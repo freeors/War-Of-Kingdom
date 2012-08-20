@@ -1,0 +1,33 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "tower defense"
+msgstr "塔防休闲"
+
+msgid "tower defense description"
+msgstr "防止AI进入最右侧3列。只要坚持20回合，你就过关了。"
+
+# scenario
+msgid "Jian Sun incursion"
+msgstr "孙坚入侵"
+
+msgid "defense Bei Liu"
+msgstr "防守刘备"
+
+msgid "Persist in 20 turns"
+msgstr "坚持20回合"
+
+msgid "Ai enter rightmost 3 colum"
+msgstr "AI进入最右侧三列"
+
+msgid "AI are same as the flood and enter in."
+msgstr "AI正像洪水一样涌进来。"
+

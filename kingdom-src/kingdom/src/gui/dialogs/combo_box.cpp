@@ -1,0 +1,120 @@
+/* $Id: campaign_difficulty.cpp 49602 2011-05-22 17:56:13Z mordante $ */
+/*
+   Copyright (C) 2010 - 2011 by Ignacio Riquelme Morelle <shadowm2006@gmail.com>
+   Part of the Battle for Wesnoth Project http://www.wesnoth.org/
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY.
+
+   See the COPYING file for more details.
+*/
+
+#define GETTEXT_DOMAIN "wesnoth-lib"
+
+#include "gui/dialogs/combo_box.hpp"
+
+#include "foreach.hpp"
+#include "gui/auxiliary/old_markup.hpp"
+#ifdef GUI2_EXPERIMENTAL_LISTBOX
+	#include "gui/widgets/list.hpp"
+#else
+	#include "gui/widgets/listbox.hpp"
+#endif
+#include "gui/dialogs/helper.hpp"
+#include "gui/widgets/settings.hpp"
+#include "gui/widgets/window.hpp"
+#include "gui/widgets/toggle_panel.hpp"
+#include <boost/bind.hpp>
+
+namespace gui2 {
+
+/*WIKI
+ * @page = GUIWindowDefinitionWML
+ * @order = 2_campaign_difficulty
+ *
+ * == Campaign difficulty ==
+ *
+ * The campaign mode difficulty menu.
+ *
+ * @begin{table}{dialog_widgets}
+ *
+ * title & & label & m &
+ *         Dialog title label. $
+ *
+ * message & & scroll_label & o &
+ *         Text label displaying a description or instructions. $
+ *
+ * listbox & & listbox & m &
+ *         Listbox displaying user choices, defined by WML for each campaign. $
+ *
+ * -icon & & control & m &
+ *         Widget which shows a listbox item icon, first item markup column. $
+ *
+ * -label & & control & m &
+ *         Widget which shows a listbox item label, second item markup column. $
+ *
+ * -description & & control & m &
+ *         Widget which shows a listbox item description, third item markup column. $
+ *
+ * @end{table}
+ */
+
+REGISTER_DIALOG(combo_box)
+
+tcombo_box::tcombo_box(const std::vector<std::string>& items, int index)
+	: index_(index), items_()
+{
+	foreach(const std::string& it, items) {
+		items_.push_back(tlegacy_menu_item(it));
+	}
+}
+
+void tcombo_box::pre_show(CVideo& /*video*/, twindow& window)
+{
+	tlistbox& list = find_widget<tlistbox>(&window, "listbox", false);
+	window.keyboard_capture(&list);
+
+	std::map<std::string, string_map> data;
+
+	int item_index = 0;
+	foreach(const tlegacy_menu_item& item, items_) {
+		if(item.is_default()) {
+			index_ = list.get_item_count();
+		}
+
+		data["icon"]["label"] = item.icon();
+		data["label"]["label"] = item.label();
+		data["label"]["use_markup"] = "true";
+		data["description"]["label"] = item.description();
+		data["description"]["use_markup"] = "true";
+
+		list.add_row(data);
+
+		tgrid* grid_ptr = list.get_row_grid(item_index);
+		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("item", true));
+		// toggle->set_callback_state_change(boost::bind(&tcombo_box::item_selected, this, _1));	
+		item_index ++;
+	}
+	list.set_callback_value_change(dialog_callback<tcombo_box, &tcombo_box::item_selected>);
+
+	if(index_ != -1) {
+		list.select_row(index_);
+	}
+}
+
+void tcombo_box::item_selected(twindow& window)
+{
+	window.set_retval(twindow::OK);
+}
+
+void tcombo_box::post_show(twindow& window)
+{
+	tlistbox& list = find_widget<tlistbox>(&window, "listbox", false);
+	index_ = list.get_selected_row();
+}
+
+}

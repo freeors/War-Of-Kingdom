@@ -1,0 +1,26 @@
+/* $Id: game_info.cpp 36987 2009-07-18 12:44:56Z silene $ */
+/*
+   Copyright (C) 2009 by Yurii Chernyi <terraninfo@terraninfo.net>
+   Part of the Battle for Wesnoth Project http://www.wesnoth.org/
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License version 2
+   or at your option any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY.
+
+   See the COPYING file for more details.
+*/
+
+/**
+ * Base class for the AI and AI-ai::manager contract.
+ * @file ai/game_info.cpp
+ */
+
+#include "game_info.hpp"
+
+namespace ai {
+// =======================================================================
+//
+// =======================================================================
+} //end of namespace ai

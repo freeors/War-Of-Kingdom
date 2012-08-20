@@ -1,0 +1,39 @@
+#textdomain wesnoth-multiplayer
+
+[multiplayer]
+    id=multiplayer_Hamlets
+    name= _ "2p — Hamlets"
+    description= _ "Warfare transforms the simple farms and villages of a peaceful region into a subtly parceled battlefield."
+    map_data="{multiplayer/maps/2p_Hamlets.map}"
+    random_start_time="no"
+
+    {DEFAULT_SCHEDULE}
+    {DEFAULT_MUSIC_PLAYLIST}
+
+    [side]
+        [ai]
+            villages_per_scout=8
+        [/ai]
+        side=1
+        canrecruit=yes
+        controller=human
+        team_name=north
+        user_team_name= _ "teamname^North"
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=8
+        [/ai]
+        side=2
+        canrecruit=yes
+        controller=human
+        team_name=south
+        user_team_name= _ "teamname^South"
+        fog=yes
+        [village]
+            x=18
+            y=24
+        [/village]
+    [/side]
+[/multiplayer]

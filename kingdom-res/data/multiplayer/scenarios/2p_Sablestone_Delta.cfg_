@@ -1,0 +1,39 @@
+#textdomain wesnoth-multiplayer
+
+[multiplayer]
+    id=multiplayer_Sablestone_Delta
+    name= _ "2p — Sablestone Delta"
+    description= _ "Two armies collide on this disjointed coastal landscape of hidden caves and jagged rivers."
+    map_data="{multiplayer/maps/2p_Sablestone_Delta.map}"
+    random_start_time="no"
+
+    {DEFAULT_SCHEDULE}
+    {DEFAULT_MUSIC_PLAYLIST}
+
+    [side]
+        [ai]
+            villages_per_scout=8
+        [/ai]
+        side=1
+        canrecruit=yes
+        controller=human
+        team_name=north
+        user_team_name= _ "teamname^North"
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=8
+        [/ai]
+        side=2
+        canrecruit=yes
+        controller=human
+        team_name=south
+        user_team_name= _ "teamname^South"
+        fog=yes
+        [village]
+            x=2
+            y=25
+        [/village]
+    [/side]
+[/multiplayer]

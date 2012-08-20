@@ -1,0 +1,92 @@
+﻿msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: li zhuo <zuoli@zowietek.cn>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hero Race"
+msgstr ""
+
+msgid "Hero Race2"
+msgstr ""
+
+msgid "Hero Race description"
+msgstr ""
+
+msgid "Hero Race description2"
+msgstr ""
+
+msgid "race of hero"
+msgstr ""
+
+msgid "race of hero2"
+msgstr ""
+
+msgid "Defeat all sides"
+msgstr ""
+
+msgid "No city you holded"
+msgstr ""
+
+msgid "Troubled waters will be quiet."
+msgstr ""
+
+msgid "Ambitious is frustrated."
+msgstr ""
+
+# actor
+msgid "actor"
+msgstr ""
+
+msgid "liuxiang word: 1"
+msgstr ""
+
+msgid "liuxiang word: 2"
+msgstr ""
+
+msgid "liuxiang word: 3"
+msgstr ""
+
+msgid "liuxiang word: 4"
+msgstr ""
+
+msgid "liuxiang word: 5"
+msgstr ""
+
+msgid "liuxiang word: 6"
+msgstr ""
+
+msgid "liuxiang word: 7"
+msgstr ""
+
+msgid "liuxiang word: 8"
+msgstr ""
+
+msgid "liuxiang word: 9"
+msgstr ""
+
+msgid "You have perfect potential, Come on!"
+msgstr ""
+
+msgid "I'm looking forward to it always"
+msgstr ""
+
+msgid "Bitch work together!"
+msgstr ""
+
+msgid "Believe chun! Resurrection Man-state in-situ!"
+msgstr ""
+
+#multiplayer
+msgid "Defeat enemy leader(s)"
+msgstr ""
+
+
+
+
+

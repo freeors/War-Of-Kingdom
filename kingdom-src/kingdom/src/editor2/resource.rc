@@ -1,0 +1,450 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Chinese (P.R.C.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+#ifdef _WIN32
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_WGEN DIALOGEX 0, 0, 346, 293
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_CHILD
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Edit...",IDC_BT_WGEN_EDIT,6,265,33,13,NOT WS_VISIBLE
+    CONTROL         "Reboot",IDC_BT_WGEN_REBOOT,"Button",BS_OWNERDRAW | WS_TABSTOP,314,1,17,14
+    CONTROL         "",IDC_LV_WGEN_EDITOR,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,24,332,262
+    EDITTEXT        IDC_ET_WGEN_FIND,86,3,103,12,ES_AUTOHSCROLL
+END
+
+IDD_ABOUT DIALOGEX 0, 0, 355, 167
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Version [Draft]",IDC_STATIC,225,13,62,8
+    PUSHBUTTON      "Help",IDC_BT_ABOUT_HELP,237,96,42,14,NOT WS_VISIBLE
+    LTEXT           "i-Site Desktop Software",IDC_ST_ABOUT_PRODUCTNAME,94,13,116,8
+    LTEXT           "Share Software (GPL)",IDC_ST_ABOUT_CORPNAME,94,61,93,10
+    LTEXT           "Copyright (C) 2010-2010",IDC_STATIC,94,49,81,8
+    LTEXT           "http://www.freeors.com",IDC_ST_ABOUT_HTTP,94,72,162,10
+END
+
+IDD_DDESC DIALOGEX 0, 0, 153, 342
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_LV_DDESC_EXPLORER,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | NOT WS_VISIBLE | WS_BORDER | WS_TABSTOP,53,7,41,29
+    EDITTEXT        IDC_ET_DDESC_SUBAREA,7,321,139,14,ES_AUTOHSCROLL | ES_READONLY
+    CONTROL         "",IDC_ST_WELCOME,"Static",SS_BITMAP,0,0,15,13
+    EDITTEXT        IDC_ET_DDESC_WWWROOT,24,57,122,13,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_BT_DDESC_BROWSE,7,57,15,13
+    CONTROL         "",IDC_TV_DDESC_EXPLORER,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | WS_BORDER | WS_HSCROLL | WS_TABSTOP,7,75,139,247
+END
+
+IDD_TITLE DIALOGEX 0, 0, 385, 52
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+END
+
+IDD_SYNC DIALOGEX 0, 0, 349, 293
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_LV_SYNC_SYNC,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,0,22,342,249
+    EDITTEXT        IDC_ET_SYNC_SUBAREA,188,272,154,14,ES_AUTOHSCROLL | ES_READONLY
+    EDITTEXT        IDC_ET_SYNC_WORKDIR,188,3,154,13,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "",IDC_ST_SYNC_BLANK,58,0,106,18
+END
+
+IDD_TBOX DIALOGEX 0, 0, 346, 293
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_LV_TBOX_DESC,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,7,332,279
+END
+
+IDD_HEROEDIT DIALOGEX 0, 0, 294, 340
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_BORDER
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "性别",IDC_STATIC,99,39,17,8
+    COMBOBOX        IDC_CMB_HEROEDIT_GENDER,120,37,23,63,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "序号",IDC_STATIC,8,24,19,10
+    EDITTEXT        IDC_ET_HEROEDIT_NUMBER,28,22,57,12,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "姓名",IDC_STATIC,8,39,19,10
+    EDITTEXT        IDC_ET_HEROEDIT_NAME,28,37,58,12,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "统率",IDC_STATIC,7,56,19,10
+    EDITTEXT        IDC_ET_HEROEDIT_LEADERSHIP,29,54,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_LEADERSHIP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,48,54,11,12
+    LTEXT           "武力",IDC_STATIC,63,56,22,10
+    EDITTEXT        IDC_ET_HEROEDIT_FORCE,85,53,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_FORCE,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,104,53,11,12
+    LTEXT           "智力",IDC_STATIC,121,55,20,10
+    EDITTEXT        IDC_ET_HEROEDIT_INTELLECT,142,53,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_INTELLECT,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,161,53,11,12
+    LTEXT           "政治",IDC_STATIC,177,55,21,10
+    EDITTEXT        IDC_ET_HEROEDIT_POLITICS,197,54,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_POLITICS,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,216,54,11,12
+    LTEXT           "魅力",IDC_STATIC,233,55,22,10
+    EDITTEXT        IDC_ET_HEROEDIT_CHARM,255,53,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_CHARM,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,276,53,11,12
+    GROUPBOX        "列传",IDC_STATIC,7,273,280,60
+    EDITTEXT        IDC_ET_HEROEDIT_BIOGRAPHY,7,287,280,46,ES_MULTILINE | ES_READONLY | WS_VSCROLL
+    CONTROL         "OK",IDOK,"Button",BS_OWNERDRAW | WS_TABSTOP,243,2,16,15
+    CONTROL         "Cancel",IDCANCEL,"Button",BS_OWNERDRAW | WS_TABSTOP,271,2,16,15
+    COMBOBOX        IDC_CMB_HEROEDIT_CONSORT,215,189,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "配偶",IDC_STATIC,194,190,17,8
+    LTEXT           "义兄弟",IDC_STATIC,10,207,27,8
+    COMBOBOX        IDC_CMB_HEROEDIT_OATH0,42,205,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_OATH1,117,205,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_AMBITION,220,259,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "野心",IDC_STATIC,199,261,17,8
+    LTEXT           "相性",IDC_STATIC,156,39,19,10
+    EDITTEXT        IDC_ET_HEROEDIT_CATALOG,178,37,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_CATALOG,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,197,37,11,12
+    LTEXT           "图像编号",IDC_STATIC,99,24,32,10
+    EDITTEXT        IDC_ET_HEROEDIT_IMAGE,135,22,31,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_IMAGE,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,165,22,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_LEADERSHIPXP,29,70,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_LEADERSHIPXP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,48,70,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_FORCEXP,85,70,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_FORCEXP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,104,70,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_INTELLECTXP,141,70,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_INTELLECTXP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,161,70,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_POLITICSXP,198,70,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_POLITICSXP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,217,70,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_CHARMXP,255,70,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_CHARMXP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,276,70,11,12
+    LTEXT           "经验",IDC_STATIC,7,72,18,10
+    LTEXT           "父母",IDC_STATIC,11,191,22,8
+    COMBOBOX        IDC_CMB_HEROEDIT_PARENT0,42,189,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_PARENT1,117,189,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_FEATURE,27,259,56,253,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "特技",IDC_STATIC,10,261,17,8
+    LTEXT           "步兵",IDC_STATIC,9,100,19,10
+    LTEXT           "骑兵",IDC_STATIC,63,100,22,10
+    LTEXT           "兵器",IDC_STATIC,121,99,20,10
+    LTEXT           "学院",IDC_STATIC,177,99,21,10
+    LTEXT           "水军",IDC_STATIC,233,99,22,10
+    EDITTEXT        IDC_ET_HEROEDIT_ARMS0XP,29,114,31,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_ARMS0XP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,59,114,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_ARMS1XP,80,115,30,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_ARMS1XP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,112,114,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_ARMS2XP,141,114,30,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_ARMS2XP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,170,114,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_ARMS3XP,198,114,30,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_ARMS3XP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,228,114,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_ARMS4XP,245,114,30,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_ARMS4XP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,276,114,11,12
+    LTEXT           "经验",IDC_STATIC,9,116,18,10
+    GROUPBOX        "兵科适性",IDC_STATIC,7,87,280,44
+    COMBOBOX        IDC_CMB_HEROEDIT_ARMS0,29,97,30,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_ARMS1,84,97,30,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_ARMS2,141,97,30,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_ARMS3,197,97,30,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_ARMS4,255,97,30,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    GROUPBOX        "血缘",IDC_STATIC,7,179,280,73
+    LTEXT           "亲近",IDC_STATIC,10,223,27,8
+    COMBOBOX        IDC_CMB_HEROEDIT_INTIMATE0,42,221,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_INTIMATE1,117,221,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_INTIMATE2,192,221,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "厌恶",IDC_STATIC,10,239,27,8
+    COMBOBOX        IDC_CMB_HEROEDIT_HATE0,42,237,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_HATE1,118,237,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_HATE2,192,237,67,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_SIDEFEATURE,132,259,56,253,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "阵营特技",IDC_STATIC,91,261,33,8
+    LTEXT           "义理",IDC_STATIC,217,39,19,10
+    EDITTEXT        IDC_ET_HEROEDIT_HEART,239,37,20,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_HEART,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,259,37,11,12
+    LTEXT           "商才",IDC_STATIC,10,149,19,10
+    LTEXT           "一骑",IDC_STATIC,64,149,22,10
+    LTEXT           "拆除",IDC_STATIC,122,148,20,10
+    EDITTEXT        IDC_ET_HEROEDIT_SKILL0XP,29,163,31,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_SKILL0XP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,60,162,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_SKILL1XP,85,162,30,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_SKILL1XP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,113,162,11,12
+    EDITTEXT        IDC_ET_HEROEDIT_SKILL2XP,142,162,30,12,ES_AUTOHSCROLL
+    CONTROL         "",IDC_UD_HEROEDIT_SKILL2XP,"msctls_updown32",UDS_SETBUDDYINT | UDS_ARROWKEYS,171,162,11,12
+    LTEXT           "经验",IDC_STATIC,10,165,18,10
+    GROUPBOX        "技能适性",IDC_STATIC,8,135,280,44
+    COMBOBOX        IDC_CMB_HEROEDIT_SKILL0,30,146,30,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_SKILL1,84,146,30,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_CMB_HEROEDIT_SKILL2,142,146,30,211,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_TB DIALOGEX 0, 0, 348, 294
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_TV_TB_EXPLORER,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | WS_BORDER | WS_HSCROLL | WS_TABSTOP,7,7,334,279
+END
+
+IDD_CFG DIALOGEX 0, 0, 345, 293
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_TV_CFG_EXPLORER,"SysTreeView32",TVS_HASBUTTONS | TVS_HASLINES | WS_BORDER | WS_HSCROLL | WS_TABSTOP,1,7,337,279
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_WGEN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 339
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 286
+    END
+
+    IDD_ABOUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 347
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 160
+    END
+
+    IDD_DDESC, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 146
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 335
+    END
+
+    IDD_TITLE, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 378
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 45
+    END
+
+    IDD_SYNC, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 342
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 286
+    END
+
+    IDD_TBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 339
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 286
+    END
+
+    IDD_HEROEDIT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 287
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 333
+    END
+
+    IDD_TB, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 341
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 287
+    END
+
+    IDD_CFG, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 338
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 286
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_DEVICE              ICON                    "device.ico"
+IDI_DIR                 ICON                    "dir.ico"
+IDI_DOWNLOAD            ICON                    "download.ico"
+IDI_UPLOAD              ICON                    "upload.ico"
+IDI_CHECK               ICON                    "check.ico"
+IDI_UNCHECK             ICON                    "uncheck.ico"
+IDI_OPEN                ICON                    "open.ico"
+IDI_RESET               ICON                    "reset.ico"
+IDI_SAVE                ICON                    "save.ico"
+IDI_XCHG                ICON                    "xchg.ico"
+IDI_REFRESH             ICON                    "refresh.ico"
+IDI_SYNC                ICON                    "sync.ico"
+IDI_OPENPCDIR           ICON                    "openpcdir.ico"
+IDI_TITLE_XCHG          ICON                    "title_xchg.ico"
+IDI_TITLE_ABOUT         ICON                    "title_about.ico"
+IDI_TITLE_PLAY          ICON                    "title_play.ico"
+IDI_TITLE_SYNC          ICON                    "title_sync.ico"
+IDI_TITLE_UPDATE        ICON                    "title_update.ico"
+IDI_TITLE_WGEN          ICON                    "title_wgen.ico"
+IDI_NEW                 ICON                    "NEW.ico"
+IDI_DEL                 ICON                    "del.ico"
+IDI_RENAME              ICON                    "rename.ico"
+IDI_RENAME_DIS          ICON                    "rename_dis.ico"
+IDI_RESET_DIS           ICON                    "reset_dis.ico"
+IDI_SAVE_DIS            ICON                    "save_dis.ico"
+IDI_DEL_DIS             ICON                    "del_dis.ico"
+IDI_NEW_DIS             ICON                    "new_dis.ico"
+IDI_OPEN_DIS            ICON                    "open_dis.ico"
+IDI_XCHG_DIS            ICON                    "xchg_dis.ico"
+IDI_OPENPCDIR_DIS       ICON                    "openpcdir_dis.ico"
+IDI_REFRESH_DIS         ICON                    "refresh_dis.ico"
+IDI_SYNC_DIS            ICON                    "sync_dis.ico"
+IDI_TITLE_XCHG_DIS      ICON                    "title_xchg_dis.ico"
+IDI_TITLE_ABOUT_DIS     ICON                    "title_about_dis.ico"
+IDI_TITLE_PLAY_DIS      ICON                    "title_play_dis.ico"
+IDI_TITLE_SYNC_DIS      ICON                    "title_sync_dis.ico"
+IDI_TITLE_UPDATE_DIS    ICON                    "title_update_dis.ico"
+IDI_TITLE_WGEN_DIS      ICON                    "title_wgen_dis.ico"
+IDI_INI                 ICON                    "ini.ico"
+IDI_TXT                 ICON                    "txt.ico"
+IDI_UNKNOWN             ICON                    "unknown.ico"
+IDI_CANCEL              ICON                    "cancel.ico"
+IDI_OK                  ICON                    "ok.ico"
+IDI_BACKUP              ICON                    "backup.ico"
+IDI_BACKUP_DIS          ICON                    "backup_dis.ico"
+IDI_EDITOR              ICON                    "editor.ico"
+IDI_WITH_SYNC           ICON                    "with_sync.ico"
+IDI_WITHOUT_SYNC        ICON                    "without_sync.ico"
+IDI_BUILD               ICON                    "build.ico"
+IDI_BUILD_DIS           ICON                    "build_dis.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_CANCEL_UNSELECT     BITMAP                  "cancel_unselect.bmp"
+IDB_OK_SELECT           BITMAP                  "ok_select.bmp"
+IDB_OK_UNSELECT         BITMAP                  "ok_unselect.bmp"
+IDB_CANCEL_SELECT       BITMAP                  "cancel_select.bmp"
+IDB_REBOOT_UNSELECT     BITMAP                  "reboot_unselect.bmp"
+IDB_REBOOT_SELECT       BITMAP                  "reboot_select.bmp"
+IDB_REBOOT_UNSELECT_LIGHT BITMAP                  "reboot_unselect_light.bmp"
+IDB_REBOOT_DISABLE      BITMAP                  "reboot_disable.bmp"
+IDB_REFRESH_UNSELECT    BITMAP                  "refresh_unselect.bmp"
+IDB_WELCOME             BITMAP                  "welcome.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDM_WGEN_RESET_NTSC_M   "Restore all value to NTSC default"
+    IDM_WGEN_RESET_PAL_D    "Reset TV standard for current profile"
+END
+
+STRINGTABLE 
+BEGIN
+    IDM_SAVE                "Save all profile"
+    IDM_WGEN_DEL_CFGITEM    "Delete one special profile item from destination file"
+    IDM_SYS_SYNC            "Build"
+    IDM_SYS_WGEN            "Device Configuration"
+    IDM_SYS_XCHG            "Conversion"
+    IDM_SYS_PLAY            "Play"
+    IDM_SYS_TBOX            "Generic Function"
+    IDM_SYS_ABOUT           "About"
+    IDM_REFRESH             "Refresh"
+    IDM_SYNC_SYNC           "Build"
+END
+
+STRINGTABLE 
+BEGIN
+    IDM_SYNC_OPENPCDIR      "Open work direcotry"
+    IDM_XCHG_XCHG           "Convert File"
+    IDM_NEW                 "Add new profile item"
+    IDM_DELETE              "Delete current profile"
+    IDM_FIND                "Find"
+END
+
+STRINGTABLE 
+BEGIN
+    IDM_OPEN                "Open File"
+    IDM_IMPORT              "Import configuration form special file"
+    IDM_EXPORT              "Export configuration to special file"
+    IDM_BACKUP              "Backup and Restore"
+END
+
+#endif    // Chinese (P.R.C.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

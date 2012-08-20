@@ -1,0 +1,424 @@
+﻿msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: li zhuo <zuoli@zowietek.cn>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#
+# bowman
+#
+msgid "bowman1"
+msgstr ""
+
+msgid "bowman1 description"
+msgstr ""
+
+msgid "bowman2"
+msgstr ""
+
+msgid "bowman2 description"
+msgstr ""
+
+msgid "bowman3"
+msgstr ""
+
+msgid "bowman3 description"
+msgstr ""
+
+msgid "bowman4"
+msgstr ""
+
+msgid "bowman4 description"
+msgstr ""
+
+msgid "bowman5"
+msgstr ""
+
+msgid "bowman5 description"
+msgstr ""
+
+msgid "bowman6"
+msgstr ""
+
+msgid "bowman6 description"
+msgstr ""
+
+#
+# catapult
+#
+msgid "catapult1"
+msgstr ""
+
+msgid "catapult1 description"
+msgstr ""
+
+msgid "catapult2"
+msgstr ""
+
+msgid "catapult2 description"
+msgstr ""
+
+msgid "catapult3"
+msgstr ""
+
+msgid "catapult3 description"
+msgstr ""
+
+msgid "catapult4"
+msgstr ""
+
+msgid "catapult4 description"
+msgstr ""
+
+msgid "catapult5"
+msgstr ""
+
+msgid "catapult5 description"
+msgstr ""
+
+msgid "catapult6"
+msgstr ""
+
+msgid "catapult6 description"
+msgstr ""
+
+#
+# footman
+#
+msgid "footman1"
+msgstr ""
+
+msgid "footman1 description"
+msgstr ""
+
+msgid "footman2"
+msgstr ""
+
+msgid "footman2 description"
+msgstr ""
+
+msgid "footman3"
+msgstr ""
+
+msgid "footman3 description"
+msgstr ""
+
+msgid "footman4"
+msgstr ""
+
+msgid "footman4 description"
+msgstr ""
+
+msgid "footman5"
+msgstr ""
+
+msgid "footman5 description"
+msgstr ""
+
+msgid "footman6"
+msgstr ""
+
+msgid "footman6 description"
+msgstr ""
+
+#
+# horseman
+#
+msgid "horseman1"
+msgstr ""
+
+msgid "horseman1 description"
+msgstr ""
+
+msgid "horseman2"
+msgstr ""
+
+msgid "horseman2 description"
+msgstr ""
+
+msgid "horseman3"
+msgstr ""
+
+msgid "horseman3 description"
+msgstr ""
+
+msgid "horseman4"
+msgstr ""
+
+msgid "horseman4 description"
+msgstr ""
+
+msgid "horseman5"
+msgstr ""
+
+msgid "horseman5 description"
+msgstr ""
+
+msgid "horseman6"
+msgstr ""
+
+msgid "horseman6 description"
+msgstr ""
+
+#
+# commander
+#
+msgid "commander1"
+msgstr ""
+
+msgid "commander1 description"
+msgstr ""
+
+msgid "commander2"
+msgstr ""
+
+msgid "commander2 description"
+msgstr ""
+
+msgid "commander3"
+msgstr ""
+
+msgid "commander3 description"
+msgstr ""
+
+msgid "commander4"
+msgstr ""
+
+msgid "commander4 description"
+msgstr ""
+
+msgid "commander5"
+msgstr ""
+
+msgid "commander5 description"
+msgstr ""
+
+msgid "commander6"
+msgstr ""
+
+msgid "commander6 description"
+msgstr ""
+
+#
+# pikeman
+#
+msgid "pikeman1"
+msgstr ""
+
+msgid "pikeman1 description"
+msgstr ""
+
+msgid "pikeman2"
+msgstr ""
+
+msgid "pikeman2 description"
+msgstr ""
+
+msgid "pikeman3"
+msgstr ""
+
+msgid "pikeman3 description"
+msgstr ""
+
+msgid "pikeman4"
+msgstr ""
+
+msgid "pikeman4 description"
+msgstr ""
+
+msgid "pikeman5"
+msgstr ""
+
+msgid "pikeman5 description"
+msgstr ""
+
+msgid "pikeman6"
+msgstr ""
+
+msgid "pikeman6 description"
+msgstr ""
+
+#
+# mage
+#
+msgid "mage1"
+msgstr ""
+
+msgid "mage1 description"
+msgstr ""
+
+msgid "whitemage2"
+msgstr ""
+
+msgid "whitemage2 description"
+msgstr ""
+
+msgid "whitemage3"
+msgstr ""
+
+msgid "whitemage3 description"
+msgstr ""
+
+msgid "whitemage4"
+msgstr ""
+
+msgid "whitemage4 description"
+msgstr ""
+
+msgid "whitemage5"
+msgstr ""
+
+msgid "whitemage5 description"
+msgstr ""
+
+msgid "whitemage6"
+msgstr ""
+
+msgid "whitemage6 description"
+msgstr ""
+
+msgid "redmage2"
+msgstr ""
+
+msgid "redmage2 description"
+msgstr ""
+
+msgid "redmage3"
+msgstr ""
+
+msgid "redmage3 description"
+msgstr ""
+
+msgid "redmage4"
+msgstr ""
+
+msgid "redmage4 description"
+msgstr ""
+
+msgid "redmage5"
+msgstr ""
+
+msgid "redmage5 description"
+msgstr ""
+
+msgid "redmage6"
+msgstr ""
+
+msgid "redmage6 description"
+msgstr ""
+
+#
+# boat
+#
+msgid "boat0"
+msgstr ""
+
+msgid "boat0 description"
+msgstr ""
+
+msgid "boat1"
+msgstr ""
+
+msgid "boat1 description"
+msgstr ""
+
+msgid "boat2"
+msgstr ""
+
+msgid "boat2 description"
+msgstr ""
+
+msgid "boat3"
+msgstr ""
+
+msgid "boat3 description"
+msgstr ""
+
+msgid "boat4"
+msgstr ""
+
+msgid "boat4 description"
+msgstr ""
+
+msgid "boat5"
+msgstr ""
+
+msgid "boat5 description"
+msgstr ""
+
+msgid "boat6"
+msgstr ""
+
+msgid "boat6 description"
+msgstr ""
+
+#
+# actor
+#
+msgid "stage player"
+msgstr ""
+
+msgid "stage player description"
+msgstr ""
+
+msgid "famous director"
+msgstr ""
+
+msgid "famous director description"
+msgstr ""
+
+#
+# city
+#
+msgid "city1"
+msgstr ""
+
+msgid "city1 description"
+msgstr ""
+
+msgid "city2"
+msgstr ""
+
+msgid "city2 description"
+msgstr ""
+
+#
+# market
+#
+msgid "market"
+msgstr ""
+
+msgid "market description"
+msgstr ""
+
+#
+# tower
+#
+msgid "tower"
+msgstr ""
+
+msgid "tower description"
+msgstr ""
+
+#
+# wall
+#
+msgid "wall1"
+msgstr ""
+
+msgid "wall1 description"
+msgstr ""
+
+#
+# keep
+#
+msgid "keep1"
+msgstr ""
+
+msgid "keep1 description"
+msgstr ""

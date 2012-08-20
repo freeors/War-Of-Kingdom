@@ -1,0 +1,126 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Duel"
+msgstr "单挑"
+
+msgid "Duel description"
+msgstr "该剧本只一个关卡。每次战斗时必会触发单挑，单挑胜利便可消灭该部队。你可通过该剧本熟悉单挑操作。"
+
+msgid "DL"
+msgstr "单挑"
+
+# win condition
+msgid "Defeat all enemies"
+msgstr "消灭所有敌人"
+
+# lost condition
+msgid "Luoyang is fallen"
+msgstr "洛阳沦陷"
+
+# union name
+msgid "union_sl"
+msgstr "孙刘联盟"
+
+msgid "wei"
+msgstr "魏"
+
+# start word
+msgid "start word: 1"
+msgstr "刘豫州移兵油江口，莫非有取南郡之意？"
+
+msgid "start word: 2"
+msgstr "闻都督欲取南郡，故持来相助，若都督不取，备必取之。"
+
+msgid "start word: 3"
+msgstr "吾东吴久欲吞并汉江，今南郡已在掌中，如何不取？"
+
+msgid "start word: 4"
+msgstr "胜负不可预定，曹操临归，令曹仁守南郡等处，必有奇计，更兼曹仁勇不可当，但恐都督不能取耳。"
+
+msgid "start word: 5"
+msgstr "吾若取不得，那时任从公取！"
+
+msgid "start word: 6"
+msgstr "都督此言，甚是公论。先让东吴去取，若不下，主公取之，有何不可！"
+
+msgid "start word: 7"
+msgstr "吾誓取南郡！"
+
+msgid "stop word: 1"
+msgstr "终于逼使曹仁撤退了！"
+
+msgid "stop word: 2"
+msgstr "撤退，全军从南郡撤退！"
+
+msgid "liubei stop: 1"
+msgstr "兴复汉室，无望矣！"
+
+#~ msgid "Legend of Bei Liu"
+#~ msgstr "刘备传"
+#~ msgid "Legend of Bei Liu description"
+#~ msgstr ""
+#~ "战役中三个关卡，长坂坡之战、赤壁之战和南郡战役。战役中后一关卡的部队、武将"
+#~ "数值、玩家航海文明继承上一关卡结果。"
+#~ msgid "LOBL"
+#~ msgstr "LOBL"
+#~ msgid "battle of changbanpo"
+#~ msgstr "长坂坡之战"
+
+# lost condition
+#~ msgid "Bei Liu troop enters camp"
+#~ msgstr "刘备队进入砦"
+# lost condition
+#~ msgid "Bei Liu troop is be defeated"
+#~ msgstr "刘备队被击败"
+#~ msgid "Turns run out"
+#~ msgstr "回合耗尽"
+#~ msgid "My ability can not compare with Cao Cao, I surrender."
+#~ msgstr "我的才能不及曹操，愿献城投降。"
+#~ msgid "battle of chibi"
+#~ msgstr "赤壁之战"
+# win condition
+#~ msgid "capture wulingang"
+#~ msgstr "占领乌林港"
+#~ msgid "It is time to extend results of battle!"
+#~ msgstr "现在应该是扩大战果的时候！"
+#~ msgid ""
+#~ "The unification objective was thrown into the eastward flowing stream."
+#~ msgstr "统一的目标付诸东流。"
+#~ msgid "story prologue: 1"
+#~ msgstr ""
+#~ "公元208年，曹操和孙权、刘备在江陵与夏口间的长江沿岸进行一场战略会战。在这"
+#~ "场战争中，处于劣势地位的孙、刘联军，面对总兵力占优势的曹军，正确分析形势，"
+#~ "找出其弱点和不利因素，采取密切协同、以长击短，以火佐攻，乘胜追击的作战方"
+#~ "针，打得曹军丢盔弃甲，狼狈窜北，使曹操“横槊赋诗”、并吞寰宇的雄心就此付诸东"
+#~ "流。"
+#~ msgid "story prologue: 2"
+#~ msgstr ""
+#~ "赤壁之战后，曹操委派曹仁镇守南郡。南郡跨长江两岸，是荆州的腹心，也交通着扬"
+#~ "州和益州，得南郡则得荆、益，不得南郡则赤壁之战的胜果不能巩固，长江天险"
+#~ "仍“与操共之”。夺取南郡，对于孙、刘两个利益集团来讲都有战略上的必要意义。曹"
+#~ "操不肯放弃荆州，孙刘两家也都想得荆州，于是赤壁之战后，三个势力集团的争端集"
+#~ "中在了南郡……"
+#~ msgid "battle of nanjun"
+#~ msgstr "南郡战役"
+# win condition
+#~ msgid "capture jiangling"
+#~ msgstr "占领江陵"
+#, fuzzy
+#~ msgid "LOBL12"
+#~ msgstr "LOBL"
+#~ msgid "War of Kingdom"
+#~ msgstr "王国战争"
+#~ msgid "War of Kingdom description"
+#~ msgstr ""
+#~ "黯淡了刀光剑影，远去了鼓角争鸣，湮没了荒城古道，荒芜了烽火边城。长江有意化"
+#~ "做泪，长江有情起歌声，历史的天空闪烁几颗星，人间一股英雄气，在驰骋纵横。 "
+

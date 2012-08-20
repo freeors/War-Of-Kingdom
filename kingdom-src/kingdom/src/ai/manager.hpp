@@ -1,0 +1,421 @@
+/* $Id: manager.hpp 37830 2009-08-16 11:29:44Z crab $ */
+/*
+   Copyright (C) 2009 by Yurii Chernyi <terraninfo@terraninfo.net>
+   Part of the Battle for Wesnoth Project http://www.wesnoth.org/
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License version 2
+   or at your option any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY.
+
+   See the COPYING file for more details.
+*/
+
+/**
+ * @file ai/ai_manager.hpp
+ * Managing the AIs lifecycle - headers
+ * @todo 1.7 Refactor history handling and internal commands.
+ * @todo 1.7 AI Interface command to clear the history.
+ */
+
+#ifndef AI_MANAGER_HPP_INCLUDED
+#define AI_MANAGER_HPP_INCLUDED
+
+#include "../global.hpp"
+
+#include "game_info.hpp"
+
+#include <map>
+#include <stack>
+#include <vector>
+#include <deque>
+
+class ai_plan;
+
+namespace ai {
+
+class ai_interface;
+
+class ai_default;
+typedef boost::shared_ptr<ai_default> default_ai_ptr;
+
+/**
+ * Base class that holds the AI and current AI parameters.
+ * It is an implementation detail.
+ * @todo 1.7.4 move it out of public view
+ */
+class holder
+{
+public:
+	holder(side_number side, const config &cfg);
+
+	virtual ~holder();
+
+	ai_interface& get_ai_ref();
+
+	const std::string describe_ai();
+
+	void modify_ai_config_old( const config::const_child_itors &ai_parameters );
+
+	config to_config() const;
+
+	const std::string get_ai_identifier() const;
+
+private:
+	void init( side_number side );
+
+
+	default_ai_ptr ai_;
+	side_number side_;
+	config cfg_;
+};
+
+/**
+ * AI Command History Item. It is an implementation detail
+ */
+class command_history_item{
+public:
+	command_history_item();
+
+	command_history_item(int number, const std::string& command);
+
+	virtual ~command_history_item();
+
+	int get_number() const;
+	void set_number(int number);
+
+	const std::string& get_command() const;
+	void set_command(const std::string& command);
+
+private:
+	int number_;
+	std::string command_;
+
+};
+
+/**
+ * Class that manages AIs for all sides and manages AI redeployment.
+ * This class is responsible for managing the AI lifecycle
+ * It can be accessed like this:   ai::manager::foo(...);
+ */
+class manager
+{
+public:
+
+	// =======================================================================
+	// CONSTANTS
+	// =======================================================================
+
+	static const size_t MAX_HISTORY_SIZE = 200;
+
+	// =======================================================================
+	// LIFECYCLE
+	// =======================================================================
+
+	/**
+	 * Sets AI information.
+	 * @param info ai_information to be set.
+	 */
+	static void set_ai_info(const game_info& info);
+
+
+	/**
+	 * Clears AI information.
+	 * Should be called in playsingle_controller 's destructor.
+	 */
+	static void clear_ai_info();
+
+
+	/**
+	 * Adds observer of game events.
+	 * Should be called in playsingle_controller 's constructor.
+	 */
+	static void add_observer( events::observer* event_observer);
+
+
+	/**
+	 * Removes an observer of game events.
+	 * Should be called in playsingle_controller 's destructor.
+	 */
+	static void remove_observer( events::observer* event_observer );
+
+
+	/**
+	 * Adds observer of game events except ai_user_interact event and ai_sync_network event
+	 */
+	static void add_gamestate_observer( events::observer* event_observer);
+
+
+	/**
+	 * Removes an observer of game events except ai_user_interact event and ai_sync_network event
+	 */
+	static void remove_gamestate_observer( events::observer* event_observer );
+
+
+	/**
+	 * Notifies all observers of 'ai_user_interact' event.
+	 * Function which should be called frequently to allow the user to interact
+	 * with the interface. This function will make sure that interaction
+	 * doesn't occur too often, so there is no problem with calling it very
+	 * regularly.
+	 */
+	static void raise_user_interact();
+
+	/**
+	 * Notifies all observers of 'ai_sync_network' event.
+	 * Basically a request from the AI to sync the network.
+	 */
+	static void raise_sync_network();
+
+
+	/**
+	 * Notifies all observers of 'ai_gamestate_changed' event.
+	 */
+	static void raise_gamestate_changed();
+
+	/**
+	 * Notifies all observers of 'ai_recruit_list_changed' event.
+	 */
+	static void raise_recruit_list_changed();
+
+	/**
+	 * Notifies all observers of 'ai_turn_started' event.
+	 */
+	static void raise_turn_started();
+
+	/**
+	 * Notifies all observers of 'ai_map_changed' event.
+	 */
+	static void raise_map_changed();
+
+	/**
+	 * Adds an observer of 'ai_map_changed' event.
+	 */
+	static void add_map_changed_observer( events::observer* event_observer );
+
+
+	/**
+	 * Adds an observer of 'ai_recruit_list_changed' event.
+	 */
+	static void add_recruit_list_changed_observer( events::observer* event_observer );
+
+	/**
+	 * Adds an observer of 'ai_user_interact' event.
+	 */
+	static void add_user_interact_observer( events::observer* event_observer );
+
+
+	/**
+	 * Adds an observer of 'ai_sync_network' event.
+	 */
+	static void add_sync_network_observer( events::observer* event_observer );
+
+
+	/**
+	 * Adds an observer of 'ai_turn_started' event.
+	 */
+	static void add_turn_started_observer( events::observer* event_observer );
+
+
+	/**
+	 * Removes an observer of 'ai_user_interact' event.
+	 */
+	static void remove_user_interact_observer( events::observer* event_observer );
+
+
+	/**
+	 * Deletes an observer of 'ai_sync_network' event.
+	 */
+	static void delete_sync_network_observer( events::observer* event_observer );
+
+
+	/**
+	 * Deletes an observer of 'ai_turn_started' event.
+	 */
+	static void remove_turn_started_observer( events::observer* event_observer );
+
+
+protected:
+
+	manager();
+
+
+public:
+
+	virtual ~manager();
+
+	// =======================================================================
+	// EVALUATION
+	// =======================================================================
+
+	// =======================================================================
+	// ADD, CREATE AIs, OR LIST AI TYPES
+	// =======================================================================
+	/**
+	 * Adds active AI for specified @a side from @a cfg.
+	 * @note Running this command may invalidate references previously returned
+	 *       by manager. AI is not initialized at this point.
+	 * @param side side number (1-based, as in game_info).
+	 * @param cfg the config from which all ai parameters are to be read.
+	 * @param replace should new ai replace the current ai or 'be placed on top of it'.
+	 * @return true if successful.
+	 */
+	static bool add_ai_for_side_from_config(side_number side, const config &cfg, bool replace = true);
+
+
+	// =======================================================================
+	// REMOVE
+	// =======================================================================
+
+	/**
+	 * Removes top-level AI from @a side.
+	 * @note Running this command may invalidate references previously returned
+	 *       by manager.
+	 * @param side side number (1-based, as in game_info).
+	 */
+	static void remove_ai_for_side( side_number side );
+
+
+	/**
+	 * Removes all AIs from @a side.
+	 * @note Running this command may invalidate references previously returned
+	 *       by manager.
+	 * @param side side number (1-based, as in game_info).
+	 */
+	static void remove_all_ais_for_side( side_number side );
+
+
+	/**
+	 * Clears all the AIs.
+	 * @note Running this command may invalidate references previously returned
+	 *       by manager. For example, this is called from the destructor of
+	 *       playsingle_controller. It is necessary to do this if any of the
+	 *       info structures used by the AI goes out of scope.
+	 */
+	static void clear_ais();
+
+	// =======================================================================
+	// GET active AI parameters
+	// =======================================================================
+
+
+	/**
+	 * Gets AI info for active AI of the given @a side.
+	 * @param side side number (1-based).
+	 * @return a reference to active AI info.
+	 */
+	static game_info& get_active_ai_info_for_side( side_number side );
+
+
+
+	/**
+	 * Gets AI algorithm identifier for active AI of the given @a side.
+	 * @param side side number (1-based).
+	 * @return ai identifier for the active AI 
+	 */
+	static std::string get_active_ai_identifier_for_side( side_number side );
+
+	/**
+	 * Gets AI plan action for active AI of the given @a side.
+	 * @param side side number (1-based).
+	 * @return ai plan for the active AI 
+	 */
+	static ai_plan& get_active_ai_plan_for_side(side_number side, bool action = false);
+
+	/**
+	 * Gets AI config for active AI of the given @a side.
+	 * @param side side number (1-based).
+	 * @return a config object for the active AI 
+	 */
+	static config to_config( side_number side );
+
+
+	/**
+	 * Gets global AI-game info
+	 * @return a reference to the AI-game info.
+	 */
+	static game_info& get_ai_info();
+
+
+	// =======================================================================
+	// SET active AI parameters
+	// =======================================================================
+
+
+	/**
+	 * Modifies AI parameters for active AI of the given @a side.
+	 * This function is provided for backward-compatability with [modify_side][ai]...[/ai][/modify_side]
+	 * It can only add new facets to aspects
+	 * @param side side_number (1-based, as in game_info).
+	 * @param ai_parameters AI paramters to be modified.
+	 */
+	static void modify_active_ai_config_old_for_side ( side_number side, const config::const_child_itors &ai_parameters );
+
+
+	// =======================================================================
+	// PROXY
+	// =======================================================================
+
+	/**
+	 * Plays a turn for the specified side using its active AI.
+	 * @param side side number (1-based, as in game_info).
+	 */
+	static void play_turn(side_number side);
+
+
+private:
+
+	typedef std::map< side_number, std::stack< holder > > AI_map_of_stacks;
+	static AI_map_of_stacks ai_map_;
+	static game_info *ai_info_;
+
+	static events::generic_event map_changed_;
+	static events::generic_event recruit_list_changed_;
+	static events::generic_event user_interact_;
+	static events::generic_event sync_network_;
+	static events::generic_event gamestate_changed_;
+	static events::generic_event turn_started_;
+	static int last_interact_;
+	static int num_interact_;
+
+	// =======================================================================
+	// AI STACKS
+	// =======================================================================
+
+
+	/**
+	 * Gets the AI stack for the specified side, create it if it doesn't exist.
+	 */
+	static std::stack< holder >& get_or_create_ai_stack_for_side(side_number side);
+
+	// =======================================================================
+	// AI HOLDERS
+	// =======================================================================
+
+
+	/**
+	 * Gets active holder for specified @a side.
+	 */
+	static holder& get_active_ai_holder_for_side( side_number side );
+
+	// =======================================================================
+	// AI POINTERS
+	// =======================================================================
+
+	/**
+	 * Gets active AI for specified side.
+	 * @note Running this command may invalidate references previously returned
+	 *       by manager.
+	 * @param side side number (1-based, as in game_info).
+	 * @return a reference to the active AI.
+	 * @note This reference may become invalid after specific manager operations.
+	 */
+	static ai_interface& get_active_ai_for_side( side_number side );
+
+
+};
+
+} //end of namespace ai
+
+#endif

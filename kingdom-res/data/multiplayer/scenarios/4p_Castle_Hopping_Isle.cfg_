@@ -1,0 +1,56 @@
+#textdomain wesnoth-multiplayer
+
+[multiplayer]
+    id=multiplayer_Castle_Hopping_Isle
+    name= _ "4p — Castle Hopping Isle"
+    map_data="{multiplayer/maps/4p_Castle_Hopping_Isle.map}"
+    description= _ "Hop from castle to castle while fighting over a central isle." + _ " Recommended setting of 2 gold per village."
+
+    {DEFAULT_SCHEDULE}
+    {DEFAULT_MUSIC_PLAYLIST}
+
+    [side]
+        [ai]
+            villages_per_scout=16
+        [/ai]
+        side=1
+        canrecruit=yes
+        controller=human
+        team_name=East
+        user_team_name= _ "teamname^East"
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=16
+        [/ai]
+        side=2
+        canrecruit=yes
+        controller=human
+        team_name=West
+        user_team_name= _ "teamname^West"
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=16
+        [/ai]
+        side=3
+        canrecruit=yes
+        controller=human
+        team_name=West
+        user_team_name= _ "teamname^West"
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=16
+        [/ai]
+        side=4
+        canrecruit=yes
+        controller=human
+        team_name=East
+        user_team_name= _ "teamname^East"
+        fog=yes
+    [/side]
+[/multiplayer]

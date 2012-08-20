@@ -1,0 +1,39 @@
+#textdomain wesnoth-multiplayer
+
+[multiplayer]
+    id=multiplayer_Hornshark_Island
+    name= _ "2p — Hornshark Island"
+    description= _ "Players must navigate the dispersive terrain of this small but topographically dense island."
+    map_data="{multiplayer/maps/2p_Hornshark_Island.map}"
+    random_start_time="no"
+
+    {DEFAULT_SCHEDULE}
+    {DEFAULT_MUSIC_PLAYLIST}
+
+    [side]
+        [ai]
+            villages_per_scout=8
+        [/ai]
+        side=1
+        canrecruit=yes
+        controller=human
+        team_name=north
+        user_team_name= _ "teamname^North"
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=8
+        [/ai]
+        side=2
+        canrecruit=yes
+        controller=human
+        team_name=south
+        user_team_name= _ "teamname^South"
+        fog=yes
+        [village]
+            x=17
+            y=20
+        [/village]
+    [/side]
+[/multiplayer]

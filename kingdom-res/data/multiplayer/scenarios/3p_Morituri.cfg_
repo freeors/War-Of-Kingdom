@@ -1,0 +1,45 @@
+#textdomain wesnoth-multiplayer
+
+[multiplayer]
+    id=multiplayer_3p_Morituri
+    name= _ "3p — Morituri"
+    description= _ "Only one faction will emerge victorious from this tightly bordered three-player map." + _ " Recommended setting of 2 gold per village."
+    map_data="{multiplayer/maps/3p_Morituri.map}"
+
+    {DEFAULT_SCHEDULE}
+    {DEFAULT_MUSIC_PLAYLIST}
+
+    [side]
+        [ai]
+            villages_per_scout=12
+        [/ai]
+        side=1
+        canrecruit=yes
+        controller=human
+        team_name=north
+        user_team_name= _ "teamname^North"
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=12
+        [/ai]
+        side=2
+        canrecruit=yes
+        controller=human
+        team_name=east
+        user_team_name= _ "teamname^East"
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=12
+        [/ai]
+        side=3
+        canrecruit=yes
+        controller=human
+        team_name=west
+        user_team_name= _ "teamname^West"
+        fog=yes
+    [/side]
+[/multiplayer]

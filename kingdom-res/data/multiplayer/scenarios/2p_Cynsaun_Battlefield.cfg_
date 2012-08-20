@@ -1,0 +1,48 @@
+#textdomain wesnoth-multiplayer
+
+# wmllint: local spelling Cynsaun
+[multiplayer]
+    id=multiplayer_Cynsaun_Battlefield
+    name= _ "2p — Cynsaun Battlefield"
+    map_data="{multiplayer/maps/2p_Cynsaun_Battlefield.map}"
+    description= _ "Cynsaun Province was named for Warrior-Queen Cynsaun the First, who drove the necromancers from these lands in 961 YW."
+    random_start_time="no"
+
+    {DEFAULT_SCHEDULE}
+    {DEFAULT_MUSIC_PLAYLIST}
+
+    [side]
+        [ai]
+            villages_per_scout=8
+        [/ai]
+        side=1
+        canrecruit=yes
+        controller=human
+        team_name=north
+        user_team_name= _ "teamname^North"
+        gold=150
+        village_gold=2
+        fog=yes
+    [/side]
+    [side]
+        [ai]
+            villages_per_scout=8
+        [/ai]
+        side=2
+        canrecruit=yes
+        controller=human
+        team_name=south
+        user_team_name= _ "teamname^South"
+        gold=150
+        village_gold=2
+        fog=yes
+        [village]
+            x=5
+            y=38
+        [/village]
+        [village]
+            x=7
+            y=41
+        [/village]
+    [/side]
+[/multiplayer]

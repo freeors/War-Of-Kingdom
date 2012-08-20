@@ -1,0 +1,411 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "bowman1"
+msgstr "弓兵"
+
+msgid "bowman1 description"
+msgstr "弓兵"
+
+msgid "bowman2"
+msgstr "熟练弓兵"
+
+msgid "bowman2 description"
+msgstr "熟练弓兵"
+
+msgid "bowman3"
+msgstr "弩兵"
+
+msgid "bowman3 description"
+msgstr "弩兵"
+
+msgid "bowman4"
+msgstr "熟练弩兵"
+
+msgid "bowman4 description"
+msgstr "熟练弩兵"
+
+msgid "bowman5"
+msgstr "连弩兵"
+
+msgid "bowman5 description"
+msgstr "连弩兵"
+
+msgid "bowman6"
+msgstr "诸葛弩"
+
+msgid "bowman6 description"
+msgstr "诸葛弩"
+
+#
+# catapult
+#
+msgid "catapult1"
+msgstr "炮车"
+
+msgid "catapult1 description"
+msgstr "炮车"
+
+msgid "catapult2"
+msgstr "二级炮车"
+
+msgid "catapult2 description"
+msgstr "二级炮车"
+
+msgid "catapult3"
+msgstr "重炮车"
+
+msgid "catapult3 description"
+msgstr "重炮车"
+
+msgid "catapult4"
+msgstr "二级重炮车"
+
+msgid "catapult4 description"
+msgstr "二级重炮车"
+
+msgid "catapult5"
+msgstr "霹雳车"
+
+msgid "catapult5 description"
+msgstr "霹雳车"
+
+msgid "catapult6"
+msgstr "二级霹雳车"
+
+msgid "catapult6 description"
+msgstr "二级霹雳车"
+
+msgid "footman1"
+msgstr "步兵"
+
+msgid "footman1 description"
+msgstr "步兵"
+
+msgid "footman2"
+msgstr "二级步兵"
+
+msgid "footman2 description"
+msgstr "二级步兵"
+
+msgid "footman3"
+msgstr "重步兵"
+
+msgid "footman3 description"
+msgstr "重步兵"
+
+msgid "footman4"
+msgstr "二级重步兵"
+
+msgid "footman4 description"
+msgstr "二级重步兵"
+
+msgid "footman5"
+msgstr "近卫兵"
+
+msgid "footman5 description"
+msgstr "近卫兵"
+
+msgid "footman6"
+msgstr "二级近卫兵"
+
+msgid "footman6 description"
+msgstr "二级近卫兵"
+
+msgid "horseman1"
+msgstr "轻骑兵"
+
+msgid "horseman1 description"
+msgstr "轻骑兵"
+
+msgid "horseman2"
+msgstr "二级轻骑兵"
+
+msgid "horseman2 description"
+msgstr "二级轻骑兵"
+
+msgid "horseman3"
+msgstr "重骑兵"
+
+msgid "horseman3 description"
+msgstr "重骑兵"
+
+msgid "horseman4"
+msgstr "二级重骑兵"
+
+msgid "horseman4 description"
+msgstr "二级重骑兵"
+
+msgid "horseman5"
+msgstr "亲卫队"
+
+msgid "horseman5 description"
+msgstr "亲卫队"
+
+msgid "horseman6"
+msgstr "二级亲卫队"
+
+msgid "horseman6 description"
+msgstr "二级亲卫队"
+
+#
+# commander
+#
+msgid "commander1"
+msgstr "伍长"
+
+msgid "commander1 description"
+msgstr "伍长"
+
+msgid "commander2"
+msgstr "什长"
+
+msgid "commander2 description"
+msgstr "什长"
+
+msgid "commander3"
+msgstr "俾将"
+
+msgid "commander3 description"
+msgstr "俾将"
+
+msgid "commander4"
+msgstr "偏将"
+
+msgid "commander4 description"
+msgstr "偏将"
+
+msgid "commander5"
+msgstr "校尉"
+
+msgid "commander5 description"
+msgstr "校尉"
+
+msgid "commander6"
+msgstr "都督"
+
+msgid "commander6 description"
+msgstr "都督"
+
+#
+# pikeman
+#
+msgid "pikeman1"
+msgstr "枪兵"
+
+msgid "pikeman1 description"
+msgstr "枪兵"
+
+msgid "pikeman2"
+msgstr "二级枪兵"
+
+msgid "pikeman2 description"
+msgstr "二级枪兵"
+
+msgid "pikeman3"
+msgstr "长枪兵"
+
+msgid "pikeman3 description"
+msgstr "长枪兵"
+
+msgid "pikeman4"
+msgstr "二级长枪兵"
+
+msgid "pikeman4 description"
+msgstr "二级长枪兵"
+
+msgid "pikeman5"
+msgstr "重甲枪兵"
+
+msgid "pikeman5 description"
+msgstr "重甲枪兵"
+
+msgid "pikeman6"
+msgstr "二级重甲枪兵"
+
+msgid "pikeman6 description"
+msgstr "二级重甲枪兵"
+
+#
+# mage
+#
+msgid "mage1"
+msgstr "文士"
+
+msgid "mage1 description"
+msgstr "文士"
+
+msgid "whitemage2"
+msgstr "风水士"
+
+msgid "whitemage2 description"
+msgstr "风水士"
+
+msgid "whitemage3"
+msgstr "二级风水士"
+
+msgid "whitemage3 description"
+msgstr "二级风水士"
+
+msgid "whitemage4"
+msgstr "方术士"
+
+msgid "whitemage4 description"
+msgstr "方术士"
+
+msgid "whitemage5"
+msgstr "二级方术士"
+
+msgid "whitemage5 description"
+msgstr "二级方术士"
+
+msgid "whitemage6"
+msgstr "仙术士"
+
+msgid "whitemage6 description"
+msgstr "仙术士"
+
+msgid "redmage2"
+msgstr "策士"
+
+msgid "redmage2 description"
+msgstr "策士"
+
+msgid "redmage3"
+msgstr "二级策士"
+
+msgid "redmage3 description"
+msgstr "二级策士"
+
+msgid "redmage4"
+msgstr "参谋"
+
+msgid "redmage4 description"
+msgstr "参谋"
+
+msgid "redmage5"
+msgstr "二级参谋"
+
+msgid "redmage5 description"
+msgstr "二级参谋"
+
+msgid "redmage6"
+msgstr "军师"
+
+msgid "redmage6 description"
+msgstr "军师"
+
+msgid "boat0"
+msgstr "舢板"
+
+msgid "boat0 description"
+msgstr "舢板"
+
+msgid "boat1"
+msgstr "蒙冲"
+
+msgid "boat1 description"
+msgstr "蒙冲"
+
+msgid "boat2"
+msgstr "二级蒙冲"
+
+msgid "boat2 description"
+msgstr "二级蒙冲"
+
+msgid "boat3"
+msgstr "斗舰"
+
+msgid "boat3 description"
+msgstr "斗舰"
+
+msgid "boat4"
+msgstr "二级斗舰"
+
+msgid "boat4 description"
+msgstr "二级斗舰"
+
+msgid "boat5"
+msgstr "楼船"
+
+msgid "boat5 description"
+msgstr "楼船"
+
+msgid "boat6"
+msgstr "二级楼船"
+
+msgid "boat6 description"
+msgstr "二级楼船"
+
+#
+# actor
+#
+msgid "stage player"
+msgstr "演员"
+
+msgid "stage player description"
+msgstr "是指专职演出，或在表演艺术中扮演某个角色的人物。经常用在电影、电视、剧场、广播等媒体当中，另外对于为了见不得光目的在公众场合避实击虚、忽悠民众的一种人，也称之为演员。"
+
+msgid "famous director"
+msgstr "名导"
+
+msgid "famous director description"
+msgstr "演员"
+
+#
+# city
+#
+msgid "city1"
+msgstr "城市"
+
+msgid "city1 description"
+msgstr "郡，是中央政府以下最高一级地方行政机构。秦始皇统一六国后，国土空前广袤，分天下为三十六郡。"
+
+msgid "city2"
+msgstr "大城市"
+
+msgid "city2 description"
+msgstr "郡，是中央政府以下最高一级地方行政机构。秦始皇统一六国后，国土空前广袤，分天下为三十六郡。"
+
+#
+# market
+#
+msgid "market"
+msgstr "市场"
+
+msgid "market description"
+msgstr "市场"
+
+# actor
+msgid "tower"
+msgstr "箭塔"
+
+msgid "tower description"
+msgstr "箭塔"
+
+#
+# wall
+#
+msgid "wall1"
+msgstr "城墙"
+
+msgid "wall1 description"
+msgstr "城墙"
+
+#
+# keep
+#
+msgid "keep1"
+msgstr "城楼"
+
+msgid "keep1 description"
+msgstr "城楼"
+

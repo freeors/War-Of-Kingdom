@@ -1,0 +1,38 @@
+﻿msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: li zhuo <zuoli@zowietek.cn>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "tower defense"
+msgstr ""
+
+msgid "tower defense description"
+msgstr ""
+
+# scenario
+msgid "Jian Sun incursion"
+msgstr ""
+
+msgid "defense Bei Liu"
+msgstr ""
+
+msgid "Persist in 20 turns"
+msgstr ""
+
+msgid "Ai enter rightmost 3 colum"
+msgstr ""
+
+msgid "AI are same as the flood and enter in."
+msgstr ""
+
+
+
+
+
+
