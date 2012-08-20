@@ -1,0 +1,8 @@
+*.swp
+
+# for visual studio
+[Dd]ebug/
+[Rr]elease/
+*.ncb
+*.user
+*.suo
