@@ -1,4 +1,4 @@
-/* $Id: handler.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: handler.hpp 54167 2012-05-13 13:33:24Z mordante $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -98,6 +98,7 @@ enum tevent {
 	, SDL_WHEEL_DOWN              /**< A SDL wheel down event. */
 
 	, SDL_KEY_DOWN                /**< A SDL key down event. */
+	, SDL_TEXT_INPUT              /**< A SDL text input event. */
 
 	, NOTIFY_REMOVAL              /**<
 	                               * Send by a widget to notify others it's
@@ -137,6 +138,11 @@ enum tevent {
 	, MESSAGE_SHOW_HELPTIP        /**<
 	                               * Request for somebody to show the helptip
 	                               * based on the data send.
+	                               */
+	, REQUEST_PLACEMENT           /**<
+	                               * Request for somebody to place the widget.
+	                               * This may also cause updating of more
+	                               * layoyt parts.
 	                               */
 };
 
@@ -212,6 +218,18 @@ typedef
 /**
  * Helper for catching use error of tdispatcher::connect_signal.
  *
+ * This version is for callbacks with the textinput values (these haven't been
+ * determined yet).
+ */
+typedef
+		boost::mpl::set<
+			boost::mpl::int_<SDL_TEXT_INPUT>
+		>
+		tset_event_textinput;
+
+/**
+ * Helper for catching use error of tdispatcher::connect_signal.
+ *
  * This version is for callbacks with a sender aka notification messages. Like the
  * onces in tset_event it has no extra parameters, but this version is only
  * send to the target and not using the pre and post queue.
@@ -239,6 +257,7 @@ typedef
 		boost::mpl::set<
 			  boost::mpl::int_<MESSAGE_SHOW_TOOLTIP>
 			, boost::mpl::int_<MESSAGE_SHOW_HELPTIP>
+			, boost::mpl::int_<REQUEST_PLACEMENT>
 		>
 		tset_event_message;
 

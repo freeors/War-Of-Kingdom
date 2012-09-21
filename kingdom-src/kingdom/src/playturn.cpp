@@ -38,6 +38,8 @@ turn_info::turn_info(unsigned team_num, replay_network_sender &replay_sender, un
 	replay_sender_(replay_sender),
 	host_transfer_("host_transfer"), replay_()
 {
+	replay_.set_use_gzip(false);
+
 	/**
 	 * We do network sync so [init_side] is transferred to network hosts
 	 */

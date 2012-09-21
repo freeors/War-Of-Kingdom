@@ -1,4 +1,4 @@
-/* $Id: progress_bar.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: progress_bar.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2010 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -23,6 +23,7 @@
 #include "gui/widgets/settings.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -38,7 +39,7 @@ void tprogress_bar::set_percentage(const unsigned percentage)
 	if(percentage_ != percentage) {
 		percentage_ = percentage;
 
-		foreach(tcanvas& c, canvas()) {
+		BOOST_FOREACH(tcanvas& c, canvas()) {
 			c.set_variable("percentage", variant(percentage));
 		}
 

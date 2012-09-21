@@ -75,78 +75,12 @@ namespace gui2 {
 
 REGISTER_DIALOG(lobby_main)
 
-void tsub_player_list::init(gui2::twindow &w, const std::string &id)
+void tplayer_list_lobby_main::init(gui2::twindow &w)
 {
-	list = find_widget<tlistbox>(&w, id, false, true);
-	show_toggle = find_widget<ttoggle_button>(&w, id + "_show_toggle"
-			, false, true);
-	show_toggle->set_icon_name("lobby/group-expanded.png");
-	show_toggle->set_callback_state_change(
-		boost::bind(&tsub_player_list::show_toggle_callback, this, _1));
-	count = find_widget<tlabel>(&w, id + "_count", false, true);
-	label = find_widget<tlabel>(&w, id + "_label", false, true);
-
-	ttree_view& parent_tree = find_widget<ttree_view>(&w
-			, "player_tree"
-			, false);
-
-	string_map tree_group_field;
-	std::map<std::string, string_map> tree_group_item;
-
-	tree_group_field["label"] = id;
-	tree_group_item["tree_view_node_label"] = tree_group_field;
-	tree = &parent_tree.add_node("player_group", tree_group_item);
-
-	tree_label = find_widget<tlabel>(tree
-				, "tree_view_node_label"
-				, false
-				, true);
-
-	tree_label->set_label(label->label());
-
-}
-
-void tsub_player_list::show_toggle_callback(gui2::twidget* /*widget*/)
-{
-	if (show_toggle->get_value()) {
-		list->set_visible(twidget::INVISIBLE);
-		show_toggle->set_icon_name("lobby/group-folded.png");
-	} else {
-		list->set_visible(twidget::VISIBLE);
-		show_toggle->set_icon_name("lobby/group-expanded.png");
-	}
-}
-
-void tsub_player_list::auto_hide()
-{
-	assert(tree);
-	assert(tree_label);
-	if(tree->empty()) {
-		/**
-		 * @todo Make sure setting visible resizes the widget.
-		 *
-		 * It doesn't work here since invalidate_layout is blocked, but the
-		 * widget should also be able to handle it itself. Once done the
-		 * setting of the label text can also be removed.
-		 */
-		assert(label);
-		tree_label->set_label(label->label() + " (0)");
-//			tree_label->set_visible(twidget::INVISIBLE);
-	} else {
-		assert(label);
-		std::stringstream ss;
-		ss << label->label() << " (" << tree->size() << ")";
-		tree_label->set_label(ss.str());
-//			tree_label->set_visible(twidget::VISIBLE);
-		}
-}
-
-void tplayer_list::init(gui2::twindow &w)
-{
-	active_game.init(w, "active_game");
-	active_room.init(w, "active_room");
-	other_rooms.init(w, "other_rooms");
-	other_games.init(w, "other_games");
+	active_game.init(w, _("Selected game"));
+	active_room.init(w, _("Current room"));
+	other_rooms.init(w, _("Lobby"));
+	other_games.init(w, _("Other games"));
 	sort_by_name = find_widget<ttoggle_button>(&w
 			, "player_list_sort_name", false, true);
 	sort_by_relation = find_widget<ttoggle_button>(&w
@@ -156,9 +90,6 @@ void tplayer_list::init(gui2::twindow &w)
 			, "player_tree"
 			, false
 			, true);
-
-	find_widget<twidget>(&w, "old_player_list", false)
-			.set_visible(twidget::INVISIBLE);
 
 	/**
 	 * @todo This is a hack to fold the items.
@@ -179,7 +110,7 @@ void tplayer_list::init(gui2::twindow &w)
 				, false).set_value(true);
 }
 
-void tplayer_list::update_sort_icons()
+void tplayer_list_lobby_main::update_sort_icons()
 {
 	if (sort_by_name->get_value()) {
 		sort_by_name->set_icon_name("lobby/sort-az.png");
@@ -359,11 +290,6 @@ tlobby_main::tlobby_main(const config& game_config
 	, preferences_callback_(NULL)
 	, open_windows_()
 	, active_window_(0)
-	, filter_friends_(NULL)
-	, filter_ignored_(NULL)
-	, filter_slots_(NULL)
-	, filter_invert_(NULL)
-	, filter_text_(NULL)
 	, selected_game_id_()
 	, player_list_()
 	, player_list_dirty_(false)
@@ -371,7 +297,6 @@ tlobby_main::tlobby_main(const config& game_config
 	, last_gamelist_update_(0)
 	, gamelist_diff_update_(true)
 	, disp_(disp)
-	, preferences_wrapper_()
 	, gamelist_id_at_row_()
 	, delay_playerlist_update_(false)
 	, delay_gamelist_update_(false)
@@ -431,48 +356,13 @@ static void signal_handler_sdl_video_resize(
 	}
 }
 
-static bool fullscreen(CVideo& video)
-{
-	preferences::set_fullscreen(video , !preferences::fullscreen());
-
-	// Setting to fullscreen doesn't seem to generate a resize event.
-	const SDL_Rect& rect = screen_area();
-
-	SDL_Event event;
-	event.type = SDL_VIDEORESIZE;
-	event.resize.type = SDL_VIDEORESIZE;
-	event.resize.w = rect.w;
-	event.resize.h = rect.h;
-
-	SDL_PushEvent(&event);
-
-	return true;
-}
-
 void tlobby_main::post_build(CVideo& video, twindow& window)
 {
-	/** @todo Should become a global hotkey after 1.8, then remove it here. */
-	window.register_hotkey(hotkey::HOTKEY_FULLSCREEN
-			, boost::bind(fullscreen, boost::ref(video)));
-
-
 	/** @todo Remove this code once the resizing in twindow is finished. */
 	window.connect_signal<event::SDL_VIDEO_RESIZE>(
 			  boost::bind(&signal_handler_sdl_video_resize
 				  , _2, _3, _4, _5, boost::ref(video))
 			, event::tdispatcher::front_child);
-
-	/*** Local hotkeys. ***/
-	preferences_wrapper_ = boost::bind(
-			  &tlobby_main::show_preferences_button_callback
-			, this
-			, boost::ref(window));
-
-	window.register_hotkey(
-			  hotkey::HOTKEY_PREFERENCES
-			, boost::bind(function_wrapper<bool, boost::function<void()> >
-				, true
-				, boost::cref(preferences_wrapper_)));
 }
 
 namespace {
@@ -562,6 +452,7 @@ void tlobby_main::update_gamelist()
 	lobby_info_.apply_game_filter();
 	update_gamelist_header();
 	gamelistbox_->set_row_shown(lobby_info_.games_visibility());
+	window_->invalidate_layout();
 }
 
 void tlobby_main::update_gamelist_diff()
@@ -649,6 +540,7 @@ void tlobby_main::update_gamelist_diff()
 	lobby_info_.apply_game_filter();
 	update_gamelist_header();
 	gamelistbox_->set_row_shown(lobby_info_.games_visibility());
+	window_->invalidate_layout();
 }
 
 void tlobby_main::update_gamelist_header()
@@ -799,10 +691,6 @@ void tlobby_main::update_playerlist()
 			lobby = true;
 		}
 	}
-	player_list_.active_game.list->clear();
-	player_list_.active_room.list->clear();
-	player_list_.other_rooms.list->clear();
-	player_list_.other_games.list->clear();
 
 	assert(player_list_.active_game.tree);
 	assert(player_list_.active_room.tree);
@@ -818,7 +706,7 @@ void tlobby_main::update_playerlist()
 	{
 		user_info& user = *userptr;
 		tsub_player_list* target_list(NULL);
-		std::map<std::string, string_map> data;
+
 		std::stringstream icon_ss;
 		std::string name = user.name;
 		icon_ss << "lobby/status";
@@ -867,8 +755,7 @@ void tlobby_main::update_playerlist()
 			name = tag(name, "b");
 		}
 		icon_ss << ".png";
-		add_label_data(data, "player", name);
-		add_label_data(data, "main_icon", icon_ss.str());
+
 		if (!preferences::playerlist_group_players()) {
 			target_list = &player_list_.other_rooms;
 		}
@@ -879,7 +766,7 @@ void tlobby_main::update_playerlist()
 		std::map<std::string, string_map> tree_group_item;
 
 		/*** Add tree item ***/
-		tree_group_field["label"] = icon_ss.str();
+		tree_group_field["label"] = decide_player_iocn((user.relation == user_info::ME)? gui2::CNTR_LOCAL: gui2::CNTR_NETWORK); // icon_ss.str()
 		tree_group_item["icon"] = tree_group_field;
 
 		tree_group_field["label"] = name;
@@ -913,16 +800,16 @@ void tlobby_main::update_selected_game()
 	} else {
 		selected_game_id_ = 0;
 	}
-	find_widget<tbutton>(window_, "observe_global", false)
-			.set_active(can_observe);
-
-	find_widget<tbutton>(window_, "join_global", false).set_active(can_join);
-
 	player_list_dirty_ = true;
 }
 
 void tlobby_main::pre_show(CVideo& /*video*/, twindow& window)
 {
+	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
+	std::stringstream str;
+	str << label->label() << "-" << preferences::login();
+	label->set_label(str.str());
+
 	SCOPE_LB;
 	roomlistbox_ = find_widget<tlistbox>(&window, "room_list", false, true);
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
@@ -997,32 +884,6 @@ void tlobby_main::pre_show(CVideo& /*video*/, twindow& window)
 				, boost::ref(window)));
 
 	connect_signal_mouse_left_click(
-			  find_widget<tbutton>(&window, "show_preferences", false)
-			, boost::bind(
-				  &tlobby_main::show_preferences_button_callback
-				, this
-				, boost::ref(window)));
-	find_widget<tbutton>(&window, "show_preferences", false).set_visible(twidget::INVISIBLE);
-
-	connect_signal_mouse_left_click(
-			  find_widget<tbutton>(&window, "join_global", false)
-			, boost::bind(
-				  &tlobby_main::join_global_button_callback
-				, this
-				, boost::ref(window)));
-	find_widget<tbutton>(&window, "join_global", false).set_active(false);
-	find_widget<tbutton>(&window, "join_global", false).set_visible(twidget::INVISIBLE);
-
-	connect_signal_mouse_left_click(
-			  find_widget<tbutton>(&window, "observe_global", false)
-			, boost::bind(
-				  &tlobby_main::observe_global_button_callback
-				, this
-				, boost::ref(window)));
-	find_widget<tbutton>(&window, "observe_global", false).set_active(false);
-	find_widget<tbutton>(&window, "observe_global", false).set_visible(twidget::INVISIBLE);
-
-	connect_signal_mouse_left_click(
 			  find_widget<tbutton>(&window, "close_window", false)
 			, boost::bind(
 				  &tlobby_main::close_window_button_callback
@@ -1033,37 +894,7 @@ void tlobby_main::pre_show(CVideo& /*video*/, twindow& window)
 			find_widget<ttoggle_button>(&window, "skip_replay", false);
 	skip_replay.set_value(preferences::skip_mp_replay());
 	skip_replay.set_callback_state_change(boost::bind(&tlobby_main::skip_replay_changed_callback, this, _1));
-
-	filter_friends_ = find_widget<ttoggle_button>(
-			&window, "filter_with_friends", false, true);
-	filter_friends_->set_visible(twidget::INVISIBLE);
-
-	filter_ignored_ = find_widget<ttoggle_button>(
-			&window, "filter_without_ignored", false, true);
-	filter_ignored_->set_visible(twidget::INVISIBLE);
-
-	filter_slots_ = find_widget<ttoggle_button>(
-			&window, "filter_vacant_slots", false, true);
-	filter_slots_->set_visible(twidget::INVISIBLE);
-
-	filter_invert_ = find_widget<ttoggle_button>(
-			&window, "filter_invert", false, true);
-	filter_invert_->set_visible(twidget::INVISIBLE);
-
-	filter_text_= find_widget<ttext_box>(&window, "filter_text", false, true);
-
-	filter_friends_->set_callback_state_change(
-		boost::bind(&tlobby_main::game_filter_change_callback, this, _1));
-	filter_ignored_->set_callback_state_change(
-		boost::bind(&tlobby_main::game_filter_change_callback, this, _1));
-	filter_slots_->set_callback_state_change(
-		boost::bind(&tlobby_main::game_filter_change_callback, this, _1));
-	filter_invert_->set_callback_state_change(
-		boost::bind(&tlobby_main::game_filter_change_callback, this, _1));
-	connect_signal_pre_key_press(*filter_text_, boost::bind(
-			  &tlobby_main::game_filter_keypress_callback
-			, this
-			, _5));
+	skip_replay.set_visible(twidget::INVISIBLE);
 
 	room_window_open("lobby", true);
 	active_window_changed();
@@ -1324,10 +1155,12 @@ void tlobby_main::network_handler()
 			gamelist_diff_update_ = true;
 		}
 	}
+
 	if (player_list_dirty_) {
-		update_gamelist_filter();
+		// update_gamelist_filter();
 		update_playerlist();
 	}
+
 	lobby_base::network_handler();
 }
 
@@ -1633,23 +1466,6 @@ void tlobby_main::refresh_button_callback(gui2::twindow& /*window*/)
 	network::send_data(config("refresh_lobby"), 0);
 }
 
-
-void tlobby_main::show_preferences_button_callback(gui2::twindow& window)
-{
-	if (preferences_callback_) {
-		preferences_callback_();
-
-		/**
-		 * The screen size might have changed force an update of the size.
-		 *
-		 * @todo This might no longer be needed when gui2 is done.
-		 */
-		window.invalidate_layout();
-
-		network::send_data(config("refresh_lobby"), 0);
-	}
-}
-
 void tlobby_main::room_switch_callback(twindow& /*window*/)
 {
 	switch_to_window(roomlistbox_->get_selected_row());
@@ -1696,38 +1512,6 @@ void tlobby_main::chat_input_keypress_callback(
 void tlobby_main::game_filter_reload()
 {
 	lobby_info_.clear_game_filter();
-
-	foreach (const std::string& s, utils::split(filter_text_->get_value(), ' ')) {
-		lobby_info_.add_game_filter(new game_filter_general_string_part(s));
-	}
-	//TODO: make changing friend/ignore lists trigger a refresh
-	if (filter_friends_->get_value()) {
-		lobby_info_.add_game_filter(
-			new game_filter_value<bool, &game_info::has_friends>(true));
-	}
-	if (filter_ignored_->get_value()) {
-		lobby_info_.add_game_filter(
-			new game_filter_value<bool, &game_info::has_ignored>(false));
-	}
-	if (filter_slots_->get_value()) {
-		lobby_info_.add_game_filter(
-			new game_filter_value<size_t, &game_info::vacant_slots, std::greater<size_t> >(0));
-	}
-	lobby_info_.set_game_filter_invert(filter_invert_->get_value());
-}
-
-void tlobby_main::game_filter_keypress_callback(const SDLKey key)
-{
-	if (key == SDLK_RETURN || key == SDLK_KP_ENTER) {
-		game_filter_reload();
-		update_gamelist_filter();
-	}
-}
-
-void tlobby_main::game_filter_change_callback(gui2::twidget* /*widget*/)
-{
-	game_filter_reload();
-	update_gamelist_filter();
 }
 
 void tlobby_main::gamelist_change_callback(gui2::twindow &/*window*/)
@@ -1746,11 +1530,17 @@ void tlobby_main::player_filter_callback(gui2::twidget* /*widget*/)
 
 void tlobby_main::user_dialog_callback(user_info* info)
 {
+	if (info->relation == user_info::ME) {
+		return;
+	}
+/*
 	tlobby_player_info dlg(*this, *info, lobby_info_);
 	lobby_delay_gamelist_update_guard g(*this);
 	dlg.show(window_->video());
 	delay_playerlist_update_ = true;
 	if (dlg.result_open_whisper()) {
+*/
+	if (true) {
 		tlobby_chat_window* t = whisper_window_open(info->name, true);
 		switch_to_window(t);
 		window_->invalidate_layout();

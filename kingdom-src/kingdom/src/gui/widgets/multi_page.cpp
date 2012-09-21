@@ -1,4 +1,4 @@
-/* $Id: multi_page.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: multi_page.cpp 54522 2012-06-30 17:46:57Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -29,11 +29,10 @@ namespace gui2 {
 REGISTER_WIDGET(multi_page)
 tmulti_page::tmulti_page()
 	: tcontainer_(0)
-	, generator_(NULL)
+	, generator_(
+			tgenerator_::build(true, true, tgenerator_::independent, false))
 	, page_builder_(NULL)
 {
-	generator_ = tgenerator_::build(
-			true, true, tgenerator_::independent, false);
 }
 
 void tmulti_page::add_page(const string_map& item)

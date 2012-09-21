@@ -63,6 +63,8 @@ private:
 
 	void hero_toggled(twidget* widget);
 
+	void switch_type(twindow& window, bool next);
+	void switch_type_internal(twindow& window);
 private:
 	game_display& gui_;
 	std::vector<team>& teams_;
@@ -81,7 +83,6 @@ private:
 
 	bool rpg_mode_;
 	tlistbox* hero_table_;
-	std::vector<std::string> recruits_;
 };
 
 }

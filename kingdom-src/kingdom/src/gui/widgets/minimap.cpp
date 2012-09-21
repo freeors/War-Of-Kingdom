@@ -1,4 +1,4 @@
-/* $Id: minimap.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: minimap.cpp 54007 2012-04-28 19:16:10Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -224,6 +224,31 @@ void tminimap::impl_draw_background(surface& frame_buffer)
 	}
 
 	SDL_Rect rect = get_rect();
+	assert(rect.w > 0 && rect.h > 0);
+
+	const ::surface surf = get_image(rect.w, rect.h);
+	if(surf) {
+		sdl_blit(surf, NULL, frame_buffer, &rect);
+	}
+}
+
+void tminimap::impl_draw_background(
+		  surface& frame_buffer
+		, int x_offset
+		, int y_offset)
+{
+	if (!terrain_) return;
+	assert(terrain_);
+
+	DBG_GUI_D << LOG_HEADER
+			<< " size " << calculate_blitting_rectangle(x_offset, y_offset)
+			<< ".\n";
+
+	if(map_data_.empty()) {
+		return;
+	}
+
+	SDL_Rect rect = calculate_blitting_rectangle(x_offset, y_offset);
 	assert(rect.w > 0 && rect.h > 0);
 
 	const ::surface surf = get_image(rect.w, rect.h);

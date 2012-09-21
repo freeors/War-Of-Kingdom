@@ -1,4 +1,4 @@
-/* $Id: tree_view_node.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: tree_view_node.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2010 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -24,6 +24,7 @@
 #include "gui/widgets/tree_view.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #define LOG_SCOPE_HEADER \
 		get_control_type() + " [" + tree_view().id() + "] " + __func__
@@ -48,7 +49,7 @@ ttree_view_node::ttree_view_node(const std::string& id
 	grid_.set_parent(this);
 	set_parent(&parent_tree_view);
 	if(id != "root") {
-		foreach(const tnode_definition& node_definition, node_definitions_) {
+		BOOST_FOREACH(const tnode_definition& node_definition, node_definitions_) {
 			if(node_definition.id == id) {
 				node_definition.builder->build(&grid_);
 				init_grid(&grid_, data);
@@ -217,7 +218,7 @@ void ttree_view_node::clear()
 	int height_reduction = 0;
 
 	if(!is_folded()) {
-		foreach(const ttree_view_node& node, children_) {
+		BOOST_FOREACH(const ttree_view_node& node, children_) {
 			height_reduction += node.get_current_size().y;
 		}
 	}
@@ -254,7 +255,7 @@ public:
 
 	template<class W>
 	static W* find_at(
-			  typename tconst_duplicator<W, ttree_view_node>::type&
+			  typename utils::tconst_clone<ttree_view_node, W>::reference
 				tree_view_node
 			, const tpoint& coordinate, const bool must_be_active)
 	{
@@ -268,7 +269,6 @@ public:
 			return NULL;
 		}
 
-		typedef typename tconst_duplicator<W, ttree_view_node>::type thack;
 		return find_at_aux<W>(tree_view_node.children_.begin(),
 				      tree_view_node.children_.end(),
 				      coordinate, must_be_active);
@@ -301,7 +301,7 @@ void ttree_view_node::impl_populate_dirty_list(twindow& caller
 		return;
 	}
 
-	foreach(ttree_view_node& node, children_) {
+	BOOST_FOREACH(ttree_view_node& node, children_) {
 		std::vector<twidget*> child_call_stack = call_stack;
 		node.impl_populate_dirty_list(caller, child_call_stack);
 	}
@@ -456,7 +456,7 @@ unsigned ttree_view_node::place(
 	}
 
 	DBG_GUI_L << LOG_HEADER << " set children.\n";
-	foreach(ttree_view_node& node, children_) {
+	BOOST_FOREACH(ttree_view_node& node, children_) {
 		origin.y += node.place(indention_step_size, origin, width);
 	}
 
@@ -478,7 +478,7 @@ void ttree_view_node::set_visible_area(const SDL_Rect& area)
 		return;
 	}
 
-	foreach(ttree_view_node& node, children_) {
+	BOOST_FOREACH(ttree_view_node& node, children_) {
 		node.set_visible_area(area);
 	}
 }
@@ -491,8 +491,24 @@ void ttree_view_node::impl_draw_children(surface& frame_buffer)
 		return;
 	}
 
-	foreach(ttree_view_node& node, children_) {
+	BOOST_FOREACH(ttree_view_node& node, children_) {
 		node.impl_draw_children(frame_buffer);
+	}
+}
+
+void ttree_view_node::impl_draw_children(
+		  surface& frame_buffer
+		, int x_offset
+		, int y_offset)
+{
+	grid_.draw_children(frame_buffer, x_offset, y_offset);
+
+	if(is_folded()) {
+		return;
+	}
+
+	BOOST_FOREACH(ttree_view_node& node, children_) {
+		node.impl_draw_children(frame_buffer, x_offset, y_offset);
 	}
 }
 

@@ -1,4 +1,4 @@
-/* $Id: wml_exception.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: wml_exception.hpp 54252 2012-05-20 09:56:05Z mordante $ */
 /*
    Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -64,6 +64,27 @@ class display;
 					, message                                             \
 					, dev_message);                                       \
 		}                                                                 \
+	} while(0)
+
+#define FAIL(message)                                                     \
+	do {                                                                  \
+		wml_exception(NULL, __FILE__, __LINE__, __func__, message);       \
+		/* wml_exception never returns. */                                \
+		/* Help the compiler to figure that out */                        \
+		throw 42;                                                         \
+	} while(0)
+
+#define FAIL_WITH_DEV_MESSAGE(message, dev_message)                       \
+	do {                                                                  \
+		wml_exception(NULL                                                \
+				, __FILE__                                                \
+				, __LINE__                                                \
+				, __func__                                                \
+				, message                                                 \
+				, dev_message);                                           \
+		/* wml_exception never returns. */                                \
+		/* Help the compiler to figure that out */                        \
+		throw 42;                                                         \
 	} while(0)
 
 /**

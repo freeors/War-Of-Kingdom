@@ -101,261 +101,15 @@ void trpg_detail::type_selected(twindow& window)
 	tlistbox& list = find_widget<tlistbox>(&window, "type_list", false);
 
 	troop_index_ = list.get_selected_row();
-	refresh_tooltip(window);
-}
-
-void trpg_detail::refresh_tooltip(twindow& window)
-{
-/*	std::stringstream text;
-	int index;
-
-	tbutton* button = find_widget<tbutton>(&window, "merit", false, true);
-	button->set_dirty();
-	button->set_active(partial_troops_.empty()? false: true);
-
-	if (partial_troops_.empty()) {
-		// It is necessary set all relative tips to empty.
-		tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
-		label->set_label("");
-
-		// tip_loyalty
-		label = find_widget<tlabel>(&window, "tip_loyalty", false, true);
-		label->set_label("");
-
-		// tip_activity
-		label = find_widget<tlabel>(&window, "tip_activity", false, true);
-		label->set_label("");
-
-		// leadership
-		label = find_widget<tlabel>(&window, "tip_leadership", false, true);
-		label->set_label("");
-
-		// force
-		label = find_widget<tlabel>(&window, "tip_force", false, true);
-		label->set_label("");
-
-		// intellect
-		label = find_widget<tlabel>(&window, "tip_intellect", false, true);
-		label->set_label("");
-
-		// politics
-		label = find_widget<tlabel>(&window, "tip_politics", false, true);
-		label->set_label("");
-
-		// charm
-		label = find_widget<tlabel>(&window, "tip_charm", false, true);
-		label->set_label("");
-
-		// traits
-		label = find_widget<tlabel>(&window, "tip_traits", false, true);
-		label->set_label("");
-
-		// adaptability
-		label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
-		label->set_label("");
-
-		// skill
-		label = find_widget<tlabel>(&window, "tip_skill", false, true);
-		label->set_label("");
-
-		// abilities
-		label = find_widget<tlabel>(&window, "tip_abilities", false, true);
-		label->set_label("");
-
-		// feature
-		label = find_widget<tlabel>(&window, "tip_feature", false, true);
-		label->set_label("");
-
-		// attack
-		label = find_widget<tlabel>(&window, "tip_attack", false, true);
-		label->set_label("");
-	
-		// resistance
-		label = find_widget<tlabel>(&window, "tip_resistance", false, true);
-		label->set_label("");
-		return;
-	}
-	const unit& temp = *(partial_troops_[troop_index_]);
-
-	std::stringstream str, activity_str;
-	int loyalty, activity, hero_count = 1;
-	// refresh to gui
-	tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
-	str << dgettext("wesnoth", "hero") << ": " << temp.master().name();
-	text << temp.master().loyalty(*teams_[temp.master().side_].leader());
-	loyalty = temp.master().loyalty(*teams_[temp.master().side_].leader());
-	activity = temp.master().activity_;
-	activity_str << (int)temp.master().activity_;
-	if (temp.second().valid()) {
-		str << "  " << temp.second().name();
-		text << ", " << temp.second().loyalty(*teams_[temp.second().side_].leader());
-		loyalty += temp.second().loyalty(*teams_[temp.second().side_].leader());
-		activity += temp.second().activity_;
-		activity_str << ", " << (int)temp.second().activity_;
-		hero_count ++;
-	}
-	if (temp.third().valid()) {
-		str << " " << temp.third().name();
-		text << ", " << temp.third().loyalty(*teams_[temp.third().side_].leader());
-		loyalty += temp.third().loyalty(*teams_[temp.third().side_].leader());
-		activity += temp.third().activity_;
-		activity_str << ", " << (int)temp.third().activity_;
-		hero_count ++;
-	}
-	label->set_label(str.str());
-
-	str.str("");
-	label = find_widget<tlabel>(&window, "tip_loyalty", false, true);
-	str << dgettext("wesnoth", "loyalty") << ": " << loyalty / hero_count << "/(" << text.str() << ")";
-	label->set_label(str.str());
-
-	// activity
-	str.str("");
-	label = find_widget<tlabel>(&window, "tip_activity", false, true);
-	str << _("Activity") << ": " << activity / hero_count << "/(" << activity_str.str() << ")";
-	label->set_label(str.str());
-
-	// leadership
-	label = find_widget<tlabel>(&window, "tip_leadership", false, true);
-	label->set_label(lexical_cast<std::string>(temp.leadership_));
-
-	// force
-	label = find_widget<tlabel>(&window, "tip_force", false, true);
-	label->set_label(lexical_cast<std::string>(temp.force_));
-
-	// intellect
-	label = find_widget<tlabel>(&window, "tip_intellect", false, true);
-	label->set_label(lexical_cast<std::string>(temp.intellect_));
-
-	// politics
-	label = find_widget<tlabel>(&window, "tip_politics", false, true);
-	label->set_label(lexical_cast<std::string>(temp.politics_));
-
-	// charm
-	label = find_widget<tlabel>(&window, "tip_charm", false, true);
-	label->set_label(lexical_cast<std::string>(temp.charm_));
-
-	// traits
-	str.str("");
-	str << dgettext("wesnoth", "Traits") << ": " << utils::join(temp.trait_names(), ", ");
-	label = find_widget<tlabel>(&window, "tip_traits", false, true);
-	label->set_label(str.str());
-
-	// abilities
-	str.str("");
-	std::vector<std::string> abilities_tt;
-	abilities_tt = temp.ability_tooltips(true);
-	str << dgettext("wesnoth", "Abilities") << ": ";
-	if (!abilities_tt.empty()) {
-		std::vector<t_string> abilities;
-		for (std::vector<std::string>::const_iterator a = abilities_tt.begin(); a != abilities_tt.end(); a += 2) {
-			abilities.push_back(*a);
-		}
-
-		for (std::vector<t_string>::const_iterator a = abilities.begin(); a != abilities.end(); a++) {
-			if (a != abilities.begin()) {
-				str << ", ";
-			}
-			str << (*a);
-		}
-	}
-	label = find_widget<tlabel>(&window, "tip_abilities", false, true);
-	label->set_label(str.str());
-
-	// feature
-	str.str("");
-	index = 0;
-	str << dgettext("wesnoth", "feature") << ": ";
-	for (int i = 0; i < HEROS_MAX_FEATURE; i ++) {
-		if (unit_feature_val2(temp, i) == hero_feature_single_result) {
-			if (index > 0) {
-				str << ", ";
-			}
-			index ++;
-			str << temp.master().feature_str(i);
-		}
-	}
-	label = find_widget<tlabel>(&window, "tip_feature", false, true);
-	label->set_label(str.str());
-
-	// adaptability
-	str.str("");
-	str << dgettext("wesnoth", "adaptability") << ": ";
-	str << hero::arms_str(temp.arms()) << "(" << hero::adaptability_str2(ftofxp12(temp.adaptability_[temp.arms()])) << ")";
-	label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
-	label->set_label(str.str());
-
-	// skill
-	str.str("");
-	str << dgettext("wesnoth-lib", "Skill") << ": ";
-	str << hero::skill_str(hero_skill_demolish) << "(" << hero::adaptability_str2(ftofxp12(temp.skill_[hero_skill_demolish])) << ")";
-	label = find_widget<tlabel>(&window, "tip_skill", false, true);
-	label->set_label(str.str());
-
-	// attack
-	str.str("");
-	std::vector<attack_type>* attacks_ptr = const_cast<std::vector<attack_type>*>(&temp.attacks());
-	for (std::vector<attack_type>::const_iterator at_it = attacks_ptr->begin(); at_it != attacks_ptr->end(); ++at_it) {
-		// see generate_report() in generate_report.cpp
-		str << at_it->name() << " (" << dgettext("wesnoth", at_it->type().c_str()) << ")\n";
-
-		std::string accuracy = at_it->accuracy_parry_description();
-		if(accuracy.empty() == false) {
-			accuracy += " ";
-		}
-
-		str << "  " << at_it->damage() << "-" << at_it->num_attacks()
-			<< " " << accuracy << "- " << dgettext("wesnoth", at_it->range().c_str());
-
-		std::string special = at_it->weapon_specials(true);
-		if (!special.empty()) {
-			str << "(" << special << ")";
-		}
-		str << "\n";
-	}
-	label = find_widget<tlabel>(&window, "tip_attack", false, true);
-	label->set_label(str.str());
-
-	// resistance
-	int idx_in_resistances;
-	std::set<std::string> resistances_table;
-	utils::string_map resistances = temp.get_base_resistances();
-	bool att_def_diff = false;
-	const map_location& loc = temp.get_location();
-	idx_in_resistances = 0;
-	str.str("");
-	for (utils::string_map::iterator resist = resistances.begin(); resist != resistances.end(); ++resist, idx_in_resistances ++) {
-		str << dgettext("wesnoth", resist->first.c_str()) << ": ";
-
-		const map_location& loc = temp.get_location();
-		if (loc.valid()) {
-			// Some units have different resistances when
-			// attacking or defending.
-			int res_att = 100 - temp.resistance_against(resist->first, true, loc);
-			int res_def = 100 - temp.resistance_against(resist->first, false, loc);
-			if (res_att == res_def) {
-				str << res_def;
-			} else {
-				str << res_att << "% / " << res_def; // (Att / Def)
-				att_def_diff = true;
-			}
-		} else {
-			str << 100 - lexical_cast_default<int>(resist->second.c_str());
-		}
-		if (idx_in_resistances % 2) {
-			str << "%\n";
-		} else {
-			str << "%  ";
-		}
-	}
-	label = find_widget<tlabel>(&window, "tip_resistance", false, true);
-	label->set_label(str.str());
-*/
 }
 
 void trpg_detail::rpg_2_ui(twindow& window)
 {
+	int value;
 	std::stringstream str;
+	const team& current_team = teams_[rpg::h->side_];
+	bool in_troop = !find_unit(units_, *rpg::h)->is_artifical();
+
 	// refresh to gui
 	tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
 	str << dgettext("wesnoth", "hero") << ": " << rpg::h->name();
@@ -384,6 +138,52 @@ void trpg_detail::rpg_2_ui(twindow& window)
 	str << _("Ownership") << ": ";
 	str << units_.city_from_cityno(rpg::h->city_)->name();
 	label = find_widget<tlabel>(&window, "tip_ownership", false, true);
+	label->set_label(str.str());
+
+	// meritorious
+	str.str("");
+	value = rpg::h->meritorious_;
+	str << _("Meritorious") << ": " << value;
+	label = find_widget<tlabel>(&window, "tip_meritorious", false, true);
+	label->set_label(str.str());
+	str.str("");
+	if (rpg::stratum == hero_stratum_citizen) {
+		utils::string_map symbols;
+		std::string message;
+		int statement_type = -1;
+		if (!rpg::h->meritorious_ && !in_troop) {
+			str << _("Wait, leader will order you to recruit");
+		} else if (rpg::h->meritorious_ < 1000) {
+			symbols["meritorious"] = "1000";
+			statement_type = 0;
+		} else if (rpg::h->meritorious_ < 2500) {
+			symbols["meritorious"] = "2500";
+			statement_type = 0;
+		} else if (rpg::h->meritorious_ < 5000) {
+			symbols["meritorious"] = "5000";
+			statement_type = 0;
+		} else if (rpg::h->meritorious_ < 8000) {
+			symbols["meritorious"] = "8000";
+			statement_type = 1;
+		} else {
+			str << _("Get mroe meritorious, will be appointed mayor");
+		}
+		if (statement_type == 0) {
+			str << vgettext("wesnoth-lib", "To $meritorious, will control more troops", symbols);
+		} else if (statement_type == 1) {
+			str << vgettext("wesnoth-lib", "To $meritorious, will be appointed mayor", symbols);
+		}
+	} else if (rpg::stratum == hero_stratum_mayor) {
+		if (current_team.holded_cities().size() < 2) {
+			str << _("Capture more city, can be independent");
+		} else {
+			str << _("Be independent will be to leader");
+		}
+	}
+	if (str.str().empty()) {
+		str << _("---");
+	}
+	label = find_widget<tlabel>(&window, "tip_meritorious2", false, true);
 	label->set_label(str.str());
 
 	// leadership
@@ -511,23 +311,6 @@ void trpg_detail::pre_show(CVideo& /*video*/, twindow& window)
 		list_item["label"] = str.str();
 		list_item_item.insert(std::make_pair("hp", list_item));
 
-		// xp
-		str.str("");
-		str << it->experience() << "/\n";
-		if (it->can_advance()) {
-			str << it->max_experience();
-		} else {
-			str << "-";
-		}
-		list_item["label"] = str.str();
-		list_item_item.insert(std::make_pair("xp", list_item));
-
-		// movement
-		str.str("");
-		str << it->movement_left() << "/" << it->total_movement();
-		list_item["label"] = str.str();
-		list_item_item.insert(std::make_pair("movement", list_item));
-
 		list->add_row(list_item_item);
 
 		tgrid* grid = list->get_row_grid(list->get_item_count() - 1);
@@ -545,7 +328,6 @@ void trpg_detail::pre_show(CVideo& /*video*/, twindow& window)
 		, this
 		, boost::ref(window)));
 
-	refresh_tooltip(window);
 }
 
 void trpg_detail::human_troops(twindow& window)

@@ -1,6 +1,6 @@
-/* $Id: window.hpp 48796 2011-03-06 18:27:54Z mordante $ */
+/* $Id: window.hpp 54906 2012-07-29 19:52:01Z mordante $ */
 /*
-   Copyright (C) 2007 - 2011 by Mark de Wever <koraq@xs4all.nl>
+   Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,7 @@ namespace gui2{
 
 class tdialog;
 class tdebug_layout_graph;
+class tpane;
 
 namespace event {
 	class tdistributor;
@@ -46,7 +47,7 @@ namespace event {
 
 /**
  * base class of top level items, the only item
- * which needs to store the final canvase to draw on
+ * which needs to store the final canvases to draw on
  */
 class twindow
 	: public tpanel
@@ -56,6 +57,7 @@ class twindow
 	friend twindow *build(CVideo &, const twindow_builder::tresolution *);
 	friend struct twindow_implementation;
 	friend class tinvalidate_layout_blocker;
+	friend class tpane;
 
 public:
 
@@ -78,7 +80,7 @@ public:
 	/**
 	 * Update the size of the screen variables in settings.
 	 *
-	 * Before a window gets build the screen sizes need to be updates. This
+	 * Before a window gets build the screen sizes need to be updated. This
 	 * function does that. It's only done when no other window is active, if
 	 * another window is active it already updates the sizes with it's resize
 	 * event.
@@ -86,7 +88,7 @@ public:
 	static void update_screen_size();
 
 	/**
-	 * Returns the intance of a window.
+	 * Returns the instance of a window.
 	 *
 	 * @param handle              The instance id of the window.
 	 *
@@ -159,7 +161,7 @@ public:
 	 * @param auto_close_timeout  The time in ms after which the window will
 	 *                            automatically close, if 0 it doesn't close.
 	 *                            @note the timeout is a minimum time and
-	 *                            there's no quarantee about how fast it closes
+	 *                            there's no guarantee about how fast it closes
 	 *                            after the minimum.
 	 */
 	void show_tooltip(/*const unsigned auto_close_timeout = 0*/);
@@ -174,7 +176,7 @@ public:
 	 * @param auto_close_timeout  The time in ms after which the window will
 	 *                            automatically close, if 0 it doesn't close.
 	 *                            @note the timeout is a minimum time and
-	 *                            there's no quarantee about how fast it closes
+	 *                            there's no guarantee about how fast it closes
 	 *                            after the minimum.
 	 */
 	void show_non_modal(/*const unsigned auto_close_timeout = 0*/);
@@ -198,7 +200,7 @@ public:
 	 * Adds an item to the dirty_list_.
 	 *
 	 * @param call_stack          The list of widgets traversed to get to the
-	 *                            dirty wiget.
+	 *                            dirty widget.
 	 */
 	void add_to_dirty_list(const std::vector<twidget*>& call_stack)
 	{
@@ -210,7 +212,7 @@ public:
 		NEW,                      /**< The window is new and not yet shown. */
 		SHOWING,                  /**< The window is being shown. */
 		REQUEST_CLOSE,            /**< The window has been requested to be
-		                           *   closed but still needs to evalueate the
+		                           *   closed but still needs to evaluate the
 								   *   request.
 								   */
 		CLOSED                    /**< The window has been closed. */
@@ -219,7 +221,7 @@ public:
 	/**
 	 * Requests to close the window.
 	 *
-	 * At the moment the request is always honoured but that might change in the
+	 * At the moment the request is always honored but that might change in the
 	 * future.
 	 */
 	void close() { status_ = REQUEST_CLOSE; }
@@ -230,7 +232,7 @@ public:
 	 * Some widgets can handling certain layout aspects without help. For
 	 * example a listbox can handle hiding and showing rows without help but
 	 * setting the visibility calls invalidate_layout(). When this blocker is
-	 * instanciated the call to invalidate_layout() becomes a nop.
+	 * Instantiated the call to invalidate_layout() becomes a nop.
 	 *
 	 * @note The class can't be used recursively.
 	 */
@@ -246,7 +248,7 @@ public:
 	/**
 	 * Updates the size of the window.
 	 *
-	 * If the window has automatic placement set this function recacluates the
+	 * If the window has automatic placement set this function recalculates the
 	 * window. To be used after creation and after modification or items which
 	 * can have different sizes eg listboxes.
 	 */
@@ -303,7 +305,7 @@ public:
 	/**
 	 * Does the window close easily?
 	 *
-	 * The behaviour can change at run-time, but that might cause oddities
+	 * The behavior can change at run-time, but that might cause oddities
 	 * with the easy close button (when one is needed).
 	 *
 	 * @returns                   Whether or not the window closes easily.
@@ -507,10 +509,10 @@ private:
 	twindow_builder::tresolution::ttip helptip_;
 
 	/**
-	 * Do we want to have easy close behaviour?
+	 * Do we want to have easy close behavior?
 	 *
 	 * Easy closing means that whenever a mouse click is done the dialog will
-	 * be closed. The widgets in the window may override this behaviour by
+	 * be closed. The widgets in the window may override this behavior by
 	 * registering themselves as blockers. This is tested by the function
 	 * disable_click_dismiss().
 	 *
@@ -544,7 +546,7 @@ private:
 	 * Helper struct to force widgets the have the same size.
 	 *
 	 * Widget which are linked will get the same width and/or height. This
-	 * can especialy be useful for listboxes, but can also be used for other
+	 * can especially be useful for listboxes, but can also be used for other
 	 * applications.
 	 */
 	struct tlinked_size
@@ -582,14 +584,14 @@ private:
 	 * This part does the pre and post processing for the actual layout
 	 * algorithm.
 	 *
-	 * @see layout_algorihm for more information.
+	 * @see layout_algorithm for more information.
 	 */
 	void layout();
 
 	/**
 	 * Layouts the linked widgets.
 	 *
-	 * @see layout_algorihm for more information.
+	 * @see layout_algorithm for more information.
 	 */
 	void layout_linked_widgets();
 
@@ -656,7 +658,7 @@ public:
 	void add_to_keyboard_chain(twidget* widget);
 
 	/**
-	 * Remove the widget from the keyborad chain.
+	 * Remove the widget from the keyboard chain.
 	 *
 	 * @todo rename to keyboard_remove_from_chain.
 	 *
@@ -687,6 +689,9 @@ private:
 			, bool& handled
 			, event::tmessage& message);
 
+	void signal_handler_request_placement(
+			  const event::tevent event
+			, bool& handled);
 };
 
 } // namespace gui2

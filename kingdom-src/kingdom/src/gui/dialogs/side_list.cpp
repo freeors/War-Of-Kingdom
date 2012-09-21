@@ -144,6 +144,14 @@ void tside_list::pre_show(CVideo& /*video*/, twindow& window)
 			, (int)GOLD_PAGE
 			, true));
 	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "feature", false)
+		, boost::bind(
+			&tside_list::catalog_page
+			, this
+			, boost::ref(window)
+			, (int)FEATURE_PAGE
+			, true));
+	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "artifical", false)
 		, boost::bind(
 			&tside_list::catalog_page
@@ -186,8 +194,6 @@ void tside_list::fill_table(int catalog)
 {
 	const team& viewing_team = teams_[gui_.viewing_team()];
 
-	// const unit_type* market = unit_types.find("market");
-	// const unit_type* tower = unit_types.find("tower");
 	std::map<std::string, size_t> art_map;
 	art_map["market"] = 0;
 	art_map["tower"] = 0;
@@ -231,9 +237,6 @@ void tside_list::fill_table(int catalog)
 			}
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("controller", table_item));
-
-			table_item["label"] = leader->feature_str(leader->side_feature_);
-			table_item_item.insert(std::make_pair("feature", table_item));
 
 			table_item["label"] = teams_[n].uses_fog()? _("yes") : _("no");
 			table_item_item.insert(std::make_pair("fog", table_item));
@@ -320,6 +323,27 @@ void tside_list::fill_table(int catalog)
 			str << teams_[n].village_gold();
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("village_gold", table_item));
+
+		} else if (catalog == FEATURE_PAGE) {
+			hero* leader = teams_[n].leader();
+
+			table_item["label"] = leader->feature_str(leader->side_feature_);
+			table_item_item.insert(std::make_pair("feature", table_item));
+
+			str.str("");
+			const std::vector<arms_feature>& features = teams_[n].features();
+			for (std::vector<arms_feature>::const_iterator it = features.begin(); it != features.end(); ++ it) {
+				if (it != features.begin()) {
+					str << ", (";
+				} else {
+					str << "(";
+				}
+				str << ">=" << it->level_;
+				str << " " << hero::arms_str(it->arms_);
+				str << "-->" << hero::feature_str(it->feature_) << ")";
+			}
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("features", table_item));
 
 		} else if (catalog == ARTIFICAL_PAGE) {
 

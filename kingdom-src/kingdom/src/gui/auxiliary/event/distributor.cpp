@@ -647,6 +647,10 @@ tdistributor::tdistributor(twidget& owner
 			boost::bind(&tdistributor::signal_handler_sdl_key_down
 				, this, _5, _6, _7));
 
+	owner_.connect_signal<event::SDL_TEXT_INPUT>(
+			boost::bind(&tdistributor::signal_handler_sdl_text_input
+				, this, _5));
+
 	owner_.connect_signal<event::NOTIFY_REMOVAL>(
 			boost::bind(
 				  &tdistributor::signal_handler_notify_removal
@@ -662,6 +666,9 @@ tdistributor::~tdistributor()
 	owner_.disconnect_signal<event::SDL_KEY_DOWN>(
 			boost::bind(&tdistributor::signal_handler_sdl_key_down
 				, this, _5, _6, _7));
+	owner_.disconnect_signal<event::SDL_TEXT_INPUT>(
+			boost::bind(&tdistributor::signal_handler_sdl_text_input
+				, this, _5));
 
 	owner_.disconnect_signal<event::NOTIFY_REMOVAL>(
 			boost::bind(
@@ -779,6 +786,66 @@ void tdistributor::signal_handler_sdl_key_down(const SDLKey key
 		DBG_GUI_E << LOG_HEADER << "Firing: " << event::SDL_KEY_DOWN << ".\n";
 		if(owner_.fire(event::SDL_KEY_DOWN
 				, **ritor, key, modifier, unicode)) {
+
+			return;
+		}
+	}
+}
+
+void tdistributor::signal_handler_sdl_text_input(const char* text)
+{
+	/** @todo Test whether recursion protection is needed. */
+
+	DBG_GUI_E << LOG_HEADER << event::SDL_TEXT_INPUT << ".\n";
+
+	if(keyboard_focus_) {
+		// Attempt to cast to control, to avoid sending events if the
+		// widget is disabled. If the cast fails, we assume the widget
+		// is enabled and ready to receive events.
+		tcontrol* control = dynamic_cast<tcontrol*>(keyboard_focus_);
+		if(!control || control->get_active()) {
+			DBG_GUI_E << LOG_HEADER << "Firing: " << event::SDL_TEXT_INPUT << ".\n";
+			if(owner_.fire(event::SDL_TEXT_INPUT
+					, *keyboard_focus_, 0, text)) {
+				return;
+			}
+		}
+	}
+
+	for(std::vector<twidget*>::reverse_iterator
+				ritor = keyboard_focus_chain_.rbegin()
+			; ritor != keyboard_focus_chain_.rend()
+			; ++ritor) {
+
+		if(*ritor == keyboard_focus_) {
+			continue;
+		}
+
+		if(*ritor == &owner_) {
+			/**
+			 * @todo Make sure we're not in the event chain.
+			 *
+			 * No idea why we're here, but needs to be fixed, otherwise we keep
+			 * calling this function recursively upon unhandled events...
+			 *
+			 * Probably added to make sure the window can grab the events and
+			 * handle + block them when needed, this is no longer needed with
+			 * the chain.
+			 */
+			continue;
+		}
+
+		// Attempt to cast to control, to avoid sending events if the
+		// widget is disabled. If the cast fails, we assume the widget
+		// is enabled and ready to receive events.
+		tcontrol* control = dynamic_cast<tcontrol*>(keyboard_focus_);
+		if(control != NULL && !control->get_active()) {
+			continue;
+		}
+
+		DBG_GUI_E << LOG_HEADER << "Firing: " << event::SDL_TEXT_INPUT << ".\n";
+		if(owner_.fire(event::SDL_TEXT_INPUT
+				, **ritor, 0, text)) {
 
 			return;
 		}

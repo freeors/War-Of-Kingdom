@@ -24,9 +24,6 @@ class hero;
 #include "events.hpp"
 #include "network.hpp"
 
-extern std::vector<hero*> empty_vector_hero_ptr;
-extern std::vector<size_t> empty_vector_size_t;
-
 namespace dialogs {
 
 /**

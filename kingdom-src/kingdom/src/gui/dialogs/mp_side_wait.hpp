@@ -33,12 +33,21 @@ class tlabel;
 class tbutton;
 class tlistbox;
 
+class tplayer_list_side_wait: public tplayer_list
+{
+public:
+	void init(twindow& w);
+
+public:
+	tsub_player_list active_game;
+};
+
 class tmp_side_wait : public tdialog, public lobby_base
 {
 public:
 	struct connected_user {
 		connected_user(const std::string& name, controller controller__,
-				network::connection connection) :
+				network::connection connection = 0) :
 			name(name), controller_(controller__), connection(connection)
 		{};
 		std::string name;
@@ -100,6 +109,8 @@ private:
 	 */
 	void process_network_data(const config& data, const network::connection sock);
 
+	void update_playerlist();
+
 	config level_;
 
 	command_pool replay_data_;
@@ -111,7 +122,6 @@ private:
 
 	tlistbox* sides_table_;
 	tlabel* waiting_;
-	tlabel* players_label_;
 	
 	// multiplayer_ui.hpp
 	config& gamelist_;
@@ -123,6 +133,8 @@ private:
 
 	bool stop_updates_;
 	bool observe_;
+
+	tplayer_list_side_wait player_list_;
 };
 
 

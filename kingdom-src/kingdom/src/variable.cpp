@@ -505,7 +505,7 @@ void scoped_xy_unit::activate()
 	const unit* u = NULL;
 
 	if (city_) {
-		u = &city_->reside_troops()[y_];
+		u = city_->reside_troops()[y_];
 		loc = city_->get_location();
 	} else {
 		unit_map::const_iterator itor = umap_.find(loc);

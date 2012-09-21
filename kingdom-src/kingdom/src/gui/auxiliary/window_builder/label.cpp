@@ -1,4 +1,4 @@
-/* $Id: label.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: label.cpp 54038 2012-04-30 19:37:24Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -28,6 +28,7 @@ namespace implementation {
 tbuilder_label::tbuilder_label(const config& cfg)
 	: tbuilder_control(cfg)
 	, wrap(cfg["wrap"].to_bool())
+	, characters_per_line(cfg["characters_per_line"])
 	, text_alignment(decode_text_alignment(cfg["text_alignment"]))
 	, width_(cfg["width"])
 	, height_(cfg["height"])
@@ -36,9 +37,9 @@ tbuilder_label::tbuilder_label(const config& cfg)
 
 twidget* tbuilder_label::build() const
 {
-	tlabel* widget = new tlabel();
+	tlabel* label = new tlabel();
 
-	init_control(widget);
+	init_control(label);
 
 	unsigned width, height;
 	if (width_.has_formula() || height_.has_formula()) {
@@ -51,17 +52,18 @@ twidget* tbuilder_label::build() const
 		height = height_();
 	}
 	if (width || height) {
-		widget->set_best_size(tpoint(width, height));
+		label->set_best_size(tpoint(width, height));
 	}
 
-	widget->set_can_wrap(wrap);
-	widget->set_text_alignment(text_alignment);
+	label->set_can_wrap(wrap);
+	label->set_characters_per_line(characters_per_line);
+	label->set_text_alignment(text_alignment);
 
 	DBG_GUI_G << "Window builder: placed label '"
 			<< id << "' with definition '"
 			<< definition << "'.\n";
 
-	return widget;
+	return label;
 }
 
 } // namespace implementation
@@ -88,6 +90,16 @@ twidget* tbuilder_label::build() const
  * List with the label specific variables:
  * @begin{table}{config}
  *     wrap & bool & false &      Is wrapping enabled for the label. $
+ *     characters_per_line & unsigned & 0 &
+ *                                Sets the maximum number of characters per
+ *                                line. The amount is an approximate since the
+ *                                width of a character differs. E.g. iii is
+ *                                smaller than MMM. When the value is non-zero
+ *                                it also implies can_wrap is true.
+ *                                When having long strings wrapping them can
+ *                                increase readability, often 66 characters per
+ *                                line is considered the optimum for a one
+ *                                column text.
  *     text_alignment & h_align & "left" &
  *                                How is the text aligned in the label. $
  * @end{table}

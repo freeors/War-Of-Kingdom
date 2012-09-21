@@ -1,4 +1,4 @@
-/* $Id: generator.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: generator.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -18,6 +18,8 @@
 #include "gui/widgets/generator_private.hpp"
 
 #include "gui/widgets/window.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -309,6 +311,8 @@ tpoint tvertical_list::calculate_best_size() const
 {
 	// The best size is the sum of the heights and the greatest width.
 	tpoint result(0, 0);
+
+	int item0_height = -1;
 	for(size_t i = 0; i < get_item_count(); ++i) {
 
 		const tgrid& grid = item(i);
@@ -317,6 +321,15 @@ tpoint tvertical_list::calculate_best_size() const
 		}
 
 		const tpoint best_size = grid.get_best_size();
+
+		if (item0_height == -1) {
+			item0_height = best_size.y;
+		} else if (item0_height != best_size.y) {
+			std::stringstream err;
+			err << "tvertical_list::calculate_best_size, height of item#0 is " << item0_height << ", but item#" << i << " is " << best_size.y;
+			int ii = 0;
+			// VALIDATE(false, err.str());
+		}
 
 		if(best_size.x > result.x) {
 			result.x = best_size.x;
@@ -678,7 +691,7 @@ void tshow::init(tgrid* grid
 	assert(!callback);
 
 	typedef std::pair<std::string, string_map> hack;
-	foreach(const hack& item, data) {
+	BOOST_FOREACH(const hack& item, data) {
 		if(item.first.empty()) {
 			for(unsigned row = 0; row < grid->get_rows(); ++row) {
 				for(unsigned col = 0; col < grid->get_cols(); ++col) {

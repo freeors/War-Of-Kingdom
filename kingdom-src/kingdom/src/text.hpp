@@ -172,9 +172,13 @@ public:
 
 	ttext& set_maximum_width(int width);
 
+	ttext& set_characters_per_line(const unsigned characters_per_line);
+
 	ttext& set_maximum_height(int height, bool multiline = true);
 
 	ttext& set_ellipse_mode(const PangoEllipsizeMode ellipse_mode);
+
+	ttext &set_alignment(const PangoAlignment alignment);
 
 	ttext& set_maximum_length(const size_t maximum_length);
 
@@ -182,7 +186,7 @@ public:
 
 private:
 
-	std::vector<text_surface*> cached_surfs_;
+	std::vector<text_surface> cached_surfs_;
 	/***** ***** ***** *****  Pango variables ***** ***** ***** *****/
 	mutable SDL_Rect rect_;
 

@@ -18,19 +18,26 @@
 #ifndef RANDOM_HPP_INCLUDED
 #define RANDOM_HPP_INCLUDED
 
-#define POOL_ALLOC_DATA_SIZE	4194304	// 4M
-#define POOL_ALLOC_POS_SIZE		1048576 // 1M, One allocate may save 1024x1024 packet pos.
+#define POOL_ALLOC_DATA_SIZE	1048576	// 1M
+#define POOL_ALLOC_POS_SIZE		131072 // 128K, One allocate may save 1024x128 packet pos.
+#define POOL_ALLOC_CACHE_SIZE	262144 // 256K
 #define POOL_COMMAND_RESERVE_BYTES	100	// Assume, one command reserve 100 bytes.
 class command_pool
 {
 public:
-	enum TYPE {START = 1, INIT_SIDE, END_TURN, INIT_AI, RECRUIT, EXPEDITE, DISBAND, MOVE_HEROS, BELONG_TO, 
+	enum TYPE {UNGZIP = 1, START, INIT_SIDE, END_TURN, INIT_AI, RECRUIT, EXPEDITE, DISBAND, MOVE_HEROS, BELONG_TO, 
 		BUILD, COUNTDOWN_UPDATE, MOVEMENT, ATTACK, RANDOM_NUMBER, CHOOSE, LABLE, RENAME, SPEAK, 
 		EVENT, UNIT_CHECKSUM, CHECKSUM_CHECK, ADVANCEMENT_UNIT, CLEAR_LABELS, DIPLOMATISM, 
-		FINAL_BATTLE, INPUT, HERO_FIELD, ADD_CARD, ERASE_CARD, ARMORY, INTERIOR};
+		FINAL_BATTLE, INPUT, HERO_FIELD, ADD_CARD, ERASE_CARD, ARMORY, INTERIOR, RPG_EXCHANGE};
 	struct command {
 		TYPE type;
 		unsigned int flags;
+	};
+
+	struct gzip_segment_t {
+		int len;
+		int min;
+		int max;
 	};
 
 	command_pool();
@@ -46,19 +53,33 @@ public:
 	unsigned char* pool_data() const { return pool_data_; }
 	int pool_data_size() const { return pool_data_size_; }
 	int pool_data_vsize() const { return pool_data_vsize_; }
+	int pool_data_gzip_size() const { return pool_data_gzip_size_; }
 	unsigned int* pool_pos() const { return pool_pos_; }
 	int pool_pos_size() const { return pool_pos_size_; }
 	int pool_pos_vsize() const { return pool_pos_vsize_; }
 
+	command* command_addr(int pool_pos_index, bool queue = true);
+	command* command_addr2(int pool_pos_index, gzip_segment_t& seg, int& pool_data_gzip_size, unsigned char* cache);
 	command* add_command();
+	int gzip_codec(unsigned char* data, int data_len, bool encode, unsigned char* to = NULL);
 
+	void set_use_gzip(bool val);
+
+	void load_for_queue(int pool_pos_index, gzip_segment_t& seg, int& pool_data_gzip_size, unsigned char* dest);
 protected:
+	bool use_gzip_;
+	
 	unsigned char* pool_data_;
 	unsigned int* pool_pos_;
 	int pool_data_size_;
 	int pool_data_vsize_;
+	int pool_data_gzip_size_;
 	int pool_pos_size_;
 	int pool_pos_vsize_;
+
+	gzip_segment_t current_gzip_seg_;
+
+	unsigned char* cache_;
 };
 
 class config;

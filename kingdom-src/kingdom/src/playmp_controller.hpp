@@ -44,6 +44,8 @@ public:
 	void wait_for_upload();
 	void process_oos(const std::string& err_msg) const;
 
+	void sync_undo();
+
 protected:
 	virtual void handle_generic_event(const std::string& name);
 

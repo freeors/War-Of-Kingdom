@@ -1,6 +1,6 @@
-/* $Id: scrollbar_container.hpp 49615 2011-05-22 17:56:49Z mordante $ */
+/* $Id: scrollbar_container.hpp 54007 2012-04-28 19:16:10Z mordante $ */
 /*
-   Copyright (C) 2008 - 2011 by Mark de Wever <koraq@xs4all.nl>
+   Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -461,6 +461,7 @@ private:
 
 	/** Inherited from tcontainer_. */
 	void impl_draw_children(surface& frame_buffer);
+	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
 	/** Inherited from tcontainer_. */
 	void child_populate_dirty_list(twindow& caller,

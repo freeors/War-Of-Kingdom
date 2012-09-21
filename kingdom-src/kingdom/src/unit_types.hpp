@@ -409,6 +409,9 @@ public:
 	const complex_feature_map& complex_feature() const { return complex_feature_; }
 	const abilities_map& abilities() const { return abilities_; }
 	const specials_map& specials() const { return specials_; }
+	const std::vector<std::string>& arms_ids() const { return arms_ids_; }
+	const std::vector<const unit_type*>& can_recruit() const { return can_recruit_; }
+	int arms_from_id(const std::string& id) const;
 	const navigation_types& navigation_threshold() const { return navigation_types_; }
 	const std::string& id_from_navigation(int navigation) const;
 	bool navigation_can_advance(int prev, int next) const;
@@ -450,6 +453,8 @@ private:
 	complex_feature_map complex_feature_;
 	abilities_map abilities_;
 	specials_map specials_;
+	std::vector<std::string> arms_ids_;
+	std::vector<const unit_type*> can_recruit_;
 	navigation_types navigation_types_;
 
 	unit_type* wall_type_;

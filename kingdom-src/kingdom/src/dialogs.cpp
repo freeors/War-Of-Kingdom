@@ -62,9 +62,6 @@ static lg::log_domain log_display("display");
 static lg::log_domain log_config("config");
 #define ERR_CF LOG_STREAM(err, log_config)
 
-std::vector<hero*> empty_vector_hero_ptr = std::vector<hero*>();
-std::vector<size_t> empty_vector_size_t = std::vector<size_t>();
-
 namespace dialogs
 {
 

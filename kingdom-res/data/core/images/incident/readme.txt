@@ -14,3 +14,4 @@
 13: Consort
 14: Duel
 15: Appoint(RPG)
+16: Independence

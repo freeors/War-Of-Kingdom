@@ -1,4 +1,4 @@
-/* $Id: label.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: label.cpp 54038 2012-04-30 19:37:24Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -26,6 +26,21 @@
 namespace gui2 {
 
 REGISTER_WIDGET(label)
+
+bool tlabel::can_wrap() const
+{
+	return can_wrap_ || characters_per_line_ != 0;
+}
+
+unsigned tlabel::get_characters_per_line() const
+{
+	return characters_per_line_;
+}
+
+void tlabel::set_characters_per_line(const unsigned characters_per_line)
+{
+	characters_per_line_ = characters_per_line;
+}
 
 void tlabel::set_state(const tstate state)
 {

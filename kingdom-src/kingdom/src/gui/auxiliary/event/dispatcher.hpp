@@ -1,4 +1,4 @@
-/* $Id: dispatcher.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: dispatcher.hpp 54265 2012-05-20 19:19:29Z mordante $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -23,9 +23,9 @@
 #include <boost/mpl/int.hpp>
 #include <boost/utility/enable_if.hpp>
 
-#include <SDL.h>
+// #include <SDL.h>
 
-#include <vector>
+// #include <vector>
 #include <map>
 
 namespace gui2 {
@@ -82,6 +82,20 @@ typedef
 			, const SDLMod modifier
 			, const Uint16 unicode) >
 		tsignal_keyboard_function;
+
+/**
+ * Callback function signature.
+ *
+ * This function is used for the callbacks in tset_event_textinput.
+ */
+typedef
+		boost::function<void(
+			  tdispatcher& dispatcher
+			, const tevent event
+			, bool& handled
+			, bool& halt
+			, const char* text) >
+		tsignal_textinput_function;
 
 /**
  * Callback function signature.
@@ -202,6 +216,18 @@ public:
 			, const SDLKey key
 			, const SDLMod modifier
 			, const Uint16 unicode);
+
+	/**
+	 * Fires an event which takes textinput parameters.
+	 *
+	 * @param event                  The event to fire.
+	 * @param target                 The widget that should receive the event.
+	 * @param text                   The SDL text of inputed.
+	 */
+	bool fire(const tevent event
+			, twidget& target
+			, int type
+			, const char* text);
 
 	/**
 	 * Fires an event which takes notification parameters.
@@ -385,6 +411,41 @@ public:
 			, const tposition position = back_child)
 	{
 		signal_keyboard_queue_.disconnect_signal(E, position, signal);
+	}
+
+	/**
+	 * Connect a signal for callback in tset_event_textinput.
+	 *
+	 * @tparam E                     The event the callback needs to react to.
+	 * @param signal                 The callback function.
+	 * @param position               The position to place the callback.
+	 */
+	template<tevent E>
+	typename boost::enable_if<boost::mpl::has_key<
+			tset_event_textinput, boost::mpl::int_<E> > >::type
+	connect_signal(const tsignal_textinput_function& signal
+			, const tposition position = back_child)
+	{
+		signal_textinput_queue_.connect_signal(E, position, signal);
+	}
+
+	/**
+	 * Disconnect a signal for callback in tset_event_textinput.
+	 *
+	 * @tparam E                     The event the callback was used for.
+	 * @param signal                 The callback function.
+	 * @param position               The place where the function was added.
+	 *                               Needed remove the event from the right
+	 *                               place. (The function doesn't care whether
+	 *                               was added in front or back.)
+	 */
+	template<tevent E>
+	typename boost::enable_if<boost::mpl::has_key<
+			tset_event_textinput, boost::mpl::int_<E> > >::type
+	disconnect_signal(const tsignal_textinput_function& signal
+			, const tposition position = back_child)
+	{
+		signal_textinput_queue_.disconnect_signal(E, position, signal);
 	}
 
 	/**
@@ -699,6 +760,9 @@ private:
 
 	/** Signal queue for callbacks in tset_event_keyboard. */
 	tsignal_queue<tsignal_keyboard_function> signal_keyboard_queue_;
+
+	/** Signal queue for callbacks in tset_event_textinput. */
+	tsignal_queue<tsignal_textinput_function> signal_textinput_queue_;
 
 	/** Signal queue for callbacks in tset_event_notification. */
 	tsignal_queue<tsignal_notification_function> signal_notification_queue_;

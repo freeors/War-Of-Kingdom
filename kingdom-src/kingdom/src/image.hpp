@@ -163,6 +163,7 @@ namespace image {
 	///use a vector with one string for each team
 	///using NULL will reset to default TC
 	void set_team_colors(const std::vector<std::string>* colors = NULL);
+	std::vector<std::string>& get_team_colors();
 
 	///sets the pixel format used by the images. Is called every time the
 	///video mode changes. Invalidates all images.

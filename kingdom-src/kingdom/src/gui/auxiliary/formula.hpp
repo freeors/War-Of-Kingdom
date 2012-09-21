@@ -1,4 +1,4 @@
-/* $Id: formula.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: formula.hpp 53834 2012-04-07 15:58:08Z loonycyborg $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -192,7 +192,7 @@ inline PangoAlignment tformula<PangoAlignment>::execute(
 
 template<class T>
 inline T tformula<T>::execute(
-		const game_logic::map_formula_callable& variables) const
+		const game_logic::map_formula_callable& /*variables*/) const
 {
 	// Every type needs its own execute function avoid instantiation of the
 	// default execute.

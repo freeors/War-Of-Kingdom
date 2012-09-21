@@ -662,13 +662,7 @@ void playsingle_controller::before_human_turn(bool save)
 	}
 	
 	// card
-	theme::menu *theme_b = gui_->get_theme().get_menu_item("card");
-	gui::button* btn = gui_->find_button("card");
-	std::stringstream title;
-	title << current_team().holded_cards().size();
-	theme_b->set_title(title.str());
-	btn->set_label(title.str());
-
+	refresh_card_button(current_team(), *gui_);
 	// if (!network::nconnections()) {
 	//	show_context_menu(NULL, *gui_);
 	// } else {
@@ -703,12 +697,7 @@ void playsingle_controller::execute_card_uh(size_t turn, int team_index)
 		}
 		if (current_team.is_human()) {
 			// card
-			theme::menu *theme_b = gui_->get_theme().get_menu_item("card");
-			gui::button* btn = gui_->find_button("card");
-			std::stringstream title;
-			title << current_team.holded_cards().size();
-			theme_b->set_title(title.str());
-			btn->set_label(title.str());
+			refresh_card_button(current_team, *gui_);
 		}
 	}
 }
@@ -723,12 +712,7 @@ void playsingle_controller::execute_card_bh(size_t turn, int team_index)
 	}
 	if (current_team.is_human()) {
 		// card
-		theme::menu *theme_b = gui_->get_theme().get_menu_item("card");
-		gui::button* btn = gui_->find_button("card");
-		std::stringstream title;
-		title << current_team.holded_cards().size();
-		theme_b->set_title(title.str());
-		btn->set_label(title.str());
+		refresh_card_button(current_team, *gui_);
 	}
 }
 

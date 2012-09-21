@@ -64,12 +64,13 @@ REGISTER_DIALOG(mp_login)
 tmp_login::tmp_login(const std::string& label, const bool focus_password)
 {
 	register_label("login_label", false, label);
+/*
 	register_text("user_name"
 			, true
 			, &preferences::login
 			, &preferences::set_login
 			, !focus_password);
-
+*/
 	register_text("password"
 			, true
 			, &preferences::password
@@ -84,6 +85,10 @@ tmp_login::tmp_login(const std::string& label, const bool focus_password)
 
 void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 {
+	ttext_box* user_widget = find_widget<ttext_box>(&window, "user_name", false, true);
+	user_widget->set_value(preferences::login());
+	user_widget->set_active(false);
+
 	if(tbutton* button = find_widget<tbutton>(
 			&window, "password_reminder", false, false)) {
 

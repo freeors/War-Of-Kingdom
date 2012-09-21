@@ -1,4 +1,4 @@
-/* $Id: panel.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: panel.cpp 54007 2012-04-28 19:16:10Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -55,9 +55,33 @@ void tpanel::impl_draw_background(surface& frame_buffer)
 	canvas(0).blit(frame_buffer, get_rect());
 }
 
+void tpanel::impl_draw_background(
+		  surface& frame_buffer
+		, int x_offset
+		, int y_offset)
+{
+	DBG_GUI_D << LOG_HEADER
+			<< " size " << get_rect()
+			<< ".\n";
+
+	canvas(0).blit(
+			  frame_buffer
+			, calculate_blitting_rectangle(x_offset, y_offset));
+}
+
 void tpanel::impl_draw_foreground(surface& frame_buffer)
 {
 	canvas(1).blit(frame_buffer, get_rect());
+}
+
+void tpanel::impl_draw_foreground(
+		  surface& frame_buffer
+		, int x_offset
+		, int y_offset)
+{
+	canvas(1).blit(
+			  frame_buffer
+			, calculate_blitting_rectangle(x_offset, y_offset));
 }
 
 tpoint tpanel::border_space() const

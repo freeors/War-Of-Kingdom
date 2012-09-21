@@ -1,4 +1,4 @@
-/* $Id: tips.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: tips.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2010 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -18,9 +18,10 @@
 #include "gui/auxiliary/tips.hpp"
 
 #include "config.hpp"
-#include "foreach.hpp"
 #include "game_preferences.hpp"
 #include "serialization/string_utils.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -39,7 +40,7 @@ std::vector<ttip> load(const config& cfg)
 {
 	std::vector<ttip> result;
 
-	foreach(const config &tip, cfg.child_range("tip")) {
+	BOOST_FOREACH(const config &tip, cfg.child_range("tip")) {
 		result.push_back(ttip(tip["text"]
 				, tip["source"]
 				, tip["encountered_units"]));
@@ -54,11 +55,11 @@ std::vector<ttip> shuffle(const std::vector<ttip>& tips)
 
 	const std::set<std::string>& units = preferences::encountered_units();
 
-	foreach(const ttip& tip, tips) {
+	BOOST_FOREACH(const ttip& tip, tips) {
 		if(tip.unit_filter_.empty()) {
 			result.push_back(tip);
 		} else {
-			foreach(const std::string& unit, tip.unit_filter_) {
+			BOOST_FOREACH(const std::string& unit, tip.unit_filter_) {
 				if(units.find(unit) != units.end()) {
 					result.push_back(tip);
 					break;

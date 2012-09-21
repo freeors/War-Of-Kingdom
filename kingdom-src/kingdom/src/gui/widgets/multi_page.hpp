@@ -1,4 +1,4 @@
-/* $Id: multi_page.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: multi_page.hpp 54007 2012-04-28 19:16:10Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -160,6 +160,10 @@ private:
 	 * Since we're always empty the draw does nothing.
 	 */
 	void impl_draw_background(surface& /*frame_buffer*/) {}
+	void impl_draw_background(
+			  surface& /*frame_buffer*/
+			, int /*x_offset*/
+			, int /*y_offset*/) {}
 
 	/** Inherited from tcontrol. */
 	const std::string& get_control_type() const;

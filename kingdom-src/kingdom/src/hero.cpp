@@ -8,6 +8,7 @@ hero_map::iterator hero_map_iter_invalid = hero_map::iterator(HEROS_INVALID_NUMB
 hero_map::const_iterator hero_map_const_iter_invalid = hero_map::const_iterator(HEROS_INVALID_NUMBER, NULL);
 
 std::string hero::image_file_root_ = "";
+std::string hero::gender_str_[HEROS_MAX_GENDER] = {};
 std::string hero::arms_str_[HEROS_MAX_ARMS] = {};
 std::string hero::skill_str_[HEROS_MAX_SKILL] = {};
 std::string hero::feature_str_[HEROS_MAX_FEATURE] = {};
@@ -17,6 +18,9 @@ std::string hero::status_str_[HEROS_STATUSES] = {};
 std::string hero::official_str_[HEROS_OFFICIALS] = {};
 std::vector<int> hero::valid_features_ = std::vector<int>();
 std::string null_str = "";
+
+std::vector<hero*> empty_vector_hero_ptr = std::vector<hero*>();
+std::vector<size_t> empty_vector_size_t = std::vector<size_t>();
 
 bool compare_leadership(const hero* lhs, const hero* rhs)
 {
@@ -54,10 +58,9 @@ bool u16_get_experience_i12(uint16_t* field, uint16_t inc_xp)
 	return (fxptoi12(*field) > integer)? true: false;
 }
 
-hero::hero(const hero& that) :
-	name_str_(),
-	surname_str_(),
-	gender_str_()
+hero::hero(const hero& that)
+	: name_str_(that.name_str_)
+	, surname_str_(that.surname_str_)
 {
 	const hero_fields_t* that_parent = (const hero_fields_t*)&that;
 	hero_fields_t* this_parent = (hero_fields_t*)this;
@@ -71,8 +74,7 @@ hero::hero(const hero& that) :
 
 hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intellect, uint16_t politics, uint16_t charm) :
 	name_str_(),
-	surname_str_(),
-	gender_str_()
+	surname_str_()
 {
 	uint32_t idx;
 
@@ -139,8 +141,7 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 
 hero::hero(const uint8_t* mem) :
 	name_str_(),
-	surname_str_(),
-	gender_str_()
+	surname_str_()
 {
 	read(mem);
 
@@ -474,6 +475,12 @@ const char* hero::image(bool big)
 	return to;
 }
 
+void hero::set_image(int image)
+{
+	image_ = image;
+	imgfile_[0] = '\0';
+	imgfile2_[0] = '\0';
+}
 
 std::string& hero::name()
 {
@@ -485,6 +492,11 @@ std::string& hero::name()
 	return name_str_;
 }
 
+void hero::set_name(const std::string& name)
+{
+	name_str_ = name;
+}
+
 std::string& hero::surname()
 {
 	if (surname_str_.empty()) {
@@ -493,6 +505,11 @@ std::string& hero::surname()
 		surname_str_ = dgettext("wesnoth-hero", text);
 	}
 	return surname_str_;
+}
+
+void hero::set_surname(const std::string& surname)
+{
+	surname_str_ = surname;
 }
 
 // if caller want use retval in furture, caller need create copy.
@@ -507,15 +524,6 @@ const char* hero::biography()
 		return trans;
 	}
 	return default_str;
-}
-
-std::string& hero::gender_str()
-{
-	char text[_MAX_PATH];
-	sprintf(text, "%s%u", HERO_PREFIX_STR_GENDER, gender_);
-	gender_str_ = dgettext("wesnoth-hero", text);
-
-	return gender_str_;
 }
 
 std::string& hero::heart_str()
@@ -620,26 +628,14 @@ std::vector<int>& hero::valid_features()
 	return valid_features_;
 }
 
-std::string& hero::adaptability_str(int type, int index)
+std::string& hero::gender_str(int gender)
 {
-	char text[_MAX_PATH];
-	if (type == ARMS) {
-		if (index < HEROS_MAX_ARMS) {
-			sprintf(text, "%s%u", HERO_PREFIX_STR_ADAPTABILITY, fxptoi12(arms_[index]));
-			adaptability_str_ = dgettext("wesnoth-hero", text);
-		} else {
-			adaptability_str_ = "";
-		}
-	} else {
-		if (index < HEROS_MAX_SKILL) {
-			sprintf(text, "%s%u", HERO_PREFIX_STR_ADAPTABILITY, fxptoi12(skill_[index]));
-			adaptability_str_ = dgettext("wesnoth-hero", text);
-		} else {
-			adaptability_str_ = "";
-		}
+	if (gender_str_[gender].empty()) {
+		char text[_MAX_PATH];
+		sprintf(text, "%s%u", HERO_PREFIX_STR_GENDER, gender);
+		gender_str_[gender] = dgettext("wesnoth-hero", text);
 	}
-
-	return adaptability_str_;
+	return gender_str_[gender];
 }
 
 std::string& hero::arms_str(int arms)
@@ -706,25 +702,6 @@ void hero::to_unstage()
 	status_ = hero_status_unstage;
 	city_ = HEROS_DEFAULT_CITY;
 	side_ = HEROS_INVALID_SIDE;
-}
-
-void replace_captains_internal(unit& u, hero& selected_hero, std::vector<hero*>& captains)
-{
-	captains.clear();
-
-	if (u.master().number_ != selected_hero.number_) {
-		captains.push_back(&u.master());
-	}
-	if (u.second().valid()) {
-		if (u.second().number_ != selected_hero.number_) {
-			captains.push_back(&u.second());
-		}
-	}
-	if (u.third().valid()) {
-		if (u.third().number_ != selected_hero.number_) {
-			captains.push_back(&u.third());
-		}
-	}
 }
 
 void hero::increase_feeling_each(unit_map& units, hero_map& heros, hero& to, int inc)
@@ -818,14 +795,15 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 						}
 					}
 				} else {
-					std::vector<unit>& reside_troops = city->reside_troops();
-					for (std::vector<unit>::iterator i2 = reside_troops.begin(); i2 != reside_troops.end(); ++ i2) {
-						if (&*i2 != u) {
+					std::vector<unit*>& reside_troops = city->reside_troops();
+					int index = 0;
+					for (std::vector<unit*>::iterator i2 = reside_troops.begin(); i2 != reside_troops.end(); ++ i2, index ++) {
+						if (*i2 != u) {
 							continue;
 						}
-						replace_captains_internal(*u, *this, captains);
+						u->replace_captains_internal(*this, captains);
 						if (captains.empty()) {
-							reside_troops.erase(i2);
+							city->troop_go_out(index);
 						} else {
 							u->replace_captains(captains);
 						}
@@ -834,7 +812,7 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 				}
 			} else {
 				// field troop
-				replace_captains_internal(*u, *this, captains);
+				u->replace_captains_internal(*this, captains);
 				if (captains.empty()) {
 					units.erase(u);
 				} else {
@@ -847,7 +825,7 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 
 		} else if (apply_to == "communicate") {
 			int increase = effect["increase"].to_int();
-			std::vector<std::pair<size_t, unit*> > pairs;
+			std::vector<std::pair<int, unit*> > pairs;
 
 			for (hero_map::iterator i = heros.begin(); i != heros.end(); ++ i) {
 				const hero& h = *i;

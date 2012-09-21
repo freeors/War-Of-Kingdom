@@ -18,12 +18,11 @@
 
 #include "gui/dialogs/dialog.hpp"
 
+class display;
+class hero_map;
+class hero;
+
 namespace gui2 {
-
-class tpopup;
-
-/** Do we wish to show the button for the debug clock. */
-extern bool show_debug_clock_button;
 
 /**
  * This class implements the title screen.
@@ -36,7 +35,7 @@ extern bool show_debug_clock_button;
 class ttitle_screen : public tdialog
 {
 public:
-	ttitle_screen();
+	ttitle_screen(display& gui, hero_map& heros, hero& player_hero);
 
 	~ttitle_screen();
 
@@ -59,8 +58,6 @@ public:
 			, EDIT_PREFERENCES
 			, SHOW_ABOUT          /**< Show credits */
 			, QUIT_GAME
-			, TIP_PREVIOUS        /**< Show previous tip-of-the-day */
-			, TIP_NEXT            /**< Show next tip-of-the-day */
 			, SHOW_HELP
 			, REDRAW_BACKGROUND   /**<
 			                       * Used after an action needing a redraw (ex:
@@ -85,23 +82,11 @@ private:
 
 	void post_show(twindow& window);
 
-	/** The progress bar time for the logo. */
-	unsigned long logo_timer_id_;
-
-	/** Holds the debug clock dialog. */
-	tpopup* debug_clock_;
-
-	/**
-	 * Updates the tip of day widget.
-	 *
-	 * @param window              The window being shown.
-	 * @param previous            Show the previous tip, else shows the next
-	 *                            one.
-	 */
-	void update_tip(twindow& window, const bool previous);
-
-	/** Shows the debug clock. */
-	void show_debug_clock_window(CVideo& video);
+	void player(twindow& window);
+private:
+	display& gui_;
+	hero_map& heros_;
+	hero& player_hero_;
 };
 
 } // namespace gui2

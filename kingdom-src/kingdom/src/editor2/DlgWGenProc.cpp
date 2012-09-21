@@ -261,7 +261,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	// 性别
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 8;
-	lvi.pszText = const_cast<char*>(general.gender_str().c_str());
+	lvi.pszText = const_cast<char*>(hero::gender_str(general.gender_).c_str());
 	ListView_SetItem(hctl, &lvi);
 
 	// 图像编号
@@ -318,56 +318,56 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	// 步兵适性
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 15;
-	sprintf(text, "%s.%u", general.adaptability_str(hero::ARMS, hero_arms_t0).c_str(), fxpmod12(general.arms_[0]));
+	sprintf(text, "%s.%u", hero::adaptability_str2(general.arms_[hero_arms_t0]).c_str(), fxpmod12(general.arms_[0]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 骑兵适性
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 16;
-	sprintf(text, "%s.%u", general.adaptability_str(hero::ARMS, hero_arms_t1).c_str(), fxpmod12(general.arms_[1]));
+	sprintf(text, "%s.%u", hero::adaptability_str2(general.arms_[hero_arms_t1]).c_str(), fxpmod12(general.arms_[1]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 兵器适性
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 17;
-	sprintf(text, "%s.%u", general.adaptability_str(hero::ARMS, hero_arms_t2).c_str(), fxpmod12(general.arms_[2]));
+	sprintf(text, "%s.%u", hero::adaptability_str2(general.arms_[hero_arms_t2]).c_str(), fxpmod12(general.arms_[2]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 学院适性
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 18;
-	sprintf(text, "%s.%u", general.adaptability_str(hero::ARMS, hero_arms_t3).c_str(), fxpmod12(general.arms_[3]));
+	sprintf(text, "%s.%u", hero::adaptability_str2(general.arms_[hero_arms_t3]).c_str(), fxpmod12(general.arms_[3]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 水军适性
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 19;
-	sprintf(text, "%s.%u", general.adaptability_str(hero::ARMS, hero_arms_t4).c_str(), fxpmod12(general.arms_[4]));
+	sprintf(text, "%s.%u", hero::adaptability_str2(general.arms_[hero_arms_t4]).c_str(), fxpmod12(general.arms_[4]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// skill: commercial
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 20;
-	sprintf(text, "%s.%u", general.adaptability_str(hero::SKILL, hero_skill_commercial).c_str(), fxpmod12(general.skill_[hero_skill_commercial]));
+	sprintf(text, "%s.%u", hero::adaptability_str2(general.skill_[hero_skill_commercial]).c_str(), fxpmod12(general.skill_[hero_skill_commercial]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// skill: hero
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 21;
-	sprintf(text, "%s.%u", general.adaptability_str(hero::SKILL, hero_skill_hero).c_str(), fxpmod12(general.skill_[hero_skill_hero]));
+	sprintf(text, "%s.%u", hero::adaptability_str2(general.skill_[hero_skill_hero]).c_str(), fxpmod12(general.skill_[hero_skill_hero]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// skill: demolish
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 22;
-	sprintf(text, "%s.%u", general.adaptability_str(hero::SKILL, hero_skill_demolish).c_str(), fxpmod12(general.skill_[hero_skill_demolish]));
+	sprintf(text, "%s.%u", hero::adaptability_str2(general.skill_[hero_skill_demolish]).c_str(), fxpmod12(general.skill_[hero_skill_demolish]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 

@@ -1,6 +1,6 @@
-/* $Id: scrollbar_container.cpp 48510 2011-02-13 09:54:37Z mordante $ */
+/* $Id: scrollbar_container.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
-   Copyright (C) 2008 - 2011 by Mark de Wever <koraq@xs4all.nl>
+   Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -17,7 +17,6 @@
 
 #include "gui/widgets/scrollbar_container_private.hpp"
 
-#include "foreach.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/layout_exception.hpp"
 #include "gui/widgets/clickable.hpp"
@@ -25,6 +24,7 @@
 #include "gui/widgets/window.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #include "posix.h"
 
@@ -666,7 +666,7 @@ bool tscrollbar_container::content_resize_height(const int height_modification)
 			<< " current height " << content_grid_->get_height()
 			<< " wanted height " << new_height;
 
-	assert(new_height > 0);
+	assert(new_height >= 0);
 
 	if(static_cast<unsigned>(new_height) <= content_->get_height()) {
 		DBG_GUI_L << " height in container, resize allowed.\n";
@@ -730,7 +730,7 @@ void tscrollbar_container::finalize_setup()
 
 	/***** Setup the scrollbar buttons *****/
 	typedef std::pair<std::string, tscrollbar_::tscroll> hack;
-	foreach(const hack& item, scroll_lookup()) {
+	BOOST_FOREACH(const hack& item, scroll_lookup()) {
 
 		// Vertical.
 		tclickable_* button = find_widget<tclickable_>(
@@ -794,6 +794,20 @@ void tscrollbar_container::impl_draw_children(surface& frame_buffer)
 	tcontainer_::impl_draw_children(frame_buffer);
 
 	content_grid_->draw_children(frame_buffer);
+}
+
+void tscrollbar_container::impl_draw_children(
+		  surface& frame_buffer
+		, int x_offset
+		, int y_offset)
+{
+	assert(get_visible() == twidget::VISIBLE
+			&& content_grid_->get_visible() == twidget::VISIBLE);
+
+	// Inherited.
+	tcontainer_::impl_draw_children(frame_buffer, x_offset, y_offset);
+
+	content_grid_->draw_children(frame_buffer, x_offset, y_offset);
 }
 
 void tscrollbar_container::layout_children()
@@ -876,7 +890,7 @@ void tscrollbar_container::set_scrollbar_button_status()
 {
 	if(true) { /** @todo scrollbar visibility. */
 		/***** set scroll up button status *****/
-		foreach(const std::string& name, button_up_names) {
+		BOOST_FOREACH(const std::string& name, button_up_names) {
 			tcontrol* button = find_widget<tcontrol>(
 					vertical_scrollbar_grid_, name, false, false);
 
@@ -886,7 +900,7 @@ void tscrollbar_container::set_scrollbar_button_status()
 		}
 
 		/***** set scroll down status *****/
-		foreach(const std::string& name, button_down_names) {
+		BOOST_FOREACH(const std::string& name, button_down_names) {
 			tcontrol* button = find_widget<tcontrol>(
 					vertical_scrollbar_grid_, name, false, false);
 
@@ -902,7 +916,7 @@ void tscrollbar_container::set_scrollbar_button_status()
 
 	if(true) { /** @todo scrollbar visibility. */
 		/***** Set scroll left button status *****/
-		foreach(const std::string& name, button_up_names) {
+		BOOST_FOREACH(const std::string& name, button_up_names) {
 			tcontrol* button = find_widget<tcontrol>(
 					horizontal_scrollbar_grid_, name, false, false);
 
@@ -912,7 +926,7 @@ void tscrollbar_container::set_scrollbar_button_status()
 		}
 
 		/***** Set scroll right button status *****/
-		foreach(const std::string& name, button_down_names) {
+		BOOST_FOREACH(const std::string& name, button_down_names) {
 			tcontrol* button = find_widget<tcontrol>(
 					horizontal_scrollbar_grid_, name, false, false);
 

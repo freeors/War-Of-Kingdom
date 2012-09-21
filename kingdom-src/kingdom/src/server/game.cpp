@@ -250,7 +250,7 @@ bool game::take_side(const player_map::const_iterator user)
 	// Check if we can figure out a fitting side.
 	const simple_wml::node::child_list& sides = level_.root().children("side");
 	for(simple_wml::node::child_list::const_iterator side = sides.begin(); side != sides.end(); ++side) {
-		if(((**side)["controller"] == "network" || (**side)["controller"] == "reserved")
+		if((**side)["controller"] == "network"
 				&& ((**side)["save_id"] == user->second.name().c_str()
 				|| (**side)["current_player"] == user->second.name().c_str()))
 		{
@@ -317,7 +317,7 @@ void game::update_side_data() {
 				sides_[side_num] = owner_;
 				side_found = true;
 			} else {
-				// "null", "reserved"
+				// "null"
 				side_controllers_[side_num] = (**side)["controller"].to_string();
 			}
 		}

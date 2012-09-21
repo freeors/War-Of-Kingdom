@@ -40,6 +40,7 @@
 #include "unit_display.hpp"
 #include "wml_exception.hpp"
 #include "serialization/parser.hpp"
+#include "dialogs.hpp"
 
 namespace {
 	/**
@@ -52,7 +53,7 @@ namespace {
 
 uint8_t mask0_2bit[4] = {0xfc, 0xf3, 0xcf, 0x3f};
 
-std::map<size_t, unit*> unit::null_size_unitp_pair;
+std::vector<std::pair<int, unit*> > unit::null_int_unitp_pair;
 
 static const unit_type &get_unit_type(const std::string &type_id)
 {
@@ -341,14 +342,6 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 
 	if (const config &mods = cfg.child("modifications")) {
 		VALIDATE(false, "Now don't support [modifications] in unit/artifical. check name: " + master_->name());
-		// for compatible with 1.0.0, shoulud delete in furture.
-		foreach (const config::any_child &c, mods.all_children_range()) {
-			if (c.key == "trait") {
-				traits_.push_back(c.cfg["id"]);
-			} else {
-				modifications_.push_back(c.cfg["id"]);
-			}
-		}
 	}
 	if (!cfg["traits"].empty()) {
 		traits_ = utils::split(cfg["traits"].str());
@@ -359,6 +352,7 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 			}
 		}
 	}
+	modifications_ = utils::split(cfg["modifications"].str());
 
 	unit_type_ = &get_unit_type(type_).get_gender_unit_type(gender_).get_variation(variation_);
 	if (unit_type_->packer()) {
@@ -507,6 +501,9 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	if (cfg_.has_attribute("keep_turns")) {
 		keep_turns_ = cfg_["keep_turns"].to_int();
 	}
+	if (cfg_.has_attribute("human")) {
+		human_ = cfg_["human"].to_bool();
+	}
 
 	/** @todo Are these modified by read? if not they can be removed. */
 	end_turn_ = false;
@@ -540,11 +537,15 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 		form_packed_animations(packer);
 		packee_unit_type_ = &get_unit_type(packee_type_).get_gender_unit_type(gender_).get_variation(variation_);
 	}
-
+/*
 	if (rpg::h->valid() && rpg::h->city_ == cityno_) {
 		if (master_ == rpg::h || second_ == rpg::h || third_ == rpg::h) {
 			set_human(true);
 		}
+	}
+*/
+	if (human_) {
+		rpg::humans.insert(this);
 	}
 }
 
@@ -901,8 +902,9 @@ void unit::write(uint8_t* mem) const
 {
 	unit_fields_t* fields = (unit_fields_t*)mem;
 
+	fields->states_ = 0;
 	for (int t = STATE_MIN; t < STATE_COUNT; t ++) {
-		fields->states_[t] = get_state((state_t)t);
+		fields->states_ |= get_state((state_t)t)? (1 << (t - STATE_MIN)): 0;
 	}
 	if (this_is_city()) {
 		fields->artifical_ = 2;
@@ -1117,7 +1119,7 @@ void unit::read(const uint8_t* mem, bool lower)
 	}
 
 	for (int t = STATE_MIN; t < STATE_COUNT; t ++) {
-		set_state((state_t)t, fields->states_[t]? true: false);
+		set_state((state_t)t, (fields->states_ & (1 << (t - STATE_MIN)))? true: false);
 	}
 	been_damage_ = fields->been_damage_;
 	cause_damage_ = fields->cause_damage_;
@@ -1494,7 +1496,7 @@ void unit::pack_to(const unit_type* to)
 	// attack damage and resistance, set now to "base" status.
 	base_resistance_ = *resistance_cfg;
 
-	// calculate_5fields();
+	calculate_5fields();
 	modify_according_to_hero(false, false);
 }
 
@@ -1741,6 +1743,10 @@ void unit::get_experience(int xp, bool opp_is_artifical)
 		}
 	}
 	experience_ += xp;
+	if (xp > 0 && unit_feature_val(hero_feature_encourage)) {
+		// when advance, xp is less than 0. 
+		experience_ += xp;
+	}
 	if (advance_packs) {
 		// field troops
 		const std::pair<unit**, size_t> p = current_team.field_troop();
@@ -1916,11 +1922,11 @@ void unit::new_turn()
 	if (keep_turns_ > 0) {
 		keep_turns_ --;
 	} else if (!unit_feature_val(hero_feature_surveillance)) {
-		if (!unit_feature_val(hero_feature_encourage)) {
+		// if (!unit_feature_val(hero_feature_encourage)) {
 			increase_loyalty(game_config::field_troop_increase_loyalty);
-		} else {
-			increase_loyalty(game_config::field_troop_increase_loyalty / 2);
-		}
+		// } else {
+		//	increase_loyalty(game_config::field_troop_increase_loyalty / 2);
+		// }
 	}
 	field_turns_ ++;
 
@@ -2155,16 +2161,17 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 		}
 		int hit_hero = cfg["exist_reside_troop"].to_int();
 		const artifical* city = const_unit_2_artifical(this);
-		std::vector<unit> reside_troops = city->reside_troops();
-		std::vector<unit>::const_iterator itor;
+		std::vector<unit*> reside_troops = city->reside_troops();
+		std::vector<unit*>::const_iterator itor;
 		for (itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
-			if (itor->master().number_ == hit_hero) {
+			unit& u = **itor;
+			if (u.master().number_ == hit_hero) {
 				break;
 			}
-			if (itor->second().valid() && itor->second().number_ == hit_hero) {
+			if (u.second().valid() && u.second().number_ == hit_hero) {
 				break;
 			}
-			if (itor->third().valid() && itor->third().number_ == hit_hero) {
+			if (u.third().valid() && u.third().number_ == hit_hero) {
 				break;
 			}
 		}
@@ -2460,6 +2467,7 @@ void unit::write(config& cfg) const
 	cfg.clear_children("unit");
 
 	cfg.clear_children("variables");
+	// cfg.clear_children("modifications");
 
 	const unit_type *ut = unit_types.find(type_id());
 	if (ut) {
@@ -2521,10 +2529,12 @@ void unit::write(config& cfg) const
 			const_cast<config *>(&sp.cfg)->remove_attribute("description");
 		}
 	}
-	cfg.clear_children("modifications");
-	// cfg.add_child("modifications", modifications_);
+
+	cfg["traits"] = utils::join(traits_);
+	cfg["modifications"] = utils::join(modifications_);
 
 	cfg["keep_turns"] = keep_turns_;
+	cfg["human"] = human_;
 
 	// unit_merit
 	cfg["field_turns"] = field_turns_;
@@ -2686,8 +2696,10 @@ void unit::calculate_5fields()
 {
 	std::vector<team>& teams_ = *resources::teams;
 	hero* leader = NULL;
+	const team* t = NULL;
 	if (teams_.size()) {
 		leader = teams_[side_ - 1].leader();
+		t = &(teams_[side_ - 1]);
 	} else {
 		leader = team::player_leader();
 	}
@@ -2781,8 +2793,55 @@ void unit::calculate_5fields()
 
 	// feature
 	const complex_feature_map& complex_feature = unit_types.complex_feature();
-
 	memset(feature_, 0, HEROS_FEATURE_M2BYTES);
+
+	std::set<int> holded_features;
+	tmp = master_->first_feature();
+	if (tmp != HEROS_MAX_FEATURE) {
+		holded_features.insert(tmp);
+	}
+	if (second_valid && (tmp = second_->first_feature())) {
+		if (tmp != HEROS_MAX_FEATURE) {
+			holded_features.insert(tmp);
+		}
+	}
+	if (third_valid && (tmp = third_->first_feature())) {
+		if (tmp != HEROS_MAX_FEATURE) {
+			holded_features.insert(tmp);
+		}
+	}
+	if (leader->side_feature_ != HEROS_NO_SIDE_FEATURE) {
+		holded_features.insert(leader->side_feature_);
+	}
+	if (t) {
+		const std::vector<arms_feature>& features = t->features();
+		for (std::vector<arms_feature>::const_iterator it = features.begin(); it != features.end(); ++ it) {
+			const arms_feature& f = *it;
+			if (arms_ == f.arms_ && level_ >= f.level_) {
+				holded_features.insert(f.feature_);
+			}
+		}
+	}
+	for (std::set<int>::const_iterator it = holded_features.begin(); it != holded_features.end(); ++ it) {
+		tmp = *it;
+		unit_feature_set(tmp, hero_feature_single_result);
+	
+		// parse complex feature to base feature
+		if (tmp >= HEROS_BASE_FEATURE_COUNT) {
+			complex_feature_map::const_iterator complex_itor = complex_feature.find(tmp);
+			if (complex_itor == complex_feature.end()) {
+				continue;
+			}
+			for (std::vector<int>::const_iterator it2 = complex_itor->second.begin(); it2 != complex_itor->second.end(); ++ it2) {
+				int single_feature = *it2;
+				if (!unit_feature_val(single_feature)) {
+					unit_feature_set(single_feature, hero_feature_complex_result);
+				}
+			}
+		}
+	}
+
+/*	
 	for (tmp = 0; tmp < HEROS_MAX_FEATURE; tmp ++) {
 		if (hero_feature_val2(*master_, tmp)) {
 			unit_feature_set(tmp, hero_feature_single_result);
@@ -2809,6 +2868,16 @@ void unit::calculate_5fields()
 				continue;
 			}
 		}
+		// arms feature
+		if (t) {
+			const std::vector<arms_feature>& features = t->features();
+			for (std::vector<arms_feature>::const_iterator it = features.begin(); it != features.end(); ++ it) {
+				const arms_feature& f = *it;
+				if (tmp == f.feature_ && arms_ == f.arms_ && level_ >= f.level_) {
+					unit_feature_set(tmp, hero_feature_single_result);
+				}
+			}
+		}
 
 		// parse complex feature to base feature
 		if (tmp >= HEROS_BASE_FEATURE_COUNT && unit_feature_val(tmp)) {
@@ -2824,6 +2893,7 @@ void unit::calculate_5fields()
 			}
 		}
 	}
+*/
 }
 
 void unit::adjust() 
@@ -3986,17 +4056,52 @@ void unit::add_modification(const std::string& type, const config& mod, bool no_
 					}
 
 					game_config::add_color_info(effect);
-				} else if (apply_to == "new_animation") {
-					if(effect["id"].empty()) {
-						unit_animation::add_anims(animations_, effect);
-					} else {
-						std::vector<unit_animation> &built = resources::controller->animation_cache[effect["id"]];
-						if(built.empty()) {
-							unit_animation::add_anims(built, effect);
-						}
-						animations_.insert(animations_.end(),built.begin(),built.end());
+
+				} else if (apply_to == "advance") {
+					int increase = effect["increase"].to_int();
+					while (increase > 0) {
+						experience_ += max_experience_;
+						dialogs::advance_unit(loc_, true);
+						increase --;
 					}
 
+				} else if (apply_to == "train") {
+					// arms adaptability
+					int increase = effect["increase"].to_int();
+					if (increase) {
+						int inc_adaptability_xp = increase * ftofxp12(1);
+
+						u16_get_experience_i12(&(master_->arms_[arms_]), inc_adaptability_xp);
+						if (second_->valid()) {
+							u16_get_experience_i12(&(second_->arms_[arms_]), inc_adaptability_xp);
+						}
+						if (third_->valid()) {
+							u16_get_experience_i12(&(third_->arms_[arms_]), inc_adaptability_xp);
+						}
+						if (packee_unit_type_) {
+							int packee_arms = packee_unit_type_->arms();
+							u16_get_experience_i12(&(master_->arms_[packee_arms]), inc_adaptability_xp);
+							if (second_->valid()) {
+								u16_get_experience_i12(&(second_->arms_[packee_arms]), inc_adaptability_xp);
+							}
+							if (third_->valid()) {
+								u16_get_experience_i12(&(third_->arms_[packee_arms]), inc_adaptability_xp);
+							}
+						}
+						adjust();
+						if (anim) {
+							std::stringstream str;
+							str << dgettext("wesnoth-lib", "Adaptability") << "\n";
+							// std::vector<unit*> touchers(1, this);
+							std::vector<unit*> touchers;
+							if (artifical* city = units_.city_from_loc(loc_)) {
+								touchers.push_back((unit*)(city));
+							} else {
+								touchers.push_back(this);
+							}
+							unit_display::unit_touching(loc_, touchers, increase, str.str());
+						}
+					}
 				}
 			} // end while
 		}
@@ -4156,19 +4261,31 @@ void unit::set_loyalty(int level, bool fixed)
 	std::vector<team>& teams_ = *resources::teams;
 	hero& leader = *(teams_[side_ - 1].leader());
 
-	master_->set_loyalty(leader, level, fixed);
+	if (master_->base_catalog_ != leader.base_catalog_) {
+		master_->set_loyalty(leader, level, fixed);
+	} else {
+		master_->float_catalog_ = ftofxp8(master_->base_catalog_);
+	}
 	if (second_->valid()) {
-		second_->set_loyalty(leader, level, fixed);
+		if (second_->base_catalog_ != leader.base_catalog_) {
+			second_->set_loyalty(leader, level, fixed);
+		} else {
+			second_->float_catalog_ = ftofxp8(second_->base_catalog_);
+		}
 	}
 	if (third_->valid()) {
-		third_->set_loyalty(leader, level, fixed);
+		if (third_->base_catalog_ != leader.base_catalog_) {
+			third_->set_loyalty(leader, level, fixed);
+		} else {
+			third_->float_catalog_ = ftofxp8(third_->base_catalog_);
+		}
 	}
 }
 
 void unit::increase_feeling(int inc)
 {
 	int carry_to, descent_number;
-	bool changed;
+	bool changed = false;
 	std::set<int> descents;
 	if (second_->valid()) {
 		carry_to = master_->increase_feeling(*second_, inc, descent_number);
@@ -4597,6 +4714,25 @@ void unit::replace_captains(const std::vector<hero*>& captains)
 	}
 }
 
+void unit::replace_captains_internal(hero& selected_hero, std::vector<hero*>& captains) const
+{
+	captains.clear();
+
+	if (master_->number_ != selected_hero.number_) {
+		captains.push_back(master_);
+	}
+	if (second_->valid()) {
+		if (second_->number_ != selected_hero.number_) {
+			captains.push_back(second_);
+		}
+	}
+	if (third_->valid()) {
+		if (third_->number_ != selected_hero.number_) {
+			captains.push_back(third_);
+		}
+	}
+}
+
 void unit::extract_heros_number()
 {
 	master_number_ = master_->number_;
@@ -4738,9 +4874,9 @@ unit* find_unit(unit_map& units, const hero& h)
 
 	if (h.status_ == hero_status_military) {
 		// in troop
-		std::vector<unit>& reside_troops = city->reside_troops();
-		for (std::vector<unit>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
-			unit& u = *itor;
+		std::vector<unit*>& reside_troops = city->reside_troops();
+		for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
+			unit& u = **itor;
 			if (u.master().number_ == h.number_) {
 				return &u;
 			}
@@ -4786,9 +4922,9 @@ bool extract_hero(unit_map& units, const hero& h)
 
 	if (h.status_ == hero_status_military) {
 		// in troop
-		std::vector<unit>& reside_troops = city->reside_troops();
-		for (std::vector<unit>::iterator itor = reside_troops.begin(); itor != reside_troops.end();) {
-			unit& u = *itor;
+		std::vector<unit*>& reside_troops = city->reside_troops();
+		for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end();) {
+			unit& u = **itor;
 			std::vector<hero*> captains;
 			bool found = false;
 			if (u.master().number_ == h.number_) {
@@ -4811,6 +4947,7 @@ bool extract_hero(unit_map& units, const hero& h)
 				}
 			}
 			if (captains.empty()) {
+				delete &u;
 				itor = reside_troops.erase(itor);
 			} else if (found) {
 				++ itor;

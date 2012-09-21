@@ -240,12 +240,12 @@ void tduel::pre_show(CVideo& /*video*/, twindow& window)
 
 	tcontrol* control = find_widget<tcontrol>(&window, "lforce", false, false);
 	str.str("");
-	str << setting_[0].force_ << "(" << left_.adaptability_str(hero::SKILL, hero_skill_hero).c_str() << ")";
+	str << setting_[0].force_ << "(" << hero::adaptability_str2(left_.skill_[hero_skill_hero]).c_str() << ")";
 	control->set_label(str.str());
 
 	control = find_widget<tcontrol>(&window, "rforce", false, false);
 	str.str("");
-	str << setting_[1].force_ << "(" << right_.adaptability_str(hero::SKILL, hero_skill_hero).c_str() << ")";;
+	str << setting_[1].force_ << "(" << hero::adaptability_str2(right_.skill_[hero_skill_hero]).c_str() << ")";;
 	control->set_label(str.str());
 
 	endturn_ = find_widget<tbutton>(&window, "endturn", false, false);

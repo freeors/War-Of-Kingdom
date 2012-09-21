@@ -1452,7 +1452,7 @@ gui2::tpoint ttext::get_cursor_position(const unsigned column, const unsigned li
 	if (column == 0) {
 		return gui2::tpoint(0, 0);
 	}
-	return gui2::tpoint(cached_surfs_[line]->measure_partial(column), 0);
+	return gui2::tpoint(cached_surfs_[line].measure_partial(column), 0);
 }
 
 // pixels --> chars(index) 
@@ -1551,6 +1551,13 @@ ttext& ttext::set_maximum_width(int width)
 	return *this;
 }
 
+ttext& ttext::set_characters_per_line(const unsigned characters_per_line)
+{
+	// todo: impletement it in future.
+
+	return *this;
+}
+
 ttext& ttext::set_maximum_height(int height, bool multiline)
 {
 	if (height <= 0) {
@@ -1574,6 +1581,13 @@ ttext& ttext::set_ellipse_mode(const PangoEllipsizeMode ellipse_mode)
 		calculation_dirty_ = true;
 		surface_dirty_ = true;
 	}
+
+	return *this;
+}
+
+ttext &ttext::set_alignment(const PangoAlignment alignment)
+{
+	// todo: impletement it in future.
 
 	return *this;
 }
@@ -1633,14 +1647,19 @@ void ttext::recalculate()
 			if (unwrapped_text_width <= maximum_width_) {
 				wrapped_lines.push_back(unwrapped_text);
 			} else if (ellipse_mode_ == PANGO_ELLIPSIZE_NONE) {
+				// this will result tow or more item.
 				wrapped_lines = utils::split(word_wrap_text(std::string(after_markup, ln->end()), sz, maximum_width_), '\n', 0);
 			} else {
 				wrapped_lines.push_back(make_text_ellipsis(std::string(after_markup, ln->end()), sz, maximum_width_, text_style));
 			}
+			if (!unwrapped_text.empty() && !wrapped_lines.empty() && wrapped_lines[0].empty()) {
+				// this is mod bug, but not result to ACCESS EXCEPTION, update it. progream must attion it!
+				wrapped_lines[0] = unwrapped_text;
+			}
 		} else {
 			wrapped_lines.push_back(std::string(after_markup, ln->end()));
 		}
-
+		
 		for (std::vector< std::string >::const_iterator wrapped_ln = wrapped_lines.begin(), wrapped_ln_end = wrapped_lines.end(); wrapped_ln != wrapped_ln_end; ++ wrapped_ln) {
 			text_surface txt_surf(sz, color, text_style);
 
@@ -1655,7 +1674,7 @@ void ttext::recalculate()
 			const std::vector<surface>&res = cached_surf->get_surfaces();
 
 			if (!res.empty()) {
-				cached_surfs_.push_back(cached_surf);
+				cached_surfs_.push_back(*cached_surf);
 				width = std::max<size_t>(cached_surf->width(), width);
 				height += cached_surf->height();
 			}
@@ -1683,9 +1702,9 @@ surface ttext::render()
 	std::vector<std::vector<surface> > surfaces;
 	surfaces.reserve(cached_surfs_.size());
 
-	for(std::vector<text_surface*>::const_iterator text_surf = cached_surfs_.begin(), text_surf_end = cached_surfs_.end(); text_surf != text_surf_end; ++ text_surf) {
+	for(std::vector<text_surface>::const_iterator text_surf = cached_surfs_.begin(), text_surf_end = cached_surfs_.end(); text_surf != text_surf_end; ++ text_surf) {
 
-		const text_surface& cached_surf = **text_surf;
+		const text_surface& cached_surf = *text_surf;
 		const std::vector<surface>&res = cached_surf.get_surfaces();
 
 		if (!res.empty()) {

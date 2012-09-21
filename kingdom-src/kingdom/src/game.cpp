@@ -41,12 +41,13 @@
 #include "gettext.hpp"
 #include "gui/dialogs/campaign_selection.hpp"
 #include "gui/dialogs/player_selection.hpp"
-#include "gui/dialogs/hero_list.hpp"
+// #include "gui/dialogs/hero_list.hpp"
 #include "gui/dialogs/language_selection.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/mp_method_selection.hpp"
 #include "gui/dialogs/title_screen.hpp"
 #include "gui/dialogs/preferences.hpp"
+#include "gui/dialogs/create_hero.hpp"
 #include "gui/dialogs/transient_message.hpp"
 #ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
 #include "gui/widgets/debug.hpp"
@@ -102,8 +103,9 @@
 #include <string>
 
 
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
+// #include <boost/iostreams/copy.hpp>
+// #include <boost/iostreams/filtering_streambuf.hpp>
+// #include <boost/iostreams/filter/gzip.hpp>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -160,7 +162,7 @@ public:
 	bool goto_multiplayer();
 	bool play_multiplayer(bool random_map = false);
 	bool change_language();
-
+	
 	void show_preferences();
 
 	enum RELOAD_GAME_DATA { RELOAD_DATA, NO_RELOAD_DATA };
@@ -172,6 +174,8 @@ public:
 	void start_wesnothd();
 	const config& game_config() const { return game_config_; }
 
+	hero_map& heros() { return heros_; }
+	hero& player_hero() { return player_hero_; }
 private:
 	game_controller(const game_controller&);
 	void operator=(const game_controller&);
@@ -217,6 +221,7 @@ private:
 	util::scoped_ptr<game_display> disp_;
 
 	game_state state_;
+	hero player_hero_;
 
 	std::string multiplayer_server_;
 	bool jump_to_multiplayer_;
@@ -254,7 +259,8 @@ game_controller::game_controller(int argc, char** argv) :
 	state_(),
 	multiplayer_server_(),
 	jump_to_multiplayer_(false),
-	cache_(game_config::config_cache::instance())
+	cache_(game_config::config_cache::instance()),
+	player_hero_(hero(HEROS_INVALID_NUMBER))
 {
 	bool no_music = false;
 	bool no_sound = false;
@@ -469,12 +475,19 @@ game_controller::game_controller(int argc, char** argv) :
 			font_manager_.update_font_path();
 		}
 	}
+
 	std::cerr << '\n';
 	std::cerr << "Data directory: " << game_config::path
 		<< "\nUser configuration directory: " << get_user_config_dir()
 		<< "\nUser data directory: " << get_user_data_dir()
 		<< "\nCache directory: " << get_cache_dir()
 		<< '\n';
+
+#if defined(_WIN32) && defined(_DEBUG)
+	// sound::init_sound make no memory leak output.
+	// By this time, I doesn't find what result it, to easy, don't call sound::init_sound. 
+	no_sound = true;
+#endif
 
 	// disable sound in nosound mode, or when sound engine failed to initialize
 	if (no_sound || ((preferences::sound_on() || preferences::music_on() ||
@@ -484,10 +497,16 @@ game_controller::game_controller(int argc, char** argv) :
 		preferences::set_music(false);
 		preferences::set_turn_bell(false);
 		preferences::set_UI_sound(false);
-	}
-	else if (no_music) { // else disable the music in nomusic mode
+	} else if (no_music) { // else disable the music in nomusic mode
 		preferences::set_music(false);
 	}
+
+	heros_.map_from_file(game_config::path + "/xwml/" + "hero.dat");
+	if (!preferences::get_hero(player_hero_, heros_.size())) {
+		// write [hero] to preferences
+		preferences::set_hero(player_hero_);
+	}
+	player_hero_.number_ = (int)heros_.size();
 }
 
 game_display& game_controller::disp()
@@ -1020,12 +1039,7 @@ bool game_controller::new_campaign()
 	}
 
 	const config &campaign = campaigns[campaign_num];
-/*
-	if (!campaign.child_count("player")) {
-		gui2::show_error_message(disp().video(), _("No player are available.\n"));
-		return new_campaign();
-	}
-*/
+
 	state_.classification().campaign = campaign["id"].str();
 	state_.classification().abbrev = campaign["abbrev"].str();
 
@@ -1046,7 +1060,7 @@ bool game_controller::new_campaign()
 	heros_start_ = heros_;
 
 	{
-		gui2::tplayer_selection dlg(heros_, cards_, campaign);
+		gui2::tplayer_selection dlg(disp(), heros_, cards_, campaign, player_hero_);
 		try {
 			dlg.show(disp().video());
 		} catch(twml_exception& e) {
@@ -1062,6 +1076,11 @@ bool game_controller::new_campaign()
 		// config player = campaign.child("player", dlg.player());
 		config player = dlg.player();
 		
+		if (player["hero"].to_int() == player_hero_.number_) {
+			heros_.add(player_hero_);
+			heros_start_.add(player_hero_);
+		}
+
 		player["shroud"] = dlg.shroud()? "yes": "no";
 		player["fog"] = dlg.fog()? "yes": "no";
 		// candidate_cards
@@ -1175,7 +1194,13 @@ void game_controller::start_wesnothd()
 bool game_controller::play_multiplayer(bool random_map)
 {
 	int res;
-
+/*
+	hero h = hero_invalid;
+	if (!preferences::get_hero(h, HEROS_INVALID_NUMBER)) {
+		gui2::show_message(disp().video(), "", _("You must create hero before play it."), gui2::tmessage::ok_button, "hero-256/230.png", "");
+		return false;
+	}
+*/
 	state_ = game_state();
 	state_.classification().campaign_type = "multiplayer";
 	state_.classification().campaign_define = "MULTIPLAYER";
@@ -1210,16 +1235,13 @@ bool game_controller::play_multiplayer(bool random_map)
 
 			if (res == 2 && preferences::mp_server_warning_disabled() < 2)
 			{
-				gui::dialog d(disp(), _("Do you really want to start the server?"),
-					_("The server will run in a background process until all users have disconnected.")
-					, gui::OK_CANCEL);
-				bool checked = preferences::mp_server_warning_disabled() != 1;
-				
-				d.add_option(_("Don't show again"), checked, gui::dialog::BUTTON_CHECKBOX_LEFT);
-				start_server = d.show();
-				if (start_server == 0)
-					preferences::set_mp_server_warning_disabled(d.option_checked()?2:1);
-
+				std::string title = _("Do you really want to start the server?");
+				std::string message = _("The server will run in a background process until all users have disconnected.");
+				if (gui2::show_message(disp().video(), title, message, gui2::tmessage::yes_no_buttons) == gui2::twindow::OK) {
+					start_server = 0;
+				} else {
+					start_server = 1;
+				}
 			}
 		} while (start_server);
 		if (res < 0) {
@@ -1329,7 +1351,6 @@ bool game_controller::change_language()
 		wm_title_string += " - " + game_config::revision;
 		SDL_WM_SetCaption(wm_title_string.c_str(), NULL);
 	}
-
 	return true;
 }
 
@@ -1424,6 +1445,8 @@ void game_controller::load_game_cfg(const bool force)
 			game_config_units_.clear_children("movetype");
 			game_config_units_.clear_children("race");
 			game_config_units_.clear_children("complexfeature");
+			game_config_units_.clear_children("arms");
+			game_config_units_.clear_children("recruit");
 			game_config_units_.clear_children("traits");
 			game_config_units_.clear_children("modifications");
 			game_config_units_.clear_children("abilities");
@@ -2228,7 +2251,7 @@ static int do_gameloop(int argc, char** argv)
 		cursor::set(cursor::NORMAL);
 		if(res == gui2::ttitle_screen::NOTHING) {
 			const hotkey::basic_handler key_handler(&game.disp());
-			gui2::ttitle_screen dlg;
+			gui2::ttitle_screen dlg(game.disp(), game.heros(), game.player_hero());
 			dlg.show(game.disp().video());
 
 			res = static_cast<gui2::ttitle_screen::tresult>(dlg.get_retval());
@@ -2241,7 +2264,6 @@ static int do_gameloop(int argc, char** argv)
 #ifdef ANDROID
 			__android_log_print(ANDROID_LOG_INFO, "SDL", "do_gameloop, after received QUIT_GAME, ticks: %u", SDL_GetTicks());
 #endif
-			LOG_GENERAL << "quitting game...\n";
 			return 0;
 		} else if(res == gui2::ttitle_screen::LOAD_GAME) {
 			if(game.load_game() == false) {
@@ -2350,6 +2372,7 @@ int main(int argc, char** argv)
 
 #ifdef _WIN32
 	_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	// result to memroy leak on purpose.
 	char * leak_p = (char*)malloc(13);
 #endif
 
@@ -2425,4 +2448,3 @@ int main(int argc, char** argv)
 
 	return 0;
 } // end main
-

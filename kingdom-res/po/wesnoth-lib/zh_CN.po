@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2012-07-29 11:44+0800\n"
+"PO-Revision-Date: 2012-09-19 21:09+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -3644,6 +3644,9 @@ msgstr "厌恶"
 msgid "Select Hero"
 msgstr "玩择武将"
 
+msgid "Select Troop"
+msgstr "玩择部队"
+
 #
 # Expedite Dialog
 #
@@ -3732,6 +3735,9 @@ msgstr "外交"
 #
 msgid "Gold"
 msgstr "金币"
+
+msgid "side^Feature"
+msgstr "特色"
 
 msgid "Artifical"
 msgstr "建筑物"
@@ -3856,6 +3862,9 @@ msgstr "玩家/类型"
 
 msgid "Faction"
 msgstr "派系"
+
+msgid "Faction/Side feature"
+msgstr "集团/势力特技"
 
 msgid "Team/Gender"
 msgstr "队伍/性别"
@@ -3998,6 +4007,95 @@ msgstr "剩余回合数"
 msgid "RPG Detail"
 msgstr "个人资料"
 
+msgid "Wait, leader will order you to recruit"
+msgstr "等待，君主会命令你去征兵"
+
+msgid "To $meritorious, will control more troops"
+msgstr "到达$meritorious，将能控制更多部队"
+
+msgid "To $meritorious, will be appointed mayor"
+msgstr "到达$meritorious，将被任命为太守"
+
+msgid "Get mroe meritorious, will be appointed mayor"
+msgstr "获得更多功勋，将被任命为太守"
+
+msgid "Capture more city, can be independent"
+msgstr "占领更多城市，将可以独立"
+
+msgid "Be independent will be to leader"
+msgstr "独立后能建国"
+
+#
+# RPG Exchange
+#
+msgid "RPG Exchange"
+msgstr "交换武将"
+
+#
+# RPG Independence
+#
+msgid "RPG Independence"
+msgstr "独立"
+
+#
+# RPG Independence
+#
+msgid "Independence"
+msgstr "独立"
+
+msgid "Vote"
+msgstr "投票"
+
+msgid "Support"
+msgstr "支持"
+
+msgid "It is all up with the wind, $side will fallen."
+msgstr "大势已去，$side灭亡。"
+
+msgid "There are enough troops, $side will be again you."
+msgstr "$side还有足够部队，会反对你。"
+
+msgid "Opinion of cities in side"
+msgstr "势力内城市意见"
+
+msgid "Exchange Hero"
+msgstr "交换武将"
+
+#
+# RPG Exchange
+#
+msgid "Exchange"
+msgstr "交换"
+
+#
+# Create Hero
+#
+msgid "Surname"
+msgstr "姓"
+
+msgid "Side feature"
+msgstr "势力特技"
+
+msgid "Create"
+msgstr "创建"
+
+msgid "Don't accept empty, invalid '$key' value"
+msgstr "不允许是空，无效“$key”值"
+
+msgid "Range is [$min, $max], invalid '$key' value:"
+msgstr "范围[$min, $max]，无效“$key”值："
+
+msgid "Select city for player hero"
+msgstr "选择玩家武将所在城市"
+
+#~ msgid "To 2500, will control more troops."
+#~ msgstr "到达2500，将能控制更多部队。"
+#~ msgid "To 5000, will control more troops."
+#~ msgstr "到达5000，将能控制更多部队。"
+#~ msgid "To 8000, will be appointed mayor."
+#~ msgstr "到达8000，将被任命为太守。"
+#~ msgid "Press left button to create hero"
+#~ msgstr "单击左侧按钮创建武将"
 #~ msgid "Turns"
 #~ msgstr "回合数"
 #~ msgid "Status Table"

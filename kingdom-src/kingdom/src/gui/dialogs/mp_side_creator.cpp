@@ -29,6 +29,7 @@
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/button.hpp"
+#include "gui/widgets/tree_view_node.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "formula_string_utils.hpp"
 #include "map.hpp"
@@ -46,8 +47,7 @@ const char* controller_names[] = {
 	"network",
 	"human",
 	"ai",
-	"null",
-	"reserved"
+	"null"
 };
 
 /*WIKI
@@ -204,6 +204,16 @@ std::string get_color_string(int id)
 
 REGISTER_DIALOG(mp_side_creator)
 
+void tplayer_list_side_creator::init(twindow & w)
+{
+	active_game.init(w, _("Selected game"));
+
+	tree = find_widget<ttree_view>(&w
+			, "player_tree"
+			, false
+			, true);
+}
+
 tmp_side_creator::tmp_side_creator(hero_map& heros, game_display& gui, gamemap& gmap, const config& game_config,
 			config& gamelist, const mp_game_settings& params, const int num_turns,
 			mp::controller default_controller, bool local_players_only)
@@ -233,6 +243,7 @@ tmp_side_creator::tmp_side_creator(hero_map& heros, game_display& gui, gamemap& 
 	, users_()
 	, default_controller_((controller)default_controller)
 	, gamelist_(gamelist)
+	, player_list_()
 {
 }
 
@@ -242,10 +253,10 @@ tmp_side_creator::~tmp_side_creator()
 
 void tmp_side_creator::pre_show(CVideo& /*video*/, twindow& window)
 {
+	player_list_.init(window);
+
 	waiting_ = find_widget<tlabel>(&window, "waiting", false, true);
 	launch_ = find_widget<tbutton>(&window, "launch", false, true);
-	players_label_ = find_widget<tlabel>(&window, "players", false, true);
-	players_label_->set_use_markup(true);
 
 	connect_signal_mouse_left_click(
 			  *launch_
@@ -357,12 +368,13 @@ void tmp_side_creator::launch(twindow& window)
 
 void tmp_side_creator::cancel(twindow& window)
 {
+/*
 	if (network::nconnections() > 0) {
 		config cfg;
 		cfg.add_child("leave_game");
 		network::send_data(cfg, 0);
 	}
-
+*/
 	legacy_result_ = QUIT;
 	window.close();
 }
@@ -752,13 +764,44 @@ void tmp_side_creator::update_user_combos()
 		itor->update_player_id();
 	}
 			
-	players_label_->set_label(str.str());
+	update_playerlist();
+}
+
+void tmp_side_creator::update_playerlist()
+{
+	VALIDATE(player_list_.active_game.tree, "tmp_side_create::update_playerlist, active_game.tree is null");
+
+	player_list_.active_game.tree->clear();
+
+	connected_user_list::iterator it;
+	for (it = users_.begin(); it != users_.end(); ++ it) {
+		connected_user& user = *it;
+		tsub_player_list* target_list = &player_list_.active_game;
+
+		assert(target_list->tree);
+
+		std::string name = user.name;
+
+		string_map tree_group_field;
+		std::map<std::string, string_map> tree_group_item;
+
+		/*** Add tree item ***/
+		tree_group_field["label"] = decide_player_iocn(it->controller_);
+		tree_group_item["icon"] = tree_group_field;
+
+		tree_group_field["label"] = name;
+		tree_group_field["use_markup"] = "true";
+		tree_group_item["name"] = tree_group_field;
+
+		ttree_view_node& player =
+				target_list->tree->add_child("player", tree_group_item);
+	}
+
+	player_list_.active_game.auto_hide();
 }
 
 void tmp_side_creator::process_network_data(const config& data, const network::connection sock)
 {
-	// ui::process_network_data(data, sock);
-
 	if (data.child("leave_game")) {
 		twindow& window = *launch_->get_window();
 		legacy_result_ = QUIT;
@@ -1021,7 +1064,7 @@ tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, co
 	, cfg_(cfg)
 	, index_(index)
 	, id_(cfg["id"])
-	, player_id_(cfg["player_id"])
+	, player_id_(cfg["current_player"])
 	, save_id_(cfg["save_id"])
 	, controller_(CNTR_NETWORK)
 	, team_(0)
@@ -1053,14 +1096,6 @@ tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, co
 				controller_ = static_cast<controller>(CNTR_COMPUTER);
 			}
 		} else {
-/*
-			if (cfg_["controller"] == "network"
-					|| cfg_["controller"] == "human")
-			{
-				cfg_["controller"] = "reserved";
-
-			}
-*/
 			for(; i != CNTR_LAST; ++i) {
 				if(cfg_["controller"] == controller_names[i]) {
 					controller_ = static_cast<controller>(i);
@@ -1144,10 +1179,10 @@ tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, co
 		selected_feature_ = COMBO_FEATURES_NONE;
 	}
 
-	if (cfg["recruit"].empty()) {
-		cfg_["recruit"] = parent_->era_cfg_->get("recruit")->str();
+	if (cfg["not_recruit"].empty() && parent_->era_cfg_->has_attribute("not_recruit")) {
+		cfg_["not_recruit"] = parent_->era_cfg_->get("not_recruit")->str();
 	}
-	if (cfg["build"].empty()) {
+	if (cfg["build"].empty() && parent_->era_cfg_->has_attribute("build")) {
 		cfg_["build"] = parent_->era_cfg_->get("build")->str();
 	}
 
@@ -1199,11 +1234,8 @@ bool tmp_side_creator::side::ready_for_start() const
 
 bool tmp_side_creator::side::available(const std::string& name) const
 {
-	if (name.empty())
-	{
-		return allow_player_
-			&& ((controller_ == CNTR_NETWORK && player_id_.empty())
-			|| controller_ == CNTR_RESERVED);
+	if (name.empty()) {
+		return allow_player_ && (controller_ == CNTR_NETWORK && player_id_.empty());
 	}
 
 	return allow_player_ && (controller_ == CNTR_NETWORK && player_id_.empty());
@@ -1268,7 +1300,6 @@ config tmp_side_creator::side::get_config() const
 			if (enabled_ && !cfg_.has_attribute("save_id")) {
 				res["save_id"] = preferences::login() + res["side"].str();
 			}
-			res["player_id"] = preferences::login() + res["side"].str();
 			res["current_player"] = preferences::login();
 			description = N_("Anonymous local player");
 			break;
@@ -1292,13 +1323,6 @@ config tmp_side_creator::side::get_config() const
 		case CNTR_EMPTY:
 			description = N_("(Empty slot)");
 			break;
-		case CNTR_RESERVED:
-			{
-				utils::string_map symbols;
-				symbols["playername"] = "";
-				description = vgettext("(Reserved for $playername)",symbols);
-			}
-			break;
 		case CNTR_LAST:
 		default:
 			description = N_("(empty)");
@@ -1307,7 +1331,6 @@ config tmp_side_creator::side::get_config() const
 		}
 		res["user_description"] = t_string(description, "wesnoth");
 	} else {
-		res["player_id"] = player_id_ + res["side"];
 		if (enabled_ && !cfg_.has_attribute("save_id")) {
 			res["save_id"] = player_id_ + res["side"];
 		}
@@ -1463,7 +1486,7 @@ void tmp_side_creator::side::set_ready_for_start(bool ready_for_start)
 
 void tmp_side_creator::side::import_network_user(const config& data)
 {
-	if (controller_ == CNTR_RESERVED || !enabled_) {
+	if (!enabled_) {
 		set_ready_for_start(true);
 	}
 
@@ -1478,7 +1501,7 @@ void tmp_side_creator::side::reset(controller controller_)
 	player_id_ = "";
 	controller_ = controller_;
 
-	if ((controller_ == CNTR_NETWORK) || (controller_ == CNTR_RESERVED)) {
+	if (controller_ == CNTR_NETWORK) {
 		ready_for_start_ = false;
 	}
 
@@ -1551,13 +1574,13 @@ void tmp_side_creator::side::player(twindow& window)
 void tmp_side_creator::side::faction(twindow& window)
 {
 	std::vector<std::string> items, single_items;
-	items.push_back(IMAGE_PREFIX + std::string("units/random-dice.png") + std::string("~SCALE(20, 25)") + COLUMN_SEPARATOR + _("Random"));
+	items.push_back(IMAGE_PREFIX + std::string("units/random-dice.png") + std::string("~SCALE(32, 40)") + COLUMN_SEPARATOR + _("Random"));
 	single_items.push_back(_("Random"));
 
 	std::vector<int> candidate = parent_->get_candidate_factions(index_);
 	for (std::vector<int>::const_iterator i = candidate.begin(); i != candidate.end(); ++ i) {
 		hero& leader = parent_->heros_[parent_->factions_[*i].first->get("leader")->to_int()];
-		items.push_back(IMAGE_PREFIX + std::string(leader.image()) + std::string("~CROP(36, 30, 48, 60)~SCALE(20, 25)") + COLUMN_SEPARATOR + leader.name());
+		items.push_back(IMAGE_PREFIX + std::string(leader.image()) + std::string("~SCALE(32, 40)") + COLUMN_SEPARATOR + leader.name());
 		single_items.push_back(leader.name());
 	}
 	

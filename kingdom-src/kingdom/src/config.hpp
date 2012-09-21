@@ -1,6 +1,6 @@
-/* $Id: config.hpp 47505 2010-11-07 20:16:10Z silene $ */
+/* $Id: config.hpp 54582 2012-07-05 18:33:42Z mordante $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2012 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,7 @@
 #include "wesconfig.h"
 
 class config;
+struct tconfig_implementation;
 class vconfig;
 struct lua_State;
 
@@ -60,6 +61,7 @@ std::ostream &operator << (std::ostream &, const config &);
 class config
 {
 	friend bool operator==(const config& a, const config& b);
+	friend struct tconfig_implementation;
 
 	/**
 	 * Raises an exception if @a this is not valid.
@@ -108,7 +110,7 @@ public:
 	{ return this != &invalid; }
 #else
 	operator safe_bool() const
-	{ return this != &invalid ? &safe_bool_impl::nonnull : 0; }
+	{ return this != &invalid ? &safe_bool_impl::nonnull : NULL; }
 #endif
 
 	typedef std::vector<config*> child_list;
@@ -199,6 +201,8 @@ public:
 		attribute_value &operator=(bool v);
 		attribute_value &operator=(int v);
 		attribute_value &operator=(double v);
+		attribute_value &operator=(size_t v);
+		attribute_value &operator=(long v);
 
 		attribute_value &operator=(const char *v)
 		{ return operator=(std::string(v)); }
@@ -207,6 +211,7 @@ public:
 
 		bool to_bool(bool def = false) const;
 		int to_int(int def = 0) const;
+		long to_long(long def = 0) const;
 		double to_double(double def = 0.) const;
 
 		bool blank() const;
@@ -261,6 +266,15 @@ public:
 	unsigned child_count(const std::string &key) const;
 
 	/**
+	 * Determine whether a config has a child or not.
+	 *
+	 * @param key                 The key of the child to find.
+	 *
+	 * @returns                   Whether a child is available.
+	 */
+	bool has_child(const std::string& key) const;
+
+	/**
 	 * Copies the first child with the given @a key, or an empty config if there is none.
 	 */
 	config child_or_empty(const std::string &key) const;
@@ -281,6 +295,40 @@ public:
 	 */
 	const config &child(const std::string& key, int n = 0) const
 	{ return const_cast<config *>(this)->child(key, n); }
+
+	/**
+	 * Returns a mandatory child node.
+	 *
+	 * If the child is not found a @ref wml_exception is thrown.
+	 *
+	 * @pre                       parent[0] == '['
+	 * @pre                       parent[parent.size() - 1] == ']'
+	 *
+	 * @param key                 The key of the child item to return.
+	 * @param parent              The section in which the child should reside.
+	 *                            This is only used for error reporting.
+	 *
+	 * @returns                   The wanted child node.
+	 */
+	config& child(const std::string& key, const std::string& parent);
+
+	/**
+	 * Returns a mandatory child node.
+	 *
+	 * If the child is not found a @ref wml_exception is thrown.
+	 *
+	 * @pre                       parent[0] == '['
+	 * @pre                       parent[parent.size() - 1] == ']'
+	 *
+	 * @param key                 The key of the child item to return.
+	 * @param parent              The section in which the child should reside.
+	 *                            This is only used for error reporting.
+	 *
+	 * @returns                   The wanted child node.
+	 */
+	const config& child(
+			  const std::string& key
+			, const std::string& parent) const;
 
 	config& add_child(const std::string& key);
 	config& add_child(const std::string& key, const config& val);

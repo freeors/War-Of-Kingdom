@@ -1,4 +1,4 @@
-/* $Id: distributor.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: distributor.hpp 54413 2012-06-15 18:30:47Z mordante $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -41,7 +41,7 @@
 
 #include "gui/auxiliary/event/dispatcher.hpp"
 #include "gui/widgets/event_executor.hpp"
-#include "gui/widgets/helper.hpp"
+#include "gui/lib/types/point.hpp"
 
 namespace gui2{
 
@@ -328,6 +328,8 @@ private:
 	void signal_handler_sdl_key_down(const SDLKey key
 			, const SDLMod modifier
 			, const Uint16 unicode);
+
+	void signal_handler_sdl_text_input(const char* text);
 
 	void signal_handler_notify_removal(tdispatcher& widget, const tevent event);
 };

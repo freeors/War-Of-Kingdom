@@ -20,6 +20,7 @@
 
 class config;
 class display;
+class hero;
 
 #include "game_config.hpp"
 #include "terrain_translation.hpp"
@@ -50,6 +51,9 @@ namespace preferences {
 	void disable_preferences_save();
 
 	config* get_prefs();
+
+	bool get_hero(hero& h, int default_image);
+	void set_hero(hero& h);
 
 	bool fullscreen();
 	void _set_fullscreen(bool ison);

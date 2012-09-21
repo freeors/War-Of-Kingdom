@@ -1,6 +1,6 @@
-/* $Id: text.hpp 49599 2011-05-22 17:55:59Z mordante $ */
+/* $Id: text.hpp 54028 2012-04-29 20:48:43Z mordante $ */
 /*
-   Copyright (C) 2008 - 2011 by Mark de Wever <koraq@xs4all.nl>
+   Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,12 @@ namespace gui2 {
  * Abstract base class for text items.
  *
  * All other text classes should inherit from this base class.
+ *
+ * The NOTIFY_MODIFIED event is send when the text is modified.
+ *
+ * @todo Validate whether the NOTIFY_MODIFIED is always fired properly. The
+ * current implementation is added for some quick testing so some cases might
+ * be forgotten.
  *
  * Common signal handlers:
  * - connect_signal_pre_key_press
@@ -390,6 +396,9 @@ private:
 
 	void signal_handler_sdl_key_down(const event::tevent event, bool& handled
 			, const SDLKey key, SDLMod modifier, const Uint16 unicode);
+
+	void signal_handler_sdl_text_input(const event::tevent event, bool& handled
+			, const char* text);
 
 	void signal_handler_receive_keyboard_focus(const event::tevent event);
 	void signal_handler_lose_keyboard_focus(const event::tevent event);

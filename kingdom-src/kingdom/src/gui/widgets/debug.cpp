@@ -1,4 +1,4 @@
-/* $Id: debug.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: debug.cpp 54609 2012-07-07 06:57:59Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -20,7 +20,6 @@
 
 #include "gui/widgets/debug.hpp"
 
-#include "foreach.hpp"
 #include "formatter.hpp"
 #include "gui/widgets/generator.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
@@ -122,7 +121,7 @@ void tdebug_layout_graph::set_level(const std::string& level)
 
 	std::vector<std::string> params = utils::split(level);
 
-	foreach(const std::string& param, params) {
+	BOOST_FOREACH(const std::string& param, params) {
 		if(param == "all") {
 			level_ = ALL;
 			// No need to look further eventhought invalid items are now
@@ -149,7 +148,7 @@ void tdebug_layout_graph::set_domain(const std::string& domain)
 
 	std::vector<std::string> params = utils::split(domain);
 
-	foreach(const std::string& param, params) {
+	BOOST_FOREACH(const std::string& param, params) {
 		if(param == "all") {
 			domain_ = ALL;
 			// No need to look further eventhought invalid items are now
@@ -185,7 +184,7 @@ void tdebug_layout_graph::generate_dot_file(
 	std::ofstream file(filename.c_str());
 
 	file << "//Basic layout graph for window id '" << window_->id()
-		<< "' using definition '" <<  window_->definition() << "'.\n"
+		<< "' using definition '" <<  window_->definition_ << "'.\n"
 		<< "digraph window {\n"
 		<< "\tnode [shape=record, style=filled, fillcolor=\"bisque\"];\n"
 		<< "\trankdir=LR;\n"
@@ -292,9 +291,6 @@ void tdebug_layout_graph::widget_generate_basic_info(
 		<< "id=" << widget->id() << '\n'
 		<< "</td></tr>" << '\n'
 		<< "<tr><td" << header_background << ">" << '\n'
-		<< "definition=" << widget->definition() << '\n'
-		<< "</td></tr>" << '\n'
-		<< "<tr><td" << header_background << ">" << '\n'
 		<< "address=" << widget << '\n'
 		<< "</td></tr>" << '\n'
 		<< "<tr><td" << header_background << ">" << '\n'
@@ -303,6 +299,9 @@ void tdebug_layout_graph::widget_generate_basic_info(
 		if(control) {
 			out << "<tr><td" << header_background << ">" << '\n'
 				<< "label=" << format_label(control->label()) << '\n'
+				<< "<tr><td" << header_background << ">" << '\n'
+				<< "definition=" << control->definition_ << '\n'
+				<< "</td></tr>" << '\n'
 				<< "</td></tr>\n";
 		}
 }

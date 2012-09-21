@@ -298,26 +298,26 @@ void tmove_hero::catalog_page(twindow& window, int catalog, bool swap)
 			table_item["label"] = h->name();
 			table_item_item.insert(std::make_pair("name", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 0);
+			table_item["label"] = hero::adaptability_str2(h->arms_[0]);
 			table_item_item.insert(std::make_pair("arm0", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 1);
+			table_item["label"] = hero::adaptability_str2(h->arms_[1]);
 			table_item_item.insert(std::make_pair("arm1", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 2);
+			table_item["label"] = hero::adaptability_str2(h->arms_[2]);
 			table_item_item.insert(std::make_pair("arm2", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 3);
+			table_item["label"] = hero::adaptability_str2(h->arms_[3]);
 			table_item_item.insert(std::make_pair("arm3", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 4);
+			table_item["label"] = hero::adaptability_str2(h->arms_[4]);
 			table_item_item.insert(std::make_pair("arm4", table_item));
 
 		} else if (catalog == PERSONAL_PAGE) {
 			table_item["label"] = h->name();
 			table_item_item.insert(std::make_pair("name", table_item));
 
-			table_item["label"] = h->gender_str();
+			table_item["label"] = hero::gender_str(h->gender_);
 			table_item_item.insert(std::make_pair("gender", table_item));
 
 		} else if (catalog == RELATION_PAGE) {

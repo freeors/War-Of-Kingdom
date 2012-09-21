@@ -1,4 +1,4 @@
-/* $Id: control.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: control.cpp 54322 2012-05-28 08:21:28Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -29,17 +29,11 @@ namespace implementation {
 
 tbuilder_control::tbuilder_control(const config& cfg)
 	: tbuilder_widget(cfg)
-	, id(cfg["id"])
 	, definition(cfg["definition"])
-	, linked_group(cfg["linked_group"])
 	, label(cfg["label"].t_str())
 	, tooltip(cfg["tooltip"].t_str())
 	, help(cfg["help"].t_str())
 	, use_tooltip_on_label_overflow(true)
-#ifndef LOW_MEM
-	, debug_border_mode(cfg["debug_border_mode"])
-	, debug_border_color(decode_color(cfg["debug_border_colour"]))
-#endif
 {
 	if(definition.empty()) {
 		definition = "default";
@@ -71,6 +65,11 @@ void tbuilder_control::init_control(tcontrol* control) const
 	control->set_debug_border_mode(debug_border_mode);
 	control->set_debug_border_color(debug_border_color);
 #endif
+}
+
+twidget* tbuilder_control::build(const treplacements& /*replacements*/) const
+{
+	return build();
 }
 
 } // namespace implementation

@@ -1,4 +1,4 @@
-/* $Id: grid_private.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: grid_private.hpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -33,7 +33,9 @@
 
 #include "gui/widgets/grid.hpp"
 
-#include "foreach.hpp"
+#include "utils/const_clone.tpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -52,11 +54,11 @@ struct tgrid_implementation
 	 * @tparam W                  twidget or const twidget.
 	 */
 	template<class W>
-	static W* find_at(typename tconst_duplicator<W, tgrid>::type& grid,
+	static W* find_at(typename utils::tconst_clone<tgrid, W>::reference grid,
 			const tpoint& coordinate, const bool must_be_active)
 	{
-		typedef typename tconst_duplicator<W, tgrid::tchild>::type hack;
-		foreach(hack& child, grid.children_) {
+		typedef typename utils::tconst_clone<tgrid::tchild, W>::type hack;
+		BOOST_FOREACH(hack& child, grid.children_) {
 
 			W* widget = child.widget();
 			if(!widget) {
@@ -81,7 +83,7 @@ struct tgrid_implementation
 	 * @tparam W                  twidget or const twidget.
 	 */
 	template<class W>
-	static W* find(typename tconst_duplicator<W, tgrid>::type& grid,
+	static W* find(typename utils::tconst_clone<tgrid, W>::reference grid,
 				const std::string& id, const bool must_be_active)
 	{
 		// Inherited.
@@ -90,8 +92,8 @@ struct tgrid_implementation
 			return widget;
 		}
 
-		typedef typename tconst_duplicator<W, tgrid::tchild>::type hack;
-		foreach(hack& child, grid.children_) {
+		typedef typename utils::tconst_clone<tgrid::tchild, W>::type hack;
+		BOOST_FOREACH(hack& child, grid.children_) {
 
 			widget = child.widget();
 			if(!widget) {

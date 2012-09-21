@@ -1,4 +1,4 @@
-/* $Id: toggle_panel.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: toggle_panel.hpp 54007 2012-04-28 19:16:10Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -172,6 +172,14 @@ private:
 	}
 
 	/** Inherited from tpanel. */
+	void impl_draw_background(surface& frame_buffer, int x_offset, int y_offset)
+	{
+		// We don't have a fore and background and need to draw depending on
+		// our state, like a control. So we use the controls drawing method.
+		tcontrol::impl_draw_background(frame_buffer, x_offset, y_offset);
+	}
+
+	/** Inherited from tpanel. */
 	void impl_draw_foreground(surface& frame_buffer);
 /*	{
 		// We don't have a fore and background and need to draw depending on
@@ -180,6 +188,14 @@ private:
 	}
 */
 
+	/** Inherited from tpanel. */
+	void impl_draw_foreground(surface& frame_buffer, int x_offset, int y_offset);
+/*	{
+		// We don't have a fore and background and need to draw depending on
+		// our state, like a control. So we use the controls drawing method.
+		tcontrol::impl_draw_foreground(frame_buffer, x_offset, y_offset);
+	}
+*/
 	/** Inherited from tpanel. */
 	const std::string& get_control_type() const;
 

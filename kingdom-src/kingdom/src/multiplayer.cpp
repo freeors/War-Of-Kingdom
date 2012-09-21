@@ -31,16 +31,13 @@
 #include "gui/widgets/window.hpp"
 #include "hash.hpp"
 #include "multiplayer.hpp"
-#include "multiplayer_connect.hpp"
-#include "multiplayer_create.hpp"
 #include "multiplayer_error_codes.hpp"
-#include "multiplayer_wait.hpp"
-#include "multiplayer_lobby.hpp"
 #include "playmp_controller.hpp"
 #include "playcampaign.hpp"
 #include "formula_string_utils.hpp"
 #include "sound.hpp"
 #include "resources.hpp"
+#include "foreach.hpp"
 
 #include <boost/bind.hpp>
 
@@ -96,6 +93,10 @@ static void run_lobby_loop(display& disp, mp::ui& ui)
 		disp.delay(20);
 	}
 	font::cache_mode(font::CACHE_GAME);
+}
+
+namespace gui2 {
+extern void check_response(network::connection res, const config& data);
 }
 
 namespace {
@@ -158,7 +159,7 @@ static server_type open_connection(game_display& disp, const std::string& origin
 		if (!data_res) {
 			return ABORT_SERVER;
 		}
-		mp::check_response(data_res, data);
+		gui2::check_response(data_res, data);
 
 		// Backwards-compatibility "version" attribute
 		const std::string& version = data["version"];
@@ -390,7 +391,7 @@ static server_type open_connection(game_display& disp, const std::string& origin
 // creating the dialogs, then, according to the dialog result, of calling other
 // of those screen functions.
 
-static void enter_wait_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, card_map& cards, mp::chat& chat, config& gamelist, bool observe)
+static void enter_wait_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, card_map& cards, config& gamelist, bool observe)
 {
 	mp::ui::result res;
 	game_state state;
@@ -399,43 +400,18 @@ static void enter_wait_mode(game_display& disp, const config& game_config, hero_
 	gamelist.clear();
 	statistics::fresh_stats();
 
-	if (true) {
-		gui2::tmp_side_wait dlg(heros, disp, *resources::game_map, game_config, gamelist, observe);
-		dlg.show(disp.video());
-		switch (dlg.get_legacy_result()) {
-		case gui2::tmp_side_wait::PLAY:
-			res = mp::ui::PLAY;
-			dlg.start_game();
-			state = dlg.get_state();
-			// lobby may modify hero's side_feature
-			heros_start = heros;
-			break;
-		default:
-			res = mp::ui::QUIT;
-		}
-	} else {
-		mp::wait ui(heros, disp, game_config, chat, gamelist);
-
-		ui.join_game(observe);
-
-		run_lobby_loop(disp, ui);
-		res = ui.get_result();
-		
-		if (res == mp::ui::PLAY) {
-			// lobby may modify hero's side_feature
-			heros_start = heros;
-
-			ui.start_game();
-			// FIXME commented a pointeless if since the else does exactly the same thing
-			//if (preferences::skip_mp_replay()){
-				//FIXME implement true skip replay
-				//state = ui.request_snapshot();
-				//state = ui.get_state();
-			//}
-			//else{
-				state = ui.get_state();
-			//}
-		}
+	gui2::tmp_side_wait dlg(heros, disp, *resources::game_map, game_config, gamelist, observe);
+	dlg.show(disp.video());
+	switch (dlg.get_legacy_result()) {
+	case gui2::tmp_side_wait::PLAY:
+		res = mp::ui::PLAY;
+		dlg.start_game();
+		state = dlg.get_state();
+		// lobby may modify hero's side_feature
+		heros_start = heros;
+		break;
+	default:
+		res = mp::ui::QUIT;
 	}
 
 	switch (res) {
@@ -451,11 +427,11 @@ static void enter_wait_mode(game_display& disp, const config& game_config, hero_
 	}
 }
 
-static void enter_create_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, card_map& cards, mp::chat& chat, config& gamelist, mp::controller default_controller, bool local_players_only = false);
+static void enter_create_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, card_map& cards, config& gamelist, mp::controller default_controller, bool local_players_only = false);
 
 static void enter_connect_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards,
-		mp::chat& chat, config& gamelist, const mp_game_settings& params,
+		config& gamelist, const mp_game_settings& params,
 		const int num_turns, mp::controller default_controller, bool local_players_only = false)
 {
 	mp::ui::result res;
@@ -467,7 +443,6 @@ static void enter_connect_mode(game_display& disp, const config& game_config, he
 	statistics::fresh_stats();
 
 	// if (gui2::new_widgets) {
-	if (true) {
 		gui2::tmp_side_creator dlg(heros, disp, *resources::game_map, game_config, gamelist, params, num_turns, default_controller, local_players_only);
 		dlg.show(disp.video());
 		switch (dlg.get_legacy_result()) {
@@ -484,21 +459,6 @@ static void enter_connect_mode(game_display& disp, const config& game_config, he
 		default:
 			res = mp::ui::QUIT;
 		}
-	} else {
-		mp::connect ui(heros, disp, *resources::game_map, game_config, chat, gamelist, params, num_turns, default_controller, local_players_only);
-		run_lobby_loop(disp, ui);
-
-		res = ui.get_result();
-
-		// start_game() updates the parameters to reflect game start,
-		// so it must be called before get_level()
-		if (res == mp::ui::PLAY) {
-			ui.start_game();
-			state = ui.get_state();
-			// lobby may modify hero's side_feature
-			heros_start = heros;
-		}
-	}
 
 	switch (res) {
 	case mp::ui::PLAY:
@@ -507,7 +467,7 @@ static void enter_connect_mode(game_display& disp, const config& game_config, he
 
 		break;
 	case mp::ui::CREATE:
-		enter_create_mode(disp, game_config, heros, heros_start, cards, chat, gamelist, default_controller, local_players_only);
+		enter_create_mode(disp, game_config, heros, heros_start, cards, gamelist, default_controller, local_players_only);
 		break;
 	case mp::ui::QUIT:
 	default:
@@ -517,14 +477,13 @@ static void enter_connect_mode(game_display& disp, const config& game_config, he
 }
 
 static void enter_create_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
-		card_map& cards, mp::chat& chat, config& gamelist, mp::controller default_controller, bool local_players_only)
+		card_map& cards, config& gamelist, mp::controller default_controller, bool local_players_only)
 {
 	mp::ui::result res;
 	mp_game_settings params;
 	int num_turns;
 
 	// if (gui2::new_widgets) {
-	if (true) {
 		gui2::tmp_create_game dlg(disp, game_config);
 		dlg.show(disp.video());
 		int retval = dlg.get_retval();
@@ -537,17 +496,10 @@ static void enter_create_mode(game_display& disp, const config& game_config, her
 		num_turns = dlg.num_turns();
 
 		// network::send_data(config("refresh_lobby"), 0);
-	} else {
-		mp::create ui(disp, game_config, chat, gamelist);
-		run_lobby_loop(disp, ui);
-		res = ui.get_result();
-		params = ui.get_parameters();
-		num_turns = ui.num_turns();
-	}
 
 	switch (res) {
 	case mp::ui::CREATE:
-		enter_connect_mode(disp, game_config, heros, heros_start, cards, chat, gamelist, params, num_turns, default_controller, local_players_only);
+		enter_connect_mode(disp, game_config, heros, heros_start, cards, gamelist, params, num_turns, default_controller, local_players_only);
 		break;
 	case mp::ui::QUIT:
 	default:
@@ -580,7 +532,7 @@ static void do_preferences_dialog(game_display& disp, const config& game_config)
 }
 
 static void enter_lobby_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
-		card_map& cards, mp::chat& chat, config& gamelist)
+		card_map& cards, config& gamelist)
 {
 
 
@@ -608,7 +560,7 @@ static void enter_lobby_mode(game_display& disp, const config& game_config, hero
 
 		sdl_fill_rect(disp.video().getSurface(), NULL, color);
 
-		if(preferences::new_lobby()) {
+		{
 			gui2::tlobby_main dlg(game_config, li, disp);
 			dlg.set_preferences_callback(
 				boost::bind(do_preferences_dialog,
@@ -628,16 +580,12 @@ static void enter_lobby_mode(game_display& disp, const config& game_config, hero
 				default:
 					res = mp::ui::QUIT;
 			}
-		} else {
-			mp::lobby ui(disp, game_config, chat, gamelist);
-			run_lobby_loop(disp, ui);
-			res = ui.get_result();
 		}
 
 		switch (res) {
 		case mp::ui::JOIN:
 			try {
-				enter_wait_mode(disp, game_config, heros, heros_start, cards, chat, gamelist, false);
+				enter_wait_mode(disp, game_config, heros, heros_start, cards, gamelist, false);
 			} catch(config::error& error) {
 				if(!error.message.empty()) {
 					gui2::show_error_message(disp.video(), error.message);
@@ -648,7 +596,7 @@ static void enter_lobby_mode(game_display& disp, const config& game_config, hero
 			break;
 		case mp::ui::OBSERVE:
 			try {
-				enter_wait_mode(disp, game_config, heros, heros_start, cards, chat, gamelist, true);
+				enter_wait_mode(disp, game_config, heros, heros_start, cards, gamelist, true);
 			} catch(config::error& error) {
 				if(!error.message.empty()) {
 					gui2::show_error_message(disp.video(), error.message);
@@ -660,7 +608,7 @@ static void enter_lobby_mode(game_display& disp, const config& game_config, hero
 			break;
 		case mp::ui::CREATE:
 			try {
-				enter_create_mode(disp, game_config, heros, heros_start, cards, chat, gamelist, mp::CNTR_NETWORK);
+				enter_create_mode(disp, game_config, heros, heros_start, cards, gamelist, mp::CNTR_NETWORK);
 			} catch(config::error& error) {
 				if (!error.message.empty())
 					gui2::show_error_message(disp.video(), error.message);
@@ -689,11 +637,10 @@ void start_local_game(game_display& disp, const config& game_config, hero_map& h
 		card_map& cards, mp::controller default_controller)
 {
 	const rand_rng::set_random_generator generator_setter(&recorder);
-	mp::chat chat;
 	config gamelist;
 	playmp_controller::set_replay_last_turn(0);
 	preferences::set_message_private(false);
-	enter_create_mode(disp, game_config, heros, heros_start, cards, chat, gamelist, default_controller, true);
+	enter_create_mode(disp, game_config, heros, heros_start, cards, gamelist, default_controller, true);
 }
 
 void start_client(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start,
@@ -702,18 +649,17 @@ void start_client(game_display& disp, const config& game_config, hero_map& heros
 	const rand_rng::set_random_generator generator_setter(&recorder);
 	const network::manager net_manager(1,1);
 
-	mp::chat chat;
 	config gamelist;
 	server_type type = open_connection(disp, host);
 
 	switch(type) {
 	case WESNOTHD_SERVER:
-		enter_lobby_mode(disp, game_config, heros, heros_start, cards, chat, gamelist);
+		enter_lobby_mode(disp, game_config, heros, heros_start, cards, gamelist);
 		break;
 	case SIMPLE_SERVER:
 		playmp_controller::set_replay_last_turn(0);
 		preferences::set_message_private(false);
-		enter_wait_mode(disp, game_config, heros, heros_start, cards, chat, gamelist, false);
+		enter_wait_mode(disp, game_config, heros, heros_start, cards, gamelist, false);
 		break;
 	case ABORT_SERVER:
 		break;

@@ -1,4 +1,4 @@
-/* $Id: settings.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: settings.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -25,7 +25,6 @@
 #include "asserts.hpp"
 #include "config_cache.hpp"
 #include "filesystem.hpp"
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/tips.hpp"
@@ -36,6 +35,8 @@
 #include "formula_string_utils.hpp"
 #include "game_config.hpp"
 #include "loadscreen.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -285,12 +286,12 @@ const std::string& tgui_definition::read(const config& cfg)
 				  , const config&
 				  , const char *key)> > thack;
 
-	foreach(thack& widget_type, registred_widget_type()) {
+	BOOST_FOREACH(thack& widget_type, registred_widget_type()) {
 		widget_type.second(*this, widget_type.first, cfg, NULL);
 	}
 
 	/***** Window types *****/
-	foreach (const config &w, cfg.child_range("window")) {
+	BOOST_FOREACH (const config &w, cfg.child_range("window")) {
 		std::pair<std::string, twindow_builder> child;
 		child.first = child.second.read(w);
 		window_types.insert(child);
@@ -425,7 +426,7 @@ void tgui_definition::load_widget_definitions(
 		  const std::string& definition_type
 		, const std::vector<tcontrol_definition_ptr>& definitions)
 {
-	foreach(const tcontrol_definition_ptr& def, definitions) {
+	BOOST_FOREACH(const tcontrol_definition_ptr& def, definitions) {
 
 		// We assume all definitions are unique if not we would leak memory.
 		assert(control_definition[definition_type].find(def->id)
@@ -503,7 +504,7 @@ void load_settings()
 	}
 */
 	// Parse guis
-	foreach (const config &g, cfg.child_range("gui")) {
+	BOOST_FOREACH (const config &g, cfg.child_range("gui")) {
 		std::pair<std::string, tgui_definition> child;
 		child.first = child.second.read(g);
 		guis.insert(child);

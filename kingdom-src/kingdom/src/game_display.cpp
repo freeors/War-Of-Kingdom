@@ -110,12 +110,13 @@ game_display::game_display(unit_map& units, CVideo& video, const gamemap& map,
 	singleton_ = this;
 
 	// Inits the flag list and the team colors used by ~TC
-	flags_.reserve(teams_.size());
-
-	std::vector<std::string> side_colors;
-	side_colors.reserve(teams_.size());
+	// std::vector<std::string> side_colors;
+	std::vector<std::string>& side_colors = image::get_team_colors();
+	side_colors.clear();
 
 	for (size_t i = 0; i != teams_.size(); ++i) {
+		add_flag(i, side_colors);
+/*
 		std::string side_color = team::get_side_color_index(i+1);
 		side_colors.push_back(side_color);
 		std::string flag = teams_[i].flag();
@@ -183,9 +184,9 @@ game_display::game_display(unit_map& units, CVideo& video, const gamemap& map,
 		big_flags_.back().start_animation(rand() % big_flags_.back().get_end_time(), true);
 
 		big_flags_cache_.push_back(std::map<std::string, surface>());
+*/
 	}
-	image::set_team_colors(&side_colors);
-	// clear_screen();
+	// image::set_team_colors(&side_colors);
 
 	// draw nodes for display::draw
 	if (map_->w() && map_->h()) {
@@ -219,6 +220,79 @@ game_display::~game_display()
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_INFO, "SDL", "game_dispaly::~game_display");
 #endif
+}
+
+void game_display::add_flag(int side_index, std::vector<std::string>& side_colors)
+{
+	size_t i = side_index;
+
+	std::string side_color = team::get_side_color_index(i + 1);
+	side_colors.push_back(side_color);
+	std::string flag = teams_[i].flag();
+	std::string old_rgb = game_config::flag_rgb;
+	std::string new_rgb = side_color;
+
+	if (flag.empty()) {
+		flag = game_config::images::flag;
+	}
+
+	// Must recolor flag image
+	animated<image::locator> temp_anim;
+
+	std::vector<std::string> items = utils::split(flag);
+	std::vector<std::string>::const_iterator itor = items.begin();
+	for(; itor != items.end(); ++itor) {
+		const std::vector<std::string>& items = utils::split(*itor, ':');
+		std::string str;
+		int time;
+
+		if(items.size() > 1) {
+			str = items.front();
+			time = atoi(items.back().c_str());
+		} else {
+			str = *itor;
+			time = 100;
+		}
+		std::stringstream temp;
+		temp << str << "~RC(" << old_rgb << ">"<< new_rgb << ")";
+		image::locator flag_image(temp.str());
+		temp_anim.add_frame(time, flag_image);
+	}
+	flags_.push_back(temp_anim);
+
+	flags_.back().start_animation(rand()%flags_.back().get_end_time(), true);
+
+	// Must recolor big flag image
+	animated<image::locator> temp_anim2;
+
+	flag = game_config::images::big_flag;
+	items = utils::split(flag);
+	itor = items.begin();
+	for(; itor != items.end(); ++itor) {
+		const std::vector<std::string>& items = utils::split(*itor, ':');
+		std::string str;
+		int time;
+
+		if(items.size() > 1) {
+			str = items.front();
+			time = atoi(items.back().c_str());
+		} else {
+			str = *itor;
+			time = 100;
+		}
+		std::stringstream temp;
+		temp << str << "~RC(" << old_rgb << ">"<< new_rgb << ")";
+		image::locator flag_image(temp.str());
+		if (image::exists(flag_image)) {
+			temp_anim2.add_frame(time, flag_image);
+		}
+	}
+	VALIDATE(temp_anim2.get_frames_count(), _("Invalid [game_config][images].big_flag value."));
+	big_flags_.push_back(temp_anim2);
+
+	big_flags_.back().start_animation(rand() % big_flags_.back().get_end_time(), true);
+
+	big_flags_cache_.push_back(std::map<std::string, surface>());
 }
 
 void game_display::new_turn()
@@ -367,17 +441,17 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 				}
 				if (!unit_can_move(*u)) {
 					// 部队不可移动, 直接追加在末尾
-					btn = tmp[i] = new gui::button(screen_, "", gui::button::TYPE_PRESS, std::string("hero-64/") + lexical_cast<std::string>(u->master().image_) + ".png", gui::button::DEFAULT_SPACE, true, this, access_unit_menu, i, NULL, loc.w, loc.h);
+					btn = tmp[i] = new gui::button(screen_, "", gui::button::TYPE_PRESS, u->master().image(), gui::button::DEFAULT_SPACE, true, this, access_unit_menu, i, NULL, loc.w, loc.h);
 					btn->cookie_ = const_cast<unit*>(u);
-					btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(u->master().image_) + ".png", u->level(), true);
+					btn->set_image(u->master().image(), u->level(), true);
 				} else {
 					// 部队可移动, 追加可移动末尾
 					if (actable_troop_count_ < i - 2) {
 						memcpy(&(tmp[actable_troop_count_ + 3]), &(tmp[actable_troop_count_ + 2]), (i - 2 - actable_troop_count_) * sizeof(gui::button*));
 					}
-					btn = tmp[actable_troop_count_ + 2] = new gui::button(screen_, "", gui::button::TYPE_PRESS, std::string("hero-64/") + lexical_cast<std::string>((*itor2)->master().image_) + ".png", gui::button::DEFAULT_SPACE, true, this, access_unit_menu, actable_troop_count_ + 2, NULL, loc.w, loc.h);
+					btn = tmp[actable_troop_count_ + 2] = new gui::button(screen_, "", gui::button::TYPE_PRESS, (*itor2)->master().image(), gui::button::DEFAULT_SPACE, true, this, access_unit_menu, actable_troop_count_ + 2, NULL, loc.w, loc.h);
 					btn->cookie_ = const_cast<unit*>(u);
-					btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(u->master().image_) + ".png", u->level());
+					btn->set_image(u->master().image(), u->level());
 					actable_troop_count_ ++;
 				}
 				i ++;
@@ -411,15 +485,13 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 		}
 		// 新按钮就放在actable_troop_count_ + 2处
 		btn = buttons_ctx_[access_troops_index_].buttons_[actable_troop_count_ + 2] = 
-			// new gui::button(screen_, "", gui::button::TYPE_PRESS, std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", gui::button::DEFAULT_SPACE, true, this, access_unit_menu, actable_troop_count_ + 2, &clip, loc.w, loc.h);
-			new gui::button(screen_, "", gui::button::TYPE_PRESS, std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", gui::button::DEFAULT_SPACE, true, this, access_unit_menu, actable_troop_count_ + 2, NULL, loc.w, loc.h);
+			new gui::button(screen_, "", gui::button::TYPE_PRESS, troop->master().image(), gui::button::DEFAULT_SPACE, true, this, access_unit_menu, actable_troop_count_ + 2, NULL, loc.w, loc.h);
 		btn->cookie_ = troop;
 		if (!unit_can_move(*troop)) {
 			// 1. 城市被攻占, 城外部队可能并入了本阵营, 这时那些部队应该被灰色
-			// btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", NULL, loc.w, loc.h, true);
-			btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", troop->level(), true);
+			btn->set_image(troop->master().image(), troop->level(), true);
 		} else {
-			btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", troop->level());
+			btn->set_image(troop->master().image(), troop->level());
 			actable_troop_count_ ++;
 		}
 		redraw_access_unit();
@@ -498,8 +570,7 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 			actable_troop_count_ --;
 		}
 		// 修改图像参数, 向未尾增加该图像
-		// btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", NULL, loc.w, loc.h, true);
-		btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", troop->level(), true);
+		btn->set_image(troop->master().image(), troop->level(), true);
 		btn->btnidx_ = unit_button_count;
 		buttons_ctx_[access_troops_index_].buttons_[unit_button_count] = btn;
 
@@ -542,8 +613,7 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 		actable_troop_count_ ++;
 
 		// 修改图像参数, 向头部增加该图像
-		// btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", NULL, loc.w, loc.h);
-		btn->set_image(std::string("hero-64/") + lexical_cast<std::string>(troop->master().image_) + ".png", troop->level());
+		btn->set_image(troop->master().image(), troop->level());
 		btn->btnidx_ = 2;
 		buttons_ctx_[access_troops_index_].buttons_[2] = btn;
 

@@ -588,3 +588,9 @@ bool playmp_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int 
 	}
 	return res;
 }
+
+void playmp_controller::sync_undo()
+{
+	play_controller::sync_undo();
+	turn_data_->send_data();
+}

@@ -30,12 +30,11 @@
 #include "log.hpp"
 #include "map.hpp"
 #include "hero.hpp"
+#include "wml_exception.hpp"
 
 static lg::log_domain log_config("config");
 #define ERR_CF LOG_STREAM(err, log_config)
 #define WRN_CF LOG_STREAM(warn, log_config)
-#define LOG_CONFIG LOG_STREAM(info, log_config)
-#define DBG_CF LOG_STREAM(debug, log_config)
 
 static lg::log_domain log_unit("unit");
 #define DBG_UT LOG_STREAM(debug, log_unit)
@@ -503,10 +502,8 @@ const defense_range &defense_range_modifier_internal(defense_cache &defense_mods
 
 	if (underlying.size() != 1 || underlying.front() != terrain) {
 		bool revert = underlying.front() == t_translation::MINUS;
-		if(recurse_count >= 90) {
-			ERR_CF << "infinite defense_modifier recursion: "
-				<< t_translation::write_terrain_code(terrain)
-				<< " depth " << recurse_count << "\n";
+		if (recurse_count >= 90) {
+
 		}
 		if (recurse_count >= 100) {
 			return res;
@@ -560,7 +557,6 @@ const defense_range &defense_range_modifier_internal(defense_cache &defense_mods
 	check:
 
 	if (res.min_ < 0) {
-		WRN_CF << "Defense '" << res.min_ << "' is '< 0' reset to 0 (100% defense).\n";
 		res.min_ = 0;
 	}
 /*
@@ -835,9 +831,9 @@ void unit_type::build_full(const movement_type_map &mv_types,
 	
 	attack_destroy_ = cfg["attack_destroy"].to_bool();
 	if (!cfg["arms"].blank()) {
-		arms_ = cfg["arms"].to_int();
-		if (arms_ >= HEROS_MAX_ARMS) {
-			throw config::error(id_ + "arms is invalid: " + cfg["arms"].str());
+		arms_ = unit_types.arms_from_id(cfg["arms"].str());
+		if (arms_ < 0 || arms_ >= HEROS_MAX_ARMS) {
+			throw config::error(id_ + "'s arms is invalid: " + cfg["arms"].str());
 		}
 	}
 	
@@ -1130,12 +1126,9 @@ void unit_type::add_advancement(const unit_type &to_unit,int xp)
 	const std::string &from_id =  cfg_["id"];
 
 	// Add extra advancement path to this unit type
-	LOG_CONFIG << "adding advancement from " << from_id << " to " << to_id << "\n";
 	if(std::find(advances_to_.begin(), advances_to_.end(), to_id) == advances_to_.end()) {
 		advances_to_.push_back(to_id);
 	} else {
-		LOG_CONFIG << "advancement from " << from_id
-		           << " to " << to_id << " already known, ignoring.\n";
 		return;
 	}
 
@@ -1159,10 +1152,8 @@ void unit_type::add_advancement(const unit_type &to_unit,int xp)
 	for(int gender=0; gender<=1; ++gender) {
 		if(gender_types_[gender] == NULL) continue;
 		if(to_unit.gender_types_[gender] == NULL) {
-			WRN_CF << to_id << " does not support gender " << gender << "\n";
 			continue;
 		}
-		LOG_CONFIG << "gendered advancement " << gender << ": ";
 		gender_types_[gender]->add_advancement(*(to_unit.gender_types_[gender]),xp);
 	}
 
@@ -1172,7 +1163,6 @@ void unit_type::add_advancement(const unit_type &to_unit,int xp)
 	// and don't block advancements that would remove a variation.
 	for(variations_map::iterator v=variations_.begin();
 	    v!=variations_.end(); ++v) {
-		LOG_CONFIG << "variation advancement: ";
 		v->second->add_advancement(to_unit,xp);
 	}
 }
@@ -1223,6 +1213,8 @@ unit_type_data::unit_type_data() :
 	complex_feature_(),
 	abilities_(),
 	specials_(),
+	arms_ids_(),
+	can_recruit_(),
 	navigation_types_(),
 	wall_type_(NULL),
 	hide_help_all_(false),
@@ -1353,6 +1345,23 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
+	if (const config& arms_cfg = cfg.child("arms")) {
+		if (arms_cfg["id"].empty()) {
+			throw config::error("[arms] error, no id attribute");
+		}
+		std::vector<std::string> arms_ids = utils::split(arms_cfg["id"]);
+		size_t size = arms_ids.size();
+		for (size_t i = 0; i < size; i ++) {
+			if (i >= HEROS_MAX_ARMS) {
+				break;
+			}
+			arms_ids_.push_back(arms_ids[i]);
+		}
+		loadscreen::increment_progress();
+	} else {
+		throw config::error("[arms] error, must define [arms] block in [units].");
+	}
+
 	// navigation_types_
 	navigation_types_.push_back("boat0");
 	navigation_types_.push_back("boat1");
@@ -1394,6 +1403,26 @@ void unit_type_data::set_config(config &cfg)
 
 	build_all(unit_type::CREATED);
 
+	if (const config recruit_cfg = cfg.child("recruit")) {
+		if (recruit_cfg["id"].empty()) {
+			throw config::error("[recruit] error, no id attribute");
+		}
+		std::vector<std::string> recruit_ids = utils::split(recruit_cfg["id"]);
+		for (std::vector<std::string>::const_iterator it = recruit_ids.begin(); it != recruit_ids.end(); ++ it) {
+			const unit_type* ut = unit_types.find(*it);
+			if (!ut) {
+				throw config::error("[recruit] error, cannot find unit type: " + *it);
+			}
+			if (std::find(can_recruit_.begin(), can_recruit_.end(), ut) != can_recruit_.end()) {
+				throw config::error("[recruit] error, duplicate unit type: " + *it);
+			}
+			can_recruit_.push_back(ut);
+		}
+		loadscreen::increment_progress();
+	} else {
+		throw config::error("[recruit] error, must define [recruit] block in [units].");
+	}
+
 	if (const config &hide_help = cfg.child("hide_help")) {
 		hide_help_all_ = hide_help["all"].to_bool();
 		read_hide_help(hide_help);
@@ -1404,7 +1433,6 @@ const unit_type *unit_type_data::find(const std::string& key, unit_type::BUILD_S
 {
 	if (key.empty() || key == "random") return NULL;
 
-	DBG_CF << "trying to find " << key  << " in unit_type list (unit_type_data.unit_types)\n";
     const unit_type_map::iterator itor = types_.find(key);
 
     //This might happen if units of another era are requested (for example for savegames)
@@ -1428,9 +1456,6 @@ const config& unit_type_data::find_config(const std::string& key) const
 
 	if (cfg)
 		return cfg;
-
-    ERR_CF << "unit type not found: " << key << "\n";
-    ERR_CF << *unit_cfg_ << "\n";
 
     throw config::error("unit type not found: "+key);
 }
@@ -1556,6 +1581,15 @@ void unit_type_data::add_advancement(unit_type& to_unit) const
 
         DBG_UT << "Added advancement ([advancefrom]) from " << from << " to " << to_unit.id() << "\n";
     }
+}
+
+int unit_type_data::arms_from_id(const std::string& id) const
+{
+	std::vector<std::string>::const_iterator it = std::find(arms_ids_.begin(), arms_ids_.end(), id);
+	if (it != arms_ids_.end()) {
+		return it - arms_ids_.begin();
+	}
+	return -1;
 }
 
 const std::string& unit_type_data::id_from_navigation(int navigation) const

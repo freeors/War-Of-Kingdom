@@ -21,14 +21,12 @@
 #include "game_config.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
-#include "log.hpp"
+// #include "log.hpp"
 #include "gui/auxiliary/timer.hpp"
-#include "gui/auxiliary/tips.hpp"
-#include "gui/dialogs/debug_clock.hpp"
 #include "gui/dialogs/language_selection.hpp"
+#include "gui/dialogs/create_hero.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
-#include "gui/widgets/multi_page.hpp"
 #include "gui/widgets/progress_bar.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/text_box.hpp"
@@ -38,10 +36,6 @@
 #include <boost/bind.hpp>
 
 #include <algorithm>
-
-static lg::log_domain log_config("config");
-#define ERR_CF LOG_STREAM(err, log_config)
-#define WRN_CF LOG_STREAM(warn, log_config)
 
 namespace gui2 {
 
@@ -111,8 +105,6 @@ namespace gui2 {
 
 REGISTER_DIALOG(title_screen)
 
-bool show_debug_clock_button = false;
-
 static bool hotkey(twindow& window, const ttitle_screen::tresult result)
 {
 	window.set_retval(static_cast<twindow::tretval>(result));
@@ -120,18 +112,15 @@ static bool hotkey(twindow& window, const ttitle_screen::tresult result)
 	return true;
 }
 
-ttitle_screen::ttitle_screen()
-	: logo_timer_id_(0)
-	, debug_clock_(NULL)
+ttitle_screen::ttitle_screen(display& gui, hero_map& heros, hero& player_hero)
+	: gui_(gui)
+	, heros_(heros)
+	, player_hero_(player_hero)
 {
 }
 
 ttitle_screen::~ttitle_screen()
 {
-	if(logo_timer_id_) {
-		remove_timer(logo_timer_id_);
-	}
-	delete debug_clock_;
 }
 
 static void animate_logo(
@@ -152,7 +141,7 @@ static void animate_logo(
 	 */
 	window.set_dirty();
 
-	if(percentage == 100) {
+	if (percentage == 100) {
 		remove_timer(timer_id);
 		timer_id = 0;
 	}
@@ -204,16 +193,17 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	window.set_escape_disabled(true);
 
 	/**** Set the version number ****/
-	if(tcontrol* control
+	if (tcontrol* control
 			= find_widget<tcontrol>(&window, "revision_number", false, false)) {
 
-		// control->set_label(_("Version ") + game_config::revision);
-		control->set_label(_("Version ") + game_config::revision + "-alpha");
+		control->set_label(_("Version ") + game_config::revision);
+		// control->set_label(_("Version ") + game_config::revision + "-alpha");
+		// control->set_label(_("Version ") + game_config::revision + "-beta");
 	}
 	window.canvas()[0].set_variable("revision_number", variant(_("Version") + std::string(" ") + game_config::revision));
 
-	if(game_config::images::game_title.empty()) {
-		ERR_CF << "No title image defined\n";
+	if (game_config::images::game_title.empty()) {
+		
 	} else {
 		window.canvas()[0].set_variable("background_image",
 			variant(game_config::images::game_title));
@@ -225,15 +215,19 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 		logo->set_label("misc/logo.png");
 	}
 
-	logo = find_widget<tcontrol>(&window, "user_logo", false, false);
-	if (logo) {
-		logo->set_label("icons/user.png");
+	std::string player_name;
+	tbutton* b = find_widget<tbutton>(&window, "player", false, false);
+	if (b) {
+		for (int i = 0; i < 4; i ++) {
+			player_name = player_hero_.image(true);
+			b->canvas()[i].set_variable("image", variant(player_name));
+		}
 	}
-	std::string user_name = preferences::login();
-	ttext_box* user_widget = find_widget<ttext_box>(&window, "user_name", false, true);
-	user_widget->set_value(user_name);
-	user_widget->set_maximum_length(max_login_size);
-	// window.keyboard_capture(user_widget);
+	player_name = player_hero_.name();
+	ttext_box* user_widget = find_widget<ttext_box>(&window, "player_name", false, true);
+	user_widget->set_value(player_name);
+	// user_widget->set_maximum_length(max_login_size);
+	user_widget->set_active(false);
 
 	for (int item = 0; item < nb_items; item ++) {
 		tbutton* b = find_widget<tbutton>(&window, menu_items[item], false, false);
@@ -267,7 +261,7 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	}
 
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-	tbutton* b = find_widget<tbutton>(&window, "editor", false, false);
+	b = find_widget<tbutton>(&window, "editor", false, false);
 	if (b) {
 		b->set_visible(twidget::INVISIBLE);
 	}
@@ -280,51 +274,38 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 		b->set_visible(twidget::INVISIBLE);
 	}
 #endif
-}
 
-void ttitle_screen::update_tip(twindow& window, const bool previous)
-{
-	tmulti_page& tips = find_widget<tmulti_page>(&window, "tips", false);
-	if(tips.get_page_count() == 0) {
-		return;
-	}
-
-	int page = tips.get_selected_page();
-	if(previous) {
-		if(page <= 0) {
-			page = tips.get_page_count();
-		}
-		--page;
-	} else {
-		++page;
-		if(static_cast<unsigned>(page) >= tips.get_page_count()) {
-			page = 0;
-		}
-	}
-
-	tips.select_page(page);
-}
-
-void ttitle_screen::show_debug_clock_window(CVideo& video)
-{
-	assert(show_debug_clock_button);
-
-	if(debug_clock_) {
-		delete debug_clock_;
-		debug_clock_ = NULL;
-	} else {
-		debug_clock_ = new tdebug_clock();
-		debug_clock_->show(video, true);
-	}
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "player", false)
+		, boost::bind(
+		&ttitle_screen::player
+			, this
+			, boost::ref(window)));
 }
 
 void ttitle_screen::post_show(twindow& window)
 {
-	ttext_box& user_widget = find_widget<ttext_box>(&window, "user_name", false);
+}
 
-	user_widget.save_to_history();
-	std::string user_name = user_widget.get_value();
-	preferences::set_login(user_name);
+void ttitle_screen::player(twindow& window)
+{
+	gui2::tcreate_hero dlg(gui_, heros_, player_hero_);
+	dlg.show(gui_.video());
+	if (dlg.get_retval() != gui2::twindow::OK) {
+		return;
+	}
+	std::string player_name;
+	tbutton* b = find_widget<tbutton>(&window, "player", false, false);
+	if (b) {
+		for (int i = 0; i < 4; i ++) {
+			player_name = player_hero_.image(true);
+			b->canvas()[i].set_variable("image", variant(player_name));
+		}
+		b->set_dirty();
+	}
+	player_name = player_hero_.name();
+	ttext_box* user_widget = find_widget<ttext_box>(&window, "player_name", false, true);
+	user_widget->set_value(player_name);
 }
 
 } // namespace gui2

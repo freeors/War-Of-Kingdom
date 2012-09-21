@@ -21,6 +21,7 @@
 #include "gui/dialogs/field.hpp"
 #include "gui/widgets/integer_selector.hpp"
 #include "video.hpp"
+#include "tooltips.hpp"
 
 namespace gui2 {
 
@@ -36,6 +37,10 @@ bool tdialog::show(CVideo& video, const unsigned auto_close_time)
 	if(video.faked()) {
 		return false;
 	}
+
+	// hide tooltip current shown.
+	tooltips::process(-1, -1);
+
 	// I want display volatile control, for example rpg button.
 	events::raise_volatile_draw_event();
 

@@ -86,7 +86,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(hero_selection)
 
-thero_selection::thero_selection(std::vector<team>* teams, unit_map* units, hero_map& heros, std::vector<std::pair<size_t, unit*> >& pairs, int side, const std::string& disable_str)
+thero_selection::thero_selection(std::vector<team>* teams, unit_map* units, hero_map& heros, std::vector<std::pair<int, unit*> >& pairs, int side, const std::string& disable_str)
 	: teams_(teams)
 	, units_(units)
 	, heros_(heros)
@@ -215,7 +215,7 @@ void thero_selection::fill_table(int catalog)
 
 	hero& leader = *(*teams_)[side_ - 1].leader();
 	int hero_index = 0;
-	for (std::vector<std::pair<size_t, unit*> >::iterator itor = pairs_.begin(); itor != pairs_.end(); ++ itor, hero_index ++) {
+	for (std::vector<std::pair<int, unit*> >::iterator itor = pairs_.begin(); itor != pairs_.end(); ++ itor, hero_index ++) {
 		/*** Add list item ***/
 		string_map table_item;
 		std::map<std::string, string_map> table_item_item;
@@ -327,19 +327,19 @@ void thero_selection::fill_table(int catalog)
 			table_item["label"] = h.name();
 			table_item_item.insert(std::make_pair("name", table_item));
 
-			table_item["label"] = h.adaptability_str(hero::ARMS, 0);
+			table_item["label"] = hero::adaptability_str2(h.arms_[0]);
 			table_item_item.insert(std::make_pair("arm0", table_item));
 
-			table_item["label"] = h.adaptability_str(hero::ARMS, 1);
+			table_item["label"] = hero::adaptability_str2(h.arms_[1]);
 			table_item_item.insert(std::make_pair("arm1", table_item));
 
-			table_item["label"] = h.adaptability_str(hero::ARMS, 2);
+			table_item["label"] = hero::adaptability_str2(h.arms_[2]);
 			table_item_item.insert(std::make_pair("arm2", table_item));
 
-			table_item["label"] = h.adaptability_str(hero::ARMS, 3);
+			table_item["label"] = hero::adaptability_str2(h.arms_[3]);
 			table_item_item.insert(std::make_pair("arm3", table_item));
 
-			table_item["label"] = h.adaptability_str(hero::ARMS, 4);
+			table_item["label"] = hero::adaptability_str2(h.arms_[4]);
 			table_item_item.insert(std::make_pair("arm4", table_item));
 
 		} else if (catalog == COMMAND_PAGE) {
@@ -353,7 +353,7 @@ void thero_selection::fill_table(int catalog)
 			table_item["label"] = h.name();
 			table_item_item.insert(std::make_pair("name", table_item));
 
-			table_item["label"] = h.gender_str();
+			table_item["label"] = hero::gender_str(h.gender_);
 			table_item_item.insert(std::make_pair("gender", table_item));
 
 		} else if (catalog == RELATION_PAGE) {

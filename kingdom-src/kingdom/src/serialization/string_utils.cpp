@@ -279,6 +279,9 @@ static bool is_wildcard_char(char c) {
 }
 
 bool isvalid_username(const std::string& username) {
+	int ii = 0;
+	return !username.empty();
+
 	const size_t alnum = std::count_if(username.begin(), username.end(), isalnum);
 	const size_t valid_char =
 			std::count_if(username.begin(), username.end(), is_username_char);

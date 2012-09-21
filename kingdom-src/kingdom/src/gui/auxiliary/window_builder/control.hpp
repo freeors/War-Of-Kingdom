@@ -1,4 +1,4 @@
-/* $Id: control.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: control.hpp 54322 2012-05-28 08:21:28Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -31,20 +31,19 @@ public:
 
 	tbuilder_control(const config& cfg);
 
+	using tbuilder_widget::build;
+
+	twidget* build(const treplacements& replacements) const;
+
+	/** @deprecated The control can initalise itself. */
 	void init_control(tcontrol* control) const;
 
 	/** Parameters for the control. */
-	std::string id;
 	std::string definition;
-	std::string linked_group;
 	t_string label;
 	t_string tooltip;
 	t_string help;
 	bool use_tooltip_on_label_overflow;
-#ifndef LOW_MEM
-	int debug_border_mode;
-	unsigned debug_border_color;
-#endif
 };
 
 } // namespace implementation

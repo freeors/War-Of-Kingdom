@@ -647,6 +647,16 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		// Time of day bonus.
 		damage_multiplier += combat_modifier(u_loc, u.alignment(), u.is_fearless());
 
+		if (unit_feature_val2(u, hero_feature_dayattack) || unit_feature_val2(u, hero_feature_nightattack)) {
+			// const time_of_day &tod = resources::tod_manager->time_of_day_at(u_loc);
+			const time_of_day &tod = resources::tod_manager->get_time_of_day(u_loc);
+			if (tod.lawful_bonus > 0 && unit_feature_val2(u, hero_feature_dayattack)) {
+				damage_multiplier += tod.lawful_bonus;
+			} else if (tod.lawful_bonus < 0 && unit_feature_val2(u, hero_feature_nightattack)) {
+				damage_multiplier -= tod.lawful_bonus;
+			}
+		}
+
 		// Leadership bonus.
 		int leader_bonus = 0;
 		if (under_leadership(units, u_loc, &leader_bonus).valid()) {
@@ -747,18 +757,7 @@ bool battle_context::better_attack(class battle_context &that, double harm_weigh
 /** Helper class for performing an attack. */
 class attack
 {
-	friend std::pair<map_location, map_location> attack_unit(unit &, unit &, int, int, bool, const config&);
-
-	attack(unit& attacker, unit& defender, int attack_with, int defend_with, bool update_display = true, const config& = config::invalid);
-	std::pair<map_location, map_location> perform();
-	bool perform_hit(bool, statistics::attack_context &);
-	bool weapon_move(unit& u, const map_location& from, const map_location& to, std::set<map_location>& invalid_locs);
-	~attack();
-
-	class attack_end_exception {};
-	void fire_event(const std::string& n);
-	void refresh_bc();
-
+public:
 	/** Structure holding unit info used in the attack action. */
 	struct unit_info
 	{
@@ -784,7 +783,17 @@ class attack
 
 		std::string dump();
 	};
-	void unit_die(unit_info& a_info, unit& die, int die_decreased_activity);
+	friend std::pair<map_location, map_location> attack_unit(unit &, unit &, int, int, bool, const config&);
+
+	attack(unit& attacker, unit& defender, int attack_with, int defend_with, bool update_display = true, const config& = config::invalid);
+	std::pair<map_location, map_location> perform();
+	bool perform_hit(bool, statistics::attack_context &);
+	bool weapon_move(unit& u, const map_location& from, const map_location& to, std::set<map_location>& invalid_locs);
+	~attack();
+
+	class attack_end_exception {};
+	void fire_event(const std::string& n);
+	void refresh_bc();
 
 	battle_context *bc_;
 	const battle_context::unit_stats *a_stats_;
@@ -987,12 +996,17 @@ private:
 
 // @a: attack. 这个attack并不总是attack::attack中的a_, 有可能是d_, 它是胜利一方
 // @die: unit of die. 它是被击败一方
-void attack::unit_die(unit_info& a_info, unit& die, int die_activity)
+void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int a_side)
 {
-	unit& a = a_info.get_unit();
+	attack::unit_info* a_info = NULL;
+	unit* attacker = NULL;
 	const map_location& die_loc = die.get_location();
-	artifical* cobj = units_.city_from_cityno(die.cityno());
-	// (cobj == NULL), 指示该部队是流浪部队
+	artifical* cobj = units.city_from_cityno(die.cityno());
+
+	if (a_info_p) {
+		a_info = reinterpret_cast<attack::unit_info*>(a_info_p);
+		attacker = &a_info->get_unit();
+	}
 
 	if (!die.is_artifical()) {
 		int merit = die.cause_damage_ + std::min<int>(75, die.field_turns_ * 25);
@@ -1051,111 +1065,11 @@ void attack::unit_die(unit_info& a_info, unit& die, int die_activity)
 				cobj = citys[get_random() % citys.size()];
 				for (std::vector<hero*>::iterator itor = roam.begin(); itor != roam.end(); ++ itor) {
 					hero* h = *itor;
-					cobj->move_into(*h);
-
-					game_events::show_hero_message(h, cobj, _("Let me join in. I will do my best to maintenance our honor."), game_events::INCIDENT_RECOMMENDONESELF);
-				}
-				resources::screen->invalidate(cobj->get_location());
-			}
-		}
-
-		units_.erase(&die);
-
-	} else if (!die.attack_destroy() && die.can_reside()) { 
-		// 被击败单位是可居住、不能催毁建筑物（城市）
-		a_info.xp_ += 16; // 攻下城的部队xp=原得xp+16
-		cobj = dynamic_cast<artifical*>(&die);
-		if (a.is_artifical() || a.master().ambition_ >= hero_ambition_4) {
-			// artifical/<流寇>，攻下城后不进城
-			cobj->fallen(a.side());
-		} else {
-			a.cause_damage_ += a_info.cause_damage_;
-			a.been_damage_ += a_info.been_damage_;
-			a.defeat_units_ += a_info.defeat_units_;
-
-			if (a_info.activity_) {
-				a.increase_activity(a_info.activity_);
-			}
-			a.get_experience(a_info.xp_, true);
-			// dialogs::advance_unit(a.get_location());
-			cobj->fallen(a.side(), &a);
-			units_.erase(&a);
-		}
-		// @todo FIXME: need normalize to call clear_status_caches()
-		// unit::clear_status_caches();
-	} else if (!die.attack_destroy()) {
-		// 被击败单位是不能催毁建筑物，但不能驻扎===>改变阵营
-		cobj->fallen(a.side());
-		// @todo FIXME: need normalize to call clear_status_caches()
-		// unit::clear_status_caches();
-	} else {
-		// 被击败单位是可催毁建筑物
-		units_.erase(&die);
-	}
-}
-
-void unit_die(unit_map& units, unit& die, int a_side)
-{
-	const map_location& die_loc = die.get_location();
-	artifical* cobj = units.city_from_cityno(die.cityno());
-
-	if (!die.is_artifical()) {
-		int merit = die.cause_damage_ + std::min<int>(75, die.field_turns_ * 25);
-		int activity;
-		if (merit < 150) {
-			activity = -1 * game_config::maximal_defeated_activity * (150 - merit) / 150;
-		} else {
-			activity = 0;
-		}
-		if (activity) {
-			die.increase_activity(activity, false);
-		}
-		if (!die.attack_destroy()) {
-			std::vector<hero*> back, roam;
-			hero* h = &die.master();
-			if (h != rpg::h && h->ambition_ <= hero_ambition_0) {
-				// <闲云野鹤>，所属部队被击溃后随机去一个城市
-				roam.push_back(h);
-			} else if (cobj) {
-				back.push_back(h);
-			}
-
-			if (die.second().valid()) {
-				h = &die.second();
-				if (h != rpg::h && h->ambition_ <= hero_ambition_0) {
-					roam.push_back(h);
-				} else if (cobj) {
-					back.push_back(h);
-				}
-			}
-			if (die.third().valid()) {
-				h = &die.third();
-				if (h != rpg::h && h->ambition_ <= hero_ambition_0) {
-					roam.push_back(h);
-				} else if (cobj) {
-					back.push_back(h);
-				}
-			}
-
-			if (back.size()) {
-				// 武将回到所在城市
-				for (std::vector<hero*>::const_iterator itor = back.begin(); itor != back.end(); ++ itor) {
-					(*itor)->status_ = hero_status_backing;
-					cobj->finish_heros().push_back(*itor);
-				}
-				resources::screen->invalidate(cobj->get_location());
-			}
-			if (roam.size()) {
-				// 武将随机流浪到一个城市
-				std::vector<artifical*> citys;
-				for (size_t i = 0; i < (*resources::teams).size(); i ++) {
-					std::vector<artifical*>& side_citys = (*resources::teams)[i].holded_cities();
-					citys.insert(citys.end(), side_citys.begin(), side_citys.end());
-				}
-				cobj = citys[get_random() % citys.size()];
-				for (std::vector<hero*>::iterator itor = roam.begin(); itor != roam.end(); ++ itor) {
-					hero* h = *itor;
-					cobj->move_into(*h);
+					if (cobj->side() == team::empty_side_) {
+						cobj->wander_into(*h, false);
+					} else {
+						cobj->move_into(*h);
+					}
 
 					game_events::show_hero_message(h, cobj, _("Let me join in. I will do my best to maintenance our honor."), game_events::INCIDENT_RECOMMENDONESELF);
 				}
@@ -1165,9 +1079,38 @@ void unit_die(unit_map& units, unit& die, int a_side)
 
 		units.erase(&die);
 
+	} else if (!die.attack_destroy() && die.can_reside()) { 
+		// 被击败单位是可居住、不能催毁建筑物（城市）
+		if (a_side == HEROS_INVALID_SIDE) {
+			a_info->xp_ += 16; // 攻下城的部队xp=原得xp+16
+			cobj = dynamic_cast<artifical*>(&die);
+			if (attacker->is_artifical() || attacker->master().ambition_ >= hero_ambition_4) {
+				// artifical/<流寇>，攻下城后不进城
+				cobj->fallen(team::empty_side_);
+				// cobj->fallen(attacker->side());
+			} else {
+				attacker->cause_damage_ += a_info->cause_damage_;
+				attacker->been_damage_ += a_info->been_damage_;
+				attacker->defeat_units_ += a_info->defeat_units_;
+
+				if (a_info->activity_) {
+					attacker->increase_activity(a_info->activity_);
+				}
+				attacker->get_experience(a_info->xp_, true);
+				// dialogs::advance_unit(a.get_location());
+				cobj->fallen(attacker->side(), attacker);
+				units.erase(attacker);
+			}
+		} else {
+			cobj->fallen(a_side);
+		}
+		// @todo FIXME: need normalize to call clear_status_caches()
+		// unit::clear_status_caches();
 	} else if (!die.attack_destroy()) {
-		// 被击败单位是不能催毁建筑物
-		cobj->fallen(a_side);
+		// 被击败单位是不能催毁建筑物，但不能驻扎===>改变阵营
+		cobj->fallen(attacker->side());
+		// @todo FIXME: need normalize to call clear_status_caches()
+		// unit::clear_status_caches();
 	} else {
 		// 被击败单位是可催毁建筑物
 		units.erase(&die);
@@ -1246,7 +1189,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 	if (attacker_turn && unit_feature_val2(attacker.get_unit(), hero_feature_fearless) && !defender.get_unit().is_artifical()) {
 		// 20% miss/ 80% hit
 		if ((ran_num % 100) < 20) {
-			defender.activity_ -= 20;
+			defender.activity_ -= 30;
 			injured = true;
 		}
 	}
@@ -1572,7 +1515,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 				refresh_bc();
 			}
 
-			unit_die(attacker, *defender_ptr, defender_ptr == center_defender_ptr? defender.activity_: 0);
+			unit_die(units_, *defender_ptr, &attacker, defender_ptr == center_defender_ptr? defender.activity_: 0);
 			if (defender_ptr == center_defender_ptr) {
 				if (attacker.valid()) {
 					// attacker may be erase!!
@@ -2072,8 +2015,9 @@ std::pair<map_location, map_location> attack::perform()
 	std::vector<team>& teams = *resources::teams;
 	game_display& disp = *resources::screen;
 	if (!resources::controller->is_replaying()) {
-		if (!(rand() & 0x7f)) {
-			get_random_card(teams[attacker_side - 1], disp, units_, heros_);
+		int r = rand();
+		if (!(r & 0x3f)) {
+			get_random_card((r & 1)? teams[attacker_side - 1]: teams[defender_side - 1], disp, units_, heros_);
 		}
 	}
 
@@ -3314,21 +3258,54 @@ bool backstab_check(const map_location& attacker_loc,
 	return false; // Defender and opposite are friends
 }
 
+void refresh_card_button(const team& t, game_display& disp)
+{
+	std::stringstream strstr;
+	theme::menu *theme_b = disp.get_theme().get_menu_item("card");
+	gui::button* btn = disp.find_button("card");
+
+	std::stringstream title;
+	title << t.holded_cards().size();
+	theme_b->set_title(title.str());
+	btn->set_label(title.str());
+
+	int size = t.holded_cards().size();
+	if (size < game_config::max_cards * 3 / 4) {
+		btn->set_color(font::BUTTON_COLOR);
+	} else if (size < game_config::max_cards) {
+		btn->set_color(font::YELLOW_COLOR);
+	} else {
+		btn->set_color(font::BAD_COLOR);
+	}
+}
+
 void get_random_card(team& t, game_display& disp, unit_map& units, hero_map& heros)
 {
 	bool added = t.add_card(CARDS_INVALID_NUMBER, false, true);
 	if (added && t.is_human()) {
+		refresh_card_button(t, disp);
 		// card
 		utils::string_map symbols;
-		std::stringstream strstr;
-		theme::menu *theme_b = disp.get_theme().get_menu_item("card");
-		gui::button* btn = disp.find_button("card");
-		std::stringstream title;
-		title << t.holded_cards().size();
-		theme_b->set_title(title.str());
-		btn->set_label(title.str());
 		symbols["first"] = t.holded_card(t.holded_cards().size() - 1).name();
 		game_events::show_hero_message(&heros[214], NULL, vgettext("Get card: $first.", symbols), game_events::INCIDENT_CARD);
+	}
+}
+
+void erase_random_card(team& t, game_display& disp, unit_map& units, hero_map& heros)
+{
+	const std::vector<size_t>& holded_cards = t.holded_cards();
+	if (holded_cards.empty()) {
+		return;
+	}
+	int index = rand() % holded_cards.size();
+	card& c = t.holded_card(index);
+	t.erase_card(index, false, true);
+	if (t.is_human()) {
+		refresh_card_button(t, disp);
+		// card
+		utils::string_map symbols;
+		symbols["first"] = c.name();
+		game_events::show_hero_message(&heros[214], NULL, vgettext("Lost card: $first.", symbols), game_events::INCIDENT_CARD);
 	}
 }
 
@@ -3397,6 +3374,19 @@ size_t calculate_keeps(unit_map& units, const artifical& owner)
 		}
 	}
 	return keeps;
+}
+
+artifical* find_city_for_wall(unit_map& units, const map_location& loc)
+{
+	map_offset* adjacent2_ptr = adjacent_2[loc.x & 0x1];
+	size_t size2 = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
+	for (size_t i2 = 0; i2 < size2; i2 ++) {
+		artifical* city = units.city_from_loc(map_location(loc.x + adjacent2_ptr[i2].x, loc.y + adjacent2_ptr[i2].y));
+		if (city) {
+			return city;
+		}
+	}
+	return NULL;
 }
 
 SDL_Rect extend_rectangle(const gamemap& map, const SDL_Rect& src, int radius)

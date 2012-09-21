@@ -119,6 +119,7 @@ class vconfig;
 #define HERO_PREFIX_STR_NAME	"name-"
 #define HERO_PREFIX_STR_SURNAME	"surname-"
 
+#define HEROS_MAX_GENDER	3
 #define HERO_PREFIX_STR_GENDER	"gender-"
 enum {
 	hero_gender_male = 0,
@@ -253,6 +254,9 @@ enum {
 	hero_feature_healer,
 	hero_feature_faction,
 	hero_feature_interlink,
+	hero_feature_submerge,
+	hero_feature_dayattack,
+	hero_feature_nightattack,
 
 	hero_feature_complex_min = HEROS_BASE_FEATURE_COUNT,
 
@@ -359,6 +363,7 @@ class hero: public hero_fields_t
 {
 public:
 	static std::string adaptability_str2(uint16_t adaptability);
+	static std::string& gender_str(int gender);
 	static std::string& arms_str(int arms);
 	static std::string& skill_str(int skill);
 	static std::string& feature_str(int feature);
@@ -399,21 +404,21 @@ public:
 	void change_language();
 
 	const char* image(bool big = false);
+	void set_image(int image);
 
 	std::string& name();
+	void set_name(const std::string& name);
 
 	std::string& surname();
+	void set_surname(const std::string& surname);
 
 	const char* biography();
-
-	std::string& gender_str();
 
 	std::string& heart_str();
 
 	std::string& ambition_str();
 
 	enum {ARMS, SKILL};
-	std::string& adaptability_str(int type, int index);
 
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	void add_modification(unit_map& units, hero_map& heros, std::vector<team>& teams, const config& mod, unit* u, hero* leader);
@@ -428,6 +433,7 @@ public:
 private:
 	friend class hero_map;
 	static std::string image_file_root_;
+	static std::string gender_str_[HEROS_MAX_GENDER];
 	static std::string feature_str_[HEROS_MAX_FEATURE];
 	static std::string feature_desc_str_[HEROS_MAX_FEATURE];
 	static std::string arms_str_[HEROS_MAX_ARMS];
@@ -441,10 +447,8 @@ private:
 	char imgfile2_[32];
 	std::string name_str_;
 	std::string surname_str_;
-	std::string gender_str_;
 	std::string heart_str_;
 	std::string ambition_str_;
-	std::string adaptability_str_;
 };
 
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
@@ -460,6 +464,8 @@ bool compare_leadership(const hero* lhs, const hero* rhs);
 bool compare_politics(const hero* lhs, const hero* rhs);
 
 extern hero hero_invalid;
+extern std::vector<hero*> empty_vector_hero_ptr;
+extern std::vector<size_t> empty_vector_size_t;
 
 class hero_map
 {

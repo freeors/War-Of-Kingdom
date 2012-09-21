@@ -1,4 +1,4 @@
-/* $Id: tree_view.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: tree_view.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2010 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -17,13 +17,14 @@
 
 #include "gui/auxiliary/window_builder/tree_view.hpp"
 
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/widget_definition/tree_view.hpp"
 #include "gui/auxiliary/window_builder/helper.hpp"
 #include "gui/widgets/tree_view.hpp"
 #include "wml_exception.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -39,7 +40,7 @@ tbuilder_tree_view::tbuilder_tree_view(const config& cfg)
 	, nodes()
 {
 
-	foreach(const config &node, cfg.child_range("node")) {
+	BOOST_FOREACH(const config &node, cfg.child_range("node")) {
 		nodes.push_back(tnode(node));
 	}
 

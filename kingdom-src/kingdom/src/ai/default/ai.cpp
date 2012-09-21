@@ -143,7 +143,7 @@ map_location ai_default::move_unit(const std::pair<unit*, int>& pair, map_locati
 	int side = side_;
 	unit* unit_ptr = NULL;
 	if (pair.second >= 0) {
-		unit_ptr = &unit_2_artifical(pair.first)->reside_troops()[pair.second];
+		unit_ptr = unit_2_artifical(pair.first)->reside_troops()[pair.second];
 	} else {
 		unit_ptr = pair.first;
 	}
@@ -197,7 +197,7 @@ map_location ai_default::move_unit(const std::pair<unit*, int>& pair, map_locati
 		if (!route_.steps.empty()) {
 			if (pair.second >= 0) {
 				artifical* expediting_city = unit_2_artifical(pair.first);
-				std::vector<unit>& reside_troops = expediting_city->reside_troops();
+				// std::vector<unit*>& reside_troops = expediting_city->reside_troops();
 				disp_.place_expedite_city(*expediting_city);
 				units_.set_expediting(expediting_city, pair.second);
 				::move_unit(
@@ -214,7 +214,7 @@ map_location ai_default::move_unit(const std::pair<unit*, int>& pair, map_locati
 				units_.set_expediting();
 				if (move_spectator.get_unit().valid() && move_spectator.get_unit()->get_location() != from) {
 					// move_unit may be not move! reside troop ratain in city.
-					reside_troops.erase(reside_troops.begin() + units_.last_expedite_index());
+					expediting_city->troop_go_out(units_.last_expedite_index());
 				} else {
 					unit_ptr->remove_movement_ai();
 				}
@@ -582,7 +582,7 @@ void ai_default::calculate_mr_target(int index)
 		// all field are back city, reside are in city.
 		for (std::map<artifical*, mr_data::enemy_data>::const_iterator i = mr.own_cities.begin(); i != mr.own_cities.end(); ++ i) {
 			artifical& city = *i->first;
-			std::vector<unit>& resides = city.reside_troops();
+			std::vector<unit*>& resides = city.reside_troops();
 			std::vector<hero*>& hero_list = city.fresh_heros();
 			size_t min_requirement = true? 0: mr_data::min_interior_requirement - 1;
 			while (hero_list.size() > min_requirement) {
@@ -594,8 +594,8 @@ void ai_default::calculate_mr_target(int index)
 				// unit& new_troop = resides.back();
 				// new_troop.set_goto(city.get_location()); // target to centor of this military region
 			}
-			for (std::vector<unit>::iterator u_itor = resides.begin(); u_itor != resides.end(); ++ u_itor) {
-				unit& u = *u_itor;
+			for (std::vector<unit*>::iterator u_itor = resides.begin(); u_itor != resides.end(); ++ u_itor) {
+				unit& u = **u_itor;
 				if (!u.human()) {
 					u.set_goto(map_location());
 				}
@@ -636,7 +636,7 @@ void ai_default::calculate_mr_target(int index)
 			}
 			artifical& city = *i->first;
 			
-			std::vector<unit>& resides = city.reside_troops();
+			std::vector<unit*>& resides = city.reside_troops();
 			std::vector<hero*>& hero_list = city.fresh_heros();
 			size_t min_requirement = true? 0: mr_data::min_interior_requirement - 1;
 			while (hero_list.size() > min_requirement) {
@@ -648,8 +648,8 @@ void ai_default::calculate_mr_target(int index)
 				// unit& new_troop = resides.back();
 				// new_troop.set_goto(city.get_location()); // target to centor of this military region
 			}
-			for (std::vector<unit>::iterator u_itor = resides.begin(); u_itor != resides.end(); ++ u_itor) {
-				unit& u = *u_itor;
+			for (std::vector<unit*>::iterator u_itor = resides.begin(); u_itor != resides.end(); ++ u_itor) {
+				unit& u = **u_itor;
 				if (!u.human()) {
 					u.set_goto(map_location());
 				}
@@ -664,10 +664,11 @@ void ai_default::calculate_mr_target(int index)
 		}
 
 		// recruit all fresh heros
-		std::vector<unit>& reside_troops = aggressing->reside_troops();
-		for (std::vector<unit>::iterator i = reside_troops.begin(); i != reside_troops.end(); ++ i) {
-			if (!i->human()) {
-				i->set_goto(aggressed->get_location());
+		std::vector<unit*>& reside_troops = aggressing->reside_troops();
+		for (std::vector<unit*>::iterator i = reside_troops.begin(); i != reside_troops.end(); ++ i) {
+			unit& u = **i;
+			if (!u.human()) {
+				u.set_goto(aggressed->get_location());
 			}
 		}
 		std::vector<hero*>& hero_list = aggressing->fresh_heros();
@@ -677,9 +678,9 @@ void ai_default::calculate_mr_target(int index)
 				// cannot recurite more, my be not enough gold
 				break;
 			}
-			unit& new_troop = reside_troops.back();
-			if (!new_troop.human()) {
-				new_troop.set_goto(aggressed->get_location()); // target to centor of this military region
+			unit* new_troop = reside_troops.back();
+			if (!new_troop->human()) {
+				new_troop->set_goto(aggressed->get_location()); // target to centor of this military region
 			}
 		}
 		
@@ -732,7 +733,7 @@ void ai_default::calculate_mr_target(int index)
 		// all field are back city, reside are in city.
 		for (std::map<artifical*, mr_data::enemy_data>::const_iterator i = mr.own_cities.begin(); i != mr.own_cities.end(); ++ i) {
 			artifical& city = *i->first;
-			std::vector<unit>& resides = city.reside_troops();
+			std::vector<unit*>& resides = city.reside_troops();
 			std::vector<hero*>& hero_list = city.fresh_heros();
 			size_t min_requirement = true? 0: mr_data::min_interior_requirement - 1;
 			while (hero_list.size() > min_requirement) {
@@ -744,8 +745,8 @@ void ai_default::calculate_mr_target(int index)
 				// unit& new_troop = resides.back();
 				// new_troop.set_goto(city.get_location()); // target to centor of this military region
 			}
-			for (std::vector<unit>::iterator u_itor = resides.begin(); u_itor != resides.end(); ++ u_itor) {
-				unit& u = *u_itor;
+			for (std::vector<unit*>::iterator u_itor = resides.begin(); u_itor != resides.end(); ++ u_itor) {
+				unit& u = **u_itor;
 				if (!u.human()) {
 					u.set_goto(map_location());
 				}
@@ -763,7 +764,7 @@ void ai_default::calculate_mr_target(int index)
 
 bool ai_default::can_allied(const team& to, int target_side, artifical* aggressed)
 {
-	if (to.is_human()) {
+	if (to.is_human() || to.is_empty()) {
 		return false;
 	}
 	if (to.holded_cities().empty()) {
@@ -1006,9 +1007,9 @@ void ai_default::move_hero(artifical& from, artifical& to, int& lack, int& more)
 		}
 	}
 
-	std::vector<unit>& resides = from.reside_troops();
-	for (std::vector<unit>::iterator u_itor = resides.begin(); u_itor != resides.end(); ++ u_itor) {
-		unit& troop = *u_itor;
+	std::vector<unit*>& resides = from.reside_troops();
+	for (std::vector<unit*>::iterator u_itor = resides.begin(); u_itor != resides.end(); ++ u_itor) {
+		unit& troop = **u_itor;
 		if (troop.human()) {
 			continue;
 		}
@@ -1036,7 +1037,7 @@ void ai_default::move_hero(artifical& from, artifical& to, int& lack, int& more)
 	}
 }
 
-int ai_default::build(std::vector<std::pair<unit*, int> >& builder_troops, const unit_type* art, const map_location& at)
+int ai_default::build(artifical& owner, std::vector<std::pair<unit*, int> >& builder_troops, const unit_type* art, const map_location& at)
 {
 	std::map<int, pathfind::paths> possible_moves2;
 	std::multimap<int, map_location> srcdst2;
@@ -1083,18 +1084,18 @@ int ai_default::build(std::vector<std::pair<unit*, int> >& builder_troops, const
 		builder = &*units_.find(builder_to_loc);
 	}
 
-	artifical* city = units_.city_from_cityno(builder->master().city_);
+	// artifical* city = units_.city_from_cityno(builder->master().city_);
 
-	recorder.add_build(art, city->get_location(), builder_to_loc, at, art->cost());
+	recorder.add_build(art, owner.get_location(), builder_to_loc, at, art->cost());
 
 	std::vector<const hero*> v;
 	if (art->master() != HEROS_INVALID_NUMBER) {
 		v.push_back(&heros_[art->master()]);
 	} else {
-		v.push_back(&city->master());
+		v.push_back(&owner.master());
 	}
 	type_heros_pair pair(art, v);
-	artifical new_artifical(units_, heros_, pair, builder->cityno(), true);
+	artifical new_artifical(units_, heros_, pair, owner.cityno(), true);
 
 	current_team_.spend_gold(new_artifical.cost());
 
@@ -1169,10 +1170,10 @@ void ai_default::do_move()
 			do {
 				if (builder_troops.empty()) {
 					int index;
-					std::vector<unit>& reside_troops = owner.reside_troops();
+					std::vector<unit*>& reside_troops = owner.reside_troops();
 					index = reside_troops.size() - 1;
-					for (std::vector<unit>::reverse_iterator u_ritor = reside_troops.rbegin(); u_ritor != reside_troops.rend(); ++ u_ritor, index --) {
-						unit& u = *u_ritor;
+					for (std::vector<unit*>::reverse_iterator u_ritor = reside_troops.rbegin(); u_ritor != reside_troops.rend(); ++ u_ritor, index --) {
+						unit& u = **u_ritor;
 						if (!u.human() && u.movement_left() && u.attacks_left()) {
 							builder_troops.push_back(std::make_pair<unit*, int>(&u, index));
 						}
@@ -1237,7 +1238,7 @@ void ai_default::do_move()
 						at = wall_vacants[rand() % wall_vacants.size()];
 					}
 					if (at) {
-						int builder_index_in_troops = build(builder_troops, art, *at);
+						int builder_index_in_troops = build(owner, builder_troops, art, *at);
 						maximum_build_walls --;
 						if (builder_index_in_troops != -1) {
 							if (builder_index_in_troops >= minimum_field_index) {
@@ -1271,7 +1272,7 @@ void ai_default::do_move()
 						}
 					}
 					if (at) {
-						builder_index_in_troops = build(builder_troops, art, *at);
+						builder_index_in_troops = build(owner, builder_troops, art, *at);
 						if (builder_index_in_troops != -1) {
 							maximum_build_markets --;
 							if (builder_index_in_troops >= minimum_field_index) {
@@ -1301,10 +1302,10 @@ void ai_default::do_move()
 				if (city->side() != side_) {
 					continue;
 				}
-				std::vector<unit>& reside_troops = city->reside_troops();
+				std::vector<unit*>& reside_troops = city->reside_troops();
 				int index = reside_troops.size() - 1;
-				for (std::vector<unit>::reverse_iterator itor = reside_troops.rbegin(); itor != reside_troops.rend(); ++ itor, index --) {
-					unit& u = *itor;
+				for (std::vector<unit*>::reverse_iterator itor = reside_troops.rbegin(); itor != reside_troops.rend(); ++ itor, index --) {
+					unit& u = **itor;
 					if (u.human() || !u.movement_left()) {
 						continue;
 					}
@@ -1337,8 +1338,8 @@ void ai_default::do_move()
 			// desired move troop may move into one city. after it, g->first became to access denied.
 			// so update goto before move_unit.
 			if (g->second >= 0) {
-				goto_loc = unit_2_artifical(g->first)->reside_troops()[g->second].get_goto();
-				unit_2_artifical(g->first)->reside_troops()[g->second].set_goto(map_location());
+				goto_loc = unit_2_artifical(g->first)->reside_troops()[g->second]->get_goto();
+				unit_2_artifical(g->first)->reside_troops()[g->second]->set_goto(map_location());
 			} else {
 				goto_loc = g->first->get_goto();
 				g->first->set_goto(map_location());
@@ -1369,7 +1370,7 @@ void ai_default::do_move_td()
 			artifical* city = itor->first;
 			const map_location& city_loc = city->get_location();
 
-			std::vector<unit>& reside_troops = city->reside_troops();
+			// std::vector<unit*>& reside_troops = city->reside_troops();
 			std::vector<hero*>& hero_list = city->fresh_heros();
 			
 			while (!hero_list.empty()) {
@@ -1430,7 +1431,7 @@ void ai_default::do_move_td()
 					}
 				}
 
-				std::vector<unit>& reside_troops = city->reside_troops();
+				std::vector<unit*>& reside_troops = city->reside_troops();
 				
 				while (size_t troops_size = reside_troops.size()) {
 					// recruit! until balance in this military-region
@@ -1542,7 +1543,10 @@ bool ai_default::do_combat(bool unmovementable)
 //   false: no unit recruited in this time.
 bool ai_default::do_recruitment(artifical& city)
 {
-	if (current_team_.gold() < current_team_.max_recruit_cost() * cost_exponent_ / 100) {
+	int gold = current_team_.gold();
+	int max_recruit_cost = current_team_.max_recruit_cost() * cost_exponent_ / 100;
+
+	if (gold < 2 * max_recruit_cost) {
 		return false;
 	}
 	if (city.mayor() == rpg::h) {
@@ -1725,16 +1729,36 @@ bool ai_default::do_recruitment(artifical& city)
 	uint16_t adaptability = 0;
 	// Find an available unit that can be recruited,
 	// matches the desired usage type, and comes in under budget.
-	const std::set<const unit_type*>& recruits = current_team_.recruits();
-	for (std::set<const unit_type*>::const_iterator itor = recruits.begin(); itor != recruits.end(); ++ itor) {
+	int bonus = 0;
+	if (gold > 5 * max_recruit_cost) {
+		bonus = rand() % 4;
+	} else if (gold > 4 * max_recruit_cost) {
+		bonus = rand() % 3;
+	} else if (gold > 3 * max_recruit_cost) {
+		bonus = rand() % 2;
+	}
+	if (game_config::default_ai_level + bonus > game_config::max_level) {
+		bonus = game_config::max_level - game_config::default_ai_level;
+	}
+	const std::vector<const unit_type*>& recruits = current_team_.recruits(game_config::default_ai_level + bonus);
+	const std::vector<arms_feature>& features = current_team_.features();
+	for (std::vector<const unit_type*>::const_iterator itor = recruits.begin(); itor != recruits.end(); ++ itor) {
 		const unit_type* ut = *itor;
 		const std::string& name = ut->id();
 
-		if (master.arms_[ut->arms()] > adaptability) {
+		bonus = 0;
+		for (std::vector<arms_feature>::const_iterator it2 = features.begin(); it2 != features.end(); ++ it2) {
+			const arms_feature& f = *it2;
+			if (ut->arms() == f.arms_) {
+				bonus += ftofxp12(1) / 2;
+			}
+		}
+
+		if (master.arms_[ut->arms()] + bonus > adaptability) {
 			options.clear();
-			adaptability = master.arms_[ut->arms()];
+			adaptability = master.arms_[ut->arms()] + bonus;
 			options.push_back(name);
-		} else if (master.arms_[ut->arms()] == adaptability) {
+		} else if (master.arms_[ut->arms()] + bonus == adaptability) {
 			options.push_back(name);
 		}
 	}
@@ -1757,16 +1781,16 @@ bool ai_default::do_recruitment(artifical& city)
 
 	recorder.add_recruit(ut->id(), city.get_location(), expedite_heros, ut->cost() * cost_exponent_ / 100, false);
 
-	unit new_unit(units_, heros_, pair, city.cityno(), true);
-	new_unit.set_movement(new_unit.total_movement());
-	new_unit.set_attacks(new_unit.attacks_total());
+	unit* new_unit = new unit(units_, heros_, pair, city.cityno(), true);
+	new_unit->set_movement(new_unit->total_movement());
+	new_unit->set_attacks(new_unit->attacks_total());
 
 	current_team_.spend_gold(ut->cost() * cost_exponent_ / 100);
 
 	for (std::vector<const hero*>::const_iterator itor = expedite_heros.begin(); itor != expedite_heros.end(); ++ itor) {
 		city.hero_go_out(**itor);
 	}
-	city.troop_come_into(new_unit);
+	city.troop_come_into(new_unit, -1, false);
 
 	manager::raise_gamestate_changed();
 
@@ -1870,10 +1894,10 @@ void ai_default::analyze_targets(std::vector<attack_analysis>& res, bool unmovem
 				city->set_movement(0);
 			}
 		}
-		std::vector<unit>& reside_troops = city->reside_troops();
+		std::vector<unit*>& reside_troops = city->reside_troops();
 		index = reside_troops.size() - 1;
-		for (std::vector<unit>::reverse_iterator itor = reside_troops.rbegin(); itor != reside_troops.rend(); ++ itor, index --) {
-			unit& u = *itor;
+		for (std::vector<unit*>::reverse_iterator itor = reside_troops.rbegin(); itor != reside_troops.rend(); ++ itor, index --) {
+			unit& u = **itor;
 			if (u.human()) {
 				continue;
 			}
@@ -2063,7 +2087,7 @@ void ai_default::do_attack_analysis(
 		if (src_ptr->movement_left() + 2 < (int)distance_between(loc, current_unit)) {
 			continue;
 		}
-
+		
 		battle_context* bc = NULL;
 
 		// This cache is only about 99% correct, but speeds up evaluation by about 1000 times.

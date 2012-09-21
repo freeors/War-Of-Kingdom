@@ -1,4 +1,4 @@
-/* $Id: scrollbar_container_private.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: scrollbar_container_private.hpp 54259 2012-05-20 14:00:17Z mordante $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -17,6 +17,8 @@
 #define GUI_WIDGETS_SCROLLBAR_CONTAINER_PRIVATE_HPP_INCLUDED
 
 #include "gui/widgets/scrollbar_container.hpp"
+
+#include "utils/const_clone.tpp"
 
 /**
  * @file
@@ -52,7 +54,7 @@ struct tscrollbar_container_implementation
 	 */
 	template<class W>
 	static W* find_at(
-			typename tconst_duplicator<W, tscrollbar_container>::type&
+			typename utils::tconst_clone<tscrollbar_container, W>::reference
 				scrollbar_container,
 			const tpoint& coordinate, const bool must_be_active)
 	{
@@ -80,7 +82,7 @@ struct tscrollbar_container_implementation
 	 */
 	template<class W>
 	static W* find(
-			typename tconst_duplicator<W, tscrollbar_container>::type&
+			typename utils::tconst_clone<tscrollbar_container, W>::reference
 				scrollbar_container,
 			const std::string& id, const bool must_be_active)
 	{

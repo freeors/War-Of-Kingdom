@@ -57,7 +57,7 @@ struct team_fields_t
 	unit_segment save_id_;
 	unit_segment current_player_;
 	unit_segment build_;
-	unit_segment recruit_;
+	unit_segment not_recruit_;
 	unit_segment color_;
 	unit_segment flag_;
 	unit_segment flag_icon_;
@@ -66,6 +66,7 @@ struct team_fields_t
 	unit_segment diplomatisms_;
 	unit_segment user_team_name_;
 	unit_segment strategies_;
+	unit_segment features_;
 	unit_segment music_;
 	unit_segment countdown_time_;
 	unit_segment candidate_cards_;
@@ -112,6 +113,17 @@ public:
 	int impletement_turns_; // persist in turns
 };
 
+struct arms_feature {
+	arms_feature(int arms = -1, int level = -1, int feature = -1) 
+		: arms_(arms)
+		, level_(level)
+		, feature_(feature)
+	{}
+	int arms_;
+	int level_;
+	int feature_;
+};
+
 /**
  * This class stores all the data for a single 'side' (in game nomenclature).
  * E.g., there is only one leader unit per team.
@@ -122,8 +134,8 @@ public:
 	team_();
 
 protected:
-	std::set<const unit_type*> can_recruit_;
-	std::set<const unit_type*> can_rpg_recruit_;
+	std::set<const unit_type*> not_recruit_;
+	std::map<int, std::vector<const unit_type*> > can_recruit_map_;
 	std::set<const unit_type*> can_build_;
 	int max_recruit_cost_;
 };
@@ -214,6 +226,8 @@ public:
 	static void set_player_leader(hero* leader);
 	static hero* player_leader_;
 
+	static int empty_side_;
+
 	team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg, const gamemap& map, int gold, size_t team_size);
 	team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem, const gamemap& map, int gold = default_team_gold);
 	team(const team& that);
@@ -230,6 +244,7 @@ public:
 	void read(const uint8_t* mem, const gamemap& map);
 
 	bool get_village(const map_location&);
+	void get_villages(const std::set<map_location>&);
 	void lose_village(const map_location&);
 	void clear_villages() { villages_.clear(); }
 	const std::set<map_location>& villages() const { return villages_; }
@@ -267,9 +282,12 @@ public:
 	bool get_scroll_to_leader() const {return info_.scroll_to_leader;}
 
 	int max_recruit_cost();
-	const std::set<const unit_type*>& recruits();
-	void add_recruit(const std::string &);
-	void set_recruits(const std::set<std::string>& recruits);
+	const std::vector<const unit_type*>& recruits(int level);
+	void set_builds(const std::set<std::string>& builds);
+
+	void set_notrecruits(const std::set<std::string>& ids);
+	void add_notrecruit(const std::string &);
+	const std::set<const unit_type*>& not_recruits() const { return not_recruit_; }
 
 	const std::set<const unit_type*>& builds() const { return can_build_; }
 
@@ -298,8 +316,13 @@ public:
 	const strategy& get_strategy(int target, int type = strategy::NONE) const;
 	std::vector<strategy>& strategies() { return strategies_; };
 	const std::vector<strategy>& strategies() const { return strategies_; }
+	void erase_strategies(bool show = true);
+	void erase_ally(int side);
+	
+	std::vector<arms_feature>& features() { return features_; }
+	const std::vector<arms_feature>& features() const { return features_; }
 
-	void rpg_changed();
+	void rpg_changed(bool independence = false);
 
 	bool has_seen(unsigned int index) const {
 		if(!uses_shroud() && !uses_fog()) return true;
@@ -355,10 +378,10 @@ public:
 	const std::vector<artifical*>& holded_cities() const { return holded_cities_; }
 
 	bool add_card(size_t number, bool replay = false, bool dialog = false);
-	bool erase_card(int index, bool replay = false);
+	bool erase_card(int index, bool replay = false, bool dialog = false);
 	bool condition_card(int index, const map_location& loc);
-	void consume_card(int index, const map_location& loc, bool replay = false, std::map<size_t, unit*>& touched_heros = unit::null_size_unitp_pair);
-	void card_touched_heros(int index, const map_location& loc, std::vector<std::pair<size_t, unit*> >& pairs, std::string& disable_str);
+	void consume_card(int index, const map_location& loc, bool replay = false, std::vector<std::pair<int, unit*> >& touched = unit::null_int_unitp_pair);
+	void card_touched(int index, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str);
 	std::vector<size_t>& candidate_cards() { return candidate_cards_; }
 	const std::vector<size_t>& candidate_cards() const { return candidate_cards_; }
 	std::vector<size_t>& holded_cards() { return holded_cards_; }
@@ -435,7 +458,7 @@ public:
 	int commercial_exploiture(bool only_idle = false) const;
 	void active_commercial();
 
-	// config to_config() const;
+	bool defeat_vote() const;
 
 private:
 	//Make these public if you need them, but look at knows_about_team(...) first.
@@ -474,6 +497,7 @@ private:
 	mutable std::map<int, diplomatism_data> diplomatisms_;
 
 	std::vector<strategy> strategies_;
+	std::vector<arms_feature> features_;
 
 	mutable std::vector<bool> seen_;
 

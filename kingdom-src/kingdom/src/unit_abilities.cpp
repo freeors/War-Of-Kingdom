@@ -124,16 +124,16 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 		}
 	}
 
-	while (unit_feature_val(hero_feature_ambush) || (unit_feature_val(hero_feature_concealment))) {
+	while (unit_feature_val(hero_feature_ambush) || unit_feature_val(hero_feature_concealment) || unit_feature_val(hero_feature_submerge)) {
 		if (ability != "hides") {
 			break;
 		}
-		static config ambush_cfg, concealment_cfg;
+		static config ambush_cfg, concealment_cfg, submerge_cfg;
 		std::vector<config*> cfgs;
 		if (unit_feature_val(hero_feature_ambush)) {
 			if (ambush_cfg.empty()) {
 				config& filter_location = ambush_cfg.add_child("filter_location");
-				filter_location["terrain"] = "*^Fp,*^Fet,*^Ft,*^Fpa,*^Fd*,*^Fm*";
+				filter_location["terrain"] = "*^Fp,*^Fet*,*^Ft,*^Fpa,*^Fd*,*^Fm*";
 			}
 			cfgs.push_back(&ambush_cfg);
 		}
@@ -144,6 +144,14 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 			}
 			cfgs.push_back(&concealment_cfg);
 		}
+		if (unit_feature_val(hero_feature_submerge)) {
+			if (submerge_cfg.empty()) {
+				config& filter_location = submerge_cfg.add_child("filter_location");
+				filter_location["terrain"] = "Wo";
+			}
+			cfgs.push_back(&submerge_cfg);
+		}
+		
 		for (std::vector<config*>::iterator i = cfgs.begin(); i != cfgs.end(); ++ i) {
 			if (matches_filter(vconfig(**i), loc, false)) {
 				return true;

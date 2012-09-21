@@ -236,6 +236,7 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 		}
 	}
 	// Add all the resolutions
+	std::string theme_name = top_cfg["name"].str();
 	foreach (const config &res, top_cfg.child_range("resolution")) {
 		int width = res["width"].to_int();
 		int height = res["height"].to_int();
@@ -249,7 +250,8 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 				// there is only 640x480 standard resolution when screen is less than 800x600.
 				continue;
 			}
-		} else if (screen.w < 1024 || screen.h < 768) {
+		} else if ((theme_name != "editor") && (screen.w < 1024 || screen.h < 768)) {
+			// editor hasn't 800x600 partialresolution.
 			// it will use 800x600 partialresolution.
 			continue;
 		} else if (width != 1024 && height != 768) {

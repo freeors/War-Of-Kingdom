@@ -35,31 +35,43 @@ msgstr ""
 msgid "Multi"
 msgstr ""
 
-msgid "loyaltys +2"
+msgid "Loyaltys +10"
 msgstr ""
 
-msgid "loyaltys +2 description"
+msgid "loyaltys +10 description"
 msgstr ""
 
-msgid "multi-munitions +10"
+msgid "Multi-munitions +10"
 msgstr ""
 
 msgid "multi-munitions +10 description"
 msgstr ""
 
-msgid "office"
+msgid "Office"
 msgstr ""
 
 msgid "office description"
 msgstr ""
 
-msgid "wande"
+msgid "Wande"
 msgstr ""
 
 msgid "wande description"
 msgstr ""
 
-msgid "communicate"
+msgid "Advance"
+msgstr ""
+
+msgid "advance description"
+msgstr ""
+
+msgid "Train"
+msgstr ""
+
+msgid "train description"
+msgstr ""
+
+msgid "Communicate"
 msgstr ""
 
 msgid "communicate description"

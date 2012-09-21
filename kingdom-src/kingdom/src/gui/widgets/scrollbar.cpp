@@ -1,4 +1,4 @@
-/* $Id: scrollbar.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: scrollbar.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -17,11 +17,11 @@
 
 #include "gui/widgets/scrollbar.hpp"
 
-#include "foreach.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/widgets/window.hpp" // Needed for invalidate_layout()
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -132,7 +132,7 @@ void tscrollbar_::set_item_position(const unsigned item_position)
 
 void tscrollbar_::update_canvas() {
 
-	foreach(tcanvas& tmp, canvas()) {
+	BOOST_FOREACH(tcanvas& tmp, canvas()) {
 		tmp.set_variable("positioner_offset", variant(positioner_offset_));
 		tmp.set_variable("positioner_length", variant(positioner_length_));
 	}
@@ -182,7 +182,7 @@ void tscrollbar_::recalculate()
 		assert(window);
 		window->invalidate_layout();
 		ERR_GUI_G << LOG_HEADER
-				<< " Can't recalculate size, force a Window layout phase.\n";
+				<< " Can't recalculate size, force a window layout phase.\n";
 		return;
 	}
 
@@ -287,7 +287,7 @@ void tscrollbar_::move_positioner(const int distance)
 void tscrollbar_::load_config_extra()
 {
 	// These values won't change so set them here.
-	foreach(tcanvas& tmp, canvas()) {
+	BOOST_FOREACH(tcanvas& tmp, canvas()) {
 		tmp.set_variable("offset_before", variant(offset_before()));
 		tmp.set_variable("offset_after", variant(offset_after()));
 	}

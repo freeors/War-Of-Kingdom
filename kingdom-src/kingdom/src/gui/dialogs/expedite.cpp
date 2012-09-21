@@ -113,7 +113,7 @@ void texpedite::type_selected(twindow& window)
 	// There is maybe no troop after disband. so troop_index_ maybe equal -1.
 	if (troop_index_ >= 0) {
 		int size = city_.reside_troops().size();
-		const unit& u = city_.reside_troops()[troop_index_];
+		const unit& u = *city_.reside_troops()[troop_index_];
 		for (int index = 0; index < size; index ++) {
 			tgrid* grid_ptr = list.get_row_grid(index);
 			// tbutton& disband = find_widget<tbutton>(&window, "disband", false);
@@ -136,7 +136,7 @@ void texpedite::refresh_tooltip(twindow& window)
 	std::stringstream text;
 	int index;
 
-	std::vector<unit>& reside_troops = city_.reside_troops();
+	std::vector<unit*>& reside_troops = city_.reside_troops();
 
 	tbutton* button = find_widget<tbutton>(&window, "merit", false, true);
 	button->set_dirty();
@@ -216,7 +216,7 @@ void texpedite::refresh_tooltip(twindow& window)
 		label->set_label("");
 		return;
 	}
-	unit& temp = reside_troops[troop_index_];
+	unit& temp = *reside_troops[troop_index_];
 
 	std::stringstream str, activity_str;
 	int loyalty, activity, hero_count = 1;
@@ -413,20 +413,21 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
 
 	int cost_exponent = current_team.cost_exponent();
-	std::vector<unit>& reside_troops = city_.reside_troops();
+	std::vector<unit*>& reside_troops = city_.reside_troops();
 	int troop_index = 0;
-	for (std::vector<unit>::const_iterator it = reside_troops.begin(); it != reside_troops.end(); ++ it, troop_index ++) {
+	for (std::vector<unit*>::const_iterator it = reside_troops.begin(); it != reside_troops.end(); ++ it, troop_index ++) {
+		unit& u = **it;
 		/*** Add list item ***/
 		string_map list_item;
 		std::map<std::string, string_map> list_item_item;
 
-		list_item["label"] = it->absolute_image() + "~RC(" + it->team_color() + ">" + team::get_side_color_index(side_num) + ")";
+		list_item["label"] = u.absolute_image() + "~RC(" + u.team_color() + ">" + team::get_side_color_index(side_num) + ")";
 		list_item_item.insert(std::make_pair("icon", list_item));
 
 		// type/name
 		str.str("");
-		str << it->type_name() << "(Lv" << it->level() << ")\n";
-		str << it->name();
+		str << u.type_name() << "(Lv" << u.level() << ")\n";
+		str << u.name();
 		list_item["label"] = str.str();
 		list_item_item.insert(std::make_pair("type", list_item));
 
@@ -435,15 +436,15 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 
 		// hp
 		str.str("");
-		str << it->hitpoints() << "/\n" << it->max_hitpoints();
+		str << u.hitpoints() << "/\n" << u.max_hitpoints();
 		list_item["label"] = str.str();
 		list_item_item.insert(std::make_pair("hp", list_item));
 
 		// xp
 		str.str("");
-		str << it->experience() << "/\n";
-		if (it->can_advance()) {
-			str << it->max_experience();
+		str << u.experience() << "/\n";
+		if (u.can_advance()) {
+			str << u.max_experience();
 		} else {
 			str << "-";
 		}
@@ -452,12 +453,12 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 
 		// movement
 		str.str("");
-		str << it->movement_left() << "/" << it->total_movement();
+		str << u.movement_left() << "/" << u.total_movement();
 		list_item["label"] = str.str();
 		list_item_item.insert(std::make_pair("movement", list_item));
 
 		str.str("");
-		str << it->cost() * cost_exponent / 100 << "/" << it->cost() * 2 / 3;
+		str << u.cost() * cost_exponent / 100 << "/" << u.cost() * 2 / 3;
 		list_item["label"] = str.str();
 		list_item_item.insert(std::make_pair("cost", list_item));
 
@@ -465,7 +466,7 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 
 		tgrid* grid_ptr = list->get_row_grid(troop_index);
 		twidget* widget = grid_ptr->find("human", false);
-		widget->set_visible(it->human()? twidget::VISIBLE: twidget::INVISIBLE);
+		widget->set_visible(u.human()? twidget::VISIBLE: twidget::INVISIBLE);
 
 		// tbutton& disband = find_widget<tbutton>(&window, "disband", false);
 		tbutton& disband = *dynamic_cast<tbutton*>(grid_ptr->find("disband", false));
@@ -481,7 +482,7 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 			disband.set_visible(twidget::INVISIBLE);
 		} else {
 			disband.set_visible(twidget::VISIBLE);
-			disband.set_active(reside_troops[troop_index].human());
+			disband.set_active(reside_troops[troop_index]->human());
 		}
 
 	}
@@ -498,14 +499,14 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 	refresh_tooltip(window);
 
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
-	const unit& u = reside_troops[troop_index_];
+	const unit& u = *reside_troops[troop_index_];
 	ok->set_active(can_move(u) && u.human());
 }
 
 void texpedite::merit(twindow& window)
 {
-	std::vector<unit>& reside_troops = city_.reside_troops();
-	unit& temp = reside_troops[troop_index_];
+	std::vector<unit*>& reside_troops = city_.reside_troops();
+	unit& temp = *reside_troops[troop_index_];
 
 	tunit_merit merit(gui_, temp);
 	merit.show(gui_.video());
@@ -549,7 +550,7 @@ void texpedite::disband(bool& handled, bool& halt, twindow& window, int index)
 				, boost::ref(window)
 				, i));
 
-		disband.set_active(city_.reside_troops()[i].human());
+		disband.set_active(city_.reside_troops()[i]->human());
 	}
 
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
@@ -558,7 +559,7 @@ void texpedite::disband(bool& handled, bool& halt, twindow& window, int index)
 			index --;
 		}
 		list->select_row(index);
-		const unit& u = city_.reside_troops()[index];
+		const unit& u = *city_.reside_troops()[index];
 		ok->set_active(can_move(u) && u.human());
 	} else {
 		ok->set_active(false);

@@ -41,6 +41,7 @@
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/unit_attack.hpp"
 #include "gui/dialogs/hero_selection.hpp"
+#include "gui/dialogs/troop_selection.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/widgets/window.hpp"
 #include "formula_string_utils.hpp"
@@ -555,14 +556,14 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			teams_[building_bldg_->side() - 1].spend_gold(building_bldg_->cost() * cost_exponent / 100);
 
 			// find city that owner this economy grid.
-			city_map& citys = units_.get_city_map();
 			artifical* ownership_city = NULL;
-			for (city_map::iterator itor = citys.begin(); itor != citys.end(); ++ itor) {
-				std::vector<map_location>& area = itor->economy_area();
-				if (std::find(area.begin(), area.end(), last_hex_) != area.end()) {
-					ownership_city = &*itor;
-				}
+			std::map<const map_location, int>::const_iterator it = unit_map::economy_areas_.find(last_hex_);
+			if (it != unit_map::economy_areas_.end()) {
+				ownership_city = units_.city_from_cityno(it->second);
+			} else if (building_bldg_->type() == unit_types.find_keep() || building_bldg_->type() == unit_types.find_wall()) {
+				ownership_city = find_city_for_wall(units_, last_hex_);
 			}
+
 			if (!ownership_city) {
 				// this artifical isn't in city's economy area.
 				ownership_city = units_.city_from_cityno(building_bldg_->cityno());
@@ -578,7 +579,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 				v.push_back(&ownership_city->master());
 			}
 			type_heros_pair pair(ut, v);
-			artifical new_art(units_, heros_, pair, building_bldg_->cityno(), true);
+			artifical new_art(units_, heros_, pair, ownership_city->cityno(), true);
 
 			units_.add(last_hex_, &new_art);
 			
@@ -618,46 +619,59 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		team& curr_team = current_team();
 		if (curr_team.condition_card(card_index_, hex)) {
 			card& c = curr_team.holded_card(card_index_);
-			std::map<size_t, unit*> maps;
-			if (c.target_hero()) {
-				std::vector<std::pair<size_t, unit*> > pairs;
-				std::string disable_str;
+			std::vector<std::pair<int, unit*> > maps;
+			std::vector<std::pair<int, unit*> > pairs;
+			std::string disable_str;
 
-				curr_team.card_touched_heros(card_index_, hex, pairs, disable_str);
-				if (pairs.empty()) {
-					do_right_click(browse);
-					return false;
-				}
+			curr_team.card_touched(card_index_, hex, pairs, disable_str);
+			if (pairs.empty()) {
+				do_right_click(browse);
+				return false;
+			}
 
-				// display hero selection dialog
-				gui2::thero_selection dlg(&teams_, &units_, heros_, pairs, side_num_, disable_str);
-				try {
-					dlg.show(gui_->video());
-				} catch(twml_exception& e) {
-					e.show(*gui_);
-					do_right_click(browse);
-					return false;
+			if (!c.multitudinous() && (pairs.size() > 1 || !disable_str.empty())) {
+				std::set<size_t> checked_pairs;
+				int retval;
+				if (c.target_hero()) {
+					// display hero selection dialog
+					gui2::thero_selection dlg(&teams_, &units_, heros_, pairs, side_num_, disable_str);
+					try {
+						dlg.show(gui_->video());
+					} catch(twml_exception& e) {
+						e.show(*gui_);
+						do_right_click(browse);
+						return false;
+					}
+					checked_pairs = dlg.checked_pairs();
+					retval = dlg.get_retval();
+				} else {
+					gui2::ttroop_selection dlg(&teams_, &units_, heros_, pairs, side_num_, disable_str);
+					try {
+						dlg.show(gui_->video());
+					} catch(twml_exception& e) {
+						e.show(*gui_);
+						do_right_click(browse);
+						return false;
+					}
+					checked_pairs = dlg.checked_pairs();
+					retval = dlg.get_retval();
 				}
-				const std::set<size_t>& checked_pairs = dlg.checked_pairs();
-				if (dlg.get_retval() != gui2::twindow::OK || checked_pairs.empty()) {
+				if (retval != gui2::twindow::OK || checked_pairs.empty()) {
 					do_right_click(browse);
 					return false;
 				}
 				gui_->draw();
 				for (std::set<size_t>::const_iterator itor = checked_pairs.begin(); itor != checked_pairs.end(); ++ itor) {
-					maps[pairs[*itor].first] = pairs[*itor].second;
+					maps.push_back(pairs[*itor]);
 				}
+			} else {
+				maps = pairs;
 			}
 			
 			curr_team.consume_card(card_index_, hex, false, maps);
 			card_playing_ = false;
 
-			theme::menu *theme_b = gui_->get_theme().get_menu_item("card");
-			gui::button* btn = gui_->find_button("card");
-			std::stringstream title;
-			title << curr_team.holded_cards().size();
-			theme_b->set_title(title.str());
-			btn->set_label(title.str());
+			refresh_card_button(curr_team, *gui_);
 
 			gui_->goto_main_context_menu();
 		} else {
@@ -708,7 +722,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 	// if the unit is selected and then itself clicked on,
 	// any goto command is cancelled
-	if (selected_itor != units_.end() && !browse && selected_hex_ == hex && selected_itor->human()) {
+	if (selected_itor != units_.end() && !browse && selected_hex_ == hex && selected_itor->human() && selected_itor->side() == side_num_) {
 		selected_itor->set_goto(map_location());
 	}
 
@@ -757,7 +771,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			do_right_click(browse);
 		}
 	} else if (!commands_disabled && !browse && selected_hex_.valid() && selected_hex_ != hex &&
-		selected_itor != units_.end() && selected_itor->human() /* selected_itor->side() == side_num_ */ && (clicked_u == units_.end() || clicked_u->base() || clicked_selfcity) &&
+		selected_itor != units_.end() && selected_itor->human() && selected_itor->side() == side_num_ && (clicked_u == units_.end() || clicked_u->base() || clicked_selfcity) &&
 		!current_team().shrouded(hex) && !current_route_.steps.empty() && current_route_.steps.front() == selected_hex_) {
 		
 		const pathfind::paths& path = pathfind::paths(map_, units_,
@@ -818,7 +832,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		// if this select a non-empty hex, display context menu
 		selected_itor = find_unit(selected_hex_);
 		if (!commands_disabled && !browse && !recalling_ && selected_itor.valid()) {
-			if (!selected_itor->is_artifical() && selected_itor->human()) {
+			if (!selected_itor->is_artifical() && selected_itor->human() && selected_itor->side() == side_num_) {
 				gui_->set_attack_indicator(&*selected_itor);
 			}
 
@@ -1227,7 +1241,7 @@ void mouse_handler::set_recalling(artifical* expedite_city, int u)
 	// ¾ßÌåÖ´ÐÐ
 	selected_hex_ = expedite_city->get_location();
 
-	unit				&un = expedite_city->reside_troops()[u];
+	unit& un = *expedite_city->reside_troops()[u];
 	const map_location	&hex = expedite_city->get_location();
 
 	bool teleport = un.get_ability_bool("teleport");

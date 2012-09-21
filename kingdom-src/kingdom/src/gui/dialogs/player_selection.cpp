@@ -20,9 +20,11 @@
 #include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
+#include "display.hpp"
 #include "hero.hpp"
 #include "card.hpp"
 #include "gui/dialogs/helper.hpp"
+#include "gui/dialogs/combo_box.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/image.hpp"
 #include "gui/widgets/label.hpp"
@@ -37,6 +39,7 @@
 #include "gui/widgets/window.hpp"
 #include "game_config.hpp"
 #include "loadscreen.hpp"
+#include <preferences.hpp>
 
 #include <boost/bind.hpp>
 
@@ -86,9 +89,10 @@ namespace gui2 {
 
 REGISTER_DIALOG(player_selection)
 
-tplayer_selection::tplayer_selection(hero_map& heros, card_map& cards, const config& campaign_config)
+tplayer_selection::tplayer_selection(display& gui, hero_map& heros, card_map& cards, const config& campaign_config, hero& player_hero)
 	: chk_shroud_(register_bool("shroud", false))
 	, chk_fog_(register_bool("fog", false))
+	, gui_(gui)
 	, heros_(heros)
 	, cards_(cards)
 	, campaign_config_(campaign_config)
@@ -100,6 +104,9 @@ tplayer_selection::tplayer_selection(hero_map& heros, card_map& cards, const con
 	, rpg_mode_(false)
 	, rows_mem_(NULL)
 	, mem_vsize_(0)
+	, player_hero_(&player_hero)
+	, city_map_()
+	, city_leader_map_()
 {
 }
 
@@ -116,17 +123,12 @@ void tplayer_selection::player_selected(twindow& window)
 	tlistbox& list = find_widget<tlistbox>(&window, "player_list", false);
 
 	player_ = list.get_selected_row();
-/*
-	size_t card_size = cards_.size();
-	if (!card_size) {
-		return;
-	}
-	for (size_t card_index = 0; card_index < card_size; card_index ++) {
-		tgrid* grid_ptr = card_table_->get_row_grid(card_index);
-		ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(grid_ptr->find("prefix", true));
-		toggle->set_value(checked_card_[card_index]);
-	}
-*/
+
+	tbutton* button = find_widget<tbutton>(&window, "player_city", false, true);
+	button->set_active(rows_mem_[player_].hero_ == player_hero_->number_);
+
+	button = find_widget<tbutton>(&window, "ok", false, true);
+	button->set_active(rows_mem_[player_].city_ != -1);
 }
 
 void tplayer_selection::card_toggled(twidget* widget)
@@ -151,13 +153,18 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 	wml_config_from_file(game_config::path + "/xwml/campaigns/" + campaign_config_["id"].str() + ".bin", cfg_from_file);
 	const config& scenario = cfg_from_file.child("scenario");
 
-	rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * heros_.size());
+	if (player_hero_->valid() && rpg_mode_) {
+		rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * (heros_.size() + 1));
+		add_row_to_heros(list, player_hero_->number_, -1, -1, hero_stratum_citizen);
+	} else {
+		rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * heros_.size());
+	}
 
-	std::map<int, int> city_map, mayor_map;
+	std::map<int, int> mayor_map;
 	std::vector<std::string> v;
 	int leader, city, stratum;
 	foreach (const config& side, scenario.child_range("side")) {
-		city_map.clear();
+		// city_map_.clear();
 		leader = side["leader"].to_int();
 		if (side.has_attribute("controller")) {
 			text = side["controller"].str();
@@ -172,7 +179,8 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 			}
 			city = c["heros_army"].to_int();
 			int cityno = c["cityno"].to_int();
-			city_map[cityno] = city;
+			city_map_[cityno] = city;
+			city_leader_map_[cityno] = leader;
 			mayor_map[cityno] = mayor;
 
 			// service_heros
@@ -221,8 +229,8 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 					stratum = hero_stratum_citizen;
 				}
 				if (rpg_mode_ || stratum == hero_stratum_leader) {
-					std::map<int, int>::const_iterator it2 = city_map.find(cityno);
-					VALIDATE(it2 != city_map.end(), "Cannot find cityno = " + u["cityno"].str() + " duration parseing " + heros_[h].name());
+					std::map<int, int>::const_iterator it2 = city_map_.find(cityno);
+					VALIDATE(it2 != city_map_.end(), "Cannot find cityno = " + u["cityno"].str() + " duration parseing " + heros_[h].name());
 					add_row_to_heros(list, h, leader, it2->second, stratum);
 				}
 			}
@@ -270,6 +278,29 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 		toggle->set_data(card_index);
 		toggle->set_value(true);
 	}
+
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "player_city", false)
+		, boost::bind(
+		&tplayer_selection::player_city
+		, this
+		, boost::ref(window)));
+
+	// disable all sort button
+	tbutton* button = find_widget<tbutton>(&window, "hero_name", false, true);
+	button->set_active(false);
+	button = find_widget<tbutton>(&window, "hero_stratum", false, true);
+	button->set_active(false);
+	button = find_widget<tbutton>(&window, "hero_side", false, true);
+	button->set_active(false);
+	button = find_widget<tbutton>(&window, "hero_city", false, true);
+	button->set_active(false);
+
+	button = find_widget<tbutton>(&window, "player_city", false, true);
+	button->set_visible((rows_mem_[player_].hero_ == player_hero_->number_)? twidget::VISIBLE: twidget::INVISIBLE);
+
+	button = find_widget<tbutton>(&window, "ok", false, true);
+	button->set_active(rows_mem_[player_].city_ != -1);
 }
 
 void tplayer_selection::post_show(twindow& window)
@@ -285,6 +316,7 @@ const config tplayer_selection::player() const
 	cfg["leader"] = rows_mem_[player_].leader_;
 	cfg["hero"] = rows_mem_[player_].hero_;
 	if (rpg_mode_) {
+		cfg["city"] = rows_mem_[player_].city_;
 		cfg["stratum"] = rows_mem_[player_].stratum_;
 	} else {
 		cfg["stratum"] = hero_stratum_leader;
@@ -303,13 +335,25 @@ void tplayer_selection::add_row_to_heros(tlistbox* list, int h, int leader, int 
 		list_item_item.insert(std::make_pair("icon", list_item));
 	}
 
-	list_item["label"] = heros_[h].name();
+	if (h != player_hero_->number_) {
+		list_item["label"] = heros_[h].name();
+	} else {
+		list_item["label"] = player_hero_->name();
+	}
 	list_item_item.insert(std::make_pair("name", list_item));
 
-	list_item["label"] = heros_[leader].name();
+	if (leader != -1) {
+		list_item["label"] = heros_[leader].name();
+	} else {
+		list_item["label"] = "---";
+	}
 	list_item_item.insert(std::make_pair("side", list_item));
 
-	list_item["label"] = heros_[city].name();
+	if (city != -1) {
+		list_item["label"] = heros_[city].name();
+	} else {
+		list_item["label"] = "---";
+	}
 	list_item_item.insert(std::make_pair("city", list_item));
 
 	list_item["label"] = hero::stratum_str(stratum);
@@ -327,6 +371,51 @@ void tplayer_selection::add_row_to_heros(tlistbox* list, int h, int leader, int 
 	rows_mem_[mem_vsize_].leader_ = leader;
 	rows_mem_[mem_vsize_].city_ = city;
 	rows_mem_[mem_vsize_ ++].stratum_ = stratum;
+}
+
+void tplayer_selection::player_city(twindow& window)
+{
+	std::stringstream str;
+	std::vector<std::string> items;
+	std::vector<int> citynos;
+	int activity_index = -1;
+
+	tlistbox* list = find_widget<tlistbox>(&window, "player_list", false, true);
+
+	int index = 0;
+	for (std::map<int, int>::const_iterator it = city_map_.begin(); it != city_map_.end(); ++ it, index ++) {
+		hero& h = heros_[it->second];
+		citynos.push_back(it->first);
+		str.str("");
+		str << h.name() << "(";
+		hero& leader = heros_[city_leader_map_.find(it->first)->second];
+		str << leader.name() << ")";
+		items.push_back(str.str());
+		if (rows_mem_[0].city_ == it->second) {
+			activity_index = index;
+		}
+	}
+	if (activity_index == -1) {
+		activity_index = 0;
+	}
+
+	gui2::tcombo_box dlg(items, activity_index);
+	dlg.show(gui_.video());
+
+	activity_index = dlg.selected_index();
+
+	rows_mem_[0].leader_ = city_leader_map_.find(citynos[activity_index])->second;
+	rows_mem_[0].city_ = city_map_.find(citynos[activity_index])->second;
+
+	tgrid* grid_ptr = list->get_row_grid(0);
+	tcontrol* control = dynamic_cast<tcontrol*>(grid_ptr->find("side", true));
+	control->set_label(heros_[rows_mem_[0].leader_].name());
+
+	control = dynamic_cast<tcontrol*>(grid_ptr->find("city", true));
+	control->set_label(heros_[rows_mem_[0].city_].name());
+
+	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
+	ok->set_active(rows_mem_[player_].city_ != -1);
 }
 
 } // namespace gui2

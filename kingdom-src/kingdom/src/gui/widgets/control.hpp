@@ -1,4 +1,4 @@
-/* $Id: control.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: control.hpp 54584 2012-07-05 18:33:49Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -22,15 +22,31 @@
 
 namespace gui2 {
 
+namespace implementation {
+	struct tbuilder_control;
+} // namespace implementation
+
 /** Base class for all visible items. */
 class tcontrol : public virtual twidget
 {
 	friend class tdebug_layout_graph;
 public:
 
+	/** @deprecated Used the second overload. */
 	explicit tcontrol(const unsigned canvas_count);
 
-	virtual ~tcontrol() {}
+	/**
+	 * Constructor.
+	 *
+	 * @param builder             The builder object with the settings for the
+	 *                            object.
+	 *
+	 * @param canvas_count        The number of canvasses in the control.
+	 */
+	tcontrol(
+			  const implementation::tbuilder_control& builder
+			, const unsigned canvas_count
+			, const std::string& control_type);
 
 	/**
 	 * Sets the members of the control.
@@ -112,6 +128,17 @@ public:
 	 */
 	tpoint get_config_maximum_size() const;
 
+	/**
+	 * Returns the number of characters per line.
+	 *
+	 * This value is used to call @ref ttext::set_characters_per_line
+	 * (indirectly).
+	 *
+	 * @returns                   The characters per line. This implementation
+	 *                            always returns 0.
+	 */
+	virtual unsigned get_characters_per_line() const;
+
 	/** Inherited from twidget. */
 	/** @todo Also handle the tooltip state if shrunken_ &&
 	 * use_tooltip_on_label_overflow_. */
@@ -130,17 +157,30 @@ public:
 
 	/***** ***** ***** ***** Inherited ***** ***** ***** *****/
 
+private:
+
 	/**
-	 * Inherited from twidget.
+	 * Loads the configuration of the widget.
 	 *
-	 * This function shouldn't be called directly it's called by set_definition().
-	 * All classes which use this class as base should call this function in
-	 * their constructor. Abstract classes shouldn't call this routine. The
+	 * Controls have their definition stored in a definition object. In order to
+	 * determine sizes and drawing the widget this definition needs to be
+	 * loaded. The member definition_ contains the name of the definition and
+	 * function load the proper configuration.
 	 *
-	 * classes which call this routine should also define get_control_type().
+	 * @depreciated @ref definition_load_configuration() is the replacement.
 	 */
 	void load_config();
 
+	/**
+	 * Uses the load function.
+	 *
+	 * @note This doesn't look really clean, but the final goal is refactor
+	 * more code and call load_config in the ctor, removing the use case for
+	 * the window. That however is a longer termine refactoring.
+	 */
+	friend class twindow;
+
+public:
 	/** Inherited from twidget. */
 	twidget* find_at(const tpoint& coordinate, const bool must_be_active)
 	{
@@ -172,7 +212,7 @@ public:
 	}
 
 	/**
-	 * Inherited from twidget.
+	 * Sets the definition.
 	 *
 	 * This function sets the definition of a control and should be called soon
 	 * after creating the object since a lot of internal functions depend on the
@@ -246,6 +286,15 @@ protected:
 	int get_text_maximum_height() const;
 
 private:
+	/**
+	 * The definition is the id of that widget class.
+	 *
+	 * Eg for a button it [button_definition]id. A button can have multiple
+	 * definitions which all look different but for the engine still is a
+	 * button.
+	 */
+	std::string definition_;
+
 	/** Contain the non-editable text associated with control. */
 	t_string label_;
 
@@ -305,6 +354,17 @@ private:
 	 * does nothing but classes can override it to implement custom behaviour.
 	 */
 	virtual void load_config_extra() {}
+
+	/**
+	 * Loads the configuration of the widget.
+	 *
+	 * Controls have their definition stored in a definition object. In order to
+	 * determine sizes and drawing the widget this definition needs to be
+	 * loaded. The member definition_ contains the name of the definition and
+	 * function load the proper configuration.
+	 */
+	void definition_load_configuration(const std::string& control_type);
+
 public:
 	/**
 	 * Returns the control_type of the control.
@@ -320,11 +380,22 @@ public:
 protected:
 	/** Inherited from twidget. */
 	void impl_draw_background(surface& frame_buffer);
+	void impl_draw_background(
+			  surface& frame_buffer
+			, int x_offset
+			, int y_offset);
 
 	/** Inherited from twidget. */
 	void impl_draw_foreground(surface& /*frame_buffer*/) { /* do nothing */ }
+	void impl_draw_foreground(
+			  surface& /*frame_buffer*/
+			, int /*x_offset*/
+			, int /*y_offset*/)
+	{ /* do nothing */ }
+
 private:
 
+#ifdef GUI2_EXPERIMENTAL_LISTBOX
 	/**
 	 * Initializes the control.
 	 *
@@ -333,6 +404,7 @@ private:
 	 * only once, this happens when set_definition is called.
 	 */
 	virtual void init() {}
+#endif
 
 	/**
 	 * Gets the best size for a text.
@@ -358,7 +430,7 @@ private:
 	 * Unfortunately that would make the dependency between the classes bigger
 	 * as wanted.
 	 */
-	mutable font::ttext renderer_;
+	// mutable font::ttext renderer_;
 
 	/** The maximum width for the text in a control. */
 	int text_maximum_width_;

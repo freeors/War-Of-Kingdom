@@ -1,4 +1,4 @@
-/* $Id: scrollbar.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: scroll_label.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/

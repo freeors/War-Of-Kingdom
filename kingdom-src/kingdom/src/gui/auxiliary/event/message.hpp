@@ -1,6 +1,6 @@
-/* $Id: message.hpp 48940 2011-03-19 22:02:54Z mordante $ */
+/* $Id: message.hpp 54167 2012-05-13 13:33:24Z mordante $ */
 /*
-   Copyright (C) 2011 by Mark de Wever <koraq@xs4all.nl>
+   Copyright (C) 2011 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -37,7 +37,9 @@ namespace event {
  * class received to make sure the proper message type is send.
  *
  * This means all messages used in the events need to be derived from this
- * class.
+ * class. When a message needs no `content' it can send this class as message.
+ * This is done by:
+ * * @ref REQUEST_PLACEMENT
  */
 struct tmessage
 {

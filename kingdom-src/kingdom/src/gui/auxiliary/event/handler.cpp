@@ -1,4 +1,4 @@
-/* $Id: handler.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: handler.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -18,7 +18,6 @@
 #include "gui/auxiliary/event/handler.hpp"
 
 #include "clipboard.hpp"
-#include "foreach.hpp"
 #include "gui/auxiliary/event/dispatcher.hpp"
 #include "gui/auxiliary/timer.hpp"
 #include "gui/auxiliary/log.hpp"
@@ -29,11 +28,9 @@
 #include "video.hpp"
 #include "posix.h"
 
-#include <cassert>
+#include <boost/foreach.hpp>
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
+#include <cassert>
 
 /**
  * @todo The items below are not implemented yet.
@@ -210,11 +207,34 @@ private:
 	tdispatcher* keyboard_dispatcher();
 
 	/**
+	 * Handles a hat motion event.
+	 *
+	 * @param event                  The SDL joystick hat event triggered.
+	 */
+	void hat_motion(const SDL_JoyHatEvent& event);
+
+
+	/**
+	 * Handles a joystick button down event.
+	 *
+	 * @param event                  The SDL joystick button event triggered.
+	 */
+	void button_down(const SDL_JoyButtonEvent& event);
+
+
+	/**
 	 * Fires a key down event.
 	 *
 	 * @param event                  The SDL keyboard event triggered.
 	 */
 	void key_down(const SDL_KeyboardEvent& event);
+
+	/**
+	 * Fires a text input event.
+	 *
+	 * @param event                  The SDL textinput event triggered.
+	 */
+	void text_input(const SDL_TextInputEvent& event);
 
 	/**
 	 * Handles the pressing of a hotkey.
@@ -297,7 +317,7 @@ thandler::~thandler()
 void thandler::handle_event(const SDL_Event& event)
 {
 	/** No dispatchers drop the event. */
-	if (dispatchers_.empty()) {
+	if(dispatchers_.empty()) {
 		return;
 	}
 
@@ -318,9 +338,6 @@ void thandler::handle_event(const SDL_Event& event)
 
 	switch(event.type) {
 		case SDL_FINGERMOTION:
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "SDL", "SDL_FINGERMOTION, (%i, %i), d(%i, %i)", event.tfinger.x, event.tfinger.y, event.tfinger.dx, event.tfinger.dy);
-#endif
 			abs_dx = posix_abs(event.tfinger.dx);
 			abs_dy = posix_abs(event.tfinger.dy);
 			if (abs_dx <= FINGER_HIT_THRESHOLD && abs_dy <= FINGER_HIT_THRESHOLD) {
@@ -391,7 +408,7 @@ void thandler::handle_event(const SDL_Event& event)
 			break;
 
 		case TIMER_EVENT:
-			execute_timer(reinterpret_cast<unsigned long>(event.user.data1));
+			execute_timer(reinterpret_cast<long>(event.user.data1));
 			break;
 
 		case CLOSE_WINDOW_EVENT:
@@ -406,8 +423,26 @@ void thandler::handle_event(const SDL_Event& event)
 				}
 			break;
 
+		case SDL_JOYBUTTONDOWN:
+			button_down(event.jbutton);
+			break;
+
+		case SDL_JOYBUTTONUP:
+			break;
+
+		case SDL_JOYAXISMOTION:
+			break;
+
+		case SDL_JOYHATMOTION:
+			hat_motion(event.jhat);
+			break;
+
 		case SDL_KEYDOWN:
 			key_down(event.key);
+			break;
+
+		case SDL_TEXTINPUT:
+            text_input(event.text);
 			break;
 
 		case SDL_VIDEOEXPOSE:
@@ -474,7 +509,7 @@ void thandler::disconnect(tdispatcher* dispatcher)
 	}
 
 	/***** Set proper state for the other dispatchers. *****/
-	foreach(tdispatcher* dispatcher, dispatchers_) {
+	BOOST_FOREACH(tdispatcher* dispatcher, dispatchers_) {
 		dynamic_cast<twidget&>(*dispatcher).set_dirty();
 	}
 
@@ -493,7 +528,7 @@ void thandler::disconnect(tdispatcher* dispatcher)
 
 void thandler::activate()
 {
-	foreach(tdispatcher* dispatcher, dispatchers_) {
+	BOOST_FOREACH(tdispatcher* dispatcher, dispatchers_) {
 		dispatcher->fire(SDL_ACTIVATE
 				, dynamic_cast<twidget&>(*dispatcher)
 				, NULL);
@@ -518,7 +553,7 @@ void thandler::draw(const bool force)
 	 * For now we use a hack, but would be nice to rewrite it for 1.9/1.11.
 	 */
 	uint32_t start = SDL_GetTicks();
-	foreach(tdispatcher* dispatcher, dispatchers_) {
+	BOOST_FOREACH(tdispatcher* dispatcher, dispatchers_) {
 		if(!first) {
 			/*
 			 * This leaves glitches on window borders if the window beneath it
@@ -560,7 +595,7 @@ void thandler::video_resize(const tpoint& new_size)
 {
 	DBG_GUI_E << "Firing: " << SDL_VIDEO_RESIZE << ".\n";
 
-	foreach(tdispatcher* dispatcher, dispatchers_) {
+	BOOST_FOREACH(tdispatcher* dispatcher, dispatchers_) {
 		dispatcher->fire(SDL_VIDEO_RESIZE
 				, dynamic_cast<twidget&>(*dispatcher)
 				, new_size);
@@ -647,9 +682,6 @@ void thandler::mouse_button_down(const tpoint& position, const Uint8 button)
 
 	switch(button) {
 		case SDL_BUTTON_LEFT :
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "SDL", "mouse_button_down, SDL_LEFT_BUTTON_DOWN.");
-#endif
 			mouse(SDL_LEFT_BUTTON_DOWN, position);
 			break;
 		case SDL_BUTTON_MIDDLE :
@@ -682,6 +714,30 @@ tdispatcher* thandler::keyboard_dispatcher()
 	return NULL;
 }
 
+void thandler::hat_motion(const SDL_JoyHatEvent& event)
+{
+/*	const hotkey::hotkey_item& hk = hotkey::get_hotkey(event);
+	bool done = false;
+	if(!hk.null()) {
+		done = hotkey_pressed(hk);
+	}
+	if(!done) {
+		//TODO fendrin think about handling hat motions that are not bound to a hotkey.
+	} */
+}
+
+void thandler::button_down(const SDL_JoyButtonEvent& event)
+{
+/*	const hotkey::hotkey_item& hk = hotkey::get_hotkey(event);
+	bool done = false;
+	if(!hk.null()) {
+		done = hotkey_pressed(hk);
+	}
+	if(!done) {
+		//TODO fendrin think about handling button down events that are not bound to a hotkey.
+	} */
+}
+
 void thandler::key_down(const SDL_KeyboardEvent& event)
 {
 	const hotkey::hotkey_item& hk = hotkey::get_hotkey(event);
@@ -692,6 +748,16 @@ void thandler::key_down(const SDL_KeyboardEvent& event)
 	if(!done) {
 		SDLMod mod = (SDLMod)event.keysym.mod;
 		key_down(event.keysym.sym, mod, event.keysym.unicode);
+	}
+}
+
+void thandler::text_input(const SDL_TextInputEvent& event)
+{
+	if (tdispatcher* dispatcher = keyboard_dispatcher()) {
+		dispatcher->fire(SDL_TEXT_INPUT
+				, dynamic_cast<twidget&>(*dispatcher)
+				, 0
+				, event.text);
 	}
 }
 
@@ -860,6 +926,7 @@ std::ostream& operator<<(std::ostream& stream, const tevent event)
 		case MESSAGE_SHOW_TOOLTIP   : stream << "message show tooltip"; break;
 		case SHOW_HELPTIP           : stream << "show helptip"; break;
 		case MESSAGE_SHOW_HELPTIP   : stream << "message show helptip"; break;
+		case REQUEST_PLACEMENT      : stream << "request placement"; break;
 	}
 
 	return stream;

@@ -1,4 +1,4 @@
-/* $Id: wml_exception.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: wml_exception.cpp 54233 2012-05-19 19:35:44Z mordante $ */
 /*
    Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -41,8 +41,13 @@ void wml_exception(
 		, const std::string& dev_message)
 {
 	std::ostringstream sstr;
-	sstr << "Condition '" << cond << "' failed at "
-		<< file << ":" << line << " in function '" << function << "'.";
+	if(cond) {
+		sstr << "Condition '" << cond << "' failed at ";
+	} else {
+		sstr << "Unconditional failure at ";
+	}
+
+	sstr << file << ":" << line << " in function '" << function << "'.";
 
 	if(!dev_message.empty()) {
 		sstr << " Extra development information: " << dev_message;

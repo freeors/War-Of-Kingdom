@@ -1,4 +1,4 @@
-/* $Id: helper.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: helper.hpp 54585 2012-07-05 18:33:52Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -16,7 +16,13 @@
 #ifndef GUI_WIDGETS_HELPER_HPP_INCLUDED
 #define GUI_WIDGETS_HELPER_HPP_INCLUDED
 
+#include "global.hpp"
+
 #include "sdl_utils.hpp"
+#include "gui/lib/types/point.hpp"
+
+#include <boost/type_traits.hpp>
+#include <boost/utility/enable_if.hpp>
 
 #include <string>
 
@@ -29,6 +35,8 @@ class map_formula_callable;
 
 namespace gui2 {
 
+struct tpoint;
+
 /**
  * Initializes the gui subsystems.
  *
@@ -36,41 +44,6 @@ namespace gui2 {
  * used.
  */
 bool init();
-
-/** Holds a 2D point. */
-struct tpoint
-{
-	tpoint(const int x_, const int y_) :
-		x(x_),
-		y(y_)
-		{}
-
-	/** x coodinate. */
-	int x;
-
-	/** y coodinate. */
-	int y;
-
-	bool operator==(const tpoint& point) const { return x == point.x && y == point.y; }
-	bool operator!=(const tpoint& point) const { return x != point.x || y != point.y; }
-	bool operator<(const tpoint& point) const
-		{ return x < point.x || (x == point.x && y < point.y); }
-
-	bool operator<=(const tpoint& point) const
-		{ return x < point.x || (x == point.x && y <= point.y); }
-
-	tpoint operator+(const tpoint& point) const
-		{ return tpoint(x + point.x, y + point.y); }
-
-	tpoint& operator+=(const tpoint& point);
-
-	tpoint operator-(const tpoint& point) const
-		{ return tpoint(x - point.x, y - point.y); }
-
-	tpoint& operator-=(const tpoint& point);
-};
-
-std::ostream &operator<<(std::ostream &stream, const tpoint& point);
 
 /**
  * Creates a rectangle.
@@ -154,27 +127,6 @@ void get_screen_size_variables(game_logic::map_formula_callable& variable);
  *                                values of these in settings.
  */
 game_logic::map_formula_callable get_screen_size_variables();
-
-/**
- * Helper struct to get the same constness for T and U.
- *
- * @param T                       A type to determine the constness.
- * @param U                       Non const type to set the constness off.
- */
-template<class T, class U>
-struct tconst_duplicator
-{
-	/** The type to use, if T not const U is also not const. */
-	typedef U type;
-};
-
-/** Specialialized version of tconst_duplicator when T is a const type. */
-template<class T, class U>
-struct tconst_duplicator<const T, U>
-{
-	/** The type to use, const U. */
-	typedef const U type;
-};
 
 /** Returns the current mouse position. */
 tpoint get_mouse_position();

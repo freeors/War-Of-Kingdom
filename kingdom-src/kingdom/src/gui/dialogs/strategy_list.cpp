@@ -321,7 +321,8 @@ void tstrategy_list::pre_show(CVideo& /*video*/, twindow& window)
 	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
 
 	for (size_t i = 0; i < teams_.size(); i ++) {
-		bool survived = units_.side_survived(i + 1);
+		// bool survived = units_.side_survived(i + 1);
+		bool survived = true;
 		if (!survived || (side_ != -1 && i != side_ - 1)) {
 			continue;
 		}

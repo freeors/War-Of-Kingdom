@@ -85,7 +85,7 @@ namespace events{
 class disband_reside_troop : public gui2::button_action
 {
 public:
-	disband_reside_troop(menu_handler& handler, game_display& disp, team& current_team, artifical& city, std::vector<unit>& units) : 
+	disband_reside_troop(menu_handler& handler, game_display& disp, team& current_team, artifical& city, std::vector<unit*>& units) : 
 		menu_handler_(handler)
 		, disp_(disp)
 		, current_team_(current_team), 
@@ -99,14 +99,14 @@ private:
 	game_display& disp_;
 	team& current_team_;
 	artifical &city_;
-	std::vector<unit>& units_;
+	std::vector<unit*>& units_;
 };
 
 int disband_reside_troop::button_pressed(int menu_selection)
 {
 	const size_t index = size_t(menu_selection);
 	if(index < units_.size()) {
-		const unit& u = units_[index];
+		unit& u = *units_[index];
 
 		//If the unit is of level > 1, or is close to advancing,
 		//we warn the player about it
@@ -130,12 +130,15 @@ int disband_reside_troop::button_pressed(int menu_selection)
 			}
 		}
 		// add gold to the gold amount
-		current_team_.spend_gold(-1 * units_[index].cost() * 2 / 3);
+		current_team_.spend_gold(-1 * u.cost() * 2 / 3);
 		// add hero to the hero list in city
-		city_.fresh_into(&units_[index]);
+		city_.fresh_into(&u);
+
 		// erase this unit from reside troop
+		delete &u;
 		units_.erase(units_.begin() + index);
 		recorder.add_disband(index, city_.get_location());
+
 		menu_handler_.clear_undo_stack(city_.side());
 
 		game_events::fire("post_disband", city_.get_location());
@@ -183,14 +186,7 @@ int discard_card::button_pressed(int menu_selection)
 		current_team_.erase_card(menu_selection);
 
 		// card
-		theme::menu *theme_b = disp_.get_theme().get_menu_item("card");
-		gui::button* btn = disp_.find_button("card");
-		std::stringstream title;
-		title << current_team_.holded_cards().size();
-		theme_b->set_title(title.str());
-		btn->set_label(title.str());
-
-		// recorder.add_disband(index, city_.get_location());
+		refresh_card_button(current_team_, disp_);
 		return 1;
 	} else {
 		return 0;
@@ -236,9 +232,8 @@ std::string menu_handler::get_title_suffix(int side_num)
 {
 	int controlled_recruiters = 0;
 	for(size_t i = 0; i < teams_.size(); ++i) {
-		if(teams_[i].is_human() && !teams_[i].recruits().empty()
-		&& units_.find_leader(i + 1) != units_.end()) {
-		++controlled_recruiters;
+		if (teams_[i].is_human() && units_.find_leader(i + 1) != units_.end()) {
+			++controlled_recruiters;
 		}
 	}
 	std::stringstream msg;
@@ -279,9 +274,9 @@ void menu_handler::reside_unit_list_in_city(const artifical* city)
 {
 	std::vector<const unit*> partial_troops;
 
-	const std::vector<unit>& reside_troops = city->reside_troops();
-	for (std::vector<unit>::const_iterator i = reside_troops.begin(); i != reside_troops.end(); ++i) {
-		partial_troops.push_back(&*i);
+	const std::vector<unit*>& reside_troops = city->reside_troops();
+	for (std::vector<unit*>::const_iterator i = reside_troops.begin(); i != reside_troops.end(); ++i) {
+		partial_troops.push_back(*i);
 	}
 
 	gui2::ttroop_detail dlg(*gui_, teams_, units_, heros_, partial_troops, dgettext("wesnoth-lib", "Reside Troop"));
@@ -542,7 +537,7 @@ void menu_handler::expedite(int side_num, const map_location &last_hex)
 
 	team &current_team = teams_[side_num - 1];
 	artifical* city = units_.city_from_loc(last_hex);
-	std::vector<unit>& reside_troops = city->reside_troops();
+	std::vector<unit*>& reside_troops = city->reside_troops();
 	size_t orignal_size = reside_troops.size();
 	// sort the available units into order by value
 	// so that the most valuable units are shown first
@@ -589,7 +584,7 @@ void menu_handler::expedite(int side_num, const map_location &last_hex)
 	map_location loc = last_hex;
 
 	// recorder.add_recall(res, loc);
-	unit& un = city->reside_troops()[troop_index];
+	unit& un = *city->reside_troops()[troop_index];
 
 	statistics::recall_unit(un);
 	clear_shroud(side_num);
@@ -714,6 +709,7 @@ void menu_handler::build(const std::string& type, mouse_handler& mousehandler, u
 	team& current_team = teams_[builder.side() - 1];
 	int cost_exponent = current_team.cost_exponent();
 	const unit_type* ut = unit_types.find(type);
+
 	if (ut->cost() * cost_exponent / 100 > current_team.gold()) {
 		gui2::show_transient_message(gui_->video(), "", _("You don't have enough gold to build that artifical"));
 		return;
@@ -805,19 +801,19 @@ void menu_handler::armory(mouse_handler& mousehandler, int side_num, artifical& 
 	std::vector<std::vector<hero*> > previous_captains;
 
 	team& current_team = teams_[side_num - 1];
-	std::vector<unit>& reside_troops = art.reside_troops();
+	std::vector<unit*>& reside_troops = art.reside_troops();
 	std::vector<hero*>& fresh_heros = art.fresh_heros();
 	size_t reside_troops_size = reside_troops.size();
 
-	if (!reside_troops_size || (reside_troops_size == 1 && !reside_troops[0].second().valid() && fresh_heros.empty())) {
+	if (!reside_troops_size || (reside_troops_size == 1 && !reside_troops[0]->second().valid() && fresh_heros.empty())) {
 		gui2::show_transient_message(gui_->video(), "", _("There are no available troop to rearm"));
 		return;
 	}
 	
 	// troops of armory
 	int humans = 0;
-	for (std::vector<unit>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
-		unit& u = *itor;
+	for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
+		unit& u = **itor;
 		candidate_troops.push_back(&u);
 		if (u.human()) {
 			humans ++;
@@ -849,7 +845,7 @@ void menu_handler::armory(mouse_handler& mousehandler, int side_num, artifical& 
 
 	std::vector<size_t> diff;
 	for (size_t i = 0; i < reside_troops_size; i ++) {
-		unit& u = reside_troops[i];
+		unit& u = *reside_troops[i];
 
 		std::vector<hero*>& previous = previous_captains[i];
 		if (&u.master() != previous[0]) {
@@ -989,7 +985,7 @@ void menu_handler::undo(int side_num)
 				u->set_movement(starting_moves);
 							
 				artifical* stop_city = unit_2_artifical(&*u_end);
-				stop_city->troop_come_into(*u, action.recall_pos);
+				stop_city->troop_come_into(&*u, action.recall_pos);
 
 				gui_->refresh_access_troops(side_num - 1, game_display::REFRESH_ERASE, NULL, &*u);
 				// unit_display::move_unit will update centor location of u->second to location of city.
@@ -1000,7 +996,7 @@ void menu_handler::undo(int side_num)
 		} else {
 			// 起点: 城市
 			artifical* start_city = unit_2_artifical(&*u);
-			unit& undo_troop = start_city->reside_troops().back();
+			unit& undo_troop = *start_city->reside_troops().back();
 
 			unit_display::move_unit(route, undo_troop, teams_);
 			undo_troop.set_goto(map_location());
@@ -1015,7 +1011,7 @@ void menu_handler::undo(int side_num)
 				u->set_movement(starting_moves);
 
 				artifical* stop_city = unit_2_artifical(&*u_end);
-				stop_city->troop_come_into(undo_troop, action.recall_pos);
+				stop_city->troop_come_into(&undo_troop, action.recall_pos);
 			}
 			start_city->troop_go_out(start_city->reside_troops().size() - 1);
 		}
@@ -1092,6 +1088,9 @@ bool menu_handler::end_turn(int side_num)
 	}
 
 	const team& current_team = teams_[side_num - 1];
+	if (!current_team.is_human()) {
+		return true;
+	}
 	
 	const std::vector<artifical*>& holded_cities = current_team.holded_cities();
 

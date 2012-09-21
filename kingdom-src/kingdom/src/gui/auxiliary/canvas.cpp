@@ -1,4 +1,4 @@
-/* $Id: canvas.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: canvas.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -24,7 +24,6 @@
 
 #include "config.hpp"
 #include "../../image.hpp"
-#include "foreach.hpp"
 #include "formatter.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/formula.hpp"
@@ -32,6 +31,8 @@
 #include "gui/widgets/helper.hpp"
 #include "../../text.hpp"
 #include "wml_exception.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -523,6 +524,19 @@ tline::tline(const config& cfg)
  *                                     several times until the entire surface
  *                                     is filled. The last images are
  *                                     truncated. $
+ *
+ *     grow_direction &                Determines how an image is resized.
+ *                                     Possible values:
+ *                                     @* scale        The image is scaled.
+ *                                     @* stretch      The first row or column
+ *                                     of pixels is copied over the entire
+ *                                     image. (Can only be used to scale resize
+ *                                     in one direction, else falls
+ *                                     back to scale.)
+ *                                     @* tile         The image is placed
+ *                                     several times until the entire surface
+ *                                     is filled. The last images are
+ *                                     truncated. $
  * @end{table}
  * @allow{type}{name="unsigned"}{value="^\d+$"}
  * @allow{type}{name="f_unsigned"}{value="^.+$"}
@@ -544,6 +558,7 @@ tline::tline(const config& cfg)
  * @allow{type}{name="border"}{value="^(top|bottom|left|right|all)?(,\s*(top|bottom|left|right|all))*$"}
  * @allow{type}{name="scrollbar_mode"}{value="^always|never|auto|initial_auto$"}
  * @allow{type}{name="resize_mode"}{value="^scale|stretch|tile$"}
+ * @allow{type}{name="grow_direction"}{value="^horizontal|vertical$"}
  *
  * @remove{type}{name="section"}
  * @remove{type}{name="config"}
@@ -1040,7 +1055,7 @@ void timage::draw(surface& canvas
 	 */
 	const std::string& name = image_name_(variables);
 
-	if (name.empty()) {
+	if(name.empty()) {
 		DBG_GUI_D << "Image: formula returned no value, will not be drawn.\n";
 		return;
 	}
@@ -1236,6 +1251,9 @@ private:
 	/** The maximum width for the text. */
 	tformula<int> maximum_width_;
 
+	/** The number of characters per line. */
+	unsigned characters_per_line_;
+
 	/** The maximum height for the text. */
 	tformula<int> maximum_height_;
 };
@@ -1252,6 +1270,7 @@ ttext::ttext(const config& cfg)
 	, text_(cfg["text"])
 	, text_markup_(cfg["text_markup"], false)
 	, maximum_width_(cfg["maximum_width"], -1)
+	, characters_per_line_(cfg["text_characters_per_line"])
 	, maximum_height_(cfg["maximum_height"], -1)
 {
 
@@ -1325,20 +1344,17 @@ void ttext::draw(surface& canvas
 	static font::ttext text_renderer;
 	text_renderer.set_text(text, text_markup_(variables));
 
-	// force update cached_surfs_ in ttext system.
-	// It is impossible that font_size_ equals 0.
-	text_renderer.set_font_size(0);
-
 	text_renderer.set_font_size(font_size_)
 			.set_font_style(font_style_)
-			// .set_alignment(text_alignment_(variables))
+			.set_alignment(text_alignment_(variables))
 			.set_foreground_color(color_)
 			.set_maximum_width(maximum_width_(variables))
 			.set_maximum_height(maximum_height_(variables))
 			.set_ellipse_mode(variables.has_key("text_wrap_mode")
 				? static_cast<PangoEllipsizeMode>
 					(variables.query_value("text_wrap_mode").as_int())
-				: PANGO_ELLIPSIZE_END);
+				: PANGO_ELLIPSIZE_END)
+			.set_characters_per_line(characters_per_line_);
 
 	surface surf = text_renderer.render();
 	if(surf->w == 0) {
@@ -1459,7 +1475,7 @@ void tcanvas::parse_cfg(const config& cfg)
 	log_scope2(log_gui_parse, "Canvas: parsing config.");
 	shapes_.clear();
 
-	foreach(const config::any_child& shape, cfg.all_children_range()) {
+	BOOST_FOREACH(const config::any_child& shape, cfg.all_children_range()) {
 		const std::string &type = shape.key;
 		const config &data = shape.cfg;
 
@@ -1478,7 +1494,7 @@ void tcanvas::parse_cfg(const config& cfg)
 		} else if(type == "pre_commit") {
 
 			/* note this should get split if more preprocessing is used. */
-			foreach(const config::any_child& function,
+			BOOST_FOREACH(const config::any_child& function,
 					data.all_children_range()) {
 
 				if(function.key == "blur") {

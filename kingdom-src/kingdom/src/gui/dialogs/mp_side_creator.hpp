@@ -37,6 +37,15 @@ class tlabel;
 class tbutton;
 class tlistbox;
 
+class tplayer_list_side_creator: public tplayer_list
+{
+public:
+	void init(twindow& w);
+
+public:
+	tsub_player_list active_game;
+};
+
 class tmp_side_creator : public tdialog, public lobby_base
 {
 public:
@@ -213,6 +222,7 @@ private:
 	void faction(twindow& window, int side);
 	void feature(twindow& window, int side);
 
+	void update_playerlist();
 private:
 	// Those 2 functions are actually the steps of the (complex)
 	// construction of this class.
@@ -304,7 +314,6 @@ private:
 	tlistbox* sides_table_;
 	tlabel* waiting_;
 	tbutton* launch_;
-	tlabel* players_label_;
 	
 	controller default_controller_;
 
@@ -317,6 +326,8 @@ private:
 	 * Result flag for interfacing with other MP dialogs
 	 */
 	legacy_result legacy_result_;
+
+	tplayer_list_side_creator player_list_;
 };
 
 

@@ -1,4 +1,4 @@
-/* $Id: widget.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: widget.hpp 54906 2012-07-29 19:52:01Z mordante $ */
 /*
    Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -17,8 +17,10 @@
 #define GUI_WIDGETS_WIDGET_HPP_INCLUDED
 
 #include "gui/auxiliary/event/dispatcher.hpp"
+#include "gui/lib/types/point.hpp"
 #include "gui/widgets/event_executor.hpp"
 #include "gui/widgets/helper.hpp"
+#include "utils/const_clone.tpp"
 #include "wml_exception.hpp"
 
 #include <boost/noncopyable.hpp>
@@ -28,6 +30,7 @@
 
 namespace gui2 {
 
+struct tbuilder_widget;
 class tdialog;
 class twindow;
 
@@ -53,19 +56,19 @@ class twidget
 	friend class twindow; // needed for modifying the layout_size.
 
 public:
+
+	/** @deprecated use the second overload. */
 	twidget();
 
-	virtual ~twidget();
-
 	/**
-	 * Loads the configuration of the widget.
+	 * Constructor.
 	 *
-	 * Controls have their definition stored in a definition object. In order to
-	 * determine sizes and drawing the widget this definition needs to be
-	 * loaded. The member definition_ contains the name of the definition and
-	 * function load the proper configuration.
+	 * @param builder             The builder object with the settings for the
+	 *                            object.
 	 */
-	virtual void load_config() {}
+	explicit twidget(const tbuilder_widget& builder);
+
+	virtual ~twidget();
 
 	/***** ***** ***** ***** flags ***** ***** ***** *****/
 
@@ -139,7 +142,7 @@ public:
 	 *
 	 * Clears the initial best size for the widgets.
 	 *
-	 * @see @ref layout_algorihm for more information.
+	 * @see @ref layout_algorithm for more information.
 	 *
 	 * @param full_initialization For widgets with scrollbars it hides them
 	 *                            unless the mode is
@@ -154,7 +157,7 @@ public:
 	 * This function tries to do it 'friendly' and only use scrollbars or
 	 * wrapping of the widget.
 	 *
-	 * @see @ref layout_algorihm for more information.
+	 * @see @ref layout_algorithm for more information.
 	 *
 	 * @param maximum_width       The wanted maximum width.
 	 */
@@ -168,7 +171,7 @@ public:
 	 *
 	 * @todo Make pure virtual.
 	 *
-	 * @see @ref layout_algorihm for more information.
+	 * @see @ref layout_algorithm for more information.
 	 *
 	 * @param maximum_width       The wanted maximum width.
 	 */
@@ -181,7 +184,7 @@ public:
 	 *
 	 * @todo Make pure virtual.
 	 *
-	 * @see @ref layout_algorihm for more information.
+	 * @see @ref layout_algorithm for more information.
 	 *
 	 * @param maximum_height      The wanted maximum height.
 	 */
@@ -195,7 +198,7 @@ public:
 	 *
 	 * @todo Make pure virtual.
 	 *
-	 * @see @ref layout_algorihm for more information.
+	 * @see @ref layout_algorithm for more information.
 	 *
 	 * @param maximum_height      The wanted maximum height.
 	 */
@@ -361,18 +364,6 @@ public:
 	const std::string& id() const { return id_; }
 	void set_id(const std::string& id);
 
-	const std::string& definition() const { return definition_; }
-
-	/**
-	 * Sets the definition.
-	 *
-	 * This function should be set as soon as possible after creating the widget
-	 * and shouldn't be changed after showing the widget. If this is done
-	 * undefined things happen and the code doesn't enforce this rule.
-	 */
-	virtual void set_definition(const std::string& definition)
-		{ definition_ = definition; }
-
 	unsigned get_width() const { return w_; }
 	unsigned get_height() const { return h_; }
 
@@ -409,11 +400,22 @@ public:
 		y_ = origin.y;
 	}
 
-	// Setting the screen locations doesn't dirty the widget.
-	void set_x(const int x) { x_ = x; }
+	/**
+	 * Moves a widget.
+	 *
+	 * This function can be used to move the widget without dirtying it.
+	 *
+	 * @todo Implement the function to all inherited classes.
+	 *
+	 * @param x_offset            The amount of pixels to move the widget in
+	 *                            the x direction.
+	 * @param y_offset            The amount of pixels to move the widget in
+	 *                            the y direction.
+	 */
+	virtual void move(const int x_offset, const int y_offset);
+
 	int get_x() const { return x_; }
 
-	void set_y(const int y) { y_ = y; }
 	int get_y() const { return y_; }
 
 	void set_visible(const tvisible visible);
@@ -456,14 +458,48 @@ public:
 #endif
 
 	/**
+	 * Calculates the blitting rectangle of the widget.
+	 *
+	 * The blitting rectangle is to entire widget rectangle, but offsetted for
+	 * drawing position.
+	 *
+	 * @param x_offset            The x offset when drawn.
+	 * @param y_offset            The y offset when drawn.
+	 *
+	 * @returns                   The drawing rectangle.
+	 */
+	SDL_Rect calculate_blitting_rectangle(
+			  const int x_offset
+			, const int y_offset);
+
+	/**
+	 * Calculates the clipping rectangle of the widget.
+	 *
+	 * The clipping rectangle is used then the @ref drawing_action_ is
+	 * @ref PARTLY_DRAWN. Since the drawing can be offsetted it also needs
+	 * offset paramters.
+	 *
+	 * @param x_offset            The x offset when drawn.
+	 * @param y_offset            The y offset when drawn.
+	 *
+	 * @returns                   The clipping rectangle.
+	 */
+	SDL_Rect calculate_clipping_rectangle(
+			  const int x_offset
+			, const int y_offset);
+
+	/**
 	 * Draws the background of a widget.
 	 *
 	 * Subclasses should override impl_draw_background instead of changing
 	 * this function.
 	 *
 	 * @param frame_buffer        The surface to draw upon.
+	 * @param x_offset            The x offset in the @p frame_buffer to draw.
+	 * @param y_offset            The y offset in the @p frame_buffer to draw.
 	 */
 	void draw_background(surface& frame_buffer);
+	void draw_background(surface& frame_buffer, int x_offset, int y_offset);
 
 	/**
 	 * Draws the children of a widget.
@@ -474,8 +510,11 @@ public:
 	 * this function.
 	 *
 	 * @param frame_buffer        The surface to draw upon.
+	 * @param x_offset            The x offset in the @p frame_buffer to draw.
+	 * @param y_offset            The y offset in the @p frame_buffer to draw.
 	 */
 	void draw_children(surface& frame_buffer);
+	void draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
 	/**
 	 * Draws the foreground of the widgt.
@@ -487,8 +526,11 @@ public:
 	 * this function.
 	 *
 	 * @param frame_buffer        The surface to draw upon.
+	 * @param x_offset            The x offset in the @p frame_buffer to draw.
+	 * @param y_offset            The y offset in the @p frame_buffer to draw.
 	 */
 	void draw_foreground(surface& frame_buffer);
+	void draw_foreground(surface& frame_buffer, int x_offset, int y_offset);
 
 	/**
 	 * Allows a widget to update its children.
@@ -555,15 +597,6 @@ private:
 	 * window, eg a listbox can have the same id for every row.
 	 */
 	std::string id_;
-
-	/**
-	 * The definition is the id of that widget class.
-	 *
-	 * Eg for a button it [button_definition]id. A button can have multiple
-	 * definitions which all look different but for the engine still is a
-	 * button.
-	 */
-	std::string definition_;
 
 	/**
 	 * The parent widget, if the widget has a parent it contains a pointer to
@@ -641,8 +674,10 @@ private:
 	unsigned debug_border_color_;
 
 	void draw_debug_border(surface& frame_buffer);
+	void draw_debug_border(surface& frame_buffer, int x_offset, int y_offset);
 #else
 	void draw_debug_border(surface&) {}
+	void draw_debug_border(surface&, int, int) {}
 #endif
 
 #ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
@@ -657,12 +692,30 @@ private:
 
 	/** See draw_background(). */
 	virtual void impl_draw_background(surface& /*frame_buffer*/) {}
+	virtual void impl_draw_background(
+			  surface& /*frame_buffer*/
+			, int /*x_offset*/
+			, int /*y_offset*/)
+	{
+	}
 
 	/** See draw_children. */
 	virtual void impl_draw_children(surface& /*frame_buffer*/) {}
+	virtual void impl_draw_children(
+			surface& /*frame_buffer*/
+			, int /*x_offset*/
+			, int /*y_offset*/)
+	{
+	}
 
 	/** See draw_foreground. */
 	virtual void impl_draw_foreground(surface& /*frame_buffer*/) {}
+	virtual void impl_draw_foreground(
+			  surface& /*frame_buffer*/
+			, int /*x_offset*/
+			, int /*y_offset*/)
+	{
+	}
 
 	/** (Will be) inherited from event::tdispatcher. */
 	virtual bool is_at(const tpoint& coordinate) const
@@ -727,7 +780,7 @@ template<class T> T* get_parent(twidget* widget)
  * @returns                   The widget with the id.
  */
 template<class T>
-T* find_widget(typename tconst_duplicator<T, twidget>::type* widget
+T* find_widget(typename utils::tconst_clone<twidget, T>::pointer widget
 		, const std::string& id
 		, const bool must_be_active
 		, const bool must_exist)
@@ -755,7 +808,7 @@ T* find_widget(typename tconst_duplicator<T, twidget>::type* widget
  * @returns                   The widget with the id.
  */
 template<class T>
-T& find_widget(typename tconst_duplicator<T, twidget>::type* widget
+T& find_widget(typename utils::tconst_clone<twidget, T>::pointer widget
 		, const std::string& id
 		, const bool must_be_active)
 {

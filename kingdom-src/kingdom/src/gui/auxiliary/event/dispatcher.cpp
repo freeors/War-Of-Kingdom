@@ -1,4 +1,4 @@
-/* $Id: dispatcher.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: dispatcher.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -17,7 +17,6 @@
 
 #include "gui/auxiliary/event/dispatcher_private.hpp"
 
-#include "foreach.hpp"
 #include "gui/auxiliary/log.hpp"
 
 namespace gui2 {
@@ -83,6 +82,8 @@ bool tdispatcher::has_event(const tevent event
 			|| find<tset_event_mouse>(event, tdispatcher_implementation
 					::thas_handler(event_type, *this))
 			|| find<tset_event_keyboard>(event, tdispatcher_implementation
+					::thas_handler(event_type, *this))
+			|| find<tset_event_textinput>(event, tdispatcher_implementation
 					::thas_handler(event_type, *this))
 			|| find<tset_event_notification>(event, tdispatcher_implementation
 					::thas_handler(event_type, *this))
@@ -256,6 +257,40 @@ bool tdispatcher::fire(const tevent event
 			, dynamic_cast<twidget*>(this)
 			, &target
 			, ttrigger_keyboard(key, modifier, unicode));
+}
+
+/** Helper struct to wrap the functor call. */
+class ttrigger_textinput
+{
+public:
+	ttrigger_textinput(const char* text)
+		: text_(text)
+	{
+	}
+
+	void operator()(tsignal_textinput_function functor
+			, tdispatcher& dispatcher
+			, const tevent event
+			, bool& handled
+			, bool& halt)
+	{
+		functor(dispatcher, event, handled, halt, text_);
+	}
+
+private:
+	const char* text_;
+};
+
+bool tdispatcher::fire(const tevent event
+		, twidget& target
+		, int type // to add it, 1)reserve for in furture; 2)not ambiguous with ttrigger_notification.
+		, const char* text)
+{
+	assert(find<tset_event_textinput>(event, tevent_in_set()));
+	return fire_event<tsignal_textinput_function>(event
+			, dynamic_cast<twidget*>(this)
+			, &target
+			, ttrigger_textinput(text));
 }
 
 /** Helper struct to wrap the functor call. */

@@ -73,7 +73,12 @@ public:
 	//event handlers, overridden from command_executor
 	virtual void objectives();
 	virtual void show_statistics();
+
 	virtual void show_rpg();
+	virtual void rpg_detail();
+	virtual void rpg_exchange(const std::vector<size_t>& human_p, size_t ai_p);
+	virtual void rpg_independence(bool replaying = false);
+
 	virtual void save_game();
 	virtual void save_replay();
 	virtual void save_map();
@@ -102,6 +107,8 @@ public:
 	 * @throw end_level_exception If the user wants to abort.
 	 */
 	virtual void process_oos(const std::string& msg) const;
+
+	virtual void sync_undo();
 
 	bool do_recruit(artifical* city, int cost_exponent, bool rpg_mode);
 	void rpg_update();
@@ -139,6 +146,7 @@ public:
 	const team& current_team() const;
 
 	bool is_linger_mode() const { return linger_; }
+	const undo_list& undo_stack() const { return undo_stack_; }
 
 	events::mouse_handler& get_mouse_handler_base();
 	events::menu_handler& get_menu_handler() { return menu_handler_; }
@@ -257,6 +265,7 @@ private:
 	static const size_t MAX_WML_COMMANDS = 7;
 
 	int human_players_;
+	bool rpging_;
 
 	bool victory_when_enemies_defeated_;
 	end_level_data end_level_data_;

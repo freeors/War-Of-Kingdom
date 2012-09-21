@@ -1,4 +1,4 @@
-/* $Id: widget_definition.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: widget_definition.hpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -19,6 +19,8 @@
 #include "config.hpp"
 #include "foreach.hpp"
 #include "gui/auxiliary/canvas.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -98,7 +100,7 @@ struct tcontrol_definition
 	void load_resolutions(const config &cfg)
 	{
 		config::const_child_itors itors = cfg.child_range("resolution");
-		foreach(const config &resolution, itors) {
+		BOOST_FOREACH(const config &resolution, itors) {
 			resolutions.push_back(new T(resolution));
 		}
 	}

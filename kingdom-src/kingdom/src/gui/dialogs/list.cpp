@@ -39,8 +39,6 @@
 #include "game_events.hpp"
 #include "dialogs.hpp"
 
-// extern std::vector<hero*> empty_vector_hero_ptr;
-
 namespace gui2 {
 
 /*WIKI

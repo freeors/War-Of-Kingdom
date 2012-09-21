@@ -41,7 +41,7 @@ public:
 	/***** ***** ***** ***** Inherited ***** ***** ***** *****/
 
 	/** Inherited from tcontrol. */
-	void set_definition(const std::string& definition);
+	void load_config_extra();
 
 	void set_active(const bool active)
 		{ if(get_active() != active) set_state(active ? ENABLED : DISABLED); };

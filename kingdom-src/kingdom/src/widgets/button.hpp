@@ -54,6 +54,7 @@ public:
 	bool checked() const;
 
 	void set_label(const std::string& val);
+	void set_color(const SDL_Color& color);
 
 	// void set_font_size(int font_size);
 
@@ -83,6 +84,7 @@ private:
 	std::string label_;
 	surface image_, pressedImage_, activeImage_, pressedActiveImage_;
 	SDL_Rect textRect_;
+	SDL_Color color_;
 
 	int font_size_;
 	bool button_;

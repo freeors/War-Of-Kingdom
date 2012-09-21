@@ -41,8 +41,8 @@ enum HOTKEY_COMMAND {
 	HOTKEY_UNDO, HOTKEY_REDO,
 	HOTKEY_ZOOM_IN, HOTKEY_ZOOM_OUT, HOTKEY_ZOOM_DEFAULT,
 	HOTKEY_FULLSCREEN, HOTKEY_SCREENSHOT, HOTKEY_MAP_SCREENSHOT, HOTKEY_ACCELERATED,
-	HOTKEY_RPG,
-	HOTKEY_RECRUIT, HOTKEY_RECALL, HOTKEY_ARMORY, HOTKEY_MOVE, 
+	HOTKEY_RPG, HOTKEY_RPG_DETAIL, HOTKEY_RPG_EXCHANGE, HOTKEY_RPG_INDEPENDENCE,
+	HOTKEY_RECRUIT, HOTKEY_EXPEDITE, HOTKEY_ARMORY, HOTKEY_MOVE, 
 	HOTKEY_ENDTURN,
 	HOTKEY_TOGGLE_ELLIPSES, HOTKEY_TOGGLE_GRID, HOTKEY_MUTE, HOTKEY_MOUSE_SCROLL,
 	HOTKEY_SPEAK, HOTKEY_CHANGE_SIDE, HOTKEY_PREFERENCES,
@@ -243,6 +243,9 @@ public:
 	virtual void redo() {}
 	virtual void save_map() {}
 	virtual void show_rpg() {}
+	virtual void rpg_detail() {}
+	virtual void rpg_exchange(const std::vector<size_t>& human_p, size_t ai_p) {}
+	virtual void rpg_independence(bool replaying = false) {}
 	virtual void toggle_ellipses() {}
 	virtual void toggle_grid() {}
 	virtual void build(const std::string& type) {}

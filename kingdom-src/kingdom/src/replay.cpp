@@ -39,27 +39,42 @@
 #include "wesconfig.h"
 #include "artifical.hpp"
 #include "formula_string_utils.hpp"
+#include "filesystem.hpp"
+#include "wml_exception.hpp"
+
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 command_pool::command_pool()
+	: use_gzip_(true)
+	, cache_(NULL)
 {
 	pool_data_ = (uint8_t*)malloc(POOL_ALLOC_DATA_SIZE);
 	pool_data_size_ = POOL_ALLOC_DATA_SIZE;
 	pool_data_vsize_ = 0;
+	pool_data_gzip_size_ = 0;
 	pool_pos_ = (unsigned int*)malloc(POOL_ALLOC_POS_SIZE * sizeof(unsigned int));
 	pool_pos_size_ = POOL_ALLOC_POS_SIZE;
-	pool_pos_vsize_ = 0;	
+	pool_pos_vsize_ = 0;
+
+	current_gzip_seg_.min = current_gzip_seg_.max = -1;
 }
 
 command_pool::command_pool(const command_pool& that)
 {
+	use_gzip_ = that.use_gzip_;
+
+	VALIDATE(use_gzip_, "command_pool::operator=, invalid use_gzip_ falg");
+
 	// pool data
 	pool_data_size_ = that.pool_data_size_;
 	pool_data_vsize_ = that.pool_data_vsize_;
+	pool_data_gzip_size_ = that.pool_data_gzip_size_;
 	if (pool_data_size_) {
 		pool_data_ = (uint8_t*)malloc(pool_data_size_);
 	}
-	if (pool_data_vsize_) {
-		memcpy(pool_data_, that.pool_data_, pool_data_vsize_);
+	if (pool_data_gzip_size_) {
+		memcpy(pool_data_, that.pool_data_, pool_data_gzip_size_);
 	}
 	// pool pos
 	pool_pos_size_ = that.pool_pos_size_;
@@ -69,6 +84,14 @@ command_pool::command_pool(const command_pool& that)
 	}
 	if (pool_pos_vsize_) {
 		memcpy(pool_pos_, that.pool_pos_, pool_pos_vsize_ * sizeof(unsigned int));
+	}
+	// cache_
+	if (pool_data_vsize_) {
+		VALIDATE(false, "command_pool::command_pool, pool_data_vsize_ isn't zero.");
+		cache_ = (unsigned char*)malloc(POOL_ALLOC_CACHE_SIZE);
+		memcpy(cache_, that.cache_, pool_data_vsize_);
+	} else {
+		cache_ = NULL;
 	}
 }
 
@@ -80,28 +103,44 @@ command_pool::~command_pool()
 	if (pool_pos_) {
 		free(pool_pos_);
 	}
+	if (cache_) {
+		free(cache_);
+	}
 }
 
 command_pool& command_pool::operator=(const command_pool& that)
 {
+	VALIDATE(use_gzip_ && that.use_gzip_, "command_pool::operator=, invalid use_gzip_ falg");
+
+	use_gzip_ = that.use_gzip_;
+
 	if (pool_data_size_ < that.pool_data_size_) {
 		free(pool_data_);
 		pool_data_size_ = that.pool_data_size_;
 		pool_data_ = (uint8_t*)malloc(pool_data_size_);
 	}
 	pool_data_vsize_ = that.pool_data_vsize_;
-	if (pool_data_vsize_) {
-		memcpy(pool_data_, that.pool_data_, pool_data_vsize_);
+	pool_data_gzip_size_ = that.pool_data_gzip_size_;
+	if (pool_data_gzip_size_) {
+		memcpy(pool_data_, that.pool_data_, pool_data_gzip_size_);
 	}
 
-	if (pool_pos_size_ > that.pool_pos_size_) {
+	if (pool_pos_size_ < that.pool_pos_size_) {
 		free(pool_pos_);
-		pool_pos_size_ = that.pool_pos_vsize_;
+		pool_pos_size_ = that.pool_pos_size_;
 		pool_pos_ = (unsigned int*)malloc(pool_pos_size_ * sizeof(unsigned int));
 	}
 	pool_pos_vsize_ = that.pool_pos_vsize_;
 	if (pool_pos_vsize_) {
 		memcpy(pool_pos_, that.pool_pos_, pool_pos_vsize_ * sizeof(unsigned int));
+	}
+	// cache
+	if (pool_data_vsize_) {
+		VALIDATE(false, "command_pool::command_pool, pool_data_vsize_ isn't zero.");
+		if (!cache_) {
+			cache_ = (unsigned char*)malloc(POOL_ALLOC_CACHE_SIZE);
+		}
+		memcpy(cache_, that.cache_, pool_data_vsize_);
 	}
 
 	return *this;
@@ -109,12 +148,12 @@ command_pool& command_pool::operator=(const command_pool& that)
 
 void command_pool::read(unsigned char* mem)
 {
-	int pool_data_size, pool_data_vsize, pool_pos_size, pool_pos_vsize;
+	int pool_data_size, pool_data_gzip_size, pool_pos_size, pool_pos_vsize;
 	int* ptr = (int*)mem;
 
 	pool_data_size = *ptr;
 	ptr = ptr + 1;
-	pool_data_vsize = *ptr;
+	pool_data_gzip_size = *ptr;
 	ptr = ptr + 1;
 	pool_pos_size = *ptr;
 	ptr = ptr + 1;
@@ -126,44 +165,107 @@ void command_pool::read(unsigned char* mem)
 		pool_data_size_ = pool_data_size;
 		pool_data_ = (uint8_t*)malloc(pool_data_size);
 	}
-	pool_data_vsize_ = pool_data_vsize;
-	if (pool_data_vsize_) {
-		memcpy(pool_data_, (unsigned char*)ptr, pool_data_vsize_);
+	// pool_data_vsize_ = pool_data_vsize;
+	pool_data_gzip_size_ = pool_data_gzip_size;
+	if (pool_data_gzip_size_) {
+		memcpy(pool_data_, (unsigned char*)ptr, pool_data_gzip_size_);
 	}
 
-	if (pool_pos_size_ > pool_pos_size) {
+	if (pool_pos_size_ < pool_pos_size) {
 		free(pool_pos_);
-		pool_pos_size_ = pool_pos_vsize;
+		pool_pos_size_ = pool_pos_size;
 		pool_pos_ = (unsigned int*)malloc(pool_pos_size_ * sizeof(unsigned int));
 	}
 	pool_pos_vsize_ = pool_pos_vsize;
 	if (pool_pos_vsize_) {
-		memcpy(pool_pos_, (unsigned char*)ptr + pool_data_vsize_, pool_pos_vsize_ * sizeof(unsigned int));
+		memcpy(pool_pos_, (unsigned char*)ptr + pool_data_gzip_size_, pool_pos_vsize_ * sizeof(unsigned int));
 	}
-}
-
-void command_pool::write(unsigned char* mem)
-{
 }
 
 void command_pool::clear()
 {
 	pool_data_vsize_ = 0;
 	pool_pos_vsize_ = 0;
+
+	pool_data_gzip_size_ = 0;
+	current_gzip_seg_.min = current_gzip_seg_.max = -1;
 }
 
-#define command_addr(pool_pos_index)	((command_pool::command*)(pool_data_ + pool_pos_[pool_pos_index]))
+void command_pool::set_use_gzip(bool val) 
+{ 
+	use_gzip_ = val; 
+}
+
+// #define command_addr(pool_pos_index)	((command_pool::command*)(pool_data_ + pool_pos_[pool_pos_index]))
+
+void command_pool::load_for_queue(int pool_pos_index, gzip_segment_t& seg, int& pool_data_gzip_size, unsigned char* dest)
+{
+	int start;
+	// ungzip necessary data to cache
+	if (pool_pos_index < current_gzip_seg_.min) {
+		// search back
+		start = 0;
+	} else if (seg.max != -1 && pool_pos_index > seg.max) {
+		// search forword
+		start = pool_data_gzip_size;
+	} else {
+		// search from 0 to max
+		start = 0;
+	}
+
+	memcpy(&seg, pool_data_ + start, sizeof(gzip_segment_t));
+	while (pool_pos_index < seg.min || pool_pos_index > seg.max) {
+		start += sizeof(gzip_segment_t) + seg.len;
+		memcpy(&seg, pool_data_ + start, sizeof(gzip_segment_t));
+	}
+	pool_data_gzip_size = start;
+	gzip_codec(pool_data_ + pool_data_gzip_size + sizeof(gzip_segment_t), seg.len, false, dest);
+}
+
+command_pool::command* command_pool::command_addr(int pool_pos_index, bool queue)
+{
+	if (use_gzip_) {
+		if (!cache_) {
+			cache_ = (unsigned char*)malloc(POOL_ALLOC_CACHE_SIZE);
+		}
+		if (queue) {
+			if (pool_pos_index < current_gzip_seg_.min || pool_pos_index > current_gzip_seg_.max) {
+				load_for_queue(pool_pos_index, current_gzip_seg_, pool_data_gzip_size_, cache_);
+			}
+		} else {
+			// ensure current_gzip_seg.min/max is valid.
+			if (current_gzip_seg_.min == -1) {
+				current_gzip_seg_.min = pool_pos_vsize_ - 1;
+				current_gzip_seg_.max = INT_MAX;
+			}
+		}
+		return (command_pool::command*)(cache_ + pool_pos_[pool_pos_index]);
+	} else {
+		return (command_pool::command*)(pool_data_ + pool_pos_[pool_pos_index]);
+	}
+}
+
+command_pool::command* command_pool::command_addr2(int pool_pos_index, gzip_segment_t& seg, int& pool_data_gzip_size, unsigned char* cache)
+{
+	if (pool_pos_index < seg.min || pool_pos_index > seg.max) {
+		load_for_queue(pool_pos_index, seg, pool_data_gzip_size, cache);
+	}
+	return (command_pool::command*)(cache + pool_pos_[pool_pos_index]);
+}
 
 // 返回下一个可以写的地址，同时已把这下个计入在了有效包中
 command_pool::command* command_pool::add_command()
 {
-	if (pool_data_size_ - pool_data_vsize_ < POOL_COMMAND_RESERVE_BYTES) {
-		pool_data_size_ += POOL_ALLOC_DATA_SIZE;
-		uint8_t* tmp = (uint8_t*)malloc(pool_data_size_);
-		memcpy(tmp, pool_data_, pool_data_vsize_);
-		free(pool_data_);
-		pool_data_ = tmp;
+	if (!use_gzip_) {
+		if (pool_data_size_ - pool_data_vsize_ < POOL_COMMAND_RESERVE_BYTES) {
+			pool_data_size_ += POOL_ALLOC_DATA_SIZE;
+			uint8_t* tmp = (uint8_t*)malloc(pool_data_size_);
+			memcpy(tmp, pool_data_, pool_data_vsize_);
+			free(pool_data_);
+			pool_data_ = tmp;
+		}
 	}
+	
 	pool_pos_vsize_ ++;
 	if (pool_pos_vsize_ > pool_pos_size_) {
 		pool_pos_size_ += POOL_ALLOC_POS_SIZE;
@@ -175,7 +277,70 @@ command_pool::command* command_pool::add_command()
 
 	pool_pos_[pool_pos_vsize_ - 1] = pool_data_vsize_;
 
-	return command_addr(pool_pos_vsize_ - 1);
+	return command_addr(pool_pos_vsize_ - 1, false);
+}
+
+int command_pool::gzip_codec(unsigned char* data, int data_len, bool encode, unsigned char* to)
+{
+	int chunk_size = 8192;
+
+	if (!data_len) {
+		return 0;
+	}
+
+	int len = 0;
+	int result_len = 0;
+	try {
+		std::stringstream gangplank;
+		std::iostream ifile(gangplank.rdbuf());
+		ifile.write((char*)data, data_len);
+
+		boost::iostreams::filtering_stream<boost::iostreams::input> in;
+		if (encode) {
+			in.push(boost::iostreams::gzip_compressor());
+		} else {
+			in.push(boost::iostreams::gzip_decompressor());
+		}
+		in.push(ifile);
+
+		if (encode) {
+			uint8_t* dest = pool_data_ + pool_data_gzip_size_ + sizeof(gzip_segment_t);
+			do {
+				if (pool_data_size_ - pool_data_gzip_size_ - (int)sizeof(gzip_segment_t) - result_len - len < chunk_size) {
+					pool_data_size_ += POOL_ALLOC_DATA_SIZE;
+					uint8_t* tmp = (uint8_t*)malloc(pool_data_size_);
+					// must copy necessary data. not forget this encoded!
+					memcpy(tmp, pool_data_, pool_data_gzip_size_ + sizeof(gzip_segment_t) + result_len + len);
+					free(pool_data_);
+					// update dest
+					dest = tmp + (dest - pool_data_);
+					pool_data_ = tmp;
+				}
+				if (len > 0) {
+					result_len += len;
+					// pool_data_gzip_size_ += len;
+					dest = dest + len;
+					if (len < chunk_size) {
+						break;
+					}
+				}
+			} while (len = in.read((char*)dest, chunk_size).gcount());
+
+		} else {
+			uint8_t* dest = to;
+			while (len = in.read((char*)dest, chunk_size).gcount()) {
+				result_len += len;
+				if (len != chunk_size) {
+					break;
+				}
+				dest = dest + len;
+			}
+		}
+
+	} catch(io_exception& e) {
+		VALIDATE(false, std::string("IO error: ") + e.what());
+	}
+	return result_len;
 }
 
 static lg::log_domain log_replay("replay");
@@ -266,25 +431,25 @@ static void verify(const unit_map& units, const config& cfg) {
 // references to it from this very file and move it out of here.
 replay recorder;
 
-replay::replay() :
-	cfg_(),
-	build_cfg_(),
-	pos_(0),
-	current_(NULL),
-	skip_(false),
-	message_locations(),
-	expected_advancements_()
+replay::replay() 
+	: cfg_()
+	, build_cfg_()
+	, pos_(0)
+	, current_(NULL)
+	, skip_(false)
+	, message_locations()
+	, expected_advancements_()
 {}
 
-replay::replay(const command_pool& pool) :
-	command_pool(pool),
-	cfg_(),
-	build_cfg_(),
-	pos_(0),
-	current_(NULL),
-	skip_(false),
-	message_locations(),
-	expected_advancements_()
+replay::replay(const command_pool& pool) 
+	: command_pool(pool)
+	, cfg_()
+	, build_cfg_()
+	, pos_(0)
+	, current_(NULL)
+	, skip_(false)
+	, message_locations()
+	, expected_advancements_()
 {
 }
 
@@ -334,7 +499,7 @@ bool replay::is_skipping() const
 void replay::add_start()
 {
 	config* const cmd = add_command(true);
-	(*cmd)["type"] = str_cast(command_pool::START);
+	(*cmd)["type"] = command_pool::START;
 	cmd->add_child("start");
 }
 
@@ -539,11 +704,11 @@ void replay::add_armory(const map_location& loc, const std::vector<size_t>& diff
 
 	// rearmed reside troops
 	artifical* city = resources::units->city_from_loc(loc);
-	std::vector<unit>& reside_troops = city->reside_troops();
+	std::vector<unit*>& reside_troops = city->reside_troops();
 
 	std::vector<size_t>::const_iterator itor = diff.begin();
 	index = *itor;
-	u = &reside_troops[index];
+	u = reside_troops[index];
 	captains.push_back(u->master().number_);
 	if (u->second().valid()) captains.push_back(u->second().number_);
 	if (u->third().valid()) captains.push_back(u->third().number_);
@@ -556,7 +721,7 @@ void replay::add_armory(const map_location& loc, const std::vector<size_t>& diff
 	}
 	for (++ itor; itor != diff.end(); ++ itor) {
 		index = *itor;
-		u = &reside_troops[index];
+		u = reside_troops[index];
 		captains.clear();
 		captains.push_back(u->master().number_);
 		if (u->second().valid()) captains.push_back(u->second().number_);
@@ -623,26 +788,27 @@ void replay::add_card(int side, size_t number, bool dialog)
 	cmd->add_child("add_card", val);
 }
 
-void replay::erase_card(int side, int index, const map_location& loc, std::map<size_t, unit*>& touched_heros)
+void replay::erase_card(int side, int index, const map_location& loc, std::vector<std::pair<int, unit*> >& touched, bool dialog)
 {
 	config* const cmd = add_command();
-	(*cmd)["type"] = str_cast(command_pool::ERASE_CARD);
+	(*cmd)["type"] = command_pool::ERASE_CARD;
 
 	config val;
 
 	std::stringstream str;
 	// touched heros
-	if (!touched_heros.empty()) {
-		std::map<size_t, unit*>::const_iterator itor = touched_heros.begin();
-		str << itor->first;
-		for (++ itor; itor != touched_heros.end(); ++ itor) {
-			str << "," << itor->first;
+	if (!touched.empty()) {
+		std::vector<std::pair<int, unit*> >::const_iterator it = touched.begin();
+		str << it->first << "," << it->second->get_location().x << "," << it->second->get_location().y;
+		for (++ it; it != touched.end(); ++ it) {
+			str << "," << it->first << "," << it->second->get_location().x << "," << it->second->get_location().y;
 		}
 	}
-	val["heros"] = str.str();
+	val["touched"] = str.str();
 
 	val["side"] = side;
 	val["index"] = index;
+	val["dialog"] = dialog? 1: 0;
 	loc.write(val);
 
 	cmd->add_child("erase_card", val);
@@ -849,6 +1015,27 @@ void replay::add_event(int type, const map_location& loc)
 	cmd->add_child("event", val);
 }
 
+void replay::add_rpg_exchange(const std::set<size_t>& checked_human, size_t checked_ai)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::RPG_EXCHANGE;
+
+	config val;
+
+	std::stringstream str;
+	std::set<size_t>::const_iterator itor = checked_human.begin();
+	int number = *itor;
+	str << number;
+	for (++ itor; itor != checked_human.end(); ++ itor) {
+		number = *itor;
+		str << "," << number;
+	}
+	val["human"] = str.str();
+	val["ai"] = (int)checked_ai;
+
+	cmd->add_child("rpg_exchange", val);
+}
+
 void replay::add_log_data(const std::string &key, const std::string &var)
 {
 
@@ -955,6 +1142,7 @@ std::stringstream message_log;
 
 std::string replay::build_chat_log()
 {
+/*
 	config cmd;
 	std::vector<int>::iterator loc_it;
 	int last_location = 0;
@@ -971,17 +1159,7 @@ std::string replay::build_chat_log()
 
 	}
 	message_locations.clear();
-
-#if 0
-	for(config::child_list::const_iterator i = cmd.begin() + (last_location + 1); i != cmd.end(); ++i) {
-		++last_location;
-		const config* speak = (**i).child("speak");
-		if(speak != NULL) {
-			message_locations.push_back(last_location);
-			add_chat_log_entry(speak, str);
-		}
-	}
-#endif
+*/
 	return message_log.str();
 }
 
@@ -1330,6 +1508,29 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		*ptr = lexical_cast_default<int>(child["x"]) - 1;
 		ptr = ptr + 1; 
 		*ptr = lexical_cast_default<int>(child["y"]) - 1;
+		ptr = ptr + 1;
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
+	} else if (type == command_pool::RPG_EXCHANGE) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = cfg.child("random", i)["value"].to_int();
+			ptr = ptr + 1; 
+		}
+		const config& child = cfg.child("rpg_exchange");
+		// human
+		const std::vector<std::string> heros = utils::split(child["human"]);
+		size = *ptr = heros.size();
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = lexical_cast_default<int>(heros[i]);
+			ptr = ptr + 1;
+		}
+		*ptr = lexical_cast_default<int>(child["ai"]);
 		ptr = ptr + 1;
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
@@ -1710,7 +1911,7 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		}
 		const config& child = cfg.child("erase_card");
 		// heros="0,1,2,3,4"
-		const std::vector<std::string> heros = utils::split(child["heros"]);
+		const std::vector<std::string> heros = utils::split(child["touched"]);
 		size = *ptr = heros.size();
 		ptr = ptr + 1; 
 		for (i = 0; i < size; i ++) {
@@ -1722,6 +1923,9 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		ptr = ptr + 1;
 		// index=2
 		*ptr = child["index"].to_int();
+		ptr = ptr + 1;
+		// dialog=2
+		*ptr = child["dialog"].to_int();
 		ptr = ptr + 1;
 		// x/y
 		*ptr = child["x"].to_int() - 1;
@@ -2002,6 +2206,29 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		loc.y = *ptr;
 		ptr = ptr + 1;
 		loc.write(child);
+
+	} else if (cmd->type == command_pool::RPG_EXCHANGE) {
+		config& child = cfg.add_child("rpg_exchange");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+		size = *ptr;
+		ptr = ptr + 1;
+		// heros
+		str << *ptr;
+		ptr = ptr + 1;
+		for (i = 1; i < size; i ++) {
+			str << "," << *ptr;
+			ptr = ptr + 1;
+		}
+		child["human"] = str.str();
+		child["ai"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
 
 	} else if (cmd->type == command_pool::BUILD) {
 		config& child = cfg.add_child("build");
@@ -2369,12 +2596,14 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			}
 			ptr = ptr + 1;
 		}
-		child["heros"] = str.str();
+		child["touched"] = str.str();
 		// side=1
 		child["side"] = lexical_cast<std::string>(*ptr);
 		ptr = ptr + 1;
 		// index=2
 		child["index"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
+		child["dialog"] = lexical_cast<std::string>(*ptr);
 		ptr = ptr + 1;
 		loc.x = *ptr;
 		ptr = ptr + 1;
@@ -2408,15 +2637,22 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 
 void replay::pool_2_config(config& cfg)
 {
+	unsigned char* cache = (unsigned char*)malloc(POOL_ALLOC_CACHE_SIZE);
+	gzip_segment_t seg;
+	int pool_data_gzip_size = 0;
+
+	seg.min = seg.max = -1;
 	for (int i = 0; i < pool_pos_vsize_; i ++) {
 		config& cmd = cfg.add_child("command");
-		command_2_config(command_addr(i), cmd);
+		// command_2_config(command_addr(i), cmd);
+		command_2_config(command_addr2(i, seg, pool_data_gzip_size, cache), cmd);
 	}
 	if (!cfg_.empty()) {
 		cfg.add_child("command", cfg_);
 		// cfg.get_children("command")[pos_ - 1]->remove_attribute("type");
 		// cfg.get_children("command")[pos_ - 1]->remove_attribute("sent");
 	}
+	delete cache;
 }
 
 void replay::get_replay_data(command_pool& that)
@@ -2424,11 +2660,32 @@ void replay::get_replay_data(command_pool& that)
 	if (!cfg_.empty()) {
 		command_pool::command* cmd = command_pool::add_command();
 		config_2_command(cfg_, cmd);
+		cfg_.clear();
+
+		// if has a undoable command, it must be send over network before "reset" current_gzip_seg_.
+		// of course, should disable "undo" button on ui.
+		play_controller& controller = *resources::controller;
+		if (!controller.undo_stack().empty()) {
+			controller.sync_undo();
+		}
 	}
+	if (use_gzip_ && pool_data_vsize_) {
+		// encode pool_data
+		gzip_segment_t seg;
+		seg.min = current_gzip_seg_.min;
+		seg.max = pool_pos_vsize_ - 1;
+		
+		seg.len = gzip_codec(cache_, pool_data_vsize_, true);
+		pool_data_vsize_ = 0;
+		// once recallocate, gzip_codec maybe modify pool_data_, so dest must locate after gzip_codec. 
+		uint8_t* dest = pool_data_ + pool_data_gzip_size_;
+		pool_data_gzip_size_ += sizeof(gzip_segment_t) + seg.len;
+		current_gzip_seg_.min = current_gzip_seg_.max = -1;
+
+		memcpy(dest, &seg, sizeof(gzip_segment_t));
+	}
+
 	that = *(dynamic_cast<command_pool*>(this));
-	if (!cfg_.empty()) {
-		pool_pos_vsize_ --;
-	}
 }
 
 void replay::start_replay()
@@ -2725,20 +2982,20 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			}
 
 			type_heros_pair pair(ut, v);
-			unit new_unit(*resources::units, heros, pair, city->cityno(), true, false);
+			unit* new_unit = new unit(*resources::units, heros, pair, city->cityno(), true, false);
 			// 必须正确以下这两个变量，否则此个回合将不能移动、攻击（虽然是回放，但移动要靠移动力、攻击要靠攻击数，这些都是要遵循的）
-			new_unit.set_movement(new_unit.total_movement());
-			new_unit.set_attacks(new_unit.attacks_total());
+			new_unit->set_movement(new_unit->total_movement());
+			new_unit->set_attacks(new_unit->attacks_total());
 			current_team.spend_gold(cost);
 
-			city->troop_come_into(new_unit);
 			if (child["human"].to_int()) {
-				city->reside_troops().back().set_human(true);
+				new_unit->set_human(true);
 			}
-
+			city->troop_come_into(new_unit, -1, false);
+			
 			resources::screen->invalidate(loc);
 
-			statistics::recruit_unit(new_unit);
+			statistics::recruit_unit(*new_unit);
 
 			LOG_REPLAY << "-> " << (current_team.gold()) << "\n";
 			fix_shroud = !get_replay_source().is_skipping();
@@ -2755,7 +3012,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			hero_map& heros = *resources::heros;
 
 			// move heros from src_city to dst_city
-			std::vector<unit>& reside_troops = city->reside_troops();
+			std::vector<unit*>& reside_troops = city->reside_troops();
 			std::vector<hero*>& fresh_heros = city->fresh_heros();
 			std::vector<hero*> previous_captains, current_captains;
 
@@ -2764,7 +3021,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				++ itor;
 				size_t size = lexical_cast_default<size_t>(*itor);
 				++ itor;
-				unit& u = reside_troops[index];
+				unit& u = *reside_troops[index];
 				previous_captains.push_back(&u.master());
 				if (u.second().valid()) {
 					previous_captains.push_back(&u.second());
@@ -2895,7 +3152,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				v.push_back(&city->master());
 			}
 			type_heros_pair pair(ut, v);
-			artifical new_unit(*resources::units, heros, pair, builder.cityno(), true);
+			artifical new_unit(*resources::units, heros, pair, city->cityno(), true);
 
 			current_team.spend_gold(cost);
 
@@ -2905,7 +3162,6 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			builder.set_movement(0);
 			builder.set_attacks(0);
 
-			LOG_REPLAY << "-> " << (current_team.gold()) << "\n";
 			fix_shroud = !get_replay_source().is_skipping();
 			game_events::fire("post_build", art_loc, builder_loc);
 
@@ -2918,7 +3174,8 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			if (index >= 0) {
 				artifical* disband_city = resources::units->city_from_loc(loc);
 
-				std::vector<unit>& reside_troops = disband_city->reside_troops();
+				std::vector<unit*>& reside_troops = disband_city->reside_troops();
+				unit& u = *reside_troops[index];
 				// sort_units(reside_troops);
 
 				if (index >= int(reside_troops.size())) {
@@ -2926,20 +3183,20 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				}
 
 				// add gold to the gold amount
-				current_team.spend_gold(-1 * reside_troops[index].cost() * 2 / 3);
+				current_team.spend_gold(-1 * u.cost() * 2 / 3);
 				// add hero to the hero list in city
-				reside_troops[index].master().status_ = hero_status_idle;
-				disband_city->fresh_heros().push_back(&reside_troops[index].master());
-				if (reside_troops[index].second().valid()) {
-					reside_troops[index].second().status_ = hero_status_idle;
-					disband_city->fresh_heros().push_back(&reside_troops[index].second());
+				u.master().status_ = hero_status_idle;
+				disband_city->fresh_heros().push_back(&u.master());
+				if (u.second().valid()) {
+					u.second().status_ = hero_status_idle;
+					disband_city->fresh_heros().push_back(&u.second());
 				}
-				if (reside_troops[index].third().valid()) {
-					reside_troops[index].third().status_ = hero_status_idle;
-					disband_city->fresh_heros().push_back(&reside_troops[index].third());
+				if (u.third().valid()) {
+					u.third().status_ = hero_status_idle;
+					disband_city->fresh_heros().push_back(&u.third());
 				}
 				// erase this unit from reside troop
-				reside_troops.erase(reside_troops.begin() + index);
+				disband_city->troop_go_out(index);
 			} else {
 				artifical* art = unit_2_artifical(&*resources::units->find(loc, (index == -1 * unit_map::OVERLAY)? true: false));
 				resources::units->erase(art);
@@ -2964,8 +3221,20 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				unit& u = *resources::units->find(loc);
 				hero* h2 = u.can_encourage();
 				u.do_encourage(u.master(), *h2);
+
+			} else if (type == replay::EVENT_RPG_INDEPENDENCE) {
+				resources::controller->rpg_independence(true);
 			}
 			resources::screen->invalidate(loc);
+		} else if (const config &child = cfg->child("rpg_exchange")) {
+			const std::vector<std::string> human_pairs = utils::split(child["human"]);
+			std::vector<size_t> v;
+			for (std::vector<std::string>::const_iterator itor = human_pairs.begin(); itor != human_pairs.end(); ++ itor) {
+				int number = lexical_cast_default<int>(*itor);
+				v.push_back(number);
+			}
+			int ai_pair = child["ai"].to_int();
+			resources::controller->rpg_exchange(v, ai_pair);
 		}
 		else if (const config &child = cfg->child("countdown_update"))
 		{
@@ -3031,7 +3300,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 				expedite_city = resources::units->city_from_loc(src);
 
-				std::vector<unit>& reside_troops = expedite_city->reside_troops();
+				std::vector<unit*>& reside_troops = expedite_city->reside_troops();
 				// sort_units(reside_troops);
 
 				if (expedite_index >= 0 && expedite_index < int(expedite_city->reside_troops().size())) {
@@ -3041,7 +3310,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 					// 暂时强制恢复所有移动力，使得底下的move_unit一定成功
 					// reside_troops[expedite_index].set_movement(reside_troops[expedite_index].total_movement());
 
-					statistics::recall_unit(reside_troops[expedite_index]);
+					statistics::recall_unit(*reside_troops[expedite_index]);
 					resources::units->set_expediting(expedite_city, expedite_index);
 					resources::screen->place_expedite_city(*expedite_city);
 				} else {
@@ -3213,22 +3482,48 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 		{
 			int side = child["side"].to_int();
 			int index = child["index"].to_int();
-			const std::vector<std::string> checked_heros = utils::split(child["heros"]);
+			bool dialog = child["dialog"].to_int()? true: false;
+			const std::vector<std::string> touched = utils::split(child["touched"]);
 
 			map_location loc(child, resources::state_of_game);
 			team& selected_team = (*resources::teams)[side - 1];
+			card& c = selected_team.holded_card(index);
 			if (loc.valid()) {
-				std::map<size_t, unit*> maps;
-				for (std::vector<std::string>::const_iterator itor = checked_heros.begin(); itor != checked_heros.end(); ++ itor) {
-					size_t number = lexical_cast_default<size_t>(*itor);
-					maps[number] = find_unit(*resources::units, (*resources::heros)[number]);
-					if (!maps[number]) {
-						replay::process_error("illegal hero number in erase_card\n");
+				std::vector<std::pair<int, unit*> > maps;
+				for (std::vector<std::string>::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
+					int number = lexical_cast_default<int>(*it);
+					if (c.target_hero()) {
+						maps.push_back(std::make_pair<int, unit*>(number, find_unit(units, heros[number])));
+						if (!maps.back().second) {
+							replay::process_error("illegal hero number in erase_card\n");
+						}
+						// ignore loc.x/y
+						++ it;
+						++ it;
+					} else {
+						++ it;
+						int x = lexical_cast_default<int>(*it);
+						++ it;
+						int y = lexical_cast_default<int>(*it);
+						unit_map::const_iterator it_u = units.find(map_location(x, y));
+						unit* u = &*it_u;
+						if (number >= 0) {
+							artifical* art = unit_2_artifical(u);
+							std::vector<unit*>& resides = art->reside_troops();
+							u = resides[number];
+						}
+						maps.push_back(std::make_pair<int, unit*>(number, u));
 					}
 				}
 				selected_team.consume_card(index, loc, true, maps);
 			} else {
 				selected_team.erase_card(index, true);
+			}
+			if (dialog) {
+				utils::string_map symbols;
+				std::stringstream strstr;
+				symbols["first"] = c.name();
+				game_events::show_hero_message(&heros[214], NULL, vgettext("Lost card: $first.", symbols), game_events::INCIDENT_CARD);
 			}
 		}
 		else if (const config &child = cfg->child("hero_field")) 

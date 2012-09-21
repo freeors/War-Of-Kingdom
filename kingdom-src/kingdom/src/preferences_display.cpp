@@ -538,6 +538,7 @@ bool show_video_mode_dialog(display& disp)
 	resolutions.push_back(current_res);
 	if (!fullScreen) {
 		resolutions.push_back(std::make_pair<int, int>(480, 320));
+		resolutions.push_back(std::make_pair<int, int>(568, 320));
 		resolutions.push_back(std::make_pair<int, int>(800, 480));
 	}
 

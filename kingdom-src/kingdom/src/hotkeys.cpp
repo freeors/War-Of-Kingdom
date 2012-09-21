@@ -63,6 +63,9 @@ const struct {
 	{ hotkey::HOTKEY_LIST, "list", N_("List"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_SYSTEM, "system", N_("System"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG, "rpg", N_("RPG"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_RPG_DETAIL, "rpg-detail", N_("RPG Detail"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_RPG_EXCHANGE, "rpg-exchange", N_("RPG Exchange"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_RPG_INDEPENDENCE, "rpg-independence", N_("RPG Independence"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BUILD_M, "build_m", N_("Build"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BUILD, "build", N_("Build"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_DEMOLISH, "demolish", N_("Demolish"), false, hotkey::SCOPE_GAME },
@@ -70,7 +73,7 @@ const struct {
 	{ hotkey::HOTKEY_UNIT_DETAIL, "unit_detail", N_("Unit Detail"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_PLAY_CARD, "play_card", N_("Play Card"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RECRUIT, "recruit", N_("Recruit"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_RECALL, "expedite", N_("Expedite"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_EXPEDITE, "expedite", N_("Expedite"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_MOVE, "move", N_("Move Hero"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_ENDTURN, "endturn", N_("End Turn"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_TOGGLE_ELLIPSES, "toggleellipses", N_("Toggle Ellipses"), false, hotkey::SCOPE_GENERAL },
@@ -698,6 +701,15 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 		case HOTKEY_RPG:
 			show_rpg();
 			break;
+		case HOTKEY_RPG_DETAIL:
+			rpg_detail();
+			break;
+		case HOTKEY_RPG_EXCHANGE:
+			rpg_exchange(empty_vector_size_t, -1);
+			break;
+		case HOTKEY_RPG_INDEPENDENCE:
+			rpg_independence();
+			break;
 		case HOTKEY_TOGGLE_ELLIPSES:
 			toggle_ellipses();
 			break;
@@ -713,7 +725,7 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 		case HOTKEY_ARMORY:
 			armory();
 			break;
-		case HOTKEY_RECALL:
+		case HOTKEY_EXPEDITE:
 			expedite();
 			break;
 		case HOTKEY_RECRUIT:

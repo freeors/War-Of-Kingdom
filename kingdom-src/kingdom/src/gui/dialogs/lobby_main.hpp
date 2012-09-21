@@ -51,25 +51,13 @@ struct tlobby_chat_window
 	int pending_messages;
 };
 
-struct tplayer_list;
-
-struct tsub_player_list
+class tplayer_list_lobby_main: public tplayer_list
 {
-	void init(twindow& w, const std::string& id);
-	void show_toggle_callback(twidget* widget);
-	void auto_hide();
-	tlabel* label;
-	tlabel* count;
-	ttoggle_button* show_toggle;
-	tlistbox* list;
-	ttree_view_node* tree;
-	tlabel* tree_label;
-};
-
-struct tplayer_list
-{
+public:
 	void init(twindow& w);
 	void update_sort_icons();
+
+public:
 	tsub_player_list active_game;
 	tsub_player_list active_room;
 	tsub_player_list other_rooms;
@@ -77,8 +65,6 @@ struct tplayer_list
 
 	ttoggle_button* sort_by_name;
 	ttoggle_button* sort_by_relation;
-
-	ttree_view* tree;
 };
 
 class tlobby_main : public tdialog, public lobby_base, private events::chat_handler
@@ -297,8 +283,6 @@ private:
 
 	void create_button_callback(twindow& window);
 
-	void show_preferences_button_callback(twindow& window);
-
 	void refresh_button_callback(twindow& window);
 
 	void quit_button_callback(twindow& window);
@@ -312,10 +296,6 @@ private:
 			, twindow& window);
 
 	void game_filter_reload();
-
-	void game_filter_change_callback(twidget* widget);
-
-	void game_filter_keypress_callback(const SDLKey key);
 
 	void gamelist_change_callback(twindow& window);
 
@@ -363,19 +343,9 @@ private:
 
 	size_t active_window_;
 
-	ttoggle_button* filter_friends_;
-
-	ttoggle_button* filter_ignored_;
-
-	ttoggle_button* filter_slots_;
-
-	ttoggle_button* filter_invert_;
-
-	ttext_box* filter_text_;
-
 	int selected_game_id_;
 
-	tplayer_list player_list_;
+	tplayer_list_lobby_main player_list_;
 
 	bool player_list_dirty_;
 
@@ -386,9 +356,6 @@ private:
 	bool gamelist_diff_update_;
 
 	display& disp_;
-
-	/** Wrapper for the preferences hotkey. */
-	boost::function<void()> preferences_wrapper_;
 
 	std::vector<int> gamelist_id_at_row_;
 

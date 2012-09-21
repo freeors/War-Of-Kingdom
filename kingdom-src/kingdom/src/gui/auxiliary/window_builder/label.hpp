@@ -1,4 +1,4 @@
-/* $Id: label.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: label.hpp 54038 2012-04-30 19:37:24Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -30,6 +30,8 @@ struct tbuilder_label
 	twidget* build () const;
 
 	bool wrap;
+
+	unsigned characters_per_line;
 
 	PangoAlignment text_alignment;
 private:

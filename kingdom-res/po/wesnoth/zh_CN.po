@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2012-07-28 15:21+0800\n"
+"PO-Revision-Date: 2012-09-18 14:08+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -2684,7 +2684,7 @@ msgstr ""
 #. [drains]: id=drains
 #: data/core/macros/abilities.cfg:678
 msgid "drains"
-msgstr "吸血"
+msgstr "攻心"
 
 #. [drains]: id=drains
 #: data/core/macros/abilities.cfg:680
@@ -2692,8 +2692,8 @@ msgid ""
 "Drain:\n"
 "This unit drains health from living units, healing itself for half the amount of damage it deals (rounded down)."
 msgstr ""
-"吸血：\n"
-"本单位从活体单位身上吸取体力，使得自身的生命值回复所造成伤害的一半（向下舍入）。"
+"攻心：\n"
+"本单位从活体单位身上吸取体力，回复自身给造成伤害的四分之一生命值（向下舍入）。"
 
 #. [poison]: id=poison
 #: data/core/macros/abilities.cfg:700
@@ -8464,11 +8464,23 @@ msgstr "结束保卫$city，$first和$second终止了同盟条约。"
 msgid "$first occupy $second."
 msgstr "$first军攻陷$second。"
 
+msgid "$second is out of control, occupied by $first."
+msgstr "$second失去控制，被$first军占据。"
+
 msgid "$first is defeated."
 msgstr "$first灭亡。"
 
+msgid "$first declared independence."
+msgstr "$first宣布独立。"
+
+msgid "$first declared belonging to $second."
+msgstr "$first宣布跟随$second。"
+
 msgid "Get card: $first."
 msgstr "得到牌：$first。"
+
+msgid "Lost card: $first."
+msgstr "失去牌：$first。"
 
 #: src/menu_events.cpp:498
 msgid "advices"
@@ -8624,7 +8636,7 @@ msgid "selfheals +16 desc"
 msgstr "自疗+16"
 
 msgid "cast"
-msgstr "巡航"
+msgstr "投射"
 
 msgid "select hero:"
 msgstr "选择玩家："
@@ -8677,8 +8689,14 @@ msgstr "祝贺你！你被任命命为$city太守。"
 msgid "Your official of $city's mayor is terminated."
 msgstr "你的$city太守官职被解除了。"
 
+msgid "You exchanged $ai using $human."
+msgstr "你用$human换来了$ai。"
+
 msgid "$login|'s game"
 msgstr "$login的游戏"
+
+msgid "You must create hero before play it."
+msgstr "玩它之前必须先创建武将。"
 
 msgid "short sword"
 msgstr "短剑"

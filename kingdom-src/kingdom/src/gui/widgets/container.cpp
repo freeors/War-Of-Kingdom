@@ -1,4 +1,4 @@
-/* $Id: container.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: container.cpp 54007 2012-04-28 19:16:10Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -122,6 +122,17 @@ void tcontainer_::impl_draw_children(surface& frame_buffer)
 			&& grid_.get_visible() == twidget::VISIBLE);
 
 	grid_.draw_children(frame_buffer);
+}
+
+void tcontainer_::impl_draw_children(
+		  surface& frame_buffer
+		, int x_offset
+		, int y_offset)
+{
+	assert(get_visible() == twidget::VISIBLE
+			&& grid_.get_visible() == twidget::VISIBLE);
+
+	grid_.draw_children(frame_buffer, x_offset, y_offset);
 }
 
 void tcontainer_::layout_children()

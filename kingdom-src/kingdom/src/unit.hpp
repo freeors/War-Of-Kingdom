@@ -145,7 +145,7 @@ struct attack_fields {
 };
 
 #define UNIT_FIELDS	\
-	uint8_t states_[8];	\
+	int32_t states_;	\
 	int32_t size_;	\
 	int32_t artifical_;	\
 	int32_t been_damage_;	\
@@ -196,7 +196,7 @@ extern uint8_t mask0_2bit[4];
 class unit: public unit_merit
 {
 public:
-	static std::map<size_t, unit*> null_size_unitp_pair;
+	static std::vector<std::pair<int, unit*> > null_int_unitp_pair;
 	/**
 	 * Clear the unit status cache for all units. Currently only the hidden
 	 * status of units is cached this way.
@@ -297,6 +297,7 @@ public:
 	hero& second() const { return *second_; }
 	hero& third() const { return *third_; }
 	void replace_captains(const std::vector<hero*>& captains);
+	void replace_captains_internal(hero& selected_hero, std::vector<hero*>& captains) const;
 
 	int guard_attack();
 

@@ -72,14 +72,16 @@ public:
 	void add_diplomatism(const std::string& type, int first_side = -1, int second_side = -1, bool alignment = true, int emissary = 0, int target_side = -1, int strategy = -1);
 	void add_final_battle(artifical* human, artifical* ai);
 	void add_card(int side, size_t number, bool dialog);
-	void erase_card(int side, int index, const map_location& loc, std::map<size_t, unit*>& touched_heros);
+	void erase_card(int side, int index, const map_location& loc, std::vector<std::pair<int, unit*> >& touched, bool dialog);
 	void add_interior(int type, const std::vector<hero*>& officials);
 	void add_hero_field(int number, int side_feature);
 	void init_side();
 	void end_turn();
 	void init_ai();
-	enum EVENT_TYPE {EVENT_ENCOURAGE};
+	enum EVENT_TYPE {EVENT_ENCOURAGE, EVENT_RPG_INDEPENDENCE};
 	void add_event(int type, const map_location& loc);
+	void add_rpg_exchange(const std::set<size_t>& checked_human, size_t checked_ai);
+
 	void add_log_data(const std::string &key, const std::string &var);
 	void add_log_data(const std::string &category, const std::string &key, const std::string &var);
 	void add_log_data(const std::string &category, const std::string &key, const config& c);

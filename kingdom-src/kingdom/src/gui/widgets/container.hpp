@@ -1,4 +1,4 @@
-/* $Id: container.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: container.hpp 54906 2012-07-29 19:52:01Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -55,7 +55,7 @@ public:
 	/**
 	 * Tries to reduce the width of a container.
 	 *
-	 * @see @ref layout_algorihm for more information.
+	 * @see @ref layout_algorithm for more information.
 	 *
 	 * @param maximum_width       The wanted maximum width.
 	 */
@@ -70,7 +70,7 @@ public:
 	/**
 	 * Tries to reduce the height of a container.
 	 *
-	 * @see @ref layout_algorihm for more information.
+	 * @see @ref layout_algorithm for more information.
 	 *
 	 * @param maximum_height      The wanted maximum height.
 	 */
@@ -97,7 +97,7 @@ public:
 
 	/** Inherited from twidget.*/
 	bool has_widget(const twidget* widget) const
-		{ return grid_.has_widget(widget); }
+		{ return twidget::has_widget(widget) || grid_.has_widget(widget); }
 
 	/** Inherited from twidget. */
 	void set_origin(const tpoint& origin);
@@ -107,6 +107,7 @@ public:
 
 	/** Inherited from twidget. */
 	void impl_draw_children(surface& frame_buffer);
+	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
 protected:
 

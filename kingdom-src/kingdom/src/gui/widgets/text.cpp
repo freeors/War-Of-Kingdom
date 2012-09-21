@@ -1,6 +1,6 @@
-/* $Id: text.cpp 48153 2011-01-01 15:57:50Z mordante $ */
+/* $Id: text.cpp 54028 2012-04-29 20:48:43Z mordante $ */
 /*
-   Copyright (C) 2008 - 2011 by Mark de Wever <koraq@xs4all.nl>
+   Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -45,6 +45,9 @@ ttext_::ttext_()
 
 	connect_signal<event::SDL_KEY_DOWN>(boost::bind(
 			&ttext_::signal_handler_sdl_key_down, this, _2, _3, _5, _6, _7));
+
+	connect_signal<event::SDL_TEXT_INPUT>(boost::bind(
+			&ttext_::signal_handler_sdl_text_input, this, _2, _3, _5));
 
 	connect_signal<event::RECEIVE_KEYBOARD_FOCUS>(boost::bind(
 			&ttext_::signal_handler_receive_keyboard_focus, this, _2));
@@ -157,6 +160,7 @@ void ttext_::paste_selection(const bool mouse)
 
 	update_canvas();
 	set_dirty();
+	fire(event::NOTIFY_MODIFIED, *this, NULL);
 }
 
 void  ttext_::set_selection_start(const size_t selection_start)
@@ -241,6 +245,7 @@ void ttext_::handle_key_backspace(SDLMod /*modifier*/, bool& handled)
 	} else if(selection_start_){
 		delete_char(true);
 	}
+	fire(event::NOTIFY_MODIFIED, *this, NULL);
 }
 
 void ttext_::handle_key_delete(SDLMod /*modifier*/, bool& handled)
@@ -253,6 +258,7 @@ void ttext_::handle_key_delete(SDLMod /*modifier*/, bool& handled)
 	} else if (selection_start_ < text_.get_length()) {
 		delete_char(false);
 	}
+	fire(event::NOTIFY_MODIFIED, *this, NULL);
 }
 
 void ttext_::handle_key_default(
@@ -263,6 +269,7 @@ void ttext_::handle_key_default(
 	if(unicode >= 32 && unicode != 127) {
 		handled = true;
 		insert_char(unicode);
+		fire(event::NOTIFY_MODIFIED, *this, NULL);
 	}
 }
 
@@ -406,10 +413,37 @@ void ttext_::signal_handler_sdl_key_down(const event::tevent event
 
 	}
 
-	if(text_changed_callback_) {
+	if (text_changed_callback_) {
 		text_changed_callback_(this, this->text());
 	}
 
+}
+
+void ttext_::signal_handler_sdl_text_input(const event::tevent event
+		, bool& handled
+		, const char* text)
+{
+	// for windows, ascii char will send WM_KEYDOWN and WM_CHAR,
+	// WM_KEYDOWN result to call signal_handler_sdl_key_down,
+	// WM_CHAR result to call signal_handler_sdl_text_input,
+	// so ascii will generate two input. 
+	const std::string str = text;
+	bool inserted = false;
+	utils::utf8_iterator ch(str);
+	for (utils::utf8_iterator end = utils::utf8_iterator::end(str); ch != end; ++ch) {
+		if (*ch <= 0x7f) {
+			// ASCII char, don't insert.
+			continue;
+		}
+		insert_char(*ch);
+		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		inserted = true;
+	}
+	if (inserted && text_changed_callback_) {
+		text_changed_callback_(this, this->text());
+	}
+
+	handled = true;
 }
 
 void ttext_::signal_handler_receive_keyboard_focus(const event::tevent event)

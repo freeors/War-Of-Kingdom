@@ -20,7 +20,9 @@
 
 #include "config.hpp"
 
+class display;
 class hero_map;
+class hero;
 class card_map;
 
 typedef struct {
@@ -37,7 +39,7 @@ class tlistbox;
 class tplayer_selection : public tdialog
 {
 public:
-	explicit tplayer_selection(hero_map& heros, card_map& cards, const config& campaign_config);
+	explicit tplayer_selection(display& gui, hero_map& heros, card_map& cards, const config& campaign_config, hero& player_hero);
 	~tplayer_selection();
 
 	const config player() const;
@@ -56,10 +58,13 @@ private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
+	void player_city(twindow& window);
+
 	void add_row_to_heros(tlistbox* list, int h, int leader, int city, int stratum);
 	void player_selected(twindow& window);
 	void card_toggled(twidget* widget);
 private:
+	display& gui_;
 	hero_map& heros_;
 	card_map& cards_;
 	const config& campaign_config_;
@@ -73,6 +78,10 @@ private:
 	bool rpg_mode_;
 	tfield_bool* chk_shroud_;
 	tfield_bool* chk_fog_;
+
+	hero* player_hero_;
+	std::map<int, int> city_map_;;
+	std::map<int, int> city_leader_map_;
 
 	bool shroud_;
 	bool fog_;

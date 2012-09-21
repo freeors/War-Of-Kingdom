@@ -1,4 +1,4 @@
-/* $Id: layout_exception.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: layout_exception.hpp 54906 2012-07-29 19:52:01Z mordante $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -26,7 +26,7 @@ namespace gui2 {
 /**
  * Exception thrown when the width has been modified during resizing.
  *
- * @see layout_algorihm for more information.
+ * @see layout_algorithm for more information.
  */
 struct tlayout_exception_width_modified {};
 
@@ -36,7 +36,7 @@ struct tlayout_exception_resize_failed {};
 /**
  * Exception thrown when the width resizing has failed.
  *
- * @see layout_algorihm for more information.
+ * @see layout_algorithm for more information.
  */
 struct tlayout_exception_width_resize_failed
 	: public tlayout_exception_resize_failed
@@ -46,7 +46,7 @@ struct tlayout_exception_width_resize_failed
 /**
  * Exception thrown when the height resizing has failed.
  *
- * @see layout_algorihm for more information.
+ * @see layout_algorithm for more information.
  */
 struct tlayout_exception_height_resize_failed
 	: public tlayout_exception_resize_failed

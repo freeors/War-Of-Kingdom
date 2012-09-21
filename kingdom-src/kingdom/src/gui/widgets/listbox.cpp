@@ -1,4 +1,4 @@
-/* $Id: listbox.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: listbox.cpp 54521 2012-06-30 17:46:54Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -50,15 +50,14 @@ void callback_list_item_clicked(twidget* caller)
 tlistbox::tlistbox(const bool has_minimum, const bool has_maximum,
 		const tgenerator_::tplacement placement, const bool select)
 	: tscrollbar_container(2) // FIXME magic number
-	, generator_(NULL)
+	, generator_(
+			tgenerator_::build(has_minimum, has_maximum, placement, select))
 	, list_builder_(NULL)
 	, callback_value_changed_(NULL)
 	, need_layout_(false)
 	, best_size_(0, 0)
 	, content_size_(0, 0)
 {
-	generator_ = tgenerator_::build(
-			has_minimum, has_maximum, placement, select);
 }
 
 void tlistbox::add_row(const string_map& item, const int index)
@@ -630,6 +629,9 @@ void tlistbox::set_best_size(const tpoint& best_size)
 
 void tlistbox::layout_init(const bool full_initialization)
 {
+	// in order to decide visiable/invisiable scrollbar, reset content_size_
+	content_size_ = tpoint(0, 0);
+
 	// Inherited.
 	tcontainer_::layout_init(full_initialization);
 
@@ -676,6 +678,7 @@ void tlistbox::request_reduce_height(
 	DBG_GUI_L << LOG_HEADER
 			<< " requested height " << maximum_height
 			<< ".\n";
+
 
 	VALIDATE(content_size_.x && content_size_.y, "content_size is zero.");
 	if (best_size_ != tpoint(0, 0)) {

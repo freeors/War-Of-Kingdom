@@ -220,8 +220,15 @@ void controller_base::post_mouse_press(const SDL_Event& /*event*/) {
 
 bool controller_base::handle_scroll(CKey& key, int mousex, int mousey, int mouse_flags)
 {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+	// for tablet device.
+	bool mouse_in_window = false;
+#else
+	// for mouse device.
 	bool mouse_in_window = (SDL_GetAppState() & SDL_APPMOUSEFOCUS) != 0
 		|| preferences::get("scroll_when_mouse_outside", true);
+#endif
+	
 	bool keyboard_focus = have_keyboard_focus();
 	int scroll_speed = preferences::scroll_speed();
 	int dx = 0, dy = 0;

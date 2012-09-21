@@ -50,6 +50,8 @@ public:
 	static game_display* get_singleton() { return singleton_ ;}
 
 
+	void add_flag(int side_index, std::vector<std::string>& side_colors);
+
 	/**
 	 * Update lighting settings.
 	 *

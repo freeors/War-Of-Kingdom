@@ -1,4 +1,4 @@
-/* $Id: stacked_widget.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: stacked_widget.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -18,12 +18,13 @@
 #include "gui/auxiliary/window_builder/stacked_widget.hpp"
 
 #include "config.hpp"
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/widget_definition/stacked_widget.hpp"
 #include "gui/widgets/stacked_widget.hpp"
 #include "wml_exception.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -35,7 +36,7 @@ tbuilder_stacked_widget::tbuilder_stacked_widget(const config& cfg)
 {
 	const config &s = cfg.child("stack");
 	VALIDATE(s, _("No stack defined."));
-	foreach(const config &layer, s.child_range("layer")) {
+	BOOST_FOREACH(const config &layer, s.child_range("layer")) {
 		stack.push_back(new tbuilder_grid(layer));
 	}
 }

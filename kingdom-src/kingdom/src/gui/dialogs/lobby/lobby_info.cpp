@@ -389,7 +389,75 @@ const std::vector<user_info*>& lobby_info::users_sorted() const
 	return users_sorted_;
 }
 
+#include "gui/widgets/label.hpp"
+#include "gui/widgets/tree_view_node.hpp"
+#include "gui/widgets/window.hpp"
+
 namespace gui2 {
+
+std::string decide_player_iocn(int controller)
+{
+	bool mobile = false;
+// #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+//	mobile = true;
+// #endif
+	if (controller == gui2::CNTR_LOCAL) {
+		if (mobile) {
+			return "lobby/status-local-mobile.png~SCALE(16, 16)";
+		} else {
+			return "lobby/status-local-pc.png~SCALE(16, 16)";
+		}
+	} else {
+		if (mobile) {
+			return "lobby/status-network-mobile.png~SCALE(16, 16)";
+		} else {
+			return "lobby/status-network-pc.png~SCALE(16, 16)";
+		}
+	}
+}
+
+void tsub_player_list::init(gui2::twindow &w, const std::string& title)
+{
+	title_ = title;
+
+	ttree_view& parent_tree = find_widget<ttree_view>(&w
+			, "player_tree"
+			, false);
+
+	string_map tree_group_field;
+	std::map<std::string, string_map> tree_group_item;
+
+	tree_group_field["label"] = title_;
+	tree_group_item["tree_view_node_label"] = tree_group_field;
+	tree = &parent_tree.add_node("player_group", tree_group_item);
+
+	tree_label = find_widget<tlabel>(tree
+				, "tree_view_node_label"
+				, false
+				, true);
+}
+
+void tsub_player_list::auto_hide()
+{
+	assert(tree);
+	assert(tree_label);
+	if(tree->empty()) {
+		/**
+		 * @todo Make sure setting visible resizes the widget.
+		 *
+		 * It doesn't work here since invalidate_layout is blocked, but the
+		 * widget should also be able to handle it itself. Once done the
+		 * setting of the label text can also be removed.
+		 */
+		// assert(label);
+		tree_label->set_label(title_ + " (0)");
+	} else {
+		// assert(label);
+		std::stringstream ss;
+		ss << title_ << " (" << tree->size() << ")";
+		tree_label->set_label(ss.str());
+	}
+}
 
 //
 // lobby_base
@@ -411,7 +479,7 @@ void lobby_base::network_handler()
 	try {
 		config data;
 		const network::connection sock = network::receive_data(data);
-		if(sock) {
+		if (sock) {
 			process_network_data(data, sock);
 		}
 	} catch(network::error& e) {

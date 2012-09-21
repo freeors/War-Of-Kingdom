@@ -1,4 +1,4 @@
-/* $Id: window_builder.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: window_builder.hpp 54322 2012-05-28 08:21:28Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -17,10 +17,12 @@
 #define GUI_AUXILIARY_WINDOW_BUILDER_HPP_INCLUDED
 
 #include "gui/auxiliary/formula.hpp"
+#include "gui/widgets/grid.hpp"
 #include "reference_counted_object.hpp"
 
 #include <boost/function.hpp>
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -29,8 +31,6 @@ class CVideo;
 
 namespace gui2 {
 
-class twidget;
-class tgrid;
 class twindow;
 
 /**
@@ -47,11 +47,36 @@ struct tbuilder_widget
 	: public reference_counted_object
 {
 public:
-	explicit tbuilder_widget(const config& /*cfg*/) {}
 
+	/**
+	 * The replacements type is used to define replacement types.
+	 *
+	 * Certain widgets need to build a part of themselves upon instantiation
+	 * but at the time of the definition it's not yet known what exactly. By
+	 * using and `[instance]' widget this decision can be postponed until
+	 * instantiation.
+	 */
+	typedef std::map<
+		  std::string
+		, boost::intrusive_ptr<tbuilder_widget>
+		> treplacements;
+
+	explicit tbuilder_widget(const config& cfg);
+
+	virtual ~tbuilder_widget() {}
 
 	virtual twidget* build() const = 0;
-	virtual ~tbuilder_widget() {}
+
+	virtual twidget* build(const treplacements& replacements) const = 0;
+
+	/** Parameters for the widget. */
+	std::string id;
+	std::string linked_group;
+
+#ifndef LOW_MEM
+	int debug_border_mode;
+	unsigned debug_border_color;
+#endif
 };
 
 typedef boost::intrusive_ptr<tbuilder_widget> tbuilder_widget_ptr;
@@ -68,6 +93,19 @@ typedef boost::intrusive_ptr<const tbuilder_widget> const_tbuilder_widget_ptr;
  */
 void register_builder_widget(const std::string& id
 		, boost::function<tbuilder_widget_ptr(config)> functor);
+
+
+/**
+ * Create a widget builder.
+ *
+ * This object holds the instance builder for a single widget.
+ *
+ * @param cfg                     The config object holding the information
+ *                                regarding the widget instance.
+ *
+ * @returns                       The builder for the widget instance.
+ */
+tbuilder_widget_ptr create_builder_widget(const config& cfg);
 
 /**
  * Helper to generate a widget from a WML widget instance.
@@ -91,8 +129,6 @@ struct tbuilder_grid
 public:
 	explicit tbuilder_grid(const config& cfg);
 
-	std::string id;
-	std::string linked_group;
 	unsigned rows;
 	unsigned cols;
 
@@ -109,8 +145,12 @@ public:
 	/** The widgets per grid cell. */
 	std::vector<tbuilder_widget_ptr> widgets;
 
-	twidget* build() const;
-	twidget* build(tgrid* grid) const;
+	tgrid* build() const;
+	twidget* build(const treplacements& replacements) const;
+
+
+	tgrid* build(tgrid* grid) const;
+	void build(tgrid& grid, const treplacements& replacements) const;
 };
 
 typedef boost::intrusive_ptr<tbuilder_grid> tbuilder_grid_ptr;

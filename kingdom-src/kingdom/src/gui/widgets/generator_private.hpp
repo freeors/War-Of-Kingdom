@@ -1,4 +1,4 @@
-/* $Id: generator_private.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: generator_private.hpp 54906 2012-07-29 19:52:01Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -19,11 +19,12 @@
 #include "gui/widgets/generator.hpp"
 
 #include "asserts.hpp"
-#include "foreach.hpp"
 #include "gui/widgets/grid.hpp"
 #include "gui/widgets/selectable.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/toggle_panel.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -627,7 +628,7 @@ public:
 	/** Inherited from tgenerator_. */
 	void clear()
 	{
-		foreach(titem* item, items_) {
+		BOOST_FOREACH(titem* item, items_) {
 			delete item;
 		}
 		selected_item_count_ = 0;
@@ -798,7 +799,7 @@ public:
 	/** Inherited from tgenerator_. */
 	void layout_init(const bool full_initialization)
 	{
-		foreach(titem* item, items_) {
+		BOOST_FOREACH(titem* item, items_) {
 			if(item->grid.get_visible() != twidget::INVISIBLE && item->shown) {
 				item->grid.layout_init(full_initialization);
 			}
@@ -852,9 +853,21 @@ public:
 	{
 		assert(this->get_visible() == twidget::VISIBLE);
 
-		foreach(titem* item, items_) {
+		BOOST_FOREACH(titem* item, items_) {
 			if(item->grid.get_visible() == twidget::VISIBLE && item->shown) {
 				item->grid.draw_children(frame_buffer);
+			}
+		}
+	}
+
+	/** Inherited from tgenerator_. */
+	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset)
+	{
+		assert(this->get_visible() == twidget::VISIBLE);
+
+		BOOST_FOREACH(titem* item, items_) {
+			if(item->grid.get_visible() == twidget::VISIBLE && item->shown) {
+				item->grid.draw_children(frame_buffer, x_offset, y_offset);
 			}
 		}
 	}
@@ -863,7 +876,7 @@ public:
 	void child_populate_dirty_list(twindow& caller,
 			const std::vector<twidget*>& call_stack)
 	{
-		foreach(titem* item, items_) {
+		BOOST_FOREACH(titem* item, items_) {
 			std::vector<twidget*> child_call_stack = call_stack;
 			item->grid.populate_dirty_list(caller, child_call_stack);
 		}
@@ -886,7 +899,7 @@ public:
 	/** Inherited from widget. */
 	bool disable_click_dismiss() const
 	{
-		foreach(titem* item, items_) {
+		BOOST_FOREACH(titem* item, items_) {
 			if(item->grid.disable_click_dismiss()) {
 				return true;
 			}
@@ -994,7 +1007,7 @@ private:
 			void (*callback)(twidget*))
 	{
 		int i = index;
-		foreach(const T& item_data, data) {
+		BOOST_FOREACH(const T& item_data, data) {
 			create_item(i, list_builder, item_data, callback);
 			if(i != -1) {
 				++i;

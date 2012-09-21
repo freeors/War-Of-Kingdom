@@ -54,12 +54,6 @@ combatant::combatant(const combatant &that, const battle_context::unit_stats &u)
 {
 }
 
-// Minimum HP we could possibly have.
-unsigned combatant::min_hp() const
-{
-	return hp_;
-}
-
 void combatant::consider_levelup(combatant &opp)
 {
 	// adjust the probabilities to take into consideration the

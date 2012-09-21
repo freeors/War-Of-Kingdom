@@ -1,6 +1,6 @@
-/* $Id: window_builder.cpp 49207 2011-04-14 18:40:26Z mordante $ */
+/* $Id: window_builder.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
-   Copyright (C) 2008 - 2011 by Mark de Wever <koraq@xs4all.nl>
+   Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -15,10 +15,9 @@
 
 #define GETTEXT_DOMAIN "wesnoth-lib"
 
-#include "gui/auxiliary/window_builder_private.hpp"
+#include "gui/auxiliary/window_builder.hpp"
 
 #include "asserts.hpp"
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/window_builder/helper.hpp"
@@ -29,6 +28,7 @@
 #include "gui/auxiliary/window_builder/stacked_widget.hpp"
 #include "gui/auxiliary/window_builder/vertical_scrollbar.hpp"
 #include "gui/auxiliary/window_builder/label.hpp"
+#include "gui/auxiliary/window_builder/matrix.hpp"
 #include "gui/auxiliary/window_builder/image.hpp"
 #include "gui/auxiliary/window_builder/toggle_button.hpp"
 #include "gui/auxiliary/window_builder/slider.hpp"
@@ -36,18 +36,19 @@
 #include "gui/auxiliary/window_builder/minimap.hpp"
 #include "gui/auxiliary/window_builder/button.hpp"
 #include "gui/auxiliary/window_builder/drawing.hpp"
+#include "gui/auxiliary/window_builder/pane.hpp"
 #include "gui/auxiliary/window_builder/password_box.hpp"
+#include "gui/auxiliary/window_builder/viewport.hpp"
 #endif
+#include "gui/auxiliary/window_builder/instance.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
-#include "gui/widgets/listbox.hpp"
 #include "formula_string_utils.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 namespace gui2 {
-
-namespace {
 
 static std::map<std::string, boost::function<tbuilder_widget_ptr(config)> >&
 builder_widget_lookup()
@@ -56,71 +57,6 @@ builder_widget_lookup()
 			result;
 	return result;
 }
-
-tbuilder_widget_ptr create_builder_widget(const config& cfg)
-{
-	config::all_children_itors children = cfg.all_children_range();
-	size_t nb_children = std::distance(children.first, children.second);
-	VALIDATE(nb_children == 1, "Grid cell does not have exactly 1 child.");
-
-	typedef
-			std::pair<
-				  std::string
-				, boost::function<tbuilder_widget_ptr(config)> >
-			thack;
-	foreach(const thack& item, builder_widget_lookup()) {
-		if(item.first == "window" || item.first == "tooltip") {
-			continue;
-		}
-		if(const config &c = cfg.child(item.first)) {
-			return item.second(c);
-		}
-	}
-
-	if(const config &c = cfg.child("grid")) {
-		return new tbuilder_grid(c);
-	}
-/*
- * This is rather odd, when commented out the classes no longer seem to be in
- * the executable, no real idea why, except maybe of an overzealous optimizer
- * while linking. It seems that all these classes aren't explicitly
- * instantiated but only implicitly. Also when looking at the symbols in
- * libwesnoth-game.a the repeating button is there regardless of this #if but
- * in the final binary only if the #if is enabled.
- *
- * If this code is executed, which it will cause an assertion failure.
- */
-#if 1
-#define TRY(name)                                                          \
-	do {                                                                   \
-		if(const config &c = cfg.child(#name)) {                           \
-			tbuilder_widget_ptr p = new implementation::tbuilder_##name(c);\
-			assert(false);                                                 \
-		}                                                                  \
-	} while (0)
-
-	TRY(stacked_widget);
-	TRY(scrollbar_panel);
-	TRY(horizontal_scrollbar);
-	TRY(repeating_button);
-	TRY(vertical_scrollbar);
-	TRY(label);
-	TRY(image);
-	TRY(toggle_button);
-	TRY(slider);
-	TRY(scroll_label);
-	TRY(minimap);
-	TRY(button);
-	TRY(drawing);
-	TRY(password_box);
-#undef TRY
-#endif
-
-	std::cerr << cfg;
-	ERROR_LOG(false);
-}
-
-} // namespace
 
 /*WIKI
  * @page = GUIWidgetInstanceWML
@@ -156,7 +92,7 @@ twindow *build(CVideo &video, const twindow_builder::tresolution *definition)
 
 	window->definition_ = definition;
 
-	foreach(const twindow_builder::tresolution::tlinked_group& lg,
+	BOOST_FOREACH(const twindow_builder::tresolution::tlinked_group& lg,
 			definition->linked_groups) {
 
 		if(window->has_linked_size_group(lg.id)) {
@@ -180,7 +116,7 @@ twindow *build(CVideo &video, const twindow_builder::tresolution *definition)
 				const twindow_definition::tresolution>(window->config());
 	assert(conf);
 
-	if (conf->grid) {
+	if(conf->grid) {
 		window->init_grid(conf->grid);
 		window->finalize(definition->grid);
 	} else {
@@ -201,10 +137,97 @@ twindow *build(CVideo &video, const std::string &type)
 	return window;
 }
 
+tbuilder_widget::tbuilder_widget(const config& cfg)
+	: id(cfg["id"])
+	, linked_group(cfg["linked_group"])
+#ifndef LOW_MEM
+	, debug_border_mode(cfg["debug_border_mode"])
+	, debug_border_color(decode_color(cfg["debug_border_color"]))
+#endif
+{
+}
+
 void register_builder_widget(const std::string& id
 		, boost::function<tbuilder_widget_ptr(config)> functor)
 {
 	builder_widget_lookup().insert(std::make_pair(id, functor));
+}
+
+tbuilder_widget_ptr create_builder_widget(const config& cfg)
+{
+	config::all_children_itors children = cfg.all_children_range();
+	size_t nb_children = std::distance(children.first, children.second);
+	VALIDATE(nb_children == 1, "Grid cell does not have exactly 1 child.");
+
+	typedef
+			std::pair<
+				  std::string
+				, boost::function<tbuilder_widget_ptr(config)> >
+			thack;
+	BOOST_FOREACH(const thack& item, builder_widget_lookup()) {
+		if(item.first == "window" || item.first == "tooltip") {
+			continue;
+		}
+		if(const config &c = cfg.child(item.first)) {
+			return item.second(c);
+		}
+	}
+
+	if(const config &c = cfg.child("grid")) {
+		return new tbuilder_grid(c);
+	}
+
+	if(const config &instance = cfg.child("instance")) {
+		return new implementation::tbuilder_instance(instance);
+	}
+
+	if(const config& pane = cfg.child("pane")) {
+		return new implementation::tbuilder_pane(pane);
+	}
+
+	if(const config& viewport = cfg.child("viewport")) {
+		return new implementation::tbuilder_viewport(viewport);
+	}
+
+/*
+ * This is rather odd, when commented out the classes no longer seem to be in
+ * the executable, no real idea why, except maybe of an overzealous optimizer
+ * while linking. It seems that all these classes aren't explicitly
+ * instantiated but only implicitly. Also when looking at the symbols in
+ * libwesnoth-game.a the repeating button is there regardless of this #if but
+ * in the final binary only if the #if is enabled.
+ *
+ * If this code is executed, which it will cause an assertion failure.
+ */
+#if 1
+#define TRY(name)                                                          \
+	do {                                                                   \
+		if(const config &c = cfg.child(#name)) {                           \
+			tbuilder_widget_ptr p = new implementation::tbuilder_##name(c);\
+			assert(false);                                                 \
+		}                                                                  \
+	} while (0)
+
+	TRY(stacked_widget);
+	TRY(scrollbar_panel);
+	TRY(horizontal_scrollbar);
+	TRY(repeating_button);
+	TRY(vertical_scrollbar);
+	TRY(label);
+	TRY(image);
+	TRY(toggle_button);
+	TRY(slider);
+	TRY(scroll_label);
+	TRY(matrix);
+	TRY(minimap);
+	TRY(button);
+	TRY(drawing);
+	TRY(password_box);
+#undef TRY
+#endif
+
+	std::cerr << cfg;
+	ERROR_LOG(false);
 }
 
 const std::string& twindow_builder::read(const config& cfg)
@@ -212,8 +235,9 @@ const std::string& twindow_builder::read(const config& cfg)
 /*WIKI
  * @page = GUIToolkitWML
  * @order = 1_window
- *
+ * @begin{parent}{name="gui/"}
  * = Window definition =
+ * @begin{tag}{name="window"}{min="0"}{max="-1"}
  *
  * A window defines how a window looks in the game.
  *
@@ -224,6 +248,9 @@ const std::string& twindow_builder::read(const config& cfg)
  *     resolution & section & &        The definitions of the window in various
  *                                   resolutions. $
  * @end{table}
+ * @end{tag}{name="window"}
+ * @end{parent}{name="gui/"}
+ *
  *
  */
 
@@ -237,7 +264,7 @@ const std::string& twindow_builder::read(const config& cfg)
 
 	config::const_child_itors cfgs = cfg.child_range("resolution");
 	VALIDATE(cfgs.first != cfgs.second, _("No resolution defined."));
-	foreach (const config &i, cfgs) {
+	BOOST_FOREACH(const config &i, cfgs) {
 		resolutions.push_back(tresolution(i));
 	}
 
@@ -261,16 +288,16 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
 	click_dismiss(cfg["click_dismiss"].to_bool()),
 	definition(cfg["definition"]),
 	linked_groups(),
-	tooltip(cfg.child_or_empty("tooltip")), /** @todo will be mandatory soon. */
-	helptip(cfg.child_or_empty("helptip")), /** @todo will be mandatory soon. */
+	tooltip(cfg.child_or_empty("tooltip")),
+	helptip(cfg.child_or_empty("helptip")),
 	grid(0)
 {
 /*WIKI
  * @page = GUIToolkitWML
  * @order = 1_window
- *
+ * @begin{parent}{name=gui/window/}
  * == Resolution ==
- *
+ * @begin{tag}{name="resolution"}{min="0"}{max="-1"}
  * @begin{table}{config}
  * window_width & unsigned & 0 &   Width of the application window. $
  * window_height & unsigned & 0 &  Height of the application window. $
@@ -334,7 +361,7 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
  *
  * grid & grid & &                 The grid with the widgets to show. $
  * @end{table}
- *
+ * @begin{tag}{name="linked_group"}{min=0}{max=-1}
  * A linked_group section has the following fields:
  * @begin{table}{config}
  *     id & string & &                   The unique id of the group (unique in this
@@ -344,13 +371,25 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
  *     fixed_height & bool & false &   Should widget in this group have the same
  *                                   height. $
  * @end{table}
+ * @end{tag}{name="linked_group"}
  * A linked group needs to have at least one size fixed.
- *
+ * @begin{tag}{name="tooltip"}{min=0}{max=1}
  * A tooltip and helptip section have the following field:
  * @begin{table}{config}
- *     id & string & &               The id of the tip to show. $
- * @begin{table}{config}
+ *     id & string & &               The id of the tip to show.
  * Note more fields will probably be added later on.
+ * @end{table}{config}
+ * @end{tag}{name=tooltip}
+ * @begin{tag}{name="foreground"}{min=0}{max=1}
+ * @end{tag}{name="foreground"}
+ * @begin{tag}{name="background"}{min=0}{max=1}
+ * @end{tag}{name="background"}
+ * @end{tag}{name="resolution"}
+ * @end{parent}{name=gui/window/}
+ * @begin{parent}{name=gui/window/resolution/}
+ * @begin{tag}{name="helptip"}{min=0}{max=1}{super="gui/window/resolution/tooltip"}
+ * @end{tag}{name="helptip"}
+ * @end{parent}{name=gui/window/resolution/}
  */
 
 	const config &c = cfg.child("grid");
@@ -373,7 +412,7 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
 		definition = "default";
 	}
 
-	foreach (const config &lg, cfg.child_range("linked_group")) {
+	BOOST_FOREACH(const config &lg, cfg.child_range("linked_group")) {
 		tlinked_group linked_group;
 		linked_group.id = lg["id"].str();
 		linked_group.fixed_width = lg["fixed_width"].to_bool();
@@ -402,12 +441,12 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
 	const config& alternate_cfg = cfg.child("alternate");
 	if (!alternate_cfg) return;
 
-	foreach (const config &item, alternate_cfg.child_range("item")) {
+	BOOST_FOREACH(const config &item, alternate_cfg.child_range("item")) {
 		alternate_items.push_back(talternate_item());
 		talternate_item& alternate = alternate_items.back();
 
 		if (item.child("linked_group")) {
-			foreach (const config &lg, item.child_range("linked_group")) {
+			BOOST_FOREACH(const config &lg, item.child_range("linked_group")) {
 				tlinked_group linked_group;
 				linked_group.id = lg["id"].str();
 				linked_group.fixed_width = lg["fixed_width"].to_bool();
@@ -443,22 +482,12 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
 twindow_builder::tresolution::ttip::ttip(const config& cfg)
 	: id(cfg["id"])
 {
-	/** @todo Remove for 1.9.7. */
-	if(id.empty()) {
-		lg::wml_error << "Window builder: parsing resolution tip with empty "
-				<< "'id' field. Will become mandatory in 1.9.7.\n";
-		id = "tooltip_large";
-		return;
-	}
-
 	VALIDATE(!id.empty()
 			, missing_mandatory_wml_key("[window][resolution][tip]", "id"));
 }
 
 tbuilder_grid::tbuilder_grid(const config& cfg) :
 	tbuilder_widget(cfg),
-	id(cfg["id"]),
-	linked_group(cfg["linked_group"]),
 	rows(0),
 	cols(0),
 	row_grow_factor(),
@@ -470,15 +499,21 @@ tbuilder_grid::tbuilder_grid(const config& cfg) :
 /*WIKI
  * @page = GUIToolkitWML
  * @order = 2_cell
- *
+ * @begin{parent}{name="gui/window/resolution/"}
  * = Cell =
+ * @begin{tag}{name="grid"}{min="1"}{max="1"}
+ * @begin{table}{config}
+ *     id & string & "" &      A grid is a widget and can have an id. This isn't
+ *                                      used that often, but is allowed. $
+ *     linked_group & string & 0 &       $
+ * @end{table}
  *
  * Every grid cell has some cell configuration values and one widget in the grid
  * cell. Here we describe the what is available more information about the usage
  * can be found here [[GUILayout]].
  *
  * == Row values ==
- *
+ * @begin{tag}{name="row"}{min="0"}{max="-1"}
  * For every row the following variables are available:
  *
  * @begin{table}{config}
@@ -486,7 +521,8 @@ tbuilder_grid::tbuilder_grid(const config& cfg) :
  * @end{table}
  *
  * == Cell values ==
- *
+ * @begin{tag}{name="column"}{min="0"}{max="-1"}
+ * @allow{link}{name="gui/window/resolution/grid"}
  * For every column the following variables are available:
  * @begin{table}{config}
  *     grow_factor & unsigned & 0 &      The grow factor for a column, this value
@@ -516,17 +552,21 @@ tbuilder_grid::tbuilder_grid(const config& cfg) :
  *                                     grid cell is higher as the best width for
  *                                     the widget. $
  * @end{table}
+ * @end{tag}{name="column"}
+ * @end{tag}{name="row"}
+ * @end{tag}{name="grid"}
+ * @end{parent}{name="gui/window/resolution/"}
  *
  */
 	log_scope2(log_gui_parse, "Window builder: parsing a grid");
 
-	foreach (const config &row, cfg.child_range("row"))
+	BOOST_FOREACH(const config &row, cfg.child_range("row"))
 	{
 		unsigned col = 0;
 
 		row_grow_factor.push_back(row["grow_factor"]);
 
-		foreach (const config &c, row.child_range("column"))
+		BOOST_FOREACH(const config &c, row.child_range("column"))
 		{
 			flags.push_back(implementation::read_flags(c));
 			border_size.push_back(c["border_size"]);
@@ -553,20 +593,19 @@ tbuilder_grid::tbuilder_grid(const config& cfg) :
 		<< rows << " rows and " << cols << " columns.\n";
 }
 
-tbuilder_gridcell::tbuilder_gridcell(const config& cfg) :
-	tbuilder_widget(cfg),
-	flags(implementation::read_flags(cfg)),
-	border_size(cfg["border_size"]),
-	widget(create_builder_widget(cfg))
-{
-}
-
-twidget* tbuilder_grid::build() const
+tgrid* tbuilder_grid::build() const
 {
 	return build(new tgrid());
 }
 
-twidget* tbuilder_grid::build (tgrid* grid) const
+twidget* tbuilder_grid::build(const treplacements& replacements) const
+{
+	tgrid* result = new tgrid();
+	build(*result, replacements);
+	return result;
+}
+
+tgrid* tbuilder_grid::build (tgrid* grid) const
 {
 	grid->set_id(id);
 	grid->set_linked_group(linked_group);
@@ -596,6 +635,39 @@ twidget* tbuilder_grid::build (tgrid* grid) const
 	return grid;
 }
 
+void tbuilder_grid::build(tgrid& grid, const treplacements& replacements) const
+{
+	grid.set_id(id);
+	grid.set_linked_group(linked_group);
+	grid.set_rows_cols(rows, cols);
+
+	log_scope2(log_gui_general, "Window builder: building grid");
+
+	DBG_GUI_G << "Window builder: grid '" << id
+		<< "' has " << rows << " rows and "
+		<< cols << " columns.\n";
+
+	for(unsigned x = 0; x < rows; ++x) {
+		grid.set_row_grow_factor(x, row_grow_factor[x]);
+		for(unsigned y = 0; y < cols; ++y) {
+
+			if(x == 0) {
+				grid.set_column_grow_factor(y, col_grow_factor[y]);
+			}
+
+			DBG_GUI_G << "Window builder: adding child at "
+					<< x << ',' << y << ".\n";
+
+			grid.set_child(
+					  widgets[x * cols + y]->build(replacements)
+					, x
+					, y
+					, flags[x * cols + y]
+					, border_size[x * cols + y]);
+		}
+	}
+}
+
 } // namespace gui2
 /*WIKI
  * @page = GUIToolkitWML
@@ -603,7 +675,6 @@ twidget* tbuilder_grid::build (tgrid* grid) const
  *
  * [[Category: WML Reference]]
  * [[Category: GUI WML Reference]]
- *
  */
 
 /*WIKI

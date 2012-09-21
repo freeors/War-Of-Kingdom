@@ -279,13 +279,17 @@ bool backstab_check(const map_location& attacker_loc,
 	const map_location& defender_loc,
 	const unit_map& units, const std::vector<team>& teams);
 
+void refresh_card_button(const team& t, game_display& disp);
 void get_random_card(team& t, game_display& disp, unit_map& units, hero_map& heros);
+void erase_random_card(team& t, game_display& disp, unit_map& units, hero_map& heros);
 
-void unit_die(unit_map& units, unit& die, int a_side = HEROS_INVALID_SIDE);
+void unit_die(unit_map& units, unit& die, void* a_info_p = NULL, int die_activity = 0, int a_side = HEROS_INVALID_SIDE);
 
 void calculate_wall_tiles(unit_map& units, gamemap& map, artifical& owner, std::vector<map_location*>& keeps, std::vector<map_location*>& wall_vacants, std::vector<map_location*>& keep_vacants);
 
 size_t calculate_keeps(unit_map& units, const artifical& owner);
+
+artifical* find_city_for_wall(unit_map& units, const map_location& loc);
 
 SDL_Rect extend_rectangle(const gamemap& map, const SDL_Rect& src, int radius);
 

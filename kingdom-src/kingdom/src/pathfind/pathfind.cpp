@@ -169,6 +169,11 @@ struct node {
 				|| (turns_left == o.turns_left
 						&& movement_left > o.movement_left);
 	}
+	bool operator<=(const node& o) const {
+		return turns_left > o.turns_left
+				|| (turns_left == o.turns_left
+						&& movement_left >= o.movement_left);
+	}
 };
 
 struct indexer {
@@ -278,8 +283,6 @@ static void find_routes(const gamemap& map, const unit_map& units,
 				}
 			}
 
-			if (next_visited && move_cost >= next.move_cost) continue;
-
 			node t = node(n.movement_left, move_cost, n.turns_left, n.curr, locs[i]);
 			if (t.movement_left < move_cost) {
 				t.movement_left = total_movement;
@@ -291,8 +294,7 @@ static void find_routes(const gamemap& map, const unit_map& units,
 			t.movement_left -= move_cost;
 
 			if (!ignore_units) {
-				const unit *v =
-					get_visible_unit(locs[i], viewing_team, see_all);
+				const unit *v = get_visible_unit(locs[i], viewing_team, see_all);
 				if (v && current_team.is_enemy(v->side()))
 					continue;
 
@@ -303,6 +305,8 @@ static void find_routes(const gamemap& map, const unit_map& units,
 					t.movement_left = 0;
 				}
 			}
+
+			if (next_visited && next <= t) continue;
 
 			++nb_dest;
 			int x = locs[i].x;
@@ -315,7 +319,7 @@ static void find_routes(const gamemap& map, const unit_map& units,
 			bool in_list = next.in == search_counter + 1;
 			t.in = search_counter + 1;
 			next = t;
-
+			
 			// if already in the priority queue then we just update it, else push it.
 			if (in_list) { // never happen see next_visited above
 				std::push_heap(pq.begin(), std::find(pq.begin(), pq.end(), index(locs[i])) + 1, node_comp);
@@ -558,7 +562,30 @@ map_location last_location;
 bool is_wall;
 
 }
-
+/*
+int pathfind::location_cost(const unit_map& units, const unit& u, bool ignore_wall)
+{
+	unit_map::node* last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location, false));
+	if (!last_node) {
+		last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location));
+	}
+	bool slowed = u.get_state(unit::STATE_SLOWED);
+	const unit_type* ut = u.type();
+	if (u.packed()) {
+		ut = u.packee_type();
+	}
+	if (ignore_wall) {
+		return slowed? 2: 1;
+	} else if (!ut->land_wall()) {
+		return 2 * u.total_movement();
+	} else if (last_node && last_node->second->walk_wall()) {
+		// keep/wall ---> wall, cost: 1
+		return slowed? 2: 1;
+	} else {
+		return slowed? 8: 4;
+	}
+}
+*/
 int pathfind::location_cost(const unit_map& units, const unit& u, bool ignore_wall)
 {
 	unit_map::node* last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location, false));

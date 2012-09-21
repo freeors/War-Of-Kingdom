@@ -32,6 +32,7 @@
 #include "video.hpp" // non_interactive()
 #include "serialization/parser.hpp"
 #include "display.hpp"
+#include "gettext.hpp"
 
 #include <sys/stat.h> // for setting the permissions of the preferences file
 
@@ -125,7 +126,8 @@ void clear(const std::string& key)
 	prefs.recursive_clear_value(key);
 }
 
-void set_child(const std::string& key, const config& val) {
+void set_child(const std::string& key, const config& val) 
+{
 	prefs.clear_children(key);
 	prefs.add_child(key, val);
 }
@@ -152,9 +154,118 @@ void disable_preferences_save() {
 	no_preferences_save = true;
 }
 
-config* get_prefs(){
+config* get_prefs()
+{
 	config* pointer = &prefs;
 	return pointer;
+}
+
+bool get_hero(hero& h, int default_image)
+{
+	const config& cfg = prefs.child("hero");
+	if (cfg) {
+		h.set_name(cfg["name"].str());
+		h.set_surname(cfg["surname"].str());
+
+		h.gender_ = cfg["gender"].to_int(hero_gender_male);
+		h.image_ = cfg["image"].to_int(default_image);
+
+		h.leadership_ = ftofxp9(cfg["leadership"].to_int(1));
+		h.force_ = ftofxp9(cfg["force"].to_int(1));
+		h.intellect_ = ftofxp9(cfg["intellect"].to_int(1));
+		h.politics_ = ftofxp9(cfg["politics"].to_int(1));
+		h.charm_ = ftofxp9(cfg["charm"].to_int(1));
+
+		std::stringstream str;
+		for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
+			str.str("");
+			str << "arms" << i;
+			h.arms_[i] = ftofxp12(cfg[str.str()].to_int(0));
+		}
+		for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
+			str.str("");
+			str << "skill" << i;
+			h.skill_[i] = ftofxp12(cfg[str.str()].to_int(0));
+		}
+
+		h.side_feature_ = cfg["side_feature"].to_int(0xff);
+		if (h.side_feature_ < 0 || h.side_feature_ > HEROS_MAX_FEATURE) {
+			h.side_feature_ = 0xff;
+		}
+		int feature = cfg["feature"].to_int(0xff);
+		if (feature > 0 && feature < HEROS_MAX_FEATURE) {
+			hero_feature_set2(h, feature);
+		}
+
+		h.base_catalog_ = cfg["base_catalog"].to_int();
+		h.float_catalog_ = ftofxp8(h.base_catalog_);
+
+		return true;
+	} else {
+		// h.set_name(_("Press left button to create hero"));
+		h.set_name(_("Player"));
+		h.set_surname("Mr.");
+
+		h.gender_ = hero_gender_male;
+		h.image_ = default_image;
+
+		h.leadership_ = ftofxp9(1);
+		h.force_ = ftofxp9(1);
+		h.intellect_ = ftofxp9(1);
+		h.politics_ = ftofxp9(1);
+		h.charm_ = ftofxp9(1);
+
+		for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
+			h.arms_[i] = 0;
+		}
+		for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
+			h.skill_[i] = 0;
+		}
+
+		return false;
+	}
+}
+
+void set_hero(hero& h)
+{
+	config* ptr = NULL;
+	if (config& cfg = prefs.child("hero")) {
+		ptr = &cfg;
+	} else {
+		ptr = &prefs.add_child("hero");
+	}
+	config& cfg = *ptr;
+	std::stringstream str;
+
+	cfg["name"] = h.name();
+	cfg["surname"] = h.surname();
+
+	cfg["leadership"] = fxptoi9(h.leadership_);
+	cfg["force"] = fxptoi9(h.force_);
+	cfg["intellect"] = fxptoi9(h.intellect_);
+	cfg["politics"] = fxptoi9(h.politics_);
+	cfg["charm"] = fxptoi9(h.charm_);
+
+	cfg["gender"] = h.gender_;
+	cfg["image"] = h.image_;
+
+	for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
+		str.str("");
+		str << "arms" << i;
+		cfg[str.str()] = fxptoi12(h.arms_[i]);
+	}
+	for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
+		str.str("");
+		str << "skill" << i;
+		cfg[str.str()] = fxptoi12(h.skill_[i]);
+	}
+
+	cfg["base_catalog"] = h.base_catalog_;
+
+	cfg["feature"] = h.first_feature();
+	cfg["side_feature"] = h.side_feature_;
+
+	write_preferences();
 }
 
 bool fullscreen()

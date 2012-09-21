@@ -1,4 +1,4 @@
-/* $Id: tree_view_node.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: tree_view_node.hpp 54007 2012-04-28 19:16:10Z mordante $ */
 /*
    Copyright (C) 2010 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -251,6 +251,7 @@ private:
 	void set_visible_area(const SDL_Rect& area);
 
 	void impl_draw_children(surface& frame_buffer);
+	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
 	// FIXME rename to icon
 	void signal_handler_left_button_click(const event::tevent event);

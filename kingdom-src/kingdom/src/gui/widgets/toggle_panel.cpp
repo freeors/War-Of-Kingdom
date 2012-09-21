@@ -1,4 +1,4 @@
-/* $Id: toggle_panel.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: toggle_panel.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -17,7 +17,6 @@
 
 #include "gui/widgets/toggle_panel.hpp"
 
-#include "foreach.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/widget_definition/toggle_panel.hpp"
 #include "gui/auxiliary/window_builder/toggle_panel.hpp"
@@ -26,6 +25,7 @@
 #include "sound.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -72,7 +72,7 @@ void ttoggle_panel::set_child_members(const std::map<std::string /* widget id */
 {
 	// typedef boost problem work around.
 	typedef std::pair<std::string, string_map> hack ;
-	foreach(const hack& item, data) {
+	BOOST_FOREACH(const hack& item, data) {
 		tcontrol* control = dynamic_cast<tcontrol*>(find(item.first, false));
 		if(control) {
 			control->set_members(item.second);
@@ -169,6 +169,13 @@ void ttoggle_panel::set_state(const tstate state)
 }
 
 void ttoggle_panel::impl_draw_foreground(surface& frame_buffer)
+{
+	if (state_ >= ENABLED_SELECTED) {
+		canvas(COUNT).blit(frame_buffer, get_rect());
+	}
+}
+
+void ttoggle_panel::impl_draw_foreground(surface& frame_buffer, int x_offset, int y_offset)
 {
 	if (state_ >= ENABLED_SELECTED) {
 		canvas(COUNT).blit(frame_buffer, get_rect());

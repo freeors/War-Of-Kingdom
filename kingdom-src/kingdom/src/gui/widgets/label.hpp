@@ -1,4 +1,4 @@
-/* $Id: label.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: label.hpp 54038 2012-04-30 19:37:24Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -29,6 +29,7 @@ public:
 		: tcontrol(COUNT)
 		, state_(ENABLED)
 		, can_wrap_(false)
+		, characters_per_line_(0)
 		, best_size_(0, 0)
 	{
 	}
@@ -45,7 +46,10 @@ private:
 
 public:
 	/** Inherited from twidget. */
-	bool can_wrap() const { return can_wrap_; }
+	bool can_wrap() const;
+
+	/** Inherited from tcontrol. */
+	unsigned get_characters_per_line() const;
 
 	/** Inherited from tcontrol. */
 	void set_active(const bool active)
@@ -63,6 +67,8 @@ public:
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
 	void set_can_wrap(const bool wrap) { can_wrap_ = wrap; }
+
+	void set_characters_per_line(const unsigned set_characters_per_line);
 
 	void set_best_size(const tpoint& best_size) { best_size_ = best_size; }
 private:
@@ -86,6 +92,13 @@ private:
 
 	/** Holds the label can wrap or not. */
 	bool can_wrap_;
+
+	/**
+	 * The maximum number of characters per line.
+	 *
+	 * The maximum is not an exact maximum, it uses the average character width.
+	 */
+	unsigned characters_per_line_;
 
 	/** When we're used as a fixed size item, this holds the best size. */
 	tpoint best_size_;

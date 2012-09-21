@@ -102,7 +102,7 @@ private:
 	
 	void move_fresh_hero(artifical& from, artifical& to, int index);
 	void move_hero(artifical& from, artifical& to, int& lack, int& more);
-	int build(std::vector<std::pair<unit*, int> >& builder_troops, const unit_type* art, const map_location& at);
+	int build(artifical& owner, std::vector<std::pair<unit*, int> >& builder_troops, const unit_type* art, const map_location& at);
 
 	const terrain_filter* get_avoid() const;
 

@@ -335,8 +335,16 @@ void set_campaign_server(const std::string& host)
 
 std::string login()
 {
+	const config& cfg = preferences::get_child("hero");
+	std::string res = _("player");
+
+	if (cfg && !cfg["name"].empty()) {
+		return cfg["name"].str();
+	}
+	return res;
+/*
 	const std::string res = preferences::get("login");
-	if(res.empty()) {
+	if (res.empty()) {
 		char* const login = getenv("USER");
 		if(login != NULL) {
 			return login;
@@ -346,7 +354,7 @@ std::string login()
 			return _("player");
 		}
 	}
-
+*/
 	return res;
 }
 

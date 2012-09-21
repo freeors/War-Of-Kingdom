@@ -3529,6 +3529,12 @@ msgid "Select Hero"
 msgstr ""
 
 #
+# Select Troop Dialog
+#
+msgid "Select Troop"
+msgstr ""
+
+#
 # Expedite Dialog
 #
 msgid "Expedite"
@@ -3618,6 +3624,9 @@ msgid "Diplomatism"
 msgstr ""
 
 msgid "Gold"
+msgstr ""
+
+msgid "side^Feature"
 msgstr ""
 
 msgid "Artifical"
@@ -3756,6 +3765,9 @@ msgid "Player/Type"
 msgstr ""
 
 msgid "Faction"
+msgstr ""
+
+msgid "Faction/Side feature"
 msgstr ""
 
 msgid "Team/Gender"
@@ -3913,4 +3925,82 @@ msgstr ""
 # RPG Detail
 #
 msgid "RPG Detail"
+msgstr ""
+
+msgid "Wait, leader will order you to recruit"
+msgstr ""
+
+msgid "To $meritorious, will control more troops"
+msgstr ""
+
+msgid "To $meritorious, will be appointed mayor"
+msgstr ""
+
+msgid "Get mroe meritorious, will be appointed mayor"
+msgstr ""
+
+msgid "Capture more city, can be independent"
+msgstr ""
+
+msgid "Be independent will be to leader"
+msgstr ""
+
+#
+# RPG Exchange
+#
+msgid "RPG Exchange"
+msgstr ""
+
+#
+# RPG Independence
+#
+msgid "RPG Independence"
+msgstr ""
+
+msgid "Independence"
+msgstr ""
+
+msgid "Vote"
+msgstr ""
+
+msgid "Support"
+msgstr ""
+
+msgid "It is all up with the wind, $side will fallen."
+msgstr ""
+
+msgid "There are enough troops, $side will be again you."
+msgstr ""
+
+msgid "Opinion of cities in side"
+msgstr ""
+
+#
+# RPG Exchange
+#
+msgid "Exchange Hero"
+msgstr ""
+
+msgid "Exchange"
+msgstr ""
+
+#
+# Create Hero
+#
+msgid "Surname"
+msgstr ""
+
+msgid "Side feature"
+msgstr ""
+
+msgid "Create"
+msgstr ""
+
+msgid "Don't accept empty, invalid '$key' value"
+msgstr ""
+
+msgid "Range is [$min, $max], invalid '$key' value:"
+msgstr ""
+
+msgid "Select city for player hero"
 msgstr ""

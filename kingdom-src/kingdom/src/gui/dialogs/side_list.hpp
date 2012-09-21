@@ -47,7 +47,7 @@ private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
-	enum {MIN_PAGE = 0, STATUS_PAGE = MIN_PAGE, MILITARY_PAGE, DIPLOMATISM_PAGE, GOLD_PAGE, ARTIFICAL_PAGE, PLAN_PAGE, MAX_PAGE = PLAN_PAGE};
+	enum {MIN_PAGE = 0, STATUS_PAGE = MIN_PAGE, MILITARY_PAGE, DIPLOMATISM_PAGE, GOLD_PAGE, FEATURE_PAGE, ARTIFICAL_PAGE, PLAN_PAGE, MAX_PAGE = PLAN_PAGE};
 	void catalog_page(twindow& window, int catalog, bool swap);	
 
 	void hero_changed(twindow& window);

@@ -49,7 +49,6 @@ private:
 	virtual const std::string& window_id() const;
 
 	void type_selected(twindow& window);
-	void refresh_tooltip(twindow& window);
 
 	void human_troops(twindow& window);
 	void rpg_2_ui(twindow& window);

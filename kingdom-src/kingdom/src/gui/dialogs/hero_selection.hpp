@@ -34,7 +34,7 @@ class tlistbox;
 class thero_selection : public tdialog
 {
 public:
-	explicit thero_selection(std::vector<team>* teams, unit_map* units, hero_map& heros, std::vector<std::pair<size_t, unit*> >& pairs, int side, const std::string& disable_str);
+	explicit thero_selection(std::vector<team>* teams, unit_map* units, hero_map& heros, std::vector<std::pair<int, unit*> >& pairs, int side, const std::string& disable_str);
 
 	const std::set<size_t>& checked_pairs() const { return checked_pairs_; }
 protected:
@@ -61,7 +61,7 @@ private:
 	hero_map& heros_;
 
 	int side_;
-	std::vector<std::pair<size_t, unit*> >& pairs_;
+	std::vector<std::pair<int, unit*> >& pairs_;
 	std::set<size_t> checked_pairs_;
 	std::vector<std::string> disables_;
 	size_t max_checked_size_;

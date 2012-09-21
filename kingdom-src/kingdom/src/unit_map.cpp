@@ -311,7 +311,7 @@ void unit_map::set_expediting(artifical* city, int troop_index)
 	const map_location& loc = city->get_location();
 
 	// 1.形成一个新的pair
-	expediting_node_ = new std::pair<map_location, unit*>(loc, new unit(city->reside_troops()[troop_index]));
+	expediting_node_ = new std::pair<map_location, unit*>(loc, new unit(*city->reside_troops()[troop_index]));
 
 	// 2.以这个pair个修改地图上cookie和容器中值(不删除该项,只是替换值), 要记住原先cookie
 	ptr = coor_map_[index(loc.x, loc.y)].overlay;
@@ -430,7 +430,7 @@ void unit_map::move(const map_location &src, const map_location &dst)
 	} else {
 		// 目的地: 都市
 		// 1. 单位进城
-		cobj->troop_come_into(*p->second);
+		cobj->troop_come_into(p->second);
 		// cobj->reside_troops().push_back(p->second);
 		// cobj->reside_troops().back().set_side(cobj->side());
 		// 2. 从unit_map清除该单位
@@ -1042,7 +1042,12 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 		b_y_offset *= -1;
 	}
 	// power ratio is inverse proportion.
-	return b_power_ratio + a_x_offset + a_y_offset >= a_power_ratio + b_x_offset + b_y_offset;
+	if (b_power_ratio + a_x_offset + a_y_offset > a_power_ratio + b_x_offset + b_y_offset) {
+		return true;
+	} else if ((b_power_ratio + a_x_offset + a_y_offset == a_power_ratio + b_x_offset + b_y_offset) && a.cityno() < b.cityno()) {
+		return true;
+	}
+	return false;
 }	
 
 static bool callback_compare_front_cities(void* caller, const mr_data& mr, artifical& a, artifical& b)
@@ -1277,6 +1282,28 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			mr.target = mr_data::TARGET_INTERIOR;
 		} else if ((field_arts >= mr.own_cities.size() * min_field_arts) && !mr.enemy_cities.empty() && mr.own_heros > mr_data::min_interior_requirement * mr.own_back_cities.size() + mr_data::min_front_requirement * mr.own_front_cities.size()) {
 			mr.target = mr_data::TARGET_AGGRESS;
+			if (mr.own_cities.size() == 1) {
+				// Alert! Be back to guard!
+				std::map<artifical*, mr_data::enemy_data>::iterator it_p = mr.own_cities.begin();
+				artifical* only = it_p->first;
+				artifical* aggressed = mr.enemy_cities[0];
+				int my_ratio = only->hitpoints() * 100 / only->max_hitpoints();
+				int aggressed_ratio = aggressed->hitpoints() * 100 / aggressed->max_hitpoints();
+
+				const map_location& loc = only->get_location();
+				SDL_Rect consider_rect = extend_rectangle(game_map, loc.x, loc.y, 7);
+				const std::vector<unit*>& enemy_troops = it_p->second.troops;
+				size_t troops = 0;
+				for (std::vector<unit*>::const_iterator t = enemy_troops.begin(); t != enemy_troops.end(); ++ t) {
+					const map_location& loc2 = (*t)->get_location();
+					if (point_in_rect(loc2.x, loc2.y, consider_rect)) {
+						troops ++;
+					}
+				}
+				if (troops >= 8 || (my_ratio < aggressed_ratio && troops >= 5)) {
+					mr.target = mr_data::TARGET_GUARD;
+				}
+			}
 		} else {
 			mr.target = mr_data::TARGET_GUARD;
 		}
@@ -1360,6 +1387,11 @@ artifical* mr_data::calculate_center_city(const map_location& center)
 			distance = distance_between(center, it->first->get_location());
 		}
 		if (distance < min_distance) {
+			min_distance = distance;
+			choice = it;
+		} else if (distance == min_distance && it->first->cityno() < choice->first->cityno()) {
+			// own_cities is std::map, sort by pointer of city.
+			// pointer of city is random, so when distance == min_distance, it is neceaary stonger estimate (using cityno).
 			min_distance = distance;
 			choice = it;
 		}

@@ -384,8 +384,20 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 	for (size_t i = 0; i < def_size; i ++) {
 		unit* def = def_ptr_vec[i];
 		map_location& b = b_vec[i];
-		if (!has_human_in_defs && def->human()) {
-			has_human_in_defs = true;
+		if (!has_human_in_defs) {
+			if (def->human()) {
+				has_human_in_defs = true;
+			} else if (def->is_artifical()) {
+				if (rpg::stratum == hero_stratum_leader) {
+					if (def->side() == rpg::h->side_ + 1) {
+						has_human_in_defs = true;
+					}
+				} else if (rpg::stratum == hero_stratum_mayor) {
+					if (def->cityno() == rpg::h->city_) {
+						has_human_in_defs = true;
+					}
+				}
+			}
 		}
 		if (!has_eyeshot_in_defs && point_in_rect_of_hexes(b.x, b.y, draw_area)) {
 			has_eyeshot_in_defs = true;
@@ -452,9 +464,9 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 		}
 
 		std::string text_2 ;
-		if(drain && damage_vec[0]) text_2 = lexical_cast<std::string>(std::min<int>(damage_vec[0], def_ptr_vec[0]->hitpoints())/4);
-		if(!att_text.empty()) {
-			text_2.insert(text_2.begin(),att_text.size()/2,' ');
+		if (drain && damage_vec[0]) text_2 = lexical_cast<std::string>(std::min<int>(damage_vec[0], def_ptr_vec[0]->hitpoints()) / 4);
+		if (!att_text.empty()) {
+			text_2.insert(text_2.begin(), att_text.size()/2, ' ');
 			text_2 = text_2 + "\n" + att_text;
 		}
 

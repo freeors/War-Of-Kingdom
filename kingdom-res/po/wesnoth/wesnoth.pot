@@ -9075,10 +9075,22 @@ msgstr ""
 msgid "$first occupy $second."
 msgstr ""
 
+msgid "$second is out of control, occupied by $first."
+msgstr ""
+
 msgid "$first is defeated."
 msgstr ""
 
+msgid "$first declared independence."
+msgstr ""
+
+msgid "$first declared belonging to $second."
+msgstr ""
+
 msgid "Get card: $first."
+msgstr ""
+
+msgid "Lost card: $first."
 msgstr ""
 
 #: src/menu_events.cpp:498
@@ -9274,7 +9286,13 @@ msgstr ""
 msgid "Your official of $city's mayor is terminated."
 msgstr ""
 
+msgid "You exchanged $ai using $human."
+msgstr ""
+
 msgid "$login|'s game"
+msgstr ""
+
+msgid "You must create hero before play it."
 msgstr ""
 
 #

@@ -1,6 +1,6 @@
-/* $Id: window.cpp 49137 2011-04-09 16:00:26Z mordante $ */
+/* $Id: window.cpp 54906 2012-07-29 19:52:01Z mordante $ */
 /*
-   Copyright (C) 2007 - 2011 by Mark de Wever <koraq@xs4all.nl>
+   Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -23,7 +23,6 @@
 #include "gui/widgets/window_private.hpp"
 
 #include "font.hpp"
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "gettext.hpp"
 #include "log.hpp"
@@ -46,6 +45,7 @@
 #include "formula_string_utils.hpp"
 
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -368,6 +368,14 @@ twindow::twindow(CVideo& video,
 				, _2
 				, _3
 				, _5)
+			, event::tdispatcher::back_pre_child);
+
+	connect_signal<event::REQUEST_PLACEMENT>(
+			  boost::bind(
+				  &twindow::signal_handler_request_placement
+				, this
+				, _2
+				, _3)
 			, event::tdispatcher::back_pre_child);
 
 	register_hotkey(hotkey::GLOBAL__HELPTIP, boost::bind(gui2::helptip));
@@ -709,7 +717,14 @@ void twindow::draw()
 
 		// Now find the widgets that are dirty.
 		std::vector<twidget*> call_stack;
-		populate_dirty_list(*this, call_stack);
+		if(!new_widgets) {
+			populate_dirty_list(*this, call_stack);
+		} else {
+			/* Force to update and redraw the entire screen */
+			dirty_list_.clear();
+			dirty_list_.push_back(std::vector<twidget*>(1, this));
+			update_rect(screen_area());
+		}
 	}
 
 	uint32_t end_layout = SDL_GetTicks();
@@ -741,11 +756,13 @@ void twindow::draw()
 		return;
 	}
 
-	foreach(std::vector<twidget*>& item, dirty_list_) {
+	BOOST_FOREACH(std::vector<twidget*>& item, dirty_list_) {
 
 		assert(!item.empty());
 
-		const SDL_Rect dirty_rect = item.back()->get_dirty_rect();
+		const SDL_Rect dirty_rect = new_widgets
+				? screen_area()
+				: item.back()->get_dirty_rect();
 
 // For testing we disable the clipping rect and force the entire screen to
 // update. This way an item rendered at the wrong place is directly visible.
@@ -799,24 +816,58 @@ void twindow::draw()
 		SDL_Rect rect = get_rect();
 		sdl_blit(restorer_, 0, frame_buffer, &rect);
 
-		// Background.
-		for(std::vector<twidget*>::iterator itor = item.begin();
-				itor != item.end(); ++itor) {
+		/**
+		 * @todo Remove the if an always use the true branch.
+		 *
+		 * When removing that code the draw functions with only a frame_buffer
+		 * as parameter should also be removed since they will be unused from
+		 * that moment.
+		 */
+#if 0
+		if(new_widgets)
+#else
+		if(true)
+#endif
+		{
+			// Background.
+			for(std::vector<twidget*>::iterator itor = item.begin();
+					itor != item.end(); ++itor) {
 
-			(**itor).draw_background(frame_buffer);
-		}
+				(**itor).draw_background(frame_buffer, 0, 0);
+			}
 
-		// Children.
-		if(!item.empty()) {
-			item.back()->draw_children(frame_buffer);
-		}
+			// Children.
+			if(!item.empty()) {
+				item.back()->draw_children(frame_buffer, 0, 0);
+			}
 
-		// Foreground.
-		for(std::vector<twidget*>::reverse_iterator ritor = item.rbegin();
-				ritor != item.rend(); ++ritor) {
+			// Foreground.
+			for(std::vector<twidget*>::reverse_iterator ritor = item.rbegin();
+					ritor != item.rend(); ++ritor) {
 
-			(**ritor).draw_foreground(frame_buffer);
-			(**ritor).set_dirty(false);
+				(**ritor).draw_foreground(frame_buffer, 0, 0);
+				(**ritor).set_dirty(false);
+			}
+		} else {
+			// Background.
+			for(std::vector<twidget*>::iterator itor = item.begin();
+					itor != item.end(); ++itor) {
+
+				(**itor).draw_background(frame_buffer);
+			}
+
+			// Children.
+			if(!item.empty()) {
+				item.back()->draw_children(frame_buffer);
+			}
+
+			// Foreground.
+			for(std::vector<twidget*>::reverse_iterator ritor = item.rbegin();
+					ritor != item.rend(); ++ritor) {
+
+				(**ritor).draw_foreground(frame_buffer);
+				(**ritor).set_dirty(false);
+			}
 		}
 
 		update_rect(dirty_rect);
@@ -1006,6 +1057,13 @@ void twindow::layout()
 		assert(click_dismiss_button);
 		click_dismiss_button->set_visible(twidget::VISIBLE);
 
+		connect_signal_mouse_left_click(
+				  *click_dismiss_button
+				, boost::bind(
+					  &twindow::set_retval
+					, this
+					, OK
+					, true));
 
 		layout_init(true);
 		generate_dot_file("layout_init", LAYOUT);
@@ -1097,12 +1155,12 @@ void twindow::layout_linked_widgets()
 {
 	// evaluate the group sizes
 	typedef std::pair<const std::string, tlinked_size> hack;
-	foreach(hack& linked_size, linked_size_) {
+	BOOST_FOREACH(hack& linked_size, linked_size_) {
 
 		tpoint max_size(0, 0);
 
 		// Determine the maximum size.
-		foreach(twidget* widget, linked_size.second.widgets) {
+		BOOST_FOREACH(twidget* widget, linked_size.second.widgets) {
 
 			if (widget->get_visible() == twidget::INVISIBLE) {
 				continue;
@@ -1119,7 +1177,7 @@ void twindow::layout_linked_widgets()
 		}
 
 		// Set the maximum size.
-		foreach(twidget* widget, linked_size.second.widgets) {
+		BOOST_FOREACH(twidget* widget, linked_size.second.widgets) {
 
 			if (widget->get_visible() == twidget::INVISIBLE) {
 				continue;
@@ -1313,7 +1371,7 @@ void twindow::alternate_uh(twidget* holder, int index)
 	}
 
 	// add linked_size_
-	foreach(const twindow_builder::tresolution::tlinked_group& lg,
+	BOOST_FOREACH(const twindow_builder::tresolution::tlinked_group& lg,
 		definition_->alternate_items[index].linked_groups) {
 
 		if (has_linked_size_group(lg.id)) {
@@ -1504,6 +1562,17 @@ void twindow::signal_handler_message_show_helptip(
 	handled = true;
 }
 
+void twindow::signal_handler_request_placement(
+		  const event::tevent event
+		, bool& handled)
+{
+	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
+
+	invalidate_layout();
+
+	handled = true;
+}
+
 } // namespace gui2
 
 
@@ -1567,7 +1636,7 @@ void twindow::signal_handler_message_show_helptip(
  *   cells fit this algorithm makes sure the widgets are put in the optimal
  *   state in their grid cell.
  *
- * @section layout_algorihm_window Window
+ * @section layout_algorithm_window Window
  *
  * Here is the algorithm used to layout the window:
  *

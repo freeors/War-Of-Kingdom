@@ -201,7 +201,7 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		if (fp == INVALID_FILE) {
 			throw game::load_game_failed();
 		}
-		uint32_t summary_size, scenario_size, start_scenario_size, start_hero_size, replay_size, side_size, bytertd, fsizelow, fsizehigh, should_least_size;
+		uint32_t summary_size, scenario_size, start_scenario_size, start_hero_size, player_data_size, replay_size, side_size, bytertd, fsizelow, fsizehigh, should_least_size;
 		uint8_t *data;
 
 		bool has_side_data = true;
@@ -218,6 +218,7 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		should_least_size += sizeof(side_size);
 		should_least_size += sizeof(start_scenario_size);
 		should_least_size += sizeof(start_hero_size);
+		should_least_size += sizeof(player_data_size);
 		should_least_size += sizeof(replay_size);
 		if (fsizelow < should_least_size) {
 			posix_fclose(fp);
@@ -232,9 +233,10 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		}
 		posix_fread(fp, &start_scenario_size, sizeof(start_scenario_size), bytertd);
 		posix_fread(fp, &start_hero_size, sizeof(start_hero_size), bytertd);
+		posix_fread(fp, &player_data_size, sizeof(player_data_size), bytertd);
 		posix_fread(fp, &replay_size, sizeof(replay_size), bytertd);
 		// check should least size 
-		should_least_size += summary_size + scenario_size + side_size + start_scenario_size + start_hero_size + replay_size;
+		should_least_size += summary_size + scenario_size + side_size + start_scenario_size + start_hero_size + player_data_size + replay_size;
 		if (fsizelow < should_least_size) {
 			posix_fclose(fp);
 			throw game::load_game_failed();
@@ -242,9 +244,9 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 
 		// reset should_least_size
 		if (has_side_data) {
-			should_least_size = sizeof(summary_size) + sizeof(scenario_size) + sizeof(side_size) + sizeof(start_scenario_size) + sizeof(start_hero_size) + sizeof(replay_size);
+			should_least_size = sizeof(summary_size) + sizeof(scenario_size) + sizeof(side_size) + sizeof(start_scenario_size) + sizeof(start_hero_size) + sizeof(player_data_size) + sizeof(replay_size);
 		} else {
-			should_least_size = sizeof(summary_size) + sizeof(scenario_size) + sizeof(start_scenario_size) + sizeof(start_hero_size) + sizeof(replay_size);
+			should_least_size = sizeof(summary_size) + sizeof(scenario_size) + sizeof(start_scenario_size) + sizeof(start_hero_size) + sizeof(player_data_size) + sizeof(replay_size);
 		}
 		//
 		// read data
@@ -252,6 +254,7 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		size_t max_size = std::max<size_t>(summary_size + 1, scenario_size + 1);
 		max_size = std::max<size_t>(max_size, start_scenario_size + 1);
 		max_size = std::max<size_t>(max_size, start_hero_size);
+		max_size = std::max<size_t>(max_size, player_data_size);
 		max_size = std::max<size_t>(max_size, replay_size);
 		data = (uint8_t*)malloc(max_size);
 		// read summary data
@@ -293,6 +296,24 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		}
 		should_least_size += start_hero_size;
 		posix_fseek(fp, should_least_size, 0);
+
+		// read player data
+		posix_fread(fp, data, player_data_size, bytertd);
+		should_least_size += player_data_size;
+		int rpg_number;
+		size_t tmp;
+		std::string rpg_name, rpg_surname;
+		memcpy(&rpg_number, data, 4);
+		tmp = 4;
+		memcpy(&bytertd, data + tmp, 4);
+		tmp += 4;
+		rpg_name.assign((const char*)data + tmp, bytertd);
+		tmp += bytertd;
+		memcpy(&bytertd, data + tmp, 4);
+		tmp += 4;
+		rpg_surname.assign((const char*)data + tmp, bytertd);
+		tmp += bytertd;
+
 		// read replay data
 		should_least_size += replay_size;
 		if (replay_data) {
@@ -311,6 +332,14 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		}
 		posix_fclose(fp);
 
+		if (start_heros) {
+			(*start_heros)[rpg_number].set_name(rpg_name);
+			(*start_heros)[rpg_number].set_surname(rpg_surname);
+		}
+		if (heros) {
+			(*heros)[rpg_number].set_name(rpg_name);
+			(*heros)[rpg_number].set_surname(rpg_surname);
+		}
 		// detect_format_and_read(cfg, *file_stream, error_log);
 	} catch (config::error &err) {
 		LOG_SAVE << err.message;
@@ -605,7 +634,7 @@ void loadgame::fill_mplevel_config(config& level){
 
 	// Adds the replay data, and the replay start, to the level,
 	// so clients can receive it.
-	level.add_child("statistics") = statistics::write_stats();
+	// level.add_child("statistics") = statistics::write_stats();
 }
 
 void loadgame::copy_era(config &cfg)
@@ -831,8 +860,9 @@ void savegame::write_game_to_disk(const std::string& filename)
 	::write(summary_ss, cfg_summary);
 
 	// if enable compress, ss.str() is compressed format data.
-	posix_file_t	fp;
-	uint32_t		summary_size, scenario_size, side_size, start_scenario_size, start_hero_size, replay_size, bytertd;
+	posix_file_t fp;
+	uint32_t summary_size, scenario_size, side_size, start_scenario_size, start_hero_size, player_data_size, replay_size, bytertd;
+	int size;
 
 	// replace_space2underbar(filename_);
 	std::string fullfilename = get_saves_dir() + "/" + filename_;
@@ -865,9 +895,11 @@ void savegame::write_game_to_disk(const std::string& filename)
 	// length of start hero data
 	// start_hero_size = gamestate_.start_hero_ss.str().length();
 	start_hero_size = resources::heros_start->file_size();
+	// length of player data(name,surname,biorigh)
+	player_data_size = 16 + rpg::h->name().size() + rpg::h->surname().size();
 	// length of replay data
 	if (gamestate_.replay_data.pool_pos_vsize()) {
-		replay_size = 16 + gamestate_.replay_data.pool_data_vsize() + gamestate_.replay_data.pool_pos_vsize() * sizeof(unsigned int);
+		replay_size = 16 + gamestate_.replay_data.pool_data_gzip_size() + gamestate_.replay_data.pool_pos_vsize() * sizeof(unsigned int);
 	} else {
 		replay_size = 0;
 	}
@@ -882,6 +914,8 @@ void savegame::write_game_to_disk(const std::string& filename)
 	posix_fwrite(fp, &start_scenario_size, sizeof(start_scenario_size), bytertd);
 	// [write] length of start hero data
 	posix_fwrite(fp, &start_hero_size, sizeof(start_hero_size), bytertd);
+	// [write] length of player data
+	posix_fwrite(fp, &player_data_size, sizeof(player_data_size), bytertd);
 	// [write] length of replay data
 	posix_fwrite(fp, &replay_size, sizeof(replay_size), bytertd);
 	
@@ -897,21 +931,42 @@ void savegame::write_game_to_disk(const std::string& filename)
 	posix_fwrite(fp, gamestate_.start_scenario_ss.str().c_str(), gamestate_.start_scenario_ss.str().length(), bytertd);
 	// start hero data
 	posix_fwrite(fp, gamestate_.start_hero_data_, start_hero_size, bytertd);
+
+	// player data(use unit::savegame_cache_ tempereray)
+	bytertd = rpg::h->number_;
+	memcpy(unit::savegame_cache_, &bytertd, 4);
+	size = 4;
+	bytertd = rpg::h->name().size();
+	memcpy(unit::savegame_cache_ + size, &bytertd, 4);
+	size += 4;
+	memcpy(unit::savegame_cache_ + size, rpg::h->name().c_str(), rpg::h->name().size());
+	size += rpg::h->name().size();
+	bytertd = rpg::h->surname().size();
+	memcpy(unit::savegame_cache_ + size, &bytertd, 4);
+	size += 4;
+	memcpy(unit::savegame_cache_ + size, rpg::h->surname().c_str(), rpg::h->surname().size());
+	size += rpg::h->surname().size();
+	bytertd = 0;
+	memcpy(unit::savegame_cache_ + size, &bytertd, 4);
+	size += 4;
+	posix_fwrite(fp, unit::savegame_cache_, size, bytertd);
+
 	// replay data
 	if (replay_size) {
-		int size = gamestate_.replay_data.pool_data_size();
+		size = gamestate_.replay_data.pool_data_size();
 		posix_fwrite(fp, &size, sizeof(size), bytertd);
-		size = gamestate_.replay_data.pool_data_vsize();
+		size = gamestate_.replay_data.pool_data_gzip_size();
 		posix_fwrite(fp, &size, sizeof(size), bytertd);
 		size = gamestate_.replay_data.pool_pos_size();
 		posix_fwrite(fp, &size, sizeof(size), bytertd);
 		size = gamestate_.replay_data.pool_pos_vsize();
 		posix_fwrite(fp, &size, sizeof(size), bytertd);
 		// pool data
-		posix_fwrite(fp, gamestate_.replay_data.pool_data(), gamestate_.replay_data.pool_data_vsize(), bytertd);
+		posix_fwrite(fp, gamestate_.replay_data.pool_data(), gamestate_.replay_data.pool_data_gzip_size(), bytertd);
 		// pool pos
 		posix_fwrite(fp, gamestate_.replay_data.pool_pos(), gamestate_.replay_data.pool_pos_vsize() * sizeof(unsigned int), bytertd);
 	}
+
 	// hero data
 	heros_.map_to_file_fp(fp);
 	posix_fclose(fp);
@@ -941,8 +996,9 @@ void savegame::write_game(config_writer &out) const
 	out.write_key_val("end_text", gamestate_.classification().end_text);
 	out.write_key_val("end_text_duration", str_cast<unsigned int>(gamestate_.classification().end_text_duration));
 	// update newest rpg to variables
-	gamestate_.set_variable("player.stratum", lexical_cast<std::string>(rpg::stratum));
-	gamestate_.set_variable("player.forbids", lexical_cast<std::string>(rpg::forbids));
+	// gamestate_.set_variable("player.stratum", lexical_cast<std::string>(rpg::stratum));
+	// gamestate_.set_variable("player.forbids", lexical_cast<std::string>(rpg::forbids));
+	gamestate_.rpg_2_variable();
 	out.write_child("variables", gamestate_.get_variables());
 
 	for (std::map<std::string, wml_menu_item *>::const_iterator j=gamestate_.wml_menu_items.begin();
@@ -962,11 +1018,11 @@ void savegame::write_game(config_writer &out) const
 	}
 
 	out.write_child("snapshot", snapshot_);
-
+/*
 	out.open_child("statistics");
 	statistics::write_stats(out);
 	out.close_child("statistics");
-
+*/
 	if (!gamestate_.replay_data_dbg.child("replay12")) {
 		out.write_child("replay12", gamestate_.replay_data_dbg);
 	}

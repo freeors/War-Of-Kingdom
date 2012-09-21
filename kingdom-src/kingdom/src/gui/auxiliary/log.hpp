@@ -1,4 +1,4 @@
-/* $Id: log.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: log.hpp 54024 2012-04-29 17:08:00Z mordante $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -18,8 +18,8 @@
  * Define the common log macros for the gui toolkit.
  */
 
-#ifndef GUI_AUXILIRY_LOG_HPP_INCLUDED
-#define GUI_AUXILIRY_LOG_HPP_INCLUDED
+#ifndef GUI_AUXILIARY_LOG_HPP_INCLUDED
+#define GUI_AUXILIARY_LOG_HPP_INCLUDED
 
 #include "../../log.hpp"
 

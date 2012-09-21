@@ -101,7 +101,6 @@ trecruit::trecruit(game_display& gui, std::vector<team>& teams, unit_map& units,
 	, type_index_(0)
 	, checked_heros_()
 	, hero_table_(NULL)
-	, recruits_()
 	, rpg_mode_(rpg_mode)
 {
 }
@@ -152,8 +151,12 @@ void trecruit::hero_toggled(twidget* widget)
 
 	twindow* window = toggle->get_window();
 	tbutton* ok = find_widget<tbutton>(window, "ok", false, true);
-	ok->set_active(checked_heros_.empty()? false: true);
-
+	const unit_type* t = unit_types_[type_index_];
+	if (current_team_.gold() >= t->cost() * cost_exponent_ / 100) {
+		ok->set_active(checked_heros_.empty()? false: true);
+	} else {
+		ok->set_active(false);
+	}
 	refresh_tooltip(*window);
 }
 
@@ -425,7 +428,7 @@ void trecruit::refresh_tooltip(twindow& window)
 
 void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 {
-	int side_num = city_.side();
+	// int side_num = city_.side();
 	std::stringstream str;
 
 	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
@@ -436,36 +439,7 @@ void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 	str << _("Recruit") << "(" << gold << sngettext("unit^Gold", "Gold", gold) << ")";
 	label->set_label(str.str());
 
-	const std::set<const unit_type*>& recruits = current_team_.recruits();
-	for (std::set<const unit_type*>::const_iterator it = recruits.begin(); it != recruits.end(); ++it) {
-		/*** Add list item ***/
-		const unit_type* type = *it;
-		VALIDATE(type, std::string("could not find unit type ") + type->id());
-		
-		recruits_.push_back(type->id());
-
-		string_map list_item;
-		std::map<std::string, string_map> list_item_item;
-
-		if (gold >= type->cost() * cost_exponent_ / 100) {
-			list_item["label"] = type->image() + "~RC(" + type->flag_rgb() + ">" + team::get_side_color_index(side_num) + ")";
-		} else {
-			list_item["label"] = type->image() + "~GS()";
-		}
-		list_item_item.insert(std::make_pair("icon", list_item));
-
-		list_item["label"] = type->type_name();
-		list_item_item.insert(std::make_pair("name", list_item));
-
-		str.str("");
-		str << type->cost() * cost_exponent_ / 100 << " " << sngettext("unit^Gold", "Gold", type->cost() * cost_exponent_ / 100);
-		list_item["label"] = str.str();
-		list_item_item.insert(std::make_pair("cost", list_item));
-
-		list->add_row(list_item_item);
-
-		unit_types_.push_back(type);
-	}
+	switch_type_internal(window);
 
 	list->set_callback_value_change(dialog_callback<trecruit, &trecruit::type_selected>);
 
@@ -509,8 +483,29 @@ void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 			, (int)RELATION_PAGE
 			, true));
 
+	// prev/next
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "prev", false)
+		, boost::bind(
+			&trecruit::switch_type
+			, this
+			, boost::ref(window)
+			, false));
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "next", false)
+		, boost::bind(
+			&trecruit::switch_type
+			, this
+			, boost::ref(window)
+			, true));
+
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
-	ok->set_active(rpg_mode_);
+	const unit_type* t = unit_types_[type_index_];
+	if (gold >= t->cost() * cost_exponent_ / 100) {
+		ok->set_active(rpg_mode_);
+	} else {
+		ok->set_active(false);
+	}
 	tbutton* cancel = find_widget<tbutton>(&window, "cancel", false, true);
 	cancel->set_visible(rpg_mode_? twidget::INVISIBLE: twidget::VISIBLE);
 
@@ -646,19 +641,19 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 0);
+			table_item["label"] = hero::adaptability_str2(h->arms_[0]);
 			table_item_item.insert(std::make_pair("arm0", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 1);
+			table_item["label"] = hero::adaptability_str2(h->arms_[1]);
 			table_item_item.insert(std::make_pair("arm1", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 2);
+			table_item["label"] = hero::adaptability_str2(h->arms_[2]);
 			table_item_item.insert(std::make_pair("arm2", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 3);
+			table_item["label"] = hero::adaptability_str2(h->arms_[3]);
 			table_item_item.insert(std::make_pair("arm3", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 4);
+			table_item["label"] = hero::adaptability_str2(h->arms_[4]);
 			table_item_item.insert(std::make_pair("arm4", table_item));
 
 		} else if (catalog == PERSONAL_PAGE) {
@@ -673,7 +668,7 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 
-			table_item["label"] = h->gender_str();
+			table_item["label"] = hero::gender_str(h->gender_);
 			table_item_item.insert(std::make_pair("gender", table_item));
 
 		} else if (catalog == RELATION_PAGE) {
@@ -782,6 +777,78 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 	}
 }
 
+void trecruit::switch_type(twindow& window, bool next)
+{
+	if (next) {
+		if (game_config::current_level == game_config::max_level) {
+			return;
+		}
+		game_config::current_level ++;
+	} else {
+		if (game_config::current_level == game_config::min_level) {
+			return;
+		}
+		game_config::current_level --;
+	}
+	switch_type_internal(window);
+}
+
+void trecruit::switch_type_internal(twindow& window)
+{
+	int side_num = city_.side();
+	std::stringstream str;
+	int gold = current_team_.gold();
+
+	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
+	list->clear();
+	unit_types_.clear();
+
+	const std::vector<const unit_type*>& recruits = current_team_.recruits(game_config::current_level);
+	for (std::vector<const unit_type*>::const_iterator it = recruits.begin(); it != recruits.end(); ++it) {
+		/*** Add list item ***/
+		const unit_type* type = *it;
+		VALIDATE(type, std::string("could not find unit type ") + type->id());
+		
+		string_map list_item;
+		std::map<std::string, string_map> list_item_item;
+
+		if (gold >= type->cost() * cost_exponent_ / 100) {
+			list_item["label"] = type->image() + "~RC(" + type->flag_rgb() + ">" + team::get_side_color_index(side_num) + ")";
+		} else {
+			list_item["label"] = type->image() + "~GS()";
+		}
+		list_item_item.insert(std::make_pair("icon", list_item));
+
+		list_item["label"] = type->type_name();
+		list_item_item.insert(std::make_pair("name", list_item));
+
+		str.str("");
+		str << type->cost() * cost_exponent_ / 100 << " " << sngettext("unit^Gold", "Gold", type->cost() * cost_exponent_ / 100);
+		list_item["label"] = str.str();
+		list_item_item.insert(std::make_pair("cost", list_item));
+
+		list->add_row(list_item_item);
+
+		unit_types_.push_back(type);
+	}
+	window.invalidate_layout();
+	if (type_index_ >= (int)list->get_item_count()) {
+		type_index_ = list->get_item_count() - 1;
+	}
+	list->select_row(type_index_);
+
+	tbutton* prev = find_widget<tbutton>(&window, "prev", false, true);
+	prev->set_active(game_config::current_level != game_config::min_level);
+	tbutton* next = find_widget<tbutton>(&window, "next", false, true);
+	next->set_active(game_config::current_level != game_config::max_level);
+
+	str.str("");
+	str << "misc/digit-big.png~CROP(" << 30 * game_config::current_level << ", 0, 30, 45)";
+	find_widget<tcontrol>(&window, "level", false, false)->set_label(str.str());
+
+	type_selected(window);
+}
+
 hero* trecruit::master() const
 {
 	if (!checked_heros_.empty()) {
@@ -816,7 +883,7 @@ hero* trecruit::third() const
 
 const unit_type* trecruit::unit_type_ptr() const
 {
-	return unit_types.find(recruits_[type_index_]);	
+	return unit_types_[type_index_];	
 }
 
 } // namespace gui2

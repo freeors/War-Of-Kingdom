@@ -1,4 +1,5 @@
 #include "global.hpp"
+#include "malloc.h"
 #include "game_config.hpp"
 #include "filesystem.hpp"
 #include "editor.hpp"
@@ -16,6 +17,7 @@
 #include "wesconfig.h"
 #include <clocale>
 #include "gettext.hpp"
+
 
 extern BOOL CALLBACK DlgTitleProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgDDescProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);

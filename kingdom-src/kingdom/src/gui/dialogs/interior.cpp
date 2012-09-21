@@ -538,7 +538,7 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 			table_item_item.insert(std::make_pair("politics", table_item));
 
 			str.str("");
-			str << h->adaptability_str(hero::SKILL, hero_skill_commercial);
+			str << hero::adaptability_str2(h->skill_[hero_skill_commercial]);
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("commercial", table_item));
 
@@ -581,19 +581,19 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 0);
+			table_item["label"] = hero::adaptability_str2(h->arms_[0]);
 			table_item_item.insert(std::make_pair("arm0", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 1);
+			table_item["label"] = hero::adaptability_str2(h->arms_[1]);
 			table_item_item.insert(std::make_pair("arm1", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 2);
+			table_item["label"] = hero::adaptability_str2(h->arms_[2]);
 			table_item_item.insert(std::make_pair("arm2", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 3);
+			table_item["label"] = hero::adaptability_str2(h->arms_[3]);
 			table_item_item.insert(std::make_pair("arm3", table_item));
 
-			table_item["label"] = h->adaptability_str(hero::ARMS, 4);
+			table_item["label"] = hero::adaptability_str2(h->arms_[4]);
 			table_item_item.insert(std::make_pair("arm4", table_item));
 
 		} else if (catalog == RELATION_PAGE) {

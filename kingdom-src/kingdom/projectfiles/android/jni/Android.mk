@@ -22,8 +22,6 @@ LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.cpp \
 	$(subst $(LOCAL_PATH)/,, \
 	$(wildcard $(LOCAL_PATH)/src/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/*.cpp) \
-	$(wildcard $(LOCAL_PATH)/src/addon/*.c) \
-	$(wildcard $(LOCAL_PATH)/src/addon/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/src/ai/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/ai/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/src/ai/default/*.c) \
@@ -36,6 +34,8 @@ LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.cpp \
 	$(wildcard $(LOCAL_PATH)/src/gui/auxiliary/event/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/src/gui/auxiliary/iterator/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/gui/auxiliary/iterator/*.cpp) \
+	$(wildcard $(LOCAL_PATH)/src/gui/auxiliary/placer/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/gui/auxiliary/placer/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/src/gui/auxiliary/widget_Definition/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/gui/auxiliary/widget_Definition/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/src/gui/auxiliary/window_Builder/*.c) \
@@ -44,6 +44,8 @@ LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.cpp \
 	$(wildcard $(LOCAL_PATH)/src/gui/dialogs/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/src/gui/dialogs/lobby/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/gui/dialogs/lobby/*.cpp) \
+	$(wildcard $(LOCAL_PATH)/src/gui/lib/types/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/gui/lib/types/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/src/gui/widgets/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/gui/widgets/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/src/pathfind/*.c) \

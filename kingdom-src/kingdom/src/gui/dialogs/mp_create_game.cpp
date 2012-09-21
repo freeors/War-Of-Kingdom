@@ -219,6 +219,9 @@ void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 
 	observers_->set_widget_value(window, preferences::allow_observers());
 
+	// Support "load game" in future.
+	launch_game_->set_active(false);
+
 	// Force first update to be directly.
 	lobby_base::network_handler();
 	lobby_update_timer_ = add_timer(game_config::lobby_network_timer
@@ -243,7 +246,6 @@ void tmp_create_game::update_map(twindow& window)
 	} else if (select > user_maps_.size()) {
 		parameters_.saved_game = false;
 		size_t index = select - user_maps_.size() - 1;
-		// assert (index < map_index_.size());
 
 		config::const_child_itors levels = cfg_.child_range("multiplayer");
 		std::advance(levels.first, index);
@@ -270,6 +272,9 @@ void tmp_create_game::update_map(twindow& window)
 	}
 
 	generate_map(window);
+
+	// Support "load game" in future.
+	launch_game_->set_active(select? true: false);
 }
 
 void tmp_create_game::generate_map(twindow& window)

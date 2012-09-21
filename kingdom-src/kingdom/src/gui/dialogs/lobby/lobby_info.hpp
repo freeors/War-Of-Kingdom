@@ -102,15 +102,38 @@ private:
 };
 
 #include "network.hpp"
+#include "gui/widgets/tree_view.hpp"
 
 namespace gui2 {
+
+class tlabel;
 
 #define COMBO_FEATURES_NONE			0
 #define COMBO_FEATURES_RANDOM		1
 #define COMBO_FEATURES_MIN_VALID	2
 
-enum controller { CNTR_NETWORK = 0, CNTR_LOCAL, CNTR_COMPUTER, CNTR_EMPTY, CNTR_RESERVED, CNTR_LAST };
+enum controller { CNTR_NETWORK = 0, CNTR_LOCAL, CNTR_COMPUTER, CNTR_EMPTY, CNTR_LAST };
 #define RANDOM_FACTION	-1
+
+std::string decide_player_iocn(int controller);
+
+struct tsub_player_list
+{
+	void init(twindow& w, const std::string& title);
+	void auto_hide();
+	std::string title_;
+	ttree_view_node* tree;
+	tlabel* tree_label;
+};
+
+class tplayer_list
+{
+public:
+	virtual void init(twindow& w) = 0;
+
+protected:
+	ttree_view* tree;
+};
 
 class lobby_base
 {
@@ -148,6 +171,7 @@ public:
 	// virtual void observe_global_button_callback(twindow& window);
 
 	// virtual void join_or_observe(int index);
+
 protected:
 	/** Timer for updating the lobby. */
 	unsigned long lobby_update_timer_;

@@ -62,9 +62,6 @@ private:
 	combatant(const combatant &that);
 	combatant& operator=(const combatant &);
 
-	/** Minimum hp we could possibly have. */
-	unsigned min_hp() const;
-
 	/** HP distribution we could end up with. */
 	static unsigned hp_dist_size(const battle_context::unit_stats &u, const combatant *prev);
 

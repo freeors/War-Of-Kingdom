@@ -44,6 +44,7 @@ button::button(CVideo& video, const std::string& label, button::TYPE type,
 	  font_size_(font_size? font_size: default_font_size),
 	  spacing_(spacing), base_height_(base_height), base_width_(base_width),
 	  hook_(hook), menu_(menu), btnidx_(btnidx), cookie_(NULL)
+	  , color_(font::BUTTON_COLOR)
 {
 	if (button_image_name.empty() && type == TYPE_PRESS) {
 		button_image_name = "button";
@@ -323,7 +324,7 @@ void button::draw_contents()
 		textx = loc.x + image_w + checkbox_horizontal_padding / 2;
 	}
 
-	SDL_Color button_color = font::BUTTON_COLOR;
+	SDL_Color button_color = color_;
 
 	if (!enabled()) {
 		static const Uint32 disabled_btn_color = 0xAAAAAA;
@@ -367,6 +368,11 @@ void button::set_label(const std::string& val)
 	calculate_size();
 
 	set_dirty(true);
+}
+
+void button::set_color(const SDL_Color& color)
+{
+	color_ = color;
 }
 
 void button::mouse_motion(SDL_MouseMotionEvent const &event)

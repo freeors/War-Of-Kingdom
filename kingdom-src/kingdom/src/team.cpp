@@ -45,6 +45,7 @@ namespace unit_display
 const int team::default_team_gold = 100;
 
 hero* team::player_leader_ = NULL;
+int team::empty_side_ = -1;
 
 static strategy null_strategy(0, strategy::NONE, 0);
 
@@ -168,22 +169,23 @@ void team::team_info::read(const config &cfg)
 	std::string control = cfg["controller"];
 	//by default, persistence of a team is set depending on the controller
 	persistent = true;
-	if (control == "human")
+	if (control == "human") {
 		controller = HUMAN;
-	else if (control == "human_ai")
+	} else if (control == "human_ai") {
 		controller = HUMAN_AI;
-	else if (control == "network")
+	} else if (control == "network") {
 		controller = NETWORK;
-	else if (control == "network_ai")
+	} else if (control == "network_ai") {
 		controller = NETWORK_AI;
-	else if (control == "null")
-	{
+	} else if (control == "null") {
 		disallow_observers = cfg["disallow_observers"].to_bool(true);
 		controller = EMPTY;
+		if (team::empty_side_ == -1) {
+			// when RPG, indepdence side is empty also.
+			team::empty_side_ = side;
+		}
 		persistent = false;
-	}
-	else
-	{
+	} else {
 		controller = AI;
 		persistent = false;
 	}
@@ -252,8 +254,8 @@ void team::team_info::write(config& cfg) const
 }
 
 team_::team_()
-	: can_recruit_()
-	, can_rpg_recruit_()
+	: not_recruit_()
+	, can_recruit_map_()
 	, can_build_()
 	, max_recruit_cost_(-1)
 {
@@ -280,6 +282,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	action_bonus_count_(0),
 	diplomatisms_(),
 	strategies_(),
+	features_(),
 	seen_(),
 	ally_shroud_(),
 	ally_fog_(),
@@ -298,10 +301,17 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	info_.read(cfg);
 
 	// recruit
-	std::vector<std::string> vstr = utils::split(cfg["recruit"]);
+	std::vector<std::string> vstr = utils::split(cfg["not_recruit"]);
+	const std::vector<const unit_type*>& can_recruit = unit_types.can_recruit();
 	for(std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++i) {
 		const unit_type* ut = unit_types.find(*i);
-		can_recruit_.insert(ut);
+		if (std::find(can_recruit.begin(), can_recruit.end(), ut) == can_recruit.end()) {
+			throw game::game_error("invalid not_recruit attribute in side(" + str_cast(info_.side) + ") tag");
+		}
+		not_recruit_.insert(ut);
+	}
+	if (not_recruit_.size() == can_recruit.size()) {
+		throw game::game_error("there will no recruitable unit type in side(" + str_cast(info_.side) + ") tag, check not_recruit attribute");
 	}
 	// build
 	vstr = utils::split(cfg["build"]);
@@ -328,12 +338,42 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 		}
 	}
 
+	vstr = utils::parenthetical_split(cfg["feature"]);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		const std::vector<std::string> vstr1 = utils::split(*it);
+		arms_feature feature;
+		if (vstr1.size() != 3) {
+			if (vstr1.empty() || (vstr1.size() == 1 && vstr1[0] == ",")) {
+				continue;
+			} else {
+				throw game::game_error("invalid feature attribute in side(" + str_cast(info_.side) + ") tag");
+			}
+		}
+		feature.arms_ = unit_types.arms_from_id(vstr1[0]);
+		if (feature.arms_ < 0 || feature.arms_ >= HEROS_MAX_ARMS) {
+			throw game::game_error("invalid feature attribute in side(" + str_cast(info_.side) + ") tag");
+		}
+		feature.level_ = lexical_cast<int>(vstr1[1].c_str());
+		if (feature.level_ < 0) {
+			throw game::game_error("invalid feature attribute in side(" + str_cast(info_.side) + ") tag");
+		}
+		feature.feature_ = lexical_cast<int>(vstr1[2].c_str());
+		if (feature.feature_ < 0 || feature.feature_ >= HEROS_MAX_FEATURE) {
+			throw game::game_error("invalid feature attribute in side(" + str_cast(info_.side) + ") tag");
+		}
+		features_.push_back(feature);
+	}
+
 	// leader
 	std::string str = cfg["leader"];
-	if (str.empty()) {
+	if (str.empty() && info_.controller != team_info::EMPTY) {
 		throw game::game_error("hasn't leader attribute in side(" + str_cast(info_.side) + ") tag");
 	}
-	leader_ = cfg["leader"].to_int();
+	if (!str.empty()) {
+		leader_ = cfg["leader"].to_int();
+	} else {
+		leader_ = 228;
+	}
 	heros_[leader_].official_ = hero_official_leader;
 	if (info_.name.empty()) {
 		info_.name = heros_[leader_].name();
@@ -438,6 +478,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem
 	action_bonus_count_(0),
 	diplomatisms_(),
 	strategies_(),
+	features_(),
 	seen_(),
 	ally_shroud_(),
 	ally_fog_(),
@@ -487,6 +528,7 @@ team::team(const team& that) :
 	action_bonus_count_(that.action_bonus_count_),
 	diplomatisms_(that.diplomatisms_),
 	strategies_(that.strategies_),
+	features_(that.features_),
 	seen_(that.seen_),
 	ally_shroud_(that.ally_shroud_),
 	ally_fog_(that.ally_fog_),
@@ -523,6 +565,7 @@ team& team::operator=(const team& that)
 	action_bonus_count_ = that.action_bonus_count_;
 	diplomatisms_ = that.diplomatisms_;
 	strategies_ = that.strategies_;
+	features_ = that.features_;
 	seen_ = that.seen_;
 	ally_shroud_ = that.ally_shroud_;
 	ally_fog_ = that.ally_fog_;
@@ -566,13 +609,13 @@ void team::write(config& cfg) const
 
 	std::stringstream can_str;
 	// recruit
-	for (std::set<const unit_type*>::const_iterator cr = can_recruit_.begin(); cr != can_recruit_.end(); ++cr) {
-		if (cr != can_recruit_.begin()) {
+	for (std::set<const unit_type*>::const_iterator cr = not_recruit_.begin(); cr != not_recruit_.end(); ++cr) {
+		if (cr != not_recruit_.begin()) {
 			can_str << ",";
 		}
 		can_str << (*cr)->id();
 	}
-	cfg["recruit"] = can_str.str();
+	cfg["not_recruit"] = can_str.str();
 
 	// build
 	can_str.str("");
@@ -714,6 +757,13 @@ void team::write(uint8_t* mem) const
 			offset += 4;
 		}
 	}
+	// features_
+	fields->features_.offset_ = offset; 
+	fields->features_.size_ = features_.size();
+	for (std::vector<arms_feature>::const_iterator it = features_.begin(); it != features_.end(); ++ it) {
+		memcpy(mem + offset, &*it, sizeof(arms_feature));
+		offset += sizeof(arms_feature);
+	}
 	// name
 	if (!info_.name.empty()) {
 		fields->name_.offset_ = offset; 
@@ -797,21 +847,21 @@ void team::write(uint8_t* mem) const
 
 	std::stringstream can_str;
 	// recruit
-	for (std::set<const unit_type*>::const_iterator cr = can_recruit_.begin(); cr != can_recruit_.end(); ++cr) {
-		if (cr != can_recruit_.begin()) {
+	for (std::set<const unit_type*>::const_iterator cr = not_recruit_.begin(); cr != not_recruit_.end(); ++cr) {
+		if (cr != not_recruit_.begin()) {
 			can_str << ",";
 		}
 		can_str << (*cr)->id();
 	}
 	if (!can_str.str().empty()) {
-		fields->recruit_.offset_ = offset; 
-		fields->recruit_.size_ = can_str.str().length();
-		memcpy(mem + offset, can_str.str().c_str(), fields->recruit_.size_);
+		fields->not_recruit_.offset_ = offset; 
+		fields->not_recruit_.size_ = can_str.str().length();
+		memcpy(mem + offset, can_str.str().c_str(), fields->not_recruit_.size_);
 	} else {
-		fields->recruit_.offset_ = -1;
-		fields->recruit_.size_ = 0;
+		fields->not_recruit_.offset_ = -1;
+		fields->not_recruit_.size_ = 0;
 	}
-	offset += fields->recruit_.size_;
+	offset += fields->not_recruit_.size_;
 
 	// build
 	can_str.str("");
@@ -1009,6 +1059,9 @@ void team::read(const uint8_t* mem, const gamemap& map)
 	info_.hidden = fields->hidden_? true: false;
 	info_.scroll_to_leader = fields->scroll_to_leader_? true: false;
 	info_.controller = (team_info::CONTROLLER)fields->controller_;
+	if (info_.controller == team_info::EMPTY && team::empty_side_ == -1) {
+		team::empty_side_ = info_.side;
+	}
 	info_.share_maps = fields->share_maps_? true: false;
 	info_.share_view = fields->share_view_? true: false;
 	info_.persistent = fields->persistent_? true: false;
@@ -1036,6 +1089,13 @@ void team::read(const uint8_t* mem, const gamemap& map)
 			s.allies_.insert(*(int*)(mem + fields->strategies_.offset_ + tune));
 		}
 	}
+	// features_
+	tune = 0;
+	for (int i = 0; i < fields->features_.size_; i ++) {
+		arms_feature* data = (arms_feature*)(mem + fields->features_.offset_ + tune);
+		features_.push_back(arms_feature(data->arms_, data->level_, data->feature_));
+		tune += sizeof(arms_feature);
+	}
 	// user_team_name
 	info_.user_team_name = std::string((const char*)mem + fields->user_team_name_.offset_, fields->user_team_name_.size_);
 	// name
@@ -1053,13 +1113,13 @@ void team::read(const uint8_t* mem, const gamemap& map)
 	// objectives
 	info_.objectives = std::string((const char*)mem + fields->objectives_.offset_, fields->objectives_.size_);
 	// recruit
-	can_recruit_.clear();
-	str.assign((const char*)mem + fields->recruit_.offset_, fields->recruit_.size_);
+	not_recruit_.clear();
+	str.assign((const char*)mem + fields->not_recruit_.offset_, fields->not_recruit_.size_);
 	std::vector<std::string> v_size = utils::split(str);
 	for (std::vector<std::string>::const_iterator i = v_size.begin(); i != v_size.end(); ++i) {
 		const unit_type* ut = unit_types.find(*i);
-		VALIDATE(ut, "team::read, unknown recruit type: " + *i);
-		can_recruit_.insert(ut);
+		VALIDATE(ut, "team::read, unknown not-recruit unit type: " + *i);
+		not_recruit_.insert(ut);
 	}
 	// build
 	can_build_.clear();
@@ -1151,6 +1211,11 @@ bool team::get_village(const map_location& loc)
 	return game_events::fire("capture",loc);
 }
 
+void team::get_villages(const std::set<map_location>& villages)
+{
+	villages_.insert(villages.begin(), villages.end());
+}
+
 void team::lose_village(const map_location& loc)
 {
 	if (owns_village(loc)) {
@@ -1225,21 +1290,35 @@ int team::side_upkeep() const
 	return upkeep;
 }
 
-void team::rpg_changed()
+void team::rpg_changed(bool independence)
 {
-	can_rpg_recruit_.clear();
 	max_recruit_cost_ = -1;
+
+	if (independence) {
+		size_t team_size = teams->size();
+		for (size_t i = 1; i < team_size; i ++) {
+			(*teams)[i - 1].diplomatisms_[team_size] = diplomatism_data();
+		}
+		// calculate_diplomatisms("", team_size);
+		// diplomatisms_[team_size].ally_ = true;
+	}
 }
 
 int team::max_recruit_cost()
 {
 	if (max_recruit_cost_ == -1) {
-		recruits();
+		const std::vector<const unit_type*>& recruits_v = recruits(-1);
+		for (std::vector<const unit_type*>::const_iterator it = recruits_v.begin(); it != recruits_v.end(); ++ it) {
+			const unit_type* ut = *it;
+			if (ut->cost() > max_recruit_cost_) {
+				max_recruit_cost_ = ut->cost();
+			}
+		}
 	}
 	return max_recruit_cost_;
 }
 
-void insert_level_unit_type(int level, const unit_type* from, std::set<const unit_type*>& to)
+void insert_level_unit_type(int level, const unit_type* from, std::vector<const unit_type*>& to)
 {
 	const std::vector<std::string>& advances_to = from->advances_to();
 	for (std::vector<std::string>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it) {
@@ -1247,64 +1326,67 @@ void insert_level_unit_type(int level, const unit_type* from, std::set<const uni
 		if (ut->level() < level) {
 			insert_level_unit_type(level, ut, to);
 		} else if (ut->level() == level) {
-			to.insert(ut);
+			to.push_back(ut);
 		}
 	}
 }
 
-const std::set<const unit_type*>& team::recruits()
+const std::vector<const unit_type*>& team::recruits(int level)
 { 
-	if ((rpg::h->side_ + 1 == info_.side) && (rpg::stratum != hero_stratum_leader)) {
-		if (can_rpg_recruit_.empty()) {
-			int least_level = 3;
-			if (rpg::stratum == hero_stratum_mayor) {
-				least_level = 2;
-			}
-			for (std::set<const unit_type*>::const_iterator it = can_recruit_.begin(); it != can_recruit_.end(); ++ it) {
-				const unit_type* ut = *it;
-				if (ut->level() >= least_level) {
-					can_rpg_recruit_.insert(ut);
-				} else {
-					insert_level_unit_type(least_level, ut, can_rpg_recruit_);
-				}
-			}
-			// calculate max recruit cost
-			max_recruit_cost_ = -1;
-			for (std::set<const unit_type*>::const_iterator it = can_rpg_recruit_.begin(); it != can_rpg_recruit_.end(); ++ it) {
-				const unit_type* ut = *it;
-				if (ut->cost() > max_recruit_cost_) {
-					max_recruit_cost_ = ut->cost();
-				}
-			}
+	if (level == -1) {
+		if (info_.controller == team_info::HUMAN) {
+			level = game_config::default_human_level;
+		} else {
+			level = game_config::default_ai_level;
 		}
-		return can_rpg_recruit_;
-	} else {
-		if (max_recruit_cost_ == -1) {
-			// calculate max recruit cost
-			for (std::set<const unit_type*>::const_iterator it = can_recruit_.begin(); it != can_recruit_.end(); ++ it) {
-				const unit_type* ut = *it;
-				if (ut->cost() > max_recruit_cost_) {
-					max_recruit_cost_ = ut->cost();
-				}
-			}
-		}
-		return can_recruit_;
 	}
+
+	std::map<int, std::vector<const unit_type*> >::iterator it = can_recruit_map_.find(level);
+	if (it != can_recruit_map_.end()) {
+		return it->second;
+	}
+
+	std::vector<const unit_type*> types;
+	const std::vector<const unit_type*>& can_recruit = unit_types.can_recruit();
+	for (std::vector<const unit_type*>::const_iterator it = can_recruit.begin(); it != can_recruit.end(); ++ it) {
+		const unit_type* ut = *it;
+		if (not_recruit_.find(ut) != not_recruit_.end()) {
+			continue;
+		}
+		if (ut->level() >= level) {
+			types.push_back(ut);
+		} else {
+			insert_level_unit_type(level, ut, types);
+		}
+	}
+	can_recruit_map_[level] = types;
+	it = can_recruit_map_.find(level);
+
+	return it->second;
 }
 
-void team::set_recruits(const std::set<std::string>& recruits)
+void team::set_notrecruits(const std::set<std::string>& ids)
 {
-	can_recruit_.clear();
-	for (std::set<std::string>::const_iterator it = recruits.begin(); it != recruits.end(); ++ it) {
-		can_recruit_.insert(unit_types.find(*it));
+	not_recruit_.clear();
+	can_recruit_map_.clear();
+	for (std::set<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++ it) {
+		not_recruit_.insert(unit_types.find(*it));
 	}
 	ai::manager::raise_recruit_list_changed();
 }
 
-void team::add_recruit(const std::string &recruit)
+void team::add_notrecruit(const std::string &recruit)
 {
-	can_recruit_.insert(unit_types.find(recruit));
+	not_recruit_.insert(unit_types.find(recruit));
 	ai::manager::raise_recruit_list_changed();
+}
+
+void team::set_builds(const std::set<std::string>& builds)
+{
+	can_build_.clear();
+	for (std::set<std::string>::const_iterator it = builds.begin(); it != builds.end(); ++ it) {
+		can_build_.insert(unit_types.find(*it));
+	}
 }
 
 void team::new_turn() 
@@ -1372,7 +1454,9 @@ void team::calculate_diplomatisms(const std::string& team_name, size_t team_size
 	std::vector<std::string> our_teams = utils::split(team_name);
 		
 	for (std::vector<std::string>::iterator it = our_teams.begin(); it != our_teams.end(); ++ it) {
-		diplomatisms_[lexical_cast_default<int>(*it)].ally_ = true;
+		int to = lexical_cast_default<int>(*it);
+		VALIDATE(to <= (int)team_size, "team::calculate_diplomatisms, invalid team_name: " + team_name + " in " + leader()->name() + " side.");
+		diplomatisms_[to].ally_ = true;
 	}
 }
 
@@ -1440,6 +1524,58 @@ void team::set_share_maps( bool share_maps ){
 	// so share_view overrides share_maps.
 	// If you want to change them, be sure to change share_view FIRST
 	info_.share_maps = !info_.share_view && share_maps;
+}
+
+void team::erase_strategies(bool show)
+{
+	utils::string_map symbols;
+	std::string message;
+
+	for (std::vector<strategy>::iterator it = strategies_.begin(); it != strategies_.end();) {
+		// terminate relative treaty.
+		artifical* target_city = units_.city_from_cityno(it->target_);
+		symbols["city"] = target_city->name();
+
+		for (std::set<int>::const_iterator it_ally = it->allies_.begin(); it_ally != it->allies_.end(); ++ it_ally) {
+			team& allied_team = (*teams)[*it_ally - 1];
+				
+			set_ally(*it_ally, false);
+			allied_team.set_ally(info_.side, false);
+
+			if (show) {
+				symbols["first"] = name();
+				symbols["second"] = allied_team.name();
+				if (it->type_ == strategy::AGGRESS) {
+					message = vgettext("End aggressing upon $city, $first and $second terminate treaty of alliance.", symbols);
+				} else if (it->type_ == strategy::DEFEND) {
+					message = vgettext("End defending $city, $first and $second terminate treaty of alliance.", symbols);
+				} else {
+					VALIDATE(false, "team::erase_strategy, unknown strategy type.");
+				}
+				game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
+			}
+		}
+		it = strategies_.erase(it);
+	}
+	return;
+}
+
+void team::erase_ally(int side)
+{
+	for (std::vector<strategy>::iterator it = strategies_.begin(); it != strategies_.end(); ++ it) {
+		// terminate relative treaty.
+		for (std::set<int>::const_iterator it_ally = it->allies_.begin(); it_ally != it->allies_.end(); ++ it_ally) {
+			if (*it_ally == side) {
+				team& allied_team = (*teams)[*it_ally - 1];
+
+				set_ally(*it_ally, false);
+				allied_team.set_ally(info_.side, false);
+
+				it->allies_.erase(it_ally);
+				break;
+			}
+		}
+	}
 }
 
 void team::set_share_view( bool share_view ){
@@ -1950,6 +2086,38 @@ void team::active_commercial()
 	}
 }
 
+bool team::defeat_vote() const
+{
+	int human_troops = 0;
+	int ai_troops = 0;
+	for (std::vector<artifical*>::const_iterator it = holded_cities_.begin(); it != holded_cities_.end(); ++ it) {
+		artifical* city = *it;
+
+		const std::vector<unit*>& resides = city->reside_troops();
+		for (std::vector<unit*>::const_iterator it2 = resides.begin(); it2 != resides.end(); ++ it2) {
+			const unit& u = **it2;
+			if (u.human()) {
+				human_troops ++;
+			} else {
+				ai_troops ++;
+			}
+		}
+		const std::vector<unit*>& fields = city->field_troops();
+		for (std::vector<unit*>::const_iterator it2 = fields.begin(); it2 != fields.end(); ++ it2) {
+			if ((*it2)->human()) {
+				human_troops ++;
+			} else {
+				ai_troops ++;
+			}
+		}
+	}
+	if (human_troops / 3 > ai_troops) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 void team::add_city(artifical* city)
 {
 	// extend rectange of holded cities
@@ -2032,7 +2200,7 @@ bool team::add_card(size_t number, bool replay, bool dialog)
 	return true;
 }
 
-bool team::erase_card(int index, bool replay)
+bool team::erase_card(int index, bool replay, bool dialog)
 {
 	int holded_cards_size = (int)holded_cards_.size();
 
@@ -2047,7 +2215,7 @@ bool team::erase_card(int index, bool replay)
 	holded_cards_.erase(holded_cards_.begin() + index);
 
 	if (!replay) {
-		recorder.erase_card(info_.side, index, map_location::null_location, unit::null_size_unitp_pair);
+		recorder.erase_card(info_.side, index, map_location::null_location, unit::null_int_unitp_pair, dialog);
 	}
 	return true;
 }
@@ -2121,7 +2289,7 @@ bool team::condition_card(int index, const map_location& loc)
 	return true;
 }
 
-void team::consume_card(int index, const map_location& loc, bool replay, std::map<size_t, unit*>& touched_heros)
+void team::consume_card(int index, const map_location& loc, bool replay, std::vector<std::pair<int, unit*> >& touched)
 {
 	card& c = cards_[holded_cards_[index]];
 	config& range_cfg = c.get_cfg().child("range");
@@ -2129,14 +2297,14 @@ void team::consume_card(int index, const map_location& loc, bool replay, std::ma
 	if (!range_cfg || !action_cfg) {
 		holded_cards_.erase(holded_cards_.begin() + index);
 		if (!replay) {
-			recorder.erase_card(info_.side, index, loc, unit::null_size_unitp_pair);
+			recorder.erase_card(info_.side, index, loc, unit::null_int_unitp_pair, false);
 		}
 		return;
 	}
 
 	// must construct [erase_card] block in replay, [random] can write on.
 	if (!replay) {
-		recorder.erase_card(info_.side, index, loc, touched_heros);
+		recorder.erase_card(info_.side, index, loc, touched, false);
 	}
 
 	unit_map::iterator u_itor;
@@ -2144,11 +2312,16 @@ void team::consume_card(int index, const map_location& loc, bool replay, std::ma
 
 	unit_display::card_start(cards_, c);
 	if (c.target_hero()) {
-		for (std::map<size_t, unit*>::iterator itor = touched_heros.begin(); itor != touched_heros.end(); ++ itor) {
+		for (std::vector<std::pair<int, unit*> >::iterator itor = touched.begin(); itor != touched.end(); ++ itor) {
 			hero& h = heros_[itor->first];
 			h.add_modification(units_, heros_, *teams, action_cfg, itor->second, leader());
 		}
 	} else {
+		for (std::vector<std::pair<int, unit*> >::iterator itor = touched.begin(); itor != touched.end(); ++ itor) {
+			unit& u = *(itor->second);
+			u.add_modification("card", action_cfg, true, true);
+		}
+/*
 		if (range_cfg["self"].to_bool()) {
 			u_itor = units_.find(loc);
 			u_itor->add_modification("card", action_cfg, true, true);
@@ -2171,12 +2344,13 @@ void team::consume_card(int index, const map_location& loc, bool replay, std::ma
 			u_itor->add_modification("card", action_cfg, true, true);
 			effected.push_back(&*u_itor);
 		}
+*/
 	}
 
 	holded_cards_.erase(holded_cards_.begin() + index);
 }
 
-void touched_heros_internal(unit_map::iterator& u_itor, const std::vector<std::string>& types, std::vector<std::pair<size_t, unit*> >& pairs)
+void touched_heros_internal(unit_map::iterator& u_itor, const std::vector<std::string>& types, std::vector<std::pair<int, unit*> >& pairs)
 {
 	if (u_itor->is_artifical()) {
 		artifical& art = *unit_2_artifical(&*u_itor);
@@ -2199,9 +2373,9 @@ void touched_heros_internal(unit_map::iterator& u_itor, const std::vector<std::s
 			}
 		}
 		if (types.empty() || std::find(types.begin(), types.end(), "military") != types.end()) {
-			std::vector<unit>& reside_troops = art.reside_troops();
-			for (std::vector<unit>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
-				unit& u = *itor;
+			std::vector<unit*>& reside_troops = art.reside_troops();
+			for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
+				unit& u = **itor;
 				pairs.push_back(std::make_pair<size_t, unit*>(u.master().number_, &u));
 				if (u.second().valid()) {
 					pairs.push_back(std::make_pair<size_t, unit*>(u.second().number_, &u));
@@ -2225,7 +2399,37 @@ void touched_heros_internal(unit_map::iterator& u_itor, const std::vector<std::s
 	}
 }
 
-void team::card_touched_heros(int index, const map_location& loc, std::vector<std::pair<size_t, unit*> >& pairs, std::string& disable_str)
+void touched_troops_internal(unit_map::iterator& u_itor, const std::vector<std::string>& types, std::vector<std::pair<int, unit*> >& pairs)
+{
+	if (u_itor->is_city()) {
+		artifical& art = *unit_2_artifical(&*u_itor);
+		if (types.empty() || std::find(types.begin(), types.end(), "city") != types.end()) {
+			pairs.push_back(std::make_pair<size_t, unit*>(-1, &*u_itor));
+		}
+		if (types.empty() || std::find(types.begin(), types.end(), "reside") != types.end()) {
+			std::vector<unit*>& reside_troops = art.reside_troops();
+			int index = 0;
+			for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor, index ++) {
+				unit& u = **itor;
+				pairs.push_back(std::make_pair<size_t, unit*>(index, &u));
+			}
+		}
+
+	} else if (u_itor->is_artifical()) {
+		artifical& art = *unit_2_artifical(&*u_itor);
+		if (types.empty() || std::find(types.begin(), types.end(), "artifical") != types.end()) {
+			pairs.push_back(std::make_pair<size_t, unit*>(-1, &*u_itor));
+		}
+				
+	} else {
+		unit& u = *u_itor;
+		if (types.empty() || std::find(types.begin(), types.end(), "field") != types.end()) {
+			pairs.push_back(std::make_pair<size_t, unit*>(-1, &u));
+		}
+	}
+}
+
+void team::card_touched(int index, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str)
 {
 	card& c = cards_[holded_cards_[index]];
 	config& cond_cfg = c.get_cfg().child("condition");
@@ -2236,12 +2440,16 @@ void team::card_touched_heros(int index, const map_location& loc, std::vector<st
 	unit_map::iterator u_itor;
 	std::vector<unit*> effected;
 
-	std::string hero_str = cond_cfg["hero"].str();
+	const std::string hero_str = cond_cfg["type"].str();
 	const std::vector<std::string>& types = utils::split(hero_str);
 	
 	if (range_cfg["self"].to_bool()) {
 		u_itor = units_.find(loc);
-		touched_heros_internal(u_itor, types, pairs);
+		if (c.target_hero()) {
+			touched_heros_internal(u_itor, types, pairs);
+		} else {
+			touched_troops_internal(u_itor, types, pairs);
+		}
 		effected.push_back(&*u_itor);
 	}
 	std::vector<std::string> adjacent = utils::split(range_cfg["adjacent"]);
@@ -2258,7 +2466,11 @@ void team::card_touched_heros(int index, const map_location& loc, std::vector<st
 		if (std::find(effected.begin(), effected.end(), &*u_itor) != effected.end()) {
 			continue;
 		}
-		touched_heros_internal(u_itor, types, pairs);
+		if (c.target_hero()) {
+			touched_heros_internal(u_itor, types, pairs);
+		} else {
+			touched_troops_internal(u_itor, types, pairs);
+		}
 		effected.push_back(&*u_itor);
 	}
 	disable_str = cond_cfg["disable"].str();
@@ -2323,6 +2535,19 @@ int team::cost_exponent() const
 		ratio = 100;
 	}
 	return ratio;
+}
+
+void team::set_leader(hero* h)
+{
+	if (h->number_ == leader_) {
+		return;
+	}
+	leader()->official_ = HEROS_NO_OFFICIAL;
+
+	leader_ = h->number_;
+	h->official_ = hero_official_leader;
+
+	info_.name = heros_[leader_].name();
 }
 
 int team::add_navigation(int increment)

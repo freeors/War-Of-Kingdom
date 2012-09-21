@@ -131,7 +131,7 @@ add_timer(const Uint32 interval
 	ttimer timer;
 	timer.sdl_id = SDL_AddTimer(
 			interval, timer_callback, reinterpret_cast<void*>(id));
-	if(timer.sdl_id == 0) {
+	if(timer.sdl_id == NULL) {
 		WRN_GUI_E << "Failed to create an sdl timer.\n";
 		return 0;
 	}

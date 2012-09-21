@@ -54,11 +54,9 @@ tbutton::tbutton()
 				&tbutton::signal_handler_left_button_click, this, _2, _3));
 }
 
-void tbutton::set_definition(const std::string& definition)
+void tbutton::load_config_extra()
 {
-	tcontrol::set_definition(definition);
-
-	foreach(tcanvas& canva, canvas()) {
+	BOOST_FOREACH(tcanvas& canva, canvas()) {
 		canva.set_variable("sort", variant(sort_));
 		canva.set_variable("sort_image", variant(""));
 	}
@@ -94,7 +92,7 @@ void tbutton::set_sort(tsort sort)
 		name = "buttons/sort-descend.png";
 	}
 
-	foreach(tcanvas& canva, canvas()) {
+	BOOST_FOREACH(tcanvas& canva, canvas()) {
 		canva.set_variable("sort", variant(sort_));
 		canva.set_variable("sort_image", variant(name));
 	}

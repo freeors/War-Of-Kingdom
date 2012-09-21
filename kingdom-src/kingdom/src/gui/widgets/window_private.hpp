@@ -1,4 +1,4 @@
-/* $Id: window_private.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: window_private.hpp 54906 2012-07-29 19:52:01Z mordante $ */
 /*
    Copyright (C) 2009 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -43,7 +43,7 @@ struct twindow_implementation
 	 *
 	 * This part handles the actual layouting of the window.
 	 *
-	 * @see layout_algorihm for more information.
+	 * @see layout_algorithm for more information.
 	 *
 	 * @param window              The window to operate upon.
 	 * @param maximum_width       The maximum width of the window.

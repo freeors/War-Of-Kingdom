@@ -29,6 +29,7 @@
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/button.hpp"
+#include "gui/widgets/tree_view_node.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "gui/dialogs/transient_message.hpp"
 #include "formula_string_utils.hpp"
@@ -81,6 +82,16 @@ extern std::string get_color_string(int id);
 
 REGISTER_DIALOG(mp_side_wait)
 
+void tplayer_list_side_wait::init(twindow & w)
+{
+	active_game.init(w, _("Selected game"));
+
+	tree = find_widget<ttree_view>(&w
+			, "player_tree"
+			, false
+			, true);
+}
+
 tmp_side_wait::tmp_side_wait(hero_map& heros, game_display& gui, gamemap& gmap, const config& game_config,
 			config& gamelist, bool observe)
 	: legacy_result_(QUIT)
@@ -94,6 +105,7 @@ tmp_side_wait::tmp_side_wait(hero_map& heros, game_display& gui, gamemap& gmap, 
 	, gamelist_(gamelist)
 	, observe_(observe)
 	, stop_updates_(false)
+	, player_list_()
 {
 }
 
@@ -103,9 +115,9 @@ tmp_side_wait::~tmp_side_wait()
 
 void tmp_side_wait::pre_show(CVideo& /*video*/, twindow& window)
 {
+	player_list_.init(window);
+
 	waiting_ = find_widget<tlabel>(&window, "waiting", false, true);
-	players_label_ = find_widget<tlabel>(&window, "players", false, true);
-	players_label_->set_use_markup(true);
 
 	connect_signal_mouse_left_click(
 			  find_widget<tbutton>(&window, "cancel_", false)
@@ -160,16 +172,8 @@ void tmp_side_wait::join_game(twindow& window, bool observe)
 		//available side.
 		const config *side_choice = NULL;
 		int side_num = -1, nb_sides = 0;
-		foreach (const config &sd, level_.child_range("side"))
-		{
-			if (sd["controller"] == "reserved" && sd["current_player"] == preferences::login())
-			{
-				side_choice = &sd;
-				side_num = nb_sides;
-				break;
-			}
-			if (sd["controller"] == "network" && sd["player_id"].empty())
-			{
+		foreach (const config &sd, level_.child_range("side")) {
+			if (sd["controller"] == "network" && sd["current_player"].empty()) {
 				if (!side_choice) { // found the first empty side
 					side_choice = &sd;
 					side_num = nb_sides;
@@ -236,11 +240,12 @@ const game_state& tmp_side_wait::get_state()
 
 void tmp_side_wait::start_game()
 {
+/*
 	if (const config &stats = level_.child("statistics")) {
 		statistics::fresh_stats();
 		statistics::read_stats(stats);
 	}
-
+*/
 	/**
 	 * @todo Instead of using level_to_gamestate reinit the state_,
 	 * this needs more testing -- Mordante
@@ -317,6 +322,39 @@ void tmp_side_wait::process_network_data(const config& data, const network::conn
 	}
 }
 
+void tmp_side_wait::update_playerlist()
+{
+	VALIDATE(player_list_.active_game.tree, "tmp_side_wait::update_playerlist, active_game.tree is null");
+
+	player_list_.active_game.tree->clear();
+
+	connected_user_list::iterator it;
+	for (it = users_.begin(); it != users_.end(); ++ it) {
+		connected_user& user = *it;
+		tsub_player_list* target_list = &player_list_.active_game;
+
+		assert(target_list->tree);
+
+		std::string name = user.name;
+
+		string_map tree_group_field;
+		std::map<std::string, string_map> tree_group_item;
+
+		/*** Add tree item ***/
+		tree_group_field["label"] = decide_player_iocn(it->controller_);
+		tree_group_item["icon"] = tree_group_field;
+
+		tree_group_field["label"] = name;
+		tree_group_field["use_markup"] = "true";
+		tree_group_item["name"] = tree_group_field;
+
+		ttree_view_node& player =
+				target_list->tree->add_child("player", tree_group_item);
+	}
+
+	player_list_.active_game.auto_hide();
+}
+
 void tmp_side_wait::generate_menu(twindow& window)
 {
 	if (stop_updates_) {
@@ -338,15 +376,27 @@ void tmp_side_wait::generate_menu(twindow& window)
 	}
 */
 	std::vector<std::string> details;
-	std::vector<std::string> playerlist;
 
+	users_.clear();
 	sides_table_->clear();
 	int side = 0;
-	foreach (const config &sd, level_.child_range("side"))
-	{
+	foreach (const config &sd, level_.child_range("side")) {
 		if (!sd["allow_player"].to_bool(true)) {
 			side ++;
 			continue;
+		}
+
+		if (!sd["current_player"].empty()) {
+			const std::string player_id = sd["current_player"].str();
+			connected_user_list::const_iterator it = users_.begin();
+			for (; it != users_.end(); ++ it) {
+				if (it->name == player_id) {
+					break;
+				}
+			}
+			if (it == users_.end()) {
+				users_.push_back(connected_user(player_id, (player_id == preferences::login())? CNTR_LOCAL: CNTR_NETWORK, 0));
+			}
 		}
 
 		// std::stringstream str;
@@ -387,15 +437,9 @@ void tmp_side_wait::generate_menu(twindow& window)
 
 		side ++;
 	}
-/*
-	game_menu_.set_items(details);
 
-	// Uses the actual connected player list if we do not have any
-	// "gamelist" user data
-	if (!gamelist().child("user")) {
-		set_user_list(playerlist, true);
-	}
-*/
+	update_playerlist();
+
 	window.invalidate_layout();
 }
 

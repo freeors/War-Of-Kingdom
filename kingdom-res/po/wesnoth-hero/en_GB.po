@@ -10,40 +10,58 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 msgid "gender-0"
-msgstr "male"
+msgstr "Male"
 
 msgid "gender-1"
-msgstr "female"
+msgstr "Female"
 
 msgid "gender-2"
 msgstr "中"
 
+msgid "stratum-0"
+msgstr "Wander"
+
+msgid "stratum-1"
+msgstr "Citizen"
+
+msgid "stratum-2"
+msgstr "Mayor"
+
+msgid "stratum-3"
+msgstr "Leader"
+
 msgid "status-0"
-msgstr "idle"
+msgstr "Idle"
 
 msgid "status-1"
-msgstr "command"
+msgstr "Command"
 
 msgid "status-2"
-msgstr "move"
+msgstr "Move"
 
 msgid "status-3"
-msgstr "back"
+msgstr "Back"
 
 msgid "status-4"
-msgstr "military"
+msgstr "Military"
 
 msgid "status-5"
-msgstr "wander"
+msgstr "Wander"
 
 msgid "status-6"
-msgstr "unstage"
+msgstr "Unstage"
 
 msgid "status-7"
-msgstr "die"
+msgstr "Die"
 
 msgid "official-0"
 msgstr "Commercial"
+
+msgid "official-1"
+msgstr "Mayor"
+
+msgid "official-2"
+msgstr "Leader"
 
 msgid "ambition-0"
 msgstr "乱世枭雄"
@@ -1435,10 +1453,10 @@ msgid "name-227"
 msgstr "City(Reserve)"
 
 msgid "name-228"
-msgstr "City(Reserve)"
+msgstr "Autonomy"
 
 msgid "name-229"
-msgstr "City(Reserve)"
+msgstr "Civilian"
 
 msgid "name-230"
 msgstr "System"
@@ -2335,13 +2353,13 @@ msgid "surname-227"
 msgstr "City"
 
 msgid "surname-228"
-msgstr "City"
+msgstr "Autonomy"
 
 msgid "surname-229"
-msgstr "City"
+msgstr "Civilian"
 
 msgid "surname-230"
-msgstr "City"
+msgstr "System"
 
 msgid "surname-231"
 msgstr "Gongsun"

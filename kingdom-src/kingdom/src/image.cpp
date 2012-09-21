@@ -1058,6 +1058,11 @@ void set_team_colors(const std::vector<std::string>* colors)
 	}
 }
 
+std::vector<std::string>& get_team_colors()
+{
+	return team_colors;
+}
+
 void set_zoom(int amount)
 {
 	if(amount != zoom) {

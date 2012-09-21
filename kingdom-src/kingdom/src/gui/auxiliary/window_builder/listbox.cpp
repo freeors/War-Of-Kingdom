@@ -1,4 +1,4 @@
-/* $Id: listbox.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: listbox.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -17,18 +17,22 @@
 
 #include "gui/auxiliary/window_builder/listbox.hpp"
 
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/widget_definition/listbox.hpp"
 #include "gui/auxiliary/window_builder/helper.hpp"
+#include "gui/widgets/grid.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 #include "gui/widgets/list.hpp"
 #else
 #include "gui/widgets/listbox.hpp"
 #endif
+#include "gui/widgets/pane.hpp"
+#include "gui/widgets/viewport.hpp"
 #include "gui/widgets/settings.hpp"
 #include "wml_exception.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -68,12 +72,12 @@ tbuilder_listbox::tbuilder_listbox(const config& cfg)
 		return;
 	}
 
-	foreach(const config& row, data.child_range("row")) {
+	BOOST_FOREACH(const config& row, data.child_range("row")) {
 		unsigned col = 0;
 
-		foreach(const config& c, row.child_range("column")) {
+		BOOST_FOREACH(const config& c, row.child_range("column")) {
 			list_data.push_back(string_map());
-			foreach(const config::attribute& i, c.attribute_range()) {
+			BOOST_FOREACH(const config::attribute& i, c.attribute_range()) {
 				list_data.back()[i.first] = i.second;
 			}
 			++col;
@@ -100,6 +104,35 @@ twidget* tbuilder_listbox::build() const
 	}
 	return widget;
 #else
+	if(new_widgets) {
+
+		tpane *pane = new tpane(list_builder);
+		pane->set_id(id);
+
+
+		tgrid* grid = new tgrid();
+		grid->set_rows_cols(1, 1);
+#if 0
+		grid->set_child(
+				  pane
+				, 0
+				, 0
+				, tgrid::VERTICAL_GROW_SEND_TO_CLIENT
+					| tgrid::HORIZONTAL_GROW_SEND_TO_CLIENT
+				, tgrid::BORDER_ALL);
+#else
+		tviewport *viewport = new tviewport(*pane);
+		grid->set_child(
+				  viewport
+				, 0
+				, 0
+				, tgrid::VERTICAL_GROW_SEND_TO_CLIENT
+					| tgrid::HORIZONTAL_GROW_SEND_TO_CLIENT
+				, tgrid::BORDER_ALL);
+#endif
+		return grid;
+	}
+
 	tlistbox *widget = new tlistbox(
 			true, true, tgenerator_::vertical_list, true);
 

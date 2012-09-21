@@ -325,11 +325,12 @@ game_state::game_state(const config& cfg, const command_pool& replay_data, bool 
 			}
 		}
 	}
-
+/*
 	if (const config &stats = cfg.child("statistics")) {
 		statistics::fresh_stats();
 		statistics::read_stats(stats);
 	}
+*/
 }
 
 void game_state::write_snapshot(config& cfg) const
@@ -446,12 +447,13 @@ void game_state::write_armory_2_variable(const team& t)
 	for (std::vector<artifical*>::const_iterator i = holded_cities.begin(); i != holded_cities.end(); ++ i) {
 		artifical* city = *i;
 
-		std::vector<unit>& reside_troops = city->reside_troops();
-		for (std::vector<unit>::const_iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
-			// field troops
-			config& u = side.add_child("unit");
-			itor->get_location().write(u);
-			itor->write(u);
+		std::vector<unit*>& reside_troops = city->reside_troops();
+		for (std::vector<unit*>::const_iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
+			// reside troops
+			const unit& u = **itor;
+			config& ucfg = side.add_child("unit");
+			u.get_location().write(ucfg);
+			u.write(ucfg);
 		}
 
 		std::vector<hero*>& fresh_heros = city->fresh_heros();
@@ -477,6 +479,18 @@ void game_state::write_armory_2_variable(const team& t)
 		}
 	}
 	side["heros"] = armory_heros.str();
+}
+
+void game_state::rpg_2_variable()
+{
+	config* player_cfg = NULL;
+	if (variables_.child_count("player")) {
+		player_cfg = &variables_.child("player");
+	} else {
+		player_cfg = &variables_.add_child("player");
+	}
+	(*player_cfg)["stratum"] = rpg::stratum;
+	(*player_cfg)["forbids"] = rpg::forbids;
 }
 
 void game_state::clear_start_hero_data()
@@ -572,7 +586,8 @@ void game_state::build_team(const config& side_cfg,
 					 std::vector<team>& teams,
 					 const config& level, gamemap& map, unit_map& units, hero_map& heros,
 					 card_map& cards,
-					 bool snapshot)
+					 bool snapshot,
+					 size_t team_size)
 {
 	const config *player_cfg = NULL;
 	//track whether a [player] tag with persistence information exists (in addition to the [side] tag)
@@ -618,7 +633,7 @@ void game_state::build_team(const config& side_cfg,
 		}			
 	}
 
-	team temp_team(units, heros, cards, side_cfg, map, ngold, level.child_count("side"));
+	team temp_team(units, heros, cards, side_cfg, map, ngold, team_size);
 	temp_team.set_gold_add(gold_add);
 	teams.push_back(temp_team);
 
@@ -824,11 +839,11 @@ void game_state::build_team(const uint8_t* mem,
 			// add [player].[armory] to this team
 
 			// reside troops
-			std::vector<unit>& reside_troops = current->reside_troops();
+			std::vector<unit*>& reside_troops = current->reside_troops();
 			foreach (config &i, armory_cfg.child_range("unit")) {
 				i["cityno"] = current->cityno();
 				i["side"] = current->side();
-				reside_troops.push_back(unit(units, heros, i));
+				reside_troops.push_back(new unit(units, heros, i));
 			}
 			// fresh heros
 			std::vector<hero*>& freshes = current->fresh_heros();

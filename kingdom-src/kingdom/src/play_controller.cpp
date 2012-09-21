@@ -50,6 +50,8 @@
 #include "gui/dialogs/rpg_detail.hpp"
 #include "gui/dialogs/select_unit.hpp"
 #include "gui/dialogs/final_battle.hpp"
+#include "gui/dialogs/exchange.hpp"
+#include "gui/dialogs/independence.hpp"
 #include "gui/widgets/window.hpp"
 
 static lg::log_domain log_engine("engine");
@@ -79,7 +81,6 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 		bool skip_replay, bool replaying) :
 	controller_base(ticks, game_config, video),
 	observer(),
-	// savegame_config(),
 	animation_cache(),
 	prefs_disp_manager_(),
 	tooltips_manager_(),
@@ -123,6 +124,7 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	all_ai_allied_(level_["ai_allied"].to_bool()),
 	final_capital_(std::make_pair<artifical*, artifical*>(NULL, NULL)),
 	human_players_(0),
+	rpging_(false),
 	fallen_to_unstage_(level_["fallen_to_unstage"].to_bool()),
 	card_mode_(level_["card_mode"].to_bool()),
 	always_duel_(level_["always_duel"].to_bool())
@@ -334,11 +336,39 @@ void play_controller::init(CVideo& video)
 	rpg::h = &hero_invalid;
 	rpg::stratum = hero_stratum_wander;
 	rpg::forbids = 0;
+	team::empty_side_ = -1;
+
+	config& player_cfg = gamestate_.get_variables().child("player");
+	if (!player_cfg || !player_cfg.has_attribute("hero")) {
+		rpg::stratum = hero_stratum_leader;
+	} else {
+		rpg::stratum = player_cfg["stratum"].to_int();
+	}
 
 	int team_num = 0;
+	size_t team_size = 0;
+	config side_cfg;
 	if (level_.child_count("side")) {
+		// calculate count of team.
 		foreach (const config &side, level_.child_range("side")) {
-			config side_cfg = side;
+			if (side["controller"].str() == "null") {
+				team_size ++;
+			}
+		}
+		VALIDATE(team_size <= 1, "play_controller::init, there is at most one null side in scenario");
+
+		if (team_size) {
+			team_size = level_.child_count("side");
+		} else {
+			team_size = level_.child_count("side") + 1;
+		}
+		if (rpg::stratum != hero_stratum_leader) {
+			team_size ++;
+		}
+
+		// [side] ---> class team
+		foreach (const config &side, level_.child_range("side")) {
+			side_cfg = side;
 			game_events::wml_expand_if(side_cfg);
 			if (first_human_team_ == -1) {
 				const std::string &controller = side_cfg["controller"];
@@ -349,10 +379,18 @@ void play_controller::init(CVideo& video)
 					first_human_team_ = team_num;
 				}
 			}
-			gamestate_.build_team(side_cfg, teams_, level_, map_, units_, heros_, cards_, snapshot);
+			gamestate_.build_team(side_cfg, teams_, level_, map_, units_, heros_, cards_, snapshot, team_size);
 			if (teams_[team_num].is_human()) {
 				human_players_ ++;
 			}
+			++ team_num;
+		}
+		// create autonomy team if necessary.
+		if (team::empty_side_ == -1) {
+			side_cfg.clear();
+			side_cfg["side"] = team_num + 1;
+			side_cfg["controller"] = "null";
+			gamestate_.build_team(side_cfg, teams_, level_, map_, units_, heros_, cards_, snapshot, team_size);
 			++ team_num;
 		}
 	} else {
@@ -375,30 +413,33 @@ void play_controller::init(CVideo& video)
 		VALIDATE(false, "Must define one human team at least.");
 	}
 
-	config& player_cfg = gamestate_.get_variables().child("player");
 	if (!player_cfg || !player_cfg.has_attribute("hero")) {
 		team& human = teams_[first_human_team_];
 		rpg::h = &heros_[human.leader()->number_];
-		// rpg::h->official_ = hero_official_leader;
-		rpg::stratum = hero_stratum_leader;
 		rpg::forbids = 0;
 		
 	} else {
 		rpg::h = &heros_[player_cfg["hero"].to_int()];
-		rpg::stratum = player_cfg["stratum"].to_int();
 		rpg::forbids = player_cfg["forbids"].to_int();
-/*
-		if (rpg::h->official_ == HEROS_NO_OFFICIAL) {
-			if (rpg::stratum == hero_stratum_mayor) {
-				rpg::h->official_ = hero_official_mayor;
-			} else if (rpg::stratum == hero_stratum_leader) {
-				rpg::h->official_ = hero_official_leader;
-			}
+		if (rpg::h->status_ == hero_status_unstage) {
+			// this is player hero. allocat it to proper city.
+			hero& city_h = heros_[player_cfg["city"].to_int()];
+			artifical* city = units_.city_from_cityno(city_h.city_);
+			city->fresh_into(*rpg::h);
 		}
-*/
 	}
 
 	if (level_.child_count("side")) {
+		// if select rpg, create 
+		if (rpg::stratum != hero_stratum_leader) {
+			side_cfg.clear();
+			side_cfg["side"] = (int)teams_.size() + 1;
+			side_cfg["controller"] = "null";
+			side_cfg["leader"] = rpg::h->number_;
+			int original = rpg::h->official_;
+			gamestate_.build_team(side_cfg, teams_, level_, map_, units_, heros_, cards_, snapshot, team_size);
+			rpg::h->official_ = original;
+		}
 		// if necessary, set begin fields troop to human.
 		team& current_team = teams_[rpg::h->side_];
 		const std::pair<unit**, size_t> p = current_team.field_troop();
@@ -420,7 +461,6 @@ void play_controller::init(CVideo& video)
 				}
 			}
 		}
-		
 	}
 
 	// mouse_handler expects at least one team for linger mode to work.
@@ -576,12 +616,362 @@ void play_controller::show_statistics(){
 
 void play_controller::show_rpg()
 {
+	if (rpg::h->status_ == hero_status_wander) {
+		return;
+	}
+	rpging_ = true;
+	gui_->goto_main_context_menu();
+	rpging_ = false;
+}
+
+void play_controller::rpg_detail() 
+{
 	gui2::trpg_detail dlg(*gui_, teams_, units_, heros_);
 	try {
 		dlg.show(gui_->video());
 	} catch(twml_exception& e) {
 		e.show(*gui_);
 		return;
+	}
+}
+
+void play_controller::rpg_exchange(const std::vector<size_t>& human_p, size_t ai_p) 
+{
+	team& rpg_team = teams_[rpg::h->side_];
+	std::vector<std::pair<size_t, unit*> > human_pairs;
+	std::vector<std::pair<size_t, unit*> > ai_pairs;
+	std::vector<std::pair<size_t, unit*> >* tmp_pairs;
+
+	std::vector<artifical*>& holded_cities = rpg_team.holded_cities();
+	for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+		artifical* city = *it;
+
+		std::vector<unit*>& resides = city->reside_troops();
+		for (std::vector<unit*>::iterator it2 = resides.begin(); it2 != resides.end(); ++ it2) {
+			unit* u = *it2;
+			if (u->human()) {
+				tmp_pairs = &human_pairs;
+			} else {
+				tmp_pairs = &ai_pairs;
+			}
+			tmp_pairs->push_back(std::make_pair<size_t, unit*>(u->master().number_, u));
+			if (u->second().valid()) {
+				tmp_pairs->push_back(std::make_pair<size_t, unit*>(u->second().number_, u));
+			}
+			if (u->third().valid()) {
+				tmp_pairs->push_back(std::make_pair<size_t, unit*>(u->third().number_, u));
+			}
+		}
+		std::vector<unit*>& fields = city->field_troops();
+		for (std::vector<unit*>::iterator it2 = fields.begin(); it2 != fields.end(); ++ it2) {
+			unit* u = *it2;
+			if (u->human()) {
+				tmp_pairs = &human_pairs;
+			} else {
+				tmp_pairs = &ai_pairs;
+			}
+			tmp_pairs->push_back(std::make_pair<size_t, unit*>(u->master().number_, u));
+			if (u->second().valid()) {
+				tmp_pairs->push_back(std::make_pair<size_t, unit*>(u->second().number_, u));
+			}
+			if (u->third().valid()) {
+				tmp_pairs->push_back(std::make_pair<size_t, unit*>(u->third().number_, u));
+			}
+		}
+		if (city->mayor() == rpg::h) {
+			tmp_pairs = &human_pairs;
+		} else {
+			tmp_pairs = &ai_pairs;
+		}
+		std::vector<hero*>& freshes = city->fresh_heros();
+		for (std::vector<hero*>::iterator it2 = freshes.begin(); it2 != freshes.end(); ++ it2) {
+			hero& h = **it2;
+			tmp_pairs->push_back(std::make_pair<size_t, unit*>(h.number_, city));
+		}
+		std::vector<hero*>& finishes = city->finish_heros();
+		for (std::vector<hero*>::iterator it2 = finishes.begin(); it2 != finishes.end(); ++ it2) {
+			hero& h = **it2;
+			tmp_pairs->push_back(std::make_pair<size_t, unit*>(h.number_, city));
+		}
+	}
+
+	std::set<size_t> checked_human;
+	size_t checked_ai;
+	if (human_p.empty()) {
+		gui2::texchange dlg(teams_, units_, heros_, human_pairs, ai_pairs);
+		try {
+			dlg.show(gui_->video());
+		} catch(twml_exception& e) {
+			e.show(*gui_);
+			return;
+		}
+		if (dlg.get_retval() != gui2::twindow::OK) {
+			return;
+		}
+		checked_human = dlg.checked_human_pairs();
+		checked_ai = dlg.checked_ai_pairs();
+	} else {
+		for (std::vector<size_t>::const_iterator it = human_p.begin(); it != human_p.end(); ++ it) {
+			checked_human.insert(*it);
+		}
+		checked_ai = ai_p;
+	}
+
+	std::vector<hero*> human_heros;
+	hero* ai_hero = NULL;
+	std::vector<size_t> checked;
+	for (std::set<size_t>::const_iterator it = checked_human.begin(); it != checked_human.end(); ++ it) {
+		checked.push_back(*it);
+	}
+	for (int i = 0; i < 4; i ++) {
+		std::pair<size_t, unit*>* pair;
+		if (i < 3) {
+			pair = &human_pairs[checked[i]];
+		} else {
+			pair = &ai_pairs[checked_ai];
+		}
+		unit* u = pair->second;
+		hero& h = heros_[pair->first];
+		if (i < 3) {
+			human_heros.push_back(&h);
+		} else {
+			ai_hero = &h;
+		}
+
+		std::vector<hero*> captains;
+		if (artifical* city = units_.city_from_loc(u->get_location())) {
+			// fresh/finish/reside troop
+			if (u->is_city()) {
+				for (int type = 0; type < 3; type ++) { 
+					std::vector<hero*>* list;
+					if (type == 0) {
+						list = &city->fresh_heros();
+					} else if (type == 1) {
+						list = &city->finish_heros();
+					} else {
+						list = &city->wander_heros();
+					}
+					std::vector<hero*>::iterator i2 = std::find(list->begin(), list->end(), &h);
+					if (i2 != list->end()) {
+						list->erase(i2);
+						break;
+					}
+				}
+			} else {
+				std::vector<unit*>& reside_troops = city->reside_troops();
+				int index = 0;
+				for (std::vector<unit*>::iterator i2 = reside_troops.begin(); i2 != reside_troops.end(); ++ i2, index ++) {
+					if (*i2 != u) {
+						continue;
+					}
+					u->replace_captains_internal(h, captains);
+					if (captains.empty()) {
+						city->troop_go_out(index);
+					} else {
+						u->replace_captains(captains);
+					}
+					break;
+				}
+			}
+		} else {
+			// field troop
+			u->replace_captains_internal(h, captains);
+			if (captains.empty()) {
+				units_.erase(u);
+			} else {
+				u->replace_captains(captains);
+			}
+		}
+	}
+
+	std::stringstream str;
+	utils::string_map symbols;
+	for (std::vector<hero*>::iterator it = human_heros.begin(); it != human_heros.end(); ++ it) {
+		hero& h = **it;
+		if (it != human_heros.begin()) {
+			str << ", ";
+		}
+		str << h.name();
+	}
+	symbols["human"] = str.str();
+	symbols["ai"] = ai_hero->name();
+	game_events::show_hero_message(rpg::h, NULL, vgettext("You exchanged $ai using $human.", symbols), game_events::INCIDENT_INVALID);
+
+
+	// ai to human city
+	artifical* city = units_.city_from_cityno(rpg::h->city_);
+	city->move_into(*ai_hero);
+
+	// human to ai city
+	if (!human_heros.empty()) {
+		std::vector<mr_data> mrs;
+		units_.calculate_mrs_data(mrs, rpg::h->side_ + 1, false);
+		artifical* aggressing = mrs[0].own_front_cities[0];
+
+		for (std::vector<hero*>::iterator it = human_heros.begin(); it != human_heros.end(); ++ it) {
+			hero& h = **it;
+			aggressing->move_into(h);
+		}
+	}
+
+	if (human_p.empty()) {
+		recorder.add_rpg_exchange(checked_human, checked_ai);
+	}
+}
+
+void play_controller::rpg_independence(bool replaying) 
+{
+	int from_side = rpg::h->side_ + 1;
+	std::vector<mr_data> mrs;
+	units_.calculate_mrs_data(mrs, from_side, false);
+	artifical* aggressing = mrs[0].own_front_cities[0];
+
+	if (!replaying) {
+		int side_num = gui_->viewing_team() + 1;
+
+		gui2::tindependence dlg(*gui_, teams_, units_, heros_, aggressing);
+		try {
+			dlg.show(gui_->video());
+		} catch(twml_exception& e) {
+			e.show(*gui_);
+			return;
+		}
+		if (dlg.get_retval() != gui2::twindow::OK) {
+			return;
+		}
+	}
+
+	artifical* rpg_city = units_.city_from_cityno(rpg::h->city_);
+	team& from_team = teams_[rpg::h->side_];
+	std::string message;
+	utils::string_map symbols;
+	
+	symbols["first"] = rpg::h->name();
+	symbols["second"] = rpg_city->name();
+	game_events::show_hero_message(rpg::h, rpg_city, vgettext("$first declared independence.", symbols), game_events::INCIDENT_INDEPENDENCE);
+
+	if (from_team.defeat_vote()) {
+		aggressing = NULL;
+
+		symbols["first"] = from_team.name();
+		game_events::show_hero_message(&heros_[214], NULL, vgettext("$first is defeated.", symbols), game_events::INCIDENT_DEFEAT);
+	}
+	hero* from_leader = from_team.leader();
+	unit* from_leader_unit = find_unit(units_, *from_leader);
+	
+	// if from_lead and rpg::h is in same troop, disband this troop.
+	if (from_leader_unit) {
+		bool same = false;
+		if (&from_leader_unit->master() == rpg::h) {
+			same = true;
+		}
+		if (!same && from_leader_unit->second().valid() && &from_leader_unit->second() == rpg::h) {
+			same = true;
+		}
+		if (!same && from_leader_unit->third().valid() && &from_leader_unit->third() == rpg::h) {
+			same = true;
+		}
+		if (same) {
+			if (rpg_city->get_location() == from_leader_unit->get_location()) {
+				// reside troop
+				std::vector<unit*>& reside_troops = rpg_city->reside_troops();
+				int index = 0;
+				for (std::vector<unit*>::iterator i2 = reside_troops.begin(); i2 != reside_troops.end(); ++ i2, index ++) {
+					if (*i2 != from_leader_unit) {
+						continue;
+					}
+					rpg_city->troop_go_out(index);
+					break;
+				}
+			} else {
+				// field troop
+				units_.erase(from_leader_unit);
+			}
+			rpg_city->fresh_into(from_leader_unit);
+		}
+	}
+
+	// change in from_side
+	from_team.rpg_changed(true);
+	from_team.change_controller(team::team_info::AI);
+	from_team.set_base_income(150);
+
+	// change in to_side
+	team& to_team = teams_.back();
+	int to_side = to_team.side();
+	to_team.change_controller(team::team_info::HUMAN);
+	// reset float_catalog equal to base_catalog_
+	rpg::h->float_catalog_ = ftofxp8(rpg::h->base_catalog_);
+
+	// select_mayor will change rpg stratum, first callit.
+	rpg_city->select_mayor(&hero_invalid);
+	// change rpg stratum to hero_stratum_leader.
+	rpg::stratum = hero_stratum_leader;
+	// artifical::troop_come_into/unit_belong_to need correct rpg::h->side_ to decide set_human.
+	rpg::h->side_ = to_side - 1;
+	rpg::h->official_ = hero_official_leader;
+	if (!aggressing) {
+		from_leader->official_ = HEROS_NO_OFFICIAL;
+	}
+
+	int independenced_cities = 0;
+	int undependenced_cities = 0;
+	std::vector<artifical*> holded_cities = from_team.holded_cities();
+	for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+		artifical* city = *it;
+		bool independenced = aggressing? false: true;
+		if (!independenced) {
+			independenced = city->independence_vote(aggressing);
+		}
+		if (independenced) {
+			independenced_cities ++;
+		} else {
+			undependenced_cities ++;
+		}
+		city->independence(independenced, to_team, rpg_city, from_team, aggressing, from_leader, from_leader_unit);
+		if (independenced && city != rpg_city) {
+			symbols["first"] = city->name();
+			symbols["second"] = rpg::h->name();
+			game_events::show_hero_message(&heros_[214], city, vgettext("$first declared belonging to $second.", symbols), game_events::INCIDENT_INVALID);
+		}
+	}
+
+	std::set<std::string> type_ids;
+	const std::set<const unit_type*>& norecruit = from_team.not_recruits();
+	for (std::set<const unit_type*>::const_iterator cr = norecruit.begin(); cr != norecruit.end(); ++ cr) {
+		type_ids.insert((*cr)->id());
+	}
+	to_team.set_notrecruits(type_ids);
+
+	type_ids.clear();
+	const std::set<const unit_type*>& can_build = from_team.builds();
+	for (std::set<const unit_type*>::const_iterator cr = can_build.begin(); cr != can_build.end(); ++ cr) {
+		type_ids.insert((*cr)->id());
+	}
+	to_team.set_builds(type_ids);
+
+	// card
+	std::vector<size_t>& candidate_cards = to_team.candidate_cards(); 
+	candidate_cards = from_team.candidate_cards();
+	std::vector<size_t>& holded_cards = to_team.holded_cards();
+	holded_cards = from_team.holded_cards();
+
+	// villages
+	std::set<map_location> villages = from_team.villages();
+	from_team.clear_villages();
+	for (std::set<map_location>::const_iterator it = villages.begin(); it != villages.end(); ++ it) {
+		if (rand() % (independenced_cities + undependenced_cities) < independenced_cities) {
+			to_team.get_village(*it);
+		} else {
+			from_team.get_village(*it);
+		}
+	}
+
+	if (!replaying) {
+		recorder.add_event(replay::EVENT_RPG_INDEPENDENCE, map_location());
+
+		gui_->hide_context_menu(NULL, true);
+		end_turn();
 	}
 }
 
@@ -704,6 +1094,11 @@ void play_controller::save_map()
 	} else {
 		save_blocker::on_unblock(this,&play_controller::save_map);
 	}
+}
+
+void play_controller::sync_undo()
+{
+	menu_handler_.clear_undo_stack(gui_->viewing_team() + 1);
 }
 
 void play_controller::load_game()
@@ -1431,9 +1826,12 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 	switch(command) {
 	// Only display these if the mouse is over a castle or keep tile
 	case hotkey::HOTKEY_RECRUIT:
-	case hotkey::HOTKEY_RECALL:
+	case hotkey::HOTKEY_EXPEDITE:
 	case hotkey::HOTKEY_ARMORY:
 	case hotkey::HOTKEY_MOVE:
+		if (rpging_) {
+			return false;
+		}
 		// loc is in myself city.
 		city = units_.city_from_loc(loc);
 		if (itor.valid() && city && (city->side() == player_number_)) {
@@ -1446,12 +1844,18 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 			return false;
 		}
 	case hotkey::HOTKEY_BUILD:
+		if (rpging_) {
+			return false;
+		}
 		if (itor.valid() && !itor->is_artifical() && itor->human() && itor->attacks_left()) {
 			return true;
 		}
 		break;
 
 	case hotkey::HOTKEY_DEMOLISH:
+		if (rpging_) {
+			return false;
+		}
 		if (rpg::stratum == hero_stratum_citizen) {
 			return false;
 		}
@@ -1461,14 +1865,34 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		break;
 
 	case hotkey::HOTKEY_INTERIOR:
+		if (rpging_) {
+			return false;
+		}
 		return rpg::stratum == hero_stratum_leader && !events::commands_disabled && !itor.valid();
 
 	case hotkey::HOTKEY_FINAL_BATTLE:
+		if (rpging_) {
+			return false;
+		}
 		return !events::commands_disabled && (teams_.size() >= 3) && !itor.valid() && (human_players_ == 1) && !network::nconnections();
 
 	case hotkey::HOTKEY_LIST:
 	case hotkey::HOTKEY_SYSTEM:
-		return replaying_ || (!events::commands_disabled && !itor.valid() && current_team.is_human());
+		if (rpging_) {
+			return false;
+		}
+		return replaying_ || (!events::commands_disabled && !itor.valid() && (network::nconnections() || current_team.is_human()));
+
+	case hotkey::HOTKEY_RPG_EXCHANGE:
+	case hotkey::HOTKEY_RPG_INDEPENDENCE:
+		if (rpg::stratum != hero_stratum_mayor || linger_ || replaying_ || events::commands_disabled || network::nconnections()) {
+			return false;
+		}
+	case hotkey::HOTKEY_RPG_DETAIL:
+		if (rpging_) {
+			return true;
+		}
+		break;
 
 	default:
 		return true;
@@ -1498,7 +1922,7 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 			return false;
 		}
 		break;
-	case hotkey::HOTKEY_RECALL:
+	case hotkey::HOTKEY_EXPEDITE:
 		if (city->reside_troops().empty()) {
 			return false;
 		}
@@ -1508,14 +1932,15 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 		break;
 	case hotkey::HOTKEY_ARMORY:
 		{
-			const std::vector<unit>& reside_troops = city->reside_troops();
+			const std::vector<unit*>& reside_troops = city->reside_troops();
 			const std::vector<hero*>& fresh_heros = city->fresh_heros();
 			size_t reside_troops_size = reside_troops.size();
-			if (!reside_troops_size || (reside_troops_size == 1 && !reside_troops[0].second().valid() && fresh_heros.empty())) {
+			if (!reside_troops_size || (reside_troops_size == 1 && !reside_troops[0]->second().valid() && fresh_heros.empty())) {
 				return false;
 			}
-			for (std::vector<unit>::const_iterator it = reside_troops.begin(); it != reside_troops.end(); ++ it) {
-				if (it->human()) {
+			for (std::vector<unit*>::const_iterator it = reside_troops.begin(); it != reside_troops.end(); ++ it) {
+				const unit& u = **it;
+				if (u.human()) {
 					return true;
 				}
 			}
@@ -1587,7 +2012,13 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 			return true;			
 		}
 		break;
-	}
+	case hotkey::HOTKEY_RPG_EXCHANGE:
+	case hotkey::HOTKEY_RPG_INDEPENDENCE:
+		if (current_team.holded_cities().size() < 2) {
+			return false;
+		}
+		break;
+	}	
 
 	return true;
 }
@@ -1596,7 +2027,7 @@ void play_controller::refresh_city_buttons(const artifical& city) const
 {
 	static hotkey::HOTKEY_COMMAND city_buttons[] = {
 		hotkey::HOTKEY_RECRUIT, 
-		hotkey::HOTKEY_RECALL, 
+		hotkey::HOTKEY_EXPEDITE, 
 		hotkey::HOTKEY_ARMORY, 
 		hotkey::HOTKEY_MOVE
 	};
@@ -1682,7 +2113,9 @@ void play_controller::check_victory()
 	for (std::vector<team>::iterator tm_beg = teams_.begin(), tm = tm_beg, tm_end = teams_.end(); tm != tm_end; ++tm) {
 		if (!tm->holded_cities().empty()) {
 			// don't conside side that hasn't city
-			cities_teams.push_back(tm->side());
+			if (!tm->is_empty()) {
+				cities_teams.push_back(tm->side());
+			}
 		} else if (teams_[tm->side() - 1].is_human()) {
 			human_defeated = true;
 		}
@@ -1745,7 +2178,6 @@ void play_controller::check_victory()
 		std::cout << '\n';
 	}
 
-	DBG_NG << "throwing end level exception...\n";
 	throw end_level_exception(VICTORY);
 }
 
@@ -1781,7 +2213,7 @@ bool play_controller::do_recruit(artifical* city, int cost_exponent, bool rpg_mo
 		gui2::show_transient_message(gui_->video(), "", _("There are no hero available to recruit"));
 		return false;
 	}
-	if (current_team.recruits().empty()) {
+	if (current_team.recruits(-1).empty()) {
 		gui2::show_transient_message(gui_->video(), "", _("There are no unit type available to recruit."));
 		return false;
 	}
@@ -1853,13 +2285,13 @@ bool play_controller::do_recruit(artifical* city, int cost_exponent, bool rpg_mo
 	// create a unit with traits
 	recorder.add_recruit(ut->id(), city_loc, v, ut->cost() * cost_exponent / 100, true);
 	
-	unit new_unit(units_, heros_, pair, city->cityno(), true);
-	new_unit.set_movement(new_unit.total_movement());
-	new_unit.set_attacks(new_unit.attacks_total());
+	unit* new_unit = new unit(units_, heros_, pair, city->cityno(), true);
+	new_unit->set_movement(new_unit->total_movement());
+	new_unit->set_attacks(new_unit->attacks_total());
 	current_team.spend_gold(ut->cost() * cost_exponent / 100);
 
-	city->troop_come_into(new_unit);
-	city->reside_troops().back().set_human(true);
+	new_unit->set_human(true);
+	city->troop_come_into(new_unit, -1, false);
 
 	menu_handler_.clear_undo_stack(side_num);
 
@@ -1888,9 +2320,9 @@ void play_controller::rpg_update()
 			city->select_mayor(rpg::h);
 
 			// all reside/field troop to human
-			std::vector<unit>& resides = city->reside_troops();
-			for (std::vector<unit>::iterator it = resides.begin(); it != resides.end(); ++ it) {
-				unit& u = *it;
+			std::vector<unit*>& resides = city->reside_troops();
+			for (std::vector<unit*>::iterator it = resides.begin(); it != resides.end(); ++ it) {
+				unit& u = **it;
 				u.set_human(true);
 			}
 			std::vector<unit*>& fields = city->field_troops();
@@ -1919,9 +2351,9 @@ void play_controller::rpg_update()
 			std::vector<artifical*>& holded_cities = current_team.holded_cities();
 			for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
 				artifical* city = *it;
-				std::vector<unit>& resides = city->reside_troops();
-				for (std::vector<unit>::iterator it = resides.begin(); it != resides.end(); ++ it) {
-					unit& u = *it;
+				std::vector<unit*>& resides = city->reside_troops();
+				for (std::vector<unit*>::iterator it = resides.begin(); it != resides.end(); ++ it) {
+					unit& u = **it;
 					if (!u.human()) {
 						units_ptr.push_back(&u);
 					}
@@ -1991,16 +2423,15 @@ bool play_controller::ally_all_ai(bool force)
 		return false;
 	}
 
-	std::vector<team>& teams = *resources::teams;
 	int human_team_index = -1;
 	int allied_teams = 0;
 
 	std::vector<artifical*> cities;
-	for (size_t side = 0; side != teams.size(); side ++) {
-		if (teams[side].is_human()) {
+	for (size_t side = 0; side != teams_.size(); side ++) {
+		if (teams_[side].is_human()) {
 			human_team_index = side;
 		}
-		std::vector<artifical*>& side_cities = teams[side].holded_cities();
+		std::vector<artifical*>& side_cities = teams_[side].holded_cities();
 		for (std::vector<artifical*>::iterator itor = side_cities.begin(); itor != side_cities.end(); ++ itor) {
 			artifical* city = *itor;
 			cities.push_back(city);
@@ -2009,18 +2440,23 @@ bool play_controller::ally_all_ai(bool force)
 	if (human_team_index < 0) {
 		return false;
 	}
-	if (force || teams[human_team_index].holded_cities().size() * 3 >= cities.size()) {
+	if (force || teams_[human_team_index].holded_cities().size() * 3 >= cities.size()) {
+		// erase all strategy
+		for (size_t i = 0; i < teams_.size(); i ++) {
+			teams_[i].erase_strategies(false);
+		}
+
 		// all ai sides concluded treaty of alliance
-		for (int from_side = 0; from_side != teams.size(); from_side ++) {
-			if (from_side == human_team_index || !teams[from_side].holded_cities().size() || !teams[human_team_index].is_enemy(from_side + 1)) {
+		for (int from_side = 0; from_side != teams_.size(); from_side ++) {
+			if (from_side == human_team_index || !teams_[from_side].holded_cities().size() || !teams_[human_team_index].is_enemy(from_side + 1)) {
 				continue;
 			}
-			for (int to_side = 0; to_side != teams.size(); to_side ++) {
-				if (to_side == human_team_index || !teams[to_side].holded_cities().size() || !teams[human_team_index].is_enemy(to_side + 1)) {
+			for (int to_side = 0; to_side != teams_.size(); to_side ++) {
+				if (to_side == human_team_index || !teams_[to_side].holded_cities().size() || !teams_[human_team_index].is_enemy(to_side + 1)) {
 					continue;
 				}
-				if (teams[from_side].is_enemy(to_side + 1)) {
-					teams[from_side].set_ally(to_side + 1);
+				if (teams_[from_side].is_enemy(to_side + 1)) {
+					teams_[from_side].set_ally(to_side + 1);
 				}
 			}
 			allied_teams ++;

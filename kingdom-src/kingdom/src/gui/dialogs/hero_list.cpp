@@ -318,19 +318,39 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item["label"] = h.name();
 		table_item_item.insert(std::make_pair("name", table_item));
 
-		table_item["label"] = h.adaptability_str(hero::ARMS, 0);
+		str.str("");
+		str << hero::adaptability_str2(h.arms_[0]);
+		val = fxpmod12(h.arms_[0]);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("arm0", table_item));
 
-		table_item["label"] = h.adaptability_str(hero::ARMS, 1);
+		str.str("");
+		str << hero::adaptability_str2(h.arms_[1]);
+		val = fxpmod12(h.arms_[1]);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("arm1", table_item));
 
-		table_item["label"] = h.adaptability_str(hero::ARMS, 2);
+		str.str("");
+		str << hero::adaptability_str2(h.arms_[2]);
+		val = fxpmod12(h.arms_[2]);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("arm2", table_item));
 
-		table_item["label"] = h.adaptability_str(hero::ARMS, 3);
+		str.str("");
+		str << hero::adaptability_str2(h.arms_[3]);
+		val = fxpmod12(h.arms_[3]);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("arm3", table_item));
 
-		table_item["label"] = h.adaptability_str(hero::ARMS, 4);
+		str.str("");
+		str << hero::adaptability_str2(h.arms_[4]);
+		val = fxpmod12(h.arms_[4]);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("arm4", table_item));
 
 	} else if (catalog == SKILL_PAGE) {
@@ -338,21 +358,21 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item_item.insert(std::make_pair("name", table_item));
 
 		str.str("");
-		str << h.adaptability_str(hero::SKILL, hero_skill_commercial);
+		str << hero::adaptability_str2(h.skill_[hero_skill_commercial]);
 		val = fxpmod12(h.skill_[hero_skill_commercial]);
 		str << "." << val;
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("skill0", table_item));
 
 		str.str("");
-		str << h.adaptability_str(hero::SKILL, hero_skill_hero);
+		str << hero::adaptability_str2(h.skill_[hero_skill_hero]);
 		val = fxpmod12(h.skill_[hero_skill_hero]);
 		str << "." << val;
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("skill4", table_item));
 
 		str.str("");
-		str << h.adaptability_str(hero::SKILL, hero_skill_demolish);
+		str << hero::adaptability_str2(h.skill_[hero_skill_demolish]);
 		val = fxpmod12(h.skill_[hero_skill_demolish]);
 		str << "." << val;
 		table_item["label"] = str.str();
@@ -383,7 +403,7 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item["label"] = h.name();
 		table_item_item.insert(std::make_pair("name", table_item));
 
-		table_item["label"] = h.gender_str();
+		table_item["label"] = hero::gender_str(h.gender_);
 		table_item_item.insert(std::make_pair("gender", table_item));
 
 	} else if (catalog == RELATION_PAGE) {
@@ -795,7 +815,7 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 			result = utils::utf8str_compare(h1->name(), h2->name());
 		} else if (sorting_widget_ == widgets[1]) {
 			// gender
-			result = utils::utf8str_compare(h1->gender_str(), h2->gender_str());
+			result = utils::utf8str_compare(hero::gender_str(h1->gender_), hero::gender_str(h2->gender_));
 		}
 
 	} else if (current_page_ == RELATION_PAGE) {

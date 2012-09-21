@@ -170,9 +170,10 @@ namespace game_events
 	enum {INCIDENT_RECOMMENDONESELF, INCIDENT_HEROJOIN, INCIDENT_TROOPJOIN, INCIDENT_WANDER, INCIDENT_LEAVE, 
 		INCIDENT_FALLEN, INCIDENT_DEFEAT, INCIDENT_ALLY, INCIDENT_CARD, INCIDENT_ENTER,
 		INCIDENT_MALEOATH, INCIDENT_FEMALEOATH, INCIDENT_MARRY, INCIDENT_ENCOURAGECONSORT, INCIDENT_DUEL, 
-		INCIDENT_APPOINT, INCIDENT_INVALID};
+		INCIDENT_APPOINT, INCIDENT_INDEPENDENCE, INCIDENT_INVALID};
 	void show_hero_message(hero* h, artifical* city, const std::string& message, int incident);
 	void show_relation_message(unit_map& units, hero_map& heros, hero& h1, hero& h2, int carry_to);
+	bool ai_relation(hero& h1, hero& h2);
 	bool confirm_carry_to(hero& h1, hero& h2, int carry_to);
 
 } // end namespace game_events

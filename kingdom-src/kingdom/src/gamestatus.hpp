@@ -115,12 +115,13 @@ public:
 	void set_variable(const std::string& varname, const t_string& value);
 	config& add_variable_cfg(const std::string& varname, const config& value=config());
 	void write_armory_2_variable(const team& player);
+	void rpg_2_variable();
 
 	void clear_variable(const std::string& varname);
 	void clear_variable_cfg(const std::string& varname); // Clears only the config children
 
 	void clear_start_hero_data();
-
+	
 	const rand_rng::simple_rng& rng() const { return rng_; }
 	rand_rng::simple_rng& rng() { return rng_; }
 
@@ -136,7 +137,7 @@ public:
 
 	//create and populate a team from a config
 	void build_team(const config& side_cfg, std::vector<team>& teams, const config& level, gamemap& map, 
-		unit_map& units, hero_map& heros, card_map& cards, bool snapshot);
+		unit_map& units, hero_map& heros, card_map& cards, bool snapshot, size_t team_size);
 	void build_team(const uint8_t* mem, std::vector<team>& teams, const config& level, gamemap& map, 
 		unit_map& units, hero_map& heros, card_map& cards, bool snapshot);
 

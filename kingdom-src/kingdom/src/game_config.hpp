@@ -51,6 +51,12 @@ namespace game_config
 	extern int minimal_activity;
 	extern int maximal_defeated_activity;
 
+	extern int default_human_level;
+	extern int default_ai_level;
+	extern int current_level;
+	extern int min_level;
+	extern int max_level;
+
 	inline int kill_xp(int level)
 	{
 		return level ? kill_experience * level : kill_experience / 2;

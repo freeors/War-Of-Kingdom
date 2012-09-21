@@ -1,4 +1,4 @@
-/* $Id: helper.cpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: helper.cpp 54413 2012-06-15 18:30:47Z mordante $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -22,7 +22,6 @@
 
 #include "formula_string_utils.hpp"
 #include "game_config.hpp"
-
 #include "SDL_ttf.h"
 
 namespace gui2 {
@@ -46,26 +45,6 @@ bool init() {
 SDL_Rect create_rect(const tpoint& origin, const tpoint& size)
 {
 	return ::create_rect(origin.x, origin.y, size.x, size.y);
-}
-
-tpoint& tpoint::operator+=(const tpoint& point)
-{
-	x += point.x;
-	y += point.y;
-	return *this;
-}
-
-tpoint& tpoint::operator-=(const tpoint& point)
-{
-	x -= point.x;
-	y -= point.y;
-	return *this;
-}
-
-std::ostream &operator<<(std::ostream &stream, const tpoint& point)
-{
-	stream << point.x << ',' << point.y;
-	return stream;
 }
 
 unsigned decode_font_style(const std::string& style)

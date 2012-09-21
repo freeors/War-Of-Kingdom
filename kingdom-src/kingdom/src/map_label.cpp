@@ -109,10 +109,12 @@ const display& map_labels::disp() const
 
 const std::string& map_labels::team_name() const
 {
+/*
 	if (team_)
 	{
 		return team_->team_name();
 	}
+*/
 	static const std::string empty;
 	return empty;
 }

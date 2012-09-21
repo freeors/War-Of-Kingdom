@@ -1,4 +1,4 @@
-/* $Id: settings.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: settings.hpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
    Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -24,6 +24,7 @@
 #include "gui/auxiliary/widget_definition/window.hpp"
 
 #include <boost/function.hpp>
+#include <boost/foreach.hpp>
 
 #include <string>
 #include <vector>
@@ -124,7 +125,7 @@ void load_widget_definitions(
 {
 	std::vector<tcontrol_definition_ptr> definitions;
 
-	foreach(const config& definition
+	BOOST_FOREACH(const config& definition
 			, cfg.child_range(key ? key : definition_type + "_definition")) {
 
 		definitions.push_back(new T(definition));

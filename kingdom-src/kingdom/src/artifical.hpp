@@ -35,11 +35,12 @@ public:
 	artifical(const config &cfg);
 	artifical(const uint8_t* mem);
 	artifical(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, bool use_traits);
+	~artifical();
 
 	const SDL_Rect& alert_rect() const { return alert_rect_; }
 
-	std::vector<unit>& reside_troops() {return reside_troops_;}
-	const std::vector<unit>& reside_troops() const {return reside_troops_;}
+	std::vector<unit*>& reside_troops() {return reside_troops_;}
+	const std::vector<unit*>& reside_troops() const {return reside_troops_;}
 
 	std::vector<unit*>& field_troops() {return field_troops_;}
 	const std::vector<unit*>& field_troops() const {return field_troops_;}
@@ -72,11 +73,11 @@ public:
 
 	// 一支部队进城
 	// @disband: 是否要自动解散该部队
-	void troop_come_into(const unit& troop, int pos = -1);
+	void troop_come_into(unit* troop, int pos = -1, bool create = true);
 	// 一支野外部队/建筑物将归属本城市
 	void unit_belong_to(unit* troop, bool loyalty = true, bool to_recorder = false);
 	// 一支城内部队出城
-	void troop_go_out(const int index_of_army);
+	void troop_go_out(const int index_of_army, bool del = true);
 
 	// 向野外部队add一部队
 	void field_troops_add(unit* troop);
@@ -95,10 +96,14 @@ public:
 	// 解散城内一支部队
 	void disband(const int index_of_army);
 	// 沦陷
-	void fallen(int a_side, const unit* attacker = NULL);
+	void fallen(int a_side, unit* attacker = NULL);
+	void independence(bool independenced, team& to_team, artifical* rpg_city, team& from_team, artifical* aggressing, hero* from_leader, unit* from_leader_unit);
 	// 判断是否被包围
 	bool is_surrounded() const;
 
+	bool independence_vote(const artifical* aggressing) const;
+
+	void fresh_into(hero& h);
 	void fresh_into(const unit* troop);
 	void wander_into(const unit* troop, bool dialog = true);
 	void wander_into(hero& h, bool dialog = true);
@@ -142,7 +147,7 @@ private:
 	
 	t_translation::t_list terrain_types_list_;
 	
-	std::vector<unit> reside_troops_;
+	std::vector<unit*> reside_troops_;
 	std::vector<unit*> field_troops_;
 	std::vector<artifical*> field_arts_;
 	std::vector<hero*> fresh_heros_;

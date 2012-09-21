@@ -39,6 +39,7 @@ public:
 	int points();
 	int range();
 	bool target_hero() const { return target_hero_; }
+	bool multitudinous() const { return multitudinous_; }
 
 // attribute
 public:
@@ -54,6 +55,7 @@ private:
 	config& action_cfg_;
 
 	bool target_hero_;
+	bool multitudinous_;
 	std::string name_str_;
 	std::string desc_str_;
 	std::string image_str_;

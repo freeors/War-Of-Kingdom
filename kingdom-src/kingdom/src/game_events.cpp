@@ -682,7 +682,7 @@ WML_HANDLER_FUNCTION(allow_recruit, /*event_info*/, cfg)
 	if (index >= resources::teams->size()) return;
 
 	foreach (const std::string &r, utils::split(cfg["type"])) {
-		(*resources::teams)[index].add_recruit(r);
+		(*resources::teams)[index].add_notrecruit(r);
 		preferences::encountered_units().insert(r);
 	}
 }
@@ -790,7 +790,7 @@ WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 	std::string team_name = cfg["team_name"];
 	std::string user_team_name = cfg["user_team_name"];
 	std::string controller = cfg["controller"];
-	std::string recruit_str = cfg["recruit"];
+	std::string recruit_str = cfg["not_recruit"];
 	std::string shroud_data = cfg["shroud_data"];
 	const config& parsed = cfg.get_parsed_config();
 	const config::const_child_itors &ai = parsed.child_range("ai");
@@ -820,7 +820,7 @@ WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 			if (recruit.size() == 1 && recruit.back() == "")
 				recruit.clear();
 
-			teams[team_index].set_recruits(std::set<std::string>(recruit.begin(),recruit.end()));
+			teams[team_index].set_notrecruits(std::set<std::string>(recruit.begin(), recruit.end()));
 		}
 		// Modify income
 		config::attribute_value income = cfg["income"];
@@ -900,7 +900,7 @@ WML_HANDLER_FUNCTION(store_side, /*event_info*/, cfg)
 	config side_data;
 	teams[team_index].write(side_data);
 	state_of_game->get_variable(var_name+".controller") = side_data["controller"];
-	state_of_game->get_variable(var_name+".recruit") = side_data["recruit"];
+	state_of_game->get_variable(var_name+".not_recruit") = side_data["not_recruit"];
 	state_of_game->get_variable(var_name+".fog") = side_data["fog"];
 	state_of_game->get_variable(var_name+".shroud") = side_data["shroud"];
 	state_of_game->get_variable(var_name+".hidden") = side_data["hidden"];
@@ -1479,16 +1479,16 @@ WML_HANDLER_FUNCTION(recommend, /*event_info*/, cfg)
 			artifical* from_city = cities[controller.turn() % cities.size()];
 			hero* leader = teams[from_city->side() - 1].leader();
 			artifical* to_city = full_cities[(controller.turn() + random) % full_cities.size()];
+			
 			while (to_city == from_city) {
 				to_city = full_cities[(controller.turn() + random) % full_cities.size()];
 				random ++;
 			}
 			std::vector<hero*>& from_wander_heros = from_city->wander_heros();
-			// std::vector<hero*>& to_wander_heros = to_city->wander_heros();
-			int max_move_wander_heros = 3;
+			int max_move_wander_heros = 2;
 			for (std::vector<hero*>::iterator itor = from_wander_heros.begin(); hero_index < max_move_wander_heros && itor != from_wander_heros.end();) {
 				hero* h = *itor;
-				if (h->loyalty(*leader) < game_config::move_loyalty_threshold) {
+				if (from_city->side() == team::empty_side_ || h->loyalty(*leader) < game_config::move_loyalty_threshold) {
 					to_city->wander_into(*h, teams[from_city->side() - 1].is_human()? false: true);
 					itor = from_wander_heros.erase(itor);
 					hero_index ++;
@@ -1503,7 +1503,6 @@ WML_HANDLER_FUNCTION(recommend, /*event_info*/, cfg)
 		}
 
 		random = get_random();
-
 		do {
 			selected_city = cities[random % cities.size()];
 			random ++;
@@ -1514,7 +1513,7 @@ WML_HANDLER_FUNCTION(recommend, /*event_info*/, cfg)
 		selected_hero = wander_heros[hero_index];
 
 		hero* leader = teams[selected_city->side() - 1].leader();
-		if (selected_hero->loyalty(*leader) < game_config::wander_loyalty_threshold) {
+		if (selected_city->side() == team::empty_side_ || selected_hero->loyalty(*leader) < game_config::wander_loyalty_threshold) {
 			artifical* into_city = cities[random % cities.size()];
 			into_city->wander_into(*selected_hero, teams[selected_city->side() - 1].is_human()? false: true);
 			wander_heros.erase(wander_heros.begin() + hero_index);
@@ -1597,9 +1596,10 @@ WML_HANDLER_FUNCTION(recommend, /*event_info*/, cfg)
 					}
 				}
 				if (!found) {
-					std::vector<unit>& reside_troops = selected_city->reside_troops();
-					for (std::vector<unit>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
-						unit& u = *itor;
+					std::vector<unit*>& reside_troops = selected_city->reside_troops();
+					int index = 0;
+					for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor, index ++) {
+						unit& u = **itor;
 						captains.clear();
 						if (&u.master() == selected_hero) {
 							found = true;
@@ -1622,7 +1622,7 @@ WML_HANDLER_FUNCTION(recommend, /*event_info*/, cfg)
 						}
 						if (found) {
 							if (captains.empty()) {
-								reside_troops.erase(itor);
+								selected_city->troop_go_out(index);
 							} else {
 								u.replace_captains(captains);
 							}
@@ -1741,9 +1741,9 @@ WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 		}
 
 		// reside troops
-		std::vector<unit>& reside_troops = city.reside_troops();
-		for (std::vector<unit>::iterator i2 = reside_troops.begin(); i2 != reside_troops.end();) {
-			unit& u = *i2;
+		std::vector<unit*>& reside_troops = city.reside_troops();
+		for (std::vector<unit*>::iterator i2 = reside_troops.begin(); i2 != reside_troops.end();) {
+			unit& u = **i2;
 			captains.clear();
 			leave_heros.clear();
 			if ((dealing_heros_itor = dealing_heros.find(u.master().number_)) == dealing_heros.end()) {
@@ -1769,6 +1769,7 @@ WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 				}
 			}
 			if (captains.empty()) {
+				delete &u;
 				i2 = reside_troops.erase(i2);
 			} else if (leave_heros.size()) {
 				++ i2;
@@ -2092,11 +2093,12 @@ WML_HANDLER_FUNCTION(kill, event_info, cfg)
 		if (!holder->is_artifical() && units.city_from_loc(loc)) {
 			// reside troop
 			artifical* city = units.city_from_loc(loc);
-			std::vector<unit>& reside_troops = city->reside_troops();
-			for (std::vector<unit>::iterator i = reside_troops.begin(); i != reside_troops.end(); ++ i) {
-				if (&*i == holder) {
+			std::vector<unit*>& reside_troops = city->reside_troops();
+			int index = 0;
+			for (std::vector<unit*>::iterator i = reside_troops.begin(); i != reside_troops.end(); ++ i, index ++) {
+				if (*i == holder) {
 					city->fresh_into(holder);
-					reside_troops.erase(i);
+					city->troop_go_out(index);
 					break;
 				}
 			}
@@ -2106,7 +2108,7 @@ WML_HANDLER_FUNCTION(kill, event_info, cfg)
 				unit_display::unit_die(loc, *holder);
 			}
 			// city/artitifical/field troop
-			unit_die(units, *holder, a_side);
+			unit_die(units, *holder, NULL, 0, a_side);
 
 			// some unit killed, clear status caches.
 			unit::clear_status_caches();
@@ -2475,9 +2477,9 @@ hero& handle_speaker(
 			for (speaker = units->begin(); speaker != units->end(); ++speaker) {
 				if (unit_is_city(&*speaker)) {
 					artifical* city = unit_2_artifical(&*speaker);
-					std::vector<unit>& reside_troops = city->reside_troops();
-					for (std::vector<unit>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
-						unit& troop = *itor;
+					std::vector<unit*>& reside_troops = city->reside_troops();
+					for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
+						unit& troop = **itor;
 						if (troop.master().number_ == speaker_number) {
 							speaker_ptr = &troop;
 						} else if (troop.second().number_ == speaker_number) {
@@ -3020,7 +3022,7 @@ static bool process_event(game_events::event_handler& handler, const game_events
 	artifical* city = NULL;
 	if (unit1 && unit1->is_city() && ev.loc2.x == MAGIC_RESIDE) {
 		city = unit_2_artifical(unit1);
-		unit2 = &city->reside_troops()[ev.loc2.y];
+		unit2 = city->reside_troops()[ev.loc2.y];
 	} else if ((u_itor = units->find(ev.loc2)) != units->end()) {
 		unit2 = &*u_itor;
 	}
@@ -3531,8 +3533,11 @@ namespace game_events {
 
 	void show_relation_message(unit_map& units, hero_map& heros, hero& h1, hero& h2, int carry_to)
 	{
-		const std::vector<team>& teams = *resources::teams;
-		if (!teams[h1.side_].is_human()) return;
+		// const std::vector<team>& teams = *resources::teams;
+		// if (!teams[h1.side_].is_human()) return;
+		if (ai_relation(h1, h2)) {
+			return;
+		}
 
 		std::string message;
 		int incident;
@@ -3565,10 +3570,36 @@ namespace game_events {
 		}
 	}
 
-	bool confirm_carry_to(hero& h1, hero& h2, int carry_to)
+	bool ai_relation(hero& h1, hero& h2)
 	{
 		const std::vector<team>& teams = *resources::teams;
+		unit_map& units = *resources::units;
 		if (!teams[h1.side_].is_human()) return true;
+		if (rpg::h != &h1 && rpg::h != &h2) {
+			unit* u = find_unit(units, h1);
+			if (!u->is_artifical()) {
+				if (!u->human()) {
+					return true;
+				}
+			} else {
+				if (rpg::stratum == hero_stratum_citizen) {
+					return true;
+				} else if (rpg::stratum == hero_stratum_mayor) {
+					artifical* city = unit_2_artifical(u);
+					if (city->mayor() != rpg::h) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	bool confirm_carry_to(hero& h1, hero& h2, int carry_to)
+	{
+		if (ai_relation(h1, h2)) {
+			return true;
+		}
 
 		utils::string_map symbols;
 		std::string str;

@@ -54,6 +54,13 @@ namespace game_config
 	int increase_feeling = 1024; // HERO_MAX_FEELING / 64. 64 turns will carry.
 	int minimal_activity = 175;
 	int maximal_defeated_activity = 100;
+
+	int default_human_level = 1;
+	int default_ai_level = 3;
+	int current_level = 1;
+	int min_level = 1;
+	int max_level = 6;
+
 	const std::string revision = VERSION;
 	const std::string checksum = "0123456789abcdef";
 	std::string wesnoth_program_dir;
@@ -64,7 +71,7 @@ namespace game_config
 	bool tiny_gui = false;
 	int start_cards = 6;
 	int cards_per_turn = 2;
-	int max_cards = 9;
+	int max_cards = 20;
 
 	int title_logo_x = 0, title_logo_y = 0, title_buttons_x = 0, title_buttons_y = 0, title_buttons_padding = 0,
 	    title_tip_x = 0, title_tip_width = 0, title_tip_padding = 0;
@@ -208,6 +215,9 @@ namespace game_config
 		} else if (minimal_activity < 2) {
 			minimal_activity = 2;
 		}
+
+		max_cards = v["max_cards"].to_int(20);
+		default_ai_level = v["default_ai_level"].to_int(3);
 
 		title_music = v["title_music"].str();
 		lobby_music = v["lobby_music"].str();
