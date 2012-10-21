@@ -215,7 +215,9 @@ public:
 		std::vector<unit*> troops;
 		std::vector<artifical*> cities;
 	};
-	std::map<artifical*, enemy_data> own_cities; // front/back cities in this mr. (not sort)
+	// pointer of city is random, 
+	// this is std::map, map is sorted, use unvarious cityno, although cityno is complex.
+	std::map<int, enemy_data> own_cities; // front/back cities in this mr. (not sort)
 	std::vector<unit*> enemy_troops;
 	std::vector<artifical*> enemy_cities; // enemy cities. (sort by distance starting at own_font_cities[0])
 	std::set<int> encountered_sides;
@@ -467,7 +469,7 @@ public:
 	void extract_heros_number();
 	void recalculate_heros_pointer();
 
-	bool compare_front_cities(const mr_data& mr, artifical& a, artifical& b);
+	// bool compare_front_cities(const mr_data& mr, artifical& a, artifical& b);
 	bool compare_enemy_cities(const mr_data& mr, artifical& a, artifical& b);
 
 private:

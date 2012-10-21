@@ -250,9 +250,9 @@ int CALLBACK fn_tvi_compare_sort(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSo
 
 BOOL is_empty_dir(const char* dir);
 BOOL is_directory(const char* fname);
-BOOL is_file(char *fname);
+BOOL is_file(const char *fname);
 BOOL delfile(char *fname);
-BOOL delfile1(char *fname);
+BOOL delfile1(const char *fname);
 BOOL copyfile(char *src, char *dst);
 
 //
@@ -263,11 +263,11 @@ typedef BOOL (* fn_walk_dir)(char *name, uint32_t flags, uint64_t len, int64_t l
 #define walk_dir_win32_deepen(rootdir, subfolders, fn, ctx)		walk_dir_win32(rootdir, subfolders, 1, fn, ctx)
 #define walk_dir_win32_fleeten(rootdir, subfolders, fn, ctx)	walk_dir_win32(rootdir, subfolders, 0, fn, ctx)
 BOOL walk_dir_win32(const char* rootdir, int subfolders, int deepen, fn_walk_dir fn, uint32_t *ctx, int del = 0);
-BOOL empty_directory(char *path, fn_walk_dir fn, uint32_t *ctx);
+BOOL empty_directory(const char *path, fn_walk_dir fn, uint32_t *ctx);
 
 void GetCurrentExePath(char *szCurExeDir);
 char* GetBrowseFilePath(HWND hdlgP);
-char *GetBrowseFileName(char *strInintialDir, char *strFilter, BOOL fFileMustExist);
+char *GetBrowseFileName(const char *strInintialDir, char *strFilter, BOOL fFileMustExist);
 char* GetBrowseFileName_title(const char *strInintialDir, char *strFilter, BOOL fFileMustExist, char *title);
 
 //

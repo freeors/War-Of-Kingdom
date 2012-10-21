@@ -153,10 +153,12 @@ BOOL check_wok_root_folder(char *folder)
 
 void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
-	char		*ptr = NULL;
-	int			retval;
-	char		text[_MAX_PATH];
-	BOOL		fok, fDir;
+	char *ptr = NULL;
+	int retval;
+	char text[_MAX_PATH];
+	BOOL fok;
+	std::string str;
+	std::stringstream strstr;
 	
 	switch (id) {
 	case IDC_BT_DDESC_BROWSE:
@@ -186,31 +188,7 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		}
 		break;
 
-	case IDM_COHERENCT_ITEM0:
-		// 列出根目录下所有同名文件
-		title_select(da_tbox);
-		do_coherence(game_config::path.c_str(), basename(gdmgr._menu_text), 0);
-		break;
-	case IDM_COHERENCT_ITEM1:
-		// 对根目录下所有同名文件,用最新的去替换
-		sprintf(text, "Do you want to xcopy all %s using last modified ?", basename(gdmgr._menu_text));
-		retval = MessageBox(hdlgP, text, "Confirm File XCopy", MB_YESNO | MB_DEFBUTTON2); // 默认: 不替换
-		if (retval == IDYES) {
-			title_select(da_tbox);
-			do_coherence(game_config::path.c_str(), basename(gdmgr._menu_text), 1);
-		}
-		break;
-	case IDM_COHERENCT_ITEM2:
-		// 对根目录下所有同名文件,用指定的文件去替换
-		sprintf(text, "Do you want to xcopy all %s using special file: %s ?", basename(gdmgr._menu_text), gdmgr._menu_text);
-		retval = MessageBox(hdlgP, text, "Confirm File XCopy", MB_YESNO | MB_DEFBUTTON2); // 默认: 不替换
-		if (retval == IDYES) {
-			title_select(da_tbox);
-			do_coherence(game_config::path.c_str(), basename(gdmgr._menu_text), 1, gdmgr._menu_text);
-		}
-		break;
-
-	case IDM_GENERATE_ITEM0:
+	case IDM_NEW_EXTRAINSDIST:
 		sprintf(text, "Do you want to extract install-material to C:\\kingdom-ins?"); 
 		retval = MessageBox(hdlgP, text, "Confirm Generate", MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
@@ -219,24 +197,50 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		}
 		break;
 
-	case IDM_GENERATE_ITEM1:
-		if (gdmgr._da != da_sync) {
-			title_select(da_sync);
-		} else {
-			sync_enter_ui();
+	case IDM_NEW_CAMPAIGN:
+		if (campaign_new()) {
+			// title_select(da_sync);
+		}
+		break;
+
+	case IDM_EXPLORER_WML:
+		if (!_stricmp(gdmgr._menu_text, "hero.dat")) {
+			if (gdmgr._da != da_wgen) {
+				title_select(da_wgen);
+			} else {
+				wgen_enter_ui();
+			}
+		} else if (!_stricmp(gdmgr._menu_text, "tb.dat")) {
+			if (gdmgr._da != da_tb) {
+				title_select(da_tb);
+			} else {
+				tb_enter_ui();
+			}
+		} else if (!_stricmp(extname(gdmgr._menu_text), "bin")) {
+			if (wml_checksum_from_file(std::string(gdmgr._menu_text))) {
+				if (gdmgr._da != da_cfg) {
+					title_select(da_cfg);
+				} else {
+					cfg_enter_ui();
+				}
+			}
 		}
 		break;
 
 	case IDM_DELETE_ITEM0:
 		// 册除指定的文件/目录
-		fDir = is_directory(gdmgr._menu_text);
-		if (fDir) {
-			sprintf(text, "Do you want to delete directory: %s?", gdmgr._menu_text); 
-		} else {
-			sprintf(text, "Do you want to delete file: %s?", gdmgr._menu_text); 
-		}
+		strstr.str("");
+		str = gdmgr._menu_text;
+		strstr << str.substr(0, str.rfind("\\xwml"));
+		strstr << "\\data\\campaigns\\" << offextname(basename(gdmgr._menu_text));
+		strcpy(text, strstr.str().c_str());
+
+		strstr.str("");
+		strstr << "您想删除文件：" << gdmgr._menu_text << "，以及目录：";
+		strstr << text << "？";
+
 		// Confirm Multiple File Delete 
-		retval = MessageBox(hdlgP, text, "Confirm Delete", MB_YESNO | MB_DEFBUTTON2);
+		retval = MessageBox(hdlgP, strstr.str().c_str(), "确认删除", MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
 			if (delfile1(gdmgr._menu_text)) {
                 TreeView_DeleteItem(GetDlgItem(hdlgP, IDC_TV_DDESC_EXPLORER), (HTREEITEM)(UINT_PTR)gdmgr._menu_lparam);
@@ -244,43 +248,36 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			} else {
 				posix_print_mb("Failed delete %s !", gdmgr._menu_text); 
 			}
+			if (!delfile1(text)) {
+                posix_print_mb("Failed delete %s !", text); 
+			}
+			sync_refresh_sync();
 		}
+
 		break;
 
 	case IDM_DELETE_ITEM1:
-		// 清空目录
-		fDir = is_directory(gdmgr._menu_text);
-		if (!fDir) {
-			posix_print_mb("%s isn't directory!", gdmgr._menu_text);
-			break;
-		}
-		sprintf(text, "Do you want to empty directory: %s?", gdmgr._menu_text); 
-		retval = MessageBox(hdlgP, text, "Confirm Empty", MB_YESNO | MB_DEFBUTTON2);
+		strstr.str("");
+		strstr << "将产生不同步，您想删除文件：" << gdmgr._menu_text << "？";
+		// Confirm Multiple File Delete 
+		retval = MessageBox(hdlgP, strstr.str().c_str(), "确认删除", MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
-            title_select(da_tbox);
-			do_empty_directory(gdmgr._menu_text);
-			TreeView_SetChilerenByPath(GetDlgItem(hdlgP, IDC_TV_DDESC_EXPLORER), (HTREEITEM)(UINT_PTR)gdmgr._menu_lparam, gdmgr._menu_text);
+			if (delfile1(gdmgr._menu_text)) {
+                TreeView_DeleteItem(GetDlgItem(hdlgP, IDC_TV_DDESC_EXPLORER), (HTREEITEM)(UINT_PTR)gdmgr._menu_lparam);
+				TreeView_SetChilerenByPath(GetDlgItem(hdlgP, IDC_TV_DDESC_EXPLORER), (HTREEITEM)(UINT_PTR)gdmgr._menu_lparam, dirname(gdmgr._menu_text)); 
+			} else {
+				posix_print_mb("Failed delete %s !", gdmgr._menu_text); 
+			}
+			// inform user, there is non sync.
+			if (gdmgr._da != da_sync) {
+				title_select(da_sync);
+			} else {
+				// forbid refresh
+				sync_enter_ui();
+			}
 		}
 		break;
 
-	case IDM_DELETE_ITEM2:
-		// auto_*.htm
-		title_select(da_tbox);
-		do_xgenfile(gdmgr._menu_text, 0);
-		break;
-
-	case IDM_DELETE_ITEM3:
-		// 清空目录
-		sprintf(text, "Do you want to delete all x_gene_*.htm/php file in directory: %s?", gdmgr._menu_text); 
-		retval = MessageBox(hdlgP, text, "Confirm Empty", MB_YESNO | MB_DEFBUTTON2);
-		if (retval == IDYES) {
-            title_select(da_tbox);
-			do_xgenfile(gdmgr._menu_text, 1);
-			TreeView_Expand(GetDlgItem(hdlgP, IDC_TV_DDESC_EXPLORER), (HTREEITEM)(UINT_PTR)gdmgr._menu_lparam, TVE_COLLAPSE);
-			TreeView_SetChilerenByPath(GetDlgItem(hdlgP, IDC_TV_DDESC_EXPLORER), (HTREEITEM)(UINT_PTR)gdmgr._menu_lparam, gdmgr._menu_text);
-		}
-		break;
-        
 	default:
 		break;
 	}
@@ -341,13 +338,22 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		strcpy(gdmgr._menu_text, TreeView_FormPath(lpNMHdr->hwndFrom, htvi, dirname(game_config::path.c_str())));
 		gdmgr._menu_lparam = (uint32_t)tvi.lParam;
 
-		if (!strcasecmp(gdmgr._menu_text, game_config::path.c_str())) {
-			EnableMenuItem(gdmgr._hpopup_ddesc, (UINT)(UINT_PTR)(gdmgr._hpopup_generate), MF_BYCOMMAND | MF_ENABLED);
-		} else {
-			EnableMenuItem(gdmgr._hpopup_ddesc, (UINT)(UINT_PTR)(gdmgr._hpopup_generate), MF_BYCOMMAND | MF_GRAYED);
+		// new
+		if (!can_execute_tack(TASK_NEW) || strcasecmp(gdmgr._menu_text, game_config::path.c_str())) {
+			EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_EXTRAINSDIST, MF_BYCOMMAND | MF_GRAYED);
 		}
-		EnableMenuItem(gdmgr._hpopup_ddesc, (UINT)(UINT_PTR)(gdmgr._hpopup_coherence), MF_BYCOMMAND | MF_GRAYED);
-		EnableMenuItem(gdmgr._hpopup_ddesc, (UINT)(UINT_PTR)(gdmgr._hpopup_delete), MF_BYCOMMAND | MF_GRAYED);
+		if (!can_execute_tack(TASK_NEW)) {
+			EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_CAMPAIGN, MF_BYCOMMAND | MF_GRAYED);
+		}
+		// explorer
+		if (_stricmp(extname(gdmgr._menu_text), "bin") && _stricmp(extname(gdmgr._menu_text), "dat")) {
+			EnableMenuItem(gdmgr._hpopup_explorer, IDM_EXPLORER_WML, MF_BYCOMMAND | MF_GRAYED);
+		}
+		// delete
+		if (!can_execute_tack(TASK_DELETE) || _stricmp(extname(gdmgr._menu_text), "bin") || !strstr(gdmgr._menu_text, "\\campaigns\\")) {
+			EnableMenuItem(gdmgr._hpopup_delete, IDM_DELETE_ITEM0, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(gdmgr._hpopup_delete, IDM_DELETE_ITEM1, MF_BYCOMMAND | MF_GRAYED);
+		}
 
 		TrackPopupMenuEx(gdmgr._hpopup_ddesc, 0,
 			point.x, 
@@ -355,9 +361,10 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			hdlgP, 
 			NULL);
 
-		EnableMenuItem(gdmgr._hpopup_ddesc, (UINT)(UINT_PTR)(gdmgr._hpopup_generate), MF_BYCOMMAND | MF_ENABLED);
-		EnableMenuItem(gdmgr._hpopup_ddesc, (UINT)(UINT_PTR)(gdmgr._hpopup_coherence), MF_BYCOMMAND | MF_ENABLED);
-		
+		EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_EXTRAINSDIST, MF_BYCOMMAND | MF_ENABLED);
+		EnableMenuItem(gdmgr._hpopup_explorer, IDM_EXPLORER_WML, MF_BYCOMMAND | MF_ENABLED);
+		EnableMenuItem(gdmgr._hpopup_delete, IDM_DELETE_ITEM0, MF_BYCOMMAND | MF_ENABLED);
+		EnableMenuItem(gdmgr._hpopup_delete, IDM_DELETE_ITEM1, MF_BYCOMMAND | MF_ENABLED);
 	
 	} else if (lpNMHdr->code == NM_CLICK) {
 		//
@@ -402,10 +409,22 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			strcpy(gdmgr._menu_text, TreeView_FormPath(lpNMHdr->hwndFrom, htvi, dirname(game_config::path.c_str())));
 			if (wml_checksum_from_file(std::string(gdmgr._menu_text))) {
 				gdmgr._menu_lparam = (uint32_t)tvi.lParam;
-				if (gdmgr._da != da_cfg) {
-					title_select(da_cfg);
+				if (strstr(gdmgr._menu_text, "\\campaigns\\") && 
+					!strstr(gdmgr._menu_text, "duel") &&
+					!strstr(gdmgr._menu_text, "legend_of_bei_liu") &&
+					!strstr(gdmgr._menu_text, "tower_defense") &&
+					!strstr(gdmgr._menu_text, "tutorial")) {
+					if (gdmgr._da != da_campaign) {
+						title_select(da_campaign);
+					} else {
+						campaign_enter_ui();
+					}
 				} else {
-					cfg_enter_ui();
+					if (gdmgr._da != da_cfg) {
+						title_select(da_cfg);
+					} else {
+						cfg_enter_ui();
+					}
 				}
 			}
 		}

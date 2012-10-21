@@ -895,7 +895,7 @@ private:
 	const mr_data& mr_;
 	bool (*callback_)(void*, const mr_data&, artifical&, artifical&);
 };
-
+/*
 bool unit_map::compare_front_cities(const mr_data& mr, artifical& a, artifical& b)
 {
 	const mr_data::enemy_data& a_data = mr.own_cities.find(&a)->second;
@@ -920,7 +920,7 @@ bool unit_map::compare_front_cities(const mr_data& mr, artifical& a, artifical& 
 		return a_distance <= b_distance;
 	}
 }
-
+*/
 bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& b)
 {
 	artifical& center_city = *mr.center_city;
@@ -960,7 +960,8 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 	if (itor != unit_map::inter_city_move_cost_.end()) {
 		a_cost = itor->second;
 	} else {
-		const pathfind::shortest_path_calculator calc(*unit_map::scout_unit_, my_team, units_, teams_, map, true);
+		// const pathfind::shortest_path_calculator calc(*unit_map::scout_unit_, my_team, units_, teams_, map, true);
+		const pathfind::emergency_path_calculator calc(*unit_map::scout_unit_, map);
 		double stop_at = 10000.0;
 		//allowed teleports
 		std::set<map_location> allowed_teleports;
@@ -985,7 +986,8 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 	if (itor != unit_map::inter_city_move_cost_.end()) {
 		b_cost = itor->second;
 	} else {
-		const pathfind::shortest_path_calculator calc(*unit_map::scout_unit_, my_team, units_, teams_, map, true);
+		// const pathfind::shortest_path_calculator calc(*unit_map::scout_unit_, my_team, units_, teams_, map, true);
+		const pathfind::emergency_path_calculator calc(*unit_map::scout_unit_, map);
 		double stop_at = 10000.0;
 		//allowed teleports
 		std::set<map_location> allowed_teleports;
@@ -998,7 +1000,7 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 	}
 
 	if (a_team.side() == b_team.side()) {
-		return a_cost <= b_cost;
+		return (a_cost < b_cost) || (a_cost == b_cost && a_cityno < b_cityno);
 	}
 
 	// condition: a_side != b_side, compare cost.
@@ -1043,18 +1045,20 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 	}
 	// power ratio is inverse proportion.
 	if (b_power_ratio + a_x_offset + a_y_offset > a_power_ratio + b_x_offset + b_y_offset) {
+		double a_double = b_power_ratio + a_x_offset + a_y_offset;
+		double b_double = a_power_ratio + b_x_offset + b_y_offset;
 		return true;
-	} else if ((b_power_ratio + a_x_offset + a_y_offset == a_power_ratio + b_x_offset + b_y_offset) && a.cityno() < b.cityno()) {
+	} else if ((b_power_ratio + a_x_offset + a_y_offset == a_power_ratio + b_x_offset + b_y_offset) && a_cityno < b_cityno) {
 		return true;
 	}
 	return false;
 }	
-
+/*
 static bool callback_compare_front_cities(void* caller, const mr_data& mr, artifical& a, artifical& b)
 {
 	return reinterpret_cast<unit_map*>(caller)->compare_front_cities(mr, a, b);
 }
-
+*/
 static bool callback_compare_enemy_cities(void* caller, const mr_data& mr, artifical& a, artifical& b)
 {
 	return reinterpret_cast<unit_map*>(caller)->compare_enemy_cities(mr, a, b);
@@ -1116,6 +1120,8 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 	hero_map& heros = *resources::heros;
 	play_controller& controller = *resources::controller;
 
+	const hero& leader = *current_team.leader();
+
 	if (!scout_unit_) {
 		const unit_type *ut = unit_types.find("footman1");
 		std::vector<const hero*> scout_heros;
@@ -1161,10 +1167,109 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			artifical& city = **city_itor;
 			const map_location& loc = city.get_location();
 			if (point_in_rect(loc.x, loc.y, mr.consider_rect)) {
-				mr.own_cities[&city] = mr_data::enemy_data();
+				mr.own_cities[city.cityno()] = mr_data::enemy_data();
 				mr.own_heros += city.fresh_heros().size() + city.finish_heros().size() + (city.reside_troops().size() + city.field_troops().size()) * 2;
 			}
 		}
+
+		// process low loyalty hero.
+		for (std::map<int, mr_data::enemy_data>::iterator city_itor = mr.own_cities.begin(); action && city_itor != mr.own_cities.end(); ++ city_itor) {
+			artifical& city = *city_from_cityno(city_itor->first);
+			std::vector<std::pair<unit*, std::vector<hero*> > > new_low_loyalty_troops;
+			std::vector<hero*> original_captains;
+			std::vector<hero*> new_captains;
+					
+			std::vector<unit*>& resides = city.reside_troops();
+			std::vector<hero*>& freshes = city.fresh_heros();
+			for (std::vector<unit*>::iterator it = resides.begin(); it != resides.end(); ++ it) {
+				unit& u = **it;
+				if (u.human()) {
+					continue;
+				}
+				original_captains.clear();
+				new_captains.clear();
+
+				int l = u.master().loyalty(leader);
+				original_captains.push_back(&u.master());
+				if (l < game_config::ai_keep_loyalty_threshold) {
+					new_captains.push_back(&u.master());
+				}
+				if (u.second().valid()) {
+					l = u.second().loyalty(leader);
+					original_captains.push_back(&u.second());
+					if (l < game_config::ai_keep_loyalty_threshold) {
+						new_captains.push_back(&u.second());
+					}
+				}
+				if (u.third().valid()) {
+					l = u.third().loyalty(leader);
+					original_captains.push_back(&u.third());
+					if (l < game_config::ai_keep_loyalty_threshold) {
+						new_captains.push_back(&u.third());
+					}
+				}
+				// always don't disband this unit.
+				if (new_captains.empty()) {
+					// all hero don't less than ai_keep_loyalty_threshold, do nothing.
+					continue;
+				}
+				if (original_captains.size() != new_captains.size()) {
+					u.replace_captains(new_captains);
+					std::vector<hero*>::iterator find_it;
+					for (std::vector<hero*>::iterator h_it = original_captains.begin(); h_it != original_captains.end(); ++ h_it) {
+						if (std::find(new_captains.begin(), new_captains.end(), *h_it) == new_captains.end()) {
+							city.fresh_into(**h_it);
+						}
+					}
+					new_low_loyalty_troops.push_back(std::make_pair<unit*, std::vector<hero*> >(&u, new_captains));
+				} else {
+					new_low_loyalty_troops.push_back(std::make_pair<unit*, std::vector<hero*> >(&u, original_captains));
+				}
+			}
+
+			// low loyalty hero section
+			std::vector<hero*> low_loyalty_heros;
+			for (std::vector<hero*>::iterator it = freshes.begin(); it != freshes.end(); ++ it) {
+				hero& h = **it;
+				if (&h == rpg::h) {
+					continue;
+				}
+				int l = h.loyalty(leader);
+				if (l < game_config::ai_keep_loyalty_threshold) {
+					low_loyalty_heros.push_back(&h);
+				}
+			}
+			if (low_loyalty_heros.empty()) {
+				continue;
+			}
+			for (std::vector<std::pair<unit*, std::vector<hero*> > >::iterator it = new_low_loyalty_troops.begin(); it != new_low_loyalty_troops.end() && !low_loyalty_heros.empty(); ++ it) {
+				if (it->second.size() == 3) {
+					continue;
+				}
+				while (it->second.size() < 3 && !low_loyalty_heros.empty()) {
+					hero* h = low_loyalty_heros.front();
+					it->second.push_back(h);
+					low_loyalty_heros.erase(low_loyalty_heros.begin());
+					freshes.erase(std::find(freshes.begin(), freshes.end(), h));
+				}
+				it->first->replace_captains(it->second);
+			}
+			if (low_loyalty_heros.empty()) {
+				continue;
+			}
+			const unit_type* ut = current_team.recruits(game_config::default_ai_level)[0];
+			while (!low_loyalty_heros.empty()) {
+				std::vector<const hero*> v;
+				do {
+					hero* h = low_loyalty_heros.front();
+					v.push_back(h);
+					low_loyalty_heros.erase(low_loyalty_heros.begin());
+					freshes.erase(std::find(freshes.begin(), freshes.end(), h));
+				} while (v.size() < 3 && !low_loyalty_heros.empty());
+				do_recruit(*this, heros, current_team, ut, v, city, current_team.cost_exponent(), false);
+			}
+		}
+		
 		mr.center_city = mr.calculate_center_city(map_location(mr.consider_rect.x + mr.consider_rect.w / 2, mr.consider_rect.y + mr.consider_rect.h / 2));
 
 		// enemy troop/city
@@ -1173,9 +1278,9 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 				node* node = coor_map_[index(x, y)].overlay;
 				if (node && (node->first == map_location(x, y))) {
 					if (current_team.is_enemy(node->second->side())) {
-						for (std::map<artifical*, mr_data::enemy_data>::iterator city_itor = mr.own_cities.begin(); city_itor != mr.own_cities.end(); ++ city_itor) {
+						for (std::map<int, mr_data::enemy_data>::iterator city_itor = mr.own_cities.begin(); city_itor != mr.own_cities.end(); ++ city_itor) {
 							// in order to judge back/front city, calculate city's enemy troops. 
-							artifical& city = *city_itor->first;
+							artifical& city = *city_from_cityno(city_itor->first);
 							const map_location& loc = node->first;
 							if (point_in_rect(loc.x, loc.y, city.alert_rect())) {
 								mr_data::enemy_data& data = city_itor->second;
@@ -1218,7 +1323,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 		if (!mr.enemy_cities.empty() && !mr.own_cities.empty()) {
 			std::sort(mr.enemy_cities.begin(), mr.enemy_cities.end(), sort_front_cities_func(this, mr, callback_compare_enemy_cities));
 			artifical* capital_of_ai = controller.final_capital().second;
-			if (!capital_of_ai || mr.own_cities.find(capital_of_ai) == mr.own_cities.end()) {
+			if (!capital_of_ai || mr.own_cities.find(capital_of_ai->cityno()) == mr.own_cities.end()) {
 				aggressing = mr.calculate_center_city(mr.enemy_cities[0]->get_location());
 			} else {
 				aggressing = capital_of_ai;				
@@ -1236,8 +1341,8 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 		}
 
 		size_t field_arts = 0;
-		for (std::map<artifical*, mr_data::enemy_data>::iterator city_itor = mr.own_cities.begin(); city_itor != mr.own_cities.end(); ++ city_itor) {
-			artifical* city = city_itor->first;
+		for (std::map<int, mr_data::enemy_data>::iterator city_itor = mr.own_cities.begin(); city_itor != mr.own_cities.end(); ++ city_itor) {
+			artifical* city = city_from_cityno(city_itor->first);
 			field_arts += city->field_arts().size();
 			if (!aggressing || city != aggressing) {
 				if ((int)city_itor->second.cities.size() + (int)city_itor->second.troops.size() >= mr_data::minimum_enemy_in_front) {
@@ -1263,7 +1368,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 		if (action) {
 			for (std::vector<artifical*>::iterator it = mr.own_front_cities.begin(); it != mr.own_front_cities.end(); ++ it) {
 				artifical* city = *it;
-				const std::vector<unit*>& enemy_troops = mr.own_cities[city].troops;
+				const std::vector<unit*>& enemy_troops = mr.own_cities[city->cityno()].troops;
 				if (city->fronts() == mr_data::max_fronts && (int)enemy_troops.size() > mr_data::minimum_enemy_in_front) {
 					strategy& defend_strategy = current_team.get_strategy(city->cityno());
 					if (!defend_strategy.target_) {
@@ -1284,8 +1389,8 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			mr.target = mr_data::TARGET_AGGRESS;
 			if (mr.own_cities.size() == 1) {
 				// Alert! Be back to guard!
-				std::map<artifical*, mr_data::enemy_data>::iterator it_p = mr.own_cities.begin();
-				artifical* only = it_p->first;
+				std::map<int, mr_data::enemy_data>::iterator it_p = mr.own_cities.begin();
+				artifical* only = city_from_cityno(it_p->first);
 				artifical* aggressed = mr.enemy_cities[0];
 				int my_ratio = only->hitpoints() * 100 / only->max_hitpoints();
 				int aggressed_ratio = aggressed->hitpoints() * 100 / aggressed->max_hitpoints();
@@ -1367,34 +1472,38 @@ mr_data::mr_data(gamemap& map, SDL_Rect& city_rect)
 
 artifical* mr_data::calculate_center_city(const map_location& center)
 {
+	unit_map& units_ = *resources::units;
 	if (own_cities.empty()) {
 		return NULL;
 	}
-	std::map<artifical*, mr_data::enemy_data>::iterator it = own_cities.begin();
+	std::map<int, mr_data::enemy_data>::iterator it = own_cities.begin();
 	if (own_cities.size() == 1) {
-		return it->first;
+		return units_.city_from_cityno(it->first);
 	}
 
-	std::map<artifical*, mr_data::enemy_data>::iterator choice = it;
+	std::map<int, mr_data::enemy_data>::iterator choice = it;
 
 	size_t min_distance = -1;
-	if (it->first->mayor() != rpg::h) {
-		min_distance = distance_between(center, it->first->get_location());
+	artifical* first = units_.city_from_cityno(it->first);
+	if (first->mayor() != rpg::h) {
+		min_distance = distance_between(center, first->get_location());
 	}
 	for (++ it; it != own_cities.end(); ++ it) {
 		size_t distance = -1;
-		if (it->first->mayor() != rpg::h) {
-			distance = distance_between(center, it->first->get_location());
+		first = units_.city_from_cityno(it->first);
+		if (first->mayor() != rpg::h) {
+			distance = distance_between(center, first->get_location());
 		}
 		if (distance < min_distance) {
 			min_distance = distance;
 			choice = it;
-		} else if (distance == min_distance && it->first->cityno() < choice->first->cityno()) {
+		// } else if (distance == min_distance && first->cityno() < choice->first->cityno()) {
+		} else if (distance == min_distance) {
 			// own_cities is std::map, sort by pointer of city.
-			// pointer of city is random, so when distance == min_distance, it is neceaary stonger estimate (using cityno).
+			// pointer of city is random, so when distance == min_distance, it is necessary stonger estimate (using cityno).
 			min_distance = distance;
 			choice = it;
 		}
 	}
-	return choice->first;
+	return units_.city_from_cityno(choice->first);
 }

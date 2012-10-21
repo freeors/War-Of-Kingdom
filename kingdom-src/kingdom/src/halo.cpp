@@ -320,7 +320,7 @@ void remove(int handle)
 
 void unrender()
 {
-	if (preferences::show_haloes() == false || haloes.size() == 0) {
+	if (haloes.size() == 0) {
 		return;
 	}
 
@@ -405,7 +405,7 @@ void unrender()
 
 void render()
 {
-	if(preferences::show_haloes() == false || haloes.size() == 0 ||
+	if (haloes.size() == 0 ||
 			(new_haloes.size() == 0 && invalidated_haloes.size() == 0)) {
 		return;
 	}

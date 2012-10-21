@@ -68,7 +68,6 @@ private:
 	void fullscreen_toggled(twidget* widget);
 	void flip_time_toggled(twidget* widget);
 	void show_floating_labels_toggled(twidget* widget);
-	void show_haloing_toggled(twidget* widget);
 	void show_team_colors_toggled(twidget* widget);
 	void idle_anim_toggled(twidget* widget);
 	void idle_anim_changed(tslider* widget, int value);

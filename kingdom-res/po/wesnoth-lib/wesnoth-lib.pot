@@ -3504,6 +3504,9 @@ msgstr ""
 msgid "Gender"
 msgstr ""
 
+msgid "Treasure"
+msgstr ""
+
 msgid "Father"
 msgstr ""
 
@@ -3922,6 +3925,15 @@ msgid "Left turns"
 msgstr ""
 
 #
+# Treasure List
+#
+msgid "Treasure List"
+msgstr ""
+
+msgid "Side Treasure List"
+msgstr ""
+
+#
 # RPG Detail
 #
 msgid "RPG Detail"
@@ -4003,4 +4015,10 @@ msgid "Range is [$min, $max], invalid '$key' value:"
 msgstr ""
 
 msgid "Select city for player hero"
+msgstr ""
+
+#
+# Assemble Treasure
+#
+msgid "Assemble Treasure"
 msgstr ""

@@ -45,6 +45,8 @@ namespace game_config
 	extern int field_troop_increase_loyalty;
 	extern int wander_loyalty_threshold;
 	extern int move_loyalty_threshold;
+	extern int ai_keep_loyalty_threshold;
+	extern int ai_keep_hp_threshold;
 	extern int max_keep_turns;
 	extern int increase_feeling;
 

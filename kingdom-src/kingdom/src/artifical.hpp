@@ -118,7 +118,7 @@ public:
 	/** draw a unit.  */
 	void redraw_unit();
 	// 告知下一回轮到它了
-	void new_turn();
+	bool new_turn();
 
 	void read(const config& cfg, bool use_traits=true, game_state* state = 0);
 	void write(config& cfg) const;

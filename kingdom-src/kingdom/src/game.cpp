@@ -136,6 +136,7 @@ static bool less_campaigns_rank(const config &a, const config &b) {
 }
 
 extern bool exit_app;
+int exe_type = exe_kingdom;
 
 class game_controller
 {
@@ -193,6 +194,7 @@ private:
 	//to clean up threads after the display disappears.
 	const threading::manager thread_manager;
 
+	surface icon_;
 	CVideo video_;
 
 	const font::manager font_manager_;
@@ -233,6 +235,7 @@ game_controller::game_controller(int argc, char** argv) :
 	arg_(1),
 	argv_(argv),
 	thread_manager(),
+	icon_(),
 	video_(),
 	font_manager_(),
 	prefs_manager_(),
@@ -533,10 +536,10 @@ bool game_controller::init_video()
 	}
 
 #ifdef _WIN32
-	surface icon(image::get_image("game-icon.png", image::UNSCALED));
-	if (icon != NULL) {
+	icon_ = image::get_image("game-icon.png", image::UNSCALED);
+	if (icon_ != NULL) {
 		// must be called after SDL_Init() and before setting video mode
-		::SDL_WM_SetIcon(icon, NULL);
+		::SDL_WM_SetIcon(icon_, NULL);
 	}
 #endif
 
@@ -1445,6 +1448,7 @@ void game_controller::load_game_cfg(const bool force)
 			game_config_units_.clear_children("movetype");
 			game_config_units_.clear_children("race");
 			game_config_units_.clear_children("complexfeature");
+			game_config_units_.clear_children("treasure");
 			game_config_units_.clear_children("arms");
 			game_config_units_.clear_children("recruit");
 			game_config_units_.clear_children("traits");
@@ -1655,6 +1659,9 @@ editor::EXIT_STATUS game_controller::start_editor(const std::string& filename)
 
 game_controller::~game_controller()
 {
+	if (icon_ != NULL) {
+		icon_.get()->refcount --;
+	}
 	terrain_builder::release_heap();
 	pathfind::release_pq();
 	delete gui::empty_menu;

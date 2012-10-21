@@ -6,3 +6,4 @@
 #Version
 
 - Kingdom 1.0.4 Release - September 21 2012 
+- Kingdom 1.0.5 Release - October 21 2012 

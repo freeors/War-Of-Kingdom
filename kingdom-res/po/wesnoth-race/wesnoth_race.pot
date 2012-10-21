@@ -9,22 +9,22 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Hero Race"
+msgid "hero_race"
 msgstr ""
 
-msgid "Hero Race2"
+msgid "hero_race2"
 msgstr ""
 
-msgid "Hero Race description"
+msgid "hero_race description"
 msgstr ""
 
-msgid "Hero Race description2"
+msgid "hero_race2 description"
 msgstr ""
 
-msgid "race of hero"
+msgid "RACE"
 msgstr ""
 
-msgid "race of hero2"
+msgid "RACE2"
 msgstr ""
 
 msgid "Defeat all sides"

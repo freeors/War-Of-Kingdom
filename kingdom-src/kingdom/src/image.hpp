@@ -190,6 +190,9 @@ namespace image {
 	///function to get the standard hex mask
 	surface get_hexmask();
 
+	///function to get the hexed image
+	surface get_hexed(const locator& i_locator);
+
 	///function to check if an image fit into an hex
 	///return false if the image has not the standard size.
 	bool is_in_hex(const locator& i_locator);

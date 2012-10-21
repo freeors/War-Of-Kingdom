@@ -180,13 +180,14 @@ void tside_list::post_show(twindow& window)
 
 void tside_list::hero_changed(twindow& window)
 {
-	int selected_row = hero_table_->get_selected_row();
+	tgrid* grid_ptr = hero_table_->get_row_grid(hero_table_->get_selected_row());
+	unsigned int selected_side = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true))->get_data();
 
 	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(window);
 
 	tcontrol* portrait = find_widget<tcontrol>(&window, "portrait", false, true);
 
-	hero* leader = teams_[selected_row].leader();
+	hero* leader = teams_[selected_side].leader();
 	portrait->set_label(leader->image(true));
 }
 
@@ -429,6 +430,9 @@ void tside_list::fill_table(int catalog)
 			table_item_item.insert(std::make_pair("enemy_cities[0]", table_item));
 		}
 		hero_table_->add_row(table_item_item);
+		tgrid* grid_ptr = hero_table_->get_row_grid(hero_table_->get_item_count() - 1);
+		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true));
+		toggle->set_data(n);
 	}
 }
 

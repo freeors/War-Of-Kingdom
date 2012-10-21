@@ -29,18 +29,6 @@ void title_enable_ui(BOOL fEnable)
 	return;
 }
 
-void title_plugin_ui(void)
-{
-	title_enable_ui(TRUE);
-	return;
-}
-
-void title_plugout_ui(void)
-{
-	title_enable_ui(FALSE);
-	return;
-}
-
 BOOL On_DlgTitleInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	init_toolbar_sys(gdmgr._hinst, hdlgP);
@@ -64,7 +52,7 @@ void On_DlgTitleCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		title_select(da_cfg);
 		break;
 	case IDM_SYS_TBOX:
-		title_select(da_tbox);
+		title_select(da_campaign);
 		break;
 	case IDM_SYS_ABOUT:
 		title_select(da_about);
@@ -211,14 +199,16 @@ void title_select(do_action_t da)
 		return;
 	}
 
-	if (gdmgr._da == da_wgen) {
+	if (gdmgr._da == da_sync) {
+		sync_hide_ui();
+	} else if (gdmgr._da == da_wgen) {
 		wgen_hide_ui();
 	} else if (gdmgr._da == da_tb) {
 		tb_hide_ui();
 	} else if (gdmgr._da == da_cfg) {
 		cfg_hide_ui();
-	} else if (gdmgr._da == da_tbox) {
-		if (!tbox_hide_ui()) {
+	} else if (gdmgr._da == da_campaign) {
+		if (!campaign_hide_ui()) {
 			return;
 		}
 	}
@@ -234,7 +224,7 @@ void title_select(do_action_t da)
 	ShowWindow(gdmgr._hdlg_wgen, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_tb, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_cfg, SW_HIDE);
-	ShowWindow(gdmgr._hdlg_tbox, SW_HIDE);
+	ShowWindow(gdmgr._hdlg_campaign, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_about, SW_HIDE);
 
 	// 记住当前正在执行的会话
@@ -260,10 +250,10 @@ void title_select(do_action_t da)
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_PLAY, 1);
 		cfg_enter_ui();
 
-	} else if (da == da_tbox) {
-		ShowWindow(gdmgr._hdlg_tbox, SW_RESTORE);
+	} else if (da == da_campaign) {
+		ShowWindow(gdmgr._hdlg_campaign, SW_RESTORE);
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_TBOX, 1);
-		tbox_enter_ui();
+		campaign_enter_ui();
 
 	} else if (da == da_about) {
 		ShowWindow(gdmgr._hdlg_about, SW_RESTORE);
@@ -271,4 +261,14 @@ void title_select(do_action_t da)
 
 	}
 	return;
+}
+
+bool can_execute_tack(int task)
+{
+	if (gdmgr._da == da_campaign) {
+		if (!campaign_can_execute_tack(task)) {
+			return false;
+		}
+	}
+	return true;
 }

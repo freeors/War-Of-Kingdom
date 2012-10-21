@@ -1,6 +1,6 @@
-/* $Id: terrain.cpp 47082 2010-10-18 00:44:43Z shadowmaster $ */
+/* $Id: terrain.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2012 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -15,12 +15,13 @@
 
 #include "global.hpp"
 
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "log.hpp"
 #include "serialization/string_utils.hpp"
 #include "terrain.hpp"
 #include "util.hpp"
+
+#include <boost/foreach.hpp>
 
 #include <set>
 
@@ -145,9 +146,6 @@ terrain_type::terrain_type(const config& cfg) :
 	std::sort(union_type_.begin(),union_type_.end());
 	union_type_.erase(std::unique(union_type_.begin(), union_type_.end()), union_type_.end());
 
-#ifdef USE_TINY_GUI
-	height_adjust_ /= 2;
-#endif
 
 
 	//mouse over message are only shown on villages
@@ -181,7 +179,7 @@ terrain_type::terrain_type(const terrain_type& base, const terrain_type& overlay
 	id_(base.id_+"^"+overlay.id_),
 	name_(overlay.name_),
 	editor_name_(overlay.editor_name_),
-	description_(overlay.description_),
+	description_(overlay.description()),
 	number_(t_translation::t_terrain(base.number_.base, overlay.number_.overlay)),
 	mvt_type_(overlay.mvt_type_),
 	def_type_(overlay.def_type_),
@@ -205,6 +203,9 @@ terrain_type::terrain_type(const terrain_type& base, const terrain_type& overlay
 	editor_default_base_(),
 	hide_in_editor_(base.hide_in_editor_ || overlay.hide_in_editor_)
 {
+	if(description_.empty()) {
+		description_ = base.description();
+	}
 
 	if(overlay.height_adjust_set_) {
 		height_adjust_set_ = true;
@@ -283,7 +284,7 @@ void create_terrain_maps(const config::const_child_itors &cfgs,
                          t_translation::t_list& terrain_list,
                          std::map<t_translation::t_terrain, terrain_type>& letter_to_terrain)
 {
-	foreach (const config &t, cfgs)
+	BOOST_FOREACH(const config &t, cfgs)
 	{
 		terrain_type terrain(t);
 		DBG_G << "create_terrain_maps: " << terrain.number() << " "
@@ -300,9 +301,9 @@ void create_terrain_maps(const config::const_child_itors &cfgs,
 				std::vector<std::string> eg2 = utils::split(terrain.editor_group());
 				std::set<std::string> egs;
 				bool clean_merge = true;
-				foreach(std::string& t, eg1)
+				BOOST_FOREACH(std::string& t, eg1)
 					clean_merge &= egs.insert(t).second;
-				foreach(std::string& t, eg2)
+				BOOST_FOREACH(std::string& t, eg2)
 					clean_merge &= egs.insert(t).second;
 
 				std::string joined = utils::join(egs);

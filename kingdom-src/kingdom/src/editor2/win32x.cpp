@@ -428,7 +428,7 @@ BOOL is_directory(const char* fname)
 	return (fattrdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)? TRUE: FALSE;
 }
 
-BOOL is_file(char *fname)
+BOOL is_file(const char *fname)
 {
 	WIN32_FILE_ATTRIBUTE_DATA		fattrdata;
 	BOOL fok = GetFileAttributesEx(fname, GetFileExInfoStandard, &fattrdata);
@@ -459,7 +459,7 @@ static void cb_walk_dir_empty(char *name, uint32_t flags, uint64_t len, int64_t 
 	return;
 }
 
-BOOL empty_directory(char *path, fn_walk_dir fn, uint32_t *ctx)
+BOOL empty_directory(const char *path, fn_walk_dir fn, uint32_t *ctx)
 {
 	walk_dir_win32(path, 1, 0, fn, ctx, 1);
 	return TRUE;
@@ -477,7 +477,7 @@ BOOL delfile(char *fname)
 }
 
 // @fname: 可能是文件也可能是目录
-BOOL delfile1(char *fname)
+BOOL delfile1(const char *fname)
 {
 	WIN32_FILE_ATTRIBUTE_DATA		fattrdata;
 	BOOL							fok = TRUE;
@@ -639,7 +639,7 @@ char* GetBrowseFilePath(HWND hdlgP)
 	}
 }
 
-char *GetBrowseFileName(char *strInintialDir, char *strFilter, BOOL fFileMustExist)
+char *GetBrowseFileName(const char *strInintialDir, char *strFilter, BOOL fFileMustExist)
 {
 	static char		gname[_MAX_PATH];
     OPENFILENAME	ofn={0};

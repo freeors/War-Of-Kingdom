@@ -644,7 +644,7 @@ WML_HANDLER_FUNCTION(teleport, event_info, cfg)
 	const unit *pass_check = &*u;
 	if (cfg["ignore_passability"].to_bool())
 		pass_check = NULL;
-	const map_location vacant_dst = find_vacant_tile(*resources::game_map, *resources::units, dst, pathfind::VACANT_ANY, pass_check);
+	const map_location vacant_dst = pathfind::find_vacant_tile(*resources::game_map, *resources::units, dst, pass_check);
 	if (!resources::game_map->on_board(vacant_dst)) return;
 
 	int side = u->side();
@@ -1370,6 +1370,7 @@ WML_HANDLER_FUNCTION(unit, /*event_info*/, cfg)
 	unit_map& units = *resources::units;
 	
 	config parsed_cfg = cfg.get_parsed_config();
+
 	unit new_unit(units, *resources::heros, parsed_cfg, true, resources::state_of_game);
 
 	config::attribute_value to_variable = cfg["to_variable"];
@@ -1386,28 +1387,37 @@ WML_HANDLER_FUNCTION(unit, /*event_info*/, cfg)
 	preferences::encountered_units().insert(new_unit.type_id());
 	map_location loc = cfg_to_loc(cfg);
 
-	if (resources::game_map->on_board(loc)) {
-		loc = pathfind::find_vacant_tile(*resources::game_map, *resources::units, loc);
-		const bool show = resources::screen && !resources::screen->fogged(loc);
-		const bool animate = show && utils::string_bool(parsed_cfg["animate"], false);
+	if (loc.x < 0) {
+		loc.x = 0;
+	} else if (loc.x >= resources::game_map->w()) {
+		loc.x = resources::game_map->w() - 1;
+	}
+	if (loc.y < 0) {
+		loc.y = 0;
+	} else if (loc.y >= resources::game_map->h()) {
+		loc.y = resources::game_map->h() - 1;
+	}
 
-		unit_map::iterator u_itor = units.find(loc);
-		if (u_itor.valid()) {
-			units.erase(&*u_itor);
-		}
-		units.add(loc, &new_unit);
-		if (resources::game_map->is_village(loc)) {
-			get_village(loc, new_unit.side());
-		}
+	loc = pathfind::find_vacant_tile(*resources::game_map, *resources::units, loc, &new_unit);
+	const bool show = resources::screen && !resources::screen->fogged(loc);
+	const bool animate = show && utils::string_bool(parsed_cfg["animate"], false);
 
-		resources::screen->invalidate(loc);
+	unit_map::iterator u_itor = units.find(loc);
+	if (u_itor.valid()) {
+		units.erase(&*u_itor);
+	}
+	units.add(loc, &new_unit);
+	if (resources::game_map->is_village(loc)) {
+		get_village(loc, new_unit.side());
+	}
 
-		rect_of_hexes& draw_area = resources::screen->draw_area();
-		if (animate) {
-			unit_display::unit_recruited(loc);
-		} else if (show && point_in_rect_of_hexes(loc.x, loc.y, draw_area)) {
-			resources::screen->draw();
-		}
+	resources::screen->invalidate(loc);
+
+	rect_of_hexes& draw_area = resources::screen->draw_area();
+	if (animate) {
+		unit_display::unit_recruited(loc);
+	} else if (show && point_in_rect_of_hexes(loc.x, loc.y, draw_area)) {
+		resources::screen->draw();
 	}
 }
 

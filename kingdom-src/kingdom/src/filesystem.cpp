@@ -99,7 +99,7 @@ void get_files_in_dir(const std::string &directory,
 					  std::vector<std::string>* files,
 					  std::vector<std::string>* dirs,
 					  file_name_option mode,
-					  file_filter_option filter,
+					  int filter,
 					  file_reorder_option reorder,
 					  file_tree_checksum* checksum)
 {
@@ -199,8 +199,9 @@ void get_files_in_dir(const std::string &directory,
 					checksum->nfiles++;
 				}
 			} else if (S_ISDIR(st.st_mode)) {
-				if (filter == SKIP_MEDIA_DIR
-						&& (basename == "images"|| basename == "sounds"))
+				if (filter & SKIP_MEDIA_DIR	&& (basename == "images"|| basename == "sounds" || basename == "music"))
+					continue;
+				if (filter & SKIP_SCENARIO_DIR	&& (basename == "scenarios"|| basename == "maps" || basename == "music"))
 					continue;
 
 				if (reorder == DO_REORDER &&
@@ -909,26 +910,26 @@ bool file_tree_checksum::operator==(const file_tree_checksum &rhs) const
 		modified == rhs.modified;
 }
 
-static void get_file_tree_checksum_internal(const std::string& path, file_tree_checksum& res)
+static void get_file_tree_checksum_internal(const std::string& path, file_tree_checksum& res, int filter)
 {
 
 	std::vector<std::string> dirs;
-	get_files_in_dir(path,NULL,&dirs, ENTIRE_FILE_PATH, SKIP_MEDIA_DIR, DONT_REORDER, &res);
+	get_files_in_dir(path,NULL,&dirs, ENTIRE_FILE_PATH, filter, DONT_REORDER, &res);
 	loadscreen::increment_progress();
 
 	for(std::vector<std::string>::const_iterator j = dirs.begin(); j != dirs.end(); ++j) {
-		get_file_tree_checksum_internal(*j,res);
+		get_file_tree_checksum_internal(*j, res, filter);
 	}
 }
 
-const file_tree_checksum& data_tree_checksum(bool reset)
+const file_tree_checksum& data_tree_checksum(bool reset, int filter)
 {
 	static file_tree_checksum checksum;
 	if (reset)
 		checksum.reset();
 	if(checksum.nfiles == 0) {
-		get_file_tree_checksum_internal("data/",checksum);
-		get_file_tree_checksum_internal(get_user_data_dir() + "/data/",checksum);
+		get_file_tree_checksum_internal("data/", checksum, filter);
+		get_file_tree_checksum_internal(get_user_data_dir() + "/data/", checksum, filter);
 		LOG_FS << "calculated data tree checksum: "
 			   << checksum.nfiles << " files; "
 			   << checksum.sum_size << " bytes\n";
@@ -937,10 +938,12 @@ const file_tree_checksum& data_tree_checksum(bool reset)
 	return checksum;
 }
 
-void data_tree_checksum(const std::string& path, file_tree_checksum& checksum)
+void data_tree_checksum(const std::vector<std::string>& paths, file_tree_checksum& checksum, int filter)
 {
 	checksum.reset();
-	get_file_tree_checksum_internal(path, checksum);
+	for (std::vector<std::string>::const_iterator it = paths.begin(); it != paths.end(); ++ it) {
+		get_file_tree_checksum_internal(*it, checksum, filter);
+	}
 }
 
 int file_size(const std::string& fname)

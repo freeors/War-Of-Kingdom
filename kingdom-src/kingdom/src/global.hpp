@@ -45,4 +45,7 @@
 // for memory lead detect end
 #endif
 
+enum {exe_kingdom, exe_kingdomd, exe_editor};
+extern int exe_type;
+
 #endif

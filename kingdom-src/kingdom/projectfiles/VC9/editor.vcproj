@@ -483,6 +483,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\editor2\DlgCampaignProc.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\editor2\DlgCfgProc.cpp"
 				>
 			</File>
@@ -495,11 +499,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\DlgTBoxProc.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\DlgTbProc.cpp"
+				RelativePath="..\..\src\editor2\DlgTerrainBuilderProc.cpp"
 				>
 			</File>
 			<File

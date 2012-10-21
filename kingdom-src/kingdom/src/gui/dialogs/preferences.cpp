@@ -281,12 +281,6 @@ void tpreferences::show_floating_labels_toggled(twidget* widget)
 	preferences::set_show_floating_labels(toggle->get_value());
 }
 
-void tpreferences::show_haloing_toggled(twidget* widget)
-{
-	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set_show_haloes(toggle->get_value());
-}
-
 void tpreferences::show_team_colors_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
@@ -532,10 +526,6 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		toggle->set_value(preferences::show_floating_labels());
 		toggle->set_callback_state_change(boost::bind(&tpreferences::show_floating_labels_toggled, this, _1));
 		
-		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("show_haloing_button", false));
-		toggle->set_value(preferences::show_haloes());
-		toggle->set_callback_state_change(boost::bind(&tpreferences::show_haloing_toggled, this, _1));
-
 		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("show_team_colors_button", false));
 		toggle->set_value(preferences::show_side_colors());
 		toggle->set_callback_state_change(boost::bind(&tpreferences::show_team_colors_toggled, this, _1));

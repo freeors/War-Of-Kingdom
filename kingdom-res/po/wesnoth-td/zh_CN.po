@@ -9,10 +9,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "tower defense"
+msgid "tower_defense"
 msgstr "塔防休闲"
 
-msgid "tower defense description"
+msgid "tower_defense description"
 msgstr "防止AI进入最右侧3列。只要坚持20回合，你就过关了。"
 
 # scenario

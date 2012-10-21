@@ -67,13 +67,21 @@ std::string editor::check_scenario_cfg(const config& scenario_cfg)
 {
 	std::set<std::string> holded_str;
 	std::set<int> holded_number;
+	std::set<std::string> officialed_str;
+	std::map<std::string, std::set<std::string> > officialed_map;
+	std::map<std::string, std::string> mayor_map;
 	int number;
 	std::vector<std::string> str_vec;
 	std::vector<std::string>::const_iterator tmp;
 	std::stringstream str;
 
 	foreach (const config& side, scenario_cfg.child_range("side")) {
+		const std::string leader = side["leader"];
 		foreach (const config& art, side.child_range("artifical")) {
+			officialed_str.clear();
+			const std::string cityno = art["cityno"].str();
+			mayor_map[cityno] = art["mayor"].str();
+
 			str_vec = utils::split(art["heros_army"]);
 			for (tmp = str_vec.begin(); tmp != str_vec.end(); ++ tmp) {
 				if (holded_str.count(*tmp)) {
@@ -101,6 +109,7 @@ std::string editor::check_scenario_cfg(const config& scenario_cfg)
 				}
 				holded_str.insert(*tmp);
 				holded_number.insert(number);
+				officialed_str.insert(*tmp);
 			}
 			str_vec = utils::split(art["wander_heros"]);
 			for (tmp = str_vec.begin(); tmp != str_vec.end(); ++ tmp) {
@@ -116,8 +125,15 @@ std::string editor::check_scenario_cfg(const config& scenario_cfg)
 				holded_str.insert(*tmp);
 				holded_number.insert(number);
 			}
+			officialed_map[cityno] = officialed_str;
 		}
 		foreach (const config& u, side.child_range("unit")) {
+			const std::string cityno = u["cityno"].str();
+			std::map<std::string, std::set<std::string> >::iterator find_it = officialed_map.find(cityno);
+			if (cityno != "0" && find_it == officialed_map.end()) {
+				str << "." << scenario_cfg["id"].str() << ", heros_army=" << u["heros_army"].str() << " uses undefined cityno: " << cityno << "";
+				return str.str();
+			}
 			str_vec = utils::split(u["heros_army"]);
 			for (tmp = str_vec.begin(); tmp != str_vec.end(); ++ tmp) {
 				if (holded_str.count(*tmp)) {
@@ -131,6 +147,23 @@ std::string editor::check_scenario_cfg(const config& scenario_cfg)
 				}
 				holded_str.insert(*tmp);
 				holded_number.insert(number);
+				if (find_it != officialed_map.end()) {
+					find_it->second.insert(*tmp);
+				}
+			}
+		}
+		for (std::map<std::string, std::set<std::string> >::const_iterator it = officialed_map.begin(); it != officialed_map.end(); ++ it) {
+			std::map<std::string, std::string>::const_iterator mayor_it = mayor_map.find(it->first);
+			if (mayor_it->second.empty()) {
+				continue;
+			}
+			if (mayor_it->second == leader) {
+				str << "." << scenario_cfg["id"].str() << ", in cityno=" << it->first << " mayor(" << mayor_it->second << ") cannot be leader!";
+				return str.str();
+			}
+			if (it->second.find(mayor_it->second) == it->second.end()) {
+				str << "." << scenario_cfg["id"].str() << ", in ciytno=" << it->first << " mayor(" << mayor_it->second << ") must be in offical hero!";
+				return str.str();
 			}
 		}
 	}
@@ -213,7 +246,7 @@ std::string editor::check_data_bin(const config& data_cfg)
 	return "";
 }
 
-bool editor::load_game_cfg(editor::BIN_TYPE type, char* name, bool write_file, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
+bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool write_file, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
 {
 	config tmpcfg;
 
@@ -237,7 +270,7 @@ bool editor::load_game_cfg(editor::BIN_TYPE type, char* name, bool write_file, u
 			// ::init_textdomains(game_config_);
 			
 			// extract [compaign_addon] block
-			config& refcfg = game_config_.child("compaign_addon");
+			config& refcfg = game_config_.child("campaign_addon");
 			foreach (const config &i, game_config_.child_range("textdomain")) {
 				refcfg.add_child("textdomain", i);
 			}
@@ -285,6 +318,7 @@ bool editor::load_game_cfg(editor::BIN_TYPE type, char* name, bool write_file, u
 
 		} else if (type == editor::EDITOR) {
 			cache_.add_define("EDITOR");
+			cache_.add_define("CORE");
 			cache_.get_config(game_config::path + "/data", game_config_);
 			// ::init_textdomains(game_config_);
 
@@ -323,7 +357,7 @@ bool editor::load_game_cfg(editor::BIN_TYPE type, char* name, bool write_file, u
 
 		} else {
 			// (type == editor::MAIN_DATA)
-			// no pre-defined
+			cache_.add_define("CORE");
 			cache_.get_config(game_config::path + "/data", game_config_);
 			// ::init_textdomains(game_config_);
 
@@ -341,6 +375,7 @@ bool editor::load_game_cfg(editor::BIN_TYPE type, char* name, bool write_file, u
 			if (write_file) {
 				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_DATA, game_config_, nfiles, sum_size, modified);
 			}
+			editor_config::data_cfg = game_config_;
 		} 
 	}
 	catch (game::error& e) {
@@ -354,6 +389,11 @@ bool editor::load_game_cfg(editor::BIN_TYPE type, char* name, bool write_file, u
 void editor::reload_campaigns_cfg()
 {
 	load_game_cfg(CAMPAIGNS, BASENAME_CAMPAIGNS, false);
+	// load_game_cfg will translate relative msgid without load textdomain.
+	// result of load_game_cfg used to known what campaign, not detail information.
+	// To detail information, need load textdomain, so call t_string::reset_translations(), 
+	// let next translate correctly.
+	t_string::reset_translations();
 }
 
 // @path: c:\kingdom-src\data
@@ -362,7 +402,7 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 	editor::wml2bin_desc desc;
 	file_tree_checksum dir_checksum;
 	std::stringstream defines_string;
-	std::string short_path;
+	std::vector<std::string> short_paths;
 	std::string bin_to_path = game_config::path + "/xwml";
 
 	std::vector<editor::BIN_TYPE> bin_types;
@@ -385,8 +425,12 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 		editor::BIN_TYPE type = *itor;
 
 		defines_string.str("");
+		short_paths.clear();
+		int filter = SKIP_MEDIA_DIR;
 		if (type == editor::SCENARIO_DATA) {
-			short_path = "data";
+			short_paths.push_back("data/core");
+			short_paths.push_back(std::string("data/campaigns/") + campaigns[campaign_index]);
+
 			desc.bin_name = campaigns[campaign_index] + ".bin";
 			
 			defines_string << path;
@@ -398,27 +442,34 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 			campaign_index ++;
 
 		} else if (type == editor::MULTI_PLAYER) {
-			short_path = "data";
+			short_paths.push_back("data/core");
+			short_paths.push_back("data/multiplayer");
+
 			desc.bin_name = BASENAME_MPLAYER;
 
 			defines_string << path;
 			defines_string << "MULTIPLAYER";
 
 		} else if (type == editor::EDITOR) {
-			short_path = "data";
+			short_paths.push_back("data/core");
+			short_paths.push_back("data/themes");
+			filter |= SKIP_SCENARIO_DIR;
+			
 			desc.bin_name = BASENAME_EDITOR;
 
 			defines_string << path;
 			defines_string << "EDITOR";
 
 		} else if (type == editor::GUI) {
-			short_path = "data/gui";
+			short_paths.push_back("data/gui");
+
 			desc.bin_name = BASENAME_GUI;
 
 			defines_string << path + "/gui";
 
 		} else if (type == editor::LANGUAGE) {
-			short_path = "data/languages";
+			short_paths.push_back("data/languages");
+
 			desc.bin_name = BASENAME_LANGUAGE;
 
 			defines_string << path + "/languages";
@@ -426,15 +477,18 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 		} else {
 			// (type == editor::MAIN_DATA)
 			// no pre-defined
-			short_path = "data";
+			short_paths.push_back("data");
+			filter |= SKIP_SCENARIO_DIR;
+
 			desc.bin_name = BASENAME_DATA;
 
 			defines_string << path;
+			defines_string << "CORE";
 		}
 		sha1_hash sha(defines_string.str());
 		desc.sha1 = sha.display();
 
-		data_tree_checksum(short_path, dir_checksum);
+		data_tree_checksum(short_paths, dir_checksum, filter);
 
 		desc.wml_nfiles = dir_checksum.nfiles;
 		desc.wml_sum_size = dir_checksum.sum_size;

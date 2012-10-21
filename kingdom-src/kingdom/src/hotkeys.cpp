@@ -64,6 +64,7 @@ const struct {
 	{ hotkey::HOTKEY_SYSTEM, "system", N_("System"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG, "rpg", N_("RPG"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG_DETAIL, "rpg-detail", N_("RPG Detail"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_RPG_TREASURE, "assemble-treasure", N_("Assemble Treasure"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG_EXCHANGE, "rpg-exchange", N_("RPG Exchange"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG_INDEPENDENCE, "rpg-independence", N_("RPG Independence"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BUILD_M, "build_m", N_("Build"), false, hotkey::SCOPE_GAME },
@@ -703,6 +704,9 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 			break;
 		case HOTKEY_RPG_DETAIL:
 			rpg_detail();
+			break;
+		case HOTKEY_RPG_TREASURE:
+			assemble_treasure();
 			break;
 		case HOTKEY_RPG_EXCHANGE:
 			rpg_exchange(empty_vector_size_t, -1);

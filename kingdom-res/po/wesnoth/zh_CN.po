@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2012-09-18 14:08+0800\n"
+"PO-Revision-Date: 2012-10-19 16:15+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -8677,6 +8677,9 @@ msgstr "没有可供移动到的城市"
 msgid "There are no holded card"
 msgstr "你没有牌"
 
+msgid "There are no hero available to assemble treasure."
+msgstr "没有可供装配宝物的武将"
+
 msgid "Prepare to battle, please recruit!"
 msgstr "为备战，请征兵！"
 
@@ -8751,6 +8754,12 @@ msgstr "火球"
 
 msgid "lightning"
 msgstr "闪电"
+
+msgid "Defeat all sides"
+msgstr "击败所有势力"
+
+msgid "No city you holded"
+msgstr "没了能控制城市"
 
 #~ msgid "ownership"
 #~ msgstr "归属"

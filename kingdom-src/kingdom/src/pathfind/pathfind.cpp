@@ -44,7 +44,6 @@ static lg::log_domain log_engine("engine");
 map_location pathfind::find_vacant_tile(const gamemap& map,
 				const unit_map& units,
 				const map_location& loc,
-				pathfind::VACANT_TILE_TYPE vacancy,
 				const unit* pass_check)
 {
 	if (!map.on_board(loc)) return map_location();
@@ -52,37 +51,33 @@ map_location pathfind::find_vacant_tile(const gamemap& map,
 	pending_tiles_to_check.insert(loc);
 	// Iterate out 50 hexes from loc
 	for (int distance = 0; distance < 50; ++distance) {
-		if (pending_tiles_to_check.empty())
-			return map_location();
 		//Copy over the hexes to check and clear the old set
 		std::set<map_location> tiles_checking;
 		tiles_checking.swap(pending_tiles_to_check);
 		//Iterate over all the hexes we need to check
 		foreach (const map_location &loc, tiles_checking)
 		{
-			//If the unit cannot reach this area or it's not a castle but should, skip it.
-			if ((vacancy == pathfind::VACANT_CASTLE && !map.is_castle(loc))
-			|| (pass_check && pass_check->movement_cost(map[loc])
-					== unit_movement_type::UNREACHABLE))
-				continue;
-			//If the hex is empty, return it.
-			if (units.find(loc) == units.end())
-				return loc;
+			tiles_checked.insert(loc);
+
+			// If the unit cannot reach this area or it's not a castle but should, skip it.
+			if (!pass_check || pass_check->movement_cost(map[loc]) != unit_movement_type::UNREACHABLE) {
+				// If the hex is empty, return it.
+				if (units.find(loc) == units.end()) {
+					return loc;
+				}
+			}
 			map_location adjs[6];
-			get_adjacent_tiles(loc,adjs);
+			get_adjacent_tiles(loc, adjs);
 			foreach (const map_location &loc, adjs)
 			{
 				if (!map.on_board(loc)) continue;
 				// Add the tile to be checked if it hasn't already been and
 				// isn't being checked.
-				if (tiles_checked.find(loc) == tiles_checked.end() &&
-				    tiles_checking.find(loc) == tiles_checking.end())
-				{
+				if (tiles_checked.find(loc) == tiles_checked.end()) {
 					pending_tiles_to_check.insert(loc);
 				}
-			}
+			}			
 		}
-		tiles_checked.swap(tiles_checking);
 	}
 	return map_location();
 }

@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2012-09-19 21:09+0800\n"
+"PO-Revision-Date: 2012-09-29 10:53+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -3623,6 +3623,9 @@ msgstr "官职"
 msgid "Gender"
 msgstr "性别"
 
+msgid "Treasure"
+msgstr "宝物"
+
 msgid "Father"
 msgstr "父亲"
 
@@ -4004,6 +4007,12 @@ msgstr "防御"
 msgid "Left turns"
 msgstr "剩余回合数"
 
+msgid "Treasure List"
+msgstr "全宝物"
+
+msgid "Side Treasure List"
+msgstr "势力宝物"
+
 msgid "RPG Detail"
 msgstr "个人资料"
 
@@ -4087,6 +4096,9 @@ msgstr "范围[$min, $max]，无效“$key”值："
 
 msgid "Select city for player hero"
 msgstr "选择玩家武将所在城市"
+
+msgid "Assemble Treasure"
+msgstr "装配宝物"
 
 #~ msgid "To 2500, will control more troops."
 #~ msgstr "到达2500，将能控制更多部队。"

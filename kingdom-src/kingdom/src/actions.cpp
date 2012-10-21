@@ -1821,7 +1821,11 @@ std::pair<map_location, map_location> attack::perform()
 	}
 
 	a_.orig_attacks_ = a_stats_->num_blows;
-	d_.orig_attacks_ = d_stats_->num_blows;
+	if (unit_feature_val2(attacker, hero_featrue_frighten)) {
+		d_.orig_attacks_ = 0;
+	} else {
+		d_.orig_attacks_ = d_stats_->num_blows;
+	}
 	a_.n_attacks_ = a_.orig_attacks_;
 	d_.n_attacks_ = d_.orig_attacks_;
 	a_.xp_ = d_.get_unit().level();
@@ -2737,7 +2741,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 					clear_shroud_unit(*step, ui->side(),
 						&known_units, &seen_units, &petrified_units);
 				}
-				if(should_clear_stack) {
+				if (should_clear_stack) {
 					disp.invalidate_all();
 				}
 			}
@@ -2925,7 +2929,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	if (undo_stack != NULL) {
 		should_clear_stack = should_clear_shroud && (tm->uses_shroud() || tm->uses_fog());
-		if(event_mutated || should_clear_stack || maybe_ui == units.end()) {
+		if (event_mutated || should_clear_stack || maybe_ui == units.end()) {
 			apply_shroud_changes(*undo_stack, team_num + 1);
 			undo_stack->clear();
 		} else {
@@ -3564,4 +3568,23 @@ int calculate_exploiture(const hero& h1, const hero& h2, const hero& h3, int art
 	}
 
 	return exploiture;
+}
+
+void do_recruit(unit_map& units, hero_map& heros, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost_exponent, bool human)
+{
+	type_heros_pair pair(ut, v);
+
+	recorder.add_recruit(ut->id(), city.get_location(), v, ut->cost() * cost_exponent / 100, human);
+
+	unit* new_unit = new unit(units, heros, pair, city.cityno(), true);
+	new_unit->set_movement(new_unit->total_movement());
+	new_unit->set_attacks(new_unit->attacks_total());
+
+	current_team.spend_gold(ut->cost() * cost_exponent / 100);
+
+	new_unit->set_human(human);
+	city.troop_come_into(new_unit, -1, false);
+
+	map_location loc2(MAGIC_RESIDE, city.reside_troops().size() - 1);
+	game_events::fire("post_recruit", city.get_location(), loc2);
 }

@@ -128,6 +128,7 @@ void team::team_info::read(const config &cfg)
 	hidden = cfg["hidden"].to_bool();
 	music = cfg["music"].str();
 	side = cfg["side"].to_int(1);
+
 	color = cfg["color"].str();
 
 	// If arel starting new scenario overide settings from [ai] tags
@@ -270,7 +271,6 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	units_(units),
 	heros_(heros),
 	cards_(cards),
-	// savegame_config(),
 	gold_(gold),
 	villages_(),
 	navigation_(0),
@@ -289,6 +289,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	holded_cities_(),
 	candidate_cards_(),
 	holded_cards_(),
+	holded_treasures_(),
 	avoid_cfg_(cfg.child("avoid")? cfg.child("avoid"): config()),
 	avoid_(terrain_filter(vconfig(avoid_cfg_), units_)),
 	has_avoid_(cfg.child("avoid")? true: false),
@@ -426,6 +427,12 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	for (std::vector<std::string>::const_iterator i = v_size.begin(); i != v_size.end(); ++ i) {
 		holded_cards_.push_back(atoi(i->c_str()));
 	}
+	// treasures
+	vstr = utils::split(cfg["treasure"]);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		int number = lexical_cast_default<int>(*it);
+		holded_treasures_.push_back(number);
+	}
 
 	// commercials
 	str = cfg["commercials"].str();
@@ -466,7 +473,6 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem
 	units_(units),
 	heros_(heros),
 	cards_(cards),
-	// savegame_config(),
 	gold_(gold),
 	villages_(),
 	navigation_(0),
@@ -485,6 +491,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem
 	holded_cities_(),
 	candidate_cards_(),
 	holded_cards_(),
+	holded_treasures_(),
 	avoid_cfg_(),
 	avoid_(terrain_filter(vconfig(config()), units)),
 	has_avoid_(false),
@@ -519,6 +526,7 @@ team::team(const team& that) :
 	holded_cities_(that.holded_cities_),
 	candidate_cards_(that.candidate_cards_),
 	holded_cards_(that.holded_cards_),
+	holded_treasures_(that.holded_treasures_),
 	navigation_(that.navigation_),
 	shroud_(that.shroud_),
 	fog_(that.fog_),
@@ -672,6 +680,20 @@ void team::write(config& cfg) const
 			str << *i;
 		}
 		cfg["holded_cards"] = str.str();
+	}
+
+	if (!holded_treasures_.empty()) {
+		bool first = true;
+		str.str("");
+		for (std::vector<size_t>::const_iterator i = holded_treasures_.begin(); i != holded_treasures_.end(); ++ i) {
+			if (!first) {
+				str << ",";
+			} else {
+				first = false;
+			}
+			str << *i;
+		}
+		cfg["treasure"] = str.str();
 	}
 
 	if (!commercials_.empty()) {
@@ -970,6 +992,29 @@ void team::write(uint8_t* mem) const
 		fields->holded_cards_.size_ = 0;
 	}
 	offset += fields->holded_cards_.size_;
+	// treasures
+	str.str("");
+	if (!holded_treasures_.empty()) {
+		bool first = true;
+		str.str("");
+		for (std::vector<size_t>::const_iterator i = holded_treasures_.begin(); i != holded_treasures_.end(); ++ i) {
+			if (!first) {
+				str << ",";
+			} else {
+				first = false;
+			}
+			str << *i;
+		}
+	}
+	if (!str.str().empty()) {
+		fields->holded_treasures_.offset_ = offset; 
+		fields->holded_treasures_.size_ = str.str().length();
+		memcpy(mem + offset, str.str().c_str(), fields->holded_treasures_.size_);
+	} else {
+		fields->holded_treasures_.offset_ = -1;
+		fields->holded_treasures_.size_ = 0;
+	}
+	offset += fields->holded_treasures_.size_;
 	// commercials
 	str.str("");
 	if (!commercials_.empty()) {
@@ -1177,6 +1222,13 @@ void team::read(const uint8_t* mem, const gamemap& map)
 	for (std::vector<std::string>::const_iterator i = v_size.begin(); i != v_size.end(); ++ i) {
 		holded_cards_.push_back(atoi(i->c_str()));
 	}
+	// treasures
+	holded_treasures_.clear();
+	str.assign((const char*)mem + fields->holded_treasures_.offset_, fields->holded_treasures_.size_);
+	v_size = utils::split(str);
+	for (std::vector<std::string>::const_iterator i = v_size.begin(); i != v_size.end(); ++ i) {
+		holded_treasures_.push_back(atoi(i->c_str()));
+	}
 
 	// commercials
 	commercials_.clear();
@@ -1228,11 +1280,11 @@ int team::base_income() const
 	int rpg_bonus = 0;
 	if (rpg::h->side_ + 1 == info_.side) {
 		if (rpg::stratum == hero_stratum_wander) {
-			rpg_bonus = 100;
+			rpg_bonus = 120;
 		} else if (rpg::stratum == hero_stratum_citizen) {
-			rpg_bonus = 100;
+			rpg_bonus = 120;
 		} else if (rpg::stratum == hero_stratum_mayor) {
-			rpg_bonus = 50;
+			rpg_bonus = 80;
 		}
 	}
 	return rpg_bonus + info_.income + game_config::base_income; 
@@ -1419,9 +1471,9 @@ bool team::is_enemy(int n) const
 void team::set_ally(int n, bool alignment)
 {
 	if (alignment) {
-		VALIDATE(!diplomatisms_[n].ally_, "team::set_ally, want to alignment, but has allied."); 
+		VALIDATE(!diplomatisms_[n].ally_, "team::set_ally, want to alignment with " + (*teams)[n - 1].name() + ", but has allied."); 
 	} else {
-		VALIDATE(diplomatisms_[n].ally_, "team::set_ally, want to release, but hasn't been allied."); 
+		VALIDATE(diplomatisms_[n].ally_, "team::set_ally, want to release with " + (*teams)[n - 1].name() + ", but hasn't been allied."); 
 	}
 	diplomatisms_[n].ally_ = alignment;
 }
@@ -1465,7 +1517,7 @@ void team::add_strategy(const strategy& s)
 	strategies_.push_back(s);
 }
 
-void team::erase_strategy(int target)
+void team::erase_strategy(int target, bool dialog)
 {
 	utils::string_map symbols;
 	std::string message;
@@ -1482,16 +1534,18 @@ void team::erase_strategy(int target)
 				set_ally(*it_ally, false);
 				allied_team.set_ally(info_.side, false);
 
-				symbols["first"] = name();
-				symbols["second"] = allied_team.name();
-				if (it->type_ == strategy::AGGRESS) {
-					message = vgettext("End aggressing upon $city, $first and $second terminate treaty of alliance.", symbols);
-				} else if (it->type_ == strategy::DEFEND) {
-					message = vgettext("End defending $city, $first and $second terminate treaty of alliance.", symbols);
-				} else {
-					VALIDATE(false, "team::erase_strategy, unknown strategy type.");
+				if (dialog) {
+					symbols["first"] = name();
+					symbols["second"] = allied_team.name();
+					if (it->type_ == strategy::AGGRESS) {
+						message = vgettext("End aggressing upon $city, $first and $second terminate treaty of alliance.", symbols);
+					} else if (it->type_ == strategy::DEFEND) {
+						message = vgettext("End defending $city, $first and $second terminate treaty of alliance.", symbols);
+					} else {
+						VALIDATE(false, "team::erase_strategy, unknown strategy type.");
+					}
+					game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
 				}
-				game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
 			}
 			strategies_.erase(it);
 			break;
@@ -1963,13 +2017,13 @@ void team::calculate_skill_feature()
 	for (std::vector<hero*>::const_iterator it = commercials_.begin(); it != commercials_.end(); ++ it) {
 		const hero& h = **it;
 
-		if (hero_feature_val2(h, hero_feature_skill)) {
+		if (h.feature_ == hero_feature_skill || h.side_feature_ == hero_feature_skill) {
 			skill_feature_ = true;
 			break;
 		}
 
 		for (int feature = HEROS_BASE_FEATURE_COUNT; feature < HEROS_MAX_FEATURE; feature ++) {
-			if (!hero_feature_val2(h, feature)) {
+			if (h.feature_ != feature) {
 				continue;
 			}
 			complex_feature_map::const_iterator complex_itor = complex_feature.find(feature);

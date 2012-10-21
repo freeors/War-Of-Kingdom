@@ -48,6 +48,7 @@
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/recruit.hpp"
 #include "gui/dialogs/rpg_detail.hpp"
+#include "gui/dialogs/treasure.hpp"
 #include "gui/dialogs/select_unit.hpp"
 #include "gui/dialogs/final_battle.hpp"
 #include "gui/dialogs/exchange.hpp"
@@ -125,6 +126,8 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	final_capital_(std::make_pair<artifical*, artifical*>(NULL, NULL)),
 	human_players_(0),
 	rpging_(false),
+	troops_cache_(NULL),
+	troops_cache_vsize_(0),
 	fallen_to_unstage_(level_["fallen_to_unstage"].to_bool()),
 	card_mode_(level_["card_mode"].to_bool()),
 	always_duel_(level_["always_duel"].to_bool())
@@ -138,6 +141,9 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	resources::tod_manager = &tod_manager_;
 	resources::persist = &persist_;
 	persist_.start_transaction();
+
+	troops_cache_vsize_ = 40;
+	troops_cache_ = (unit**)malloc(troops_cache_vsize_ * sizeof(unit*));
 
 	// Setup victory and defeat music
 	set_victory_music_list(level_["victory_music"]);
@@ -202,8 +208,12 @@ play_controller::~play_controller()
 			}
 		}
 	}
-
+	
 	clear_resources();
+
+	if (troops_cache_) {
+		free(troops_cache_);
+	}
 }
 
 void play_controller::init(CVideo& video)
@@ -635,6 +645,111 @@ void play_controller::rpg_detail()
 	}
 }
 
+void play_controller::assemble_treasure() 
+{
+	team& rpg_team = teams_[rpg::h->side_];
+	std::vector<std::pair<size_t, unit*> > human_pairs;
+	std::vector<int> original_holded;
+		
+	std::vector<artifical*>& holded_cities = rpg_team.holded_cities();
+	for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+		artifical* city = *it;
+
+		std::vector<unit*>& resides = city->reside_troops();
+		for (std::vector<unit*>::iterator it2 = resides.begin(); it2 != resides.end(); ++ it2) {
+			unit* u = *it2;
+			if (!u->human()) {
+				continue;
+			}
+			human_pairs.push_back(std::make_pair<size_t, unit*>(u->master().number_, u));
+			if (u->second().valid()) {
+				human_pairs.push_back(std::make_pair<size_t, unit*>(u->second().number_, u));
+			}
+			if (u->third().valid()) {
+				human_pairs.push_back(std::make_pair<size_t, unit*>(u->third().number_, u));
+			}
+		}
+/*
+		std::vector<unit*>& fields = city->field_troops();
+		for (std::vector<unit*>::iterator it2 = fields.begin(); it2 != fields.end(); ++ it2) {
+			unit* u = *it2;
+			if (!u->human()) {
+				continue;
+			}
+			human_pairs.push_back(std::make_pair<size_t, unit*>(u->master().number_, u));
+			if (u->second().valid()) {
+				human_pairs.push_back(std::make_pair<size_t, unit*>(u->second().number_, u));
+			}
+			if (u->third().valid()) {
+				human_pairs.push_back(std::make_pair<size_t, unit*>(u->third().number_, u));
+			}
+		}
+*/
+		std::vector<hero*>& freshes = city->fresh_heros();
+		std::vector<hero*>& finishes = city->finish_heros();
+		if (city->mayor() == rpg::h || rpg::stratum == hero_stratum_leader) {
+			for (std::vector<hero*>::iterator it2 = freshes.begin(); it2 != freshes.end(); ++ it2) {
+				hero& h = **it2;
+				human_pairs.push_back(std::make_pair<size_t, unit*>(h.number_, city));
+			}
+			for (std::vector<hero*>::iterator it2 = finishes.begin(); it2 != finishes.end(); ++ it2) {
+				hero& h = **it2;
+				human_pairs.push_back(std::make_pair<size_t, unit*>(h.number_, city));
+			}
+		}
+		if (rpg::stratum == hero_stratum_citizen) {
+			if (std::find(freshes.begin(), freshes.end(), rpg::h) != freshes.end()) {
+				human_pairs.push_back(std::make_pair<size_t, unit*>(rpg::h->number_, city));
+			}
+			if (std::find(finishes.begin(), finishes.end(), rpg::h) != finishes.end()) {
+				human_pairs.push_back(std::make_pair<size_t, unit*>(rpg::h->number_, city));
+			}
+		}
+	}
+	if (human_pairs.empty()) {
+		gui2::show_transient_message(gui_->video(), "", _("There are no hero available to assemble treasure."));
+		return;
+	}
+
+	for (std::vector<std::pair<size_t, unit*> >::iterator it = human_pairs.begin(); it != human_pairs.end(); ++ it) {
+		const hero& h = heros_[it->first];
+		original_holded.push_back(h.treasure_);
+	}
+	
+	std::map<int, int> diff;
+	std::set<unit*> diff_troops;
+	{
+		gui2::ttreasure dlg(teams_, units_, heros_, human_pairs, replaying_);
+		try {
+			dlg.show(gui_->video());
+		} catch(twml_exception& e) {
+			e.show(*gui_);
+			return;
+		}
+		int index = 0;
+		for (std::vector<std::pair<size_t, unit*> >::iterator it = human_pairs.begin(); it != human_pairs.end(); ++ it, index ++) {
+			const int orig = original_holded[index];
+			const hero& h = heros_[it->first];
+
+			if (orig != h.treasure_) {
+				diff[h.number_] = h.treasure_;
+				if (!it->second->is_artifical()) {
+					diff_troops.insert(it->second);
+				}
+			}
+		}
+	}
+
+	for (std::set<unit*>::iterator it = diff_troops.begin(); it != diff_troops.end(); ++ it) {
+		unit& u = **it;
+		u.adjust();
+	}
+
+	if (!diff.empty()) {
+		recorder.add_assemble_treasure(diff);
+	}
+}
+
 void play_controller::rpg_exchange(const std::vector<size_t>& human_p, size_t ai_p) 
 {
 	team& rpg_team = teams_[rpg::h->side_];
@@ -871,7 +986,7 @@ void play_controller::rpg_independence(bool replaying)
 		if (!same && from_leader_unit->third().valid() && &from_leader_unit->third() == rpg::h) {
 			same = true;
 		}
-		if (same) {
+		if (same && aggressing) {
 			if (rpg_city->get_location() == from_leader_unit->get_location()) {
 				// reside troop
 				std::vector<unit*>& reside_troops = rpg_city->reside_troops();
@@ -949,6 +1064,16 @@ void play_controller::rpg_independence(bool replaying)
 		type_ids.insert((*cr)->id());
 	}
 	to_team.set_builds(type_ids);
+
+	// shourd/fog
+	if (from_team.uses_shroud()) {
+		from_team.set_shroud(false);
+		to_team.set_shroud(true);
+	}
+	if (from_team.uses_fog()) {
+		from_team.set_fog(false);
+		to_team.set_fog(true);
+	}
 
 	// card
 	std::vector<size_t>& candidate_cards = to_team.candidate_cards(); 
@@ -1277,9 +1402,19 @@ void play_controller::do_init_side(const unsigned int team_index)
 			rpg::forbids --;
 		}
 		uint32_t start = SDL_GetTicks();
-		for (unit_map::iterator i = units_.begin(); i != units_.end(); ++i) {
-			if (i->side() == player_number_) {
-				i->new_turn();
+		const std::pair<unit**, size_t> p = current_team.field_troop();
+		if (p.second) {
+			size_t troops_vsize = p.second;
+			if (troops_cache_vsize_ < troops_vsize) {
+				free(troops_cache_);
+				troops_cache_vsize_ = troops_vsize;
+				troops_cache_ = (unit**)malloc(troops_cache_vsize_ * sizeof(unit*));
+			}
+			memcpy(troops_cache_, p.first, troops_vsize * sizeof(unit*));
+			for (size_t i = 0; i < troops_vsize; i ++) {
+				if (troops_cache_[i]->new_turn()) {
+					units_.erase(troops_cache_[i]);
+				}
 			}
 		}
 		
@@ -1889,6 +2024,7 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 			return false;
 		}
 	case hotkey::HOTKEY_RPG_DETAIL:
+	case hotkey::HOTKEY_RPG_TREASURE:
 		if (rpging_) {
 			return true;
 		}
@@ -1904,6 +2040,7 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const map_location& loc) const
 {
 	const team& current_team = teams_[player_number_ - 1];
+	const std::vector<artifical*>& holded_cities = current_team.holded_cities();
 	unit_map::const_iterator itor;
 	if (!replaying_) {
 		itor = find_visible_unit(loc, current_team);
@@ -2012,9 +2149,39 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 			return true;			
 		}
 		break;
+	case hotkey::HOTKEY_RPG_TREASURE:
+		for (std::vector<artifical*>::const_iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+			const artifical* city = *it;
+
+			const std::vector<unit*>& resides = city->reside_troops();
+			for (std::vector<unit*>::const_iterator it2 = resides.begin(); it2 != resides.end(); ++ it2) {
+				unit* u = *it2;
+				if (!u->human()) {
+					continue;
+				}
+				return true;
+			}
+
+			const std::vector<hero*>& freshes = city->fresh_heros();
+			const std::vector<hero*>& finishes = city->finish_heros();
+			if (city->mayor() == rpg::h || rpg::stratum == hero_stratum_leader) {
+				if (!freshes.empty() || !finishes.empty()) {
+					return true;
+				}
+			}
+			if (rpg::stratum == hero_stratum_citizen) {
+				if (std::find(freshes.begin(), freshes.end(), rpg::h) != freshes.end()) {
+					return true;
+				}
+				if (std::find(finishes.begin(), finishes.end(), rpg::h) != finishes.end()) {
+					return true;
+				}
+			}
+		}
+		return false;
 	case hotkey::HOTKEY_RPG_EXCHANGE:
 	case hotkey::HOTKEY_RPG_INDEPENDENCE:
-		if (current_team.holded_cities().size() < 2) {
+		if (holded_cities.size() < 2) {
 			return false;
 		}
 		break;
@@ -2280,24 +2447,9 @@ bool play_controller::do_recruit(artifical* city, int cost_exponent, bool rpg_mo
 		unit::commercial_exploiture_ = current_team.commercial_exploiture();
 	}
 
-	type_heros_pair pair(ut, v);
-
-	// create a unit with traits
-	recorder.add_recruit(ut->id(), city_loc, v, ut->cost() * cost_exponent / 100, true);
-	
-	unit* new_unit = new unit(units_, heros_, pair, city->cityno(), true);
-	new_unit->set_movement(new_unit->total_movement());
-	new_unit->set_attacks(new_unit->attacks_total());
-	current_team.spend_gold(ut->cost() * cost_exponent / 100);
-
-	new_unit->set_human(true);
-	city->troop_come_into(new_unit, -1, false);
+	::do_recruit(units_, heros_, current_team, ut, v, *city, cost_exponent, true);
 
 	menu_handler_.clear_undo_stack(side_num);
-
-	map_location loc2(MAGIC_RESIDE, city->reside_troops().size() - 1);
-	game_events::fire("post_recruit", city_loc, loc2);
-
 	refresh_city_buttons(*city);
 
 	return true;

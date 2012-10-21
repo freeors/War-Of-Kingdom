@@ -36,7 +36,7 @@ char *format_space_u64n(uint64_t space);
 char *inet_u32toa(const uint32_t addr);
 uint32_t inet_atou32(const char *ipaddr);
 
-char *offextname(char *filename);
+char *offextname(const char *filename);
 char *updextname(char *filename, char *newextname);
 int cmpextname(char *filename, char *desiredextname);
 char *u32tostr(uint32_t u32n);

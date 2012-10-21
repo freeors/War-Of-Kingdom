@@ -209,8 +209,8 @@ void artifical::read(const config& cfg, bool use_traits, game_state* state)
 	}
 
 	if (this_is_city()) {
-		if (cfg.has_attribute("mayor")) {
-			mayor_ = &heros_[cfg["mayor"].to_int()];
+		mayor_ = &heros_[cfg["mayor"].to_int(HEROS_INVALID_NUMBER)];
+		if (mayor_->number_ != HEROS_INVALID_NUMBER) {
 			mayor_->official_ = hero_official_mayor;
 		}
 		fronts_ = cfg["fronts"].to_int();
@@ -757,7 +757,7 @@ void artifical::redraw_unit()
 	refreshing_ = false;
 }
 
-void artifical::new_turn()
+bool artifical::new_turn()
 {
 	unit::new_turn();
 
@@ -807,6 +807,8 @@ void artifical::new_turn()
 			select_mayor();
 		}
 	}
+
+	return false;
 }
 
 void artifical::set_resting(bool rest)
@@ -1461,7 +1463,7 @@ void artifical::fallen(int a_side, unit* attacker)
 		defender_leader->official_ = HEROS_NO_OFFICIAL;
 
 		// erase all strategy that this side holded
-		defender_team.erase_strategies();
+		defender_team.erase_strategies(false);
 
 		// erase all ally that is this team
 		for (size_t i = 0; i < teams.size(); i ++) {
@@ -1751,7 +1753,7 @@ void artifical::select_mayor(hero* commend)
 			utils::string_map symbols;
 			symbols["city"] = name();
 			std::string message = vgettext("Your official of $city's mayor is terminated.", symbols);
-			game_events::show_hero_message(&heros_[229], this, message, game_events::INCIDENT_INVALID);
+			game_events::show_hero_message(&heros_[229], NULL, message, game_events::INCIDENT_INVALID);
 		}
 		mayor_ = commend;
 		if (mayor_->valid()) {

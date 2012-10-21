@@ -15,8 +15,12 @@
 extern editor editor_;
 
 static void sync_update_task_desc(HWND hctl);
-static void do_sync(void);
+static void do_sync();
 static HWND init_toolbar_sync(HINSTANCE hinst, HWND hdlgP);
+
+namespace ns {
+	extern HIMAGELIST himl_checkbox;
+}
 
 #define sync_enable_refresh_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sync, IDM_REFRESH, fEnable)
 #define sync_enable_sync_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sync, IDM_SYNC_SYNC, fEnable)
@@ -40,19 +44,27 @@ void sync_enter_ui(void)
 	ToolBar_EnableButton(gdmgr._htb_sync, IDM_SYNC_SYNC, FALSE);
 
 	sync_update_task_desc(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC));
+
+	if (editor_config::data_cfg.empty()) {
+		wml_config_from_file(game_config::path + "/xwml/data.bin", editor_config::data_cfg);
+	}
+
+	ns::himl_checkbox = ImageList_Create(15, 15, FALSE, 2, 0);
+	ImageList_SetBkColor(ns::himl_checkbox, RGB(255, 255, 255));
+
+    HICON hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_UNCHECK));
+    ImageList_AddIcon(ns::himl_checkbox, hicon);
+
+	hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_CHECK));
+    ImageList_AddIcon(ns::himl_checkbox, hicon);
+
+	ListView_SetImageList(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC), ns::himl_checkbox, LVSIL_STATE);
 }
 
-UINT ListView_GetCheckedCount(HWND hwnd)
+BOOL sync_hide_ui(void)
 {
-	int	count, idx, checkedcount;
-
-	count = ListView_GetItemCount(hwnd);
-	for (idx = 0, checkedcount = 0; idx < count; idx ++) {
-		if (ListView_GetCheckState(hwnd, idx)) {
-			checkedcount ++;
-		}
-	}
-	return checkedcount;
+	ImageList_Destroy(ns::himl_checkbox);
+	return TRUE;
 }
 
 void sync_update_task_desc(HWND hctl)
@@ -109,11 +121,20 @@ void sync_update_task_desc(HWND hctl)
 		if (itor->first == editor::MAIN_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
 			ListView_SetCheckState(hctl, lvi.iItem, TRUE);
 		}
-		if (itor->first == editor::SCENARIO_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
-			ListView_SetCheckState(hctl, lvi.iItem, TRUE);
+		if (editor_config::sync_why_startup == editor_config::WHY_CAMPAIGN) {
+			if (itor->first == editor::SCENARIO_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
+				std::string id = offextname(itor->second.bin_name.c_str());
+				if (id == editor_config::campaign_id) {
+					ListView_SetCheckState(hctl, lvi.iItem, TRUE);
+				}
+			}
+		} else {
+			if (itor->first == editor::SCENARIO_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
+				ListView_SetCheckState(hctl, lvi.iItem, TRUE);
+			}
 		}
 	}
-	if (ListView_GetCheckedCount(hctl)) {
+	if (editor_config::ListView_GetCheckedCount(hctl)) {
 		sync_enable_sync_btn(TRUE);
 	}
 }
@@ -162,22 +183,7 @@ BOOL On_DlgSyncInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = "sha1码";
 	ListView_InsertColumn(hctl, 4, &lvc);
 
-	HICON                           hicon;
-	HIMAGELIST						himl;
-
 	ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
-
-	// 状态图像列表
-	himl = ImageList_Create(15, 15, FALSE, 2, 0);
-	ImageList_SetBkColor(himl, RGB(255, 255, 255));
-
-    hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_UNCHECK));
-    ImageList_AddIcon(himl, hicon);
-
-	hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_CHECK));
-    ImageList_AddIcon(himl, hicon);
-
-	ListView_SetImageList(hctl, himl, LVSIL_STATE);
 
 	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
@@ -272,7 +278,7 @@ BOOL On_DlgSyncNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 				if (lvi.iImage == gdmgr._iico_with_sync || lvi.lParam != editor::MAIN_DATA) {
 					ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, FALSE);
 					// 检查视图列表中有没有需要同步的,如果没有,灰掉同步钮
-					if (!ListView_GetCheckedCount(lpNMHdr->hwndFrom)) {
+					if (!editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom)) {
 						sync_enable_sync_btn(FALSE);	// 没有选中项 
 					}
 				}
@@ -459,10 +465,15 @@ DWORD WINAPI ThdSyncProc(LPVOID ctx)
 
 	gdmgr._syncing = FALSE;
 
+	if (editor_config::sync_why_startup == editor_config::WHY_CAMPAIGN) {
+		editor_config::sync_why_startup = editor_config::WHY_NORMAL;
+		title_select(da_campaign);
+	}
+
 	return 0;
 }
 
-void do_sync(void)
+void do_sync()
 {
 	DWORD			dwThreadID;
 
@@ -476,6 +487,94 @@ void do_sync(void)
 	gdmgr._hthdSync = CreateThread(NULL, 0, ::ThdSyncProc, NULL, 0, &dwThreadID);
 
 	return;
+}
+
+DWORD WINAPI ThdSync2Proc(LPVOID ctx)
+{
+	HWND hctlPB = gdmgr._hpb_task;
+	sync_ctx_t increment_ctx;
+
+	StatusBar_Trans();
+
+	MakeDirectory(game_config::path + "/xwml/campaigns");
+
+	gdmgr._syncing = TRUE;
+
+	set_increment_progress progress(increment_progress_cb, &increment_ctx);
+
+	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_SYNC, FALSE);
+	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_ABOUT, FALSE);
+	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), FALSE);
+
+	EnableWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), FALSE);
+	EnableWindow(gdmgr._hdlg_campaign, FALSE);
+
+	editor_.get_wml2bin_desc_from_wml(game_config::path + "/data");
+	const std::vector<std::pair<editor::BIN_TYPE, editor::wml2bin_desc> >& descs = editor_.wml2bin_descs();
+	for (std::vector<std::pair<editor::BIN_TYPE, editor::wml2bin_desc> >::const_iterator it = descs.begin(); it != descs.end(); ++ it) {
+		bool building = false;
+		if (it->first == editor::MAIN_DATA && (it->second.wml_nfiles != it->second.bin_nfiles || it->second.wml_sum_size != it->second.bin_sum_size || it->second.wml_modified != it->second.bin_modified)) {
+			building = true;
+		}
+		if (it->first == editor::SCENARIO_DATA && (it->second.wml_nfiles != it->second.bin_nfiles || it->second.wml_sum_size != it->second.bin_sum_size || it->second.wml_modified != it->second.bin_modified)) {
+			std::string id = offextname(it->second.bin_name.c_str());
+			if (id == editor_config::campaign_id) {
+				building = true;
+			}
+		}
+		if (!building) {
+			continue;
+		}
+
+		increment_ctx.nfiles = 0;
+		increment_ctx.itor = it;
+
+		ProgressBar_SetRange(gdmgr._hpb_task, 0, increment_ctx.itor->second.wml_nfiles);
+
+		// execute
+		int bin_type = increment_ctx.itor->first;
+		bool success = editor_.load_game_cfg((editor::BIN_TYPE)bin_type, increment_ctx.itor->second.bin_name.c_str(), true, increment_ctx.itor->second.wml_nfiles, increment_ctx.itor->second.wml_sum_size, (uint32_t)increment_ctx.itor->second.wml_modified);
+	}
+
+	ProgressBar_SetRange(gdmgr._hpb_task, 0, 0);
+	StatusBar_SetText(gdmgr._hwnd_status, 2, "");
+	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_SYNC, TRUE);
+	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_ABOUT, TRUE);
+	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), TRUE);
+
+	EnableWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), TRUE);
+	EnableWindow(gdmgr._hdlg_campaign, TRUE);
+
+	gdmgr._syncing = FALSE;
+
+	return 0;
+}
+
+void do_sync2()
+{
+	DWORD			dwThreadID;
+
+	if (gdmgr._hthdSync) {
+		// 2、曾经运行过任务，现在已执行完了任务
+		WaitForSingleObject(gdmgr._hthdSync, INFINITE);
+		CloseHandle(gdmgr._hthdSync);
+		gdmgr._hthdSync = NULL;
+	}
+
+	gdmgr._hthdSync = CreateThread(NULL, 0, ::ThdSync2Proc, NULL, 0, &dwThreadID);
+
+	return;
+}
+
+void sync_refresh_sync()
+{
+	if (gdmgr._da != da_sync) {
+		title_select(da_sync);
+	} else {
+		// forbid refresh
+		sync_enter_ui();
+	}
+	do_sync();
 }
 
 // ------------------------------------------------------------------------

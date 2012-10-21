@@ -299,4 +299,6 @@ void post_duel(unit& left_u, hero& left, unit& right_u, hero& right, int percent
 
 int calculate_exploiture(const hero& h1, const hero& h2, const hero& h3, int artificals = 0);
 
+void do_recruit(unit_map& units, hero_map& heros, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost_exponent, bool human);
+
 #endif

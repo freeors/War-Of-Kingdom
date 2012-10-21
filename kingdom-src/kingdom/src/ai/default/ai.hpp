@@ -114,6 +114,7 @@ private:
 	unit_map& units_;
 	hero_map& heros_;
 	std::vector<team>& teams_;
+	hero& leader_;
 	tod_manager& tod_manager_;
 	play_controller& controller_;
 	bool consider_combat_;

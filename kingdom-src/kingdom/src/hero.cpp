@@ -16,7 +16,8 @@ std::string hero::feature_desc_str_[HEROS_MAX_FEATURE] = {};
 std::string hero::stratum_str_[HEROS_STRATUMS] = {};
 std::string hero::status_str_[HEROS_STATUSES] = {};
 std::string hero::official_str_[HEROS_OFFICIALS] = {};
-std::vector<int> hero::valid_features_ = std::vector<int>();
+std::map<int, std::string> hero::treasure_str_;
+std::vector<int> hero::valid_features_;
 std::string null_str = "";
 
 std::vector<hero*> empty_vector_hero_ptr = std::vector<hero*>();
@@ -92,13 +93,15 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	// stratum_ = HEROS_DEFAULT_STRATUM;
 	status_ = HEROS_DEFAULT_STATUS;
 	official_ = HEROS_DEFAULT_OFFICIAL;
-	side_feature_ = HEROS_NO_SIDE_FEATURE;
+	feature_ = HEROS_NO_FEATURE;
+	side_feature_ = HEROS_NO_FEATURE;
 	activity_ = HEROS_DEFAULT_ACTIVITY;
 	meritorious_ = 0;
 	base_catalog_ = HEROS_DEFAULT_BASE_CATALOG;
 	float_catalog_ = ftofxp8(base_catalog_);
 	ambition_ = HEROS_DEFAULT_AMBITION;
 	heart_ = HEROS_DEFAULT_HEART;
+	treasure_ = HEROS_NO_TREASURE;
 
 	// portrait image file
 	imgfile_[0] ='\0';
@@ -107,14 +110,12 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	//
 	// initial some field
 	//
+	
 	// arms adaptability
 	memset(arms_, 0, sizeof(arms_));
 
 	// skill adaptability
 	memset(skill_, 0, sizeof(skill_));
-
-	// feature
-	memset(feature_, 0, HEROS_FEATURE_BYTES);
 
 	// relation
 	for (idx = 0; idx < HEROS_MAX_PARENT; idx ++) {
@@ -247,18 +248,6 @@ bool hero::is_hate(const hero& h, uint32_t* index) const
 		}
 	}
 	return false;
-}
-
-// if no feature, return HEROS_MAX_FEATURE
-int hero::first_feature() const
-{
-	int i;
-	for (i = 0; i < HEROS_MAX_FEATURE; i ++) {
-		if (hero_feature_val(i)) {
-			break;
-		}
-	}
-	return i;
 }
 
 // @inc: >0, decrease loyalty; < 0, increase loyalty
@@ -585,6 +574,22 @@ std::string& hero::official_str(int official)
 		official_str_[official] = dgettext("wesnoth-hero", text);
 	}
 	return official_str_[official];
+}
+
+std::string& hero::treasure_str(int tid)
+{
+	if (tid == HEROS_NO_TREASURE) {
+		return null_str;
+	}
+	std::map<int, std::string>::iterator it = treasure_str_.find(tid);
+	if (it != treasure_str_.end()) {
+		return it->second;
+	}
+	char text[_MAX_PATH];
+	sprintf(text, "%s%u", HERO_PREFIX_STR_TREASURE, tid);
+	char* trans = dgettext("wesnoth-hero", text);
+	treasure_str_[tid] = dgettext("wesnoth-hero", text);
+	return treasure_str_[tid];
 }
 
 std::string& hero::feature_str(int feature)
@@ -1394,4 +1399,5 @@ void hero_map::change_language()
 	for (int i = 0; i < HEROS_OFFICIALS; i ++) {
 		hero::official_str_[i].clear();
 	}
+	hero::treasure_str_.clear();
 }

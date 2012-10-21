@@ -192,9 +192,9 @@ bool get_hero(hero& h, int default_image)
 		if (h.side_feature_ < 0 || h.side_feature_ > HEROS_MAX_FEATURE) {
 			h.side_feature_ = 0xff;
 		}
-		int feature = cfg["feature"].to_int(0xff);
-		if (feature > 0 && feature < HEROS_MAX_FEATURE) {
-			hero_feature_set2(h, feature);
+		h.feature_ = cfg["feature"].to_int(0xff);
+		if (h.feature_ < 0 || h.feature_ > HEROS_MAX_FEATURE) {
+			h.feature_ = 0xff;
 		}
 
 		h.base_catalog_ = cfg["base_catalog"].to_int();
@@ -262,7 +262,7 @@ void set_hero(hero& h)
 
 	cfg["base_catalog"] = h.base_catalog_;
 
-	cfg["feature"] = h.first_feature();
+	cfg["feature"] = h.feature_;
 	cfg["side_feature"] = h.side_feature_;
 
 	write_preferences();

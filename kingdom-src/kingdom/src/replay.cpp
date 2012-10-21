@@ -1015,6 +1015,24 @@ void replay::add_event(int type, const map_location& loc)
 	cmd->add_child("event", val);
 }
 
+void replay::add_assemble_treasure(const std::map<int, int>& diff)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::ASSEMBLE_TREASURE;
+
+	config val;
+	std::stringstream str;
+	// diff
+	std::map<int, int>::const_iterator it = diff.begin();
+	str << it->first << "," << it->second;
+	for (++ it; it != diff.end(); ++ it) {
+		str << "," << it->first << "," << it->second;
+	}
+	val["diff"] = str.str();
+
+	cmd->add_child("assemble_treasure", val);
+}
+
 void replay::add_rpg_exchange(const std::set<size_t>& checked_human, size_t checked_ai)
 {
 	config* const cmd = add_command();
@@ -1509,6 +1527,28 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		ptr = ptr + 1; 
 		*ptr = lexical_cast_default<int>(child["y"]) - 1;
 		ptr = ptr + 1;
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
+	} else if (type == command_pool::ASSEMBLE_TREASURE) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = cfg.child("random", i)["value"].to_int();
+			ptr = ptr + 1; 
+		}
+		const config& child = cfg.child("assemble_treasure");
+		// diff="0,1,2,3,4,5"
+		const std::vector<std::string> diff = utils::split(child["diff"]);
+		size = *ptr = diff.size();
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			*ptr = lexical_cast_default<int>(diff[i]);
+			ptr = ptr + 1;
+		}
+		// other field-vars
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
@@ -2206,6 +2246,30 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		loc.y = *ptr;
 		ptr = ptr + 1;
 		loc.write(child);
+
+	} else if (cmd->type == command_pool::ASSEMBLE_TREASURE) {
+		config& child = cfg.add_child("assemble_treasure");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+		// diff
+		str.str("");
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			if (i == 0) {
+				str << *ptr;
+			} else {
+				str << "," << *ptr;
+			}
+			ptr = ptr + 1;
+		}
+		child["diff"] = str.str();
 
 	} else if (cmd->type == command_pool::RPG_EXCHANGE) {
 		config& child = cfg.add_child("rpg_exchange");
@@ -3226,6 +3290,44 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				resources::controller->rpg_independence(true);
 			}
 			resources::screen->invalidate(loc);
+
+		} else if (const config &child = cfg->child("assemble_treasure")) {
+			const std::vector<std::string> diff_vstr = utils::split(child["diff"]);
+
+			std::vector<size_t>& holded_treasures = current_team.holded_treasures();
+			std::map<int, int> diff;
+			std::set<unit*> diff_troops;
+			for (std::vector<std::string>::const_iterator it = diff_vstr.begin(); it != diff_vstr.end(); ++ it) {
+				int number = lexical_cast_default<int>(*it);
+				hero& h = heros[number];
+				if (h.treasure_ != HEROS_NO_TREASURE) {
+					holded_treasures.push_back(h.treasure_);
+					h.treasure_ = HEROS_NO_TREASURE;
+				}
+				++ it;
+				int t0 = lexical_cast_default<int>(*it);
+				diff[number] = t0;
+			}
+			std::sort(holded_treasures.begin(), holded_treasures.end());
+
+			for (std::map<int, int>::const_iterator it = diff.begin(); it != diff.end(); ++ it) {
+				hero& h = heros[it->first];
+				h.treasure_ = it->second;
+				if (h.treasure_ != HEROS_NO_TREASURE) {
+					std::vector<size_t>::iterator it2 = std::find(holded_treasures.begin(), holded_treasures.end(), h.treasure_);
+					holded_treasures.erase(it2);
+				}
+
+				unit* u = find_unit(units, h);
+				if (!u->is_artifical()) {
+					diff_troops.insert(u);
+				}
+			}
+			for (std::set<unit*>::iterator it = diff_troops.begin(); it != diff_troops.end(); ++ it) {
+				unit& u = **it;
+				u.adjust();
+			}
+			
 		} else if (const config &child = cfg->child("rpg_exchange")) {
 			const std::vector<std::string> human_pairs = utils::split(child["human"]);
 			std::vector<size_t> v;

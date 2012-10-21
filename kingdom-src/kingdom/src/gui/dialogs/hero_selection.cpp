@@ -299,28 +299,13 @@ void thero_selection::fill_table(int catalog)
 			table_item_item.insert(std::make_pair("action", table_item));
 
 		} else if (catalog == FEATURE_PAGE) {
-			features.clear();
-			for (int tmp = 0; tmp < HEROS_MAX_FEATURE; tmp ++) {
-				if (hero_feature_val2(h, tmp)) {
-					features.push_back(tmp);
-				}
-			}
-
 			table_item["label"] = h.name();
 			table_item_item.insert(std::make_pair("name", table_item));
 
-			if (!features.empty()) {
-				table_item["label"] = h.feature_str(features.front());
-			} else {
-				table_item["label"] = "";
-			}
+			table_item["label"] = hero::feature_str(h.feature_);
 			table_item_item.insert(std::make_pair("feature", table_item));
 
-			if (!features.empty()) {
-				table_item["label"] = h.feature_desc_str(features.front());
-			} else {
-				table_item["label"] = "";
-			}
+			table_item["label"] = hero::feature_desc_str(h.feature_);
 			table_item_item.insert(std::make_pair("explain", table_item));
 
 		} else if (catalog == ADAPTABILITY_PAGE) {

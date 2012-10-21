@@ -1869,8 +1869,10 @@ void unit::set_attacks(int left)
 	attacks_left_ = std::max<int>(0,std::min<int>(left,max_attacks_)); 
 }
 
-void unit::new_turn()
+bool unit::new_turn()
 {
+	bool erase = false;
+
 	end_turn_ = false;
 	movement_ = total_movement();
 	attacks_left_ = max_attacks_;
@@ -1878,43 +1880,44 @@ void unit::new_turn()
 
 	const std::vector<team>& teams = *resources::teams;
 	if (artifical_ || !teams.size()) {
-		return;
+		return false;
 	}
 
 	hero& leader = *(teams[side_ - 1].leader());
 	// wander
+	std::vector<hero*> captains, wanders;
+	if (master_ != rpg::h && master_->loyalty(leader) < game_config::wander_loyalty_threshold) {
+		wanders.push_back(master_);
+	} else {
+		captains.push_back(master_);
+	}
 	if (second_->valid()) {
-		std::vector<hero*> captains, wanders;
-		if (master_ != rpg::h && master_->loyalty(leader) < game_config::wander_loyalty_threshold) {
-			wanders.push_back(master_);
-		} else {
-			captains.push_back(master_);
-		}
 		if (second_ != rpg::h && second_->loyalty(leader) < game_config::wander_loyalty_threshold) {
 			wanders.push_back(second_);
 		} else {
 			captains.push_back(second_);
 		}
-		if (third_->valid()) {
-			if (third_ != rpg::h && third_->loyalty(leader) < game_config::wander_loyalty_threshold) {
-				wanders.push_back(third_);
-			} else {
-				captains.push_back(third_);
-			}
+	}
+	if (third_->valid()) {
+		if (third_ != rpg::h && third_->loyalty(leader) < game_config::wander_loyalty_threshold) {
+			wanders.push_back(third_);
+		} else {
+			captains.push_back(third_);
+		}
+	}
+	if (!wanders.empty()) {
+		artifical* to_city = units_.city_from_seed(max_hit_points_);
+		for (std::vector<hero*>::iterator itor = wanders.begin(); itor != wanders.end(); ++ itor) {
+			game_events::show_hero_message(*itor, units_.city_from_cityno((*itor)->city_), 
+				_("In misfortune time, it is necessary to search chance that can carry out value of life."),
+				game_events::INCIDENT_WANDER);
+			to_city->wander_into(**itor, teams[side_ - 1].is_human()? false: true);
 		}
 		if (captains.empty()) {
-			captains.push_back(wanders.back());
-			wanders.erase(wanders.begin() + (wanders.size() - 1));
-		}
-		if (!wanders.empty()) {
+			erase = true;
+			// this troops will be erase.
+		} else {
 			replace_captains(captains);
-			artifical* to_city = units_.city_from_seed(max_hit_points_);
-			for (std::vector<hero*>::iterator itor = wanders.begin(); itor != wanders.end(); ++ itor) {
-				game_events::show_hero_message(*itor, units_.city_from_cityno((*itor)->city_), 
-					_("In misfortune time, it is necessary to search chance that can carry out value of life."),
-					game_events::INCIDENT_WANDER);
-				to_city->wander_into(**itor, teams[side_ - 1].is_human()? false: true);
-			}
 		}
 	}
 
@@ -1934,6 +1937,8 @@ void unit::new_turn()
 	increase_activity(8);
 
 	increase_feeling(game_config::increase_feeling);
+
+	return erase;
 }
 
 void unit::end_turn()
@@ -2793,24 +2798,51 @@ void unit::calculate_5fields()
 
 	// feature
 	const complex_feature_map& complex_feature = unit_types.complex_feature();
+	const treasure_map& treasures = unit_types.treasures();
 	memset(feature_, 0, HEROS_FEATURE_M2BYTES);
 
 	std::set<int> holded_features;
-	tmp = master_->first_feature();
-	if (tmp != HEROS_MAX_FEATURE) {
-		holded_features.insert(tmp);
+	if (master_->feature_ != HEROS_MAX_FEATURE) {
+		holded_features.insert(master_->feature_);
 	}
-	if (second_valid && (tmp = second_->first_feature())) {
-		if (tmp != HEROS_MAX_FEATURE) {
-			holded_features.insert(tmp);
+	if (master_->treasure_ != HEROS_NO_TREASURE) {
+		treasure_map::const_iterator it = treasures.find(master_->treasure_);
+		if (it != treasures.end()) {
+			for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+				int single_feature = *it2;
+				holded_features.insert(*it2);
+			}
 		}
 	}
-	if (third_valid && (tmp = third_->first_feature())) {
-		if (tmp != HEROS_MAX_FEATURE) {
-			holded_features.insert(tmp);
+	if (second_valid) {
+		if (second_->feature_ != HEROS_MAX_FEATURE) {
+			holded_features.insert(second_->feature_);
+		}
+		if (second_->treasure_ != HEROS_NO_TREASURE) {
+			treasure_map::const_iterator it = treasures.find(second_->treasure_);
+			if (it != treasures.end()) {
+				for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+					int single_feature = *it2;
+					holded_features.insert(*it2);
+				}
+			}
 		}
 	}
-	if (leader->side_feature_ != HEROS_NO_SIDE_FEATURE) {
+	if (third_valid) {
+		if (third_->feature_ != HEROS_MAX_FEATURE) {
+			holded_features.insert(third_->feature_);
+		}
+		if (third_->treasure_ != HEROS_NO_TREASURE) {
+			treasure_map::const_iterator it = treasures.find(third_->treasure_);
+			if (it != treasures.end()) {
+				for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+					int single_feature = *it2;
+					holded_features.insert(*it2);
+				}
+			}
+		}
+	}
+	if (leader->side_feature_ != HEROS_NO_FEATURE) {
 		holded_features.insert(leader->side_feature_);
 	}
 	if (t) {
@@ -2819,6 +2851,9 @@ void unit::calculate_5fields()
 			const arms_feature& f = *it;
 			if (arms_ == f.arms_ && level_ >= f.level_) {
 				holded_features.insert(f.feature_);
+			}
+			if (packee_unit_type_ && packee_unit_type_->arms() == f.arms_ && packee_unit_type_->level() >= f.level_) {
+				holded_features.insert(f.feature_);	
 			}
 		}
 	}
@@ -2840,60 +2875,6 @@ void unit::calculate_5fields()
 			}
 		}
 	}
-
-/*	
-	for (tmp = 0; tmp < HEROS_MAX_FEATURE; tmp ++) {
-		if (hero_feature_val2(*master_, tmp)) {
-			unit_feature_set(tmp, hero_feature_single_result);
-			if (tmp < HEROS_BASE_FEATURE_COUNT) {
-				continue;
-			}
-		}
-		if (second_valid && hero_feature_val2(*second_, tmp)) {
-			unit_feature_set(tmp, hero_feature_single_result);
-			if (tmp < HEROS_BASE_FEATURE_COUNT) {
-				continue;
-			}
-		}
-		if (third_valid && hero_feature_val2(*third_, tmp)) {
-			unit_feature_set(tmp, hero_feature_single_result);
-			if (tmp < HEROS_BASE_FEATURE_COUNT) {
-				continue;
-			}
-		}
-		// leader feature
-		if (leader && tmp == leader->side_feature_) {
-			unit_feature_set(tmp, hero_feature_single_result);
-			if (tmp < HEROS_BASE_FEATURE_COUNT) {
-				continue;
-			}
-		}
-		// arms feature
-		if (t) {
-			const std::vector<arms_feature>& features = t->features();
-			for (std::vector<arms_feature>::const_iterator it = features.begin(); it != features.end(); ++ it) {
-				const arms_feature& f = *it;
-				if (tmp == f.feature_ && arms_ == f.arms_ && level_ >= f.level_) {
-					unit_feature_set(tmp, hero_feature_single_result);
-				}
-			}
-		}
-
-		// parse complex feature to base feature
-		if (tmp >= HEROS_BASE_FEATURE_COUNT && unit_feature_val(tmp)) {
-			complex_feature_map::const_iterator complex_itor = complex_feature.find(tmp);
-			if (complex_itor == complex_feature.end()) {
-				continue;
-			}
-			for (std::vector<int>::const_iterator itor = complex_itor->second.begin(); itor != complex_itor->second.end(); ++ itor) {
-				int single_feature = *itor;
-				if (!unit_feature_val(single_feature)) {
-					unit_feature_set(single_feature, hero_feature_complex_result);
-				}
-			}
-		}
-	}
-*/
 }
 
 void unit::adjust() 
@@ -3622,6 +3603,7 @@ int unit::movement_cost(const t_translation::t_terrain terrain, const map_locati
 int unit::defense_modifier(t_translation::t_terrain terrain) const
 {
 	assert(resources::game_map != NULL);
+
 	int def = defense_modifier_internal(defense_mods_, cfg_, NULL, *resources::game_map, terrain);
 #if 0
 	// A [defense] ability is too costly and doesn't take into account target locations.
@@ -4280,6 +4262,27 @@ void unit::set_loyalty(int level, bool fixed)
 			third_->float_catalog_ = ftofxp8(third_->base_catalog_);
 		}
 	}
+}
+
+bool unit::has_less_loyalty(int loyalty, const hero& leader)
+{
+	int l = master_->loyalty(leader);
+	if (l < loyalty) {
+		return true;
+	}
+	if (second_->valid()) {
+		l = second_->loyalty(leader);
+		if (l < loyalty) {
+			return true;
+		}
+	}
+	if (third_->valid()) {
+		l = third_->loyalty(leader);
+		if (l < loyalty) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void unit::increase_feeling(int inc)

@@ -543,6 +543,8 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 	const hero* rpg_hero = rpg::h;
 	int hero_index = 0;
 	int activity_ajdusted;
+	const treasure_map& treasures = unit_types.treasures();
+
 	for (std::vector<hero*>::iterator itor = fresh_heros_.begin(); itor != fresh_heros_.end(); ++ itor, hero_index ++) {
 		/*** Add list item ***/
 		string_map table_item;
@@ -551,13 +553,6 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 		hero* h = *itor;
 
 		if (catalog == ABILITY_PAGE) {
-			features.clear();
-			for (int tmp = 0; tmp < HEROS_MAX_FEATURE; tmp ++) {
-				if (hero_feature_val2(*h, tmp)) {
-					features.push_back(tmp);
-				}
-			}
-
 			table_item["use_markup"] = "true";
 			str.str("");
 			if (h->official_ == hero_official_commercial) {
@@ -572,11 +567,7 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 			table_item["label"] = lexical_cast<std::string>(h->loyalty(*teams_[h->side_].leader()));;
 			table_item_item.insert(std::make_pair("loyalty", table_item));
 
-			if (!features.empty()) {
-				table_item["label"] = h->feature_str(features.front());
-			} else {
-				table_item["label"] = "";
-			}
+			table_item["label"] = hero::feature_str(h->feature_);
 			table_item_item.insert(std::make_pair("feature", table_item));
 
 			str.str("");
@@ -670,6 +661,25 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 
 			table_item["label"] = hero::gender_str(h->gender_);
 			table_item_item.insert(std::make_pair("gender", table_item));
+
+			str.str("");
+			str << hero::treasure_str(h->treasure_);
+			if (h->treasure_ != HEROS_NO_TREASURE) {
+				treasure_map::const_iterator it = treasures.find(h->treasure_);
+				str << "(";
+				if (it != treasures.end()) {
+					for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+						if (it2 == it->second.begin()) {
+							str << hero::feature_str(*it2);
+						} else {
+							str << " " << hero::feature_str(*it2);
+						}	
+					}
+				}
+				str << ")";
+			}
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("treasure", table_item));
 
 		} else if (catalog == RELATION_PAGE) {
 			table_item["use_markup"] = "true";

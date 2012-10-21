@@ -7,9 +7,11 @@
 #include "xfunc.h"
 #include "win32x.h"
 #include "struct.h"
-// #include "utf8.h"
 
+#include "wesconfig.h"
 #include "gettext.hpp"
+#include "filesystem.hpp"
+#include "editor.hpp"
 
 #include <sstream>
 #include <iosfwd>
@@ -23,22 +25,11 @@ BOOL CALLBACK DlgHeroEditProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 #define NAME_CUSTOM_PROFILE		"Custom"
 
-static environ_var_t	*evar = NULL;
 static int				gcfgidx = -1;
-
-typedef enum {
-	ma_unkonwn			= 0,
-	ma_new				= 1,
-	ma_rename			= 2,
-
-	ma_edit				= 3,
-	ma_add				= 4,
-} mgr_action_t;
 
 typedef struct {
 	mgr_action_t	_ma;
 	int				_cfgidx;
-	char			_cfgname[MAX_CFGITEM_CHARS + 1];
 } cfgmgr_t;
 cfgmgr_t			gcfgmgr;
 
@@ -73,13 +64,13 @@ void wgen_enter_ui(void)
 	wgen_enable_save_btn(FALSE);
 
 	UpdateUIFromFile(gdmgr._hdlg_wgen, gdmgr.heros_fname_);
-
+/*
 	if (!gdmgr.list_header_height_) {
 		RECT rc;
 		ListView_GetItemRect(GetDlgItem(gdmgr._hdlg_wgen, IDC_LV_WGEN_EDITOR), 0, &rc, LVIR_BOUNDS);
 		gdmgr.list_header_height_ = rc.top;
 	}
-
+*/
 	// 后面是保留给将来使用按钮,当前版本全都灰掉
 	ToolBar_EnableButton(gdmgr._htb_wgen, IDM_NEW, FALSE);
 	ToolBar_EnableButton(gdmgr._htb_wgen, IDM_RESET, FALSE);
@@ -178,7 +169,14 @@ void create_wgen_toolinfo(HWND hwndP)
 
 	return;
 }
-
+/*
+const std::string& utf8_2_ansi(const std::string& utf8) 
+{
+	static std::string tstr = general.name();
+	conv_ansi_utf8(tstr, false);
+	return tstr;
+}
+*/
 // general.number_决定了向列表控件是添加还是修改
 void hero_data_2_lv(HWND hdlgP, hero& general)
 {
@@ -213,7 +211,6 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	// 姓名
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 1;
-
 	lvi.pszText = const_cast<char*>(general.name().c_str());
 	ListView_SetItem(hctl, &lvi);
 
@@ -293,22 +290,17 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	// 特技
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 13;
-	for (i = hero_feature_min; i <= hero_feature_max; i ++) {
-		if (hero_feature_val2(general, i)) {
-			break;
-		}
-	}
-	if (i <= hero_feature_max) {
-		lvi.pszText = const_cast<char*>(general.feature_str(i).c_str());
+	if (general.feature_ != HEROS_NO_FEATURE) {
+		lvi.pszText = const_cast<char*>(general.feature_str(general.feature_).c_str());
 	} else {
 		lvi.pszText = NULL;
 	}
 	ListView_SetItem(hctl, &lvi);
 
-	// 阵营特技
+	// 势力特技
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 14;
-	if (general.side_feature_ != HEROS_NO_SIDE_FEATURE) {
+	if (general.side_feature_ != HEROS_NO_FEATURE) {
 		lvi.pszText = const_cast<char*>(general.feature_str(general.side_feature_).c_str());
 	} else {
 		lvi.pszText = NULL;
@@ -489,9 +481,20 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
-	// 列传
+	// 宝物
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 31;
+	strstr.str("");
+	strstr << hero::treasure_str(general.treasure_);
+	val = general.treasure_;
+	strstr << "(" << val << ")";
+	strcpy(text, strstr.str().c_str());
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+
+	// 列传
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = 32;
 	const char* biography = general.biography();
 	// lvi.pszText = const_cast<char*>(biography.c_str());
 	lvi.pszText = const_cast<char*>(general.biography());
@@ -512,11 +515,6 @@ BOOL On_DlgWGenInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	SetParent(GetDlgItem(hdlgP, IDC_ET_WGEN_FIND), gdmgr._htb_wgen);
 	if (gdmgr._dvrsrc == dsrc_network) {
 		create_wgen_toolinfo(gdmgr._hdlg_wgen);
-	}
-
-	if (!evar) {
-        evar = (environ_var_t *)malloc(sizeof(environ_var_t) * MAX_CFGITEMS);
-		memset(evar, 0, sizeof(environ_var_t) * MAX_CFGITEMS);
 	}
 
 	//
@@ -681,16 +679,21 @@ BOOL On_DlgWGenInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = "官职";
 	ListView_InsertColumn(hctl, 30, &lvc);
 
-	lvc.cx = 400;
+	lvc.cx = 100;
 	lvc.iSubItem = 31;
-	lvc.pszText = "列传";
+	lvc.pszText = "宝物";
 	ListView_InsertColumn(hctl, 31, &lvc);
+
+	lvc.cx = 400;
+	lvc.iSubItem = 32;
+	lvc.pszText = "列传";
+	ListView_InsertColumn(hctl, 32, &lvc);
 
 	ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
 
 	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
-
+	
 	SetFocus(GetCfgDescHandle());
 
 	return FALSE;
@@ -750,46 +753,6 @@ void On_DlgWGenCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		
 		break;
 	}
-}
-
-// 跟据evar内容重新刷新存储CFGDESC的CMB控件
-// 它只是更新内容不负责选责某条一条
-void update_cfgdesc_use_evar(HWND hdlgP)
-{
-	int		idx;
-	char	text[_MAX_PATH];
-	HWND	hctl = GetCfgDescHandle();
-
-	ComboBox_ResetContent(hctl);
-	if ((gdmgr._cfgidx == 0) && (gdmgr._dvrsrc == dsrc_network)) {
-		ComboBox_AddString(hctl, formatstr("* %s", NAME_CUSTOM_PROFILE));	// 添加一项默认的
-	} else {
-		ComboBox_AddString(hctl, NAME_CUSTOM_PROFILE);		// 添加一项默认的
-	}
-	for (idx = 0; idx < MAX_CFGITEMS; idx ++) {
-		if (evar[idx]._cfgname[0]) {
-			if (idx == 0) {
-				sprintf(text, "%ist: %s", idx + 1, evar[idx]._cfgname);
-			} else if (idx == 1) {
-				sprintf(text, "%ind: %s", idx + 1, evar[idx]._cfgname);
-			} else if (idx == 2) {
-                sprintf(text, "%ird: %s", idx + 1, evar[idx]._cfgname);
-			} else {
-				sprintf(text, "%ith: %s", idx + 1, evar[idx]._cfgname);
-			}
-			if (gdmgr._dvrsrc == dsrc_network) {
-				if ((gdmgr._cfgidx - 1)== idx) {
-					strcpy(text, formatstr("* %s", text));
-				} else {
-					strcpy(text, formatstr("  %s", text));
-				}
-			}
-			ComboBox_AddString(hctl, text);
-		} else {
-			break;
-		}
-	}
-	return;
 }
 
 BOOL UpdateUIFromFile(HWND hdlgP, char* fname)
@@ -906,15 +869,29 @@ void OnFindBt(HWND hdlgP)
 		return;
 	}
 
-	RECT line0_rcct;
-	ListView_GetItemRect(hctl, 0, &line0_rcct, LVIR_BOUNDS);
-	int data_line_height = line0_rcct.bottom - line0_rcct.top;
-	// size_t first_viewed_line = posix_abs(line0_rcct.top - gdmgr.list_header_height_) / data_line_height;
+	RECT line0_rect;
+	ListView_GetItemRect(hctl, 0, &line0_rect, LVIR_BOUNDS);
+	int data_line_height = line0_rect.bottom - line0_rect.top;
 	size_t first_viewed_line = ListView_GetTopIndex(hctl);
-	// size_t lines_per_screen = ListView_GetCountPerPage(hctl);
+	size_t count_per_page = ListView_GetCountPerPage(hctl);
 
 	size_t found, idx, count, hero_size = gdmgr.heros_.size();
-	for (found = idx = first_viewed_line + 1; idx < hero_size; found ++, idx ++) {
+	size_t first_find_line = first_viewed_line + 1;
+	
+	if (first_viewed_line + count_per_page == hero_size) {
+		// current display is last screen. 
+		// if select item in this view, first_find_line is next to select item. or next to first viewed item.
+		for (idx = first_viewed_line; idx < hero_size; idx ++) {
+			if (ListView_GetItemState(hctl, idx, LVIS_SELECTED)) {
+				break;
+			}
+		}
+		if (idx != hero_size) {
+			first_find_line = idx + 1;
+		}
+	}
+
+	for (found = idx = first_find_line; idx < hero_size; found ++, idx ++) {
 		hero& h = gdmgr.heros_[idx];
 		size_t size = strlen(text);
 		if (!strncasecmp(text, h.name().c_str(), size)) {
@@ -922,22 +899,19 @@ void OnFindBt(HWND hdlgP)
 		}
 	}
 	if (found == hero_size) {
-		for (found = 0, idx = 0; idx < first_viewed_line + 1; found ++, idx ++) {
+		for (found = 0, idx = 0; idx < first_find_line; found ++, idx ++) {
 			hero& h = gdmgr.heros_[idx];
 			size_t size = strlen(text);
 			if (!strncasecmp(text, h.name().c_str(), size)) {
 				break;
 			}
 		}
-		if (found == first_viewed_line + 1) {
+		if (found == first_find_line) {
 			found = hero_size;
 		}
 	}
 
 	if (found != hero_size) {
-		RECT rc;
-		LONG need_scroll_to_y;
-		
 		SetFocus(hctl);
 		count = ListView_GetItemCount(hctl);
 		for (idx = 0; idx < count; idx ++) {
@@ -947,17 +921,13 @@ void OnFindBt(HWND hdlgP)
 				ListView_SetItemState(hctl, idx, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 			}
 		}
-		ListView_GetItemRect(hctl, 0, &rc, LVIR_BOUNDS);
-		need_scroll_to_y = found * (rc.bottom - rc.top);
-		ListView_Scroll(hctl, 0, -1 * count * (rc.bottom - rc.top));
-		ListView_Scroll(hctl, 0, need_scroll_to_y);
+		ListView_Scroll(hctl, 0, (found - first_viewed_line) * data_line_height);
 	}
 	return;
 }
 
 void On_DlgWGenDestroy(HWND hdlgP)
 {
-	free(evar);
 	return;
 }
 
@@ -1069,10 +1039,6 @@ void wgen_notify_handler_dblclk(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 	}
     return;
 }
-
-#ifndef NUMELMS
-   #define NUMELMS(aa) (sizeof(aa)/sizeof((aa)[0]))
-#endif
 
 BOOL CALLBACK DlgWGenProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -1318,163 +1284,6 @@ HWND init_toolbar(HINSTANCE hinst, HWND hdlgP)
 
 
 
-void create_subcfg_toolbar(HWND hwndP)
-{
-	TBBUTTON		tbBtns[5];
-	int				cxblank;
-	RECT			rc;
-
-
-	GetClientRect(hwndP, &rc);
-	cxblank = (rc.right - rc.left) - 4 * 24 - 6;
-
-	if (gdmgr._htb_subcfg) {
-		DestroyWindow(gdmgr._htb_subcfg);
-	}
-
-	// Create a toolbar
-	gdmgr._htb_subcfg = CreateWindowEx(0, TOOLBARCLASSNAME, (LPSTR)NULL, 
-		WS_CHILD | CCS_ADJUSTABLE | TBSTYLE_TOOLTIPS | TBSTYLE_FLAT, 0, 0, 100, 0, hwndP, 
-		(HMENU)IDR_WGENMENU, gdmgr._hinst, NULL);
-
-	// Send the TB_BUTTONSTRUCTSIZE message, which is required for backward compatibility
-	ToolBar_ButtonStructSize(gdmgr._htb_subcfg, sizeof(TBBUTTON));
-	ToolBar_SetButtonSize(gdmgr._htb_subcfg, 30, 30);
-	
-	tbBtns[0].iBitmap = MAKELONG(gdmgr._iico_reset, 0);
-	tbBtns[0].idCommand = IDM_RESET;	
-	tbBtns[0].fsState = TBSTATE_ENABLED;
-	tbBtns[0].fsStyle = BTNS_BUTTON;
-	tbBtns[0].dwData = 0L;
-	tbBtns[0].iString = -1;
-
-	ToolBar_AddButtons(gdmgr._htb_subcfg, 1, &tbBtns);
-	ToolBar_AutoSize(gdmgr._htb_subcfg);
-	ToolBar_SetExtendedStyle(gdmgr._htb_subcfg, TBSTYLE_EX_DRAWDDARROWS);
-	ToolBar_SetImageList(gdmgr._htb_subcfg, gdmgr._himl_24x24, 0);
-	
-	ShowWindow(gdmgr._htb_subcfg, SW_SHOW);
-
-	SetParent(GetDlgItem(hwndP, IDOK), gdmgr._htb_subcfg);
-	SetParent(GetDlgItem(hwndP, IDCANCEL), gdmgr._htb_subcfg);
-
-	TOOLINFO	ti;
-    RECT		rect;
-	// CREATE A TOOLTIP WINDOW for OK
-	if (gdmgr._tt_ok) {
-		DestroyWindow(gdmgr._tt_ok);
-	}
-    gdmgr._tt_ok = CreateWindowEx(WS_EX_TOPMOST,
-        TOOLTIPS_CLASS,
-        NULL,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,		
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        GetDlgItem(gdmgr._htb_subcfg, IDOK),
-        NULL,
-        gdmgr._hinst,
-        NULL
-        );
-	// SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    // GET COORDINATES OF THE MAIN CLIENT AREA
-    GetClientRect(GetDlgItem(gdmgr._htb_subcfg, IDOK), &rect);
-    // INITIALIZE MEMBERS OF THE TOOLINFO STRUCTURE
-    ti.cbSize = sizeof(TOOLINFO);
-    ti.uFlags = TTF_SUBCLASS;
-    ti.hwnd = GetDlgItem(gdmgr._htb_subcfg, IDOK);
-    ti.hinst = gdmgr._hinst;
-    ti.uId = 0;
-    ti.lpszText = "Save and exit";
-    // ToolTip control will cover the whole window
-    ti.rect.left = rect.left;    
-    ti.rect.top = rect.top;
-    ti.rect.right = rect.right;
-    ti.rect.bottom = rect.bottom;
-
-    // SEND AN ADDTOOL MESSAGE TO THE TOOLTIP CONTROL WINDOW 
-    SendMessage(gdmgr._tt_ok, TTM_ADDTOOL, 0, (LPARAM) (LPTOOLINFO) &ti);
-
-	// CREATE A TOOLTIP WINDOW for CANCEL
-	if (gdmgr._tt_cancel) {
-		DestroyWindow(gdmgr._tt_cancel);
-	}
-    gdmgr._tt_cancel = CreateWindowEx(WS_EX_TOPMOST,
-        TOOLTIPS_CLASS,
-        NULL,
-        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,		
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        GetDlgItem(gdmgr._htb_subcfg, IDCANCEL),
-        NULL,
-        gdmgr._hinst,
-        NULL
-        );
-	// SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-    // GET COORDINATES OF THE MAIN CLIENT AREA
-    GetClientRect(GetDlgItem(gdmgr._htb_subcfg, IDCANCEL), &rect);
-    // INITIALIZE MEMBERS OF THE TOOLINFO STRUCTURE
-    ti.cbSize = sizeof(TOOLINFO);
-    ti.uFlags = TTF_SUBCLASS;
-    ti.hwnd = GetDlgItem(gdmgr._htb_subcfg, IDCANCEL);
-    ti.hinst = gdmgr._hinst;
-    ti.uId = 0;
-    ti.lpszText = "Discard and exit";
-    // ToolTip control will cover the whole window
-    ti.rect.left = rect.left;    
-    ti.rect.top = rect.top;
-    ti.rect.right = rect.right;
-    ti.rect.bottom = rect.bottom;
-
-    // SEND AN ADDTOOL MESSAGE TO THE TOOLTIP CONTROL WINDOW 
-    SendMessage(gdmgr._tt_cancel, TTM_ADDTOOL, 0, (LPARAM) (LPTOOLINFO) &ti);
-
-	return;
-}
-
-void move_subcfg_right_position(HWND hdlgP, LPARAM lParam)
-{
-	RECT		rcMe;
-	POINT		ptTrigger;
-	int			cx, cy, cxScreen, cyScreen;
-
-	cxScreen = GetSystemMetrics(SM_CXSCREEN);
-	cyScreen = GetSystemMetrics(SM_CYSCREEN);;
-
-    ptTrigger.x = LOWORD(lParam);
-	ptTrigger.y = HIWORD(lParam);
-
-	GetWindowRect(hdlgP, &rcMe);
-	cx = rcMe.right - rcMe.left;
-	cy = rcMe.bottom - rcMe.top;
-
-	// 是否可以显示在右上角
-	if (ptTrigger.x >= cx) {
-		// x轴上，左边能显示
-		if (ptTrigger.y >= cy) {
-			// 左上角（优先）
-			MoveWindow(hdlgP, ptTrigger.x - cx, ptTrigger.y - cy, cx, cy, FALSE);
-		} else {
-			// 左下角
-			MoveWindow(hdlgP, ptTrigger.x - cx, std::min<int>(ptTrigger.y, cyScreen - cy), cx, cy, FALSE);
-		}
-	} else {
-		// x轴上，左边能显示，须显示右边
-		if (ptTrigger.y >= cy) {
-			// 右上角
-			MoveWindow(hdlgP, ptTrigger.x, ptTrigger.y - cy, cx, cy, FALSE);
-		} else {
-			// 右下角
-			MoveWindow(hdlgP, ptTrigger.x, std::min<int>(ptTrigger.y, cyScreen -cy), cx, cy, FALSE);
-		}
-	}
-	
-	return;
-}
-
 void On_DlgPopupDrawItem(HWND hdlgP, const DRAWITEMSTRUCT *lpdis)
 {
 	HDC					hdcMem; 
@@ -1644,11 +1453,19 @@ void update_hero_edit(HWND hdlgP, hero& h)
 	// ambition
 	ComboBox_SetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_AMBITION), h.ambition_);
 
+	// treasure
+	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_TREASURE0);
+	for (int idx = 0; idx < ComboBox_GetCount(hctl); idx ++) {
+		if (ComboBox_GetItemData(hctl, idx) == h.treasure_) {
+			ComboBox_SetCurSel(hctl, idx);
+			break;
+		}
+	}
+	
 	// feature
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_FEATURE);
-	int first_feature = h.first_feature();
 	for (int idx = 0; idx < ComboBox_GetCount(hctl); idx ++) {
-		if (ComboBox_GetItemData(hctl, idx) == first_feature) {
+		if (ComboBox_GetItemData(hctl, idx) == h.feature_) {
 			ComboBox_SetCurSel(hctl, idx);
 			break;
 		}
@@ -1705,8 +1522,6 @@ BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 	// char		text[1024];
 
 	// 1.检查参数是否合法
-
-	// 2.参数放入全局结构evar
 	*changed = FALSE;
 
 	// image number
@@ -1786,15 +1601,20 @@ BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 		gdmgr.heros_[gdmgr._menu_lparam].ambition_ = u32n;
 	}
 
+	// treasure
+	u32n = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_TREASURE0));
+	idx = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_TREASURE0), u32n);
+	if (gdmgr.heros_[gdmgr._menu_lparam].treasure_ != idx) {
+		*changed = TRUE;
+		gdmgr.heros_[gdmgr._menu_lparam].treasure_ = idx;
+	}
+
 	// feature
 	u32n = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_FEATURE));
 	idx = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_FEATURE), u32n);
-	if (gdmgr.heros_[gdmgr._menu_lparam].first_feature() != idx) {
+	if (gdmgr.heros_[gdmgr._menu_lparam].feature_ != idx) {
 		*changed = TRUE;
-		memset(gdmgr.heros_[gdmgr._menu_lparam].feature_, 0, HEROS_FEATURE_BYTES);
-		if (idx != HEROS_MAX_FEATURE) {
-			hero_feature_set2(gdmgr.heros_[gdmgr._menu_lparam], idx);
-		}
+		gdmgr.heros_[gdmgr._menu_lparam].feature_ = idx;
 	}
 
 	// side feature
@@ -2360,17 +2180,17 @@ void refresh_hero_name_list(HWND hdlgP, hero& h)
 BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	HWND hctl;
-	char text[_MAX_PATH], *ptr;
+	char text[_MAX_PATH];
 
-	move_subcfg_right_position(hdlgP, lParam);
-	create_subcfg_toolbar(hdlgP);
+	editor_config::move_subcfg_right_position(hdlgP, lParam);
+	editor_config::create_subcfg_toolbar(hdlgP);
 
 	// gender
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_GENDER);
-	sprintf(text, "%s0", HERO_PREFIX_STR_GENDER);
-	ComboBox_AddString(hctl, dgettext("wesnoth-hero", text)); 
-	sprintf(text, "%s1", HERO_PREFIX_STR_GENDER);
-	ComboBox_AddString(hctl, dgettext("wesnoth-hero", text)); 
+	for (int idx = 0; idx <= hero_gender_max; idx ++) {
+		sprintf(text, "%s%i", HERO_PREFIX_STR_GENDER, idx);
+		ComboBox_AddString(hctl, dgettext("wesnoth-hero", text));
+	}
 
 	// ambition
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_AMBITION);
@@ -2379,12 +2199,25 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		ComboBox_AddString(hctl, dgettext("wesnoth-hero", text)); 
 	}
 
+	// treasure
+	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_TREASURE0);
+	ComboBox_AddString(hctl, "");
+	ComboBox_SetItemData(hctl, 0, HEROS_NO_TREASURE);
+	for (int i = 0; i < HEROS_MAX_TREASURE; i ++) {
+		sprintf(text, "%s%i", HERO_PREFIX_STR_TREASURE, i);
+		char* ptr = dgettext("wesnoth-hero", text);
+		if (strncmp(ptr, HERO_PREFIX_STR_TREASURE, strlen(HERO_PREFIX_STR_TREASURE))) {
+			ComboBox_AddString(hctl, ptr);
+			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, i);
+		}
+	}
+
 	// feature
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_FEATURE);
 	ComboBox_AddString(hctl, "");
-	ComboBox_SetItemData(hctl, 0, HEROS_MAX_FEATURE);
+	ComboBox_SetItemData(hctl, 0, HEROS_NO_FEATURE);
 
-	std::vector<int> features = hero::valid_features();
+	std::vector<int>& features = hero::valid_features();
 	for (std::vector<int>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
 		sprintf(text, "%s%i", HERO_PREFIX_STR_FEATURE, *itor);
 		ComboBox_AddString(hctl, dgettext("wesnoth-hero", text)); 
@@ -2394,14 +2227,11 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// side feature
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_SIDEFEATURE);
 	ComboBox_AddString(hctl, "");
-	ComboBox_SetItemData(hctl, 0, HEROS_NO_SIDE_FEATURE);
-	for (int idx = 0; idx <= hero_feature_max; idx ++) {
-		sprintf(text, "%s%i", HERO_PREFIX_STR_FEATURE, idx);
-		ptr = dgettext("wesnoth-hero", text);
-		if (strncmp(ptr, HERO_PREFIX_STR_FEATURE, strlen(HERO_PREFIX_STR_FEATURE))) {
-			ComboBox_AddString(hctl, dgettext("wesnoth-hero", text)); 
-			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, idx);
-		}
+	ComboBox_SetItemData(hctl, 0, HEROS_NO_FEATURE);
+	for (std::vector<int>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
+		sprintf(text, "%s%i", HERO_PREFIX_STR_FEATURE, *itor);
+		ComboBox_AddString(hctl, dgettext("wesnoth-hero", text)); 
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *itor);
 	}
 
 	refresh_hero_name_list(hdlgP, gdmgr.heros_[gdmgr._menu_lparam]);

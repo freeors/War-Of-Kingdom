@@ -86,14 +86,16 @@ surface getMinimap(int w, int h, const gamemap &map, const team *vw)
 				if(i == cache->end()) {
 					std::string base_file =
 							"terrain/" + terrain_info.minimap_image() + ".png";
-					surface tile = get_image(base_file,image::HEXED);
-
+					// surface tile = get_image(base_file,image::HEXED);
+					surface tile = get_hexed(base_file);
+					
 					//Compose images of base and overlay if necessary
 					// NOTE we also skip overlay when base is missing (to avoid hiding the error)
 					if(tile != NULL && map.get_terrain_info(terrain).is_combined()) {
 						std::string overlay_file =
 								"terrain/" + terrain_info.minimap_image_overlay() + ".png";
-						surface overlay = get_image(overlay_file,image::HEXED);
+						// surface overlay = get_image(overlay_file,image::HEXED);
+						surface overlay = get_hexed(overlay_file);
 
 						if(overlay != NULL && overlay != tile) {
 							surface combined = create_compatible_surface(tile, tile->w, tile->h);

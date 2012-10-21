@@ -311,15 +311,15 @@ void manager::raise_map_changed() {
 // ADD, CREATE AIs, OR LIST AI TYPES
 // =======================================================================
 
-bool manager::add_ai_for_side_from_config( side_number side, const config& cfg, bool replace ){
+bool manager::add_ai_for_side_from_config( side_number side, const config& cfg, bool replace )
+{
 	config parsed_cfg;
-	configuration::parse_side_config(cfg, parsed_cfg);
 
 	if (replace) {
 		remove_ai_for_side(side);
 	}
 
-	holder new_holder(side,parsed_cfg);
+	holder new_holder(side, parsed_cfg);
 	std::stack<holder>& ai_stack_for_specific_side = get_or_create_ai_stack_for_side(side);
 	ai_stack_for_specific_side.push(new_holder);
 	return true;
@@ -439,7 +439,7 @@ holder& manager::get_active_ai_holder_for_side( side_number side )
 	if (!ai_stack_for_specific_side.empty()){
 		return ai_stack_for_specific_side.top();
 	} else {
-		config cfg = configuration::get_default_ai_parameters();
+		config cfg = config();
 		holder new_holder(side, cfg);
 		ai_stack_for_specific_side.push(new_holder);
 		return ai_stack_for_specific_side.top();

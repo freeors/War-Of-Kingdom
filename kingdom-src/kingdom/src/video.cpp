@@ -384,6 +384,7 @@ int CVideo::setMode( int x, int y, int bits_per_pixel, int flags )
 	mode_changed_ = true;
 
 	flags = get_flags(flags);
+
 	const int res = SDL_VideoModeOK( x, y, bits_per_pixel, flags );
 	if (res == 0) {
 		return 0;

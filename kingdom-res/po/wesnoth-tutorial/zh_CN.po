@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: wesnoth-1.10\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2012-02-25 15:51+0100\n"
-"PO-Revision-Date: 2012-06-16 12:14+0800\n"
+"PO-Revision-Date: 2012-10-10 09:42+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: Chinese Simplified <http://code.google.com/p/wesnoth-translation-cn>\n"
 "MIME-Version: 1.0\n"
@@ -1074,6 +1074,15 @@ msgstr "连枷"
 
 msgid "Um, well...click on the tile again to end move."
 msgstr "恩，好吧……再次单击这个格子结束移动。"
+
+msgid "tutorial"
+msgstr "教程"
+
+msgid "TUTORIAL"
+msgstr "教程"
+
+msgid "tutorial description"
+msgstr "教程剧本。"
 
 #~ msgid "$name-132 fallen"
 #~ msgstr "$name-132沦陷"

@@ -9,10 +9,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Legend of Bei Liu"
+msgid "legend_of_bei_liu"
 msgstr "刘备传"
 
-msgid "Legend of Bei Liu description"
+msgid "legend_of_bei_liu description"
 msgstr "战役中三个关卡，长坂坡之战、赤壁之战和南郡战役。战役中后一关卡的部队、武将数值、玩家航海文明继承上一关卡结果。"
 
 msgid "LOBL"

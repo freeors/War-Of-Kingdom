@@ -221,7 +221,7 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		, this
 		, boost::ref(window)
 		, false));
-	button->set_label(hero::feature_str(h_->first_feature()));
+	button->set_label(hero::feature_str(h_->feature_));
 
 	button = find_widget<tbutton>(&window, "side_feature", false, true);
 	connect_signal_mouse_left_click(
@@ -352,7 +352,7 @@ void tcreate_hero::feature(twindow& window, bool side)
 	}
 
 	if (side) {
-		if (h_->side_feature_ == HEROS_NO_SIDE_FEATURE) {
+		if (h_->side_feature_ == HEROS_NO_FEATURE) {
 			activity_index = 0;
 		} else {
 			// activity_index = h_->side_feature_ + 1;
@@ -360,8 +360,7 @@ void tcreate_hero::feature(twindow& window, bool side)
 		}
 		str = "side_feature";
 	} else {
-		activity_index = h_->first_feature();
-		if (activity_index == HEROS_MAX_FEATURE) {
+		if (h_->feature_ == HEROS_NO_FEATURE) {
 			activity_index = 0;
 		} else {
 			// activity_index ++;
@@ -380,16 +379,16 @@ void tcreate_hero::feature(twindow& window, bool side)
 			h_->side_feature_ = features[activity_index - 1];
 			str = hero::feature_str(h_->side_feature_);
 		} else {
-			h_->side_feature_ = HEROS_NO_SIDE_FEATURE;
+			h_->side_feature_ = HEROS_NO_FEATURE;
 			str = "";
 		}
 		label->set_label(str);
 	} else {
-		memset(h_->feature_, 0, HEROS_FEATURE_BYTES);
 		if (activity_index) {
-			hero_feature_set2(*h_, features[activity_index - 1]);
-			str = hero::feature_str(features[activity_index - 1]);
+			h_->feature_ = features[activity_index - 1];
+			str = hero::feature_str(h_->feature_);
 		} else {
+			h_->feature_ = HEROS_NO_FEATURE;
 			str = "";
 		}
 		label->set_label(str);

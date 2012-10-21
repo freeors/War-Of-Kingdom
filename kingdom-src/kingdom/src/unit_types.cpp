@@ -1211,6 +1211,7 @@ unit_type_data::unit_type_data() :
 	traits_(),
 	modifications_(),
 	complex_feature_(),
+	treasures_(),
 	abilities_(),
 	specials_(),
 	arms_ids_(),
@@ -1299,6 +1300,34 @@ void unit_type_data::set_config(config &cfg)
 			v.push_back(feature);
 		}
 		complex_feature_.insert(std::pair<int, std::vector<int> >(id, v));
+		loadscreen::increment_progress();
+	}
+
+	foreach (const config &af, cfg.child_range("treasure"))
+	{
+		if (af["id"].empty()) {
+			throw config::error("treasure error, no id attribute");
+		}
+		int id = af["id"].to_int();
+		if (id >= HEROS_MAX_TREASURE) {
+			throw config::error("treasure error, id=" + af["id"].str() + ", invalid id");
+		}
+		if (af["feature"].empty()) {
+			throw config::error("treasure error, id=" + af["id"].str() + ", no feature attribute");
+		}
+		if (treasures_.find(id) != treasures_.end()) {
+			throw config::error("treasure error, id=" + af["id"].str() + ", duplicate id");
+		}
+		const std::vector<std::string> features = utils::split(af["feature"].str());
+		std::vector<int> v;
+		for (std::vector<std::string>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
+			int feature = lexical_cast_default<int>(*itor);
+			if (feature < 0 || feature >= HEROS_MAX_FEATURE) {
+				throw config::error("treasure error, id=" + af["id"].str() + ", invalid feature");
+			}
+			v.push_back(feature);
+		}
+		treasures_.insert(std::pair<int, std::vector<int> >(id, v));
 		loadscreen::increment_progress();
 	}
 

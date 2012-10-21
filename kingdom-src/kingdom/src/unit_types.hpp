@@ -188,6 +188,7 @@ typedef std::map<std::string, unit_movement_type> movement_type_map;
 typedef std::map<std::string, const config> traits_map;
 typedef std::map<std::string, const config> modifications_map;
 typedef std::map<int, std::vector<int> > complex_feature_map;
+typedef std::map<int, std::vector<int> > treasure_map;
 typedef std::map<std::string, const config> abilities_map;
 typedef std::map<std::string, const config> specials_map;
 typedef std::vector<std::string> navigation_types;
@@ -407,6 +408,7 @@ public:
 	const traits_map& traits() const { return traits_; }
 	const modifications_map& modifications() const { return modifications_; }
 	const complex_feature_map& complex_feature() const { return complex_feature_; }
+	const treasure_map& treasures() const { return treasures_; }
 	const abilities_map& abilities() const { return abilities_; }
 	const specials_map& specials() const { return specials_; }
 	const std::vector<std::string>& arms_ids() const { return arms_ids_; }
@@ -451,6 +453,7 @@ private:
 	modifications_map modifications_;
 	traits_map traits_;
 	complex_feature_map complex_feature_;
+	treasure_map treasures_;
 	abilities_map abilities_;
 	specials_map specials_;
 	std::vector<std::string> arms_ids_;

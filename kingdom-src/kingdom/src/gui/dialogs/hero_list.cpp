@@ -213,6 +213,7 @@ void thero_list::fill_table_row(hero& h, int catalog)
 	std::vector<int> features;
 	std::stringstream str;
 	int val;
+	const treasure_map& treasures = unit_types.treasures();
 
 	/*** Add list item ***/
 	string_map table_item;
@@ -290,28 +291,13 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item_item.insert(std::make_pair("activity", table_item));
 
 	} else if (catalog == FEATURE_PAGE) {
-		// features.clear();
-		for (int tmp = 0; tmp < HEROS_MAX_FEATURE; tmp ++) {
-			if (hero_feature_val2(h, tmp)) {
-				features.push_back(tmp);
-			}
-		}
-
 		table_item["label"] = h.name();
 		table_item_item.insert(std::make_pair("name", table_item));
 
-		if (!features.empty()) {
-			table_item["label"] = h.feature_str(features.front());
-		} else {
-			table_item["label"] = "";
-		}
+		table_item["label"] = hero::feature_str(h.feature_);
 		table_item_item.insert(std::make_pair("feature", table_item));
 
-		if (!features.empty()) {
-			table_item["label"] = h.feature_desc_str(features.front());
-		} else {
-			table_item["label"] = "";
-		}
+		table_item["label"] = hero::feature_desc_str(h.feature_);
 		table_item_item.insert(std::make_pair("explain", table_item));
 
 	} else if (catalog == ADAPTABILITY_PAGE) {
@@ -405,6 +391,25 @@ void thero_list::fill_table_row(hero& h, int catalog)
 
 		table_item["label"] = hero::gender_str(h.gender_);
 		table_item_item.insert(std::make_pair("gender", table_item));
+
+		str.str("");
+		str << hero::treasure_str(h.treasure_);
+		if (h.treasure_ != HEROS_NO_TREASURE) {
+			treasure_map::const_iterator it = treasures.find(h.treasure_);
+			str << "(";
+			if (it != treasures.end()) {
+				for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+					if (it2 == it->second.begin()) {
+						str << hero::feature_str(*it2);
+					} else {
+						str << " " << hero::feature_str(*it2);
+					}	
+				}
+			}
+			str << ")";
+		}
+		table_item["label"] = str.str();
+		table_item_item.insert(std::make_pair("treasure", table_item));
 
 	} else if (catalog == RELATION_PAGE) {
 		table_item["label"] = h.name();
@@ -574,6 +579,7 @@ void thero_list::catalog_page(twindow& window, int catalog, bool swap)
 	} else if (catalog == PERSONAL_PAGE) {
 		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_gender", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_treasure", false));
 	} else if (catalog == RELATION_PAGE) {
 		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_father", false));
@@ -714,23 +720,7 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 			result = utils::utf8str_compare(h1->name(), h2->name());
 		} else if (sorting_widget_ == widgets[1]) {
 			// feature
-			std::vector<int> features1, features2;
-			for (int tmp = 0; tmp < HEROS_MAX_FEATURE; tmp ++) {
-				if (hero_feature_val2(*h1, tmp)) {
-					features1.push_back(tmp);
-				}
-				if (hero_feature_val2(*h2, tmp)) {
-					features2.push_back(tmp);
-				}
-			}
-			std::string str1, str2;
-			if (!features1.empty()) {
-				str1 = h1->feature_str(features1.front());
-			}
-			if (!features2.empty()) {
-				str2 = h2->feature_str(features2.front());
-			}
-			result = utils::utf8str_compare(str1, str2);
+			result = utils::utf8str_compare(hero::feature_str(h1->feature_), hero::feature_str(h2->feature_));
 		}
 
 	} else if (current_page_ == ADAPTABILITY_PAGE) {
@@ -816,6 +806,9 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 		} else if (sorting_widget_ == widgets[1]) {
 			// gender
 			result = utils::utf8str_compare(hero::gender_str(h1->gender_), hero::gender_str(h2->gender_));
+		} else if (sorting_widget_ == widgets[2]) {
+			// treasure
+			result = utils::utf8str_compare(hero::treasure_str(h1->treasure_), hero::treasure_str(h2->treasure_));
 		}
 
 	} else if (current_page_ == RELATION_PAGE) {

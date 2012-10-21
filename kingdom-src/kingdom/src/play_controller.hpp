@@ -76,6 +76,7 @@ public:
 
 	virtual void show_rpg();
 	virtual void rpg_detail();
+	virtual void assemble_treasure();
 	virtual void rpg_exchange(const std::vector<size_t>& human_p, size_t ai_p);
 	virtual void rpg_independence(bool replaying = false);
 
@@ -266,6 +267,9 @@ private:
 
 	int human_players_;
 	bool rpging_;
+
+	unit** troops_cache_;
+	size_t troops_cache_vsize_;
 
 	bool victory_when_enemies_defeated_;
 	end_level_data end_level_data_;

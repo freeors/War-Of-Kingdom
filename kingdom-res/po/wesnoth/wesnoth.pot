@@ -9274,6 +9274,9 @@ msgstr ""
 msgid "There are no holded card"
 msgstr ""
 
+msgid "There are no hero available to assemble treasure."
+msgstr ""
+
 msgid "Prepare to battle, please recruit!"
 msgstr ""
 
@@ -9350,4 +9353,13 @@ msgid "fireball"
 msgstr ""
 
 msgid "lightning"
+msgstr ""
+
+#
+# new campaign
+#
+msgid "Defeat all sides"
+msgstr ""
+
+msgid "No city you holded"
 msgstr ""

@@ -11,7 +11,7 @@
 #include <crtdbg.h>
 // for memory lead detect end
 
-#define PROG_NAME			"WOK-Editor"
+#define PROG_NAME			"SLG Maker"
 #include "posix.h"
 
 #include <commctrl.h>

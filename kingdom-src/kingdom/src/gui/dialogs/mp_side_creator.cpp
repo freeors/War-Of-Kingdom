@@ -235,7 +235,6 @@ tmp_side_creator::tmp_side_creator(hero_map& heros, game_display& gui, gamemap& 
 	, side_features_()
 	, player_teams_()
 	, player_colors_()
-	, ai_algorithms_()
 	, team_names_()
 	, user_team_names_()
 	, team_prefix_(std::string(_("Team")) + " ")
@@ -525,7 +524,6 @@ void tmp_side_creator::lists_init()
 	// AI algorithms
 	const config &era = level_.child("era");
 	// ai::configuration::add_era_ai_from_config(era);
-	ai_algorithms_ = ai::configuration::get_available_ais();
 
 	// Factions
 	config::child_itors sides = current_config()->child_range("side");
@@ -1163,7 +1161,7 @@ tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, co
 		hero& leader = parent_->heros_[cfg["leader"].to_int()];
 		faction_button_->set_label(leader.name());
 
-		if (leader.side_feature_ != HEROS_NO_SIDE_FEATURE) {
+		if (leader.side_feature_ != HEROS_NO_FEATURE) {
 			std::vector<int>& features = hero::valid_features();
 			std::vector<int>::iterator itor = std::find(features.begin(), features.end(), leader.side_feature_);
 			feature_button_->set_label(hero::feature_str(*itor));
@@ -1310,9 +1308,7 @@ config tmp_side_creator::side::get_config() const
 			{
 				utils::string_map symbols;
 				if (allow_player_) {
-					const config &ai_cfg = ai::configuration::get_ai_config_for(ai_algorithm_);
-					res.add_child("ai",ai_cfg);
-					symbols["playername"] = ai_cfg["description"];
+					symbols["playername"] = "";
 				} else { // do not import default ai cfg here - all is set by scenario config
 					symbols["playername"] = _("Computer Player");
 				}
@@ -1540,7 +1536,7 @@ void tmp_side_creator::side::resolve_random()
 	const config& faction_cfg = *parent_->factions_[parent_->get_faction(index_)].first;
 	hero& leader = parent_->heros_[faction_cfg["leader"].to_int()];
 	if (selected_feature_ == COMBO_FEATURES_NONE) {
-		leader.side_feature_ = HEROS_NO_SIDE_FEATURE;
+		leader.side_feature_ = HEROS_NO_FEATURE;
 	} else if (selected_feature_ >= COMBO_FEATURES_MIN_VALID) {
 		leader.side_feature_ = hero::valid_features()[selected_feature_ - COMBO_FEATURES_MIN_VALID];
 	}

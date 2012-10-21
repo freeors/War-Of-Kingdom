@@ -1203,3 +1203,12 @@ msgstr ""
 
 msgid "Um, well...click on the tile again to end move."
 msgstr ""
+
+msgid "tutorial"
+msgstr ""
+
+msgid "TUTORIAL"
+msgstr ""
+
+msgid "tutorial description"
+msgstr ""

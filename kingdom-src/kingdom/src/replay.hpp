@@ -80,6 +80,7 @@ public:
 	void init_ai();
 	enum EVENT_TYPE {EVENT_ENCOURAGE, EVENT_RPG_INDEPENDENCE};
 	void add_event(int type, const map_location& loc);
+	void add_assemble_treasure(const std::map<int, int>& diff);
 	void add_rpg_exchange(const std::set<size_t>& checked_human, size_t checked_ai);
 
 	void add_log_data(const std::string &key, const std::string &var);

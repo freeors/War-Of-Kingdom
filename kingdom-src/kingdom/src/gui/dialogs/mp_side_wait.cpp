@@ -365,7 +365,7 @@ void tmp_side_wait::generate_menu(twindow& window)
 				leader.side_feature_ = hero::valid_features()[selected_feature - COMBO_FEATURES_MIN_VALID];
 
 			} else if (selected_feature == COMBO_FEATURES_NONE) {
-				leader.side_feature_ = HEROS_NO_SIDE_FEATURE;
+				leader.side_feature_ = HEROS_NO_FEATURE;
 			}
 		}
 		return;

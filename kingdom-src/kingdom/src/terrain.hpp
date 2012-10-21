@@ -1,6 +1,6 @@
-/* $Id: terrain.hpp 47839 2010-12-05 18:09:57Z mordante $ */
+/* $Id: terrain.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2012 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <map>
 
 // 以下函数用于
 // 1. 在实际值和显示值之间进行转换。存储在内存中的是fixed_t，显示值是float或int
@@ -106,7 +107,7 @@ class vconfig;
 #define HEROS_INVALID_SIDE		0xff
 #define HEROS_DEFAULT_CITY		0
 #define HEROS_DEFAULT_STATUS	hero_status_unstage
-#define HEROS_NO_SIDE_FEATURE	0xff
+#define HEROS_NO_FEATURE		0xff
 
 #define HEROS_NO_OFFICIAL		0xff
 #define HEROS_DEFAULT_OFFICIAL	HEROS_NO_OFFICIAL
@@ -198,6 +199,11 @@ enum {
 	hero_arms_max = hero_arms_t5,
 };
 
+// treasure
+#define HEROS_MAX_TREASURE			256
+#define HEROS_NO_TREASURE			0xff
+#define HERO_PREFIX_STR_TREASURE	"treasure-"
+
 // skill
 #define HEROS_MAX_SKILL	8
 #define HERO_PREFIX_STR_SKILL		"skill-"
@@ -257,6 +263,7 @@ enum {
 	hero_feature_submerge,
 	hero_feature_dayattack,
 	hero_feature_nightattack,
+	hero_featrue_frighten,
 
 	hero_feature_complex_min = HEROS_BASE_FEATURE_COUNT,
 
@@ -267,14 +274,6 @@ enum {
 	hero_feature_single_result = 1,
 	hero_feature_complex_result = 2,
 };
-
-#define hero_feature_val(i)		((feature_[(i) >> 3] >> ((i) % 8)) & 0x1)
-#define hero_feature_val2(h, i)	(((h).feature_[(i) >> 3] >> ((i) % 8)) & 0x1)
-
-#define hero_feature_set(i)		(feature_[(i) >> 3] |= (1 << ((i) % 8)))
-#define hero_feature_set2(h, i)	((h).feature_[(i) >> 3] |= (1 << ((i) % 8)))
-#define hero_feature_clear(i)	(feature_[(i) >> 3] &= ~(1 << ((i) % 8)))
-#define hero_feature_clear2(i)	((h).feature_[(i) >> 3] &= ~(1 << ((i) % 8)))
 
 #define HERO_PREFIX_STR_ADAPTABILITY	"adaptability-"
 enum {
@@ -323,7 +322,7 @@ struct hero_feeling {
 
 #define HERO_FIELDS	\
 	uint8_t gender_;	\
-	uint8_t stratum1_;	\
+	uint8_t feature_;	\
 	uint8_t longevity_;	\
 	uint8_t status_;	\
 	uint8_t official_;	\
@@ -334,7 +333,8 @@ struct hero_feeling {
 	uint8_t side_;	\
 	uint8_t heart_;	\
 	uint8_t side_feature_;	\
-	uint16_t number_;	\
+	uint8_t treasure_;	\
+	uint8_t reserve1_;	\
 	uint16_t image_;	\
 	uint16_t leadership_;	\
 	uint16_t force_;	\
@@ -347,7 +347,8 @@ struct hero_feeling {
 	uint16_t float_catalog_;	\
 	uint16_t arms_[6];	\
 	uint16_t skill_[8];	\
-	uint8_t feature_[98];	\
+	uint16_t number_;	\
+	uint8_t reserve2_[96];	\
 	hero_feeling parent_[HEROS_MAX_PARENT];	\
 	hero_feeling consort_[HEROS_MAX_CONSORT];	\
 	hero_feeling oath_[HEROS_MAX_OATH];	\
@@ -372,6 +373,7 @@ public:
 	static std::string& stratum_str(int stratum);
 	static std::string& status_str(int status);
 	static std::string& official_str(int offical);
+	static std::string& treasure_str(int tid);
 
 	hero(uint16_t number, uint16_t leadership = 0, uint16_t force = 0, uint16_t intellect = 0, uint16_t politics = 0, uint16_t charm = 0);
 	hero(const hero& that);
@@ -388,8 +390,6 @@ public:
 	bool is_oath(const hero& h, uint32_t* index = NULL) const;
 	bool is_intimate(const hero& h, uint32_t* index = NULL) const;
 	bool is_hate(const hero& h, uint32_t* index = NULL) const;
-
-	int first_feature() const;
 
 	int increase_catalog(int inc, hero& leader);
 
@@ -441,7 +441,8 @@ private:
 	static std::string stratum_str_[HEROS_STRATUMS];
 	static std::string status_str_[HEROS_STATUSES];
 	static std::string official_str_[HEROS_OFFICIALS];
-	static std::vector<int> valid_features_; 
+	static std::map<int, std::string> treasure_str_; 
+	static std::vector<int> valid_features_;
 
 	char imgfile_[32];
 	char imgfile2_[32];

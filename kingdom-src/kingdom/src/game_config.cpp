@@ -46,10 +46,12 @@ namespace game_config
 	unsigned lobby_refresh = 4000;
 	const int gold_carryover_percentage = 80;
 	const std::string version = VERSION;
-	int reside_troop_increase_loyalty = 15;
-	int field_troop_increase_loyalty = 4;
+	int reside_troop_increase_loyalty = 30;
+	int field_troop_increase_loyalty = 8;
 	int wander_loyalty_threshold = 112; // HERO_MAX_LOYALTY / 4 * 3
 	int move_loyalty_threshold = 130; // HERO_MAX_LOYALTY - 20
+	int ai_keep_loyalty_threshold = wander_loyalty_threshold + 8;
+	int ai_keep_hp_threshold = 50;
 	int max_keep_turns = 10;
 	int increase_feeling = 1024; // HERO_MAX_FEELING / 64. 64 turns will carry.
 	int minimal_activity = 175;
@@ -207,6 +209,8 @@ namespace game_config
 		field_troop_increase_loyalty = v["field_troop_increase_loyalty"].to_int(4);
 		wander_loyalty_threshold = v["wander_loyalty_threshold"].to_int(112); // HERO_MAX_LOYALTY / 4 * 3
 		move_loyalty_threshold = v["wander_loyalty_threshold"].to_int(130); // HERO_MAX_LOYALTY - 20
+		ai_keep_loyalty_threshold = wander_loyalty_threshold + 8;
+		ai_keep_hp_threshold = v["ai_keep_hp_threshold"].to_int(50);
 		max_keep_turns = v["max_keep_turns"].to_int(10);
 
 		minimal_activity = v["minimal_activity"].to_int(175);

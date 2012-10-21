@@ -27,6 +27,7 @@
 #include "gui/dialogs/troop_list.hpp"
 #include "gui/dialogs/city_list.hpp"
 #include "gui/dialogs/artifical_list.hpp"
+#include "gui/dialogs/treasure_list.hpp"
 #include "gui/dialogs/hero_list.hpp"
 #include <boost/bind.hpp>
 #include "game_display.hpp"
@@ -262,7 +263,9 @@ void tlist::artifical_list(twindow& window, bool global)
 	if (global) {
 		side_num = -1;
 	}
-	gui2::tartifical_list dlg(gui_, teams_, units_, heros_, gamestate_, side_num);
+	// gui2::tartifical_list dlg(gui_, teams_, units_, heros_, gamestate_, side_num);
+	gui2::ttreasure_list dlg(teams_, units_, heros_, side_num);
+
 	try {
 		dlg.show(gui_.video());
 	} catch(twml_exception& e) {

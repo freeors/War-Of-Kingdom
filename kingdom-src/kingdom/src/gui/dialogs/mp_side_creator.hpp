@@ -301,7 +301,6 @@ private:
 	std::vector<std::string> side_features_;
 	std::vector<std::string> player_teams_;
 	std::vector<std::string> player_colors_;
-	std::vector<ai::description*> ai_algorithms_;
 
 	// team_name list and "Team" prefix
 	std::vector<std::string> team_names_;

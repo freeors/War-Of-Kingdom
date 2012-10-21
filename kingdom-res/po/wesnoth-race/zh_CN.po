@@ -9,22 +9,22 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Hero Race"
+msgid "hero_race"
 msgstr "群雄争霸"
 
-msgid "Hero Race2"
+msgid "hero_race2"
 msgstr "群雄争霸2"
 
-msgid "Hero Race description"
+msgid "hero_race description"
 msgstr "黯淡了刀光剑影，远去了鼓角争鸣，湮没了荒城古道，荒芜了烽火边城。长江有意化做泪，长江有情起歌声，历史的天空闪烁几颗星，人间一股英雄气，在驰骋纵横。（战役只一个场景，玩家可以选马超、袁绍、曹操、袁术、孙坚、刘表、孟获、刘备或董卓。）"
 
-msgid "Hero Race description2"
+msgid "hero_race2 description"
 msgstr "战役只一个场景，玩家可以选马超、袁绍、曹操、袁术、孙坚、刘表、孟获、刘备、董卓、吕布、公孙瓒、刘璋和张鲁。（踏莎刀影制作）"
 
-msgid "race of hero"
+msgid "RACE"
 msgstr "群雄争霸"
 
-msgid "race of hero2"
+msgid "RACE2"
 msgstr "群雄争霸2"
 
 msgid "Defeat all sides"
@@ -90,6 +90,14 @@ msgstr "信春哥！死后满状态原地复活！"
 msgid "Defeat enemy leader(s)"
 msgstr "击败所有敌对领袖"
 
+#~ msgid "race of hero"
+#~ msgstr "群雄争霸"
+#~ msgid "race of hero2"
+#~ msgstr "群雄争霸2"
+#~ msgid "Hero Race description2"
+#~ msgstr ""
+#~ "战役只一个场景，玩家可以选马超、袁绍、曹操、袁术、孙坚、刘表、孟获、刘备、"
+#~ "董卓、吕布、公孙瓒、刘璋和张鲁。（踏莎刀影制作）"
 #~ msgid "you are defeated"
 #~ msgstr "没了能控制城市"
 #~ msgid "8p - battle of nanjun"

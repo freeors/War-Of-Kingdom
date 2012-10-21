@@ -231,7 +231,7 @@ char *updextname(char *filename, char *newextname)
 	return gname;
 }
 
-char *offextname(char *filename)
+char *offextname(const char *filename)
 {
 	static char		gname[_MAX_PATH];
 	char			*p, *p1;

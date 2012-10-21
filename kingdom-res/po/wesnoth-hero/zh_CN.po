@@ -78,6 +78,164 @@ msgstr "乱世枭雄"
 msgid "ambition-4"
 msgstr "戏子流寇"
 
+msgid "treasure-0"
+msgstr "赤免马"
+
+msgid "treasure-1"
+msgstr "的卢"
+
+msgid "treasure-2"
+msgstr "爪黄飞电"
+
+msgid "treasure-3"
+msgstr "绝影"
+
+msgid "treasure-4"
+msgstr "白龙"
+
+msgid "treasure-5"
+msgstr "四轮车"
+
+msgid "treasure-6"
+msgstr "七星宝刀"
+
+msgid "treasure-7"
+msgstr "倚天剑"
+
+msgid "treasure-8"
+msgstr "青釭剑"
+
+msgid "treasure-9"
+msgstr "雌雄双剑"
+
+msgid "treasure-10"
+msgstr "古锭刀"
+
+msgid "treasure-11"
+msgstr "青龙偃月刀"
+
+msgid "treasure-12"
+msgstr "三尖刀"
+
+msgid "treasure-13"
+msgstr "蛇矛"
+
+msgid "treasure-14"
+msgstr "铁脊蛇矛"
+
+msgid "treasure-15"
+msgstr "方天画戟"
+
+msgid "treasure-16"
+msgstr "双铁戟"
+
+msgid "treasure-17"
+msgstr "铁鞭"
+
+msgid "treasure-18"
+msgstr "铁蒺藜骨朵"
+
+msgid "treasure-19"
+msgstr "飞刀"
+
+msgid "treasure-20"
+msgstr "孙子兵法"
+
+msgid "treasure-21"
+msgstr "三略"
+
+msgid "treasure-22"
+msgstr "司马法"
+
+msgid "treasure-23"
+msgstr "孟德新书"
+
+msgid "treasure-24"
+msgstr "兵法二十四篇"
+
+msgid "treasure-25"
+msgstr "管子"
+
+msgid "treasure-26"
+msgstr "晏子春秋"
+
+msgid "treasure-27"
+msgstr "周书阴符"
+
+msgid "treasure-28"
+msgstr "春秋左传"
+
+msgid "treasure-29"
+msgstr "书经"
+
+msgid "treasure-30"
+msgstr "论语集解"
+
+msgid "treasure-31"
+msgstr "典论"
+
+msgid "treasure-32"
+msgstr "时要论"
+
+msgid "treasure-33"
+msgstr "治论"
+
+msgid "treasure-34"
+msgstr "辨道论"
+
+msgid "treasure-35"
+msgstr "仇国论"
+
+msgid "treasure-36"
+msgstr "太平要术"
+
+msgid "treasure-37"
+msgstr "西蜀地形图"
+
+msgid "treasure-38"
+msgstr "平蛮指掌图"
+
+msgid "treasure-39"
+msgstr "五石散"
+
+msgid "treasure-40"
+msgstr "白羽扇"
+
+msgid "treasure-41"
+msgstr "玉玺"
+
+#, fuzzy
+msgid "treasure-42"
+msgstr "遁甲天书"
+
+#, fuzzy
+msgid "treasure-43"
+msgstr "谋士"
+
+#, fuzzy
+msgid "treasure-44"
+msgstr "水将"
+
+#, fuzzy
+msgid "treasure-45"
+msgstr "水将"
+
+#, fuzzy
+msgid "treasure-46"
+msgstr "水将"
+
+#, fuzzy
+msgid "treasure-47"
+msgstr "水将"
+
+#, fuzzy
+msgid "treasure-48"
+msgstr "水将"
+
+#, fuzzy
+msgid "treasure-49"
+msgstr "水将"
+
 msgid "feature-0"
 msgstr "步将"
 
@@ -427,10 +585,10 @@ msgid "feature_desc-57"
 msgstr "黑夜时增加25%攻击力"
 
 msgid "feature-58"
-msgstr ""
+msgstr "震摄"
 
 msgid "feature_desc-58"
-msgstr ""
+msgstr "攻击后无反击"
 
 msgid "feature-59"
 msgstr ""

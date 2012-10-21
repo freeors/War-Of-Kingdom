@@ -18,44 +18,6 @@
 #include "gettext.hpp"
 
 #include <cstring>
-/*
-char *libintl_gettext (const char *__msgid)
-{
-	return NULL;
-}
-char *libintl_dgettext (const char *__domainname, const char *__msgid)
-{
-	return NULL;
-}
-char *libintl_dcgettext (const char *__domainname, const char *__msgid, int __category)
-{
-	return NULL;
-}
-char *libintl_ngettext (const char *__msgid1, const char *__msgid2, unsigned long int __n)
-{
-	return NULL;
-}
-char *libintl_dngettext (const char *__domainname, const char *__msgid1, const char *__msgid2, unsigned long int __n)
-{
-	return NULL;
-}
-char *libintl_dcngettext (const char *__domainname, const char *__msgid1, const char *__msgid2, unsigned long int __n, int __category)
-{
-	return NULL;
-}
-char *libintl_textdomain (const char *__domainname)
-{
-	return NULL;
-}
-char *libintl_bindtextdomain (const char *__domainname, const char *__dirname)
-{
-	return NULL;
-}
-char *libintl_bind_textdomain_codeset (const char *__domainname, const char *__codeset)
-{
-	return NULL;
-}
-*/
 
 char const *egettext(char const *msgid)
 {
@@ -77,7 +39,9 @@ const char* sgettext (const char *msgid)
 
 const char* dsgettext (const char * domainname, const char *msgid)
 {
-	bind_textdomain_codeset(domainname, "UTF-8");
+	if (exe_type != exe_editor) {
+		bind_textdomain_codeset(domainname, "UTF-8");
+	}
 	const char *msgval = dgettext (domainname, msgid);
 	if (msgval == msgid) {
 		msgval = std::strrchr (msgid, '^');
@@ -104,7 +68,9 @@ const char* sngettext (const char *singular, const char *plural, int n)
 
 const char* dsngettext (const char * domainname, const char *singular, const char *plural, int n)
 {
-	bind_textdomain_codeset(domainname, "UTF-8");
+	if (exe_type != exe_editor) {
+		bind_textdomain_codeset(domainname, "UTF-8");
+	}
 	const char *msgval = dngettext (domainname, singular, plural, n);
 	if (msgval == singular) {
 		msgval = std::strrchr (singular, '^');

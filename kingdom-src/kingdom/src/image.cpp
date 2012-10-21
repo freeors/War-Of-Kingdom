@@ -244,7 +244,6 @@ namespace {
 /** Definition of all image maps */
 image::image_cache images_(false);
 image::image_cache scaled_to_zoom_,
-		hexed_images_,
 		scaled_to_hex_images_,
 		tod_colored_images_,
 		brightened_images_;
@@ -281,7 +280,6 @@ int cached_zoom = 0;
 void image_verify_pos()
 {
 	images_.verify_pos();
-	hexed_images_.verify_pos();
 }
 
 namespace image {
@@ -292,7 +290,6 @@ mini_terrain_cache_map mini_fogged_terrain_cache;
 void flush_cache()
 {
 	images_.flush();
-	hexed_images_.flush();
 	tod_colored_images_.flush();
 	scaled_to_zoom_.flush();
 	scaled_to_hex_images_.flush();
@@ -1077,28 +1074,39 @@ void set_zoom(int amount)
 		// We keep these caches if:
 		// we use default zoom (it doesn't need those)
 		// or if they are already at the wanted zoom.
+		scaled_to_hex_images_.flush();
 		if (zoom != tile_size && zoom != cached_zoom) {
 			scaled_to_zoom_.flush();
-			scaled_to_hex_images_.flush();
+			// scaled_to_hex_images_.flush();
 			cached_zoom = zoom;
 		}
 	}
 }
 
-static surface get_hexed(const locator& i_locator)
+surface get_hexed(const locator& i_locator)
 {
 	surface image(get_image(i_locator, UNSCALED));
-	// Re-cut scaled tiles according to a mask.
-	bool is_empty = false;
-	surface res = mask_surface(image, get_hexmask(), &is_empty);
-	i_locator.add_to_cache(is_empty_hex_, is_empty);
-	return res;
+	if (!i_locator.get_loc().valid()) {
+		// Re-cut scaled tiles according to a mask.
+		bool is_empty = false;
+		surface res = mask_surface(image, get_hexmask(), &is_empty);
+		i_locator.add_to_cache(is_empty_hex_, is_empty);
+		if (!is_empty)
+			res = create_optimized_surface(res);
+		return res;
+	}
+	return image;
 }
 
 static surface get_scaled_to_hex(const locator& i_locator)
 {
-	surface img = get_image(i_locator, HEXED);
-	return scale_surface(img, zoom, zoom);
+	// surface img = get_image(i_locator, HEXED);
+	surface img = get_hexed(i_locator);
+	if (zoom == tile_size) {
+		return img;
+	} else {
+		return scale_surface(img, zoom, zoom);
+	}
 }
 
 static surface get_tod_colored(const locator& i_locator)
@@ -1158,12 +1166,12 @@ static TYPE simplify_type(const image::locator& i_locator, TYPE type){
 		if (red_adjust==0 && green_adjust==0 && blue_adjust==0)
 			type = SCALED_TO_HEX;
 	}
-
+/*
 	if(type == SCALED_TO_HEX) {
 		if(zoom == tile_size)
 			type = HEXED;
 	}
-
+*/
 	if(type == HEXED) {
 		// check if the image is already hex-cut by the location system
 		if(i_locator.get_loc().valid())
@@ -1198,7 +1206,7 @@ surface get_image(const image::locator& i_locator, TYPE type)
 		imap = &scaled_to_zoom_;
 		break;
 	case HEXED:
-		imap = &hexed_images_;
+		// imap = &hexed_images_;
 		break;
 	case SCALED_TO_HEX:
 		imap = &scaled_to_hex_images_;
@@ -1287,7 +1295,8 @@ bool is_empty_hex(const locator& i_locator)
 {
 	int index;
 	if ((index = i_locator.in_cache(is_empty_hex_)) < 0) {
-		const surface surf = get_image(i_locator, HEXED);
+		// const surface surf = get_image(i_locator, HEXED);
+		const surface surf = get_image(i_locator);
 		// emptiness of terrain image is checked during hex cut
 		// so, maybe in cache now, let's recheck
 		if ((index = i_locator.in_cache(is_empty_hex_)) < 0) {

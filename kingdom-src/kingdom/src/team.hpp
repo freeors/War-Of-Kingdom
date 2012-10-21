@@ -71,6 +71,7 @@ struct team_fields_t
 	unit_segment countdown_time_;
 	unit_segment candidate_cards_;
 	unit_segment holded_cards_;
+	unit_segment holded_treasures_;
 	unit_segment commercials_;
 	unit_segment village_;
 	unit_segment cfg_;
@@ -311,7 +312,7 @@ public:
 	const std::map<int, diplomatism_data>& diplomatisms() const { return diplomatisms_; }
 
 	void add_strategy(const strategy& s);
-	void erase_strategy(int target);
+	void erase_strategy(int target, bool dialog = true);
 	strategy& get_strategy(int target, int type = strategy::NONE);
 	const strategy& get_strategy(int target, int type = strategy::NONE) const;
 	std::vector<strategy>& strategies() { return strategies_; };
@@ -388,6 +389,11 @@ public:
 	const std::vector<size_t>& holded_cards() const { return holded_cards_; }
 	card& holded_card(int index);
 	const card& holded_card(int index) const;
+
+	std::vector<size_t>& holded_treasures() { return holded_treasures_; }
+	const std::vector<size_t>& holded_treasures() const { return holded_treasures_; }
+	void erase_treasure(int tid);
+	void erase_treasure2(int index);
 
 	SDL_Rect& city_rect() { return city_rect_; }
 	const SDL_Rect& city_rect() const { return city_rect_; }
@@ -476,6 +482,7 @@ private:
 
 	std::vector<size_t> candidate_cards_;
 	std::vector<size_t> holded_cards_;
+	std::vector<size_t> holded_treasures_;
 
 	int leader_;
 	std::vector<artifical*> holded_cities_;

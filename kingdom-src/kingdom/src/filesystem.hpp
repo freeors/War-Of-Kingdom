@@ -38,7 +38,7 @@ struct io_exception : public game::error {
 struct file_tree_checksum;
 
 enum file_name_option { ENTIRE_FILE_PATH, FILE_NAME_ONLY };
-enum file_filter_option { NO_FILTER, SKIP_MEDIA_DIR };
+enum file_filter_option { NO_FILTER = 0, SKIP_MEDIA_DIR = 0x1, SKIP_SCENARIO_DIR = 0x2};
 enum file_reorder_option { DONT_REORDER, DO_REORDER };
 
 /**
@@ -55,7 +55,7 @@ void get_files_in_dir(const std::string &dir,
                       std::vector<std::string>* files,
                       std::vector<std::string>* dirs=NULL,
                       file_name_option mode = FILE_NAME_ONLY,
-                      file_filter_option filter = NO_FILTER,
+                      int filter = NO_FILTER,
                       file_reorder_option reorder = DONT_REORDER,
                       file_tree_checksum* checksum = NULL);
 
@@ -144,10 +144,10 @@ struct file_tree_checksum
 };
 
 /** Get the time at which the data/ tree was last modified at. */
-const file_tree_checksum& data_tree_checksum(bool reset = false);
+const file_tree_checksum& data_tree_checksum(bool reset = false, int filter = SKIP_MEDIA_DIR);
 
 /** Get the time at which the data/ tree was last modified at. (used by editor)*/
-void data_tree_checksum(const std::string& path, file_tree_checksum& checksum);
+void data_tree_checksum(const std::vector<std::string>& paths, file_tree_checksum& checksum, int filter);
 
 /** Returns the size of a file, or -1 if the file doesn't exist. */
 int file_size(const std::string& fname);

@@ -25,7 +25,7 @@ extern BOOL CALLBACK DlgSyncProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lP
 extern BOOL CALLBACK DlgWGenProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgTbProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgCfgProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK DlgTBoxProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+extern BOOL CALLBACK DlgCampaignProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgAboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 #define CLASSNAME			"wokeditor"
@@ -33,7 +33,7 @@ extern BOOL CALLBACK DlgAboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 static char			gtext[_MAX_PATH];
 dvrmgr_t			gdmgr;
 
-char				gszSrcFileInCmdLine[_MAX_PATH];
+int exe_type = exe_editor;
 
 editor editor_;
 
@@ -47,7 +47,6 @@ editor editor_;
 #define KEYNAME_CORP_OEM_DESC		"oem_desc"
 #define KEYNAME_PRODUCT_NAME		"name"
 
-
 #define EDITOR_INI					"editor.ini"
 #define MARK_BMP					"mark.bmp"
 #define PC_BMP						"pc.bmp"
@@ -56,6 +55,236 @@ editor editor_;
 #define WELCOME_BMP					"welcome.bmp"
 #define CF_BMP						"cf.bmp"
 #define NETWORK_BMP					"network.bmp"
+
+namespace editor_config
+{
+	config data_cfg;
+	int sync_why_startup = WHY_NORMAL;
+	std::string campaign_id;
+
+void move_subcfg_right_position(HWND hdlgP, LPARAM lParam)
+{
+	RECT		rcMe;
+	POINT		ptTrigger;
+	int			cx, cy, cxScreen, cyScreen;
+
+	cxScreen = GetSystemMetrics(SM_CXSCREEN);
+	cyScreen = GetSystemMetrics(SM_CYSCREEN);
+
+	HWND taskbar = FindWindow( "shell_traywnd", NULL);
+	RECT taskbar_rect;
+	GetWindowRect(taskbar, &taskbar_rect);
+
+	if (taskbar_rect.right - taskbar_rect.left != cxScreen) {
+		cxScreen -= taskbar_rect.right - taskbar_rect.left;
+	}
+	if (taskbar_rect.bottom - taskbar_rect.top != cyScreen) {
+		cyScreen -= taskbar_rect.bottom - taskbar_rect.top;
+	}
+
+    ptTrigger.x = LOWORD(lParam);
+	ptTrigger.y = HIWORD(lParam);
+
+	GetWindowRect(hdlgP, &rcMe);
+	cx = rcMe.right - rcMe.left;
+	cy = rcMe.bottom - rcMe.top;
+
+	// 是否可以显示在右上角
+	if (ptTrigger.x >= cx) {
+		// x轴上，左边能显示
+		if (ptTrigger.y >= cy) {
+			// 左上角（优先）
+			MoveWindow(hdlgP, ptTrigger.x - cx, ptTrigger.y - cy, cx, cy, FALSE);
+		} else {
+			// 左下角
+			MoveWindow(hdlgP, ptTrigger.x - cx, std::min<int>(ptTrigger.y, cyScreen - cy), cx, cy, FALSE);
+		}
+	} else {
+		// x轴上，左边能显示，须显示右边
+		if (ptTrigger.y >= cy) {
+			// 右上角
+			MoveWindow(hdlgP, ptTrigger.x, ptTrigger.y - cy, cx, cy, FALSE);
+		} else {
+			// 右下角
+			MoveWindow(hdlgP, ptTrigger.x, std::min<int>(ptTrigger.y, cyScreen -cy), cx, cy, FALSE);
+		}
+	}
+	
+	return;
+}
+
+void create_subcfg_toolbar(HWND hwndP)
+{
+	TBBUTTON		tbBtns[5];
+	int				cxblank;
+	RECT			rc;
+
+
+	GetClientRect(hwndP, &rc);
+	cxblank = (rc.right - rc.left) - 4 * 24 - 6;
+
+	if (gdmgr._htb_subcfg) {
+		DestroyWindow(gdmgr._htb_subcfg);
+	}
+
+	// Create a toolbar
+	gdmgr._htb_subcfg = CreateWindowEx(0, TOOLBARCLASSNAME, (LPSTR)NULL, 
+		WS_CHILD | CCS_ADJUSTABLE | TBSTYLE_TOOLTIPS | TBSTYLE_FLAT, 0, 0, 100, 0, hwndP, 
+		(HMENU)IDR_WGENMENU, gdmgr._hinst, NULL);
+
+	// Send the TB_BUTTONSTRUCTSIZE message, which is required for backward compatibility
+	ToolBar_ButtonStructSize(gdmgr._htb_subcfg, sizeof(TBBUTTON));
+	ToolBar_SetButtonSize(gdmgr._htb_subcfg, 30, 30);
+	
+	tbBtns[0].iBitmap = MAKELONG(gdmgr._iico_reset, 0);
+	tbBtns[0].idCommand = IDM_RESET;	
+	tbBtns[0].fsState = TBSTATE_ENABLED;
+	tbBtns[0].fsStyle = BTNS_BUTTON;
+	tbBtns[0].dwData = 0L;
+	tbBtns[0].iString = -1;
+
+	ToolBar_AddButtons(gdmgr._htb_subcfg, 1, &tbBtns);
+	ToolBar_AutoSize(gdmgr._htb_subcfg);
+	ToolBar_SetExtendedStyle(gdmgr._htb_subcfg, TBSTYLE_EX_DRAWDDARROWS);
+	ToolBar_SetImageList(gdmgr._htb_subcfg, gdmgr._himl_24x24, 0);
+	
+	ShowWindow(gdmgr._htb_subcfg, SW_SHOW);
+
+	SetParent(GetDlgItem(hwndP, IDOK), gdmgr._htb_subcfg);
+	SetParent(GetDlgItem(hwndP, IDCANCEL), gdmgr._htb_subcfg);
+
+	TOOLINFO	ti;
+    RECT		rect;
+	// CREATE A TOOLTIP WINDOW for OK
+	if (gdmgr._tt_ok) {
+		DestroyWindow(gdmgr._tt_ok);
+	}
+    gdmgr._tt_ok = CreateWindowEx(WS_EX_TOPMOST,
+        TOOLTIPS_CLASS,
+        NULL,
+        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,		
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        GetDlgItem(gdmgr._htb_subcfg, IDOK),
+        NULL,
+        gdmgr._hinst,
+        NULL
+        );
+	// SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    // GET COORDINATES OF THE MAIN CLIENT AREA
+    GetClientRect(GetDlgItem(gdmgr._htb_subcfg, IDOK), &rect);
+    // INITIALIZE MEMBERS OF THE TOOLINFO STRUCTURE
+    ti.cbSize = sizeof(TOOLINFO);
+    ti.uFlags = TTF_SUBCLASS;
+    ti.hwnd = GetDlgItem(gdmgr._htb_subcfg, IDOK);
+    ti.hinst = gdmgr._hinst;
+    ti.uId = 0;
+    ti.lpszText = "Save and exit";
+    // ToolTip control will cover the whole window
+    ti.rect.left = rect.left;    
+    ti.rect.top = rect.top;
+    ti.rect.right = rect.right;
+    ti.rect.bottom = rect.bottom;
+
+    // SEND AN ADDTOOL MESSAGE TO THE TOOLTIP CONTROL WINDOW 
+    SendMessage(gdmgr._tt_ok, TTM_ADDTOOL, 0, (LPARAM) (LPTOOLINFO) &ti);
+
+	// CREATE A TOOLTIP WINDOW for CANCEL
+	if (gdmgr._tt_cancel) {
+		DestroyWindow(gdmgr._tt_cancel);
+	}
+    gdmgr._tt_cancel = CreateWindowEx(WS_EX_TOPMOST,
+        TOOLTIPS_CLASS,
+        NULL,
+        WS_POPUP | TTS_NOPREFIX | TTS_ALWAYSTIP,		
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        CW_USEDEFAULT,
+        GetDlgItem(gdmgr._htb_subcfg, IDCANCEL),
+        NULL,
+        gdmgr._hinst,
+        NULL
+        );
+	// SetWindowPos(hwndTT, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    // GET COORDINATES OF THE MAIN CLIENT AREA
+    GetClientRect(GetDlgItem(gdmgr._htb_subcfg, IDCANCEL), &rect);
+    // INITIALIZE MEMBERS OF THE TOOLINFO STRUCTURE
+    ti.cbSize = sizeof(TOOLINFO);
+    ti.uFlags = TTF_SUBCLASS;
+    ti.hwnd = GetDlgItem(gdmgr._htb_subcfg, IDCANCEL);
+    ti.hinst = gdmgr._hinst;
+    ti.uId = 0;
+    ti.lpszText = "Discard and exit";
+    // ToolTip control will cover the whole window
+    ti.rect.left = rect.left;    
+    ti.rect.top = rect.top;
+    ti.rect.right = rect.right;
+    ti.rect.bottom = rect.bottom;
+
+    // SEND AN ADDTOOL MESSAGE TO THE TOOLTIP CONTROL WINDOW 
+    SendMessage(gdmgr._tt_cancel, TTM_ADDTOOL, 0, (LPARAM) (LPTOOLINFO) &ti);
+
+	return;
+}
+
+void On_DlgDrawItem(HWND hdlgP, const DRAWITEMSTRUCT *lpdis)
+{
+	HDC					hdcMem; 
+    hdcMem = CreateCompatibleDC(lpdis->hDC); 
+
+	if (lpdis->CtlID == IDOK) {
+		if (lpdis->itemState & ODS_SELECTED) { // if selected 
+            SelectObject(hdcMem, gdmgr._hbm_ok_select); 
+		} else {
+			SelectObject(hdcMem, gdmgr._hbm_ok_unselect); 
+		}
+	} else {
+		// (lpdis->CtlID == IDCANCEL)
+		if (lpdis->itemState & ODS_SELECTED) { // if selected 
+            SelectObject(hdcMem, gdmgr._hbm_cancel_select); 
+		} else {
+			SelectObject(hdcMem, gdmgr._hbm_cancel_unselect); 
+		}
+	}
+
+    // Destination 
+    StretchBlt( 
+                lpdis->hDC,         // destination DC 
+                lpdis->rcItem.left, // x upper left 
+                lpdis->rcItem.top,  // y upper left 
+ 
+                // The next two lines specify the width and 
+                // height. 
+                lpdis->rcItem.right - lpdis->rcItem.left, 
+                lpdis->rcItem.bottom - lpdis->rcItem.top, 
+                hdcMem,    // source device context 
+                0, 0,      // x and y upper left 
+                24,        // source bitmap width 
+                24,        // source bitmap height 
+                SRCCOPY);  // raster operation 
+
+	DeleteDC(hdcMem); 
+
+	return;
+}
+
+UINT ListView_GetCheckedCount(HWND hwnd)
+{
+	int	count, idx, checkedcount;
+
+	count = ListView_GetItemCount(hwnd);
+	for (idx = 0, checkedcount = 0; idx < count; idx ++) {
+		if (ListView_GetCheckState(hwnd, idx)) {
+			checkedcount ++;
+		}
+	}
+	return checkedcount;
+}
+
+}
 
 void init_dvrmgr_struct(void) 
 {
@@ -373,50 +602,49 @@ void init_dvrmgr_struct(void)
 
 	// 菜单
 	// menu item: generate
-	gdmgr._hpopup_generate = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_generate, MF_STRING, IDM_GENERATE_ITEM0, "Extract install-material to C:\\kingdom-ins");
-	// AppendMenu(gdmgr._hpopup_generate, MF_STRING, IDM_GENERATE_ITEM1, "WML to *.bin");
+	gdmgr._hpopup_new = CreatePopupMenu();
+	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_EXTRAINSDIST, "提取发布包到C:\\kingdom-ins");
+	AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
+	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_CAMPAIGN, "战役");
 
 	// menu item: coherence
-	gdmgr._hpopup_coherence = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_coherence, MF_STRING, IDM_COHERENCT_ITEM0, "List files");
-	AppendMenu(gdmgr._hpopup_coherence, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_coherence, MF_STRING, IDM_COHERENCT_ITEM1, "XCopy using last modified file");
-	AppendMenu(gdmgr._hpopup_coherence, MF_STRING, IDM_COHERENCT_ITEM2, "XCopy using this file");
+	gdmgr._hpopup_explorer = CreatePopupMenu();
+	AppendMenu(gdmgr._hpopup_explorer, MF_STRING, IDM_EXPLORER_WML, "WML格式");
+	// AppendMenu(gdmgr._hpopup_explorer, MF_SEPARATOR, 0, NULL);
 
 	// menu item: delete
 	gdmgr._hpopup_delete = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM0, "Delete this");
+	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM0, "同时删除相关配置文件");
 	AppendMenu(gdmgr._hpopup_delete, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM1, "Empty Directory");
+	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM1, "删除");
 	AppendMenu(gdmgr._hpopup_delete, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM2, "List x_gen_*.htm/php");
-	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM3, "Delete x_gen_*.htm/php");
+
+	// menu item: delete2
+	gdmgr._hpopup_delete2 = CreatePopupMenu();
+	AppendMenu(gdmgr._hpopup_delete2, MF_STRING, IDM_DELETE_ITEM0, "删除");
+	AppendMenu(gdmgr._hpopup_delete2, MF_SEPARATOR, 0, NULL);
+	AppendMenu(gdmgr._hpopup_delete2, MF_STRING, IDM_DELETE_ITEM1, "删除全部");
+	AppendMenu(gdmgr._hpopup_delete2, MF_SEPARATOR, 0, NULL);
 	
 	// 主菜单要放在子菜单后面, 要确保子菜章句柄已有效
 	gdmgr._hpopup_ddesc = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_generate), "Generate");
-	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_coherence), "Coherence");
-	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_delete), "Delete");
+	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_new), "新建");
+	AppendMenu(gdmgr._hpopup_ddesc, MF_SEPARATOR, 0, NULL);
+	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_explorer), "浏览");
+	AppendMenu(gdmgr._hpopup_ddesc, MF_SEPARATOR, 0, NULL);
+	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_delete), "删除");
 	
-	gdmgr._hpopup_pc = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_pc, MF_STRING, IDM_OPEN, "Open");
-	AppendMenu(gdmgr._hpopup_pc, MF_STRING, IDM_UPLOAD, "Upload");
-	// AppendMenu(gdmgr._hpopup_pc, MF_STRING, IDM_FIND, "Find");
-	AppendMenu(gdmgr._hpopup_pc, MF_STRING, IDM_DELETE, "Delete");
-
 	// wgen会话时,editor控件上的弹出式菜单
 	gdmgr._hpopup_editor = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_ADD, "Add...");
-	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_EDIT, "Edit...");
-	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_DELETE, "Delete");
-
+	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_ADD, "添加...");
+	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_EDIT, "编辑...");
+	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_DELETE, "删除");
+/*
 	// OSD项中的弹出式菜单
-	gdmgr._hpopup_osditem = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_osditem, MF_STRING, IDM_ADD, "Add...");
-	AppendMenu(gdmgr._hpopup_osditem, MF_STRING, IDM_EDIT, "Edit...");
-	AppendMenu(gdmgr._hpopup_osditem, MF_STRING, IDM_DELETE, "Delete");
-	
+	gdmgr._hpopup_candidate = CreatePopupMenu();
+	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOSERVICE, "到在职");
+	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOWANDER, "到在野");
+*/	
 	return;
 }
 
@@ -513,23 +741,23 @@ void uninit_dvrmgr_struct(void)
 	if (gdmgr._hpopup_ddesc) {
 		DestroyMenu(gdmgr._hpopup_ddesc);
 	}
-	if (gdmgr._hpopup_generate) {
-		DestroyMenu(gdmgr._hpopup_generate);
+	if (gdmgr._hpopup_new) {
+		DestroyMenu(gdmgr._hpopup_new);
 	}
-	if (gdmgr._hpopup_coherence) {
-		DestroyMenu(gdmgr._hpopup_coherence);
+	if (gdmgr._hpopup_explorer) {
+		DestroyMenu(gdmgr._hpopup_explorer);
 	}
 	if (gdmgr._hpopup_delete) {
 		DestroyMenu(gdmgr._hpopup_delete);
 	}
-	if (gdmgr._hpopup_pc) {
-		DestroyMenu(gdmgr._hpopup_pc);
+	if (gdmgr._hpopup_delete2) {
+		DestroyMenu(gdmgr._hpopup_delete2);
 	}
 	if (gdmgr._hpopup_editor) {
 		DestroyMenu(gdmgr._hpopup_editor);
 	}
-	if (gdmgr._hpopup_osditem) {
-		DestroyMenu(gdmgr._hpopup_osditem);
+	if (gdmgr._hpopup_candidate) {
+		DestroyMenu(gdmgr._hpopup_candidate);
 	}
 	if (gdmgr._hthdSync) {
 		// 2、曾经运行过任务，现在已执行完了任务
@@ -636,10 +864,10 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	MoveWindow(gdmgr._hdlg_cfg, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
 	ShowWindow(gdmgr._hdlg_cfg, SW_HIDE);
 
-	// 会话窗口: IDD_TBOX
-	gdmgr._hdlg_tbox = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_TBOX), hwndP, DlgTBoxProc, NULL);
-	MoveWindow(gdmgr._hdlg_tbox, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
-	ShowWindow(gdmgr._hdlg_tbox, SW_HIDE);
+	// 会话窗口: IDD_CAMPAIGN
+	gdmgr._hdlg_campaign = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_CAMPAIGN), hwndP, DlgCampaignProc, NULL);
+	MoveWindow(gdmgr._hdlg_campaign, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
+	ShowWindow(gdmgr._hdlg_campaign, SW_HIDE);
 
 	// 会话窗口: IDD_ABOUT
 	gdmgr._hdlg_about = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_ABOUT), hwndP, DlgAboutProc, NULL);
@@ -1086,6 +1314,11 @@ static void init_locale()
 	const std::string& intl_dir = get_intl_dir();
 	textdomain(PACKAGE "-hero");
 	bindtextdomain (PACKAGE "-hero", intl_dir.c_str());
+
+	// bindtextdomain (PACKAGE "-race", intl_dir.c_str());
+	// default codeset is ansi.
+	// in order to avoid UTF-8 to ansi, let gettext output ansi directly.
+	// so don't call bind_textdomain_codeset;
 	// bind_textdomain_codeset (PACKAGE "-hero", "UTF-8");
 
 	SetEnvironmentVariable("LANG", "zh_CN");
@@ -1111,8 +1344,7 @@ void main_ui_sysmenu(BOOL fEnable)
 	return;
 }
 
-#define MAIN_WIDTH_FULL				760
-#define MAIN_WIDTH_PART				540
+#define MAIN_WIDTH					800
 #define MAIN_HEIGHT					600
 
 void left_top(POINT *p)
@@ -1122,7 +1354,7 @@ void left_top(POINT *p)
 	int				cyScreen = GetSystemMetrics(SM_CYSCREEN);
 	POINT			point;
 
-	point.x = (cxScreen - ((gdmgr._dvrsrc != dsrc_unknown)? MAIN_WIDTH_FULL: MAIN_WIDTH_PART)) / 2;  
+	point.x = (cxScreen - MAIN_WIDTH) / 2;  
 	point.y = (cyScreen - MAIN_HEIGHT) / 2;  
 
 	*p = point;
@@ -1173,21 +1405,6 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 	memset(&gdmgr, 0, sizeof(dvrmgr_t));
 	gdmgr.heros_.realloc_hero_map(HEROS_MAX_HEROS);
 
-	if (lpCmdLine[0]) {
-		if (lpCmdLine[0] == '\"') {
-            strncpy(gszSrcFileInCmdLine, lpCmdLine + 1,  strlen(lpCmdLine) - 2);
-		} else {
-			strcpy(gszSrcFileInCmdLine, lpCmdLine);
-		}
-		// 如果字符串是被" "包围的,首先去掉这字符串
-		if (gszSrcFileInCmdLine[1] != ':') {
-			posix_print_mb("lpCmdLine is not NULL, buf isn't a valid full path. %s", lpCmdLine);
-			goto exit;
-		}
-	}  else {
-		gszSrcFileInCmdLine[0] = 0;
-	}
-		
 	gdmgr._hinst = inst;
 	init_dvrmgr_struct();
 	
@@ -1197,7 +1414,7 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 	// Initialize the common controls
 	//
 	cc.dwSize = sizeof(INITCOMMONCONTROLSEX);
-	cc.dwICC = ICC_BAR_CLASSES | ICC_TAB_CLASSES | ICC_INTERNET_CLASSES | ICC_PROGRESS_CLASS /*| ICC_LINK_CLASS*/;
+	cc.dwICC = ICC_BAR_CLASSES | ICC_TAB_CLASSES | ICC_INTERNET_CLASSES | ICC_PROGRESS_CLASS | ICC_LISTVIEW_CLASSES;
 	InitCommonControlsEx(&cc);
 
 	gdmgr._dvrsrc = dsrc_removabledisk;
@@ -1223,7 +1440,7 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
     gdmgr._hwnd_main = CreateWindow(CLASSNAME, PROG_NAME,
                          WS_OVERLAPPEDWINDOW | WS_CAPTION | WS_CLIPCHILDREN,
                          lefttop.x, lefttop.y, // CW_USEDEFAULT, CW_USEDEFAULT,
-						 (gdmgr._dvrsrc != dsrc_unknown)? MAIN_WIDTH_FULL: MAIN_WIDTH_PART, 600, // 600,
+						 MAIN_WIDTH, MAIN_HEIGHT, // 600,
                          0, 0, inst, 0);
 
 	SetWindowText(gdmgr._hwnd_main, formatstr("%s(%s)", PROG_NAME, __DATE__));
@@ -1239,7 +1456,6 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
         posix_print_mb("Failed to create the main window! Error=0x%x", GetLastError());
     }
 
-exit:
 	uninit_dvrmgr_struct();
 
 	CloseHandle(hvtdvrmgr);

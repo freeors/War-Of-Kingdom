@@ -310,7 +310,7 @@ public:
 	int attacks_left() const { return (attacks_left_ == 0 || incapacitated()) ? 0 : attacks_left_; }
 	int attacks_total() const { return max_attacks_; }
 	void set_attacks(int left);
-	virtual void new_turn();
+	virtual bool new_turn();
 	virtual void end_turn();
 	virtual void new_scenario();
 	/** Called on every draw */
@@ -324,6 +324,7 @@ public:
 	virtual void set_resting(bool rest) { resting_ = rest; }
 	void increase_loyalty(int inc);
 	void set_loyalty(int level, bool fixed = false);
+	bool has_less_loyalty(int loyalty, const hero& leader);
 
 	void increase_feeling(int inc);
 

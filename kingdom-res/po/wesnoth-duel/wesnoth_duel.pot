@@ -9,59 +9,20 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Duel"
+msgid "duel"
 msgstr ""
 
-msgid "Duel description"
+msgid "duel description"
 msgstr ""
 
 msgid "DL"
 msgstr ""
 
-# win condition
 msgid "Defeat all enemies"
 msgstr ""
 
-# lost condition
 msgid "Luoyang is fallen"
 msgstr ""
 
-# union name
-msgid "union_sl"
-msgstr ""
-
-msgid "wei"
-msgstr ""
-
-# start word
-msgid "start word: 1"
-msgstr ""
-
-msgid "start word: 2"
-msgstr ""
-
-msgid "start word: 3"
-msgstr ""
-
-msgid "start word: 4"
-msgstr ""
-
-msgid "start word: 5"
-msgstr ""
-
-msgid "start word: 6"
-msgstr ""
-
-msgid "start word: 7"
-msgstr ""
-
-msgid "stop word: 1"
-msgstr ""
-
-msgid "stop word: 2"
-msgstr ""
-
-msgid "liubei stop: 1"
-msgstr ""
 
 

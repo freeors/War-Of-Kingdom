@@ -9,10 +9,10 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "tower defense"
+msgid "tower_defense"
 msgstr ""
 
-msgid "tower defense description"
+msgid "tower_defense description"
 msgstr ""
 
 # scenario

@@ -63,55 +63,6 @@ public:
 	 * @param game_config_ game config
 	 */
 	static void init(const config &game_config);
-
-
-	/**
-	 * get default AI parameters
-	 * @return default AI parameters
-	 */
-	static const config& get_default_ai_parameters();
-
-
-	/**
-	 * Return the config for a specified ai
-	 */
-	static const config& get_ai_config_for(const std::string &id);
-
-
-	/**
-	 * Returns a list of available AIs.
-	 * @return the list of available AIs.
-	 */
-	static std::vector<description*> get_available_ais();
-
-
-	/**
-	 * get side config from file
-	 * @param file the file name to open. follows usual WML convention.
-	 * @param[out] cfg the config to be written from file.
-	 * @return was all ok?
-	 * @retval true success
-	 * @retval false failure
-	 */
-	static bool get_side_config_from_file( const std::string& file, config& cfg );
-
-
-
-	/**
-	 * @param[in] cfg the config to be read
-	 * @param[out] parsed_cfg parsed config
-	 * @return was all ok?
-	 * @retval true success
-	 * @retval false failure
-	 */
-	static bool parse_side_config(const config& cfg, config &parsed_cfg);
-
-
-private:
-	typedef std::map<std::string, description> description_map;
-	static description_map ai_configurations_;
-	static config default_config_;
-
 };
 
 } //end of namespace ai
