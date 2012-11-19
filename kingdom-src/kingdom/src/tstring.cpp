@@ -571,9 +571,7 @@ void t_string::add_textdomain(const std::string &name, const std::string &path)
 
 	// Register and (re-)bind this textdomain
 	bindtextdomain(name.c_str(), path.c_str());
-	if (exe_type != exe_editor) {
-		bind_textdomain_codeset(name.c_str(), "UTF-8");
-	}
+	bind_textdomain_codeset(name.c_str(), "UTF-8");
 }
 
 void t_string::reset_translations()

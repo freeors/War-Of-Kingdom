@@ -32,11 +32,6 @@
 #include "util.hpp"
 #include "wml_exception.hpp"
 
-static lg::log_domain log_config("config");
-#define ERR_CF LOG_STREAM(err, log_config)
-#define LOG_G LOG_STREAM(info, lg::general)
-#define DBG_G LOG_STREAM(debug, lg::general)
-
 const std::string gamemap::default_map_header = "usage=map\nborder_size=1\n\n";
 const gamemap::tborder gamemap::default_border = gamemap::SINGLE_TILE_BORDER;
 
@@ -152,7 +147,6 @@ gamemap::gamemap(const config& cfg, const std::string& data):
 		border_size_(NO_BORDER),
 		usage_(IS_MAP)
 {
-	DBG_G << "loading map: '" << data << "'\n";
 	// const config::const_child_itors &terrains = cfg.child_range("terrain_type");
 	const config::const_child_itors &terrains = terrain_types.child_range("terrain_type");
 	create_terrain_maps(terrains, terrainList_, tcodeToTerrain_);
@@ -213,11 +207,13 @@ void gamemap::read(const std::string& data)
 	if(usage == "map") {
 		usage_ = IS_MAP;
 		symbols["border_size_val"] = "1";
-		VALIDATE(border_size_ == 1, vgettext(msg.c_str(), symbols));
+		// BUG! to editor, it cannot support vgettext.
+		// VALIDATE(border_size_ == 1, vgettext(msg.c_str(), symbols));
 	} else if(usage == "mask") {
 		usage_ = IS_MASK;
 		symbols["border_size_val"] = "0";
-		VALIDATE(border_size_ == 0, vgettext(msg.c_str(), symbols));
+		// BUG! to editor, it cannot support vgettext.
+		// VALIDATE(border_size_ == 0, vgettext(msg.c_str(), symbols));
 	} else if(usage == "") {
 		throw incorrect_map_format_error("Map has a header but no usage");
 	} else {
@@ -248,7 +244,7 @@ void gamemap::read(const std::string& data)
 		if(itor->first < 1 || itor->first >= MAX_PLAYERS+1) {
 			std::stringstream ss;
 			ss << "Starting position " << itor->first << " out of range\n";
-			ERR_CF << ss.str();
+			// ERR_CF << ss.str();
 			ss << "The map cannot be loaded.";
 			throw incorrect_map_format_error(ss.str().c_str());
 		}
@@ -272,7 +268,7 @@ void gamemap::read(const std::string& data)
 					std::stringstream ss;
 					ss << "Illegal tile in map: (" << t_translation::write_terrain_code(tiles_[x][y])
 						   << ") '" << tiles_[x][y] << "'\n";
-					ERR_CF << ss.str();
+					// ERR_CF << ss.str();
 					ss << "The map cannot be loaded.";
 					throw incorrect_map_format_error(ss.str().c_str());
 				}

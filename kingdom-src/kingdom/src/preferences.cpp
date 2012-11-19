@@ -188,11 +188,11 @@ bool get_hero(hero& h, int default_image)
 			h.skill_[i] = ftofxp12(cfg[str.str()].to_int(0));
 		}
 
-		h.side_feature_ = cfg["side_feature"].to_int(0xff);
+		h.side_feature_ = cfg["side_feature"].to_int(HEROS_NO_FEATURE);
 		if (h.side_feature_ < 0 || h.side_feature_ > HEROS_MAX_FEATURE) {
 			h.side_feature_ = 0xff;
 		}
-		h.feature_ = cfg["feature"].to_int(0xff);
+		h.feature_ = cfg["feature"].to_int(HEROS_NO_FEATURE);
 		if (h.feature_ < 0 || h.feature_ > HEROS_MAX_FEATURE) {
 			h.feature_ = 0xff;
 		}

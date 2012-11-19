@@ -40,10 +40,10 @@ msgid "bowman5 description"
 msgstr "连弩兵"
 
 msgid "bowman6"
-msgstr "诸葛弩"
+msgstr "二级连弩兵"
 
 msgid "bowman6 description"
-msgstr "诸葛弩"
+msgstr "二级连弩兵"
 
 #
 # catapult
@@ -160,40 +160,40 @@ msgstr "二级亲卫队"
 # commander
 #
 msgid "commander1"
-msgstr "伍长"
+msgstr "校尉"
 
 msgid "commander1 description"
-msgstr "伍长"
+msgstr "校尉"
 
 msgid "commander2"
-msgstr "什长"
+msgstr "都督"
 
 msgid "commander2 description"
-msgstr "什长"
+msgstr "都督"
 
 msgid "commander3"
-msgstr "俾将"
+msgstr "英雄"
 
 msgid "commander3 description"
-msgstr "俾将"
+msgstr "英雄"
 
 msgid "commander4"
-msgstr "偏将"
+msgstr "群雄"
 
 msgid "commander4 description"
-msgstr "偏将"
+msgstr "群雄"
 
 msgid "commander5"
-msgstr "校尉"
+msgstr "诸侯"
 
 msgid "commander5 description"
-msgstr "校尉"
+msgstr "诸侯"
 
 msgid "commander6"
-msgstr "都督"
+msgstr "霸王"
 
 msgid "commander6 description"
-msgstr "都督"
+msgstr "霸王"
 
 #
 # pikeman
@@ -303,6 +303,42 @@ msgstr "军师"
 msgid "redmage6 description"
 msgstr "军师"
 
+msgid "ballet1"
+msgstr "仕女"
+
+msgid "ballet1 description"
+msgstr "仕女"
+
+msgid "ballet2"
+msgstr "二级仕女"
+
+msgid "ballet2 description"
+msgstr "二级仕女"
+
+msgid "ballet3"
+msgstr "舞姬"
+
+msgid "ballet3 description"
+msgstr "舞姬"
+
+msgid "ballet4"
+msgstr "二级舞姬"
+
+msgid "ballet4 description"
+msgstr "二级舞姬"
+
+msgid "ballet5"
+msgstr "媚娘"
+
+msgid "ballet5 description"
+msgstr "媚娘"
+
+msgid "ballet6"
+msgstr "二级媚娘"
+
+msgid "ballet6 description"
+msgstr "二级媚娘"
+
 msgid "boat0"
 msgstr "舢板"
 
@@ -360,52 +396,532 @@ msgstr "名导"
 msgid "famous director description"
 msgstr "演员"
 
+msgid "white mage"
+msgstr "白袍法师"
+
+msgid "white mage description"
+msgstr "有些法师，逐渐了解了周围的世界，了解了世人所忍受的痛苦与肮脏，他们无法说服自己远离尘世一心向学。这些男女放弃了法师的生涯，加入神职人员的行列，将他们的毕生所学奉献给公益事业。在接受神职后，他们常常环游世界，治疗他人的疾病和伤痛。虽然没有受过作战训练，但他们在对付魔法的或者非自然的事物时仍然是强大的盟友。"
+
 #
 # city
 #
 msgid "city1"
-msgstr "城市"
+msgstr "一级城市"
 
 msgid "city1 description"
-msgstr "郡，是中央政府以下最高一级地方行政机构。秦始皇统一六国后，国土空前广袤，分天下为三十六郡。"
+msgstr "一级城市"
 
 msgid "city2"
-msgstr "大城市"
+msgstr "二级城市"
 
 msgid "city2 description"
-msgstr "郡，是中央政府以下最高一级地方行政机构。秦始皇统一六国后，国土空前广袤，分天下为三十六郡。"
+msgstr "二级城市"
+
+#
+# city
+#
+msgid "city3"
+msgstr "三级城市"
+
+msgid "city3 description"
+msgstr "三级城市"
 
 #
 # market
 #
-msgid "market"
+msgid "market1"
+msgstr "集市"
+
+msgid "market1 description"
+msgstr "集市"
+
+#
+# market
+#
+msgid "market2"
 msgstr "市场"
 
-msgid "market description"
+msgid "market2 description"
 msgstr "市场"
+
+#
+# market
+#
+msgid "market3"
+msgstr "大市场"
+
+msgid "market3 description"
+msgstr "大市场"
 
 # actor
-msgid "tower"
+msgid "tower1"
 msgstr "箭塔"
 
-msgid "tower description"
+msgid "tower1 description"
 msgstr "箭塔"
 
 #
 # wall
 #
-msgid "wall1"
+msgid "wall2"
 msgstr "城墙"
 
-msgid "wall1 description"
+msgid "wall2 description"
 msgstr "城墙"
 
 #
 # keep
 #
-msgid "keep1"
+msgid "keep2"
 msgstr "城楼"
 
-msgid "keep1 description"
+msgid "keep2 description"
 msgstr "城楼"
+
+msgid "desert horseman4"
+msgstr "车骑兵"
+
+msgid "desert horseman4 description"
+msgstr "车骑兵"
+
+msgid "desert horseman5"
+msgstr "羌骑兵"
+
+msgid "desert horseman5 description"
+msgstr "羌骑兵"
+
+msgid "desert horseman6"
+msgstr "西凉铁骑"
+
+msgid "desert horseman6 description"
+msgstr "西凉铁骑"
+
+msgid "horse crossbowman4"
+msgstr "弓骑兵"
+
+msgid "horse crossbowman4 description"
+msgstr "弓骑兵"
+
+msgid "horse crossbowman5"
+msgstr "弩骑兵"
+
+msgid "horse crossbowman5 description"
+msgstr "弩骑兵"
+
+msgid "horse crossbowman6"
+msgstr "白马义从"
+
+msgid "horse crossbowman6 description"
+msgstr "白马义从"
+
+#
+# character unit type: martial artist
+#
+msgid "martial artist2"
+msgstr "义兵"
+
+msgid "martial artist2 description"
+msgstr "义兵"
+
+msgid "martial artist3"
+msgstr "拳师"
+
+msgid "martial artist3 description"
+msgstr "拳师"
+
+msgid "martial artist4"
+msgstr "二级拳师"
+
+msgid "martial artist4 description"
+msgstr "二级拳师"
+
+msgid "martial artist5"
+msgstr "武术家"
+
+msgid "martial artist5 description"
+msgstr "武术家"
+
+msgid "martial artist6"
+msgstr "二级武术家"
+
+msgid "martial artist6 description"
+msgstr "二级武术家"
+
+msgid "zhuge bowman4"
+msgstr "元戎弩"
+
+msgid "zhuge bowman4 description"
+msgstr "元戎弩"
+
+msgid "zhuge bowman5"
+msgstr "诸葛弩"
+
+msgid "zhuge bowman5 description"
+msgstr "诸葛弩"
+
+msgid "zhuge bowman6"
+msgstr "二级诸葛弩"
+
+msgid "zhuge bowman6 description"
+msgstr "二级诸葛弩"
+
+msgid "vanguard bowman4"
+msgstr "猛射手"
+
+msgid "vanguard bowman4 description"
+msgstr "猛射手"
+
+msgid "vanguard bowman5"
+msgstr "先登死士"
+
+msgid "vanguard bowman5 description"
+msgstr "先登死士"
+
+msgid "vanguard bowman6"
+msgstr "二级先登死士"
+
+msgid "vanguard bowman6 description"
+msgstr "二级先登死士"
+
+msgid "powerdashers4"
+msgstr "鬼刀兵"
+
+msgid "powerdashers4 description"
+msgstr "鬼刀兵"
+
+msgid "powerdashers5"
+msgstr "陷阵营"
+
+msgid "powerdashers5 description"
+msgstr "陷阵营"
+
+msgid "powerdashers6"
+msgstr "二级陷阵营"
+
+msgid "powerdashers6 description"
+msgstr "二级陷阵营"
+
+msgid "qingzhou pikeman4"
+msgstr "铁枪兵"
+
+msgid "qingzhou pikeman4 description"
+msgstr "铁枪兵"
+
+msgid "qingzhou pikeman5"
+msgstr "青州兵"
+
+msgid "qingzhou pikeman5 description"
+msgstr "青州兵"
+
+msgid "qingzhou pikeman6"
+msgstr "二级青州兵"
+
+msgid "qingzhou pikeman6 description"
+msgstr "二级青州兵"
+
+#
+# character unit type: wizard
+#
+msgid "wizard3"
+msgstr "妖术士"
+
+msgid "wizard3 description"
+msgstr "妖术士"
+
+msgid "wizard4"
+msgstr "二级妖术士"
+
+msgid "wizard4 description"
+msgstr "二级妖术士"
+
+msgid "wizard5"
+msgstr "咒术士"
+
+msgid "wizard5 description"
+msgstr "咒术士"
+
+msgid "wizard6"
+msgstr "二级咒术士"
+
+msgid "wizard6 description"
+msgstr "二级咒术士"
+
+msgid "adviser6"
+msgstr "军师将军"
+
+msgid "adviser6 description"
+msgstr "军师将军"
+
+msgid "tiger horseman4"
+msgstr "斧骑兵"
+
+msgid "tiger horseman4 description"
+msgstr "斧骑兵"
+
+msgid "tiger horseman5"
+msgstr "重甲斧骑"
+
+msgid "tiger horseman5 description"
+msgstr "重甲斧骑"
+
+msgid "tiger horseman6"
+msgstr "虎豹骑"
+
+msgid "tiger horseman6 description"
+msgstr "虎豹骑"
+
+msgid "rattan armour footman3"
+msgstr "南蛮刀兵"
+
+msgid "rattan armour footman3 description"
+msgstr "南蛮刀兵"
+
+msgid "rattan armour footman4"
+msgstr "二级南蛮刀兵"
+
+msgid "rattan armour footman4 description"
+msgstr "二级南蛮刀兵"
+
+msgid "rattan armour footman5"
+msgstr "藤甲刀兵"
+
+msgid "rattan armour footman5 description"
+msgstr "藤甲刀兵"
+
+msgid "rattan armour footman6"
+msgstr "二级藤甲刀兵"
+
+msgid "rattan armour footman6 description"
+msgstr "二级藤甲刀兵"
+
+msgid "rattan armour pikeman3"
+msgstr "南蛮枪兵"
+
+msgid "rattan armour pikeman3 description"
+msgstr "南蛮枪兵"
+
+msgid "rattan armour pikeman4"
+msgstr "二级南蛮枪兵"
+
+msgid "rattan armour pikeman4 description"
+msgstr "二级南蛮枪兵"
+
+msgid "rattan armour pikeman5"
+msgstr "藤甲枪兵"
+
+msgid "rattan armour pikeman5 description"
+msgstr "藤甲枪兵"
+
+msgid "rattan armour pikeman6"
+msgstr "二级藤甲枪兵"
+
+msgid "rattan armour pikeman6 description"
+msgstr "二级藤甲枪兵"
+
+msgid "rattan armour bowman3"
+msgstr "南蛮弓兵"
+
+msgid "rattan armour bowman3 description"
+msgstr "南蛮弓兵"
+
+msgid "rattan armour bowman4"
+msgstr "二级南蛮弓兵"
+
+msgid "rattan armour bowman4 description"
+msgstr "二级南蛮弓兵"
+
+msgid "rattan armour bowman5"
+msgstr "藤甲弓兵"
+
+msgid "rattan armour bowman5 description"
+msgstr "藤甲弓兵"
+
+msgid "rattan armour bowman6"
+msgstr "二级藤甲弓兵"
+
+msgid "rattan armour bowman6 description"
+msgstr "二级藤甲弓兵"
+
+msgid "rattan armour horseman3"
+msgstr "南蛮骑兵"
+
+msgid "rattan armour horseman3 description"
+msgstr "南蛮骑兵"
+
+msgid "rattan armour horseman4"
+msgstr "二级南蛮骑兵"
+
+msgid "rattan armour horseman4 description"
+msgstr "南蛮骑兵"
+
+msgid "rattan armour horseman5"
+msgstr "藤甲骑兵"
+
+msgid "rattan armour horseman5 description"
+msgstr "藤甲骑兵"
+
+msgid "rattan armour horseman6"
+msgstr "二级藤甲骑兵"
+
+msgid "rattan armour horseman6 description"
+msgstr "二级藤甲骑兵"
+
+msgid "rattan armour whitemage3"
+msgstr "南蛮法师"
+
+msgid "rattan armour whitemage3 description"
+msgstr "南蛮法师"
+
+msgid "rattan armour whitemage4"
+msgstr "二级南蛮法师"
+
+msgid "rattan armour whitemage4 description"
+msgstr "二级南蛮法师"
+
+msgid "rattan armour whitemage5"
+msgstr "藤甲法师"
+
+msgid "rattan armour whitemage5 description"
+msgstr "藤甲法师"
+
+msgid "rattan armour whitemage6"
+msgstr "二级藤甲法师"
+
+msgid "rattan armour whitemage6 description"
+msgstr "二级藤甲法师"
+
+#
+# character unit type:war elephant
+#
+msgid "war elephant1"
+msgstr "战象"
+
+msgid "war elephant1 description"
+msgstr "战象"
+
+msgid "war elephant2"
+msgstr "二级战象"
+
+msgid "war elephant2 description"
+msgstr "二级战象"
+
+msgid "war elephant3"
+msgstr "三级战象"
+
+msgid "war elephant3 description"
+msgstr "三级战象"
+
+msgid "war elephant4"
+msgstr "天神象"
+
+msgid "war elephant4 description"
+msgstr "天神象"
+
+msgid "war elephant5"
+msgstr "二级天神象"
+
+msgid "war elephant5 description"
+msgstr "二级天神象"
+
+msgid "war elephant6"
+msgstr "三级天神象"
+
+msgid "war elephant6 description"
+msgstr "三级天神象"
+
+#
+# character unit type: heroine
+#
+msgid "heroine4"
+msgstr "江东巾帼"
+
+msgid "heroine4 description"
+msgstr "江东巾帼"
+
+#
+# character unit type: heroine
+#
+msgid "heroine5"
+msgstr "江东女杰"
+
+msgid "heroine5 description"
+msgstr "江东女杰"
+
+msgid "heroine6"
+msgstr "二级江东女杰"
+
+msgid "heroine6 description"
+msgstr "二级江东女杰"
+
+msgid "danyang assassin3"
+msgstr "丹阳剑客"
+
+msgid "danyang assassin3 description"
+msgstr "丹阳剑客"
+
+msgid "danyang assassin4"
+msgstr "二级丹阳剑客"
+
+msgid "danyang assassin4 description"
+msgstr "二级丹阳剑客"
+
+msgid "danyang assassin5"
+msgstr "丹阳刺客"
+
+msgid "danyang assassin5 description"
+msgstr "丹阳刺客"
+
+msgid "danyang assassin6"
+msgstr "二级丹阳刺客"
+
+msgid "danyang assassin6 description"
+msgstr "二级丹阳刺客"
+
+msgid "bingzhou horseman3"
+msgstr "长刀骑兵"
+
+msgid "bingzhou horseman3 description"
+msgstr "长刀骑兵"
+
+msgid "bingzhou horseman4"
+msgstr "二级长刀骑兵"
+
+msgid "bingzhou horseman4 description"
+msgstr "二级长刀骑兵"
+
+msgid "bingzhou horseman5"
+msgstr "并州铁骑"
+
+msgid "bingzhou horseman5 description"
+msgstr "并州铁骑"
+
+msgid "bingzhou horseman6"
+msgstr "二级并州铁骑"
+
+msgid "bingzhou horseman6 description"
+msgstr "二级并州铁骑"
+
+msgid "pelisse footman3"
+msgstr "朴刀手"
+
+msgid "pelisse footman3 description"
+msgstr "朴刀手"
+
+msgid "pelisse footman4"
+msgstr "二级朴刀手"
+
+msgid "pelisse footman4 description"
+msgstr "二级朴刀手"
+
+msgid "pelisse footman5"
+msgstr "白眊兵"
+
+msgid "pelisse footman5 description"
+msgstr "白眊兵"
+
+msgid "pelisse footman6"
+msgstr "二级白眊兵"
+
+msgid "pelisse footman6 description"
+msgstr "二级白眊兵"
 

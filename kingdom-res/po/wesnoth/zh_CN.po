@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2012-10-19 16:15+0800\n"
+"PO-Revision-Date: 2012-11-18 10:33+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -2293,12 +2293,12 @@ msgstr ""
 #. [heals]: id=curing
 #: data/core/macros/abilities.cfg:51
 msgid "cures"
-msgstr "治愈"
+msgstr "觉醒"
 
 #. [heals]: id=curing
 #: data/core/macros/abilities.cfg:52
 msgid "female^cures"
-msgstr "治愈"
+msgstr "觉醒"
 
 #. [heals]: id=curing
 #: data/core/macros/abilities.cfg:54
@@ -2306,27 +2306,23 @@ msgid ""
 "Cures:\n"
 "A curer can cure a unit of poison, although that unit will receive no additional healing on the turn it is cured of the poison."
 msgstr ""
-"治愈：\n"
-"治愈者可以治愈单位的中毒状态，虽然该单位在被治愈的回合将不会获得额外的治疗。"
+"觉醒：\n"
+"让周围部队每回合恢复回正常状态。"
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:76
-msgid "regenerates"
-msgstr "再生"
+msgid "surveillances"
+msgstr "监军"
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:77
-msgid "female^regenerates"
-msgstr "再生"
+msgid "female^surveillances"
+msgstr "监军"
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:79
-msgid ""
-"Regenerates:\n"
-"The unit will heal itself 8 HP per turn. If it is poisoned, it will remove the poison instead of healing."
-msgstr ""
-"再生：\n"
-"本单位可以每回合回复自身8点生命值。如果中了毒，那么就移除中毒状态，而不是进行治疗。"
+msgid "Surveillances: A surveillancer can urveillance a unit of loyalty."
+msgstr "监军：让周围部队不降忠诚。"
 
 #. [resistance]: id=steadfast
 #: data/core/macros/abilities.cfg:98
@@ -2382,6 +2378,12 @@ msgstr ""
 "本单位可以领导相邻的我军单位，使他们更好地战斗。\n"
 "\n"
 "相邻的等级比领导者低的我军单位将在战斗中造成更大的伤害。当有领导者与比他等级低的我军单位相邻时，这些单位的攻击将比平时多造成25%乘以其与领袖等级之差的伤害。"
+
+msgid "encourages"
+msgstr "激励"
+
+msgid "encourages desc"
+msgstr "增加周围部队的暴击机率"
 
 #. [skirmisher]: id=skirmisher
 #: data/core/macros/abilities.cfg:347
@@ -4290,6 +4292,10 @@ msgstr "穿刺"
 #: data/hardwired/english.cfg:49
 msgid "impact"
 msgstr "冲击"
+
+#: data/hardwired/english.cfg:49
+msgid "archery"
+msgstr "弓弩"
 
 #. [language]
 #: data/hardwired/english.cfg:50
@@ -8208,7 +8214,7 @@ msgstr "守序"
 
 #: src/unit_types.cpp:964
 msgid "liminal"
-msgstr ""
+msgstr "边缘"
 
 #: src/unit_types.cpp:964
 msgid "neutral"
@@ -8223,9 +8229,8 @@ msgid "female^lawful"
 msgstr "守序"
 
 #: src/unit_types.cpp:965
-#, fuzzy
 msgid "female^liminal"
-msgstr "忠诚"
+msgstr "边缘"
 
 #: src/unit_types.cpp:965
 msgid "female^neutral"
@@ -8587,17 +8592,19 @@ msgid "injured"
 msgstr "受伤"
 
 msgid "firm"
-msgstr "强阵"
-
-msgid "female^firm"
-msgstr "强阵"
+msgstr "坚固"
 
 msgid "firm desc"
-msgstr ""
-"强阵：\n"
-"本单位可以强化相邻的友好单位，使之更好的防御。\n"
-"\n"
-"相邻的低等级友好单位获得更多的防御加成。当有领袖与低等级友好单位相邻时，这些单位的防御比平时增加原本的 5% 乘以其与领袖等级的数量差异。"
+msgstr "强化自身防御"
+
+msgid "firms"
+msgstr "强阵"
+
+msgid "female^firms"
+msgstr "强阵"
+
+msgid "firms desc"
+msgstr "强化周围部队防御"
 
 msgid "heals +12"
 msgstr "治疗+12"
@@ -8606,7 +8613,7 @@ msgid "female^heals +12"
 msgstr "治疗+12"
 
 msgid "heals +12 desc"
-msgstr "治疗+12"
+msgstr "每回合给周围部队恢复12HP"
 
 msgid "heals +16"
 msgstr "治疗+16"
@@ -8615,7 +8622,7 @@ msgid "female^heals +16"
 msgstr "治疗+16"
 
 msgid "heals +16 desc"
-msgstr "治疗+16"
+msgstr "每回合给周围部队恢复16HP"
 
 msgid "selfheals +12"
 msgstr "自疗+12"
@@ -8624,7 +8631,7 @@ msgid "female^selfheals +12"
 msgstr "自疗+12"
 
 msgid "selfheals +12 desc"
-msgstr "自疗+12"
+msgstr "每回合让自身恢复12HP"
 
 msgid "selfheals +16"
 msgstr "自疗+16"
@@ -8633,7 +8640,7 @@ msgid "female^selfheals +16"
 msgstr "自疗+16"
 
 msgid "selfheals +16 desc"
-msgstr "自疗+16"
+msgstr "每回合让自身恢复16HP"
 
 msgid "cast"
 msgstr "投射"
@@ -8752,6 +8759,9 @@ msgstr "光束"
 msgid "fireball"
 msgstr "火球"
 
+msgid "chill wave"
+msgstr "冷冻波"
+
 msgid "lightning"
 msgstr "闪电"
 
@@ -8761,6 +8771,18 @@ msgstr "击败所有势力"
 msgid "No city you holded"
 msgstr "没了能控制城市"
 
+#~ msgid "regenerates"
+#~ msgstr "再生"
+#~ msgid "female^regenerates"
+#~ msgstr "再生"
+#~ msgid ""
+#~ "Regenerates:\n"
+#~ "The unit will heal itself 8 HP per turn. If it is poisoned, it will "
+#~ "remove the poison instead of healing."
+#~ msgstr ""
+#~ "再生：\n"
+#~ "本单位可以每回合回复自身8点生命值。如果中了毒，那么就移除中毒状态，而不是"
+#~ "进行治疗。"
 #~ msgid "ownership"
 #~ msgstr "归属"
 

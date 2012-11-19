@@ -283,6 +283,6 @@ int CfgQueryValueWin(char *szFileName, char *szSection, char *szKeyName, char *s
 //  ·Ç0£ºÊ§°Ü
 int CfgSetValueWin(char *szFileName, char *szSection, char *szKeyName, const char* szKeyValue);
 
-BOOL MakeDirectory(std::string& dd);
+BOOL MakeDirectory(const std::string& dd);
 
 #endif //__WIN32X_H_

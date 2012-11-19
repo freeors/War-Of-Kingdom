@@ -1052,13 +1052,6 @@ void play_controller::rpg_independence(bool replaying)
 	}
 
 	std::set<std::string> type_ids;
-	const std::set<const unit_type*>& norecruit = from_team.not_recruits();
-	for (std::set<const unit_type*>::const_iterator cr = norecruit.begin(); cr != norecruit.end(); ++ cr) {
-		type_ids.insert((*cr)->id());
-	}
-	to_team.set_notrecruits(type_ids);
-
-	type_ids.clear();
 	const std::set<const unit_type*>& can_build = from_team.builds();
 	for (std::set<const unit_type*>::const_iterator cr = can_build.begin(); cr != can_build.end(); ++ cr) {
 		type_ids.insert((*cr)->id());
@@ -1376,6 +1369,23 @@ void play_controller::do_init_side(const unsigned int team_index)
 		{
 			game_events::fire("turn " + turn_num);
 			game_events::fire("new turn");
+
+			recommend();
+			if (gamestate_.classification().rpg_mode && ally_all_ai()) {
+				game_events::show_hero_message(&heros_[214], NULL, _("lips death and teeth cold, all ai sides concluded treaty of alliance."), game_events::INCIDENT_ALLY);
+
+				if (rpg::stratum != hero_stratum_leader) {
+					// enter to final battle automaticly
+					if (!final_capital().first) {
+						artifical* capital_of_human = units_.city_from_cityno(rpg::h->city_);
+						artifical* capital_of_ai = decide_ai_capital();
+
+						set_final_capital(capital_of_human, capital_of_ai);
+						final_battle(capital_of_human->side(), -1, -1);
+					}
+				}
+			}
+
 			previous_turn_ = turn();
 			// turn or new turn may trigger endlevel, but if here will result end directly.
 			// check_end_level();
@@ -1402,6 +1412,14 @@ void play_controller::do_init_side(const unsigned int team_index)
 			rpg::forbids --;
 		}
 		uint32_t start = SDL_GetTicks();
+
+		std::vector<artifical*> holded_cities = current_team.holded_cities();
+		for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+			artifical& city = **it;
+			city.get_experience2(5);
+			city.new_turn();
+		}
+
 		const std::pair<unit**, size_t> p = current_team.field_troop();
 		if (p.second) {
 			size_t troops_vsize = p.second;
@@ -1412,8 +1430,9 @@ void play_controller::do_init_side(const unsigned int team_index)
 			}
 			memcpy(troops_cache_, p.first, troops_vsize * sizeof(unit*));
 			for (size_t i = 0; i < troops_vsize; i ++) {
-				if (troops_cache_[i]->new_turn()) {
-					units_.erase(troops_cache_[i]);
+				unit* u = troops_cache_[i];
+				if (u->new_turn()) {
+					units_.erase(u);
 				}
 			}
 		}
@@ -2380,7 +2399,7 @@ bool play_controller::do_recruit(artifical* city, int cost_exponent, bool rpg_mo
 		gui2::show_transient_message(gui_->video(), "", _("There are no hero available to recruit"));
 		return false;
 	}
-	if (current_team.recruits(-1).empty()) {
+	if (city->recruits(-1).empty()) {
 		gui2::show_transient_message(gui_->video(), "", _("There are no unit type available to recruit."));
 		return false;
 	}
@@ -2641,6 +2660,146 @@ artifical* play_controller::decide_ai_capital() const
 		}
 	}
 	return capital_of_ai;
+}
+
+void play_controller::recommend()
+{
+	std::vector<team>& teams = teams_;
+
+	std::string message;
+	artifical* selected_city = NULL;
+	hero* selected_hero = NULL;
+
+	std::vector<artifical*> cities, full_cities;
+	for (size_t side = 0; side != teams.size(); side ++) {
+		std::vector<artifical*>& side_cities = teams[side].holded_cities();
+		for (std::vector<artifical*>::iterator itor = side_cities.begin(); itor != side_cities.end(); ++ itor) {
+			artifical* city = *itor;
+			full_cities.push_back(city);
+			if (!city->wander_heros().size()) {
+				continue;
+			}
+			cities.push_back(city);
+		}
+	}
+	if (!cities.size()) {
+		return;
+	}
+	// move max_move_wander_heros wander hero
+	int random = 1;
+	int hero_index = 0;
+	if (full_cities.size() > 1) {
+		artifical* from_city = cities[turn() % cities.size()];
+		hero* leader = teams[from_city->side() - 1].leader();
+		artifical* to_city = full_cities[(turn() + random) % full_cities.size()];
+		
+		while (to_city == from_city) {
+			to_city = full_cities[(turn() + random) % full_cities.size()];
+			random ++;
+		}
+		std::vector<hero*>& from_wander_heros = from_city->wander_heros();
+		int max_move_wander_heros = 2;
+		for (std::vector<hero*>::iterator itor = from_wander_heros.begin(); hero_index < max_move_wander_heros && itor != from_wander_heros.end();) {
+			hero* h = *itor;
+			if (from_city->side() == team::empty_side_ || h->loyalty(*leader) < game_config::move_loyalty_threshold) {
+				to_city->wander_into(*h, teams[from_city->side() - 1].is_human()? false: true);
+				itor = from_wander_heros.erase(itor);
+				hero_index ++;
+			} else {
+				++ itor;
+			}
+		}
+	}
+	// recommand wander hero
+	if (cities.size() == 1 && !cities[0]->wander_heros().size()) {
+		return;
+	}
+
+	random = get_random();
+	do {
+		selected_city = cities[random % cities.size()];
+		random ++;
+	} while (!selected_city->wander_heros().size());
+	std::vector<hero*>& wander_heros = selected_city->wander_heros();
+	hero_index = random % wander_heros.size();
+
+	selected_hero = wander_heros[hero_index];
+
+	hero* leader = teams[selected_city->side() - 1].leader();
+	if (selected_city->side() == team::empty_side_ || selected_hero->loyalty(*leader) < game_config::wander_loyalty_threshold) {
+		artifical* into_city = cities[random % cities.size()];
+		into_city->wander_into(*selected_hero, teams[selected_city->side() - 1].is_human()? false: true);
+		wander_heros.erase(wander_heros.begin() + hero_index);
+		return;
+	}
+	// update heros list in artifical
+	selected_hero->status_ = hero_status_idle;
+	selected_hero->side_ = selected_city->side() - 1;
+	selected_city->fresh_heros().push_back(selected_hero);
+	wander_heros.erase(wander_heros.begin() + hero_index);
+
+	message = _("Let me join in. I will do my best to maintenance our honor.");
+
+	map_location loc2(MAGIC_HERO, selected_hero->number_);
+	game_events::fire("post_recommend", selected_city->get_location(), loc2);
+
+	show_hero_message(selected_hero, selected_city, message, game_events::INCIDENT_RECOMMENDONESELF);
+}
+
+bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int emissary_number, int target_side, int strategy_index)
+{
+	if (!alignment) {
+		// current not support discard alignment.
+		return false;
+	}
+
+	hero& emissary = heros_[emissary_number];
+	team& my_team = teams_[my_side - 1];
+	team& to_ally_team = teams_[to_ally_side - 1];
+	team& target_team = teams_[target_side - 1];
+	
+	std::vector<strategy>& strategies = my_team.strategies();
+	strategy& s = strategies[strategy_index];
+	artifical* target_city = units_.city_from_cityno(s.target_);
+
+	// display dialog
+	utils::string_map symbols;
+	symbols["city"] = target_city->name();
+	symbols["first"] = my_team.name();
+	symbols["second"] = to_ally_team.name();
+	
+	if (s.type_ != strategy::DEFEND || !target_team.is_human() || !to_ally_team.is_enemy(target_side)) {
+		// calculate to_ally_team aggreen with whether or not.
+		std::vector<mr_data> mrs;
+		units_.calculate_mrs_data(mrs, to_ally_side, false);
+		if (!mrs[0].enemy_cities.empty() && mrs[0].enemy_cities[0]->side() == my_side) {
+			// game_events::show_hero_message(&heros[214], NULL, vgettext("$first wants to ally with $second, but $second refuse.", symbols), game_events::INCIDENT_ALLY);
+			return false;
+		}
+	}
+
+	my_team.set_ally(to_ally_side);
+	to_ally_team.set_ally(my_side);
+
+	s.allies_.insert(to_ally_side);
+
+	// emissary from fresh to finish.
+	artifical* city = units_.city_from_cityno(emissary.city_);
+	std::vector<hero*>& freshes = city->fresh_heros();
+	city->fresh_heros().erase(std::find(freshes.begin(), freshes.end(), &emissary));
+	city->finish_heros().push_back(&emissary);
+	emissary.status_ = hero_status_backing;
+
+	std::string message;
+	if (s.type_ == strategy::AGGRESS) {
+		message = vgettext("In order to aggress upon $city, $first and $second concluded treaty of alliance.", symbols);
+	} else if (s.type_ == strategy::DEFEND) {
+		message = vgettext("In order to defend $city, $first and $second concluded treaty of alliance.", symbols);
+	} else {
+		VALIDATE(false, "ally, unknown strategy type.");
+	}
+	game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
+	return true;
 }
 
 int play_controller::human_players()

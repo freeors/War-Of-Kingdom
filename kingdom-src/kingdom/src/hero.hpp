@@ -204,6 +204,10 @@ enum {
 #define HEROS_NO_TREASURE			0xff
 #define HERO_PREFIX_STR_TREASURE	"treasure-"
 
+// treasure
+#define NO_CHARACTER				-1
+#define HERO_PREFIX_STR_CHARACTER	"character-"
+
 // skill
 #define HEROS_MAX_SKILL	8
 #define HERO_PREFIX_STR_SKILL		"skill-"
@@ -212,7 +216,7 @@ enum {
 	hero_skill_commercial = hero_skill_min,
 	hero_skill_t1,
 	hero_skill_t2,
-	hero_skill_t3,
+	hero_skill_encourage,
 	hero_skill_hero,
 	hero_skill_demolish,
 	hero_skill_t6,
@@ -252,7 +256,7 @@ enum {
 	hero_feature_renown,
 	hero_feature_innovate,
 	hero_feature_surveillance,
-	hero_feature_encourage,
+	hero_feature_xp,
 	hero_feature_lobbyist,
 	hero_feature_break,
 	hero_feature_penetrate,	// ---> 50
@@ -264,6 +268,7 @@ enum {
 	hero_feature_dayattack,
 	hero_feature_nightattack,
 	hero_featrue_frighten,
+	hero_feature_curer,
 
 	hero_feature_complex_min = HEROS_BASE_FEATURE_COUNT,
 
@@ -374,6 +379,12 @@ public:
 	static std::string& status_str(int status);
 	static std::string& official_str(int offical);
 	static std::string& treasure_str(int tid);
+	static std::string& character_str(int cid);
+
+	static int number_market;
+	static int number_wall;
+	static int number_keep;
+	static int number_tower;
 
 	hero(uint16_t number, uint16_t leadership = 0, uint16_t force = 0, uint16_t intellect = 0, uint16_t politics = 0, uint16_t charm = 0);
 	hero(const hero& that);
@@ -441,7 +452,8 @@ private:
 	static std::string stratum_str_[HEROS_STRATUMS];
 	static std::string status_str_[HEROS_STATUSES];
 	static std::string official_str_[HEROS_OFFICIALS];
-	static std::map<int, std::string> treasure_str_; 
+	static std::map<int, std::string> treasure_str_;
+	static std::map<int, std::string> character_str_; 
 	static std::vector<int> valid_features_;
 
 	char imgfile_[32];
@@ -463,6 +475,7 @@ namespace rpg {
 
 bool compare_leadership(const hero* lhs, const hero* rhs);
 bool compare_politics(const hero* lhs, const hero* rhs);
+bool compare_recruit(const hero* lhs, const hero* rhs);
 
 extern hero hero_invalid;
 extern std::vector<hero*> empty_vector_hero_ptr;

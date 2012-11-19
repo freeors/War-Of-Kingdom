@@ -22,10 +22,10 @@ msgid "hero_race2 description"
 msgstr "战役只一个场景，玩家可以选马超、袁绍、曹操、袁术、孙坚、刘表、孟获、刘备、董卓、吕布、公孙瓒、刘璋和张鲁。（踏莎刀影制作）"
 
 msgid "RACE"
-msgstr "群雄争霸"
+msgstr "RACE"
 
 msgid "RACE2"
-msgstr "群雄争霸2"
+msgstr "RACE2"
 
 msgid "Defeat all sides"
 msgstr "击败所有势力"

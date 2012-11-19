@@ -44,7 +44,8 @@ namespace reports {
 				image(),
 				text(text),
 				tooltip(),
-				action()
+				action(),
+				rect(empty_rect)
 				{}
 
 		// Invariant: either text or image should be empty
@@ -52,19 +53,21 @@ namespace reports {
 		// invariant so I left it like the original report class.
 		image::locator image;
 		std::string text;
+		// left top point. if w == 0, invalid.
+		SDL_Rect rect;
 
 		std::string tooltip;
 		std::string action;
 		element(const std::string& text, const std::string& image,
 				const std::string& tooltip, const std::string& action="") :
-			image(image), text(text), tooltip(tooltip), action(action) {}
+			image(image), text(text), tooltip(tooltip), action(action), rect(empty_rect) {}
 
 		element(const std::string& text, const image::locator& image,
 				const std::string& tooltip,	const std::string& action="") :
-			image(image), text(text), tooltip(tooltip), action(action) {}
+			image(image), text(text), tooltip(tooltip), action(action), rect(empty_rect) {}
 		element(const std::string& text, const char* image,
 				const std::string& tooltip, const std::string& action="") :
-			image(image), text(text), tooltip(tooltip), action(action) {}
+			image(image), text(text), tooltip(tooltip), action(action), rect(empty_rect) {}
 
 		bool operator==(const element& o) const {
 			return o.text == text && o.image == image && o.tooltip == tooltip && o.action == action;

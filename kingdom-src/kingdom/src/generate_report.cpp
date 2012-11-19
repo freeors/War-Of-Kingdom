@@ -298,7 +298,14 @@ report generate_report(TYPE type,
 	{
 //		const std::vector<Uint32>& old_rgb = u->second.team_rgb_range();
 //		color_range new_rgb = team::get_side_color_range(u->second.side());
-		return report("", image::locator(u->absolute_image(), u->image_mods()), "");
+
+		report res("", image::locator(u->absolute_image(), u->image_mods()), "");
+		if (!u->is_artifical() && u->character() != NO_CHARACTER) {
+			res.add_image(unit_types.character(u->character()).image_, "");
+			res.back().rect.w = 16;
+			res.back().rect.h = 16;
+		}
+		return res;
 	}
 	case UNIT_PROFILE:
 		return report("", u->profile(), "");

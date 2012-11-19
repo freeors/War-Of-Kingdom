@@ -9,6 +9,8 @@
 #include "posix.h"
 #include <set>
 
+#include "unit_types.hpp"
+
 // language.cpp有init_textdomains函数体,但要把language.cpp加起来会出现很多unsoluve linke, 在这里实现一个
 // 这里实现和language.cpp中是一样的
 static void init_textdomains(const config& cfg)
@@ -248,7 +250,7 @@ std::string editor::check_data_bin(const config& data_cfg)
 
 bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool write_file, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
 {
-	config tmpcfg;
+	config tmpcfg, foreground;
 
 	// 以下这句如果不加，（后续）生成的cache-v0.1.1-xxxxx.define.gz会出错，大小上大于应该的字节数
 	// 但测试下来，对真正的须的cache-v0.1.1-xxxx.gz这个文件没影响
@@ -376,6 +378,8 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_DATA, game_config_, nfiles, sum_size, modified);
 			}
 			editor_config::data_cfg = game_config_;
+			unit_types.set_config(editor_config::data_cfg.child("units"));
+			unit_types.build_all(unit_type::FULL);
 		} 
 	}
 	catch (game::error& e) {

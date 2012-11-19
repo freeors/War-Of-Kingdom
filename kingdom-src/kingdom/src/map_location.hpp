@@ -20,6 +20,7 @@
 
 class config;
 class variable_set;
+class gamemap;
 
 #include <string>
 #include <vector>
@@ -61,6 +62,7 @@ struct map_location {
 
 	map_location() : x(-1000), y(-1000) {}
 	map_location(int x, int y) : x(x), y(y) {}
+
 	map_location(const config& cfg, const variable_set *variables);
 
 	void write(config& cfg) const;
@@ -128,7 +130,7 @@ void get_adjacent_tiles(const map_location& a, map_location* res);
 size_t distance_between(const map_location& a, const map_location& b);
 
 /** Parses ranges of locations into a vector of locations. */
-std::vector<map_location> parse_location_range(const std::string& xvals,
+std::vector<map_location> parse_location_range(gamemap* map, const std::string& xvals,
 	const std::string &yvals, bool with_border = false);
 
 /**

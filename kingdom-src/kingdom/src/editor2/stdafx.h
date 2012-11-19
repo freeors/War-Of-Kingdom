@@ -17,4 +17,10 @@
 #include <commctrl.h>
 #include <time.h>
 
+#include <iosfwd>
+#include <locale>
+#include <algorithm>
+#include <cctype>
+#include <iomanip>
+
 #endif // __STDAFX_H_

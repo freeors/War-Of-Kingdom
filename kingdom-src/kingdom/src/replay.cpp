@@ -1212,7 +1212,7 @@ void replay::undo()
 		// A unit's move is being undone.
 		// Repair unsynced cmds whose locations depend on that unit's location.
 		const std::vector<map_location> steps =
-				parse_location_range(child["x"], child["y"]);
+				parse_location_range(resources::game_map, child["x"], child["y"]);
 
 		if (steps.empty()) {
 			replay::process_error("undo(), trying to undo a move using an empty path");
@@ -1274,8 +1274,9 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		size = *ptr = cfg.child_count("random");
 		ptr = ptr + 1; 
 		for (i = 0; i < size; i ++) {
-			*ptr = cfg.child("random", i)["value"].to_int();
-			ptr = ptr + 1; 
+			const config& random = cfg.child("random", i);
+			*ptr = random["value"].to_int();
+			ptr = ptr + 1;
 		}
 		const config& child = cfg.child("start");
 		cmd->flags = 0;
@@ -1287,8 +1288,19 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		size = *ptr = cfg.child_count("random");
 		ptr = ptr + 1; 
 		for (i = 0; i < size; i ++) {
-			*ptr = cfg.child("random", i)["value"].to_int();
-			ptr = ptr + 1; 
+			const config& random = cfg.child("random", i);
+			*ptr = random["value"].to_int();
+			ptr = ptr + 1;
+
+			const config& results = random.child("results", 0);
+			if (!results) {
+				*ptr = INT_MAX;
+				ptr = ptr + 1;
+				continue;
+			}
+			// [results].choose
+			*ptr = lexical_cast_default<int>(results["choose"], 0);
+			ptr = ptr + 1;
 		}
 		const config& child = cfg.child("init_side");
 		cmd->flags = 0;
@@ -1371,7 +1383,7 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		// x=/y=
 		const std::string x = child.get("x")->str();
 		const std::string y = child.get("y")->str();
-		steps = parse_location_range(x, y);
+		steps = parse_location_range(resources::game_map, x, y);
 		*ptr = steps.size();
 		ptr = ptr + 1;
 		for (std::vector<map_location>::iterator itor = steps.begin(); itor != steps.end(); ++ itor) {
@@ -1396,7 +1408,7 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		// x=/y=
 		const std::string x = child.get("x")->str();
 		const std::string y = child.get("y")->str();
-		steps = parse_location_range(x, y);
+		steps = parse_location_range(resources::game_map, x, y);
 		*ptr = steps.size();
 		ptr = ptr + 1;
 		for (std::vector<map_location>::iterator itor = steps.begin(); itor != steps.end(); ++ itor) {
@@ -2032,6 +2044,13 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		for (i = 0; i < size; i ++) {
 			config& random_cfg = cfg.add_child("random");
 			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+			if (*ptr == INT_MAX) {
+				ptr = ptr + 1;
+				continue;
+			}
+			config& result_cfg = random_cfg.add_child("results");
+			result_cfg["choose"] = lexical_cast<std::string>(*ptr);
 			ptr = ptr + 1;
 		}
 
@@ -3364,7 +3383,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			const std::string x = *child->get("x");
 			const std::string y = *child->get("y");
-			std::vector<map_location> steps = parse_location_range(x, y);
+			std::vector<map_location> steps = parse_location_range(resources::game_map, x, y);
 
 			if (steps.empty()) {
 				WRN_REPLAY << "Warning: Missing path data found in [move]\n";
@@ -3550,14 +3569,13 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 		} 
 		else if (const config &child = cfg->child("diplomatism"))
 		{
-			if (child["type"] == "ally") {
-				game_events::fire("diplomatism", map_location::null_location, map_location::null_location, child);
-			} else if (child["type"] == "ally_all_ai") {
-				config ctx_cfg;
-				game_events::handle_event_command("ai",
-					game_events::queued_event("_from_interface", map_location(),
-					map_location(), config()), vconfig(ctx_cfg));
-			}
+			int emissary = child["hero"].to_int();
+			int my_side = child["first"].to_int();
+			int to_ally_side = child["second"].to_int();
+			int strategy_index = child["strategy"].to_int(-1);
+			int target_side = child["target"].to_int(-1);
+			
+			resources::controller->do_ally(true, my_side, to_ally_side, emissary, target_side, strategy_index);
 
 		} 
 		else if (const config &child = cfg->child("final_battle")) 

@@ -236,6 +236,49 @@ msgstr "水将"
 msgid "treasure-49"
 msgstr "水将"
 
+msgid "character-0"
+msgstr "西凉"
+
+msgid "character-1"
+msgstr "虎豹"
+
+msgid "character-2"
+msgstr "咒术"
+
+msgid "character-3"
+msgstr "南蛮"
+
+msgid "character-4"
+msgstr "陷阵"
+
+msgid "character-5"
+msgstr "先登"
+
+msgid "character-6"
+msgstr "巾帼"
+
+msgid "character-7"
+msgstr "骑射"
+
+msgid "character-8"
+msgstr "白眊"
+
+msgid "character-9"
+msgstr "青州"
+
+msgid "character-10"
+msgstr "并州"
+
+msgid "character-11"
+msgstr "丹阳"
+
+msgid "character-12"
+msgstr "诸葛"
+
+#, fuzzy
+msgid "character-13"
+msgstr "虎豹"
+
 msgid "feature-0"
 msgstr "步将"
 
@@ -513,7 +556,7 @@ msgid "feature_desc-45"
 msgstr "需要XP减少20%"
 
 msgid "feature-46"
-msgstr "监军"
+msgstr "监队"
 
 msgid "feature_desc-46"
 msgstr "所在部队不会掉忠诚度"
@@ -591,10 +634,10 @@ msgid "feature_desc-58"
 msgstr "攻击后无反击"
 
 msgid "feature-59"
-msgstr ""
+msgstr "自醒"
 
 msgid "feature_desc-59"
-msgstr ""
+msgstr "每回合恢复回正常状态"
 
 msgid "feature-60"
 msgstr ""
@@ -864,7 +907,7 @@ msgid "skill-2"
 msgstr ""
 
 msgid "skill-3"
-msgstr ""
+msgstr "激励"
 
 msgid "skill-4"
 msgstr "一骑"

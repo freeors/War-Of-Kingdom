@@ -27,17 +27,12 @@
 #include "game_config.hpp"
 #include "gettext.hpp"
 #include "loadscreen.hpp"
-#include "log.hpp"
+// #include "log.hpp"
 #include "map.hpp"
 #include "hero.hpp"
 #include "wml_exception.hpp"
 
-static lg::log_domain log_config("config");
-#define ERR_CF LOG_STREAM(err, log_config)
-#define WRN_CF LOG_STREAM(warn, log_config)
-
-static lg::log_domain log_unit("unit");
-#define DBG_UT LOG_STREAM(debug, log_unit)
+static std::string null_str = "";
 
 department::department(int type, const std::string& name, const std::string& image, const std::string& portrait)
 	: type_(type)
@@ -46,6 +41,14 @@ department::department(int type, const std::string& name, const std::string& ima
 	, portrait_(portrait)
 	, exploiture_(0)
 {
+}
+
+tcharacter::tcharacter(int index, const std::string& id)
+	: index_(index)
+	, id_(id)
+{
+	name_ = hero::character_str(index_);
+	image_ = "misc/character-" + id_ + ".png";
 }
 
 attack_type::attack_type(const config& cfg) :
@@ -137,9 +140,10 @@ bool attack_type::matches_filter(const config& cfg,bool self) const
 	if(filter_type.empty() == false && std::find(filter_type.begin(),filter_type.end(),type()) == filter_type.end())
 		return false;
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	if(!self && filter_special.empty() == false && !get_special_bool(filter_special,true))
 		return false;
-
+#endif
 	return true;
 }
 
@@ -420,9 +424,6 @@ int movement_cost_internal(std::map<t_translation::t_terrain, int>& move_costs,
 	if (underlying.size() != 1 || underlying.front() != terrain) {
 		bool revert = (underlying.front() == t_translation::MINUS ? true : false);
 		if (recurse_count >= 100) {
-			ERR_CF << "infinite movement_cost recursion: "
-				<< t_translation::write_terrain_code(terrain)
-				<< " depth " << recurse_count << "\n";
 			move_costs.insert(std::pair<t_translation::t_terrain, int>(terrain, impassable));
 			return impassable;
 		}
@@ -457,9 +458,6 @@ int movement_cost_internal(std::map<t_translation::t_terrain, int>& move_costs,
 
 	if (const config& movement_costs = cfg.child("movement_costs"))	{
 		if (underlying.size() != 1) {
-			ERR_CF << "Terrain '" << terrain << "' has "
-				<< underlying.size() << " underlying names - 0 expected.\n";
-
 			move_costs.insert(std::pair<t_translation::t_terrain, int>(terrain, impassable));
 			return impassable;
 		}
@@ -476,8 +474,6 @@ int movement_cost_internal(std::map<t_translation::t_terrain, int>& move_costs,
 	}
 
 	if (res <= 0) {
-		WRN_CF << "Terrain '" << terrain << "' has a movement cost of '"
-			<< res << "' which is '<= 0'; resetting to 1.\n";
 		res = 1;
 	}
 
@@ -559,12 +555,7 @@ const defense_range &defense_range_modifier_internal(defense_cache &defense_mods
 	if (res.min_ < 0) {
 		res.min_ = 0;
 	}
-/*
-	if (res.max_ > 100) {
-		WRN_CF << "Defense '" << res.max_ << "' is '> 100' reset to 100 (0% defense).\n";
-		res.max_ = 100;
-	}
-*/
+
 	return res;
 }
 
@@ -605,6 +596,7 @@ unit_type::unit_type(const unit_type& o) :
 	cost_(o.cost_),
 	gold_income_(o.gold_income_),
 	heal_(o.heal_),
+	turn_experience_(o.turn_experience_),
 	halo_(o.halo_),
 	undead_variation_(o.undead_variation_),
 	image_(o.image_),
@@ -618,6 +610,7 @@ unit_type::unit_type(const unit_type& o) :
 	ability_tooltips_(o.ability_tooltips_),
 	zoc_(o.zoc_),
 	cancel_zoc_(o.cancel_zoc_),
+	leader_(o.leader_),
 	hide_help_(o.hide_help_),
 	advances_to_(o.advances_to_),
 	advancement_(o.advancement_),
@@ -625,9 +618,12 @@ unit_type::unit_type(const unit_type& o) :
 	in_advancefrom_(o.in_advancefrom_),
 	alignment_(o.alignment_),
 	movementType_(o.movementType_),
+	movementType_id_(o.movementType_id_),
 	possibleTraits_(o.possibleTraits_),
 	genders_(o.genders_),
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	animations_(o.animations_),
+#endif
 	build_status_(o.build_status_),
 	match_(o.match_),
 	terrain_(o.terrain_),
@@ -637,16 +633,18 @@ unit_type::unit_type(const unit_type& o) :
 	wall_(o.wall_),
 	land_wall_(o.land_wall_),
 	walk_wall_(o.walk_wall_),
-	attack_destroy_(o.attack_destroy_),
 	arms_(o.arms_),
+	character_(o.character_),
 	master_(o.master_),
+	guard_(o.guard_),
 	packer_(o.packer_),
 	attacks_(o.attacks_)
 {
-	gender_types_[0] = o.gender_types_[0] != NULL ? new unit_type(*o.gender_types_[0]) : NULL;
-	gender_types_[1] = o.gender_types_[1] != NULL ? new unit_type(*o.gender_types_[1]) : NULL;
+	for (variations_map::const_iterator i = o.gender_types_.begin(); i != o.gender_types_.end(); ++ i) {
+		gender_types_[i->first] = new unit_type(*i->second);
+	}
 
-	for(variations_map::const_iterator i = o.variations_.begin(); i != o.variations_.end(); ++i) {
+	for (variations_map::const_iterator i = o.variations_.begin(); i != o.variations_.end(); ++ i) {
 		variations_[i->first] = new unit_type(*i->second);
 	}
 }
@@ -664,12 +662,13 @@ unit_type::unit_type(config &cfg) :
 	cost_(0),
 	gold_income_(0),
 	heal_(0),
+	turn_experience_(0),
 	halo_(),
 	undead_variation_(),
 	image_(),
 	flag_rgb_(),
 	num_traits_(0),
-	// gender_types_(),
+	gender_types_(),
 	variations_(),
 	race_(&dummy_race()),
 	alpha_(),
@@ -678,6 +677,7 @@ unit_type::unit_type(config &cfg) :
 	ability_tooltips_(),
 	zoc_(false),
 	cancel_zoc_(false),
+	leader_(false),
 	hide_help_(false),
 	advances_to_(),
 	advancement_(),
@@ -685,9 +685,12 @@ unit_type::unit_type(config &cfg) :
 	in_advancefrom_(false),
 	alignment_(),
 	movementType_(),
+	movementType_id_(),
 	possibleTraits_(),
 	genders_(),
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	animations_(),
+#endif
 	build_status_(NOT_BUILT),
 	match_(),
 	terrain_(t_translation::NONE_TERRAIN),
@@ -697,14 +700,12 @@ unit_type::unit_type(config &cfg) :
 	wall_(false),
 	land_wall_(true),
 	walk_wall_(false),
-	attack_destroy_(false),
 	arms_(0),
+	character_(-1),
 	master_(HEROS_INVALID_NUMBER),
+	guard_(NO_GUARD),
 	packer_(false)
 {
-	gender_types_[0] = NULL;
-	gender_types_[1] = NULL;
-
 	foreach (config &att, cfg_.child_range("attack")) {
 		attacks_.push_back(attack_type(att));
 		if (attacks_.size() == 3) {
@@ -714,6 +715,7 @@ unit_type::unit_type(config &cfg) :
 	cfg_.clear_children("attack");
 
 	// AI need this flag, may be before build_all status. duraton ai's interior
+	master_ = cfg_["master"].to_int(HEROS_INVALID_NUMBER);
 	wall_ = cfg_["wall"].to_bool();
 	walk_wall_ = cfg_["walk_wall"].to_bool();
 	gold_income_ = cfg["gold_income"].to_int();
@@ -721,10 +723,10 @@ unit_type::unit_type(config &cfg) :
 
 unit_type::~unit_type()
 {
-	delete gender_types_[0];
-	delete gender_types_[1];
-
-	for(variations_map::iterator i = variations_.begin(); i != variations_.end(); ++i) {
+	for (variations_map::iterator i = gender_types_.begin(); i != gender_types_.end(); ++i) {
+		delete i->second;
+	}
+	for (variations_map::iterator i = variations_.begin(); i != variations_.end(); ++i) {
 		delete i->second;
 	}
 }
@@ -761,9 +763,8 @@ void unit_type::build_full(const movement_type_map &mv_types,
 		variations_.insert(std::make_pair(var_cfg["variation_name"], ut));
 	}
 
-	for (int i = 0; i < 2; ++i) {
-		if (gender_types_[i])
-			gender_types_[i]->build_full(mv_types, races, traits);
+	for (variations_map::const_iterator it = gender_types_.begin(); it != gender_types_.end(); ++ it) {
+		it->second->build_full(mv_types, races, traits);
 	}
 
 	const std::string& align = cfg["alignment"];
@@ -799,6 +800,7 @@ void unit_type::build_full(const movement_type_map &mv_types,
 */
 	zoc_ = cfg["zoc"].to_bool(level_ > 0);
 	cancel_zoc_ = cfg["cancel_zoc"].to_bool();
+	leader_ = cfg["leader"].to_bool();
 
 	const std::string& alpha_blend = cfg["alpha"];
 	if(alpha_blend.empty() == false) {
@@ -829,25 +831,30 @@ void unit_type::build_full(const movement_type_map &mv_types,
 	}
 	base_ = cfg["base"].to_bool();
 	
-	attack_destroy_ = cfg["attack_destroy"].to_bool();
 	if (!cfg["arms"].blank()) {
 		arms_ = unit_types.arms_from_id(cfg["arms"].str());
 		if (arms_ < 0 || arms_ >= HEROS_MAX_ARMS) {
 			throw config::error(id_ + "'s arms is invalid: " + cfg["arms"].str());
 		}
 	}
+	if (!cfg["character"].blank()) {
+		character_ = unit_types.character_from_id(cfg["character"].str());
+		if (character_ < 0) {
+			throw config::error(id_ + "'s character is invalid: " + cfg["character"].str());
+		}
+	}
 	
 	land_wall_ = cfg_["land_wall"].to_bool(true);
-	master_ = cfg_["master"].to_int(HEROS_INVALID_NUMBER);
+	guard_ = cfg_["guard"].to_int(NO_GUARD);
 
 	// Deprecation messages, only seen when unit is parsed for the first time.
 
 	build_status_ = FULL;
 
 	// remove some attribute that indicated by varaible.
-	static char const *internalized_attrs[] = { "abilities", "advances_to", "advancement", "alignment", "alpha", "arms", "attack_destroy", 
-		"base", "can_recruit", "can_reside", "cancel_zoc", "cost", 
-		"experience", "flag_rgb", "gold_income", 
+	static char const *internalized_attrs[] = { "abilities", "advances_to", "advancement", "alignment", "alpha", "arms", 
+		"base", "can_recruit", "can_reside", "cancel_zoc", "cost", "character",
+		"cost", "experience", "flag_rgb", "gold_income", 
 		"halo", "heal", "hitpoints", "id", "ignore_race_traits", "image", 
 		"land_wall", "level", "master", "match", "movement", "movement_type",
 		"packer", "race", "terrain", "walk_wall", "wall", "undead_variation", "zoc"};
@@ -899,10 +906,11 @@ void unit_type::build_help_index(const movement_type_map &mv_types,
 	undead_variation_ = cfg_["undead_variation"].str();
 	image_ = cfg_["image"].str();
 	heal_ = cfg["heal"].to_int();
+	turn_experience_ = cfg["turn_experience"].to_int();
+	movementType_id_ = cfg["movement_type"].str();
 
-	for (int i = 0; i < 2; ++i) {
-		if (gender_types_[i])
-			gender_types_[i]->build_help_index(mv_types, races, traits);
+	for (variations_map::const_iterator it = gender_types_.begin(); it != gender_types_.end(); ++ it) {
+		it->second->build_help_index(mv_types, races, traits);
 	}
 
 	const race_map::const_iterator race_it = races.find(cfg["race"]);
@@ -943,8 +951,7 @@ void unit_type::build_help_index(const movement_type_map &mv_types,
 void unit_type::build_created(const movement_type_map &mv_types,
 	const race_map &races, const config::const_child_itors &traits)
 {
-	gender_types_[0] = NULL;
-	gender_types_[1] = NULL;
+	gender_types_.clear();
 
 	config &cfg = cfg_;
 
@@ -968,7 +975,7 @@ void unit_type::build_created(const movement_type_map &mv_types,
 		}
 		male_cfg.clear_children("male");
 		male_cfg.clear_children("female");
-		gender_types_[0] = new unit_type(male_cfg);
+		gender_types_["male"] = new unit_type(male_cfg);
 	}
 
 	if (config &female_cfg = cfg.child("female"))
@@ -980,17 +987,22 @@ void unit_type::build_created(const movement_type_map &mv_types,
 		}
 		female_cfg.clear_children("male");
 		female_cfg.clear_children("female");
-		gender_types_[1] = new unit_type(female_cfg);
+		gender_types_["female"] = new unit_type(female_cfg);
 	}
 
-	for (int i = 0; i < 2; ++i) {
-		if (gender_types_[i])
-			gender_types_[i]->build_created(mv_types, races, traits);
+	for (variations_map::const_iterator it = gender_types_.begin(); it != gender_types_.end(); ++ it) {
+		it->second->build_created(mv_types, races, traits);
 	}
 
     const std::string& advances_to_val = cfg["advances_to"];
 	if (advances_to_val != "null" && advances_to_val != "") {
         advances_to_ = utils::split(advances_to_val);
+	}
+	for (std::vector<std::string>::const_iterator it = advances_to_.begin(); it != advances_to_.end(); ++ it) {
+		const unit_type* ut = unit_types.find(*it);
+		if (!ut) {
+			throw config::error("unit_type " + id_ + " advances_to error, cannot find " + *it + " in unit_types.");
+		}
 	}
 
     advancement_ = cfg["advancement"].str();
@@ -1007,28 +1019,25 @@ void unit_type::build_created(const movement_type_map &mv_types,
 	build_status_ = CREATED;
 }
 
-const unit_type& unit_type::get_gender_unit_type(std::string gender) const
-{
-	if (gender == "female") return get_gender_unit_type(unit_race::FEMALE);
-	else if (gender == "male") return get_gender_unit_type(unit_race::MALE);
-	else return *this;
-}
-
 const unit_type& unit_type::get_gender_unit_type(unit_race::GENDER gender) const
 {
-	const size_t i = gender;
-	if(i < sizeof(gender_types_)/sizeof(*gender_types_)
-	&& gender_types_[i] != NULL) {
-		return *gender_types_[i];
+	std::string gender_str = "male";
+	if (gender == unit_race::FEMALE) {
+		gender_str = "female";
 	}
 
-	return *this;
+	const variations_map::const_iterator i = gender_types_.find(gender_str);
+	if (i != gender_types_.end()) {
+		return *i->second;
+	} else {
+		return *this;
+	}
 }
 
 const unit_type& unit_type::get_variation(const std::string& name) const
 {
 	const variations_map::const_iterator i = variations_.find(name);
-	if(i != variations_.end()) {
+	if (i != variations_.end()) {
 		return *i->second;
 	} else {
 		return *this;
@@ -1044,6 +1053,7 @@ const t_string unit_type::unit_description() const
 	}
 }
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 const std::vector<unit_animation>& unit_type::animations() const 
 {
 	if (animations_.empty()) {
@@ -1053,6 +1063,7 @@ const std::vector<unit_animation>& unit_type::animations() const
 
 	return animations_;
 }
+#endif
 
 std::vector<attack_type> unit_type::attacks() const
 {
@@ -1120,60 +1131,14 @@ bool unit_type::hide_help() const {
 	return hide_help_ || unit_types.hide_help(id_, race_->id());
 }
 
-void unit_type::add_advancement(const unit_type &to_unit,int xp)
-{
-	const std::string &to_id =  to_unit.cfg_["id"];
-	const std::string &from_id =  cfg_["id"];
-
-	// Add extra advancement path to this unit type
-	if(std::find(advances_to_.begin(), advances_to_.end(), to_id) == advances_to_.end()) {
-		advances_to_.push_back(to_id);
-	} else {
-		return;
-	}
-
-	if(xp > 0) {
-		//xp is 0 in case experience= wasn't given.
-		if(!in_advancefrom_) {
-			//This function is called for and only for an [advancefrom] tag in a unit_type referencing this unit_type.
-			in_advancefrom_ = true;
-			experience_needed_ = xp;
-			DBG_UT << "Changing experience_needed from " << experience_needed_ << " to " << xp << " due to (first) [advancefrom] of " << to_id << "\n";
-		}
-		else if(experience_needed_ > xp) {
-			experience_needed_ = xp;
-			DBG_UT << "Lowering experience_needed from " << experience_needed_ << " to " << xp << " due to (multiple, lower) [advancefrom] of " << to_id << "\n";
-		}
-		else
-			DBG_UT << "Ignoring experience_needed change from " << experience_needed_ << " to " << xp << " due to (multiple, higher) [advancefrom] of " << to_id << "\n";
-	}
-
-	// Add advancements to gendered subtypes, if supported by to_unit
-	for(int gender=0; gender<=1; ++gender) {
-		if(gender_types_[gender] == NULL) continue;
-		if(to_unit.gender_types_[gender] == NULL) {
-			continue;
-		}
-		gender_types_[gender]->add_advancement(*(to_unit.gender_types_[gender]),xp);
-	}
-
-	// Add advancements to variation subtypes.
-	// Since these are still a rare and special-purpose feature,
-	// we assume that the unit designer knows what they're doing,
-	// and don't block advancements that would remove a variation.
-	for(variations_map::iterator v=variations_.begin();
-	    v!=variations_.end(); ++v) {
-		v->second->add_advancement(to_unit,xp);
-	}
-}
-
 static void advancement_tree_internal(const std::string& id, std::set<std::string>& tree)
 {
 	const unit_type *ut = unit_types.find(id);
 	if (!ut)
 		return;
 
-	foreach(const std::string& adv, ut->advances_to()) {
+	std::vector<std::string> vstr = ut->advances_to();
+	foreach(const std::string& adv, vstr) {
 		if (tree.insert(adv).second) {
 			// insertion succeed, expand the new type
 			advancement_tree_internal(adv, tree);
@@ -1188,6 +1153,18 @@ std::set<std::string> unit_type::advancement_tree() const
 	return tree;
 }
 
+std::vector<std::string> unit_type::advances_to(int character) const
+{
+	std::vector<std::string> vstr;
+	for (std::vector<std::string>::const_iterator it = advances_to_.begin(); it != advances_to_.end(); ++ it) {
+		int adv = unit_types.find(*it)->character();
+		if (adv == -1 || adv == character) {
+			vstr.push_back(*it);
+		}
+	}
+	return vstr;
+}
+
 const std::vector<std::string> unit_type::advances_from() const
 {
 	// currently not needed (only help call us and already did it)
@@ -1196,7 +1173,8 @@ const std::vector<std::string> unit_type::advances_from() const
 	std::vector<std::string> adv_from;
 	foreach (const unit_type_data::unit_type_map::value_type &ut, unit_types.types())
 	{
-		foreach(const std::string& adv, ut.second.advances_to()) {
+		std::vector<std::string> vstr = ut.second.advances_to();
+		foreach(const std::string& adv, vstr) {
 			if (adv == id_)
 				adv_from.push_back(ut.second.id());
 		}
@@ -1215,6 +1193,7 @@ unit_type_data::unit_type_data() :
 	abilities_(),
 	specials_(),
 	arms_ids_(),
+	characters_(),
 	can_recruit_(),
 	navigation_types_(),
 	wall_type_(NULL),
@@ -1228,8 +1207,6 @@ unit_type_data::unit_type_data() :
 
 void unit_type_data::set_config(config &cfg)
 {
-    DBG_UT << "unit_type_data::set_config, name: " << cfg["name"] << "\n";
-
     clear();
     set_unit_config(cfg);
 
@@ -1374,21 +1351,33 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
-	if (const config& arms_cfg = cfg.child("arms")) {
-		if (arms_cfg["id"].empty()) {
-			throw config::error("[arms] error, no id attribute");
+	if (const config& id_cfg = cfg.child("identifier")) {
+		// identifier of arms
+		if (id_cfg["arms"].empty()) {
+			throw config::error("[identifier] error, no arms attribute");
 		}
-		std::vector<std::string> arms_ids = utils::split(arms_cfg["id"]);
-		size_t size = arms_ids.size();
+		std::vector<std::string> ids = utils::split(id_cfg["arms"]);
+		size_t size = ids.size();
 		for (size_t i = 0; i < size; i ++) {
 			if (i >= HEROS_MAX_ARMS) {
 				break;
 			}
-			arms_ids_.push_back(arms_ids[i]);
+			arms_ids_.push_back(ids[i]);
 		}
+
+		// identifier of character
+		if (id_cfg["character"].empty()) {
+			throw config::error("[identifier] error, no character attribute");
+		}
+		ids = utils::split(id_cfg["character"]);
+		size = ids.size();
+		for (size_t i = 0; i < size; i ++) {
+			characters_.push_back(tcharacter(i, ids[i]));
+		}
+
 		loadscreen::increment_progress();
 	} else {
-		throw config::error("[arms] error, must define [arms] block in [units].");
+		throw config::error("[identifier] error, must define [identifier] block in [units].");
 	}
 
 	// navigation_types_
@@ -1413,24 +1402,55 @@ void unit_type_data::set_config(config &cfg)
 		}
 		// We insert an empty unit_type and build it after the copy (for performance).
 		unit_type_map::iterator itor = insert(std::make_pair(id, unit_type(ut))).first;
-		if (itor->second.wall()) {
-			wall_type_ = &itor->second;
-			// build all, form other field, for example match.
-			find(itor->first);
-		} else if (itor->second.walk_wall()) {
-			keep_type_ = &itor->second;
-			// build all, form other field, for example match.
-			find(itor->first);
-		} else if (itor->second.gold_income()) {
-			market_type_ = &itor->second;
-			// build all, form other field, for example master_.
-			find(itor->first);
-		}
 		
 		loadscreen::increment_progress();
 	}
 
 	build_all(unit_type::CREATED);
+
+	for (unit_type_map::iterator it = types_.begin(); it != types_.end(); ++ it) {
+		unit_type& ut = it->second;
+		int master = ut.master();
+		if (master == hero::number_wall) {
+			if (!wall_type_ || wall_type_->level() > ut.level()) {
+				wall_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}			
+		} else if (master == hero::number_keep) {
+			if (!keep_type_ || keep_type_->level() > ut.level()) {
+				keep_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}
+		} else if (master == hero::number_market) {
+			if (!market_type_ || market_type_->level() > ut.level()) {
+				market_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}
+		} else if (master == hero::number_tower) {
+			if (!tower_type_ || tower_type_->level() > ut.level()) {
+				tower_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}
+		}
+	}
+
+	// form artifical types
+	if (wall_type_) {
+		artifical_types_[wall_type_->id()] = wall_type_;
+	}
+	if (keep_type_) {
+		artifical_types_[keep_type_->id()] = keep_type_;
+	}
+	if (market_type_) {
+		artifical_types_[market_type_->id()] = market_type_;
+	}
+	if (tower_type_) {
+		artifical_types_[tower_type_->id()] = tower_type_;
+	}
 
 	if (const config recruit_cfg = cfg.child("recruit")) {
 		if (recruit_cfg["id"].empty()) {
@@ -1466,10 +1486,6 @@ const unit_type *unit_type_data::find(const std::string& key, unit_type::BUILD_S
 
     //This might happen if units of another era are requested (for example for savegames)
     if (itor == types_.end()){
-        /*
-        for (unit_type_map::const_iterator ut = types_.begin(); ut != types_.end(); ut++)
-            DBG_UT << "Known unit_types: key = '" << ut->first << "', id = '" << ut->second.id() << "'\n";
-        */
 		return NULL;
     }
 
@@ -1492,14 +1508,25 @@ const config& unit_type_data::find_config(const std::string& key) const
 void unit_type_data::clear()
 {
 	types_.clear();
+	artifical_types_.clear();
 	movement_types_.clear();
 	races_.clear();
+	modifications_.clear();
 	traits_.clear();
 	complex_feature_.clear();
+	treasures_.clear();
 	abilities_.clear();
 	specials_.clear();
+	arms_ids_.clear();
+	characters_.clear();
+	can_recruit_.clear();
 	navigation_types_.clear();
 	build_status_ = unit_type::NOT_BUILT;
+
+	wall_type_ = NULL;
+	keep_type_ = NULL;
+	market_type_ = NULL;
+	tower_type_ = NULL;
 
 	hide_help_all_ = false;
 	hide_help_race_.clear();
@@ -1515,17 +1542,12 @@ void unit_type_data::build_all(unit_type::BUILD_STATUS status)
 		build_unit_type(u, status);
 		loadscreen::increment_progress();
 	}
-	for (unit_type_map::iterator u = types_.begin(), u_end = types_.end(); u != u_end; ++u) {
-		add_advancement(u->second);
-	}
 
 	build_status_ = status;
 }
 
 unit_type &unit_type_data::build_unit_type(const unit_type_map::iterator &ut, unit_type::BUILD_STATUS status) const
 {
-	DBG_UT << "Building unit type " << ut->first << ", level " << status << '\n';
-
 	if (int(status) <= int(ut->second.build_status()))
 		return ut->second;
 
@@ -1587,31 +1609,6 @@ bool unit_type_data::hide_help(const std::string& type, const std::string& race)
 	return res;
 }
 
-void unit_type_data::add_advancement(unit_type& to_unit) const
-{
-    const config& cfg = to_unit.get_cfg();
-
-    foreach (const config &af, cfg.child_range("advancefrom"))
-    {
-        const std::string &from = af["unit"];
-        int xp = af["experience"];
-
-        unit_type_data::unit_type_map::iterator from_unit = types_.find(from);
-
-		if (from_unit == types_.end()) {
-			std::ostringstream msg;
-			msg << "unit type '" << from << "' not found when resolving [advancefrom] tag for '"
-				<< to_unit.id() << "'";
-			throw config::error(msg.str());
-		}
-
-        // Fix up advance_from references
-        from_unit->second.add_advancement(to_unit, xp);
-
-        DBG_UT << "Added advancement ([advancefrom]) from " << from << " to " << to_unit.id() << "\n";
-    }
-}
-
 int unit_type_data::arms_from_id(const std::string& id) const
 {
 	std::vector<std::string>::const_iterator it = std::find(arms_ids_.begin(), arms_ids_.end(), id);
@@ -1619,6 +1616,28 @@ int unit_type_data::arms_from_id(const std::string& id) const
 		return it - arms_ids_.begin();
 	}
 	return -1;
+}
+
+const std::string& unit_type_data::character_id(int character) const
+{
+	if (character < 0 || character >= (int)characters_.size()) {
+		return null_str;
+	} else {
+		return characters_[character].id_;
+	}
+}
+
+int unit_type_data::character_from_id(const std::string& id) const
+{
+	if (id.empty()) {
+		return NO_CHARACTER;
+	}
+	for (std::vector<tcharacter>::const_iterator it = characters_.begin(); it != characters_.end(); ++ it) {
+		if (it->id_ == id) {
+			return it->index_;
+		}
+	}
+	return NO_CHARACTER;
 }
 
 const std::string& unit_type_data::id_from_navigation(int navigation) const

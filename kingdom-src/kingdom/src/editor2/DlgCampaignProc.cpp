@@ -1,12 +1,9 @@
 #include "global.hpp"
 #include "game_config.hpp"
-#include "config.hpp"
 #include "foreach.hpp"
 #include "loadscreen.hpp"
-#include "stdafx.h"
-#include <windowsx.h>
+#include "DlgCampaignProc.hpp"
 #include <string.h>
-#include <shlobj.h> // SHBrowseForFolder
 
 #include "resource.h"
 
@@ -14,100 +11,71 @@
 #include "struct.h"
 #include "win32x.h"
 #include "gettext.hpp"
-#include "editor.hpp"
 #include "serialization/string_utils.hpp"
 #include "serialization/parser.hpp"
 #include "filesystem.hpp"
 #include "map_location.hpp"
 
-#include <sstream>
-#include <iosfwd>
-#include <locale>
-#include <algorithm>
-#include <cctype>
-#include <iomanip>
-
-#define campaign_enable_save_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_campaign, IDM_SAVE, fEnable)
-#define campaign_get_save_btn()				(ToolBar_GetState(gdmgr._htb_campaign, IDM_SAVE) & TBSTATE_ENABLED)
 
 void campaign_refresh(HWND hdlgP);
 
 BOOL CALLBACK DlgCampaignMainProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgCampaignScenarioProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-typedef struct tag_dlghdr {
-    HWND hwndTab;       // tab control
-    HWND hwndDisplay;   // current child dialog box 
-    RECT rcDisplay;     // display rectangle for the tab control 
-	DLGTEMPLATE** apRes;
-	int reserved_pages;
-	int valid_pages;
-} DLGHDR;
+const std::string null_str = "";
 
-extern editor editor_;
-static std::string null_str = "";
+namespace ns {
+	int empty_leader = 228;
 
-class tcampaign
-{
-public:
-	tcampaign();
+	tcampaign campaign;
+	tmain _main;
+	std::vector<tscenario> _scenario;
+	const config* campaign_cfg_ptr;
 
-	HWND init_toolbar(HINSTANCE hinst, HWND hdlgP);
+	std::map<int, int> cityno_map;
 
-	void init_hero_state(hero_map& heros);
-	void do_state(int h, bool allocate, int city = -1, int state = STATE_UNKNOWN);
+	HIMAGELIST himl_checkbox_side;
+	HIMAGELIST himl_checkbox;
 
-	const std::string& arms(const std::string& id);
-	int arms_int(const std::string& id);
+	int clicked_side;
+	int clicked_event;
+	int clicked_feature;
+	int clicked_city;
+	int clicked_troop;
+	int clicked_hero;
 
-	const std::string& artifical_name(const std::string& id);
+	int type;
+	int current_scenario;
+	int action_side;
+	int action_event;
+	int action_feature;
+	int action_city;
+	int action_troop;
 
-	const std::string& navigation(const std::string& id);
-
-	const std::string& city_name(const std::string& id);
-	const std::string& troop_name(const std::string& id);
-
-	class ttrait
+	void set_dirty() 
 	{
-	public:
-		ttrait(const std::string& name, const std::string& desc)
-			: name_(name)
-			, desc_(desc)
-		{}
-		std::string name_;
-		std::string desc_;
-	};
-	const ttrait& city_trait(const std::string& id);
-	const ttrait& troop_trait(const std::string& id);
+		if (_main.dirty_) {
+			campaign_enable_save_btn(TRUE);
+			return;
+		}
+		for (std::vector<tscenario>::const_iterator it = _scenario.begin(); it != _scenario.end(); ++ it) {
+			if (it->dirty_) {
+				campaign_enable_save_btn(TRUE);
+				return;
+			}
+		}
+		campaign_enable_save_btn(FALSE);
+	}
 
-public:
-	config game_config_;
-	std::string id_;
+	DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName)
+	{ 
+		HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG); 
+		HGLOBAL hglb = LoadResource(gdmgr._hinst, hrsrc); 
+		return (DLGTEMPLATE *)LockResource(hglb); 
+	}
 
-	enum {STATE_UNKNOWN, STATE_SERVICE, STATE_WANDER, STATE_ARMY};
-	class hero_state 
-	{
-	public:
-		hero_state(bool allocated = false, int city = -1, int state = STATE_UNKNOWN)
-			: allocated_(allocated)
-			, city_(city)
-			, state_(state)
-		{}
-		bool allocated_;
-		int city_; // hero of city.
-		int state_;
-	};
-	std::vector<std::pair<std::string, std::string> > arms_;
-	std::vector<std::pair<std::string, std::string> > artifical_type_;
-	std::vector<std::pair<std::string, std::string> > city_arms_;
-	std::vector<std::pair<std::string, std::string> > troop_arms_;
-	std::vector<std::pair<std::string, std::string> > navigation_;
-	std::vector<std::pair<std::string, ttrait> > city_traits_;
-	std::vector<std::pair<std::string, ttrait> > troop_traits_;
-	std::map<int, hero_state> persons_;
-	std::map<int, hero_state> artificals_;
-	std::set<int> reserved_heros_;
-};
+	void new_campaign(const std::string& id, const std::string& firstscenario_id);
+}
 
 tcampaign::tcampaign()
 {}
@@ -148,81 +116,55 @@ HWND tcampaign::init_toolbar(HINSTANCE hinst, HWND hdlgP)
 
 void tcampaign::init_hero_state(hero_map& heros)
 {
+	const unit_type_data::unit_type_map& types = unit_types.types();
+
 	if (arms_.empty()) {
-		arms_.push_back(std::make_pair<std::string, std::string>("footman", hero::arms_str(0)));
-		arms_.push_back(std::make_pair<std::string, std::string>("horseman", hero::arms_str(1)));
-		arms_.push_back(std::make_pair<std::string, std::string>("enginery", hero::arms_str(2)));
-		arms_.push_back(std::make_pair<std::string, std::string>("academy", hero::arms_str(3)));
-		arms_.push_back(std::make_pair<std::string, std::string>("navy", hero::arms_str(4)));
+		arms_.push_back(std::make_pair<std::string, std::string>("footman", utf8_2_ansi(hero::arms_str(0).c_str())));
+		arms_.push_back(std::make_pair<std::string, std::string>("horseman", utf8_2_ansi(hero::arms_str(1).c_str())));
+		arms_.push_back(std::make_pair<std::string, std::string>("enginery", utf8_2_ansi(hero::arms_str(2).c_str())));
+		arms_.push_back(std::make_pair<std::string, std::string>("academy", utf8_2_ansi(hero::arms_str(3).c_str())));
+		arms_.push_back(std::make_pair<std::string, std::string>("navy", utf8_2_ansi(hero::arms_str(4).c_str())));
 	}
-	if (artifical_type_.empty()) {
-		artifical_type_.push_back(std::make_pair<std::string, std::string>("wall", "城墙"));
-		artifical_type_.push_back(std::make_pair<std::string, std::string>("market", "市场"));
-		artifical_type_.push_back(std::make_pair<std::string, std::string>("tower", "箭塔"));
+
+	artifical_utype_.clear();
+	const std::map<std::string, const unit_type*>& artifical_types = unit_types.artifical_types();
+	const unit_type* keep_type = unit_types.find_keep();
+	for (std::map<std::string, const unit_type*>::const_iterator it = artifical_types.begin(); it != artifical_types.end(); ++ it) {
+		if (it->second != keep_type) {
+			artifical_utype_.push_back(std::make_pair<std::string, const unit_type*>(it->first, it->second));
+		}
 	}
-	if (city_arms_.empty()) {
-		city_arms_.push_back(std::make_pair<std::string, std::string>("city1", "城市"));
-		city_arms_.push_back(std::make_pair<std::string, std::string>("city2", "大城市"));
+
+	city_utypes_.clear();
+	for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
+		const unit_type& ut = it->second;
+		if (ut.packer()) {
+			continue;
+		}
+		if (ut.master() != HEROS_INVALID_NUMBER) {
+			continue;
+		}
+		if (!ut.can_recruit()) {
+			continue;
+		}
+		city_utypes_.push_back(std::make_pair<std::string, const unit_type*>(it->first, &ut));
 	}
-	if (troop_arms_.empty()) {
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("bowman1", "弓兵(1级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("bowman2", "熟练弓兵(2级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("bowman3", "弩兵(3级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("bowman4", "熟练弩兵(4级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("bowman5", "连弩兵(5级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("bowman6", "诸葛兵(6级步兵)"));
 
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("footman1", "步兵(1级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("footman2", "二级步兵(2级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("footman3", "重步兵(3级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("footman4", "二级重步兵(4级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("footman5", "近卫兵(5级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("footman6", "二级近卫兵(6级步兵)"));
-
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("pikeman1", "枪兵(1级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("pikeman2", "二级枪兵(2级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("pikeman3", "长枪兵(3级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("pikeman4", "二级长枪兵(4级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("pikeman5", "重甲枪兵(5级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("pikeman6", "二级重甲枪兵(6级步兵)"));
-
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("horseman1", "轻骑兵(1级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("horseman2", "二级轻骑兵(2级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("horseman3", "重轻骑(3级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("horseman4", "二级重轻骑(4级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("horseman5", "亲卫队(5级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("horseman6", "二级亲卫队(6级骑兵)"));
-
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("commander1", "伍长(1级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("commander2", "什长(2级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("commander3", "俾将(3级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("commander4", "偏骑(4级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("commander5", "校尉(5级骑兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("commander6", "都督(6级骑兵)"));
-
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("catapult1", "炮车(1级兵器)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("catapult2", "二级炮车(2级兵器)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("catapult3", "重炮车(3级兵器)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("catapult4", "二级重炮车(4级兵器)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("catapult5", "霹雳车(5级兵器)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("catapult6", "二级霹雳车(6级兵器)"));
-
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("mage1", "文士(1级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("whitemage2", "风水士(2级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("whitemage3", "二级风水士(3级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("whitemage4", "方术士(4级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("whitemage5", "二级方术士(5级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("whitemage6", "仙术士(6级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("redmage2", "策士(2级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("redmage3", "二级策士(3级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("redmage4", "参谋(4级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("redmage5", "二级参谋(5级学术)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("redmage6", "军师(6级学术)"));
-
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("stage player", "戏子(2级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("famous director", "名导(4级步兵)"));
-		troop_arms_.push_back(std::make_pair<std::string, std::string>("White Mage", "白袍法师(2级学术)"));
+	troop_utypes_.clear();
+	for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
+		const unit_type& ut = it->second;
+		if (ut.packer()) {
+			continue;
+		}
+		if (ut.master() != HEROS_INVALID_NUMBER) {
+			continue;
+		}
+		if (ut.can_recruit() || ut.can_reside()) {
+			continue;
+		}
+		troop_utypes_.push_back(std::make_pair<std::string, const unit_type*>(it->first, &ut));
 	}
+
 	if (navigation_.empty()) {
 		navigation_.push_back(std::make_pair<std::string, std::string>("boat0", "舢板"));
 		navigation_.push_back(std::make_pair<std::string, std::string>("boat1", "蒙冲"));
@@ -320,39 +262,6 @@ int tcampaign::arms_int(const std::string& id)
 	return index;
 }
 
-const std::string& tcampaign::artifical_name(const std::string& id)
-{
-	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = artifical_type_.begin(); it != artifical_type_.end(); ++ it) {
-		if (id == it->first) {
-			return it->second;
-		}
-	}
-	static std::string null_str = "";
-	return null_str;
-}
-
-const std::string& tcampaign::city_name(const std::string& id)
-{
-	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = city_arms_.begin(); it != city_arms_.end(); ++ it) {
-		if (id == it->first) {
-			return it->second;
-		}
-	}
-	static std::string null_str = "";
-	return null_str;
-}
-
-const std::string& tcampaign::troop_name(const std::string& id)
-{
-	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = troop_arms_.begin(); it != troop_arms_.end(); ++ it) {
-		if (id == it->first) {
-			return it->second;
-		}
-	}
-	static std::string null_str = "";
-	return null_str;
-}
-
 const tcampaign::ttrait& tcampaign::city_trait(const std::string& id)
 {
 	for (std::vector<std::pair<std::string, ttrait> >::const_iterator it = city_traits_.begin(); it != city_traits_.end(); ++ it) {
@@ -385,290 +294,6 @@ const std::string& tcampaign::navigation(const std::string& id)
 	static std::string null_str = "";
 	return null_str;
 }
-
-class tmain_
-{
-public:
-	tmain_(const std::string& id = null_str, const std::string& firstscenario_id = null_str) 
-		: textdomain_(PACKAGE)
-		, id_(id)
-		, rank_(0)
-		// , abbrev_(id)
-		, abbrev_()
-		, first_scenario_(firstscenario_id)
-		, hero_data_("^xwml/hero.dat")
-		, rpg_mode_(false)
-	{}
-
-public:
-	std::string textdomain_;
-	std::string id_;
-	int rank_;
-	std::string abbrev_;
-	std::string first_scenario_;
-	std::string hero_data_;
-	bool rpg_mode_;
-};
-
-class tmain: public tmain_
-{
-public:
-	tmain(const std::string& id = null_str, const std::string& firstscenario_id = null_str);
-	void from_config(const config& cfg);
-	void from_ui(HWND hdlgP);
-	void update_to_ui(HWND hdlgP);
-	void generate();
-
-	std::string description() const;
-	std::string icon(bool absolute = false) const;
-	std::string image(bool absolute = false) const;
-
-	enum {BIT_ID = 0, BIT_TEXTDOMAIN, BIT_RANK, 
-		BIT_ABBREV, BIT_FIRSTSCENARIO, BIT_ICON, 
-		BIT_IMAGE, BIT_RPGMODE};
-	void set_dirty(int bit, bool set);
-public:
-
-	std::string file_;
-
-	uint32_t dirty_;
-	tmain_ main_from_cfg_;
-};
-
-class tside
-{
-public:
-	class tcity 
-	{
-	public:
-		tcity() 
-			: mayor_(HEROS_INVALID_NUMBER)
-		{}
-
-		void from_ui(HWND hdlgP, tside& side);
-		void update_to_ui_side_edit(HWND hdlgP, int index = -1) const;
-		void update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial = true);
-
-		bool operator==(const tcity& that) const
-		{
-			if (heros_army_ != that.heros_army_) return false;
-			if (type_ != that.type_) return false;
-			if (loc_ != that.loc_) return false;
-			if (traits_ != that.traits_) return false;
-			if (mayor_ != that.mayor_) return false;
-			if (service_heros_ != that.service_heros_) return false;
-			if (wander_heros_ != that.wander_heros_) return false;
-			if (economy_area_ != that.economy_area_) return false;
-			return true;
-		}
-		bool operator!=(const tcity& that) const { return !operator==(that); }
-
-		std::vector<int> heros_army_;
-		std::string type_;
-		map_location loc_;
-		std::vector<std::string> traits_;
-
-		int mayor_;
-		std::set<int> service_heros_;
-		std::set<int> wander_heros_;
-		std::set<map_location> economy_area_;
-	};
-
-	class tunit 
-	{
-	public:
-		void from_ui(HWND hdlgP, tside& side);
-		void update_to_ui_side_edit(HWND hdlgP, int index = -1) const;
-		void update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial = true);
-
-		bool operator==(const tunit& that) const
-		{
-			if (heros_army_ != that.heros_army_) return false;
-			if (city_ != that.city_) return false;
-			if (type_ != that.type_) return false;
-			if (loc_ != that.loc_) return false;
-			if (traits_ != that.traits_) return false;
-			return true;
-		}
-		bool operator!=(const tunit& that) const { return !operator==(that); }
-
-		std::vector<int> heros_army_;
-		int city_;
-		std::string type_;
-		map_location loc_;
-		std::vector<std::string> traits_;
-	};
-
-	class arms_feature 
-	{
-	public:
-		arms_feature(int arms = -1, int level = -1, int feature = -1) 
-			: arms_(arms)
-			, level_(level)
-			, feature_(feature)
-		{}
-
-		void from_ui(HWND hdlgP);
-		void update_to_ui_side_edit(HWND hdlgP, int index = -1) const;
-		void update_to_ui_feature_edit(HWND hdlgP);
-
-		bool operator==(const arms_feature& that) const
-		{
-			if (arms_ != that.arms_) return false;
-			if (level_ != that.level_) return false;
-			if (feature_ != that.feature_) return false;
-			return true;
-		}
-		bool operator!=(const arms_feature& that) const { return !operator==(that); }
-
-		int arms_;
-		int level_;
-		int feature_;
-	};
-
-	tside();
-	void from_config(const config& side_cfg);
-	void from_ui(HWND hdlgP);
-	void update_to_ui(HWND hdlgP) const;
-	void update_to_ui_side_edit(HWND hdlgP, bool partial = true);
-
-	bool new_feature();
-	void erase_feature(int index, HWND hdlgP);
-
-	bool new_city();
-	void erase_city(int index, HWND hdlgP);
-
-	bool new_troop();
-	void erase_troop(int index, HWND hdlgP);
-
-	bool operator==(const tside& that) const;
-	bool operator!=(const tside& that) const { return !operator==(that); }
-
-	enum CONTROLLER {HUMAN, HUMAN_AI, AI, NETWORK, NETWORK_AI, EMPTY};
-
-	std::string generate_features(CONTROLLER cntl = AI) const;
-public:
-	int side_;
-	std::string name_;
-	int leader_;
-	CONTROLLER controller_;
-	bool shroud_;
-	bool fog_;
-	std::vector<size_t> holded_cards_;
-	std::vector<arms_feature> features_;
-	int navigation_;
-	int gold_;
-	int income_;
-	std::string flag_;
-	std::vector<std::string> build_;
-
-	std::vector<tcity> cities_;
-	std::vector<tunit> troops_;
-};
-
-class tscenario_
-{
-public:
-	tscenario_::tscenario_(const std::string& id = null_str)
-		: id_(id)
-		, next_scenario_("null")
-		, map_data_()
-		, turns_(-1)
-		, maximal_defeated_activity_(0)
-		, win_()
-		, lose_()
-	{}
-
-public:
-	std::string id_;
-	std::string next_scenario_;
-	std::string map_data_;
-	int turns_;
-	int maximal_defeated_activity_;
-	std::string win_;
-	std::string lose_;
-};
-
-class tscenario: public tscenario_
-{
-public:
-	static std::string default_map_data();
-
-	tscenario(const std::string& campaign_id = null_str, const std::string& id = null_str);
-	void from_config(int index, const config& cfg);
-	void from_ui(HWND hdlgP);
-	void generate();
-	void update_to_ui(HWND hdlgP);
-	
-	std::string file(bool absolute = false) const;
-	std::string map_file(bool absolute = false) const;
-	std::string map_data_from_file(const std::string& file) const;
-	map_location map_data_size(const std::string& map_data) const;
-	int null_side() const;
-	bool side_equal() const;
-	
-	bool new_side();
-	void erase_side(int index, HWND hdlgP);
-
-	enum {BIT_ID = 0, BIT_NEXTSCENARIO, BIT_MAP, 
-		BIT_TURNS, BIT_MDACTIVITY, BIT_WIN, 
-		BIT_LOSE, BIT_SIDE};
-	void set_dirty(int bit, bool set);
-	
-public:
-	std::vector<tside> side_;
-	std::string campaign_id_;
-	int index_;
-	std::string file_;
-
-	uint32_t dirty_;
-	tscenario_ scenario_from_cfg_;
-private:
-	std::vector<tside> side_from_cfg_;
-};
-
-namespace ns {
-	int empty_leader = 228;
-
-	tcampaign campaign;
-	tmain _main;
-	std::vector<tscenario> _scenario;
-	const config* campaign_cfg_ptr;
-
-	HIMAGELIST himl_checkbox_side;
-	HIMAGELIST himl_checkbox;
-
-	int clicked_side;
-	int clicked_feature;
-	int clicked_city;
-	int clicked_troop;
-	int clicked_hero;
-
-	int type;
-	int current_scenario;
-	int action_side;
-	int action_feature;
-	int action_city;
-	int action_troop;
-
-	void set_dirty() 
-	{
-		if (_main.dirty_) {
-			campaign_enable_save_btn(TRUE);
-			return;
-		}
-		for (std::vector<tscenario>::const_iterator it = _scenario.begin(); it != _scenario.end(); ++ it) {
-			if (it->dirty_) {
-				campaign_enable_save_btn(TRUE);
-				return;
-			}
-		}
-		campaign_enable_save_btn(FALSE);
-	}
-
-	void new_campaign(const std::string& id, const std::string& firstscenario_id);
-}
-
 
 tmain::tmain(const std::string& id, const std::string& firstscenario_id)
 	: tmain_(id, firstscenario_id)
@@ -844,6 +469,7 @@ tside::tside()
 	, gold_(0)
 	, income_(0)
 	, build_()
+	, except_(false)
 {
 }
 
@@ -890,7 +516,17 @@ void tside::from_config(const config& direct_side_cfg)
 	str = side_cfg["build"].str();
 	vstr = utils::split(str);
 	for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
-		build_.push_back(*i);
+		const std::string& id = *i;
+		const unit_type* ut = unit_types.find(id);
+		if (!ut) {
+			std::stringstream strstr;
+			strstr << utf8_2_ansi(gdmgr.heros_[leader_].name().c_str()) << "势力原可造建筑物包括“" << id;
+			strstr << "”，但查不到该建筑物兵种，强制取消";
+			posix_print_mb(strstr.str().c_str());
+			except_ = true;
+			continue;
+		}
+		build_.insert(*i);
 	}
 
 	vstr = utils::parenthetical_split(side_cfg["feature"]);
@@ -920,14 +556,11 @@ void tside::from_config(const config& direct_side_cfg)
 	}
 
 	foreach (const config &cfg, side_cfg.child_range("artifical")) {
-		str = cfg["type"].str();
-		if (str.find("city") == std::string::npos) {
-			continue;
-		}
+		// str = cfg["type"].str();
 		cities_.push_back(tcity());
 		tcity& c = cities_.back();
 
-		c.type_ = str;
+		// c.type_ = str;
 		vstr = utils::split(cfg["heros_army"].str());
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			int number = lexical_cast_default<int>(*i);
@@ -942,6 +575,12 @@ void tside::from_config(const config& direct_side_cfg)
 		vstr = utils::split(cfg["traits"].str());
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			c.traits_.push_back(*i);
+		}
+		str = cfg["character"].str();
+		c.character_ = unit_types.character_from_id(str);
+		vstr = utils::split(cfg["not_recruit"].str());
+		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
+			c.not_recruit_.push_back(*i);
 		}
 		// service_heros
 		vstr = utils::split(cfg["service_heros"].str());
@@ -966,13 +605,25 @@ void tside::from_config(const config& direct_side_cfg)
 				c.economy_area_.insert(loc);
 			}
 		}
+
+		str = cfg["type"].str();
+		const unit_type* ut = unit_types.find(str);
+		if (!ut) {
+			std::stringstream strstr;
+			strstr << utf8_2_ansi(gdmgr.heros_[c.heros_army_[0]].name().c_str()) << "城市原兵种标识是“" << str;
+			c.type_ = ns::campaign.city_utypes_[0].first;
+			strstr << "”，但查不到该兵种，强制设为“" << utf8_2_ansi(unit_types.find(c.type_)->type_name().c_str()) << "”";
+			posix_print_mb(strstr.str().c_str());
+			c.except_ = true;
+		} else {
+			c.type_ = str;
+		}
 	}
 
 	foreach (const config &cfg, side_cfg.child_range("unit")) {
 		troops_.push_back(tunit());
 		tunit& u = troops_.back();
 
-		u.type_ = cfg["type"].str();
 		cityno = cfg["cityno"].to_int();
 		if (cityno == HEROS_DEFAULT_CITY) {
 			u.city_ = HEROS_INVALID_NUMBER;
@@ -990,6 +641,21 @@ void tside::from_config(const config& direct_side_cfg)
 		vstr = utils::split(cfg["traits"].str());
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			u.traits_.push_back(*i);
+		}
+		str = cfg["character"].str();
+		u.character_ = unit_types.character_from_id(str);
+
+		str = cfg["type"].str();
+		const unit_type* ut = unit_types.find(str);
+		if (!ut) {
+			std::stringstream strstr;
+			strstr << utf8_2_ansi(gdmgr.heros_[u.heros_army_[0]].name().c_str()) << "部队原兵种标识是“" << str;
+			u.type_ = ns::campaign.troop_utypes_[0].first;
+			strstr << "”，但查不到该兵种，强制设为“" << utf8_2_ansi(unit_types.find(u.type_)->type_name().c_str()) << "”";
+			posix_print_mb(strstr.str().c_str());
+			u.except_ = true;
+		} else {
+			u.type_ = str;
 		}
 	}
 }
@@ -1022,7 +688,7 @@ void tside::from_ui(HWND hdlgP)
 	hctl = GetDlgItem(hdlgP, IDC_LV_SIDEEDIT_BUILD);
 	for (int idx = 0; idx < ListView_GetItemCount(hctl); idx ++) {
 		if (ListView_GetCheckState(hctl, idx)) {
-			build_.push_back(ns::campaign.artifical_type_[idx].first);
+			build_.insert(ns::campaign.artifical_utype_[idx].first);
 		}
 	}
 }
@@ -1059,9 +725,9 @@ void tside::update_to_ui(HWND hdlgP) const
 	lvi.iSubItem = 1;
 	strstr.str("");
 	if (!name_.empty()) {
-		strstr << dgettext(ns::_main.textdomain_.c_str(), name_.c_str());
+		strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), name_.c_str()));
 	} else {
-		strstr << "(" << gdmgr.heros_[leader_].name() << ")";
+		strstr << "(" << utf8_2_ansi(gdmgr.heros_[leader_].name().c_str()) << ")";
 	}
 	strcpy(text, strstr.str().c_str());
 	lvi.pszText = text;
@@ -1070,7 +736,8 @@ void tside::update_to_ui(HWND hdlgP) const
 	// 君主
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 2;
-	lvi.pszText = const_cast<char*>(gdmgr.heros_[leader_].name().c_str());
+	strcpy(text, utf8_2_ansi(gdmgr.heros_[leader_].name().c_str()));
+	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 空白
@@ -1134,11 +801,11 @@ void tside::update_to_ui(HWND hdlgP) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 10;
 	strstr.str("");
-	for (std::vector<std::string>::const_iterator it = build_.begin(); it != build_.end(); ++ it) {
+	for (std::set<std::string>::const_iterator it = build_.begin(); it != build_.end(); ++ it) {
 		if (it == build_.begin()) {
-			strstr << ns::campaign.artifical_name(*it);
+			strstr << utf8_2_ansi(unit_types.find(*it)->type_name().c_str());
 		} else {
-			strstr << ", " << ns::campaign.artifical_name(*it);
+			strstr << ", " << utf8_2_ansi(unit_types.find(*it)->type_name().c_str());
 		}
 	}
 	strcpy(text, strstr.str().c_str());
@@ -1152,9 +819,9 @@ void tside::update_to_ui(HWND hdlgP) const
 	strstr << cities_.size() << "(";
 	for (std::vector<tcity>::const_iterator it = cities_.begin(); it != cities_.end(); ++ it) {
 		if (it == cities_.begin()) {
-			strstr << gdmgr.heros_[it->heros_army_[0]].name();
+			strstr << utf8_2_ansi(gdmgr.heros_[it->heros_army_[0]].name().c_str());
 		} else {
-			strstr << ", " << gdmgr.heros_[it->heros_army_[0]].name();
+			strstr << ", " << utf8_2_ansi(gdmgr.heros_[it->heros_army_[0]].name().c_str());
 		}
 	}
 	strstr << ")";
@@ -1169,9 +836,9 @@ void tside::update_to_ui(HWND hdlgP) const
 	strstr << troops_.size() << "(";
 	for (std::vector<tunit>::const_iterator it = troops_.begin(); it != troops_.end(); ++ it) {
 		if (it == troops_.begin()) {
-			strstr << gdmgr.heros_[it->heros_army_[0]].name();
+			strstr << utf8_2_ansi(gdmgr.heros_[it->heros_army_[0]].name().c_str());
 		} else {
-			strstr << ", " << gdmgr.heros_[it->heros_army_[0]].name();
+			strstr << ", " << utf8_2_ansi(gdmgr.heros_[it->heros_army_[0]].name().c_str());
 		}
 	}
 	strstr << ")";
@@ -1184,6 +851,7 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 {
 	std::stringstream strstr;
 	HWND hctl;
+	char text[_MAX_PATH];
 
 	if (!partial) {
 		strstr << side_ + 1;
@@ -1207,7 +875,7 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 	if (controller_ == EMPTY || ns::_scenario[ns::current_scenario].null_side() == -1) {
 		int number = ns::empty_leader;
 		strstr.str("");
-		strstr << "(" << gdmgr.heros_[number].name() << ")";
+		strstr << "(" << utf8_2_ansi(gdmgr.heros_[number].name().c_str()) << ")";
 		ComboBox_AddString(hctl, strstr.str().c_str());
 		ComboBox_SetItemData(hctl, 0, number);
 		if (leader_ == number) {
@@ -1219,7 +887,7 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 		for (std::set<int>::const_iterator it2 = it->service_heros_.begin(); it2 != it->service_heros_.end(); ++ it2) {
 			int number = *it2;
 			if (number == it->mayor_) continue;
-			ComboBox_AddString(hctl, gdmgr.heros_[number].name().c_str());
+			ComboBox_AddString(hctl, utf8_2_ansi(gdmgr.heros_[number].name().c_str()));
 			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, number);
 			if (leader_ == number) {
 				selected_row = ComboBox_GetCount(hctl) - 1;
@@ -1236,7 +904,7 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 		for (std::vector<int>::const_iterator it2 = it->heros_army_.begin(); it2 != it->heros_army_.end(); ++ it2) {
 			int number = *it2;
 			if (number == mayor) continue;
-			ComboBox_AddString(hctl, gdmgr.heros_[number].name().c_str());
+			ComboBox_AddString(hctl, utf8_2_ansi(gdmgr.heros_[number].name().c_str()));
 			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, number);
 			if (leader_ == number) {
 				selected_row = ComboBox_GetCount(hctl) - 1;
@@ -1248,7 +916,7 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 		leader_ = ComboBox_GetItemData(hctl, selected_row);
 		if (name_.empty()) {
 			strstr.str("");
-			strstr << "(" << gdmgr.heros_[leader_].name() << ")";
+			strstr << "(" << utf8_2_ansi(gdmgr.heros_[leader_].name().c_str()) << ")";
 			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SIDEEDIT_NAME), strstr.str().c_str());
 		}
 	}
@@ -1260,16 +928,17 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 		ListView_DeleteAllItems(hctl);
 		int index = 0;
 		LVITEM lvi;
-		for (std::vector<std::pair<std::string, std::string> >::const_iterator it = ns::campaign.artifical_type_.begin(); it != ns::campaign.artifical_type_.end(); ++ it) {
+		for (std::vector<std::pair<std::string, const unit_type*> >::const_iterator it = ns::campaign.artifical_utype_.begin(); it != ns::campaign.artifical_utype_.end(); ++ it) {
 			lvi.mask = LVIF_TEXT | LVIF_PARAM;
 			// 姓名
 			lvi.iItem = index ++;
 			lvi.iSubItem = 0;
-			lvi.pszText = const_cast<char*>(it->second.c_str());
+			strcpy(text, utf8_2_ansi(it->second->type_name().c_str()));
+			lvi.pszText = text;
 			lvi.lParam = (LPARAM)0;
 			ListView_InsertItem(hctl, &lvi);
 
-			if (std::find(build_.begin(), build_.end(), it->first) != build_.end()) {
+			if (build_.find(it->first) != build_.end()) {
 				ListView_SetCheckState(hctl, lvi.iItem, TRUE);
 			} else {
 				ListView_SetCheckState(hctl, lvi.iItem, FALSE);
@@ -1326,7 +995,7 @@ bool tside::new_city()
 	if (city.heros_army_.empty()) {
 		return false;
 	}
-	city.type_ = ns::campaign.city_arms_[0].first;
+	city.type_ = ns::campaign.city_utypes_[0].first;
 	city.loc_ = map_location(1, 1);
 
 	ns::campaign.do_state(city.heros_army_[0], true, city.heros_army_[0], tcampaign::STATE_ARMY);
@@ -1387,7 +1056,7 @@ bool tside::new_troop()
 	} else {
 		troop.city_ = HEROS_INVALID_NUMBER;
 	}
-	troop.type_ = ns::campaign.troop_arms_[0].first;
+	troop.type_ = ns::campaign.troop_utypes_[0].first;
 	troop.loc_ = map_location(1, 1);
 
 	ns::campaign.do_state(troop.heros_army_[0], true, troop.heros_army_[0], tcampaign::STATE_ARMY);
@@ -1409,6 +1078,7 @@ void tside::erase_troop(int index, HWND hdlgP)
 
 bool tside::operator==(const tside& that) const
 {
+	if (except_) return false;
 	if (side_ != that.side_) return false;
 	if (name_ != that.name_) return false;
 	if (leader_ != that.leader_) return false;
@@ -1483,7 +1153,7 @@ void tside::tcity::from_ui(HWND hdlgP, tside& side)
 	mayor_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
 	hctl = GetDlgItem(hdlgP, IDC_CMB_CITYEDIT_TYPE);
-	type_ = ns::campaign.city_arms_[ComboBox_GetCurSel(hctl)].first;
+	type_ = ns::campaign.city_utypes_[ComboBox_GetCurSel(hctl)].first;
 
 	loc_.x = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_CITYEDIT_X));
 	loc_.y = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_CITYEDIT_Y));
@@ -1493,6 +1163,25 @@ void tside::tcity::from_ui(HWND hdlgP, tside& side)
 	for (int idx = 0; idx < ListView_GetItemCount(hctl); idx ++) {
 		if (ListView_GetCheckState(hctl, idx)) {
 			traits_.push_back(ns::campaign.city_traits_[idx].first);
+		}
+	}
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_CITYEDIT_CHARACTER);
+	character_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+
+	not_recruit_.clear();
+	hctl = GetDlgItem(hdlgP, IDC_LV_CITYEDIT_NOTRECRUIT);
+	LVITEM lvi;
+	for (int idx = 0; idx < ListView_GetItemCount(hctl); idx ++) {
+		if (ListView_GetCheckState(hctl, idx)) {
+			lvi.iItem = idx;
+			lvi.mask = LVIF_PARAM;
+			lvi.iSubItem = 0;
+			lvi.pszText = NULL;
+			lvi.cchTextMax = 0;
+			ListView_GetItem(hctl, &lvi);
+
+			not_recruit_.push_back(ns::campaign.troop_utypes_[lvi.lParam].first);
 		}
 	}
 }
@@ -1514,7 +1203,8 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 		lvi.iItem = index;
 	}
 	lvi.iSubItem = 0;
-	lvi.pszText = const_cast<char*>(gdmgr.heros_[heros_army_[0]].name().c_str());
+	strcpy(text, utf8_2_ansi(gdmgr.heros_[heros_army_[0]].name().c_str()));
+	lvi.pszText = text;
 	lvi.lParam = (LPARAM)0;
 	if (lvi.iItem != count) {
 		ListView_SetItem(hctl, &lvi);
@@ -1525,7 +1215,10 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 	// 兵种
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 1;
-	lvi.pszText = const_cast<char*>(ns::campaign.city_name(type_).c_str());
+	strstr.str("");
+	strstr << utf8_2_ansi(unit_types.find(type_)->type_name().c_str());
+	strcpy(text, strstr.str().c_str());
+	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 坐标
@@ -1552,11 +1245,40 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
-	// 太守
+	// 特色
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 4;
+	strstr.str("");
+	if (character_ != NO_CHARACTER) {
+		strstr << utf8_2_ansi(unit_types.character(character_).name_.c_str());
+	}
+	strcpy(text, strstr.str().c_str());
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+
+	// 不可征兵种
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = 5;
+	strstr.str("");
+	strstr << not_recruit_.size() << "(";
+	for (std::vector<std::string>::const_iterator it = not_recruit_.begin(); it != not_recruit_.end(); ++ it) {
+		if (it == not_recruit_.begin()) {
+			strstr << utf8_2_ansi(unit_types.find(*it)->type_name().c_str());
+		} else {
+			strstr << ", " << utf8_2_ansi(unit_types.find(*it)->type_name().c_str());
+		}
+	}
+	strstr << ")";
+	strcpy(text, strstr.str().c_str());
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+
+	// 太守
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = 6;
 	if (mayor_ != HEROS_INVALID_NUMBER) {
-		lvi.pszText = const_cast<char*>(gdmgr.heros_[mayor_].name().c_str());
+		strcpy(text, utf8_2_ansi(gdmgr.heros_[mayor_].name().c_str()));
+		lvi.pszText = text;
 	} else {
 		lvi.pszText = NULL;
 	}
@@ -1564,7 +1286,7 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 
 	// 在职
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 5;
+	lvi.iSubItem = 7;
 	strstr.str("");
 	strstr << service_heros_.size();
 	strcpy(text, strstr.str().c_str());
@@ -1573,7 +1295,7 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 
 	// 在野
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 6;
+	lvi.iSubItem = 8;
 	strstr.str("");
 	strstr << wander_heros_.size();
 	strcpy(text, strstr.str().c_str());
@@ -1582,7 +1304,7 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 
 	// 经济区
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 7;
+	lvi.iSubItem = 9;
 	strstr.str("");
 	strstr << economy_area_.size();
 	strcpy(text, strstr.str().c_str());
@@ -1599,9 +1321,24 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 	if (!partial) {
 		hctl = GetDlgItem(hdlgP, IDC_CMB_CITYEDIT_TYPE);
 		ComboBox_ResetContent(hctl);
-		for (std::vector<std::pair<std::string, std::string> >::const_iterator it = ns::campaign.city_arms_.begin(); it != ns::campaign.city_arms_.end(); ++ it) {
-			ComboBox_AddString(hctl, it->second.c_str());
+		for (std::vector<std::pair<std::string, const unit_type*> >::const_iterator it = ns::campaign.city_utypes_.begin(); it != ns::campaign.city_utypes_.end(); ++ it) {
+			ComboBox_AddString(hctl, utf8_2_ansi(it->second->type_name().c_str()));
 			if (type_ == it->first) {
+				selected_row = ComboBox_GetCount(hctl) - 1;
+			}
+		}
+		ComboBox_SetCurSel(hctl, selected_row);
+
+		hctl = GetDlgItem(hdlgP, IDC_CMB_CITYEDIT_CHARACTER);
+		ComboBox_AddString(hctl, "");
+		ComboBox_SetItemData(hctl, 0, NO_CHARACTER);
+		selected_row = 0;
+		const std::vector<tcharacter>& characters = unit_types.characters();
+		for (std::vector<tcharacter>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
+			const tcharacter& character = *it;
+			ComboBox_AddString(hctl, utf8_2_ansi(character.name_.c_str()));
+			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, character.index_);
+			if (character.index_ == character_) {
 				selected_row = ComboBox_GetCount(hctl) - 1;
 			}
 		}
@@ -1611,7 +1348,7 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		ComboBox_ResetContent(hctl);
 		for (std::map<int, tcampaign::hero_state>::const_iterator it = ns::campaign.artificals_.begin(); it != ns::campaign.artificals_.end(); ++ it) {
 			if (it->second.allocated_ && it->first != heros_army_[0]) continue;
-			ComboBox_AddString(hctl, gdmgr.heros_[it->first].name().c_str());
+			ComboBox_AddString(hctl, utf8_2_ansi(gdmgr.heros_[it->first].name().c_str()));
 			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
 			if (it->first == heros_army_[0]) {
 				selected_row = ComboBox_GetCount(hctl) - 1;
@@ -1636,7 +1373,7 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		if (it->second.city_ != heros_army_[0]) continue;
 		if (it->second.state_ != tcampaign::STATE_SERVICE && it->second.state_ != tcampaign::STATE_ARMY) continue;
 		if (it->first == heros_army_[0] || it->first == side.leader_) continue;
-		ComboBox_AddString(hctl, gdmgr.heros_[it->first].name().c_str());
+		ComboBox_AddString(hctl, utf8_2_ansi(gdmgr.heros_[it->first].name().c_str()));
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
 		if (it->first == mayor_) {
 			selected_row = ComboBox_GetCount(hctl) - 1;
@@ -1677,6 +1414,56 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 				ListView_SetCheckState(hctl, lvi.iItem, FALSE);
 			}
 		}
+
+		// not recruit
+		hctl = GetDlgItem(hdlgP, IDC_LV_CITYEDIT_NOTRECRUIT);
+		count = ListView_GetItemCount(hctl);
+		ListView_DeleteAllItems(hctl);
+		index = 0;
+		for (std::vector<std::pair<std::string, const unit_type*> >::const_iterator it = ns::campaign.troop_utypes_.begin(); it != ns::campaign.troop_utypes_.end(); ++ it, index ++) {
+			const unit_type* ut = it->second;
+			
+			if (ut->character() != NO_CHARACTER) {
+				continue;
+			}
+			lvi.mask = LVIF_TEXT | LVIF_PARAM;
+			// 名称
+			lvi.iItem = ListView_GetItemCount(hctl);
+			lvi.iSubItem = 0;
+			strstr.str("");
+			strstr << utf8_2_ansi(ut->type_name().c_str());
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			lvi.lParam = (LPARAM)index;
+			ListView_InsertItem(hctl, &lvi);
+
+			// level
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = 1;
+			strstr.str("");
+			strstr << ut->level();
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			// level
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = 2;
+			strstr.str("");
+			strstr << utf8_2_ansi(hero::arms_str(ut->arms()).c_str());
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			if (std::find(not_recruit_.begin(), not_recruit_.end(), it->first) != not_recruit_.end()) {
+				ListView_SetCheckState(hctl, lvi.iItem, TRUE);
+			} else {
+				ListView_SetCheckState(hctl, lvi.iItem, FALSE);
+			}
+		}
+		strstr.str("");
+		strstr << "不可征兵种(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITYEDIT_NOTRECRUIT), strstr.str().c_str());
 	}
 
 	// candidate hero
@@ -1694,7 +1481,8 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		// 姓名
 		lvi.iItem = index ++;
 		lvi.iSubItem = 0;
-		lvi.pszText = const_cast<char*>(h.name().c_str());
+		strcpy(text, utf8_2_ansi(h.name().c_str()));
+		lvi.pszText = text;
 		lvi.lParam = (LPARAM)it->first;
 		ListView_InsertItem(hctl, &lvi);
 
@@ -1711,13 +1499,15 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		// 特技
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 2;
-		lvi.pszText = const_cast<char*>(hero::feature_str(h.feature_).c_str());
+		strcpy(text, utf8_2_ansi(hero::feature_str(h.feature_).c_str()));
+		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 
 		// 势力特技
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 3;
-		lvi.pszText = const_cast<char*>(hero::feature_str(h.side_feature_).c_str());
+		strcpy(text, utf8_2_ansi(hero::feature_str(h.side_feature_).c_str()));
+		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 
 		// 统帅
@@ -1740,7 +1530,8 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		// 姓名
 		lvi.iItem = index ++;
 		lvi.iSubItem = 0;
-		lvi.pszText = const_cast<char*>(h.name().c_str());
+		strcpy(text, utf8_2_ansi(h.name().c_str()));
+		lvi.pszText = text;
 		lvi.lParam = (LPARAM)h.number_;
 		ListView_InsertItem(hctl, &lvi);
 
@@ -1757,7 +1548,8 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		// 特技
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 2;
-		lvi.pszText = const_cast<char*>(hero::feature_str(h.feature_).c_str());
+		strcpy(text, utf8_2_ansi(hero::feature_str(h.feature_).c_str()));
+		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 	}
 
@@ -1773,7 +1565,8 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		// 姓名
 		lvi.iItem = index ++;
 		lvi.iSubItem = 0;
-		lvi.pszText = const_cast<char*>(h.name().c_str());
+		strcpy(text, utf8_2_ansi(h.name().c_str()));
+		lvi.pszText = text;
 		lvi.lParam = (LPARAM)h.number_;
 		ListView_InsertItem(hctl, &lvi);
 
@@ -1790,7 +1583,8 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		// 特技
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 2;
-		lvi.pszText = const_cast<char*>(hero::feature_str(h.feature_).c_str());
+		strcpy(text, utf8_2_ansi(hero::feature_str(h.feature_).c_str()));
+		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 	}
 
@@ -1845,7 +1639,10 @@ void tside::tunit::from_ui(HWND hdlgP, tside& side)
 	city_ = selected_hero;
 
 	hctl = GetDlgItem(hdlgP, IDC_CMB_TROOPEDIT_TYPE);
-	type_ = ns::campaign.troop_arms_[ComboBox_GetCurSel(hctl)].first;
+	type_ = ns::campaign.troop_utypes_[ComboBox_GetCurSel(hctl)].first;
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_TROOPEDIT_CHARACTER);
+	character_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
 	loc_.x = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_TROOPEDIT_X));
 	loc_.y = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_TROOPEDIT_Y));
@@ -1876,7 +1673,8 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 		lvi.iItem = index;
 	}
 	lvi.iSubItem = 0;
-	lvi.pszText = const_cast<char*>(gdmgr.heros_[heros_army_[0]].name().c_str());
+	strcpy(text, utf8_2_ansi(gdmgr.heros_[heros_army_[0]].name().c_str()));
+	lvi.pszText = text;
 	lvi.lParam = (LPARAM)0;
 	if (lvi.iItem != count) {
 		ListView_SetItem(hctl, &lvi);
@@ -1888,7 +1686,8 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 1;
 	if (heros_army_.size() >= 2) {
-		lvi.pszText = const_cast<char*>(gdmgr.heros_[heros_army_[1]].name().c_str());
+		strcpy(text, utf8_2_ansi(gdmgr.heros_[heros_army_[1]].name().c_str()));
+		lvi.pszText = text;
 	} else {
 		lvi.pszText = NULL;
 	}
@@ -1898,7 +1697,8 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 2;
 	if (heros_army_.size() == 3) {
-		lvi.pszText = const_cast<char*>(gdmgr.heros_[heros_army_[2]].name().c_str());
+		strcpy(text, utf8_2_ansi(gdmgr.heros_[heros_army_[2]].name().c_str()));
+		lvi.pszText = text;
 	} else {
 		lvi.pszText = NULL;
 	}
@@ -1907,7 +1707,10 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 	// 兵种
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 3;
-	lvi.pszText = const_cast<char*>(ns::campaign.troop_name(type_).c_str());
+	strstr.str("");
+	strstr << utf8_2_ansi(unit_types.find(type_)->type_name().c_str());
+	strcpy(text, strstr.str().c_str());
+	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 坐标
@@ -1934,12 +1737,23 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
-	// 城市
+	// 特色
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 6;
 	strstr.str("");
+	if (character_ != NO_CHARACTER) {
+		strstr << utf8_2_ansi(unit_types.character(character_).name_.c_str());
+	}
+	strcpy(text, strstr.str().c_str());
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+
+	// 城市
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = 7;
+	strstr.str("");
 	if (city_ != HEROS_INVALID_NUMBER) {
-		strstr << gdmgr.heros_[city_].name();
+		strstr << utf8_2_ansi(gdmgr.heros_[city_].name().c_str());
 	} else {
 		strstr << "(流浪)";
 	}
@@ -1957,9 +1771,28 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 	if (!partial) {
 		hctl = GetDlgItem(hdlgP, IDC_CMB_TROOPEDIT_TYPE);
 		ComboBox_ResetContent(hctl);
-		for (std::vector<std::pair<std::string, std::string> >::const_iterator it = ns::campaign.troop_arms_.begin(); it != ns::campaign.troop_arms_.end(); ++ it) {
-			ComboBox_AddString(hctl, it->second.c_str());
+		for (std::vector<std::pair<std::string, const unit_type*> >::const_iterator it = ns::campaign.troop_utypes_.begin(); it != ns::campaign.troop_utypes_.end(); ++ it) {
+			const unit_type* ut = it->second;
+			strstr.str("");
+			strstr << utf8_2_ansi(ut->type_name().c_str());
+			strstr << "(" << ut->level() << "级" << utf8_2_ansi(hero::arms_str(ut->arms()).c_str()) << ")";
+			ComboBox_AddString(hctl, strstr.str().c_str());
 			if (type_ == it->first) {
+				selected_row = ComboBox_GetCount(hctl) - 1;
+			}
+		}
+		ComboBox_SetCurSel(hctl, selected_row);
+
+		hctl = GetDlgItem(hdlgP, IDC_CMB_TROOPEDIT_CHARACTER);
+		ComboBox_AddString(hctl, "");
+		ComboBox_SetItemData(hctl, 0, NO_CHARACTER);
+		selected_row = 0;
+		const std::vector<tcharacter>& characters = unit_types.characters();
+		for (std::vector<tcharacter>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
+			const tcharacter& character = *it;
+			ComboBox_AddString(hctl, utf8_2_ansi(character.name_.c_str()));
+			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, character.index_);
+			if (character.index_ == character_) {
 				selected_row = ComboBox_GetCount(hctl) - 1;
 			}
 		}
@@ -1975,7 +1808,7 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 			selected_row = -1;
 			for (std::vector<tcity>::const_iterator it = side.cities_.begin(); it != side.cities_.end(); ++ it) {
 				int city = it->heros_army_[0];
-				ComboBox_AddString(hctl, gdmgr.heros_[city].name().c_str());
+				ComboBox_AddString(hctl, utf8_2_ansi(gdmgr.heros_[city].name().c_str()));
 				ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, city);
 				if (city_ == city) {
 					selected_row = ComboBox_GetCount(hctl) - 1;
@@ -2041,7 +1874,8 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 		// 姓名
 		lvi.iItem = index ++;
 		lvi.iSubItem = 0;
-		lvi.pszText = const_cast<char*>(h.name().c_str());
+		strcpy(text, utf8_2_ansi(h.name().c_str()));
+		lvi.pszText = text;
 		lvi.lParam = (LPARAM)it->first;
 		ListView_InsertItem(hctl, &lvi);
 
@@ -2058,13 +1892,15 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 		// 特技
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 2;
-		lvi.pszText = const_cast<char*>(hero::feature_str(h.feature_).c_str());
+		strcpy(text, utf8_2_ansi(hero::feature_str(h.feature_).c_str()));
+		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 
 		// 势力特技
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 3;
-		lvi.pszText = const_cast<char*>(hero::feature_str(h.side_feature_).c_str());
+		strcpy(text, utf8_2_ansi(hero::feature_str(h.side_feature_).c_str()));
+		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 
 		// 统帅
@@ -2087,7 +1923,8 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 		// 姓名
 		lvi.iItem = index ++;
 		lvi.iSubItem = 0;
-		lvi.pszText = const_cast<char*>(h.name().c_str());
+		strcpy(text, utf8_2_ansi(h.name().c_str()));
+		lvi.pszText = text;
 		lvi.lParam = (LPARAM)h.number_;
 		ListView_InsertItem(hctl, &lvi);
 
@@ -2104,7 +1941,8 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 		// 特技
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 2;
-		lvi.pszText = const_cast<char*>(hero::feature_str(h.feature_).c_str());
+		strcpy(text, utf8_2_ansi(hero::feature_str(h.feature_).c_str()));
+		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 	}
 }
@@ -2157,7 +1995,8 @@ void tside::arms_feature::update_to_ui_side_edit(HWND hdlgP, int index) const
 	// 特技
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 2;
-	lvi.pszText = const_cast<char*>(hero::feature_str(feature_).c_str());
+	strcpy(text, utf8_2_ansi(hero::feature_str(feature_).c_str()));
+	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 }
 
@@ -2219,6 +2058,11 @@ tscenario::tscenario(const std::string& campaign_id, const std::string& id)
 	, index_(0)
 	, dirty_(0)
 {
+}
+
+tscenario::~tscenario()
+{
+	event_.clear();
 }
 
 std::string tscenario::file(bool absolute) const
@@ -2318,6 +2162,19 @@ bool tscenario::side_equal() const
 	return true;
 }
 
+bool tscenario::event_equal() const
+{
+	if (event_.size() != event_from_cfg_.size()) {
+		return false;
+	}
+	for (size_t i = 0; i < event_.size(); i ++) {
+		if (event_[i] != event_from_cfg_[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
 void tscenario::from_config(int index, const config& scenario_cfg)
 {
 	index_ = index;
@@ -2359,10 +2216,29 @@ void tscenario::from_config(int index, const config& scenario_cfg)
 		s.from_config(side_cfg);
 	}
 
-	dirty_ = 0;
+	// form cityno_map need ns::cityno_map
+	ns::cityno_map = generate_cityno_map();
+
+	foreach (const config &event_cfg, scenario_cfg.child_range("event")) {
+		if (event_cfg["name"].str() == "prestart") {
+			continue;
+		}
+
+		event_.push_back(tevent());
+		tevent& e = event_.back();
+
+		e.from_config(event_cfg);
+	}
+
 	// remember side, will use to compare in future.
 	side_from_cfg_ = side_;
+	event_from_cfg_ = event_;
 	scenario_from_cfg_ = *this;
+
+	// maybe occure except duration read config.
+	dirty_ = 0;
+	set_dirty(BIT_SIDE, !side_equal());
+	set_dirty(BIT_EVENT, !event_equal());
 }
 
 bool tscenario::new_side()
@@ -2390,6 +2266,26 @@ void tscenario::erase_side(int index, HWND hdlgP)
 	}
 
 	update_to_ui(hdlgP);
+}
+
+bool tscenario::new_event(const std::string& name)
+{
+	event_.push_back(tevent());
+	tevent& e = event_.back();
+	e.name_ = name;
+
+	return true;
+}
+
+void tscenario::erase_event(int index, HWND hdlgP)
+{
+	tevent& e = event_[index];
+
+	event_.erase(event_.begin() + index);
+
+	if (hdlgP) {
+		update_to_ui(hdlgP);
+	}
 }
 
 void tscenario::update_to_ui(HWND hdlgP)
@@ -2421,6 +2317,13 @@ void tscenario::update_to_ui(HWND hdlgP)
 	for (std::vector<tside>::const_iterator it = side_.begin(); it != side_.end(); ++ it) {
 		it->update_to_ui(hdlgP);
 	}
+
+	// side
+	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_EVENT);
+	ListView_DeleteAllItems(hctl);
+	for (std::vector<tevent>::const_iterator it = event_.begin(); it != event_.end(); ++ it) {
+		it->update_to_ui(hdlgP);
+	}
 }
 
 void tscenario::from_ui(HWND hdlgP)
@@ -2442,7 +2345,6 @@ void tscenario::from_ui(HWND hdlgP)
 
 void tscenario::generate()
 {
-	std::string define;
 	std::stringstream strstr;
 	uint32_t bytertd;
 
@@ -2462,13 +2364,7 @@ void tscenario::generate()
 	// generate cityno
 	//
 	// number-->cityno
-	std::map<int, int> cityno_map;
-	int cityno = 1;
-	for (std::vector<tside>::const_iterator it = side_.begin(); it != side_.end(); ++ it) {
-		for (std::vector<tside::tcity>::const_iterator it2 = it->cities_.begin(); it2 != it->cities_.end(); ++ it2) {
-			cityno_map[it2->heros_army_[0]] = cityno ++;
-		}
-	}
+	ns::cityno_map = generate_cityno_map();
 
 	strstr << "[scenario]\n";
 	strstr << "\tid = " << id_ << "\n";
@@ -2520,7 +2416,7 @@ void tscenario::generate()
 		strstr << "\t\tleader = " << it->leader_ << "\n";
 		strstr << "\t\tnavigation = " << it->navigation_ << "\n";
 		strstr << "\t\tbuild = ";
-		for (std::vector<std::string>::const_iterator it2 = it->build_.begin(); it2 != it->build_.end(); ++ it2) {
+		for (std::set<std::string>::const_iterator it2 = it->build_.begin(); it2 != it->build_.end(); ++ it2) {
 			if (it2 == it->build_.begin()) {
 				strstr << *it2;
 			} else {
@@ -2558,7 +2454,7 @@ void tscenario::generate()
 		strstr << "\n";
 		for (std::vector<tside::tcity>::const_iterator it2 = it->cities_.begin(); it2 != it->cities_.end(); ++ it2) {
 			strstr << "\t\t{ANONYMITY_CITY ";
-			strstr << cityno_map.find(it2->heros_army_[0])->second << " ";
+			strstr << ns::cityno_map.find(it2->heros_army_[0])->second << " ";
 			strstr << it->side_ + 1 << " ";
 			strstr << "(" << it2->type_ << ") ";
 			strstr << it2->loc_.x << " " << it2->loc_.y << " ";
@@ -2606,6 +2502,18 @@ void tscenario::generate()
 				}
 			}
 			strstr << "\n";
+			if (it2->character_ != NO_CHARACTER) {
+				strstr << "\t\t\tcharacter = " << unit_types.character(it2->character_).id_ << "\n";
+			}
+			strstr << "\t\t\tnot_recruit = ";
+			for (std::vector<std::string>::const_iterator it3 = it2->not_recruit_.begin(); it3 != it2->not_recruit_.end(); ++ it3) {
+				if (it3 == it2->not_recruit_.begin()) {
+					strstr << *it3;
+				} else {
+					strstr << ", " << *it3;
+				}
+			}
+			strstr << "\n";
 			strstr << "\t\t[/artifical]\n";
 		}
 
@@ -2614,7 +2522,7 @@ void tscenario::generate()
 		for (std::vector<tside::tunit>::const_iterator it2 = it->troops_.begin(); it2 != it->troops_.end(); ++ it2) {
 			strstr << "\t\t{ANONYMITY_UNIT ";
 			if (it2->city_ != HEROS_INVALID_NUMBER) {
-				strstr << cityno_map.find(it2->city_)->second << " ";
+				strstr << ns::cityno_map.find(it2->city_)->second << " ";
 			} else {
 				strstr << "0 ";
 			}
@@ -2637,14 +2545,19 @@ void tscenario::generate()
 					strstr << ", " << *it3;
 				}
 			}
-			strstr << ")";
+			strstr << ") ";
+			if (it2->character_ != NO_CHARACTER) {
+				strstr << "(" << unit_types.character(it2->character_).id_ << ")";
+			} else {
+				strstr << "()";
+			}
 			strstr << "}\n";
 		}
 
 		strstr << "\t[/side]\n";
 		strstr << "\n";
 	}
-
+/*
 	strstr << "\n";
 	// recommend
 	strstr << "\t[event]\n";
@@ -2665,167 +2578,16 @@ void tscenario::generate()
 	strstr << "\t\t[ally]\n";
 	strstr << "\t\t[/ally]\n";
 	strstr << "\t[/event]\n";
+*/
+	strstr << "\n";
 
-	strstr << "\n";
-	// last breath, number = 38
-	strstr << "\t[event]\n";
-	strstr << "\t\tname = last breath\n";
-	strstr << "\t\tfirst_time_only = no\n";
-	strstr << "\t\t[filter]\n";
-	strstr << "\t\t\tmaster_hero = 38\n";
-	strstr << "\t\t[/filter]\n";
-	strstr << "\n";
-	strstr << "\t\t[set_variable]\n";
-	strstr << "\t\t\tname = side\n";
-	strstr << "\t\t\tvalue = $unit.side\n";
-	strstr << "\t\t[/set_variable]\n";
-	strstr << "\n";
-	strstr << "\t\t[if]\n";
-	strstr << "\t\t\t[variable]\n";
-	strstr << "\t\t\t\tname = random\n";
-	strstr << "\t\t\t\tless_than = 85\n";
-	strstr << "\t\t\t[/variable]\n";
-	strstr << "\t\t\t[then]\n";
-	strstr << "\t\t\t\t[set_variable]\n";
-	strstr << "\t\t\t\t\tname = coor_x\n";
-	strstr << "\t\t\t\t\trand = 18..39\n";
-	strstr << "\t\t\t\t[/set_variable]\n";
-	strstr << "\t\t\t\t[set_variable]\n";
-	strstr << "\t\t\t\t\tname = coor_y\n";
-	strstr << "\t\t\t\t\trand = 8..29\n";
-	strstr << "\t\t\t\t[/set_variable]\n";
-	strstr << "\t\t\t\t[kill]\n";
-	strstr << "\t\t\t\t\tmaster_hero = 38\n";
-	strstr << "\t\t\t\t[/kill]\n";
-	strstr << "\t\t\t\t[unit]\n";
-	strstr << "\t\t\t\t\ttype = stage player\n";
-	strstr << "\t\t\t\t\theros_army = 38\n";
-	strstr << "\t\t\t\t\tside = $side\n";
-	strstr << "\t\t\t\t\tcityno = 0\n";
-	strstr << "\t\t\t\t\tattacks_left = 0\n";
-	strstr << "\t\t\t\t\tx,y = $coor_x, $coor_y\n";
-	strstr << "\t\t\t\t[/unit]\n";
-	strstr << "\t\t\t[/then]\n";
-	strstr << "\t\t\t[else]\n";
-	strstr << "\t\t\t\t[kill]\n";
-	strstr << "\t\t\t\t\tmaster_hero = 38\n";
-	strstr << "\t\t\t\t[/kill]\n";
-	strstr << "\t\t\t\t[join]\n";
-	strstr << "\t\t\t\t\tmaster_hero = 123\n";
-	strstr << "\t\t\t\t\tjoin = 38\n";
-	strstr << "\t\t\t\t[/join]\n";
-	strstr << "\t\t\t[/else]\n";
-	strstr << "\t\t[/if]\n";
-	strstr << "\t[/event]\n";
-
-	strstr << "\n";
-	// last breath, number = 123
-	strstr << "\t[event]\n";
-	strstr << "\t\tname = last breath\n";
-	strstr << "\t\tfirst_time_only = no\n";
-	strstr << "\t\t[filter]\n";
-	strstr << "\t\t\tmaster_hero = 123\n";
-	strstr << "\t\t[/filter]\n";
-	strstr << "\n";
-	strstr << "\t\t[set_variable]\n";
-	strstr << "\t\t\tname = side\n";
-	strstr << "\t\t\tvalue = $unit.side\n";
-	strstr << "\t\t[/set_variable]\n";
-	strstr << "\n";
-	strstr << "\t\t[if]\n";
-	strstr << "\t\t\t[variable]\n";
-	strstr << "\t\t\t\tname = random\n";
-	strstr << "\t\t\t\tless_than = 20\n";
-	strstr << "\t\t\t[/variable]\n";
-	strstr << "\t\t\t[then]\n";
-	strstr << "\t\t\t\t[set_variable]\n";
-	strstr << "\t\t\t\t\tname = coor_x\n";
-	strstr << "\t\t\t\t\tvalue = $unit.x\n";
-	strstr << "\t\t\t\t[/set_variable]\n";
-	strstr << "\t\t\t\t[set_variable]\n";
-	strstr << "\t\t\t\t\tname = coor_y\n";
-	strstr << "\t\t\t\t\tvalue = $unit.y\n";
-	strstr << "\t\t\t\t[/set_variable]\n";
-	strstr << "\t\t\t[/then]\n";
-	strstr << "\t\t\t[else]\n";
-	strstr << "\t\t\t\t[set_variable]\n";
-	strstr << "\t\t\t\t\tname = coor_x\n";
-	strstr << "\t\t\t\t\trand = 18..39\n";
-	strstr << "\t\t\t\t[/set_variable]\n";
-	strstr << "\t\t\t\t[set_variable]\n";
-	strstr << "\t\t\t\t\tname = coor_y\n";
-	strstr << "\t\t\t\t\trand = 8..29\n";
-	strstr << "\t\t\t\t[/set_variable]\n";
-	strstr << "\t\t\t[/else]\n";
-	strstr << "\t\t[/if]\n";
-	strstr << "\t\t[kill]\n";
-	strstr << "\t\t\tmaster_hero = 123\n";
-	strstr << "\t\t[/kill]\n";
-	strstr << "\t\t[unit]\n";
-	strstr << "\t\t\ttype = famous director\n";
-	strstr << "\t\t\theros_army = 123, 124\n";
-	strstr << "\t\t\tside = $side\n";
-	strstr << "\t\t\tcityno = 0\n";
-	strstr << "\t\t\tattacks_left = 0\n";
-	strstr << "\t\t\tx,y = $coor_x, $coor_y\n";
-	strstr << "\t\t[/unit]\n";
-
-	strstr << "\t\t[if]\n";
-	strstr << "\t\t\t[have_unit]\n";
-	strstr << "\t\t\t\tmaster_hero = 38\n";
-	strstr << "\t\t\t[/have_unit]\n";
-	strstr << "\t\t\t[then]\n";
-	strstr << "\t\t\t[/then]\n";
-	strstr << "\t\t\t[else]\n";
-	strstr << "\t\t\t\t[unit]\n";
-	strstr << "\t\t\t\t\ttype = stage player\n";
-	strstr << "\t\t\t\t\theros_army = 38\n";
-	strstr << "\t\t\t\t\tside = $side\n";
-	strstr << "\t\t\t\t\tcityno = 0\n";
-	strstr << "\t\t\t\t\tattacks_left = 0\n";
-	strstr << "\t\t\t\t\tx,y = $coor_x, $coor_y\n";
-	strstr << "\t\t\t\t[/unit]\n";
-	strstr << "\t\t\t[/else]\n";
-	strstr << "\t\t[/if]\n";
-	strstr << "\t[/event]\n";
-
-	strstr << "\n";
-	// last breath, number = 270
-	strstr << "\t[event]\n";
-	strstr << "\t\tname = last breath\n";
-	strstr << "\t\tfirst_time_only = no\n";
-	strstr << "\t\t[filter]\n";
-	strstr << "\t\t\tmaster_hero = 270\n";
-	strstr << "\t\t[/filter]\n";
-	strstr << "\n";
-	strstr << "\t\t[set_variable]\n";
-	strstr << "\t\t\tname = side\n";
-	strstr << "\t\t\tvalue = $unit.side\n";
-	strstr << "\t\t[/set_variable]\n";
-	strstr << "\n";
-	strstr << "\t\t[set_variable]\n";
-	strstr << "\t\t\tname = coor_x\n";
-	strstr << "\t\t\trand = 85..148\n";
-	strstr << "\t\t[/set_variable]\n";
-	strstr << "\n";
-	strstr << "\t\t[set_variable]\n";
-	strstr << "\t\t\tname = coor_y\n";
-	strstr << "\t\t\trand = 30..99\n";
-	strstr << "\t\t[/set_variable]\n";
-	strstr << "\n";
-	strstr << "\t\t[kill]\n";
-	strstr << "\t\t\tmaster_hero = 270\n";
-	strstr << "\t\t[/kill]\n";
-	strstr << "\t\t[unit]\n";
-	strstr << "\t\t\ttype = stage player\n";
-	strstr << "\t\t\theros_army = 270\n";
-	strstr << "\t\t\tside = $side\n";
-	strstr << "\t\t\tcityno = 0\n";
-	strstr << "\t\t\tattacks_left = 0\n";
-	strstr << "\t\t\tx,y = $coor_x, $coor_y\n";
-	strstr << "\t\t[/unit]\n";
-	strstr << "\t[/event]\n";
-
+	for (std::vector<tevent>::const_iterator it = event_.begin(); it != event_.end(); ++ it) {
+		if (it->is_null()) {
+			continue;
+		}
+		it->generate(strstr, "\t");
+		strstr << "\n";
+	}
 	strstr << "[/scenario]\n";
 
 	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
@@ -2835,9 +2597,35 @@ void tscenario::generate()
 	posix_fclose(fp_map);
 
 	dirty_ = 0;
+	clear_except_dirty();
 	scenario_from_cfg_ = *this;
 	side_from_cfg_ = side_;
+	event_from_cfg_ = event_;
+}
 
+std::map<int, int> tscenario::generate_cityno_map() const
+{
+	std::map<int, int> cityno_map;
+	int cityno = 1;
+	for (std::vector<tside>::const_iterator it = side_.begin(); it != side_.end(); ++ it) {
+		for (std::vector<tside::tcity>::const_iterator it2 = it->cities_.begin(); it2 != it->cities_.end(); ++ it2) {
+			cityno_map[it2->heros_army_[0]] = cityno ++;
+		}
+	}
+	return cityno_map;
+}
+
+void tscenario::clear_except_dirty()
+{
+	for (std::vector<tside>::iterator it = side_.begin(); it != side_.end(); ++ it) {
+		it->except_ = false;
+		for (std::vector<tside::tcity>::iterator it2 = it->cities_.begin(); it2 != it->cities_.end(); ++ it2) {
+			it2->except_ = false;
+		}
+		for (std::vector<tside::tunit>::iterator it2 = it->troops_.begin(); it2 != it->troops_.end(); ++ it2) {
+			it2->except_ = false;
+		}
+	}
 }
 
 void tscenario::set_dirty(int bit, bool set)
@@ -2856,19 +2644,19 @@ void OnSaveBt(HWND hdlgP)
 	// verify _main/_scenario
 	for (std::vector<tscenario>::const_iterator it = ns::_scenario.begin(); it != ns::_scenario.end(); ++ it) {
 		if (it->map_data_.empty()) {
-			strstr << dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str()) << "，关卡没设置有效地图";
+			strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str())) << "，关卡没设置有效地图";
 			posix_print_mb(strstr.str().c_str());
 			return;
 		}
 		int i2 = 1;
 		for (std::vector<tside>::const_iterator it2 = it->side_.begin(); it2 != it->side_.end(); ++ it2, i2 ++) {
 			if (it2->leader_ == HEROS_INVALID_NUMBER) {
-				strstr << dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str()) << "关卡的第" << i2 << "势力没有设置君主";
+				strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str())) << "关卡的第" << i2 << "势力没有设置君主";
 				posix_print_mb(strstr.str().c_str());
 				return;
 			}
 			if (it2->cities_.empty() && it2->troops_.empty()) {
-				strstr << dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str()) << "关卡的第" << i2 << "势力既没有城市也没有部队";
+				strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str())) << "关卡的第" << i2 << "势力既没有城市也没有部队";
 				posix_print_mb(strstr.str().c_str());
 				return;
 			}
@@ -2923,8 +2711,8 @@ static bool save_if_dirty()
 		DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hdlgP, GWL_USERDATA); 
 		int iSel = TabCtrl_GetCurSel(pHdr->hwndTab); 
 
-		title << "保存战役-" << dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str()); 
-		message << dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str());
+		title << "保存战役-" << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str())); 
+		message << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str()));
 		message << "，有改动，您想保存修改吗？";
 
 		int retval = MessageBox(gdmgr._htb_campaign, message.str().c_str(), title.str().c_str(), MB_YESNO);
@@ -3111,11 +2899,11 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	select_rank_cmb(GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_RANK), ns::_main.rank_);
 	// name
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_NAME_MSGID), ns::_main.id_.c_str());
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_NAME), dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str()));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_NAME), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str())));
 
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ABBREV_MSGID), ns::_main.abbrev_.c_str());
 	strstr.str("");
-	strstr << dgettext(ns::_main.textdomain_.c_str(), ns::_main.abbrev_.c_str());
+	strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.abbrev_.c_str()));
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ABBREV), strstr.str().c_str());
 	if (is_file(ns::_main.icon(true).c_str())) {
 		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ICON), "存在");
@@ -3130,28 +2918,12 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// description
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC_MSGID), ns::_main.description().c_str());
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC), dgettext(ns::_main.textdomain_.c_str(), ns::_main.description().c_str()));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.description().c_str())));
 	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_CAMPMAIN_RPGMODE), ns::_main.rpg_mode_);
 
 	ns::_main.update_to_ui(hdlgP);
 
 	return FALSE;
-}
-
-static bool is_id_char(char c) 
-{
-	return ((c == '_') || (c == '-'));
-}
-
-bool isvalid_id(const std::string& id)
-{
-	std::string str = id;
-	const size_t alnum = std::count_if(str.begin(), str.end(), isalnum);
-	const size_t valid_char = std::count_if(str.begin(), str.end(), is_id_char);
-	if ((alnum + valid_char != str.size()) || valid_char == str.size() || str.empty() || !isalpha(str.at(0))) {
-		return false;
-	}
-	return str != "null";
 }
 
 void OnCampaignMainEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
@@ -3176,9 +2948,9 @@ void OnCampaignMainEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	}
 
 	ns::_main.textdomain_ = str;
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_NAME), dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str()));
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ABBREV), dgettext(ns::_main.textdomain_.c_str(), ns::_main.abbrev_.c_str()));
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC), dgettext(ns::_main.textdomain_.c_str(), ns::_main.description().c_str()));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_NAME), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str())));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ABBREV), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.abbrev_.c_str())));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.description().c_str())));
 	
 	ns::_main.set_dirty(tmain::BIT_TEXTDOMAIN, ns::_main.textdomain_ != ns::_main.main_from_cfg_.textdomain_);
 
@@ -3207,7 +2979,7 @@ void OnCampaignMainEt2(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	}
 	strstr.str("");
 	if (text[0]) {
-		strstr << dgettext(ns::_main.textdomain_.c_str(), text);
+		strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), text));
 	}
 	Edit_SetText(hctl, strstr.str().c_str());
 	ns::_main.set_dirty(bit, strcmp(text, that.c_str()));
@@ -3369,9 +3141,9 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SIDEEDIT_NAME_MSGID), side.name_.c_str());
 	strstr.str("");
 	if (!side.name_.empty()) {
-		strstr << dgettext(ns::_main.textdomain_.c_str(), side.name_.c_str());
+		strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), side.name_.c_str()));
 	} else {
-		strstr << "(" << gdmgr.heros_[side.leader_].name() << ")";
+		strstr << "(" << utf8_2_ansi(gdmgr.heros_[side.leader_].name().c_str()) << ")";
 	}
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SIDEEDIT_NAME), strstr.str().c_str());
 
@@ -3470,25 +3242,36 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = "特质";
 	ListView_InsertColumn(hctl, 3, &lvc);
 
-	lvc.cx = 60;
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 50;
 	lvc.iSubItem = 4;
-	lvc.pszText = "太守";
+	lvc.pszText = "特色";
 	ListView_InsertColumn(hctl, 4, &lvc);
 
-	lvc.cx = 40;
+	lvc.cx = 100;
 	lvc.iSubItem = 5;
-	lvc.pszText = "在职";
+	lvc.pszText = "不可征";
 	ListView_InsertColumn(hctl, 5, &lvc);
 
-	lvc.cx = 54;
+	lvc.cx = 60;
 	lvc.iSubItem = 6;
-	lvc.pszText = "在野";
+	lvc.pszText = "太守";
 	ListView_InsertColumn(hctl, 6, &lvc);
 
-	lvc.cx = 54;
+	lvc.cx = 40;
 	lvc.iSubItem = 7;
-	lvc.pszText = "经济区";
+	lvc.pszText = "在职";
 	ListView_InsertColumn(hctl, 7, &lvc);
+
+	lvc.cx = 54;
+	lvc.iSubItem = 8;
+	lvc.pszText = "在野";
+	ListView_InsertColumn(hctl, 8, &lvc);
+
+	lvc.cx = 54;
+	lvc.iSubItem = 9;
+	lvc.pszText = "经济区";
+	ListView_InsertColumn(hctl, 9, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -3533,10 +3316,15 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = "特质";
 	ListView_InsertColumn(hctl, 5, &lvc);
 
-	lvc.cx = 60;
+	lvc.cx = 50;
 	lvc.iSubItem = 6;
-	lvc.pszText = "城市";
+	lvc.pszText = "特色";
 	ListView_InsertColumn(hctl, 6, &lvc);
+
+	lvc.cx = 60;
+	lvc.iSubItem = 7;
+	lvc.pszText = "城市";
+	ListView_InsertColumn(hctl, 7, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -3583,7 +3371,7 @@ BOOL On_DlgFeatureEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	hctl = GetDlgItem(hdlgP, IDC_CMB_FEATUREEDIT_FEATURE);
 	const std::vector<int>& features = hero::valid_features();
 	for (std::vector<int>::const_iterator it = features.begin(); it != features.end(); ++ it) {
-		ComboBox_AddString(hctl, hero::feature_str(*it).c_str()); 
+		ComboBox_AddString(hctl, utf8_2_ansi(hero::feature_str(*it).c_str())); 
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *it);
 	}
 
@@ -3827,6 +3615,33 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
+	// not recruit
+	hctl = GetDlgItem(hdlgP, IDC_LV_CITYEDIT_NOTRECRUIT);
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 90;
+	lvc.pszText = "名称";
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = 0;
+	ListView_InsertColumn(hctl, 0, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 40;
+	lvc.iSubItem = 1;
+	lvc.pszText = "等级";
+	ListView_InsertColumn(hctl, 1, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 40;
+	lvc.iSubItem = 2;
+	lvc.pszText = "兵科";
+	ListView_InsertColumn(hctl, 2, &lvc);
+
+	ListView_SetImageList(hctl, ns::himl_checkbox, LVSIL_STATE);
+
+	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
 	// economy area
 	hctl = GetDlgItem(hdlgP, IDC_UD_CITYEDIT_EAX);
 	UpDown_SetRange(hctl, 1, 300);	// [1, 300]
@@ -3839,20 +3654,20 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	hctl = GetDlgItem(hdlgP, IDC_LV_CITYEDIT_EA);
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
-	lvc.cx = 50;
+	lvc.cx = 40;
 	lvc.pszText = "编号";
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-	lvc.cx = 40;
+	lvc.cx = 30;
 	lvc.iSubItem = 1;
 	lvc.pszText = "X";
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-	lvc.cx = 40;
+	lvc.cx = 30;
 	lvc.iSubItem = 2;
 	lvc.pszText = "Y";
 	ListView_InsertColumn(hctl, 2, &lvc);
@@ -4042,6 +3857,10 @@ void cityedit_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 	lvi.cchTextMax = _MAX_PATH;
 	ListView_GetItem(lpNMHdr->hwndFrom, &lvi);
 
+	if (lpnmitem->iItem < 0) {
+		return;
+	}
+
 	int number = lvi.lParam;
 
 	if (lpNMHdr->hwndFrom == GetDlgItem(hdlgP, IDC_LV_CITYEDIT_SERVICE)) {
@@ -4057,6 +3876,7 @@ void cityedit_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 
 BOOL On_DlgCityEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 {
+	std::stringstream strstr;
 	if (lpNMHdr->code == NM_CLICK) {
 		LPNMITEMACTIVATE lpnmitem = (LPNMITEMACTIVATE)lpNMHdr;
 		if ((lpNMHdr->idFrom == IDC_LV_CITYEDIT_TRAIT) && (lpnmitem->ptAction.x <= 14)) {
@@ -4067,6 +3887,14 @@ BOOL On_DlgCityEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 					ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, TRUE);
 				}
 			}
+		} else if ((lpNMHdr->idFrom == IDC_LV_CITYEDIT_NOTRECRUIT) && (lpnmitem->ptAction.x <= 14)) {
+			if (ListView_GetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem)) {
+				ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, FALSE);
+			} else {
+				ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, TRUE);
+			}
+			strstr << "不可征兵种(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
+			Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITYEDIT_NOTRECRUIT), strstr.str().c_str());
 		}
 	} else if (lpNMHdr->code == NM_RCLICK) {
 		cityedit_notify_handler_rclick(hdlgP, DlgItem, lpNMHdr);
@@ -4642,7 +4470,7 @@ void OnSideEditEt(HWND hdlgP, int id, UINT codeNotify)
 	side.name_ = text;
 	strstr.str("");
 	if (!side.name_.empty()) {
-		strstr << dgettext(ns::_main.textdomain_.c_str(), side.name_.c_str());
+		strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), side.name_.c_str()));
 	} else {
 		strstr << "(" << gdmgr.heros_[side.leader_].name() << ")";
 	}
@@ -4780,7 +4608,7 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_ID), scenario.id_.c_str());
 	// name
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_NAME_MSGID), scenario.id_.c_str());
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_NAME), dgettext(ns::_main.textdomain_.c_str(), scenario.id_.c_str()));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_NAME), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), scenario.id_.c_str())));
 
 	strstr.str("");
 	strstr << "(" << scenario.map_file() << ")";
@@ -4803,9 +4631,9 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	UpDown_SetPos(hctl, scenario.maximal_defeated_activity_);
 	// win/lose
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_WIN_MSGID), scenario.win_.c_str());
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_WIN), dgettext(ns::_main.textdomain_.c_str(), scenario.win_.c_str()));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_WIN), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), scenario.win_.c_str())));
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_LOSE_MSGID), scenario.lose_.c_str());
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_LOSE), dgettext(ns::_main.textdomain_.c_str(), scenario.lose_.c_str()));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_LOSE), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), scenario.lose_.c_str())));
 
 
 	LVCOLUMN lvc;
@@ -4885,6 +4713,32 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
+	// event
+	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_EVENT);
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 40;
+	lvc.pszText = "编号";
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = 0;
+	ListView_InsertColumn(hctl, 0, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 70;
+	lvc.iSubItem = 1;
+	lvc.pszText = "时机";
+	ListView_InsertColumn(hctl, 1, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 60;
+	lvc.iSubItem = 2;
+	lvc.pszText = "只一次";
+	ListView_InsertColumn(hctl, 2, &lvc);
+
+	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
+	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
 	scenario.update_to_ui(hdlgP);
 
 	return FALSE;
@@ -4951,7 +4805,7 @@ void OnCampaignScenarioEt2(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	}
 	strstr.str("");
 	if (text[0]) {
-		strstr << dgettext(ns::_main.textdomain_.c_str(), text);
+		strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), text));
 	}
 	Edit_SetText(hctl, strstr.str().c_str());
 	scenario.set_dirty(bit, strcmp(text, that.c_str()));
@@ -5007,7 +4861,7 @@ void OnCampaignScenarioEt3(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	scenario.id_ = str;
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_FILE), scenario.file().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_NAME_MSGID), scenario.id_.c_str());
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_NAME), dgettext(ns::_main.textdomain_.c_str(), scenario.id_.c_str()));
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_NAME), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), scenario.id_.c_str())));
 
 	// read map data from new file, check whether valid.
 	std::string map_data = scenario.map_data_from_file(scenario.map_file(true));
@@ -5193,14 +5047,27 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 		OnCampaignScenarioCmb(hdlgP, id, hwndCtrl, codeNotify);
 		break;
 
+	case IDM_NEW_ITEM0:
+	case IDM_NEW_ITEM1:
+		OnEventAddBt(hdlgP, tevent::name_map[id - IDM_NEW_ITEM0].first);
+		break;
+
 	case IDM_ADD:
 		OnSideAddBt(hdlgP);
 		break;
 	case IDM_DELETE:
-		OnSideDelBt(hdlgP);
+		if (ns::type == IDC_LV_CAMPSCENARIO_SIDE) {
+			OnSideDelBt(hdlgP);
+		} else if (ns::type == IDC_LV_CAMPSCENARIO_EVENT) {
+			OnEventDelBt(hdlgP);
+		}
 		break;
 	case IDM_EDIT:
-		OnSideEditBt(hdlgP);
+		if (ns::type == IDC_LV_CAMPSCENARIO_SIDE) {
+			OnSideEditBt(hdlgP);
+		} else if (ns::type == IDC_LV_CAMPSCENARIO_EVENT) {
+			OnEventEditBt(hdlgP);
+		}
 		break;
 
 	case IDC_BT_CAMPSCENARIO_BROWSEMAP:
@@ -5213,31 +5080,35 @@ void campaignscenario_notify_handler_rclick(HWND hdlgP, LPNMHDR lpNMHdr)
 {
 	LVITEM					lvi;
 	LPNMITEMACTIVATE		lpnmitem;
-	int						icount;
+
+	if (lpNMHdr->code != NM_RCLICK) {
+		return;
+	}
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 
+	lpnmitem = (LPNMITEMACTIVATE)lpNMHdr;
+	// 如果单击到的是复选框位置,把复选框状态置反
+	// 当前定义的图标大小是16x16. ptAction反回的(x,y)是整个列表视图内的坐标,因而y值不大好判断
+	// 认为如果x是小于16的就认为是击中复选框
+	
+	// ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, !ListView_GetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem));
+	POINT		point = {lpnmitem->ptAction.x, lpnmitem->ptAction.y};
+	MapWindowPoints(lpNMHdr->hwndFrom, NULL, &point, 1);
+
+	lvi.iItem = lpnmitem->iItem;
+	lvi.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
+	lvi.iSubItem = 0;
+	lvi.pszText = gdmgr._menu_text;
+	lvi.cchTextMax = _MAX_PATH;
+	ListView_GetItem(lpNMHdr->hwndFrom, &lvi);
+
+	std::stringstream strstr;
+	int icount = ListView_GetItemCount(lpNMHdr->hwndFrom);
+
 	// NM_表示对通用控件都通用,范围丛(0, 99)
 	// TVN_表示只能TreeView通用,范围丛(400, 499)
-	if ((lpNMHdr->code == NM_RCLICK) && lpNMHdr->hwndFrom == GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_SIDE)) {
-		lpnmitem = (LPNMITEMACTIVATE)lpNMHdr;
-		// 如果单击到的是复选框位置,把复选框状态置反
-		// 当前定义的图标大小是16x16. ptAction反回的(x,y)是整个列表视图内的坐标,因而y值不大好判断
-		// 认为如果x是小于16的就认为是击中复选框
-		
-		// ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, !ListView_GetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem));
-		POINT		point = {lpnmitem->ptAction.x, lpnmitem->ptAction.y};
-		MapWindowPoints(lpNMHdr->hwndFrom, NULL, &point, 1);
-
-		lvi.iItem = lpnmitem->iItem;
-		lvi.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
-		lvi.iSubItem = 0;
-		lvi.pszText = gdmgr._menu_text;
-		lvi.cchTextMax = _MAX_PATH;
-		ListView_GetItem(lpNMHdr->hwndFrom, &lvi);
-
-		icount = ListView_GetItemCount(lpNMHdr->hwndFrom);
-
+	if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_SIDE) {
 		EnableMenuItem(gdmgr._hpopup_editor, IDM_ADD, MF_BYCOMMAND);
 		if (lpnmitem->iItem < 0) {
 			EnableMenuItem(gdmgr._hpopup_editor, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
@@ -5258,8 +5129,45 @@ void campaignscenario_notify_handler_rclick(HWND hdlgP, LPNMHDR lpNMHdr)
 		EnableMenuItem(gdmgr._hpopup_editor, IDM_DELETE, MF_BYCOMMAND | MF_ENABLED);
 
 		ns::clicked_side = lpnmitem->iItem;
+		ns::type = IDC_LV_CAMPSCENARIO_SIDE;
+
+	} else if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_EVENT) {
+
+		HMENU hpopup_new = CreatePopupMenu();
+		int index = 0;
+		for (std::vector<std::pair<std::string, std::string> >::const_iterator it = tevent::name_map.begin(); it != tevent::name_map.end(); ++ it, index ++) {
+			strstr.str("");
+			strstr << it->first << "(" << it->second << ")";
+			AppendMenu(hpopup_new, MF_STRING, IDM_NEW_ITEM0 + index, strstr.str().c_str());
+		}
+		HMENU hpopup_event = CreatePopupMenu();
+		AppendMenu(hpopup_event, MF_POPUP, (UINT_PTR)(hpopup_new), "添加");
+		AppendMenu(hpopup_event, MF_STRING, IDM_EDIT, "编辑...");
+		AppendMenu(hpopup_event, MF_STRING, IDM_DELETE, "删除");
+
+		if (icount >= tscenario::max_event_count) {
+			EnableMenuItem(hpopup_event, (UINT_PTR)(hpopup_new), MF_BYCOMMAND | MF_GRAYED);
+		}
+		if (lpnmitem->iItem < 0) {
+			EnableMenuItem(hpopup_event, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_event, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
+		}
+		
+
+		TrackPopupMenuEx(hpopup_event, 0, 
+			point.x, 
+			point.y, 
+			hdlgP, 
+			NULL);
+
+		DestroyMenu(hpopup_new);
+		DestroyMenu(hpopup_event);
+
+		ns::clicked_event = lpnmitem->iItem;
+		ns::type = IDC_LV_CAMPSCENARIO_EVENT;
 	}
-    return;
+
+	return;
 }
 
 void campaignscenario_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
@@ -5269,7 +5177,7 @@ void campaignscenario_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 
 	// NM_表示对通用控件都通用,范围丛(0, 99)
 	// TVN_表示只能TreeView通用,范围丛(400, 499)
-	if ((lpNMHdr->code == NM_DBLCLK) && lpNMHdr->hwndFrom == GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_SIDE)) {
+	if ((lpNMHdr->code == NM_DBLCLK) && (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_SIDE || lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_EVENT))  {
 		lpnmitem = (LPNMITEMACTIVATE)lpNMHdr;
 		// 如果单击到的是复选框位置,把复选框状态置反
 		// 当前定义的图标大小是16x16. ptAction反回的(x,y)是整个列表视图内的坐标,因而y值不大好判断
@@ -5282,8 +5190,15 @@ void campaignscenario_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 		lvi.cchTextMax = _MAX_PATH;
 		ListView_GetItem(lpNMHdr->hwndFrom, &lvi);
 
-		ns::clicked_side = lpnmitem->iItem;
-		OnSideEditBt(hdlgP);
+		if (lpnmitem->iItem >= 0) {
+			if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_SIDE) {
+				ns::clicked_side = lpnmitem->iItem;
+				OnSideEditBt(hdlgP);
+			} else if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_EVENT) {
+				ns::clicked_event = lpnmitem->iItem;
+				OnEventEditBt(hdlgP);
+			}
+		}
 	}
     return;
 }
@@ -5312,13 +5227,6 @@ BOOL CALLBACK DlgCampaignScenarioProc(HWND hDlg, UINT message, WPARAM wParam, LP
 	return FALSE;
 }
 
-DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName) 
-{ 
-    HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG); 
-    HGLOBAL hglb = LoadResource(gdmgr._hinst, hrsrc); 
-    return (DLGTEMPLATE *)LockResource(hglb); 
-} 
-
 void campaign_refresh(HWND hdlgP)
 {
 	wml_config_from_file(std::string(gdmgr.cfg_fname_), ns::campaign.game_config_);
@@ -5342,9 +5250,10 @@ void campaign_refresh(HWND hdlgP)
 	ns::_scenario.clear();
 	int index = 0;
 	foreach (const config &i, ns::campaign.game_config_.child_range("scenario")) {
-		tscenario s(id);
+		ns::_scenario.push_back(tscenario(id));
+		tscenario& s = ns::_scenario.back();
 		s.from_config(index ++, i);
-		ns::_scenario.push_back(s);
+		
 	}
 
 	TCITEM tie;
@@ -5371,7 +5280,7 @@ void campaign_refresh(HWND hdlgP)
 		pHdr->valid_pages = 1;
 
 		// Lock the resources for the three child dialog boxes. 
-		pHdr->apRes[0] = DoLockDlgRes(MAKEINTRESOURCE(IDD_CAMPAIGN_MAIN));
+		pHdr->apRes[0] = ns::DoLockDlgRes(MAKEINTRESOURCE(IDD_CAMPAIGN_MAIN));
 		
 		// Calculate how large to make the tab control, so 
 		// the display area can accommodate all the child dialog boxes.
@@ -5408,7 +5317,7 @@ void campaign_refresh(HWND hdlgP)
 		tie.pszText = text; 
 		TabCtrl_InsertItem(pHdr->hwndTab, index, &tie); 
 
-		pHdr->apRes[index] = DoLockDlgRes(MAKEINTRESOURCE(IDD_CAMPAIGN_SCENARIO));
+		pHdr->apRes[index] = ns::DoLockDlgRes(MAKEINTRESOURCE(IDD_CAMPAIGN_SCENARIO));
 	}
 
 	// Simulate selection of the first item.
@@ -5591,7 +5500,7 @@ bool campaign_new()
 
 bool campaign_can_execute_tack(int task)
 {
-	if (task == TASK_NEW || task == TASK_DELETE) {
+	if (task == TASK_NEW || task == TASK_DELETE || task == TASK_EXPLORER) {
 		if (campaign_get_save_btn()) {
 			return false;
 		}

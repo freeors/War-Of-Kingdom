@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -119,7 +119,7 @@
 				Optimization="4"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="..\..\src;..\..\external\boost_1_46;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;"
+				AdditionalIncludeDirectories="..\..\src;..\..\external\boost_1_46;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -138,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -195,6 +195,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\unit_types.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\wml_exception_empty.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\xwml.cpp"
 				>
 			</File>
@@ -206,6 +214,14 @@
 			>
 			<File
 				RelativePath="..\..\src\config_cache.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\DlgCampaignProc.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\editor.hpp"
 				>
 			</File>
 			<File
@@ -284,6 +300,62 @@
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\editor.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\evt_attribute.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_attribute.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_command.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\evt_command.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_condition.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\evt_condition.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_event.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\evt_event.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\evt_filter.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_filter.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_if.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\evt_if.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_then.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\evt_then.ico"
 				>
 			</File>
 			<File
@@ -487,7 +559,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\DlgCfgProc.cpp"
+				RelativePath="..\..\src\editor2\DlgCoreProc.cpp"
 				>
 			</File>
 			<File
@@ -495,11 +567,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\DlgSyncProc.cpp"
+				RelativePath="..\..\src\editor2\DlgHEditorProc.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\DlgTerrainBuilderProc.cpp"
+				RelativePath="..\..\src\editor2\DlgSyncProc.cpp"
 				>
 			</File>
 			<File
@@ -507,7 +579,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\DlgWGenProc.cpp"
+				RelativePath="..\..\src\editor2\DlgVisualProc.cpp"
 				>
 			</File>
 			<File
@@ -515,7 +587,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\editor.hpp"
+				RelativePath="..\..\src\editor2\event.cpp"
 				>
 			</File>
 			<File

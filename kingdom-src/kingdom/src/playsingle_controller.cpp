@@ -581,13 +581,7 @@ void playsingle_controller::play_side(const unsigned int team_index, bool save)
 
 		if (current_team().is_human()) {
 			try {
-				if (save && rpg::stratum != hero_stratum_leader) {
-					play_ai_turn();
-					// resume gui.
-					// gui_->enable_menu("play_card", true);
-					// gui_->enable_menu("endturn", true);
-					// browse_ = false;
-				}
+				play_ai_turn();
 				before_human_turn(save);
 				play_human_turn();
 				after_human_turn();
@@ -653,14 +647,14 @@ void playsingle_controller::before_human_turn(bool save)
 	// button: endturn
 	gui_->enable_menu("play_card", true);
 	gui_->enable_menu("endturn", true);
-
+/*
 	if (rpg::stratum == hero_stratum_leader) {
 		if (card_mode_) {
 			execute_card_uh(turn(), player_number_);
 		}
 		execute_guard_attack(player_number_);
 	}
-	
+*/	
 	// card
 	refresh_card_button(current_team(), *gui_);
 	// if (!network::nconnections()) {
@@ -938,16 +932,18 @@ void playsingle_controller::play_ai_turn()
 	}
 	turn_data.sync_network();
 
-	gui_->recalculate_minimap();
-	::clear_shroud(player_number_);
-	gui_->invalidate_unit();
-	gui_->invalidate_game_status();
-	gui_->invalidate_all();
-	
-	gui_->draw();
+	if (!teams_[player_number_ - 1].is_human()) {
+		gui_->recalculate_minimap();
+		::clear_shroud(player_number_);
+		gui_->invalidate_unit();
+		gui_->invalidate_game_status();
+		gui_->invalidate_all();
+		
+		gui_->draw();
 
-	if (card_mode_) {
-		execute_card_bh(turn(), player_number_);
+		if (card_mode_) {
+			execute_card_bh(turn(), player_number_);
+		}
 	}
 
 	uint32_t stop = SDL_GetTicks();

@@ -168,6 +168,7 @@ struct attack_fields {
 	int32_t facing_;	\
 	int32_t upkeep_;	\
 	int32_t keep_turns_;	\
+	int32_t character_; \
 	int32_t human_;	\
 	int32_t random_traits_;	\
 	int32_t resting_;	\
@@ -233,6 +234,8 @@ public:
 	const unit_type* type() const;
 	const unit_type* packee_type() const;
 
+	int character() const { return character_; }
+
 	/** id assigned by wml */
 	const std::string& id() const { return type_; }
 	/** The unique internal ID of the unit */
@@ -262,6 +265,8 @@ public:
 	 * should occur
 	 */
 	virtual void get_experience(int xp, bool opp_is_artifical = false);
+	void get_experience2(int xp);
+
 	/** Colors for the unit's hitpoints. */
 	SDL_Color hp_color() const;
 	/** Colors for the unit's XP. */
@@ -289,7 +294,6 @@ public:
 	bool wall() const { return wall_; }
 	bool land_wall() const { return land_wall_; }
 	bool walk_wall() const { return walk_wall_; }
-	bool attack_destroy() const { return attack_destroy_; }
 	int arms() const { return arms_; }
 	const t_translation::t_terrain& terrain() const { return terrain_; }
 
@@ -381,6 +385,7 @@ public:
 
 	int cost () const { return unit_value_; }
 	int gold_income () const;
+	int turn_experience() const { return turn_experience_; }
 
 	int keep_turns() const { return keep_turns_; }
 	void set_keep_turns(int turns) { keep_turns_ = turns; }
@@ -400,7 +405,7 @@ public:
 	virtual void set_location(const map_location &loc);
 
 	const map_location& get_goto() const { return goto_; }
-	void set_goto(const map_location& new_goto) { goto_ = new_goto; }
+	void set_goto(const map_location& new_goto);
 
 	virtual int upkeep() const;
 	bool loyal() const;
@@ -492,6 +497,9 @@ public:
 	virtual void write(uint8_t* mem) const;
 	void read(const uint8_t* mem, bool full = true);
 
+	enum {BIT_ATTACKING = 0, BIT_DEFENDING, BIT_STRONGER};
+	void set_temporary_state(int bit, bool set);
+	
 	uint16_t leadership_;
 	uint16_t force_;
 	uint16_t intellect_;
@@ -500,8 +508,6 @@ public:
 	uint8_t feature_[HEROS_FEATURE_M2BYTES];
 	uint16_t adaptability_[HEROS_MAX_ARMS];
 	uint16_t skill_[HEROS_MAX_SKILL];
-
-	map_location last_location_;
 
 	map_location adjacent_[12];	// 和loc_邻近的最多12个格子
 	size_t adjacent_size_;
@@ -538,12 +544,13 @@ protected:
 	std::string packee_type_;
 	const unit_type* unit_type_;
 	const unit_type* packee_unit_type_;
+	int character_;
 	const unit_race* race_;
 	mutable t_string name_;
 	t_string type_name_;
 	std::string undead_variation_;
 	std::string variation_;
-
+	
 	int hit_points_;
 	int max_hit_points_;
 	int experience_;
@@ -592,6 +599,7 @@ protected:
 	int unit_value_;
 	int gold_income_;
 	int heal_;
+	int turn_experience_;
 	map_location goto_;
 
 	bool flying_, is_fearless_, is_healthy_;
@@ -642,7 +650,6 @@ protected:
 	bool wall_;
 	bool land_wall_;
 	bool walk_wall_;
-	bool attack_destroy_;
 	t_translation::t_terrain terrain_;
 
 	int arms_;
@@ -654,6 +661,8 @@ protected:
 	size_t master_number_;
 	size_t second_number_;
 	size_t third_number_;
+
+	uint32_t temporary_state_;
 };
 
 /** Object which temporarily resets a unit's movement */

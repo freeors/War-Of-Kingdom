@@ -117,6 +117,7 @@ namespace t_translation {
 /***************************************************************************************/
 
 const t_terrain OFF_MAP_USER = string_to_number_("_off^_usr");
+const t_terrain FAKE_MAP_EDGE = string_to_number_("^_fme");
 
 const t_terrain VOID_TERRAIN = string_to_number_("_s");
 const t_terrain FOGGED = string_to_number_("_f");

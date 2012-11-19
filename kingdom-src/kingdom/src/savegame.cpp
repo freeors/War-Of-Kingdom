@@ -979,6 +979,7 @@ void savegame::write_game(config_writer &out) const
 	out.write_key_val("parent", gamestate_.classification().parent);
 	out.write_key_val("history", gamestate_.classification().history);
 	out.write_key_val("abbrev", gamestate_.classification().abbrev);
+	out.write_key_val("rpg_mode", gamestate_.classification().rpg_mode? "yes" : "no");
 	out.write_key_val("version", game_config::version);
 	out.write_key_val("scenario", gamestate_.classification().scenario);
 	out.write_key_val("next_scenario", gamestate_.classification().next_scenario);

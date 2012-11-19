@@ -123,25 +123,6 @@ std::string map_location::write_direction(map_location::DIRECTION dir)
 	}
 }
 
-map_location::map_location(const config& cfg, const variable_set *variables) :
-		x(-1000),
-		y(-1000)
-{
-	std::string xs = cfg["x"], ys = cfg["y"];
-	if (variables)
-	{
-		xs = utils::interpolate_variables_into_string( xs, *variables);
-		ys = utils::interpolate_variables_into_string( ys, *variables);
-	}
-	// The co-ordinates in config files will be 1-based,
-	// while we want them as 0-based.
-	if(xs.empty() == false && xs != "recall")
-		x = atoi(xs.c_str()) - 1;
-
-	if(ys.empty() == false && ys != "recall")
-		y = atoi(ys.c_str()) - 1;
-}
-
 void map_location::write(config& cfg) const
 {
 	cfg["x"] = x + 1;
@@ -441,13 +422,13 @@ size_t distance_between(const map_location& a, const map_location& b)
 	return std::max<int>(hdistance, abs(a.y - b.y) + vpenalty + hdistance/2);
 }
 
-std::vector<map_location> parse_location_range(const std::string &x, const std::string &y,
+std::vector<map_location> parse_location_range(gamemap* map, const std::string &x, const std::string &y,
 	bool with_border)
 {
 	std::vector<map_location> res;
 	const std::vector<std::string> xvals = utils::split(x);
 	const std::vector<std::string> yvals = utils::split(y);
-	gamemap *map = resources::game_map;
+	// gamemap *map = resources::game_map;
 	assert(map);
 	int xmin = 1, xmax = map->w(), ymin = 1, ymax = map->h();
 	if (with_border) {

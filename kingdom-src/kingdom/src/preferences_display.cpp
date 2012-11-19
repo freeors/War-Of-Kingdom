@@ -540,6 +540,7 @@ bool show_video_mode_dialog(display& disp)
 		resolutions.push_back(std::make_pair<int, int>(480, 320));
 		resolutions.push_back(std::make_pair<int, int>(568, 320));
 		resolutions.push_back(std::make_pair<int, int>(800, 480));
+		resolutions.push_back(std::make_pair<int, int>(854, 480));
 	}
 
 	std::sort(resolutions.begin(),resolutions.end(),compare_resolutions);

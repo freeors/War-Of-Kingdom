@@ -12,6 +12,8 @@
 #include "win32x.h"
 #include <utility>
 
+#include "unit_types.hpp"
+
 extern editor editor_;
 
 static void sync_update_task_desc(HWND hctl);
@@ -47,6 +49,13 @@ void sync_enter_ui(void)
 
 	if (editor_config::data_cfg.empty()) {
 		wml_config_from_file(game_config::path + "/xwml/data.bin", editor_config::data_cfg);
+		try {
+			unit_types.set_config(editor_config::data_cfg.child("units"));
+			unit_types.build_all(unit_type::FULL);
+		} catch (game::error& e) {
+			MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
+			unit_types.clear();
+		}	 
 	}
 
 	ns::himl_checkbox = ImageList_Create(15, 15, FALSE, 2, 0);
@@ -121,17 +130,8 @@ void sync_update_task_desc(HWND hctl)
 		if (itor->first == editor::MAIN_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
 			ListView_SetCheckState(hctl, lvi.iItem, TRUE);
 		}
-		if (editor_config::sync_why_startup == editor_config::WHY_CAMPAIGN) {
-			if (itor->first == editor::SCENARIO_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
-				std::string id = offextname(itor->second.bin_name.c_str());
-				if (id == editor_config::campaign_id) {
-					ListView_SetCheckState(hctl, lvi.iItem, TRUE);
-				}
-			}
-		} else {
-			if (itor->first == editor::SCENARIO_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
-				ListView_SetCheckState(hctl, lvi.iItem, TRUE);
-			}
+		if (itor->first == editor::SCENARIO_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
+			ListView_SetCheckState(hctl, lvi.iItem, TRUE);
 		}
 	}
 	if (editor_config::ListView_GetCheckedCount(hctl)) {
@@ -465,11 +465,6 @@ DWORD WINAPI ThdSyncProc(LPVOID ctx)
 
 	gdmgr._syncing = FALSE;
 
-	if (editor_config::sync_why_startup == editor_config::WHY_CAMPAIGN) {
-		editor_config::sync_why_startup = editor_config::WHY_NORMAL;
-		title_select(da_campaign);
-	}
-
 	return 0;
 }
 
@@ -507,7 +502,11 @@ DWORD WINAPI ThdSync2Proc(LPVOID ctx)
 	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), FALSE);
 
 	EnableWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), FALSE);
-	EnableWindow(gdmgr._hdlg_campaign, FALSE);
+	if (gdmgr._da == da_core) {
+		EnableWindow(gdmgr._hdlg_core, FALSE);
+	} else if (gdmgr._da == da_campaign) {
+		EnableWindow(gdmgr._hdlg_campaign, FALSE);
+	}
 
 	editor_.get_wml2bin_desc_from_wml(game_config::path + "/data");
 	const std::vector<std::pair<editor::BIN_TYPE, editor::wml2bin_desc> >& descs = editor_.wml2bin_descs();
@@ -543,9 +542,18 @@ DWORD WINAPI ThdSync2Proc(LPVOID ctx)
 	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), TRUE);
 
 	EnableWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), TRUE);
-	EnableWindow(gdmgr._hdlg_campaign, TRUE);
+	if (gdmgr._da == da_core) {
+		EnableWindow(gdmgr._hdlg_core, TRUE);
+	} else if (gdmgr._da == da_campaign) {
+		EnableWindow(gdmgr._hdlg_campaign, TRUE);
+	}
 
 	gdmgr._syncing = FALSE;
+
+	// postfix work.
+	if (gdmgr._da == da_core) {
+		core_enter_ui();
+	}
 
 	return 0;
 }

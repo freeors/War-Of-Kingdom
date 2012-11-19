@@ -1257,7 +1257,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			if (low_loyalty_heros.empty()) {
 				continue;
 			}
-			const unit_type* ut = current_team.recruits(game_config::default_ai_level)[0];
+			const unit_type* ut = city.recruits(game_config::default_ai_level)[0];
 			while (!low_loyalty_heros.empty()) {
 				std::vector<const hero*> v;
 				do {

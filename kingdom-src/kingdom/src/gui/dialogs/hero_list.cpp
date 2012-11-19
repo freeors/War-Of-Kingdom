@@ -351,6 +351,13 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item_item.insert(std::make_pair("skill0", table_item));
 
 		str.str("");
+		str << hero::adaptability_str2(h.skill_[hero_skill_encourage]);
+		val = fxpmod12(h.skill_[hero_skill_encourage]);
+		str << "." << val;
+		table_item["label"] = str.str();
+		table_item_item.insert(std::make_pair("skill3", table_item));
+
+		str.str("");
 		str << hero::adaptability_str2(h.skill_[hero_skill_hero]);
 		val = fxpmod12(h.skill_[hero_skill_hero]);
 		str << "." << val;
@@ -567,6 +574,7 @@ void thero_list::catalog_page(twindow& window, int catalog, bool swap)
 	} else if (catalog == SKILL_PAGE) {
 		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_skill0", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_skill3", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_skill4", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_skill5", false));
 	} else if (catalog == COMMAND_PAGE) {
@@ -764,11 +772,16 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 				result = false;
 			}
 		} else if (sorting_widget_ == widgets[2]) {
+			// skill3
+			if (h1->skill_[hero_skill_encourage] > h2->skill_[hero_skill_encourage]) {
+				result = false;
+			}
+		} else if (sorting_widget_ == widgets[3]) {
 			// skill4
 			if (h1->skill_[hero_skill_hero] > h2->skill_[hero_skill_hero]) {
 				result = false;
 			}
-		} else if (sorting_widget_ == widgets[3]) {
+		} else if (sorting_widget_ == widgets[4]) {
 			// skill5
 			if (h1->skill_[hero_skill_demolish] > h2->skill_[hero_skill_demolish]) {
 				result = false;

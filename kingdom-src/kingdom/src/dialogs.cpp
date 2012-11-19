@@ -65,7 +65,7 @@ static lg::log_domain log_config("config");
 namespace dialogs
 {
 
-void advance_unit(const map_location &loc, bool random_choice, bool add_replay_event)
+void advance_unit(const map_location &loc, bool random_choice, bool choose_from_random)
 {
 	game_display& gui = *resources::screen;
 
@@ -111,14 +111,28 @@ void advance_unit(const map_location &loc, bool random_choice, bool add_replay_e
 		}
 	}
 
-	LOG_DP << "options: " << options.size() << "\n";
-
 	int res = 0;
 
-	if(lang_options.empty()) {
+	if (lang_options.empty()) {
 		return;
-	} else if(random_choice) {
-		res = rand()%lang_options.size();
+	} else if (random_choice) {
+		if (lang_options.size() > 1) {
+			// select character if existed.
+			size_t index = 0;
+			for (std::vector<std::string>::const_iterator it = options.begin(); it != options.end(); ++ it, index ++) {
+				const unit_type* ut = unit_types.find(*it);
+				if (ut->character() != -1) {
+					break;
+				}
+			}
+			if (index == sample_units.size()) {
+				res = rand()%lang_options.size();
+			} else {
+				res = index;
+			}
+		} else {
+			res = 0;
+		}
 	} else if(lang_options.size() > 1 || always_display) {
 
 		std::vector<const unit*> sample_units_ptr;
@@ -134,32 +148,25 @@ void advance_unit(const map_location &loc, bool random_choice, bool add_replay_e
 		res = dlg.troop_index();
 	}
 
-	if(add_replay_event) {
-		recorder.add_advancement(loc);
-	}
-
-	recorder.choose_option(res);
-
-	LOG_DP << "animating advancement...\n";
-	animate_unit_advancement(loc, size_t(res));
-
-	// In some rare cases the unit can have enough XP to advance again,
-	// so try to do that.
-	// Make sure that we don't enter an infinite level loop.
-	u = resources::units->find(loc);
-	if (u != resources::units->end()) {
-		// Level 10 unit gives 80 XP and the highest mainline is level 5
-		if(u->experience() < 81) {
-			// For all leveling up we have to add advancement to replay here because replay
-			// doesn't handle cascading advancement since it just calls animate_unit_advancement().
-			advance_unit(loc, random_choice, true);
+	if (choose_from_random) {
+		get_random();
+		const config *ran_results = get_random_results();
+		if (ran_results) {
+			res = (*ran_results)["choose"].to_int();
 		} else {
-			ERR_CF << "Unit has an too high amount of " << u->experience()
-				<< " XP left, cascade leveling disabled\n";
+			config cfg;
+			cfg["choose"] = res;
+			set_random_results(cfg);
 		}
 	} else {
-		ERR_NG << "Unit advanced no longer exists\n";
+		recorder.choose_option(res);
 	}
+
+	animate_unit_advancement(loc, size_t(res));
+
+	// Don't support advance again! (wesnoth support it.)
+	u = resources::units->find(loc);
+	VALIDATE(u != resources::units->end(), "Unit advanced no longer exists");
 }
 
 bool animate_unit_advancement(const map_location &loc, size_t choice)

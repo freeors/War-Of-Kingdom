@@ -1045,6 +1045,7 @@ bool game_controller::new_campaign()
 
 	state_.classification().campaign = campaign["id"].str();
 	state_.classification().abbrev = campaign["abbrev"].str();
+	state_.classification().rpg_mode = campaign["rpg_mode"].to_bool();
 
 	// we didn't specify in the command line the scenario to be started
 	state_.classification().scenario = campaign["first_scenario"].str();
@@ -1449,7 +1450,7 @@ void game_controller::load_game_cfg(const bool force)
 			game_config_units_.clear_children("race");
 			game_config_units_.clear_children("complexfeature");
 			game_config_units_.clear_children("treasure");
-			game_config_units_.clear_children("arms");
+			game_config_units_.clear_children("identifier");
 			game_config_units_.clear_children("recruit");
 			game_config_units_.clear_children("traits");
 			game_config_units_.clear_children("modifications");

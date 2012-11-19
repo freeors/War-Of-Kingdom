@@ -2404,20 +2404,17 @@ msgstr ""
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:76
-msgid "regenerates"
+msgid "surveillances"
 msgstr ""
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:77
-msgid "female^regenerates"
+msgid "female^surveillances"
 msgstr ""
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:79
-msgid ""
-"Regenerates:\n"
-"The unit will heal itself 8 HP per turn. If it is poisoned, it will remove "
-"the poison instead of healing."
+msgid "Surveillances: A surveillancer can urveillance a unit of loyalty."
 msgstr ""
 
 #. [resistance]: id=steadfast
@@ -2465,6 +2462,12 @@ msgid ""
 "adjacent to, of a lower level than, and on the same side as a unit with "
 "Leadership engages in combat, its attacks do 25% more damage times the "
 "difference in their levels."
+msgstr ""
+
+msgid "encourages"
+msgstr ""
+
+msgid "encourages desc"
 msgstr ""
 
 #. [skirmisher]: id=skirmisher
@@ -4967,6 +4970,10 @@ msgstr ""
 #. [language]
 #: data/hardwired/english.cfg:49
 msgid "impact"
+msgstr ""
+
+#: data/hardwired/english.cfg:49
+msgid "archery"
 msgstr ""
 
 #. [language]
@@ -9190,10 +9197,16 @@ msgstr ""
 msgid "firm"
 msgstr ""
 
-msgid "female^firm"
+msgid "firm desc"
 msgstr ""
 
-msgid "firm desc"
+msgid "firms"
+msgstr ""
+
+msgid "female^firms"
+msgstr ""
+
+msgid "firms desc"
 msgstr ""
 
 msgid "heals +12"
@@ -9350,6 +9363,9 @@ msgid "lightbeam"
 msgstr ""
 
 msgid "fireball"
+msgstr ""
+
+msgid "chill wave"
 msgstr ""
 
 msgid "lightning"

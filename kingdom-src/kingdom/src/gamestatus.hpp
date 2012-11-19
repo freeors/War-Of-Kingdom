@@ -57,6 +57,7 @@ public:
 	std::string campaign;                            /**< the campaign being played */
 	std::string history;                             /**< ancestral IDs */
 	std::string abbrev;                              /**< the campaign abbreviation */
+	bool rpg_mode;
 	std::string scenario;                            /**< the scenario being played */
 	std::string next_scenario;                       /**< the scenario coming next (for campaigns) */
 	std::string completion;                          /**< running. victory, or defeat */

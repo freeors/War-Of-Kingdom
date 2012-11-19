@@ -133,7 +133,7 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 	buttons_ctx_(NULL),
 	access_troops_index_(-1),
 	start_group_(0),
-	button_loc_(button_loc(NULL, 0)),
+	button_loc_(button_loc(reinterpret_cast<const theme::menu*>(NULL), 0)),
 	draw_area_(NULL),
 	draw_area_pitch_(0),
 	draw_area_size_(0),
@@ -1696,7 +1696,16 @@ void display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags,
 
 		for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
 			gui::button* b = buttons_ctx_[i].buttons_[i2];
-			const unit_type* ut = unit_types.find(b->id());
+			const unit_type* ut = NULL;
+			if (b->id() == "market") {
+				ut = unit_types.find_market();
+			} else if (b->id() == "keep") {
+				ut = unit_types.find_keep();
+			} else if (b->id() == "wall") {
+				ut = unit_types.find_wall();
+			} else if (b->id() == "tower") {
+				ut = unit_types.find_tower();
+			}
 			if (can_build.find(ut) == can_build.end()) {
 				flags &= ~ (1 << i2);
 			}
@@ -2698,7 +2707,14 @@ void display::refresh_report(reports::TYPE report_num, reports::report report)
 	reports::report::iterator e = report.begin();
 	for(; e != report.end(); ++e)
 	{
-		SDL_Rect area = create_rect(x, y, rect.w + rect.x - x, rect.h + rect.y - y);
+		SDL_Rect area;
+		if (!e->rect.w) {
+			area = create_rect(x, y, rect.w + rect.x - x, rect.h + rect.y - y);
+		} else {
+			const SDL_Rect& e_rect = e->rect;
+			area = create_rect(rect.x + e_rect.x, rect.y + e_rect.y, e_rect.w, e_rect.h);
+		}
+			
 		if (area.h <= 0) break;
 
 		if (!e->text.empty())
@@ -2768,7 +2784,8 @@ void display::refresh_report(reports::TYPE report_num, reports::report report)
 				continue;
 			}
 
-			if (area.w < img->w && image_count) {
+			// BUG! correct in future. portrait only tow iamge.
+			if (area.w < img->w && image_count >= 3) {
 				// We have more than one image, and this one doesn't fit.
 				img = surface(image::get_image(game_config::images::ellipsis));
 				used_ellipsis = true;

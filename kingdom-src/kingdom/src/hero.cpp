@@ -17,9 +17,15 @@ std::string hero::stratum_str_[HEROS_STRATUMS] = {};
 std::string hero::status_str_[HEROS_STATUSES] = {};
 std::string hero::official_str_[HEROS_OFFICIALS] = {};
 std::map<int, std::string> hero::treasure_str_;
+std::map<int, std::string> hero::character_str_;
 std::vector<int> hero::valid_features_;
-std::string null_str = "";
 
+int hero::number_market = 272;
+int hero::number_wall = 273;
+int hero::number_keep = 274;
+int hero::number_tower = 275;
+
+static std::string null_str = "";
 std::vector<hero*> empty_vector_hero_ptr = std::vector<hero*>();
 std::vector<size_t> empty_vector_size_t = std::vector<size_t>();
 
@@ -31,6 +37,13 @@ bool compare_leadership(const hero* lhs, const hero* rhs)
 bool compare_politics(const hero* lhs, const hero* rhs)
 {
 	return (lhs->politics_ > rhs->politics_) || (lhs->politics_ == rhs->politics_ && lhs->skill_[hero_skill_commercial] > rhs->skill_[hero_skill_commercial]);
+}
+
+bool compare_recruit(const hero* lhs, const hero* rhs)
+{
+	if (lhs->official_ == hero_official_leader) return true;
+	if (rhs->official_ == hero_official_leader) return false;
+	return (lhs->leadership_ > rhs->leadership_) || (lhs->leadership_ == rhs->leadership_ && lhs->number_ < rhs->number_);
 }
 
 bool u16_get_experience_i9(uint16_t* field, uint16_t inc_xp)
@@ -586,10 +599,24 @@ std::string& hero::treasure_str(int tid)
 		return it->second;
 	}
 	char text[_MAX_PATH];
-	sprintf(text, "%s%u", HERO_PREFIX_STR_TREASURE, tid);
-	char* trans = dgettext("wesnoth-hero", text);
+	sprintf(text, "%s%i", HERO_PREFIX_STR_TREASURE, tid);
 	treasure_str_[tid] = dgettext("wesnoth-hero", text);
 	return treasure_str_[tid];
+}
+
+std::string& hero::character_str(int cid)
+{
+	if (cid == NO_CHARACTER) {
+		return null_str;
+	}
+	std::map<int, std::string>::iterator it = character_str_.find(cid);
+	if (it != character_str_.end()) {
+		return it->second;
+	}
+	char text[_MAX_PATH];
+	sprintf(text, "%s%i", HERO_PREFIX_STR_CHARACTER, cid);
+	character_str_[cid] = dgettext("wesnoth-hero", text);
+	return character_str_[cid];
 }
 
 std::string& hero::feature_str(int feature)
@@ -599,7 +626,7 @@ std::string& hero::feature_str(int feature)
 	}
 	if (feature_str_[feature].empty()) {
 		char text[_MAX_PATH];
-		sprintf(text, "%s%u", HERO_PREFIX_STR_FEATURE, feature);
+		sprintf(text, "%s%i", HERO_PREFIX_STR_FEATURE, feature);
 		feature_str_[feature] = dgettext("wesnoth-hero", text);
 	}
 	return feature_str_[feature];
@@ -767,9 +794,9 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 		} else if (apply_to == "office") {
 			artifical* selected_city = unit_2_artifical(u);
 
-			status_ = hero_status_idle;
+			status_ = hero_status_backing;
 			side_ = selected_city->side() - 1;
-			selected_city->fresh_heros().push_back(this);
+			selected_city->finish_heros().push_back(this);
 			std::vector<hero*>& wander_heros = selected_city->wander_heros();
 			wander_heros.erase(std::find(wander_heros.begin(), wander_heros.end(), this));
 

@@ -210,17 +210,42 @@ unit_ability_list unit::get_abilities(const std::string& ability, const map_loca
 {
 	unit_ability_list res;
 
-	if (unit_feature_val(hero_feature_healer) && ability == "heals") {
-		static config heals_cfg;
-		if (heals_cfg.empty()) {
-			heals_cfg["value"] = 20;
-			heals_cfg["id"] = "healing";
-			heals_cfg["affect_self"] = "yes";
-			heals_cfg["poison"] = "cured";
+	while (unit_feature_val(hero_feature_healer) || unit_feature_val(hero_feature_curer) || unit_feature_val(hero_feature_surveillance)) {
+		if (ability != "heals") {
+			break;
 		}
-		if (ability_affects_self(ability, heals_cfg, loc)) {
-			res.cfgs.push_back(std::pair<const config *, unit *>(&heals_cfg, const_cast<unit*>(this)));
+		static config heal_cfg, cure_cfg, surveillance_cfg;
+		std::vector<config*> cfgs;
+		if (unit_feature_val(hero_feature_healer)) {
+			if (heal_cfg.empty()) {
+				heal_cfg["id"] = "healing";
+				heal_cfg["affect_self"] = "yes";
+				heal_cfg["value"] = 20;
+			}
+			cfgs.push_back(&heal_cfg);
 		}
+		if (unit_feature_val(hero_feature_curer)) {
+			if (cure_cfg.empty()) {
+				cure_cfg["id"] = "curing";
+				cure_cfg["affect_self"] = "yes";
+				cure_cfg["cured"] = "yes";
+			}
+			cfgs.push_back(&cure_cfg);
+		}
+		if (unit_feature_val(hero_feature_surveillance)) {
+			if (surveillance_cfg.empty()) {
+				surveillance_cfg["id"] = "surveillancing";
+				surveillance_cfg["affect_self"] = "yes";
+				surveillance_cfg["surveillanced"] = "yes";
+			}
+			cfgs.push_back(&surveillance_cfg);
+		}
+		for (std::vector<config*>::iterator i = cfgs.begin(); i != cfgs.end(); ++ i) {
+			if (ability_affects_self(ability, **i, loc)) {
+				res.cfgs.push_back(std::pair<const config *, unit *>(*i, const_cast<unit*>(this)));
+			}
+		}
+		break;
 	}
 
 	// self

@@ -25,7 +25,8 @@ struct artifical_fields_t
 	unit_segment finish_heros_;
 	unit_segment economy_area_;
 	unit_segment district_;
-	unit_segment reside_troops_;
+	unit_segment not_recruit_;
+	unit_segment reside_troops_;	
 };
 
 class artifical : public unit
@@ -141,6 +142,13 @@ public:
 	void write(uint8_t* mem) const;
 	void read(const uint8_t* mem);
 
+	const std::set<map_location>& villages() const;
+
+	// recruit
+	int max_recruit_cost();
+	void reset_max_recruit_cost();
+	const std::vector<const unit_type*>& recruits(int level);
+	void insert_level_unit_type(int level, const unit_type* from, std::vector<const unit_type*>& to);
 private:
 	// notice: loading game, gui_ isn't ready when artifical::artifical.
 	gamemap& map_;
@@ -159,10 +167,17 @@ private:
 	SDL_Rect alert_rect_;
 
 	std::vector<uint16_t> fresh_heros_number_;
-	std::vector<uint16_t> finish_heros_number_;	
+	std::vector<uint16_t> finish_heros_number_;
+
+	std::set<map_location> villages_;
 
 	hero* mayor_;
 	int fronts_;
+
+	// recruit
+	std::set<const unit_type*> not_recruit_;
+	std::map<int, std::vector<const unit_type*> > can_recruit_map_;
+	int max_recruit_cost_;
 };
 
 #endif // __ARTIFICAL_H_

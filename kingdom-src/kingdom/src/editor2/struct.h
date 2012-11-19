@@ -13,27 +13,19 @@
 #define TB_BTNS_COUNT_SYNC			6
 #define TB_BTNS_COUNT_WGEN			17
 #define TB_BTNS_COUNT_CAMPAIGN		7
+#define TB_BTNS_COUNT_CORE		7
 
 typedef enum {
 	da_unknown		= 0,
 	da_sync,
 	da_wgen,
-	da_tb,
-	da_cfg,
+	da_core,
+	da_visual,
 	da_campaign,
 	da_about,
 } do_action_t;
 
-enum task_type {TASK_NEW, TASK_DELETE};
-
-typedef enum {
-	dsrc_unknown	= 0,
-	dsrc_auto,
-	dsrc_network,
-	dsrc_removabledisk,
-} dvr_source_t;
-
-#define HWID_REMOVABLEDISK			0xFFFFFFFFFFFFFFF0I64
+enum task_type {TASK_NEW, TASK_DELETE, TASK_EXPLORER};
 
 typedef struct {
 	HINSTANCE		_hinst;
@@ -48,32 +40,16 @@ typedef struct {
 	HBITMAP			_welcomebmp;;
 
 	CRITICAL_SECTION	_cshbeat;
-	dvr_source_t	_dvrsrc;
 
-	int				_cfgidx;
-	time_t			_lasthbeattime;
-	
-	// 配置选项
-	dvr_source_t	_appointed_dvrsrc;
-	char			_appointed_removabledir[4];		// 只在_appointed_dvrsrc=dsrc_removabledisk时生效
-	BOOL			_autocalendar;	// sync界面下,自动同步时间
-	BOOL			_autosave;	// wgen界面下,按保存时自动保存到相关DVR目录
-	BOOL			_autoxchg;	// xchg界面下,投了源文件名后自动转换
-	BOOL			_autoexit;	// xchg界面下(没有设备浏览器),转换完后自动退出
-	BOOL			_shengchan;	// 程序是否要处于自使用状态
-	
-	char			_fulloemini[_MAX_PATH];
 	char			_fulldvrmgrini[_MAX_PATH];
 	char			_corp_name[_MAX_PATH];
 	char			_corp_http[_MAX_PATH];
-	uint32_t		_corp_oem_desc;
-	int32_t			_has_osdlib_page;
 	HWND			_hdlg_title;
 	HWND			_hdlg_ddesc;
 	HWND			_hdlg_sync;
 	HWND			_hdlg_wgen;
-	HWND			_hdlg_tb;
-	HWND			_hdlg_cfg;
+	HWND			_hdlg_core;
+	HWND			_hdlg_visual;
 	HWND			_hdlg_campaign;
 	HWND			_hdlg_about;
 	HWND			_hwnd_status;
@@ -89,6 +65,8 @@ typedef struct {
 	HWND			_htb_wgen;
 	TBBUTTON		_tbBtns_campaign[TB_BTNS_COUNT_CAMPAIGN];
 	HWND			_htb_campaign;
+	TBBUTTON		_tbBtns_core[TB_BTNS_COUNT_CORE];
+	HWND			_htb_core;
 
 	HWND			_htb_subcfg;
 	HWND			_tt_ok;
@@ -114,6 +92,7 @@ typedef struct {
 
 	HIMAGELIST		_himl_24x24;
 	HIMAGELIST		_himl_24x24_dis;
+	HIMAGELIST		_himl_checkbox;
 	int				_iico_open;			// 24x24
 	int				_iico_reset;		// 24x24
 	int				_iico_save;			// 24x24
@@ -159,9 +138,9 @@ typedef struct {
 	HMENU			_hpopup_delete2;
 	HMENU			_hpopup_editor;
 	HMENU			_hpopup_candidate;
+	HMENU			_hpopup_mtype;
 
 	HANDLE			_hthdSync;
-	BOOL			_exit_sync_thread;
 
 	HTREEITEM		_htvroot;
 	
@@ -180,8 +159,6 @@ typedef struct {
 	hero_map		heros_;
 	char			heros_fname_[_MAX_PATH];
 	char			cfg_fname_[_MAX_PATH]; // processing file in cfg page
-
-	// int				list_header_height_;
 } dvrmgr_t;
 extern dvrmgr_t			gdmgr;
 
@@ -189,30 +166,17 @@ extern dvrmgr_t			gdmgr;
 
 #define SECNAME_SYSTEM			"system"
 #define KEYNAME_WWWROOT			"wwwroot"
-#define KEYNAME_STARTUPSTRATEGY	"StartupStrategy"
-
-#define SECNAME_SYNC			"sync"
-#define KEYNAME_AUTOCALENDAR	"AutoCalendar"
-
-#define SECNAME_WGEN			"wgen"
-#define KEYNAME_AUTOSAVE		"AutoSave"
-
-#define SECNAME_XCHG			"xchg"
-#define KEYNAME_AUTOXCHG		"AutoXChg"
-#define KEYNAME_AUTOEXIT		"AutoExit"
 
 #define ID_STATUS_TIMER			2
-
-#define SYNC_BYTES					CONSTANT_16K
-#define XCHG_CASH_LEN				CONSTANT_1M
-#define XCHG_CASH_ALMOST_FULL		CONSTANT_768K
-#define XCHG_CASH_ALMOST_EMPTY		CONSTANT_256K
 
 #define PAGE_NUM				256
 
 //
 // -------------------------------------------------------
 //
+const char* utf8_2_ansi(const char* str);
+bool isvalid_id(const std::string& id);
+
 HBITMAP LoadBitmap(char *fname, DWORD *biWidth, DWORD *biHeight);
 void transparent_24bmp(HBITMAP hBitmap, DWORD transparentclr);
 void title_select(do_action_t da);
@@ -233,15 +197,16 @@ void update_locale_dir();
 //
 // DlgCfgProc.cpp
 //
-void cfg_enter_ui(void);
-BOOL cfg_hide_ui(void);
+void visual_enter_ui(void);
+BOOL visual_hide_ui(void);
 
 //
-// DlgTbProc.cpp
+// DlgCoreProc.cpp
 //
-void tb_enable_ui(BOOL fEnable);
-void tb_enter_ui(void);
-BOOL tb_hide_ui(void);
+void core_enter_ui(void);
+BOOL core_hide_ui(void);
+
+bool core_can_execute_tack(int task);
 
 // dlgwgenproc.cpp
 void wgen_enter_ui(void);

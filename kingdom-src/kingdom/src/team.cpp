@@ -255,10 +255,7 @@ void team::team_info::write(config& cfg) const
 }
 
 team_::team_()
-	: not_recruit_()
-	, can_recruit_map_()
-	, can_build_()
-	, max_recruit_cost_(-1)
+	: can_build_()
 {
 }
 
@@ -301,21 +298,8 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	gold_ = gold;
 	info_.read(cfg);
 
-	// recruit
-	std::vector<std::string> vstr = utils::split(cfg["not_recruit"]);
-	const std::vector<const unit_type*>& can_recruit = unit_types.can_recruit();
-	for(std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++i) {
-		const unit_type* ut = unit_types.find(*i);
-		if (std::find(can_recruit.begin(), can_recruit.end(), ut) == can_recruit.end()) {
-			throw game::game_error("invalid not_recruit attribute in side(" + str_cast(info_.side) + ") tag");
-		}
-		not_recruit_.insert(ut);
-	}
-	if (not_recruit_.size() == can_recruit.size()) {
-		throw game::game_error("there will no recruitable unit type in side(" + str_cast(info_.side) + ") tag, check not_recruit attribute");
-	}
 	// build
-	vstr = utils::split(cfg["build"]);
+	std::vector<std::string> vstr = utils::split(cfg["build"]);
 	bool keep_existed = false, wall_existed = false;
 	for(std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++i) {
 		const unit_type* ut = unit_types.find(*i);
@@ -616,15 +600,6 @@ void team::write(config& cfg) const
 	info_.write(cfg);
 
 	std::stringstream can_str;
-	// recruit
-	for (std::set<const unit_type*>::const_iterator cr = not_recruit_.begin(); cr != not_recruit_.end(); ++cr) {
-		if (cr != not_recruit_.begin()) {
-			can_str << ",";
-		}
-		can_str << (*cr)->id();
-	}
-	cfg["not_recruit"] = can_str.str();
-
 	// build
 	can_str.str("");
 	for (std::set<const unit_type*>::const_iterator cr = can_build_.begin(); cr != can_build_.end(); ++cr) {
@@ -868,23 +843,6 @@ void team::write(uint8_t* mem) const
 	offset += fields->objectives_.size_;
 
 	std::stringstream can_str;
-	// recruit
-	for (std::set<const unit_type*>::const_iterator cr = not_recruit_.begin(); cr != not_recruit_.end(); ++cr) {
-		if (cr != not_recruit_.begin()) {
-			can_str << ",";
-		}
-		can_str << (*cr)->id();
-	}
-	if (!can_str.str().empty()) {
-		fields->not_recruit_.offset_ = offset; 
-		fields->not_recruit_.size_ = can_str.str().length();
-		memcpy(mem + offset, can_str.str().c_str(), fields->not_recruit_.size_);
-	} else {
-		fields->not_recruit_.offset_ = -1;
-		fields->not_recruit_.size_ = 0;
-	}
-	offset += fields->not_recruit_.size_;
-
 	// build
 	can_str.str("");
 	for (std::set<const unit_type*>::const_iterator cr = can_build_.begin(); cr != can_build_.end(); ++ cr) {
@@ -1157,19 +1115,10 @@ void team::read(const uint8_t* mem, const gamemap& map)
 	info_.description.assign((const char*)mem + fields->id_.offset_, fields->id_.size_);
 	// objectives
 	info_.objectives = std::string((const char*)mem + fields->objectives_.offset_, fields->objectives_.size_);
-	// recruit
-	not_recruit_.clear();
-	str.assign((const char*)mem + fields->not_recruit_.offset_, fields->not_recruit_.size_);
-	std::vector<std::string> v_size = utils::split(str);
-	for (std::vector<std::string>::const_iterator i = v_size.begin(); i != v_size.end(); ++i) {
-		const unit_type* ut = unit_types.find(*i);
-		VALIDATE(ut, "team::read, unknown not-recruit unit type: " + *i);
-		not_recruit_.insert(ut);
-	}
 	// build
 	can_build_.clear();
 	str.assign((const char*)mem + fields->build_.offset_, fields->build_.size_);
-	v_size = utils::split(str);
+	std::vector<std::string> v_size = utils::split(str);
 	bool keep_existed = false, wall_existed = false;
 	for (std::vector<std::string>::const_iterator i = v_size.begin(); i != v_size.end(); ++i) {
 		const unit_type* ut = unit_types.find(*i);
@@ -1344,7 +1293,10 @@ int team::side_upkeep() const
 
 void team::rpg_changed(bool independence)
 {
-	max_recruit_cost_ = -1;
+	for (std::vector<artifical*>::const_iterator it = holded_cities_.begin(); it != holded_cities_.end(); ++ it) {
+		artifical& city = **it;
+		city.reset_max_recruit_cost();
+	}
 
 	if (independence) {
 		size_t team_size = teams->size();
@@ -1354,83 +1306,6 @@ void team::rpg_changed(bool independence)
 		// calculate_diplomatisms("", team_size);
 		// diplomatisms_[team_size].ally_ = true;
 	}
-}
-
-int team::max_recruit_cost()
-{
-	if (max_recruit_cost_ == -1) {
-		const std::vector<const unit_type*>& recruits_v = recruits(-1);
-		for (std::vector<const unit_type*>::const_iterator it = recruits_v.begin(); it != recruits_v.end(); ++ it) {
-			const unit_type* ut = *it;
-			if (ut->cost() > max_recruit_cost_) {
-				max_recruit_cost_ = ut->cost();
-			}
-		}
-	}
-	return max_recruit_cost_;
-}
-
-void insert_level_unit_type(int level, const unit_type* from, std::vector<const unit_type*>& to)
-{
-	const std::vector<std::string>& advances_to = from->advances_to();
-	for (std::vector<std::string>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it) {
-		const unit_type* ut = unit_types.find(*it);
-		if (ut->level() < level) {
-			insert_level_unit_type(level, ut, to);
-		} else if (ut->level() == level) {
-			to.push_back(ut);
-		}
-	}
-}
-
-const std::vector<const unit_type*>& team::recruits(int level)
-{ 
-	if (level == -1) {
-		if (info_.controller == team_info::HUMAN) {
-			level = game_config::default_human_level;
-		} else {
-			level = game_config::default_ai_level;
-		}
-	}
-
-	std::map<int, std::vector<const unit_type*> >::iterator it = can_recruit_map_.find(level);
-	if (it != can_recruit_map_.end()) {
-		return it->second;
-	}
-
-	std::vector<const unit_type*> types;
-	const std::vector<const unit_type*>& can_recruit = unit_types.can_recruit();
-	for (std::vector<const unit_type*>::const_iterator it = can_recruit.begin(); it != can_recruit.end(); ++ it) {
-		const unit_type* ut = *it;
-		if (not_recruit_.find(ut) != not_recruit_.end()) {
-			continue;
-		}
-		if (ut->level() >= level) {
-			types.push_back(ut);
-		} else {
-			insert_level_unit_type(level, ut, types);
-		}
-	}
-	can_recruit_map_[level] = types;
-	it = can_recruit_map_.find(level);
-
-	return it->second;
-}
-
-void team::set_notrecruits(const std::set<std::string>& ids)
-{
-	not_recruit_.clear();
-	can_recruit_map_.clear();
-	for (std::set<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++ it) {
-		not_recruit_.insert(unit_types.find(*it));
-	}
-	ai::manager::raise_recruit_list_changed();
-}
-
-void team::add_notrecruit(const std::string &recruit)
-{
-	not_recruit_.insert(unit_types.find(recruit));
-	ai::manager::raise_recruit_list_changed();
 }
 
 void team::set_builds(const std::set<std::string>& builds)

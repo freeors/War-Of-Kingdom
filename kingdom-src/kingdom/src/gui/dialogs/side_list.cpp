@@ -195,9 +195,9 @@ void tside_list::fill_table(int catalog)
 {
 	const team& viewing_team = teams_[gui_.viewing_team()];
 
-	std::map<std::string, size_t> art_map;
-	art_map["market"] = 0;
-	art_map["tower"] = 0;
+	std::map<int, size_t> art_map;
+	art_map[hero::number_market] = 0;
+	art_map[hero::number_tower] = 0;
 	
 	for (size_t n = 0; n != teams_.size(); ++n) {
 		if (teams_[n].is_empty() || teams_[n].hidden()) {
@@ -349,7 +349,7 @@ void tside_list::fill_table(int catalog)
 		} else if (catalog == ARTIFICAL_PAGE) {
 
 			const std::vector<artifical*>& holded_cities = teams_[n].holded_cities();
-			for (std::map<std::string, size_t>::iterator itor = art_map.begin(); itor != art_map.end(); ++ itor) {
+			for (std::map<int, size_t>::iterator itor = art_map.begin(); itor != art_map.end(); ++ itor) {
 				itor->second = 0;
 			}
 			for (std::vector<artifical*>::const_iterator itor = holded_cities.begin(); itor != holded_cities.end(); ++ itor) {
@@ -357,15 +357,22 @@ void tside_list::fill_table(int catalog)
 				std::vector<artifical*>& arts = city->field_arts();
 				for (std::vector<artifical*>::const_iterator itor2 = arts.begin(); itor2 != arts.end(); ++ itor2) {
 					artifical* art = *itor2;
-					art_map[art->type_id()] = art_map[art->type_id()] + 1;
+					int master = art->type()->master();
+					if (art_map.find(master) != art_map.end()) {
+						art_map[master] = art_map[master] + 1;
+					}
 				}
 			}
 
-			for (std::map<std::string, size_t>::const_iterator itor = art_map.begin(); itor != art_map.end(); ++ itor) {
+			for (std::map<int, size_t>::const_iterator itor = art_map.begin(); itor != art_map.end(); ++ itor) {
 				str.str("");
 				str << itor->second;
 				table_item["label"] = str.str();
-				table_item_item.insert(std::make_pair(itor->first, table_item));
+				if (itor->first == hero::number_market) {
+					table_item_item.insert(std::make_pair("market", table_item));
+				} else {
+					table_item_item.insert(std::make_pair("tower", table_item));
+				}
 			}
 
 		} else if (catalog == PLAN_PAGE) {

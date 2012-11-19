@@ -7,7 +7,6 @@
 
 #include "resource.h"
 #include "struct.h"
-// #include "param_def.h"
 
 #include "xfunc.h"
 #include "win32x.h"
@@ -211,17 +210,19 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 				wgen_enter_ui();
 			}
 		} else if (!_stricmp(gdmgr._menu_text, "tb.dat")) {
-			if (gdmgr._da != da_tb) {
-				title_select(da_tb);
+			editor_config::type = BIN_BUILDINGRULE;
+			if (gdmgr._da != da_visual) {
+				title_select(da_visual);
 			} else {
-				tb_enter_ui();
+				visual_enter_ui();
 			}
 		} else if (!_stricmp(extname(gdmgr._menu_text), "bin")) {
 			if (wml_checksum_from_file(std::string(gdmgr._menu_text))) {
-				if (gdmgr._da != da_cfg) {
-					title_select(da_cfg);
+				editor_config::type = BIN_WML;
+				if (gdmgr._da != da_visual) {
+					title_select(da_visual);
 				} else {
-					cfg_enter_ui();
+					visual_enter_ui();
 				}
 			}
 		}
@@ -346,7 +347,7 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_CAMPAIGN, MF_BYCOMMAND | MF_GRAYED);
 		}
 		// explorer
-		if (_stricmp(extname(gdmgr._menu_text), "bin") && _stricmp(extname(gdmgr._menu_text), "dat")) {
+		if (!can_execute_tack(TASK_EXPLORER) || (_stricmp(extname(gdmgr._menu_text), "bin") && _stricmp(extname(gdmgr._menu_text), "dat"))) {
 			EnableMenuItem(gdmgr._hpopup_explorer, IDM_EXPLORER_WML, MF_BYCOMMAND | MF_GRAYED);
 		}
 		// delete
@@ -389,6 +390,7 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		//
 		// ÇÐ»»µ½±à¼­´°¿Ú
 		TreeView_GetItem1(lpNMHdr->hwndFrom, htvi, &tvi, TVIF_IMAGE | TVIF_PARAM | TVIF_TEXT, text);
+
 		if (!_stricmp(text, "hero.dat")) {
 			strcpy(gdmgr._menu_text, TreeView_FormPath(lpNMHdr->hwndFrom, htvi, dirname(game_config::path.c_str())));
 			gdmgr._menu_lparam = (uint32_t)tvi.lParam;
@@ -400,10 +402,11 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		} else if (!_stricmp(text, "tb.dat") || !_stricmp(text, "tb-1.dat")) {
 			strcpy(gdmgr._menu_text, TreeView_FormPath(lpNMHdr->hwndFrom, htvi, dirname(game_config::path.c_str())));
 			gdmgr._menu_lparam = (uint32_t)tvi.lParam;
-			if (gdmgr._da != da_tb) {
-				title_select(da_tb);
+			editor_config::type = BIN_BUILDINGRULE;
+			if (gdmgr._da != da_visual) {
+				title_select(da_visual);
 			} else {
-				tb_enter_ui();
+				visual_enter_ui();
 			}
 		} else if (!_stricmp(extname(text), "bin")) {
 			strcpy(gdmgr._menu_text, TreeView_FormPath(lpNMHdr->hwndFrom, htvi, dirname(game_config::path.c_str())));
@@ -419,11 +422,18 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 					} else {
 						campaign_enter_ui();
 					}
-				} else {
-					if (gdmgr._da != da_cfg) {
-						title_select(da_cfg);
+				} else if (strstr(gdmgr._menu_text, "data.bin")) {
+					if (gdmgr._da != da_core) {
+						title_select(da_core);
 					} else {
-						cfg_enter_ui();
+						// core_enter_ui();
+					}
+				} else {
+					editor_config::type = BIN_WML;
+					if (gdmgr._da != da_visual) {
+						title_select(da_visual);
+					} else {
+						visual_enter_ui();
 					}
 				}
 			}

@@ -23,12 +23,12 @@ extern BOOL CALLBACK DlgTitleProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM l
 extern BOOL CALLBACK DlgDDescProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgSyncProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgWGenProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK DlgTbProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+extern BOOL CALLBACK DlgCoreProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgCfgProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgCampaignProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgAboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
-#define CLASSNAME			"wokeditor"
+#define CLASSNAME			"slgmaker"
 
 static char			gtext[_MAX_PATH];
 dvrmgr_t			gdmgr;
@@ -38,15 +38,6 @@ int exe_type = exe_editor;
 editor editor_;
 
 // oem.ini相关
-#define OEM_INI						"oem.ini"
-#define SECNAME_PRODUCT				"product"
-#define SECNAME_CORP				"corporation"
-
-#define KEYNAME_CORP_NAME			"name"
-#define KEYNAME_CORP_HTTP			"http"
-#define KEYNAME_CORP_OEM_DESC		"oem_desc"
-#define KEYNAME_PRODUCT_NAME		"name"
-
 #define EDITOR_INI					"editor.ini"
 #define MARK_BMP					"mark.bmp"
 #define PC_BMP						"pc.bmp"
@@ -59,7 +50,7 @@ editor editor_;
 namespace editor_config
 {
 	config data_cfg;
-	int sync_why_startup = WHY_NORMAL;
+	int type = BIN_WML;
 	std::string campaign_id;
 
 void move_subcfg_right_position(HWND hdlgP, LPARAM lParam)
@@ -286,9 +277,41 @@ UINT ListView_GetCheckedCount(HWND hwnd)
 
 }
 
+const char* utf8_2_ansi(const char* str)
+{
+	static const int wlen = 4096;
+	static WCHAR wc[wlen];
+	static char ac[wlen * 2];
+
+	ac[0] = '\0';
+	if (!str || str[0] == '\0') {
+		return ac;
+	}
+	if (MultiByteToWideChar(CP_UTF8, 0, str, -1, wc, wlen) == 0) {
+		return ac;
+	}
+	WideCharToMultiByte(CP_ACP, 0, wc, -1, ac, wlen * 2, NULL, NULL);
+	return ac;
+}
+
+static bool is_id_char(char c) 
+{
+	return ((c == '_') || (c == '-') || (c == ' '));
+}
+
+bool isvalid_id(const std::string& id)
+{
+	std::string str = id;
+	const size_t alnum = std::count_if(str.begin(), str.end(), isalnum);
+	const size_t valid_char = std::count_if(str.begin(), str.end(), is_id_char);
+	if ((alnum + valid_char != str.size()) || valid_char == str.size() || str.empty() || !isalpha(str.at(0))) {
+		return false;
+	}
+	return str != "null";
+}
+
 void init_dvrmgr_struct(void) 
 {
-	int			retval;
 	char		text[_MAX_PATH];
 
 	// oemini文件全路径名
@@ -298,7 +321,6 @@ void init_dvrmgr_struct(void)
 	MakeDirectory(std::string(gdmgr._userdir));
 	
 	SHGetFolderPath(NULL, CSIDL_PROGRAM_FILES, NULL, 0, gdmgr._programfilesdir);
-	sprintf(gdmgr._fulloemini, "%s\\%s", gdmgr._curexedir, OEM_INI);
 	sprintf(gdmgr._fulldvrmgrini, "%s\\%s", gdmgr._userdir, EDITOR_INI);
 	sprintf(gdmgr._markbmp, "%s\\%s", gdmgr._curexedir, MARK_BMP);
 	sprintf(gdmgr._pcbmp, "%s\\%s", gdmgr._curexedir, PC_BMP);
@@ -309,24 +331,14 @@ void init_dvrmgr_struct(void)
 	// gdmgr._welcomebmp = (HBITMAP)LoadImage(gdmgr._hinst, formatstr("%s\\%s", gdmgr._curexedir, WELCOME_BMP), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_LOADTRANSPARENT);
 	gdmgr._welcomebmp = (HBITMAP)LoadImage(gdmgr._hinst, MAKEINTRESOURCE(IDB_WELCOME), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
-	gdmgr._dvrsrc = dsrc_unknown;
-	
-	gdmgr._has_osdlib_page = 0;	// osdlib页
-
 	InitializeCriticalSection(&gdmgr._cshbeat);
 
 	//
 	// oem.ini
 	//
 	// 得到公司名，默认空
-	retval = CfgQueryValueWin(gdmgr._fulloemini, SECNAME_CORP, KEYNAME_CORP_NAME, gdmgr._corp_name);
-	if (retval) {
-		strcpy(gdmgr._corp_name, "Share Software (GPL)");
-	}
-	retval = CfgQueryValueWin(gdmgr._fulloemini, SECNAME_CORP, KEYNAME_CORP_HTTP, gdmgr._corp_http);
-	if (retval) {
-		strcpy(gdmgr._corp_http, "http://www.freeors.com");
-	}
+	strcpy(gdmgr._corp_name, "Share Software (GPL)");
+	strcpy(gdmgr._corp_http, "http://www.freeors.com");
 
 	//
 	// system
@@ -343,58 +355,6 @@ void init_dvrmgr_struct(void)
 	gdmgr.heros_.set_path(game_config::path);
 	set_preferences_dir("kingdom");
 
-	if (CfgQueryValueWin(gdmgr._fulldvrmgrini, SECNAME_SYSTEM, KEYNAME_STARTUPSTRATEGY, text)) {
-		gdmgr._appointed_dvrsrc = dsrc_auto;
-		CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_SYSTEM, KEYNAME_STARTUPSTRATEGY, formatstr("%u", dsrc_auto));
-	} else {
-		sscanf(text, "%u", &gdmgr._appointed_dvrsrc);
-	}
-
-	// 
-	// sync
-	//
-	if (CfgQueryValueWin(gdmgr._fulldvrmgrini, SECNAME_SYNC, KEYNAME_AUTOCALENDAR, text)) {
-		gdmgr._autocalendar = TRUE;
-		CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_SYNC, KEYNAME_AUTOCALENDAR, "TRUE");
-	} else if (!strcmp(text, "TRUE")) {
-		gdmgr._autocalendar = TRUE;
-	} else {
-		gdmgr._autocalendar = FALSE;
-	}
-
-
-	//
-	// wgen
-	//
-	if (CfgQueryValueWin(gdmgr._fulldvrmgrini, SECNAME_WGEN, KEYNAME_AUTOSAVE, text)) {
-		gdmgr._autosave = TRUE;
-		CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_WGEN, KEYNAME_AUTOSAVE, "TRUE");
-	} else if (!strcmp(text, "TRUE")) {
-		gdmgr._autosave = TRUE;
-	} else {
-		gdmgr._autosave = FALSE;
-	}
-
-	// 
-	// xchg
-	//
-	if (CfgQueryValueWin(gdmgr._fulldvrmgrini, SECNAME_XCHG, KEYNAME_AUTOXCHG, text)) {
-		gdmgr._autoxchg = FALSE;
-		CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_XCHG, KEYNAME_AUTOXCHG, "FALSE");
-	} else if (!strcmp(text, "TRUE")) {
-		gdmgr._autoxchg = TRUE;
-	} else {
-		gdmgr._autoxchg = FALSE;
-	}
-	if (CfgQueryValueWin(gdmgr._fulldvrmgrini, SECNAME_XCHG, KEYNAME_AUTOEXIT, text)) {
-		gdmgr._autoexit = FALSE;
-		CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_XCHG, KEYNAME_AUTOEXIT, "FALSE");
-	} else if (!strcmp(text, "TRUE")) {
-		gdmgr._autoexit = TRUE;
-	} else {
-		gdmgr._autoexit = FALSE;
-	}
-	
 	// 列表视图中的图标
 	HICON                           hicon;
 
@@ -522,6 +482,16 @@ void init_dvrmgr_struct(void)
 	hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_BACKUP_DIS));
 	ImageList_AddIcon(gdmgr._himl_24x24_dis, hicon);
 
+	// check/uncheck
+	gdmgr._himl_checkbox = ImageList_Create(15, 15, FALSE, 2, 0);
+	ImageList_SetBkColor(gdmgr._himl_checkbox, RGB(255, 255, 255));
+
+    hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_UNCHECK));
+    ImageList_AddIcon(gdmgr._himl_checkbox, hicon);
+
+	hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_CHECK));
+    ImageList_AddIcon(gdmgr._himl_checkbox, hicon);
+
 	hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_OK));
 	gdmgr._iico_ok = ImageList_AddIcon(gdmgr._himl_24x24, hicon);
 
@@ -639,12 +609,11 @@ void init_dvrmgr_struct(void)
 	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_ADD, "添加...");
 	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_EDIT, "编辑...");
 	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_DELETE, "删除");
-/*
-	// OSD项中的弹出式菜单
-	gdmgr._hpopup_candidate = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOSERVICE, "到在职");
-	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOWANDER, "到在野");
-*/	
+
+	// core会话时, utype控件上的弹出式菜单
+	gdmgr._hpopup_mtype = CreatePopupMenu();
+	AppendMenu(gdmgr._hpopup_mtype, MF_STRING, IDM_RESET, "全部恢复到默认");
+
 	return;
 }
 
@@ -654,24 +623,7 @@ void SaveCfgToIni(void)
 	// system
 	//
 	CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_SYSTEM, KEYNAME_WWWROOT, game_config::path.c_str());
-	CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_SYSTEM, KEYNAME_STARTUPSTRATEGY, formatstr("%u", gdmgr._appointed_dvrsrc));
 	
-	//
-	// sync
-	//
-	CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_SYNC, KEYNAME_AUTOCALENDAR, gdmgr._autocalendar? "TRUE": "FALSE");
-
-	//
-	// wgen
-	//
-	CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_WGEN, KEYNAME_AUTOSAVE, gdmgr._autosave? "TRUE": "FALSE");
-
-	//
-	// xchg
-	//
-	CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_XCHG, KEYNAME_AUTOXCHG, gdmgr._autoxchg? "TRUE": "FALSE");
-	CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_XCHG, KEYNAME_AUTOEXIT, gdmgr._autoexit? "TRUE": "FALSE");
-
 	return;
 }
 
@@ -695,6 +647,9 @@ void uninit_dvrmgr_struct(void)
 	}
 	if (gdmgr._himl_24x24_dis) {
 		ImageList_Destroy(gdmgr._himl_24x24_dis);
+	}
+	if (gdmgr._himl_checkbox) {
+		ImageList_Destroy(gdmgr._himl_checkbox);
 	}
 	if (gdmgr._himl_80x80) {
 		ImageList_Destroy(gdmgr._himl_80x80);
@@ -758,6 +713,9 @@ void uninit_dvrmgr_struct(void)
 	}
 	if (gdmgr._hpopup_candidate) {
 		DestroyMenu(gdmgr._hpopup_candidate);
+	}
+	if (gdmgr._hpopup_mtype) {
+		DestroyMenu(gdmgr._hpopup_mtype);
 	}
 	if (gdmgr._hthdSync) {
 		// 2、曾经运行过任务，现在已执行完了任务
@@ -826,17 +784,10 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	GetClientRect(hwndP, &rcMain);
 
 	// 设备浏览器窗口
-	if (gdmgr._dvrsrc != dsrc_unknown) {
-		gdmgr._hdlg_ddesc = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_DDESC), hwndP, DlgDDescProc, NULL);
-		GetClientRect(gdmgr._hdlg_ddesc, &rcDDesc);
-		MoveWindow(gdmgr._hdlg_ddesc, 0, 0, rcDDesc.right, rcMain.bottom, FALSE);
-		ShowWindow(gdmgr._hdlg_ddesc, SW_RESTORE);
-	} else {
-		gdmgr._hdlg_ddesc = NULL;
-		rcDDesc.left = rcDDesc.top = 0;
-		rcDDesc.right = 5;
-		rcDDesc.bottom = 0;
-	}
+	gdmgr._hdlg_ddesc = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_DDESC), hwndP, DlgDDescProc, NULL);
+	GetClientRect(gdmgr._hdlg_ddesc, &rcDDesc);
+	MoveWindow(gdmgr._hdlg_ddesc, 0, 0, rcDDesc.right, rcMain.bottom, FALSE);
+	ShowWindow(gdmgr._hdlg_ddesc, SW_RESTORE);
 
 	// 标题栏窗口
 	gdmgr._hdlg_title = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_TITLE), hwndP, DlgTitleProc, NULL);
@@ -854,15 +805,15 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	MoveWindow(gdmgr._hdlg_wgen, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
 	ShowWindow(gdmgr._hdlg_wgen, SW_HIDE);
 
-	// 会话窗口: IDD_TB
-	gdmgr._hdlg_tb = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_TB), hwndP, DlgTbProc, NULL);
-	MoveWindow(gdmgr._hdlg_tb, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
-	ShowWindow(gdmgr._hdlg_tb, SW_HIDE);
+	// 会话窗口: IDD_CORE
+	gdmgr._hdlg_core = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_CORE), hwndP, DlgCoreProc, NULL);
+	MoveWindow(gdmgr._hdlg_core, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
+	ShowWindow(gdmgr._hdlg_core, SW_HIDE);
 
-	// 会话窗口: IDD_CFG
-	gdmgr._hdlg_cfg = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_CFG), hwndP, DlgCfgProc, NULL);
-	MoveWindow(gdmgr._hdlg_cfg, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
-	ShowWindow(gdmgr._hdlg_cfg, SW_HIDE);
+	// 会话窗口: IDD_VISUAL
+	gdmgr._hdlg_visual = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_VISUAL), hwndP, DlgCfgProc, NULL);
+	MoveWindow(gdmgr._hdlg_visual, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
+	ShowWindow(gdmgr._hdlg_visual, SW_HIDE);
 
 	// 会话窗口: IDD_CAMPAIGN
 	gdmgr._hdlg_campaign = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_CAMPAIGN), hwndP, DlgCampaignProc, NULL);
@@ -947,25 +898,25 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	normal_rc[rcidx_sync_subarea] = rc;
 
 	//
-	// IDD_TB
+	// IDD_CORE
 	//
-	GetWindowRect(gdmgr._hdlg_tb, &rc);
-	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_tb), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
+	GetWindowRect(gdmgr._hdlg_core, &rc);
+	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_core), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
 	normal_rc[rcidx_dlg_tb] = rc;
-	// IDC_TV_TB_EXPLORER
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_tb, IDC_TV_TB_EXPLORER), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_tb, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
+	// IDC_TV_CORE_EXPLORER
+	GetWindowRect(GetDlgItem(gdmgr._hdlg_core, IDC_TV_CORE_EXPLORER), &rc);
+	MapWindowPoints(NULL, gdmgr._hdlg_core, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
 	normal_rc[rcidx_tb_explorer] = rc;
 
 	//
-	// IDD_CFG
+	// IDD_VISUAL
 	//
-	GetWindowRect(gdmgr._hdlg_cfg, &rc);
-	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_cfg), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
+	GetWindowRect(gdmgr._hdlg_visual, &rc);
+	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_visual), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
 	normal_rc[rcidx_dlg_cfg] = rc;
 	// IDC_TV_CFG_EXPLORER
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_cfg, IDC_TV_CFG_EXPLORER), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_cfg, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
+	GetWindowRect(GetDlgItem(gdmgr._hdlg_visual, IDC_TV_CFG_EXPLORER), &rc);
+	MapWindowPoints(NULL, gdmgr._hdlg_visual, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
 	normal_rc[rcidx_cfg_explorer] = rc;
 
 	return TRUE;
@@ -1038,7 +989,7 @@ void calculate_max_rects(HWND hwndP)
 	horizontal_diff = rcMain.right - normal_rc[rcidx_dlg_tb].right;
 	vertical_diff = rcMain.bottom - normal_rc[rcidx_dlg_tb].bottom;
 	//
-	// IDD_TB
+	// IDD_CORE
 	//
 	max_rc[rcidx_dlg_tb] = normal_rc[rcidx_dlg_tb];
 	max_rc[rcidx_dlg_tb].right = rcMain.right;
@@ -1052,7 +1003,7 @@ void calculate_max_rects(HWND hwndP)
 	horizontal_diff = rcMain.right - normal_rc[rcidx_dlg_cfg].right;
 	vertical_diff = rcMain.bottom - normal_rc[rcidx_dlg_cfg].bottom;
 	//
-	// IDD_CFG
+	// IDD_VISUAL
 	//
 	max_rc[rcidx_dlg_cfg] = normal_rc[rcidx_dlg_cfg];
 	max_rc[rcidx_dlg_cfg].right = rcMain.right;
@@ -1112,7 +1063,7 @@ void DVR_OnLButtonDblClk(HWND hdlgP, BOOL fDobule, int x, int y, UINT wParam)
 	LONG			lStyle;
 	RECT			rc;
  
-	if ((gdmgr._da != da_cfg) || (!gdmgr._fFullScreen && !PointInVideoArea(x, y))) {
+	if ((gdmgr._da != da_visual) || (!gdmgr._fFullScreen && !PointInVideoArea(x, y))) {
 		return;
 	}
 
@@ -1189,11 +1140,11 @@ void DVR_OnSize(HWND hdlgP, UINT wParam, int cx, int cy)
 		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC), max_rc[rcidx_sync_sync].left, max_rc[rcidx_sync_sync].top, max_rc[rcidx_sync_sync].right - max_rc[rcidx_sync_sync].left, max_rc[rcidx_sync_sync].bottom - max_rc[rcidx_sync_sync].top, TRUE);
 		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_ET_SYNC_SUBAREA), max_rc[rcidx_sync_subarea].left, max_rc[rcidx_sync_subarea].top, max_rc[rcidx_sync_subarea].right - max_rc[rcidx_sync_subarea].left, max_rc[rcidx_sync_subarea].bottom - max_rc[rcidx_sync_subarea].top, TRUE);
 
-		MoveWindow(gdmgr._hdlg_tb, max_rc[rcidx_dlg_tb].left, max_rc[rcidx_dlg_tb].top, max_rc[rcidx_dlg_tb].right - max_rc[rcidx_dlg_tb].left, max_rc[rcidx_dlg_tb].bottom - max_rc[rcidx_dlg_tb].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_tb, IDC_TV_TB_EXPLORER), max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].top, max_rc[rcidx_tb_explorer].right - max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].bottom - max_rc[rcidx_tb_explorer].top, TRUE);
+		MoveWindow(gdmgr._hdlg_core, max_rc[rcidx_dlg_tb].left, max_rc[rcidx_dlg_tb].top, max_rc[rcidx_dlg_tb].right - max_rc[rcidx_dlg_tb].left, max_rc[rcidx_dlg_tb].bottom - max_rc[rcidx_dlg_tb].top, TRUE);
+		MoveWindow(GetDlgItem(gdmgr._hdlg_core, IDC_TV_CORE_EXPLORER), max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].top, max_rc[rcidx_tb_explorer].right - max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].bottom - max_rc[rcidx_tb_explorer].top, TRUE);
 
-		MoveWindow(gdmgr._hdlg_cfg, max_rc[rcidx_dlg_cfg].left, max_rc[rcidx_dlg_cfg].top, max_rc[rcidx_dlg_cfg].right - max_rc[rcidx_dlg_cfg].left, max_rc[rcidx_dlg_cfg].bottom - max_rc[rcidx_dlg_cfg].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_cfg, IDC_TV_CFG_EXPLORER), max_rc[rcidx_cfg_explorer].left, max_rc[rcidx_cfg_explorer].top, max_rc[rcidx_cfg_explorer].right - max_rc[rcidx_cfg_explorer].left, max_rc[rcidx_cfg_explorer].bottom - max_rc[rcidx_cfg_explorer].top, TRUE);
+		MoveWindow(gdmgr._hdlg_visual, max_rc[rcidx_dlg_cfg].left, max_rc[rcidx_dlg_cfg].top, max_rc[rcidx_dlg_cfg].right - max_rc[rcidx_dlg_cfg].left, max_rc[rcidx_dlg_cfg].bottom - max_rc[rcidx_dlg_cfg].top, TRUE);
+		MoveWindow(GetDlgItem(gdmgr._hdlg_visual, IDC_TV_CFG_EXPLORER), max_rc[rcidx_cfg_explorer].left, max_rc[rcidx_cfg_explorer].top, max_rc[rcidx_cfg_explorer].right - max_rc[rcidx_cfg_explorer].left, max_rc[rcidx_cfg_explorer].bottom - max_rc[rcidx_cfg_explorer].top, TRUE);
 	} else {
 		MoveWindow(gdmgr._hwnd_status, normal_rc[rcidx_hwnd_status].left, normal_rc[rcidx_hwnd_status].top, normal_rc[rcidx_hwnd_status].right - normal_rc[rcidx_hwnd_status].left, normal_rc[rcidx_hwnd_status].bottom - normal_rc[rcidx_hwnd_status].top, TRUE);
 
@@ -1208,11 +1159,11 @@ void DVR_OnSize(HWND hdlgP, UINT wParam, int cx, int cy)
 		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC), normal_rc[rcidx_sync_sync].left, normal_rc[rcidx_sync_sync].top, normal_rc[rcidx_sync_sync].right - normal_rc[rcidx_sync_sync].left, normal_rc[rcidx_sync_sync].bottom - normal_rc[rcidx_sync_sync].top, TRUE);
 		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_ET_SYNC_SUBAREA), normal_rc[rcidx_sync_subarea].left, normal_rc[rcidx_sync_subarea].top, normal_rc[rcidx_sync_subarea].right - normal_rc[rcidx_sync_subarea].left, normal_rc[rcidx_sync_subarea].bottom - normal_rc[rcidx_sync_subarea].top, TRUE);
 
-		MoveWindow(gdmgr._hdlg_tb, normal_rc[rcidx_dlg_tb].left, normal_rc[rcidx_dlg_tb].top, normal_rc[rcidx_dlg_tb].right - normal_rc[rcidx_dlg_tb].left, normal_rc[rcidx_dlg_tb].bottom - normal_rc[rcidx_dlg_tb].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_tb, IDC_TV_TB_EXPLORER), normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].top, normal_rc[rcidx_tb_explorer].right - normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].bottom - normal_rc[rcidx_tb_explorer].top, TRUE);
+		MoveWindow(gdmgr._hdlg_core, normal_rc[rcidx_dlg_tb].left, normal_rc[rcidx_dlg_tb].top, normal_rc[rcidx_dlg_tb].right - normal_rc[rcidx_dlg_tb].left, normal_rc[rcidx_dlg_tb].bottom - normal_rc[rcidx_dlg_tb].top, TRUE);
+		MoveWindow(GetDlgItem(gdmgr._hdlg_core, IDC_TV_CORE_EXPLORER), normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].top, normal_rc[rcidx_tb_explorer].right - normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].bottom - normal_rc[rcidx_tb_explorer].top, TRUE);
 
-		MoveWindow(gdmgr._hdlg_cfg, normal_rc[rcidx_dlg_cfg].left, normal_rc[rcidx_dlg_cfg].top, normal_rc[rcidx_dlg_cfg].right - normal_rc[rcidx_dlg_cfg].left, normal_rc[rcidx_dlg_cfg].bottom - normal_rc[rcidx_dlg_cfg].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_cfg, IDC_TV_CFG_EXPLORER), normal_rc[rcidx_cfg_explorer].left, normal_rc[rcidx_cfg_explorer].top, normal_rc[rcidx_cfg_explorer].right - normal_rc[rcidx_cfg_explorer].left, normal_rc[rcidx_cfg_explorer].bottom - normal_rc[rcidx_cfg_explorer].top, TRUE);
+		MoveWindow(gdmgr._hdlg_visual, normal_rc[rcidx_dlg_cfg].left, normal_rc[rcidx_dlg_cfg].top, normal_rc[rcidx_dlg_cfg].right - normal_rc[rcidx_dlg_cfg].left, normal_rc[rcidx_dlg_cfg].bottom - normal_rc[rcidx_dlg_cfg].top, TRUE);
+		MoveWindow(GetDlgItem(gdmgr._hdlg_visual, IDC_TV_CFG_EXPLORER), normal_rc[rcidx_cfg_explorer].left, normal_rc[rcidx_cfg_explorer].top, normal_rc[rcidx_cfg_explorer].right - normal_rc[rcidx_cfg_explorer].left, normal_rc[rcidx_cfg_explorer].bottom - normal_rc[rcidx_cfg_explorer].top, TRUE);
 	}
 
 	// GetClientRect(GetDlgItem(gdmgr._htb_wgen, IDC_BT_WGEN_REBOOT), &rect);
@@ -1314,12 +1265,10 @@ static void init_locale()
 	const std::string& intl_dir = get_intl_dir();
 	textdomain(PACKAGE "-hero");
 	bindtextdomain (PACKAGE "-hero", intl_dir.c_str());
-
-	// bindtextdomain (PACKAGE "-race", intl_dir.c_str());
 	// default codeset is ansi.
 	// in order to avoid UTF-8 to ansi, let gettext output ansi directly.
 	// so don't call bind_textdomain_codeset;
-	// bind_textdomain_codeset (PACKAGE "-hero", "UTF-8");
+	bind_textdomain_codeset (PACKAGE "-hero", "UTF-8");
 
 	SetEnvironmentVariable("LANG", "zh_CN");
 }
@@ -1389,10 +1338,7 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
     MSG						msg = {0};
     WNDCLASS				wc;
 	INITCOMMONCONTROLSEX	cc;
-/*
-	errno_t err = _putenv_s("LC_ALL", "en_GB");
-	BOOL fok = SetEnvironmentVariable("LC_ALL", "en_GB");
-*/
+
 	_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	char* ptr = (char*)malloc(41);
 
@@ -1402,59 +1348,58 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 		return 0;
 	}
 
-	memset(&gdmgr, 0, sizeof(dvrmgr_t));
-	gdmgr.heros_.realloc_hero_map(HEROS_MAX_HEROS);
+	try {
+		memset(&gdmgr, 0, sizeof(dvrmgr_t));
+		gdmgr.heros_.realloc_hero_map(HEROS_MAX_HEROS);
 
-	gdmgr._hinst = inst;
-	init_dvrmgr_struct();
-	
-	init_locale();
+		gdmgr._hinst = inst;
+		init_dvrmgr_struct();
+		
+		init_locale();
 
-	//
-	// Initialize the common controls
-	//
-	cc.dwSize = sizeof(INITCOMMONCONTROLSEX);
-	cc.dwICC = ICC_BAR_CLASSES | ICC_TAB_CLASSES | ICC_INTERNET_CLASSES | ICC_PROGRESS_CLASS | ICC_LISTVIEW_CLASSES;
-	InitCommonControlsEx(&cc);
+		//
+		// Initialize the common controls
+		//
+		cc.dwSize = sizeof(INITCOMMONCONTROLSEX);
+		cc.dwICC = ICC_BAR_CLASSES | ICC_TAB_CLASSES | ICC_INTERNET_CLASSES | ICC_PROGRESS_CLASS | ICC_LISTVIEW_CLASSES;
+		InitCommonControlsEx(&cc);
 
-	gdmgr._dvrsrc = dsrc_removabledisk;
+		// Register the window class
+		ZeroMemory(&wc, sizeof wc);
+		wc.hInstance		= inst;
+		wc.lpfnWndProc		= WndMainProc;
+		wc.lpszClassName	= CLASSNAME;
+		wc.lpszMenuName		= NULL; // MAKEINTRESOURCE(IDR_MENU);
+		// wc.hbrBackground	= (HBRUSH)GetStockObject(/*WHITE_BRUSH*/ /* LTGRAY_BRUSH */ NULL_BRUSH);
+		wc.hbrBackground    = GetSysColorBrush(COLOR_BTNFACE);
+		wc.hCursor			= LoadCursor(NULL, IDC_ARROW);
+		wc.hIcon			= gdmgr._markico; // LoadIcon(hInstC, MAKEINTRESOURCE(IDI_VISUALFMTFILE));
+		wc.style			= CS_DBLCLKS;	// 使窗口能接收鼠标双击事件
+		if (!RegisterClass(&wc)) {
+			posix_print_mb("RegisterClass Failed! Error=0x%x", GetLastError());
+			return 1;
+		}
 
-	// Register the window class
-    ZeroMemory(&wc, sizeof wc);
-    wc.hInstance		= inst;
-    wc.lpfnWndProc		= WndMainProc;
-    wc.lpszClassName	= CLASSNAME;
-    wc.lpszMenuName		= NULL; // MAKEINTRESOURCE(IDR_MENU);
-	// wc.hbrBackground	= (HBRUSH)GetStockObject(/*WHITE_BRUSH*/ /* LTGRAY_BRUSH */ NULL_BRUSH);
-	wc.hbrBackground    = GetSysColorBrush(COLOR_BTNFACE);
-    wc.hCursor			= LoadCursor(NULL, IDC_ARROW);
-    wc.hIcon			= gdmgr._markico; // LoadIcon(hInstC, MAKEINTRESOURCE(IDI_VISUALFMTFILE));
-	wc.style			= CS_DBLCLKS;	// 使窗口能接收鼠标双击事件
-    if(!RegisterClass(&wc)) {
-        posix_print_mb("RegisterClass Failed! Error=0x%x", GetLastError());
-        return 1;
-    }
+		left_top(&lefttop);
+		// Create the main window.  The WS_CLIPCHILDREN style is required.
+		gdmgr._hwnd_main = CreateWindow(CLASSNAME, PROG_NAME,
+							 WS_OVERLAPPEDWINDOW | WS_CAPTION | WS_CLIPCHILDREN,
+							 lefttop.x, lefttop.y, // CW_USEDEFAULT, CW_USEDEFAULT,
+							 MAIN_WIDTH, MAIN_HEIGHT, // 600,
+							 0, 0, inst, 0);
 
-	left_top(&lefttop);
-    // Create the main window.  The WS_CLIPCHILDREN style is required.
-    gdmgr._hwnd_main = CreateWindow(CLASSNAME, PROG_NAME,
-                         WS_OVERLAPPEDWINDOW | WS_CAPTION | WS_CLIPCHILDREN,
-                         lefttop.x, lefttop.y, // CW_USEDEFAULT, CW_USEDEFAULT,
-						 MAIN_WIDTH, MAIN_HEIGHT, // 600,
-                         0, 0, inst, 0);
+		SetWindowText(gdmgr._hwnd_main, formatstr("%s(%s)", PROG_NAME, __DATE__));
+		ShowWindow(gdmgr._hwnd_main, nCmdShow);
 
-	SetWindowText(gdmgr._hwnd_main, formatstr("%s(%s)", PROG_NAME, __DATE__));
-	ShowWindow(gdmgr._hwnd_main, nCmdShow);
-
-    if(gdmgr._hwnd_main) {
-        // Main message loop
-        while(GetMessage(&msg, NULL, 0, 0)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    } else {
-        posix_print_mb("Failed to create the main window! Error=0x%x", GetLastError());
-    }
+		// Main message loop
+		while(GetMessage(&msg, NULL, 0, 0)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	} catch (game::error& e) {
+		MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
+		return false;
+	} 
 
 	uninit_dvrmgr_struct();
 

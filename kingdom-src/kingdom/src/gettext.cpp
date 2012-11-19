@@ -39,9 +39,7 @@ const char* sgettext (const char *msgid)
 
 const char* dsgettext (const char * domainname, const char *msgid)
 {
-	if (exe_type != exe_editor) {
-		bind_textdomain_codeset(domainname, "UTF-8");
-	}
+	bind_textdomain_codeset(domainname, "UTF-8");
 	const char *msgval = dgettext (domainname, msgid);
 	if (msgval == msgid) {
 		msgval = std::strrchr (msgid, '^');
@@ -68,9 +66,7 @@ const char* sngettext (const char *singular, const char *plural, int n)
 
 const char* dsngettext (const char * domainname, const char *singular, const char *plural, int n)
 {
-	if (exe_type != exe_editor) {
-		bind_textdomain_codeset(domainname, "UTF-8");
-	}
+	bind_textdomain_codeset(domainname, "UTF-8");
 	const char *msgval = dngettext (domainname, singular, plural, n);
 	if (msgval == singular) {
 		msgval = std::strrchr (singular, '^');

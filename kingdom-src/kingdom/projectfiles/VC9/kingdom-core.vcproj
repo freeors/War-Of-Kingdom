@@ -176,11 +176,35 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\map.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\map_location.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\network.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\src\network_worker.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\race.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\random.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\terrain.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\terrain_translation.cpp"
 				>
 			</File>
 			<File

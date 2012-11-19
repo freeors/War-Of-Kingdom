@@ -10,12 +10,13 @@ typedef enum {
 	ma_edit				= 3,
 } mgr_action_t;
 
+enum {BIN_WML, BIN_BUILDINGRULE};
+
 namespace editor_config
 {
 	extern config data_cfg;
-	enum {WHY_NORMAL, WHY_CAMPAIGN};
-	extern int sync_why_startup;
 	extern std::string campaign_id;
+	extern int type;
 
 	extern void move_subcfg_right_position(HWND hdlgP, LPARAM lParam);
 	extern void create_subcfg_toolbar(HWND hwndP);

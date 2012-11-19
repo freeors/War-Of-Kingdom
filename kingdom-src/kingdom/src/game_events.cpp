@@ -675,18 +675,6 @@ WML_HANDLER_FUNCTION(teleport, event_info, cfg)
 	resources::screen->draw();
 }
 
-WML_HANDLER_FUNCTION(allow_recruit, /*event_info*/, cfg)
-{
-	int side_num = cfg["side"].to_int(1);
-	unsigned index = side_num - 1;
-	if (index >= resources::teams->size()) return;
-
-	foreach (const std::string &r, utils::split(cfg["type"])) {
-		(*resources::teams)[index].add_notrecruit(r);
-		preferences::encountered_units().insert(r);
-	}
-}
-
 WML_HANDLER_FUNCTION(volume, /*event_info*/, cfg)
 {
 
@@ -813,14 +801,6 @@ WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 			LOG_NG << "change side's user_team_name to '" << user_team_name << "'\n";
 			teams[team_index].change_team(teams[team_index].team_name(),
 					user_team_name);
-		}
-		// Modify recruit list (override)
-		if (!recruit_str.empty()) {
-			std::vector<std::string> recruit = utils::split(recruit_str);
-			if (recruit.size() == 1 && recruit.back() == "")
-				recruit.clear();
-
-			teams[team_index].set_notrecruits(std::set<std::string>(recruit.begin(), recruit.end()));
 		}
 		// Modify income
 		config::attribute_value income = cfg["income"];
@@ -1429,7 +1409,7 @@ WML_HANDLER_FUNCTION(join, /*event_info*/, cfg)
 	const config& parsed_cfg = cfg.get_parsed_config();
 
 	std::string master_hero = parsed_cfg["master_hero"].str();
-	std::string join_hero = parsed_cfg["join_hero"].str();
+	std::string join_hero = parsed_cfg["join"].str();
 
 	if (master_hero.empty() || join_hero.empty()) {
 		return;
@@ -1451,9 +1431,9 @@ WML_HANDLER_FUNCTION(join, /*event_info*/, cfg)
 	gui.invalidate(master_troop->get_location());
 	gui.draw();
 }
-
+/*
 // If we should spawn a new unit on the map somewhere
-WML_HANDLER_FUNCTION(recommend, /*event_info*/, cfg)
+WML_HANDLER_FUNCTION(recommend, event_info, cfg)
 {
 	std::vector<team>& teams = *resources::teams;
 	hero_map& heros = *resources::heros;
@@ -1676,7 +1656,7 @@ WML_HANDLER_FUNCTION(recommend, /*event_info*/, cfg)
 
 	show_hero_message(selected_hero, selected_city, message, game_events::INCIDENT_RECOMMENDONESELF);
 }
-
+*/
 WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 {
 	std::vector<team>& teams = *resources::teams;
@@ -1866,7 +1846,7 @@ WML_HANDLER_FUNCTION(ai, /*event_info*/, cfg)
 		}
 	}
 }
-
+/*
 WML_HANDLER_FUNCTION(ally, event_info, cfg)
 {
 	std::vector<team>& teams_ = *resources::teams;
@@ -1923,7 +1903,7 @@ WML_HANDLER_FUNCTION(ally, event_info, cfg)
 	}
 	game_events::show_hero_message(&heros[214], NULL, message, game_events::INCIDENT_ALLY);
 }
-
+*/
 // If we should recall units that match a certain description
 WML_HANDLER_FUNCTION(recall, /*event_info*/, cfg)
 {

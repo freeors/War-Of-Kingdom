@@ -39,6 +39,17 @@ public:
 	int exploiture_;
 };
 
+class tcharacter 
+{
+public:
+	tcharacter(int index, const std::string& id);
+
+	int index_;
+	std::string id_;
+	std::string name_;
+	std::string image_;
+};
+
 //and how much damage it does.
 class attack_type
 {
@@ -193,6 +204,8 @@ typedef std::map<std::string, const config> abilities_map;
 typedef std::map<std::string, const config> specials_map;
 typedef std::vector<std::string> navigation_types;
 
+#define NO_GUARD				-1
+
 class unit_type
 {
 public:
@@ -221,22 +234,17 @@ public:
 	void build_created(const movement_type_map &movement_types,
 		const race_map &races, const config::const_child_itors &traits);
 
-	/**
-	 * Adds an additional advancement path to a unit type.
-	 * This is used to implement the [advancefrom] tag.
-	 */
-	void add_advancement(const unit_type &advance_to,int experience);
-
 	/** Get the advancement tree
 	 *  Build a set of unit type's id of this unit type's advancement tree */
 	std::set<std::string> advancement_tree() const;
 
+	std::vector<std::string> advances_to(int character) const;
 	const std::vector<std::string>& advances_to() const { return advances_to_; }
 	const std::vector<std::string> advances_from() const;
 	const std::string& advancement() const { return advancement_; }
 
-	const unit_type& get_gender_unit_type(std::string gender) const;
 	const unit_type& get_gender_unit_type(unit_race::GENDER gender) const;
+
 	const unit_type& get_variation(const std::string& name) const;
 	/** Info on the type of unit that the unit reanimates as. */
 	const std::string& undead_variation() const { return undead_variation_; }
@@ -257,15 +265,19 @@ public:
 	int cost() const { return cost_; }
 	int gold_income() const { return gold_income_; }
 	int heal() const { return heal_; }
+	int turn_experience() const { return turn_experience_; }
 	const std::string& image() const { return image_; }
 	const std::string& halo() const { return halo_; }
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	const std::vector<unit_animation>& animations() const;
+#endif
 
 	const std::string& flag_rgb() const { return flag_rgb_; }
 
 	std::vector<attack_type> attacks() const;
 	const unit_movement_type& movement_type() const { return movementType_; }
+	const std::string& movementType_id() const { return movementType_id_; }
 
 	int experience_needed(bool with_acceleration=true) const;
 
@@ -298,13 +310,15 @@ public:
 	bool land_wall() const { return land_wall_; }
 	bool walk_wall() const { return walk_wall_; }
 	const std::string& match() const { return match_; }
-	bool attack_destroy() const { return attack_destroy_; }
 	int arms() const { return arms_; }
+	int character() const { return character_; }
 	int master() const { return master_; }
+	int guard() const { return guard_; }
 	bool packer() const { return packer_; }
 
 	bool has_zoc() const { return zoc_; }
 	bool cancel_zoc() const { return cancel_zoc_; }
+	bool leader() const { return leader_; }
 
 	bool has_ability_by_id(const std::string& ability) const;
 
@@ -338,6 +352,7 @@ private:
     int cost_;
 	int gold_income_;
 	int heal_;
+	int turn_experience_;
     std::string halo_;
     std::string undead_variation_;
 
@@ -346,9 +361,8 @@ private:
 
     unsigned int num_traits_;
 
-	unit_type* gender_types_[2];
-
-	typedef std::map<std::string,unit_type*> variations_map;
+	typedef std::map<std::string, unit_type*> variations_map;
+	variations_map gender_types_;
 	variations_map variations_;
 
 	const unit_race* race_;
@@ -361,6 +375,7 @@ private:
 
 	bool zoc_, hide_help_;
 	bool cancel_zoc_;
+	bool leader_;
 
 	std::vector<std::string> advances_to_;
 	std::string advancement_;
@@ -371,6 +386,7 @@ private:
 	ALIGNMENT alignment_;
 
 	unit_movement_type movementType_;
+	std::string movementType_id_;
 
 	std::vector<const config*> possibleTraits_;
 
@@ -378,7 +394,9 @@ private:
 	std::vector<attack_type> attacks_;
 
 	// animations are loaded only after the first animations() call
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	mutable std::vector<unit_animation> animations_;
+#endif
 
 	BUILD_STATUS build_status_;
 
@@ -390,9 +408,10 @@ private:
 	bool wall_;
 	bool land_wall_;
 	bool walk_wall_;
-	bool attack_destroy_;
 	int arms_;
+	int character_;
 	int master_;
+	int guard_;
 	bool packer_;
 };
 
@@ -404,6 +423,8 @@ public:
 	typedef std::map<std::string,unit_type> unit_type_map;
 
 	const unit_type_map &types() const { return types_; }
+	const std::map<std::string, const unit_type*> &artifical_types() const { return artifical_types_; }
+	const movement_type_map& movement_types() const { return movement_types_; }
 	const race_map &races() const { return races_; }
 	const traits_map& traits() const { return traits_; }
 	const modifications_map& modifications() const { return modifications_; }
@@ -412,8 +433,12 @@ public:
 	const abilities_map& abilities() const { return abilities_; }
 	const specials_map& specials() const { return specials_; }
 	const std::vector<std::string>& arms_ids() const { return arms_ids_; }
-	const std::vector<const unit_type*>& can_recruit() const { return can_recruit_; }
 	int arms_from_id(const std::string& id) const;
+	const std::vector<tcharacter>& characters() const { return characters_; }
+	const tcharacter& character(int index) const { return characters_[index]; }
+	const std::string& character_id(int character) const;
+	int character_from_id(const std::string& id) const;
+	const std::vector<const unit_type*>& can_recruit() const { return can_recruit_; }
 	const navigation_types& navigation_threshold() const { return navigation_types_; }
 	const std::string& id_from_navigation(int navigation) const;
 	bool navigation_can_advance(int prev, int next) const;
@@ -425,12 +450,14 @@ public:
 	const unit_type *find_wall() const { return wall_type_; }
 	const unit_type *find_keep() const { return keep_type_; }
 	const unit_type *find_market() const { return market_type_; }
+	const unit_type *find_tower() const { return tower_type_; }
 
 	void build_all(unit_type::BUILD_STATUS status);
 
 	/** Checks if the [hide_help] tag contains these IDs. */
 	bool hide_help(const std::string &type_id, const std::string &race_id) const;
 
+	void clear();
 private:
 	// unit_type_data(const unit_type_data &);
 
@@ -441,13 +468,12 @@ private:
 
 	const config &find_config(const std::string &key) const;
 	std::pair<unit_type_map::iterator, bool> insert(const std::pair<std::string, unit_type> &utype) { return types_.insert(utype); }
-	void clear();
-
+	
 	unit_type& build_unit_type(const unit_type_map::iterator &ut, unit_type::BUILD_STATUS status) const;
 	void add_advancefrom(const config& unit_cfg) const;
-	void add_advancement(unit_type& to_unit) const;
 
 	mutable unit_type_map types_;
+	std::map<std::string, const unit_type*> artifical_types_;
 	movement_type_map movement_types_;
 	race_map races_;
 	modifications_map modifications_;
@@ -457,12 +483,14 @@ private:
 	abilities_map abilities_;
 	specials_map specials_;
 	std::vector<std::string> arms_ids_;
+	std::vector<tcharacter> characters_;
 	std::vector<const unit_type*> can_recruit_;
 	navigation_types navigation_types_;
 
 	unit_type* wall_type_;
 	unit_type* keep_type_;
 	unit_type* market_type_;
+	unit_type* tower_type_;
 
 	/** True if [hide_help] contains a 'all=yes' at its root. */
 	bool hide_help_all_;

@@ -57,7 +57,6 @@ struct team_fields_t
 	unit_segment save_id_;
 	unit_segment current_player_;
 	unit_segment build_;
-	unit_segment not_recruit_;
 	unit_segment color_;
 	unit_segment flag_;
 	unit_segment flag_icon_;
@@ -135,10 +134,7 @@ public:
 	team_();
 
 protected:
-	std::set<const unit_type*> not_recruit_;
-	std::map<int, std::vector<const unit_type*> > can_recruit_map_;
 	std::set<const unit_type*> can_build_;
-	int max_recruit_cost_;
 };
 
 class team: public team_
@@ -282,13 +278,7 @@ public:
 
 	bool get_scroll_to_leader() const {return info_.scroll_to_leader;}
 
-	int max_recruit_cost();
-	const std::vector<const unit_type*>& recruits(int level);
 	void set_builds(const std::set<std::string>& builds);
-
-	void set_notrecruits(const std::set<std::string>& ids);
-	void add_notrecruit(const std::string &);
-	const std::set<const unit_type*>& not_recruits() const { return not_recruit_; }
 
 	const std::set<const unit_type*>& builds() const { return can_build_; }
 

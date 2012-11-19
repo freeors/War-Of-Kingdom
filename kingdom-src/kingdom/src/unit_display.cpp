@@ -28,6 +28,8 @@
 #include "artifical.hpp"
 #include "play_controller.hpp"
 
+#include "sound.hpp"
+
 #define LOG_DP LOG_STREAM(info, display)
 
 static void teleport_unit_between( const map_location& a, const map_location& b, unit& temp_unit, bool force_scroll)
@@ -272,7 +274,7 @@ void move_unit(const std::vector<map_location>& path, unit& u,
 	disp->invalidate(path.back());
 }
 
-void reset_helpers(const unit *attacker,const unit *defender);
+void reset_helpers(const unit *attacker, const unit *defender, bool stronger = false);
 
 void unit_draw_weapon(const map_location& loc, unit& attacker,
 		const attack_type* attack,const attack_type* secondary_attack, const map_location& defender_loc,unit* defender)
@@ -355,11 +357,63 @@ void unit_die(const map_location& loc, unit& loser,
 	}
 }
 
+class attack_temporary_state_lock
+{
+public:
+	attack_temporary_state_lock(unit& u, bool stronger)
+		: u_(u)
+		, stronger_(stronger)
+	{
+		u_.set_temporary_state(unit::BIT_ATTACKING, true);
+		if (stronger_) {
+			u_.set_temporary_state(unit::BIT_STRONGER, true);
+		}
+	}
+
+	~attack_temporary_state_lock() 
+	{
+		u_.set_temporary_state(unit::BIT_ATTACKING, false);
+		if (stronger_) {
+			u_.set_temporary_state(unit::BIT_STRONGER, false);
+		}
+	}
+
+private:
+	unit& u_;
+	bool stronger_;
+};
+
+class defend_temporary_state_lock
+{
+public:
+	defend_temporary_state_lock(const std::vector<unit*>& uvec)
+		: uvec_(uvec)
+	{
+		for (std::vector<unit*>::const_iterator it = uvec_.begin(); it != uvec_.end(); it ++) {
+			unit& u = **it;
+			u.set_temporary_state(unit::BIT_DEFENDING, true);
+			int ii = 0;
+		}
+		int ii = 0;
+	}
+
+	~defend_temporary_state_lock() 
+	{
+		for (std::vector<unit*>::const_iterator it = uvec_.begin(); it != uvec_.end(); it ++) {
+			unit& u = **it;
+			u.set_temporary_state(unit::BIT_DEFENDING, false);
+		}
+	}
+private:
+	const std::vector<unit*>& uvec_;
+};
+
 // 1. b_vec, damagc_vec and hit_text_vec must be same size.
 // 2. first element of b_vec/damagc_vec/hit_text_vec is "center" of defender.
 void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	const attack_type* attack, const attack_type* secondary_attack,
-	int swing, std::vector<std::string>& hit_text_vec, bool drain, std::string att_text)
+	int swing, std::vector<std::string>& hit_text_vec, bool drain, bool stronger, 
+	const std::string& att_text)
 {
 	const map_location& a = attacker.get_location();
 	std::vector<map_location> b_vec;
@@ -410,6 +464,12 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 	if (force_scroll || point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || has_eyeshot_in_defs) {
 		// clear global draw_desc flag
 		unit::draw_desc_ = false;
+		const attack_temporary_state_lock lock1(attacker, stronger);
+		const defend_temporary_state_lock lock2(def_ptr_vec);
+
+		if (stronger) {
+			sound::play_sound("stronger.wav");
+		}
 
 		disp->select_hex(map_location::null_location);
 
@@ -430,8 +490,12 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 
 		unit_animator animator;
 		unit_ability_list leaders;
+		unit_ability_list encouragers;
 		if (attack) {
 			leaders = attacker.get_abilities("leadership");
+			if (stronger) {
+				encouragers = attacker.get_abilities("encourage");
+			}
 		}
 		unit_ability_list helpers = def_ptr_vec[0]->get_abilities("resistance");
 		// helpers_to indicate which defender does resistance in helpers map to.
@@ -470,6 +534,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 			text_2 = text_2 + "\n" + att_text;
 		}
 
+		std::set<const unit*> animated_units;
 		std::vector<unit_animation::hit_type> hit_type_vec;
 		for (size_t i = 0; i < def_size; i ++) {
 			unit_animation::hit_type hit_type;
@@ -486,6 +551,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 			def_ptr_vec[0]->get_location(), damage_vec[0], true, false, text_2,
 			display::rgb(0, 255, 0), hit_type_vec[0], attack, secondary_attack,
 			swing);
+		animated_units.insert(&attacker);
 
 		// note that we take an anim from the real unit, we'll use it later
 		std::vector<const unit_animation*> defender_anim_vec;
@@ -496,29 +562,52 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 			animator.add_animation(def_ptr_vec[i], defender_anim, def_ptr_vec[i]->get_location(),
 				true, false, text_vec[i], display::rgb(255, 0, 0));
 			defender_anim_vec.push_back(defender_anim);
+
+			animated_units.insert(def_ptr_vec[i]);
 		}
 
 		for (std::vector<std::pair<const config *, unit *> >::iterator itor = leaders.cfgs.begin(); itor != leaders.cfgs.end(); ++itor) {
-			if (itor->second == &attacker) continue;
-			if (std::find(def_ptr_vec.begin(), def_ptr_vec.end(), itor->second) != def_ptr_vec.end()) continue;
+			if (animated_units.find(itor->second) != animated_units.end()) {
+				continue;
+			}
+			// if (itor->second == &attacker) continue;
+			// if (std::find(def_ptr_vec.begin(), def_ptr_vec.end(), itor->second) != def_ptr_vec.end()) continue;
 			unit* leader = itor->second;
 			leader->set_facing(leader->get_location().get_relative_dir(a));
 			animator.add_animation(leader, "leading", leader->get_location(),
 				a, damage_vec[0], true, false, "", 0,
 				hit_type_vec[0], attack, secondary_attack, swing);
+
+			animated_units.insert(leader);
 		}
 		size_t helper_cfgs_index = 0;
 		for (std::vector<std::pair<const config *, unit *> >::iterator itor = helpers.cfgs.begin(); itor != helpers.cfgs.end(); ++itor, helper_cfgs_index ++) {
-			if (itor->second == &attacker) continue;
-			if (std::find(def_ptr_vec.begin(), def_ptr_vec.end(), itor->second) != def_ptr_vec.end()) continue;
+			if (animated_units.find(itor->second) != animated_units.end()) {
+				continue;
+			}
+			// if (itor->second == &attacker) continue;
+			// if (std::find(def_ptr_vec.begin(), def_ptr_vec.end(), itor->second) != def_ptr_vec.end()) continue;
 			unit* helper = itor->second;
 			size_t mapped_defend_index = helpers_to[helper_cfgs_index];
 			helper->set_facing(helper->get_location().get_relative_dir(b_vec[mapped_defend_index]));
 			animator.add_animation(helper, "resistance", helper->get_location(),
 				def_ptr_vec[mapped_defend_index]->get_location(), damage_vec[mapped_defend_index], true, false, "", 0,
 				hit_type_vec[mapped_defend_index], attack, secondary_attack, swing);
+			animated_units.insert(helper);
 		}
-
+		for (std::vector<std::pair<const config *, unit *> >::iterator itor = encouragers.cfgs.begin(); itor != encouragers.cfgs.end(); ++itor) {
+			if (animated_units.find(itor->second) != animated_units.end()) {
+				continue;
+			}
+			// if (itor->second == &attacker) continue;
+			// if (std::find(def_ptr_vec.begin(), def_ptr_vec.end(), itor->second) != def_ptr_vec.end()) continue;
+			unit* encourager = itor->second;
+			encourager->set_facing(encourager->get_location().get_relative_dir(a));
+			animator.add_animation(encourager, "leading", encourager->get_location(),
+				a, damage_vec[0], true, false, "", 0,
+				hit_type_vec[0], attack, secondary_attack, swing);
+			animated_units.insert(encourager);
+		}
 
 		animator.start_animations();
 		// to attack animation, need update loc of dst. dst maybe distance one or more grid!
@@ -545,7 +634,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 		for (size_t i = 0; i < def_size; i ++) {
 			// by far, I cannot understand why call start_animation
 			// def_ptr_vec[i]->start_animation(animator.get_end_time(), defender_anim_vec[i], true);
-			reset_helpers(i == 0? &attacker: NULL, def_ptr_vec[i]);
+			reset_helpers(i == 0? &attacker: NULL, def_ptr_vec[i], stronger);
 			def_ptr_vec[i]->set_hitpoints(def_hitpoints_vec[i]);
 		}
 
@@ -555,15 +644,22 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 }
 
 // private helper function, set all helpers to default position
-void reset_helpers(const unit *attacker,const unit *defender)
+void reset_helpers(const unit *attacker,const unit *defender, bool stronger)
 {
 	game_display* disp = game_display::get_singleton();
 	unit_map& units = disp->get_units();
-	if(attacker) {
+	if (attacker) {
 		unit_ability_list leaders = attacker->get_abilities("leadership");
 		for (std::vector<std::pair<const config *, unit *> >::iterator itor = leaders.cfgs.begin(); itor != leaders.cfgs.end(); ++itor) {
 			unit* leader = itor->second;
 			leader->set_standing();
+		}
+		if (stronger) {
+			unit_ability_list encouragers = attacker->get_abilities("encourage");
+			for (std::vector<std::pair<const config *, unit *> >::iterator itor = encouragers.cfgs.begin(); itor != encouragers.cfgs.end(); ++itor) {
+				unit* encourager = itor->second;
+				encourager->set_standing();
+			}
 		}
 	}
 

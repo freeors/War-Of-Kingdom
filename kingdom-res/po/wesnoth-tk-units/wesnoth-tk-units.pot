@@ -313,6 +313,45 @@ msgid "redmage6 description"
 msgstr ""
 
 #
+# ballet
+#
+msgid "ballet1"
+msgstr ""
+
+msgid "ballet1 description"
+msgstr ""
+
+msgid "ballet2"
+msgstr ""
+
+msgid "ballet2 description"
+msgstr ""
+
+msgid "ballet3"
+msgstr ""
+
+msgid "ballet3 description"
+msgstr ""
+
+msgid "ballet4"
+msgstr ""
+
+msgid "ballet4 description"
+msgstr ""
+
+msgid "ballet5"
+msgstr ""
+
+msgid "ballet5 description"
+msgstr ""
+
+msgid "ballet6"
+msgstr ""
+
+msgid "ballet6 description"
+msgstr ""
+
+#
 # boat
 #
 msgid "boat0"
@@ -372,6 +411,12 @@ msgstr ""
 msgid "famous director description"
 msgstr ""
 
+msgid "white mage"
+msgstr ""
+
+msgid "white mage description"
+msgstr ""
+
 #
 # city
 #
@@ -387,38 +432,560 @@ msgstr ""
 msgid "city2 description"
 msgstr ""
 
+msgid "city3"
+msgstr ""
+
+msgid "city3 description"
+msgstr ""
+
 #
 # market
 #
-msgid "market"
+msgid "market1"
 msgstr ""
 
-msgid "market description"
+msgid "market1 description"
+msgstr ""
+
+msgid "market2"
+msgstr ""
+
+msgid "market2 description"
+msgstr ""
+
+msgid "market3"
+msgstr ""
+
+msgid "market3 description"
 msgstr ""
 
 #
 # tower
 #
-msgid "tower"
+msgid "tower1"
 msgstr ""
 
-msgid "tower description"
+msgid "tower1 description"
 msgstr ""
 
 #
 # wall
 #
-msgid "wall1"
+msgid "wall2"
 msgstr ""
 
-msgid "wall1 description"
+msgid "wall2 description"
 msgstr ""
 
 #
 # keep
 #
-msgid "keep1"
+msgid "keep2"
 msgstr ""
 
-msgid "keep1 description"
+msgid "keep2 description"
+msgstr ""
+
+#
+# character unit type: desert horseman
+#
+msgid "desert horseman4"
+msgstr ""
+
+msgid "desert horseman4 description"
+msgstr ""
+
+msgid "desert horseman5"
+msgstr ""
+
+msgid "desert horseman5 description"
+msgstr ""
+
+msgid "desert horseman6"
+msgstr ""
+
+msgid "desert horseman6 description"
+msgstr ""
+
+#
+# character unit type: horse crossbowman
+#
+msgid "horse crossbowman4"
+msgstr ""
+
+msgid "horse crossbowman4 description"
+msgstr ""
+
+msgid "horse crossbowman5"
+msgstr ""
+
+msgid "horse crossbowman5 description"
+msgstr ""
+
+msgid "horse crossbowman6"
+msgstr ""
+
+msgid "horse crossbowman6 description"
+msgstr ""
+
+#
+# character unit type: martial artist
+#
+
+msgid "martial artist2"
+msgstr ""
+
+msgid "martial artist2 description"
+msgstr ""
+
+msgid "martial artist3"
+msgstr ""
+
+msgid "martial artist3 description"
+msgstr ""
+
+msgid "martial artist4"
+msgstr ""
+
+msgid "martial artist4 description"
+msgstr ""
+
+msgid "martial artist5"
+msgstr ""
+
+msgid "martial artist5 description"
+msgstr ""
+
+msgid "martial artist6"
+msgstr ""
+
+msgid "martial artist6 description"
+msgstr ""
+
+#
+# character unit type: ZhuGe bowman
+#
+msgid "zhuge bowman4"
+msgstr ""
+
+msgid "zhuge bowman4 description"
+msgstr ""
+
+msgid "zhuge bowman5"
+msgstr ""
+
+msgid "zhuge bowman5 description"
+msgstr ""
+
+msgid "zhuge bowman6"
+msgstr ""
+
+msgid "zhuge bowman6 description"
+msgstr ""
+
+#
+# character unit type: Vanguard bowman
+#
+msgid "vanguard bowman4"
+msgstr ""
+
+msgid "vanguard bowman4 description"
+msgstr ""
+
+msgid "vanguard bowman5"
+msgstr ""
+
+msgid "vanguard bowman5 description"
+msgstr ""
+
+msgid "vanguard bowman6"
+msgstr ""
+
+msgid "vanguard bowman6 description"
+msgstr ""
+
+#
+# character unit type: Powerdashers
+#
+msgid "powerdashers4"
+msgstr ""
+
+msgid "powerdashers4 description"
+msgstr ""
+
+msgid "powerdashers5"
+msgstr ""
+
+msgid "powerdashers5 description"
+msgstr ""
+
+msgid "powerdashers6"
+msgstr ""
+
+msgid "powerdashers6 description"
+msgstr ""
+
+#
+# character unit type: QingZhou pikeman
+#
+msgid "qingzhou pikeman4"
+msgstr ""
+
+msgid "qingzhou pikeman4 description"
+msgstr ""
+
+msgid "qingzhou pikeman5"
+msgstr ""
+
+msgid "qingzhou pikeman5 description"
+msgstr ""
+
+msgid "qingzhou pikeman6"
+msgstr ""
+
+msgid "qingzhou pikeman6 description"
+msgstr ""
+
+#
+# character unit type: wizard
+#
+
+msgid "wizard3"
+msgstr ""
+
+msgid "wizard3 description"
+msgstr ""
+
+msgid "wizard4"
+msgstr ""
+
+msgid "wizard4 description"
+msgstr ""
+
+msgid "wizard5"
+msgstr ""
+
+msgid "wizard5 description"
+msgstr ""
+
+msgid "wizard6"
+msgstr ""
+
+msgid "wizard6 description"
+msgstr ""
+
+#
+# character unit type: adviser
+#
+
+msgid "adviser6"
+msgstr ""
+
+msgid "adviser6 description"
+msgstr ""
+
+#
+# character unit type: tiger horseman
+#
+msgid "tiger horseman4"
+msgstr ""
+
+msgid "tiger horseman4 description"
+msgstr ""
+
+msgid "tiger horseman5"
+msgstr ""
+
+msgid "tiger horseman5 description"
+msgstr ""
+
+msgid "tiger horseman6"
+msgstr ""
+
+msgid "tiger horseman6 description"
+msgstr ""
+
+#
+# character unit type: Rattan armour footman
+#
+
+msgid "rattan armour footman3"
+msgstr ""
+
+msgid "rattan armour footman3 description"
+msgstr ""
+
+msgid "rattan armour footman4"
+msgstr ""
+
+msgid "rattan armour footman4 description"
+msgstr ""
+
+msgid "rattan armour footman5"
+msgstr ""
+
+msgid "rattan armour footman5 description"
+msgstr ""
+
+msgid "rattan armour footman6"
+msgstr ""
+
+msgid "rattan armour footman6 description"
+msgstr ""
+
+#
+# character unit type: Rattan armour pikeman
+#
+
+msgid "rattan armour pikeman3"
+msgstr ""
+
+msgid "rattan armour pikeman3 description"
+msgstr ""
+
+msgid "rattan armour pikeman4"
+msgstr ""
+
+msgid "rattan armour pikeman4 description"
+msgstr ""
+
+msgid "rattan armour pikeman5"
+msgstr ""
+
+msgid "rattan armour pikeman5 description"
+msgstr ""
+
+msgid "rattan armour pikeman6"
+msgstr ""
+
+msgid "rattan armour pikeman6 description"
+msgstr ""
+
+#
+# character unit type: Rattan armour bowman
+#
+
+msgid "rattan armour bowman3"
+msgstr ""
+
+msgid "rattan armour bowman3 description"
+msgstr ""
+
+msgid "rattan armour bowman4"
+msgstr ""
+
+msgid "rattan armour bowman4 description"
+msgstr ""
+
+msgid "rattan armour bowman5"
+msgstr ""
+
+msgid "rattan armour bowman5 description"
+msgstr ""
+
+msgid "rattan armour bowman6"
+msgstr ""
+
+msgid "rattan armour bowman6 description"
+msgstr ""
+
+#
+# character unit type: Rattan armour horseman
+#
+
+msgid "rattan armour horseman3"
+msgstr ""
+
+msgid "rattan armour horseman3 description"
+msgstr ""
+
+msgid "rattan armour horseman4"
+msgstr ""
+
+msgid "rattan armour horseman4 description"
+msgstr ""
+
+msgid "rattan armour horseman5"
+msgstr ""
+
+msgid "rattan armour horseman5 description"
+msgstr ""
+
+msgid "rattan armour horseman6"
+msgstr ""
+
+msgid "rattan armour horseman6 description"
+msgstr ""
+
+#
+# character unit type: Rattan armour whitemage
+#
+
+msgid "rattan armour whitemage3"
+msgstr ""
+
+msgid "rattan armour whitemage3 description"
+msgstr ""
+
+msgid "rattan armour whitemage4"
+msgstr ""
+
+msgid "rattan armour whitemage4 description"
+msgstr ""
+
+msgid "rattan armour whitemage5"
+msgstr ""
+
+msgid "rattan armour whitemage5 description"
+msgstr ""
+
+msgid "rattan armour whitemage6"
+msgstr ""
+
+msgid "rattan armour whitemage6 description"
+msgstr ""
+
+#
+# character unit type:war elephant
+#
+
+msgid "war elephant1"
+msgstr ""
+
+msgid "war elephant1 description"
+msgstr ""
+
+msgid "war elephant2"
+msgstr ""
+
+msgid "war elephant2 description"
+msgstr ""
+
+msgid "war elephant3"
+msgstr ""
+
+msgid "war elephant3 description"
+msgstr ""
+
+msgid "war elephant4"
+msgstr ""
+
+msgid "war elephant4 description"
+msgstr ""
+
+msgid "war elephant5"
+msgstr ""
+
+msgid "war elephant5 description"
+msgstr ""
+
+msgid "war elephant6"
+msgstr ""
+
+msgid "war elephant6 description"
+msgstr ""
+
+#
+# character unit type: heroine
+#
+msgid "heroine4"
+msgstr ""
+
+msgid "heroine4 description"
+msgstr ""
+
+msgid "heroine5"
+msgstr ""
+
+msgid "heroine5 description"
+msgstr ""
+
+msgid "heroine6"
+msgstr ""
+
+msgid "heroine6 description"
+msgstr ""
+
+#
+# character unit type: Danyang assassin
+#
+
+msgid "danyang assassin3"
+msgstr ""
+
+msgid "danyang assassin3 description"
+msgstr ""
+
+msgid "danyang assassin4"
+msgstr ""
+
+msgid "danyang assassin4 description"
+msgstr ""
+
+msgid "danyang assassin5"
+msgstr ""
+
+msgid "danyang assassin5 description"
+msgstr ""
+
+msgid "danyang assassin6"
+msgstr ""
+
+msgid "danyang assassin6 description"
+msgstr ""
+
+#
+# character unit type: Bingzhou horseman
+#
+
+msgid "bingzhou horseman3"
+msgstr ""
+
+msgid "bingzhou horseman3 description"
+msgstr ""
+
+msgid "bingzhou horseman4"
+msgstr ""
+
+msgid "bingzhou horseman4 description"
+msgstr ""
+
+msgid "bingzhou horseman5"
+msgstr ""
+
+msgid "bingzhou horseman5 description"
+msgstr ""
+
+msgid "bingzhou horseman6"
+msgstr ""
+
+msgid "bingzhou horseman6 description"
+msgstr ""
+
+#
+# character unit type: pelisse footman
+#
+
+msgid "pelisse footman3"
+msgstr ""
+
+msgid "pelisse footman3 description"
+msgstr ""
+
+msgid "pelisse footman4"
+msgstr ""
+
+msgid "pelisse footman4 description"
+msgstr ""
+
+msgid "pelisse footman5"
+msgstr ""
+
+msgid "pelisse footman5 description"
+msgstr ""
+
+msgid "pelisse footman6"
+msgstr ""
+
+msgid "pelisse footman6 description"
 msgstr ""

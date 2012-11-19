@@ -102,7 +102,7 @@ void unit_sheath_weapon( const map_location& loc, unit* u=NULL, const attack_typ
  */
 void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	const attack_type* attack, const attack_type* secondary_attack,
-	int swing, std::vector<std::string>& hit_text_vec, bool drain, std::string att_text);
+	int swing, std::vector<std::string>& hit_text_vec, bool drain, bool stronger, const std::string& att_text);
 
 
 void unit_recruited(const map_location& loc,

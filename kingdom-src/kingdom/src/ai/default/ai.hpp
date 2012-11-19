@@ -113,6 +113,7 @@ private:
 	gamemap& map_;
 	unit_map& units_;
 	hero_map& heros_;
+	game_state& gamestate_;
 	std::vector<team>& teams_;
 	hero& leader_;
 	tod_manager& tod_manager_;
@@ -137,6 +138,8 @@ private:
 	std::map<unit*, std::pair<map_location, unit*>* > reside_cache_;
 	int* side_cache_int_;
 	size_t side_cache_size_;
+
+	std::set<map_location> capturing_villages_;
 };
 
 } //end of namespace ai

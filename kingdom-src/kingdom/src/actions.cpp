@@ -1020,66 +1020,65 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 		if (activity) {
 			die.increase_activity(activity, false);
 		}
-		if (!die.attack_destroy()) {
-			std::vector<hero*> back, roam;
-			hero* h = &die.master();
+
+		std::vector<hero*> back, roam;
+		hero* h = &die.master();
+		if (h != rpg::h && h->ambition_ <= hero_ambition_0) {
+			// <闲云野鹤>，所属部队被击溃后随机去一个城市
+			roam.push_back(h);
+		} else if (cobj) {
+			back.push_back(h);
+		}
+
+		if (die.second().valid()) {
+			h = &die.second();
 			if (h != rpg::h && h->ambition_ <= hero_ambition_0) {
-				// <闲云野鹤>，所属部队被击溃后随机去一个城市
 				roam.push_back(h);
 			} else if (cobj) {
 				back.push_back(h);
 			}
+		}
+		if (die.third().valid()) {
+			h = &die.third();
+			if (h != rpg::h && h->ambition_ <= hero_ambition_0) {
+				roam.push_back(h);
+			} else if (cobj) {
+				back.push_back(h);
+			}
+		}
 
-			if (die.second().valid()) {
-				h = &die.second();
-				if (h != rpg::h && h->ambition_ <= hero_ambition_0) {
-					roam.push_back(h);
-				} else if (cobj) {
-					back.push_back(h);
-				}
+		if (back.size()) {
+			// 武将回到所在城市
+			for (std::vector<hero*>::const_iterator itor = back.begin(); itor != back.end(); ++ itor) {
+				(*itor)->status_ = hero_status_backing;
+				cobj->finish_heros().push_back(*itor);
 			}
-			if (die.third().valid()) {
-				h = &die.third();
-				if (h != rpg::h && h->ambition_ <= hero_ambition_0) {
-					roam.push_back(h);
-				} else if (cobj) {
-					back.push_back(h);
-				}
+			resources::screen->invalidate(cobj->get_location());
+		}
+		if (roam.size()) {
+			// 武将随机流浪到一个城市
+			std::vector<artifical*> citys;
+			for (size_t i = 0; i < (*resources::teams).size(); i ++) {
+				std::vector<artifical*>& side_citys = (*resources::teams)[i].holded_cities();
+				citys.insert(citys.end(), side_citys.begin(), side_citys.end());
 			}
+			cobj = citys[get_random() % citys.size()];
+			for (std::vector<hero*>::iterator itor = roam.begin(); itor != roam.end(); ++ itor) {
+				hero* h = *itor;
+				if (cobj->side() == team::empty_side_) {
+					cobj->wander_into(*h, false);
+				} else {
+					cobj->move_into(*h);
+				}
 
-			if (back.size()) {
-				// 武将回到所在城市
-				for (std::vector<hero*>::const_iterator itor = back.begin(); itor != back.end(); ++ itor) {
-					(*itor)->status_ = hero_status_backing;
-					cobj->finish_heros().push_back(*itor);
-				}
-				resources::screen->invalidate(cobj->get_location());
+				game_events::show_hero_message(h, cobj, _("Let me join in. I will do my best to maintenance our honor."), game_events::INCIDENT_RECOMMENDONESELF);
 			}
-			if (roam.size()) {
-				// 武将随机流浪到一个城市
-				std::vector<artifical*> citys;
-				for (size_t i = 0; i < (*resources::teams).size(); i ++) {
-					std::vector<artifical*>& side_citys = (*resources::teams)[i].holded_cities();
-					citys.insert(citys.end(), side_citys.begin(), side_citys.end());
-				}
-				cobj = citys[get_random() % citys.size()];
-				for (std::vector<hero*>::iterator itor = roam.begin(); itor != roam.end(); ++ itor) {
-					hero* h = *itor;
-					if (cobj->side() == team::empty_side_) {
-						cobj->wander_into(*h, false);
-					} else {
-						cobj->move_into(*h);
-					}
-
-					game_events::show_hero_message(h, cobj, _("Let me join in. I will do my best to maintenance our honor."), game_events::INCIDENT_RECOMMENDONESELF);
-				}
-				resources::screen->invalidate(cobj->get_location());
-			}
+			resources::screen->invalidate(cobj->get_location());
 		}
 
 		units.erase(&die);
 
-	} else if (!die.attack_destroy() && die.can_reside()) { 
+	} else if (die.can_reside()) { 
 		// 被击败单位是可居住、不能催毁建筑物（城市）
 		if (a_side == HEROS_INVALID_SIDE) {
 			a_info->xp_ += 16; // 攻下城的部队xp=原得xp+16
@@ -1106,12 +1105,7 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 		}
 		// @todo FIXME: need normalize to call clear_status_caches()
 		// unit::clear_status_caches();
-	} else if (!die.attack_destroy()) {
-		// 被击败单位是不能催毁建筑物，但不能驻扎===>改变阵营
-		cobj->fallen(attacker->side());
-		// @todo FIXME: need normalize to call clear_status_caches()
-		// unit::clear_status_caches();
-	} else {
+	}  else {
 		// 被击败单位是可催毁建筑物
 		units.erase(&die);
 	}
@@ -1169,6 +1163,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 	unit_map& units_ = *resources::units;
 	std::vector<team>& teams_ = *resources::teams;
 	unit_info &attacker = *(attacker_turn ? &a_ : &d_), &defender = *(attacker_turn ? &d_ : &a_);
+	unit& attacker_u = attacker.get_unit();
 	unit* center_defender_ptr = &defender.get_unit();
 	const battle_context::unit_stats
 		*&attacker_stats = *(attacker_turn ? &a_stats_ : &d_stats_),
@@ -1193,10 +1188,36 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 			injured = true;
 		}
 	}
+	bool stronger = false;
+	if (attacker_turn && !attacker_u.get_state(unit::STATE_POISONED) && 
+		(!attacker_u.is_artifical() || attacker_u.is_city()) 
+		&&  (!center_defender_ptr->is_artifical() || center_defender_ptr->is_city())) {
 
+		int encourage_diff = attacker_u.skill_[hero_skill_encourage] - center_defender_ptr->skill_[hero_skill_encourage];
+		if (attacker_u.get_ability_bool("encourage")) {
+			encourage_diff += 2; // 20%
+		}
+		if (center_defender_ptr->get_ability_bool("encourage")) {
+			encourage_diff -= 2; // 20%
+		}
+		if (encourage_diff > 0) {
+			const int encourage_threshold = 8; // 80%
+			if (encourage_diff > encourage_threshold) {
+				encourage_diff = encourage_threshold;
+			}
+			int normalize_encourage = encourage_threshold * 5 / 4;
+			if ((ran_num % normalize_encourage) < encourage_diff) {
+				stronger = true;
+			}
+		}
+	}
+	
 	int damage = 0;
 	if (hits) {
 		damage = attacker.damage_;
+		if (stronger) {
+			damage = damage * 3 / 2;
+		}
 		resources::state_of_game->set_variable("damage_inflicted", str_cast<int>(damage));
 	}
 
@@ -1280,7 +1301,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 			errbuf_ << "SYNC: In attack " << a_.dump() << " vs " << d_.dump()
 				<< ": the data source says the "
 				<< (attacker_turn ? "defender" : "attacker")
-				<< (results_dies ? "perished" : "survived")
+				<< (results_dies ? " perished" : " survived")
 				<< " while in-game calculations show it "
 				<< (defender_dies ? "perished" : "survived")
 				<< " (over-riding game calculations with data source results)\n";
@@ -1402,7 +1423,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 
 	unit_display::unit_attack(attacker.get_unit(), def_ptr_vec, damage_vec,
 		attacker_stats->weapon, defender_stats->weapon,
-		abs_n, hit_text_vec, attacker_stats->drains, "");
+		abs_n, hit_text_vec, attacker_stats->drains, stronger, "");
 
 	bool center_defender_survived = true;
 	size_t index_in_locs = 0;
@@ -2123,18 +2144,21 @@ void calculate_healing(int side, bool update_display)
 				continue;
 
 			unit* curer = NULL;
+			unit* surveillanced = NULL;
 			std::vector<unit *> healers;
 
 			int healing = 0;
 			int rest_healing = 0;
 
-			std::string curing;
+			bool curing = false;
+			bool surveillancing = false;
 
 			unit_ability_list heal = u.get_abilities("heals");
 
+			const bool is_diseased = u.get_state(unit::STATE_POISONED) || u.get_state(unit::STATE_SLOWED) || u.get_state(unit::STATE_BROKEN);
 			const bool is_poisoned = u.get_state(unit::STATE_POISONED);
-			if (is_poisoned) {
-				// Remove the enemies' healers to determine if poison is slowed or cured
+			if (is_diseased) {
+				// Remove the enemies' healers to determine if cured is yes
 				for (std::vector<std::pair<const config *, unit *> >::iterator
 						h_it = heal.cfgs.begin(); h_it != heal.cfgs.end();) {
 
@@ -2149,22 +2173,15 @@ void calculate_healing(int side, bool update_display)
 				for (std::vector<std::pair<const config *, unit *> >::const_iterator
 						heal_it = heal.cfgs.begin(); heal_it != heal.cfgs.end(); ++heal_it) {
 
-					if((*heal_it->first)["poison"] == "cured") {
+					if ((*heal_it->first)["cured"].to_bool()) {
 						curer = heal_it->second;
-						// Full curing only occurs on the healer turn (may be changed)
-						if(curer->side() == side) {
-							curing = "cured";
-						} else if(curing != "cured") {
-							curing = "slowed";
-						}
-					} else if(curing != "cured" && (*heal_it->first)["poison"] == "slowed") {
-						curer = heal_it->second;
-						curing = "slowed";
+						// Full curing either occurs on the healer turn
+						curing = true;
 					}
 				}
 			}
 
-			// For heal amounts, only consider healers on side which is starting now.
+			// For heal amounts and surveillance, only consider healers on side which is starting now.
 			// Remove all healers not on this side.
 			for (std::vector<std::pair<const config *, unit *> >::iterator h_it =
 					heal.cfgs.begin(); h_it != heal.cfgs.end();) {
@@ -2176,68 +2193,60 @@ void calculate_healing(int side, bool update_display)
 					++h_it;
 				}
 			}
+			for (std::vector<std::pair<const config *, unit *> >::const_iterator
+					heal_it = heal.cfgs.begin(); heal_it != heal.cfgs.end(); ++heal_it) {
+
+				if ((*heal_it->first)["surveillanced"].to_bool()) {
+					surveillanced = heal_it->second;
+					// Full curing either occurs on the healer turn
+					surveillancing = true;
+				}
+			}
 
 			unit_abilities::effect heal_effect(heal,0,false);
 			healing = heal_effect.get_composite_value();
 
-			for(std::vector<unit_abilities::individual_effect>::const_iterator heal_loc = heal_effect.begin(); heal_loc != heal_effect.end(); ++heal_loc) {
+			for (std::vector<unit_abilities::individual_effect>::const_iterator heal_loc = heal_effect.begin(); heal_loc != heal_effect.end(); ++heal_loc) {
 				healers.push_back(heal_loc->u);
 			}
 
 			if (u.side() == side) {
-				unit_ability_list regen = u.get_abilities("regenerate");
-				unit_abilities::effect regen_effect(regen,0,false);
-				if(regen_effect.get_composite_value() > healing) {
-					healing = regen_effect.get_composite_value();
-					healers.clear();
-				}
-				if(regen.cfgs.size()) {
-					for (std::vector<std::pair<const config *, unit *> >::const_iterator regen_it = regen.cfgs.begin(); regen_it != regen.cfgs.end(); ++regen_it) {
-						if((*regen_it->first)["poison"] == "cured") {
-							curer = NULL;
-							curing = "cured";
-						} else if(curing != "cured" && (*regen_it->first)["poison"] == "slowed") {
-							curer = NULL;
-							curing = "slowed";
-						}
-					}
-				}
 				if (int h = resources::game_map->gives_healing(u.get_location())) {
 					if (h > healing) {
 						healing = h;
 						healers.clear();
 					}
 					/** @todo FIXME */
-					curing = "cured";
+					curing = true;
 					curer = NULL;
 				}
 				if (u.resting() || u.is_healthy()) {
 					rest_healing = game_config::rest_heal_amount;
 					healing += rest_healing;
 				}
+
+				// field troop, decrease loyalty
+				int keep_turns = u.keep_turns();
+				if (keep_turns > 0) {
+					u.set_keep_turns(-- keep_turns);
+				} else if (!surveillancing) {
+					u.increase_loyalty(game_config::field_troop_increase_loyalty);
+				}
 			}
-			if(is_poisoned) {
-				if(curing == "cured") {
-					u.set_state(unit::STATE_POISONED, false);
-					healing = rest_healing;
-					healers.clear();
-					if (curer)
-						healers.push_back(curer);
-				} else if(curing == "slowed") {
-					healing = rest_healing;
-					healers.clear();
-					if (curer)
-						healers.push_back(curer);
-				} else {
-					healers.clear();
-					healing = rest_healing;
-					if (u.side() == side) {
-						healing -= game_config::poison_amount;
-					}
+			if (is_diseased && curing) {
+				u.set_state(unit::STATE_POISONED, false);
+				u.set_state(unit::STATE_SLOWED, false);
+				u.set_state(unit::STATE_BROKEN, false);
+				if (curer) {
+					healers.push_back(curer);
+				}
+			} else if (is_poisoned) {
+				if (u.side() == side) {
+					healing -= game_config::poison_amount;
 				}
 			}
 
-			if (curing == "" && healing==0) {
+			if (!curing && healing == 0) {
 				continue;
 			}
 
@@ -2271,11 +2280,12 @@ void calculate_healing(int side, bool update_display)
 				u.take_hit(-healing);
 			resources::screen->invalidate_unit();
 
-			for (std::vector<unit*>::iterator itor = healers.begin(); itor != healers.end(); ++ itor) {
-				(*itor)->get_experience(2);
+			for (std::vector<unit*>::iterator it = healers.begin(); it != healers.end(); ++ it) {
+				unit& healer = **it;
+				healer.get_experience(2);
 				// advance_unit可能会使得itor指向的单位无效
 				// 此处如果升级，录像回放时会出问题。简单一句话说，录像回放时绝不能掉用dialogs::advance_unit，因为dialogs::advance_unit会调用add_choice，使得replay只读的变成写了！产生config_2_command的type=0错
-				// dialogs::advance_unit((*itor)->first, !(*resources::teams)[(*itor)->second.side()-1].is_human());
+				dialogs::advance_unit(healer.get_location(), !teams[healer.side() - 1].is_human(), true);
 			}
 		}
 	}
@@ -2617,7 +2627,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	//don't modify goto if we're have a spectator
 	//if it is present, then the caller code is responsible for modifying gotos
 	if (move_spectator==NULL) {
-		ui->set_goto(map_location());
+		// ui->set_goto(map_location());
 	}
 
 	size_t team_num = ui->side()-1;

@@ -1492,22 +1492,6 @@ static int impl_side_get(lua_State *L)
 	return_string_attrib("color", t.map_color_to());
 	return_cstring_attrib("controller", t.controller_string());
 
-	if (strcmp(m, "not_recruit") == 0) {
-		const std::set<const unit_type*>& not_recruits = t.not_recruits();
-		std::set<std::string> recruits;
-		for (std::set<const unit_type*>::const_iterator it = not_recruits.begin(); it != not_recruits.end(); ++ it) {
-			const unit_type* ut = *it;
-			recruits.insert(ut->id());
-		}
-		lua_createtable(L, recruits.size(), 0);
-		int i = 1;
-		foreach (const unit_type* r, not_recruits) {
-			lua_pushstring(L, r->id().c_str());
-			lua_rawseti(L, -2, i++);
-		}
-		return 1;
-	}
-
 	return_cfg_attrib("__cfg", t.write(cfg));
 	return 0;
 }
@@ -1534,18 +1518,6 @@ static int impl_side_set(lua_State *L)
 	modify_tstring_attrib("user_team_name", t.change_team(t.team_name(), value));
 	modify_string_attrib("team_name", t.change_team(value, t.user_team_name()));
 	modify_string_attrib("controller", t.change_controller(value));
-
-	if (strcmp(m, "not_recruit") == 0) {
-		t.set_notrecruits(std::set<std::string>());
-		if (!lua_istable(L, 3)) return 0;
-		for (int i = 1;; ++i) {
-			lua_rawgeti(L, 3, i);
-			if (lua_isnil(L, -1)) break;
-			t.add_notrecruit(lua_tostring(L, -1));
-			lua_pop(L, 1);
-		}
-		return 0;
-	}
 
 	return luaL_argerror(L, 2, "unknown modifiable property");
 }

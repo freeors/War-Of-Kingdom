@@ -704,10 +704,20 @@ void menu_handler::move(bool browse, int side_num, const map_location &last_hex)
 	resources::controller->refresh_city_buttons(*src_city);
 }
 
-void menu_handler::build(const std::string& type, mouse_handler& mousehandler, unit& builder)
+void menu_handler::build(const std::string& type1, mouse_handler& mousehandler, unit& builder)
 {
 	team& current_team = teams_[builder.side() - 1];
 	int cost_exponent = current_team.cost_exponent();
+	std::string type;
+	if (type1 == "market") {
+		type = unit_types.find_market()->id();
+	} else if (type1 == "keep") {
+		type = unit_types.find_keep()->id();
+	} else if (type1 == "wall") {
+		type = unit_types.find_wall()->id();
+	} else if (type1 == "tower") {
+		type = unit_types.find_tower()->id();
+	}
 	const unit_type* ut = unit_types.find(type);
 
 	if (ut->cost() * cost_exponent / 100 > current_team.gold()) {

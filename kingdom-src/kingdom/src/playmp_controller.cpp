@@ -107,6 +107,7 @@ void playmp_controller::play_side(const unsigned int team_index, bool save)
 
 
 			try{
+				play_ai_turn();
 				before_human_turn(save);
 				play_human_turn();
 				after_human_turn();

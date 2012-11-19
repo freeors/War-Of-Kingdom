@@ -149,7 +149,7 @@ void tod_manager::add_time_area(const config& cfg)
 	area.id = cfg["id"].str();
 	area.xsrc = cfg["x"].str();
 	area.ysrc = cfg["y"].str();
-	std::vector<map_location> const& locs = parse_location_range(area.xsrc, area.ysrc, true);
+	std::vector<map_location> const& locs = parse_location_range(resources::game_map, area.xsrc, area.ysrc, true);
 	std::copy(locs.begin(), locs.end(), std::inserter(area.hexes, area.hexes.end()));
 	time_of_day::parse_times(cfg, area.times);
 }

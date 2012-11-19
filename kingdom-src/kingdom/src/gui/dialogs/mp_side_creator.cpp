@@ -1180,8 +1180,12 @@ tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, co
 	if (cfg["not_recruit"].empty() && parent_->era_cfg_->has_attribute("not_recruit")) {
 		cfg_["not_recruit"] = parent_->era_cfg_->get("not_recruit")->str();
 	}
-	if (cfg["build"].empty() && parent_->era_cfg_->has_attribute("build")) {
-		cfg_["build"] = parent_->era_cfg_->get("build")->str();
+	if (cfg["build"].empty()) {
+		str.str("");
+		str << unit_types.find_wall()->id();
+		str << ", " << unit_types.find_market()->id();
+		str << ", " << unit_types.find_tower()->id();
+		cfg_["build"] = str.str();
 	}
 
 	update_ui();

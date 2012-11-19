@@ -462,6 +462,11 @@ void tcamp_armory::refresh_according_to_hero(twindow& window, const int curr)
 		toggle = find_widget<ttoggle_button>(&window, id, false, false);
 		toggle->set_value(false);
 		return;
+	} else if (u.type()->leader() && replaced_hero && replaced_hero->official_ == hero_official_leader) { 
+		sprintf(id, "candidate_hero%u", curr);
+		toggle = find_widget<ttoggle_button>(&window, id, false, false);
+		toggle->set_value(false);
+		return;
 	}
 
 	// replace!!
@@ -480,7 +485,7 @@ void tcamp_armory::refresh_according_to_hero(twindow& window, const int curr)
 		used_heros.push_back(candidate_heros_[curr]);
 	}
 	// sort
-	std::sort(used_heros.begin(), used_heros.end(), compare_leadership);
+	std::sort(used_heros.begin(), used_heros.end(), compare_recruit);
 
 	u.replace_captains(used_heros);
 

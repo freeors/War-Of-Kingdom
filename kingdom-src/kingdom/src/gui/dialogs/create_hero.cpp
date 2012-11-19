@@ -193,7 +193,7 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		temp->set_label(hero::adaptability_str2(h_->arms_[i]));
 	}
 	for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
-		if (i != 0 && i != 4 && i != 5) {
+		if (i != 0 && i != 3 && i != 4 && i != 5) {
 			continue;
 		}
 		str.str("");

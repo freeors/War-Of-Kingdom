@@ -228,6 +228,48 @@ msgstr ""
 msgid "treasure-49"
 msgstr ""
 
+msgid "character-0"
+msgstr ""
+
+msgid "character-1"
+msgstr ""
+
+msgid "character-2"
+msgstr ""
+
+msgid "character-3"
+msgstr ""
+
+msgid "character-4"
+msgstr ""
+
+msgid "character-5"
+msgstr ""
+
+msgid "character-6"
+msgstr ""
+
+msgid "character-7"
+msgstr ""
+
+msgid "character-8"
+msgstr ""
+
+msgid "character-9"
+msgstr ""
+
+msgid "character-10"
+msgstr ""
+
+msgid "character-11"
+msgstr ""
+
+msgid "character-12"
+msgstr ""
+
+msgid "character-13"
+msgstr ""
+
 msgid "feature-0"
 msgstr ""
 

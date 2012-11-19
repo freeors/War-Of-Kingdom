@@ -158,6 +158,8 @@ public:
 	void refresh_city_buttons(const artifical& city) const;
 
 	artifical* decide_ai_capital() const;
+	void recommend();
+	bool do_ally(bool alignment, int my_side, int to_ally_side, int emissary_number, int target_side, int strategy_index);
 
 	int human_players();
 	int first_human_team() const { return first_human_team_; }

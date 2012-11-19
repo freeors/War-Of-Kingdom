@@ -186,6 +186,9 @@ void tcity_list::fill_table(int catalog)
 
 			str.str("");
 			str << i->level();
+			if (i->character() != NO_CHARACTER) {
+				str << "(" << unit_types.character(i->character()).name_ << ")";
+			}
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("level", table_item));
 

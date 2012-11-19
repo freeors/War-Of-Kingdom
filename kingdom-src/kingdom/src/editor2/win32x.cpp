@@ -639,7 +639,7 @@ char* GetBrowseFilePath(HWND hdlgP)
 	}
 }
 
-char *GetBrowseFileName(const char *strInintialDir, char *strFilter, BOOL fFileMustExist)
+char* GetBrowseFileName(const char *strInintialDir, char *strFilter, BOOL fFileMustExist)
 {
 	static char		gname[_MAX_PATH];
     OPENFILENAME	ofn={0};
@@ -748,7 +748,7 @@ int CfgSetValueWin(char *szFileName, char* szSection, char* szKeyName, const cha
 	return dwRetVal? 0: -1;
 }
 
-BOOL MakeDirectory(std::string& dd)
+BOOL MakeDirectory(const std::string& dd)
 {
 	HANDLE fFile; // File Handle
 	WIN32_FIND_DATA fileinfo; // File Information Structure

@@ -46,10 +46,10 @@ void On_DlgTitleCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		title_select(da_wgen);
 		break;
 	case IDM_SYS_XCHG:
-		title_select(da_tb);
+		title_select(da_core);
 		break;
 	case IDM_SYS_PLAY:
-		title_select(da_cfg);
+		title_select(da_visual);
 		break;
 	case IDM_SYS_TBOX:
 		title_select(da_campaign);
@@ -152,11 +152,7 @@ HWND init_toolbar_sys(HINSTANCE hinst, HWND hdlgP)
 	idx ++;
 	gdmgr._tbBtns_sys[idx].iBitmap = MAKELONG(gdmgr._iico_title_play, 0);
 	gdmgr._tbBtns_sys[idx].idCommand = IDM_SYS_PLAY;
-	if (gdmgr._dvrsrc == dsrc_removabledisk) {
-		gdmgr._tbBtns_sys[idx].fsState = 0;
-	} else {
-		gdmgr._tbBtns_sys[idx].fsState = TBSTATE_ENABLED;
-	}
+	gdmgr._tbBtns_sys[idx].fsState = 0;
 	gdmgr._tbBtns_sys[idx].fsStyle = TBSTYLE_BUTTON;
 	gdmgr._tbBtns_sys[idx].dwData = 0L;
 	gdmgr._tbBtns_sys[idx].iString = 0;
@@ -203,10 +199,10 @@ void title_select(do_action_t da)
 		sync_hide_ui();
 	} else if (gdmgr._da == da_wgen) {
 		wgen_hide_ui();
-	} else if (gdmgr._da == da_tb) {
-		tb_hide_ui();
-	} else if (gdmgr._da == da_cfg) {
-		cfg_hide_ui();
+	} else if (gdmgr._da == da_core) {
+		core_hide_ui();
+	} else if (gdmgr._da == da_visual) {
+		visual_hide_ui();
 	} else if (gdmgr._da == da_campaign) {
 		if (!campaign_hide_ui()) {
 			return;
@@ -222,8 +218,8 @@ void title_select(do_action_t da)
 
 	ShowWindow(gdmgr._hdlg_sync, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_wgen, SW_HIDE);
-	ShowWindow(gdmgr._hdlg_tb, SW_HIDE);
-	ShowWindow(gdmgr._hdlg_cfg, SW_HIDE);
+	ShowWindow(gdmgr._hdlg_core, SW_HIDE);
+	ShowWindow(gdmgr._hdlg_visual, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_campaign, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_about, SW_HIDE);
 
@@ -240,15 +236,15 @@ void title_select(do_action_t da)
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_WGEN, 1);
 		wgen_enter_ui();
 
-	} else if (da == da_tb) {
-		ShowWindow(gdmgr._hdlg_tb, SW_RESTORE);
+	} else if (da == da_core) {
+		ShowWindow(gdmgr._hdlg_core, SW_RESTORE);
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_XCHG, 1);
-		tb_enter_ui();
+		core_enter_ui();
 
-	} else if (da == da_cfg) {
-		ShowWindow(gdmgr._hdlg_cfg, SW_RESTORE);
+	} else if (da == da_visual) {
+		ShowWindow(gdmgr._hdlg_visual, SW_RESTORE);
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_PLAY, 1);
-		cfg_enter_ui();
+		visual_enter_ui();
 
 	} else if (da == da_campaign) {
 		ShowWindow(gdmgr._hdlg_campaign, SW_RESTORE);
@@ -265,7 +261,11 @@ void title_select(do_action_t da)
 
 bool can_execute_tack(int task)
 {
-	if (gdmgr._da == da_campaign) {
+	if (gdmgr._da == da_core) {
+		if (!core_can_execute_tack(task)) {
+			return false;
+		}
+	} else if (gdmgr._da == da_campaign) {
 		if (!campaign_can_execute_tack(task)) {
 			return false;
 		}

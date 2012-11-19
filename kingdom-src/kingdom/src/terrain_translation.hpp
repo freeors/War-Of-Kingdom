@@ -120,6 +120,7 @@ namespace t_translation {
 
 	// On the map the user can use this type to make odd shaped maps look good.
 	extern const t_terrain OFF_MAP_USER;
+	extern const t_terrain FAKE_MAP_EDGE;
 
 	extern const t_terrain HUMAN_CASTLE;
 	extern const t_terrain HUMAN_KEEP;

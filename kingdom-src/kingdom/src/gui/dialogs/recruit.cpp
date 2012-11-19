@@ -115,8 +115,12 @@ void trecruit::type_selected(twindow& window)
 	
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 	const unit_type* t = unit_types_[type_index_];
-	if (gold >= t->cost() * cost_exponent_ / 100) {
-		ok->set_active(checked_heros_.empty()? false: true);
+	if (!checked_heros_.empty() && gold >= t->cost() * cost_exponent_ / 100) {
+		if (!t->leader() || master()->official_ == hero_official_leader) {
+			ok->set_active(true);
+		} else {
+			ok->set_active(false);
+		}
 	} else {
 		ok->set_active(false);
 	}
@@ -152,8 +156,12 @@ void trecruit::hero_toggled(twidget* widget)
 	twindow* window = toggle->get_window();
 	tbutton* ok = find_widget<tbutton>(window, "ok", false, true);
 	const unit_type* t = unit_types_[type_index_];
-	if (current_team_.gold() >= t->cost() * cost_exponent_ / 100) {
-		ok->set_active(checked_heros_.empty()? false: true);
+	if (!checked_heros_.empty() && current_team_.gold() >= t->cost() * cost_exponent_ / 100) {
+		if (!t->leader() || master()->official_ == hero_official_leader) {
+			ok->set_active(true);
+		} else {
+			ok->set_active(false);
+		}
 	} else {
 		ok->set_active(false);
 	}
@@ -445,7 +453,7 @@ void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 
 	hero_table_ = find_widget<tlistbox>(&window, "hero_table", false, true);
 	fresh_heros_ = city_.fresh_heros();
-	std::sort(fresh_heros_.begin(), fresh_heros_.end(), compare_leadership);
+	std::sort(fresh_heros_.begin(), fresh_heros_.end(), compare_recruit);
 
 	// fill data to hero_table
 	catalog_page(window, ABILITY_PAGE, false);
@@ -501,8 +509,12 @@ void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 	const unit_type* t = unit_types_[type_index_];
-	if (gold >= t->cost() * cost_exponent_ / 100) {
-		ok->set_active(rpg_mode_);
+	if (!checked_heros_.empty() && gold >= t->cost() * cost_exponent_ / 100) {
+		if (!t->leader() || master()->official_ == hero_official_leader) {
+			ok->set_active(true);
+		} else {
+			ok->set_active(false);
+		}
 	} else {
 		ok->set_active(false);
 	}
@@ -813,7 +825,7 @@ void trecruit::switch_type_internal(twindow& window)
 	list->clear();
 	unit_types_.clear();
 
-	const std::vector<const unit_type*>& recruits = current_team_.recruits(game_config::current_level);
+	const std::vector<const unit_type*>& recruits = city_.recruits(game_config::current_level);
 	for (std::vector<const unit_type*>::const_iterator it = recruits.begin(); it != recruits.end(); ++it) {
 		/*** Add list item ***/
 		const unit_type* type = *it;
@@ -827,6 +839,7 @@ void trecruit::switch_type_internal(twindow& window)
 		} else {
 			list_item["label"] = type->image() + "~GS()";
 		}
+
 		list_item_item.insert(std::make_pair("icon", list_item));
 
 		list_item["label"] = type->type_name();
@@ -838,6 +851,10 @@ void trecruit::switch_type_internal(twindow& window)
 		list_item_item.insert(std::make_pair("cost", list_item));
 
 		list->add_row(list_item_item);
+
+		tgrid* grid_ptr = list->get_row_grid(unit_types_.size());
+		twidget* widget = grid_ptr->find("leader", false);
+		widget->set_visible(type->leader()? twidget::VISIBLE: twidget::INVISIBLE);
 
 		unit_types_.push_back(type);
 	}

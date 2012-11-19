@@ -98,6 +98,7 @@ unit::unit(const unit& o):
 	packee_type_(o.packee_type_),
 	unit_type_(o.unit_type_),
 	packee_unit_type_(o.packee_unit_type_),
+	character_(o.character_),
 	race_(o.race_),
 	name_(o.name_),
 	type_name_(o.type_name_),
@@ -161,6 +162,7 @@ unit::unit(const unit& o):
 	cityno_(o.cityno_),
 	gold_income_(o.gold_income_),
 	heal_(o.heal_),
+	turn_experience_(o.turn_experience_),
 	keep_turns_(o.keep_turns_),
 	human_(o.human_),
 	verifying_(o.verifying_),
@@ -171,7 +173,6 @@ unit::unit(const unit& o):
 	wall_(o.wall_),
 	land_wall_(o.land_wall_),
 	walk_wall_(o.walk_wall_),
-	attack_destroy_(o.attack_destroy_),
 	terrain_(o.terrain_),
 	arms_(o.arms_),
 	master_(o.master_),
@@ -192,7 +193,8 @@ unit::unit(const unit& o):
 	adjacent_size_3_(o.adjacent_size_3_),
 	base_resistance_(o.base_resistance_),
 	move_spectator_(o.move_spectator_),
-	guard_attack_(o.guard_attack_)
+	guard_attack_(o.guard_attack_),
+	temporary_state_(o.temporary_state_)
 {
 	std::copy(o.adaptability_, o.adaptability_ + HEROS_MAX_ARMS, adaptability_);
 	std::copy(o.skill_, o.skill_ + HEROS_MAX_SKILL, skill_);
@@ -206,7 +208,7 @@ unit::unit(const unit& o):
 	}
 }
            
-unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits, game_state* state, bool artifical) :
+unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits, game_state* state, bool is_artifical) :
 	unit_merit(),
 	units_(units),
 	heros_(heros),
@@ -214,9 +216,10 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	loc_(), // !!! don't evalidate loc_, should use set_location to evalidate loc_
 	advances_to_(),
 	type_(cfg["type"]),
-	packee_type_(cfg["packee_type"]),
+	packee_type_(),
 	unit_type_(NULL),
 	packee_unit_type_(NULL),
+	character_(-1),
 	race_(NULL),
 	name_(),
 	type_name_(),
@@ -270,17 +273,17 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	cityno_(-1),
 	gold_income_(),
 	heal_(0),
+	turn_experience_(0),
 	keep_turns_(game_config::max_keep_turns),
 	human_(false),
 	verifying_(false),
-	artifical_(artifical),
+	artifical_(is_artifical),
 	can_recruit_(false),
 	can_reside_(false),
 	base_(false),
 	wall_(false),
 	land_wall_(true),
 	walk_wall_(false),
-	attack_destroy_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
 	touch_dirs_(),
@@ -290,7 +293,8 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	adjacent_size_3_(0),
 	base_resistance_(),
 	move_spectator_(units_),
-	guard_attack_(-2)
+	guard_attack_(-2),
+	temporary_state_(0)
 {
 	if (type_.empty()) {
 		throw game::game_error("creating unit with an empty type field");
@@ -355,10 +359,12 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	modifications_ = utils::split(cfg["modifications"].str());
 
 	unit_type_ = &get_unit_type(type_).get_gender_unit_type(gender_).get_variation(variation_);
-	if (unit_type_->packer()) {
-		unit_type_ = &get_unit_type(packee_type_).get_gender_unit_type(gender_).get_variation(variation_);
-		packee_type_ = "";
+	if (artifical_) {
+		character_ = unit_types.character_from_id(cfg["character"].str());
+	} else {
+		character_ = unit_type_->character();
 	}
+	
 	advance_to(unit_type_, use_traits, state);
 
 	// set city_ and side_. only when is troop or city. don't set when artifical.
@@ -511,7 +517,7 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	hidden_ = false;
 	game_config::add_color_info(cfg);
 
-	static char const *internalized_attrs[] = { "type", "packee_type", "name",
+	static char const *internalized_attrs[] = { "type", "name",
 		"gender", "random_gender", "variation",
 		"side", "facing", "race",
 		"level", "undead_variation", "max_attacks",
@@ -532,18 +538,7 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 			add_trait_description(unit_types.traits().find(*it)->second);
 		}
 	}
-	if (packed() && animations_.empty()) {
-		const unit_type* packer = &get_unit_type(type_).get_gender_unit_type(gender_).get_variation(variation_);
-		form_packed_animations(packer);
-		packee_unit_type_ = &get_unit_type(packee_type_).get_gender_unit_type(gender_).get_variation(variation_);
-	}
-/*
-	if (rpg::h->valid() && rpg::h->city_ == cityno_) {
-		if (master_ == rpg::h || second_ == rpg::h || third_ == rpg::h) {
-			set_human(true);
-		}
-	}
-*/
+
 	if (human_) {
 		rpg::humans.insert(this);
 	}
@@ -560,6 +555,7 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	packee_type_(),
 	unit_type_(NULL),
 	packee_unit_type_(NULL),
+	character_(-1),
 	race_(NULL),
 	name_(),
 	type_name_(),
@@ -613,6 +609,7 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	cityno_(-1),
 	gold_income_(),
 	heal_(0),
+	turn_experience_(0),
 	keep_turns_(game_config::max_keep_turns),
 	human_(false),
 	verifying_(false),
@@ -623,7 +620,6 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	wall_(false),
 	land_wall_(true),
 	walk_wall_(false),
-	attack_destroy_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
 	touch_dirs_(),
@@ -633,7 +629,8 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	adjacent_size_3_(0),
 	base_resistance_(),
 	move_spectator_(units_),
-	guard_attack_(-2)
+	guard_attack_(-2),
+	temporary_state_(0)
 {
 	unit_fields_t* fields = (unit_fields_t*)mem;
 
@@ -669,10 +666,6 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	}
 
 	unit_type_ = &get_unit_type(type_).get_gender_unit_type(gender_).get_variation(variation_);
-	if (unit_type_->packer()) {
-		unit_type_ = &get_unit_type(packee_type_).get_gender_unit_type(gender_).get_variation(variation_);
-		packee_type_ = "";
-	}
 	advance_to(unit_type_, use_traits, state);
 
 	// it is time to read full fields.
@@ -713,11 +706,6 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 			add_trait_description(unit_types.traits().find(*it)->second);
 		}
 	}
-	if (packed() && animations_.empty()) {
-		const unit_type* packer = &get_unit_type(type_).get_gender_unit_type(gender_).get_variation(variation_);
-		form_packed_animations(packer);
-		packee_unit_type_ = &get_unit_type(packee_type_).get_gender_unit_type(gender_).get_variation(variation_);
-	}
 
 	if (human_) {
 		rpg::humans.insert(this);
@@ -734,7 +722,7 @@ void unit::clear_status_caches()
 	units_with_cache.clear();
 }
 
-unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, bool real_unit, bool artifical) :
+unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, bool real_unit, bool is_artifical) :
 	unit_merit(),
 	units_(units),
 	heros_(heros),
@@ -743,6 +731,7 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	advances_to_(),
 	type_(),
 	packee_type_(),
+	character_(-1),
 	unit_type_(NULL),
 	packee_unit_type_(NULL),
 	race_(NULL),
@@ -797,17 +786,17 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	cityno_(cityno),
 	gold_income_(0),
 	heal_(0),
+	turn_experience_(0),
 	keep_turns_(game_config::max_keep_turns),
 	human_(false),
 	verifying_(false),
-	artifical_(artifical),
+	artifical_(is_artifical),
 	can_recruit_(false),
 	can_reside_(false),
 	base_(false),
 	wall_(false),
 	land_wall_(true),
 	walk_wall_(false),
-	attack_destroy_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
 	touch_dirs_(),
@@ -817,7 +806,8 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	adjacent_size_3_(0),
 	base_resistance_(),
 	move_spectator_(units_),
-	guard_attack_(-2)
+	guard_attack_(-2),
+	temporary_state_(0)
 {
 	master_ = const_cast<hero*>(t.second[0]);
 	master_number_ = master_->number_;
@@ -840,6 +830,13 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	gender_ = static_cast<unit_race::GENDER>(master_->gender_);
 
 	unit_type_ = t.first;
+
+	artifical& city = *units_.city_from_cityno(cityno_);
+	character_ = city.character();
+	if (unit_type_->character() != NO_CHARACTER) {
+		VALIDATE(unit_type_->character() == character_, "error character in recruiting unit_type: " + unit_type_->id());
+	}
+
 	advance_to(unit_type_, real_unit);
 
 	// fill those after traits and modifs to have correct max
@@ -933,6 +930,7 @@ void unit::write(uint8_t* mem) const
 	fields->facing_ = facing_;
 	fields->upkeep_ = upkeep_;
 	fields->keep_turns_ = keep_turns_;
+	fields->character_ = character_;
 	fields->human_ = human_? 1: 0;
 	fields->random_traits_ = random_traits_? 1: 0;
 	fields->resting_ = resting_? 1: 0;
@@ -1110,12 +1108,14 @@ void unit::read(const uint8_t* mem, bool lower)
 			third_ = &hero_invalid;
 		}
 
+		// fllowing advances_to(...) used it!
+		character_ = fields->character_;
+
 		// traits
 		str.assign((const char*)mem + fields->traits_.offset_, fields->traits_.size_);
 		traits_ = utils::split(str);
-		// if (!full) {
-			return;
-		// }
+
+		return;
 	}
 
 	for (int t = STATE_MIN; t < STATE_COUNT; t ++) {
@@ -1294,7 +1294,6 @@ void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
 {
 	VALIDATE(!t->packer(), "unit::advance_to, packer unit_type: " + t->id());
 
-	t = &t->get_gender_unit_type(gender_).get_variation(variation_);
 	const std::string mod_childs[] = {"movement_costs", "defense", "resistance"};
 
 	// Clear modification-related caches
@@ -1323,7 +1322,7 @@ void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
 	cfg_.clear_children("male");
 	cfg_.clear_children("female");
 
-	advances_to_ = t->advances_to();
+	advances_to_ = t->advances_to(character_);
 
 	race_ = t->race_;
 	type_name_ = t->type_name();
@@ -1344,6 +1343,7 @@ void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
 	unit_value_ = t->cost();
 	gold_income_ = t->gold_income();
 	heal_ = t->heal();
+	turn_experience_ = t->turn_experience();
 	flying_ = t->movement_type().is_flying();
 
 	max_attacks_ = t->max_attacks();
@@ -1354,7 +1354,6 @@ void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
 	wall_ = t->wall_;
 	land_wall_ = t->land_wall_;
 	walk_wall_ = t->walk_wall_;
-	attack_destroy_ = t->attack_destroy_;
 	arms_ = t->arms_;
 	terrain_ = t->terrain_;
 
@@ -1409,17 +1408,17 @@ void unit::pack_to(const unit_type* to)
 	const unit_type* original_type = type();
 
 	if (to) {
-		t = &to->get_gender_unit_type(gender_).get_variation(variation_);
+		t = to;
 		if (!original_type->packer()) {
 			packee_type_ = type_;
-			packee_unit_type_ = &get_unit_type(packee_type_).get_gender_unit_type(gender_).get_variation(variation_);
+			packee_unit_type_ = unit_type_;
 		}
 		max_hit_points_ = packee_unit_type_->hitpoints();
 		max_experience_ = packee_unit_type_->experience_needed(false);
 		max_movement_ = packee_unit_type_->movement();
 		attacks_ = packee_unit_type_->attacks();
 	} else {
-		t = &get_unit_type(packee_type_).get_gender_unit_type(gender_).get_variation(variation_);
+		t = packee_unit_type_;
 		packee_type_ = "";
 		packee_unit_type_ = NULL;
 		max_hit_points_ = t->hitpoints();
@@ -1469,7 +1468,6 @@ void unit::pack_to(const unit_type* to)
 	emit_zoc_ = t->has_zoc();
 	cancel_zoc_ = t->cancel_zoc();
 	gold_income_ = t->gold_income();
-	heal_ = t->heal();
 	flying_ = t->movement_type().is_flying();
 	land_wall_ = t->land_wall_;
 	arms_ = t->arms_;
@@ -1581,7 +1579,6 @@ std::string unit::image_halo() const
 bool unit::packed() const
 {
 	return unit_type_->packer();
-	// return packee_type_.empty()? false: true;
 }
 
 const unit_type* unit::type() const
@@ -1743,7 +1740,7 @@ void unit::get_experience(int xp, bool opp_is_artifical)
 		}
 	}
 	experience_ += xp;
-	if (xp > 0 && unit_feature_val(hero_feature_encourage)) {
+	if (xp > 0 && unit_feature_val(hero_feature_xp)) {
 		// when advance, xp is less than 0. 
 		experience_ += xp;
 	}
@@ -1777,6 +1774,53 @@ void unit::get_experience(int xp, bool opp_is_artifical)
 
 	if (has_rpg && xp > 0 && rpg::stratum != hero_stratum_leader && !rpg::forbids) {
 		resources::controller->rpg_update();
+	}
+	return;
+}
+
+void unit::get_experience2(int xp) 
+{ 
+	bool has_carry = false;
+
+	if (master_->number_ == 129) {
+		int ii = 0;
+	}
+
+	uint16_t inc_skill_xp = xp * SKILL_XP_PER_XP;
+	if (unit_feature_val(hero_feature_skill)) {
+		inc_skill_xp = inc_skill_xp * 2;
+	}
+	if (u16_get_experience_i12(&(master_->skill_[hero_skill_encourage]), inc_skill_xp)) {
+		has_carry = true;
+	}
+
+	if (second_->valid()) {
+		if (u16_get_experience_i12(&(second_->skill_[hero_skill_encourage]), inc_skill_xp)) {
+			has_carry = true;
+		}
+	}
+	if (third_->valid()) {
+		// skill adaptability
+		if (u16_get_experience_i12(&(third_->skill_[hero_skill_encourage]), inc_skill_xp)) {
+			has_carry = true;
+		}
+	}
+	if (has_carry) {
+		calculate_5fields();
+	}
+
+	if (has_carry) {
+		const unit_type* current_type = type();
+		if (packed()) {
+			pack_to(current_type);
+		} else {
+			max_hit_points_ = current_type->hitpoints();
+			max_experience_ = current_type->experience_needed(false);
+			max_movement_ = current_type->movement();
+			attacks_ = current_type->attacks();
+
+			modify_according_to_hero(false, false);
+		}
 	}
 	return;
 }
@@ -1921,22 +1965,16 @@ bool unit::new_turn()
 		}
 	}
 
-	// field troop, decrease loyalty
-	if (keep_turns_ > 0) {
-		keep_turns_ --;
-	} else if (!unit_feature_val(hero_feature_surveillance)) {
-		// if (!unit_feature_val(hero_feature_encourage)) {
-			increase_loyalty(game_config::field_troop_increase_loyalty);
-		// } else {
-		//	increase_loyalty(game_config::field_troop_increase_loyalty / 2);
-		// }
-	}
 	field_turns_ ++;
 
 	// field troop, increase activity
 	increase_activity(8);
 
 	increase_feeling(game_config::increase_feeling);
+
+	if (!artifical_) {
+		get_experience2(5);
+	}
 
 	return erase;
 }
@@ -2143,6 +2181,12 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 		return false;
 	}
 
+	if (!cfg["cityno"].blank()) {
+		if (cfg["cityno"].to_int(0) != cityno_) {
+			return false;
+		}
+	}
+
 	// 1. this must is city
 	// 2. yes: this is noly one city
 	// 3. no: this is at least tow city
@@ -2319,8 +2363,34 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 	}
 
 	config::attribute_value cfg_level = cfg["level"];
-	if (!cfg_level.blank() && cfg_level.to_int(-1) != level_) {
-		return false;
+	if (!cfg_level.blank()) {
+		const std::vector<std::string> vstr = utils::split(cfg_level.str());
+		if (vstr.size() == 1) {
+			if (lexical_cast_default<int>(vstr[0], -1) != level_) {
+				return false;
+			}
+		} else if (vstr.size() == 2) {
+			int level = lexical_cast_default<int>(vstr[1], -1);
+			if (vstr[0] == "<=") {
+				if (level_ > level) {
+					return false;
+				}
+			} else if (vstr[0] == ">=") {
+				if (level_ < level) {
+					return false;
+				}
+			} else if (vstr[0] == "<") {
+				if (level_ >= level) {
+					return false;
+				}
+			} else if (vstr[0] == ">") {
+				if (level_ <= level) {
+					return false;
+				}
+			}
+		} else {
+			return false;
+		}
 	}
 
 	config::attribute_value cfg_defense = cfg["defense"];
@@ -2474,10 +2544,7 @@ void unit::write(config& cfg) const
 	cfg.clear_children("variables");
 	// cfg.clear_children("modifications");
 
-	const unit_type *ut = unit_types.find(type_id());
-	if (ut) {
-		ut = &ut->get_gender_unit_type(gender_).get_variation(variation_);
-	}
+	const unit_type *ut = unit_type_;
 
 	cfg["hitpoints"] = hit_points_;
 	cfg["max_hitpoints"] = max_hit_points_;
@@ -2490,8 +2557,13 @@ void unit::write(config& cfg) const
 
 	cfg["side"] = side_;
 
-	cfg["type"] = type_id();
-	cfg["packee_type"] = packee_type_;
+	if (packed()) {
+		cfg["type"] = packee_type_;
+	} else {
+		cfg["type"] = type_;
+	}
+
+	cfg["character"] = unit_types.character_id(character_);
 
 	cfg["cityno"] = cityno_;
 
@@ -2505,6 +2577,7 @@ void unit::write(config& cfg) const
 		str << "," << third_->number_;
 	}
 	cfg["heros_army"] = str.str();
+	cfg["master_hero"] = master_->number_;
 
 	config status_flags;
 	std::map<std::string,std::string> all_states = get_states();
@@ -2648,7 +2721,7 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 				decrease_percent += 0.1;
 			}
 
-			value = (int)(value * (1.0 - std::min<double>(decrease_percent, 0.7)));
+			value = (int)(value * (1.0 - std::min<double>(decrease_percent, 0.6)));
 			target[istrmap.first] = lexical_cast<std::string>(value);
 		}
 	}
@@ -2802,7 +2875,7 @@ void unit::calculate_5fields()
 	memset(feature_, 0, HEROS_FEATURE_M2BYTES);
 
 	std::set<int> holded_features;
-	if (master_->feature_ != HEROS_MAX_FEATURE) {
+	if (master_->feature_ != HEROS_NO_FEATURE) {
 		holded_features.insert(master_->feature_);
 	}
 	if (master_->treasure_ != HEROS_NO_TREASURE) {
@@ -2815,7 +2888,7 @@ void unit::calculate_5fields()
 		}
 	}
 	if (second_valid) {
-		if (second_->feature_ != HEROS_MAX_FEATURE) {
+		if (second_->feature_ != HEROS_NO_FEATURE) {
 			holded_features.insert(second_->feature_);
 		}
 		if (second_->treasure_ != HEROS_NO_TREASURE) {
@@ -2829,7 +2902,7 @@ void unit::calculate_5fields()
 		}
 	}
 	if (third_valid) {
-		if (third_->feature_ != HEROS_MAX_FEATURE) {
+		if (third_->feature_ != HEROS_NO_FEATURE) {
 			holded_features.insert(third_->feature_);
 		}
 		if (third_->treasure_ != HEROS_NO_TREASURE) {
@@ -2859,6 +2932,7 @@ void unit::calculate_5fields()
 	}
 	for (std::set<int>::const_iterator it = holded_features.begin(); it != holded_features.end(); ++ it) {
 		tmp = *it;
+		VALIDATE(tmp < HEROS_MAX_FEATURE, "error feature when calculate_5fields unit_type: " + unit_type_->id());
 		unit_feature_set(tmp, hero_feature_single_result);
 	
 		// parse complex feature to base feature
@@ -2955,7 +3029,7 @@ std::string unit::form_tooltip() const
 		if (!packed()) {
 			text << _("troop^type") << ": " << type_name() << "(Lv" << level() << ")";
 		} else {
-			text << _("troop^type") << ": " << get_unit_type(packee_type_).get_gender_unit_type(gender_).get_variation(variation_).type_name() << "(Lv" << level() << ")";
+			text << _("troop^type") << ": " << packee_unit_type_->type_name() << "(Lv" << level() << ")";
 			text << "[" << type_name() << "]";
 		}
 		// adaptability
@@ -2966,7 +3040,8 @@ std::string unit::form_tooltip() const
 		text << _("force")           << ":" << force_ << "\n";
 		text << _("intellect")       << ":" << intellect_ << "  ";
 		text << _("politics")        << ":" << politics_ << "\n";
-		text << _("charm")           << ":" << charm_ << "\n";
+		// text << _("charm")           << ":" << charm_ << "\n";
+		text << _("charm")           << ":" << charm_ << " " << hero::character_str(character_) << "\n";
 
 		text << "HP: " << hitpoints() << "/" << max_hitpoints() << "  ";
 
@@ -3079,12 +3154,14 @@ std::string unit::form_tooltip() const
 	}
 	text << _("AMLA") << ": " << amla << "\n";
 
+	// skill
+	text << dgettext("wesnoth-lib", "Skill") << ": ";
+	text << hero::skill_str(hero_skill_encourage) << "(" << hero::adaptability_str2(ftofxp12(skill_[hero_skill_encourage])) << ")";
 	if (!artifical_) {
-		// skill
-		text << dgettext("wesnoth-lib", "Skill") << ": ";
-		text << hero::skill_str(hero_skill_demolish) << "(" << hero::adaptability_str2(ftofxp12(skill_[hero_skill_demolish])) << ")" << "\n";
+		text << "  ";
+		text << hero::skill_str(hero_skill_demolish) << "(" << hero::adaptability_str2(ftofxp12(skill_[hero_skill_demolish])) << ")";
 	}
-		
+	text << "\n";
 
 	text << " \n";
 
@@ -3196,6 +3273,8 @@ void unit::set_facing(map_location::DIRECTION dir) {
 	// Else look at yourself (not available so continue to face the same direction)
 }
 
+#define BIT_2_MASK(bit)		(1 << (bit))
+
 void unit::redraw_unit()
 {
 	game_display &disp = *game_display::get_singleton();
@@ -3240,9 +3319,12 @@ void unit::redraw_unit()
 	}
 	params.y -= height_adjust;
 	params.halo_y -= height_adjust;
-	if (get_state(STATE_POISONED)){
-		params.blend_with = disp.rgb(0,255,0);
+	if (get_state(STATE_POISONED)) {
+		params.blend_with = disp.rgb(0, 255, 0);
 		params.blend_ratio = 0.25;
+	} else if (temporary_state_ & BIT_2_MASK(BIT_STRONGER)) {
+		params.blend_with = disp.rgb(255, 32, 32);
+		params.blend_ratio = 0.40;
 	}
 	//hackish : see unit_frame::merge_parameters
 	// we use image_mod on the primary image
@@ -3329,7 +3411,7 @@ void unit::redraw_unit()
 		disp.drawing_buffer_add(display::LAYER_UNIT_FIRST, loc_,
 			xsrc, ysrc +adjusted_params.y-ellipse_floating, ellipse_front);
 	}
-	if ((draw_desc_ || (anim_->event_[0] == "attack") || (anim_->event_[0] == "defend")) && draw_bars) {
+	if ((draw_desc_ || (temporary_state_ & BIT_2_MASK(BIT_ATTACKING)) || (temporary_state_ & BIT_2_MASK(BIT_DEFENDING))) && draw_bars) {
 		const surface* orb_img = NULL;
 
 		if (size_t(side()) != disp.viewing_team() + 1) {
@@ -4670,6 +4752,11 @@ void unit::set_location(const map_location &loc)
 	}
 }
 
+void unit::set_goto(const map_location& new_goto) 
+{ 
+	goto_ = new_goto; 
+}
+
 void unit::replace_captains(const std::vector<hero*>& captains)
 {
 	if (master_ != captains[0]) {
@@ -4832,11 +4919,7 @@ const move_unit_spectator& unit::get_move_spectator() const
 int unit::guard_attack()
 {
 	if (guard_attack_ == -2) {
-		if (cfg_.has_attribute("guard_attack")) {
-			guard_attack_ = cfg_["guard_attack"].to_int(-1);
-		} else {
-			guard_attack_ = -1;
-		}
+		guard_attack_ = unit_type_->guard();
 		if (guard_attack_ >= (int)attacks_.size()) {
 			guard_attack_ = -1;
 		}
@@ -5072,4 +5155,13 @@ void unit::do_encourage(hero& h1, hero& h2)
 
 	heal(max_hit_points_ / 3);
 	increase_feeling(game_config::increase_feeling);
+}
+
+void unit::set_temporary_state(int bit, bool set)
+{
+	if (set) {
+		temporary_state_ |= 1 << bit;
+	} else {
+		temporary_state_ &= ~(1 << bit);
+	}
 }

@@ -388,19 +388,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\map.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\map_create.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\src\map_label.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\map_location.cpp"
 				>
 			</File>
 			<File
@@ -488,14 +480,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\race.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\random.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\replay.cpp"
 				>
 			</File>
@@ -568,15 +552,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\terrain.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\terrain_filter.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\terrain_translation.cpp"
 				>
 			</File>
 			<File

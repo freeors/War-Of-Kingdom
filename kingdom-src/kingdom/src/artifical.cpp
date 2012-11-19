@@ -16,6 +16,7 @@
 #include "formula_string_utils.hpp"
 #include "replay.hpp"
 #include "wml_exception.hpp"
+#include "dialogs.hpp"
 
 artifical::artifical(const config& cfg) :
 	unit(*resources::units, *resources::heros, cfg, true, 0, true)
@@ -31,8 +32,12 @@ artifical::artifical(const config& cfg) :
 	, district_locs_()
 	, terrain_types_list_(t_translation::t_match(type()->match_).terrain)
 	, alert_rect_()	
+	, villages_()
 	, mayor_(&hero_invalid)
 	, fronts_(0)
+	, not_recruit_()
+	, can_recruit_map_()
+	, max_recruit_cost_(-1)
 {
 	// 设置[city]级字段
 	read(cfg);
@@ -59,10 +64,14 @@ artifical::artifical(const uint8_t* mem) :
 	, economy_area_()
 	, district_()
 	, district_locs_()
+	, villages_()
 	, terrain_types_list_(t_translation::t_match(type()->match_).terrain)
 	, alert_rect_()	
 	, mayor_(&hero_invalid)
 	, fronts_(0)
+	, not_recruit_()
+	, can_recruit_map_()
+	, max_recruit_cost_(-1)
 {
 	// 设置[city]级字段
 	read(mem);
@@ -89,10 +98,14 @@ artifical::artifical(const artifical& cobj) :
 	, economy_area_(cobj.economy_area_)
 	, district_(cobj.district_)
 	, district_locs_(cobj.district_locs_)
+	, villages_(cobj.villages_)
 	, terrain_types_list_(cobj.terrain_types_list_)
 	, alert_rect_(cobj.alert_rect_)
 	, mayor_(cobj.mayor_)
 	, fronts_(cobj.fronts_)
+	, not_recruit_(cobj.not_recruit_)
+	, can_recruit_map_(cobj.can_recruit_map_)
+	, max_recruit_cost_(cobj.max_recruit_cost_)
 {
 	for (std::vector<unit*>::const_iterator it = cobj.reside_troops_.begin(); it != cobj.reside_troops_.end(); ++ it) {
 		reside_troops_.push_back(new unit(**it));
@@ -111,10 +124,14 @@ artifical::artifical(unit_map& units, hero_map& heros, type_heros_pair& t, int c
 	, economy_area_()
 	, district_()
 	, district_locs_()
+	, villages_()
 	, terrain_types_list_(t_translation::t_match(type()->match_).terrain)
 	, alert_rect_()
 	, mayor_(&hero_invalid)
 	, fronts_(0)
+	, not_recruit_()
+	, can_recruit_map_()
+	, max_recruit_cost_(-1)
 {
 	if (this_is_city()) {
 		touch_dirs_.insert(map_location::NORTH);
@@ -214,6 +231,17 @@ void artifical::read(const config& cfg, bool use_traits, game_state* state)
 			mayor_->official_ = hero_official_mayor;
 		}
 		fronts_ = cfg["fronts"].to_int();
+
+		// not recruit
+		std::vector<std::string> vstr = utils::split(cfg["not_recruit"]);
+		const std::vector<const unit_type*>& can_recruit = unit_types.can_recruit();
+		for(std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++i) {
+			const unit_type* ut = unit_types.find(*i);
+			if (!ut) {
+				throw game::load_game_failed("invalid not_recruit attribute in city(" + master_->name() + "), type: " + *i);
+			}
+			not_recruit_.insert(ut);
+		}
 	}
 
 	// 读出底下所有unit到城市武将列表
@@ -273,6 +301,15 @@ void artifical::write(config& cfg) const
 	if (this_is_city()) {
 		cfg["fronts"] = fronts_;
 		cfg["mayor"] = mayor_->number_;
+
+		str.str("");
+		for (std::set<const unit_type*>::const_iterator cr = not_recruit_.begin(); cr != not_recruit_.end(); ++cr) {
+			if (cr != not_recruit_.begin()) {
+				str << ",";
+			}
+			str << (*cr)->id();
+		}
+		cfg["not_recruit"] = str.str();
 	}
 
 	for (std::vector<unit*>::const_iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
@@ -355,6 +392,25 @@ void artifical::write(uint8_t* mem) const
 	fields->district_.size_ = str.str().length();
 	memcpy(mem + offset, str.str().c_str(), fields->district_.size_);
 	offset += fields->district_.size_;
+
+	str.str("");
+	// recruit
+	for (std::set<const unit_type*>::const_iterator cr = not_recruit_.begin(); cr != not_recruit_.end(); ++cr) {
+		if (cr != not_recruit_.begin()) {
+			str << ",";
+		}
+		str << (*cr)->id();
+	}
+	if (!str.str().empty()) {
+		fields->not_recruit_.offset_ = offset; 
+		fields->not_recruit_.size_ = str.str().length();
+		memcpy(mem + offset, str.str().c_str(), fields->not_recruit_.size_);
+	} else {
+		fields->not_recruit_.offset_ = -1;
+		fields->not_recruit_.size_ = 0;
+	}
+	offset += fields->not_recruit_.size_;
+
 
 	// align 4
 	offset = (offset + 3) & ~3;
@@ -457,6 +513,16 @@ void artifical::read(const uint8_t* mem)
 		}
 	}
 
+	// recruit
+	not_recruit_.clear();
+	str.assign((const char*)mem + fields->not_recruit_.offset_, fields->not_recruit_.size_);
+	std::vector<std::string> v_str = utils::split(str);
+	for (std::vector<std::string>::const_iterator i = v_str.begin(); i != v_str.end(); ++i) {
+		const unit_type* ut = unit_types.find(*i);
+		VALIDATE(ut, "team::read, unknown not-recruit unit type: " + *i);
+		not_recruit_.insert(ut);
+	}
+
 	// 读出底下所有unit到城市武将列表
 	int offset = fields->reside_troops_.offset_;
 	for (int i = 0; i < fields->reside_troops_.size_; i ++) {
@@ -467,12 +533,18 @@ void artifical::read(const uint8_t* mem)
 	}
 }
 
+const std::set<map_location>& artifical::villages() const
+{
+	return villages_;
+}
+
 const std::set<map_location>& artifical::district_locs() const
 {
 	return district_locs_;
 }
 
 #define ALERT_RECT_RADIUS		10
+#define VILLAGE_RECT_RADIUS		15
 void artifical::set_location(const map_location &loc)
 {
 	if (loc_ == loc) {
@@ -481,33 +553,17 @@ void artifical::set_location(const map_location &loc)
 
 	unit::set_location(loc);
 
-	// recalculate alert-rectangle
-	if (loc.x < ALERT_RECT_RADIUS) {
-		alert_rect_.x = 0;
-		alert_rect_.w = loc.x;
-	} else {
-		alert_rect_.x = loc.x - ALERT_RECT_RADIUS;
-		alert_rect_.w = ALERT_RECT_RADIUS;
+	alert_rect_ = extend_rectangle(map_, loc_.x, loc_.y, ALERT_RECT_RADIUS);
+	if (is_city() && villages_.empty()) {
+		SDL_Rect rect = extend_rectangle(map_, loc_.x, loc_.y, VILLAGE_RECT_RADIUS);
+		for (int y = rect.y; y < rect.y + rect.h; y ++) {
+			for (int x = rect.x; x < rect.x + rect.w; x ++) {
+				if (map_.is_village(map_location(x, y))) {
+					villages_.insert(map_location(x, y));
+				}
+			}
+		}
 	}
-	if (loc.x + ALERT_RECT_RADIUS >= map_.w()) {
-		alert_rect_.w += map_.w() - 1 - loc.x;
-	} else {
-		alert_rect_.w += ALERT_RECT_RADIUS;
-	}
-	if (loc.y < ALERT_RECT_RADIUS) {
-		alert_rect_.y = 0;
-		alert_rect_.h = loc.y;
-	} else {
-		alert_rect_.y = loc.y - ALERT_RECT_RADIUS;
-		alert_rect_.h = ALERT_RECT_RADIUS;
-	}
-	if (loc.y + ALERT_RECT_RADIUS >= map_.h()) {
-		alert_rect_.h += map_.h() - 1 - loc.y;
-	} else {
-		alert_rect_.h += ALERT_RECT_RADIUS;
-	}
-	alert_rect_.w ++;
-	alert_rect_.h ++;
 
 	// reset loc_ of reside troops
 	for (std::vector<unit*>::iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
@@ -674,7 +730,7 @@ void artifical::redraw_unit()
 		} else if (display::default_zoom_ == display::ZOOM_64) {
 			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, str.str(), 15, font::NORMAL_COLOR, xsrc + 30, ysrc - 30);
 		} else {
-			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, str.str(), 15, font::NORMAL_COLOR, xsrc + 32, ysrc - 34);
+			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, str.str(), 15, font::NORMAL_COLOR, xsrc + 32, ysrc - 32);
 		}
 	}
 
@@ -702,6 +758,9 @@ void artifical::redraw_unit()
 			if (is_city()) {
 				disp.draw_bar(*energy_file, xsrc + 20, ysrc - 24, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
+				if (character_ != NO_CHARACTER) {
+					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 2, ysrc - 16, image::get_image(unit_types.character(character_).image_));
+				}
 			} else {
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 14, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
@@ -710,6 +769,9 @@ void artifical::redraw_unit()
 			if (is_city()) {
 				disp.draw_bar(*energy_file, xsrc + 20, ysrc - 28, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
+				if (character_ != NO_CHARACTER) {
+					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 2, ysrc - 16, image::get_image(unit_types.character(character_).image_));
+				}
 			} else {
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 17, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
@@ -718,14 +780,20 @@ void artifical::redraw_unit()
 			if (is_city()) {
 				disp.draw_bar(*energy_file, xsrc + 22, ysrc - 35, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
+				if (character_ != NO_CHARACTER) {
+					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 4, ysrc - 16, image::get_image(unit_types.character(character_).image_));
+				}
 			} else {
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 21, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 			}
 		} else {
 			if (is_city()) {
-				disp.draw_bar(*energy_file, xsrc + 24, ysrc - 44, 
+				disp.draw_bar(*energy_file, xsrc + 24, ysrc - 42, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
+				if (character_ != NO_CHARACTER) {
+					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 6, ysrc - 16, image::get_image(unit_types.character(character_).image_));
+				}
 			} else {
 				disp.draw_bar(*energy_file, xsrc + 5, ysrc - 25, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
@@ -741,7 +809,7 @@ void artifical::redraw_unit()
 		} else if (display::default_zoom_ == display::ZOOM_64) {
 			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, name(), 15, font::BIGMAP_COLOR, xsrc + 29, ysrc - 16);
 		} else {
-			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, name(), 15, font::BIGMAP_COLOR, xsrc + 32, ysrc - 20);
+			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, name(), 15, font::BIGMAP_COLOR, xsrc + 32, ysrc - 18);
 		}
 	}
 
@@ -763,6 +831,29 @@ bool artifical::new_turn()
 
 	std::vector<team>& teams = *resources::teams;
 	team& current_team = teams[side_ - 1];
+	int healing = heal_;
+	std::vector<unit*> executor;
+
+	int pos_max = max_hit_points_ - hit_points_;
+	int neg_max = -(hit_points_ - 1);
+	if (pos_max > 0) {
+		// Do not try to "heal" if HP >= max HP
+		if (healing > pos_max) {
+			healing = pos_max;
+		} else if (healing < neg_max) {
+			healing = neg_max;
+		}
+		unit_display::unit_healing(*this, loc_, executor, healing);
+		heal(healing);
+	}	
+
+	if (!this_is_city() && unit_map::economy_areas_.find(loc_) != unit_map::economy_areas_.end()) {
+		const artifical& city = *units_.city_from_cityno(cityno_);
+		get_experience(city.turn_experience());
+		dialogs::advance_unit(loc_, current_team.is_human(), true);
+		return false;
+	}
+
 	hero& leader = *current_team.leader();
 
 	for (std::vector<hero*>::iterator itor = fresh_heros_.begin(); itor != fresh_heros_.end();) {
@@ -802,11 +893,50 @@ bool artifical::new_turn()
 	}
 
 	// select mayor
-	if (this_is_city() && side_ != team::empty_side_) {
+	if (side_ != team::empty_side_) {
 		if (!mayor_->valid()) {
 			select_mayor();
 		}
 	}
+
+	// reside troops
+	for (std::vector<unit*>::iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
+		unit& u = **it;
+		u.set_movement(u.total_movement());
+		u.set_attacks(u.attacks_total());
+		u.increase_loyalty(-1 * game_config::reside_troop_increase_loyalty);
+		u.increase_activity(10);
+		u.get_experience2(4);
+		u.set_state(unit::STATE_SLOWED, false);
+		u.set_state(unit::STATE_BROKEN, false);
+		u.set_state(unit::STATE_PETRIFIED, false);
+		if (u.get_state(unit::STATE_POISONED)) {
+			u.set_state(unit::STATE_POISONED, false);
+		} else {
+			u.heal(12);
+		}
+	}
+
+	// reside heros
+	for (std::vector<hero*>::iterator itor = fresh_heros_.begin(); itor != fresh_heros_.end(); ++ itor) {
+		hero& h = **itor;
+		if (h.activity_ < HEROS_FULL_ACTIVITY) {
+			if (10 + h.activity_ < HEROS_FULL_ACTIVITY) {
+				h.activity_ += 15;
+			} else {
+				h.activity_ = HEROS_FULL_ACTIVITY;
+			}
+		}
+	}
+	for (std::vector<hero*>::iterator itor = finish_heros_.begin(); itor != finish_heros_.end(); ++ itor) {
+		(*itor)->status_ = hero_status_idle;
+	}
+	std::copy(finish_heros_.begin(), finish_heros_.end(), std::back_inserter(fresh_heros_));
+	finish_heros_.clear();
+
+	
+	get_experience(turn_experience_);
+	dialogs::advance_unit(loc_, current_team.is_human(), true);
 
 	return false;
 }
@@ -818,7 +948,7 @@ void artifical::set_resting(bool rest)
 	if (!resting_) {
 		return;
 	}
-
+/*
 	int healing = heal_;
 	std::vector<unit*> executor;
 
@@ -873,6 +1003,7 @@ void artifical::set_resting(bool rest)
 	}
 	std::copy(finish_heros_.begin(), finish_heros_.end(), std::back_inserter(fresh_heros_));
 	finish_heros_.clear();
+*/
 	return;
 }
 
@@ -885,6 +1016,12 @@ void artifical::get_experience(int xp, bool opp_is_artifical)
 {
 	if (this_is_city()) {
 		unit::get_experience(xp, opp_is_artifical);
+	} else {
+		experience_ += xp;
+		if (xp > 0 && unit_feature_val(hero_feature_xp)) {
+			// when advance, xp is less than 0. 
+			experience_ += xp;
+		}
 	}
 }
 
@@ -937,6 +1074,8 @@ void artifical::troop_come_into(unit* uobj, int pos, bool create)
 	u.set_cityno(cityno_);
 	// 4. 修改unit坐标为城郡所在坐标
 	u.set_location(loc_);
+	// 5. set goto to map_location()
+	u.set_goto(map_location());
 
 	if (!u.human()) {
 		if ((rpg::stratum == hero_stratum_leader && side_ == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor_ == rpg::h)) {
@@ -1857,4 +1996,74 @@ void artifical::set_fronts(int fronts)
 	} else if (fronts_ > mr_data::max_fronts) {
 		fronts_ = mr_data::max_fronts;
 	}
+}
+
+int artifical::max_recruit_cost()
+{
+	if (max_recruit_cost_ == -1) {
+		const std::vector<const unit_type*>& recruits_v = recruits(-1);
+		for (std::vector<const unit_type*>::const_iterator it = recruits_v.begin(); it != recruits_v.end(); ++ it) {
+			const unit_type* ut = *it;
+			if (ut->cost() > max_recruit_cost_) {
+				max_recruit_cost_ = ut->cost();
+			}
+		}
+	}
+	return max_recruit_cost_;
+}
+
+void artifical::reset_max_recruit_cost()
+{
+	max_recruit_cost_ = -1;
+}
+
+void artifical::insert_level_unit_type(int level, const unit_type* from, std::vector<const unit_type*>& to)
+{
+	std::vector<std::string> advances_to = from->advances_to(character_);
+	for (std::vector<std::string>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it) {
+		const unit_type* ut = unit_types.find(*it);
+		if (not_recruit_.find(ut) != not_recruit_.end()) {
+			continue;
+		}
+		if (ut->level() < level) {
+			insert_level_unit_type(level, ut, to);
+		} else if (ut->level() == level) {
+			to.push_back(ut);
+		}
+	}
+}
+
+const std::vector<const unit_type*>& artifical::recruits(int level)
+{ 
+	if (level == -1) {
+		std::vector<team>& teams = *resources::teams;
+		if (teams[side_ - 1].is_human()) {
+			level = game_config::default_human_level;
+		} else {
+			level = game_config::default_ai_level;
+		}
+	}
+
+	std::map<int, std::vector<const unit_type*> >::iterator it = can_recruit_map_.find(level);
+	if (it != can_recruit_map_.end()) {
+		return it->second;
+	}
+
+	std::vector<const unit_type*> types;
+	const std::vector<const unit_type*>& can_recruit = unit_types.can_recruit();
+	for (std::vector<const unit_type*>::const_iterator it = can_recruit.begin(); it != can_recruit.end(); ++ it) {
+		const unit_type* ut = *it;
+		if (not_recruit_.find(ut) != not_recruit_.end()) {
+			continue;
+		}
+		if (ut->level() >= level) {
+			types.push_back(ut);
+		} else {
+			insert_level_unit_type(level, ut, types);
+		}
+	}
+	can_recruit_map_[level] = types;
+	it = can_recruit_map_.find(level);
+
+	return it->second;
 }
