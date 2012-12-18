@@ -159,9 +159,8 @@ public:
 	map_location access_unit_press(size_t btnidx);
 
 	// runtime tooltip of mouse-over unit
-	void show_unit_tooltip(const unit& troop, const map_location& loc);
-	void show_unit_tooltip(const unit& troop, int16_t xoffset, int16_t yoffset);
-	void hide_unit_tooltip();
+	void show_unit_tip(const unit& troop, const map_location& loc);
+	void hide_unit_tip();
 protected:
 	/**
 	 * game_display pre_draw does specific things related e.g. to unit rendering
@@ -243,6 +242,9 @@ public:
 	std::vector<range_locs_pair>& attack_indicator_each() { return attack_indicator_each_dst_; }
 	const std::vector<range_locs_pair>& attack_indicator_each() const { return attack_indicator_each_dst_; }
 	const range_locs_pair& attack_indicator_each(std::string& str) const;
+
+	map_location& tactic_indicator() { return tactic_indicator_; }
+	const map_location& tactic_indicator() const { return tactic_indicator_; }
 
 	const artifical* expedite_city() const { return expedite_city_; }
 
@@ -378,9 +380,11 @@ private:
 	bool terrain_dirty_;
 
 	// Locations of the attack direction indicator's parts
-	map_location attack_indicator_src_;
 	std::set<map_location> attack_indicator_dst_;
 	std::vector<range_locs_pair> attack_indicator_each_dst_;
+
+	map_location tactic_indicator_;
+
 	// Locations of the build direction indicator's parts
 	std::set<map_location> build_indicator_dst_;
 

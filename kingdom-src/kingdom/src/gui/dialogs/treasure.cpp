@@ -196,7 +196,7 @@ void ttreasure::fill_2list(twindow& window)
 
 		str.str("");
 		if (!u.is_artifical()) {
-			str << u.name() << dgettext("wesnoth", "name^troop");
+			str << u.name() << dgettext("wesnoth", "name^Troop");
 		} else if (u.is_city()) {
 			str << u.name();
 		} else {

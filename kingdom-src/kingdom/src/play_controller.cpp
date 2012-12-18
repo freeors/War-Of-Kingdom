@@ -130,7 +130,8 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	troops_cache_vsize_(0),
 	fallen_to_unstage_(level_["fallen_to_unstage"].to_bool()),
 	card_mode_(level_["card_mode"].to_bool()),
-	always_duel_(level_["always_duel"].to_bool())
+	always_duel_(level_["always_duel"].to_bool()),
+	treasures_()
 {
 	resources::game_map = &map_;
 	resources::units = &units_;
@@ -155,7 +156,18 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	hotkey::set_scope_active(hotkey::SCOPE_GAME);
 	try {
 		init(video);
-		
+	
+		// Setup treasures
+		const std::vector<std::string> vstr = utils::split(level_["treasures"]);
+		const treasure_map& treasures = unit_types.treasures();
+		for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+			int t = lexical_cast_default<int>(*it, -1);
+			if (treasures.find(t) == treasures.end()) {
+				throw game::load_game_failed("treasures");
+			}
+			treasures_.push_back(t);
+		}
+
 		if (!level_["final_capital"].empty()) {
 			const std::vector<std::string> capitals = utils::split(level_["final_capital"]);
 			final_capital_.first = units_.city_from_cityno(lexical_cast_default<int>(capitals[0]));
@@ -1029,9 +1041,8 @@ void play_controller::rpg_independence(bool replaying)
 		from_leader->official_ = HEROS_NO_OFFICIAL;
 	}
 
-	int independenced_cities = 0;
-	int undependenced_cities = 0;
 	std::vector<artifical*> holded_cities = from_team.holded_cities();
+	std::set<int> independenced_cities, undependenced_cities;
 	for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
 		artifical* city = *it;
 		bool independenced = aggressing? false: true;
@@ -1039,9 +1050,21 @@ void play_controller::rpg_independence(bool replaying)
 			independenced = city->independence_vote(aggressing);
 		}
 		if (independenced) {
-			independenced_cities ++;
+			independenced_cities.insert(city->cityno());
 		} else {
-			undependenced_cities ++;
+			undependenced_cities.insert(city->cityno());
+		}
+	}
+
+	// navigation
+	int navigation = from_team.navigation();
+	to_team.set_navigation(navigation * independenced_cities.size() / (independenced_cities.size() + undependenced_cities.size()));
+
+	for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+		artifical* city = *it;
+		bool independenced = aggressing? false: true;
+		if (!independenced) {
+			independenced = independenced_cities.find(city->cityno()) != independenced_cities.end();
 		}
 		city->independence(independenced, to_team, rpg_city, from_team, aggressing, from_leader, from_leader_unit);
 		if (independenced && city != rpg_city) {
@@ -1071,14 +1094,20 @@ void play_controller::rpg_independence(bool replaying)
 	// card
 	std::vector<size_t>& candidate_cards = to_team.candidate_cards(); 
 	candidate_cards = from_team.candidate_cards();
+	from_team.candidate_cards().clear();
 	std::vector<size_t>& holded_cards = to_team.holded_cards();
 	holded_cards = from_team.holded_cards();
+	from_team.holded_cards().clear();
+
+	// treasure
+	to_team.holded_treasures() = from_team.holded_treasures();
+	from_team.holded_treasures().clear();
 
 	// villages
 	std::set<map_location> villages = from_team.villages();
 	from_team.clear_villages();
 	for (std::set<map_location>::const_iterator it = villages.begin(); it != villages.end(); ++ it) {
-		if (rand() % (independenced_cities + undependenced_cities) < independenced_cities) {
+		if (rand() % (independenced_cities.size() + undependenced_cities.size()) < independenced_cities.size()) {
 			to_team.get_village(*it);
 		} else {
 			from_team.get_village(*it);
@@ -1416,7 +1445,7 @@ void play_controller::do_init_side(const unsigned int team_index)
 		std::vector<artifical*> holded_cities = current_team.holded_cities();
 		for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
 			artifical& city = **it;
-			city.get_experience2(5);
+			city.get_experience2(3);
 			city.new_turn();
 		}
 
@@ -1490,10 +1519,22 @@ void play_controller::to_config(config& cfg) const
 	cfg.clear();
 
 	cfg.merge_attributes(level_);
+
+	std::stringstream strstr;
+	strstr.str("");
+	for (std::vector<int>::const_iterator it = treasures_.begin(); it != treasures_.end(); ++ it) {
+		if (it != treasures_.begin()) {
+			strstr << ", " << *it;
+		} else {
+			strstr << *it;
+		}
+	}
+	cfg["treasures"] = strstr.str();
+
 	if (final_capital_.first && !cfg.has_attribute("final_capital")) {
-		std::stringstream str;
-		str << final_capital_.first->cityno() << "," << (final_capital_.second? final_capital_.second->cityno(): 0);
-		cfg["final_capital"] = str.str();
+		strstr.str("");
+		strstr << final_capital_.first->cityno() << "," << (final_capital_.second? final_capital_.second->cityno(): 0);
+		cfg["final_capital"] = strstr.str();
 	}
 	cfg["maximal_defeated_activity"] = game_config::maximal_defeated_activity;
 
@@ -1555,6 +1596,11 @@ void play_controller::to_config(config& cfg) const
 
 	//write out the current state of the map
 	cfg["map_data"] = map_.write();
+}
+
+void play_controller::erase_treasure(int pos)
+{
+	treasures_.erase(treasures_.begin() + pos);
 }
 
 void play_controller::finish_side_turn()

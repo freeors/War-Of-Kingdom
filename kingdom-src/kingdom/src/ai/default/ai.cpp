@@ -943,6 +943,104 @@ void ai_default::do_diplomatism(int index)
 	}
 }
 
+bool ai_default::do_tactic(int index, bool first)
+{
+	int side_point = current_team_.tactic_point();
+	if (current_team_.is_human() && rpg::stratum != hero_stratum_leader) {
+		if (side_point < game_config::max_tactic_point * 3 / 4) { // 15
+			return false;
+		}
+	} else {
+		if (side_point < game_config::max_tactic_point / 2) { // 10
+			return false;
+		}
+	}
+
+	mr_data& mr = plan_to_.mrs_[index];
+	mr.calculate_mass(units_, current_team_);
+
+	int best_score = -1, score;
+	hero* best_hero = NULL;
+	unit* best_troop = NULL;
+
+	for (std::vector<tmess_data>::const_iterator it = mr.messes.begin(); it != mr.messes.end(); ++ it) {
+		const tmess_data& mess = *it;
+
+		for (std::map<unit*, tmess_data::tadjacent_data>::const_iterator it2 = mess.selfs.begin(); it2 != mess.selfs.end(); ++ it2) {
+			unit& u = *it2->first;
+			if (u.human()) {
+				continue;
+			}
+			if (!u.attacks_left()) {
+				continue;
+			}
+
+			for (int step = 0; step < 3; step ++) {
+				hero* h;
+				if (step == 0) {
+					h = &u.master();
+				} else if (step == 1) {
+					if (!u.second().valid()) {
+						continue;
+					}
+					h = &u.second();
+				} else if (step == 2) {
+					if (!u.third().valid()) {
+						continue;
+					}
+					h = &u.third();
+				}
+				if (h->tactic_ == HEROS_NO_TACTIC) {
+					continue;
+				}
+				const ttactic& t = unit_types.tactic(h->tactic_);
+				if (t.point() > side_point) {
+					continue;
+				}
+
+				// self. if no enemies, this profit divided by 2. 
+				if (!mess.enemies && !mess.enemy_arts) {
+					score = 0;
+				} else {
+					score = t.self_profit() * u.hitpoints() / u.max_hitpoints();
+					if (!mess.enemies) {
+						score /= 4;
+					}
+				}
+
+				// friend. if no enemies, this profit divided by 2. 
+				score += t.friend_profit() * it2->second.friends;
+				if (!mess.enemies) {
+					score /= 4;
+				}
+
+				// enemy
+				if (mess.selfs.size() > 1 || mess.allys) {
+					score += t.enemy_profit() * it2->second.enemies;
+				}
+				
+				// if total score < 50, don't conside this tactic.
+				if (score < 50) {
+					continue;
+				}
+
+				score += 50 * (game_config::max_tactic_point - t.point());
+				if (score > best_score) {
+					best_hero = h;
+					best_troop = &u;
+
+					best_score = score;
+				}
+			}
+		}
+	}
+	if (best_troop) {
+		cast_tactic(units_, *best_troop, *best_hero);
+		return true;
+	}
+	return false;
+}
+
 void ai_default::move_fresh_hero(artifical& from, artifical& to, int index)
 {
 	std::vector<hero*>& src_heros = from.fresh_heros();
@@ -1161,6 +1259,11 @@ void ai_default::do_move()
 		}
 		satisfy_hero_requirement(index);
 		calculate_mr_target(index);
+
+		bool ret = true;
+		while (ret) {
+			ret = do_tactic(index, true);
+		}
 
 		// attack! own field/reside troops and cities vs enemy field/reside troops and cities
 		while (consider_combat_) {
@@ -1402,6 +1505,12 @@ void ai_default::do_move()
 				move_unit(*g, goto_loc, false);
 			}
 		}
+/*
+		ret = true;
+		while (ret) {
+			ret = do_tactic(index, false);
+		}
+*/
 	}
 }
 
@@ -1782,9 +1891,6 @@ bool ai_default::do_recruitment(artifical& city)
 
 	// which unit_type
 	const std::string usage = "";
-
-	//make sure id, usage and cost are known for the coming evaluation of unit types
-	unit_types.build_all(unit_type::BS_HELP_INDEX);
 
 	std::vector<std::string> options;
 	int adaptability = 0;

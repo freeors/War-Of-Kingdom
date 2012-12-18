@@ -275,6 +275,13 @@ UINT ListView_GetCheckedCount(HWND hwnd)
 	return checkedcount;
 }
 
+DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName)
+{ 
+	HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG); 
+	HGLOBAL hglb = LoadResource(gdmgr._hinst, hrsrc); 
+	return (DLGTEMPLATE *)LockResource(hglb); 
+}
+
 }
 
 const char* utf8_2_ansi(const char* str)
@@ -903,8 +910,8 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	GetWindowRect(gdmgr._hdlg_core, &rc);
 	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_core), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
 	normal_rc[rcidx_dlg_tb] = rc;
-	// IDC_TV_CORE_EXPLORER
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_core, IDC_TV_CORE_EXPLORER), &rc);
+	// IDC_TAB_CORE_SECTION
+	GetWindowRect(GetDlgItem(gdmgr._hdlg_core, IDC_TAB_CORE_SECTION), &rc);
 	MapWindowPoints(NULL, gdmgr._hdlg_core, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
 	normal_rc[rcidx_tb_explorer] = rc;
 
@@ -1141,7 +1148,7 @@ void DVR_OnSize(HWND hdlgP, UINT wParam, int cx, int cy)
 		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_ET_SYNC_SUBAREA), max_rc[rcidx_sync_subarea].left, max_rc[rcidx_sync_subarea].top, max_rc[rcidx_sync_subarea].right - max_rc[rcidx_sync_subarea].left, max_rc[rcidx_sync_subarea].bottom - max_rc[rcidx_sync_subarea].top, TRUE);
 
 		MoveWindow(gdmgr._hdlg_core, max_rc[rcidx_dlg_tb].left, max_rc[rcidx_dlg_tb].top, max_rc[rcidx_dlg_tb].right - max_rc[rcidx_dlg_tb].left, max_rc[rcidx_dlg_tb].bottom - max_rc[rcidx_dlg_tb].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_core, IDC_TV_CORE_EXPLORER), max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].top, max_rc[rcidx_tb_explorer].right - max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].bottom - max_rc[rcidx_tb_explorer].top, TRUE);
+		MoveWindow(GetDlgItem(gdmgr._hdlg_core, IDC_TAB_CORE_SECTION), max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].top, max_rc[rcidx_tb_explorer].right - max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].bottom - max_rc[rcidx_tb_explorer].top, TRUE);
 
 		MoveWindow(gdmgr._hdlg_visual, max_rc[rcidx_dlg_cfg].left, max_rc[rcidx_dlg_cfg].top, max_rc[rcidx_dlg_cfg].right - max_rc[rcidx_dlg_cfg].left, max_rc[rcidx_dlg_cfg].bottom - max_rc[rcidx_dlg_cfg].top, TRUE);
 		MoveWindow(GetDlgItem(gdmgr._hdlg_visual, IDC_TV_CFG_EXPLORER), max_rc[rcidx_cfg_explorer].left, max_rc[rcidx_cfg_explorer].top, max_rc[rcidx_cfg_explorer].right - max_rc[rcidx_cfg_explorer].left, max_rc[rcidx_cfg_explorer].bottom - max_rc[rcidx_cfg_explorer].top, TRUE);
@@ -1160,7 +1167,7 @@ void DVR_OnSize(HWND hdlgP, UINT wParam, int cx, int cy)
 		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_ET_SYNC_SUBAREA), normal_rc[rcidx_sync_subarea].left, normal_rc[rcidx_sync_subarea].top, normal_rc[rcidx_sync_subarea].right - normal_rc[rcidx_sync_subarea].left, normal_rc[rcidx_sync_subarea].bottom - normal_rc[rcidx_sync_subarea].top, TRUE);
 
 		MoveWindow(gdmgr._hdlg_core, normal_rc[rcidx_dlg_tb].left, normal_rc[rcidx_dlg_tb].top, normal_rc[rcidx_dlg_tb].right - normal_rc[rcidx_dlg_tb].left, normal_rc[rcidx_dlg_tb].bottom - normal_rc[rcidx_dlg_tb].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_core, IDC_TV_CORE_EXPLORER), normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].top, normal_rc[rcidx_tb_explorer].right - normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].bottom - normal_rc[rcidx_tb_explorer].top, TRUE);
+		MoveWindow(GetDlgItem(gdmgr._hdlg_core, IDC_TAB_CORE_SECTION), normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].top, normal_rc[rcidx_tb_explorer].right - normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].bottom - normal_rc[rcidx_tb_explorer].top, TRUE);
 
 		MoveWindow(gdmgr._hdlg_visual, normal_rc[rcidx_dlg_cfg].left, normal_rc[rcidx_dlg_cfg].top, normal_rc[rcidx_dlg_cfg].right - normal_rc[rcidx_dlg_cfg].left, normal_rc[rcidx_dlg_cfg].bottom - normal_rc[rcidx_dlg_cfg].top, TRUE);
 		MoveWindow(GetDlgItem(gdmgr._hdlg_visual, IDC_TV_CFG_EXPLORER), normal_rc[rcidx_cfg_explorer].left, normal_rc[rcidx_cfg_explorer].top, normal_rc[rcidx_cfg_explorer].right - normal_rc[rcidx_cfg_explorer].left, normal_rc[rcidx_cfg_explorer].bottom - normal_rc[rcidx_cfg_explorer].top, TRUE);

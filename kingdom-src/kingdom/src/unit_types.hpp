@@ -50,6 +50,75 @@ public:
 	std::string image_;
 };
 
+class ttactic 
+{
+public:
+	static int min_complex_index;
+
+	enum {ATTACK = 0, RESISTANCE, ENCOURAGE, DEMOLISH};
+	enum {SELF = 0x1, FRIEND = 0x2, ENEMY = 0x4};
+
+	static std::map<int, std::string> type_name_map;
+	static std::map<std::string, int> range_id_map;
+
+	static int calculate_turn(int force, int intellect);
+
+	ttactic()
+		: index_(-1)
+		, id_()
+		, range_(0)
+		, point_(0)
+		, name_()
+		, description_()
+		, bg_image_()
+		, parts_()
+		, self_profit_(0)
+		, friend_profit_(0)
+		, enemy_profit_(0)
+		, complex_(false)
+	{}
+
+	ttactic(int index, int complex_index, const config& cfg);
+
+	int index() const { return index_; }
+	const std::string& id() const { return id_; }
+	const std::string& name() const { return name_; }
+	const std::string& description() const { return description_; }
+	const std::string& bg_image() const { return bg_image_; }
+	const std::vector<const ttactic*>& parts() const { return parts_; }
+
+	const config& action_cfg() const { return action_cfg_; }
+
+	int range() const { return range_; }
+	int point() const { return point_; }
+
+	int self_profit() const { return self_profit_; }
+	int friend_profit() const { return friend_profit_; }
+	int enemy_profit() const { return enemy_profit_; }
+	bool complex() const { return complex_; }
+
+	void set_atom_part() { parts_.push_back(this); }
+
+	std::vector<std::pair<const ttactic*, std::vector<map_location> > > touch_locs(const map_location& loc) const;
+	std::map<int, std::vector<unit*> > touch_units(unit_map& units, unit& u) const;
+private:
+	int index_;
+	std::string id_;
+	std::string name_;
+	std::string description_;
+	std::string bg_image_;
+	int point_;
+	std::vector<const ttactic*> parts_;
+	int range_;
+	config action_cfg_;
+
+	int self_profit_;
+	int friend_profit_;
+	int enemy_profit_;
+
+	bool complex_;
+};
+
 //and how much damage it does.
 class attack_type
 {
@@ -213,6 +282,30 @@ public:
 	friend class artifical;
 	friend class unit_type_data;
 
+	static std::string image(const std::string& race, const std::string& id, bool terrain);
+	static std::string hit(const std::string& race, const std::string& id, bool terrain);
+	static std::string miss(const std::string& race, const std::string& id, bool terrain);
+	static std::string leading(const std::string& race, const std::string& id, bool terrain);
+	static std::string idle(const std::string& race, const std::string& id, bool terrain, int number);
+	static std::string attack_image(const std::string& race, const std::string& id, bool terrain, int range, int number);
+
+	static bool has_resistance_anim(const std::set<std::string>& abilities);
+	static bool has_leading_anim(const std::set<std::string>& abilities);
+	static bool has_healing_anim(const std::set<std::string>& abilities);
+
+	static void defend_anim(const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void resistance_anim(const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void leading_anim(const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void healing_anim(const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void idle_anim(const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_melee(const std::string& aid, const std::string& aicon, bool troop, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_ranged(const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_ranged_magic_missile(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_ranged_lightbeam(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_ranged_fireball(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_ranged_iceball(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_ranged_lightning(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
+
 	/**
 	 * Creates a unit type for the given config, but delays its build
 	 * till later.
@@ -225,14 +318,14 @@ public:
 	~unit_type();
 
 	/** Load data into an empty unit_type */
-	void build_full(const movement_type_map &movement_types,
-		const race_map &races, const config::const_child_itors &traits);
+	void build_full(const config& cfg, const movement_type_map &movement_types,
+		const race_map &races);
 	/** Partially load data into an empty unit_type */
-	void build_help_index(const movement_type_map &movement_types,
-		const race_map &races, const config::const_child_itors &traits);
+	void build_help_index(const config& cfg, const movement_type_map &movement_types,
+		const race_map &races);
 	/** Load the most needed data into an empty unit_type */
-	void build_created(const movement_type_map &movement_types,
-		const race_map &races, const config::const_child_itors &traits);
+	void build_created(const config& cfg, const movement_type_map &movement_types,
+		const race_map &races);
 
 	/** Get the advancement tree
 	 *  Build a set of unit type's id of this unit type's advancement tree */
@@ -274,6 +367,7 @@ public:
 #endif
 
 	const std::string& flag_rgb() const { return flag_rgb_; }
+	const std::string& die_sound() const { return die_sound_; }
 
 	std::vector<attack_type> attacks() const;
 	const unit_movement_type& movement_type() const { return movementType_; }
@@ -320,7 +414,7 @@ public:
 	bool cancel_zoc() const { return cancel_zoc_; }
 	bool leader() const { return leader_; }
 
-	bool has_ability_by_id(const std::string& ability) const;
+	// bool has_ability_by_id(const std::string& ability) const;
 
 	const std::vector<const config*>& possible_traits() const
 	{ return possibleTraits_; }
@@ -334,13 +428,15 @@ public:
 
     BUILD_STATUS build_status() const { return build_status_; }
 
-	const config &get_cfg() const { return cfg_; }
+	const config& get_cfg() const { return cfg_; }
+
+	bool use_terrain_image() const;
 
 private:
 	void operator=(const unit_type& o);
 	void fill_abilities_cfg(const std::string& abilities);
 
-	config &cfg_;
+	config cfg_;
 
 	std::string id_;
     t_string type_name_;
@@ -358,6 +454,7 @@ private:
 
     std::string image_;
 	std::string flag_rgb_;
+	std::string die_sound_;
 
     unsigned int num_traits_;
 
@@ -432,12 +529,18 @@ public:
 	const treasure_map& treasures() const { return treasures_; }
 	const abilities_map& abilities() const { return abilities_; }
 	const specials_map& specials() const { return specials_; }
+	const std::map<int, ttactic>& tactics() const { return tactics_; }
+	const ttactic& tactic(int index) const { return tactics_.find(index)->second; }
+	const std::map<std::string, int>& tactics_id() const { return tactics_id_; }
+	const ttactic& tactic(const std::string& id) const { return tactics_.find(tactics_id_.find(id)->second)->second; }
 	const std::vector<std::string>& arms_ids() const { return arms_ids_; }
 	int arms_from_id(const std::string& id) const;
+	const std::vector<std::string>& range_ids() const { return range_ids_; }
 	const std::vector<tcharacter>& characters() const { return characters_; }
 	const tcharacter& character(int index) const { return characters_[index]; }
 	const std::string& character_id(int character) const;
 	int character_from_id(const std::string& id) const;
+	const std::map<std::string, config>& utype_anims() const { return utype_anims_; }
 	const std::vector<const unit_type*>& can_recruit() const { return can_recruit_; }
 	const navigation_types& navigation_threshold() const { return navigation_types_; }
 	const std::string& id_from_navigation(int navigation) const;
@@ -452,8 +555,6 @@ public:
 	const unit_type *find_market() const { return market_type_; }
 	const unit_type *find_tower() const { return tower_type_; }
 
-	void build_all(unit_type::BUILD_STATUS status);
-
 	/** Checks if the [hide_help] tag contains these IDs. */
 	bool hide_help(const std::string &type_id, const std::string &race_id) const;
 
@@ -464,12 +565,9 @@ private:
 	/** Parses the [hide_help] tag. */
 	void read_hide_help(const config &cfg);
 
-	void set_unit_config(const config& unit_cfg) { unit_cfg_ = &unit_cfg; }
-
-	const config &find_config(const std::string &key) const;
 	std::pair<unit_type_map::iterator, bool> insert(const std::pair<std::string, unit_type> &utype) { return types_.insert(utype); }
 	
-	unit_type& build_unit_type(const unit_type_map::iterator &ut, unit_type::BUILD_STATUS status) const;
+	unit_type& build_unit_type(unit_type &ut, const config& cfg, unit_type::BUILD_STATUS status = unit_type::FULL) const;
 	void add_advancefrom(const config& unit_cfg) const;
 
 	mutable unit_type_map types_;
@@ -482,7 +580,11 @@ private:
 	treasure_map treasures_;
 	abilities_map abilities_;
 	specials_map specials_;
+	std::map<int, ttactic> tactics_;
+	std::map<std::string, int> tactics_id_;
+	std::map<std::string, config> utype_anims_;
 	std::vector<std::string> arms_ids_;
+	std::vector<std::string> range_ids_;
 	std::vector<tcharacter> characters_;
 	std::vector<const unit_type*> can_recruit_;
 	navigation_types navigation_types_;
@@ -498,7 +600,6 @@ private:
 	std::vector< std::set<std::string> > hide_help_type_;
 	std::vector< std::set<std::string> > hide_help_race_;
 
-	const config *unit_cfg_;
 	unit_type::BUILD_STATUS build_status_;
 };
 

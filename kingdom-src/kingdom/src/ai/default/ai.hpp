@@ -96,6 +96,7 @@ private:
 
 	bool can_allied(const team& to, int target_side, artifical* aggressed);
 	void do_diplomatism(int index);
+	bool do_tactic(int index, bool first);
 	// void calculate_mr_rects_from_city_rect();
 	void satisfy_hero_requirement(int index);
 	void calculate_mr_target(int index);

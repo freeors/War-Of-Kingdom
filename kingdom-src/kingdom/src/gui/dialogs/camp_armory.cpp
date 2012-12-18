@@ -303,7 +303,7 @@ void tcamp_armory::refresh_according_to_troop(twindow& window, const int curr)
 
 	// traits
 	str.str("");
-	str << dgettext("wesnoth", "Traits") << ": " << utils::join(u.trait_names(), ", ");
+	str << _("Traits") << ": " << utils::join(u.trait_names(), ", ");
 	label = find_widget<tlabel>(&window, "tip_traits", false, true);
 	label->set_label(str.str());
 
@@ -311,7 +311,7 @@ void tcamp_armory::refresh_according_to_troop(twindow& window, const int curr)
 	str.str("");
 	std::vector<std::string> abilities_tt;
 	abilities_tt = u.ability_tooltips(true);
-	str << dgettext("wesnoth", "Abilities") << ": ";
+	str << _("Abilities") << ": ";
 	if (!abilities_tt.empty()) {
 		std::vector<t_string> abilities;
 		for (std::vector<std::string>::const_iterator a = abilities_tt.begin(); a != abilities_tt.end(); a += 2) {
@@ -335,7 +335,7 @@ void tcamp_armory::refresh_according_to_troop(twindow& window, const int curr)
 	// feature
 	str.str("");
 	int index = 0;
-	str << dgettext("wesnoth", "feature") << ": ";
+	str << _("Feature") << ": ";
 	for (int i = 0; i < HEROS_MAX_FEATURE; i ++) {
 		if (unit_feature_val2(u, i) == hero_feature_single_result) {
 			if (index > 0) {
@@ -354,7 +354,7 @@ void tcamp_armory::refresh_according_to_troop(twindow& window, const int curr)
 
 	// adaptability
 	str.str("");
-	str << dgettext("wesnoth", "adaptability") << ": ";
+	str << _("Adaptability") << ": ";
 	str << hero::arms_str(u.arms()) << "(" << hero::adaptability_str2(ftofxp12(u.adaptability_[u.arms()])) << ")";
 	label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
 	label->set_label(str.str());

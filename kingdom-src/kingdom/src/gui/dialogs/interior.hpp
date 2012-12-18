@@ -59,6 +59,7 @@ private:
 
 	void hero_toggled(twidget* widget);
 
+	std::pair<int, int> calculate_markets(int exploiture);
 private:
 	game_display& gui_;
 	std::vector<team>& teams_;
@@ -76,8 +77,8 @@ private:
 	tlistbox* hero_table_;
 
 	std::vector<department> departments_;
-	int artificals_;
-	int income_;
+	std::map<const unit_type*, int> market_map_;
+	// int income_;
 };
 
 }

@@ -186,7 +186,7 @@ void tselect_unit::refresh_tooltip(twindow& window)
 	int loyalty, hero_count = 1;
 	// refresh to gui
 	tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
-	str << dgettext("wesnoth", "hero") << ": " << temp.master().name();
+	str << _("Hero") << ": " << temp.master().name();
 	text << temp.master().loyalty(*teams_[temp.master().side_].leader());
 	loyalty = temp.master().loyalty(*teams_[temp.master().side_].leader());
 	if (temp.second().valid()) {
@@ -205,7 +205,7 @@ void tselect_unit::refresh_tooltip(twindow& window)
 
 	str.str("");
 	label = find_widget<tlabel>(&window, "tip_loyalty", false, true);
-	str << dgettext("wesnoth", "loyalty") << ": " << loyalty / hero_count << "/(" << text.str() << ")";
+	str << _("Loyalty") << ": " << loyalty / hero_count << "/(" << text.str() << ")";
 	label->set_label(str.str());
 
 	// leadership
@@ -248,7 +248,7 @@ void tselect_unit::refresh_tooltip(twindow& window)
 
 	// traits
 	str.str("");
-	str << dgettext("wesnoth", "Traits") << ": " << utils::join(temp.trait_names(), ", ");
+	str << _("Traits") << ": " << utils::join(temp.trait_names(), ", ");
 	label = find_widget<tlabel>(&window, "tip_traits", false, true);
 	label->set_label(str.str());
 
@@ -256,7 +256,7 @@ void tselect_unit::refresh_tooltip(twindow& window)
 	str.str("");
 	std::vector<std::string> abilities_tt;
 	abilities_tt = temp.ability_tooltips(true);
-	str << dgettext("wesnoth", "Abilities") << ": ";
+	str << _("Abilities") << ": ";
 	if (!abilities_tt.empty()) {
 		std::vector<t_string> abilities;
 		for (std::vector<std::string>::const_iterator a = abilities_tt.begin(); a != abilities_tt.end(); a += 2) {
@@ -276,7 +276,7 @@ void tselect_unit::refresh_tooltip(twindow& window)
 	// feature
 	str.str("");
 	index = 0;
-	str << dgettext("wesnoth", "feature") << ": ";
+	str << _("Feature") << ": ";
 	for (int i = 0; i < HEROS_MAX_FEATURE; i ++) {
 		if (unit_feature_val2(temp, i) == hero_feature_single_result) {
 			if (index > 0) {
@@ -291,7 +291,7 @@ void tselect_unit::refresh_tooltip(twindow& window)
 
 	// adaptability
 	str.str("");
-	str << dgettext("wesnoth", "adaptability") << ": ";
+	str << _("Adaptability") << ": ";
 	str << hero::arms_str(temp.arms()) << "(" << hero::adaptability_str2(ftofxp12(temp.adaptability_[temp.arms()])) << ")";
 	label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
 	label->set_label(str.str());
@@ -375,6 +375,11 @@ void tselect_unit::pre_show(CVideo& /*video*/, twindow& window)
 	for (std::vector<const unit*>::const_iterator itor = partial_troops_.begin(); itor != partial_troops_.end(); ++ itor) {
 		const unit* it = *itor;
 
+		const unit_type* ut = it->type();
+		if (it->packed()) {
+			ut = it->packee_type();
+		}
+
 		int side_num = it->side();
 		team& current_team = teams_[side_num - 1];
 
@@ -384,6 +389,11 @@ void tselect_unit::pre_show(CVideo& /*video*/, twindow& window)
 
 		list_item["label"] = it->absolute_image() + "~RC(" + it->team_color() + ">" + team::get_side_color_index(side_num) + ")";
 		list_item_item.insert(std::make_pair("icon", list_item));
+
+		if (ut->character() != NO_CHARACTER) {
+			list_item["label"] = unit_types.character(ut->character()).image_;
+			list_item_item.insert(std::make_pair("human", list_item));
+		}
 
 		// type/name
 		str.str("");

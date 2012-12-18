@@ -658,6 +658,22 @@ void replay::add_build(const unit_type* type, const map_location& city_loc, cons
 	cmd->add_child("build", build);
 }
 
+void replay::add_cast_tactic(const unit& tactician, const hero& h)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = str_cast(command_pool::CAST_TACTIC);
+
+	config val;
+
+	std::stringstream str;
+	str << tactician.get_location();
+	val["tactician"] = str.str();
+
+	val["hero"] = h.number_;
+
+	cmd->add_child("cast_tactic", val);
+}
+
 void replay::add_expedite(int unit_index, const std::vector<map_location>& steps)
 {
 	if (steps.empty()) { // no move, nothing to record
@@ -1626,6 +1642,28 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
+	} else if (type == command_pool::CAST_TACTIC) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = cfg.child("random", i)["value"].to_int();
+			ptr = ptr + 1; 
+		}
+		const config& child = cfg.child("cast_tactic");
+		// tactician="19,2"
+		std::vector<std::string> coor = utils::split(child["tactician"]);
+		for (i = 0; i < 2; i ++) {
+			*ptr = lexical_cast_default<int>(coor[i]);
+			ptr = ptr + 1;
+		}
+		*ptr = lexical_cast_default<int>(child["hero"]);
+		ptr = ptr + 1;
+
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
 	} else if (type == command_pool::ARMORY) {
 		cmd->type = (command_pool::TYPE)type;
 		int* ptr = (int*)(cmd + 1);
@@ -2349,6 +2387,27 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		size = *ptr;
 		ptr = ptr + 1;
 		child["type"] = (char*)ptr;
+
+	} else if (cmd->type == command_pool::CAST_TACTIC) {
+		config& child = cfg.add_child("cast_tactic");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+		// tactician
+		str << *ptr;
+		ptr = ptr + 1;
+		str << "," << *ptr;
+		ptr = ptr + 1;
+		child["tactician"] = str.str();
+		// hero
+		child["hero"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
+
 	} else if (cmd->type == command_pool::ARMORY) {
 		config& child = cfg.add_child("armory");
 		int* ptr = (int*)(cmd + 1);
@@ -3248,6 +3307,20 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			fix_shroud = !get_replay_source().is_skipping();
 			game_events::fire("post_build", art_loc, builder_loc);
 
+		} else if (const config &child = cfg->child("cast_tactic")) {
+			hero_map& heros = *resources::heros;
+			std::vector<std::string> vector_str = utils::split(child["tactician"]);
+			map_location tactician_loc(lexical_cast_default<int>(vector_str[0]) - 1, lexical_cast_default<int>(vector_str[1]) - 1);
+			unit& tactician = *resources::units->find(tactician_loc);
+
+			hero& h = heros[child["hero"].to_int()];
+
+			cast_tactic(units, tactician, h, true);
+
+			if (tactician.advances()) {
+				get_replay_source().add_expected_advancement(tactician.get_location());
+			}
+
 		} else if (const config &child = cfg->child("disband")) {
 			const std::string& disband_index = child["value"];
 			const int index = lexical_cast_default<int>(disband_index);
@@ -3304,11 +3377,14 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				unit& u = *resources::units->find(loc);
 				hero* h2 = u.can_encourage();
 				u.do_encourage(u.master(), *h2);
+				resources::screen->invalidate(loc);
 
 			} else if (type == replay::EVENT_RPG_INDEPENDENCE) {
 				resources::controller->rpg_independence(true);
-			}
-			resources::screen->invalidate(loc);
+
+			} else if (type == replay::EVENT_FIND_TREASURE) {
+				current_team.find_treasure(heros, *resources::controller, loc.x);
+			}			
 
 		} else if (const config &child = cfg->child("assemble_treasure")) {
 			const std::vector<std::string> diff_vstr = utils::split(child["diff"]);

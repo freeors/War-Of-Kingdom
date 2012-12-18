@@ -301,4 +301,6 @@ int calculate_exploiture(const hero& h1, const hero& h2, const hero& h3, int art
 
 void do_recruit(unit_map& units, hero_map& heros, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost_exponent, bool human);
 
+void cast_tactic(unit_map& units, unit& tactician, hero& h, bool replay = false);
+
 #endif

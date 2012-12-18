@@ -27,10 +27,14 @@
 #include "game_config.hpp"
 #include "gettext.hpp"
 #include "loadscreen.hpp"
-// #include "log.hpp"
 #include "map.hpp"
 #include "hero.hpp"
 #include "wml_exception.hpp"
+
+#include "unit_map.hpp"
+#include "unit.hpp"
+
+#include "formula_string_utils.hpp"
 
 static std::string null_str = "";
 
@@ -50,6 +54,248 @@ tcharacter::tcharacter(int index, const std::string& id)
 	name_ = hero::character_str(index_);
 	image_ = "misc/character-" + id_ + ".png";
 }
+
+int ttactic::min_complex_index = 100;
+std::map<int, std::string> ttactic::type_name_map;
+std::map<std::string, int> ttactic::range_id_map;
+
+int ttactic::calculate_turn(int force, int intellect)
+{
+	int sum = (force * 30 + intellect * 70) / 100;
+	if (sum < 90) {
+		return 2;
+	}
+	return 3;
+}
+
+ttactic::ttactic(int index, int complex_index, const config& cfg)
+	: index_(-1)
+	, range_(0)
+	, action_cfg_()
+	, parts_()
+	, id_()
+	, name_()
+	, description_()
+	, bg_image_()
+	, self_profit_(0)
+	, friend_profit_(0)
+	, enemy_profit_(0)
+{
+	if (type_name_map.empty()) {
+		type_name_map[RESISTANCE] = "resistance";
+		type_name_map[ATTACK] = "attack";
+		type_name_map[ENCOURAGE] = "encourage";
+		type_name_map[DEMOLISH] = "demolish";
+	}
+	if (range_id_map.empty()) {
+		range_id_map["self"] = SELF;
+		range_id_map["friend"] = FRIEND;
+		range_id_map["enemy"] = ENEMY;
+	}
+
+	id_ = cfg["id"].str();
+
+	point_ = cfg["point"].to_int(3);
+
+	std::vector<std::string> parts = utils::split(cfg["parts"].str());
+	if (!parts.empty()) {
+		const std::map<int, ttactic>& tactics = unit_types.tactics();
+		const std::map<std::string, int>& tactics_id = unit_types.tactics_id();
+		for (std::vector<std::string>::const_iterator it = parts.begin(); it != parts.end(); ++ it) {
+			std::map<std::string, int>::const_iterator find = tactics_id.find(*it);
+			if (find == tactics_id.end()) {
+				throw config::error("[tactic] error, " + id_ + " is complex tactic, but cannot find part: " + *it);
+			}
+			if (find->second >= min_complex_index) {
+				throw config::error("[tactic] error, " + id_ + " is complex tactic, " + *it + " is complex also.");
+			}
+			const ttactic* t = &(tactics.find(find->second)->second);
+			if (std::find(parts_.begin(), parts_.end(), t) != parts_.end()) {
+				throw config::error("[tactic] error, " + id_ + " is complex tactic, its sub-tactic " + *it + " duplicated.");
+			}
+			parts_.push_back(t);
+		}
+		index_ = complex_index;
+		complex_ = true;
+	} else {
+		index_ = index; 
+		complex_ = false;
+	}
+
+	std::stringstream strstr;
+	strstr << HERO_PREFIX_STR_TACTIC << id_;
+	name_ = dgettext("wesnoth-hero", strstr.str().c_str());
+
+	strstr.str("");
+	strstr << HERO_PREFIX_STR_TACTIC_DESC << id_;
+	description_ = dgettext("wesnoth-hero", strstr.str().c_str());
+
+	if (!complex_) {
+		std::vector<std::string> range = utils::split(cfg["range"].str());
+		for (std::vector<std::string>::const_iterator it = range.begin(); it != range.end(); ++ it) {
+			std::map<std::string, int>::const_iterator find = range_id_map.find(*it);
+			if (find != range_id_map.end()) {
+				range_ |= find->second;
+			}
+		}
+		if (!range_) {
+			throw config::error("[tactic] error, " + id_ + " range is null.");
+		}
+	
+		const config& action_cfg = cfg.child("action");
+		if (!action_cfg) {
+			throw config::error("[tactic] error, " + id_ + " is atom tactic, but no [action].");
+		}
+		action_cfg_ = action_cfg;
+	}
+
+	if (!complex_) {
+		int profit = 0; // x 100
+
+		foreach (const config& effect, action_cfg_.child_range("effect")) {
+			const std::string apply_to = effect["apply_to"].str();
+			int total_value = 0;
+			if (apply_to == "resistance") {
+				const config& resistance = effect.child("resistance");
+				foreach (const config::attribute &istrmap, resistance.attribute_range()) {
+					total_value += lexical_cast<int>(istrmap.second);
+				}
+				profit += total_value / 2;
+			} else if (apply_to == "attack") {
+				total_value = effect["increase_damage"].to_int();
+
+				profit += total_value * 50;
+			} else if (apply_to == "encourage") {
+				total_value = effect["increase"].to_int();
+
+				profit += total_value * 50;
+			} else if (apply_to == "demolish") {
+				total_value = effect["increase"].to_int();
+
+				// same value but lower profit
+				profit += total_value * 20;
+			}
+		}
+		if (range_ & SELF) {
+			self_profit_ = profit;
+		}
+		if (range_ & FRIEND) {
+			friend_profit_ = profit;
+		}
+		if (range_ & ENEMY) {
+			enemy_profit_ = -1 * profit;
+		}
+	} else {
+		for (std::vector<const ttactic*>::const_iterator it = parts_.begin(); it != parts_.end(); ++ it) {
+			const ttactic& t = **it;
+			if (t.range() & SELF) {
+				range_ |= SELF;
+			}
+			if (t.range() & FRIEND) {
+				range_ |= FRIEND;
+			}
+			if (t.range() & ENEMY) {
+				range_ |= ENEMY;
+			}
+
+			self_profit_ += t.self_profit();
+			friend_profit_ += t.friend_profit();
+			enemy_profit_ += t.enemy_profit();
+		}
+	}
+
+	if ((range_ & FRIEND) || (range_ & ENEMY)) {
+		bg_image_ = "tactic/bg-mess-increase.png";
+	} else {
+		bg_image_ = "tactic/bg-single-increase.png";
+	}
+}
+
+std::vector<std::pair<const ttactic*, std::vector<map_location> > > ttactic::touch_locs(const map_location& loc) const
+{
+	std::vector<std::pair<const ttactic*, std::vector<map_location> > > ret;
+	std::vector<const ttactic*> parts;
+	if (parts_.empty()) {
+		parts.push_back(this);		
+	} else {
+		parts = parts_;
+	}
+/*
+	for (std::vector<const ttactic*>::const_iterator it = parts.begin(); it != parts.end(); ++ it) {
+		const ttactic& t = **it;
+		const config& cfg = t.range_cfg();
+		ret.push_back(std::make_pair<const ttactic*, std::vector<map_location> >(&t, std::vector<map_location>()));
+
+		if (cfg["self"].to_bool()) {
+			ret.back().second.push_back(loc);
+		}
+		std::vector<std::string> adjacent = utils::split(cfg["adjacent"]);
+		for (std::vector<std::string>::const_iterator dir = adjacent.begin(); dir != adjacent.end(); ++ dir) {
+			map_location::DIRECTION dir_i = map_location::parse_direction(*dir);
+			if (dir_i == map_location::NDIRECTIONS) {
+				continue;
+			}
+			map_location loc1 = loc.get_direction(dir_i);
+			ret.back().second.push_back(loc1);
+		}
+	}
+*/
+	return ret;
+}
+
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+#include "team.hpp"
+#include "resources.hpp"
+
+std::map<int, std::vector<unit*> > ttactic::touch_units(unit_map& units, unit& u) const
+{
+	std::map<int, std::vector<unit*> > ret;
+	unit_map::iterator u_it;
+	const team& tactican_team = (*resources::teams)[u.side() - 1];
+	std::vector<unit*> touched;
+
+	int part = 0;
+	for (std::vector<const ttactic*>::const_iterator it = parts_.begin(); it != parts_.end(); ++ it, part ++) {
+		const ttactic& t = **it;
+		touched.clear();
+		
+		if (t.range() & SELF) {
+			touched.push_back(&u);
+		}
+		if ((t.range() & ttactic::FRIEND) || (t.range() & ttactic::ENEMY)) {
+			const map_location* tiles = u.adjacent_;
+			size_t adjance_size = u.adjacent_size_;
+
+			for (int step = 0; step < 2; step ++) {
+				if (step == 1) {
+					tiles = u.adjacent_2_;
+					adjance_size = u.adjacent_size_2_;
+				}
+			
+				for (size_t adj = 0; adj != adjance_size; adj ++) {
+					const map_location& loc = tiles[adj];
+					u_it = units.find(loc);
+					if (!u_it.valid()) {
+						continue;
+					}
+					if ((t.range() & ttactic::FRIEND) && tactican_team.is_enemy(u_it->side())) {
+						continue;
+					}
+					if ((t.range() & ttactic::ENEMY) && !tactican_team.is_enemy(u_it->side())) {
+						continue;
+					}						
+					if (std::find(touched.begin(), touched.end(), &*u_it) != touched.end()) {
+						continue;
+					}
+					touched.push_back(&*u_it);
+				}
+			}
+		}
+		ret[part] = touched;
+	}
+	return ret;
+}
+#endif
 
 attack_type::attack_type(const config& cfg) :
 	aloc_(),
@@ -584,6 +830,371 @@ static const unit_race& dummy_race(){
 #pragma warning(pop)
 #endif
 
+std::string unit_type::image(const std::string& race, const std::string& id, bool terrain)
+{
+	std::stringstream strstr;
+
+	strstr << "units/";
+	strstr << race << "/";
+	strstr << id << ".png";
+	return strstr.str();
+}
+
+std::string unit_type::hit(const std::string& race, const std::string& id, bool terrain)
+{
+	if (terrain) return "";
+
+	std::stringstream strstr;
+
+	strstr << "units/";
+	strstr << race << "/";
+	strstr << id << "-defend-hit.png";
+
+	return strstr.str();
+}
+
+std::string unit_type::miss(const std::string& race, const std::string& id, bool terrain)
+{
+	if (terrain) return "";
+
+	std::stringstream strstr;
+
+	strstr << "units/";
+	strstr << race << "/";
+	strstr << id << "-defend-miss.png";
+
+	return strstr.str();
+}
+
+std::string unit_type::leading(const std::string& race, const std::string& id, bool terrain)
+{
+	if (terrain) return "";
+
+	std::stringstream strstr;
+
+	strstr << "units/";
+	strstr << race << "/";
+	strstr << id << "-leading.png";
+
+	return strstr.str();
+}
+
+std::string unit_type::idle(const std::string& race, const std::string& id, bool terrain, int number)
+{
+	if (terrain) return "";
+
+	std::stringstream strstr;
+
+	strstr << "units/";
+	strstr << race << "/";
+	strstr << id << "-" << "idle" << "-";
+	strstr << number << ".png";
+
+	return strstr.str();
+}
+
+bool unit_type::has_resistance_anim(const std::set<std::string>& abilities)
+{
+	for (std::set<std::string>::const_iterator it = abilities.begin(); it != abilities.end(); ++ it) {
+		if (it->find("firm") != std::string::npos) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool unit_type::has_leading_anim(const std::set<std::string>& abilities)
+{
+	for (std::set<std::string>::const_iterator it = abilities.begin(); it != abilities.end(); ++ it) {
+		if (it->find("leadership") != std::string::npos) {
+			return true;
+		}
+		if (it->find("encourage") != std::string::npos) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool unit_type::has_healing_anim(const std::set<std::string>& abilities)
+{
+	for (std::set<std::string>::const_iterator it = abilities.begin(); it != abilities.end(); ++ it) {
+		if (it->find("heals") != std::string::npos) {
+			return true;
+		}
+		if (it->find("curing") != std::string::npos) {
+			return true;
+		}
+	}
+	return false;
+}
+
+std::string unit_type::attack_image(const std::string& race, const std::string& id, bool terrain, int range, int number)
+{
+	if (terrain) return "";
+
+	std::stringstream strstr;
+
+	strstr << "units/";
+	strstr << race << "/";
+	strstr << id << "-" << unit_types.range_ids()[range] << "-";
+	strstr << "attack-" << number << ".png";
+	
+	return strstr.str();
+}
+
+static void replace_anim_cfg_inernal(const config& src, config& dst, const utils::string_map& symbols)
+{
+	foreach (const config::any_child& c, src.all_children_range()) {
+		config& adding = dst.add_child(c.key);
+		foreach (const config::attribute &i, c.cfg.attribute_range()) {
+			adding[i.first] = utils::interpolate_variables_into_string(i.second, &symbols);
+		}
+		replace_anim_cfg_inernal(c.cfg, adding, symbols);
+	}
+}
+
+static void replace_anim_cfg(const std::string& src, config& dst, const utils::string_map& symbols)
+{
+	const config& anim_cfg = unit_types.utype_anims().find(src)->second;
+	// replace
+	foreach (const config::attribute &i, anim_cfg.attribute_range()) {
+		dst[i.first] = utils::interpolate_variables_into_string(i.second, &symbols);
+	}
+	replace_anim_cfg_inernal(anim_cfg, dst, symbols);
+}
+
+void unit_type::defend_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	symbols["base_png"] = image(race, id, terrain);
+	symbols["hit_png"] = hit(race, id, terrain);
+	symbols["miss_png"] = miss(race, id, terrain);
+	symbols["hit_sound"] = "human-hit-1.ogg,human-hit-2.ogg,human-hit-3.ogg,human-hit-4.ogg,human-hit-5.ogg";
+
+	replace_anim_cfg("defend", cfg, symbols);
+}
+
+void unit_type::resistance_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	symbols["leading_png"] = leading(race, id, terrain);
+
+	replace_anim_cfg("resistance", cfg, symbols);
+}
+
+void unit_type::leading_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	symbols["leading_png"] = leading(race, id, terrain);
+
+	replace_anim_cfg("leading", cfg, symbols);
+}
+
+void unit_type::healing_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+
+	replace_anim_cfg("healing", cfg, symbols);
+}
+
+void unit_type::idle_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	symbols["idle_1_png"] = idle(race, id, terrain, 1);
+	symbols["idle_2_png"] = idle(race, id, terrain, 2);
+	symbols["idle_3_png"] = idle(race, id, terrain, 3);
+	symbols["idle_4_png"] = idle(race, id, terrain, 4);
+
+	replace_anim_cfg("idle", cfg, symbols);
+}
+
+void unit_type::attack_anim_melee(const std::string& aid, const std::string& aicon, bool troop, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	std::string hit_sound = "sword-1.ogg"; // {SOUND_LIST:SWORD_SWISH}
+	std::string miss_sound = "miss-1.ogg,miss-2.ogg,miss-3.ogg"; // {SOUND_LIST:MISS}
+	if (aicon.find("staff") != std::string::npos) {
+		hit_sound = "staff.wav";
+	}
+
+	cfg.clear();
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["hit_sound"] = hit_sound;
+	symbols["miss_sound"] = miss_sound;
+	symbols["melee_attack_1_png"] = attack_image(race, id, terrain, 0, 1);
+	symbols["melee_attack_2_png"] = attack_image(race, id, terrain, 0, 2);
+	symbols["melee_attack_3_png"] = attack_image(race, id, terrain, 0, 3);
+	symbols["melee_attack_4_png"] = attack_image(race, id, terrain, 0, 4);
+
+	replace_anim_cfg("melee_attack", cfg, symbols);
+
+	if (!troop) {
+		cfg["offset"] = 0;
+	}
+}
+
+void unit_type::attack_anim_ranged(const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	std::string image = "projectiles/missile-n.png";
+	std::string image_diagonal = "projectiles/missile-ne.png";
+	std::string hit_sound = "bow.ogg";
+	std::string miss_sound = "bow-miss.ogg";
+	if (aicon.find("sling") != std::string::npos) {
+		image = "projectiles/stone-large.png";
+		image_diagonal = "";
+	}
+
+	cfg.clear();
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["image_png"] = image;
+	symbols["image_diagonal_png"] = image_diagonal;
+	symbols["hit_sound"] = hit_sound;
+	symbols["miss_sound"] = miss_sound;
+	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+
+	replace_anim_cfg("ranged_attack", cfg, symbols);
+}
+
+void unit_type::attack_anim_ranged_magic_missile(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+
+	replace_anim_cfg("magic_missile_attack", cfg, symbols);
+}
+
+void unit_type::attack_anim_ranged_lightbeam(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+
+	replace_anim_cfg("lightbeam_attack", cfg, symbols);
+}
+
+void unit_type::attack_anim_ranged_fireball(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+
+	replace_anim_cfg("fireball_attack", cfg, symbols);
+}
+
+void unit_type::attack_anim_ranged_iceball(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+
+	replace_anim_cfg("iceball_attack", cfg, symbols);
+}
+
+void unit_type::attack_anim_ranged_lightning(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	cfg.clear();
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+
+	replace_anim_cfg("lightning_attack", cfg, symbols);
+}
+
 unit_type::unit_type(const unit_type& o) :
 	cfg_(o.cfg_),
 	id_(o.id_),
@@ -601,6 +1212,7 @@ unit_type::unit_type(const unit_type& o) :
 	undead_variation_(o.undead_variation_),
 	image_(o.image_),
 	flag_rgb_(o.flag_rgb_),
+	die_sound_(o.die_sound_),
 	num_traits_(o.num_traits_),
 	variations_(o.variations_),
 	race_(o.race_),
@@ -651,7 +1263,7 @@ unit_type::unit_type(const unit_type& o) :
 
 
 unit_type::unit_type(config &cfg) :
-	cfg_(cfg),
+	cfg_(),
 	id_(cfg["id"]),
 	type_name_(),
 	description_(),
@@ -667,6 +1279,7 @@ unit_type::unit_type(config &cfg) :
 	undead_variation_(),
 	image_(),
 	flag_rgb_(),
+	die_sound_(),
 	num_traits_(0),
 	gender_types_(),
 	variations_(),
@@ -706,18 +1319,22 @@ unit_type::unit_type(config &cfg) :
 	guard_(NO_GUARD),
 	packer_(false)
 {
-	foreach (config &att, cfg_.child_range("attack")) {
+	foreach (const config::any_child& c, cfg.all_children_range()) {
+		if (c.key == "attack") continue;
+		cfg_.add_child(c.key, c.cfg);
+	}
+
+	foreach (config &att, cfg.child_range("attack")) {
 		attacks_.push_back(attack_type(att));
 		if (attacks_.size() == 3) {
 			break;
 		}
 	}
-	cfg_.clear_children("attack");
 
 	// AI need this flag, may be before build_all status. duraton ai's interior
-	master_ = cfg_["master"].to_int(HEROS_INVALID_NUMBER);
-	wall_ = cfg_["wall"].to_bool();
-	walk_wall_ = cfg_["walk_wall"].to_bool();
+	master_ = cfg["master"].to_int(HEROS_INVALID_NUMBER);
+	wall_ = cfg["wall"].to_bool();
+	walk_wall_ = cfg["walk_wall"].to_bool();
 	gold_income_ = cfg["gold_income"].to_int();
 }
 
@@ -731,13 +1348,11 @@ unit_type::~unit_type()
 	}
 }
 
-void unit_type::build_full(const movement_type_map &mv_types,
-	const race_map &races, const config::const_child_itors &traits)
+void unit_type::build_full(const config& cfg, const movement_type_map &mv_types,
+	const race_map &races)
 {
 	if (build_status_ == NOT_BUILT || build_status_ == CREATED)
-		build_help_index(mv_types, races, traits);
-
-	config &cfg = cfg_;
+		build_help_index(cfg, mv_types, races);
 
 	movementType_ = unit_movement_type(cfg);
 	alpha_ = ftofxp(1.0);
@@ -749,8 +1364,8 @@ void unit_type::build_full(const movement_type_map &mv_types,
 		}
 		possibleTraits_.push_back(&it->second);
 	}
-		
-	foreach (config &var_cfg, cfg.child_range("variation"))
+/*		
+	foreach (const config &var_cfg, cfg.child_range("variation"))
 	{
 		if (var_cfg["inherit"].to_bool()) {
 			config nvar_cfg(cfg);
@@ -759,12 +1374,12 @@ void unit_type::build_full(const movement_type_map &mv_types,
 			var_cfg.swap(nvar_cfg);
 		}
 		unit_type *ut = new unit_type(var_cfg);
-		ut->build_full(mv_types, races, traits);
+		ut->build_full(var_cfg, mv_types, races);
 		variations_.insert(std::make_pair(var_cfg["variation_name"], ut));
 	}
-
+*/
 	for (variations_map::const_iterator it = gender_types_.begin(); it != gender_types_.end(); ++ it) {
-		it->second->build_full(mv_types, races, traits);
+		it->second->build_full(cfg, mv_types, races);
 	}
 
 	const std::string& align = cfg["alignment"];
@@ -820,6 +1435,8 @@ void unit_type::build_full(const movement_type_map &mv_types,
 	flag_rgb_ = cfg["flag_rgb"].str();
 	game_config::add_color_info(cfg);
 
+	die_sound_ = cfg["die_sound"].str();
+
 	match_ = cfg["match"].str();
 	terrain_ = t_translation::read_terrain_code(cfg["terrain"].str());
 	can_recruit_ = cfg["can_recruit"].to_bool();
@@ -844,23 +1461,12 @@ void unit_type::build_full(const movement_type_map &mv_types,
 		}
 	}
 	
-	land_wall_ = cfg_["land_wall"].to_bool(true);
-	guard_ = cfg_["guard"].to_int(NO_GUARD);
+	land_wall_ = cfg["land_wall"].to_bool(true);
+	guard_ = cfg["guard"].to_int(NO_GUARD);
 
 	// Deprecation messages, only seen when unit is parsed for the first time.
 
 	build_status_ = FULL;
-
-	// remove some attribute that indicated by varaible.
-	static char const *internalized_attrs[] = { "abilities", "advances_to", "advancement", "alignment", "alpha", "arms", 
-		"base", "can_recruit", "can_reside", "cancel_zoc", "cost", "character",
-		"cost", "experience", "flag_rgb", "gold_income", 
-		"halo", "heal", "hitpoints", "id", "ignore_race_traits", "image", 
-		"land_wall", "level", "master", "match", "movement", "movement_type",
-		"packer", "race", "terrain", "walk_wall", "wall", "undead_variation", "zoc"};
-	foreach (const char *attr, internalized_attrs) {
-		cfg_.remove_attribute(attr);
-	}
 }
 
 void unit_type::fill_abilities_cfg(const std::string& abilities)
@@ -885,32 +1491,28 @@ void unit_type::fill_abilities_cfg(const std::string& abilities)
 	}
 }
 
-void unit_type::build_help_index(const movement_type_map &mv_types,
-	const race_map &races, const config::const_child_itors &traits)
+void unit_type::build_help_index(const config& cfg, const movement_type_map &mv_types,
+	const race_map &races)
 {
 	if (build_status_ == NOT_BUILT)
-		build_created(mv_types, races, traits);
+		build_created(cfg, mv_types, races);
 
-	const config &cfg = cfg_;
-
-	type_name_ = cfg_["name"];
-	cfg_.remove_attribute("name");
-	description_ = cfg_["description"];
-	cfg_.remove_attribute("description");
+	type_name_ = cfg["name"];
+	description_ = cfg["description"];
 	hitpoints_ = cfg["hitpoints"].to_int(1);
 	level_ = cfg["level"];
 	movement_ = cfg["movement"].to_int(1);
 	max_attacks_ = cfg["attacks"].to_int(1);
 	cost_ = cfg["cost"].to_int(1);
-	halo_ = cfg_["halo"].str();
-	undead_variation_ = cfg_["undead_variation"].str();
-	image_ = cfg_["image"].str();
+	halo_ = cfg["halo"].str();
+	undead_variation_ = cfg["undead_variation"].str();
+	image_ = cfg["image"].str();
 	heal_ = cfg["heal"].to_int();
 	turn_experience_ = cfg["turn_experience"].to_int();
 	movementType_id_ = cfg["movement_type"].str();
 
 	for (variations_map::const_iterator it = gender_types_.begin(); it != gender_types_.end(); ++ it) {
-		it->second->build_help_index(mv_types, races, traits);
+		it->second->build_help_index(cfg, mv_types, races);
 	}
 
 	const race_map::const_iterator race_it = races.find(cfg["race"]);
@@ -948,24 +1550,13 @@ void unit_type::build_help_index(const movement_type_map &mv_types,
 	build_status_ = BS_HELP_INDEX;
 }
 
-void unit_type::build_created(const movement_type_map &mv_types,
-	const race_map &races, const config::const_child_itors &traits)
+void unit_type::build_created(const config& cfg, const movement_type_map &mv_types,
+	const race_map &races)
 {
 	gender_types_.clear();
 
-	config &cfg = cfg_;
-
 	packer_ = cfg["packer"].to_bool();
-	// for packer type, some attribute must be absent.
-	if (packer_) {
-		cfg.remove_attribute("advances_to");
-		cfg.remove_attribute("advancement");
-		cfg.remove_attribute("hitpoints");
-		cfg.remove_attribute("experience");
-		cfg.remove_attribute("movement");
-		cfg.remove_attribute("cost");
-	}
-
+/*
 	if (config &male_cfg = cfg.child("male"))
 	{
 		if (male_cfg["inherit"].to_bool(true)) {
@@ -989,9 +1580,9 @@ void unit_type::build_created(const movement_type_map &mv_types,
 		female_cfg.clear_children("female");
 		gender_types_["female"] = new unit_type(female_cfg);
 	}
-
+*/
 	for (variations_map::const_iterator it = gender_types_.begin(); it != gender_types_.end(); ++ it) {
-		it->second->build_created(mv_types, races, traits);
+		it->second->build_created(cfg, mv_types, races);
 	}
 
     const std::string& advances_to_val = cfg["advances_to"];
@@ -1053,13 +1644,89 @@ const t_string unit_type::unit_description() const
 	}
 }
 
+bool unit_type::use_terrain_image() const
+{
+	return (terrain_ != t_translation::NONE_TERRAIN)? true: false;
+}
+
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
 const std::vector<unit_animation>& unit_type::animations() const 
 {
-	if (animations_.empty()) {
-		const std::string& default_image = (terrain_ == t_translation::NONE_TERRAIN)? image_: "";
-		unit_animation::fill_initial_animations(default_image, animations_, cfg_);
+	if (!animations_.empty()) return animations_;
+
+	std::set<std::string> abilities;
+	for (std::multimap<const std::string, const config*>::const_iterator it = abilities_cfg_.begin(); it != abilities_cfg_.end(); ++ it) {
+		const config& ab_cfg = *(it->second);
+		const std::string& id = ab_cfg["id"];
+		if (!id.empty()) {
+			abilities.insert(id);
+		}
 	}
+
+	config utype_cfg;
+
+	if (!use_terrain_image()) {
+		config& cfg = utype_cfg.add_child("defend");
+		unit_type::defend_anim(race_->id(), id_, use_terrain_image(), cfg);
+	}
+
+	if (has_resistance_anim(abilities)) {
+		config& cfg = utype_cfg.add_child("resistance_anim");
+		unit_type::resistance_anim(race_->id(), id_, use_terrain_image(), cfg);
+	}
+	if (has_leading_anim(abilities)) {
+		config& cfg = utype_cfg.add_child("leading_anim");
+		unit_type::leading_anim(race_->id(), id_, use_terrain_image(), cfg);
+	}
+	if (has_healing_anim(abilities)) {
+		config& cfg = utype_cfg.add_child("healing_anim");
+		unit_type::healing_anim(race_->id(), id_, use_terrain_image(), cfg);
+	}
+
+	config& cfg = utype_cfg.add_child("idle_anim");
+	unit_type::idle_anim(race_->id(), id_, use_terrain_image(), cfg);
+
+	if (!packer_) {
+		for (std::vector<attack_type>::const_iterator it = attacks_.begin(); it != attacks_.end(); ++ it) {
+			config& cfg = utype_cfg.add_child("attack_anim");
+			if (it->range() == "melee") {
+				unit_type::attack_anim_melee(it->id(), it->icon(), master_ == HEROS_INVALID_NUMBER && !can_recruit_, race_->id(), id_, use_terrain_image(), cfg);
+
+			} else if (it->icon().find("magic-missile") != std::string::npos) {
+				unit_type::attack_anim_ranged_magic_missile(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+
+			} else if (it->icon().find("lightbeam") != std::string::npos) {
+				unit_type::attack_anim_ranged_lightbeam(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+
+			} else if (it->icon().find("fireball") != std::string::npos) {
+				unit_type::attack_anim_ranged_fireball(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+
+			} else if (it->icon().find("iceball") != std::string::npos) {
+				unit_type::attack_anim_ranged_iceball(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+
+			} else if (it->icon().find("lightning") != std::string::npos) {
+				unit_type::attack_anim_ranged_lightning(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+
+			} else {
+				unit_type::attack_anim_ranged(it->id(), it->icon(), race_->id(), id_, use_terrain_image(), cfg);
+			}
+		}
+	} else {
+		const std::vector<std::string>& range_ids = unit_types.range_ids();
+
+		config* cfg = &utype_cfg.add_child("attack_anim");
+		unit_type::attack_anim_melee(range_ids[0], "staff-magic.png", true, race_->id(), id_, use_terrain_image(), *cfg);
+
+		cfg = &utype_cfg.add_child("attack_anim");
+		unit_type::attack_anim_ranged_magic_missile(range_ids[1], race_->id(), id_, use_terrain_image(), *cfg);
+
+		cfg = &utype_cfg.add_child("attack_anim");
+		unit_type::attack_anim_ranged(range_ids[2], "sling.png", race_->id(), id_, use_terrain_image(), *cfg);
+	}
+
+	const std::string& default_image = (terrain_ == t_translation::NONE_TERRAIN)? image_: "";
+	utype_cfg["die_sound"] = die_sound_;
+	unit_animation::fill_initial_animations(default_image, animations_, utype_cfg);
 
 	return animations_;
 }
@@ -1115,18 +1782,6 @@ const char* unit_type::alignment_id(unit_type::ALIGNMENT align)
 	return (aligns[align]);
 }
 
-bool unit_type::has_ability_by_id(const std::string& ability) const
-{
-	if (const config &abil = cfg_.child("abilities"))
-	{
-		foreach (const config::any_child &ab, abil.all_children_range()) {
-			if (ab.cfg["id"] == ability)
-				return true;
-		}
-	}
-	return false;
-}
-
 bool unit_type::hide_help() const {
 	return hide_help_ || unit_types.hide_help(id_, race_->id());
 }
@@ -1167,9 +1822,6 @@ std::vector<std::string> unit_type::advances_to(int character) const
 
 const std::vector<std::string> unit_type::advances_from() const
 {
-	// currently not needed (only help call us and already did it)
-	unit_types.build_all(unit_type::BS_HELP_INDEX);
-
 	std::vector<std::string> adv_from;
 	foreach (const unit_type_data::unit_type_map::value_type &ut, unit_types.types())
 	{
@@ -1192,15 +1844,18 @@ unit_type_data::unit_type_data() :
 	treasures_(),
 	abilities_(),
 	specials_(),
+	tactics_(),
+	tactics_id_(),
 	arms_ids_(),
+	range_ids_(),
 	characters_(),
+	utype_anims_(),
 	can_recruit_(),
 	navigation_types_(),
 	wall_type_(NULL),
 	hide_help_all_(false),
 	hide_help_type_(),
 	hide_help_race_(),
-	unit_cfg_(NULL),
 	build_status_(unit_type::NOT_BUILT)
 {
 }
@@ -1208,7 +1863,6 @@ unit_type_data::unit_type_data() :
 void unit_type_data::set_config(config &cfg)
 {
     clear();
-    set_unit_config(cfg);
 
 	foreach (const config &mt, cfg.child_range("movetype"))
 	{
@@ -1282,29 +1936,31 @@ void unit_type_data::set_config(config &cfg)
 
 	foreach (const config &af, cfg.child_range("treasure"))
 	{
-		if (af["id"].empty()) {
-			throw config::error("treasure error, no id attribute");
-		}
-		int id = af["id"].to_int();
-		if (id >= HEROS_MAX_TREASURE) {
-			throw config::error("treasure error, id=" + af["id"].str() + ", invalid id");
-		}
-		if (af["feature"].empty()) {
-			throw config::error("treasure error, id=" + af["id"].str() + ", no feature attribute");
-		}
-		if (treasures_.find(id) != treasures_.end()) {
-			throw config::error("treasure error, id=" + af["id"].str() + ", duplicate id");
-		}
-		const std::vector<std::string> features = utils::split(af["feature"].str());
-		std::vector<int> v;
-		for (std::vector<std::string>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
-			int feature = lexical_cast_default<int>(*itor);
-			if (feature < 0 || feature >= HEROS_MAX_FEATURE) {
-				throw config::error("treasure error, id=" + af["id"].str() + ", invalid feature");
+		foreach (const config::attribute &i, af.attribute_range()) {
+			int id = lexical_cast_default<int>(i.first, -1);
+			if (id == -1) {
+				throw config::error("treasure error, invalid treasure number.");
 			}
-			v.push_back(feature);
+			if (treasures_.find(id) != treasures_.end()) {
+				throw config::error("treasure error, number=" + i.first + ", duplicate number.");
+			}
+			if (id >= HEROS_MAX_TREASURE) {
+				throw config::error("treasure error, number=" + i.first + ", to lardge number.");
+			}
+			if (i.second.empty()) {
+				throw config::error("treasure error, number=" + i.first + ", no feature attribute");
+			}
+			const std::vector<std::string> features = utils::split(i.second.str());
+			std::vector<int> v;
+			for (std::vector<std::string>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
+				int feature = lexical_cast_default<int>(*itor);
+				if (feature < 0 || feature >= HEROS_MAX_FEATURE) {
+					throw config::error("treasure error, number=" + i.first + ", invalid feature");
+				}
+				v.push_back(feature);
+			}
+			treasures_.insert(std::pair<int, std::vector<int> >(id, v));
 		}
-		treasures_.insert(std::pair<int, std::vector<int> >(id, v));
 		loadscreen::increment_progress();
 	}
 
@@ -1336,6 +1992,24 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
+	foreach (const config &anim, cfg.child_range("utype_anim"))
+	{
+		const std::string id = anim["id"].str();
+		if (id.empty()) {
+			throw config::error("[utype_anim] error, utype_anim must has id attribute");
+		}
+		if (utype_anims_.find(id) != utype_anims_.end()) {
+			throw config::error("[utype_anim] error, duplicate id: " + id);
+		}
+		const config& sub = anim.child("anim");
+		if (!sub) {
+			throw config::error("[utype_anim] error, utype_anim must has [anim] tag");
+		}
+		utype_anims_[id] = sub;
+
+		loadscreen::increment_progress();
+	}
+
 	foreach (const config &sp, cfg.child_range("specials"))
 	{
 		foreach (const config::any_child &c, sp.all_children_range()) {
@@ -1351,6 +2025,31 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
+	int index = 0, complex_index = ttactic::min_complex_index;
+	foreach (const config &tactic, cfg.child_range("tactic"))
+	{
+		const std::string id = tactic["id"].str();
+		if (id.empty()) {
+			throw config::error("[tactic] error, no id attribute");
+		}
+		if (tactics_id_.find(id) != tactics_id_.end()) {
+			throw config::error("[tactic] error, duplicate id " + id);
+		}
+		
+		ttactic t(index, complex_index, tactic);
+		std::pair<std::map<int, ttactic>::iterator, bool> ins = tactics_.insert(std::make_pair<int, ttactic>(t.index(), t));
+		tactics_id_[id] = t.index();
+
+		if (!t.complex()) {
+			ins.first->second.set_atom_part();
+			index ++;
+		} else {
+			complex_index ++;
+		}
+		
+		loadscreen::increment_progress();
+	}
+
 	if (const config& id_cfg = cfg.child("identifier")) {
 		// identifier of arms
 		if (id_cfg["arms"].empty()) {
@@ -1363,6 +2062,19 @@ void unit_type_data::set_config(config &cfg)
 				break;
 			}
 			arms_ids_.push_back(ids[i]);
+		}
+
+		// identifier of range
+		if (id_cfg["range"].empty()) {
+			throw config::error("[identifier] error, no range attribute");
+		}
+		ids = utils::split(id_cfg["range"]);
+		if (ids.size() != 3) {
+			throw config::error("[identifier] error, size of range value must is 3.");
+		}
+		size = ids.size();
+		for (size_t i = 0; i < size; i ++) {
+			range_ids_.push_back(ids[i]);
 		}
 
 		// identifier of character
@@ -1389,24 +2101,28 @@ void unit_type_data::set_config(config &cfg)
 	navigation_types_.push_back("boat5");
 	navigation_types_.push_back("boat6");
 
+	std::map<unit_type*, const config*> ut_cfg_map;
 	foreach (config &ut, cfg.child_range("unit_type"))
 	{
 		std::string id = ut["id"];
-		if (const config &bu = ut.child("base_unit"))
-		{
-			// Derive a new unit type from an existing base unit id
-			config merge_cfg = find_config(bu["id"]);
-			ut.clear_children("base_unit");
-			merge_cfg.merge_with(ut);
-			ut.swap(merge_cfg);
-		}
+		// cannot support base_unit again.(wesnoth support it)
+
 		// We insert an empty unit_type and build it after the copy (for performance).
 		unit_type_map::iterator itor = insert(std::make_pair(id, unit_type(ut))).first;
-		
+		ut_cfg_map.insert(std::make_pair(&itor->second, &ut));
+				
 		loadscreen::increment_progress();
 	}
 
-	build_all(unit_type::CREATED);
+	// Parse some unit_type'field may need other unit_type, example "advances_to",
+	// So it is impossible that call build_unit_type in above foreach loop.
+
+	// You may use member variable in unit_type to rember which config relative to this unit_type,
+	// But this config maybe destroy after this call, in order to avoid confuse, 
+	// don't let ths config appear in unit_type's member variable.
+	for (std::map<unit_type*, const config*>::const_iterator it = ut_cfg_map.begin(); it != ut_cfg_map.end(); ++ it) {
+		build_unit_type(*(it->first), *(it->second));
+	}
 
 	for (unit_type_map::iterator it = types_.begin(); it != types_.end(); ++ it) {
 		unit_type& ut = it->second;
@@ -1489,20 +2205,7 @@ const unit_type *unit_type_data::find(const std::string& key, unit_type::BUILD_S
 		return NULL;
     }
 
-    //check if the unit_type is constructed and build it if necessary
-    build_unit_type(itor, status);
-
 	return &itor->second;
-}
-
-const config& unit_type_data::find_config(const std::string& key) const
-{
-	const config &cfg = unit_cfg_->find_child("unit_type", "id", key);
-
-	if (cfg)
-		return cfg;
-
-    throw config::error("unit type not found: "+key);
 }
 
 void unit_type_data::clear()
@@ -1517,8 +2220,12 @@ void unit_type_data::clear()
 	treasures_.clear();
 	abilities_.clear();
 	specials_.clear();
+	tactics_.clear();
+	tactics_id_.clear();
 	arms_ids_.clear();
+	range_ids_.clear();
 	characters_.clear();
+	utype_anims_.clear();
 	can_recruit_.clear();
 	navigation_types_.clear();
 	build_status_ = unit_type::NOT_BUILT;
@@ -1533,37 +2240,24 @@ void unit_type_data::clear()
 	hide_help_type_.clear();
 }
 
-void unit_type_data::build_all(unit_type::BUILD_STATUS status)
+unit_type& unit_type_data::build_unit_type(unit_type &ut, const config& cfg, unit_type::BUILD_STATUS status) const
 {
-	if (int(status) <= int(build_status_)) return;
-	assert(unit_cfg_ != NULL);
-
-	for (unit_type_map::iterator u = types_.begin(), u_end = types_.end(); u != u_end; ++u) {
-		build_unit_type(u, status);
-		loadscreen::increment_progress();
-	}
-
-	build_status_ = status;
-}
-
-unit_type &unit_type_data::build_unit_type(const unit_type_map::iterator &ut, unit_type::BUILD_STATUS status) const
-{
-	if (int(status) <= int(ut->second.build_status()))
-		return ut->second;
+	if (int(status) <= int(ut.build_status()))
+		return ut;
 
 	switch (status) {
 	case unit_type::CREATED:
-		ut->second.build_created(movement_types_, races_, unit_cfg_->child_range("trait"));
+		ut.build_created(cfg, movement_types_, races_);
 		break;
 	case unit_type::BS_HELP_INDEX:
 		// Build the data needed to feed the help index.
-		ut->second.build_help_index(movement_types_, races_, unit_cfg_->child_range("trait"));
+		ut.build_help_index(cfg, movement_types_, races_);
 		break;
 	default:
-		ut->second.build_full(movement_types_, races_, unit_cfg_->child_range("trait"));
+		ut.build_full(cfg, movement_types_, races_);
 	}
 
-	return ut->second;
+	return ut;
 }
 
 void unit_type_data::read_hide_help(const config& cfg)

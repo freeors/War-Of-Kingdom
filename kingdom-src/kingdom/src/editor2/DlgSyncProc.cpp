@@ -49,13 +49,14 @@ void sync_enter_ui(void)
 
 	if (editor_config::data_cfg.empty()) {
 		wml_config_from_file(game_config::path + "/xwml/data.bin", editor_config::data_cfg);
-		try {
-			unit_types.set_config(editor_config::data_cfg.child("units"));
-			unit_types.build_all(unit_type::FULL);
-		} catch (game::error& e) {
-			MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
-			unit_types.clear();
-		}	 
+		if (!editor_config::data_cfg.empty()) {
+			try {
+				unit_types.set_config(editor_config::data_cfg.child("units"));
+			} catch (game::error& e) {
+				MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
+				unit_types.clear();
+			}
+		}
 	}
 
 	ns::himl_checkbox = ImageList_Create(15, 15, FALSE, 2, 0);

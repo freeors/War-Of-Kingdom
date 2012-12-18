@@ -563,7 +563,7 @@ static const section *find_section(const section &sec, const std::string &id);
 /// Parse a text string. Return a vector with the different parts of the
 /// text. Each markup item is a separate part while the text between
 /// markups are separate parts.
-static std::vector<std::string> parse_text(const std::string &text);
+std::vector<std::string> parse_text(const std::string &text);
 
 /// Convert the contents to wml attributes, surrounded within
 /// [element_name]...[/element_name]. Return the resulting WML.
@@ -571,12 +571,12 @@ static std::string convert_to_wml(const std::string &element_name, const std::st
 
 /// Return the color the string represents. Return font::NORMAL_COLOR if
 /// the string is empty or can't be matched against any other color.
-static SDL_Color string_to_color(const std::string &s);
+SDL_Color string_to_color(const std::string &s);
 
 /// Make a best effort to word wrap s. All parts are less than width.
-static std::vector<std::string> split_in_width(const std::string &s, const int font_size, const unsigned width);
+std::vector<std::string> split_in_width(const std::string &s, const int font_size, const unsigned width);
 
-static std::string remove_first_space(const std::string& text);
+std::string remove_first_space(const std::string& text);
 
 /// Prepend all chars with meaning inside attributes with a backslash.
 static std::string escape(const std::string &s)
@@ -586,7 +586,7 @@ static std::string escape(const std::string &s)
 
 /// Return the first word in s, not removing any spaces in the start of
 /// it.
-static std::string get_first_word(const std::string &s);
+std::string get_first_word(const std::string &s);
 
 } // namespace help
 
@@ -3010,6 +3010,9 @@ SDL_Color string_to_color(const std::string &cmp_str)
 	if (cmp_str == "white") {
 		return font::BIGMAP_COLOR;
 	}
+	if (cmp_str == "blue") {
+		return font::BLUE_COLOR;
+	}
 	return font::NORMAL_COLOR;
 }
 
@@ -3124,10 +3127,6 @@ void show_help(display &disp, const section &toplevel_sec,
 					 true, &buttons_ptr);
 	f.layout(xloc, yloc, width, height);
 	f.draw();
-
-    // Find all unit_types that have not been constructed yet and fill in the information
-    // needed to create the help topics
-	unit_types.build_all(unit_type::BS_HELP_INDEX);
 
 	if (preferences::encountered_units().size() != size_t(last_num_encountered_units) ||
 	    preferences::encountered_terrains().size() != size_t(last_num_encountered_terrains) ||

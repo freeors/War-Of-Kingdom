@@ -281,9 +281,8 @@ public:
 
 	gui::button* find_button(const theme::menu* m, int btnidx = 0);
 	// runtime tooltip of mouse-over unit
-	virtual void show_unit_tooltip(const unit& troop, const map_location& loc) {}
-	virtual void show_unit_tooltip(const unit& troop, int16_t xoffset, int16_t yoffset) {};
-	virtual void hide_unit_tooltip() {}
+	virtual void show_unit_tip(const unit& troop, const map_location& loc) {}
+	virtual void hide_unit_tip() {}
 
 	// Will be overridden in the display subclass
 	virtual void draw_minimap_units() {};
@@ -668,7 +667,7 @@ protected:
 	rect_of_hexes draw_area_rect_;
 
 	// used for runtime tooltip of mouse-over unit
-	int tooltip_handle_;
+	int main_tip_handle_;
 public:
 	/**
 	 * The layers to render something on. This value should never be stored
@@ -703,16 +702,17 @@ public:
 		                            */
 		LAYER_UNIT_MISSILE_DEFAULT = LAYER_UNIT_FIRST+90, /**< default layer for missile frames*/
 		LAYER_UNIT_LAST=LAYER_UNIT_FIRST+100,
+		LAYER_UNIT_BAR=LAYER_UNIT_LAST+10,            /**<
+		                            * Unit bars and overlays are drawn on this
+		                            * layer (for testing here).
+		                            */
 		LAYER_REACHMAP,            /**< "black stripes" on unreachable hexes. */
 		LAYER_MOUSEOVER_BOTTOM,    /**< Bottom half of image following the mouse */
 		LAYER_FOG_SHROUD,          /**< Fog and shroud. */
 		LAYER_ARROWS,              /**< Arrows from the arrows framework. Used for planned moves display. */
 		LAYER_SELECTED_HEX,        /**< Image on the selected unit */
 		LAYER_ATTACK_INDICATOR,    /**< Layer which holds the attack indicator. */
-		LAYER_UNIT_BAR,            /**<
-		                            * Unit bars and overlays are drawn on this
-		                            * layer (for testing here).
-		                            */
+
 		LAYER_MOVE_INFO,           /**< Movement info (defense%, ect...). */
 		LAYER_LINGER_OVERLAY,      /**< The overlay used for the linger mode. */
 		LAYER_BORDER,              /**< The border of the map. */
@@ -751,7 +751,7 @@ public:
 
 	void draw_text_in_hex2(const map_location& loc,
 		const tdrawing_layer layer, const std::string& text,
-		size_t font_size, SDL_Color color, int x, int y);
+		size_t font_size, SDL_Color color, int x, int y, fixed_t alpha = 255);
 
 protected:
 	/**

@@ -114,16 +114,18 @@ protected:
 	// return the best weapon choice
 	int fill_weapon_choices(std::vector<battle_context>& bc_vector, unit_map::iterator attacker, unit_map::iterator defender);
 	// wrapper to catch bad_alloc so this should be called
-	// wrapper to catch bad_alloc so this should be called
 	bool attack_enemy(unit_map::iterator attacker, unit_map::iterator defender, const map_location& target_loc);
 	// the real function but can throw bad_alloc
 	bool attack_enemy_(unit_map::iterator attacker, unit_map::iterator defender, const map_location& target_loc);
+
+	bool cast_tactic(unit& tactician, const map_location& target_loc);
 
 	// the perform attack function called after a random seed is obtained
 	void perform_attack(unit& attacker, unit& defender, int attacker_weapon, int defender_weapon, rand_rng::seed_t seed);
 
 	void show_attack_options(const unit_map::const_iterator &u);
 	map_location current_unit_attacks_from(const map_location& loc);
+	map_location current_unit_tactic_from(const map_location& loc);
 	map_location current_unit_build_from(const map_location& loc);
 	unit_map::const_iterator find_unit(const map_location& hex) const;
 	unit_map::iterator find_unit(const map_location& hex);

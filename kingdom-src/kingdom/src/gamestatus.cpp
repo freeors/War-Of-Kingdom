@@ -706,12 +706,17 @@ void game_state::build_team(const config& side_cfg,
 				") for a city on side " +
 				lexical_cast<std::string>(side) + ".");
 		} else {
-			if (units.find(loc) != units.end()) {
-				ERR_NG << "[city] trying to overwrite existing unit at " << loc << "\n";
-			} else {
-				units.add(loc, &new_unit);
-				LOG_NG << "inserting unit for side " << new_unit.side() << "\n";
+			std::set<map_location> touch_locs = new_unit.get_touch_locations(map, loc);
+			for (std::set<map_location>::const_iterator it = touch_locs.begin(); it != touch_locs.end(); ++ it) {
+				if (units.find(*it) != units.end()) {
+					unit_map::iterator find = units.find(*it, !new_unit.base());
+					std::stringstream str;
+					str << "City " << new_unit.name() << " trying to overwrite existing unit " << find->name() << " at (";
+					str << loc.x + 1 << "," << loc.y + 1 << ")";
+					throw game::load_game_failed(str.str());
+				}
 			}
+			units.add(loc, &new_unit);
 		}
 	}
 
@@ -745,11 +750,14 @@ void game_state::build_team(const config& side_cfg,
 				") for a unit on side " +
 				lexical_cast<std::string>(side) + ".");
 		} else {
-			if (units.find(loc) != units.end()) {
-				ERR_NG << "[unit] trying to overwrite existing unit at " << loc << "\n";
+			if (units.find(loc, !new_unit.base()) != units.end()) {
+				unit_map::iterator it = units.find(loc, !new_unit.base());
+				std::stringstream str;
+				str << new_unit.name() << " trying to overwrite existing unit " << it->name() << " at (";
+				str << loc.x + 1 << "," << loc.y + 1 << ")";
+				throw game::load_game_failed(str.str());
 			} else {
 				units.add(loc, &new_unit);
-				LOG_NG << "inserting unit for side " << new_unit.side() << "\n";
 			}
 		}
 	}
@@ -823,16 +831,18 @@ void game_state::build_team(const uint8_t* mem,
 				") for a city on side " +
 				lexical_cast<std::string>(side) + ".");
 		} else {
-			if (units.find(loc, !new_unit->base()) != units.end()) {
-				unit_map::iterator it = units.find(loc, !new_unit->base());
-				std::stringstream str;
-				str << new_unit->name() << " trying to overwrite existing unit " << it->name() << " at (";
-				str << loc.x + 1 << "," << loc.y + 1 << ")";
-				delete new_unit;
-				throw game::load_game_failed(str.str());
-			} else {
-				units.add(loc, new_unit);
+			std::set<map_location> touch_locs = new_unit->get_touch_locations(map, loc);
+			for (std::set<map_location>::const_iterator it = touch_locs.begin(); it != touch_locs.end(); ++ it) {
+				if (units.find(*it, !new_unit->base()) != units.end()) {
+					unit_map::iterator find = units.find(*it, !new_unit->base());
+					std::stringstream str;
+					str << new_unit->name() << " trying to overwrite existing unit " << find->name() << " at (";
+					str << loc.x + 1 << "," << loc.y + 1 << ")";
+					delete new_unit;
+					throw game::load_game_failed(str.str());
+				}
 			}
+			units.add(loc, new_unit);
 		}
 		delete new_unit;
 

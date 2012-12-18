@@ -196,6 +196,7 @@ bool get_hero(hero& h, int default_image)
 		if (h.feature_ < 0 || h.feature_ > HEROS_MAX_FEATURE) {
 			h.feature_ = 0xff;
 		}
+		h.tactic_ = cfg["tactic"].to_int(HEROS_NO_TACTIC);
 
 		h.base_catalog_ = cfg["base_catalog"].to_int();
 		h.float_catalog_ = ftofxp8(h.base_catalog_);
@@ -264,6 +265,8 @@ void set_hero(hero& h)
 
 	cfg["feature"] = h.feature_;
 	cfg["side_feature"] = h.side_feature_;
+
+	cfg["tactic"] = h.tactic_;
 
 	write_preferences();
 }

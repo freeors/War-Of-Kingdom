@@ -31,6 +31,7 @@
 #include "serialization/parser.hpp"
 #include "serialization/preprocessor.hpp"
 #include "serialization/string_utils.hpp"
+#include "help.hpp"
 
 #include <list>
 #include <set>
@@ -401,6 +402,7 @@ const SDL_Color NORMAL_COLOR = {0xDD,0xDD,0xDD,0},
                 PETRIFIED_COLOR = {0xA0,0xA0,0xA0,0},
                 TITLE_COLOR  = {0xBC,0xB0,0x88,0},
 				LABEL_COLOR  = {0x6B,0x8C,0xFF,0},
+				BLUE_COLOR   = {0x00,0x00,0xFF,0}, 
 				BIGMAP_COLOR = {0xFF,0xFF,0xFF,0};
 const SDL_Color DISABLED_COLOR = inverse(PETRIFIED_COLOR);
 
@@ -684,6 +686,16 @@ text_surface &text_cache::find(text_surface const &t)
 
 static surface render_text(const std::string& text, int fontsize, const SDL_Color& color, int style, bool use_markup)
 {
+	ttext text_;
+	text_.set_foreground_color((color.r << 24) | (color.g << 16) | (color.b << 8) | 255);
+	text_.set_font_size(fontsize);
+	// text_.set_maximum_width(width_ < 0 ? clip_rect_.w : width_);
+	// text_.set_maximum_height(clip_rect_.h);
+
+	text_.set_text(text, use_markup);
+
+	return text_.render();
+/*
 	// we keep blank lines and spaces (may be wanted for indentation)
 	const std::vector<std::string> lines = utils::split(text, '\n', 0);
 	std::vector<std::vector<surface> > surfaces;
@@ -750,8 +762,10 @@ static surface render_text(const std::string& text, int fontsize, const SDL_Colo
 			ypos += height;
 		}
 
+		SDL_SetAlpha(res, SDL_SRCALPHA | SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
 		return res;
 	}
+*/
 }
 
 
@@ -957,6 +971,621 @@ std::string make_text_hide(const std::string& text, bool always, size_t front_sh
 }
 
 namespace {
+	const int title2_size = font::SIZE_15;
+	const int box_width = 2;
+	const int normal_font_size = font::SIZE_SMALL;
+
+	/// Thrown when the help system fails to parse something.
+	struct parse_error : public game::error
+	{
+		parse_error(const std::string& msg) : game::error(msg) {}
+	};
+}
+
+namespace help {
+
+void tintegrate::generate_img(std::stringstream& strstr, const std::string& src, tintegrate::ALIGNMENT align, bool floating)
+{
+	strstr << "<img>src='" << src << "'";
+	std::string str = align_to_string(align);
+	if (!str.empty()) {
+		strstr << " align='";
+		strstr << str << "'";
+		
+	}
+	if (floating) {
+		strstr << " float=yes";
+	}
+	strstr << " box=no";
+
+	strstr << "</img>";
+/*
+	if (floating) {
+		strstr << "<jump>to=" << "0";
+		strstr << "</jump>";
+	}
+*/
+}
+
+void tintegrate::generate_format(std::stringstream& strstr, const std::string& text, const std::string& color, int font_size, bool bold, bool italic)
+{
+	if (text.empty()) {
+		return;
+	}
+	// text maybe have sapce character.
+	strstr << "<format>text='" << text << "'";
+	if (!color.empty()) {
+		strstr << " color=" << color;
+	}
+	if (font_size) {
+		strstr << " font_size=" << font_size;
+	}
+	if (bold) {
+		strstr << " bold=yes";
+	}
+	if (italic) {
+		strstr << " italic=yes";
+	}
+	strstr << "</format>";
+}
+
+void generate_format(std::stringstream& strstr, const std::string& text, const std::string& color, int font_size, bool bold, bool italic)
+{
+	tintegrate::generate_format(strstr, text, color, font_size, bold, italic);
+}
+
+tintegrate::item::item(surface surface, int x, int y, const std::string& _text,
+						   const std::string& reference_to, bool _floating,
+						   bool _box, ALIGNMENT alignment) :
+	rect(),
+	surf(surface),
+	text(_text),
+	ref_to(reference_to),
+	floating(_floating), box(_box),
+	align(alignment)
+{
+	rect.x = x;
+	rect.y = y;
+	rect.w = box ? surface->w + box_width * 2 : surface->w;
+	rect.h = box ? surface->h + box_width * 2 : surface->h;
+}
+
+tintegrate::item::item(surface surface, int x, int y, bool _floating,
+						   bool _box, ALIGNMENT alignment) :
+	rect(),
+	surf(surface),
+	text(""),
+	ref_to(""),
+	floating(_floating),
+	box(_box), align(alignment)
+{
+	rect.x = x;
+	rect.y = y;
+	rect.w = box ? surface->w + box_width * 2 : surface->w;
+	rect.h = box ? surface->h + box_width * 2 : surface->h;
+}
+
+tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_height, int default_font_size, const SDL_Color& default_font_color)
+	: items_()
+	, last_row_()
+	, title_spacing_(16)
+	, curr_loc_(0, 0)
+	, min_row_height_(font::get_max_height(normal_font_size))
+	, curr_row_height_(min_row_height_)
+	, contents_height_(0)
+	, maximum_width_(maximum_width)
+	, maximum_height_(maximum_height)
+	, default_font_size_(default_font_size)
+	, default_font_color_(default_font_color)
+{
+	// Parse and add the text.
+	std::vector<std::string> const& parsed_items = parse_text(src);
+	std::vector<std::string>::const_iterator it;
+	for (it = parsed_items.begin(); it != parsed_items.end(); ++it) {
+		if (*it != "" && (*it)[0] == '[') {
+			// Should be parsed as WML.
+			try {
+				config cfg;
+				std::istringstream stream(*it);
+				read(cfg, stream);
+
+#define TRY(name) do { \
+				if (config &child = cfg.child(#name)) \
+					handle_##name##_cfg(child); \
+				} while (0)
+
+				TRY(ref);
+				TRY(img);
+				TRY(bold);
+				TRY(italic);
+				TRY(header);
+				TRY(jump);
+				TRY(format);
+
+#undef TRY
+
+			}
+			catch (config::error e) {
+				std::stringstream msg;
+				msg << "Error when parsing help markup as WML: '" << e.message << "'";
+				throw parse_error(msg.str());
+			}
+		}
+		else {
+			add_text_item(*it, default_font_color_);
+		}
+	}
+	down_one_line(); // End the last line.
+}
+
+void tintegrate::handle_ref_cfg(const config &cfg)
+{
+	const std::string dst = cfg["dst"];
+	const std::string text = cfg["text"];
+	bool force = cfg["force"].to_bool();
+
+	if (dst == "") {
+		std::stringstream msg;
+		msg << "Ref markup must have dst attribute. Please submit a bug"
+		       " report if you have not modified the game files yourself. Erroneous config: ";
+		write(msg, cfg);
+		throw parse_error(msg.str());
+	}
+
+	// if (find_topic(toplevel_, dst) == NULL && !force) {
+	if (!force) {
+		// detect the broken link but quietly silence the hyperlink for normal user
+		add_text_item(text, default_font_color_, game_config::debug ? dst : "", true);
+
+		// FIXME: workaround: if different campaigns define different
+		// terrains, some terrains available in one campaign will
+		// appear in the list of seen terrains, and be displayed in the
+		// help, even if the current campaign does not handle such
+		// terrains. This will lead to the unit page generator creating
+		// invalid references.
+		//
+		// Disabling this is a kludgy workaround until the
+		// encountered_terrains system is fixed
+		//
+		// -- Ayin apr 8 2005
+#if 0
+		if (game_config::debug) {
+			std::stringstream msg;
+			msg << "Reference to non-existent topic '" << dst
+			    << "'. Please submit a bug report if you have not"
+			       "modified the game files yourself. Erroneous config: ";
+			write(msg, cfg);
+			throw parse_error(msg.str());
+		}
+#endif
+	} else {
+		add_text_item(text, default_font_color_, dst);
+	}
+
+}
+
+void tintegrate::handle_img_cfg(const config &cfg)
+{
+	const std::string src = cfg["src"];
+	const std::string align = cfg["align"];
+	bool floating = cfg["float"].to_bool();
+	bool box = cfg["box"].to_bool(true);
+	if (src == "") {
+		throw parse_error("Img markup must have src attribute.");
+	}
+	add_img_item(src, align, floating, box);
+}
+
+void tintegrate::handle_bold_cfg(const config &cfg)
+{
+	const std::string text = cfg["text"];
+	if (text == "") {
+		throw parse_error("Bold markup must have text attribute.");
+	}
+	add_text_item(text, default_font_color_, "", false, -1, true);
+}
+
+void tintegrate::handle_italic_cfg(const config &cfg)
+{
+	const std::string text = cfg["text"];
+	if (text == "") {
+		throw parse_error("Italic markup must have text attribute.");
+	}
+	add_text_item(text, default_font_color_, "", false, -1, false, true);
+}
+
+void tintegrate::handle_header_cfg(const config &cfg)
+{
+	const std::string text = cfg["text"];
+	if (text == "") {
+		throw parse_error("Header markup must have text attribute.");
+	}
+	add_text_item(text, default_font_color_, "", false, title2_size, true);
+}
+
+void tintegrate::handle_jump_cfg(const config &cfg)
+{
+	const std::string amount_str = cfg["amount"];
+	const std::string to_str = cfg["to"];
+	if (amount_str == "" && to_str == "") {
+		throw parse_error("Jump markup must have either a to or an amount attribute.");
+	}
+	unsigned jump_to = curr_loc_.first;
+	if (amount_str != "") {
+		unsigned amount;
+		try {
+			amount = lexical_cast<unsigned, std::string>(amount_str);
+		}
+		catch (bad_lexical_cast) {
+			throw parse_error("Invalid amount the amount attribute in jump markup.");
+		}
+		jump_to += amount;
+	}
+	if (to_str != "") {
+		unsigned to;
+		try {
+			to = lexical_cast<unsigned, std::string>(to_str);
+		}
+		catch (bad_lexical_cast) {
+			throw parse_error("Invalid amount in the to attribute in jump markup.");
+		}
+		if (to < jump_to) {
+			down_one_line();
+		}
+		jump_to = to;
+	}
+	if (jump_to != 0 && static_cast<int>(jump_to) <
+            get_max_x(curr_loc_.first, curr_row_height_)) {
+
+		curr_loc_.first = jump_to;
+	}
+}
+
+void tintegrate::handle_format_cfg(const config &cfg)
+{
+	const std::string text = cfg["text"];
+	if (text == "") {
+		throw parse_error("Format markup must have text attribute.");
+	}
+	bool bold = cfg["bold"].to_bool();
+	bool italic = cfg["italic"].to_bool();
+	int font_size = cfg["font_size"].to_int(default_font_size_);
+	SDL_Color color = string_to_color(cfg["color"]);
+	add_text_item(text, color, "", false, font_size, bold, italic);
+}
+
+void tintegrate::add_text_item(const std::string& text, const SDL_Color& text_color, const std::string& ref_dst,
+								   bool broken_link, int _font_size, bool bold, bool italic)
+{
+	const int font_size = _font_size < 0 ? default_font_size_ : _font_size;
+	if (text.empty())
+		return;
+	const int remaining_width = get_remaining_width();
+	size_t first_word_start = text.find_first_not_of(" ");
+	if (first_word_start == std::string::npos) {
+		first_word_start = 0;
+	}
+	if (text[first_word_start] == '\n') {
+		down_one_line();
+		std::string rest_text = text;
+		rest_text.erase(0, first_word_start + 1);
+		add_text_item(rest_text, text_color, ref_dst, broken_link, _font_size, bold, italic);
+		return;
+	}
+	const std::string first_word = get_first_word(text);
+	int state = ref_dst == "" ? 0 : TTF_STYLE_UNDERLINE;
+	state |= bold ? TTF_STYLE_BOLD : 0;
+	state |= italic ? TTF_STYLE_ITALIC : 0;
+	if (curr_loc_.first != get_min_x(curr_loc_.second, curr_row_height_)
+		&& remaining_width < font::line_width(first_word, font_size, state)) {
+		// The first word does not fit, and we are not at the start of
+		// the line. Move down.
+		down_one_line();
+		std::string s = remove_first_space(text);
+		add_text_item(s, text_color, ref_dst, broken_link, _font_size, bold, italic);
+	}
+	else {
+		std::vector<std::string> parts = split_in_width(text, font_size, remaining_width);
+		std::string first_part = parts.front();
+		// Always override the color if we have a cross reference.
+		SDL_Color color;
+		if(ref_dst.empty())
+			color = text_color;
+		else if(broken_link)
+			color = font::BAD_COLOR;
+		else
+			color = font::YELLOW_COLOR;
+
+		surface surf(font::get_rendered_text(first_part, font_size, color, state));
+		if (!surf.null())
+			add_item(item(surf, curr_loc_.first, curr_loc_.second, first_part, ref_dst));
+		if (parts.size() > 1) {
+
+			std::string& s = parts.back();
+
+			const std::string first_word_before = get_first_word(s);
+			const std::string first_word_after = get_first_word(remove_first_space(s));
+			if (get_remaining_width() >= font::line_width(first_word_after, font_size, state)
+				&& get_remaining_width()
+				< font::line_width(first_word_before, font_size, state)) {
+				// If the removal of the space made this word fit, we
+				// must move down a line, otherwise it will be drawn
+				// without a space at the end of the line.
+				s = remove_first_space(s);
+				down_one_line();
+			}
+			else if (!(font::line_width(first_word_before, font_size, state)
+					   < get_remaining_width())) {
+				s = remove_first_space(s);
+			}
+			add_text_item(s, text_color, ref_dst, broken_link, _font_size, bold, italic);
+
+		}
+	}
+}
+
+void tintegrate::add_img_item(const std::string& path, const std::string& alignment,
+								  const bool floating, const bool box)
+{
+	surface surf(image::get_image(path));
+	if (surf.null())
+		return;
+	ALIGNMENT align = str_to_align(alignment);
+	if (align == BACK && items_.empty()) {
+		align = HERE;
+	}
+	if (align == HERE && floating) {
+		align = LEFT;
+	}
+	const int width = surf->w + (box ? box_width * 2 : 0);
+	int xpos;
+	int ypos = curr_loc_.second;
+	int text_width = maximum_width_;
+	switch (align) {
+	case HERE:
+		xpos = curr_loc_.first;
+		break;
+	case LEFT:
+	default:
+		xpos = 0;
+		break;
+	case MIDDLE:
+		xpos = text_width / 2 - width / 2 - (box ? box_width : 0);
+		break;
+	case RIGHT:
+		xpos = text_width - width - (box ? box_width * 2 : 0);
+		break;
+	case BACK:
+		xpos = items_.back().rect.x;
+		ypos = items_.back().rect.y;
+		break;
+	}
+	if (align != BACK && curr_loc_.first != get_min_x(curr_loc_.second, curr_row_height_)
+		&& (xpos < curr_loc_.first || xpos + width > text_width)) {
+		down_one_line();
+		add_img_item(path, alignment, floating, box);
+	}
+	else {
+		if (!floating) {
+			curr_loc_.first = xpos;
+		}
+		else {
+			ypos = get_y_for_floating_img(width, xpos, ypos);
+		}
+		add_item(item(surf, xpos, ypos, floating, box, align));
+	}
+}
+
+int tintegrate::get_y_for_floating_img(const int width, const int x, const int desired_y)
+{
+	int min_y = desired_y;
+	for (std::list<item>::const_iterator it = items_.begin(); it != items_.end(); ++it) {
+		const item& itm = *it;
+		if (itm.floating) {
+			if ((itm.rect.x + itm.rect.w > x && itm.rect.x < x + width)
+				|| (itm.rect.x > x && itm.rect.x < x + width)) {
+				min_y = std::max<int>(min_y, itm.rect.y + itm.rect.h);
+			}
+		}
+	}
+	return min_y;
+}
+
+int tintegrate::get_min_x(const int y, const int height)
+{
+	int min_x = 0;
+	for (std::list<item>::const_iterator it = items_.begin(); it != items_.end(); ++it) {
+		const item& itm = *it;
+		if (itm.floating) {
+			if (itm.rect.y < y + height && itm.rect.y + itm.rect.h > y && itm.align == LEFT) {
+				min_x = std::max<int>(min_x, itm.rect.w + 5);
+			}
+		}
+	}
+	return min_x;
+}
+
+int tintegrate::get_max_x(const int y, const int height)
+{
+	int text_width = maximum_width_;
+	int max_x = text_width;
+	for (std::list<item>::const_iterator it = items_.begin(); it != items_.end(); ++it) {
+		const item& itm = *it;
+		if (itm.floating) {
+			if (itm.rect.y < y + height && itm.rect.y + itm.rect.h > y) {
+				if (itm.align == RIGHT) {
+					max_x = std::min<int>(max_x, text_width - itm.rect.w - 5);
+				} else if (itm.align == MIDDLE) {
+					max_x = std::min<int>(max_x, text_width / 2 - itm.rect.w / 2 - 5);
+				}
+			}
+		}
+	}
+	return max_x;
+}
+
+void tintegrate::add_item(const item &itm)
+{
+	items_.push_back(itm);
+	if (!itm.floating) {
+		curr_loc_.first += itm.rect.w;
+		curr_row_height_ = std::max<int>(itm.rect.h, curr_row_height_);
+		contents_height_ = std::max<int>(contents_height_, curr_loc_.second + curr_row_height_);
+		last_row_.push_back(&items_.back());
+	}
+	else {
+		if (itm.align == LEFT) {
+			curr_loc_.first = itm.rect.w + 5;
+		}
+		contents_height_ = std::max<int>(contents_height_, itm.rect.y + itm.rect.h);
+	}
+}
+
+
+tintegrate::ALIGNMENT tintegrate::str_to_align(const std::string &cmp_str)
+{
+	if (cmp_str == "left") {
+		return LEFT;
+	} else if (cmp_str == "middle") {
+		return MIDDLE;
+	} else if (cmp_str == "right") {
+		return RIGHT;
+	} else if (cmp_str == "back") {
+		return BACK;
+	} else if (cmp_str == "here" || cmp_str == "") { // Make the empty string be "here" alignment.
+		return HERE;
+	}
+	std::stringstream msg;
+	msg << "Invalid alignment string: '" << cmp_str << "'";
+	throw parse_error(msg.str());
+}
+
+std::string tintegrate::align_to_string(tintegrate::ALIGNMENT align)
+{
+	if (align == LEFT) return "left";
+	if (align == MIDDLE) return "middle";
+	if (align == RIGHT) return "right";
+	if (align == BACK) return "back";
+	if (align == HERE) return "";
+	return "";
+}
+
+void tintegrate::down_one_line()
+{
+	adjust_last_row();
+	last_row_.clear();
+	// curr_loc_.second += curr_row_height_ + (curr_row_height_ == min_row_height_ ? 0 : 2);
+	curr_loc_.second += curr_row_height_ + (curr_row_height_ == min_row_height_ ? 0 : 0);
+	curr_row_height_ = min_row_height_;
+	contents_height_ = std::max<int>(curr_loc_.second + curr_row_height_, contents_height_);
+	curr_loc_.first = get_min_x(curr_loc_.second, curr_row_height_);
+}
+
+void tintegrate::adjust_last_row()
+{
+	for (std::list<item *>::iterator it = last_row_.begin(); it != last_row_.end(); ++it) {
+		item &itm = *(*it);
+		const int gap = curr_row_height_ - itm.rect.h;
+		itm.rect.y += gap / 2;
+	}
+}
+
+int tintegrate::get_remaining_width()
+{
+	const int total_w = get_max_x(curr_loc_.second, curr_row_height_);
+	return total_w - curr_loc_.first;
+}
+
+SDL_Rect tintegrate::get_size() const
+{
+	int max_x = 0;
+	int max_y = 0;
+
+	for(std::list<item>::const_iterator it = items_.begin(), end = items_.end(); it != end; ++it) {
+		SDL_Rect dst = it->rect;
+		max_x = std::max<int>(max_x, dst.x + dst.w);
+		max_y = std::max<int>(max_y, dst.y + dst.h);
+	}
+	SDL_Rect ret;
+	ret.x = ret.y = 0;
+	ret.w = max_x;
+	ret.h = max_y;
+	return ret;
+}
+
+surface tintegrate::get_surface() const
+{
+	SDL_Rect size = get_size();
+	surface screen = create_neutral_surface(size.w, size.h);
+
+	for(std::list<item>::const_iterator it = items_.begin(), end = items_.end(); it != end; ++it) {
+		SDL_Rect dst = it->rect;
+		if (it->box) {
+			for (int i = 0; i < box_width; ++i) {
+				draw_rectangle(dst.x, dst.y, it->rect.w - i * 2, it->rect.h - i * 2,
+				                    0, screen);
+				++dst.x;
+				++dst.y;
+			}
+		}
+		sdl_blit(it->surf, NULL, screen, &dst);
+	}
+	return screen;
+}
+
+void tintegrate::draw_contents()
+{
+/*
+	SDL_Rect const &loc = inner_location();
+	bg_restore();
+	surface screen = video().getSurface();
+	clip_rect_setter clip_rect_set(screen, &loc);
+	for(std::list<item>::const_iterator it = items_.begin(), end = items_.end(); it != end; ++it) {
+		SDL_Rect dst = it->rect;
+		dst.y -= get_position();
+		if (dst.y < static_cast<int>(loc.h) && dst.y + it->rect.h > 0) {
+			dst.x += loc.x;
+			dst.y += loc.y;
+			if (it->box) {
+				for (int i = 0; i < box_width; ++i) {
+					draw_rectangle(dst.x, dst.y, it->rect.w - i * 2, it->rect.h - i * 2,
+					                    0, screen);
+					++dst.x;
+					++dst.y;
+				}
+			}
+			sdl_blit(it->surf, NULL, screen, &dst);
+		}
+	}
+	update_rect(loc);
+*/
+}
+
+bool tintegrate::item_at::operator()(const item& item) const {
+	return point_in_rect(x_, y_, item.rect);
+}
+
+std::string tintegrate::ref_at(const int x, const int y)
+{
+/*	const int local_x = x - location().x;
+	const int local_y = y - location().y;
+	if (local_y < static_cast<int>(height()) && local_y > 0) {
+		const int cmp_y = local_y + get_position();
+		const std::list<item>::const_iterator it =
+			std::find_if(items_.begin(), items_.end(), item_at(local_x, cmp_y));
+		if (it != items_.end()) {
+			if ((*it).ref_to != "") {
+				return ((*it).ref_to);
+			}
+		}
+	}
+*/
+	return "";
+}
+
+}
+
+namespace {
 
 typedef std::map<int, font::floating_label> label_map;
 label_map labels;
@@ -1001,6 +1630,7 @@ int floating_label::xpos(size_t width) const
 surface floating_label::create_surface()
 {
 	if (surf_.null()) {
+/*
 		font::ttext text;
 		text.set_foreground_color((color_.r << 24) | (color_.g << 16) | (color_.b << 8) | 255);
 		text.set_font_size(font_size_);
@@ -1018,6 +1648,9 @@ surface floating_label::create_surface()
 		// don't call text.set_maximum_width, word_wrap_text is not accurate!
 		// text.set_maximum_width(text.get_width());
 		surface foreground = text.render();
+*/
+		help::tintegrate integrate(text_, width_ < 0 ? clip_rect_.w : width_, clip_rect_.h, font_size_, color_);
+		surface foreground = integrate.get_surface();
 
 		if(foreground == NULL) {
 			ERR_FT << "could not create floating label's text" << std::endl;
@@ -1638,7 +2271,9 @@ void ttext::recalculate()
 
 		std::vector<std::string> wrapped_lines;
 		
-		if (maximum_width_ > 0) {
+		if (after_markup == ln->end()) {
+			wrapped_lines.push_back("");
+		} else if (maximum_width_ > 0) {
 			// Width of chars calling TTF_SizeUTF8 in statement is less than accumulative total.
 			// word_wrap_text's method is accumulative total, so it maybe large than maximum_width_.
 			std::string unwrapped_text(after_markup, ln->end());
@@ -1663,11 +2298,17 @@ void ttext::recalculate()
 		for (std::vector< std::string >::const_iterator wrapped_ln = wrapped_lines.begin(), wrapped_ln_end = wrapped_lines.end(); wrapped_ln != wrapped_ln_end; ++ wrapped_ln) {
 			text_surface txt_surf(sz, color, text_style);
 
-			txt_surf.set_text(*wrapped_ln);
-
-			// length is length of all chars
-			for (utils::utf8_iterator itor(*wrapped_ln); itor != utils::utf8_iterator::end(*wrapped_ln); ++itor) {
-				length ++;
+			if (after_markup == ln->end() && (ln+1 != ln_end || lines.begin() + 1 == ln_end)) {
+				// we replace empty line by a space (to have a line height)
+				// except for the last line if we have several
+				txt_surf.set_text(" ");
+			} else {
+				txt_surf.set_text(*wrapped_ln);
+			
+				// length is length of all chars
+				for (utils::utf8_iterator itor(*wrapped_ln); itor != utils::utf8_iterator::end(*wrapped_ln); ++itor) {
+					length ++;
+				}
 			}
 
 			text_surface* const cached_surf = &text_cache::find(txt_surf);
@@ -1692,6 +2333,7 @@ void ttext::recalculate()
 
 surface ttext::render()
 {
+	// when text_ is empty, don' return null, replace space. it is necessary for tintegrate.
 	if (!surface_dirty_) {
 		return surface_;
 	}
@@ -1720,7 +2362,7 @@ surface ttext::render()
 		surface_.assign(surf);
 	} else {
 
-		surface res(create_compatible_surface(surfaces.front().front(), rect_.w, rect_.h));
+		surface res(create_neutral_surface(rect_.w, rect_.h));
 		if (res.null()) {
 			surface_.assign(NULL);
 			return surface_;
@@ -1741,6 +2383,7 @@ surface ttext::render()
 			ypos += height;
 		}
 
+		SDL_SetAlpha(res, SDL_SRCALPHA | SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
 		surface_.assign(res);
 	}
 

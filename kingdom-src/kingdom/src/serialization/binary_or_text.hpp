@@ -41,6 +41,7 @@ public:
 	void close_child(const std::string &key);
 	bool good() const;
 
+	void set_level(unsigned int level) { level_ = level; }
 private:
 	boost::iostreams::filtering_stream<boost::iostreams::output> filter_;
 	std::ostream *out_ptr_;

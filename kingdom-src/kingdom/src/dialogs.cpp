@@ -75,6 +75,22 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 
 	const std::vector<std::string>& options = u->advances_to();
 
+	//
+	std::string id = u->id();
+	std::string name = u->name();
+	int exp = u->experience();
+	int cityno = u->cityno();
+	int side = u->side();
+	std::stringstream id2;
+	for (std::vector<std::string>::const_iterator it = options.begin(); it != options.end(); ++ it) {
+		if (it != options.end()) {
+			id2 << *it; 
+		} else {
+			id2 << ", "<< *it; 
+		}
+	}
+	//
+
 	std::vector<std::string> lang_options;
 
 	std::vector<unit> sample_units;
@@ -111,10 +127,21 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 		}
 	}
 
-	int res = 0;
-
 	if (lang_options.empty()) {
 		return;
+	}
+
+	int res = 0;
+
+	const config* ran_results = NULL;
+	if (choose_from_random) {
+		get_random();
+		ran_results = get_random_results();
+	}
+
+	if (ran_results) {
+		res = (*ran_results)["choose"].to_int();
+
 	} else if (random_choice) {
 		if (lang_options.size() > 1) {
 			// select character if existed.
@@ -133,7 +160,7 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 		} else {
 			res = 0;
 		}
-	} else if(lang_options.size() > 1 || always_display) {
+	} else if (lang_options.size() > 1 || always_display) {
 
 		std::vector<const unit*> sample_units_ptr;
 		for (std::vector<unit>::const_iterator iter = sample_units.begin(); iter != sample_units.end(); ++ iter) {
@@ -149,11 +176,7 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 	}
 
 	if (choose_from_random) {
-		get_random();
-		const config *ran_results = get_random_results();
-		if (ran_results) {
-			res = (*ran_results)["choose"].to_int();
-		} else {
+		if (!ran_results) {
 			config cfg;
 			cfg["choose"] = res;
 			set_random_results(cfg);
@@ -164,9 +187,8 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 
 	animate_unit_advancement(loc, size_t(res));
 
-	// Don't support advance again! (wesnoth support it.)
-	u = resources::units->find(loc);
-	VALIDATE(u != resources::units->end(), "Unit advanced no longer exists");
+	// loc maybe is loc_ of advanced unit, so is invalid after advance,
+	// don't call relatve loc_, else use copy of loc.
 }
 
 bool animate_unit_advancement(const map_location &loc, size_t choice)
@@ -205,6 +227,22 @@ bool animate_unit_advancement(const map_location &loc, size_t choice)
 		std::string chosen_unit = options[choice];
 		::advance_unit(loc, chosen_unit);
 	} else {
+		unit* amla_unit = &*u;
+		const config &mod_option = mod_options[choice - options.size()];
+		
+		game_events::fire("advance",loc);
+
+		amla_unit->get_experience(-amla_unit->max_experience()); // subtract xp required
+		// ALMA may want to change status, but add_modification in modify_according_to_hero cannot change state,
+		// so it need call amla_unit->add_modification instead of amla_unit->modify_according_to_hero.
+		amla_unit->add_modification("advance", mod_option);
+		// amla_unit->modify_according_to_hero();
+		// resources::units->replace(loc, amla_unit);
+
+		game_events::fire("post_advance",loc);
+		// delete amla_unit;
+
+/*
 		// unit amla_unit(u->second);
 		unit* amla_unit;
 		if (!u->is_artifical()) {
@@ -226,6 +264,7 @@ bool animate_unit_advancement(const map_location &loc, size_t choice)
 
 		game_events::fire("post_advance",loc);
 		delete amla_unit;
+*/
 	}
 
 	u = resources::units->find(loc);

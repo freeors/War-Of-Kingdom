@@ -59,6 +59,8 @@ namespace game_config
 	extern int min_level;
 	extern int max_level;
 
+	extern int max_tactic_point;
+
 	inline int kill_xp(int level)
 	{
 		return level ? kill_experience * level : kill_experience / 2;

@@ -39,6 +39,7 @@ namespace ns {
 
 	int clicked_side;
 	int clicked_event;
+	int clicked_treasure;
 	int clicked_feature;
 	int clicked_city;
 	int clicked_troop;
@@ -48,6 +49,7 @@ namespace ns {
 	int current_scenario;
 	int action_side;
 	int action_event;
+	int action_treasure;
 	int action_feature;
 	int action_city;
 	int action_troop;
@@ -65,13 +67,6 @@ namespace ns {
 			}
 		}
 		campaign_enable_save_btn(FALSE);
-	}
-
-	DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName)
-	{ 
-		HRSRC hrsrc = FindResource(NULL, lpszResName, RT_DIALOG); 
-		HGLOBAL hglb = LoadResource(gdmgr._hinst, hrsrc); 
-		return (DLGTEMPLATE *)LockResource(hglb); 
 	}
 
 	void new_campaign(const std::string& id, const std::string& firstscenario_id);
@@ -2188,6 +2183,17 @@ void tscenario::from_config(int index, const config& scenario_cfg)
 	turns_ = scenario_cfg["turns"].to_int();
 	maximal_defeated_activity_ = scenario_cfg["maximal_defeated_activity"].to_int();
 
+	const std::vector<std::string> vstr = utils::split(scenario_cfg["treasures"]);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		int t = lexical_cast_default<int>(*it, -1);
+		std::map<int, int>::iterator find = treasures_.find(t);
+		if (find == treasures_.end()) {
+			treasures_[t] = 1;
+		} else {
+			find->second ++;
+		}
+	}
+
 	foreach (const config &cfg, scenario_cfg.child_range("event")) {
 		if (cfg["name"].str() != "prestart") continue;
 		const config& objectives_cfg = cfg.child("objectives");
@@ -2311,6 +2317,8 @@ void tscenario::update_to_ui(HWND hdlgP)
 	}
 	ComboBox_SetCurSel(hctl, selected_row);
 
+	update_to_ui_treasures(hdlgP);
+
 	// side
 	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_SIDE);
 	ListView_DeleteAllItems(hctl);
@@ -2318,11 +2326,67 @@ void tscenario::update_to_ui(HWND hdlgP)
 		it->update_to_ui(hdlgP);
 	}
 
-	// side
+	// event
 	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_EVENT);
 	ListView_DeleteAllItems(hctl);
 	for (std::vector<tevent>::const_iterator it = event_.begin(); it != event_.end(); ++ it) {
 		it->update_to_ui(hdlgP);
+	}
+}
+
+void tscenario::update_to_ui_treasures(HWND hdlgP)
+{
+	LVITEM lvi;
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+
+	const treasure_map& treasures = unit_types.treasures();
+	HWND hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_TREASURE);
+	ListView_DeleteAllItems(hctl);
+
+	int index = 0;
+	for (std::map<int, int>::const_iterator it = treasures_.begin(); it != treasures_.end(); ++ it, index ++) {
+		lvi.mask = LVIF_TEXT | LVIF_PARAM;
+		// 编号
+		lvi.iItem = index;
+		lvi.iSubItem = 0;
+		sprintf(text, "%i", index + 1);
+		lvi.pszText = text;
+		lvi.lParam = (LPARAM)it->first;
+		ListView_InsertItem(hctl, &lvi);
+
+		// 名称
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 1;
+		strstr.str("");
+		strstr << utf8_2_ansi(hero::treasure_str(it->first).c_str());
+		strcpy(text, strstr.str().c_str());
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// 数量
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 2;
+		strstr.str("");
+		strstr << it->second;
+		strcpy(text, strstr.str().c_str());
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// 特技
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 3;
+		strstr.str("");
+		const std::vector<int>& features = treasures.find(it->first)->second;
+		for (std::vector<int>::const_iterator it2 = features.begin(); it2 != features.end(); ++ it2) {
+			if (it2 != features.begin()) {
+				strstr << ", ";
+			}
+			strstr << utf8_2_ansi(hero::feature_str(*it2).c_str());
+		}
+		strcpy(text, strstr.str().c_str());
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
 	}
 }
 
@@ -2341,6 +2405,23 @@ void tscenario::from_ui(HWND hdlgP)
 	win_ = text;
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_LOSE_MSGID), text, sizeof(text) / sizeof(text[0]));
 	lose_ = text;
+}
+
+void tscenario::from_ui_treasure(HWND hdlgP, bool edit)
+{
+	int val = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_TREASURE_COUNT));
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_TREASURE_TREASURE);
+	int t = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+	std::map<int, int>::iterator find = treasures_.find(t);
+	if (edit) {
+		find->second = val;
+	} else {
+		if (find == treasures_.end()) {
+			treasures_[t] = val;
+		} else {
+			find->second = find->second + val;
+		}
+	}
 }
 
 void tscenario::generate()
@@ -2373,7 +2454,19 @@ void tscenario::generate()
 	strstr << "\tmap_data = \"{" << map_file() << "}\"\n";
 	strstr << "\tturns = " << turns_ << "\n";
 	strstr << "\tmaximal_defeated_activity = " << maximal_defeated_activity_ << "\n";
-
+	if (!treasures_.empty()) {
+		strstr << "\ttreasures = ";
+		for (std::map<int, int>::const_iterator it = treasures_.begin(); it != treasures_.end(); ++ it) {
+			for (int i = 0; i < it->second; i ++) {
+				if (it != treasures_.begin() || i) {
+					strstr << ", ";
+				}
+				strstr << it->first;
+			}
+		}
+		strstr << "\n";
+	}
+	
 	strstr << "\n";
 	// tod
 	strstr << "\t{DAWN}\n";
@@ -4635,8 +4728,38 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_LOSE_MSGID), scenario.lose_.c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_LOSE), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), scenario.lose_.c_str())));
 
-
 	LVCOLUMN lvc;
+	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_TREASURE);
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 40;
+	lvc.pszText = "编号";
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = 0;
+	ListView_InsertColumn(hctl, 0, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 70;
+	lvc.iSubItem = 1;
+	lvc.pszText = "名称";
+	ListView_InsertColumn(hctl, 1, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 60;
+	lvc.iSubItem = 2;
+	lvc.pszText = "数量";
+	ListView_InsertColumn(hctl, 2, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 60;
+	lvc.iSubItem = 3;
+	lvc.pszText = "特技";
+	ListView_InsertColumn(hctl, 3, &lvc);
+
+	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
+	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
 	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_SIDE);
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
@@ -5026,6 +5149,141 @@ void OnSideDelBt(HWND hdlgP)
 	return;
 }
 
+BOOL On_DlgTreasureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	editor_config::move_subcfg_right_position(hdlgP, lParam);
+
+	if (ns::action_treasure == ma_edit) {
+		SetWindowText(hdlgP, "编辑关卡隐藏宝物");
+		// ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+	} else {
+		SetWindowText(hdlgP, "添加关卡隐藏宝物");
+	}
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	std::stringstream strstr;
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_TREASURE_TREASURE);
+	const treasure_map& treasures = unit_types.treasures();
+	int selected = 0, index = 0;
+	for (treasure_map::const_iterator it = treasures.begin(); it != treasures.end(); ++ it, index ++) {
+		strstr.str("");
+		strstr << utf8_2_ansi(hero::treasure_str(it->first).c_str());
+		strstr << "(";
+		const std::vector<int>& features = treasures.find(it->first)->second;
+		for (std::vector<int>::const_iterator it2 = features.begin(); it2 != features.end(); ++ it2) {
+			if (it2 != features.begin()) {
+				strstr << ", ";
+			}
+			strstr << utf8_2_ansi(hero::feature_str(*it2).c_str());
+		}
+		strstr << ")";
+		ComboBox_AddString(hctl, strstr.str().c_str());
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
+		if (ns::action_treasure == ma_edit) {
+			if (it->first == ns::clicked_treasure) {
+				selected = index;
+			}
+		}
+	}
+	ComboBox_SetCurSel(hctl, selected);
+	if (ns::action_treasure == ma_edit) {
+		ComboBox_Enable(hctl, FALSE);
+	}
+
+	hctl = GetDlgItem(hdlgP, IDC_UD_TREASURE_COUNT);
+	UpDown_SetRange(hctl, 1, 100);	// [1, 100]
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_TREASURE_COUNT));
+
+	if (ns::action_treasure == ma_edit) {
+		const std::map<int, int>::const_iterator find = scenario.treasures_.find(ns::clicked_treasure);
+		UpDown_SetPos(hctl, find->second);
+	} else {
+		UpDown_SetPos(hctl, 1);
+	}
+
+	return FALSE;
+}
+
+void On_DlgTreasureCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	BOOL changed = FALSE;
+
+	switch (id) {
+	case IDOK:
+		changed = TRUE;
+		scenario.from_ui_treasure(hdlgP, ns::action_treasure == ma_edit);
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL CALLBACK DlgTreasureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(uMsg) {
+	case WM_INITDIALOG:
+		return On_DlgTreasureInitDialog(hdlgP, (HWND)(wParam), lParam);
+	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgTreasureCommand);
+	HANDLE_MSG(hdlgP, WM_DRAWITEM, editor_config::On_DlgDrawItem);
+	// HANDLE_MSG(hdlgP, WM_DESTROY,  On_DlgTreasureDestroy);
+	}	
+	return FALSE;
+}
+
+void OnTreasureAddBt(HWND hdlgP)
+{
+	RECT		rcBtn;
+	LPARAM		lParam;
+	
+	GetWindowRect(GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_TREASURE), &rcBtn);
+	lParam = posix_mku32((rcBtn.left > 0)? rcBtn.left: rcBtn.right, rcBtn.top);
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	ns::action_treasure = ma_new;
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_TREASURE), hdlgP, DlgTreasureProc, lParam)) {
+		scenario.update_to_ui_treasures(hdlgP);
+		scenario.set_dirty(tscenario::BIT_TREASURES, scenario.scenario_from_cfg_.treasures_ != scenario.treasures_);
+	}
+
+	return;
+}
+
+void OnTreasureEditBt(HWND hdlgP)
+{
+	RECT		rcBtn;
+	LPARAM		lParam;
+	
+	GetWindowRect(GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_TREASURE), &rcBtn);
+	lParam = posix_mku32((rcBtn.left > 0)? rcBtn.left: rcBtn.right, rcBtn.top);
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	ns::action_treasure = ma_edit;
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_TREASURE), hdlgP, DlgTreasureProc, lParam)) {
+		scenario.update_to_ui_treasures(hdlgP);
+		scenario.set_dirty(tscenario::BIT_TREASURES, scenario.scenario_from_cfg_.treasures_ != scenario.treasures_);
+	}
+
+	return;
+}
+
+void OnTreasureDelBt(HWND hdlgP)
+{
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	std::map<int, int>& treasures = scenario.treasures_;
+	treasures.erase(ns::clicked_treasure);
+
+	scenario.update_to_ui_treasures(hdlgP);
+	scenario.set_dirty(tscenario::BIT_TREASURES, scenario.scenario_from_cfg_.treasures_ != scenario.treasures_);
+	return;
+}
+
 void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	switch (id) {
@@ -5053,13 +5311,19 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 		break;
 
 	case IDM_ADD:
-		OnSideAddBt(hdlgP);
+		if (ns::type == IDC_LV_CAMPSCENARIO_SIDE) {
+			OnSideAddBt(hdlgP);
+		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
+			OnTreasureAddBt(hdlgP);
+		}
 		break;
 	case IDM_DELETE:
 		if (ns::type == IDC_LV_CAMPSCENARIO_SIDE) {
 			OnSideDelBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_EVENT) {
 			OnEventDelBt(hdlgP);
+		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
+			OnTreasureDelBt(hdlgP);
 		}
 		break;
 	case IDM_EDIT:
@@ -5067,6 +5331,8 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 			OnSideEditBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_EVENT) {
 			OnEventEditBt(hdlgP);
+		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
+			OnTreasureEditBt(hdlgP);
 		}
 		break;
 
@@ -5165,6 +5431,29 @@ void campaignscenario_notify_handler_rclick(HWND hdlgP, LPNMHDR lpNMHdr)
 
 		ns::clicked_event = lpnmitem->iItem;
 		ns::type = IDC_LV_CAMPSCENARIO_EVENT;
+
+	} else if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_TREASURE) {
+		HMENU hpopup_treasure = CreatePopupMenu();
+		AppendMenu(hpopup_treasure, MF_STRING, IDM_ADD, "添加...");
+		AppendMenu(hpopup_treasure, MF_STRING, IDM_EDIT, "编辑...");
+		AppendMenu(hpopup_treasure, MF_STRING, IDM_DELETE, "删除");
+
+		if (lpnmitem->iItem < 0) {
+			EnableMenuItem(hpopup_treasure, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_treasure, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
+		}
+		
+
+		TrackPopupMenuEx(hpopup_treasure, 0, 
+			point.x, 
+			point.y, 
+			hdlgP, 
+			NULL);
+
+		DestroyMenu(hpopup_treasure);
+
+		ns::clicked_treasure = lvi.lParam;
+		ns::type = IDC_LV_CAMPSCENARIO_TREASURE;
 	}
 
 	return;
@@ -5177,7 +5466,7 @@ void campaignscenario_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 
 	// NM_表示对通用控件都通用,范围丛(0, 99)
 	// TVN_表示只能TreeView通用,范围丛(400, 499)
-	if ((lpNMHdr->code == NM_DBLCLK) && (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_SIDE || lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_EVENT))  {
+	if ((lpNMHdr->code == NM_DBLCLK) && (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_SIDE || lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_EVENT || lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_TREASURE))  {
 		lpnmitem = (LPNMITEMACTIVATE)lpNMHdr;
 		// 如果单击到的是复选框位置,把复选框状态置反
 		// 当前定义的图标大小是16x16. ptAction反回的(x,y)是整个列表视图内的坐标,因而y值不大好判断
@@ -5197,6 +5486,9 @@ void campaignscenario_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 			} else if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_EVENT) {
 				ns::clicked_event = lpnmitem->iItem;
 				OnEventEditBt(hdlgP);
+			} else if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_TREASURE) {
+				ns::clicked_treasure = lvi.lParam;
+				OnTreasureEditBt(hdlgP);
 			}
 		}
 	}
@@ -5280,7 +5572,7 @@ void campaign_refresh(HWND hdlgP)
 		pHdr->valid_pages = 1;
 
 		// Lock the resources for the three child dialog boxes. 
-		pHdr->apRes[0] = ns::DoLockDlgRes(MAKEINTRESOURCE(IDD_CAMPAIGN_MAIN));
+		pHdr->apRes[0] = editor_config::DoLockDlgRes(MAKEINTRESOURCE(IDD_CAMPAIGN_MAIN));
 		
 		// Calculate how large to make the tab control, so 
 		// the display area can accommodate all the child dialog boxes.
@@ -5317,7 +5609,7 @@ void campaign_refresh(HWND hdlgP)
 		tie.pszText = text; 
 		TabCtrl_InsertItem(pHdr->hwndTab, index, &tie); 
 
-		pHdr->apRes[index] = ns::DoLockDlgRes(MAKEINTRESOURCE(IDD_CAMPAIGN_SCENARIO));
+		pHdr->apRes[index] = editor_config::DoLockDlgRes(MAKEINTRESOURCE(IDD_CAMPAIGN_SCENARIO));
 	}
 
 	// Simulate selection of the first item.

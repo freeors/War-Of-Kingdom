@@ -25,10 +25,10 @@ namespace {
 		"unit_race", "unit_level", "unit_side", "unit_amla",
 		"unit_traits", "unit_status", "unit_alignment", "unit_abilities",
 		"unit_hp", "unit_xp", "unit_advancement_options",
-		"unit_weapons", "unit_image", "unit_profile", "time_of_day",
+		"unit_weapons", "unit_image", "time_of_day",
 		"turn", "gold", "villages", "upkeep", "expenses",
-		"income", "terrain", "position", "stratum", "meritorious", "side_playing", "observers",
-		"report_countdown", "report_clock",
+		"income", "tactic", "terrain", "position", "stratum", "meritorious", 
+		"side_playing", "observers", "report_countdown", "report_clock",
 		"selected_terrain", "edit_left_button_function", "editor_tool_hint"
 	};
 }

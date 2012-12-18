@@ -220,7 +220,7 @@ unit_ability_list unit::get_abilities(const std::string& ability, const map_loca
 			if (heal_cfg.empty()) {
 				heal_cfg["id"] = "healing";
 				heal_cfg["affect_self"] = "yes";
-				heal_cfg["value"] = 20;
+				heal_cfg["value"] = 32;
 			}
 			cfgs.push_back(&heal_cfg);
 		}

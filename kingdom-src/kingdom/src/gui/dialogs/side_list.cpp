@@ -433,6 +433,20 @@ void tside_list::fill_table(int catalog)
 			} else {
 				str << "---";
 			}
+/*
+			for (std::vector<tmess_data>::const_iterator it = plan.mrs_[0].messes.begin(); it != plan.mrs_[0].messes.end(); ++ it) {
+				if (it != plan.mrs_[0].messes.begin()) {
+					str << "\n";
+				}
+				const tmess_data& mess = *it;
+				str << "[" << mess.selfs.size() << "{" << mess.cumulate_x / mess.selfs.size() << ", " << mess.cumulate_y / mess.selfs.size() << "}";
+				str << mess.allys << ",A " << mess.friend_arts << ", " << mess.enemies << ",A " << mess.enemy_arts;
+				str << "]";
+				for (std::map<unit*, tmess_data::tadjacent_data>::const_iterator it2 = mess.selfs.begin(); it2 != mess.selfs.end(); ++ it2) {
+					str << "(" << it2->first->name() << ", " << it2->second.friends << ", " << it2->second.enemies << ")";
+				}
+			}
+*/
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("enemy_cities[0]", table_item));
 		}

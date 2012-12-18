@@ -989,3 +989,25 @@ msgstr ""
 
 msgid "pelisse footman6 description"
 msgstr ""
+
+#
+# character unit type: powder catapult
+#
+
+msgid "powder catapult4"
+msgstr ""
+
+msgid "powder catapult4 description"
+msgstr ""
+
+msgid "powder catapult5"
+msgstr ""
+
+msgid "powder catapult5 description"
+msgstr ""
+
+msgid "powder catapult6"
+msgstr ""
+
+msgid "powder catapult6 description"
+msgstr ""

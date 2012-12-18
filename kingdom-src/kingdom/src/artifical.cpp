@@ -906,7 +906,8 @@ bool artifical::new_turn()
 		u.set_attacks(u.attacks_total());
 		u.increase_loyalty(-1 * game_config::reside_troop_increase_loyalty);
 		u.increase_activity(10);
-		u.get_experience2(4);
+		u.get_experience2(3);
+		u.new_turn_tactics();
 		u.set_state(unit::STATE_SLOWED, false);
 		u.set_state(unit::STATE_BROKEN, false);
 		u.set_state(unit::STATE_PETRIFIED, false);
@@ -1124,9 +1125,16 @@ void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
 		}
 	}
 
-	// 2. 更改troop属性(将属城市,将属阵营)
+	// 2. set troop attribute(city, side, human)
 	troop->set_cityno(cityno_);
 	troop->set_side(side_);
+	// set human must before field_troops_add, 
+	// field_troops_add use human flag to refresh access_troops. 
+	if (!troop->is_artifical() && !troop->human()) {
+		if ((rpg::stratum == hero_stratum_leader && side_ == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor_ == rpg::h)) {
+			troop->set_human(true);
+		}
+	}
 
 	// 3. 把troop加入将属城市的城外部队列表
 	if (!troop->is_artifical()) {
@@ -1144,12 +1152,6 @@ void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
 	// moved troop are added to end regardless team.field_troop or artifical[n].field_troop.
 	prevous_team.erase_troop(troop);
 	current_team.add_troop(troop);
-
-	if (!troop->is_artifical() && !troop->human()) {
-		if ((rpg::stratum == hero_stratum_leader && side_ == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor_ == rpg::h)) {
-			troop->set_human(true);
-		}
-	}	
 }
 
 // 出城
@@ -1357,6 +1359,7 @@ void artifical::fallen(int a_side, unit* attacker)
 	utils::string_map symbols;
 	std::stringstream strstr;
 	int random;
+	bool force_wander;
 
 	bool fallen_to_unstage = controller.fallen_to_unstage();
 
@@ -1392,19 +1395,25 @@ void artifical::fallen(int a_side, unit* attacker)
 		random = get_random();
 		join_to_city = NULL;
 
+		if (current_troop->packee_type()->leader()) {
+			force_wander = true;
+		} else {
+			force_wander = false;
+		}
+
 		if (city_same_side) {
 			city_same_side->troop_come_into(current_troop, -1, false);
-		} else if (fallen_to_unstage) {
+		} else if (!force_wander && fallen_to_unstage) {
 			current_troop->to_unstage();
-		} else if (a_side != team::empty_side_ && current_troop->master().base_catalog_ == attacker_leader->base_catalog_) {
+		} else if (!force_wander && a_side != team::empty_side_ && current_troop->master().base_catalog_ == attacker_leader->base_catalog_) {
 			troop_come_into(current_troop, -1, false);
 			join_to_city = this;
-		} else if (a_side != team::empty_side_ && (random % 10 + current_troop->master().loyalty(*attacker_leader)) > HERO_MAX_LOYALTY) {
+		} else if (!force_wander && a_side != team::empty_side_ && (random % 10 + current_troop->master().loyalty(*attacker_leader)) > HERO_MAX_LOYALTY) {
 			troop_come_into(current_troop, -1, false);
 			join_to_city = this;
 		} else {
 			artifical* cobj = citys[random % citys.size()];
-			if (cobj->side() == team::empty_side_ || random % 2) {
+			if (force_wander || cobj->side() == team::empty_side_ || random % 2) {
 				cobj->wander_into(current_troop, teams[cobj->side() - 1].is_human()? true: false);
 			} else {
 				cobj->troop_come_into(current_troop, -1, false);
@@ -1481,43 +1490,51 @@ void artifical::fallen(int a_side, unit* attacker)
 		random = get_random();
 		join_to_city = NULL;
 
+		if (current_troop->packee_type()->leader()) {
+			force_wander = true;
+		} else {
+			force_wander = false;
+		}
+
 		if (city_same_side) {
 			city_same_side->unit_belong_to(current_troop, false);
 
 		} else {
-			for (size_t i = 0; i < current_troop->adjacent_size_; i ++) {
-				unit_map::iterator u_itor = units_.find(current_troop->adjacent_[i]);
-				if (u_itor.valid() && unit_feature_val2(*u_itor, hero_feature_lobbyist) && u_itor->side() != current_troop->side()) {
-					if (lobbyisted_troops.find(&*u_itor) != lobbyisted_troops.end()) {
-						// a lobbyist only face down one troop
-						continue;
-					}
-					artifical* cobj = units_.city_from_cityno(u_itor->cityno());
-					lobbyisted_troops.insert(&*u_itor);
+			if (!force_wander) {
+				for (size_t i = 0; i < current_troop->adjacent_size_; i ++) {
+					unit_map::iterator u_itor = units_.find(current_troop->adjacent_[i]);
+					if (u_itor.valid() && unit_feature_val2(*u_itor, hero_feature_lobbyist) && u_itor->side() != current_troop->side()) {
+						if (lobbyisted_troops.find(&*u_itor) != lobbyisted_troops.end()) {
+							// a lobbyist only face down one troop
+							continue;
+						}
+						artifical* cobj = units_.city_from_cityno(u_itor->cityno());
+						lobbyisted_troops.insert(&*u_itor);
 
-					join_to_city = cobj;
-					break;
+						join_to_city = cobj;
+						break;
+					}
 				}
 			}
 			if (join_to_city) {
 				join_to_city->unit_belong_to(current_troop);
 
-			} else if (fallen_to_unstage) {
+			} else if (!force_wander && fallen_to_unstage) {
 				current_troop->to_unstage();
 				units_.erase(current_troop);
 
-			} else if (a_side != team::empty_side_ && current_troop->master().base_catalog_ == attacker_leader->base_catalog_) {
+			} else if (!force_wander && a_side != team::empty_side_ && current_troop->master().base_catalog_ == attacker_leader->base_catalog_) {
 				unit_belong_to(current_troop);
 				join_to_city = this;
 
-			} else if (a_side != team::empty_side_ && (random % 10 + current_troop->master().loyalty(*attacker_leader)) > HERO_MAX_LOYALTY) {
+			} else if (!force_wander && a_side != team::empty_side_ && (random % 10 + current_troop->master().loyalty(*attacker_leader)) > HERO_MAX_LOYALTY) {
 				unit_belong_to(current_troop);
 				join_to_city = this;
 
 			} else {
 				// 随机取一个城市
 				artifical* cobj = citys[random % citys.size()];
-				if (cobj->side() == team::empty_side_ || random % 2) {
+				if (force_wander || cobj->side() == team::empty_side_ || random % 2) {
 					cobj->wander_into(current_troop, teams[cobj->side() - 1].is_human()? true: false);
 					units_.erase(current_troop);
 				} else {
@@ -1576,9 +1593,6 @@ void artifical::fallen(int a_side, unit* attacker)
 		}
 	}
 
-	// 3.城市耐久度恢复到50%
-	hit_points_ = std::max(max_hit_points_ / 2, 1);
-
 	// 4.攻占者进入城市
 	if (attacker) {
 		troop_come_into(attacker);
@@ -1627,8 +1641,21 @@ void artifical::fallen(int a_side, unit* attacker)
 	}
 
 	// leader is changed, recalculate fields
-	adjust();
-
+	// decrease level_
+	modifications_.clear();
+	const std::vector<std::string> from = unit_type_->advances_from();
+	if (from.empty()) {
+		adjust();
+	} else {
+		// reference to get_advanced_unit2(...)
+		const unit_type* new_type = unit_types.find(from[0]);
+		advance_to(new_type);
+		calculate_5fields();
+		modify_according_to_hero(false);
+	}
+	hit_points_ = std::max(max_hit_points_ / 2, 1);
+	experience_ = 0;
+		
 	// get one card random
 	if (!controller.is_replaying()) {
 		get_random_card(attacker_team, *resources::screen, units_, heros_);

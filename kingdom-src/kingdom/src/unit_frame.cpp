@@ -146,6 +146,7 @@ frame_parameters::frame_parameters() :
 	image(),
 	image_diagonal(),
 	image_mod(""),
+	stext(""),
 	halo(""),
 	halo_x(0),
 	halo_y(0),
@@ -153,6 +154,7 @@ frame_parameters::frame_parameters() :
 	sound(""),
 	text(""),
 	text_color(0),
+	font_size(0),
 	blend_with(0),
 	blend_ratio(0.0),
 	highlight_ratio(1.0),
@@ -202,6 +204,7 @@ frame_builder::frame_builder(const config& cfg,const std::string& frame_string) 
 	image_(cfg[frame_string + "image"]),
 	image_diagonal_(cfg[frame_string + "image_diagonal"]),
 	image_mod_(cfg[frame_string + "image_mod"]),
+	stext_(cfg[frame_string + "stext"]),
 	halo_(cfg[frame_string + "halo"]),
 	halo_x_(cfg[frame_string + "halo_x"]),
 	halo_y_(cfg[frame_string + "halo_y"]),
@@ -209,6 +212,7 @@ frame_builder::frame_builder(const config& cfg,const std::string& frame_string) 
 	sound_(cfg[frame_string + "sound"]),
 	text_(cfg[frame_string + "text"]),
 	text_color_(0),
+	font_size_(cfg[frame_string + "font_size"].to_int(0)),
 	blend_with_(0),
 	blend_ratio_(cfg[frame_string + "blend_ratio"]),
 	highlight_ratio_(cfg[frame_string + "alpha"]),
@@ -371,6 +375,7 @@ frame_parsed_parameters::frame_parsed_parameters(const frame_builder & builder, 
 	image_(builder.image_),
 	image_diagonal_(builder.image_diagonal_),
 	image_mod_(builder.image_mod_),
+	stext_(builder.stext_),
 	halo_(builder.halo_,duration_),
 	halo_x_(builder.halo_x_,duration_),
 	halo_y_(builder.halo_y_,duration_),
@@ -378,6 +383,7 @@ frame_parsed_parameters::frame_parsed_parameters(const frame_builder & builder, 
 	sound_(builder.sound_),
 	text_(builder.text_),
 	text_color_(builder.text_color_),
+	font_size_(builder.font_size_),
 	blend_with_(builder.blend_with_),
 	blend_ratio_(builder.blend_ratio_,duration_),
 	highlight_ratio_(builder.highlight_ratio_,duration_),
@@ -436,6 +442,7 @@ const frame_parameters frame_parsed_parameters::parameters(int current_time) con
 	result.image = image_;
 	result.image_diagonal = image_diagonal_;
 	result.image_mod = image_mod_;
+	result.stext = stext_;
 	result.halo = halo_.get_current_element(current_time);
 	result.halo_x = halo_x_.get_current_element(current_time);
 	result.halo_y = halo_y_.get_current_element(current_time);
@@ -443,6 +450,7 @@ const frame_parameters frame_parsed_parameters::parameters(int current_time) con
 	result.sound = sound_;
 	result.text = text_;
 	result.text_color = text_color_;
+	result.font_size = font_size_;
 	result.blend_with = blend_with_;
 	result.blend_ratio = blend_ratio_.get_current_element(current_time);
 	result.highlight_ratio = highlight_ratio_.get_current_element(current_time,1.0);
@@ -655,18 +663,19 @@ void unit_frame::redraw_screen_mode(const int frame_time,bool first_time, const 
 	}
 
 	game_display* disp = game_display::get_singleton();
-	int screen_width = disp->video().getx();
-	int screen_height = disp->video().gety();
+	SDL_Rect map_area = disp->map_outside_area();
+	// int screen_width = disp->video().getx();
+	// int screen_height = disp->video().gety();
 
-	const int x = static_cast<int>(tmp_offset * screen_width);
-	const int y = static_cast<int>(tmp_offset * screen_height);
+	const int x = static_cast<int>(tmp_offset * map_area.w);
+	const int y = static_cast<int>(tmp_offset * map_area.h);
 
 	bool facing_west = false;
 	bool facing_north = true;
 
-	if (image != NULL) {
-		double zoom_factor = game_display::get_singleton()->get_zoom_factor();
+	double zoom_factor = game_display::get_singleton()->get_zoom_factor();
 
+	if (image != NULL) {
 		int my_x = x + int(current_data.x * zoom_factor - image->w/2);
 		int my_y = y + int(current_data.y * zoom_factor - image->h/2);
 
@@ -675,6 +684,14 @@ void unit_frame::redraw_screen_mode(const int frame_time,bool first_time, const 
 			       	map_location(), image, facing_west, false,
 					ftofxp(current_data.highlight_ratio), current_data.blend_with,
 			       	current_data.blend_ratio, current_data.submerge, !facing_north);
+
+	} else if (!current_data.stext.empty()) {
+		int my_x = x + int(current_data.x * zoom_factor);
+		int my_y = y + int(current_data.y * zoom_factor);
+
+		disp->draw_text_in_hex2(map_location(), static_cast<display::tdrawing_layer>(display::LAYER_UNIT_FIRST+current_data.drawing_layer),
+			current_data.stext, current_data.font_size, font::NORMAL_COLOR, my_x, my_y,
+			       	ftofxp(current_data.highlight_ratio));
 	}
 }
 
@@ -791,8 +808,9 @@ std::set<map_location> unit_frame::get_overlaped_hex_screen_mode(const int frame
 		image=image::get_image(image_loc, image::SCALED_TO_ZOOM);
 	}
 
-	int screen_width = disp->video().getx();
-	int screen_height = disp->video().gety();
+	SDL_Rect map_area = disp->map_outside_area();
+	// int screen_width = disp->video().getx();
+	// int screen_height = disp->video().gety();
 
 	// we always invalidate our own hex because we need to be called at redraw time even
 	// if we don't draw anything in the hex itself
@@ -805,8 +823,8 @@ std::set<map_location> unit_frame::get_overlaped_hex_screen_mode(const int frame
 		int my_x = int(current_data.x * zoom_factor - image->w/2);
 		int my_y = int(current_data.y * zoom_factor - image->h/2);
 
-		const int x = static_cast<int>(tmp_offset * screen_width) + my_x;
-		const int y = static_cast<int>(tmp_offset * screen_height) + my_y;
+		const int x = static_cast<int>(tmp_offset * map_area.w) + my_x;
+		const int y = static_cast<int>(tmp_offset * map_area.h) + my_y;
 
 		const SDL_Rect r = create_rect(x, y, image->w, image->h);
 		// check if our underlying hexes are invalidated
@@ -824,6 +842,13 @@ void unit_frame::replace_image_name(const std::string& src, const std::string& d
 {
 	if (builder_.image_ == src) {
 		builder_.image_ = dst;
+	}
+}
+
+void unit_frame::replace_static_text(const std::string& src, const std::string& dst)
+{
+	if (builder_.stext_ == src) {
+		builder_.stext_ = dst;
 	}
 }
 
@@ -874,6 +899,8 @@ const frame_parameters unit_frame::merge_parameters(int current_time,const frame
                 result.image_mod += engine_val.halo_mod;
         }
 
+	result.stext = current_val.stext.empty()? animation_val.stext: current_val.stext;
+
 	assert(engine_val.halo.empty());
 	result.halo = current_val.halo.empty()?animation_val.halo:current_val.halo;
 
@@ -898,6 +925,11 @@ const frame_parameters unit_frame::merge_parameters(int current_time,const frame
 
 	assert(engine_val.text_color == 0);
 	result.text_color = current_val.text_color?current_val.text_color:animation_val.text_color;
+
+	result.font_size = current_val.font_size? current_val.font_size: animation_val.font_size;
+	if (!result.font_size) {
+		result.font_size = font::SIZE_NORMAL;
+	}
 
 	/** engine provide a blend color for poisoned units */
 	result.blend_with = current_val.blend_with?current_val.blend_with:animation_val.blend_with;

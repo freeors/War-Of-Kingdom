@@ -37,6 +37,8 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include "play_controller.hpp"
+#include "resources.hpp"
 
 #include <boost/bind.hpp>
 
@@ -146,7 +148,21 @@ void ttreasure_list::pre_show(CVideo& /*video*/, twindow& window)
 			}
 		}
 	}
-
+/*
+	// hide treasure
+	const std::vector<int>& hide_treasures = resources::controller->treasures();
+	for (std::vector<int>::const_iterator it = hide_treasures.begin(); it != hide_treasures.end(); ++ it) {
+		size_t t = *it;
+		find_it = ownerships_.find(t);
+		if (find_it != ownerships_.end()) {
+			find_it->second.sides_.push_back(&teams_[0]);
+		} else {
+			ownership owner;
+			owner.sides_.push_back(&teams_[0]);
+			ownerships_[t] = owner;
+		}
+	}
+*/
 	catalog_page(window, OWNERSHIP_PAGE, false);
 
 	hero_table_->set_callback_value_change(dialog_callback<ttreasure_list, &ttreasure_list::hero_changed>);

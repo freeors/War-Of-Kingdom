@@ -488,10 +488,10 @@ typedef FILE*			posix_file_t;
 			//support the file size is less than 4GB
 			va_list va_param;
 			char   szBuf[DBG_BUFF_SIZE];
-			va_end(va_param);
-
+			
 			va_start(va_param, formt);
 			vsprintf(szBuf, formt, va_param);
+			va_end(va_param);
 #ifdef PROG_NAME
 			MessageBox(NULL, szBuf, PROG_NAME, MB_OK);
 #else

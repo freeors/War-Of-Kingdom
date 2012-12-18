@@ -196,29 +196,25 @@ msgid "treasure-38"
 msgstr "平蛮指掌图"
 
 msgid "treasure-39"
-msgstr "五石散"
+msgstr "珍珠"
 
 msgid "treasure-40"
-msgstr "白羽扇"
+msgstr "碧玉"
 
 msgid "treasure-41"
-msgstr "玉玺"
+msgstr "青玉"
 
-#, fuzzy
 msgid "treasure-42"
-msgstr "遁甲天书"
+msgstr "红玉"
 
-#, fuzzy
 msgid "treasure-43"
-msgstr "谋士"
+msgstr "五石散"
 
-#, fuzzy
 msgid "treasure-44"
-msgstr "水将"
+msgstr "白羽扇"
 
-#, fuzzy
 msgid "treasure-45"
-msgstr "水将"
+msgstr "玉玺"
 
 #, fuzzy
 msgid "treasure-46"
@@ -275,9 +271,8 @@ msgstr "丹阳"
 msgid "character-12"
 msgstr "诸葛"
 
-#, fuzzy
 msgid "character-13"
-msgstr "虎豹"
+msgstr "火药"
 
 msgid "feature-0"
 msgstr "步将"
@@ -562,7 +557,7 @@ msgid "feature_desc-46"
 msgstr "所在部队不会掉忠诚度"
 
 msgid "feature-47"
-msgstr "鼓舞"
+msgstr "好学"
 
 msgid "feature_desc-47"
 msgstr "获得XP加倍"
@@ -595,7 +590,7 @@ msgid "feature-52"
 msgstr "自疗"
 
 msgid "feature_desc-52"
-msgstr "每回合恢复20HP"
+msgstr "每回合恢复32HP"
 
 msgid "feature-53"
 msgstr "内讧"
@@ -763,7 +758,7 @@ msgid "feature-80"
 msgstr "魅惑"
 
 msgid "feature_desc-80"
-msgstr "鼓舞+攻心"
+msgstr "好学+攻心"
 
 msgid "feature-81"
 msgstr "劫营"
@@ -775,7 +770,7 @@ msgid "feature-82"
 msgstr "医疗"
 
 msgid "feature_desc-82"
-msgstr "战法拥有减速效果，每回合恢复20HP"
+msgstr "战法拥有减速效果，每回合恢复32HP"
 
 msgid "feature-83"
 msgstr "兵法"
@@ -879,6 +874,252 @@ msgstr ""
 msgid "feature_desc-99"
 msgstr ""
 
+msgid "tactic-attack"
+msgstr "攻击强化"
+
+msgid "tactic_desc-attack"
+msgstr "提升自身攻击力"
+
+msgid "tactic-more attack"
+msgstr "攻击较大强化"
+
+msgid "tactic_desc-more attack"
+msgstr "较大提升自身攻击力"
+
+msgid "tactic-best attack"
+msgstr "攻击深度强化"
+
+msgid "tactic_desc-best attack"
+msgstr "深度提升自身攻击力"
+
+msgid "tactic-attacks"
+msgstr "全攻击强化"
+
+msgid "tactic_desc-attacks"
+msgstr "提升范围内友方的攻击"
+
+msgid "tactic-more attacks"
+msgstr "全攻击较大强化"
+
+msgid "tactic_desc-more attacks"
+msgstr "较大提升范围内友方的攻击"
+
+msgid "tactic-weaken attacks"
+msgstr "全攻击弱化"
+
+msgid "tactic_desc-weaken attacks"
+msgstr "弱化范围内敌方的攻击"
+
+msgid "tactic-weaken more attacks"
+msgstr "全攻击较大弱化"
+
+msgid "tactic_desc-weaken more attacks"
+msgstr "较大弱化范围内敌方的攻击"
+
+msgid "tactic-firm"
+msgstr "防御强化"
+
+msgid "tactic_desc-firm"
+msgstr "提升自身的防御力"
+
+msgid "tactic-more firm"
+msgstr "防御较大强化"
+
+msgid "tactic_desc-more firm"
+msgstr "较大提升自身的防御力"
+
+msgid "tactic-best firm"
+msgstr "防御深度强化"
+
+msgid "tactic_desc-best firm"
+msgstr "深度提升自身的防御力"
+
+msgid "tactic-firms"
+msgstr "全防御强化"
+
+msgid "tactic_desc-firms"
+msgstr "提升范围内友军的防御力"
+
+msgid "tactic-more firms"
+msgstr "全防御较大强化"
+
+msgid "tactic_desc-more firms"
+msgstr "较大提升范围内友军的防御力"
+
+msgid "tactic-breaks"
+msgstr "全防御弱化"
+
+msgid "tactic_desc-breaks"
+msgstr "弱化范围内敌方防御"
+
+msgid "tactic-more breaks"
+msgstr "全防御较大弱化"
+
+msgid "tactic_desc-more breaks"
+msgstr "较大弱化范围内敌军防御"
+
+msgid "tactic-encourage"
+msgstr "士气强化"
+
+msgid "tactic_desc-encourage"
+msgstr "提升自身士气"
+
+msgid "tactic-more encourage"
+msgstr "士气较大强化"
+
+msgid "tactic_desc-more encourage"
+msgstr "较大提升自身士气"
+
+msgid "tactic-best encourage"
+msgstr "士气深度强化"
+
+msgid "tactic_desc-best encourage"
+msgstr "深度提升自身士气"
+
+msgid "tactic-encourages"
+msgstr "全士气强化"
+
+msgid "tactic_desc-encourages"
+msgstr "提升范围内友军的士气"
+
+msgid "tactic-more encourages"
+msgstr "全士气较大强化"
+
+msgid "tactic_desc-more encourages"
+msgstr "较大提升范围内友军的士气"
+
+msgid "tactic-weaken encourages"
+msgstr "全士气弱化"
+
+msgid "tactic_desc-weaken encourages"
+msgstr "降低范围内敌方的士气"
+
+msgid "tactic-weaken more encourages"
+msgstr "全士气较大弱化"
+
+msgid "tactic_desc-weaken more encourages"
+msgstr "较大降低范围内敌方的士气"
+
+msgid "tactic-demolish"
+msgstr "破坏强化"
+
+msgid "tactic_desc-demolish"
+msgstr "提升自身破坏力"
+
+msgid "tactic-more demolish"
+msgstr "破坏较大强化"
+
+msgid "tactic_desc-more demolish"
+msgstr "较大提升自身破坏力"
+
+msgid "tactic-demolishes"
+msgstr "全破化强化"
+
+msgid "tactic_desc-demolishes"
+msgstr "提升范围内友军的破坏力"
+
+msgid "tactic-more demolishes"
+msgstr "全破化较大强化"
+
+msgid "tactic_desc-more demolishes"
+msgstr "较大提升范围内友军的破坏力"
+
+msgid "tactic-weaken demolishes"
+msgstr "全破坏弱化"
+
+msgid "tactic_desc-weaken demolishes"
+msgstr "弱化范围内敌方的破坏力"
+
+msgid "tactic-weaken more demolishes"
+msgstr "全破坏较大弱化"
+
+msgid "tactic_desc-weaken more demolishes"
+msgstr "较大弱化范围内敌方的破坏力"
+
+msgid "tactic-divine wei wu"
+msgstr "魏武之强"
+
+msgid "tactic_desc-divine wei wu"
+msgstr "较大提升范围内友军攻击、防御"
+
+msgid "tactic-dragon in people"
+msgstr "龙中吕布"
+
+msgid "tactic_desc-dragon in people"
+msgstr "较大提升自身攻击、防御、士气，并降低敌军防御"
+
+msgid "tactic-integrate attack and defend"
+msgstr "攻防一体"
+
+msgid "tactic_desc-integrate attack and defend"
+msgstr "较大提升范围自身攻击、防御"
+
+msgid "tactic-speedy solo"
+msgstr "单骑驱"
+
+msgid "tactic_desc-speedy solo"
+msgstr "提升自身攻击、防御、士气"
+
+msgid "tactic-remote strike"
+msgstr "千里行"
+
+msgid "tactic_desc-remote strike"
+msgstr "提升自身攻击、防御、破坏"
+
+msgid "tactic-again thousands"
+msgstr "万人敌"
+
+msgid "tactic_desc-again thousands"
+msgstr "深度提升自身攻击"
+
+msgid "tactic-ironman"
+msgstr "铁壁"
+
+msgid "tactic_desc-ironman"
+msgstr "深度提升自身的防御力"
+
+msgid "tactic-brave ironman"
+msgstr "刚勇"
+
+msgid "tactic_desc-brave ironman"
+msgstr "深度提升自身的防御力"
+
+msgid "tactic-storm attack"
+msgstr "强袭"
+
+msgid "tactic_desc-storm attack"
+msgstr "深度提升自身的攻击力"
+
+msgid "tactic-break through"
+msgstr "突破"
+
+msgid "tactic_desc-break through"
+msgstr "较大提升自身攻击、破坏"
+
+msgid "tactic-military defense"
+msgstr "全军防御"
+
+msgid "tactic_desc-military defense"
+msgstr "提升范围内友军的防御、士气"
+
+msgid "tactic-military encourage"
+msgstr "全军兵击"
+
+msgid "tactic_desc-military encourage"
+msgstr "提升友军士气"
+
+msgid "tactic-military attack"
+msgstr "全军猛攻"
+
+msgid "tactic_desc-military attack"
+msgstr "较大提升友军攻击力"
+
+msgid "tactic-spy infiltrate"
+msgstr "埋伏之毒"
+
+msgid "tactic_desc-spy infiltrate"
+msgstr "弱化敌方攻击、防御"
+
 msgid "arms-0"
 msgstr "步兵"
 
@@ -907,7 +1148,7 @@ msgid "skill-2"
 msgstr ""
 
 msgid "skill-3"
-msgstr "激励"
+msgstr "鼓舞"
 
 msgid "skill-4"
 msgstr "一骑"
@@ -1645,13 +1886,13 @@ msgid "name-224"
 msgstr "小沛"
 
 msgid "name-225"
-msgstr "城市（保留）"
+msgstr "襄平"
 
 msgid "name-226"
-msgstr "城市（保留）"
+msgstr "晋阳"
 
 msgid "name-227"
-msgstr "城市（保留）"
+msgstr "长沙"
 
 msgid "name-228"
 msgstr "黄巾"
@@ -2704,16 +2945,16 @@ msgid "surname-223"
 msgstr "徐州"
 
 msgid "surname-224"
-msgstr "徐州"
+msgstr "小沛"
 
 msgid "surname-225"
-msgstr "城市"
+msgstr "襄平"
 
 msgid "surname-226"
-msgstr "城市"
+msgstr "晋阳"
 
 msgid "surname-227"
-msgstr "城市"
+msgstr "长沙"
 
 msgid "surname-228"
 msgstr "黄巾"
@@ -3769,16 +4010,16 @@ msgid "desc224"
 msgstr "小沛"
 
 msgid "desc225"
-msgstr "城市（保留）"
+msgstr "襄平"
 
 msgid "desc226"
-msgstr "城市（保留）"
+msgstr "晋阳"
 
 msgid "desc227"
-msgstr "城市（保留）"
+msgstr "长沙"
 
 msgid "desc228"
-msgstr "城市（保留）"
+msgstr "黄巾"
 
 msgid "desc229"
 msgstr "文官"
@@ -4164,6 +4405,146 @@ msgstr ""
 msgid "desc356"
 msgstr ""
 
+#~ msgid "tactic-storm demolish"
+#~ msgstr "猛攻"
+#~ msgid "tactic_desc-storm demolish"
+#~ msgstr "较大提升自身攻击、破坏"
+#~ msgid "tactic-melee attacks"
+#~ msgstr "全近战攻击强化"
+#~ msgid "tactic_desc-melee attacks"
+#~ msgstr "提升范围内友方的近战攻击"
+#~ msgid "tactic-weaken melee attacks"
+#~ msgstr "全攻击近战弱化"
+#~ msgid "tactic_desc-weaken melee attacks"
+#~ msgstr "弱化范围内敌方的近战攻击"
+#~ msgid "tactic-weaken ranged attacks"
+#~ msgstr "全远程攻击弱化"
+#~ msgid "tactic_desc-weaken ranged attacks"
+#~ msgstr "弱化范围内敌方的远程攻击"
+#~ msgid "tactic-weaken cast attacks"
+#~ msgstr "全投射攻击弱化"
+#~ msgid "tactic_desc-weaken cast attacks"
+#~ msgstr "弱化范围内敌方的投射攻击"
+#~ msgid "tactic-physical attacks"
+#~ msgstr "全物理攻击强化"
+#~ msgid "tactic_desc-physical attacks"
+#~ msgstr "提升范围内友方的物理攻击"
+#~ msgid "tactic-weaken physical attacks"
+#~ msgstr "全物理攻击弱化"
+#~ msgid "tactic_desc-weaken physical attacks"
+#~ msgstr "弱化范围内敌方的物理攻击"
+#~ msgid "tactic-mage attacks"
+#~ msgstr "全法术攻击强化"
+#~ msgid "tactic_desc-mage attacks"
+#~ msgstr "提升范围内友方的法术攻击"
+#~ msgid "tactic-physical firms"
+#~ msgstr "全物理防御强化"
+#~ msgid "tactic_desc-physical firms"
+#~ msgstr "提升范围内友军对物理攻击防御力"
+#~ msgid "tactic-physical breaks"
+#~ msgstr "全物理防御弱化"
+#~ msgid "tactic_desc-physical breaks"
+#~ msgstr "弱化范围内敌军对物理攻击防御力"
+#~ msgid "tactic-mage firms"
+#~ msgstr "全法术防御强化"
+#~ msgid "tactic_desc-mage firms"
+#~ msgstr "较大提升范围内友军对法术攻击防御力"
+#~ msgid "tactic-blade attacks"
+#~ msgstr "全剑刃攻击强化"
+#~ msgid "tactic_desc-blade attacks"
+#~ msgstr "提升范围内友方的剑刃攻击"
+#~ msgid "tactic-weaken blade attacks"
+#~ msgstr "全剑刃攻击弱化"
+#~ msgid "tactic_desc-weaken blade attacks"
+#~ msgstr "弱化范围内友方的剑刃攻击"
+#~ msgid "tactic-impact attacks"
+#~ msgstr "全冲击攻击强化"
+#~ msgid "tactic_desc-impact attacks"
+#~ msgstr "提升范围内友方的冲击攻击"
+#~ msgid "tactic-weaken impact attacks"
+#~ msgstr "全冲击攻击弱化"
+#~ msgid "tactic_desc-weaken impact attacks"
+#~ msgstr "弱化范围内友方的冲击攻击"
+#~ msgid "tactic-archery attacks"
+#~ msgstr "全弓弩攻击强化"
+#~ msgid "tactic_desc-archery attacks"
+#~ msgstr "提升范围内友方的弓弩攻击"
+#~ msgid "tactic-weaken archery attacks"
+#~ msgstr "全弓弩攻击弱化"
+#~ msgid "tactic_desc-weaken archery attacks"
+#~ msgstr "弱化范围内友方的弓弩攻击"
+#~ msgid "tactic-collapse attacks"
+#~ msgstr "全塌陷攻击强化"
+#~ msgid "tactic_desc-collapse attacks"
+#~ msgstr "提升范围内友方的塌陷攻击"
+#~ msgid "tactic-weaken collapse attacks"
+#~ msgstr "全塌陷攻击弱化"
+#~ msgid "tactic_desc-weaken collapse attacks"
+#~ msgstr "弱化范围内友方的塌陷攻击"
+#~ msgid "tactic-weaken arcane attacks"
+#~ msgstr "全奥术攻击弱化"
+#~ msgid "tactic_desc-weaken arcane attacks"
+#~ msgstr "弱化范围内友方的奥术攻击"
+#~ msgid "tactic-weaken fire attacks"
+#~ msgstr "全火焰攻击弱化"
+#~ msgid "tactic_desc-weaken fire attacks"
+#~ msgstr "弱化范围内友方的火焰攻击"
+#~ msgid "tactic-cold attacks"
+#~ msgstr "全寒冷攻击强化"
+#~ msgid "tactic_desc-cold attacks"
+#~ msgstr "提升范围内友方的寒冷攻击"
+#~ msgid "tactic-weaken cold attacks"
+#~ msgstr "全寒冷攻击弱化"
+#~ msgid "tactic_desc-weaken cold attacks"
+#~ msgstr "弱化范围内友方的寒冷攻击"
+#~ msgid "tactic-impact firms"
+#~ msgstr "全冲击防御强化"
+#~ msgid "tactic_desc-impact firms"
+#~ msgstr "提升范围内友军的对冲击防御力"
+#~ msgid "tactic-impact breaks"
+#~ msgstr "全冲击防御弱化"
+#~ msgid "tactic_desc-impact breaks"
+#~ msgstr "弱化范围内敌军的对冲击防御力"
+#~ msgid "tactic-archery firms"
+#~ msgstr "全弓弩防御强化"
+#~ msgid "tactic_desc-archery firms"
+#~ msgstr "提升范围内友军的对弓弩防御力"
+#~ msgid "tactic-archery breaks"
+#~ msgstr "全弓弩防御弱化"
+#~ msgid "tactic_desc-archery breaks"
+#~ msgstr "弱化范围内敌军的对弓弩防御力"
+#~ msgid "tactic-collapse firms"
+#~ msgstr "全塌陷防御强化"
+#~ msgid "tactic_desc-collapse firms"
+#~ msgstr "提升范围内友军的对塌陷防御力"
+#~ msgid "tactic-collapse breaks"
+#~ msgstr "全塌陷防御弱化"
+#~ msgid "tactic_desc-collapse breaks"
+#~ msgstr "弱化范围内敌军的对塌陷防御力"
+#~ msgid "tactic-arcane firms"
+#~ msgstr "全奥术防御强化"
+#~ msgid "tactic_desc-arcane firms"
+#~ msgstr "提升范围内友军的对奥术防御力"
+#~ msgid "tactic-arcane breaks"
+#~ msgstr "全奥术防御弱化"
+#~ msgid "tactic_desc-arcane breaks"
+#~ msgstr "弱化范围内敌军的对奥术防御力"
+#~ msgid "tactic-fire firms"
+#~ msgstr "全火焰防御强化"
+#~ msgid "tactic_desc-fire firms"
+#~ msgstr "提升范围内友军的对火焰防御力"
+#~ msgid "tactic-fire breaks"
+#~ msgstr "全火焰防御弱化"
+#~ msgid "tactic_desc-fire breaks"
+#~ msgstr "弱化范围内敌军的对火焰防御力"
+#~ msgid "tactic-cold firms"
+#~ msgstr "全寒冷防御强化"
+#~ msgid "tactic_desc-cold firms"
+#~ msgstr "提升范围内友军的对寒冷防御力"
+#~ msgid "tactic-cold breaks"
+#~ msgstr "全寒冷防御弱化"
+#~ msgid "tactic_desc-cold breaks"
+#~ msgstr "弱化范围内敌军的对寒冷防御力"
 #~ msgid "ye"
 #~ msgstr "叶"
 #~ msgid "hu"

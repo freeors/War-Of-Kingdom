@@ -684,7 +684,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		if (!u.wall()) {
 			unit_map::const_iterator itor = units.find(u_loc, false);
 			if (itor.valid() && !teams[itor->side() - 1].is_enemy(u.side()) && itor->wall()) {
-				damage += damage / 3;
+				damage += damage / 10;
 			}
 		}
 		if (!opp.wall()) {
@@ -1189,9 +1189,8 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 		}
 	}
 	bool stronger = false;
-	if (attacker_turn && !attacker_u.get_state(unit::STATE_POISONED) && 
-		(!attacker_u.is_artifical() || attacker_u.is_city()) 
-		&&  (!center_defender_ptr->is_artifical() || center_defender_ptr->is_city())) {
+	if (attacker_turn && (!attacker_u.is_artifical() || attacker_u.is_city()) && 
+		(!center_defender_ptr->is_artifical() || center_defender_ptr->is_city())) {
 
 		int encourage_diff = attacker_u.skill_[hero_skill_encourage] - center_defender_ptr->skill_[hero_skill_encourage];
 		if (attacker_u.get_ability_bool("encourage")) {
@@ -1391,21 +1390,29 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 			// for example, second defender has city, poisoned cannot effect it.
 			if (defender_ptr == center_defender_ptr) {
 				if (attacker_stats->poisons && !defender_unit.get_state(unit::STATE_POISONED)) {
+					// help::tintegrate::generate_img(float_text, "misc/poisoned.png");
+					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^poisoned") : _("poisoned")) << '\n';
 				}
 
 				if (attacker_stats->slows && !unit_feature_val2(defender_unit, hero_feature_penetrate) && !defender_unit.get_state(unit::STATE_SLOWED)) {
+					// help::tintegrate::generate_img(float_text, "misc/slowed.png");
+					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^slowed") : _("slowed")) << '\n';
 				}
 
 				if (attacker_stats->breaks && !unit_feature_val2(defender_unit, hero_feature_penetrate) && !defender_unit.get_state(unit::STATE_BROKEN)) {
+					// help::tintegrate::generate_img(float_text, "misc/broken.png");
+					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^broken") : _("broken")) << '\n';
 				}
 
 				if (attacker_stats->petrifies) {
+					// help::tintegrate::generate_img(float_text, "misc/petrified.png");
+					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^petrified") : _("petrified")) << '\n';
 				}
@@ -2280,11 +2287,18 @@ void calculate_healing(int side, bool update_display)
 				u.take_hit(-healing);
 			resources::screen->invalidate_unit();
 
+
+			std::set<unit*> healers_set;
+			for (std::vector<unit*>::iterator it = healers.begin(); it != healers.end(); ++ it) {
+				healers_set.insert(*it);
+			}
+			if (healers_set.size() != healers.size()) {
+				int ii = 0;
+			}
+
 			for (std::vector<unit*>::iterator it = healers.begin(); it != healers.end(); ++ it) {
 				unit& healer = **it;
 				healer.get_experience(2);
-				// advance_unit可能会使得itor指向的单位无效
-				// 此处如果升级，录像回放时会出问题。简单一句话说，录像回放时绝不能掉用dialogs::advance_unit，因为dialogs::advance_unit会调用add_choice，使得replay只读的变成写了！产生config_2_command的type=0错
 				dialogs::advance_unit(healer.get_location(), !teams[healer.side() - 1].is_human(), true);
 			}
 		}
@@ -2341,6 +2355,7 @@ unit* get_advanced_unit(const unit* u, const std::string& advance_to)
 	}
 	new_unit->get_experience(-new_unit->max_experience());
 	new_unit->advance_to(new_type);
+	new_unit->calculate_5fields();
 	new_unit->modify_according_to_hero(false);
 	if (!u->is_artifical()) {
 		new_unit->heal(new_unit->max_hitpoints() / 2);
@@ -2348,6 +2363,20 @@ unit* get_advanced_unit(const unit* u, const std::string& advance_to)
 		new_unit->heal_all();
 	}
 	return new_unit;
+}
+
+void get_advanced_unit2(unit* u, const std::string& advance_to)
+{
+	const unit_type *new_type = unit_types.find(advance_to);
+	if (!new_type) {
+		throw game::game_error("Could not find the unit being advanced"
+			" to: " + advance_to);
+	}
+	u->get_experience(-u->max_experience());
+	u->advance_to(new_type);
+	u->calculate_5fields();
+	u->modify_according_to_hero(false, true);
+	u->heal(u->max_hitpoints() / 2);
 }
 
 void advance_unit(map_location loc, const std::string &advance_to)
@@ -2367,18 +2396,13 @@ void advance_unit(map_location loc, const std::string &advance_to)
 	}
 
 	loc = u->get_location();
-	unit* new_unit = get_advanced_unit(&*u, advance_to);
-	statistics::advance_unit(*new_unit);
-
-	preferences::encountered_units().insert(new_unit->type_id());
+	get_advanced_unit2(&*u, advance_to);
 
 	if (unit_is_packed) {
-		new_unit->pack_to(unit_types.find(original_type));
+		u->pack_to(unit_types.find(original_type));
 	}
-	resources::units->replace(loc, new_unit);
 	
 	game_events::fire("post_advance",loc);
-	delete new_unit;
 }
 
 int combat_modifier(const map_location &loc,
@@ -3060,14 +3084,13 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	// I select 2).
 	if (!controller->is_replaying() && !to_city && maybe_ui.valid()) {
 		int random = rand();
+		bool triggered = false;
 		if (!(random & 0x1ff)) {
 			get_random_card(*tm, disp, units, heros);
-			if (undo_stack) {
-				undo_stack->clear();
-			}
-		}
-		// suport to encourage
-		if ((random % 15) == 10) {
+			triggered = true;
+			
+		} else if ((random & 0xf) == 1) {
+			// suport to encourage
 			unit& mover = *maybe_ui;
 			if (mover.hitpoints() < mover.max_hitpoints() * 2 / 3) {
 				hero* h2 = mover.can_encourage();
@@ -3076,10 +3099,19 @@ size_t move_unit(move_unit_spectator* move_spectator,
 					// when replaying, increase_feeling in add_event may enquire choice, it is said [input] must after add_event. 
 					move_recorder->add_event(replay::EVENT_ENCOURAGE, mover.get_location());
 					mover.do_encourage(mover.master(), *h2);
-					if (undo_stack) {
-						undo_stack->clear();
-					}
+					triggered = true;
 				}
+			}
+
+		} else if (tm->is_human() && !controller->treasures().empty() && ((random % 0xff) == 2)) {
+			int pos = random % controller->treasures().size();
+			tm->find_treasure(heros, *controller, pos);
+			move_recorder->add_event(replay::EVENT_FIND_TREASURE, map_location(pos, -1000));
+			triggered = true;
+		}
+		if (triggered) {
+			if (undo_stack) {
+				undo_stack->clear();
 			}
 		}
 	}
@@ -3150,12 +3182,6 @@ std::pair<map_location, map_location> attack_enemy(unit* a_, unit* d_, int att_w
 			dialogs::advance_unit(to_locs.second, !teams_[defender_team].is_human());
 		}
 	}
-
-	// start of ugly hack. @todo 1.8 rework that via extended event system
-	// until event system is reworked, we note the attack this way
-	// !!!unkonwn, this is defender_loc? or to_locs.second?
-	ai::manager::get_ai_info().recent_attacks.insert(defender_loc);
-	// end of ugly hack
 
 	try {
 		ai::manager::raise_gamestate_changed();
@@ -3597,4 +3623,46 @@ void do_recruit(unit_map& units, hero_map& heros, team& current_team, const unit
 
 	map_location loc2(MAGIC_RESIDE, city.reside_troops().size() - 1);
 	game_events::fire("post_recruit", city.get_location(), loc2);
+}
+
+void cast_tactic(unit_map& units, unit& tactician, hero& h, bool replay)
+{
+	const ttactic& t = unit_types.tactic(h.tactic_);
+	const std::map<int, std::vector<unit*> > touched = t.touch_units(units, tactician);
+	std::set<const unit*> effected;
+	int part, turn;
+
+	const rect_of_hexes& draw_area = resources::screen->draw_area();
+	if (point_in_rect_of_hexes(tactician.get_location().x, tactician.get_location().y, draw_area)) {
+		unit_display::tactic_start(h);
+	}
+	for (std::map<int, std::vector<unit*> >::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
+		const std::vector<const ttactic*>& parts = t.parts();
+		part = it->first;
+		turn = ttactic::calculate_turn(fxptoi9(h.force_), fxptoi9(h.intellect_));
+		const ttactic& part_tactic = *(t.parts()[part]);
+		
+		for (std::vector<unit*>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+			unit& u = **it2;
+			u.apply_tactic(&t, part_tactic, part, turn);
+			effected.insert(&u);
+		}
+	}
+
+	// tactician.set_movement(0);
+	// tactician.set_attacks(0);
+
+	team& current_team = (*resources::teams)[h.side_];
+	current_team.add_tactic_point(-1 * t.point());
+
+	tactician.get_experience(2);
+
+	if (!replay) {
+		// resources::screen->refresh_access_troops(tactician.side() - 1, game_display::REFRESH_DISABLE, NULL, &tactician);
+		recorder.add_cast_tactic(tactician, h);
+
+		if (tactician.advances()) {
+			dialogs::advance_unit(tactician.get_location(), !current_team.is_human());
+		}
+	}
 }

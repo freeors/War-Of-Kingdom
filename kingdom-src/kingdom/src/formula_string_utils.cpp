@@ -114,6 +114,7 @@ static std::string do_interpolation(const std::string &str, const variable_set& 
 				res.replace(var_begin, var_end, "");
 				continue;
 			}
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 			try {
 				const game_logic::formula form(std::string(var_begin+2, var_end-1));
 				res.replace(var_begin, var_end, form.evaluate().string_cast());
@@ -123,6 +124,7 @@ static std::string do_interpolation(const std::string &str, const variable_set& 
 					<< e.formula << "\"\n";
 				res.replace(var_begin, var_end, "");
 			}
+#endif
 			continue;
 		}
 

@@ -375,22 +375,22 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item["label"] = h.name();
 		table_item_item.insert(std::make_pair("name", table_item));
 
-		artifical* city = units_? units_->city_from_cityno(h.city_): NULL;
-		if (city) {
-			table_item["label"] = city->name();
-		} else {
-			table_item["label"] = "---";
+		const ttactic* t = NULL;
+		if (h.tactic_ != HEROS_NO_TACTIC) {
+			t = &unit_types.tactic(h.tactic_);
 		}
-		table_item_item.insert(std::make_pair("city", table_item));
-
-		table_item["label"] = hero::status_str(h.status_);
-		table_item_item.insert(std::make_pair("action", table_item));
-
-		table_item["label"] = hero::official_str(h.official_);
-		table_item_item.insert(std::make_pair("official", table_item));
-
-		table_item["label"] = "----";
-		table_item_item.insert(std::make_pair("command", table_item));
+		if (t) {
+			table_item["label"] = t->name();
+		} else {
+			table_item["label"] = "";
+		}
+		table_item_item.insert(std::make_pair("tactic", table_item));
+		if (t) {
+			table_item["label"] = t->description();
+		} else {
+			table_item["label"] = "";
+		}
+		table_item_item.insert(std::make_pair("explain", table_item));
 
 	} else if (catalog == PERSONAL_PAGE) {
 		table_item["label"] = h.name();
@@ -417,6 +417,12 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		}
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("treasure", table_item));
+
+		table_item["label"] = hero::status_str(h.status_);
+		table_item_item.insert(std::make_pair("action", table_item));
+
+		table_item["label"] = hero::official_str(h.official_);
+		table_item_item.insert(std::make_pair("official", table_item));
 
 	} else if (catalog == RELATION_PAGE) {
 		table_item["label"] = h.name();
@@ -579,15 +585,15 @@ void thero_list::catalog_page(twindow& window, int catalog, bool swap)
 		widgets.push_back(&find_widget<tbutton>(&window, "button_skill5", false));
 	} else if (catalog == COMMAND_PAGE) {
 		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
-		widgets.push_back(&find_widget<tbutton>(&window, "button_city", false));
-		widgets.push_back(&find_widget<tbutton>(&window, "button_action", false));
-		widgets.push_back(&find_widget<tbutton>(&window, "button_official", false));
-		widgets.push_back(&find_widget<tbutton>(&window, "button_command", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_tactic", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_explain", false));
 		widgets.back()->set_active(false);
 	} else if (catalog == PERSONAL_PAGE) {
 		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_gender", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_treasure", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_action", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_official", false));
 	} else if (catalog == RELATION_PAGE) {
 		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_father", false));
@@ -793,23 +799,15 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 			// name
 			result = utils::utf8str_compare(h1->name(), h2->name());
 		} else if (sorting_widget_ == widgets[1]) {
-			// city
+			// tactic
 			std::string str1, str2;
-			artifical* city = units_? units_->city_from_cityno(h1->city_): NULL;
-			if (city) {
-				str1 = city->name();
+			if (h1->tactic_ != HEROS_NO_TACTIC) {
+				str1 = unit_types.tactic(h1->tactic_).name();
 			}
-			city = units_? units_->city_from_cityno(h2->city_): NULL;
-			if (city) {
-				str2 = city->name();
+			if (h2->tactic_ != HEROS_NO_TACTIC) {
+				str2 = unit_types.tactic(h2->tactic_).name();
 			}
 			result = utils::utf8str_compare(str1, str2);
-		} else if (sorting_widget_ == widgets[2]) {
-			// action
-			result = utils::utf8str_compare(hero::status_str(h1->status_), hero::status_str(h2->status_));
-		} else if (sorting_widget_ == widgets[3]) {
-			// official
-			result = utils::utf8str_compare(hero::official_str(h1->official_), hero::official_str(h2->official_));
 		}
 
 	} else if (current_page_ == PERSONAL_PAGE) {
@@ -822,6 +820,12 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 		} else if (sorting_widget_ == widgets[2]) {
 			// treasure
 			result = utils::utf8str_compare(hero::treasure_str(h1->treasure_), hero::treasure_str(h2->treasure_));
+		} else if (sorting_widget_ == widgets[3]) {
+			// action
+			result = utils::utf8str_compare(hero::status_str(h1->status_), hero::status_str(h2->status_));
+		} else if (sorting_widget_ == widgets[4]) {
+			// official
+			result = utils::utf8str_compare(hero::official_str(h1->official_), hero::official_str(h2->official_));
 		}
 
 	} else if (current_page_ == RELATION_PAGE) {

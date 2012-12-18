@@ -312,6 +312,10 @@ enum {
 #define HEROS_MAX_INTIMATE	4
 #define HEROS_MAX_HATE		4
 
+#define HEROS_NO_TACTIC			0xff
+#define HERO_PREFIX_STR_TACTIC	"tactic-"
+#define HERO_PREFIX_STR_TACTIC_DESC	"tactic_desc-"
+
 struct hero_5fields_t {
 	uint16_t leadership_;
 	uint16_t force_;
@@ -339,7 +343,7 @@ struct hero_feeling {
 	uint8_t heart_;	\
 	uint8_t side_feature_;	\
 	uint8_t treasure_;	\
-	uint8_t reserve1_;	\
+	uint8_t tactic_;	\
 	uint16_t image_;	\
 	uint16_t leadership_;	\
 	uint16_t force_;	\
@@ -379,7 +383,7 @@ public:
 	static std::string& status_str(int status);
 	static std::string& official_str(int offical);
 	static std::string& treasure_str(int tid);
-	static std::string& character_str(int cid);
+	static const std::string& character_str(int cid);
 
 	static int number_market;
 	static int number_wall;

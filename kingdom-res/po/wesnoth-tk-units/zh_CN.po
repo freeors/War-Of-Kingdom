@@ -925,3 +925,21 @@ msgstr "二级白眊兵"
 msgid "pelisse footman6 description"
 msgstr "二级白眊兵"
 
+msgid "powder catapult4"
+msgstr "火炮车"
+
+msgid "powder catapult4 description"
+msgstr "火炮车"
+
+msgid "powder catapult5"
+msgstr "轰天雷"
+
+msgid "powder catapult5 description"
+msgstr "轰天雷"
+
+msgid "powder catapult6"
+msgstr "二级轰天雷"
+
+msgid "powder catapult6 description"
+msgstr "二级轰天雷"
+

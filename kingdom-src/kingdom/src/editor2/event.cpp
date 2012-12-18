@@ -1910,7 +1910,7 @@ void tevent::tcondition::switch_type(HWND hdlgP, int to)
 	TabCtrl_InsertItem(pHdr->hwndTab, 0, &tie);
 
 	// Lock the resources for the three child dialog boxes. 
-	pHdr->apRes[0] = ns::DoLockDlgRes(MAKEINTRESOURCE(idd_map.find(type_)->second));
+	pHdr->apRes[0] = editor_config::DoLockDlgRes(MAKEINTRESOURCE(idd_map.find(type_)->second));
 
 	RECT rc;
 	// Calculate how large to make the tab control, so 

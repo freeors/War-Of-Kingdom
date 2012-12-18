@@ -198,7 +198,7 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 
 		control->set_label(_("Version ") + game_config::revision);
 		// control->set_label(_("Version ") + game_config::revision + "-alpha");
-		// control->set_label(_("Version ") + game_config::revision + "-beta");
+		// control->set_label(_("Version ") + game_config::revision + "-beta-3");
 	}
 	window.canvas()[0].set_variable("revision_number", variant(_("Version") + std::string(" ") + game_config::revision));
 
@@ -274,6 +274,10 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 		b->set_visible(twidget::INVISIBLE);
 	}
 #endif
+	b = find_widget<tbutton>(&window, "tutorial", false, false);
+	if (b) {
+		b->set_visible(twidget::INVISIBLE);
+	}
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "player", false)

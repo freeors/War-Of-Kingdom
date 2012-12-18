@@ -3509,7 +3509,7 @@ namespace game_events {
 				title << "\n(" << city->master().name() << ")";
 			}
 
-			gui.hide_unit_tooltip();
+			gui.hide_unit_tip();
 			gui2::show_message(gui.video(), title.str(), message, gui2::tmessage::auto_close, h->image(true), incident_str);
 
 			// Since gui2::show_message needs to do undrawing the

@@ -17,6 +17,7 @@
  *  @file
  *  Implementation for wml_exception.hpp.
  */
+#ifndef ANDROID
 
 #define GETTEXT_DOMAIN "wesnoth-lib"
 
@@ -52,4 +53,4 @@ void wml_exception(
 
 }
 
-
+#endif

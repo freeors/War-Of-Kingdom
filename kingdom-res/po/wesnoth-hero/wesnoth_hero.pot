@@ -870,6 +870,252 @@ msgstr ""
 msgid "feature_desc-99"
 msgstr ""
 
+msgid "tactic-attack"
+msgstr ""
+
+msgid "tactic_desc-attack"
+msgstr ""
+
+msgid "tactic-more attack"
+msgstr ""
+
+msgid "tactic_desc-more attack"
+msgstr ""
+
+msgid "tactic-best attack"
+msgstr ""
+
+msgid "tactic_desc-best attack"
+msgstr ""
+
+msgid "tactic-attacks"
+msgstr ""
+
+msgid "tactic_desc-attacks"
+msgstr ""
+
+msgid "tactic-more attacks"
+msgstr ""
+
+msgid "tactic_desc-more attacks"
+msgstr ""
+
+msgid "tactic-weaken attacks"
+msgstr ""
+
+msgid "tactic_desc-weaken attacks"
+msgstr ""
+
+msgid "tactic-weaken more attacks"
+msgstr ""
+
+msgid "tactic_desc-weaken more attacks"
+msgstr ""
+
+msgid "tactic-firm"
+msgstr ""
+
+msgid "tactic_desc-firm"
+msgstr ""
+
+msgid "tactic-more firm"
+msgstr ""
+
+msgid "tactic_desc-more firm"
+msgstr ""
+
+msgid "tactic-best firm"
+msgstr ""
+
+msgid "tactic_desc-best firm"
+msgstr ""
+
+msgid "tactic-firms"
+msgstr ""
+
+msgid "tactic_desc-firms"
+msgstr ""
+
+msgid "tactic-more firms"
+msgstr ""
+
+msgid "tactic_desc-more firms"
+msgstr ""
+
+msgid "tactic-breaks"
+msgstr ""
+
+msgid "tactic_desc-breaks"
+msgstr ""
+
+msgid "tactic-more breaks"
+msgstr ""
+
+msgid "tactic_desc-more breaks"
+msgstr ""
+
+msgid "tactic-encourage"
+msgstr ""
+
+msgid "tactic_desc-encourage"
+msgstr ""
+
+msgid "tactic-more encourage"
+msgstr ""
+
+msgid "tactic_desc-more encourage"
+msgstr ""
+
+msgid "tactic-best encourage"
+msgstr ""
+
+msgid "tactic_desc-best encourage"
+msgstr ""
+
+msgid "tactic-encourages"
+msgstr ""
+
+msgid "tactic_desc-encourages"
+msgstr ""
+
+msgid "tactic-more encourages"
+msgstr ""
+
+msgid "tactic_desc-more encourages"
+msgstr ""
+
+msgid "tactic-weaken encourages"
+msgstr ""
+
+msgid "tactic_desc-weaken encourages"
+msgstr ""
+
+msgid "tactic-weaken more encourages"
+msgstr ""
+
+msgid "tactic_desc-weaken more encourages"
+msgstr ""
+
+msgid "tactic-demolish"
+msgstr ""
+
+msgid "tactic_desc-demolish"
+msgstr ""
+
+msgid "tactic-more demolish"
+msgstr ""
+
+msgid "tactic_desc-more demolish"
+msgstr ""
+
+msgid "tactic-demolishes"
+msgstr ""
+
+msgid "tactic_desc-demolishes"
+msgstr ""
+
+msgid "tactic-more demolishes"
+msgstr ""
+
+msgid "tactic_desc-more demolishes"
+msgstr ""
+
+msgid "tactic-weaken demolishes"
+msgstr ""
+
+msgid "tactic_desc-weaken demolishes"
+msgstr ""
+
+msgid "tactic-weaken more demolishes"
+msgstr ""
+
+msgid "tactic_desc-weaken more demolishes"
+msgstr ""
+
+msgid "tactic-divine wei wu"
+msgstr ""
+
+msgid "tactic_desc-divine wei wu"
+msgstr ""
+
+msgid "tactic-dragon in people"
+msgstr ""
+
+msgid "tactic_desc-dragon in people"
+msgstr ""
+
+msgid "tactic-integrate attack and defend"
+msgstr ""
+
+msgid "tactic_desc-integrate attack and defend"
+msgstr ""
+
+msgid "tactic-speedy solo"
+msgstr ""
+
+msgid "tactic_desc-speedy solo"
+msgstr ""
+
+msgid "tactic-remote strike"
+msgstr ""
+
+msgid "tactic_desc-remote strike"
+msgstr ""
+
+msgid "tactic-again thousands"
+msgstr ""
+
+msgid "tactic_desc-again thousands"
+msgstr ""
+
+msgid "tactic-ironman"
+msgstr ""
+
+msgid "tactic_desc-ironman"
+msgstr ""
+
+msgid "tactic-brave ironman"
+msgstr ""
+
+msgid "tactic_desc-brave ironman"
+msgstr ""
+
+msgid "tactic-storm attack"
+msgstr ""
+
+msgid "tactic_desc-storm attack"
+msgstr ""
+
+msgid "tactic-break through"
+msgstr ""
+
+msgid "tactic_desc-break through"
+msgstr ""
+
+msgid "tactic-military defense"
+msgstr ""
+
+msgid "tactic_desc-military defense"
+msgstr ""
+
+msgid "tactic-military encourage"
+msgstr ""
+
+msgid "tactic_desc-military encourage"
+msgstr ""
+
+msgid "tactic-military attack"
+msgstr ""
+
+msgid "tactic_desc-military attack"
+msgstr ""
+
+msgid "tactic-spy infiltrate"
+msgstr ""
+
+msgid "tactic_desc-spy infiltrate"
+msgstr ""
+
 msgid "arms-0"
 msgstr ""
 

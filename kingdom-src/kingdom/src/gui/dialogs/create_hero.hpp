@@ -58,6 +58,7 @@ private:
 	void gender(twindow& window);
 	void adaptability(twindow& window, int type, int index);
 	void feature(twindow& window, bool side);
+	void tactic(twindow& window);
 	void catalog(twindow& window);
 	void create(twindow& window);
 

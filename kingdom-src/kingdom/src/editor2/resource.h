@@ -4,7 +4,6 @@
 //
 #define IDD_WGEN                        101
 #define IDD_ABOUT                       104
-#define IDD_UTYPE                       105
 #define IDD_CORE                        105
 #define IDR_SYSMENU                     106
 #define IDR_WGENMENU                    107
@@ -124,6 +123,10 @@
 #define IDI_ICON1                       243
 #define IDI_EVT_ATTRIBUTE               243
 #define IDD_VISUAL2                     244
+#define IDD_DIALOG2                     245
+#define IDD_TACTIC                      245
+#define IDD_UTYPE                       246
+#define IDD_TREASURE                    247
 #define IDC_BT_WGEN_EDIT                1034
 #define IDC_BT_XCHG_XCHG                1054
 #define IDC_BT_XCHG_CANCELXCHG          1055
@@ -227,12 +230,13 @@
 #define IDC_CMB_HEROEDIT_TREASURE0      1183
 #define IDC_ET_HEROEDIT_SKILL1XP        1184
 #define IDC_UD_HEROEDIT_SKILL1XP        1185
+#define IDC_CMB_HEROEDIT_TACTIC         1186
 #define IDC_LV_TBOX_DESC                1204
 #define IDC_LV_WGEN_EDITOR              1204
 #define IDC_TV_DDESC_EXPLORER           1206
 #define IDC_TV_CFG_EXPLORER             1212
 #define IDC_ET_WGEN_FIND                1213
-#define IDC_TV_CORE_EXPLORER            1214
+#define IDC_TV_UTYPE_EXPLORER           1214
 #define IDC_TAB_CAMP_SCENARIO           1215
 #define IDC_ET_CAMPMAIN_ID              1217
 #define IDC_ET_CAMPMAIN_FILE            1218
@@ -277,6 +281,8 @@
 #define IDC_CMB_SIDEEDIT_LEADER         1246
 #define IDC_LV_CAMPSCENARIO_EVENT       1246
 #define IDC_ET_SIDEEDIT_GOLD            1247
+#define IDC_LV_CAMPSCENARIO_TREASURE    1247
+#define IDC_LV_CAMPSCENARIO_TREASURE    1247
 #define IDC_ET_SIDEEDIT_INCOME          1248
 #define IDC_ET_SIDEEDIT_NAVIGATIONXP    1249
 #define IDC_CMB_SIDEEDIT_NAVIGATION     1250
@@ -343,6 +349,7 @@
 #define IDC_CMB_EVENTUNIT_TYPE          1291
 #define IDC_CMB_CONDITION_TYPE          1291
 #define IDC_CMB_VARIABLE_OP             1291
+#define IDC_CMB_TREASURE_TREASURE       1291
 #define IDC_ET_NEWCAMP_DESC             1292
 #define IDC_CMB_CAMPMAIN_FIRSTSCENARIO  1292
 #define IDC_CMB_UTYPEEDIT_LEVEL         1292
@@ -460,6 +467,11 @@
 #define IDC_LV_EVENTJOIN_VARIABLE       1366
 #define IDC_LIST1                       1367
 #define IDC_LV_VISUAL2_EXPLORER         1367
+#define IDC_TAB_CORE_SECTION            1368
+#define IDC_TV_TACTIC_ATOM              1370
+#define IDC_TV_TACTIC_COMPLEX           1371
+#define IDC_ET_TREASURE_COUNT           1371
+#define IDC_UD_TREASURE_COUNT           1372
 #define IDM_RESET                       40009
 #define IDM_UTYPE                       40010
 #define IDM_UTYPE_GENERAL               40011
@@ -546,9 +558,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        245
+#define _APS_NEXT_RESOURCE_VALUE        248
 #define _APS_NEXT_COMMAND_VALUE         40100
-#define _APS_NEXT_CONTROL_VALUE         1368
+#define _APS_NEXT_CONTROL_VALUE         1373
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

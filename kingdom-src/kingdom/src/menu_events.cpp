@@ -949,7 +949,10 @@ void menu_handler::undo(int side_num)
 
 	// will move unit, hide context menu.
 	gui_->hide_context_menu(NULL, true);
-
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+#else
+	gui_->hide_unit_tip();
+#endif
 	{
 		const events::command_disabler disable_commands;
 		team &current_team = teams_[side_num - 1];

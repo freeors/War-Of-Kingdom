@@ -98,8 +98,7 @@ tinterior::tinterior(game_display& gui, std::vector<team>& teams, unit_map& unit
 	, checked_heros_()
 	, appoint_(NULL)
 	, hero_table_(NULL)
-	, artificals_(0)
-	, income_(0)
+	, market_map_()
 {
 	std::vector<hero*>& commercials = current_team_.commercials();
 	departments_.push_back(department(department::commercial, _("Commercial"), "interior/commercial.png", "themes/gold.png"));
@@ -251,7 +250,8 @@ void tinterior::refresh_tooltip(twindow& window)
 		
 	// total
 	str.str("");
-	str << "x " << artificals_ << " = " << artificals_ * income_ * exploiture / 100;
+	std::pair<int, int> total = calculate_markets(exploiture);
+	str << "x " << total.first << " = " << total.second;
 	find_widget<tlabel>(&window, "tip_total", false, true)->set_label(str.str());
 }
 
@@ -298,7 +298,7 @@ void tinterior::appoint(twindow& window)
 	departments_[type_index_].exploiture_ = calculate_exploiture(*h1, *h2, *h3);
 	// exploiture data
 	str.str("");
-	str << artificals_ * income_ * departments_[type_index_].exploiture_ / 100;
+	str << calculate_markets(departments_[type_index_].exploiture_).second;
 	control = dynamic_cast<tcontrol*>(grid_ptr->find("total", true));
 	control->set_label(str.str());
 
@@ -331,13 +331,32 @@ void tinterior::appoint(twindow& window)
 	refresh_tooltip(window);
 }
 
+std::pair<int, int> tinterior::calculate_markets(int exploiture)
+{
+	int count = 0, income = 0;
+	for (std::map<const unit_type*, int>::const_iterator it2 = market_map_.begin(); it2 != market_map_.end(); ++ it2) {
+		for (int i = 0; i < it2->second; i ++) {
+			income += it2->first->gold_income() * exploiture / 100;
+		}
+		count += it2->second;
+	}
+	return std::make_pair(count, income);
+}
+
 void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 {
 	int side_num = current_team_.side();
 	std::stringstream str;
 
-	const unit_type* ut = unit_types.find_market();
-	income_ = ut->gold_income();
+	const unit_type_data::unit_type_map& types = unit_types.types();
+	for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
+		if (market_map_.find(&it->second) != market_map_.end()) {
+			continue;
+		}
+		if (it->second.master() == hero::number_market) {
+			market_map_.insert(std::make_pair(&it->second, 0));
+		}
+	}
 
 	const std::vector<artifical*>& holded_cities = current_team_.holded_cities();
 	for (std::vector<artifical*>::const_iterator c_itor = holded_cities.begin(); c_itor != holded_cities.end(); ++ c_itor) {
@@ -350,8 +369,12 @@ void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 		const std::vector<map_location>& economy_area = (*c_itor)->economy_area();
 		for (std::vector<map_location>::const_iterator it = economy_area.begin(); it != economy_area.end(); ++ it) {
 			unit_map::const_iterator it2 = units_.find(*it);
-			if (it2.valid() && it2->type() == ut) {
-				artificals_ ++;
+			if (!it2.valid()) {
+				continue;
+			}
+			std::map<const unit_type*, int>::iterator find = market_map_.find(it2->type());
+			if (find != market_map_.end()) {
+				find->second ++;
 			}
 		}
 	}
@@ -384,7 +407,7 @@ void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 		list_item_item.insert(std::make_pair("portrait", list_item));
 
 		str.str("");
-		str << artificals_ * income_ * d_itor->exploiture_ / 100;
+		str << calculate_markets(d_itor->exploiture_).second;
 		list_item["label"] = str.str();
 		list_item_item.insert(std::make_pair("total", list_item));
 
@@ -423,7 +446,7 @@ void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 	type_selected(window);
 
 	find_widget<tcontrol>(&window, "image_exploiture", false, true)->set_label("misc/equal.png");
-	find_widget<tcontrol>(&window, "image_total", false, true)->set_label("buttons/market.png");
+	find_widget<tcontrol>(&window, "image_total", false, true)->set_label(departments_[type_index_].image_);
 
 	list->set_callback_value_change(dialog_callback<tinterior, &tinterior::type_selected>);
 

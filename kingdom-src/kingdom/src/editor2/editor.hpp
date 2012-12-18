@@ -22,6 +22,7 @@ namespace editor_config
 	extern void create_subcfg_toolbar(HWND hwndP);
 	extern void On_DlgDrawItem(HWND hdlgP, const DRAWITEMSTRUCT *lpdis);
 	extern UINT ListView_GetCheckedCount(HWND hwnd);
+	extern DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName);
 }
 
 class editor

@@ -199,54 +199,14 @@ msgid "slowed"
 msgstr ""
 
 #. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:16
-#: data/core/macros/abilities.cfg:10
-msgid "heals +4"
-msgstr ""
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:17
-#: data/core/macros/abilities.cfg:11
-msgid "female^heals +4"
-msgstr ""
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:22
-#: data/core/macros/abilities.cfg:16
-msgid ""
-"Heals +4:\n"
-"Allows the unit to heal adjacent allied units at the beginning of our turn.\n"
-"\n"
-"A unit cared for by this healer may heal up to 4 HP per turn, or stop poison "
-"from taking effect for that turn.\n"
-"A poisoned unit cannot be cured of its poison by a healer, and must seek the "
-"care of a village or a unit that can cure."
-msgstr ""
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:45
-#: data/core/macros/abilities.cfg:30
-msgid "heals +8"
-msgstr ""
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:46
-#: data/core/macros/abilities.cfg:31
-msgid "female^heals +8"
-msgstr ""
-
-#. [heals]: id=healing
 #: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:51
 #: data/core/macros/abilities.cfg:36
 msgid ""
-"Heals +8:\n"
-"This unit combines herbal remedies with magic to heal units more quickly "
-"than is normally possible on the battlefield.\n"
+"Heals +24:\n"
+"Allows the unit to heal adjacent allied units at the beginning of our turn.\n"
 "\n"
-"A unit cared for by this healer may heal up to 8 HP per turn, or stop poison "
-"from taking effect for that turn.\n"
-"A poisoned unit cannot be cured of its poison by a healer, and must seek the "
-"care of a village or a unit that can cure."
+"A unit cared for by this healer may heal up to 24 HP per turn, or stop poison from taking effect for that turn.\n"
+"A poisoned unit cannot be cured of its poison by a healer, and must seek the care of a village or a unit that can cure."
 msgstr ""
 
 #. [about]
@@ -5692,6 +5652,9 @@ msgstr ""
 msgid "income"
 msgstr ""
 
+msgid "Tactic"
+msgstr ""
+
 #. [unit_level]: id=unit-level
 #: data/themes/default.cfg:429 data/themes/dfool.cfg:472
 #: data/themes/experimental.cfg:375
@@ -8852,76 +8815,19 @@ msgstr ""
 msgid "Munition"
 msgstr ""
 
-msgid "loyalty"
+msgid "Loyalty"
 msgstr ""
 
-msgid "side"
+msgid "Side"
 msgstr ""
 
-msgid "city"
+msgid "City"
 msgstr ""
 
-msgid "hero^ability"
+msgid "name^Troop"
 msgstr ""
 
-msgid "feature"
-msgstr ""
-
-msgid "adaptability"
-msgstr ""
-
-msgid "command"
-msgstr ""
-
-msgid "personal"
-msgstr ""
-
-msgid "relation"
-msgstr ""
-
-msgid "gender"
-msgstr ""
-
-msgid "father"
-msgstr ""
-
-msgid "mother"
-msgstr ""
-
-msgid "oath"
-msgstr ""
-
-msgid "consort"
-msgstr ""
-
-msgid "hero^intimate"
-msgstr ""
-
-msgid "hero^hate"
-msgstr ""
-
-msgid "explain"
-msgstr ""
-
-msgid "name^troop"
-msgstr ""
-
-msgid "troop^type"
-msgstr ""
-
-msgid "fresh hero"
-msgstr ""
-
-msgid "finish hero"
-msgstr ""
-
-msgid "wander hero"
-msgstr ""
-
-msgid "reside troop"
-msgstr ""
-
-msgid "field troop"
+msgid "troop^Type"
 msgstr ""
 
 msgid "destination city"
@@ -8930,55 +8836,13 @@ msgstr ""
 msgid "artifical"
 msgstr ""
 
-msgid "biography"
-msgstr ""
-
 msgid "player"
 msgstr ""
 
 msgid "select player:"
 msgstr ""
 
-msgid "expedite"
-msgstr ""
-
-msgid "hero"
-msgstr ""
-
-msgid "hero^action"
-msgstr ""
-
-msgid "action^fresh"
-msgstr ""
-
-msgid "action^finish"
-msgstr ""
-
-msgid "hero^name"
-msgstr ""
-
-msgid "hero^loyalty"
-msgstr ""
-
-msgid "hero^leadership"
-msgstr ""
-
-msgid "force"
-msgstr ""
-
-msgid "intellect"
-msgstr ""
-
-msgid "politics"
-msgstr ""
-
-msgid "charm"
-msgstr ""
-
-msgid "meritorious"
-msgstr ""
-
-msgid "female^meritorious"
+msgid "Hero"
 msgstr ""
 
 msgid "architure"
@@ -9100,6 +8964,9 @@ msgstr ""
 msgid "Lost card: $first."
 msgstr ""
 
+msgid "Find treasure: $first($second)!"
+msgstr ""
+
 #: src/menu_events.cpp:498
 msgid "advices"
 msgstr ""
@@ -9209,40 +9076,22 @@ msgstr ""
 msgid "firms desc"
 msgstr ""
 
-msgid "heals +12"
+msgid "heals +24"
 msgstr ""
 
-msgid "female^heals +12"
+msgid "female^heals +24"
 msgstr ""
 
-msgid "heals +12 desc"
+msgid "heals +24 desc"
 msgstr ""
 
-msgid "heals +16"
+msgid "selfheal +24"
 msgstr ""
 
-msgid "female^heals +16"
+msgid "female^selfheal +24"
 msgstr ""
 
-msgid "heals +16 desc"
-msgstr ""
-
-msgid "selfheals +12"
-msgstr ""
-
-msgid "female^selfheals +12"
-msgstr ""
-
-msgid "selfheals +12 desc"
-msgstr ""
-
-msgid "selfheals +16"
-msgstr ""
-
-msgid "female^selfheals +16"
-msgstr ""
-
-msgid "selfheals +16 desc"
+msgid "selfheal +24 desc"
 msgstr ""
 
 msgid "cast"

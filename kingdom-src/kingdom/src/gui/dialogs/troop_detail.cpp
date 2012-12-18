@@ -199,7 +199,7 @@ void ttroop_detail::refresh_tooltip(twindow& window)
 	int loyalty, activity, hero_count = 1;
 	// refresh to gui
 	tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
-	str << dgettext("wesnoth", "hero") << ": " << temp.master().name();
+	str << _("Hero") << ": " << temp.master().name();
 	text << temp.master().loyalty(*teams_[temp.master().side_].leader());
 	loyalty = temp.master().loyalty(*teams_[temp.master().side_].leader());
 	activity = temp.master().activity_;
@@ -224,7 +224,7 @@ void ttroop_detail::refresh_tooltip(twindow& window)
 
 	str.str("");
 	label = find_widget<tlabel>(&window, "tip_loyalty", false, true);
-	str << dgettext("wesnoth", "loyalty") << ": " << loyalty / hero_count << "/(" << text.str() << ")";
+	str << _("Loyalty") << ": " << loyalty / hero_count << "/(" << text.str() << ")";
 	label->set_label(str.str());
 
 	// activity
@@ -301,7 +301,7 @@ void ttroop_detail::refresh_tooltip(twindow& window)
 	// feature
 	str.str("");
 	index = 0;
-	str << dgettext("wesnoth", "feature") << ": ";
+	str << _("Feature") << ": ";
 	for (int i = 0; i < HEROS_MAX_FEATURE; i ++) {
 		if (unit_feature_val2(temp, i) == hero_feature_single_result) {
 			if (index > 0) {
@@ -316,14 +316,14 @@ void ttroop_detail::refresh_tooltip(twindow& window)
 
 	// adaptability
 	str.str("");
-	str << dgettext("wesnoth", "adaptability") << ": ";
+	str << _("Adaptability") << ": ";
 	str << hero::arms_str(temp.arms()) << "(" << hero::adaptability_str2(ftofxp12(temp.adaptability_[temp.arms()])) << ")";
 	label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
 	label->set_label(str.str());
 
 	// skill
 	str.str("");
-	str << dgettext("wesnoth-lib", "Skill") << ": ";
+	str << _("Skill") << ": ";
 	str << hero::skill_str(hero_skill_demolish) << "(" << hero::adaptability_str2(ftofxp12(temp.skill_[hero_skill_demolish])) << ")";
 	label = find_widget<tlabel>(&window, "tip_skill", false, true);
 	label->set_label(str.str());

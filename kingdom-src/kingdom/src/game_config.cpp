@@ -63,6 +63,8 @@ namespace game_config
 	int min_level = 1;
 	int max_level = 6;
 
+	int max_tactic_point = 15;
+
 	const std::string revision = VERSION;
 	const std::string checksum = "0123456789abcdef";
 	std::string wesnoth_program_dir;

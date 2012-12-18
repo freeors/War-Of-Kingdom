@@ -1,4 +1,3 @@
-# translation of en_GB.po to English (British)
 # Peter J Ross <pjr@insurgent.org>, 2006.
 # PJR <pjr@britishlibrary.net>, 2006.
 # Peter J Ross <wesnoth@pjr.britishlibrary.net>, 2007.
@@ -7,7 +6,7 @@ msgstr ""
 "Project-Id-Version: en_GB\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2011-03-07 12:34+0800\n"
+"PO-Revision-Date: 2012-12-17 12:17+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: English (British) <en@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -195,59 +194,19 @@ msgid "slowed"
 msgstr "slowed"
 
 #. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:16
-#: data/core/macros/abilities.cfg:10
-msgid "heals +4"
-msgstr "heals +4"
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:17
-#: data/core/macros/abilities.cfg:11
-msgid "female^heals +4"
-msgstr "heals +4"
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:22
-#: data/core/macros/abilities.cfg:16
-msgid ""
-"Heals +4:\n"
-"Allows the unit to heal adjacent allied units at the beginning of our turn.\n"
-"\n"
-"A unit cared for by this healer may heal up to 4 HP per turn, or stop poison from taking effect for that turn.\n"
-"A poisoned unit cannot be cured of its poison by a healer, and must seek the care of a village or a unit that can cure."
-msgstr ""
-"Heals +4:\n"
-"Allows the unit to heal adjacent allied units at the beginning of each turn.\n"
-"\n"
-"A unit cared for by this healer may heal up to 4 HP per turn, or stop poison from taking effect for that turn.\n"
-"A poisoned unit cannot be cured of its poison by a healer, and must seek the care of a village or a unit that can cure."
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:45
-#: data/core/macros/abilities.cfg:30
-msgid "heals +8"
-msgstr "heals +8"
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:46
-#: data/core/macros/abilities.cfg:31
-msgid "female^heals +8"
-msgstr "heals +8"
-
-#. [heals]: id=healing
 #: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:51
 #: data/core/macros/abilities.cfg:36
 msgid ""
-"Heals +8:\n"
-"This unit combines herbal remedies with magic to heal units more quickly than is normally possible on the battlefield.\n"
+"Heals +24:\n"
+"Allows the unit to heal adjacent allied units at the beginning of our turn.\n"
 "\n"
-"A unit cared for by this healer may heal up to 8 HP per turn, or stop poison from taking effect for that turn.\n"
+"A unit cared for by this healer may heal up to 24 HP per turn, or stop poison from taking effect for that turn.\n"
 "A poisoned unit cannot be cured of its poison by a healer, and must seek the care of a village or a unit that can cure."
 msgstr ""
-"Heals +8:\n"
-"This unit combines herbal remedies with magic to heal units more quickly than is normally possible on the battlefield.\n"
+"Heals +24:\n"
+"Allows the unit to heal adjacent allied units at the beginning of each turn.\n"
 "\n"
-"A unit cared for by this healer may heal up to 8 HP per turn, or stop poison from taking effect for that turn.\n"
+"A unit cared for by this healer may heal up to 24 HP per turn, or stop poison from taking effect for that turn.\n"
 "A poisoned unit cannot be cured of its poison by a healer, and must seek the care of a village or a unit that can cure."
 
 #. [about]
@@ -2277,12 +2236,12 @@ msgstr ""
 #. [heals]: id=curing
 #: data/core/macros/abilities.cfg:51
 msgid "cures"
-msgstr "cures"
+msgstr "Cure.S"
 
 #. [heals]: id=curing
 #: data/core/macros/abilities.cfg:52
 msgid "female^cures"
-msgstr "cures"
+msgstr "Cure.S"
 
 #. [heals]: id=curing
 #: data/core/macros/abilities.cfg:54
@@ -2295,22 +2254,18 @@ msgstr ""
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:76
-msgid "regenerates"
-msgstr "regenerates"
+msgid "surveillances"
+msgstr "Surveillance.S"
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:77
-msgid "female^regenerates"
-msgstr "regenerates"
+msgid "female^surveillances"
+msgstr "Surveillance.S"
 
 #. [regenerate]: id=regenerates
 #: data/core/macros/abilities.cfg:79
-msgid ""
-"Regenerates:\n"
-"The unit will heal itself 8 HP per turn. If it is poisoned, it will remove the poison instead of healing."
+msgid "Surveillances: A surveillancer can urveillance a unit of loyalty."
 msgstr ""
-"Regenerates:\n"
-"The unit will heal itself 8 hp per turn. If it is poisoned, it will remove the poison instead of healing."
 
 #. [resistance]: id=steadfast
 #: data/core/macros/abilities.cfg:98
@@ -2365,6 +2320,12 @@ msgstr ""
 "This unit can lead friendly units that are next to it, making them fight better.\n"
 "\n"
 "Adjacent friendly units of lower level will do more damage in battle. When a unit adjacent to, of a lower level than, and on the same side as a unit with Leadership engages in combat, its attacks do 25% more damage times the difference in their levels."
+
+msgid "encourages"
+msgstr "Encourage.S"
+
+msgid "encourages desc"
+msgstr ""
 
 #. [skirmisher]: id=skirmisher
 #: data/core/macros/abilities.cfg:347
@@ -3557,6 +3518,30 @@ msgstr "aged"
 msgid "female^aged"
 msgstr "dim"
 
+#, fuzzy
+msgid "step1"
+msgstr "stone"
+
+#, fuzzy
+msgid "female^step1"
+msgstr "stone"
+
+#, fuzzy
+msgid "step2"
+msgstr "stone"
+
+#, fuzzy
+msgid "female^step2"
+msgstr "stone"
+
+#, fuzzy
+msgid "brawniness"
+msgstr "drains"
+
+#, fuzzy
+msgid "female^brawniness"
+msgstr "cures"
+
 #. [color_range]: id=red
 #. [color_range]: id=1
 #: data/core/team-colors.cfg:14
@@ -4256,6 +4241,11 @@ msgstr "pierce"
 msgid "impact"
 msgstr "impact"
 
+#: data/hardwired/english.cfg:49
+#, fuzzy
+msgid "archery"
+msgstr "arcane"
+
 #. [language]
 #: data/hardwired/english.cfg:50
 msgid "fire"
@@ -4884,6 +4874,10 @@ msgstr "upkeep"
 #: data/themes/experimental.cfg:241
 msgid "income"
 msgstr "income"
+
+#, fuzzy
+msgid "Tactic"
+msgstr "Faction"
 
 #. [unit_level]: id=unit-level
 #: data/themes/default.cfg:429
@@ -6265,12 +6259,15 @@ msgid "Loading units"
 msgstr "Loading units"
 
 #: src/loadscreen.cpp:237
-#: src/loadscreen.cpp:239
+msgid "Building terrain rules"
+msgstr ""
+
+#: src/loadscreen.cpp:238
 msgid "Initializing display"
 msgstr "Initializing display"
 
-#: src/loadscreen.cpp:238
-msgid "Building terrain rules"
+#: src/loadscreen.cpp:239
+msgid "Drawing theme"
 msgstr ""
 
 #: src/loadscreen.cpp:240
@@ -6333,10 +6330,6 @@ msgstr "Lvl."
 #: src/menu_events.cpp:211
 msgid "unit list^Traits"
 msgstr "Traits"
-
-#: src/menu_events.cpp:309
-msgid "Unit List"
-msgstr "Unit List"
 
 #: src/menu_events.cpp:315
 #: src/menu_events.cpp:337
@@ -6518,19 +6511,17 @@ msgid_plural "You must have at least $cost gold pieces to recall a unit"
 msgstr[0] "You must have at least $cost gold pieces to recall a unit"
 msgstr[1] "You must have at least $cost gold pieces to recall a unit"
 
-#: src/menu_events.cpp:1364
-msgid "You have not started your turn yet. Do you really want to end your turn?"
+msgid "$city and other $cities cities have $heros low loyalty heros. If not process, heros may wander in next turn. Do you really want to end your turn?"
+msgstr ""
+
+#, fuzzy
+msgid "$city has $heros low loyalty heros. If not process, heros may wander in next turn. Do you really want to end your turn?"
 msgstr "You have not started your turn yet. Do you really want to end your turn?"
 
-#: src/menu_events.cpp:1372
+#: src/menu_events.cpp:1364
 #, fuzzy
-msgid "Some units have planned actions left. Do you really want to end your turn?"
-msgstr "Some units have movement left. Do you really want to end your turn?"
-
-#: src/menu_events.cpp:1380
-#: src/menu_events.cpp:1385
-msgid "Some units have movement left. Do you really want to end your turn?"
-msgstr "Some units have movement left. Do you really want to end your turn?"
+msgid "You have vacancy in interior work yet. Do you really want to end your turn?"
+msgstr "You have not started your turn yet. Do you really want to end your turn?"
 
 #: src/menu_events.cpp:1420
 msgid "Rename Unit"
@@ -7899,7 +7890,8 @@ msgstr ""
 "cannot continue. Do you want to save the game?"
 
 #: src/playsingle_controller.cpp:667
-msgid "It is now $name|’s turn"
+#, fuzzy
+msgid "It is now $name|'s turn"
 msgstr "It is now $name|’s turn"
 
 #: src/playsingle_controller.cpp:896
@@ -8225,109 +8217,25 @@ msgstr "loyal"
 msgid "female^neutral"
 msgstr "neutral"
 
-msgid "unit detail"
+#, fuzzy
+msgid "Munition"
+msgstr "Mountains"
+
+#, fuzzy
+msgid "Loyalty"
+msgstr "loyal"
+
+#, fuzzy
+msgid "Side"
+msgstr "Size"
+
+msgid "City"
 msgstr ""
 
-#, fuzzy
-msgid "hero detail"
-msgstr "Error: "
+msgid "name^Troop"
+msgstr " Troop"
 
-msgid "city detail"
-msgstr ""
-
-msgid "artifical detail"
-msgstr ""
-
-#, fuzzy
-msgid "troop detail"
-msgstr "Error: "
-
-msgid "hero list"
-msgstr ""
-
-#, fuzzy
-msgid "city list"
-msgstr "Unit List"
-
-msgid "troop list"
-msgstr ""
-
-msgid "artifical list"
-msgstr ""
-
-#, fuzzy
-msgid "side"
-msgstr "Bridge"
-
-msgid "city"
-msgstr ""
-
-#, fuzzy
-msgid "ownership"
-msgstr "leadership"
-
-#, fuzzy
-msgid "hero^ability"
-msgstr "healthy"
-
-#, fuzzy
-msgid "feature"
-msgstr "fearless"
-
-msgid "adaptability"
-msgstr ""
-
-#, fuzzy
-msgid "command"
-msgstr "Commands"
-
-#, fuzzy
-msgid "personal"
-msgstr "Version"
-
-#, fuzzy
-msgid "relation"
-msgstr "Faction"
-
-#, fuzzy
-msgid "gender"
-msgstr "Defender"
-
-#, fuzzy
-msgid "father"
-msgstr "her"
-
-#, fuzzy
-msgid "mother"
-msgstr "her"
-
-#, fuzzy
-msgid "oath"
-msgstr "Combat"
-
-msgid "consort"
-msgstr ""
-
-msgid "hero^intimate"
-msgstr ""
-
-msgid "hero^hate"
-msgstr ""
-
-#, fuzzy
-msgid "explain"
-msgstr "(playing)"
-
-msgid "name^troop"
-msgstr ""
-
-msgid "troop^type"
-msgstr ""
-
-msgid "reside troop"
-msgstr ""
-
-msgid "field troop"
+msgid "troop^Type"
 msgstr ""
 
 msgid "destination city"
@@ -8337,9 +8245,6 @@ msgstr ""
 msgid "artifical"
 msgstr "magical"
 
-msgid "biography"
-msgstr ""
-
 #, fuzzy
 msgid "player"
 msgstr "Multiplayer"
@@ -8348,58 +8253,9 @@ msgstr "Multiplayer"
 msgid "select player:"
 msgstr "Replace with $player"
 
-msgid "expedite"
-msgstr ""
-
 #, fuzzy
-msgid "hero"
+msgid "Hero"
 msgstr "her"
-
-#, fuzzy
-msgid "hero^action"
-msgstr "Faction"
-
-#, fuzzy
-msgid "action^fresh"
-msgstr "Factions"
-
-#, fuzzy
-msgid "action^finish"
-msgstr "Factions"
-
-msgid "hero^name"
-msgstr ""
-
-#, fuzzy
-msgid "hero^loyalty"
-msgstr "healthy"
-
-#, fuzzy
-msgid "hero^leadership"
-msgstr "leadership"
-
-#, fuzzy
-msgid "force"
-msgstr "fire"
-
-#, fuzzy
-msgid "intellect"
-msgstr "intelligent"
-
-msgid "politics"
-msgstr ""
-
-#, fuzzy
-msgid "charm"
-msgstr "charge"
-
-#, fuzzy
-msgid "meritorious"
-msgstr "Dextrous"
-
-#, fuzzy
-msgid "female^meritorious"
-msgstr "dextrous"
 
 msgid "architure"
 msgstr ""
@@ -8448,10 +8304,29 @@ msgstr ""
 msgid "verticalattack desc"
 msgstr ""
 
+#, fuzzy
+msgid "sweep"
+msgstr "Keep"
+
+msgid "Sweep desc"
+msgstr ""
+
+msgid "cyclone"
+msgstr ""
+
+msgid "Cyclone desc"
+msgstr ""
+
 msgid "Enable scroll tracking of unit actions"
 msgstr ""
 
 msgid "Let me join in. I will do my best to maintenance our honor."
+msgstr ""
+
+msgid "I will leave for a while, and be back in future."
+msgstr ""
+
+msgid "Go here, Can live the life I would like to?"
 msgstr ""
 
 msgid "economy area"
@@ -8483,8 +8358,40 @@ msgstr ""
 msgid "scenario settings^ally"
 msgstr "Fog"
 
-#: src/menu_events.cpp:498
-msgid "$first and $second concluded treaty of alliance."
+msgid "In order to aggress upon $city, $first and $second concluded treaty of alliance."
+msgstr ""
+
+msgid "In order to defend $city, $first and $second concluded treaty of alliance."
+msgstr ""
+
+msgid "End aggressing upon $city, $first and $second terminate treaty of alliance."
+msgstr ""
+
+msgid "End defending $city, $first and $second terminate treaty of alliance."
+msgstr ""
+
+msgid "$first occupy $second."
+msgstr ""
+
+msgid "$second is out of control, occupied by $first."
+msgstr ""
+
+msgid "$first is defeated."
+msgstr ""
+
+msgid "$first declared independence."
+msgstr ""
+
+msgid "$first declared belonging to $second."
+msgstr ""
+
+msgid "Get card: $first."
+msgstr ""
+
+msgid "Lost card: $first."
+msgstr ""
+
+msgid "Find treasure: $first($second)!"
 msgstr ""
 
 #: src/menu_events.cpp:498
@@ -8492,20 +8399,73 @@ msgstr ""
 msgid "advices"
 msgstr "Races"
 
-msgid "diplomatism"
-msgstr ""
-
-msgid "side^status"
-msgstr ""
-
-msgid "side^military"
-msgstr ""
-
-msgid "side^plan"
-msgstr ""
-
 msgid "lips death and teeth cold, all ai sides concluded treaty of alliance."
 msgstr ""
+
+msgid "In misfortune time, it is necessary to search chance that can carry out value of life."
+msgstr ""
+
+msgid "Find wise leader, let me join in."
+msgstr ""
+
+msgid "Find wise leader, $first would like to lead troop join in."
+msgstr ""
+
+msgid "Find wise leader, I would like to lead troop join in."
+msgstr ""
+
+msgid "$second! let improve morale, prepare to better battle."
+msgstr ""
+
+msgid "$first is here, who dares to take a duel with me!"
+msgstr ""
+
+msgid "I take a duel with $second, and victory."
+msgstr ""
+
+msgid "I take a duel with $second, but defeated."
+msgstr ""
+
+msgid "I take a duel with $second, and tied."
+msgstr ""
+
+#, fuzzy
+msgid "Do you really command $troop to enter $city?"
+msgstr "Do you really want to delete this game?"
+
+#, fuzzy
+msgid "Do you really command $troop to move to village?"
+msgstr "Do you really want to delete this game?"
+
+#, fuzzy
+msgid "Do you really command $troop to move to $loc?"
+msgstr "Do you really want to delete this game?"
+
+msgid "$first want to marry with $second, do you agree?"
+msgstr ""
+
+msgid "$first want to oath with $second, do you agree?"
+msgstr ""
+
+msgid "I'm happy! I have married with $second."
+msgstr ""
+
+msgid "I'm happy! I have oathed with $second."
+msgstr ""
+
+msgid "I'm happy! I got rid of hate with $second."
+msgstr ""
+
+msgid "Feeling between $first and $second is increased."
+msgstr ""
+
+#, fuzzy
+msgid "$first, do you really want to discard it?"
+msgstr "Do you really want to dismiss him?"
+
+#, fuzzy
+msgid "Do you really want to demolish $type?"
+msgstr "Do you really want to dismiss her?"
 
 msgid "final battle"
 msgstr ""
@@ -8521,66 +8481,62 @@ msgid ""
 "ai capital: $second"
 msgstr ""
 
+#, fuzzy
+msgid "Munition turns"
+msgstr "Mountains"
+
 msgid "collapse"
 msgstr ""
 
 #, fuzzy
-msgid "firm"
-msgstr "fire"
+msgid "female^broken"
+msgstr "strong"
 
 #, fuzzy
-msgid "female^firm"
-msgstr "dim"
+msgid "broken"
+msgstr "Frozen"
+
+#, fuzzy
+msgid "female^injured"
+msgstr "cures"
+
+msgid "injured"
+msgstr ""
+
+msgid "firm"
+msgstr "Firm"
 
 #, fuzzy
 msgid "firm desc"
 msgstr "fire"
 
-#, fuzzy
-msgid "heals +12"
-msgstr "heals +4"
+msgid "firms"
+msgstr "Firm.S"
+
+msgid "female^firms"
+msgstr "Firm.S"
 
 #, fuzzy
-msgid "female^heals +12"
-msgstr "heals +4"
+msgid "firms desc"
+msgstr "fire"
 
-#, fuzzy
-msgid "heals +12 desc"
-msgstr "heals +4"
+msgid "heals +24"
+msgstr "Heal.S +24"
 
-#, fuzzy
-msgid "heals +16"
-msgstr "heals +4"
+msgid "female^heals +24"
+msgstr "Heal.S +24"
 
-#, fuzzy
-msgid "female^heals +16"
-msgstr "heals +4"
+msgid "heals +24 desc"
+msgstr "Heal adjacent allied units at the beginning of each turn"
 
-#, fuzzy
-msgid "heals +16 desc"
-msgstr "heals +4"
+msgid "selfheal +24"
+msgstr "Heal +24"
 
-#, fuzzy
-msgid "selfheals +12"
-msgstr "heals +4"
+msgid "female^selfheal +24"
+msgstr "Heal +24"
 
-#, fuzzy
-msgid "female^selfheals +12"
-msgstr "heals +4"
-
-msgid "selfheals +12 desc"
-msgstr ""
-
-#, fuzzy
-msgid "selfheals +16"
-msgstr "heals +4"
-
-#, fuzzy
-msgid "female^selfheals +16"
-msgstr "heals +4"
-
-msgid "selfheals +16 desc"
-msgstr ""
+msgid "selfheal +24 desc"
+msgstr "Heal local unit at the beginning of each turn."
 
 #, fuzzy
 msgid "cast"
@@ -8602,652 +8558,268 @@ msgid "I'm Ready"
 msgstr "I’m Ready"
 
 #, fuzzy
+msgid "You don't have enough gold to recruit that unit"
+msgstr "You don’t have enough gold to recruit that unit"
+
+#, fuzzy
+msgid "You don't have enough gold to build that artifical"
+msgstr "You don’t have enough gold to recruit that unit"
+
+msgid "There hasn't valid grid to build that artifical."
+msgstr ""
+
+msgid "Must exist tow keep at least before building wall."
+msgstr ""
+
+#, fuzzy
+msgid "There are no hero available to recruit"
+msgstr "You have no units available to recruit."
+
+#, fuzzy
+msgid "There are no available troop to rearm"
+msgstr "There are no add-ons available for download from this server."
+
+#, fuzzy
+msgid "There are no hero available to move"
+msgstr "There are no add-ons available for download from this server."
+
+#, fuzzy
+msgid "There are no city available to move"
+msgstr "You have no units available to recruit."
+
+msgid "There are no holded card"
+msgstr ""
+
+#, fuzzy
+msgid "There are no hero available to assemble treasure."
+msgstr "There are no add-ons available for download from this server."
+
+msgid "Prepare to battle, please recruit!"
+msgstr ""
+
+msgid "You can control more troop."
+msgstr ""
+
+msgid "Congratulate! You are appointed $city mayor."
+msgstr ""
+
+msgid "Your official of $city's mayor is terminated."
+msgstr ""
+
+msgid "You exchanged $ai using $human."
+msgstr ""
+
+#, fuzzy
 msgid "$login|'s game"
 msgstr "$login|’s game"
 
-#~ msgid "red if it has used all its movement this turn."
-#~ msgstr "red if it has used all its movement this turn."
-#~ msgid "Set Password"
-#~ msgstr "Set Password"
-#~ msgid ""
-#~ "Set the password that people wanting to join your game as players must "
-#~ "enter."
-#~ msgstr ""
-#~ "Set the password that people wanting to join your game as players must "
-#~ "enter."
-#~ msgid "Difficulty"
-#~ msgstr "Difficulty"
-#~ msgid "Select difficulty level:"
-#~ msgstr "Select difficulty level:"
-#~ msgid "Place Label"
-#~ msgstr "Place Label"
-#~ msgid "Label: "
-#~ msgstr "Label: "
-#~ msgid "Team only"
-#~ msgstr "Team only"
-#~ msgid "User-Command#3"
-#~ msgstr "User-Command#3"
+msgid "You must create hero before play it."
+msgstr ""
 
 #, fuzzy
-#~ msgid ""
-#~ "<i>― Haldric II, 42 YW, from Handbook of Tactical Analysis: Volume I</i>"
-#~ msgstr "- Handbook of Tactical Analysis Volume I - Haldric II, 42YW"
-#~ msgid "About to upload statistics — Help us make Wesnoth better for you!"
-#~ msgstr "About to upload statistics — Help us make Wesnoth better for you!"
-#~ msgid "Save my reply and do not ask again"
-#~ msgstr "Save my reply and do not ask again"
-#~ msgid ""
-#~ "To change the setting later on, click on the envelope icon in the main "
-#~ "menu."
-#~ msgstr ""
-#~ "To change the setting later on, click on the envelope icon in the main "
-#~ "menu."
-#~ msgid "Send"
-#~ msgstr "Send"
-#~ msgid "Don’t send"
-#~ msgstr "Don’t send"
-#~ msgid "Do not ask every time before sending data"
-#~ msgstr "Do not ask every time before sending data"
-#~ msgid ""
-#~ "You can send the Wesnoth Project an anonymous summary of your progress "
-#~ "using the 'Help Wesnoth' button (indicated by the envelope icon near the "
-#~ "lower-right-hand corner of the game main screen). This information is "
-#~ "vital so we can adjust campaign difficulty."
-#~ msgstr ""
-#~ "You can send the Wesnoth Project an anonymous summary of your progress "
-#~ "using the 'Help Wesnoth' button (indicated by the envelope icon near the "
-#~ "lower-right-hand corner of the game main screen). This information is "
-#~ "vital so we can adjust campaign difficulty."
-#~ msgid "vs"
-#~ msgstr "vs"
+msgid "short sword"
+msgstr "Set Password"
+
+msgid "bow"
+msgstr "bow"
 
 #, fuzzy
-#~ msgid "Multiplayer_AI^Default AI"
-#~ msgstr "Multiplayer"
-#~ msgid "Which enemy side to focus on?"
-#~ msgstr "Which enemy side to focus on?"
-#~ msgid "focusing on defeating $this_enemy_description|."
-#~ msgstr "focusing on defeating $this_enemy_description|."
-#~ msgid "Which friendly side to protect?"
-#~ msgstr "Which friendly side to protect?"
-#~ msgid "focusing on protecting $this_ally_description|."
-#~ msgstr "focusing on protecting $this_ally_description|."
-#~ msgid ""
-#~ "$addon_title depends upon the following add-on which you have not "
-#~ "installed yet:"
-#~ msgid_plural ""
-#~ "$addon_title depends upon the following add-ons which you have not "
-#~ "installed yet:"
-#~ msgstr[0] ""
-#~ "$addon_title depends upon the following add-on which you have not "
-#~ "installed yet:"
-#~ msgstr[1] ""
-#~ "$addon_title depends upon the following add-ons which you have not "
-#~ "installed yet:"
-#~ msgid ""
-#~ "Do you still want to download $addon_title|? (You will have to install "
-#~ "all the dependencies in order to play.)"
-#~ msgstr ""
-#~ "Do you still want to download $addon_title|? (You will have to install "
-#~ "all the dependencies in order to play.)"
-#~ msgid "[unit_worth]'s filter didn't match any units!"
-#~ msgstr "[unit_worth]'s filter didn't match any units!"
-#~ msgid "tooltip^damage"
-#~ msgid_plural "damage"
-#~ msgstr[0] "damage"
-#~ msgstr[1] "damage"
-#~ msgid "tooltip^attack"
-#~ msgid_plural "attacks"
-#~ msgstr[0] "attack"
-#~ msgstr[1] "attacks"
-#~ msgid "tooltip^% accuracy"
-#~ msgstr "% accuracy"
-#~ msgid "tooltip^% parry"
-#~ msgstr "% parry"
+msgid "cast bow"
+msgstr "Castle"
 
 #, fuzzy
-#~ msgid "Filter:"
-#~ msgstr "Filter: "
-#~ msgid "Next"
-#~ msgstr "Next"
-#~ msgid "TitleScreen button^Tutorial"
-#~ msgstr "Tutorial"
-#~ msgid "TitleScreen button^Campaign"
-#~ msgstr "Campaign"
-#~ msgid "TitleScreen button^Multiplayer"
-#~ msgstr "Multiplayer"
-#~ msgid "TitleScreen button^Load"
-#~ msgstr "Load"
-#~ msgid "TitleScreen button^Add-ons"
-#~ msgstr "Add-ons"
-#~ msgid "TitleScreen button^Map Editor"
-#~ msgstr "Map Editor"
-#~ msgid "TitleScreen button^Language"
-#~ msgstr "Language"
-#~ msgid "TitleScreen button^Preferences"
-#~ msgstr "Preferences"
-#~ msgid "TitleScreen button^Credits"
-#~ msgstr "Credits"
-#~ msgid "TitleScreen button^Quit"
-#~ msgstr "Quit"
-#~ msgid "TitleScreen button^Previous"
-#~ msgstr "Previous"
-#~ msgid "TitleScreen button^Next"
-#~ msgstr "Next"
-#~ msgid "TitleScreen button^Help"
-#~ msgstr "Help"
-#~ msgid "Start a tutorial to familiarize yourself with the game"
-#~ msgstr "Start a tutorial to familiarise yourself with the game"
-#~ msgid "Start a new single player campaign"
-#~ msgstr "Start a new single player campaign"
-#~ msgid ""
-#~ "Play multiplayer (hotseat, LAN, or Internet), or a single scenario "
-#~ "against the AI"
-#~ msgstr ""
-#~ "Play multiplayer (hotseat, LAN, or Internet), or a single scenario "
-#~ "against the AI"
-#~ msgid "Load a saved game"
-#~ msgstr "Load a saved game"
-#~ msgid "Download usermade campaigns, eras, or map packs"
-#~ msgstr "Download user-made campaigns, eras, or map packs"
-#~ msgid "Start the map editor"
-#~ msgstr "Start the map editor"
-#~ msgid "Change the language"
-#~ msgstr "Change the language"
-#~ msgid "Configure the game’s settings"
-#~ msgstr "Configure the game’s settings"
-#~ msgid "View the credits"
-#~ msgstr "View the credits"
-#~ msgid "Quit the game"
-#~ msgstr "Quit the game"
+msgid "short stone"
+msgstr "stone"
+
+msgid "stone"
+msgstr "stone"
 
 #, fuzzy
-#~ msgid "Show previous tip of the day"
-#~ msgstr "Show next tip of the day"
-#~ msgid "Show next tip of the day"
-#~ msgstr "Show next tip of the day"
-#~ msgid "Show Battle for Wesnoth help"
-#~ msgstr "Show Battle for Wesnoth help"
-#~ msgid "$trait_name|: $trait_description "
-#~ msgstr "$trait_name|: $trait_description "
-#~ msgid "TitleScreen button^Help Wesnoth"
-#~ msgstr "Help Wesnoth"
+msgid "sword"
+msgstr "Password: "
+
+#, fuzzy
+msgid "sword2"
+msgstr "Password: "
+
+msgid "crossbow"
+msgstr ""
+
+#, fuzzy
+msgid "pike"
+msgstr "pierce"
+
+msgid "tiqiang"
+msgstr ""
+
+msgid "huyou"
+msgstr ""
+
+#, fuzzy
+msgid "naocan"
+msgstr "arcane"
+
+msgid "tianlei"
+msgstr ""
+
+msgid "staff"
+msgstr ""
+
+msgid "missile"
+msgstr ""
+
+msgid "lightbeam"
+msgstr ""
+
+#, fuzzy
+msgid "fireball"
+msgstr "fire"
+
+msgid "chill wave"
+msgstr ""
+
+msgid "lightning"
+msgstr ""
+
+#, fuzzy
+msgid "Defeat all sides"
+msgstr "Clear all orders"
+
+msgid "No city you holded"
+msgstr ""
+
+#~ msgid "heals +8"
+#~ msgstr "heals +8"
+#~ msgid "female^heals +8"
+#~ msgstr "heals +8"
 #~ msgid ""
-#~ "Battle for Wesnoth automatically sends anonymized statistics about your "
-#~ "game advancement to a server where they are stored. This enables several "
-#~ "features, and allows us to improve Wesnoth. To learn more about this or "
-#~ "disable it, click the envelope in the bottom-right corner."
-#~ msgstr ""
-#~ "Battle for Wesnoth automatically sends anonymised statistics about your "
-#~ "game advancement to a server where they are stored. This enables several "
-#~ "features, and allows us to improve Wesnoth. To learn more about this or "
-#~ "disable it, click the envelope in the bottom-right corner."
-#~ msgid "Wesnoth Developers"
-#~ msgstr "Wesnoth Developers"
-#~ msgid "Upload statistics"
-#~ msgstr "Upload statistics"
-#~ msgid "Help Wesnoth"
-#~ msgstr "Help Wesnoth"
-#~ msgid "Help Wesnoth by sending us information"
-#~ msgstr "Help Wesnoth by sending us information"
-#~ msgid ""
-#~ "Wesnoth relies on volunteers like yourself for feedback, especially "
-#~ "beginners and new players. Wesnoth keeps summaries of your games: you can "
-#~ "help us improve game play by giving permission to send these summaries "
-#~ "(anonymously) to wesnoth.org.\n"
-#~ msgstr ""
-#~ "Wesnoth relies on volunteers like yourself for feedback, especially "
-#~ "beginners and new players. Wesnoth keeps summaries of your games: you can "
-#~ "help us improve game play by giving permission to send these summaries "
-#~ "(anonymously) to wesnoth.org.\n"
-#~ msgid "Summaries are stored here:"
-#~ msgstr "Summaries are stored here:"
-#~ msgid "You can view the results at:"
-#~ msgstr "You can view the results at:"
-#~ msgid "Help us make Wesnoth better for you!"
-#~ msgstr "Help us make Wesnoth better for you!"
-#~ msgid "Enable summary uploads"
-#~ msgstr "Enable summary uploads"
-#~ msgid "Unknown unit type '$type|'"
-#~ msgstr "Unknown unit type '$type|'"
-#~ msgid ""
-#~ "Leader position not empty - duplicate side definition for side '$side|' "
-#~ "found."
-#~ msgstr ""
-#~ "Leader position not empty - duplicate side definition for side '$side|' "
-#~ "found."
-#~ msgid "End scenario"
-#~ msgstr "End scenario"
-#~ msgid ""
-#~ "This situation should test the ability of AI to spread poison around..."
-#~ msgstr ""
-#~ "This situation should test the ability of AI to spread poison around..."
-#~ msgid "This situation should test the ability of AI to make an attack..."
-#~ msgstr "This situation should test the ability of AI to make an attack..."
-#~ msgid "Movement cost is 0, probably a terrain with movement cost of 0."
-#~ msgstr "Movement cost is 0, probably a terrain with movement cost of 0."
-#~ msgid "The file you have tried to load is corrupt. Continue playing?"
-#~ msgstr "The file you have tried to load is corrupt. Continue playing?"
-#~ msgid "Can rest while moving, takes a quarter less poison damage"
-#~ msgstr "Can rest while moving, takes a quarter less poison damage"
-#~ msgid "Location^Loc."
-#~ msgstr "Loc"
-#~ msgid "Computer player"
-#~ msgstr "Computer player"
-#~ msgid "Play a campaign"
-#~ msgstr "Play a campaign"
-#~ msgid "Default AI"
-#~ msgstr "Default AI"
-#~ msgid "stones"
-#~ msgstr "stones"
-#~ msgid "An invalid weapon is selected, possibly by the Python AI."
-#~ msgstr "An invalid weapon is selected, possibly by the Python AI."
-#~ msgid "female^stone"
-#~ msgstr "stone"
-#~ msgid "stone"
-#~ msgstr "stone"
-#~ msgid "Unknown unit type : "
-#~ msgstr "Unknown unit type : "
-#~ msgid "Quit Game"
-#~ msgstr "Quit Game"
-#~ msgid "Ignore All"
-#~ msgstr "Ignore all"
-#~ msgid ""
-#~ "Save names may not contain colons, slashes, or backslashes. Please choose "
-#~ "a different name."
-#~ msgstr ""
-#~ "Save names may not contain colons, slashes or backslashes. Please choose "
-#~ "a different name."
-#~ msgid "stone: "
-#~ msgstr "stone: "
-#~ msgid "Remove a trait from a unit. (Does not work yet.)"
-#~ msgstr "Remove a trait from a unit. (Does not work yet.)"
-#~ msgid "The replay could not be saved"
-#~ msgstr "The replay could not be saved"
-#~ msgid "Name:"
-#~ msgstr "Name:"
-#~ msgid "Do you still want to download it?"
-#~ msgstr "Do you really want to download it?"
-#~ msgid " included from "
-#~ msgstr " included from "
-#~ msgid "Mute an observer."
-#~ msgstr "Mute an observer."
-#~ msgid "Unchecked script files found:"
-#~ msgstr "Unchecked script files found:"
-#~ msgid "Reading cache"
-#~ msgstr "Reading cache"
-#~ msgid "Back to start"
-#~ msgstr "Back to start"
-#~ msgid "Only Run Safe Python AIs"
-#~ msgstr "Only Run Safe Python AIs"
-#~ msgid "+  "
-#~ msgstr "+  "
-#~ msgid "Unknown error."
-#~ msgstr "Unknown error"
-#~ msgid "Login: "
-#~ msgstr "Login: "
-#~ msgid "Choose a different username"
-#~ msgstr "Choose a different username"
-#~ msgid "Whisper"
-#~ msgstr "Whisper"
-#~ msgid "Message: "
-#~ msgstr "Message: "
-#~ msgid "Login"
-#~ msgstr "Login"
-#~ msgid ""
+#~ "Heals +8:\n"
+#~ "This unit combines herbal remedies with magic to heal units more quickly "
+#~ "than is normally possible on the battlefield.\n"
 #~ "\n"
-#~ "Redraw the screen.\n"
+#~ "A unit cared for by this healer may heal up to 8 HP per turn, or stop "
+#~ "poison from taking effect for that turn.\n"
+#~ "A poisoned unit cannot be cured of its poison by a healer, and must seek "
+#~ "the care of a village or a unit that can cure."
+#~ msgstr ""
+#~ "Heals +8:\n"
+#~ "This unit combines herbal remedies with magic to heal units more quickly "
+#~ "than is normally possible on the battlefield.\n"
 #~ "\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Redraw the screen.\n"
-#~ "\n"
-#~ msgid " This unit is capable of basic healing and slowing dehydration."
-#~ msgstr " This unit is capable of basic healing and slowing dehydration."
-#~ msgid ""
-#~ " This unit is capable of healing those around it, slowing dehydration, "
-#~ "and curing them of poison."
-#~ msgstr ""
-#~ " This unit is capable of healing those around it, slowing dehydration, "
-#~ "and curing them of poison."
-#~ msgid "Location name?"
-#~ msgstr "Location name?"
-#~ msgid "Give new orders"
-#~ msgstr "Give new orders"
-#~ msgid "value: "
-#~ msgstr "value:"
-#~ msgid "Defeat an enemy Leader!"
-#~ msgstr "Defeat an enemy Leader!"
-#~ msgid "Grassland"
-#~ msgstr "Grassland"
-#~ msgid "Snow"
-#~ msgstr "Snow"
-#~ msgid "Ice"
-#~ msgstr "Ice"
-#~ msgid ""
-#~ "Ice represents any body of frozen water. For gameplay purposes, it is "
-#~ "identical to <ref>dst='terrain_snow' text='Snow'</ref>. Note that "
-#~ "swimming units, even those who can breathe underwater, cannot swim "
-#~ "underneath ice."
-#~ msgstr ""
-#~ "Ice represents any body of frozen water. For gameplay purposes, it is "
-#~ "identical to <ref>dst='terrain_snow' text='Snow'</ref>. Note that "
-#~ "swimming units, even those who can breathe underwater, cannot swim "
-#~ "underneath ice."
-#~ msgid "Savanna"
-#~ msgstr "Savanna"
-#~ msgid ""
-#~ "Savannas are plains of tall grass, found in the warmer climates of the "
-#~ "world. For gameplay purposes, they are identical to "
-#~ "<ref>dst='terrain_grassland' text='Grassland'</ref>."
-#~ msgstr ""
-#~ "Savannas are plains of tall grass, found in the warmer climates of the "
-#~ "world. For gameplay purposes, they are identical to "
-#~ "<ref>dst='terrain_grassland' text='Grassland'</ref>."
-#~ msgid "Chasm"
-#~ msgstr "Chasm"
-#~ msgid "Cave Wall"
-#~ msgstr "Cave Wall"
-#~ msgid ""
-#~ "Cave walls are made of solid stone, renowned for its ability to impede "
-#~ "even the most determined traveler."
-#~ msgstr ""
-#~ "Cave walls are made of solid stone, renowned for its ability to impede "
-#~ "even the most determined traveller."
-#~ msgid "Battle for Wesnoth"
-#~ msgstr "Battle for Wesnoth"
-#~ msgid "No multiplayer sides available in this game"
-#~ msgstr "No multiplayer sides available in this game"
-#~ msgid "Warning: Errors occurred while loading game configuration files: '"
-#~ msgstr "Warning: Errors occurred while loading game configuration files: '"
-#~ msgid "testing translation reset."
-#~ msgstr "testing translation reset."
-#~ msgid "Connect to add-ons server"
-#~ msgstr "Connect to add-ons server"
-#~ msgid "Type the address of a server to download add-ons from."
-#~ msgstr "Type the address of a server to download add-ons from."
-#~ msgid "Server: "
-#~ msgstr "Server: "
-#~ msgid "Join Official Server"
-#~ msgstr "Join Official Server"
-#~ msgid "Log on to the official Wesnoth multiplayer server"
-#~ msgstr "Log on to the official Wesnoth multiplayer server"
-#~ msgid "Connect to Server"
-#~ msgstr "Connect to Server"
-#~ msgid "Join a different server"
-#~ msgstr "Join a different server"
-#~ msgid "Host Networked Game"
-#~ msgstr "Host Networked Game"
-#~ msgid "Host a game using dedicated server 'wesnothd'"
-#~ msgstr "Host a game using dedicated server 'wesnothd'"
-#~ msgid ""
-#~ "Play a multiplayer game with the AI or humans sharing the same machine"
-#~ msgstr ""
-#~ "Play a multiplayer game with the AI or humans sharing the same machine"
-#~ msgid "Language"
-#~ msgstr "Language"
-#~ msgid "Choose your preferred language:"
-#~ msgstr "Choose your preferred language:"
-#~ msgid "View List"
-#~ msgstr "View List"
-#~ msgid "Connect to Host"
-#~ msgstr "Connect to Host"
-#~ msgid "Choose host to connect to: "
-#~ msgstr "Choose host to connect to: "
-#~ msgid "testing translation reset"
-#~ msgstr "testing translation reset"
-#~ msgid "test translation reset"
-#~ msgstr "test translation reset"
-#~ msgid "File"
-#~ msgstr "File"
-#~ msgid "Map"
-#~ msgstr "Map"
-#~ msgid "Remove add-ons"
-#~ msgstr "Remove add-ons"
-#~ msgid "--move--"
-#~ msgstr "--move--"
-#~ msgid "Default"
-#~ msgstr "Default"
-#~ msgid "cancel"
-#~ msgstr "cancel"
-#~ msgid "#(unknown campaign)"
-#~ msgstr "#(unknown campaign)"
-#~ msgid "Screenshot"
-#~ msgstr "Screenshot"
-#~ msgid "Map_Screenshot"
-#~ msgstr "Map_Screenshot"
-#~ msgid ""
-#~ "Ignore messages from players on the ignore list and highlight players on "
-#~ "the friends list. Usage: /list <subcommand> [<argument>] Subcommands: "
-#~ "addfriend, addignore, remove, display, clear. Type /help list "
-#~ "<subcommand> for more info."
-#~ msgstr ""
-#~ "Ignore messages from players on the ignore list and highlight players on "
-#~ "the friends list. Usage: /list <subcommand> [<argument>] Subcommands: "
-#~ "addfriend, addignore, remove, display, clear. Type /help list "
-#~ "<subcommand> for more info."
-#~ msgid "Add a nick to your friends list. Usage: /list addfriend <nick>"
-#~ msgstr "Add a nick to your friends list. Usage: /list addfriend <nick>"
-#~ msgid "Clear your complete ignores and friends list. Usage: /list clear"
-#~ msgstr "Clear your complete ignores and friends list. Usage: /list clear"
-#~ msgid "Unknown subcommand."
-#~ msgstr "Unknown subcommand."
-#~ msgid "Unknown command."
-#~ msgstr "Unknown command."
-#~ msgid "Unknown command: "
-#~ msgstr "Unknown command: "
-#~ msgid ""
-#~ " This unit is capable of basic healing, though it can only delay the "
-#~ "effects of poison, not cure them entirely."
-#~ msgstr ""
-#~ " This unit is capable of basic healing, though it can only delay the "
-#~ "effects of poison, not cure them entirely."
-#~ msgid ""
-#~ " This unit can teleport between any two villages instantly, though the "
-#~ "player must control both, and the destination village must be unoccupied."
-#~ msgstr ""
-#~ " This unit can teleport between any two villages instantly, though the "
-#~ "player must control both, and the destination village must be unoccupied."
-#~ msgid "Join a server or hosted game"
-#~ msgstr "Join a server or hosted game"
-#~ msgid "DejaVuSans.ttf,sazanami-gothic.ttf,gkai00mp.ttf"
-#~ msgstr "DejaVuSans.ttf,sazanami-gothic.ttf,gkai00mp.ttf"
-#~ msgid ""
-#~ "Ox,Hol,Il,Del,El,York,Corn,Hel,Sel,Sil,Sal,Bal,Water,Sen,Sed,Hex,Hox,Fox,"
-#~ "Bal,Wet,Earl,Fren,Kin,Tal,Gel,Nam,Sam,Olf,Old,New,Ol,Nes,Cam,Rook,Rock,Oul"
-#~ msgstr ""
-#~ "Ox,Hol,Il,Del,El,York,Corn,Hel,Sel,Sil,Sal,Bal,Water,Sen,Sed,Hex,Hox,Fox,"
-#~ "Bal,Wet,Earl,Fren,Kin,Tal,Gel,Nam,Sam,Olf,Old,New,Ol,Nes,Cam,Rook,Rock,Oul"
-#~ msgid "Damage Taken"
-#~ msgstr "Damage Taken"
-#~ msgid "Damage Inflicted (EV)"
-#~ msgstr "Damage Inflicted (EV)"
-#~ msgid "Damage Taken (EV)"
-#~ msgstr "Damage Taken (EV)"
-#~ msgid "Commands: whisper list emote. Type /help [command] for more help."
-#~ msgstr "Commands: whisper list emote. Type /help [command] for more help."
-#~ msgid "Removed from ignore list: "
-#~ msgstr "Removed from ignore list: "
-#~ msgid "Removed from friends list: "
-#~ msgstr "Removed from friends list: "
-#~ msgid ""
-#~ "Poisoned units lose 8 hitpoints every turn, but they will not die from "
-#~ "poison: poison will never reduce them below 1 hitpoint. Poisoned units "
-#~ "next to a healer will not lose hitpoints on their next turn. If they are "
-#~ "in a village or next to a unit with the 'cures' ability, the poison will "
-#~ "be completely cured on their next turn."
-#~ msgstr ""
-#~ "Poisoned units lose 8 hitpoints every turn, but they will not die from "
-#~ "poison: poison will never reduce them below 1 hitpoint. Poisoned units "
-#~ "next to a healer will not lose hitpoints on their next turn. If they are "
-#~ "in a village or next to a unit with the 'cures' ability, the poison will "
-#~ "be completely cured on their next turn."
-#~ msgid "Contributors"
-#~ msgstr "Contributors"
-#~ msgid "Heal to full, MAX XP +25%"
-#~ msgstr "Heal to full, MAX XP +25%"
-#~ msgid ""
-#~ "\n"
-#~ "\n"
-#~ "Each scenario has some objectives, shown as the scenario starts. These "
-#~ "objectives list what you need to do to win, and what you should do to "
-#~ "avoid losing. Often the objective is to defeat all enemies, but other "
-#~ "times you need to reach a destination, to rescue someone, to solve a "
-#~ "puzzle, or just to survive a certain number of turns."
-#~ msgstr ""
-#~ "\n"
-#~ "\n"
-#~ "Each scenario has some objectives, shown as the scenario starts. These "
-#~ "objectives list what you need to do to win, and what you should do to "
-#~ "avoid losing. Often the objective is to defeat all enemies, but other "
-#~ "times you need to reach a destination, to rescue someone, to solve a "
-#~ "puzzle, or just to survive a certain number of turns."
-#~ msgid "Campaign Maintenance"
-#~ msgstr "Campaign Maintenance"
-#~ msgid "Artwork and Graphics Design"
-#~ msgstr "Artwork and Graphics Design"
-#~ msgid "Translators"
-#~ msgstr "Translators"
-#~ msgid "Code and Translation Assistance"
-#~ msgstr "Code and Translation Assistance"
-#~ msgid "WML Assistance"
-#~ msgstr "WML Assistance"
-#~ msgid "Era not available"
-#~ msgstr "Era not available"
-#~ msgid "-- The Tome of Wesnoth"
-#~ msgstr "-- The Tome of Wesnoth"
-#~ msgid "Masked Dwarf"
-#~ msgstr "Masked Dwarf"
-#~ msgid "Full Heal"
-#~ msgstr "Full Heal"
-#~ msgid ""
-#~ "In a campaign, you can use veteran units from previous scenarios by using "
-#~ "the 'recall' option."
-#~ msgstr ""
-#~ "In a campaign, you can use veteran units from previous scenarios by using "
-#~ "the 'recall' option."
-#~ msgid ""
-#~ "Holding the mouse cursor on an ability or trait shows a description of "
-#~ "that ability or trait."
-#~ msgstr ""
-#~ "Holding the mouse cursor on an ability or trait shows a description of "
-#~ "that ability or trait."
-#~ msgid "Binary Saves"
-#~ msgstr "Binary Saves"
-#~ msgid "time left"
-#~ msgstr "time left"
-#~ msgid "No multiplayer sides."
-#~ msgstr "No multiplayer sides."
-#~ msgid "TitleScreen button^More"
-#~ msgstr "More"
-#~ msgid ""
-#~ "The login name you chose is too long, please use a login with less than "
-#~ "18 characters"
-#~ msgstr ""
-#~ "The login name you chose is too long. Please use a login with fewer than "
-#~ "18 characters"
-#~ msgid "Receiving data..."
-#~ msgstr "Receiving data..."
-#~ msgid "Campaign"
-#~ msgstr "Campaign"
-#~ msgid "race^Lizards"
-#~ msgstr "Lizards"
-#~ msgid "Based on version"
-#~ msgstr "Based on version"
-#~ msgid "Advance from:"
-#~ msgstr "Advance from:"
-#~ msgid "Choose the campaign you want to play:"
-#~ msgstr "Choose the campaign you want to play:"
-#~ msgid " per level"
-#~ msgstr " per level"
-#~ msgid "female^Elvish Lady"
-#~ msgstr "Elvish Lady"
-#~ msgid "; "
-#~ msgstr "; "
-#~ msgid "/level"
-#~ msgstr "/level"
-#~ msgid "This water will make melee weapons holy."
-#~ msgstr "This water will make melee weapons holy."
-#~ msgid "Replace with "
-#~ msgstr "Replace with "
-#~ msgid "Music Development"
-#~ msgstr "Music Development"
-#~ msgid "WML Contributors"
-#~ msgstr "WML Contributors"
-#~ msgid "Elves"
-#~ msgstr "Elves"
-#~ msgid "Orcs"
-#~ msgstr "Orcs"
-#~ msgid "him"
-#~ msgstr "him"
-#~ msgid "game settings^Fog"
-#~ msgstr "Fog"
-#~ msgid "Can't set abilities yet, sorry."
-#~ msgstr "Can't set abilities yet, sorry."
-#~ msgid "Credits"
-#~ msgstr "Credits"
-#~ msgid "Unit art"
-#~ msgstr "Unit art"
-#~ msgid "Map art"
-#~ msgstr "Map art"
-#~ msgid "mace"
-#~ msgstr "mace"
-#~ msgid "sling"
-#~ msgstr "sling"
-#~ msgid "female^Fugitive"
-#~ msgstr "Fugitive"
-#~ msgid "Outlaw Ranger"
-#~ msgstr "Outlaw Ranger"
-#~ msgid "bow"
-#~ msgstr "bow"
-#~ msgid "None"
-#~ msgstr "None"
-#~ msgid "Elven Castle"
-#~ msgstr "Elven Castle"
-#~ msgid "Dwarven Castle"
-#~ msgstr "Dwarven Castle"
-#~ msgid "Ruin"
-#~ msgstr "Ruin"
-#~ msgid "Sunken Ruin"
-#~ msgstr "Sunken Ruin"
-#~ msgid "Swamp Ruin"
-#~ msgstr "Swamp Ruin"
-#~ msgid "Encampment"
-#~ msgstr "Encampment"
-#~ msgid "Keep"
-#~ msgstr "Keep"
-#~ msgid "Elven Keep"
-#~ msgstr "Elven Keep"
-#~ msgid "Dwarven keep"
-#~ msgstr "Dwarven keep"
-#~ msgid "Sunken keep"
-#~ msgstr "Sunken keep"
-#~ msgid "Swamp keep"
-#~ msgstr "Swamp keep"
-#~ msgid "Crater"
-#~ msgstr "Crater"
-#~ msgid "Oasis"
-#~ msgstr "Oasis"
-#~ msgid "Snow Forest"
-#~ msgstr "Snow Forest"
-#~ msgid "Great Tree"
-#~ msgstr "Great Tree"
-#~ msgid "Tropical Forest"
-#~ msgstr "Tropical Forest"
-#~ msgid "Snow Hills"
-#~ msgstr "Snow Hills"
-#~ msgid "Dunes"
-#~ msgstr "Dunes"
-#~ msgid "Desert road"
-#~ msgstr "Desert road"
-#~ msgid "Dirt"
-#~ msgstr "Dirt"
-#~ msgid "Farmland"
-#~ msgstr "Farmland"
-#~ msgid "Rockbound Cave Lit"
-#~ msgstr "Rockbound Cave Lit"
-#~ msgid "Impassable Mountains"
-#~ msgstr "Impassable Mountains"
-#~ msgid "Impassable Desert Mountains"
-#~ msgstr "Impassable Desert Mountains"
+#~ "A unit cared for by this healer may heal up to 8 HP per turn, or stop "
+#~ "poison from taking effect for that turn.\n"
+#~ "A poisoned unit cannot be cured of its poison by a healer, and must seek "
+#~ "the care of a village or a unit that can cure."
+
+#, fuzzy
+#~ msgid "heals +12"
+#~ msgstr "heals +4"
+
+#, fuzzy
+#~ msgid "female^heals +12"
+#~ msgstr "heals +4"
+
+#, fuzzy
+#~ msgid "heals +16"
+#~ msgstr "heals +4"
+
+#, fuzzy
+#~ msgid "female^heals +16"
+#~ msgstr "heals +4"
+
+#, fuzzy
+#~ msgid "heals +16 desc"
+#~ msgstr "heals +4"
+
+#, fuzzy
+#~ msgid "selfheals +16"
+#~ msgstr "heals +4"
+
+#, fuzzy
+#~ msgid "female^selfheals +16"
+#~ msgstr "heals +4"
+
+#, fuzzy
+#~ msgid "hero^ability"
+#~ msgstr "healthy"
+
+#, fuzzy
+#~ msgid "feature"
+#~ msgstr "fearless"
+
+#, fuzzy
+#~ msgid "hero^action"
+#~ msgstr "Faction"
+
+#, fuzzy
+#~ msgid "action^fresh"
+#~ msgstr "Factions"
+
+#, fuzzy
+#~ msgid "action^finish"
+#~ msgstr "Factions"
+
+#, fuzzy
+#~ msgid "hero^loyalty"
+#~ msgstr "healthy"
+
+#, fuzzy
+#~ msgid "hero^leadership"
+#~ msgstr "leadership"
+
+#, fuzzy
+#~ msgid "force"
+#~ msgstr "fire"
+
+#, fuzzy
+#~ msgid "intellect"
+#~ msgstr "intelligent"
+
+#, fuzzy
+#~ msgid "charm"
+#~ msgstr "charge"
+
+#, fuzzy
+#~ msgid "meritorious"
+#~ msgstr "Dextrous"
+
+#, fuzzy
+#~ msgid "female^meritorious"
+#~ msgstr "dextrous"
+
+#, fuzzy
+#~ msgid "side"
+#~ msgstr "Bridge"
+
+#, fuzzy
+#~ msgid "command"
+#~ msgstr "Commands"
+
+#, fuzzy
+#~ msgid "personal"
+#~ msgstr "Version"
+
+#, fuzzy
+#~ msgid "relation"
+#~ msgstr "Faction"
+
+#, fuzzy
+#~ msgid "gender"
+#~ msgstr "Defender"
+
+#, fuzzy
+#~ msgid "father"
+#~ msgstr "her"
+
+#, fuzzy
+#~ msgid "mother"
+#~ msgstr "her"
+
+#, fuzzy
+#~ msgid "oath"
+#~ msgstr "Combat"
+
+#, fuzzy
+#~ msgid "explain"
+#~ msgstr "(playing)"
 

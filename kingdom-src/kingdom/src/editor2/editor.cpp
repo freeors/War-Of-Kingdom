@@ -379,7 +379,6 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 			}
 			editor_config::data_cfg = game_config_;
 			unit_types.set_config(editor_config::data_cfg.child("units"));
-			unit_types.build_all(unit_type::FULL);
 		} 
 	}
 	catch (game::error& e) {

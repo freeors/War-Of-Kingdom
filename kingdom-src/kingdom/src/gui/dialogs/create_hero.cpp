@@ -233,6 +233,19 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		, true));
 	button->set_label(hero::feature_str(h_->side_feature_));
 
+	button = find_widget<tbutton>(&window, "tactic", false, true);
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "tactic", false)
+		, boost::bind(
+		&tcreate_hero::tactic
+		, this
+		, boost::ref(window)));
+	if (h_->tactic_ != HEROS_NO_TACTIC) {
+		button->set_label(unit_types.tactic(h_->tactic_).name());
+	} else {
+		button->set_label("");
+	}
+
 	button = find_widget<tbutton>(&window, "catalog", false, true);
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "catalog", false)
@@ -393,6 +406,31 @@ void tcreate_hero::feature(twindow& window, bool side)
 		}
 		label->set_label(str);
 	}
+}
+
+void tcreate_hero::tactic(twindow& window)
+{
+	std::vector<std::string> items;
+	int activity_index = -1;
+	std::vector<int> tactics_index;
+
+	items.push_back(" ");
+	tactics_index.push_back(HEROS_NO_TACTIC);
+	const std::map<int, ttactic>& tactics = unit_types.tactics();
+	for (std::map<int, ttactic>::const_iterator it = tactics.begin(); it != tactics.end(); ++ it) {
+		const ttactic& t = it->second;
+		items.push_back(t.name());
+		tactics_index.push_back(t.index());
+	}
+
+	gui2::tcombo_box dlg(items, activity_index);
+	dlg.show(gui_.video());
+
+	activity_index = dlg.selected_index();
+	h_->tactic_ = tactics_index[activity_index];
+
+	tcontrol* label = find_widget<tcontrol>(&window, "tactic", false, true);
+	label->set_label(items[activity_index]);
 }
 
 void tcreate_hero::catalog(twindow& window)

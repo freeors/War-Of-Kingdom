@@ -28,6 +28,7 @@ class attack_type;
 class team;
 class unit;
 class card;
+class hero;
 
 /**
  *  Contains a number of free functions which display units
@@ -39,7 +40,7 @@ namespace unit_display
 /**
  * global animations
  */
-enum GLOBAL_ANIM {ANIM_REINFORCE = 0, ANIM_ENCOURAGE};
+enum GLOBAL_ANIM {ANIM_REINFORCE = 0, ANIM_ENCOURAGE, ANIM_TACTIC};
 
 void load_global_animations(const config& cfg);
 
@@ -132,6 +133,8 @@ void wml_animation(const vconfig &cfg,
 	const map_location& default_location=map_location::null_location);
 
 void card_start(card_map& cards, card& c);
+
+void tactic_start(hero& h);
 
 void unit_touching(const map_location& loc, std::vector<unit *>& touchers, int touching, const std::string& prefix);
 

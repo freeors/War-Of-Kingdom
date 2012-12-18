@@ -581,9 +581,11 @@ void unit_map::replace(const map_location &l, const unit* u)
 	//of that unit iterator which is to be deleted by erase,
 	// 'l' is invalidated by erase, too. Thus, 'add(l,u)' fails.
 	// So, we need to make a copy of that map_location.
+	const map_location loc = l;
+
 	unit* replacing = u->base()? coor_map_[index(l.x, l.y)].base->second: coor_map_[index(l.x, l.y)].overlay->second;
 	erase(replacing);
-	add(l, u);
+	add(loc, u);
 }
 
 void unit_map::delete_all()
@@ -1175,6 +1177,9 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 		// process low loyalty hero.
 		for (std::map<int, mr_data::enemy_data>::iterator city_itor = mr.own_cities.begin(); action && city_itor != mr.own_cities.end(); ++ city_itor) {
 			artifical& city = *city_from_cityno(city_itor->first);
+			if (rpg::stratum == hero_stratum_mayor && city.mayor() == rpg::h) {
+				continue;
+			}
 			std::vector<std::pair<unit*, std::vector<hero*> > > new_low_loyalty_troops;
 			std::vector<hero*> original_captains;
 			std::vector<hero*> new_captains;
@@ -1412,6 +1417,8 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 		} else {
 			mr.target = mr_data::TARGET_GUARD;
 		}
+
+		// mr.calculate_mass(*this, current_team);
 	}
 }
 
@@ -1506,4 +1513,190 @@ artifical* mr_data::calculate_center_city(const map_location& center)
 		}
 	}
 	return units_.city_from_cityno(choice->first);
+}
+
+int mess_estimate_radius = 7;
+void mr_data::calculate_mass(unit_map& units, const team& current_team)
+{
+	messes.clear();
+
+	tmess_data::tadjacent_data adjacent;
+	std::set<const unit*> calculated_base, calculated_overlay;
+	std::vector<const unit*> field_arts;
+
+	int side = current_team.side();
+	
+	const std::pair<unit**, size_t> p = current_team.field_troop();
+	unit** troops = p.first;
+	size_t troops_vsize = p.second;
+	for (size_t i = 0; i < troops_vsize; i ++) {
+		if (troops[i]->is_artifical()) {
+			field_arts.push_back(troops[i]);
+			continue;
+		}
+
+		unit& u_analysing = *troops[i];
+		
+		tmess_data* mess = NULL;
+		const map_location& loc_analysing = u_analysing.get_location();
+		// center
+		for (std::vector<tmess_data>::iterator it = messes.begin(); it != messes.end(); ++ it) {
+			const map_location center(it->cumulate_x / it->selfs.size(), it->cumulate_y / it->selfs.size());
+			int d = distance_between(center, loc_analysing);
+			if (d <= mess_estimate_radius) {
+				mess = &*it;
+			}
+		}
+		if (!mess) {
+			messes.push_back(tmess_data());
+			mess = &messes.back();
+		}
+		mess->cumulate_x += loc_analysing.x;
+		mess->cumulate_y += loc_analysing.y;
+
+		adjacent.clear();
+
+		const map_location* tiles = u_analysing.adjacent_;
+		size_t adjance_size = u_analysing.adjacent_size_;
+		for (int step = 0; step < 2; step ++) {
+			if (step == 1) {
+				tiles = u_analysing.adjacent_2_;
+				adjance_size = u_analysing.adjacent_size_2_;
+			}
+
+			for (size_t adj = 0; adj < adjance_size; adj ++) {
+				const map_location& loc = tiles[adj];
+				// overlay
+				unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units.get_cookie(loc));
+				if (curr_node) {
+					const unit* u = curr_node->second;
+					if (u->side() != side) {
+						bool calculated = calculated_overlay.find(u) != calculated_overlay.end();
+						if (current_team.is_enemy(u->side())) {
+							if (u->is_artifical()) {
+								if (!calculated) {
+									mess->enemy_arts ++;
+								}
+							} else {
+								adjacent.enemies ++;
+								if (!calculated) {
+									mess->enemies ++;
+								}
+							}
+						} else {
+							if (u->is_artifical()) {
+								if (!calculated) {
+									mess->friend_arts ++;
+								}
+							} else {
+								adjacent.friends ++;
+								if (!calculated) {
+									mess->allys ++;
+								}
+							}
+						}
+						if (!calculated) {
+							calculated_overlay.insert(u);
+						}
+					} else if (!u->is_artifical()) {
+						adjacent.friends ++;
+					}
+				} 
+				// base
+				curr_node = reinterpret_cast<unit_map::node*>(units.get_cookie(loc, false));
+				if (curr_node) {
+					const unit* u = curr_node->second;
+					if (u->side() != side) {
+						bool calculated = calculated_base.find(u) != calculated_base.end();
+						if (current_team.is_enemy(u->side())) {
+							if (u->is_artifical()) {
+								if (!calculated) {
+									mess->enemy_arts ++;
+								}
+							} else {
+								adjacent.enemies ++;
+								if (!calculated) {
+									mess->enemies ++;
+								}
+							}
+						} else {
+							if (u->is_artifical()) {
+								if (!calculated) {
+									mess->friend_arts ++;
+								}
+							} else {
+								adjacent.friends ++;
+								if (!calculated) {
+									mess->allys ++;
+								}
+							}
+						}
+						if (!calculated) {
+							calculated_base.insert(u);
+						}
+					} else if (!u->is_artifical()) {
+						adjacent.friends ++;
+					}
+				}
+			}
+		}
+		mess->selfs[&u_analysing] = adjacent;
+	}
+
+	// combine if necessary
+	bool combined = true;
+	while (combined) {
+		combined = false;
+		for (std::vector<tmess_data>::iterator it = messes.begin(); it != messes.end(); ++ it) {
+			const map_location center(it->cumulate_x / it->selfs.size(), it->cumulate_y / it->selfs.size());
+			for (std::vector<tmess_data>::iterator it2 = messes.begin(); it2 != messes.end(); ++ it2) {
+				if (it->cumulate_x == it2->cumulate_x && it->cumulate_y == it2->cumulate_y) {
+					continue;
+				}
+				const map_location center2(it2->cumulate_x / it2->selfs.size(), it2->cumulate_y / it2->selfs.size());
+				int d = distance_between(center, center2);
+				if (d > mess_estimate_radius) {
+					continue;
+				}
+				// combined this
+				it->combine(*it2);
+				messes.erase(it2);
+
+				combined = true;
+				break;
+			}
+			if (combined) {
+				break;
+			}
+		}
+	}
+
+	for (std::vector<const unit*>::iterator it = field_arts.begin(); it != field_arts.end(); ++ it) {
+		const artifical* art = const_unit_2_artifical(*it);
+		if (!art->wall()) {
+			continue;
+		}
+		for (std::vector<tmess_data>::iterator it2 = messes.begin(); it2 != messes.end(); ++ it2) {
+			const map_location center(it2->cumulate_x / it2->selfs.size(), it2->cumulate_y / it2->selfs.size());
+			int d = distance_between(center, art->get_location());
+			if (d <= mess_estimate_radius) {
+				it2->friend_arts ++;
+				// one wall only belong to a mess.
+				break;
+			}
+		}
+	}
+}
+
+void tmess_data::combine(const tmess_data& that)
+{
+	cumulate_x += that.cumulate_x;
+	cumulate_y += that.cumulate_y;
+	for (std::map<unit*, tadjacent_data>::const_iterator it = that.selfs.begin(); it != that.selfs.end(); ++ it) {
+		selfs[it->first] = it->second;
+	}
+	allys += that.allys;
+	friend_arts += that.friend_arts;
+	enemies += that.enemies;
+	enemy_arts += that.enemy_arts;
 }

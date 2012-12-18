@@ -52,7 +52,8 @@ public:
 	void add_move_heros(const map_location& src, const map_location& dst, std::set<size_t>& heros);
 	void add_belong_to(const unit* u, const artifical* to, bool loyalty);
 	void add_build_begin(const std::string& type);
-	void add_build(const unit_type* type, const map_location& city_loc, const map_location& builder_loc, const map_location& art_loc, int cost); 
+	void add_build(const unit_type* type, const map_location& city_loc, const map_location& builder_loc, const map_location& art_loc, int cost);
+	void add_cast_tactic(const unit& tactician, const hero& h);
 	void add_build_cancel();
 	void add_countdown_update(int value,int team);
 	void add_movement(const std::vector<map_location>& steps);
@@ -78,7 +79,7 @@ public:
 	void init_side();
 	void end_turn();
 	void init_ai();
-	enum EVENT_TYPE {EVENT_ENCOURAGE, EVENT_RPG_INDEPENDENCE};
+	enum EVENT_TYPE {EVENT_ENCOURAGE, EVENT_RPG_INDEPENDENCE, EVENT_FIND_TREASURE};
 	void add_event(int type, const map_location& loc);
 	void add_assemble_treasure(const std::map<int, int>& diff);
 	void add_rpg_exchange(const std::set<size_t>& checked_human, size_t checked_ai);

@@ -112,13 +112,13 @@ void trpg_detail::rpg_2_ui(twindow& window)
 
 	// refresh to gui
 	tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
-	str << dgettext("wesnoth", "hero") << ": " << rpg::h->name();
+	str << _("Hero") << ": " << rpg::h->name();
 	label->set_label(str.str());
 
 	str.str("");
 	label = find_widget<tlabel>(&window, "tip_loyalty", false, true);
 	int loyalty = rpg::h->loyalty(*teams_[rpg::h->side_].leader());
-	str << dgettext("wesnoth", "loyalty") << ": " << loyalty;
+	str << _("Loyalty") << ": " << loyalty;
 	label->set_label(str.str());
 
 	// stratum

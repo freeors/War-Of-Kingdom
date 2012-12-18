@@ -71,8 +71,8 @@ game_display::game_display(unit_map& units, CVideo& video, const gamemap& map,
 		units_(units),
 		temp_units_(),
 		exclusive_unit_draw_requests_(),
-		attack_indicator_src_(),
 		attack_indicator_dst_(),
+		tactic_indicator_(),
 		energy_bar_rects_(),
 		route_(),
 		tod_manager_(tod),
@@ -815,7 +815,7 @@ void game_display::pre_draw(rect_of_hexes& hexes)
 image::TYPE game_display::get_image_type(const map_location& loc) {
 	// We highlight hex under the mouse, or under a selected unit.
 	if (get_map().on_board(loc)) {
-		if (loc == mouseoverHex_ || loc == attack_indicator_src_) {
+		if (loc == mouseoverHex_) {
 			return image::BRIGHTENED;
 		} else if (loc == selectedHex_) {
 			const unit *un = get_visible_unit(loc, teams_[currentTeam_], !viewpoint_);
@@ -917,6 +917,8 @@ void file_2_surface(SDL_Surface* surf)
 	posix_fclose(fp);
 }
 
+std::map<map_location, std::string> tip_locs_;
+
 void game_display::draw_hex(const map_location& loc)
 {
 	const bool on_map = get_map().on_board(loc);
@@ -958,12 +960,21 @@ void game_display::draw_hex(const map_location& loc)
 		}
 	}
 
+	if (on_map) {
+		std::map<map_location, std::string>::const_iterator find = tip_locs_.find(loc);
+		if (find != tip_locs_.end() && !find->second.empty()) {
+			drawing_buffer_add(LAYER_GRID_BOTTOM, // LAYER_GRID_BOTTOM, LAYER_UNIT_MOVE_DEFAULT
+				loc, xpos, ypos, image::get_image(find->second, image::SCALED_TO_ZOOM));
+		}
+	}
+
 	// Draw reach_map information.
 	// We remove the reachability mask of the unit
 	// that we want to attack.
 	if (!is_shrouded && !reach_map_.empty() && reach_map_.find(loc) != reach_map_.end()) {
 		// drawing_buffer_add(LAYER_REACHMAP, loc, xpos, ypos, image::get_image(game_config::images::unreachable,image::SCALED_TO_HEX));
-		drawing_buffer_add(LAYER_UNIT_MOVE_DEFAULT, loc, xpos, ypos, image::get_image(game_config::images::unreachable, image::SCALED_TO_HEX));
+		// drawing_buffer_add(LAYER_UNIT_MOVE_DEFAULT, loc, xpos, ypos, image::get_image(game_config::images::unreachable, image::SCALED_TO_HEX));
+		drawing_buffer_add(LAYER_GRID_BOTTOM, loc, xpos, ypos, image::get_image(game_config::images::unreachable, image::SCALED_TO_HEX));
 	}
 
 	if (!disctrict_.empty() && disctrict_.find(loc) != disctrict_.end()) {
@@ -977,8 +988,12 @@ void game_display::draw_hex(const map_location& loc)
 	}
 
 	// Draw the attack direction indicator
-	if (on_map && std::find(attack_indicator_dst_.begin(), attack_indicator_dst_.end(), loc) != attack_indicator_dst_.end()) {
+	if (on_map && attack_indicator_dst_.find(loc) != attack_indicator_dst_.end()) {
 		drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/attack-indicator-dst.png", image::SCALED_TO_HEX));
+	}
+	// Draw the tactic indicator
+	if (on_map && !events::mouse_handler::get_singleton()->is_moving() && loc == tactic_indicator_) {
+		drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/tactic-indicator.png", image::SCALED_TO_HEX));
 	}
 	// Draw the build direction indicator
 	if (on_map && std::find(build_indicator_dst_.begin(), build_indicator_dst_.end(), loc) != build_indicator_dst_.end()) {
@@ -1084,36 +1099,82 @@ void game_display::draw_game_status()
 	}
 }
 
-void game_display::show_unit_tooltip(const unit& troop, const map_location& loc)
+void game_display::show_unit_tip(const unit& troop, const map_location& loc)
 {
-	int16_t xoffset = 0;
-	int16_t yoffset = 200; 
+	int16_t xoffset_main, yoffset_main;
 	std::string tip_message;
 	SDL_Color tip_color = font::NORMAL_COLOR;
 	int font_size = font::SIZE_SMALL;
 	int text_width = 400;
 
-	if (game_config::tiny_gui) {
-		return;
-	}
-
-	const SDL_Color bgcolor = {0, 0, 0, 128};
+	const SDL_Color bgcolor = {0, 0, 0, 160};
 	SDL_Rect area = screen_area();
 
-	if (tooltip_handle_) {
-		font::remove_floating_label(tooltip_handle_);
-		tooltip_handle_ = 0;
+	if (main_tip_handle_) {
+		for (std::map<map_location, std::string>::const_iterator it = tip_locs_.begin(); it != tip_locs_.end(); ++ it) {
+			invalidate(it->first);
+		}
+		tip_locs_.clear();
+
+		font::remove_floating_label(main_tip_handle_);
+		main_tip_handle_ = 0;
 	}
 
-	tip_message = troop.form_tooltip();
-	
-	unsigned int border = 10;
+	for (size_t i = 0; i < troop.adjacent_size_ && !troop.is_artifical(); i ++) {
+		invalidate(troop.adjacent_[i]);
+		tip_locs_.insert(std::make_pair(troop.adjacent_[i], ""));
+	}
+	for (size_t i = 0; i < troop.adjacent_size_2_ && !troop.is_artifical(); i ++) {
+		const map_location& loc1 = troop.adjacent_2_[i];
+		if (loc1.x == loc.x - 2) {
+			if (loc1.y < loc.y) {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-nw2.png"));
+			} else if (loc1.y == loc.y) {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-w.png"));
+			} else {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-sw2.png"));
+			}
+		} else if (loc1.x == loc.x - 1) {
+			if (loc1.y < loc.y) {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-nw.png"));
+			} else {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-sw.png"));
+			}
+		} else if (loc1.x == loc.x) {
+			if (loc1.y < loc.y) {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-n.png"));
+			} else {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-s.png"));
+			}
+		} else if (loc1.x == loc.x + 1) {
+			if (loc1.y < loc.y) {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-ne.png"));
+			} else {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-se.png"));
+			}
+		} else if (loc1.x == loc.x + 2) {
+			if (loc1.y < loc.y) {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-ne2.png"));
+			} else if (loc1.y == loc.y) {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-e.png"));
+			} else {
+				tip_locs_.insert(std::make_pair(loc1, "misc/light2-se2.png"));
+			}
+		}
+		invalidate(loc1);
+	}
+	for (size_t i = 0; i < troop.adjacent_size_3_ && !troop.is_artifical(); i ++) {
+		invalidate(troop.adjacent_3_[i]);
+		tip_locs_.insert(std::make_pair(troop.adjacent_3_[i], ""));
+	}
 
-	const std::string wrapped_message = font::word_wrap_text(tip_message, font_size, text_width);
-/*
-	tooltip_handle_ = font::add_floating_label(wrapped_message, font_size, tip_color, 
-	                                          0, 0, 0, 0, -1, area, font::LEFT_ALIGN, &bgcolour, border);
-*/
+
+	tip_message = troop.form_tip();
+	
+	// const std::string wrapped_message = font::word_wrap_text(tip_message, font_size, text_width);
+	// font::word_wrap_text don't now tag of tintegate. but tip_message is tintegate format message.
+	const std::string wrapped_message = tip_message;
+
 	font::floating_label flabel(wrapped_message);
 	flabel.set_font_size(font_size);
 	flabel.set_color(tip_color);
@@ -1121,9 +1182,9 @@ void game_display::show_unit_tooltip(const unit& troop, const map_location& loc)
 	flabel.set_position(0, 0);
 	flabel.set_alignment(font::LEFT_ALIGN);
 	flabel.set_clip_rect(area);
-	tooltip_handle_ = font::add_floating_label(flabel);
+	main_tip_handle_ = font::add_floating_label(flabel);
 
-	SDL_Rect rect = font::get_floating_label_rect(tooltip_handle_);
+	SDL_Rect rect_main = font::get_floating_label_rect(main_tip_handle_);
 
 	// one instance of map_area: (0, 26, 800, 471)
 	const SDL_Rect& map_area = map_outside_area();
@@ -1131,60 +1192,26 @@ void game_display::show_unit_tooltip(const unit& troop, const map_location& loc)
 
 	// 单位提示放置规则:
 	// 1. 当x方向上，窗口距单位所在格子足够放置提示宽度时，提示放在左下角，否则放去右下解；
-	if (xpos >= rect.w) {
-		xoffset = map_area.x;
+	if (game_config::tiny_gui || xpos >= rect_main.w) {
+		xoffset_main = map_area.x;
 	} else  {
-		xoffset = map_area.x + map_area.w - rect.w;
+		xoffset_main = map_area.x + map_area.w - rect_main.w;
 	}
 
-	yoffset = map_area.y + map_area.h - rect.h;
-	font::move_floating_label(tooltip_handle_, xoffset, yoffset);
+	yoffset_main = map_area.y + map_area.h - rect_main.h;
+	font::move_floating_label(main_tip_handle_, xoffset_main, yoffset_main);
 }
 
-void game_display::show_unit_tooltip(const unit& troop, int16_t xoffset, int16_t yoffset)
+void game_display::hide_unit_tip()
 {
-	std::string tip_message;
-	SDL_Color tip_color = font::NORMAL_COLOR;
-	int font_size = font::SIZE_SMALL;
-	int text_width = 400;
+	if (main_tip_handle_) {
+		for (std::map<map_location, std::string>::const_iterator it = tip_locs_.begin(); it != tip_locs_.end(); ++ it) {
+			invalidate(it->first);
+		}
+		tip_locs_.clear();
 
-	// const SDL_Color bgcolour = {0, 0, 0, 128};
-	const SDL_Color bgcolor = {0, 0, 0, 255};
-	SDL_Rect area = screen_area();
-
-	if (tooltip_handle_) {
-		font::remove_floating_label(tooltip_handle_);
-		tooltip_handle_ = 0;
-	}
-
-	tip_message = troop.form_tooltip();
-	
-	unsigned int border = 10;
-
-	const std::string wrapped_message = font::word_wrap_text(tip_message, font_size, text_width);
-/*
-	tooltip_handle_ = font::add_floating_label(wrapped_message, font_size, tip_color, 
-	                                          0, 0, 0, 0, -1, area, font::LEFT_ALIGN, &bgcolour, border);
-*/
-	font::floating_label flabel(wrapped_message);
-	flabel.set_font_size(font_size);
-	flabel.set_color(tip_color);
-	flabel.set_bg_color(bgcolor);
-	flabel.set_position(xoffset, yoffset);
-	flabel.set_alignment(font::LEFT_ALIGN);
-	flabel.set_clip_rect(area);
-	tooltip_handle_ = font::add_floating_label(flabel);
-
-	SDL_Rect rect = font::get_floating_label_rect(tooltip_handle_);
-
-	// font::move_floating_label(tooltip_handle_, xoffset, yoffset);
-}
-
-void game_display::hide_unit_tooltip()
-{
-	if (tooltip_handle_) {
-		font::remove_floating_label(tooltip_handle_);
-		tooltip_handle_ = 0;
+		font::remove_floating_label(main_tip_handle_);
+		main_tip_handle_ = 0;
 	}
 }
 
@@ -1199,22 +1226,31 @@ void game_display::draw_sidebar()
 		return;
 	}
 
-	if(invalidateUnit_) {
+	if (invalidateUnit_) {
 		// We display the unit the mouse is over if it is over a unit,
 		// otherwise we display the unit that is selected.
-		for(size_t r = reports::UNIT_REPORTS_BEGIN; r != reports::UNIT_REPORTS_END; ++r) {
+		for (size_t r = reports::UNIT_REPORTS_BEGIN; r != reports::UNIT_REPORTS_END; ++r) {
 			draw_report(reports::TYPE(r));
 		}
 
 		invalidateUnit_ = false;
 
-		unit_map::const_iterator itor = find_visible_unit(mouseoverHex_, teams_[currentTeam_]);
-		if (itor.valid() && !fogged(mouseoverHex_)) {
-			show_unit_tooltip(*itor, itor->get_location());
+		if (resources::controller->is_replaying() || !events::commands_disabled) {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+			unit_map::const_iterator selected_it = find_visible_unit(selectedHex_, teams_[currentTeam_]);
+			if (selected_it.valid() && !fogged(selectedHex_)) {
+				show_unit_tip(*selected_it, selected_it->get_location());
+			}
+#else
+			unit_map::const_iterator mouseover_it = find_visible_unit(mouseoverHex_, teams_[currentTeam_]);
+			if (mouseover_it.valid() && !fogged(mouseoverHex_)) {
+				show_unit_tip(*mouseover_it, mouseover_it->get_location());
+			}
+#endif
 		}
 	}
 
-	if(invalidateGameStatus_) {
+	if (invalidateGameStatus_) {
 		draw_game_status();
 		invalidateGameStatus_ = false;
 	}
@@ -1349,7 +1385,6 @@ void game_display::draw_bar(const std::string& image, int xpos, int ypos, const 
 		if (vtl) {
 			drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos + bar_loc.x, ypos + bar_loc.y + unfilled, filled_surf);
 		} else {
-			// drawing_buffer_add(LAYER_UNIT_BAR, loc, tblit(xpos + bar_loc.x + unfilled, ypos + bar_loc.y, filled_surf));
 			drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos + bar_loc.x, ypos + bar_loc.y, filled_surf);
 		}
 	}
@@ -1879,6 +1914,10 @@ void game_display::invalidate_animations_location(const map_location& loc) {
 
 void game_display::invalidate_animations()
 {
+	for (std::map<map_location, std::string>::const_iterator it = tip_locs_.begin(); it != tip_locs_.end(); ++ it) {
+		invalidate(it->first);
+	}
+
 	// new_animation_frame();
 	display::invalidate_animations();
 
@@ -1971,6 +2010,10 @@ void game_display::set_attack_indicator(unit* attack)
 	invalidate(attack_indicator_dst_);
 	attack_indicator_dst_.clear();
 	attack_indicator_each_dst_.clear();
+
+	invalidate(tactic_indicator_);
+	tactic_indicator_ = map_location();
+
 	if (!attack || !attack->attacks_left()) {
 		return;
 	}
@@ -2039,6 +2082,13 @@ void game_display::set_attack_indicator(unit* attack)
 	}
 	attack_indicator_dst_ = dst;
 	invalidate(attack_indicator_dst_);
+
+	if (attack->master().tactic_ != HEROS_NO_TACTIC ||
+		(attack->second().valid() && attack->second().tactic_ != HEROS_NO_TACTIC) ||
+		(attack->third().valid() && attack->third().tactic_ != HEROS_NO_TACTIC)) {
+		tactic_indicator_ = loc;
+		invalidate(tactic_indicator_);
+	}	
 }
 
 void game_display::clear_attack_indicator()
@@ -2048,7 +2098,7 @@ void game_display::clear_attack_indicator()
 
 bool game_display::loc_in_attack_indicator(const map_location& loc) const
 {
-	return std::find(attack_indicator_dst_.begin(), attack_indicator_dst_.end(), loc) != attack_indicator_dst_.end();
+	return attack_indicator_dst_.find(loc) != attack_indicator_dst_.end();
 }
 
 void game_display::set_moving_src_loc(const map_location& loc)

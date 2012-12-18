@@ -183,6 +183,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\formula_string_utils.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\hero.cpp"
 				>
 			</File>
@@ -221,6 +225,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\editor2\DlgCoreProc.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\editor2\editor.hpp"
 				>
 			</File>
@@ -238,6 +246,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\struct.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\unit_types.hpp"
 				>
 			</File>
 		</Filter>
@@ -303,19 +315,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\evt_attribute.ico"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\editor2\evt_attribute.ico"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\evt_command.ico"
+				RelativePath=".\evt_attribute.ico"
 				>
 			</File>
 			<File
 				RelativePath=".\evt_command.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_command.ico"
 				>
 			</File>
 			<File
@@ -327,15 +339,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\evt_event.ico"
-				>
-			</File>
-			<File
 				RelativePath=".\evt_event.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\evt_filter.ico"
+				RelativePath="..\..\src\editor2\evt_event.ico"
 				>
 			</File>
 			<File
@@ -343,7 +351,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\evt_if.ico"
+				RelativePath=".\evt_filter.ico"
 				>
 			</File>
 			<File
@@ -351,11 +359,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\evt_then.ico"
+				RelativePath="..\..\src\editor2\evt_if.ico"
 				>
 			</File>
 			<File
 				RelativePath=".\evt_then.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\evt_then.ico"
 				>
 			</File>
 			<File
@@ -592,6 +604,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\utype.cpp"
 				>
 			</File>
 		</Filter>

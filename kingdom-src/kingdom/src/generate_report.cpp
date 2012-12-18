@@ -234,47 +234,12 @@ report generate_report(TYPE type,
 		str << font::color2markup(u->hp_color()) << u->hitpoints()
 			<< '/' << u->max_hitpoints();
 
-		std::set<std::string> resistances_table;
-
-		utils::string_map resistances = u->get_base_resistances();
-
-		bool att_def_diff = false;
-		for(utils::string_map::iterator resist = resistances.begin();
-				resist != resistances.end(); ++resist) {
-			std::ostringstream line;
-			line << gettext(resist->first.c_str()) << ": ";
-
-			// Some units have different resistances when
-			// attacking or defending.
-			int res_att = 100 - u->resistance_against(resist->first, true, loc);
-			int res_def = 100 - u->resistance_against(resist->first, false, loc);
-			if (res_att == res_def) {
-				line << signed_percent(res_def) << "\n";
-			} else {
-				line << signed_percent(res_att) << " / " << signed_percent(res_def) << "\n";
-				att_def_diff = true;
-			}
-			resistances_table.insert(line.str());
-		}
-
-		tooltip << _("Resistances: ");
-		if (att_def_diff)
-			tooltip << _("(Att / Def)");
-		tooltip << "\n";
-
-		// the STL set will give alphabetical sorting
-		for(std::set<std::string>::iterator line = resistances_table.begin();
-				line != resistances_table.end(); ++line) {
-			tooltip << (*line);
-		}
-
 		return report(str.str(), "", tooltip.str());
 	}
 	case UNIT_XP: {
 		str << font::color2markup(u->xp_color()) << u->experience()
 			<< '/' << u->max_experience();
 
-		tooltip << _("Experience Modifier: ") << (!level["experience_modifier"].empty() ? level["experience_modifier"].str() : "100") << '%';
 		return report(str.str(), "", tooltip.str());
 	}
 	case UNIT_ADVANCEMENT_OPTIONS: {
@@ -307,8 +272,6 @@ report generate_report(TYPE type,
 		}
 		return res;
 	}
-	case UNIT_PROFILE:
-		return report("", u->profile(), "");
 	case TIME_OF_DAY: {
 		time_of_day tod;
 
@@ -406,6 +369,21 @@ report generate_report(TYPE type,
 			str << font::BAD_TEXT;
 
 		str << data.net_income;
+		break;
+	}
+	case TACTIC: {
+		int tactic_point = viewing_team.tactic_point();
+		if (current_side != playing_side) {
+			str << font::GRAY_TEXT;
+		} else if (tactic_point >= game_config::max_tactic_point) {
+			str << font::RED_TEXT;
+		} else if (tactic_point > game_config::max_tactic_point * 2 / 3) {
+			str << "<255,255,0>";
+		} else {
+			str << font::GOOD_TEXT;
+		}
+
+		str << viewing_team.tactic_point();
 		break;
 	}
 	case TERRAIN: {

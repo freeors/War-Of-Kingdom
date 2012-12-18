@@ -108,7 +108,7 @@ void tunit_detail::refresh_tooltip(twindow& window)
 	int loyalty, activity, hero_count = 1;
 	// refresh to gui
 	tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
-	str << dgettext("wesnoth", "hero") << ": " << temp.master().name();
+	str << _("Hero") << ": " << temp.master().name();
 	if (!temp.is_artifical()) {
 		text << temp.master().loyalty(*teams_[temp.master().side_].leader());
 		loyalty = temp.master().loyalty(*teams_[temp.master().side_].leader());
@@ -134,7 +134,7 @@ void tunit_detail::refresh_tooltip(twindow& window)
 
 		str.str("");
 		label = find_widget<tlabel>(&window, "tip_loyalty", false, true);
-		str << dgettext("wesnoth", "loyalty") << ": " << loyalty / hero_count << "/(" << text.str() << ")";
+		str << _("Loyalty") << ": " << loyalty / hero_count << "/(" << text.str() << ")";
 		label->set_label(str.str());
 
 		str.str("");
@@ -147,25 +147,25 @@ void tunit_detail::refresh_tooltip(twindow& window)
 
 	// ownership
 	str.str("");
-	str << dgettext("wesnoth-lib", "Ownership");
+	str << _("Ownership");
 	if (!temp.is_artifical()) {
 		artifical* owner_city = units_.city_from_cityno(temp.cityno());
 		if (owner_city) {
-			str << dgettext("wesnoth", "city") << ": " << owner_city->master().name();
+			str << _("City") << ": " << owner_city->master().name();
 		} else {
-			str << dgettext("wesnoth", "city") << ": --";
+			str << _("City") << ": --";
 		}
 		str << " (" << teams_[temp.side() - 1].name() << ")";
 	} else if (temp.is_city()) {
 		const artifical& city = *const_unit_2_artifical(&temp);
-		str << dgettext("wesnoth", "side") << ": " << teams_[city.side() - 1].name();
+		str << _("Side") << ": " << teams_[city.side() - 1].name();
 	} else {
 		const artifical& art = *const_unit_2_artifical(&temp);
 		artifical* owner_city = units_.city_from_cityno(art.cityno());
 		if (owner_city) {
-			str << dgettext("wesnoth", "city") << ": " << owner_city->master().name();
+			str << _("City") << ": " << owner_city->master().name();
 		} else {
-			str << dgettext("wesnoth", "city") << ": --";
+			str << _("City") << ": --";
 		}
 		str << " (" << teams_[temp.side() - 1].name() << ")";
 	}
@@ -214,7 +214,7 @@ void tunit_detail::refresh_tooltip(twindow& window)
 	// movement
 	if (!temp.is_artifical()) {
 		str.str("");
-		str << dgettext("wesnoth", "Moves") << ": " << temp.movement_left() << "/" << temp.total_movement();
+		str << _("Moves") << ": " << temp.movement_left() << "/" << temp.total_movement();
 		// no space, reuse movement to display Munition-turns
 		str << "    " << dgettext("wesnoth", "Munition turns") << ": " << temp.keep_turns();
 
@@ -224,7 +224,7 @@ void tunit_detail::refresh_tooltip(twindow& window)
 
 	// traits
 	str.str("");
-	str << dgettext("wesnoth", "Traits") << ": " << utils::join(temp.trait_names(), ", ");
+	str << _("Traits") << ": " << utils::join(temp.trait_names(), ", ");
 	label = find_widget<tlabel>(&window, "tip_traits", false, true);
 	label->set_label(str.str());
 
@@ -232,7 +232,7 @@ void tunit_detail::refresh_tooltip(twindow& window)
 	str.str("");
 	std::vector<std::string> abilities_tt;
 	abilities_tt = temp.ability_tooltips(true);
-	str << dgettext("wesnoth", "Abilities") << ": ";
+	str << _("Abilities") << ": ";
 	if (!abilities_tt.empty()) {
 		std::vector<t_string> abilities;
 		for (std::vector<std::string>::const_iterator a = abilities_tt.begin(); a != abilities_tt.end(); a += 2) {
@@ -252,7 +252,7 @@ void tunit_detail::refresh_tooltip(twindow& window)
 	// feature
 	str.str("");
 	index = 0;
-	str << dgettext("wesnoth", "feature") << ": ";
+	str << _("Feature") << ": ";
 	for (int i = 0; i < HEROS_MAX_FEATURE; i ++) {
 		if (unit_feature_val2(temp, i) == hero_feature_single_result) {
 			if (index > 0) {
@@ -267,14 +267,14 @@ void tunit_detail::refresh_tooltip(twindow& window)
 
 	// adaptability
 	str.str("");
-	str << dgettext("wesnoth", "adaptability") << ": ";
+	str << _("Adaptability") << ": ";
 	str << hero::arms_str(temp.arms()) << "(" << hero::adaptability_str2(ftofxp12(temp.adaptability_[temp.arms()])) << ")";
 	label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
 	label->set_label(str.str());
 
 	// skill
 	str.str("");
-	str << dgettext("wesnoth-lib", "Skill") << ": ";
+	str << _("Skill") << ": ";
 	str << hero::skill_str(hero_skill_demolish) << "(" << hero::adaptability_str2(ftofxp12(temp.skill_[hero_skill_demolish])) << ")";
 	label = find_widget<tlabel>(&window, "tip_skill", false, true);
 	label->set_label(str.str());

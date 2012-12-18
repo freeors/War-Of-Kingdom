@@ -138,7 +138,7 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 	draw_area_pitch_(0),
 	draw_area_size_(0),
 	drawing_(false),
-	tooltip_handle_(0)
+	main_tip_handle_(0)
 {
 	// show coordinate and terrain
 	// draw_coordinates_ = true;
@@ -1413,14 +1413,24 @@ void display::draw_text_in_hex(const map_location& loc,
 
 void display::draw_text_in_hex2(const map_location& loc,
 		const tdrawing_layer layer, const std::string& text,
-		size_t font_size, SDL_Color color, int x, int y)
+		size_t font_size, SDL_Color color, int x, int y, fixed_t alpha)
 {
 	if (text.empty()) return;
 
 	const size_t font_sz = static_cast<size_t>(font_size * get_zoom_factor());
 
-	surface text_surf = font::get_rendered_text(text, font_sz, color);
-	surface back_surf = font::get_rendered_text(text, font_sz, font::BLACK_COLOR);
+	surface text_surf;
+	surface back_surf;
+	if (true) {
+		text_surf = font::get_rendered_text(text, font_sz, color);
+		back_surf = font::get_rendered_text(text, font_sz, font::BLACK_COLOR);
+	} else {
+		help::tintegrate integrate(text, 800, 600, font_sz, color);
+		text_surf = integrate.get_surface();
+
+		help::tintegrate integrate_bg(text, 800, 600, font_sz, font::BLACK_COLOR);
+		back_surf = integrate_bg.get_surface();
+	}
 
 	for (int dy=-1; dy <= 1; ++dy) {
 		for (int dx=-1; dx <= 1; ++dx) {
@@ -2397,19 +2407,19 @@ void display::draw(bool update,bool force)
 		 * draw_invalidated() also invalidates the halos, so also needs to be
 		 * ran if invalidated_.empty() == true.
 		 */
-		// if (!invalidated_.empty()) {
-			draw_invalidated();
-		// }
+		draw_invalidated();
 		drawing_buffer_commit();
 		post_commit();
+
+		// clear flag. 
+		// draw_sidebar may genrate new invalidate loc(ex. show_unit_tip), keep those dirty so next draw will update then
+		memset(draw_area_, BOARD, draw_area_size_);
+
 		draw_sidebar();
-		// Simulate slow PC:
-		//SDL_Delay(2*simulate_delay + rand() % 20);
 	}
 
 	draw_wrap(update, force);
-	// exit draw, clear flag
-	memset(draw_area_, BOARD, draw_area_size_);
+	
 	drawing_ = false;
 
 	total_draw += SDL_GetTicks() - start;
@@ -2546,9 +2556,9 @@ void display::draw_hex(const map_location& loc)
 	}
 
 	if (on_map && loc == mouseoverHex_) {
-		drawing_buffer_add(LAYER_MOUSEOVER_TOP,
+		drawing_buffer_add(LAYER_UNIT_MISSILE_DEFAULT,
 				loc, xpos, ypos, image::get_image("misc/hover-hex-top.png", image::SCALED_TO_HEX));
-		drawing_buffer_add(LAYER_MOUSEOVER_BOTTOM,
+		drawing_buffer_add(LAYER_UNIT_MISSILE_DEFAULT,
 				loc, xpos, ypos, image::get_image("misc/hover-hex-bottom.png", image::SCALED_TO_HEX));
 	}
 

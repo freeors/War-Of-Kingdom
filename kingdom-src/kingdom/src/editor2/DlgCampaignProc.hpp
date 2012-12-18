@@ -12,15 +12,6 @@
 #define campaign_enable_save_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_campaign, IDM_SAVE, fEnable)
 #define campaign_get_save_btn()				(ToolBar_GetState(gdmgr._htb_campaign, IDM_SAVE) & TBSTATE_ENABLED)
 
-typedef struct tag_dlghdr {
-    HWND hwndTab;       // tab control
-    HWND hwndDisplay;   // current child dialog box 
-    RECT rcDisplay;     // display rectangle for the tab control 
-	DLGTEMPLATE** apRes;
-	int reserved_pages;
-	int valid_pages;
-} DLGHDR;
-
 extern editor editor_;
 extern const std::string null_str;
 
@@ -42,6 +33,10 @@ public:
 	class ttrait
 	{
 	public:
+		ttrait()
+			: name_()
+			, desc_()
+		{}
 		ttrait(const std::string& name, const std::string& desc)
 			: name_(name)
 			, desc_(desc)
@@ -731,6 +726,7 @@ public:
 		, maximal_defeated_activity_(0)
 		, win_()
 		, lose_()
+		, treasures_()
 	{}
 
 public:
@@ -741,6 +737,7 @@ public:
 	int maximal_defeated_activity_;
 	std::string win_;
 	std::string lose_;
+	std::map<int, int> treasures_;
 };
 
 class tscenario: public tscenario_
@@ -752,8 +749,10 @@ public:
 	~tscenario();
 	void from_config(int index, const config& cfg);
 	void from_ui(HWND hdlgP);
+	void from_ui_treasure(HWND hdlgP, bool edit);
 	void generate();
 	void update_to_ui(HWND hdlgP);
+	void update_to_ui_treasures(HWND hdlgP);
 	
 	std::string file(bool absolute = false) const;
 	std::string map_file(bool absolute = false) const;
@@ -772,7 +771,7 @@ public:
 	std::map<int, int> generate_cityno_map() const;
 
 	enum {BIT_ID = 0, BIT_NEXTSCENARIO, BIT_MAP, 
-		BIT_TURNS, BIT_MDACTIVITY, BIT_WIN, 
+		BIT_TURNS, BIT_MDACTIVITY, BIT_TREASURES, BIT_WIN, 
 		BIT_LOSE, BIT_SIDE, BIT_EVENT};
 	void set_dirty(int bit, bool set);
 	
@@ -823,7 +822,6 @@ namespace ns {
 	extern int action_troop;
 
 	extern void set_dirty();
-	extern DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName);
 	extern void new_campaign(const std::string& id, const std::string& firstscenario_id);
 }
 

@@ -144,6 +144,12 @@ struct attack_fields {
 	int32_t number_;
 };
 
+struct tactic_fields {
+	int32_t t_;
+	int32_t turn_;
+	int32_t part_;
+};
+
 #define UNIT_FIELDS	\
 	int32_t states_;	\
 	int32_t size_;	\
@@ -155,9 +161,6 @@ struct attack_fields {
 	int32_t hitpoints_;	\
 	int32_t experience_;	\
 	int32_t moves_;	\
-	int32_t max_hitpoints_;	\
-	int32_t max_experience_;	\
-	int32_t max_moves_;	\
 	int32_t attacks_left_;	\
 	int32_t side_;	\
 	int32_t cityno_;	\
@@ -166,19 +169,17 @@ struct attack_fields {
 	int32_t goto_x_;	\
 	int32_t goto_y_;	\
 	int32_t facing_;	\
-	int32_t upkeep_;	\
 	int32_t keep_turns_;	\
 	int32_t character_; \
 	int32_t human_;	\
 	int32_t random_traits_;	\
 	int32_t resting_;	\
 	int32_t modified_;	\
-	unit_segment attacks_;	\
+	unit_segment tactics_;	\
 	unit_segment heros_army_;	\
 	unit_segment type_;	\
 	unit_segment traits_;	\
 	unit_segment modifications_;	\
-	unit_segment cfg_;	
 
 struct unit_fields_t 
 {
@@ -226,7 +227,6 @@ public:
 	const std::vector<std::string>& advances_to() const;
 
 	void pack_to(const unit_type* t);
-	void form_packed_animations(const unit_type* packee);
 
 	/** The type id of the unit */
 	const std::string& type_id() const { return type_; }
@@ -286,7 +286,8 @@ public:
 	void calculate_5fields();
 	void modify_according_to_hero(bool fill_up_hp = true, bool fill_up_movement = false);
 	void adjust();
-	std::string form_tooltip() const;
+	std::string form_tip() const;
+	std::string form_tiny_tip() const;
 	// it's better name is can_recruit(), but back-compitable used
 	bool can_recruits() const { return can_recruit_; }
 	bool can_reside() const { return can_reside_; }
@@ -319,6 +320,8 @@ public:
 	virtual void new_scenario();
 	/** Called on every draw */
 	void refresh();
+
+	void new_turn_tactics();
 
 	void set_hitpoints(int hitpoints) { hit_points_ = hitpoints; }
 	bool take_hit(int damage) { hit_points_ -= damage; return hit_points_ <= 0; }
@@ -404,11 +407,15 @@ public:
 	/** To be called by unit_map or for temporary units only. */
 	virtual void set_location(const map_location &loc);
 
+	std::set<map_location> get_touch_locations(const gamemap& map, const map_location& loc) const;
+
 	const map_location& get_goto() const { return goto_; }
 	void set_goto(const map_location& new_goto);
 
 	virtual int upkeep() const;
 	bool loyal() const;
+
+	int tactic_effect(int type, const std::string& field) const;
 
 	void set_hidden(bool state);
 	bool get_hidden() const { return hidden_; }
@@ -438,6 +445,8 @@ public:
 
 	void add_modification(const std::string& type, const config& modification,
 	                  bool no_add = false, bool anim = false);
+
+	void apply_tactic(const ttactic* contain, const ttactic& effect, int part = 0, int turn = -1);
 
 	/** States for animation. */
 	enum STATE {
@@ -565,6 +574,20 @@ protected:
 	std::vector<std::string> traits_;
 	std::vector<std::string> modifications_;
 
+	class tunit_tactic
+	{
+	public:
+		tunit_tactic(const ttactic* tactic, int turn, int part)
+			: tactic_(tactic)
+			, turn_(turn)
+			, part_(part)
+		{}
+		const ttactic* tactic_;
+		int turn_;
+		int part_;
+	};
+	std::vector<tunit_tactic> tactics_;
+
 	int side_;
 	int cityno_;
 	unit_race::GENDER gender_;
@@ -604,10 +627,7 @@ protected:
 
 	bool flying_, is_fearless_, is_healthy_;
 
-	// utils::string_map modification_descriptions_;
 	// Animations:
-	std::vector<unit_animation> animations_;
-
 	unit_animation *anim_;
 	int next_idling_;
 	int frame_begin_time_;
@@ -661,6 +681,9 @@ protected:
 	size_t master_number_;
 	size_t second_number_;
 	size_t third_number_;
+
+	std::map<std::string, int> tactic_compare_resistance_;
+	std::map<std::string, int> tactic_compare_damage_;
 
 	uint32_t temporary_state_;
 };

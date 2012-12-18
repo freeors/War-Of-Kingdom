@@ -200,7 +200,9 @@ void title_select(do_action_t da)
 	} else if (gdmgr._da == da_wgen) {
 		wgen_hide_ui();
 	} else if (gdmgr._da == da_core) {
-		core_hide_ui();
+		if (!core_hide_ui()) {
+			return;
+		}
 	} else if (gdmgr._da == da_visual) {
 		visual_hide_ui();
 	} else if (gdmgr._da == da_campaign) {

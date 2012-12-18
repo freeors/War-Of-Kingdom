@@ -138,6 +138,10 @@ public:
 	bool fallen_to_unstage() const { return fallen_to_unstage_; }
 	bool card_mode() const { return card_mode_; }
 	bool always_duel() const { return always_duel_; }
+	
+	std::vector<int>& treasures() { return treasures_; }
+	const std::vector<int>& treasures() const { return treasures_; }
+	void erase_treasure(int pos);
 
 	void set_final_capital(artifical* human, artifical* ai);
 	std::pair<artifical*, artifical*>& final_capital() { return final_capital_; }
@@ -250,6 +254,7 @@ protected:
 	bool fallen_to_unstage_;
 	bool card_mode_;
 	bool always_duel_;
+	std::vector<int> treasures_;
 
 	const std::string& select_victory_music() const;
 	const std::string& select_defeat_music()  const;

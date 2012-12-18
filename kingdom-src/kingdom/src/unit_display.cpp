@@ -132,6 +132,8 @@ void load_global_animations(const config& cfg)
 			animations_.insert(std::make_pair<int, unit_animation>(ANIM_REINFORCE, unit_animation(anim)));
 		} else if (anim["apply_to"] == "encourage") { 
 			animations_.insert(std::make_pair<int, unit_animation>(ANIM_ENCOURAGE, unit_animation(anim)));
+		} else if (anim["apply_to"] == "tactic") { 
+			animations_.insert(std::make_pair<int, unit_animation>(ANIM_TACTIC, unit_animation(anim)));
 		}
 	}
 }
@@ -392,9 +394,7 @@ public:
 		for (std::vector<unit*>::const_iterator it = uvec_.begin(); it != uvec_.end(); it ++) {
 			unit& u = **it;
 			u.set_temporary_state(unit::BIT_DEFENDING, true);
-			int ii = 0;
 		}
-		int ii = 0;
 	}
 
 	~defend_temporary_state_lock() 
@@ -843,6 +843,39 @@ void card_start(card_map& cards, card& c)
 		disp->set_screen_anim(&screen_anim);
 		
 		screen_anim.replace_image_name("__id.png", c.image());
+		screen_anim.start_animation(0);
+
+		// wait_until
+		bool finished = false;
+		while (!finished) {
+			resources::controller->play_slice(false);
+			disp->delay(10);
+			finished = screen_anim.animation_finished_potential();
+		}
+		disp->set_screen_anim(NULL);
+
+		screen_anim.invalidate(frame_parameters::null_param);
+		disp->draw();
+	}
+}
+
+void tactic_start(hero& h)
+{
+	const ttactic& t = unit_types.tactic(h.tactic_);
+
+	game_display* disp = game_display::get_singleton();
+	if (unit_animation* start_tpl = global_animation(ANIM_TACTIC)) {
+		unit_animation screen_anim = *start_tpl;
+		std::stringstream strstr;
+
+		disp->set_screen_anim(&screen_anim);
+		
+		screen_anim.replace_image_name("__bg.png", t.bg_image());
+		screen_anim.replace_image_name("__id.png", h.image(true));
+		screen_anim.replace_static_text("__hero", h.name());
+		screen_anim.replace_static_text("__tactic", t.name());
+		screen_anim.replace_static_text("__description", t.description());
+		new_animation_frame();
 		screen_anim.start_animation(0);
 
 		// wait_until

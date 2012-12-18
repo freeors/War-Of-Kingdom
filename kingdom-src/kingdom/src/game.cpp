@@ -212,7 +212,6 @@ private:
 
 	config game_config_;
 	config game_config_core_;
-	config game_config_units_;
 	hero_map heros_;
 	hero_map heros_start_;
 	preproc_map old_defines_map_;
@@ -253,7 +252,6 @@ game_controller::game_controller(int argc, char** argv) :
 	force_bpp_(-1),
 	game_config_(),
 	game_config_core_(),
-	game_config_units_(),
 	heros_(game_config::path),
 	cards_(game_config::path),
 	checked_card_(),
@@ -1443,20 +1441,9 @@ void game_controller::load_game_cfg(const bool force)
 			game_config_.clear_children("card");
 			game_config_.clear_children("card_anim");
 
-			game_config_units_ = game_config_.child("units");
+			set_unit_data(game_config_.child("units"));
 			game_config_.clear_children("units");
-			set_unit_data(game_config_units_);
-			game_config_units_.clear_children("movetype");
-			game_config_units_.clear_children("race");
-			game_config_units_.clear_children("complexfeature");
-			game_config_units_.clear_children("treasure");
-			game_config_units_.clear_children("identifier");
-			game_config_units_.clear_children("recruit");
-			game_config_units_.clear_children("traits");
-			game_config_units_.clear_children("modifications");
-			game_config_units_.clear_children("abilities");
-			game_config_units_.clear_children("specials");
-			// unit_type will refer to [unit_type] of game_config_units_, don't clear here.
+		
 
 			const config::const_child_itors& terrains = game_config_.child_range("terrain_type");
 			foreach (const config &t, terrains) {

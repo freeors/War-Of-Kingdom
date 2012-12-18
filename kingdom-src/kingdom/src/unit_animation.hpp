@@ -67,6 +67,7 @@ class unit_animation
 		void clear_haloes();
 		bool invalidate(frame_parameters& value );
 		void replace_image_name(const std::string& src, const std::string& dst);
+		void replace_static_text(const std::string& src, const std::string& dst);
 
 	friend class unit;
 	friend class artifical;
@@ -113,6 +114,7 @@ class unit_animation
 			const frame_parameters parameters(const frame_parameters & default_val) const { return get_current_frame().merge_parameters(get_current_frame_time(),parameters_.parameters(get_animation_time()-get_begin_time()),default_val); };
 			void clear_halo();
 			void replace_image_name(const std::string& src, const std::string& dst);
+			void replace_static_text(const std::string& src, const std::string& dst);
 
 			bool accelerate;
 		private:

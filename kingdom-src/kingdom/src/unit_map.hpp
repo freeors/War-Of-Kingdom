@@ -188,6 +188,43 @@ city_map::iterator_base<iter_types> city_map::iterator_base<iter_types>::operato
 	return temp;
 }
 
+struct tmess_data {
+	struct tadjacent_data {
+		tadjacent_data(size_t _friends = 0, size_t _enemies = 0) 
+			: friends(_friends)
+			, enemies(_enemies)
+		{}
+
+		void clear() 
+		{
+			friends = 0;
+			enemies = 0;
+		}
+
+		size_t friends;
+		size_t enemies;
+	};
+	tmess_data() 
+		: cumulate_x(0)
+		, cumulate_y(0)
+		, selfs()
+		, allys(0)
+		, friend_arts(0)
+		, enemies(0)
+		, enemy_arts(0)
+	{}
+
+	void combine(const tmess_data& that);
+
+	int cumulate_x;
+	int cumulate_y;
+	std::map<unit*, tadjacent_data> selfs;
+	size_t allys;
+	size_t friend_arts;
+	size_t enemies;
+	size_t enemy_arts;
+};
+
 class mr_data
 {
 public:
@@ -200,7 +237,8 @@ public:
 
 	mr_data(gamemap& map, SDL_Rect& city_rect);
 
-	artifical*  calculate_center_city(const map_location& center);
+	artifical* calculate_center_city(const map_location& center);
+	void calculate_mass(unit_map& units, const team& current_team);
 
 	enum {TARGET_AGGRESS, TARGET_GUARD, TARGET_INTERIOR, TARGET_CHAOTIC};
 
@@ -211,7 +249,10 @@ public:
 	std::vector<artifical*> own_front_cities; // front cities in this mr. (sort by important)
 	std::vector<artifical*> own_back_cities; // back cities in this mr. (not sort)
 	struct enemy_data {
-		enemy_data() : troops(), cities() {}
+		enemy_data()
+			: troops()
+			, cities()
+		{}
 		std::vector<unit*> troops;
 		std::vector<artifical*> cities;
 	};
@@ -224,6 +265,8 @@ public:
 
 	artifical* center_city;
 	strategy* aggressing_strategy;
+
+	std::vector<tmess_data> messes;
 };
 
 class ai_plan

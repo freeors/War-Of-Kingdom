@@ -33,6 +33,7 @@
 #include "serialization/parser.hpp"
 #include "wml_exception.hpp"
 #include "formula_string_utils.hpp"
+#include "play_controller.hpp"
 
 static std::vector<team> *&teams = resources::teams;
 
@@ -271,6 +272,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	gold_(gold),
 	villages_(),
 	navigation_(0),
+	tactic_point_(0),
 	shroud_(),
 	fog_(),
 	auto_shroud_updates_(true),
@@ -378,6 +380,12 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 		str = resources::state_of_game->get_variable(str.substr(1)).str();
 	}
 	navigation_ = atoi(str.c_str());
+	// tactic_point
+	str = cfg["tactic_point"].str();
+	if (!str.empty() && str.at(0) == '$') {
+		str = resources::state_of_game->get_variable(str.substr(1)).str();
+	}
+	tactic_point_ = atoi(str.c_str());
 	// fog
 	str = cfg["fog"].str();
 	if (!str.empty() && str.at(0) == '$') {
@@ -460,6 +468,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem
 	gold_(gold),
 	villages_(),
 	navigation_(0),
+	tactic_point_(0),
 	shroud_(),
 	fog_(),
 	auto_shroud_updates_(true),
@@ -512,6 +521,7 @@ team::team(const team& that) :
 	holded_cards_(that.holded_cards_),
 	holded_treasures_(that.holded_treasures_),
 	navigation_(that.navigation_),
+	tactic_point_(that.tactic_point_),
 	shroud_(that.shroud_),
 	fog_(that.fog_),
 	auto_shroud_updates_(that.auto_shroud_updates_),
@@ -549,6 +559,7 @@ team& team::operator=(const team& that)
 	villages_ = that.villages_;
 	holded_cities_ = that.holded_cities_;
 	navigation_ = that.navigation_;
+	tactic_point_ = that.tactic_point_;
 	shroud_ = that.shroud_;
 	fog_ = that.fog_;
 	auto_shroud_updates_ = that.auto_shroud_updates_;
@@ -615,6 +626,7 @@ void team::write(config& cfg) const
 	cfg["fog"] = uses_fog();
 	cfg["gold"] = gold_;
 	cfg["navigation"] = navigation_;
+	cfg["tactic_point"] = tactic_point_;
 
 	// write card
 	std::stringstream str;
@@ -726,6 +738,7 @@ void team::write(uint8_t* mem) const
 	fields->fog_ = uses_fog()? 1: 0;
 	fields->gold_ = gold_;
 	fields->navigation_ = navigation_;
+	fields->tactic_point_ = tactic_point_;
 
 	int offset = sizeof(team_fields_t);
 	// diplomatisms_, (ally, forbided)
@@ -1072,6 +1085,7 @@ void team::read(const uint8_t* mem, const gamemap& map)
 	set_shroud(fields->shroud_? true: false);
 	set_fog(fields->fog_? true: false);
 	navigation_ = fields->navigation_;
+	tactic_point_ = fields->tactic_point_;
 
 	std::string str;
 	// diplomatisms_, (ally, forbided)
@@ -1319,6 +1333,7 @@ void team::set_builds(const std::set<std::string>& builds)
 void team::new_turn() 
 { 
 	gold_ += total_income();
+	add_tactic_point(std::max<int>(game_config::max_tactic_point / 4, 4));
 
 	// update strategy
 	for (std::vector<strategy>::iterator it = strategies_.begin(); it != strategies_.end(); ++ it) {
@@ -2421,6 +2436,30 @@ const card& team::holded_card(int index) const
 	return cards_[holded_cards_[index]];
 }
 
+void team::find_treasure(hero_map& heros, play_controller& controller, int pos)
+{
+	const treasure_map& treasures = unit_types.treasures();
+	const std::vector<int>& hide_treasures = controller.treasures();
+
+	holded_treasures_.push_back(hide_treasures[pos]);
+	controller.erase_treasure(pos);
+
+	// card
+	utils::string_map symbols;
+	symbols["first"] = hero::treasure_str(holded_treasures_.back());
+	std::stringstream strstr;
+	const std::vector<int>& features = treasures.find(holded_treasures_.back())->second;
+	for (std::vector<int>::const_iterator it = features.begin(); it != features.end(); ++ it) {
+		if (it != features.begin()) {
+			strstr << ", " << hero::feature_str(*it);
+		} else {
+			strstr << hero::feature_str(*it);
+		}
+	}
+	symbols["second"] = strstr.str();
+	game_events::show_hero_message(&heros[214], NULL, vgettext("Find treasure: $first($second)!", symbols), game_events::INCIDENT_CARD);
+}
+
 void team::add_troop(unit* troop)
 {
 	field_troops_[field_troops_vsize_ ++] = troop;
@@ -2486,6 +2525,17 @@ int team::add_navigation(int increment)
 		navigation_ = 0;
 	}
 	return navigation_;
+}
+
+int team::add_tactic_point(int increment)
+{
+	tactic_point_ += increment;
+	if (tactic_point_ < 0) {
+		tactic_point_ = 0;
+	} else if (tactic_point_ > game_config::max_tactic_point) {
+		tactic_point_ = game_config::max_tactic_point;
+	}
+	return tactic_point_;
 }
 
 namespace player_teams {

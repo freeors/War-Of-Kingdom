@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2012-11-04 11:57+0800\n"
+"PO-Revision-Date: 2012-12-16 13:03+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -3564,6 +3564,9 @@ msgstr "能力"
 msgid "Feature"
 msgstr "特技"
 
+msgid "Tactic"
+msgstr "战法"
+
 msgid "Adaptability"
 msgstr "适性"
 
@@ -3688,6 +3691,15 @@ msgstr "建筑物情报"
 
 msgid "Troop Detail"
 msgstr "部队情报"
+
+msgid "Moves"
+msgstr "移动"
+
+#
+# Hero List Dialog
+#
+msgid "Abilities"
+msgstr "能力"
 
 msgid "Troop List"
 msgstr "部队列表"
@@ -4097,6 +4109,18 @@ msgstr "选择玩家武将所在城市"
 
 msgid "Assemble Treasure"
 msgstr "装配宝物"
+
+#
+# Cast tactic
+#
+msgid "Cast tactic"
+msgstr "施放战法"
+
+msgid "Choose tactic"
+msgstr "选择战法"
+
+msgid "tactic^Cast"
+msgstr "施放"
 
 #~ msgid "To 2500, will control more troops."
 #~ msgstr "到达2500，将能控制更多部队。"

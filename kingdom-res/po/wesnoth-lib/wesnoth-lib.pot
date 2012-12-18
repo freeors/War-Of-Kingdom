@@ -3447,6 +3447,9 @@ msgstr ""
 msgid "Feature"
 msgstr ""
 
+msgid "Tactic"
+msgstr ""
+
 msgid "Adaptability"
 msgstr ""
 
@@ -3579,6 +3582,12 @@ msgid "Artifical Detail"
 msgstr ""
 
 msgid "Troop Detail"
+msgstr ""
+
+msgid "Moves"
+msgstr ""
+
+msgid "Abilities"
 msgstr ""
 
 #
@@ -4021,4 +4030,16 @@ msgstr ""
 # Assemble Treasure
 #
 msgid "Assemble Treasure"
+msgstr ""
+
+#
+# Cast tactic
+#
+msgid "Cast tactic"
+msgstr ""
+
+msgid "Choose tactic"
+msgstr ""
+
+msgid "tactic^Cast"
 msgstr ""

@@ -17,13 +17,13 @@
 
 #include "color_range.hpp"
 #include "game_config.hpp"
-// #include "savegame_config.hpp"
 #include "unit.hpp"
 #include "terrain_filter.hpp"
 
 class gamemap;
 class card;
 class card_map;
+class play_controller;
 
 struct team_fields_t 
 {
@@ -41,6 +41,7 @@ struct team_fields_t
 	int32_t income_;
 	int32_t leader_;
 	int32_t navigation_;
+	int32_t tactic_point_;
 	int32_t objectives_changed_;
 	int32_t persistent_;
 	int32_t recall_cost_;
@@ -274,7 +275,12 @@ public:
 		{ info_.current_player = player; }
 
 	int navigation() const { return navigation_; }
+	void set_navigation(int navigation) { navigation_ = navigation; }
 	int add_navigation(int increment);
+
+	int tactic_point() const { return tactic_point_; }
+	void set_tactic_point(int tactic_point) { tactic_point_ = tactic_point; }
+	int add_tactic_point(int increment);
 
 	bool get_scroll_to_leader() const {return info_.scroll_to_leader;}
 
@@ -384,6 +390,7 @@ public:
 	const std::vector<size_t>& holded_treasures() const { return holded_treasures_; }
 	void erase_treasure(int tid);
 	void erase_treasure2(int index);
+	void find_treasure(hero_map& heros, play_controller& controller, int pos);
 
 	SDL_Rect& city_rect() { return city_rect_; }
 	const SDL_Rect& city_rect() const { return city_rect_; }
@@ -480,6 +487,7 @@ private:
 	int gold_;
 	std::set<map_location> villages_;
 	int navigation_;
+	int tactic_point_;
 
 	shroud_map shroud_, fog_;
 

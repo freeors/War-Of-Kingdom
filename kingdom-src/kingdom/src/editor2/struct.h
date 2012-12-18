@@ -25,6 +25,15 @@ typedef enum {
 	da_about,
 } do_action_t;
 
+typedef struct tag_dlghdr {
+    HWND hwndTab;       // tab control
+    HWND hwndDisplay;   // current child dialog box 
+    RECT rcDisplay;     // display rectangle for the tab control 
+	DLGTEMPLATE** apRes;
+	int reserved_pages;
+	int valid_pages;
+} DLGHDR;
+
 enum task_type {TASK_NEW, TASK_DELETE, TASK_EXPLORER};
 
 typedef struct {

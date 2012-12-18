@@ -429,9 +429,6 @@ void trecruit::refresh_tooltip(twindow& window)
 		label = find_widget<tlabel>(&window, text.str(), false, true);
 		label->set_label(str.str());
 	}
-	
-
-	// gui_.show_unit_tooltip(temp, window.get_x() + window.get_width(), window.get_y());
 }
 
 void trecruit::pre_show(CVideo& /*video*/, twindow& window)
@@ -581,6 +578,13 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 
 			table_item["label"] = hero::feature_str(h->feature_);
 			table_item_item.insert(std::make_pair("feature", table_item));
+
+			if (h->tactic_ != HEROS_NO_TACTIC) {
+				table_item["label"] = unit_types.tactic(h->tactic_).name();
+			} else {
+				table_item["label"] = "";
+			}
+			table_item_item.insert(std::make_pair("tactic", table_item));
 
 			str.str("");
 			if (h->activity_ < HEROS_FULL_ACTIVITY) {

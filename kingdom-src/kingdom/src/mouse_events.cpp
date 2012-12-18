@@ -43,6 +43,7 @@
 #include "gui/dialogs/hero_selection.hpp"
 #include "gui/dialogs/troop_selection.hpp"
 #include "gui/dialogs/message.hpp"
+#include "gui/dialogs/tactic.hpp"
 #include "gui/widgets/window.hpp"
 #include "formula_string_utils.hpp"
 
@@ -51,6 +52,8 @@
 static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
 #define LOG_NG LOG_STREAM(info, log_engine)
+
+map_location selected_loc;
 
 namespace events{
 
@@ -119,9 +122,13 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 
 	const map_location new_hex = gui().hex_clicked_on(x,y);
 
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+#else
 	if (!units_.count(new_hex) && !units_.count(new_hex, false)) {
-		gui_->hide_unit_tooltip();
+		gui_->hide_unit_tip();
 	}
+#endif
+
 	if (new_hex != last_hex_) {
 		update = true;
 		if (last_hex_.valid()) {
@@ -187,6 +194,8 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 
 		// we search if there is an attack possibility and where
 		map_location attack_from;
+		// we search if there is an tactic possibility and where
+		map_location tactic_from;
 		// we search if there is an builder possibility and where
 		map_location build_from;
 		// we search if there is card playing to possibility and where
@@ -207,6 +216,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 			}
 		} else {
 			attack_from = current_unit_attacks_from(new_hex);
+			tactic_from = current_unit_tactic_from(new_hex);
 		}
 
 		//see if we should show the normal cursor, the movement cursor, or
@@ -227,6 +237,9 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 				if (attack_from.valid()) {
 					// cursor: attack!
 					cursor::set(dragging_started_ ? cursor::ATTACK_DRAG : cursor::ATTACK);
+				} else if (tactic_from.valid()) {
+					// cursor: tactic!
+					cursor::set(dragging_started_ ? cursor::TACTIC_DRAG : cursor::TACTIC);
 				} else if (build_from.valid()) {
 					// cursor: build!
 					cursor::set(dragging_started_ ? cursor::BUILD_DRAG : cursor::BUILD);
@@ -345,6 +358,24 @@ map_location mouse_handler::current_unit_attacks_from(const map_location& loc)
 	} else {
 		return map_location();
 	}
+}
+
+map_location mouse_handler::current_unit_tactic_from(const map_location& loc)
+{
+	const map_location& tactic_indicator = gui_->tactic_indicator();
+	if (!moving_ && tactic_indicator.valid() && tactic_indicator == loc) {
+		const unit& tactician = *units_.find(tactic_indicator);
+		if (tactician.master().tactic_ != HEROS_NO_TACTIC) {
+			return selected_hex_;
+		}
+		if (tactician.second().valid() && tactician.second().tactic_ != HEROS_NO_TACTIC) {
+			return selected_hex_;
+		}
+		if (tactician.third().valid() && tactician.third().tactic_ != HEROS_NO_TACTIC) {
+			return selected_hex_;
+		}
+	}
+	return map_location();
 }
 
 map_location mouse_handler::current_unit_build_from(const map_location& loc)
@@ -728,7 +759,8 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 	const map_location src = selected_hex_;
 	pathfind::paths orig_paths = current_paths_;
-	const map_location& attack_from = current_unit_attacks_from(hex);
+	const map_location attack_from = current_unit_attacks_from(hex);
+	const map_location tactic_from = current_unit_tactic_from(hex);
 
 	artifical* cobj = units_.city_from_loc(hex);
 	bool clicked_selfcity = (cobj && (cobj->side() == side_num_))? true: false;
@@ -769,6 +801,10 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			end_moving();
 		} else {
 			do_right_click(browse);
+		}
+	} else if (!browse && !commands_disabled && tactic_from.valid()) {
+		if (cast_tactic(*selected_itor, hex)) {
+			return false;
 		}
 	} else if (!commands_disabled && !browse && selected_hex_.valid() && selected_hex_ != hex &&
 		selected_itor != units_.end() && selected_itor->human() && selected_itor->side() == side_num_ && (clicked_u == units_.end() || clicked_u->base() || clicked_selfcity) &&
@@ -835,7 +871,23 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			if (!selected_itor->is_artifical() && selected_itor->human() && selected_itor->side() == side_num_) {
 				gui_->set_attack_indicator(&*selected_itor);
 			}
+/*				
+			// display tactic window
+			{
+				gui_->draw();
+				// calculate xpos/ypos
+				selected_loc = selected_hex_;
 
+				gui2::ttactic dlg(*gui_, teams_, units_, heros_);
+				try {
+					dlg.show(gui_->video());
+					int retval = dlg.get_retval();
+				} catch(twml_exception& e) {
+					e.show(*gui_);
+					return false;
+				}
+			}
+*/
 			if (cobj && (hex == cobj->get_location().get_direction(map_location::NORTH))) {
 				gui_->highlight_disctrict(*cobj);
 			}
@@ -847,6 +899,11 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 void mouse_handler::select_hex(const map_location& hex, const bool browse) 
 {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+	if (!find_unit(hex).valid()) {
+		gui_->hide_unit_tip();
+	}
+#endif
 	selected_hex_ = hex;
 	gui().select_hex(hex);
 	gui().clear_attack_indicator();
@@ -1022,56 +1079,25 @@ bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterato
 			battle_context bc(units_, *attacker, *defender, i, -1, 0.5);
 			bc_vector.push_back(bc);
 			if (bc.better_attack(bc_vector[best], 0.5)) {
+				// there is maybe below weapons.
+				// melee 2x4
+				// ranged 4x9
+				// melee 3x4  <---cast 3x4 (right)
+				// It is mistaken in [unit_type], but program should permit it!
 				best = i;
+				if (best >= bc_vector.size()) {
+					best = bc_vector.size() - 1;
+				}
 			}
 		}
 	}
-/*
-	for (i = 0; i < bc_vector.size(); i++) {
-		const battle_context::unit_stats& att = bc_vector[i].get_attacker_stats();
-		const battle_context::unit_stats& def = bc_vector[i].get_defender_stats();
-		config tmp_config;
-		attack_type no_weapon(tmp_config);
-		const attack_type& attw = attack_type(*att.weapon);
-		const attack_type& defw = attack_type(def.weapon ? *def.weapon : no_weapon);
 
-		attw.set_specials_context(attacker->get_location(), defender->get_location(), *attacker, true);
-		defw.set_specials_context(attacker->get_location(), defender->get_location(), *attacker, false);
-
-		//if there is an attack special or defend special, we output a single space for the other unit, to make sure
-		//that the attacks line up nicely.
-		std::string special_pad = "";
-		if (!attw.weapon_specials().empty() || !defw.weapon_specials().empty())
-			special_pad = " ";
-
-		std::stringstream atts;
-		if (i == best) {
-			atts << DEFAULT_ITEM;
-		}
-
-		std::string range = attw.range().empty() ? defw.range() : attw.range();
-		if (!range.empty()) {
-			range = gettext(range.c_str());
-		}
-		atts << IMAGE_PREFIX << attw.icon() << COLUMN_SEPARATOR
-			 << font::BOLD_TEXT << attw.name() << "\n" << att.damage << "-"
-			 << att.num_blows << " "  << " (" << att.chance_to_hit << "%)\n"
-			 << attw.weapon_specials() << special_pad
-			 << COLUMN_SEPARATOR << "<245,230,193>" << "- " << range << " -" << COLUMN_SEPARATOR
-			 << font::BOLD_TEXT << defw.name() << "\n" << def.damage << "-"
-			 << def.num_blows << " "  << " (" << def.chance_to_hit << "%)\n"
-			 << defw.weapon_specials() << special_pad << COLUMN_SEPARATOR
-			 << IMAGE_PREFIX << defw.icon();
-
-		items.push_back(atts.str());
-	}
-*/
 	//make it so that when we attack an enemy, the attacking unit
 	//is again shown in the status bar, so that we can easily
 	//compare between the attacking and defending unit
 	gui().highlight_hex(map_location());
 	gui().draw(true, true);
-	gui().hide_unit_tooltip();
+	gui().hide_unit_tip();
 
 	attack_prediction_displayer ap_displayer(bc_vector, attacker_loc, defender_loc);
 	std::vector<gui::dialog_button_info> buttons;
@@ -1126,6 +1152,53 @@ bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterato
 	} else {
 		return false;
 	}
+}
+
+bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc)
+{
+	//make it so that when we attack an enemy, the attacking unit
+	//is again shown in the status bar, so that we can easily
+	//compare between the attacking and defending unit
+	gui().highlight_hex(map_location());
+	gui().draw(true, true);
+	gui().hide_unit_tip();
+
+	hero* selected_hero = NULL;
+	{
+		gui2::ttactic dlg(*gui_, teams_, units_, heros_, tactician);
+		try {
+			dlg.show(gui_->video());
+			if (dlg.get_retval() == gui2::twindow::OK) {
+				selected_hero = dlg.get_selected_hero();
+			}
+		} catch(twml_exception& e) {
+			e.show(*gui_);
+			return false;
+		}
+	}
+
+	cursor::set(cursor::NORMAL);
+	if (!selected_hero) {
+		return false;
+	}
+
+	{
+		const events::command_disabler disable_commands;
+
+		tactician.set_goto(map_location());
+		clear_undo_stack();
+
+		current_paths_ = pathfind::paths();
+		gui().clear_attack_indicator();
+		gui().clear_build_indicator();
+		gui().unhighlight_reach();
+		select_hex(map_location(), false);
+		gui_->hide_context_menu(NULL, true);
+
+		::cast_tactic(units_, tactician, *selected_hero);
+	}
+	gui_->goto_main_context_menu();
+	return true;
 }
 
 void mouse_handler::perform_attack(unit& attacker, unit& defender,

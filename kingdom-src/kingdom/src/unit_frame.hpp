@@ -63,6 +63,7 @@ class frame_parameters{
 	std::string image;
 	image::locator image_diagonal;
 	std::string image_mod;
+	std::string stext;
 	std::string halo;
 	int halo_x;
 	int halo_y;
@@ -70,6 +71,7 @@ class frame_parameters{
 	std::string sound;
 	std::string text;
 	Uint32 text_color;
+	int font_size;
 	Uint32 blend_with;
 	double blend_ratio;
 	double highlight_ratio;
@@ -121,6 +123,7 @@ class frame_builder {
 		std::string image_;
 		image::locator image_diagonal_;
 		std::string image_mod_;
+		std::string stext_;
 		std::string halo_;
 		std::string halo_x_;
 		std::string halo_y_;
@@ -128,6 +131,7 @@ class frame_builder {
 		std::string sound_;
 		std::string text_;
 		Uint32 text_color_;
+		int font_size_;
 		Uint32 blend_with_;
 		std::string blend_ratio_;
 		std::string highlight_ratio_;
@@ -170,6 +174,7 @@ class frame_parsed_parameters {
 		std::string image_;
 		image::locator image_diagonal_;
 		std::string image_mod_;
+		std::string stext_;
 		progressive_string halo_;
 		progressive_int halo_x_;
 		progressive_int halo_y_;
@@ -177,6 +182,7 @@ class frame_parsed_parameters {
 		std::string sound_;
 		std::string text_;
 		Uint32 text_color_;
+		int font_size_;
 		Uint32 blend_with_;
 		progressive_double blend_ratio_;
 		progressive_double highlight_ratio_;
@@ -206,6 +212,7 @@ class unit_frame {
 		bool need_update() const{ return builder_.need_update();};
 		std::set<map_location> get_overlaped_hex(const int frame_time,const map_location & src,const map_location & dst,const frame_parameters & animation_val,const frame_parameters & engine_val) const;
 		void replace_image_name(const std::string& src, const std::string& dst);
+		void replace_static_text(const std::string& src, const std::string& dst);
 	private:
 		void redraw_screen_mode(const int frame_time,bool first_time, const frame_parameters & current_data) const;
 		std::set<map_location> get_overlaped_hex_screen_mode(const int frame_time, const frame_parameters& current_data) const;

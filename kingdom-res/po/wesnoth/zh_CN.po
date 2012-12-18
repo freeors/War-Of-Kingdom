@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2012-11-18 10:33+0800\n"
+"PO-Revision-Date: 2012-12-17 11:58+0800\n"
 "Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -199,59 +199,19 @@ msgid "slowed"
 msgstr "减速"
 
 #. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:16
-#: data/core/macros/abilities.cfg:10
-msgid "heals +4"
-msgstr "治疗+4"
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:17
-#: data/core/macros/abilities.cfg:11
-msgid "female^heals +4"
-msgstr "治疗+4"
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:22
-#: data/core/macros/abilities.cfg:16
-msgid ""
-"Heals +4:\n"
-"Allows the unit to heal adjacent allied units at the beginning of our turn.\n"
-"\n"
-"A unit cared for by this healer may heal up to 4 HP per turn, or stop poison from taking effect for that turn.\n"
-"A poisoned unit cannot be cured of its poison by a healer, and must seek the care of a village or a unit that can cure."
-msgstr ""
-"治疗+4：\n"
-"允许本单位在每回合开始时治疗相邻区域内受伤的友军单位。\n"
-"\n"
-"本治疗者所治疗的单位每回合最多能恢复4点生命值，或阻止毒药在该回合发作。\n"
-"中毒的单位不能由治疗者解毒，只有进入村庄或者被拥有治愈能力的单位治疗。"
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:45
-#: data/core/macros/abilities.cfg:30
-msgid "heals +8"
-msgstr "治疗+8"
-
-#. [heals]: id=healing
-#: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:46
-#: data/core/macros/abilities.cfg:31
-msgid "female^heals +8"
-msgstr "治疗+8"
-
-#. [heals]: id=healing
 #: data/campaigns/Under_the_Burning_Suns/utils/abilities.cfg:51
 #: data/core/macros/abilities.cfg:36
 msgid ""
-"Heals +8:\n"
-"This unit combines herbal remedies with magic to heal units more quickly than is normally possible on the battlefield.\n"
+"Heals +24:\n"
+"Allows the unit to heal adjacent allied units at the beginning of our turn.\n"
 "\n"
-"A unit cared for by this healer may heal up to 8 HP per turn, or stop poison from taking effect for that turn.\n"
+"A unit cared for by this healer may heal up to 24 HP per turn, or stop poison from taking effect for that turn.\n"
 "A poisoned unit cannot be cured of its poison by a healer, and must seek the care of a village or a unit that can cure."
 msgstr ""
-"治疗+8：\n"
-"本单位将魔法与草药混合使用以在战场上治疗单位，比通常可能的速度快得多。\n"
+"治疗+24：\n"
+"允许本单位在每回合开始时治疗相邻区域内受伤的友军单位。\n"
 "\n"
-"本治疗者所治疗的单位每回合最多能恢复8点生命值，或阻止毒药在该回合发作。\n"
+"本治疗者所治疗的单位每回合最多能恢复24点生命值，或阻止毒药在该回合发作。\n"
 "中毒的单位不能由治疗者解毒，只有进入村庄或者被拥有治愈能力的单位治疗。"
 
 #. [about]
@@ -4923,6 +4883,9 @@ msgstr "维护费用"
 msgid "income"
 msgstr "收入"
 
+msgid "Tactic"
+msgstr "战法"
+
 #. [unit_level]: id=unit-level
 #: data/themes/default.cfg:429
 #: data/themes/dfool.cfg:472
@@ -8239,77 +8202,20 @@ msgstr "中立"
 msgid "Munition"
 msgstr "军需"
 
-msgid "loyalty"
+msgid "Loyalty"
 msgstr "忠诚"
 
-msgid "side"
+msgid "Side"
 msgstr "势力"
 
-msgid "city"
+msgid "City"
 msgstr "城市"
 
-msgid "hero^ability"
-msgstr "能力"
-
-msgid "feature"
-msgstr "特技"
-
-msgid "adaptability"
-msgstr "适性"
-
-msgid "command"
-msgstr "命令"
-
-msgid "personal"
-msgstr "个人"
-
-msgid "relation"
-msgstr "关系"
-
-msgid "gender"
-msgstr "性别"
-
-msgid "father"
-msgstr "父亲"
-
-msgid "mother"
-msgstr "母亲"
-
-msgid "oath"
-msgstr "义兄弟"
-
-msgid "consort"
-msgstr "配偶"
-
-msgid "hero^intimate"
-msgstr "亲近"
-
-msgid "hero^hate"
-msgstr "厌恶"
-
-msgid "explain"
-msgstr "说明"
-
-msgid "name^troop"
+msgid "name^Troop"
 msgstr "队"
 
-msgid "troop^type"
+msgid "troop^Type"
 msgstr "兵种"
-
-msgid "fresh hero"
-msgstr "武将（未）"
-
-msgid "finish hero"
-msgstr "武将（完）"
-
-msgid "wander hero"
-msgstr "在野武将"
-
-msgid "reside troop"
-msgstr "城内部队"
-
-msgid "field troop"
-msgstr "城外部队"
 
 msgid "destination city"
 msgstr "目标城市"
@@ -8317,56 +8223,14 @@ msgstr "目标城市"
 msgid "artifical"
 msgstr "建筑物"
 
-msgid "biography"
-msgstr "列传"
-
 msgid "player"
 msgstr "玩家"
 
 msgid "select player:"
 msgstr "选择玩家："
 
-msgid "expedite"
-msgstr "出征"
-
-msgid "hero"
+msgid "Hero"
 msgstr "武将"
-
-msgid "hero^action"
-msgstr "行动"
-
-msgid "action^fresh"
-msgstr "未"
-
-msgid "action^finish"
-msgstr "完"
-
-msgid "hero^name"
-msgstr "姓名"
-
-msgid "hero^loyalty"
-msgstr "忠诚"
-
-msgid "hero^leadership"
-msgstr "统率"
-
-msgid "force"
-msgstr "武力"
-
-msgid "intellect"
-msgstr "智力"
-
-msgid "politics"
-msgstr "政治"
-
-msgid "charm"
-msgstr "魅力"
-
-msgid "meritorious"
-msgstr "功勋"
-
-msgid "female^meritorious"
-msgstr "功勋"
 
 msgid "architure"
 msgstr "建筑"
@@ -8487,6 +8351,9 @@ msgstr "得到牌：$first。"
 msgid "Lost card: $first."
 msgstr "失去牌：$first。"
 
+msgid "Find treasure: $first($second)!"
+msgstr "发现宝物：$first($second)！"
+
 #: src/menu_events.cpp:498
 msgid "advices"
 msgstr "情报"
@@ -8606,41 +8473,23 @@ msgstr "强阵"
 msgid "firms desc"
 msgstr "强化周围部队防御"
 
-msgid "heals +12"
-msgstr "治疗+12"
+msgid "heals +24"
+msgstr "治疗+24"
 
-msgid "female^heals +12"
-msgstr "治疗+12"
+msgid "female^heals +24"
+msgstr "治疗+24"
 
-msgid "heals +12 desc"
-msgstr "每回合给周围部队恢复12HP"
+msgid "heals +24 desc"
+msgstr "每回合给周围部队恢复24HP"
 
-msgid "heals +16"
-msgstr "治疗+16"
+msgid "selfheal +24"
+msgstr "自疗+24"
 
-msgid "female^heals +16"
-msgstr "治疗+16"
+msgid "female^selfheal +24"
+msgstr "自疗+24"
 
-msgid "heals +16 desc"
-msgstr "每回合给周围部队恢复16HP"
-
-msgid "selfheals +12"
-msgstr "自疗+12"
-
-msgid "female^selfheals +12"
-msgstr "自疗+12"
-
-msgid "selfheals +12 desc"
-msgstr "每回合让自身恢复12HP"
-
-msgid "selfheals +16"
-msgstr "自疗+16"
-
-msgid "female^selfheals +16"
-msgstr "自疗+16"
-
-msgid "selfheals +16 desc"
-msgstr "每回合让自身恢复16HP"
+msgid "selfheal +24 desc"
+msgstr "每回合让自身恢复24HP"
 
 msgid "cast"
 msgstr "投射"
@@ -8771,6 +8620,113 @@ msgstr "击败所有势力"
 msgid "No city you holded"
 msgstr "没了能控制城市"
 
+#~ msgid ""
+#~ "Heals +24:\n"
+#~ "This unit combines herbal remedies with magic to heal units more quickly "
+#~ "than is normally possible on the battlefield.\n"
+#~ "\n"
+#~ "A unit cared for by this healer may heal up to 24 HP per turn, or stop "
+#~ "poison from taking effect for that turn.\n"
+#~ "A poisoned unit cannot be cured of its poison by a healer, and must seek "
+#~ "the care of a village or a unit that can cure."
+#~ msgstr ""
+#~ "治疗+24：\n"
+#~ "本单位将魔法与草药混合使用以在战场上治疗单位，比通常可能的速度快得多。\n"
+#~ "\n"
+#~ "本治疗者所治疗的单位每回合最多能恢复24点生命值，或阻止毒药在该回合发作。\n"
+#~ "中毒的单位不能由治疗者解毒，只有进入村庄或者被拥有治愈能力的单位治疗。"
+#~ msgid "heals +4"
+#~ msgstr "治疗+4"
+#~ msgid "female^heals +4"
+#~ msgstr "治疗+4"
+#~ msgid "heals +8"
+#~ msgstr "治疗+8"
+#~ msgid "female^heals +8"
+#~ msgstr "治疗+8"
+#~ msgid "heals +12"
+#~ msgstr "治疗+12"
+#~ msgid "female^heals +12"
+#~ msgstr "治疗+12"
+#~ msgid "heals +16"
+#~ msgstr "治疗+16"
+#~ msgid "female^heals +16"
+#~ msgstr "治疗+16"
+#~ msgid "heals +16 desc"
+#~ msgstr "每回合给周围部队恢复16HP"
+#~ msgid "selfheals +16"
+#~ msgstr "自疗+16"
+#~ msgid "female^selfheals +16"
+#~ msgstr "自疗+16"
+#~ msgid "selfheals +16 desc"
+#~ msgstr "每回合让自身恢复16HP"
+#~ msgid "hero^ability"
+#~ msgstr "能力"
+#~ msgid "feature"
+#~ msgstr "特技"
+#~ msgid "adaptability"
+#~ msgstr "适性"
+#~ msgid "fresh hero"
+#~ msgstr "武将（未）"
+#~ msgid "finish hero"
+#~ msgstr "武将（完）"
+#~ msgid "wander hero"
+#~ msgstr "在野武将"
+#~ msgid "reside troop"
+#~ msgstr "城内部队"
+#~ msgid "field troop"
+#~ msgstr "城外部队"
+#~ msgid "biography"
+#~ msgstr "列传"
+#~ msgid "expedite"
+#~ msgstr "出征"
+#~ msgid "hero^action"
+#~ msgstr "行动"
+#~ msgid "action^fresh"
+#~ msgstr "未"
+#~ msgid "action^finish"
+#~ msgstr "完"
+#~ msgid "hero^name"
+#~ msgstr "姓名"
+#~ msgid "hero^loyalty"
+#~ msgstr "忠诚"
+#~ msgid "hero^leadership"
+#~ msgstr "统率"
+#~ msgid "force"
+#~ msgstr "武力"
+#~ msgid "intellect"
+#~ msgstr "智力"
+#~ msgid "politics"
+#~ msgstr "政治"
+#~ msgid "charm"
+#~ msgstr "魅力"
+#~ msgid "meritorious"
+#~ msgstr "功勋"
+#~ msgid "female^meritorious"
+#~ msgstr "功勋"
+#~ msgid "side"
+#~ msgstr "势力"
+#~ msgid "command"
+#~ msgstr "命令"
+#~ msgid "personal"
+#~ msgstr "个人"
+#~ msgid "relation"
+#~ msgstr "关系"
+#~ msgid "gender"
+#~ msgstr "性别"
+#~ msgid "father"
+#~ msgstr "父亲"
+#~ msgid "mother"
+#~ msgstr "母亲"
+#~ msgid "oath"
+#~ msgstr "义兄弟"
+#~ msgid "consort"
+#~ msgstr "配偶"
+#~ msgid "hero^intimate"
+#~ msgstr "亲近"
+#~ msgid "hero^hate"
+#~ msgstr "厌恶"
+#~ msgid "explain"
+#~ msgstr "说明"
 #~ msgid "regenerates"
 #~ msgstr "再生"
 #~ msgid "female^regenerates"

@@ -322,8 +322,9 @@ void controller_base::play_slice(bool is_delay_enabled)
 			// gui.select_hex(pressed_loc);
 			// sound::play_UI_sound("select-unit.wav");
 			resources::units->find(pressed_loc)->set_selecting();
+			resources::screen->invalidate_unit();
 			// now, selectedHex_ is invalid, hide context menu.
-			// gui.hide_context_menu(NULL, true);
+			gui.goto_main_context_menu();			
 		}
 	} else if (m != NULL){
 		const SDL_Rect& menu_loc = m->location(get_display().screen_area());

@@ -47,6 +47,8 @@
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 
+#include "resources.hpp"
+
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
 
@@ -56,6 +58,8 @@
 
 int dbg_output;
 extern bool exit_app;
+
+extern map_location selected_loc;
 
 namespace gui2{
 
@@ -987,6 +991,10 @@ void twindow::layout()
 
 	get_screen_size_variables(variables_);
 
+	// for automatic_placement_ = false, variables_ can use (volatile_width)/(volatile_height) 
+	variables_.add("volatile_width", variant(settings::screen_width));
+	variables_.add("volatile_height", variant(settings::screen_height));
+
 	const int maximum_width = automatic_placement_
 			?  maximum_width_
 				? std::min(maximum_width_, settings::screen_width)
@@ -1131,11 +1139,39 @@ void twindow::layout()
 				assert(false);
 		}
 	} else {
+		variables_.add("volatile_width", variant(size.x));
+		variables_.add("volatile_height", variant(size.y));
+
 		size.x = w_(variables_);
 		size.y = h_(variables_);
 
+		const game_display* gui = resources::screen;
+		int xpos = 0, ypos = 0;
+		if (gui) {
+			const map_location loc = selected_loc;
+
+			if (loc.valid()) {
+				xpos = gui->get_location_x(loc);
+				ypos = gui->get_location_y(loc);
+			}
+
+			int reserved_gap = 3 * gui->hex_size();
+
+			if (xpos >= size.x + reserved_gap) {
+				xpos = xpos - size.x - reserved_gap;
+			} else {
+				xpos = xpos + gui->hex_size() + reserved_gap;
+			}
+			const SDL_Rect& map_area = gui->map_outside_area();
+			ypos = map_area.x;
+		}
+
+		variables_.add("xpos", variant(xpos));
+		variables_.add("ypos", variant(ypos));
+
 		variables_.add("width", variant(size.x));
 		variables_.add("height", variant(size.y));
+
 		origin.x = x_(variables_);
 		origin.y = y_(variables_);
 	}

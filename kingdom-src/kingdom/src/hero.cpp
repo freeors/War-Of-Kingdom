@@ -1,6 +1,7 @@
 #include "global.hpp"
 #include "hero.hpp"
 #include "gettext.hpp"
+#include "unit_types.hpp"
 
 hero hero_invalid = hero(HEROS_INVALID_NUMBER);
 
@@ -103,11 +104,11 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	image_ = number;
 	side_ = HEROS_INVALID_SIDE;
 	city_ = HEROS_DEFAULT_CITY;
-	// stratum_ = HEROS_DEFAULT_STRATUM;
 	status_ = HEROS_DEFAULT_STATUS;
 	official_ = HEROS_DEFAULT_OFFICIAL;
 	feature_ = HEROS_NO_FEATURE;
 	side_feature_ = HEROS_NO_FEATURE;
+	tactic_ = HEROS_NO_TACTIC;
 	activity_ = HEROS_DEFAULT_ACTIVITY;
 	meritorious_ = 0;
 	base_catalog_ = HEROS_DEFAULT_BASE_CATALOG;
@@ -604,7 +605,7 @@ std::string& hero::treasure_str(int tid)
 	return treasure_str_[tid];
 }
 
-std::string& hero::character_str(int cid)
+const std::string& hero::character_str(int cid)
 {
 	if (cid == NO_CHARACTER) {
 		return null_str;
@@ -1229,6 +1230,7 @@ bool hero_map::map_from_file(const std::string& fname)
 	realloc_hero_map(HEROS_MAX_HEROS);
 	while (rdpos + HEROS_BYTES_PER_HERO <= bytertd) {
 		hero h(fdata + rdpos);
+
 		if (h.valid()) {
 			add(h);
 		}
