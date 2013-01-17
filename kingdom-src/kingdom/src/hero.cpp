@@ -25,6 +25,7 @@ int hero::number_market = 272;
 int hero::number_wall = 273;
 int hero::number_keep = 274;
 int hero::number_tower = 275;
+int hero::number_technology = 276;
 
 static std::string null_str = "";
 std::vector<hero*> empty_vector_hero_ptr = std::vector<hero*>();
@@ -722,10 +723,7 @@ namespace rpg {
 
 void hero::to_unstage()
 {
-	if (official_ == hero_official_commercial) {
-		team& t = (*resources::teams)[side_];
-		t.erase_commercial(this);
-	} else if (official_ == hero_official_mayor) {
+	if (official_ == hero_official_mayor) {
 		unit_map& units = *resources::units;
 		artifical* from = units.city_from_cityno(city_);
 		from->select_mayor(&hero_invalid);
@@ -783,7 +781,7 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 				}
 				// play animation
 				std::stringstream str;
-				str << dgettext("wesnoth", "loyalty") << "\n";
+				str << dgettext("wesnoth", "Loyalty") << "\n";
 				std::vector<unit*> touchers;
 				if (artifical* city = units.city_from_loc(u->get_location())) {
 					touchers.push_back((unit*)(city));
@@ -913,6 +911,137 @@ bool hero::internal_matches_filter(const vconfig& cfg)
 #else
 #define confirm_carry_to(h1, h2, carry_to)	true 
 #endif
+
+namespace increase_xp {
+
+ublock ub;
+ublock& generic_ublock() 
+{
+	memset(&ub, 0, sizeof(ublock));
+	return ub;
+}
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+ublock& attack_ublock(const unit& attack, bool opp_is_artifical) 
+{
+	memset(&ub, 0, sizeof(ublock));
+	ub.xp = true;
+	ub.leadership = ub.force = ub.intellect = ub.charm = true;
+	ub.arms = true;
+	if (opp_is_artifical) {
+		ub.skill[hero_skill_demolish] = true;
+	}
+	if (unit_feature_val2(attack, hero_feature_guide)) {
+		ub.abilityx2 = true;
+	}
+	if (unit_feature_val2(attack, hero_feature_spirit)) {
+		ub.armsx2 = true;
+	}
+	if (unit_feature_val2(attack, hero_feature_skill)) {
+		ub.skillx2 = true;
+	}
+	ub.meritorious = true;
+	return ub;
+}
+
+ublock& turn_ublock(const unit& u)
+{
+	memset(&ub, 0, sizeof(ublock));
+	ub.skill[hero_skill_encourage] = true;
+	if (unit_feature_val2(u, hero_feature_skill)) {
+		ub.skillx2 = true;
+	}
+	return ub;
+}
+#endif
+
+ublock& exploiture_ublock(int markets, int technologies, bool abilityx2, bool skillx2)
+{
+	memset(&ub, 0, sizeof(ublock));
+	if (markets) {
+		ub.politics = true;
+		ub.skill[hero_skill_commercial] = true;
+	}
+	if (technologies) {
+		ub.intellect = true;
+		ub.skill[hero_skill_invent] = true;
+	}
+	ub.abilityx2 = abilityx2;
+	ub.skillx2 = skillx2;
+
+	return ub;
+}
+
+int ability_per_xp = 1;
+int arms_per_xp = 3;
+int skill_per_xp = 16;
+int meritorious_per_xp = 5;
+int navigation_per_xp = 2;
+
+hblock hb;
+hblock& generic_hblock() 
+{
+	memset(&hb, 0, sizeof(hblock));
+	return hb;
+}
+
+hblock& exploiture_hblock(int markets, int technologies, bool abilityx2, bool skillx2, int xp)
+{
+	memset(&hb, 0, sizeof(hblock));
+	int ability_per_xp_x2 = ability_per_xp + (abilityx2? ability_per_xp: 0);
+	int skill_per_xp_x2 = skill_per_xp + (skillx2? skill_per_xp: 0);
+
+	if (markets) {
+		hb.politics = xp * ability_per_xp_x2;
+		hb.skill[hero_skill_commercial] = xp * skill_per_xp_x2;
+	}
+	if (technologies) {
+		hb.intellect = xp * ability_per_xp_x2;
+		hb.skill[hero_skill_invent] = xp * skill_per_xp_x2;
+	}
+	return hb;
+}
+
+}
+
+bool hero::get_xp(const increase_xp::hblock& hb)
+{
+	bool has_carry = false;
+
+	if (u16_get_experience_i9(&leadership_, hb.leadership)) {
+		has_carry = true;
+	}
+	if (u16_get_experience_i9(&force_, hb.force)) {
+		has_carry = true;
+	}
+	if (u16_get_experience_i9(&intellect_, hb.intellect)) {
+		has_carry = true;
+	}
+	if (u16_get_experience_i9(&politics_, hb.politics)) {
+		has_carry = true;
+	}
+	if (u16_get_experience_i9(&charm_, hb.charm)) {
+		has_carry = true;
+	}
+	// arms adaptability
+	for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
+		if (u16_get_experience_i12(arms_ + i, hb.arms[i])) {
+			has_carry = true;
+		}
+	}
+	// skill adaptability
+	for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
+		if (u16_get_experience_i12(skill_ + i, hb.skill[i])) {
+			has_carry = true;
+		}
+	}
+	if (meritorious_ < 60000) {
+		meritorious_ += hb.meritorious;
+		if (meritorious_ > 60000) {
+			meritorious_ = 60000;
+		}
+	}
+	return has_carry;
+}
 
 // return value
 //   FEELING_HATE: get rid of hate

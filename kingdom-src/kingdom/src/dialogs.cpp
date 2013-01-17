@@ -118,7 +118,7 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 		sample_unit = ::get_advanced_unit(&*u, to);
 		sample_units.push_back(*sample_unit);
 		delete sample_unit;
-		sample_units.back().add_modification("advance", mod);
+		sample_units.back().add_modification(mod);
 		const unit& type = sample_units.back();
 		if (!mod["image"].empty()) {
 			lang_options.push_back(IMAGE_PREFIX + mod["image"].str() + COLUMN_SEPARATOR + mod["description"].str());
@@ -232,39 +232,12 @@ bool animate_unit_advancement(const map_location &loc, size_t choice)
 		
 		game_events::fire("advance",loc);
 
-		amla_unit->get_experience(-amla_unit->max_experience()); // subtract xp required
+		amla_unit->get_experience(increase_xp::attack_ublock(*amla_unit), -amla_unit->max_experience()); // subtract xp required
 		// ALMA may want to change status, but add_modification in modify_according_to_hero cannot change state,
 		// so it need call amla_unit->add_modification instead of amla_unit->modify_according_to_hero.
-		amla_unit->add_modification("advance", mod_option);
-		// amla_unit->modify_according_to_hero();
-		// resources::units->replace(loc, amla_unit);
+		amla_unit->add_modification(mod_option);
 
 		game_events::fire("post_advance",loc);
-		// delete amla_unit;
-
-/*
-		// unit amla_unit(u->second);
-		unit* amla_unit;
-		if (!u->is_artifical()) {
-			amla_unit = new unit(*u);
-		} else {
-			amla_unit = new artifical(*(unit_2_artifical(&*u)));
-		}
-
-		const config &mod_option = mod_options[choice - options.size()];
-		
-		game_events::fire("advance",loc);
-
-		amla_unit->get_experience(-amla_unit->max_experience()); // subtract xp required
-		// ALMA may want to change status, but add_modification in modify_according_to_hero cannot change state,
-		// so it need call amla_unit->add_modification instead of amla_unit->modify_according_to_hero.
-		amla_unit->add_modification("advance", mod_option);
-		// amla_unit->modify_according_to_hero();
-		resources::units->replace(loc, amla_unit);
-
-		game_events::fire("post_advance",loc);
-		delete amla_unit;
-*/
 	}
 
 	u = resources::units->find(loc);

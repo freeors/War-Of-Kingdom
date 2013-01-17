@@ -460,6 +460,27 @@ msgid "market3 description"
 msgstr ""
 
 #
+# technology
+#
+msgid "technology1"
+msgstr ""
+
+msgid "technology1 description"
+msgstr ""
+
+msgid "technology2"
+msgstr ""
+
+msgid "technology2 description"
+msgstr ""
+
+msgid "technology3"
+msgstr ""
+
+msgid "technology3 description"
+msgstr ""
+
+#
 # tower
 #
 msgid "tower1"
@@ -1010,4 +1031,26 @@ msgid "powder catapult6"
 msgstr ""
 
 msgid "powder catapult6 description"
+msgstr ""
+
+#
+# character unit type: taoism
+#
+
+msgid "taoism4"
+msgstr ""
+
+msgid "taoism4 description"
+msgstr ""
+
+msgid "taoism5"
+msgstr ""
+
+msgid "taoism5 description"
+msgstr ""
+
+msgid "taoism6"
+msgstr ""
+
+msgid "taoism6 description"
 msgstr ""

@@ -42,18 +42,14 @@
 #include "gui/dialogs/hero_list.hpp"
 #include "gui/dialogs/unit_detail.hpp"
 #include "gui/dialogs/troop_detail.hpp"
-// #include "gui/dialogs/troop_list.hpp"
-// #include "gui/dialogs/artifical_list.hpp"
 #include "gui/dialogs/play_card.hpp"
 #include "gui/dialogs/preferences.hpp"
 #include "gui/dialogs/move_hero.hpp"
 #include "gui/dialogs/final_battle.hpp"
-// #include "gui/dialogs/side_list.hpp"
-// #include "gui/dialogs/city_list.hpp"
 #include "gui/dialogs/camp_armory.hpp"
-#include "gui/dialogs/interior.hpp"
 #include "gui/dialogs/list.hpp"
 #include "gui/dialogs/system.hpp"
+#include "gui/dialogs/technology_tree.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "help.hpp"
@@ -322,36 +318,37 @@ int menu_handler::hero_list(std::vector<hero*>& heros)
 
 void menu_handler::interior(int side_num)
 {
-	team& current_team = teams_[side_num - 1];
-	std::vector<hero*> before_commercials = current_team.commercials();
-
-	gui2::tinterior dlg(*gui_, teams_, units_, heros_, side_num);
+	bool browse = rpg::stratum != hero_stratum_leader;
+	gui2::ttechnology_tree dlg(*gui_, teams_, units_, heros_, side_num, browse);
 	try {
 		dlg.show(gui_->video());
 	} catch(twml_exception& e) {
 		e.show(*gui_);
 		return;
 	}
-
-	std::vector<hero*>& commercials = current_team.commercials();
-	bool changed = false;
-	if (before_commercials.size() != commercials.size()) {
-		changed = true;
-	} else {
-		for (size_t index = 0; index < before_commercials.size(); ++ index) {
-			if (before_commercials[index]->number_ != commercials[index]->number_) {
-				changed = true;
-				break;
-			}
-		}
+	const technology* ret = dlg.ing_technology();
+	team& current_team = teams_[side_num - 1];
+	if (!browse && ret != current_team.ing_technology()) {
+		current_team.select_ing_technology(ret);
+		recorder.add_ing_technology(ret->id());
 	}
-	if (changed) {
-		const hero& h1 = !commercials.empty()? *commercials[0]: hero_invalid;
-		const hero& h2 = commercials.size() >= 2? *commercials[1]: hero_invalid;
-		const hero& h3 = commercials.size() >= 3? *commercials[2]: hero_invalid;
-		unit::commercial_exploiture_ = calculate_exploiture(h1, h2, h3);
+}
 
-		recorder.add_interior(department::commercial, commercials);
+void menu_handler::technology_tree(int side_num)
+{
+	bool browse = rpg::stratum != hero_stratum_leader;
+	gui2::ttechnology_tree dlg(*gui_, teams_, units_, heros_, side_num, browse);
+	try {
+		dlg.show(gui_->video());
+	} catch(twml_exception& e) {
+		e.show(*gui_);
+		return;
+	}
+	const technology* ret = dlg.ing_technology();
+	team& current_team = teams_[side_num - 1];
+	if (!browse && ret != current_team.ing_technology()) {
+		current_team.select_ing_technology(ret);
+		recorder.add_ing_technology(ret->id());
 	}
 }
 
@@ -593,6 +590,7 @@ void menu_handler::expedite(int side_num, const map_location &last_hex)
 	events::mouse_handler* mousehandler = events::mouse_handler::get_singleton();
 	mousehandler->set_recalling(city, troop_index);
 
+	gui_->clear_attack_indicator();
 	return;
 }
 
@@ -711,6 +709,8 @@ void menu_handler::build(const std::string& type1, mouse_handler& mousehandler, 
 	std::string type;
 	if (type1 == "market") {
 		type = unit_types.find_market()->id();
+	} else if (type1 == "technology") {
+		type = unit_types.find_technology()->id();
 	} else if (type1 == "keep") {
 		type = unit_types.find_keep()->id();
 	} else if (type1 == "wall") {
@@ -898,24 +898,6 @@ void menu_handler::armory(mouse_handler& mousehandler, int side_num, artifical& 
 		}
 		// use a way to keep up fresh heros with replay. duration armory dialog, player may throw into confusion.
 		std::sort(fresh_heros.begin(), fresh_heros.end(), compare_leadership);
-
-		// commercial officials
-		bool commercial_changed = false;
-		// earse_commercial maybe modify commerical, there should use copy.
-		std::vector<hero*> commercial = current_team.commercials();
-		for (size_t i = 0; i < commercial.size(); i ++) {
-			hero* h = commercial[i];
-			if (h->city_ != art.cityno()) {
-				continue;
-			}
-			if (std::find(fresh_heros.begin(), fresh_heros.end(), h) == fresh_heros.end()) {
-				current_team.erase_commercial(h);
-				commercial_changed = true;
-			}
-		}
-		if (commercial_changed) {
-			unit::commercial_exploiture_ = current_team.commercial_exploiture();
-		}
 
 		recorder.add_armory(art.get_location(), diff);
 
@@ -1171,7 +1153,7 @@ bool menu_handler::end_turn(int side_num)
 	if (rpg::stratum == hero_stratum_mayor) {
 		return true;
 	}
-
+/*
 	const unit_type* market = unit_types.find_market();
 	const std::set<const unit_type*>& can_build = current_team.builds();
 	if (can_build.find(market) != can_build.end() && current_team.commercials().size() < 3) {
@@ -1183,6 +1165,7 @@ bool menu_handler::end_turn(int side_num)
 			}
 		}
 	}
+*/
 
 	return true;
 }
@@ -1338,7 +1321,63 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 			}
 
 			gui_->set_route(&route);
-			int moves = ::move_unit(NULL, route.steps, &recorder, &undo_stack_, true, &stop_loc, false);
+			bool show_move = ui->movement_left() >= route.move_cost;
+			if (!show_move) {
+				// whether turn1's "end" exist city. Not path!
+				const unit* u = find_unit(units_, next_stop);
+				if (u && u->is_city()) {
+					show_move = true;
+				}
+			}
+			if (!show_move) {
+				// whether turn1's "end" exist enemy or not. 
+				team& current_team = teams_[side - 1];
+				map_offset* adjacent_ptr;
+				size_t i, size;
+				map_location adjacent_loc;
+				unit* u;
+
+				// range=1
+				size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
+				adjacent_ptr = adjacent_1[next_stop.x & 0x1];
+				for (i = 0; i < size && !show_move; i ++) {
+					adjacent_loc.x = next_stop.x + adjacent_ptr[i].x;
+					adjacent_loc.y = next_stop.y + adjacent_ptr[i].y;
+					if (map_.on_board(adjacent_loc)) {
+						u = find_unit(units_, adjacent_loc);
+						if (u && current_team.is_enemy(u->side())) {
+							show_move = true;
+						}
+					}
+				}
+				// range=2
+				size = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
+				adjacent_ptr = adjacent_2[next_stop.x & 0x1];
+				for (i = 0; i < size && !show_move; i ++) {
+					adjacent_loc.x = next_stop.x + adjacent_ptr[i].x;
+					adjacent_loc.y = next_stop.y + adjacent_ptr[i].y;
+					if (map_.on_board(adjacent_loc)) {
+						u = find_unit(units_, adjacent_loc);
+						if (u && current_team.is_enemy(u->side())) {
+							show_move = true;
+						} 
+					}
+				}
+				// range=3
+				size = (sizeof(adjacent_3) / sizeof(map_offset)) >> 1;
+				adjacent_ptr = adjacent_3[next_stop.x & 0x1];
+				for (i = 0; i < size && !show_move; i ++) {
+					adjacent_loc.x = next_stop.x + adjacent_ptr[i].x;
+					adjacent_loc.y = next_stop.y + adjacent_ptr[i].y;
+					if (map_.on_board(adjacent_loc)) {
+						u = find_unit(units_, adjacent_loc);
+						if (u && current_team.is_enemy(u->side())) {
+							show_move = true;
+						}
+					}
+				}
+			}
+			int moves = ::move_unit(NULL, route.steps, &recorder, &undo_stack_, show_move, &stop_loc, false);
 			change = moves > 0;
 
 			if (change) {

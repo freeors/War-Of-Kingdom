@@ -370,7 +370,7 @@ public:
 
 	const theme::menu* access_troop_menu() const;
 
-	virtual void set_attack_indicator(unit* attack) {};
+	virtual void set_attack_indicator(unit* attack, bool browse) {};
 
 		/**
 	 * Finds the menu which has a given item in it,
@@ -425,8 +425,6 @@ public:
 	void set_turbo_speed(const double speed) { turbo_speed_ = speed; }
 
 	/** control unit idle animations and their frequency */
-	void set_idle_anim(bool ison) { idle_anim_ = ison; }
-	bool idle_anim() const { return idle_anim_; }
 	void set_idle_anim_rate(int rate);
 	double idle_anim_rate() const { return idle_anim_rate_; }
 
@@ -910,7 +908,6 @@ private:
 	int invalidated_hexes_;
 	int drawn_hexes_;
 
-	bool idle_anim_;
 	double idle_anim_rate_;
 
 	surface map_screenshot_surf_;

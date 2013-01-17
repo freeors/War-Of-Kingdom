@@ -9,6 +9,63 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "leadership"
+msgstr ""
+
+msgid "force"
+msgstr ""
+
+msgid "intellect"
+msgstr ""
+
+msgid "politics"
+msgstr ""
+
+msgid "charm"
+msgstr ""
+
+msgid "catalog"
+msgstr ""
+
+msgid "base catalog"
+msgstr ""
+
+msgid "float catalog"
+msgstr ""
+
+msgid "base/float catalog"
+msgstr ""
+
+msgid "biography"
+msgstr ""
+
+msgid "parent"
+msgstr ""
+
+msgid "father"
+msgstr ""
+
+msgid "mother"
+msgstr ""
+
+msgid "consort"
+msgstr ""
+
+msgid "oath"
+msgstr ""
+
+msgid "intimate"
+msgstr ""
+
+msgid "hate"
+msgstr ""
+
+msgid "meritorious"
+msgstr ""
+
+msgid "gender"
+msgstr ""
+
 msgid "gender-0"
 msgstr ""
 
@@ -28,6 +85,9 @@ msgid "stratum-2"
 msgstr ""
 
 msgid "stratum-3"
+msgstr ""
+
+msgid "status"
 msgstr ""
 
 msgid "status-0"
@@ -54,6 +114,9 @@ msgstr ""
 msgid "status-7"
 msgstr ""
 
+msgid "official"
+msgstr ""
+
 msgid "official-0"
 msgstr ""
 
@@ -61,6 +124,9 @@ msgid "official-1"
 msgstr ""
 
 msgid "official-2"
+msgstr ""
+
+msgid "ambition"
 msgstr ""
 
 msgid "ambition-0"
@@ -76,6 +142,12 @@ msgid "ambition-3"
 msgstr ""
 
 msgid "ambition-4"
+msgstr ""
+
+msgid "heart"
+msgstr ""
+
+msgid "treasure"
 msgstr ""
 
 msgid "treasure-0"
@@ -268,6 +340,15 @@ msgid "character-12"
 msgstr ""
 
 msgid "character-13"
+msgstr ""
+
+msgid "character-14"
+msgstr ""
+
+msgid "feature"
+msgstr ""
+
+msgid "side feature"
 msgstr ""
 
 msgid "feature-0"
@@ -870,6 +951,9 @@ msgstr ""
 msgid "feature_desc-99"
 msgstr ""
 
+msgid "tactic"
+msgstr ""
+
 msgid "tactic-attack"
 msgstr ""
 
@@ -1032,6 +1116,60 @@ msgstr ""
 msgid "tactic_desc-weaken more demolishes"
 msgstr ""
 
+msgid "tactic-blade"
+msgstr ""
+
+msgid "tactic_desc-blade"
+msgstr ""
+
+msgid "tactic-pierce"
+msgstr ""
+
+msgid "tactic_desc-pierce"
+msgstr ""
+
+msgid "tactic-impact"
+msgstr ""
+
+msgid "tactic_desc-impact"
+msgstr ""
+
+msgid "tactic-fire"
+msgstr ""
+
+msgid "tactic_desc-fire"
+msgstr ""
+
+msgid "tactic-hide"
+msgstr ""
+
+msgid "tactic_desc-hide"
+msgstr ""
+
+msgid "tactic-hides"
+msgstr ""
+
+msgid "tactic_desc-hides"
+msgstr ""
+
+msgid "tactic-accelerate"
+msgstr ""
+
+msgid "tactic_desc-accelerate"
+msgstr ""
+
+msgid "tactic-accelerates"
+msgstr ""
+
+msgid "tactic_desc-accelerates"
+msgstr ""
+
+msgid "tactic-decelerates"
+msgstr ""
+
+msgid "tactic_desc-decelerates"
+msgstr ""
+
 msgid "tactic-divine wei wu"
 msgstr ""
 
@@ -1114,6 +1252,54 @@ msgid "tactic-spy infiltrate"
 msgstr ""
 
 msgid "tactic_desc-spy infiltrate"
+msgstr ""
+
+msgid "tactic-fire stratagem"
+msgstr ""
+
+msgid "tactic_desc-fire stratagem"
+msgstr ""
+
+msgid "tactic-divine fire"
+msgstr ""
+
+msgid "tactic_desc-divine fire"
+msgstr ""
+
+msgid "tactic-big strike"
+msgstr ""
+
+msgid "tactic_desc-big strike"
+msgstr ""
+
+msgid "tactic-ambush"
+msgstr ""
+
+msgid "tactic_desc-ambush"
+msgstr ""
+
+msgid "tactic-divine ambushes"
+msgstr ""
+
+msgid "tactic_desc-divine ambushes"
+msgstr ""
+
+msgid "tactic-ambush accelerate"
+msgstr ""
+
+msgid "tactic_desc-ambush accelerate"
+msgstr ""
+
+msgid "tactic-accelerate firms"
+msgstr ""
+
+msgid "tactic_desc-accelerate firms"
+msgstr ""
+
+msgid "tactic-beautiful interlink"
+msgstr ""
+
+msgid "tactic_desc-beautiful interlink"
 msgstr ""
 
 msgid "arms-0"
@@ -1204,6 +1390,9 @@ msgid "adaptability-14"
 msgstr ""
 
 msgid "adaptability-15"
+msgstr ""
+
+msgid "name"
 msgstr ""
 
 msgid "name-0"
@@ -2268,6 +2457,18 @@ msgstr ""
 msgid "name-353"
 msgstr ""
 
+msgid "name-354"
+msgstr ""
+
+msgid "name-355"
+msgstr ""
+
+msgid "name-356"
+msgstr ""
+
+msgid "surname"
+msgstr ""
+
 msgid "surname-0"
 msgstr ""
 
@@ -3328,6 +3529,15 @@ msgid "surname-352"
 msgstr ""
 
 msgid "surname-353"
+msgstr ""
+
+msgid "surname-354"
+msgstr ""
+
+msgid "surname-355"
+msgstr ""
+
+msgid "surname-356"
 msgstr ""
 
 msgid "desc0"

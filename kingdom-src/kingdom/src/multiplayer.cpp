@@ -514,21 +514,6 @@ static void do_preferences_dialog(game_display& disp, const config& game_config)
 	const preferences::display_manager disp_manager(&disp);
 	gui2::show_preferences_dialog(disp);
 	return;
-
-	preferences::show_preferences_dialog(disp,game_config);
-
-	/**
-	 * The screen size might have changed force an update of the size.
-	 *
-	 * @todo This might no longer be needed when gui2 is done.
-	 */
-	const SDL_Rect rect = screen_area();
-	preferences::set_resolution(disp.video(), rect.w, rect.h);
-
-	gui2::settings::gamemap_width += rect.w - gui2::settings::screen_width ;
-	gui2::settings::gamemap_height += rect.h - gui2::settings::screen_height ;
-	gui2::settings::screen_width = rect.w;
-	gui2::settings::screen_height = rect.h;
 }
 
 static void enter_lobby_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 

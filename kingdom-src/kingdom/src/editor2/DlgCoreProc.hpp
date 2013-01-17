@@ -29,6 +29,7 @@ public:
 		, hitpoints_(1)
 		, experience_needed_(1)
 		, movement_(1)
+		, max_movement_(-1)
 		, level_(1)
 		, cost_(1)
 		, alignment_(unit_type::LAWFUL)
@@ -71,6 +72,7 @@ public:
 		if (can_recruit_ != that.can_recruit_) return false;
 		if (master_ != that.master_) return false;
 		if (movement_ != that.movement_) return false;
+		if (max_movement_ != that.max_movement_) return false;
 		if (character_ != that.character_) return false;
 		if (land_wall_ != that.land_wall_) return false;
 		if (leader_ != that.leader_) return false;
@@ -105,6 +107,7 @@ public:
 	int master_;
 	// valid on troop
 	int movement_;
+	int max_movement_;
 	int character_;
 	bool land_wall_;
 	bool leader_;
@@ -182,10 +185,6 @@ public:
 
 	bool has_halo() const;
 
-	bool has_healing_anim() const;
-	bool has_resistance_anim() const;
-	bool has_leading_anim() const;
-
 	void vertify_core_images() const;
 	void vertify_healing_anim_images() const;
 	void vertify_resistance_anim_images() const;
@@ -217,7 +216,7 @@ public:
 
 public:
 	static std::map<int, std::string> type_map_;
-	static std::map<int, std::string> artifical_hero_;
+	static std::set<hero*> artifical_hero_;
 
 	std::vector<tattack> attacks_;
 	tunit_type_ utype_from_cfg_;
@@ -230,7 +229,7 @@ private:
 class tcore
 {
 public:
-	enum {UNIT_TYPE = 0, TACTIC, SECTIONS};
+	enum {UNIT_TYPE = 0, TACTIC, TECH, SECTIONS};
 
 	static std::map<int, std::string> name_map;
 	static std::map<int, int> idd_map;
@@ -239,24 +238,19 @@ public:
 	tcore();
 	~tcore();
 
-	struct node {
-		node(const unit_type* ut)
-			: current(ut)
-			, advances_to()
-		{}
-
-		const unit_type* current;
-		std::vector<node> advances_to;
-	};
-
 	HWND init_toolbar(HINSTANCE hinst, HWND hdlgP);
 	void refresh_utype(HWND hdlgP);
 	void refresh_tactic(HWND hdlgP);
+	void refresh_technology(HWND hdlgP);
+	void refresh_technology2(HWND hdlgP);
 
 	void switch_section(HWND hdlgP, int to, bool force);
 
-	void tree_2_tv(HWND hctl, HTREEITEM htvroot);
-	void tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<node>& advances_to, const std::vector<std::string>& advances_from2);
+	void utype_tree_2_tv(HWND hctl, HTREEITEM htvroot);
+	void utype_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<advance_tree::node>& advances_to, const std::vector<std::string>& advances_from2);
+
+	void technology_tree_2_tv(HWND hctl, HTREEITEM htvroot);
+	void technology_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<advance_tree::node>& advances_to, const std::vector<std::string>& advances_from2);
 
 	bool new_utype();
 	void erase_utype(int index, HWND hdlgP);
@@ -272,23 +266,26 @@ public:
 
 private:
 	void generate_utype_tree();
-	void generate_utype_tree_internal(const unit_type& current, std::vector<node>& advances_to, bool& to_branch);
-	void hang_branch_internal(std::vector<node>& advances_to, bool& hang_branch);
 
 public:
 	int section_;
 	// second: unit type that can advance to
-	std::vector<node*> utype_tree_;
 	std::vector<std::pair<std::string, std::vector<std::string> > > tv_tree_;
+	std::vector<std::pair<std::string, std::vector<std::string> > > technology_tv_;
 
 	gamemap* map_;
 	t_translation::t_list alias_terrains_;
+
 	HTREEITEM htvroot_utype_;
+	HTREEITEM htvroot_technology_;
 
 	std::map<int, tunit_type> types_updating_;
 
 	HTREEITEM htvroot_tactic_atom_;
 	HTREEITEM htvroot_tactic_complex_;
+
+	HTREEITEM htvroot_technology_atom_;
+	HTREEITEM htvroot_technology_complex_;
 
 	uint32_t dirty_;
 };
@@ -314,5 +311,6 @@ namespace ns {
 
 extern BOOL CALLBACK DlgUTypeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgTacticProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+extern BOOL CALLBACK DlgTechnologyProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 #endif // __DLGCOREPROC_HPP_

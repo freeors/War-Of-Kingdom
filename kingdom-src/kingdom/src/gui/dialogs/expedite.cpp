@@ -97,6 +97,7 @@ texpedite::texpedite(game_display& gui, const gamemap& map, std::vector<team>& t
 	, disband_(disband)
 	, troop_index_(0)
 	, hero_table_(NULL)
+	, window_(NULL)
 {
 }
 
@@ -406,6 +407,8 @@ void texpedite::refresh_tooltip(twindow& window)
 
 void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window_ = &window;
+
 	int side_num = city_.side();
 	team& current_team = teams_[side_num - 1];
 	std::stringstream str;
@@ -476,7 +479,6 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 				&texpedite::disband
 				, this
 				, _3, _4
-				, boost::ref(window)
 				, troop_index));
 		if (troop_index) {
 			disband.set_visible(twidget::INVISIBLE);
@@ -516,8 +518,9 @@ void texpedite::post_show(twindow& window)
 {
 }
 
-void texpedite::disband(bool& handled, bool& halt, twindow& window, int index)
+void texpedite::disband(bool& handled, bool& halt, int index)
 {
+	twindow& window = *window_;
 	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
 
 	if (!disband_->button_pressed(index)) {
@@ -538,7 +541,6 @@ void texpedite::disband(bool& handled, bool& halt, twindow& window, int index)
 				&texpedite::disband
 				, this
 				, _3, _4
-				, boost::ref(window)
 				, i + 1));
 
 		connect_signal_mouse_left_click(
@@ -547,7 +549,6 @@ void texpedite::disband(bool& handled, bool& halt, twindow& window, int index)
 				&texpedite::disband
 				, this
 				, _3, _4
-				, boost::ref(window)
 				, i));
 
 		disband.set_active(city_.reside_troops()[i]->human());

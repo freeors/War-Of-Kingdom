@@ -179,6 +179,8 @@ public:
 
 	const ttree_view& tree_view() const;
 
+	tselectable_* label() { return label_; }
+	const tselectable_* label() const { return label_; }
 private:
 
 	/** Inherited from twidget. */
@@ -196,6 +198,7 @@ private:
 
 	/** Grid holding our contents. */
 	tgrid grid_;
+
 
 	/**
 	 * Our children.
@@ -235,6 +238,9 @@ private:
 	tpoint calculate_best_size(const int indention_level
 			, const unsigned indention_step_size) const;
 
+	tpoint calculate_best_size_left_align(const int indention_level
+			, const unsigned indention_step_size) const;
+
 	tpoint get_current_size() const;
 	tpoint get_folded_size() const;
 	tpoint get_unfolded_size() const;
@@ -244,6 +250,11 @@ private:
 	void place(const tpoint& origin, const tpoint& size);
 
 	unsigned place(
+			  const unsigned indention_step_size
+			, tpoint origin
+			, unsigned width);
+
+	unsigned place_left_align(
 			  const unsigned indention_step_size
 			, tpoint origin
 			, unsigned width);

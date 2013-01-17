@@ -3,11 +3,12 @@ msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
 
 msgid "bowman1"
 msgstr "弓兵"
@@ -388,7 +389,10 @@ msgid "stage player"
 msgstr "演员"
 
 msgid "stage player description"
-msgstr "是指专职演出，或在表演艺术中扮演某个角色的人物。经常用在电影、电视、剧场、广播等媒体当中，另外对于为了见不得光目的在公众场合避实击虚、忽悠民众的一种人，也称之为演员。"
+msgstr ""
+"是指专职演出，或在表演艺术中扮演某个角色的人物。经常用在电影、电视、剧场、广"
+"播等媒体当中，另外对于为了见不得光目的在公众场合避实击虚、忽悠民众的一种人，"
+"也称之为演员。"
 
 msgid "famous director"
 msgstr "名导"
@@ -400,7 +404,11 @@ msgid "white mage"
 msgstr "白袍法师"
 
 msgid "white mage description"
-msgstr "有些法师，逐渐了解了周围的世界，了解了世人所忍受的痛苦与肮脏，他们无法说服自己远离尘世一心向学。这些男女放弃了法师的生涯，加入神职人员的行列，将他们的毕生所学奉献给公益事业。在接受神职后，他们常常环游世界，治疗他人的疾病和伤痛。虽然没有受过作战训练，但他们在对付魔法的或者非自然的事物时仍然是强大的盟友。"
+msgstr ""
+"有些法师，逐渐了解了周围的世界，了解了世人所忍受的痛苦与肮脏，他们无法说服自"
+"己远离尘世一心向学。这些男女放弃了法师的生涯，加入神职人员的行列，将他们的毕"
+"生所学奉献给公益事业。在接受神职后，他们常常环游世界，治疗他人的疾病和伤痛。"
+"虽然没有受过作战训练，但他们在对付魔法的或者非自然的事物时仍然是强大的盟友。"
 
 #
 # city
@@ -452,6 +460,27 @@ msgstr "大市场"
 
 msgid "market3 description"
 msgstr "大市场"
+
+#
+# technology
+#
+msgid "technology1"
+msgstr "一级技法所"
+
+msgid "technology1 description"
+msgstr "一级技法所"
+
+msgid "technology2"
+msgstr "二级技法所"
+
+msgid "technology2 description"
+msgstr "二级技法所"
+
+msgid "technology3"
+msgstr "三级技法所"
+
+msgid "technology3 description"
+msgstr "三级技法所"
 
 # actor
 msgid "tower1"
@@ -943,3 +972,23 @@ msgstr "二级轰天雷"
 msgid "powder catapult6 description"
 msgstr "二级轰天雷"
 
+#
+# character unit type: taoism
+#
+msgid "taoism4"
+msgstr "天师道徒"
+
+msgid "taoism4 description"
+msgstr "天师道徒"
+
+msgid "taoism5"
+msgstr "天师祭酒"
+
+msgid "taoism5 description"
+msgstr "天师祭酒"
+
+msgid "taoism6"
+msgstr "二级天师祭酒"
+
+msgid "taoism6 description"
+msgstr "二级天师祭酒"

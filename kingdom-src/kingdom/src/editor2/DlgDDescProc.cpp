@@ -1,9 +1,13 @@
+#define GETTEXT_DOMAIN "wesnoth-maker"
+
 #include "global.hpp"
 #include "game_config.hpp"
 #include "loadscreen.hpp"
 #include "editor.hpp"
 #include "stdafx.h"
 #include <windowsx.h>
+#include "gettext.hpp"
+#include "formula_string_utils.hpp"
 
 #include "resource.h"
 #include "struct.h"
@@ -141,13 +145,13 @@ BOOL On_DlgDDescInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	return TRUE;
 }
 
-BOOL check_wok_root_folder(char *folder)
+BOOL check_wok_root_folder(const std::string& folder)
 {
-	char		text[_MAX_PATH];
+	std::stringstream strstr;
 	
 	// <wok>\data\_main.cfg
-	sprintf(text, "%s\\data\\_main.cfg", folder);
-	return is_file(text);
+	strstr << folder << "\\data\\_main.cfg";
+	return is_file(strstr.str().c_str());
 }
 
 void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
@@ -158,6 +162,7 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	BOOL fok;
 	std::string str;
 	std::stringstream strstr;
+	utils::string_map symbols;
 	
 	switch (id) {
 	case IDC_BT_DDESC_BROWSE:
@@ -170,29 +175,38 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			text[strlen(text) - 1] = 0;
 		}
 		if (!check_wok_root_folder(text)) {
-			posix_print_mb("%s，不是有效的kingdom-src-x.x.x源数据目录，请重新选择", appendbackslash(text));
+			symbols["directory"] = appendbackslash(text);
+			strstr.str("");
+			strstr << utf8_2_ansi(vgettext2("\"$directory\" isn't valid resource directory, please select again", symbols).c_str());
+			posix_print_mb(strstr.str().c_str());
 			break;
 		}
 		if (strcasecmp(ptr, game_config::path.c_str())) {
 			game_config::path = ptr;
-			gdmgr.heros_.set_path(game_config::path.c_str());
 			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_DDESC_WWWROOT), appendbackslash(ptr));
 			OnLSBt(TRUE);
+
+			update_locale_dir();
+
 			if (gdmgr._da != da_sync) {
 				title_select(da_sync);
 			} else {
 				sync_enter_ui();
 			}
-			update_locale_dir();
 		}
 		break;
 
 	case IDM_NEW_EXTRAINSDIST:
-		sprintf(text, "Do you want to extract install-material to C:\\kingdom-ins?"); 
-		retval = MessageBox(hdlgP, text, "Confirm Generate", MB_YESNO | MB_DEFBUTTON2);
+		strcpy(text, utf8_2_ansi(_("Do you want to extract release package to \"C:\\kingdom-ins\"?"))); 
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Confirm generate"));
+		retval = MessageBox(hdlgP, text, strstr.str().c_str(), MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
 			fok = extra_kingdom_ins_disk(gdmgr._menu_text, "c:\\kingdom-ins", "c:\\kingdom-ins-android\\com.freeors.kingdom");
-			posix_print_mb("Extract install-material from %s to C:\\kingdom-ins, %s!!", gdmgr._menu_text, fok? "Success": "Fail");
+			symbols["src"] = gdmgr._menu_text;
+			symbols["result"] = fok? "Success": "Fail";
+			strcpy(text, utf8_2_ansi(vgettext2("Extract release package from \"$src\" to \"C:\\kingdom-ins\", $result!", symbols).c_str())); 
+			posix_print_mb(text);
 		}
 		break;
 
@@ -236,12 +250,14 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		strstr << "\\data\\campaigns\\" << offextname(basename(gdmgr._menu_text));
 		strcpy(text, strstr.str().c_str());
 
+		symbols["file"] = gdmgr._menu_text;
+		symbols["directory"] = text;
 		strstr.str("");
-		strstr << "您想删除文件：" << gdmgr._menu_text << "，以及目录：";
-		strstr << text << "？";
+		strstr << utf8_2_ansi(vgettext2("Do you want to delete file: \"$file\" and directory: \"$directory\"?", symbols).c_str());
 
-		// Confirm Multiple File Delete 
-		retval = MessageBox(hdlgP, strstr.str().c_str(), "确认删除", MB_YESNO | MB_DEFBUTTON2);
+		strcpy(text, utf8_2_ansi(_("Confirm delete")));
+		// Confirm Multiple File Delete
+		retval = MessageBox(hdlgP, strstr.str().c_str(), text, MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
 			if (delfile1(gdmgr._menu_text)) {
                 TreeView_DeleteItem(GetDlgItem(hdlgP, IDC_TV_DDESC_EXPLORER), (HTREEITEM)(UINT_PTR)gdmgr._menu_lparam);
@@ -258,10 +274,13 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 
 	case IDM_DELETE_ITEM1:
+		symbols["file"] = gdmgr._menu_text;
 		strstr.str("");
-		strstr << "将产生不同步，您想删除文件：" << gdmgr._menu_text << "？";
+		strstr << utf8_2_ansi(vgettext2("Will generate non-sync, do you want to only delete file: \"$file\"?", symbols).c_str());
+
+		strcpy(text, utf8_2_ansi(_("Confirm delete")));
 		// Confirm Multiple File Delete 
-		retval = MessageBox(hdlgP, strstr.str().c_str(), "确认删除", MB_YESNO | MB_DEFBUTTON2);
+		retval = MessageBox(hdlgP, strstr.str().c_str(), text, MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
 			if (delfile1(gdmgr._menu_text)) {
                 TreeView_DeleteItem(GetDlgItem(hdlgP, IDC_TV_DDESC_EXPLORER), (HTREEITEM)(UINT_PTR)gdmgr._menu_lparam);
@@ -691,7 +710,7 @@ BOOL extra_kingdom_ins_disk(char* kingdom_src, char* kingdom_ins, char* kingdom_
 	}
 	fok = delfile1(kingdom_ins_android);
 	if (!fok) {
-		posix_print_mb("删除目录: %s，失败", kingdom_ins_android);
+		// posix_print_mb("删除目录: %s，失败", kingdom_ins_android);
 		// return fok;
 	}
 

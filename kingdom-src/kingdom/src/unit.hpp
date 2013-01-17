@@ -170,6 +170,7 @@ struct tactic_fields {
 	int32_t goto_y_;	\
 	int32_t facing_;	\
 	int32_t keep_turns_;	\
+	int32_t hide_turns_;	\
 	int32_t character_; \
 	int32_t human_;	\
 	int32_t random_traits_;	\
@@ -206,9 +207,10 @@ public:
 	static void clear_status_caches();
 	static bool draw_desc_;
 	static bool ignore_pack_;
-	static int commercial_exploiture_;
 
-	static unsigned char savegame_cache_[CONSTANT_1M];
+	// if allocate static, iOS may be not align 4! 
+	// use dynamic alloc by alloc.
+	static unsigned char* savegame_cache_;
 
 	friend struct unit_movement_resetter;
 	// Copy constructor
@@ -264,8 +266,7 @@ public:
 	 * Adds 'xp' points to the units experience; returns true if advancement
 	 * should occur
 	 */
-	virtual void get_experience(int xp, bool opp_is_artifical = false);
-	void get_experience2(int xp);
+	virtual void get_experience(const increase_xp::ublock& ub, int xp, bool master = true, bool second = true, bool third = true);
 
 	/** Colors for the unit's hitpoints. */
 	SDL_Color hp_color() const;
@@ -386,14 +387,20 @@ public:
 	const std::vector<t_string>& trait_names() const { return trait_names_; }
 	std::vector<std::string> get_traits_list() const;
 
-	int cost () const { return unit_value_; }
-	int gold_income () const;
+	int cost() const { return unit_value_; }
+	int gold_income() const;
 	int turn_experience() const { return turn_experience_; }
+
+	int technology_income() const;
 
 	int keep_turns() const { return keep_turns_; }
 	void set_keep_turns(int turns) { keep_turns_ = turns; }
+	int hide_turns() const { return hide_turns_; }
+	void set_hide_turns(int turns) { hide_turns_ = turns; }
 	bool human() const { return human_; }
 	void set_human(bool val);
+
+
 
 	bool verifying() const { return verifying_; }
 	void set_verifying(bool verifying = true) { verifying_ = verifying; }
@@ -420,8 +427,8 @@ public:
 	void set_hidden(bool state);
 	bool get_hidden() const { return hidden_; }
 	bool is_flying() const { return flying_; }
-	bool is_fearless() const { return is_fearless_; }
-	bool is_healthy() const { return is_healthy_; }
+	bool is_fearless() const { return false; }
+	bool is_healthy() const { return false; }
 	int movement_cost(const t_translation::t_terrain terrain, const map_location* loc = NULL) const;
 	int defense_modifier(t_translation::t_terrain terrain) const;
 	int resistance_against(const std::string& damage_name,bool attacker,const map_location& loc) const;
@@ -443,8 +450,8 @@ public:
 
 	size_t modification_count(const std::string& id) const;
 
-	void add_modification(const std::string& type, const config& modification,
-	                  bool no_add = false, bool anim = false);
+	void add_modification(const config& modification, bool no_add = false, bool anim = false);
+	void add_modification_internal(int apply_to, const config& effect, bool anim, int turns = -1);
 
 	void apply_tactic(const ttactic* contain, const ttactic& effect, int part = 0, int turn = -1);
 
@@ -604,6 +611,7 @@ protected:
 	int max_attacks_;
 
 	int keep_turns_;
+	int hide_turns_;
 	bool human_;
 	bool verifying_;
 
@@ -621,11 +629,12 @@ protected:
 
 	int unit_value_;
 	int gold_income_;
+	int technology_income_;
 	int heal_;
 	int turn_experience_;
 	map_location goto_;
 
-	bool flying_, is_fearless_, is_healthy_;
+	bool flying_;
 
 	// Animations:
 	unit_animation *anim_;
@@ -684,6 +693,7 @@ protected:
 
 	std::map<std::string, int> tactic_compare_resistance_;
 	std::map<std::string, int> tactic_compare_damage_;
+	int tactic_compare_movement_;
 
 	uint32_t temporary_state_;
 };
@@ -719,14 +729,14 @@ struct team_data
 		units(0),
 		upkeep(0),
 		villages(0),
-		expenses(0),
 		net_income(0),
 		gold(0),
+		technology_net_income(0),
 		teamname()
 	{
 	}
 
-	int units, upkeep, villages, expenses, net_income, gold;
+	int units, upkeep, villages, net_income, gold, technology_net_income;
 	std::string teamname;
 };
 
@@ -751,5 +761,6 @@ private:
 
 unit* find_unit(unit_map& units, const hero& h);
 bool extract_hero(unit_map& units, const hero& h);
+unit* find_unit(unit_map& units, const map_location& loc);
 
 #endif

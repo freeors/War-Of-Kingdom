@@ -60,7 +60,8 @@ enum HOTKEY_COMMAND {
 	HOTKEY_UNIT_DETAIL,
 	HOTKEY_PLAY_CARD,
 
-	HOTKEY_INTERIOR,
+	HOTKEY_INTERIOR_M, HOTKEY_INTERIOR,
+	HOTKEY_TECHNOLOGY_TREE,
 	HOTKEY_FINAL_BATTLE,
 	HOTKEY_LIST,
 	HOTKEY_SYSTEM,
@@ -284,6 +285,7 @@ public:
 	virtual void replay_skip_animation() {}
 
 	virtual void interior() {};
+	virtual void technology_tree() {};
 	virtual void final_battle(int side_num = -1, int human_capital = -1, int ai_capital = -1) {}
 	virtual void list() {}
 	virtual void system() {}

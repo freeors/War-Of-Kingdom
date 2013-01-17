@@ -1,8 +1,11 @@
+#define GETTEXT_DOMAIN "wesnoth-maker"
+
 #include "global.hpp"
 #include "game_config.hpp"
 #include "loadscreen.hpp"
 #include "filesystem.hpp"
 #include "editor.hpp"
+#include "gettext.hpp"
 #include "stdafx.h"
 #include <windowsx.h>
 
@@ -12,7 +15,8 @@
 #include "win32x.h"
 #include <utility>
 
-#include "unit_types.hpp"
+#include "foreach.hpp"
+#include "language.hpp"
 
 extern editor editor_;
 
@@ -45,19 +49,18 @@ void sync_enter_ui(void)
 	ToolBar_EnableButton(gdmgr._htb_sync, IDM_REFRESH, TRUE);
 	ToolBar_EnableButton(gdmgr._htb_sync, IDM_SYNC_SYNC, FALSE);
 
-	sync_update_task_desc(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC));
-
-	if (editor_config::data_cfg.empty()) {
-		wml_config_from_file(game_config::path + "/xwml/data.bin", editor_config::data_cfg);
-		if (!editor_config::data_cfg.empty()) {
-			try {
-				unit_types.set_config(editor_config::data_cfg.child("units"));
-			} catch (game::error& e) {
-				MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
-				unit_types.clear();
-			}
+	HWND hctl = GetDlgItem(gdmgr._htb_sync, IDC_CMB_SYNC_LANGUAGE);
+	ComboBox_ResetContent(hctl);
+	const std::vector<language_def>& languages = get_languages();
+	const language_def& current_language = get_language();
+	foreach (const language_def& lang, languages) {
+		ComboBox_AddString(hctl, utf8_2_ansi(lang.language.c_str()));
+		if (lang == current_language) {
+			ComboBox_SetCurSel(hctl, ComboBox_GetCount(hctl) - 1);
 		}
 	}
+
+	sync_update_task_desc(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC));
 
 	ns::himl_checkbox = ImageList_Create(15, 15, FALSE, 2, 0);
 	ImageList_SetBkColor(ns::himl_checkbox, RGB(255, 255, 255));
@@ -144,13 +147,15 @@ BOOL On_DlgSyncInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	HWND hctl = GetDlgItem(hdlgP, IDC_LV_SYNC_SYNC);
 	LVCOLUMN lvc;
+	char text[_MAX_PATH];
 
 	init_toolbar_sync(gdmgr._hinst, hdlgP);
-	SetParent(GetDlgItem(hdlgP, IDC_ET_SYNC_WORKDIR), gdmgr._htb_sync);
-	SetParent(GetDlgItem(hdlgP, IDC_ST_SYNC_BLANK), gdmgr._htb_sync);
+	SetParent(GetDlgItem(hdlgP, IDC_STATIC_SYNC_LANGUAGE), gdmgr._htb_sync);
+	SetParent(GetDlgItem(hdlgP, IDC_CMB_SYNC_LANGUAGE), gdmgr._htb_sync);
 
 	gdmgr._hdlg_sync = hdlgP;
 
+	Static_SetText(GetDlgItem(gdmgr._htb_sync, IDC_STATIC_SYNC_LANGUAGE), utf8_2_ansi(_("Need restart if changed")));
 
 	//
 	// 初始化列视图控件
@@ -158,7 +163,8 @@ BOOL On_DlgSyncInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 140;
-	lvc.pszText = "file name";
+	strcpy(text, utf8_2_ansi(_("File name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -166,22 +172,26 @@ BOOL On_DlgSyncInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 170;
 	lvc.iSubItem = 1;
-	lvc.pszText = "(wml)checksum";
+	sprintf(text, "(wml)%s", utf8_2_ansi(_("Checksum")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 170;
 	lvc.iSubItem = 2;
-	lvc.pszText = "(bin)checksum";
+	sprintf(text, "(bin)%s", utf8_2_ansi(_("Checksum")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	lvc.cx = 80;
 	lvc.iSubItem = 3;
-	lvc.pszText = "Status";
+	strcpy(text, utf8_2_ansi(_("Status")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
 	lvc.cx = 250;
 	lvc.iSubItem = 4;
-	lvc.pszText = "sha1码";
+	strcpy(text, utf8_2_ansi(_("SHA1")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 4, &lvc);
 
 	ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -221,6 +231,19 @@ void exe_pc_exe(char *cmdline, BOOL fSync)
 	return;
 }
 
+void OnSyncCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	if (codeNotify != CBN_SELCHANGE) {
+		return;
+	}
+
+	int res = ComboBox_GetCurSel(hwndCtrl);
+	const std::vector<language_def>& languages = get_languages();
+	::set_language(languages[res]);
+	preferences::set_language(languages[res].localename);
+}
+
+
 void On_DlgSyncCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	char text[_MAX_PATH];
@@ -232,6 +255,10 @@ void On_DlgSyncCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 
 	case IDM_SYNC_SYNC:
 		do_sync();
+		break;
+
+	case IDC_CMB_SYNC_LANGUAGE:
+		OnSyncCmb(hdlgP, id, hwndCtrl, codeNotify);
 		break;
 
 	case IDM_SYNC_OPENPCDIR:
@@ -625,7 +652,7 @@ HWND init_toolbar_sync(HINSTANCE hinst, HWND hdlgP)
 	gdmgr._tbBtns_sync[3].dwData = 0L;
 	gdmgr._tbBtns_sync[3].iString = 0;
 
-	gdmgr._tbBtns_sync[4].iBitmap = 174;
+	gdmgr._tbBtns_sync[4].iBitmap = 60;
 	gdmgr._tbBtns_sync[4].idCommand = 0;
 	gdmgr._tbBtns_sync[4].fsState = 0;
 	gdmgr._tbBtns_sync[4].fsStyle = TBSTYLE_SEP;

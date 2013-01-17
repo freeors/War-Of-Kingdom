@@ -55,6 +55,7 @@ public:
 	int hero_list(std::vector<hero*>& heros);
 
 	void interior(int side_num);
+	void technology_tree(int side_num);
 	void list(int side_num);
 	void system(int side_num);
 

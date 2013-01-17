@@ -3,6 +3,8 @@
 
 
 #include "hero.hpp"
+#include "serialization/string_utils.hpp"
+#include "filesystem.hpp"
 
 #ifndef NUMELMS
    #define NUMELMS(aa) (sizeof(aa)/sizeof((aa)[0]))
@@ -50,7 +52,6 @@ typedef struct {
 
 	CRITICAL_SECTION	_cshbeat;
 
-	char			_fulldvrmgrini[_MAX_PATH];
 	char			_corp_name[_MAX_PATH];
 	char			_corp_http[_MAX_PATH];
 	HWND			_hdlg_title;
@@ -171,11 +172,6 @@ typedef struct {
 } dvrmgr_t;
 extern dvrmgr_t			gdmgr;
 
-#define DEVICE_INI				"DEVICE.INI"
-
-#define SECNAME_SYSTEM			"system"
-#define KEYNAME_WWWROOT			"wwwroot"
-
 #define ID_STATUS_TIMER			2
 
 #define PAGE_NUM				256
@@ -183,7 +179,6 @@ extern dvrmgr_t			gdmgr;
 //
 // -------------------------------------------------------
 //
-const char* utf8_2_ansi(const char* str);
 bool isvalid_id(const std::string& id);
 
 HBITMAP LoadBitmap(char *fname, DWORD *biWidth, DWORD *biHeight);
@@ -240,5 +235,10 @@ void exe_pc_exe(char *cmdline, BOOL fSync);
 
 void StatusBar_Trans(void);
 void StatusBar_Idle(void);
+
+BOOL check_wok_root_folder(const std::string& folder);
+std::string vgettext2(const char *msgid, const utils::string_map& symbols);
+const char* dgettext_2_ansi(const char* domain, const char* msgid);
+void set_language_text(HWND hdlgP, int id, const char* domain, const char* msgid);
 
 #endif // __STRUCT_H_

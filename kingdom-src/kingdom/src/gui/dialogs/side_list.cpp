@@ -26,6 +26,7 @@
 #include "game_display.hpp"
 #include "gamestatus.hpp"
 #include "gui/dialogs/helper.hpp"
+#include "gui/dialogs/technology_tree.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/image.hpp"
 #include "gui/widgets/label.hpp"
@@ -152,6 +153,14 @@ void tside_list::pre_show(CVideo& /*video*/, twindow& window)
 			, (int)FEATURE_PAGE
 			, true));
 	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "technology", false)
+		, boost::bind(
+			&tside_list::catalog_page
+			, this
+			, boost::ref(window)
+			, (int)TECHNOLOGY_PAGE
+			, true));
+	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "artifical", false)
 		, boost::bind(
 			&tside_list::catalog_page
@@ -189,6 +198,17 @@ void tside_list::hero_changed(twindow& window)
 
 	hero* leader = teams_[selected_side].leader();
 	portrait->set_label(leader->image(true));
+}
+
+void tside_list::technology_tree(int n)
+{
+	gui2::ttechnology_tree dlg(gui_, teams_, units_, heros_, n + 1, true);
+	try {
+		dlg.show(gui_.video());
+	} catch(twml_exception& e) {
+		e.show(gui_);
+		return;
+	}
 }
 
 void tside_list::fill_table(int catalog)
@@ -346,6 +366,24 @@ void tside_list::fill_table(int catalog)
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("features", table_item));
 
+		} else if (catalog == TECHNOLOGY_PAGE) {
+			hero* leader = teams_[n].leader();
+
+			
+			str.str("");
+			str << teams_[n].total_technology_income();
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("net_income", table_item));
+
+			str.str("");
+			if (teams_[n].ing_technology()) {
+				str << teams_[n].ing_technology()->name();
+			} else {
+				str << "---";
+			}
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("researching", table_item));
+
 		} else if (catalog == ARTIFICAL_PAGE) {
 
 			const std::vector<artifical*>& holded_cities = teams_[n].holded_cities();
@@ -433,7 +471,9 @@ void tside_list::fill_table(int catalog)
 			} else {
 				str << "---";
 			}
+
 /*
+			str.str("");
 			for (std::vector<tmess_data>::const_iterator it = plan.mrs_[0].messes.begin(); it != plan.mrs_[0].messes.end(); ++ it) {
 				if (it != plan.mrs_[0].messes.begin()) {
 					str << "\n";
@@ -443,10 +483,11 @@ void tside_list::fill_table(int catalog)
 				str << mess.allys << ",A " << mess.friend_arts << ", " << mess.enemies << ",A " << mess.enemy_arts;
 				str << "]";
 				for (std::map<unit*, tmess_data::tadjacent_data>::const_iterator it2 = mess.selfs.begin(); it2 != mess.selfs.end(); ++ it2) {
-					str << "(" << it2->first->name() << ", " << it2->second.friends << ", " << it2->second.enemies << ")";
+					str << "(" << it2->first->name() << ", " << it2->second.friends << ", " << it2->second.unhides << ", " << it2->second.enemies << ")";
 				}
 			}
 */
+
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("enemy_cities[0]", table_item));
 		}
@@ -454,6 +495,15 @@ void tside_list::fill_table(int catalog)
 		tgrid* grid_ptr = hero_table_->get_row_grid(hero_table_->get_item_count() - 1);
 		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true));
 		toggle->set_data(n);
+
+		if (catalog == TECHNOLOGY_PAGE) {
+			connect_signal_mouse_left_click(
+				find_widget<tbutton>(grid_ptr, "technology_tree", true)
+				, boost::bind(
+					&tside_list::technology_tree
+					, this
+					, (int)n));
+		}
 	}
 }
 

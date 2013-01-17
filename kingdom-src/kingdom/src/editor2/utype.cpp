@@ -1,9 +1,4 @@
-/*
-	兵种树树形视图中每个结点的lParam值有特珠意义
-	1)根结点: 0（未使用）
-	2)非结点：该兵种在tv_tree_这个std::vector中索引
-*/
-#define GETTEXT_DOMAIN "wesnoth"
+#define GETTEXT_DOMAIN "wesnoth-maker"
 
 #include "global.hpp"
 #include "game_config.hpp"
@@ -37,7 +32,7 @@ namespace ns {
 }
 
 std::map<int, std::string> tunit_type::type_map_;
-std::map<int, std::string> tunit_type::artifical_hero_;
+std::set<hero*> tunit_type::artifical_hero_;
 
 tunit_type::tunit_type(const std::string& id)
 	: tunit_type_(id)
@@ -59,6 +54,7 @@ void tunit_type::from_config(const unit_type* ut)
 	hitpoints_ = ut->hitpoints();
 	experience_needed_ = ut->experience_needed(false);
 	movement_ = ut->movement();
+	max_movement_ = ut->max_movement();
 	level_ = ut->level();
 	cost_ = ut->cost();
 	alignment_ = ut->alignment();
@@ -102,7 +98,13 @@ void tunit_type::from_config(const unit_type* ut)
 	turn_experience_ = ut->turn_experience();
 	heal_ = ut->heal();
 	guard_ = ut->guard();
-	income_ = ut->gold_income();
+	if (master_ == hero::number_market) {
+		income_ = ut->gold_income();
+	} else if (master_ == hero::number_technology) {
+		income_ = ut->technology_income();
+	} else {
+		income_ = 0;
+	}
 
 	packer_ = ut->packer();
 	if (packer_) {
@@ -130,8 +132,9 @@ void tunit_type::from_config(const unit_type* ut)
 		const unit_type* that = unit_types.find(*it);
 		candidate_advances_to_.push_back(that);
 	}
-	for (std::vector<tcore::node*>::const_iterator it = ns::core.utype_tree_.begin(); it != ns::core.utype_tree_.end(); ++ it) {
-		const unit_type* that = (*it)->current;
+	const std::vector<advance_tree::node*>& utype_tree = unit_types.utype_tree();
+	for (std::vector<advance_tree::node*>::const_iterator it = utype_tree.begin(); it != utype_tree.end(); ++ it) {
+		const unit_type* that = dynamic_cast<const unit_type*>((*it)->current);
 		if (that->packer()) {
 			continue;
 		}
@@ -255,6 +258,10 @@ void tunit_type::from_ui_utype_type(HWND hdlgP)
 	HWND hctl;
 	if (ns::utype.type() == tunit_type::TYPE_TROOP) {
 		movement_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPETROOP_MOVEMENT));
+		max_movement_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPETROOP_MAXMOVEMENT));
+		if (max_movement_ < movement_) {
+			max_movement_ = -1;
+		}
 
 		hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPETROOP_CHARACTER);
 		character_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
@@ -275,7 +282,7 @@ void tunit_type::from_ui_utype_type(HWND hdlgP)
 		hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPEARTIFICAL_GUARD);
 		guard_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
-		if (master_ == hero::number_market) {
+		if (master_ == hero::number_market || master_ == hero::number_technology) {
 			income_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPEARTIFICAL_INCOME));
 		}
 	}
@@ -319,7 +326,7 @@ void tunit_type::update_to_ui_utype_edit(HWND hdlgP) const
 		}
 	}
 	strstr.str("");
-	strstr << "升级到(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
+	strstr << utf8_2_ansi(_("Advances to")) << "(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_UTYPEEDIT_ADVANCESTO), strstr.str().c_str());
 
 	hctl = GetDlgItem(hdlgP, IDC_LV_UTYPEEDIT_ABILITIES);
@@ -362,7 +369,7 @@ void tunit_type::update_to_ui_utype_edit(HWND hdlgP) const
 		}
 	}
 	strstr.str("");
-	strstr << "能力(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
+	strstr << utf8_2_ansi(_("Abilities")) << "(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_UTYPEEDIT_ABILITIES), strstr.str().c_str());
 
 	update_to_ui_utype_edit_mtype(hdlgP);
@@ -389,7 +396,7 @@ void tunit_type::update_to_ui_utype_edit_mtype(HWND hdlgP) const
 		lvi.iItem = index ++;
 		lvi.iSubItem = 0;
 		strstr.str("");
-		strstr << utf8_2_ansi(gettext(it->c_str()));
+		strstr << utf8_2_ansi(dgettext(PACKAGE, it->c_str()));
 		strcpy(text, strstr.str().c_str());
 		lvi.pszText = text;
 		lvi.lParam = (LPARAM)0;
@@ -411,29 +418,45 @@ void tunit_type::update_to_ui_utype_edit_type(HWND hdlgP) const
 {
 	std::stringstream strstr;
 	if (type() == TYPE_TROOP) {
-		strstr << "移动力: " << movement_ << "\r\n";
-		strstr << "特色: ";
+		strstr << dgettext_2_ansi("wesnoth-lib", "Movement") << ": " << movement_;
+		strstr << "(";
+		if (max_movement_ != -1) {
+			strstr << max_movement_;
+		} else {
+			strstr << utf8_2_ansi(_("Unrestricted"));
+		} 
+		strstr << ")\r\n";
+		strstr << dgettext_2_ansi("wesnoth-lib", "Character") << ": ";
 		if (character_ != NO_CHARACTER) {
 			strstr << utf8_2_ansi(unit_types.character(character_).name_.c_str());
 		}
 		strstr << "\r\n";
-		strstr << "是否能上城墙: " << (land_wall_? "能": "不能") << "\r\n";
-		strstr << "君主专属兵种: " << (leader_? "是": "不是");
+		strstr << utf8_2_ansi(_("Can land on wall")) << ": ";
+		strstr << (land_wall_? utf8_2_ansi(_("Can")): utf8_2_ansi(_("Cannot"))) << "\r\n";
+		strstr << utf8_2_ansi(_("Only used to leader")) << ": ";
+		strstr << (leader_? utf8_2_ansi(_("YES")): utf8_2_ansi(_("No")));
 
 	} else if (type() == TYPE_CITY) {
-		strstr << "回合自增加XP: " << turn_experience_ << "\r\n";
-		strstr << "回合自恢复HP: " << heal_;
+		strstr << utf8_2_ansi(_("Increase XP per turn")) << ": " << turn_experience_ << "\r\n";
+		strstr << utf8_2_ansi(_("Recover HP per turn")) << ": " << heal_;
 
 	} else if (type() == TYPE_ARTIFICAL) {
-		strstr << "类型: " << tunit_type::artifical_hero_.find(master_)->second << "\r\n";
-		strstr << "回合自恢复HP: " << heal_ << "\r\n";
-		strstr << "警戒攻击: ";
+		hero& h = **(tunit_type::artifical_hero_.find(&gdmgr.heros_[master_]));
+		strstr << utf8_2_ansi(_("Type")) << ": ";
+		strstr << utf8_2_ansi(h.name().c_str()) << "\r\n";
+		strstr << utf8_2_ansi(_("Recover HP per turn")) << ": " << heal_ << "\r\n";
+		strstr << utf8_2_ansi(_("Guard attack")) << ": ";
 		if (guard_ != NO_GUARD) {
 			strstr << utf8_2_ansi(dgettext(PACKAGE, attacks_[guard_].id_.c_str()));
 		}
-		if (master_ == hero::number_market) {
+		if (master_ == hero::number_market || master_ == hero::number_technology) {
 			strstr << "\r\n";
-			strstr << "基本收入金: " << income_;
+			if (master_ == hero::number_market) {
+				strstr << utf8_2_ansi(_("Base income gold"));
+			} else if (master_ == hero::number_technology) {
+				strstr << utf8_2_ansi(_("Base income technology"));
+			}
+			strstr << ": " << income_;
 		}
 	}
 
@@ -459,7 +482,7 @@ void tunit_type::update_to_ui_mtype_edit(HWND hdlgP) const
 		lvi.iItem = index ++;
 		lvi.iSubItem = 0;
 		strstr.str("");
-		strstr << utf8_2_ansi(gettext(it->c_str()));
+		strstr << utf8_2_ansi(dgettext(PACKAGE, it->c_str()));
 		strcpy(text, strstr.str().c_str());
 		lvi.pszText = text;
 		lvi.lParam = (LPARAM)0;
@@ -644,6 +667,9 @@ void tunit_type::generate() const
 				
 		if (type() == TYPE_TROOP) {
 			strstr << "\tmovement = " << movement_ << "\n";
+			if (max_movement_ != -1) {
+				strstr << "\tmax_movement = " << max_movement_ << "\n";
+			}
 			if (character_ != NO_CHARACTER) {
 				strstr << "\tcharacter = " << unit_types.character(character_).id_ << "\n";
 			}
@@ -674,7 +700,7 @@ void tunit_type::generate() const
 				strstr << "\tterrain = Kud" << "\n";
 				strstr << "\twalk_wall = yes" << "\n";
 				strstr << "\tcancel_zoc = yes" << "\n";
-			} else if (master_ == hero::number_market) {
+			} else if (master_ == hero::number_market || master_ == hero::number_technology) {
 				strstr << "\tmatch = Ea" << "\n";
 				strstr << "\tgold_income = " << income_ << "\n";
 			} else if (master_ == hero::number_tower) {
@@ -849,42 +875,6 @@ bool tunit_type::has_halo() const
 {
 	for (std::set<std::string>::const_iterator it = abilities_.begin(); it != abilities_.end(); ++ it) {
 		if (it->find("illumination") != std::string::npos) {
-			return true;
-		}
-	}
-	return false;
-}
-
-bool tunit_type::has_resistance_anim() const
-{
-	for (std::set<std::string>::const_iterator it = abilities_.begin(); it != abilities_.end(); ++ it) {
-		if (it->find("firm") != std::string::npos) {
-			return true;
-		}
-	}
-	return false;
-}
-
-bool tunit_type::has_leading_anim() const
-{
-	for (std::set<std::string>::const_iterator it = abilities_.begin(); it != abilities_.end(); ++ it) {
-		if (it->find("leadership") != std::string::npos) {
-			return true;
-		}
-		if (it->find("encourage") != std::string::npos) {
-			return true;
-		}
-	}
-	return false;
-}
-
-bool tunit_type::has_healing_anim() const
-{
-	for (std::set<std::string>::const_iterator it = abilities_.begin(); it != abilities_.end(); ++ it) {
-		if (it->find("heals") != std::string::npos) {
-			return true;
-		}
-		if (it->find("curing") != std::string::npos) {
 			return true;
 		}
 	}
@@ -1363,12 +1353,33 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
+	char text[_MAX_PATH];
 	if (ns::action_utype == ma_edit) {
-		SetWindowText(hdlgP, "编辑兵种");
+		strstr << utf8_2_ansi(_("arms^Edit type"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加兵种");
+		strstr << utf8_2_ansi(_("arms^Add type"));
+		
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FILE), utf8_2_ansi(_("Corresponding cfg")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DOMAIN), utf8_2_ansi(_("Domain")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NAME), utf8_2_ansi(_("Name")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ID), utf8_2_ansi(_("ID")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DESCRIPTION), utf8_2_ansi(_("Description")));
+	set_language_text(hdlgP, IDC_STATIC_COST, "wesnoth-lib", "Cost");
+	set_language_text(hdlgP, IDC_STATIC_GOLD, "wesnoth-lib", "Gold");
+	Static_SetText(GetDlgItem(hdlgP, IDC_CHK_UTYPEEDIT_ZOC), utf8_2_ansi(_("Has ZOC")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("Type")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MTYPE), utf8_2_ansi(_("Resistance/Defend/Cost")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_BT_UTYPEEDIT_SPECIAL), utf8_2_ansi(_("Set")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LEVEL), utf8_2_ansi(_("Level")));
+	set_language_text(hdlgP, IDC_STATIC_ARMS, "wesnoth-lib", "Arms");
+	set_language_text(hdlgP, IDC_STATIC_RACE, "wesnoth-lib", "Race");
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ALIGNMENT), utf8_2_ansi(_("Alignment")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ATTACK), utf8_2_ansi(_("Attack")));
 
 	std::map<int, tunit_type>::const_iterator find_it = ns::core.types_updating_.find(ns::clicked_utype);
 	if (find_it != ns::core.types_updating_.end()) {
@@ -1377,8 +1388,6 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		const std::string& id = ns::core.tv_tree_[ns::clicked_utype].first;
 		ns::utype.from_config(unit_types.find(id));
 	}
-
-	std::stringstream strstr;
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_FILE);
 	Edit_SetText(hctl, ns::utype.file(true).c_str());
@@ -1475,7 +1484,8 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 100;
-	lvc.pszText = "名称(标识)";
+	strcpy(text, utf8_2_ansi(_("Name(ID)")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -1483,7 +1493,8 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "等级";
+	strcpy(text, utf8_2_ansi(_("Level")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	ListView_SetImageList(hctl, gdmgr._himl_checkbox, LVSIL_STATE);
@@ -1496,7 +1507,8 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 120;
-	lvc.pszText = "名称(标识)";
+	strcpy(text, utf8_2_ansi(_("Name(ID)")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -1504,7 +1516,8 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 700;
 	lvc.iSubItem = 1;
-	lvc.pszText = "描述";
+	strcpy(text, utf8_2_ansi(_("Description")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	ListView_SetImageList(hctl, gdmgr._himl_checkbox, LVSIL_STATE);
@@ -1517,7 +1530,8 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 80;
-	lvc.pszText = "类型";
+	strcpy(text, utf8_2_ansi(_("Type")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -1525,7 +1539,10 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 50;
 	lvc.iSubItem = 1;
-	lvc.pszText = "抗性";
+	strstr.str("");
+	strstr << "Resistance";
+	strcpy(text, utf8_2_ansi(dsgettext("wesnoth", strstr.str().c_str())));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -1537,7 +1554,8 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 100;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -1545,32 +1563,43 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "类型";
+	strcpy(text, utf8_2_ansi(_("Type")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 120;
 	lvc.iSubItem = 2;
-	lvc.pszText = "图标(attacks/)";
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Icon")) << "(attacks/)";
+	strcpy(text, strstr.str().c_str());
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 3;
-	lvc.pszText = "距离";
+	strstr.str("");
+	strcpy(text, utf8_2_ansi(_("attack^Range")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
 	lvc.cx = 80;
 	lvc.iSubItem = 4;
-	lvc.pszText = "特色";
+	strstr.str("");
+	strstr << "Character";
+	strcpy(text, utf8_2_ansi(dsgettext("wesnoth-lib", strstr.str().c_str())));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 4, &lvc);
 
 	lvc.cx = 38;
 	lvc.iSubItem = 5;
-	lvc.pszText = "损伤";
+	strcpy(text, utf8_2_ansi(_("Damage")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 5, &lvc);
 
 	lvc.cx = 38;
 	lvc.iSubItem = 6;
-	lvc.pszText = "次数";
+	strcpy(text, utf8_2_ansi(_("damage^Number")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 6, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -1588,16 +1617,28 @@ BOOL On_DlgAttackEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
 	if (ns::action_attack == ma_edit) {
-		SetWindowText(hdlgP, "编辑攻击");
+		strstr << utf8_2_ansi(_("Edit attack"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加攻击");
+		strstr << utf8_2_ansi(_("Add attack"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
 
 	char text[_MAX_PATH];
-	std::stringstream strstr;
 	HWND hctl;
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DOMAIN), utf8_2_ansi(_("Domain")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ID), utf8_2_ansi(_("ID")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NAME), utf8_2_ansi(_("Name")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ICON), utf8_2_ansi(_("Icon")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("Type")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_RANGE), utf8_2_ansi(_("attack^Range")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DAMAGE), utf8_2_ansi(_("Damage")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NUMBER), utf8_2_ansi(_("damage^Number")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_ATTACKEDIT_BROWSEICON), utf8_2_ansi(_("Browse...")));
+
 	tunit_type::tattack& attack = ns::utype.attacks_[ns::clicked_attack];
 
 	// textdomain
@@ -1654,7 +1695,8 @@ BOOL On_DlgAttackEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 60;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -1662,7 +1704,8 @@ BOOL On_DlgAttackEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 500;
 	lvc.iSubItem = 1;
-	lvc.pszText = "描述";
+	strcpy(text, utf8_2_ansi(_("Description")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	ListView_SetImageList(hctl, gdmgr._himl_checkbox, LVSIL_STATE);
@@ -1708,7 +1751,7 @@ BOOL On_DlgAttackEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		}
 	}
 	strstr.str("");
-	strstr << "特色(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
+	strstr << utf8_2_ansi(_("Specials")) << "(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ATTACKEDIT_SPECIALS), strstr.str().c_str());
 
 	return FALSE;
@@ -1729,13 +1772,13 @@ void OnAttackEditEt2(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	std::string str = text;
 	std::transform(str.begin(), str.end(), str.begin(), std::tolower);
 	if (!isvalid_id(str)) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ATTACKEDIT_IDSTATUS), "无效字符串");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ATTACKEDIT_IDSTATUS), utf8_2_ansi(_("Invalid string")));
 		return;
 	}
 	// cannot be exist id.
 	for (size_t i = 0; i < ns::utype.attacks_.size(); i ++) {
 		if (i != ns::clicked_attack && str == ns::utype.attacks_[i].id_) {
-			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ATTACKEDIT_IDSTATUS), "已存在该ID的其它攻击");
+			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ATTACKEDIT_IDSTATUS), utf8_2_ansi(_("Other attack has holded ID")));
 			return;
 		}
 	}
@@ -1807,7 +1850,7 @@ BOOL On_DlgAttackEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			}
 			if (lpNMHdr->idFrom == IDC_LV_ATTACKEDIT_SPECIALS) {
 				strstr.str("");
-				strstr << "特色(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
+				strstr << utf8_2_ansi(_("Specials")) << "(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
 				Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ATTACKEDIT_SPECIALS), strstr.str().c_str());
 			} 
 		}
@@ -1895,9 +1938,16 @@ BOOL On_DlgMTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ns::clicked_mtype = -1;
 
 	std::stringstream strstr;
-	strstr << "抗性/防御指数/移动消耗";
+	char text[_MAX_PATH];
+	strstr << utf8_2_ansi(_("Resistance/Defend/Cost"));
 	SetWindowText(hdlgP, strstr.str().c_str());
 	ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TEMPLATE), utf8_2_ansi(_("Template")));
+	set_language_text(hdlgP, IDC_STATIC_RESISTANCE, "wesnoth", "Resistance");
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DEFEND), utf8_2_ansi(_("mtype^Defend")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MOVEMENTCOST), utf8_2_ansi(_("Movement cost")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TIP), utf8_2_ansi(_("Double click one item to modify")));
 
 	// movement_type
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_MTYPEEDIT_TYPE);
@@ -1917,7 +1967,8 @@ BOOL On_DlgMTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 80;
-	lvc.pszText = "类型";
+	strcpy(text, utf8_2_ansi(_("Type")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -1925,13 +1976,15 @@ BOOL On_DlgMTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "默认值";
+	strcpy(text, utf8_2_ansi(_("Default value")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 2;
-	lvc.pszText = "使用值";
+	strcpy(text, utf8_2_ansi(_("Using value")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -1943,7 +1996,8 @@ BOOL On_DlgMTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 80;
-	lvc.pszText = "地形";
+	strcpy(text, dgettext_2_ansi("wesnoth", "Terrain"));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -1951,7 +2005,8 @@ BOOL On_DlgMTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "默认值";
+	strcpy(text, utf8_2_ansi(_("Default value")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -1963,7 +2018,8 @@ BOOL On_DlgMTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 80;
-	lvc.pszText = "地形";
+	strcpy(text, dgettext_2_ansi("wesnoth", "Terrain"));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -1971,7 +2027,8 @@ BOOL On_DlgMTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "默认值";
+	strcpy(text, utf8_2_ansi(_("Default value")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -2277,15 +2334,31 @@ BOOL On_DlgUTypeTroopInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ns::clicked_mtype = -1;
 
 	std::stringstream strstr;
-	strstr << "部队兵种特有属性";
+	strstr << utf8_2_ansi(_("Special attributes of troop type"));
 	SetWindowText(hdlgP, strstr.str().c_str());
 	ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+	
+	set_language_text(hdlgP, IDC_STATIC_MOVEMENT, "wesnoth-lib", "Movement");
+	Button_SetText(GetDlgItem(hdlgP, IDC_STATIC_MAXIMUM), utf8_2_ansi(_("Maximum")));
+	strstr.str("");
+	strstr << "(-1: ";
+	strstr << utf8_2_ansi(_("Unrestricted")) << ")";
+	Button_SetText(GetDlgItem(hdlgP, IDC_STATIC_UNRESTRAINT), strstr.str().c_str());
+	set_language_text(hdlgP, IDC_STATIC_CHARACTER, "wesnoth-lib", "Character");
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_UTYPETROOP_LANDWALL), utf8_2_ansi(_("Can land on wall")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_UTYPETROOP_LEADER), utf8_2_ansi(_("Only used to leader")));
 
 	// movement
 	HWND hctl = GetDlgItem(hdlgP, IDC_UD_UTYPETROOP_MOVEMENT);
 	UpDown_SetRange(hctl, 1, 30);	// [1, 30]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPETROOP_MOVEMENT));
 	UpDown_SetPos(hctl, ns::utype.movement_);
+
+	// max movement
+	hctl = GetDlgItem(hdlgP, IDC_UD_UTYPETROOP_MAXMOVEMENT);
+	UpDown_SetRange(hctl, -1, 30);	// [-1, 30]
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPETROOP_MAXMOVEMENT));
+	UpDown_SetPos(hctl, ns::utype.max_movement_);
 
 	// character
 	hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPETROOP_CHARACTER);
@@ -2357,9 +2430,12 @@ BOOL On_DlgUTypeCityInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
 	std::stringstream strstr;
-	strstr << "城市兵种特有属性";
+	strstr << utf8_2_ansi(_("Special attributes of city type"));
 	SetWindowText(hdlgP, strstr.str().c_str());
 	ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TURNEXPERIENCE), utf8_2_ansi(_("Increase XP per turn")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HEAL), utf8_2_ansi(_("Recover HP per turn")));
 
 	// turn experience
 	HWND hctl = GetDlgItem(hdlgP, IDC_UD_UTYPECITY_TURNEXPERIENCE);
@@ -2422,16 +2498,22 @@ BOOL On_DlgUTypeArtificalInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
 	std::stringstream strstr;
-	strstr << "建筑物兵种特有属性";
+	strstr << utf8_2_ansi(_("Special attributes of artifical type"));
 	SetWindowText(hdlgP, strstr.str().c_str());
 	ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("Type")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HEAL), utf8_2_ansi(_("Recover HP per turn")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_GUARD), utf8_2_ansi(_("Guard attack")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income gold")));
+
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPEARTIFICAL_MASTER);
 	int selected_row = -1;
-	for (std::map<int, std::string>::iterator it = tunit_type::artifical_hero_.begin(); it != tunit_type::artifical_hero_.end(); ++ it) {
-		ComboBox_AddString(hctl, it->second.c_str());
-		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
-		if (ns::utype.master_ == it->first) {
+	for (std::set<hero*>::iterator it = tunit_type::artifical_hero_.begin(); it != tunit_type::artifical_hero_.end(); ++ it) {
+		hero& h = **it;
+		ComboBox_AddString(hctl, utf8_2_ansi(h.name().c_str()));
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, h.number_);
+		if (ns::utype.master_ == h.number_) {
 			selected_row = ComboBox_GetCount(hctl) - 1;
 		}
 	}
@@ -2461,7 +2543,7 @@ BOOL On_DlgUTypeArtificalInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	hctl = GetDlgItem(hdlgP, IDC_UD_UTYPEARTIFICAL_INCOME);
 	UpDown_SetRange(hctl, 0, 1000);	// [0, 1000]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPEARTIFICAL_INCOME));
-	if (ns::utype.master_ == hero::number_market) {
+	if (ns::utype.master_ == hero::number_market || ns::utype.master_ == hero::number_technology) {
 		UpDown_SetPos(hctl, ns::utype.income_);
 	} else {
 		UpDown_SetPos(hctl, 0);
@@ -2485,7 +2567,7 @@ void OnUTypeArtificalCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	int master = ComboBox_GetItemData(hwndCtrl, ComboBox_GetCurSel(hwndCtrl));
 	
 	HWND hctl = GetDlgItem(hdlgP, IDC_UD_UTYPEARTIFICAL_INCOME);
-	if (master == hero::number_market) {
+	if (master == hero::number_market || master == hero::number_technology) {
 		UpDown_SetPos(hctl, ns::utype.income_);
 		Edit_Enable(GetDlgItem(hdlgP, IDC_ET_UTYPEARTIFICAL_INCOME), TRUE);
 		EnableWindow(hctl, TRUE);
@@ -2564,7 +2646,7 @@ void OnUTypeEditEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	std::string str = text;
 	std::transform(str.begin(), str.end(), str.begin(), std::tolower);
 	if (!isvalid_id(str)) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_TEXTDOMAINSTATUS), "无效字符串");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_TEXTDOMAINSTATUS), utf8_2_ansi(_("Invalid string")));
 		return;
 	}
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_TEXTDOMAINSTATUS), "");
@@ -2592,21 +2674,21 @@ void OnUTypeEditEt2(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	std::string str = text;
 	std::transform(str.begin(), str.end(), str.begin(), std::tolower);
 	if (!isvalid_id(str)) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), "无效字符串");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), utf8_2_ansi(_("Invalid string")));
 		return;
 	}
 	// cannot be exist id.
 	for (size_t i = 0; i < ns::core.tv_tree_.size(); i ++) {
 		if (i != ns::clicked_utype && str == ns::core.tv_tree_[i].first) {
-			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), "已存在该ID的其它兵种");
+			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), utf8_2_ansi(_("Other type has holded ID")));
 			return;
 		}
 	}
 	if (ns::action_utype == ma_new) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), "请设置新加兵种ID");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), utf8_2_ansi(_("Set adding type's ID")));
 	} else {
 		if (ns::utype.utype_from_cfg_.id_ != str) {
-			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), "修改ID会导致自动重汇编");
+			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), utf8_2_ansi(_("Modify ID results to rebuild")));
 		} else {
 			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDSTATUS), "");
 		}
@@ -2647,14 +2729,17 @@ void OnUTypeEditCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		if (ns::utype.utype_from_cfg_.master_ != HEROS_INVALID_NUMBER) {
 			ns::utype.master_ = ns::utype.utype_from_cfg_.master_;
 		} else {
-			ns::utype.master_ = tunit_type::artifical_hero_.begin()->first;
+			const hero& h = **(tunit_type::artifical_hero_.begin());
+			ns::utype.master_ = h.number_;
 		}
 		ns::utype.can_recruit_ = false;
 	}
 	if (type == tunit_type::TYPE_TROOP && !ns::utype.utype_from_cfg_.movement_) {
 		ns::utype.movement_ = 5;
+		ns::utype.max_movement_ = -1;
 	} else {
 		ns::utype.movement_ = ns::utype.utype_from_cfg_.movement_;
+		ns::utype.max_movement_ = ns::utype.utype_from_cfg_.max_movement_;
 	}
 	ns::utype.character_ = ns::utype.utype_from_cfg_.character_;
 	ns::utype.land_wall_ = ns::utype.utype_from_cfg_.land_wall_;
@@ -2819,11 +2904,11 @@ BOOL On_DlgUTypeEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			}
 			strstr.str("");
 			if (lpNMHdr->idFrom == IDC_LV_UTYPEEDIT_ADVANCESTO) {
-				strstr << "升级到(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
+				strstr << utf8_2_ansi(_("Advances to")) << "(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
 				Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_UTYPEEDIT_ADVANCESTO), strstr.str().c_str());
 
 			} else if (lpNMHdr->idFrom == IDC_LV_UTYPEEDIT_ABILITIES) {
-				strstr << "能力(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
+				strstr << utf8_2_ansi(_("Abilities")) << "(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
 				Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_UTYPEEDIT_ABILITIES), strstr.str().c_str());
 			} 
 		}
@@ -2855,12 +2940,29 @@ BOOL On_DlgUType2EditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
+	char text[_MAX_PATH];
 	if (ns::action_utype == ma_edit) {
-		SetWindowText(hdlgP, "编辑打包兵种");
+		strstr << utf8_2_ansi(_("Edit packer type"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加打包兵种");
+		strstr << utf8_2_ansi(_("Add packer type"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FILE), utf8_2_ansi(_("Corresponding cfg")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DOMAIN), utf8_2_ansi(_("Domain")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NAME), utf8_2_ansi(_("Name")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ID), utf8_2_ansi(_("ID")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DESCRIPTION), utf8_2_ansi(_("Description")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_CHK_UTYPEEDIT_ZOC), utf8_2_ansi(_("Has ZOC")));
+	set_language_text(hdlgP, IDC_STATIC_ARMS, "wesnoth-lib", "Arms");
+	set_language_text(hdlgP, IDC_STATIC_RACE, "wesnoth-lib", "Race");
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MTYPE), utf8_2_ansi(_("Resistance/Defend/Cost")));
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MELEE), utf8_2_ansi(_("Increase in melee")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_RANGED), utf8_2_ansi(_("Increase in ranged")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CAST), utf8_2_ansi(_("Increase in cast")));
 
 	std::map<int, tunit_type>::const_iterator find_it = ns::core.types_updating_.find(ns::clicked_utype);
 	if (find_it != ns::core.types_updating_.end()) {
@@ -2869,8 +2971,6 @@ BOOL On_DlgUType2EditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		const std::string& id = ns::core.tv_tree_[ns::clicked_utype].first;
 		ns::utype.from_config(unit_types.find(id));
 	}
-
-	std::stringstream strstr;
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_FILE);
 	Edit_SetText(hctl, ns::utype.file(true).c_str());
@@ -2936,7 +3036,8 @@ BOOL On_DlgUType2EditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 80;
-	lvc.pszText = "类型";
+	strcpy(text, utf8_2_ansi(_("Type")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -2944,7 +3045,8 @@ BOOL On_DlgUType2EditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 50;
 	lvc.iSubItem = 1;
-	lvc.pszText = "抗性";
+	strcpy(text, dgettext_2_ansi("wesnoth", "Resistance"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -3050,9 +3152,16 @@ void OnUTypeDelBt(HWND hdlgP)
 	const std::string& id = ns::core.tv_tree_[ns::clicked_utype].first;
 	const unit_type* ut = unit_types.find(id);
 
-	std::stringstream message;
-	message << "您想删除“" << utf8_2_ansi(ut->type_name().c_str()) << "”兵种吗？";
-	if (MessageBox(hdlgP, message.str().c_str(), "确认删除", MB_YESNO | MB_DEFBUTTON2) != IDYES) {
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+	utils::string_map symbols;
+
+	symbols["type"] = ut->type_name();
+	strstr << utf8_2_ansi(vgettext2("Do you want to delete type: \"$type\"?", symbols).c_str());
+
+	strcpy(text, utf8_2_ansi(_("Confirm delete")));
+	int retval = MessageBox(gdmgr._hwnd_main, strstr.str().c_str(), text, MB_YESNO);
+	if (retval == IDNO) {
 		return;
 	}
 
@@ -3065,28 +3174,32 @@ void OnUTypeDelBt(HWND hdlgP)
 
 BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
+	std::stringstream strstr;
+	strstr << utf8_2_ansi(_("arms^Type")) << "--";
 	if (ns::type == IDM_UTYPE_GENERAL) {
-		SetWindowText(hdlgP, "兵种--基本信息");
+		strstr << utf8_2_ansi(_("Base information"));
 	} else if (ns::type == IDM_UTYPE_MTYPE) {
-		SetWindowText(hdlgP, "兵种--抗性");
+		strstr << dgettext_2_ansi("wesnoth", "Resistance");
 	} else if (ns::type == IDM_UTYPE_ATTACKI) {
-		SetWindowText(hdlgP, "兵种--攻击I");
+		strstr << utf8_2_ansi(_("Attack I"));
 	} else if (ns::type == IDM_UTYPE_ATTACKII) {
-		SetWindowText(hdlgP, "兵种--攻击II");
+		strstr << utf8_2_ansi(_("Attack II"));
 	} else if (ns::type == IDM_UTYPE_ATTACKIII) {
-		SetWindowText(hdlgP, "兵种--攻击III");
+		strstr << utf8_2_ansi(_("Attack III"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
+	Button_SetText(GetDlgItem(hdlgP, IDOK), utf8_2_ansi(_("Close")));
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_LV_VISUAL2_EXPLORER);
 	LVCOLUMN lvc;
 	int index = 0;
-	std::stringstream strstr;
 	char text[_MAX_PATH];
 
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 80;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = index;
 	ListView_InsertColumn(hctl, index ++, &lvc);
@@ -3094,7 +3207,8 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 50;
 	lvc.iSubItem = index;
-	lvc.pszText = "等级";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Level"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, index ++, &lvc);
 
 	if (ns::type == IDM_UTYPE_GENERAL) {
@@ -3113,25 +3227,29 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 50;
 		lvc.iSubItem = index;
-		lvc.pszText = "移动力";
+		strcpy(text, dgettext_2_ansi("wesnoth-lib", "Movement"));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 50;
 		lvc.iSubItem = index;
-		lvc.pszText = "兵科";
+		strcpy(text, dgettext_2_ansi("wesnoth-lib", "Arms"));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 50;
 		lvc.iSubItem = index;
-		lvc.pszText = "成本";
+		strcpy(text, dgettext_2_ansi("wesnoth-lib", "Cost"));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 50;
 		lvc.iSubItem = index;
-		lvc.pszText = "上城墙";
+		strcpy(text, utf8_2_ansi(_("Can land on wall")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
@@ -3143,7 +3261,8 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 150;
 		lvc.iSubItem = index;
-		lvc.pszText = "能力";
+		strcpy(text, utf8_2_ansi(_("Abilities")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 		
 	} else if (ns::type == IDM_UTYPE_MTYPE) {
@@ -3151,7 +3270,8 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 75;
 		lvc.iSubItem = index;
-		lvc.pszText = "模板";
+		strcpy(text, utf8_2_ansi(_("Template")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		for (std::vector<std::string>::const_iterator it = attack_type_vstr.begin(); it != attack_type_vstr.end(); ++ it) {
@@ -3159,7 +3279,7 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvc.cx = 50;
 			lvc.iSubItem = index;
 			strstr.str("");
-			strstr << utf8_2_ansi(gettext(it->c_str()));
+			strstr << utf8_2_ansi(dgettext(PACKAGE, it->c_str()));
 			strcpy(text, strstr.str().c_str());
 			lvc.pszText = text;
 			ListView_InsertColumn(hctl, index ++, &lvc);
@@ -3169,43 +3289,50 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 100;
 		lvc.iSubItem = index;
-		lvc.pszText = "名称";
+		strcpy(text, utf8_2_ansi(_("Name")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 50;
 		lvc.iSubItem = index;
-		lvc.pszText = "类型";
+		strcpy(text, utf8_2_ansi(_("Type")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 120;
 		lvc.iSubItem = index;
-		lvc.pszText = "图标";
+		strcpy(text, utf8_2_ansi(_("Icon")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 50;
 		lvc.iSubItem = index;
-		lvc.pszText = "距离";
+		strcpy(text, utf8_2_ansi(_("attack^Range")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 100;
 		lvc.iSubItem = index;
-		lvc.pszText = "特色";
+		strcpy(text, utf8_2_ansi(_("Specials")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 40;
 		lvc.iSubItem = index;
-		lvc.pszText = "伤害";
+		strcpy(text, utf8_2_ansi(_("Damage")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 40;
 		lvc.iSubItem = index;
-		lvc.pszText = "次数";
+		strcpy(text, utf8_2_ansi(_("damage^Number")));
+		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 	}
 
@@ -3228,7 +3355,7 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		strstr.str("");
 		strstr << utf8_2_ansi(ut->type_name().c_str());
 		if (ut->leader()) {
-			strstr << "(君主)";
+			strstr << "(" << utf8_2_ansi("Leader") << ")";
 		}
 		strcpy(text, strstr.str().c_str());
 		lvi.pszText = text;
@@ -3267,7 +3394,7 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.mask = LVIF_TEXT;
 			lvi.iSubItem = index ++;
 			strstr.str("");
-			strstr << ut->movement();
+			strstr << ut->movement() << "(" << ut->max_movement() << ")";
 			strcpy(text, strstr.str().c_str());
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);
@@ -3291,7 +3418,7 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.mask = LVIF_TEXT;
 			lvi.iSubItem = index ++;
 			strstr.str("");
-			strstr << (ut->land_wall()? "能": "不能");
+			strstr << (ut->land_wall()? utf8_2_ansi(_("Can")): utf8_2_ansi(_("Cannot")));
 			strcpy(text, strstr.str().c_str());
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);
@@ -3299,7 +3426,7 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.mask = LVIF_TEXT;
 			lvi.iSubItem = index ++;
 			strstr.str("");
-			strstr << (ut->has_zoc()? "有": "没有");
+			strstr << (ut->has_zoc()? utf8_2_ansi(_("Has")): utf8_2_ansi(_("Hasn't")));
 			strcpy(text, strstr.str().c_str());
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);
@@ -3497,7 +3624,7 @@ void On_DlgUTypeCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 	case IDM_GENERATE_ITEM2:
 		ns::core.generate_utypes();
-		posix_print_mb("重生新成所有兵种配置、相关图像成功");
+		posix_print_mb(utf8_2_ansi(_("Regenerate all type's cfg and relative image success.")));
 		break;
 
 	case IDM_UTYPE_GENERAL:
@@ -3522,6 +3649,7 @@ void core_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 	HTREEITEM				htvi;
 	TVITEMEX				tvi;
 	POINT					point;
+	std::stringstream strstr;
 
 	if (lpNMHdr->idFrom != IDC_TV_UTYPE_EXPLORER) {
 		return;
@@ -3545,20 +3673,30 @@ void core_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		TreeView_GetItem1(lpNMHdr->hwndFrom, htvi, &tvi, TVIF_PARAM | TVIF_CHILDREN, NULL);
 
 		HMENU hpopup_explorer = CreatePopupMenu();
-		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_GENERAL, "基本信息...");
-		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_MTYPE, "抗性...");
-		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKI, "攻击I...");
-		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKII, "攻击II...");
-		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKIII, "攻击III...");
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Base information")) << "...";
+		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_GENERAL, strstr.str().c_str());
+		strstr.str("");
+		strstr << dgettext_2_ansi("wesnoth", "Resistance") << "...";
+		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_MTYPE, strstr.str().c_str());
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Attack I")) << "...";
+		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKI, strstr.str().c_str());
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Attack II")) << "...";
+		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKII, strstr.str().c_str());
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Attack III")) << "...";
+		AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKIII, strstr.str().c_str());
 
 		HMENU hpopup_utype = CreatePopupMenu();
-		AppendMenu(hpopup_utype, MF_STRING, IDM_ADD, "添加...");
-		AppendMenu(hpopup_utype, MF_STRING, IDM_EDIT, "编辑...");
-		AppendMenu(hpopup_utype, MF_STRING, IDM_DELETE, "删除");
+		AppendMenu(hpopup_utype, MF_STRING, IDM_ADD, utf8_2_ansi(_("Add...")));
+		AppendMenu(hpopup_utype, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
+		AppendMenu(hpopup_utype, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
 		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
-		AppendMenu(hpopup_utype, MF_STRING, IDM_GENERATE_ITEM2, "重新生成所有兵种配置、相关图像");
+		AppendMenu(hpopup_utype, MF_STRING, IDM_GENERATE_ITEM2, utf8_2_ansi(_("Regenerate all type's cfg and relatve image")));
 		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
-		AppendMenu(hpopup_utype, MF_POPUP, (UINT_PTR)(hpopup_explorer), "报表格式");
+		AppendMenu(hpopup_utype, MF_POPUP, (UINT_PTR)(hpopup_explorer), utf8_2_ansi(_("Report format")));
 
 		if (!htvi || htvi == ns::core.htvroot_utype_) {
 			EnableMenuItem(hpopup_utype, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);

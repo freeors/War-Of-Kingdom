@@ -94,7 +94,7 @@ tstrategy_list::tstrategy_list(game_display& gui, std::vector<team>& teams, unit
 	, side_(side)
 	, troop_index_(0)
 	, hero_table_(NULL)
-	, strategy_list_(NULL)
+	, strategy_list_()
 {
 }
 

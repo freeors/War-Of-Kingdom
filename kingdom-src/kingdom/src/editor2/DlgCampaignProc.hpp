@@ -30,22 +30,8 @@ public:
 
 	const std::string& navigation(const std::string& id);
 
-	class ttrait
-	{
-	public:
-		ttrait()
-			: name_()
-			, desc_()
-		{}
-		ttrait(const std::string& name, const std::string& desc)
-			: name_(name)
-			, desc_(desc)
-		{}
-		std::string name_;
-		std::string desc_;
-	};
-	const ttrait& city_trait(const std::string& id);
-	const ttrait& troop_trait(const std::string& id);
+	std::string city_trait(const std::string& id);
+	std::string troop_trait(const std::string& id);
 
 public:
 	config game_config_;
@@ -68,9 +54,9 @@ public:
 	std::vector<std::pair<std::string, const unit_type*> > artifical_utype_;
 	std::vector<std::pair<std::string, const unit_type*> > city_utypes_;
 	std::vector<std::pair<std::string, const unit_type*> > troop_utypes_;
-	std::vector<std::pair<std::string, std::string> > navigation_;
-	std::vector<std::pair<std::string, ttrait> > city_traits_;
-	std::vector<std::pair<std::string, ttrait> > troop_traits_;
+	std::vector<std::string> navigation_;
+	std::vector<std::pair<std::string, const config*> > city_traits_;
+	std::vector<std::pair<std::string, const config*> > troop_traits_;
 	std::map<int, hero_state> persons_;
 	std::map<int, hero_state> artificals_;
 	std::set<int> reserved_heros_;
@@ -162,7 +148,7 @@ public:
 		std::string type_;
 		int character_;
 		map_location loc_;
-		std::vector<std::string> traits_;
+		std::set<std::string> traits_;
 		std::vector<std::string> not_recruit_;
 
 		int mayor_;
@@ -201,7 +187,7 @@ public:
 		std::string type_;
 		int character_;
 		map_location loc_;
-		std::vector<std::string> traits_;
+		std::set<std::string> traits_;
 		bool except_;
 	};
 
@@ -267,6 +253,7 @@ public:
 	int income_;
 	std::string flag_;
 	std::set<std::string> build_;
+	std::set<std::string> technologies_;
 
 	std::vector<tcity> cities_;
 	std::vector<tunit> troops_;

@@ -26,7 +26,7 @@ namespace {
 		"unit_traits", "unit_status", "unit_alignment", "unit_abilities",
 		"unit_hp", "unit_xp", "unit_advancement_options",
 		"unit_weapons", "unit_image", "time_of_day",
-		"turn", "gold", "villages", "upkeep", "expenses",
+		"turn", "gold", "villages", "upkeep",
 		"income", "tactic", "terrain", "position", "stratum", "meritorious", 
 		"side_playing", "observers", "report_countdown", "report_clock",
 		"selected_terrain", "edit_left_button_function", "editor_tool_hint"

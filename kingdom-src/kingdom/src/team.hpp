@@ -72,6 +72,9 @@ struct team_fields_t
 	unit_segment candidate_cards_;
 	unit_segment holded_cards_;
 	unit_segment holded_treasures_;
+	unit_segment holded_technologies_;
+	unit_segment half_technologies_;
+	unit_segment ing_technology_;
 	unit_segment commercials_;
 	unit_segment village_;
 	unit_segment cfg_;
@@ -133,6 +136,25 @@ class team_
 {
 public:
 	team_();
+
+	int leadership_speed_;
+	int force_speed_;
+	int intellect_speed_;
+	int politics_speed_;
+	int charm_speed_;
+	int arms_speed_[HEROS_MAX_ARMS];
+
+	bool ignore_zoc_on_wall_;
+	bool land_enemy_wall_;
+	int recover_tactic_increase_;
+	int interlink_increase_;
+	int cooperate_increase_;
+
+	int navigation_civi_increase_;
+	int repair_increase_;
+	int village_gold_increase_;
+	int market_increase_;
+	int technology_increase_;
 
 protected:
 	std::set<const unit_type*> can_build_;
@@ -260,6 +282,7 @@ public:
 	void set_recall_cost(int cost) { info_.recall_cost = cost; }
 	int total_income() const;
 	int side_upkeep() const;
+	int total_technology_income() const;
 	void new_turn();
 	void get_shared_maps();
 	void set_gold(int amount) { gold_ = amount; }
@@ -281,6 +304,10 @@ public:
 	int tactic_point() const { return tactic_point_; }
 	void set_tactic_point(int tactic_point) { tactic_point_ = tactic_point; }
 	int add_tactic_point(int increment);
+
+	void add_modification_internal(int apply_to, const config& effect);
+	void apply_holded_technologies_finish();
+	void apply_holded_technologies_modify();
 
 	bool get_scroll_to_leader() const {return info_.scroll_to_leader;}
 
@@ -392,6 +419,16 @@ public:
 	void erase_treasure2(int index);
 	void find_treasure(hero_map& heros, play_controller& controller, int pos);
 
+	std::vector<const technology*>& holded_technologies() { return holded_technologies_; }
+	const std::vector<const technology*>& holded_technologies() const { return holded_technologies_; }
+	std::map<const technology*, int>& half_technologies() { return half_technologies_; }
+	const std::map<const technology*, int>& half_technologies() const { return half_technologies_; }
+	void select_ing_technology(const technology* set = NULL);
+	const technology* ing_technology() { return ing_technology_; }
+	const technology* ing_technology() const { return ing_technology_; }
+
+	int max_tactic_point() const { return max_tactic_point_; }
+
 	SDL_Rect& city_rect() { return city_rect_; }
 	const SDL_Rect& city_rect() const { return city_rect_; }
 
@@ -454,12 +491,8 @@ public:
 	const terrain_filter& avoid() const { return avoid_; }
 	bool has_avoid() const { return has_avoid_; }
 
-	void set_commercials(std::vector<hero*>& commercials);
-	void erase_commercial(hero* h);
 	std::vector<hero*>& commercials() { return commercials_; }
 	const std::vector<hero*>& commercials() const { return commercials_; }
-	int commercial_exploiture(bool only_idle = false) const;
-	void active_commercial();
 
 	bool defeat_vote() const;
 
@@ -480,6 +513,12 @@ private:
 	std::vector<size_t> candidate_cards_;
 	std::vector<size_t> holded_cards_;
 	std::vector<size_t> holded_treasures_;
+
+	std::vector<const technology*> holded_technologies_;
+	std::map<const technology*, int> half_technologies_;
+	const technology* ing_technology_;
+
+	int max_tactic_point_;
 
 	int leader_;
 	std::vector<artifical*> holded_cities_;

@@ -290,11 +290,20 @@ static void find_routes(const gamemap& map, const unit_map& units,
 
 			if (!ignore_units) {
 				const unit *v = get_visible_unit(locs[i], viewing_team, see_all);
-				if (v && current_team.is_enemy(v->side()))
-					continue;
-
+				if (v) {
+					if ((!v->wall() || !current_team.land_enemy_wall_ || !u.land_wall()) && current_team.is_enemy(v->side())) {
+						continue;
+					}
+				}
+/*
 				// move cost in any terrain cannot be zero. it is zero indicate loc is self-city grid.
 				if (move_cost && (!v || !v->cancel_zoc()) && !force_ignore_zocs && t.movement_left > 0
+				    && pathfind::enemy_zoc(teams, locs[i], viewing_team, u.side(), see_all)
+						&& !u.get_ability_bool("skirmisher", locs[i])) {
+					t.movement_left = 0;
+				}
+*/
+				if (move_cost && !force_ignore_zocs && t.movement_left > 0
 				    && pathfind::enemy_zoc(teams, locs[i], viewing_team, u.side(), see_all)
 						&& !u.get_ability_bool("skirmisher", locs[i])) {
 					t.movement_left = 0;
@@ -515,13 +524,15 @@ pathfind::marked_route pathfind::mark_route(const plain_route &rt,
 			bool invisible = u.invisible(*i,false);
 			res.marks[*i] = marked_route::mark(0, pass_here, zoc, false, invisible);
 		}
-
+/*
 		unit_map::iterator itor = units.find(*(i + 1));
 		if (!itor.valid() || !itor->cancel_zoc()) {
 			zoc = enemy_zoc((*resources::teams), *(i + 1), viewing_team,u.side()) && !u.get_ability_bool("skirmisher", *(i+1));
 		} else {
 			zoc = false;
 		}
+*/
+		zoc = enemy_zoc((*resources::teams), *(i + 1), viewing_team,u.side()) && !u.get_ability_bool("skirmisher", *(i+1));
 
 		if (zoc) {
 			movement = 0;
@@ -557,30 +568,7 @@ map_location last_location;
 bool is_wall;
 
 }
-/*
-int pathfind::location_cost(const unit_map& units, const unit& u, bool ignore_wall)
-{
-	unit_map::node* last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location, false));
-	if (!last_node) {
-		last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location));
-	}
-	bool slowed = u.get_state(unit::STATE_SLOWED);
-	const unit_type* ut = u.type();
-	if (u.packed()) {
-		ut = u.packee_type();
-	}
-	if (ignore_wall) {
-		return slowed? 2: 1;
-	} else if (!ut->land_wall()) {
-		return 2 * u.total_movement();
-	} else if (last_node && last_node->second->walk_wall()) {
-		// keep/wall ---> wall, cost: 1
-		return slowed? 2: 1;
-	} else {
-		return slowed? 8: 4;
-	}
-}
-*/
+
 int pathfind::location_cost(const unit_map& units, const unit& u, bool ignore_wall)
 {
 	unit_map::node* last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location, false));
@@ -663,10 +651,12 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 
 		if (other_unit) {
 			if (teams_[unit_.side() - 1].is_enemy(other_unit->side())) {
-				if (!other_unit->is_city()) {
-					return getUnitHoldValue(); // getNoPathValue();
-				} else if (!ignore_city) {
-					return 2 * total_movement_;
+				if (!other_unit->wall() || !teams_[unit_.side() - 1].land_enemy_wall_ || !unit_.land_wall()) {
+					if (!other_unit->is_city()) {
+						return getUnitHoldValue(); // getNoPathValue();
+					} else if (!ignore_city) {
+						return 2 * total_movement_;
+					}
 				}
 			} else {
 				// This value will be used with the defense_subcost (see below)
@@ -699,7 +689,11 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 */
 
 	// check ZoC
+/*
 	if (!ignore_unit_ && (!other_unit || !other_unit->cancel_zoc()) && remaining_movement > terrain_cost
+	    && !unit_.get_ability_bool("skirmisher", loc) && enemy_zoc(teams_, loc, viewing_team_, unit_.side(), see_all_, ignore_city)) {
+*/
+	if (!ignore_unit_ && remaining_movement > terrain_cost
 	    && !unit_.get_ability_bool("skirmisher", loc) && enemy_zoc(teams_, loc, viewing_team_, unit_.side(), see_all_, ignore_city)) {
 		// entering ZoC cost all remaining MP
 		move_cost += remaining_movement;

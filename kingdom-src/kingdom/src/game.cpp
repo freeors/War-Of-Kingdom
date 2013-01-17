@@ -268,6 +268,10 @@ game_controller::game_controller(int argc, char** argv) :
 
 	resources::heros_start = &heros_start_;
 
+	// if allocate static, iOS may be not align 4! 
+	// it necessary to ensure align great equal than 4.
+	unit::savegame_cache_ = (unsigned char*)malloc(CONSTANT_1M);
+
 	// The path can be hardcoded and it might be a relative path.
 	if(!game_config::path.empty() &&
 #ifdef _WIN32
@@ -1649,6 +1653,10 @@ game_controller::~game_controller()
 {
 	if (icon_ != NULL) {
 		icon_.get()->refcount --;
+	}
+	if (unit::savegame_cache_) {
+		free(unit::savegame_cache_);
+		unit::savegame_cache_ = NULL;
 	}
 	terrain_builder::release_heap();
 	pathfind::release_pq();

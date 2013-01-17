@@ -29,7 +29,7 @@ class unit_type_data;
 class department
 {
 public:
-	enum { commercial };
+	enum { commercial = 0, technology };
 	department(int type, const std::string& name, const std::string& image, const std::string& portrait);
 	
 	int type_;
@@ -49,6 +49,22 @@ public:
 	std::string name_;
 	std::string image_;
 };
+
+namespace apply_to_tag {
+	enum {NONE, ATTACK, HITPOINTS, MOVEMENT, MUNITION, MAX_EXPERIENCE,
+		LOYAL, STATUS, MOVEMENT_COSTS, DEFENSE, RESISTANCE, ENCOURAGE,
+		DEMOLISH, ZOC, IMAGE_MOD, ADVANCE, TRAIN, DAMAGE, HIDE, UNIT_END = HIDE,
+		// side <=
+		CIVILIZATION, POLITICS, HEAL, STRATEGIC
+	};
+
+	extern std::map<const std::string, int> tags;
+	int find(const std::string& tag);
+}
+
+namespace filter {
+enum {TROOP = 1, ARTIFICAL = 2, CITY = 4};
+}
 
 class ttactic 
 {
@@ -71,9 +87,13 @@ public:
 		, name_()
 		, description_()
 		, bg_image_()
+		, apply_to_(apply_to_tag::NONE)
+		, type_filter_(0)
 		, parts_()
 		, self_profit_(0)
+		, self_hide_profit_(0)
 		, friend_profit_(0)
+		, friend_hide_profit_(0)
 		, enemy_profit_(0)
 		, complex_(false)
 	{}
@@ -87,20 +107,25 @@ public:
 	const std::string& bg_image() const { return bg_image_; }
 	const std::vector<const ttactic*>& parts() const { return parts_; }
 
-	const config& action_cfg() const { return action_cfg_; }
+	const config& effect_cfg() const { return effect_cfg_; }
+	int apply_to() const { return apply_to_; }
+	int type_filter() const { return type_filter_; }
 
 	int range() const { return range_; }
 	int point() const { return point_; }
 
 	int self_profit() const { return self_profit_; }
+	int self_hide_profit() const { return self_hide_profit_; }
 	int friend_profit() const { return friend_profit_; }
+	int friend_hide_profit() const { return friend_hide_profit_; }
 	int enemy_profit() const { return enemy_profit_; }
 	bool complex() const { return complex_; }
+	bool oneoff() const;
 
 	void set_atom_part() { parts_.push_back(this); }
 
 	std::vector<std::pair<const ttactic*, std::vector<map_location> > > touch_locs(const map_location& loc) const;
-	std::map<int, std::vector<unit*> > touch_units(unit_map& units, unit& u) const;
+	std::map<int, std::vector<map_location> > touch_units(unit_map& units, unit& u) const;
 private:
 	int index_;
 	std::string id_;
@@ -110,12 +135,96 @@ private:
 	int point_;
 	std::vector<const ttactic*> parts_;
 	int range_;
-	config action_cfg_;
+	config effect_cfg_;
+	int apply_to_;
+	int type_filter_;
 
 	int self_profit_;
+	int self_hide_profit_;
 	int friend_profit_;
+	int friend_hide_profit_;
 	int enemy_profit_;
 
+	bool complex_;
+};
+
+namespace advance_tree {
+
+class base
+{
+public:
+	virtual const std::string& id() const = 0;
+	virtual const std::vector<std::string>& advances_to() const = 0;
+};
+
+struct node {
+	node(const base* ut)
+		: current(ut)
+		, advances_to()
+	{}
+
+	const base* current;
+	std::vector<node> advances_to;
+};
+
+void generate_advance_tree(const std::map<std::string, const base*>& src, std::vector<node*>& dst);
+void generate_advance_tree_internal(const base* current, std::vector<node>& advances_to, bool& to_branch);
+void hang_branch_internal(std::vector<node*>& dst, std::vector<node>& advances_to, bool& hang_branch);
+}
+
+class technology : public advance_tree::base
+{
+public:
+	enum {NONE = 0, MODIFY, FINISH};
+	
+	technology()
+		: id_()
+		, advances_to_()
+		, name_()
+		, description_()
+		, occasion_(NONE)
+		, max_experience_(0)
+		, apply_to_(apply_to_tag::NONE)
+		, parts_()
+		, complex_(false)
+		, type_filter_(0)
+		, arms_filter_(0)
+	{}
+
+	technology(const config& cfg);
+
+	const std::string& id() const { return id_; }
+	const std::vector<std::string>& advances_to() const { return advances_to_; }
+	const std::string& name() const { return name_; }
+	const std::string& description() const { return description_; }
+	int occasion() const { return occasion_; }
+	const std::vector<const technology*>& parts() const { return parts_; }
+
+	int max_experience() const { return max_experience_; }
+
+	const config& effect_cfg() const { return effect_cfg_; }
+	int apply_to() const { return apply_to_; }
+
+	bool complex() const { return complex_; }
+
+	void set_atom_part() { parts_.push_back(this); }
+
+	int type_filter() const { return type_filter_; }
+	int arms_filter() const { return arms_filter_; }
+	bool filter(int type, int arms) const;
+private:
+	std::string id_;
+	std::vector<std::string> advances_to_;
+	std::string name_;
+	std::string description_;
+	int occasion_;
+	int max_experience_;
+	std::vector<const technology*> parts_;
+	config effect_cfg_;
+	int apply_to_;
+	int type_filter_;
+	int arms_filter_;
+		
 	bool complex_;
 };
 
@@ -275,7 +384,7 @@ typedef std::vector<std::string> navigation_types;
 
 #define NO_GUARD				-1
 
-class unit_type
+class unit_type : public advance_tree::base
 {
 public:
 	friend class unit;
@@ -354,9 +463,11 @@ public:
 	int hitpoints() const { return hitpoints_; }
 	int level() const { return level_; }
 	int movement() const { return movement_; }
+	int max_movement() const { return max_movement_; }
 	int max_attacks() const { return max_attacks_; }
 	int cost() const { return cost_; }
 	int gold_income() const { return gold_income_; }
+	int technology_income() const { return technology_income_; }
 	int heal() const { return heal_; }
 	int turn_experience() const { return turn_experience_; }
 	const std::string& image() const { return image_; }
@@ -444,9 +555,11 @@ private:
     int hitpoints_;
     int level_;
     int movement_;
+	int max_movement_;
     int max_attacks_;
     int cost_;
 	int gold_income_;
+	int technology_income_;
 	int heal_;
 	int turn_experience_;
     std::string halo_;
@@ -516,6 +629,7 @@ class unit_type_data
 {
 public:
 	unit_type_data();
+	~unit_type_data();
 
 	typedef std::map<std::string,unit_type> unit_type_map;
 
@@ -533,6 +647,7 @@ public:
 	const ttactic& tactic(int index) const { return tactics_.find(index)->second; }
 	const std::map<std::string, int>& tactics_id() const { return tactics_id_; }
 	const ttactic& tactic(const std::string& id) const { return tactics_.find(tactics_id_.find(id)->second)->second; }
+	const std::map<std::string, technology>& technologies() const { return technologies_; }
 	const std::vector<std::string>& arms_ids() const { return arms_ids_; }
 	int arms_from_id(const std::string& id) const;
 	const std::vector<std::string>& range_ids() const { return range_ids_; }
@@ -546,6 +661,11 @@ public:
 	const std::string& id_from_navigation(int navigation) const;
 	bool navigation_can_advance(int prev, int next) const;
 
+	void generate_utype_tree();
+	const std::vector<advance_tree::node*>& utype_tree() const { return utype_tree_; }
+	void generate_technology_tree();
+	const std::vector<advance_tree::node*>& technology_tree() const { return technology_tree_; }
+
 	void set_config(config &cfg);
 
 	const unit_type *find(const std::string &key, unit_type::BUILD_STATUS status = unit_type::FULL) const;
@@ -553,6 +673,7 @@ public:
 	const unit_type *find_wall() const { return wall_type_; }
 	const unit_type *find_keep() const { return keep_type_; }
 	const unit_type *find_market() const { return market_type_; }
+	const unit_type *find_technology() const { return technology_type_; }
 	const unit_type *find_tower() const { return tower_type_; }
 
 	/** Checks if the [hide_help] tag contains these IDs. */
@@ -582,6 +703,7 @@ private:
 	specials_map specials_;
 	std::map<int, ttactic> tactics_;
 	std::map<std::string, int> tactics_id_;
+	std::map<std::string, technology> technologies_;
 	std::map<std::string, config> utype_anims_;
 	std::vector<std::string> arms_ids_;
 	std::vector<std::string> range_ids_;
@@ -589,9 +711,13 @@ private:
 	std::vector<const unit_type*> can_recruit_;
 	navigation_types navigation_types_;
 
+	std::vector<advance_tree::node*> utype_tree_;
+	std::vector<advance_tree::node*> technology_tree_;
+
 	unit_type* wall_type_;
 	unit_type* keep_type_;
 	unit_type* market_type_;
+	unit_type* technology_type_;
 	unit_type* tower_type_;
 
 	/** True if [hide_help] contains a 'all=yes' at its root. */

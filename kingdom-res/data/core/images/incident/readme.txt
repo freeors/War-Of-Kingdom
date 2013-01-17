@@ -15,3 +15,4 @@
 14: Duel
 15: Appoint(RPG)
 16: Independence
+17: Technology

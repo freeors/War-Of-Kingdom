@@ -39,6 +39,7 @@
 #include "terrain_filter.hpp"
 // #include "wml_exception.hpp"
 #include "gettext.hpp"
+#include "filesystem.hpp"
 
 #include <fstream>
 
@@ -947,11 +948,11 @@ bool ai_default::do_tactic(int index, bool first)
 {
 	int side_point = current_team_.tactic_point();
 	if (current_team_.is_human() && rpg::stratum != hero_stratum_leader) {
-		if (side_point < game_config::max_tactic_point * 3 / 4) { // 15
+		if (side_point < current_team_.max_tactic_point() * 3 / 4) { // 15
 			return false;
 		}
 	} else {
-		if (side_point < game_config::max_tactic_point / 2) { // 10
+		if (side_point < current_team_.max_tactic_point() / 2) { // 10
 			return false;
 		}
 	}
@@ -1003,13 +1004,17 @@ bool ai_default::do_tactic(int index, bool first)
 					score = 0;
 				} else {
 					score = t.self_profit() * u.hitpoints() / u.max_hitpoints();
+					if (!u.hide_turns()) {
+						score += t.self_hide_profit();
+					}
 					if (!mess.enemies) {
 						score /= 4;
 					}
 				}
 
-				// friend. if no enemies, this profit divided by 2. 
+				// friend. if no enemies, this profit divided by 2.
 				score += t.friend_profit() * it2->second.friends;
+				score += t.friend_hide_profit() * it2->second.unhides;
 				if (!mess.enemies) {
 					score /= 4;
 				}
@@ -1024,7 +1029,7 @@ bool ai_default::do_tactic(int index, bool first)
 					continue;
 				}
 
-				score += 50 * (game_config::max_tactic_point - t.point());
+				score += 50 * (current_team_.max_tactic_point() - t.point());
 				if (score > best_score) {
 					best_hero = h;
 					best_troop = &u;
@@ -1247,7 +1252,9 @@ void ai_default::do_move()
 	if (can_build.find(unit_types.find_keep()) == end || can_build.find(unit_types.find_wall()) == end) {
 		maximum_side_build_walls = 0;
 	}
-	if (can_build.find(unit_types.find_market()) == end) {
+	bool can_build_market = can_build.find(unit_types.find_market()) != end;
+	bool can_build_technology = can_build.find(unit_types.find_technology()) != end;
+	if (!can_build_market && !can_build_technology) {
 		maximum_side_build_markets = 0;
 	}
 
@@ -1381,31 +1388,45 @@ void ai_default::do_move()
 				}
 
 				// market
-				art = unit_types.find_market();
+				std::vector<const map_location*> ea_vacants;
+
 				at = NULL;
 				while (maximum_build_markets) {
-					if (current_team_.gold() < art->cost()) {
+					if (current_team_.gold() < std::max(unit_types.find_market()->cost(), unit_types.find_technology()->cost())) {
 						maximum_build_markets = 0;
 						break;
 					}
-					std::vector<map_location>& economy_area = owner.economy_area();
-					for (std::vector<map_location>::const_iterator ea = economy_area.begin(); ea != economy_area.end(); ++ ea) {
-						if (!units_.count(*ea)) {
-							at = &*ea;
-							break;
-						}
+					int markets, technologies;
+					owner.calculate_ea_tiles(ea_vacants, markets, technologies);
+					if (ea_vacants.empty()) {
+						maximum_build_markets = 0;
+						break;
 					}
-					if (at) {
-						builder_index_in_troops = build(owner, builder_troops, art, *at);
-						if (builder_index_in_troops != -1) {
-							maximum_build_markets --;
-							if (builder_index_in_troops >= minimum_field_index) {
-								builder_troops.erase(builder_troops.begin() + builder_index_in_troops);
-							} else {
-								builder_troops.clear();
-							}
+					if (can_build_market && markets == 0) {
+						art = unit_types.find_market();
+					} else if (can_build_technology && technologies == 0) {
+						art = unit_types.find_technology();
+					} else {
+						// rand in market or technology
+						std::vector<const unit_type*> candidate;
+
+						if (can_build_market) {
+							candidate.push_back(unit_types.find_market());
+						}
+						if (can_build_technology) {
+							candidate.push_back(unit_types.find_technology());
+						}
+
+						art = candidate[rand() % candidate.size()];
+					}
+					at = ea_vacants[rand() % ea_vacants.size()];
+					builder_index_in_troops = build(owner, builder_troops, art, *at);
+					if (builder_index_in_troops != -1) {
+						maximum_build_markets --;
+						if (builder_index_in_troops >= minimum_field_index) {
+							builder_troops.erase(builder_troops.begin() + builder_index_in_troops);
 						} else {
-							maximum_build_markets = 0;
+							builder_troops.clear();
 						}
 					} else {
 						maximum_build_markets = 0;
@@ -1673,7 +1694,16 @@ bool ai_default::do_combat(bool unmovementable)
 		}
 		const map_location arrived_at = move_unit(move_param, to);
 		if (arrived_at != to || units_.find(to, !attacker_base) == units_.end()) {
-			posix_print("!!!unit moving to attack has ended up unexpectedly at (%i, %i) when moving to (%i, %i) from (%i, %i)\n", arrived_at.x, arrived_at.y, to.x, to.y, from.x, from.y);
+			// end unit's movement in this turn
+			move_param.first->set_movement(0);
+
+			std::stringstream strstr;
+			strstr << "!!! " << utf8_2_ansi(move_param.first->name().c_str());
+			strstr << " moving to attack has ended up unexpectedly at (";
+			strstr << arrived_at.x << ", " << arrived_at.y << "), when moving to (";
+			strstr << to.x << ", " << to.y << ") from (";
+			strstr << from.x << ", " << from.y << ")\n";
+			posix_print(strstr.str().c_str());
 			return true;
 		}
 
@@ -1955,12 +1985,6 @@ bool ai_default::do_recruitment(artifical& city)
 
 	// std::set<const unit_type*>::const_iterator recruit = recruits.find(ut);
 	// size_t index_in_recruits = std::distance(recruits.begin(), recruit);
-
-	for (std::vector<const hero*>::const_iterator itor = expedite_heros.begin(); itor != expedite_heros.end(); ++ itor) {
-		if ((*itor)->official_ == hero_official_commercial) {
-			current_team_.erase_commercial(&heros_[(*itor)->number_]);
-		}
-	}
 
 	for (std::vector<const hero*>::const_iterator itor = expedite_heros.begin(); itor != expedite_heros.end(); ++ itor) {
 		city.hero_go_out(**itor);

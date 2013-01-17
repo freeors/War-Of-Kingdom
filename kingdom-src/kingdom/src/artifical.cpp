@@ -34,6 +34,8 @@ artifical::artifical(const config& cfg) :
 	, alert_rect_()	
 	, villages_()
 	, mayor_(&hero_invalid)
+	, commercial_exploiture_(0)
+	, technology_exploiture_(0)
 	, fronts_(0)
 	, not_recruit_()
 	, can_recruit_map_()
@@ -68,6 +70,8 @@ artifical::artifical(const uint8_t* mem) :
 	, terrain_types_list_(t_translation::t_match(type()->match_).terrain)
 	, alert_rect_()	
 	, mayor_(&hero_invalid)
+	, commercial_exploiture_(0)
+	, technology_exploiture_(0)
 	, fronts_(0)
 	, not_recruit_()
 	, can_recruit_map_()
@@ -102,6 +106,8 @@ artifical::artifical(const artifical& cobj) :
 	, terrain_types_list_(cobj.terrain_types_list_)
 	, alert_rect_(cobj.alert_rect_)
 	, mayor_(cobj.mayor_)
+	, commercial_exploiture_(cobj.commercial_exploiture_)
+	, technology_exploiture_(cobj.technology_exploiture_)
 	, fronts_(cobj.fronts_)
 	, not_recruit_(cobj.not_recruit_)
 	, can_recruit_map_(cobj.can_recruit_map_)
@@ -128,6 +134,8 @@ artifical::artifical(unit_map& units, hero_map& heros, type_heros_pair& t, int c
 	, terrain_types_list_(t_translation::t_match(type()->match_).terrain)
 	, alert_rect_()
 	, mayor_(&hero_invalid)
+	, commercial_exploiture_(0)
+	, technology_exploiture_(0)
 	, fronts_(0)
 	, not_recruit_()
 	, can_recruit_map_()
@@ -831,7 +839,7 @@ bool artifical::new_turn()
 
 	std::vector<team>& teams = *resources::teams;
 	team& current_team = teams[side_ - 1];
-	int healing = heal_;
+	int healing = heal_ * current_team.repair_increase_ / 100;
 	std::vector<unit*> executor;
 
 	int pos_max = max_hit_points_ - hit_points_;
@@ -849,7 +857,11 @@ bool artifical::new_turn()
 
 	if (!this_is_city() && unit_map::economy_areas_.find(loc_) != unit_map::economy_areas_.end()) {
 		const artifical& city = *units_.city_from_cityno(cityno_);
-		get_experience(city.turn_experience());
+		int turn_experience = city.turn_experience();
+		if (current_team.village_gold_increase_ > 100) {
+			turn_experience = turn_experience + std::min(1, turn_experience * current_team.village_gold_increase_ / 100);
+		}
+		get_experience(increase_xp::attack_ublock(*this), turn_experience);
 		dialogs::advance_unit(loc_, current_team.is_human(), true);
 		return false;
 	}
@@ -906,7 +918,10 @@ bool artifical::new_turn()
 		u.set_attacks(u.attacks_total());
 		u.increase_loyalty(-1 * game_config::reside_troop_increase_loyalty);
 		u.increase_activity(10);
-		u.get_experience2(3);
+		if (u.hide_turns()) {
+			u.set_hide_turns(0);
+		}
+		u.get_experience(increase_xp::turn_ublock(*this), 3);
 		u.new_turn_tactics();
 		u.set_state(unit::STATE_SLOWED, false);
 		u.set_state(unit::STATE_BROKEN, false);
@@ -936,7 +951,7 @@ bool artifical::new_turn()
 	finish_heros_.clear();
 
 	
-	get_experience(turn_experience_);
+	get_experience(increase_xp::attack_ublock(*this), turn_experience_);
 	dialogs::advance_unit(loc_, current_team.is_human(), true);
 
 	return false;
@@ -1013,10 +1028,10 @@ int artifical::upkeep() const
 	return reside_troops_.size() * 2;
 }
 
-void artifical::get_experience(int xp, bool opp_is_artifical)
+void artifical::get_experience(const increase_xp::ublock& ub, int xp, bool master, bool second, bool third)
 {
 	if (this_is_city()) {
-		unit::get_experience(xp, opp_is_artifical);
+		unit::get_experience(ub, xp, master, second, third);
 	} else {
 		experience_ += xp;
 		if (xp > 0 && unit_feature_val(hero_feature_xp)) {
@@ -1305,10 +1320,7 @@ void artifical::wander_into(hero& h, bool dialog)
 {
 	std::vector<team>& teams = *resources::teams;
 
-	if (h.official_ == hero_official_commercial) {
-		team& t = teams[h.side_];
-		t.erase_commercial(&h);
-	} else if (h.official_ == hero_official_mayor) {
+	if (h.official_ == hero_official_mayor) {
 		artifical* from = units_.city_from_cityno(h.city_);
 		from->select_mayor(&hero_invalid);
 	}
@@ -1608,7 +1620,8 @@ void artifical::fallen(int a_side, unit* attacker)
 		if (attacker_team.side() != team::empty_side_) {
 			game_events::show_hero_message(&heros_[214], NULL, vgettext("$first occupy $second.", symbols), game_events::INCIDENT_FALLEN);
 		} else {
-			game_events::show_hero_message(&heros_[214], NULL, vgettext("$second is out of control, occupied by $first.", symbols), game_events::INCIDENT_FALLEN);
+			// in order to avoid overmany tip, close this.
+			// game_events::show_hero_message(&heros_[214], NULL, vgettext("$second is out of control, occupied by $first.", symbols), game_events::INCIDENT_FALLEN);
 		}
 	}
 	if (defender_team.side() != team::empty_side_ && defender_team.holded_cities().empty()) {
@@ -1655,11 +1668,14 @@ void artifical::fallen(int a_side, unit* attacker)
 	}
 	hit_points_ = std::max(max_hit_points_ / 2, 1);
 	experience_ = 0;
-		
+
 	// get one card random
 	if (!controller.is_replaying()) {
+/*
+		为阻止玩家靠攻城来刷卡, 先取消攻城得卡/失城掉设置, 等将来对攻城刷卡有惩罚措施后再打开
 		get_random_card(attacker_team, *resources::screen, units_, heros_);
 		erase_random_card(defender_team, *resources::screen, units_, heros_);
+*/
 	}
 
 	// erase all strategy that target is this.
@@ -1874,7 +1890,7 @@ void artifical::recalculate_heros_pointer()
 	}
 }
 
-bool compare_for_mayor(const hero* a, const hero* b, const hero* leader)
+bool compare_for_mayor(const hero* master, const hero* a, const hero* b, const hero* leader)
 {
 	if (b == rpg::h) {
 		return true;
@@ -1899,28 +1915,57 @@ bool compare_for_mayor(const hero* a, const hero* b, const hero* leader)
 	if (a_loyality < game_config::move_loyalty_threshold || b_loyality < game_config::move_loyalty_threshold) {
 		return a_loyality >= b_loyality;
 	}
-	return (a->politics_ > b->politics_) || (a->politics_ == b->politics_ && a_loyality >= b_loyality);
+	return a->politics_ + a->intellect_ > b->politics_ + b->intellect_;
 }
 
-void artifical::select_mayor(hero* commend)
+void show_mayor_message(hero_map& heros, hero& mayor, artifical& city, bool terminate)
+{
+	utils::string_map symbols;
+	std::string message;
+
+	int incident = game_events::INCIDENT_APPOINT;
+	symbols["city"] = city.name();
+	if (terminate) {
+		if (&mayor == rpg::h) {
+			message = vgettext("Your official of $city's mayor is terminated.", symbols);
+		} else if (mayor.valid()) {
+			symbols["hero"] = mayor.name();
+			message = vgettext("$hero official of $city's mayor is terminated.", symbols);
+		}
+		incident = game_events::INCIDENT_INVALID;
+	} else {
+		if (&mayor == rpg::h) {
+			message = vgettext("Congratulate! You are appointed $city mayor.", symbols);
+		} else if (mayor.valid()) {
+			symbols["hero"] = mayor.name();
+			message = vgettext("Congratulate! $hero is appointed $city mayor.", symbols);
+		}
+		incident = game_events::INCIDENT_APPOINT;
+	}
+	if (!message.empty()) {
+		game_events::show_hero_message(&heros[229], &city, message, incident);
+	}
+}
+
+void artifical::select_mayor(hero* commend, bool dialog)
 {
 	std::vector<team>& teams = *resources::teams;
+
 	if (commend) {
 		if (mayor_ == commend) {
 			return;
 		}
 		if (mayor_->valid()) {
+			if (dialog) {
+				show_mayor_message(heros_, *mayor_, *this, true);
+			}
 			mayor_->official_ = HEROS_NO_OFFICIAL;
 		}
 		if (mayor_ == rpg::h) {
 			rpg::stratum = hero_stratum_citizen;
 			teams[rpg::h->side_].rpg_changed();
-			
-			utils::string_map symbols;
-			symbols["city"] = name();
-			std::string message = vgettext("Your official of $city's mayor is terminated.", symbols);
-			game_events::show_hero_message(&heros_[229], NULL, message, game_events::INCIDENT_INVALID);
 		}
+				
 		mayor_ = commend;
 		if (mayor_->valid()) {
 			mayor_->official_ = hero_official_mayor;
@@ -1929,39 +1974,43 @@ void artifical::select_mayor(hero* commend)
 				teams[rpg::h->side_].rpg_changed();
 			}
 		}
+		if (dialog) {
+			show_mayor_message(heros_, *mayor_, *this, false);
+		}
 		return;
 	}
 
+	VALIDATE(!mayor_->valid(), std::string("select mayor(), ") + name() + " has existed mayor!");
 	team& t = teams[side_ - 1];
 	const hero* leader = t.leader();
 	hero* max = &hero_invalid;
 	for (std::vector<hero*>::iterator it = fresh_heros_.begin(); it != fresh_heros_.end(); ++ it) {
 		hero* h = *it;
-		if (compare_for_mayor(h, max, leader)) {
+		if (compare_for_mayor(master_, h, max, leader)) {
 			max = h;
 		}
 	}
 	for (std::vector<hero*>::iterator it = finish_heros_.begin(); it != finish_heros_.end(); ++ it) {
 		hero* h = *it;
-		if (compare_for_mayor(h, max, leader)) {
+		if (compare_for_mayor(master_, h, max, leader)) {
 			max = h;
 		}
 	}
 	for (std::vector<unit*>::iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
 		unit& u = **it;
 		hero* h = &u.master();
-		if (compare_for_mayor(h, max, leader)) {
+		if (compare_for_mayor(master_, h, max, leader)) {
 			max = h;
 		}
 		if (u.second().valid()) {
 			h = &u.second();
-			if (compare_for_mayor(h, max, leader)) {
+			if (compare_for_mayor(master_, h, max, leader)) {
 				max = h;
 			}
 		}
 		if (u.third().valid()) {
 			h = &u.third();
-			if (compare_for_mayor(h, max, leader)) {
+			if (compare_for_mayor(master_, h, max, leader)) {
 				max = h;
 			}
 		}
@@ -1969,18 +2018,18 @@ void artifical::select_mayor(hero* commend)
 	for (std::vector<unit*>::iterator it = field_troops_.begin(); it != field_troops_.end(); ++ it) {
 		unit& u = **it;
 		hero* h = &u.master();
-		if (compare_for_mayor(h, max, leader)) {
+		if (compare_for_mayor(master_, h, max, leader)) {
 			max = h;
 		}
 		if (u.second().valid()) {
 			h = &u.second();
-			if (compare_for_mayor(h, max, leader)) {
+			if (compare_for_mayor(master_, h, max, leader)) {
 				max = h;
 			}
 		}
 		if (u.third().valid()) {
 			h = &u.third();
-			if (compare_for_mayor(h, max, leader)) {
+			if (compare_for_mayor(master_, h, max, leader)) {
 				max = h;
 			}
 		}
@@ -1988,8 +2037,113 @@ void artifical::select_mayor(hero* commend)
 	if (max->official_ == HEROS_NO_OFFICIAL && max != rpg::h) {
 		mayor_ = max;
 		mayor_->official_ = hero_official_mayor;
+
+		if (dialog) {
+			show_mayor_message(heros_, *mayor_, *this, false);
+		}
 	} else {
 		mayor_ = &hero_invalid;
+	}
+}
+
+void artifical::calculate_exploiture()
+{
+	commercial_exploiture_ = ::calculate_exploiture(*master_, *mayor_, department::commercial);
+	technology_exploiture_ = ::calculate_exploiture(*master_, *mayor_, department::technology);
+}
+
+std::pair<bool, bool> artifical::calculate_feature() const
+{
+	// whether skill feature or not.
+	bool guide_feature = false;
+	bool skill_feature = false;
+	std::set<int> v;
+	if (master_->feature_ != HEROS_NO_FEATURE) {
+		v.insert(master_->feature_);
+	}
+	if (mayor_->valid() && mayor_->feature_ != HEROS_NO_FEATURE) {
+		v.insert(mayor_->feature_);
+	}
+
+	const complex_feature_map& complex_feature = unit_types.complex_feature();
+
+	for (std::set<int>::const_iterator it = v.begin(); it != v.end(); ++ it) {
+		int feature = *it;
+
+		if (feature == hero_feature_guide) {
+			guide_feature = true;
+		}
+		if (feature == hero_feature_skill) {
+			skill_feature = true;
+		}
+		if (feature >= HEROS_BASE_FEATURE_COUNT) {
+			complex_feature_map::const_iterator complex_it = complex_feature.find(feature);
+			if (complex_it == complex_feature.end()) {
+				continue;
+			}
+			for (std::vector<int>::const_iterator it2 = complex_it->second.begin(); it2 != complex_it->second.end(); ++ it2) {
+				int single_feature = *it2;
+				if (single_feature == hero_feature_guide) {
+					guide_feature = true;
+				}
+				if (single_feature == hero_feature_skill) {
+					skill_feature = true;
+				}
+			}
+		}
+	}
+	return std::make_pair(guide_feature, skill_feature);
+}
+
+void artifical::active_exploiture()
+{
+	std::vector<const map_location*> ea_vacants;
+	int markets, technologies;
+	calculate_ea_tiles(ea_vacants, markets, technologies);
+
+	if (!markets && !technologies) {
+		return;
+	}
+	std::pair<bool, bool> relative_feature = calculate_feature();
+	int xp = 4;
+
+	get_experience(increase_xp::exploiture_ublock(markets, technologies, relative_feature.first, relative_feature.second), xp, true, false, false);
+	if (mayor_->valid()) {
+		unit* u = find_unit(units_, *mayor_);
+		if (!u->is_artifical()) {
+			bool master = false;
+			bool second = false;
+			bool third = false;
+			if (mayor_ == &u->master()) {
+				master = true;
+			} else if (mayor_ == &u->second()) {
+				second = true;
+			} else if (mayor_ == &u->third()) {
+				third = true;
+			} else {
+				VALIDATE(false, "Cannot find mayor(" + mayor_->name() + ") in " + name() + "'s troops."); 
+			}
+			u->get_experience(increase_xp::exploiture_ublock(markets, technologies, relative_feature.first, relative_feature.second), xp, master, second, third);
+		} else {
+			mayor_->get_xp(increase_xp::exploiture_hblock(markets, technologies, relative_feature.first, relative_feature.second, xp));
+		}
+	}
+}
+
+void artifical::calculate_ea_tiles(std::vector<const map_location*>& ea_vacants, int& markets, int& technologies)
+{
+	ea_vacants.clear();
+	markets = 0;
+	technologies = 0;
+	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
+		unit_map::const_iterator find = units_.find(*ea);
+		if (!find.valid()) {
+			ea_vacants.push_back(&*ea);
+		} else if (find->type()->master() == hero::number_market) {
+			markets ++;
+		} else if (find->type()->master() == hero::number_technology) {
+			technologies ++;
+		}
 	}
 }
 

@@ -1787,13 +1787,19 @@ SDL_SetTimerCallback(Uint32 interval, void* param)
 }
 
 #ifdef __IPHONEOS__
-extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardShow(SDL_Window * window);
-extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardHide(SDL_Window * window);
-extern DECLSPEC SDL_bool SDLCALL SDL_iPhoneKeyboardIsShown(SDL_Window *
-                                                           window);
-extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardToggle(SDL_Window * window);
 void SDL_ShowKeyboard(SDL_bool show)
 {
+	SDL_VideoDevice *_this = SDL_GetVideoDevice();
+
+	if (_this->SDL_IsScreenKeyboardShown(_this, SDL_VideoWindow)) {
+		if (!show) {
+			_this->SDL_HideScreenKeyboard(_this, SDL_VideoWindow);
+		}
+	} else if (show) {
+		_this->SDL_ShowScreenKeyboard(_this, SDL_VideoWindow);
+	}
+
+	/*
 	if (SDL_iPhoneKeyboardIsShown(SDL_VideoWindow)) {
 		if (!show) {
 			SDL_iPhoneKeyboardHide(SDL_VideoWindow);
@@ -1801,6 +1807,7 @@ void SDL_ShowKeyboard(SDL_bool show)
 	} else if (show) {
 		SDL_iPhoneKeyboardShow(SDL_VideoWindow);
 	}
+*/
 }
 #elif defined(ANDROID)
 void SDL_ShowKeyboard(SDL_bool show)

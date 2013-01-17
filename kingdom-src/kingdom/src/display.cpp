@@ -123,7 +123,6 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 	fps_handle_(0),
 	invalidated_hexes_(0),
 	drawn_hexes_(0),
-	idle_anim_(preferences::idle_anim()),
 	idle_anim_rate_(1.0),
 	map_screenshot_surf_(NULL),
 	redraw_observers_(),
@@ -1696,7 +1695,7 @@ void display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags,
 			break;
 		}
 	}
-	if (!hide && m_adjusted->get_id() == "build") {
+	if (!hide && (m_adjusted->get_id() == "build" || m_adjusted->get_id() == "interior")) {
 		std::vector<team>& teams = *resources::teams;
 		play_controller& controller = *resources::controller;
 		team& current_team = teams[controller.current_side() - 1];
@@ -1709,12 +1708,17 @@ void display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags,
 			const unit_type* ut = NULL;
 			if (b->id() == "market") {
 				ut = unit_types.find_market();
+			} else if (b->id() == "technology") {
+				ut = unit_types.find_technology();
 			} else if (b->id() == "keep") {
 				ut = unit_types.find_keep();
 			} else if (b->id() == "wall") {
 				ut = unit_types.find_wall();
 			} else if (b->id() == "tower") {
 				ut = unit_types.find_tower();
+			}
+			if (!ut) {
+				continue;
 			}
 			if (can_build.find(ut) == can_build.end()) {
 				flags &= ~ (1 << i2);

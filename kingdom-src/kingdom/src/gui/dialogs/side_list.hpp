@@ -47,13 +47,14 @@ private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
-	enum {MIN_PAGE = 0, STATUS_PAGE = MIN_PAGE, MILITARY_PAGE, DIPLOMATISM_PAGE, GOLD_PAGE, FEATURE_PAGE, ARTIFICAL_PAGE, PLAN_PAGE, MAX_PAGE = PLAN_PAGE};
+	enum {MIN_PAGE = 0, STATUS_PAGE = MIN_PAGE, MILITARY_PAGE, DIPLOMATISM_PAGE, GOLD_PAGE, FEATURE_PAGE, TECHNOLOGY_PAGE, ARTIFICAL_PAGE, PLAN_PAGE, MAX_PAGE = PLAN_PAGE};
 	void catalog_page(twindow& window, int catalog, bool swap);	
 
 	void hero_changed(twindow& window);
 	void fill_table(int catalog);
 	void fill_table_row(team& t, int catalog);
 
+	void technology_tree(int n);
 private:
 	game_display& gui_;
 	std::vector<team>& teams_;

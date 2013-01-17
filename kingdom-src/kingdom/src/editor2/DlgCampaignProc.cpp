@@ -1,3 +1,5 @@
+#define GETTEXT_DOMAIN "wesnoth-maker"
+
 #include "global.hpp"
 #include "game_config.hpp"
 #include "foreach.hpp"
@@ -11,7 +13,6 @@
 #include "struct.h"
 #include "win32x.h"
 #include "gettext.hpp"
-#include "serialization/string_utils.hpp"
 #include "serialization/parser.hpp"
 #include "filesystem.hpp"
 #include "map_location.hpp"
@@ -114,11 +115,11 @@ void tcampaign::init_hero_state(hero_map& heros)
 	const unit_type_data::unit_type_map& types = unit_types.types();
 
 	if (arms_.empty()) {
-		arms_.push_back(std::make_pair<std::string, std::string>("footman", utf8_2_ansi(hero::arms_str(0).c_str())));
-		arms_.push_back(std::make_pair<std::string, std::string>("horseman", utf8_2_ansi(hero::arms_str(1).c_str())));
-		arms_.push_back(std::make_pair<std::string, std::string>("enginery", utf8_2_ansi(hero::arms_str(2).c_str())));
-		arms_.push_back(std::make_pair<std::string, std::string>("academy", utf8_2_ansi(hero::arms_str(3).c_str())));
-		arms_.push_back(std::make_pair<std::string, std::string>("navy", utf8_2_ansi(hero::arms_str(4).c_str())));
+		const std::vector<std::string>& ids = unit_types.arms_ids();
+		int index = 0;
+		for (std::vector<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++ it) {
+			arms_.push_back(std::make_pair(*it, utf8_2_ansi(hero::arms_str(index ++).c_str())));
+		}
 	}
 
 	artifical_utype_.clear();
@@ -161,35 +162,22 @@ void tcampaign::init_hero_state(hero_map& heros)
 	}
 
 	if (navigation_.empty()) {
-		navigation_.push_back(std::make_pair<std::string, std::string>("boat0", "舢板"));
-		navigation_.push_back(std::make_pair<std::string, std::string>("boat1", "蒙冲"));
-		navigation_.push_back(std::make_pair<std::string, std::string>("boat2", "二级蒙冲"));
-		navigation_.push_back(std::make_pair<std::string, std::string>("boat3", "斗舰"));
-		navigation_.push_back(std::make_pair<std::string, std::string>("boat4", "二级斗舰"));
-		navigation_.push_back(std::make_pair<std::string, std::string>("boat5", "楼船"));
-		navigation_.push_back(std::make_pair<std::string, std::string>("boat6", "二级楼船"));
+		const navigation_types& navigation_types = unit_types.navigation_threshold();
+		for (navigation_types::const_iterator it = navigation_types.begin(); it != navigation_types.end(); ++ it) {
+			navigation_.push_back(*it);
+		}
 	}
-	if (city_traits_.empty()) {
-		city_traits_.push_back(std::make_pair<std::string, ttrait>("strong", ttrait("强壮", "强壮")));
-		city_traits_.push_back(std::make_pair<std::string, ttrait>("intelligent", ttrait("聪慧", "聪慧")));
-		city_traits_.push_back(std::make_pair<std::string, ttrait>("resilient", ttrait("坚韧", "坚韧")));
-		city_traits_.push_back(std::make_pair<std::string, ttrait>("loyal", ttrait("忠诚", "忠诚")));
-		city_traits_.push_back(std::make_pair<std::string, ttrait>("architecture", ttrait("建筑", "建筑")));
-		city_traits_.push_back(std::make_pair<std::string, ttrait>("architecture_mid", ttrait("建筑", "建筑")));
-		city_traits_.push_back(std::make_pair<std::string, ttrait>("architecture_high", ttrait("建筑", "建筑")));
+
+	const traits_map& traits = unit_types.traits();
+	city_traits_.clear();
+	for (traits_map::const_iterator it = traits.begin(); it != traits.end(); ++ it) {
+		city_traits_.push_back(std::make_pair(it->first, &it->second));
 	}
-	if (troop_traits_.empty()) {
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("strong", ttrait("强壮", "强壮")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("quick", ttrait("迅捷", "迅捷")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("intelligent", ttrait("聪慧", "聪慧")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("resilient", ttrait("坚韧", "坚韧")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("loyal", ttrait("忠诚", "忠诚")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("brawniness", ttrait("顽强", "顽强")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("step1", ttrait("限速", "限速")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("step2", ttrait("限速", "限速")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("meritorious", ttrait("功勋", "功勋")));
-		troop_traits_.push_back(std::make_pair<std::string, ttrait>("statue", ttrait("雕像", "雕像")));
+	troop_traits_.clear();
+	for (traits_map::const_iterator it = traits.begin(); it != traits.end(); ++ it) {
+		troop_traits_.push_back(std::make_pair(it->first, &it->second));
 	}
+
 	if (reserved_heros_.empty()) {
 		reserved_heros_.insert(214); // 情报
 		reserved_heros_.insert(228); // 黄巾
@@ -200,6 +188,8 @@ void tcampaign::init_hero_state(hero_map& heros)
 		reserved_heros_.insert(273); // 城墙
 		reserved_heros_.insert(274); // 主楼
 		reserved_heros_.insert(275); // 箭塔
+		reserved_heros_.insert(276); // 技法所
+		reserved_heros_.insert(277); // (保留)
 	}
 
 	persons_.clear();
@@ -257,37 +247,40 @@ int tcampaign::arms_int(const std::string& id)
 	return index;
 }
 
-const tcampaign::ttrait& tcampaign::city_trait(const std::string& id)
+std::string tcampaign::city_trait(const std::string& id)
 {
-	for (std::vector<std::pair<std::string, ttrait> >::const_iterator it = city_traits_.begin(); it != city_traits_.end(); ++ it) {
+	for (std::vector<std::pair<std::string, const config*> >::const_iterator it = city_traits_.begin(); it != city_traits_.end(); ++ it) {
 		if (id == it->first) {
-			return it->second;
+			const config& cfg = *(it->second);
+			std::string name = cfg["male_name"];
+			if (name.empty()) {
+				name = cfg["female_name"];
+			}
+			if (name.empty()) {
+				name = cfg["name"];
+			}
+			return name;
 		}
 	}
-	static ttrait null_trait("", "");
-	return null_trait;
+	return "unknown trait";
 }
 
-const tcampaign::ttrait& tcampaign::troop_trait(const std::string& id)
+std::string tcampaign::troop_trait(const std::string& id)
 {
-	for (std::vector<std::pair<std::string, ttrait> >::const_iterator it = troop_traits_.begin(); it != troop_traits_.end(); ++ it) {
+	for (std::vector<std::pair<std::string, const config*> >::const_iterator it = troop_traits_.begin(); it != troop_traits_.end(); ++ it) {
 		if (id == it->first) {
-			return it->second;
+			const config& cfg = *(it->second);
+			std::string name = cfg["male_name"];
+			if (name.empty()) {
+				name = cfg["female_name"];
+			}
+			if (name.empty()) {
+				name = cfg["name"];
+			}
+			return name;
 		}
 	}
-	static ttrait null_trait("", "");
-	return null_trait;
-}
-
-const std::string& tcampaign::navigation(const std::string& id)
-{
-	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = navigation_.begin(); it != navigation_.end(); ++ it) {
-		if (id == it->first) {
-			return it->second;
-		}
-	}
-	static std::string null_str = "";
-	return null_str;
+	return "unknown trait";
 }
 
 tmain::tmain(const std::string& id, const std::string& firstscenario_id)
@@ -464,6 +457,7 @@ tside::tside()
 	, gold_(0)
 	, income_(0)
 	, build_()
+	, technologies_()
 	, except_(false)
 {
 }
@@ -524,6 +518,23 @@ void tside::from_config(const config& direct_side_cfg)
 		build_.insert(*i);
 	}
 
+	str = side_cfg["technologies"].str();
+	vstr = utils::split(str);
+	const std::map<std::string, technology>& technologies = unit_types.technologies();
+	for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
+		const std::string& id = *i;
+		std::map<std::string, technology>::const_iterator find = technologies.find(id);
+		if (find == technologies.end()) {
+			std::stringstream strstr;
+			strstr << utf8_2_ansi(gdmgr.heros_[leader_].name().c_str()) << "势力原拥有科技包括“" << id;
+			strstr << "”，但查不到该科技，强制取消";
+			posix_print_mb(strstr.str().c_str());
+			except_ = true;
+			continue;
+		}
+		technologies_.insert(*i);
+	}
+
 	vstr = utils::parenthetical_split(side_cfg["feature"]);
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		const std::vector<std::string> vstr1 = utils::split(*it);
@@ -569,7 +580,7 @@ void tside::from_config(const config& direct_side_cfg)
 		c.loc_.y = cfg["y"].to_int();
 		vstr = utils::split(cfg["traits"].str());
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
-			c.traits_.push_back(*i);
+			c.traits_.insert(*i);
 		}
 		str = cfg["character"].str();
 		c.character_ = unit_types.character_from_id(str);
@@ -635,7 +646,7 @@ void tside::from_config(const config& direct_side_cfg)
 		u.loc_.y = cfg["y"].to_int();
 		vstr = utils::split(cfg["traits"].str());
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
-			u.traits_.push_back(*i);
+			u.traits_.insert(*i);
 		}
 		str = cfg["character"].str();
 		u.character_ = unit_types.character_from_id(str);
@@ -684,6 +695,16 @@ void tside::from_ui(HWND hdlgP)
 	for (int idx = 0; idx < ListView_GetItemCount(hctl); idx ++) {
 		if (ListView_GetCheckState(hctl, idx)) {
 			build_.insert(ns::campaign.artifical_utype_[idx].first);
+		}
+	}
+
+	technologies_.clear();
+	hctl = GetDlgItem(hdlgP, IDC_LV_SIDEEDIT_TECHNOLOGY);
+	const std::map<std::string, technology>& technologies = unit_types.technologies();
+	int idx = 0;
+	for (std::map<std::string, technology>::const_iterator it = technologies.begin(); it != technologies.end(); ++ it, idx ++) {
+		if (ListView_GetCheckState(hctl, idx)) {
+			technologies_.insert(it->first);
 		}
 	}
 }
@@ -738,7 +759,8 @@ void tside::update_to_ui(HWND hdlgP) const
 	// 空白
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 3;
-	lvi.pszText = (controller_ == EMPTY)? "是": "否";
+	strcpy(text, (controller_ == EMPTY)? utf8_2_ansi(_("Yes")): utf8_2_ansi(_("No")));
+	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 迷雾
@@ -939,6 +961,40 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 				ListView_SetCheckState(hctl, lvi.iItem, FALSE);
 			}
 		}
+
+		// technology
+		hctl = GetDlgItem(hdlgP, IDC_LV_SIDEEDIT_TECHNOLOGY);
+		ListView_DeleteAllItems(hctl);
+		index = 0;
+		const std::map<std::string, technology>& technologies = unit_types.technologies();
+		for (std::map<std::string, technology>::const_iterator it = technologies.begin(); it != technologies.end(); ++ it) {
+			const technology& t = it->second;
+			lvi.mask = LVIF_TEXT | LVIF_PARAM;
+			// 名称
+			lvi.iItem = index;
+			lvi.iSubItem = 0;
+			strcpy(text, utf8_2_ansi(t.name().c_str()));
+			lvi.pszText = text;
+			lvi.lParam = (LPARAM)0;
+			ListView_InsertItem(hctl, &lvi);
+
+			// 描述
+			lvi.mask = LVIF_TEXT;
+			lvi.iItem = index ++;
+			lvi.iSubItem = 1;
+			strcpy(text, utf8_2_ansi(t.description().c_str()));
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			if (technologies_.find(it->first) != technologies_.end()) {
+				ListView_SetCheckState(hctl, lvi.iItem, TRUE);
+			} else {
+				ListView_SetCheckState(hctl, lvi.iItem, FALSE);
+			}
+		}
+		strstr.str("");
+		strstr << dgettext_2_ansi("wesnoth-lib", "Technology") << "(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TECHNOLOGY), strstr.str().c_str());
 	}
 
 	// feature
@@ -1085,6 +1141,7 @@ bool tside::operator==(const tside& that) const
 	if (income_ != that.income_) return false;
 	if (flag_ != that.flag_) return false;
 	if (build_ != that.build_) return false;
+	if (technologies_ != that.technologies_) return false;
 
 	if (cities_.size() != that.cities_.size()) return false;
 	for (size_t i = 0; i < cities_.size(); i ++) {
@@ -1157,7 +1214,7 @@ void tside::tcity::from_ui(HWND hdlgP, tside& side)
 	hctl = GetDlgItem(hdlgP, IDC_LV_CITYEDIT_TRAIT);
 	for (int idx = 0; idx < ListView_GetItemCount(hctl); idx ++) {
 		if (ListView_GetCheckState(hctl, idx)) {
-			traits_.push_back(ns::campaign.city_traits_[idx].first);
+			traits_.insert(ns::campaign.city_traits_[idx].first);
 		}
 	}
 
@@ -1229,12 +1286,11 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 3;
 	strstr.str("");
-	for (std::vector<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
-		if (it == traits_.begin()) {
-			strstr << ns::campaign.city_trait(*it).name_;
-		} else {
-			strstr << ", " << ns::campaign.city_trait(*it).name_;
+	for (std::set<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
+		if (it != traits_.begin()) {
+			strstr << ", ";
 		}
+		strstr << utf8_2_ansi(ns::campaign.city_trait(*it).c_str());
 	}
 	strcpy(text, strstr.str().c_str());
 	lvi.pszText = text;
@@ -1386,21 +1442,33 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		count = ListView_GetItemCount(hctl);
 		ListView_DeleteAllItems(hctl);
 		index = 0;
-		for (std::vector<std::pair<std::string, tcampaign::ttrait> >::const_iterator it = ns::campaign.city_traits_.begin(); it != ns::campaign.city_traits_.end(); ++ it) {
-			const tcampaign::ttrait& trait = it->second;
+		for (std::vector<std::pair<std::string, const config*> >::const_iterator it = ns::campaign.city_traits_.begin(); it != ns::campaign.city_traits_.end(); ++ it) {
+			const config& cfg = *it->second;
+
+			std::string name = cfg["male_name"];
+			if (name.empty()) {
+				name = cfg["female_name"];
+			}
+			if (name.empty()) {
+				name = cfg["name"];
+			}
 			
 			lvi.mask = LVIF_TEXT | LVIF_PARAM;
 			// 名称
 			lvi.iItem = index ++;
 			lvi.iSubItem = 0;
-			lvi.pszText = const_cast<char*>(trait.name_.c_str());
+			strcpy(text, utf8_2_ansi(name.c_str()));
+			lvi.pszText = text;
 			lvi.lParam = (LPARAM)0;
 			ListView_InsertItem(hctl, &lvi);
 
 			// 描述
+			std::string description = cfg["description"];
+
 			lvi.mask = LVIF_TEXT;
 			lvi.iSubItem = 1;
-			lvi.pszText = const_cast<char*>(trait.desc_.c_str());
+			strcpy(text, utf8_2_ansi(description.c_str()));
+			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);
 
 			if (std::find(traits_.begin(), traits_.end(), it->first) != traits_.end()) {
@@ -1457,7 +1525,7 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 			}
 		}
 		strstr.str("");
-		strstr << "不可征兵种(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
+		strstr << utf8_2_ansi(_("Cannot recruit")) << "(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
 		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITYEDIT_NOTRECRUIT), strstr.str().c_str());
 	}
 
@@ -1646,7 +1714,7 @@ void tside::tunit::from_ui(HWND hdlgP, tside& side)
 	hctl = GetDlgItem(hdlgP, IDC_LV_TROOPEDIT_TRAIT);
 	for (int idx = 0; idx < ListView_GetItemCount(hctl); idx ++) {
 		if (ListView_GetCheckState(hctl, idx)) {
-			traits_.push_back(ns::campaign.troop_traits_[idx].first);
+			traits_.insert(ns::campaign.troop_traits_[idx].first);
 		}
 	}
 }
@@ -1721,12 +1789,11 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 5;
 	strstr.str("");
-	for (std::vector<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
-		if (it == traits_.begin()) {
-			strstr << ns::campaign.troop_trait(*it).name_;
-		} else {
-			strstr << ", " << ns::campaign.troop_trait(*it).name_;
+	for (std::set<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
+		if (it != traits_.begin()) {
+			strstr << ", ";
 		}
+		strstr << utf8_2_ansi(ns::campaign.troop_trait(*it).c_str());
 	}
 	strcpy(text, strstr.str().c_str());
 	lvi.pszText = text;
@@ -1750,7 +1817,7 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 	if (city_ != HEROS_INVALID_NUMBER) {
 		strstr << utf8_2_ansi(gdmgr.heros_[city_].name().c_str());
 	} else {
-		strstr << "(流浪)";
+		strstr << "(" << utf8_2_ansi(_("Roam")) << ")";
 	}
 	strcpy(text, strstr.str().c_str());
 	lvi.pszText = text;
@@ -1760,6 +1827,7 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial)
 {
 	std::stringstream strstr;
+	utils::string_map symbols;
 	int value, selected_row = -1;
 	HWND hctl;
 
@@ -1770,7 +1838,10 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 			const unit_type* ut = it->second;
 			strstr.str("");
 			strstr << utf8_2_ansi(ut->type_name().c_str());
-			strstr << "(" << ut->level() << "级" << utf8_2_ansi(hero::arms_str(ut->arms()).c_str()) << ")";
+			strstr << "(";
+			symbols["level"] = lexical_cast_default<std::string>(ut->level());
+			strstr << utf8_2_ansi(vgettext2("Lv$level", symbols).c_str());
+			strstr << " " << utf8_2_ansi(hero::arms_str(ut->arms()).c_str()) << ")";
 			ComboBox_AddString(hctl, strstr.str().c_str());
 			if (type_ == it->first) {
 				selected_row = ComboBox_GetCount(hctl) - 1;
@@ -1796,7 +1867,9 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 		hctl = GetDlgItem(hdlgP, IDC_CMB_TROOPEDIT_CITY);
 		ComboBox_ResetContent(hctl);
 		if (side.cities_.empty()) {
-			ComboBox_AddString(hctl, "(流浪)");
+			strstr.str("");
+			strstr << "(" << utf8_2_ansi(_("Roam")) << ")";
+			ComboBox_AddString(hctl, strstr.str().c_str());
 			ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
 			selected_row = 0;
 		} else {
@@ -1829,21 +1902,33 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 		count = ListView_GetItemCount(hctl);
 		ListView_DeleteAllItems(hctl);
 		index = 0;
-		for (std::vector<std::pair<std::string, tcampaign::ttrait> >::const_iterator it = ns::campaign.troop_traits_.begin(); it != ns::campaign.troop_traits_.end(); ++ it) {
-			const tcampaign::ttrait& trait = it->second;
+		for (std::vector<std::pair<std::string, const config*> >::const_iterator it = ns::campaign.troop_traits_.begin(); it != ns::campaign.troop_traits_.end(); ++ it) {
+			const config& cfg = *(it->second);
+			
+			std::string name = cfg["male_name"];
+			if (name.empty()) {
+				name = cfg["female_name"];
+			}
+			if (name.empty()) {
+				name = cfg["name"];
+			}
 			
 			lvi.mask = LVIF_TEXT | LVIF_PARAM;
 			// 名称
 			lvi.iItem = index ++;
 			lvi.iSubItem = 0;
-			lvi.pszText = const_cast<char*>(trait.name_.c_str());
+			strcpy(text, utf8_2_ansi(name.c_str()));
+			lvi.pszText = text;
 			lvi.lParam = (LPARAM)0;
 			ListView_InsertItem(hctl, &lvi);
 
 			// 描述
+			std::string description = cfg["description"];
+
 			lvi.mask = LVIF_TEXT;
 			lvi.iSubItem = 1;
-			lvi.pszText = const_cast<char*>(trait.desc_.c_str());
+			strcpy(text, utf8_2_ansi(description.c_str()));
+			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);
 
 			if (std::find(traits_.begin(), traits_.end(), it->first) != traits_.end()) {
@@ -2535,6 +2620,15 @@ void tscenario::generate()
 			strstr << "\t\t\tgold = " << it->gold_ << "\n";
 			strstr << "\t\t\tincome = " << it->income_ << "\n";
 			strstr << "\t\t\tfeature = " << it->generate_features() << "\n";
+			strstr << "\t\t\ttechnologies = ";
+			for (std::set<std::string>::const_iterator it2 = it->technologies_.begin(); it2 != it->technologies_.end(); ++ it2) {
+				if (it2 == it->technologies_.begin()) {
+					strstr << *it2;
+				} else {
+					strstr << ", " << *it2;
+				}
+			}
+			strstr << "\n";
 			strstr << "\t\t{PLAYER_ENDIF_ELSE}\n";
 		} else {
 			strstr << "\t\tcontroller = null\n";
@@ -2553,7 +2647,7 @@ void tscenario::generate()
 			strstr << it2->loc_.x << " " << it2->loc_.y << " ";
 			strstr << "(" << it2->heros_army_[0] << ") ";
 			strstr << "(";
-			for (std::vector<std::string>::const_iterator it3 = it2->traits_.begin(); it3 != it2->traits_.end(); ++ it3) {
+			for (std::set<std::string>::const_iterator it3 = it2->traits_.begin(); it3 != it2->traits_.end(); ++ it3) {
 				if (it3 == it2->traits_.begin()) {
 					strstr << *it3;
 				} else {
@@ -2631,7 +2725,7 @@ void tscenario::generate()
 			}
 			strstr << ") ";
 			strstr << "(";
-			for (std::vector<std::string>::const_iterator it3 = it2->traits_.begin(); it3 != it2->traits_.end(); ++ it3) {
+			for (std::set<std::string>::const_iterator it3 = it2->traits_.begin(); it3 != it2->traits_.end(); ++ it3) {
 				if (it3 == it2->traits_.begin()) {
 					strstr << *it3;
 				} else {
@@ -2799,15 +2893,15 @@ static bool save_if_dirty()
 {
 	if (ToolBar_GetState(gdmgr._htb_campaign, IDM_SAVE) & TBSTATE_ENABLED) {
 		std::stringstream title, message;
+		utils::string_map symbols;
 		HWND hdlgP = gdmgr._hdlg_campaign;
 
 		DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hdlgP, GWL_USERDATA); 
 		int iSel = TabCtrl_GetCurSel(pHdr->hwndTab); 
 
-		title << "保存战役-" << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str())); 
-		message << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str()));
-		message << "，有改动，您想保存修改吗？";
-
+		symbols["campaign"] = dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str());
+		title << utf8_2_ansi(vgettext2("Save campaign-$campaign", symbols).c_str());
+		message << utf8_2_ansi(vgettext2("$campaign is dirty, do you want to save modify?", symbols).c_str());
 		int retval = MessageBox(gdmgr._htb_campaign, message.str().c_str(), title.str().c_str(), MB_YESNO);
 		if (retval == IDYES) {
 			OnSaveBt(gdmgr._hdlg_campaign);
@@ -2972,21 +3066,41 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
     DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
     SetWindowPos(hdlgP, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE); 
 
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FILE), utf8_2_ansi(_("Corresponding cfg")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ID), utf8_2_ansi(_("ID")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DOMAIN), utf8_2_ansi(_("Domain")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NAME), utf8_2_ansi(_("Name")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ABBREVIATION), utf8_2_ansi(_("Abbreviation")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_RANK), utf8_2_ansi(_("Rank")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FIRSTSCENARIO), utf8_2_ansi(_("First scenario")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_IMAGE), utf8_2_ansi(_("Image")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DESCRIPTION), utf8_2_ansi(_("Description")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_CAMPMAIN_RPGMODE), utf8_2_ansi(_("RPG mode")));
+
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPMAIN_BROWSEICON), utf8_2_ansi(_("Browse...")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPMAIN_BROWSEIMAGE), utf8_2_ansi(_("Browse...")));
+	
+	std::stringstream strstr;
 	HWND hctl = GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_FILE);
 	Edit_SetText(hctl, ns::_main.file_.c_str());
 
 	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_RANK);
-	ComboBox_AddString(hctl, "教程[0, 99]");
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Tutorial")) << "[0, 99]";
+	ComboBox_AddString(hctl, strstr.str().c_str());
 	ComboBox_AddString(hctl, "SLG[100, 199]");
-	ComboBox_AddString(hctl, "多关卡[200, 299]");
-	ComboBox_AddString(hctl, "测试[300, ---)");
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Multi-scenario")) << "[200, 299]";
+	ComboBox_AddString(hctl, strstr.str().c_str());
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Test")) << "[300, ---)";
+	ComboBox_AddString(hctl, strstr.str().c_str());
 	ComboBox_SetItemData(hctl, 0, 0);
 	ComboBox_SetItemData(hctl, 1, 100);
 	ComboBox_SetItemData(hctl, 2, 200);
 	ComboBox_SetItemData(hctl, 3, 300);
 
 	std::string str;
-	std::stringstream strstr;
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ID), ns::_main.id_.c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_TEXTDOMAIN), ns::_main.textdomain_.c_str());
 	select_rank_cmb(GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_RANK), ns::_main.rank_);
@@ -2999,14 +3113,14 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.abbrev_.c_str()));
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ABBREV), strstr.str().c_str());
 	if (is_file(ns::_main.icon(true).c_str())) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ICON), "存在");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ICON), utf8_2_ansi(_("Exist")));
 	} else {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ICON), "不存在");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ICON), utf8_2_ansi(_("Not exist")));
 	}
 	if (is_file(ns::_main.image(true).c_str())) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_IMAGE), "存在");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_IMAGE), utf8_2_ansi(_("Exist")));
 	} else {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_IMAGE), "不存在");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_IMAGE), utf8_2_ansi(_("Not exist")));
 	}
 
 	// description
@@ -3032,7 +3146,7 @@ void OnCampaignMainEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	std::string str = text;
 	std::transform(str.begin(), str.end(), str.begin(), std::tolower);
 	if (!isvalid_id(str)) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_TEXTDOMAINSTATUS), "无效字符串");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_TEXTDOMAINSTATUS), utf8_2_ansi(_("Invalid string")));
 		return;
 	}
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_TEXTDOMAINSTATUS), "");
@@ -3155,16 +3269,27 @@ void OnCampaignMainBt(HWND hdlgP, int id, UINT codeNotify)
 	HWND hctl;
 	BOOL fok = FALSE;
 	std::stringstream strstr;
+	utils::string_map symbols;
+
+	symbols["src"] = ptr;
 	if (id == IDC_BT_CAMPMAIN_BROWSEICON) {
 		fok = CopyFile(ptr, ns::_main.icon(true).c_str(), FALSE);
-		strstr << "复制" << ptr << "到" << ns::_main.icon(true);
+		symbols["dst"] = ns::_main.icon(true);
 	} else if (id == IDC_BT_CAMPMAIN_BROWSEIMAGE) {
 		fok = CopyFile(ptr, ns::_main.image(true).c_str(), FALSE);
-		strstr << "复制" << ptr << "到" << ns::_main.image(true);
+		symbols["dst"] = ns::_main.image(true);
 	} else {
 		return;
 	}
-	strstr << (fok? "成功": "失败");
+	if (symbols["src"].str() == symbols["dst"].str()) {
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Selected is using file, do nothing."));
+		posix_print_mb(strstr.str().c_str());
+		return;
+	}
+	symbols["result"] = fok? "success": "fail";
+	strstr.str("");
+	strstr << utf8_2_ansi(vgettext2("Copy \"$src\" to \"$dst\" $result!", symbols).c_str());
 	posix_print_mb(strstr.str().c_str());
 
 	if (id == IDC_BT_CAMPMAIN_BROWSEICON) {
@@ -3174,7 +3299,7 @@ void OnCampaignMainBt(HWND hdlgP, int id, UINT codeNotify)
 		fok = is_file(ns::_main.image(true).c_str());
 		hctl = GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_IMAGE);
 	}
-	Edit_SetText(hctl, fok? "存在": "不存在");
+	Edit_SetText(hctl, fok? utf8_2_ansi(_("Exist")): utf8_2_ansi(_("Not exist")));
 }
 
 void On_DlgCampaignMainCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
@@ -3218,17 +3343,30 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
+	char text[_MAX_PATH];
 	if (ns::action_side == ma_edit) {
-		SetWindowText(hdlgP, "编辑势力");
+		strstr << utf8_2_ansi(_("Edit side"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加势力");
+		strstr << utf8_2_ansi(_("Add side"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NUMBER), utf8_2_ansi(_("Number")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NAME), utf8_2_ansi(_("Name")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LEADER), utf8_2_ansi(_("Leader")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_SIDEEDIT_CONTROLLER), utf8_2_ansi(_("Void")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_GOLD), utf8_2_ansi(_("Base gold")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NAVIGATION), dgettext_2_ansi("wesnoth-lib", "Navigation civilization"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FEATURE), dgettext_2_ansi("wesnoth-hero", "feature"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TECHNOLOGY), dgettext_2_ansi("wesnoth-lib", "Technology"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITY), utf8_2_ansi(_("City")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TROOP), utf8_2_ansi(_("Troop")));
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	tside& side = scenario.side_[ns::clicked_side];
-
-	std::stringstream strstr;
 
 	// name
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SIDEEDIT_NAME_MSGID), side.name_.c_str());
@@ -3256,8 +3394,8 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	hctl = GetDlgItem(hdlgP, IDC_CMB_SIDEEDIT_NAVIGATION);
 	int index = 0;
-	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = ns::campaign.navigation_.begin(); it != ns::campaign.navigation_.end(); ++ it) {
-		ComboBox_AddString(hctl, it->second.c_str());
+	for (std::vector<std::string>::const_iterator it = ns::campaign.navigation_.begin(); it != ns::campaign.navigation_.end(); ++ it) {
+		ComboBox_AddString(hctl, utf8_2_ansi(unit_types.find(*it)->type_name().c_str()));
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, index ++);
 	}
 	hctl = GetDlgItem(hdlgP, IDC_UD_SIDEEDIT_NAVIGATIONXP);
@@ -3269,12 +3407,12 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 100;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
 
-	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
 	ns::himl_checkbox_side = ImageList_Create(15, 15, FALSE, 2, 0);
 	ImageList_SetBkColor(ns::himl_checkbox_side, RGB(255, 255, 255));
 
@@ -3287,11 +3425,13 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ListView_SetImageList(hctl, ns::himl_checkbox_side, LVSIL_STATE);
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
-	hctl = GetDlgItem(hdlgP, IDC_LV_SIDEEDIT_FEATURE);
+	// technology
+	hctl = GetDlgItem(hdlgP, IDC_LV_SIDEEDIT_TECHNOLOGY);
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
-	lvc.cx = 60;
-	lvc.pszText = "兵科";
+	lvc.cx = 100;
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3299,12 +3439,35 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 50;
 	lvc.iSubItem = 1;
-	lvc.pszText = "级别";
+	strcpy(text, utf8_2_ansi(_("Description")));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, 1, &lvc);
+
+	ListView_SetImageList(hctl, ns::himl_checkbox_side, LVSIL_STATE);
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
+	// featrue
+	hctl = GetDlgItem(hdlgP, IDC_LV_SIDEEDIT_FEATURE);
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 60;
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Arms"));
+	lvc.pszText = text;
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = 0;
+	ListView_InsertColumn(hctl, 0, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 50;
+	lvc.iSubItem = 1;
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Level"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 60;
 	lvc.iSubItem = 2;
-	lvc.pszText = "特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -3314,7 +3477,8 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 60;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3322,48 +3486,57 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 50;
 	lvc.iSubItem = 1;
-	lvc.pszText = "兵种";
+	strcpy(text, utf8_2_ansi(_("arms^Type")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 58;
 	lvc.iSubItem = 2;
-	lvc.pszText = "坐标";
+	strcpy(text, utf8_2_ansi(_("Coordinate")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	lvc.cx = 70;
 	lvc.iSubItem = 3;
-	lvc.pszText = "特质";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Traits"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 50;
 	lvc.iSubItem = 4;
-	lvc.pszText = "特色";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Character"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 4, &lvc);
 
 	lvc.cx = 100;
 	lvc.iSubItem = 5;
-	lvc.pszText = "不可征";
+	strcpy(text, utf8_2_ansi(_("Cannot recruit")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 5, &lvc);
 
 	lvc.cx = 60;
 	lvc.iSubItem = 6;
-	lvc.pszText = "太守";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Mayor"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 6, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 7;
-	lvc.pszText = "在职";
+	strcpy(text, utf8_2_ansi(_("Office")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 7, &lvc);
 
 	lvc.cx = 54;
 	lvc.iSubItem = 8;
-	lvc.pszText = "在野";
+	strcpy(text, utf8_2_ansi(_("Wander")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 8, &lvc);
 
 	lvc.cx = 54;
 	lvc.iSubItem = 9;
-	lvc.pszText = "经济区";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "economy area"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 9, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -3376,7 +3549,8 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 60;
-	lvc.pszText = "主将";
+	strcpy(text, utf8_2_ansi(_("troop^Master")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3384,39 +3558,50 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "副将I";
+	strstr.str("");
+	strstr << utf8_2_ansi(_("troop^Second")) << "I";
+	strcpy(text, strstr.str().c_str());
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 2;
-	lvc.pszText = "副将II";
+	strstr.str("");
+	strstr << utf8_2_ansi(_("troop^Second")) << "II";
+	strcpy(text, strstr.str().c_str());
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 120;
 	lvc.iSubItem = 3;
-	lvc.pszText = "兵种";
+	strcpy(text, utf8_2_ansi(_("arms^Type")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
 	lvc.cx = 58;
 	lvc.iSubItem = 4;
-	lvc.pszText = "坐标";
+	strcpy(text, utf8_2_ansi(_("Coordinate")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 4, &lvc);
 
 	lvc.cx = 70;
 	lvc.iSubItem = 5;
-	lvc.pszText = "特质";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Traits"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 5, &lvc);
 
 	lvc.cx = 50;
 	lvc.iSubItem = 6;
-	lvc.pszText = "特色";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Character"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 6, &lvc);
 
 	lvc.cx = 60;
 	lvc.iSubItem = 7;
-	lvc.pszText = "城市";
+	strcpy(text, utf8_2_ansi(_("City")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 7, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -3434,12 +3619,18 @@ BOOL On_DlgFeatureEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
 	if (ns::action_feature == ma_edit) {
-		SetWindowText(hdlgP, "编辑特色");
+		strstr << utf8_2_ansi(_("Edit feature"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加特色");
+		strstr << utf8_2_ansi(_("Add feature"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ARMS), dgettext_2_ansi("wesnoth-lib", "Arms"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LEVEL), dgettext_2_ansi("wesnoth-lib", "Level"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FEATURE), dgettext_2_ansi("wesnoth-hero", "feature"));
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	tside& side = scenario.side_[ns::clicked_side];
@@ -3562,13 +3753,31 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
 	if (ns::action_city == ma_edit) {
-		SetWindowText(hdlgP, "编辑城市");
+		strstr << utf8_2_ansi(_("Edit city"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加城市");
+		strstr << utf8_2_ansi(_("Add city"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
 
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITY), utf8_2_ansi(_("City")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("arms^Type")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MAYOR), dgettext_2_ansi("wesnoth-lib", "Mayor"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CHARACTER), dgettext_2_ansi("wesnoth-lib", "Character"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_COORDINATE), utf8_2_ansi(_("Coordinate")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TRAITS), dgettext_2_ansi("wesnoth-lib", "Traits"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HERO), utf8_2_ansi(_("Hero")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CANDIDATE), utf8_2_ansi(_("Candidate")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_OFFICE), utf8_2_ansi(_("Office")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_WANDER), utf8_2_ansi(_("Wander")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_EA), dgettext_2_ansi("wesnoth-lib", "economy area"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_EACOORDINATE), utf8_2_ansi(_("Coordinate")));
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_BT_CITYEDIT_ADDEA), utf8_2_ansi(_("Add")));
+
+	char text[_MAX_PATH];
 	gdmgr._hpopup_candidate = CreatePopupMenu();
 	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOSERVICE, "到在职");
 	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOWANDER, "到在野");
@@ -3590,7 +3799,8 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 60;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3598,7 +3808,8 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "描述";
+	strcpy(text, utf8_2_ansi(_("Description")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -3622,7 +3833,8 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 60;
-	lvc.pszText = "姓名";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "name"));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3630,22 +3842,26 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "相性";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "catalog"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 48;
 	lvc.iSubItem = 2;
-	lvc.pszText = "特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 3;
-	lvc.pszText = "势力特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "side feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 4;
-	lvc.pszText = "统帅";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "leadership"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 4, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -3659,7 +3875,8 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 50;
-	lvc.pszText = "姓名";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "name"));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3667,12 +3884,14 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "相性";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "catalog"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 48;
 	lvc.iSubItem = 2;
-	lvc.pszText = "特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -3686,7 +3905,8 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 50;
-	lvc.pszText = "姓名";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "name"));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3694,12 +3914,14 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "相性";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "catalog"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 48;
 	lvc.iSubItem = 2;
-	lvc.pszText = "特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -3713,7 +3935,8 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 90;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3721,13 +3944,15 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 40;
 	lvc.iSubItem = 1;
-	lvc.pszText = "等级";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Level"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 40;
 	lvc.iSubItem = 2;
-	lvc.pszText = "兵科";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Arms"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	ListView_SetImageList(hctl, ns::himl_checkbox, LVSIL_STATE);
@@ -3748,7 +3973,8 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 40;
-	lvc.pszText = "编号";
+	strcpy(text, utf8_2_ansi(_("Number")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -3986,7 +4212,7 @@ BOOL On_DlgCityEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			} else {
 				ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, TRUE);
 			}
-			strstr << "不可征兵种(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
+			strstr << utf8_2_ansi(_("Cannot recruit")) << "(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
 			Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITYEDIT_NOTRECRUIT), strstr.str().c_str());
 		}
 	} else if (lpNMHdr->code == NM_RCLICK) {
@@ -4079,13 +4305,25 @@ BOOL On_DlgTroopEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
 	if (ns::action_troop == ma_edit) {
-		SetWindowText(hdlgP, "编辑部队");
+		strstr << utf8_2_ansi(_("Edit troop"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加部队");
+		strstr << utf8_2_ansi(_("Add troop"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
 
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("arms^Type")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITY), utf8_2_ansi(_("City")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CHARACTER), dgettext_2_ansi("wesnoth-lib", "Character"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_COORDINATE), utf8_2_ansi(_("Coordinate")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TRAITS), dgettext_2_ansi("wesnoth-lib", "Traits"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HERO), utf8_2_ansi(_("Hero")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CANDIDATE), utf8_2_ansi(_("Candidate")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TROOPHERO), utf8_2_ansi(_("Hero")));
+
+	char text[_MAX_PATH];
 	gdmgr._hpopup_candidate = CreatePopupMenu();
 	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOMASTER, "到主将");
 	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOSECOND, "到副将I");
@@ -4108,7 +4346,8 @@ BOOL On_DlgTroopEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 60;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -4116,7 +4355,8 @@ BOOL On_DlgTroopEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "描述";
+	strcpy(text, utf8_2_ansi(_("Description")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -4140,7 +4380,8 @@ BOOL On_DlgTroopEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 60;
-	lvc.pszText = "姓名";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "name"));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -4148,22 +4389,26 @@ BOOL On_DlgTroopEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "相性";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "catalog"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 48;
 	lvc.iSubItem = 2;
-	lvc.pszText = "特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 3;
-	lvc.pszText = "势力特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "side feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 4;
-	lvc.pszText = "统帅";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "leadership"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 4, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -4177,7 +4422,8 @@ BOOL On_DlgTroopEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 50;
-	lvc.pszText = "姓名";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "name"));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -4185,12 +4431,14 @@ BOOL On_DlgTroopEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "相性";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "catalog"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 48;
 	lvc.iSubItem = 2;
-	lvc.pszText = "特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -4565,7 +4813,7 @@ void OnSideEditEt(HWND hdlgP, int id, UINT codeNotify)
 	if (!side.name_.empty()) {
 		strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), side.name_.c_str()));
 	} else {
-		strstr << "(" << gdmgr.heros_[side.leader_].name() << ")";
+		strstr << "(" << utf8_2_ansi(gdmgr.heros_[side.leader_].name().c_str()) << ")";
 	}
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SIDEEDIT_NAME), strstr.str().c_str());
 
@@ -4587,7 +4835,7 @@ void OnLeaderCmb(HWND hdlgP, int id, UINT codeNotify)
 	HWND hctl = GetDlgItem(hdlgP, id);
 	side.leader_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 	std::stringstream strstr;
-	strstr << "(" << gdmgr.heros_[side.leader_].name() << ")";
+	strstr << "(" << utf8_2_ansi(gdmgr.heros_[side.leader_].name().c_str()) << ")";
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SIDEEDIT_NAME), strstr.str().c_str());
 }
 
@@ -4645,15 +4893,20 @@ void On_DlgSideEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 
 BOOL On_DlgSideEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 {
+	std::stringstream strstr;
 	if (lpNMHdr->code == NM_CLICK) {
 		LPNMITEMACTIVATE lpnmitem = (LPNMITEMACTIVATE)lpNMHdr;
-		if ((lpNMHdr->idFrom == IDC_LV_SIDEEDIT_BUILD) && (lpnmitem->ptAction.x <= 14)) {
+		if ((lpNMHdr->idFrom == IDC_LV_SIDEEDIT_BUILD || lpNMHdr->idFrom == IDC_LV_SIDEEDIT_TECHNOLOGY) && (lpnmitem->ptAction.x <= 14)) {
 			if (ListView_GetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem)) {
 				ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, FALSE);
 			} else {
 				ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, TRUE);
 			}
+			strstr.str("");
+			strstr << dgettext_2_ansi("wesnoth-lib", "Technology") << "(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
+			Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TECHNOLOGY), strstr.str().c_str());
 		}
+
 	} else if (lpNMHdr->code == NM_RCLICK) {
 		sideedit_notify_handler_rclick(hdlgP, DlgItem, lpNMHdr);
 
@@ -4689,6 +4942,23 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
     DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
     SetWindowPos(hdlgP, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE); 
 
+	std::stringstream strstr;
+	char text[_MAX_PATH];
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FILE), utf8_2_ansi(_("Corresponding cfg")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ID), utf8_2_ansi(_("ID")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NAME), utf8_2_ansi(_("Name")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MAP), utf8_2_ansi(_("Map")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NEXTSCENARIO), utf8_2_ansi(_("Next scenario")));
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Turns")) << "(-1: ";
+	strstr << utf8_2_ansi(_("Unrestricted")) << ")";
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TURNS), strstr.str().c_str());
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MDACTIVITY), utf8_2_ansi(_("Maximal defeated activity")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_WIN), utf8_2_ansi(_("Win condition")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LOSE), utf8_2_ansi(_("Lose condition")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TREASURE), utf8_2_ansi(_("Hidden treasure")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPSCENARIO_BROWSEMAP), utf8_2_ansi(_("Browse...")));
+
 	// int index = TabCtrl_GetCurSel(pHdr->hwndTab) - 1;
 	ns::current_scenario = TabCtrl_GetCurSel(pHdr->hwndTab) - 1;
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
@@ -4696,7 +4966,6 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	HWND hctl = GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_FILE);
 	Edit_SetText(hctl, scenario.file(true).c_str());
 
-	std::stringstream strstr;
 	//id
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_ID), scenario.id_.c_str());
 	// name
@@ -4706,9 +4975,9 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	strstr.str("");
 	strstr << "(" << scenario.map_file() << ")";
 	if (scenario.map_data_size(scenario.map_data_).valid()) {
-		strstr << "存在";
+		strstr << utf8_2_ansi(_("Exist"));
 	} else {
-		strstr << "不存在";
+		strstr << utf8_2_ansi(_("Not exist"));
 	}
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_MAP), strstr.str().c_str());
 
@@ -4733,7 +5002,8 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 40;
-	lvc.pszText = "编号";
+	strcpy(text, utf8_2_ansi(_("Number")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -4741,19 +5011,22 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 70;
 	lvc.iSubItem = 1;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 2;
-	lvc.pszText = "数量";
+	strcpy(text, utf8_2_ansi(_("Quantity")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 3;
-	lvc.pszText = "特技";
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -4764,7 +5037,8 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 40;
-	lvc.pszText = "编号";
+	strcpy(text, utf8_2_ansi(_("Number")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -4772,62 +5046,74 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 1;
-	lvc.pszText = "名称";
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.cx = 48;
 	lvc.iSubItem = 2;
-	lvc.pszText = "君主";
+	strcpy(text, utf8_2_ansi(_("Leader")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 3;
-	lvc.pszText = "空白";
+	strcpy(text, utf8_2_ansi(_("Void")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 4;
-	lvc.pszText = "迷雾";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Fog"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 4, &lvc);
 
 	lvc.cx = 54;
 	lvc.iSubItem = 5;
-	lvc.pszText = "卡牌";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Card"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 5, &lvc);
 
 	lvc.cx = 54;
 	lvc.iSubItem = 6;
-	lvc.pszText = "初始金";
+	strcpy(text, utf8_2_ansi(_("Base gold")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 6, &lvc);
 
 	lvc.cx = 54;
 	lvc.iSubItem = 7;
-	lvc.pszText = "回合金";
+	strcpy(text, utf8_2_ansi(_("Base income")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 7, &lvc);
 
 	lvc.cx = 60;
 	lvc.iSubItem = 8;
-	lvc.pszText = "航海文明";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Navigation civilization"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 8, &lvc);
 
 	lvc.cx = 40;
 	lvc.iSubItem = 9;
-	lvc.pszText = "特色";
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Character"));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 9, &lvc);
 
 	lvc.cx = 100;
 	lvc.iSubItem = 10;
-	lvc.pszText = "建筑物";
+	strcpy(text, utf8_2_ansi(_("Artifical")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 10, &lvc);
 
 	lvc.cx = 80;
 	lvc.iSubItem = 11;
-	lvc.pszText = "城市";
+	strcpy(text, utf8_2_ansi(_("City")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 11, &lvc);
 
 	lvc.cx = 80;
 	lvc.iSubItem = 12;
-	lvc.pszText = "部队";
+	strcpy(text, utf8_2_ansi(_("Troop")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 12, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
@@ -4841,7 +5127,8 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 40;
-	lvc.pszText = "编号";
+	strcpy(text, utf8_2_ansi(_("Number")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
@@ -4849,13 +5136,15 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 70;
 	lvc.iSubItem = 1;
-	lvc.pszText = "时机";
+	strcpy(text, utf8_2_ansi(_("Occasion")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
 	lvc.iSubItem = 2;
-	lvc.pszText = "只一次";
+	strcpy(text, utf8_2_ansi(_("Only one time")));
+	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -4953,13 +5242,13 @@ void OnCampaignScenarioEt3(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	std::string str = text;
 	std::transform(str.begin(), str.end(), str.begin(), std::tolower);
 	if (!isvalid_id(str)) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_IDSTATUS), "无效字符串");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_IDSTATUS), utf8_2_ansi(_("Invalid string")));
 		return;
 	}
 	// cannot be exist id.
 	for (size_t i = 0; i < ns::_scenario.size(); i ++) {
 		if (i != ns::current_scenario && str == ns::_scenario[i].id_) {
-			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_IDSTATUS), "已存在该ID的其它关卡");
+			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_IDSTATUS), utf8_2_ansi(_("Other scenario has holded ID")));
 			return;
 		}
 	}
@@ -4991,9 +5280,9 @@ void OnCampaignScenarioEt3(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	strstr.str("");
 	strstr << "(" << scenario.map_file() << ")";
 	if (scenario.map_data_size(map_data).valid()) {
-		strstr << "存在";
+		strstr << utf8_2_ansi(_("Exist"));
 	} else {
-		strstr << "不存在";
+		strstr << utf8_2_ansi(_("Not exist"));
 	}
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_MAP), strstr.str().c_str());
 
@@ -5053,17 +5342,19 @@ void OnCampaignScenarioBt(HWND hdlgP, int id, UINT codeNotify)
 	if (!ptr) return;
 
 	std::stringstream strstr;
+	utils::string_map symbols;
 	std::string map_data = scenario.map_data_from_file(ptr);
 	map_location size = scenario.map_data_size(map_data);
 	if (!size.valid()) {
+		symbols["file"] = ptr;
 		strstr.str("");
-		strstr << ptr << "不是有效地图文件";
+		strstr << utf8_2_ansi(vgettext2("$file isn't valid map file!", symbols).c_str());
 		posix_print_mb(strstr.str().c_str());
 		return;
 	}
 	if (scenario.map_data_ == map_data) {
 		strstr.str("");
-		strstr << ptr << "是有效地图，但数据和已设置的一样，不复制";
+		strstr << utf8_2_ansi(_("Selected is using file, do nothing."));
 		posix_print_mb(strstr.str().c_str());
 		return;
 	}
@@ -5072,11 +5363,14 @@ void OnCampaignScenarioBt(HWND hdlgP, int id, UINT codeNotify)
 	BOOL fok;
 	if (id == IDC_BT_CAMPSCENARIO_BROWSEMAP) {
 		fok = CopyFile(ptr, scenario.map_file(true).c_str(), FALSE);
-		strstr << "复制" << ptr << "到" << scenario.map_file(true);
 	} else {
 		return;
 	}
-	strstr << (fok? "成功": "失败");
+	symbols["src"] = ptr;
+	symbols["dst"] = scenario.map_file(true);
+	symbols["result"] = fok? "success": "fail";
+	strstr.str("");
+	strstr << utf8_2_ansi(vgettext2("Copy \"$src\" to \"$dst\" $result!", symbols).c_str());
 	posix_print_mb(strstr.str().c_str());
 
 	if (id == IDC_BT_CAMPSCENARIO_BROWSEMAP) {
@@ -5085,7 +5379,7 @@ void OnCampaignScenarioBt(HWND hdlgP, int id, UINT codeNotify)
 	}
 
 	strstr.str("");
-	strstr << "(" << scenario.map_file() << ")存在";
+	strstr << "(" << scenario.map_file() << ")" << utf8_2_ansi(_("Exist"));
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_MAP), strstr.str().c_str());
 	
 	scenario.map_data_ = map_data;
@@ -5153,16 +5447,16 @@ BOOL On_DlgTreasureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
 	if (ns::action_treasure == ma_edit) {
-		SetWindowText(hdlgP, "编辑关卡隐藏宝物");
+		strstr << utf8_2_ansi(_("Edit hidden treasure"));
 		// ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加关卡隐藏宝物");
+		strstr << utf8_2_ansi(_("Add hidden treasure"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
-
-	std::stringstream strstr;
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_TREASURE_TREASURE);
 	const treasure_map& treasures = unit_types.treasures();
@@ -5407,9 +5701,9 @@ void campaignscenario_notify_handler_rclick(HWND hdlgP, LPNMHDR lpNMHdr)
 			AppendMenu(hpopup_new, MF_STRING, IDM_NEW_ITEM0 + index, strstr.str().c_str());
 		}
 		HMENU hpopup_event = CreatePopupMenu();
-		AppendMenu(hpopup_event, MF_POPUP, (UINT_PTR)(hpopup_new), "添加");
-		AppendMenu(hpopup_event, MF_STRING, IDM_EDIT, "编辑...");
-		AppendMenu(hpopup_event, MF_STRING, IDM_DELETE, "删除");
+		AppendMenu(hpopup_event, MF_POPUP, (UINT_PTR)(hpopup_new), utf8_2_ansi(_("Add")));
+		AppendMenu(hpopup_event, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
+		AppendMenu(hpopup_event, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
 
 		if (icount >= tscenario::max_event_count) {
 			EnableMenuItem(hpopup_event, (UINT_PTR)(hpopup_new), MF_BYCOMMAND | MF_GRAYED);
@@ -5434,9 +5728,9 @@ void campaignscenario_notify_handler_rclick(HWND hdlgP, LPNMHDR lpNMHdr)
 
 	} else if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_TREASURE) {
 		HMENU hpopup_treasure = CreatePopupMenu();
-		AppendMenu(hpopup_treasure, MF_STRING, IDM_ADD, "添加...");
-		AppendMenu(hpopup_treasure, MF_STRING, IDM_EDIT, "编辑...");
-		AppendMenu(hpopup_treasure, MF_STRING, IDM_DELETE, "删除");
+		AppendMenu(hpopup_treasure, MF_STRING, IDM_ADD, utf8_2_ansi(_("Add...")));
+		AppendMenu(hpopup_treasure, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
+		AppendMenu(hpopup_treasure, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
 
 		if (lpnmitem->iItem < 0) {
 			EnableMenuItem(hpopup_treasure, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
@@ -5640,6 +5934,14 @@ BOOL On_DlgNewCampaignInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ns_new::set_dirty(ns_new::BIT_ID, true);
 	ns_new::set_dirty(ns_new::BIT_FIRSTSCENARIOID, true);
 
+	SetWindowText(hdlgP, utf8_2_ansi(_("New campaign")));
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CAMPAIGNID), utf8_2_ansi(_("Campaign ID(Once set, cannot modify in future)")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_SCENARIOID), utf8_2_ansi(_("First scenario ID(May modify in future)")));
+
+	Button_SetText(GetDlgItem(hdlgP, IDOK), utf8_2_ansi(_("New")));
+	Button_SetText(GetDlgItem(hdlgP, IDCANCEL), utf8_2_ansi(_("Cancel")));
+
 	Button_Enable(GetDlgItem(hdlgP, IDOK), FALSE);
 
 	SetFocus(GetDlgItem(hdlgP, IDC_ET_NEWCAMP_ID));
@@ -5666,7 +5968,7 @@ void OnNewCampaignEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	std::transform(str.begin(), str.end(), str.begin(), std::tolower);
 
 	if (!isvalid_id(str)) {
-		strstr << "无效字符串";
+		strstr << utf8_2_ansi(_("Invalid string"));
 		if (id == IDC_ET_NEWCAMP_ID) {
 			ns_new::set_dirty(ns_new::BIT_ID, true);
 		} else if (id == IDC_ET_NEWCAMP_FIRSTSCENARIOID) {
@@ -5676,19 +5978,19 @@ void OnNewCampaignEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		const config& campaigns_cfg = editor_.campaigns_config();
 		const config& campaign_cfg = campaigns_cfg.find_child("campaign", "id", str);
 		if (!campaign_cfg) {
-			strstr << "cfg目录：<res>/data/campaigns/" << str << "/";
+			strstr << utf8_2_ansi(_("cfg directory:")) << " <res>/data/campaigns/" << str << "/";
 			strstr << "\r\n";
-			strstr << "bin文件：<res>/xwml/campaigns/" << str << ".bin";
+			strstr << utf8_2_ansi(_("bin file:")) << " <res>/xwml/campaigns/" << str << ".bin";
 			ns_new::set_dirty(ns_new::BIT_ID, false);
-			ns_new::id_ = str;
+			ns_new::id_ = str; 
 		} else {
 			ns_new::set_dirty(ns_new::BIT_ID, true);
-			strstr << "已存在该战役ID";
+			strstr << utf8_2_ansi(_("Other campaign has holded ID"));
 		}
 	} else if (id == IDC_ET_NEWCAMP_FIRSTSCENARIOID) {
-		strstr << "关卡文件：<campaign>/scenarios/01_" << str << ".cfg";
+		strstr << utf8_2_ansi(_("scenario file:")) << " <campaign>/scenarios/01_" << str << ".cfg";
 		strstr << "\r\n";
-		strstr << "地图文件：<campaign>/maps/01_" << str << ".map";
+		strstr << utf8_2_ansi(_("map file:")) << " <campaign>/maps/01_" << str << ".map";
 		ns_new::set_dirty(ns_new::BIT_FIRSTSCENARIOID, false);
 		ns_new::firstscenario_id_ = str;
 	}

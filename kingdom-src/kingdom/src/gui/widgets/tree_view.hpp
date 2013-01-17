@@ -78,11 +78,18 @@ public:
 
 	const ttree_view_node* selected_item() const { return selected_item_; }
 
+	void set_select_item(ttree_view_node* node);
+
 	void set_selection_change_callback(boost::function<void()> callback)
 	{
 		selection_change_callback_ = callback;
 	}
 
+	void set_left_align() { left_align_ = true; } 
+
+	/** Inherited from tscrollbar_container. */
+	tpoint adjust_content_size(const tpoint& size);
+	void adjust_offset(int& x_offset, int& y_offset);
 protected:
 
 	/***** ***** ***** ***** keyboard functions ***** ***** ***** *****/
@@ -118,6 +125,8 @@ private:
 	ttree_view_node* selected_item_;
 
 	boost::function<void ()> selection_change_callback_;
+
+	bool left_align_;
 
 	/**
 	 * Resizes the content.

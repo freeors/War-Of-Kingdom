@@ -58,7 +58,9 @@ const struct {
 	{ hotkey::HOTKEY_SCREENSHOT, "screenshot", N_("Screenshot"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_MAP_SCREENSHOT, "mapscreenshot", N_("Map Screenshot"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_ACCELERATED, "accelerated", N_("Accelerated"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_INTERIOR_M, "interior_m", N_("Interior"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_INTERIOR, "interior", N_("Interior"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_TECHNOLOGY_TREE, "technologytree", N_("Technology tree"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_FINAL_BATTLE, "finalbattle", N_("Final Battle"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_LIST, "list", N_("List"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_SYSTEM, "system", N_("System"), false, hotkey::SCOPE_GAME },
@@ -689,6 +691,9 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 			break;
 		case HOTKEY_INTERIOR:
 			interior();
+			break;
+		case HOTKEY_TECHNOLOGY_TREE:
+			technology_tree();
 			break;
 		case HOTKEY_FINAL_BATTLE:
 			final_battle();

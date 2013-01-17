@@ -72,7 +72,10 @@ game_display::game_display(unit_map& units, CVideo& video, const gamemap& map,
 		temp_units_(),
 		exclusive_unit_draw_requests_(),
 		attack_indicator_dst_(),
+		selectable_indicator_(),
 		tactic_indicator_(),
+		interior_indicator_(),
+		technology_tree_indicator_(),
 		energy_bar_rects_(),
 		route_(),
 		tod_manager_(tod),
@@ -989,11 +992,19 @@ void game_display::draw_hex(const map_location& loc)
 
 	// Draw the attack direction indicator
 	if (on_map && attack_indicator_dst_.find(loc) != attack_indicator_dst_.end()) {
-		drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/attack-indicator-dst.png", image::SCALED_TO_HEX));
+		if (selectable_indicator_.find(loc) == selectable_indicator_.end()) {
+			drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/attack-indicator-dst.png", image::SCALED_TO_HEX));
+		} else if (!preferences::default_move()) {
+			drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/technology-indicator.png", image::SCALED_TO_HEX));
+		}
 	}
 	// Draw the tactic indicator
 	if (on_map && !events::mouse_handler::get_singleton()->is_moving() && loc == tactic_indicator_) {
 		drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/tactic-indicator.png", image::SCALED_TO_HEX));
+	}
+	// Draw the interior indicator
+	if (on_map && !events::mouse_handler::get_singleton()->is_moving() && loc == interior_indicator_) {
+		drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/interior-indicator.png", image::SCALED_TO_HEX));
 	}
 	// Draw the build direction indicator
 	if (on_map && std::find(build_indicator_dst_.begin(), build_indicator_dst_.end(), loc) != build_indicator_dst_.end()) {
@@ -2005,16 +2016,21 @@ void game_display::remove_expedite_city()
 	expedite_city_ = NULL;
 }
 
-void game_display::set_attack_indicator(unit* attack)
+void game_display::set_attack_indicator(unit* attack, bool browse)
 {
 	invalidate(attack_indicator_dst_);
 	attack_indicator_dst_.clear();
 	attack_indicator_each_dst_.clear();
+	// selectable_indicator_ must be included in attack_indicator_dst_.
+	selectable_indicator_.clear();
 
 	invalidate(tactic_indicator_);
 	tactic_indicator_ = map_location();
 
-	if (!attack || !attack->attacks_left()) {
+	invalidate(interior_indicator_);
+	interior_indicator_ = map_location();
+
+	if (!attack || (!attack->is_artifical() && !attack->attacks_left())) {
 		return;
 	}
 
@@ -2022,73 +2038,84 @@ void game_display::set_attack_indicator(unit* attack)
 
 	const map_location& loc = attack->get_location();
 	map_location relative_loc;
-	std::set<map_location> dst, each_dst;
+	std::set<map_location> each_dst;
 	size_t i, size;
 	int range;
 	bool find;
 	const team& current_team = teams_[attack->side() - 1];
 
-	std::vector<attack_type>& attacks = attack->attacks();
-	for (std::vector<attack_type>::const_iterator at_it = attacks.begin(); at_it != attacks.end(); ++ at_it, i ++) {
-		if (at_it->range() == "melee") {
-			// range: 1
-			range = 1;
-		} else if (at_it->range() == "ranged") {
-			// range: 2
-			range = 2;
-		} else {
-			// other to range: 3
-			range = 3;
+	if (!attack->is_artifical()) {
+		if (browse) {
+			return;
 		}
-		// 检查此种range在此次是否已遇到过
-		find = false;
-		for (std::vector<range_locs_pair>::iterator itor = attack_indicator_each_dst_.begin(); itor != attack_indicator_each_dst_.end(); ++ itor) {
-			if (itor->first == range) {
-				attack_indicator_each_dst_.push_back(*itor);
-				find = true;
-				break;
+		std::vector<attack_type>& attacks = attack->attacks();
+		for (std::vector<attack_type>::const_iterator at_it = attacks.begin(); at_it != attacks.end(); ++ at_it, i ++) {
+			if (at_it->range() == "melee") {
+				// range: 1
+				range = 1;
+			} else if (at_it->range() == "ranged") {
+				// range: 2
+				range = 2;
+			} else {
+				// other to range: 3
+				range = 3;
 			}
-		}
-		if (find) {
-			// This range has been in this indicator.
-			continue;
-		}
-		each_dst.clear();
-		if (range == 1) {
-			size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
-			adjacent_ptr = adjacent_1[loc.x & 0x1];
-		} else if (range == 2) {
-			size = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
-			adjacent_ptr = adjacent_2[loc.x & 0x1];
-		} else if (range == 3) {
-			size = (sizeof(adjacent_3) / sizeof(map_offset)) >> 1;
-			adjacent_ptr = adjacent_3[loc.x & 0x1];
-		}
-		for (i = 0; i < size; i ++) {
-			relative_loc.x = loc.x + adjacent_ptr[i].x;
-			relative_loc.y = loc.y + adjacent_ptr[i].y;
-			if (units_.count(relative_loc) || units_.count(relative_loc, false)) {
-				unit_map::iterator itor = units_.find(relative_loc);
-				if (itor == units_.end()) {
-					itor = units_.find(relative_loc, false);
-				}
-				if (!current_team.fogged(relative_loc) && current_team.is_enemy(itor->side()) && !itor->invisible(relative_loc)) {
-					dst.insert(relative_loc);
-					each_dst.insert(relative_loc);
+			// 检查此种range在此次是否已遇到过
+			find = false;
+			for (std::vector<range_locs_pair>::iterator itor = attack_indicator_each_dst_.begin(); itor != attack_indicator_each_dst_.end(); ++ itor) {
+				if (itor->first == range) {
+					attack_indicator_each_dst_.push_back(*itor);
+					find = true;
+					break;
 				}
 			}
-		}
-		attack_indicator_each_dst_.push_back(std::pair<int, std::set<map_location> >(range, each_dst));
-	}
-	attack_indicator_dst_ = dst;
-	invalidate(attack_indicator_dst_);
+			if (find) {
+				// This range has been in this indicator.
+				continue;
+			}
+			each_dst.clear();
+			if (range == 1) {
+				size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
+				adjacent_ptr = adjacent_1[loc.x & 0x1];
+			} else if (range == 2) {
+				size = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
+				adjacent_ptr = adjacent_2[loc.x & 0x1];
+			} else if (range == 3) {
+				size = (sizeof(adjacent_3) / sizeof(map_offset)) >> 1;
+				adjacent_ptr = adjacent_3[loc.x & 0x1];
+			}
+			for (i = 0; i < size; i ++) {
+				relative_loc.x = loc.x + adjacent_ptr[i].x;
+				relative_loc.y = loc.y + adjacent_ptr[i].y;
+				if (units_.count(relative_loc) || units_.count(relative_loc, false)) {
+					unit_map::iterator other = units_.find(relative_loc);
+					if (other == units_.end()) {
+						other = units_.find(relative_loc, false);
+					}
+					if (!current_team.fogged(relative_loc) && current_team.is_enemy(other->side()) && !other->invisible(relative_loc)) {
+						each_dst.insert(relative_loc);
+						attack_indicator_dst_.insert(relative_loc);
 
-	if (attack->master().tactic_ != HEROS_NO_TACTIC ||
-		(attack->second().valid() && attack->second().tactic_ != HEROS_NO_TACTIC) ||
-		(attack->third().valid() && attack->third().tactic_ != HEROS_NO_TACTIC)) {
-		tactic_indicator_ = loc;
-		invalidate(tactic_indicator_);
-	}	
+						const unit& enemy = *other;
+						if (enemy.wall() && teams_[currentTeam_].land_enemy_wall_ && attack->land_wall()) {
+							selectable_indicator_.insert(relative_loc);
+						}
+					}
+				}
+			}
+			attack_indicator_each_dst_.push_back(std::pair<int, std::set<map_location> >(range, each_dst));
+		}
+		invalidate(attack_indicator_dst_);
+
+		if (attack->master().tactic_ != HEROS_NO_TACTIC ||
+			(attack->second().valid() && attack->second().tactic_ != HEROS_NO_TACTIC) ||
+			(attack->third().valid() && attack->third().tactic_ != HEROS_NO_TACTIC)) {
+			tactic_indicator_ = loc;
+		}
+	} else if (attack->is_city()) {
+		interior_indicator_ = loc;
+	}
+	invalidate(loc);
 }
 
 void game_display::clear_attack_indicator()

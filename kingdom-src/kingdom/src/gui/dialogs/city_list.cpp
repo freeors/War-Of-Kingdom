@@ -101,11 +101,13 @@ tcity_list::tcity_list(game_display& gui, std::vector<team>& teams, unit_map& un
 	, sorting_widgets_()
 	, sorting_widget_(NULL)
 	, hero_table_(NULL)
+	, window_(NULL)
 {
 }
 
 void tcity_list::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window_ = &window;
 	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
 	if (side_ >= 1) {
 		label->set_label(_("side city list"));
@@ -312,7 +314,6 @@ void tcity_list::catalog_page(twindow& window, int catalog, bool swap)
 			, boost::bind(
 				&tcity_list::sort_column
 				, this
-				, boost::ref(window)
 				, boost::ref(widget)));
 	}
 	sorting_widgets_[catalog] = widgets;
@@ -397,8 +398,9 @@ static bool callback_compare_row(void* caller, tgrid& row1, tgrid& row2)
 	return reinterpret_cast<tcity_list*>(caller)->compare_row(row1, row2);
 }
 
-void tcity_list::sort_column(twindow& window, tbutton& widget)
+void tcity_list::sort_column(tbutton& widget)
 {
+	twindow& window = *window_;
 	if (sorting_widget_ && (sorting_widget_ != &widget)) {
 		sorting_widget_->set_sort(tbutton::NONE);
 	}

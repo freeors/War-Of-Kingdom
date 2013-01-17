@@ -287,10 +287,10 @@ void tpreferences::show_team_colors_toggled(twidget* widget)
 	preferences::set_show_side_colors(toggle->get_value());
 }
 
-void tpreferences::idle_anim_toggled(twidget* widget)
+void tpreferences::default_move_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set_idle_anim(toggle->get_value());
+	preferences::set_default_move(toggle->get_value());
 }
 
 void tpreferences::idle_anim_changed(tslider* widget, int value)
@@ -530,9 +530,9 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		toggle->set_value(preferences::show_side_colors());
 		toggle->set_callback_state_change(boost::bind(&tpreferences::show_team_colors_toggled, this, _1));
 		
-		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("idle_anim_button", false));
-		toggle->set_value(preferences::idle_anim());
-		toggle->set_callback_state_change(boost::bind(&tpreferences::idle_anim_toggled, this, _1));
+		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("default_move_button", false));
+		toggle->set_value(preferences::default_move());
+		toggle->set_callback_state_change(boost::bind(&tpreferences::default_move_toggled, this, _1));
 
 		tslider* slider = dynamic_cast<tslider*>(options_grid_->find("idle_anim_slider", false));
 		slider->set_callback_value_change(boost::bind(&tpreferences::idle_anim_changed, this, _1, _2));

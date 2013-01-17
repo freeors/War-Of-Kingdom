@@ -137,6 +137,10 @@ void ttoggle_button::signal_handler_mouse_enter(
 		const event::tevent event, bool& handled)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
+	if (!get_active()) {
+		handled = true;
+		return;
+	}
 
 	if(get_value()) {
 		set_state(FOCUSSED_SELECTED);
@@ -150,6 +154,10 @@ void ttoggle_button::signal_handler_mouse_leave(
 		const event::tevent event, bool& handled)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
+	if (!get_active()) {
+		handled = true;
+		return;
+	}
 
 	if(get_value()) {
 		set_state(ENABLED_SELECTED);

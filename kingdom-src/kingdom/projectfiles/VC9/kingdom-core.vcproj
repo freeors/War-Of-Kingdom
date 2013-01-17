@@ -172,6 +172,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\language.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\log.cpp"
 				>
 			</File>

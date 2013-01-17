@@ -34,6 +34,7 @@ class gamemap;
 namespace gui2 {
 
 class tlistbox;
+class twindow;
 
 class texpedite : public tdialog
 {
@@ -53,7 +54,7 @@ private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
-	void disband(bool& handled, bool& halt,	twindow& window, int index);
+	void disband(bool& handled, bool& halt,	int index);
 
 	void type_selected(twindow& window);
 	void refresh_tooltip(twindow& window);
@@ -72,6 +73,7 @@ private:
 	int troop_index_;
 
 	tlistbox* hero_table_;
+	twindow* window_;
 };
 
 }

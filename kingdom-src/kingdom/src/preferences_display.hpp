@@ -67,17 +67,11 @@ namespace preferences {
 	void set_color_cursors(bool value);
 
 	// Control unit idle animations
-	void set_idle_anim(bool ison);
+	void set_default_move(bool ison);
 	void set_idle_anim_rate(int rate);
 
 	std::string show_wesnothd_server_search(display&);
-	void show_preferences_dialog(display& disp, const config& game_cfg);
 	bool show_video_mode_dialog(display& disp);
-	bool show_theme_dialog(display& disp);
-
-	// If prefs is non-null, save the hotkeys in that config
-	// instead of the default.
-	void show_hotkeys_dialog (display & disp, config *prefs=NULL);
 } // end namespace preferences
 
 #endif

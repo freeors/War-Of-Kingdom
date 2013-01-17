@@ -1,3 +1,5 @@
+#define GETTEXT_DOMAIN "wesnoth-maker"
+
 #include "global.hpp"
 #include "game_config.hpp"
 #include "foreach.hpp"
@@ -11,7 +13,6 @@
 #include "struct.h"
 #include "win32x.h"
 #include "gettext.hpp"
-#include "serialization/string_utils.hpp"
 #include "serialization/parser.hpp"
 #include "filesystem.hpp"
 #include "map_location.hpp"
@@ -335,7 +336,7 @@ void tevent::update_to_ui(HWND hdlgP, int index) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 2;
 	strstr.str("");
-	strstr << (first_time_only_? "是": "不是");
+	strstr << (first_time_only_? utf8_2_ansi(_("Yes")): utf8_2_ansi(_("No")));
 	strcpy(text, strstr.str().c_str());
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
@@ -348,7 +349,8 @@ void tevent::update_to_ui_event_edit(HWND hwndtv, HTREEITEM branch) const
 
 	HTREEITEM htvi = TreeView_AddLeaf(hwndtv, branch);
 	strstr.str("");
-	strstr << "只触发一次: " << (first_time_only_? "是": "不是");
+	strstr << utf8_2_ansi(_("Only one time")) << ": ";
+	strstr << (first_time_only_? utf8_2_ansi(_("Yes")): utf8_2_ansi(_("No")));
 	strcpy(text, strstr.str().c_str());
 	TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, 
 		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
@@ -377,14 +379,14 @@ void tevent::update_to_ui_event_edit(HWND hdlgP)
 		strstr.str("");
 		if (index == 0) {
 			htvi_filter = TreeView_AddLeaf(hctl, htvi_root);
-			strstr << "条件I: 第一单位筛选";
+			strstr << utf8_2_ansi(_("Cond.I: Filter first unit"));
 			htvi1 = htvi_filter;
 			filter = &filter_;
 			param = PARAM_FILTER;
 		} else {
 			htvi_second_filter = TreeView_AddLeaf(hctl, htvi_root);
-			strstr << "条件II: 第二单位筛选";
-			htvi1 = htvi_second_filter;
+			strstr << utf8_2_ansi(_("Cond.II: Filter second unit"));
+				htvi1 = htvi_second_filter;
 			filter = &second_filter_;
 			param = PARAM_SECONDFILTER;
 		}
@@ -692,7 +694,7 @@ void tevent::tfilter_::update_to_ui_event_edit(HWND hwndtv, HTREEITEM branch) co
 		if (city_ != HEROS_INVALID_NUMBER) {
 			strstr << utf8_2_ansi(gdmgr.heros_[city_].name().c_str());
 		} else {
-			strstr << "(流浪)";
+			strstr << "(" << utf8_2_ansi(_("Roam")) << ")";
 		}
 	}
 	strcpy(text, strstr.str().c_str());
@@ -768,7 +770,9 @@ void tevent::tfilter_::update_to_ui_special(HWND hdlgP) const
 	ComboBox_ResetContent(hctl);
 	ComboBox_AddString(hctl, "");
 	ComboBox_SetItemData(hctl, 0, -1);
-	ComboBox_AddString(hctl, "(流浪)");
+	strstr.str("");
+	strstr << "(" << utf8_2_ansi(_("Roam")) << ")";
+	ComboBox_AddString(hctl, strstr.str().c_str());
 	ComboBox_SetItemData(hctl, 1, HEROS_INVALID_NUMBER);
 	if (city_ == HEROS_INVALID_NUMBER) {
 		selected_row = 1;
@@ -830,8 +834,8 @@ tevent::tset_variable::tset_variable()
 	, value_("val_")
 {
 	if (op_map.empty()) {
-		op_map.push_back(std::make_pair<std::string, std::string>("value", "等于值"));
-		op_map.push_back(std::make_pair<std::string, std::string>("rand", "范围中取一个值"));
+		op_map.push_back(std::make_pair("value", _("equal value")));
+		op_map.push_back(std::make_pair("rand", _("evaluats one amone range")));
 	}
 }
 
@@ -895,14 +899,17 @@ void tevent::tset_variable::update_to_ui_event_edit(HWND hwndtv, HTREEITEM htvi_
 		(LPARAM)(tcommand*)(this), ns::iico_evt_command, ns::iico_evt_command, 1, text);
 
 	HTREEITEM htvi = TreeView_AddLeaf(hwndtv, htvi1);
-	strstr.str("");
-	strstr << "变量“" << name_ << "”";
+
+	utils::string_map symbols;
+	symbols["name"] = name_;
 	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = op_map.begin(); it != op_map.end(); ++ it) {
 		if (it->first == op_) {
-			strstr << it->second;
+			symbols["op"] = it->second;
 		}
 	}
-	strstr << "“" << value_ << "”";
+	symbols["value"] = value_;
+	strstr.str("");
+	strstr << utf8_2_ansi(vgettext2("Variable \"$name\" $op \"$value\"", symbols).c_str());
 	strcpy(text, strstr.str().c_str());
 	TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
@@ -1411,7 +1418,7 @@ void tevent::tunit::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
 		if (city_hero != HEROS_INVALID_NUMBER) {
 			strstr << utf8_2_ansi(gdmgr.heros_[city_hero].name().c_str());
 		} else {
-			strstr << "(流浪)";
+			strstr << "(" << utf8_2_ansi(_("Roam")) << ")";
 		}
 	}
 	strcpy(text, strstr.str().c_str());
@@ -1531,7 +1538,9 @@ void tevent::tunit::update_to_ui_special(HWND hdlgP) const
 	}
 	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTUNIT_CITY);
 	ComboBox_ResetContent(hctl);
-	ComboBox_AddString(hctl, "(流浪)");
+	strstr.str("");
+	strstr << "(" << utf8_2_ansi(_("Roam")) << ")";
+	ComboBox_AddString(hctl, strstr.str().c_str());
 	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
 	selected_row = 0;
 	for (std::map<int, int>::const_iterator it = ns::cityno_map.begin(); it != ns::cityno_map.end(); ++ it) {
@@ -1646,17 +1655,17 @@ tevent::tvariable::tvariable()
 	, right_()
 {
 	if (op_map.empty()) {
-		op_map.push_back(std::make_pair<std::string, std::string>("equals", "等于(字符串)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("not_equals", "不等于(字符串)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("contains", "包含(字符串)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("numerical_equals", "等于(数字)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("numerical_not_equals", "不等于(数字)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("greater_than", "大于(数字)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("less_than", "小于(数字)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("greater_than_equal_to", "大于等于(数字)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("less_than_equal_to", "小于等于(数字)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("boolean_equals", "等于(布尔)"));
-		op_map.push_back(std::make_pair<std::string, std::string>("boolean_not_equals", "不等于(布尔)"));
+		op_map.push_back(std::make_pair("equals", _("equals string")));
+		op_map.push_back(std::make_pair("not_equals", _("not equals string")));
+		op_map.push_back(std::make_pair("contains", _("contains string")));
+		op_map.push_back(std::make_pair("numerical_equals", _("equals numerical")));
+		op_map.push_back(std::make_pair("numerical_not_equals", _("not equals numerical")));
+		op_map.push_back(std::make_pair("greater_than", _("greater than numerical")));
+		op_map.push_back(std::make_pair("less_than", _("less than numerical")));
+		op_map.push_back(std::make_pair("greater_than_equal_to", _("greater than equal to numerical")));
+		op_map.push_back(std::make_pair("less_than_equal_to", _("less_than_equal_to numerical")));
+		op_map.push_back(std::make_pair("boolean_equals", _("equals boolean")));
+		op_map.push_back(std::make_pair("boolean_not_equals", _("not equals boolean")));
 	}
 }
 
@@ -1690,17 +1699,20 @@ void tevent::tvariable::from_ui_special(HWND hdlgP)
 void tevent::tvariable::update_to_ui_event_edit(HWND hwndtv, HTREEITEM branch) const
 {
 	std::stringstream strstr;
+	utils::string_map symbols;
 	char text[_MAX_PATH];
-
+	
 	HTREEITEM htvi = TreeView_AddLeaf(hwndtv, branch);
-	strstr.str("");
-	strstr << "“" << left_ << "”";
+	symbols["left"] = left_;
 	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = op_map.begin(); it != op_map.end(); ++ it) {
 		if (it->first == op_) {
-			strstr << it->second;
+			symbols["op"] = it->second;
 		}
 	}
-	strstr << "“" << right_ << "”";
+	symbols["right"] = right_;
+
+	strstr.str("");
+	strstr << utf8_2_ansi(vgettext2("\"$left\" $op \"$right\"", symbols).c_str());
 	strcpy(text, strstr.str().c_str());
 	TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
@@ -2028,7 +2040,7 @@ BOOL On_DlgVariableInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_VARIABLE_OP);
 	const std::vector<std::pair<std::string, std::string> >& op_map = tevent::tvariable::op_map;
 	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = op_map.begin(); it != op_map.end(); ++ it) {
-		ComboBox_AddString(hctl, it->second.c_str());
+		ComboBox_AddString(hctl, utf8_2_ansi(it->second.c_str()));
 	}
 
 	hctl = GetDlgItem(hdlgP, IDC_LV_VARIABLE_ENV);
@@ -2538,7 +2550,7 @@ BOOL On_DlgSetVariableInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_SETVARIABLE_OP);
 	const std::vector<std::pair<std::string, std::string> >& op_map = tevent::tset_variable::op_map;
 	for (std::vector<std::pair<std::string, std::string> >::const_iterator it = op_map.begin(); it != op_map.end(); ++ it) {
-		ComboBox_AddString(hctl, it->second.c_str());
+		ComboBox_AddString(hctl, utf8_2_ansi(it->second.c_str()));
 	}
 
 	hctl = GetDlgItem(hdlgP, IDC_LV_SETVARIABLE_ENV);
@@ -2581,7 +2593,7 @@ void OnSetVariableEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	std::string str = text;
 	std::transform(str.begin(), str.end(), str.begin(), std::tolower);
 	if (!isvalid_id(str)) {
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SETVARIABLE_NAMESTATUS), "无效字符串");
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SETVARIABLE_NAMESTATUS), utf8_2_ansi(_("Invalid string")));
 		Button_Enable(GetDlgItem(hdlgP, IDOK), FALSE);
 		return;
 	}
@@ -3027,29 +3039,31 @@ BOOL On_DlgEventEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
 	std::stringstream strstr;
+	utils::string_map symbols;
 
+	strstr.str("");
 	if (ns::action_event == ma_edit) {
-		strstr.str("");
-		strstr << "编辑第" << ns::clicked_event + 1 << "条事件";
-		SetWindowText(hdlgP, strstr.str().c_str());
+		symbols["number"] = lexical_cast_default<std::string>(ns::clicked_event + 1);
+		strstr << utf8_2_ansi(vgettext2("Edit $number|th event", symbols).c_str());
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加事件");
+		strstr << utf8_2_ansi(_("Add event"));
 	}
+	SetWindowText(hdlgP, strstr.str().c_str());
 
 	ns::hpopup_new = CreatePopupMenu();
-	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM0, "判断分枝");
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM0, utf8_2_ansi(_("Judge branch")));
 	AppendMenu(ns::hpopup_new, MF_SEPARATOR, 0, NULL);
-	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM1, "设置变量");
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM1, utf8_2_ansi(_("Set variable")));
 	AppendMenu(ns::hpopup_new, MF_SEPARATOR, 0, NULL);
-	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM2, "生成部队");
-	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM3, "杀死部队");
-	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM4, "加入部队");
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM2, utf8_2_ansi(_("Generate troop")));
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM3, utf8_2_ansi(_("Kill troop")));
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM4, utf8_2_ansi(_("Join in troop")));
 
 	ns::hpopup_event = CreatePopupMenu();
-	AppendMenu(ns::hpopup_event, MF_POPUP, (UINT_PTR)(ns::hpopup_new), "在之后添加");
-	AppendMenu(ns::hpopup_event, MF_STRING, IDM_EDIT, "编辑...");
-	AppendMenu(ns::hpopup_event, MF_STRING, IDM_DELETE, "删除...");
+	AppendMenu(ns::hpopup_event, MF_POPUP, (UINT_PTR)(ns::hpopup_new), utf8_2_ansi(_("Append after it")));
+	AppendMenu(ns::hpopup_event, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
+	AppendMenu(ns::hpopup_event, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	tevent& evt = scenario.event_[ns::clicked_event];
@@ -3355,9 +3369,16 @@ void OnEventDelBt(HWND hdlgP)
 {
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 
-	std::stringstream message;
-	message << "您想删除第" << ns::clicked_event + 1 << "条事件吗？";
-	if (MessageBox(hdlgP, message.str().c_str(), "确认删除", MB_YESNO | MB_DEFBUTTON2) != IDYES) {
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+	utils::string_map symbols;
+
+	symbols["number"] = lexical_cast_default<std::string>(ns::clicked_event + 1);
+	strstr << utf8_2_ansi(vgettext2("Do you want to delete $number|th event?", symbols).c_str());
+
+	strcpy(text, utf8_2_ansi(_("Confirm delete")));
+	int retval = MessageBox(gdmgr._hwnd_main, strstr.str().c_str(), text, MB_YESNO);
+	if (retval == IDNO) {
 		return;
 	}
 

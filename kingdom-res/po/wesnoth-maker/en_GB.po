@@ -1,0 +1,467 @@
+# Peter J Ross <pjr@insurgent.org>, 2006.
+# Peter J Ross <wesnoth@pjr.britishlibrary.net>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: en_GB\n"
+"Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
+"POT-Creation-Date: 2012-12-28 10:01+0800\n"
+"PO-Revision-Date: 2012-12-28 10:04+0800\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"Language-Team: English (British) <en@li.org>\n"
+"Language: en_GB\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#: DlgCampaignProc.cpp:2976 DlgCampaignProc.cpp:4717 utype.cpp:1374
+#: utype.cpp:2945
+msgid "Corresponding cfg"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2977 DlgCampaignProc.cpp:4718 utype.cpp:1377
+#: utype.cpp:1640 utype.cpp:2948
+msgid "ID"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2978 utype.cpp:1375 utype.cpp:1639 utype.cpp:2946
+msgid "Domain"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2979 DlgCampaignProc.cpp:4719 DlgCampaignProc.cpp:4784
+#: DlgCampaignProc.cpp:4819 utype.cpp:1376 utype.cpp:1564 utype.cpp:1641
+#: utype.cpp:1705 utype.cpp:2947
+msgid "Name"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2980
+msgid "Abbreviation"
+msgstr "Abbr."
+
+#: DlgCampaignProc.cpp:2981
+msgid "Rank"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2982
+msgid "First scenario"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2983
+msgid "Image"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2984 DlgCoreProc.cpp:530 utype.cpp:1378 utype.cpp:1526
+#: utype.cpp:1714 utype.cpp:2949
+#, fuzzy
+msgid "Description"
+msgstr "Unit Description"
+
+#: DlgCampaignProc.cpp:2985
+msgid "RPG mode"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2987 DlgCampaignProc.cpp:2988 DlgCampaignProc.cpp:4730
+#: utype.cpp:1647
+msgid "Browse..."
+msgstr ""
+
+#: DlgCampaignProc.cpp:2996
+msgid "Tutorial"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3000
+msgid "Multi-scenario"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3003
+msgid "Test"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3023 DlgCampaignProc.cpp:3028 DlgCampaignProc.cpp:3198
+#: DlgCampaignProc.cpp:4748 DlgCampaignProc.cpp:5053 DlgCampaignProc.cpp:5147
+msgid "Exist"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3025 DlgCampaignProc.cpp:3030 DlgCampaignProc.cpp:3198
+#: DlgCampaignProc.cpp:4750 DlgCampaignProc.cpp:5055
+msgid "Not exist"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3773 DlgCampaignProc.cpp:4775 DlgCampaignProc.cpp:4810
+#: DlgCampaignProc.cpp:4900 DlgHEditorProc.cpp:544 DlgHEditorProc.cpp:2338
+msgid "Number"
+msgstr "NO."
+
+#: DlgCampaignProc.cpp:4720
+msgid "Map"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4721
+msgid "Next scenario"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4723
+msgid "Turns"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4724
+msgid "Unrestricted"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4726
+msgid "Maximal defeated activity"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4727
+msgid "Win condition"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4728
+msgid "Lose condition"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4729
+msgid "Hid treasure"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4791
+msgid "Quantity"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4825
+msgid "Leader"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4831
+msgid "Void"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4849
+msgid "Base gold"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4855
+msgid "Base income"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4873 DlgCoreProc.cpp:438
+msgid "Artifical"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4879 DlgCoreProc.cpp:437
+msgid "City"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4885 DlgCoreProc.cpp:436
+msgid "Troop"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4909
+msgid "Occasion"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4916
+msgid "Only one time"
+msgstr ""
+
+#: DlgCoreProc.cpp:124 DlgCoreProc.cpp:158
+msgid "Lv$level"
+msgstr ""
+
+#: DlgCoreProc.cpp:160
+msgid "Packer"
+msgstr ""
+
+#: DlgCoreProc.cpp:459 DlgCoreProc.cpp:625
+#, fuzzy
+msgid "arms^Type"
+msgstr "Type"
+
+#: DlgCoreProc.cpp:489
+msgid "Atomic tactic"
+msgstr ""
+
+#: DlgCoreProc.cpp:497
+msgid "Complex tactic"
+msgstr ""
+
+#: DlgCoreProc.cpp:536
+msgid "Point"
+msgstr ""
+
+#: DlgCoreProc.cpp:545
+msgid "Range"
+msgstr ""
+
+#: DlgCoreProc.cpp:547
+msgid "Myself"
+msgstr ""
+
+#: DlgCoreProc.cpp:554
+#, fuzzy
+msgid "troop^Friend"
+msgstr "Friends"
+
+#: DlgCoreProc.cpp:561
+msgid "troop^Enemy"
+msgstr ""
+
+#: DlgCoreProc.cpp:573
+msgid "Defend"
+msgstr ""
+
+#: DlgCoreProc.cpp:575 utype.cpp:1389
+msgid "Attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:577
+msgid "Will"
+msgstr ""
+
+#: DlgCoreProc.cpp:579
+msgid "Demolish"
+msgstr ""
+
+#: DlgCoreProc.cpp:586
+msgid "tactic^Child"
+msgstr ""
+
+#: DlgCoreProc.cpp:626
+msgid "Tactic"
+msgstr ""
+
+#: DlgHEditorProc.cpp:618 DlgHEditorProc.cpp:2339
+msgid "Picture number"
+msgstr ""
+
+#: DlgHEditorProc.cpp:624
+msgid "Base/Float catalog"
+msgstr ""
+
+#: DlgHEditorProc.cpp:790
+msgid "Status/Activity"
+msgstr ""
+
+#: DlgHEditorProc.cpp:1520
+msgid "Add"
+msgstr ""
+
+#: DlgHEditorProc.cpp:1522
+msgid "Edit"
+msgstr ""
+
+#: DlgHEditorProc.cpp:1524
+msgid "Unknown action"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2349
+msgid "Experience"
+msgstr "Exp."
+
+#: DlgSyncProc.cpp:159
+msgid "Need restart if changed"
+msgstr ""
+
+#: DlgSyncProc.cpp:167
+#, fuzzy
+msgid "File name"
+msgstr "File: "
+
+#: DlgSyncProc.cpp:176 DlgSyncProc.cpp:182
+#, fuzzy
+msgid "Checksum"
+msgstr "Check status"
+
+#: DlgSyncProc.cpp:188
+msgid "Status"
+msgstr "Status"
+
+#: DlgSyncProc.cpp:194
+msgid "SHA1"
+msgstr ""
+
+#: utype.cpp:317 utype.cpp:2899
+msgid "Advances to"
+msgstr ""
+
+#: utype.cpp:360 utype.cpp:2903 utype.cpp:3240
+msgid "Abilities"
+msgstr ""
+
+#: utype.cpp:415 utype.cpp:2350
+msgid "Can land on wall"
+msgstr ""
+
+#: utype.cpp:416
+msgid "Can"
+msgstr ""
+
+#: utype.cpp:416
+msgid "Cannot"
+msgstr ""
+
+#: utype.cpp:417 utype.cpp:2351
+msgid "Only used to leader"
+msgstr ""
+
+#: utype.cpp:418
+msgid "YES"
+msgstr ""
+
+#: utype.cpp:418
+msgid "NO"
+msgstr ""
+
+#: utype.cpp:421 utype.cpp:2433
+msgid "Increase XP per turn"
+msgstr ""
+
+#: utype.cpp:422 utype.cpp:426 utype.cpp:2434 utype.cpp:2502
+msgid "Recover HP per turn"
+msgstr ""
+
+#: utype.cpp:425 utype.cpp:1382 utype.cpp:1540 utype.cpp:1573 utype.cpp:1643
+#: utype.cpp:1953 utype.cpp:1977 utype.cpp:2501 utype.cpp:3031
+#, fuzzy
+msgid "Type"
+msgstr "Type"
+
+#: utype.cpp:427 utype.cpp:2503
+msgid "Guard attack"
+msgstr ""
+
+#: utype.cpp:433 utype.cpp:2504
+msgid "Base income gold"
+msgstr ""
+
+#: utype.cpp:1366
+#, fuzzy
+msgid "arms^Edit type"
+msgstr "Type"
+
+#: utype.cpp:1369
+#, fuzzy
+msgid "arms^Add type"
+msgstr "Type"
+
+#: utype.cpp:1381 utype.cpp:2950
+msgid "Has ZOC"
+msgstr ""
+
+#: utype.cpp:1383 utype.cpp:1949 utype.cpp:2953
+msgid "Resistance/Defend/Cost"
+msgstr ""
+
+#: utype.cpp:1384
+msgid "Set"
+msgstr ""
+
+#: utype.cpp:1385 utype.cpp:1503
+#, fuzzy
+msgid "Level"
+msgstr " Level"
+
+#: utype.cpp:1388
+msgid "Alignment"
+msgstr ""
+
+#: utype.cpp:1494 utype.cpp:1517
+msgid "Name(ID)"
+msgstr ""
+
+#: utype.cpp:1580 utype.cpp:1642
+msgid "Icon"
+msgstr ""
+
+#: utype.cpp:1588 utype.cpp:1644
+msgid "attack^Range"
+msgstr ""
+
+#: utype.cpp:1602 utype.cpp:1645
+msgid "Damage"
+msgstr ""
+
+#: utype.cpp:1608 utype.cpp:1646
+msgid "damage^Number"
+msgstr ""
+
+#: utype.cpp:1629
+msgid "Edit attack"
+msgstr ""
+
+#: utype.cpp:1632
+msgid "Add attack"
+msgstr ""
+
+#: utype.cpp:1761 utype.cpp:1860 utype.cpp:3291
+msgid "Specials"
+msgstr ""
+
+#: utype.cpp:1955
+msgid "mtype^Defend"
+msgstr ""
+
+#: utype.cpp:1956
+msgid "Movement cost"
+msgstr ""
+
+#: utype.cpp:1957
+msgid "Double click one item to modify"
+msgstr ""
+
+#: utype.cpp:1986 utype.cpp:2015 utype.cpp:2037
+msgid "Default value"
+msgstr ""
+
+#: utype.cpp:1993
+msgid "Using value"
+msgstr ""
+
+#: utype.cpp:2344
+msgid "Special attributes of troop type"
+msgstr ""
+
+#: utype.cpp:2429
+msgid "Special attributes of city type"
+msgstr ""
+
+#: utype.cpp:2497
+msgid "Special attributes of artifical type"
+msgstr ""
+
+#: utype.cpp:2644 utype.cpp:2672
+msgid "Invalid string"
+msgstr ""
+
+#: utype.cpp:2678
+msgid "Other type has holded ID"
+msgstr ""
+
+#: utype.cpp:2683
+msgid "Set adding type's ID"
+msgstr ""
+
+#: utype.cpp:2686
+msgid "Modify ID results to rebuild"
+msgstr ""
+
+#: utype.cpp:2938
+msgid "Edit packer type"
+msgstr ""
+
+#: utype.cpp:2941
+msgid "Add packer type"
+msgstr ""
+
+#: utype.cpp:2955
+msgid "Increase in melee"
+msgstr ""
+
+#: utype.cpp:2956
+msgid "Increase in ranged"
+msgstr ""
+
+#: utype.cpp:2957
+msgid "Increase in cast"
+msgstr ""

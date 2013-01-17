@@ -3,11 +3,69 @@ msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+msgid "leadership"
+msgstr "Leadership"
+
+msgid "force"
+msgstr "Force"
+
+msgid "intellect"
+msgstr "Intellect"
+
+msgid "politics"
+msgstr "Politics"
+
+msgid "charm"
+msgstr "Charm"
+
+msgid "catalog"
+msgstr "Catalog"
+
+msgid "base catalog"
+msgstr "Base catalog"
+
+msgid "float catalog"
+msgstr "Float catalog"
+
+msgid "base/float catalog"
+msgstr "Base/Float catalog"
+
+msgid "biography"
+msgstr "Biography"
+
+msgid "parent"
+msgstr "Parent"
+
+msgid "father"
+msgstr "Father"
+
+msgid "mother"
+msgstr "Mother"
+
+msgid "consort"
+msgstr "Consort"
+
+msgid "oath"
+msgstr "Oath"
+
+msgid "intimate"
+msgstr "Intimate"
+
+msgid "hate"
+msgstr "Hate"
+
+msgid "meritorious"
+msgstr "Meritorious"
+
+msgid "gender"
+msgstr "Gender"
 
 msgid "gender-0"
 msgstr "Male"
@@ -29,6 +87,9 @@ msgstr "Mayor"
 
 msgid "stratum-3"
 msgstr "Leader"
+
+msgid "status"
+msgstr "Status"
 
 msgid "status-0"
 msgstr "Idle"
@@ -54,6 +115,9 @@ msgstr "Unstage"
 msgid "status-7"
 msgstr "Die"
 
+msgid "official"
+msgstr "Official"
+
 msgid "official-0"
 msgstr "Commercial"
 
@@ -62,6 +126,9 @@ msgstr "Mayor"
 
 msgid "official-2"
 msgstr "Leader"
+
+msgid "ambition"
+msgstr "Ambition"
 
 msgid "ambition-0"
 msgstr "Troubled times"
@@ -77,6 +144,12 @@ msgstr "Entertainer"
 
 msgid "ambition-4"
 msgstr "Drift along"
+
+msgid "heart"
+msgstr "Heart"
+
+msgid "treasure"
+msgstr "Treasure"
 
 msgid "treasure-0"
 msgstr "Chi tu horse"
@@ -273,6 +346,15 @@ msgstr "Zhuge"
 
 msgid "character-13"
 msgstr "powder"
+
+msgid "character-14"
+msgstr "Taoism"
+
+msgid "feature"
+msgstr "Feature"
+
+msgid "side feature"
+msgstr "Side feature"
 
 msgid "feature-0"
 msgstr "Footman"
@@ -629,10 +711,10 @@ msgid "feature_desc-58"
 msgstr "No fight back when attacking"
 
 msgid "feature-59"
-msgstr "Cure"
+msgstr "Indomitable"
 
 msgid "feature_desc-59"
-msgstr "Back to normal status"
+msgstr "Chance reduce damage when low HP"
 
 msgid "feature-60"
 msgstr ""
@@ -874,6 +956,9 @@ msgstr ""
 msgid "feature_desc-99"
 msgstr ""
 
+msgid "tactic"
+msgstr "Tactic"
+
 msgid "tactic-attack"
 msgstr "Enhance ATK"
 
@@ -1036,6 +1121,60 @@ msgstr "Weaken more demolishe.S"
 msgid "tactic_desc-weaken more demolishes"
 msgstr "Weaken enemy troops more demolish"
 
+msgid "tactic-blade"
+msgstr "Blade"
+
+msgid "tactic_desc-blade"
+msgstr "Damage enemy troops by blade attack"
+
+msgid "tactic-pierce"
+msgstr "Pierce"
+
+msgid "tactic_desc-pierce"
+msgstr "Damage enemy troops by pierce attack"
+
+msgid "tactic-impact"
+msgstr "Impact"
+
+msgid "tactic_desc-impact"
+msgstr "Damage enemy troops by impact attack"
+
+msgid "tactic-fire"
+msgstr "Fire"
+
+msgid "tactic_desc-fire"
+msgstr "Damage enemy troops by fire attack"
+
+msgid "tactic-hide"
+msgstr "Hide"
+
+msgid "tactic_desc-hide"
+msgstr "Make local troop invisiable"
+
+msgid "tactic-hides"
+msgstr "Hide.S"
+
+msgid "tactic_desc-hides"
+msgstr "Make friend troops invisiable"
+
+msgid "tactic-accelerate"
+msgstr "Accelerate"
+
+msgid "tactic_desc-accelerate"
+msgstr "Enspeed local troop"
+
+msgid "tactic-accelerates"
+msgstr "Accelerate.S"
+
+msgid "tactic_desc-accelerates"
+msgstr "Accelerate friend troops"
+
+msgid "tactic-decelerates"
+msgstr "Decelerate.S"
+
+msgid "tactic_desc-decelerates"
+msgstr "Decelerate enemy troops"
+
 msgid "tactic-divine wei wu"
 msgstr "Divine wei wu"
 
@@ -1119,6 +1258,54 @@ msgstr "Spy Infiltrate"
 
 msgid "tactic_desc-spy infiltrate"
 msgstr "Weaken enemy troops ATK and DEF"
+
+msgid "tactic-fire stratagem"
+msgstr "Fire stratagem"
+
+msgid "tactic_desc-fire stratagem"
+msgstr "Damage enemy troops by fire attack"
+
+msgid "tactic-divine fire"
+msgstr "Divine fire"
+
+msgid "tactic_desc-divine fire"
+msgstr "Damage enemy troops by fire attack"
+
+msgid "tactic-big strike"
+msgstr "Big strike"
+
+msgid "tactic_desc-big strike"
+msgstr "Damage enemy troops by impact attack"
+
+msgid "tactic-ambush"
+msgstr "Ambush"
+
+msgid "tactic_desc-ambush"
+msgstr "Make local troop invisiable"
+
+msgid "tactic-divine ambushes"
+msgstr "Divine ambushes"
+
+msgid "tactic_desc-divine ambushes"
+msgstr "Make friend troops invisiable"
+
+msgid "tactic-ambush accelerate"
+msgstr "Ambush accelerate"
+
+msgid "tactic_desc-ambush accelerate"
+msgstr "Make local troop invisiable"
+
+msgid "tactic-accelerate firms"
+msgstr "Accelerate firms"
+
+msgid "tactic_desc-accelerate firms"
+msgstr "Enspeed friend troops"
+
+msgid "tactic-beautiful interlink"
+msgstr "Beautiful interlink"
+
+msgid "tactic_desc-beautiful interlink"
+msgstr "Decelerate enemy troops"
 
 msgid "arms-0"
 msgstr "Foootman"
@@ -1209,6 +1396,9 @@ msgstr "S11"
 
 msgid "adaptability-15"
 msgstr "S12"
+
+msgid "name"
+msgstr "Name"
 
 msgid "name-0"
 msgstr "Ye Liuying"
@@ -1907,7 +2097,7 @@ msgid "name-231"
 msgstr "Gongsun Yue"
 
 msgid "name-232"
-msgstr "Yuan Gongsun"
+msgstr "Gongsun Yuan"
 
 msgid "name-233"
 msgstr "Gongsun Gong"
@@ -2039,10 +2229,10 @@ msgid "name-275"
 msgstr "Tower"
 
 msgid "name-276"
-msgstr "Ju Shou"
+msgstr "Technology"
 
 msgid "name-277"
-msgstr "Shen Pei"
+msgstr "(Reserve)"
 
 msgid "name-278"
 msgstr "Pang Tong"
@@ -2271,6 +2461,19 @@ msgstr "Yang Fu"
 
 msgid "name-353"
 msgstr "Li Yan"
+
+msgid "name-354"
+msgstr "Ju Shou"
+
+msgid "name-355"
+msgstr "Shen Pei"
+
+#, fuzzy
+msgid "name-356"
+msgstr "Cao Hong"
+
+msgid "surname"
+msgstr "Surname"
 
 msgid "surname-0"
 msgstr "Ye"
@@ -3101,10 +3304,10 @@ msgid "surname-275"
 msgstr "-"
 
 msgid "surname-276"
-msgstr "Ju"
+msgstr "-"
 
 msgid "surname-277"
-msgstr "Shen"
+msgstr "-"
 
 msgid "surname-278"
 msgstr "Pang"
@@ -3333,6 +3536,16 @@ msgstr "Yang"
 
 msgid "surname-353"
 msgstr "Li"
+
+msgid "surname-354"
+msgstr "Ju"
+
+msgid "surname-355"
+msgstr "Shen"
+
+#, fuzzy
+msgid "surname-356"
+msgstr "Cao"
 
 msgid "desc0"
 msgstr " "
@@ -4404,4 +4617,3 @@ msgstr " "
 
 msgid "desc356"
 msgstr " "
-

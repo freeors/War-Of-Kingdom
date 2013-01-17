@@ -85,11 +85,18 @@ ttree_view_node::ttree_view_node(const std::string& id
 								signal_handler_label_left_button_click
 								, this, _2, _3, _4)
 							, event::tdispatcher::front_child);
+
 					widget.connect_signal<event::LEFT_BUTTON_CLICK>(
 							  boost::bind(&ttree_view_node::
 								signal_handler_label_left_button_click
 								, this, _2, _3, _4)
 							, event::tdispatcher::front_pre_child);
+
+					widget.connect_signal<event::LEFT_BUTTON_CLICK>(
+							  boost::bind(&ttree_view_node::
+								signal_handler_label_left_button_click
+								, this, _2, _3, _4)
+							, event::tdispatcher::front_post_child);
 
 					if(!tree_view().selected_item_) {
 						tree_view().selected_item_ = this;
@@ -380,6 +387,10 @@ tpoint ttree_view_node::calculate_best_size(const int indention_level
 {
 	log_scope2(log_gui_layout, LOG_SCOPE_HEADER);
 
+	if (tree_view().left_align_) {
+		return calculate_best_size_left_align(indention_level, indention_step_size);
+	}
+
 	tpoint best_size = grid_.get_best_size();
 	if(indention_level > 0) {
 		best_size.x += indention_level * indention_step_size;
@@ -414,6 +425,50 @@ tpoint ttree_view_node::calculate_best_size(const int indention_level
 	return best_size;
 }
 
+tpoint ttree_view_node::calculate_best_size_left_align(const int indention_level
+		, const unsigned indention_step_size) const
+{
+	tpoint best_size = grid_.get_best_size();
+	if(indention_level > 0) {
+		best_size.x += indention_step_size;
+	}
+
+	if(is_folded()) {
+
+		DBG_GUI_L << LOG_HEADER
+				<< " Folded grid return own best size " << best_size << ".\n";
+		return best_size;
+	}
+
+	DBG_GUI_L << LOG_HEADER << " own grid best size " << best_size << ".\n";
+
+	int max_node_width = 0;
+	int node_height = 0;
+	for(boost::ptr_vector<ttree_view_node>::const_iterator itor =
+			children_.begin (); itor != children_.end (); ++itor) {
+
+		const ttree_view_node& node = *itor;
+
+		if(node.grid_.get_visible() == twidget::INVISIBLE) {
+			continue;
+		}
+
+		const tpoint node_size = node.calculate_best_size_left_align(indention_level + 1,
+				indention_step_size);
+
+		// if (is_root_node() || itor != children_.begin()) {
+		//	best_size.y += node_size.y;
+		// }
+		max_node_width = std::max(max_node_width, node_size.x);
+		node_height += node_size.y;
+	}
+	best_size.x += max_node_width;
+	best_size.y = std::max(node_height, best_size.y);;
+	
+	DBG_GUI_L << LOG_HEADER << " result " << best_size << ".\n";
+	return best_size;
+}
+
 void ttree_view_node::set_origin(const tpoint& origin)
 {
 	// Inherited.
@@ -439,6 +494,10 @@ unsigned ttree_view_node::place(
 	log_scope2(log_gui_layout, LOG_SCOPE_HEADER);
 	DBG_GUI_L << LOG_HEADER << " origin " << origin << ".\n";
 
+	if (tree_view().left_align_) {
+		return place_left_align(indention_step_size, origin, width);
+	}
+
 	const unsigned offset = origin.y;
 	tpoint best_size = grid_.get_best_size();
 	best_size.x = width;
@@ -458,6 +517,45 @@ unsigned ttree_view_node::place(
 	DBG_GUI_L << LOG_HEADER << " set children.\n";
 	BOOST_FOREACH(ttree_view_node& node, children_) {
 		origin.y += node.place(indention_step_size, origin, width);
+	}
+
+	// Inherited.
+	twidget::set_size(tpoint(width, origin.y - offset));
+
+	DBG_GUI_L << LOG_HEADER << " result " << ( origin.y - offset) << ".\n";
+	return origin.y - offset;
+}
+
+unsigned ttree_view_node::place_left_align(
+	  const unsigned indention_step_size
+	, tpoint origin
+	, unsigned width)
+{
+	const unsigned offset = origin.y;
+	tpoint best_size = grid_.get_best_size();
+	// grid_size_ = best_size;
+	// best_size.x = width;
+	grid_.place(origin, best_size);
+
+	if(!is_root_node()) {
+		origin.x += indention_step_size + grid_.get_width();
+		width -= indention_step_size + grid_.get_width();
+	}
+	origin.y += best_size.y;
+
+	if(is_folded()) {
+		DBG_GUI_L << LOG_HEADER << " folded node done.\n";
+		return origin.y - offset;
+	}
+
+	DBG_GUI_L << LOG_HEADER << " set children.\n";
+	int index = 0;
+	BOOST_FOREACH(ttree_view_node& node, children_) {
+		if (index == 0) {
+			origin.y -= best_size.y;
+		}
+		index ++;
+		origin.y += node.place_left_align(indention_step_size, origin, width);
 	}
 
 	// Inherited.

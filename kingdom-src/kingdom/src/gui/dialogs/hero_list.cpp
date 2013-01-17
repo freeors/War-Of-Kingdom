@@ -95,11 +95,13 @@ thero_list::thero_list(std::vector<team>* teams, unit_map* units, hero_map& hero
 	, sorting_widgets_()
 	, sorting_widget_(NULL)
 	, hero_table_(NULL)
+	, window_(NULL)
 {
 }
 
 void thero_list::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window_ = &window;
 	hero_table_ = find_widget<tlistbox>(&window, "hero_table", false, true);
 
 	catalog_page(window, ABILITY_PAGE, false);
@@ -272,19 +274,39 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item["label"] = h.name();
 		table_item_item.insert(std::make_pair("name", table_item));
 
-		table_item["label"] = lexical_cast<std::string>(fxptoi9(h.leadership_));
+		str.str("");
+		str << fxptoi9(h.leadership_);
+		val = fxpmod9(h.leadership_);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("leadership", table_item));
 
-		table_item["label"] = lexical_cast<std::string>(fxptoi9(h.force_));
+		str.str("");
+		str << fxptoi9(h.force_);
+		val = fxpmod9(h.force_);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("force", table_item));
 
-		table_item["label"] = lexical_cast<std::string>(fxptoi9(h.intellect_));
+		str.str("");
+		str << fxptoi9(h.intellect_);
+		val = fxpmod9(h.intellect_);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("intellect", table_item));
 
-		table_item["label"] = lexical_cast<std::string>(fxptoi9(h.politics_));
+		str.str("");
+		str << fxptoi9(h.politics_);
+		val = fxpmod9(h.politics_);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("politics", table_item));
 
-		table_item["label"] = lexical_cast<std::string>(fxptoi9(h.charm_));
+		str.str("");
+		str << fxptoi9(h.charm_);
+		val = fxpmod9(h.charm_);
+		str << "." << val;
+		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("charm", table_item));
 
 		table_item["label"] = lexical_cast<std::string>((int)h.activity_);
@@ -349,6 +371,13 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		str << "." << val;
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("skill0", table_item));
+
+		str.str("");
+		str << hero::adaptability_str2(h.skill_[hero_skill_invent]);
+		val = fxpmod12(h.skill_[hero_skill_invent]);
+		str << "." << val;
+		table_item["label"] = str.str();
+		table_item_item.insert(std::make_pair("skill1", table_item));
 
 		str.str("");
 		str << hero::adaptability_str2(h.skill_[hero_skill_encourage]);
@@ -580,6 +609,7 @@ void thero_list::catalog_page(twindow& window, int catalog, bool swap)
 	} else if (catalog == SKILL_PAGE) {
 		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_skill0", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_skill1", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_skill3", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_skill4", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_skill5", false));
@@ -614,7 +644,6 @@ void thero_list::catalog_page(twindow& window, int catalog, bool swap)
 			, boost::bind(
 				&thero_list::sort_column
 				, this
-				, boost::ref(window)
 				, boost::ref(widget)));
 	}
 	sorting_widgets_[catalog] = widgets;
@@ -778,16 +807,21 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 				result = false;
 			}
 		} else if (sorting_widget_ == widgets[2]) {
+			// skill1
+			if (h1->skill_[hero_skill_invent] > h2->skill_[hero_skill_invent]) {
+				result = false;
+			}
+		} else if (sorting_widget_ == widgets[3]) {
 			// skill3
 			if (h1->skill_[hero_skill_encourage] > h2->skill_[hero_skill_encourage]) {
 				result = false;
 			}
-		} else if (sorting_widget_ == widgets[3]) {
+		} else if (sorting_widget_ == widgets[4]) {
 			// skill4
 			if (h1->skill_[hero_skill_hero] > h2->skill_[hero_skill_hero]) {
 				result = false;
 			}
-		} else if (sorting_widget_ == widgets[4]) {
+		} else if (sorting_widget_ == widgets[5]) {
 			// skill5
 			if (h1->skill_[hero_skill_demolish] > h2->skill_[hero_skill_demolish]) {
 				result = false;
@@ -863,8 +897,9 @@ static bool callback_compare_row(void* caller, tgrid& row1, tgrid& row2)
 	return reinterpret_cast<thero_list*>(caller)->compare_row(row1, row2);
 }
 
-void thero_list::sort_column(twindow& window, tbutton& widget)
+void thero_list::sort_column(tbutton& widget)
 {
+	twindow& window = *window_;
 	if (sorting_widget_ && (sorting_widget_ != &widget)) {
 		sorting_widget_->set_sort(tbutton::NONE);
 	}

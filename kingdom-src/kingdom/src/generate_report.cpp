@@ -36,6 +36,7 @@
 #include "game_display.hpp"
 #include "artifical.hpp"
 #include "play_controller.hpp"
+#include "wml_exception.hpp"
 
 #include <iostream>
 #include <ctime>
@@ -351,14 +352,7 @@ report generate_report(TYPE type,
 		const team_data data = calculate_team_data(viewing_team,current_side);
 		if (current_side != playing_side)
 			str << font::GRAY_TEXT;
-		str << data.expenses << "(" << data.upkeep << ")";
-		break;
-	}
-	case EXPENSES: {
-		const team_data data = calculate_team_data(viewing_team,current_side);
-		if (current_side != playing_side)
-			str << font::GRAY_TEXT;
-		str << data.expenses;
+		str << data.upkeep;
 		break;
 	}
 	case INCOME: {
@@ -368,16 +362,16 @@ report generate_report(TYPE type,
 		else if (data.net_income < 0)
 			str << font::BAD_TEXT;
 
-		str << data.net_income;
+		str << data.net_income << "/" << data.technology_net_income;
 		break;
 	}
 	case TACTIC: {
 		int tactic_point = viewing_team.tactic_point();
 		if (current_side != playing_side) {
 			str << font::GRAY_TEXT;
-		} else if (tactic_point >= game_config::max_tactic_point) {
+		} else if (tactic_point >= viewing_team.max_tactic_point()) {
 			str << font::RED_TEXT;
-		} else if (tactic_point > game_config::max_tactic_point * 2 / 3) {
+		} else if (tactic_point > viewing_team.max_tactic_point() * 2 / 3) {
 			str << "<255,255,0>";
 		} else {
 			str << font::GOOD_TEXT;
@@ -623,7 +617,9 @@ report generate_report(TYPE type,
 		}
 	}
 	default:
-		assert(false);
+		str.str("");
+		str << "Not impletement report type: " << reports::report_name(type);
+		VALIDATE(false, str.str());
 		break;
 	}
 	return report(str.str());

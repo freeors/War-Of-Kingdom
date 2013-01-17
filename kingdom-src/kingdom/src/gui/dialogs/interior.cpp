@@ -87,25 +87,29 @@ namespace gui2 {
 
 REGISTER_DIALOG(interior)
 
-tinterior::tinterior(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, int side)
+tinterior::tinterior(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, bool browse)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
-	, current_team_(teams_[side - 1])
+	, city_(city)
+	, current_team_(teams_[city.side() - 1])
+	, browse_(browse)
 	, fresh_heros_()
 	, type_index_(0)
-	, checked_heros_()
+	, checked_hero_(-1)
 	, appoint_(NULL)
 	, hero_table_(NULL)
 	, market_map_()
+	, technology_map_()
 {
-	std::vector<hero*>& commercials = current_team_.commercials();
-	departments_.push_back(department(department::commercial, _("Commercial"), "interior/commercial.png", "themes/gold.png"));
-	hero& h1 = !commercials.empty()? *commercials[0]: hero_invalid;
-	hero& h2 = commercials.size() >= 2? *commercials[1]: hero_invalid;
-	hero& h3 = commercials.size() >= 3? *commercials[2]: hero_invalid;
-	departments_.back().exploiture_ = calculate_exploiture(h1, h2, h3);
+	departments_.push_back(department(department::commercial, _("Commercial"), "interior/commercial.png", "interior/commercial-unit.png"));
+	hero& h1 = city_.master();
+	hero& h2 = *city_.mayor();
+	departments_.back().exploiture_ = calculate_exploiture(h1, h2, department::commercial);
+
+	departments_.push_back(department(department::technology, _("Technology"), "interior/technology.png", "interior/technology-unit.png"));
+	departments_.back().exploiture_ = calculate_exploiture(h1, h2, department::technology);
 }
 
 void tinterior::type_selected(twindow& window)
@@ -113,35 +117,19 @@ void tinterior::type_selected(twindow& window)
 	tlistbox& list = find_widget<tlistbox>(&window, "type_list", false);
 	type_index_ = list.get_selected_row();
 	
-	checked_heros_.clear();
-
-	const department& t = departments_[type_index_];
-	std::vector<hero*>& officials = current_team_.commercials();
-	if (!officials.empty()) {
-		checked_heros_.insert(std::find(fresh_heros_.begin(), fresh_heros_.end(), officials[0]) - fresh_heros_.begin());
-	}
-	if (officials.size() >= 2) {
-		checked_heros_.insert(std::find(fresh_heros_.begin(), fresh_heros_.end(), officials[1]) - fresh_heros_.begin());
-	}
-	if (officials.size() >= 3) {
-		checked_heros_.insert(std::find(fresh_heros_.begin(), fresh_heros_.end(), officials[2]) - fresh_heros_.begin());
-	}
 	// appoint_->set_active(!officials.empty());
-
-	refresh_tooltip(window);
 }
 
 void tinterior::hero_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
 	int toggled_index = toggle->get_data();
-	std::set<int>::iterator result = checked_heros_.find(toggled_index);
 
-	if (result == checked_heros_.end()) {
-		// toggled button isn't in checked_heros_
+	if (toggled_index != checked_hero_) {
+		// toggled button isn't in checked_hero_
 		if (toggle->get_value()) {
-			if (checked_heros_.size() < 3) {
-				checked_heros_.insert(toggled_index);
+			if (checked_hero_ == -1) {
+				checked_hero_ = toggled_index;
 			} else {
 				// At most select three heros. decheck it!
 				toggle->set_value(false);
@@ -153,29 +141,17 @@ void tinterior::hero_toggled(twidget* widget)
 	} else if (toggle->get_value()) { 
 		VALIDATE(false, "hero_toggled program error #2");
 	} else {
-		checked_heros_.erase(result);
+		checked_hero_ = -1;
 	}
 
 	twindow* window = toggle->get_window();
 
-	bool active = false;
-
-	std::vector<hero*> officials;
-	if (departments_[type_index_].type_ == department::commercial) {
-		officials = current_team_.commercials();
+	bool active = true;
+	hero* mayor = city_.mayor();
+	if ((!mayor->valid() && checked_hero_ == -1) || (mayor->valid() && checked_hero_ != -1 && mayor->number_ == fresh_heros_[checked_hero_]->number_)) {
+		active = false;
 	}
 
-	if (checked_heros_.size() != officials.size()) {
-		active = true;
-	} 
-	if (!active) {
-		for (std::set<int>::const_iterator itor = checked_heros_.begin(); itor != checked_heros_.end(); ++ itor) {
-			if (std::find(officials.begin(), officials.end(), fresh_heros_[*itor]) == officials.end()) {
-				active = true;
-				break;
-			}
-		}
-	}
 	appoint_->set_active(active);
 
 	refresh_tooltip(*window);
@@ -183,148 +159,81 @@ void tinterior::hero_toggled(twidget* widget)
 
 void tinterior::refresh_tooltip(twindow& window)
 {
-	std::stringstream str;
-
-	tstacked_widget* stacked = find_widget<tstacked_widget>(&window, "middle_top_part", false, true);
-	stacked->set_dirty(true);
-	
-	std::vector<hero*> v;
-	int index = 0;
-	for (std::set<int>::const_iterator itor = checked_heros_.begin(); itor != checked_heros_.end(); ++ itor, index ++) {
-		if (index == 0) {
-			v.push_back(fresh_heros_[*itor]);
-		} else if (index == 1) {
-			v.push_back(fresh_heros_[*itor]);
-		} else if (index == 2) {
-			v.push_back(fresh_heros_[*itor]);
-		}
-	}
+	std::stringstream strstr;
 
 	// refresh to gui
-	tcontrol* control = find_widget<tcontrol>(&window, "master_png", false, true);
-	tlabel* label = find_widget<tlabel>(&window, "master_name", false, true);
-	if (!v.empty()) {
-		control->set_label(v[0]->image());
-		label->set_label(v[0]->name());
-	} else {
-		control->set_label("");
-		label->set_label("");
+	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
+	hero* mayor = city_.mayor();
+
+	for (std::vector<department>::const_iterator d_it = departments_.begin(); d_it != departments_.end(); ++ d_it) {
+		tgrid* grid_ptr = list->get_row_grid(d_it->type_);
+
+		tcontrol* control = find_widget<tcontrol>(grid_ptr, "new_exploiture", false, true);
+		control->set_use_markup(true);
+		strstr.str("");
+		if ((!mayor->valid() && checked_hero_ == -1) || (mayor->valid() && checked_hero_ != -1 && mayor->number_ == fresh_heros_[checked_hero_]->number_)) {
+			strstr << d_it->exploiture_ << "%";
+		} else {
+			int exploiture = calculate_exploiture(city_.master(), checked_hero_ != -1? *(fresh_heros_[checked_hero_]): hero_invalid, d_it->type_);
+			if (exploiture > d_it->exploiture_) {
+				strstr << "<0,255,0>";
+			} else if (exploiture < d_it->exploiture_) {
+				strstr << "<255,0,0>";
+			}
+			strstr << exploiture << "%";
+		}
+		control->set_label(strstr.str());
 	}
-
-	control = find_widget<tcontrol>(&window, "second_png", false, true);
-	label = find_widget<tlabel>(&window, "second_name", false, true);
-	if (v.size() >= 2) {
-		control->set_label(v[1]->image());
-		label->set_label(v[1]->name());
-	} else {
-		control->set_label("");
-		label->set_label("");
-	}
-
-	control = find_widget<tcontrol>(&window, "third_png", false, true);
-	label = find_widget<tlabel>(&window, "third_name", false, true);
-	if (v.size() >= 3) {
-		control->set_label(v[2]->image());
-		label->set_label(v[2]->name());
-	} else {
-		control->set_label("");
-		label->set_label("");
-	}
-
-	// exploiture
-	int exploiture = calculate_exploiture(((v.size() >= 1)? *v[0]: hero_invalid), ((v.size() >= 2)? *v[1]: hero_invalid), ((v.size() >= 3)? *v[2]: hero_invalid));
-	str.str("");
-	if (exploiture > departments_[type_index_].exploiture_) {
-		find_widget<tcontrol>(&window, "image_exploiture", false, true)->set_label("misc/increase.png");
-		str << exploiture - departments_[type_index_].exploiture_;
-
-	} else if (exploiture < departments_[type_index_].exploiture_) {
-		find_widget<tcontrol>(&window, "image_exploiture", false, true)->set_label("misc/decrease.png");
-		str << departments_[type_index_].exploiture_ - exploiture;
-
-	} else {
-		find_widget<tcontrol>(&window, "image_exploiture", false, true)->set_label("misc/equal.png");
-		str << "0";
-	}
-	find_widget<tlabel>(&window, "tip_exploiture", false, true)->set_label(str.str());
-		
-	// total
-	str.str("");
-	std::pair<int, int> total = calculate_markets(exploiture);
-	str << "x " << total.first << " = " << total.second;
-	find_widget<tlabel>(&window, "tip_total", false, true)->set_label(str.str());
 }
 
 void tinterior::appoint(twindow& window)
 {
-	hero* h1 = &hero_invalid;
-	hero* h2 = &hero_invalid;
-	hero* h3 = &hero_invalid;
+	std::stringstream strstr;
+	hero* new_mayor = checked_hero_ != -1? fresh_heros_[checked_hero_]: &hero_invalid;
+	city_.select_mayor(new_mayor, false);
 
-	std::stringstream str;
-	std::vector<hero*> v;
-	int index = 0;
-	for (std::set<int>::const_iterator itor = checked_heros_.begin(); itor != checked_heros_.end(); ++ itor, index ++) {
-		if (index == 0) {
-			h1 = fresh_heros_[*itor];
-			v.push_back(h1);
-		} else if (index == 1) {
-			h2 = fresh_heros_[*itor];
-			v.push_back(h2);
-		} else if (index == 2) {
-			h3 = fresh_heros_[*itor];
-			v.push_back(h3);
-		}
-	}
-	current_team_.set_commercials(v);
-
-	tgrid* grid_ptr;
 	tcontrol* control;
-	for (index = 0; index < (int)fresh_heros_.size(); index ++) {
-		grid_ptr = hero_table_->get_row_grid(index);
+	for (int index = 0; index < (int)fresh_heros_.size(); index ++) {
+		tgrid* grid_ptr = hero_table_->get_row_grid(index);
 		control = dynamic_cast<tcontrol*>(grid_ptr->find("name", true));
 		hero& h = *fresh_heros_[index];
-		str.str("");
-		if (h.official_ == hero_official_commercial) {
-			str << "<0,0,255>";
+		strstr.str("");
+		if (h.official_ == hero_official_mayor) {
+			strstr << "<0,0,255>";
 		}
-		str << h.name();
-		control->set_label(str.str());
+		strstr << h.name();
+		control->set_label(strstr.str());
 	}
 
 	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
-	grid_ptr = list->get_row_grid(type_index_);
-
-	departments_[type_index_].exploiture_ = calculate_exploiture(*h1, *h2, *h3);
-	// exploiture data
-	str.str("");
-	str << calculate_markets(departments_[type_index_].exploiture_).second;
-	control = dynamic_cast<tcontrol*>(grid_ptr->find("total", true));
-	control->set_label(str.str());
-
-	str.str("");
-	str << _("Exploiture") << "  " << departments_[type_index_].exploiture_ << "%";
-	control = dynamic_cast<tcontrol*>(grid_ptr->find("exploiture", true));
-	control->set_label(str.str());
 
 	// official portrait
-	control = dynamic_cast<tcontrol*>(grid_ptr->find("master_portrait", true));
-	if (h1->valid()) {
-		control->set_label(h1->image());
+	control = find_widget<tcontrol>(&window, "mayor", false, true);
+	if (new_mayor->valid()) {
+		control->set_label(new_mayor->image());
 	} else {
 		control->set_label("");
 	}
-	control = dynamic_cast<tcontrol*>(grid_ptr->find("second_portrait", true));
-	if (h2->valid()) {
-		control->set_label(h2->image());
-	} else {
-		control->set_label("");
-	}
-	control = dynamic_cast<tcontrol*>(grid_ptr->find("third_portrait", true));
-	if (h3->valid()) {
-		control->set_label(h3->image());	
-	} else {
-		control->set_label("");
+
+	for (std::vector<department>::iterator d_it = departments_.begin(); d_it != departments_.end(); ++ d_it) {
+		tgrid* grid_ptr = list->get_row_grid(d_it->type_);
+
+		d_it->exploiture_ = calculate_exploiture(city_.master(), new_mayor? (*new_mayor): hero_invalid, d_it->type_);
+
+		// exploiture data
+		strstr.str("");
+		if (d_it->type_ == department::commercial) {
+			strstr << calculate_markets(d_it->exploiture_).second;
+		} else {
+			strstr << calculate_technologies(d_it->exploiture_).second;
+		}
+		control = dynamic_cast<tcontrol*>(grid_ptr->find("total", true));
+		control->set_label(strstr.str());
+
+		strstr.str("");
+		strstr << d_it->exploiture_ << "%";
+		control = dynamic_cast<tcontrol*>(grid_ptr->find("exploiture", true));
+		control->set_label(strstr.str());
 	}
 
 	appoint_->set_active(false);
@@ -343,99 +252,151 @@ std::pair<int, int> tinterior::calculate_markets(int exploiture)
 	return std::make_pair(count, income);
 }
 
+std::pair<int, int> tinterior::calculate_technologies(int exploiture)
+{
+	int count = 0, income = 0;
+	for (std::map<const unit_type*, int>::const_iterator it2 = technology_map_.begin(); it2 != technology_map_.end(); ++ it2) {
+		for (int i = 0; i < it2->second; i ++) {
+			income += it2->first->technology_income() * exploiture / 100;
+		}
+		count += it2->second;
+	}
+	return std::make_pair(count, income);
+}
+
 void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 {
 	int side_num = current_team_.side();
-	std::stringstream str;
+	std::stringstream strstr;
+
+	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
+	strstr.str();
+	strstr << _("Interior") << "(" << city_.name() << ")";
+	label->set_label(strstr.str());
+	if (browse_) {
+		label = find_widget<tlabel>(&window, "flag", false, true);
+		strstr.str("");
+		strstr << "(" << _("Browse") << ")";
+		label->set_label(strstr.str());
+	}
 
 	const unit_type_data::unit_type_map& types = unit_types.types();
 	for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
-		if (market_map_.find(&it->second) != market_map_.end()) {
-			continue;
-		}
 		if (it->second.master() == hero::number_market) {
-			market_map_.insert(std::make_pair(&it->second, 0));
-		}
-	}
-
-	const std::vector<artifical*>& holded_cities = current_team_.holded_cities();
-	for (std::vector<artifical*>::const_iterator c_itor = holded_cities.begin(); c_itor != holded_cities.end(); ++ c_itor) {
-		const std::vector<hero*>& freshes = (*c_itor)->fresh_heros();
-		std::copy(freshes.begin(), freshes.end(), std::back_inserter(fresh_heros_));
-		const std::vector<hero*>& finishes = (*c_itor)->finish_heros();
-		std::copy(finishes.begin(), finishes.end(), std::back_inserter(fresh_heros_));
-
-		// calculate artificals
-		const std::vector<map_location>& economy_area = (*c_itor)->economy_area();
-		for (std::vector<map_location>::const_iterator it = economy_area.begin(); it != economy_area.end(); ++ it) {
-			unit_map::const_iterator it2 = units_.find(*it);
-			if (!it2.valid()) {
+			if (market_map_.find(&it->second) != market_map_.end()) {
 				continue;
 			}
-			std::map<const unit_type*, int>::iterator find = market_map_.find(it2->type());
-			if (find != market_map_.end()) {
-				find->second ++;
+			market_map_.insert(std::make_pair(&it->second, 0));
+		}
+		if (it->second.master() == hero::number_technology) {
+			if (technology_map_.find(&it->second) != technology_map_.end()) {
+				continue;
 			}
+			technology_map_.insert(std::make_pair(&it->second, 0));
 		}
 	}
+
+	// candidate heros
+	const std::vector<hero*>& freshes = city_.fresh_heros();
+	std::copy(freshes.begin(), freshes.end(), std::back_inserter(fresh_heros_));
+	const std::vector<hero*>& finishes = city_.finish_heros();
+	std::copy(finishes.begin(), finishes.end(), std::back_inserter(fresh_heros_));
+	for (std::vector<unit*>::iterator it = city_.reside_troops().begin(); it != city_.reside_troops().end(); ++ it) {
+		unit& u = **it;
+		hero* h = &u.master();
+		fresh_heros_.push_back(h);
+		if (u.second().valid()) {
+			h = &u.second();
+			fresh_heros_.push_back(h);
+		}
+		if (u.third().valid()) {
+			h = &u.third();
+			fresh_heros_.push_back(h);
+		}
+	}
+	for (std::vector<unit*>::iterator it = city_.field_troops().begin(); it != city_.field_troops().end(); ++ it) {
+		unit& u = **it;
+		hero* h = &u.master();
+		fresh_heros_.push_back(h);
+		if (u.second().valid()) {
+			h = &u.second();
+			fresh_heros_.push_back(h);
+		}
+		if (u.third().valid()) {
+			h = &u.third();
+			fresh_heros_.push_back(h);
+		}
+	}
+
+	// calculate artificals
+	const std::vector<map_location>& economy_area = city_.economy_area();
+	for (std::vector<map_location>::const_iterator it = economy_area.begin(); it != economy_area.end(); ++ it) {
+		unit_map::const_iterator find = units_.find(*it);
+		if (!find.valid()) {
+			continue;
+		}
+		std::map<const unit_type*, int>::iterator find2 = market_map_.find(find->type());
+		if (find2 != market_map_.end()) {
+			find2->second ++;
+			continue;
+		}
+		find2 = technology_map_.find(find->type());
+		if (find2 != technology_map_.end()) {
+			find2->second ++;
+		}
+	}
+
 	std::sort(fresh_heros_.begin(), fresh_heros_.end(), compare_politics);
+
+	// mayor
+	tcontrol* control = find_widget<tcontrol>(&window, "mayor", false, true);
+	hero* mayor = city_.mayor();
+	if (mayor->valid()) {
+		control->set_label(mayor->image());
+	} else {
+		control->set_label("");
+	}
 
 	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
 
-	for (std::vector<department>::const_iterator d_itor = departments_.begin(); d_itor != departments_.end(); ++ d_itor) {
+	for (std::vector<department>::const_iterator d_it = departments_.begin(); d_it != departments_.end(); ++ d_it) {
 		/*** Add list item ***/
 		string_map list_item;
 		std::map<std::string, string_map> list_item_item;
 
-		std::vector<hero*> officials;
-		if (d_itor->type_ == department::commercial) {
-			officials = current_team_.commercials();
-		}
-
-		// if (gold >= type->cost() * cost_exponent / 100) {
-		if (true) {
-			list_item["label"] = d_itor->image_;
-		} else {
-			list_item["label"] = d_itor->image_ + "~GS()";
-		}
+		list_item["label"] = d_it->image_;
 		list_item_item.insert(std::make_pair("icon", list_item));
 
-		list_item["label"] = d_itor->name_;
+		list_item["label"] = d_it->name_;
 		list_item_item.insert(std::make_pair("name", list_item));
 
-		list_item["label"] = d_itor->portrait_;
+		list_item["label"] = d_it->portrait_;
 		list_item_item.insert(std::make_pair("portrait", list_item));
 
-		str.str("");
-		str << calculate_markets(d_itor->exploiture_).second;
-		list_item["label"] = str.str();
+		strstr.str("");
+		strstr << "X";
+		if (d_it->type_ == department::commercial) {
+			strstr << calculate_markets(d_it->exploiture_).first;
+		} else if (d_it->type_ == department::technology) {
+			strstr << calculate_technologies(d_it->exploiture_).first;
+		}
+		strstr << "=";
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("number", list_item));
+
+		strstr.str("");
+		if (d_it->type_ == department::commercial) {
+			strstr << calculate_markets(d_it->exploiture_).second;
+		} else if (d_it->type_ == department::technology) {
+			strstr << calculate_technologies(d_it->exploiture_).second;
+		}
+		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("total", list_item));
 
-		str.str("");
-		str << _("Exploiture") << "  " << d_itor->exploiture_ << "%";
-		list_item["label"] = str.str();
+		strstr.str("");
+		strstr << d_it->exploiture_ << "%";
+		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("exploiture", list_item));
-
-		if (!officials.empty()) {
-			list_item["label"] = officials[0]->image();
-		} else {
-			list_item["label"] = "";
-		}
-		list_item_item.insert(std::make_pair("master_portrait", list_item));
-
-		if (officials.size() >= 2) {
-			list_item["label"] = officials[1]->image();
-		} else {
-			list_item["label"] = "";
-		}
-		list_item_item.insert(std::make_pair("second_portrait", list_item));
-
-		if (officials.size() >= 3) {
-			list_item["label"] = officials[2]->image();
-		} else {
-			list_item["label"] = "";
-		}
-		list_item_item.insert(std::make_pair("third_portrait", list_item));
 
 		list->add_row(list_item_item);
 	}
@@ -443,10 +404,19 @@ void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 	appoint_ = find_widget<tbutton>(&window, "appoint", false, true);
 	appoint_->set_active(false);
 
-	type_selected(window);
+	// default: 0th department
+	if (mayor->valid()) {
+		for (std::vector<hero*>::iterator it = fresh_heros_.begin(); it != fresh_heros_.end(); ++ it) {
+			if (*it == mayor) {
+				checked_hero_ = std::distance(fresh_heros_.begin(), it);
+				break;
+			}
+		}
+		VALIDATE(checked_hero_ != -1, "exist mayor(" + mayor->name() + "), but cannot find mayor in candidate hero.");
+	}
 
-	find_widget<tcontrol>(&window, "image_exploiture", false, true)->set_label("misc/equal.png");
-	find_widget<tcontrol>(&window, "image_total", false, true)->set_label(departments_[type_index_].image_);
+	// type_selected(window);
+	refresh_tooltip(window);
 
 	list->set_callback_value_change(dialog_callback<tinterior, &tinterior::type_selected>);
 
@@ -536,7 +506,7 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 		if (catalog == ABILITY_PAGE) {
 			str.str("");
 			table_item["use_markup"] = "true";
-			if (h->official_ == hero_official_commercial) {
+			if (h->official_ == hero_official_mayor) {
 				str << "<0,0,255>";
 			} else if (h->official_ != HEROS_NO_OFFICIAL) {
 				str << "<255,0,0>";
@@ -558,6 +528,11 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("commercial", table_item));
 
+			str.str("");
+			str << hero::adaptability_str2(h->skill_[hero_skill_invent]);
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("technology", table_item));
+
 			table_item["label"] = hero::feature_str(h->feature_);
 			table_item_item.insert(std::make_pair("feature", table_item));
 
@@ -565,11 +540,6 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 			str << fxptoi9(h->leadership_);
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("leadership", table_item));
-
-			str.str("");
-			str << fxptoi9(h->force_);
-			table_item["label"] = str.str();
-			table_item_item.insert(std::make_pair("force", table_item));
 
 			str.str("");
 			str << fxptoi9(h->intellect_);
@@ -584,7 +554,7 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 		} else if (catalog == ADAPTABILITY_PAGE) {
 			str.str("");
 			table_item["use_markup"] = "true";
-			if (h->official_ == hero_official_commercial) {
+			if (h->official_ == hero_official_mayor) {
 				str << "<0,0,255>";
 			} else if (h->official_ != HEROS_NO_OFFICIAL) {
 				str << "<255,0,0>";
@@ -611,7 +581,7 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 		} else if (catalog == RELATION_PAGE) {
 			str.str("");
 			table_item["use_markup"] = "true";
-			if (h->official_ == hero_official_commercial) {
+			if (h->official_ == hero_official_mayor) {
 				str << "<0,0,255>";
 			} else if (h->official_ != HEROS_NO_OFFICIAL) {
 				str << "<255,0,0>";
@@ -693,10 +663,12 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 		ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(grid_ptr->find("prefix", true));
 		toggle->set_callback_state_change(boost::bind(&tinterior::hero_toggled, this, _1));
 		toggle->set_data(hero_index);
-		if (checked_heros_.find(hero_index) != checked_heros_.end()) {
+		if (checked_hero_ == hero_index) {
 			toggle->set_value(true);
 		}
-		if (h->official_ != HEROS_NO_OFFICIAL && h->official_ != hero_official_commercial) {
+		if (browse_) {
+			toggle->set_active(false);
+		} else if (h->official_ != HEROS_NO_OFFICIAL && h->official_ != hero_official_mayor) {
 			toggle->set_active(false);
 		} else if (h->loyalty(*current_team_.leader()) < game_config::wander_loyalty_threshold) {
 			toggle->set_active(false);

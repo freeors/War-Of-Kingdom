@@ -555,6 +555,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 	plague_type()
 {
 	std::vector<team>& teams = *resources::teams;
+	team& u_team = teams[u.side() - 1];
 
 	// Get the current state of the unit.
 	if (attack_num >= 0) {
@@ -585,13 +586,17 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		if (opp_weapon)
 			opp_weapon->set_specials_context(aloc, dloc, units, !attacking, weapon);
 		bool not_living = opp.get_state("not_living");
-		if (unit_feature_val2(u, hero_feature_pure)) {
+		if (unit_feature_val2(u, hero_feature_pure) && !unit_feature_val2(opp, hero_feature_penetrate)) {
 			slows = true;
 		} else {
 			slows = weapon->get_special_bool("slow");
 		}
-		if (!opp.is_artifical() && unit_feature_val2(u, hero_feature_break)) {
-			breaks = true;
+		if (!opp.is_artifical()) {
+			if (attacking && u.hide_turns()) {
+				breaks = true;
+			} else if (unit_feature_val2(u, hero_feature_break) && !unit_feature_val2(opp, hero_feature_penetrate)) {
+				breaks = true;
+			}
 		}
 		if (unit_feature_val2(u, hero_feature_drain)) {
 			drains = true;
@@ -599,7 +604,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 			drains = !not_living && weapon->get_special_bool("drains");
 		}
 		petrifies = weapon->get_special_bool("petrifies");
-		if (opp.is_artifical() || unit_feature_val2(opp, hero_feature_poison)) {
+		if (!attacking || opp.is_artifical() || unit_feature_val2(opp, hero_feature_poison)) {
 			// cannot make artifcal be poison
 			poisons = false;
 		} else if (unit_feature_val2(u, hero_feature_poison)) {
@@ -624,11 +629,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 
 		// Compute chance to hit.
 		chance_to_hit = opp.defense_modifier(resources::game_map->get_terrain(opp_loc)) + weapon->accuracy() - (opp_weapon ? opp_weapon->parry() : 0);
-/*
-		if(chance_to_hit > 100) {
-			chance_to_hit = 100;
-		}
-*/
+
 		unit_ability_list cth_specials = weapon->get_specials("chance_to_hit");
 		unit_abilities::effect cth_effects(cth_specials, chance_to_hit, backstab_pos);
 		if ((int)chance_to_hit < cth_effects.get_composite_value()) {
@@ -660,7 +661,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		// Leadership bonus.
 		int leader_bonus = 0;
 		if (under_leadership(units, u_loc, &leader_bonus).valid()) {
-			damage_multiplier += leader_bonus;
+			damage_multiplier += leader_bonus * u_team.cooperate_increase_ / 100;
 		}
 
 		if (opp.is_artifical()) {
@@ -676,20 +677,25 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		if (opp.get_state(unit::STATE_BROKEN)) {
 			damage = damage * 3 / 2;
 		}
-		if (is_reinforced) {
-			damage = damage * 3 / 2;
+		if (attacking) {
+			if (u.get_state(unit::STATE_REINFORCED)) {
+				damage = damage * 3 / 2;
+			} 
+			if (opp.get_state(unit::STATE_REINFORCED)) {
+				damage = damage * 2 / 3;
+			}
 		}
 		
 		// conside wall
 		if (!u.wall()) {
 			unit_map::const_iterator itor = units.find(u_loc, false);
-			if (itor.valid() && !teams[itor->side() - 1].is_enemy(u.side()) && itor->wall()) {
+			if (itor.valid() && itor->wall()) {
 				damage += damage / 10;
 			}
 		}
 		if (!opp.wall()) {
 			unit_map::const_iterator itor = units.find(opp_loc, false);
-			if (itor.valid() && !teams[itor->side() - 1].is_enemy(opp.side()) && itor->wall()) {
+			if (itor.valid() && itor->wall()) {
 				damage -= damage / 3;
 			}
 		}
@@ -1079,7 +1085,7 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 		units.erase(&die);
 
 	} else if (die.can_reside()) { 
-		// 被击败单位是可居住、不能催毁建筑物（城市）
+		// defend type: city
 		if (a_side == HEROS_INVALID_SIDE) {
 			a_info->xp_ += 16; // 攻下城的部队xp=原得xp+16
 			cobj = dynamic_cast<artifical*>(&die);
@@ -1095,7 +1101,7 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 				if (a_info->activity_) {
 					attacker->increase_activity(a_info->activity_);
 				}
-				attacker->get_experience(a_info->xp_, true);
+				attacker->get_experience(increase_xp::attack_ublock(*attacker, true), a_info->xp_);
 				// dialogs::advance_unit(a.get_location());
 				cobj->fallen(attacker->side(), attacker);
 				units.erase(attacker);
@@ -1106,7 +1112,7 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 		// @todo FIXME: need normalize to call clear_status_caches()
 		// unit::clear_status_caches();
 	}  else {
-		// 被击败单位是可催毁建筑物
+		// // defend type: artifical
 		units.erase(&die);
 	}
 }
@@ -1188,6 +1194,8 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 			injured = true;
 		}
 	}
+
+	// encourage section
 	bool stronger = false;
 	if (attacker_turn && (!attacker_u.is_artifical() || attacker_u.is_city()) && 
 		(!center_defender_ptr->is_artifical() || center_defender_ptr->is_city())) {
@@ -1210,12 +1218,23 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 			}
 		}
 	}
+
+	// indomitable section
+	bool indomitable = false;
+	if (center_defender_ptr->hitpoints() < center_defender_ptr->max_hitpoints() / 2) {
+		if (!(ran_num % 4) && center_defender_ptr->get_ability_bool("indomitable")) {
+			indomitable = true;
+		}
+	}
 	
 	int damage = 0;
 	if (hits) {
 		damage = attacker.damage_;
 		if (stronger) {
 			damage = damage * 3 / 2;
+		}
+		if (indomitable) {
+			damage = damage / 2;
 		}
 		resources::state_of_game->set_variable("damage_inflicted", str_cast<int>(damage));
 	}
@@ -1372,7 +1391,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 				}
 				battle_context bc(*resources::units, attacker.get_unit(), *itor, attacker.weapon_, -1);
 				const battle_context::unit_stats* a_stats = &bc.get_attacker_stats();
-				damage_locs.push_back(std::make_pair<unit*, int>(u_ptr, a_stats->damage * value / 100));
+				damage_locs.push_back(std::make_pair(u_ptr, a_stats->damage * value * attack_team.interlink_increase_ / 10000));
 				assist_find.insert(u_ptr);
 			}
 		}
@@ -1396,14 +1415,14 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 						_("female^poisoned") : _("poisoned")) << '\n';
 				}
 
-				if (attacker_stats->slows && !unit_feature_val2(defender_unit, hero_feature_penetrate) && !defender_unit.get_state(unit::STATE_SLOWED)) {
+				if (attacker_stats->slows && !defender_unit.get_state(unit::STATE_SLOWED)) {
 					// help::tintegrate::generate_img(float_text, "misc/slowed.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^slowed") : _("slowed")) << '\n';
 				}
 
-				if (attacker_stats->breaks && !unit_feature_val2(defender_unit, hero_feature_penetrate) && !defender_unit.get_state(unit::STATE_BROKEN)) {
+				if (attacker_stats->breaks && !defender_unit.get_state(unit::STATE_BROKEN)) {
 					// help::tintegrate::generate_img(float_text, "misc/broken.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
@@ -1420,6 +1439,10 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 				if (injured) {
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^injured") : _("injured")) << '\n';
+				}
+
+				if (indomitable) {
+					float_text << _("indomitable") << '\n';
 				}
 			}
 		}
@@ -1572,7 +1595,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 							config &variation = mod.add_child("effect");
 							variation["apply_to"] = "variation";
 							variation["name"] = undead_variation;
-							newunit.add_modification("variation",mod);
+							newunit.add_modification(mod);
 							newunit.heal_all();
 						}
 						units_.add(death_loc, &newunit);
@@ -1596,7 +1619,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 					defender_unit.set_state(unit::STATE_POISONED, true);
 				}
 
-				if (attacker_stats->slows && !unit_feature_val2(defender_unit, hero_feature_penetrate) && !defender_unit.get_state(unit::STATE_SLOWED)) {
+				if (attacker_stats->slows && !defender_unit.get_state(unit::STATE_SLOWED)) {
 					defender_unit.set_state(unit::STATE_SLOWED, true);
 					update_fog = true;
 					if (defender_ptr == center_defender_ptr) {
@@ -1605,7 +1628,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 					}
 				}
 
-				if (attacker_stats->breaks && !unit_feature_val2(defender_unit, hero_feature_penetrate) && !defender_unit.get_state(unit::STATE_BROKEN)) {
+				if (attacker_stats->breaks && !defender_unit.get_state(unit::STATE_BROKEN)) {
 					defender_unit.set_state(unit::STATE_BROKEN, true);
 					update_fog = true;
 					if (defender_ptr == center_defender_ptr) {
@@ -1811,6 +1834,17 @@ std::pair<map_location, map_location> attack::perform()
 			}
 		}
 	}
+	// defender reinforced
+	if (!((random + defender.hitpoints()) % 8)) {
+		hero* h = defender.can_encourage();
+		if (h) {
+			if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(defender.get_location().x, defender.get_location().y, draw_area)) {
+				unit_display::global_anim_2(unit_display::ANIM_REINFORCE, defender.master().image(true), h->image(true));
+			}
+			defender.set_state(unit::STATE_REINFORCED, true);
+			defender.master().increase_feeling_each(units_, heros_, *h, game_config::increase_feeling);
+		}
+	}
 
 	a_.get_unit().set_state(unit::STATE_NOT_MOVED,false);
 	d_.get_unit().set_resting(false);
@@ -1997,9 +2031,11 @@ std::pair<map_location, map_location> attack::perform()
 	if (a_.valid()) {
 		unit& u = a_.get_unit();
 
+		u.set_hide_turns(0);
 		u.set_standing();
+
 		if (a_.xp_) {
-			u.get_experience(defender_contain_entertainer? a_.xp_ * 2: a_.xp_, defender_is_artifical);
+			u.get_experience(increase_xp::attack_ublock(u, defender_is_artifical), defender_contain_entertainer? a_.xp_ * 2: a_.xp_);
 		}
 		if (a_.activity_) {
 			u.increase_activity(a_.activity_);
@@ -2018,7 +2054,7 @@ std::pair<map_location, map_location> attack::perform()
 
 		u.set_standing();
 		if (d_.xp_) {
-			u.get_experience(d_.xp_, attacker_is_artifical);
+			u.get_experience(increase_xp::attack_ublock(u, attacker_is_artifical), d_.xp_);
 		}
 		if (d_.activity_) {
 			u.increase_activity(d_.activity_);
@@ -2026,6 +2062,8 @@ std::pair<map_location, map_location> attack::perform()
 		u.cause_damage_ += d_.cause_damage_;
 		u.been_damage_ += d_.been_damage_;
 		u.defeat_units_ += d_.defeat_units_;
+
+		u.set_state(unit::STATE_REINFORCED, false);
 	} else {
 		new_locs.second = map_location();
 	}
@@ -2150,43 +2188,17 @@ void calculate_healing(int side, bool update_display)
 			if (u.get_state("unhealable") || u.incapacitated())
 				continue;
 
-			unit* curer = NULL;
 			unit* surveillanced = NULL;
 			std::vector<unit *> healers;
 
 			int healing = 0;
-			int rest_healing = 0;
 
 			bool curing = false;
 			bool surveillancing = false;
 
 			unit_ability_list heal = u.get_abilities("heals");
 
-			const bool is_diseased = u.get_state(unit::STATE_POISONED) || u.get_state(unit::STATE_SLOWED) || u.get_state(unit::STATE_BROKEN);
 			const bool is_poisoned = u.get_state(unit::STATE_POISONED);
-			if (is_diseased) {
-				// Remove the enemies' healers to determine if cured is yes
-				for (std::vector<std::pair<const config *, unit *> >::iterator
-						h_it = heal.cfgs.begin(); h_it != heal.cfgs.end();) {
-
-					unit* potential_healer = h_it->second;
-
-					if ((*resources::teams)[potential_healer->side() - 1].is_enemy(side)) {
-						h_it = heal.cfgs.erase(h_it);
-					} else {
-						++h_it;
-					}
-				}
-				for (std::vector<std::pair<const config *, unit *> >::const_iterator
-						heal_it = heal.cfgs.begin(); heal_it != heal.cfgs.end(); ++heal_it) {
-
-					if ((*heal_it->first)["cured"].to_bool()) {
-						curer = heal_it->second;
-						// Full curing either occurs on the healer turn
-						curing = true;
-					}
-				}
-			}
 
 			// For heal amounts and surveillance, only consider healers on side which is starting now.
 			// Remove all healers not on this side.
@@ -2194,7 +2206,7 @@ void calculate_healing(int side, bool update_display)
 					heal.cfgs.begin(); h_it != heal.cfgs.end();) {
 
 				unit* potential_healer = h_it->second;
-				if(potential_healer->side() != side) {
+				if (potential_healer->side() != side) {
 					h_it = heal.cfgs.erase(h_it);
 				} else {
 					++h_it;
@@ -2207,11 +2219,16 @@ void calculate_healing(int side, bool update_display)
 					surveillanced = heal_it->second;
 					// Full curing either occurs on the healer turn
 					surveillancing = true;
+					break;
 				}
 			}
 
-			unit_abilities::effect heal_effect(heal,0,false);
-			healing = heal_effect.get_composite_value();
+			unit_abilities::effect heal_effect(heal, 0, false);
+			healing = heal_effect.get_composite_value() * t.cooperate_increase_ / 100;
+			if (is_poisoned && healing > 0) {
+				curing = true;
+				healing = 0;
+			}
 
 			for (std::vector<unit_abilities::individual_effect>::const_iterator heal_loc = heal_effect.begin(); heal_loc != heal_effect.end(); ++heal_loc) {
 				healers.push_back(heal_loc->u);
@@ -2219,17 +2236,17 @@ void calculate_healing(int side, bool update_display)
 
 			if (u.side() == side) {
 				if (int h = resources::game_map->gives_healing(u.get_location())) {
-					if (h > healing) {
-						healing = h;
-						healers.clear();
+					if (is_poisoned) {
+						curing = true;
+					} else {
+						if (h > healing) {
+							healing = h;
+							healers.clear();
+						}
 					}
-					/** @todo FIXME */
-					curing = true;
-					curer = NULL;
 				}
-				if (u.resting() || u.is_healthy()) {
-					rest_healing = game_config::rest_heal_amount;
-					healing += rest_healing;
+				if (!curing && u.resting()) {
+					healing += game_config::rest_heal_amount;
 				}
 
 				// field troop, decrease loyalty
@@ -2240,13 +2257,9 @@ void calculate_healing(int side, bool update_display)
 					u.increase_loyalty(game_config::field_troop_increase_loyalty);
 				}
 			}
-			if (is_diseased && curing) {
+			if (is_poisoned && curing) {
 				u.set_state(unit::STATE_POISONED, false);
-				u.set_state(unit::STATE_SLOWED, false);
-				u.set_state(unit::STATE_BROKEN, false);
-				if (curer) {
-					healers.push_back(curer);
-				}
+				unit_display::unit_text(u, false, "");
 			} else if (is_poisoned) {
 				if (u.side() == side) {
 					healing -= game_config::poison_amount;
@@ -2298,7 +2311,7 @@ void calculate_healing(int side, bool update_display)
 
 			for (std::vector<unit*>::iterator it = healers.begin(); it != healers.end(); ++ it) {
 				unit& healer = **it;
-				healer.get_experience(2);
+				healer.get_experience(increase_xp::attack_ublock(healer), 2);
 				dialogs::advance_unit(healer.get_location(), !teams[healer.side() - 1].is_human(), true);
 			}
 		}
@@ -2353,7 +2366,7 @@ unit* get_advanced_unit(const unit* u, const std::string& advance_to)
 	} else {
 		new_unit = new artifical(*(const_unit_2_artifical(u)));
 	}
-	new_unit->get_experience(-new_unit->max_experience());
+	new_unit->get_experience(increase_xp::generic_ublock(), -new_unit->max_experience());
 	new_unit->advance_to(new_type);
 	new_unit->calculate_5fields();
 	new_unit->modify_according_to_hero(false);
@@ -2372,10 +2385,11 @@ void get_advanced_unit2(unit* u, const std::string& advance_to)
 		throw game::game_error("Could not find the unit being advanced"
 			" to: " + advance_to);
 	}
-	u->get_experience(-u->max_experience());
+	u->get_experience(increase_xp::generic_ublock(), -u->max_experience());
+	bool fill_up_movement = u->movement_left() == u->total_movement();
 	u->advance_to(new_type);
 	u->calculate_5fields();
-	u->modify_according_to_hero(false, true);
+	u->modify_according_to_hero(false, fill_up_movement);
 	u->heal(u->max_hitpoints() / 2);
 }
 
@@ -2623,9 +2637,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		 map_location* next_unit, bool continue_move,
 		 bool should_clear_shroud, bool is_replay)
 {
-	if (route.size() <= 2 && route.front() == route.back()) {
-		DBG_NG << "Ignore an unit trying to jump on its hex at " << route.front() << "\n";
-	}
+	VALIDATE(route.size() > 2 || route.front() != route.back(),  "Ignore an unit trying to jump on its hex");
 
 	// Stop the user from issuing any commands while the unit is moving
 	const events::command_disabler disable_commands;
@@ -2648,8 +2660,8 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		expediting_city_cookie = units.expediting_city_node();
 	}
 
-	//don't modify goto if we're have a spectator
-	//if it is present, then the caller code is responsible for modifying gotos
+	// don't modify goto if we're have a spectator
+	// if it is present, then the caller code is responsible for modifying gotos
 	if (move_spectator==NULL) {
 		// ui->set_goto(map_location());
 	}
@@ -2663,7 +2675,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		(tm->uses_shroud() || tm->uses_fog());
 
 	std::set<map_location> known_units;
-	if(check_shroud) {
+	if (check_shroud) {
 		for(unit_map::const_iterator u = units.begin(); u != units.end(); ++u) {
 			if (!tm->fogged(u->get_location())) {
 				known_units.insert(u->get_location());
@@ -2719,25 +2731,26 @@ size_t move_unit(move_unit_spectator* move_spectator,
 					break;
 				}
 			}
-		}
-		else
+		} else {
 			sighted_interrupts = seen_units.empty() == false; //interrupt if any unit was sighted
+		}
 
-		if(cost >moves_left || discovered_unit || (continue_move == false && sighted_interrupts)) {
-			if ((!is_replay) || (!skirmisher))
+		if (cost >moves_left || discovered_unit || (continue_move == false && sighted_interrupts)) {
+			if ((!is_replay) || (!skirmisher)) {
 				break; // not enough MP or spotted new enemies
+			}
 		}
 
 		const unit_map::const_iterator enemy_unit = units.find(*step);
 		if (enemy_unit != units.end()) {
 			if (tm->is_enemy(enemy_unit->side())) {
-				if (move_spectator!=NULL) {
+				if (move_spectator != NULL) {
 					move_spectator->set_ambusher(enemy_unit);
 				}
 				// can't traverse enemy (bug in fog or pathfinding?)
 				should_clear_stack = true; // assuming that this enemy was hidden somehow
 				break;
-			} else if (!tiles_adjacent(*(step-1),*step)) {
+			} else if (!tiles_adjacent(*(step-1), *step)) {
 				// can't teleport on ally (on fogged village, with no-leader and view not-shared)
 				if (move_spectator!=NULL) {
 					move_spectator->set_failed_teleport(enemy_unit);
@@ -2784,7 +2797,8 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		team_num = ui->side()-1;
 		tm = &teams[team_num];
 
-		if (!skirmisher && (!enemy_unit.valid() || !enemy_unit->cancel_zoc()) && pathfind::enemy_zoc(teams, *step, *tm, ui->side())) {
+		// if (!skirmisher && (!enemy_unit.valid() || !enemy_unit->cancel_zoc()) && pathfind::enemy_zoc(teams, *step, *tm, ui->side())) {
+		if (!skirmisher && pathfind::enemy_zoc(teams, *step, *tm, ui->side())) {
 			moves_left = 0;
 		}
 
@@ -2803,6 +2817,9 @@ size_t move_unit(move_unit_spectator* move_spectator,
 				should_clear_stack = true;
 				moves_left = 0;
 				if (move_spectator!=NULL) {
+					if (it->hide_turns()) {
+						it->set_hide_turns(0);
+					}
 					move_spectator->set_ambusher(it);
 				}
 
@@ -2897,8 +2914,11 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	ui = units.find(steps.back());
 	ui->set_standing();
 
-	if (discovered_unit && !ui->get_state(unit::STATE_SLOWED)) {
-		ui->set_state(unit::STATE_SLOWED, true);
+	if (discovered_unit) {
+		if (!ui->get_state(unit::STATE_SLOWED)) {
+			ui->set_state(unit::STATE_SLOWED, true);
+		}
+		ui->set_hide_turns(0);
 	}
 
 	disp.invalidate_unit_after_move(steps.front(), steps.back());
@@ -2990,13 +3010,13 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		redraw = true;
 	}
 
-	if(teleport_failed) {
+	if (teleport_failed) {
 		std::string teleport_string = _ ("Failed teleport! Exit not empty");
 		disp.announce(teleport_string, font::BAD_COLOR);
 		redraw = true;
 	}
 
-	if(continue_move == false && seen_units.empty() == false) {
+	if (continue_move == false && seen_units.empty() == false) {
 		// The message depends on how many units have been sighted,
 		// and whether they are allies or enemies, so calculate that out here
 		int nfriends = 0, nenemies = 0;
@@ -3562,41 +3582,32 @@ void post_duel(unit& left_u, hero& left, unit& right_u, hero& right, int percent
 	resources::state_of_game->clear_variable_cfg("duel");
 }
 
-int calculate_exploiture(const hero& h1, const hero& h2, const hero& h3, int artificals)
+int calculate_exploiture(const hero& h1, const hero& h2, int type)
 {
-	int max_assistant, exploiture, commercial;
-	uint32_t second_relation = 350, third_relation = 350;
-	uint16_t tmp;
+	int assistant_ability, skill, exploiture;
 
 	if (h2.valid()) {
-		if (h1.is_parent(h2) || h1.is_consort(h2) || h1.is_oath(h2)) {
-			second_relation = 250;
-		} else if (h1.is_hate(h2)) {
-			second_relation = 10000; // a almost large value
+		if (type == department::commercial) {
+			assistant_ability = fxptoi9(h2.politics_) * 100 / 250; // oath relative
+			skill = fxptoi12(h2.skill_[hero_skill_commercial]);
+		} else if (type == department::technology) {
+			assistant_ability = fxptoi9(h2.intellect_) * 100 / 250;
+			skill = fxptoi12(h2.skill_[hero_skill_invent]);
 		}
-		max_assistant= fxptoi9(h2.politics_) * 100 / second_relation;
-		commercial = fxptoi12(h2.skill_[hero_skill_commercial]);
 	} else {
-		max_assistant = 0;
-		commercial = 0;
+		assistant_ability = 0;
+		skill = 0;
 	}
-	if (h3.valid()) {
-		if (h1.is_parent(h3) || h1.is_consort(h3) || h1.is_oath(h3)) {
-			third_relation = 250;
-		} else if (h1.is_hate(h3)) {
-			third_relation = 10000; // a almost large value
-		}
-		// Second and Third has same intimate. select better value every one
-		tmp = fxptoi9(h3.politics_) * 100 / third_relation;
-		max_assistant = std::max<uint16_t>(max_assistant, tmp);
-
-		commercial += fxptoi12(h3.skill_[hero_skill_commercial]);
+	if (type == department::commercial) {
+		exploiture = fxptoi9(h1.politics_) + assistant_ability;
+		skill += fxptoi12(h1.skill_[hero_skill_commercial]);
+	} else if (type == department::technology) {
+		exploiture = fxptoi9(h1.intellect_) + assistant_ability;
+		skill += fxptoi12(h1.skill_[hero_skill_invent]);
 	}
-	exploiture = fxptoi9(h1.politics_) + max_assistant;
-	commercial += fxptoi12(h1.skill_[hero_skill_commercial]);
 
-	// comercial maybe is 0.
-	exploiture = exploiture * (1 + commercial) / 5;
+	// boath exploiture and skill maybe is 0.
+	exploiture = exploiture * (1 + skill) / 5;
 	if (exploiture < 80) {
 		exploiture = 80;
 	} else if (exploiture > 200) {
@@ -3628,24 +3639,37 @@ void do_recruit(unit_map& units, hero_map& heros, team& current_team, const unit
 void cast_tactic(unit_map& units, unit& tactician, hero& h, bool replay)
 {
 	const ttactic& t = unit_types.tactic(h.tactic_);
-	const std::map<int, std::vector<unit*> > touched = t.touch_units(units, tactician);
-	std::set<const unit*> effected;
+	const std::map<int, std::vector<map_location> > touched = t.touch_units(units, tactician);
 	int part, turn;
+
+	if (!replay) {
+		recorder.add_cast_tactic(tactician, h);
+		// must called before tactician.get_experience(2).
+		// tactician.get_experience(2) may generate [input](select human troop),
+		// replay should known [input] is generate by cast_tactic.
+	}
 
 	const rect_of_hexes& draw_area = resources::screen->draw_area();
 	if (point_in_rect_of_hexes(tactician.get_location().x, tactician.get_location().y, draw_area)) {
 		unit_display::tactic_start(h);
 	}
-	for (std::map<int, std::vector<unit*> >::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
+	for (std::map<int, std::vector<map_location> >::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
 		const std::vector<const ttactic*>& parts = t.parts();
 		part = it->first;
 		turn = ttactic::calculate_turn(fxptoi9(h.force_), fxptoi9(h.intellect_));
 		const ttactic& part_tactic = *(t.parts()[part]);
-		
-		for (std::vector<unit*>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
-			unit& u = **it2;
-			u.apply_tactic(&t, part_tactic, part, turn);
-			effected.insert(&u);
+	
+		if (part_tactic.apply_to() == apply_to_tag::DAMAGE) {
+			tactician.apply_tactic(&t, part_tactic, part, turn);
+		} else { 
+			for (std::vector<map_location>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+				unit* u = find_unit(units, *it2);
+				if (!u) {
+					// this unit may be erased by previous tactic. for example "damage".
+					continue;
+				}
+				u->apply_tactic(&t, part_tactic, part, turn);
+			}
 		}
 	}
 
@@ -3655,14 +3679,120 @@ void cast_tactic(unit_map& units, unit& tactician, hero& h, bool replay)
 	team& current_team = (*resources::teams)[h.side_];
 	current_team.add_tactic_point(-1 * t.point());
 
-	tactician.get_experience(2);
+	tactician.get_experience(increase_xp::attack_ublock(tactician), 2);
 
 	if (!replay) {
-		// resources::screen->refresh_access_troops(tactician.side() - 1, game_display::REFRESH_DISABLE, NULL, &tactician);
-		recorder.add_cast_tactic(tactician, h);
-
 		if (tactician.advances()) {
 			dialogs::advance_unit(tactician.get_location(), !current_team.is_human());
+		}
+	}
+	// some tactic maybe "add/erase" unit on map, for example "damage".
+	unit::clear_status_caches();
+}
+
+void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std::string& type, const std::string& relative, int ratio)
+{
+	team& u_team = teams[u.side() - 1];
+	const map_location& u_loc = u.get_location();
+	
+	unit_map::iterator u_it;
+	std::map<unit*, int> touched;
+
+	const map_location* tiles = u.adjacent_;
+	size_t adjance_size = u.adjacent_size_;
+
+	for (int step = 0; step < 2; step ++) {
+		if (step == 1) {
+			tiles = u.adjacent_2_;
+			adjance_size = u.adjacent_size_2_;
+		}
+	
+		for (size_t adj = 0; adj != adjance_size; adj ++) {
+			const map_location& loc = tiles[adj];
+			u_it = units.find(loc);
+			if (!u_it.valid()) {
+				u_it = units.find(loc, false);
+				if (!u_it.valid()) {
+					continue;
+				}
+			}
+			if (!u_team.is_enemy(u_it->side())) {
+				continue;
+			}
+			if (touched.find(&*u_it) != touched.end()) {
+				continue;
+			}
+			unit& opp = *u_it;
+			const map_location& opp_loc = opp.get_location();
+						
+			int damage;
+			if (relative == "leadership") {
+				damage = u.leadership_ - opp.leadership_;
+			} else if (relative == "force") {
+				damage = u.force_ - opp.force_;
+			} else if (relative == "intellect") {
+				damage = u.intellect_ - opp.intellect_;
+			} else if (relative == "politics") {
+				damage = u.politics_ - opp.politics_;
+			} else {
+				damage = u.charm_ - opp.charm_;
+			}
+			if (damage < 10) {
+				damage = 10;
+			} else if (damage > 50) {
+				damage = 50;
+			}
+			damage = damage * ratio / 100;
+
+			int defense = opp.defense_modifier(resources::game_map->get_terrain(opp_loc));
+			int multiplier = defense * opp.resistance_against(type, false, opp.get_location());
+			damage = round_damage(damage, multiplier, 10000);
+			
+			touched.insert(std::make_pair(&opp, damage));
+		}
+	}
+
+	
+	std::vector<unit*> def_ptr_vec;
+	std::vector<int> damage_vec;
+	std::vector<std::string> hit_text_vec;
+	for (std::map<unit*, int>::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
+		def_ptr_vec.push_back(it->first);
+		damage_vec.push_back(it->second);
+		hit_text_vec.push_back("");
+	}
+	unit_display::unit_attack2(u, type, def_ptr_vec, damage_vec, hit_text_vec);
+
+	config dat;
+	dat.add_child("first",  config());
+	dat.add_child("second", config());
+	for (std::map<unit*, int>::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
+		unit& opp = *it->first;
+		// display animation
+		bool dies = opp.take_hit(it->second);
+		if (dies) {
+			{
+				event_lock lock(units, opp);
+
+				game_events::fire("last breath", opp.get_location(), u_loc, dat);
+				// recalculate defender_pointer
+				if (!lock.valid()) {
+					// WML has invalidated the dying unit, abort
+					continue;
+				}
+			}
+			unit_display::unit_die(opp.get_location(), opp, NULL, NULL, u.get_location(), &u);
+			{
+				event_lock lock(units, opp);
+
+				game_events::fire("die", opp.get_location(), u_loc, dat);
+				// recalculate defender_pointer
+				if (!lock.valid()) {
+					// WML has invalidated the dying unit, abort
+					continue;
+				}
+			}
+			unit_die(units, opp, NULL, 0, u.side());
 		}
 	}
 }

@@ -23,6 +23,7 @@
 #ifndef _SDL_sysvideo_h
 #define _SDL_sysvideo_h
 
+#include "SDL_messagebox.h"
 #include "SDL_shape.h"
 
 /* The SDL video driver */
@@ -232,6 +233,12 @@ struct SDL_VideoDevice
     void (*StartTextInput) (_THIS);
     void (*StopTextInput) (_THIS);
     void (*SetTextInputRect) (_THIS, SDL_Rect *rect);
+
+    /* Screen keyboard */
+    SDL_bool (*SDL_HasScreenKeyboardSupport) (_THIS);
+    void (*SDL_ShowScreenKeyboard) (_THIS, SDL_Window *window);
+    void (*SDL_HideScreenKeyboard) (_THIS, SDL_Window *window);
+    SDL_bool (*SDL_IsScreenKeyboardShown) (_THIS, SDL_Window *window);
 
     /* Clipboard */
     int (*SetClipboardText) (_THIS, const char *text);

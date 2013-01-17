@@ -1103,6 +1103,13 @@ void play_controller::rpg_independence(bool replaying)
 	to_team.holded_treasures() = from_team.holded_treasures();
 	from_team.holded_treasures().clear();
 
+	// technology
+	to_team.holded_technologies() = from_team.holded_technologies();
+	to_team.half_technologies() = from_team.half_technologies();
+	to_team.apply_holded_technologies_finish();
+	to_team.apply_holded_technologies_modify();
+
+
 	// villages
 	std::set<map_location> villages = from_team.villages();
 	from_team.clear_villages();
@@ -1125,6 +1132,11 @@ void play_controller::rpg_independence(bool replaying)
 void play_controller::interior()
 {
 	menu_handler_.interior(gui_->viewing_team() + 1);
+}
+
+void play_controller::technology_tree()
+{
+	menu_handler_.technology_tree(gui_->viewing_team() + 1);
 }
 
 void play_controller::final_battle(int side_num, int human_capital, int ai_capital)
@@ -1387,15 +1399,18 @@ void play_controller::do_init_side(const unsigned int team_index)
 	const std::string side_num = str_cast(team_index + 1);
 
 	// calculate interior exploiture
-	if (!loading_game_) {
-		current_team.active_commercial();
-	}
-	unit::commercial_exploiture_ = current_team.commercial_exploiture();
+	std::vector<artifical*>& holded = current_team.holded_cities();
+	for (std::vector<artifical*>::iterator it = holded.begin(); it != holded.end(); ++ it) {
+		artifical& city = **it;
+		if (!loading_game_) {
+			city.active_exploiture();
+		}
+		city.calculate_exploiture();	
+	}	
 	
 	// If this is right after loading a game we don't need to fire events and such. It was already done before saving.
 	if (!loading_game_) {
-		if (turn() != previous_turn_)
-		{
+		if (turn() != previous_turn_) {
 			game_events::fire("turn " + turn_num);
 			game_events::fire("new turn");
 
@@ -1424,6 +1439,21 @@ void play_controller::do_init_side(const unsigned int team_index)
 		game_events::fire("side " + side_num + " turn");
 		game_events::fire("side turn " + turn_num);
 		game_events::fire("side " + side_num + " turn " + turn_num);
+
+		// first turn should begin to reserach technology.
+		if (!current_team.ing_technology()) {
+			current_team.select_ing_technology();
+			if (current_team.ing_technology()) {
+				utils::string_map symbols;
+				symbols["begin"] = current_team.ing_technology()->name();
+				symbols["side"] = current_team.name();
+				artifical* city = units_.city_from_cityno(current_team.leader()->city_);
+				if (city) {
+					game_events::show_hero_message(&heros_[229], city, 
+						vgettext("$side begin to research $begin!", symbols), game_events::INCIDENT_TECHNOLOGY);
+				}
+			}
+		}
 	}
 
 	if (current_team.is_human()) {
@@ -1445,7 +1475,7 @@ void play_controller::do_init_side(const unsigned int team_index)
 		std::vector<artifical*> holded_cities = current_team.holded_cities();
 		for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
 			artifical& city = **it;
-			city.get_experience2(3);
+			city.get_experience(increase_xp::turn_ublock(city), 3);
 			city.new_turn();
 		}
 
@@ -1477,6 +1507,7 @@ void play_controller::do_init_side(const unsigned int team_index)
 		if (expense > 0) {
 			current_team.spend_gold(expense);
 		}
+
 		uint32_t gold = SDL_GetTicks();
 		posix_print("(gold)used time: %u ms\n", gold - new_turn);
 
@@ -2011,7 +2042,7 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 	if (linger_) {
 		return command == hotkey::HOTKEY_LIST || command == hotkey::HOTKEY_SYSTEM;
 	}
-	if (replaying_ && (command == hotkey::HOTKEY_INTERIOR || command == hotkey::HOTKEY_FINAL_BATTLE)) {
+	if (replaying_ && (command == hotkey::HOTKEY_TECHNOLOGY_TREE || command == hotkey::HOTKEY_FINAL_BATTLE)) {
 		// current don't support, remark them.
 		return false;
 	}
@@ -2068,7 +2099,13 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		if (rpging_) {
 			return false;
 		}
-		return rpg::stratum == hero_stratum_leader && !events::commands_disabled && !itor.valid();
+		return !events::commands_disabled && !itor.valid();
+
+	case hotkey::HOTKEY_TECHNOLOGY_TREE:
+		if (rpging_) {
+			return false;
+		}
+		return !events::commands_disabled && !itor.valid();
 
 	case hotkey::HOTKEY_FINAL_BATTLE:
 		if (rpging_) {
@@ -2488,28 +2525,13 @@ bool play_controller::do_recruit(artifical* city, int cost_exponent, bool rpg_mo
 	std::vector<const hero*> v;
 	v.push_back(&heros_[master->number_]);
 	city->hero_go_out(*master);
-	if (v.back()->official_ == hero_official_commercial) {
-		current_team.erase_commercial(&heros_[master->number_]);
-		commercial_changed = true;
-	}
 	if (second->valid()) {
 		v.push_back(&heros_[second->number_]);
 		city->hero_go_out(*second);
-		if (v.back()->official_ == hero_official_commercial) {
-			current_team.erase_commercial(&heros_[second->number_]);
-			commercial_changed = true;
-		}
 	}
 	if (third->valid()) {
 		v.push_back(&heros_[third->number_]);
 		city->hero_go_out(*third);
-		if (v.back()->official_ == hero_official_commercial) {
-			current_team.erase_commercial(&heros_[third->number_]);
-			commercial_changed = true;
-		}
-	}
-	if (commercial_changed) {
-		unit::commercial_exploiture_ = current_team.commercial_exploiture();
 	}
 
 	::do_recruit(units_, heros_, current_team, ut, v, *city, cost_exponent, true);
@@ -2528,11 +2550,6 @@ void play_controller::rpg_update()
 		bool control_more = false;
 		if (rpg::h->meritorious_ >= 8000) {
 			artifical* city = units_.city_from_cityno(rpg::h->city_);
-
-			utils::string_map symbols;
-			symbols["city"] = city->name();
-			message = vgettext("Congratulate! You are appointed $city mayor.", symbols);
-			game_events::show_hero_message(&heros_[229], city, message, incident);
 
 			city->select_mayor(rpg::h);
 
@@ -2615,6 +2632,10 @@ void play_controller::rpg_update()
 				res = action->get("value")->to_int(-1);
 			}
 			unit& u = *(const_cast<unit*>(units_ptr[res]));
+			// end this turn
+			u.set_movement(0);
+			u.set_attacks(0);
+
 			u.set_human(true);
 			u.set_goto(map_location());
 			if (!units_.city_from_loc(u.get_location())) {
@@ -2844,7 +2865,9 @@ bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int
 	} else {
 		VALIDATE(false, "ally, unknown strategy type.");
 	}
-	game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
+	if (my_team.is_human() || to_ally_team.is_human() || target_team.is_human()) {
+		game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
+	}
 	return true;
 }
 

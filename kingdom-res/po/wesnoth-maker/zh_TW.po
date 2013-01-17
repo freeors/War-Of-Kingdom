@@ -1,0 +1,1032 @@
+# Dionysus <huang.wei.bhu@gmail.com>, 2007.  (unicon)
+# sylecn <sylecn@yahoo.com.cn>, 2009.
+# CloudiDust <cloudidust@gmail.com>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: wesnoth\n"
+"Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
+"POT-Creation-Date: 2012-12-29 11:17+0800\n"
+"PO-Revision-Date: 2013-01-05 19:50+0800\n"
+"Last-Translator: Peter WONG Wing Lun <luiges90@gmail.com>\n"
+"Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-SourceCharset: utf-8\n"
+"Plural-Forms: nplurals=2; plural=(n>1);\n"
+"X-Poedit-Bookmarks: -1,-1,-1,3,-1,-1,-1,-1,-1,-1\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#: DlgCampaignProc.cpp:732
+#: event.cpp:339
+#: event.cpp:353
+msgid "Yes"
+msgstr "是"
+
+#: DlgCampaignProc.cpp:732
+#: event.cpp:339
+#: event.cpp:353
+#: utype.cpp:418
+msgid "No"
+msgstr "不是"
+
+#: DlgCampaignProc.cpp:1463
+#: DlgCampaignProc.cpp:3417
+#: DlgCampaignProc.cpp:4118
+msgid "Cannot recruit"
+msgstr "不可徵召"
+
+#: DlgCampaignProc.cpp:1755
+#: DlgCampaignProc.cpp:1806
+#: event.cpp:697
+#: event.cpp:774
+#: event.cpp:1421
+#: event.cpp:1542
+msgid "Roam"
+msgstr "流浪"
+
+#: DlgCampaignProc.cpp:1778
+#: DlgCoreProc.cpp:124
+#: DlgCoreProc.cpp:158
+msgid "Lv$level"
+msgstr "$level級"
+
+#: DlgCampaignProc.cpp:2829
+msgid "Save campaign-$campaign"
+msgstr "保存戰役-$campaign"
+
+#: DlgCampaignProc.cpp:2830
+msgid "$campaign is dirty, do you want to save modify?"
+msgstr "$campaign有改動，你要保存修改嗎？"
+
+#: DlgCampaignProc.cpp:2995
+#: DlgCampaignProc.cpp:4845
+#: utype.cpp:1376
+#: utype.cpp:2949
+msgid "Corresponding cfg"
+msgstr "對應的cfg文件"
+
+#: DlgCampaignProc.cpp:2996
+#: DlgCampaignProc.cpp:4846
+#: utype.cpp:1379
+#: utype.cpp:1642
+#: utype.cpp:2952
+msgid "ID"
+msgstr "編號"
+
+#: DlgCampaignProc.cpp:2997
+#: utype.cpp:1377
+#: utype.cpp:1641
+#: utype.cpp:2950
+msgid "Domain"
+msgstr "翻譯域"
+
+#: DlgCampaignProc.cpp:2998
+#: DlgCampaignProc.cpp:3283
+#: DlgCampaignProc.cpp:3334
+#: DlgCampaignProc.cpp:3383
+#: DlgCampaignProc.cpp:3705
+#: DlgCampaignProc.cpp:3841
+#: DlgCampaignProc.cpp:4252
+#: DlgCampaignProc.cpp:4847
+#: DlgCampaignProc.cpp:4912
+#: DlgCampaignProc.cpp:4947
+#: utype.cpp:1378
+#: utype.cpp:1566
+#: utype.cpp:1643
+#: utype.cpp:1707
+#: utype.cpp:2951
+#: utype.cpp:3197
+#: utype.cpp:3288
+msgid "Name"
+msgstr "名稱"
+
+#: DlgCampaignProc.cpp:2999
+msgid "Abbreviation"
+msgstr "縮寫"
+
+#: DlgCampaignProc.cpp:3000
+msgid "Rank"
+msgstr "順序"
+
+#: DlgCampaignProc.cpp:3001
+msgid "First scenario"
+msgstr "第一關"
+
+#: DlgCampaignProc.cpp:3002
+msgid "Image"
+msgstr "圖像"
+
+#: DlgCampaignProc.cpp:3003
+#: DlgCampaignProc.cpp:3714
+#: DlgCampaignProc.cpp:4261
+#: DlgCoreProc.cpp:530
+#: utype.cpp:1380
+#: utype.cpp:1528
+#: utype.cpp:1716
+#: utype.cpp:2953
+msgid "Description"
+msgstr "描述"
+
+#: DlgCampaignProc.cpp:3004
+msgid "RPG mode"
+msgstr "RPG模式"
+
+#: DlgCampaignProc.cpp:3006
+#: DlgCampaignProc.cpp:3007
+#: DlgCampaignProc.cpp:4858
+#: utype.cpp:1649
+msgid "Browse..."
+msgstr "瀏覽..."
+
+#: DlgCampaignProc.cpp:3015
+msgid "Tutorial"
+msgstr "教程"
+
+#: DlgCampaignProc.cpp:3019
+msgid "Multi-scenario"
+msgstr "多關卡"
+
+#: DlgCampaignProc.cpp:3022
+msgid "Test"
+msgstr "測試"
+
+#: DlgCampaignProc.cpp:3042
+#: DlgCampaignProc.cpp:3047
+#: DlgCampaignProc.cpp:3228
+#: DlgCampaignProc.cpp:4876
+#: DlgCampaignProc.cpp:5181
+#: DlgCampaignProc.cpp:5280
+msgid "Exist"
+msgstr "存在"
+
+#: DlgCampaignProc.cpp:3044
+#: DlgCampaignProc.cpp:3049
+#: DlgCampaignProc.cpp:3228
+#: DlgCampaignProc.cpp:4878
+#: DlgCampaignProc.cpp:5183
+msgid "Not exist"
+msgstr "不存在"
+
+#: DlgCampaignProc.cpp:3075
+#: DlgCampaignProc.cpp:5143
+#: DlgCampaignProc.cpp:5869
+#: event.cpp:2596
+#: utype.cpp:1784
+#: utype.cpp:2647
+#: utype.cpp:2675
+msgid "Invalid string"
+msgstr "無效字串"
+
+#: DlgCampaignProc.cpp:3212
+#: DlgCampaignProc.cpp:5255
+msgid "Selected is using file, do nothing."
+msgstr "選擇的是正使用文件，不進行操作。"
+
+#: DlgCampaignProc.cpp:3218
+#: DlgCampaignProc.cpp:5271
+msgid "Copy \"$src\" to \"$dst\" $result!"
+msgstr "複製“$src”到“$dst”$result！"
+
+#: DlgCampaignProc.cpp:3275
+msgid "Edit side"
+msgstr "編輯勢力"
+
+#: DlgCampaignProc.cpp:3278
+msgid "Add side"
+msgstr "添加勢力"
+
+#: DlgCampaignProc.cpp:3282
+#: DlgCampaignProc.cpp:3879
+#: DlgCampaignProc.cpp:4903
+#: DlgCampaignProc.cpp:4938
+#: DlgCampaignProc.cpp:5028
+#: DlgHEditorProc.cpp:547
+#: DlgHEditorProc.cpp:2347
+msgid "Number"
+msgstr "編號"
+
+#: DlgCampaignProc.cpp:3284
+#: DlgCampaignProc.cpp:4953
+msgid "Leader"
+msgstr "君主"
+
+#: DlgCampaignProc.cpp:3285
+#: DlgCampaignProc.cpp:4959
+msgid "Void"
+msgstr "空白"
+
+#: DlgCampaignProc.cpp:3286
+#: DlgCampaignProc.cpp:4977
+msgid "Base gold"
+msgstr "初始金"
+
+#: DlgCampaignProc.cpp:3287
+#: DlgCampaignProc.cpp:4983
+msgid "Base income"
+msgstr "回合金"
+
+#: DlgCampaignProc.cpp:3289
+#: DlgCampaignProc.cpp:3506
+#: DlgCampaignProc.cpp:3668
+#: DlgCampaignProc.cpp:4221
+#: DlgCampaignProc.cpp:5007
+#: DlgCoreProc.cpp:437
+msgid "City"
+msgstr "城市"
+
+#: DlgCampaignProc.cpp:3290
+#: DlgCampaignProc.cpp:5013
+#: DlgCoreProc.cpp:436
+msgid "Troop"
+msgstr "部隊"
+
+#: DlgCampaignProc.cpp:3392
+#: DlgCampaignProc.cpp:3482
+#: DlgCampaignProc.cpp:3669
+#: DlgCampaignProc.cpp:4220
+#: DlgCoreProc.cpp:459
+#: DlgCoreProc.cpp:625
+#: utype.cpp:3174
+msgid "arms^Type"
+msgstr "兵種"
+
+#: DlgCampaignProc.cpp:3398
+#: DlgCampaignProc.cpp:3488
+#: DlgCampaignProc.cpp:3672
+#: DlgCampaignProc.cpp:3679
+#: DlgCampaignProc.cpp:4223
+msgid "Coordinate"
+msgstr "坐標"
+
+#: DlgCampaignProc.cpp:3429
+#: DlgCampaignProc.cpp:3676
+msgid "Office"
+msgstr "在職"
+
+#: DlgCampaignProc.cpp:3435
+#: DlgCampaignProc.cpp:3677
+msgid "Wander"
+msgstr "在野"
+
+#: DlgCampaignProc.cpp:3455
+msgid "troop^Master"
+msgstr "主將"
+
+#: DlgCampaignProc.cpp:3465
+#: DlgCampaignProc.cpp:3474
+msgid "troop^Second"
+msgstr "副將"
+
+#: DlgCampaignProc.cpp:3527
+msgid "Edit feature"
+msgstr "編輯特色"
+
+#: DlgCampaignProc.cpp:3530
+msgid "Add feature"
+msgstr "添加特色"
+
+#: DlgCampaignProc.cpp:3661
+msgid "Edit city"
+msgstr "編輯城市"
+
+#: DlgCampaignProc.cpp:3664
+msgid "Add city"
+msgstr "添加城市"
+
+#: DlgCampaignProc.cpp:3674
+#: DlgCampaignProc.cpp:4225
+#: DlgCampaignProc.cpp:4227
+msgid "Hero"
+msgstr "武將"
+
+#: DlgCampaignProc.cpp:3675
+#: DlgCampaignProc.cpp:4226
+msgid "Candidate"
+msgstr "候選"
+
+#: DlgCampaignProc.cpp:3681
+#: DlgCampaignProc.cpp:5602
+#: DlgHEditorProc.cpp:1529
+msgid "Add"
+msgstr "添加"
+
+#: DlgCampaignProc.cpp:4213
+msgid "Edit troop"
+msgstr "編輯部隊"
+
+#: DlgCampaignProc.cpp:4216
+msgid "Add troop"
+msgstr "添加部隊"
+
+#: DlgCampaignProc.cpp:4848
+msgid "Map"
+msgstr "地圖"
+
+#: DlgCampaignProc.cpp:4849
+msgid "Next scenario"
+msgstr "下一關"
+
+#: DlgCampaignProc.cpp:4851
+msgid "Turns"
+msgstr "回合數"
+
+#: DlgCampaignProc.cpp:4852
+msgid "Unrestricted"
+msgstr "不限制"
+
+#: DlgCampaignProc.cpp:4854
+msgid "Maximal defeated activity"
+msgstr "潰敗后最大厭戰指數"
+
+#: DlgCampaignProc.cpp:4855
+msgid "Win condition"
+msgstr "勝利條件"
+
+#: DlgCampaignProc.cpp:4856
+msgid "Lose condition"
+msgstr "失敗條件"
+
+#: DlgCampaignProc.cpp:4857
+msgid "Hidden treasure"
+msgstr "隱藏寶物"
+
+#: DlgCampaignProc.cpp:4919
+msgid "Quantity"
+msgstr "數量"
+
+#: DlgCampaignProc.cpp:5001
+#: DlgCoreProc.cpp:438
+msgid "Artifical"
+msgstr "建築物"
+
+#: DlgCampaignProc.cpp:5037
+msgid "Occasion"
+msgstr "時機"
+
+#: DlgCampaignProc.cpp:5044
+#: event.cpp:352
+msgid "Only one time"
+msgstr "只一次"
+
+#: DlgCampaignProc.cpp:5149
+msgid "Other scenario has holded ID"
+msgstr "已存在該ID的其它關卡"
+
+#: DlgCampaignProc.cpp:5249
+msgid "$file isn't valid map file!"
+msgstr "$file不是有效地圖文件！"
+
+#: DlgCampaignProc.cpp:5350
+msgid "Edit hidden treasure"
+msgstr "編輯隱藏寶物"
+
+#: DlgCampaignProc.cpp:5353
+msgid "Add hidden treasure"
+msgstr "添加隱藏寶物"
+
+#: DlgCampaignProc.cpp:5603
+#: DlgCampaignProc.cpp:5630
+#: event.cpp:3065
+#: main.cpp:743
+#: utype.cpp:3690
+msgid "Edit..."
+msgstr "編輯..."
+
+#: DlgCampaignProc.cpp:5604
+#: DlgCampaignProc.cpp:5631
+#: event.cpp:3066
+#: main.cpp:744
+#: utype.cpp:3691
+msgid "Delete..."
+msgstr "刪除..."
+
+#: DlgCampaignProc.cpp:5629
+#: main.cpp:742
+#: utype.cpp:3689
+msgid "Add..."
+msgstr "添加..."
+
+#: DlgCampaignProc.cpp:5835
+msgid "New campaign"
+msgstr "新建戰役"
+
+#: DlgCampaignProc.cpp:5837
+msgid "Campaign ID(Once set, cannot modify in future)"
+msgstr "戰役ID（一旦設置，將不能修改）"
+
+#: DlgCampaignProc.cpp:5838
+msgid "First scenario ID(May modify in future)"
+msgstr "第一關卡ID（將來能修改）"
+
+#: DlgCampaignProc.cpp:5840
+#: main.cpp:734
+msgid "New"
+msgstr "新建"
+
+#: DlgCampaignProc.cpp:5841
+msgid "Cancel"
+msgstr "取消"
+
+#: DlgCampaignProc.cpp:5879
+msgid "cfg directory:"
+msgstr "cfg文件夾"
+
+#: DlgCampaignProc.cpp:5881
+msgid "bin file:"
+msgstr "bin文件"
+
+#: DlgCampaignProc.cpp:5886
+msgid "Other campaign has holded ID"
+msgstr "已存在該ID的其它戰役"
+
+#: DlgCampaignProc.cpp:5889
+msgid "scenario file:"
+msgstr "關卡文件"
+
+#: DlgCampaignProc.cpp:5891
+msgid "map file:"
+msgstr "地圖文件"
+
+#: DlgCoreProc.cpp:160
+msgid "Packer"
+msgstr "打包"
+
+#: DlgCoreProc.cpp:354
+#: DlgHEditorProc.cpp:92
+msgid "Save modify"
+msgstr "保存修改"
+
+#: DlgCoreProc.cpp:355
+msgid "Core data is dirty, do you want to save modify?"
+msgstr "核心數據有改動，你要保存修改嗎？"
+
+#: DlgCoreProc.cpp:489
+msgid "Atomic tactic"
+msgstr "原子戰法"
+
+#: DlgCoreProc.cpp:497
+msgid "Complex tactic"
+msgstr "複合戰法"
+
+#: DlgCoreProc.cpp:536
+msgid "Point"
+msgstr "點數"
+
+#: DlgCoreProc.cpp:545
+msgid "Range"
+msgstr "範圍"
+
+#: DlgCoreProc.cpp:547
+msgid "Myself"
+msgstr "自身"
+
+#: DlgCoreProc.cpp:554
+msgid "troop^Friend"
+msgstr "友軍"
+
+#: DlgCoreProc.cpp:561
+msgid "troop^Enemy"
+msgstr "敵軍"
+
+#: DlgCoreProc.cpp:573
+msgid "Defend"
+msgstr "防御"
+
+#: DlgCoreProc.cpp:575
+#: utype.cpp:1391
+msgid "Attack"
+msgstr "攻擊"
+
+#: DlgCoreProc.cpp:577
+msgid "Will"
+msgstr "士氣"
+
+#: DlgCoreProc.cpp:579
+msgid "Demolish"
+msgstr "破壞"
+
+#: DlgCoreProc.cpp:586
+msgid "tactic^Child"
+msgstr "子戰法"
+
+#: DlgCoreProc.cpp:626
+msgid "Tactic"
+msgstr "戰法"
+
+#: DlgDDescProc.cpp:180
+msgid "\"$directory\" isn't valid resource directory, please select again"
+msgstr "“$directory”不是有效資源包目錄，請重新選擇"
+
+#: DlgDDescProc.cpp:200
+msgid "Do you want to extract release package to \"C:\\kingdom-ins\"?"
+msgstr "你想把發布包解壓到“C:\\kingdom-ins”吗？"
+
+#: DlgDDescProc.cpp:202
+msgid "Confirm generate"
+msgstr "確認生成"
+
+#: DlgDDescProc.cpp:208
+msgid "Extract release package from \"$src\" to \"C:\\kingdom-ins\", $result!"
+msgstr "從“$src”解壓發布包到“C:\\kingdom-ins”，$result！"
+
+#: DlgDDescProc.cpp:256
+msgid "Do you want to delete file: \"$file\" and directory: \"$directory\"?"
+msgstr "確認刪除文件：“$file”，以及目錄“$directory”？"
+
+#: DlgDDescProc.cpp:258
+#: DlgDDescProc.cpp:281
+#: DlgHEditorProc.cpp:961
+#: event.cpp:3379
+#: utype.cpp:3158
+msgid "Confirm delete"
+msgstr "確認刪除"
+
+#: DlgDDescProc.cpp:279
+msgid "Will generate non-sync, do you want to only delete file: \"$file\"?"
+msgstr "將產生資料不同步的狀況，你確認要只刪除文件：“$file”吗？"
+
+#: DlgHEditorProc.cpp:91
+msgid "Do you want to save modify?"
+msgstr "你要保存修改嗎？"
+
+#: DlgHEditorProc.cpp:621
+#: DlgHEditorProc.cpp:2348
+msgid "Picture number"
+msgstr "圖像編號"
+
+#: DlgHEditorProc.cpp:627
+msgid "Base/Float catalog"
+msgstr "基本/浮動相性"
+
+#: DlgHEditorProc.cpp:793
+msgid "Status/Activity"
+msgstr "狀態/活力"
+
+#: DlgHEditorProc.cpp:959
+msgid "Do you want to delete hero($name) that number is $number?"
+msgstr "你想刪除編號為$number的武將（$name）嗎？"
+
+#: DlgHEditorProc.cpp:1531
+msgid "Edit"
+msgstr "編輯"
+
+#: DlgHEditorProc.cpp:1533
+msgid "Unknown action"
+msgstr "不明動作"
+
+#: DlgHEditorProc.cpp:2358
+msgid "Experience"
+msgstr "經驗"
+
+#: DlgSyncProc.cpp:158
+msgid "Need restart if changed"
+msgstr "如要改動，需重啟才能生效"
+
+#: DlgSyncProc.cpp:166
+msgid "File name"
+msgstr "文件名"
+
+#: DlgSyncProc.cpp:175
+#: DlgSyncProc.cpp:181
+msgid "Checksum"
+msgstr "校驗和"
+
+#: DlgSyncProc.cpp:187
+msgid "Status"
+msgstr "狀態"
+
+#: DlgSyncProc.cpp:193
+msgid "SHA1"
+msgstr "SHA1"
+
+#: event.cpp:382
+msgid "Cond.I: Filter first unit"
+msgstr "條件I: 篩選第一單位"
+
+#: event.cpp:388
+msgid "Cond.II: Filter second unit"
+msgstr "條件II: 篩選第二單位"
+
+#: event.cpp:837
+msgid "equal value"
+msgstr "等於值"
+
+#: event.cpp:838
+msgid "evaluats one amone range"
+msgstr "在範圍中取值"
+
+#: event.cpp:912
+msgid "Variable \"$name\" $op \"$value\""
+msgstr "變量“$name”$op“$value”"
+
+#: event.cpp:1658
+msgid "equals string"
+msgstr "等於字串"
+
+#: event.cpp:1659
+msgid "not equals string"
+msgstr "不等於字串"
+
+#: event.cpp:1660
+msgid "contains string"
+msgstr "包含字串"
+
+#: event.cpp:1661
+msgid "equals numerical"
+msgstr "等於數字"
+
+#: event.cpp:1662
+msgid "not equals numerical"
+msgstr "不等於數字"
+
+#: event.cpp:1663
+msgid "greater than numerical"
+msgstr "大於數字"
+
+#: event.cpp:1664
+msgid "less than numerical"
+msgstr "小於數字"
+
+#: event.cpp:1665
+msgid "greater than equal to numerical"
+msgstr "大於或等於數字"
+
+#: event.cpp:1666
+msgid "less_than_equal_to numerical"
+msgstr "小於或等於數字"
+
+#: event.cpp:1667
+msgid "equals boolean"
+msgstr "等於布爾值"
+
+#: event.cpp:1668
+msgid "not equals boolean"
+msgstr "不等於布爾值"
+
+#: event.cpp:1715
+msgid "\"$left\" $op \"$right\""
+msgstr "“$left”$op“$right”"
+
+#: event.cpp:3047
+msgid "Edit $number|th event"
+msgstr "編輯第$number條事件"
+
+#: event.cpp:3050
+msgid "Add event"
+msgstr "添加事件"
+
+#: event.cpp:3055
+msgid "Judge branch"
+msgstr "判斷分支"
+
+#: event.cpp:3057
+msgid "Set variable"
+msgstr "設置變量"
+
+#: event.cpp:3059
+msgid "Generate troop"
+msgstr "產生部隊"
+
+#: event.cpp:3060
+msgid "Kill troop"
+msgstr "殺死部隊"
+
+#: event.cpp:3061
+msgid "Join in troop"
+msgstr "加入部隊"
+
+#: event.cpp:3064
+msgid "Append after it"
+msgstr "在之後添加"
+
+#: event.cpp:3377
+msgid "Do you want to delete $number|th event?"
+msgstr "你要刪除第$number條事件吗？"
+
+#: main.cpp:709
+msgid "Extract release package to C:\\kingdom-ins"
+msgstr "解壓发布包到“C:\\kingdom-ins”"
+
+#: main.cpp:715
+msgid "WML format"
+msgstr "WML格式"
+
+#: main.cpp:720
+msgid "Delete relative *.cfg at the same time"
+msgstr "同時刪除相關配置文件"
+
+#: main.cpp:722
+#: main.cpp:727
+#: main.cpp:738
+msgid "Delete"
+msgstr "刪除"
+
+#: main.cpp:729
+msgid "Delete all"
+msgstr "刪除全部"
+
+#: main.cpp:736
+msgid "Explorer"
+msgstr "瀏覽"
+
+#: main.cpp:748
+msgid "Reset all to default"
+msgstr "全部重設到默認值"
+
+#: utype.cpp:317
+#: utype.cpp:2903
+msgid "Advances to"
+msgstr "升級到"
+
+#: utype.cpp:360
+#: utype.cpp:2907
+#: utype.cpp:3260
+msgid "Abilities"
+msgstr "能力"
+
+#: utype.cpp:415
+#: utype.cpp:2352
+#: utype.cpp:3247
+msgid "Can land on wall"
+msgstr "是否能上城牆"
+
+#: utype.cpp:416
+#: utype.cpp:3417
+msgid "Can"
+msgstr "能"
+
+#: utype.cpp:416
+#: utype.cpp:3417
+msgid "Cannot"
+msgstr "不能"
+
+#: utype.cpp:417
+#: utype.cpp:2353
+msgid "Only used to leader"
+msgstr "君主專用"
+
+#: utype.cpp:418
+msgid "YES"
+msgstr "是"
+
+#: utype.cpp:421
+#: utype.cpp:2435
+msgid "Increase XP per turn"
+msgstr "每回合自增加XP"
+
+#: utype.cpp:422
+#: utype.cpp:428
+#: utype.cpp:2436
+#: utype.cpp:2504
+msgid "Recover HP per turn"
+msgstr "每回合自恢復HP"
+
+#: utype.cpp:426
+#: utype.cpp:1384
+#: utype.cpp:1542
+#: utype.cpp:1575
+#: utype.cpp:1645
+#: utype.cpp:1979
+#: utype.cpp:2503
+#: utype.cpp:3035
+#: utype.cpp:3295
+msgid "Type"
+msgstr "類型"
+
+#: utype.cpp:429
+#: utype.cpp:2505
+msgid "Guard attack"
+msgstr "警戒攻擊"
+
+#: utype.cpp:435
+#: utype.cpp:2506
+msgid "Base income gold"
+msgstr "基本收入"
+
+#: utype.cpp:1368
+msgid "arms^Edit type"
+msgstr "編輯兵種"
+
+#: utype.cpp:1371
+msgid "arms^Add type"
+msgstr "添加兵種"
+
+#: utype.cpp:1383
+#: utype.cpp:2954
+msgid "Has ZOC"
+msgstr "有ZOC"
+
+#: utype.cpp:1385
+#: utype.cpp:1951
+#: utype.cpp:2957
+msgid "Resistance/Defend/Cost"
+msgstr "抗性/防御指數/移動消耗"
+
+#: utype.cpp:1386
+msgid "Set"
+msgstr "設置"
+
+#: utype.cpp:1387
+#: utype.cpp:1505
+msgid "Level"
+msgstr "等級"
+
+#: utype.cpp:1390
+msgid "Alignment"
+msgstr "立場"
+
+#: utype.cpp:1496
+#: utype.cpp:1519
+msgid "Name(ID)"
+msgstr "名称(編號)"
+
+#: utype.cpp:1582
+#: utype.cpp:1644
+#: utype.cpp:3302
+msgid "Icon"
+msgstr "圖示"
+
+#: utype.cpp:1590
+#: utype.cpp:1646
+#: utype.cpp:3309
+msgid "attack^Range"
+msgstr "距離"
+
+#: utype.cpp:1604
+#: utype.cpp:1647
+#: utype.cpp:3323
+msgid "Damage"
+msgstr "傷害"
+
+#: utype.cpp:1610
+#: utype.cpp:1648
+#: utype.cpp:3330
+msgid "damage^Number"
+msgstr "次數"
+
+#: utype.cpp:1631
+msgid "Edit attack"
+msgstr "編輯攻擊"
+
+#: utype.cpp:1634
+msgid "Add attack"
+msgstr "添加攻擊"
+
+#: utype.cpp:1763
+#: utype.cpp:1862
+#: utype.cpp:3316
+msgid "Specials"
+msgstr "特色"
+
+#: utype.cpp:1790
+msgid "Other attack has holded ID"
+msgstr "已存在該ID的其它攻擊"
+
+#: utype.cpp:1955
+#: utype.cpp:3269
+msgid "Template"
+msgstr "模板"
+
+#: utype.cpp:1957
+msgid "mtype^Defend"
+msgstr "防御指數"
+
+#: utype.cpp:1958
+msgid "Movement cost"
+msgstr "移動消耗"
+
+#: utype.cpp:1959
+msgid "Double click one item to modify"
+msgstr "雙擊上面一項以修改其值"
+
+#: utype.cpp:1988
+#: utype.cpp:2017
+#: utype.cpp:2039
+msgid "Default value"
+msgstr "默認值"
+
+#: utype.cpp:1995
+msgid "Using value"
+msgstr "使用值"
+
+#: utype.cpp:2346
+msgid "Special attributes of troop type"
+msgstr "部隊兵種特有屬性"
+
+#: utype.cpp:2431
+msgid "Special attributes of city type"
+msgstr "城市兵種特有屬性"
+
+#: utype.cpp:2499
+msgid "Special attributes of artifical type"
+msgstr "建築物兵種特有屬性"
+
+#: utype.cpp:2681
+msgid "Other type has holded ID"
+msgstr "已存在該ID的其它兵種"
+
+#: utype.cpp:2686
+msgid "Set adding type's ID"
+msgstr "請設置新增兵種的ID"
+
+#: utype.cpp:2689
+msgid "Modify ID results to rebuild"
+msgstr "修改ID会導致自動重編"
+
+#: utype.cpp:2942
+msgid "Edit packer type"
+msgstr "編輯打包兵種"
+
+#: utype.cpp:2945
+msgid "Add packer type"
+msgstr "添加打包兵種"
+
+#: utype.cpp:2959
+msgid "Increase in melee"
+msgstr "近戰增加量"
+
+#: utype.cpp:2960
+msgid "Increase in ranged"
+msgstr "遠程增加量"
+
+#: utype.cpp:2961
+msgid "Increase in cast"
+msgstr "投射增加量"
+
+#: utype.cpp:3156
+msgid "Do you want to delete type: \"$type\"?"
+msgstr "你想刪除兵種：“$type”吗？"
+
+#: utype.cpp:3176
+#: utype.cpp:3673
+msgid "Base information"
+msgstr "基本信息"
+
+#: utype.cpp:3180
+#: utype.cpp:3679
+msgid "Attack I"
+msgstr "攻擊I"
+
+#: utype.cpp:3182
+#: utype.cpp:3682
+msgid "Attack II"
+msgstr "攻擊II"
+
+#: utype.cpp:3184
+#: utype.cpp:3685
+msgid "Attack III"
+msgstr "攻擊III"
+
+#: utype.cpp:3187
+msgid "Close"
+msgstr "關閉"
+
+#: utype.cpp:3425
+msgid "Has"
+msgstr "有"
+
+#: utype.cpp:3425
+msgid "Hasn't"
+msgstr "没有"
+
+#: utype.cpp:3623
+msgid "Regenerate all type's cfg and relative image success."
+msgstr "重新生成所有兵種配置、相關圖像成功。"
+
+#: utype.cpp:3693
+msgid "Regenerate all type's cfg and relatve image"
+msgstr "重新生成所有兵種配置、相關圖像"
+
+#: utype.cpp:3695
+msgid "Report format"
+msgstr "報表格式"
+
+#~ msgid "success"
+#~ msgstr "成功"
+
+#~ msgid "fail"
+#~ msgstr "失敗"
+
+#~ msgid "Resistance..."
+#~ msgstr "抗性..."
+
+#~ msgid "Attack I..."
+#~ msgstr "攻擊I"
+
+#~ msgid "NO"
+#~ msgstr "不是"
+
+#~ msgid "Icon(attacks/)"
+#~ msgstr "图标(attacks/)"
+
+#~ msgid "Is leader special"
+#~ msgstr "君主專用"
+
+#~ msgid "Modify"
+#~ msgstr "修改"
+
+#~ msgid "digit^Level"
+#~ msgstr "級"

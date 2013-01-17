@@ -120,12 +120,16 @@ protected:
 
 	bool cast_tactic(unit& tactician, const map_location& target_loc);
 
+	bool interior(bool browse, unit& u);
+
 	// the perform attack function called after a random seed is obtained
 	void perform_attack(unit& attacker, unit& defender, int attacker_weapon, int defender_weapon, rand_rng::seed_t seed);
 
 	void show_attack_options(const unit_map::const_iterator &u);
 	map_location current_unit_attacks_from(const map_location& loc);
 	map_location current_unit_tactic_from(const map_location& loc);
+	map_location current_unit_interior_from(const map_location& loc);
+	map_location current_unit_technology_tree_from(const map_location& loc);
 	map_location current_unit_build_from(const map_location& loc);
 	unit_map::const_iterator find_unit(const map_location& hex) const;
 	unit_map::iterator find_unit(const map_location& hex);

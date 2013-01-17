@@ -117,47 +117,63 @@ static bool affects_side(const config& cfg, const std::vector<team>& teams, size
 
 bool unit::get_ability_bool(const std::string& ability, const map_location& loc) const
 {
+	const team& current_team = (*resources::teams)[side_ - 1];
+
 	// first check ability that feature resulted
-	if (unit_feature_val(hero_feature_shuttle)) {
-		if (ability == "skirmisher") {
+	if (ability == "skirmisher") {
+		if (unit_feature_val(hero_feature_shuttle)) {
 			return true;
 		}
-	}
-
-	while (unit_feature_val(hero_feature_ambush) || unit_feature_val(hero_feature_concealment) || unit_feature_val(hero_feature_submerge)) {
-		if (ability != "hides") {
-			break;
-		}
-		static config ambush_cfg, concealment_cfg, submerge_cfg;
-		std::vector<config*> cfgs;
-		if (unit_feature_val(hero_feature_ambush)) {
-			if (ambush_cfg.empty()) {
-				config& filter_location = ambush_cfg.add_child("filter_location");
-				filter_location["terrain"] = "*^Fp,*^Fet*,*^Ft,*^Fpa,*^Fd*,*^Fm*";
+		unit_map::iterator it = units_.find(loc);
+		if (it.valid()) {
+			if (it->cancel_zoc()) {
+				return true;
 			}
-			cfgs.push_back(&ambush_cfg);
-		}
-		if (unit_feature_val(hero_feature_concealment)) {
-			if (concealment_cfg.empty()) {
-				config& filter_location = concealment_cfg.add_child("filter_location");
-				filter_location["terrain"] = "*^V*";
-			}
-			cfgs.push_back(&concealment_cfg);
-		}
-		if (unit_feature_val(hero_feature_submerge)) {
-			if (submerge_cfg.empty()) {
-				config& filter_location = submerge_cfg.add_child("filter_location");
-				filter_location["terrain"] = "Wo";
-			}
-			cfgs.push_back(&submerge_cfg);
-		}
-		
-		for (std::vector<config*>::iterator i = cfgs.begin(); i != cfgs.end(); ++ i) {
-			if (matches_filter(vconfig(**i), loc, false)) {
+		} else if (current_team.ignore_zoc_on_wall_) {
+			it = units_.find(loc, false);
+			if (it.valid() && it->wall()) {
 				return true;
 			}
 		}
-		break;
+	} else if (ability == "hides") {
+		if (hide_turns_) {
+			return true;
+		}
+		if (unit_feature_val(hero_feature_ambush) || unit_feature_val(hero_feature_concealment) || unit_feature_val(hero_feature_submerge)) {
+			static config ambush_cfg, concealment_cfg, submerge_cfg;
+			std::vector<config*> cfgs;
+			if (unit_feature_val(hero_feature_ambush)) {
+				if (ambush_cfg.empty()) {
+					config& filter_location = ambush_cfg.add_child("filter_location");
+					filter_location["terrain"] = "*^Fp,*^Fet*,*^Ft,*^Fpa,*^Fd*,*^Fm*";
+				}
+				cfgs.push_back(&ambush_cfg);
+			}
+			if (unit_feature_val(hero_feature_concealment)) {
+				if (concealment_cfg.empty()) {
+					config& filter_location = concealment_cfg.add_child("filter_location");
+					filter_location["terrain"] = "*^V*";
+				}
+				cfgs.push_back(&concealment_cfg);
+			}
+			if (unit_feature_val(hero_feature_submerge)) {
+				if (submerge_cfg.empty()) {
+					config& filter_location = submerge_cfg.add_child("filter_location");
+					filter_location["terrain"] = "Wo";
+				}
+				cfgs.push_back(&submerge_cfg);
+			}
+			
+			for (std::vector<config*>::iterator i = cfgs.begin(); i != cfgs.end(); ++ i) {
+				if (matches_filter(vconfig(**i), loc, false)) {
+					return true;
+				}
+			}
+		}
+	} else if (ability == "indomitable") {
+		if (unit_feature_val(hero_featrue_indomitable)) {
+			return true;
+		}
 	}
 
 	// second check ability that unit_type holded
@@ -210,7 +226,7 @@ unit_ability_list unit::get_abilities(const std::string& ability, const map_loca
 {
 	unit_ability_list res;
 
-	while (unit_feature_val(hero_feature_healer) || unit_feature_val(hero_feature_curer) || unit_feature_val(hero_feature_surveillance)) {
+	while (unit_feature_val(hero_feature_healer) || unit_feature_val(hero_feature_surveillance)) {
 		if (ability != "heals") {
 			break;
 		}
@@ -223,14 +239,6 @@ unit_ability_list unit::get_abilities(const std::string& ability, const map_loca
 				heal_cfg["value"] = 32;
 			}
 			cfgs.push_back(&heal_cfg);
-		}
-		if (unit_feature_val(hero_feature_curer)) {
-			if (cure_cfg.empty()) {
-				cure_cfg["id"] = "curing";
-				cure_cfg["affect_self"] = "yes";
-				cure_cfg["cured"] = "yes";
-			}
-			cfgs.push_back(&cure_cfg);
 		}
 		if (unit_feature_val(hero_feature_surveillance)) {
 			if (surveillance_cfg.empty()) {

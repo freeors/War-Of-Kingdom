@@ -359,14 +359,14 @@ void save_turbo_speed(const double speed)
 	prefs["turbo_speed"] = speed;
 }
 
-bool idle_anim()
+bool default_move()
 {
-	return  get("idle_anim", true);
+	return  get("default_move", true);
 }
 
-void _set_idle_anim(const bool ison)
+void _set_default_move(const bool ison)
 {
-	prefs["idle_anim"] = ison;
+	prefs["default_move"] = ison;
 }
 
 int idle_anim_rate()

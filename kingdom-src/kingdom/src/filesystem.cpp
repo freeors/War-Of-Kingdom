@@ -1423,4 +1423,36 @@ std::string conv_ansi_utf8_2(const std::string &name, bool a2u)
 
 	return result;
 }
+
+const char* utf8_2_ansi(const char* str)
+{
+	static const int wlen = 8192;
+	static WCHAR wc[wlen];
+	static char ac[wlen * 2];
+
+	ac[0] = '\0';
+	if (!str || str[0] == '\0') {
+		return ac;
+	}
+	if (MultiByteToWideChar(CP_UTF8, 0, str, -1, wc, wlen) == 0) {
+		return ac;
+	}
+	WideCharToMultiByte(CP_ACP, 0, wc, -1, ac, wlen * 2, NULL, NULL);
+	return ac;
+}
+
+#else
+
+const char* utf8_2_ansi(const char* str)
+{
+	static const int wlen = 8192;
+	static char ac[wlen * 2];
+
+	ac[0] = '\0';
+	if (str) {
+		strcpy(ac, str);
+	}
+	return ac;
+}
+
 #endif

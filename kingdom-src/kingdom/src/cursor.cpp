@@ -84,13 +84,8 @@ SDL_Cursor* cache[cursor::NUM_CURSORS] = { NULL, NULL, NULL, NULL, NULL, NULL, N
 
 // This array must have members corresponding to cursor::CURSOR_TYPE enum members
 // Apple need 16x16 b&w cursors
-#ifdef __APPLE__
-const std::string bw_images[cursor::NUM_CURSORS] = { "normal.png", "wait-alt.png", "move.png", "attack.png", "tactic.png", "build.png", "select.png", "move_drag_alt.png" , "attack_drag_alt.png", "tactic_drag.png", "build_drag.png", "no_cursor.png"};
-#else
-const std::string bw_images[cursor::NUM_CURSORS] = { "normal.png", "wait.png", "move.png", "attack.png", "tactic.png", "build.png", "enter.png", "illegal.png", "standby.png", "select.png", "move_drag.png", "attack_drag.png", "tactic_drag.png", "build_drag.png", "enter_drag.png", "illegal_drag.png", "standby_drag.png", "no_cursor.png"};
-#endif
-
-const std::string color_images[cursor::NUM_CURSORS] = { "normal.png", "wait.png", "move.png", "attack.png", "tactic.png", "build.png", "enter.png", "illegal.png", "standby.png", "select.png", "move_drag.png", "attack_drag.png", "tactic_drag.png", "build_drag.png", "enter_drag.png", "illegal_drag.png", "standby_drag.png", ""};
+const std::string color_images[cursor::NUM_CURSORS] = { "normal.png", "wait.png", "move.png", "attack.png", "tactic.png", "build.png", "enter.png", "illegal.png", "standby.png", "interior.png", "technology.png", "select.png", 
+	"move_drag.png", "attack_drag.png", "tactic_drag.png", "build_drag.png", "enter_drag.png", "illegal_drag.png", "standby_drag.png", "interior_drag.png", "technology_drag.png", ""};
 
 // Position of the hotspot of the cursor, from the normal topleft
 const int shift_x[cursor::NUM_CURSORS] = {0, 0, 0, 0, 0, 0, 0, 2, 3, 0, 0, 0};
@@ -109,7 +104,7 @@ static SDL_Cursor* get_cursor(cursor::CURSOR_TYPE type)
 {
 	if(cache[type] == NULL) {
 		static const std::string prefix = "cursors-bw/";
-		const surface surf(image::get_image(prefix + bw_images[type]));
+		const surface surf(image::get_image(prefix + color_images[type]));
 		cache[type] = create_cursor(surf);
 	}
 
@@ -205,6 +200,12 @@ void set_dragging(bool drag)
 			break;
 		case ENTER_DRAG:
 			if (!drag) cursor::set(ENTER);
+			break;
+		case INTERIOR:
+			if (drag) cursor::set(INTERIOR_DRAG);
+			break;
+		case TECHNOLOGY_TREE:
+			if (drag) cursor::set(TECHNOLOGY_TREE_DRAG);
 			break;
 		default:
 			break;

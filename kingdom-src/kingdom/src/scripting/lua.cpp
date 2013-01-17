@@ -3199,7 +3199,7 @@ static int intf_add_modification(lua_State *L)
 		return luaL_argerror(L, 2, "unknown modification type");
 
 	config cfg = luaW_checkconfig(L, 3);
-	u->add_modification(sm, cfg);
+	u->add_modification(cfg);
 	return 0;
 }
 

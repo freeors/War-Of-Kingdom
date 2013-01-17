@@ -32,6 +32,7 @@ class unit_type;
 
 namespace gui2 {
 
+class twindow;
 class tlistbox;
 
 class tplay_card : public tdialog
@@ -52,7 +53,7 @@ private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
-	void discard(bool& handled, bool& halt, twindow& window, int index);
+	void discard(bool& handled, bool& halt, int index);
 
 	void card_selected(twindow& window);
 	void refresh_tooltip(twindow& window);
@@ -70,6 +71,7 @@ private:
 	int card_index_;
 
 	tlistbox* hero_table_;
+	twindow* window_;
 };
 
 }

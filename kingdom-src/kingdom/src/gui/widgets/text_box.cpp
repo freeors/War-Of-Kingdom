@@ -223,6 +223,9 @@ void ttext_box::handle_mouse_selection(tpoint mouse, const bool start_selection)
 	   mouse.y >= static_cast<int>(text_y_offset_ + text_height_)) {
 		return;
 	}
+    if (text().empty()) {
+        return;
+    }
 
 	int offset = get_column_line(tpoint(
 		mouse.x - text_x_offset_, mouse.y - text_y_offset_)).x;

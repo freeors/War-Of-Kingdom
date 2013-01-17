@@ -2230,7 +2230,7 @@ msgid "Custom"
 msgstr ""
 
 #: src/game_preferences_display.cpp:204
-msgid "Show Unit Idle Animations"
+msgid "When sneak wall, force to move"
 msgstr ""
 
 #: src/game_preferences_display.cpp:206
@@ -3453,6 +3453,9 @@ msgstr ""
 msgid "Adaptability"
 msgstr ""
 
+msgid "Arms"
+msgstr ""
+
 msgid "Skill"
 msgstr ""
 
@@ -3614,6 +3617,9 @@ msgstr ""
 msgid "Level"
 msgstr ""
 
+msgid "Character"
+msgstr ""
+
 msgid "Fresh Hero"
 msgstr ""
 
@@ -3656,7 +3662,7 @@ msgstr ""
 msgid "Units"
 msgstr ""
 
-msgid "Navigation Civilization"
+msgid "Navigation civilization"
 msgstr ""
 
 msgid "Card"
@@ -3866,7 +3872,16 @@ msgstr ""
 msgid "Exploiture"
 msgstr ""
 
-msgid "Appoint"
+msgid "Current mayor"
+msgstr ""
+
+msgid "If appoint new mayor"
+msgstr ""
+
+msgid "Select desired mayor"
+msgstr ""
+
+msgid "Appoint mayor"
 msgstr ""
 
 #
@@ -4043,3 +4058,31 @@ msgstr ""
 
 msgid "tactic^Cast"
 msgstr ""
+
+#
+# Technology tree
+#
+msgid "Technology tree"
+msgstr ""
+
+msgid "Technology"
+msgstr ""
+
+msgid "Browse"
+msgstr ""
+
+msgid "Researching"
+msgstr ""
+
+msgid "Research"
+msgstr ""
+
+#
+# Selectable attack/move to wall
+#
+msgid "Attack wall"
+msgstr ""
+
+msgid "Move to wall"
+msgstr ""
+

@@ -89,9 +89,9 @@ bool u16_get_experience_i9(uint16_t* field, uint16_t inc_xp);
 bool u16_get_experience_i12(uint16_t* field, uint16_t inc_xp);
 
 class hero_map;
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 class config;
 class unit;
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 class unit_map;
 class team;
 class vconfig;
@@ -214,7 +214,7 @@ enum {
 enum {
 	hero_skill_min = 0,
 	hero_skill_commercial = hero_skill_min,
-	hero_skill_t1,
+	hero_skill_invent,
 	hero_skill_t2,
 	hero_skill_encourage,
 	hero_skill_hero,
@@ -268,7 +268,7 @@ enum {
 	hero_feature_dayattack,
 	hero_feature_nightattack,
 	hero_featrue_frighten,
-	hero_feature_curer,
+	hero_featrue_indomitable,
 
 	hero_feature_complex_min = HEROS_BASE_FEATURE_COUNT,
 
@@ -315,6 +315,9 @@ enum {
 #define HEROS_NO_TACTIC			0xff
 #define HERO_PREFIX_STR_TACTIC	"tactic-"
 #define HERO_PREFIX_STR_TACTIC_DESC	"tactic_desc-"
+
+#define HERO_PREFIX_STR_TECHNOLOGY	"technology-"
+#define HERO_PREFIX_STR_TECHNOLOGY_DESC	"technology_desc-"
 
 struct hero_5fields_t {
 	uint16_t leadership_;
@@ -369,6 +372,62 @@ struct hero_fields_t {
 	HERO_FIELDS;
 }; 
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+class hero;
+namespace rpg {
+	extern hero* h;
+	extern int stratum;
+	extern std::set<unit*> humans;
+	extern int forbids;
+}
+#endif
+
+namespace increase_xp {
+// use to increase unit's xp
+struct ublock {
+	bool xp;
+	bool leadership;
+	bool force;
+	bool intellect;
+	bool politics;
+	bool charm;
+	bool meritorious;
+	bool abilityx2;
+	bool arms;
+	bool armsx2;
+	bool skill[HEROS_MAX_SKILL];
+	bool skillx2;
+};
+
+// use to increase hero's xp
+struct hblock {
+	int leadership;
+	int force;
+	int intellect;
+	int politics;
+	int charm;
+	int meritorious;
+	int arms[HEROS_MAX_ARMS];
+	int skill[HEROS_MAX_SKILL];
+};
+
+extern ublock ub;
+ublock& generic_ublock();
+ublock& attack_ublock(const unit& attack, bool opp_is_artifical = false);
+ublock& turn_ublock(const unit& u);
+ublock& exploiture_ublock(int markets, int technologies, bool abilityx2, bool skillx2);
+
+extern hblock hb;
+hblock& generic_hblock();
+hblock& exploiture_hblock(int markets, int technologies, bool abilityx2, bool skillx2, int xp);
+
+extern int ability_per_xp;
+extern int arms_per_xp;
+extern int skill_per_xp;
+extern int meritorious_per_xp;
+extern int navigation_per_xp;
+}
+
 class hero: public hero_fields_t
 {
 public:
@@ -386,6 +445,7 @@ public:
 	static const std::string& character_str(int cid);
 
 	static int number_market;
+	static int number_technology;
 	static int number_wall;
 	static int number_keep;
 	static int number_tower;
@@ -440,6 +500,7 @@ public:
 	bool internal_matches_filter(const vconfig& cfg);
 	void increase_feeling_each(unit_map& units, hero_map& heros, hero& to, int inc);
 #endif
+	bool get_xp(const increase_xp::hblock& hb);
 
 // attribute
 public:
@@ -468,14 +529,6 @@ private:
 	std::string ambition_str_;
 };
 
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
-namespace rpg {
-	extern hero* h;
-	extern int stratum;
-	extern std::set<unit*> humans;
-	extern int forbids;
-} // end of namespace rpg
-#endif
 
 bool compare_leadership(const hero* lhs, const hero* rhs);
 bool compare_politics(const hero* lhs, const hero* rhs);

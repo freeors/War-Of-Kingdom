@@ -297,10 +297,12 @@ SDL_Rect extend_rectangle(const gamemap& map, int x, int y, int radius);
 
 void post_duel(unit& left_u, hero& left, unit& right_u, hero& right, int percentage);
 
-int calculate_exploiture(const hero& h1, const hero& h2, const hero& h3, int artificals = 0);
+int calculate_exploiture(const hero& h1, const hero& h2, int type);
 
 void do_recruit(unit_map& units, hero_map& heros, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost_exponent, bool human);
 
 void cast_tactic(unit_map& units, unit& tactician, hero& h, bool replay = false);
+
+void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std::string& type, const std::string& relative, int ratio);
 
 #endif

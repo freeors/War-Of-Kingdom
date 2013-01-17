@@ -1,9 +1,4 @@
-/*
-	兵种树树形视图中每个结点的lParam值有特珠意义
-	1)根结点: 0（未使用）
-	2)非结点：该兵种在tv_tree_这个std::vector中索引
-*/
-#define GETTEXT_DOMAIN "wesnoth"
+#define GETTEXT_DOMAIN "wesnoth-maker"
 
 #include "global.hpp"
 #include "game_config.hpp"
@@ -11,6 +6,7 @@
 #include "loadscreen.hpp"
 #include "DlgCoreProc.hpp"
 #include "gettext.hpp"
+#include "formula_string_utils.hpp"
 #include <string.h>
 
 #include "resource.h"
@@ -38,6 +34,12 @@ namespace ns {
 	int iico_tactic_range;
 	int iico_tactic_action;
 	int iico_tactic_txt;
+
+	HIMAGELIST himl_technology;
+	int iico_technology_technology;	
+	int iico_technology_experience;
+	int iico_technology_action;
+	int iico_technology_txt;
 }
 
 std::map<int, std::string> tcore::name_map;
@@ -66,9 +68,6 @@ tcore::tcore()
 
 tcore::~tcore()
 {
-	for (std::vector<node*>::iterator it = utype_tree_.begin(); it != utype_tree_.end(); ++ it) {
-		delete *it;
-	}
 	if (map_) {
 		delete map_;
 	}
@@ -110,19 +109,22 @@ HWND tcore::init_toolbar(HINSTANCE hinst, HWND hdlgP)
 	return gdmgr._htb_core;
 }
 
-void tcore::tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<node>& advances_to, const std::vector<std::string>& advances_from2)
+void tcore::utype_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<advance_tree::node>& advances_to, const std::vector<std::string>& advances_from2)
 {
 	char text[_MAX_PATH];
 	HTREEITEM htvi;
 	std::stringstream strstr;
+	utils::string_map symbols;
 	std::vector<std::string> advances_from = advances_from2;
 
 	size_t index = 0;
-	for (std::vector<node>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it, index ++) {
-		const unit_type* current = it->current;
+	for (std::vector<advance_tree::node>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it, index ++) {
+		const unit_type* current = dynamic_cast<const unit_type*>(it->current);
 		htvi = TreeView_AddLeaf(hctl, htvroot);
 		strstr.str("");
-		strstr << utf8_2_ansi(current->type_name().c_str()) << "(" << current->id() << ")[" << current->level() << "级]";
+		strstr << utf8_2_ansi(current->type_name().c_str()) << "(" << current->id() << ")[";
+		symbols["level"] = lexical_cast_default<std::string>(current->level());
+		strstr << utf8_2_ansi(vgettext2("Lv$level", symbols).c_str()) << "]";
 		strcpy(text, strstr.str().c_str());
 		// 枚举到此为止,此个config一定有孩子,强制让出来前面+符号
 		LPARAM lParam = tv_tree_.size();
@@ -132,31 +134,34 @@ void tcore::tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<n
 		} else {
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
 			advances_from.push_back(current->id());
-			tree_2_tv_internal(hctl, htvi, it->advances_to, advances_from);
+			utype_tree_2_tv_internal(hctl, htvi, it->advances_to, advances_from);
 			TreeView_Expand(hctl, htvi, TVE_EXPAND);
 		}
 	}
 }
 
 // void advancement_tree_internal(const unit_type& current, 
-void tcore::tree_2_tv(HWND hctl, HTREEITEM htvroot)
+void tcore::utype_tree_2_tv(HWND hctl, HTREEITEM htvroot)
 {
 	char text[_MAX_PATH];
 	HTREEITEM htvi;
 	std::stringstream strstr;
+	utils::string_map symbols;
 	std::vector<std::string> advances_from;
 
 	size_t index = 0;
-	for (std::vector<node*>::const_iterator it = utype_tree_.begin(); it != utype_tree_.end(); ++ it, index ++) {
-		const node* n = *it;
-		const unit_type* current = n->current;
+	const std::vector<advance_tree::node*>& utype_tree = unit_types.utype_tree();
+	for (std::vector<advance_tree::node*>::const_iterator it = utype_tree.begin(); it != utype_tree.end(); ++ it, index ++) {
+		const advance_tree::node* n = *it;
+		const unit_type* current = dynamic_cast<const unit_type*>(n->current);
 		htvi = TreeView_AddLeaf(hctl, htvroot);
 		strstr.str("");
 		strstr << std::setw(2) << std::setfill('0') << index << ": " << utf8_2_ansi(current->type_name().c_str()) << "(" << current->id() << ")";
 		if (!current->packer()) {
-			strstr << "[" << current->level() << "级]";
+			symbols["level"] = lexical_cast_default<std::string>(current->level());
+			strstr << "[" << utf8_2_ansi(vgettext2("Lv$level", symbols).c_str()) << "]";
 		} else {
-			strstr << "[打包]";
+			strstr << "[" << utf8_2_ansi(_("Packer")) << "]";
 		}
 		strcpy(text, strstr.str().c_str());
 		// 枚举到此为止,此个config一定有孩子,强制让出来前面+符号
@@ -168,114 +173,80 @@ void tcore::tree_2_tv(HWND hctl, HTREEITEM htvroot)
 		} else {
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
 			advances_from.push_back(current->id());
-			tree_2_tv_internal(hctl, htvi, n->advances_to, advances_from);
+			utype_tree_2_tv_internal(hctl, htvi, n->advances_to, advances_from);
 			TreeView_Expand(hctl, htvi, TVE_EXPAND);
 		}
 	}
 }
 
-void tcore::generate_utype_tree_internal(const unit_type& current, std::vector<node>& advances_to, bool& to_branch)
+void tcore::technology_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<advance_tree::node>& advances_to, const std::vector<std::string>& advances_from2)
 {
-	for (std::vector<node>::iterator it2 = advances_to.begin(); it2 != advances_to.end(); ++ it2) {
-		const std::vector<std::string>& advances_to = it2->current->advances_to();
-		if (std::find(advances_to.begin(), advances_to.end(), current.id()) != advances_to.end()) {
-			it2->advances_to.push_back(node(&current));
-			to_branch = true;
+	char text[_MAX_PATH];
+	HTREEITEM htvi;
+	std::stringstream strstr;
+	utils::string_map symbols;
+	std::vector<std::string> advances_from = advances_from2;
+
+	size_t index = 0;
+	for (std::vector<advance_tree::node>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it, index ++) {
+		const technology* current = dynamic_cast<const technology*>(it->current);
+		htvi = TreeView_AddLeaf(hctl, htvroot);
+		strstr.str("");
+		strstr << utf8_2_ansi(current->name().c_str()) << "(" << current->id() << ")[";
+		symbols["level"] = lexical_cast_default<std::string>(current->max_experience());
+		strstr << utf8_2_ansi(vgettext2("Lv$level", symbols).c_str()) << "]";
+		strcpy(text, strstr.str().c_str());
+		// 枚举到此为止,此个config一定有孩子,强制让出来前面+符号
+		LPARAM lParam = technology_tv_.size();
+		technology_tv_.push_back(std::make_pair<std::string, std::vector<std::string> >(current->id(), advances_from));
+		if (it->advances_to.empty()) {
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
+		} else {
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
+			advances_from.push_back(current->id());
+			technology_tree_2_tv_internal(hctl, htvi, it->advances_to, advances_from);
+			TreeView_Expand(hctl, htvi, TVE_EXPAND);
 		}
-		generate_utype_tree_internal(current, it2->advances_to, to_branch);
 	}
 }
 
-void tcore::hang_branch_internal(std::vector<node>& advances_to, bool& hang_branch)
+void tcore::technology_tree_2_tv(HWND hctl, HTREEITEM htvroot)
 {
-	size_t size = utype_tree_.size();
-	for (std::vector<node>::iterator it = advances_to.begin(); it != advances_to.end(); ++ it) {
-		node* n = &*it;
-		const std::vector<std::string>& advances_to = n->current->advances_to();
-		for (size_t hanging = 0; hanging < size; hanging ++) {
-			if (!utype_tree_[hanging]) {
-				continue;
-			}
-			node* hanging_n = utype_tree_[hanging];
-			if (std::find(advances_to.begin(), advances_to.end(), hanging_n->current->id()) != advances_to.end()) {
-				n->advances_to.push_back(*hanging_n);
-				delete hanging_n;
-				utype_tree_[hanging] = NULL;
-				hang_branch = true;
-			}
+	char text[_MAX_PATH];
+	HTREEITEM htvi;
+	std::stringstream strstr;
+	utils::string_map symbols;
+	std::vector<std::string> advances_from;
+
+	size_t index = 0;
+	const std::vector<advance_tree::node*>& technology_tree = unit_types.technology_tree();
+	for (std::vector<advance_tree::node*>::const_iterator it = technology_tree.begin(); it != technology_tree.end(); ++ it, index ++) {
+		const advance_tree::node* n = *it;
+		const technology* current = dynamic_cast<const technology*>(n->current);
+		htvi = TreeView_AddLeaf(hctl, htvroot);
+		strstr.str("");
+		strstr << std::setw(2) << std::setfill('0') << index << ": " << utf8_2_ansi(current->name().c_str()) << "(" << current->id() << ")";
+		symbols["level"] = lexical_cast_default<std::string>(current->max_experience());
+		strstr << "[" << utf8_2_ansi(vgettext2("Lv$level", symbols).c_str()) << "]";
+		strcpy(text, strstr.str().c_str());
+		// 枚举到此为止,此个config一定有孩子,强制让出来前面+符号
+		LPARAM lParam = technology_tv_.size();
+		advances_from.clear();
+		technology_tv_.push_back(std::make_pair<std::string, std::vector<std::string> >(current->id(), advances_from));
+		if (n->advances_to.empty()) {
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
+		} else {
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
+			advances_from.push_back(current->id());
+			technology_tree_2_tv_internal(hctl, htvi, n->advances_to, advances_from);
+			TreeView_Expand(hctl, htvi, TVE_EXPAND);
 		}
-		hang_branch_internal(n->advances_to, hang_branch);
 	}
 }
 
 void tcore::generate_utype_tree()
 {
-	for (std::vector<node*>::iterator it = utype_tree_.begin(); it != utype_tree_.end(); ++ it) {
-		delete *it;
-	}
-	utype_tree_.clear();
 	types_updating_.clear();
-
-	const unit_type_data::unit_type_map& types = unit_types.types();
-	for (std::map<std::string, unit_type>::const_iterator it = types.begin(); it != types.end(); ++ it) {
-		const unit_type& current = it->second;
-		bool to_branch = false;
-		for (std::vector<node*>::iterator it2 = utype_tree_.begin(); it2 != utype_tree_.end(); ++ it2) {
-			node* n = *it2;
-			const std::vector<std::string>& advances_to = n->current->advances_to();
-			if (std::find(advances_to.begin(), advances_to.end(), current.id()) != advances_to.end()) {
-				n->advances_to.push_back(node(&current));
-				to_branch = true;
-			}
-			generate_utype_tree_internal(current, n->advances_to, to_branch);
-		}
-		if (!to_branch) {
-			utype_tree_.push_back(new node(&current));
-		}
-	}
-
-	// check every teminate node, if necessary, hang root-branch to it.
-	size_t size = utype_tree_.size();
-	int max_hang_times = 2;
-	bool hang_branch = false;
-	do {
-		hang_branch = false;
-		for (size_t analysing = 0; analysing < size; analysing ++) {
-			if (!utype_tree_[analysing]) {
-				continue;
-			}
-			// search terminate node
-			node* n = utype_tree_[analysing];
-			const std::vector<std::string>& advances_to = n->current->advances_to();
-			for (size_t hanging = 0; hanging < size; hanging ++) {
-				if (!utype_tree_[hanging]) {
-					continue;
-				}
-				node* hanging_n = utype_tree_[hanging];
-				if (std::find(advances_to.begin(), advances_to.end(), hanging_n->current->id()) != advances_to.end()) {
-					n->advances_to.push_back(*hanging_n);
-					delete hanging_n;
-					utype_tree_[hanging] = NULL;
-					hang_branch = true;
-				}
-			}
-			hang_branch_internal(n->advances_to, hang_branch);
-		}
-	} while (-- max_hang_times && hang_branch);
-
-	if (hang_branch) {
-		// I think, one while is enogh.
-		int ii = 0;
-	}
-
-	// remove branch that is NULL.
-	for (std::vector<node*>::iterator it = utype_tree_.begin(); it != utype_tree_.end(); ) {
-		if (*it == NULL) {
-			it = utype_tree_.erase(it);
-		} else {
-			++ it;
-		}
-	}
 }
 
 bool tcore::new_utype()
@@ -300,8 +271,9 @@ bool tcore::new_utype()
 		utype.resistance_[*it] = 0;
 	}
 	// advances_to
-	for (std::vector<tcore::node*>::const_iterator it = ns::core.utype_tree_.begin(); it != ns::core.utype_tree_.end(); ++ it) {
-		const unit_type* that = (*it)->current;
+	const std::vector<advance_tree::node*>& utype_tree = unit_types.utype_tree();
+	for (std::vector<advance_tree::node*>::const_iterator it = utype_tree.begin(); it != utype_tree.end(); ++ it) {
+		const unit_type* that = dynamic_cast<const unit_type*>((*it)->current);
 		if (that->packer()) {
 			continue;
 		}
@@ -350,8 +322,8 @@ bool tcore::save_if_dirty()
 		std::stringstream title, message;
 		HWND hdlgP = gdmgr._hdlg_core;
 
-		title << "保存修改"; 
-		message << "核心数据有改动，您想保存修改吗？";
+		title << utf8_2_ansi(_("Save modify")); 
+		message << utf8_2_ansi(_("Core data is dirty, do you want to save modify?"));
 
 		int retval = MessageBox(gdmgr._htb_core, message.str().c_str(), title.str().c_str(), MB_YESNO);
 		bool ret;
@@ -432,15 +404,17 @@ void tcore::refresh_utype(HWND hdlgP)
 		}
 	}
 	if (tunit_type::type_map_.empty()) {
-		tunit_type::type_map_[tunit_type::TYPE_TROOP] = "部队";
-		tunit_type::type_map_[tunit_type::TYPE_CITY] = "城市";
-		tunit_type::type_map_[tunit_type::TYPE_ARTIFICAL] = "建筑物";
+		tunit_type::type_map_[tunit_type::TYPE_TROOP] = utf8_2_ansi(_("Troop"));
+		tunit_type::type_map_[tunit_type::TYPE_CITY] = utf8_2_ansi(_("City"));
+		tunit_type::type_map_[tunit_type::TYPE_ARTIFICAL] = utf8_2_ansi(_("Artifical"));
 	}
-	if (tunit_type::artifical_hero_.empty()) {
-		tunit_type::artifical_hero_[hero::number_market] = "市场";
-		tunit_type::artifical_hero_[hero::number_wall] = "城墙";
-		tunit_type::artifical_hero_[hero::number_keep] = "主楼";
-		tunit_type::artifical_hero_[hero::number_tower] = "箭塔";
+	tunit_type::artifical_hero_.clear();
+	if (gdmgr.heros_.size()) {
+		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_market]);
+		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_wall]);
+		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_keep]);
+		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_tower]);
+		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_technology]);
 	}
 	if (types_updating_.empty()) {
 		generate_utype_tree();
@@ -455,12 +429,12 @@ void tcore::refresh_utype(HWND hdlgP)
 	// 2. 向TreeView添加一级内容
 	htvroot_utype_ = TreeView_AddLeaf(hctl, TVI_ROOT);
 	strstr.str("");
-	strstr << "兵种(" << unit_types.types().size() << ")";
+	strstr << utf8_2_ansi(_("arms^Type")) << "(" << unit_types.types().size() << ")";
 	strcpy(text, strstr.str().c_str());
 	// 这里一定要设TVIF_CHILDREN, 否则接下折叠后将判断出其cChildren为0, 再不能展开
 	TreeView_SetItem1(hctl, htvroot_utype_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
 		unit_types.types().size()? 1: 0, text);
-	tree_2_tv(hctl, htvroot_utype_);
+	utype_tree_2_tv(hctl, htvroot_utype_);
 
 	TreeView_Expand(hctl, htvroot_utype_, TVE_EXPAND);
 }
@@ -470,11 +444,6 @@ void tcore::refresh_tactic(HWND hdlgP)
 	char text[_MAX_PATH];
 	std::stringstream strstr;
 
-/*
-	if (types_updating_.empty()) {
-		generate_utype_tree();
-	}
-*/
 	HWND hctl_atom = GetDlgItem(hdlgP, IDC_TV_TACTIC_ATOM);
 	HWND hctl_complex = GetDlgItem(hdlgP, IDC_TV_TACTIC_COMPLEX);
 
@@ -485,7 +454,7 @@ void tcore::refresh_tactic(HWND hdlgP)
 	// 2. fill content
 	htvroot_tactic_atom_ = TreeView_AddLeaf(hctl_atom, TVI_ROOT);
 	strstr.str("");
-	strstr << "原子战法";
+	strstr << utf8_2_ansi(_("Atomic tactic"));
 	strcpy(text, strstr.str().c_str());
 	// 这里一定要设TVIF_CHILDREN, 否则接下折叠后将判断出其cChildren为0, 再不能展开
 	TreeView_SetItem1(hctl_atom, htvroot_tactic_atom_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
@@ -493,7 +462,7 @@ void tcore::refresh_tactic(HWND hdlgP)
 
 	htvroot_tactic_complex_ = TreeView_AddLeaf(hctl_complex, TVI_ROOT);
 	strstr.str("");
-	strstr << "复合战法";
+	strstr << utf8_2_ansi(_("Complex tactic"));
 	strcpy(text, strstr.str().c_str());
 	TreeView_SetItem1(hctl_complex, htvroot_tactic_complex_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
 		1, text);
@@ -526,13 +495,14 @@ void tcore::refresh_tactic(HWND hdlgP)
 		// description
 		htvi = TreeView_AddLeaf(hctl, htvroot);
 		strstr.str("");
-		strstr << "描述: " << utf8_2_ansi(t.description().c_str());
+		strstr << utf8_2_ansi(_("Description")) << ": ";
+		strstr << utf8_2_ansi(t.description().c_str());
 		strcpy(text, strstr.str().c_str());
 		TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, ns::iico_tactic_txt, ns::iico_tactic_txt, 0, text);
 
 		htvi = TreeView_AddLeaf(hctl, htvroot);
 		strstr.str("");
-		strstr << "消耗: " << t.point();
+		strstr << utf8_2_ansi(_("Point")) << ": " << t.point();
 		strcpy(text, strstr.str().c_str());
 		TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_tactic_txt, ns::iico_tactic_txt, 0, text);
 
@@ -541,48 +511,45 @@ void tcore::refresh_tactic(HWND hdlgP)
 			bool first = true;
 			htvi = TreeView_AddLeaf(hctl, htvroot);
 			strstr.str("");
-			strstr << "范围: ";
+			strstr << utf8_2_ansi(_("Range")) << ": ";
 			if (t.range() & ttactic::SELF) {
-				strstr << "自已";
+				strstr << utf8_2_ansi(_("Myself"));
 				first = false;
 			}
 			if (t.range() & ttactic::FRIEND) {
 				if (!first) {
 					strstr << ", ";
 				}
-				strstr << "友军";
+				strstr << utf8_2_ansi(_("troop^Friend"));
 				first = false;
 			}
 			if (t.range() & ttactic::ENEMY) {
 				if (!first) {
 					strstr << ", ";
 				}
-				strstr << "敌军";
+				strstr << utf8_2_ansi(_("troop^Enemy"));
 				first = false;
 			}
 			strcpy(text, strstr.str().c_str());
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_tactic_range, ns::iico_tactic_range, 0, text);
 
-			const config& action = t.action_cfg();
-			foreach (const config& effect, action.child_range("effect")) {
-				const std::string apply_to = effect["apply_to"].str();
+				int apply_to = t.apply_to();
 				htvi = TreeView_AddLeaf(hctl, htvroot);
 				strstr.str("");
-				if (apply_to == "resistance") {
-					strstr << "防御";
-				} else if (apply_to == "attack") {
-					strstr << "攻击";
-				} else if (apply_to == "encourage") {
-					strstr << "士气";
-				} else if (apply_to == "demolish") {
-					strstr << "破坏";
+				if (apply_to == apply_to_tag::RESISTANCE) {
+					strstr << utf8_2_ansi(_("Defend"));
+				} else if (apply_to == apply_to_tag::ATTACK) {
+					strstr << utf8_2_ansi(_("Attack"));
+				} else if (apply_to == apply_to_tag::ENCOURAGE) {
+					strstr << utf8_2_ansi(_("Will"));
+				} else if (apply_to == apply_to_tag::DEMOLISH) {
+					strstr << utf8_2_ansi(_("Demolish"));
 				}
 				strcpy(text, strstr.str().c_str());
 				TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_tactic_action, ns::iico_tactic_action, 1, text);
-			}
 		} else {
 			strstr.str("");
-			strstr << "子战法: ";
+			strstr << utf8_2_ansi(_("tactic^Child")) << ": ";
 			const std::vector<const ttactic*>& parts = t.parts();
 			for (std::vector<const ttactic*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
 				const ttactic& part = **it2;
@@ -596,19 +563,6 @@ void tcore::refresh_tactic(HWND hdlgP)
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_tactic_txt, ns::iico_tactic_txt, 0, text);
 		}
 
-/*
-		LPARAM lParam = tv_tree_.size();
-		advances_from.clear();
-		tv_tree_.push_back(std::make_pair<std::string, std::vector<std::string> >(current->id(), advances_from));
-		if (n->advances_to.empty()) {
-			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
-		} else {
-			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
-			advances_from.push_back(current->id());
-			tree_2_tv_internal(hctl, htvi, n->advances_to, advances_from);
-			TreeView_Expand(hctl, htvi, TVE_EXPAND);
-		}
-*/
 		TreeView_Expand(hctl, htvi_tactic, TVE_EXPAND);
 	}
 
@@ -616,22 +570,214 @@ void tcore::refresh_tactic(HWND hdlgP)
 	TreeView_Expand(hctl_complex, htvroot_tactic_complex_, TVE_EXPAND);
 }
 
+void tcore::refresh_technology(HWND hdlgP)
+{
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_EXPLORER);
+
+	// 1. 删除Treeview中所有项
+	TreeView_DeleteAllItems(hctl);
+	technology_tv_.clear();
+
+	// 2. 向TreeView添加一级内容
+	htvroot_technology_ = TreeView_AddLeaf(hctl, TVI_ROOT);
+	strstr.str("");
+	strstr << dgettext_2_ansi("wesnoth-lib", "Technology tree") << "(" << unit_types.technologies().size() << ")";
+	strcpy(text, strstr.str().c_str());
+	// 这里一定要设TVIF_CHILDREN, 否则接下折叠后将判断出其cChildren为0, 再不能展开
+	TreeView_SetItem1(hctl, htvroot_technology_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
+		unit_types.technologies().size()? 1: 0, text);
+	technology_tree_2_tv(hctl, htvroot_technology_);
+
+	TreeView_Expand(hctl, htvroot_technology_, TVE_EXPAND);
+}
+
+void tcore::refresh_technology2(HWND hdlgP)
+{
+	std::stringstream strstr;
+	char text[_MAX_PATH];
+	HWND hctl_atom = GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_ATOM);
+	HWND hctl_complex = GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_COMPLEX);
+
+	// 1. clear treeview
+	TreeView_DeleteAllItems(hctl_atom);
+	TreeView_DeleteAllItems(hctl_complex);
+
+	// 2. fill content
+	htvroot_technology_atom_ = TreeView_AddLeaf(hctl_atom, TVI_ROOT);
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Atomic technology"));
+	strcpy(text, strstr.str().c_str());
+	// 这里一定要设TVIF_CHILDREN, 否则接下折叠后将判断出其cChildren为0, 再不能展开
+	TreeView_SetItem1(hctl_atom, htvroot_technology_atom_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
+		1, text);
+
+	htvroot_technology_complex_ = TreeView_AddLeaf(hctl_complex, TVI_ROOT);
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Complex technology"));
+	strcpy(text, strstr.str().c_str());
+	TreeView_SetItem1(hctl_complex, htvroot_technology_complex_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
+		1, text);
+
+	HTREEITEM htvi_technology, htvi;
+
+	const std::map<std::string, technology>& technologies = unit_types.technologies();
+	int atom_index = 0, complex_index = 0;
+	for (std::map<std::string, technology>::const_iterator it = technologies.begin(); it != technologies.end(); ++ it) {
+		const technology& t = it->second;
+		HWND hctl;
+		HTREEITEM htvroot;
+		int index;
+		if (!t.complex()) {
+			hctl = hctl_atom;
+			htvroot = htvroot_technology_atom_;
+			index = atom_index ++;
+		} else {
+			hctl = hctl_complex;
+			htvroot = htvroot_technology_complex_;
+			index = complex_index ++;
+		}
+		htvi_technology = TreeView_AddLeaf(hctl, htvroot);
+		LPARAM lParam = index;
+		strstr.str("");
+		strstr << std::setw(2) << std::setfill('0') << index << ": " << utf8_2_ansi(t.name().c_str()) << "(" << t.id() << ")";
+		strcpy(text, strstr.str().c_str());
+		TreeView_SetItem2(hctl, htvi_technology, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
+
+		htvroot = htvi_technology;
+		// description
+		htvi = TreeView_AddLeaf(hctl, htvroot);
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Description")) << ": ";
+		strstr << utf8_2_ansi(t.description().c_str());
+		strcpy(text, strstr.str().c_str());
+		TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, ns::iico_technology_txt, ns::iico_technology_txt, 0, text);
+
+		htvi = TreeView_AddLeaf(hctl, htvroot);
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Experience")) << ": " << t.max_experience();
+		strcpy(text, strstr.str().c_str());
+		TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_technology_txt, ns::iico_technology_txt, 0, text);
+
+		if (!t.complex()) {
+			// occasion
+			bool first = true;
+			htvi = TreeView_AddLeaf(hctl, htvroot);
+			strstr.str("");
+			strstr << utf8_2_ansi(_("Occasion")) << ": ";
+			if (t.occasion() == technology::MODIFY) {
+				strstr << utf8_2_ansi(_("Adjust unit"));
+				first = false;
+			} else if (t.occasion() == technology::FINISH) {
+				strstr << utf8_2_ansi(_("Finish research"));
+				first = false;
+			}
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_technology_txt, ns::iico_technology_txt, 0, text);
+
+			htvi = TreeView_AddLeaf(hctl, htvroot);
+			strstr.str("");
+			strstr << utf8_2_ansi(_("Type filter")) << ": ";
+			if (t.type_filter() & filter::TROOP) {
+				strstr << utf8_2_ansi(_("Troop"));
+				first = false;
+			}
+			if (t.type_filter() & filter::ARTIFICAL) {
+				if (!first) {
+					strstr << ", ";
+				} else {
+					first = false;
+				}
+				strstr << utf8_2_ansi(_("Artifical"));
+			}
+			if (t.type_filter() & filter::CITY) {
+				if (!first) {
+					strstr << ", ";
+				} else {
+					first = false;
+				}
+				strstr << utf8_2_ansi(_("City"));
+			}
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_technology_txt, ns::iico_technology_txt, 0, text);
+
+			htvi = TreeView_AddLeaf(hctl, htvroot);
+			strstr.str("");
+			strstr << utf8_2_ansi(_("Arms filter")) << ": ";
+			first = true;
+			const std::vector<std::string>& arms_ids = unit_types.arms_ids();
+			for (int i = 0; i < (int)arms_ids.size(); i ++) {
+				if (t.arms_filter() & 1 << i) {
+					if (!first) {
+						strstr << ", ";
+					} else {
+						first = false;
+					}
+					strstr << utf8_2_ansi(hero::arms_str(i).c_str());
+				}
+			}
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_technology_txt, ns::iico_technology_txt, 0, text);
+
+				int apply_to = t.apply_to();
+				htvi = TreeView_AddLeaf(hctl, htvroot);
+				strstr.str("");
+				if (apply_to == apply_to_tag::RESISTANCE) {
+					strstr << utf8_2_ansi(_("Defend"));
+				} else if (apply_to == apply_to_tag::ATTACK) {
+					strstr << utf8_2_ansi(_("Attack"));
+				} else if (apply_to == apply_to_tag::ENCOURAGE) {
+					strstr << utf8_2_ansi(_("Will"));
+				} else if (apply_to == apply_to_tag::DEMOLISH) {
+					strstr << utf8_2_ansi(_("Demolish"));
+				}
+				strcpy(text, strstr.str().c_str());
+				TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_technology_action, ns::iico_technology_action, 1, text);
+		} else {
+			strstr.str("");
+			strstr << utf8_2_ansi(_("technology^Child")) << ": ";
+			const std::vector<const technology*>& parts = t.parts();
+			for (std::vector<const technology*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
+				const technology& part = **it2;
+				if (it2 != parts.begin()) {
+					strstr << ", ";
+				}
+				strstr << std::setw(2) << std::setfill('0') << index << ": " << utf8_2_ansi(part.name().c_str()) << "(" << part.id() << ")";
+			}
+			strcpy(text, strstr.str().c_str());
+			htvi = TreeView_AddLeaf(hctl, htvroot);
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_technology_txt, ns::iico_technology_txt, 0, text);
+		}
+
+		TreeView_Expand(hctl, htvi_technology, TVE_EXPAND);
+	}
+
+	TreeView_Expand(hctl_atom, htvroot_technology_atom_, TVE_EXPAND);
+	TreeView_Expand(hctl_complex, htvroot_technology_complex_, TVE_EXPAND);
+}
+
 void tcore::switch_section(HWND hdlgP, int to, bool force)
 {
+	char text[_MAX_PATH];
+
 	if (name_map.empty()) {
-		name_map[UNIT_TYPE] = "兵种";
-		name_map[TACTIC] = "战法";
+		name_map[UNIT_TYPE] = utf8_2_ansi(_("arms^Type"));
+		name_map[TACTIC] = utf8_2_ansi(_("Tactic"));
+		name_map[TECH] = dgettext_2_ansi("wesnoth-lib", "Technology");
 	}
 	if (idd_map.empty()) {
 		idd_map[UNIT_TYPE] = IDD_UTYPE;
 		idd_map[TACTIC] = IDD_TACTIC;
+		idd_map[TECH] = IDD_TECHNOLOGY;
 	}
 	if (dlgproc_map.empty()) {
 		dlgproc_map[UNIT_TYPE] = DlgUTypeProc;
 		dlgproc_map[TACTIC] = DlgTacticProc;
+		dlgproc_map[TECH] = DlgTechnologyProc;
 	}
 
-	char text[_MAX_PATH];
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLong(hdlgP, GWL_USERDATA);
 
 	if (!force && pHdr && to == section_) {
@@ -690,6 +836,8 @@ void tcore::switch_section(HWND hdlgP, int to, bool force)
 		ns::core.refresh_utype(pHdr->hwndDisplay);
 	} else if (section_ == TACTIC) {
 		ns::core.refresh_tactic(pHdr->hwndDisplay);
+	} else if (section_ == TECH) {
+		ns::core.refresh_technology(pHdr->hwndDisplay);
 	} 
 }
 
@@ -763,49 +911,6 @@ void tactic_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 	TreeView_HitTest1(lpNMHdr->hwndFrom, point, htvi);
 
 	TreeView_GetItem1(lpNMHdr->hwndFrom, htvi, &tvi, TVIF_PARAM | TVIF_CHILDREN, NULL);
-/*
-	HMENU hpopup_explorer = CreatePopupMenu();
-	AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_GENERAL, "基本信息...");
-	AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_MTYPE, "抗性...");
-	AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKI, "攻击I...");
-	AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKII, "攻击II...");
-	AppendMenu(hpopup_explorer, MF_STRING, IDM_UTYPE_ATTACKIII, "攻击III...");
-
-	HMENU hpopup_utype = CreatePopupMenu();
-	AppendMenu(hpopup_utype, MF_STRING, IDM_ADD, "添加...");
-	AppendMenu(hpopup_utype, MF_STRING, IDM_EDIT, "编辑...");
-	AppendMenu(hpopup_utype, MF_STRING, IDM_DELETE, "删除");
-	AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
-	AppendMenu(hpopup_utype, MF_STRING, IDM_GENERATE_ITEM2, "重新生成所有兵种配置、相关图像");
-	AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
-	AppendMenu(hpopup_utype, MF_POPUP, (UINT_PTR)(hpopup_explorer), "报表格式");
-
-	if (!htvi || htvi == ns::core.htvroot_tactic_atoi_) {
-		EnableMenuItem(hpopup_utype, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
-		EnableMenuItem(hpopup_utype, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
-	} else {
-		const std::string& id = ns::core.tv_tree_[tvi.lParam].first;
-		const unit_type* ut = unit_types.find(id);
-		if (ut->packer()) {
-			EnableMenuItem(hpopup_utype, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
-		}
-	}
-	if (core_get_save_btn()) {
-		EnableMenuItem(hpopup_utype, IDM_GENERATE_ITEM2, MF_BYCOMMAND | MF_GRAYED);
-		EnableMenuItem(hpopup_utype, (UINT_PTR)(hpopup_explorer), MF_BYCOMMAND | MF_GRAYED);
-	}
-	
-	TrackPopupMenuEx(hpopup_utype, 0, 
-		point.x, 
-		point.y, 
-		hdlgP, 
-		NULL);
-
-	DestroyMenu(hpopup_explorer);
-	DestroyMenu(hpopup_utype);
-
-	ns::clicked_utype = tvi.lParam;
-*/
 }
 
 void tactic_notify_handler_dblclk(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
@@ -842,6 +947,425 @@ BOOL CALLBACK DlgTacticProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgTacticCommand);
 	HANDLE_MSG(hdlgP, WM_NOTIFY,  On_DlgTacticNotify);
 	HANDLE_MSG(hdlgP, WM_DESTROY,  On_DlgTacticDestroy);
+	}
+	
+	return FALSE;
+}
+
+//
+// technology section
+//
+BOOL On_DlgTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	HWND hwndParent = GetParent(hdlgP); 
+    DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
+    SetWindowPos(hdlgP, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE); 
+
+	ns::himl_technology = ImageList_Create(15, 15, ILC_COLOR24, 3, 0);
+	ImageList_SetBkColor(ns::himl_technology, RGB(236, 233, 216));
+
+    HICON hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_EVT_EVENT));
+	ns::iico_technology_technology = ImageList_AddIcon(ns::himl_technology, hicon);
+
+	hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_EVT_FILTER));
+	ns::iico_technology_experience = ImageList_AddIcon(ns::himl_technology, hicon);
+
+	hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_EVT_COMMAND));
+	ns::iico_technology_action = ImageList_AddIcon(ns::himl_technology, hicon);
+
+	hicon = LoadIcon(gdmgr._hinst, MAKEINTRESOURCE(IDI_EVT_ATTRIBUTE));
+	ns::iico_technology_txt = ImageList_AddIcon(ns::himl_technology, hicon);
+
+	TreeView_SetImageList(GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_ATOM), ns::himl_technology, TVSIL_NORMAL);
+	TreeView_SetImageList(GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_COMPLEX), ns::himl_technology, TVSIL_NORMAL);
+
+	return FALSE;
+}
+
+BOOL On_DlgTechnology2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	std::stringstream strstr;
+	strstr << dgettext_2_ansi("wesnoth-lib", "Technology tree");
+	SetWindowText(hdlgP, strstr.str().c_str());
+
+	Button_SetText(GetDlgItem(hdlgP, IDOK), utf8_2_ansi(_("Close")));
+
+	ns::core.refresh_technology2(hdlgP);
+	return FALSE;
+}
+
+void On_DlgTechnology2Command(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	BOOL changed = FALSE;
+	switch (id) {
+	case IDOK:
+		changed = TRUE;
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL CALLBACK DlgTechnology2Proc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch(message) {
+	case WM_INITDIALOG:
+		return On_DlgTechnology2InitDialog(hDlg, (HWND)(wParam), lParam);
+	HANDLE_MSG(hDlg, WM_COMMAND, On_DlgTechnology2Command);
+	}
+	
+	return FALSE;
+}
+
+BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	std::stringstream strstr;
+	strstr << dgettext_2_ansi("wesnoth-lib", "Technology") << "--";
+	if (ns::type == IDM_TECHNOLOGY_ATOMIC) {
+		strstr << utf8_2_ansi(_("Atomic technology"));
+	} else if (ns::type == IDM_TECHNOLOGY_COMPLEX) {
+		strstr << utf8_2_ansi(_("Complex technology"));
+	}
+	SetWindowText(hdlgP, strstr.str().c_str());
+	Button_SetText(GetDlgItem(hdlgP, IDOK), utf8_2_ansi(_("Close")));
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_LV_VISUAL2_EXPLORER);
+	LVCOLUMN lvc;
+	int index = 0;
+	char text[_MAX_PATH];
+
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 80;
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = index;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 50;
+	lvc.iSubItem = index;
+	strcpy(text, utf8_2_ansi(_("Experience")));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	if (ns::type == IDM_TECHNOLOGY_ATOMIC) {
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 80;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("Occasion")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 80;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("Type filter")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 80;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("Arms filter")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 50;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("Action")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
+
+	} else if (ns::type == IDM_TECHNOLOGY_COMPLEX) {
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 500;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("technology^Child")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
+
+	}
+	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
+	// fill data
+	LVITEM lvi;
+	int iItem = 0;
+	bool first;
+	int apply_to;
+	for (std::map<std::string, technology>::const_iterator it = unit_types.technologies().begin(); it != unit_types.technologies().end(); ++ it) {
+		const technology& t = it->second;
+
+		if (ns::type == IDM_TECHNOLOGY_ATOMIC) {
+			if (t.complex()) {
+				continue;
+			}
+		} else if (ns::type == IDM_TECHNOLOGY_COMPLEX) {
+			if (!t.complex()) {
+				continue;
+			}
+		}
+
+		index = 0;
+
+		lvi.mask = LVIF_TEXT | LVIF_PARAM;
+		// 名称
+		lvi.iItem = iItem;
+		lvi.iSubItem = index ++;
+		strstr.str("");
+		strstr << utf8_2_ansi(t.name().c_str());
+		strcpy(text, strstr.str().c_str());
+		lvi.pszText = text;
+		lvi.lParam = (LPARAM)0;
+		ListView_InsertItem(hctl, &lvi);
+
+		// Exp.
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = index ++;
+		strstr.str("");
+		strstr << t.max_experience();
+		strcpy(text, strstr.str().c_str());
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		if (ns::type == IDM_TECHNOLOGY_ATOMIC) {
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			if (t.occasion() == technology::MODIFY) {
+				strstr << utf8_2_ansi(_("Adjust unit"));
+			} else if (t.occasion() == technology::FINISH) {
+				strstr << utf8_2_ansi(_("Finish research"));
+			}
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			first = true;
+			if (t.type_filter() & filter::TROOP) {
+				strstr << utf8_2_ansi(_("Troop"));
+				first = false;
+			}
+			if (t.type_filter() & filter::ARTIFICAL) {
+				if (!first) {
+					strstr << ", ";
+				} else {
+					first = false;
+				}
+				strstr << utf8_2_ansi(_("Artifical"));
+			}
+			if (t.type_filter() & filter::CITY) {
+				if (!first) {
+					strstr << ", ";
+				} else {
+					first = false;
+				}
+				strstr << utf8_2_ansi(_("City"));
+			}
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			first = true;
+			const std::vector<std::string>& arms_ids = unit_types.arms_ids();
+			for (int i = 0; i < (int)arms_ids.size(); i ++) {
+				if (t.arms_filter() & 1 << i) {
+					if (!first) {
+						strstr << ", ";
+					} else {
+						first = false;
+					}
+					strstr << utf8_2_ansi(hero::arms_str(i).c_str());
+				}
+			}
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			apply_to = t.apply_to();
+			if (apply_to == apply_to_tag::RESISTANCE) {
+				strstr << utf8_2_ansi(_("Defend"));
+			} else if (apply_to == apply_to_tag::ATTACK) {
+				strstr << utf8_2_ansi(_("Attack"));
+			} else if (apply_to == apply_to_tag::ENCOURAGE) {
+				strstr << utf8_2_ansi(_("Will"));
+			} else if (apply_to == apply_to_tag::DEMOLISH) {
+				strstr << utf8_2_ansi(_("Demolish"));
+			}
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+		} else if (ns::type == IDM_TECHNOLOGY_COMPLEX) {
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			const std::vector<const technology*>& parts = t.parts();
+			for (std::vector<const technology*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
+				const technology& part = **it2;
+				if (it2 != parts.begin()) {
+					strstr << ", ";
+				}
+				strstr << utf8_2_ansi(part.name().c_str()) << "(" << part.id() << ")";
+			}
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+		}
+		iItem ++;
+	}
+
+	return FALSE;
+}
+
+void On_DlgReportTechnologyCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	BOOL changed = FALSE;
+	switch (id) {
+	case IDOK:
+		changed = TRUE;
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL CALLBACK DlgReportTechnologyProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch(message) {
+	case WM_INITDIALOG:
+		return On_DlgReportTechnologyInitDialog(hDlg, (HWND)(wParam), lParam);
+	HANDLE_MSG(hDlg, WM_COMMAND, On_DlgReportTechnologyCommand);
+	}
+	
+	return FALSE;
+}
+
+void On_DlgTechnologyCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	switch (id) {
+	case IDM_TECHNOLOGY_ATOMIC:
+	case IDM_TECHNOLOGY_COMPLEX:
+		ns::type = id;
+		DialogBox(gdmgr._hinst, MAKEINTRESOURCE(IDD_VISUAL2), NULL, DlgReportTechnologyProc);
+		break;
+	}
+	return;
+}
+
+void technology_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	LPNMTREEVIEW			lpnmitem;
+	HTREEITEM				htvi;
+	TVITEMEX				tvi;
+	POINT					point;
+	std::stringstream strstr;
+
+	if (lpNMHdr->idFrom != IDC_TV_TECHNOLOGY_EXPLORER) {
+		return;
+	}
+
+	lpnmitem = (LPNMTREEVIEW)lpNMHdr;
+
+	// NM_RCLICK/NM_CLICK/NM_DBLCLK这些通知被发来后,其附代参数没法指定是哪个叶子句柄,
+	// 需通过判断鼠标坐标来判断是哪个叶子被按下?
+	// 1. GetCursorPos, 得到屏幕坐标系下的鼠标坐标
+	// 2. TreeView_HitTest1(自写宏),由屏幕坐标系下的鼠标坐标返回指向的叶子句柄
+	GetCursorPos(&point);	// 得到的是屏幕坐标
+	TreeView_HitTest1(lpNMHdr->hwndFrom, point, htvi);
+	
+	// NM_表示对通用控件都通用,范围丛(0, 99)
+	// TVN_表示只能TreeView通用,范围丛(400, 499)
+	if (lpNMHdr->code == NM_RCLICK) {
+		//
+		// 右键单击: 弹出菜单
+		//
+		TreeView_GetItem1(lpNMHdr->hwndFrom, htvi, &tvi, TVIF_PARAM | TVIF_CHILDREN, NULL);
+
+		HMENU hpopup_explorer = CreatePopupMenu();
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Atomic technology")) << "...";
+		AppendMenu(hpopup_explorer, MF_STRING, IDM_TECHNOLOGY_ATOMIC, strstr.str().c_str());
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Complex technology")) << "...";
+		AppendMenu(hpopup_explorer, MF_STRING, IDM_TECHNOLOGY_COMPLEX, strstr.str().c_str());
+
+		HMENU hpopup_technology = CreatePopupMenu();
+/*
+		AppendMenu(hpopup_utype, MF_STRING, IDM_ADD, utf8_2_ansi(_("Add...")));
+		AppendMenu(hpopup_utype, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
+		AppendMenu(hpopup_utype, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
+		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
+		AppendMenu(hpopup_utype, MF_STRING, IDM_GENERATE_ITEM2, utf8_2_ansi(_("Regenerate all type's cfg and relatve image")));
+		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
+*/
+		AppendMenu(hpopup_technology, MF_POPUP, (UINT_PTR)(hpopup_explorer), utf8_2_ansi(_("Report format")));
+/*
+		if (!htvi || htvi == ns::core.htvroot_utype_) {
+			EnableMenuItem(hpopup_utype, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_utype, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
+		} else {
+			const std::string& id = ns::core.tv_tree_[tvi.lParam].first;
+			const unit_type* ut = unit_types.find(id);
+			if (ut->packer()) {
+				EnableMenuItem(hpopup_utype, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
+			}
+		}
+*/
+		if (core_get_save_btn()) {
+			// EnableMenuItem(hpopup_technology, IDM_GENERATE_ITEM2, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_technology, (UINT_PTR)(hpopup_explorer), MF_BYCOMMAND | MF_GRAYED);
+		}
+		
+		TrackPopupMenuEx(hpopup_technology, 0, 
+			point.x, 
+			point.y, 
+			hdlgP, 
+			NULL);
+
+		// DestroyMenu(hpopup_explorer);
+		DestroyMenu(hpopup_technology);
+
+		// ns::clicked_utype = tvi.lParam;
+	}
+}
+
+BOOL On_DlgTechnologyNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	if (lpNMHdr->code == NM_RCLICK) {
+		technology_notify_handler_rclick(hdlgP, DlgItem, lpNMHdr);
+	}
+	return FALSE;
+}
+
+void On_DlgTechnologyDestroy(HWND hdlgP)
+{
+	ImageList_Destroy(ns::himl_technology);
+
+	return;
+}
+
+BOOL CALLBACK DlgTechnologyProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(uMsg) {
+	case WM_INITDIALOG:
+		return On_DlgTechnologyInitDialog(hdlgP, (HWND)(wParam), lParam);
+	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgTechnologyCommand);
+	HANDLE_MSG(hdlgP, WM_NOTIFY,  On_DlgTechnologyNotify);
+	HANDLE_MSG(hdlgP, WM_DESTROY,  On_DlgTechnologyDestroy);
 	}
 	
 	return FALSE;

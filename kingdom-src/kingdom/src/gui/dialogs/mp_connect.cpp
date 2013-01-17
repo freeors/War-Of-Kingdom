@@ -142,12 +142,13 @@ void tmp_server_list::post_show(twindow& window)
 
 REGISTER_DIALOG(mp_connect)
 
+twindow* window_;
 static void show_server_list(
 		  CVideo& video
-		, twindow& window
 		, tfield_text* host_name)
 {
 	assert(host_name);
+	twindow& window = *window_;
 
 	tmp_server_list dlg;
 	dlg.show(video);
@@ -169,6 +170,7 @@ tmp_connect::tmp_connect()
 void tmp_connect::pre_show(CVideo& video, twindow& window)
 {
 	assert(host_name_);
+	window_ = &window;
 
 	// Set view list callback button.
 	if(tbutton* button = find_widget<tbutton>(&window, "list", false, false)) {
@@ -176,7 +178,6 @@ void tmp_connect::pre_show(CVideo& video, twindow& window)
 		connect_signal_mouse_left_click(*button, boost::bind(
 				  show_server_list
 				, boost::ref(video)
-				, boost::ref(window)
 				, host_name_));
 	}
 

@@ -33,6 +33,7 @@ namespace gui2 {
 class tbutton;
 class tgrid;
 class tlistbox;
+class twindow;
 
 class ttroop_list : public tdialog
 {
@@ -58,7 +59,7 @@ private:
 	void fill_table(int catalog);
 	void fill_table_row(team& t, int catalog);
 
-	void sort_column(twindow& window, tbutton& widget);
+	void sort_column(tbutton& widget);
 private:
 	game_display& gui_;
 	std::vector<team>& teams_;
@@ -75,6 +76,7 @@ private:
 	tbutton* sorting_widget_;
 
 	tlistbox* hero_table_;
+	twindow* window_;
 };
 
 }

@@ -86,8 +86,7 @@ unit_merit::unit_merit(const unit_merit& o):
 
 bool unit::draw_desc_ = true;
 bool unit::ignore_pack_ = false;
-int unit::commercial_exploiture_ = 0;
-unsigned char unit::savegame_cache_[CONSTANT_1M];
+unsigned char* unit::savegame_cache_ = NULL;
 
 // Copy constructor
 unit::unit(const unit& o):
@@ -149,8 +148,6 @@ unit::unit(const unit& o):
 	unit_value_(o.unit_value_),
 	goto_(o.goto_),
 	flying_(o.flying_),
-	is_fearless_(o.is_fearless_),
-	is_healthy_(o.is_healthy_),
 
 	anim_(NULL),
 	next_idling_(0),
@@ -164,9 +161,11 @@ unit::unit(const unit& o):
 	invisibility_cache_(),
 	cityno_(o.cityno_),
 	gold_income_(o.gold_income_),
+	technology_income_(o.technology_income_),
 	heal_(o.heal_),
 	turn_experience_(o.turn_experience_),
 	keep_turns_(o.keep_turns_),
+	hide_turns_(o.hide_turns_),
 	human_(o.human_),
 	verifying_(o.verifying_),
 	artifical_(o.artifical_),
@@ -199,7 +198,8 @@ unit::unit(const unit& o):
 	guard_attack_(o.guard_attack_),
 	temporary_state_(o.temporary_state_),
 	tactic_compare_damage_(o.tactic_compare_damage_),
-	tactic_compare_resistance_(o.tactic_compare_resistance_)
+	tactic_compare_resistance_(o.tactic_compare_resistance_),
+	tactic_compare_movement_(o.tactic_compare_movement_)
 {
 	std::copy(o.adaptability_, o.adaptability_ + HEROS_MAX_ARMS, adaptability_);
 	std::copy(o.skill_, o.skill_ + HEROS_MAX_SKILL, skill_);
@@ -265,8 +265,6 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	unit_value_(),
 	goto_(),
 	flying_(false),
-	is_fearless_(false),
-	is_healthy_(false),
 	anim_(NULL),
 	next_idling_(0),
 	frame_begin_time_(0),
@@ -277,9 +275,11 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	invisibility_cache_(),
 	cityno_(-1),
 	gold_income_(),
+	technology_income_(0),
 	heal_(0),
 	turn_experience_(0),
 	keep_turns_(game_config::max_keep_turns),
+	hide_turns_(0),
 	human_(false),
 	verifying_(false),
 	artifical_(is_artifical),
@@ -301,7 +301,8 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	guard_attack_(-2),
 	temporary_state_(0),
 	tactic_compare_damage_(),
-	tactic_compare_resistance_()
+	tactic_compare_resistance_(),
+	tactic_compare_movement_(0)
 {
 	if (type_.empty()) {
 		throw game::game_error("creating unit with an empty type field");
@@ -399,43 +400,7 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	if (const config::attribute_value *v = cfg.get("alpha")) {
 		alpha_ = lexical_cast_default<fixed_t>(*v);
 	}
-/*
-	//don't use the unit_type's attacks if this config has its own defined
-	config::const_child_itors cfg_range = cfg.child_range("attack");
-	if (cfg_range.first != cfg_range.second) {
-		attacks_.clear();
-		do {
-			attacks_.push_back(attack_type(*cfg_range.first));
-		} while(++cfg_range.first != cfg_range.second);
-	}
 
-	//adjust the unit_type's defense if this config has its own defined
-	cfg_range = cfg.child_range("defense");
-	if(cfg_range.first != cfg_range.second) {
-		config &target = cfg_.child_or_add("defense");
-		do {
-			target.append(*cfg_range.first);
-		} while(++cfg_range.first != cfg_range.second);
-	}
-
-	//adjust the unit_type's movement costs if this config has its own defined
-	cfg_range = cfg.child_range("movement_costs");
-	if(cfg_range.first != cfg_range.second) {
-		config &target = cfg_.child_or_add("movement_costs");
-		do {
-			target.append(*cfg_range.first);
-		} while(++cfg_range.first != cfg_range.second);
-	}
-
-	//adjust the unit_type's resistance if this config has its own defined
-	cfg_range = cfg.child_range("resistance");
-	if (cfg_range.first != cfg_range.second) {
-		config &target = cfg_.child_or_add("resistance");
-		do {
-			target.append(*cfg_range.first);
-		} while(++cfg_range.first != cfg_range.second);
-	}
-*/
 	if (const config &status_flags = cfg.child("status")) {
 		foreach (const config::attribute &st, status_flags.attribute_range()) {
 			if (st.second.to_bool()) {
@@ -562,8 +527,6 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	unit_value_(),
 	goto_(),
 	flying_(false),
-	is_fearless_(false),
-	is_healthy_(false),
 	anim_(NULL),
 	next_idling_(0),
 	frame_begin_time_(0),
@@ -574,9 +537,11 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	invisibility_cache_(),
 	cityno_(-1),
 	gold_income_(),
+	technology_income_(0),
 	heal_(0),
 	turn_experience_(0),
 	keep_turns_(game_config::max_keep_turns),
+	hide_turns_(0),
 	human_(false),
 	verifying_(false),
 	artifical_(artifical),
@@ -598,7 +563,8 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	guard_attack_(-2),
 	temporary_state_(0),
 	tactic_compare_damage_(),
-	tactic_compare_resistance_()
+	tactic_compare_resistance_(),
+	tactic_compare_movement_(0)
 {
 	unit_fields_t* fields = (unit_fields_t*)mem;
 
@@ -737,8 +703,6 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	unit_value_(),
 	goto_(),
 	flying_(false),
-	is_fearless_(false),
-	is_healthy_(false),
 	anim_(NULL),
 	next_idling_(0),
 	frame_begin_time_(0),
@@ -749,9 +713,11 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	invisibility_cache_(),
 	cityno_(cityno),
 	gold_income_(0),
+	technology_income_(0),
 	heal_(0),
 	turn_experience_(0),
 	keep_turns_(game_config::max_keep_turns),
+	hide_turns_(0),
 	human_(false),
 	verifying_(false),
 	artifical_(is_artifical),
@@ -773,7 +739,8 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	guard_attack_(-2),
 	temporary_state_(0),
 	tactic_compare_damage_(),
-	tactic_compare_resistance_()
+	tactic_compare_resistance_(),
+	tactic_compare_movement_(0)
 {
 	master_ = const_cast<hero*>(t.second[0]);
 	master_number_ = master_->number_;
@@ -892,6 +859,7 @@ void unit::write(uint8_t* mem) const
 	fields->goto_y_ = goto_.y;
 	fields->facing_ = facing_;
 	fields->keep_turns_ = keep_turns_;
+	fields->hide_turns_ = hide_turns_;
 	fields->character_ = character_;
 	fields->human_ = human_? 1: 0;
 	fields->random_traits_ = random_traits_? 1: 0;
@@ -1114,6 +1082,7 @@ void unit::read(const uint8_t* mem, bool lower)
 	goto_.x = fields->goto_x_;
 	goto_.y = fields->goto_y_;
 	keep_turns_ = fields->keep_turns_;
+	hide_turns_ = fields->hide_turns_;
 	human_ = fields->human_? true: false;
 	resting_ = fields->resting_? true: false;
 	// fields->modified_ = 1;
@@ -1306,6 +1275,7 @@ void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
 	attacks_ = t->attacks();
 	unit_value_ = t->cost();
 	gold_income_ = t->gold_income();
+	technology_income_ = t->technology_income();
 	heal_ = t->heal();
 	turn_experience_ = t->turn_experience();
 	flying_ = t->movement_type().is_flying();
@@ -1425,16 +1395,14 @@ void unit::pack_to(const unit_type* to)
 	alpha_ = t->alpha();
 	emit_zoc_ = t->has_zoc();
 	cancel_zoc_ = t->cancel_zoc();
-	gold_income_ = t->gold_income();
 	flying_ = t->movement_type().is_flying();
-	land_wall_ = t->land_wall_;
 	arms_ = t->arms_;
 
 	flag_rgb_ = t->flag_rgb();
 
 	if (to) {
 		if (const config& pack = t->get_cfg().child("pack")) {
-			add_modification("pack", pack, true);
+			add_modification(pack, true);
 		}
 	}
 
@@ -1469,7 +1437,18 @@ int unit::gold_income() const
 	if (!gold_income_) {
 		return 0;
 	} else {
-		return commercial_exploiture_ * gold_income_ / 100;
+		artifical* city = units_.city_from_cityno(cityno_);
+		return city->commercial_exploiture() * gold_income_ / 100;
+	}
+}
+
+int unit::technology_income() const
+{
+	if (!technology_income_) {
+		return 0;
+	} else {
+		artifical* city = units_.city_from_cityno(cityno_);
+		return city->technology_exploiture() * technology_income_ / 100;
 	}
 }
 
@@ -1516,11 +1495,7 @@ t_string unit::unit_description() const
 	return unit_type_->unit_description();
 }
 
-#define EXPERIENCE_PER_XP		2
-#define ARMS_XP_PER_XP			5
-#define SKILL_XP_PER_XP			16
-#define MERITORIOUS_PER_XP		5
-void unit::get_experience(int xp, bool opp_is_artifical) 
+void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bool second, bool third) 
 { 
 	game_display &disp = *game_display::get_singleton();
 	bool has_carry = false;
@@ -1530,122 +1505,72 @@ void unit::get_experience(int xp, bool opp_is_artifical)
 
 	// When executing to advance, xp < 0.
 	if (xp > 0) {
-		uint16_t inc_xp = xp * EXPERIENCE_PER_XP;
-		uint16_t inc_adaptability_xp = xp * ARMS_XP_PER_XP;
-		uint16_t inc_skill_xp = xp * SKILL_XP_PER_XP;
-		uint16_t inc_meritorious_xp =  xp * MERITORIOUS_PER_XP;
-		if (unit_feature_val(hero_feature_guide)) {
-			inc_xp = inc_xp * 2;
+		uint16_t inc_ability_xp = xp * increase_xp::ability_per_xp;
+		if (ub.abilityx2) {
+			inc_ability_xp = inc_ability_xp * 2;
 		}
-		if (unit_feature_val(hero_feature_spirit)) {
-			inc_adaptability_xp = inc_adaptability_xp * 2;
+		uint16_t inc_arms_xp = xp * increase_xp::arms_per_xp;
+		if (ub.armsx2) {
+			inc_arms_xp = inc_arms_xp * 2;
 		}
-		if (unit_feature_val(hero_feature_skill)) {
+		uint16_t inc_skill_xp = xp * increase_xp::skill_per_xp;
+		if (ub.skillx2) {
 			inc_skill_xp = inc_skill_xp * 2;
 		}
+		uint16_t inc_meritorious_xp = xp * increase_xp::meritorious_per_xp;
+		uint16_t inc_navigation_xp = xp * increase_xp::navigation_per_xp;
 
-		if (u16_get_experience_i9(&(master_->leadership_), inc_xp)) {
-			has_carry = true;
+		increase_xp::hblock& hb = increase_xp::generic_hblock();
+
+		if (ub.leadership) {
+			hb.leadership = inc_ability_xp * current_team.leadership_speed_ / 100;
 		}
-		if (u16_get_experience_i9(&(master_->force_), inc_xp)) {
-			has_carry = true;
+		if (ub.force) {
+			hb.force = inc_ability_xp * current_team.force_speed_ / 100;
 		}
-		if (u16_get_experience_i9(&(master_->intellect_), inc_xp)) {
-			has_carry = true;
+		if (ub.intellect) {
+			hb.intellect = inc_ability_xp * current_team.intellect_speed_ / 100;
 		}
-		if (u16_get_experience_i9(&(master_->charm_), inc_xp)) {
-			has_carry = true;
+		if (ub.politics) {
+			hb.politics = inc_ability_xp * current_team.politics_speed_ / 100;
 		}
-		// arms adaptability
-		if (u16_get_experience_i12(&(master_->arms_[arms_]), inc_adaptability_xp)) {
-			has_carry = true;
+		if (ub.charm) {
+			hb.charm = inc_ability_xp * current_team.charm_speed_ / 100;
 		}
-		if (packee_unit_type_ && u16_get_experience_i12(&(master_->arms_[packee_unit_type_->arms()]), inc_adaptability_xp)) {
-			has_carry = true;
-		}
-		// skill adaptability
-		if (opp_is_artifical) {
-			if (u16_get_experience_i12(&(master_->skill_[hero_skill_demolish]), inc_skill_xp)) {
-				has_carry = true;
+		if (ub.arms) {
+			hb.arms[arms_] = inc_arms_xp * current_team.arms_speed_[arms_] / 100;
+			if (packee_unit_type_) {
+				hb.arms[packee_unit_type_->arms()] = inc_arms_xp * current_team.arms_speed_[packee_unit_type_->arms()] / 100;
 			}
 		}
-		if (master_->meritorious_ < 60000) {
-			master_->meritorious_ += inc_meritorious_xp;
-			if (master_->meritorious_ > 60000) {
-				master_->meritorious_ = 60000;
+		for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
+			if (ub.skill[i]) {
+				hb.skill[i] = inc_skill_xp;
 			}
 		}
-		if (master_ == rpg::h) {
-			has_rpg = true;
+		if (ub.meritorious) {
+			hb.meritorious = inc_meritorious_xp;
 		}
 
-		if (second_->valid()) {
-			if (u16_get_experience_i9(&(second_->leadership_), inc_xp)) {
+		if (master) {
+			if (master_->get_xp(hb)) {
 				has_carry = true;
 			}
-			if (u16_get_experience_i9(&(second_->force_), inc_xp)) {
+			if (master_ == rpg::h) {
+				has_rpg = true;
+			}
+		}
+		if (second && second_->valid()) {
+			if (second_->get_xp(hb)) {
 				has_carry = true;
-			}
-			if (u16_get_experience_i9(&(second_->intellect_), inc_xp)) {
-				has_carry = true;
-			}
-			if (u16_get_experience_i9(&(second_->charm_), inc_xp)) {
-				has_carry = true;
-			}
-			// arms adaptability
-			if (u16_get_experience_i12(&(second_->arms_[arms_]), inc_adaptability_xp)) {
-				has_carry = true;
-			}
-			if (packee_unit_type_ && u16_get_experience_i12(&(second_->arms_[packee_unit_type_->arms()]), inc_adaptability_xp)) {
-				has_carry = true;
-			}
-			// skill adaptabiltiy
-			if (opp_is_artifical) {
-				if (u16_get_experience_i12(&(second_->skill_[hero_skill_demolish]), inc_skill_xp)) {
-					has_carry = true;
-				}
-			}
-			if (second_->meritorious_ < 60000) {
-				second_->meritorious_ += inc_meritorious_xp;
-				if (second_->meritorious_ > 60000) {
-					second_->meritorious_ = 60000;
-				}
 			}
 			if (second_ == rpg::h) {
 				has_rpg = true;
 			}
 		}
-		if (third_->valid()) {
-			if (u16_get_experience_i9(&(third_->leadership_), inc_xp)) {
+		if (third && third_->valid()) {
+			if (third_->get_xp(hb)) {
 				has_carry = true;
-			}
-			if (u16_get_experience_i9(&(third_->force_), inc_xp)) {
-				has_carry = true;
-			}
-			if (u16_get_experience_i9(&(third_->intellect_), inc_xp)) {
-				has_carry = true;
-			}
-			if (u16_get_experience_i9(&(third_->charm_), inc_xp)) {
-				has_carry = true;
-			}
-			// arms adaptability
-			if (u16_get_experience_i12(&(third_->arms_[arms_]), inc_adaptability_xp)) {
-				has_carry = true;
-			}
-			if (packee_unit_type_ && u16_get_experience_i12(&(third_->arms_[packee_unit_type_->arms()]), inc_adaptability_xp)) {
-				has_carry = true;
-			}
-			// skill adaptability
-			if (opp_is_artifical) {
-				if (u16_get_experience_i12(&(third_->skill_[hero_skill_demolish]), inc_skill_xp)) {
-					has_carry = true;
-				}
-			}
-			if (third_->meritorious_ < 60000) {
-				third_->meritorious_ += inc_meritorious_xp;
-				if (third_->meritorious_ > 60000) {
-					third_->meritorious_ = 60000;
-				}
 			}
 			if (third_ == rpg::h) {
 				has_rpg = true;
@@ -1656,17 +1581,23 @@ void unit::get_experience(int xp, bool opp_is_artifical)
 		}
 		if (arms_ == 4) {
 			int prev_navigation = current_team.navigation();
-			current_team.add_navigation(inc_xp);
+			current_team.add_navigation(inc_navigation_xp * current_team.navigation_civi_increase_ / 100);
 			if (unit_types.navigation_can_advance(prev_navigation, current_team.navigation())) {
 				advance_packs = true;
 			}
 		}
-	}
-	experience_ += xp;
-	if (xp > 0 && unit_feature_val(hero_feature_xp)) {
-		// when advance, xp is less than 0. 
+		// when xp>0, ub.xp controls whehter xp increase or not.
+		if (ub.xp) {
+			experience_ += xp;
+			if (unit_feature_val(hero_feature_xp)) {
+				// when advance, xp is less than 0.
+				experience_ += xp;
+			}
+		}
+	} else {
 		experience_ += xp;
 	}
+
 	if (advance_packs) {
 		// field troops
 		const std::pair<unit**, size_t> p = current_team.field_troop();
@@ -1697,49 +1628,6 @@ void unit::get_experience(int xp, bool opp_is_artifical)
 
 	if (has_rpg && xp > 0 && rpg::stratum != hero_stratum_leader && !rpg::forbids) {
 		resources::controller->rpg_update();
-	}
-	return;
-}
-
-void unit::get_experience2(int xp) 
-{ 
-	bool has_carry = false;
-
-	uint16_t inc_skill_xp = xp * SKILL_XP_PER_XP;
-	if (unit_feature_val(hero_feature_skill)) {
-		inc_skill_xp = inc_skill_xp * 2;
-	}
-	if (u16_get_experience_i12(&(master_->skill_[hero_skill_encourage]), inc_skill_xp)) {
-		has_carry = true;
-	}
-
-	if (second_->valid()) {
-		if (u16_get_experience_i12(&(second_->skill_[hero_skill_encourage]), inc_skill_xp)) {
-			has_carry = true;
-		}
-	}
-	if (third_->valid()) {
-		// skill adaptability
-		if (u16_get_experience_i12(&(third_->skill_[hero_skill_encourage]), inc_skill_xp)) {
-			has_carry = true;
-		}
-	}
-	if (has_carry) {
-		calculate_5fields();
-	}
-
-	if (has_carry) {
-		const unit_type* current_type = type();
-		if (packed()) {
-			pack_to(current_type);
-		} else {
-			max_hit_points_ = current_type->hitpoints();
-			max_experience_ = current_type->experience_needed(false);
-			max_movement_ = current_type->movement();
-			attacks_ = current_type->attacks();
-
-			modify_according_to_hero(false, false);
-		}
 	}
 	return;
 }
@@ -1904,6 +1792,9 @@ bool unit::new_turn()
 	}
 
 	field_turns_ ++;
+	if (hide_turns_) {
+		hide_turns_ --;
+	}
 
 	// field troop, increase activity
 	increase_activity(8);
@@ -1911,7 +1802,7 @@ bool unit::new_turn()
 	increase_feeling(game_config::increase_feeling);
 
 	if (!artifical_) {
-		get_experience2(3);
+		get_experience(increase_xp::turn_ublock(*this), 3);
 	}
 
 	new_turn_tactics();
@@ -2552,6 +2443,7 @@ void unit::write(config& cfg) const
 	cfg["modifications"] = utils::join(modifications_);
 
 	cfg["keep_turns"] = keep_turns_;
+	cfg["hide_turns"] = hide_turns_;
 	cfg["human"] = human_;
 
 	// unit_merit
@@ -2566,12 +2458,11 @@ void unit::write(config& cfg) const
 
 void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 {
+	int current_movement = movement_;
 	double increase_percent, decrease_percent;
 
 	// Reset the scalar values first
 	trait_names_.clear();
-	is_fearless_ = false;
-	is_healthy_ = false;
 
 	// Apply modifications etc, refresh the unit.
 	// This needs to be after type and gender are fixed,
@@ -2579,9 +2470,9 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 	// that may result in different effects after the advancement.
 	apply_modifications();
 
-	// max_hit_points_, (原HP * (100 + (统率值-70))) / 100
-	if (leadership_ > 70) {
-		int bonus = (leadership_ - 70) / 2; // "/ 2" can extend effect range. max leadership is about 177.
+	// max_hit_points_, (原HP * (100 + (统率值-80))) / 100
+	if (leadership_ > 80) {
+		int bonus = (leadership_ - 80) / 2; // "/ 2" can extend effect range. max leadership is about 177.
 		max_hit_points_ = max_hit_points_ * (100 + bonus) / 100;
 	} else {
 		// dont' forget it!!
@@ -2597,36 +2488,35 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 		max_experience_ = max_experience_;
 	}
 
-	double arms_feature_bonus = unit_feature_val(arms_)? 0.1: 0;
+	double arms_feature_bonus = unit_feature_val(arms_)? 0.075: 0;
 	if (unit_feature_val(HEROS_MAX_ARMS + arms_)) {
-		arms_feature_bonus = 0.2;
+		arms_feature_bonus = 0.15;
 	}
 	double range_feature_bonus[3];
-	range_feature_bonus[0] = unit_feature_val(hero_feature_range_min)? 0.1: 0;
+	range_feature_bonus[0] = unit_feature_val(hero_feature_range_min)? 0.075: 0;
 	if (unit_feature_val(3 + hero_feature_range_min)) {
-		range_feature_bonus[0] = 0.2;
+		range_feature_bonus[0] = 0.15;
 	}
-	range_feature_bonus[1] = unit_feature_val(hero_feature_range_min + 1)? 0.1: 0;
+	range_feature_bonus[1] = unit_feature_val(hero_feature_range_min + 1)? 0.075: 0;
 	if (unit_feature_val(3 + hero_feature_range_min + 1)) {
-		range_feature_bonus[1] = 0.2;
+		range_feature_bonus[1] = 0.15;
 	}
-	range_feature_bonus[2] = unit_feature_val(hero_feature_range_min + 2)? 0.1: 0;
+	range_feature_bonus[2] = unit_feature_val(hero_feature_range_min + 2)? 0.075: 0;
 	if (unit_feature_val(3 + hero_feature_range_min + 2)) {
-		range_feature_bonus[2] = 0.2;
+		range_feature_bonus[2] = 0.15;
 	}
 
 	// attack
-	tactic_compare_damage_.clear();
 	double hero_bonus = 0;
 	if ((leadership_ > 80) || (force_ > 80) || (intellect_ > 80)) {
 		hero_bonus = 1.0 * ((std::max<uint16_t>(80, leadership_) - 80) * 60 + (std::max<uint16_t>(80, force_) - 80) * 25 + (std::max<uint16_t>(80, intellect_) - 80) * 25) / 10000;
-		hero_bonus = hero_bonus / 4; // max hero_bonus is about 1.06, this max increase_percent is about 5 level adaptability
+		hero_bonus = hero_bonus / 10; // max hero_bonus is about 1.06, this max increase_percent is about 5 level adaptability
 	}
 	for (std::vector<attack_type>::iterator a = attacks_.begin(); a != attacks_.end(); ++a) {
 		increase_percent = hero_bonus;
 
 		// effect of adaptability
-		increase_percent += 0.05 * adaptability_[arms_];
+		increase_percent += 0.025 * adaptability_[arms_];
 
 		// effect of arms feature
 		increase_percent += arms_feature_bonus;
@@ -2642,17 +2532,13 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 		}
 
 		a->apply_modification_damage2(increase_percent);
-
-		// remember for comapre in future.
-		tactic_compare_damage_[a->id()] = a->damage();
 	}
 
 	// resistance
-	tactic_compare_resistance_.clear();
 	hero_bonus = 0;
 	if (leadership_ > 100) {
 		hero_bonus = 1.0 * (leadership_ - 100) / 200;
-		hero_bonus = hero_bonus / 3; // max bonus is about 0.385, this max increase_percent is about 5 level adaptability.
+		hero_bonus = hero_bonus / 5; // max bonus is about 0.385, this max increase_percent is about 5 level adaptability.
 	}
 	config::child_itors cfg_range = cfg_.child_range("resistance");
 	if (cfg_range.first != cfg_range.second) {
@@ -2662,21 +2548,18 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 			decrease_percent = hero_bonus;
 
 			// effect of adaptability
-			decrease_percent += 0.025 * adaptability_[arms_];
+			decrease_percent += 0.02 * adaptability_[arms_];
 
 			// effect of arms feature
 			decrease_percent += arms_feature_bonus / 2;
 
 			// effect of other feature
 			if (unit_feature_val(hero_feature_firm)) {
-				decrease_percent += 0.1;
+				decrease_percent += 0.08;
 			}
 
 			value = (int)(value * (1.0 - std::min<double>(decrease_percent, 0.6)));
 			target[istrmap.first] = lexical_cast<std::string>(value);
-
-			// remember for comapre in future.
-			tactic_compare_resistance_[istrmap.first] = value;
 		}
 	}
 
@@ -2689,6 +2572,53 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 	}
 	if (unit_feature_val(HEROS_MAX_ARMS * 2 + arms_)) {
 		max_movement_ = max_movement_ + 1;
+	}
+
+	// redo technology
+	if (resources::teams) {
+		int type = filter::ARTIFICAL;
+		if (!is_artifical()) {
+			type = filter::TROOP;
+		} else if (is_city()) {
+			type = filter::CITY;
+		}
+		const team& current_team = (*resources::teams)[side_ - 1];
+		const std::vector<const technology*>& holded_technologies = current_team.holded_technologies();
+		for (std::vector<const technology*>::const_iterator it = holded_technologies.begin(); it != holded_technologies.end(); ++ it) {
+			const std::vector<const technology*>& parts = (*it)->parts();
+			for (std::vector<const technology*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
+				const technology& t = **it2;
+				if (t.occasion() == technology::MODIFY && t.filter(type, arms_)) {
+					add_modification_internal(t.apply_to(), t.effect_cfg(), false);
+				}
+			}
+		}
+	}
+
+	tactic_compare_damage_.clear();
+	for (std::vector<attack_type>::iterator a = attacks_.begin(); a != attacks_.end(); ++a) {
+		// remember for comapre in future.
+		tactic_compare_damage_[a->id()] = a->damage();
+	}
+	tactic_compare_resistance_.clear();
+	const config& resistance_cfg = cfg_.child("resistance");
+	if (resistance_cfg) {
+		foreach (const config::attribute &istrmap, resistance_cfg.attribute_range()) {
+			// remember for comapre in future.
+			tactic_compare_resistance_[istrmap.first] = lexical_cast<int>(istrmap.second);
+		}
+	}
+	tactic_compare_movement_ = max_movement_;
+
+	// redo tactic
+	for (std::vector<tunit_tactic>::const_iterator it = tactics_.begin(); it != tactics_.end(); ++ it) {
+		const tunit_tactic& unit_t = *it;
+		const ttactic* t;
+		
+		const std::vector<const ttactic*>& parts = unit_t.tactic_->parts();
+		t = parts[unit_t.part_];
+
+		apply_tactic(NULL, *t);
 	}
 
 	// redo AMLA
@@ -2712,18 +2642,7 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 			}
 		}
 		// It is simulate advance, don't write to modifications_.[advance]
-		add_modification("advance", can_redo_amla, true);
-	}
-
-	// redo tactic
-	for (std::vector<tunit_tactic>::const_iterator it = tactics_.begin(); it != tactics_.end(); ++ it) {
-		const tunit_tactic& unit_t = *it;
-		const ttactic* t;
-		
-		const std::vector<const ttactic*>& parts = unit_t.tactic_->parts();
-		t = parts[unit_t.part_];
-
-		apply_tactic(NULL, *t);
+		add_modification(can_redo_amla, true);
 	}
 
 	if (fill_up_hp) {
@@ -2731,6 +2650,10 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 	}
 	if (fill_up_movement) {
 		movement_ = max_movement_;
+	} if (current_movement > max_movement_) {
+		movement_ = max_movement_;
+	} else if (movement_ != current_movement) {
+		movement_ = current_movement;
 	}
 }
 
@@ -3108,7 +3031,7 @@ std::string unit::form_tip() const
 
 	} else {
 		const artifical& art = *const_unit_2_artifical(this);
-		text << _("Name") << ": " << art.name() << art.type_name() << "\n";
+		text << _("Name") << ": " << art.name() << "\n";
 
 		artifical* owner_city = units_.city_from_cityno(art.cityno());
 		if (owner_city) {
@@ -3127,13 +3050,14 @@ std::string unit::form_tip() const
 	text << "HP: " << hitpoints() << "/";
 	strstr.str("");
 	strstr << max_hitpoints();
-	help::generate_format(text, strstr.str(), "green", 0, false, false);
+	// default font_size is font::SIZE_SMALL
+	help::generate_format(text, strstr.str(), "", 0, false, false);
 	text << "  ";
 
 	text << "XP: " << experience() << "/";
 	strstr.str("");
 	strstr << max_experience();
-	help::generate_format(text, strstr.str(), "blue", 0, false, false);
+	help::generate_format(text, strstr.str(), "", 0, false, false);
 	text << "\n";
 
 	if (this_is_city()) {
@@ -3308,6 +3232,17 @@ std::string unit::form_tip() const
 	} else if (effect < 0) {
 		help::tintegrate::generate_img(text, "misc/mini-decrease.png", help::tintegrate::BACK);
 	}
+	if (!artifical_) {
+		help::tintegrate::generate_img(text, "misc/movement.png");
+		if (max_movement_ > tactic_compare_movement_) {
+			help::tintegrate::generate_img(text, "misc/mini-increase.png", help::tintegrate::BACK);
+		} else if (max_movement_ < tactic_compare_movement_) {
+			help::tintegrate::generate_img(text, "misc/mini-decrease.png", help::tintegrate::BACK);
+		}
+	}
+	if (hide_turns_) {
+		help::tintegrate::generate_img(text, "misc/hide.png");
+	}
 	text << "    ";
 
 	if (invisible(loc_)) {
@@ -3326,29 +3261,6 @@ std::string unit::form_tip() const
 		help::tintegrate::generate_img(text, "petrified.png");
 	}
 
-/*	
-	std::vector<std::string> resistance_ids;
-	resistance_ids.push_back("blade");
-	resistance_ids.push_back("pierce");
-	resistance_ids.push_back("impact");
-	resistance_ids.push_back("archery");
-	resistance_ids.push_back("collapse");
-	resistance_ids.push_back("arcane");
-	resistance_ids.push_back("fire");
-	resistance_ids.push_back("cold");
-
-	for (std::vector<std::string>::const_iterator it = resistance_ids.begin(); it != resistance_ids.end(); ++ it) {
-		strstr.str("");
-		strstr << "misc/resistance-" << *it << ".png";
-		help::tintegrate::generate_img(text, strstr.str());
-		effect = tactic_effect(ttactic::RESISTANCE, *it);
-		if (effect > 0) {
-			help::tintegrate::generate_img(text, "misc/mini-increase.png", help::tintegrate::BACK);
-		} else if (effect < 0) {
-			help::tintegrate::generate_img(text, "misc/mini-decrease.png", help::tintegrate::BACK);
-		}
-	}
-*/	
 	return text.str();
 }
 
@@ -3381,14 +3293,29 @@ std::string unit::form_tiny_tip() const
 	} else if (effect < 0) {
 		help::tintegrate::generate_img(strstr, "misc/mini-decrease.png", help::tintegrate::BACK);
 	}
+	
 	strstr << " ";
-
 	help::tintegrate::generate_img(strstr, "misc/demolish.png");
 	effect = tactic_effect(ttactic::DEMOLISH, "");
 	if (effect > 0) {
 		help::tintegrate::generate_img(strstr, "misc/mini-increase.png", help::tintegrate::BACK);
 	} else if (effect < 0) {
 		help::tintegrate::generate_img(strstr, "misc/mini-decrease.png", help::tintegrate::BACK);
+	}
+
+	if (!artifical_) {
+		strstr << " ";
+		help::tintegrate::generate_img(strstr, "misc/movement.png");
+		if (max_movement_ > tactic_compare_movement_) {
+			help::tintegrate::generate_img(strstr, "misc/mini-increase.png", help::tintegrate::BACK);
+		} else if (max_movement_ < tactic_compare_movement_) {
+			help::tintegrate::generate_img(strstr, "misc/mini-decrease.png", help::tintegrate::BACK);
+		}
+	}
+
+	if (hide_turns_) {
+		strstr << " ";
+		help::tintegrate::generate_img(strstr, "misc/hide.png");
 	}
 
 	bool first_state_icon = true;
@@ -3502,12 +3429,9 @@ void unit::start_animation(int start_time, const unit_animation *animation,
 		cycles, text, text_color, accelerate);
 	frame_begin_time_ = anim_->get_begin_time() -1;
 
-	if (disp->idle_anim()) {
-		next_idling_ = get_current_animation_tick()
+	// idle anim
+	next_idling_ = get_current_animation_tick()
 			+ static_cast<int>((20000 + rand() % 20000) * disp->idle_anim_rate());
-	} else {
-		next_idling_ = INT_MAX;
-	}
 }
 
 
@@ -3992,7 +3916,17 @@ int unit::resistance_against(const std::string& damage_name,bool attacker,const 
 	if(!resistance_abilities.empty()) {
 		unit_abilities::effect resist_effect(resistance_abilities,res,false);
 
-		res = std::min<int>(resist_effect.get_composite_value(),resistance_abilities.highest("max_value").first);
+		int new_res = std::min<int>(resist_effect.get_composite_value(),resistance_abilities.highest("max_value").first);
+		if (new_res != res) {
+			const team& t = (*resources::teams)[side_ - 1 ];
+			if (new_res > res) {
+				res = res + (new_res - res) * t.cooperate_increase_ / 100;
+			} else {
+				res = res + (res - new_res) * 100 / t.cooperate_increase_;
+			}
+		} else {
+			res = new_res;
+		}
 	}
 	return 100 - res;
 }
@@ -4161,373 +4095,381 @@ static void mod_mdr_merge(config& dst, const config& mod, bool delta, bool rever
 	}
 }
 
-void unit::add_modification(const std::string& type, const config& mod, bool no_add, bool anim)
+void unit::add_modification(const config& mod, bool no_add, bool anim)
+{
+	if (no_add == false) {
+		modifications_.push_back(mod["id"]);
+	}
+
+	BOOST_FOREACH (const config &effect, mod.child_range("effect")) {
+		// See if the effect only applies to certain unit types
+		/** @todo The above two filters can be removed in 1.7 they're covered by the SUF. */
+		// Apply SUF. (Filtering on location is probably a bad idea though.)
+		if (const config &afilter = effect.child("filter")) {
+		    if (!matches_filter(vconfig(afilter), map_location(cfg_, NULL))) continue;
+		}
+
+		const std::string& apply_to = effect["apply_to"];
+		const std::string& apply_times = effect["times"];
+		int times = 1;
+
+		int tag = apply_to_tag::find(apply_to);
+		if (tag == apply_to_tag::NONE) continue;
+
+		if (apply_times == "per level") {
+			times = level_;
+		}
+		if (times) {
+			while (times > 0) {
+				times --;
+
+				add_modification_internal(tag, effect, anim);
+			}
+		}
+	}
+}
+
+void unit::add_modification_internal(int apply_to, const config& effect, bool anim, int turns)
 {
 	std::stringstream strstr;
 	bool increased;
 	bool decreased;
 
-	//some trait activate specific flags
-	if (type == "trait") {
-		const std::string& id = mod["id"];
-		is_fearless_ = is_fearless_ || id == "fearless";
-		is_healthy_ = is_healthy_ || id == "healthy";
+	// Apply unit type/variation changes last to avoid double applying effects on advance.
+	if (apply_to == apply_to_tag::ATTACK) {
+		bool first_attack = true;
 
-	} else if (no_add == false) {
-		modifications_.push_back(mod["id"]);
-	}
+		std::string attack_names;
+		std::string desc;
 
-	config last_effect;
-	foreach (const config &effect, mod.child_range("effect"))
-	{
-		// See if the effect only applies to certain unit types
-		const std::string &type_filter = effect["unit_type"];
-		if(type_filter.empty() == false) {
-			const std::vector<std::string>& types = utils::split(type_filter);
-			if(std::find(types.begin(),types.end(),type_id()) == types.end()) {
-				continue;
+		increased = decreased = false;
+		for (std::vector<attack_type>::iterator a = attacks_.begin(); a != attacks_.end(); ++a) {
+			int damage = a->damage();
+			bool affected = a->apply_modification(effect, &desc);
+			if (affected && desc != "") {
+				if (first_attack) {
+					first_attack = false;
+				} 
+			}
+			if (affected) {
+				if (damage < a->damage()) {
+					increased = true;
+				} else if (damage > a->damage()) {
+					decreased = true;
+				}
 			}
 		}
-		// See if the effect only applies to certain genders
-		const std::string &gender_filter = effect["unit_gender"];
-		if(gender_filter.empty() == false) {
-			const std::string& gender = gender_string(gender_);
-			const std::vector<std::string>& genders = utils::split(gender_filter);
-			if(std::find(genders.begin(),genders.end(),gender) == genders.end()) {
-				continue;
+		if (anim) {
+			strstr.str("");
+			help::tintegrate::generate_img(strstr, "misc/attack.png");
+			if (increased) {
+				help::tintegrate::generate_img(strstr, "misc/increase.png");
+			}
+			if (decreased) {
+				help::tintegrate::generate_img(strstr, "misc/decrease.png");
+			}
+			unit_display::unit_text(*this, decreased, strstr.str());
+		}
+	} else if(apply_to == apply_to_tag::HITPOINTS) {
+		const std::string &increase_hp = effect["increase"];
+		const std::string &increase_total = effect["increase_total"];
+		const std::string &set_hp = effect["set"];
+		const std::string &set_total = effect["set_total"];
+
+		// If the hitpoints are allowed to end up greater than max hitpoints
+		const bool violate_max = effect["violate_maximum"].to_bool();
+
+		if(set_hp.empty() == false) {
+			if(set_hp[set_hp.size()-1] == '%') {
+				hit_points_ = lexical_cast_default<int>(set_hp)*max_hit_points_/100;
+			} else {
+				hit_points_ = lexical_cast_default<int>(set_hp);
 			}
 		}
-		/** @todo The above two filters can be removed in 1.7 they're covered by the SUF. */
-		// Apply SUF. (Filtering on location is probably a bad idea though.)
-		if (const config &afilter = effect.child("filter"))
-		    if (!matches_filter(vconfig(afilter), map_location(cfg_, NULL))) continue;
+		if(set_total.empty() == false) {
+			if(set_total[set_total.size()-1] == '%') {
+				max_hit_points_ = lexical_cast_default<int>(set_total)*max_hit_points_/100;
+			} else {
+				max_hit_points_ = lexical_cast_default<int>(set_total);
+			}
+		}
 
-		const std::string &apply_to = effect["apply_to"];
-		const std::string &apply_times = effect["times"];
-		int times = 1;
+		if (increase_total.empty() == false) {
+			// A percentage on the end means increase by that many percent
+			max_hit_points_ = utils::apply_modifier(max_hit_points_, increase_total);
+		}
 
-		if (apply_times == "per level")
-			times = level_;
-		if (times) {
-			while (times > 0) {
-				times --;
+		if(max_hit_points_ < 1)
+			max_hit_points_ = 1;
 
-				// Apply unit type/variation changes last to avoid double applying effects on advance.
-				if (apply_to == "new_attack") {
-					attacks_.push_back(attack_type(effect));
-				} else if(apply_to == "remove_attacks") {
-					for(std::vector<attack_type>::iterator a = attacks_.begin(); a != attacks_.end(); ++a) {
-						if (a->matches_filter(effect, false)) {
-							attacks_.erase(a--);
-						}
-					}
-				} else if(apply_to == "attack") {
+		if (effect["heal_full"].to_bool()) {
+			heal_all();
+		}
 
-					bool first_attack = true;
-
-					std::string attack_names;
-					std::string desc;
-
-					increased = decreased = false;
-					for (std::vector<attack_type>::iterator a = attacks_.begin(); a != attacks_.end(); ++a) {
-						int damage = a->damage();
-						bool affected = a->apply_modification(effect, &desc);
-						if (affected && desc != "") {
-							if (first_attack) {
-								first_attack = false;
-							} else {
-								if (!times) {
-									attack_names += t_string(N_(" and "), "wesnoth");
-								}
-							}
-
-							if (!times) {
-								attack_names += t_string(a->name(), "wesnoth");
-							}
-						}
-						if (affected) {
-							if (damage < a->damage()) {
-								increased = true;
-							} else if (damage > a->damage()) {
-								decreased = true;
-							}
-						}
-					}
-					if (anim) {
-						strstr.str("");
-						help::tintegrate::generate_img(strstr, "misc/attack.png");
-						if (increased) {
-							help::tintegrate::generate_img(strstr, "misc/increase.png");
-						}
-						if (decreased) {
-							help::tintegrate::generate_img(strstr, "misc/decrease.png");
-						}
-						unit_display::unit_text(*this, decreased, strstr.str());
-					}
-				} else if(apply_to == "hitpoints") {
-					const std::string &increase_hp = effect["increase"];
-					const std::string &increase_total = effect["increase_total"];
-					const std::string &set_hp = effect["set"];
-					const std::string &set_total = effect["set_total"];
-
-					// If the hitpoints are allowed to end up greater than max hitpoints
-					const bool violate_max = effect["violate_maximum"].to_bool();
-
-					if(set_hp.empty() == false) {
-						if(set_hp[set_hp.size()-1] == '%') {
-							hit_points_ = lexical_cast_default<int>(set_hp)*max_hit_points_/100;
-						} else {
-							hit_points_ = lexical_cast_default<int>(set_hp);
-						}
-					}
-					if(set_total.empty() == false) {
-						if(set_total[set_total.size()-1] == '%') {
-							max_hit_points_ = lexical_cast_default<int>(set_total)*max_hit_points_/100;
-						} else {
-							max_hit_points_ = lexical_cast_default<int>(set_total);
-						}
-					}
-
-					if (increase_total.empty() == false) {
-						// A percentage on the end means increase by that many percent
-						max_hit_points_ = utils::apply_modifier(max_hit_points_, increase_total);
-					}
-
-					if(max_hit_points_ < 1)
-						max_hit_points_ = 1;
-
-					if (effect["heal_full"].to_bool()) {
-						heal_all();
-					}
-
-					if(increase_hp.empty() == false) {
-						hit_points_ = utils::apply_modifier(hit_points_, increase_hp, 0, max_hit_points_);
-					}
+		if (increase_hp.empty() == false) {
+			hit_points_ = utils::apply_modifier(hit_points_, increase_hp, 0, max_hit_points_);
+		}
 /*
-					if(hit_points_ > max_hit_points_ && !violate_max) {
-						hit_points_ = max_hit_points_;
-					}
+		if(hit_points_ > max_hit_points_ && !violate_max) {
+			hit_points_ = max_hit_points_;
+		}
 */
-					if(hit_points_ < 1)
-						hit_points_ = 1;
-				} else if(apply_to == "movement") {
-					const std::string &increase = effect["increase"];
+		if (hit_points_ < 1) {
+			hit_points_ = 1;
+		}
+	} else if(apply_to == apply_to_tag::MOVEMENT) {
+		const std::string &increase = effect["increase"];
+		const std::string &increase_curr = effect["increase_curr"];
+		int base_max_movement = max_movement_;
 
-					if (increase.empty() == false) {
-						max_movement_ = utils::apply_modifier(max_movement_, increase, 1);
-					}
-					max_movement_ = effect["set"].to_int(max_movement_);
-/*
-					if(movement_ > max_movement_)
-						movement_ = max_movement_;
-*/
-				} else if (apply_to == "munition") {
-					int increase = effect["increase"].to_int();
+		if (!increase.empty()) {
+			max_movement_ = utils::apply_modifier(max_movement_, increase);
+		}
+		max_movement_ = effect["set"].to_int(max_movement_);
 
-					if (increase > 0 || (increase < 0 && keep_turns_)) {
-						keep_turns_ += increase;
-						if (keep_turns_ < 0) keep_turns_ = 0;
-						if (anim) {
-							std::stringstream str;
-							str << _("Munition") << "\n";
-							std::vector<unit*> touchers(1, this);
-							unit_display::unit_touching(loc_, touchers, increase, str.str());
-						}
-					}
+		if (!increase_curr.empty()) {
+			movement_ = utils::apply_modifier(movement_, increase_curr);
+		}
 
-				} else if(apply_to == "max_experience") {
-					const std::string &increase = effect["increase"];
+		// verify max_movement_
+		int type_max_movement = packee_type()->max_movement();
+		if (type_max_movement != -1 && max_movement_ > type_max_movement) {
+			max_movement_ = type_max_movement;
+		} else if (max_movement_ < 0) {
+			max_movement_ = 0;
+		}
+		// verify movement_
+		if (movement_ > max_movement_) {
+			movement_ = max_movement_;
+		} else if (movement_ < 0) {
+			movement_ = 0;
+		}
 
-					if (increase.empty() == false) {
-						max_experience_ = utils::apply_modifier(max_experience_, increase, 1);
-					}
+		increased = decreased = false;
+		if (max_movement_ > base_max_movement) {
+			increased = true;
+		} else if (max_movement_ < base_max_movement) {
+			decreased = true;
+		}
+		if (anim) {
+			strstr.str("");
+			help::tintegrate::generate_img(strstr, "misc/movement.png");
+			if (increased) {
+				help::tintegrate::generate_img(strstr, "misc/increase.png");
+			}
+			if (decreased) {
+				help::tintegrate::generate_img(strstr, "misc/decrease.png");
+			}
+			unit_display::unit_text(*this, decreased, strstr.str());
+		}
+	} else if (apply_to == apply_to_tag::MUNITION) {
+		int increase = effect["increase"].to_int();
 
-				} else if (apply_to == "loyal") {
-					upkeep_ = 0;
+		if (increase > 0 || (increase < 0 && keep_turns_)) {
+			keep_turns_ += increase;
+			if (keep_turns_ < 0) keep_turns_ = 0;
+			if (anim) {
+				std::stringstream str;
+				str << _("Munition") << "\n";
+				std::vector<unit*> touchers(1, this);
+				unit_display::unit_touching(loc_, touchers, increase, str.str());
+			}
+		}
 
-				} else if(apply_to == "status") {
-					const std::string &add = effect["add"];
-					const std::string &remove = effect["remove"];
+	} else if(apply_to == apply_to_tag::MAX_EXPERIENCE) {
+		const std::string &increase = effect["increase"];
 
-					if(add.empty() == false) {
-						set_state(add, true);
-					}
+		if (increase.empty() == false) {
+			max_experience_ = utils::apply_modifier(max_experience_, increase, 1);
+		}
 
-					if(remove.empty() == false) {
-						set_state(remove, false);
-					}
-				} else if (apply_to == "movement_costs") {
-					config &mv = cfg_.child_or_add("movement_costs");
-					if (const config &ap = effect.child("movement_costs")) {
-						mod_mdr_merge(mv, ap, !effect["replace"].to_bool(), false, 1, 1000);
-					}
-					movement_costs_.clear();
-				} else if (apply_to == "defense") {
-					config &def = cfg_.child_or_add("defense");
-					if (const config &ap = effect.child("defense")) {
-						bool replace = effect["replace"].to_bool();
-						foreach (const config::attribute &i, ap.attribute_range()) {
-							int v = i.second.to_int();
-							config::attribute_value &dst = def[i.first];
-							if (!replace) {
-								int w = dst.to_int(100);
-								v += w;
-								if ((w >= 0 && v < 0) || (w < 0 && v > 0)) v = 0;
-								else if (v < -100) v = -100;
-								else if (v > 100) v = 100;
-							}
-							dst = v;
-						}
-					}
-					defense_mods_.clear();
-				} else if (apply_to == "resistance") {
-					config& mv = cfg_.child_or_add("resistance");
-					increased = decreased = false;
-					if (const config& ap = effect.child("resistance")) {
-						if (anim) {
-							foreach (const config::attribute &i, ap.attribute_range()) {
-								int v = i.second.to_int();
-								if (v > 0) {
-									increased = true;
-								} else if (v < 0) {
-									decreased = true;
-								}
-							}
-						}
-						mod_mdr_merge(mv, ap, !effect["replace"].to_bool(), true, 50, 500);
-					}
-					if (anim) {
-						strstr.str("");
-						help::tintegrate::generate_img(strstr, "misc/resistance.png");
-						if (increased) {
-							help::tintegrate::generate_img(strstr, "misc/increase.png");
-						}
-						if (decreased) {
-							help::tintegrate::generate_img(strstr, "misc/decrease.png");
-						}
-						unit_display::unit_text(*this, decreased, strstr.str());
-					}
-				} else if (apply_to == "encourage") {
-					int increase = effect["increase"].to_int();
-					int value = increase + skill_[hero_skill_encourage];
-					if (value < 0) {
-						value = 0;
-					} else if (value > fxptoi12(65535)) {
-						value = fxptoi12(65535);
-					}
-					skill_[hero_skill_encourage] = value;
+	} else if (apply_to == apply_to_tag::LOYAL) {
+		upkeep_ = 0;
 
-					if (anim && increase) {
-						strstr.str("");
-						help::tintegrate::generate_img(strstr, "misc/encourage.png");
-						if (increase > 0) {
-							decreased = false;
-							help::tintegrate::generate_img(strstr, "misc/increase.png");
-						} else {
-							decreased = true;
-							help::tintegrate::generate_img(strstr, "misc/decrease.png");
-						}
-						unit_display::unit_text(*this, decreased, strstr.str());
-					}
+	} else if(apply_to == apply_to_tag::STATUS) {
+		const std::string &add = effect["add"];
+		const std::string &remove = effect["remove"];
 
-				} else if (apply_to == "demolish") {
-					int increase = effect["increase"].to_int();
-					int value = increase + skill_[hero_skill_demolish];
-					if (value < 0) {
-						value = 0;
-					} else if (value > fxptoi12(65535)) {
-						value = fxptoi12(65535);
-					}
-					skill_[hero_skill_demolish] = value;
+		if(add.empty() == false) {
+			set_state(add, true);
+		}
 
-					if (anim && increase) {
-						strstr.str("");
-						help::tintegrate::generate_img(strstr, "misc/demolish.png");
-						if (increase > 0) {
-							help::tintegrate::generate_img(strstr, "misc/increase.png");
-						} else {
-							help::tintegrate::generate_img(strstr, "misc/decrease.png");
-						}
-						unit_display::unit_text(*this, decreased, strstr.str());
-					}
-
-				} else if (apply_to == "zoc") {
-					if (const config::attribute_value *v = effect.get("value")) {
-						emit_zoc_ = v->to_bool();
-					}
-				} else if (apply_to == "image_mod") {
-					std::string mod = effect["replace"];
-					if (!mod.empty()){
-						image_mods_ = mod;
-					}
-					mod = effect["add"].str();
-					if (!mod.empty()){
-						image_mods_ += mod;
-					}
-
-					game_config::add_color_info(effect);
-
-				} else if (apply_to == "advance") {
-					int increase = effect["increase"].to_int();
-					while (increase > 0) {
-						experience_ += max_experience_;
-						dialogs::advance_unit(loc_, true);
-						increase --;
-					}
-
-				} else if (apply_to == "train") {
-					// arms adaptability
-					int increase = effect["increase"].to_int();
-					if (increase) {
-						int inc_adaptability_xp = increase * ftofxp12(1);
-
-						u16_get_experience_i12(&(master_->arms_[arms_]), inc_adaptability_xp);
-						if (second_->valid()) {
-							u16_get_experience_i12(&(second_->arms_[arms_]), inc_adaptability_xp);
-						}
-						if (third_->valid()) {
-							u16_get_experience_i12(&(third_->arms_[arms_]), inc_adaptability_xp);
-						}
-						if (packee_unit_type_) {
-							int packee_arms = packee_unit_type_->arms();
-							u16_get_experience_i12(&(master_->arms_[packee_arms]), inc_adaptability_xp);
-							if (second_->valid()) {
-								u16_get_experience_i12(&(second_->arms_[packee_arms]), inc_adaptability_xp);
-							}
-							if (third_->valid()) {
-								u16_get_experience_i12(&(third_->arms_[packee_arms]), inc_adaptability_xp);
-							}
-						}
-						adjust();
-						if (anim) {
-							std::stringstream str;
-							str << dgettext("wesnoth-lib", "Adaptability") << "\n";
-							// std::vector<unit*> touchers(1, this);
-							std::vector<unit*> touchers;
-							if (artifical* city = units_.city_from_loc(loc_)) {
-								touchers.push_back((unit*)(city));
-							} else {
-								touchers.push_back(this);
-							}
-							unit_display::unit_touching(loc_, touchers, increase, str.str());
-						}
+		if(remove.empty() == false) {
+			set_state(remove, false);
+		}
+	} else if (apply_to == apply_to_tag::MOVEMENT_COSTS) {
+		config &mv = cfg_.child_or_add("movement_costs");
+		if (const config &ap = effect.child("movement_costs")) {
+			mod_mdr_merge(mv, ap, !effect["replace"].to_bool(), false, 1, 1000);
+		}
+		movement_costs_.clear();
+	} else if (apply_to == apply_to_tag::DEFENSE) {
+		config &def = cfg_.child_or_add("defense");
+		if (const config &ap = effect.child("defense")) {
+			bool replace = effect["replace"].to_bool();
+			foreach (const config::attribute &i, ap.attribute_range()) {
+				int v = i.second.to_int();
+				config::attribute_value &dst = def[i.first];
+				if (!replace) {
+					int w = dst.to_int(100);
+					v += w;
+					if ((w >= 0 && v < 0) || (w < 0 && v > 0)) v = 0;
+					else if (v < -100) v = -100;
+					else if (v > 100) v = 100;
+				}
+				dst = v;
+			}
+		}
+		defense_mods_.clear();
+	} else if (apply_to == apply_to_tag::RESISTANCE) {
+		config& mv = cfg_.child_or_add("resistance");
+		increased = decreased = false;
+		if (const config& ap = effect.child("resistance")) {
+			if (anim) {
+				foreach (const config::attribute &i, ap.attribute_range()) {
+					int v = i.second.to_int();
+					if (v > 0) {
+						increased = true;
+					} else if (v < 0) {
+						decreased = true;
 					}
 				}
-			} // end while
+			}
+			mod_mdr_merge(mv, ap, !effect["replace"].to_bool(), true, 50, 500);
 		}
-	}
+		if (anim) {
+			strstr.str("");
+			help::tintegrate::generate_img(strstr, "misc/resistance.png");
+			if (increased) {
+				help::tintegrate::generate_img(strstr, "misc/increase.png");
+			}
+			if (decreased) {
+				help::tintegrate::generate_img(strstr, "misc/decrease.png");
+			}
+			unit_display::unit_text(*this, decreased, strstr.str());
+		}
+	} else if (apply_to == apply_to_tag::ENCOURAGE) {
+		int increase = effect["increase"].to_int();
+		int value = increase + skill_[hero_skill_encourage];
+		if (value < 0) {
+			value = 0;
+		} else if (value > fxptoi12(65535)) {
+			value = fxptoi12(65535);
+		}
+		skill_[hero_skill_encourage] = value;
 
-	// store trait info
-	if (type == "trait") {
-		add_trait_description(mod);
+		if (anim && increase) {
+			strstr.str("");
+			help::tintegrate::generate_img(strstr, "misc/encourage.png");
+			if (increase > 0) {
+				decreased = false;
+				help::tintegrate::generate_img(strstr, "misc/increase.png");
+			} else {
+				decreased = true;
+				help::tintegrate::generate_img(strstr, "misc/decrease.png");
+			}
+			unit_display::unit_text(*this, decreased, strstr.str());
+		}
+
+	} else if (apply_to == apply_to_tag::DEMOLISH) {
+		int increase = effect["increase"].to_int();
+		int value = increase + skill_[hero_skill_demolish];
+		if (value < 0) {
+			value = 0;
+		} else if (value > fxptoi12(65535)) {
+			value = fxptoi12(65535);
+		}
+		skill_[hero_skill_demolish] = value;
+
+		if (anim && increase) {
+			strstr.str("");
+			help::tintegrate::generate_img(strstr, "misc/demolish.png");
+			if (increase > 0) {
+				decreased = false;
+				help::tintegrate::generate_img(strstr, "misc/increase.png");
+			} else {
+				decreased = true;
+				help::tintegrate::generate_img(strstr, "misc/decrease.png");
+			}
+			unit_display::unit_text(*this, decreased, strstr.str());
+		}
+
+	} else if (apply_to == apply_to_tag::ZOC) {
+		if (const config::attribute_value *v = effect.get("value")) {
+			emit_zoc_ = v->to_bool();
+		}
+	} else if (apply_to == apply_to_tag::IMAGE_MOD) {
+		std::string mod = effect["replace"];
+		if (!mod.empty()){
+			image_mods_ = mod;
+		}
+		mod = effect["add"].str();
+		if (!mod.empty()){
+			image_mods_ += mod;
+		}
+
+		game_config::add_color_info(effect);
+
+	} else if (apply_to == apply_to_tag::ADVANCE) {
+		int increase = effect["increase"].to_int();
+		while (increase > 0) {
+			experience_ += max_experience_;
+			dialogs::advance_unit(loc_, true);
+			increase --;
+		}
+
+	} else if (apply_to == apply_to_tag::TRAIN) {
+		// arms adaptability
+		int increase = effect["increase"].to_int();
+		if (increase) {
+			int inc_adaptability_xp = increase * ftofxp12(1);
+
+			u16_get_experience_i12(&(master_->arms_[arms_]), inc_adaptability_xp);
+			if (second_->valid()) {
+				u16_get_experience_i12(&(second_->arms_[arms_]), inc_adaptability_xp);
+			}
+			if (third_->valid()) {
+				u16_get_experience_i12(&(third_->arms_[arms_]), inc_adaptability_xp);
+			}
+			if (packee_unit_type_) {
+				int packee_arms = packee_unit_type_->arms();
+				u16_get_experience_i12(&(master_->arms_[packee_arms]), inc_adaptability_xp);
+				if (second_->valid()) {
+					u16_get_experience_i12(&(second_->arms_[packee_arms]), inc_adaptability_xp);
+				}
+				if (third_->valid()) {
+					u16_get_experience_i12(&(third_->arms_[packee_arms]), inc_adaptability_xp);
+				}
+			}
+			adjust();
+			if (anim) {
+				std::stringstream str;
+				str << dgettext("wesnoth-lib", "Adaptability") << "\n";
+				std::vector<unit*> touchers;
+				if (artifical* city = units_.city_from_loc(loc_)) {
+					touchers.push_back((unit*)(city));
+				} else {
+					touchers.push_back(this);
+				}
+				unit_display::unit_touching(loc_, touchers, increase, str.str());
+			}
+		}
+	} else if (apply_to == apply_to_tag::DAMAGE) {
+		const std::string& type = effect["type"];
+		const std::string& relative = effect["relative"];
+		int ratio = effect["ratio"].to_int(100);
+		damage_range(units_, *resources::teams, *this, type, relative, ratio);
+
+	} else if (apply_to == apply_to_tag::HIDE) {
+		if (hide_turns_ < turns) hide_turns_ = turns;
 	}
 }
 
 void unit::apply_tactic(const ttactic* contain, const ttactic& effect, int part, int turn)
 {
 	bool redo = contain? false: true;
-	add_modification("tactic", effect.action_cfg(), true, !redo);
-	if (!redo) {
+	add_modification_internal(effect.apply_to(), effect.effect_cfg(), !redo, turn);
+	if (!redo && !contain->parts()[part]->oneoff()) {
 		tactics_.push_back(tunit_tactic(contain, turn, part));
 	}
 }
@@ -4571,8 +4513,9 @@ const unit_animation* unit::choose_animation(const game_display& disp, const map
 void unit::apply_modifications()
 {
 	for (std::vector<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
-		add_modification("trait", unit_types.traits().find(*it)->second, true);
-
+		const config& mod = unit_types.traits().find(*it)->second;
+		add_modification(mod, true);
+		add_trait_description(mod);
 	}
 
 	//apply the experience acceleration last
@@ -4582,7 +4525,6 @@ void unit::apply_modifications()
 
 bool unit::invisible(const map_location& loc, bool see_all) const
 {
-	const unit_map& units = *resources::units;
 	const std::vector<team>& teams = *resources::teams;
 
 	// Fetch from cache
@@ -4609,10 +4551,29 @@ bool unit::invisible(const map_location& loc, bool see_all) const
 		is_inv = !curr_node && get_ability_bool("hides", loc);
 	}
 	if (is_inv) {
-		for (unit_map::const_iterator u = units.begin(); u != units.end(); ++u) {
+		map_offset* adjacent_ptr;
+		size_t i, size;
+		map_location u_loc;
+
+		// range=1
+		size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
+		adjacent_ptr = adjacent_1[loc.x & 0x1];
+		for (i = 0; i < size; i ++) {
+			u_loc.x = loc.x + adjacent_ptr[i].x;
+			u_loc.y = loc.y + adjacent_ptr[i].y;
+			
+			// when expedite, center of city using unit_map::find is expediting troop, other is city.
+			// because city is 7 grids, so range = 1 don't touch center grid.
+			unit* u = find_unit(units_, u_loc);
+			if (!u) {
+				continue;
+			}
+			if (u->wall()) {
+				continue;
+			}
+/*
 			// don't palce adjacent = false outer of for loop!
 			bool adjacent = false;
-			const map_location& u_loc = u->get_location();
 			if (!u->is_artifical() && (!expediting_city_node || expediting_city_node->first != u_loc)) {
 				adjacent = tiles_adjacent(loc, u_loc);
 			} else {
@@ -4630,7 +4591,8 @@ bool unit::invisible(const map_location& loc, bool see_all) const
 					}
 				}
 			}
-			
+*/			
+			bool adjacent = true;
 			if (teams[side_-1].is_enemy(u->side()) && adjacent) {
 				// Enemy spotted in adjacent tiles, check if we can see him.
 				// Watch out to call invisible with see_all=true to avoid infinite recursive calls!
@@ -4938,12 +4900,8 @@ void unit::refresh()
 	if (get_current_animation_tick() > next_idling_ + 1000)
 	{
 		// prevent all units animating at the same time
-		if (disp.idle_anim()) {
-			next_idling_ = get_current_animation_tick()
-				+ static_cast<int>((10000 + rand() % 10000) * disp.idle_anim_rate());
-		} else {
-			next_idling_ = INT_MAX;
-		}
+		next_idling_ = get_current_animation_tick()
+			+ static_cast<int>((10000 + rand() % 10000) * disp.idle_anim_rate());
 	} else {
 		set_idling();
 	}
@@ -4956,9 +4914,9 @@ team_data calculate_team_data(const team& tm, int side)
 	// res.upkeep = side_upkeep(units, side);
 	res.upkeep = tm.side_upkeep();
 	res.villages = tm.villages().size();
-	res.expenses = std::max<int>(0,res.upkeep - res.villages);
-	res.net_income = tm.total_income() - res.expenses;
+	res.net_income = tm.total_income() - res.upkeep;
 	res.gold = tm.gold();
+	res.technology_net_income = tm.total_technology_income();
 	res.teamname = tm.user_team_name();
 	return res;
 }
@@ -5475,6 +5433,19 @@ bool extract_hero(unit_map& units, const hero& h)
 
 	assert(false);
 	return false;
+}
+
+unit* find_unit(unit_map& units, const map_location& loc)
+{
+	if (!resources::game_map->on_board(loc)) return NULL;
+	unit_map::iterator u = units.find(loc);
+	if (!u.valid()) {
+		u = units.find(loc, false);
+	}
+	if (u.valid()) {
+		return &*u;
+	}
+	return NULL;
 }
 
 const t_string& unit::name() const

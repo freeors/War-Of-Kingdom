@@ -110,9 +110,17 @@ public:
 	void wander_into(hero& h, bool dialog = true);
 	void move_into(hero& h);
 
-	void select_mayor(hero* commend = NULL);
+	void select_mayor(hero* commend = NULL, bool dialog = true);
+	// must not return NULL, should &hero_invalid.
 	hero* mayor() const { return mayor_; }
 
+	void calculate_exploiture();
+	int commercial_exploiture() const { return commercial_exploiture_; }
+	int technology_exploiture() const { return technology_exploiture_; }
+	void active_exploiture();
+	std::pair<bool, bool> calculate_feature() const;
+
+	void calculate_ea_tiles(std::vector<const map_location*>& ea_vacants, int& markets, int& technologies);
 	//
 	// override
 	//
@@ -128,7 +136,7 @@ public:
 
 	void set_resting(bool rest);
 	int upkeep() const;
-	void get_experience(int xp, bool opp_is_artifical = false);
+	void get_experience(const increase_xp::ublock& ub, int xp, bool master = true, bool second = true, bool third = true);
 
 	void extract_heros_number();
 	void recalculate_heros_pointer();
@@ -173,6 +181,9 @@ private:
 
 	hero* mayor_;
 	int fronts_;
+
+	int commercial_exploiture_;
+	int technology_exploiture_;
 
 	// recruit
 	std::set<const unit_type*> not_recruit_;

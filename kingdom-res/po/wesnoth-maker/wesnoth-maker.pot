@@ -1,0 +1,898 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2013-01-12 19:34+0800\n"
+"PO-Revision-Date: 2013-01-12 19:34+0800\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-KeywordsList: _;gettext;gettext_noop;vgettext2\n"
+"X-Poedit-Basepath: C:\\ddksample\\kingdom-src\\kingdom\\src\\editor2\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: DlgCampaignProc.cpp:762 event.cpp:339 event.cpp:353
+msgid "Yes"
+msgstr ""
+
+#: DlgCampaignProc.cpp:762 event.cpp:339 event.cpp:353 utype.cpp:428
+msgid "No"
+msgstr ""
+
+#: DlgCampaignProc.cpp:1528 DlgCampaignProc.cpp:3514 DlgCampaignProc.cpp:4215
+msgid "Cannot recruit"
+msgstr ""
+
+#: DlgCampaignProc.cpp:1820 DlgCampaignProc.cpp:1871 event.cpp:697
+#: event.cpp:774 event.cpp:1421 event.cpp:1542
+msgid "Roam"
+msgstr ""
+
+#: DlgCampaignProc.cpp:1843 DlgCoreProc.cpp:127 DlgCoreProc.cpp:162
+#: DlgCoreProc.cpp:197 DlgCoreProc.cpp:230
+msgid "Lv$level"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2903
+msgid "Save campaign-$campaign"
+msgstr ""
+
+#: DlgCampaignProc.cpp:2904
+msgid "$campaign is dirty, do you want to save modify?"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3069 DlgCampaignProc.cpp:4947 utype.cpp:1394
+#: utype.cpp:2980
+msgid "Corresponding cfg"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3070 DlgCampaignProc.cpp:4948 utype.cpp:1397
+#: utype.cpp:1660 utype.cpp:2983
+msgid "ID"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3071 utype.cpp:1395 utype.cpp:1659 utype.cpp:2981
+msgid "Domain"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3072 DlgCampaignProc.cpp:3357 DlgCampaignProc.cpp:3410
+#: DlgCampaignProc.cpp:3433 DlgCampaignProc.cpp:3480 DlgCampaignProc.cpp:3802
+#: DlgCampaignProc.cpp:3938 DlgCampaignProc.cpp:4349 DlgCampaignProc.cpp:4949
+#: DlgCampaignProc.cpp:5014 DlgCampaignProc.cpp:5049 DlgCoreProc.cpp:1039
+#: utype.cpp:1396 utype.cpp:1584 utype.cpp:1661 utype.cpp:1725 utype.cpp:2982
+#: utype.cpp:3228 utype.cpp:3319
+msgid "Name"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3073
+msgid "Abbreviation"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3074
+msgid "Rank"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3075
+msgid "First scenario"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3076
+msgid "Image"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3077 DlgCampaignProc.cpp:3442 DlgCampaignProc.cpp:3811
+#: DlgCampaignProc.cpp:4358 DlgCoreProc.cpp:498 DlgCoreProc.cpp:652
+#: utype.cpp:1398 utype.cpp:1546 utype.cpp:1734 utype.cpp:2984
+msgid "Description"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3078
+msgid "RPG mode"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3080 DlgCampaignProc.cpp:3081 DlgCampaignProc.cpp:4960
+#: utype.cpp:1667
+msgid "Browse..."
+msgstr ""
+
+#: DlgCampaignProc.cpp:3089
+msgid "Tutorial"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3093
+msgid "Multi-scenario"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3096
+msgid "Test"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3116 DlgCampaignProc.cpp:3121 DlgCampaignProc.cpp:3302
+#: DlgCampaignProc.cpp:4978 DlgCampaignProc.cpp:5283 DlgCampaignProc.cpp:5382
+msgid "Exist"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3118 DlgCampaignProc.cpp:3123 DlgCampaignProc.cpp:3302
+#: DlgCampaignProc.cpp:4980 DlgCampaignProc.cpp:5285
+msgid "Not exist"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3149 DlgCampaignProc.cpp:5245 DlgCampaignProc.cpp:5971
+#: event.cpp:2596 utype.cpp:1802 utype.cpp:2676 utype.cpp:2704
+msgid "Invalid string"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3286 DlgCampaignProc.cpp:5357
+msgid "Selected is using file, do nothing."
+msgstr ""
+
+#: DlgCampaignProc.cpp:3292 DlgCampaignProc.cpp:5373
+msgid "Copy \"$src\" to \"$dst\" $result!"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3349
+msgid "Edit side"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3352
+msgid "Add side"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3356 DlgCampaignProc.cpp:3976 DlgCampaignProc.cpp:5005
+#: DlgCampaignProc.cpp:5040 DlgCampaignProc.cpp:5130 DlgHEditorProc.cpp:554
+#: DlgHEditorProc.cpp:2375
+msgid "Number"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3358 DlgCampaignProc.cpp:5055
+msgid "Leader"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3359 DlgCampaignProc.cpp:5061
+msgid "Void"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3360 DlgCampaignProc.cpp:5079
+msgid "Base gold"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3361 DlgCampaignProc.cpp:5085
+msgid "Base income"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3365 DlgCampaignProc.cpp:3603 DlgCampaignProc.cpp:3765
+#: DlgCampaignProc.cpp:4318 DlgCampaignProc.cpp:5109 DlgCoreProc.cpp:408
+#: DlgCoreProc.cpp:700 DlgCoreProc.cpp:1169
+msgid "City"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3366 DlgCampaignProc.cpp:5115 DlgCoreProc.cpp:407
+#: DlgCoreProc.cpp:683 DlgCoreProc.cpp:1152
+msgid "Troop"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3489 DlgCampaignProc.cpp:3579 DlgCampaignProc.cpp:3766
+#: DlgCampaignProc.cpp:4317 DlgCoreProc.cpp:432 DlgCoreProc.cpp:765
+#: utype.cpp:3205
+msgid "arms^Type"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3495 DlgCampaignProc.cpp:3585 DlgCampaignProc.cpp:3769
+#: DlgCampaignProc.cpp:3776 DlgCampaignProc.cpp:4320
+msgid "Coordinate"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3526 DlgCampaignProc.cpp:3773
+msgid "Office"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3532 DlgCampaignProc.cpp:3774
+msgid "Wander"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3552
+msgid "troop^Master"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3562 DlgCampaignProc.cpp:3571
+msgid "troop^Second"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3624
+msgid "Edit feature"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3627
+msgid "Add feature"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3758
+msgid "Edit city"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3761
+msgid "Add city"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3771 DlgCampaignProc.cpp:4322 DlgCampaignProc.cpp:4324
+msgid "Hero"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3772 DlgCampaignProc.cpp:4323
+msgid "Candidate"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3778 DlgCampaignProc.cpp:5704 DlgHEditorProc.cpp:1544
+msgid "Add"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4310
+msgid "Edit troop"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4313
+msgid "Add troop"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4950
+msgid "Map"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4951
+msgid "Next scenario"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4953
+msgid "Turns"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4954 utype.cpp:2372
+msgid "Unrestricted"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4956
+msgid "Maximal defeated activity"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4957
+msgid "Win condition"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4958
+msgid "Lose condition"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4959
+msgid "Hidden treasure"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5021
+msgid "Quantity"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5103 DlgCoreProc.cpp:409 DlgCoreProc.cpp:692
+#: DlgCoreProc.cpp:1161
+msgid "Artifical"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5139 DlgCoreProc.cpp:668 DlgCoreProc.cpp:1056
+msgid "Occasion"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5146 event.cpp:352
+msgid "Only one time"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5251
+msgid "Other scenario has holded ID"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5351
+msgid "$file isn't valid map file!"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5452
+msgid "Edit hidden treasure"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5455
+msgid "Add hidden treasure"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5705 DlgCampaignProc.cpp:5732 event.cpp:3065
+#: main.cpp:726 utype.cpp:3721
+msgid "Edit..."
+msgstr ""
+
+#: DlgCampaignProc.cpp:5706 DlgCampaignProc.cpp:5733 event.cpp:3066
+#: main.cpp:727 utype.cpp:3722
+msgid "Delete..."
+msgstr ""
+
+#: DlgCampaignProc.cpp:5731 main.cpp:725 utype.cpp:3720
+msgid "Add..."
+msgstr ""
+
+#: DlgCampaignProc.cpp:5937
+msgid "New campaign"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5939
+msgid "Campaign ID(Once set, cannot modify in future)"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5940
+msgid "First scenario ID(May modify in future)"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5942 main.cpp:717
+msgid "New"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5943
+msgid "Cancel"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5981
+msgid "cfg directory:"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5983
+msgid "bin file:"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5988
+msgid "Other campaign has holded ID"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5991
+msgid "scenario file:"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5993
+msgid "map file:"
+msgstr ""
+
+#: DlgCoreProc.cpp:164
+msgid "Packer"
+msgstr ""
+
+#: DlgCoreProc.cpp:325 DlgHEditorProc.cpp:92
+msgid "Save modify"
+msgstr ""
+
+#: DlgCoreProc.cpp:326
+msgid "Core data is dirty, do you want to save modify?"
+msgstr ""
+
+#: DlgCoreProc.cpp:457
+msgid "Atomic tactic"
+msgstr ""
+
+#: DlgCoreProc.cpp:465
+msgid "Complex tactic"
+msgstr ""
+
+#: DlgCoreProc.cpp:504
+msgid "Point"
+msgstr ""
+
+#: DlgCoreProc.cpp:513
+msgid "Range"
+msgstr ""
+
+#: DlgCoreProc.cpp:515
+msgid "Myself"
+msgstr ""
+
+#: DlgCoreProc.cpp:522
+msgid "troop^Friend"
+msgstr ""
+
+#: DlgCoreProc.cpp:529
+msgid "troop^Enemy"
+msgstr ""
+
+#: DlgCoreProc.cpp:539 DlgCoreProc.cpp:727 DlgCoreProc.cpp:1199
+msgid "Defend"
+msgstr ""
+
+#: DlgCoreProc.cpp:541 DlgCoreProc.cpp:729 DlgCoreProc.cpp:1201 utype.cpp:1409
+msgid "Attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:543 DlgCoreProc.cpp:731 DlgCoreProc.cpp:1203
+msgid "Will"
+msgstr ""
+
+#: DlgCoreProc.cpp:545 DlgCoreProc.cpp:733 DlgCoreProc.cpp:1205
+msgid "Demolish"
+msgstr ""
+
+#: DlgCoreProc.cpp:551
+msgid "tactic^Child"
+msgstr ""
+
+#: DlgCoreProc.cpp:610 DlgCoreProc.cpp:1024 DlgCoreProc.cpp:1299
+msgid "Atomic technology"
+msgstr ""
+
+#: DlgCoreProc.cpp:618 DlgCoreProc.cpp:1026 DlgCoreProc.cpp:1302
+msgid "Complex technology"
+msgstr ""
+
+#: DlgCoreProc.cpp:659 DlgCoreProc.cpp:1048 DlgHEditorProc.cpp:2386
+msgid "Experience"
+msgstr ""
+
+#: DlgCoreProc.cpp:670 DlgCoreProc.cpp:1139
+msgid "Adjust unit"
+msgstr ""
+
+#: DlgCoreProc.cpp:673 DlgCoreProc.cpp:1141
+msgid "Finish research"
+msgstr ""
+
+#: DlgCoreProc.cpp:681 DlgCoreProc.cpp:1063
+msgid "Type filter"
+msgstr ""
+
+#: DlgCoreProc.cpp:707 DlgCoreProc.cpp:1070
+msgid "Arms filter"
+msgstr ""
+
+#: DlgCoreProc.cpp:739 DlgCoreProc.cpp:1086
+msgid "technology^Child"
+msgstr ""
+
+#: DlgCoreProc.cpp:766
+msgid "Tactic"
+msgstr ""
+
+#: DlgCoreProc.cpp:990 DlgCoreProc.cpp:1029 utype.cpp:3218
+msgid "Close"
+msgstr ""
+
+#: DlgCoreProc.cpp:1077
+msgid "Action"
+msgstr ""
+
+#: DlgCoreProc.cpp:1314 utype.cpp:3726
+msgid "Report format"
+msgstr ""
+
+#: DlgDDescProc.cpp:180
+msgid "\"$directory\" isn't valid resource directory, please select again"
+msgstr ""
+
+#: DlgDDescProc.cpp:200
+msgid "Do you want to extract release package to \"C:\\kingdom-ins\"?"
+msgstr ""
+
+#: DlgDDescProc.cpp:202
+msgid "Confirm generate"
+msgstr ""
+
+#: DlgDDescProc.cpp:208
+msgid "Extract release package from \"$src\" to \"C:\\kingdom-ins\", $result!"
+msgstr ""
+
+#: DlgDDescProc.cpp:256
+msgid "Do you want to delete file: \"$file\" and directory: \"$directory\"?"
+msgstr ""
+
+#: DlgDDescProc.cpp:258 DlgDDescProc.cpp:281 DlgHEditorProc.cpp:976
+#: event.cpp:3379 utype.cpp:3189
+msgid "Confirm delete"
+msgstr ""
+
+#: DlgDDescProc.cpp:279
+msgid "Will generate non-sync, do you want to only delete file: \"$file\"?"
+msgstr ""
+
+#: DlgHEditorProc.cpp:91
+msgid "Do you want to save modify?"
+msgstr ""
+
+#: DlgHEditorProc.cpp:628 DlgHEditorProc.cpp:2376
+msgid "Picture number"
+msgstr ""
+
+#: DlgHEditorProc.cpp:634
+msgid "Base/Float catalog"
+msgstr ""
+
+#: DlgHEditorProc.cpp:808
+msgid "Status/Activity"
+msgstr ""
+
+#: DlgHEditorProc.cpp:974
+msgid "Do you want to delete hero($name) that number is $number?"
+msgstr ""
+
+#: DlgHEditorProc.cpp:1546
+msgid "Edit"
+msgstr ""
+
+#: DlgHEditorProc.cpp:1548
+msgid "Unknown action"
+msgstr ""
+
+#: DlgSyncProc.cpp:158
+msgid "Need restart if changed"
+msgstr ""
+
+#: DlgSyncProc.cpp:166
+msgid "File name"
+msgstr ""
+
+#: DlgSyncProc.cpp:175 DlgSyncProc.cpp:181
+msgid "Checksum"
+msgstr ""
+
+#: DlgSyncProc.cpp:187
+msgid "Status"
+msgstr ""
+
+#: DlgSyncProc.cpp:193
+msgid "SHA1"
+msgstr ""
+
+#: event.cpp:382
+msgid "Cond.I: Filter first unit"
+msgstr ""
+
+#: event.cpp:388
+msgid "Cond.II: Filter second unit"
+msgstr ""
+
+#: event.cpp:837
+msgid "equal value"
+msgstr ""
+
+#: event.cpp:838
+msgid "evaluats one amone range"
+msgstr ""
+
+#: event.cpp:912
+msgid "Variable \"$name\" $op \"$value\""
+msgstr ""
+
+#: event.cpp:1658
+msgid "equals string"
+msgstr ""
+
+#: event.cpp:1659
+msgid "not equals string"
+msgstr ""
+
+#: event.cpp:1660
+msgid "contains string"
+msgstr ""
+
+#: event.cpp:1661
+msgid "equals numerical"
+msgstr ""
+
+#: event.cpp:1662
+msgid "not equals numerical"
+msgstr ""
+
+#: event.cpp:1663
+msgid "greater than numerical"
+msgstr ""
+
+#: event.cpp:1664
+msgid "less than numerical"
+msgstr ""
+
+#: event.cpp:1665
+msgid "greater than equal to numerical"
+msgstr ""
+
+#: event.cpp:1666
+msgid "less_than_equal_to numerical"
+msgstr ""
+
+#: event.cpp:1667
+msgid "equals boolean"
+msgstr ""
+
+#: event.cpp:1668
+msgid "not equals boolean"
+msgstr ""
+
+#: event.cpp:1715
+msgid "\"$left\" $op \"$right\""
+msgstr ""
+
+#: event.cpp:3047
+msgid "Edit $number|th event"
+msgstr ""
+
+#: event.cpp:3050
+msgid "Add event"
+msgstr ""
+
+#: event.cpp:3055
+msgid "Judge branch"
+msgstr ""
+
+#: event.cpp:3057
+msgid "Set variable"
+msgstr ""
+
+#: event.cpp:3059
+msgid "Generate troop"
+msgstr ""
+
+#: event.cpp:3060
+msgid "Kill troop"
+msgstr ""
+
+#: event.cpp:3061
+msgid "Join in troop"
+msgstr ""
+
+#: event.cpp:3064
+msgid "Append after it"
+msgstr ""
+
+#: event.cpp:3377
+msgid "Do you want to delete $number|th event?"
+msgstr ""
+
+#: main.cpp:692
+msgid "Extract release package to C:\\kingdom-ins"
+msgstr ""
+
+#: main.cpp:698
+msgid "WML format"
+msgstr ""
+
+#: main.cpp:703
+msgid "Delete relative *.cfg at the same time"
+msgstr ""
+
+#: main.cpp:705 main.cpp:710 main.cpp:721
+msgid "Delete"
+msgstr ""
+
+#: main.cpp:712
+msgid "Delete all"
+msgstr ""
+
+#: main.cpp:719
+msgid "Explorer"
+msgstr ""
+
+#: main.cpp:731
+msgid "Reset all to default"
+msgstr ""
+
+#: utype.cpp:326 utype.cpp:2934
+msgid "Advances to"
+msgstr ""
+
+#: utype.cpp:369 utype.cpp:2938 utype.cpp:3291
+msgid "Abilities"
+msgstr ""
+
+#: utype.cpp:425 utype.cpp:2375 utype.cpp:3278
+msgid "Can land on wall"
+msgstr ""
+
+#: utype.cpp:426 utype.cpp:3448
+msgid "Can"
+msgstr ""
+
+#: utype.cpp:426 utype.cpp:3448
+msgid "Cannot"
+msgstr ""
+
+#: utype.cpp:427 utype.cpp:2376
+msgid "Only used to leader"
+msgstr ""
+
+#: utype.cpp:428
+msgid "YES"
+msgstr ""
+
+#: utype.cpp:431 utype.cpp:2464
+msgid "Increase XP per turn"
+msgstr ""
+
+#: utype.cpp:432 utype.cpp:438 utype.cpp:2465 utype.cpp:2533
+msgid "Recover HP per turn"
+msgstr ""
+
+#: utype.cpp:436 utype.cpp:1402 utype.cpp:1560 utype.cpp:1593 utype.cpp:1663
+#: utype.cpp:1997 utype.cpp:2532 utype.cpp:3066 utype.cpp:3326
+msgid "Type"
+msgstr ""
+
+#: utype.cpp:439 utype.cpp:2534
+msgid "Guard attack"
+msgstr ""
+
+#: utype.cpp:446 utype.cpp:2535
+msgid "Base income gold"
+msgstr ""
+
+#: utype.cpp:448
+msgid "Base income technology"
+msgstr ""
+
+#: utype.cpp:1386
+msgid "arms^Edit type"
+msgstr ""
+
+#: utype.cpp:1389
+msgid "arms^Add type"
+msgstr ""
+
+#: utype.cpp:1401 utype.cpp:2985
+msgid "Has ZOC"
+msgstr ""
+
+#: utype.cpp:1403 utype.cpp:1969 utype.cpp:2988
+msgid "Resistance/Defend/Cost"
+msgstr ""
+
+#: utype.cpp:1404
+msgid "Set"
+msgstr ""
+
+#: utype.cpp:1405 utype.cpp:1523
+msgid "Level"
+msgstr ""
+
+#: utype.cpp:1408
+msgid "Alignment"
+msgstr ""
+
+#: utype.cpp:1514 utype.cpp:1537
+msgid "Name(ID)"
+msgstr ""
+
+#: utype.cpp:1600 utype.cpp:1662 utype.cpp:3333
+msgid "Icon"
+msgstr ""
+
+#: utype.cpp:1608 utype.cpp:1664 utype.cpp:3340
+msgid "attack^Range"
+msgstr ""
+
+#: utype.cpp:1622 utype.cpp:1665 utype.cpp:3354
+msgid "Damage"
+msgstr ""
+
+#: utype.cpp:1628 utype.cpp:1666 utype.cpp:3361
+msgid "damage^Number"
+msgstr ""
+
+#: utype.cpp:1649
+msgid "Edit attack"
+msgstr ""
+
+#: utype.cpp:1652
+msgid "Add attack"
+msgstr ""
+
+#: utype.cpp:1781 utype.cpp:1880 utype.cpp:3347
+msgid "Specials"
+msgstr ""
+
+#: utype.cpp:1808
+msgid "Other attack has holded ID"
+msgstr ""
+
+#: utype.cpp:1973 utype.cpp:3300
+msgid "Template"
+msgstr ""
+
+#: utype.cpp:1975
+msgid "mtype^Defend"
+msgstr ""
+
+#: utype.cpp:1976
+msgid "Movement cost"
+msgstr ""
+
+#: utype.cpp:1977
+msgid "Double click one item to modify"
+msgstr ""
+
+#: utype.cpp:2006 utype.cpp:2035 utype.cpp:2057
+msgid "Default value"
+msgstr ""
+
+#: utype.cpp:2013
+msgid "Using value"
+msgstr ""
+
+#: utype.cpp:2364
+msgid "Special attributes of troop type"
+msgstr ""
+
+#: utype.cpp:2369
+msgid "Maximum"
+msgstr ""
+
+#: utype.cpp:2460
+msgid "Special attributes of city type"
+msgstr ""
+
+#: utype.cpp:2528
+msgid "Special attributes of artifical type"
+msgstr ""
+
+#: utype.cpp:2710
+msgid "Other type has holded ID"
+msgstr ""
+
+#: utype.cpp:2715
+msgid "Set adding type's ID"
+msgstr ""
+
+#: utype.cpp:2718
+msgid "Modify ID results to rebuild"
+msgstr ""
+
+#: utype.cpp:2973
+msgid "Edit packer type"
+msgstr ""
+
+#: utype.cpp:2976
+msgid "Add packer type"
+msgstr ""
+
+#: utype.cpp:2990
+msgid "Increase in melee"
+msgstr ""
+
+#: utype.cpp:2991
+msgid "Increase in ranged"
+msgstr ""
+
+#: utype.cpp:2992
+msgid "Increase in cast"
+msgstr ""
+
+#: utype.cpp:3187
+msgid "Do you want to delete type: \"$type\"?"
+msgstr ""
+
+#: utype.cpp:3207 utype.cpp:3704
+msgid "Base information"
+msgstr ""
+
+#: utype.cpp:3211 utype.cpp:3710
+msgid "Attack I"
+msgstr ""
+
+#: utype.cpp:3213 utype.cpp:3713
+msgid "Attack II"
+msgstr ""
+
+#: utype.cpp:3215 utype.cpp:3716
+msgid "Attack III"
+msgstr ""
+
+#: utype.cpp:3456
+msgid "Has"
+msgstr ""
+
+#: utype.cpp:3456
+msgid "Hasn't"
+msgstr ""
+
+#: utype.cpp:3654
+msgid "Regenerate all type's cfg and relative image success."
+msgstr ""
+
+#: utype.cpp:3724
+msgid "Regenerate all type's cfg and relatve image"
+msgstr ""

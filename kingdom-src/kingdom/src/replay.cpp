@@ -554,27 +554,15 @@ void replay::add_move_heros(const map_location& src, const map_location& dst, st
 	cmd->add_child("move_heros",val);
 }
 
-void replay::add_interior(int type, const std::vector<hero*>& officials)
+void replay::add_interior(const artifical& city)
 {
 	config* const cmd = add_command();
 	(*cmd)["type"] = command_pool::INTERIOR;
 
 	config val;
 
-	std::stringstream str;
-	// official heros
-	if (!officials.empty()) {
-		std::vector<hero*>::const_iterator itor = officials.begin();
-		int number = (*itor)->number_;
-		str << number;
-		for (++ itor; itor != officials.end(); ++ itor) {
-			number = (*itor)->number_;
-			str << "," << number;
-		}
-	}
-	val["officials"] = str.str();
-
-	val["type"] = type;
+	val["mayor"] = city.mayor()->number_;
+	city.get_location().write(val);
 
 	cmd->add_child("interior", val);
 }
@@ -1068,6 +1056,17 @@ void replay::add_rpg_exchange(const std::set<size_t>& checked_human, size_t chec
 	val["ai"] = (int)checked_ai;
 
 	cmd->add_child("rpg_exchange", val);
+}
+
+void replay::add_ing_technology(const std::string& id)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::ING_TECHNOLOGY;
+
+	config val;
+	val["id"] = id;
+
+	cmd->add_child("ing_technology", val);
 }
 
 void replay::add_log_data(const std::string &key, const std::string &var)
@@ -1603,6 +1602,27 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
+	} else if (type == command_pool::ING_TECHNOLOGY) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = cfg.child("random", i)["value"].to_int();
+			ptr = ptr + 1; 
+		}
+		const config& child = cfg.child("ing_technology");
+		// id="hot blooded"
+		size = *ptr = child["id"].str().size();
+		ptr = ptr + 1;
+		memcpy(ptr, child["id"].str().c_str(), size);
+		*((char*)ptr + size) = '\0';
+		ptr = ptr + (size + 1 + 3) / 4; // ±ß½çÈ¡4Õû
+		
+		// other field-vars
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
 	} else if (type == command_pool::BUILD) {
 		cmd->type = (command_pool::TYPE)type;
 		int* ptr = (int*)(cmd + 1);
@@ -1735,16 +1755,14 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		}
 		const config& child = cfg.child("interior");
 		// officials="0,1,2"
-		const std::vector<std::string> heros = utils::split(child["officials"]);
-		size = *ptr = heros.size();
+		*ptr = child["x"].to_int() - 1;
 		ptr = ptr + 1; 
-		for (i = 0; i < size; i ++) {
-			*ptr = lexical_cast_default<int>(heros[i]);
-			ptr = ptr + 1;
-		}
-		// type="0"
-		*ptr = lexical_cast_default<int>(child["type"]);
+		*ptr = child["y"].to_int() - 1;
 		ptr = ptr + 1;
+		// mayor="0"
+		*ptr = child["mayor"].to_int();
+		ptr = ptr + 1;
+
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
@@ -2351,6 +2369,21 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		child["ai"] = lexical_cast<std::string>(*ptr);
 		ptr = ptr + 1;
 
+	} else if (cmd->type == command_pool::ING_TECHNOLOGY) {
+		config& child = cfg.add_child("ing_technology");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+		// id
+		size = *ptr;
+		ptr = ptr + 1;
+		child["id"] = (char*)ptr;
+
 	} else if (cmd->type == command_pool::BUILD) {
 		config& child = cfg.add_child("build");
 		int* ptr = (int*)(cmd + 1);
@@ -2481,21 +2514,14 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			random_cfg["value"] = lexical_cast<std::string>(*ptr);
 			ptr = ptr + 1;
 		}
-		// officials
-		str.str("");
-		size = *ptr;
+		// loc
+		loc.x = *ptr;
 		ptr = ptr + 1;
-		for (i = 0; i < size; i ++) {
-			if (i == 0) {
-				str << *ptr;
-			} else {
-				str << "," << *ptr;
-			}
-			ptr = ptr + 1;
-		}
-		child["officials"] = str.str();
-		// type
-		child["type"] = lexical_cast<std::string>(*ptr);
+		loc.y = *ptr;
+		ptr = ptr + 1;
+		loc.write(child);
+		// mayor
+		child["mayor"] = *ptr;
 		ptr = ptr + 1;
 
 	} else if (cmd->type == command_pool::BELONG_TO) {
@@ -3118,9 +3144,6 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				hero& h = heros[number];
 				v.push_back(&h);
 				city->hero_go_out(h);
-				if (h.official_ == hero_official_commercial) {
-					current_team.erase_commercial(&h);
-				}
 			}
 
 			type_heros_pair pair(ut, v);
@@ -3189,24 +3212,6 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			}
 			std::sort(fresh_heros.begin(), fresh_heros.end(), compare_leadership);
 
-			// commercial officials
-			bool commercial_changed = false;
-			// earse_commercial maybe modify commerical, there should use copy.
-			std::vector<hero*> commercial = current_team.commercials();
-			for (size_t i = 0; i < commercial.size(); i ++) {
-				hero* h = commercial[i];
-				if (h->city_ != city->cityno()) {
-					continue;
-				}
-				if (std::find(fresh_heros.begin(), fresh_heros.end(), h) == fresh_heros.end()) {
-					current_team.erase_commercial(h);
-					commercial_changed = true;
-				}
-			}
-			if (commercial_changed) {
-				unit::commercial_exploiture_ = current_team.commercial_exploiture();
-			}
-
 			resources::screen->invalidate(city->get_location());
 
 			game_events::fire("post_armory", city->get_location());
@@ -3243,18 +3248,16 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			game_events::fire("post_moveheros", dst_city->get_location(), src_city->get_location());
 
 		} else if (const config &child = cfg->child("interior")) {
-			const std::vector<std::string> official_heros = utils::split(child["officials"]);
-			int type = child["type"].to_int(-1);
-
-			std::vector<hero*> officials;
-
-			for (std::vector<std::string>::const_iterator itor = official_heros.begin(); itor != official_heros.end(); ++ itor) {
-				size_t index = lexical_cast_default<size_t>(*itor);
-				officials.push_back(&heros[index]);
+			map_location loc(child, resources::state_of_game);
+			artifical* city = units.city_from_loc(loc);
+			if (!city) {
+				std::stringstream errbuf;
+				errbuf << "cannot find city: " << loc << "\n";
+				replay::process_error(errbuf.str());
 			}
-			if (type == department::commercial) {
-				current_team.set_commercials(officials);			
-			}
+			hero& mayor = heros[child["mayor"].to_int()];
+			city->select_mayor(&mayor);
+			city->calculate_exploiture();
 
 		} else if (const config &child = cfg->child("belong_to")) {
 			int layer = child["layer"].to_int();
@@ -3432,9 +3435,13 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			}
 			int ai_pair = child["ai"].to_int();
 			resources::controller->rpg_exchange(v, ai_pair);
-		}
-		else if (const config &child = cfg->child("countdown_update"))
-		{
+
+		} else if (const config &child = cfg->child("ing_technology")) {
+			const std::string& id = child["id"].str();
+			const technology& t = unit_types.technologies().find(id)->second;
+			current_team.select_ing_technology(&t);
+
+		} else if (const config &child = cfg->child("countdown_update")) {
 			const std::string &num = child["value"];
 			const int val = lexical_cast_default<int>(num);
 			const std::string &tnum = child["team"];

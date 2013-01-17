@@ -1,8 +1,15 @@
+#define GETTEXT_DOMAIN "wesnoth-maker"
+
 #include "global.hpp"
 #include "malloc.h"
 #include "game_config.hpp"
+#include "loadscreen.hpp"
 #include "filesystem.hpp"
 #include "editor.hpp"
+#include "serialization/parser.hpp"
+#include "formula_string_utils.hpp"
+#include "language.hpp"
+#include "unit_types.hpp"
 
 #include "stdafx.h"
 #include <windowsx.h>
@@ -17,6 +24,8 @@
 #include "wesconfig.h"
 #include <clocale>
 #include "gettext.hpp"
+#include <sstream>
+#include <iosfwd>
 
 
 extern BOOL CALLBACK DlgTitleProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -38,7 +47,6 @@ int exe_type = exe_editor;
 editor editor_;
 
 // oem.ini相关
-#define EDITOR_INI					"editor.ini"
 #define MARK_BMP					"mark.bmp"
 #define PC_BMP						"pc.bmp"
 #define DVR_BMP						"dvr.bmp"
@@ -284,9 +292,104 @@ DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName)
 
 }
 
-const char* utf8_2_ansi(const char* str)
+namespace {
+	config prefs;
+}
+
+namespace preferences {
+
+base_manager::base_manager()
 {
-	static const int wlen = 4096;
+	scoped_istream stream = istream_file(get_prefs_file(), true);
+	read(prefs, *stream);
+}
+
+base_manager::~base_manager()
+{
+	write_preferences();
+}
+
+void write_preferences()
+{
+	try {
+		scoped_ostream prefs_file = ostream_file(get_prefs_file(), true);
+		write(*prefs_file, prefs);
+	} catch(io_exception&) {
+		std::stringstream err;
+		err << "error writing to preferences file '" << get_prefs_file();
+		posix_print(err.str().c_str());
+	}
+}
+
+void set(const std::string &key, bool value)
+{
+	prefs[key] = value;
+}
+
+void set(const std::string &key, int value)
+{
+	prefs[key] = value;
+}
+
+void set(const std::string &key, char const *value)
+{
+	prefs[key] = value;
+}
+
+void set(const std::string &key, const std::string &value)
+{
+	prefs[key] = value;
+}
+
+void clear(const std::string& key)
+{
+	prefs.recursive_clear_value(key);
+}
+
+void set_child(const std::string& key, const config& val) 
+{
+	prefs.clear_children(key);
+	prefs.add_child(key, val);
+}
+
+const config &get_child(const std::string& key)
+{
+	return prefs.child(key);
+}
+
+void erase(const std::string& key) {
+	prefs.remove_attribute(key);
+}
+
+std::string get(const std::string& key) {
+	return prefs[key];
+}
+
+bool get(const std::string &key, bool def)
+{
+	return prefs[key].to_bool(def);
+}
+
+std::string language()
+{
+	return prefs["locale"];
+}
+
+void set_language(const std::string& s)
+{
+	preferences::set("locale", s);
+}
+
+}
+
+const char* dgettext_2_ansi(const char* domain, const char* msgid)
+{
+	return utf8_2_ansi(dgettext(domain, msgid));
+}
+
+const char* ansi_2_utf8(const char* str)
+{
+	static const int wlen = 8192;
 	static WCHAR wc[wlen];
 	static char ac[wlen * 2];
 
@@ -294,11 +397,16 @@ const char* utf8_2_ansi(const char* str)
 	if (!str || str[0] == '\0') {
 		return ac;
 	}
-	if (MultiByteToWideChar(CP_UTF8, 0, str, -1, wc, wlen) == 0) {
+	if (MultiByteToWideChar(CP_ACP, 0, str, -1, wc, wlen) == 0) {
 		return ac;
 	}
-	WideCharToMultiByte(CP_ACP, 0, wc, -1, ac, wlen * 2, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, wc, -1, ac, wlen * 2, NULL, NULL);
 	return ac;
+}
+
+std::string vgettext2(const char *msgid, const utils::string_map& symbols)
+{
+	return vgettext("wesnoth-maker", msgid, symbols);
 }
 
 static bool is_id_char(char c) 
@@ -328,7 +436,6 @@ void init_dvrmgr_struct(void)
 	MakeDirectory(std::string(gdmgr._userdir));
 	
 	SHGetFolderPath(NULL, CSIDL_PROGRAM_FILES, NULL, 0, gdmgr._programfilesdir);
-	sprintf(gdmgr._fulldvrmgrini, "%s\\%s", gdmgr._userdir, EDITOR_INI);
 	sprintf(gdmgr._markbmp, "%s\\%s", gdmgr._curexedir, MARK_BMP);
 	sprintf(gdmgr._pcbmp, "%s\\%s", gdmgr._curexedir, PC_BMP);
 	sprintf(gdmgr._dvrbmp, "%s\\%s", gdmgr._curexedir, DVR_BMP);
@@ -350,17 +457,16 @@ void init_dvrmgr_struct(void)
 	//
 	// system
 	//
-	// 工作目录
-	if (CfgQueryValueWin(gdmgr._fulldvrmgrini, SECNAME_SYSTEM, KEYNAME_WWWROOT, text)) {
-		// 配置文件不存在,创建一个,并设好默认值
+	std::string str = preferences::get("wwwroot");
+	if (str.empty()) {
 		SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, text);
 		game_config::path = text;
-		CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_SYSTEM, KEYNAME_WWWROOT, text);
 	} else {
-		game_config::path = text;
+		game_config::path = utf8_2_ansi(str.c_str());
 	}
 	gdmgr.heros_.set_path(game_config::path);
-	set_preferences_dir("kingdom");
+	std::string hero_filename = get_wml_location("^xwml/hero.dat");
+	gdmgr.heros_.map_from_file(hero_filename);
 
 	// 列表视图中的图标
 	HICON                           hicon;
@@ -576,62 +682,60 @@ void init_dvrmgr_struct(void)
 	gdmgr._hbm_refresh_disable = (HBITMAP)LoadImage(gdmgr._hinst, MAKEINTRESOURCE(IDB_REFRESH_UNSELECT), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 	// gdmgr._hbm_refresh_disable = LoadBitmap(gdmgr._hinst, MAKEINTRESOURCE(IDB_REFRESH_UNSELECT/*IDB_REFRESH_DISABLE*/));
 	transparent_24bmp(gdmgr._hbm_refresh_disable, 0x00000000);
+}
 
+void prepare_popup_menu()
+{
 	// 菜单
 	// menu item: generate
 	gdmgr._hpopup_new = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_EXTRAINSDIST, "提取发布包到C:\\kingdom-ins");
+	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_EXTRAINSDIST, utf8_2_ansi(_("Extract release package to C:\\kingdom-ins")));
 	AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_CAMPAIGN, "战役");
+	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_CAMPAIGN, dgettext_2_ansi("wesnoth-lib", "Campaign"));
 
 	// menu item: coherence
 	gdmgr._hpopup_explorer = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_explorer, MF_STRING, IDM_EXPLORER_WML, "WML格式");
+	AppendMenu(gdmgr._hpopup_explorer, MF_STRING, IDM_EXPLORER_WML, utf8_2_ansi(_("WML format")));
 	// AppendMenu(gdmgr._hpopup_explorer, MF_SEPARATOR, 0, NULL);
 
 	// menu item: delete
 	gdmgr._hpopup_delete = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM0, "同时删除相关配置文件");
+	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM0, utf8_2_ansi(_("Delete relative *.cfg at the same time")));
 	AppendMenu(gdmgr._hpopup_delete, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM1, "删除");
+	AppendMenu(gdmgr._hpopup_delete, MF_STRING, IDM_DELETE_ITEM1, utf8_2_ansi(_("Delete")));
 	AppendMenu(gdmgr._hpopup_delete, MF_SEPARATOR, 0, NULL);
 
 	// menu item: delete2
 	gdmgr._hpopup_delete2 = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_delete2, MF_STRING, IDM_DELETE_ITEM0, "删除");
+	AppendMenu(gdmgr._hpopup_delete2, MF_STRING, IDM_DELETE_ITEM0, utf8_2_ansi(_("Delete")));
 	AppendMenu(gdmgr._hpopup_delete2, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_delete2, MF_STRING, IDM_DELETE_ITEM1, "删除全部");
+	AppendMenu(gdmgr._hpopup_delete2, MF_STRING, IDM_DELETE_ITEM1, utf8_2_ansi(_("Delete all")));
 	AppendMenu(gdmgr._hpopup_delete2, MF_SEPARATOR, 0, NULL);
 	
 	// 主菜单要放在子菜单后面, 要确保子菜章句柄已有效
 	gdmgr._hpopup_ddesc = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_new), "新建");
+	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_new), utf8_2_ansi(_("New")));
 	AppendMenu(gdmgr._hpopup_ddesc, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_explorer), "浏览");
+	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_explorer), utf8_2_ansi(_("Explorer")));
 	AppendMenu(gdmgr._hpopup_ddesc, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_delete), "删除");
+	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_delete), utf8_2_ansi(_("Delete")));
 	
 	// wgen会话时,editor控件上的弹出式菜单
 	gdmgr._hpopup_editor = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_ADD, "添加...");
-	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_EDIT, "编辑...");
-	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_DELETE, "删除");
+	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_ADD, utf8_2_ansi(_("Add...")));
+	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
+	AppendMenu(gdmgr._hpopup_editor, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
 
 	// core会话时, utype控件上的弹出式菜单
 	gdmgr._hpopup_mtype = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_mtype, MF_STRING, IDM_RESET, "全部恢复到默认");
+	AppendMenu(gdmgr._hpopup_mtype, MF_STRING, IDM_RESET, utf8_2_ansi(_("Reset all to default")));
 
 	return;
 }
 
 void SaveCfgToIni(void)
 {
-	//
-	// system
-	//
-	CfgSetValueWin(gdmgr._fulldvrmgrini, SECNAME_SYSTEM, KEYNAME_WWWROOT, game_config::path.c_str());
-	
-	return;
+	preferences::set("wwwroot", ansi_2_utf8(game_config::path.c_str()));
 }
 
 void uninit_dvrmgr_struct(void)
@@ -1121,12 +1225,6 @@ void DVR_OnRButtonUp(HWND hdlgP, int x, int y, UINT wParam)
 
 void DVR_OnCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
-	switch(id) {
-	case IDM_FMTSETTING:
-		break;
-	default:
-		break;
-	}
 	return;
 }
 
@@ -1272,19 +1370,50 @@ static void init_locale()
 	const std::string& intl_dir = get_intl_dir();
 	textdomain(PACKAGE "-hero");
 	bindtextdomain (PACKAGE "-hero", intl_dir.c_str());
-	// default codeset is ansi.
-	// in order to avoid UTF-8 to ansi, let gettext output ansi directly.
-	// so don't call bind_textdomain_codeset;
+	bindtextdomain (PACKAGE "-maker", intl_dir.c_str());
+	// chage default codeset to utf-8.
 	bind_textdomain_codeset (PACKAGE "-hero", "UTF-8");
+	bind_textdomain_codeset (PACKAGE "-maker", "UTF-8");
 
-	SetEnvironmentVariable("LANG", "zh_CN");
+	// set UI language
+	// SetEnvironmentVariable("LANG", "zh_CN");
+}
+
+bool init_language()
+{
+	if(!::load_language_list())
+		return false;
+
+	if (!::set_language(get_locale()))
+		return false;
+
+	return true;
 }
 
 void update_locale_dir()
 {
 	const std::string& intl_dir = get_intl_dir();
-	textdomain(PACKAGE "-hero");
+	// textdomain(PACKAGE "-hero");
 	bindtextdomain (PACKAGE "-hero", intl_dir.c_str());
+
+	// textdomain(PACKAGE "-maker");
+	bindtextdomain (PACKAGE "-maker", intl_dir.c_str());
+
+	wml_config_from_file(game_config::path + "/xwml/data.bin", editor_config::data_cfg);
+	if (!editor_config::data_cfg.empty()) {
+		try {
+			unit_types.set_config(editor_config::data_cfg.child("units"));
+			// reload languages
+			init_language();
+		} catch (game::error& e) {
+			MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
+			unit_types.clear();
+		}
+	}
+
+	gdmgr.heros_.set_path(game_config::path);
+	std::string hero_filename = get_wml_location("^xwml/hero.dat");
+	gdmgr.heros_.map_from_file(hero_filename);
 }
 
 void main_ui_sysmenu(BOOL fEnable)
@@ -1355,6 +1484,9 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 		return 0;
 	}
 
+	set_preferences_dir("kingdom");
+	preferences::base_manager base;
+
 	try {
 		memset(&gdmgr, 0, sizeof(dvrmgr_t));
 		gdmgr.heros_.realloc_hero_map(HEROS_MAX_HEROS);
@@ -1364,6 +1496,21 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 		
 		init_locale();
 
+		if (check_wok_root_folder(game_config::path)) {
+			init_language();
+			wml_config_from_file(game_config::path + "/xwml/data.bin", editor_config::data_cfg);
+			if (!editor_config::data_cfg.empty()) {
+				try {
+					unit_types.set_config(editor_config::data_cfg.child("units"));
+				} catch (game::error& e) {
+					MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
+					unit_types.clear();
+				}
+			}
+		}
+
+		prepare_popup_menu();
+		
 		//
 		// Initialize the common controls
 		//

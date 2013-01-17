@@ -27,6 +27,7 @@
 #include "gui/dialogs/editor_settings.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/transient_message.hpp"
+#include "gui/dialogs/preferences.hpp"
 #include "gui/widgets/window.hpp"
 
 #include "../clipboard.hpp"
@@ -1161,7 +1162,8 @@ void editor_controller::cycle_brush()
 
 void editor_controller::preferences()
 {
-	preferences::show_preferences_dialog(*gui_, game_config_);
+	gui2::show_preferences_dialog(*gui_);
+	// preferences::show_preferences_dialog(*gui_, game_config_);
 	gui_->redraw_everything();
 }
 

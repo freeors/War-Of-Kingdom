@@ -44,8 +44,12 @@
 #include "gui/dialogs/troop_selection.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/tactic.hpp"
+#include "gui/dialogs/interior.hpp"
+#include "gui/dialogs/technology_tree.hpp"
+#include "gui/dialogs/combo_box.hpp"
 #include "gui/widgets/window.hpp"
 #include "formula_string_utils.hpp"
+#include "game_preferences.hpp"
 
 #include <boost/bind.hpp>
 
@@ -196,6 +200,8 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 		map_location attack_from;
 		// we search if there is an tactic possibility and where
 		map_location tactic_from;
+		// we search if there is an interior possibility and where
+		map_location interior_from;
 		// we search if there is an builder possibility and where
 		map_location build_from;
 		// we search if there is card playing to possibility and where
@@ -217,6 +223,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 		} else {
 			attack_from = current_unit_attacks_from(new_hex);
 			tactic_from = current_unit_tactic_from(new_hex);
+			interior_from = current_unit_interior_from(new_hex);
 		}
 
 		//see if we should show the normal cursor, the movement cursor, or
@@ -240,6 +247,9 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 				} else if (tactic_from.valid()) {
 					// cursor: tactic!
 					cursor::set(dragging_started_ ? cursor::TACTIC_DRAG : cursor::TACTIC);
+				} else if (interior_from.valid()) {
+					// cursor: interior!
+					cursor::set(dragging_started_ ? cursor::INTERIOR_DRAG : cursor::INTERIOR);
 				} else if (build_from.valid()) {
 					// cursor: build!
 					cursor::set(dragging_started_ ? cursor::BUILD_DRAG : cursor::BUILD);
@@ -352,8 +362,10 @@ unit_map::const_iterator mouse_handler::find_unit(const map_location& hex) const
 
 map_location mouse_handler::current_unit_attacks_from(const map_location& loc)
 {
-	std::set<map_location>& attack_indicator_dst = gui_->attack_indicator();
-	if (std::find(attack_indicator_dst.begin(), attack_indicator_dst.end(), loc) != attack_indicator_dst.end()) {
+	const std::set<map_location>& attack_indicator_dst = gui_->attack_indicator();
+	const std::set<map_location>& selectable_indicator = gui_->selectable_indicator();
+	
+	if (attack_indicator_dst.find(loc) != attack_indicator_dst.end() && selectable_indicator.find(loc) == selectable_indicator.end()) {
 		return selected_hex_;
 	} else {
 		return map_location();
@@ -374,6 +386,27 @@ map_location mouse_handler::current_unit_tactic_from(const map_location& loc)
 		if (tactician.third().valid() && tactician.third().tactic_ != HEROS_NO_TACTIC) {
 			return selected_hex_;
 		}
+	}
+	return map_location();
+}
+
+map_location mouse_handler::current_unit_interior_from(const map_location& loc)
+{
+	const map_location& interior_indicator = gui_->interior_indicator();
+	if (!recalling_ && interior_indicator.valid() && interior_indicator == loc) {
+		const unit& interior = *units_.find(interior_indicator);
+		if (interior.is_city()) {
+			return selected_hex_;
+		}
+	}
+	return map_location();
+}
+
+map_location mouse_handler::current_unit_technology_tree_from(const map_location& loc)
+{
+	const std::set<map_location>& selectable_indicator = gui_->selectable_indicator();
+	if (selectable_indicator.find(loc) != selectable_indicator.end()) {
+		return selected_hex_;
 	}
 	return map_location();
 }
@@ -425,7 +458,9 @@ void mouse_handler::do_right_click(const bool browse)
 	// 可以肯定的,在那种状态下调用left_click会产生致命错误,left_click发现是出征状态,于是移除临时单位,结果使得unit_display::move_unit执行非法
 	// 
 	// 对这种问题解决办法是在移动过程中不处理鼠标右键,这时就要需有个标志知道现在正处于move_unit状态,commands_disabled似乎就是干这个用的
-	if (commands_disabled) {
+	bool is_replaying = resources::controller->is_replaying();
+
+	if (!is_replaying && commands_disabled) {
 		// when move result to commands_disable not-zero, moving_ is true.
 		return;
 	}
@@ -550,6 +585,7 @@ bool mouse_handler::post_move_unit(unit& mover, const map_location& stop_loc)
 
 bool mouse_handler::left_click(int x, int y, const bool browse)
 {
+	bool is_replaying = resources::controller->is_replaying();
 	undo_ = false;
 	
 	if (gui_->unit_image_location_on(x, y)) {
@@ -626,7 +662,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			// 取消单位选中
 			select_hex(map_location(), browse);
 
-			// 不可取消建造操作
+			// clear undo stack
 			clear_undo_stack();
 
 			gui().refresh_access_troops(itor->side() - 1, game_display::REFRESH_DISABLE, NULL, &*itor);
@@ -702,6 +738,9 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			curr_team.consume_card(card_index_, hex, false, maps);
 			card_playing_ = false;
 
+			// clear undo stack
+			clear_undo_stack();
+
 			refresh_card_button(curr_team, *gui_);
 
 			gui_->goto_main_context_menu();
@@ -759,11 +798,35 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 	const map_location src = selected_hex_;
 	pathfind::paths orig_paths = current_paths_;
-	const map_location attack_from = current_unit_attacks_from(hex);
+	map_location attack_from = current_unit_attacks_from(hex);
 	const map_location tactic_from = current_unit_tactic_from(hex);
+	const map_location interior_from = current_unit_interior_from(hex);
+	const map_location technology_tree_from = current_unit_technology_tree_from(hex);
 
 	artifical* cobj = units_.city_from_loc(hex);
 	bool clicked_selfcity = (cobj && (cobj->side() == side_num_))? true: false;
+
+	if (technology_tree_from.valid()) {
+		if (!preferences::default_move()) {
+			std::vector<std::string> items;
+			std::stringstream strstr;
+			strstr.str("");
+			strstr << IMAGE_PREFIX << "misc/large-attack.png~SCALE(64, 64)" << COLUMN_SEPARATOR;
+			strstr << dgettext("wesnoth-lib", "Attack wall");
+			items.push_back(strstr.str());
+
+			strstr.str("");
+			strstr << IMAGE_PREFIX << "misc/large-move.png~SCALE(64, 64)" << COLUMN_SEPARATOR;
+			strstr << dgettext("wesnoth-lib", "Move to wall");
+			items.push_back(strstr.str());
+
+			gui2::tcombo_box dlg(items, 0);
+			dlg.show(gui_->video());
+			if (dlg.selected_index() == 0) {
+				attack_from = technology_tree_from;
+			}
+		}
+	}
 
 	// see if we're trying to do a attack
 	if (!browse && !commands_disabled && attack_from.valid()) {
@@ -804,6 +867,10 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		}
 	} else if (!browse && !commands_disabled && tactic_from.valid()) {
 		if (cast_tactic(*selected_itor, hex)) {
+			return false;
+		}
+	} else if ((is_replaying || !commands_disabled) && interior_from.valid()) {
+		if (interior(browse || selected_itor->side() != side_num_ || rpg::stratum != hero_stratum_leader, *selected_itor)) {
 			return false;
 		}
 	} else if (!commands_disabled && !browse && selected_hex_.valid() && selected_hex_ != hex &&
@@ -867,30 +934,16 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 		// if this select a non-empty hex, display context menu
 		selected_itor = find_unit(selected_hex_);
-		if (!commands_disabled && !browse && !recalling_ && selected_itor.valid()) {
-			if (!selected_itor->is_artifical() && selected_itor->human() && selected_itor->side() == side_num_) {
-				gui_->set_attack_indicator(&*selected_itor);
+		// if (!commands_disabled && !browse && !recalling_ && selected_itor.valid()) {
+		if ((is_replaying || !commands_disabled) && !recalling_ && selected_itor.valid()) {
+			if (selected_itor->human() || selected_itor->is_artifical()) {
+				gui_->set_attack_indicator(&*selected_itor, browse || commands_disabled);
 			}
-/*				
-			// display tactic window
-			{
-				gui_->draw();
-				// calculate xpos/ypos
-				selected_loc = selected_hex_;
-
-				gui2::ttactic dlg(*gui_, teams_, units_, heros_);
-				try {
-					dlg.show(gui_->video());
-					int retval = dlg.get_retval();
-				} catch(twml_exception& e) {
-					e.show(*gui_);
-					return false;
-				}
-			}
-*/
+/*
 			if (cobj && (hex == cobj->get_location().get_direction(map_location::NORTH))) {
 				gui_->highlight_disctrict(*cobj);
 			}
+*/
 		}
 		gui_->goto_main_context_menu();
 	}
@@ -1097,7 +1150,7 @@ bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterato
 	//compare between the attacking and defending unit
 	gui().highlight_hex(map_location());
 	gui().draw(true, true);
-	gui().hide_unit_tip();
+	// gui().hide_unit_tip();
 
 	attack_prediction_displayer ap_displayer(bc_vector, attacker_loc, defender_loc);
 	std::vector<gui::dialog_button_info> buttons;
@@ -1161,7 +1214,7 @@ bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc)
 	//compare between the attacking and defending unit
 	gui().highlight_hex(map_location());
 	gui().draw(true, true);
-	gui().hide_unit_tip();
+	// gui().hide_unit_tip();
 
 	hero* selected_hero = NULL;
 	{
@@ -1197,6 +1250,51 @@ bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc)
 
 		::cast_tactic(units_, tactician, *selected_hero);
 	}
+	gui_->goto_main_context_menu();
+	return true;
+}
+
+bool mouse_handler::interior(bool browse, unit& u)
+{
+	//make it so that when we attack an enemy, the attacking unit
+	//is again shown in the status bar, so that we can easily
+	//compare between the attacking and defending unit
+	gui().highlight_hex(map_location());
+	gui().draw(true, true);
+
+	{
+		const events::command_disabler disable_commands;
+
+		clear_undo_stack();
+
+		current_paths_ = pathfind::paths();
+		gui().clear_attack_indicator();
+		gui().clear_build_indicator();
+		gui().unhighlight_reach();
+		select_hex(map_location(), false);
+		gui().invalidate_unit();
+		gui_->hide_context_menu(NULL, true);
+
+		team& current_team = teams_[side_num_ - 1];
+		std::vector<hero*> before_commercials = current_team.commercials();
+
+		artifical* city = unit_2_artifical(&u);
+		hero* mayor = city->mayor();
+		gui2::tinterior dlg(*gui_, teams_, units_, heros_, *city, browse);
+		try {
+			dlg.show(gui_->video());
+		} catch(twml_exception& e) {
+			e.show(*gui_);
+			return false;
+		}
+
+		if (!browse && city->mayor() != mayor) {
+			city->calculate_exploiture();
+			recorder.add_interior(*city);
+		}
+	}
+
+	cursor::set(cursor::NORMAL);
 	gui_->goto_main_context_menu();
 	return true;
 }

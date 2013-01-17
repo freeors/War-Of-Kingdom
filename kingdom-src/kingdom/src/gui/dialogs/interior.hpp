@@ -27,6 +27,7 @@ class unit_map;
 class hero_map;
 class hero;
 class unit_type;
+class artifical;
 class department;
 
 namespace gui2 {
@@ -37,7 +38,7 @@ class tbutton;
 class tinterior : public tdialog
 {
 public:
-	explicit tinterior(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, int side);
+	explicit tinterior(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, bool browse);
 
 protected:
 	/** Inherited from tdialog. */
@@ -60,24 +61,27 @@ private:
 	void hero_toggled(twidget* widget);
 
 	std::pair<int, int> calculate_markets(int exploiture);
+	std::pair<int, int> calculate_technologies(int exploiture);
 private:
 	game_display& gui_;
 	std::vector<team>& teams_;
 	unit_map& units_;
 	hero_map& heros_;
-
+	artifical& city_;
+	bool browse_;
 	team& current_team_;
 	// fresh heros in city after sort by leadership
 	std::vector<hero*> fresh_heros_;
 
 	int type_index_;
-	std::set<int> checked_heros_;
+	int checked_hero_;
 
 	tbutton* appoint_;
 	tlistbox* hero_table_;
 
 	std::vector<department> departments_;
 	std::map<const unit_type*, int> market_map_;
+	std::map<const unit_type*, int> technology_map_;
 	// int income_;
 };
 

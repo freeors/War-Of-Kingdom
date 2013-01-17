@@ -22,6 +22,8 @@
 #include "gui/widgets/integer_selector.hpp"
 #include "video.hpp"
 #include "tooltips.hpp"
+#include "game_display.hpp"
+#include "resources.hpp"
 
 namespace gui2 {
 
@@ -43,6 +45,11 @@ bool tdialog::show(CVideo& video, const unsigned auto_close_time)
 
 	// I want display volatile control, for example rpg button.
 	events::raise_volatile_draw_event();
+
+	// hide unit tip if necessary.
+	if (resources::screen) {
+		resources::screen->hide_unit_tip();
+	}
 
 	std::auto_ptr<twindow> window(build_window(video));
 	assert(window.get());

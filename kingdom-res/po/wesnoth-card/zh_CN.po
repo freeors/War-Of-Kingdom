@@ -8,18 +8,17 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2012-09-13 09:56+0800\n"
-"Last-Translator: ancientcc <zuoli@zowietek.cn>\n"
+"PO-Revision-Date: 2013-01-16 23:05+0800\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: \n"
-"X-Poedit-Language: Chinese\n"
-"X-Poedit-Country: CHINA\n"
 "X-Poedit-SourceCharset: utf-8\n"
 "Plural-Forms: nplurals=2; plural=(n>1);\n"
 "X-Poedit-Bookmarks: -1,-1,-1,3,-1,-1,-1,-1,-1,-1\n"
+"X-Generator: Poedit 1.5.4\n"
 
 msgid "None"
 msgstr "无"
@@ -72,3 +71,293 @@ msgstr "交流"
 msgid "communicate description"
 msgstr "大幅增加我方两武将间的情感度"
 
+#
+# technology section
+#
+msgid "technology-footman hp"
+msgstr "步兵HP"
+
+msgid "technology_desc-footman hp"
+msgstr "增加步兵兵科HP"
+
+msgid "technology-horseman hp"
+msgstr "骑兵HP"
+
+msgid "technology_desc-horseman hp"
+msgstr "增加骑兵兵科HP"
+
+msgid "technology-enginery hp"
+msgstr "兵器HP"
+
+msgid "technology_desc-enginery hp"
+msgstr "增加兵器兵科HP"
+
+msgid "technology-academy hp"
+msgstr "学术HP"
+
+msgid "technology_desc-academy hp"
+msgstr "增加学术兵科HP"
+
+msgid "technology-footman attack"
+msgstr "步兵攻击"
+
+msgid "technology_desc-footman attack"
+msgstr "增加步兵兵科攻击"
+
+msgid "technology-horseman attack"
+msgstr "骑兵攻击"
+
+msgid "technology_desc-horseman attack"
+msgstr "增加骑兵兵科攻击"
+
+msgid "technology-enginery attack"
+msgstr "兵器攻击"
+
+msgid "technology_desc-enginery attack"
+msgstr "增加兵器兵科攻击"
+
+msgid "technology-academy attack"
+msgstr "学术攻击"
+
+msgid "technology_desc-academy attack"
+msgstr "增加学术兵科攻击"
+
+msgid "technology-footman defend"
+msgstr "步兵防御"
+
+msgid "technology_desc-footman defend"
+msgstr "增加步兵防御"
+
+msgid "technology-horseman defend"
+msgstr "骑兵防御"
+
+msgid "technology_desc-horseman defend"
+msgstr "增加骑兵防御"
+
+msgid "technology-enginery defend"
+msgstr "兵器防御"
+
+msgid "technology_desc-enginery defend"
+msgstr "增加兵器防御"
+
+msgid "technology-academy defend"
+msgstr "法术防御"
+
+msgid "technology_desc-academy defend"
+msgstr "增加法术防御"
+
+msgid "technology-footman"
+msgstr "步兵"
+
+msgid "technology_desc-footman"
+msgstr "加速学习步兵适性"
+
+msgid "technology-horseman"
+msgstr "骑兵"
+
+msgid "technology_desc-horseman"
+msgstr "加速学习骑兵适性"
+
+msgid "technology-enginery"
+msgstr "兵器"
+
+msgid "technology_desc-enginery"
+msgstr "加速学习兵器适性"
+
+msgid "technology-academy"
+msgstr "学术"
+
+msgid "technology_desc-academy"
+msgstr "加速学习学术适性"
+
+msgid "technology-navy"
+msgstr "水军"
+
+msgid "technology_desc-navy"
+msgstr "加速学习水军适性"
+
+msgid "technology-leadership"
+msgstr "统率"
+
+msgid "technology_desc-leadership"
+msgstr "加速学习统率"
+
+msgid "technology-force"
+msgstr "武力"
+
+msgid "technology_desc-force"
+msgstr "加速学习武力"
+
+msgid "technology-intellect"
+msgstr "智力"
+
+msgid "technology_desc-intellect"
+msgstr "加速学习智力"
+
+msgid "technology-politics"
+msgstr "政治"
+
+msgid "technology_desc-politics"
+msgstr "加速学习智力"
+
+msgid "technology-charm"
+msgstr "魅力"
+
+msgid "technology_desc-charm"
+msgstr "加速学习魅力"
+
+msgid "technology-build"
+msgstr "建造"
+
+msgid "technology_desc-build"
+msgstr "增加建筑物HP"
+
+msgid "technology-repair"
+msgstr "修补"
+
+msgid "technology_desc-repair"
+msgstr "增加建筑物恢复HP"
+
+msgid "technology-drill"
+msgstr "操练"
+
+msgid "technology_desc-drill"
+msgstr "增加战法总点数"
+
+msgid "technology-discipline"
+msgstr "法纪"
+
+msgid "technology_desc-discipline"
+msgstr "增加战法回复点数"
+
+msgid "technology-balefire"
+msgstr "烽火"
+
+msgid "technology_desc-balefire"
+msgstr "城墙上移动忽视ZOC"
+
+msgid "technology-sneak attack"
+msgstr "云梯"
+
+msgid "technology_desc-sneak attack"
+msgstr "部队可上敌城墙"
+
+msgid "technology-interlink"
+msgstr "连环"
+
+msgid "technology_desc-interlink"
+msgstr "加大波及伤害"
+
+msgid "technology-cooperate"
+msgstr "配合"
+
+msgid "technology_desc-cooperate"
+msgstr "强化部队间配合"
+
+msgid "technology-police"
+msgstr "治安"
+
+msgid "technology_desc-police"
+msgstr "增加经济区建筑每回合自涨XP"
+
+msgid "technology-morale"
+msgstr "民心"
+
+msgid "technology_desc-morale"
+msgstr "减少征兵费用"
+
+msgid "technology-commercial"
+msgstr "商业"
+
+msgid "technology_desc-commercial"
+msgstr "增加市场金产出"
+
+msgid "technology-technology"
+msgstr "科技"
+
+msgid "technology_desc-technology"
+msgstr "增加技法所技法产出"
+
+msgid "technology-hot blooded"
+msgstr "虎符"
+
+msgid "technology_desc-hot blooded"
+msgstr "增加步兵、骑兵、兵器HP"
+
+msgid "technology-smelt"
+msgstr "冶炼"
+
+msgid "technology_desc-smelt"
+msgstr "增加步兵、骑兵、兵器攻击"
+
+msgid "technology-armature"
+msgstr "锁铠"
+
+msgid "technology_desc-armature"
+msgstr "增加步兵、骑兵、兵器防御"
+
+msgid "technology-agriculture"
+msgstr "农耕"
+
+msgid "technology_desc-agriculture"
+msgstr "加速学习步兵适性"
+
+msgid "technology-grassland"
+msgstr "狩猎"
+
+msgid "technology_desc-grassland"
+msgstr "加速学习骑兵适性"
+
+msgid "technology-navigation"
+msgstr "航海"
+
+msgid "technology_desc-navigation"
+msgstr "加速学习航海文明"
+
+msgid "technology-school"
+msgstr "太学"
+
+msgid "technology_desc-school"
+msgstr "增加学术HP"
+
+msgid "technology-mage"
+msgstr "魔法"
+
+msgid "technology_desc-mage"
+msgstr "增加学术攻击"
+
+msgid "technology-camouflage"
+msgstr "伪装"
+
+msgid "technology_desc-camouflage"
+msgstr "增加学术防御"
+
+msgid "technology-strategic"
+msgstr "战术"
+
+msgid "technology_desc-strategic"
+msgstr "加速学习统率、魅力"
+
+#~ msgid "technology-shipbuilding"
+#~ msgstr "造船"
+
+#~ msgid "technology_desc-shipbuilding"
+#~ msgstr "加速学习航海文明"
+
+#~ msgid "technology-physics"
+#~ msgstr "物理"
+
+#~ msgid "technology_desc-physics"
+#~ msgstr "加速学习兵器适性"
+
+#~ msgid "technology-chemistry"
+#~ msgstr "化学"
+
+#~ msgid "technology_desc-chemistry"
+#~ msgstr "加速学习法术适性"
+
+#~ msgid "technology-heal"
+#~ msgstr "护理"
+
+#~ msgid "technology_desc-heal"
+#~ msgstr "增加回合恢复HP"

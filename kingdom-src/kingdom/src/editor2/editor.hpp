@@ -25,6 +25,31 @@ namespace editor_config
 	extern DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName);
 }
 
+namespace preferences 
+{
+	struct base_manager
+	{
+		base_manager();
+		~base_manager();
+	};
+
+	void write_preferences();
+
+	void set(const std::string& key, const std::string &value);
+	void set(const std::string& key, char const *value);
+	void set(const std::string &key, bool value);
+	void set(const std::string &key, int value);
+	void clear(const std::string& key);
+	void set_child(const std::string& key, const config& val);
+	const config &get_child(const std::string &key);
+	std::string get(const std::string& key);
+	bool get(const std::string &key, bool def);
+	void erase(const std::string& key);
+
+	std::string language();
+	void set_language(const std::string& s);
+}
+
 class editor
 {
 public:

@@ -115,7 +115,10 @@ void tbutton::signal_handler_mouse_enter(
 		const event::tevent event, bool& handled)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
-
+	if (!get_active()) {
+		handled = true;
+		return;
+	}
 	set_state(FOCUSSED);
 	handled = true;
 }
@@ -124,7 +127,10 @@ void tbutton::signal_handler_mouse_leave(
 		const event::tevent event, bool& handled)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
-
+	if (!get_active()) {
+		handled = true;
+		return;
+	}
 	set_state(ENABLED);
 	handled = true;
 }

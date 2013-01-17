@@ -1590,6 +1590,9 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 								}
 							} else {
 								adjacent.friends ++;
+								if (!u->hide_turns()) {
+									adjacent.unhides ++;
+								}
 								if (!calculated) {
 									mess->allys ++;
 								}
@@ -1600,6 +1603,9 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 						}
 					} else if (!u->is_artifical()) {
 						adjacent.friends ++;
+						if (!u->hide_turns()) {
+							adjacent.unhides ++;
+						}
 					}
 				} 
 				// base
@@ -1626,6 +1632,9 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 								}
 							} else {
 								adjacent.friends ++;
+								if (!u->hide_turns()) {
+									adjacent.unhides ++;
+								}
 								if (!calculated) {
 									mess->allys ++;
 								}
@@ -1636,6 +1645,9 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 						}
 					} else if (!u->is_artifical()) {
 						adjacent.friends ++;
+						if (!u->hide_turns()) {
+							adjacent.unhides ++;
+						}
 					}
 				}
 			}

@@ -40,7 +40,10 @@ namespace unit_display
 /**
  * global animations
  */
-enum GLOBAL_ANIM {ANIM_REINFORCE = 0, ANIM_ENCOURAGE, ANIM_TACTIC};
+enum GLOBAL_ANIM {ANIM_REINFORCE = 0, ANIM_ENCOURAGE, ANIM_TACTIC, 
+	ANIM_BLADE, ANIM_PIERCE, ANIM_IMPACT, ANIM_ARCHERY, ANIM_COLLAPSE, ANIM_ARCANE, ANIM_FIRE, ANIM_COLD,
+	ANIM_STRIKE, ANIM_MAGIC
+};
 
 void load_global_animations(const config& cfg);
 
@@ -105,6 +108,8 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 	const attack_type* attack, const attack_type* secondary_attack,
 	int swing, std::vector<std::string>& hit_text_vec, bool drain, bool stronger, const std::string& att_text);
 
+void unit_attack2(unit& attacker, const std::string& type, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
+	 std::vector<std::string>& hit_text_vec);
 
 void unit_recruited(const map_location& loc,
 	const map_location& leader_loc=map_location::null_location);

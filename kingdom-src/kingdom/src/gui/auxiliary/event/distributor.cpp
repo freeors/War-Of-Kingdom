@@ -177,7 +177,7 @@ void tmouse_motion::signal_handler_sdl_mouse_motion(
 			mouse_motion(mouse_focus_, coordinate);
 		}
 	} else {
-		twidget* mouse_over = owner_.find_at(coordinate, true);
+		twidget* mouse_over = owner_.find_at(coordinate, false);
 		if(mouse_over) {
 			DBG_GUI_E << LOG_HEADER << "Firing: " << event << ".\n";
 			if(owner_.fire(event, *mouse_over, coordinate)) {
@@ -308,9 +308,9 @@ void tmouse_motion::mouse_leave()
 	DBG_GUI_E << LOG_HEADER << "Firing: " << event::MOUSE_LEAVE << ".\n";
 
 	tcontrol* control = dynamic_cast<tcontrol*>(mouse_focus_);
-	if(!control || control->get_active()) {
+	// if(!control || control->get_active()) {
 		owner_.fire(event::MOUSE_LEAVE, *mouse_focus_);
-	}
+	// }
 
 	owner_.fire(NOTIFY_REMOVE_TOOLTIP, *mouse_focus_, NULL);
 

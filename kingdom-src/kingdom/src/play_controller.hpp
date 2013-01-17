@@ -92,6 +92,7 @@ public:
 	virtual void toggle_ellipses();
 	virtual void toggle_grid();
 	virtual void interior();
+	virtual void technology_tree();
 	virtual void final_battle(int side_num, int human_capital, int ai_capital);
 	virtual void list();
 	virtual void system();

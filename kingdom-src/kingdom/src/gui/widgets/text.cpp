@@ -375,6 +375,12 @@ void ttext_::signal_handler_sdl_key_down(const event::tevent event
 #endif
 			break;
 
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+        case SDLK_RETURN:
+            SDL_SetTimer(0xbbbbbbb0, NULL);
+            break;
+#endif
+            
 		case SDLK_c :
 			if(!(modifier & copypaste_modifier)) {
 				handle_key_default(handled, key, modifier, unicode);

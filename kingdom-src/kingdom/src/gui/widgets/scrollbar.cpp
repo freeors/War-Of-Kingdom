@@ -297,7 +297,6 @@ void tscrollbar_::signal_handler_mouse_enter(
 		const event::tevent event, bool& handled, bool& halt)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
-
 	// Send the motion under our event id to make debugging easier.
 	signal_handler_mouse_motion(event, handled, halt, get_mouse_position());
 }
@@ -309,7 +308,10 @@ void tscrollbar_::signal_handler_mouse_motion(
 		, const tpoint& coordinate)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << " at " << coordinate << ".\n";
-
+	if (!get_active()) {
+		handled = true;
+		return;
+	}
 	tpoint mouse = coordinate;
 	mouse.x -= get_x();
 	mouse.y -= get_y();
@@ -351,7 +353,10 @@ void tscrollbar_::signal_handler_mouse_leave(
 		const event::tevent event, bool& handled)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
-
+	if (!get_active()) {
+		handled = true;
+		return;
+	}
 	if(state_ == FOCUSSED) {
 		set_state(ENABLED);
 	}

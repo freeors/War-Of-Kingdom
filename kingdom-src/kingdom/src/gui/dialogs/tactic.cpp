@@ -107,7 +107,7 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 			find_widget<tlistbox>(&window, "tactic_list", false);
 	const team& current_team = teams_[tactician_.side() - 1];
 	int side_point = current_team.tactic_point();
-	std::map<int, std::vector<unit*> > touched;
+	std::map<int, std::vector<map_location> > touched;
 	bool has_effect_unit;
 
 	for (std::vector<hero*>::iterator it = candidate_.begin(); it != candidate_.end(); ++ it) {
@@ -119,7 +119,7 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 
 		touched = t.touch_units(units_, tactician_);
 		has_effect_unit = false;
-		for (std::map<int, std::vector<unit*> >::const_iterator it2 = touched.begin(); it2 != touched.end(); ++ it2) {
+		for (std::map<int, std::vector<map_location> >::const_iterator it2 = touched.begin(); it2 != touched.end(); ++ it2) {
 			if (!it2->second.empty()) {
 				has_effect_unit =true;
 				break;

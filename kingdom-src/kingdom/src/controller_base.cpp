@@ -330,30 +330,39 @@ void controller_base::play_slice(bool is_delay_enabled)
 		const SDL_Rect& menu_loc = m->location(get_display().screen_area());
 		if (m->is_context()) {
 			// Is pressed menu a father menu of context-menu?
-			const std::string& item = m->items()[loc.second];
-			std::vector<std::string> item2 = utils::split(item, ':');
-			if (item2.size() == 1) {
-				// item2.push_back(item2[0]) is wrong way, resulting item2[1] is null string.
-				item2.push_back("");
-			}
-			size_t pos = item2[0].rfind("_m");
-			if (pos == item2[0].size() - 2) {
-				// cancel current menu, and display sub-menu
-				gui.hide_context_menu(NULL, true);
-				const std::string item1 = item2[0].substr(0, pos);
-				gui.get_theme().set_current_context_menu(get_display().get_theme().context_menu(item1));
-				show_context_menu(NULL, get_display());
-			} else {
-				// execute one menu command
-				pos = item2[0].rfind("_c");
+			std::string item = m->items()[loc.second];
+			bool executed = false;
+			while (!executed) {
+				std::vector<std::string> item2 = utils::split(item, ':');
+				if (item2.size() == 1) {
+					// item2.push_back(item2[0]) is wrong way, resulting item2[1] is null string.
+					item2.push_back("");
+				}
+				size_t pos = item2[0].rfind("_m");
 				if (pos == item2[0].size() - 2) {
-					const std::string item1 = item2[0].substr(0, pos);
-					// hotkey::execute_command(gui, hotkey::get_hotkey(item1).get_id(), this, -1, item2[1]);
-					execute_command(hotkey::get_hotkey(item1).get_id(), -1, item2[1]);
+					// cancel current menu, and display sub-menu
 					gui.hide_context_menu(NULL, true);
+					const std::string item1 = item2[0].substr(0, pos);
+					gui.get_theme().set_current_context_menu(get_display().get_theme().context_menu(item1));
+					show_context_menu(NULL, get_display());
+					executed = true;
 				} else {
-					// hotkey::execute_command(gui, hotkey::get_hotkey(item2[0]).get_id(), this, -1, item2[1]);
-					execute_command(hotkey::get_hotkey(item2[0]).get_id(), -1, item2[1]);
+					// execute one menu command
+					pos = item2[0].rfind("_c");
+					if (pos == item2[0].size() - 2) {
+						const std::string item1 = item2[0].substr(0, pos);
+						if (item2[1].rfind("_m") != item2[1].size() - 2) {
+							execute_command(hotkey::get_hotkey(item1).get_id(), -1, item2[1]);
+							gui.hide_context_menu(NULL, true);
+							executed = true;
+						} else {
+							item = item2[1];
+							continue;
+						}
+					} else {
+						execute_command(hotkey::get_hotkey(item2[0]).get_id(), -1, item2[1]);
+						executed = true;
+					}
 				}
 			}
 		} else {

@@ -94,6 +94,7 @@ tplay_card::tplay_card(game_display& gui, std::vector<team>& teams, unit_map& un
 	, discard_(discard)
 	, card_index_(0)
 	, hero_table_(NULL)
+	, window_(NULL)
 {
 }
 
@@ -291,6 +292,7 @@ void tplay_card::pre_show(CVideo& /*video*/, twindow& window)
 {
 	std::stringstream str;
 
+	window_ = &window;
 	tlistbox* list = find_widget<tlistbox>(&window, "card_list", false, true);
 
 	std::vector<size_t>& holded_cards = current_team_.holded_cards();
@@ -350,7 +352,6 @@ void tplay_card::pre_show(CVideo& /*video*/, twindow& window)
 				&tplay_card::discard
 				, this
 				, _3, _4
-				, boost::ref(window)
 				, card_index));
 		if (card_index) {
 			discard.set_visible(twidget::INVISIBLE);
@@ -368,8 +369,9 @@ void tplay_card::post_show(twindow& window)
 {
 }
 
-void tplay_card::discard(bool& handled, bool& halt, twindow& window, int index)
+void tplay_card::discard(bool& handled, bool& halt, int index)
 {
+	twindow& window = *window_;
 	tlistbox* list = find_widget<tlistbox>(&window, "card_list", false, true);
 
 	if (!discard_->button_pressed(index)) {
@@ -388,7 +390,6 @@ void tplay_card::discard(bool& handled, bool& halt, twindow& window, int index)
 				&tplay_card::discard
 				, this
 				, _3, _4
-				, boost::ref(window)
 				, i + 1));
 
 		connect_signal_mouse_left_click(
@@ -397,7 +398,6 @@ void tplay_card::discard(bool& handled, bool& halt, twindow& window, int index)
 				&tplay_card::discard
 				, this
 				, _3, _4
-				, boost::ref(window)
 				, i));
 	}
 

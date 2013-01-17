@@ -64,6 +64,7 @@ namespace game_config
 	int max_level = 6;
 
 	int max_tactic_point = 15;
+	int increase_tactic_point = 4;
 
 	const std::string revision = VERSION;
 	const std::string checksum = "0123456789abcdef";

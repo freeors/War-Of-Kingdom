@@ -1,31 +1,23 @@
-﻿# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Wesnoth development team
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
-"POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"PO-Revision-Date: 2013-01-03 10:35+0800\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
 
+#
+# card section
+#
 msgid "None"
 msgstr ""
 
@@ -76,3 +68,273 @@ msgstr ""
 
 msgid "communicate description"
 msgstr ""
+
+#
+# technology section
+#
+msgid "technology-footman hp"
+msgstr ""
+
+msgid "technology_desc-footman hp"
+msgstr ""
+
+msgid "technology-horseman hp"
+msgstr ""
+
+msgid "technology_desc-horseman hp"
+msgstr ""
+
+msgid "technology-enginery hp"
+msgstr ""
+
+msgid "technology_desc-enginery hp"
+msgstr ""
+
+msgid "technology-academy hp"
+msgstr ""
+
+msgid "technology_desc-academy hp"
+msgstr ""
+
+msgid "technology-footman attack"
+msgstr ""
+
+msgid "technology_desc-footman attack"
+msgstr ""
+
+msgid "technology-horseman attack"
+msgstr ""
+
+msgid "technology_desc-horseman attack"
+msgstr ""
+
+msgid "technology-enginery attack"
+msgstr ""
+
+msgid "technology_desc-enginery attack"
+msgstr ""
+
+msgid "technology-academy attack"
+msgstr ""
+
+msgid "technology_desc-academy attack"
+msgstr ""
+
+msgid "technology-footman defend"
+msgstr ""
+
+msgid "technology_desc-footman defend"
+msgstr ""
+
+msgid "technology-horseman defend"
+msgstr ""
+
+msgid "technology_desc-horseman defend"
+msgstr ""
+
+msgid "technology-enginery defend"
+msgstr ""
+
+msgid "technology_desc-enginery defend"
+msgstr ""
+
+msgid "technology-academy defend"
+msgstr ""
+
+msgid "technology_desc-academy defend"
+msgstr ""
+
+msgid "technology-footman"
+msgstr ""
+
+msgid "technology_desc-footman"
+msgstr ""
+
+msgid "technology-horseman"
+msgstr ""
+
+msgid "technology_desc-horseman"
+msgstr ""
+
+msgid "technology-enginery"
+msgstr ""
+
+msgid "technology_desc-enginery"
+msgstr ""
+
+msgid "technology-academy"
+msgstr ""
+
+msgid "technology_desc-academy"
+msgstr ""
+
+msgid "technology-navy"
+msgstr ""
+
+msgid "technology_desc-navy"
+msgstr ""
+
+msgid "technology-leadership"
+msgstr ""
+
+msgid "technology_desc-leadership"
+msgstr ""
+
+msgid "technology-force"
+msgstr ""
+
+msgid "technology_desc-force"
+msgstr ""
+
+msgid "technology-intellect"
+msgstr ""
+
+msgid "technology_desc-intellect"
+msgstr ""
+
+msgid "technology-politics"
+msgstr ""
+
+msgid "technology_desc-politics"
+msgstr ""
+
+msgid "technology-charm"
+msgstr ""
+
+msgid "technology_desc-charm"
+msgstr ""
+
+msgid "technology-build"
+msgstr ""
+
+msgid "technology_desc-build"
+msgstr ""
+
+msgid "technology-repair"
+msgstr ""
+
+msgid "technology_desc-repair"
+msgstr ""
+
+msgid "technology-drill"
+msgstr ""
+
+msgid "technology_desc-drill"
+msgstr ""
+
+msgid "technology-discipline"
+msgstr ""
+
+msgid "technology_desc-discipline"
+msgstr ""
+
+msgid "technology-balefire"
+msgstr ""
+
+msgid "technology_desc-balefire"
+msgstr ""
+
+msgid "technology-sneak attack"
+msgstr ""
+
+msgid "technology_desc-sneak attack"
+msgstr ""
+
+msgid "technology-interlink"
+msgstr ""
+
+msgid "technology_desc-interlink"
+msgstr ""
+
+msgid "technology-cooperate"
+msgstr ""
+
+msgid "technology_desc-cooperate"
+msgstr ""
+
+msgid "technology-police"
+msgstr ""
+
+msgid "technology_desc-police"
+msgstr ""
+
+msgid "technology-morale"
+msgstr ""
+
+msgid "technology_desc-morale"
+msgstr ""
+
+msgid "technology-commercial"
+msgstr ""
+
+msgid "technology_desc-commercial"
+msgstr ""
+
+msgid "technology-technology"
+msgstr ""
+
+msgid "technology_desc-technology"
+msgstr ""
+
+msgid "technology-hot blooded"
+msgstr ""
+
+msgid "technology_desc-hot blooded"
+msgstr ""
+
+msgid "technology-smelt"
+msgstr ""
+
+msgid "technology_desc-smelt"
+msgstr ""
+
+msgid "technology-armature"
+msgstr ""
+
+msgid "technology_desc-armature"
+msgstr ""
+
+msgid "technology-agriculture"
+msgstr ""
+
+msgid "technology_desc-agriculture"
+msgstr ""
+
+msgid "technology-grassland"
+msgstr ""
+
+msgid "technology_desc-grassland"
+msgstr ""
+
+msgid "technology-navigation"
+msgstr ""
+
+msgid "technology_desc-navigation"
+msgstr ""
+
+msgid "technology-school"
+msgstr ""
+
+msgid "technology_desc-school"
+msgstr ""
+
+msgid "technology-mage"
+msgstr ""
+
+msgid "technology_desc-mage"
+msgstr ""
+
+msgid "technology-camouflage"
+msgstr ""
+
+msgid "technology_desc-camouflage"
+msgstr ""
+
+msgid "technology-strategic"
+msgstr ""
+
+msgid "technology_desc-strategic"
+msgstr ""
+
+
+

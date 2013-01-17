@@ -23,6 +23,7 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/tree_view_node.hpp"
 #include "gui/widgets/window.hpp"
+#include "gui/widgets/selectable.hpp"
 
 #include <boost/bind.hpp>
 
@@ -46,6 +47,7 @@ ttree_view::ttree_view(const std::vector<tnode_definition>& node_definitions)
 		, std::map<std::string, string_map>()))
 	, selected_item_(NULL)
 	, selection_change_callback_()
+	, left_align_(false)
 {
 	connect_signal<event::LEFT_BUTTON_DOWN>(
 			  boost::bind(
@@ -105,6 +107,57 @@ bool ttree_view::empty() const
 void ttree_view::layout_children()
 {
 	layout_children(false);
+}
+
+void ttree_view::set_select_item(ttree_view_node* node)
+{
+	if (selected_item_ == node) {
+		return;
+	}
+
+	if (selected_item_ && selected_item_->label()) {
+		selected_item_->label()->set_value(false);
+	}
+
+	selected_item_ = node;
+	selected_item_->label()->set_value(true);
+
+	if (selection_change_callback_) {
+		selection_change_callback_();
+	}
+}
+
+tpoint ttree_view::adjust_content_size(const tpoint& size)
+{
+	if (!left_align_ || empty()) {
+		return size;
+	}
+	tgrid& item = root_node_->children_.begin()->grid_;
+	// by this time, hasn't called place(), cannot use get_size().
+	int height = item.get_best_size().y;
+	if (height > size.y) {
+		return size;
+	}
+	int list_height = size.y / height * height;
+
+	// reduce hight if necessary.
+	height = root_node_->get_best_size().y;
+	if (list_height > height) {
+		list_height = height;
+	}
+	return tpoint(size.x, list_height);
+}
+
+void ttree_view::adjust_offset(int& x_offset, int& y_offset)
+{
+	if (!left_align_ || empty() || !y_offset) {
+		return;
+	}
+	tgrid& item = root_node_->children_.begin()->grid_;
+	int height = item.get_size().y;
+	if (y_offset % height) {
+		y_offset = y_offset / height * height + height;
+	}
 }
 
 void ttree_view::resize_content(

@@ -265,5 +265,6 @@ public:
 void conv_ansi_utf8(std::string &name, bool a2u);
 std::string conv_ansi_utf8_2(const std::string &name, bool a2u);
 #endif
+const char* utf8_2_ansi(const char* str);
 
 #endif

@@ -234,7 +234,7 @@ public:
 	void remove_expedite_city();
 
 	/** Set the attack direction indicator. */
-	void set_attack_indicator(unit* attack);
+	void set_attack_indicator(unit* attack, bool browse = false);
 	void clear_attack_indicator();
 	std::set<map_location>& attack_indicator() { return attack_indicator_dst_; }
 	const std::set<map_location>& attack_indicator() const { return attack_indicator_dst_; }
@@ -243,8 +243,17 @@ public:
 	const std::vector<range_locs_pair>& attack_indicator_each() const { return attack_indicator_each_dst_; }
 	const range_locs_pair& attack_indicator_each(std::string& str) const;
 
+	std::set<map_location>& selectable_indicator() { return selectable_indicator_; }
+	const std::set<map_location>& selectable_indicator() const { return selectable_indicator_; }
+
 	map_location& tactic_indicator() { return tactic_indicator_; }
 	const map_location& tactic_indicator() const { return tactic_indicator_; }
+
+	map_location& interior_indicator() { return interior_indicator_; }
+	const map_location& interior_indicator() const { return interior_indicator_; }
+
+	map_location& technology_tree_indicator() { return technology_tree_indicator_; }
+	const map_location& technology_tree_indicator() const { return technology_tree_indicator_; }
 
 	const artifical* expedite_city() const { return expedite_city_; }
 
@@ -383,7 +392,10 @@ private:
 	std::set<map_location> attack_indicator_dst_;
 	std::vector<range_locs_pair> attack_indicator_each_dst_;
 
+	std::set<map_location> selectable_indicator_;
 	map_location tactic_indicator_;
+	map_location interior_indicator_;
+	map_location technology_tree_indicator_;
 
 	// Locations of the build direction indicator's parts
 	std::set<map_location> build_indicator_dst_;

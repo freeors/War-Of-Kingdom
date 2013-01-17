@@ -60,6 +60,7 @@ namespace game_config
 	extern int max_level;
 
 	extern int max_tactic_point;
+	extern int increase_tactic_point;
 
 	inline int kill_xp(int level)
 	{

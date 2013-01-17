@@ -73,8 +73,8 @@ namespace preferences {
 	double turbo_speed();
 	void save_turbo_speed(const double speed);
 
-	bool idle_anim();
-	void _set_idle_anim(const bool ison);
+	bool default_move();
+	void _set_default_move(const bool ison);
 
 	int idle_anim_rate();
 	void _set_idle_anim_rate(const int rate);
