@@ -1351,7 +1351,7 @@ WML_HANDLER_FUNCTION(unit, /*event_info*/, cfg)
 	
 	config parsed_cfg = cfg.get_parsed_config();
 
-	unit new_unit(units, *resources::heros, parsed_cfg, true, resources::state_of_game);
+	unit new_unit(units, *resources::heros, *resources::teams, parsed_cfg, true, resources::state_of_game);
 
 	config::attribute_value to_variable = cfg["to_variable"];
 	if (!to_variable.blank())

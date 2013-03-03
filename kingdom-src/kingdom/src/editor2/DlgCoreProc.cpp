@@ -405,6 +405,7 @@ void tcore::refresh_utype(HWND hdlgP)
 	}
 	if (tunit_type::type_map_.empty()) {
 		tunit_type::type_map_[tunit_type::TYPE_TROOP] = utf8_2_ansi(_("Troop"));
+		tunit_type::type_map_[tunit_type::TYPE_COMMONER] = utf8_2_ansi(_("Commoner"));
 		tunit_type::type_map_[tunit_type::TYPE_CITY] = utf8_2_ansi(_("City"));
 		tunit_type::type_map_[tunit_type::TYPE_ARTIFICAL] = utf8_2_ansi(_("Artifical"));
 	}
@@ -415,6 +416,11 @@ void tcore::refresh_utype(HWND hdlgP)
 		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_keep]);
 		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_tower]);
 		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_technology]);
+	}
+	tunit_type::commoner_hero_.clear();
+	if (gdmgr.heros_.size()) {
+		tunit_type::commoner_hero_.insert(&gdmgr.heros_[hero::number_businessman]);
+		tunit_type::commoner_hero_.insert(&gdmgr.heros_[hero::number_scholar]);
 	}
 	if (types_updating_.empty()) {
 		generate_utype_tree();
@@ -568,6 +574,151 @@ void tcore::refresh_tactic(HWND hdlgP)
 
 	TreeView_Expand(hctl_atom, htvroot_tactic_atom_, TVE_EXPAND);
 	TreeView_Expand(hctl_complex, htvroot_tactic_complex_, TVE_EXPAND);
+}
+
+void tcore::refresh_character(HWND hdlgP)
+{
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+
+	HWND hctl_atom = GetDlgItem(hdlgP, IDC_TV_CHARACTER_ATOM);
+	HWND hctl_complex = GetDlgItem(hdlgP, IDC_TV_CHARACTER_COMPLEX);
+
+	// 1. clear treeview
+	TreeView_DeleteAllItems(hctl_atom);
+	TreeView_DeleteAllItems(hctl_complex);
+
+	// 2. fill content
+	htvroot_character_atom_ = TreeView_AddLeaf(hctl_atom, TVI_ROOT);
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Atomic character"));
+	strcpy(text, strstr.str().c_str());
+	// 这里一定要设TVIF_CHILDREN, 否则接下折叠后将判断出其cChildren为0, 再不能展开
+	TreeView_SetItem1(hctl_atom, htvroot_character_atom_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
+		1, text);
+
+	htvroot_character_complex_ = TreeView_AddLeaf(hctl_complex, TVI_ROOT);
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Complex character"));
+	strcpy(text, strstr.str().c_str());
+	TreeView_SetItem1(hctl_complex, htvroot_character_complex_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
+		1, text);
+
+	HTREEITEM htvi_character, htvi;
+
+	const std::map<int, tcharacter>& characters = unit_types.characters();
+	for (std::map<int, tcharacter>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
+		const tcharacter& t = it->second;
+		HWND hctl;
+		HTREEITEM htvroot;
+		int index;
+		if (t.index() < tcharacter::min_complex_index) {
+			hctl = hctl_atom;
+			htvroot = htvroot_character_atom_;
+			index = t.index();
+		} else {
+			hctl = hctl_complex;
+			htvroot = htvroot_character_complex_;
+			index = t.index() - tcharacter::min_complex_index;
+		}
+		htvi_character = TreeView_AddLeaf(hctl, htvroot);
+		LPARAM lParam = t.index();
+		strstr.str("");
+		strstr << std::setw(2) << std::setfill('0') << index << ": " << utf8_2_ansi(t.name().c_str()) << "(" << t.id() << ")";
+		strstr << utf8_2_ansi(_("Description")) << ": ";
+		strstr << utf8_2_ansi(t.description().c_str());
+		strcpy(text, strstr.str().c_str());
+		TreeView_SetItem2(hctl, htvi_character, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
+
+		htvroot = htvi_character;
+
+		if (t.index() < tcharacter::min_complex_index) {
+/*
+			int apply_to = t.apply_to();
+			HTREEITEM branch = TreeView_AddLeaf(hctl, htvroot);
+			strstr.str("");
+			if (apply_to == apply_to_tag::THOUGHT) {
+				strstr << utf8_2_ansi(_("Thought"));
+			} else if (apply_to == apply_to_tag::COOPERATION) {
+				strstr << utf8_2_ansi(_("Cooperation"));
+			} else if (apply_to == apply_to_tag::GODLINESS) {
+				strstr << utf8_2_ansi(_("Godliness"));
+			} else if (apply_to == apply_to_tag::EXPLOIT) {
+				strstr << utf8_2_ansi(_("Exploit"));
+			} else if (apply_to == apply_to_tag::DILIGENCE) {
+				strstr << utf8_2_ansi(_("Diligence"));
+			} else if (apply_to == apply_to_tag::AGGRESSION) {
+				strstr << utf8_2_ansi(_("Aggression"));
+			} else if (apply_to == apply_to_tag::INNOVATE) {
+				strstr << utf8_2_ansi(_("Innovate"));
+			} else if (apply_to == apply_to_tag::FINANCING) {
+				strstr << utf8_2_ansi(_("Financing"));
+			}
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem2(hctl, branch, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_tactic_action, ns::iico_tactic_action, 1, text);
+*/
+			htvi = TreeView_AddLeaf(hctl, htvroot);
+			strstr.str("");
+			if (t.leadership_) {
+				strstr << dgettext_2_ansi("wesnoth-hero", "leadership");
+				strstr << ": " << t.leadership_;
+				strcpy(text, strstr.str().c_str());
+			}
+			if (t.force_) {
+				if (!strstr.str().empty()) {
+					strstr << "    ";
+				}
+				strstr << dgettext_2_ansi("wesnoth-hero", "force");
+				strstr << ": " << t.force_;
+				strcpy(text, strstr.str().c_str());
+			}
+			if (t.intellect_) {
+				if (!strstr.str().empty()) {
+					strstr << "    ";
+				}
+				strstr << dgettext_2_ansi("wesnoth-hero", "intellect");
+				strstr << ": " << t.intellect_;
+				strcpy(text, strstr.str().c_str());
+			}
+			if (t.politics_) {
+				if (!strstr.str().empty()) {
+					strstr << "    ";
+				}
+				strstr << dgettext_2_ansi("wesnoth-hero", "politics");
+				strstr << ": " << t.politics_;
+				strcpy(text, strstr.str().c_str());
+			}
+			if (t.charm_) {
+				if (!strstr.str().empty()) {
+					strstr << "    ";
+				}
+				strstr << dgettext_2_ansi("wesnoth-hero", "charm");
+				strstr << ": " << t.charm_;
+				strcpy(text, strstr.str().c_str());
+			}
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_tactic_action, ns::iico_tactic_action, 0, text);
+
+		} else {
+			strstr.str("");
+			strstr << utf8_2_ansi(_("character^Child")) << ": ";
+			const std::vector<const tcharacter*>& parts = t.parts();
+			for (std::vector<const tcharacter*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
+				const tcharacter& part = **it2;
+				if (it2 != parts.begin()) {
+					strstr << ", ";
+				}
+				strstr << std::setw(2) << std::setfill('0') << part.index() << ": " << utf8_2_ansi(part.name().c_str()) << "(" << part.id() << ")";
+			}
+			strcpy(text, strstr.str().c_str());
+			htvi = TreeView_AddLeaf(hctl, htvroot);
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_tactic_txt, ns::iico_tactic_txt, 0, text);
+		}
+
+		TreeView_Expand(hctl, htvi_character, TVE_EXPAND);
+	}
+
+	TreeView_Expand(hctl_atom, htvroot_character_atom_, TVE_EXPAND);
+	TreeView_Expand(hctl_complex, htvroot_character_complex_, TVE_EXPAND);
 }
 
 void tcore::refresh_technology(HWND hdlgP)
@@ -765,16 +916,19 @@ void tcore::switch_section(HWND hdlgP, int to, bool force)
 	if (name_map.empty()) {
 		name_map[UNIT_TYPE] = utf8_2_ansi(_("arms^Type"));
 		name_map[TACTIC] = utf8_2_ansi(_("Tactic"));
+		name_map[CHARACTER] = dgettext_2_ansi("wesnoth-lib", "Character");
 		name_map[TECH] = dgettext_2_ansi("wesnoth-lib", "Technology");
 	}
 	if (idd_map.empty()) {
 		idd_map[UNIT_TYPE] = IDD_UTYPE;
 		idd_map[TACTIC] = IDD_TACTIC;
+		idd_map[CHARACTER] = IDD_CHARACTER;
 		idd_map[TECH] = IDD_TECHNOLOGY;
 	}
 	if (dlgproc_map.empty()) {
 		dlgproc_map[UNIT_TYPE] = DlgUTypeProc;
 		dlgproc_map[TACTIC] = DlgTacticProc;
+		dlgproc_map[CHARACTER] = DlgCharacterProc;
 		dlgproc_map[TECH] = DlgTechnologyProc;
 	}
 
@@ -836,6 +990,8 @@ void tcore::switch_section(HWND hdlgP, int to, bool force)
 		ns::core.refresh_utype(pHdr->hwndDisplay);
 	} else if (section_ == TACTIC) {
 		ns::core.refresh_tactic(pHdr->hwndDisplay);
+	} else if (section_ == CHARACTER) {
+		ns::core.refresh_character(pHdr->hwndDisplay);
 	} else if (section_ == TECH) {
 		ns::core.refresh_technology(pHdr->hwndDisplay);
 	} 
@@ -953,6 +1109,40 @@ BOOL CALLBACK DlgTacticProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 
 //
+// character section
+//
+BOOL On_DlgCharacterInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	HWND hwndParent = GetParent(hdlgP); 
+    DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
+    SetWindowPos(hdlgP, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE); 
+
+	return FALSE;
+}
+
+void On_DlgCharacterCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	return;
+}
+
+void On_DlgCharacterDestroy(HWND hdlgP)
+{
+	return;
+}
+
+BOOL CALLBACK DlgCharacterProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(uMsg) {
+	case WM_INITDIALOG:
+		return On_DlgCharacterInitDialog(hdlgP, (HWND)(wParam), lParam);
+	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgCharacterCommand);
+	HANDLE_MSG(hdlgP, WM_DESTROY,  On_DlgCharacterDestroy);
+	}
+	
+	return FALSE;
+}
+
+//
 // technology section
 //
 BOOL On_DlgTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
@@ -1050,6 +1240,13 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = text;
 	ListView_InsertColumn(hctl, index ++, &lvc);
 
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 80;
+	lvc.iSubItem = index;
+	strcpy(text, utf8_2_ansi(_("Relative")));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
 	if (ns::type == IDM_TECHNOLOGY_ATOMIC) {
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 80;
@@ -1128,6 +1325,17 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvi.iSubItem = index ++;
 		strstr.str("");
 		strstr << t.max_experience();
+		strcpy(text, strstr.str().c_str());
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// Relative
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = index ++;
+		strstr.str("");
+		if (t.relative() != HEROS_NO_CHARACTER) {
+			strstr << utf8_2_ansi(unit_types.character(t.relative()).name().c_str());
+		}
 		strcpy(text, strstr.str().c_str());
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);

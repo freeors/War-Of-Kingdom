@@ -260,7 +260,7 @@ void trecruit::refresh_tooltip(twindow& window)
 		}
 	}
 	type_heros_pair pair(t, v);
-	unit temp(units_, heros_, pair, city_.cityno(), false);
+	unit temp(units_, heros_, teams_, pair, city_.cityno(), false);
 
 	std::stringstream str;
 	// refresh to gui

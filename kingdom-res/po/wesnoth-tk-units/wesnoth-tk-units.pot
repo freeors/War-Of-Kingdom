@@ -727,186 +727,6 @@ msgid "tiger horseman6 description"
 msgstr ""
 
 #
-# character unit type: Rattan armour footman
-#
-
-msgid "rattan armour footman3"
-msgstr ""
-
-msgid "rattan armour footman3 description"
-msgstr ""
-
-msgid "rattan armour footman4"
-msgstr ""
-
-msgid "rattan armour footman4 description"
-msgstr ""
-
-msgid "rattan armour footman5"
-msgstr ""
-
-msgid "rattan armour footman5 description"
-msgstr ""
-
-msgid "rattan armour footman6"
-msgstr ""
-
-msgid "rattan armour footman6 description"
-msgstr ""
-
-#
-# character unit type: Rattan armour pikeman
-#
-
-msgid "rattan armour pikeman3"
-msgstr ""
-
-msgid "rattan armour pikeman3 description"
-msgstr ""
-
-msgid "rattan armour pikeman4"
-msgstr ""
-
-msgid "rattan armour pikeman4 description"
-msgstr ""
-
-msgid "rattan armour pikeman5"
-msgstr ""
-
-msgid "rattan armour pikeman5 description"
-msgstr ""
-
-msgid "rattan armour pikeman6"
-msgstr ""
-
-msgid "rattan armour pikeman6 description"
-msgstr ""
-
-#
-# character unit type: Rattan armour bowman
-#
-
-msgid "rattan armour bowman3"
-msgstr ""
-
-msgid "rattan armour bowman3 description"
-msgstr ""
-
-msgid "rattan armour bowman4"
-msgstr ""
-
-msgid "rattan armour bowman4 description"
-msgstr ""
-
-msgid "rattan armour bowman5"
-msgstr ""
-
-msgid "rattan armour bowman5 description"
-msgstr ""
-
-msgid "rattan armour bowman6"
-msgstr ""
-
-msgid "rattan armour bowman6 description"
-msgstr ""
-
-#
-# character unit type: Rattan armour horseman
-#
-
-msgid "rattan armour horseman3"
-msgstr ""
-
-msgid "rattan armour horseman3 description"
-msgstr ""
-
-msgid "rattan armour horseman4"
-msgstr ""
-
-msgid "rattan armour horseman4 description"
-msgstr ""
-
-msgid "rattan armour horseman5"
-msgstr ""
-
-msgid "rattan armour horseman5 description"
-msgstr ""
-
-msgid "rattan armour horseman6"
-msgstr ""
-
-msgid "rattan armour horseman6 description"
-msgstr ""
-
-#
-# character unit type: Rattan armour whitemage
-#
-
-msgid "rattan armour whitemage3"
-msgstr ""
-
-msgid "rattan armour whitemage3 description"
-msgstr ""
-
-msgid "rattan armour whitemage4"
-msgstr ""
-
-msgid "rattan armour whitemage4 description"
-msgstr ""
-
-msgid "rattan armour whitemage5"
-msgstr ""
-
-msgid "rattan armour whitemage5 description"
-msgstr ""
-
-msgid "rattan armour whitemage6"
-msgstr ""
-
-msgid "rattan armour whitemage6 description"
-msgstr ""
-
-#
-# character unit type:war elephant
-#
-
-msgid "war elephant1"
-msgstr ""
-
-msgid "war elephant1 description"
-msgstr ""
-
-msgid "war elephant2"
-msgstr ""
-
-msgid "war elephant2 description"
-msgstr ""
-
-msgid "war elephant3"
-msgstr ""
-
-msgid "war elephant3 description"
-msgstr ""
-
-msgid "war elephant4"
-msgstr ""
-
-msgid "war elephant4 description"
-msgstr ""
-
-msgid "war elephant5"
-msgstr ""
-
-msgid "war elephant5 description"
-msgstr ""
-
-msgid "war elephant6"
-msgstr ""
-
-msgid "war elephant6 description"
-msgstr ""
-
-#
 # character unit type: heroine
 #
 msgid "heroine4"
@@ -1054,3 +874,86 @@ msgstr ""
 
 msgid "taoism6 description"
 msgstr ""
+
+#
+# character unit type: elephant
+#
+msgid "elephant4"
+msgstr ""
+
+msgid "elephant4 description"
+msgstr ""
+
+msgid "elephant5"
+msgstr ""
+
+msgid "elephant5 description"
+msgstr ""
+
+msgid "elephant6"
+msgstr ""
+
+msgid "elephant6 description"
+msgstr ""
+
+#
+# character unit type: bine
+#
+msgid "bine4"
+msgstr ""
+
+msgid "bine4 description"
+msgstr ""
+
+msgid "bine5"
+msgstr ""
+
+msgid "bine5 description"
+msgstr ""
+
+msgid "bine6"
+msgstr ""
+
+msgid "bine6 description"
+msgstr ""
+
+#
+# commoner unit type: businessman
+#
+msgid "businessman1"
+msgstr ""
+
+msgid "businessman1 description"
+msgstr ""
+
+msgid "businessman2"
+msgstr ""
+
+msgid "businessman2 description"
+msgstr ""
+
+msgid "businessman3"
+msgstr ""
+
+msgid "businessman3 description"
+msgstr ""
+
+msgid "scholar1"
+msgstr ""
+
+msgid "scholar1 description"
+msgstr ""
+
+msgid "scholar2"
+msgstr ""
+
+msgid "scholar2 description"
+msgstr ""
+
+msgid "scholar3"
+msgstr ""
+
+msgid "scholar3 description"
+msgstr ""
+
+

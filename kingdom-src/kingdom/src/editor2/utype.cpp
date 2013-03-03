@@ -33,6 +33,7 @@ namespace ns {
 
 std::map<int, std::string> tunit_type::type_map_;
 std::set<hero*> tunit_type::artifical_hero_;
+std::set<hero*> tunit_type::commoner_hero_;
 
 tunit_type::tunit_type(const std::string& id)
 	: tunit_type_(id)
@@ -58,7 +59,7 @@ void tunit_type::from_config(const unit_type* ut)
 	level_ = ut->level();
 	cost_ = ut->cost();
 	alignment_ = ut->alignment();
-	character_ = ut->character();
+	character_ = ut->especial();
 	movement_type_ = ut->movementType_id();
 	// [resistance]
 	resistance_.clear();
@@ -98,9 +99,9 @@ void tunit_type::from_config(const unit_type* ut)
 	turn_experience_ = ut->turn_experience();
 	heal_ = ut->heal();
 	guard_ = ut->guard();
-	if (master_ == hero::number_market) {
+	if (master_ == hero::number_market || master_ == hero::number_businessman) {
 		income_ = ut->gold_income();
-	} else if (master_ == hero::number_technology) {
+	} else if (master_ == hero::number_technology || master_ == hero::number_scholar) {
 		income_ = ut->technology_income();
 	} else {
 		income_ = 0;
@@ -269,6 +270,20 @@ void tunit_type::from_ui_utype_type(HWND hdlgP)
 		land_wall_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPETROOP_LANDWALL))? true: false;
 		leader_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPETROOP_LEADER))? true: false;
 
+	} else if (ns::utype.type() == tunit_type::TYPE_COMMONER) {
+		hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPECOMMONER_MASTER);
+		master_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+
+		movement_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPECOMMONER_MOVEMENT));
+		max_movement_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPECOMMONER_MAXMOVEMENT));
+		if (max_movement_ < movement_) {
+			max_movement_ = -1;
+		}
+
+		land_wall_ = true;
+
+		income_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPECOMMONER_INCOME));
+
 	} else if (ns::utype.type() == tunit_type::TYPE_CITY) {
 		turn_experience_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPECITY_TURNEXPERIENCE));
 		heal_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPECITY_HEAL));
@@ -427,14 +442,35 @@ void tunit_type::update_to_ui_utype_edit_type(HWND hdlgP) const
 		} 
 		strstr << ")\r\n";
 		strstr << dgettext_2_ansi("wesnoth-lib", "Character") << ": ";
-		if (character_ != NO_CHARACTER) {
-			strstr << utf8_2_ansi(unit_types.character(character_).name_.c_str());
+		if (character_ != NO_ESPECIAL) {
+			strstr << utf8_2_ansi(unit_types.especial(character_).name_.c_str());
 		}
 		strstr << "\r\n";
 		strstr << utf8_2_ansi(_("Can land on wall")) << ": ";
 		strstr << (land_wall_? utf8_2_ansi(_("Can")): utf8_2_ansi(_("Cannot"))) << "\r\n";
 		strstr << utf8_2_ansi(_("Only used to leader")) << ": ";
 		strstr << (leader_? utf8_2_ansi(_("YES")): utf8_2_ansi(_("No")));
+
+	} else if (type() == TYPE_COMMONER) {
+		hero& h = **(tunit_type::commoner_hero_.find(&gdmgr.heros_[master_]));
+		strstr << utf8_2_ansi(_("Type")) << ": ";
+		strstr << utf8_2_ansi(h.name().c_str()) << "\r\n";
+
+		strstr << dgettext_2_ansi("wesnoth-lib", "Movement") << ": " << movement_;
+		strstr << "(";
+		if (max_movement_ != -1) {
+			strstr << max_movement_;
+		} else {
+			strstr << utf8_2_ansi(_("Unrestricted"));
+		} 
+		strstr << ")\r\n";
+
+		if (master_ == hero::number_businessman) {
+			strstr << utf8_2_ansi(_("Base income gold"));
+		} else if (master_ == hero::number_scholar) {
+			strstr << utf8_2_ansi(_("Base income technology"));
+		}
+		strstr << ": " << income_;
 
 	} else if (type() == TYPE_CITY) {
 		strstr << utf8_2_ansi(_("Increase XP per turn")) << ": " << turn_experience_ << "\r\n";
@@ -665,24 +701,30 @@ void tunit_type::generate() const
 		strstr << "\tcost = " << cost_ << "\n";
 		strstr << "\tlevel = " << level_ << "\n";
 				
-		if (type() == TYPE_TROOP) {
+		int t = type();
+		if (t == TYPE_TROOP || t == TYPE_COMMONER) {
 			strstr << "\tmovement = " << movement_ << "\n";
 			if (max_movement_ != -1) {
 				strstr << "\tmax_movement = " << max_movement_ << "\n";
 			}
-			if (character_ != NO_CHARACTER) {
-				strstr << "\tcharacter = " << unit_types.character(character_).id_ << "\n";
-			}
 			strstr << "\tland_wall = " << (land_wall_? "yes": "no") << "\n";
-			if (leader_) {
-				strstr << "\tleader = yes\n";
+			if (t == TYPE_TROOP) {
+				if (character_ != NO_ESPECIAL) {
+					strstr << "\tespecial = " << unit_types.especial(character_).id_ << "\n";
+				}
+				if (leader_) {
+					strstr << "\tleader = yes\n";
+				}
+			} else if (t == TYPE_COMMONER) {
+				strstr << "\tmaster = " << master_ << "\n";
+				strstr << "\tincome = " << income_ << "\n";
 			}
-		} else if (type() == TYPE_CITY) {
+		} else if (t == TYPE_CITY) {
 			strstr << "\tcan_recruit = yes\n";
 			strstr << "\tcan_reside = yes\n";
 			strstr << "\tturn_experience = " << turn_experience_ << "\n";
 			strstr << "\theal = " << heal_ << "\n";
-		} else if (type() == TYPE_ARTIFICAL) {
+		} else if (t == TYPE_ARTIFICAL) {
 			strstr << "\tmovement = 0\n";
 			strstr << "\tmaster = " << master_ << "\n";
 			strstr << "\tattack_destroy = yes" << "\n";
@@ -702,7 +744,7 @@ void tunit_type::generate() const
 				strstr << "\tcancel_zoc = yes" << "\n";
 			} else if (master_ == hero::number_market || master_ == hero::number_technology) {
 				strstr << "\tmatch = Ea" << "\n";
-				strstr << "\tgold_income = " << income_ << "\n";
+				strstr << "\tincome = " << income_ << "\n";
 			} else if (master_ == hero::number_tower) {
 				strstr << "\tmatch = G*^*,R*^*" << "\n";
 			}
@@ -827,7 +869,7 @@ void tunit_type::generate() const
 				continue;
 			}
 			if (it->range_ == 0) {
-				unit_type::attack_anim_melee(it->id_, it->icon_, type() == TYPE_TROOP, race_, id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_melee(it->id_, it->icon_, type() == TYPE_TROOP || type() == TYPE_COMMONER, race_, id_, use_terrain_image(), cfg);
 
 			} else if (it->icon_.find("magic-missile") != std::string::npos) {
 				unit_type::attack_anim_ranged_magic_missile(it->id_, race_, id_, use_terrain_image(), cfg);
@@ -1130,7 +1172,7 @@ std::string tunit_type::description() const
 int tunit_type::type() const
 {
 	if (master_ != HEROS_INVALID_NUMBER) {
-		return TYPE_ARTIFICAL;
+		return hero::is_commoner(master_)? TYPE_COMMONER: TYPE_ARTIFICAL;
 	} else if (can_recruit_) {
 		return TYPE_CITY;
 	} else {
@@ -1141,7 +1183,7 @@ int tunit_type::type() const
 int tunit_type::type_from_cfg() const
 {
 	if (utype_from_cfg_.master_ != HEROS_INVALID_NUMBER) {
-		return TYPE_ARTIFICAL;
+		return hero::is_commoner(utype_from_cfg_.master_)? TYPE_COMMONER: TYPE_ARTIFICAL;
 	} else if (utype_from_cfg_.can_recruit_) {
 		return TYPE_CITY;
 	} else {
@@ -2363,11 +2405,11 @@ BOOL On_DlgUTypeTroopInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// character
 	hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPETROOP_CHARACTER);
 	ComboBox_AddString(hctl, "");
-	ComboBox_SetItemData(hctl, 0, NO_CHARACTER);
+	ComboBox_SetItemData(hctl, 0, NO_ESPECIAL);
 	int selected_row = 0;
-	const std::vector<tcharacter>& characters = unit_types.characters();
-	for (std::vector<tcharacter>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
-		const tcharacter& character = *it;
+	const std::vector<tespecial>& characters = unit_types.especials();
+	for (std::vector<tespecial>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
+		const tespecial& character = *it;
 		ComboBox_AddString(hctl, utf8_2_ansi(character.name_.c_str()));
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, character.index_);
 		if (character.index_ == ns::utype.character_) {
@@ -2425,6 +2467,100 @@ BOOL CALLBACK DlgUTypeTroopProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM l
 	return FALSE;
 }
 
+BOOL On_DlgUTypeCommonerInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	editor_config::move_subcfg_right_position(hdlgP, lParam);
+
+	ns::clicked_mtype = -1;
+
+	std::stringstream strstr;
+	strstr << utf8_2_ansi(_("Special attributes of commoner type"));
+	SetWindowText(hdlgP, strstr.str().c_str());
+	ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+	
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("Type")));
+	set_language_text(hdlgP, IDC_STATIC_MOVEMENT, "wesnoth-lib", "Movement");
+	Button_SetText(GetDlgItem(hdlgP, IDC_STATIC_MAXIMUM), utf8_2_ansi(_("Maximum")));
+	strstr.str("");
+	strstr << "(-1: ";
+	strstr << utf8_2_ansi(_("Unrestricted")) << ")";
+	Button_SetText(GetDlgItem(hdlgP, IDC_STATIC_UNRESTRAINT), strstr.str().c_str());
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income gold")));
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPECOMMONER_MASTER);
+	int selected_row = -1;
+	for (std::set<hero*>::iterator it = tunit_type::commoner_hero_.begin(); it != tunit_type::commoner_hero_.end(); ++ it) {
+		hero& h = **it;
+		ComboBox_AddString(hctl, utf8_2_ansi(h.name().c_str()));
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, h.number_);
+		if (ns::utype.master_ == h.number_) {
+			selected_row = ComboBox_GetCount(hctl) - 1;
+		}
+	}
+	ComboBox_SetCurSel(hctl, selected_row);
+
+	// movement
+	hctl = GetDlgItem(hdlgP, IDC_UD_UTYPECOMMONER_MOVEMENT);
+	UpDown_SetRange(hctl, 1, 50);	// [1, 50]
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPECOMMONER_MOVEMENT));
+	UpDown_SetPos(hctl, ns::utype.movement_);
+
+	// max movement
+	hctl = GetDlgItem(hdlgP, IDC_UD_UTYPECOMMONER_MAXMOVEMENT);
+	UpDown_SetRange(hctl, -1, 50);	// [-1, 50]
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPECOMMONER_MAXMOVEMENT));
+	UpDown_SetPos(hctl, ns::utype.max_movement_);
+
+	// income
+	hctl = GetDlgItem(hdlgP, IDC_UD_UTYPECOMMONER_INCOME);
+	UpDown_SetRange(hctl, 0, 1000);	// [0, 1000]
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPECOMMONER_INCOME));
+	UpDown_SetPos(hctl, ns::utype.income_);
+
+	ns::utype.update_to_ui_utype_type(hdlgP);
+	return FALSE;
+}
+
+
+void On_DlgUTypeCommonerCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	BOOL changed = FALSE;
+
+	switch (id) {
+	case IDOK:
+		changed = TRUE;
+		ns::utype.from_ui_utype_type(hdlgP);
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL On_DlgUTypeCommonerNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	if (lpNMHdr->code != NM_DBLCLK) {
+		return FALSE;
+	}
+	if (DlgItem != IDC_LV_MTYPEEDIT_RESISTANCE) {
+		return FALSE;
+	}
+
+	return FALSE;
+}
+
+BOOL CALLBACK DlgUTypeCommonerProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch(message) {
+	case WM_INITDIALOG:
+		return On_DlgUTypeCommonerInitDialog(hDlg, (HWND)(wParam), lParam);
+	HANDLE_MSG(hDlg, WM_COMMAND, On_DlgUTypeCommonerCommand);
+	HANDLE_MSG(hDlg, WM_DRAWITEM, editor_config::On_DlgDrawItem);
+	HANDLE_MSG(hDlg, WM_NOTIFY, On_DlgUTypeCommonerNotify);
+	}
+	
+	return FALSE;
+}
+
 BOOL On_DlgUTypeCityInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
@@ -2452,7 +2588,6 @@ BOOL On_DlgUTypeCityInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ns::utype.update_to_ui_utype_type(hdlgP);
 	return FALSE;
 }
-
 
 void On_DlgUTypeCityCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
@@ -2621,6 +2756,8 @@ void OnUTypeTypeBt(HWND hdlgP)
 	int retval = 0;
 	if (ns::utype.type() == tunit_type::TYPE_TROOP) {
 		retval = DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_UTYPETROOP), hdlgP, DlgUTypeTroopProc, lParam);
+	} else if (ns::utype.type() == tunit_type::TYPE_COMMONER) {
+		retval = DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_UTYPECOMMONER), hdlgP, DlgUTypeCommonerProc, lParam);
 	} else if (ns::utype.type() == tunit_type::TYPE_CITY) {
 		retval = DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_UTYPECITY), hdlgP, DlgUTypeCityProc, lParam);
 	} else if (ns::utype.type() == tunit_type::TYPE_ARTIFICAL) {
@@ -2721,12 +2858,20 @@ void OnUTypeEditCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		ns::utype.master_ = HEROS_INVALID_NUMBER;
 		ns::utype.can_recruit_ = false;
 
+	} else if (type == tunit_type::TYPE_COMMONER) {
+		if (ns::utype.utype_from_cfg_.master_ != HEROS_INVALID_NUMBER && hero::is_commoner(ns::utype.utype_from_cfg_.master_)) {
+			ns::utype.master_ = ns::utype.utype_from_cfg_.master_;
+		} else {
+			ns::utype.master_ = hero::number_businessman;
+		}
+		ns::utype.can_recruit_ = false;
+
 	} else if (type == tunit_type::TYPE_CITY) {
 		ns::utype.master_ = HEROS_INVALID_NUMBER;
 		ns::utype.can_recruit_ = true;
 		
 	} else if (type == tunit_type::TYPE_ARTIFICAL) {
-		if (ns::utype.utype_from_cfg_.master_ != HEROS_INVALID_NUMBER) {
+		if (ns::utype.utype_from_cfg_.master_ != HEROS_INVALID_NUMBER && !hero::is_commoner(ns::utype.utype_from_cfg_.master_)) {
 			ns::utype.master_ = ns::utype.utype_from_cfg_.master_;
 		} else {
 			const hero& h = **(tunit_type::artifical_hero_.begin());
@@ -2734,7 +2879,7 @@ void OnUTypeEditCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		}
 		ns::utype.can_recruit_ = false;
 	}
-	if (type == tunit_type::TYPE_TROOP && !ns::utype.utype_from_cfg_.movement_) {
+	if ((type == tunit_type::TYPE_TROOP || type == tunit_type::TYPE_COMMONER) && !ns::utype.utype_from_cfg_.movement_) {
 		ns::utype.movement_ = 5;
 		ns::utype.max_movement_ = -1;
 	} else {
@@ -3248,6 +3393,13 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 		lvc.cx = 50;
 		lvc.iSubItem = index;
+		strcpy(text, dgettext_2_ansi("wesnoth-lib", "Income"));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 50;
+		lvc.iSubItem = index;
 		strcpy(text, utf8_2_ansi(_("Can land on wall")));
 		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
@@ -3367,8 +3519,8 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvi.iSubItem = index ++;
 		strstr.str("");
 		strstr << ut->level();
-		if (ut->character() != NO_CHARACTER) {
-			strstr << "(" << utf8_2_ansi(unit_types.character(ut->character()).name_.c_str()) << ")";
+		if (ut->especial() != NO_ESPECIAL) {
+			strstr << "(" << utf8_2_ansi(unit_types.especial(ut->especial()).name_.c_str()) << ")";
 		}
 		strcpy(text, strstr.str().c_str());
 		lvi.pszText = text;
@@ -3411,6 +3563,14 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.iSubItem = index ++;
 			strstr.str("");
 			strstr << ut->cost();
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			strstr << (ut->gold_income()? ut->gold_income(): ut->technology_income());
 			strcpy(text, strstr.str().c_str());
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);

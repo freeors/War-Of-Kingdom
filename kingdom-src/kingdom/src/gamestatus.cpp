@@ -734,7 +734,7 @@ void game_state::build_team(const config& side_cfg,
 	foreach (const config& cfg, side_cfg.child_range("unit")) {
 		config temp_cfg(cfg);
 		temp_cfg["side"] = side; //set the side before unit creation to avoid invalid side errors
-		unit new_unit(units, heros, temp_cfg, true);
+		unit new_unit(units, heros, teams, temp_cfg, true);
 
 		const std::string x = cfg["x"].str();
 		const std::string y = cfg["y"].str();
@@ -814,11 +814,12 @@ void game_state::build_team(const uint8_t* mem,
 		if (fields->artifical_) {
 			new_unit = new artifical(mem + offset);
 		} else {
-			new_unit = new unit(units, heros, mem + offset);
+			new_unit = new unit(units, heros, teams, mem + offset);
 		}
 		offset += fields->size_;
 
 		map_location loc(fields->x_, fields->y_);
+
 		if (!loc.valid()) {
 			loc = map.starting_position(side);
 		}
@@ -858,7 +859,7 @@ void game_state::build_team(const uint8_t* mem,
 			foreach (config &i, armory_cfg.child_range("unit")) {
 				i["cityno"] = current->cityno();
 				i["side"] = current->side();
-				reside_troops.push_back(new unit(units, heros, i));
+				reside_troops.push_back(new unit(units, heros, teams, i));
 			}
 			// fresh heros
 			std::vector<hero*>& freshes = current->fresh_heros();

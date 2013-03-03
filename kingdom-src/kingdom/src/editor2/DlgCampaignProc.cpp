@@ -41,6 +41,7 @@ namespace ns {
 	int clicked_side;
 	int clicked_event;
 	int clicked_treasure;
+	int clicked_road;
 	int clicked_feature;
 	int clicked_city;
 	int clicked_troop;
@@ -51,6 +52,7 @@ namespace ns {
 	int action_side;
 	int action_event;
 	int action_treasure;
+	int action_road;
 	int action_feature;
 	int action_city;
 	int action_troop;
@@ -582,8 +584,8 @@ void tside::from_config(const config& direct_side_cfg)
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			c.traits_.insert(*i);
 		}
-		str = cfg["character"].str();
-		c.character_ = unit_types.character_from_id(str);
+		str = cfg["especial"].str();
+		c.character_ = unit_types.especial_from_id(str);
 		vstr = utils::split(cfg["not_recruit"].str());
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			c.not_recruit_.push_back(*i);
@@ -648,8 +650,8 @@ void tside::from_config(const config& direct_side_cfg)
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			u.traits_.insert(*i);
 		}
-		str = cfg["character"].str();
-		u.character_ = unit_types.character_from_id(str);
+		str = cfg["especial"].str();
+		u.character_ = unit_types.especial_from_id(str);
 
 		str = cfg["type"].str();
 		const unit_type* ut = unit_types.find(str);
@@ -1300,8 +1302,8 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 4;
 	strstr.str("");
-	if (character_ != NO_CHARACTER) {
-		strstr << utf8_2_ansi(unit_types.character(character_).name_.c_str());
+	if (character_ != NO_ESPECIAL) {
+		strstr << utf8_2_ansi(unit_types.especial(character_).name_.c_str());
 	}
 	strcpy(text, strstr.str().c_str());
 	lvi.pszText = text;
@@ -1382,11 +1384,11 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 
 		hctl = GetDlgItem(hdlgP, IDC_CMB_CITYEDIT_CHARACTER);
 		ComboBox_AddString(hctl, "");
-		ComboBox_SetItemData(hctl, 0, NO_CHARACTER);
+		ComboBox_SetItemData(hctl, 0, NO_ESPECIAL);
 		selected_row = 0;
-		const std::vector<tcharacter>& characters = unit_types.characters();
-		for (std::vector<tcharacter>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
-			const tcharacter& character = *it;
+		const std::vector<tespecial>& characters = unit_types.especials();
+		for (std::vector<tespecial>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
+			const tespecial& character = *it;
 			ComboBox_AddString(hctl, utf8_2_ansi(character.name_.c_str()));
 			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, character.index_);
 			if (character.index_ == character_) {
@@ -1486,7 +1488,7 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		for (std::vector<std::pair<std::string, const unit_type*> >::const_iterator it = ns::campaign.troop_utypes_.begin(); it != ns::campaign.troop_utypes_.end(); ++ it, index ++) {
 			const unit_type* ut = it->second;
 			
-			if (ut->character() != NO_CHARACTER) {
+			if (ut->especial() != NO_ESPECIAL) {
 				continue;
 			}
 			lvi.mask = LVIF_TEXT | LVIF_PARAM;
@@ -1803,8 +1805,8 @@ void tside::tunit::update_to_ui_side_edit(HWND hdlgP, int index) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 6;
 	strstr.str("");
-	if (character_ != NO_CHARACTER) {
-		strstr << utf8_2_ansi(unit_types.character(character_).name_.c_str());
+	if (character_ != NO_ESPECIAL) {
+		strstr << utf8_2_ansi(unit_types.especial(character_).name_.c_str());
 	}
 	strcpy(text, strstr.str().c_str());
 	lvi.pszText = text;
@@ -1851,11 +1853,11 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 
 		hctl = GetDlgItem(hdlgP, IDC_CMB_TROOPEDIT_CHARACTER);
 		ComboBox_AddString(hctl, "");
-		ComboBox_SetItemData(hctl, 0, NO_CHARACTER);
+		ComboBox_SetItemData(hctl, 0, NO_ESPECIAL);
 		selected_row = 0;
-		const std::vector<tcharacter>& characters = unit_types.characters();
-		for (std::vector<tcharacter>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
-			const tcharacter& character = *it;
+		const std::vector<tespecial>& characters = unit_types.especials();
+		for (std::vector<tespecial>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
+			const tespecial& character = *it;
 			ComboBox_AddString(hctl, utf8_2_ansi(character.name_.c_str()));
 			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, character.index_);
 			if (character.index_ == character_) {
@@ -2268,7 +2270,7 @@ void tscenario::from_config(int index, const config& scenario_cfg)
 	turns_ = scenario_cfg["turns"].to_int();
 	maximal_defeated_activity_ = scenario_cfg["maximal_defeated_activity"].to_int();
 
-	const std::vector<std::string> vstr = utils::split(scenario_cfg["treasures"]);
+	std::vector<std::string> vstr = utils::split(scenario_cfg["treasures"]);
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		int t = lexical_cast_default<int>(*it, -1);
 		std::map<int, int>::iterator find = treasures_.find(t);
@@ -2309,6 +2311,18 @@ void tscenario::from_config(int index, const config& scenario_cfg)
 
 	// form cityno_map need ns::cityno_map
 	ns::cityno_map = generate_cityno_map();
+
+	vstr = utils::parenthetical_split(scenario_cfg["roads"]);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		const std::vector<std::string> vstr1 = utils::split(*it);
+		if (vstr1.size() == 2) {
+			int h1 = hero_from_cityno_map(ns::cityno_map, lexical_cast_default<int>(vstr1[0]));
+			int h2 = hero_from_cityno_map(ns::cityno_map, lexical_cast_default<int>(vstr1[1]));
+			if (h1 != HEROS_INVALID_NUMBER && h2 != HEROS_INVALID_NUMBER && h1 != h2) {
+				roads_.insert(std::make_pair(h1, h2));
+			}
+		}
+	}
 
 	foreach (const config &event_cfg, scenario_cfg.child_range("event")) {
 		if (event_cfg["name"].str() == "prestart") {
@@ -2403,6 +2417,7 @@ void tscenario::update_to_ui(HWND hdlgP)
 	ComboBox_SetCurSel(hctl, selected_row);
 
 	update_to_ui_treasures(hdlgP);
+	update_to_ui_roads(hdlgP);
 
 	// side
 	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_SIDE);
@@ -2475,6 +2490,46 @@ void tscenario::update_to_ui_treasures(HWND hdlgP)
 	}
 }
 
+void tscenario::update_to_ui_roads(HWND hdlgP)
+{
+	LVITEM lvi;
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_ROAD);
+	ListView_DeleteAllItems(hctl);
+
+	int index = 0;
+	for (std::multimap<int, int>::const_iterator it = roads_.begin(); it != roads_.end(); ++ it, index ++) {
+		lvi.mask = LVIF_TEXT | LVIF_PARAM;
+		// number
+		lvi.iItem = index;
+		lvi.iSubItem = 0;
+		sprintf(text, "%i", index + 1);
+		lvi.pszText = text;
+		lvi.lParam = (LPARAM)it->first;
+		ListView_InsertItem(hctl, &lvi);
+
+		// city
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 1;
+		strstr.str("");
+		strstr << utf8_2_ansi(gdmgr.heros_[it->first].name().c_str());
+		strcpy(text, strstr.str().c_str());
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// city
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 2;
+		strstr.str("");
+		strstr << utf8_2_ansi(gdmgr.heros_[it->second].name().c_str());
+		strcpy(text, strstr.str().c_str());
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+	}
+}
+
 void tscenario::from_ui(HWND hdlgP)
 {
 	char text[_MAX_PATH];
@@ -2509,6 +2564,16 @@ void tscenario::from_ui_treasure(HWND hdlgP, bool edit)
 	}
 }
 
+void tscenario::from_ui_road(HWND hdlgP, bool edit)
+{
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_ROAD_CITY1);
+	int city1 = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+	hctl = GetDlgItem(hdlgP, IDC_CMB_ROAD_CITY2);
+	int city2 = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+
+	roads_.insert(std::make_pair(city1, city2));
+}
+
 void tscenario::generate()
 {
 	std::stringstream strstr;
@@ -2538,7 +2603,7 @@ void tscenario::generate()
 	strstr << "\tname = _ \"" << id_ << "\"\n";
 	strstr << "\tmap_data = \"{" << map_file() << "}\"\n";
 	strstr << "\tturns = " << turns_ << "\n";
-	strstr << "\tmaximal_defeated_activity = " << maximal_defeated_activity_ << "\n";
+	// strstr << "\tmaximal_defeated_activity = " << maximal_defeated_activity_ << "\n";
 	if (!treasures_.empty()) {
 		strstr << "\ttreasures = ";
 		for (std::map<int, int>::const_iterator it = treasures_.begin(); it != treasures_.end(); ++ it) {
@@ -2552,6 +2617,32 @@ void tscenario::generate()
 		strstr << "\n";
 	}
 	
+	if (!roads_.empty()) {
+		std::map<int, std::set<int> > cityno_roads;
+		std::set<int> roads;
+		int analyzing = roads_.begin()->first;
+		for (std::multimap<int, int>::const_iterator it = roads_.begin(); it != roads_.end(); ++ it) {
+			if (it->first != analyzing) {
+				cityno_roads.insert(std::make_pair(ns::cityno_map.find(analyzing)->second, roads));
+				analyzing = it->first;
+				roads.clear();
+			}
+			roads.insert(ns::cityno_map.find(it->second)->second);
+		}
+		cityno_roads.insert(std::make_pair(ns::cityno_map.find(analyzing)->second, roads));
+
+		strstr << "\troads = ";
+		for (std::map<int, std::set<int> >::const_iterator it = cityno_roads.begin(); it != cityno_roads.end(); ++ it) {
+			for (std::set<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+				if (it != cityno_roads.begin() || it2 != it->second.begin()) {
+					strstr << ", ";
+				}
+				strstr << "(" << it->first << "," << *it2 << ")";
+			}
+		}
+		strstr << "\n";
+	}
+
 	strstr << "\n";
 	// tod
 	strstr << "\t{DAWN}\n";
@@ -2689,8 +2780,8 @@ void tscenario::generate()
 				}
 			}
 			strstr << "\n";
-			if (it2->character_ != NO_CHARACTER) {
-				strstr << "\t\t\tcharacter = " << unit_types.character(it2->character_).id_ << "\n";
+			if (it2->character_ != NO_ESPECIAL) {
+				strstr << "\t\t\tespecial = " << unit_types.especial(it2->character_).id_ << "\n";
 			}
 			strstr << "\t\t\tnot_recruit = ";
 			for (std::vector<std::string>::const_iterator it3 = it2->not_recruit_.begin(); it3 != it2->not_recruit_.end(); ++ it3) {
@@ -2733,8 +2824,8 @@ void tscenario::generate()
 				}
 			}
 			strstr << ") ";
-			if (it2->character_ != NO_CHARACTER) {
-				strstr << "(" << unit_types.character(it2->character_).id_ << ")";
+			if (it2->character_ != NO_ESPECIAL) {
+				strstr << "(" << unit_types.especial(it2->character_).id_ << ")";
 			} else {
 				strstr << "()";
 			}
@@ -2744,6 +2835,7 @@ void tscenario::generate()
 		strstr << "\t[/side]\n";
 		strstr << "\n";
 	}
+
 /*
 	strstr << "\n";
 	// recommend
@@ -2800,6 +2892,56 @@ std::map<int, int> tscenario::generate_cityno_map() const
 		}
 	}
 	return cityno_map;
+}
+
+int tscenario::hero_from_cityno_map(const std::map<int, int>& cityno_map, int no) const
+{
+	int h = HEROS_INVALID_NUMBER;
+	for (std::map<int, int>::const_iterator it2 = cityno_map.begin(); it2 != cityno_map.end(); ++ it2) {
+		if (it2->second == no) {
+			h = it2->first;
+			break;
+		}
+	}
+	return h;
+}
+
+std::set<int> tscenario::get_cities() const
+{
+	std::set<int> cities;
+	for (std::vector<tside>::const_iterator it = side_.begin(); it != side_.end(); ++ it) {
+		for (std::vector<tside::tcity>::const_iterator it2 = it->cities_.begin(); it2 != it->cities_.end(); ++ it2) {
+			cities.insert(it2->heros_army_[0]);
+		}
+	}
+	return cities;
+}
+
+bool tscenario::validate_roads()
+{
+	bool dirty = false;
+	bool erased;
+	const std::set<int> cities = get_cities();
+	do {
+		erased = false;
+		for (std::multimap<int, int>::const_iterator it = roads_.begin(); it != roads_.end(); ++ it) {
+			if (cities.find(it->first) == cities.end()) {
+				roads_.erase(it);
+				erased = true;
+				dirty = true;
+				break;
+			}
+			if (cities.find(it->second) == cities.end()) {
+				roads_.erase(it);
+				erased = true;
+				dirty = true;
+				break;
+			}
+		}
+	} while (erased);
+
+	set_dirty(tscenario::BIT_ROADS, scenario_from_cfg_.roads_ != roads_);
+	return dirty;
 }
 
 void tscenario::clear_except_dirty()
@@ -4957,6 +5099,7 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_WIN), utf8_2_ansi(_("Win condition")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LOSE), utf8_2_ansi(_("Lose condition")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TREASURE), utf8_2_ansi(_("Hidden treasure")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ROAD), utf8_2_ansi(_("Road")));
 	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPSCENARIO_BROWSEMAP), utf8_2_ansi(_("Browse...")));
 
 	// int index = TabCtrl_GetCurSel(pHdr->hwndTab) - 1;
@@ -5016,7 +5159,7 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ListView_InsertColumn(hctl, 1, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-	lvc.cx = 60;
+	lvc.cx = 40;
 	lvc.iSubItem = 2;
 	strcpy(text, utf8_2_ansi(_("Quantity")));
 	lvc.pszText = text;
@@ -5033,6 +5176,38 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
+	//
+	// road
+	//
+	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_ROAD);
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 40;
+	strcpy(text, utf8_2_ansi(_("Number")));
+	lvc.pszText = text;
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = 0;
+	ListView_InsertColumn(hctl, 0, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 70;
+	lvc.iSubItem = 1;
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "City"));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, 1, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 70;
+	lvc.iSubItem = 1;
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "City"));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, 1, &lvc);
+	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
+	//
+	// side
+	//
 	hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_SIDE);
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
@@ -5405,7 +5580,8 @@ void OnSideAddBt(HWND hdlgP)
 	ns::action_side = ma_new;
 
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_SIDEEDIT), hdlgP, DlgSideEditProc, lParam)) {
-		scenario.side_[ns::clicked_side].update_to_ui(hdlgP);
+		scenario.validate_roads();
+		scenario.update_to_ui(hdlgP);
 		scenario.set_dirty(tscenario::BIT_SIDE, !scenario.side_equal()); 
 	} else {
 		scenario.erase_side(scenario.side_.size() - 1, hdlgP);
@@ -5427,7 +5603,8 @@ void OnSideEditBt(HWND hdlgP)
 
 	ns::action_side = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_SIDEEDIT), hdlgP, DlgSideEditProc, lParam)) {
-		side.update_to_ui(hdlgP);
+		scenario.validate_roads();
+		scenario.update_to_ui(hdlgP);
 		scenario.set_dirty(tscenario::BIT_SIDE, !scenario.side_equal()); 
 	}
 	return;
@@ -5578,6 +5755,186 @@ void OnTreasureDelBt(HWND hdlgP)
 	return;
 }
 
+BOOL On_DlgRoadInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	editor_config::move_subcfg_right_position(hdlgP, lParam);
+
+	std::stringstream strstr;
+	if (ns::action_road == ma_edit) {
+		strstr << utf8_2_ansi(_("Edit road"));
+		// ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+	} else {
+		strstr << utf8_2_ansi(_("Add road"));
+	}
+	SetWindowText(hdlgP, strstr.str().c_str());
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITY1), dgettext_2_ansi("wesnoth-lib", "City"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITY2), dgettext_2_ansi("wesnoth-lib", "City"));
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	std::vector<tside>& sides = scenario.side_;
+	std::multimap<int, int>& roads = scenario.roads_;
+	std::set<int> cities = scenario.get_cities();
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_ROAD_CITY1);
+	for (std::set<int>::const_iterator it = cities.begin(); it != cities.end(); ++ it) {
+		std::set<int>::iterator find = cities.find(*it);
+		int great = std::distance(find, cities.end()) - 1;
+		if (roads.count(*it) == great) {
+			continue;
+		}
+		strstr.str("");
+		strstr << utf8_2_ansi(gdmgr.heros_[*it].name().c_str());
+		ComboBox_AddString(hctl, strstr.str().c_str());
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *it);
+	}
+	if (ComboBox_GetCount(hctl)) {
+		ComboBox_SetCurSel(hctl, 0);
+		int city1 = ComboBox_GetItemData(hctl, 0);
+		
+		hctl = GetDlgItem(hdlgP, IDC_CMB_ROAD_CITY2);
+		std::set<int> roaded_cities;
+		typedef std::multimap<int, int>::const_iterator Itor;
+		std::pair<Itor, Itor> its = roads.equal_range(city1);
+		while (its.first != its.second) {
+			roaded_cities.insert(its.first->second);
+			++ its.first;
+		}
+		for (std::set<int>::const_iterator it = cities.begin(); it != cities.end(); ++ it) {
+			if (*it > city1 && roaded_cities.find(*it) == roaded_cities.end()) {
+				strstr.str("");
+				strstr << utf8_2_ansi(gdmgr.heros_[*it].name().c_str());
+				ComboBox_AddString(hctl, strstr.str().c_str());
+				ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *it);
+			}
+		}
+		ComboBox_SetCurSel(hctl, 0);
+	}
+
+	return FALSE;
+}
+
+void OnRoadCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	std::stringstream strstr;
+
+	if (codeNotify != CBN_SELCHANGE && id != IDC_CMB_ROAD_CITY1) {
+		return;
+	}
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	std::vector<tside>& sides = scenario.side_;
+	std::multimap<int, int>& roads = scenario.roads_;
+	std::set<int> cities = scenario.get_cities();
+
+	int city1 = ComboBox_GetItemData(hwndCtrl, ComboBox_GetCurSel(hwndCtrl));
+	
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_ROAD_CITY2);
+	ComboBox_ResetContent(hctl);
+	std::set<int> roaded_cities;
+	typedef std::multimap<int, int>::const_iterator Itor;
+	std::pair<Itor, Itor> its = roads.equal_range(city1);
+	while (its.first != its.second) {
+		roaded_cities.insert(its.first->second);
+		++ its.first;
+	}
+	for (std::set<int>::const_iterator it = cities.begin(); it != cities.end(); ++ it) {
+		if (*it > city1 && roaded_cities.find(*it) == roaded_cities.end()) {
+			strstr.str("");
+			strstr << utf8_2_ansi(gdmgr.heros_[*it].name().c_str());
+			ComboBox_AddString(hctl, strstr.str().c_str());
+			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *it);
+		}
+	}
+	ComboBox_SetCurSel(hctl, 0);
+
+
+	return;
+}
+
+void On_DlgRoadCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	BOOL changed = FALSE;
+
+	switch (id) {
+	case IDC_CMB_ROAD_CITY1:
+		OnRoadCmb(hdlgP, id, hwndCtrl, codeNotify);
+		break;
+
+	case IDOK:
+		changed = TRUE;
+		scenario.from_ui_road(hdlgP, ns::action_road == ma_edit);
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL CALLBACK DlgRoadProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(uMsg) {
+	case WM_INITDIALOG:
+		return On_DlgRoadInitDialog(hdlgP, (HWND)(wParam), lParam);
+	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgRoadCommand);
+	HANDLE_MSG(hdlgP, WM_DRAWITEM, editor_config::On_DlgDrawItem);
+	}	
+	return FALSE;
+}
+
+void OnRoadAddBt(HWND hdlgP)
+{
+	RECT		rcBtn;
+	LPARAM		lParam;
+	
+	GetWindowRect(GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_ROAD), &rcBtn);
+	lParam = posix_mku32((rcBtn.left > 0)? rcBtn.left: rcBtn.right, rcBtn.top);
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	ns::action_road = ma_new;
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_ROAD), hdlgP, DlgRoadProc, lParam)) {
+		scenario.update_to_ui_roads(hdlgP);
+		scenario.set_dirty(tscenario::BIT_ROADS, scenario.scenario_from_cfg_.roads_ != scenario.roads_);
+	}
+
+	return;
+}
+
+void OnRoadEditBt(HWND hdlgP)
+{
+	RECT		rcBtn;
+	LPARAM		lParam;
+	
+	GetWindowRect(GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_ROAD), &rcBtn);
+	lParam = posix_mku32((rcBtn.left > 0)? rcBtn.left: rcBtn.right, rcBtn.top);
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	ns::action_road = ma_edit;
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_ROAD), hdlgP, DlgRoadProc, lParam)) {
+		scenario.update_to_ui_roads(hdlgP);
+		scenario.set_dirty(tscenario::BIT_ROADS, scenario.scenario_from_cfg_.roads_ != scenario.roads_);
+	}
+
+	return;
+}
+
+void OnRoadDelBt(HWND hdlgP)
+{
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	std::multimap<int, int>::iterator it = scenario.roads_.begin();
+	std::advance(it, ns::clicked_road);
+	scenario.roads_.erase(it);
+
+	scenario.update_to_ui_roads(hdlgP);
+	scenario.set_dirty(tscenario::BIT_ROADS, scenario.scenario_from_cfg_.roads_ != scenario.roads_);
+	return;
+}
+
 void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	switch (id) {
@@ -5609,6 +5966,8 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 			OnSideAddBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
 			OnTreasureAddBt(hdlgP);
+		} else if (ns::type == IDC_LV_CAMPSCENARIO_ROAD) {
+			OnRoadAddBt(hdlgP);
 		}
 		break;
 	case IDM_DELETE:
@@ -5618,6 +5977,8 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 			OnEventDelBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
 			OnTreasureDelBt(hdlgP);
+		} else if (ns::type == IDC_LV_CAMPSCENARIO_ROAD) {
+			OnRoadDelBt(hdlgP);
 		}
 		break;
 	case IDM_EDIT:
@@ -5627,6 +5988,8 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 			OnEventEditBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
 			OnTreasureEditBt(hdlgP);
+		} else if (ns::type == IDC_LV_CAMPSCENARIO_ROAD) {
+			OnRoadEditBt(hdlgP);
 		}
 		break;
 
@@ -5748,6 +6111,45 @@ void campaignscenario_notify_handler_rclick(HWND hdlgP, LPNMHDR lpNMHdr)
 
 		ns::clicked_treasure = lvi.lParam;
 		ns::type = IDC_LV_CAMPSCENARIO_TREASURE;
+	} else if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_ROAD) {
+		HMENU hpopup_road = CreatePopupMenu();
+		AppendMenu(hpopup_road, MF_STRING, IDM_ADD, utf8_2_ansi(_("Add...")));
+		// AppendMenu(hpopup_road, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
+		AppendMenu(hpopup_road, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
+
+		std::vector<tside>& sides = scenario.side_;
+		std::set<int> cities;
+		for (std::vector<tside>::const_iterator it = sides.begin(); it != sides.end(); ++ it) {
+			for (std::vector<tside::tcity>::const_iterator it2 = it->cities_.begin(); it2 != it->cities_.end(); ++ it2) {
+				cities.insert(it2->heros_army_[0]);
+			}
+		}
+		int total_roads = 0;
+		for (std::set<int>::const_iterator it = cities.begin(); it != cities.end(); ++ it) {
+			std::set<int>::iterator find = cities.find(*it);
+			int great = std::distance(find, cities.end()) - 1;
+			total_roads += great;
+		}
+		if (ListView_GetItemCount(lpNMHdr->hwndFrom) == total_roads) {
+			EnableMenuItem(hpopup_road, IDM_ADD, MF_BYCOMMAND | MF_GRAYED);
+		}
+
+		if (lpnmitem->iItem < 0) {
+			// EnableMenuItem(hpopup_road, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_road, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
+		}
+		
+
+		TrackPopupMenuEx(hpopup_road, 0, 
+			point.x, 
+			point.y, 
+			hdlgP, 
+			NULL);
+
+		DestroyMenu(hpopup_road);
+
+		ns::clicked_road = lpnmitem->iItem;
+		ns::type = IDC_LV_CAMPSCENARIO_ROAD;
 	}
 
 	return;

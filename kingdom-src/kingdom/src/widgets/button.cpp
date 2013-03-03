@@ -142,7 +142,7 @@ void button::set_rpg_image(hero* h, bool greyscale)
 	SDL_BlitSurface(activeImage_, &src_clip, pressedImage_, &dst_clip);
 }
 
-void button::set_image(const std::string& stem, int integer, bool greyscale)
+void button::set_image(const std::string& stem, int integer, bool greyscale, bool special)
 {
 	int width = location().w;
 	int height = location().h;
@@ -185,6 +185,12 @@ void button::set_image(const std::string& stem, int integer, bool greyscale)
 	text.str("");
 	text << "misc/digit.png~CROP(" << 8 * (integer % 10) << ", 0, 8, 12)";
 	SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
+
+	if (special) {
+		dst_clip.x = 8;
+		dst_clip.y = 0;
+		SDL_BlitSurface(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
+	}
 
 	// Get active/pressed_image from button_image
 	activeImage_ = adjust_surface_color(image_, 40, 40, 40);

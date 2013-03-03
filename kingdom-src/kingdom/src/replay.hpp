@@ -46,21 +46,21 @@ public:
 
 	void add_start();
 	void add_recruit(const std::string& type, const map_location& loc, std::vector<const hero*>& troop_heros, int cost, bool human);
-	void add_expedite(int unit_index, const std::vector<map_location>& steps);
-	void add_disband(int unit_index, const map_location& loc);
+	void add_expedite(bool troop, int index, const std::vector<map_location>& steps);
+	void add_disband(int unit_index, const map_location& loc, int income = 0);
 	void add_armory(const map_location& loc, const std::vector<size_t>& diff);
 	void add_move_heros(const map_location& src, const map_location& dst, std::set<size_t>& heros);
 	void add_belong_to(const unit* u, const artifical* to, bool loyalty);
 	void add_build_begin(const std::string& type);
 	void add_build(const unit_type* type, const map_location& city_loc, const map_location& builder_loc, const map_location& art_loc, int cost);
-	void add_cast_tactic(const unit& tactician, const hero& h);
+	void add_cast_tactic(const unit& tactician, const hero& h, const unit* special);
 	void add_build_cancel();
 	void add_countdown_update(int value,int team);
 	void add_movement(const std::vector<map_location>& steps);
 	void add_attack(const unit& a, const unit& b,
 		int att_weapon, int def_weapon, const std::string& attacker_type_id,
 		const std::string& defender_type_id, int attacker_lvl,
-		int defender_lvl, const size_t turn, const time_of_day t);
+		int defender_lvl, const size_t turn, const time_of_day t, bool move = true);
 	void add_duel(const hero& left, const hero& right, int percentage);
 	void add_seed(const char* child_name, rand_rng::seed_t seed);
 	void user_input(const std::string &, const config &);
@@ -79,6 +79,8 @@ public:
 	void init_side();
 	void end_turn();
 	void init_ai();
+	void do_commoner();
+	void add_inching_block(const unit& u, bool increase);
 	enum EVENT_TYPE {EVENT_ENCOURAGE, EVENT_RPG_INDEPENDENCE, EVENT_FIND_TREASURE};
 	void add_event(int type, const map_location& loc);
 	void add_assemble_treasure(const std::map<int, int>& diff);
@@ -92,23 +94,17 @@ public:
 	/**
 	 * Mark an expected advancement adding it to the queue
 	 */
-	void add_expected_advancement(const map_location& loc);
+	void add_expected_advancement(unit* u);
 
 	/**
 	 * Access to the expected advancements queue.
 	 */
-	const std::deque<map_location>& expected_advancements() const;
+	const std::deque<unit*>& expected_advancements() const;
 
 	/**
 	 * Remove the front expected advancement from the queue
 	 */
 	void pop_expected_advancement();
-
-	/**
-	 * Adds an advancement to the replay, the following option command
-	 * determines which advancement option has been choosen
-	 */
-	void add_advancement(const map_location& loc);
 
 	void add_chat_message_location();
 	void speak(const config& cfg);
@@ -204,7 +200,7 @@ private:
 	 * A queue of units (locations) that are supposed to advance but the
 	 * relevant advance (choice) message has not yet been received
 	 */
-	std::deque<map_location> expected_advancements_;
+	std::deque<unit*> expected_advancements_;
 };
 
 replay& get_replay_source();

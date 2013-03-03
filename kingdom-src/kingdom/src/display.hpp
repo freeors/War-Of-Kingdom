@@ -892,6 +892,8 @@ protected:
 	gui::button** access_troops_buttons_;
 	gui::button** attack_methods_buttons_;
 
+	std::set<map_location> road_locs_;
+
 public: //operations for the arrow framework
 
 	void add_arrow(arrow&);

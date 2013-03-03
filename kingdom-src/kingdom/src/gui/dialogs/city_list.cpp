@@ -23,6 +23,7 @@
 #include "hero.hpp"
 #include "team.hpp"
 #include "artifical.hpp"
+#include "card.hpp"
 #include "game_display.hpp"
 #include "gamestatus.hpp"
 #include "gui/dialogs/helper.hpp"
@@ -137,6 +138,14 @@ void tcity_list::pre_show(CVideo& /*video*/, twindow& window)
 			, boost::ref(window)
 			, (int)UNITS_PAGE
 			, true));
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "interior", false)
+		, boost::bind(
+			&tcity_list::catalog_page
+			, this
+			, boost::ref(window)
+			, (int)INTERIOR_PAGE
+			, true));
 }
 
 void tcity_list::post_show(twindow& window)
@@ -167,6 +176,7 @@ void tcity_list::fill_table(int catalog)
 		if ((side_ >= 1) && (i->side() != side_)) {
 			continue;
 		}
+		team& current_team = teams_[i->side() - 1];
 		candidate_cities_.push_back(&*i);
 
 		std::stringstream str;
@@ -188,8 +198,8 @@ void tcity_list::fill_table(int catalog)
 
 			str.str("");
 			str << i->level();
-			if (i->character() != NO_CHARACTER) {
-				str << "(" << unit_types.character(i->character()).name_ << ")";
+			if (i->especial() != NO_ESPECIAL) {
+				str << "(" << unit_types.especial(i->especial()).name_ << ")";
 			}
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("level", table_item));
@@ -246,6 +256,37 @@ void tcity_list::fill_table(int catalog)
 			str << i->field_troops().size();
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("field_troop", table_item));
+
+		} else if (catalog == INTERIOR_PAGE) {
+			str.str("");
+			if (i->decree().first) {
+				str << i->decree().first->name() << "(" << i->decree().second << ")";
+			} else {
+				str << dgettext("wesnoth-lib", "None");
+			}
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("decree", table_item));
+
+			str.str("");
+			str << i->field_commoners().size();
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("field", table_item));
+
+			str.str("");
+			str << i->reside_commoners().size();
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("reside", table_item));
+
+			str.str("");
+			str << i->total_gold_income(current_team.market_increase_);
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("gold_income", table_item));
+
+			str.str("");
+			str << i->total_technology_income(current_team.technology_increase_);
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("technology_income", table_item));
+
 		}
 		hero_table_->add_row(table_item_item);
 
@@ -306,6 +347,19 @@ void tcity_list::catalog_page(twindow& window, int catalog, bool swap)
 		widgets.push_back(&find_widget<tbutton>(&window, "button_wander", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_reside", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_field", false));
+	} else if (catalog == INTERIOR_PAGE) {
+		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
+		widgets.back()->set_active(false);
+		widgets.push_back(&find_widget<tbutton>(&window, "button_decree", false));
+		widgets.back()->set_active(false);
+		widgets.push_back(&find_widget<tbutton>(&window, "button_field", false));
+		widgets.back()->set_active(false);
+		widgets.push_back(&find_widget<tbutton>(&window, "button_reside", false));
+		widgets.back()->set_active(false);
+		widgets.push_back(&find_widget<tbutton>(&window, "button_gold_income", false));
+		widgets.back()->set_active(false);
+		widgets.push_back(&find_widget<tbutton>(&window, "button_technology_income", false));
+		widgets.back()->set_active(false);
 	}
 	for (std::vector<tbutton*>::iterator i = widgets.begin(); i != widgets.end(); ++ i) {
 		tbutton& widget = **i;

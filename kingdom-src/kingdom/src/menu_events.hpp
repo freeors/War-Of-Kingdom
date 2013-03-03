@@ -50,8 +50,8 @@ public:
 	std::string get_title_suffix(int side_num);
 	void objectives(int side_num);
 	void show_statistics(int side_num);
-	void reside_unit_list_in_city(const artifical* city);
-	void field_unit_list_in_city(const artifical* city, bool only_troop = true);
+	void reside_unit_list_in_city(const artifical* city, bool troop = true, bool commoner = false);
+	void field_unit_list_in_city(const artifical* city, bool troop = true, bool commoner = false);
 	int hero_list(std::vector<hero*>& heros);
 
 	void interior(int side_num);

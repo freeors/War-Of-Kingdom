@@ -2178,13 +2178,7 @@ static int intf_put_unit(lua_State *L)
 			resources::units->move(u->get_location(), loc);
 			return 0;
 		} else if (int side = lu->on_recall_list()) {
-/*
-			team &t = (*resources::teams)[side - 1];
-			unit *v = new unit(*u);
-			std::vector<unit> &rl = t.recall_list();
-			rl.erase(rl.begin() + (u - &rl[0]));
-			u = v;
-*/
+
 		}
 		if (unit_arg == 1) {
 			loc = u->get_location();
@@ -2201,7 +2195,6 @@ static int intf_put_unit(lua_State *L)
 			if (!resources::game_map->on_board(loc))
 				return luaL_argerror(L, 1, "invalid location");
 		}
-		// u = new unit(cfg, true, resources::state_of_game);
 	}
 
 	resources::units->erase(loc);
@@ -2320,7 +2313,7 @@ static int intf_find_vacant_tile(lua_State *L)
 			u = static_cast<lua_unit *>(lua_touserdata(L, 3))->get();
 		} else {
 			config cfg = luaW_checkconfig(L, 3);
-			u = new unit(*resources::units, *resources::heros, cfg, false, resources::state_of_game);
+			u = new unit(*resources::units, *resources::heros, *resources::teams, cfg, false, resources::state_of_game);
 			fake_unit = true;
 		}
 	}
@@ -2360,15 +2353,6 @@ static int intf_float_label(lua_State *L)
  */
 static int intf_create_unit(lua_State *L)
 {
-/*
-	config cfg = luaW_checkconfig(L, 1);
-	unit *u = new unit(cfg, true, resources::state_of_game);
-	new(lua_newuserdata(L, sizeof(lua_unit))) lua_unit(u);
-	lua_pushlightuserdata(L
-			, static_cast<void *>(const_cast<char *>(&getunitKey)));
-	lua_rawget(L, LUA_REGISTRYINDEX);
-	lua_setmetatable(L, -2);
-*/
 	return 1;
 }
 

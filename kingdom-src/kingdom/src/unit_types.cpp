@@ -47,7 +47,7 @@ department::department(int type, const std::string& name, const std::string& ima
 {
 }
 
-tcharacter::tcharacter(int index, const std::string& id)
+tespecial::tespecial(int index, const std::string& id)
 	: index_(index)
 	, id_(id)
 {
@@ -81,9 +81,12 @@ ttactic::ttactic(int index, int complex_index, const config& cfg)
 	, bg_image_()
 	, self_profit_(0)
 	, self_hide_profit_(0)
+	, self_clear_profit_(0)
 	, friend_profit_(0)
 	, friend_hide_profit_(0)
+	, friend_clear_profit_(0)
 	, enemy_profit_(0)
+	, enemy_provoke_profit_(0)
 {
 	if (type_name_map.empty()) {
 		type_name_map[RESISTANCE] = "resistance";
@@ -179,6 +182,9 @@ ttactic::ttactic(int index, int complex_index, const config& cfg)
 		// calculate profit
 		int profit = 0; // x 100
 		int hide_profit = 0;
+		int alert_profit = 0;
+		int clear_profit = 0;
+		int provoke_profit = 0;
 		int damage_profit = 0;
 
 		int total_value = 0;
@@ -210,18 +216,30 @@ ttactic::ttactic(int index, int complex_index, const config& cfg)
 
 			damage_profit += total_value / 2;
 		} else if (apply_to_ == apply_to_tag::HIDE) {
-
 			hide_profit += 50;
+
+		} else if (apply_to_ == apply_to_tag::ALERT) {
+			alert_profit += 50;
+
+		} else if (apply_to_ == apply_to_tag::CLEAR) {
+			clear_profit += 30;
+
+		} else if (apply_to_ == apply_to_tag::PROVOKE) {
+			provoke_profit += 50;
 		}
 
 		if (range_ == SELF) {
 			self_profit_ = profit;
 			self_hide_profit_ = hide_profit;
+			self_alert_profit_ = alert_profit;
+			self_clear_profit_ = clear_profit;
 		} else if (range_ == FRIEND) {
 			friend_profit_ = profit;
 			friend_hide_profit_ = hide_profit;
+			friend_clear_profit_ = clear_profit;
 		} else if (range_ == ENEMY) {
 			enemy_profit_ = -1 * profit + damage_profit;
+			enemy_provoke_profit_ = -1 * provoke_profit;
 		}
 	} else {
 		for (std::vector<const ttactic*>::const_iterator it = parts_.begin(); it != parts_.end(); ++ it) {
@@ -258,32 +276,23 @@ std::vector<std::pair<const ttactic*, std::vector<map_location> > > ttactic::tou
 	} else {
 		parts = parts_;
 	}
-/*
-	for (std::vector<const ttactic*>::const_iterator it = parts.begin(); it != parts.end(); ++ it) {
-		const ttactic& t = **it;
-		const config& cfg = t.range_cfg();
-		ret.push_back(std::make_pair<const ttactic*, std::vector<map_location> >(&t, std::vector<map_location>()));
-
-		if (cfg["self"].to_bool()) {
-			ret.back().second.push_back(loc);
-		}
-		std::vector<std::string> adjacent = utils::split(cfg["adjacent"]);
-		for (std::vector<std::string>::const_iterator dir = adjacent.begin(); dir != adjacent.end(); ++ dir) {
-			map_location::DIRECTION dir_i = map_location::parse_direction(*dir);
-			if (dir_i == map_location::NDIRECTIONS) {
-				continue;
-			}
-			map_location loc1 = loc.get_direction(dir_i);
-			ret.back().second.push_back(loc1);
-		}
-	}
-*/
 	return ret;
 }
 
 bool ttactic::oneoff() const
 {
-	return apply_to_ == apply_to_tag::DAMAGE || apply_to_ == apply_to_tag::HIDE;
+	return apply_to_ >= apply_to_tag::ONEOFF_MIN && apply_to_ <= apply_to_tag::ONEOFF_MAX;
+}
+
+bool ttactic::select_one() const
+{
+	for (std::vector<const ttactic*>::const_iterator it = parts_.begin(); it != parts_.end(); ++ it) {
+		const ttactic& t = **it;
+		if (t.apply_to() == apply_to_tag::PROVOKE) {
+			return true;
+		}
+	}
+	return false;
 }
 
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
@@ -298,6 +307,7 @@ std::map<int, std::vector<map_location> > ttactic::touch_units(unit_map& units, 
 	std::vector<map_location> touched;
 
 	int part = 0;
+	bool select_one_absent = false;
 	for (std::vector<const ttactic*>::const_iterator it = parts_.begin(); it != parts_.end(); ++ it, part ++) {
 		const ttactic& t = **it;
 		touched.clear();
@@ -319,6 +329,9 @@ std::map<int, std::vector<map_location> > ttactic::touch_units(unit_map& units, 
 					const map_location& loc = tiles[adj];
 					u_it = find_visible_unit(loc, tactican_team);
 					if (!u_it.valid()) {
+						continue;
+					}
+					if (u_it->is_commoner()) {
 						continue;
 					}
 					if ((t.range() & ttactic::FRIEND) && tactican_team.is_enemy(u_it->side())) {
@@ -346,10 +359,122 @@ std::map<int, std::vector<map_location> > ttactic::touch_units(unit_map& units, 
 			}
 		}
 		ret[part] = touched;
+		if (t.select_one() && touched.empty()) {
+			select_one_absent = true;
+		}
+	}
+	if (select_one_absent) {
+		ret.clear();
 	}
 	return ret;
 }
 #endif
+
+int tcharacter::min_complex_index = 100;
+
+tcharacter::tcharacter(int index, int complex_index, const config& cfg)
+	: index_(-1)
+	, effect_cfg_()
+	, apply_to_(apply_to_tag::NONE)
+	, id_()
+	, name_()
+	, description_()
+	, parts_()
+{
+	id_ = cfg["id"].str();
+
+	std::vector<std::string> parts = utils::split(cfg["parts"].str());
+	if (!parts.empty()) {
+		const std::map<int, tcharacter>& characters = unit_types.characters();
+		const std::map<std::string, int>& characters_id = unit_types.characters_id();
+		for (std::vector<std::string>::const_iterator it = parts.begin(); it != parts.end(); ++ it) {
+			std::map<std::string, int>::const_iterator find = characters_id.find(*it);
+			if (find == characters_id.end()) {
+				throw config::error("[character] error, " + id_ + " is complex character, but cannot find part: " + *it);
+			}
+			if (find->second >= min_complex_index) {
+				throw config::error("[character] error, " + id_ + " is complex character, " + *it + " is complex also.");
+			}
+			const tcharacter* t = &(characters.find(find->second)->second);
+			if (std::find(parts_.begin(), parts_.end(), t) != parts_.end()) {
+				throw config::error("[character] error, " + id_ + " is complex character, its sub-character " + *it + " duplicated.");
+			}
+			parts_.push_back(t);
+		}
+		index_ = complex_index;
+		complex_ = true;
+	} else {
+		index_ = index; 
+		complex_ = false;
+	}
+
+	std::stringstream strstr;
+	strstr << HERO_PREFIX_STR_CHARACTER << id_;
+	name_ = dgettext("wesnoth-card", strstr.str().c_str());
+
+	strstr.str("");
+	strstr << HERO_PREFIX_STR_CHARACTER_DESC << id_;
+	description_ = dgettext("wesnoth-card", strstr.str().c_str());
+
+	if (!complex_) {
+		if (cfg.has_attribute("leadership")) {
+			leadership_ = cfg["leadership"].to_int();
+		}
+		if (cfg.has_attribute("force")) {
+			force_ = cfg["force"].to_int();
+		}
+		if (cfg.has_attribute("intellect")) {
+			intellect_ = cfg["intellect"].to_int();
+		}
+		if (cfg.has_attribute("politics")) {
+			politics_ = cfg["politics"].to_int();
+		}
+		if (cfg.has_attribute("charm")) {
+			charm_ = cfg["charm"].to_int();
+		}
+
+		if (!leadership_ && !force_ && !intellect_ && !politics_ && !charm_) {
+			throw config::error("[character] error, " + id_ + " is atomic character, must define ratio!");
+		}
+
+		const std::string& apply_to = cfg["apply_to"];
+		int tag = apply_to_tag::find(apply_to);
+		if (tag == apply_to_tag::NONE) {
+			throw config::error("[character] error, " + id_ + " is atomic character, unknown apply to: " + apply_to);
+		}
+		if (tag < apply_to_tag::CHARACTER_MIN || tag > apply_to_tag::CHARACTER_MAX) {
+			throw config::error("[character] error, " + id_ + " is atomic character, not support apply to: " + apply_to);
+		}
+		apply_to_ = tag;
+	}
+}
+
+int tcharacter::level(const hero& h) const
+{
+	int l = 0;
+
+	if (leadership_) {
+		l += fxptoi9(h.leadership_) * leadership_;
+	}
+	if (force_) {
+		l += fxptoi9(h.force_) * force_;
+	}
+	if (intellect_) {
+		l += fxptoi9(h.intellect_) * intellect_;
+	}
+	if (politics_) {
+		l += fxptoi9(h.politics_) * politics_;
+	}
+	if (charm_) {
+		l += fxptoi9(h.charm_) * charm_;
+	}
+
+	l = l / 100;
+	if (l < 0) l = 0;
+	if (l > 100) l = 100;
+
+	return l;
+}
 
 namespace advance_tree {
 
@@ -458,6 +583,7 @@ technology::technology(const config& cfg)
 	, occasion_(NONE)
 	, max_experience_(0)
 	, apply_to_(apply_to_tag::NONE)
+	, relative_(HEROS_NO_CHARACTER)
 	, parts_()
 	, type_filter_(0)
 	, arms_filter_(0)
@@ -548,6 +674,19 @@ technology::technology(const config& cfg)
 				}
 			}
 		}
+	}
+
+	const std::string relative = cfg["relative"];
+	if (!relative.empty()) {
+		const std::map<std::string, int>& characters_id = unit_types.characters_id();
+		std::map<std::string, int>::const_iterator find = characters_id.find(relative);
+		if (find == characters_id.end()) {
+			throw config::error("[technology] error, " + id_ + " is technology, unknown relative: " + relative);
+		}
+		if (unit_types.character(find->second).complex()) {
+			throw config::error("[technology] error, " + id_ + "'s relative(" + relative + ") must be atomic!");
+		}
+		relative_ = find->second;
 	}
 }
 
@@ -1237,7 +1376,6 @@ void unit_type::defend_anim(const std::string& race, const std::string& id, bool
 	symbols["base_png"] = image(race, id, terrain);
 	symbols["hit_png"] = hit(race, id, terrain);
 	symbols["miss_png"] = miss(race, id, terrain);
-	symbols["hit_sound"] = "human-hit-1.ogg,human-hit-2.ogg,human-hit-3.ogg,human-hit-4.ogg,human-hit-5.ogg";
 
 	replace_anim_cfg("defend", cfg, symbols);
 }
@@ -1513,7 +1651,7 @@ unit_type::unit_type(const unit_type& o) :
 	land_wall_(o.land_wall_),
 	walk_wall_(o.walk_wall_),
 	arms_(o.arms_),
-	character_(o.character_),
+	special_(o.special_),
 	master_(o.master_),
 	guard_(o.guard_),
 	packer_(o.packer_),
@@ -1583,7 +1721,7 @@ unit_type::unit_type(config &cfg) :
 	land_wall_(true),
 	walk_wall_(false),
 	arms_(0),
-	character_(-1),
+	special_(-1),
 	master_(HEROS_INVALID_NUMBER),
 	guard_(NO_GUARD),
 	packer_(false)
@@ -1604,11 +1742,11 @@ unit_type::unit_type(config &cfg) :
 	master_ = cfg["master"].to_int(HEROS_INVALID_NUMBER);
 	wall_ = cfg["wall"].to_bool();
 	walk_wall_ = cfg["walk_wall"].to_bool();
-	int income = cfg["gold_income"].to_int();
-	if (master_ == hero::number_market) {
+	int income = cfg["income"].to_int();
+	if (master_ == hero::number_market || master_ == hero::number_businessman) {
 		gold_income_ = income;
 		technology_income_ = 0;
-	} else if (master_ == hero::number_technology) {
+	} else if (master_ == hero::number_technology || master_ == hero::number_scholar) {
 		gold_income_ = 0;
 		technology_income_ = income;
 	}
@@ -1730,10 +1868,10 @@ void unit_type::build_full(const config& cfg, const movement_type_map &mv_types,
 			throw config::error(id_ + "'s arms is invalid: " + cfg["arms"].str());
 		}
 	}
-	if (!cfg["character"].blank()) {
-		character_ = unit_types.character_from_id(cfg["character"].str());
-		if (character_ < 0) {
-			throw config::error(id_ + "'s character is invalid: " + cfg["character"].str());
+	if (!cfg["especial"].blank()) {
+		special_ = unit_types.especial_from_id(cfg["especial"].str());
+		if (special_ < 0) {
+			throw config::error(id_ + "'s especial is invalid: " + cfg["especial"].str());
 		}
 	}
 	
@@ -1967,7 +2105,8 @@ const std::vector<unit_animation>& unit_type::animations() const
 		for (std::vector<attack_type>::const_iterator it = attacks_.begin(); it != attacks_.end(); ++ it) {
 			config& cfg = utype_cfg.add_child("attack_anim");
 			if (it->range() == "melee") {
-				unit_type::attack_anim_melee(it->id(), it->icon(), master_ == HEROS_INVALID_NUMBER && !can_recruit_, race_->id(), id_, use_terrain_image(), cfg);
+				bool not_artifical_master = (master_ == HEROS_INVALID_NUMBER) || hero::is_commoner(master_);
+				unit_type::attack_anim_melee(it->id(), it->icon(), not_artifical_master && !can_recruit_, race_->id(), id_, use_terrain_image(), cfg);
 
 			} else if (it->icon().find("magic-missile") != std::string::npos) {
 				unit_type::attack_anim_ranged_magic_missile(it->id(), race_->id(), id_, use_terrain_image(), cfg);
@@ -2085,12 +2224,12 @@ std::set<std::string> unit_type::advancement_tree() const
 	return tree;
 }
 
-std::vector<std::string> unit_type::advances_to(int character) const
+std::vector<std::string> unit_type::advances_to(int spe) const
 {
 	std::vector<std::string> vstr;
 	for (std::vector<std::string>::const_iterator it = advances_to_.begin(); it != advances_to_.end(); ++ it) {
-		int adv = unit_types.find(*it)->character();
-		if (adv == -1 || adv == character) {
+		int adv = unit_types.find(*it)->especial();
+		if (adv == -1 || adv == spe) {
 			vstr.push_back(*it);
 		}
 	}
@@ -2123,10 +2262,12 @@ unit_type_data::unit_type_data() :
 	specials_(),
 	tactics_(),
 	tactics_id_(),
+	characters_(),
+	characters_id_(),
 	technologies_(),
 	arms_ids_(),
 	range_ids_(),
-	characters_(),
+	especials_(),
 	utype_anims_(),
 	can_recruit_(),
 	navigation_types_(),
@@ -2174,12 +2315,29 @@ void fill_tags()
 	tags.insert(std::make_pair("train", (int)TRAIN));
 	tags.insert(std::make_pair("damage", (int)DAMAGE));
 	tags.insert(std::make_pair("hide", (int)HIDE));
+	tags.insert(std::make_pair("alert", (int)ALERT));
+	tags.insert(std::make_pair("provoke", (int)PROVOKE));
+	tags.insert(std::make_pair("clear", (int)CLEAR));
+	tags.insert(std::make_pair("decree", (int)DECREE));
 
 	// side <=
 	tags.insert(std::make_pair("civilization", (int)CIVILIZATION));
 	tags.insert(std::make_pair("politics", (int)POLITICS));
 	tags.insert(std::make_pair("heal", (int)HEAL));
 	tags.insert(std::make_pair("strategic", (int)STRATEGIC));
+
+	// character <=
+	tags.insert(std::make_pair("aggressive", (int)AGGRESSIVE));
+	tags.insert(std::make_pair("united", (int)UNITED));
+	tags.insert(std::make_pair("charismatic", (int)CHARISMATIC));
+	tags.insert(std::make_pair("creative", (int)CREATIVE));
+	tags.insert(std::make_pair("expansive", (int)EXPANSIVE));
+	tags.insert(std::make_pair("financial", (int)FINANCIAL));
+	tags.insert(std::make_pair("industrious", (int)INDUSTRIOUS));
+	tags.insert(std::make_pair("organized", (int)ORGANIZED));
+	tags.insert(std::make_pair("protective", (int)PROTECTIVE));
+	tags.insert(std::make_pair("philosophical", (int)PHILOSOPHICAL));
+	tags.insert(std::make_pair("spiritual", (int)SPIRITUAL));
 }
 
 int find(const std::string& tag) 
@@ -2193,11 +2351,77 @@ int find(const std::string& tag)
 
 }
 
+namespace sound_filter_tag {
+std::map<const std::string, int> tags;
+
+void fill_tags()
+{
+	if (!tags.empty()) return;
+
+	tags.insert(std::make_pair("male", (int)MALE));
+	tags.insert(std::make_pair("female", (int)FEMALE));
+}
+
+int find(const std::string& tag) 
+{
+	std::map<const std::string, int>::const_iterator it = tags.find(tag);
+	if (it != tags.end()) {
+		return it->second;
+	}
+	return NONE;
+}
+
+const std::string& rfind(int tag)
+{
+	for (std::map<const std::string, int>::const_iterator it = tags.begin(); it != tags.end(); ++ it) {
+		if (it->second == tag) {
+			return it->first;
+		}
+	}
+	return null_str;
+}
+
+std::string filter(const std::string& src, const std::string& f)
+{
+	if (f.empty()) {
+		return src;
+	}
+
+	std::stringstream result;
+	const std::vector<std::string> vstr = utils::split(src);
+	bool first = true;
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		size_t pos = it->find(":");
+		if (pos == std::string::npos) {
+			if (!first) {
+				result << ",";
+			} else {
+				first = false;
+			}
+			result << *it;
+		} else {
+			if (it->substr(0, pos) == f && it->size() > pos + 1) {
+				if (!first) {
+					result << ",";
+				} else {
+					first = false;
+				}
+				std::string n = it->substr(pos + 1);
+				result << it->substr(pos + 1);
+			}
+		}
+	}
+	return result.str();
+}
+
+}
+
 void unit_type_data::set_config(config &cfg)
 {
     clear();
 
 	apply_to_tag::fill_tags();
+	sound_filter_tag::fill_tags();
 
 	foreach (const config &mt, cfg.child_range("movetype"))
 	{
@@ -2372,7 +2596,7 @@ void unit_type_data::set_config(config &cfg)
 		}
 		
 		ttactic t(index, complex_index, tactic);
-		std::pair<std::map<int, ttactic>::iterator, bool> ins = tactics_.insert(std::make_pair<int, ttactic>(t.index(), t));
+		std::pair<std::map<int, ttactic>::iterator, bool> ins = tactics_.insert(std::make_pair(t.index(), t));
 		tactics_id_[id] = t.index();
 
 		if (!t.complex()) {
@@ -2382,6 +2606,31 @@ void unit_type_data::set_config(config &cfg)
 			complex_index ++;
 		}
 		
+		loadscreen::increment_progress();
+	}
+
+	index = 0, complex_index = tcharacter::min_complex_index;
+	foreach (const config &character, cfg.child_range("character"))
+	{
+		const std::string id = character["id"].str();
+		if (id.empty()) {
+			throw config::error("[character] error, no id attribute");
+		}
+		if (characters_id_.find(id) != characters_id_.end()) {
+			throw config::error("[character] error, duplicate id " + id);
+		}
+		
+		tcharacter c(index, complex_index, character);
+		std::pair<std::map<int, tcharacter>::iterator, bool> ins = characters_.insert(std::make_pair(c.index(), c));
+		characters_id_[id] = c.index();
+
+		if (!c.complex()) {
+			ins.first->second.set_atom_part();
+			index ++;
+		} else {
+			complex_index ++;
+		}
+
 		loadscreen::increment_progress();
 	}
 
@@ -2413,13 +2662,13 @@ void unit_type_data::set_config(config &cfg)
 		}
 
 		// identifier of character
-		if (id_cfg["character"].empty()) {
-			throw config::error("[identifier] error, no character attribute");
+		if (id_cfg["especial"].empty()) {
+			throw config::error("[identifier] error, no especial attribute");
 		}
-		ids = utils::split(id_cfg["character"]);
+		ids = utils::split(id_cfg["especial"]);
 		size = ids.size();
 		for (size_t i = 0; i < size; i ++) {
-			characters_.push_back(tcharacter(i, ids[i]));
+			especials_.push_back(tespecial(i, ids[i]));
 		}
 
 		// identifier of boat
@@ -2444,7 +2693,7 @@ void unit_type_data::set_config(config &cfg)
 		if (id.empty()) {
 			throw config::error("[technology] error, no id attribute");
 		}
-		if (tactics_id_.find(id) != tactics_id_.end()) {
+		if (technologies_.find(id) != technologies_.end()) {
 			throw config::error("[technology] error, duplicate id " + id);
 		}
 		
@@ -2536,24 +2785,49 @@ void unit_type_data::set_config(config &cfg)
 				// build all, form other field
 				find(it->first);
 			}
+		} else if (master == hero::number_businessman) {
+			if (!businessman_type_ || businessman_type_->level() > ut.level()) {
+				businessman_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}
+		} else if (master == hero::number_scholar) {
+			if (!scholar_type_ || scholar_type_->level() > ut.level()) {
+				scholar_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}
 		}
 	}
 
 	// form artifical types
 	if (wall_type_) {
 		artifical_types_[wall_type_->id()] = wall_type_;
+		master_types_.insert(std::make_pair(wall_type_->master(), wall_type_));
 	}
 	if (keep_type_) {
 		artifical_types_[keep_type_->id()] = keep_type_;
+		master_types_.insert(std::make_pair(keep_type_->master(), keep_type_));
 	}
 	if (market_type_) {
 		artifical_types_[market_type_->id()] = market_type_;
+		master_types_.insert(std::make_pair(market_type_->master(), market_type_));
 	}
 	if (technology_type_) {
 		artifical_types_[technology_type_->id()] = technology_type_;
+		master_types_.insert(std::make_pair(technology_type_->master(), technology_type_));
 	}
 	if (tower_type_) {
 		artifical_types_[tower_type_->id()] = tower_type_;
+		master_types_.insert(std::make_pair(tower_type_->master(), tower_type_));
+	}
+	if (businessman_type_) {
+		artifical_types_[businessman_type_->id()] = businessman_type_;
+		master_types_.insert(std::make_pair(businessman_type_->master(), businessman_type_));
+	}
+	if (scholar_type_) {
+		artifical_types_[scholar_type_->id()] = scholar_type_;
+		master_types_.insert(std::make_pair(scholar_type_->master(), scholar_type_));
 	}
 
 	if (const config recruit_cfg = cfg.child("recruit")) {
@@ -2600,6 +2874,7 @@ void unit_type_data::clear()
 {
 	types_.clear();
 	artifical_types_.clear();
+	master_types_.clear();
 	movement_types_.clear();
 	races_.clear();
 	modifications_.clear();
@@ -2610,10 +2885,12 @@ void unit_type_data::clear()
 	specials_.clear();
 	tactics_.clear();
 	tactics_id_.clear();
+	characters_.clear();
+	characters_id_.clear();
 	technologies_.clear();
 	arms_ids_.clear();
 	range_ids_.clear();
-	characters_.clear();
+	especials_.clear();
 	utype_anims_.clear();
 	can_recruit_.clear();
 	navigation_types_.clear();
@@ -2634,6 +2911,8 @@ void unit_type_data::clear()
 	market_type_ = NULL;
 	technology_type_ = NULL;
 	tower_type_ = NULL;
+	businessman_type_ = NULL;
+	scholar_type_ = NULL;
 
 	hide_help_all_ = false;
 	hide_help_race_.clear();
@@ -2713,26 +2992,26 @@ int unit_type_data::arms_from_id(const std::string& id) const
 	return -1;
 }
 
-const std::string& unit_type_data::character_id(int character) const
+const std::string& unit_type_data::especial_id(int character) const
 {
-	if (character < 0 || character >= (int)characters_.size()) {
+	if (character < 0 || character >= (int)especials_.size()) {
 		return null_str;
 	} else {
-		return characters_[character].id_;
+		return especials_[character].id_;
 	}
 }
 
-int unit_type_data::character_from_id(const std::string& id) const
+int unit_type_data::especial_from_id(const std::string& id) const
 {
 	if (id.empty()) {
-		return NO_CHARACTER;
+		return NO_ESPECIAL;
 	}
-	for (std::vector<tcharacter>::const_iterator it = characters_.begin(); it != characters_.end(); ++ it) {
+	for (std::vector<tespecial>::const_iterator it = especials_.begin(); it != especials_.end(); ++ it) {
 		if (it->id_ == id) {
 			return it->index_;
 		}
 	}
-	return NO_CHARACTER;
+	return NO_ESPECIAL;
 }
 
 const std::string& unit_type_data::id_from_navigation(int navigation) const

@@ -129,6 +129,10 @@ tpoint twidget::get_best_size() const
 
 void twidget::place(const tpoint& origin, const tpoint& size)
 {
+	// release of visutal studio cannot detect assert, use breakpoint.
+	if (size.x < 0 || size.y < 0) {
+		int ii = 0;
+	}
 	assert(size.x >= 0);
 	assert(size.y >= 0);
 
@@ -153,6 +157,10 @@ void twidget::place(const tpoint& origin, const tpoint& size)
 
 void twidget::set_size(const tpoint& size)
 {
+	// release of visutal studio cannot detect assert, use breakpoint.
+	if (size.x < 0 || size.y < 0) {
+		int ii = 0;
+	}
 	assert(size.x >= 0);
 	assert(size.y >= 0);
 

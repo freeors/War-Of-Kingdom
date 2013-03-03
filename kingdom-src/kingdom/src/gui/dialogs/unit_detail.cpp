@@ -418,6 +418,22 @@ void tunit_detail::pre_show(CVideo& /*video*/, twindow& window)
 		field_troop->set_visible(twidget::INVISIBLE);
 	}
 
+	tbutton* control = find_widget<tbutton>(&window, "field_commoner", false, true);
+	connect_signal_mouse_left_click(
+		*control
+		, boost::bind(
+			&tunit_detail::field_commoner
+			, this
+			, boost::ref(window)));
+	if (interviewee_->is_artifical()) {
+		const artifical* city = const_unit_2_artifical(interviewee_);
+		if (!(city->field_commoners().size())) {
+			control->set_active(false);
+		}
+	} else {
+		control->set_visible(twidget::INVISIBLE);
+	}
+
 	tbutton* reside_troop = find_widget<tbutton>(&window, "reside_troop", false, true);
 	connect_signal_mouse_left_click(
 		*reside_troop
@@ -432,6 +448,22 @@ void tunit_detail::pre_show(CVideo& /*video*/, twindow& window)
 		}
 	} else {
 		reside_troop->set_visible(twidget::INVISIBLE);
+	}
+
+	control = find_widget<tbutton>(&window, "reside_commoner", false, true);
+	connect_signal_mouse_left_click(
+		*control
+		, boost::bind(
+			&tunit_detail::reside_commoner
+			, this
+			, boost::ref(window)));
+	if (interviewee_->is_artifical()) {
+		const artifical* city = const_unit_2_artifical(interviewee_);
+		if (!(city->reside_commoners().size())) {
+			control->set_active(false);
+		}
+	} else {
+		control->set_visible(twidget::INVISIBLE);
 	}
 
 	tbutton* hero_list = find_widget<tbutton>(&window, "hero_list", false, true);
@@ -477,6 +509,16 @@ void tunit_detail::reside_troop(twindow& window)
 void tunit_detail::field_troop(twindow& window)
 {
 	menu_handler_->field_unit_list_in_city(const_unit_2_artifical(interviewee_));
+}
+
+void tunit_detail::reside_commoner(twindow& window)
+{
+	menu_handler_->reside_unit_list_in_city(const_unit_2_artifical(interviewee_), false, true);
+}
+
+void tunit_detail::field_commoner(twindow& window)
+{
+	menu_handler_->field_unit_list_in_city(const_unit_2_artifical(interviewee_), false, true);
 }
 
 void tunit_detail::hero_list(twindow& window)

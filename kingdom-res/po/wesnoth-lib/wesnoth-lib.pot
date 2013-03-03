@@ -3369,6 +3369,12 @@ msgstr ""
 msgid "Front"
 msgstr ""
 
+msgid "Police"
+msgstr ""
+
+msgid "Task"
+msgstr ""
+
 msgid "side list"
 msgstr ""
 
@@ -3617,7 +3623,13 @@ msgstr ""
 msgid "Level"
 msgstr ""
 
+msgid "side^Character"
+msgstr ""
+
 msgid "Character"
+msgstr ""
+
+msgid "Especial"
 msgstr ""
 
 msgid "Fresh Hero"
@@ -3750,6 +3762,12 @@ msgid "Advance Unit"
 msgstr ""
 
 msgid "What should our victorious unit become?"
+msgstr ""
+
+msgid "Change unit"
+msgstr ""
+
+msgid "Which should you change?"
 msgstr ""
 
 msgid "Human Control"
@@ -4032,6 +4050,9 @@ msgstr ""
 msgid "Create"
 msgstr ""
 
+msgid "Stronger"
+msgstr ""
+
 msgid "Don't accept empty, invalid '$key' value"
 msgstr ""
 
@@ -4086,3 +4107,38 @@ msgstr ""
 msgid "Move to wall"
 msgstr ""
 
+#
+# commoner
+#
+msgid "None"
+msgstr ""
+
+msgid "task^Back"
+msgstr ""
+
+msgid "task^Trade"
+msgstr ""
+
+msgid "task^Transfer"
+msgstr ""
+
+msgid "trade^Back"
+msgstr ""
+
+msgid "Decree"
+msgstr ""
+
+msgid "Gold income"
+msgstr ""
+
+msgid "Technology income"
+msgstr ""
+
+msgid "Reside commoner"
+msgstr ""
+
+msgid "Field commoner"
+msgstr ""
+
+msgid "Commoner"
+msgstr ""

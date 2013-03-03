@@ -129,6 +129,9 @@
 #define IDD_TREASURE                    247
 #define IDD_TECHNOLOGY                  248
 #define IDD_TECHNOLOGY2                 250
+#define IDD_ROAD                        251
+#define IDD_UTYPECOMMONER               252
+#define IDD_CHARACTER                   253
 #define IDC_BT_WGEN_EDIT                1034
 #define IDC_BT_XCHG_XCHG                1054
 #define IDC_BT_XCHG_CANCELXCHG          1055
@@ -237,6 +240,7 @@
 #define IDC_UD_HEROEDIT_SKILL1XP        1187
 #define IDC_ET_HEROEDIT_SKILL3XP        1188
 #define IDC_CMB_HEROEDIT_SKILL4         1189
+#define IDC_CMB_HEROEDIT_CHARACTER      1190
 #define IDC_LV_TBOX_DESC                1204
 #define IDC_LV_WGEN_EDITOR              1204
 #define IDC_TV_DDESC_EXPLORER           1206
@@ -289,6 +293,7 @@
 #define IDC_ET_SIDEEDIT_GOLD            1247
 #define IDC_LV_CAMPSCENARIO_TREASURE    1247
 #define IDC_ET_SIDEEDIT_INCOME          1248
+#define IDC_LV_CAMPSCENARIO_ROAD        1248
 #define IDC_ET_SIDEEDIT_NAVIGATIONXP    1249
 #define IDC_CMB_SIDEEDIT_NAVIGATION     1250
 #define IDC_BT_SIDEEDIT_ADDCITY         1251
@@ -357,6 +362,7 @@
 #define IDC_CMB_VARIABLE_OP             1291
 #define IDC_CMB_TREASURE_TREASURE       1291
 #define IDC_CMB_SYNC_LANGUAGE           1291
+#define IDC_CMB_ROAD_CITY1              1291
 #define IDC_ET_NEWCAMP_DESC             1292
 #define IDC_CMB_CAMPMAIN_FIRSTSCENARIO  1292
 #define IDC_CMB_UTYPEEDIT_LEVEL         1292
@@ -364,6 +370,7 @@
 #define IDC_CMB_UTYPEARTIFICAL_GUARD    1292
 #define IDC_CMB_EVENTUNIT_CITY          1292
 #define IDC_CMB_EVENTFILTER_CITY        1292
+#define IDC_CMB_ROAD_CITY2              1292
 #define IDC_ET_UTYPEEDIT_FILE           1293
 #define IDC_CMB_ATTACKEDIT_TYPE         1293
 #define IDC_CMB_EVENTUNIT_SIDE          1293
@@ -521,6 +528,7 @@
 #define IDC_STATIC_SKILL6               1409
 #define IDC_STATIC_SKILL1               1409
 #define IDC_STATIC_DOMAIN               1410
+#define IDC_STATIC_ROAD                 1410
 #define IDC_STATIC_ID                   1411
 #define IDC_STATIC_DESCRIPTION          1412
 #define IDC_STATIC_TYPE                 1413
@@ -580,6 +588,17 @@
 #define IDC_TV_TECHNOLOGY_EXPLORER      1466
 #define IDC_STATIC_MAXIMUM              1467
 #define IDC_STATIC_UNRESTRAINT          1468
+#define IDC_STATIC_CITY1                1469
+#define IDC_STATIC_CITY2                1470
+#define IDC_ET_UTYPECOMMONER_MOVEMENT   1470
+#define IDC_UD_UTYPECOMMONER_MOVEMENT   1471
+#define IDC_ET_UTYPECOMMONER_MAXMOVEMENT 1472
+#define IDC_UD_UTYPECOMMONER_MAXMOVEMENT 1473
+#define IDC_CMB_UTYPECOMMONER_MASTER    1474
+#define IDC_ET_UTYPECOMMONER_INCOME     1475
+#define IDC_UD_UTYPECOMMONER_INCOME     1476
+#define IDC_TV_CHARACTER_ATOM           1477
+#define IDC_TV_CHARACTER_COMPLEX        1478
 #define IDM_RESET                       40009
 #define IDM_UTYPE                       40010
 #define IDM_UTYPE_GENERAL               40011
@@ -666,9 +685,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        251
+#define _APS_NEXT_RESOURCE_VALUE        254
 #define _APS_NEXT_COMMAND_VALUE         40100
-#define _APS_NEXT_CONTROL_VALUE         1469
+#define _APS_NEXT_CONTROL_VALUE         1479
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

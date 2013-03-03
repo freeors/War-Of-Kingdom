@@ -305,51 +305,6 @@ msgstr "水将"
 msgid "treasure-49"
 msgstr "水将"
 
-msgid "character-0"
-msgstr "西凉"
-
-msgid "character-1"
-msgstr "虎豹"
-
-msgid "character-2"
-msgstr "咒术"
-
-msgid "character-3"
-msgstr "南蛮"
-
-msgid "character-4"
-msgstr "陷阵"
-
-msgid "character-5"
-msgstr "先登"
-
-msgid "character-6"
-msgstr "巾帼"
-
-msgid "character-7"
-msgstr "骑射"
-
-msgid "character-8"
-msgstr "白眊"
-
-msgid "character-9"
-msgstr "青州"
-
-msgid "character-10"
-msgstr "并州"
-
-msgid "character-11"
-msgstr "丹阳"
-
-msgid "character-12"
-msgstr "诸葛"
-
-msgid "character-13"
-msgstr "火药"
-
-msgid "character-14"
-msgstr "天师"
-
 msgid "feature"
 msgstr "特技"
 
@@ -1175,6 +1130,30 @@ msgstr "减速"
 msgid "tactic_desc-decelerates"
 msgstr "弱化范围内敌军的移动力"
 
+msgid "tactic-alert"
+msgstr "预警"
+
+msgid "tactic_desc-alert"
+msgstr "对进入范围敌部队执行预警攻击"
+
+msgid "tactic-provoke"
+msgstr "挑衅"
+
+msgid "tactic_desc-provoke"
+msgstr "范围内敌方部队向我方移动"
+
+msgid "tactic-clear"
+msgstr "镇队"
+
+msgid "tactic_desc-clear"
+msgstr "解除自身异常状态"
+
+msgid "tactic-clears"
+msgstr "镇军"
+
+msgid "tactic_desc-clears"
+msgstr "解除范围友部队异常状态"
+
 msgid "tactic-divine wei wu"
 msgstr "魏武之强"
 
@@ -1306,6 +1285,24 @@ msgstr "美女连环"
 
 msgid "tactic_desc-beautiful interlink"
 msgstr "弱化范围内敌军防御、移动"
+
+msgid "tactic-alert attack"
+msgstr "预警攻击"
+
+msgid "tactic_desc-alert attack"
+msgstr "对进入范围敌部队执行预警攻击"
+
+msgid "tactic-divine provoke"
+msgstr "虚诱掩杀"
+
+msgid "tactic_desc-divine provoke"
+msgstr "范围内敌方部队向我方移动"
+
+msgid "tactic-divine clear"
+msgstr "镇静"
+
+msgid "tactic_desc-divine clear"
+msgstr "解除范围友部队异常状态"
 
 msgid "arms-0"
 msgstr "步兵"
@@ -2468,9 +2465,47 @@ msgstr "沮授"
 msgid "name-355"
 msgstr "审配"
 
-#, fuzzy
 msgid "name-356"
-msgstr "曹洪"
+msgstr "保留"
+
+msgid "name-357"
+msgstr "保留"
+
+msgid "name-358"
+msgstr "保留"
+
+msgid "name-359"
+msgstr "保留"
+
+msgid "name-360"
+msgstr "商人"
+
+msgid "name-361"
+msgstr "学士"
+
+msgid "name-362"
+msgstr "保留"
+
+msgid "name-363"
+msgstr "保留"
+
+msgid "name-364"
+msgstr "保留"
+
+msgid "name-365"
+msgstr "保留"
+
+msgid "name-366"
+msgstr "保留"
+
+msgid "name-367"
+msgstr "保留"
+
+msgid "name-368"
+msgstr "保留"
+
+msgid "name-369"
+msgstr "保留"
 
 msgid "surname"
 msgstr "姓"
@@ -3543,9 +3578,47 @@ msgstr "沮"
 msgid "surname-355"
 msgstr "审"
 
-#, fuzzy
 msgid "surname-356"
-msgstr "曹"
+msgstr "保留"
+
+msgid "surname-357"
+msgstr "保留"
+
+msgid "surname-358"
+msgstr "保留"
+
+msgid "surname-359"
+msgstr "保留"
+
+msgid "surname-360"
+msgstr "商人"
+
+msgid "surname-361"
+msgstr "学士"
+
+msgid "surname-362"
+msgstr "保留"
+
+msgid "surname-363"
+msgstr "保留"
+
+msgid "surname-364"
+msgstr "保留"
+
+msgid "surname-365"
+msgstr "保留"
+
+msgid "surname-366"
+msgstr "保留"
+
+msgid "surname-367"
+msgstr "保留"
+
+msgid "surname-368"
+msgstr "保留"
+
+msgid "surname-369"
+msgstr "保留"
 
 msgid "desc0"
 msgstr ""
@@ -6297,298 +6370,44 @@ msgstr ""
 msgid "desc356"
 msgstr ""
 
-#~ msgid "status/activity"
-#~ msgstr "状态/活力"
+msgid "desc357"
+msgstr ""
 
-#~ msgid "tactic-storm demolish"
-#~ msgstr "猛攻"
+msgid "desc358"
+msgstr ""
 
-#~ msgid "tactic_desc-storm demolish"
-#~ msgstr "较大提升自身攻击、破坏"
+msgid "desc359"
+msgstr ""
 
-#~ msgid "tactic-melee attacks"
-#~ msgstr "全近战攻击强化"
+msgid "desc360"
+msgstr "平民之一。从事商业贸易。"
 
-#~ msgid "tactic_desc-melee attacks"
-#~ msgstr "提升范围内友方的近战攻击"
+msgid "desc361"
+msgstr "平民之一。从事技术交流。"
 
-#~ msgid "tactic-weaken melee attacks"
-#~ msgstr "全攻击近战弱化"
+msgid "desc362"
+msgstr ""
 
-#~ msgid "tactic_desc-weaken melee attacks"
-#~ msgstr "弱化范围内敌方的近战攻击"
+msgid "desc363"
+msgstr ""
 
-#~ msgid "tactic-weaken ranged attacks"
-#~ msgstr "全远程攻击弱化"
+msgid "desc364"
+msgstr ""
 
-#~ msgid "tactic_desc-weaken ranged attacks"
-#~ msgstr "弱化范围内敌方的远程攻击"
+msgid "desc365"
+msgstr ""
 
-#~ msgid "tactic-weaken cast attacks"
-#~ msgstr "全投射攻击弱化"
+msgid "desc366"
+msgstr ""
 
-#~ msgid "tactic_desc-weaken cast attacks"
-#~ msgstr "弱化范围内敌方的投射攻击"
+msgid "desc367"
+msgstr ""
 
-#~ msgid "tactic-physical attacks"
-#~ msgstr "全物理攻击强化"
+msgid "desc368"
+msgstr ""
 
-#~ msgid "tactic_desc-physical attacks"
-#~ msgstr "提升范围内友方的物理攻击"
+msgid "desc369"
+msgstr ""
 
-#~ msgid "tactic-weaken physical attacks"
-#~ msgstr "全物理攻击弱化"
-
-#~ msgid "tactic_desc-weaken physical attacks"
-#~ msgstr "弱化范围内敌方的物理攻击"
-
-#~ msgid "tactic-mage attacks"
-#~ msgstr "全法术攻击强化"
-
-#~ msgid "tactic_desc-mage attacks"
-#~ msgstr "提升范围内友方的法术攻击"
-
-#~ msgid "tactic-physical firms"
-#~ msgstr "全物理防御强化"
-
-#~ msgid "tactic_desc-physical firms"
-#~ msgstr "提升范围内友军对物理攻击防御力"
-
-#~ msgid "tactic-physical breaks"
-#~ msgstr "全物理防御弱化"
-
-#~ msgid "tactic_desc-physical breaks"
-#~ msgstr "弱化范围内敌军对物理攻击防御力"
-
-#~ msgid "tactic-mage firms"
-#~ msgstr "全法术防御强化"
-
-#~ msgid "tactic_desc-mage firms"
-#~ msgstr "较大提升范围内友军对法术攻击防御力"
-
-#~ msgid "tactic-weaken blade attacks"
-#~ msgstr "全剑刃攻击弱化"
-
-#~ msgid "tactic_desc-weaken blade attacks"
-#~ msgstr "弱化范围内友方的剑刃攻击"
-
-#~ msgid "tactic-impact attacks"
-#~ msgstr "全冲击攻击强化"
-
-#~ msgid "tactic_desc-impact attacks"
-#~ msgstr "提升范围内友方的冲击攻击"
-
-#~ msgid "tactic-weaken impact attacks"
-#~ msgstr "全冲击攻击弱化"
-
-#~ msgid "tactic_desc-weaken impact attacks"
-#~ msgstr "弱化范围内友方的冲击攻击"
-
-#~ msgid "tactic-weaken archery attacks"
-#~ msgstr "全弓弩攻击弱化"
-
-#~ msgid "tactic_desc-weaken archery attacks"
-#~ msgstr "弱化范围内友方的弓弩攻击"
-
-#~ msgid "tactic-collapse attacks"
-#~ msgstr "全塌陷攻击强化"
-
-#~ msgid "tactic_desc-collapse attacks"
-#~ msgstr "提升范围内友方的塌陷攻击"
-
-#~ msgid "tactic-weaken collapse attacks"
-#~ msgstr "全塌陷攻击弱化"
-
-#~ msgid "tactic_desc-weaken collapse attacks"
-#~ msgstr "弱化范围内友方的塌陷攻击"
-
-#~ msgid "tactic-weaken arcane attacks"
-#~ msgstr "全奥术攻击弱化"
-
-#~ msgid "tactic_desc-weaken arcane attacks"
-#~ msgstr "弱化范围内友方的奥术攻击"
-
-#~ msgid "tactic-weaken fire attacks"
-#~ msgstr "全火焰攻击弱化"
-
-#~ msgid "tactic_desc-weaken fire attacks"
-#~ msgstr "弱化范围内友方的火焰攻击"
-
-#~ msgid "tactic-cold attacks"
-#~ msgstr "全寒冷攻击强化"
-
-#~ msgid "tactic_desc-cold attacks"
-#~ msgstr "提升范围内友方的寒冷攻击"
-
-#~ msgid "tactic-weaken cold attacks"
-#~ msgstr "全寒冷攻击弱化"
-
-#~ msgid "tactic_desc-weaken cold attacks"
-#~ msgstr "弱化范围内友方的寒冷攻击"
-
-#~ msgid "tactic-impact breaks"
-#~ msgstr "全冲击防御弱化"
-
-#~ msgid "tactic_desc-impact breaks"
-#~ msgstr "弱化范围内敌军的对冲击防御力"
-
-#~ msgid "tactic-archery firms"
-#~ msgstr "全弓弩防御强化"
-
-#~ msgid "tactic_desc-archery firms"
-#~ msgstr "提升范围内友军的对弓弩防御力"
-
-#~ msgid "tactic-archery breaks"
-#~ msgstr "全弓弩防御弱化"
-
-#~ msgid "tactic_desc-archery breaks"
-#~ msgstr "弱化范围内敌军的对弓弩防御力"
-
-#~ msgid "tactic-collapse firms"
-#~ msgstr "全塌陷防御强化"
-
-#~ msgid "tactic_desc-collapse firms"
-#~ msgstr "提升范围内友军的对塌陷防御力"
-
-#~ msgid "tactic-collapse breaks"
-#~ msgstr "全塌陷防御弱化"
-
-#~ msgid "tactic_desc-collapse breaks"
-#~ msgstr "弱化范围内敌军的对塌陷防御力"
-
-#~ msgid "tactic-arcane breaks"
-#~ msgstr "全奥术防御弱化"
-
-#~ msgid "tactic_desc-arcane breaks"
-#~ msgstr "弱化范围内敌军的对奥术防御力"
-
-#~ msgid "tactic-fire breaks"
-#~ msgstr "全火焰防御弱化"
-
-#~ msgid "tactic_desc-fire breaks"
-#~ msgstr "弱化范围内敌军的对火焰防御力"
-
-#~ msgid "tactic-cold firms"
-#~ msgstr "全寒冷防御强化"
-
-#~ msgid "tactic_desc-cold firms"
-#~ msgstr "提升范围内友军的对寒冷防御力"
-
-#~ msgid "tactic-cold breaks"
-#~ msgstr "全寒冷防御弱化"
-
-#~ msgid "tactic_desc-cold breaks"
-#~ msgstr "弱化范围内敌军的对寒冷防御力"
-
-#~ msgid "ye"
-#~ msgstr "叶"
-
-#~ msgid "hu"
-#~ msgstr "胡"
-
-#~ msgid "li"
-#~ msgstr "李"
-
-#~ msgid "cao-2"
-#~ msgstr "曹"
-
-#~ msgid "liu"
-#~ msgstr "刘"
-
-#~ msgid "zhuge"
-#~ msgstr "诸葛"
-
-#~ msgid "zhou"
-#~ msgstr "周"
-
-#~ msgid "sima"
-#~ msgstr "司马"
-
-#~ msgid "deng"
-#~ msgstr "邓"
-
-#~ msgid "zhang"
-#~ msgstr "马"
-
-#~ msgid "zhao"
-#~ msgstr "赵"
-
-#~ msgid "jiang"
-#~ msgstr "姜"
-
-#~ msgid "ma"
-#~ msgstr "马"
-
-#~ msgid "xu"
-#~ msgstr "徐"
-
-#~ msgid "gan"
-#~ msgstr "甘"
-
-#~ msgid "man"
-#~ msgstr "满"
-
-#~ msgid "yue"
-#~ msgstr "乐"
-
-#~ msgid "jin"
-#~ msgstr "进"
-
-#~ msgid "liuying"
-#~ msgstr "柳莺"
-
-#~ msgid "ruoling"
-#~ msgstr "若菱"
-
-#~ msgid "lunqing"
-#~ msgstr "沦清"
-
-#~ msgid "cao-1"
-#~ msgstr "操"
-
-#~ msgid "bei"
-#~ msgstr "备"
-
-#~ msgid "liang"
-#~ msgstr "亮"
-
-#~ msgid "yu"
-#~ msgstr "瑜"
-
-#~ msgid "yi"
-#~ msgstr "懿"
-
-#~ msgid "ai"
-#~ msgstr "艾"
-
-#~ msgid "liao"
-#~ msgstr "辽"
-
-#~ msgid "yun"
-#~ msgstr "云"
-
-#~ msgid "wei"
-#~ msgstr "维"
-
-#~ msgid "chao"
-#~ msgstr "超"
-
-#~ msgid "huang"
-#~ msgstr "晃"
-
-#~ msgid "ning"
-#~ msgstr "宁"
-
-#~ msgid "chong"
-#~ msgstr "宠"
-
-#~ msgid "HuRuoLin"
-#~ msgstr "胡若菱"
-
-#~ msgid "War of Kingdom"
-#~ msgstr "王国战争"
-
-#~ msgid "War of Kingdom description"
-#~ msgstr ""
-#~ "黯淡了刀光剑影，远去了鼓角争鸣，湮没了荒城古道，荒芜了烽火边城。长江有意化"
-#~ "做泪，长江有情起歌声，历史的天空闪烁几颗星，人间一股英雄气，在驰骋纵横。 "
+#~ msgid "character"
+#~ msgstr "性格"

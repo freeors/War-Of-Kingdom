@@ -54,8 +54,6 @@ extern uint32_t total_recruit;
 extern uint32_t total_combat;
 extern uint32_t total_build;
 extern uint32_t total_move;
-extern uint32_t total_a_star_search;
-extern int total_a_star_searches;
 extern uint32_t total_diplomatism;
 
 namespace ai {
@@ -142,164 +140,6 @@ const game_info& ai_default::get_info() const
 	return manager::get_active_ai_info_for_side(side_);
 }
 
-map_location ai_default::move_unit(const std::pair<unit*, int>& pair, map_location to, bool dst_must_reachable)
-{
-	int side = side_;
-	unit* unit_ptr = NULL;
-	if (pair.second >= 0) {
-		unit_ptr = unit_2_artifical(pair.first)->reside_troops()[pair.second];
-	} else {
-		unit_ptr = pair.first;
-	}
-	map_location from = unit_ptr->get_location();
-	map_location unit_location_ = from;
-
-	if (from != to) {
-		// it shouldn't use move_spectator of unit_ptr! when expediate, un will became invalid.
-		move_unit_spectator move_spectator(units_);
-		// do_init_for_execution
-		// move_spectator.reset(units_);
-		// check_before
-		//do an A*-search
-		const pathfind::shortest_path_calculator calc(*unit_ptr, current_team_, units_, teams_, map_, false, true);
-		// double stop_at = dst_must_reachable? 10000.0: calc.getUnitHoldValue() * 3 + 10000.0;
-		double stop_at = dst_must_reachable? 10000.0: calc.getUnitHoldValue() + 10000.0;
-		//allowed teleports
-		std::set<map_location> allowed_teleports;
-		uint32_t start = SDL_GetTicks();
-		pathfind::plain_route route_ = a_star_search(from, to, stop_at, &calc, map_.w(), map_.h(), &allowed_teleports);
-		total_a_star_searches ++;
-		total_a_star_search += SDL_GetTicks() - start;
-
-		if (route_.steps.empty()) {
-			return map_location();
-		}
-		// modify! last location must no unit on it.
-		while (!dst_must_reachable) {
-			to = route_.steps.back();
-			if (!units_.count(to)) {
-				break;
-			} else if (artifical* c = units_.city_from_loc(to)) {
-				if (c->side() == unit_ptr->side()) { 
-					// same side's city. 
-					break;
-				}
-			}
-			if (to == from) {
-				// A(city)(city), A will enter it
-				return map_location();
-			}
-			route_.steps.pop_back();
-		}
-		
-		// do_execute
-		move_spectator.set_unit(units_.find(from));
-
-		bool gamestate_changed = false;
-
-		// if (units_.count(to) == 0 || from == to) {
-		if (!route_.steps.empty()) {
-			if (pair.second >= 0) {
-				artifical* expediting_city = unit_2_artifical(pair.first);
-				// std::vector<unit*>& reside_troops = expediting_city->reside_troops();
-				disp_.place_expedite_city(*expediting_city);
-				units_.set_expediting(expediting_city, pair.second);
-				::move_unit(
-					/*move_unit_spectator* move_spectator*/ &move_spectator,
-					/*std::vector<map_location> route*/ route_.steps,
-					/*replay* move_recorder*/ &recorder,
-					/*undo_list* undo_stack*/ NULL,
-					/*bool show_move*/ true,
-					/*map_location *next_unit*/ NULL,
-					/*bool continue_move*/ true, //@todo: 1.7 set to false after implemeting interrupt awareness
-					/*bool should_clear_shroud*/ true,
-					/*bool is_replay*/ false);
-				disp_.remove_expedite_city();
-				units_.set_expediting();
-				if (move_spectator.get_unit().valid() && move_spectator.get_unit()->get_location() != from) {
-					// move_unit may be not move! reside troop ratain in city.
-					expediting_city->troop_go_out(units_.last_expedite_index());
-				} else {
-					unit_ptr->remove_movement_ai();
-				}
-
-			} else {
-				::move_unit(
-					/*move_unit_spectator* move_spectator*/ &move_spectator,
-					/*std::vector<map_location> route*/ route_.steps,
-					/*replay* move_recorder*/ &recorder,
-					/*undo_list* undo_stack*/ NULL,
-					/*bool show_move*/ true,
-					/*map_location *next_unit*/ NULL,
-					/*bool continue_move*/ true, //@todo: 1.7 set to false after implemeting interrupt awareness
-					/*bool should_clear_shroud*/ true,
-					/*bool is_replay*/ false);
-			}
-			// once unit moved one or more grid, unit_ptr may invalid. below code must not use un!
-
-			if (move_spectator.get_ambusher().valid() || !move_spectator.get_seen_enemies().empty() || !move_spectator.get_seen_friends().empty() ) {
-				unit_location_ = move_spectator.get_unit()->get_location();
-				gamestate_changed = true;
-			} else if (move_spectator.get_unit().valid()){
-				unit_location_ = move_spectator.get_unit()->get_location();
-				if (unit_location_ != from) {
-					gamestate_changed = true;
-				}
-			}
-		}
-
-		if (unit_location_ != from) {
-			unit_map::iterator un = units_.find(unit_location_);
-			if (unit_location_ != from && un->movement_left() > 0) {
-				bool remove_movement_ = true;
-				bool remove_attacks_ = false;
-				if (remove_movement_){
-					un->remove_movement_ai();
-					gamestate_changed = true;
-				}
-				if (remove_attacks_){
-					un->remove_attacks_ai();
-					gamestate_changed = true;
-				}
-			}
-		} else {
-			unit_location_ = map_location();
-		}
-
-		try {
-			if (gamestate_changed) {
-				manager::raise_gamestate_changed();
-			}
-			resources::controller->check_victory();
-			resources::controller->check_end_level();
-		} catch (...) {
-			throw;
-		}
-		// check_after
-		if (unit_location_ != from && unit_location_ != to) {
-/*
-			// We've been ambushed; find the ambushing unit and attack them.
-			adjacent_tiles_array locs;
-			get_adjacent_tiles(unit_location_, locs.data());
-			for(adjacent_tiles_array::const_iterator adj_i = locs.begin(); adj_i != locs.end(); ++adj_i) {
-				const unit_map::const_iterator itor = units_.find(*adj_i);
-				if(itor != units_.end() && current_team_.is_enemy(itor->second.side()) &&
-				   !itor->second.incapacitated()) {
-					// here, only melee weapon is valid, need modify!!
-					battle_context bc(units_, unit_location_, *adj_i, -1, -1, aggression_);
-					attack_enemy(unit_location_,itor->first,bc.get_attacker_stats().attack_num,bc.get_defender_stats().attack_num);
-					break;
-				}
-			}
-*/
-		}
-
-		return unit_location_;
-	} else {
-		return from;
-	}
-}
-
 void ai_default::play_turn()
 {
 	// Protect against a memory over commitment:
@@ -364,7 +204,7 @@ void ai_default::calculate_possible_moves2(std::vector<std::pair<unit*, int> > t
 			srcdst.insert(std::make_pair<int, map_location>(index, un_loc));
 			dstsrc.insert(std::make_pair<map_location, int>(un_loc, index));
 		}
-		res.insert(std::pair<int, pathfind::paths>(
+		res.insert(std::make_pair(
 					index, pathfind::paths(map_, units_, *unit_ptr, un_loc, teams_, false, false, current_team_, 0, see_all)));
 	}
 
@@ -402,8 +242,8 @@ void ai_default::calculate_possible_moves2(std::vector<std::pair<unit*, int> > t
 			}
 
 			if (src != dst && units_.find(dst) == units_.end()) {
-				srcdst.insert(std::pair<int, map_location>(m->first, dst));
-				dstsrc.insert(std::pair<map_location, int>(dst, m->first));
+				srcdst.insert(std::make_pair(m->first, dst));
+				dstsrc.insert(std::make_pair(dst, m->first));
 			}
 		}
 	}
@@ -609,7 +449,9 @@ void ai_default::calculate_mr_target(int index)
 			std::vector<unit*>& fields = city.field_troops();
 			for (std::vector<unit*>::iterator u_itor = fields.begin(); u_itor != fields.end(); ++ u_itor) {
 				unit* troop = *u_itor;
-				if (!troop->human()) {
+				if (troop->provoked_turns()) {
+					troop->set_goto(find_provoke(troop)->get_location());
+				} else if (!troop->human()) {
 					const map_location& goto_loc = troop->get_goto();
 					if (goto_loc.valid() && map_.is_village(goto_loc) && !current_team_.owns_village(goto_loc)) {
 						capturing_villages_.insert(goto_loc);
@@ -625,11 +467,14 @@ void ai_default::calculate_mr_target(int index)
 		unit** troops = fields.first;
 		size_t troops_vsize = fields.second;
 		for (size_t i = 0; i < troops_vsize; i ++) {
-			if (!troops[i]->is_artifical()) {
+			unit& u = *troops[i];
+			if (!u.is_artifical()) {
 				// field troops
 				artifical* city = mr.enemy_cities[rand() % mr.enemy_cities.size()];
-				if (!troops[i]->human()) {
-					troops[i]->set_goto(city->get_location());
+				if (u.provoked_turns()) {
+					u.set_goto(find_provoke(&u)->get_location());
+				} else if (!u.is_commoner() && !u.human()) {
+					u.set_goto(city->get_location());
 				}
 			}
 		}
@@ -668,7 +513,9 @@ void ai_default::calculate_mr_target(int index)
 			std::vector<unit*>& fields = city.field_troops();
 			for (std::vector<unit*>::iterator u_itor = fields.begin(); u_itor != fields.end(); ++ u_itor) {
 				unit* troop = *u_itor;
-				if (!troop->human()) {
+				if (troop->provoked_turns()) {
+					troop->set_goto(find_provoke(troop)->get_location());
+				} else if (!troop->human()) {
 					const map_location& goto_loc = troop->get_goto();
 					if (goto_loc.valid() && map_.is_village(goto_loc) && !current_team_.owns_village(goto_loc)) {
 						capturing_villages_.insert(goto_loc);
@@ -739,7 +586,9 @@ void ai_default::calculate_mr_target(int index)
 		std::vector<unit*>& fieldes = aggressing->field_troops();
 		for (std::vector<unit*>::iterator i = fieldes.begin(); i != fieldes.end(); ++ i) {
 			unit* troop = *i;
-			if (!troop->human()) {
+			if (troop->provoked_turns()) {
+				troop->set_goto(find_provoke(troop)->get_location());
+			} else if (!troop->human()) {
 				troop->set_goto(aggressed->get_location());
 			}
 		}
@@ -770,7 +619,9 @@ void ai_default::calculate_mr_target(int index)
 			std::vector<unit*>& fields = city.field_troops();
 			for (std::vector<unit*>::iterator u_itor = fields.begin(); u_itor != fields.end(); ++ u_itor) {
 				unit* troop = *u_itor;
-				if (!troop->human()) {
+				if (troop->provoked_turns()) {
+					troop->set_goto(find_provoke(troop)->get_location());
+				} else if (!troop->human()) {
 					const map_location& goto_loc = troop->get_goto();
 					if (goto_loc.valid() && map_.is_village(goto_loc) && !current_team_.owns_village(goto_loc)) {
 						capturing_villages_.insert(goto_loc);
@@ -963,13 +814,14 @@ bool ai_default::do_tactic(int index, bool first)
 	int best_score = -1, score;
 	hero* best_hero = NULL;
 	unit* best_troop = NULL;
+	const ttactic* best_tactic = NULL;
 
 	for (std::vector<tmess_data>::const_iterator it = mr.messes.begin(); it != mr.messes.end(); ++ it) {
 		const tmess_data& mess = *it;
 
 		for (std::map<unit*, tmess_data::tadjacent_data>::const_iterator it2 = mess.selfs.begin(); it2 != mess.selfs.end(); ++ it2) {
 			unit& u = *it2->first;
-			if (u.human()) {
+			if (u.human() || u.provoked_turns() || u.is_commoner()) {
 				continue;
 			}
 			if (!u.attacks_left()) {
@@ -998,6 +850,9 @@ bool ai_default::do_tactic(int index, bool first)
 				if (t.point() > side_point) {
 					continue;
 				}
+				if (t.select_one() && !it2->second.unprovoks) {
+					continue;
+				}
 
 				// self. if no enemies, this profit divided by 2. 
 				if (!mess.enemies && !mess.enemy_arts) {
@@ -1007,6 +862,12 @@ bool ai_default::do_tactic(int index, bool first)
 					if (!u.hide_turns()) {
 						score += t.self_hide_profit();
 					}
+					if (!u.alert_turns()) {
+						score += t.self_alert_profit();
+					}
+					if (u.uncleared()) {
+						score += t.self_clear_profit();
+					}
 					if (!mess.enemies) {
 						score /= 4;
 					}
@@ -1015,6 +876,7 @@ bool ai_default::do_tactic(int index, bool first)
 				// friend. if no enemies, this profit divided by 2.
 				score += t.friend_profit() * it2->second.friends;
 				score += t.friend_hide_profit() * it2->second.unhides;
+				score += t.friend_clear_profit() * it2->second.unnormals;
 				if (!mess.enemies) {
 					score /= 4;
 				}
@@ -1022,6 +884,9 @@ bool ai_default::do_tactic(int index, bool first)
 				// enemy
 				if (mess.selfs.size() > 1 || mess.allys) {
 					score += t.enemy_profit() * it2->second.enemies;
+				}
+				if (it2->second.unprovoks) {
+					score += t.enemy_provoke_profit();
 				}
 				
 				// if total score < 50, don't conside this tactic.
@@ -1033,6 +898,7 @@ bool ai_default::do_tactic(int index, bool first)
 				if (score > best_score) {
 					best_hero = h;
 					best_troop = &u;
+					best_tactic = &t;
 
 					best_score = score;
 				}
@@ -1040,7 +906,20 @@ bool ai_default::do_tactic(int index, bool first)
 		}
 	}
 	if (best_troop) {
-		cast_tactic(units_, *best_troop, *best_hero);
+		unit* special = NULL;
+		if (best_tactic->select_one()) {
+			const std::map<int, std::vector<map_location> > touched = best_tactic->touch_units(units_, *best_troop);
+			const std::vector<const ttactic*>& parts = best_tactic->parts();
+			for (std::map<int, std::vector<map_location> >::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
+				const ttactic& part_tactic = *(parts[it->first]);
+				if (part_tactic.apply_to() == apply_to_tag::PROVOKE) {
+					const map_location& loc = it->second[rand() % it->second.size()];
+					special = &*find_visible_unit(loc, current_team_);
+					break;
+				}
+			}
+		}
+		cast_tactic(teams_, units_, *best_troop, *best_hero, special);
 		return true;
 	}
 	return false;
@@ -1100,7 +979,7 @@ void ai_default::move_hero(artifical& from, artifical& to, int& lack, int& more)
 	std::vector<unit*> fields = from.field_troops();
 	for (std::vector<unit*>::iterator u_itor = fields.begin(); u_itor != fields.end(); ++ u_itor) {
 		unit* troop = *u_itor;
-		if (troop->human()) {
+		if (troop->human() || troop->provoked_turns()) {
 			continue;
 		}
 		if (troop->master().number_ == mayor->number_) {
@@ -1188,7 +1067,7 @@ int ai_default::build(artifical& owner, std::vector<std::pair<unit*, int> >& bui
 	if (tmppair.second >= 0) {
 		tmppair.first = units_.city_from_loc(tmppair.first->get_location());
 	}
-	const map_location arrived_at = move_unit(tmppair, builder_to_loc);
+	const map_location arrived_at = controller_.move_unit(true, current_team_, tmppair, builder_to_loc);
 	if (arrived_at != builder_to_loc) {
 		// because some reason cannot reach builder_to_loc, for example ambished.
 		// still return builder_index_in_troops, not -1! indicate it moved, but cann't build.
@@ -1210,7 +1089,7 @@ int ai_default::build(artifical& owner, std::vector<std::pair<unit*, int> >& bui
 		v.push_back(&owner.master());
 	}
 	type_heros_pair pair(art, v);
-	artifical new_artifical(units_, heros_, pair, owner.cityno(), true);
+	artifical new_artifical(units_, heros_, teams_, pair, owner.cityno(), true);
 
 	current_team_.spend_gold(new_artifical.cost());
 
@@ -1229,47 +1108,60 @@ void ai_default::do_move()
 {
 	manager::raise_user_interact();
 
-	if (current_team_.is_human() && rpg::stratum == hero_stratum_leader) {
-		while (consider_combat_) {
-			consider_combat_ = do_combat();
-		}
-		return;
-	}
+	bool leader_mode = current_team_.is_human() && rpg::stratum == hero_stratum_leader;
 
 	int side = side_;
 
-	plan_to_.reset();
-	std::vector<mr_data>& mrs = plan_to_.mrs_;
-	units_.calculate_mrs_data(mrs, side);
-	recorder.init_ai();
-
-	int maximum_side_build_walls = 2;
-	int maximum_side_build_markets = 2;
-
-	const std::set<const unit_type*>& can_build = current_team_.builds();
-	std::set<const unit_type*>::const_iterator end = can_build.end();
-
-	if (can_build.find(unit_types.find_keep()) == end || can_build.find(unit_types.find_wall()) == end) {
-		maximum_side_build_walls = 0;
-	}
-	bool can_build_market = can_build.find(unit_types.find_market()) != end;
-	bool can_build_technology = can_build.find(unit_types.find_technology()) != end;
-	if (!can_build_market && !can_build_technology) {
-		maximum_side_build_markets = 0;
-	}
-
-	int size = mrs.size();
-	for (int index = 0; index < size; index ++) {
-		mr_data& mr = mrs[index];
-		if (gamestate_.classification().rpg_mode) {
-			do_diplomatism(index);
+	std::vector<std::pair<unit*, int> > gotos;
+	if (leader_mode) {
+		while (consider_combat_) {
+			consider_combat_ = do_combat();
 		}
-		satisfy_hero_requirement(index);
-		calculate_mr_target(index);
+		std::pair<unit**, size_t> fields = current_team_.field_troop();
+		unit** troops = fields.first;
+		size_t troops_vsize = fields.second;
+		for (size_t i = 0; i < troops_vsize; i ++) {
+			unit& u = *troops[i];
+			if (u.provoked_turns() && u.movement_left()) {
+				// field troops
+				u.set_goto(find_provoke(&u)->get_location());
+				gotos.push_back(std::make_pair<unit*, int>(&u, -1));
+				// "end" this unit
+				u.set_attacks(0);
+			}
+		}
+	} else {
+		plan_to_.reset();
+		std::vector<mr_data>& mrs = plan_to_.mrs_;
+		units_.calculate_mrs_data(mrs, side);
+		mr_data& mr = mrs[0];
+		recorder.init_ai();
+
+		int maximum_side_build_walls = 2;
+		int maximum_side_build_markets = 2;
+
+		const std::set<const unit_type*>& can_build = current_team_.builds();
+		std::set<const unit_type*>::const_iterator end = can_build.end();
+
+		if (can_build.find(unit_types.find_keep()) == end || can_build.find(unit_types.find_wall()) == end) {
+			maximum_side_build_walls = 0;
+		}
+		bool can_build_market = can_build.find(unit_types.find_market()) != end;
+		bool can_build_technology = can_build.find(unit_types.find_technology()) != end;
+		if (!can_build_market && !can_build_technology) {
+			maximum_side_build_markets = 0;
+		}
+
+		if (gamestate_.classification().rpg_mode) {
+			do_diplomatism(0);
+		}
+		satisfy_hero_requirement(0);
+	
+		calculate_mr_target(0);
 
 		bool ret = true;
 		while (ret) {
-			ret = do_tactic(index, true);
+			ret = do_tactic(0, true);
 		}
 
 		// attack! own field/reside troops and cities vs enemy field/reside troops and cities
@@ -1314,7 +1206,7 @@ void ai_default::do_move()
 					std::vector<unit*>& field_troops = owner.field_troops();
 					for (std::vector<unit*>::iterator u_itor = field_troops.begin(); u_itor != field_troops.end(); ++ u_itor) {
 						unit* troop = *u_itor;
-						if (!troop->human() && troop->attacks_left()) {
+						if (!troop->human() && !troop->provoked_turns() && troop->attacks_left()) {
 							builder_troops.push_back(std::make_pair<unit*, int>(troop, -1));
 						}
 					}
@@ -1437,8 +1329,6 @@ void ai_default::do_move()
 		}
 
 		// 9. all unmoved field/reside troops execute move. (according to goto)
-		std::vector<std::pair<unit*, int> > gotos;
-		map_location goto_loc;
 		// calcuate best attackable city. removeable unit will move to it.
 
 		if (!mr.own_cities.empty()) {
@@ -1509,29 +1399,24 @@ void ai_default::do_move()
 				}
 			}
 		}
+	}
 
-		total_a_star_search = 0;
-		total_a_star_searches = 0;
-		for (std::vector<std::pair<unit*, int> >::iterator g = gotos.begin(); g != gotos.end(); ++g) {
-			// desired move troop may move into one city. after it, g->first became to access denied.
-			// so update goto before move_unit.
-			if (g->second >= 0) {
-				goto_loc = unit_2_artifical(g->first)->reside_troops()[g->second]->get_goto();
-				// unit_2_artifical(g->first)->reside_troops()[g->second]->set_goto(map_location());
-			} else {
-				goto_loc = g->first->get_goto();
-				// g->first->set_goto(map_location());
-			}
-			if (map_.on_board(goto_loc)) {
-				move_unit(*g, goto_loc, false);
-			}
+	map_location goto_loc;
+	for (std::vector<std::pair<unit*, int> >::iterator g = gotos.begin(); g != gotos.end(); ++g) {
+		// desired move troop may move into one city. after it, g->first became to access denied.
+		// so update goto before move_unit.
+		if (g->second >= 0) {
+			goto_loc = unit_2_artifical(g->first)->reside_troops()[g->second]->get_goto();
+		} else {
+			goto_loc = g->first->get_goto();
 		}
-/*
-		ret = true;
-		while (ret) {
-			ret = do_tactic(index, false);
+		if (map_.on_board(goto_loc)) {
+			controller_.move_unit(true, current_team_, *g, goto_loc, false);
 		}
-*/
+	}
+
+	if (!current_team_.is_human()) {
+		controller_.do_commoner(current_team_);
 	}
 }
 
@@ -1600,8 +1485,8 @@ void ai_default::do_move_td()
 				if (units_.count(loc_plus_1)) {
 					continue;
 				}
-				std::pair<unit*, int> move_param = std::make_pair<unit*, int>(*u, -1);
-				move_unit(move_param, loc_plus_1);
+				std::pair<unit*, int> move_param = std::make_pair(*u, -1);
+				controller_.move_unit(true, current_team_, move_param, loc_plus_1);
 			}
 		}
 		// 4/7. expedite reside troops as soon as posibble
@@ -1628,8 +1513,8 @@ void ai_default::do_move_td()
 					int loc_index = rand() % empty_size;
 					int troop_index = rand() % troops_size;
 					
-					std::pair<unit*, int> move_param = std::make_pair<unit*, int>(city, troop_index);
-					move_unit(move_param, empty_locs[loc_index]);
+					std::pair<unit*, int> move_param = std::make_pair(city, troop_index);
+					controller_.move_unit(true, current_team_, move_param, empty_locs[loc_index]);
 					empty_locs.erase(empty_locs.begin() + loc_index);
 				}
 			}
@@ -1692,8 +1577,12 @@ bool ai_default::do_combat(bool unmovementable)
 			artifical* city = units_.city_from_loc(from);
 			move_param = std::make_pair<unit*, int>(city, choice_it->movements[0].first.second);
 		}
-		const map_location arrived_at = move_unit(move_param, to);
-		if (arrived_at != to || units_.find(to, !attacker_base) == units_.end()) {
+		const map_location arrived_at = controller_.move_unit(true, current_team_, move_param, to);
+		if (!arrived_at.valid()) {
+			// mover is died
+			return true;
+
+		} else if (arrived_at != to || units_.find(to, !attacker_base) == units_.end()) {
 			// end unit's movement in this turn
 			move_param.first->set_movement(0);
 
@@ -1718,7 +1607,7 @@ bool ai_default::do_combat(bool unmovementable)
 		}
 
 		// Recalc appropriate weapons here: AI uses approximations.
-		usc = us.find(std::pair<const unit*, const unit_type*>(target_ptr, to_type_ptr));
+		usc = us.find(std::make_pair(target_ptr, to_type_ptr));
 		if (usc == us.end()) {
 			throw game::game_error("cannot find item from unit_states_cache when attack_enemy");
 		}
@@ -1955,7 +1844,7 @@ bool ai_default::do_recruitment(artifical& city)
 				bonus += ftofxp12(1) / 2;
 			}
 		}
-		if (ut->character() != NO_CHARACTER) {
+		if (ut->especial() != NO_ESPECIAL) {
 			bonus += ftofxp12(1);
 		}
 
@@ -1991,7 +1880,7 @@ bool ai_default::do_recruitment(artifical& city)
 	}
 
 	// recruit
-	do_recruit(units_, heros_, current_team_, ut, expedite_heros, city, cost_exponent_, false);
+	do_recruit(units_, heros_, teams_, current_team_, ut, expedite_heros, city, cost_exponent_, false);
 	manager::raise_gamestate_changed();
 
 	return true;
@@ -2095,7 +1984,7 @@ void ai_default::analyze_targets(std::vector<attack_analysis>& res, bool unmovem
 		index = reside_troops.size() - 1;
 		for (std::vector<unit*>::reverse_iterator itor = reside_troops.rbegin(); itor != reside_troops.rend(); ++ itor, index --) {
 			unit& u = **itor;
-			if (u.human() || u.has_less_loyalty(game_config::ai_keep_loyalty_threshold, leader_)) {
+			if (u.is_commoner() || u.human() || u.has_less_loyalty(game_config::ai_keep_loyalty_threshold, leader_)) {
 				continue;
 			}
 			unit_locs.push_back(std::make_pair<unit*, int>(&u, index));
@@ -2110,13 +1999,14 @@ void ai_default::analyze_targets(std::vector<attack_analysis>& res, bool unmovem
 	unit** troops = p.first;
 	size_t troops_vsize = p.second;
 	for (size_t i = 0; i < troops_vsize; i ++) {
-		if (!troops[i]->human() && troops[i]->attacks_left() && !troops[i]->wall()) {
-			unit_locs.push_back(std::make_pair<unit*, int>(troops[i], -1));
+		unit& u = *troops[i];
+		if (!u.is_commoner() && (!u.human() || u.provoked_turns()) && u.attacks_left() && !u.wall()) {
+			unit_locs.push_back(std::make_pair<unit*, int>(&u, -1));
 			if (unmovementable) {
-				movements.push_back(troops[i]->movement_left());
-				troops[i]->set_movement(0);
+				movements.push_back(u.movement_left());
+				u.set_movement(0);
 			}
-			expand_rect(consider_enemy_rect, troops[i]->get_location());
+			expand_rect(consider_enemy_rect, u.get_location());
 		}
 	}
 	unit_locs2 = unit_locs;
@@ -2248,8 +2138,13 @@ void ai_default::do_attack_analysis(
 		std::pair<unit*, int> curr_pair = units[i];
 		unit* src_ptr = units[i].first;
 		const map_location current_unit = src_ptr->get_location();
-		
 
+		if (src_ptr->provoked_turns()) {
+			if (target_ptr != find_provoke(src_ptr)) {
+				continue;
+			}
+		}
+		
 		// See if the unit has the backstab ability.
 		// Units with backstab will want to try to have a
 		// friendly unit opposite the position they move to.
@@ -2298,7 +2193,7 @@ void ai_default::do_attack_analysis(
 			src_type = unit_types.find(src_ptr->packee_type_id());
 		}
 
-		usc = unit_stats_cache_.find(std::pair<const unit*, const unit_type*>(target_ptr, src_type));
+		usc = unit_stats_cache_.find(std::make_pair(target_ptr, src_type));
 		// Just check this attack is valid for this attacking unit (may be modified)
 		const battle_context::unit_stats* att;
 		if (usc != unit_stats_cache_.end()) {
@@ -2307,8 +2202,7 @@ void ai_default::do_attack_analysis(
 			bc = new battle_context(units_, *src_ptr, *target_ptr, -1, -1, aggression_, NULL);
 			att = &(bc->get_attacker_stats());
 
-			unit_stats_cache_.insert(std::pair<std::pair<const unit*, const unit_type*>, battle_context*>
-				(std::pair<const unit*, const unit_type*>(target_ptr, src_type), bc));
+			unit_stats_cache_.insert(std::make_pair(std::make_pair(target_ptr, src_type), bc));
 		}
 		// range
 		if (!att->weapon) {
@@ -2411,7 +2305,7 @@ void ai_default::do_attack_analysis(
 			units.erase(units.begin() + i);
 
 			// don't use units[i].first, i is invalid because of erase.
-			cur_analysis.movements.push_back(std::make_pair<std::pair<unit*, int>, map_location>(curr_pair, tiles[cur_position]));
+			cur_analysis.movements.push_back(std::make_pair(curr_pair, tiles[cur_position]));
 
 			{
 				attack_analysis_lock lock(cur_analysis);

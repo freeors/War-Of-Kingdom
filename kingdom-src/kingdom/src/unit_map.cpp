@@ -278,7 +278,7 @@ void unit_map::create_coor_map(int w, int h)
 
 // @cobj: 要被出征的城郡。NULL: 进入正常状态
 // @troop_index: 出征单位出征城内unit_list内索引。只在city非NULL时才生效
-void unit_map::set_expediting(artifical* city, int troop_index)
+void unit_map::set_expediting(artifical* city, bool troop, int index)
 {
 	size_t i;
 	node *ptr;
@@ -311,7 +311,11 @@ void unit_map::set_expediting(artifical* city, int troop_index)
 	const map_location& loc = city->get_location();
 
 	// 1.形成一个新的pair
-	expediting_node_ = new std::pair<map_location, unit*>(loc, new unit(*city->reside_troops()[troop_index]));
+	if (troop) {
+		expediting_node_ = new std::pair<map_location, unit*>(loc, new unit(*city->reside_troops()[index]));
+	} else {
+		expediting_node_ = new std::pair<map_location, unit*>(loc, new unit(*city->reside_commoners()[index]));
+	}
 
 	// 2.以这个pair个修改地图上cookie和容器中值(不删除该项,只是替换值), 要记住原先cookie
 	ptr = coor_map_[index(loc.x, loc.y)].overlay;
@@ -333,7 +337,8 @@ void unit_map::set_expediting(artifical* city, int troop_index)
 	expediting_ = true;
 	expediting_city_ = city;
 	expediting_city_node_index_in_map_ = i;
-	expediting_troop_index_ = troop_index;
+	expediting_troop_ = troop;
+	expediting_index_ = index;
 
 	return;
 }
@@ -348,9 +353,14 @@ unit_map::node* unit_map::expediting_city_node(void) const
 	return expediting_node_;
 }
 
+bool unit_map::last_expedite_troop(void) const
+{
+	return expediting_troop_;
+}
+
 int unit_map::last_expedite_index(void) const
 {
-	return expediting_troop_index_;
+	return expediting_index_;
 }
 
 unit_map::node* unit_map::get_cookie(const map_location& loc, bool overlay) const
@@ -405,14 +415,16 @@ void unit_map::add(const map_location&l, const unit* u)
 // @dst: 移动目的格子
 // 注:
 //   当时从一个城郡出征到另一个城郡时, 函数还是会产生一次new/delete,(但这样写逻辑上简单)
-void unit_map::move(const map_location &src, const map_location &dst) 
+bool unit_map::move(const map_location &src, const map_location &dst) 
 {
+	bool can_undo = true;
 	size_t i;
 	std::pair<map_location, unit*> *p = NULL;
 	artifical* cobj = city_from_loc(dst);
-	
+		
 	p = extract(src);
-	
+	bool troop = !p->second->is_commoner();
+
 	// !!!src是个引用,调用程序极可能用的原值是iter->first
 	// 以下这个p->frist=dst就可能使src被篡改, 须要src的须趁早
 	p->first = dst;
@@ -430,7 +442,12 @@ void unit_map::move(const map_location &src, const map_location &dst)
 	} else {
 		// 目的地: 都市
 		// 1. 单位进城
-		cobj->troop_come_into(p->second);
+		if (troop) {
+			can_undo = cobj->troop_come_into(p->second);
+		} else {
+			cobj->commoner_come_into(p->second);
+			can_undo = false;
+		}
 		// cobj->reside_troops().push_back(p->second);
 		// cobj->reside_troops().back().set_side(cobj->side());
 		// 2. 从unit_map清除该单位
@@ -452,7 +469,11 @@ void unit_map::move(const map_location &src, const map_location &dst)
 			// 出发地: 城外
 			if (citys_.map_[p->second->cityno()]) {
 				// 部队进城, 刷新部队所在城市的城外部队列表
-				citys_.map_[p->second->cityno()]->field_troops_erase(p->second);
+				if (troop) {
+					citys_.map_[p->second->cityno()]->field_troops_erase(p->second);
+				} else {
+					citys_.map_[p->second->cityno()]->field_commoners_erase(p->second);
+				}
 			}
 			// 刷新该阵营所属城外部队列表
 			(*resources::teams)[p->second->side() - 1].erase_troop(p->second);
@@ -473,13 +494,20 @@ void unit_map::move(const map_location &src, const map_location &dst)
 			// 目的地: 非城市
 			if (citys_.map_[p->second->cityno()]) {
 				// 部队出征, 刷新部队所在城市的城外部队列表
-				citys_.map_[p->second->cityno()]->field_troops_add(p->second);
+				if (troop) {
+					citys_.map_[p->second->cityno()]->field_troops_add(p->second);
+				} else {
+					citys_.map_[p->second->cityno()]->field_commoners_add(p->second);
+				}
 			}
 			// 刷新该阵营所属城外部队列表
 			(*resources::teams)[p->second->side() - 1].add_troop(p->second);
-			p->second->set_keep_turns(game_config::max_keep_turns);
+			if (troop) {
+				p->second->set_keep_turns(game_config::max_keep_turns);
+			}
 		}
 	}
+	return can_undo;
 }
 
 bool unit_map::insert(std::pair<map_location, unit*>* p)
@@ -521,7 +549,11 @@ bool unit_map::insert(std::pair<map_location, unit*>* p)
 	if (unit_is_city(u)) {
 		citys_.add(unit_2_artifical(u));
 	} else if (!u->is_artifical() && citys_.map_[u->cityno()]) {
-		citys_.map_[u->cityno()]->field_troops_add(u);
+		if (!u->is_commoner()) {
+			citys_.map_[u->cityno()]->field_troops_add(u);
+		} else {
+			citys_.map_[u->cityno()]->field_commoners_add(u);
+		}
 	} else if (u->is_artifical() && citys_.map_[u->cityno()]) {
 		citys_.map_[u->cityno()]->field_arts_add(unit_2_artifical(u));
 	}
@@ -686,7 +718,11 @@ bool unit_map::erase(unit* u)
 	if (unit_is_city(u)) {
 		citys_.erase(unit_2_artifical(u));
 	} else if (!u->is_artifical() && citys_.map_[u->cityno()]) {
-		citys_.map_[u->cityno()]->field_troops_erase(u);
+		if (!u->is_commoner()) {
+			citys_.map_[u->cityno()]->field_troops_erase(u);
+		} else {
+			citys_.map_[u->cityno()]->field_commoners_erase(u);
+		}
 	} else if (u->is_artifical() && citys_.map_[u->cityno()]) {
 		citys_.map_[u->cityno()]->field_arts_erase(unit_2_artifical(u));
 	}
@@ -958,7 +994,7 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 		second_cityno = a_cityno;
 	}
 
-	itor = unit_map::inter_city_move_cost_.find(std::pair<int, int>(first_cityno, second_cityno));
+	itor = unit_map::inter_city_move_cost_.find(std::make_pair(first_cityno, second_cityno));
 	if (itor != unit_map::inter_city_move_cost_.end()) {
 		a_cost = itor->second;
 	} else {
@@ -967,11 +1003,12 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 		double stop_at = 10000.0;
 		//allowed teleports
 		std::set<map_location> allowed_teleports;
-		pathfind::plain_route route = a_star_search(center_city.get_location(), a.get_location(), stop_at, &calc, map.w(), map.h(), &allowed_teleports);
+		// NOTICE! although start and end are same, but rank filp, result maybe differenrt! so use cityno to make sure same.
+		pathfind::plain_route route = a_star_search(city_from_cityno(first_cityno)->get_location(), city_from_cityno(second_cityno)->get_location(), stop_at, &calc, map.w(), map.h(), &allowed_teleports);
 		if (route.steps.empty()) {
 			route.move_cost = 10000;
 		}
-		unit_map::inter_city_move_cost_.insert(std::pair<std::pair<int, int>, int>(std::pair<int, int>(first_cityno, second_cityno), route.move_cost));
+		unit_map::inter_city_move_cost_.insert(std::make_pair(std::make_pair(first_cityno, second_cityno), route.move_cost));
 		a_cost = route.move_cost;
 	}
 
@@ -984,7 +1021,7 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 		second_cityno = b_cityno;
 	}
 
-	itor = unit_map::inter_city_move_cost_.find(std::pair<int, int>(first_cityno, second_cityno));
+	itor = unit_map::inter_city_move_cost_.find(std::make_pair(first_cityno, second_cityno));
 	if (itor != unit_map::inter_city_move_cost_.end()) {
 		b_cost = itor->second;
 	} else {
@@ -993,11 +1030,12 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 		double stop_at = 10000.0;
 		//allowed teleports
 		std::set<map_location> allowed_teleports;
-		pathfind::plain_route route = a_star_search(center_city.get_location(), b.get_location(), stop_at, &calc, map.w(), map.h(), &allowed_teleports);
+		// NOTICE! although start and end are same, but rank filp, result maybe differenrt! so use cityno to make sure same.
+		pathfind::plain_route route = a_star_search(city_from_cityno(first_cityno)->get_location(), city_from_cityno(second_cityno)->get_location(), stop_at, &calc, map.w(), map.h(), &allowed_teleports);
 		if (route.steps.empty()) {
 			route.move_cost = 10000;
 		}
-		unit_map::inter_city_move_cost_.insert(std::pair<std::pair<int, int>, int>(std::pair<int, int>(first_cityno, second_cityno), route.move_cost));
+		unit_map::inter_city_move_cost_.insert(std::make_pair(std::make_pair(first_cityno, second_cityno), route.move_cost));
 		b_cost = route.move_cost;
 	}
 
@@ -1117,32 +1155,13 @@ void unit_map::calculate_mr_rects_from_city_rect(std::vector<team>& teams, gamem
 // 2. Form mr's target.
 void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool action)
 {
-	team& current_team = (*resources::teams)[side - 1];
+	std::vector<team>& teams = *resources::teams;
+	team& current_team = teams[side - 1];
 	gamemap& game_map = *resources::game_map;
 	hero_map& heros = *resources::heros;
 	play_controller& controller = *resources::controller;
 
 	const hero& leader = *current_team.leader();
-
-	if (!scout_unit_) {
-		const unit_type *ut = unit_types.find("footman1");
-		std::vector<const hero*> scout_heros;
-		scout_heros.push_back(&heros[49]);
-		
-		// select a valid cityno
-		int cityno = -1;
-		city_map& citys = get_city_map();
-		for (city_map::const_iterator i = citys.begin(); i != citys.end(); ++ i) {
-			cityno = i->cityno();
-			break;
-		}
-		if (cityno == -1) {
-			throw game::game_error("You must define at least one city.");
-		}
-		// recruit
-		type_heros_pair pair(ut, scout_heros);
-		scout_unit_ = new unit(*this, heros, pair, cityno, false);
-	}
 
 	calculate_mr_rects_from_city_rect(*resources::teams, game_map, mrs, side);
 
@@ -1271,7 +1290,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 					low_loyalty_heros.erase(low_loyalty_heros.begin());
 					freshes.erase(std::find(freshes.begin(), freshes.end(), h));
 				} while (v.size() < 3 && !low_loyalty_heros.empty());
-				do_recruit(*this, heros, current_team, ut, v, city, current_team.cost_exponent(), false);
+				do_recruit(*this, heros, teams, current_team, ut, v, city, current_team.cost_exponent(), false);
 			}
 		}
 		
@@ -1434,7 +1453,7 @@ void unit_map::ai_capture_aggressed(artifical& aggressed, int side, bool to_reco
 			node* node = coor_map_[index(x, y)].overlay;
 			if (node && !node->second->is_artifical()) {
 				unit* troop= node->second;
-				if (!troop->human() && troop->side() == side && troop->cityno() != aggressed.cityno()) {
+				if (!troop->human() && !troop->is_commoner() && troop->side() == side && troop->cityno() != aggressed.cityno()) {
 					aggressed.unit_belong_to(troop, false, to_recorder);
 					troop->set_goto(aggressed_loc);
 				}
@@ -1577,7 +1596,7 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 								if (!calculated) {
 									mess->enemy_arts ++;
 								}
-							} else {
+							} else if (!u->is_commoner()) {
 								adjacent.enemies ++;
 								if (!calculated) {
 									mess->enemies ++;
@@ -1588,10 +1607,16 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 								if (!calculated) {
 									mess->friend_arts ++;
 								}
-							} else {
+							} else if (!u->is_commoner()) {
 								adjacent.friends ++;
 								if (!u->hide_turns()) {
 									adjacent.unhides ++;
+								}
+								if (u->uncleared()) {
+									adjacent.unnormals ++;
+								}
+								if (!u->provoked_turns()) {
+									adjacent.unprovoks ++;
 								}
 								if (!calculated) {
 									mess->allys ++;
@@ -1605,6 +1630,12 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 						adjacent.friends ++;
 						if (!u->hide_turns()) {
 							adjacent.unhides ++;
+						}
+						if (u->uncleared()) {
+							adjacent.unnormals ++;
+						}
+						if (!u->provoked_turns()) {
+							adjacent.unprovoks ++;
 						}
 					}
 				} 
@@ -1635,6 +1666,12 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 								if (!u->hide_turns()) {
 									adjacent.unhides ++;
 								}
+								if (u->uncleared()) {
+									adjacent.unnormals ++;
+								}
+								if (!u->provoked_turns()) {
+									adjacent.unprovoks ++;
+								}
 								if (!calculated) {
 									mess->allys ++;
 								}
@@ -1647,6 +1684,12 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 						adjacent.friends ++;
 						if (!u->hide_turns()) {
 							adjacent.unhides ++;
+						}
+						if (u->uncleared()) {
+							adjacent.unnormals ++;
+						}
+						if (!u->provoked_turns()) {
+							adjacent.unprovoks ++;
 						}
 					}
 				}

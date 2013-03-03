@@ -68,6 +68,7 @@ public:
 	bool is_recalling() const { return recalling_; }
 	bool is_building() const { return building_; }
 	bool is_card_playing() const { return card_playing_; }
+	bool is_selecting() const { return selecting_; }
 
 	void current_position(int* x, int* y);
 
@@ -171,6 +172,7 @@ protected:
 	bool recalling_;
 	bool building_;
 	bool card_playing_;
+	bool selecting_;
 };
 
 } // end namespace events

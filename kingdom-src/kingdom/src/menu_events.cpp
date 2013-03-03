@@ -126,14 +126,15 @@ int disband_reside_troop::button_pressed(int menu_selection)
 			}
 		}
 		// add gold to the gold amount
-		current_team_.spend_gold(-1 * u.cost() * 2 / 3);
+		int income = calculate_disband_income(u, current_team_.cost_exponent());
+		current_team_.spend_gold(-1 * income);
 		// add hero to the hero list in city
 		city_.fresh_into(&u);
 
 		// erase this unit from reside troop
 		delete &u;
 		units_.erase(units_.begin() + index);
-		recorder.add_disband(index, city_.get_location());
+		recorder.add_disband(index, city_.get_location(), income);
 
 		menu_handler_.clear_undo_stack(city_.side());
 
@@ -266,16 +267,35 @@ void menu_handler::show_statistics(int side_num)
 	stats_dialog.show();
 }
 
-void menu_handler::reside_unit_list_in_city(const artifical* city)
+void menu_handler::reside_unit_list_in_city(const artifical* city, bool troop, bool commoner)
 {
+	if (!troop && !commoner) return;
+
 	std::vector<const unit*> partial_troops;
 
-	const std::vector<unit*>& reside_troops = city->reside_troops();
-	for (std::vector<unit*>::const_iterator i = reside_troops.begin(); i != reside_troops.end(); ++i) {
-		partial_troops.push_back(*i);
+	if (troop) {
+		const std::vector<unit*>& reside_troops = city->reside_troops();
+		for (std::vector<unit*>::const_iterator i = reside_troops.begin(); i != reside_troops.end(); ++i) {
+			partial_troops.push_back(*i);
+		}
+	}
+	if (commoner) {
+		const std::vector<unit*>& reside_commoners = city->reside_commoners();
+		for (std::vector<unit*>::const_iterator i = reside_commoners.begin(); i != reside_commoners.end(); ++i) {
+			partial_troops.push_back(*i);
+		}
 	}
 
-	gui2::ttroop_detail dlg(*gui_, teams_, units_, heros_, partial_troops, dgettext("wesnoth-lib", "Reside Troop"));
+	std::stringstream strstr;
+	if (troop && commoner) {
+		strstr << dgettext("wesnoth-lib", "Reside unit");
+	} else if (troop && !commoner) {
+		strstr << dgettext("wesnoth-lib", "Reside Troop");
+	} else {
+		strstr << dgettext("wesnoth-lib", "Reside commoner");
+	}
+	
+	gui2::ttroop_detail dlg(*gui_, teams_, units_, heros_, partial_troops, strstr.str());
 	try {
 		dlg.show(gui_->video());
 	} catch(twml_exception& e) {
@@ -285,16 +305,35 @@ void menu_handler::reside_unit_list_in_city(const artifical* city)
 	return;
 }
 
-void menu_handler::field_unit_list_in_city(const artifical* city, bool only_troop)
+void menu_handler::field_unit_list_in_city(const artifical* city, bool troop, bool commoner)
 {
+	if (!troop && !commoner) return;
+
 	std::vector<const unit*> partial_troops;
 
-	const std::vector<unit*>& field_troops = city->field_troops();
-	for (std::vector<unit*>::const_iterator i = field_troops.begin(); i != field_troops.end(); ++i) {
-		partial_troops.push_back(*i);
+	if (troop) {
+		const std::vector<unit*>& field_troops = city->field_troops();
+		for (std::vector<unit*>::const_iterator i = field_troops.begin(); i != field_troops.end(); ++i) {
+			partial_troops.push_back(*i);
+		}
+	}
+	if (commoner) {
+		const std::vector<unit*>& field_commoners = city->field_commoners();
+		for (std::vector<unit*>::const_iterator i = field_commoners.begin(); i != field_commoners.end(); ++i) {
+			partial_troops.push_back(*i);
+		}
 	}
 
-	gui2::ttroop_detail dlg(*gui_, teams_, units_, heros_, partial_troops, dgettext("wesnoth-lib", "Field Troop"));
+	std::stringstream strstr;
+	if (troop && commoner) {
+		strstr << dgettext("wesnoth-lib", "Field unit");
+	} else if (troop && !commoner) {
+		strstr << dgettext("wesnoth-lib", "Field Troop");
+	} else {
+		strstr << dgettext("wesnoth-lib", "Field commoner");
+	}
+
+	gui2::ttroop_detail dlg(*gui_, teams_, units_, heros_, partial_troops, strstr.str());
 	try {
 		dlg.show(gui_->video());
 	} catch(twml_exception& e) {
@@ -586,7 +625,7 @@ void menu_handler::expedite(int side_num, const map_location &last_hex)
 	statistics::recall_unit(un);
 	clear_shroud(side_num);
 
-	units_.set_expediting(city, troop_index);
+	units_.set_expediting(city, true, troop_index);
 	events::mouse_handler* mousehandler = events::mouse_handler::get_singleton();
 	mousehandler->set_recalling(city, troop_index);
 
@@ -737,7 +776,7 @@ void menu_handler::build(const std::string& type1, mouse_handler& mousehandler, 
 		v.push_back(&city->master());
 	}
 	type_heros_pair pair(ut, v);
-	artifical* new_unit = new artifical(units_, heros_, pair, builder.cityno(), false);
+	artifical* new_unit = new artifical(units_, heros_, teams_, pair, builder.cityno(), false);
 		
 	gui_->set_build_indicator(&builder, new_unit);
 	if (gui_->build_indicator().empty()) {
@@ -1267,19 +1306,25 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 
 	bool change = false;
 	bool blocked_unit = false;
+	team& current_team = teams_[side - 1];
 	do {
 		change = false;
 		blocked_unit = false;
-		for(unit_map::iterator ui = units_.begin(); ui != units_.end(); ++ui) {
-			if(ui->side() != side  || ui->movement_left() == 0)
+		const std::pair<unit**, size_t> p = current_team.field_troop();
+		unit** troops = p.first;
+		size_t troops_vsize = p.second;
+		for (size_t i = 0; i < troops_vsize; i ++) {
+			unit& ui = *troops[i];
+			if (ui.is_artifical() || ui.is_commoner() || ui.movement_left() == 0) {
 				continue;
+			}
 
-			const map_location& current_loc = ui->get_location();
-			const map_location& goto_loc = ui->get_goto();
+			const map_location& current_loc = ui.get_location();
+			const map_location& goto_loc = ui.get_goto();
 			map_location stop_loc;
 
-			if(goto_loc == current_loc){
-				ui->set_goto(map_location());
+			if (goto_loc == current_loc){
+				ui.set_goto(map_location());
 				continue;
 			}
 
@@ -1290,9 +1335,9 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 			if(fully_moved.count(current_loc))
 				continue;
 
-			pathfind::marked_route route = mousehandler.get_route(&*ui, goto_loc, teams_[side - 1]);
+			pathfind::marked_route route = mousehandler.get_route(&ui, goto_loc, current_team);
 
-			if(route.steps.size() <= 1) { // invalid path
+			if (route.steps.size() <= 1) { // invalid path
 				fully_moved.insert(current_loc);
 				continue;
 			}
@@ -1307,21 +1352,21 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 				}
 			}
 
-			if(next_stop == current_loc) {
+			if (next_stop == current_loc) {
 				fully_moved.insert(current_loc);
 				continue;
 			}
 
 			// we delay each blocked move because some other change
 			// may open a another not blocked path
-			if(units_.count(next_stop)) {
+			if (units_.count(next_stop)) {
 				blocked_unit = true;
 				if (wait_blocker_move)
 					continue;
 			}
 
 			gui_->set_route(&route);
-			bool show_move = ui->movement_left() >= route.move_cost;
+			bool show_move = ui.movement_left() >= route.move_cost;
 			if (!show_move) {
 				// whether turn1's "end" exist city. Not path!
 				const unit* u = find_unit(units_, next_stop);
@@ -1331,7 +1376,6 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 			}
 			if (!show_move) {
 				// whether turn1's "end" exist enemy or not. 
-				team& current_team = teams_[side - 1];
 				map_offset* adjacent_ptr;
 				size_t i, size;
 				map_location adjacent_loc;
@@ -1386,22 +1430,22 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 
 				bool stop_on_city = units_.city_from_loc(stop_loc)? true: false;
 				// once come into city(clicked_selfcity), selected_itor become invalid.
-				if (!stop_on_city && !unit_can_move(*ui)) {
-					gui_->refresh_access_troops(ui->side() - 1, game_display::REFRESH_DISABLE, NULL, &*ui);
+				if (!stop_on_city && !unit_can_move(ui)) {
+					gui_->refresh_access_troops(ui.side() - 1, game_display::REFRESH_DISABLE, NULL, &ui);
 				} else if (stop_on_city) {
-					// once ui enter into city, ui became invalid.
+					// once ui enter into city, field_troop of team became invalid.
 					artifical* city = units_.city_from_loc(stop_loc);
-					ui = units_.begin();
+					i = 0;
 				}
 			}
 		}
 
-		if(!change && wait_blocker_move) {
+		if (!change && wait_blocker_move) {
 			// no change when waiting, stop waiting and retry
 			wait_blocker_move = false;
 			change = true;
 		}
-	} while(change && blocked_unit);
+	} while (change && blocked_unit);
 
 	// erase the footsteps after movement
 	gui_->set_route(NULL);

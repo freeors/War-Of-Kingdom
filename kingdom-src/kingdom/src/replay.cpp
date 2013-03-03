@@ -641,28 +641,36 @@ void replay::add_build(const unit_type* type, const map_location& city_loc, cons
 	str << art_loc;
 	build["artifical"] = str.str();
 
-	build["cost"] = str_cast(cost);
+	build["cost"] = cost;
 
 	cmd->add_child("build", build);
 }
 
-void replay::add_cast_tactic(const unit& tactician, const hero& h)
+void replay::add_cast_tactic(const unit& tactician, const hero& h, const unit* special)
 {
 	config* const cmd = add_command();
 	(*cmd)["type"] = str_cast(command_pool::CAST_TACTIC);
 
 	config val;
 
-	std::stringstream str;
-	str << tactician.get_location();
-	val["tactician"] = str.str();
+	std::stringstream strstr;
+	strstr << tactician.get_location();
+	val["tactician"] = strstr.str();
+
+	strstr.str("");
+	if (special) {
+		strstr << special->get_location();
+	} else {
+		strstr << map_location();
+	}
+	val["special"] = strstr.str();
 
 	val["hero"] = h.number_;
 
 	cmd->add_child("cast_tactic", val);
 }
 
-void replay::add_expedite(int unit_index, const std::vector<map_location>& steps)
+void replay::add_expedite(bool troop, int index, const std::vector<map_location>& steps)
 {
 	if (steps.empty()) { // no move, nothing to record
 		return;
@@ -673,14 +681,15 @@ void replay::add_expedite(int unit_index, const std::vector<map_location>& steps
 
 	config expedite;
 
-	expedite["value"] = str_cast(unit_index);
+	expedite["troop"] = troop? 1: 0;
+	expedite["value"] = index;
 
 	write_locations(steps, expedite);
 
 	cmd->add_child("expedite", expedite);
 }
 
-void replay::add_disband(int value, const map_location& loc)
+void replay::add_disband(int value, const map_location& loc, int income)
 {
 	config* const cmd = add_command();
 	(*cmd)["type"] = command_pool::DISBAND;
@@ -688,6 +697,7 @@ void replay::add_disband(int value, const map_location& loc)
 	config val;
 
 	val["value"] = value;
+	val["income"] = income;
 
 	loc.write(val);
 
@@ -861,7 +871,7 @@ void replay::add_movement(const std::vector<map_location>& steps)
 void replay::add_attack(const unit& a, const unit& b,
 	int att_weapon, int def_weapon, const std::string& attacker_type_id,
 	const std::string& defender_type_id, int attacker_lvl,
-	int defender_lvl, const size_t turn, const time_of_day t)
+	int defender_lvl, const size_t turn, const time_of_day t, bool move)
 {
 	const map_location& a_loc = a.get_location();
 	const map_location& b_loc = b.get_location();
@@ -876,8 +886,8 @@ void replay::add_attack(const unit& a, const unit& b,
 	cfg["defender_layer"] = b.base()? unit_map::BASE: unit_map::OVERLAY;
 	cfg["attacker_lvl"] = str_cast(attacker_lvl);
 	cfg["defender_lvl"] = str_cast(defender_lvl);
-	cfg["turn"] = str_cast(turn);
-	// cfg["tod"] = t.id;
+	cfg["turn"] = turn;
+	cfg["move"] = move? 1: 0;
 }
 
 void replay::add_duel(const hero& left, const hero& right, int percentage)
@@ -1008,6 +1018,24 @@ void replay::init_ai()
 	cmd->add_child("init_ai");
 }
 
+void replay::do_commoner()
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::DO_COMMONER;
+	cmd->add_child("do_commoner");
+}
+
+void replay::add_inching_block(const unit& u, bool increase)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::INCHING_BLOCK;
+
+	config val;
+	val["increase"] = increase? 1: 0;
+	u.get_location().write(val);
+	cmd->add_child("inching_block", val);
+}
+
 void replay::add_event(int type, const map_location& loc)
 {
 	config* const cmd = add_command();
@@ -1092,12 +1120,12 @@ void replay::add_log_data(const std::string &category, const std::string &key, c
 */
 }
 
-void replay::add_expected_advancement(const map_location& loc)
+void replay::add_expected_advancement(unit* u)
 {
-	expected_advancements_.push_back(loc);
+	expected_advancements_.push_back(u);
 }
 
-const std::deque<map_location>& replay::expected_advancements() const
+const std::deque<unit*>& replay::expected_advancements() const
 {
 	return expected_advancements_;
 }
@@ -1105,17 +1133,6 @@ const std::deque<map_location>& replay::expected_advancements() const
 void replay::pop_expected_advancement()
 {
 	expected_advancements_.pop_front();
-}
-
-void replay::add_advancement(const map_location& loc)
-{
-	config* const cmd = add_command();
-
-	(*cmd)["type"] = str_cast(command_pool::ADVANCEMENT_UNIT);
-
-	config val;
-	loc.write(val);
-	cmd->add_child("advance_unit",val);
 }
 
 void replay::add_chat_message_location()
@@ -1347,6 +1364,30 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
+	} else if (type == command_pool::DO_COMMONER) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			const config& random = cfg.child("random", i);
+			*ptr = random["value"].to_int();
+			ptr = ptr + 1;
+
+			const config& results = random.child("results", 0);
+			if (!results) {
+				*ptr = INT_MAX;
+				ptr = ptr + 1;
+				continue;
+			}
+			// [results].choose
+			*ptr = lexical_cast_default<int>(results["choose"], 0);
+			ptr = ptr + 1;
+		}
+		const config& child = cfg.child("do_commoner");
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
 	} else if (type == command_pool::RECRUIT) {
 		cmd->type = (command_pool::TYPE)type;
 		int* ptr = (int*)(cmd + 1);
@@ -1388,10 +1429,24 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		size = *ptr = cfg.child_count("random");
 		ptr = ptr + 1; 
 		for (i = 0; i < size; i ++) {
-			*ptr = cfg.child("random", i)["value"].to_int();
-			ptr = ptr + 1; 
+			const config& random = cfg.child("random", i);
+			*ptr = random["value"].to_int();
+			ptr = ptr + 1;
+
+			const config& results = random.child("results", 0);
+			if (!results) {
+				*ptr = INT_MAX;
+				ptr = ptr + 1;
+				continue;
+			}
+			// [results].choose
+			*ptr = lexical_cast_default<int>(results["choose"], 0);
+			ptr = ptr + 1;
 		}
 		const config& child = cfg.child("expedite");
+		// troop
+		*ptr = lexical_cast_default<int>(child["troop"]);
+		ptr = ptr + 1;
 		// value
 		*ptr = lexical_cast_default<int>(child["value"]);
 		ptr = ptr + 1;
@@ -1416,8 +1471,19 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		size = *ptr = cfg.child_count("random");
 		ptr = ptr + 1; 
 		for (i = 0; i < size; i ++) {
-			*ptr = cfg.child("random", i)["value"].to_int();
-			ptr = ptr + 1; 
+			const config& random = cfg.child("random", i);
+			*ptr = random["value"].to_int();
+			ptr = ptr + 1;
+
+			const config& results = random.child("results", 0);
+			if (!results) {
+				*ptr = INT_MAX;
+				ptr = ptr + 1;
+				continue;
+			}
+			// [results].choose
+			*ptr = lexical_cast_default<int>(results["choose"], 0);
+			ptr = ptr + 1;
 		}
 		const config& child = cfg.child("move");
 		// x=/y=
@@ -1495,7 +1561,10 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		*ptr = lexical_cast_default<int>(child["seed"]);
 		ptr = ptr + 1;
 		// turn
-		*ptr = lexical_cast_default<int>(child["turn"]);
+		*ptr = child["turn"].to_int();
+		ptr = ptr + 1;
+		// move
+		*ptr = child["move"].to_int();
 		ptr = ptr + 1;
 		// weapon
 		*ptr = lexical_cast_default<int>(child["weapon"]);
@@ -1527,6 +1596,30 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		const config& child = cfg.child("disband");
 		// value
 		*ptr = lexical_cast_default<int>(child["value"]);
+		ptr = ptr + 1;
+		// income
+		*ptr = lexical_cast_default<int>(child["income"]);
+		ptr = ptr + 1;
+		// x/y
+		*ptr = lexical_cast_default<int>(child["x"]) - 1;
+		ptr = ptr + 1; 
+		*ptr = lexical_cast_default<int>(child["y"]) - 1;
+		ptr = ptr + 1;
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
+	} else if (type == command_pool::INCHING_BLOCK) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = cfg.child("random", i)["value"].to_int();
+			ptr = ptr + 1; 
+		}
+		const config& child = cfg.child("inching_block");
+		// increase
+		*ptr = lexical_cast_default<int>(child["increase"]);
 		ptr = ptr + 1;
 		// x/y
 		*ptr = lexical_cast_default<int>(child["x"]) - 1;
@@ -1674,6 +1767,12 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		const config& child = cfg.child("cast_tactic");
 		// tactician="19,2"
 		std::vector<std::string> coor = utils::split(child["tactician"]);
+		for (i = 0; i < 2; i ++) {
+			*ptr = lexical_cast_default<int>(coor[i]);
+			ptr = ptr + 1;
+		}
+		// special="19,2"
+		coor = utils::split(child["special"]);
 		for (i = 0; i < 2; i ++) {
 			*ptr = lexical_cast_default<int>(coor[i]);
 			ptr = ptr + 1;
@@ -1869,23 +1968,6 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 			*((char*)ptr + size) = '\0';
 			ptr = ptr + (size + 1 + 3) / 4; // 边界取4整
 		}
-		cmd->flags = 0;
-		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
-
-	} else if (type == command_pool::ADVANCEMENT_UNIT) {
-		cmd->type = (command_pool::TYPE)type;
-		int* ptr = (int*)(cmd + 1);
-		size = *ptr = cfg.child_count("random");
-		ptr = ptr + 1; 
-		for (i = 0; i < size; i ++) {
-			*ptr = cfg.child("random", i)["value"].to_int();
-			ptr = ptr + 1; 
-		}
-		const config& child = cfg.child("advance_unit");
-		*ptr = lexical_cast_default<int>(child["x"]) - 1;
-		ptr = ptr + 1; 
-		*ptr = lexical_cast_default<int>(child["y"]) - 1;
-		ptr = ptr + 1;
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
@@ -2132,6 +2214,24 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			ptr = ptr + 1;
 		}
 
+	} else if (cmd->type == command_pool::DO_COMMONER) {
+		config& child = cfg.add_child("do_commoner");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+			if (*ptr == INT_MAX) {
+				ptr = ptr + 1;
+				continue;
+			}
+			config& result_cfg = random_cfg.add_child("results");
+			result_cfg["choose"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+
 	} else if (cmd->type == command_pool::RECRUIT) {
 		config& child = cfg.add_child("recruit");
 		int* ptr = (int*)(cmd + 1);
@@ -2175,7 +2275,17 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			config& random_cfg = cfg.add_child("random");
 			random_cfg["value"] = lexical_cast<std::string>(*ptr);
 			ptr = ptr + 1;
+			if (*ptr == INT_MAX) {
+				ptr = ptr + 1;
+				continue;
+			}
+			config& result_cfg = random_cfg.add_child("results");
+			result_cfg["choose"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
 		}
+		// troop
+		child["troop"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
 		// value
 		child["value"] = lexical_cast<std::string>(*ptr);
 		ptr = ptr + 1;
@@ -2203,6 +2313,13 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		for (i = 0; i < size; i ++) {
 			config& random_cfg = cfg.add_child("random");
 			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+			if (*ptr == INT_MAX) {
+				ptr = ptr + 1;
+				continue;
+			}
+			config& result_cfg = random_cfg.add_child("results");
+			result_cfg["choose"] = lexical_cast<std::string>(*ptr);
 			ptr = ptr + 1;
 		}
 		// x=/y=
@@ -2271,6 +2388,8 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		ptr = ptr + 1;
 		child["turn"] = lexical_cast<std::string>(*ptr);
 		ptr = ptr + 1;
+		child["move"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
 		child["weapon"] = lexical_cast<std::string>(*ptr);
 		ptr = ptr + 1;
 		config& source = child.add_child("source");
@@ -2297,6 +2416,26 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			ptr = ptr + 1;
 		}
 		child["value"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
+		child["income"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
+		loc.x = *ptr;
+		ptr = ptr + 1;
+		loc.y = *ptr;
+		ptr = ptr + 1;
+		loc.write(child);
+
+	} else if (cmd->type == command_pool::INCHING_BLOCK) {
+		config& child = cfg.add_child("inching_block");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+		child["increase"] = *ptr;
 		ptr = ptr + 1;
 		loc.x = *ptr;
 		ptr = ptr + 1;
@@ -2432,11 +2571,19 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			ptr = ptr + 1;
 		}
 		// tactician
+		str.str("");
 		str << *ptr;
 		ptr = ptr + 1;
 		str << "," << *ptr;
 		ptr = ptr + 1;
 		child["tactician"] = str.str();
+		// special
+		str.str("");
+		str << *ptr;
+		ptr = ptr + 1;
+		str << "," << *ptr;
+		ptr = ptr + 1;
+		child["special"] = str.str();
 		// hero
 		child["hero"] = lexical_cast<std::string>(*ptr);
 		ptr = ptr + 1;
@@ -2621,22 +2768,6 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			ptr = ptr + (size + 1 + 3) / 4; // 边界取4整
 		}
 		
-	} else if (cmd->type == command_pool::ADVANCEMENT_UNIT) {
-		config& child = cfg.add_child("advance_unit");
-		int* ptr = (int*)(cmd + 1);
-		size = *ptr;
-		ptr = ptr + 1;
-		for (i = 0; i < size; i ++) {
-			config& random_cfg = cfg.add_child("random");
-			random_cfg["value"] = lexical_cast<std::string>(*ptr);
-			ptr = ptr + 1;
-		}
-		loc.x = *ptr;
-		ptr = ptr + 1;
-		loc.y = *ptr;
-		ptr = ptr + 1;
-		loc.write(child);
-
 	} else if (cmd->type == command_pool::CLEAR_LABELS) {
 		config& child = cfg.add_child("clear_labels");
 		int* ptr = (int*)(cmd + 1);
@@ -3005,10 +3136,11 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 	//a list of units that have promoted from the last attack
 	std::deque<map_location> advancing_units;
 
-	team& current_team = (*resources::teams)[side_num - 1];
+	std::vector<team>& teams = *resources::teams;
+	team& current_team = teams[side_num - 1];
 	unit_map& units = *resources::units;
 	hero_map& heros = *resources::heros;
-
+	play_controller& controller = *resources::controller;
 
 	for(;;) {
 		const config *cfg = get_replay_source().get_next_action();
@@ -3038,8 +3170,8 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			//command -- it may have been mixed up with other commands such as messages
 			if (const config &child = cfg->child("choose")) {
 				const int val = lexical_cast_default<int>(child["value"]);
-				map_location loc = get_replay_source().expected_advancements().front();
-				dialogs::animate_unit_advancement(loc, val);
+				unit* u = get_replay_source().expected_advancements().front();
+				dialogs::animate_unit_advancement(*u, val);
 				get_replay_source().pop_expected_advancement();
 
 				//if there are no more advancing units, then we check for victory,
@@ -3118,6 +3250,11 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			std::vector<mr_data> mrs;
 			units.calculate_mrs_data(mrs, side_num);
 		}
+		else if (cfg->child("do_commoner"))
+		{
+			std::vector<std::pair<unit*, int> > gotos;
+			controller.calculate_commoner_gotos(current_team, gotos);
+		}
 		else if (const config &child = cfg->child("recruit")) {
 			int cost = lexical_cast_default<int>(child["cost"]);
 
@@ -3130,43 +3267,48 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				replay::process_error(errbuf.str());
 			}
 
-			artifical* city = resources::units->city_from_loc(loc);
+			artifical* city = units.city_from_loc(loc);
 			if (!city) {
 				std::stringstream errbuf;
 				errbuf << "cannot recruit unit: " << loc << "\n";
 				replay::process_error(errbuf.str());
 			}
 
-			const std::vector<std::string> heros_army = utils::split(child["heros"]);
-			std::vector<const hero*> v;
-			for (std::vector<std::string>::const_iterator itor = heros_army.begin(); itor != heros_army.end(); ++ itor) {
-				int number = lexical_cast_default<int>(*itor);
-				hero& h = heros[number];
-				v.push_back(&h);
-				city->hero_go_out(h);
+			if (ut->master() == HEROS_INVALID_NUMBER) {
+				const std::vector<std::string> heros_army = utils::split(child["heros"]);
+				std::vector<const hero*> v;
+				for (std::vector<std::string>::const_iterator itor = heros_army.begin(); itor != heros_army.end(); ++ itor) {
+					int number = lexical_cast_default<int>(*itor);
+					hero& h = heros[number];
+					v.push_back(&h);
+					city->hero_go_out(h);
+				}
+
+				type_heros_pair pair(ut, v);
+				unit* new_unit = new unit(*resources::units, heros, teams, pair, city->cityno(), true, false);
+				// 必须正确以下这两个变量，否则此个回合将不能移动、攻击（虽然是回放，但移动要靠移动力、攻击要靠攻击数，这些都是要遵循的）
+				new_unit->set_movement(new_unit->total_movement());
+				new_unit->set_attacks(new_unit->attacks_total());
+				current_team.spend_gold(cost);
+
+				if (child["human"].to_int()) {
+					new_unit->set_human(true);
+				}
+				city->troop_come_into(new_unit, -1, false);
+				
+				resources::screen->invalidate(loc);
+
+				statistics::recruit_unit(*new_unit);
+
+				LOG_REPLAY << "-> " << (current_team.gold()) << "\n";
+				fix_shroud = !get_replay_source().is_skipping();
+
+				map_location loc2(MAGIC_RESIDE, city->reside_troops().size() - 1);
+				game_events::fire("post_recruit", loc, loc2);
+
+			} else {
+				resources::controller->generate_commoner(*city, ut, true);
 			}
-
-			type_heros_pair pair(ut, v);
-			unit* new_unit = new unit(*resources::units, heros, pair, city->cityno(), true, false);
-			// 必须正确以下这两个变量，否则此个回合将不能移动、攻击（虽然是回放，但移动要靠移动力、攻击要靠攻击数，这些都是要遵循的）
-			new_unit->set_movement(new_unit->total_movement());
-			new_unit->set_attacks(new_unit->attacks_total());
-			current_team.spend_gold(cost);
-
-			if (child["human"].to_int()) {
-				new_unit->set_human(true);
-			}
-			city->troop_come_into(new_unit, -1, false);
-			
-			resources::screen->invalidate(loc);
-
-			statistics::recruit_unit(*new_unit);
-
-			LOG_REPLAY << "-> " << (current_team.gold()) << "\n";
-			fix_shroud = !get_replay_source().is_skipping();
-
-			map_location loc2(MAGIC_RESIDE, city->reside_troops().size() - 1);
-			game_events::fire("post_recruit", loc, loc2);
 
 		} else if (const config &child = cfg->child("armory")) {
 			std::vector<std::string> vector_str = utils::split(child["city"]);
@@ -3257,7 +3399,6 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			}
 			hero& mayor = heros[child["mayor"].to_int()];
 			city->select_mayor(&mayor);
-			city->calculate_exploiture();
 
 		} else if (const config &child = cfg->child("belong_to")) {
 			int layer = child["layer"].to_int();
@@ -3297,7 +3438,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				v.push_back(&city->master());
 			}
 			type_heros_pair pair(ut, v);
-			artifical new_unit(*resources::units, heros, pair, city->cityno(), true);
+			artifical new_unit(*resources::units, heros, teams, pair, city->cityno(), true);
 
 			current_team.spend_gold(cost);
 
@@ -3314,18 +3455,26 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			hero_map& heros = *resources::heros;
 			std::vector<std::string> vector_str = utils::split(child["tactician"]);
 			map_location tactician_loc(lexical_cast_default<int>(vector_str[0]) - 1, lexical_cast_default<int>(vector_str[1]) - 1);
-			unit& tactician = *resources::units->find(tactician_loc);
+			unit& tactician = *units.find(tactician_loc);
+
+			vector_str = utils::split(child["special"]);
+			map_location special_loc(lexical_cast_default<int>(vector_str[0]) - 1, lexical_cast_default<int>(vector_str[1]) - 1);
+			unit* special = NULL;
+			if (special_loc.valid()) {
+				special = &*units.find(special_loc);
+			}
 
 			hero& h = heros[child["hero"].to_int()];
 
-			cast_tactic(units, tactician, h, true);
+			cast_tactic(teams, units, tactician, h, special, true);
 
 			if (tactician.advances()) {
-				get_replay_source().add_expected_advancement(tactician.get_location());
+				get_replay_source().add_expected_advancement(&tactician);
 			}
 
 		} else if (const config &child = cfg->child("disband")) {
 			const std::string& disband_index = child["value"];
+			int income = child["income"].to_int(0);
 			const int index = lexical_cast_default<int>(disband_index);
 
 			map_location loc(child, resources::state_of_game);
@@ -3342,7 +3491,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				}
 
 				// add gold to the gold amount
-				current_team.spend_gold(-1 * u.cost() * 2 / 3);
+				current_team.spend_gold(-1 * income);
 				// add hero to the hero list in city
 				u.master().status_ = hero_status_idle;
 				disband_city->fresh_heros().push_back(&u.master());
@@ -3370,6 +3519,14 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			resources::screen->invalidate(loc);
 			game_events::fire("post_disband", loc);
+
+		} else if (const config &child = cfg->child("inching_block")) {
+			bool increase = child["increase"].to_int()? true: false;
+
+			map_location loc(child, NULL);
+
+			unit& u = *units.find(loc);
+			u.inching_block_turns(increase);						
 
 		} else if (const config &child = cfg->child("event")) {
 			int type = child["type"].to_int();
@@ -3482,12 +3639,14 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			}
 
 			unit_map::iterator u = resources::units->find(dst);
+			// destination maybe already occupied! mover may cannot reach dst loc! for example encount to alert attack.
 			if (u.valid() && !unit_is_city(&*u)) {
 				std::stringstream errbuf;
 				errbuf << "destination already occupied: "
 				       << dst << '\n';
 				replay::process_error(errbuf.str());
 			}
+
 			u = resources::units->find(src);
 			if (!u.valid()) {
 				std::stringstream errbuf;
@@ -3497,25 +3656,20 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			}
 
 			artifical* expedite_city = NULL;
+			bool expedite_troop = false;
 			int expedite_index = -1;
 			if (cfg->child("expedite")) {
-				const std::string& recall_num = *child->get("value");
-				expedite_index = lexical_cast_default<int>(recall_num);
+				expedite_troop = child->get("troop")->to_int()? true: false;
+				expedite_index = child->get("value")->to_int();
 
 				expedite_city = resources::units->city_from_loc(src);
 
-				std::vector<unit*>& reside_troops = expedite_city->reside_troops();
-				// sort_units(reside_troops);
-
-				if (expedite_index >= 0 && expedite_index < int(expedite_city->reside_troops().size())) {
-					// 1、银袍法师移动到一个城市
-					// 2、银袍法师在该回合内又移出城市。这次移动时发现剩余移动力是0，致使以下的move_unit失败！！
-					// ——我怀疑这就是个bug，这里先做个记号，等AI代码时一并改的掉。
-					// 暂时强制恢复所有移动力，使得底下的move_unit一定成功
-					// reside_troops[expedite_index].set_movement(reside_troops[expedite_index].total_movement());
-
-					statistics::recall_unit(*reside_troops[expedite_index]);
-					resources::units->set_expediting(expedite_city, expedite_index);
+				size_t reside_size = expedite_city->reside_troops().size();
+				if (!expedite_troop) {
+					reside_size = expedite_city->reside_commoners().size();
+				}
+				if (expedite_index >= 0 && expedite_index < int(reside_size)) {
+					units.set_expediting(expedite_city, expedite_troop, expedite_index);
 					resources::screen->place_expedite_city(*expedite_city);
 				} else {
 					replay::process_error("illegal recall\n");
@@ -3528,12 +3682,16 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			bool show_move = true;
 			::move_unit(NULL, steps, NULL, NULL, show_move, NULL, true, true, true);
 
-			unit& builder = *resources::units->find(dst);
+			// notic: mover maybe died! (when alert attack)
 
 			if (cfg->child("expedite")) {
 				resources::screen->remove_expedite_city();
-				resources::units->set_expediting();
-				expedite_city->troop_go_out(expedite_index);
+				units.set_expediting();
+				if (expedite_troop) {
+					expedite_city->troop_go_out(expedite_index);
+				} else {
+					expedite_city->commoner_go_out(expedite_index);
+				}
 
 				resources::screen->invalidate(steps.front());
 			}
@@ -3541,7 +3699,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			//NOTE: The AI fire sighetd event whem moving in the FoV of team 1
 			// (supposed to be the human player in SP)
 			// That's ugly but let's try to make the replay works like that too
-			if (side_num != 1 && resources::teams->front().fog_or_shroud() && !resources::teams->front().fogged(dst)
+			if (side_num != 1 && teams.front().fog_or_shroud() && !teams.front().fogged(dst)
 					 && (current_team.is_ai() || current_team.is_network_ai()))
 			{
 				// the second parameter is impossible to know
@@ -3571,6 +3729,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			
 			int layer = child["layer"].to_int();
 			int defender_layer = child["defender_layer"].to_int();
+			bool move = child["move"].to_int()? true: false;
 
 			const std::string &def_weapon = child["defender_weapon"];
 			int def_weapon_num = -1;
@@ -3607,17 +3766,17 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			rand_rng::seed_t seed = lexical_cast<rand_rng::seed_t>(child["seed"]);
 			rand_rng::set_seed(seed);
 
-			std::pair<map_location, map_location> to_locs = attack_unit(*u, *tgt, weapon_num, def_weapon_num, !get_replay_source().is_skipping(), child.child("duel"));
+			std::pair<map_location, map_location> to_locs = attack_unit(*u, *tgt, weapon_num, def_weapon_num, !get_replay_source().is_skipping(), child.child("duel"), move);
 
 			u = resources::units->find(to_locs.first);
 			tgt = resources::units->find(to_locs.second);
 
 			if (u.valid() && u->advances()) {
-				get_replay_source().add_expected_advancement(to_locs.first);
+				get_replay_source().add_expected_advancement(&*u);
 			}
 			
 			if (tgt.valid() && tgt->advances()) {
-				get_replay_source().add_expected_advancement(to_locs.second);
+				get_replay_source().add_expected_advancement(&*tgt);
 			}
 
 			//check victory now if we don't have any advancements. If we do have advancements,
@@ -3644,12 +3803,6 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			}
 
 		}
-		else if (const config &child = cfg->child("advance_unit"))
-		{
-			const map_location loc(child, resources::state_of_game);
-			get_replay_source().add_expected_advancement(loc);
-
-		} 
 		else if (const config &child = cfg->child("diplomatism"))
 		{
 			int emissary = child["hero"].to_int();
@@ -3686,42 +3839,47 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			int side = child["side"].to_int();
 			int index = child["index"].to_int();
 			bool dialog = child["dialog"].to_int()? true: false;
-			const std::vector<std::string> touched = utils::split(child["touched"]);
-
+			
 			map_location loc(child, resources::state_of_game);
 			team& selected_team = (*resources::teams)[side - 1];
 			card& c = selected_team.holded_card(index);
 			if (loc.valid()) {
-				std::vector<std::pair<int, unit*> > maps;
-				for (std::vector<std::string>::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
-					int number = lexical_cast_default<int>(*it);
-					if (c.target_hero()) {
-						maps.push_back(std::make_pair<int, unit*>(number, find_unit(units, heros[number])));
-						if (!maps.back().second) {
-							replay::process_error("illegal hero number in erase_card\n");
+				if (!c.decree()) {
+					const std::vector<std::string> touched = utils::split(child["touched"]);
+					std::vector<std::pair<int, unit*> > maps;
+					for (std::vector<std::string>::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
+						int number = lexical_cast_default<int>(*it);
+						if (c.target_hero()) {
+							maps.push_back(std::make_pair<int, unit*>(number, find_unit(units, heros[number])));
+							if (!maps.back().second) {
+								replay::process_error("illegal hero number in erase_card\n");
+							}
+							// ignore loc.x/y
+							++ it;
+							++ it;
+						} else {
+							++ it;
+							int x = lexical_cast_default<int>(*it);
+							++ it;
+							int y = lexical_cast_default<int>(*it);
+							unit_map::const_iterator it_u = units.find(map_location(x, y));
+							unit* u = &*it_u;
+							if (number >= 0) {
+								artifical* art = unit_2_artifical(u);
+								std::vector<unit*>& resides = art->reside_troops();
+								u = resides[number];
+							}
+							maps.push_back(std::make_pair<int, unit*>(number, u));
 						}
-						// ignore loc.x/y
-						++ it;
-						++ it;
-					} else {
-						++ it;
-						int x = lexical_cast_default<int>(*it);
-						++ it;
-						int y = lexical_cast_default<int>(*it);
-						unit_map::const_iterator it_u = units.find(map_location(x, y));
-						unit* u = &*it_u;
-						if (number >= 0) {
-							artifical* art = unit_2_artifical(u);
-							std::vector<unit*>& resides = art->reside_troops();
-							u = resides[number];
-						}
-						maps.push_back(std::make_pair<int, unit*>(number, u));
 					}
+					selected_team.consume_card(c, loc, maps, index, false);
+				} else {
+					units.city_from_loc(loc)->apply_issur_decree(&c, game_config::default_decree_turns, index, false);
 				}
-				selected_team.consume_card(index, loc, true, maps);
 			} else {
 				selected_team.erase_card(index, true);
 			}
+			refresh_card_button(current_team, *resources::screen);
 			if (dialog) {
 				utils::string_map symbols;
 				std::stringstream strstr;

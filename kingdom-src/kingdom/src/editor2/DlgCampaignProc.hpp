@@ -118,7 +118,7 @@ public:
 	{
 	public:
 		tcity() 
-			: character_(NO_CHARACTER)
+			: character_(NO_ESPECIAL)
 			, mayor_(HEROS_INVALID_NUMBER)
 			, except_(false)
 		{}
@@ -162,7 +162,7 @@ public:
 	{
 	public:
 		tunit()
-			: character_(NO_CHARACTER)
+			: character_(NO_ESPECIAL)
 			, except_(false)
 		{}
 		void from_ui(HWND hdlgP, tside& side);
@@ -714,6 +714,7 @@ public:
 		, win_()
 		, lose_()
 		, treasures_()
+		, roads_()
 	{}
 
 public:
@@ -725,6 +726,7 @@ public:
 	std::string win_;
 	std::string lose_;
 	std::map<int, int> treasures_;
+	std::multimap<int, int> roads_;
 };
 
 class tscenario: public tscenario_
@@ -737,9 +739,11 @@ public:
 	void from_config(int index, const config& cfg);
 	void from_ui(HWND hdlgP);
 	void from_ui_treasure(HWND hdlgP, bool edit);
+	void from_ui_road(HWND hdlgP, bool edit);
 	void generate();
 	void update_to_ui(HWND hdlgP);
 	void update_to_ui_treasures(HWND hdlgP);
+	void update_to_ui_roads(HWND hdlgP);
 	
 	std::string file(bool absolute = false) const;
 	std::string map_file(bool absolute = false) const;
@@ -756,9 +760,12 @@ public:
 	void erase_event(int index, HWND hdlgP);
 
 	std::map<int, int> generate_cityno_map() const;
+	int hero_from_cityno_map(const std::map<int, int>& cityno_map, int no) const;
+	std::set<int> get_cities() const;
+	bool validate_roads();
 
 	enum {BIT_ID = 0, BIT_NEXTSCENARIO, BIT_MAP, 
-		BIT_TURNS, BIT_MDACTIVITY, BIT_TREASURES, BIT_WIN, 
+		BIT_TURNS, BIT_MDACTIVITY, BIT_TREASURES, BIT_ROADS, BIT_WIN, 
 		BIT_LOSE, BIT_SIDE, BIT_EVENT};
 	void set_dirty(int bit, bool set);
 	

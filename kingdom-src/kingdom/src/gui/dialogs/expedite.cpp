@@ -25,6 +25,7 @@
 #include "hero.hpp"
 #include "artifical.hpp"
 #include "map.hpp"
+#include "actions.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/image.hpp"
@@ -461,7 +462,7 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 		list_item_item.insert(std::make_pair("movement", list_item));
 
 		str.str("");
-		str << u.cost() * cost_exponent / 100 << "/" << u.cost() * 2 / 3;
+		str << u.cost() * cost_exponent / 100 << "/" << calculate_disband_income(u, cost_exponent);
 		list_item["label"] = str.str();
 		list_item_item.insert(std::make_pair("cost", list_item));
 

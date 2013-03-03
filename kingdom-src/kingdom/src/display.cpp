@@ -137,7 +137,8 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 	draw_area_pitch_(0),
 	draw_area_size_(0),
 	drawing_(false),
-	main_tip_handle_(0)
+	main_tip_handle_(0),
+	road_locs_()
 {
 	// show coordinate and terrain
 	// draw_coordinates_ = true;
@@ -942,7 +943,7 @@ std::vector<surface> display::get_terrain_images(const map_location &loc,
 	std::string color_mod;
 	bool use_lightmap = false;
 	bool use_local_light = local_tod_light_;
-	if(use_local_light){
+	if (use_local_light){
 		const time_of_day& tod = get_time_of_day(loc);
 
 		map_location adjs[6];
@@ -969,7 +970,7 @@ std::vector<surface> display::get_terrain_images(const map_location &loc,
 		}
 
 		std::ostringstream mod;
-		if(use_lightmap) {
+		if (use_lightmap) {
 			//generate the base of the lightmap
 			//and add light transitions on it
 			mod	<< "~L("
@@ -1000,12 +1001,17 @@ std::vector<surface> display::get_terrain_images(const map_location &loc,
 		color_mod = mod.str();
 	}
 
-	if(terrains != NULL) {
+	if (terrains != NULL) {
+		bool roaded = false;
+		if (road_locs_.find(loc) != road_locs_.end()) {
+			roaded = true;
+			color_mod = "~L(misc/road.png)";
+		}
 		// Cache the offmap name.
 		// Since it is themabel it can change,
 		// so don't make it static.
 		const std::string off_map_name = "terrain/" + theme_.border().tile_image;
-		for(std::vector<animated<image::locator> >::const_iterator it =
+		for (std::vector<animated<image::locator> >::const_iterator it =
 				terrains->begin(); it != terrains->end(); ++it) {
 
 			const image::locator &image = animate_map_ ?
@@ -1019,10 +1025,10 @@ std::vector<surface> display::get_terrain_images(const map_location &loc,
 
 			surface surf;
 
-			if(!use_local_light) {
+			if (!use_local_light && !roaded) {
 				const bool off_map = (image.get_filename() == off_map_name);
 				surf = image::get_image(image, off_map ? image::SCALED_TO_HEX : image_type);
-			} else if(color_mod.empty()) {
+			} else if (color_mod.empty()) {
 				surf = image::get_image(image, image::SCALED_TO_HEX);
 			} else {
 				image::locator colored_image(
@@ -1032,7 +1038,8 @@ std::vector<surface> display::get_terrain_images(const map_location &loc,
 						image.get_modifications() + color_mod
 					);
 
-				surf = image::get_image(colored_image, image::SCALED_TO_HEX);
+				const bool off_map = (image.get_filename() == off_map_name);
+				surf = image::get_image(colored_image, off_map? image::SCALED_TO_HEX : image_type);
 			}
 
 			if (!surf.null()) {

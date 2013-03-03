@@ -141,7 +141,7 @@ private:
 
 /** Performs an attack. */
 std::pair<map_location, map_location> attack_unit(unit& attacker, unit& defender,
-												  int attack_with, int defend_with, bool update_display = true, const config& duel = config::invalid);
+												  int attack_with, int defend_with, bool update_display = true, const config& duel = config::invalid, bool move = true);
 
 
 /**
@@ -171,7 +171,7 @@ void calculate_healing(int side, bool update_display);
 /**
  * Returns the advanced version of unit (with traits and items retained).
  */
-unit* get_advanced_unit(const unit* u, const std::string &advance_to);
+unit* get_advanced_unit(const unit* u, const std::string &advance_to, bool real = true);
 
 /**
  * Function which will advance the unit at @a loc to 'advance_to'.
@@ -179,7 +179,7 @@ unit* get_advanced_unit(const unit* u, const std::string &advance_to);
  * we couldn't safely pass in a reference to the item in the map
  * that we're going to delete, since deletion would invalidate the reference.
  */
-void advance_unit(map_location loc, const std::string &advance_to);
+void advance_unit(unit& u, const std::string &advance_to);
 
 /**
  * function which tests if the unit at loc is currently affected by leadership.
@@ -235,7 +235,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 				map_location *next_unit = NULL,
 				bool continue_move = false, bool should_clear_shroud=true, bool is_replay=false);
 
-std::pair<map_location, map_location> attack_enemy(unit* attacker, unit* defender, int att_weapon, int def_weapon);
+std::pair<map_location, map_location> attack_enemy(unit* attacker, unit* defender, int att_weapon, int def_weapon, bool move = true);
 
 /** Function which recalculates the fog. */
 void recalculate_fog(int side);
@@ -299,10 +299,16 @@ void post_duel(unit& left_u, hero& left, unit& right_u, hero& right, int percent
 
 int calculate_exploiture(const hero& h1, const hero& h2, int type);
 
-void do_recruit(unit_map& units, hero_map& heros, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost_exponent, bool human);
+int calculate_disband_income(const unit& u, int cost_exponent);
 
-void cast_tactic(unit_map& units, unit& tactician, hero& h, bool replay = false);
+void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost_exponent, bool human);
+
+void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, hero& h, unit* special, bool replay = false);
 
 void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std::string& type, const std::string& relative, int ratio);
+
+void do_trade(team& current_team, unit& commoner, artifical& owner, artifical& target, bool forward);
+
+bool no_fightback_attack(unit& attacker, unit& defender);
 
 #endif

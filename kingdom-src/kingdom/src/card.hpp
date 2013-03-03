@@ -40,6 +40,7 @@ public:
 	int range();
 	bool target_hero() const { return target_hero_; }
 	bool multitudinous() const { return multitudinous_; }
+	bool decree() const { return decree_; }
 
 // attribute
 public:
@@ -56,6 +57,7 @@ private:
 
 	bool target_hero_;
 	bool multitudinous_;
+	bool decree_;
 	std::string name_str_;
 	std::string desc_str_;
 	std::string image_str_;
@@ -160,6 +162,7 @@ public:
 	const_iterator end() const;
 
 	size_t size() const { return map_vsize_; }
+	const std::vector<card*>& decrees() const { return decrees_; }
 	
 	void clear_map();
 
@@ -178,6 +181,8 @@ private:
 
 	card** map_;
 	size_t map_vsize_;
+
+	std::vector<card*> decrees_;
 };
 
 // define allowed conversions.

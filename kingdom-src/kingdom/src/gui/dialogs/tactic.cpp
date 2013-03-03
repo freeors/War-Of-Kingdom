@@ -128,7 +128,7 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 
 		strstr.str("");
 		strstr << h.image();
-		if (!has_effect_unit) {
+		if (tactician_.provoked_turns() || !has_effect_unit) {
 			strstr << "~GS()";
 		}
 		item["label"] = strstr.str();
@@ -155,7 +155,7 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("turn", item));
 
-		valid_.push_back(has_effect_unit && side_point >= t.point());
+		valid_.push_back(!tactician_.provoked_turns() && has_effect_unit && side_point >= t.point());
 		tactic_list.add_row(data);
 	}
 

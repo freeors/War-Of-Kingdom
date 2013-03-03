@@ -35,6 +35,7 @@ typedef struct {
 namespace gui2 {
 
 class tlistbox;
+class tbutton;
 
 class tplayer_selection : public tdialog
 {
@@ -59,6 +60,7 @@ private:
 	virtual const std::string& window_id() const;
 
 	void player_city(twindow& window);
+	void maximal_defeated_activity(twindow& window);
 
 	void add_row_to_heros(tlistbox* list, int h, int leader, int city, int stratum);
 	void player_selected(twindow& window);
@@ -82,6 +84,8 @@ private:
 	hero* player_hero_;
 	std::map<int, int> city_map_;;
 	std::map<int, int> city_leader_map_;
+
+	tbutton* maximal_defeated_activity_;
 
 	bool shroud_;
 	bool fog_;

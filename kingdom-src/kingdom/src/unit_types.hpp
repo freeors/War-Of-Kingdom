@@ -17,6 +17,7 @@
 
 #include "unit_animation.hpp"
 #include "race.hpp"
+#include "hero.hpp"
 
 class gamemap;
 class unit;
@@ -39,10 +40,10 @@ public:
 	int exploiture_;
 };
 
-class tcharacter 
+class tespecial 
 {
 public:
-	tcharacter(int index, const std::string& id);
+	tespecial(int index, const std::string& id);
 
 	int index_;
 	std::string id_;
@@ -53,13 +54,28 @@ public:
 namespace apply_to_tag {
 	enum {NONE, ATTACK, HITPOINTS, MOVEMENT, MUNITION, MAX_EXPERIENCE,
 		LOYAL, STATUS, MOVEMENT_COSTS, DEFENSE, RESISTANCE, ENCOURAGE,
-		DEMOLISH, ZOC, IMAGE_MOD, ADVANCE, TRAIN, DAMAGE, HIDE, UNIT_END = HIDE,
+		DEMOLISH, ZOC, IMAGE_MOD, ADVANCE, TRAIN, 
+		DAMAGE, ONEOFF_MIN = DAMAGE, HIDE, ALERT, PROVOKE, CLEAR, ONEOFF_MAX = CLEAR,
+		DECREE, UNIT_END = DECREE,
 		// side <=
-		CIVILIZATION, POLITICS, HEAL, STRATEGIC
+		CIVILIZATION, POLITICS, HEAL, STRATEGIC,
+		// character <=
+		AGGRESSIVE, CHARACTER_MIN = AGGRESSIVE, UNITED, CHARISMATIC, CREATIVE, 
+		EXPANSIVE, FINANCIAL, INDUSTRIOUS, ORGANIZED, PROTECTIVE,
+		PHILOSOPHICAL, SPIRITUAL, CHARACTER_MAX = SPIRITUAL
 	};
 
 	extern std::map<const std::string, int> tags;
 	int find(const std::string& tag);
+}
+
+namespace sound_filter_tag {
+	enum {NONE, MALE, FEMALE};
+
+	extern std::map<const std::string, int> tags;
+	int find(const std::string& tag);
+	const std::string& rfind(int tag);
+	std::string filter(const std::string& src, const std::string& f);
 }
 
 namespace filter {
@@ -92,9 +108,13 @@ public:
 		, parts_()
 		, self_profit_(0)
 		, self_hide_profit_(0)
+		, self_alert_profit_(0)
+		, self_clear_profit_(0)
 		, friend_profit_(0)
 		, friend_hide_profit_(0)
+		, friend_clear_profit_(0)
 		, enemy_profit_(0)
+		, enemy_provoke_profit_(0)
 		, complex_(false)
 	{}
 
@@ -116,11 +136,16 @@ public:
 
 	int self_profit() const { return self_profit_; }
 	int self_hide_profit() const { return self_hide_profit_; }
+	int self_alert_profit() const { return self_alert_profit_; }
+	int self_clear_profit() const { return self_clear_profit_; }
 	int friend_profit() const { return friend_profit_; }
 	int friend_hide_profit() const { return friend_hide_profit_; }
+	int friend_clear_profit() const { return friend_clear_profit_; }
 	int enemy_profit() const { return enemy_profit_; }
+	int enemy_provoke_profit() const { return enemy_provoke_profit_; }
 	bool complex() const { return complex_; }
 	bool oneoff() const;
+	bool select_one() const;
 
 	void set_atom_part() { parts_.push_back(this); }
 
@@ -141,9 +166,73 @@ private:
 
 	int self_profit_;
 	int self_hide_profit_;
+	int self_alert_profit_;
+	int self_clear_profit_;
 	int friend_profit_;
 	int friend_hide_profit_;
+	int friend_clear_profit_;
 	int enemy_profit_;
+	int enemy_provoke_profit_;
+
+	bool complex_;
+};
+
+class tcharacter_
+{
+public:
+	tcharacter_():
+		leadership_(0)
+		, force_(0)
+		, intellect_(0)
+		, politics_(0)
+		, charm_(0)
+	{}
+
+public:
+	int leadership_;
+	int force_;
+	int intellect_;
+	int politics_;
+	int charm_;
+};
+
+class tcharacter: public tcharacter_
+{
+public:
+	static int min_complex_index;
+
+	tcharacter()
+		: index_(-1)
+		, id_()
+		, name_()
+		, description_()
+		, apply_to_(apply_to_tag::NONE)
+		, parts_()
+		, complex_(false)
+	{}
+
+	tcharacter(int index, int complex_index, const config& cfg);
+
+	int index() const { return index_; }
+	const std::string& id() const { return id_; }
+	const std::string& name() const { return name_; }
+	const std::string& description() const { return description_; }
+	const std::vector<const tcharacter*>& parts() const { return parts_; }
+	bool complex() const { return complex_; }
+
+	int apply_to() const { return apply_to_; }
+	const config& effect_cfg() const { return effect_cfg_; }
+	int level(const hero& h) const;
+
+	void set_atom_part() { parts_.push_back(this); }
+private:
+	int index_;
+	std::string id_;
+	std::string name_;
+	std::string description_;
+	std::vector<const tcharacter*> parts_;
+	int apply_to_;
+	config effect_cfg_;
 
 	bool complex_;
 };
@@ -185,6 +274,7 @@ public:
 		, occasion_(NONE)
 		, max_experience_(0)
 		, apply_to_(apply_to_tag::NONE)
+		, relative_(HEROS_NO_CHARACTER)
 		, parts_()
 		, complex_(false)
 		, type_filter_(0)
@@ -202,6 +292,7 @@ public:
 
 	int max_experience() const { return max_experience_; }
 
+	int relative() const { return relative_; }
 	const config& effect_cfg() const { return effect_cfg_; }
 	int apply_to() const { return apply_to_; }
 
@@ -220,6 +311,7 @@ private:
 	int occasion_;
 	int max_experience_;
 	std::vector<const technology*> parts_;
+	int relative_;
 	config effect_cfg_;
 	int apply_to_;
 	int type_filter_;
@@ -440,7 +532,7 @@ public:
 	 *  Build a set of unit type's id of this unit type's advancement tree */
 	std::set<std::string> advancement_tree() const;
 
-	std::vector<std::string> advances_to(int character) const;
+	std::vector<std::string> advances_to(int especial) const;
 	const std::vector<std::string>& advances_to() const { return advances_to_; }
 	const std::vector<std::string> advances_from() const;
 	const std::string& advancement() const { return advancement_; }
@@ -516,7 +608,7 @@ public:
 	bool walk_wall() const { return walk_wall_; }
 	const std::string& match() const { return match_; }
 	int arms() const { return arms_; }
-	int character() const { return character_; }
+	int especial() const { return special_; }
 	int master() const { return master_; }
 	int guard() const { return guard_; }
 	bool packer() const { return packer_; }
@@ -619,7 +711,7 @@ private:
 	bool land_wall_;
 	bool walk_wall_;
 	int arms_;
-	int character_;
+	int special_;
 	int master_;
 	int guard_;
 	bool packer_;
@@ -635,6 +727,7 @@ public:
 
 	const unit_type_map &types() const { return types_; }
 	const std::map<std::string, const unit_type*> &artifical_types() const { return artifical_types_; }
+	const unit_type* master_type(int number) const { return master_types_.find(number)->second; }
 	const movement_type_map& movement_types() const { return movement_types_; }
 	const race_map &races() const { return races_; }
 	const traits_map& traits() const { return traits_; }
@@ -643,18 +736,25 @@ public:
 	const treasure_map& treasures() const { return treasures_; }
 	const abilities_map& abilities() const { return abilities_; }
 	const specials_map& specials() const { return specials_; }
+
 	const std::map<int, ttactic>& tactics() const { return tactics_; }
 	const ttactic& tactic(int index) const { return tactics_.find(index)->second; }
 	const std::map<std::string, int>& tactics_id() const { return tactics_id_; }
 	const ttactic& tactic(const std::string& id) const { return tactics_.find(tactics_id_.find(id)->second)->second; }
+
+	const std::map<int, tcharacter>& characters() const { return characters_; }
+	const tcharacter& character(int index) const { return characters_.find(index)->second; }
+	const std::map<std::string, int>& characters_id() const { return characters_id_; }
+	const tcharacter& character(const std::string& id) const { return characters_.find(characters_id_.find(id)->second)->second; }
+
 	const std::map<std::string, technology>& technologies() const { return technologies_; }
 	const std::vector<std::string>& arms_ids() const { return arms_ids_; }
 	int arms_from_id(const std::string& id) const;
 	const std::vector<std::string>& range_ids() const { return range_ids_; }
-	const std::vector<tcharacter>& characters() const { return characters_; }
-	const tcharacter& character(int index) const { return characters_[index]; }
-	const std::string& character_id(int character) const;
-	int character_from_id(const std::string& id) const;
+	const std::vector<tespecial>& especials() const { return especials_; }
+	const tespecial& especial(int index) const { return especials_[index]; }
+	const std::string& especial_id(int character) const;
+	int especial_from_id(const std::string& id) const;
 	const std::map<std::string, config>& utype_anims() const { return utype_anims_; }
 	const std::vector<const unit_type*>& can_recruit() const { return can_recruit_; }
 	const navigation_types& navigation_threshold() const { return navigation_types_; }
@@ -693,6 +793,7 @@ private:
 
 	mutable unit_type_map types_;
 	std::map<std::string, const unit_type*> artifical_types_;
+	std::map<int, const unit_type*> master_types_;
 	movement_type_map movement_types_;
 	race_map races_;
 	modifications_map modifications_;
@@ -703,11 +804,13 @@ private:
 	specials_map specials_;
 	std::map<int, ttactic> tactics_;
 	std::map<std::string, int> tactics_id_;
+	std::map<int, tcharacter> characters_;
+	std::map<std::string, int> characters_id_;
 	std::map<std::string, technology> technologies_;
 	std::map<std::string, config> utype_anims_;
 	std::vector<std::string> arms_ids_;
 	std::vector<std::string> range_ids_;
-	std::vector<tcharacter> characters_;
+	std::vector<tespecial> especials_;
 	std::vector<const unit_type*> can_recruit_;
 	navigation_types navigation_types_;
 
@@ -719,6 +822,9 @@ private:
 	unit_type* market_type_;
 	unit_type* technology_type_;
 	unit_type* tower_type_;
+
+	unit_type* businessman_type_;
+	unit_type* scholar_type_;
 
 	/** True if [hide_help] contains a 'all=yes' at its root. */
 	bool hide_help_all_;

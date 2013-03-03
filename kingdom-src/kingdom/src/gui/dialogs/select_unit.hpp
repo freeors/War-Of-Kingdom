@@ -39,7 +39,7 @@ public:
 
 	int troop_index() const { return troop_index_; }
 
-	enum {ADVANCE, HUMAN};
+	enum {ADVANCE, CHANGE, HUMAN};
 
 protected:
 	/** Inherited from tdialog. */

@@ -33,6 +33,7 @@
 #include "unit.hpp"
 #include "unit_map.hpp"
 #include "wml_exception.hpp"
+#include "play_controller.hpp"
 
 #include <iostream>
 #include <vector>
@@ -201,6 +202,10 @@ static void find_routes(const gamemap& map, const unit_map& units,
 	if (allow_teleport) {
 	  teleports = pathfind::get_teleport_locations(u, viewing_team, see_all, ignore_units);
 	}
+	const std::vector<map_location>* road = NULL;
+	if (u.is_commoner()) {
+		road = &resources::controller->road(u);
+	}
 
 	const int total_movement = u.total_movement();
 
@@ -269,10 +274,11 @@ static void find_routes(const gamemap& map, const unit_map& units,
 			int move_cost;
 			if (expediting_city_cookie && units.get_cookie(locs[i]) == expediting_city_cookie) {
 				move_cost = 0;
+			} else if (road && std::find(road->begin(), road->end(), locs[i]) == road->end()) {
+				move_cost = unit_movement_type::UNREACHABLE;
 			} else {
 				if (curr_node && curr_node->second->wall()) {
 					move_cost = pathfind::location_cost(units, u, false);
-
 				} else {
 					move_cost = u.movement_cost(map[locs[i]], &locs[i]);
 				}
@@ -579,7 +585,7 @@ int pathfind::location_cost(const unit_map& units, const unit& u, bool ignore_wa
 	if (u.packed()) {
 		ut = u.packee_type();
 	}
-	if (ignore_wall) {
+	if (ignore_wall || u.is_commoner()) {
 		return 1;
 	} else if (!ut->land_wall()) {
 		return 2 * u.total_movement();
@@ -711,6 +717,22 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 	// we don't want any impact on move cost for less then 100-steps path
 	// (even ~200 since mean defense is around ~50%)
 	return move_cost + (defense_subcost + other_unit_subcost) / 10000.0;
+}
+
+pathfind::commoner_path_calculator::commoner_path_calculator(unit const &u, team const &t,
+		unit_map const &units, std::vector<team> const &teams, gamemap const &map, const std::vector<map_location>& road,
+		bool ignore_unit, bool ignore_defense, bool see_all)
+	: shortest_path_calculator(u, t, units, teams, map, ignore_unit, ignore_defense, see_all)
+	, road_(road)
+{
+}
+
+double pathfind::commoner_path_calculator::cost(const map_location& loc, const double so_far) const
+{
+	if (std::find(road_.begin(), road_.end(), loc) == road_.end()) {
+		return getNoPathValue();
+	}
+	return shortest_path_calculator::cost(loc, so_far);
 }
 
 pathfind::emergency_path_calculator::emergency_path_calculator(const unit& u, const gamemap& map)

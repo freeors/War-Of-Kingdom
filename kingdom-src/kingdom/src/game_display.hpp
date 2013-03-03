@@ -23,6 +23,7 @@ class tod_manager;
 class team;
 class unit;
 class unit_map;
+class play_controller;
 
 #include "animated.hpp"
 #include "chat_events.hpp"
@@ -39,7 +40,7 @@ typedef std::pair<int, std::set<map_location> > range_locs_pair;
 class game_display : public display
 {
 public:
-	game_display(unit_map& units, CVideo& video,
+	game_display(unit_map& units, play_controller* controller, CVideo& video,
 			const gamemap& map, const tod_manager& tod_manager,
 			const std::vector<team>& t, const config& theme_cfg,
 			const config& level);
@@ -243,6 +244,7 @@ public:
 	const std::vector<range_locs_pair>& attack_indicator_each() const { return attack_indicator_each_dst_; }
 	const range_locs_pair& attack_indicator_each(std::string& str) const;
 
+	void set_selectable_indicator(const std::set<map_location>& selectable) { selectable_indicator_ = selectable; }
 	std::set<map_location>& selectable_indicator() { return selectable_indicator_; }
 	const std::set<map_location>& selectable_indicator() const { return selectable_indicator_; }
 
@@ -252,8 +254,8 @@ public:
 	map_location& interior_indicator() { return interior_indicator_; }
 	const map_location& interior_indicator() const { return interior_indicator_; }
 
-	map_location& technology_tree_indicator() { return technology_tree_indicator_; }
-	const map_location& technology_tree_indicator() const { return technology_tree_indicator_; }
+	std::set<map_location>& alternatable_indicator() { return alternatable_indicator_; }
+	const std::set<map_location>& alternatable_indicator() const { return alternatable_indicator_; }
 
 	const artifical* expedite_city() const { return expedite_city_; }
 
@@ -345,6 +347,8 @@ public:
 		const map_location& loc, size_t size, double filled,
 		const SDL_Color& col, fixed_t alpha, bool vtl = true);
 
+	void construct_road();
+
 	/**
 	 * Sets the linger mode for the display.
 	 * There have been some discussions on what to do with fog and shroud
@@ -374,6 +378,8 @@ private:
 
 	unit_map& units_;
 
+	play_controller* controller_;
+
 	/// collection of units destined to be drawn but not put into the unit map
 	std::deque<unit*> temp_units_;
 
@@ -395,7 +401,7 @@ private:
 	std::set<map_location> selectable_indicator_;
 	map_location tactic_indicator_;
 	map_location interior_indicator_;
-	map_location technology_tree_indicator_;
+	std::set<map_location> alternatable_indicator_;
 
 	// Locations of the build direction indicator's parts
 	std::set<map_location> build_indicator_dst_;

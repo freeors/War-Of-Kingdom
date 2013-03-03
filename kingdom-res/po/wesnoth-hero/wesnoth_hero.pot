@@ -300,51 +300,6 @@ msgstr ""
 msgid "treasure-49"
 msgstr ""
 
-msgid "character-0"
-msgstr ""
-
-msgid "character-1"
-msgstr ""
-
-msgid "character-2"
-msgstr ""
-
-msgid "character-3"
-msgstr ""
-
-msgid "character-4"
-msgstr ""
-
-msgid "character-5"
-msgstr ""
-
-msgid "character-6"
-msgstr ""
-
-msgid "character-7"
-msgstr ""
-
-msgid "character-8"
-msgstr ""
-
-msgid "character-9"
-msgstr ""
-
-msgid "character-10"
-msgstr ""
-
-msgid "character-11"
-msgstr ""
-
-msgid "character-12"
-msgstr ""
-
-msgid "character-13"
-msgstr ""
-
-msgid "character-14"
-msgstr ""
-
 msgid "feature"
 msgstr ""
 
@@ -1170,6 +1125,30 @@ msgstr ""
 msgid "tactic_desc-decelerates"
 msgstr ""
 
+msgid "tactic-alert"
+msgstr ""
+
+msgid "tactic_desc-alert"
+msgstr ""
+
+msgid "tactic-provoke"
+msgstr ""
+
+msgid "tactic_desc-provoke"
+msgstr ""
+
+msgid "tactic-clear"
+msgstr ""
+
+msgid "tactic_desc-clear"
+msgstr ""
+
+msgid "tactic-clears"
+msgstr ""
+
+msgid "tactic_desc-clears"
+msgstr ""
+
 msgid "tactic-divine wei wu"
 msgstr ""
 
@@ -1300,6 +1279,24 @@ msgid "tactic-beautiful interlink"
 msgstr ""
 
 msgid "tactic_desc-beautiful interlink"
+msgstr ""
+
+msgid "tactic-alert attack"
+msgstr ""
+
+msgid "tactic_desc-alert attack"
+msgstr ""
+
+msgid "tactic-divine provoke"
+msgstr ""
+
+msgid "tactic_desc-divine provoke"
+msgstr ""
+
+msgid "tactic-divine clear"
+msgstr ""
+
+msgid "tactic_desc-divine clear"
 msgstr ""
 
 msgid "arms-0"
@@ -2466,6 +2463,45 @@ msgstr ""
 msgid "name-356"
 msgstr ""
 
+msgid "name-357"
+msgstr ""
+
+msgid "name-358"
+msgstr ""
+
+msgid "name-359"
+msgstr ""
+
+msgid "name-360"
+msgstr ""
+
+msgid "name-361"
+msgstr ""
+
+msgid "name-362"
+msgstr ""
+
+msgid "name-363"
+msgstr ""
+
+msgid "name-364"
+msgstr ""
+
+msgid "name-365"
+msgstr ""
+
+msgid "name-366"
+msgstr ""
+
+msgid "name-367"
+msgstr ""
+
+msgid "name-368"
+msgstr ""
+
+msgid "name-369"
+msgstr ""
+
 msgid "surname"
 msgstr ""
 
@@ -3540,6 +3576,45 @@ msgstr ""
 msgid "surname-356"
 msgstr ""
 
+msgid "surname-357"
+msgstr ""
+
+msgid "surname-358"
+msgstr ""
+
+msgid "surname-359"
+msgstr ""
+
+msgid "surname-360"
+msgstr ""
+
+msgid "surname-361"
+msgstr ""
+
+msgid "surname-362"
+msgstr ""
+
+msgid "surname-363"
+msgstr ""
+
+msgid "surname-364"
+msgstr ""
+
+msgid "surname-365"
+msgstr ""
+
+msgid "surname-366"
+msgstr ""
+
+msgid "surname-367"
+msgstr ""
+
+msgid "surname-368"
+msgstr ""
+
+msgid "surname-369"
+msgstr ""
+
 msgid "desc0"
 msgstr ""
 
@@ -4609,4 +4684,43 @@ msgid "desc355"
 msgstr ""
 
 msgid "desc356"
+msgstr ""
+
+msgid "desc357"
+msgstr ""
+
+msgid "desc358"
+msgstr ""
+
+msgid "desc359"
+msgstr ""
+
+msgid "desc360"
+msgstr ""
+
+msgid "desc361"
+msgstr ""
+
+msgid "desc362"
+msgstr ""
+
+msgid "desc363"
+msgstr ""
+
+msgid "desc364"
+msgstr ""
+
+msgid "desc365"
+msgstr ""
+
+msgid "desc366"
+msgstr ""
+
+msgid "desc367"
+msgstr ""
+
+msgid "desc368"
+msgstr ""
+
+msgid "desc369"
 msgstr ""

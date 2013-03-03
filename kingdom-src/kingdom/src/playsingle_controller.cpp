@@ -53,8 +53,8 @@ static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
 #define LOG_NG LOG_STREAM(info, log_engine)
 
-uint32_t total_draw, total_analyzing, total_recruit, total_combat, total_build, total_move, total_a_star_search, total_diplomatism;
-int total_draws, total_a_star_searches;
+uint32_t total_draw, total_analyzing, total_recruit, total_combat, total_build, total_move, total_diplomatism;
+int total_draws;
 
 playsingle_controller::playsingle_controller(const config& level,
 		game_state& state_of_game, hero_map& heros, hero_map& heros_start, 
@@ -870,6 +870,14 @@ void playsingle_controller::end_turn_record_unlock()
 
 void playsingle_controller::after_human_turn()
 {
+	team& current_team = teams_[player_number_ - 1];
+
+	// add cards if in card mode
+	if (card_mode_) {
+		execute_card_bh(turn(), player_number_);
+	}
+	do_commoner(current_team);
+
 	// clear access troops
 	gui_->refresh_access_troops(player_number_ - 1, game_display::REFRESH_CLEAR);
 	// hide context-menu
@@ -880,19 +888,13 @@ void playsingle_controller::after_human_turn()
 	end_turn_record_unlock();
 	menu_handler_.clear_undo_stack(player_number_);
 
-	if(teams_[player_number_-1].uses_fog()) {
+	if (current_team.uses_fog()) {
 		// needed because currently fog is only recalculated when a hex is /un/covered
 		recalculate_fog(player_number_);
 	}
 
 	gui_->set_route(NULL);
 	gui_->unhighlight_reach();
-
-	// add cards if in card mode
-	if (card_mode_) {
-		execute_card_bh(turn(), player_number_);
-	}
-
 }
 
 void playsingle_controller::play_ai_turn()
@@ -949,11 +951,11 @@ void playsingle_controller::play_ai_turn()
 	}
 
 	uint32_t stop = SDL_GetTicks();
-	posix_print("#%i, play_ai_turn %u ms, (draw: %u(%i), analyzing: %u), [%u](%u+[%u]+%u)(recruit: %u, combat: %u, build: %u, move: %u(%u)(%i), diplomatism: %u)\n", 
+	posix_print("#%i, play_ai_turn %u ms, (draw: %u(%i), analyzing: %u), [%u](%u+[%u]+%u)(recruit: %u, combat: %u, build: %u, move: %u, diplomatism: %u)\n", 
 		player_number_, stop - start, total_draw, total_draws, total_analyzing, 
 		before - start + total_recruit + total_combat + total_build + total_move + total_diplomatism + stop - after,
 		before - start, total_recruit + total_combat + total_build + total_move + total_diplomatism, stop - after,
-		total_recruit, total_combat, total_build, total_move, total_a_star_search, total_a_star_searches, total_diplomatism);
+		total_recruit, total_combat, total_build, total_move, total_diplomatism);
 }
 
 void playsingle_controller::handle_generic_event(const std::string& name)

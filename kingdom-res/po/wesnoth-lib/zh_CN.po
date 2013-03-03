@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-01-09 15:49+0800\n"
+"PO-Revision-Date: 2013-02-20 00:13+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -3467,6 +3467,12 @@ msgstr "太守"
 msgid "Front"
 msgstr "前线"
 
+msgid "Police"
+msgstr "治安"
+
+msgid "Task"
+msgstr "任务"
+
 msgid "side list"
 msgstr "全势力"
 
@@ -3706,7 +3712,13 @@ msgstr "特质"
 msgid "Level"
 msgstr "等级"
 
+msgid "side^Character"
+msgstr "特色"
+
 msgid "Character"
+msgstr "性格"
+
+msgid "Especial"
 msgstr "特色"
 
 msgid "Fresh Hero"
@@ -3832,6 +3844,12 @@ msgstr "升级部队"
 
 msgid "What should our victorious unit become?"
 msgstr "选择要升级到兵种？"
+
+msgid "Change unit"
+msgstr "转换部队"
+
+msgid "Which should you change?"
+msgstr "选择要转换哪只部队？"
 
 msgid "Human Control"
 msgstr "手动控制"
@@ -4094,6 +4112,9 @@ msgstr "势力特技"
 msgid "Create"
 msgstr "创建"
 
+msgid "Stronger"
+msgstr "较强"
+
 msgid "Don't accept empty, invalid '$key' value"
 msgstr "不允许是空，无效“$key”值"
 
@@ -4141,6 +4162,42 @@ msgstr "攻击城墙"
 
 msgid "Move to wall"
 msgstr "移动到城墙"
+
+msgid "None"
+msgstr "无"
+
+msgid "task^Back"
+msgstr "返回"
+
+msgid "task^Trade"
+msgstr "贸易"
+
+msgid "task^Transfer"
+msgstr "迁移"
+
+msgid "trade^Back"
+msgstr "回程"
+
+msgid "Decree"
+msgstr "政令"
+
+msgid "Gold income"
+msgstr "金收入"
+
+#
+# Technology tree
+#
+msgid "Technology income"
+msgstr "技法收入"
+
+msgid "Reside commoner"
+msgstr "城内平民"
+
+msgid "Field commoner"
+msgstr "城外平民"
+
+msgid "Commoner"
+msgstr "平民"
 
 #~ msgid "Show Unit Idle Animations"
 #~ msgstr "显示单位空闲动画"
@@ -4224,9 +4281,6 @@ msgstr "移动到城墙"
 
 #~ msgid "Wall"
 #~ msgstr "墙壁"
-
-#~ msgid "None"
-#~ msgstr "无"
 
 #~ msgid "Could not get image for terrain: $terrain."
 #~ msgstr "无法获取该地形的图像：$terrain。"

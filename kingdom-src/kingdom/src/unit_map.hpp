@@ -190,9 +190,11 @@ city_map::iterator_base<iter_types> city_map::iterator_base<iter_types>::operato
 
 struct tmess_data {
 	struct tadjacent_data {
-		tadjacent_data(size_t _friends = 0, size_t _unhides = 0, size_t _enemies = 0) 
+		tadjacent_data(size_t _friends = 0, size_t _unhides = 0, size_t _unnormals = 0, size_t _unprovoks = 0, size_t _enemies = 0) 
 			: friends(_friends)
 			, unhides(_unhides)
+			, unnormals(_unnormals)
+			, unprovoks(_unprovoks)
 			, enemies(_enemies)
 		{}
 
@@ -200,11 +202,15 @@ struct tmess_data {
 		{
 			friends = 0;
 			unhides = 0;
+			unnormals = 0;
+			unprovoks = 0;
 			enemies = 0;
 		}
 
 		size_t friends;
 		size_t unhides;
+		size_t unnormals;
+		size_t unprovoks;
 		size_t enemies;
 	};
 	tmess_data() 
@@ -470,7 +476,7 @@ public:
 	/**
 	 * Moves a unit from location @a src to location @a dst.
 	 */
-	void move(const map_location &src, const map_location &dst);
+	bool move(const map_location &src, const map_location &dst);
 
 	/** Like add, but loc must be occupied (implicitly erased). */
 	void replace(const map_location &l, const unit* u);
@@ -488,7 +494,8 @@ public:
 
 	bool valid(const map_location& loc, bool check_loc = true, bool overlay = true) const;
 
-	void set_expediting(artifical* city = NULL, int troop_index = 0);
+	void set_expediting(artifical* city = NULL, bool troop = true, int index = 0);
+	bool last_expedite_troop(void) const;
 	int last_expedite_index(void) const;
 	bool expediting(void) const;
 	node* expediting_city_node(void) const;
@@ -547,7 +554,8 @@ private:
 	node* expediting_node_;
 	artifical* expediting_city_;
 	int expediting_city_node_index_in_map_;
-	int expediting_troop_index_;
+	bool expediting_troop_;
+	int expediting_index_;
 };
 
 // define allowed conversions.

@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-01-16 23:05+0800\n"
+"PO-Revision-Date: 2013-03-01 17:46+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -70,6 +70,24 @@ msgstr "交流"
 
 msgid "communicate description"
 msgstr "大幅增加我方两武将间的情感度"
+
+msgid "Develop business"
+msgstr "开发商业"
+
+msgid "develop business description"
+msgstr "加倍涨城市和太守的政治、商才"
+
+msgid "Develop technology"
+msgstr "开发科技"
+
+msgid "develop technology description"
+msgstr "加倍涨城市和太守的智力、发明"
+
+msgid "Balance revenue"
+msgstr "平衡税收"
+
+msgid "balance revenue description"
+msgstr "提高贸易成功获得的收益"
 
 #
 # technology section
@@ -338,26 +356,128 @@ msgstr "战术"
 msgid "technology_desc-strategic"
 msgstr "加速学习统率、魅力"
 
-#~ msgid "technology-shipbuilding"
-#~ msgstr "造船"
+msgid "character-aggressive"
+msgstr "好斗"
 
-#~ msgid "technology_desc-shipbuilding"
-#~ msgstr "加速学习航海文明"
+msgid "character_desc-aggressive"
+msgstr "强悍好斗"
 
-#~ msgid "technology-physics"
-#~ msgstr "物理"
+msgid "character-united"
+msgstr "团结"
 
-#~ msgid "technology_desc-physics"
-#~ msgstr "加速学习兵器适性"
+msgid "character_desc-united"
+msgstr "团结协作"
 
-#~ msgid "technology-chemistry"
-#~ msgstr "化学"
+msgid "character-charismatic"
+msgstr "魅力"
 
-#~ msgid "technology_desc-chemistry"
-#~ msgstr "加速学习法术适性"
+msgid "character_desc-charismatic"
+msgstr "魅力超群"
 
-#~ msgid "technology-heal"
-#~ msgstr "护理"
+msgid "character-creative"
+msgstr "创新"
 
-#~ msgid "technology_desc-heal"
-#~ msgstr "增加回合恢复HP"
+msgid "character_desc-creative"
+msgstr "崇尚创新"
+
+msgid "character-expansive"
+msgstr "开拓"
+
+msgid "character_desc-expansive"
+msgstr "开拓进取"
+
+msgid "character-financial"
+msgstr "理财"
+
+msgid "character_desc-financial"
+msgstr "擅长理财"
+
+msgid "character-industrious"
+msgstr "勤奋"
+
+msgid "character_desc-industrious"
+msgstr "勤奋刻苦"
+
+msgid "character-organized"
+msgstr "组织"
+
+msgid "character_desc-organized"
+msgstr "组织严密"
+
+msgid "character-protective"
+msgstr "防御"
+
+msgid "character_desc-protective"
+msgstr "擅于防御"
+
+msgid "character-philosophical"
+msgstr "思辩"
+
+msgid "character_desc-philosophical"
+msgstr "富于思辩"
+
+msgid "character-spiritual"
+msgstr "虔诚"
+
+msgid "character_desc-spiritual"
+msgstr "虔信神灵"
+
+msgid "character-imperialistic"
+msgstr "追逐霸权"
+
+msgid "character_desc-imperialistic"
+msgstr "追逐霸权"
+
+msgid "character-ambitious"
+msgstr "乱世枭雄"
+
+msgid "character_desc-ambitious"
+msgstr "乱世枭雄"
+
+msgid "especial-0"
+msgstr "西凉"
+
+msgid "especial-1"
+msgstr "虎豹"
+
+msgid "especial-2"
+msgstr "咒术"
+
+msgid "especial-3"
+msgstr "南蛮"
+
+msgid "especial-4"
+msgstr "陷阵"
+
+msgid "especial-5"
+msgstr "先登"
+
+msgid "especial-6"
+msgstr "巾帼"
+
+msgid "especial-7"
+msgstr "骑射"
+
+msgid "especial-8"
+msgstr "白眊"
+
+msgid "especial-9"
+msgstr "青州"
+
+msgid "especial-10"
+msgstr "并州"
+
+msgid "especial-11"
+msgstr "丹阳"
+
+msgid "especial-12"
+msgstr "诸葛"
+
+msgid "especial-13"
+msgstr "火药"
+
+msgid "especial-14"
+msgstr "天师"
+
+msgid "especial-15"
+msgstr "藤甲"

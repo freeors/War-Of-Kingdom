@@ -69,6 +69,24 @@ msgstr ""
 msgid "communicate description"
 msgstr ""
 
+msgid "Develop business"
+msgstr ""
+
+msgid "develop business description"
+msgstr ""
+
+msgid "Develop technology"
+msgstr ""
+
+msgid "develop technology description"
+msgstr ""
+
+msgid "Balance revenue"
+msgstr ""
+
+msgid "balance revenue description"
+msgstr ""
+
 #
 # technology section
 #
@@ -337,4 +355,131 @@ msgid "technology_desc-strategic"
 msgstr ""
 
 
+#
+# character section
+#
+msgid "character-aggressive"
+msgstr ""
 
+msgid "character_desc-aggressive"
+msgstr ""
+
+msgid "character-united"
+msgstr ""
+
+msgid "character_desc-united"
+msgstr ""
+
+msgid "character-charismatic"
+msgstr ""
+
+msgid "character_desc-charismatic"
+msgstr ""
+
+msgid "character-creative"
+msgstr ""
+
+msgid "character_desc-creative"
+msgstr ""
+
+msgid "character-expansive"
+msgstr ""
+
+msgid "character_desc-expansive"
+msgstr ""
+
+msgid "character-financial"
+msgstr ""
+
+msgid "character_desc-financial"
+msgstr ""
+
+msgid "character-industrious"
+msgstr ""
+
+msgid "character_desc-industrious"
+msgstr ""
+
+msgid "character-organized"
+msgstr ""
+
+msgid "character_desc-organized"
+msgstr ""
+
+msgid "character-protective"
+msgstr ""
+
+msgid "character_desc-protective"
+msgstr ""
+
+msgid "character-philosophical"
+msgstr ""
+
+msgid "character_desc-philosophical"
+msgstr ""
+
+msgid "character-spiritual"
+msgstr ""
+
+msgid "character_desc-spiritual"
+msgstr ""
+
+msgid "character-imperialistic"
+msgstr ""
+
+msgid "character_desc-imperialistic"
+msgstr ""
+
+msgid "character-ambitious"
+msgstr ""
+
+msgid "character_desc-ambitious"
+msgstr ""
+
+msgid "especial-0"
+msgstr ""
+
+msgid "especial-1"
+msgstr ""
+
+msgid "especial-2"
+msgstr ""
+
+msgid "especial-3"
+msgstr ""
+
+msgid "especial-4"
+msgstr ""
+
+msgid "especial-5"
+msgstr ""
+
+msgid "especial-6"
+msgstr ""
+
+msgid "especial-7"
+msgstr ""
+
+msgid "especial-8"
+msgstr ""
+
+msgid "especial-9"
+msgstr ""
+
+msgid "especial-10"
+msgstr ""
+
+msgid "especial-11"
+msgstr ""
+
+msgid "especial-12"
+msgstr ""
+
+msgid "especial-13"
+msgstr ""
+
+msgid "especial-14"
+msgstr ""
+
+msgid "especial-15"
+msgstr ""

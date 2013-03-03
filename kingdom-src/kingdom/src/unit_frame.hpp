@@ -86,6 +86,7 @@ class frame_parameters{
 	tristate primary_frame;
 	int drawing_layer;
 	bool screen_mode;
+	std::string sound_filter;
 
 	static frame_parameters null_param;
 } ;

@@ -699,165 +699,6 @@ msgstr "虎豹骑"
 msgid "tiger horseman6 description"
 msgstr "虎豹骑"
 
-msgid "rattan armour footman3"
-msgstr "南蛮刀兵"
-
-msgid "rattan armour footman3 description"
-msgstr "南蛮刀兵"
-
-msgid "rattan armour footman4"
-msgstr "二级南蛮刀兵"
-
-msgid "rattan armour footman4 description"
-msgstr "二级南蛮刀兵"
-
-msgid "rattan armour footman5"
-msgstr "藤甲刀兵"
-
-msgid "rattan armour footman5 description"
-msgstr "藤甲刀兵"
-
-msgid "rattan armour footman6"
-msgstr "二级藤甲刀兵"
-
-msgid "rattan armour footman6 description"
-msgstr "二级藤甲刀兵"
-
-msgid "rattan armour pikeman3"
-msgstr "南蛮枪兵"
-
-msgid "rattan armour pikeman3 description"
-msgstr "南蛮枪兵"
-
-msgid "rattan armour pikeman4"
-msgstr "二级南蛮枪兵"
-
-msgid "rattan armour pikeman4 description"
-msgstr "二级南蛮枪兵"
-
-msgid "rattan armour pikeman5"
-msgstr "藤甲枪兵"
-
-msgid "rattan armour pikeman5 description"
-msgstr "藤甲枪兵"
-
-msgid "rattan armour pikeman6"
-msgstr "二级藤甲枪兵"
-
-msgid "rattan armour pikeman6 description"
-msgstr "二级藤甲枪兵"
-
-msgid "rattan armour bowman3"
-msgstr "南蛮弓兵"
-
-msgid "rattan armour bowman3 description"
-msgstr "南蛮弓兵"
-
-msgid "rattan armour bowman4"
-msgstr "二级南蛮弓兵"
-
-msgid "rattan armour bowman4 description"
-msgstr "二级南蛮弓兵"
-
-msgid "rattan armour bowman5"
-msgstr "藤甲弓兵"
-
-msgid "rattan armour bowman5 description"
-msgstr "藤甲弓兵"
-
-msgid "rattan armour bowman6"
-msgstr "二级藤甲弓兵"
-
-msgid "rattan armour bowman6 description"
-msgstr "二级藤甲弓兵"
-
-msgid "rattan armour horseman3"
-msgstr "南蛮骑兵"
-
-msgid "rattan armour horseman3 description"
-msgstr "南蛮骑兵"
-
-msgid "rattan armour horseman4"
-msgstr "二级南蛮骑兵"
-
-msgid "rattan armour horseman4 description"
-msgstr "南蛮骑兵"
-
-msgid "rattan armour horseman5"
-msgstr "藤甲骑兵"
-
-msgid "rattan armour horseman5 description"
-msgstr "藤甲骑兵"
-
-msgid "rattan armour horseman6"
-msgstr "二级藤甲骑兵"
-
-msgid "rattan armour horseman6 description"
-msgstr "二级藤甲骑兵"
-
-msgid "rattan armour whitemage3"
-msgstr "南蛮法师"
-
-msgid "rattan armour whitemage3 description"
-msgstr "南蛮法师"
-
-msgid "rattan armour whitemage4"
-msgstr "二级南蛮法师"
-
-msgid "rattan armour whitemage4 description"
-msgstr "二级南蛮法师"
-
-msgid "rattan armour whitemage5"
-msgstr "藤甲法师"
-
-msgid "rattan armour whitemage5 description"
-msgstr "藤甲法师"
-
-msgid "rattan armour whitemage6"
-msgstr "二级藤甲法师"
-
-msgid "rattan armour whitemage6 description"
-msgstr "二级藤甲法师"
-
-#
-# character unit type:war elephant
-#
-msgid "war elephant1"
-msgstr "战象"
-
-msgid "war elephant1 description"
-msgstr "战象"
-
-msgid "war elephant2"
-msgstr "二级战象"
-
-msgid "war elephant2 description"
-msgstr "二级战象"
-
-msgid "war elephant3"
-msgstr "三级战象"
-
-msgid "war elephant3 description"
-msgstr "三级战象"
-
-msgid "war elephant4"
-msgstr "天神象"
-
-msgid "war elephant4 description"
-msgstr "天神象"
-
-msgid "war elephant5"
-msgstr "二级天神象"
-
-msgid "war elephant5 description"
-msgstr "二级天神象"
-
-msgid "war elephant6"
-msgstr "三级天神象"
-
-msgid "war elephant6 description"
-msgstr "三级天神象"
-
 #
 # character unit type: heroine
 #
@@ -992,3 +833,84 @@ msgstr "二级天师祭酒"
 
 msgid "taoism6 description"
 msgstr "二级天师祭酒"
+
+msgid "elephant4"
+msgstr "战象"
+
+msgid "elephant4 description"
+msgstr "战象"
+
+msgid "elephant5"
+msgstr "天神象"
+
+msgid "elephant5 description"
+msgstr "天神象"
+
+msgid "elephant6"
+msgstr "二级天神象"
+
+msgid "elephant6 description"
+msgstr "二级天神象"
+
+#
+# character unit type: heroine
+#
+msgid "bine4"
+msgstr "藤蔓"
+
+msgid "bine4 description"
+msgstr "藤蔓"
+
+#
+# character unit type: heroine
+#
+msgid "bine5"
+msgstr "藤甲"
+
+msgid "bine5 description"
+msgstr "藤甲"
+
+msgid "bine6"
+msgstr "二级藤甲"
+
+msgid "bine6 description"
+msgstr "二级藤甲"
+
+#
+# pikeman
+#
+msgid "businessman1"
+msgstr "一级商人"
+
+msgid "businessman1 description"
+msgstr "一级商人"
+
+msgid "businessman2"
+msgstr "二级商人"
+
+msgid "businessman2 description"
+msgstr "二级商人"
+
+msgid "businessman3"
+msgstr "三级商人"
+
+msgid "businessman3 description"
+msgstr "三级商人"
+
+msgid "scholar1"
+msgstr "一级学者"
+
+msgid "scholar1 description"
+msgstr "一级学者"
+
+msgid "scholar2"
+msgstr "二级学者"
+
+msgid "scholar2 description"
+msgstr "二级学者"
+
+msgid "scholar3"
+msgstr "三级学者"
+
+msgid "scholar3 description"
+msgstr "三级学者"

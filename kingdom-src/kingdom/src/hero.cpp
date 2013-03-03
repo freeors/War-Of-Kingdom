@@ -27,6 +27,11 @@ int hero::number_keep = 274;
 int hero::number_tower = 275;
 int hero::number_technology = 276;
 
+int hero::number_commoner_min = 360;
+int hero::number_commoner_max = 369;
+int hero::number_businessman = 360;
+int hero::number_scholar = 361;
+
 static std::string null_str = "";
 std::vector<hero*> empty_vector_hero_ptr = std::vector<hero*>();
 std::vector<size_t> empty_vector_size_t = std::vector<size_t>();
@@ -109,6 +114,7 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	official_ = HEROS_DEFAULT_OFFICIAL;
 	feature_ = HEROS_NO_FEATURE;
 	side_feature_ = HEROS_NO_FEATURE;
+	character_ = HEROS_NO_CHARACTER;
 	tactic_ = HEROS_NO_TACTIC;
 	activity_ = HEROS_DEFAULT_ACTIVITY;
 	meritorious_ = 0;
@@ -608,7 +614,7 @@ std::string& hero::treasure_str(int tid)
 
 const std::string& hero::character_str(int cid)
 {
-	if (cid == NO_CHARACTER) {
+	if (cid == NO_ESPECIAL) {
 		return null_str;
 	}
 	std::map<int, std::string>::iterator it = character_str_.find(cid);
@@ -616,8 +622,8 @@ const std::string& hero::character_str(int cid)
 		return it->second;
 	}
 	char text[_MAX_PATH];
-	sprintf(text, "%s%i", HERO_PREFIX_STR_CHARACTER, cid);
-	character_str_[cid] = dgettext("wesnoth-hero", text);
+	sprintf(text, "%s%i", HERO_PREFIX_STR_ESPECIAL, cid);
+	character_str_[cid] = dgettext("wesnoth-card", text);
 	return character_str_[cid];
 }
 
@@ -697,6 +703,11 @@ std::string hero::adaptability_str2(uint16_t adaptability)
 	char text[_MAX_PATH];
 	sprintf(text, "%s%u", HERO_PREFIX_STR_ADAPTABILITY, fxptoi12(adaptability));
 	return dgettext("wesnoth-hero", text);
+}
+
+bool hero::is_commoner(int h)
+{
+	return h >= number_commoner_min && h <= number_commoner_max;
 }
 
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
@@ -925,21 +936,23 @@ ublock& attack_ublock(const unit& attack, bool opp_is_artifical)
 {
 	memset(&ub, 0, sizeof(ublock));
 	ub.xp = true;
-	ub.leadership = ub.force = ub.intellect = ub.charm = true;
-	ub.arms = true;
-	if (opp_is_artifical) {
-		ub.skill[hero_skill_demolish] = true;
+	if (!attack.is_commoner()) {
+		ub.leadership = ub.force = ub.intellect = ub.charm = true;
+		ub.arms = true;
+		if (opp_is_artifical) {
+			ub.skill[hero_skill_demolish] = true;
+		}
+		if (unit_feature_val2(attack, hero_feature_guide)) {
+			ub.abilityx2 = true;
+		}
+		if (unit_feature_val2(attack, hero_feature_spirit)) {
+			ub.armsx2 = true;
+		}
+		if (unit_feature_val2(attack, hero_feature_skill)) {
+			ub.skillx2 = true;
+		}
+		ub.meritorious = true;
 	}
-	if (unit_feature_val2(attack, hero_feature_guide)) {
-		ub.abilityx2 = true;
-	}
-	if (unit_feature_val2(attack, hero_feature_spirit)) {
-		ub.armsx2 = true;
-	}
-	if (unit_feature_val2(attack, hero_feature_skill)) {
-		ub.skillx2 = true;
-	}
-	ub.meritorious = true;
 	return ub;
 }
 
@@ -954,16 +967,20 @@ ublock& turn_ublock(const unit& u)
 }
 #endif
 
-ublock& exploiture_ublock(int markets, int technologies, bool abilityx2, bool skillx2)
+ublock& exploiture_ublock(int markets, int technologies, int business_speed, int technology_speed, bool abilityx2, bool skillx2)
 {
 	memset(&ub, 0, sizeof(ublock));
 	if (markets) {
 		ub.politics = true;
+		ub.politics_speed = business_speed - 100;
 		ub.skill[hero_skill_commercial] = true;
+		ub.skill_speed[hero_skill_commercial] = business_speed - 100;
 	}
 	if (technologies) {
 		ub.intellect = true;
+		ub.intellect_speed = technology_speed - 100;
 		ub.skill[hero_skill_invent] = true;
+		ub.skill_speed[hero_skill_invent] = technology_speed - 100;
 	}
 	ub.abilityx2 = abilityx2;
 	ub.skillx2 = skillx2;
@@ -984,19 +1001,19 @@ hblock& generic_hblock()
 	return hb;
 }
 
-hblock& exploiture_hblock(int markets, int technologies, bool abilityx2, bool skillx2, int xp)
+hblock& exploiture_hblock(int markets, int technologies, int business_speed, int technology_speed, bool abilityx2, bool skillx2, int xp)
 {
 	memset(&hb, 0, sizeof(hblock));
 	int ability_per_xp_x2 = ability_per_xp + (abilityx2? ability_per_xp: 0);
 	int skill_per_xp_x2 = skill_per_xp + (skillx2? skill_per_xp: 0);
 
 	if (markets) {
-		hb.politics = xp * ability_per_xp_x2;
-		hb.skill[hero_skill_commercial] = xp * skill_per_xp_x2;
+		hb.politics = xp * ability_per_xp_x2 * business_speed / 100;
+		hb.skill[hero_skill_commercial] = xp * skill_per_xp_x2 * business_speed / 100;
 	}
 	if (technologies) {
-		hb.intellect = xp * ability_per_xp_x2;
-		hb.skill[hero_skill_invent] = xp * skill_per_xp_x2;
+		hb.intellect = xp * ability_per_xp_x2 * technology_speed / 100;
+		hb.skill[hero_skill_invent] = xp * skill_per_xp_x2 * technology_speed / 100;
 	}
 	return hb;
 }
@@ -1359,7 +1376,6 @@ bool hero_map::map_from_file(const std::string& fname)
 	realloc_hero_map(HEROS_MAX_HEROS);
 	while (rdpos + HEROS_BYTES_PER_HERO <= bytertd) {
 		hero h(fdata + rdpos);
-
 		if (h.valid()) {
 			add(h);
 		}

@@ -45,7 +45,6 @@ namespace unit_display
 //static member initialization
 const int team::default_team_gold = 100;
 
-hero* team::player_leader_ = NULL;
 int team::empty_side_ = -1;
 
 static strategy null_strategy(0, strategy::NONE, 0);
@@ -63,11 +62,6 @@ strategy::strategy(int target, int type, int impletement_turns)
 bool strategy::operator==(const strategy& that)
 {
 	return target_ == that.target_;
-}
-
-void team::set_player_leader(hero* leader)
-{
-	player_leader_ = leader;
 }
 
 const std::vector<team>& teams_manager::get_teams()
@@ -304,6 +298,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	ally_shroud_(),
 	ally_fog_(),
 	holded_cities_(),
+	character_(),
 	candidate_cards_(),
 	holded_cards_(),
 	holded_treasures_(),
@@ -520,6 +515,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem
 	ally_shroud_(),
 	ally_fog_(),
 	holded_cities_(),
+	character_(),
 	candidate_cards_(),
 	holded_cards_(),
 	holded_treasures_(),
@@ -561,6 +557,7 @@ team::team(const team& that) :
 	gold_(that.gold_),
 	villages_(that.villages_),
 	holded_cities_(that.holded_cities_),
+	character_(that.character_),
 	candidate_cards_(that.candidate_cards_),
 	holded_cards_(that.holded_cards_),
 	holded_treasures_(that.holded_treasures_),
@@ -605,6 +602,7 @@ team& team::operator=(const team& that)
 	leader_ = that.leader_;
 	gold_ = that.gold_;
 	villages_ = that.villages_;
+	character_ = character_;
 	holded_cities_ = that.holded_cities_;
 	navigation_ = that.navigation_;
 	tactic_point_ = that.tactic_point_;
@@ -1403,25 +1401,10 @@ int team::base_income() const
 int team::total_income() const 
 {
 	// bool magnate_found;
-	int income = 0, income_per_city;
-	for (std::vector<artifical*>::const_iterator itor = holded_cities_.begin(); itor != holded_cities_.end(); ++ itor) {
-		income_per_city = 0;
-		std::vector<map_location>& economy_area = (*itor)->economy_area();
-		for (std::vector<map_location>::const_iterator itor1 = economy_area.begin(); itor1 != economy_area.end(); ++ itor1) {
-			unit_map::const_iterator itor2 = resources::units->find(*itor1);
-			if (itor2.valid() && itor2->is_artifical()) {
-				income_per_city += itor2->gold_income();
-			}
-		}
-		income_per_city = income_per_city * market_increase_ / 100;
-
-		std::vector<hero*> fresh_heros = (*itor)->fresh_heros();
-		for (std::vector<hero*>::iterator itor2 = fresh_heros.begin(); itor2 != fresh_heros.end(); ++ itor2) {
-			// income_per_city += (*itor)->fresh_heros().size() * game_config::hero_income;
-			income_per_city += (*itor)->politics_ / 32;
-		}
-		// ----> no maganate hero found
-		income += income_per_city;
+	int income = 0;
+	for (std::vector<artifical*>::const_iterator it = holded_cities_.begin(); it != holded_cities_.end(); ++ it) {
+		artifical& city = **it;
+		income += city.total_gold_income(market_increase_);
 	}
 	return income + base_income() + villages_.size() * info_.income_per_village;
 }
@@ -1457,30 +1440,22 @@ int team::side_upkeep() const
 int team::total_technology_income() const
 {
 	// bool magnate_found;
-	int income = 0, income_per_city;
+	int income = 0;
 	for (std::vector<artifical*>::const_iterator it = holded_cities_.begin(); it != holded_cities_.end(); ++ it) {
-		income_per_city = 0;
-
-		artifical& city = *const_cast<artifical*>(*it);
-		if (!city.technology_exploiture()) {
-			city.calculate_exploiture();
-		}
-		std::vector<map_location>& economy_area = city.economy_area();
-		for (std::vector<map_location>::const_iterator it1 = economy_area.begin(); it1 != economy_area.end(); ++ it1) {
-			unit_map::const_iterator it2 = resources::units->find(*it1);
-			if (it2.valid() && it2->is_artifical()) {
-				income_per_city += it2->technology_income();
-			}
-		}
-		income_per_city = income_per_city * technology_increase_ / 100;
-
-		income += income_per_city;
+		artifical& city = **it;
+		income += city.total_technology_income(technology_increase_);
 	}
 
 	if (income) {
-		int multiplier = 100;
-		int divisor = holded_cities_.size() * cost_exponent();
+		int multiplier = 1;
+		int divisor = holded_cities_.size();
 		const int max_safe_turn = 200;
+
+		int exponent = cost_exponent();
+		if (exponent > 350) {
+			multiplier *= 100;
+			divisor *= 100 + (exponent - 350);
+		}
 
 		int turn = resources::controller->turn();
 		if (turn > max_safe_turn) {
@@ -1528,7 +1503,8 @@ void team::new_turn()
 		std::map<const technology*, int>::iterator find = half_technologies_.find(ing_technology_);
 		if (find != half_technologies_.end()) {
 			int xp = find->second + income;
-			if (xp >= ing_technology_->max_experience()) {
+			int max_experience = technology_max_experience(*ing_technology_);
+			if (xp >= max_experience) {
 				utils::string_map symbols;
 				std::string message;
 
@@ -1549,27 +1525,6 @@ void team::new_turn()
 				}
 				if (adjust_unit) {
 					apply_holded_technologies_modify();
-/*
-					// city
-					const std::vector<artifical*>& cities = holded_cities();
-					for (std::vector<artifical*>::const_iterator it = cities.begin(); it != cities.end(); ++ it) {
-						artifical& city = **it;
-						city.adjust();
-						std::vector<unit*>& reside_troops = city.reside_troops();
-						for (std::vector<unit*>::iterator it2 = reside_troops.begin(); it2 != reside_troops.end(); ++ it2) {
-							unit& u = **it2;
-							u.adjust();
-						}
-					}
-					// field troops/artifical
-					const std::pair<unit**, size_t> p = field_troop();
-					unit** troops = p.first;
-					size_t troops_vsize = p.second;
-					for (size_t i = 0; i < troops_vsize; i ++) {
-						unit& u = *troops[i];
-						u.adjust();
-					}
-*/
 				}
 
 				half_technologies_.erase(find);
@@ -2344,6 +2299,26 @@ void team::erase_city(const artifical* city)
 	}
 }
 
+int team::character() const
+{
+	return heros_[leader_].character_;
+}
+
+int team::technology_max_experience(const technology& t) const
+{
+	int max_experience = t.max_experience();
+	int relative = t.relative();
+	if (relative != HEROS_NO_CHARACTER) {
+		for (std::map<int, int>::const_iterator it = character_.begin(); it != character_.end(); ++ it) {
+			if (relative == it->first) {
+				max_experience = (max_experience * 90) / 100;
+				break;
+			}
+		}
+	}
+	return max_experience;
+}
+
 // use scenario: that runtime executed but replay not.
 bool team::add_card(size_t number, bool replay, bool dialog)
 {
@@ -2383,10 +2358,38 @@ bool team::erase_card(int index, bool replay, bool dialog)
 	return true;
 }
 
-bool team::condition_card(int index, const map_location& loc)
+bool team::add_random_decree(artifical& city, int random)
+{
+	if ((int)holded_cards_.size() >= game_config::max_cards) {
+		return false;
+	}
+
+	// if (!replay) {
+	//	recorder.add_card(info_.side, number, dialog);
+	// }
+
+	const std::vector<card*>& decrees = cards_.decrees();
+	if (decrees.empty()) {
+		return false;
+	}
+
+	holded_cards_.push_back(decrees[random % decrees.size()]->number_);
+
+	if (is_human()) {
+		game_display& disp = *resources::screen;
+		refresh_card_button(*this, disp);
+		// card
+		utils::string_map symbols;
+		symbols["city"] = city.name();
+		symbols["decree"] = holded_card(holded_cards().size() - 1).name();
+		game_events::show_hero_message(&heros_[214], NULL, vgettext("$city investigats decree: $decree.", symbols), game_events::INCIDENT_CARD);
+	}
+	return true;
+}
+
+bool team::condition_card(card& c, const map_location& loc)
 {
 	unit_map::iterator itor = find_visible_unit(loc, *this);
-	card& c = cards_[holded_cards_[index]];
 	config& cond_cfg = c.get_cfg().child("condition");
 
 	std::string unit_str = cond_cfg["unit"].str();
@@ -2403,6 +2406,9 @@ bool team::condition_card(int index, const map_location& loc)
 		const std::vector<std::string>& types = utils::split(unit_str);
 		const std::vector<std::string>& hero_types = utils::split(hero_str);
 		if (!itor->is_artifical()) {
+			if (itor->is_commoner()) {
+				return false;
+			}
 			if (std::find(types.begin(), types.end(), "troop") == types.end()) {
 				return false;
 			}
@@ -2452,28 +2458,34 @@ bool team::condition_card(int index, const map_location& loc)
 	return true;
 }
 
-void team::consume_card(int index, const map_location& loc, bool replay, std::vector<std::pair<int, unit*> >& touched)
+void team::consume_card(card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& touched, int index, bool to_recorder)
 {
-	card& c = cards_[holded_cards_[index]];
 	config& range_cfg = c.get_cfg().child("range");
 	config& action_cfg = c.get_cfg().child("action");
 	if (!range_cfg || !action_cfg) {
-		holded_cards_.erase(holded_cards_.begin() + index);
-		if (!replay) {
+		if (index >= 0) {
+			holded_cards_.erase(holded_cards_.begin() + index);
+		}
+		if (to_recorder) {
 			recorder.erase_card(info_.side, index, loc, unit::null_int_unitp_pair, false);
 		}
 		return;
 	}
 
 	// must construct [erase_card] block in replay, [random] can write on.
-	if (!replay) {
+	if (to_recorder) {
 		recorder.erase_card(info_.side, index, loc, touched, false);
 	}
 
 	unit_map::iterator u_itor;
 	std::vector<unit*> effected;
 
-	unit_display::card_start(cards_, c);
+	if (index >= 0) {
+		rect_of_hexes& draw_area = resources::screen->draw_area();
+		if (point_in_rect_of_hexes(loc.x, loc.y, draw_area)) {
+			unit_display::card_start(cards_, c);
+		}
+	}
 	if (c.target_hero()) {
 		for (std::vector<std::pair<int, unit*> >::iterator itor = touched.begin(); itor != touched.end(); ++ itor) {
 			hero& h = heros_[itor->first];
@@ -2486,7 +2498,9 @@ void team::consume_card(int index, const map_location& loc, bool replay, std::ve
 		}
 	}
 
-	holded_cards_.erase(holded_cards_.begin() + index);
+	if (index >= 0) {
+		holded_cards_.erase(holded_cards_.begin() + index);
+	}
 }
 
 void touched_heros_internal(unit_map::iterator& u_itor, const std::vector<std::string>& types, std::vector<std::pair<int, unit*> >& pairs)
@@ -2568,9 +2582,8 @@ void touched_troops_internal(unit_map::iterator& u_itor, const std::vector<std::
 	}
 }
 
-void team::card_touched(int index, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str)
+void team::card_touched(card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str)
 {
-	card& c = cards_[holded_cards_[index]];
 	config& cond_cfg = c.get_cfg().child("condition");
 	config& range_cfg = c.get_cfg().child("range");
 	if (!range_cfg) {
@@ -2598,7 +2611,7 @@ void team::card_touched(int index, const map_location& loc, std::vector<std::pai
 			continue;
 		}
 		map_location loc1 = loc.get_direction(dir_i);
-		if (!condition_card(index, loc1)) {
+		if (!condition_card(c, loc1)) {
 			continue;
 		}
 		u_itor = units_.find(loc1);
@@ -2675,14 +2688,26 @@ void team::select_ing_technology(const technology* set)
 			ing_technology_ = it->first;
 			return;
 		}
-		std::vector<const technology*> candidate;
+		std::map<int, std::vector<const technology*> > candidate;
+		std::map<int, std::vector<const technology*> >::iterator find;
 		for (std::vector<const technology*>::const_iterator it = holded_technologies_.begin(); it != holded_technologies_.end(); ++ it) {
 			const technology& t = **it;
 			const std::vector<std::string>& advances_to = t.advances_to();
 			for (std::vector<std::string>::const_iterator it2 = advances_to.begin(); it2 != advances_to.end(); ++ it2) {
 				const technology& t2 = technologies.find(*it2)->second;
 				if (std::find(holded_technologies_.begin(), holded_technologies_.end(), &t2) == holded_technologies_.end()) {
-					candidate.push_back(&t2);
+					std::vector<const technology*> v;
+					int key = 0;
+					if (technology_max_experience(t2) != t2.max_experience()) {
+						key = 1;
+					}
+					find = candidate.find(key);
+					if (find == candidate.end()) {
+						v.push_back(&t2);
+						candidate.insert(std::make_pair(key, v));
+					} else {
+						find->second.push_back(&t2);
+					}
 				}
 			}
 		}
@@ -2690,13 +2715,28 @@ void team::select_ing_technology(const technology* set)
 		for (std::vector<advance_tree::node*>::const_iterator it = tree.begin(); it != tree.end(); ++ it) {
 			const technology* t = dynamic_cast<const technology*>((*it)->current);
 			if (std::find(holded_technologies_.begin(), holded_technologies_.end(), t) == holded_technologies_.end()) {
-				candidate.push_back(t);
+				std::vector<const technology*> v;
+				int key = 0;
+				if (technology_max_experience(*t) != t->max_experience()) {
+					key = 1;
+				}
+				find = candidate.find(key);
+				if (find == candidate.end()) {
+					v.push_back(t);
+					candidate.insert(std::make_pair(key, v));
+				} else {
+					find->second.push_back(t);
+				}
 			}
 		}
 		if (candidate.empty()) {
 			return;
 		}
-		ing_technology_ = candidate[random % candidate.size()];
+		find = candidate.find(1);
+		if (find == candidate.end()) {
+			find = candidate.find(0);
+		}
+		ing_technology_ = find->second[random % find->second.size()];
 	}
 }
 
@@ -2844,6 +2884,17 @@ void team::apply_holded_technologies_finish()
 			}
 		}
 	}
+
+	hero& h = heros_[leader_];
+	if (h.character_ != HEROS_NO_CHARACTER) {
+		const tcharacter& ch = unit_types.character(h.character_);
+		for (std::vector<const tcharacter*>::const_iterator it = ch.parts().begin(); it != ch.parts().end(); ++ it) {
+			const tcharacter& ch = **it;
+			character_.insert(std::make_pair(ch.index(), ch.level(h)));
+		}
+	} else {
+		character_.clear();
+	}
 }
 
 void team::apply_holded_technologies_modify()
@@ -2855,6 +2906,11 @@ void team::apply_holded_technologies_modify()
 		city.adjust();
 		std::vector<unit*>& reside_troops = city.reside_troops();
 		for (std::vector<unit*>::iterator it2 = reside_troops.begin(); it2 != reside_troops.end(); ++ it2) {
+			unit& u = **it2;
+			u.adjust();
+		}
+		std::vector<unit*>& reside_commoners = city.reside_commoners();
+		for (std::vector<unit*>::iterator it2 = reside_commoners.begin(); it2 != reside_commoners.end(); ++ it2) {
 			unit& u = **it2;
 			u.adjust();
 		}

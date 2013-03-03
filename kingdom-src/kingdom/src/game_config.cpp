@@ -55,7 +55,12 @@ namespace game_config
 	int max_keep_turns = 10;
 	int increase_feeling = 1024; // HERO_MAX_FEELING / 64. 64 turns will carry.
 	int minimal_activity = 175;
-	int maximal_defeated_activity = 100;
+	int maximal_defeated_activity = 0;
+	int max_police = 100;
+	int min_tradable_police = max_police / 2;
+	int min_researchable_police = max_police / 2;
+	int default_decree_turns = 20;
+	int max_commoners = 5;
 
 	int default_human_level = 1;
 	int default_ai_level = 3;
@@ -215,6 +220,11 @@ namespace game_config
 		ai_keep_loyalty_threshold = wander_loyalty_threshold + 8;
 		ai_keep_hp_threshold = v["ai_keep_hp_threshold"].to_int(50);
 		max_keep_turns = v["max_keep_turns"].to_int(10);
+		max_police = v["max_police"].to_int(100);
+		min_tradable_police = v["min_tradable_police"].to_int(max_police / 2);
+		min_researchable_police = v["min_researchable_police"].to_int(max_police / 2);
+		default_decree_turns = v["default_decree_turns"].to_int(20);
+		max_commoners = v["max_commoners"].to_int(5);
 
 		minimal_activity = v["minimal_activity"].to_int(175);
 		if (minimal_activity > 0xff) {

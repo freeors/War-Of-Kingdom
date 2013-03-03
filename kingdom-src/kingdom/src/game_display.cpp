@@ -64,18 +64,19 @@ static lg::log_domain log_engine("engine");
 
 std::map<map_location,fixed_t> game_display::debugHighlights_;
 
-game_display::game_display(unit_map& units, CVideo& video, const gamemap& map,
+game_display::game_display(unit_map& units, play_controller* controller, CVideo& video, const gamemap& map,
 		const tod_manager& tod, const std::vector<team>& t,
 		const config& theme_cfg, const config& level) :
 		display(video, &map, theme_cfg, level),
 		units_(units),
+		controller_(controller),
 		temp_units_(),
 		exclusive_unit_draw_requests_(),
 		attack_indicator_dst_(),
 		selectable_indicator_(),
 		tactic_indicator_(),
 		interior_indicator_(),
-		technology_tree_indicator_(),
+		alternatable_indicator_(),
 		energy_bar_rects_(),
 		route_(),
 		tod_manager_(tod),
@@ -205,7 +206,7 @@ game_display* game_display::create_dummy_display(CVideo& video)
 	static gamemap dummy_map(dummy_cfg, "");
 	static tod_manager dummy_tod(dummy_cfg, 0);
 	static std::vector<team> dummy_teams;
-	return new game_display(dummy_umap, video, dummy_map, dummy_tod,
+	return new game_display(dummy_umap, NULL, video, dummy_map, dummy_tod,
 			dummy_teams, dummy_cfg, dummy_cfg);
 }
 
@@ -223,6 +224,20 @@ game_display::~game_display()
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_INFO, "SDL", "game_dispaly::~game_display");
 #endif
+}
+
+void game_display::construct_road()
+{
+	const std::map<std::pair<int, int>, std::vector<map_location> >& roads = controller_->roads();
+	for (std::map<std::pair<int, int>, std::vector<map_location> >::const_iterator it = roads.begin(); it != roads.end(); ++ it) {
+		for (std::vector<map_location>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+			const map_location& loc = *it2;
+			artifical* city = units_.city_from_loc(loc);
+			if (!city || city->get_location() != loc) {
+				road_locs_.insert(loc);
+			}
+		}
+	}
 }
 
 void game_display::add_flag(int side_index, std::vector<std::string>& side_colors)
@@ -399,6 +414,15 @@ void game_display::invalidate_unit_after_move(const map_location& src, const map
 	invalidate_unit();
 }
 
+bool has_mayor(const unit& u)
+{
+	if (u.is_artifical() || u.is_commoner()) return false;
+	if (u.master().official_ == hero_official_mayor) return true;
+	if (u.second().valid() && u.second().official_ == hero_official_mayor) return true;
+	if (u.third().valid() && u.third().official_ == hero_official_mayor) return true;
+	return false;
+}
+
 // refresh field troop buttons
 // @side: base 0
 void game_display::refresh_access_troops(int side, refresh_reason reason, void* , unit* troop)
@@ -446,7 +470,7 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 					// 部队不可移动, 直接追加在末尾
 					btn = tmp[i] = new gui::button(screen_, "", gui::button::TYPE_PRESS, u->master().image(), gui::button::DEFAULT_SPACE, true, this, access_unit_menu, i, NULL, loc.w, loc.h);
 					btn->cookie_ = const_cast<unit*>(u);
-					btn->set_image(u->master().image(), u->level(), true);
+					btn->set_image(u->master().image(), u->level(), true, has_mayor(*u));
 				} else {
 					// 部队可移动, 追加可移动末尾
 					if (actable_troop_count_ < i - 2) {
@@ -454,7 +478,7 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 					}
 					btn = tmp[actable_troop_count_ + 2] = new gui::button(screen_, "", gui::button::TYPE_PRESS, (*itor2)->master().image(), gui::button::DEFAULT_SPACE, true, this, access_unit_menu, actable_troop_count_ + 2, NULL, loc.w, loc.h);
 					btn->cookie_ = const_cast<unit*>(u);
-					btn->set_image(u->master().image(), u->level());
+					btn->set_image(u->master().image(), u->level(), false, has_mayor(*u));
 					actable_troop_count_ ++;
 				}
 				i ++;
@@ -492,9 +516,9 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 		btn->cookie_ = troop;
 		if (!unit_can_move(*troop)) {
 			// 1. 城市被攻占, 城外部队可能并入了本阵营, 这时那些部队应该被灰色
-			btn->set_image(troop->master().image(), troop->level(), true);
+			btn->set_image(troop->master().image(), troop->level(), true, has_mayor(*troop));
 		} else {
-			btn->set_image(troop->master().image(), troop->level());
+			btn->set_image(troop->master().image(), troop->level(), false, has_mayor(*troop));
 			actable_troop_count_ ++;
 		}
 		redraw_access_unit();
@@ -573,7 +597,7 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 			actable_troop_count_ --;
 		}
 		// 修改图像参数, 向未尾增加该图像
-		btn->set_image(troop->master().image(), troop->level(), true);
+		btn->set_image(troop->master().image(), troop->level(), true, has_mayor(*troop));
 		btn->btnidx_ = unit_button_count;
 		buttons_ctx_[access_troops_index_].buttons_[unit_button_count] = btn;
 
@@ -616,7 +640,7 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 		actable_troop_count_ ++;
 
 		// 修改图像参数, 向头部增加该图像
-		btn->set_image(troop->master().image(), troop->level());
+		btn->set_image(troop->master().image(), troop->level(), false, has_mayor(*troop));
 		btn->btnidx_ = 2;
 		buttons_ctx_[access_troops_index_].buttons_[2] = btn;
 
@@ -983,21 +1007,34 @@ void game_display::draw_hex(const map_location& loc)
 	if (!disctrict_.empty() && disctrict_.find(loc) != disctrict_.end()) {
 		drawing_buffer_add(LAYER_MOVE_INFO/*LAYER_REACHMAP*/, loc, xpos, ypos, image::get_image("terrain/disctrict.png", image::SCALED_TO_HEX));
 	}
-
+/*
+	if (road_locs_.find(loc) != road_locs_.end()) {
+		drawing_buffer_add(LAYER_MOVE_INFO, loc, xpos, ypos, image::get_image("misc/road.png", image::SCALED_TO_HEX));
+	}
+*/
 	// Footsteps indicating a movement path
 	const std::vector<surface>& footstepImages = footsteps_images(loc);
 	if (footstepImages.size() != 0) {
 		drawing_buffer_add(LAYER_FOOTSTEPS, loc, xpos, ypos, footstepImages);
 	}
 
-	// Draw the attack direction indicator
-	if (on_map && attack_indicator_dst_.find(loc) != attack_indicator_dst_.end()) {
-		if (selectable_indicator_.find(loc) == selectable_indicator_.end()) {
-			drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/attack-indicator-dst.png", image::SCALED_TO_HEX));
-		} else if (!preferences::default_move()) {
-			drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/technology-indicator.png", image::SCALED_TO_HEX));
+	// Draw the selectable indicator
+	// selectable indicator overlapped with attack indicator, privilidge display selectable.
+	if (on_map && selectable_indicator_.empty()) {
+		if (attack_indicator_dst_.find(loc) != attack_indicator_dst_.end()) {
+			// Draw the attack direction indicator
+			if (alternatable_indicator_.find(loc) == alternatable_indicator_.end()) {
+				drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/attack-indicator-dst.png", image::SCALED_TO_HEX));
+			} else if (!preferences::default_move()) {
+				drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/selectable-indicator.png", image::SCALED_TO_HEX));
+			}
+		}
+	} else if (on_map) {
+		if (selectable_indicator_.find(loc) != selectable_indicator_.end()) {
+			drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/selectable-indicator.png", image::SCALED_TO_HEX));
 		}
 	}
+
 	// Draw the tactic indicator
 	if (on_map && !events::mouse_handler::get_singleton()->is_moving() && loc == tactic_indicator_) {
 		drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/tactic-indicator.png", image::SCALED_TO_HEX));
@@ -2021,8 +2058,8 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 	invalidate(attack_indicator_dst_);
 	attack_indicator_dst_.clear();
 	attack_indicator_each_dst_.clear();
-	// selectable_indicator_ must be included in attack_indicator_dst_.
-	selectable_indicator_.clear();
+	// alternatable_indicator_ must be included in attack_indicator_dst_.
+	alternatable_indicator_.clear();
 
 	invalidate(tactic_indicator_);
 	tactic_indicator_ = map_location();
@@ -2098,7 +2135,7 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 
 						const unit& enemy = *other;
 						if (enemy.wall() && teams_[currentTeam_].land_enemy_wall_ && attack->land_wall()) {
-							selectable_indicator_.insert(relative_loc);
+							alternatable_indicator_.insert(relative_loc);
 						}
 					}
 				}

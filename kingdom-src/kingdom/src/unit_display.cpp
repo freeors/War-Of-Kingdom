@@ -130,8 +130,8 @@ void load_global_animations(const config& cfg)
 	foreach (const config &anim, cfg.child_range("global_anim")) {
 		if (anim["apply_to"] == "reinforce") { 
 			animations_.insert(std::make_pair<int, unit_animation>(ANIM_REINFORCE, unit_animation(anim)));
-		} else if (anim["apply_to"] == "encourage") { 
-			animations_.insert(std::make_pair<int, unit_animation>(ANIM_ENCOURAGE, unit_animation(anim)));
+		} else if (anim["apply_to"] == "individuality") { 
+			animations_.insert(std::make_pair<int, unit_animation>(ANIM_INDIVIDUALITY, unit_animation(anim)));
 		} else if (anim["apply_to"] == "tactic") { 
 			animations_.insert(std::make_pair<int, unit_animation>(ANIM_TACTIC, unit_animation(anim)));
 		} else if (anim["apply_to"] == "blade") { 
@@ -161,7 +161,7 @@ void move_unit(const std::vector<map_location>& path, unit& u,
 		const std::vector<team>& teams, bool animate,
 		map_location::DIRECTION dir)
 {
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && (u.human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((u.human() && animate) || preferences::scroll_to_action())))? true: false;
 	game_display* disp = game_display::get_singleton();
 	assert(!path.empty());
 	assert(disp);
@@ -175,7 +175,8 @@ void move_unit(const std::vector<map_location>& path, unit& u,
 		dir = path[path.size()-2].get_relative_dir(path.back());
 	}
 	// Don't animate, only set facing and redraw path ends
-	if (!animate || (!force_scroll && !point_in_rect_of_hexes(path[0].x, path[0].y, draw_area) && !point_in_rect_of_hexes(path[path.size() - 1].x, path[path.size() - 1].y, draw_area))) {
+	// if (!animate || (!force_scroll && !point_in_rect_of_hexes(path[0].x, path[0].y, draw_area) && !point_in_rect_of_hexes(path[path.size() - 1].x, path[path.size() - 1].y, draw_area))) {
+	if ((!force_scroll && !point_in_rect_of_hexes(path[0].x, path[0].y, draw_area) && !point_in_rect_of_hexes(path[path.size() - 1].x, path[path.size() - 1].y, draw_area))) {
 		u.set_facing(dir);
 		disp->invalidate(path.front());
 		disp->invalidate(path.back());
@@ -414,6 +415,26 @@ public:
 	}
 private:
 	const std::vector<unit*>& uvec_;
+};
+
+class bit_temporary_state_lock
+{
+public:
+	bit_temporary_state_lock(unit& u, int bit)
+		: u_(u)
+		, bit_(bit)
+	{
+		u_.set_temporary_state(bit_, true);
+	}
+
+	~bit_temporary_state_lock() 
+	{
+		u_.set_temporary_state(bit_, false);
+	}
+
+private:
+	unit& u_;
+	int bit_;
 };
 
 // 1. b_vec, damagc_vec and hit_text_vec must be same size.
@@ -930,6 +951,7 @@ void unit_healing(unit &healed, const map_location &healed_loc,
 		disp->scroll_to_tile(healed_loc, game_display::ONSCREEN, true, true);
 		disp->display_unit_hex(healed_loc);
 		unit_animator animator;
+		// const bit_temporary_state_lock lock(healed, unit::BIT_STRONGER);
 
 		foreach (unit *h, healers) {
 			h->set_facing(h->get_location().get_relative_dir(healed_loc));
@@ -1162,7 +1184,7 @@ void unit_touching(const map_location& loc, std::vector<unit *>& touchers, int t
 void unit_text(unit& u, bool poisoned, const std::string& text)
 {
 	// if (text.empty()) return;
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((*resources::teams)[player_number_ - 1].is_human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = (!player_number_ || ((player_number_ > 0) && (u.human() || preferences::scroll_to_action())))? true: false;
 	const map_location& loc = u.get_location();
 	game_display* disp = game_display::get_singleton();
 	if (!disp || disp->video().update_locked() || disp->video().faked() || disp->fogged(loc)) return;

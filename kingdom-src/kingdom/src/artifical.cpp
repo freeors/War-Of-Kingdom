@@ -4,6 +4,7 @@
 #include "actions.hpp"
 #include "pathutils.hpp"
 #include "game_display.hpp"
+#include "card.hpp"
 #include "map.hpp"
 #include "halo.hpp"
 #include "game_preferences.hpp"
@@ -17,12 +18,35 @@
 #include "replay.hpp"
 #include "wml_exception.hpp"
 #include "dialogs.hpp"
+#include "gui/dialogs/select_unit.hpp"
+
+tartifical_::tartifical_()
+	: police_speed_(100)
+	, generate_speed_(100)
+	, trade_speed_(100)
+	, business_speed_(100)
+	, technology_speed_(100)
+	, revenue_income_(100)
+{
+}
+
+void tartifical_::reset_commoner_speed()
+{
+	police_speed_ = 100;
+	generate_speed_ = 100;
+	trade_speed_ = 100;
+	business_speed_ = 100;
+	technology_speed_ = 100;
+	revenue_income_ = 100;
+}
 
 artifical::artifical(const config& cfg) :
-	unit(*resources::units, *resources::heros, cfg, true, 0, true)
+	unit(*resources::units, *resources::heros, *resources::teams, cfg, true, 0, true)
 	, map_(*resources::game_map)
 	, reside_troops_()
 	, field_troops_()
+	, reside_commoners_()
+	, field_commoners_()
 	, field_arts_()
 	, fresh_heros_()
 	, finish_heros_()
@@ -33,12 +57,19 @@ artifical::artifical(const config& cfg) :
 	, terrain_types_list_(t_translation::t_match(type()->match_).terrain)
 	, alert_rect_()	
 	, villages_()
+	, roaded_cities_()
 	, mayor_(&hero_invalid)
 	, commercial_exploiture_(0)
 	, technology_exploiture_(0)
+	, gold_bonus_(0)
+	, technology_bonus_(0)
+	, max_commoners_(game_config::max_commoners)
+	, research_turns_(0)
 	, fronts_(0)
+	, police_(game_config::max_police / 2)
 	, not_recruit_()
 	, can_recruit_map_()
+	, decree_(std::make_pair((card*)NULL, 0))
 	, max_recruit_cost_(-1)
 {
 	// 设置[city]级字段
@@ -52,13 +83,17 @@ artifical::artifical(const config& cfg) :
 		touch_dirs_.insert(map_location::SOUTH_WEST);
 		touch_dirs_.insert(map_location::NORTH_WEST);
 	}
+	apply_issur_decree(decree_.first, decree_.second);
+	calculate_exploiture();
 }
 
 artifical::artifical(const uint8_t* mem) :
-	unit(*resources::units, *resources::heros, mem, true, 0, true)
+	unit(*resources::units, *resources::heros, *resources::teams, mem, true, 0, true)
 	, map_(*resources::game_map)
 	, reside_troops_()
 	, field_troops_()
+	, reside_commoners_()
+	, field_commoners_()
 	, field_arts_()
 	, fresh_heros_()
 	, finish_heros_()
@@ -67,14 +102,21 @@ artifical::artifical(const uint8_t* mem) :
 	, district_()
 	, district_locs_()
 	, villages_()
+	, roaded_cities_()
 	, terrain_types_list_(t_translation::t_match(type()->match_).terrain)
 	, alert_rect_()	
 	, mayor_(&hero_invalid)
 	, commercial_exploiture_(0)
 	, technology_exploiture_(0)
+	, gold_bonus_(0)
+	, technology_bonus_(0)
+	, max_commoners_(game_config::max_commoners)
+	, research_turns_(0)
 	, fronts_(0)
+	, police_(game_config::max_police / 2)
 	, not_recruit_()
 	, can_recruit_map_()
+	, decree_(std::make_pair((card*)NULL, 0))
 	, max_recruit_cost_(-1)
 {
 	// 设置[city]级字段
@@ -88,41 +130,58 @@ artifical::artifical(const uint8_t* mem) :
 		touch_dirs_.insert(map_location::SOUTH_WEST);
 		touch_dirs_.insert(map_location::NORTH_WEST);
 	}
+	apply_issur_decree(decree_.first, decree_.second);
+	calculate_exploiture();
 }
 
-artifical::artifical(const artifical& cobj) :
-	unit(cobj)
+artifical::artifical(const artifical& that) :
+	unit(that)
+	, tartifical_(that)
 	, map_(*resources::game_map)
-	// , reside_troops_(cobj.reside_troops_)
-	, field_troops_(cobj.field_troops_)
-	, field_arts_(cobj.field_arts_)
-	, fresh_heros_(cobj.fresh_heros_)
-	, finish_heros_(cobj.finish_heros_)
-	, wander_heros_(cobj.wander_heros_)
-	, economy_area_(cobj.economy_area_)
-	, district_(cobj.district_)
-	, district_locs_(cobj.district_locs_)
-	, villages_(cobj.villages_)
-	, terrain_types_list_(cobj.terrain_types_list_)
-	, alert_rect_(cobj.alert_rect_)
-	, mayor_(cobj.mayor_)
-	, commercial_exploiture_(cobj.commercial_exploiture_)
-	, technology_exploiture_(cobj.technology_exploiture_)
-	, fronts_(cobj.fronts_)
-	, not_recruit_(cobj.not_recruit_)
-	, can_recruit_map_(cobj.can_recruit_map_)
-	, max_recruit_cost_(cobj.max_recruit_cost_)
+	// , reside_troops_(that.reside_troops_)
+	, field_troops_(that.field_troops_)
+	// , reside_commoners_(that.reside_commoners_)
+	, field_commoners_(that.field_commoners_)
+	, field_arts_(that.field_arts_)
+	, fresh_heros_(that.fresh_heros_)
+	, finish_heros_(that.finish_heros_)
+	, wander_heros_(that.wander_heros_)
+	, economy_area_(that.economy_area_)
+	, district_(that.district_)
+	, district_locs_(that.district_locs_)
+	, villages_(that.villages_)
+	, roaded_cities_(that.roaded_cities_)
+	, terrain_types_list_(that.terrain_types_list_)
+	, alert_rect_(that.alert_rect_)
+	, mayor_(that.mayor_)
+	, commercial_exploiture_(that.commercial_exploiture_)
+	, technology_exploiture_(that.technology_exploiture_)
+	, gold_bonus_(that.gold_bonus_)
+	, technology_bonus_(that.technology_bonus_)
+	, max_commoners_(that.max_commoners_)
+	, research_turns_(that.research_turns_)
+	, fronts_(that.fronts_)
+	, police_(that.police_)
+	, not_recruit_(that.not_recruit_)
+	, can_recruit_map_(that.can_recruit_map_)
+	, decree_(that.decree_)
+	, max_recruit_cost_(that.max_recruit_cost_)
 {
-	for (std::vector<unit*>::const_iterator it = cobj.reside_troops_.begin(); it != cobj.reside_troops_.end(); ++ it) {
+	for (std::vector<unit*>::const_iterator it = that.reside_troops_.begin(); it != that.reside_troops_.end(); ++ it) {
 		reside_troops_.push_back(new unit(**it));
+	}
+	for (std::vector<unit*>::const_iterator it = that.reside_commoners_.begin(); it != that.reside_commoners_.end(); ++ it) {
+		reside_commoners_.push_back(new unit(**it));
 	}
 }
 
-artifical::artifical(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, bool use_traits) :
-	unit(units, heros, t, cityno, use_traits, true)
+artifical::artifical(unit_map& units, hero_map& heros, std::vector<team>& teams, type_heros_pair& t, int cityno, bool use_traits) :
+	unit(units, heros, teams, t, cityno, use_traits, true)
 	, map_(*resources::game_map)
 	, reside_troops_()
 	, field_troops_()
+	, reside_commoners_()
+	, field_commoners_()
 	, field_arts_()
 	, fresh_heros_()
 	, finish_heros_()
@@ -131,14 +190,21 @@ artifical::artifical(unit_map& units, hero_map& heros, type_heros_pair& t, int c
 	, district_()
 	, district_locs_()
 	, villages_()
+	, roaded_cities_()
 	, terrain_types_list_(t_translation::t_match(type()->match_).terrain)
 	, alert_rect_()
 	, mayor_(&hero_invalid)
 	, commercial_exploiture_(0)
 	, technology_exploiture_(0)
+	, gold_bonus_(0)
+	, technology_bonus_(0)
+	, max_commoners_(game_config::max_commoners)
+	, research_turns_(0)
 	, fronts_(0)
+	, police_(game_config::max_police / 2)
 	, not_recruit_()
 	, can_recruit_map_()
+	, decree_(std::make_pair((card*)NULL, 0))
 	, max_recruit_cost_(-1)
 {
 	if (this_is_city()) {
@@ -149,11 +215,15 @@ artifical::artifical(unit_map& units, hero_map& heros, type_heros_pair& t, int c
 		touch_dirs_.insert(map_location::SOUTH_WEST);
 		touch_dirs_.insert(map_location::NORTH_WEST);
 	}
+	calculate_exploiture();
 }
 
 artifical::~artifical()
 {
 	for (std::vector<unit*>::const_iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
+		delete *it;
+	}
+	for (std::vector<unit*>::const_iterator it = reside_commoners_.begin(); it != reside_commoners_.end(); ++ it) {
 		delete *it;
 	}
 }
@@ -239,6 +309,8 @@ void artifical::read(const config& cfg, bool use_traits, game_state* state)
 			mayor_->official_ = hero_official_mayor;
 		}
 		fronts_ = cfg["fronts"].to_int();
+		police_ = cfg["police"].to_int(50);
+		research_turns_ = cfg["research_turns"].to_int();
 
 		// not recruit
 		std::vector<std::string> vstr = utils::split(cfg["not_recruit"]);
@@ -252,9 +324,13 @@ void artifical::read(const config& cfg, bool use_traits, game_state* state)
 		}
 	}
 
-	// 读出底下所有unit到城市武将列表
+	// read [unit] to reside troop
 	foreach (config &i, cfg_.child_range("unit")) {
-		reside_troops_.push_back(new unit(units_, heros_, i));
+		reside_troops_.push_back(new unit(units_, heros_, teams_, i));
+	}
+	// read [commoner] to reside commoner
+	foreach (config &i, cfg_.child_range("commoner")) {
+		reside_commoners_.push_back(new unit(units_, heros_, teams_, i));
 	}
 }
 
@@ -308,6 +384,7 @@ void artifical::write(config& cfg) const
 
 	if (this_is_city()) {
 		cfg["fronts"] = fronts_;
+		cfg["police"] = police_;
 		cfg["mayor"] = mayor_->number_;
 
 		str.str("");
@@ -325,6 +402,11 @@ void artifical::write(config& cfg) const
 		config& ucfg = cfg.add_child("unit");
 		u.write(ucfg);
 	}
+	for (std::vector<unit*>::const_iterator it = reside_commoners_.begin(); it != reside_commoners_.end(); ++ it) {
+		const unit& u = **it;
+		config& ucfg = cfg.add_child("commoner");
+		u.write(ucfg);
+	}
 }
 
 void artifical::write(uint8_t* mem) const
@@ -338,6 +420,11 @@ void artifical::write(uint8_t* mem) const
 
 	fields->mayor_ = mayor_->number_;
 	fields->fronts_ = fronts_;
+	fields->police_ = police_;
+	fields->gold_bonus_ = gold_bonus_;
+	fields->technology_bonus_ = technology_bonus_;
+	fields->max_commoners_ = max_commoners_;
+	fields->research_turns_ = research_turns_;
 
 	str.str("");
 	// fresh_heros
@@ -419,6 +506,18 @@ void artifical::write(uint8_t* mem) const
 	}
 	offset += fields->not_recruit_.size_;
 
+	str.str("");
+	// decree
+	if (decree_.first) {
+		str << decree_.first->number_ << "," << decree_.second;
+		fields->decree_.offset_ = offset;
+		fields->decree_.size_ = str.str().length();
+		memcpy(mem + offset, str.str().c_str(), fields->decree_.size_);
+	} else {
+		fields->decree_.offset_ = -1;
+		fields->decree_.size_ = 0;
+	}
+	offset += fields->decree_.size_;
 
 	// align 4
 	offset = (offset + 3) & ~3;
@@ -426,6 +525,15 @@ void artifical::write(uint8_t* mem) const
 	fields->reside_troops_.offset_ = offset;
 	fields->reside_troops_.size_ = reside_troops_.size();
 	for (std::vector<unit*>::const_iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
+		const unit& u = **it;
+		u.write(mem + offset);
+		unit_fields_t* fields = (unit_fields_t*)(mem + offset);
+		offset += fields->size_;
+	}
+
+	fields->reside_commoners_.offset_ = offset;
+	fields->reside_commoners_.size_ = reside_commoners_.size();
+	for (std::vector<unit*>::const_iterator it = reside_commoners_.begin(); it != reside_commoners_.end(); ++ it) {
 		const unit& u = **it;
 		u.write(mem + offset);
 		unit_fields_t* fields = (unit_fields_t*)(mem + offset);
@@ -442,6 +550,11 @@ void artifical::read(const uint8_t* mem)
 	
 	mayor_ = &heros_[fields->mayor_];
 	fronts_ = fields->fronts_;
+	police_ = fields->police_;
+	gold_bonus_ = fields->gold_bonus_;
+	technology_bonus_ = fields->technology_bonus_;
+	max_commoners_ = fields->max_commoners_;
+	research_turns_ = fields->research_turns_;
 
 	// fresh_heros_
 	str.assign((const char*)mem + fields->fresh_heros_.offset_, fields->fresh_heros_.size_);
@@ -531,10 +644,25 @@ void artifical::read(const uint8_t* mem)
 		not_recruit_.insert(ut);
 	}
 
-	// 读出底下所有unit到城市武将列表
 	int offset = fields->reside_troops_.offset_;
 	for (int i = 0; i < fields->reside_troops_.size_; i ++) {
-		reside_troops_.push_back(new unit(units_, heros_, mem + offset));
+		reside_troops_.push_back(new unit(units_, heros_, teams_, mem + offset));
+
+		unit_fields_t* u_fields = (unit_fields_t*)(mem + offset);
+		offset += u_fields->size_;
+	}
+
+	// decree
+	if (fields->decree_.size_) {
+		str.assign((const char*)mem + fields->decree_.offset_, fields->decree_.size_);
+		v_str = utils::split(str);
+		decree_.first = &resources::controller->cards()[lexical_cast_default<int>(v_str[0])];
+		decree_.second = lexical_cast_default<int>(v_str[1]);
+	}
+
+	offset = fields->reside_commoners_.offset_;
+	for (int i = 0; i < fields->reside_commoners_.size_; i ++) {
+		reside_commoners_.push_back(new unit(units_, heros_, teams_, mem + offset));
 
 		unit_fields_t* u_fields = (unit_fields_t*)(mem + offset);
 		offset += u_fields->size_;
@@ -544,6 +672,16 @@ void artifical::read(const uint8_t* mem)
 const std::set<map_location>& artifical::villages() const
 {
 	return villages_;
+}
+
+void artifical::set_roaded_cities(const std::set<int>& cities)
+{
+	roaded_cities_ = cities;
+}
+
+const std::set<int>& artifical::roaded_cities() const 
+{
+	return roaded_cities_;
 }
 
 const std::set<map_location>& artifical::district_locs() const
@@ -575,6 +713,10 @@ void artifical::set_location(const map_location &loc)
 
 	// reset loc_ of reside troops
 	for (std::vector<unit*>::iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
+		unit& u = **it;
+		u.set_location(loc);
+	}
+	for (std::vector<unit*>::iterator it = reside_commoners_.begin(); it != reside_commoners_.end(); ++ it) {
 		unit& u = **it;
 		u.set_location(loc);
 	}
@@ -635,6 +777,36 @@ void artifical::set_location(const map_location &loc)
 		}
 		std::copy(adjacent_3_, adjacent_3_ + adjacent_size_3_, adjacent_2_);
 		adjacent_size_2_ = adjacent_size_3_;
+	}
+}
+
+void artifical::issue_decree(const config& effect)
+{
+	const std::string& type = effect["type"];
+	const std::string& increase = effect["increase"];
+
+	if (increase.empty()) return;
+
+	if (type == "business") {
+		business_speed_ = utils::apply_modifier(business_speed_, increase);
+		if (business_speed_ > 200) {
+			business_speed_ = 200;
+		}
+	} else if (type == "technology") {
+		technology_speed_ = utils::apply_modifier(technology_speed_, increase);
+		if (technology_speed_ > 200) {
+			technology_speed_ = 200;
+		}
+	} else if (type == "police") {
+		police_speed_ = utils::apply_modifier(police_speed_, increase);
+		if (police_speed_ < 50) {
+			police_speed_ = 50;
+		}
+	} else if (type == "revenue") {
+		revenue_income_ = utils::apply_modifier(revenue_income_, increase);
+		if (revenue_income_ < 50) {
+			revenue_income_ = 50;
+		}
 	}
 }
 
@@ -766,8 +938,8 @@ void artifical::redraw_unit()
 			if (is_city()) {
 				disp.draw_bar(*energy_file, xsrc + 20, ysrc - 24, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
-				if (character_ != NO_CHARACTER) {
-					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 2, ysrc - 16, image::get_image(unit_types.character(character_).image_));
+				if (especial_ != NO_ESPECIAL) {
+					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 2, ysrc - 16, image::get_image(unit_types.especial(especial_).image_));
 				}
 			} else {
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 14, 
@@ -777,8 +949,8 @@ void artifical::redraw_unit()
 			if (is_city()) {
 				disp.draw_bar(*energy_file, xsrc + 20, ysrc - 28, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
-				if (character_ != NO_CHARACTER) {
-					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 2, ysrc - 16, image::get_image(unit_types.character(character_).image_));
+				if (especial_ != NO_ESPECIAL) {
+					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 2, ysrc - 16, image::get_image(unit_types.especial(especial_).image_));
 				}
 			} else {
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 17, 
@@ -788,8 +960,8 @@ void artifical::redraw_unit()
 			if (is_city()) {
 				disp.draw_bar(*energy_file, xsrc + 22, ysrc - 35, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
-				if (character_ != NO_CHARACTER) {
-					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 4, ysrc - 16, image::get_image(unit_types.character(character_).image_));
+				if (especial_ != NO_ESPECIAL) {
+					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 4, ysrc - 16, image::get_image(unit_types.especial(especial_).image_));
 				}
 			} else {
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 21, 
@@ -799,8 +971,8 @@ void artifical::redraw_unit()
 			if (is_city()) {
 				disp.draw_bar(*energy_file, xsrc + 24, ysrc - 42, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
-				if (character_ != NO_CHARACTER) {
-					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 6, ysrc - 16, image::get_image(unit_types.character(character_).image_));
+				if (especial_ != NO_ESPECIAL) {
+					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 6, ysrc - 16, image::get_image(unit_types.especial(especial_).image_));
 				}
 			} else {
 				disp.draw_bar(*energy_file, xsrc + 5, ysrc - 25, 
@@ -837,8 +1009,8 @@ bool artifical::new_turn()
 {
 	unit::new_turn();
 
-	std::vector<team>& teams = *resources::teams;
-	team& current_team = teams[side_ - 1];
+	play_controller& controller = *resources::controller;
+	team& current_team = teams_[side_ - 1];
 	int healing = heal_ * current_team.repair_increase_ / 100;
 	std::vector<unit*> executor;
 
@@ -855,14 +1027,18 @@ bool artifical::new_turn()
 		heal(healing);
 	}	
 
-	if (!this_is_city() && unit_map::economy_areas_.find(loc_) != unit_map::economy_areas_.end()) {
-		const artifical& city = *units_.city_from_cityno(cityno_);
-		int turn_experience = city.turn_experience();
-		if (current_team.village_gold_increase_ > 100) {
-			turn_experience = turn_experience + std::min(1, turn_experience * current_team.village_gold_increase_ / 100);
+	if (!this_is_city()) {
+		if (unit_map::economy_areas_.find(loc_) != unit_map::economy_areas_.end()) {
+			artifical& city = *units_.city_from_cityno(cityno_);
+			int turn_experience = city.turn_experience();
+			if (current_team.village_gold_increase_ > 100) {
+				turn_experience = turn_experience + std::min(1, turn_experience * current_team.village_gold_increase_ / 100);
+			}
+			get_experience(increase_xp::attack_ublock(*this), turn_experience);
+		} else {
+			get_experience(increase_xp::attack_ublock(*this), turn_experience_);
 		}
-		get_experience(increase_xp::attack_ublock(*this), turn_experience);
-		dialogs::advance_unit(loc_, current_team.is_human(), true);
+		dialogs::advance_unit(*this, current_team.is_human(), true);
 		return false;
 	}
 
@@ -872,11 +1048,11 @@ bool artifical::new_turn()
 		hero* h = *itor;
 		if (h != rpg::h && h->loyalty(leader) < game_config::wander_loyalty_threshold) {
 			// wander
-			artifical* to_city = units_.city_from_seed(teams[side_ - 1].gold());
+			artifical* to_city = units_.city_from_seed(current_team.gold());
 			game_events::show_hero_message(h, units_.city_from_cityno(h->city_), 
 					_("In misfortune time, it is necessary to search chance that can carry out value of life."),
 					game_events::INCIDENT_WANDER);
-			to_city->wander_into(*h, teams[side_ - 1].is_human()? false: true);
+			to_city->wander_into(*h, current_team.is_human()? false: true);
 			itor = fresh_heros_.erase(itor);
 			break;
 		} else {
@@ -888,7 +1064,7 @@ bool artifical::new_turn()
 	int decrease = 0;
 	for (size_t i = 0; i < adjacent_size_; i ++) {
 		unit_map::iterator itor = units_.find(adjacent_[i]);
-		if (itor.valid() && teams[side_-1].is_enemy(itor->side())) {
+		if (itor.valid() && current_team.is_enemy(itor->side())) {
 			decrease ++;
 		}
 	}
@@ -921,6 +1097,10 @@ bool artifical::new_turn()
 		if (u.hide_turns()) {
 			u.set_hide_turns(0);
 		}
+		if (u.alert_turns()) {
+			u.set_alert_turns(0);
+		}
+		VALIDATE(!u.provoked_turns(), "artifical::new_turn, reside troop cannot be provoked!");
 		u.get_experience(increase_xp::turn_ublock(*this), 3);
 		u.new_turn_tactics();
 		u.set_state(unit::STATE_SLOWED, false);
@@ -930,6 +1110,23 @@ bool artifical::new_turn()
 			u.set_state(unit::STATE_POISONED, false);
 		} else {
 			u.heal(12);
+		}
+	}
+	for (std::vector<unit*>::iterator it = reside_commoners_.begin(); it != reside_commoners_.end(); ++ it) {
+		unit& u = **it;
+		u.set_movement(u.total_movement());
+		u.set_attacks(u.attacks_total());
+		if (u.hide_turns()) {
+			u.set_hide_turns(0);
+		}
+		u.new_turn_tactics();
+		u.set_state(unit::STATE_SLOWED, false);
+		u.set_state(unit::STATE_BROKEN, false);
+		u.set_state(unit::STATE_PETRIFIED, false);
+		if (u.get_state(unit::STATE_POISONED)) {
+			u.set_state(unit::STATE_POISONED, false);
+		} else {
+			u.heal(24);
 		}
 	}
 
@@ -951,10 +1148,63 @@ bool artifical::new_turn()
 	finish_heros_.clear();
 
 	
+	gold_bonus_ = technology_bonus_ = 0;
+	increase_police(1);
+
+	if (decree_.first) {
+		VALIDATE(decree_.second > 0, "artifical::new_turn, when issue decree, effect turns must > 0!");
+		decree_.second = decree_.second - 1;
+		if (!decree_.second) {
+			apply_issur_decree();
+		}
+	}
+	const std::vector<size_t>& holded_cards = current_team.holded_cards();
+	if (police_ >= game_config::min_researchable_police && (int)holded_cards.size() < game_config::max_cards) {
+		VALIDATE(research_turns_ >= 0, "artifical::new_turn, research must not < 0!");
+		research_turns_ ++;
+		// a turn amone [16..40]
+		if (research_turns_ > 15) {
+			int random = get_random();
+			if (random % 25 < research_turns_ - 15) {
+				if (current_team.add_random_decree(*this, random)) {
+					if (!current_team.is_human()) {
+						card& c = current_team.holded_card(holded_cards.size() - 1);
+
+						apply_issur_decree(&c, game_config::default_decree_turns, holded_cards.size() - 1);
+					}
+					research_turns_ = 0;
+				}
+			}
+		}
+	}
+
 	get_experience(increase_xp::attack_ublock(*this), turn_experience_);
-	dialogs::advance_unit(loc_, current_team.is_human(), true);
+	dialogs::advance_unit(*this, current_team.is_human(), true);
 
 	return false;
+}
+
+void artifical::apply_issur_decree(card* c, int turns, int index, bool to_recorder)
+{
+	reset_commoner_speed();
+
+	decree_.first = c;
+	decree_.second = turns;
+
+	if (c) {
+		team& current_team = teams_[side_ - 1];
+
+		std::vector<std::pair<int, unit*> > maps;
+		maps.push_back(std::make_pair(-1, this));
+		// std::string disable_str;
+
+		// current_team.card_touched(*c, loc_, maps, disable_str);
+		current_team.consume_card(*c, loc_, maps, index, to_recorder);
+		if (index >= 0) {
+			std::vector<unit*> touchers(1, this);
+			unit_display::unit_text(*this, false, c->name());
+		}
+	}
 }
 
 void artifical::set_resting(bool rest)
@@ -964,62 +1214,6 @@ void artifical::set_resting(bool rest)
 	if (!resting_) {
 		return;
 	}
-/*
-	int healing = heal_;
-	std::vector<unit*> executor;
-
-	int pos_max = max_hit_points_ - hit_points_;
-	int neg_max = -(hit_points_ - 1);
-	if (pos_max > 0) {
-		// Do not try to "heal" if HP >= max HP
-		if (healing > pos_max) {
-			healing = pos_max;
-		} else if (healing < neg_max) {
-			healing = neg_max;
-		}
-		unit_display::unit_healing(*this, loc_, executor, healing);
-		heal(healing);
-	}	
-
-	if (!artifical_is_city(this)) {
-		return;
-	}
-
-	// reside troops
-	for (std::vector<unit*>::iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
-		unit& u = **it;
-		u.set_movement(u.total_movement());
-		u.set_attacks(u.attacks_total());
-		u.increase_loyalty(-1 * game_config::reside_troop_increase_loyalty);
-		u.increase_activity(10);
-
-		u.set_state(unit::STATE_SLOWED, false);
-		u.set_state(unit::STATE_BROKEN, false);
-		u.set_state(unit::STATE_PETRIFIED, false);
-		if (u.get_state(unit::STATE_POISONED)) {
-			u.set_state(unit::STATE_POISONED, false);
-		} else {
-			u.heal(12);
-		}
-	}
-
-	// reside heros
-	for (std::vector<hero*>::iterator itor = fresh_heros_.begin(); itor != fresh_heros_.end(); ++ itor) {
-		hero& h = **itor;
-		if (h.activity_ < HEROS_FULL_ACTIVITY) {
-			if (10 + h.activity_ < HEROS_FULL_ACTIVITY) {
-				h.activity_ += 15;
-			} else {
-				h.activity_ = HEROS_FULL_ACTIVITY;
-			}
-		}
-	}
-	for (std::vector<hero*>::iterator itor = finish_heros_.begin(); itor != finish_heros_.end(); ++ itor) {
-		(*itor)->status_ = hero_status_idle;
-	}
-	std::copy(finish_heros_.begin(), finish_heros_.end(), std::back_inserter(fresh_heros_));
-	finish_heros_.clear();
-*/
 	return;
 }
 
@@ -1041,13 +1235,8 @@ void artifical::get_experience(const increase_xp::ublock& ub, int xp, bool maste
 	}
 }
 
-//
-//  暂时以下定义
-//    城内武将只指空闲武将，一旦武将加入某个部队该武将就从武将列表中去除
-//
-
-// 进城
-void artifical::troop_come_into(unit* uobj, int pos, bool create)
+// retval indicates whether cannot-undo triggered, for exapmle change mayor. 
+bool artifical::troop_come_into(unit* uobj, int pos, bool create)
 {
 	unit* that = uobj;
 	if (create) {
@@ -1055,7 +1244,6 @@ void artifical::troop_come_into(unit* uobj, int pos, bool create)
 	}
 
 	std::vector<unit*>::iterator it;
-	// 1. 把单位加入目的城郡单位列表
 	if (pos >= 0) {
 		it = reside_troops_.insert(reside_troops_.begin() + pos, that);
 	} else {
@@ -1063,6 +1251,7 @@ void artifical::troop_come_into(unit* uobj, int pos, bool create)
 		it = reside_troops_.begin() + (reside_troops_.size() - 1);
 	}
 
+	bool can_undo = true;
 	// get ride of (official_ == hero_official_mayor)
 	unit& u = **it;
 	if (u.cityno() != cityno_) {
@@ -1080,18 +1269,21 @@ void artifical::troop_come_into(unit* uobj, int pos, bool create)
 			}
 			if (h->official_ == hero_official_mayor) {
 				artifical* from = units_.city_from_cityno(h->city_);
-				from->select_mayor(&hero_invalid);
+				if (from->select_mayor(&hero_invalid)) {
+					can_undo = false;
+				}
 			}
 		}
 	}
-	// 2. 修改阵营号
 	u.set_side(side_);
-	// 3. 修改都市编码
 	u.set_cityno(cityno_);
-	// 4. 修改unit坐标为城郡所在坐标
 	u.set_location(loc_);
-	// 5. set goto to map_location()
 	u.set_goto(map_location());
+	u.set_block_turns(0);
+	u.clear_visibility_cache();
+	if (u.provoked_turns()) {
+		u.set_provoked_turns_next(u, 0);
+	}
 
 	if (!u.human()) {
 		if ((rpg::stratum == hero_stratum_leader && side_ == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor_ == rpg::h)) {
@@ -1099,7 +1291,27 @@ void artifical::troop_come_into(unit* uobj, int pos, bool create)
 		}
 	}
 
-	return;
+	return can_undo;
+}
+
+void artifical::commoner_come_into(unit* that, int pos, bool create)
+{
+	unit* u = that;
+	if (create) {
+		u = new unit(*that);
+	}
+	if (pos >= 0) {
+		reside_commoners_.insert(reside_commoners_.begin() + pos, u);
+	} else {
+		reside_commoners_.push_back(u);
+	}
+
+	u->set_side(side_);
+	u->set_cityno(cityno_);
+	u->set_location(loc_);
+	u->set_from(map_location());
+	u->set_goto(map_location());
+	u->clear_visibility_cache();
 }
 
 // before call unit_belong_to, don't update cityno and side!
@@ -1134,7 +1346,11 @@ void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
 	artifical* src_city = units_.city_from_cityno(troop->cityno());
 	if (src_city) {
 		if (!troop->is_artifical()) {
-			src_city->field_troops_erase(troop);
+			if (!troop->is_commoner()) {
+				src_city->field_troops_erase(troop);
+			} else {
+				src_city->field_commoners_erase(troop);
+			}
 		} else {
 			src_city->field_arts_erase(unit_2_artifical(troop));
 		}
@@ -1145,7 +1361,7 @@ void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
 	troop->set_side(side_);
 	// set human must before field_troops_add, 
 	// field_troops_add use human flag to refresh access_troops. 
-	if (!troop->is_artifical() && !troop->human()) {
+	if (!troop->is_artifical() && !troop->human() && !troop->is_commoner()) {
 		if ((rpg::stratum == hero_stratum_leader && side_ == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor_ == rpg::h)) {
 			troop->set_human(true);
 		}
@@ -1153,10 +1369,14 @@ void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
 
 	// 3. 把troop加入将属城市的城外部队列表
 	if (!troop->is_artifical()) {
-		field_troops_add(troop);
-		if (loyalty) {
-			// adjust loyalty, avoid to wander immediately.
-			troop->set_loyalty(game_config::wander_loyalty_threshold + 1);
+		if (!troop->is_commoner()) {
+			field_troops_add(troop);
+			if (loyalty) {
+				// adjust loyalty, avoid to wander immediately.
+				troop->set_loyalty(game_config::wander_loyalty_threshold + 1);
+			}
+		} else {
+			field_commoners_add(troop);
 		}
 	} else {
 		field_arts_add(unit_2_artifical(troop));
@@ -1180,6 +1400,14 @@ void artifical::troop_go_out(const int uidx, bool del)
 	reside_troops_.erase(reside_troops_.begin() + uidx);
 }
 
+void artifical::commoner_go_out(int index, bool del)
+{
+	if (del) {
+		delete reside_commoners_[index];
+	}
+	reside_commoners_.erase(reside_commoners_.begin() + index);
+}
+
 void artifical::field_troops_add(unit* troop)
 {
 	game_display* disp = game_display::get_singleton();
@@ -1188,6 +1416,11 @@ void artifical::field_troops_add(unit* troop)
 	}
 
 	field_troops_.push_back(troop);
+}
+
+void artifical::field_commoners_add(unit* commoner)
+{
+	field_commoners_.push_back(commoner);
 }
 
 void artifical::field_arts_add(artifical* troop)
@@ -1205,6 +1438,14 @@ void artifical::field_troops_erase(const unit* troop)
 		}
 
 		field_troops_.erase(itor);
+	}
+}
+
+void artifical::field_commoners_erase(const unit* commoner)
+{
+	std::vector<unit*>::iterator itor = std::find(field_commoners_.begin(), field_commoners_.end(), commoner);
+	if (itor != field_commoners_.end()) {
+		field_commoners_.erase(itor);
 	}
 }
 
@@ -1352,6 +1593,159 @@ void artifical::move_into(hero& h)
 	finish_heros_.push_back(&h);
 }
 
+void insert_level_special(std::map<int, std::vector<const unit_type*> >& candidate, const unit_type* from, int special)
+{
+	std::map<int, std::vector<const unit_type*> >::iterator find;
+	if (from->especial() != NO_ESPECIAL) {
+		find = candidate.find(from->level());
+		if (find == candidate.end()) {
+			std::vector<const unit_type*> v;
+			v.push_back(from);
+			candidate.insert(std::make_pair(from->level(), v));
+		} else if (std::find(find->second.begin(), find->second.end(), from) == find->second.end()) {
+			find->second.push_back(from);
+		}
+	}
+	std::vector<std::string> advances_to = from->advances_to(special);
+	for (std::vector<std::string>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it) {
+		const unit_type* ut = unit_types.find(*it);
+		if (ut->especial() != NO_ESPECIAL) {
+			find = candidate.find(ut->level());
+			if (find == candidate.end()) {
+				std::vector<const unit_type*> v;
+				v.push_back(ut);
+				candidate.insert(std::make_pair(ut->level(), v));
+			} else if (std::find(find->second.begin(), find->second.end(), ut) == find->second.end()) {
+				find->second.push_back(ut);
+			}
+		}
+		insert_level_special(candidate, ut, special);
+	}
+
+}
+
+void insert_from_internal(std::set<const unit_type*>& from, const unit_type* to)
+{
+	std::vector<std::string> f = to->advances_from();
+	for (std::vector<std::string>::const_iterator it = f.begin(); it != f.end(); ++ it) {
+		const unit_type* ut = unit_types.find(*it);
+		if (from.find(ut) == from.end()) {
+			from.insert(ut);
+		}
+		insert_from_internal(from, ut);
+	}
+}
+
+bool exist_from_internal(const unit_type* to, std::set<const unit_type*>& from)
+{
+	std::vector<std::string> f = to->advances_from();
+	for (std::vector<std::string>::const_iterator it = f.begin(); it != f.end(); ++ it) {
+		const unit_type* ut = unit_types.find(*it);
+		if (from.find(ut) != from.end()) {
+			return true;
+		}
+		if (exist_from_internal(ut, from)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void artifical::change_to_special_unit(int attacker_side, int random, bool replaying)
+{
+	std::vector<unit*> desire;
+	const map_location* tiles = adjacent_;
+	size_t adjance_size = adjacent_size_;
+	for (int step = 0; step < 2; step ++) {
+		if (step == 1) {
+			tiles = adjacent_2_;
+			adjance_size = adjacent_size_2_;
+		}
+		for (size_t adj = 0; adj < adjance_size; adj ++) {
+			const map_location& loc = tiles[adj];
+			unit_map::iterator find = units_.find(loc);
+			if (find.valid()) {
+				unit& u = *find;
+				if (!u.is_artifical() && u.side() == attacker_side && u.packee_type()->especial() == NO_ESPECIAL) {
+					desire.push_back(&u);
+				}
+			}
+		}
+	}
+	if (desire.empty()) {
+		return;
+	}
+
+	team& attacker_team = teams_[attacker_side - 1];
+	const std::vector<const unit_type*>& r = recruits(-1);
+	std::map<int, std::vector<const unit_type*> > special;
+	for (std::vector<const unit_type*>::const_iterator it = r.begin(); it != r.end(); ++ it) {
+		const unit_type* ut = *it;
+		insert_level_special(special, ut, especial_);
+	}
+	if (special.empty()) {
+		return;
+	}
+
+	std::vector<std::pair<unit*, unit> >specialable;
+	for (std::vector<unit*>::iterator it = desire.begin(); it != desire.end(); ++ it) {
+		unit& u = **it;
+		std::map<int, std::vector<const unit_type*> >::iterator find = special.find(u.level());
+		if (find == special.end()) {
+			continue;
+		}
+		std::set<const unit_type*> from;
+		insert_from_internal(from, u.packee_type());
+		for (std::vector<const unit_type*>::const_iterator it2 = find->second.begin(); it2 != find->second.end(); ++ it2) {
+			const unit_type* ut = *it2;
+			if (ut->arms() == u.packee_type()->arms() && exist_from_internal(ut, from)) {
+				unit* sample_unit = ::get_advanced_unit(&u, ut->id(), false);
+				specialable.push_back(std::make_pair(&u, *sample_unit));
+				delete sample_unit;
+			}
+		}
+	}
+
+	if (!specialable.empty()) {
+		std::vector<const unit*> sample_units_ptr;
+		for (std::vector<std::pair<unit*, unit> >::const_iterator it = specialable.begin(); it != specialable.end(); ++ it) {
+			sample_units_ptr.push_back(&it->second);
+		}
+		game_display& gui = *resources::screen;
+		int res = 0;
+		if (specialable.size() >= 2) {
+			if (attacker_team.is_human()) {
+				std::string name = "input";
+				if (!replaying) {
+					gui2::tselect_unit dlg(gui, teams_, units_, heros_, sample_units_ptr, gui2::tselect_unit::CHANGE);
+					try {
+						dlg.show(gui.video());
+					} catch(twml_exception& e) {
+						e.show(gui);
+					}
+					res = dlg.troop_index();
+
+					config cfg;
+					cfg["value"] = res;
+					recorder.user_input(name, cfg);
+				} else {
+					do_replay_handle(attacker_side, name);
+					const config *action = get_replay_source().get_next_action();
+					if (!action || !*(action = &action->child(name))) {
+						replay::process_error("[" + name + "] expected but none found\n");
+					}
+					res = action->get("value")->to_int(-1);
+				}
+			} else {
+				res = random % specialable.size();
+			}
+		}
+		// reference to get_advanced_unit2(...)
+		unit& u = *specialable[res].first;
+		u.change_to(gui, specialable[res].second.type());
+	}
+}
+
 // fallen
 // @attacker: troop that captures this artifical.
 void artifical::fallen(int a_side, unit* attacker)
@@ -1495,6 +1889,7 @@ void artifical::fallen(int a_side, unit* attacker)
 		// 强制置为“完”状态
 		unit* current_troop = *itor;
 
+		current_troop->remove_from_provoke_cache();
 		current_troop->set_movement(0);
 		current_troop->set_attacks(0);
 		current_troop->set_goto(map_location());
@@ -1516,6 +1911,8 @@ void artifical::fallen(int a_side, unit* attacker)
 				for (size_t i = 0; i < current_troop->adjacent_size_; i ++) {
 					unit_map::iterator u_itor = units_.find(current_troop->adjacent_[i]);
 					if (u_itor.valid() && unit_feature_val2(*u_itor, hero_feature_lobbyist) && u_itor->side() != current_troop->side()) {
+					// should use below statement
+					// if (u_itor.valid() && unit_feature_val2(*u_itor, hero_feature_lobbyist) && u_itor->side() == a_side) {
 						if (lobbyisted_troops.find(&*u_itor) != lobbyisted_troops.end()) {
 							// a lobbyist only face down one troop
 							continue;
@@ -1575,6 +1972,21 @@ void artifical::fallen(int a_side, unit* attacker)
 		}
 	}
 
+	std::vector<unit*> cache_analyzing = field_commoners_;
+	for (std::vector<unit*>::iterator itor = cache_analyzing.begin(); itor != cache_analyzing.end(); ++ itor) {
+		// 强制置为“完”状态
+		unit* current_troop = *itor;
+
+		current_troop->set_movement(0);
+		current_troop->set_attacks(0);
+		current_troop->set_goto(map_location());
+
+		random = get_random();
+		join_to_city = NULL;
+
+		units_.erase(current_troop);
+	}
+
 	// 处理城外建筑物: 如果还存在同阵营城市, 全部迁置为属于该城市, 否则随机分配到其它城市
 	std::vector<artifical*> cache_field_arts = field_arts_;
 	for (std::vector<artifical*>::iterator itor = cache_field_arts.begin(); itor != cache_field_arts.end(); ++itor) {
@@ -1603,6 +2015,25 @@ void artifical::fallen(int a_side, unit* attacker)
 				units_.erase(current_art);
 			}
 		}
+	}
+
+	std::vector<unit*> cache_reside_commoners = reside_commoners_;
+	reside_commoners_.clear();
+	for (std::vector<unit*>::iterator itor = cache_reside_commoners.begin(); itor != cache_reside_commoners.end() ; ++ itor) {
+		// 强制置为“完”状态
+		unit* current_troop = *itor;
+		
+		current_troop->set_movement(0);
+		current_troop->set_attacks(0);
+
+		random = get_random();
+		join_to_city = NULL;
+
+		delete current_troop;
+	}
+
+	if (this_is_city()) {
+		change_to_special_unit(a_side, get_random(), controller.is_replaying());
 	}
 
 	// 4.攻占者进入城市
@@ -1772,6 +2203,15 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 		}
 	}
 
+	for (std::vector<unit*>::iterator it = reside_commoners_.begin(); it != reside_commoners_.end(); ++ it) {
+		unit* current_troop = *it;
+		if (independenced) {
+			current_troop->set_side(to_side);
+			current_troop->adjust();
+			++ it;
+		}
+	}
+
 	std::vector<hero*> cache_heros = fresh_heros_;
 	std::copy(finish_heros_.begin(), finish_heros_.end(), std::back_inserter(cache_heros));
 	fresh_heros_.clear();
@@ -1796,6 +2236,7 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 	field_troops_.clear();
 	for (std::vector<unit*>::iterator it = field_troops.begin(); it != field_troops.end();  ++ it) {
 		unit* current_troop = *it;
+		current_troop->remove_from_provoke_cache();
 		if (independenced) {
 			if ((current_troop != from_leader_unit && current_troop->human()) || !aggressing) {
 				if (!current_troop->human()) {
@@ -1820,6 +2261,18 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 				}
 				unit_belong_to(current_troop);
 			}
+		}
+	}
+
+	std::vector<unit*> cache_analyzing = field_commoners_;
+	field_commoners_.clear();
+	for (std::vector<unit*>::iterator it = cache_analyzing.begin(); it != cache_analyzing.end();  ++ it) {
+		unit* current_troop = *it;
+		if (independenced) {
+			unit_belong_to(current_troop);
+			current_troop->adjust();
+		} else {
+			unit_belong_to(current_troop);
 		}
 	}
 
@@ -1947,13 +2400,14 @@ void show_mayor_message(hero_map& heros, hero& mayor, artifical& city, bool term
 	}
 }
 
-void artifical::select_mayor(hero* commend, bool dialog)
+// retval indicats whether mayor changed.
+bool artifical::select_mayor(hero* commend, bool dialog)
 {
 	std::vector<team>& teams = *resources::teams;
 
 	if (commend) {
 		if (mayor_ == commend) {
-			return;
+			return false;
 		}
 		if (mayor_->valid()) {
 			if (dialog) {
@@ -1977,7 +2431,8 @@ void artifical::select_mayor(hero* commend, bool dialog)
 		if (dialog) {
 			show_mayor_message(heros_, *mayor_, *this, false);
 		}
-		return;
+		calculate_exploiture();
+		return true;
 	}
 
 	VALIDATE(!mayor_->valid(), std::string("select mayor(), ") + name() + " has existed mayor!");
@@ -2041,9 +2496,10 @@ void artifical::select_mayor(hero* commend, bool dialog)
 		if (dialog) {
 			show_mayor_message(heros_, *mayor_, *this, false);
 		}
-	} else {
-		mayor_ = &hero_invalid;
+		calculate_exploiture();
+		return true;
 	}
+	return false;
 }
 
 void artifical::calculate_exploiture()
@@ -2107,7 +2563,7 @@ void artifical::active_exploiture()
 	std::pair<bool, bool> relative_feature = calculate_feature();
 	int xp = 4;
 
-	get_experience(increase_xp::exploiture_ublock(markets, technologies, relative_feature.first, relative_feature.second), xp, true, false, false);
+	get_experience(increase_xp::exploiture_ublock(markets, technologies, business_speed_, technology_speed_, relative_feature.first, relative_feature.second), xp, true, false, false);
 	if (mayor_->valid()) {
 		unit* u = find_unit(units_, *mayor_);
 		if (!u->is_artifical()) {
@@ -2123,11 +2579,12 @@ void artifical::active_exploiture()
 			} else {
 				VALIDATE(false, "Cannot find mayor(" + mayor_->name() + ") in " + name() + "'s troops."); 
 			}
-			u->get_experience(increase_xp::exploiture_ublock(markets, technologies, relative_feature.first, relative_feature.second), xp, master, second, third);
+			u->get_experience(increase_xp::exploiture_ublock(markets, technologies, business_speed_, technology_speed_, relative_feature.first, relative_feature.second), xp, master, second, third);
 		} else {
-			mayor_->get_xp(increase_xp::exploiture_hblock(markets, technologies, relative_feature.first, relative_feature.second, xp));
+			mayor_->get_xp(increase_xp::exploiture_hblock(markets, technologies, business_speed_, technology_speed_, relative_feature.first, relative_feature.second, xp));
 		}
 	}
+	calculate_exploiture();
 }
 
 void artifical::calculate_ea_tiles(std::vector<const map_location*>& ea_vacants, int& markets, int& technologies)
@@ -2179,6 +2636,26 @@ void artifical::set_fronts(int fronts)
 	}
 }
 
+void artifical::increase_police(int increase)
+{
+	police_ += increase;
+	if (police_ < 0) {
+		police_ = 0;
+	} else if (police_ > game_config::max_police) {
+		police_ = game_config::max_police;
+	}
+}
+
+void artifical::set_police(int val)
+{
+	police_ = val;
+	if (police_ < 0) {
+		police_ = 0;
+	} else if (police_ > game_config::max_police) {
+		police_ = game_config::max_police;
+	}
+}
+
 int artifical::max_recruit_cost()
 {
 	if (max_recruit_cost_ == -1) {
@@ -2200,7 +2677,7 @@ void artifical::reset_max_recruit_cost()
 
 void artifical::insert_level_unit_type(int level, const unit_type* from, std::vector<const unit_type*>& to)
 {
-	std::vector<std::string> advances_to = from->advances_to(character_);
+	std::vector<std::string> advances_to = from->advances_to(especial_);
 	for (std::vector<std::string>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it) {
 		const unit_type* ut = unit_types.find(*it);
 		if (not_recruit_.find(ut) != not_recruit_.end()) {
@@ -2247,4 +2724,40 @@ const std::vector<const unit_type*>& artifical::recruits(int level)
 	it = can_recruit_map_.find(level);
 
 	return it->second;
+}
+
+int artifical::total_gold_income(int market_increase) const
+{
+	VALIDATE(commercial_exploiture_, "artifical::total_gold_income, commercial_exploiture_ must not 0!");
+
+	int income = gold_bonus();
+	for (std::vector<map_location>::const_iterator it = economy_area_.begin(); it != economy_area_.end(); ++ it) {
+		unit_map::const_iterator find = units_.find(*it);
+		if (find.valid() && find->is_artifical()) {
+			income += find->gold_income();
+		}
+	}
+	income = income * market_increase / 100;
+
+	for (std::vector<hero*>::const_iterator it = fresh_heros_.begin(); it != fresh_heros_.end(); ++ it) {
+		const hero& h = **it;
+		income += fxptoi9(h.politics_) / 32;
+	}
+	return income;
+}
+
+int artifical::total_technology_income(int technology_increase) const
+{
+	VALIDATE(technology_exploiture_, "artifical::total_gold_income, technology_exploiture_ must not 0!");
+
+	int income = technology_bonus();
+	for (std::vector<map_location>::const_iterator it = economy_area_.begin(); it != economy_area_.end(); ++ it) {
+		unit_map::const_iterator find = units_.find(*it);
+		if (find.valid() && find->is_artifical()) {
+			income += find->technology_income();
+		}
+	}
+	income = income * technology_increase / 100;
+
+	return income;
 }

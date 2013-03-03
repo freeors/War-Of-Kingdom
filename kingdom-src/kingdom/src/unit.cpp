@@ -46,6 +46,11 @@ namespace help {
 	extern void generate_format(std::stringstream& strstr, const std::string& text, const std::string& color, int font_size, bool bold, bool italic);
 }
 
+namespace camp {
+	// only used for calculate_5fields and when teams is empty.
+	hero* leader;
+}
+
 namespace {
 	/**
 	 * Pointers to units which have data in their internal caches. The
@@ -53,6 +58,66 @@ namespace {
 	 * always valid.
 	 */
 	static std::vector<const unit *> units_with_cache;
+	static std::map<unit*, int> alert_cache;
+	static std::multimap<unit*, unit*> provoke_cache;
+}
+
+unit* loc_in_alert_area(unit& interloper, const map_location& from, const map_location& to)
+{
+	std::vector<team>& teams = *resources::teams;
+	unit* alert = NULL;
+	for (std::map<unit*, int>::const_iterator it = alert_cache.begin(); it != alert_cache.end(); ++ it) {
+		unit& u = *it->first;
+		if (&interloper == &u || !teams[interloper.side() - 1].is_enemy(u.side())) {
+			continue;
+		}
+/*
+		if (from.in_area(u.get_location(), it->second)) {
+			continue;
+		}
+*/
+		if (to.in_area(u.get_location(), it->second)) {
+			alert = &u;
+			break;
+		}
+	}
+	return alert;
+}
+
+bool provoke_cache_ready;
+std::string provoke_cache_2_str()
+{
+	std::stringstream strstr;
+	for (std::multimap<unit*, unit*>::const_iterator it = provoke_cache.begin(); it != provoke_cache.end(); ++ it) {
+		if (it != provoke_cache.begin()) {
+			strstr << ", ";
+		}
+		int h1, h2;
+		h1 = it->first->master().number_;
+		h2 = it->second->master().number_;
+		strstr << h1 << ", " << h2;
+	}
+	return strstr.str();
+}
+
+void str_2_provoke_cache(unit_map& units, hero_map& heros, const std::string& str)
+{
+	const std::vector<std::string> vstr = utils::split(str);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		int h1 = lexical_cast_default<int>(*it);
+		++ it;
+		int h2 = lexical_cast_default<int>(*it);
+		provoke_cache.insert(std::make_pair(find_unit(units, heros[h1]), find_unit(units, heros[h2])));
+	}
+	provoke_cache_ready = true;
+}
+
+unit* find_provoke(const unit* provoked)
+{
+	for (std::multimap<unit*, unit*>::const_iterator it = provoke_cache.begin(); it != provoke_cache.end(); ++ it) {
+		if (it->second == provoked) return it->first;
+	}
+	return NULL;
 }
 
 uint8_t mask0_2bit[4] = {0xfc, 0xf3, 0xcf, 0x3f};
@@ -94,6 +159,7 @@ unit::unit(const unit& o):
 	/* unit */
 	units_(o.units_),
 	heros_(o.heros_),
+	teams_(o.teams_),
 	cfg_(o.cfg_),
 	loc_(o.loc_),
 	advances_to_(o.advances_to_),
@@ -101,7 +167,7 @@ unit::unit(const unit& o):
 	packee_type_(o.packee_type_),
 	unit_type_(o.unit_type_),
 	packee_unit_type_(o.packee_unit_type_),
-	character_(o.character_),
+	especial_(o.especial_),
 	race_(o.race_),
 	name_(o.name_),
 	type_name_(o.type_name_),
@@ -147,6 +213,7 @@ unit::unit(const unit& o):
 	trait_names_(o.trait_names_),
 	unit_value_(o.unit_value_),
 	goto_(o.goto_),
+	from_(o.from_),
 	flying_(o.flying_),
 
 	anim_(NULL),
@@ -165,9 +232,14 @@ unit::unit(const unit& o):
 	heal_(o.heal_),
 	turn_experience_(o.turn_experience_),
 	keep_turns_(o.keep_turns_),
+	block_turns_(o.block_turns_),
 	hide_turns_(o.hide_turns_),
+	alert_turns_(0), // set this later
+	provoked_turns_(0), // set this later
+	task_(o.task_),
 	human_(o.human_),
 	verifying_(o.verifying_),
+	commoner_(o.commoner_),
 	artifical_(o.artifical_),
 	can_recruit_(o.can_recruit_),
 	can_reside_(o.can_reside_),
@@ -188,6 +260,7 @@ unit::unit(const unit& o):
 	intellect_(o.intellect_),
 	politics_(o.politics_),
 	charm_(o.charm_),
+	characters_(o.characters_),
 	touch_locs_(o.touch_locs_),
 	touch_dirs_(o.touch_dirs_),
 	adjacent_size_(o.adjacent_size_),
@@ -201,6 +274,16 @@ unit::unit(const unit& o):
 	tactic_compare_resistance_(o.tactic_compare_resistance_),
 	tactic_compare_movement_(o.tactic_compare_movement_)
 {
+	if (o.alert_turns_) {
+		set_alert_turns(o.alert_turns_);
+	}
+	if (o.provoked_turns_) {
+		if (provoke_cache_ready) {
+			set_provoked_turns_next(o, o.provoked_turns_);
+		} else {
+			provoked_turns_ = o.provoked_turns_;
+		}
+	}
 	std::copy(o.adaptability_, o.adaptability_ + HEROS_MAX_ARMS, adaptability_);
 	std::copy(o.skill_, o.skill_ + HEROS_MAX_SKILL, skill_);
 	std::copy(o.feature_, o.feature_ + HEROS_FEATURE_M2BYTES, feature_);
@@ -213,10 +296,11 @@ unit::unit(const unit& o):
 	}
 }
            
-unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits, game_state* state, bool is_artifical) :
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const config& cfg, bool use_traits, game_state* state, bool is_artifical) :
 	unit_merit(),
 	units_(units),
 	heros_(heros),
+	teams_(teams),
 	cfg_(cfg),
 	loc_(), // !!! don't evalidate loc_, should use set_location to evalidate loc_
 	advances_to_(),
@@ -224,7 +308,7 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	packee_type_(),
 	unit_type_(NULL),
 	packee_unit_type_(NULL),
-	character_(-1),
+	especial_(-1),
 	race_(NULL),
 	name_(),
 	type_name_(),
@@ -264,6 +348,7 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	trait_names_(),
 	unit_value_(),
 	goto_(),
+	from_(),
 	flying_(false),
 	anim_(NULL),
 	next_idling_(0),
@@ -279,9 +364,14 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	heal_(0),
 	turn_experience_(0),
 	keep_turns_(game_config::max_keep_turns),
+	block_turns_(0),
 	hide_turns_(0),
+	alert_turns_(0),
+	provoked_turns_(0),
+	task_(TASK_NONE),
 	human_(false),
 	verifying_(false),
+	commoner_(false),
 	artifical_(is_artifical),
 	can_recruit_(false),
 	can_reside_(false),
@@ -368,9 +458,9 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 
 	unit_type_ = &get_unit_type(type_).get_gender_unit_type(gender_).get_variation(variation_);
 	if (artifical_) {
-		character_ = unit_types.character_from_id(cfg["character"].str());
+		especial_ = unit_types.especial_from_id(cfg["especial"].str());
 	} else {
-		character_ = unit_type_->character();
+		especial_ = unit_type_->especial();
 	}
 	
 	advance_to(unit_type_, use_traits, state);
@@ -447,6 +537,12 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	if (cfg_.has_attribute("keep_turns")) {
 		keep_turns_ = cfg_["keep_turns"].to_int();
 	}
+	if (cfg_.has_attribute("block_turns")) {
+		block_turns_ = cfg_["block_turns"].to_int();
+	}
+	if (cfg_.has_attribute("task")) {
+		task_ = cfg_["task"].to_int();
+	}
 	if (cfg_.has_attribute("human")) {
 		human_ = cfg_["human"].to_bool();
 	}
@@ -473,12 +569,14 @@ unit::unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits,
 	if (human_) {
 		rpg::humans.insert(this);
 	}
+	commoner_ = !artifical_ && (unit_type_->master() != HEROS_INVALID_NUMBER);
 }
 
-unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits, game_state* state, bool artifical) :
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uint8_t* mem, bool use_traits, game_state* state, bool artifical) :
 	unit_merit(),
 	units_(units),
 	heros_(heros),
+	teams_(teams),
 	cfg_(),
 	loc_(), // !!! don't evalidate loc_, should use set_location to evalidate loc_
 	advances_to_(),
@@ -486,7 +584,7 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	packee_type_(),
 	unit_type_(NULL),
 	packee_unit_type_(NULL),
-	character_(-1),
+	especial_(-1),
 	race_(NULL),
 	name_(),
 	type_name_(),
@@ -526,6 +624,7 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	trait_names_(),
 	unit_value_(),
 	goto_(),
+	from_(),
 	flying_(false),
 	anim_(NULL),
 	next_idling_(0),
@@ -541,9 +640,14 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	heal_(0),
 	turn_experience_(0),
 	keep_turns_(game_config::max_keep_turns),
+	block_turns_(0),
 	hide_turns_(0),
+	alert_turns_(0),
+	provoked_turns_(0),
+	task_(TASK_NONE),
 	human_(false),
 	verifying_(false),
+	commoner_(false),
 	artifical_(artifical),
 	can_recruit_(false),
 	can_reside_(false),
@@ -640,6 +744,7 @@ unit::unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits
 	if (human_) {
 		rpg::humans.insert(this);
 	}
+	commoner_ = !artifical_ && (unit_type_->master() != HEROS_INVALID_NUMBER);
 }
 
 void unit::clear_status_caches()
@@ -652,16 +757,17 @@ void unit::clear_status_caches()
 	units_with_cache.clear();
 }
 
-unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, bool real_unit, bool is_artifical) :
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_heros_pair& t, int cityno, bool real_unit, bool is_artifical) :
 	unit_merit(),
 	units_(units),
 	heros_(heros),
+	teams_(teams),
 	cfg_(),
 	loc_(),
 	advances_to_(),
 	type_(),
 	packee_type_(),
-	character_(-1),
+	especial_(-1),
 	unit_type_(NULL),
 	packee_unit_type_(NULL),
 	race_(NULL),
@@ -702,6 +808,7 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	trait_names_(),
 	unit_value_(),
 	goto_(),
+	from_(),
 	flying_(false),
 	anim_(NULL),
 	next_idling_(0),
@@ -716,10 +823,15 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	technology_income_(0),
 	heal_(0),
 	turn_experience_(0),
-	keep_turns_(game_config::max_keep_turns),
+	keep_turns_(0),
+	block_turns_(0),
 	hide_turns_(0),
+	alert_turns_(0),
+	provoked_turns_(0),
+	task_(TASK_NONE),
 	human_(false),
 	verifying_(false),
+	commoner_(false),
 	artifical_(is_artifical),
 	can_recruit_(false),
 	can_reside_(false),
@@ -765,9 +877,9 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	unit_type_ = t.first;
 
 	artifical& city = *units_.city_from_cityno(cityno_);
-	character_ = city.character();
-	if (unit_type_->character() != NO_CHARACTER) {
-		VALIDATE(unit_type_->character() == character_, "error character in recruiting unit_type: " + unit_type_->id());
+	especial_ = city.especial();
+	if (unit_type_->especial() != NO_ESPECIAL) {
+		VALIDATE(unit_type_->especial() == especial_, "error especial in recruiting unit_type: " + unit_type_->id());
 	}
 
 	advance_to(unit_type_, real_unit);
@@ -793,6 +905,7 @@ unit::unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, boo
 	if (human_) {
 		rpg::humans.insert(this);
 	}
+	commoner_ = !artifical_ && (unit_type_->master() != HEROS_INVALID_NUMBER);
 }
 
 unit::~unit()
@@ -808,15 +921,20 @@ unit::~unit()
 	}
 
 	// Remove us from the status cache
-	std::vector<const unit *>::iterator itor =
-	std::find(units_with_cache.begin(), units_with_cache.end(), this);
-
+	std::vector<const unit *>::iterator itor =std::find(units_with_cache.begin(), units_with_cache.end(), this);
 	if (itor != units_with_cache.end()) {
 		units_with_cache.erase(itor);
 	}
+
+	// Remove us from this alert cache
+	std::map<unit*, int>::iterator it = alert_cache.find(this);
+	if (it != alert_cache.end()) {
+		alert_cache.erase(it);
+	}
+
+	// Remove us from this provoke cache
+	remove_from_provoke_cache();
 }
-
-
 
 unit& unit::operator=(const unit& u)
 {
@@ -857,10 +975,16 @@ void unit::write(uint8_t* mem) const
 	fields->y_ = loc_.y;
 	fields->goto_x_ = goto_.x;
 	fields->goto_y_ = goto_.y;
+	fields->from_x_ = from_.x;
+	fields->from_y_ = from_.y;
 	fields->facing_ = facing_;
 	fields->keep_turns_ = keep_turns_;
+	fields->block_turns_ = block_turns_;
 	fields->hide_turns_ = hide_turns_;
-	fields->character_ = character_;
+	fields->alert_turns_ = alert_turns_;
+	fields->provoked_turns_ = provoked_turns_;
+	fields->task_ = task_;
+	fields->especial_ = especial_;
 	fields->human_ = human_? 1: 0;
 	fields->random_traits_ = random_traits_? 1: 0;
 	fields->resting_ = resting_? 1: 0;
@@ -1041,7 +1165,7 @@ void unit::read(const uint8_t* mem, bool lower)
 		}
 
 		// fllowing advances_to(...) used it!
-		character_ = fields->character_;
+		especial_ = fields->especial_;
 
 		random_traits_ = fields->random_traits_? true: false;
 
@@ -1081,46 +1205,17 @@ void unit::read(const uint8_t* mem, bool lower)
 	loc_.y = loc.y;
 	goto_.x = fields->goto_x_;
 	goto_.y = fields->goto_y_;
+	from_.x = fields->from_x_;
+	from_.y = fields->from_y_;
 	keep_turns_ = fields->keep_turns_;
+	block_turns_ = fields->block_turns_;
 	hide_turns_ = fields->hide_turns_;
+	set_alert_turns(fields->alert_turns_);
+	provoked_turns_ = fields->provoked_turns_;
+	task_ = fields->task_;
 	human_ = fields->human_? true: false;
 	resting_ = fields->resting_? true: false;
 	// fields->modified_ = 1;
-
-/*
-	// attack
-	attacks_.clear();
-	for (int i = 0; i < fields->attacks_.size_; i ++) {
-		attack_fields* a_fields = (attack_fields*)(mem + fields->attacks_.offset_) + i;
-		config attack;
-				
-		// id
-		str.assign((const char*)mem + a_fields->id_.offset_, a_fields->id_.size_);
-		attack["name"] = str;
-		// type
-		str.assign((const char*)mem + a_fields->type_.offset_, a_fields->type_.size_);
-		attack["type"] = str;
-		// icon
-		str.assign((const char*)mem + a_fields->icon_.offset_, a_fields->icon_.size_);
-		attack["icon"] = str;
-		// specials
-		str.assign((const char*)mem + a_fields->specials_.offset_, a_fields->specials_.size_);
-		attack["specials"] = str;
-
-		if (a_fields->range_ == attack_type::MELEE) {
-			attack["range"] = "melee";
-		} else if (a_fields->range_ == attack_type::RANGED) {
-			attack["range"] = "ranged";
-		} else {
-			attack["range"] = "cast";
-		}
-		attack["damage"] = a_fields->damage_;
-		attack["number"] = a_fields->number_;
-
-		attacks_.push_back(attack_type(attack));
-	}
-*/
-	
 }
 
 void unit::delete_anim()
@@ -1255,7 +1350,7 @@ void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
 	cfg_.clear_children("male");
 	cfg_.clear_children("female");
 
-	advances_to_ = t->advances_to(character_);
+	advances_to_ = t->advances_to(especial_);
 
 	race_ = t->race_;
 	type_name_ = t->type_name();
@@ -1419,8 +1514,165 @@ void unit::pack_to(const unit_type* to)
 	modify_according_to_hero(false, false);
 }
 
+void unit::change_to(game_display& gui, const unit_type* t)
+{
+	bool unit_is_packed = packed();
+	std::string original_type = type_id();
+
+	if (!t->advances_to().empty()) {
+		modifications_.clear();
+	}
+	especial_ = t->especial();
+	advance_to(t);
+	calculate_5fields();
+	modify_according_to_hero(false);
+
+	if (unit_is_packed) {
+		pack_to(unit_types.find(original_type));
+	}
+
+	rect_of_hexes& draw_area = gui.draw_area();
+	bool force_scroll = (!unit_display::player_number_ || (unit_display::player_number_ > 0 && human()))? true: false;
+	bool animate = force_scroll || point_in_rect_of_hexes(get_location().x, get_location().y, draw_area);
+	if (!gui.video().update_locked() && animate) {
+		unit_animator animator;
+		bool with_bars = true;
+		animator.add_animation(this, "levelout", get_location(), map_location(), 0, with_bars);
+		animator.start_animations();
+		animator.wait_for_end();
+		set_standing();
+	}
+}
+
+// if increase is true, attempt to increase block_turns, else clear block_turns
+void unit::inching_block_turns(bool increase)
+{
+	VALIDATE(is_commoner(), "inching_block_turns, block unit must be commoner!");
+
+	if (increase) {
+		if (!get_state(unit::STATE_BLOCKED) && total_movement() == movement_left()) {
+			block_turns_ ++;
+			set_state(unit::STATE_BLOCKED, true);
+		}
+	} else if (block_turns_) {
+		block_turns_ = 0;
+	}
+}
+
+void unit::set_alert_turns(int turns) 
+{
+	if (alert_turns_ == turns) {
+		return;
+	}
+	if (alert_turns_ == 0) {
+		// Insert us into the alert cache
+		std::map<unit*, int>::iterator it = alert_cache.find(this);
+		VALIDATE(it == alert_cache.end(), "unit::set_alert_turns, insert, but find this in alert cache!");
+
+		int max_range = -1;
+		std::map<std::string, int> range_map;
+		range_map.insert(std::make_pair("melee", 1));
+		range_map.insert(std::make_pair("ranged", 2));
+		range_map.insert(std::make_pair("cast", 3));
+		for (std::vector<attack_type>::iterator it = attacks_.begin(); it != attacks_.end(); ++ it) {
+			std::map<std::string, int>::iterator find = range_map.find(it->range());
+			if (find->second > max_range) {
+				max_range = find->second;
+			}
+		}
+		alert_cache.insert(std::make_pair(this, max_range));
+
+	} else if (turns == 0) {
+		// Remove us from the alert cache
+		std::map<unit*, int>::iterator it = alert_cache.find(this);
+		VALIDATE(it != alert_cache.end(), "unit::set_alert_turns, erase, but cannnot find this in alert cache!");
+		alert_cache.erase(it);
+	}
+
+	alert_turns_ = turns;
+}
+
+void unit::do_provoked(unit& tactician, int turns)
+{
+	if (provoked_turns_) {
+		// Only one tactician to a provoked. if exist, erase it before set.
+		set_provoked_turns_next(*this, 0);
+	} else {
+		// provoked cannot is tactician.
+		std::multimap<unit*, unit*>::iterator it = provoke_cache.find(this);
+		while (it != provoke_cache.end()) {
+			it->second->set_provoked_turns(*it->first, 0);
+			it = provoke_cache.find(this);
+		}
+	}
+	set_provoked_turns(tactician, turns);
+}
+
+void unit::set_provoked_turns_next(const unit& provoked, int turns)
+{
+	std::multimap<unit*, unit*>::iterator it;
+	for (it = provoke_cache.begin(); it != provoke_cache.end(); ++ it) {
+		if (it->second == &provoked) {
+			break;
+		}
+	}
+	set_provoked_turns(*it->first, turns);
+}
+
+void unit::set_provoked_turns(unit& tactician, int turns) 
+{
+	if (provoked_turns_ == turns) {
+		return;
+	}
+	if (provoke_cache_ready) {
+		if (provoked_turns_ == 0) {
+			// Insert us into the provoke cache
+			for (std::multimap<unit*, unit*>::iterator it = provoke_cache.begin(); it != provoke_cache.end(); ++ it) {
+				VALIDATE(it->second != this, "unit::set_provoked_turns, insert, but find this in provoke cache!");
+			}
+			provoke_cache.insert(std::make_pair(&tactician, this));
+
+
+		} else if (turns == 0) {
+			// Remove us from the provoke cache
+			std::multimap<unit*, unit*>::iterator it;
+			for (it = provoke_cache.begin(); it != provoke_cache.end(); ++ it) {
+				if (it->first == &tactician && it->second == this) {
+					break;
+				}
+			}
+			VALIDATE(it != provoke_cache.end(), "unit::set_provoke_turns, erase, but cannnot find <this, target> pair in provoke cache!");
+			provoke_cache.erase(it);
+			set_goto(map_location());
+		}
+	}
+	provoked_turns_ = turns;
+}
+
+void unit::remove_from_provoke_cache()
+{
+	// Remove us from this provoke cache
+	if (provoked_turns_) {
+		for (std::multimap<unit*, unit*>::iterator it = provoke_cache.begin(); it != provoke_cache.end(); ++ it) {
+			if (it->second == this) {
+				provoke_cache.erase(it);
+				break;
+			}
+		}
+		provoked_turns_ = 0;
+	} else {
+		std::multimap<unit*, unit*>::iterator it = provoke_cache.find(this);
+		while (it != provoke_cache.end()) {
+			it->second->set_provoked_turns(*it->first, 0);
+			it = provoke_cache.find(this);
+		}
+	}
+}
+
 void unit::set_human(bool val)
 {
+	VALIDATE(!(val && commoner_), "unit::set_human, Cannot set commoner to huamn!");
+
 	if (human_ == val) {
 		return;
 	}
@@ -1436,6 +1688,8 @@ int unit::gold_income() const
 {
 	if (!gold_income_) {
 		return 0;
+	} else if (commoner_) {
+		return gold_income_;
 	} else {
 		artifical* city = units_.city_from_cityno(cityno_);
 		return city->commercial_exploiture() * gold_income_ / 100;
@@ -1446,6 +1700,8 @@ int unit::technology_income() const
 {
 	if (!technology_income_) {
 		return 0;
+	} else if (commoner_) {
+		return technology_income_;
 	} else {
 		artifical* city = units_.city_from_cityno(cityno_);
 		return city->technology_exploiture() * technology_income_ / 100;
@@ -1501,7 +1757,7 @@ void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bo
 	bool has_carry = false;
 	bool advance_packs = false;
 	bool has_rpg = false;
-	team& current_team = (*resources::teams)[side_ - 1];
+	team& this_team = teams_[side_ - 1];
 
 	// When executing to advance, xp < 0.
 	if (xp > 0) {
@@ -1523,29 +1779,29 @@ void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bo
 		increase_xp::hblock& hb = increase_xp::generic_hblock();
 
 		if (ub.leadership) {
-			hb.leadership = inc_ability_xp * current_team.leadership_speed_ / 100;
+			hb.leadership = inc_ability_xp * (this_team.leadership_speed_ + ub.leadership_speed) / 100;
 		}
 		if (ub.force) {
-			hb.force = inc_ability_xp * current_team.force_speed_ / 100;
+			hb.force = inc_ability_xp * (this_team.force_speed_ + ub.force_speed) / 100;
 		}
 		if (ub.intellect) {
-			hb.intellect = inc_ability_xp * current_team.intellect_speed_ / 100;
+			hb.intellect = inc_ability_xp * (this_team.intellect_speed_ + ub.intellect_speed) / 100;
 		}
 		if (ub.politics) {
-			hb.politics = inc_ability_xp * current_team.politics_speed_ / 100;
+			hb.politics = inc_ability_xp * (this_team.politics_speed_ + ub.politics_speed) / 100;
 		}
 		if (ub.charm) {
-			hb.charm = inc_ability_xp * current_team.charm_speed_ / 100;
+			hb.charm = inc_ability_xp * (this_team.charm_speed_ + ub.charm_speed) / 100;
 		}
 		if (ub.arms) {
-			hb.arms[arms_] = inc_arms_xp * current_team.arms_speed_[arms_] / 100;
+			hb.arms[arms_] = inc_arms_xp * this_team.arms_speed_[arms_] / 100;
 			if (packee_unit_type_) {
-				hb.arms[packee_unit_type_->arms()] = inc_arms_xp * current_team.arms_speed_[packee_unit_type_->arms()] / 100;
+				hb.arms[packee_unit_type_->arms()] = inc_arms_xp * this_team.arms_speed_[packee_unit_type_->arms()] / 100;
 			}
 		}
 		for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
 			if (ub.skill[i]) {
-				hb.skill[i] = inc_skill_xp;
+				hb.skill[i] = inc_skill_xp * (100 + ub.skill_speed[i]) / 100;
 			}
 		}
 		if (ub.meritorious) {
@@ -1580,9 +1836,9 @@ void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bo
 			calculate_5fields();
 		}
 		if (arms_ == 4) {
-			int prev_navigation = current_team.navigation();
-			current_team.add_navigation(inc_navigation_xp * current_team.navigation_civi_increase_ / 100);
-			if (unit_types.navigation_can_advance(prev_navigation, current_team.navigation())) {
+			int prev_navigation = this_team.navigation();
+			this_team.add_navigation(inc_navigation_xp * this_team.navigation_civi_increase_ / 100);
+			if (unit_types.navigation_can_advance(prev_navigation, this_team.navigation())) {
 				advance_packs = true;
 			}
 		}
@@ -1600,10 +1856,10 @@ void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bo
 
 	if (advance_packs) {
 		// field troops
-		const std::pair<unit**, size_t> p = current_team.field_troop();
+		const std::pair<unit**, size_t> p = this_team.field_troop();
 		unit** troops = p.first;
 		size_t troops_vsize = p.second;
-		const unit_type* packer = unit_types.find(unit_types.id_from_navigation(current_team.navigation()));
+		const unit_type* packer = unit_types.find(unit_types.id_from_navigation(this_team.navigation()));
 		for (size_t i = 0; i < troops_vsize; i ++) {
 			if (troops[i]->packed()) {
 				// troops[i]->pack_to(NULL);
@@ -1708,6 +1964,11 @@ SDL_Color unit::xp_color() const
 
 std::string unit::side_id() const {return teams_manager::get_teams()[side()-1].save_id(); }
 
+bool unit::uncleared() const
+{
+	return known_boolean_states_[unit::STATE_SLOWED] || known_boolean_states_[unit::STATE_BROKEN] || provoked_turns_;
+}
+
 void unit::set_movement(int moves)
 {
 	//FIXME: we shouldn't set those here, other code use this a simple setter.
@@ -1745,66 +2006,73 @@ bool unit::new_turn()
 	attacks_left_ = max_attacks_;
 	set_state(STATE_UNCOVERED, false);
 
-	const std::vector<team>& teams = *resources::teams;
-	if (artifical_ || !teams.size()) {
-		if (artifical_) {
-			new_turn_tactics();
-		}
+	// when in camp system, teams_ is empty. of course artifical_ is false.
+	if (artifical_) {
+		new_turn_tactics();
 		return false;
 	}
+	VALIDATE(!teams_.empty(), "unit::new_turn, teams must not empty!");
 
-	hero& leader = *(teams[side_ - 1].leader());
-	// wander
-	std::vector<hero*> captains, wanders;
-	if (master_ != rpg::h && master_->loyalty(leader) < game_config::wander_loyalty_threshold) {
-		wanders.push_back(master_);
-	} else {
-		captains.push_back(master_);
-	}
-	if (second_->valid()) {
-		if (second_ != rpg::h && second_->loyalty(leader) < game_config::wander_loyalty_threshold) {
-			wanders.push_back(second_);
+	team& this_team = teams_[side_ - 1];
+	if (!commoner_) {
+		hero& leader = *(this_team.leader());
+		// wander
+		std::vector<hero*> captains, wanders;
+		if (master_ != rpg::h && master_->loyalty(leader) < game_config::wander_loyalty_threshold) {
+			wanders.push_back(master_);
 		} else {
-			captains.push_back(second_);
+			captains.push_back(master_);
+		}
+		if (second_->valid()) {
+			if (second_ != rpg::h && second_->loyalty(leader) < game_config::wander_loyalty_threshold) {
+				wanders.push_back(second_);
+			} else {
+				captains.push_back(second_);
+			}
+		}
+		if (third_->valid()) {
+			if (third_ != rpg::h && third_->loyalty(leader) < game_config::wander_loyalty_threshold) {
+				wanders.push_back(third_);
+			} else {
+				captains.push_back(third_);
+			}
+		}
+		if (!wanders.empty()) {
+			artifical* to_city = units_.city_from_seed(max_hit_points_);
+			for (std::vector<hero*>::iterator itor = wanders.begin(); itor != wanders.end(); ++ itor) {
+				game_events::show_hero_message(*itor, units_.city_from_cityno((*itor)->city_), 
+					_("In misfortune time, it is necessary to search chance that can carry out value of life."),
+					game_events::INCIDENT_WANDER);
+				to_city->wander_into(**itor, this_team.is_human()? false: true);
+			}
+			if (captains.empty()) {
+				erase = true;
+				// this troops will be erase.
+			} else {
+				replace_captains(captains);
+			}
+		}
+
+		field_turns_ ++;
+		if (hide_turns_) {
+			hide_turns_ --;
+		}
+		if (alert_turns_) {
+			set_alert_turns(alert_turns_ - 1);
+		}
+		if (provoked_turns_) {
+			set_provoked_turns_next(*this, provoked_turns_ - 1);
+		}
+
+		// field troop, increase activity
+		increase_activity(8);
+
+		increase_feeling(game_config::increase_feeling);
+
+		if (!artifical_) {
+			get_experience(increase_xp::turn_ublock(*this), 3);
 		}
 	}
-	if (third_->valid()) {
-		if (third_ != rpg::h && third_->loyalty(leader) < game_config::wander_loyalty_threshold) {
-			wanders.push_back(third_);
-		} else {
-			captains.push_back(third_);
-		}
-	}
-	if (!wanders.empty()) {
-		artifical* to_city = units_.city_from_seed(max_hit_points_);
-		for (std::vector<hero*>::iterator itor = wanders.begin(); itor != wanders.end(); ++ itor) {
-			game_events::show_hero_message(*itor, units_.city_from_cityno((*itor)->city_), 
-				_("In misfortune time, it is necessary to search chance that can carry out value of life."),
-				game_events::INCIDENT_WANDER);
-			to_city->wander_into(**itor, teams[side_ - 1].is_human()? false: true);
-		}
-		if (captains.empty()) {
-			erase = true;
-			// this troops will be erase.
-		} else {
-			replace_captains(captains);
-		}
-	}
-
-	field_turns_ ++;
-	if (hide_turns_) {
-		hide_turns_ --;
-	}
-
-	// field troop, increase activity
-	increase_activity(8);
-
-	increase_feeling(game_config::increase_feeling);
-
-	if (!artifical_) {
-		get_experience(increase_xp::turn_ublock(*this), 3);
-	}
-
 	new_turn_tactics();
 
 	return erase;
@@ -1817,13 +2085,15 @@ void unit::end_turn()
 	if((movement_ != total_movement()) && !(get_state(STATE_NOT_MOVED))) {
 		resting_ = false;
 	}
-	set_state(STATE_NOT_MOVED,false);
+	set_state(STATE_NOT_MOVED, false);
+	set_state(STATE_BLOCKED, false);
 }
 
 void unit::new_scenario()
 {
 	// Set the goto-command to be going to no-where
 	goto_ = map_location();
+	from_ = map_location();
 
 	heal_all();
 	set_state(STATE_SLOWED, false);
@@ -1895,16 +2165,15 @@ std::map<std::string, unit::state_t> unit::known_boolean_state_names_ = get_know
 std::map<std::string, unit::state_t> unit::get_known_boolean_state_names()
 {
 	std::map<std::string, state_t> known_boolean_state_names_map;
-	known_boolean_state_names_map.insert(std::make_pair("slowed",STATE_SLOWED));
-	known_boolean_state_names_map.insert(std::make_pair("broken",STATE_BROKEN));
-	known_boolean_state_names_map.insert(std::make_pair("poisoned",STATE_POISONED));
-	known_boolean_state_names_map.insert(std::make_pair("petrified",STATE_PETRIFIED));
+	known_boolean_state_names_map.insert(std::make_pair("slowed", STATE_SLOWED));
+	known_boolean_state_names_map.insert(std::make_pair("broken", STATE_BROKEN));
+	known_boolean_state_names_map.insert(std::make_pair("poisoned", STATE_POISONED));
+	known_boolean_state_names_map.insert(std::make_pair("petrified", STATE_PETRIFIED));
 	known_boolean_state_names_map.insert(std::make_pair("uncovered", STATE_UNCOVERED));
-	known_boolean_state_names_map.insert(std::make_pair("not_moved",STATE_NOT_MOVED));
-	known_boolean_state_names_map.insert(std::make_pair("reinforced",STATE_REINFORCED));
-	known_boolean_state_names_map.insert(std::make_pair("legeritied",STATE_LEGERITIED));
-	//not sure if "guardian" is a yes/no state.
-	//known_boolean_state_names_map.insert(std::make_pair("guardian",STATE_GUARDIAN));
+	known_boolean_state_names_map.insert(std::make_pair("not_moved", STATE_NOT_MOVED));
+	known_boolean_state_names_map.insert(std::make_pair("reinforced", STATE_REINFORCED));
+	known_boolean_state_names_map.insert(std::make_pair("legeritied", STATE_LEGERITIED));
+	known_boolean_state_names_map.insert(std::make_pair("blocked", STATE_BLOCKED));
 	return known_boolean_state_names_map;
 }
 
@@ -2025,7 +2294,7 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 		if (!unit_is_city(this)) {
 			return false;
 		}
-		std::vector<artifical*>& citys = (*resources::teams)[side_ - 1].holded_cities();
+		std::vector<artifical*>& citys = teams_[side_ - 1].holded_cities();
 		if (citys.size() > 1) {
 			if (cfg["last_city"].to_bool()) {
 				return false;
@@ -2085,12 +2354,12 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 	}
 
 	if(cfg.has_child("filter_location")) {
-		assert(resources::game_map != NULL);
-		assert(resources::teams != NULL);
-		assert(resources::tod_manager != NULL);
-		assert(resources::units != NULL);
+		VALIDATE(resources::game_map != NULL, "unit::internal_matches_filter, game_map == NULL!");
+		VALIDATE(resources::teams != NULL, "unit::internal_matches_filter, teams == NULL!");
+		VALIDATE(resources::tod_manager != NULL, "unit::internal_matches_filter, tod_manager == NULL!");
+		VALIDATE(resources::units != NULL, "unit::internal_matches_filter, units == NULL!");
 		const vconfig& t_cfg = cfg.child("filter_location");
-		terrain_filter t_filter(t_cfg, *resources::units, use_flat_tod);
+		terrain_filter t_filter(t_cfg, units_, use_flat_tod);
 		if(!t_filter.match(loc)) {
 			return false;
 		}
@@ -2394,7 +2663,7 @@ void unit::write(config& cfg) const
 		cfg["type"] = type_;
 	}
 
-	cfg["character"] = unit_types.character_id(character_);
+	cfg["especial"] = unit_types.especial_id(especial_);
 
 	cfg["cityno"] = cityno_;
 
@@ -2443,7 +2712,10 @@ void unit::write(config& cfg) const
 	cfg["modifications"] = utils::join(modifications_);
 
 	cfg["keep_turns"] = keep_turns_;
+	cfg["block_turns"] = block_turns_;
 	cfg["hide_turns"] = hide_turns_;
+	cfg["alert_turns"] = alert_turns_;
+	cfg["task"] = task_;
 	cfg["human"] = human_;
 
 	// unit_merit
@@ -2575,20 +2847,22 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 	}
 
 	// redo technology
-	if (resources::teams) {
+	if (!teams_.empty()) {
 		int type = filter::ARTIFICAL;
 		if (!is_artifical()) {
 			type = filter::TROOP;
 		} else if (is_city()) {
 			type = filter::CITY;
 		}
-		const team& current_team = (*resources::teams)[side_ - 1];
-		const std::vector<const technology*>& holded_technologies = current_team.holded_technologies();
+		int packee_arms = packee_type()->arms();
+		const team& this_team = teams_[side_ - 1];
+
+		const std::vector<const technology*>& holded_technologies = this_team.holded_technologies();
 		for (std::vector<const technology*>::const_iterator it = holded_technologies.begin(); it != holded_technologies.end(); ++ it) {
 			const std::vector<const technology*>& parts = (*it)->parts();
 			for (std::vector<const technology*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
 				const technology& t = **it2;
-				if (t.occasion() == technology::MODIFY && t.filter(type, arms_)) {
+				if (t.occasion() == technology::MODIFY && t.filter(type, packee_arms)) {
 					add_modification_internal(t.apply_to(), t.effect_cfg(), false);
 				}
 			}
@@ -2660,14 +2934,13 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 // 2.5, 3, 3.5, 100
 void unit::calculate_5fields()
 {
-	std::vector<team>& teams_ = *resources::teams;
 	hero* leader = NULL;
 	const team* t = NULL;
-	if (teams_.size()) {
+	if (!teams_.empty()) {
 		leader = teams_[side_ - 1].leader();
 		t = &(teams_[side_ - 1]);
 	} else {
-		leader = team::player_leader();
+		leader = camp::leader;
 	}
 
 	hero_5fields_t max_assistant;
@@ -2837,6 +3110,32 @@ void unit::calculate_5fields()
 			}
 		}
 	}
+
+	characters_.clear();
+	for (int i = 0; i < 3; i ++) {
+		hero* h = master_;
+		if (i == 1) {
+			if (!second_valid) continue;
+			h = second_;
+		} else if (i == 2) {
+			if (!third_valid) continue;
+			h = third_;
+		}
+		if (h->character_ != HEROS_NO_CHARACTER) {
+			const tcharacter& ch = unit_types.character(h->character_);
+			for (std::vector<const tcharacter*>::const_iterator it = ch.parts().begin(); it != ch.parts().end(); ++ it) {
+				const tcharacter& ch = **it;
+				int apply_to = ch.apply_to();
+				int l = ch.level(*h);
+				std::map<int, character_data>::iterator find = characters_.find(apply_to);
+				if (find == characters_.end()) {
+					characters_.insert(std::make_pair(apply_to, character_data(h, ch.index(), l)));
+				} else if (l > find->second.level) {
+					find->second = character_data(h, ch.index(), l);
+				}
+			}
+		}
+	}
 }
 
 void unit::adjust() 
@@ -2845,7 +3144,7 @@ void unit::adjust()
 
 	calculate_5fields();
 	if (packed()) {
-		int navigation = (*resources::teams)[side_ - 1].navigation();
+		int navigation = teams_[side_ - 1].navigation();
 		const unit_type* to_type = unit_types.find(unit_types.id_from_navigation(navigation));
 		pack_to(to_type);
 
@@ -2935,7 +3234,7 @@ std::string unit::form_tip() const
 		return form_tiny_tip();
 	}
 
-	std::vector<team>& teams_ = *resources::teams;
+	team& current_team = teams_[side_ - 1];
 	std::stringstream text, strstr;
 	std::vector<std::string> abilities_tt;
 	if (!artifical_) {
@@ -2956,9 +3255,11 @@ std::string unit::form_tip() const
 		} else {
 			help::generate_format(text, master_->name(), "red", 0, false, false);
 		}
-		help::generate_format(text, "(", "blue", 0, false, false);
-		text << master_->loyalty(*teams_[master_->side_].leader());
-		help::generate_format(text, ")", "blue", 0, false, false);
+		if (!commoner_) {
+			help::generate_format(text, "(", "blue", 0, false, false);
+			text << master_->loyalty(*teams_[master_->side_].leader());
+			help::generate_format(text, ")", "blue", 0, false, false);
+		}
 		if (second_->valid()) {
 			text << "\n    ";
 			if (second_->activity_ == 255) {
@@ -2966,9 +3267,11 @@ std::string unit::form_tip() const
 			} else {
 				help::generate_format(text, second_->name(), "red", 0, false, false);
 			}
-			help::generate_format(text, "(", "blue", 0, false, false);
-			text << second_->loyalty(*teams_[second_->side_].leader());
-			help::generate_format(text, ")", "blue", 0, false, false);
+			if (!commoner_) {
+				help::generate_format(text, "(", "blue", 0, false, false);
+				text << second_->loyalty(*teams_[second_->side_].leader());
+				help::generate_format(text, ")", "blue", 0, false, false);
+			}
 		}
 		if (third_->valid()) {
 			text << " ";
@@ -2977,9 +3280,11 @@ std::string unit::form_tip() const
 			} else {
 				help::generate_format(text, third_->name(), "red", 0, false, false);
 			}
-			help::generate_format(text, "(", "blue", 0, false, false);
-			text << third_->loyalty(*teams_[third_->side_].leader());
-			help::generate_format(text, ")", "blue", 0, false, false);
+			if (!commoner_) {
+				help::generate_format(text, "(", "blue", 0, false, false);
+				text << third_->loyalty(*teams_[third_->side_].leader());
+				help::generate_format(text, ")", "blue", 0, false, false);
+			}
 		}
 		text << "\n";
 
@@ -3060,8 +3365,48 @@ std::string unit::form_tip() const
 	help::generate_format(text, strstr.str(), "", 0, false, false);
 	text << "\n";
 
-	if (this_is_city()) {
-		text << dgettext("wesnoth-lib", "Front") << ": " << const_unit_2_artifical(this)->fronts() << "/" << mr_data::max_fronts << "\n";
+	std::map<int, std::string> task_str;
+	task_str.insert(std::make_pair((int)TASK_NONE, dsgettext("wesnoth-lib", "None")));
+	task_str.insert(std::make_pair((int)TASK_BACK, dsgettext("wesnoth-lib", "task^Back")));
+	task_str.insert(std::make_pair((int)TASK_TRADE, dsgettext("wesnoth-lib", "task^Trade")));
+	task_str.insert(std::make_pair((int)TASK_TRANSFER, dsgettext("wesnoth-lib", "task^Transfer")));
+	if (commoner_) {
+		text << dsgettext("wesnoth-lib", "Task") << ": " << task_str.find(task_)->second;
+		int income = gold_income()? gold_income(): technology_income();
+		if (task_ == TASK_TRADE) {
+			if (from_.valid()) {
+				text << "(" << dsgettext("wesnoth-lib", "trade^Back") << ")";
+			} else {
+				income /= 2;
+			}
+		} else {
+			income = 0;
+		}
+		text << "\n";
+		text << dgettext("wesnoth-lib", "Income") << ": " << income << "\n";
+		text << _("Block turns") << ": " << block_turns_ << "\n";
+	} else if (this_is_city()) {
+		const artifical* city = const_unit_2_artifical(this);
+		text << dgettext("wesnoth-lib", "Decree") << ": ";
+		if (city->decree().first) {
+			text << city->decree().first->name() << "(" << city->decree().second << ")";
+		} else {
+			text << dgettext("wesnoth-lib", "None");
+		}
+		text << "\n";
+		text << dgettext("wesnoth-lib", "Police") << ": ";
+		strstr.str("");
+		strstr << city->police();
+		if (city->police() < game_config::min_tradable_police) {
+			help::generate_format(text, strstr.str(), "red", 0, false, false);
+		} else {
+			help::generate_format(text, strstr.str(), "white", 0, false, false);
+		}
+		text << "\n";
+		text << dgettext("wesnoth-lib", "Commoner") << ": " << city->field_commoners().size() + city->reside_commoners().size() << "\n";
+		text << dgettext("wesnoth-lib", "Front") << ": " << city->fronts() << "/" << mr_data::max_fronts << "\n";
+		text << dgettext("wesnoth-lib", "Gold income") << ": " << city->total_gold_income(current_team.market_increase_) << "\n";
+		text << dgettext("wesnoth-lib", "Technology income") << ": " << city->total_technology_income(current_team.technology_increase_) << "\n";
 	}
 
 	// abilities
@@ -3133,18 +3478,11 @@ std::string unit::form_tip() const
 	}
 
 	if (!artifical_) {
-		text << _("Munition turns") << ": " << keep_turns_ << "    ";
+		text << _("Munition turns") << ": " << keep_turns_ << "   ";
 	}
 
 	// AMLA
-	int amla = 0;
-	const modifications_map& unit_modifications = unit_types.modifications();
-	for (std::vector<std::string>::const_iterator it = modifications_.begin(); it != modifications_.end(); ++ it) {
-		if (unit_modifications.find(*it) != unit_modifications.end()) {
-			amla ++;
-		}
-	}
-	text << _("AMLA") << ": " << amla;
+	text << _("AMLA") << ": " << amla();
 /*
 	for (std::vector<tunit_tactic>::const_iterator it = tactics_.begin(); it != tactics_.end(); ++ it) {
 		const tunit_tactic& t = *it;
@@ -3156,6 +3494,20 @@ std::string unit::form_tip() const
 	}
 */
 	text << "\n";
+/*
+	for (std::map<int, character_data>::const_iterator it = characters_.begin(); it != characters_.end(); ++ it) {
+		const tcharacter& ch = unit_types.character(it->second.ch);
+		hero& h = *it->second.h;
+		if (it == characters_.begin()) {
+			text << ch.name() << "(" << h.name() << ")" << "(" << it->second.level << ")";
+		} else {
+			text << ", " << ch.name() << "(" << h.name() << ")" << "(" << it->second.level << ")";
+		}
+	}
+
+	text << "   (" << provoke_cache.size() << ")";
+	text << "\n";
+*/
 
 	// skill
 	text << dgettext("wesnoth-lib", "Skill") << ": ";
@@ -3240,11 +3592,17 @@ std::string unit::form_tip() const
 			help::tintegrate::generate_img(text, "misc/mini-decrease.png", help::tintegrate::BACK);
 		}
 	}
+	text << "    ";
+
 	if (hide_turns_) {
 		help::tintegrate::generate_img(text, "misc/hide.png");
 	}
-	text << "    ";
-
+	if (alert_turns_) {
+		help::tintegrate::generate_img(text, "misc/alert.png");
+	}
+	if (provoked_turns_) {
+		help::tintegrate::generate_img(text, "misc/provoked.png");
+	}
 	if (invisible(loc_)) {
 		help::tintegrate::generate_img(text, "misc/invisible.png");
 	}
@@ -3313,13 +3671,29 @@ std::string unit::form_tiny_tip() const
 		}
 	}
 
-	if (hide_turns_) {
-		strstr << " ";
-		help::tintegrate::generate_img(strstr, "misc/hide.png");
-	}
-
 	bool first_state_icon = true;
 	
+	if (hide_turns_) {
+		if (first_state_icon) {
+			strstr << "    ";
+			first_state_icon = false;
+		}
+		help::tintegrate::generate_img(strstr, "misc/hide.png");
+	}
+	if (alert_turns_) {
+		if (first_state_icon) {
+			strstr << "    ";
+			first_state_icon = false;
+		}
+		help::tintegrate::generate_img(strstr, "misc/alert.png");
+	}
+	if (provoked_turns_) {
+		if (first_state_icon) {
+			strstr << "    ";
+			first_state_icon = false;
+		}
+		help::tintegrate::generate_img(strstr, "misc/provoked.png");
+	}
 	if (invisible(loc_)) {
 		if (first_state_icon) {
 			strstr << "    ";
@@ -3494,6 +3868,9 @@ void unit::redraw_unit()
 	} else if (temporary_state_ & BIT_2_MASK(BIT_STRONGER)) {
 		params.blend_with = disp.rgb(255, 32, 32);
 		params.blend_ratio = 0.40;
+	} else if (provoked_turns_) {
+		params.blend_with = disp.rgb(255, 0, 0);
+		params.blend_ratio = 0.25;
 	}
 	//hackish : see unit_frame::merge_parameters
 	// we use image_mod on the primary image
@@ -3501,6 +3878,7 @@ void unit::redraw_unit()
 	params.image_mod = image_mods();
 	params.halo_mod = TC_image_mods();
 	params.image= absolute_image();
+	params.sound_filter = sound_filter_tag::rfind(master_->gender_ == hero_gender_female? sound_filter_tag::FEMALE: sound_filter_tag::MALE);
 
 
 	if(get_state(STATE_PETRIFIED)) params.image_mod +="~GS()";
@@ -3593,7 +3971,11 @@ void unit::redraw_unit()
 			orb_img = &unit_map::moved_orb_;
 			if (disp.playing_team() == disp.viewing_team() && !user_end_turn()) {
 				if (!human()) {
-					orb_img = &unit_map::self_orb_;
+					if (!commoner_) {
+						orb_img = &unit_map::self_orb_;
+					} else {
+						orb_img = &unit_map::automatic_orb_;
+					}
 				} else if (movement_left() == total_movement()) {
 					orb_img = &unit_map::unmoved_orb_;
 				} else if (unit_can_action(*this)) {
@@ -3817,7 +4199,7 @@ bool unit::invalidate(const map_location &loc)
 
 int unit::upkeep() const
 {
-	if (unit_feature_val(hero_feature_magnate)) {
+	if (commoner_ || unit_feature_val(hero_feature_magnate)) {
 		return 0;
 	}
 	// Leaders do not incur upkeep.
@@ -3838,9 +4220,9 @@ int unit::movement_cost(const t_translation::t_terrain terrain, const map_locati
 		return 1;
 	}
 
-	team& current_team = (*resources::teams)[side_ - 1];
-	if (!loc || !current_team.has_avoid() || !current_team.avoid().match(*loc)) {
-		assert(resources::game_map != NULL);
+	team& this_team = teams_[side_ - 1];
+	if (!loc || !this_team.has_avoid() || !this_team.avoid().match(*loc)) {
+		VALIDATE(resources::game_map != NULL, "unit::movement_cost, game_map is null!");
 		const int res = movement_cost_internal(movement_costs_,
 				cfg_, NULL, *resources::game_map, terrain);
 
@@ -3918,7 +4300,7 @@ int unit::resistance_against(const std::string& damage_name,bool attacker,const 
 
 		int new_res = std::min<int>(resist_effect.get_composite_value(),resistance_abilities.highest("max_value").first);
 		if (new_res != res) {
-			const team& t = (*resources::teams)[side_ - 1 ];
+			const team& t = teams_[side_ - 1 ];
 			if (new_res > res) {
 				res = res + (new_res - res) * t.cooperate_increase_ / 100;
 			} else {
@@ -4159,7 +4541,7 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 				}
 			}
 		}
-		if (anim) {
+		if (anim && (increased || decreased)) {
 			strstr.str("");
 			help::tintegrate::generate_img(strstr, "misc/attack.png");
 			if (increased) {
@@ -4251,7 +4633,7 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 		} else if (max_movement_ < base_max_movement) {
 			decreased = true;
 		}
-		if (anim) {
+		if (anim && (increased || decreased)) {
 			strstr.str("");
 			help::tintegrate::generate_img(strstr, "misc/movement.png");
 			if (increased) {
@@ -4337,7 +4719,7 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 			}
 			mod_mdr_merge(mv, ap, !effect["replace"].to_bool(), true, 50, 500);
 		}
-		if (anim) {
+		if (anim && (increased || decreased)) {
 			strstr.str("");
 			help::tintegrate::generate_img(strstr, "misc/resistance.png");
 			if (increased) {
@@ -4414,7 +4796,7 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 		int increase = effect["increase"].to_int();
 		while (increase > 0) {
 			experience_ += max_experience_;
-			dialogs::advance_unit(loc_, true);
+			dialogs::advance_unit(*this, true);
 			increase --;
 		}
 
@@ -4458,10 +4840,39 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 		const std::string& type = effect["type"];
 		const std::string& relative = effect["relative"];
 		int ratio = effect["ratio"].to_int(100);
-		damage_range(units_, *resources::teams, *this, type, relative, ratio);
+		damage_range(units_, teams_, *this, type, relative, ratio);
 
 	} else if (apply_to == apply_to_tag::HIDE) {
 		if (hide_turns_ < turns) hide_turns_ = turns;
+
+	} else if (apply_to == apply_to_tag::ALERT) {
+		if (alert_turns_ < turns) {
+			set_alert_turns(turns);
+		}
+
+	} else if (apply_to == apply_to_tag::CLEAR) {
+		increased = false;
+		if (get_state(STATE_SLOWED)) {
+			set_state(STATE_SLOWED, false);
+			increased = true;
+		}
+		if (get_state(STATE_BROKEN)) {
+			set_state(STATE_BROKEN, false);
+			increased = true;
+		}
+		if (provoked_turns_) {
+			remove_from_provoke_cache();
+			increased = true;
+		}
+		if (increased) {
+			unit_display::unit_text(*this, false, "");
+		}
+
+	} else if (apply_to == apply_to_tag::PROVOKE) {
+		VALIDATE(false, "apply_to_tag::PROVOKE don't process by add_modification_internal!");
+
+	} else if (apply_to == apply_to_tag::DECREE) {
+		issue_decree(effect);
 	}
 }
 
@@ -4525,8 +4936,6 @@ void unit::apply_modifications()
 
 bool unit::invisible(const map_location& loc, bool see_all) const
 {
-	const std::vector<team>& teams = *resources::teams;
-
 	// Fetch from cache
 	/**
 	 * @todo FIXME: We use the cache only when using the default see_all=true
@@ -4593,13 +5002,13 @@ bool unit::invisible(const map_location& loc, bool see_all) const
 			}
 */			
 			bool adjacent = true;
-			if (teams[side_-1].is_enemy(u->side()) && adjacent) {
+			if (teams_[side_-1].is_enemy(u->side()) && adjacent) {
 				// Enemy spotted in adjacent tiles, check if we can see him.
 				// Watch out to call invisible with see_all=true to avoid infinite recursive calls!
 				if (see_all) {
 					is_inv = false;
 					break;
-				} else if (!teams[side_-1].fogged(u_loc) && !u->invisible(u_loc, true)) {
+				} else if (!teams_[side_-1].fogged(u_loc) && !u->invisible(u_loc, true)) {
 					is_inv = false;
 					break;
 				}
@@ -4625,7 +5034,6 @@ unit& unit::clone(bool is_temporary)
 
 void unit::increase_loyalty(int inc)
 {
-	std::vector<team>& teams_ = *resources::teams;
 	hero& leader = *(teams_[side_ - 1].leader());
 
 	master_->increase_loyalty(inc, leader);
@@ -4641,7 +5049,6 @@ void unit::increase_loyalty(int inc)
 // @fixed: true: set all heros's loyalty to level. false: set all heros's loyalty to level if his loyalty is less than level.
 void unit::set_loyalty(int level, bool fixed)
 {
-	std::vector<team>& teams_ = *resources::teams;
 	hero& leader = *(teams_[side_ - 1].leader());
 
 	if (master_->base_catalog_ != leader.base_catalog_) {
@@ -5061,7 +5468,7 @@ void unit::set_location(const map_location &loc)
 				if (!packed()) {
 					// pack!
 					// std::string packer;
-					int navigation = (*resources::teams)[side_ - 1].navigation();
+					int navigation = teams_[side_ - 1].navigation();
 					pack_to(unit_types.find(unit_types.id_from_navigation(navigation)));
 
 					// since appearance of unit has changed, current animation should became invalid.
@@ -5086,7 +5493,12 @@ void unit::set_location(const map_location &loc)
 
 void unit::set_goto(const map_location& new_goto) 
 { 
-	goto_ = new_goto; 
+	goto_ = new_goto;
+}
+
+void unit::set_from(const map_location& new_from)
+{
+	from_ = new_from;
 }
 
 void unit::replace_captains(const std::vector<hero*>& captains)
@@ -5509,4 +5921,34 @@ void unit::set_temporary_state(int bit, bool set)
 	} else {
 		temporary_state_ &= ~(1 << bit);
 	}
+}
+
+int unit::character_level(int apply_to) const
+{
+	std::map<int, character_data>::const_iterator find = characters_.find(apply_to);
+	if (find != characters_.end()) {
+		return find->second.level;
+	}
+	return 0;		
+}
+
+hero* unit::character_hero(int apply_to) const
+{
+	std::map<int, character_data>::const_iterator find = characters_.find(apply_to);
+	if (find != characters_.end()) {
+		return find->second.h;
+	}
+	return NULL;	
+}
+
+int unit::amla() const
+{
+	int n = 0;
+	const modifications_map& unit_modifications = unit_types.modifications();
+	for (std::vector<std::string>::const_iterator it = modifications_.begin(); it != modifications_.end(); ++ it) {
+		if (unit_modifications.find(*it) != unit_modifications.end()) {
+			n ++;
+		}
+	}
+	return n;
 }

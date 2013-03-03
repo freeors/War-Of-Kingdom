@@ -287,6 +287,15 @@ double attack_analysis::rating(double aggression) const
 	} else if (target->type() == unit_types.find_keep()) {
 		value += 0.15;
 	}
+	// ensure provoked must attack provoke.
+	if (movements.size() == 1 && movements.front().first.second == -1) {
+		unit* u = movements.front().first.first;
+		if (u->provoked_turns() && find_provoke(u) == target) {
+			if (value < 0.01) {
+				value = 0.01;
+			}
+		}
+	}
 
 	return value;
 }

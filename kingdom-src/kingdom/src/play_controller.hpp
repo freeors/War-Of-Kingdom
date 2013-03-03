@@ -113,7 +113,13 @@ public:
 	virtual void sync_undo();
 
 	bool do_recruit(artifical* city, int cost_exponent, bool rpg_mode);
+	bool generate_commoner(artifical& city, const unit_type* ut, bool replay);
 	void rpg_update();
+
+	void calculate_commoner_gotos(team& current_team, std::vector<std::pair<unit*, int> >& gotos);
+	void do_commoner(team& current_team);
+	void commoner_back(artifical* entered_city, artifical* belong_city, const map_location& src_loc);
+	map_location move_unit(bool troop, team& current_team, const std::pair<unit*, int>& pair, map_location to, bool dst_must_reachable = true);
 
 	void set_victory_when_enemies_defeated(bool e)
 	{ victory_when_enemies_defeated_ = e; }
@@ -166,9 +172,16 @@ public:
 	void recommend();
 	bool do_ally(bool alignment, int my_side, int to_ally_side, int emissary_number, int target_side, int strategy_index);
 
+	void construct_road();
+	const std::map<std::pair<int, int>, std::vector<map_location> >& roads() const { return roads_; }
+	const std::vector<map_location>& road(int a, int b) const;
+	const std::vector<map_location>& road(const unit& u) const;
+
 	int human_players();
 	int first_human_team() const { return first_human_team_; }
 	const config& level() const { return level_; }
+
+	card_map& cards() { return cards_; }
 protected:
 	void slice_before_scroll();
 
@@ -278,6 +291,8 @@ private:
 
 	unit** troops_cache_;
 	size_t troops_cache_vsize_;
+
+	std::map<std::pair<int, int>, std::vector<map_location> > roads_;
 
 	bool victory_when_enemies_defeated_;
 	end_level_data end_level_data_;

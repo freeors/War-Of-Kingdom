@@ -65,57 +65,40 @@ static lg::log_domain log_config("config");
 namespace dialogs
 {
 
-void advance_unit(const map_location &loc, bool random_choice, bool choose_from_random)
+bool advance_unit(unit& u, bool random_choice, bool choose_from_random)
 {
 	game_display& gui = *resources::screen;
 
-	unit_map::iterator u = resources::units->find(loc);
-	if (u == resources::units->end() || u->advances() == false)
-		return;
-
-	const std::vector<std::string>& options = u->advances_to();
-
-	//
-	std::string id = u->id();
-	std::string name = u->name();
-	int exp = u->experience();
-	int cityno = u->cityno();
-	int side = u->side();
-	std::stringstream id2;
-	for (std::vector<std::string>::const_iterator it = options.begin(); it != options.end(); ++ it) {
-		if (it != options.end()) {
-			id2 << *it; 
-		} else {
-			id2 << ", "<< *it; 
-		}
+	if (u.advances() == false) {
+		return false;
 	}
-	//
 
+	const std::vector<std::string>& options = u.advances_to();
 	std::vector<std::string> lang_options;
 
 	std::vector<unit> sample_units;
 	unit* sample_unit;
 	for(std::vector<std::string>::const_iterator op = options.begin(); op != options.end(); ++op) {
-		sample_unit = ::get_advanced_unit(&*u, *op);
+		sample_unit = ::get_advanced_unit(&u, *op);
 		sample_units.push_back(*sample_unit);
 		delete sample_unit;
 		const unit& type = sample_units.back();
 
-		lang_options.push_back(IMAGE_PREFIX + type.absolute_image() + u->image_mods() + COLUMN_SEPARATOR + type.type_name());
+		lang_options.push_back(IMAGE_PREFIX + type.absolute_image() + u.image_mods() + COLUMN_SEPARATOR + type.type_name());
 		preferences::encountered_units().insert(*op);
 	}
 
 	bool always_display = false;
-	foreach (const config &mod, u->get_modification_advances())
+	foreach (const config &mod, u.get_modification_advances())
 	{
 		if (utils::string_bool(mod["always_display"])) always_display = true;
 		std::string to;
-		if (u->packed()) {
-			to = u->packee_type_id();
+		if (u.packed()) {
+			to = u.packee_type_id();
 		} else {
-			to = u->type_id();
+			to = u.type_id();
 		}
-		sample_unit = ::get_advanced_unit(&*u, to);
+		sample_unit = ::get_advanced_unit(&u, to);
 		sample_units.push_back(*sample_unit);
 		delete sample_unit;
 		sample_units.back().add_modification(mod);
@@ -123,12 +106,12 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 		if (!mod["image"].empty()) {
 			lang_options.push_back(IMAGE_PREFIX + mod["image"].str() + COLUMN_SEPARATOR + mod["description"].str());
 		} else {
-			lang_options.push_back(IMAGE_PREFIX + type.absolute_image() + u->image_mods() + COLUMN_SEPARATOR + mod["description"].str());
+			lang_options.push_back(IMAGE_PREFIX + type.absolute_image() + u.image_mods() + COLUMN_SEPARATOR + mod["description"].str());
 		}
 	}
 
 	if (lang_options.empty()) {
-		return;
+		return false;
 	}
 
 	int res = 0;
@@ -148,7 +131,7 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 			size_t index = 0;
 			for (std::vector<std::string>::const_iterator it = options.begin(); it != options.end(); ++ it, index ++) {
 				const unit_type* ut = unit_types.find(*it);
-				if (ut->character() != -1) {
+				if (ut->especial() != -1) {
 					break;
 				}
 			}
@@ -185,25 +168,24 @@ void advance_unit(const map_location &loc, bool random_choice, bool choose_from_
 		recorder.choose_option(res);
 	}
 
-	animate_unit_advancement(loc, size_t(res));
+	return animate_unit_advancement(u, size_t(res));
 
 	// loc maybe is loc_ of advanced unit, so is invalid after advance,
 	// don't call relatve loc_, else use copy of loc.
 }
 
-bool animate_unit_advancement(const map_location &loc, size_t choice)
+bool animate_unit_advancement(unit& u, size_t choice)
 {
 	const events::command_disabler cmd_disabler;
 
-	unit_map::iterator u = resources::units->find(loc);
-	if (u == resources::units->end() || u->advances() == false) {
+	if (u.advances() == false) {
 		return false;
 	}
 
-	const std::vector<std::string>& options = u->advances_to();
-	std::vector<config> mod_options = u->get_modification_advances();
+	const std::vector<std::string>& options = u.advances_to();
+	std::vector<config> mod_options = u.get_modification_advances();
 
-	if(choice >= options.size() + mod_options.size()) {
+	if (choice >= options.size() + mod_options.size()) {
 		return false;
 	}
 
@@ -212,12 +194,12 @@ bool animate_unit_advancement(const map_location &loc, size_t choice)
 
 	game_display* disp = resources::screen;
 	rect_of_hexes& draw_area = disp->draw_area();
-	bool force_scroll = (!unit_display::player_number_ || ((unit_display::player_number_ > 0) && ((*resources::teams)[unit_display::player_number_ - 1].is_human() || preferences::scroll_to_action())))? true: false;
-	bool animate = force_scroll || point_in_rect_of_hexes(u->get_location().x, u->get_location().y, draw_area);
+	bool force_scroll = (!unit_display::player_number_ || (unit_display::player_number_ > 0 && preferences::scroll_to_action()))? true: false;
+	bool animate = force_scroll || point_in_rect_of_hexes(u.get_location().x, u.get_location().y, draw_area);
 	if (!resources::screen->video().update_locked() && animate) {
 		unit_animator animator;
 		bool with_bars = true;
-		animator.add_animation(&*u,"levelout", u->get_location(), map_location(), 0, with_bars);
+		animator.add_animation(&u, "levelout", u.get_location(), map_location(), 0, with_bars);
 		animator.start_animations();
 		animator.wait_for_end();
 	}
@@ -225,40 +207,39 @@ bool animate_unit_advancement(const map_location &loc, size_t choice)
 	if(choice < options.size()) {
 		// chosen_unit is not a reference, since the unit may disappear at any moment.
 		std::string chosen_unit = options[choice];
-		::advance_unit(loc, chosen_unit);
+		::advance_unit(u, chosen_unit);
 	} else {
-		unit* amla_unit = &*u;
+		unit* amla_unit = &u;
 		const config &mod_option = mod_options[choice - options.size()];
 		
-		game_events::fire("advance",loc);
+		game_events::fire("advance", u.get_location());
 
 		amla_unit->get_experience(increase_xp::attack_ublock(*amla_unit), -amla_unit->max_experience()); // subtract xp required
 		// ALMA may want to change status, but add_modification in modify_according_to_hero cannot change state,
 		// so it need call amla_unit->add_modification instead of amla_unit->modify_according_to_hero.
 		amla_unit->add_modification(mod_option);
 
-		game_events::fire("post_advance",loc);
+		game_events::fire("post_advance", u.get_location());
 	}
 
-	u = resources::units->find(loc);
 	resources::screen->invalidate_unit();
 
-	if (u != resources::units->end() && !resources::screen->video().update_locked()) {
-		if (force_scroll || point_in_rect_of_hexes(loc.x, loc.y, draw_area)) {
+	if (!resources::screen->video().update_locked()) {
+		if (force_scroll || point_in_rect_of_hexes(u.get_location().x, u.get_location().y, draw_area)) {
 			unit_animator animator;
-			animator.add_animation(&*u,"levelin",u->get_location(), map_location(), 0, true);
+			animator.add_animation(&u, "levelin", u.get_location(), map_location(), 0, true);
 			animator.start_animations();
 			animator.wait_for_end();
 			animator.set_all_standing();
 		
-			resources::screen->invalidate(loc);
+			resources::screen->invalidate(u.get_location());
 			resources::screen->draw();
 		}
 		events::pump();
 	}
 
 	resources::screen->invalidate_all();
-	if (force_scroll || point_in_rect_of_hexes(loc.x, loc.y, draw_area)) {
+	if (force_scroll || point_in_rect_of_hexes(u.get_location().x, u.get_location().y, draw_area)) {
 		resources::screen->draw();
 	}
 

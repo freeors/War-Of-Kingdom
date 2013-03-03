@@ -119,6 +119,7 @@ protected:
 	bool attack_enemy_(unit_map::iterator attacker, unit_map::iterator defender, const map_location& target_loc);
 
 	bool cast_tactic(unit& tactician, const map_location& target_loc);
+	void cast_tactic_special(unit& tactician, unit& special);
 
 	bool interior(bool browse, unit& u);
 
@@ -129,7 +130,8 @@ protected:
 	map_location current_unit_attacks_from(const map_location& loc);
 	map_location current_unit_tactic_from(const map_location& loc);
 	map_location current_unit_interior_from(const map_location& loc);
-	map_location current_unit_technology_tree_from(const map_location& loc);
+	map_location current_unit_alternate_from(const map_location& loc);
+	map_location current_unit_select_from(const map_location& loc);
 	map_location current_unit_build_from(const map_location& loc);
 	unit_map::const_iterator find_unit(const map_location& hex) const;
 	unit_map::iterator find_unit(const map_location& hex);
@@ -176,6 +178,11 @@ private:
 	// card playing
 	//
 	int card_index_;
+
+	//
+	// cast tactic
+	//
+	hero* selected_hero_;
 
 	static mouse_handler * singleton_;
 };

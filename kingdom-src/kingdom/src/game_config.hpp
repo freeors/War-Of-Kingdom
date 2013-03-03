@@ -49,6 +49,11 @@ namespace game_config
 	extern int ai_keep_hp_threshold;
 	extern int max_keep_turns;
 	extern int increase_feeling;
+	extern int max_police;
+	extern int min_tradable_police;
+	extern int min_researchable_police;
+	extern int default_decree_turns;
+	extern int max_commoners;
 
 	extern int minimal_activity;
 	extern int maximal_defeated_activity;

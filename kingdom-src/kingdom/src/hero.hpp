@@ -205,8 +205,8 @@ enum {
 #define HERO_PREFIX_STR_TREASURE	"treasure-"
 
 // treasure
-#define NO_CHARACTER				-1
-#define HERO_PREFIX_STR_CHARACTER	"character-"
+#define NO_ESPECIAL				-1
+#define HERO_PREFIX_STR_ESPECIAL	"especial-"
 
 // skill
 #define HEROS_MAX_SKILL	8
@@ -319,6 +319,10 @@ enum {
 #define HERO_PREFIX_STR_TECHNOLOGY	"technology-"
 #define HERO_PREFIX_STR_TECHNOLOGY_DESC	"technology_desc-"
 
+#define HEROS_NO_CHARACTER		0xff
+#define HERO_PREFIX_STR_CHARACTER	"character-"
+#define HERO_PREFIX_STR_CHARACTER_DESC	"character_desc-"
+
 struct hero_5fields_t {
 	uint16_t leadership_;
 	uint16_t force_;
@@ -341,7 +345,7 @@ struct hero_feeling {
 	uint8_t base_catalog_;	\
 	uint8_t	activity_;	\
 	uint8_t ambition_;	\
-	uint8_t native_;	\
+	uint8_t character_;	\
 	uint8_t side_;	\
 	uint8_t heart_;	\
 	uint8_t side_feature_;	\
@@ -383,19 +387,25 @@ namespace rpg {
 #endif
 
 namespace increase_xp {
-// use to increase unit's xp
+// use to increase unit's xp, speed is additional.
 struct ublock {
 	bool xp;
 	bool leadership;
+	int leadership_speed;
 	bool force;
+	int force_speed;
 	bool intellect;
+	int intellect_speed;
 	bool politics;
+	int politics_speed;
 	bool charm;
+	int charm_speed;
 	bool meritorious;
 	bool abilityx2;
 	bool arms;
 	bool armsx2;
 	bool skill[HEROS_MAX_SKILL];
+	int skill_speed[HEROS_MAX_SKILL];
 	bool skillx2;
 };
 
@@ -415,11 +425,11 @@ extern ublock ub;
 ublock& generic_ublock();
 ublock& attack_ublock(const unit& attack, bool opp_is_artifical = false);
 ublock& turn_ublock(const unit& u);
-ublock& exploiture_ublock(int markets, int technologies, bool abilityx2, bool skillx2);
+ublock& exploiture_ublock(int markets, int technologies, int business_speed, int technology_speed, bool abilityx2, bool skillx2);
 
 extern hblock hb;
 hblock& generic_hblock();
-hblock& exploiture_hblock(int markets, int technologies, bool abilityx2, bool skillx2, int xp);
+hblock& exploiture_hblock(int markets, int technologies, int business_speed, int technology_speed, bool abilityx2, bool skillx2, int xp);
 
 extern int ability_per_xp;
 extern int arms_per_xp;
@@ -449,6 +459,12 @@ public:
 	static int number_wall;
 	static int number_keep;
 	static int number_tower;
+
+	static int number_businessman;
+	static int number_scholar;
+	static int number_commoner_min;
+	static int number_commoner_max;
+	static bool is_commoner(int h);
 
 	hero(uint16_t number, uint16_t leadership = 0, uint16_t force = 0, uint16_t intellect = 0, uint16_t politics = 0, uint16_t charm = 0);
 	hero(const hero& that);

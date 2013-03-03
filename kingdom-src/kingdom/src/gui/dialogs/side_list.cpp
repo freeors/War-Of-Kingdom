@@ -348,6 +348,13 @@ void tside_list::fill_table(int catalog)
 		} else if (catalog == FEATURE_PAGE) {
 			hero* leader = teams_[n].leader();
 
+			str.str("");
+			if (teams_[n].character() != HEROS_NO_CHARACTER) {
+				str << unit_types.character(teams_[n].character()).name();
+			}
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("character", table_item));
+
 			table_item["label"] = leader->feature_str(leader->side_feature_);
 			table_item_item.insert(std::make_pair("feature", table_item));
 

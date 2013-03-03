@@ -65,6 +65,7 @@ mouse_handler_base::mouse_handler_base()
 	, recalling_(false)
 	, building_(false)
 	, card_playing_(false)
+	, selecting_(false)
 {
 }
 

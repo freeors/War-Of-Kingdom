@@ -24,6 +24,7 @@ card::card()
 	, number_(CARDS_INVALID_NUMBER)
 	, target_hero_(false)
 	, multitudinous_(false)
+	, decree_(false)
 	, points_(-1)
 	, range_(NONE)
 {
@@ -37,9 +38,19 @@ card::card(const config& card_cfg)
 	, number_(CARDS_INVALID_NUMBER)
 	, target_hero_(card_cfg["hero"].to_bool())
 	, multitudinous_(card_cfg["multitudinous"].to_bool())
+	, decree_(card_cfg["decree"].to_bool())
 	, points_(-1)
 	, range_(NONE)
 {
+	if (!condition_cfg_) {
+		throw config::error("[card] error, " + name() + " no [condition].");
+	}
+	if (!range_cfg_) {
+		throw config::error("[card] error, " + name() + " no [range].");
+	}
+	if (!action_cfg_) {
+		throw config::error("[card] error, " + name() + " no [action].");
+	}
 }
 
 card::card(const card& that)
@@ -50,6 +61,7 @@ card::card(const card& that)
 	, number_(that.number_)
 	, target_hero_(that.target_hero_)
 	, multitudinous_(that.multitudinous_)
+	, decree_(that.decree_)
 	, points_(that.points_)
 	, range_(that.range_)
 {
@@ -124,10 +136,11 @@ int card::range()
 // card_map
 //
 card_map::card_map(const std::string& path) :
-	animations_(),
-	map_size_(0),
-	map_(NULL),
-	map_vsize_(0)
+	animations_()
+	, map_size_(0)
+	, map_(NULL)
+	, map_vsize_(0)
+	, decrees_()
 {
 	card::image_file_root_ = path + "/data/core/images";
 }
@@ -199,6 +212,10 @@ void card_map::add(const card& h)
 	card* p = new card(h);
 	p->number_ = map_vsize_;
 	map_[map_vsize_ ++] = p;
+
+	if (p->decree()) {
+		decrees_.push_back(p);
+	}
 }
 
 card& card_map::operator[](size_t num)
@@ -223,7 +240,11 @@ void card_map::erase(size_t number)
 	if (number >= map_vsize_) {
 		return;
 	}
-	delete map_[number];
+	card* p = map_[number];
+	if (p->decree()) {
+		decrees_.erase(std::find(decrees_.begin(), decrees_.end(), p));
+	}
+	delete p;
 	if (number != (map_vsize_ - 1)) {
 		memcpy(&(map_[number]), &(map_[number + 1]), (map_vsize_ - number - 1) * sizeof(card*));
 	}
@@ -246,6 +267,10 @@ void card_map::map_from_cfg(const config& cfg)
 		card* t = new card(tf);
 		t->number_ = map_vsize_;
 		map_[map_vsize_ ++] = t;
+
+		if (t->decree()) {
+			decrees_.push_back(t);
+		}
 	}
 
 	//

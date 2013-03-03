@@ -5781,6 +5781,9 @@ msgstr ""
 msgid "Ambushed!"
 msgstr ""
 
+msgid "Alerted!"
+msgstr ""
+
 #: src/actions.cpp:2501
 msgid "Failed teleport! Exit not empty"
 msgstr ""
@@ -8967,6 +8970,9 @@ msgstr ""
 msgid "Lost card: $first."
 msgstr ""
 
+msgid "$city investigats decree: $decree."
+msgstr ""
+
 msgid "Find treasure: $first($second)!"
 msgstr ""
 
@@ -9054,6 +9060,9 @@ msgid ""
 msgstr ""
 
 msgid "Munition turns"
+msgstr ""
+
+msgid "Block turns"
 msgstr ""
 
 msgid "collapse"

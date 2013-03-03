@@ -57,6 +57,8 @@ private:
 
 	void reside_troop(twindow& window);
 	void field_troop(twindow& window);
+	void reside_commoner(twindow& window);
+	void field_commoner(twindow& window);
 	void hero_list(twindow& window);
 
 	void merit(twindow& window);

@@ -197,6 +197,7 @@ bool get_hero(hero& h, int default_image)
 			h.feature_ = 0xff;
 		}
 		h.tactic_ = cfg["tactic"].to_int(HEROS_NO_TACTIC);
+		h.character_ = cfg["character"].to_int(HEROS_NO_CHARACTER);
 
 		h.base_catalog_ = cfg["base_catalog"].to_int();
 		h.float_catalog_ = ftofxp8(h.base_catalog_);
@@ -267,6 +268,7 @@ void set_hero(hero& h)
 	cfg["side_feature"] = h.side_feature_;
 
 	cfg["tactic"] = h.tactic_;
+	cfg["character"] = h.character_;
 
 	write_preferences();
 }

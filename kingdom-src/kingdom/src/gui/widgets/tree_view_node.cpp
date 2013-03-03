@@ -555,7 +555,7 @@ unsigned ttree_view_node::place_left_align(
 			origin.y -= best_size.y;
 		}
 		index ++;
-		origin.y += node.place_left_align(indention_step_size, origin, width);
+		origin.y += node.place_left_align(!node.empty()? indention_step_size: 0, origin, width);
 	}
 
 	// Inherited.

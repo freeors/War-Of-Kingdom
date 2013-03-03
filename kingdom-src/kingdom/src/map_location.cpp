@@ -49,6 +49,19 @@ map_offset adjacent_3[2][18] = {
 	{{0, -3}, {1, -2}, {2, -2}, {3, -1}, {3, 0}, {3, 1}, {3, 2}, {2, 2}, {1, 3}, {0, 3}, {-1, 3}, {-2, 2}, {-3, 2}, {-3, 1}, {-3, 0}, {-3, -1}, {-2, -2}, {-1, -2}},
 };
 
+trange range_1[2][3] = {
+	{{-1, 0}, {-1, 1}, {-1, 0}},
+	{{0, 1}, {-1, 1}, {0, 1}},
+};
+trange range_2[2][5] = {
+	{{-1, 1}, {-2, 1}, {-2, 2}, {-2, 1}, {-1, 1}},
+	{{-1, 1}, {-1, 2}, {-2, 2}, {-1, 2}, {-1, 1}},
+};
+trange range_3[2][7] = {
+	{{-2, 1}, {-2, 2}, {-3, 2}, {-3, 3}, {-3, 2}, {-2, 2}, {-2, 1}},
+	{{-1, 2}, {-2, 2}, {-2, 3}, {-3, 3}, {-2, 3}, {-2, 2}, {-1, 2}},
+};
+
 std::ostream &operator<<(std::ostream &s, map_location const &l) {
 	s << (l.x + 1) << ',' << (l.y + 1);
 	return s;
@@ -368,6 +381,30 @@ bool map_location::matches_range(const std::string& xloc, const std::string &ylo
 		}
 	}
 	return true;
+}
+
+bool map_location::in_area(const map_location& loc, int range) const
+{
+	trange* range_ptr = NULL;
+	if (abs(x - loc.x) > range || abs(y - loc.y) > range) {
+		return false;
+	}
+
+	if (range == 1) {
+		range_ptr = range_1[loc.x & 0x1];
+	} else if (range == 2) {
+		range_ptr = range_2[loc.x & 0x1];
+	} else if (range == 3) {
+		range_ptr = range_3[loc.x & 0x1];
+	}
+
+	int normalize_x = x - loc.x + range;
+	int diff_y = y - loc.y;
+
+	if (diff_y >= range_ptr[normalize_x].min && diff_y <= range_ptr[normalize_x].max) {
+		return true;
+	}
+	return false;
 }
 
 void get_adjacent_tiles(const map_location& a, map_location* res)

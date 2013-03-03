@@ -40,9 +40,9 @@ namespace dialogs {
  * cause for advancement is different (eg unstore_unit) the add_replay_event
  * should be set.
  */
-void advance_unit(const map_location &loc, bool random_choice = false, bool choose_from_random = false);
+bool advance_unit(unit& u, bool random_choice = false, bool choose_from_random = false);
 
-bool animate_unit_advancement(const map_location &loc, size_t choice);
+bool animate_unit_advancement(unit& u, size_t choice);
 
 void show_objectives(const config &level, const std::string &objectives);
 

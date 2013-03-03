@@ -177,28 +177,16 @@ report generate_report(TYPE type,
 		return res;
 	}
 	case UNIT_STATUS: {
-		report res;
-		if (map.on_board(loc) && u->invisible(loc)) {
-			add_status(res, "misc/invisible.png", N_("invisible: "),
-				N_("This unit is invisible. It cannot be seen or attacked by enemy units."));
+		if (!u->is_city()) {
+			break;
 		}
-		if (u->get_state(unit::STATE_SLOWED)) {
-			add_status(res, "misc/slowed.png", N_("slowed: "),
-				N_("This unit has been slowed. It will only deal half its normal damage when attacking and its movement cost is doubled."));
+		const artifical* city = const_unit_2_artifical(u);
+		if (city->police() < game_config::min_tradable_police) {
+			str << font::RED_TEXT;
 		}
-		if (u->get_state(unit::STATE_BROKEN)) {
-			add_status(res, "misc/broken.png", N_("broken: "),
-				N_("This unit has been broken. It will suffer 1.5 times its normal damage when defending."));
-		}
-		if (u->get_state(unit::STATE_POISONED)) {
-			add_status(res, "misc/poisoned.png", N_("poisoned: "),
-				N_("This unit is poisoned. It will lose 8 HP every turn until it can seek a cure to the poison in a village or from a friendly unit with the 'cures' ability.\n\nUnits cannot be killed by poison alone. The poison will not reduce it below 1 HP."));
-		}
-		if (u->get_state(unit::STATE_PETRIFIED)) {
-			add_status(res, "misc/petrified.png", N_("petrified: "),
-				N_("This unit has been petrified. It may not move or attack."));
-		}
-		return res;
+		str << city->field_commoners().size() + city->reside_commoners().size();
+		str << "/" << city->police();
+		break;
 	}
 
 	case UNIT_ALIGNMENT: {
@@ -252,11 +240,20 @@ report generate_report(TYPE type,
 		return res;
 	}
 	case UNIT_WEAPONS: {
-		if (u->second().valid()) {
-			str << u->second().name();
-		}
-		if (u->third().valid()) {
-			str << " " << u->third().name();
+		if (!u->is_city()) {
+			if (u->second().valid()) {
+				str << u->second().name();
+			}
+			if (u->third().valid()) {
+				str << " " << u->third().name();
+			}
+		} else {
+			const artifical* city = const_unit_2_artifical(u);
+			if (city->decree().first) {
+				str << city->decree().first->name() << "(" << city->decree().second << ")";
+			} else {
+				// str << dgettext("wesnoth-lib", "None");
+			}
 		}
 		return report(str.str(), "", tooltip.str());
 	}
@@ -266,8 +263,8 @@ report generate_report(TYPE type,
 //		color_range new_rgb = team::get_side_color_range(u->second.side());
 
 		report res("", image::locator(u->absolute_image(), u->image_mods()), "");
-		if (!u->is_artifical() && u->character() != NO_CHARACTER) {
-			res.add_image(unit_types.character(u->character()).image_, "");
+		if (!u->is_artifical() && u->especial() != NO_ESPECIAL) {
+			res.add_image(unit_types.especial(u->especial()).image_, "");
 			res.back().rect.w = 16;
 			res.back().rect.h = 16;
 		}

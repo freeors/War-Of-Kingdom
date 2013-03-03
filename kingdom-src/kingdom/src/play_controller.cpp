@@ -43,6 +43,7 @@
 #include "ai/manager.hpp"
 #include "scripting/lua.hpp"
 #include "artifical.hpp"
+#include "unit_display.hpp"
 
 #include "gui/dialogs/camp_armory.hpp"
 #include "gui/dialogs/transient_message.hpp"
@@ -61,6 +62,10 @@ static lg::log_domain log_engine("engine");
 
 static lg::log_domain log_display("display");
 #define ERR_DP LOG_STREAM(err, log_display)
+
+namespace null_val {
+	const std::vector<map_location> vector_location;
+}
 
 static void clear_resources()
 {
@@ -128,6 +133,7 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	rpging_(false),
 	troops_cache_(NULL),
 	troops_cache_vsize_(0),
+	roads_(),
 	fallen_to_unstage_(level_["fallen_to_unstage"].to_bool()),
 	card_mode_(level_["card_mode"].to_bool()),
 	always_duel_(level_["always_duel"].to_bool()),
@@ -230,6 +236,7 @@ play_controller::~play_controller()
 
 void play_controller::init(CVideo& video)
 {
+	provoke_cache_ready = false;
 	uint32_t start = SDL_GetTicks();
 
 	util::scoped_resource<loadscreen::global_loadscreen_manager*, util::delete_item> scoped_loadscreen_manager;
@@ -271,7 +278,7 @@ void play_controller::init(CVideo& video)
 		if (!player_cfg) {
 			break;
 		}
-		team::set_player_leader(&heros_[player_cfg["leader"].to_int()]);
+		camp::leader = &heros_[player_cfg["leader"].to_int()];
 
 		config& armory_cfg = player_cfg.child("armory");
 		if (!armory_cfg) {
@@ -280,7 +287,7 @@ void play_controller::init(CVideo& video)
 		// troops of armory
 		foreach (config &i, armory_cfg.child_range("unit")) {
 			// i["cityno"] = 0;
-			unit* u = new unit(units_, heros_, i);
+			unit* u = new unit(units_, heros_, teams_, i); // ???
 			u->new_turn();
 			// u->heal_all();
 			u->set_state(unit::STATE_SLOWED, false);
@@ -485,6 +492,14 @@ void play_controller::init(CVideo& video)
 		}
 	}
 
+	str_2_provoke_cache(units_, heros_, level_["provoke_cache"]);
+/*
+	{
+		int ii = 0;
+		find_unit(units_, heros_[70])->do_provoked(*find_unit(units_, heros_[123]), 2);
+		teams_[1].set_tactic_point(10);
+	}
+*/
 	// mouse_handler expects at least one team for linger mode to work.
 	if (teams_.empty()) end_level_data_.linger_mode = false;
 
@@ -501,7 +516,7 @@ void play_controller::init(CVideo& video)
 
 	// building terrain rules...
 	loadscreen::start_stage("build terrain");
-	gui_.reset(new game_display(units_, video, map_, tod_manager_, teams_, theme_cfg, level_));
+	gui_.reset(new game_display(units_, this, video, map_, tod_manager_, teams_, theme_cfg, level_));
 	if (!gui_->video().faked()) {
 		if (gamestate_.mp_settings().mp_countdown)
 			gui_->get_theme().modify_label("time-icon", _ ("time left for current turn"));
@@ -539,7 +554,9 @@ void play_controller::init(CVideo& video)
 	}
 
 	loadscreen::global_loadscreen->start_stage("draw theme");
-	// loadscreen_manager->reset();
+
+	// construct roads
+	construct_road();
 
 	uint32_t stop = SDL_GetTicks();
 	posix_print("play_controller::init, used time: %u ms\n", stop - start);
@@ -1404,8 +1421,7 @@ void play_controller::do_init_side(const unsigned int team_index)
 		artifical& city = **it;
 		if (!loading_game_) {
 			city.active_exploiture();
-		}
-		city.calculate_exploiture();	
+		}		
 	}	
 	
 	// If this is right after loading a game we don't need to fire events and such. It was already done before saving.
@@ -1462,6 +1478,7 @@ void play_controller::do_init_side(const unsigned int team_index)
 		gui_->invalidate_all();
 		gui_->draw(true,true);
 	}
+
 	// We want to work out if units for this player should get healed,
 	// and the player should get income now.
 	// Healing/income happen if it's not the first turn of processing,
@@ -1472,6 +1489,9 @@ void play_controller::do_init_side(const unsigned int team_index)
 		}
 		uint32_t start = SDL_GetTicks();
 
+		// new turn: 1)team, 2)city, 3)troop/commoner/artifcal
+		current_team.new_turn();
+		
 		std::vector<artifical*> holded_cities = current_team.holded_cities();
 		for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
 			artifical& city = **it;
@@ -1496,7 +1516,6 @@ void play_controller::do_init_side(const unsigned int team_index)
 			}
 		}
 		
-		current_team.new_turn();
 		uint32_t new_turn = SDL_GetTicks();
 		posix_print("(new_turn)used time: %u ms\n", new_turn - start);
 
@@ -1568,6 +1587,8 @@ void play_controller::to_config(config& cfg) const
 		cfg["final_capital"] = strstr.str();
 	}
 	cfg["maximal_defeated_activity"] = game_config::maximal_defeated_activity;
+
+	cfg["provoke_cache"] = provoke_cache_2_str(); 
 
 	if (all_ai_allied_) {
 		cfg["ai_allied"] = all_ai_allied_;
@@ -2534,12 +2555,431 @@ bool play_controller::do_recruit(artifical* city, int cost_exponent, bool rpg_mo
 		city->hero_go_out(*third);
 	}
 
-	::do_recruit(units_, heros_, current_team, ut, v, *city, cost_exponent, true);
+	::do_recruit(units_, heros_, teams_, current_team, ut, v, *city, cost_exponent, true);
 
 	menu_handler_.clear_undo_stack(side_num);
 	refresh_city_buttons(*city);
 
 	return true;
+}
+
+bool play_controller::generate_commoner(artifical& city, const unit_type* ut, bool replay)
+{
+	VALIDATE(ut->master() != HEROS_INVALID_NUMBER, "play_controller::generate_commoner, desired master is HEROS_INVALID_NUMBER");
+
+	int side_num = city.side();
+	const map_location& city_loc = city.get_location();
+	team& current_team = teams_[side_num - 1];
+
+	std::vector<const hero*> v;
+	v.push_back(&heros_[ut->master()]);
+	type_heros_pair pair(ut, v);
+	if (!replay) {
+		// recorder.add_recruit(ut->id(), city.get_location(), v, 0, false);
+	}
+
+	unit* new_unit = new unit(units_, heros_, teams_, pair, city.cityno(), true);
+	new_unit->set_movement(new_unit->total_movement());
+
+	current_team.spend_gold(0);
+	city.commoner_come_into(new_unit, -1, false);
+
+	menu_handler_.clear_undo_stack(side_num);
+
+	return true;
+}
+
+void play_controller::calculate_commoner_gotos(team& current_team, std::vector<std::pair<unit*, int> >& gotos)
+{
+	gotos.clear();
+
+	const int random = get_random();
+	int derived_random;
+
+	// field commoner
+	const std::pair<unit**, size_t> p = current_team.field_troop();
+	unit** troops = p.first;
+	size_t troops_vsize = p.second;
+	for (size_t i = 0; i < troops_vsize; i ++) {
+		unit& u = *troops[i];
+		if (u.is_commoner()) {
+			artifical* goto_city = units_.city_from_loc(u.get_goto());
+			if (goto_city->side() != current_team.side() ||
+				(u.block_turns() >= 1 && !u.get_from().valid())) {
+				// goto city is captured, be back!
+				u.set_from(goto_city->get_location());
+				u.set_goto(units_.city_from_cityno(u.cityno())->get_location());
+				u.set_task(unit::TASK_BACK);
+				u.set_block_turns(0);
+			}
+			gotos.push_back(std::make_pair<unit*, int>(&u, -1));
+		}
+	}
+
+	// reside commoner
+	const std::vector<artifical*>& holded_cities = current_team.holded_cities();
+	for (std::vector<artifical*>::const_iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+		artifical* city = *it;
+		
+		// recruit
+		std::vector<unit*>& reside_commoners = city->reside_commoners();
+		int ratio;
+
+		if (city->police() >= game_config::min_tradable_police) {
+			derived_random = random + city->master().number_ + city->hitpoints();
+
+			// recruit probability: 1/10
+			ratio = 10;
+			int generate_ratio = ratio * (200 - city->generate_speed_) / 100;
+			if (!generate_ratio) {
+				generate_ratio = 1;
+			}
+			if (int(reside_commoners.size() + city->field_commoners().size()) < city->max_commoners()) {
+				if (!(random % generate_ratio)) {
+					if (derived_random & 1) {
+						generate_commoner(*city, unit_types.master_type(hero::number_businessman), false);
+					} else {
+						generate_commoner(*city, unit_types.master_type(hero::number_scholar), false);
+					}
+				}
+			}
+		}
+
+		// trade/transfer
+		const std::set<int>& roaded_cities = city->roaded_cities();
+		std::vector<artifical*> candidate, transferable_cities;
+		for (std::set<int>::const_iterator it2 = roaded_cities.begin(); it2 != roaded_cities.end(); ++ it2) {
+			artifical* roaded = units_.city_from_cityno(*it2);
+			if (roaded->side() == current_team.side() && roaded->police() >= game_config::min_tradable_police) {
+				candidate.push_back(roaded);
+				if (int(roaded->reside_commoners().size() + roaded->field_commoners().size()) < roaded->max_commoners()) {
+					transferable_cities.push_back(roaded);
+				}
+			}
+		}
+		if (candidate.empty()) {
+			continue;
+		}
+		if (!reside_commoners.empty()) {
+			int index = reside_commoners.size() - 1;
+			bool transfered = false, traded = false;
+			for (std::vector<unit*>::reverse_iterator it2 = reside_commoners.rbegin(); it2 != reside_commoners.rend(); ++ it2, index --) {
+				unit& u = **it2;
+
+				derived_random = random + u.hitpoints() + u.experience();
+				// trade probability: 1/6
+				ratio = 6;
+				int trade_ratio = ratio * (200 - city->trade_speed_) / 100;
+				if (!trade_ratio) {
+					trade_ratio = 1;
+				}
+
+				if (city->police() < game_config::min_tradable_police) {
+					// transfer probability: 1/3
+					if (!transfered && !(random % 3) && !transferable_cities.empty()) {
+						u.set_task(unit::TASK_TRANSFER);
+						u.set_goto(transferable_cities[random % transferable_cities.size()]->get_location());
+						gotos.push_back(std::make_pair<unit*, int>(city, index));
+						// avoid another commoner to transfer.
+						transfered = true;
+					} else {
+						u.set_task(unit::TASK_NONE);
+					}
+
+				} else if (!traded && !(derived_random % trade_ratio)) {
+					u.set_task(unit::TASK_TRADE);
+					u.set_goto(candidate[derived_random % candidate.size()]->get_location());
+					gotos.push_back(std::make_pair<unit*, int>(city, index));
+					// avoid another commoner to trade.
+					traded = true;
+				} else {
+					u.set_task(unit::TASK_NONE);
+				}
+			}
+		}
+	}
+}
+
+void play_controller::commoner_back(artifical* entered_city, artifical* belong_city, const map_location& src_loc)
+{
+	unit& back_commoner = *entered_city->reside_commoners().back();
+	const map_location& entered_loc = entered_city->get_location();
+
+	VALIDATE(entered_city != belong_city, "commoner_back, entered_city is same as belong_city!");
+
+	std::vector<map_location> steps;
+	const std::vector<map_location>& r = road(entered_city->cityno(), belong_city->cityno());
+	std::vector<map_location>::const_iterator stand_it = std::find(r.begin(), r.end(), src_loc);
+	bool direct_road = r.front() == entered_loc;
+	if (direct_road) {
+		std::advance(stand_it, 1);
+		std::copy(r.begin(), stand_it, std::back_inserter(steps));
+	} else {
+		for (std::vector<map_location>::const_reverse_iterator it2 = r.rbegin(); it2 != r.rend(); ++ it2) {
+			const map_location& l = *it2;
+			steps.push_back(l);
+			if (l == src_loc) break;
+		}
+	}
+	unit_display::move_unit(steps, back_commoner, teams_);
+	back_commoner.set_movement(0);
+
+	if (!units_.city_from_loc(src_loc)) {
+		// end at: not-city
+		back_commoner.set_from(entered_city->get_location());
+		back_commoner.set_goto(belong_city->get_location());
+		back_commoner.set_cityno(belong_city->cityno());
+		units_.add(src_loc, &back_commoner);
+	} else {
+		// end at: city
+		belong_city->commoner_come_into(&back_commoner);
+	}
+	entered_city->commoner_go_out(entered_city->reside_commoners().size() - 1);
+}
+
+void play_controller::do_commoner(team& current_team)
+{
+	std::vector<std::pair<unit*, int> > ping, pang;
+	std::vector<std::pair<unit*, int> >* curr = &ping, *background = &pang;
+	map_location goto_loc;
+	std::pair<unit*, int> param;
+
+	recorder.do_commoner();
+
+	calculate_commoner_gotos(current_team, *curr);
+
+	int times = 0;
+	while (++ times <= 2 && !curr->empty()) {
+		for (std::vector<std::pair<unit*, int> >::iterator g = curr->begin(); g != curr->end(); ++g) {
+			artifical* belong_city;
+			const map_location src_loc = g->first->get_location();
+			// desired move troop may move into one city. after it, g->first became to access denied.
+			// so update goto before move_unit.
+			if (g->second >= 0) {
+				belong_city = unit_2_artifical(g->first);
+				goto_loc = belong_city->reside_commoners()[g->second]->get_goto();
+			} else {
+				belong_city = units_.city_from_cityno(g->first->cityno());
+				goto_loc = g->first->get_goto();
+			}
+			const map_location arrived_at = move_unit(false, current_team, *g, goto_loc, false);
+			if (g->second < 0 && arrived_at == src_loc) {
+				const unit& u = *units_.find(src_loc);
+				if (u.movement_left()) {
+					background->push_back(*g);
+				}
+			}
+		}
+		curr->clear();
+		if (curr == &ping) {
+			curr = &pang;
+			background = &ping;
+		} else {
+			curr = &ping;
+			background = &pang;
+		}
+	}
+}
+
+map_location play_controller::move_unit(bool troop, team& current_team, const std::pair<unit*, int>& pair, map_location to, bool dst_must_reachable)
+{
+	unit* unit_ptr = NULL;
+	if (pair.second >= 0) {
+		if (troop) {
+			unit_ptr = unit_2_artifical(pair.first)->reside_troops()[pair.second];
+		} else {
+			unit_ptr = unit_2_artifical(pair.first)->reside_commoners()[pair.second];
+		}
+	} else {
+		unit_ptr = pair.first;
+	}
+	map_location from = unit_ptr->get_location();
+	map_location unit_location_ = from;
+
+	if (from != to) {
+		// it shouldn't use move_spectator of unit_ptr! when expediate, un will became invalid.
+		move_unit_spectator move_spectator(units_);
+		std::vector<map_location> steps;
+
+		if (troop) {
+			// check_before
+			//do an A*-search
+			const pathfind::shortest_path_calculator calc(*unit_ptr, current_team, units_, teams_, map_, false, true);
+			// double stop_at = dst_must_reachable? 10000.0: calc.getUnitHoldValue() * 3 + 10000.0;
+			double stop_at = dst_must_reachable? 10000.0: calc.getUnitHoldValue() + 10000.0;
+			//allowed teleports
+			std::set<map_location> allowed_teleports;
+			pathfind::plain_route route_ = a_star_search(from, to, stop_at, &calc, map_.w(), map_.h(), &allowed_teleports);
+
+			if (route_.steps.empty()) {
+				return map_location();
+			}
+			// modify! last location must no unit on it.
+			while (!dst_must_reachable) {
+				to = route_.steps.back();
+				if (!units_.count(to)) {
+					break;
+				} else if (artifical* c = units_.city_from_loc(to)) {
+					if (c->side() == unit_ptr->side()) { 
+						// same side's city. 
+						break;
+					}
+				}
+				if (to == from) {
+					// A(city)(city), A will enter it
+					return map_location();
+				}
+				route_.steps.pop_back();
+			}
+			steps = route_.steps;
+		} else {
+			// cannot use a_star_search, when expeting, returned unit on loc of city is expeting troop! 
+			// play_controll::road will mistake, avoid it!
+			artifical* start_city;
+			artifical* stop_city;
+			bool forward = !unit_ptr->get_from().valid();
+			if (forward) {
+				start_city = units_.city_from_cityno(unit_ptr->cityno());
+				stop_city = units_.city_from_loc(to);
+			} else {
+				start_city = units_.city_from_loc(unit_ptr->get_from());
+				stop_city = units_.city_from_cityno(unit_ptr->cityno());
+			}
+			
+			const std::vector<map_location>& r = road(start_city->cityno(), stop_city->cityno());
+			std::vector<map_location>::const_iterator from_it = std::find(r.begin(), r.end(), from);
+			int index = std::distance(r.begin(), from_it);
+			int stop_at;
+			bool direct_road = r.front() != to;
+			if (direct_road) {
+				// maybe expedite, +1
+				stop_at = index + unit_ptr->movement_left() + 1;
+				if (stop_at >= (int)r.size()) {
+					stop_at = (int)r.size() - 1;
+				}
+				for ( ; index <= stop_at; index ++) {
+					steps.push_back(r[index]);
+				}
+			} else {
+				stop_at = 0;
+				if (index > unit_ptr->movement_left() + 1) {
+					stop_at = index - (unit_ptr->movement_left() + 1);
+				}
+				for ( ; index >= stop_at; index --) {
+					steps.push_back(r[index]);
+				}
+			}
+		}
+		// do_execute
+		move_spectator.set_unit(units_.find(from));
+		
+		bool gamestate_changed = false;
+
+		if (!steps.empty()) {
+			if (pair.second >= 0) {
+				artifical* expediting_city = unit_2_artifical(pair.first);
+				// std::vector<unit*>& reside_troops = expediting_city->reside_troops();
+				gui_->place_expedite_city(*expediting_city);
+				units_.set_expediting(expediting_city, troop, pair.second);
+				::move_unit(
+					/*move_unit_spectator* move_spectator*/ &move_spectator,
+					/*std::vector<map_location> route*/ steps,
+					/*replay* move_recorder*/ &recorder,
+					/*undo_list* undo_stack*/ NULL,
+					/*bool show_move*/ true,
+					/*map_location *next_unit*/ NULL,
+					/*bool continue_move*/ true, //@todo: 1.7 set to false after implemeting interrupt awareness
+					/*bool should_clear_shroud*/ true,
+					/*bool is_replay*/ false);
+				gui_->remove_expedite_city();
+				units_.set_expediting();
+				if (!move_spectator.get_unit().valid() || move_spectator.get_unit()->get_location() != from) {
+					// move_unit may be not move! reside troop ratain in city.
+					if (troop) {
+						expediting_city->troop_go_out(units_.last_expedite_index());
+					} else {
+						expediting_city->commoner_go_out(units_.last_expedite_index());
+					}
+				} else {
+					unit_ptr->remove_movement_ai();
+				}
+
+			} else {
+				::move_unit(
+					/*move_unit_spectator* move_spectator*/ &move_spectator,
+					/*std::vector<map_location> route*/ steps,
+					/*replay* move_recorder*/ &recorder,
+					/*undo_list* undo_stack*/ NULL,
+					/*bool show_move*/ true,
+					/*map_location *next_unit*/ NULL,
+					/*bool continue_move*/ true, //@todo: 1.7 set to false after implemeting interrupt awareness
+					/*bool should_clear_shroud*/ true,
+					/*bool is_replay*/ false);
+			}
+			// once unit moved one or more grid, unit_ptr may invalid. below code must not use un!
+			if (!move_spectator.get_unit().valid()) {
+				// mover is died!
+				unit_location_ = map_location();
+			} else if (move_spectator.get_ambusher().valid() || !move_spectator.get_seen_enemies().empty() || !move_spectator.get_seen_friends().empty() ) {
+				unit_location_ = move_spectator.get_unit()->get_location();
+				gamestate_changed = true;
+			} else if (move_spectator.get_unit().valid()){
+				unit_location_ = move_spectator.get_unit()->get_location();
+				const unit& u = *move_spectator.get_unit();
+				if (unit_location_ != from || (u.is_commoner() && !u.movement_left() && u.get_from().valid())) {
+					gamestate_changed = true;
+				}
+			}
+		}
+
+		if (gamestate_changed) {
+
+			unit_map::iterator un = units_.find(unit_location_);
+			if (unit_location_ != from && un->movement_left() > 0) {
+				bool remove_movement_ = true;
+				bool remove_attacks_ = false;
+				if (remove_movement_){
+					un->remove_movement_ai();
+				}
+				if (remove_attacks_){
+					un->remove_attacks_ai();
+				}
+			}
+		}
+/*
+		try {
+			if (gamestate_changed) {
+				manager::raise_gamestate_changed();
+			}
+			resources::controller->check_victory();
+			resources::controller->check_end_level();
+		} catch (...) {
+			throw;
+		}
+*/
+		// check_after
+		if (unit_location_ != from && unit_location_ != to) {
+/*
+			// We've been ambushed; find the ambushing unit and attack them.
+			adjacent_tiles_array locs;
+			get_adjacent_tiles(unit_location_, locs.data());
+			for(adjacent_tiles_array::const_iterator adj_i = locs.begin(); adj_i != locs.end(); ++adj_i) {
+				const unit_map::const_iterator itor = units_.find(*adj_i);
+				if(itor != units_.end() && current_team_.is_enemy(itor->second.side()) &&
+				   !itor->second.incapacitated()) {
+					// here, only melee weapon is valid, need modify!!
+					battle_context bc(units_, unit_location_, *adj_i, -1, -1, aggression_);
+					attack_enemy(unit_location_,itor->first,bc.get_attacker_stats().attack_num,bc.get_defender_stats().attack_num);
+					break;
+				}
+			}
+*/
+		}
+
+		return unit_location_;
+	} else {
+		return from;
+	}
 }
 
 void play_controller::rpg_update()
@@ -2869,6 +3309,147 @@ bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int
 		game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
 	}
 	return true;
+}
+
+void play_controller::construct_road()
+{
+	VALIDATE(!unit_map::scout_unit_, "play_controller::construct_road, detect unit_map::scout_unit_ isn't null.");
+	const unit_type *ut = unit_types.find("footman1");
+	std::vector<const hero*> scout_heros;
+	scout_heros.push_back(&heros_[49]);
+	
+	// select a valid cityno
+	int cityno = -1;
+	city_map& citys = units_.get_city_map();
+	for (city_map::const_iterator i = citys.begin(); i != citys.end(); ++ i) {
+		cityno = i->cityno();
+		break;
+	}
+	if (cityno == -1) {
+		throw game::game_error("You must define at least one city.");
+	}
+	// recruit
+	type_heros_pair pair(ut, scout_heros);
+	unit_map::scout_unit_ = new unit(units_, heros_, teams_, pair, cityno, false);
+
+	std::multimap<int, int> roads_from_cfg;
+	std::vector<std::string> vstr = utils::parenthetical_split(level_["roads"]);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		const std::vector<std::string> vstr1 = utils::split(*it);
+		if (vstr1.size() == 2) {
+			int no1 = lexical_cast_default<int>(vstr1[0]);
+			int no2 = lexical_cast_default<int>(vstr1[1]);
+			VALIDATE(units_.city_from_cityno(no1), "play_controller::construct_road, invalid cityno " + vstr1[0]);
+			VALIDATE(units_.city_from_cityno(no2), "play_controller::construct_road, invalid cityno " + vstr1[1]);
+			VALIDATE(no1 != no2, "play_controller::construct_road, invalid road " + *it);
+			roads_from_cfg.insert(std::make_pair(no1, no2));
+		}
+	}
+
+	artifical* a;
+	artifical* b;
+	std::map<artifical*, std::set<int> > roaded_cities;
+	std::map<artifical*, std::set<int> >::iterator find;
+	size_t shortest_road = -1;
+	std::pair<int, int> shortest_cities;
+	for (std::multimap<int, int>::const_iterator it = roads_from_cfg.begin(); it != roads_from_cfg.end(); ++ it) {
+		if (it->first < it->second) {
+			a = units_.city_from_cityno(it->first);
+			b = units_.city_from_cityno(it->second);
+		} else {
+			a = units_.city_from_cityno(it->second);
+			b = units_.city_from_cityno(it->first);
+		}
+		find = roaded_cities.find(a);
+		if (find == roaded_cities.end()) {
+			std::set<int> s;
+			s.insert(b->cityno());
+			roaded_cities.insert(std::make_pair(a, s));
+		} else {
+			find->second.insert(b->cityno());
+		}
+		find = roaded_cities.find(b);
+		if (find == roaded_cities.end()) {
+			std::set<int> s;
+			s.insert(a->cityno());
+			roaded_cities.insert(std::make_pair(b, s));
+		} else {
+			find->second.insert(a->cityno());
+		}
+
+		const pathfind::emergency_path_calculator calc(*unit_map::scout_unit_, map_);
+		double stop_at = 10000.0;
+		//allowed teleports
+		std::set<map_location> allowed_teleports;
+		// NOTICE! although start and end are same, but rank filp, result maybe differenrt! so use cityno to make sure same.
+		pathfind::plain_route route = a_star_search(a->get_location(), b->get_location(), stop_at, &calc, map_.w(), map_.h(), &allowed_teleports);
+		if (!route.steps.empty()) {
+			if (route.steps.size() < shortest_road) {
+				shortest_road = route.steps.size();
+				shortest_cities = std::make_pair(a->cityno(), b->cityno());
+			}
+			roads_.insert(std::make_pair(std::make_pair(a->cityno(), b->cityno()), route.steps));
+		}
+	}
+	if (!roads_.empty()) {
+		// avoid one trade can city I thoughtout city II.
+		const unit_type_data::unit_type_map& types = unit_types.types();
+		for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
+			const unit_type& ut = it->second;
+			if (hero::is_commoner(ut.master())) {
+				if (ut.movement() + 4 >= (int)shortest_road) {
+					std::stringstream err;
+					utils::string_map symbols;
+					symbols["from"] = units_.city_from_cityno(shortest_cities.first)->name();
+					symbols["to"] = units_.city_from_cityno(shortest_cities.second)->name();
+					err << vgettext("map error, too short road from $from to $to!", symbols);
+					VALIDATE(false, err.str());
+				}
+			}
+		}
+	
+		for (std::map<artifical*, std::set<int> >::const_iterator it = roaded_cities.begin(); it != roaded_cities.end(); ++ it) {
+			artifical& city = *it->first;
+			city.set_roaded_cities(it->second);
+		}
+
+		gui_->construct_road();
+	}
+}
+
+const std::vector<map_location>& play_controller::road(int a, int b) const
+{
+	VALIDATE(a != b, "road, must tow city when get road.");
+	std::map<std::pair<int, int>, std::vector<map_location> >::const_iterator find;
+	int new_a, new_b;
+
+	if (a < b) {
+		new_a = a;
+		new_b = b;
+	} else {
+		new_a = b;
+		new_b = a;
+	}
+	find = roads_.find(std::make_pair(new_a, new_b));
+	if (find != roads_.end()) {
+		return find->second;
+	}
+	return null_val::vector_location;
+}
+
+const std::vector<map_location>& play_controller::road(const unit& u) const
+{
+	const artifical* start_city;
+	const artifical* stop_city;
+	bool forward = !u.get_from().valid();
+	if (forward) {
+		start_city = units_.city_from_cityno(u.cityno());
+		stop_city = units_.city_from_loc(u.get_goto());
+	} else {
+		start_city = units_.city_from_loc(u.get_from());
+		stop_city = units_.city_from_cityno(u.cityno());
+	}
+	return road(start_city->cityno(), stop_city->cityno());
 }
 
 int play_controller::human_players()

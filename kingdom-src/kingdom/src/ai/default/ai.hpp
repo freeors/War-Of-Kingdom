@@ -67,7 +67,7 @@ private:
 	 * Our own version of 'move_unit'. It is like the version in readwrite_context
 	 * however if it is the leader moving, it will first attempt recruitment.
 	 */
-	map_location move_unit(const std::pair<unit*, int>& pair, location to, bool dst_must_reachable = true);
+	// map_location move_unit(const std::pair<unit*, int>& pair, location to, bool dst_must_reachable = true);
 
 	// attacks
 	void analyze_targets(std::vector<attack_analysis>& res, bool unmovementable);

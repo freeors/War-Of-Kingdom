@@ -168,7 +168,8 @@ frame_parameters::frame_parameters() :
 	auto_hflip(t_unset),
 	primary_frame(t_unset),
 	drawing_layer(display::LAYER_UNIT_DEFAULT - display::LAYER_UNIT_FIRST),
-	screen_mode(false)
+	screen_mode(false),
+	sound_filter()
 {}
 
 frame_builder::frame_builder() :
@@ -541,7 +542,7 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 	if(first_time ) {
 		// stuff sthat should be done only once per frame
 		if(!current_data.sound.empty()  ) {
-			sound::play_sound(current_data.sound);
+			sound::play_sound(sound_filter_tag::filter(current_data.sound, current_data.sound_filter));
 		}
 		if(!current_data.text.empty()  ) {
 			game_display::get_singleton()->float_label(src,current_data.text,
@@ -985,6 +986,9 @@ const frame_parameters unit_frame::merge_parameters(int current_time,const frame
 	// screen mode
 	result.screen_mode = current_val.screen_mode? current_val.screen_mode : animation_val.screen_mode;
 	if (engine_val.screen_mode) result.screen_mode = engine_val.screen_mode;
+
+	// sound filter
+	result.sound_filter = engine_val.sound_filter;
 
 	return result;
 }

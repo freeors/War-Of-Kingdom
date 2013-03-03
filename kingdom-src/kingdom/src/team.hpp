@@ -242,10 +242,6 @@ public:
 	static std::map<int, color_range> team_color_range_;
 	static const int default_team_gold;
 
-	static hero* player_leader() { return player_leader_; }
-	static void set_player_leader(hero* leader);
-	static hero* player_leader_;
-
 	static int empty_side_;
 
 	team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg, const gamemap& map, int gold, size_t team_size);
@@ -401,11 +397,15 @@ public:
 	std::vector<artifical*>& holded_cities() { return holded_cities_; }
 	const std::vector<artifical*>& holded_cities() const { return holded_cities_; }
 
+	int character() const;
+	int technology_max_experience(const technology& t) const;
+
 	bool add_card(size_t number, bool replay = false, bool dialog = false);
 	bool erase_card(int index, bool replay = false, bool dialog = false);
-	bool condition_card(int index, const map_location& loc);
-	void consume_card(int index, const map_location& loc, bool replay = false, std::vector<std::pair<int, unit*> >& touched = unit::null_int_unitp_pair);
-	void card_touched(int index, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str);
+	bool add_random_decree(artifical& city, int random);
+	bool condition_card(card& c, const map_location& loc);
+	void consume_card(card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& touched = unit::null_int_unitp_pair, int index = -1, bool to_recorder = false);
+	void card_touched(card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str);
 	std::vector<size_t>& candidate_cards() { return candidate_cards_; }
 	const std::vector<size_t>& candidate_cards() const { return candidate_cards_; }
 	std::vector<size_t>& holded_cards() { return holded_cards_; }
@@ -522,6 +522,7 @@ private:
 
 	int leader_;
 	std::vector<artifical*> holded_cities_;
+	std::map<int, int> character_;
 
 	int gold_;
 	std::set<map_location> villages_;

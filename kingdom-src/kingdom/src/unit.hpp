@@ -168,10 +168,16 @@ struct tactic_fields {
 	int32_t y_;	\
 	int32_t goto_x_;	\
 	int32_t goto_y_;	\
+	int32_t from_x_;	\
+	int32_t from_y_;	\
 	int32_t facing_;	\
 	int32_t keep_turns_;	\
+	int32_t block_turns_;	\
 	int32_t hide_turns_;	\
-	int32_t character_; \
+	int32_t alert_turns_;	\
+	int32_t provoked_turns_;	\
+	int32_t task_;	\
+	int32_t especial_; \
 	int32_t human_;	\
 	int32_t random_traits_;	\
 	int32_t resting_;	\
@@ -216,10 +222,10 @@ public:
 	// Copy constructor
 	unit(const unit& u);
 	/** Initilizes a unit from a config */
-	unit(unit_map& units, hero_map& heros, const config& cfg, bool use_traits=false, game_state* state = 0, bool artifical = false);
-	unit(unit_map& units, hero_map& heros, const uint8_t* mem, bool use_traits=false, game_state* state = 0, bool artifical = false);
+	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const config& cfg, bool use_traits=false, game_state* state = 0, bool artifical = false);
+	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uint8_t* mem, bool use_traits=false, game_state* state = 0, bool artifical = false);
 	/** Initializes a unit from a unit type */
-	unit(unit_map& units, hero_map& heros, type_heros_pair& t, int cityno, bool real_unit, bool artifical = false);
+	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_heros_pair& t, int cityno, bool real_unit, bool artifical = false);
 	virtual ~unit();
 	unit& operator=(const unit&);
 
@@ -229,6 +235,7 @@ public:
 	const std::vector<std::string>& advances_to() const;
 
 	void pack_to(const unit_type* t);
+	void change_to(game_display& gui, const unit_type* t);
 
 	/** The type id of the unit */
 	const std::string& type_id() const { return type_; }
@@ -236,7 +243,8 @@ public:
 	const unit_type* type() const;
 	const unit_type* packee_type() const;
 
-	int character() const { return character_; }
+	int especial() const { return especial_; }
+	void set_special(int val) { especial_ = val; }
 
 	/** id assigned by wml */
 	const std::string& id() const { return type_; }
@@ -280,6 +288,7 @@ public:
 	void set_side(unsigned int new_side);
 	fixed_t alpha() const { return alpha_; }
 
+	bool is_commoner() const { return commoner_; }
 	bool is_artifical() const { return artifical_; } 
 	bool is_city() const { return artifical_ && can_reside_; } 
 	int cityno() const { return cityno_; } 
@@ -305,8 +314,10 @@ public:
 	void replace_captains(const std::vector<hero*>& captains);
 	void replace_captains_internal(hero& selected_hero, std::vector<hero*>& captains) const;
 
+	int amla() const;
 	int guard_attack();
 
+	bool uncleared() const;
 	bool incapacitated() const { return get_state(STATE_PETRIFIED); }
 	int total_movement() const { return max_movement_; }
 	int movement_left() const { return (movement_ == 0 || incapacitated()) ? 0 : movement_; }
@@ -342,7 +353,7 @@ public:
 	bool get_state(const std::string& state) const;
 	void set_state(const std::string &state, bool value);
 	enum state_t { STATE_MIN = 0, STATE_SLOWED = STATE_MIN, STATE_BROKEN, STATE_POISONED, STATE_PETRIFIED,
-		STATE_UNCOVERED, STATE_NOT_MOVED, STATE_REINFORCED, STATE_LEGERITIED, STATE_COUNT, STATE_UNKNOWN = -1 };
+		STATE_UNCOVERED, STATE_NOT_MOVED, STATE_REINFORCED, STATE_LEGERITIED, STATE_BLOCKED, STATE_COUNT, STATE_UNKNOWN = -1 };
 	void set_state(state_t state, bool value);
 	bool get_state(state_t state) const;
 	static state_t get_known_boolean_state_id(const std::string &state);
@@ -395,12 +406,25 @@ public:
 
 	int keep_turns() const { return keep_turns_; }
 	void set_keep_turns(int turns) { keep_turns_ = turns; }
+	int block_turns() const { return block_turns_; }
+	void set_block_turns(int turns) { block_turns_ = turns; }
+	void inching_block_turns(bool increase);
 	int hide_turns() const { return hide_turns_; }
 	void set_hide_turns(int turns) { hide_turns_ = turns; }
+	int alert_turns() const { return alert_turns_; }
+	void set_alert_turns(int turns);
+	void do_provoked(unit& tactician, int turns);
+	int provoked_turns() const { return provoked_turns_; }
+	void set_provoked_turns(unit& tactician, int turns);
+	// it is search tactician using provoked from golbal provoke_cache.
+	void set_provoked_turns_next(const unit& provoked, int turns);
+	void remove_from_provoke_cache();
 	bool human() const { return human_; }
 	void set_human(bool val);
 
-
+	enum {TASK_NONE, TASK_BACK, TASK_TRADE, TASK_TRANSFER};
+	int task() const { return task_; }
+	void set_task(int t) { task_ = t; }
 
 	bool verifying() const { return verifying_; }
 	void set_verifying(bool verifying = true) { verifying_ = verifying; }
@@ -418,6 +442,8 @@ public:
 
 	const map_location& get_goto() const { return goto_; }
 	void set_goto(const map_location& new_goto);
+	const map_location& get_from() const { return from_; }
+	void set_from(const map_location& new_from);
 
 	virtual int upkeep() const;
 	bool loyal() const;
@@ -452,6 +478,7 @@ public:
 
 	void add_modification(const config& modification, bool no_add = false, bool anim = false);
 	void add_modification_internal(int apply_to, const config& effect, bool anim, int turns = -1);
+	virtual void issue_decree(const config& effect) {}
 
 	void apply_tactic(const ttactic* contain, const ttactic& effect, int part = 0, int turn = -1);
 
@@ -516,6 +543,17 @@ public:
 	enum {BIT_ATTACKING = 0, BIT_DEFENDING, BIT_STRONGER};
 	void set_temporary_state(int bit, bool set);
 	
+	int character_level(int apply_to) const;
+	hero* character_hero(int apply_to) const;
+
+	/**
+	 * Clears the cache.
+	 *
+	 * Since we don't change the state of the object we're marked const (also
+	 * required since the objects in the cache need to be marked const).
+	 */
+	void clear_visibility_cache() const { invisibility_cache_.clear(); }
+
 	uint16_t leadership_;
 	uint16_t force_;
 	uint16_t intellect_;
@@ -524,6 +562,19 @@ public:
 	uint8_t feature_[HEROS_FEATURE_M2BYTES];
 	uint16_t adaptability_[HEROS_MAX_ARMS];
 	uint16_t skill_[HEROS_MAX_SKILL];
+	class character_data
+	{
+	public:
+		character_data(hero* _h, int _ch, int _level)
+			: h(_h)
+			, ch(_ch)
+			, level(_level)
+		{}
+		hero* h;
+		int ch;
+		int level;
+	};
+	std::map<int, character_data> characters_;
 
 	map_location adjacent_[12];	// 和loc_邻近的最多12个格子
 	size_t adjacent_size_;
@@ -560,7 +611,7 @@ protected:
 	std::string packee_type_;
 	const unit_type* unit_type_;
 	const unit_type* packee_unit_type_;
-	int character_;
+	int especial_;
 	const unit_race* race_;
 	mutable t_string name_;
 	t_string type_name_;
@@ -611,9 +662,14 @@ protected:
 	int max_attacks_;
 
 	int keep_turns_;
+	int block_turns_;
 	int hide_turns_;
+	int alert_turns_;
+	int provoked_turns_;
 	bool human_;
 	bool verifying_;
+
+	int task_;
 
 	std::set<std::string> states_;
 	std::vector<bool> known_boolean_states_;
@@ -633,6 +689,7 @@ protected:
 	int heal_;
 	int turn_experience_;
 	map_location goto_;
+	map_location from_;
 
 	bool flying_;
 
@@ -651,24 +708,19 @@ protected:
 	friend void attack_type::set_specials_context(const unit* loc, const unit*, const unit& un, bool) const;
 	unit_map& units_;
 	hero_map& heros_;
+	std::vector<team>& teams_;
 
 	/** Hold the visibility status cache for a unit, mutable since it's a cache. */
 	mutable std::map<map_location, bool> invisibility_cache_;
 	
-	/**
-	 * Clears the cache.
-	 *
-	 * Since we don't change the state of the object we're marked const (also
-	 * required since the objects in the cache need to be marked const).
-	 */
-	void clear_visibility_cache() const { invisibility_cache_.clear(); }
-
 	// rember parameter before modify according to heros in this unit
 	config base_resistance_;
 
 	surface small_portrait_;
 
 	move_unit_spectator move_spectator_;
+
+	bool commoner_;
 	//
 	// artifical
 	//
@@ -697,6 +749,10 @@ protected:
 
 	uint32_t temporary_state_;
 };
+
+namespace camp {
+	extern hero* leader;
+}
 
 /** Object which temporarily resets a unit's movement */
 struct unit_movement_resetter
@@ -762,5 +818,11 @@ private:
 unit* find_unit(unit_map& units, const hero& h);
 bool extract_hero(unit_map& units, const hero& h);
 unit* find_unit(unit_map& units, const map_location& loc);
+
+unit* loc_in_alert_area(unit& u, const map_location& from, const map_location& to);
+extern bool provoke_cache_ready;
+std::string provoke_cache_2_str();
+void str_2_provoke_cache(unit_map& units, hero_map& heros, const std::string& str);
+unit* find_provoke(const unit* provoked);
 
 #endif

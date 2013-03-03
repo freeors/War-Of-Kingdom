@@ -33,10 +33,19 @@ struct map_offset {
 	int y;
 };
 
+struct trange {
+	int min;
+	int max;
+};
+
 // [0]even, [1]odd
 extern map_offset adjacent_1[2][6];
 extern map_offset adjacent_2[2][12];
 extern map_offset adjacent_3[2][18];
+
+extern trange range_1[2][3];
+extern trange range_2[2][5];
+extern trange range_3[2][7];
 
 /**
  * Encapsulates the map of the game.
@@ -109,6 +118,8 @@ struct map_location {
 	map_location get_direction(const std::string& str, const map_location& src) const;
 	DIRECTION get_relative_dir(map_location loc) const;
 	static DIRECTION get_opposite_dir(DIRECTION d);
+
+	bool in_area(const map_location& loc, int range) const;
 
 	static const map_location null_location;
 };

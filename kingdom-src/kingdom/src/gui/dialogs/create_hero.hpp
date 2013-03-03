@@ -17,9 +17,9 @@
 #define GUI_DIALOGS_CREATE_HERO_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
+#include "hero.hpp"
 
 class display;
-class hero;
 class hero_map;
 class config;
 
@@ -59,6 +59,7 @@ private:
 	void adaptability(twindow& window, int type, int index);
 	void feature(twindow& window, bool side);
 	void tactic(twindow& window);
+	void character(twindow& window);
 	void catalog(twindow& window);
 	void create(twindow& window);
 
@@ -69,7 +70,8 @@ private:
 private:
 	display& gui_;
 	hero_map& heros_;
-	hero* h_;
+	hero h_;
+	hero& player_hero_;
 
 	int male_number_;
 	int female_number_;

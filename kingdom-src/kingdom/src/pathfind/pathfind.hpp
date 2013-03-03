@@ -216,6 +216,18 @@ private:
 	void* expediting_city_cookie_;
 };
 
+struct commoner_path_calculator : shortest_path_calculator
+{
+	commoner_path_calculator(const unit& u, const team& t, const unit_map& units,
+		const std::vector<team> &teams, const gamemap &map, const std::vector<map_location>& road,
+		bool ignore_unit = false, bool ignore_defense_ = false,
+		bool see_all = false);
+	virtual double cost(const map_location& loc, const double so_far) const;
+
+private:
+	const std::vector<map_location>& road_;
+};
+
 /**
  * Function which only uses terrain, ignoring shroud, enemies, etc.
  * Required by move_unit_fake if the normal path fails.

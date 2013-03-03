@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-01-16 10:33+0800\n"
+"PO-Revision-Date: 2013-03-01 21:35+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -7187,6 +7187,9 @@ msgstr "石化"
 msgid "Ambushed!"
 msgstr "遭到伏击！"
 
+msgid "Alerted!"
+msgstr "遭到预警！"
+
 #: src/actions.cpp:2501
 msgid "Failed teleport! Exit not empty"
 msgstr "传送失败！出口阻塞"
@@ -10458,6 +10461,9 @@ msgstr "得到牌：$first。"
 msgid "Lost card: $first."
 msgstr "失去牌：$first。"
 
+msgid "$city investigats decree: $decree."
+msgstr "$city研究出政令：$decree"
+
 msgid "Find treasure: $first($second)!"
 msgstr "发现宝物：$first($second)！"
 
@@ -10551,6 +10557,9 @@ msgstr ""
 
 msgid "Munition turns"
 msgstr "军需回合数"
+
+msgid "Block turns"
+msgstr "阻塞回合数"
 
 msgid "collapse"
 msgstr "塌陷"

@@ -33,7 +33,7 @@ public:
 		, level_(1)
 		, cost_(1)
 		, alignment_(unit_type::LAWFUL)
-		, character_(NO_CHARACTER)
+		, character_(NO_ESPECIAL)
 		, movement_type_()
 		, resistance_()
 		, zoc_(true)
@@ -208,7 +208,7 @@ public:
 	std::string cfg_file(bool absolute) const;
 	std::string description() const;
 
-	enum {TYPE_TROOP = 0, TYPE_CITY, TYPE_ARTIFICAL};
+	enum {TYPE_TROOP = 0, TYPE_COMMONER, TYPE_CITY, TYPE_ARTIFICAL};
 	int type() const;
 	int type_from_cfg() const;
 
@@ -217,6 +217,7 @@ public:
 public:
 	static std::map<int, std::string> type_map_;
 	static std::set<hero*> artifical_hero_;
+	static std::set<hero*> commoner_hero_;
 
 	std::vector<tattack> attacks_;
 	tunit_type_ utype_from_cfg_;
@@ -229,7 +230,7 @@ private:
 class tcore
 {
 public:
-	enum {UNIT_TYPE = 0, TACTIC, TECH, SECTIONS};
+	enum {UNIT_TYPE = 0, TACTIC, CHARACTER, TECH, SECTIONS};
 
 	static std::map<int, std::string> name_map;
 	static std::map<int, int> idd_map;
@@ -241,6 +242,7 @@ public:
 	HWND init_toolbar(HINSTANCE hinst, HWND hdlgP);
 	void refresh_utype(HWND hdlgP);
 	void refresh_tactic(HWND hdlgP);
+	void refresh_character(HWND hdlgP);
 	void refresh_technology(HWND hdlgP);
 	void refresh_technology2(HWND hdlgP);
 
@@ -284,6 +286,9 @@ public:
 	HTREEITEM htvroot_tactic_atom_;
 	HTREEITEM htvroot_tactic_complex_;
 
+	HTREEITEM htvroot_character_atom_;
+	HTREEITEM htvroot_character_complex_;
+
 	HTREEITEM htvroot_technology_atom_;
 	HTREEITEM htvroot_technology_complex_;
 
@@ -311,6 +316,7 @@ namespace ns {
 
 extern BOOL CALLBACK DlgUTypeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgTacticProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+extern BOOL CALLBACK DlgCharacterProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgTechnologyProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 #endif // __DLGCOREPROC_HPP_

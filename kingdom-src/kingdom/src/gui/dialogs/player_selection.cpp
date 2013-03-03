@@ -107,6 +107,7 @@ tplayer_selection::tplayer_selection(display& gui, hero_map& heros, card_map& ca
 	, player_hero_(&player_hero)
 	, city_map_()
 	, city_leader_map_()
+	, maximal_defeated_activity_(NULL)
 {
 }
 
@@ -145,6 +146,8 @@ void tplayer_selection::card_toggled(twidget* widget)
 
 void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 {
+	maximal_defeated_activity_ = find_widget<tbutton>(&window, "maximal_defeated_activity", false, true);
+
 	tlistbox* list = find_widget<tlistbox>(&window, "player_list", false, true);
 	std::string text;
 	config cfg_from_file;
@@ -245,12 +248,8 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 	if (!card_size) {
 		return;
 	}
-	checked_card_.resize(card_size);
-	for (size_t i = 0;  i < card_size; i ++) {
-		checked_card_[i] = true;
-	}
 
-	std::stringstream str;
+	std::stringstream strstr;
 	card_table_ = find_widget<tlistbox>(&window, "card_table", false, true);
 
 	int card_index = 0;
@@ -262,9 +261,9 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 		list_item["label"] = c->name();
 		list_item_item.insert(std::make_pair("name", list_item));
 
-		str.str("");
-		str << c->points();
-		list_item["label"] = str.str();
+		strstr.str("");
+		strstr << c->points();
+		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("points", list_item));
 
 		list_item["label"] = c->desc();
@@ -276,7 +275,8 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 		ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(grid_ptr->find("prefix", true));
 		toggle->set_callback_state_change(boost::bind(&tplayer_selection::card_toggled, this, _1));
 		toggle->set_data(card_index);
-		toggle->set_value(true);
+		toggle->set_value(!c->decree());
+		checked_card_.push_back(!c->decree());
 	}
 
 	connect_signal_mouse_left_click(
@@ -285,6 +285,12 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 		&tplayer_selection::player_city
 		, this
 		, boost::ref(window)));
+	connect_signal_mouse_left_click(
+		*maximal_defeated_activity_
+		, boost::bind(
+			&tplayer_selection::maximal_defeated_activity
+			, this
+			, boost::ref(window)));
 
 	// disable all sort button
 	tbutton* button = find_widget<tbutton>(&window, "hero_name", false, true);
@@ -298,6 +304,10 @@ void tplayer_selection::pre_show(CVideo& /*video*/, twindow& window)
 
 	button = find_widget<tbutton>(&window, "player_city", false, true);
 	button->set_visible((rows_mem_[player_].hero_ == player_hero_->number_)? twidget::VISIBLE: twidget::INVISIBLE);
+
+	strstr.str("");
+	strstr << game_config::maximal_defeated_activity;
+	maximal_defeated_activity_->set_label(strstr.str());
 
 	button = find_widget<tbutton>(&window, "ok", false, true);
 	button->set_active(rows_mem_[player_].city_ != -1);
@@ -416,6 +426,45 @@ void tplayer_selection::player_city(twindow& window)
 
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 	ok->set_active(rows_mem_[player_].city_ != -1);
+}
+
+void tplayer_selection::maximal_defeated_activity(twindow& window)
+{
+	// The possible eras to play
+	std::vector<std::string> activities;
+	activities.push_back("0");
+	activities.push_back("50");
+	activities.push_back("100");
+	activities.push_back("150");
+	
+	int activity_index;
+	if (game_config::maximal_defeated_activity <= 0) {
+		activity_index = 0;
+	} else if (game_config::maximal_defeated_activity <= 50) {
+		activity_index = 1;
+	} else if (game_config::maximal_defeated_activity <= 100) {
+		activity_index = 2;
+	} else {
+		activity_index = 3;
+	}
+
+	gui2::tcombo_box dlg(activities, activity_index);
+	dlg.show(gui_.video());
+
+	activity_index = dlg.selected_index();
+	if (activity_index == 0) {
+		game_config::maximal_defeated_activity = 0;
+	} else if (activity_index == 1) {
+		game_config::maximal_defeated_activity = 50;
+	} else if (activity_index == 2) {
+		game_config::maximal_defeated_activity = 100;
+	} else {
+		game_config::maximal_defeated_activity = 150;
+	}
+
+	std::stringstream str;
+	str << game_config::maximal_defeated_activity;
+	maximal_defeated_activity_->set_label(str.str());
 }
 
 } // namespace gui2

@@ -363,6 +363,9 @@ void tselect_unit::pre_show(CVideo& /*video*/, twindow& window)
 	if (type_ == ADVANCE) {
 		title->set_label(_("Advance Unit"));
 		select_tip->set_label(_("What should our victorious unit become?"));
+	} else if (type_ == CHANGE) {
+		title->set_label(_("Change unit"));
+		select_tip->set_label(_("Which should you change?"));
 	} else if (type_ == HUMAN) {
 		title->set_label(_("Human Control"));
 		select_tip->set_label(_("Which should you control?"));
@@ -390,8 +393,8 @@ void tselect_unit::pre_show(CVideo& /*video*/, twindow& window)
 		list_item["label"] = it->absolute_image() + "~RC(" + it->team_color() + ">" + team::get_side_color_index(side_num) + ")";
 		list_item_item.insert(std::make_pair("icon", list_item));
 
-		if (ut->character() != NO_CHARACTER) {
-			list_item["label"] = unit_types.character(ut->character()).image_;
+		if (ut->especial() != NO_ESPECIAL) {
+			list_item["label"] = unit_types.especial(ut->especial()).image_;
 			list_item_item.insert(std::make_pair("human", list_item));
 		}
 

@@ -125,7 +125,13 @@ void ttechnology_tree::show_tip(const technology& t)
 	std::stringstream strstr;
 	
 	strstr << exp_str(t) << "/" << t.max_experience();
-	
+	int max_experience = current_team_.technology_max_experience(t);
+	if (max_experience != t.max_experience()) {
+		strstr << "(";
+		strstr << unit_types.character(current_team_.character()).name();
+		strstr << ")";
+	}
+		
 	tcontrol* control = find_widget<tcontrol>(window_, "point", false, true);
 	control->set_label(strstr.str());
 	control = find_widget<tcontrol>(window_, "description", false, true);
@@ -162,9 +168,14 @@ void ttechnology_tree::technology_tree_2_tv_internal(ttree_view_node* htvroot, c
 		const technology* current = dynamic_cast<const technology*>(it->current);
 		bool hold = std::find(holded.begin(), holded.end(), current) != holded.end();
 
+		tree_group_field["use_markup"] = "true";
 		strstr.str("");
-		strstr << current->name();
-		strstr << "\n(" << exp_str(*current) << "/" << current->max_experience() << ")";
+		strstr << current->name() << "\n";
+		int max_experience = current_team_.technology_max_experience(*current);
+		if (max_experience != current->max_experience()) {
+			strstr << "<0,0,255>";
+		}
+		strstr << "(" << exp_str(*current) << "/" << max_experience << ")";
 		tree_group_field["label"] = strstr.str();
 		if (hold) {
 			tree_group_field["icon"] = "misc/ok2.png";
@@ -234,9 +245,14 @@ void ttechnology_tree::pre_show(CVideo& /*video*/, twindow& window)
 		const technology* current = dynamic_cast<const technology*>(n->current);
 		bool hold = std::find(holded.begin(), holded.end(), current) != holded.end();
 
+		tree_group_field["use_markup"] = "true";
 		strstr.str("");
-		strstr << current->name();
-		strstr << "\n(" << exp_str(*current) << "/" << current->max_experience() << ")";
+		strstr << current->name() << "\n";
+		int max_experience = current_team_.technology_max_experience(*current);
+		if (max_experience != current->max_experience()) {
+			strstr << "<0,0,255>";
+		}
+		strstr << "(" << exp_str(*current) << "/" << max_experience << ")";
 		tree_group_field["label"] = strstr.str();
 		if (hold) {
 			tree_group_field["icon"] = "misc/ok2.png";
