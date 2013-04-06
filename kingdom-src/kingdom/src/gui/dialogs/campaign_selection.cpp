@@ -131,10 +131,14 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 		tgrid* grid = list.get_row_grid(list.get_item_count() - 1);
 		assert(grid);
 
-		twidget* widget = grid->find("rpg", false);
-		// if (widget && !c["completed"].to_bool()) {
-		if (widget && !c["rpg_mode"].to_bool()) {
-			widget->set_visible(twidget::HIDDEN);
+		tcontrol* widget = dynamic_cast<tcontrol*>(grid->find("mode", false));
+		if (widget) {
+			const std::string& mode = c["mode"].str();
+			if (mode == "rpg") {
+				widget->set_label("misc/mode-rpg.png");
+			} else if (mode == "tower") {
+				widget->set_label("misc/mode-tower.png");
+			}
 		}
 
 		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid->find("_toggle", true));

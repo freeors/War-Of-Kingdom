@@ -151,160 +151,6 @@ msgstr "义理"
 msgid "treasure"
 msgstr "宝物"
 
-msgid "treasure-0"
-msgstr "赤免马"
-
-msgid "treasure-1"
-msgstr "的卢"
-
-msgid "treasure-2"
-msgstr "爪黄飞电"
-
-msgid "treasure-3"
-msgstr "绝影"
-
-msgid "treasure-4"
-msgstr "白龙"
-
-msgid "treasure-5"
-msgstr "四轮车"
-
-msgid "treasure-6"
-msgstr "七星宝刀"
-
-msgid "treasure-7"
-msgstr "倚天剑"
-
-msgid "treasure-8"
-msgstr "青釭剑"
-
-msgid "treasure-9"
-msgstr "雌雄双剑"
-
-msgid "treasure-10"
-msgstr "古锭刀"
-
-msgid "treasure-11"
-msgstr "青龙偃月刀"
-
-msgid "treasure-12"
-msgstr "三尖刀"
-
-msgid "treasure-13"
-msgstr "蛇矛"
-
-msgid "treasure-14"
-msgstr "铁脊蛇矛"
-
-msgid "treasure-15"
-msgstr "方天画戟"
-
-msgid "treasure-16"
-msgstr "双铁戟"
-
-msgid "treasure-17"
-msgstr "铁鞭"
-
-msgid "treasure-18"
-msgstr "铁蒺藜骨朵"
-
-msgid "treasure-19"
-msgstr "飞刀"
-
-msgid "treasure-20"
-msgstr "孙子兵法"
-
-msgid "treasure-21"
-msgstr "三略"
-
-msgid "treasure-22"
-msgstr "司马法"
-
-msgid "treasure-23"
-msgstr "孟德新书"
-
-msgid "treasure-24"
-msgstr "兵法二十四篇"
-
-msgid "treasure-25"
-msgstr "管子"
-
-msgid "treasure-26"
-msgstr "晏子春秋"
-
-msgid "treasure-27"
-msgstr "周书阴符"
-
-msgid "treasure-28"
-msgstr "春秋左传"
-
-msgid "treasure-29"
-msgstr "书经"
-
-msgid "treasure-30"
-msgstr "论语集解"
-
-msgid "treasure-31"
-msgstr "典论"
-
-msgid "treasure-32"
-msgstr "时要论"
-
-msgid "treasure-33"
-msgstr "治论"
-
-msgid "treasure-34"
-msgstr "辨道论"
-
-msgid "treasure-35"
-msgstr "仇国论"
-
-msgid "treasure-36"
-msgstr "太平要术"
-
-msgid "treasure-37"
-msgstr "西蜀地形图"
-
-msgid "treasure-38"
-msgstr "平蛮指掌图"
-
-msgid "treasure-39"
-msgstr "珍珠"
-
-msgid "treasure-40"
-msgstr "碧玉"
-
-msgid "treasure-41"
-msgstr "青玉"
-
-msgid "treasure-42"
-msgstr "红玉"
-
-msgid "treasure-43"
-msgstr "五石散"
-
-msgid "treasure-44"
-msgstr "白羽扇"
-
-msgid "treasure-45"
-msgstr "玉玺"
-
-#, fuzzy
-msgid "treasure-46"
-msgstr "水将"
-
-#, fuzzy
-msgid "treasure-47"
-msgstr "水将"
-
-#, fuzzy
-msgid "treasure-48"
-msgstr "水将"
-
-#, fuzzy
-msgid "treasure-49"
-msgstr "水将"
-
 msgid "feature"
 msgstr "特技"
 
@@ -1275,7 +1121,7 @@ msgid "tactic_desc-ambush accelerate"
 msgstr "加速自身并发动伏兵效果"
 
 msgid "tactic-accelerate firms"
-msgstr "速度固守"
+msgstr "速战固守"
 
 msgid "tactic_desc-accelerate firms"
 msgstr "提升范围内友军的防御、移动"
@@ -2040,7 +1886,7 @@ msgid "name-213"
 msgstr "糜竺"
 
 msgid "name-214"
-msgstr "情报"
+msgstr "长沙"
 
 msgid "name-215"
 msgstr "柴桑"
@@ -2079,7 +1925,7 @@ msgid "name-226"
 msgstr "晋阳"
 
 msgid "name-227"
-msgstr "长沙"
+msgstr "情报"
 
 msgid "name-228"
 msgstr "黄巾"
@@ -2466,7 +2312,7 @@ msgid "name-355"
 msgstr "审配"
 
 msgid "name-356"
-msgstr "保留"
+msgstr "王基"
 
 msgid "name-357"
 msgstr "保留"
@@ -2481,7 +2327,7 @@ msgid "name-360"
 msgstr "商人"
 
 msgid "name-361"
-msgstr "学士"
+msgstr "学者"
 
 msgid "name-362"
 msgstr "保留"
@@ -3153,7 +2999,7 @@ msgid "surname-213"
 msgstr "糜"
 
 msgid "surname-214"
-msgstr "情报"
+msgstr "长沙"
 
 msgid "surname-215"
 msgstr "柴桑"
@@ -3192,7 +3038,7 @@ msgid "surname-226"
 msgstr "晋阳"
 
 msgid "surname-227"
-msgstr "长沙"
+msgstr "情报"
 
 msgid "surname-228"
 msgstr "黄巾"
@@ -3579,7 +3425,7 @@ msgid "surname-355"
 msgstr "审"
 
 msgid "surname-356"
-msgstr "保留"
+msgstr "王"
 
 msgid "surname-357"
 msgstr "保留"
@@ -5318,7 +5164,7 @@ msgstr ""
 "糜芳之背叛所致甚为羞愧，不久後病故。"
 
 msgid "desc214"
-msgstr "士兵"
+msgstr "长沙"
 
 msgid "desc215"
 msgstr "柴桑"
@@ -5357,7 +5203,7 @@ msgid "desc226"
 msgstr "晋阳"
 
 msgid "desc227"
-msgstr "长沙"
+msgstr "用于和“侦察兵”兵种组成部队去探路。游戏中提示。"
 
 msgid "desc228"
 msgstr "黄巾"
@@ -6369,6 +6215,11 @@ msgstr ""
 
 msgid "desc356"
 msgstr ""
+"魏之武将。历任安平太守、荆州刺史等职。[*演]是聽到管辂的评價並使其占卜的人物之"
+"一。在司马师讨伐毌丘俭时以监军身份同行。提议制服毌丘俭之前应先压制南顿城，使"
+"战局导向有利。之後为镇南将军，也参与司马昭讨伐诸葛诞之行。击破朱異、唐咨攻进"
+"寿春城，镇压了叛乱。[*史]琅邪留学归回後，服侍王淩。劝谏曹叡建造宫殿。当曹芳即"
+"位，曹爽掌握实权时，著有「时要论」批判时代倾向。"
 
 msgid "desc357"
 msgstr ""

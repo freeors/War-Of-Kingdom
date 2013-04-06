@@ -359,7 +359,10 @@ report generate_report(TYPE type,
 		else if (data.net_income < 0)
 			str << font::BAD_TEXT;
 
-		str << data.net_income << "/" << data.technology_net_income;
+		str << data.net_income;
+		if (tent::mode != TOWER_MODE) {
+			str << "/" << data.technology_net_income;
+		}
 		break;
 	}
 	case TACTIC: {

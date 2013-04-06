@@ -434,7 +434,7 @@ public:
 	const map_location &get_location() const { return loc_; }
 	const std::set<map_location>& get_touch_locations() const { return touch_locs_; }
 	const std::set<map_location>& get_overlapped_locations() const { return overlapped_locs_; }
-	const std::set<map_location::DIRECTION>& get_touch_dirs() const { return touch_dirs_; }
+	const std::set<map_location::DIRECTION>& get_touch_dirs() const;
 	/** To be called by unit_map or for temporary units only. */
 	virtual void set_location(const map_location &loc);
 
@@ -546,6 +546,7 @@ public:
 	int character_level(int apply_to) const;
 	hero* character_hero(int apply_to) const;
 
+	bool has_mayor() const;
 	/**
 	 * Clears the cache.
 	 *
@@ -604,7 +605,6 @@ protected:
 	map_location loc_;
 	std::set<map_location> touch_locs_;
 	std::set<map_location> overlapped_locs_;
-	std::set<map_location::DIRECTION> touch_dirs_;
 
 	std::vector<std::string> advances_to_;
 	std::string type_;
@@ -750,8 +750,14 @@ protected:
 	uint32_t temporary_state_;
 };
 
-namespace camp {
+enum {NONE_MODE, RPG_MODE, TOWER_MODE};
+enum {NO_DUEL, RANDOM_DUEL, ALWAYS_DUEL};
+namespace tent {
 	extern hero* leader;
+	extern int ai_count;
+	extern int mode;
+	extern int turns;
+	extern int duel;
 }
 
 /** Object which temporarily resets a unit's movement */

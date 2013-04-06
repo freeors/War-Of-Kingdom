@@ -1411,6 +1411,10 @@ int team::total_income() const
 
 int team::side_upkeep() const 
 {
+	if (tent::mode == TOWER_MODE) {
+		return 0;
+	}
+
 	int upkeep = 0, loss_per_city;
 
 	for (size_t idx = 0; idx < field_troops_vsize_; idx ++) {
@@ -1646,7 +1650,7 @@ void team::erase_strategy(int target, bool dialog)
 						VALIDATE(false, "team::erase_strategy, unknown strategy type.");
 					}
 					if (is_human() || allied_team.is_human()) {
-						game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
+						game_events::show_hero_message(&heros_[hero::number_scout], NULL, message, game_events::INCIDENT_ALLY);
 					}
 				}
 			}
@@ -1709,7 +1713,7 @@ void team::erase_strategies(bool show)
 				} else {
 					VALIDATE(false, "team::erase_strategy, unknown strategy type.");
 				}
-				game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
+				game_events::show_hero_message(&heros_[hero::number_scout], NULL, message, game_events::INCIDENT_ALLY);
 			}
 		}
 		it = strategies_.erase(it);
@@ -2382,7 +2386,7 @@ bool team::add_random_decree(artifical& city, int random)
 		utils::string_map symbols;
 		symbols["city"] = city.name();
 		symbols["decree"] = holded_card(holded_cards().size() - 1).name();
-		game_events::show_hero_message(&heros_[214], NULL, vgettext("$city investigats decree: $decree.", symbols), game_events::INCIDENT_CARD);
+		game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$city investigats decree: $decree.", symbols), game_events::INCIDENT_CARD);
 	}
 	return true;
 }
@@ -2646,7 +2650,6 @@ const card& team::holded_card(int index) const
 
 void team::find_treasure(hero_map& heros, play_controller& controller, int pos)
 {
-	const treasure_map& treasures = unit_types.treasures();
 	const std::vector<int>& hide_treasures = controller.treasures();
 
 	holded_treasures_.push_back(hide_treasures[pos]);
@@ -2654,18 +2657,10 @@ void team::find_treasure(hero_map& heros, play_controller& controller, int pos)
 
 	// card
 	utils::string_map symbols;
-	symbols["first"] = hero::treasure_str(holded_treasures_.back());
-	std::stringstream strstr;
-	const std::vector<int>& features = treasures.find(holded_treasures_.back())->second;
-	for (std::vector<int>::const_iterator it = features.begin(); it != features.end(); ++ it) {
-		if (it != features.begin()) {
-			strstr << ", " << hero::feature_str(*it);
-		} else {
-			strstr << hero::feature_str(*it);
-		}
-	}
-	symbols["second"] = strstr.str();
-	game_events::show_hero_message(&heros[214], NULL, vgettext("Find treasure: $first($second)!", symbols), game_events::INCIDENT_CARD);
+	const ttreasure& t = unit_types.treasure(holded_treasures_.back());
+	symbols["first"] = t.name();
+	symbols["second"] = hero::feature_str(t.feature());
+	game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("Find treasure: $first($second)!", symbols), game_events::INCIDENT_CARD);
 }
 
 void team::select_ing_technology(const technology* set)

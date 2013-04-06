@@ -25,11 +25,12 @@
 #include "pathutils.hpp"
 #include "play_controller.hpp"
 #include "artifical.hpp"
+#include "wml_exception.hpp"
 
 #include <functional>
 
 #include "actions.hpp"
-#include "posix.h"
+
 
 //
 // city_map section
@@ -418,6 +419,7 @@ void unit_map::add(const map_location&l, const unit* u)
 bool unit_map::move(const map_location &src, const map_location &dst) 
 {
 	bool can_undo = true;
+	std::vector<team>& teams = *resources::teams;
 	size_t i;
 	std::pair<map_location, unit*> *p = NULL;
 	artifical* cobj = city_from_loc(dst);
@@ -457,9 +459,8 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 				break;
 			}
 		}
-		if (i == map_vsize_) {
-			posix_print_mb("unitmap::move, i == map_vsize, check code!!!\n");
-		}
+		VALIDATE(i != map_vsize_, "unitmap::move, i == map_vsize, check code!");
+
 		if (i < map_vsize_ - 1) {
 			memcpy(&(map_[i]), &(map_[i + 1]), (map_vsize_ - i - 1) * sizeof(node*));
 		}
@@ -476,7 +477,7 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 				}
 			}
 			// 刷新该阵营所属城外部队列表
-			(*resources::teams)[p->second->side() - 1].erase_troop(p->second);
+			teams[p->second->side() - 1].erase_troop(p->second);
 		}
 		
 		delete p->second;
@@ -484,7 +485,7 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 	}
 	// 出征状态时,如果发生移动的也只能是要出征的武将,不比较src了(如要比较src须趁见,见以上的p->first = dst
 	if (expediting_) {
-		insert(expediting_node_); // 这个recalling_node_是出征都市
+		insert(expediting_node_); // 这个expediting_node_是出征都市
 		expediting_node_ = NULL;
 
 		expediting_city_ = NULL;
@@ -501,7 +502,7 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 				}
 			}
 			// 刷新该阵营所属城外部队列表
-			(*resources::teams)[p->second->side() - 1].add_troop(p->second);
+			teams[p->second->side() - 1].add_troop(p->second);
 			if (troop) {
 				p->second->set_keep_turns(game_config::max_keep_turns);
 			}
@@ -1195,6 +1196,9 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 
 		// process low loyalty hero.
 		for (std::map<int, mr_data::enemy_data>::iterator city_itor = mr.own_cities.begin(); action && city_itor != mr.own_cities.end(); ++ city_itor) {
+			if (tent::mode == TOWER_MODE) {
+				continue;
+			}
 			artifical& city = *city_from_cityno(city_itor->first);
 			if (rpg::stratum == hero_stratum_mayor && city.mayor() == rpg::h) {
 				continue;

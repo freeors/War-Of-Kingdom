@@ -1431,232 +1431,7 @@ WML_HANDLER_FUNCTION(join, /*event_info*/, cfg)
 	gui.invalidate(master_troop->get_location());
 	gui.draw();
 }
-/*
-// If we should spawn a new unit on the map somewhere
-WML_HANDLER_FUNCTION(recommend, event_info, cfg)
-{
-	std::vector<team>& teams = *resources::teams;
-	hero_map& heros = *resources::heros;
-	unit_map& units = *resources::units;
-	play_controller& controller = *resources::controller;
-	const config& parsed_cfg = cfg.get_parsed_config();
-	int cityno = parsed_cfg["cityno"];
-	bool wander_recommand = parsed_cfg.has_attribute("hero")? false: true;
 
-	std::string message;
-	artifical* selected_city = NULL;
-	hero* selected_hero = NULL;
-	if (wander_recommand) {
-		std::vector<artifical*> cities, full_cities;
-		for (size_t side = 0; side != teams.size(); side ++) {
-			std::vector<artifical*>& side_cities = teams[side].holded_cities();
-			for (std::vector<artifical*>::iterator itor = side_cities.begin(); itor != side_cities.end(); ++ itor) {
-				artifical* city = *itor;
-				full_cities.push_back(city);
-				if (!city->wander_heros().size()) {
-					continue;
-				}
-				cities.push_back(city);
-			}
-		}
-		if (!cities.size()) {
-			return;
-		}
-		// move max_move_wander_heros wander hero
-		int random = 1;
-		int hero_index = 0;
-		if (full_cities.size() > 1) {
-			artifical* from_city = cities[controller.turn() % cities.size()];
-			hero* leader = teams[from_city->side() - 1].leader();
-			artifical* to_city = full_cities[(controller.turn() + random) % full_cities.size()];
-			
-			while (to_city == from_city) {
-				to_city = full_cities[(controller.turn() + random) % full_cities.size()];
-				random ++;
-			}
-			std::vector<hero*>& from_wander_heros = from_city->wander_heros();
-			int max_move_wander_heros = 2;
-			for (std::vector<hero*>::iterator itor = from_wander_heros.begin(); hero_index < max_move_wander_heros && itor != from_wander_heros.end();) {
-				hero* h = *itor;
-				if (from_city->side() == team::empty_side_ || h->loyalty(*leader) < game_config::move_loyalty_threshold) {
-					to_city->wander_into(*h, teams[from_city->side() - 1].is_human()? false: true);
-					itor = from_wander_heros.erase(itor);
-					hero_index ++;
-				} else {
-					++ itor;
-				}
-			}
-		}
-		// recommand wander hero
-		if (cities.size() == 1 && !cities[0]->wander_heros().size()) {
-			return;
-		}
-
-		random = get_random();
-		do {
-			selected_city = cities[random % cities.size()];
-			random ++;
-		} while (!selected_city->wander_heros().size());
-		std::vector<hero*>& wander_heros = selected_city->wander_heros();
-		hero_index = random % wander_heros.size();
-
-		selected_hero = wander_heros[hero_index];
-
-		hero* leader = teams[selected_city->side() - 1].leader();
-		if (selected_city->side() == team::empty_side_ || selected_hero->loyalty(*leader) < game_config::wander_loyalty_threshold) {
-			artifical* into_city = cities[random % cities.size()];
-			into_city->wander_into(*selected_hero, teams[selected_city->side() - 1].is_human()? false: true);
-			wander_heros.erase(wander_heros.begin() + hero_index);
-			return;
-		}
-		// update heros list in artifical
-		selected_hero->status_ = hero_status_idle;
-		selected_hero->side_ = selected_city->side() - 1;
-		selected_city->fresh_heros().push_back(selected_hero);
-		wander_heros.erase(wander_heros.begin() + hero_index);
-
-		message = _("Let me join in. I will do my best to maintenance our honor.");
-
-		map_location loc2(MAGIC_HERO, selected_hero->number_);
-		game_events::fire("post_recommend", selected_city->get_location(), loc2);
-
-	} else {
-		std::string action = parsed_cfg["action"];
-		selected_hero = &heros[parsed_cfg["hero"]];
-		if (action == "join") {
-			int cityno = parsed_cfg["cityno"].to_int(0);
-			if (cityno) {
-				selected_city = units.city_from_cityno(cityno);
-			} else if (parsed_cfg.has_attribute("side")) {
-				std::vector<artifical*>& side_cities = teams[parsed_cfg["side"] - 1].holded_cities();
-				selected_city = side_cities[0];
-				cityno = selected_city->cityno();
-			} else {
-				return;
-			}
-			selected_hero->status_ = hero_status_idle;
-			selected_hero->side_ = selected_city->side() - 1;
-			selected_hero->city_ = cityno;
-			selected_city->fresh_heros().push_back(selected_hero);
-
-			message = parsed_cfg["message"].str();
-			if (message.empty()) {
-				message = _("Let me join in. I will do my best to maintenance our honor.");
-			}
-		} else if (action == "leave" && (selected_hero->side_ != HEROS_INVALID_SIDE)) {
-			// which this hero in?
-			bool found = false;
-			int ownership_side = selected_hero->side_ + 1;
-			if (parsed_cfg.has_attribute("side") && parsed_cfg["side"].to_int() != ownership_side) {
-				return;
-			}
-			selected_city = units.city_from_cityno(selected_hero->city_);
-			if (selected_hero->status_ == hero_status_military) {
-				std::vector<hero*> captains;
-				std::vector<unit*>& field_troops = selected_city->field_troops();
-				for (std::vector<unit*>::iterator itor = field_troops.begin(); itor != field_troops.end(); ++ itor) {
-					unit& u = **itor;
-					captains.clear();
-					if (&u.master() == selected_hero) {
-						found = true;
-					} else {
-						captains.push_back(&u.master());
-					}
-					if (u.second().valid()) {
-						if (&u.second() == selected_hero) {
-							found = true;
-						} else {
-							captains.push_back(&u.second());
-						}
-					} 
-					if (u.third().valid()) {
-						if (&u.third() == selected_hero) {
-							found = true;
-						} else {
-							captains.push_back(&u.third());
-						}
-					}
-					if (found) {
-						if (captains.empty()) {
-							units.erase(&u);
-						} else {
-							u.replace_captains(captains);
-						}
-						break;
-					}
-				}
-				if (!found) {
-					std::vector<unit*>& reside_troops = selected_city->reside_troops();
-					int index = 0;
-					for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor, index ++) {
-						unit& u = **itor;
-						captains.clear();
-						if (&u.master() == selected_hero) {
-							found = true;
-						} else {
-							captains.push_back(&u.master());
-						}
-						if (u.second().valid()) {
-							if (&u.second() == selected_hero) {
-								found = true;
-							} else {
-								captains.push_back(&u.second());
-							}
-						} 
-						if (u.third().valid()) {
-							if (&u.third() == selected_hero) {
-								found = true;
-							} else {
-								captains.push_back(&u.third());
-							}
-						}
-						if (found) {
-							if (captains.empty()) {
-								selected_city->troop_go_out(index);
-							} else {
-								u.replace_captains(captains);
-							}
-							break;
-						}
-					}
-				}
-			} else if (selected_hero->status_ == hero_status_idle) {
-				std::vector<hero*>& fresh_heros = selected_city->fresh_heros();
-				for (std::vector<hero*>::iterator itor = fresh_heros.begin(); itor != fresh_heros.end(); ++ itor) {
-					if (*itor == selected_hero) {
-						found = true;
-						fresh_heros.erase(itor);
-						break;
-					}
-				}
-			} else if (selected_hero->status_ == hero_status_moving || selected_hero->status_ == hero_status_backing) {
-				std::vector<hero*>& finish_heros = selected_city->finish_heros();
-				for (std::vector<hero*>::iterator itor = finish_heros.begin(); itor != finish_heros.end(); ++ itor) {
-					if (*itor == selected_hero) {
-						found = true;
-						finish_heros.erase(itor);
-						break;
-					}
-				}
-			} else {
-				return;
-			}
-
-			selected_hero->to_unstage();
-
-			message = parsed_cfg["message"].str();
-			if (message.empty()) {
-				message = _("I will leave for a while, and be back in future.");
-			}
-
-		} else {
-			return;
-		}
-	}
-
-	show_hero_message(selected_hero, selected_city, message, game_events::INCIDENT_RECOMMENDONESELF);
-}
-*/
 WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 {
 	std::vector<team>& teams = *resources::teams;
@@ -1832,7 +1607,7 @@ WML_HANDLER_FUNCTION(ai, /*event_info*/, cfg)
 	}
 
 	if (controller->ally_all_ai()) {
-		game_events::show_hero_message(&heros[214], NULL, _("lips death and teeth cold, all ai sides concluded treaty of alliance."), game_events::INCIDENT_ALLY);
+		game_events::show_hero_message(&heros[hero::number_scout], NULL, _("lips death and teeth cold, all ai sides concluded treaty of alliance."), game_events::INCIDENT_ALLY);
 
 		if (rpg::stratum != hero_stratum_leader) {
 			// enter to final battle automaticly
@@ -1846,64 +1621,7 @@ WML_HANDLER_FUNCTION(ai, /*event_info*/, cfg)
 		}
 	}
 }
-/*
-WML_HANDLER_FUNCTION(ally, event_info, cfg)
-{
-	std::vector<team>& teams_ = *resources::teams;
-	unit_map& units = *resources::units;
-	hero_map& heros = *resources::heros;
-	hero& emissary = heros[event_info.data["hero"].to_int()];
-	int my_side = event_info.data["first"].to_int();
-	int to_ally_side = event_info.data["second"].to_int();
-	int strategy_index = event_info.data["strategy"].to_int(-1);
-	int target_side = event_info.data["target"].to_int(-1);
-	team& my_team = teams_[my_side - 1];
-	team& to_ally_team = teams_[to_ally_side - 1];
-	team& target_team = teams_[target_side - 1];
-	
-	std::vector<strategy>& strategies = my_team.strategies();
-	strategy& s = strategies[strategy_index];
-	artifical* target_city = units.city_from_cityno(s.target_);
 
-	// display dialog
-	utils::string_map symbols;
-	symbols["city"] = target_city->name();
-	symbols["first"] = my_team.name();
-	symbols["second"] = to_ally_team.name();
-	
-	if (s.type_ != strategy::DEFEND || !target_team.is_human() || !to_ally_team.is_enemy(target_side)) {
-		// calculate to_ally_team aggreen with whether or not.
-		std::vector<mr_data> mrs;
-		units.calculate_mrs_data(mrs, to_ally_side, false);
-		if (!mrs[0].enemy_cities.empty() && mrs[0].enemy_cities[0]->side() == my_side) {
-			// game_events::show_hero_message(&heros[214], NULL, vgettext("$first wants to ally with $second, but $second refuse.", symbols), game_events::INCIDENT_ALLY);
-			return;
-		}
-	}
-
-	my_team.set_ally(to_ally_side);
-	to_ally_team.set_ally(my_side);
-
-	s.allies_.insert(to_ally_side);
-
-	// emissary from fresh to finish.
-	artifical* city = units.city_from_cityno(emissary.city_);
-	std::vector<hero*>& freshes = city->fresh_heros();
-	city->fresh_heros().erase(std::find(freshes.begin(), freshes.end(), &emissary));
-	city->finish_heros().push_back(&emissary);
-	emissary.status_ = hero_status_backing;
-
-	std::string message;
-	if (s.type_ == strategy::AGGRESS) {
-		message = vgettext("In order to aggress upon $city, $first and $second concluded treaty of alliance.", symbols);
-	} else if (s.type_ == strategy::DEFEND) {
-		message = vgettext("In order to defend $city, $first and $second concluded treaty of alliance.", symbols);
-	} else {
-		VALIDATE(false, "ally, unknown strategy type.");
-	}
-	game_events::show_hero_message(&heros[214], NULL, message, game_events::INCIDENT_ALLY);
-}
-*/
 // If we should recall units that match a certain description
 WML_HANDLER_FUNCTION(recall, /*event_info*/, cfg)
 {
@@ -3509,7 +3227,7 @@ namespace game_events {
 				title << "\n(" << city->master().name() << ")";
 			}
 
-			// gui.hide_unit_tip();
+			// gui.hide_tip();
 			gui2::show_message(gui.video(), title.str(), message, gui2::tmessage::auto_close, h->image(true), incident_str);
 
 			// Since gui2::show_message needs to do undrawing the

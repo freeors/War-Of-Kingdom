@@ -17,34 +17,16 @@ msgid "bowman1 description"
 msgstr "弓兵"
 
 msgid "bowman2"
-msgstr "熟练弓兵"
+msgstr "弩兵"
 
 msgid "bowman2 description"
-msgstr "熟练弓兵"
+msgstr "弩兵"
 
 msgid "bowman3"
-msgstr "弩兵"
+msgstr "连弩兵"
 
 msgid "bowman3 description"
-msgstr "弩兵"
-
-msgid "bowman4"
-msgstr "熟练弩兵"
-
-msgid "bowman4 description"
-msgstr "熟练弩兵"
-
-msgid "bowman5"
 msgstr "连弩兵"
-
-msgid "bowman5 description"
-msgstr "连弩兵"
-
-msgid "bowman6"
-msgstr "二级连弩兵"
-
-msgid "bowman6 description"
-msgstr "二级连弩兵"
 
 #
 # catapult
@@ -56,34 +38,16 @@ msgid "catapult1 description"
 msgstr "炮车"
 
 msgid "catapult2"
-msgstr "二级炮车"
+msgstr "重炮车"
 
 msgid "catapult2 description"
-msgstr "二级炮车"
+msgstr "重炮车"
 
 msgid "catapult3"
-msgstr "重炮车"
+msgstr "霹雳车"
 
 msgid "catapult3 description"
-msgstr "重炮车"
-
-msgid "catapult4"
-msgstr "二级重炮车"
-
-msgid "catapult4 description"
-msgstr "二级重炮车"
-
-msgid "catapult5"
 msgstr "霹雳车"
-
-msgid "catapult5 description"
-msgstr "霹雳车"
-
-msgid "catapult6"
-msgstr "二级霹雳车"
-
-msgid "catapult6 description"
-msgstr "二级霹雳车"
 
 msgid "footman1"
 msgstr "步兵"
@@ -92,34 +56,16 @@ msgid "footman1 description"
 msgstr "步兵"
 
 msgid "footman2"
-msgstr "二级步兵"
+msgstr "重步兵"
 
 msgid "footman2 description"
-msgstr "二级步兵"
+msgstr "重步兵"
 
 msgid "footman3"
-msgstr "重步兵"
+msgstr "近卫兵"
 
 msgid "footman3 description"
-msgstr "重步兵"
-
-msgid "footman4"
-msgstr "二级重步兵"
-
-msgid "footman4 description"
-msgstr "二级重步兵"
-
-msgid "footman5"
 msgstr "近卫兵"
-
-msgid "footman5 description"
-msgstr "近卫兵"
-
-msgid "footman6"
-msgstr "二级近卫兵"
-
-msgid "footman6 description"
-msgstr "二级近卫兵"
 
 msgid "horseman1"
 msgstr "轻骑兵"
@@ -128,72 +74,36 @@ msgid "horseman1 description"
 msgstr "轻骑兵"
 
 msgid "horseman2"
-msgstr "二级轻骑兵"
+msgstr "重骑兵"
 
 msgid "horseman2 description"
-msgstr "二级轻骑兵"
+msgstr "重骑兵"
 
 msgid "horseman3"
-msgstr "重骑兵"
+msgstr "亲卫队"
 
 msgid "horseman3 description"
-msgstr "重骑兵"
-
-msgid "horseman4"
-msgstr "二级重骑兵"
-
-msgid "horseman4 description"
-msgstr "二级重骑兵"
-
-msgid "horseman5"
 msgstr "亲卫队"
-
-msgid "horseman5 description"
-msgstr "亲卫队"
-
-msgid "horseman6"
-msgstr "二级亲卫队"
-
-msgid "horseman6 description"
-msgstr "二级亲卫队"
 
 #
 # commander
 #
 msgid "commander1"
-msgstr "校尉"
+msgstr "群雄"
 
 msgid "commander1 description"
-msgstr "校尉"
+msgstr "群雄"
 
 msgid "commander2"
-msgstr "都督"
+msgstr "诸侯"
 
 msgid "commander2 description"
-msgstr "都督"
+msgstr "诸侯"
 
 msgid "commander3"
-msgstr "英雄"
-
-msgid "commander3 description"
-msgstr "英雄"
-
-msgid "commander4"
-msgstr "群雄"
-
-msgid "commander4 description"
-msgstr "群雄"
-
-msgid "commander5"
-msgstr "诸侯"
-
-msgid "commander5 description"
-msgstr "诸侯"
-
-msgid "commander6"
 msgstr "霸王"
 
-msgid "commander6 description"
+msgid "commander3 description"
 msgstr "霸王"
 
 #
@@ -206,102 +116,51 @@ msgid "pikeman1 description"
 msgstr "枪兵"
 
 msgid "pikeman2"
-msgstr "二级枪兵"
+msgstr "长枪兵"
 
 msgid "pikeman2 description"
-msgstr "二级枪兵"
+msgstr "长枪兵"
 
 msgid "pikeman3"
-msgstr "长枪兵"
+msgstr "重甲枪兵"
 
 msgid "pikeman3 description"
-msgstr "长枪兵"
-
-msgid "pikeman4"
-msgstr "二级长枪兵"
-
-msgid "pikeman4 description"
-msgstr "二级长枪兵"
-
-msgid "pikeman5"
 msgstr "重甲枪兵"
 
-msgid "pikeman5 description"
-msgstr "重甲枪兵"
+msgid "whitemage1"
+msgstr "风水士"
 
-msgid "pikeman6"
-msgstr "二级重甲枪兵"
-
-msgid "pikeman6 description"
-msgstr "二级重甲枪兵"
-
-#
-# mage
-#
-msgid "mage1"
-msgstr "文士"
-
-msgid "mage1 description"
-msgstr "文士"
+msgid "whitemage1 description"
+msgstr "风水士"
 
 msgid "whitemage2"
-msgstr "风水士"
+msgstr "方术士"
 
 msgid "whitemage2 description"
-msgstr "风水士"
+msgstr "方术士"
 
 msgid "whitemage3"
-msgstr "二级风水士"
+msgstr "仙术士"
 
 msgid "whitemage3 description"
-msgstr "二级风水士"
-
-msgid "whitemage4"
-msgstr "方术士"
-
-msgid "whitemage4 description"
-msgstr "方术士"
-
-msgid "whitemage5"
-msgstr "二级方术士"
-
-msgid "whitemage5 description"
-msgstr "二级方术士"
-
-msgid "whitemage6"
 msgstr "仙术士"
 
-msgid "whitemage6 description"
-msgstr "仙术士"
+msgid "redmage1"
+msgstr "策士"
+
+msgid "redmage1 description"
+msgstr "策士"
 
 msgid "redmage2"
-msgstr "策士"
+msgstr "参谋"
 
 msgid "redmage2 description"
-msgstr "策士"
+msgstr "参谋"
 
 msgid "redmage3"
-msgstr "二级策士"
-
-msgid "redmage3 description"
-msgstr "二级策士"
-
-msgid "redmage4"
-msgstr "参谋"
-
-msgid "redmage4 description"
-msgstr "参谋"
-
-msgid "redmage5"
-msgstr "二级参谋"
-
-msgid "redmage5 description"
-msgstr "二级参谋"
-
-msgid "redmage6"
 msgstr "军师"
 
-msgid "redmage6 description"
+msgid "redmage3 description"
 msgstr "军师"
 
 msgid "ballet1"
@@ -311,34 +170,16 @@ msgid "ballet1 description"
 msgstr "仕女"
 
 msgid "ballet2"
-msgstr "二级仕女"
+msgstr "舞姬"
 
 msgid "ballet2 description"
-msgstr "二级仕女"
+msgstr "舞姬"
 
 msgid "ballet3"
-msgstr "舞姬"
+msgstr "媚娘"
 
 msgid "ballet3 description"
-msgstr "舞姬"
-
-msgid "ballet4"
-msgstr "二级舞姬"
-
-msgid "ballet4 description"
-msgstr "二级舞姬"
-
-msgid "ballet5"
 msgstr "媚娘"
-
-msgid "ballet5 description"
-msgstr "媚娘"
-
-msgid "ballet6"
-msgstr "二级媚娘"
-
-msgid "ballet6 description"
-msgstr "二级媚娘"
 
 msgid "boat0"
 msgstr "舢板"
@@ -434,6 +275,12 @@ msgstr "三级城市"
 msgid "city3 description"
 msgstr "三级城市"
 
+msgid "forest1"
+msgstr "森林据点"
+
+msgid "forest1 description"
+msgstr "森林据点"
+
 #
 # market
 #
@@ -507,40 +354,28 @@ msgstr "城楼"
 msgid "keep2 description"
 msgstr "城楼"
 
-msgid "desert horseman4"
-msgstr "车骑兵"
-
-msgid "desert horseman4 description"
-msgstr "车骑兵"
-
-msgid "desert horseman5"
+msgid "desert horseman2"
 msgstr "羌骑兵"
 
-msgid "desert horseman5 description"
+msgid "desert horseman2 description"
 msgstr "羌骑兵"
 
-msgid "desert horseman6"
+msgid "desert horseman3"
 msgstr "西凉铁骑"
 
-msgid "desert horseman6 description"
+msgid "desert horseman3 description"
 msgstr "西凉铁骑"
 
-msgid "horse crossbowman4"
-msgstr "弓骑兵"
-
-msgid "horse crossbowman4 description"
-msgstr "弓骑兵"
-
-msgid "horse crossbowman5"
+msgid "horse crossbowman2"
 msgstr "弩骑兵"
 
-msgid "horse crossbowman5 description"
+msgid "horse crossbowman2 description"
 msgstr "弩骑兵"
 
-msgid "horse crossbowman6"
+msgid "horse crossbowman3"
 msgstr "白马义从"
 
-msgid "horse crossbowman6 description"
+msgid "horse crossbowman3 description"
 msgstr "白马义从"
 
 #
@@ -576,104 +411,71 @@ msgstr "二级武术家"
 msgid "martial artist6 description"
 msgstr "二级武术家"
 
-msgid "zhuge bowman4"
+msgid "zhuge bowman2"
 msgstr "元戎弩"
 
-msgid "zhuge bowman4 description"
+msgid "zhuge bowman2 description"
 msgstr "元戎弩"
 
-msgid "zhuge bowman5"
+msgid "zhuge bowman3"
 msgstr "诸葛弩"
 
-msgid "zhuge bowman5 description"
+msgid "zhuge bowman3 description"
 msgstr "诸葛弩"
 
-msgid "zhuge bowman6"
-msgstr "二级诸葛弩"
-
-msgid "zhuge bowman6 description"
-msgstr "二级诸葛弩"
-
-msgid "vanguard bowman4"
+msgid "vanguard bowman2"
 msgstr "猛射手"
 
-msgid "vanguard bowman4 description"
+msgid "vanguard bowman2 description"
 msgstr "猛射手"
 
-msgid "vanguard bowman5"
+msgid "vanguard bowman3"
 msgstr "先登死士"
 
-msgid "vanguard bowman5 description"
+msgid "vanguard bowman3 description"
 msgstr "先登死士"
 
-msgid "vanguard bowman6"
-msgstr "二级先登死士"
-
-msgid "vanguard bowman6 description"
-msgstr "二级先登死士"
-
-msgid "powerdashers4"
+msgid "powerdashers2"
 msgstr "鬼刀兵"
 
-msgid "powerdashers4 description"
+msgid "powerdashers2 description"
 msgstr "鬼刀兵"
 
-msgid "powerdashers5"
+msgid "powerdashers3"
 msgstr "陷阵营"
 
-msgid "powerdashers5 description"
+msgid "powerdashers3 description"
 msgstr "陷阵营"
 
-msgid "powerdashers6"
-msgstr "二级陷阵营"
-
-msgid "powerdashers6 description"
-msgstr "二级陷阵营"
-
-msgid "qingzhou pikeman4"
+msgid "qingzhou pikeman2"
 msgstr "铁枪兵"
 
-msgid "qingzhou pikeman4 description"
+msgid "qingzhou pikeman2 description"
 msgstr "铁枪兵"
 
-msgid "qingzhou pikeman5"
+msgid "qingzhou pikeman3"
 msgstr "青州兵"
 
-msgid "qingzhou pikeman5 description"
+msgid "qingzhou pikeman3 description"
 msgstr "青州兵"
 
-msgid "qingzhou pikeman6"
-msgstr "二级青州兵"
+#
+# character unit type: wizard
+#
+msgid "wizard2"
+msgstr "妖术士"
 
-msgid "qingzhou pikeman6 description"
-msgstr "二级青州兵"
+msgid "wizard2 description"
+msgstr "妖术士"
 
 #
 # character unit type: wizard
 #
 msgid "wizard3"
-msgstr "妖术士"
+msgstr "咒术士"
 
 msgid "wizard3 description"
-msgstr "妖术士"
-
-msgid "wizard4"
-msgstr "二级妖术士"
-
-msgid "wizard4 description"
-msgstr "二级妖术士"
-
-msgid "wizard5"
 msgstr "咒术士"
-
-msgid "wizard5 description"
-msgstr "咒术士"
-
-msgid "wizard6"
-msgstr "二级咒术士"
-
-msgid "wizard6 description"
-msgstr "二级咒术士"
 
 msgid "adviser6"
 msgstr "军师将军"
@@ -681,71 +483,47 @@ msgstr "军师将军"
 msgid "adviser6 description"
 msgstr "军师将军"
 
-msgid "tiger horseman4"
+msgid "tiger horseman2"
 msgstr "斧骑兵"
 
-msgid "tiger horseman4 description"
+msgid "tiger horseman2 description"
 msgstr "斧骑兵"
 
-msgid "tiger horseman5"
-msgstr "重甲斧骑"
-
-msgid "tiger horseman5 description"
-msgstr "重甲斧骑"
-
-msgid "tiger horseman6"
+msgid "tiger horseman3"
 msgstr "虎豹骑"
 
-msgid "tiger horseman6 description"
+msgid "tiger horseman3 description"
 msgstr "虎豹骑"
 
 #
 # character unit type: heroine
 #
-msgid "heroine4"
+msgid "heroine2"
 msgstr "江东巾帼"
 
-msgid "heroine4 description"
+msgid "heroine2 description"
 msgstr "江东巾帼"
 
 #
 # character unit type: heroine
 #
-msgid "heroine5"
+msgid "heroine3"
 msgstr "江东女杰"
 
-msgid "heroine5 description"
+msgid "heroine3 description"
 msgstr "江东女杰"
 
-msgid "heroine6"
-msgstr "二级江东女杰"
+msgid "danyang assassin2"
+msgstr "丹阳剑客"
 
-msgid "heroine6 description"
-msgstr "二级江东女杰"
+msgid "danyang assassin2 description"
+msgstr "丹阳剑客"
 
 msgid "danyang assassin3"
-msgstr "丹阳剑客"
+msgstr "丹阳刺客"
 
 msgid "danyang assassin3 description"
-msgstr "丹阳剑客"
-
-msgid "danyang assassin4"
-msgstr "二级丹阳剑客"
-
-msgid "danyang assassin4 description"
-msgstr "二级丹阳剑客"
-
-msgid "danyang assassin5"
 msgstr "丹阳刺客"
-
-msgid "danyang assassin5 description"
-msgstr "丹阳刺客"
-
-msgid "danyang assassin6"
-msgstr "二级丹阳刺客"
-
-msgid "danyang assassin6 description"
-msgstr "二级丹阳刺客"
 
 msgid "bingzhou horseman3"
 msgstr "长刀骑兵"
@@ -771,110 +549,83 @@ msgstr "二级并州铁骑"
 msgid "bingzhou horseman6 description"
 msgstr "二级并州铁骑"
 
-msgid "pelisse footman3"
+msgid "pelisse footman2"
 msgstr "朴刀手"
+
+msgid "pelisse footman2 description"
+msgstr "朴刀手"
+
+msgid "pelisse footman3"
+msgstr "白眊兵"
 
 msgid "pelisse footman3 description"
-msgstr "朴刀手"
-
-msgid "pelisse footman4"
-msgstr "二级朴刀手"
-
-msgid "pelisse footman4 description"
-msgstr "二级朴刀手"
-
-msgid "pelisse footman5"
 msgstr "白眊兵"
 
-msgid "pelisse footman5 description"
-msgstr "白眊兵"
-
-msgid "pelisse footman6"
-msgstr "二级白眊兵"
-
-msgid "pelisse footman6 description"
-msgstr "二级白眊兵"
-
-msgid "powder catapult4"
+msgid "powder catapult2"
 msgstr "火炮车"
 
-msgid "powder catapult4 description"
+msgid "powder catapult2 description"
 msgstr "火炮车"
 
-msgid "powder catapult5"
+msgid "powder catapult3"
 msgstr "轰天雷"
 
-msgid "powder catapult5 description"
+msgid "powder catapult3 description"
 msgstr "轰天雷"
-
-msgid "powder catapult6"
-msgstr "二级轰天雷"
-
-msgid "powder catapult6 description"
-msgstr "二级轰天雷"
 
 #
 # character unit type: taoism
 #
-msgid "taoism4"
+msgid "taoism2"
 msgstr "天师道徒"
 
-msgid "taoism4 description"
+msgid "taoism2 description"
 msgstr "天师道徒"
 
-msgid "taoism5"
+#
+# character unit type: taoism
+#
+msgid "taoism3"
 msgstr "天师祭酒"
 
-msgid "taoism5 description"
+msgid "taoism3 description"
 msgstr "天师祭酒"
 
-msgid "taoism6"
-msgstr "二级天师祭酒"
-
-msgid "taoism6 description"
-msgstr "二级天师祭酒"
-
-msgid "elephant4"
+msgid "elephant2"
 msgstr "战象"
 
-msgid "elephant4 description"
+msgid "elephant2 description"
 msgstr "战象"
 
-msgid "elephant5"
+msgid "elephant3"
 msgstr "天神象"
 
-msgid "elephant5 description"
+msgid "elephant3 description"
 msgstr "天神象"
-
-msgid "elephant6"
-msgstr "二级天神象"
-
-msgid "elephant6 description"
-msgstr "二级天神象"
 
 #
 # character unit type: heroine
 #
-msgid "bine4"
+msgid "bine2"
 msgstr "藤蔓"
 
-msgid "bine4 description"
+msgid "bine2 description"
 msgstr "藤蔓"
 
 #
 # character unit type: heroine
 #
-msgid "bine5"
+msgid "bine3"
 msgstr "藤甲"
 
-msgid "bine5 description"
+msgid "bine3 description"
 msgstr "藤甲"
 
-msgid "bine6"
-msgstr "二级藤甲"
+msgid "scoutman"
+msgstr "侦察兵"
 
-msgid "bine6 description"
-msgstr "二级藤甲"
+msgid "scoutman description"
+msgstr "系统内部须要，必须定义以这个id命名的兵种"
 
 #
 # pikeman

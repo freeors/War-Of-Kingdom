@@ -69,7 +69,8 @@ public:
 	// void recruit(bool browse, int side_num, const map_location &last_hex);
 	void move(bool browse, int side_num, const map_location &last_hex);
 	void build(const std::string& type, mouse_handler& mousehandler, unit& builder);
-	void demolish(mouse_handler& mousehandler, artifical& art);
+	void extract(mouse_handler& mousehandler, unit& u);
+	void demolish(mouse_handler& mousehandler, unit* u);
 	void armory(mouse_handler& mousehandler, int side_num, artifical& art);
 	void expedite(int side_num, const map_location& last_hex);
 	void undo(int side_num);
@@ -79,6 +80,7 @@ public:
 	void toggle_shroud_updates(int side_num);
 	void update_shroud_now(int side_num);
 	bool end_turn(int side_num);
+	void switch_list(int side_num);
 	void change_side(mouse_handler& mousehandler);
 	void label_terrain(mouse_handler& mousehandler, bool team_only);
 	void clear_labels();

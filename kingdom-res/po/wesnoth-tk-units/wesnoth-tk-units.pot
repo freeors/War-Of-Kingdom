@@ -30,24 +30,6 @@ msgstr ""
 msgid "bowman3 description"
 msgstr ""
 
-msgid "bowman4"
-msgstr ""
-
-msgid "bowman4 description"
-msgstr ""
-
-msgid "bowman5"
-msgstr ""
-
-msgid "bowman5 description"
-msgstr ""
-
-msgid "bowman6"
-msgstr ""
-
-msgid "bowman6 description"
-msgstr ""
-
 #
 # catapult
 #
@@ -67,24 +49,6 @@ msgid "catapult3"
 msgstr ""
 
 msgid "catapult3 description"
-msgstr ""
-
-msgid "catapult4"
-msgstr ""
-
-msgid "catapult4 description"
-msgstr ""
-
-msgid "catapult5"
-msgstr ""
-
-msgid "catapult5 description"
-msgstr ""
-
-msgid "catapult6"
-msgstr ""
-
-msgid "catapult6 description"
 msgstr ""
 
 #
@@ -108,24 +72,6 @@ msgstr ""
 msgid "footman3 description"
 msgstr ""
 
-msgid "footman4"
-msgstr ""
-
-msgid "footman4 description"
-msgstr ""
-
-msgid "footman5"
-msgstr ""
-
-msgid "footman5 description"
-msgstr ""
-
-msgid "footman6"
-msgstr ""
-
-msgid "footman6 description"
-msgstr ""
-
 #
 # horseman
 #
@@ -145,24 +91,6 @@ msgid "horseman3"
 msgstr ""
 
 msgid "horseman3 description"
-msgstr ""
-
-msgid "horseman4"
-msgstr ""
-
-msgid "horseman4 description"
-msgstr ""
-
-msgid "horseman5"
-msgstr ""
-
-msgid "horseman5 description"
-msgstr ""
-
-msgid "horseman6"
-msgstr ""
-
-msgid "horseman6 description"
 msgstr ""
 
 #
@@ -186,24 +114,6 @@ msgstr ""
 msgid "commander3 description"
 msgstr ""
 
-msgid "commander4"
-msgstr ""
-
-msgid "commander4 description"
-msgstr ""
-
-msgid "commander5"
-msgstr ""
-
-msgid "commander5 description"
-msgstr ""
-
-msgid "commander6"
-msgstr ""
-
-msgid "commander6 description"
-msgstr ""
-
 #
 # pikeman
 #
@@ -225,31 +135,13 @@ msgstr ""
 msgid "pikeman3 description"
 msgstr ""
 
-msgid "pikeman4"
-msgstr ""
-
-msgid "pikeman4 description"
-msgstr ""
-
-msgid "pikeman5"
-msgstr ""
-
-msgid "pikeman5 description"
-msgstr ""
-
-msgid "pikeman6"
-msgstr ""
-
-msgid "pikeman6 description"
-msgstr ""
-
 #
 # mage
 #
-msgid "mage1"
+msgid "whitemage1"
 msgstr ""
 
-msgid "mage1 description"
+msgid "whitemage1 description"
 msgstr ""
 
 msgid "whitemage2"
@@ -264,22 +156,10 @@ msgstr ""
 msgid "whitemage3 description"
 msgstr ""
 
-msgid "whitemage4"
+msgid "redmage1"
 msgstr ""
 
-msgid "whitemage4 description"
-msgstr ""
-
-msgid "whitemage5"
-msgstr ""
-
-msgid "whitemage5 description"
-msgstr ""
-
-msgid "whitemage6"
-msgstr ""
-
-msgid "whitemage6 description"
+msgid "redmage1 description"
 msgstr ""
 
 msgid "redmage2"
@@ -292,24 +172,6 @@ msgid "redmage3"
 msgstr ""
 
 msgid "redmage3 description"
-msgstr ""
-
-msgid "redmage4"
-msgstr ""
-
-msgid "redmage4 description"
-msgstr ""
-
-msgid "redmage5"
-msgstr ""
-
-msgid "redmage5 description"
-msgstr ""
-
-msgid "redmage6"
-msgstr ""
-
-msgid "redmage6 description"
 msgstr ""
 
 #
@@ -331,24 +193,6 @@ msgid "ballet3"
 msgstr ""
 
 msgid "ballet3 description"
-msgstr ""
-
-msgid "ballet4"
-msgstr ""
-
-msgid "ballet4 description"
-msgstr ""
-
-msgid "ballet5"
-msgstr ""
-
-msgid "ballet5 description"
-msgstr ""
-
-msgid "ballet6"
-msgstr ""
-
-msgid "ballet6 description"
 msgstr ""
 
 #
@@ -438,6 +282,12 @@ msgstr ""
 msgid "city3 description"
 msgstr ""
 
+msgid "forest1"
+msgstr ""
+
+msgid "forest1 description"
+msgstr ""
+
 #
 # market
 #
@@ -510,43 +360,31 @@ msgstr ""
 #
 # character unit type: desert horseman
 #
-msgid "desert horseman4"
+msgid "desert horseman2"
 msgstr ""
 
-msgid "desert horseman4 description"
+msgid "desert horseman2 description"
 msgstr ""
 
-msgid "desert horseman5"
+msgid "desert horseman3"
 msgstr ""
 
-msgid "desert horseman5 description"
-msgstr ""
-
-msgid "desert horseman6"
-msgstr ""
-
-msgid "desert horseman6 description"
+msgid "desert horseman3 description"
 msgstr ""
 
 #
 # character unit type: horse crossbowman
 #
-msgid "horse crossbowman4"
+msgid "horse crossbowman2"
 msgstr ""
 
-msgid "horse crossbowman4 description"
+msgid "horse crossbowman2 description"
 msgstr ""
 
-msgid "horse crossbowman5"
+msgid "horse crossbowman3"
 msgstr ""
 
-msgid "horse crossbowman5 description"
-msgstr ""
-
-msgid "horse crossbowman6"
-msgstr ""
-
-msgid "horse crossbowman6 description"
+msgid "horse crossbowman3 description"
 msgstr ""
 
 #
@@ -586,113 +424,76 @@ msgstr ""
 #
 # character unit type: ZhuGe bowman
 #
-msgid "zhuge bowman4"
+msgid "zhuge bowman2"
 msgstr ""
 
-msgid "zhuge bowman4 description"
+msgid "zhuge bowman2 description"
 msgstr ""
 
-msgid "zhuge bowman5"
+msgid "zhuge bowman3"
 msgstr ""
 
-msgid "zhuge bowman5 description"
-msgstr ""
-
-msgid "zhuge bowman6"
-msgstr ""
-
-msgid "zhuge bowman6 description"
+msgid "zhuge bowman3 description"
 msgstr ""
 
 #
 # character unit type: Vanguard bowman
 #
-msgid "vanguard bowman4"
+msgid "vanguard bowman2"
 msgstr ""
 
-msgid "vanguard bowman4 description"
+msgid "vanguard bowman2 description"
 msgstr ""
 
-msgid "vanguard bowman5"
+msgid "vanguard bowman3"
 msgstr ""
 
-msgid "vanguard bowman5 description"
-msgstr ""
-
-msgid "vanguard bowman6"
-msgstr ""
-
-msgid "vanguard bowman6 description"
+msgid "vanguard bowman3 description"
 msgstr ""
 
 #
 # character unit type: Powerdashers
 #
-msgid "powerdashers4"
+msgid "powerdashers2"
 msgstr ""
 
-msgid "powerdashers4 description"
+msgid "powerdashers2 description"
 msgstr ""
 
-msgid "powerdashers5"
+msgid "powerdashers3"
 msgstr ""
 
-msgid "powerdashers5 description"
-msgstr ""
-
-msgid "powerdashers6"
-msgstr ""
-
-msgid "powerdashers6 description"
+msgid "powerdashers3 description"
 msgstr ""
 
 #
 # character unit type: QingZhou pikeman
 #
-msgid "qingzhou pikeman4"
+msgid "qingzhou pikeman2"
 msgstr ""
 
-msgid "qingzhou pikeman4 description"
+msgid "qingzhou pikeman2 description"
 msgstr ""
 
-msgid "qingzhou pikeman5"
+msgid "qingzhou pikeman3"
 msgstr ""
 
-msgid "qingzhou pikeman5 description"
-msgstr ""
-
-msgid "qingzhou pikeman6"
-msgstr ""
-
-msgid "qingzhou pikeman6 description"
+msgid "qingzhou pikeman3 description"
 msgstr ""
 
 #
 # character unit type: wizard
 #
+msgid "wizard2"
+msgstr ""
+
+msgid "wizard2 description"
+msgstr ""
 
 msgid "wizard3"
 msgstr ""
 
 msgid "wizard3 description"
-msgstr ""
-
-msgid "wizard4"
-msgstr ""
-
-msgid "wizard4 description"
-msgstr ""
-
-msgid "wizard5"
-msgstr ""
-
-msgid "wizard5 description"
-msgstr ""
-
-msgid "wizard6"
-msgstr ""
-
-msgid "wizard6 description"
 msgstr ""
 
 #
@@ -708,71 +509,46 @@ msgstr ""
 #
 # character unit type: tiger horseman
 #
-msgid "tiger horseman4"
+msgid "tiger horseman2"
 msgstr ""
 
-msgid "tiger horseman4 description"
+msgid "tiger horseman2 description"
 msgstr ""
 
-msgid "tiger horseman5"
+msgid "tiger horseman3"
 msgstr ""
 
-msgid "tiger horseman5 description"
-msgstr ""
-
-msgid "tiger horseman6"
-msgstr ""
-
-msgid "tiger horseman6 description"
+msgid "tiger horseman3 description"
 msgstr ""
 
 #
 # character unit type: heroine
 #
-msgid "heroine4"
+msgid "heroine2"
 msgstr ""
 
-msgid "heroine4 description"
+msgid "heroine2 description"
 msgstr ""
 
-msgid "heroine5"
+msgid "heroine3"
 msgstr ""
 
-msgid "heroine5 description"
-msgstr ""
-
-msgid "heroine6"
-msgstr ""
-
-msgid "heroine6 description"
+msgid "heroine3 description"
 msgstr ""
 
 #
 # character unit type: Danyang assassin
 #
+msgid "danyang assassin2"
+msgstr ""
+
+msgid "danyang assassin2 description"
+msgstr ""
 
 msgid "danyang assassin3"
 msgstr ""
 
 msgid "danyang assassin3 description"
-msgstr ""
-
-msgid "danyang assassin4"
-msgstr ""
-
-msgid "danyang assassin4 description"
-msgstr ""
-
-msgid "danyang assassin5"
-msgstr ""
-
-msgid "danyang assassin5 description"
-msgstr ""
-
-msgid "danyang assassin6"
-msgstr ""
-
-msgid "danyang assassin6 description"
 msgstr ""
 
 #
@@ -807,115 +583,88 @@ msgstr ""
 # character unit type: pelisse footman
 #
 
+msgid "pelisse footman2"
+msgstr ""
+
+msgid "pelisse footman2 description"
+msgstr ""
+
 msgid "pelisse footman3"
 msgstr ""
 
 msgid "pelisse footman3 description"
 msgstr ""
 
-msgid "pelisse footman4"
-msgstr ""
-
-msgid "pelisse footman4 description"
-msgstr ""
-
-msgid "pelisse footman5"
-msgstr ""
-
-msgid "pelisse footman5 description"
-msgstr ""
-
-msgid "pelisse footman6"
-msgstr ""
-
-msgid "pelisse footman6 description"
-msgstr ""
-
 #
 # character unit type: powder catapult
 #
 
-msgid "powder catapult4"
+msgid "powder catapult2"
 msgstr ""
 
-msgid "powder catapult4 description"
+msgid "powder catapult2 description"
 msgstr ""
 
-msgid "powder catapult5"
+msgid "powder catapult3"
 msgstr ""
 
-msgid "powder catapult5 description"
-msgstr ""
-
-msgid "powder catapult6"
-msgstr ""
-
-msgid "powder catapult6 description"
+msgid "powder catapult3 description"
 msgstr ""
 
 #
 # character unit type: taoism
 #
-
-msgid "taoism4"
+msgid "taoism2"
 msgstr ""
 
-msgid "taoism4 description"
+msgid "taoism2 description"
 msgstr ""
 
-msgid "taoism5"
+msgid "taoism3"
 msgstr ""
 
-msgid "taoism5 description"
-msgstr ""
-
-msgid "taoism6"
-msgstr ""
-
-msgid "taoism6 description"
+msgid "taoism3 description"
 msgstr ""
 
 #
 # character unit type: elephant
 #
-msgid "elephant4"
+msgid "elephant2"
 msgstr ""
 
-msgid "elephant4 description"
+msgid "elephant2 description"
 msgstr ""
 
-msgid "elephant5"
+msgid "elephant3"
 msgstr ""
 
-msgid "elephant5 description"
-msgstr ""
-
-msgid "elephant6"
-msgstr ""
-
-msgid "elephant6 description"
+msgid "elephant3 description"
 msgstr ""
 
 #
 # character unit type: bine
 #
-msgid "bine4"
+msgid "bine2"
 msgstr ""
 
-msgid "bine4 description"
+msgid "bine2 description"
 msgstr ""
 
-msgid "bine5"
+msgid "bine3"
 msgstr ""
 
-msgid "bine5 description"
+msgid "bine3 description"
 msgstr ""
 
-msgid "bine6"
+#
+# system required
+#
+msgid "scoutman"
 msgstr ""
 
-msgid "bine6 description"
+msgid "scoutman description"
 msgstr ""
+
 
 #
 # commoner unit type: businessman

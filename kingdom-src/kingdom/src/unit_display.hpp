@@ -108,7 +108,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 	const attack_type* attack, const attack_type* secondary_attack,
 	int swing, std::vector<std::string>& hit_text_vec, bool drain, bool stronger, const std::string& att_text);
 
-void unit_attack2(unit& attacker, const std::string& type, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
+void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	 std::vector<std::string>& hit_text_vec);
 
 void unit_recruited(const map_location& loc,

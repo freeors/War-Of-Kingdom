@@ -186,7 +186,8 @@ std::string file_dialog::format_dirname(const std::string& dirname) const
 }
 
 
-void file_dialog::action(gui::dialog_process_info &dp_info) {
+void file_dialog::action(gui::dialog_process_info &dp_info) 
+{
 	if(result() == gui::CLOSE_DIALOG)
 		return;
 

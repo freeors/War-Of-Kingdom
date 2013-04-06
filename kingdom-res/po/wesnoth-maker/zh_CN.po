@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
-"POT-Creation-Date: 2013-02-22 11:44+0800\n"
-"PO-Revision-Date: 2013-02-22 11:45+0800\n"
+"POT-Creation-Date: 2013-03-31 00:39+0800\n"
+"PO-Revision-Date: 2013-03-31 00:40+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -19,490 +19,534 @@ msgstr ""
 "X-Poedit-Bookmarks: -1,-1,-1,3,-1,-1,-1,-1,-1,-1\n"
 "X-Generator: Poedit 1.5.4\n"
 
-#: DlgCampaignProc.cpp:764 event.cpp:339 event.cpp:353
-msgid "Yes"
-msgstr "是"
+#: DlgCampaignProc.cpp:793 DlgCampaignProc.cpp:981
+msgid "Human_AI"
+msgstr "玩家/AI"
 
-#: DlgCampaignProc.cpp:764 event.cpp:339 event.cpp:353 utype.cpp:452
-msgid "No"
-msgstr "不是"
+#: DlgCampaignProc.cpp:795 DlgCampaignProc.cpp:980
+msgid "Human only"
+msgstr "只限玩家"
 
-#: DlgCampaignProc.cpp:1530 DlgCampaignProc.cpp:3656 DlgCampaignProc.cpp:4357
-msgid "Cannot recruit"
-msgstr "不可征"
+#: DlgCampaignProc.cpp:797 DlgCampaignProc.cpp:982
+msgid "AI only"
+msgstr "只限AI"
 
-#: DlgCampaignProc.cpp:1822 DlgCampaignProc.cpp:1873 event.cpp:697
-#: event.cpp:774 event.cpp:1421 event.cpp:1542
-msgid "Roam"
-msgstr "流浪"
-
-#: DlgCampaignProc.cpp:1845 DlgCoreProc.cpp:127 DlgCoreProc.cpp:162
-#: DlgCoreProc.cpp:197 DlgCoreProc.cpp:230
-msgid "Lv$level"
-msgstr "$level级"
-
-#: DlgCampaignProc.cpp:3045
-msgid "Save campaign-$campaign"
-msgstr "保存战役-$campaign"
-
-#: DlgCampaignProc.cpp:3046
-msgid "$campaign is dirty, do you want to save modify?"
-msgstr "$campaign有改动，你要保存修改吗？"
-
-#: DlgCampaignProc.cpp:3211 DlgCampaignProc.cpp:5089 utype.cpp:1409
-#: utype.cpp:3098
-msgid "Corresponding cfg"
-msgstr "对应的cfg文件"
-
-#: DlgCampaignProc.cpp:3212 DlgCampaignProc.cpp:5090 utype.cpp:1412
-#: utype.cpp:1675 utype.cpp:3101
-msgid "ID"
-msgstr "标识"
-
-#: DlgCampaignProc.cpp:3213 utype.cpp:1410 utype.cpp:1674 utype.cpp:3099
-msgid "Domain"
-msgstr "翻译域"
-
-#: DlgCampaignProc.cpp:3214 DlgCampaignProc.cpp:3499 DlgCampaignProc.cpp:3552
-#: DlgCampaignProc.cpp:3575 DlgCampaignProc.cpp:3622 DlgCampaignProc.cpp:3944
-#: DlgCampaignProc.cpp:4080 DlgCampaignProc.cpp:4491 DlgCampaignProc.cpp:5091
-#: DlgCampaignProc.cpp:5157 DlgCampaignProc.cpp:5224 DlgCoreProc.cpp:1230
-#: utype.cpp:1411 utype.cpp:1599 utype.cpp:1676 utype.cpp:1740 utype.cpp:3100
-#: utype.cpp:3346 utype.cpp:3444
-msgid "Name"
-msgstr "名称"
-
-#: DlgCampaignProc.cpp:3215
-msgid "Abbreviation"
-msgstr "缩写"
-
-#: DlgCampaignProc.cpp:3216
-msgid "Rank"
-msgstr "顺序"
-
-#: DlgCampaignProc.cpp:3217
-msgid "First scenario"
-msgstr "第一关卡"
-
-#: DlgCampaignProc.cpp:3218
-msgid "Image"
-msgstr "图像"
-
-#: DlgCampaignProc.cpp:3219 DlgCampaignProc.cpp:3584 DlgCampaignProc.cpp:3953
-#: DlgCampaignProc.cpp:4500 DlgCoreProc.cpp:504 DlgCoreProc.cpp:628
-#: DlgCoreProc.cpp:804 utype.cpp:1413 utype.cpp:1561 utype.cpp:1749
-#: utype.cpp:3102
-msgid "Description"
-msgstr "描述"
-
-#: DlgCampaignProc.cpp:3220
-msgid "RPG mode"
-msgstr "RPG模式"
-
-#: DlgCampaignProc.cpp:3222 DlgCampaignProc.cpp:3223 DlgCampaignProc.cpp:5103
-#: utype.cpp:1682
-msgid "Browse..."
-msgstr "浏览..."
-
-#: DlgCampaignProc.cpp:3231
-msgid "Tutorial"
-msgstr "教程"
-
-#: DlgCampaignProc.cpp:3235
-msgid "Multi-scenario"
-msgstr "多关卡"
-
-#: DlgCampaignProc.cpp:3238
-msgid "Test"
-msgstr "测试"
-
-#: DlgCampaignProc.cpp:3258 DlgCampaignProc.cpp:3263 DlgCampaignProc.cpp:3444
-#: DlgCampaignProc.cpp:5121 DlgCampaignProc.cpp:5458 DlgCampaignProc.cpp:5557
-msgid "Exist"
-msgstr "存在"
-
-#: DlgCampaignProc.cpp:3260 DlgCampaignProc.cpp:3265 DlgCampaignProc.cpp:3444
-#: DlgCampaignProc.cpp:5123 DlgCampaignProc.cpp:5460
-msgid "Not exist"
-msgstr "不存在"
-
-#: DlgCampaignProc.cpp:3291 DlgCampaignProc.cpp:5420 DlgCampaignProc.cpp:6373
-#: event.cpp:2596 utype.cpp:1817 utype.cpp:2786 utype.cpp:2814
-msgid "Invalid string"
-msgstr "无效字符串"
-
-#: DlgCampaignProc.cpp:3428 DlgCampaignProc.cpp:5532
-msgid "Selected is using file, do nothing."
-msgstr "选择的是正使用文件，不作操作。"
-
-#: DlgCampaignProc.cpp:3434 DlgCampaignProc.cpp:5548
-msgid "Copy \"$src\" to \"$dst\" $result!"
-msgstr "复制“$src”到“$dst”$result！"
-
-#: DlgCampaignProc.cpp:3491
-msgid "Edit side"
-msgstr "编辑势力"
-
-#: DlgCampaignProc.cpp:3494
-msgid "Add side"
-msgstr "添加势力"
-
-#: DlgCampaignProc.cpp:3498 DlgCampaignProc.cpp:4118 DlgCampaignProc.cpp:5148
-#: DlgCampaignProc.cpp:5186 DlgCampaignProc.cpp:5215 DlgCampaignProc.cpp:5305
-#: DlgHEditorProc.cpp:565 DlgHEditorProc.cpp:2411
-msgid "Number"
-msgstr "编号"
-
-#: DlgCampaignProc.cpp:3500 DlgCampaignProc.cpp:5230
-msgid "Leader"
-msgstr "君主"
-
-#: DlgCampaignProc.cpp:3501 DlgCampaignProc.cpp:5236
+#: DlgCampaignProc.cpp:799 DlgCampaignProc.cpp:3604
 msgid "Void"
 msgstr "空白"
 
-#: DlgCampaignProc.cpp:3502 DlgCampaignProc.cpp:5254
+#: DlgCampaignProc.cpp:1580 DlgCampaignProc.cpp:3759 DlgCampaignProc.cpp:4460
+msgid "Cannot recruit"
+msgstr "不可征"
+
+#: DlgCampaignProc.cpp:1872 DlgCampaignProc.cpp:1923 event.cpp:707
+#: event.cpp:784 event.cpp:1486 event.cpp:1607
+msgid "Roam"
+msgstr "流浪"
+
+#: DlgCampaignProc.cpp:1895 DlgCoreProc.cpp:131 DlgCoreProc.cpp:166
+#: DlgCoreProc.cpp:201 DlgCoreProc.cpp:234
+msgid "Lv$level"
+msgstr "$level级"
+
+#: DlgCampaignProc.cpp:3156
+msgid "Save campaign-$campaign"
+msgstr "保存战役-$campaign"
+
+#: DlgCampaignProc.cpp:3157
+msgid "$campaign is dirty, do you want to save modify?"
+msgstr "$campaign有改动，你要保存修改吗？"
+
+#: DlgCampaignProc.cpp:3322 DlgCampaignProc.cpp:5192 utype.cpp:1424
+#: utype.cpp:3122
+msgid "Corresponding cfg"
+msgstr "对应的cfg文件"
+
+#: DlgCampaignProc.cpp:3323 DlgCampaignProc.cpp:5193 utype.cpp:1427
+#: utype.cpp:1695 utype.cpp:3125
+msgid "ID"
+msgstr "标识"
+
+#: DlgCampaignProc.cpp:3324 utype.cpp:1425 utype.cpp:1694 utype.cpp:3123
+msgid "Domain"
+msgstr "翻译域"
+
+#: DlgCampaignProc.cpp:3325 DlgCampaignProc.cpp:3602 DlgCampaignProc.cpp:3655
+#: DlgCampaignProc.cpp:3678 DlgCampaignProc.cpp:3725 DlgCampaignProc.cpp:4047
+#: DlgCampaignProc.cpp:4183 DlgCampaignProc.cpp:4594 DlgCampaignProc.cpp:5194
+#: DlgCampaignProc.cpp:5274 DlgCampaignProc.cpp:5341 DlgCoreProc.cpp:785
+#: DlgCoreProc.cpp:1250 utype.cpp:1426 utype.cpp:1619 utype.cpp:1696
+#: utype.cpp:1760 utype.cpp:3124 utype.cpp:3370 utype.cpp:3475
+msgid "Name"
+msgstr "名称"
+
+#: DlgCampaignProc.cpp:3326
+msgid "Abbreviation"
+msgstr "缩写"
+
+#: DlgCampaignProc.cpp:3327
+msgid "Rank"
+msgstr "顺序"
+
+#: DlgCampaignProc.cpp:3328
+msgid "First scenario"
+msgstr "第一关卡"
+
+#: DlgCampaignProc.cpp:3329 DlgCoreProc.cpp:800
+msgid "Image"
+msgstr "图像"
+
+#: DlgCampaignProc.cpp:3330 DlgCampaignProc.cpp:3687 DlgCampaignProc.cpp:4056
+#: DlgCampaignProc.cpp:4603 DlgCoreProc.cpp:519 DlgCoreProc.cpp:643
+#: utype.cpp:1428 utype.cpp:1581 utype.cpp:1769 utype.cpp:3126
+msgid "Description"
+msgstr "描述"
+
+#: DlgCampaignProc.cpp:3331
+msgid "Mode"
+msgstr "模式"
+
+#: DlgCampaignProc.cpp:3333 DlgCampaignProc.cpp:3334 DlgCampaignProc.cpp:5207
+#: utype.cpp:1702
+msgid "Browse..."
+msgstr "浏览..."
+
+#: DlgCampaignProc.cpp:3342
+msgid "Tutorial"
+msgstr "教程"
+
+#: DlgCampaignProc.cpp:3346
+msgid "Multi-scenario"
+msgstr "多关卡"
+
+#: DlgCampaignProc.cpp:3349
+msgid "Test"
+msgstr "测试"
+
+#: DlgCampaignProc.cpp:3369 DlgCampaignProc.cpp:3374 DlgCampaignProc.cpp:3549
+#: DlgCampaignProc.cpp:5225 DlgCampaignProc.cpp:5575 DlgCampaignProc.cpp:5680
+msgid "Exist"
+msgstr "存在"
+
+#: DlgCampaignProc.cpp:3371 DlgCampaignProc.cpp:3376 DlgCampaignProc.cpp:3549
+#: DlgCampaignProc.cpp:5227 DlgCampaignProc.cpp:5577 DlgCoreProc.cpp:981
+msgid "Not exist"
+msgstr "不存在"
+
+#: DlgCampaignProc.cpp:3384
+msgid "None"
+msgstr "无"
+
+#: DlgCampaignProc.cpp:3385
+msgid "RPG"
+msgstr "RPG"
+
+#: DlgCampaignProc.cpp:3386
+msgid "Tower"
+msgstr "塔防"
+
+#: DlgCampaignProc.cpp:3414 DlgCampaignProc.cpp:5537 DlgCampaignProc.cpp:6496
+#: event.cpp:2728 utype.cpp:1837 utype.cpp:2810 utype.cpp:2838
+msgid "Invalid string"
+msgstr "无效字符串"
+
+#: DlgCampaignProc.cpp:3533 DlgCampaignProc.cpp:5655
+msgid "Selected is using file, do nothing."
+msgstr "选择的是正使用文件，不作操作。"
+
+#: DlgCampaignProc.cpp:3539 DlgCampaignProc.cpp:5671
+msgid "Copy \"$src\" to \"$dst\" $result!"
+msgstr "复制“$src”到“$dst”$result！"
+
+#: DlgCampaignProc.cpp:3594
+msgid "Edit side"
+msgstr "编辑势力"
+
+#: DlgCampaignProc.cpp:3597
+msgid "Add side"
+msgstr "添加势力"
+
+#: DlgCampaignProc.cpp:3601 DlgCampaignProc.cpp:4221 DlgCampaignProc.cpp:5265
+#: DlgCampaignProc.cpp:5303 DlgCampaignProc.cpp:5332 DlgCampaignProc.cpp:5422
+#: DlgCoreProc.cpp:775 DlgHEditorProc.cpp:582 DlgHEditorProc.cpp:2452
+msgid "Number"
+msgstr "编号"
+
+#: DlgCampaignProc.cpp:3603 DlgCampaignProc.cpp:5347
+msgid "Leader"
+msgstr "君主"
+
+#: DlgCampaignProc.cpp:3605 DlgCampaignProc.cpp:5371
 msgid "Base gold"
 msgstr "初始金"
 
-#: DlgCampaignProc.cpp:3503 DlgCampaignProc.cpp:5260
+#: DlgCampaignProc.cpp:3606 DlgCampaignProc.cpp:5377
 msgid "Base income"
 msgstr "回合金"
 
-#: DlgCampaignProc.cpp:3507 DlgCampaignProc.cpp:3745 DlgCampaignProc.cpp:3907
-#: DlgCampaignProc.cpp:4460 DlgCampaignProc.cpp:5284 DlgCoreProc.cpp:409
-#: DlgCoreProc.cpp:852 DlgCoreProc.cpp:1378
+#: DlgCampaignProc.cpp:3610 DlgCampaignProc.cpp:3848 DlgCampaignProc.cpp:4010
+#: DlgCampaignProc.cpp:4563 DlgCampaignProc.cpp:5401 DlgCoreProc.cpp:424
+#: DlgCoreProc.cpp:1398
 msgid "City"
 msgstr "城市"
 
-#: DlgCampaignProc.cpp:3508 DlgCampaignProc.cpp:5290 DlgCoreProc.cpp:407
-#: DlgCoreProc.cpp:835 DlgCoreProc.cpp:1361
+#: DlgCampaignProc.cpp:3611 DlgCampaignProc.cpp:5407 DlgCoreProc.cpp:422
+#: DlgCoreProc.cpp:1381
 msgid "Troop"
 msgstr "部队"
 
-#: DlgCampaignProc.cpp:3631 DlgCampaignProc.cpp:3721 DlgCampaignProc.cpp:3908
-#: DlgCampaignProc.cpp:4459 DlgCoreProc.cpp:438 DlgCoreProc.cpp:917
-#: utype.cpp:3323
+#: DlgCampaignProc.cpp:3734 DlgCampaignProc.cpp:3824 DlgCampaignProc.cpp:4011
+#: DlgCampaignProc.cpp:4562 DlgCoreProc.cpp:453 DlgCoreProc.cpp:824
+#: DlgHEditorProc.cpp:717 DlgHEditorProc.cpp:2488 utype.cpp:3347
 msgid "arms^Type"
 msgstr "兵种"
 
-#: DlgCampaignProc.cpp:3637 DlgCampaignProc.cpp:3727 DlgCampaignProc.cpp:3911
-#: DlgCampaignProc.cpp:3918 DlgCampaignProc.cpp:4462
+#: DlgCampaignProc.cpp:3740 DlgCampaignProc.cpp:3830 DlgCampaignProc.cpp:4014
+#: DlgCampaignProc.cpp:4021 DlgCampaignProc.cpp:4565
 msgid "Coordinate"
 msgstr "坐标"
 
-#: DlgCampaignProc.cpp:3668 DlgCampaignProc.cpp:3915
+#: DlgCampaignProc.cpp:3771 DlgCampaignProc.cpp:4018
 msgid "Office"
 msgstr "在职"
 
-#: DlgCampaignProc.cpp:3674 DlgCampaignProc.cpp:3916
+#: DlgCampaignProc.cpp:3777 DlgCampaignProc.cpp:4019
 msgid "Wander"
 msgstr "在野"
 
-#: DlgCampaignProc.cpp:3694
+#: DlgCampaignProc.cpp:3797
 msgid "troop^Master"
 msgstr "主将"
 
-#: DlgCampaignProc.cpp:3704 DlgCampaignProc.cpp:3713
+#: DlgCampaignProc.cpp:3807 DlgCampaignProc.cpp:3816
 msgid "troop^Second"
 msgstr "副将"
 
-#: DlgCampaignProc.cpp:3766
+#: DlgCampaignProc.cpp:3869
 msgid "Edit feature"
 msgstr "编辑特色"
 
-#: DlgCampaignProc.cpp:3769
+#: DlgCampaignProc.cpp:3872
 msgid "Add feature"
 msgstr "添加特色"
 
-#: DlgCampaignProc.cpp:3900
+#: DlgCampaignProc.cpp:4003
 msgid "Edit city"
 msgstr "编辑城市"
 
-#: DlgCampaignProc.cpp:3903
+#: DlgCampaignProc.cpp:4006
 msgid "Add city"
 msgstr "添加城市"
 
-#: DlgCampaignProc.cpp:3913 DlgCampaignProc.cpp:4464 DlgCampaignProc.cpp:4466
+#: DlgCampaignProc.cpp:4016 DlgCampaignProc.cpp:4567 DlgCampaignProc.cpp:4569
 msgid "Hero"
 msgstr "武将"
 
-#: DlgCampaignProc.cpp:3914 DlgCampaignProc.cpp:4465
+#: DlgCampaignProc.cpp:4017 DlgCampaignProc.cpp:4568
 msgid "Candidate"
 msgstr "候选"
 
-#: DlgCampaignProc.cpp:3920 DlgCampaignProc.cpp:6067 DlgHEditorProc.cpp:1563
+#: DlgCampaignProc.cpp:4023 DlgCampaignProc.cpp:6190 DlgHEditorProc.cpp:1587
 msgid "Add"
 msgstr "添加"
 
-#: DlgCampaignProc.cpp:4452
+#: DlgCampaignProc.cpp:4555
 msgid "Edit troop"
 msgstr "编辑部队"
 
-#: DlgCampaignProc.cpp:4455
+#: DlgCampaignProc.cpp:4558
 msgid "Add troop"
 msgstr "添加部队"
 
-#: DlgCampaignProc.cpp:5092
+#: DlgCampaignProc.cpp:5195
 msgid "Map"
 msgstr "地图"
 
-#: DlgCampaignProc.cpp:5093
+#: DlgCampaignProc.cpp:5196
 msgid "Next scenario"
 msgstr "下一关卡"
 
-#: DlgCampaignProc.cpp:5095
+#: DlgCampaignProc.cpp:5198
 msgid "Turns"
 msgstr "回合数"
 
-#: DlgCampaignProc.cpp:5096 utype.cpp:441 utype.cpp:464 utype.cpp:2387
-#: utype.cpp:2486
+#: DlgCampaignProc.cpp:5199 utype.cpp:448 utype.cpp:471 utype.cpp:2407
+#: utype.cpp:2506
 msgid "Unrestricted"
 msgstr "不限制"
 
-#: DlgCampaignProc.cpp:5098
+#: DlgCampaignProc.cpp:5201
 msgid "Maximal defeated activity"
 msgstr "溃败后最大厌战指数"
 
-#: DlgCampaignProc.cpp:5099
+#: DlgCampaignProc.cpp:5202
+msgid "Duel"
+msgstr "单挑"
+
+#: DlgCampaignProc.cpp:5203
 msgid "Win condition"
 msgstr "胜利条件"
 
-#: DlgCampaignProc.cpp:5100
+#: DlgCampaignProc.cpp:5204
 msgid "Lose condition"
 msgstr "失败条件"
 
-#: DlgCampaignProc.cpp:5101
+#: DlgCampaignProc.cpp:5205
 msgid "Hidden treasure"
 msgstr "隐藏宝物"
 
-#: DlgCampaignProc.cpp:5102
+#: DlgCampaignProc.cpp:5206
 msgid "Road"
 msgstr "道路"
 
-#: DlgCampaignProc.cpp:5164
+#: DlgCampaignProc.cpp:5244
+msgid "have^No"
+msgstr "没有"
+
+#: DlgCampaignProc.cpp:5245
+msgid "Random"
+msgstr "随机"
+
+#: DlgCampaignProc.cpp:5246
+msgid "Always"
+msgstr "总是"
+
+#: DlgCampaignProc.cpp:5281
 msgid "Quantity"
 msgstr "数量"
 
-#: DlgCampaignProc.cpp:5278 DlgCoreProc.cpp:410 DlgCoreProc.cpp:844
-#: DlgCoreProc.cpp:1370
+#: DlgCampaignProc.cpp:5395 DlgCoreProc.cpp:425 DlgCoreProc.cpp:1390
 msgid "Artifical"
 msgstr "建筑物"
 
-#: DlgCampaignProc.cpp:5314 DlgCoreProc.cpp:820 DlgCoreProc.cpp:1254
+#: DlgCampaignProc.cpp:5431 DlgCoreProc.cpp:1274
 msgid "Occasion"
 msgstr "时机"
 
-#: DlgCampaignProc.cpp:5321 event.cpp:352
+#: DlgCampaignProc.cpp:5438 event.cpp:360
 msgid "Only one time"
 msgstr "只一次"
 
-#: DlgCampaignProc.cpp:5426
+#: DlgCampaignProc.cpp:5543
 msgid "Other scenario has holded ID"
 msgstr "已存在该ID的其它关卡"
 
-#: DlgCampaignProc.cpp:5526
+#: DlgCampaignProc.cpp:5649
 msgid "$file isn't valid map file!"
 msgstr "$file不是有效地图文件！"
 
-#: DlgCampaignProc.cpp:5629
+#: DlgCampaignProc.cpp:5752
 msgid "Edit hidden treasure"
 msgstr "编辑隐藏宝物"
 
-#: DlgCampaignProc.cpp:5632
+#: DlgCampaignProc.cpp:5755
 msgid "Add hidden treasure"
 msgstr "添加隐藏宝物"
 
-#: DlgCampaignProc.cpp:5764
+#: DlgCampaignProc.cpp:5886
 msgid "Edit road"
 msgstr "编辑道路"
 
-#: DlgCampaignProc.cpp:5767
+#: DlgCampaignProc.cpp:5889
 msgid "Add road"
 msgstr "添加道路"
 
-#: DlgCampaignProc.cpp:6068 DlgCampaignProc.cpp:6095 event.cpp:3065
-#: main.cpp:726 utype.cpp:3854
+#: DlgCampaignProc.cpp:6191 DlgCampaignProc.cpp:6218 DlgCoreProc.cpp:1749
+#: event.cpp:3198 main.cpp:726 utype.cpp:3893
 msgid "Edit..."
 msgstr "编辑..."
 
-#: DlgCampaignProc.cpp:6069 DlgCampaignProc.cpp:6096 DlgCampaignProc.cpp:6118
-#: event.cpp:3066 main.cpp:727 utype.cpp:3855
+#: DlgCampaignProc.cpp:6192 DlgCampaignProc.cpp:6219 DlgCampaignProc.cpp:6241
+#: DlgCoreProc.cpp:1750 event.cpp:3199 main.cpp:727 utype.cpp:3894
 msgid "Delete..."
 msgstr "删除..."
 
-#: DlgCampaignProc.cpp:6094 DlgCampaignProc.cpp:6116 main.cpp:725
-#: utype.cpp:3853
+#: DlgCampaignProc.cpp:6217 DlgCampaignProc.cpp:6239 DlgCoreProc.cpp:1748
+#: main.cpp:725 utype.cpp:3892
 msgid "Add..."
 msgstr "添加..."
 
-#: DlgCampaignProc.cpp:6339
+#: DlgCampaignProc.cpp:6462
 msgid "New campaign"
 msgstr "新建战役"
 
-#: DlgCampaignProc.cpp:6341
+#: DlgCampaignProc.cpp:6464
 msgid "Campaign ID(Once set, cannot modify in future)"
 msgstr "战役ID（一旦设置，将来不能修改）"
 
-#: DlgCampaignProc.cpp:6342
+#: DlgCampaignProc.cpp:6465
 msgid "First scenario ID(May modify in future)"
 msgstr "第一关卡ID（将来能修改）"
 
-#: DlgCampaignProc.cpp:6344 main.cpp:717
+#: DlgCampaignProc.cpp:6467 main.cpp:717
 msgid "New"
 msgstr "新建"
 
-#: DlgCampaignProc.cpp:6345
+#: DlgCampaignProc.cpp:6468
 msgid "Cancel"
 msgstr "取消"
 
-#: DlgCampaignProc.cpp:6383
+#: DlgCampaignProc.cpp:6506
 msgid "cfg directory:"
 msgstr "cfg目录"
 
-#: DlgCampaignProc.cpp:6385
+#: DlgCampaignProc.cpp:6508
 msgid "bin file:"
 msgstr "bin文件"
 
-#: DlgCampaignProc.cpp:6390
+#: DlgCampaignProc.cpp:6513
 msgid "Other campaign has holded ID"
 msgstr "已存在该ID的其它战役"
 
-#: DlgCampaignProc.cpp:6393
+#: DlgCampaignProc.cpp:6516
 msgid "scenario file:"
 msgstr "关卡文件"
 
-#: DlgCampaignProc.cpp:6395
+#: DlgCampaignProc.cpp:6518
 msgid "map file:"
 msgstr "地图文件"
 
-#: DlgCoreProc.cpp:164
+#: DlgCoreProc.cpp:168
 msgid "Packer"
 msgstr "打包"
 
-#: DlgCoreProc.cpp:325 DlgHEditorProc.cpp:92
+#: DlgCoreProc.cpp:334 DlgHEditorProc.cpp:92
 msgid "Save modify"
 msgstr "保存修改"
 
-#: DlgCoreProc.cpp:326
+#: DlgCoreProc.cpp:335
 msgid "Core data is dirty, do you want to save modify?"
 msgstr "核心数据有改动，你要保存修改吗？"
 
-#: DlgCoreProc.cpp:408
+#: DlgCoreProc.cpp:423
 msgid "Commoner"
 msgstr "平民"
 
-#: DlgCoreProc.cpp:463
+#: DlgCoreProc.cpp:478
 msgid "Atomic tactic"
 msgstr "原子战法"
 
-#: DlgCoreProc.cpp:471
+#: DlgCoreProc.cpp:486
 msgid "Complex tactic"
 msgstr "复合战法"
 
-#: DlgCoreProc.cpp:511
+#: DlgCoreProc.cpp:526
 msgid "Point"
 msgstr "点数"
 
-#: DlgCoreProc.cpp:520
+#: DlgCoreProc.cpp:535
 msgid "Range"
 msgstr "范围"
 
-#: DlgCoreProc.cpp:522
+#: DlgCoreProc.cpp:537
 msgid "Myself"
 msgstr "自身"
 
-#: DlgCoreProc.cpp:529
+#: DlgCoreProc.cpp:544
 msgid "troop^Friend"
 msgstr "友军"
 
-#: DlgCoreProc.cpp:536
+#: DlgCoreProc.cpp:551
 msgid "troop^Enemy"
 msgstr "敌军"
 
-#: DlgCoreProc.cpp:546 DlgCoreProc.cpp:879 DlgCoreProc.cpp:1408
+#: DlgCoreProc.cpp:561 DlgCoreProc.cpp:1428
 msgid "Defend"
 msgstr "防御"
 
-#: DlgCoreProc.cpp:548 DlgCoreProc.cpp:881 DlgCoreProc.cpp:1410 utype.cpp:1424
+#: DlgCoreProc.cpp:563 DlgCoreProc.cpp:1430 utype.cpp:1440
 msgid "Attack"
 msgstr "攻击"
 
-#: DlgCoreProc.cpp:550 DlgCoreProc.cpp:883 DlgCoreProc.cpp:1412
+#: DlgCoreProc.cpp:565 DlgCoreProc.cpp:1432
 msgid "Will"
 msgstr "士气"
 
-#: DlgCoreProc.cpp:552 DlgCoreProc.cpp:885 DlgCoreProc.cpp:1414
+#: DlgCoreProc.cpp:567 DlgCoreProc.cpp:1434
 msgid "Demolish"
 msgstr "破坏"
 
-#: DlgCoreProc.cpp:558
+#: DlgCoreProc.cpp:573
 msgid "tactic^Child"
 msgstr "子战法"
 
-#: DlgCoreProc.cpp:594
+#: DlgCoreProc.cpp:609
 msgid "Atomic character"
 msgstr "原子性格"
 
-#: DlgCoreProc.cpp:602
+#: DlgCoreProc.cpp:617
 msgid "Complex character"
 msgstr "复合性格"
 
-#: DlgCoreProc.cpp:703
+#: DlgCoreProc.cpp:718
 msgid "character^Child"
 msgstr "子性格"
 
-#: DlgCoreProc.cpp:762 DlgCoreProc.cpp:1215 DlgCoreProc.cpp:1508
-msgid "Atomic technology"
-msgstr "原子科技"
-
-#: DlgCoreProc.cpp:770 DlgCoreProc.cpp:1217 DlgCoreProc.cpp:1511
-msgid "Complex technology"
-msgstr "复合科技"
-
-#: DlgCoreProc.cpp:811 DlgCoreProc.cpp:1239 DlgHEditorProc.cpp:2422
-msgid "Experience"
-msgstr "经验"
-
-#: DlgCoreProc.cpp:822 DlgCoreProc.cpp:1348
-msgid "Adjust unit"
-msgstr "调整单位"
-
-#: DlgCoreProc.cpp:825 DlgCoreProc.cpp:1350
-msgid "Finish research"
-msgstr "完成研发"
-
-#: DlgCoreProc.cpp:833 DlgCoreProc.cpp:1261
-msgid "Type filter"
-msgstr "类型过滤"
-
-#: DlgCoreProc.cpp:859 DlgCoreProc.cpp:1268
-msgid "Arms filter"
-msgstr "兵科过滤"
-
-#: DlgCoreProc.cpp:891 DlgCoreProc.cpp:1284
-msgid "technology^Child"
-msgstr "子科技"
-
-#: DlgCoreProc.cpp:918
+#: DlgCoreProc.cpp:826
 msgid "Tactic"
 msgstr "战法"
 
-#: DlgCoreProc.cpp:1181 DlgCoreProc.cpp:1220 utype.cpp:3336
+#: DlgCoreProc.cpp:826 DlgCoreProc.cpp:830 DlgCoreProc.cpp:834
+msgid "Read only"
+msgstr "只读"
+
+#: DlgCoreProc.cpp:1235 DlgCoreProc.cpp:1528
+msgid "Atomic technology"
+msgstr "原子科技"
+
+#: DlgCoreProc.cpp:1237 DlgCoreProc.cpp:1531
+msgid "Complex technology"
+msgstr "复合科技"
+
+#: DlgCoreProc.cpp:1240 utype.cpp:3360
 msgid "Close"
 msgstr "关闭"
 
-#: DlgCoreProc.cpp:1246
+#: DlgCoreProc.cpp:1259 DlgHEditorProc.cpp:2463
+msgid "Experience"
+msgstr "经验"
+
+#: DlgCoreProc.cpp:1266
 msgid "Relative"
 msgstr "相关"
 
-#: DlgCoreProc.cpp:1275
+#: DlgCoreProc.cpp:1281
+msgid "Type filter"
+msgstr "类型过滤"
+
+#: DlgCoreProc.cpp:1288
+msgid "Arms filter"
+msgstr "兵科过滤"
+
+#: DlgCoreProc.cpp:1295
 msgid "Action"
 msgstr "行为"
 
-#: DlgCoreProc.cpp:1523 utype.cpp:3859
+#: DlgCoreProc.cpp:1304
+msgid "technology^Child"
+msgstr "子科技"
+
+#: DlgCoreProc.cpp:1368
+msgid "Adjust unit"
+msgstr "调整单位"
+
+#: DlgCoreProc.cpp:1370
+msgid "Finish research"
+msgstr "完成研发"
+
+#: DlgCoreProc.cpp:1543 utype.cpp:3898
 msgid "Report format"
 msgstr "报表格式"
+
+#: DlgCoreProc.cpp:1611
+msgid "Treasure remark"
+msgstr ""
+"名称：wesnoth-card.po内定义。msgid是“treasure-<编号>”。举个例子，对编号“13”宝"
+"物，它在wesnoth-card.po内的msgid就是“treasure-13”。"
+
+#: DlgCoreProc.cpp:1674
+msgid "Edit treasure"
+msgstr "编辑宝物"
 
 #: DlgDDescProc.cpp:180
 msgid "\"$directory\" isn't valid resource directory, please select again"
@@ -524,8 +568,8 @@ msgstr "从“$src”提取发布包到“C:\\kingdom-ins”，$result！"
 msgid "Do you want to delete file: \"$file\" and directory: \"$directory\"?"
 msgstr "你想删除文件：“$file”，以及目录“$directory”？"
 
-#: DlgDDescProc.cpp:258 DlgDDescProc.cpp:281 DlgHEditorProc.cpp:995
-#: event.cpp:3379 utype.cpp:3307
+#: DlgDDescProc.cpp:258 DlgDDescProc.cpp:281 DlgHEditorProc.cpp:1019
+#: event.cpp:3518 utype.cpp:3331
 msgid "Confirm delete"
 msgstr "确认删除"
 
@@ -537,27 +581,31 @@ msgstr "将产生不同步，你想只删除文件：“$file”吗？"
 msgid "Do you want to save modify?"
 msgstr "你要保存修改吗？"
 
-#: DlgHEditorProc.cpp:639 DlgHEditorProc.cpp:2412
+#: DlgHEditorProc.cpp:346
+msgid "Invalid"
+msgstr "无效"
+
+#: DlgHEditorProc.cpp:656 DlgHEditorProc.cpp:2453
 msgid "Picture number"
 msgstr "图像编号"
 
-#: DlgHEditorProc.cpp:645
+#: DlgHEditorProc.cpp:662
 msgid "Base/Float catalog"
 msgstr "基本/浮动相性"
 
-#: DlgHEditorProc.cpp:827
+#: DlgHEditorProc.cpp:851
 msgid "Status/Activity"
 msgstr "状态/活力"
 
-#: DlgHEditorProc.cpp:993
+#: DlgHEditorProc.cpp:1017
 msgid "Do you want to delete hero($name) that number is $number?"
 msgstr "你想删除编号是$number的武将（$name）吗？"
 
-#: DlgHEditorProc.cpp:1565
+#: DlgHEditorProc.cpp:1589
 msgid "Edit"
 msgstr "编辑"
 
-#: DlgHEditorProc.cpp:1567
+#: DlgHEditorProc.cpp:1591
 msgid "Unknown action"
 msgstr "末知动作"
 
@@ -581,107 +629,119 @@ msgstr "状态"
 msgid "SHA1"
 msgstr "SHA1"
 
-#: event.cpp:382
+#: event.cpp:347 event.cpp:361
+msgid "Yes"
+msgstr "是"
+
+#: event.cpp:347 event.cpp:361 utype.cpp:459
+msgid "No"
+msgstr "不是"
+
+#: event.cpp:390
 msgid "Cond.I: Filter first unit"
 msgstr "条件I: 筛选第一单位"
 
-#: event.cpp:388
+#: event.cpp:396
 msgid "Cond.II: Filter second unit"
 msgstr "条件II: 筛选第二单位"
 
-#: event.cpp:837
+#: event.cpp:847
 msgid "equal value"
 msgstr "等于值"
 
-#: event.cpp:838
+#: event.cpp:848
 msgid "evaluats one amone range"
 msgstr "在范围中取值"
 
-#: event.cpp:912
+#: event.cpp:922
 msgid "Variable \"$name\" $op \"$value\""
 msgstr "变量“$name”$op“$value”"
 
-#: event.cpp:1658
+#: event.cpp:1723
 msgid "equals string"
 msgstr "等于字符串"
 
-#: event.cpp:1659
+#: event.cpp:1724
 msgid "not equals string"
 msgstr "不等于字符串"
 
-#: event.cpp:1660
+#: event.cpp:1725
 msgid "contains string"
 msgstr "包含字符串"
 
-#: event.cpp:1661
+#: event.cpp:1726
 msgid "equals numerical"
 msgstr "等于数字"
 
-#: event.cpp:1662
+#: event.cpp:1727
 msgid "not equals numerical"
 msgstr "不等于数字"
 
-#: event.cpp:1663
+#: event.cpp:1728
 msgid "greater than numerical"
 msgstr "大于数字"
 
-#: event.cpp:1664
+#: event.cpp:1729
 msgid "less than numerical"
 msgstr "小于数字"
 
-#: event.cpp:1665
+#: event.cpp:1730
 msgid "greater than equal to numerical"
 msgstr "大于等于数字"
 
-#: event.cpp:1666
+#: event.cpp:1731
 msgid "less_than_equal_to numerical"
 msgstr "小于等于数字"
 
-#: event.cpp:1667
+#: event.cpp:1732
 msgid "equals boolean"
 msgstr "等于布尔值"
 
-#: event.cpp:1668
+#: event.cpp:1733
 msgid "not equals boolean"
 msgstr "不等于布尔值"
 
-#: event.cpp:1715
+#: event.cpp:1780
 msgid "\"$left\" $op \"$right\""
 msgstr "“$left”$op“$right”"
 
-#: event.cpp:3047
+#: event.cpp:3179
 msgid "Edit $number|th event"
 msgstr "编辑第$number条事件"
 
-#: event.cpp:3050
+#: event.cpp:3182
 msgid "Add event"
 msgstr "添加事件"
 
-#: event.cpp:3055
+#: event.cpp:3187
 msgid "Judge branch"
 msgstr "判断分枝"
 
-#: event.cpp:3057
+#: event.cpp:3189
 msgid "Set variable"
 msgstr "设置变量"
 
-#: event.cpp:3059
+#: event.cpp:3191
 msgid "Generate troop"
 msgstr "产生部队"
 
-#: event.cpp:3060
+#: event.cpp:3192
 msgid "Kill troop"
 msgstr "杀死部队"
 
-#: event.cpp:3061
+#: event.cpp:3193
+msgid "End level"
+msgstr "结束关卡"
+
+#: event.cpp:3194
 msgid "Join in troop"
 msgstr "加入部队"
 
-#: event.cpp:3064
+#: event.cpp:3197
 msgid "Append after it"
 msgstr "在之后添加"
 
-#: event.cpp:3377
+#: event.cpp:3516
 msgid "Do you want to delete $number|th event?"
 msgstr "你想删除第$number条事件吗？"
 
@@ -713,235 +773,250 @@ msgstr "浏览"
 msgid "Reset all to default"
 msgstr "全部恢复到默认"
 
-#: utype.cpp:344 utype.cpp:3052
+#: utype.cpp:351 utype.cpp:3076
 msgid "Advances to"
 msgstr "升级到"
 
-#: utype.cpp:387 utype.cpp:3056 utype.cpp:3416
+#: utype.cpp:394 utype.cpp:3080 utype.cpp:3440
 msgid "Abilities"
 msgstr "能力"
 
-#: utype.cpp:449 utype.cpp:2390 utype.cpp:3403
+#: utype.cpp:456 utype.cpp:2410 utype.cpp:3427
 msgid "Can land on wall"
 msgstr "是否能上城墙"
 
-#: utype.cpp:450 utype.cpp:3581
+#: utype.cpp:457 utype.cpp:3612
 msgid "Can"
 msgstr "能"
 
-#: utype.cpp:450 utype.cpp:3581
+#: utype.cpp:457 utype.cpp:3612
 msgid "Cannot"
 msgstr "不能"
 
-#: utype.cpp:451 utype.cpp:2391
+#: utype.cpp:458 utype.cpp:2411
 msgid "Only used to leader"
 msgstr "君主专用"
 
-#: utype.cpp:452
+#: utype.cpp:459
 msgid "YES"
 msgstr "是"
 
-#: utype.cpp:456 utype.cpp:481 utype.cpp:1417 utype.cpp:1575 utype.cpp:1608
-#: utype.cpp:1678 utype.cpp:2012 utype.cpp:2481 utype.cpp:2640 utype.cpp:3184
-#: utype.cpp:3451
+#: utype.cpp:463 utype.cpp:490 utype.cpp:1433 utype.cpp:1595 utype.cpp:1628
+#: utype.cpp:1698 utype.cpp:2032 utype.cpp:2501 utype.cpp:2664 utype.cpp:3208
+#: utype.cpp:3482
 msgid "Type"
 msgstr "类型"
 
-#: utype.cpp:469 utype.cpp:491 utype.cpp:2488 utype.cpp:2643
+#: utype.cpp:476 utype.cpp:500 utype.cpp:2508 utype.cpp:2667
 msgid "Base income gold"
 msgstr "基本收入金"
 
-#: utype.cpp:471 utype.cpp:493
+#: utype.cpp:478 utype.cpp:502
 msgid "Base income technology"
 msgstr "基本收入技法"
 
-#: utype.cpp:476 utype.cpp:2573
+#: utype.cpp:483 utype.cpp:2593
 msgid "Increase XP per turn"
 msgstr "每回合自增加XP"
 
-#: utype.cpp:477 utype.cpp:483 utype.cpp:2574 utype.cpp:2641
+#: utype.cpp:484 utype.cpp:492 utype.cpp:2594 utype.cpp:2665
 msgid "Recover HP per turn"
 msgstr "每回合自恢复HP"
 
-#: utype.cpp:484 utype.cpp:2642
+#: utype.cpp:485
+msgid "Overlapped grid"
+msgstr "覆盖格子数"
+
+#: utype.cpp:486 utype.cpp:2595
+msgid "Multi grid"
+msgstr "多格"
+
+#: utype.cpp:486
+msgid "Single grid"
+msgstr "单格"
+
+#: utype.cpp:493 utype.cpp:2666
 msgid "Guard attack"
 msgstr "警戒攻击"
 
-#: utype.cpp:1401
+#: utype.cpp:1416
 msgid "arms^Edit type"
 msgstr "编辑兵种"
 
-#: utype.cpp:1404
+#: utype.cpp:1419
 msgid "arms^Add type"
 msgstr "添加兵种"
 
-#: utype.cpp:1416 utype.cpp:3103
-msgid "Has ZOC"
-msgstr "产生ZOC"
-
-#: utype.cpp:1418 utype.cpp:1984 utype.cpp:3106
-msgid "Resistance/Defend/Cost"
-msgstr "抗性/防御指数/移动消耗"
-
-#: utype.cpp:1419
-msgid "Set"
-msgstr "设置"
-
-#: utype.cpp:1420 utype.cpp:1538
-msgid "Level"
-msgstr "等级"
-
-#: utype.cpp:1423
-msgid "Alignment"
-msgstr "立场"
-
-#: utype.cpp:1529 utype.cpp:1552
-msgid "Name(ID)"
-msgstr "名称(标识)"
-
-#: utype.cpp:1615 utype.cpp:1677 utype.cpp:3458
+#: utype.cpp:1431 utype.cpp:1635 utype.cpp:1697 utype.cpp:3447 utype.cpp:3489
 msgid "Icon"
 msgstr "图标"
 
-#: utype.cpp:1623 utype.cpp:1679 utype.cpp:3465
+#: utype.cpp:1432 utype.cpp:3127
+msgid "Has ZOC"
+msgstr "产生ZOC"
+
+#: utype.cpp:1434 utype.cpp:2004 utype.cpp:3130
+msgid "Resistance/Defend/Cost"
+msgstr "抗性/防御指数/移动消耗"
+
+#: utype.cpp:1435
+msgid "Set"
+msgstr "设置"
+
+#: utype.cpp:1436 utype.cpp:1558
+msgid "Level"
+msgstr "等级"
+
+#: utype.cpp:1439
+msgid "Alignment"
+msgstr "立场"
+
+#: utype.cpp:1549 utype.cpp:1572
+msgid "Name(ID)"
+msgstr "名称(标识)"
+
+#: utype.cpp:1643 utype.cpp:1699 utype.cpp:3496
 msgid "attack^Range"
 msgstr "距离"
 
-#: utype.cpp:1637 utype.cpp:1680 utype.cpp:3479
+#: utype.cpp:1657 utype.cpp:1700 utype.cpp:3510
 msgid "Damage"
 msgstr "伤害"
 
-#: utype.cpp:1643 utype.cpp:1681 utype.cpp:3486
+#: utype.cpp:1663 utype.cpp:1701 utype.cpp:3517
 msgid "damage^Number"
 msgstr "次数"
 
-#: utype.cpp:1664
+#: utype.cpp:1684
 msgid "Edit attack"
 msgstr "编辑攻击"
 
-#: utype.cpp:1667
+#: utype.cpp:1687
 msgid "Add attack"
 msgstr "添加攻击"
 
-#: utype.cpp:1796 utype.cpp:1895 utype.cpp:3472
+#: utype.cpp:1816 utype.cpp:1915 utype.cpp:3503
 msgid "Specials"
 msgstr "特色"
 
-#: utype.cpp:1823
+#: utype.cpp:1843
 msgid "Other attack has holded ID"
 msgstr "已存在该ID的其它攻击"
 
-#: utype.cpp:1988 utype.cpp:3425
+#: utype.cpp:2008 utype.cpp:3456
 msgid "Template"
 msgstr "模板"
 
-#: utype.cpp:1990
+#: utype.cpp:2010
 msgid "mtype^Defend"
 msgstr "防御指数"
 
-#: utype.cpp:1991
+#: utype.cpp:2011
 msgid "Movement cost"
 msgstr "移动消耗"
 
-#: utype.cpp:1992
+#: utype.cpp:2012
 msgid "Double click one item to modify"
 msgstr "双击上面上项以修改值"
 
-#: utype.cpp:2021 utype.cpp:2050 utype.cpp:2072
+#: utype.cpp:2041 utype.cpp:2070 utype.cpp:2092
 msgid "Default value"
 msgstr "默认值"
 
-#: utype.cpp:2028
+#: utype.cpp:2048
 msgid "Using value"
 msgstr "使用值"
 
-#: utype.cpp:2379
+#: utype.cpp:2399
 msgid "Special attributes of troop type"
 msgstr "部队兵种特有属性"
 
-#: utype.cpp:2384 utype.cpp:2483
+#: utype.cpp:2404 utype.cpp:2503
 msgid "Maximum"
 msgstr "最大"
 
-#: utype.cpp:2477
+#: utype.cpp:2497
 msgid "Special attributes of commoner type"
 msgstr "平民兵种特有属性"
 
-#: utype.cpp:2569
+#: utype.cpp:2589
 msgid "Special attributes of city type"
 msgstr "城市兵种特有属性"
 
-#: utype.cpp:2636
+#: utype.cpp:2660
 msgid "Special attributes of artifical type"
 msgstr "建筑物兵种特有属性"
 
-#: utype.cpp:2820
+#: utype.cpp:2844
 msgid "Other type has holded ID"
 msgstr "已存在该ID的其它兵种"
 
-#: utype.cpp:2825
+#: utype.cpp:2849
 msgid "Set adding type's ID"
 msgstr "请设置新加兵种ID"
 
-#: utype.cpp:2828
+#: utype.cpp:2852
 msgid "Modify ID results to rebuild"
 msgstr "修改ID会导致自动重汇编"
 
-#: utype.cpp:3091
+#: utype.cpp:3115
 msgid "Edit packer type"
 msgstr "编辑打包兵种"
 
-#: utype.cpp:3094
+#: utype.cpp:3118
 msgid "Add packer type"
 msgstr "添加打包兵种"
 
-#: utype.cpp:3108
+#: utype.cpp:3132
 msgid "Increase in melee"
 msgstr "近战增加量"
 
-#: utype.cpp:3109
+#: utype.cpp:3133
 msgid "Increase in ranged"
 msgstr "远程增加量"
 
-#: utype.cpp:3110
+#: utype.cpp:3134
 msgid "Increase in cast"
 msgstr "投射增加量"
 
-#: utype.cpp:3305
+#: utype.cpp:3329
 msgid "Do you want to delete type: \"$type\"?"
 msgstr "你想删除兵种：“$type”吗？"
 
-#: utype.cpp:3325 utype.cpp:3837
+#: utype.cpp:3349 utype.cpp:3876
 msgid "Base information"
 msgstr "基本信息"
 
-#: utype.cpp:3329 utype.cpp:3843
+#: utype.cpp:3353 utype.cpp:3882
 msgid "Attack I"
 msgstr "攻击I"
 
-#: utype.cpp:3331 utype.cpp:3846
+#: utype.cpp:3355 utype.cpp:3885
 msgid "Attack II"
 msgstr "攻击II"
 
-#: utype.cpp:3333 utype.cpp:3849
+#: utype.cpp:3357 utype.cpp:3888
 msgid "Attack III"
 msgstr "攻击III"
 
-#: utype.cpp:3589
+#: utype.cpp:3620
 msgid "Has"
 msgstr "有"
 
-#: utype.cpp:3589
+#: utype.cpp:3620
 msgid "Hasn't"
 msgstr "没有"
 
-#: utype.cpp:3787
+#: utype.cpp:3826
 msgid "Regenerate all type's cfg and relative image success."
 msgstr "重生新成所有兵种配置、相关图像成功。"
 
-#: utype.cpp:3857
+#: utype.cpp:3896
 msgid "Regenerate all type's cfg and relatve image"
 msgstr "重新生成所有兵种配置、相关图像"
+
+#~ msgid "RPG mode"
+#~ msgstr "RPG模式"
 
 #, fuzzy
 #~ msgid "Unrestraint"

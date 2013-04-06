@@ -179,8 +179,9 @@ struct marked_route
 
 extern map_location last_location;
 extern bool is_wall;
+extern bool is_expedit_at;
 
-int location_cost(const unit_map& units, const unit& u, bool ignore_wall);
+int location_cost(const unit_map& units, const team& current_team, const unit& u, bool enemy, bool ignore_wall);
 
 plain_route a_star_search(map_location const &src, map_location const &dst,
 		double stop_at, const cost_calculator* costCalculator,

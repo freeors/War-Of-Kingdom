@@ -46,9 +46,13 @@ namespace help {
 	extern void generate_format(std::stringstream& strstr, const std::string& text, const std::string& color, int font_size, bool bold, bool italic);
 }
 
-namespace camp {
+namespace tent {
 	// only used for calculate_5fields and when teams is empty.
 	hero* leader;
+	int ai_count = 0;
+	int mode;
+	int turns = -1;
+	int duel = -1;
 }
 
 namespace {
@@ -262,7 +266,6 @@ unit::unit(const unit& o):
 	charm_(o.charm_),
 	characters_(o.characters_),
 	touch_locs_(o.touch_locs_),
-	touch_dirs_(o.touch_dirs_),
 	adjacent_size_(o.adjacent_size_),
 	adjacent_size_2_(o.adjacent_size_2_),
 	adjacent_size_3_(o.adjacent_size_3_),
@@ -381,7 +384,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 	walk_wall_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
-	touch_dirs_(),
 	touch_locs_(),
 	adjacent_size_(0),
 	adjacent_size_2_(0),
@@ -657,7 +659,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	walk_wall_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
-	touch_dirs_(),
 	touch_locs_(),
 	adjacent_size_(0),
 	adjacent_size_2_(0),
@@ -841,7 +842,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_hero
 	walk_wall_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
-	touch_dirs_(),
 	touch_locs_(),
 	adjacent_size_(0),
 	adjacent_size_2_(0),
@@ -876,10 +876,11 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_hero
 
 	unit_type_ = t.first;
 
-	artifical& city = *units_.city_from_cityno(cityno_);
-	especial_ = city.especial();
-	if (unit_type_->especial() != NO_ESPECIAL) {
-		VALIDATE(unit_type_->especial() == especial_, "error especial in recruiting unit_type: " + unit_type_->id());
+	// first from desired unit type, if no, from city.
+	especial_ = unit_type_->especial();
+	if (unit_type_->especial() == NO_ESPECIAL) {
+		artifical& city = *units_.city_from_cityno(cityno_);
+		especial_ = city.especial();
 	}
 
 	advance_to(unit_type_, real_unit);
@@ -2014,7 +2015,7 @@ bool unit::new_turn()
 	VALIDATE(!teams_.empty(), "unit::new_turn, teams must not empty!");
 
 	team& this_team = teams_[side_ - 1];
-	if (!commoner_) {
+	if (tent::mode != TOWER_MODE && !commoner_) {
 		hero& leader = *(this_team.leader());
 		// wander
 		std::vector<hero*> captains, wanders;
@@ -2940,7 +2941,7 @@ void unit::calculate_5fields()
 		leader = teams_[side_ - 1].leader();
 		t = &(teams_[side_ - 1]);
 	} else {
-		leader = camp::leader;
+		leader = tent::leader;
 	}
 
 	hero_5fields_t max_assistant;
@@ -3032,7 +3033,6 @@ void unit::calculate_5fields()
 
 	// feature
 	const complex_feature_map& complex_feature = unit_types.complex_feature();
-	const treasure_map& treasures = unit_types.treasures();
 	memset(feature_, 0, HEROS_FEATURE_M2BYTES);
 
 	std::set<int> holded_features;
@@ -3040,26 +3040,16 @@ void unit::calculate_5fields()
 		holded_features.insert(master_->feature_);
 	}
 	if (master_->treasure_ != HEROS_NO_TREASURE) {
-		treasure_map::const_iterator it = treasures.find(master_->treasure_);
-		if (it != treasures.end()) {
-			for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
-				int single_feature = *it2;
-				holded_features.insert(*it2);
-			}
-		}
+		const ttreasure& t = unit_types.treasure(master_->treasure_);
+		holded_features.insert(t.feature());
 	}
 	if (second_valid) {
 		if (second_->feature_ != HEROS_NO_FEATURE) {
 			holded_features.insert(second_->feature_);
 		}
 		if (second_->treasure_ != HEROS_NO_TREASURE) {
-			treasure_map::const_iterator it = treasures.find(second_->treasure_);
-			if (it != treasures.end()) {
-				for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
-					int single_feature = *it2;
-					holded_features.insert(*it2);
-				}
-			}
+			const ttreasure& t = unit_types.treasure(second_->treasure_);
+			holded_features.insert(t.feature());
 		}
 	}
 	if (third_valid) {
@@ -3067,13 +3057,8 @@ void unit::calculate_5fields()
 			holded_features.insert(third_->feature_);
 		}
 		if (third_->treasure_ != HEROS_NO_TREASURE) {
-			treasure_map::const_iterator it = treasures.find(third_->treasure_);
-			if (it != treasures.end()) {
-				for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
-					int single_feature = *it2;
-					holded_features.insert(*it2);
-				}
-			}
+			const ttreasure& t = unit_types.treasure(third_->treasure_);
+			holded_features.insert(t.feature());
 		}
 	}
 	if (leader->side_feature_ != HEROS_NO_FEATURE) {
@@ -3822,6 +3807,7 @@ void unit::redraw_unit()
 {
 	game_display &disp = *game_display::get_singleton();
 	const gamemap &map = disp.get_map();
+
 	if (!loc_.valid() || hidden_ || disp.fogged(loc_) ||
 	    (invisible(loc_)
 	&& disp.get_teams()[disp.viewing_team()].is_enemy(side())))
@@ -5051,24 +5037,12 @@ void unit::set_loyalty(int level, bool fixed)
 {
 	hero& leader = *(teams_[side_ - 1].leader());
 
-	if (master_->base_catalog_ != leader.base_catalog_) {
-		master_->set_loyalty(leader, level, fixed);
-	} else {
-		master_->float_catalog_ = ftofxp8(master_->base_catalog_);
-	}
+	master_->set_loyalty2(leader, level, fixed);
 	if (second_->valid()) {
-		if (second_->base_catalog_ != leader.base_catalog_) {
-			second_->set_loyalty(leader, level, fixed);
-		} else {
-			second_->float_catalog_ = ftofxp8(second_->base_catalog_);
-		}
+		second_->set_loyalty2(leader, level, fixed);
 	}
 	if (third_->valid()) {
-		if (third_->base_catalog_ != leader.base_catalog_) {
-			third_->set_loyalty(leader, level, fixed);
-		} else {
-			third_->float_catalog_ = ftofxp8(third_->base_catalog_);
-		}
+		third_->set_loyalty2(leader, level, fixed);
 	}
 }
 
@@ -5258,6 +5232,7 @@ int side_units_cost(int side)
 	return res;
 }
 
+/*
 int side_upkeep(int side)
 {
 	int res = 0;
@@ -5266,6 +5241,7 @@ int side_upkeep(int side)
 	}
 	return res;
 }
+*/
 
 unit_map::iterator find_visible_unit(const map_location &loc,
 	const team& current_team, bool see_all)
@@ -5318,7 +5294,6 @@ team_data calculate_team_data(const team& tm, int side)
 {
 	team_data res;
 	res.units = side_units(side);
-	// res.upkeep = side_upkeep(units, side);
 	res.upkeep = tm.side_upkeep();
 	res.villages = tm.villages().size();
 	res.net_income = tm.total_income() - res.upkeep;
@@ -5394,7 +5369,8 @@ std::set<map_location> unit::get_touch_locations(const gamemap& map, const map_l
 	std::set<map_location> touch_locs;
 
 	touch_locs.insert(loc);
-	for (std::set<map_location::DIRECTION>::const_iterator it = touch_dirs_.begin(); it != touch_dirs_.end(); ++ it) {
+	const std::set<map_location::DIRECTION>& touch_dirs = get_touch_dirs();
+	for (std::set<map_location::DIRECTION>::const_iterator it = touch_dirs.begin(); it != touch_dirs.end(); ++ it) {
 		map_location offset = loc.get_direction(*it);
 		if (!map.on_board(offset)) {
 			std::stringstream str;
@@ -5404,6 +5380,11 @@ std::set<map_location> unit::get_touch_locations(const gamemap& map, const map_l
 		touch_locs.insert(offset);
 	}
 	return touch_locs;
+}
+
+const std::set<map_location::DIRECTION>& unit::get_touch_dirs() const 
+{ 
+	return packee_type()->touch_dirs(); 
 }
 
 void unit::set_location(const map_location &loc) 
@@ -5424,7 +5405,7 @@ void unit::set_location(const map_location &loc)
 	// Centor location must be in touch locations for all unit.
 	touch_locs_.insert(loc_);
 	
-	if (!this_is_city()) {
+	if (!this_is_city() || get_touch_dirs().empty()) {
 		map_offset* adjacent_ptr;
 		size_t i, size;
 
@@ -5939,6 +5920,15 @@ hero* unit::character_hero(int apply_to) const
 		return find->second.h;
 	}
 	return NULL;	
+}
+
+bool unit::has_mayor() const
+{
+	if (is_artifical() || is_commoner()) return false;
+	if (master_->official_ == hero_official_mayor) return true;
+	if (second_->valid() && second_->official_ == hero_official_mayor) return true;
+	if (third_->valid() && third_->official_ == hero_official_mayor) return true;
+	return false;
 }
 
 int unit::amla() const

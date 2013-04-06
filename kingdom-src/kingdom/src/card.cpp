@@ -27,6 +27,7 @@ card::card()
 	, decree_(false)
 	, points_(-1)
 	, range_(NONE)
+	, mode_()
 {
 }
 
@@ -41,6 +42,7 @@ card::card(const config& card_cfg)
 	, decree_(card_cfg["decree"].to_bool())
 	, points_(-1)
 	, range_(NONE)
+	, mode_(card_cfg["mode"].str())
 {
 	if (!condition_cfg_) {
 		throw config::error("[card] error, " + name() + " no [condition].");
@@ -64,6 +66,7 @@ card::card(const card& that)
 	, decree_(that.decree_)
 	, points_(that.points_)
 	, range_(that.range_)
+	, mode_(that.mode_)
 {
 }
 

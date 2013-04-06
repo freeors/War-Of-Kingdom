@@ -43,9 +43,6 @@ class artifical;
 void change_terrain(const map_location &loc, const t_translation::t_terrain &t,
 	gamemap::tmerge_mode mode, bool replace_if_failed);
 
-#define MAGIC_RESIDE 0x27051956
-#define MAGIC_HERO 0x27051957
-
 namespace game_events
 {
 	// The game event manager loads the scenario configuration object,

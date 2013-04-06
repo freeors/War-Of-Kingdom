@@ -315,8 +315,12 @@ void controller_base::play_slice(bool is_delay_enabled)
 	const button_loc& loc = get_display().menu_pressed();
 	const theme::menu* m = loc.first;
 	if (m && (m == gui.access_troop_menu())) {
-		map_location pressed_loc = gui.access_unit_press(loc.second);
-		if (pressed_loc.valid() && !get_mouse_handler_base().is_moving() && !get_mouse_handler_base().is_recalling() && !get_mouse_handler_base().is_building() && !get_mouse_handler_base().is_card_playing()) {
+		map_location pressed_loc = gui.access_list_press(loc.second);
+		if (pressed_loc.x == MAGIC_HERO && pressed_loc.y >= 0) {
+			hero& h = (*resources::heros)[pressed_loc.y];
+			events::mouse_handler::get_singleton()->set_hero_placing(&h);
+			
+		} else if (pressed_loc.valid() && !get_mouse_handler_base().is_moving() && !get_mouse_handler_base().is_recalling() && !get_mouse_handler_base().is_building() && !get_mouse_handler_base().is_card_playing()) {
 			gui.scroll_to_tile(pressed_loc, display::WARP);
 			events::mouse_handler::get_singleton()->select_hex(map_location(), false);
 			// gui.select_hex(pressed_loc);

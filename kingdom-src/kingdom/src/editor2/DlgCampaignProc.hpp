@@ -15,6 +15,9 @@
 extern editor editor_;
 extern const std::string null_str;
 
+enum {NONE_MODE, RPG_MODE, TOWER_MODE};
+enum {NO_DUEL, RANDOM_DUEL, ALWAYS_DUEL};
+
 class tcampaign
 {
 public:
@@ -68,22 +71,20 @@ public:
 	tmain_(const std::string& id = null_str, const std::string& firstscenario_id = null_str) 
 		: textdomain_(PACKAGE)
 		, id_(id)
-		, rank_(0)
 		// , abbrev_(id)
 		, abbrev_()
 		, first_scenario_(firstscenario_id)
 		, hero_data_("^xwml/hero.dat")
-		, rpg_mode_(false)
+		, mode_(NONE_MODE)
 	{}
 
 public:
 	std::string textdomain_;
 	std::string id_;
-	int rank_;
 	std::string abbrev_;
 	std::string first_scenario_;
 	std::string hero_data_;
-	bool rpg_mode_;
+	int mode_;
 };
 
 class tmain: public tmain_
@@ -99,9 +100,9 @@ public:
 	std::string icon(bool absolute = false) const;
 	std::string image(bool absolute = false) const;
 
-	enum {BIT_ID = 0, BIT_TEXTDOMAIN, BIT_RANK, 
+	enum {BIT_ID = 0, BIT_TEXTDOMAIN, 
 		BIT_ABBREV, BIT_FIRSTSCENARIO, BIT_ICON, 
-		BIT_IMAGE, BIT_RPGMODE};
+		BIT_IMAGE, BIT_MODE};
 	void set_dirty(int bit, bool set);
 public:
 
@@ -321,7 +322,7 @@ public:
 		{}
 		virtual ~tcommand() {};
 
-		enum {SET_VARIABLE, KILL, JOIN, UNIT, IF, CONDITION};
+		enum {SET_VARIABLE, KILL, ENDLEVEL, JOIN, UNIT, IF, CONDITION};
 
 		virtual void from_config(const config& cfg) {};
 		virtual void from_ui_special(HWND) {};
@@ -410,6 +411,41 @@ public:
 		bool operator!=(const tkill& that) const { return !operator==(that); }
 	public:
 		std::string master_hero_;
+	};
+
+	// [endlevel]
+	class tendlevel : public tcommand
+	{
+	public:
+		tendlevel()
+			: tcommand(ENDLEVEL)
+			, result_("victory")
+		{}
+		void from_config(const config& cfg);
+		void from_ui_special(HWND hdlgP);
+		void update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const;
+		void update_to_ui_special(HWND hdlgP) const;
+
+		void generate(std::stringstream& strstr, const std::string& prefix) const
+		{
+			strstr << prefix << "[endlevel]\n";
+			strstr << prefix << "\tresult = " << result_ << "\n";
+			strstr << prefix << "[/endlevel]\n";
+		}
+
+		bool is_null() const
+		{
+			if (!result_.empty()) return false;
+			return true;
+		}
+		bool operator==(const tendlevel& that) const
+		{
+			if (result_ != that.result_) return false;
+			return true;
+		}
+		bool operator!=(const tendlevel& that) const { return !operator==(that); }
+	public:
+		std::string result_;
 	};
 
 	// [join]
@@ -711,6 +747,7 @@ public:
 		, map_data_()
 		, turns_(-1)
 		, maximal_defeated_activity_(0)
+		, duel_(RANDOM_DUEL)
 		, win_()
 		, lose_()
 		, treasures_()
@@ -723,6 +760,7 @@ public:
 	std::string map_data_;
 	int turns_;
 	int maximal_defeated_activity_;
+	int duel_;
 	std::string win_;
 	std::string lose_;
 	std::map<int, int> treasures_;
@@ -765,7 +803,7 @@ public:
 	bool validate_roads();
 
 	enum {BIT_ID = 0, BIT_NEXTSCENARIO, BIT_MAP, 
-		BIT_TURNS, BIT_MDACTIVITY, BIT_TREASURES, BIT_ROADS, BIT_WIN, 
+		BIT_TURNS, BIT_MDACTIVITY, BIT_DUEL, BIT_TREASURES, BIT_ROADS, BIT_WIN, 
 		BIT_LOSE, BIT_SIDE, BIT_EVENT};
 	void set_dirty(int bit, bool set);
 	

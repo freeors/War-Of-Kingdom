@@ -9200,6 +9200,9 @@ msgstr ""
 msgid "$side finished researching $end, and have gotten all technology!"
 msgstr ""
 
+msgid "Select a grid to place, or a troop to join"
+msgstr ""
+
 #
 # weapon name
 #

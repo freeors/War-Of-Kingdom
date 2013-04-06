@@ -17,7 +17,7 @@
 #define GUI_DIALOGS_CREATE_HERO_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
-#include "hero.hpp"
+#include <hero.hpp>
 
 class display;
 class hero_map;

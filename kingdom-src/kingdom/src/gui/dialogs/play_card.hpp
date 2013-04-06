@@ -29,6 +29,7 @@ class hero;
 class card_map;
 class artifical;
 class unit_type;
+class game_state;
 
 namespace gui2 {
 
@@ -38,7 +39,7 @@ class tlistbox;
 class tplay_card : public tdialog
 {
 public:
-	explicit tplay_card(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, card_map& cards, int side, button_action* discard);
+	explicit tplay_card(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, card_map& cards, game_state& gamestate, int side, button_action* discard);
 
 	int card_index() const { return card_index_; }
 
@@ -54,6 +55,7 @@ private:
 	virtual const std::string& window_id() const;
 
 	void discard(bool& handled, bool& halt, int index);
+	void contex(twindow& window);
 
 	void card_selected(twindow& window);
 	void refresh_tooltip(twindow& window);
@@ -64,6 +66,7 @@ private:
 	unit_map& units_;
 	hero_map& heros_;
 	card_map& cards_;
+	game_state& gamestate_;
 
 	team& current_team_;
 

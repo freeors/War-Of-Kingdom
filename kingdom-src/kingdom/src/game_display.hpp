@@ -40,6 +40,30 @@ typedef std::pair<int, std::set<map_location> > range_locs_pair;
 class game_display : public display
 {
 public:
+	class taccess_list
+	{
+	public:
+		enum {TROOP = 0, HERO, TYPE_COUNT};
+
+		taccess_list(int type);
+		~taccess_list();
+	
+		void reload(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side);
+		void insert(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
+		void erase(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
+		void disable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
+		void enable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
+		void free_heap();
+
+		// for access_troops
+		int type_;
+		gui::button** buttons_;
+		size_t  count_;
+		int index_in_map_;
+		size_t start_group_;
+		size_t actable_count_;
+	};
+
 	game_display(unit_map& units, play_controller* controller, CVideo& video,
 			const gamemap& map, const tod_manager& tod_manager,
 			const std::vector<team>& t, const config& theme_cfg,
@@ -138,6 +162,13 @@ public:
 
 	bool redraw_everything();
 
+	/** Rebuild all dynamic terrain. */
+	void rebuild_all();
+
+	void set_index_in_map(int index, bool troop);
+	bool index_in_map(int index) const;
+	const theme::menu* access_troop_menu() const;
+
 	/** Function to invalidate that unit status displayed on the sidebar. */
 	void invalidate_unit() { invalidateUnit_ = true; }
 
@@ -154,14 +185,21 @@ public:
 	/** refresh field troop buttons */
 	enum refresh_reason {REFRESH_RELOAD, REFRESH_DISABLE, REFRESH_ENABLE, REFRESH_INSERT, REFRESH_ERASE, REFRESH_CLEAR};
 
-	void refresh_access_troops(int side, refresh_reason reason = REFRESH_RELOAD, void* cookie = NULL, unit* troop = NULL);
-	void redraw_access_unit();
-	void hide_access_unit();
-	map_location access_unit_press(size_t btnidx);
+	void refresh_access_troops(int side, refresh_reason reason = REFRESH_RELOAD, void* cookie = NULL);
+	void refresh_access_heros(int side, refresh_reason reason = REFRESH_RELOAD, void* cookie = NULL);
+
+	void redraw_access_unit(taccess_list* list);
+	void hide_access_unit(taccess_list* list);
+	map_location access_list_press(size_t btnidx);
+	int current_list_type() const { return current_list_type_; }
+	int next_list_type() const;
+	void set_current_list_type(int type);
+	taccess_list& type_2_list(int type);
 
 	// runtime tooltip of mouse-over unit
 	void show_unit_tip(const unit& troop, const map_location& loc);
-	void hide_unit_tip();
+	void show_tip(const std::string& message, const map_location& loc = map_location::null_location, bool clear = true);
+	void hide_tip();
 protected:
 	/**
 	 * game_display pre_draw does specific things related e.g. to unit rendering
@@ -192,6 +230,9 @@ protected:
 	void invalidate_animations_location(const map_location& loc);
 
 	virtual void draw_minimap_units();
+
+private:
+	void refresh_access_list(int side, refresh_reason reason, void* cookie, int type);
 
 public:
 	/** Temporarily place a unit on map (moving: can overlap others).
@@ -247,6 +288,11 @@ public:
 	void set_selectable_indicator(const std::set<map_location>& selectable) { selectable_indicator_ = selectable; }
 	std::set<map_location>& selectable_indicator() { return selectable_indicator_; }
 	const std::set<map_location>& selectable_indicator() const { return selectable_indicator_; }
+
+	void set_hero_indicator(const hero& h);
+	void clear_hero_indicator();
+	const std::set<map_location>& joinable_indicator() const { return joinable_indicator_; }
+	const std::set<map_location>& placable_indicator() const { return placable_indicator_; }
 
 	map_location& tactic_indicator() { return tactic_indicator_; }
 	const map_location& tactic_indicator() const { return tactic_indicator_; }
@@ -344,10 +390,12 @@ public:
 
 	virtual bool in_game() const { return in_game_; }
 	void draw_bar(const std::string& image, int xpos, int ypos,
-		const map_location& loc, size_t size, double filled,
+		const map_location& loc, int size, double filled,
 		const SDL_Color& col, fixed_t alpha, bool vtl = true);
 
-	void construct_road();
+	void construct_road_locs(const std::map<std::pair<int, int>, std::vector<map_location> >& roads);
+	const std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >& road_locs() const { return road_locs_; };
+	int road_owner(std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >::const_iterator& loc) const;
 
 	/**
 	 * Sets the linger mode for the display.
@@ -402,6 +450,9 @@ private:
 	map_location tactic_indicator_;
 	map_location interior_indicator_;
 	std::set<map_location> alternatable_indicator_;
+
+	std::set<map_location> joinable_indicator_;
+	std::set<map_location> placable_indicator_;
 
 	// Locations of the build direction indicator's parts
 	std::set<map_location> build_indicator_dst_;
@@ -479,8 +530,10 @@ private:
 	void process_disctrict_changes();
 
 	// for access_troops
-	size_t actable_troop_count_;
-	int access_unit_side_;
+	taccess_list troop_list_;
+	taccess_list hero_list_;
+	int current_list_type_;
+	int access_list_side_;
 
 	// for draw
 	unit** draw_area_unit_;

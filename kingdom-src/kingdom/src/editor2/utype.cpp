@@ -58,6 +58,7 @@ void tunit_type::from_config(const unit_type* ut)
 	max_movement_ = ut->max_movement();
 	level_ = ut->level();
 	cost_ = ut->cost();
+	raw_icon_ = ut->raw_icon();
 	alignment_ = ut->alignment();
 	character_ = ut->especial();
 	movement_type_ = ut->movementType_id();
@@ -98,6 +99,7 @@ void tunit_type::from_config(const unit_type* ut)
 	master_ = ut->master();
 	turn_experience_ = ut->turn_experience();
 	heal_ = ut->heal();
+	multi_grid_ = !ut->touch_dirs().empty();
 	guard_ = ut->guard();
 	if (master_ == hero::number_market || master_ == hero::number_businessman) {
 		income_ = ut->gold_income();
@@ -172,11 +174,15 @@ void tunit_type::from_config(const unit_type* ut)
 void tunit_type::from_ui(HWND hdlgP)
 {
 	HWND hctl;
+	char text[_MAX_PATH];
 
 	if (!packer_) {
 		hitpoints_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPEEDIT_HP));
 		experience_needed_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPEEDIT_XP));
 		cost_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPEEDIT_COST));
+
+		Edit_GetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_ICON), text, _MAX_PATH);
+		raw_icon_ = text;
 
 		hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPEEDIT_LEVEL);
 		level_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
@@ -287,6 +293,7 @@ void tunit_type::from_ui_utype_type(HWND hdlgP)
 	} else if (ns::utype.type() == tunit_type::TYPE_CITY) {
 		turn_experience_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPECITY_TURNEXPERIENCE));
 		heal_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPECITY_HEAL));
+		multi_grid_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPECITY_TOUCHDIRS));
 
 	} else if (ns::utype.type() == tunit_type::TYPE_ARTIFICAL) {
 		heal_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPEARTIFICAL_HEAL));
@@ -474,7 +481,9 @@ void tunit_type::update_to_ui_utype_edit_type(HWND hdlgP) const
 
 	} else if (type() == TYPE_CITY) {
 		strstr << utf8_2_ansi(_("Increase XP per turn")) << ": " << turn_experience_ << "\r\n";
-		strstr << utf8_2_ansi(_("Recover HP per turn")) << ": " << heal_;
+		strstr << utf8_2_ansi(_("Recover HP per turn")) << ": " << heal_ << "\r\n";
+		strstr << utf8_2_ansi(_("Overlapped grid")) << ": ";
+		strstr << (multi_grid_? utf8_2_ansi(_("Multi grid")): utf8_2_ansi(_("Single grid")));
 
 	} else if (type() == TYPE_ARTIFICAL) {
 		hero& h = **(tunit_type::artifical_hero_.find(&gdmgr.heros_[master_]));
@@ -643,6 +652,8 @@ void tunit_type::vertify_core_images() const
 	if (!is_file(leading(true).c_str())) {
 		CopyFile(image(true).c_str(), leading(true).c_str(), TRUE);
 	}
+	vertify_attack_anim_melee_images();
+	vertify_attack_anim_ranged_images();
 }
 
 void tunit_type::generate() const
@@ -699,6 +710,9 @@ void tunit_type::generate() const
 		strstr << "\thitpoints = " << hitpoints_ << "\n";
 		strstr << "\texperience = " << experience_needed_ << "\n";
 		strstr << "\tcost = " << cost_ << "\n";
+		if (!raw_icon_.empty()) {
+			strstr << "\ticon = " << raw_icon_ << "\n";
+		}
 		strstr << "\tlevel = " << level_ << "\n";
 				
 		int t = type();
@@ -720,6 +734,9 @@ void tunit_type::generate() const
 				strstr << "\tincome = " << income_ << "\n";
 			}
 		} else if (t == TYPE_CITY) {
+			if (multi_grid_) {
+				strstr << "\ttouch_dirs = n, ne, se, s, sw, nw\n";
+			}
 			strstr << "\tcan_recruit = yes\n";
 			strstr << "\tcan_reside = yes\n";
 			strstr << "\tturn_experience = " << turn_experience_ << "\n";
@@ -851,7 +868,7 @@ void tunit_type::generate() const
 		}
 	}
 
-	vertify_idle_anim_images();
+	// vertify_idle_anim_images();
 	if (generate_anim) {
 		unit_type::idle_anim(race_, id_, use_terrain_image(), cfg);
 		out.write_child("idle_anim", cfg);
@@ -859,10 +876,6 @@ void tunit_type::generate() const
 	
 
 	if (!packer_) {
-		if (!attacks_.empty()) {
-			vertify_attack_anim_melee_images();
-			vertify_attack_anim_ranged_images();
-		}
 		for (std::vector<tattack>::const_iterator it = attacks_.begin(); it != attacks_.end(); ++ it) {
 			it->generate(strstr, "\t");
 			if (!generate_anim) {
@@ -892,9 +905,6 @@ void tunit_type::generate() const
 			out.write_child("attack_anim", cfg);
 		}
 	} else {
-		vertify_attack_anim_melee_images();
-		vertify_attack_anim_ranged_images();
-
 		if (generate_anim) {
 			unit_type::attack_anim_melee("melee", "staff-magic.png", type() == TYPE_TROOP, race_, id_, use_terrain_image(), cfg);
 			out.write_child("attack_anim", cfg);
@@ -1413,6 +1423,7 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DESCRIPTION), utf8_2_ansi(_("Description")));
 	set_language_text(hdlgP, IDC_STATIC_COST, "wesnoth-lib", "Cost");
 	set_language_text(hdlgP, IDC_STATIC_GOLD, "wesnoth-lib", "Gold");
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ICON), utf8_2_ansi(_("Icon")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_CHK_UTYPEEDIT_ZOC), utf8_2_ansi(_("Has ZOC")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("Type")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MTYPE), utf8_2_ansi(_("Resistance/Defend/Cost")));
@@ -1482,6 +1493,10 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	UpDown_SetRange(hctl, 1, 1000);	// [1, 1000]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_COST));
 	UpDown_SetPos(hctl, ns::utype.cost_);
+
+	// raw icon
+	hctl = GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_ICON);
+	Edit_SetText(hctl, ns::utype.raw_icon_.c_str());
 
 	// level
 	hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPEEDIT_LEVEL);
@@ -2572,6 +2587,7 @@ BOOL On_DlgUTypeCityInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TURNEXPERIENCE), utf8_2_ansi(_("Increase XP per turn")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HEAL), utf8_2_ansi(_("Recover HP per turn")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_CHK_UTYPECITY_TOUCHDIRS), utf8_2_ansi(_("Multi grid")));
 
 	// turn experience
 	HWND hctl = GetDlgItem(hdlgP, IDC_UD_UTYPECITY_TURNEXPERIENCE);
@@ -2584,6 +2600,9 @@ BOOL On_DlgUTypeCityInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	UpDown_SetRange(hctl, 0, 100);	// [0, 100]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPECITY_HEAL));
 	UpDown_SetPos(hctl, ns::utype.heal_);
+
+	// multi-grid
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPECITY_TOUCHDIRS), ns::utype.multi_grid_);
 
 	ns::utype.update_to_ui_utype_type(hdlgP);
 	return FALSE;
@@ -3416,6 +3435,13 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		strcpy(text, utf8_2_ansi(_("Abilities")));
 		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 100;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("Icon")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
 		
 	} else if (ns::type == IDM_UTYPE_MTYPE) {
 
@@ -3606,6 +3632,14 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 					}
 				}
 			}
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			strstr << ut->icon();
 			strcpy(text, strstr.str().c_str());
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);

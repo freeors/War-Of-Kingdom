@@ -71,6 +71,7 @@ const struct {
 	{ hotkey::HOTKEY_RPG_INDEPENDENCE, "rpg-independence", N_("RPG Independence"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BUILD_M, "build_m", N_("Build"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BUILD, "build", N_("Build"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_EXTRACT, "extract", N_("Extract"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_DEMOLISH, "demolish", N_("Demolish"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_ARMORY, "armory", N_("Reform"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_UNIT_DETAIL, "unit_detail", N_("Unit Detail"), false, hotkey::SCOPE_GAME },
@@ -78,6 +79,7 @@ const struct {
 	{ hotkey::HOTKEY_RECRUIT, "recruit", N_("Recruit"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_EXPEDITE, "expedite", N_("Expedite"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_MOVE, "move", N_("Move Hero"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_SWITCH_LIST, "switch", N_("Switch List"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_ENDTURN, "endturn", N_("End Turn"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_TOGGLE_ELLIPSES, "toggleellipses", N_("Toggle Ellipses"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_TOGGLE_GRID, "togglegrid", N_("Toggle Grid"), false, hotkey::SCOPE_GENERAL },
@@ -683,6 +685,9 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 		case HOTKEY_ENDTURN:
 			end_turn();
 			break;
+		case HOTKEY_SWITCH_LIST:
+			switch_list();
+			break;
 		case HOTKEY_UNDO:
 			undo();
 			break;
@@ -727,6 +732,9 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 			break;
 		case HOTKEY_BUILD:
 			build(str);
+			break;
+		case HOTKEY_EXTRACT:
+			extract();
 			break;
 		case HOTKEY_DEMOLISH:
 			demolish();

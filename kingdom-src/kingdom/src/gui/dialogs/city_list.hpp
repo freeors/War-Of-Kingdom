@@ -38,7 +38,9 @@ class twindow;
 class tcity_list : public tdialog
 {
 public:
-	explicit tcity_list(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side_num);
+	enum {MIN_PAGE = 0, STATUS_PAGE = MIN_PAGE, UNITS_PAGE, INTERIOR_PAGE, MAX_PAGE = INTERIOR_PAGE};
+
+	explicit tcity_list(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side_num, int start = MIN_PAGE);
 
 	bool compare_row(tgrid& row1, tgrid& row2);
 protected:
@@ -52,7 +54,6 @@ private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
-	enum {MIN_PAGE = 0, STATUS_PAGE = MIN_PAGE, UNITS_PAGE, INTERIOR_PAGE, MAX_PAGE = INTERIOR_PAGE};
 	void catalog_page(twindow& window, int catalog, bool swap);	
 
 	void city_changed(twindow& window);
@@ -69,6 +70,7 @@ private:
 
 	int side_;
 	std::vector<const artifical*> candidate_cities_;
+	int start_;
 
 	bool ascend_;
 	int current_page_;

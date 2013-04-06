@@ -28,6 +28,7 @@
 #include "gui/widgets/image.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/toggle_button.hpp"
+#include "gui/dialogs/city_list.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 #include "gui/widgets/list.hpp"
 #else
@@ -84,12 +85,13 @@ namespace gui2 {
 
 REGISTER_DIALOG(play_card)
 
-tplay_card::tplay_card(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, card_map& cards, int side, button_action* discard)
+tplay_card::tplay_card(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, card_map& cards, game_state& gamestate, int side, button_action* discard)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, cards_(cards)
+	, gamestate_(gamestate)
 	, current_team_(teams[side - 1])
 	, discard_(discard)
 	, card_index_(0)
@@ -166,14 +168,13 @@ void tplay_card::refresh_tooltip(twindow& window)
 		// feature
 		label = find_widget<tlabel>(&window, "tip_feature", false, true);
 		label->set_label("");
-
-		// attack
-		label = find_widget<tlabel>(&window, "tip_attack", false, true);
-		label->set_label("");
 */	
 		// desc
 		label = find_widget<tlabel>(&window, "tip_desc", false, true);
 		label->set_label("");
+
+		tbutton* button = find_widget<tbutton>(&window, "tip_button", false, true);
+		button->set_visible(twidget::INVISIBLE);
 		return;
 	}
 	card& c = cards_[holded_cards[card_index_]];
@@ -258,34 +259,19 @@ void tplay_card::refresh_tooltip(twindow& window)
 	str << hero::arms_str(temp.arms()) << "(" << hero::adaptability_str2(ftofxp12(temp.adaptability_[temp.arms()])) << ")";
 	label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
 	label->set_label(str.str());
-
-	// attack
-	str.str("");
-	std::vector<attack_type>* attacks_ptr = const_cast<std::vector<attack_type>*>(&temp.attacks());
-	for (std::vector<attack_type>::const_iterator at_it = attacks_ptr->begin(); at_it != attacks_ptr->end(); ++at_it) {
-		// see generate_report() in generate_report.cpp
-		str << at_it->name() << " (" << dgettext("wesnoth", at_it->type().c_str()) << ")\n";
-
-		std::string accuracy = at_it->accuracy_parry_description();
-		if(accuracy.empty() == false) {
-			accuracy += " ";
-		}
-
-		str << "  " << at_it->damage() << "-" << at_it->num_attacks()
-			<< " " << accuracy << "- " << dgettext("wesnoth", at_it->range().c_str());
-
-		std::string special = at_it->weapon_specials(true);
-		if (!special.empty()) {
-			str << "(" << special << ")";
-		}
-		str << "\n";
-	}
-	label = find_widget<tlabel>(&window, "tip_attack", false, true);
-	label->set_label(str.str());
 */
 	// description
 	label = find_widget<tlabel>(&window, "tip_desc", false, true);
 	label->set_label(c.desc());
+
+	// contex button
+	tbutton* button = find_widget<tbutton>(&window, "tip_button", false, true);
+	if (!c.decree()) {
+		button->set_visible(twidget::INVISIBLE);
+	} else {
+		button->set_label(_("Our cities"));
+		button->set_visible(twidget::VISIBLE);
+	}
 }
 
 void tplay_card::pre_show(CVideo& /*video*/, twindow& window)
@@ -362,6 +348,13 @@ void tplay_card::pre_show(CVideo& /*video*/, twindow& window)
 
 	list->set_callback_value_change(dialog_callback<tplay_card, &tplay_card::card_selected>);
 
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "tip_button", false)
+		, boost::bind(
+			&tplay_card::contex
+			, this
+			, boost::ref(window)));
+
 	refresh_tooltip(window);
 }
 
@@ -414,6 +407,19 @@ void tplay_card::discard(bool& handled, bool& halt, int index)
 
 	handled = true;
 	halt = true;
+}
+
+void tplay_card::contex(twindow& window)
+{
+	int side_num = current_team_.side();
+	gui2::tcity_list dlg(gui_, teams_, units_, heros_, gamestate_, side_num, gui2::tcity_list::INTERIOR_PAGE);
+
+	try {
+		dlg.show(gui_.video());
+	} catch(twml_exception& e) {
+		e.show(gui_);
+		return;
+	}
 }
 
 } // namespace gui2

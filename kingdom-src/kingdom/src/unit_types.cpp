@@ -30,13 +30,12 @@
 #include "map.hpp"
 #include "hero.hpp"
 #include "wml_exception.hpp"
+#include "filesystem.hpp"
 
 #include "unit_map.hpp"
 #include "unit.hpp"
 
 #include "formula_string_utils.hpp"
-
-static std::string null_str = "";
 
 department::department(int type, const std::string& name, const std::string& image, const std::string& portrait)
 	: type_(type)
@@ -51,8 +50,10 @@ tespecial::tespecial(int index, const std::string& id)
 	: index_(index)
 	, id_(id)
 {
-	name_ = hero::character_str(index_);
-	image_ = "misc/character-" + id_ + ".png";
+	std::stringstream strstr;
+	strstr << HERO_PREFIX_STR_ESPECIAL << index;
+	name_ = dgettext("wesnoth-card", strstr.str().c_str());
+	image_ = "utype/" + id_ + ".png";
 }
 
 int ttactic::min_complex_index = 100;
@@ -474,6 +475,20 @@ int tcharacter::level(const hero& h) const
 	if (l > 100) l = 100;
 
 	return l;
+}
+
+ttreasure::ttreasure(int index, int feature)
+	: index_(index)
+	, feature_(feature)
+{
+	std::stringstream strstr;
+	strstr.str("");
+	strstr << HERO_PREFIX_STR_TREASURE << index;
+	name_ = dgettext("wesnoth-card", strstr.str().c_str());
+
+	strstr.str("");
+	strstr << "treasure/" << index << ".png";
+	image_ = strstr.str();
 }
 
 namespace advance_tree {
@@ -1418,10 +1433,18 @@ void unit_type::idle_anim(const std::string& race, const std::string& id, bool t
 	cfg.clear();
 
 	utils::string_map symbols;
-	symbols["idle_1_png"] = idle(race, id, terrain, 1);
-	symbols["idle_2_png"] = idle(race, id, terrain, 2);
-	symbols["idle_3_png"] = idle(race, id, terrain, 3);
-	symbols["idle_4_png"] = idle(race, id, terrain, 4);
+	std::string idle1 = get_binary_file_location("images", idle(race, id, terrain, 1));
+	if (!idle1.empty()) {
+		symbols["idle_1_png"] = idle(race, id, terrain, 1);
+		symbols["idle_2_png"] = idle(race, id, terrain, 2);
+		symbols["idle_3_png"] = idle(race, id, terrain, 3);
+		symbols["idle_4_png"] = idle(race, id, terrain, 4);
+	} else {
+		symbols["idle_1_png"] = miss(race, id, terrain);
+		symbols["idle_2_png"] = attack_image(race, id, terrain, 1, 1);
+		symbols["idle_3_png"] = attack_image(race, id, terrain, 1, 2);
+		symbols["idle_4_png"] = attack_image(race, id, terrain, 1, 3);
+	}
 
 	replace_anim_cfg("idle", cfg, symbols);
 }
@@ -1643,6 +1666,7 @@ unit_type::unit_type(const unit_type& o) :
 #endif
 	build_status_(o.build_status_),
 	match_(o.match_),
+	raw_icon_(o.raw_icon_),
 	terrain_(o.terrain_),
 	can_recruit_(o.can_recruit_),
 	can_reside_(o.can_reside_),
@@ -1651,9 +1675,10 @@ unit_type::unit_type(const unit_type& o) :
 	land_wall_(o.land_wall_),
 	walk_wall_(o.walk_wall_),
 	arms_(o.arms_),
-	special_(o.special_),
+	especial_(o.especial_),
 	master_(o.master_),
 	guard_(o.guard_),
+	touch_dirs_(o.touch_dirs_),
 	packer_(o.packer_),
 	attacks_(o.attacks_)
 {
@@ -1713,6 +1738,7 @@ unit_type::unit_type(config &cfg) :
 #endif
 	build_status_(NOT_BUILT),
 	match_(),
+	raw_icon_(),
 	terrain_(t_translation::NONE_TERRAIN),
 	can_recruit_(false),
 	can_reside_(false),
@@ -1721,9 +1747,10 @@ unit_type::unit_type(config &cfg) :
 	land_wall_(true),
 	walk_wall_(false),
 	arms_(0),
-	special_(-1),
+	especial_(-1),
 	master_(HEROS_INVALID_NUMBER),
 	guard_(NO_GUARD),
+	touch_dirs_(),
 	packer_(false)
 {
 	foreach (const config::any_child& c, cfg.all_children_range()) {
@@ -1852,6 +1879,7 @@ void unit_type::build_full(const config& cfg, const movement_type_map &mv_types,
 	die_sound_ = cfg["die_sound"].str();
 
 	match_ = cfg["match"].str();
+
 	terrain_ = t_translation::read_terrain_code(cfg["terrain"].str());
 	can_recruit_ = cfg["can_recruit"].to_bool();
 	// if can_recruit, it must can_reside.
@@ -1869,20 +1897,39 @@ void unit_type::build_full(const config& cfg, const movement_type_map &mv_types,
 		}
 	}
 	if (!cfg["especial"].blank()) {
-		special_ = unit_types.especial_from_id(cfg["especial"].str());
-		if (special_ < 0) {
+		especial_ = unit_types.especial_from_id(cfg["especial"].str());
+		if (especial_ < 0) {
 			throw config::error(id_ + "'s especial is invalid: " + cfg["especial"].str());
 		}
 	}
+	raw_icon_ = cfg["icon"].str();
 	
 	land_wall_ = cfg["land_wall"].to_bool(true);
 	guard_ = cfg["guard"].to_int(NO_GUARD);
+
+	const std::vector<std::string> vstr = utils::split(cfg["touch_dirs"]);
+	std::vector<std::string>::const_iterator tmp;
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		map_location::DIRECTION dir = map_location::parse_direction(*it);
+		if (dir != map_location::NDIRECTIONS) {
+			touch_dirs_.insert(dir);
+		}
+	}
 
 	// Deprecation messages, only seen when unit is parsed for the first time.
 
 	build_status_ = FULL;
 }
 
+std::string unit_type::icon() const
+{
+	if (!raw_icon_.empty()) {
+		return std::string("utype/") + raw_icon_;
+	} else if (especial_ != NO_ESPECIAL) {
+		return std::string("utype/") + unit_types.especial(especial_).id_ + ".png";
+	}
+	return null_str;
+}
 void unit_type::fill_abilities_cfg(const std::string& abilities)
 {
 	if (abilities.empty()) {
@@ -2423,6 +2470,8 @@ void unit_type_data::set_config(config &cfg)
 	apply_to_tag::fill_tags();
 	sound_filter_tag::fill_tags();
 
+	std::stringstream err;
+
 	foreach (const config &mt, cfg.child_range("movetype"))
 	{
 		const unit_movement_type move_type(mt);
@@ -2495,30 +2544,21 @@ void unit_type_data::set_config(config &cfg)
 
 	foreach (const config &af, cfg.child_range("treasure"))
 	{
-		foreach (const config::attribute &i, af.attribute_range()) {
-			int id = lexical_cast_default<int>(i.first, -1);
-			if (id == -1) {
-				throw config::error("treasure error, invalid treasure number.");
+		if (af["feature"].empty()) {
+			throw config::error("treasure error, no feature attribute");
+		}
+		const std::vector<std::string> features = utils::split(af["feature"].str());
+		if (features.size() >= HEROS_MAX_TREASURE) {
+			throw config::error("treasure error, too more treasure, not support.");
+		}
+		int index = 0;
+		for (std::vector<std::string>::const_iterator it = features.begin(); it != features.end(); ++ it, index ++) {
+			int feature = lexical_cast_default<int>(*it);
+			if (feature < 0 || feature >= HEROS_MAX_FEATURE) {
+				err << "treasure error, " << index << "th's is invalid feature.";
+				throw config::error(err.str());
 			}
-			if (treasures_.find(id) != treasures_.end()) {
-				throw config::error("treasure error, number=" + i.first + ", duplicate number.");
-			}
-			if (id >= HEROS_MAX_TREASURE) {
-				throw config::error("treasure error, number=" + i.first + ", to lardge number.");
-			}
-			if (i.second.empty()) {
-				throw config::error("treasure error, number=" + i.first + ", no feature attribute");
-			}
-			const std::vector<std::string> features = utils::split(i.second.str());
-			std::vector<int> v;
-			for (std::vector<std::string>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
-				int feature = lexical_cast_default<int>(*itor);
-				if (feature < 0 || feature >= HEROS_MAX_FEATURE) {
-					throw config::error("treasure error, number=" + i.first + ", invalid feature");
-				}
-				v.push_back(feature);
-			}
-			treasures_.insert(std::pair<int, std::vector<int> >(id, v));
+			treasures_.push_back(ttreasure(index, feature));
 		}
 		loadscreen::increment_progress();
 	}
@@ -2752,6 +2792,31 @@ void unit_type_data::set_config(config &cfg)
 	generate_utype_tree();
 	generate_technology_tree();
 	
+	foreach (const config &ktype, cfg.child_range("keytype"))
+	{
+		foreach (const config::attribute &i, ktype.attribute_range()) {
+			int id = lexical_cast_default<int>(i.first, -1);
+			if (id == -1) {
+				throw config::error("keytype error, invalid keytype number.");
+			}
+			if (keytypes_.find(id) != keytypes_.end()) {
+				throw config::error("keytype error, number=" + i.first + ", duplicate number.");
+			}
+			if (id >= HEROS_MAX_UTYPE) {
+				throw config::error("keytype error, number=" + i.first + ", to lardge number.");
+			}
+			if (i.second.empty()) {
+				throw config::error("keytype error, number=" + i.first + ", no type attribute");
+			}
+			const unit_type* ut = find(i.second);
+			if (!ut) {
+				throw config::error("keytype error, number=" + i.first + ", invalid type");
+			}
+			keytypes_.insert(std::make_pair(id, ut));
+		}
+		loadscreen::increment_progress();
+	}
+
 	for (unit_type_map::iterator it = types_.begin(); it != types_.end(); ++ it) {
 		unit_type& ut = it->second;
 		int master = ut.master();
@@ -2794,6 +2859,12 @@ void unit_type_data::set_config(config &cfg)
 		} else if (master == hero::number_scholar) {
 			if (!scholar_type_ || scholar_type_->level() > ut.level()) {
 				scholar_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}
+		} else if (ut.id() == "scoutman") {
+			if (!scout_type_ || scout_type_->level() > ut.level()) {
+				scout_type_ = &ut;
 				// build all, form other field
 				find(it->first);
 			}
@@ -2873,6 +2944,7 @@ const unit_type *unit_type_data::find(const std::string& key, unit_type::BUILD_S
 void unit_type_data::clear()
 {
 	types_.clear();
+	keytypes_.clear();
 	artifical_types_.clear();
 	master_types_.clear();
 	movement_types_.clear();
@@ -2913,10 +2985,20 @@ void unit_type_data::clear()
 	tower_type_ = NULL;
 	businessman_type_ = NULL;
 	scholar_type_ = NULL;
+	scout_type_ = NULL;
 
 	hide_help_all_ = false;
 	hide_help_race_.clear();
 	hide_help_type_.clear();
+}
+
+const unit_type* unit_type_data::keytype2(int index) const
+{
+	std::map<int, const unit_type*>::const_iterator find = keytypes_.find(index);
+	if (find != keytypes_.end()) {
+		return find->second;
+	}
+	return NULL;
 }
 
 unit_type& unit_type_data::build_unit_type(unit_type &ut, const config& cfg, unit_type::BUILD_STATUS status) const

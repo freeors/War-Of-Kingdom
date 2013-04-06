@@ -142,7 +142,7 @@ void ttreasure::post_show(twindow& window)
 void ttreasure::fill_2list(twindow& window)
 {
 	std::stringstream str;
-	const treasure_map& treasures = unit_types.treasures();
+	// const std::vector<ttreasure>& treasures = unit_types.treasures();
 	const std::vector<size_t>& holded_treasures = current_team_.holded_treasures();
 	hero& leader = *current_team_.leader();
 
@@ -151,27 +151,18 @@ void ttreasure::fill_2list(twindow& window)
 		string_map table_item;
 		std::map<std::string, string_map> table_item_item;
 
-		size_t index = *it;
+		const ::ttreasure& t = unit_types.treasure(*it);
 
 		str.str("");
-		str << "treasure/" << index << ".png";
+		str << t.image();
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("icon", table_item));
 
-		table_item["label"] = hero::treasure_str(index);
+		table_item["label"] = t.name();
 		table_item_item.insert(std::make_pair("name", table_item));
 
 		str.str("");
-		treasure_map::const_iterator it_m = treasures.find(index);
-		if (it_m != treasures.end()) {
-			for (std::vector<int>::const_iterator it2 = it_m->second.begin(); it2 != it_m->second.end(); ++ it2) {
-				if (it2 == it_m->second.begin()) {
-					str << hero::feature_str(*it2);
-				} else {
-					str << " " << hero::feature_str(*it2);
-				}	
-			}
-		}
+		str << hero::feature_str(t.feature());
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("feature", table_item));
 
@@ -206,19 +197,11 @@ void ttreasure::fill_2list(twindow& window)
 		table_item_item.insert(std::make_pair("position", table_item));
 
 		str.str("");
-		str << hero::treasure_str(h.treasure_);
 		if (h.treasure_ != HEROS_NO_TREASURE) {
-			treasure_map::const_iterator it = treasures.find(h.treasure_);
+			const ::ttreasure t = unit_types.treasure(h.treasure_);
+			str << t.name();
 			str << "(";
-			if (it != treasures.end()) {
-				for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
-					if (it2 == it->second.begin()) {
-						str << hero::feature_str(*it2);
-					} else {
-						str << " " << hero::feature_str(*it2);
-					}	
-				}
-			}
+			str << hero::feature_str(t.feature());
 			str << ")";
 		}
 		table_item["label"] = str.str();

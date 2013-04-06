@@ -136,7 +136,7 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	roads_(),
 	fallen_to_unstage_(level_["fallen_to_unstage"].to_bool()),
 	card_mode_(level_["card_mode"].to_bool()),
-	always_duel_(level_["always_duel"].to_bool()),
+	duel_(RANDOM_DUEL),
 	treasures_()
 {
 	resources::game_map = &map_;
@@ -165,10 +165,10 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	
 		// Setup treasures
 		const std::vector<std::string> vstr = utils::split(level_["treasures"]);
-		const treasure_map& treasures = unit_types.treasures();
+		const std::vector<ttreasure>& treasures = unit_types.treasures();
 		for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 			int t = lexical_cast_default<int>(*it, -1);
-			if (treasures.find(t) == treasures.end()) {
+			if (t < 0 || t >= (int)treasures.size()) {
 				throw game::load_game_failed("treasures");
 			}
 			treasures_.push_back(t);
@@ -181,6 +181,21 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 		}
 		if (!level_["maximal_defeated_activity"].empty()) {
 			game_config::maximal_defeated_activity = level_["maximal_defeated_activity"].to_int(100);
+		}
+		if (tent::duel == -1) {
+			if (level_.has_attribute("duel")) {
+				const std::string& duel = level_["duel"];
+				if (duel == "no") {
+					duel_ = NO_DUEL;
+				} else if (duel == "always") {
+					duel_ = ALWAYS_DUEL;
+				} else {
+					duel_ = RANDOM_DUEL;
+				}
+			}
+		} else {
+			duel_ = tent::duel;
+			tent::duel = -1;
 		}
 	} catch (...) {
 		clear_resources();
@@ -251,6 +266,7 @@ void play_controller::init(CVideo& video)
 	// to the recorder, whose only goal is to initialize the RNG
 	if (recorder.empty()) {
 		recorder.add_start();
+		recorder.add_tent(tent::ai_count, tent::duel);
 	} else {
 		recorder.pre_replay();
 	}
@@ -278,7 +294,7 @@ void play_controller::init(CVideo& video)
 		if (!player_cfg) {
 			break;
 		}
-		camp::leader = &heros_[player_cfg["leader"].to_int()];
+		tent::leader = &heros_[player_cfg["leader"].to_int()];
 
 		config& armory_cfg = player_cfg.child("armory");
 		if (!armory_cfg) {
@@ -492,6 +508,35 @@ void play_controller::init(CVideo& video)
 		}
 	}
 
+	if (replaying_) {
+		// first command: start, second command: tent
+		do_replay_handle(1, "");
+	}
+
+	if (tent::ai_count) {
+		std::set<int> candidate;
+		for (hero_map::iterator it = heros_.begin(); it != heros_.end(); ++ it) {
+			hero& h = *it;
+			if (hero::is_commoner(h.number_) || hero::is_system(h.number_)) {
+				continue;
+			}
+			if (h.status_ == hero_status_unstage && h.gender_ != hero_gender_neutral && h.ambition_ != hero_ambition_4) {
+				candidate.insert(h.number_);
+			}
+		}
+		int random = get_random();
+		for (std::vector<team>::iterator it = teams_.begin(); it != teams_.end(); ++ it) {
+			team& t = *it;
+			if (!t.is_ai()) continue;
+			std::vector<artifical*>& holded = t.holded_cities();
+			for (std::vector<artifical*>::iterator it2 = holded.begin(); it2 != holded.end(); ++ it2) {
+				artifical& c = **it2;
+				c.fill_ai_hero(candidate, tent::ai_count, random);
+			}
+		}
+		tent::ai_count = 0;
+	}
+
 	str_2_provoke_cache(units_, heros_, level_["provoke_cache"]);
 /*
 	{
@@ -514,6 +559,13 @@ void play_controller::init(CVideo& video)
 	loadscreen::start_stage("init theme");
 	const config &theme_cfg = get_theme(game_config_, level_["theme"]);
 
+	tent::mode = NONE_MODE;
+	if (gamestate_.classification().mode == "rpg") {
+		tent::mode = RPG_MODE;
+	} else if (gamestate_.classification().mode == "tower") {
+		tent::mode = TOWER_MODE;
+	}	
+	
 	// building terrain rules...
 	loadscreen::start_stage("build terrain");
 	gui_.reset(new game_display(units_, this, video, map_, tod_manager_, teams_, theme_cfg, level_));
@@ -655,7 +707,7 @@ void play_controller::show_statistics(){
 
 void play_controller::show_rpg()
 {
-	if (rpg::h->status_ == hero_status_wander) {
+	if (tent::mode == TOWER_MODE || rpg::h->status_ == hero_status_wander) {
 		return;
 	}
 	rpging_ = true;
@@ -998,7 +1050,7 @@ void play_controller::rpg_independence(bool replaying)
 		aggressing = NULL;
 
 		symbols["first"] = from_team.name();
-		game_events::show_hero_message(&heros_[214], NULL, vgettext("$first is defeated.", symbols), game_events::INCIDENT_DEFEAT);
+		game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$first is defeated.", symbols), game_events::INCIDENT_DEFEAT);
 	}
 	hero* from_leader = from_team.leader();
 	unit* from_leader_unit = find_unit(units_, *from_leader);
@@ -1087,7 +1139,7 @@ void play_controller::rpg_independence(bool replaying)
 		if (independenced && city != rpg_city) {
 			symbols["first"] = city->name();
 			symbols["second"] = rpg::h->name();
-			game_events::show_hero_message(&heros_[214], city, vgettext("$first declared belonging to $second.", symbols), game_events::INCIDENT_INVALID);
+			game_events::show_hero_message(&heros_[hero::number_scout], city, vgettext("$first declared belonging to $second.", symbols), game_events::INCIDENT_INVALID);
 		}
 	}
 
@@ -1228,6 +1280,11 @@ void play_controller::list()
 void play_controller::system()
 {
 	menu_handler_.system(gui_->viewing_team() + 1);
+}
+
+void play_controller::switch_list()
+{
+	menu_handler_.switch_list(gui_->viewing_team() + 1);
 }
 
 void play_controller::unit_detail()
@@ -1431,8 +1488,8 @@ void play_controller::do_init_side(const unsigned int team_index)
 			game_events::fire("new turn");
 
 			recommend();
-			if (gamestate_.classification().rpg_mode && ally_all_ai()) {
-				game_events::show_hero_message(&heros_[214], NULL, _("lips death and teeth cold, all ai sides concluded treaty of alliance."), game_events::INCIDENT_ALLY);
+			if (tent::mode != TOWER_MODE && ally_all_ai()) {
+				game_events::show_hero_message(&heros_[hero::number_scout], NULL, _("lips death and teeth cold, all ai sides concluded treaty of alliance."), game_events::INCIDENT_ALLY);
 
 				if (rpg::stratum != hero_stratum_leader) {
 					// enter to final battle automaticly
@@ -1464,7 +1521,7 @@ void play_controller::do_init_side(const unsigned int team_index)
 				symbols["begin"] = current_team.ing_technology()->name();
 				symbols["side"] = current_team.name();
 				artifical* city = units_.city_from_cityno(current_team.leader()->city_);
-				if (city) {
+				if (city && tent::mode != TOWER_MODE) {
 					game_events::show_hero_message(&heros_[229], city, 
 						vgettext("$side begin to research $begin!", symbols), game_events::INCIDENT_TECHNOLOGY);
 				}
@@ -1512,6 +1569,8 @@ void play_controller::do_init_side(const unsigned int team_index)
 				unit* u = troops_cache_[i];
 				if (u->new_turn()) {
 					units_.erase(u);
+				} else if (tent::mode == TOWER_MODE && current_team.is_human()) {
+					u->set_movement(0);
 				}
 			}
 		}
@@ -1521,8 +1580,7 @@ void play_controller::do_init_side(const unsigned int team_index)
 
 		// If the expense is less than the number of villages owned,
 		// then we don't have to pay anything at all
-		int expense = side_upkeep(player_number_) -
-								current_team.villages().size();
+		int expense = current_team.side_upkeep() - current_team.villages().size();
 		if (expense > 0) {
 			current_team.spend_gold(expense);
 		}
@@ -1537,6 +1595,8 @@ void play_controller::do_init_side(const unsigned int team_index)
 		reset_resting(units_, player_number_);
 		uint32_t resting = SDL_GetTicks();
 		posix_print("(resting)used time: %u ms\n", resting - healing);
+
+		road_guarding(units_, teams_, gui_->road_locs(), player_number_);
 	}
 
 	if (!loading_game_) {
@@ -1587,6 +1647,11 @@ void play_controller::to_config(config& cfg) const
 		cfg["final_capital"] = strstr.str();
 	}
 	cfg["maximal_defeated_activity"] = game_config::maximal_defeated_activity;
+	if (duel_ == NO_DUEL) {
+		cfg["duel"] = "no";
+	} else if (duel_ == ALWAYS_DUEL) {
+		cfg["duel"] = "always";
+	}
 
 	cfg["provoke_cache"] = provoke_cache_2_str(); 
 
@@ -2081,7 +2146,7 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 	case hotkey::HOTKEY_EXPEDITE:
 	case hotkey::HOTKEY_ARMORY:
 	case hotkey::HOTKEY_MOVE:
-		if (rpging_) {
+		if (rpging_ || tent::mode == TOWER_MODE) {
 			return false;
 		}
 		// loc is in myself city.
@@ -2104,6 +2169,15 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		}
 		break;
 
+	case hotkey::HOTKEY_EXTRACT:
+		if (tent::mode != TOWER_MODE) {
+			return false;
+		}
+		if (itor.valid() && !itor->is_artifical() && (itor->side() == player_number_)) {
+			return true;
+		}
+		break;
+
 	case hotkey::HOTKEY_DEMOLISH:
 		if (rpging_) {
 			return false;
@@ -2111,7 +2185,7 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		if (rpg::stratum == hero_stratum_citizen) {
 			return false;
 		}
-		if (itor.valid() && itor->is_artifical() && (itor->side() == player_number_) && !artifical_is_city(&*itor)) {
+		if (itor.valid() && (tent::mode == TOWER_MODE || itor->is_artifical()) && (itor->side() == player_number_) && !unit_is_city(&*itor)) {
 			return true;
 		}
 		break;
@@ -2123,13 +2197,13 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		return !events::commands_disabled && !itor.valid();
 
 	case hotkey::HOTKEY_TECHNOLOGY_TREE:
-		if (rpging_) {
+		if (rpging_ || tent::mode == TOWER_MODE) {
 			return false;
 		}
 		return !events::commands_disabled && !itor.valid();
 
 	case hotkey::HOTKEY_FINAL_BATTLE:
-		if (rpging_) {
+		if (rpging_ || tent::mode == TOWER_MODE) {
 			return false;
 		}
 		return !events::commands_disabled && (teams_.size() >= 3) && !itor.valid() && (human_players_ == 1) && !network::nconnections();
@@ -2218,8 +2292,18 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 			return false;
 		}
 		break;
+
+	case hotkey::HOTKEY_EXTRACT:
+		if (!itor.valid() || itor->is_artifical() || (itor->side() != player_number_) || !itor->second().valid()) {
+			return false;
+		}
+		break;
+
 	case hotkey::HOTKEY_DEMOLISH:
-		if (itor.valid() && itor->is_artifical() && (itor->side() == player_number_) && !artifical_is_city(&*itor)) {
+		if (!itor.valid() || itor->side() != player_number_ || unit_is_city(&*itor)) {
+			return false;
+		}
+		if (itor->is_artifical()) {
 			const artifical* art = unit_2_artifical(&*itor);
 			const map_location* tiles;
 			size_t adjacent_size;
@@ -2804,9 +2888,11 @@ map_location play_controller::move_unit(bool troop, team& current_team, const st
 		if (troop) {
 			// check_before
 			//do an A*-search
+
 			const pathfind::shortest_path_calculator calc(*unit_ptr, current_team, units_, teams_, map_, false, true);
 			// double stop_at = dst_must_reachable? 10000.0: calc.getUnitHoldValue() * 3 + 10000.0;
 			double stop_at = dst_must_reachable? 10000.0: calc.getUnitHoldValue() + 10000.0;
+
 			//allowed teleports
 			std::set<map_location> allowed_teleports;
 			pathfind::plain_route route_ = a_star_search(from, to, stop_at, &calc, map_.w(), map_.h(), &allowed_teleports);
@@ -3005,9 +3091,9 @@ void play_controller::rpg_update()
 				if (!u.human()) {
 					u.set_human(true);
 					u.set_goto(map_location());
-					gui_->refresh_access_troops(u.side() - 1, game_display::REFRESH_INSERT, NULL, &u);
+					gui_->refresh_access_troops(u.side() - 1, game_display::REFRESH_INSERT, &u);
 					if (!unit_can_move(u)) {
-						gui_->refresh_access_troops(u.side() - 1, game_display::REFRESH_DISABLE, NULL, &u);
+						gui_->refresh_access_troops(u.side() - 1, game_display::REFRESH_DISABLE, &u);
 					}
 				}
 			}
@@ -3079,9 +3165,9 @@ void play_controller::rpg_update()
 			u.set_human(true);
 			u.set_goto(map_location());
 			if (!units_.city_from_loc(u.get_location())) {
-				gui_->refresh_access_troops(u.side() - 1, game_display::REFRESH_INSERT, NULL, &u);
+				gui_->refresh_access_troops(u.side() - 1, game_display::REFRESH_INSERT, &u);
 				if (!unit_can_move(u)) {
-					gui_->refresh_access_troops(u.side() - 1, game_display::REFRESH_DISABLE, NULL, &u);
+					gui_->refresh_access_troops(u.side() - 1, game_display::REFRESH_DISABLE, &u);
 				}
 			}
 			// rpg::forbids = 10;
@@ -3126,11 +3212,11 @@ bool play_controller::ally_all_ai(bool force)
 
 		// all ai sides concluded treaty of alliance
 		for (int from_side = 0; from_side != teams_.size(); from_side ++) {
-			if (from_side == human_team_index || !teams_[from_side].holded_cities().size() || !teams_[human_team_index].is_enemy(from_side + 1)) {
+			if (from_side == human_team_index || !teams_[from_side].holded_cities().size() || teams_[from_side].is_empty() || !teams_[human_team_index].is_enemy(from_side + 1)) {
 				continue;
 			}
 			for (int to_side = 0; to_side != teams_.size(); to_side ++) {
-				if (to_side == human_team_index || !teams_[to_side].holded_cities().size() || !teams_[human_team_index].is_enemy(to_side + 1)) {
+				if (to_side == human_team_index || to_side == from_side || !teams_[to_side].holded_cities().size() || teams_[to_side].is_empty() || !teams_[human_team_index].is_enemy(to_side + 1)) {
 					continue;
 				}
 				if (teams_[from_side].is_enemy(to_side + 1)) {
@@ -3195,7 +3281,7 @@ void play_controller::recommend()
 	// move max_move_wander_heros wander hero
 	int random = 1;
 	int hero_index = 0;
-	if (full_cities.size() > 1) {
+	if (tent::mode != TOWER_MODE && full_cities.size() > 1) {
 		artifical* from_city = cities[turn() % cities.size()];
 		hero* leader = teams[from_city->side() - 1].leader();
 		artifical* to_city = full_cities[(turn() + random) % full_cities.size()];
@@ -3229,21 +3315,25 @@ void play_controller::recommend()
 	} while (!selected_city->wander_heros().size());
 	std::vector<hero*>& wander_heros = selected_city->wander_heros();
 	hero_index = random % wander_heros.size();
+	std::vector<hero*>::iterator erase_it = wander_heros.begin();
+	std::advance(erase_it, hero_index);
 
 	selected_hero = wander_heros[hero_index];
 
-	hero* leader = teams[selected_city->side() - 1].leader();
-	if (selected_city->side() == team::empty_side_ || selected_hero->loyalty(*leader) < game_config::wander_loyalty_threshold) {
-		artifical* into_city = cities[random % cities.size()];
-		into_city->wander_into(*selected_hero, teams[selected_city->side() - 1].is_human()? false: true);
-		wander_heros.erase(wander_heros.begin() + hero_index);
-		return;
+	if (tent::mode != TOWER_MODE) {
+		hero* leader = teams[selected_city->side() - 1].leader();
+		if (selected_city->side() == team::empty_side_ || selected_hero->loyalty(*leader) < game_config::wander_loyalty_threshold) {
+			artifical* into_city = cities[random % cities.size()];
+			into_city->wander_into(*selected_hero, teams[selected_city->side() - 1].is_human()? false: true);
+			wander_heros.erase(erase_it);
+			return;
+		}
 	}
 	// update heros list in artifical
 	selected_hero->status_ = hero_status_idle;
 	selected_hero->side_ = selected_city->side() - 1;
 	selected_city->fresh_heros().push_back(selected_hero);
-	wander_heros.erase(wander_heros.begin() + hero_index);
+	wander_heros.erase(erase_it);
 
 	message = _("Let me join in. I will do my best to maintenance our honor.");
 
@@ -3280,7 +3370,7 @@ bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int
 		std::vector<mr_data> mrs;
 		units_.calculate_mrs_data(mrs, to_ally_side, false);
 		if (!mrs[0].enemy_cities.empty() && mrs[0].enemy_cities[0]->side() == my_side) {
-			// game_events::show_hero_message(&heros[214], NULL, vgettext("$first wants to ally with $second, but $second refuse.", symbols), game_events::INCIDENT_ALLY);
+			// game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("$first wants to ally with $second, but $second refuse.", symbols), game_events::INCIDENT_ALLY);
 			return false;
 		}
 	}
@@ -3292,10 +3382,8 @@ bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int
 
 	// emissary from fresh to finish.
 	artifical* city = units_.city_from_cityno(emissary.city_);
-	std::vector<hero*>& freshes = city->fresh_heros();
-	city->fresh_heros().erase(std::find(freshes.begin(), freshes.end(), &emissary));
-	city->finish_heros().push_back(&emissary);
-	emissary.status_ = hero_status_backing;
+	city->hero_go_out(emissary);
+	city->finish_into(emissary, hero_status_backing);
 
 	std::string message;
 	if (s.type_ == strategy::AGGRESS) {
@@ -3306,7 +3394,7 @@ bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int
 		VALIDATE(false, "ally, unknown strategy type.");
 	}
 	if (my_team.is_human() || to_ally_team.is_human() || target_team.is_human()) {
-		game_events::show_hero_message(&heros_[214], NULL, message, game_events::INCIDENT_ALLY);
+		game_events::show_hero_message(&heros_[hero::number_scout], NULL, message, game_events::INCIDENT_ALLY);
 	}
 	return true;
 }
@@ -3314,9 +3402,9 @@ bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int
 void play_controller::construct_road()
 {
 	VALIDATE(!unit_map::scout_unit_, "play_controller::construct_road, detect unit_map::scout_unit_ isn't null.");
-	const unit_type *ut = unit_types.find("footman1");
+	const unit_type *ut = unit_types.find_scout();
 	std::vector<const hero*> scout_heros;
-	scout_heros.push_back(&heros_[49]);
+	scout_heros.push_back(&heros_[hero::number_scout]);
 	
 	// select a valid cityno
 	int cityno = -1;
@@ -3413,7 +3501,7 @@ void play_controller::construct_road()
 			city.set_roaded_cities(it->second);
 		}
 
-		gui_->construct_road();
+		gui_->construct_road_locs(roads_);
 	}
 }
 

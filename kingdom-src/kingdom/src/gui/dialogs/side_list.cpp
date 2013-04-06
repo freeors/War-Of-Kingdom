@@ -391,6 +391,11 @@ void tside_list::fill_table(int catalog)
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("researching", table_item));
 
+			str.str("");
+			str << teams_[n].holded_technologies().size();
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("holden", table_item));
+
 		} else if (catalog == ARTIFICAL_PAGE) {
 
 			const std::vector<artifical*>& holded_cities = teams_[n].holded_cities();

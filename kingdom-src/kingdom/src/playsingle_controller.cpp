@@ -104,7 +104,12 @@ void playsingle_controller::init_gui()
 		gui_->scroll_to_tile(map_.starting_position(first_human_team_ + 1), game_display::WARP);
 	}
 	gui_->scroll_to_tile(map_.starting_position(1), game_display::WARP);
-	
+	if (tent::mode != TOWER_MODE) {
+		gui_->set_current_list_type(game_display::taccess_list::TROOP); 
+	} else {
+		gui_->set_current_list_type(game_display::taccess_list::HERO);
+	}
+		
 	uint32_t end_scroll_to_tile = SDL_GetTicks();
 	posix_print("playsingle_controller::init_gui, scroll_to_tile, used time: %u ms\n", end_scroll_to_tile - end_parent_init_gui);
 
@@ -154,11 +159,19 @@ void playsingle_controller::build(const std::string& type)
 	}
 }
 
+void playsingle_controller::extract()
+{
+	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor.valid()) {
+		menu_handler_.extract(mouse_handler_, *u_itor);
+	}
+}
+
 void playsingle_controller::demolish()
 {
 	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
 	if (!browse_ && u_itor.valid()) {
-		menu_handler_.demolish(mouse_handler_, *unit_2_artifical(&*u_itor));
+		menu_handler_.demolish(mouse_handler_, &*u_itor);
 	}
 }
 
@@ -583,6 +596,9 @@ void playsingle_controller::play_side(const unsigned int team_index, bool save)
 			try {
 				if (save) {
 					play_ai_turn();
+					if (tent::mode == TOWER_MODE) {
+						do_fresh_heros(current_team(), false);
+					}
 				}
 				before_human_turn(save);
 				play_human_turn();
@@ -619,6 +635,7 @@ void playsingle_controller::before_human_turn(bool save)
 	linger_ = false;
 
 	gui_->refresh_access_troops(player_number_ - 1);
+	gui_->refresh_access_heros(player_number_ - 1);
 	ai::manager::raise_turn_started();
 
 	if (save) {
@@ -880,6 +897,7 @@ void playsingle_controller::after_human_turn()
 
 	// clear access troops
 	gui_->refresh_access_troops(player_number_ - 1, game_display::REFRESH_CLEAR);
+	gui_->refresh_access_heros(player_number_ - 1, game_display::REFRESH_CLEAR);
 	// hide context-menu
 	gui_->hide_context_menu(NULL, true);
 
@@ -971,22 +989,23 @@ void playsingle_controller::handle_generic_event(const std::string& name)
 void playsingle_controller::check_time_over()
 {
 	bool b = tod_manager_.next_turn();
-	if(!b) {
-
-		LOG_NG << "firing time over event...\n";
+	if (!b) {
 		game_events::fire("time over");
-		LOG_NG << "done firing time over event...\n";
-		//if turns are added while handling 'time over' event
+		// if turns are added while handling 'time over' event
 		if (tod_manager_.is_time_left()) {
 			return;
 		}
 
-		if(non_interactive()) {
+		if (non_interactive()) {
 			std::cout << "time over (draw)\n";
 		}
 
 		check_end_level();
-		throw end_level_exception(DEFEAT);
+		if (tent::mode == TOWER_MODE) {
+			throw end_level_exception(VICTORY);
+		} else {
+			throw end_level_exception(DEFEAT);
+		}
 	}
 }
 
@@ -1081,6 +1100,9 @@ bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, 
 			return !browse_ && !linger_ && !events::commands_disabled;
 		case hotkey::HOTKEY_ENDTURN:
 			return (!browse_ || linger_) && !events::commands_disabled;
+
+		case hotkey::HOTKEY_SWITCH_LIST:
+			return !events::commands_disabled;
 
 		case hotkey::HOTKEY_UNIT_DETAIL:
 			return !events::commands_disabled;

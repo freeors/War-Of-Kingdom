@@ -63,6 +63,7 @@ public:
 	void set_recalling(artifical *c, int u);
 	void set_building(artifical* bldg);
 	void set_card_playing(int index);
+	void set_hero_placing(hero* h);
 
 	unit_map::iterator selected_unit();
 
@@ -75,6 +76,8 @@ public:
 
 	void select_hex(const map_location& hex, const bool browse);
 
+	void clear();
+
 	//
 	// moving
 	//
@@ -84,9 +87,7 @@ public:
 
 	map_location move_unit_along_current_route(const std::vector<map_location>& caller_steps, bool check_shroud, bool attackmove = false);
 
-	// show the attack dialog and return the choice made
-	// which can be invalid if 'cancel' was used
-	int show_attack_dialog(const map_location& attacker_loc, const map_location& defender_loc);
+	void exit_placing_hero();
 protected:
 	/**
 	 * Due to the way this class is constructed we can assume that the
@@ -101,6 +102,8 @@ protected:
 	team &current_team() { return teams_[side_num_ - 1]; }
 
 	int drag_threshold() const;
+
+	bool in_tip_state() const;
 	/**
 	 * Use update to force an update of the mouse state.
 	 */
@@ -121,6 +124,9 @@ protected:
 	bool cast_tactic(unit& tactician, const map_location& target_loc);
 	void cast_tactic_special(unit& tactician, unit& special);
 
+	void place_at(const map_location& at, hero& h);
+	void join_in(const map_location& at, hero& h);
+
 	bool interior(bool browse, unit& u);
 
 	// the perform attack function called after a random seed is obtained
@@ -133,9 +139,13 @@ protected:
 	map_location current_unit_alternate_from(const map_location& loc);
 	map_location current_unit_select_from(const map_location& loc);
 	map_location current_unit_build_from(const map_location& loc);
+	const map_location& current_unit_placable_from(const map_location& loc) const ;
+	const map_location& current_unit_joinable_from(const map_location& loc) const;
+
 	unit_map::const_iterator find_unit(const map_location& hex) const;
 	unit_map::iterator find_unit(const map_location& hex);
 	bool unit_in_cycle(unit_map::const_iterator it);
+
 private:
 	gamemap& map_;
 	game_display* gui_;
@@ -166,8 +176,8 @@ private:
 	//
 	// recalling
 	//
-	artifical *city_recalling_;
-	int unit_recalling_;
+	artifical *expediting_city_;
+	int expediting_unit_;
 
 	//
 	// building
@@ -178,6 +188,16 @@ private:
 	// card playing
 	//
 	int card_index_;
+
+	//
+	// placing hero
+	//
+	hero* placing_hero_;
+
+	//
+	// placing unit
+	//
+	unit* placing_unit_;
 
 	//
 	// cast tactic

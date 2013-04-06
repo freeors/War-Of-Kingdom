@@ -552,7 +552,6 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 	const hero* rpg_hero = rpg::h;
 	int hero_index = 0;
 	int activity_ajdusted;
-	const treasure_map& treasures = unit_types.treasures();
 
 	for (std::vector<hero*>::iterator itor = fresh_heros_.begin(); itor != fresh_heros_.end(); ++ itor, hero_index ++) {
 		/*** Add list item ***/
@@ -679,19 +678,11 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 			table_item_item.insert(std::make_pair("gender", table_item));
 
 			str.str("");
-			str << hero::treasure_str(h->treasure_);
 			if (h->treasure_ != HEROS_NO_TREASURE) {
-				treasure_map::const_iterator it = treasures.find(h->treasure_);
+				const ttreasure& t = unit_types.treasure(h->treasure_);
+				str << t.name();
 				str << "(";
-				if (it != treasures.end()) {
-					for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
-						if (it2 == it->second.begin()) {
-							str << hero::feature_str(*it2);
-						} else {
-							str << " " << hero::feature_str(*it2);
-						}	
-					}
-				}
+				str << hero::feature_str(t.feature());
 				str << ")";
 			}
 			table_item["label"] = str.str();
@@ -830,6 +821,9 @@ void trecruit::switch_type_internal(twindow& window)
 	unit_types_.clear();
 
 	const std::vector<const unit_type*>& recruits = city_.recruits(game_config::current_level);
+	str.str("");
+	str << "trecruit::switch_type_internal, there is no type in current_level(" << game_config::current_level << ")!";
+	VALIDATE(!recruits.empty(), str.str());
 	for (std::vector<const unit_type*>::const_iterator it = recruits.begin(); it != recruits.end(); ++it) {
 		/*** Add list item ***/
 		const unit_type* type = *it;
@@ -857,8 +851,12 @@ void trecruit::switch_type_internal(twindow& window)
 		list->add_row(list_item_item);
 
 		tgrid* grid_ptr = list->get_row_grid(unit_types_.size());
-		twidget* widget = grid_ptr->find("leader", false);
-		widget->set_visible(type->leader()? twidget::VISIBLE: twidget::INVISIBLE);
+		tcontrol* widget = dynamic_cast<tcontrol*>(grid_ptr->find("utype_icon", false));
+		if (type->leader()) {
+			widget->set_label("utype/commander.png");
+		} else if (type->especial() != NO_ESPECIAL) {
+			widget->set_label(unit_types.especial(type->especial()).image_);
+		}
 
 		unit_types_.push_back(type);
 	}

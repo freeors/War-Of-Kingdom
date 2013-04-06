@@ -1116,11 +1116,11 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath="..\..\packaging\windows\kingdom.ico"
+				RelativePath=".\kingdom.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\kingdom.ico"
+				RelativePath="..\..\packaging\windows\kingdom.ico"
 				>
 			</File>
 			<File
@@ -2151,6 +2151,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\hero.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\hero.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\hero_list.cpp"
 					>
 					<FileConfiguration
@@ -2943,6 +2967,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\tent.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\tent.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\tip.cpp"
 					>
 					<FileConfiguration
@@ -2988,6 +3036,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\title_screen.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\tower_tent.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\tower_tent.hpp"
 					>
 				</File>
 				<File

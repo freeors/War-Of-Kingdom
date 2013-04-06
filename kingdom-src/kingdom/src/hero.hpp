@@ -204,9 +204,13 @@ enum {
 #define HEROS_NO_TREASURE			0xff
 #define HERO_PREFIX_STR_TREASURE	"treasure-"
 
-// treasure
+// especial
 #define NO_ESPECIAL				-1
 #define HERO_PREFIX_STR_ESPECIAL	"especial-"
+
+// unit type
+#define HEROS_MAX_UTYPE				255
+#define HEROS_NO_UTYPE				0xff
 
 // skill
 #define HEROS_MAX_SKILL	8
@@ -339,7 +343,7 @@ struct hero_feeling {
 #define HERO_FIELDS	\
 	uint8_t gender_;	\
 	uint8_t feature_;	\
-	uint8_t longevity_;	\
+	uint8_t utype_;	\
 	uint8_t status_;	\
 	uint8_t official_;	\
 	uint8_t base_catalog_;	\
@@ -445,14 +449,12 @@ public:
 	static std::string& gender_str(int gender);
 	static std::string& arms_str(int arms);
 	static std::string& skill_str(int skill);
-	static std::string& feature_str(int feature);
-	static std::string& feature_desc_str(int feature);
+	static const std::string& feature_str(int feature);
+	static const std::string& feature_desc_str(int feature);
 	static std::vector<int>& valid_features();
-	static std::string& stratum_str(int stratum);
-	static std::string& status_str(int status);
-	static std::string& official_str(int offical);
-	static std::string& treasure_str(int tid);
-	static const std::string& character_str(int cid);
+	static const std::string& stratum_str(int stratum);
+	static const std::string& status_str(int status);
+	static const std::string& official_str(int offical);
 
 	static int number_market;
 	static int number_technology;
@@ -465,6 +467,11 @@ public:
 	static int number_commoner_min;
 	static int number_commoner_max;
 	static bool is_commoner(int h);
+
+	static int number_scout;
+	static int number_system_min;
+	static int number_system_max;
+	static bool is_system(int h);
 
 	hero(uint16_t number, uint16_t leadership = 0, uint16_t force = 0, uint16_t intellect = 0, uint16_t politics = 0, uint16_t charm = 0);
 	hero(const hero& that);
@@ -488,6 +495,7 @@ public:
 	int base_loyalty(const hero& leader) const;
 	int increase_loyalty(int inc, hero& leader);
 	void set_loyalty(hero& leader, int level, bool fixed = false);
+	void set_loyalty2(hero& leader, int level, bool fixed = false);
 
 	int increase_feeling(hero& to, int inc, int& descent_number);
 
@@ -533,8 +541,6 @@ private:
 	static std::string stratum_str_[HEROS_STRATUMS];
 	static std::string status_str_[HEROS_STATUSES];
 	static std::string official_str_[HEROS_OFFICIALS];
-	static std::map<int, std::string> treasure_str_;
-	static std::map<int, std::string> character_str_; 
 	static std::vector<int> valid_features_;
 
 	char imgfile_[32];

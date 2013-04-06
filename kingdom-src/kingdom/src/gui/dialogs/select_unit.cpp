@@ -112,7 +112,10 @@ void tselect_unit::refresh_tooltip(twindow& window)
 
 	if (partial_troops_.empty()) {
 		// It is necessary set all relative tips to empty.
-		tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
+		tlabel* label = find_widget<tlabel>(&window, "tip_city", false, true);
+		label->set_label("");
+
+		label = find_widget<tlabel>(&window, "tip_name", false, true);
 		label->set_label("");
 
 		// tip_loyalty
@@ -185,7 +188,20 @@ void tselect_unit::refresh_tooltip(twindow& window)
 	std::stringstream str;
 	int loyalty, hero_count = 1;
 	// refresh to gui
-	tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);
+	tlabel* label = find_widget<tlabel>(&window, "tip_city", false, true);
+	artifical* owner_city = units_.city_from_cityno(temp.cityno());
+	if (owner_city) {
+		str << _("City") << ": " << owner_city->master().name();
+		str << " (";
+		str << (temp.get_location() == owner_city->get_location()? _("Reside"): _("Field"));
+		str << ")";
+	} else {
+		str << _("City") << ": --";
+	}
+	label->set_label(str.str());
+	
+	str.str("");
+	label = find_widget<tlabel>(&window, "tip_name", false, true);
 	str << _("Hero") << ": " << temp.master().name();
 	text << temp.master().loyalty(*teams_[temp.master().side_].leader());
 	loyalty = temp.master().loyalty(*teams_[temp.master().side_].leader());

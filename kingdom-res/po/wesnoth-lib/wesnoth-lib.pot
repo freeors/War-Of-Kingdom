@@ -2835,6 +2835,9 @@ msgstr ""
 msgid "End Turn"
 msgstr ""
 
+msgid "Switch List"
+msgstr ""
+
 #: src/hotkeys.cpp:77
 msgid "Toggle Ellipses"
 msgstr ""
@@ -3725,6 +3728,9 @@ msgstr ""
 msgid "Description"
 msgstr ""
 
+msgid "Our cities"
+msgstr ""
+
 #
 # Preferences Dialog
 #
@@ -3944,6 +3950,11 @@ msgstr ""
 msgid "Stratum"
 msgstr ""
 
+msgid "Hero count of AI on stage"
+msgstr ""
+
+msgid "Tent"
+msgstr ""
 
 #
 # Strategy List Dialog
@@ -4095,6 +4106,9 @@ msgstr ""
 msgid "Researching"
 msgstr ""
 
+msgid "quantity^Hold"
+msgstr ""
+
 msgid "Research"
 msgstr ""
 
@@ -4141,4 +4155,28 @@ msgid "Field commoner"
 msgstr ""
 
 msgid "Commoner"
+msgstr ""
+
+#
+# Extract
+#
+msgid "Extract hero"
+msgstr ""
+
+msgid "Extract"
+msgstr ""
+
+msgid "Base"
+msgstr ""
+
+msgid "Hasn't"
+msgstr ""
+
+msgid "Duel"
+msgstr ""
+
+msgid "Reside"
+msgstr ""
+
+msgid "Field"
 msgstr ""

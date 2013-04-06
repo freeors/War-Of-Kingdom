@@ -45,8 +45,9 @@ public:
 	bool is_skipping() const;
 
 	void add_start();
+	void add_tent(int ai_count, int duel);
 	void add_recruit(const std::string& type, const map_location& loc, std::vector<const hero*>& troop_heros, int cost, bool human);
-	void add_expedite(bool troop, int index, const std::vector<map_location>& steps);
+	void add_expedite(bool troop, int index, const std::vector<map_location>& steps, bool zero = false);
 	void add_disband(int unit_index, const map_location& loc, int income = 0);
 	void add_armory(const map_location& loc, const std::vector<size_t>& diff);
 	void add_move_heros(const map_location& src, const map_location& dst, std::set<size_t>& heros);
@@ -75,11 +76,12 @@ public:
 	void add_card(int side, size_t number, bool dialog);
 	void erase_card(int side, int index, const map_location& loc, std::vector<std::pair<int, unit*> >& touched, bool dialog);
 	void add_interior(const artifical& city);
-	void add_hero_field(int number, int side_feature);
+	void add_reform_captain(const unit& u, const hero& h, bool join);
 	void init_side();
 	void end_turn();
 	void init_ai();
 	void do_commoner();
+	void add_fresh_heros();
 	void add_inching_block(const unit& u, bool increase);
 	enum EVENT_TYPE {EVENT_ENCOURAGE, EVENT_RPG_INDEPENDENCE, EVENT_FIND_TREASURE};
 	void add_event(int type, const map_location& loc);

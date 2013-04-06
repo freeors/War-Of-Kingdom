@@ -35,6 +35,7 @@ public:
 
 	virtual void recruit();
 	virtual void build(const std::string& type);
+	virtual void extract();
 	virtual void demolish();
 	virtual void armory();
 	virtual void play_card();

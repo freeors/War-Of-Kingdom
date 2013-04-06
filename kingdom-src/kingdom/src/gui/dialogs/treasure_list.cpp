@@ -213,27 +213,18 @@ void ttreasure_list::fill_table_row(std::map<int, ownership>::iterator& p, int c
 {
 	std::vector<int> features;
 	std::stringstream str;
-	const treasure_map& treasures = unit_types.treasures();
 
 	/*** Add list item ***/
 	string_map table_item;
 	std::map<std::string, string_map> table_item_item;
 
 	if (catalog == OWNERSHIP_PAGE) {
-		table_item["label"] = hero::treasure_str(p->first);
+		const ttreasure& t = unit_types.treasure(p->first);
+		table_item["label"] = t.name();
 		table_item_item.insert(std::make_pair("name", table_item));
 
 		str.str("");
-		treasure_map::const_iterator it = treasures.find(p->first);
-		if (it != treasures.end()) {
-			for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
-				if (it2 == it->second.begin()) {
-					str << hero::feature_str(*it2);
-				} else {
-					str << " " << hero::feature_str(*it2);
-				}	
-			}
-		}
+		str << hero::feature_str(t.feature());
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("feature", table_item));
 

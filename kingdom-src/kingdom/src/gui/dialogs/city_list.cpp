@@ -91,19 +91,23 @@ namespace gui2 {
 
 REGISTER_DIALOG(city_list)
 
-tcity_list::tcity_list(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side_num)
+tcity_list::tcity_list(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side_num, int start)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, gamestate_(gamestate)
 	, side_(side_num)
+	, start_(start)
 	, candidate_cities_()
 	, sorting_widgets_()
 	, sorting_widget_(NULL)
 	, hero_table_(NULL)
 	, window_(NULL)
 {
+	if (start_ < MIN_PAGE || start_ > MAX_PAGE) {
+		start_ = MIN_PAGE;
+	}
 }
 
 void tcity_list::pre_show(CVideo& /*video*/, twindow& window)
@@ -118,7 +122,7 @@ void tcity_list::pre_show(CVideo& /*video*/, twindow& window)
 
 	hero_table_ = find_widget<tlistbox>(&window, "hero_table", false, true);
 
-	catalog_page(window, STATUS_PAGE, false);
+	catalog_page(window, start_, false);
 
 	hero_table_->set_callback_value_change(dialog_callback<tcity_list, &tcity_list::city_changed>);
 
@@ -268,14 +272,21 @@ void tcity_list::fill_table(int catalog)
 			table_item_item.insert(std::make_pair("decree", table_item));
 
 			str.str("");
-			str << i->field_commoners().size();
+			str << i->field_commoners().size() + i->reside_commoners().size();
 			table_item["label"] = str.str();
-			table_item_item.insert(std::make_pair("field", table_item));
+			table_item_item.insert(std::make_pair("commoner", table_item));
 
 			str.str("");
-			str << i->reside_commoners().size();
+			str << fxptoi9(i->master().politics_);
+			str << "+" << hero::adaptability_str2(i->master().skill_[hero_skill_commercial]);
 			table_item["label"] = str.str();
-			table_item_item.insert(std::make_pair("reside", table_item));
+			table_item_item.insert(std::make_pair("commercial", table_item));
+
+			str.str("");
+			str << fxptoi9(i->master().intellect_);
+			str << "+" << hero::adaptability_str2(i->master().skill_[hero_skill_invent]);
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("technology", table_item));
 
 			str.str("");
 			str << i->total_gold_income(current_team.market_increase_);
@@ -352,9 +363,11 @@ void tcity_list::catalog_page(twindow& window, int catalog, bool swap)
 		widgets.back()->set_active(false);
 		widgets.push_back(&find_widget<tbutton>(&window, "button_decree", false));
 		widgets.back()->set_active(false);
-		widgets.push_back(&find_widget<tbutton>(&window, "button_field", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_commoner", false));
 		widgets.back()->set_active(false);
-		widgets.push_back(&find_widget<tbutton>(&window, "button_reside", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_commercial", false));
+		widgets.back()->set_active(false);
+		widgets.push_back(&find_widget<tbutton>(&window, "button_technology", false));
 		widgets.back()->set_active(false);
 		widgets.push_back(&find_widget<tbutton>(&window, "button_gold_income", false));
 		widgets.back()->set_active(false);

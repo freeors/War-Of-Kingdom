@@ -64,7 +64,7 @@ public:
 	void release();
 
 	void set_rpg_image(hero* h, bool greyscale = false);
-	void set_image(const std::string& stem, int digit, bool greyscale = false, bool special = false);
+	void set_image(const std::string& stem, int digit, bool greyscale = false, bool special = false, const std::string& icon = null_str);
 
 	void* cookie_;
 	size_t btnidx_;

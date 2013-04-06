@@ -69,9 +69,6 @@ namespace {
 int display::default_zoom_ = display::ZOOM_72;
 int display::last_zoom_ = display::ZOOM_72;
 
-int last_map_w_;
-int last_map_h_;
-
 int display::adjust_zoom(int zoom)
 {
 	if (zoom <= display::ZOOM_48) {
@@ -90,6 +87,8 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 	viewpoint_(NULL),
 	xpos_(0),
 	ypos_(0),
+	last_map_w_(0),
+	last_map_h_(0),
 	theme_(theme_cfg, screen_area()),
 	zoom_(default_zoom_),
 	builder_(new terrain_builder(level, map, theme_.border().tile_image)),
@@ -130,8 +129,6 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 	draw_terrain_codes_(false),
 	arrows_map_(),
 	buttons_ctx_(NULL),
-	access_troops_index_(-1),
-	start_group_(0),
 	button_loc_(button_loc(reinterpret_cast<const theme::menu*>(NULL), 0)),
 	draw_area_(NULL),
 	draw_area_pitch_(0),
@@ -161,11 +158,9 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 
 	// image::set_zoom(zoom_);
 
-	access_troops_buttons_ = NULL;
 	draw_area_ = NULL;
 	// allocate memory for access troops
 	if (map_->w() && map_->h()) {
-		access_troops_buttons_ = (gui::button**)malloc(sizeof(gui::button*) * (map_->w() * map_->h() + 2));
 		draw_area_ = (uint8_t*)malloc(map_->total_width() * map_->total_height());
 		last_map_w_ = map_->total_width();
 		last_map_h_ = map_->total_height();
@@ -173,40 +168,17 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 		draw_area_pitch_ = last_map_w_;
 		draw_area_size_ = last_map_w_ * last_map_h_;
 	} else {
-		access_troops_buttons_ = NULL;
 		draw_area_ = NULL;
 		last_map_w_ = -1;
 		last_map_h_ = -1;
 	}
 
-	if (map_->w() && map_->h()) {
-		attack_methods_buttons_ = (gui::button**)malloc(sizeof(gui::button*) * 16);
-	} else {
-		attack_methods_buttons_ = NULL;
-	}
 }
 
 display::~display()
 {
-	clear_context_menu_buttons();
-
-	// release memory for access troops
-	// 以下这两个free会导致, ????, 只好暂时放弃等将来再查找原因
-	// First-chance exception at 0x7c81eb33 in kingdom.exe: Microsoft C++ exception: CVideo::quit at memory location 0x0012a6a7..
-	// Heap corruption detected at 0716B510
-	// !!!以上题居然犯是一个低级错误, 调用malloc时用了类似以下语句
-	// access_troops_buttons_ = malloc(size(...)) + 2, 这个+2出问题 
-	// 这块内存由display::clear_context_menu_buttons进行释放. clear_context_menu_buttons在dispaly的析构函数被调用, display析构在game_display析构之后才执行
-	//
-	if (access_troops_buttons_) {
-		free(access_troops_buttons_);
-	}
 	if (draw_area_) {
 		free(draw_area_);
-	}
-
-	if (attack_methods_buttons_) {
-		free(attack_methods_buttons_);
 	}
 }
 
@@ -244,13 +216,9 @@ void display::rebuild_all()
 {
 	// map editor: new/load other map, resize this map(this isn't call change_map
 	if (map_->w() != last_map_w_ || map_->h() != last_map_h_) {
-		if (access_troops_buttons_) {
-			free(access_troops_buttons_);
-		}
 		if (draw_area_) {
 			free(draw_area_);
 		}
-		access_troops_buttons_ = (gui::button**)malloc(sizeof(gui::button*) * (map_->w() * map_->h() + 2));
 		draw_area_ = (uint8_t*)malloc(map_->total_width() * map_->total_height());
 		last_map_w_ = map_->total_width();
 		last_map_h_ = map_->total_height();
@@ -753,7 +721,12 @@ void display::create_buttons()
 		if (i->get_id() == "access-unit") {
 			buttons_ctx_[idx].menu_ = &*i;
 			buttons_ctx_[idx].button_count_ = 0;
-			access_troops_index_ = idx;
+			set_index_in_map(idx, true);
+			continue;
+		} else if (i->get_id() == "access-hero") {
+			buttons_ctx_[idx].menu_ = &*i;
+			buttons_ctx_[idx].button_count_ = 0;
+			set_index_in_map(idx, false);
 			continue;
 		} else if (i->get_id() == "main") {
 			theme_.set_main_context_menu(&*i);
@@ -796,7 +769,7 @@ void display::create_buttons()
 		}
 	}
 
-	// buttons_ctx_.swap(work);
+	hide_menu("switch", true);
 }
 
 void display::clear_context_menu_buttons()
@@ -817,21 +790,14 @@ void display::clear_context_menu_buttons()
 				delete buttons_ctx_[i].buttons_[i2];
 			}
 		}
-		if (i != access_troops_index_) {
+		if (!index_in_map(i)) {
 			// 部队快捷访问菜单按钮内存由display析构函数负责释放
 			free(buttons_ctx_[i].buttons_);
 		}
+		buttons_ctx_[i].button_count_ = 0;
 	}
 	free(buttons_ctx_);
 	buttons_ctx_ = NULL;
-}
-
-const theme::menu* display::access_troop_menu() const 
-{
-	if (!buttons_ctx_ || access_troops_index_ == -1) {
-		return NULL;
-	}
-	return buttons_ctx_[access_troops_index_].menu_; 
 }
 
 gui::button::TYPE display::string_to_button_type(std::string type)
@@ -1003,9 +969,17 @@ std::vector<surface> display::get_terrain_images(const map_location &loc,
 
 	if (terrains != NULL) {
 		bool roaded = false;
-		if (road_locs_.find(loc) != road_locs_.end()) {
+		std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >::const_iterator find = road_locs_.find(loc);
+		if (find != road_locs_.end()) {
 			roaded = true;
-			color_mod = "~L(misc/road.png)";
+			int owner = road_owner(find);
+			if (owner == OWNER_SELF) {
+				color_mod = "~L(misc/road-self.png)";
+			} else if (owner == OWNER_ENEMY) {
+				color_mod = "~L(misc/road-enemy.png)";
+			} else {
+				color_mod = "~L(misc/road.png)";
+			} 
 		}
 		// Cache the offmap name.
 		// Since it is themabel it can change,

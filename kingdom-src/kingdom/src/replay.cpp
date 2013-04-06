@@ -500,7 +500,19 @@ void replay::add_start()
 {
 	config* const cmd = add_command(true);
 	(*cmd)["type"] = command_pool::START;
+
 	cmd->add_child("start");
+}
+
+void replay::add_tent(int ai_count, int duel)
+{
+	config* const cmd = add_command(true);
+	(*cmd)["type"] = command_pool::TENT;
+
+	config val;
+	val["ai_count"] = ai_count;
+	val["duel"] = duel;
+	cmd->add_child("tent", val);
 }
 
 void replay::add_recruit(const std::string& type, const map_location& loc, std::vector<const hero*>& troop_heros, int cost, bool human)
@@ -670,7 +682,7 @@ void replay::add_cast_tactic(const unit& tactician, const hero& h, const unit* s
 	cmd->add_child("cast_tactic", val);
 }
 
-void replay::add_expedite(bool troop, int index, const std::vector<map_location>& steps)
+void replay::add_expedite(bool troop, int index, const std::vector<map_location>& steps, bool zero)
 {
 	if (steps.empty()) { // no move, nothing to record
 		return;
@@ -682,8 +694,9 @@ void replay::add_expedite(bool troop, int index, const std::vector<map_location>
 	config expedite;
 
 	expedite["troop"] = troop? 1: 0;
+	expedite["zero"] = zero? 1: 0;
 	expedite["value"] = index;
-
+	
 	write_locations(steps, expedite);
 
 	cmd->add_child("expedite", expedite);
@@ -828,17 +841,18 @@ void replay::erase_card(int side, int index, const map_location& loc, std::vecto
 	cmd->add_child("erase_card", val);
 }
 
-void replay::add_hero_field(int number, int side_feature)
+void replay::add_reform_captain(const unit& u, const hero& h, bool join)
 {
 	config* const cmd = add_command();
-	(*cmd)["type"] = str_cast(command_pool::HERO_FIELD);
+	(*cmd)["type"] = str_cast(command_pool::REFORM_CAPTAIN);
 
 	config val;
 
-	val["number"] = number;
-	val["side_feature"] = side_feature;
+	val["number"] = h.number_;
+	val["join"] = join? 1: 0;
+	u.get_location().write(val);
 
-	cmd->add_child("hero_field", val);
+	cmd->add_child("reform_captain", val);
 }
 
 void replay::add_countdown_update(int value, int team)
@@ -1015,7 +1029,16 @@ void replay::init_ai()
 {
 	config* const cmd = add_command();
 	(*cmd)["type"] = command_pool::INIT_AI;
+
 	cmd->add_child("init_ai");
+}
+
+void replay::add_fresh_heros()
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::FRESH_HEROS;
+
+	cmd->add_child("fresh_heros");
 }
 
 void replay::do_commoner()
@@ -1289,11 +1312,6 @@ config* replay::add_command(bool update_random_context)
 	return current_;
 }
 
-/*
-START = 1, INIT_SIDE, END_TURN, RECRUIT, EXPEDITE, DISBAND, MOVE_HEROS, BUILD, 
-		COUNTDOWN_UPDATE, MOVEMENT, ATTACK, SEED, LABLE, RENAME, EVENT, 
-		UNIT_CHECKSUM, CHECKSUM_CHECK, EXPECTED_ADVANCEMENT
-*/
 void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 {
 	int type = lexical_cast_default<int>(cfg["type"], 0);
@@ -1311,6 +1329,26 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 			ptr = ptr + 1;
 		}
 		const config& child = cfg.child("start");
+
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
+	} else if (type == command_pool::TENT) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			const config& random = cfg.child("random", i);
+			*ptr = random["value"].to_int();
+			ptr = ptr + 1;
+		}
+		const config& child = cfg.child("tent");
+		*ptr = child["ai_count"].to_int();
+		ptr = ptr + 1;
+		*ptr = child["duel"].to_int();
+		ptr = ptr + 1;
+
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
@@ -1361,6 +1399,19 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 			ptr = ptr + 1; 
 		}
 		const config& child = cfg.child("init_ai");
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
+	} else if (type == command_pool::FRESH_HEROS) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = cfg.child("random", i)["value"].to_int();
+			ptr = ptr + 1; 
+		}
+		const config& child = cfg.child("fresh_heros");
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
@@ -1445,10 +1496,13 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		}
 		const config& child = cfg.child("expedite");
 		// troop
-		*ptr = lexical_cast_default<int>(child["troop"]);
+		*ptr = child["troop"].to_int();
+		ptr = ptr + 1;
+		// zero
+		*ptr = child["zero"].to_int();
 		ptr = ptr + 1;
 		// value
-		*ptr = lexical_cast_default<int>(child["value"]);
+		*ptr = child["value"].to_int();
 		ptr = ptr + 1;
 		// x=/y=
 		const std::string x = child.get("x")->str();
@@ -2126,7 +2180,7 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
-	} else if (type == command_pool::HERO_FIELD) {
+	} else if (type == command_pool::REFORM_CAPTAIN) {
 		cmd->type = (command_pool::TYPE)type;
 		int* ptr = (int*)(cmd + 1);
 		size = *ptr = cfg.child_count("random");
@@ -2135,12 +2189,17 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 			*ptr = cfg.child("random", i)["value"].to_int();
 			ptr = ptr + 1; 
 		}
-		const config& child = cfg.child("hero_field");
+		const config& child = cfg.child("reform_captain");
 		// number=1
 		*ptr = child["number"].to_int();
 		ptr = ptr + 1;
-		// side_feature=2
-		*ptr = child["side_feature"].to_int();
+		// join=0/1
+		*ptr = child["join"].to_int();
+		ptr = ptr + 1;
+		// x/y
+		*ptr = child["x"].to_int() - 1;
+		ptr = ptr + 1; 
+		*ptr = child["y"].to_int() - 1;
 		ptr = ptr + 1;
 		// other field-vars
 		cmd->flags = 0;
@@ -2173,6 +2232,25 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			random_cfg["value"] = lexical_cast<std::string>(*ptr);
 			ptr = ptr + 1;
 		}
+		child["ai_count"] = lexical_cast<std::string>(*ptr);;
+		ptr = ptr + 1;
+		child["duel"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
+
+	} else if (cmd->type == command_pool::TENT) {
+		config& child = cfg.add_child("tent");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+		child["ai_count"] = lexical_cast<std::string>(*ptr);;
+		ptr = ptr + 1;
+		child["duel"] = lexical_cast<std::string>(*ptr);
+		ptr = ptr + 1;
 
 	} else if (cmd->type == command_pool::INIT_SIDE) {
 		config& child = cfg.add_child("init_side");
@@ -2205,6 +2283,17 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 
 	} else if (cmd->type == command_pool::INIT_AI) {
 		config& child = cfg.add_child("init_ai");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+
+	} else if (cmd->type == command_pool::FRESH_HEROS) {
+		config& child = cfg.add_child("fresh_heros");
 		int* ptr = (int*)(cmd + 1);
 		size = *ptr;
 		ptr = ptr + 1;
@@ -2284,10 +2373,13 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			ptr = ptr + 1;
 		}
 		// troop
-		child["troop"] = lexical_cast<std::string>(*ptr);
+		child["troop"] = *ptr;
+		ptr = ptr + 1;
+		// zero
+		child["zero"] = *ptr;
 		ptr = ptr + 1;
 		// value
-		child["value"] = lexical_cast<std::string>(*ptr);
+		child["value"] = *ptr;
 		ptr = ptr + 1;
 		// x=/y=
 		size = *ptr;
@@ -2910,8 +3002,8 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		ptr = ptr + 1;
 		loc.write(child);
 
-	} else if (cmd->type == command_pool::HERO_FIELD) {
-		config& child = cfg.add_child("hero_field");
+	} else if (cmd->type == command_pool::REFORM_CAPTAIN) {
+		config& child = cfg.add_child("reform_captain");
 		int* ptr = (int*)(cmd + 1);
 		size = *ptr;
 		ptr = ptr + 1;
@@ -2921,11 +3013,17 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			ptr = ptr + 1;
 		}
 		// number=1
-		child["number"] = lexical_cast<std::string>(*ptr);
+		child["number"] = *ptr;
 		ptr = ptr + 1;
-		// side_feature=2
-		child["side_feature"] = lexical_cast<std::string>(*ptr);
+		// join=0/1
+		child["join"] = *ptr;
 		ptr = ptr + 1;
+		// x/y
+		loc.x = *ptr;
+		ptr = ptr + 1;
+		loc.y = *ptr;
+		ptr = ptr + 1;
+		loc.write(child);
 
 	} else {
 		std::stringstream str;
@@ -3141,6 +3239,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 	unit_map& units = *resources::units;
 	hero_map& heros = *resources::heros;
 	play_controller& controller = *resources::controller;
+	game_display& gui = *resources::screen;
 
 	for(;;) {
 		const config *cfg = get_replay_source().get_next_action();
@@ -3193,12 +3292,15 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 		config::all_children_itors ch_itors = cfg->all_children_range();
 		//if there is an empty command tag, create by pre_replay() or a start tag
-		if (ch_itors.first == ch_itors.second || cfg->child("start"))
-		{
-			//do nothing
-		}
-		else if (const config &child = cfg->child("speak"))
-		{
+		if (ch_itors.first == ch_itors.second || cfg->child("start")) {
+			// do nothing
+
+		} else if (const config& child = cfg->child("tent")) {
+			tent::ai_count = child["ai_count"].to_int(0);
+			tent::duel = child["duel"].to_int(-1);
+			return true;
+
+		} else if (const config &child = cfg->child("speak")) {
 			const std::string &team_name = child["team_name"];
 			const std::string &speaker_name = child["id"];
 			const std::string &message = child["message"];
@@ -3249,6 +3351,10 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 		{
 			std::vector<mr_data> mrs;
 			units.calculate_mrs_data(mrs, side_num);
+		}
+		else if (cfg->child("fresh_heros"))
+		{
+			do_fresh_heros(current_team, true);
 		}
 		else if (cfg->child("do_commoner"))
 		{
@@ -3480,7 +3586,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			map_location loc(child, resources::state_of_game);
 
 			if (index >= 0) {
-				artifical* disband_city = resources::units->city_from_loc(loc);
+				artifical* disband_city = units.city_from_loc(loc);
 
 				std::vector<unit*>& reside_troops = disband_city->reside_troops();
 				unit& u = *reside_troops[index];
@@ -3505,19 +3611,12 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				}
 				// erase this unit from reside troop
 				disband_city->troop_go_out(index);
+				gui.invalidate(loc);
 			} else {
-				artifical* art = unit_2_artifical(&*resources::units->find(loc, (index == -1 * unit_map::OVERLAY)? true: false));
-				resources::units->erase(art);
-
-				// loc及周围所有格子置为无效
-				size_t size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
-				map_offset* adjacent_ptr = adjacent_1[loc.x & 0x1];
-				for (size_t i = 0; i < size; i ++) {
-					resources::screen->invalidate(map_location(loc.x + adjacent_ptr[i].x, loc.y + adjacent_ptr[i].y));
-				}
+				unit& u = *units.find(loc, (index == -1 * unit_map::OVERLAY)? true: false);
+				do_demolish(gui, units, current_team, &u, income, true);
 			}
 
-			resources::screen->invalidate(loc);
 			game_events::fire("post_disband", loc);
 
 		} else if (const config &child = cfg->child("inching_block")) {
@@ -3692,8 +3791,12 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				} else {
 					expedite_city->commoner_go_out(expedite_index);
 				}
+				bool zero_movement = child->get("zero")->to_int()? true: false;
+				if (zero_movement) {
+					units.find(steps.back())->set_movement(0);
+				}
 
-				resources::screen->invalidate(steps.front());
+				gui.invalidate(steps.front());
 			}
 
 			//NOTE: The AI fire sighetd event whem moving in the FoV of team 1
@@ -3831,7 +3934,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				utils::string_map symbols;
 				std::stringstream strstr;
 				symbols["first"] = selected_team.holded_card(selected_team.holded_cards().size() - 1).name();
-				game_events::show_hero_message(&heros[214], NULL, vgettext("Get card: $first.", symbols), game_events::INCIDENT_CARD);
+				game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("Get card: $first.", symbols), game_events::INCIDENT_CARD);
 			}
 		}
 		else if (const config &child = cfg->child("erase_card")) 
@@ -3884,12 +3987,15 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				utils::string_map symbols;
 				std::stringstream strstr;
 				symbols["first"] = c.name();
-				game_events::show_hero_message(&heros[214], NULL, vgettext("Lost card: $first.", symbols), game_events::INCIDENT_CARD);
+				game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("Lost card: $first.", symbols), game_events::INCIDENT_CARD);
 			}
 		}
-		else if (const config &child = cfg->child("hero_field")) 
-		{
-			(*resources::heros)[child["number"].to_int(-1)].side_feature_ = child["side_feature"].to_int(-1);
+		else if (const config &child = cfg->child("reform_captain")) {
+			map_location loc(child, resources::state_of_game);
+			int number = child["number"].to_int();
+			bool join = child["join"].to_int()? true: false;
+
+			reform_captain(units, *units.find(loc), heros[number], join, true);
 
 		} else {
 			if (!cfg->child("checksum")) {

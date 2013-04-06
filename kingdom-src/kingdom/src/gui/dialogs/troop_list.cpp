@@ -197,7 +197,7 @@ void ttroop_list::fill_table(int catalog)
 		if ((side_ >= 1) && (i->side() != side_)) {
 			continue;
 		}
-		if (i->is_artifical()) {
+		if (i->is_artifical() || i->is_commoner()) {
 			continue;
 		}
 		bool known = viewing_team.knows_about_team(i->side() - 1, network::nconnections() > 0);
@@ -229,7 +229,7 @@ void ttroop_list::fill_table(int catalog)
 
 			str.str("");
 			if (known) {
-				str << i->type_name();
+				str << i->packee_type()->type_name();
 			} else{
 				str << "??";
 			}
@@ -248,7 +248,7 @@ void ttroop_list::fill_table(int catalog)
 		} else if (catalog == STATUS_PAGE) {
 			str.str("");
 			if (known) {
-				str << i->type_name();
+				str << i->packee_type()->type_name();
 			} else{
 				str << "??";
 			}
@@ -300,7 +300,7 @@ void ttroop_list::fill_table(int catalog)
 		} else if (catalog == MERIT_PAGE) {
 			str.str("");
 			if (known) {
-				str << i->type_name();
+				str << i->packee_type()->type_name();
 			} else{
 				str << "??";
 			}

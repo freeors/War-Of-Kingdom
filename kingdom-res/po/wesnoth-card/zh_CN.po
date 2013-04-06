@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-03-01 17:46+0800\n"
+"PO-Revision-Date: 2013-03-30 23:55+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -481,3 +481,157 @@ msgstr "天师"
 
 msgid "especial-15"
 msgstr "藤甲"
+
+msgid "treasure-0"
+msgstr "赤免马"
+
+msgid "treasure-1"
+msgstr "的卢"
+
+msgid "treasure-2"
+msgstr "爪黄飞电"
+
+msgid "treasure-3"
+msgstr "绝影"
+
+msgid "treasure-4"
+msgstr "白龙"
+
+msgid "treasure-5"
+msgstr "四轮车"
+
+msgid "treasure-6"
+msgstr "七星宝刀"
+
+msgid "treasure-7"
+msgstr "倚天剑"
+
+msgid "treasure-8"
+msgstr "青釭剑"
+
+msgid "treasure-9"
+msgstr "雌雄双剑"
+
+msgid "treasure-10"
+msgstr "古锭刀"
+
+msgid "treasure-11"
+msgstr "青龙偃月刀"
+
+msgid "treasure-12"
+msgstr "三尖刀"
+
+msgid "treasure-13"
+msgstr "蛇矛"
+
+msgid "treasure-14"
+msgstr "铁脊蛇矛"
+
+msgid "treasure-15"
+msgstr "方天画戟"
+
+msgid "treasure-16"
+msgstr "双铁戟"
+
+msgid "treasure-17"
+msgstr "铁鞭"
+
+msgid "treasure-18"
+msgstr "铁蒺藜骨朵"
+
+msgid "treasure-19"
+msgstr "飞刀"
+
+msgid "treasure-20"
+msgstr "孙子兵法"
+
+msgid "treasure-21"
+msgstr "三略"
+
+msgid "treasure-22"
+msgstr "司马法"
+
+msgid "treasure-23"
+msgstr "孟德新书"
+
+msgid "treasure-24"
+msgstr "兵法二十四篇"
+
+msgid "treasure-25"
+msgstr "管子"
+
+msgid "treasure-26"
+msgstr "晏子春秋"
+
+msgid "treasure-27"
+msgstr "周书阴符"
+
+msgid "treasure-28"
+msgstr "春秋左传"
+
+msgid "treasure-29"
+msgstr "书经"
+
+msgid "treasure-30"
+msgstr "论语集解"
+
+msgid "treasure-31"
+msgstr "典论"
+
+msgid "treasure-32"
+msgstr "时要论"
+
+msgid "treasure-33"
+msgstr "治论"
+
+msgid "treasure-34"
+msgstr "辨道论"
+
+msgid "treasure-35"
+msgstr "仇国论"
+
+msgid "treasure-36"
+msgstr "太平要术"
+
+msgid "treasure-37"
+msgstr "西蜀地形图"
+
+msgid "treasure-38"
+msgstr "平蛮指掌图"
+
+msgid "treasure-39"
+msgstr "珍珠"
+
+msgid "treasure-40"
+msgstr "碧玉"
+
+msgid "treasure-41"
+msgstr "青玉"
+
+msgid "treasure-42"
+msgstr "红玉"
+
+msgid "treasure-43"
+msgstr "五石散"
+
+msgid "treasure-44"
+msgstr "白羽扇"
+
+msgid "treasure-45"
+msgstr "玉玺"
+
+#, fuzzy
+msgid "treasure-46"
+msgstr "水将"
+
+#, fuzzy
+msgid "treasure-47"
+msgstr "水将"
+
+#, fuzzy
+msgid "treasure-48"
+msgstr "水将"
+
+#, fuzzy
+msgid "treasure-49"
+msgstr "水将"

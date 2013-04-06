@@ -67,10 +67,8 @@ namespace game_config
 	extern int max_tactic_point;
 	extern int increase_tactic_point;
 
-	inline int kill_xp(int level)
-	{
-		return level ? kill_experience * level : kill_experience / 2;
-	}
+	int kill_xp(int level);
+	int attack_xp(int level);
 
 	extern std::string wesnoth_program_dir;
 

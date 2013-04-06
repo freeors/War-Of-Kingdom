@@ -672,19 +672,21 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 	}
 }
 
-void unit_attack2(unit& attacker, const std::string& type, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
+void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	 std::vector<std::string>& hit_text_vec)
 {
-	const map_location& a = attacker.get_location();
+	if (def_ptr_vec.empty()) return;
+
+	const map_location& a = attacker? attacker->get_location(): map_location::null_location;
 	std::vector<map_location> b_vec;
 	for (std::vector<unit*>::const_iterator b = def_ptr_vec.begin(); b != def_ptr_vec.end(); ++ b) {
 		b_vec.push_back((*b)->get_location());
 	}
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && (attacker.human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((attacker && attacker->human()) || preferences::scroll_to_action())))? true: false;
 	game_display* disp = game_display::get_singleton();
 	std::vector<team>& teams = *resources::teams;
 	if (!disp ||disp->video().update_locked() || disp->video().faked() ||
-			(disp->fogged(a) && disp->fogged(b_vec[0])) || preferences::show_combat() == false) {
+			((!attacker || disp->fogged(a)) && disp->fogged(b_vec[0])) || preferences::show_combat() == false) {
 		return;
 	}
 	rect_of_hexes& draw_area = disp->draw_area();
@@ -721,16 +723,27 @@ void unit_attack2(unit& attacker, const std::string& type, std::vector<unit*>& d
 	if (player_number_ > 0 && has_human_in_defs) {
 		force_scroll = true;
 	}
-	if (force_scroll || point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || has_eyeshot_in_defs) {
+	bool attacker_in_eyeshot = false;
+	if (attacker && point_in_rect_of_hexes(a.x, a.y, draw_area)) {
+		attacker_in_eyeshot = true;
+	}
+	if (force_scroll || attacker_in_eyeshot || has_eyeshot_in_defs) {
 		// clear global draw_desc flag
 		unit::draw_desc_ = false;
-		const attack_temporary_state_lock lock1(attacker, false);
+		const attack_temporary_state_lock* lock1 = NULL;
+		if (attacker) {
+			lock1 = new attack_temporary_state_lock(*attacker, false);
+		}
 		const defend_temporary_state_lock lock2(def_ptr_vec);
 
 		disp->select_hex(map_location::null_location);
 
 		// scroll such that there is at least half a hex spacing around fighters
-		disp->scroll_to_tiles(a, b_vec[0], game_display::ONSCREEN, true, 0.5, force_scroll);
+		if (attacker) {
+			disp->scroll_to_tiles(a, b_vec[0], game_display::ONSCREEN, true, 0.5, force_scroll);
+		} else {
+			disp->scroll_to_tile(b_vec[0], game_display::ONSCREEN, true, force_scroll);
+		}
 
 		// do a copy so we can change the caracteristics
 		// unit::redraw_unit is different from artifcal::redraw_unit, left call "right" protol-member according type!
@@ -739,9 +752,11 @@ void unit_attack2(unit& attacker, const std::string& type, std::vector<unit*>& d
 			def_hitpoints_vec.push_back(def_ptr_vec[i]->hitpoints());
 		}
 
-		attacker.set_facing(a.get_relative_dir(b_vec[0]));
-		for (size_t i = 0; i < def_size; i ++) {
-			def_ptr_vec[i]->set_facing(b_vec[i].get_relative_dir(a));
+		if (attacker) {
+			attacker->set_facing(a.get_relative_dir(b_vec[0]));
+			for (size_t i = 0; i < def_size; i ++) {
+				def_ptr_vec[i]->set_facing(b_vec[i].get_relative_dir(a));
+			}
 		}
 
 		unit_animator animator;
@@ -790,20 +805,21 @@ void unit_attack2(unit& attacker, const std::string& type, std::vector<unit*>& d
 			hit_type_vec.push_back(hit_type);
 		}
 
-		const unit_animation* attacker_anim;
-		const unit_animation* defender_anim;
+		if (attacker) {
+			const unit_animation* attacker_anim;
 
-		attacker_anim = global_animation(unit_display::ANIM_MAGIC);
-		
+			attacker_anim = global_animation(unit_display::ANIM_MAGIC);
+			if (attacker_anim) {
+				animator.add_animation(attacker, attacker_anim);
+				animated_units.insert(attacker);
+			}
+		}
+
+		const unit_animation* defender_anim;
 		if (type == "blade" || type == "pierce" || type == "impact") {
 			defender_anim = global_animation(unit_display::ANIM_BLADE);
 		} else {
 			defender_anim = global_animation(unit_display::ANIM_FIRE);
-		}
-		if (attacker_anim) {
-			animator.add_animation(&attacker, attacker_anim);
-
-			animated_units.insert(&attacker);
 		}
 
 		// note that we take an anim from the real unit, we'll use it later
@@ -837,8 +853,10 @@ void unit_attack2(unit& attacker, const std::string& type, std::vector<unit*>& d
 		}
 
 		animator.start_animations();
-		// to attack animation, need update loc of dst. dst maybe distance one or more grid!
-		attacker.get_animation()->update_parameters(a, b_vec[0]);
+		if (attacker) {
+			// to attack animation, need update loc of dst. dst maybe distance one or more grid!
+			attacker->get_animation()->update_parameters(a, b_vec[0]);
+		}
 
 		animator.wait_until(0);
 		std::vector<int> damage_left = damage_vec;
@@ -869,6 +887,9 @@ void unit_attack2(unit& attacker, const std::string& type, std::vector<unit*>& d
 			def_ptr_vec[i]->set_hitpoints(def_hitpoints_vec[i]);
 		}
 
+		if (lock1) {
+			delete lock1;
+		}
 		// set global draw_desc flag
 		unit::draw_desc_ = true;
 	}

@@ -28,6 +28,11 @@ editor_display::editor_display(CVideo& video, const editor_map& map,
 	clear_screen();
 }
 
+editor_display::~editor_display()
+{
+	clear_context_menu_buttons();
+}
+
 void editor_display::add_brush_loc(const map_location& hex)
 {
 	brush_locations_.insert(hex);

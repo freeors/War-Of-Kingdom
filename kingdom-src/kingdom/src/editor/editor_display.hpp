@@ -26,6 +26,7 @@ class editor_display : public display
 public:
 	editor_display(CVideo& video, const editor_map& map, const config& theme_cfg,
 			const config& level);
+	~editor_display();
 
 	bool in_editor() const { return true; }
 

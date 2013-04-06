@@ -19,76 +19,34 @@
 #include "gui/dialogs/dialog.hpp"
 
 #include "config.hpp"
-
-class display;
-class hero_map;
-class hero;
-class card_map;
-
-typedef struct {
-	int hero_;
-	int leader_;
-	int city_;
-	int stratum_;
-} hero_row;
+#include "tent.hpp"
 
 namespace gui2 {
 
 class tlistbox;
 class tbutton;
 
-class tplayer_selection : public tdialog
+class tplayer_selection : public ttent
 {
 public:
 	explicit tplayer_selection(display& gui, hero_map& heros, card_map& cards, const config& campaign_config, hero& player_hero);
 	~tplayer_selection();
 
-	const config player() const;
-	const std::vector<bool>& checked_card() const { return checked_card_; }
-	bool shroud() const { return shroud_; }
-	bool fog() const { return fog_; }
-
 protected:
 	/** Inherited from tdialog. */
 	void pre_show(CVideo& video, twindow& window);
 
-	/** Inherited from tdialog. */
-	void post_show(twindow& window);
-
+	void player_selected(twindow& window);
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
-	virtual const std::string& window_id() const;
+	const std::string& window_id() const;
 
 	void player_city(twindow& window);
 	void maximal_defeated_activity(twindow& window);
-
-	void add_row_to_heros(tlistbox* list, int h, int leader, int city, int stratum);
-	void player_selected(twindow& window);
-	void card_toggled(twidget* widget);
+	void duel(twindow& window);
 private:
-	display& gui_;
-	hero_map& heros_;
-	card_map& cards_;
-	const config& campaign_config_;
-
-	tlistbox* card_table_;
-	hero_row* rows_mem_;
-	int mem_vsize_;
-	int player_;
-	std::vector<bool> checked_card_;
-
-	bool rpg_mode_;
-	tfield_bool* chk_shroud_;
-	tfield_bool* chk_fog_;
-
-	hero* player_hero_;
-	std::map<int, int> city_map_;;
-	std::map<int, int> city_leader_map_;
-
 	tbutton* maximal_defeated_activity_;
-
-	bool shroud_;
-	bool fog_;
+	tbutton* duel_;
 };
 
 }

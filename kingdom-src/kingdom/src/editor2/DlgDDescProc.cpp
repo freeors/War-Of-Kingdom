@@ -434,7 +434,6 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 				if (strstr(gdmgr._menu_text, "\\campaigns\\") && 
 					!strstr(gdmgr._menu_text, "duel") &&
 					!strstr(gdmgr._menu_text, "legend_of_bei_liu") &&
-					!strstr(gdmgr._menu_text, "tower_defense") &&
 					!strstr(gdmgr._menu_text, "tutorial")) {
 					if (gdmgr._da != da_campaign) {
 						title_select(da_campaign);

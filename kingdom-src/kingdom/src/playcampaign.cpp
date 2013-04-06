@@ -127,6 +127,10 @@ static LEVEL_RESULT playsingle_scenario(const config& game_config,
 {
 	const int ticks = SDL_GetTicks();
 	int num_turns = (*level)["turns"].to_int();
+	if (tent::turns != -1) {
+		num_turns = tent::turns;
+		tent::turns = -1;
+	}
 
 	LOG_NG << "creating objects... " << (SDL_GetTicks() - ticks) << "\n";
 	posix_print("playsingle_scenerio, begin construct playsingle_controller......\n");

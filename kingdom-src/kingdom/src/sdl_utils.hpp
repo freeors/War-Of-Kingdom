@@ -28,6 +28,8 @@
 #include <map>
 #include <string>
 
+extern const std::string null_str;
+
 typedef enum {
   PANGO_ALIGN_LEFT,
   PANGO_ALIGN_CENTER,

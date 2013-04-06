@@ -198,7 +198,7 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 
 		control->set_label(_("Version ") + game_config::revision);
 		// control->set_label(_("Version ") + game_config::revision + "-alpha");
-		// control->set_label(_("Version ") + game_config::revision + "-beta-2");
+		// control->set_label(_("Version ") + game_config::revision + "-beta");
 	}
 	window.canvas()[0].set_variable("revision_number", variant(_("Version") + std::string(" ") + game_config::revision));
 

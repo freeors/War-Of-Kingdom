@@ -896,6 +896,12 @@ std::vector<std::vector<twidget*> >& twindow::dirty_list()
 	return dirty_list_;
 }
 
+void twindow::set_maximum_size(int w, int h)
+{ 
+	maximum_width_ = w;
+	maximum_height_ = h;
+}
+
 void twindow::undraw()
 {
 	if(restorer_) {

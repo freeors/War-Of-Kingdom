@@ -21,6 +21,7 @@ void OnEventFilterBt(HWND hdlgP);
 bool OnEventFilterBt2(HWND hdlgP);
 void OnSetVariableEditBt(HWND hdlgP);
 void OnEventKillEditBt(HWND hdlgP);
+void OnEventEndlevelEditBt(HWND hdlgP);
 void OnEventJoinEditBt(HWND hdlgP);
 void OnEventUnitEditBt(HWND hdlgP);
 void OnConditionEditBt(HWND hdlgP);
@@ -171,6 +172,8 @@ void tevent::from_config_branch(const config& cfg, std::vector<tcommand*>& b)
 			c = new tset_variable();
 		} else if (tmp.key == "kill") {
 			c = new tkill();
+		} else if (tmp.key == "endlevel") {
+			c = new tendlevel();
 		} else if (tmp.key == "join") {
 			c = new tjoin();
 		} else if (tmp.key == "unit") {
@@ -195,6 +198,8 @@ void tevent::copy_commands(const std::vector<tcommand*>& src, std::vector<tcomma
 			new_cmd = new tset_variable(*dynamic_cast<const tset_variable*>(cmd));
 		} else if (cmd->type_ == tcommand::KILL) {
 			new_cmd = new tkill(*dynamic_cast<const tkill*>(cmd));
+		} else if (cmd->type_ == tcommand::ENDLEVEL) {
+			new_cmd = new tendlevel(*dynamic_cast<const tendlevel*>(cmd));
 		} else if (cmd->type_ == tcommand::JOIN) {
 			new_cmd = new tjoin(*dynamic_cast<const tjoin*>(cmd));
 		} else if (cmd->type_ == tcommand::UNIT) {
@@ -220,6 +225,9 @@ bool tevent::compare_commands(const std::vector<tevent::tcommand*>& left, const 
 
 		} else if (a->type_ == tcommand::KILL) {
 			if (*dynamic_cast<const tkill*>(a) != *dynamic_cast<const tkill*>(b)) return false;
+
+		} else if (a->type_ == tcommand::ENDLEVEL) {
+			if (*dynamic_cast<const tendlevel*>(a) != *dynamic_cast<const tendlevel*>(b)) return false;
 
 		} else if (a->type_ == tcommand::JOIN) {
 			if (*dynamic_cast<const tjoin*>(a) != *dynamic_cast<const tjoin*>(b)) return false;
@@ -573,6 +581,8 @@ bool tevent::do_edit(HWND hwndtv)
 			OnEventUnitEditBt(hdlgP);
 		} else if (ns::clicked_command->type_ == tcommand::KILL) {
 			OnEventKillEditBt(hdlgP);
+		} else if (ns::clicked_command->type_ == tcommand::ENDLEVEL) {
+			OnEventEndlevelEditBt(hdlgP);
 		} else if (ns::clicked_command->type_ == tcommand::JOIN) {
 			OnEventJoinEditBt(hdlgP);
 		} else if (ns::clicked_command->type_ == tcommand::CONDITION) {
@@ -1055,6 +1065,61 @@ void tevent::tkill::update_to_ui_special(HWND hdlgP) const
 		}
 	}
 	ComboBox_SetCurSel(hctl, selected_row);
+}
+
+void tevent::tendlevel::from_config(const config& cfg)
+{
+	result_ = cfg["result"];
+}
+
+void tevent::tendlevel::from_ui_special(HWND hdlgP)
+{
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTENDLEVEL_RESULT);
+	// master_hero
+	int sel = ComboBox_GetCurSel(hctl);
+	if (sel == 0) {
+		result_ = "victory";
+	} else {
+		result_ = "defeat";
+	}
+}
+
+void tevent::tendlevel::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
+{
+	std::stringstream strstr;
+	char text[_MAX_PATH];
+
+	HTREEITEM htvi1 = TreeView_AddLeaf(hctl, branch);
+	strstr.str("");
+	strstr << "endlevel";
+	strcpy(text, strstr.str().c_str());
+	TreeView_SetItem1(hctl, htvi1, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+		(LPARAM)(tcommand*)(this), ns::iico_evt_command, ns::iico_evt_command, 1, text);
+
+	HTREEITEM htvi = TreeView_AddLeaf(hctl, htvi1);
+	strstr.str("");
+	strstr << "result = ";
+	strstr << result_;
+	
+	strcpy(text, strstr.str().c_str());
+	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+}
+
+void tevent::tendlevel::update_to_ui_special(HWND hdlgP) const
+{
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTENDLEVEL_RESULT);
+	ComboBox_ResetContent(hctl);
+	std::map<int, std::string> result_map;
+	result_map.insert(std::make_pair(0, "victory"));
+	result_map.insert(std::make_pair(1, "defeat"));
+	for (std::map<int, std::string>::const_iterator it = result_map.begin(); it != result_map.end(); ++ it) {
+		ComboBox_AddString(hctl, it->second.c_str());
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
+		if (result_ == it->second) {
+			ComboBox_SetCurSel(hctl, ComboBox_GetCount(hctl) - 1);
+		}
+	}
 }
 
 void tevent::tjoin::from_config(const config& cfg)
@@ -1729,6 +1794,7 @@ void tevent::tvariable::update_to_ui_special(HWND hdlgP) const
 	LVITEM lvi;
 	std::vector<std::pair<std::string, std::string> > env;
 	env.push_back(std::make_pair<std::string, std::string>("random", "概率"));
+	env.push_back(std::make_pair<std::string, std::string>("turn_number", "当前回合"));
 	env.push_back(std::make_pair<std::string, std::string>("unit.heros_army", "第一单位武将"));
 	env.push_back(std::make_pair<std::string, std::string>("unit.side", "第一单位势力"));
 	env.push_back(std::make_pair<std::string, std::string>("second_unit.heros_army", "第二单位武将"));
@@ -2408,6 +2474,72 @@ void OnEventKillEditBt(HWND hdlgP)
 	return;
 }
 
+BOOL On_DlgEventEndlevelInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	editor_config::move_subcfg_right_position(hdlgP, lParam);
+
+	if (ns::action_event_item == ma_edit) {
+		SetWindowText(hdlgP, "编辑操作：结束关卡");
+		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+	} else {
+		SetWindowText(hdlgP, "添加操作：结束关卡");
+	}
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	tevent& evt = scenario.event_[ns::clicked_event];
+
+	ns::clicked_command->update_to_ui_special(hdlgP);
+	return FALSE;
+}
+
+void On_DlgEventEndlevelCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	BOOL changed = FALSE;
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	tevent& evt = scenario.event_[ns::clicked_event];
+
+	switch (id) {
+	case IDOK:
+		changed = TRUE;
+		ns::clicked_command->from_ui_special(hdlgP);
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL CALLBACK DlgEventEndlevelProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(uMsg) {
+	case WM_INITDIALOG:
+		return On_DlgEventEndlevelInitDialog(hdlgP, (HWND)(wParam), lParam);
+	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgEventEndlevelCommand);
+	HANDLE_MSG(hdlgP, WM_DRAWITEM, editor_config::On_DlgDrawItem);
+	}
+	
+	return FALSE;
+}
+
+void OnEventEndlevelEditBt(HWND hdlgP)
+{
+	RECT		rcBtn;
+	LPARAM		lParam;
+	
+	GetWindowRect(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), &rcBtn);
+	lParam = posix_mku32((rcBtn.left > 0)? rcBtn.left: rcBtn.right, rcBtn.top);
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	tevent& evt = scenario.event_[ns::clicked_event];
+
+	ns::action_event_item = ma_edit;
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTENDLEVEL), hdlgP, DlgEventEndlevelProc, lParam)) {
+		TreeView_DeleteAllItems(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER));
+		evt.update_to_ui_event_edit(hdlgP);
+	}
+
+	return;
+}
+
 BOOL On_DlgEventJoinInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
@@ -3058,7 +3190,8 @@ BOOL On_DlgEventEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	AppendMenu(ns::hpopup_new, MF_SEPARATOR, 0, NULL);
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM2, utf8_2_ansi(_("Generate troop")));
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM3, utf8_2_ansi(_("Kill troop")));
-	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM4, utf8_2_ansi(_("Join in troop")));
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM4, utf8_2_ansi(_("End level")));
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM5, utf8_2_ansi(_("Join in troop")));
 
 	ns::hpopup_event = CreatePopupMenu();
 	AppendMenu(ns::hpopup_event, MF_POPUP, (UINT_PTR)(ns::hpopup_new), utf8_2_ansi(_("Append after it")));
@@ -3125,7 +3258,13 @@ void On_DlgEventEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		if (!new_cmd) {
 			new_cmd = new tevent::tkill();
 		}
-	case IDM_NEW_ITEM4: // join
+	case IDM_NEW_ITEM4: // endlevel
+		if (!new_cmd) {
+			new_cmd = new tevent::tendlevel();
+		}
+		evt.new_command(new_cmd, hdlgP);
+		break;
+	case IDM_NEW_ITEM5: // join
 		if (!new_cmd) {
 			new_cmd = new tevent::tjoin();
 		}

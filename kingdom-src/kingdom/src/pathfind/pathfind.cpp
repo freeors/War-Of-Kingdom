@@ -278,7 +278,8 @@ static void find_routes(const gamemap& map, const unit_map& units,
 				move_cost = unit_movement_type::UNREACHABLE;
 			} else {
 				if (curr_node && curr_node->second->wall()) {
-					move_cost = pathfind::location_cost(units, u, false);
+					const unit* w = curr_node->second;
+					move_cost = pathfind::location_cost(units, current_team, u, current_team.is_enemy(w->side()), false);
 				} else {
 					move_cost = u.movement_cost(map[locs[i]], &locs[i]);
 				}
@@ -482,7 +483,8 @@ pathfind::marked_route pathfind::mark_route(const plain_route &rt,
 		} else {
 			unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units.get_cookie(*(i + 1), false));
 			if (curr_node && curr_node->second->wall()) {
-				move_cost = location_cost(units, u, false);
+				const unit* w = curr_node->second;
+				move_cost = location_cost(units, unit_team, u, unit_team.is_enemy(w->side()), false);
 
 			} else {
 				move_cost = u.movement_cost((*resources::game_map)[*(i+1)]);
@@ -572,10 +574,11 @@ namespace pathfind {
 
 map_location last_location;
 bool is_wall;
+bool is_expedit_at;
 
 }
 
-int pathfind::location_cost(const unit_map& units, const unit& u, bool ignore_wall)
+int pathfind::location_cost(const unit_map& units, const team& current_team, const unit& u, bool enemy, bool ignore_wall)
 {
 	unit_map::node* last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location, false));
 	if (!last_node) {
@@ -585,11 +588,11 @@ int pathfind::location_cost(const unit_map& units, const unit& u, bool ignore_wa
 	if (u.packed()) {
 		ut = u.packee_type();
 	}
-	if (ignore_wall || u.is_commoner()) {
+	/* if (ignore_wall) {
 		return 1;
-	} else if (!ut->land_wall()) {
+	} else */ if (!ut->land_wall() || (enemy && !current_team.land_enemy_wall_)) {
 		return 2 * u.total_movement();
-	} else if (last_node && last_node->second->walk_wall()) {
+	} else if (u.is_commoner() || (last_node && last_node->second->walk_wall())) {
 		// keep/wall ---> wall, cost: 1
 		return 1;
 	} else {
@@ -601,16 +604,28 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 {
 	assert(map_.on_board(loc));
 
+	const team& current_team = teams_[unit_.side() - 1];
 	pathfind::is_wall = false;
+	pathfind::is_expedit_at = false;
 
 	if (total_movement_ == 0) {
 		// to unit that total_movement == 0, all cost is getNoPathValue().
 		return getNoPathValue();
 	}
+
 	if (expediting_city_cookie_ && units_.get_cookie(loc) == expediting_city_cookie_) {
 		// move cost in self-city grid is 0.
-		return 0;
+		pathfind::is_expedit_at = true;
+		const unit_map::node* n = (const unit_map::node*)expediting_city_cookie_;
+		if (pathfind::last_location == n->first || units_.get_cookie(pathfind::last_location) == expediting_city_cookie_) {
+			// a grid belong expediting city to other grid belong same city. 0 cost. 
+			return 0;
+		} else {
+			// outer grid into self-city, forbit! must not back, it will result dead lock!
+			return getNoPathValue();
+		}
 	}
+
 	// loc is shrouded, consider it impassable
 	// NOTE: This is why AI must avoid to use shroud
 	if (!see_all_ && viewing_team_.shrouded(loc))
@@ -627,13 +642,16 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 	// cost of wall
 	unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
 	
+	bool enemy_wall = false;
 	if (so_far == 0.8888) {
 		// when so_far = 0.8888, it indicates judging dst.
 		terrain_cost = 1;
 
 	} else if (curr_node && curr_node->second->wall()) {
 		pathfind::is_wall = true;
-		terrain_cost = location_cost(units_, unit_, ignore_city);
+		const unit* w = curr_node->second;
+		enemy_wall = current_team.is_enemy(w->side());
+		terrain_cost = location_cost(units_, current_team, unit_, enemy_wall, ignore_city);
 
 	} else {
 		terrain_cost = unit_.movement_cost(terrain);
@@ -643,8 +661,9 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 	VALIDATE(terrain_cost >= 1, _("Terrain with a movement cost less than 1 encountered."));
 
 	// total MP is not enough to move on this terrain: impassable
-	if (total_movement_ < terrain_cost)
-		return getNoPathValue();
+	if (total_movement_ < terrain_cost) {
+		return pathfind::is_wall? terrain_cost: getNoPathValue();
+	}
 
 	int other_unit_subcost = 0;
 	const unit* other_unit = NULL;
@@ -657,7 +676,8 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 
 		if (other_unit) {
 			if (teams_[unit_.side() - 1].is_enemy(other_unit->side())) {
-				if (!other_unit->wall() || !teams_[unit_.side() - 1].land_enemy_wall_ || !unit_.land_wall()) {
+				// if (!other_unit->wall() || !teams_[unit_.side() - 1].land_enemy_wall_ || !unit_.land_wall()) {
+				if (!other_unit->wall()) {
 					if (!other_unit->is_city()) {
 						return getUnitHoldValue(); // getNoPathValue();
 					} else if (!ignore_city) {

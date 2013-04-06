@@ -43,7 +43,7 @@ enum HOTKEY_COMMAND {
 	HOTKEY_FULLSCREEN, HOTKEY_SCREENSHOT, HOTKEY_MAP_SCREENSHOT, HOTKEY_ACCELERATED,
 	HOTKEY_RPG, HOTKEY_RPG_DETAIL, HOTKEY_RPG_TREASURE, HOTKEY_RPG_EXCHANGE, HOTKEY_RPG_INDEPENDENCE,
 	HOTKEY_RECRUIT, HOTKEY_EXPEDITE, HOTKEY_ARMORY, HOTKEY_MOVE, 
-	HOTKEY_ENDTURN,
+	HOTKEY_SWITCH_LIST, HOTKEY_ENDTURN,
 	HOTKEY_TOGGLE_ELLIPSES, HOTKEY_TOGGLE_GRID, HOTKEY_MUTE, HOTKEY_MOUSE_SCROLL,
 	HOTKEY_SPEAK, HOTKEY_CHANGE_SIDE, HOTKEY_PREFERENCES,
 	HOTKEY_OBJECTIVES, HOTKEY_STATISTICS, HOTKEY_STOP_NETWORK, HOTKEY_START_NETWORK, HOTKEY_QUIT_GAME,
@@ -56,7 +56,7 @@ enum HOTKEY_COMMAND {
 	HOTKEY_REPLAY_SHOW_EACH, HOTKEY_REPLAY_SHOW_TEAM1,
 	HOTKEY_REPLAY_SKIP_ANIMATION,
 	HOTKEY_ANIMATE_MAP,
-	HOTKEY_BUILD_M, HOTKEY_BUILD, HOTKEY_DEMOLISH,
+	HOTKEY_BUILD_M, HOTKEY_BUILD, HOTKEY_EXTRACT, HOTKEY_DEMOLISH,
 	HOTKEY_UNIT_DETAIL,
 	HOTKEY_PLAY_CARD,
 
@@ -242,6 +242,7 @@ public:
 	virtual void end_turn() {}
 	virtual void undo() {}
 	virtual void redo() {}
+	virtual void switch_list() {}
 	virtual void save_map() {}
 	virtual void show_rpg() {}
 	virtual void rpg_detail() {}
@@ -251,6 +252,7 @@ public:
 	virtual void toggle_ellipses() {}
 	virtual void toggle_grid() {}
 	virtual void build(const std::string& type) {}
+	virtual void extract() {}
 	virtual void demolish() {}
 	virtual void armory() {}
 	virtual void unit_detail() {}

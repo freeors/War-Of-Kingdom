@@ -418,6 +418,7 @@ public:
 	void alternate_bh(twidget* holder, int index = 0);
 
 	std::vector<std::vector<twidget*> >& dirty_list();
+	void set_maximum_size(int w, int h);
 private:
 
 	/** Needed so we can change what's drawn on the screen. */

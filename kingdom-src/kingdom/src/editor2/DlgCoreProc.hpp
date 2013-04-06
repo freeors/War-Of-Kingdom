@@ -32,6 +32,7 @@ public:
 		, max_movement_(-1)
 		, level_(1)
 		, cost_(1)
+		, raw_icon_()
 		, alignment_(unit_type::LAWFUL)
 		, character_(NO_ESPECIAL)
 		, movement_type_()
@@ -45,6 +46,7 @@ public:
 		, master_(HEROS_INVALID_NUMBER)
 		, turn_experience_(0)
 		, heal_(0)
+		, multi_grid_(false)
 		, guard_(NO_GUARD)
 		, income_(0)
 		, packer_(false)
@@ -63,6 +65,7 @@ public:
 		if (experience_needed_ != that.experience_needed_) return false;
 		if (level_ != that.level_) return false;
 		if (cost_ != that.cost_) return false;
+		if (raw_icon_ != that.raw_icon_) return false;
 		if (alignment_ != that.alignment_) return false;
 		if (movement_type_ != that.movement_type_) return false;
 		if (resistance_ != that.resistance_) return false;
@@ -78,6 +81,7 @@ public:
 		if (leader_ != that.leader_) return false;
 		if (turn_experience_ != that.turn_experience_) return false;
 		if (heal_ != that.heal_) return false;
+		if (multi_grid_ != that.multi_grid_) return false;
 		if (guard_ != that.guard_) return false;
 		if (income_ != that.income_) return false;
 		if (packer_ != that.packer_) return false;
@@ -97,6 +101,7 @@ public:
 	int experience_needed_;
 	int level_;
 	int cost_;
+	std::string raw_icon_;
 	int alignment_;
 	std::string movement_type_;
 	std::map<std::string, int> resistance_;
@@ -116,6 +121,7 @@ public:
 	int heal_;
 	int guard_;
 	int income_;
+	bool multi_grid_;
 
 	bool packer_;
 	int melee_increase_;
@@ -230,7 +236,7 @@ private:
 class tcore
 {
 public:
-	enum {UNIT_TYPE = 0, TACTIC, CHARACTER, TECH, SECTIONS};
+	enum {UNIT_TYPE = 0, TACTIC, CHARACTER, TECH, TREASURE, SECTIONS};
 
 	static std::map<int, std::string> name_map;
 	static std::map<int, int> idd_map;
@@ -244,9 +250,9 @@ public:
 	void refresh_tactic(HWND hdlgP);
 	void refresh_character(HWND hdlgP);
 	void refresh_technology(HWND hdlgP);
-	void refresh_technology2(HWND hdlgP);
+	void refresh_treasure(HWND hdlgP);
 
-	void switch_section(HWND hdlgP, int to, bool force);
+	void switch_section(HWND hdlgP, int to, bool init);
 
 	void utype_tree_2_tv(HWND hctl, HTREEITEM htvroot);
 	void utype_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<advance_tree::node>& advances_to, const std::vector<std::string>& advances_from2);
@@ -259,14 +265,24 @@ public:
 
 	bool types_dirty() const;
 
-	enum {BIT_UTYPE = 0, BIT_CHARACTER};
+	enum {BIT_UTYPE = 0, BIT_CHARACTER, BIT_TREASURE};
 	void set_dirty(int bit, bool set);
+	bool bit_dirty(int bit) const;
 
 	bool save_if_dirty();
 	void save(HWND hdlgP);
 	void generate_utypes() const;
 
+	// section: treasure
+	void update_to_ui_treasure(HWND hdlgP);
+	void update_to_ui_treasure_edit(HWND hdlgP);
+	void from_ui_treasure_edit(HWND hdlgP);
+	bool treasures_dirty() const { return treasures_from_cfg_ != treasures_updating_; }
+
 private:
+	std::string units_internal(bool absolute = false) const;
+	void generate_units_internal() const;
+
 	void generate_utype_tree();
 
 public:
@@ -278,10 +294,13 @@ public:
 	gamemap* map_;
 	t_translation::t_list alias_terrains_;
 
+	std::map<int, tunit_type> types_updating_;
+
+	std::map<int, int> treasures_from_cfg_;
+	std::map<int, int> treasures_updating_;
+
 	HTREEITEM htvroot_utype_;
 	HTREEITEM htvroot_technology_;
-
-	std::map<int, tunit_type> types_updating_;
 
 	HTREEITEM htvroot_tactic_atom_;
 	HTREEITEM htvroot_tactic_complex_;
@@ -307,9 +326,11 @@ namespace ns {
 	extern int clicked_utype;
 	extern int clicked_attack;
 	extern int clicked_mtype;
+	extern int clicked_treasure;
 	
 	extern int action_utype;
 	extern int action_attack;
+	extern int action_treasure;
 
 	extern int type;
 }
@@ -318,5 +339,6 @@ extern BOOL CALLBACK DlgUTypeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM l
 extern BOOL CALLBACK DlgTacticProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgCharacterProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgTechnologyProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+extern BOOL CALLBACK DlgTreasureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 #endif // __DLGCOREPROC_HPP_

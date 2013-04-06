@@ -181,7 +181,7 @@ void tcampaign::init_hero_state(hero_map& heros)
 	}
 
 	if (reserved_heros_.empty()) {
-		reserved_heros_.insert(214); // 情报
+		reserved_heros_.insert(227); // 情报
 		reserved_heros_.insert(228); // 黄巾
 		reserved_heros_.insert(229); // 文官
 		reserved_heros_.insert(230); // 系统
@@ -321,7 +321,6 @@ std::string tmain::image(bool absolute) const
 void tmain::from_config(const config& campaign_cfg)
 {
 	id_ = campaign_cfg["id"].str();
-	rank_ = campaign_cfg["rank"].to_int();
 	std::vector<t_string_base::trans_str> trans = campaign_cfg["name"].t_str().valuex();
 	for (std::vector<t_string_base::trans_str>::const_iterator ti = trans.begin(); ti != trans.end(); ti ++) {
 		// only support one textdomain
@@ -336,7 +335,13 @@ void tmain::from_config(const config& campaign_cfg)
 	}
 	first_scenario_ = campaign_cfg["first_scenario"].str();
 	hero_data_ = campaign_cfg["hero_data"].str();
-	rpg_mode_ = campaign_cfg["rpg_mode"].to_bool();
+
+	const std::string& mode = campaign_cfg["mode"];
+	if (mode == "rpg") {
+		mode_ = RPG_MODE;
+	} else if (mode == "tower") {
+		mode_ = TOWER_MODE;
+	}
 	
 	file_ = game_config::path + "\\data\\campaigns\\" + id_ + "\\_main.cfg";
 
@@ -352,8 +357,6 @@ void tmain::from_ui(HWND hdlgP)
 
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ID), text, sizeof(text) / sizeof(text[0]));
 	id_ = text;
-	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_RANK);
-	rank_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ABBREV_MSGID), text, sizeof(text) / sizeof(text[0]));
 	abbrev_ = text;
 
@@ -361,7 +364,8 @@ void tmain::from_ui(HWND hdlgP)
 	ComboBox_GetText(hctl, text, sizeof(text) / sizeof(text[0]));
 	first_scenario_ = text;
 
-	rpg_mode_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_CAMPMAIN_RPGMODE));
+	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_MODE);
+	mode_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 }
 
 void tmain::update_to_ui(HWND hdlgP)
@@ -408,7 +412,6 @@ void tmain::generate()
 	strstr << "\n";
 	strstr << "[campaign]\n";
 	strstr << "\tid = " << id_ << "\n";
-	strstr << "\trank = " << rank_ << "\n";
 	strstr << "\tname = _ \"" << id_ << "\"\n";
 	strstr << "\tabbrev = _ \"" << abbrev_ << "\"\n";
 	strstr << "\tdefine = " << define << "\n";
@@ -417,7 +420,16 @@ void tmain::generate()
 	strstr << "\timage = \"" << image() << "\"\n";
 	strstr << "\tdescription = _ \"" << id_ << " description\"\n";
 	strstr << "\thero_data = \"" << hero_data_ << "\"\n";
-	strstr << "\trpg_mode = " << (rpg_mode_? "yes": "no") << "\n";
+	if (mode_ == TOWER_MODE) {
+		strstr << "\tmode = tower\n";
+		strstr << "\trank = 0\n";
+	} else if (mode_ == RPG_MODE) {
+		strstr << "\tmode = rpg\n";
+		strstr << "\trank = 100\n";
+	} else {
+		strstr << "\trank = 200\n";
+	}
+
 	strstr << "[/campaign]\n";
 
 	strstr << "\n";
@@ -451,7 +463,7 @@ tside::tside()
 	: side_(-1)
 	, name_()
 	, leader_(HEROS_INVALID_NUMBER)
-	, controller_(HUMAN)
+	, controller_(HUMAN_AI)
 	, shroud_(false)
 	, fog_(false)
 	, holded_cards_()
@@ -473,9 +485,12 @@ void tside::from_config(const config& direct_side_cfg)
 
 	// expand [if] block
 	config side_cfg = direct_side_cfg;
+	// if --> human, else --> ai
+	controller_ = EMPTY;
 	foreach (const config &cfg, direct_side_cfg.child_range("if")) {
 		const config& else_cfg = cfg.child("else");
 		side_cfg.merge_attributes(else_cfg);
+		controller_ = HUMAN_AI;
 	}
 
 	side_ = side_cfg["side"].to_int() - 1;
@@ -488,11 +503,24 @@ void tside::from_config(const config& direct_side_cfg)
 		}
 	}
 	leader_ = side_cfg["leader"].to_int(HEROS_INVALID_NUMBER);
-	if (side_cfg["controller"].str() == "null") {
-		controller_ = EMPTY;
+	if (controller_ != HUMAN_AI) {
+		const std::string& controller = side_cfg["controller"].str();
+		if (controller == "human") {
+			controller_ = HUMAN;
+		} else if (controller == "ai") {
+			controller_ = AI;
+		} else {
+			// null
+			controller_ = EMPTY;
+		}
 	}
-	shroud_ = side_cfg["shroud"].to_bool();
-	fog_ = side_cfg["fog"].to_bool();
+	if (controller_ != HUMAN) {
+		shroud_ = side_cfg["shroud"].to_bool();
+		fog_ = side_cfg["fog"].to_bool();
+	} else {
+		shroud_ = false;
+		fog_ = false;
+	}
 
 	str = side_cfg["holded_cards"].str();
 	std::vector<std::string> vstr = utils::split(str);
@@ -682,7 +710,8 @@ void tside::from_ui(HWND hdlgP)
 	if (leader_ == ns::empty_leader) {
 		controller_ = EMPTY;
 	} else {
-		controller_ = HUMAN;
+		hctl = GetDlgItem(hdlgP, IDC_CMB_SIDEEDIT_CONTROLLER);
+		controller_ = (tside::CONTROLLER)ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 	}
 
 	gold_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_SIDEEDIT_GOLD));
@@ -758,10 +787,18 @@ void tside::update_to_ui(HWND hdlgP) const
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
-	// 空白
+	// controller
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 3;
-	strcpy(text, (controller_ == EMPTY)? utf8_2_ansi(_("Yes")): utf8_2_ansi(_("No")));
+	if (controller_ == HUMAN_AI) {
+		strcpy(text, utf8_2_ansi(_("Human_AI")));
+	} else if (controller_ == HUMAN) {
+		strcpy(text, utf8_2_ansi(_("Human only")));
+	} else if (controller_ == AI) {
+		strcpy(text, utf8_2_ansi(_("AI only")));
+	} else {
+		strcpy(text, utf8_2_ansi(_("Void")));
+	}
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
@@ -876,9 +913,6 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 		strstr << side_ + 1;
 		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_SIDEEDIT_SIDE), strstr.str().c_str());
 
-		// controller
-		Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_SIDEEDIT_CONTROLLER), (controller_ == EMPTY)? TRUE: FALSE);
-
 		UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_SIDEEDIT_GOLD), gold_);
 		UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_SIDEEDIT_INCOME), income_);
 
@@ -940,6 +974,23 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 		}
 	}
 	ComboBox_SetCurSel(hctl, selected_row);
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_SIDEEDIT_CONTROLLER);
+	ComboBox_ResetContent(hctl);
+	std::map<int, std::string> controller_map;
+	controller_map.insert(std::make_pair(HUMAN, _("Human only"))); 
+	controller_map.insert(std::make_pair(HUMAN_AI, _("Human_AI")));
+	controller_map.insert(std::make_pair(AI, _("AI only")));
+	for (std::map<int, std::string>::const_iterator it = controller_map.begin(); it != controller_map.end(); ++ it) {
+		ComboBox_AddString(hctl, utf8_2_ansi(it->second.c_str()));
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
+		if (controller_ == it->first) {
+			ComboBox_SetCurSel(hctl, ComboBox_GetCount(hctl) - 1);
+		}
+	}
+	if (controller_ == EMPTY) {
+		ComboBox_SetCurSel(hctl, 0);
+	}
 
 	if (!partial) {
 		// build
@@ -2269,6 +2320,16 @@ void tscenario::from_config(int index, const config& scenario_cfg)
 	next_scenario_ = scenario_cfg["next_scenario"].str();
 	turns_ = scenario_cfg["turns"].to_int();
 	maximal_defeated_activity_ = scenario_cfg["maximal_defeated_activity"].to_int();
+	if (scenario_cfg.has_attribute("duel")) {
+		const std::string& duel = scenario_cfg["duel"];
+		if (duel == "no") {
+			duel_ = NO_DUEL;
+		} else if (duel == "always") {
+			duel_ = ALWAYS_DUEL;
+		} else {
+			duel_ = RANDOM_DUEL;
+		}
+	}
 
 	std::vector<std::string> vstr = utils::split(scenario_cfg["treasures"]);
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
@@ -2440,12 +2501,13 @@ void tscenario::update_to_ui_treasures(HWND hdlgP)
 	char text[_MAX_PATH];
 	std::stringstream strstr;
 
-	const treasure_map& treasures = unit_types.treasures();
+	const std::vector<ttreasure>& treasures = unit_types.treasures();
 	HWND hctl = GetDlgItem(hdlgP, IDC_LV_CAMPSCENARIO_TREASURE);
 	ListView_DeleteAllItems(hctl);
 
 	int index = 0;
 	for (std::map<int, int>::const_iterator it = treasures_.begin(); it != treasures_.end(); ++ it, index ++) {
+		const ttreasure& t = unit_types.treasure(it->first);
 		lvi.mask = LVIF_TEXT | LVIF_PARAM;
 		// 编号
 		lvi.iItem = index;
@@ -2458,9 +2520,7 @@ void tscenario::update_to_ui_treasures(HWND hdlgP)
 		// 名称
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 1;
-		strstr.str("");
-		strstr << utf8_2_ansi(hero::treasure_str(it->first).c_str());
-		strcpy(text, strstr.str().c_str());
+		strcpy(text, utf8_2_ansi(t.name().c_str()));
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 
@@ -2477,13 +2537,7 @@ void tscenario::update_to_ui_treasures(HWND hdlgP)
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = 3;
 		strstr.str("");
-		const std::vector<int>& features = treasures.find(it->first)->second;
-		for (std::vector<int>::const_iterator it2 = features.begin(); it2 != features.end(); ++ it2) {
-			if (it2 != features.begin()) {
-				strstr << ", ";
-			}
-			strstr << utf8_2_ansi(hero::feature_str(*it2).c_str());
-		}
+		strstr << utf8_2_ansi(hero::feature_str(t.feature()).c_str());
 		strcpy(text, strstr.str().c_str());
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
@@ -2540,6 +2594,9 @@ void tscenario::from_ui(HWND hdlgP)
 
 	turns_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_CAMPSCENARIO_TURNS));
 	maximal_defeated_activity_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_CAMPSCENARIO_MDACTIVITY));
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPSCENARIO_DUEL);
+	duel_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_WIN_MSGID), text, sizeof(text) / sizeof(text[0]));
 	win_ = text;
@@ -2604,6 +2661,14 @@ void tscenario::generate()
 	strstr << "\tmap_data = \"{" << map_file() << "}\"\n";
 	strstr << "\tturns = " << turns_ << "\n";
 	// strstr << "\tmaximal_defeated_activity = " << maximal_defeated_activity_ << "\n";
+	if (duel_ == NO_DUEL) {
+		strstr << "\tduel = no\n";
+	} else if (duel_ == ALWAYS_DUEL) {
+		strstr << "\tduel = always\n";
+	}
+	if (ns::_main.mode_ == TOWER_MODE) {
+		strstr << "\ttheme = tower\n";
+	}
 	if (!treasures_.empty()) {
 		strstr << "\ttreasures = ";
 		for (std::map<int, int>::const_iterator it = treasures_.begin(); it != treasures_.end(); ++ it) {
@@ -2694,7 +2759,29 @@ void tscenario::generate()
 		}
 		strstr << "\n";
 
-		if (it->controller_ != tside::EMPTY) { 
+		if (it->controller_ == tside::HUMAN || it->controller_ == tside::AI) { 
+			// 
+			strstr << "\n";
+			if (it->controller_ == tside::HUMAN) {
+				strstr << "\t\tcontroller = human\n";
+				strstr << "\t\tshroud = $player.shroud\n";
+				strstr << "\t\tfog = $player.fog\n";
+			} else {
+				strstr << "\t\tcontroller = ai\n";
+			}
+			strstr << "\t\tgold = " << it->gold_ << "\n";
+			strstr << "\t\tincome = " << it->income_ << "\n";
+			strstr << "\t\tfeature = " << it->generate_features() << "\n";
+			strstr << "\t\ttechnologies = ";
+			for (std::set<std::string>::const_iterator it2 = it->technologies_.begin(); it2 != it->technologies_.end(); ++ it2) {
+				if (it2 == it->technologies_.begin()) {
+					strstr << *it2;
+				} else {
+					strstr << ", " << *it2;
+				}
+			}
+			strstr << "\n";
+		} else if (it->controller_ != tside::EMPTY) { 
 			// PLAYER_IF
 			strstr << "\n";
 			strstr << "\t\t{PLAYER_IF " << it->leader_ << "}\n";
@@ -2978,6 +3065,7 @@ void OnSaveBt(HWND hdlgP)
 			return;
 		}
 		int i2 = 1;
+		std::set<int> human, ai, human_ai;
 		for (std::vector<tside>::const_iterator it2 = it->side_.begin(); it2 != it->side_.end(); ++ it2, i2 ++) {
 			if (it2->leader_ == HEROS_INVALID_NUMBER) {
 				strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str())) << "关卡的第" << i2 << "势力没有设置君主";
@@ -2989,6 +3077,23 @@ void OnSaveBt(HWND hdlgP)
 				posix_print_mb(strstr.str().c_str());
 				return;
 			}
+			if (it2->controller_ == tside::HUMAN) {
+				human.insert(it2->side_);
+			} else if (it2->controller_ == tside::AI) {
+				ai.insert(it2->side_);
+			} else if (it2->controller_ == tside::HUMAN_AI) {
+				human_ai.insert(it2->side_);
+			}
+		}
+		if (human.size() > 1) {
+			strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str())) << "关卡存在多个只限玩家势力";
+			posix_print_mb(strstr.str().c_str());
+			return;
+		}
+		if (!human.empty() && !human_ai.empty()) {
+			strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str())) << "关卡既存在只限玩家又存在玩家/AI势力";
+			posix_print_mb(strstr.str().c_str());
+			return;
 		}
 	}
 	
@@ -3217,7 +3322,7 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FIRSTSCENARIO), utf8_2_ansi(_("First scenario")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_IMAGE), utf8_2_ansi(_("Image")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DESCRIPTION), utf8_2_ansi(_("Description")));
-	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_CAMPMAIN_RPGMODE), utf8_2_ansi(_("RPG mode")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MODE), utf8_2_ansi(_("Mode")));
 
 	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPMAIN_BROWSEICON), utf8_2_ansi(_("Browse...")));
 	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPMAIN_BROWSEIMAGE), utf8_2_ansi(_("Browse...")));
@@ -3226,26 +3331,9 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	HWND hctl = GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_FILE);
 	Edit_SetText(hctl, ns::_main.file_.c_str());
 
-	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_RANK);
-	strstr.str("");
-	strstr << utf8_2_ansi(_("Tutorial")) << "[0, 99]";
-	ComboBox_AddString(hctl, strstr.str().c_str());
-	ComboBox_AddString(hctl, "SLG[100, 199]");
-	strstr.str("");
-	strstr << utf8_2_ansi(_("Multi-scenario")) << "[200, 299]";
-	ComboBox_AddString(hctl, strstr.str().c_str());
-	strstr.str("");
-	strstr << utf8_2_ansi(_("Test")) << "[300, ---)";
-	ComboBox_AddString(hctl, strstr.str().c_str());
-	ComboBox_SetItemData(hctl, 0, 0);
-	ComboBox_SetItemData(hctl, 1, 100);
-	ComboBox_SetItemData(hctl, 2, 200);
-	ComboBox_SetItemData(hctl, 3, 300);
-
 	std::string str;
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_ID), ns::_main.id_.c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_TEXTDOMAIN), ns::_main.textdomain_.c_str());
-	select_rank_cmb(GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_RANK), ns::_main.rank_);
 	// name
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_NAME_MSGID), ns::_main.id_.c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_NAME), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.id_.c_str())));
@@ -3268,7 +3356,19 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// description
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC_MSGID), ns::_main.description().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.description().c_str())));
-	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_CAMPMAIN_RPGMODE), ns::_main.rpg_mode_);
+
+	std::map<int, std::string> mode_map;
+	mode_map.insert(std::make_pair(NONE_MODE, _("None")));
+	mode_map.insert(std::make_pair(RPG_MODE, _("RPG")));
+	mode_map.insert(std::make_pair(TOWER_MODE, _("Tower")));
+	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_MODE);
+	for (std::map<int, std::string>::const_iterator it = mode_map.begin(); it != mode_map.end(); ++ it) {
+		ComboBox_AddString(hctl, utf8_2_ansi(it->second.c_str()));
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
+		if (ns::_main.mode_ == it->first) {
+			ComboBox_SetCurSel(hctl, ComboBox_GetCount(hctl) - 1);
+		}
+	}
 
 	ns::_main.update_to_ui(hdlgP);
 
@@ -3336,27 +3436,6 @@ void OnCampaignMainEt2(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	return;
 }
 
-void OnCampaignMainChk(HWND hdlgP, int id, UINT codeNotify)
-{
-	bool val, that;
-	int bit;
-
-	HWND hctl = GetDlgItem(hdlgP, id);
-
-	if (id == IDC_CHK_CAMPMAIN_RPGMODE) {
-		bit = tmain::BIT_RPGMODE;
-		that = ns::_main.main_from_cfg_.rpg_mode_;
-	} else {
-		return;
-	}
-
-	if (codeNotify == BN_CLICKED) {
-		val = Button_GetCheck(hctl);
-		ns::_main.set_dirty(bit, val != that);
-	}
-	return;
-}
-
 void OnCampaignMainCmb(HWND hdlgP, int id, UINT codeNotify)
 {
 	int val, that;
@@ -3364,9 +3443,9 @@ void OnCampaignMainCmb(HWND hdlgP, int id, UINT codeNotify)
 
 	HWND hctl = GetDlgItem(hdlgP, id);
 
-	if (id == IDC_CMB_CAMPMAIN_RANK) {
-		bit = tmain::BIT_RANK;
-		that = ns::_main.main_from_cfg_.rank_;
+	if (id == IDC_CMB_CAMPMAIN_MODE) {
+		bit = tmain::BIT_MODE;
+		that = ns::_main.main_from_cfg_.mode_;
 	} else {
 		return;
 	}
@@ -3457,10 +3536,7 @@ void On_DlgCampaignMainCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotif
 	case IDC_CMB_CAMPMAIN_FIRSTSCENARIO:
 		OnCampaignMainCmb(hdlgP, id, hwndCtrl, codeNotify);
 		break;
-	case IDC_CHK_CAMPMAIN_RPGMODE:
-		OnCampaignMainChk(hdlgP, id ,codeNotify);
-		break;
-	case IDC_CMB_CAMPMAIN_RANK:
+	case IDC_CMB_CAMPMAIN_MODE:
 		OnCampaignMainCmb(hdlgP, id, codeNotify);
 		break;
 	case IDC_BT_CAMPMAIN_BROWSEICON:
@@ -5096,6 +5172,7 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	strstr << utf8_2_ansi(_("Unrestricted")) << ")";
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TURNS), strstr.str().c_str());
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MDACTIVITY), utf8_2_ansi(_("Maximal defeated activity")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DUEL), utf8_2_ansi(_("Duel")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_WIN), utf8_2_ansi(_("Win condition")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LOSE), utf8_2_ansi(_("Lose condition")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TREASURE), utf8_2_ansi(_("Hidden treasure")));
@@ -5134,6 +5211,19 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	UpDown_SetRange(hctl, 0, 200);	// [0, 200]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_MDACTIVITY));
 	UpDown_SetPos(hctl, scenario.maximal_defeated_activity_);
+	// duel
+	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPSCENARIO_DUEL);
+	std::map<int, std::string> duel_map;
+	duel_map.insert(std::make_pair((int)NO_DUEL, _("have^No")));
+	duel_map.insert(std::make_pair((int)RANDOM_DUEL, _("Random")));
+	duel_map.insert(std::make_pair((int)ALWAYS_DUEL, _("Always")));
+	for (std::map<int, std::string>::const_iterator it = duel_map.begin(); it != duel_map.end(); ++ it) {
+		ComboBox_AddString(hctl, utf8_2_ansi(it->second.c_str()));
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
+		if (scenario.duel_ == it->first) {
+			ComboBox_SetCurSel(hctl, ComboBox_GetCount(hctl) - 1);
+		}
+	}
 	// win/lose
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_WIN_MSGID), scenario.win_.c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_WIN), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), scenario.win_.c_str())));
@@ -5231,9 +5321,9 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 2, &lvc);
 
-	lvc.cx = 40;
+	lvc.cx = 60;
 	lvc.iSubItem = 3;
-	strcpy(text, utf8_2_ansi(_("Void")));
+	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Controller"));
 	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 3, &lvc);
 
@@ -5493,16 +5583,22 @@ void OnCampaignScenarioCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	}
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	bool notequal = true;
 
 	if (id == IDC_CMB_CAMPSCENARIO_NEXTSCENARIO) {
 		bit = tscenario::BIT_NEXTSCENARIO;
 		that = scenario.scenario_from_cfg_.next_scenario_;
+		notequal = strcmp(text, that.c_str());
+	} else if (id == IDC_CMB_CAMPSCENARIO_DUEL) {
+		bit = tscenario::BIT_DUEL;
+		that = scenario.scenario_from_cfg_.next_scenario_;
+		notequal = scenario.scenario_from_cfg_.duel_ != ComboBox_GetItemData(hwndCtrl, ComboBox_GetCurSel(hwndCtrl));
 	} else {
 		return;
 	}
 
 	ComboBox_GetLBText(hwndCtrl, ComboBox_GetCurSel(hwndCtrl), text);
-	scenario.set_dirty(bit, strcmp(text, that.c_str()));
+	scenario.set_dirty(bit, notequal);
 
 	return;
 }
@@ -5620,7 +5716,7 @@ void OnSideDelBt(HWND hdlgP)
 	return;
 }
 
-BOOL On_DlgTreasureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+BOOL On_DlgScenarioTreasureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
@@ -5636,24 +5732,19 @@ BOOL On_DlgTreasureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_TREASURE_TREASURE);
-	const treasure_map& treasures = unit_types.treasures();
+	const std::vector<ttreasure>& treasures = unit_types.treasures();
 	int selected = 0, index = 0;
-	for (treasure_map::const_iterator it = treasures.begin(); it != treasures.end(); ++ it, index ++) {
+	for (std::vector<ttreasure>::const_iterator it = treasures.begin(); it != treasures.end(); ++ it, index ++) {
+		const ttreasure& t = *it;
 		strstr.str("");
-		strstr << utf8_2_ansi(hero::treasure_str(it->first).c_str());
+		strstr << utf8_2_ansi(t.name().c_str());
 		strstr << "(";
-		const std::vector<int>& features = treasures.find(it->first)->second;
-		for (std::vector<int>::const_iterator it2 = features.begin(); it2 != features.end(); ++ it2) {
-			if (it2 != features.begin()) {
-				strstr << ", ";
-			}
-			strstr << utf8_2_ansi(hero::feature_str(*it2).c_str());
-		}
+		strstr << utf8_2_ansi(hero::feature_str(t.feature()).c_str());
 		strstr << ")";
 		ComboBox_AddString(hctl, strstr.str().c_str());
-		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, t.index());
 		if (ns::action_treasure == ma_edit) {
-			if (it->first == ns::clicked_treasure) {
+			if (t.index() == ns::clicked_treasure) {
 				selected = index;
 			}
 		}
@@ -5677,7 +5768,7 @@ BOOL On_DlgTreasureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	return FALSE;
 }
 
-void On_DlgTreasureCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+void On_DlgScenarioTreasureCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 
@@ -5693,19 +5784,18 @@ void On_DlgTreasureCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	}
 }
 
-BOOL CALLBACK DlgTreasureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
+BOOL CALLBACK DlgScenarioTreasureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg) {
 	case WM_INITDIALOG:
-		return On_DlgTreasureInitDialog(hdlgP, (HWND)(wParam), lParam);
-	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgTreasureCommand);
+		return On_DlgScenarioTreasureInitDialog(hdlgP, (HWND)(wParam), lParam);
+	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgScenarioTreasureCommand);
 	HANDLE_MSG(hdlgP, WM_DRAWITEM, editor_config::On_DlgDrawItem);
-	// HANDLE_MSG(hdlgP, WM_DESTROY,  On_DlgTreasureDestroy);
 	}	
 	return FALSE;
 }
 
-void OnTreasureAddBt(HWND hdlgP)
+void OnScenarioTreasureAddBt(HWND hdlgP)
 {
 	RECT		rcBtn;
 	LPARAM		lParam;
@@ -5716,7 +5806,7 @@ void OnTreasureAddBt(HWND hdlgP)
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 
 	ns::action_treasure = ma_new;
-	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_TREASURE), hdlgP, DlgTreasureProc, lParam)) {
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_SCENARIOTREASURE), hdlgP, DlgScenarioTreasureProc, lParam)) {
 		scenario.update_to_ui_treasures(hdlgP);
 		scenario.set_dirty(tscenario::BIT_TREASURES, scenario.scenario_from_cfg_.treasures_ != scenario.treasures_);
 	}
@@ -5724,7 +5814,7 @@ void OnTreasureAddBt(HWND hdlgP)
 	return;
 }
 
-void OnTreasureEditBt(HWND hdlgP)
+void OnScenarioTreasureEditBt(HWND hdlgP)
 {
 	RECT		rcBtn;
 	LPARAM		lParam;
@@ -5735,7 +5825,7 @@ void OnTreasureEditBt(HWND hdlgP)
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 
 	ns::action_treasure = ma_edit;
-	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_TREASURE), hdlgP, DlgTreasureProc, lParam)) {
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_SCENARIOTREASURE), hdlgP, DlgScenarioTreasureProc, lParam)) {
 		scenario.update_to_ui_treasures(hdlgP);
 		scenario.set_dirty(tscenario::BIT_TREASURES, scenario.scenario_from_cfg_.treasures_ != scenario.treasures_);
 	}
@@ -5743,7 +5833,7 @@ void OnTreasureEditBt(HWND hdlgP)
 	return;
 }
 
-void OnTreasureDelBt(HWND hdlgP)
+void OnScenarioTreasureDelBt(HWND hdlgP)
 {
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 
@@ -5953,6 +6043,7 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 		break;
 
 	case IDC_CMB_CAMPSCENARIO_NEXTSCENARIO:
+	case IDC_CMB_CAMPSCENARIO_DUEL:
 		OnCampaignScenarioCmb(hdlgP, id, hwndCtrl, codeNotify);
 		break;
 
@@ -5965,7 +6056,7 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 		if (ns::type == IDC_LV_CAMPSCENARIO_SIDE) {
 			OnSideAddBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
-			OnTreasureAddBt(hdlgP);
+			OnScenarioTreasureAddBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_ROAD) {
 			OnRoadAddBt(hdlgP);
 		}
@@ -5976,7 +6067,7 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_EVENT) {
 			OnEventDelBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
-			OnTreasureDelBt(hdlgP);
+			OnScenarioTreasureDelBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_ROAD) {
 			OnRoadDelBt(hdlgP);
 		}
@@ -5987,7 +6078,7 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_EVENT) {
 			OnEventEditBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_TREASURE) {
-			OnTreasureEditBt(hdlgP);
+			OnScenarioTreasureEditBt(hdlgP);
 		} else if (ns::type == IDC_LV_CAMPSCENARIO_ROAD) {
 			OnRoadEditBt(hdlgP);
 		}
@@ -6184,7 +6275,7 @@ void campaignscenario_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 				OnEventEditBt(hdlgP);
 			} else if (lpNMHdr->idFrom == IDC_LV_CAMPSCENARIO_TREASURE) {
 				ns::clicked_treasure = lvi.lParam;
-				OnTreasureEditBt(hdlgP);
+				OnScenarioTreasureEditBt(hdlgP);
 			}
 		}
 	}
@@ -6449,7 +6540,7 @@ void new_campaign(const std::string& id, const std::string& firstscenario_id)
 	ns::campaign.init_hero_state(gdmgr.heros_);
 
 	_main = tmain(id, firstscenario_id);
-	_main.rpg_mode_ = true;
+	_main.mode_ = RPG_MODE;
 	_scenario.clear();
 	_scenario.push_back(tscenario(id, firstscenario_id));
 	tscenario& scenario = _scenario.back();

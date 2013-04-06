@@ -18,6 +18,8 @@
 #include "gui/dialogs/combo_box.hpp"
 
 #include "foreach.hpp"
+#include "formula_string_utils.hpp"
+#include "gettext.hpp"
 #include "gui/auxiliary/old_markup.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 	#include "gui/widgets/list.hpp"
@@ -28,6 +30,7 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/toggle_panel.hpp"
+#include "gui/widgets/label.hpp"
 #include <boost/bind.hpp>
 
 namespace gui2 {
@@ -65,8 +68,10 @@ namespace gui2 {
 
 REGISTER_DIALOG(combo_box)
 
-tcombo_box::tcombo_box(const std::vector<std::string>& items, int index)
-	: index_(index), items_()
+tcombo_box::tcombo_box(const std::vector<std::string>& items, int index, int type)
+	: index_(index)
+	, items_()
+	, type_(type)
 {
 	foreach(const std::string& it, items) {
 		items_.push_back(tlegacy_menu_item(it));
@@ -75,6 +80,14 @@ tcombo_box::tcombo_box(const std::vector<std::string>& items, int index)
 
 void tcombo_box::pre_show(CVideo& /*video*/, twindow& window)
 {
+	tlabel* title = find_widget<tlabel>(&window, "title", false, true);
+	if (type_ == EXTRACT) {
+		title->set_label(_("Extract hero"));
+	} else {
+		title->set_visible(twidget::INVISIBLE);
+		find_widget<twidget>(&window, "ok", false, true)->set_visible(twidget::INVISIBLE);
+		find_widget<twidget>(&window, "cancel", false, true)->set_visible(twidget::INVISIBLE);
+	}
 	tlistbox& list = find_widget<tlistbox>(&window, "listbox", false);
 	window.keyboard_capture(&list);
 
@@ -96,7 +109,6 @@ void tcombo_box::pre_show(CVideo& /*video*/, twindow& window)
 
 		tgrid* grid_ptr = list.get_row_grid(item_index);
 		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("item", true));
-		// toggle->set_callback_state_change(boost::bind(&tcombo_box::item_selected, this, _1));	
 		item_index ++;
 	}
 	list.set_callback_value_change(dialog_callback<tcombo_box, &tcombo_box::item_selected>);
@@ -108,7 +120,9 @@ void tcombo_box::pre_show(CVideo& /*video*/, twindow& window)
 
 void tcombo_box::item_selected(twindow& window)
 {
-	window.set_retval(twindow::OK);
+	if (type_ != EXTRACT) {
+		window.set_retval(twindow::OK);
+	}
 }
 
 void tcombo_box::post_show(twindow& window)

@@ -63,13 +63,24 @@ namespace game_config
 	int max_commoners = 5;
 
 	int default_human_level = 1;
-	int default_ai_level = 3;
+	int default_ai_level = 2;
 	int current_level = 1;
 	int min_level = 1;
-	int max_level = 6;
+	int max_level = 3;
 
 	int max_tactic_point = 15;
 	int increase_tactic_point = 4;
+
+	int kill_xp(int level)
+	{
+		level += 3;
+		return level ? kill_experience * level : kill_experience / 2;
+	}
+	int attack_xp(int level)
+	{
+		level += 3;
+		return level;
+	}
 
 	const std::string revision = VERSION;
 	const std::string checksum = "0123456789abcdef";
@@ -234,7 +245,7 @@ namespace game_config
 		}
 
 		max_cards = v["max_cards"].to_int(20);
-		default_ai_level = v["default_ai_level"].to_int(3);
+		default_ai_level = v["default_ai_level"].to_int(2);
 
 		title_music = v["title_music"].str();
 		lobby_music = v["lobby_music"].str();

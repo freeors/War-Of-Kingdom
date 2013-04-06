@@ -28,6 +28,9 @@ class gamemap;
 
 #define MAX_MAP_AREA	65536
 
+#define MAGIC_RESIDE 0x27051956
+#define MAGIC_HERO 0x27051957
+
 struct map_offset {
 	int x;
 	int y;

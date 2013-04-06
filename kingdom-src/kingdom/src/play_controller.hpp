@@ -97,6 +97,7 @@ public:
 	virtual void list();
 	virtual void system();
 	virtual void unit_detail();
+	virtual void switch_list();
 
 	virtual void do_init_side(const unsigned int team_index);
 	virtual void play_side(const unsigned int team_num, bool save) = 0;
@@ -144,7 +145,7 @@ public:
 	bool all_ai_allied() const { return all_ai_allied_; }
 	bool fallen_to_unstage() const { return fallen_to_unstage_; }
 	bool card_mode() const { return card_mode_; }
-	bool always_duel() const { return always_duel_; }
+	int duel() const { return duel_; }
 	
 	std::vector<int>& treasures() { return treasures_; }
 	const std::vector<int>& treasures() const { return treasures_; }
@@ -176,12 +177,13 @@ public:
 	const std::map<std::pair<int, int>, std::vector<map_location> >& roads() const { return roads_; }
 	const std::vector<map_location>& road(int a, int b) const;
 	const std::vector<map_location>& road(const unit& u) const;
-
+	
 	int human_players();
 	int first_human_team() const { return first_human_team_; }
 	const config& level() const { return level_; }
 
 	card_map& cards() { return cards_; }
+
 protected:
 	void slice_before_scroll();
 
@@ -267,7 +269,7 @@ protected:
 	std::pair<artifical*, artifical*> final_capital_;
 	bool fallen_to_unstage_;
 	bool card_mode_;
-	bool always_duel_;
+	int duel_;
 	std::vector<int> treasures_;
 
 	const std::string& select_victory_music() const;
@@ -278,6 +280,7 @@ protected:
 
 private:
 	void init(CVideo &video);
+
 	// Expand AUTOSAVES in the menu items, setting the real savenames.
 	void expand_autosaves(std::vector<std::string>& items);
 	std::vector<std::string> savenames_;
@@ -293,7 +296,7 @@ private:
 	size_t troops_cache_vsize_;
 
 	std::map<std::pair<int, int>, std::vector<map_location> > roads_;
-
+	
 	bool victory_when_enemies_defeated_;
 	end_level_data end_level_data_;
 	std::vector<std::string> victory_music_;

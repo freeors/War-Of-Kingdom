@@ -237,6 +237,28 @@ private:
 	bool complex_;
 };
 
+class ttreasure
+{
+public:
+	ttreasure()
+		: index_(-1)
+		, feature_(0)
+		, name_()
+		, image_()
+	{}
+	ttreasure(int index, int feature);
+
+	int index() const { return index_; }
+	int feature() const { return feature_; }
+	const std::string& name() const { return name_; }
+	const std::string& image() const { return image_; }
+private:
+	int index_;
+	int feature_;
+	std::string name_;
+	std::string image_;
+};
+
 namespace advance_tree {
 
 class base
@@ -469,7 +491,6 @@ typedef std::map<std::string, unit_movement_type> movement_type_map;
 typedef std::map<std::string, const config> traits_map;
 typedef std::map<std::string, const config> modifications_map;
 typedef std::map<int, std::vector<int> > complex_feature_map;
-typedef std::map<int, std::vector<int> > treasure_map;
 typedef std::map<std::string, const config> abilities_map;
 typedef std::map<std::string, const config> specials_map;
 typedef std::vector<std::string> navigation_types;
@@ -607,10 +628,13 @@ public:
 	bool land_wall() const { return land_wall_; }
 	bool walk_wall() const { return walk_wall_; }
 	const std::string& match() const { return match_; }
+	const std::string& raw_icon() const { return raw_icon_; }
+	std::string icon() const;
 	int arms() const { return arms_; }
-	int especial() const { return special_; }
+	int especial() const { return especial_; }
 	int master() const { return master_; }
 	int guard() const { return guard_; }
+	const std::set<map_location::DIRECTION>& touch_dirs() const { return touch_dirs_; }
 	bool packer() const { return packer_; }
 
 	bool has_zoc() const { return zoc_; }
@@ -703,6 +727,7 @@ private:
 	BUILD_STATUS build_status_;
 
 	std::string match_;
+	std::string raw_icon_;
 	t_translation::t_terrain terrain_;
 	bool can_recruit_;
 	bool can_reside_;
@@ -711,9 +736,10 @@ private:
 	bool land_wall_;
 	bool walk_wall_;
 	int arms_;
-	int special_;
+	int especial_;
 	int master_;
 	int guard_;
+	std::set<map_location::DIRECTION> touch_dirs_;
 	bool packer_;
 };
 
@@ -727,13 +753,17 @@ public:
 
 	const unit_type_map &types() const { return types_; }
 	const std::map<std::string, const unit_type*> &artifical_types() const { return artifical_types_; }
+	const std::map<int, const unit_type*>& keytypes() const { return keytypes_; }
+	const unit_type* keytype(int index) const { return keytypes_.find(index)->second; }
+	const unit_type* keytype2(int index) const;
 	const unit_type* master_type(int number) const { return master_types_.find(number)->second; }
 	const movement_type_map& movement_types() const { return movement_types_; }
 	const race_map &races() const { return races_; }
 	const traits_map& traits() const { return traits_; }
 	const modifications_map& modifications() const { return modifications_; }
 	const complex_feature_map& complex_feature() const { return complex_feature_; }
-	const treasure_map& treasures() const { return treasures_; }
+	const std::vector<ttreasure>& treasures() const { return treasures_; }
+	const ttreasure& treasure(int index) const { return treasures_[index]; }
 	const abilities_map& abilities() const { return abilities_; }
 	const specials_map& specials() const { return specials_; }
 
@@ -776,6 +806,8 @@ public:
 	const unit_type *find_technology() const { return technology_type_; }
 	const unit_type *find_tower() const { return tower_type_; }
 
+	const unit_type *find_scout() const { return scout_type_; }
+
 	/** Checks if the [hide_help] tag contains these IDs. */
 	bool hide_help(const std::string &type_id, const std::string &race_id) const;
 
@@ -792,6 +824,7 @@ private:
 	void add_advancefrom(const config& unit_cfg) const;
 
 	mutable unit_type_map types_;
+	std::map<int, const unit_type*> keytypes_;
 	std::map<std::string, const unit_type*> artifical_types_;
 	std::map<int, const unit_type*> master_types_;
 	movement_type_map movement_types_;
@@ -799,7 +832,7 @@ private:
 	modifications_map modifications_;
 	traits_map traits_;
 	complex_feature_map complex_feature_;
-	treasure_map treasures_;
+	std::vector<ttreasure> treasures_;
 	abilities_map abilities_;
 	specials_map specials_;
 	std::map<int, ttactic> tactics_;
@@ -825,6 +858,8 @@ private:
 
 	unit_type* businessman_type_;
 	unit_type* scholar_type_;
+
+	unit_type* scout_type_;
 
 	/** True if [hide_help] contains a 'all=yes' at its root. */
 	bool hide_help_all_;

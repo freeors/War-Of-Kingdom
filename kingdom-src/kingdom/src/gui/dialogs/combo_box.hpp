@@ -26,7 +26,9 @@ namespace gui2 {
 class tcombo_box : public tdialog
 {
 public:
-	explicit tcombo_box(const std::vector<std::string>& items, int index = 0);
+	enum {NONE, EXTRACT};
+
+	explicit tcombo_box(const std::vector<std::string>& items, int index = 0, int type = NONE);
 
 	/**
 	 * Returns the selected item index after displaying.
@@ -49,6 +51,7 @@ private:
 private:
 	int index_;
 	std::vector<tlegacy_menu_item> items_;
+	int type_;
 };
 
 

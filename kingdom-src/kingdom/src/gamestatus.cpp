@@ -72,7 +72,7 @@ game_classification::game_classification():
 	campaign(),
 	history(),
 	abbrev(),
-	rpg_mode(false),
+	mode(),
 	scenario(),
 	next_scenario(),
 	completion(),
@@ -93,7 +93,7 @@ game_classification::game_classification(const config& cfg):
 	campaign(cfg["campaign"]),
 	history(cfg["history"]),
 	abbrev(cfg["abbrev"]),
-	rpg_mode(cfg["rpg_mode"].to_bool()),
+	mode(cfg["mode"]),
 	scenario(cfg["scenario"]),
 	next_scenario(cfg["next_scenario"]),
 	completion(cfg["completion"]),
@@ -114,7 +114,7 @@ game_classification::game_classification(const game_classification& gc):
 	campaign(gc.campaign),
 	history(gc.history),
 	abbrev(gc.abbrev),
-	rpg_mode(gc.rpg_mode),
+	mode(gc.mode),
 	scenario(gc.scenario),
 	next_scenario(gc.next_scenario),
 	completion(gc.completion),
@@ -137,7 +137,7 @@ config game_classification::to_config() const
 	cfg["campaign"] = campaign;
 	cfg["history"] = history;
 	cfg["abbrev"] = abbrev;
-	cfg["rpg_mode"] = rpg_mode;
+	cfg["mode"] = mode;
 	cfg["scenario"] = scenario;
 	cfg["next_scenario"] = next_scenario;
 	cfg["completion"] = completion;
@@ -342,7 +342,7 @@ void game_state::write_snapshot(config& cfg) const
 	cfg["label"] = classification_.label;
 	cfg["history"] = classification_.history;
 	cfg["abbrev"] = classification_.abbrev;
-	cfg["rpg_mode"] = classification_.rpg_mode;
+	cfg["mode"] = classification_.mode;
 	cfg["version"] = game_config::version;
 
 	cfg["scenario"] = classification_.scenario;

@@ -17,8 +17,6 @@ std::string hero::feature_desc_str_[HEROS_MAX_FEATURE] = {};
 std::string hero::stratum_str_[HEROS_STRATUMS] = {};
 std::string hero::status_str_[HEROS_STATUSES] = {};
 std::string hero::official_str_[HEROS_OFFICIALS] = {};
-std::map<int, std::string> hero::treasure_str_;
-std::map<int, std::string> hero::character_str_;
 std::vector<int> hero::valid_features_;
 
 int hero::number_market = 272;
@@ -27,12 +25,15 @@ int hero::number_keep = 274;
 int hero::number_tower = 275;
 int hero::number_technology = 276;
 
+int hero::number_system_min = 227;
+int hero::number_system_max = 230;
+int hero::number_scout = 227;
+
 int hero::number_commoner_min = 360;
 int hero::number_commoner_max = 369;
 int hero::number_businessman = 360;
 int hero::number_scholar = 361;
 
-static std::string null_str = "";
 std::vector<hero*> empty_vector_hero_ptr = std::vector<hero*>();
 std::vector<size_t> empty_vector_size_t = std::vector<size_t>();
 
@@ -123,6 +124,7 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	ambition_ = HEROS_DEFAULT_AMBITION;
 	heart_ = HEROS_DEFAULT_HEART;
 	treasure_ = HEROS_NO_TREASURE;
+	utype_ = HEROS_NO_UTYPE;
 
 	// portrait image file
 	imgfile_[0] ='\0';
@@ -454,6 +456,15 @@ void hero::set_loyalty(hero& leader, int level, bool fixed)
 	float_catalog_ = ftofxp8(to_catalog);
 }
 
+void hero::set_loyalty2(hero& leader, int level, bool fixed)
+{
+	if (base_catalog_ != leader.base_catalog_) {
+		set_loyalty(leader, level, fixed);
+	} else {
+		float_catalog_ = ftofxp8(base_catalog_);
+	}
+}
+
 const char* hero::image(bool big)
 {
 	char* to;
@@ -558,7 +569,7 @@ std::string& hero::ambition_str()
 	return ambition_str_;
 }
 
-std::string& hero::stratum_str(int stratum)
+const std::string& hero::stratum_str(int stratum)
 {
 	if (stratum >= HEROS_STRATUMS) {
 		return null_str;
@@ -571,7 +582,7 @@ std::string& hero::stratum_str(int stratum)
 	return stratum_str_[stratum];
 }
 
-std::string& hero::status_str(int status)
+const std::string& hero::status_str(int status)
 {
 	if (status >= HEROS_STATUSES) {
 		return null_str;
@@ -584,7 +595,7 @@ std::string& hero::status_str(int status)
 	return status_str_[status];
 }
 
-std::string& hero::official_str(int official)
+const std::string& hero::official_str(int official)
 {
 	if (official >= HEROS_OFFICIALS) {
 		return null_str;
@@ -597,37 +608,7 @@ std::string& hero::official_str(int official)
 	return official_str_[official];
 }
 
-std::string& hero::treasure_str(int tid)
-{
-	if (tid == HEROS_NO_TREASURE) {
-		return null_str;
-	}
-	std::map<int, std::string>::iterator it = treasure_str_.find(tid);
-	if (it != treasure_str_.end()) {
-		return it->second;
-	}
-	char text[_MAX_PATH];
-	sprintf(text, "%s%i", HERO_PREFIX_STR_TREASURE, tid);
-	treasure_str_[tid] = dgettext("wesnoth-hero", text);
-	return treasure_str_[tid];
-}
-
-const std::string& hero::character_str(int cid)
-{
-	if (cid == NO_ESPECIAL) {
-		return null_str;
-	}
-	std::map<int, std::string>::iterator it = character_str_.find(cid);
-	if (it != character_str_.end()) {
-		return it->second;
-	}
-	char text[_MAX_PATH];
-	sprintf(text, "%s%i", HERO_PREFIX_STR_ESPECIAL, cid);
-	character_str_[cid] = dgettext("wesnoth-card", text);
-	return character_str_[cid];
-}
-
-std::string& hero::feature_str(int feature)
+const std::string& hero::feature_str(int feature)
 {
 	if (feature >= HEROS_MAX_FEATURE) {
 		return null_str;
@@ -640,7 +621,7 @@ std::string& hero::feature_str(int feature)
 	return feature_str_[feature];
 }
 
-std::string& hero::feature_desc_str(int feature)
+const std::string& hero::feature_desc_str(int feature)
 {
 	if (feature >= HEROS_MAX_FEATURE) {
 		return null_str;
@@ -708,6 +689,11 @@ std::string hero::adaptability_str2(uint16_t adaptability)
 bool hero::is_commoner(int h)
 {
 	return h >= number_commoner_min && h <= number_commoner_max;
+}
+
+bool hero::is_system(int h)
+{
+	return h >= number_system_min && h <= number_system_max;
 }
 
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
@@ -804,9 +790,7 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 		} else if (apply_to == "office") {
 			artifical* selected_city = unit_2_artifical(u);
 
-			status_ = hero_status_backing;
-			side_ = selected_city->side() - 1;
-			selected_city->finish_heros().push_back(this);
+			selected_city->finish_into(*this, hero_status_backing);
 			std::vector<hero*>& wander_heros = selected_city->wander_heros();
 			wander_heros.erase(std::find(wander_heros.begin(), wander_heros.end(), this));
 
@@ -897,7 +881,7 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 				utils::string_map symbols;
 				symbols["first"] = name();
 				symbols["second"] = to.name();
-				game_events::show_hero_message(&heros[214], NULL, vgettext("Feeling between $first and $second is increased.", symbols), game_events::INCIDENT_INVALID);
+				game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("Feeling between $first and $second is increased.", symbols), game_events::INCIDENT_INVALID);
 				
 				// adjust troop if needed.
 				increase_feeling_each(units, heros, to, increase);
@@ -1573,5 +1557,4 @@ void hero_map::change_language()
 	for (int i = 0; i < HEROS_OFFICIALS; i ++) {
 		hero::official_str_[i].clear();
 	}
-	hero::treasure_str_.clear();
 }

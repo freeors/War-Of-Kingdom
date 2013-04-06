@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-02-20 00:13+0800\n"
+"PO-Revision-Date: 2013-04-01 10:07+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -1850,7 +1850,7 @@ msgstr "使用地图："
 #. [label]
 #: data/gui/default/window/mp_create_game.cfg:331
 msgid "Number of turns"
-msgstr "回合数："
+msgstr "回合数"
 
 #. [slider]: id=turn_count
 #: data/gui/default/window/mp_create_game.cfg:354
@@ -2920,6 +2920,9 @@ msgstr "召回"
 msgid "End Turn"
 msgstr "结束本回合"
 
+msgid "Switch List"
+msgstr "切换列表"
+
 # TODO 这个是啥？
 #: src/hotkeys.cpp:77
 msgid "Toggle Ellipses"
@@ -3815,6 +3818,9 @@ msgstr "范围"
 msgid "Description"
 msgstr "描述"
 
+msgid "Our cities"
+msgstr "我方城市"
+
 #
 # Preferences Dialog
 #
@@ -4013,6 +4019,12 @@ msgstr "标题屏幕"
 msgid "Stratum"
 msgstr "身份"
 
+msgid "Hero count of AI on stage"
+msgstr "AI出场武将数"
+
+msgid "Tent"
+msgstr "营账"
+
 msgid "Strategy List"
 msgstr "战略列表"
 
@@ -4154,6 +4166,9 @@ msgstr "查看"
 msgid "Researching"
 msgstr "正在研究"
 
+msgid "quantity^Hold"
+msgstr "拥有数"
+
 msgid "Research"
 msgstr "研究"
 
@@ -4199,120 +4214,29 @@ msgstr "城外平民"
 msgid "Commoner"
 msgstr "平民"
 
-#~ msgid "Show Unit Idle Animations"
-#~ msgstr "显示单位空闲动画"
+#
+# Extract
+#
+msgid "Extract hero"
+msgstr "提取武将"
 
-#~ msgid "To 2500, will control more troops."
-#~ msgstr "到达2500，将能控制更多部队。"
+#
+# Extract
+#
+msgid "Extract"
+msgstr "提取"
 
-#~ msgid "To 5000, will control more troops."
-#~ msgstr "到达5000，将能控制更多部队。"
+msgid "Base"
+msgstr "基本"
 
-#~ msgid "To 8000, will be appointed mayor."
-#~ msgstr "到达8000，将被任命为太守。"
+msgid "Hasn't"
+msgstr "没有"
 
-#~ msgid "Press left button to create hero"
-#~ msgstr "单击左侧按钮创建武将"
+msgid "Duel"
+msgstr "单挑"
 
-#~ msgid "Turns"
-#~ msgstr "回合数"
+msgid "Reside"
+msgstr "城内"
 
-#~ msgid "Status Table"
-#~ msgstr "状态表"
-
-#~ msgid "player"
-#~ msgstr "玩家"
-
-#~ msgid "Game Lobby: "
-#~ msgstr "游戏大厅："
-
-#~ msgid "arm1"
-#~ msgstr "骑兵"
-
-#~ msgid "arm2"
-#~ msgstr "兵器"
-
-#~ msgid "arm3"
-#~ msgstr "学院"
-
-#~ msgid "arm4"
-#~ msgstr "水军"
-
-#~ msgid "Generate name"
-#~ msgstr "生成姓名"
-
-#~ msgid "Screenshot failed"
-#~ msgstr "屏幕截图失败"
-
-#~ msgid "Mushroom Grove Lit"
-#~ msgstr "被照亮的蘑菇林"
-
-#, fuzzy
-#~ msgid "Impassable Regular Mountains"
-#~ msgstr "高不可攀的沙漠山脉"
-
-#~ msgid "Impassable Desert Mountains"
-#~ msgstr "高不可攀的沙漠山脉"
-
-#, fuzzy
-#~ msgid "Castle Human Keep"
-#~ msgstr "城堡主楼"
-
-#, fuzzy
-#~ msgid "Snowy Castle Keep"
-#~ msgstr "城堡主楼"
-
-#, fuzzy
-#~ msgid "Deep Water Medium"
-#~ msgstr "深水"
-
-#, fuzzy
-#~ msgid "Deep Water Tropical"
-#~ msgstr "深水"
-
-#~ msgid "Snow Forest"
-#~ msgstr "雪地森林"
-
-#~ msgid "User-Command#2"
-#~ msgstr "用户命令#2"
-
-#~ msgid "User-Command#3"
-#~ msgstr "用户命令#3"
-
-#~ msgid "Wall"
-#~ msgstr "墙壁"
-
-#~ msgid "Could not get image for terrain: $terrain."
-#~ msgstr "无法获取该地形的图像：$terrain。"
-
-#~ msgid "Error creating or aquiring an image."
-#~ msgstr "创建或获取图像时发生错误。"
-
-#~ msgid "Fort"
-#~ msgstr "堡垒"
-
-#~ msgid "Ruin"
-#~ msgstr "遗迹"
-
-#~ msgid "Elven Keep"
-#~ msgstr "精灵主楼"
-
-#~ msgid "Grassland"
-#~ msgstr "草原"
-
-#~ msgid "Savanna"
-#~ msgstr "热带草原"
-
-#~ msgid "Road"
-#~ msgstr "道路"
-
-#~ msgid "River Ford"
-#~ msgstr "河滩"
-
-#~ msgid ""
-#~ "mouseover^Use new lobby interface (only works after a manual reconnect to "
-#~ "the server)"
-#~ msgstr "使用新版大厅界面（只有在手动与服务器重新连接之后才有效）"
-
-#~ msgid "Window not defined."
-#~ msgstr "窗口未定义。"
+msgid "Field"
+msgstr "城外"

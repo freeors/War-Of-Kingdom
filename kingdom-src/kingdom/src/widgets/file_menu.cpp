@@ -312,11 +312,26 @@ void file_menu::select_file(const std::string& begin_of_filename)
     }
 }
 
-void file_menu::update_file_lists() {
+void file_menu::update_file_lists()
+{
 	files_in_current_dir_.clear();
 	dirs_in_current_dir_.clear();
-	get_files_in_dir(current_dir_, &files_in_current_dir_,
-	                 &dirs_in_current_dir_, FILE_NAME_ONLY);
+
+#ifdef _WIN32
+	std::vector<std::string> files, dirs;
+	get_files_in_dir(current_dir_, &files, &dirs, FILE_NAME_ONLY);
+
+	// files and dirs of get_files_in_dir returned are unicode16 format
+	for (std::vector<std::string>::const_iterator it = files.begin(); it != files.end(); ++ it) {
+		files_in_current_dir_.push_back(conv_ansi_utf8_2(*it, true));
+	}
+	for (std::vector<std::string>::const_iterator it = dirs.begin(); it != dirs.end(); ++ it) {
+		dirs_in_current_dir_.push_back(conv_ansi_utf8_2(*it, true));
+	}
+#else
+	get_files_in_dir(current_dir_, &files_in_current_dir_, &dirs_in_current_dir_, FILE_NAME_ONLY);
+#endif
+
 	display_current_files();
 }
 

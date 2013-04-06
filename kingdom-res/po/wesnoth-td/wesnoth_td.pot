@@ -16,16 +16,16 @@ msgid "tower_defense description"
 msgstr ""
 
 # scenario
-msgid "Jian Sun incursion"
+msgid "td_1_1"
 msgstr ""
 
 msgid "defense Bei Liu"
 msgstr ""
 
-msgid "Persist in 20 turns"
+msgid "Persist in required turns"
 msgstr ""
 
-msgid "Ai enter rightmost 3 colum"
+msgid "No city you holden"
 msgstr ""
 
 msgid "AI are same as the flood and enter in."

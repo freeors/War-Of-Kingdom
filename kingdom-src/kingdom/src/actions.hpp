@@ -299,16 +299,28 @@ void post_duel(unit& left_u, hero& left, unit& right_u, hero& right, int percent
 
 int calculate_exploiture(const hero& h1, const hero& h2, int type);
 
-int calculate_disband_income(const unit& u, int cost_exponent);
+int calculate_disband_income(const unit& u, int cost_exponent, bool hp = false);
 
 void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost_exponent, bool human);
 
 void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, hero& h, unit* special, bool replay = false);
 
+void multi_attack(unit_map& units, unit* attacker, const std::string& type, const std::map<unit*, int>& touched, int a_side);
+
 void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std::string& type, const std::string& relative, int ratio);
+
+void road_guarding(unit_map& units, std::vector<team>& teams, const std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >& road_locs, int side);
 
 void do_trade(team& current_team, unit& commoner, artifical& owner, artifical& target, bool forward);
 
+int calculate_weapon(const unit& attacker, const unit& defender);
+
 bool no_fightback_attack(unit& attacker, unit& defender);
+
+void reform_captain(unit_map& units, unit& u, hero& h, bool join, bool replay);
+
+void do_demolish(game_display& gui, unit_map& units, team& current_team, unit* u, int income, bool replay);
+
+void do_fresh_heros(team& current_team, bool replay);
 
 #endif

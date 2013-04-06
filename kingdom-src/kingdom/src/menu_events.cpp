@@ -50,6 +50,7 @@
 #include "gui/dialogs/list.hpp"
 #include "gui/dialogs/system.hpp"
 #include "gui/dialogs/technology_tree.hpp"
+#include "gui/dialogs/combo_box.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "help.hpp"
@@ -650,7 +651,7 @@ void menu_handler::play_card(bool browse, int side_num)
 
 	{
 		discard_card discard(*gui_, current_team, cards_);
-		gui2::tplay_card dlg(*gui_, teams_, units_, heros_, cards_, side_num, &discard);
+		gui2::tplay_card dlg(*gui_, teams_, units_, heros_, cards_, gamestate_, side_num, &discard);
 		try {
 			dlg.show(gui_->video());
 		} catch(twml_exception& e) {
@@ -820,26 +821,92 @@ void menu_handler::build(const std::string& type1, mouse_handler& mousehandler, 
 	mousehandler.set_building(new_unit);
 }
 
-void menu_handler::demolish(mouse_handler& mousehandler, artifical& art)
+void menu_handler::extract(mouse_handler& mousehandler, unit& u)
+{
+	int side = u.side();
+
+	std::vector<hero*> vh;
+	std::vector<std::string> items;
+	std::stringstream strstr;
+
+	strstr.str("");
+	strstr << IMAGE_PREFIX << u.second().image() << "~SCALE(48, 60)" << COLUMN_SEPARATOR;
+	strstr << u.second().name();
+	items.push_back(strstr.str());
+	vh.push_back(&u.second());
+
+	if (u.third().valid()) {
+		strstr.str("");
+		strstr << IMAGE_PREFIX << u.third().image() << "~SCALE(48, 60)" << COLUMN_SEPARATOR;
+		strstr << u.third().name();
+		items.push_back(strstr.str());
+		vh.push_back(&u.third());
+	}
+
+	mousehandler.clear();
+	clear_undo_stack(side);
+
+	hero* extracted = NULL;
+	if (vh.size() == 1) {
+		extracted = vh.front();
+	} else {
+		gui2::tcombo_box dlg(items, 0, gui2::tcombo_box::EXTRACT);
+		dlg.show(gui_->video());
+		if (dlg.get_retval() == gui2::twindow::OK) {
+			std::vector<hero*>::iterator it = vh.begin();
+			std::advance(it, dlg.selected_index());
+			extracted = *it;
+		}
+	}
+	if (extracted) {
+		reform_captain(units_, u, *extracted, false, false);
+	}
+
+	gui_->goto_main_context_menu();
+}
+
+void menu_handler::demolish(mouse_handler& mousehandler, unit* u)
 {
 	std::string message;
 	utils::string_map symbols;
-	symbols["type"] = art.type()->type_name();
+	symbols["type"] = u->name();
 	message = vgettext("Do you really want to demolish $type?", symbols);
 	int res = gui2::show_message(gui_->video(), "", message, gui2::tmessage::yes_no_buttons);
 	if (res != gui2::twindow::OK) {
 		return;
 	}
 
-	int side = art.side();
-	map_location loc = art.get_location();
+	int side = u->side();
+	team& current_team = teams_[side - 1];
+/*	artifical* city = units_.city_from_cityno(u->cityno());
+	map_location loc = u->get_location();
 
-	units_.erase(&art);
-	recorder.add_disband(art.base()? -1 * unit_map::BASE: -1 * unit_map::OVERLAY, loc);
+	std::vector<hero*> vh;
+	if (!u->is_artifical()) {
+		vh.push_back(&u->master());
+		if (u->second().valid()) {
+			vh.push_back(&u->second());
+		}
+		if (u->third().valid()) {
+			vh.push_back(&u->third());
+		}
+	}
 
-	gui_->invalidate_unit();
+	units_.erase(u);
+	recorder.add_disband(u->base()? -1 * unit_map::BASE: -1 * unit_map::OVERLAY, loc);
+*/
+	int income = u->is_artifical()? 0: calculate_disband_income(*u, current_team.cost_exponent(), true);
+	do_demolish(*gui_, units_, current_team, u, income, false);
+
+	mousehandler.clear();
 	clear_undo_stack(side);
-
+/*
+	if (!u->is_artifical()) {
+		for (std::vector<hero*>::iterator it = vh.begin(); it != vh.end(); ++ it) {
+			city->finish_into(**it, hero_status_backing);
+		}
+	}
+*/
 	gui_->goto_main_context_menu();
 }
 
@@ -972,7 +1039,7 @@ void menu_handler::undo(int side_num)
 	gui_->hide_context_menu(NULL, true);
 #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
 #else
-	gui_->hide_unit_tip();
+	gui_->hide_tip();
 #endif
 	{
 		const events::command_disabler disable_commands;
@@ -1011,7 +1078,7 @@ void menu_handler::undo(int side_num)
 				units_.place(up);
 				up->second->set_standing();
 
-				gui_->refresh_access_troops(side_num - 1, game_display::REFRESH_ENABLE, NULL, up->second);
+				gui_->refresh_access_troops(side_num - 1, game_display::REFRESH_ENABLE, up->second);
 			} else {
 				// ÖÕµã: ³ÇÊÐ
 				unit_display::move_unit(route, *u, teams_);
@@ -1021,7 +1088,7 @@ void menu_handler::undo(int side_num)
 				artifical* stop_city = unit_2_artifical(&*u_end);
 				stop_city->troop_come_into(&*u, action.recall_pos);
 
-				gui_->refresh_access_troops(side_num - 1, game_display::REFRESH_ERASE, NULL, &*u);
+				gui_->refresh_access_troops(side_num - 1, game_display::REFRESH_ERASE, &*u);
 				// unit_display::move_unit will update centor location of u->second to location of city.
 				// Centor location of u->second must be back to u->first before call units_.erase.
 				// u->second.set_location(u->first);
@@ -1117,7 +1184,7 @@ void menu_handler::update_shroud_now(int side_num)
 
 bool menu_handler::end_turn(int side_num)
 {
-	if (rpg::stratum == hero_stratum_citizen) {
+	if (tent::mode == TOWER_MODE || rpg::stratum == hero_stratum_citizen) {
 		return true;
 	}
 
@@ -1189,24 +1256,12 @@ bool menu_handler::end_turn(int side_num)
 		}
 	}
 
-	if (rpg::stratum == hero_stratum_mayor) {
-		return true;
-	}
-/*
-	const unit_type* market = unit_types.find_market();
-	const std::set<const unit_type*>& can_build = current_team.builds();
-	if (can_build.find(market) != can_build.end() && current_team.commercials().size() < 3) {
-		size_t candidate_workers = freshes - fresh_imloyalty + finishes - finish_imloyalty - non_commercial_officials;
-		if (candidate_workers > current_team.commercials().size()) {
-			const int res = gui2::show_message(gui_->video(), "", _("You have vacancy in interior work yet. Do you really want to end your turn?"), gui2::tmessage::yes_no_buttons, "hero-256/230.png");
-			if (res != gui2::twindow::OK) {
-				return false;
-			}
-		}
-	}
-*/
-
 	return true;
+}
+
+void menu_handler::switch_list(int side_num)
+{
+	gui_->set_current_list_type(gui_->next_list_type());
 }
 
 unit_map::iterator menu_handler::current_unit()
@@ -1310,7 +1365,7 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 	do {
 		change = false;
 		blocked_unit = false;
-		const std::pair<unit**, size_t> p = current_team.field_troop();
+		std::pair<unit**, size_t> p = current_team.field_troop();
 		unit** troops = p.first;
 		size_t troops_vsize = p.second;
 		for (size_t i = 0; i < troops_vsize; i ++) {
@@ -1431,11 +1486,15 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 				bool stop_on_city = units_.city_from_loc(stop_loc)? true: false;
 				// once come into city(clicked_selfcity), selected_itor become invalid.
 				if (!stop_on_city && !unit_can_move(ui)) {
-					gui_->refresh_access_troops(ui.side() - 1, game_display::REFRESH_DISABLE, NULL, &ui);
+					gui_->refresh_access_troops(ui.side() - 1, game_display::REFRESH_DISABLE, &ui);
 				} else if (stop_on_city) {
 					// once ui enter into city, field_troop of team became invalid.
 					artifical* city = units_.city_from_loc(stop_loc);
+					// refresh
 					i = 0;
+					p = current_team.field_troop();
+					troops = p.first;
+					troops_vsize = p.second;
 				}
 			}
 		}

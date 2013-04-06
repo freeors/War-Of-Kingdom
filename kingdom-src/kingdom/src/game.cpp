@@ -41,7 +41,7 @@
 #include "gettext.hpp"
 #include "gui/dialogs/campaign_selection.hpp"
 #include "gui/dialogs/player_selection.hpp"
-// #include "gui/dialogs/hero_list.hpp"
+#include "gui/dialogs/tower_tent.hpp"
 #include "gui/dialogs/language_selection.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/mp_method_selection.hpp"
@@ -1047,7 +1047,7 @@ bool game_controller::new_campaign()
 
 	state_.classification().campaign = campaign["id"].str();
 	state_.classification().abbrev = campaign["abbrev"].str();
-	state_.classification().rpg_mode = campaign["rpg_mode"].to_bool();
+	state_.classification().mode = campaign["mode"].str();
 
 	// we didn't specify in the command line the scenario to be started
 	state_.classification().scenario = campaign["first_scenario"].str();
@@ -1066,29 +1066,37 @@ bool game_controller::new_campaign()
 	heros_start_ = heros_;
 
 	{
-		gui2::tplayer_selection dlg(disp(), heros_, cards_, campaign, player_hero_);
+		gui2::ttent* tent = NULL;
+		const std::string mode = campaign["mode"].str();
+		if (mode == "tower") {
+			tent = new gui2::ttower_tent(disp(), heros_, cards_, campaign, player_hero_);
+		} else {
+			tent = new gui2::tplayer_selection(disp(), heros_, cards_, campaign, player_hero_);
+		}
+
 		try {
-			dlg.show(disp().video());
+			tent->show(disp().video());
 		} catch(twml_exception& e) {
 			e.show(disp());
+			delete tent;
 			return false;
 		}
 
-		if (dlg.get_retval() != gui2::twindow::OK) {
+		if (tent->get_retval() != gui2::twindow::OK) {
 			// canceled difficulty dialog, relaunch the campaign selection dialog
+			delete tent;
 			return new_campaign();
 		}
-		checked_card_ = dlg.checked_card();
-		// config player = campaign.child("player", dlg.player());
-		config player = dlg.player();
+		checked_card_ = tent->checked_card();
 		
+		config player = tent->player();
 		if (player["hero"].to_int() == player_hero_.number_) {
 			heros_.add(player_hero_);
 			heros_start_.add(player_hero_);
 		}
 
-		player["shroud"] = dlg.shroud()? "yes": "no";
-		player["fog"] = dlg.fog()? "yes": "no";
+		player["shroud"] = tent->shroud()? "yes": "no";
+		player["fog"] = tent->fog()? "yes": "no";
 		// candidate_cards
 		std::stringstream str;
 		int index = 0;
@@ -1136,6 +1144,8 @@ bool game_controller::new_campaign()
 		state_.classification().version = game_config::version;
 		cache_.clear_defines();
 		cache_.add_define("EASY");
+
+		delete tent;
 	}
 
 	state_.classification().campaign_define = campaign["define"].str();

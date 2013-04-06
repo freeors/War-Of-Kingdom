@@ -138,9 +138,12 @@ public:
 
 	void fresh_into(hero& h);
 	void fresh_into(const unit* troop);
+	void finish_into(hero& h, uint8_t status);
 	void wander_into(const unit* troop, bool dialog = true);
 	void wander_into(hero& h, bool dialog = true);
 	void move_into(hero& h);
+
+	void finish_2_fresh();
 
 	bool select_mayor(hero* commend = NULL, bool dialog = true);
 	// must not return NULL, should &hero_invalid.
@@ -166,6 +169,8 @@ public:
 	void redraw_unit();
 	// 告知下一回轮到它了
 	bool new_turn();
+
+	void fill_ai_hero(std::set<int>& candidate, int count, int& random);
 
 	void read(const config& cfg, bool use_traits=true, game_state* state = 0);
 	void write(config& cfg) const;

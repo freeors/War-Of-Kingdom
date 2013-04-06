@@ -41,6 +41,7 @@ public:
 	bool target_hero() const { return target_hero_; }
 	bool multitudinous() const { return multitudinous_; }
 	bool decree() const { return decree_; }
+	const std::string& mode() const { return mode_; }
 
 // attribute
 public:
@@ -58,6 +59,7 @@ private:
 	bool target_hero_;
 	bool multitudinous_;
 	bool decree_;
+	std::string mode_;
 	std::string name_str_;
 	std::string desc_str_;
 	std::string image_str_;

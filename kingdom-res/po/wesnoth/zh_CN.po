@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-03-01 21:35+0800\n"
+"PO-Revision-Date: 2013-03-22 16:18+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -10696,6 +10696,9 @@ msgstr "$side完成研究$end科技，接下研究$begin！"
 msgid "$side finished researching $end, and have gotten all technology!"
 msgstr "$side完成研究$end，已研究完所有科技！"
 
+msgid "Select a grid to place, or a troop to join"
+msgstr "选择哪格子放置部队，或加入哪部队"
+
 msgid "short sword"
 msgstr "短剑"
 
@@ -10758,17 +10761,3 @@ msgstr "击败所有势力"
 
 msgid "No city you holded"
 msgstr "没了能控制城市"
-
-#~ msgid "teleport"
-#~ msgstr "传送"
-
-#~ msgid "female^teleport"
-#~ msgstr "传送"
-
-#~ msgid ""
-#~ "Teleport:\n"
-#~ "This unit may teleport between any two empty villages owned by its side "
-#~ "using one of its moves."
-#~ msgstr ""
-#~ "传送：\n"
-#~ "本单位可以花费一次移动机会，在任意两个属于本阵营的无人驻守的村庄之间传送。"

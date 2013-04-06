@@ -28,6 +28,8 @@
 #include <cstring>
 #include <iostream>
 
+const std::string null_str = "";
+
 void surface::sdl_add_ref(SDL_Surface *surf)
 {
 	if (surf != NULL)

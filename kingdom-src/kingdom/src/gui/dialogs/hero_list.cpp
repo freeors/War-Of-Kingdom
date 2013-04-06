@@ -215,7 +215,6 @@ void thero_list::fill_table_row(hero& h, int catalog)
 	std::vector<int> features;
 	std::stringstream str;
 	int val;
-	const treasure_map& treasures = unit_types.treasures();
 
 	/*** Add list item ***/
 	string_map table_item;
@@ -429,19 +428,11 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item_item.insert(std::make_pair("gender", table_item));
 
 		str.str("");
-		str << hero::treasure_str(h.treasure_);
 		if (h.treasure_ != HEROS_NO_TREASURE) {
-			treasure_map::const_iterator it = treasures.find(h.treasure_);
+			const ttreasure& t = unit_types.treasure(h.treasure_);
+			str << t.name();
 			str << "(";
-			if (it != treasures.end()) {
-				for (std::vector<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
-					if (it2 == it->second.begin()) {
-						str << hero::feature_str(*it2);
-					} else {
-						str << " " << hero::feature_str(*it2);
-					}	
-				}
-			}
+			str << hero::feature_str(t.feature());
 			str << ")";
 		}
 		table_item["label"] = str.str();
@@ -853,7 +844,14 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 			result = utils::utf8str_compare(hero::gender_str(h1->gender_), hero::gender_str(h2->gender_));
 		} else if (sorting_widget_ == widgets[2]) {
 			// treasure
-			result = utils::utf8str_compare(hero::treasure_str(h1->treasure_), hero::treasure_str(h2->treasure_));
+			std::string str1, str2;
+			if (h1->treasure_ != HEROS_NO_TREASURE) {
+				str1 = unit_types.treasure(h1->treasure_).name();
+			}
+			if (h2->treasure_ != HEROS_NO_TREASURE) {
+				str2 = unit_types.treasure(h2->treasure_).name();
+			}
+			result = utils::utf8str_compare(str1, str2);
 		} else if (sorting_widget_ == widgets[3]) {
 			// action
 			result = utils::utf8str_compare(hero::status_str(h1->status_), hero::status_str(h2->status_));

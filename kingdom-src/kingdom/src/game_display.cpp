@@ -64,6 +64,369 @@ static lg::log_domain log_engine("engine");
 
 std::map<map_location,fixed_t> game_display::debugHighlights_;
 
+int max_heros_in_list = 62;
+
+game_display::taccess_list::taccess_list(int type)
+	: type_(type)
+	, buttons_(NULL)
+	, count_(0)
+	, index_in_map_(-1)
+	, start_group_(0)
+	, actable_count_(0)
+{
+}
+
+game_display::taccess_list::~taccess_list()
+{
+	free_heap();
+}
+
+void game_display::taccess_list::free_heap()
+{
+	if (buttons_) {
+/*
+		for (size_t index = 0; index < count_; index ++) {
+			buttons_[index]->hide(true);
+			delete buttons_[index];
+		}
+*/
+		free(buttons_);
+		buttons_ = NULL;
+	}
+}
+
+void game_display::taccess_list::reload(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side)
+{
+	size_t i;
+	// size_t unit_button_count, dirty_btn_idx;
+	gui::button* btn;
+	gui::button** tmp;
+	theme::menu* access_unit_menu = access_map->menu_;
+
+	// restruct all button
+	access_map->buttons_ = buttons_;
+
+	// previous arrow
+	btn = access_map->buttons_[0] = 
+		new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, "buttons/arrow_left.png", gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, 0, NULL, loc.w, loc.h);
+	// next arrow
+	btn = access_map->buttons_[1] = 
+		new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, "buttons/arrow_right.png", gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, 1, NULL, loc.w, loc.h);
+
+	i = 2;
+	actable_count_ = 0;
+	tmp = access_map->buttons_;
+	const std::vector<artifical*>& holded_cities = gui.teams_[side].holded_cities();
+	if (type_ == TROOP) {
+		for (std::vector<artifical*>::const_iterator itor1 = holded_cities.begin(); itor1 != holded_cities.end(); ++ itor1) {
+			const std::vector<unit*>& troops = (*itor1)->field_troops();
+			for (std::vector<unit*>::const_iterator itor2 = troops.begin(); itor2 != troops.end(); ++ itor2) {
+				const unit* u = *itor2;
+				if (!u->human()) {
+					continue;
+				}
+				if (!unit_can_move(*u)) {
+					// 部队不可移动, 直接追加在末尾
+					btn = tmp[i] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, u->master().image(), gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, i, NULL, loc.w, loc.h);
+					btn->cookie_ = const_cast<unit*>(u);
+					btn->set_image(u->master().image(), u->level(), true, u->has_mayor());
+				} else {
+					// 部队可移动, 追加可移动末尾
+					if (actable_count_ < i - 2) {
+						memcpy(&(tmp[actable_count_ + 3]), &(tmp[actable_count_ + 2]), (i - 2 - actable_count_) * sizeof(gui::button*));
+					}
+					btn = tmp[actable_count_ + 2] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, (*itor2)->master().image(), gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, actable_count_ + 2, NULL, loc.w, loc.h);
+					btn->cookie_ = const_cast<unit*>(u);
+					btn->set_image(u->master().image(), u->level(), false, u->has_mayor());
+					actable_count_ ++;
+				}
+				i ++;
+			}
+		}
+	} else if (type_ == HERO && !holded_cities.empty()) {
+		for (std::vector<artifical*>::const_iterator c_it = holded_cities.begin(); c_it != holded_cities.end(); ++ c_it) {
+			artifical& city = **c_it;
+			const std::vector<hero*>& fresh = city.fresh_heros();
+			for (std::vector<hero*>::const_iterator it = fresh.begin(); it != fresh.end(); ++ it) {
+				hero* h = *it;
+
+				// 部队可移动, 追加可移动末尾
+				if (actable_count_ < i - 2) {
+					memcpy(&(tmp[actable_count_ + 3]), &(tmp[actable_count_ + 2]), (i - 2 - actable_count_) * sizeof(gui::button*));
+				}
+				btn = tmp[actable_count_ + 2] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, h->image(), gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, actable_count_ + 2, NULL, loc.w, loc.h);
+				btn->cookie_ = h;
+				if (h->utype_ != HEROS_NO_UTYPE) {
+					const unit_type* ut = unit_types.keytype(h->utype_);
+					btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+				} else {
+					btn->set_image(h->image(), -1, false);
+				}
+				actable_count_ ++;
+
+				i ++;
+			}
+			const std::vector<hero*>& finish = city.finish_heros();
+			for (std::vector<hero*>::const_iterator it = finish.begin(); it != finish.end(); ++ it) {
+				hero* h = *it;
+
+				// 部队不可移动, 直接追加在末尾
+				btn = tmp[i] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, h->image(), gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, i, NULL, loc.w, loc.h);
+				btn->cookie_ = h;
+				btn->set_image(h->image(), -1, true);
+				
+				i ++;
+			}
+		}
+	}
+
+	access_map->button_count_ = i;
+	// list->actable_count_ = i - 2;
+
+	// 一次性修正btnidx参数
+	for (i = actable_count_ + 2; i < access_map->button_count_; i ++) {
+		tmp[i]->btnidx_ = i;
+	}
+
+	// reset start_group_
+	start_group_ = 0;
+
+	gui.redraw_access_unit(this);
+}
+
+void game_display::taccess_list::insert(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie)
+{
+	size_t i, unit_button_count;
+	// size_t dirty_btn_idx;
+	gui::button* btn;
+	gui::button** tmp;
+	theme::menu* access_unit_menu = access_map->menu_;
+
+	const unit* u = reinterpret_cast<const unit*>(cookie);
+	hero* h = reinterpret_cast<hero*>(cookie);
+
+	tmp = access_map->buttons_;
+	unit_button_count = access_map->button_count_ - 2;
+	if (unit_button_count && (actable_count_ != unit_button_count)) {
+		memcpy(&(tmp[actable_count_ + 3]), &(tmp[actable_count_ + 2]), (unit_button_count - actable_count_) * sizeof(gui::button*));
+	}
+	access_map->button_count_ ++;
+	for (i = actable_count_ + 3; i < access_map->button_count_; i ++) {
+		tmp[i]->btnidx_ = i;
+	}
+	// 新按钮就放在list->actable_count_ + 2处
+	const char* image;
+	if (type_ == TROOP) {
+		image = u->master().image();
+	} else if (type_ == HERO) {
+		image = h->image();
+	}
+	btn = access_map->buttons_[actable_count_ + 2] = 
+		new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, image, gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, actable_count_ + 2, NULL, loc.w, loc.h);
+	btn->cookie_ = cookie;
+	
+	if (type_ == TROOP) {
+		if (!unit_can_move(*u)) {
+			// 1. 城市被攻占, 城外部队可能并入了本阵营, 这时那些部队应该被灰色
+			btn->set_image(image, u->level(), true, u->has_mayor());
+		} else {
+			btn->set_image(image, u->level(), false, u->has_mayor());
+			actable_count_ ++;
+		}
+	} else if (type_ == HERO) {
+		if (h->utype_ != HEROS_NO_UTYPE) {
+			const unit_type* ut = unit_types.keytype(h->utype_);
+			btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+		} else {
+			btn->set_image(h->image(), -1, false);
+		}
+		actable_count_ ++;
+	}
+
+	gui.redraw_access_unit(this);
+}
+
+void game_display::taccess_list::erase(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie)
+{
+	size_t i, unit_button_count, dirty_btn_idx;
+	gui::button** tmp;
+	theme::menu* access_unit_menu = access_map->menu_;
+	// const unit* u = reinterpret_cast<unit*>(cookie);
+
+	// 根据cookie进行搜索
+	tmp = access_map->buttons_;
+	// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
+	unit_button_count = access_map->button_count_ - 1;
+	// 按钮不可能是0, dirty_btn_idx置0指示无效
+	for (dirty_btn_idx = 0, i = 2; i < access_map->button_count_; i ++) {
+		if (dirty_btn_idx && (i < unit_button_count)) {
+			access_map->buttons_[i] = access_map->buttons_[i + 1];
+			access_map->buttons_[i]->btnidx_ --;
+		} else if (tmp[i]->cookie_ == cookie) {
+			// 检查到有按钮要被erase,先进行隐藏
+			gui.hide_access_unit(this);
+
+			dirty_btn_idx = i;
+			// 测试证明, delete不能清除已画在窗口中的图面
+			access_map->buttons_[i]->hide(true);
+			delete access_map->buttons_[i];
+			// 记住, 别忘这一处
+			// 同样要判断如果是最后一个按钮, 不要执行以下这两个赋值, [i + 1]这个按钮就是不存的
+			if (i < unit_button_count) {
+				access_map->buttons_[i] = access_map->buttons_[i + 1];
+				access_map->buttons_[i]->btnidx_ --;
+			}
+		}
+	}
+	if (!dirty_btn_idx) {
+		// 没有搜索到匹配项
+		return;
+	}
+	if (dirty_btn_idx < actable_count_ + 2) {
+		actable_count_ --;
+	}
+	access_map->button_count_ --;
+
+	// erase this maybe result group --
+	const SDL_Rect& mid_panel_loc = gui.theme_.mid_panel_location(gui.screen_area());
+	const int can_disp_width = mid_panel_loc.w - (loc.x - mid_panel_loc.x);
+
+	// first tow button are previous and next button
+	if (access_map->button_count_ > 2 && can_disp_width / loc.w > 2) {
+		size_t need_disp_units = access_map->button_count_ - 2;
+		size_t can_disp_units = can_disp_width / loc.w - 2;
+		// groups is count
+		size_t groups = ((access_map->button_count_ - 2) + can_disp_units - 1) / can_disp_units;
+		if (start_group_ == groups) {
+			start_group_ --;
+		}
+	}
+
+	gui.redraw_access_unit(this);
+}
+
+void game_display::taccess_list::disable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie)
+{
+	size_t i, unit_button_count, dirty_btn_idx;
+	gui::button* btn;
+	gui::button** tmp;
+	theme::menu* access_unit_menu = access_map->menu_;
+	const unit* u = reinterpret_cast<unit*>(cookie);
+	hero* h = reinterpret_cast<hero*>(cookie);
+
+	// 根据cookie进行搜索
+	tmp = access_map->buttons_;
+	// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
+	unit_button_count = access_map->button_count_ - 1;
+	// 按钮不可能是0, dirty_btn_idx置0指示无效
+	for (dirty_btn_idx = 0, i = 2; i < access_map->button_count_; i ++) {
+		if (dirty_btn_idx && (i < unit_button_count)) {
+			access_map->buttons_[i] = access_map->buttons_[i + 1];
+			access_map->buttons_[i]->btnidx_ --;
+		} else if (!dirty_btn_idx && tmp[i]->cookie_ == cookie) {
+			dirty_btn_idx = i;
+			if (dirty_btn_idx >= actable_count_ + 2) {
+				return;
+			}
+			// 检查到有按钮要被erase,先进行隐藏
+			gui.hide_access_unit(this);
+
+			// 测试证明, delete不能清除已画在窗口中的图面
+			btn = access_map->buttons_[i];
+			btn->hide(true);
+			
+			// 记住, 别忘这一处
+			// 同样要判断如果是最后一个按钮, 不要执行以下这两个赋值, [i + 1]这个按钮就是不存的
+			if (i < unit_button_count) {
+				access_map->buttons_[i] = access_map->buttons_[i + 1];
+				access_map->buttons_[i]->btnidx_ --;
+			}
+		}
+	}
+	if (!dirty_btn_idx) {
+		// 没有搜索到匹配项
+		return;
+	}
+	if (dirty_btn_idx < actable_count_ + 2) {
+		actable_count_ --;
+	}
+	// 修改图像参数, 向未尾增加该图像
+	if (type_ == TROOP) {
+		btn->set_image(u->master().image(), u->level(), true, u->has_mayor());
+	} else if (type_ == HERO) {
+		if (h->utype_ != HEROS_NO_UTYPE) {
+			const unit_type* ut = unit_types.keytype(h->utype_);
+			btn->set_image(h->image(), ut->cost(), true, false, ut->icon());
+		} else {
+			btn->set_image(h->image(), -1, true);
+		}
+	}
+	btn->btnidx_ = unit_button_count;
+	access_map->buttons_[unit_button_count] = btn;
+
+	gui.redraw_access_unit(this);
+}
+
+void game_display::taccess_list::enable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie)
+{
+	size_t i, unit_button_count, dirty_btn_idx;
+	gui::button* btn;
+	gui::button** tmp;
+	theme::menu* access_unit_menu = access_map->menu_;
+	const unit* u = reinterpret_cast<unit*>(cookie);
+	hero* h = reinterpret_cast<hero*>(cookie);
+
+	// 根据cookie进行搜索
+	tmp = access_map->buttons_;
+	// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
+	unit_button_count = access_map->button_count_ - 1;
+	// 按钮不可能是0, dirty_btn_idx置0指示无效
+	for (dirty_btn_idx = 0, i = 2; i < access_map->button_count_; i ++) {
+		if (tmp[i]->cookie_ == cookie) {
+			dirty_btn_idx = i;
+			if (dirty_btn_idx < actable_count_ + 2) {
+				return;
+			}
+			// 检查到有按钮要被erase,先进行隐藏
+			gui.hide_access_unit(this);
+
+			// 测试证明, delete不能清除已画在窗口中的图面
+			btn = access_map->buttons_[i];
+			btn->hide(true);
+			break;
+		}
+	}
+	if (!dirty_btn_idx) {
+		// 没有搜索到匹配项
+		return;
+	}
+	// 重新循环, 把dirty_btn_idx之前的按钮后移一个位置
+	// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
+	for (i = dirty_btn_idx - 1; i >= 2; i --) {
+		access_map->buttons_[i + 1] = access_map->buttons_[i];
+		access_map->buttons_[i + 1]->btnidx_ ++;
+	}
+
+	// 可行动按钮数增1
+	actable_count_ ++;
+
+	// 修改图像参数, 向头部增加该图像
+	if (type_ == TROOP) {
+		btn->set_image(u->master().image(), u->level(), false, u->has_mayor());
+	} else if (type_ == TROOP) {
+		if (h->utype_ != HEROS_NO_UTYPE) {
+			const unit_type* ut = unit_types.keytype(h->utype_);
+			btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+		} else {
+			btn->set_image(h->image(), -1, false);
+		}
+	}
+	btn->btnidx_ = 2;
+	access_map->buttons_[2] = btn;
+
+	gui.redraw_access_unit(this);
+}
+
 game_display::game_display(unit_map& units, play_controller* controller, CVideo& video, const gamemap& map,
 		const tod_manager& tod, const std::vector<team>& t,
 		const config& theme_cfg, const config& level) :
@@ -107,11 +470,21 @@ game_display::game_display(unit_map& units, play_controller* controller, CVideo&
 		disctrict_changed_(true),
 		draw_area_unit_(NULL),
 		draw_area_unit_size_(0),
-		access_unit_side_(-1),
+		troop_list_(taccess_list::TROOP),
+		hero_list_(taccess_list::HERO),
+		current_list_type_(taccess_list::TROOP),
+		access_list_side_(-1),
 		moving_src_loc_(),
 		moving_dst_loc_()
 {
 	singleton_ = this;
+
+	if (map_->w() && map_->h()) {
+		troop_list_.count_ = sizeof(gui::button*) * (map_->w() * map_->h() + 2);
+		troop_list_.buttons_ = (gui::button**)malloc(troop_list_.count_);
+		hero_list_.count_ = sizeof(gui::button*) * (max_heros_in_list + 2);
+		hero_list_.buttons_ = (gui::button**)malloc(hero_list_.count_);
+	}
 
 	// Inits the flag list and the team colors used by ~TC
 	// std::vector<std::string> side_colors;
@@ -221,23 +594,97 @@ game_display::~game_display()
 	prune_chat_messages(true);
 	singleton_ = NULL;
 
+	clear_context_menu_buttons();
 #ifdef ANDROID
 	__android_log_print(ANDROID_LOG_INFO, "SDL", "game_dispaly::~game_display");
 #endif
 }
 
-void game_display::construct_road()
+void game_display::rebuild_all()
 {
-	const std::map<std::pair<int, int>, std::vector<map_location> >& roads = controller_->roads();
+	display::rebuild_all();
+
+	if (map_->w() != last_map_w_ || map_->h() != last_map_h_) {
+		troop_list_.free_heap();
+		hero_list_.free_heap();
+
+		troop_list_.count_ = sizeof(gui::button*) * (map_->w() * map_->h() + 2);
+		troop_list_.buttons_ = (gui::button**)malloc(troop_list_.count_);
+		hero_list_.count_ = sizeof(gui::button*) * (max_heros_in_list + 2);
+		hero_list_.buttons_ = (gui::button**)malloc(hero_list_.count_);
+	}
+}
+
+void game_display::set_index_in_map(int index, bool troop)
+{
+	if (troop) {
+		troop_list_.index_in_map_ = index;
+	} else {
+		hero_list_.index_in_map_ = index;
+	}
+}
+
+bool game_display::index_in_map(int index) const
+{
+	return index == troop_list_.index_in_map_ || index == hero_list_.index_in_map_;
+}
+
+const theme::menu* game_display::access_troop_menu() const 
+{
+	if (!buttons_ctx_) {
+		return NULL;
+	}
+	if (current_list_type_ == taccess_list::TROOP) {
+		if (troop_list_.index_in_map_ != -1) {
+			return buttons_ctx_[troop_list_.index_in_map_].menu_;
+		}
+	} else if (current_list_type_ == taccess_list::HERO) {
+		if (hero_list_.index_in_map_ != -1) {
+			return buttons_ctx_[hero_list_.index_in_map_].menu_;
+		}
+	}
+	return NULL;
+}
+
+void game_display::construct_road_locs(const std::map<std::pair<int, int>, std::vector<map_location> >& roads)
+{
 	for (std::map<std::pair<int, int>, std::vector<map_location> >::const_iterator it = roads.begin(); it != roads.end(); ++ it) {
+		artifical* a = units_.city_from_cityno(it->first.first);
+		artifical* b = units_.city_from_cityno(it->first.second);
 		for (std::vector<map_location>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
 			const map_location& loc = *it2;
 			artifical* city = units_.city_from_loc(loc);
 			if (!city || city->get_location() != loc) {
-				road_locs_.insert(loc);
+				std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >::iterator find = road_locs_.find(loc);
+				if (find == road_locs_.end()) {
+					std::vector<std::pair<artifical*, artifical*> > v;
+					v.push_back(std::make_pair(a, b));
+					road_locs_.insert(std::make_pair(loc, v));
+				} else {
+					find->second.push_back(std::make_pair(a, b));
+				}
 			}
 		}
 	}
+}
+
+int game_display::road_owner(std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >::const_iterator& loc) const
+{
+	const team& t = teams_[activeTeam_];
+	int ret = OWNER_NONE;
+
+	const std::vector<std::pair<artifical*, artifical*> >& owner = loc->second;
+	for (std::vector<std::pair<artifical*, artifical*> >::const_iterator it = owner.begin(); it != owner.end(); ++ it) {
+		int a_side = it->first->side();
+		int b_side = it->second->side();
+		if (a_side != b_side) continue;
+		if (a_side == activeTeam_ + 1) {
+			return OWNER_SELF;
+		} else if (t.is_enemy(a_side)) {
+			return OWNER_ENEMY;
+		}
+	}
+	return ret;
 }
 
 void game_display::add_flag(int side_index, std::vector<std::string>& side_colors)
@@ -414,246 +861,68 @@ void game_display::invalidate_unit_after_move(const map_location& src, const map
 	invalidate_unit();
 }
 
-bool has_mayor(const unit& u)
+void game_display::refresh_access_troops(int side, refresh_reason reason, void* cookie)
 {
-	if (u.is_artifical() || u.is_commoner()) return false;
-	if (u.master().official_ == hero_official_mayor) return true;
-	if (u.second().valid() && u.second().official_ == hero_official_mayor) return true;
-	if (u.third().valid() && u.third().official_ == hero_official_mayor) return true;
-	return false;
+	refresh_access_list(side, reason, cookie, taccess_list::TROOP);
+}
+
+void game_display::refresh_access_heros(int side, refresh_reason reason, void* cookie)
+{
+	refresh_access_list(side, reason, cookie, taccess_list::HERO);
 }
 
 // refresh field troop buttons
 // @side: base 0
-void game_display::refresh_access_troops(int side, refresh_reason reason, void* , unit* troop)
+void game_display::refresh_access_list(int side, refresh_reason reason, void* cookie, int type)
 {
-	if (!buttons_ctx_ || access_troops_index_ == -1) {
+	if (!buttons_ctx_) {
 		return;
 	}
-
-	size_t i, unit_button_count, dirty_btn_idx;
-	gui::button* btn;
-	gui::button** tmp;
-	theme::menu* access_unit_menu = buttons_ctx_[access_troops_index_].menu_;
+	taccess_list* list = &troop_list_;
+	if (type == taccess_list::HERO) {
+		list = &hero_list_;
+	}
+	if (list->index_in_map_ == -1) {
+		return;
+	}
+	size_t i;
+	menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
+	theme::menu* access_unit_menu = access_map->menu_;
 
 	const SDL_Rect& loc = access_unit_menu->location(screen_area());
 	// SDL_Rect clip = {36, 30, 48, 60};
 
 	if (reason == REFRESH_RELOAD) {
 		// destroy all existed button
-		if (buttons_ctx_[access_troops_index_].buttons_) {
-			posix_print_mb("game_display::refresh_access_tropps, program error");
-		}
+		VALIDATE(!access_map->buttons_, "game_display::refresh_access_tropps, program error");
 		
-		// restruct all button
-		buttons_ctx_[access_troops_index_].buttons_ = access_troops_buttons_;
+		list->reload(*this, access_map, loc, side);
 
-		// previous arrow
-		btn = buttons_ctx_[access_troops_index_].buttons_[0] = 
-			new gui::button(screen_, "", gui::button::TYPE_PRESS, "buttons/arrow_left.png", gui::button::DEFAULT_SPACE, true, this, access_unit_menu, 0, NULL, loc.w, loc.h);
-		// next arrow
-		btn = buttons_ctx_[access_troops_index_].buttons_[1] = 
-			new gui::button(screen_, "", gui::button::TYPE_PRESS, "buttons/arrow_right.png", gui::button::DEFAULT_SPACE, true, this, access_unit_menu, 1, NULL, loc.w, loc.h);
+		access_list_side_ = side;
 
-		i = 2;
-		actable_troop_count_ = 0;
-		tmp = buttons_ctx_[access_troops_index_].buttons_;
-		const std::vector<artifical*>& holded_cities = teams_[side].holded_cities();
-		for (std::vector<artifical*>::const_iterator itor1 = holded_cities.begin(); itor1 != holded_cities.end(); ++ itor1) {
-			const std::vector<unit*>& troops = (*itor1)->field_troops();
-			for (std::vector<unit*>::const_iterator itor2 = troops.begin(); itor2 != troops.end(); ++ itor2) {
-				const unit* u = *itor2;
-				if (!u->human()) {
-					continue;
-				}
-				if (!unit_can_move(*u)) {
-					// 部队不可移动, 直接追加在末尾
-					btn = tmp[i] = new gui::button(screen_, "", gui::button::TYPE_PRESS, u->master().image(), gui::button::DEFAULT_SPACE, true, this, access_unit_menu, i, NULL, loc.w, loc.h);
-					btn->cookie_ = const_cast<unit*>(u);
-					btn->set_image(u->master().image(), u->level(), true, has_mayor(*u));
-				} else {
-					// 部队可移动, 追加可移动末尾
-					if (actable_troop_count_ < i - 2) {
-						memcpy(&(tmp[actable_troop_count_ + 3]), &(tmp[actable_troop_count_ + 2]), (i - 2 - actable_troop_count_) * sizeof(gui::button*));
-					}
-					btn = tmp[actable_troop_count_ + 2] = new gui::button(screen_, "", gui::button::TYPE_PRESS, (*itor2)->master().image(), gui::button::DEFAULT_SPACE, true, this, access_unit_menu, actable_troop_count_ + 2, NULL, loc.w, loc.h);
-					btn->cookie_ = const_cast<unit*>(u);
-					btn->set_image(u->master().image(), u->level(), false, has_mayor(*u));
-					actable_troop_count_ ++;
-				}
-				i ++;
-			}
-		}
-		buttons_ctx_[access_troops_index_].button_count_ = i;
-		// actable_troop_count_ = i - 2;
-
-		// 一次性修正btnidx参数
-		for (i = actable_troop_count_ + 2; i < buttons_ctx_[access_troops_index_].button_count_; i ++) {
-			tmp[i]->btnidx_ = i;
-		}
-
-		// reset start_group_
-		start_group_ = 0;
-
-		redraw_access_unit();
-		access_unit_side_ = side;
-
-	} else if (buttons_ctx_[access_troops_index_].buttons_ && (access_unit_side_ == side) && (reason == REFRESH_INSERT)) {
+	} else if (access_map->buttons_ && (access_list_side_ == side) && (reason == REFRESH_INSERT)) {
 		// 处理
-		hide_access_unit();
-		tmp = buttons_ctx_[access_troops_index_].buttons_;
-		unit_button_count = buttons_ctx_[access_troops_index_].button_count_ - 2;
-		if (unit_button_count && (actable_troop_count_ != unit_button_count)) {
-			memcpy(&(tmp[actable_troop_count_ + 3]), &(tmp[actable_troop_count_ + 2]), (unit_button_count - actable_troop_count_) * sizeof(gui::button*));
-		}
-		buttons_ctx_[access_troops_index_].button_count_ ++;
-		for (i = actable_troop_count_ + 3; i < buttons_ctx_[access_troops_index_].button_count_; i ++) {
-			tmp[i]->btnidx_ = i;
-		}
-		// 新按钮就放在actable_troop_count_ + 2处
-		btn = buttons_ctx_[access_troops_index_].buttons_[actable_troop_count_ + 2] = 
-			new gui::button(screen_, "", gui::button::TYPE_PRESS, troop->master().image(), gui::button::DEFAULT_SPACE, true, this, access_unit_menu, actable_troop_count_ + 2, NULL, loc.w, loc.h);
-		btn->cookie_ = troop;
-		if (!unit_can_move(*troop)) {
-			// 1. 城市被攻占, 城外部队可能并入了本阵营, 这时那些部队应该被灰色
-			btn->set_image(troop->master().image(), troop->level(), true, has_mayor(*troop));
-		} else {
-			btn->set_image(troop->master().image(), troop->level(), false, has_mayor(*troop));
-			actable_troop_count_ ++;
-		}
-		redraw_access_unit();
+		hide_access_unit(list);
 
-	} else if (buttons_ctx_[access_troops_index_].buttons_ && (access_unit_side_ == side) && (reason == REFRESH_ERASE)) {
-		// 根据cookie进行搜索
-		tmp = buttons_ctx_[access_troops_index_].buttons_;
-		// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
-		unit_button_count = buttons_ctx_[access_troops_index_].button_count_ - 1;
-		// 按钮不可能是0, dirty_btn_idx置0指示无效
-		for (dirty_btn_idx = 0, i = 2; i < buttons_ctx_[access_troops_index_].button_count_; i ++) {
-			if (dirty_btn_idx && (i < unit_button_count)) {
-				buttons_ctx_[access_troops_index_].buttons_[i] = buttons_ctx_[access_troops_index_].buttons_[i + 1];
-				buttons_ctx_[access_troops_index_].buttons_[i]->btnidx_ --;
-			} else if (tmp[i]->cookie_ == troop) {
-				// 检查到有按钮要被erase,先进行隐藏
-				hide_access_unit();
+		list->insert(*this, access_map, loc, side, cookie);
 
-				dirty_btn_idx = i;
-				// 测试证明, delete不能清除已画在窗口中的图面
-				buttons_ctx_[access_troops_index_].buttons_[i]->hide(true);
-				delete buttons_ctx_[access_troops_index_].buttons_[i];
-				// 记住, 别忘这一处
-				// 同样要判断如果是最后一个按钮, 不要执行以下这两个赋值, [i + 1]这个按钮就是不存的
-				if (i < unit_button_count) {
-					buttons_ctx_[access_troops_index_].buttons_[i] = buttons_ctx_[access_troops_index_].buttons_[i + 1];
-					buttons_ctx_[access_troops_index_].buttons_[i]->btnidx_ --;
-				}
-			}
-		}
-		if (!dirty_btn_idx) {
-			// 没有搜索到匹配项
-			return;
-		}
-		if (dirty_btn_idx < actable_troop_count_ + 2) {
-			actable_troop_count_ --;
-		}
-		buttons_ctx_[access_troops_index_].button_count_ --;
-		redraw_access_unit();
+	} else if (access_map->buttons_ && (access_list_side_ == side) && (reason == REFRESH_ERASE)) {
+		list->erase(*this, access_map, loc, side, cookie);
 
-	} else if (buttons_ctx_[access_troops_index_].buttons_ && (access_unit_side_ == side) && (reason == REFRESH_DISABLE)) {
-		// 根据cookie进行搜索
-		tmp = buttons_ctx_[access_troops_index_].buttons_;
-		// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
-		unit_button_count = buttons_ctx_[access_troops_index_].button_count_ - 1;
-		// 按钮不可能是0, dirty_btn_idx置0指示无效
-		for (dirty_btn_idx = 0, i = 2; i < buttons_ctx_[access_troops_index_].button_count_; i ++) {
-			if (dirty_btn_idx && (i < unit_button_count)) {
-				buttons_ctx_[access_troops_index_].buttons_[i] = buttons_ctx_[access_troops_index_].buttons_[i + 1];
-				buttons_ctx_[access_troops_index_].buttons_[i]->btnidx_ --;
-			} else if (!dirty_btn_idx && tmp[i]->cookie_ == troop) {
-				dirty_btn_idx = i;
-				if (dirty_btn_idx >= actable_troop_count_ + 2) {
-					return;
-				}
-				// 检查到有按钮要被erase,先进行隐藏
-				hide_access_unit();
+	} else if (access_map->buttons_ && (access_list_side_ == side) && (reason == REFRESH_DISABLE)) {
+		list->disable(*this, access_map, loc, side, cookie);
 
-				// 测试证明, delete不能清除已画在窗口中的图面
-				btn = buttons_ctx_[access_troops_index_].buttons_[i];
-				btn->hide(true);
-				
-				// 记住, 别忘这一处
-				// 同样要判断如果是最后一个按钮, 不要执行以下这两个赋值, [i + 1]这个按钮就是不存的
-				if (i < unit_button_count) {
-					buttons_ctx_[access_troops_index_].buttons_[i] = buttons_ctx_[access_troops_index_].buttons_[i + 1];
-					buttons_ctx_[access_troops_index_].buttons_[i]->btnidx_ --;
-				}
-			}
+	} else if (access_map->buttons_ && (access_list_side_ == side) && (reason == REFRESH_ENABLE)) {
+		list->enable(*this, access_map, loc, side, cookie);
+
+	} else if (access_map->buttons_ && (reason == REFRESH_CLEAR)) {
+		hide_access_unit(list);
+		for (i = 0; i < access_map->button_count_; i ++) {
+			delete access_map->buttons_[i];
 		}
-		if (!dirty_btn_idx) {
-			// 没有搜索到匹配项
-			return;
-		}
-		if (dirty_btn_idx < actable_troop_count_ + 2) {
-			actable_troop_count_ --;
-		}
-		// 修改图像参数, 向未尾增加该图像
-		btn->set_image(troop->master().image(), troop->level(), true, has_mayor(*troop));
-		btn->btnidx_ = unit_button_count;
-		buttons_ctx_[access_troops_index_].buttons_[unit_button_count] = btn;
-
-		redraw_access_unit();
-
-	} else if (buttons_ctx_[access_troops_index_].buttons_ && (access_unit_side_ == side) && (reason == REFRESH_ENABLE)) {
-		// 根据cookie进行搜索
-		tmp = buttons_ctx_[access_troops_index_].buttons_;
-		// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
-		unit_button_count = buttons_ctx_[access_troops_index_].button_count_ - 1;
-		// 按钮不可能是0, dirty_btn_idx置0指示无效
-		for (dirty_btn_idx = 0, i = 2; i < buttons_ctx_[access_troops_index_].button_count_; i ++) {
-			if (tmp[i]->cookie_ == troop) {
-				dirty_btn_idx = i;
-				if (dirty_btn_idx < actable_troop_count_ + 2) {
-					return;
-				}
-				// 检查到有按钮要被erase,先进行隐藏
-				hide_access_unit();
-
-				// 测试证明, delete不能清除已画在窗口中的图面
-				btn = buttons_ctx_[access_troops_index_].buttons_[i];
-				btn->hide(true);
-				break;
-			}
-		}
-		if (!dirty_btn_idx) {
-			// 没有搜索到匹配项
-			return;
-		}
-		// 重新循环, 把dirty_btn_idx之前的按钮后移一个位置
-		// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
-		// unit_button_count = std::min(dirty_btn_idx, buttons_ctx_[access_troops_index_].button_count_ - 2);
-		for (i = dirty_btn_idx - 1; i >= 2; i --) {
-			buttons_ctx_[access_troops_index_].buttons_[i + 1] = buttons_ctx_[access_troops_index_].buttons_[i];
-			buttons_ctx_[access_troops_index_].buttons_[i + 1]->btnidx_ ++;
-		}
-
-		// 可行动按钮数增1
-		actable_troop_count_ ++;
-
-		// 修改图像参数, 向头部增加该图像
-		btn->set_image(troop->master().image(), troop->level(), false, has_mayor(*troop));
-		btn->btnidx_ = 2;
-		buttons_ctx_[access_troops_index_].buttons_[2] = btn;
-
-		redraw_access_unit();
-
-	} else if (buttons_ctx_[access_troops_index_].buttons_ && (reason == REFRESH_CLEAR)) {
-		hide_access_unit();
-		for (i = 0; i < buttons_ctx_[access_troops_index_].button_count_; i ++) {
-			delete buttons_ctx_[access_troops_index_].buttons_[i];
-		}
-		buttons_ctx_[access_troops_index_].buttons_ = NULL;
-		buttons_ctx_[access_troops_index_].button_count_ = 0; // 这个还是要置的, display清除上下文菜单时要根据它来判断
-		access_unit_side_ = -1;
+		access_map->buttons_ = NULL;
+		access_map->button_count_ = 0; // 这个还是要置的, display清除上下文菜单时要根据它来判断
+		access_list_side_ = -1;
 	}
 }
 
@@ -661,38 +930,45 @@ void game_display::refresh_access_troops(int side, refresh_reason reason, void* 
 // must valid parameter: start_group_
 // 根据当前按钮数组和要显示组号，在快捷访问部队列表中显示该组中所有部队。它和hide_access_unit功能是相反。
 // 注：start_groups_值必须被指定，但如果start_groups_是一个过大非法值（理论上不该出现），会被这函数修改。
-void game_display::redraw_access_unit()
+void game_display::redraw_access_unit(taccess_list* list)
 {
+	if (list->type_ != current_list_type_) {
+		return;
+	}
+	if (list->index_in_map_ == -1) {
+		return;
+	}
+
 	size_t i, need_disp_units, can_disp_units, stop_disp_unit_plus1, groups;
-	theme::menu* access_unit_menu = buttons_ctx_[access_troops_index_].menu_;
+	menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
+	theme::menu* access_unit_menu = access_map->menu_;
 	gui::button* btn;
 
 	const SDL_Rect& loc = access_unit_menu->location(screen_area());
 	const SDL_Rect& mid_panel_loc = theme_.mid_panel_location(screen_area());
+	const int can_disp_width = mid_panel_loc.w - (loc.x - mid_panel_loc.x);
 
 	// first tow button are previous and next button
-	if (buttons_ctx_[access_troops_index_].button_count_ > 2) {
-		need_disp_units = buttons_ctx_[access_troops_index_].button_count_ - 2;
+	if (access_map->button_count_ > 2) {
+		need_disp_units = access_map->button_count_ - 2;
 	} else {
 		// no unit need be displayed
 		return;
 	}
-	if (mid_panel_loc.w / loc.w > 2) {
-		can_disp_units = mid_panel_loc.w / loc.w - 2;
+	if (can_disp_width / loc.w > 2) {
+		can_disp_units = can_disp_width / loc.w - 2;
 	} else {
 		// width configuration about bottom-middle-panel is too short
 		return;
 	}
-	// groups指示的是显示所有单位需要多少组, 以下计算时应该用buttons_ctx_[access_troops_index_].button_count_ - 2而不是buttons_ctx_[access_troops_index_].button_count_
-	groups = ((buttons_ctx_[access_troops_index_].button_count_ - 2) + can_disp_units - 1) / can_disp_units;
-	if (start_group_ >= groups) {
-		// correct start_group_
-		start_group_ = groups - 1;
-	}
+	// groups指示的是显示所有单位需要多少组, 以下计算时应该用access_map->button_count_ - 2而不是access_map.button_count_
+	groups = ((access_map->button_count_ - 2) + can_disp_units - 1) / can_disp_units;
+	VALIDATE(list->start_group_ < groups, "game_display::redraw_access_unit, start_group_ >= groups, invalid!");
+
 	// preview arrow
-	btn = buttons_ctx_[access_troops_index_].buttons_[0];
-	if (start_group_) {
-		btn = buttons_ctx_[access_troops_index_].buttons_[0];
+	btn = access_map->buttons_[0];
+	if (list->start_group_) {
+		btn = access_map->buttons_[0];
 		btn->set_location(loc.x, loc.y);
 		btn->hide(false);
 	}
@@ -701,19 +977,19 @@ void game_display::redraw_access_unit()
 	// need_disp_units: 指的就是要被显示的单位数
 	// can_disp_units: 一次最多可显示的单位数
 	// stop_disp_unit_plus1: 此次要显到的终于单位索引值+1, 这个索引值指的是在need_disp_units这个范围内索引值
-	if (need_disp_units > (start_group_ + 1) * can_disp_units) {
-		stop_disp_unit_plus1 = (start_group_ + 1) * can_disp_units;
+	if (need_disp_units > (list->start_group_ + 1) * can_disp_units) {
+		stop_disp_unit_plus1 = (list->start_group_ + 1) * can_disp_units;
 	} else {
 		stop_disp_unit_plus1 = need_disp_units;
 	}
 	// main units
-	for (i = start_group_ * can_disp_units; i < stop_disp_unit_plus1; i ++) {
-		btn = buttons_ctx_[access_troops_index_].buttons_[i + 2];
-		btn->set_location(loc.x + (1 + i - start_group_ * can_disp_units) * loc.w, loc.y);
+	for (i = list->start_group_ * can_disp_units; i < stop_disp_unit_plus1; i ++) {
+		btn = access_map->buttons_[i + 2];
+		btn->set_location(loc.x + (1 + i - list->start_group_ * can_disp_units) * loc.w, loc.y);
 		btn->hide(false);
 	}
 	// next arrow
-	btn = buttons_ctx_[access_troops_index_].buttons_[1];
+	btn = access_map->buttons_[1];
 	if (need_disp_units > stop_disp_unit_plus1) {
 		btn->set_location(loc.x + (1 + can_disp_units) * loc.w, loc.y);
 		btn->hide(false);
@@ -721,31 +997,37 @@ void game_display::redraw_access_unit()
 }
 
 // must valid parameter: start_group_
-void game_display::hide_access_unit()
+void game_display::hide_access_unit(taccess_list* list)
 {
+	if (list->index_in_map_ == -1) {
+		return;
+	}
+
 	size_t i, need_disp_units, can_disp_units, stop_disp_unit_plus1;
-	theme::menu* access_unit_menu = buttons_ctx_[access_troops_index_].menu_;
+	menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
+	theme::menu* access_unit_menu = access_map->menu_;
 	gui::button* btn;
 
 	const SDL_Rect& loc = access_unit_menu->location(screen_area());
 	const SDL_Rect& mid_panel_loc = theme_.mid_panel_location(screen_area());
+	const int can_disp_width = mid_panel_loc.w - (loc.x - mid_panel_loc.x);
 
 	// first tow button are previous and next button
-	if (buttons_ctx_[access_troops_index_].button_count_ > 2) {
-		need_disp_units = buttons_ctx_[access_troops_index_].button_count_ - 2;
+	if (access_map->button_count_ > 2) {
+		need_disp_units = access_map->button_count_ - 2;
 	} else {
 		// no unit need be displayed
 		return;
 	}
-	if (mid_panel_loc.w / loc.w > 2) {
-		can_disp_units = mid_panel_loc.w / loc.w - 2;
+	if (can_disp_width / loc.w > 2) {
+		can_disp_units = can_disp_width / loc.w - 2;
 	} else {
 		// width configuration about bottom-middle-panel is too short
 		return;
 	}
 	// preview arrow
-	btn = buttons_ctx_[access_troops_index_].buttons_[0];
-	if (start_group_) {
+	btn = access_map->buttons_[0];
+	if (list->start_group_) {
 		btn->hide(true);
 	}
 
@@ -753,45 +1035,78 @@ void game_display::hide_access_unit()
 	// need_disp_units: 指的就是要被显示的单位数
 	// can_disp_units: 一次最多可显示的单位数
 	// stop_disp_unit_plus1: 此次要显到的终于单位索引值+1, 这个索引值指的是在need_disp_units这个范围内索引值
-	if (need_disp_units > (start_group_ + 1) * can_disp_units) {
-		stop_disp_unit_plus1 = (start_group_ + 1) * can_disp_units;
+	if (need_disp_units > (list->start_group_ + 1) * can_disp_units) {
+		stop_disp_unit_plus1 = (list->start_group_ + 1) * can_disp_units;
 	} else {
 		stop_disp_unit_plus1 = need_disp_units;
 	}
 	// main units
-	for (i = start_group_ * can_disp_units; i < stop_disp_unit_plus1; i ++) {
-		btn = buttons_ctx_[access_troops_index_].buttons_[i + 2];
+	for (i = list->start_group_ * can_disp_units; i < stop_disp_unit_plus1; i ++) {
+		btn = access_map->buttons_[i + 2];
 		btn->hide(true);
 	}
 	// next arrow
-	btn = buttons_ctx_[access_troops_index_].buttons_[1];
+	btn = access_map->buttons_[1];
 	if (need_disp_units > stop_disp_unit_plus1) {
 		btn->hide(true);
 	}
 }
 
-map_location game_display::access_unit_press(size_t btnidx)
+map_location game_display::access_list_press(size_t btnidx)
 {
-	gui::button* btn;
-	unit* troop;
+	gui::button* btn = NULL;
 	map_location loc;
+	taccess_list* list = current_list_type_ == taccess_list::HERO? &hero_list_: &troop_list_;
+	menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
 
 	if (btnidx == 0) {
-		hide_access_unit();
-		-- start_group_;
-		redraw_access_unit();
+		hide_access_unit(list);
+		-- list->start_group_;
+		redraw_access_unit(list);
 	} else if (btnidx == 1) {
-		hide_access_unit();
-		start_group_ ++;
-		redraw_access_unit();
+		hide_access_unit(list);
+		list->start_group_ ++;
+		redraw_access_unit(list);
 	} else {
-		btn = buttons_ctx_[access_troops_index_].buttons_[btnidx];
-		troop = static_cast<unit*>(btn->cookie_);
-		// scroll_to_tile(troop->get_location(), WARP);
-		// events::mouse_handler::get_singleton()->select_hex(troop->get_location(), 0);
-		loc = troop->get_location();
+		btn = access_map->buttons_[btnidx];
+	}
+
+	if (btn) {
+		if (list->type_ == taccess_list::HERO) {
+			hero* h = reinterpret_cast<hero*>(btn->cookie_);
+			loc = map_location(MAGIC_HERO, h->number_);
+		} else {
+			unit* troop = reinterpret_cast<unit*>(btn->cookie_);
+			loc = troop->get_location();
+		}
 	}
 	return loc;
+}
+
+int game_display::next_list_type() const
+{
+	return (current_list_type_ + 1) % taccess_list::TYPE_COUNT;
+}
+
+game_display::taccess_list& game_display::type_2_list(int type)
+{
+	if (current_list_type_ == taccess_list::HERO) {
+		return hero_list_;
+	} else {
+		return troop_list_;
+	}
+}
+
+void game_display::set_current_list_type(int type) 
+{ 
+	if (current_list_type_ == type) {
+		return;
+	}
+	hide_access_unit(&type_2_list(current_list_type_));
+
+	current_list_type_ = type; 
+
+	redraw_access_unit(&type_2_list(current_list_type_));	
 }
 
 void game_display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags, uint32_t disable)
@@ -1007,11 +1322,7 @@ void game_display::draw_hex(const map_location& loc)
 	if (!disctrict_.empty() && disctrict_.find(loc) != disctrict_.end()) {
 		drawing_buffer_add(LAYER_MOVE_INFO/*LAYER_REACHMAP*/, loc, xpos, ypos, image::get_image("terrain/disctrict.png", image::SCALED_TO_HEX));
 	}
-/*
-	if (road_locs_.find(loc) != road_locs_.end()) {
-		drawing_buffer_add(LAYER_MOVE_INFO, loc, xpos, ypos, image::get_image("misc/road.png", image::SCALED_TO_HEX));
-	}
-*/
+
 	// Footsteps indicating a movement path
 	const std::vector<surface>& footstepImages = footsteps_images(loc);
 	if (footstepImages.size() != 0) {
@@ -1033,6 +1344,15 @@ void game_display::draw_hex(const map_location& loc)
 		if (selectable_indicator_.find(loc) != selectable_indicator_.end()) {
 			drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/selectable-indicator.png", image::SCALED_TO_HEX));
 		}
+	}
+
+	// placable indicator
+	if (on_map && placable_indicator_.find(loc) != placable_indicator_.end()) {
+		drawing_buffer_add(LAYER_TERRAIN_FG, loc, xpos, ypos, image::get_image("misc/placable-indicator.png", image::SCALED_TO_HEX));
+	}
+	// joinable indicator
+	if (on_map && joinable_indicator_.find(loc) != joinable_indicator_.end()) {
+		drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/joinable-indicator.png", image::SCALED_TO_HEX));
 	}
 
 	// Draw the tactic indicator
@@ -1149,15 +1469,6 @@ void game_display::draw_game_status()
 
 void game_display::show_unit_tip(const unit& troop, const map_location& loc)
 {
-	int16_t xoffset_main, yoffset_main;
-	std::string tip_message;
-	SDL_Color tip_color = font::NORMAL_COLOR;
-	int font_size = font::SIZE_SMALL;
-	int text_width = 400;
-
-	const SDL_Color bgcolor = {0, 0, 0, 160};
-	SDL_Rect area = screen_area();
-
 	if (main_tip_handle_) {
 		for (std::map<map_location, std::string>::const_iterator it = tip_locs_.begin(); it != tip_locs_.end(); ++ it) {
 			invalidate(it->first);
@@ -1216,12 +1527,31 @@ void game_display::show_unit_tip(const unit& troop, const map_location& loc)
 		tip_locs_.insert(std::make_pair(troop.adjacent_3_[i], ""));
 	}
 
+	show_tip(troop.form_tip(), loc, false);
+}
 
-	tip_message = troop.form_tip();
-	
+void game_display::show_tip(const std::string& message, const map_location& loc, bool clear)
+{
+	int16_t xoffset_main, yoffset_main;
+	SDL_Color tip_color = font::NORMAL_COLOR;
+	int font_size = font::SIZE_SMALL;
+
+	const SDL_Color bgcolor = {0, 0, 0, 160};
+	SDL_Rect area = screen_area();
+
+	if (clear && main_tip_handle_) {
+		for (std::map<map_location, std::string>::const_iterator it = tip_locs_.begin(); it != tip_locs_.end(); ++ it) {
+			invalidate(it->first);
+		}
+		tip_locs_.clear();
+
+		font::remove_floating_label(main_tip_handle_);
+		main_tip_handle_ = 0;
+	}
+
 	// const std::string wrapped_message = font::word_wrap_text(tip_message, font_size, text_width);
 	// font::word_wrap_text don't now tag of tintegate. but tip_message is tintegate format message.
-	const std::string wrapped_message = tip_message;
+	const std::string wrapped_message = message;
 
 	font::floating_label flabel(wrapped_message);
 	flabel.set_font_size(font_size);
@@ -1236,7 +1566,7 @@ void game_display::show_unit_tip(const unit& troop, const map_location& loc)
 
 	// one instance of map_area: (0, 26, 800, 471)
 	const SDL_Rect& map_area = map_outside_area();
-	int xpos = get_location_x(loc);
+	int xpos = loc.valid()? get_location_x(loc): rect_main.w;
 
 	// 单位提示放置规则:
 	// 1. 当x方向上，窗口距单位所在格子足够放置提示宽度时，提示放在左下角，否则放去右下解；
@@ -1250,7 +1580,7 @@ void game_display::show_unit_tip(const unit& troop, const map_location& loc)
 	font::move_floating_label(main_tip_handle_, xoffset_main, yoffset_main);
 }
 
-void game_display::hide_unit_tip()
+void game_display::hide_tip()
 {
 	if (main_tip_handle_) {
 		for (std::map<map_location, std::string>::const_iterator it = tip_locs_.begin(); it != tip_locs_.end(); ++ it) {
@@ -1347,7 +1677,7 @@ void game_display::draw_minimap_units()
 	}
 }
 
-void game_display::draw_bar(const std::string& image, int xpos, int ypos, const map_location& loc, size_t size, double filled, const SDL_Color& col, fixed_t alpha, bool vtl)
+void game_display::draw_bar(const std::string& image, int xpos, int ypos, const map_location& loc, int size, double filled, const SDL_Color& col, fixed_t alpha, bool vtl)
 {
 	filled = std::min<double>(std::max<double>(filled, 0.0), 1.0);
 	size = static_cast<size_t>(size * get_zoom_factor());
@@ -1415,7 +1745,7 @@ void game_display::draw_bar(const std::string& image, int xpos, int ypos, const 
 		drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos + top.w, ypos, surf, bot);
 	}
 
-	const size_t unfilled = static_cast<const size_t>(size * (1.0 - filled));
+	const int unfilled = static_cast<const int>(size * (1.0 - filled));
 
 	if (unfilled < size && alpha >= ftofxp(0.3)) {
 		const Uint8 r_alpha = std::min<unsigned>(unsigned(fxpmult(alpha,255)),255);
@@ -1637,6 +1967,7 @@ bool game_display::redraw_everything()
 	if (redrawn) {
 		if (!teams_.empty() && teams_[activeTeam_].is_human()) {
 			refresh_access_troops(activeTeam_);
+			refresh_access_heros(activeTeam_);
 			resources::controller->show_context_menu(NULL, *this);
 		}
 	}
@@ -2067,7 +2398,7 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 	invalidate(interior_indicator_);
 	interior_indicator_ = map_location();
 
-	if (!attack || (!attack->is_artifical() && !attack->attacks_left())) {
+	if (tent::mode == TOWER_MODE || !attack || (!attack->is_artifical() && !attack->attacks_left())) {
 		return;
 	}
 
@@ -2158,6 +2489,50 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 void game_display::clear_attack_indicator()
 {
 	set_attack_indicator(NULL);
+}
+
+void game_display::set_hero_indicator(const hero& h)
+{
+	invalidate(placable_indicator_);
+	placable_indicator_.clear();
+	invalidate(joinable_indicator_);
+	joinable_indicator_.clear();
+	if (!h.valid()) {
+		return;
+	}
+
+	const team& current_team = teams_[h.side_];
+	const gamemap& map = *map_;
+	int gold = current_team.gold();
+	int cost_exponent = current_team.cost_exponent();
+
+	int border_size = map.border_size();
+	for (int y_off = 0; y_off < map.h(); ++ y_off) {
+		for (int x_off = 0; x_off < map.w(); ++ x_off) {
+			
+			const map_location loc = map_location(x_off, y_off);
+			const t_translation::t_terrain terrain = map.get_terrain(loc);
+			const unit* u = find_unit(units_, loc);
+			if (u) {
+				if (!u->is_artifical() && !u->third().valid() && h.side_ + 1 == u->side()) {
+					joinable_indicator_.insert(loc);
+					invalidate(loc);
+				}
+			} else if (x_off >=3 && h.utype_ != HEROS_NO_UTYPE) {
+				const unit_type* ut = unit_types.keytype(h.utype_);
+				const unit_movement_type& mtype = ut->movement_type();
+				if (gold >= ut->cost() * cost_exponent / 100 && mtype.movement_cost(map, terrain) != unit_movement_type::UNREACHABLE) {
+					placable_indicator_.insert(loc);
+					invalidate(loc);
+				}
+			}
+		}
+	}
+}
+
+void game_display::clear_hero_indicator()
+{
+	set_hero_indicator(hero_invalid);
 }
 
 bool game_display::loc_in_attack_indicator(const map_location& loc) const

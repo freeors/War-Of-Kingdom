@@ -57,7 +57,6 @@ public:
 
 private:
 	void do_move();
-	void do_move_td();
 
 	bool do_combat(bool unmovementable = false);
 
@@ -132,7 +131,6 @@ private:
 	ai_plan plan_to_;
 
 	// [ai] setting variable
-	bool td_mode_;
 	double aggression_;
 	int attack_depth_;
 

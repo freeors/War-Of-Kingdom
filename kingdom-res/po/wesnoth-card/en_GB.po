@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: en_GB\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-01-17 11:14+0800\n"
+"PO-Revision-Date: 2013-03-31 00:00+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: English (British) <en@li.org>\n"
 "Language: en_GB\n"
@@ -66,6 +66,28 @@ msgstr ""
 
 msgid "communicate description"
 msgstr "communicate"
+
+msgid "Develop business"
+msgstr ""
+
+#, fuzzy
+msgid "develop business description"
+msgstr "advance"
+
+#, fuzzy
+msgid "Develop technology"
+msgstr "technology"
+
+#, fuzzy
+msgid "develop technology description"
+msgstr "navigation"
+
+msgid "Balance revenue"
+msgstr ""
+
+#, fuzzy
+msgid "balance revenue description"
+msgstr "advance"
 
 #
 # technology section
@@ -333,3 +355,286 @@ msgstr "strategic"
 
 msgid "technology_desc-strategic"
 msgstr "strategic"
+
+#
+# character section
+#
+msgid "character-aggressive"
+msgstr ""
+
+msgid "character_desc-aggressive"
+msgstr ""
+
+msgid "character-united"
+msgstr ""
+
+msgid "character_desc-united"
+msgstr ""
+
+msgid "character-charismatic"
+msgstr ""
+
+msgid "character_desc-charismatic"
+msgstr ""
+
+msgid "character-creative"
+msgstr ""
+
+msgid "character_desc-creative"
+msgstr ""
+
+msgid "character-expansive"
+msgstr ""
+
+msgid "character_desc-expansive"
+msgstr ""
+
+msgid "character-financial"
+msgstr ""
+
+msgid "character_desc-financial"
+msgstr ""
+
+msgid "character-industrious"
+msgstr ""
+
+msgid "character_desc-industrious"
+msgstr ""
+
+msgid "character-organized"
+msgstr ""
+
+msgid "character_desc-organized"
+msgstr ""
+
+msgid "character-protective"
+msgstr ""
+
+msgid "character_desc-protective"
+msgstr ""
+
+msgid "character-philosophical"
+msgstr ""
+
+msgid "character_desc-philosophical"
+msgstr ""
+
+msgid "character-spiritual"
+msgstr ""
+
+msgid "character_desc-spiritual"
+msgstr ""
+
+msgid "character-imperialistic"
+msgstr ""
+
+msgid "character_desc-imperialistic"
+msgstr ""
+
+msgid "character-ambitious"
+msgstr ""
+
+msgid "character_desc-ambitious"
+msgstr ""
+
+msgid "especial-0"
+msgstr "Desert"
+
+msgid "especial-1"
+msgstr "Tiger"
+
+msgid "especial-2"
+msgstr "Witch"
+
+msgid "especial-3"
+msgstr "South-barbarian"
+
+msgid "especial-4"
+msgstr "Break"
+
+msgid "especial-5"
+msgstr "Vanguard"
+
+msgid "especial-6"
+msgstr "Heroine"
+
+msgid "especial-7"
+msgstr "Crossbow"
+
+msgid "especial-8"
+msgstr "Pelisse"
+
+msgid "especial-9"
+msgstr "Qingzhou"
+
+msgid "especial-10"
+msgstr "Bingzhou"
+
+msgid "especial-11"
+msgstr "Danyang"
+
+msgid "especial-12"
+msgstr "Zhuge"
+
+msgid "especial-13"
+msgstr "Powder"
+
+msgid "especial-14"
+msgstr "Taoism"
+
+msgid "especial-15"
+msgstr "Feature"
+
+msgid "treasure-0"
+msgstr "Chi tu horse"
+
+msgid "treasure-1"
+msgstr "Di lu horse"
+
+msgid "treasure-2"
+msgstr "Zhua huang fei dian horse"
+
+msgid "treasure-3"
+msgstr "Jue ying horse"
+
+msgid "treasure-4"
+msgstr "White dragon horse"
+
+msgid "treasure-5"
+msgstr "Si lun vehicle"
+
+msgid "treasure-6"
+msgstr "Seven star falchion"
+
+msgid "treasure-7"
+msgstr "Yi tian sword"
+
+msgid "treasure-8"
+msgstr "Qing gang sword"
+
+msgid "treasure-9"
+msgstr "Chi xiong double sword"
+
+msgid "treasure-10"
+msgstr "Gu ding falchion"
+
+msgid "treasure-11"
+msgstr "Qing long yan yue falchion"
+
+msgid "treasure-12"
+msgstr "Three jian falchion"
+
+msgid "treasure-13"
+msgstr "She pike"
+
+msgid "treasure-14"
+msgstr "Tian ji she pike"
+
+msgid "treasure-15"
+msgstr "Fang tian hua pike"
+
+msgid "treasure-16"
+msgstr "Twin iron pike"
+
+msgid "treasure-17"
+msgstr "Iron scourge"
+
+msgid "treasure-18"
+msgstr "Iron ji li gu duo"
+
+msgid "treasure-19"
+msgstr "Fie falchion"
+
+msgid "treasure-20"
+msgstr "Master Sun's Art of War"
+
+msgid "treasure-21"
+msgstr "Three lue"
+
+msgid "treasure-22"
+msgstr "Si ma art"
+
+msgid "treasure-23"
+msgstr "Meng de xin shu"
+
+msgid "treasure-24"
+msgstr "Twenty four chapter"
+
+msgid "treasure-25"
+msgstr "Guang zi"
+
+msgid "treasure-26"
+msgstr "Yan zi cun qiu"
+
+msgid "treasure-27"
+msgstr "Zhou shu yin fu"
+
+msgid "treasure-28"
+msgstr "Cun qiu zuo zhang"
+
+msgid "treasure-29"
+msgstr "Shu jing"
+
+msgid "treasure-30"
+msgstr "Lun yu ji jie"
+
+msgid "treasure-31"
+msgstr "Jian lun"
+
+msgid "treasure-32"
+msgstr "Shi yao lun"
+
+msgid "treasure-33"
+msgstr "Zhi lun"
+
+msgid "treasure-34"
+msgstr "Bian dao lun"
+
+msgid "treasure-35"
+msgstr "Qiu guo lun"
+
+msgid "treasure-36"
+msgstr "Tai ping yao shu"
+
+msgid "treasure-37"
+msgstr "Xi Shu di xing chart"
+
+msgid "treasure-38"
+msgstr "Ping man zhi zhang chart"
+
+msgid "treasure-39"
+msgstr "Pearl"
+
+msgid "treasure-40"
+msgstr "Jade"
+
+msgid "treasure-41"
+msgstr "Cyan jade"
+
+msgid "treasure-42"
+msgstr "Red jade"
+
+msgid "treasure-43"
+msgstr "Five stone san"
+
+msgid "treasure-44"
+msgstr "White feather fan"
+
+msgid "treasure-45"
+msgstr "imperial jade seal "
+
+#, fuzzy
+msgid "treasure-46"
+msgstr "Surveillance"
+
+#, fuzzy
+msgid "treasure-47"
+msgstr "Encourage"
+
+#, fuzzy
+msgid "treasure-48"
+msgstr "Lobbyist"
+
+#, fuzzy
+msgid "treasure-49"
+msgstr "Break"

@@ -221,6 +221,8 @@ public:
 	virtual void select_hex(map_location hex);
 	virtual void highlight_hex(map_location hex);
 
+	virtual void set_hero_indicator(const hero& h) {};
+
 	/** Function to invalidate the game status displayed on the sidebar. */
 	void invalidate_game_status() { invalidateGameStatus_ = true; }
 
@@ -282,7 +284,7 @@ public:
 	gui::button* find_button(const theme::menu* m, int btnidx = 0);
 	// runtime tooltip of mouse-over unit
 	virtual void show_unit_tip(const unit& troop, const map_location& loc) {}
-	virtual void hide_unit_tip() {}
+	virtual void hide_tip() {}
 
 	// Will be overridden in the display subclass
 	virtual void draw_minimap_units() {};
@@ -356,7 +358,7 @@ public:
 	void update_display();
 
 	/** Rebuild all dynamic terrain. */
-	void rebuild_all();
+	virtual void rebuild_all();
 
 	// const theme::menu* menu_pressed();
 	const button_loc& menu_pressed();
@@ -366,9 +368,11 @@ public:
 	
 	void clear_context_menu_buttons();
 
-	virtual map_location access_unit_press(size_t btnidx) { return map_location(); }
+	virtual map_location access_list_press(size_t btnidx) { return map_location(); }
 
-	const theme::menu* access_troop_menu() const;
+	virtual void set_index_in_map(int index, bool troop) {};
+	virtual bool index_in_map(int index) const { return false; }
+	virtual const theme::menu* access_troop_menu() const { return NULL; }
 
 	virtual void set_attack_indicator(unit* attack, bool browse) {};
 
@@ -617,6 +621,9 @@ protected:
 	bool invalidateGameStatus_;
 	boost::scoped_ptr<map_labels> map_labels_;
 
+	int last_map_w_;
+	int last_map_h_;
+
 	/** Event raised when the map is being scrolled */
 	mutable events::generic_event scroll_event_;
 
@@ -648,16 +655,14 @@ protected:
 	/** Local cache for preferences "local_tod_light" */
 	bool local_tod_light_;
 
-		struct menu_button_map {
+	struct menu_button_map {
 		menu_button_map(): menu_(NULL), buttons_(NULL), button_count_(0) {}
 		theme::menu *menu_;
 		gui::button **buttons_;
 		size_t button_count_;
 	};
 	menu_button_map *buttons_ctx_;
-	int access_troops_index_;
-	size_t start_group_;
-	
+
 	uint8_t* draw_area_;
 	int draw_area_pitch_;
 	int draw_area_size_;
@@ -885,14 +890,13 @@ protected:
 	void draw_init();
 	void draw_wrap(bool update,bool force);
 
+	enum {OWNER_NONE, OWNER_SELF, OWNER_ENEMY};
+	virtual int road_owner(std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >::const_iterator& loc) const { return OWNER_NONE; }
+
 	/** Used to indicate to drawing functions that we are doing a map screenshot */
 	bool map_screenshot_;
 
-	// for access_troops
-	gui::button** access_troops_buttons_;
-	gui::button** attack_methods_buttons_;
-
-	std::set<map_location> road_locs_;
+	std::map<map_location, std::vector<std::pair<artifical*, artifical*> > > road_locs_;
 
 public: //operations for the arrow framework
 

@@ -153,6 +153,9 @@ void reallocate_pq(size_t width, size_t height)
 		hash = new cost_hash[size];
 		pq_size = size;
 	}
+	for (size_t i = 0; i < size; i ++) {
+		hash[i].in = search_counter - 2;
+	}
 }
 
 void release_pq()
@@ -235,7 +238,7 @@ pathfind::plain_route pathfind::a_star_search(const map_location& src, const map
 				cost = hash[index(locs[i])].cost;
 			} else {
 				cost = calc->cost(locs[i], n.g);
-				if (!is_wall) {
+				if (!is_wall && !is_expedit_at) {
 					hash[index(locs[i])].in = search_counter;
 					hash[index(locs[i])].cost = cost;
 				}
