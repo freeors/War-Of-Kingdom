@@ -19,13 +19,19 @@
 #include "config.hpp"
 #include "mapgen.hpp"
 
+namespace gui2 {
+
+class tmap_generator;
+
+}
+
 class default_map_generator : public map_generator
 {
 public:
 	default_map_generator(const config &game_config);
 
 	bool allow_user_config() const;
-	void user_config(display& disp, const config& cfg);
+	bool user_config(display& disp, const config& cfg, int max_players = -1, int min_w = -1, int max_w = -1, int min_h = -1, int max_h = -1);
 
 	std::string name() const;
 
@@ -35,6 +41,7 @@ public:
 	config create_scenario(const std::vector<std::string>& args);
 
 private:
+	friend class gui2::tmap_generator;
 
 	std::string generate_map(const std::vector<std::string>& args, std::map<map_location,std::string>* labels=NULL);
 	config economy_area_;

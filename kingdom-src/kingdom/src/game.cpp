@@ -137,6 +137,7 @@ static bool less_campaigns_rank(const config &a, const config &b) {
 
 extern bool exit_app;
 int exe_type = exe_kingdom;
+size_t hero_size_from_dat = 0;
 
 class game_controller
 {
@@ -159,6 +160,7 @@ public:
 	bool load_game();
 	void set_tutorial();
 
+	void level_to_gamestate(const std::string& map_data = null_str, bool modify_placing = false);
 	bool new_campaign();
 	bool goto_multiplayer();
 	bool play_multiplayer(bool random_map = false);
@@ -182,6 +184,7 @@ private:
 	void operator=(const game_controller&);
 
 	void load_game_cfg(const bool force=false);
+	void load_campaign_cfg();
 	void set_unit_data(config& gc);
 
 	void mark_completed_campaigns(std::vector<config>& campaigns);
@@ -511,6 +514,7 @@ game_controller::game_controller(int argc, char** argv) :
 		// write [hero] to preferences
 		preferences::set_hero(player_hero_);
 	}
+	hero_size_from_dat = heros_.size();
 	player_hero_.number_ = (int)heros_.size();
 }
 
@@ -588,9 +592,6 @@ bool game_controller::init_config(const bool force)
 	cache_.clear_defines();
 
 	// make sure that multiplayer mode is set if command line parameter is selected
-	if (multiplayer_mode_)
-		cache_.add_define("MULTIPLAYER");
-
 	if (!multiplayer_mode_)
 		cache_.add_define("TITLE_SCREEN");
 
@@ -879,21 +880,13 @@ bool game_controller::load_game()
 		load.load_game(game::load_game_exception::game, game::load_game_exception::show_replay, game::load_game_exception::cancel_orders, heros_, &heros_start_);
 
 		cache_.clear_defines();
-		game_config::scoped_preproc_define dificulty_def(state_.classification().difficulty);
 
 		game_config::scoped_preproc_define campaign_define_def(state_.classification().campaign_define, !state_.classification().campaign_define.empty());
 
 		game_config::scoped_preproc_define campaign_type_def("MULTIPLAYER", state_.classification().campaign_define.empty() && (state_.classification().campaign_type == "multiplayer"));
 
-		typedef boost::shared_ptr<game_config::scoped_preproc_define> define_ptr;
-		std::deque<define_ptr> extra_defines;
-		for(std::vector<std::string>::const_iterator i = state_.classification().campaign_xtra_defines.begin(); i != state_.classification().campaign_xtra_defines.end(); ++i) {
-			define_ptr newdefine(new game_config::scoped_preproc_define(*i));
-			extra_defines.push_back(newdefine);
-		}
-
 		try {
-			load_game_cfg();
+			// load_game_cfg();
 		} catch(config::error&) {
 			cache_.clear_defines();
 			load_game_cfg();
@@ -987,7 +980,7 @@ void game_controller::set_tutorial()
 	state_.classification().campaign_type = "tutorial";
 	state_.classification().scenario = "tutorial";
 	state_.classification().campaign_define = "CAMPAIGN_TUTORIAL";
-	state_.classification().difficulty = "EASY";
+	state_.classification().create = (long)time(NULL);
 	state_.classification().version = game_config::version;
 	cache_.clear_defines();
 	cache_.add_define("EASY");
@@ -998,6 +991,8 @@ void game_controller::set_tutorial()
 		return;
 	}
 	heros_start_ = heros_;
+
+	level_to_gamestate();
 }
 
 void game_controller::mark_completed_campaigns(std::vector<config> &campaigns)
@@ -1005,6 +1000,81 @@ void game_controller::mark_completed_campaigns(std::vector<config> &campaigns)
 	foreach (config &campaign, campaigns) {
 		campaign["completed"] = preferences::is_campaign_completed(campaign["id"]);
 	}
+}
+
+void game_controller::level_to_gamestate(const std::string& map_data, bool modify_placing)
+{
+	load_campaign_cfg();
+	config scenario = game_config().find_child("scenario", "id", state_.classification().scenario);
+	if (tent::turns != -1) {
+		scenario["turns"] = tent::turns;
+		tent::turns = -1;
+	}
+	if (tent::duel != -1) {
+		if (tent::duel == NO_DUEL) {
+			scenario["duel"] = "no";
+		} else if (tent::duel == ALWAYS_DUEL) {
+			scenario["duel"] = "always";
+		} else {
+			scenario.remove_attribute("duel");
+		}
+		tent::duel = -1;
+	}
+	if (tent::ai_count) {
+		scenario["ai_count"] = tent::ai_count;
+		tent::ai_count = 0;
+	}
+	if (tent::employ_count) {
+		scenario["employ_count"] = tent::employ_count;
+		tent::employ_count = 0;
+	}
+	if (!map_data.empty()) {
+		scenario["map_data"] = map_data;
+	}
+	if (modify_placing) {
+		scenario["modify_placing"] = true;
+		// modify all city's map_location to invalid.
+		int sides = scenario.child_count("side");
+		for (int n = 0; n < sides; n ++) {
+			config& side = scenario.child("side", n);
+			// think there is one city only.
+			config& city = side.child("artifical");
+			if (city) {
+				city["x"] = map_location::null_location.x;
+				city["y"] = map_location::null_location.y;
+			}
+		}
+	}
+	if (tent::human_leader_number != HEROS_INVALID_NUMBER) {
+		int sides = scenario.child_count("side");
+		config* human_side = NULL;
+		config* human_artifical = NULL;
+		for (int n = 0; n < sides; n ++) {
+			config& side = scenario.child("side", n);
+			if (side["controller"].str() == "human") {
+				human_side = &side;
+				human_artifical = &side.child("artifical");
+				break;
+			}
+		}
+		const config::const_child_itors& factions = game_config().child_range("faction");
+		BOOST_FOREACH (const config &cfg, factions) {
+			if (cfg["leader"].to_int() == tent::human_leader_number) {
+				config& s = *human_side;
+				s["leader"] = cfg["leader"];
+				const config& sub_cfg = cfg.child("artifical");
+				config& sub_s = *human_artifical;
+				sub_s["service_heros"] = sub_cfg["service_heros"];
+				sub_s["wander_heros"] = sub_cfg["wander_heros"];
+				break;
+			}
+		}
+		tent::human_leader_number = HEROS_INVALID_NUMBER;
+	}
+
+	command_pool replay_data;
+	scenario["random_seed"] = state_.rng().get_random_seed();
+	::level_to_gamestate(scenario, replay_data, state_);
 }
 
 bool game_controller::new_campaign()
@@ -1069,9 +1139,9 @@ bool game_controller::new_campaign()
 		gui2::ttent* tent = NULL;
 		const std::string mode = campaign["mode"].str();
 		if (mode == "tower") {
-			tent = new gui2::ttower_tent(disp(), heros_, cards_, campaign, player_hero_);
+			tent = new gui2::ttower_tent(disp(), heros_, cards_, game_config(), campaign, player_hero_);
 		} else {
-			tent = new gui2::tplayer_selection(disp(), heros_, cards_, campaign, player_hero_);
+			tent = new gui2::tplayer_selection(disp(), heros_, cards_, game_config(), campaign, player_hero_);
 		}
 
 		try {
@@ -1083,7 +1153,7 @@ bool game_controller::new_campaign()
 		}
 
 		if (tent->get_retval() != gui2::twindow::OK) {
-			// canceled difficulty dialog, relaunch the campaign selection dialog
+			// relaunch the campaign selection dialog
 			delete tent;
 			return new_campaign();
 		}
@@ -1140,17 +1210,22 @@ bool game_controller::new_campaign()
 		// there is invalid here, so doesn't do it.
 		// state_.set_variable("player", state_.classification().player);		
 
-		state_.classification().difficulty = "EASY";
+		state_.classification().create = (long)time(NULL);
 		state_.classification().version = game_config::version;
+		state_.classification().campaign_define = campaign["define"].str();
 		cache_.clear_defines();
 		cache_.add_define("EASY");
+		
+		if (mode == "tower") {
+			gui2::ttower_tent* tower_tent = dynamic_cast<gui2::ttower_tent*>(tent);
+			const config& scenario_data = tower_tent->scenario_data();
+			level_to_gamestate(scenario_data["map_data"].str(), scenario_data["modify_placing"].to_bool());
+		} else {
+			level_to_gamestate();
+		}
 
 		delete tent;
 	}
-
-	state_.classification().campaign_define = campaign["define"].str();
-	state_.classification().campaign_xtra_defines = utils::split(campaign["extra_defines"]);
-
 	return true;
 }
 
@@ -1291,10 +1366,12 @@ bool game_controller::play_multiplayer(bool random_map)
 
 		}
 
-		/* do */ {
+		{
+/*
 			cache_.clear_defines();
 			game_config::scoped_preproc_define multiplayer(state_.classification().campaign_define);
 			load_game_cfg();
+*/
 			events::discard(INPUT_MASK_MIN, INPUT_MASK_MAX); // prevent the "keylogger" effect
 			cursor::set(cursor::NORMAL);
 			// update binary paths
@@ -1388,13 +1465,11 @@ void game_controller::set_unit_data(config& gc)
 #define BASENAME_DATA		"data.bin"
 // #define BASENAME_DATA		"data2.bin" // used to generate building_rules_
 #define BASENAME_EDITOR		"editor.bin"
-#define BASENAME_MPLAYER	"mplayer.bin"
 
 typedef enum {
 	ppmt_data		= 0,
 	ppmt_easy,
 	ppmt_editor,
-	ppmt_mplayer,
 } ppmap_type_t;
 
 ppmap_type_t decide_preprocmap_type(const preproc_map &ppmap)
@@ -1408,12 +1483,22 @@ ppmap_type_t decide_preprocmap_type(const preproc_map &ppmap)
 		} else if (!strcmp(i->first.c_str(), "EDITOR")) {
 			type = ppmt_editor;
 			break;
-		} else if (!strcmp(i->first.c_str(), "MULTIPLAYER")) {
-			type = ppmt_mplayer;
-			break;
 		}
 	}
 	return type;
+}
+
+void game_controller::load_campaign_cfg()
+{
+	game_config::scoped_preproc_define campaign_define(state_.classification().campaign_define, state_.classification().campaign_define.empty() == false);
+
+	try {
+		load_game_cfg();
+	} catch(config::error&) {
+		cache_.clear_defines();
+		load_game_cfg();
+		return;
+	}
 }
 
 void game_controller::load_game_cfg(const bool force)
@@ -1476,11 +1561,6 @@ void game_controller::load_game_cfg(const bool force)
 		} else if (ppmt == ppmt_editor) {
 			game_config_ = game_config_core_;
 			wml_config_from_file(game_config::path + "/xwml/" + BASENAME_EDITOR, tmpcfg);
-			game_config_.append(tmpcfg);
-
-		} else if (ppmt == ppmt_mplayer) {
-			game_config_ = game_config_core_;
-			wml_config_from_file(game_config::path + "/xwml/" + BASENAME_MPLAYER, tmpcfg);
 			game_config_.append(tmpcfg);
 
 		}
@@ -1569,7 +1649,7 @@ void game_controller::load_game_cfg(const bool force)
 			hashes[ch["id"]] = ch.hash();
 		}
 
-		terrain_builder::set_terrain_rules_cfg(game_config());
+		// terrain_builder::set_terrain_rules_cfg(game_config());
 
 	} catch(game::error& e) {
 		ERR_CONFIG << "Error loading game configuration files\n";
@@ -1584,24 +1664,12 @@ void game_controller::launch_game(RELOAD_GAME_DATA reload)
 {
 	loadscreen::global_loadscreen_manager loadscreen_manager(disp().video());
 	loadscreen::start_stage("load data");
-	if(reload == RELOAD_DATA) {
-		game_config::scoped_preproc_define campaign_define(state_.classification().campaign_define, state_.classification().campaign_define.empty() == false);
-
-		typedef boost::shared_ptr<game_config::scoped_preproc_define> define_ptr;
-		std::deque<define_ptr> extra_defines;
-		for(std::vector<std::string>::const_iterator i = state_.classification().campaign_xtra_defines.begin(); i != state_.classification().campaign_xtra_defines.end(); ++i) {
-			define_ptr newdefine(new game_config::scoped_preproc_define(*i));
-			extra_defines.push_back(newdefine);
-		}
-		try {
-			load_game_cfg();
-		} catch(config::error&) {
-			cache_.clear_defines();
-			load_game_cfg();
-			return;
-		}
+/*
+	// if (reload == RELOAD_DATA) {
+	if (state_.starting_pos.empty()) {
+		load_campaign_cfg();
 	}
-
+*/
 	const binary_paths_manager bin_paths_manager(game_config());
 
 	try {

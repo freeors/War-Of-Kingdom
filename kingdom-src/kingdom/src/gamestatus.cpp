@@ -78,7 +78,7 @@ game_classification::game_classification():
 	completion(),
 	end_text(),
 	end_text_duration(),
-	difficulty("NORMAL")
+	create(0)
 	{}
 
 game_classification::game_classification(const config& cfg):
@@ -99,7 +99,7 @@ game_classification::game_classification(const config& cfg):
 	completion(cfg["completion"]),
 	end_text(cfg["end_text"]),
 	end_text_duration(cfg["end_text_duration"]),
-	difficulty(cfg["difficulty"].empty() ? "NORMAL" : cfg["difficulty"].str())
+	create(cfg["create"].to_long())
 	{}
 
 game_classification::game_classification(const game_classification& gc):
@@ -120,7 +120,7 @@ game_classification::game_classification(const game_classification& gc):
 	completion(gc.completion),
 	end_text(gc.end_text),
 	end_text_duration(gc.end_text_duration),
-	difficulty(gc.difficulty)
+	create(gc.create)
 {
 }
 
@@ -143,7 +143,7 @@ config game_classification::to_config() const
 	cfg["completion"] = completion;
 	cfg["end_text"] = end_text;
 	cfg["end_text_duration"] = str_cast<unsigned int>(end_text_duration);
-	cfg["difficulty"] = difficulty;
+	cfg["create"] = create;
 
 	return cfg;
 }
@@ -177,6 +177,102 @@ game_state::game_state()  :
 		mp_settings_(),
 		phase_(INITIAL)
 		{}
+
+void level_to_gamestate(config& level, command_pool& replay_data, game_state& state)
+{
+	//any replay data is only temporary and should be removed from
+	//the level data in case we want to save the game later
+	if (replay_data.pool_pos_vsize()) {
+		state.replay_data = replay_data;
+		recorder = replay(state.replay_data);
+		if(!recorder.empty()) {
+			recorder.set_skip(false);
+			recorder.set_to_end();
+		}
+	}
+
+	//set random
+	const std::string seed = level["random_seed"];
+	if(! seed.empty()) {
+		const unsigned calls = lexical_cast_default<unsigned>(level["random_calls"]);
+		state.rng().seed_random(lexical_cast<int>(seed), calls);
+	} else {
+		// ERR_NG << "No random seed found, random "
+		//	"events will probably be out of sync.\n";
+	}
+
+	//adds the starting pos to the level
+	if (!level.child("replay_start")) {
+		level.add_child("replay_start", level);
+		level.child("replay_start").remove_child("multiplayer", 0);
+	}
+	//this is important, if it does not happen, the starting position is missing and
+	//will be drawn from the snapshot instead (which is not what we want since we have
+	//all needed information here already)
+	state.starting_pos = level.child("replay_start");
+
+	level["campaign_type"] = "multiplayer";
+	state.classification().campaign_type = "multiplayer";
+	state.classification().completion = level["completion"].str();
+	state.classification().version = level["version"].str();
+
+	if (const config &vars = level.child("variables")) {
+		state.set_variables(vars);
+	}
+	state.set_menu_items(level.child_range("menu_item"));
+	state.mp_settings().set_from_config(level);
+
+	//Check whether it is a save-game by looking for snapshot data
+	const config &snapshot = level.child("snapshot");
+	const bool saved_game = snapshot && snapshot.child("side");
+
+	//It might be a MP campaign start-of-scenario save
+	//In this case, it's not entirely a new game, but not a save, either
+	//Check whether it is no savegame and the starting_pos contains [player] information
+	bool start_of_scenario = !saved_game && state.starting_pos.child("player");
+
+	//If we start a fresh game, there won't be any snapshot information. If however this
+	//is a savegame, we got a valid snapshot here.
+	if (saved_game) {
+		state.snapshot = snapshot;
+		if (const config &v = snapshot.child("variables")) {
+			state.set_variables(v);
+		}
+		state.set_menu_items(snapshot.child_range("menu_item"));
+	}
+
+	//In any type of reload(normal save or start-of-scenario) the players could have
+	//changed and need to be replaced
+	if(saved_game || start_of_scenario){
+		config::child_itors saved_sides = saved_game ?
+			state.snapshot.child_range("side") :
+			state.starting_pos.child_range("side");
+		config::const_child_itors level_sides = level.child_range("side");
+
+		foreach (config &side, saved_sides)
+		{
+			foreach (const config &lside, level_sides)
+			{
+				if (side["side"] == lside["side"] &&
+						(side["current_player"] != lside["current_player"] ||
+						 side["controller"] != lside["controller"]))
+				{
+					side["current_player"] = lside["current_player"];
+					side["id"] = lside["id"];
+					side["save_id"] = lside["save_id"];
+					side["controller"] = lside["controller"];
+					break;
+				}
+			}
+		}
+	}
+	if(state.get_variables().empty()) {
+		// LOG_NG << "No variables were found for the game_state." << std::endl;
+	} else {
+		// LOG_NG << "Variables found and loaded into game_state:" << std::endl;
+		// LOG_NG << state.get_variables();
+	}
+}
 
 void write_players(game_state& gamestate, config& cfg, const bool use_snapshot, const bool merge_side)
 {
@@ -352,7 +448,7 @@ void game_state::write_snapshot(config& cfg) const
 
 	cfg["campaign"] = classification_.campaign;
 	cfg["campaign_type"] = classification_.campaign_type;
-	cfg["difficulty"] = classification_.difficulty;
+	cfg["create"] = classification_.create;
 
 	cfg["campaign_define"] = classification_.campaign_define;
 	cfg["campaign_extra_defines"] = utils::join(classification_.campaign_xtra_defines);

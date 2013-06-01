@@ -49,14 +49,12 @@ void callback_list_item_clicked(twidget* caller)
 
 tlistbox::tlistbox(const bool has_minimum, const bool has_maximum,
 		const tgenerator_::tplacement placement, const bool select)
-	: tscrollbar_container(2) // FIXME magic number
+	: tscrollbar_container(2, true) // FIXME magic number
 	, generator_(
 			tgenerator_::build(has_minimum, has_maximum, placement, select))
 	, list_builder_(NULL)
 	, callback_value_changed_(NULL)
 	, need_layout_(false)
-	, best_size_(0, 0)
-	, content_size_(0, 0)
 {
 }
 
@@ -377,7 +375,7 @@ void tlistbox::resize_content(
 			set_dirty();
 		}
 
-		content_size_ = tpoint(0, 0);
+		// content_size_ = tpoint(0, 0);
 
 		DBG_GUI_L << LOG_HEADER << " succeeded.\n";
 	} else {
@@ -617,264 +615,9 @@ void tlistbox::set_list_builder(tbuilder_grid_ptr list_builder)
 	set_dirty();
 
 	// in order to decide visiable/invisiable scrollbar, reset content_size_
-	content_size_ = tpoint(0, 0);
+	// content_size_ = tpoint(0, 0);
 
 	list_builder_ = list_builder; 
-}
-
-void tlistbox::set_best_size(const tpoint& best_size) 
-{ 
-	best_size_ = best_size; 
-}
-
-void tlistbox::layout_init(const bool full_initialization)
-{
-	// in order to decide visiable/invisiable scrollbar, reset content_size_
-	content_size_ = tpoint(0, 0);
-
-	// Inherited.
-	tcontainer_::layout_init(full_initialization);
-
-	if (full_initialization && content_size_ == tpoint(0, 0)) {
-
-		assert(vertical_scrollbar_grid_);
-		switch(vertical_scrollbar_mode_) {
-			case always_visible :
-				vertical_scrollbar_grid_->set_visible(twidget::VISIBLE);
-				break;
-
-			case auto_visible :
-				vertical_scrollbar_grid_->set_visible(twidget::HIDDEN);
-				break;
-
-			default :
-				vertical_scrollbar_grid_->set_visible(twidget::INVISIBLE);
-		}
-
-		assert(horizontal_scrollbar_grid_);
-		switch(horizontal_scrollbar_mode_) {
-			case always_visible :
-				horizontal_scrollbar_grid_->set_visible(twidget::VISIBLE);
-				break;
-
-			case auto_visible :
-				horizontal_scrollbar_grid_->set_visible(twidget::HIDDEN);
-				break;
-
-			default :
-				horizontal_scrollbar_grid_->set_visible(twidget::INVISIBLE);
-		}
-	}
-
-	assert(content_grid_);
-	if (content_size_ == tpoint(0, 0)) {
-		content_grid_->layout_init(full_initialization);
-	}
-}
-
-void tlistbox::request_reduce_height(
-		const unsigned maximum_height)
-{
-	DBG_GUI_L << LOG_HEADER
-			<< " requested height " << maximum_height
-			<< ".\n";
-
-
-	VALIDATE(content_size_.x && content_size_.y, "content_size is zero.");
-	if (best_size_ != tpoint(0, 0)) {
-		// fixed size case, do nothing
-		return;
-	}
-	/*
-	 * First ask the content to reduce it's height. This seems to work for now,
-	 * but maybe some sizing hints will be required later.
-	 */
-	/** @todo Evaluate whether sizing hints are required. */
-	assert(content_grid_);
-/*	const unsigned offset = horizontal_scrollbar_grid_
-			&& horizontal_scrollbar_grid_->get_visible() != twidget::INVISIBLE
-				?  horizontal_scrollbar_grid_->get_best_size().y
-				: 0;
-	content_grid_->request_reduce_height(maximum_height - offset);
-*/
-	// Did we manage to achieve the wanted size?
-	tpoint size = get_best_size();
-	if (static_cast<unsigned>(size.y) <= maximum_height) {
-		DBG_GUI_L << LOG_HEADER
-				<< " child honoured request, height " << size.y
-				<< ".\n";
-		return;
-	}
-
-	if (vertical_scrollbar_mode_ == always_invisible) {
-		DBG_GUI_L << LOG_HEADER << " request failed due to scrollbar mode.\n";
-		return;
-	}
-
-	assert(vertical_scrollbar_grid_);
-	const bool resized =
-		vertical_scrollbar_grid_->get_visible() == twidget::INVISIBLE;
-
-	// Always set the bar visible, is a nop is already visible.
-	vertical_scrollbar_grid_->set_visible(twidget::VISIBLE);
-
-	const tpoint scrollbar_size = vertical_scrollbar_grid_->get_best_size();
-
-	// If showing the scrollbar increased the height, hide and abort.
-	if (resized && scrollbar_size.y > size.y) {
-		vertical_scrollbar_grid_->set_visible(twidget::INVISIBLE);
-		DBG_GUI_L << LOG_HEADER
-				<< " request failed, showing the scrollbar"
-			    << " increased the height to " << scrollbar_size.y
-				<< ".\n";
-		return;
-	}
-
-	if (maximum_height > static_cast<unsigned>(scrollbar_size.y)) {
-		size.y = maximum_height;
-	} else {
-		size.y = scrollbar_size.y;
-	}
-
-	// FIXME adjust for the step size of the scrollbar
-
-	set_layout_size(size);
-	DBG_GUI_L << LOG_HEADER
-			<< " resize resulted in " << size.y
-			<< ".\n";
-
-	if (resized) {
-		DBG_GUI_L << LOG_HEADER
-				<< " resize modified the width, throw notification.\n";
-
-		// posix_print("id: %s, layout_size_: (%i, %i), width of scrollbar: %i\n", id().c_str(), layout_size().x, layout_size().y, scrollbar_size.x);
-		throw tlayout_exception_width_modified();
-	}
-}
-
-void tlistbox::request_reduce_width(const unsigned maximum_width)
-{
-	DBG_GUI_L << LOG_HEADER
-			<< " requested width " << maximum_width
-			<< ".\n";
-
-	VALIDATE(content_size_.x && content_size_.y, "content_size is zero.");
-	if (best_size_ != tpoint(0, 0)) {
-		// fixed size case, do nothing
-		return;
-	}
-
-	// First ask our content, it might be able to wrap which looks better as
-	// a scrollbar.
-	assert(content_grid_);
-/*
-	const unsigned offset = vertical_scrollbar_grid_
-			&& vertical_scrollbar_grid_->get_visible() != twidget::INVISIBLE
-				?  vertical_scrollbar_grid_->get_best_size().x
-				: 0;
-
-	content_grid_->request_reduce_width(maximum_width - offset);
-*/
-	// Did we manage to achieve the wanted size?
-	tpoint size = get_best_size();
-	if(static_cast<unsigned>(size.x) <= maximum_width) {
-		DBG_GUI_L << LOG_HEADER
-				<< " child honoured request, width " << size.x
-				<< ".\n";
-		return;
-	}
-
-	if(horizontal_scrollbar_mode_ == always_invisible) {
-		DBG_GUI_L << LOG_HEADER << " request failed due to scrollbar mode.\n";
-		return;
-	}
-
-	// Always set the bar visible, is a nop when it's already visible.
-	assert(horizontal_scrollbar_grid_);
-	horizontal_scrollbar_grid_->set_visible(twidget::VISIBLE);
-	size = get_best_size();
-
-	const tpoint scrollbar_size = horizontal_scrollbar_grid_->get_best_size();
-
-	// If showing the scrollbar increased the width, hide and abort.
-	if(horizontal_scrollbar_mode_ == auto_visible_first_run
-			&& scrollbar_size.x > size.x) {
-
-		horizontal_scrollbar_grid_->set_visible(twidget::INVISIBLE);
-		DBG_GUI_L << LOG_HEADER
-				<< " request failed, showing the scrollbar"
-			    << " increased the width to " << scrollbar_size.x
-				<< ".\n";
-		return;
-	}
-
-	if(maximum_width > static_cast<unsigned>(scrollbar_size.x)) {
-		size.x = maximum_width;
-	} else {
-		size.x = scrollbar_size.x;
-	}
-
-	// FIXME adjust for the step size of the scrollbar
-
-	set_layout_size(size);
-	DBG_GUI_L << LOG_HEADER
-			<< " resize resulted in " << size.x
-			<< ".\n";
-}
-
-tpoint tlistbox::calculate_best_size() const
-{
-	bool from_best_size = (best_size_ != tpoint(0, 0))? true: false;
-
-	if (from_best_size && content_size_ != tpoint(0, 0)) {
-		return best_size_;
-	}
-	
-	/***** get vertical scrollbar size *****/
-	const tpoint vertical_scrollbar =
-			vertical_scrollbar_grid_->get_visible() == twidget::INVISIBLE
-			? tpoint(0, 0)
-			: vertical_scrollbar_grid_->get_best_size();
-
-	/***** get horizontal scrollbar size *****/
-	const tpoint horizontal_scrollbar =
-			horizontal_scrollbar_grid_->get_visible() == twidget::INVISIBLE
-			? tpoint(0, 0)
-			: horizontal_scrollbar_grid_->get_best_size();
-
-	/***** get content size *****/
-	assert(content_grid_);
-	if (content_size_ == tpoint(0, 0)) {
-		content_size_ = content_grid_->get_best_size();
-	}
-
-	if (from_best_size) {
-		bool visiable_horizontal_bar = false;
-		if (best_size_.x < content_size_.x) {
-			VALIDATE(horizontal_scrollbar_mode_ != always_invisible, "request failed due to scrollbar mode.");
-			horizontal_scrollbar_grid_->set_visible(twidget::VISIBLE);
-			visiable_horizontal_bar = true;
-		} else {
-			horizontal_scrollbar_grid_->set_visible(twidget::INVISIBLE);
-		}
-		if ((best_size_.y - (visiable_horizontal_bar? horizontal_scrollbar_grid_->get_best_size().y: 0)) < content_size_.y) {
-			VALIDATE(vertical_scrollbar_mode_ != always_invisible, "request failed due to scrollbar mode.");
-			vertical_scrollbar_grid_->set_visible(twidget::VISIBLE);
-		} else {
-			vertical_scrollbar_grid_->set_visible(twidget::INVISIBLE);
-		}
-	}
-
-	if (from_best_size) {
-		return best_size_;
-	} else {
-		const tpoint result(
-			vertical_scrollbar.x +
-				std::max(horizontal_scrollbar.x, content_size_.x),
-			horizontal_scrollbar.y +
-				std::max(vertical_scrollbar.y,  content_size_.y));
-		return result;
-	}
 }
 
 const std::string& tlistbox::get_control_type() const

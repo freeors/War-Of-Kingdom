@@ -371,26 +371,30 @@ void unit_die(const map_location& loc, unit& loser,
 class attack_temporary_state_lock
 {
 public:
-	attack_temporary_state_lock(unit& u, bool stronger)
+	attack_temporary_state_lock(unit* u, bool stronger)
 		: u_(u)
 		, stronger_(stronger)
 	{
-		u_.set_temporary_state(unit::BIT_ATTACKING, true);
-		if (stronger_) {
-			u_.set_temporary_state(unit::BIT_STRONGER, true);
+		if (u_) {
+			u_->set_temporary_state(unit::BIT_ATTACKING, true);
+			if (stronger_) {
+				u_->set_temporary_state(unit::BIT_STRONGER, true);
+			}
 		}
 	}
 
 	~attack_temporary_state_lock() 
 	{
-		u_.set_temporary_state(unit::BIT_ATTACKING, false);
-		if (stronger_) {
-			u_.set_temporary_state(unit::BIT_STRONGER, false);
+		if (u_) {
+			u_->set_temporary_state(unit::BIT_ATTACKING, false);
+			if (stronger_) {
+				u_->set_temporary_state(unit::BIT_STRONGER, false);
+			}
 		}
 	}
 
 private:
-	unit& u_;
+	unit* u_;
 	bool stronger_;
 };
 
@@ -442,7 +446,7 @@ private:
 void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	const attack_type* attack, const attack_type* secondary_attack,
 	int swing, std::vector<std::string>& hit_text_vec, bool drain, bool stronger, 
-	const std::string& att_text)
+	const std::string& att_text, artifical* effecting_tactic)
 {
 	const map_location& a = attacker.get_location();
 	std::vector<map_location> b_vec;
@@ -493,8 +497,9 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 	if (force_scroll || point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || has_eyeshot_in_defs) {
 		// clear global draw_desc flag
 		unit::draw_desc_ = false;
-		const attack_temporary_state_lock lock1(attacker, stronger);
+		const attack_temporary_state_lock lock1(&attacker, stronger);
 		const defend_temporary_state_lock lock2(def_ptr_vec);
+		const attack_temporary_state_lock lock3(effecting_tactic, true);
 
 		if (stronger) {
 			sound::play_sound("stronger.wav");
@@ -730,10 +735,7 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 	if (force_scroll || attacker_in_eyeshot || has_eyeshot_in_defs) {
 		// clear global draw_desc flag
 		unit::draw_desc_ = false;
-		const attack_temporary_state_lock* lock1 = NULL;
-		if (attacker) {
-			lock1 = new attack_temporary_state_lock(*attacker, false);
-		}
+		const attack_temporary_state_lock lock1(attacker, false);
 		const defend_temporary_state_lock lock2(def_ptr_vec);
 
 		disp->select_hex(map_location::null_location);
@@ -887,9 +889,6 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 			def_ptr_vec[i]->set_hitpoints(def_hitpoints_vec[i]);
 		}
 
-		if (lock1) {
-			delete lock1;
-		}
 		// set global draw_desc flag
 		unit::draw_desc_ = true;
 	}
@@ -1087,7 +1086,7 @@ void wml_animation_internal(unit_animator &animator, const vconfig &cfg, const m
 
 }
 
-void card_start(card_map& cards, card& c)
+void card_start(card_map& cards, const card& c)
 {
 	game_display* disp = game_display::get_singleton();
 	if (unit_animation* start_tpl = cards.animation(card_map::ANIM_START)) {

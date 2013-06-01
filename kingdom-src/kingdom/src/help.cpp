@@ -574,7 +574,7 @@ static std::string convert_to_wml(const std::string &element_name, const std::st
 SDL_Color string_to_color(const std::string &s);
 
 /// Make a best effort to word wrap s. All parts are less than width.
-std::vector<std::string> split_in_width(const std::string &s, const int font_size, const unsigned width);
+// std::vector<std::string> split_in_width(const std::string &s, const int font_size, const unsigned width);
 
 std::string remove_first_space(const std::string& text);
 
@@ -607,7 +607,7 @@ namespace {
 	const int max_section_level = 15;
 	const int menu_font_size = font::SIZE_NORMAL;
 	const int title_size = font::SIZE_LARGE;
-	const int title2_size = font::SIZE_15;
+	const int title2_size = font::SIZE_NORMAL;
 	const int box_width = 2;
 	const int normal_font_size = font::SIZE_SMALL;
 	const unsigned max_history = 100;
@@ -3017,17 +3017,40 @@ SDL_Color string_to_color(const std::string &cmp_str)
 }
 
 std::vector<std::string> split_in_width(const std::string &s, const int font_size,
-		const unsigned width)
+		const unsigned width, int style)
 {
 	std::vector<std::string> res;
 	try {
+	// [see remark#24]
+	size_t pos = s.find("\n");
+	if (pos == std::string::npos) {
+		unsigned unsplit_width = font::line_size(s, font_size, style).w;
+		if (unsplit_width <= width) {
+			res.push_back(s);
+			return res;
+		}
+	} else {
+		const std::string line_str = s.substr(0, pos);
+		unsigned unsplit_width = font::line_size(line_str, font_size, style).w;
+		if (unsplit_width <= width) {
+			res.push_back(line_str);
+			res.push_back(s.substr(pos));
+			return res;
+		}
+	}
+	
 	const std::string& first_line = font::word_wrap_text(s, font_size, width, -1, 1, true);
-	res.push_back(first_line);
-	if(s.size() > first_line.size()) {
-		res.push_back(s.substr(first_line.size()));
+	// [see remark#21]
+	if (!first_line.empty()) {
+		res.push_back(first_line);
+		if(s.size() > first_line.size()) {
+			res.push_back(s.substr(first_line.size()));
+		}
+	} else {
+		res.push_back(s);
 	}
 	}
-	catch (utils::invalid_utf8_exception e)
+	catch (utils::invalid_utf8_exception&)
 	{
 		throw parse_error (_("corrupted original file"));
 	}
@@ -3064,7 +3087,17 @@ std::string get_first_word(const std::string &s)
 
 	wchar_t firstchar = *ch;
 	if (font::is_cjk_char(firstchar)) {
-		re = utils::wchar_to_string(firstchar);
+		// [see remark#23]
+		std::string re1 = utils::wchar_to_string(firstchar);
+		wchar_t previous = firstchar;
+		for (++ ch; ch != utils::utf8_iterator::end(re); ++ch) {
+			if (font::can_break(previous, *ch)) {
+				break;
+			}
+			re1.append(ch.substr().first, ch.substr().second);
+			previous = *ch;
+		}
+		return re1;
 	}
 	return re;
 }

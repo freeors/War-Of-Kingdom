@@ -641,14 +641,17 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 
 	// cost of wall
 	unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
-	
+	// remark varible, so that caller can use it.
+	if (curr_node && curr_node->second->wall()) {
+		pathfind::is_wall = true;
+	}
+
 	bool enemy_wall = false;
 	if (so_far == 0.8888) {
 		// when so_far = 0.8888, it indicates judging dst.
 		terrain_cost = 1;
 
 	} else if (curr_node && curr_node->second->wall()) {
-		pathfind::is_wall = true;
 		const unit* w = curr_node->second;
 		enemy_wall = current_team.is_enemy(w->side());
 		terrain_cost = location_cost(units_, current_team, unit_, enemy_wall, ignore_city);
@@ -665,8 +668,8 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 		return pathfind::is_wall? terrain_cost: getNoPathValue();
 	}
 
-	int other_unit_subcost = 0;
 	const unit* other_unit = NULL;
+	bool double_terrain_cost = false;
 	if (!ignore_unit_) {
 		other_unit = get_visible_unit(loc, viewing_team_, see_all_);
 
@@ -688,7 +691,10 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 				// This value will be used with the defense_subcost (see below)
 				// The 1 here means: consider occupied hex as a -1% defense
 				// (less important than 10% defense because friends may move)
-				other_unit_subcost = 1;
+				if (so_far < total_movement_) {
+					// on scurviness road, first some gird is important.
+					double_terrain_cost = true;
+				}
 			}
 		}
 	}
@@ -707,22 +713,15 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 	// costing 3 MP. We don't have enough MP now, so we must end our turn here,
 	// thus spend our remaining MP by waiting (next turn, with full MP, we will
 	// be able to move on that hex)
-/*
-	if (remaining_movement < terrain_cost) {
-		move_cost += remaining_movement;
-		remaining_movement = total_movement_; // we consider having full MP now
-	}
-*/
-
 	// check ZoC
-/*
-	if (!ignore_unit_ && (!other_unit || !other_unit->cancel_zoc()) && remaining_movement > terrain_cost
-	    && !unit_.get_ability_bool("skirmisher", loc) && enemy_zoc(teams_, loc, viewing_team_, unit_.side(), see_all_, ignore_city)) {
-*/
 	if (!ignore_unit_ && remaining_movement > terrain_cost
 	    && !unit_.get_ability_bool("skirmisher", loc) && enemy_zoc(teams_, loc, viewing_team_, unit_.side(), see_all_, ignore_city)) {
 		// entering ZoC cost all remaining MP
 		move_cost += remaining_movement;
+	} else if (double_terrain_cost) {
+		// on scurviness road
+		// move_cost += terrain_cost + terrain_cost;
+		move_cost += terrain_cost;
 	} else {
 		// empty hex, pay only the terrain cost
 		move_cost += terrain_cost;
@@ -731,12 +730,11 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 	// We will add a tiny cost based on terrain defense, so the pathfinding
 	// will prefer good terrains between 2 with the same MP cost
 	// Keep in mind that defense_modifier is inverted (= 100 - defense%)
-	const int defense_subcost = ignore_defense_ ? 0 : unit_.defense_modifier(terrain);
 
 	// We divide subcosts by 100 * 100, because defense is 100-based and
 	// we don't want any impact on move cost for less then 100-steps path
 	// (even ~200 since mean defense is around ~50%)
-	return move_cost + (defense_subcost + other_unit_subcost) / 10000.0;
+	return move_cost;
 }
 
 pathfind::commoner_path_calculator::commoner_path_calculator(unit const &u, team const &t,

@@ -34,10 +34,11 @@
 #include "serialization/binary_or_text.hpp"
 #include "serialization/parser.hpp"
 #include "statistics.hpp"
-//#include "unit.hpp"
 #include "unit_id.hpp"
 #include "version.hpp"
+#include "formula_string_utils.hpp"
 
+#include <iomanip>
 #include "posix.h"
 
 static lg::log_domain log_engine("engine");
@@ -83,11 +84,49 @@ static lg::log_domain log_engine("engine");
 	}
 #endif /* _WIN32 */
 
+extern size_t hero_size_from_dat;
+
 namespace savegame {
 
 config dummy_snapshot;
 
-const std::string save_info::format_time_local() const{
+std::string format_time_local(time_t t)
+{
+	char time_buf[256] = {0};
+	tm* tm_l = localtime(&t);
+	if (tm_l) {
+		const size_t res = strftime(time_buf,sizeof(time_buf),_("%a %b %d %H:%M %Y"),tm_l);
+		if(res == 0) {
+			time_buf[0] = 0;
+		}
+	}
+
+	return time_buf;
+}
+
+std::string format_time_elapse(time_t elapse)
+{
+	char time_buf[256] = {0};
+	int sec = elapse % 60;
+	int min = (elapse / 60) % 60;
+	int hour = (elapse / 3600) % 24;
+	int day = elapse / (3600 * 24);
+
+	std::stringstream strstr;
+	if (day) {
+		utils::string_map symbols;
+		symbols["d"] = str_cast(day);
+		strstr << vgettext("$d days", symbols) << " ";
+	}
+	strstr << std::setfill('0') << std::setw(2) << hour << ":";
+	strstr << std::setfill('0') << std::setw(2) << min << ":";
+	strstr << std::setfill('0') << std::setw(2) << sec;
+	
+	return strstr.str();
+}
+
+const std::string save_info::format_time_local() const
+{
 	char time_buf[256] = {0};
 	tm* tm_l = localtime(&time_modified);
 	if (tm_l) {
@@ -124,11 +163,12 @@ const std::string save_info::format_time_summary() const
 
 	if(current_time.tm_year == save_time.tm_year) {
 		const int days_apart = current_time.tm_yday - save_time.tm_yday;
+
 		if(days_apart == 0) {
 			// save is from today
 			format_string = _("%H:%M");
 		} else if(days_apart > 0 && days_apart <= current_time.tm_wday) {
-			// save is from this week
+			// save is from this week. On chinese, %A cannot display. use %m%d instead.
 			format_string = _("%A, %H:%M");
 		} else {
 			// save is from current year
@@ -139,12 +179,12 @@ const std::string save_info::format_time_summary() const
 		format_string = _("%b %d %y");
 	}
 
-	char buf[40];
+	char buf[64];
 	const size_t res = strftime(buf,sizeof(buf),format_string,&save_time);
 	if(res == 0) {
 		buf[0] = 0;
 	}
-
+	
 	return buf;
 }
 
@@ -332,11 +372,11 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		}
 		posix_fclose(fp);
 
-		if (start_heros) {
+		if (start_heros && rpg_number >= (int)hero_size_from_dat) {
 			(*start_heros)[rpg_number].set_name(rpg_name);
 			(*start_heros)[rpg_number].set_surname(rpg_surname);
 		}
-		if (heros) {
+		if (heros && rpg_number >= (int)hero_size_from_dat) {
 			(*heros)[rpg_number].set_name(rpg_name);
 			(*heros)[rpg_number].set_surname(rpg_surname);
 		}
@@ -505,7 +545,7 @@ void loadgame::load_game(std::string& filename, bool show_replay, bool cancel_or
         }
 	}
 
-	gamestate_.classification().difficulty = load_config_["difficulty"].str();
+	gamestate_.classification().create = load_config_["create"].to_long();
 	gamestate_.classification().campaign_define = load_config_["campaign_define"].str();
 
 	gamestate_.classification().campaign = load_config_["campaign"].str();
@@ -986,7 +1026,7 @@ void savegame::write_game(config_writer &out) const
 	out.write_key_val("completion", gamestate_.classification().completion);
 	out.write_key_val("campaign", gamestate_.classification().campaign);
 	out.write_key_val("campaign_type", gamestate_.classification().campaign_type);
-	out.write_key_val("difficulty", gamestate_.classification().difficulty);
+	out.write_key_val("create", lexical_cast<std::string>(gamestate_.classification().create));
 	out.write_key_val("campaign_define", gamestate_.classification().campaign_define);
 	out.write_key_val("campaign_extra_defines", utils::join(gamestate_.classification().campaign_xtra_defines));
 	out.write_key_val("random_seed", lexical_cast<std::string>(gamestate_.rng().get_random_seed()));
@@ -1042,7 +1082,7 @@ void savegame::extract_summary_data_from_save(config& out)
 	out["campaign"] = gamestate_.classification().campaign;
 	out["campaign_type"] = gamestate_.classification().campaign_type;
 	out["scenario"] = gamestate_.classification().scenario;
-	out["difficulty"] = gamestate_.classification().difficulty;
+	out["create"] = gamestate_.classification().create;
 	out["version"] = gamestate_.classification().version;
 	out["corrupt"] = "";
 

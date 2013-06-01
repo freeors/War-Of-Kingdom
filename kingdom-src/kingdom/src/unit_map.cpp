@@ -637,9 +637,9 @@ void unit_map::delete_all()
 }
 
 // extract/place pair only use in overlay layer.
-std::pair<map_location,unit*> *unit_map::extract(const map_location &loc)
+std::pair<map_location,unit*>* unit_map::extract(const map_location &loc)
 {
-	node *ptr;
+	node* ptr;
 
 	if (!loc.valid()) {
 		return NULL;
@@ -1203,6 +1203,8 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			if (rpg::stratum == hero_stratum_mayor && city.mayor() == rpg::h) {
 				continue;
 			}
+			city.demolish_ea();
+
 			std::vector<std::pair<unit*, std::vector<hero*> > > new_low_loyalty_troops;
 			std::vector<hero*> original_captains;
 			std::vector<hero*> new_captains;
@@ -1292,9 +1294,8 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 					hero* h = low_loyalty_heros.front();
 					v.push_back(h);
 					low_loyalty_heros.erase(low_loyalty_heros.begin());
-					freshes.erase(std::find(freshes.begin(), freshes.end(), h));
 				} while (v.size() < 3 && !low_loyalty_heros.empty());
-				do_recruit(*this, heros, teams, current_team, ut, v, city, current_team.cost_exponent(), false);
+				do_recruit(*this, heros, teams, current_team, ut, v, city, ut->cost() * current_team.cost_exponent() / 100, false, false);
 			}
 		}
 		
@@ -1619,6 +1620,9 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 								if (u->uncleared()) {
 									adjacent.unnormals ++;
 								}
+								if (u->healable()) {
+									adjacent.healables ++;
+								}
 								if (!u->provoked_turns()) {
 									adjacent.unprovoks ++;
 								}
@@ -1637,6 +1641,9 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 						}
 						if (u->uncleared()) {
 							adjacent.unnormals ++;
+						}
+						if (u->healable()) {
+							adjacent.healables ++;
 						}
 						if (!u->provoked_turns()) {
 							adjacent.unprovoks ++;
@@ -1673,6 +1680,9 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 								if (u->uncleared()) {
 									adjacent.unnormals ++;
 								}
+								if (u->healable()) {
+									adjacent.healables ++;
+								}
 								if (!u->provoked_turns()) {
 									adjacent.unprovoks ++;
 								}
@@ -1691,6 +1701,9 @@ void mr_data::calculate_mass(unit_map& units, const team& current_team)
 						}
 						if (u->uncleared()) {
 							adjacent.unnormals ++;
+						}
+						if (u->healable()) {
+							adjacent.healables ++;
 						}
 						if (!u->provoked_turns()) {
 							adjacent.unprovoks ++;

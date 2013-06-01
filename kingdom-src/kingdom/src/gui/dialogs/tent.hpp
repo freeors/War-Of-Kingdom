@@ -20,7 +20,7 @@
 
 #include "config.hpp"
 
-class display;
+class game_display;
 class hero_map;
 class hero;
 class card_map;
@@ -37,18 +37,10 @@ namespace gui2 {
 class tlistbox;
 class tbutton;
 
-struct tcount_str {
-	tcount_str(int c, const std::string& s)
-		: count(c), str(s)
-	{}
-	int count;
-	std::string str;
-};
-
 class ttent : public tdialog
 {
 public:
-	explicit ttent(display& gui, hero_map& heros, card_map& cards, const config& campaign_config, hero& player_hero, const std::string& mode_id);
+	explicit ttent(hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero, const std::string& mode_id);
 	~ttent();
 
 	config player() const;
@@ -63,16 +55,22 @@ protected:
 	/** Inherited from tdialog. */
 	void post_show(twindow& window);
 
+	virtual game_display& gui() = 0;
 	virtual void player_selected(twindow& window);
 private:
-	void add_row_to_heros(tlistbox* list, int h, int leader, int city, int stratum);
+	void init_player_list(tlistbox& list, twindow& window);
+	void init_faction_list(tlistbox& list, twindow& window);
+
+	void add_row_to_heros(tlistbox& list, int h, int leader, int city, int stratum);
+	void add_row_to_factions(tlistbox& list, const config& cfg);
 	void card_toggled(twidget* widget);
 	bool card_valid(const std::string& mode) const;
 
+	void player_faction(twindow& window);
 protected:
-	display& gui_;
 	hero_map& heros_;
 	card_map& cards_;
+	const config& cfg_;
 	const config& campaign_config_;
 	std::string mode_id_;
 
@@ -89,6 +87,9 @@ protected:
 	hero* player_hero_;
 	std::map<int, int> city_map_;;
 	std::map<int, int> city_leader_map_;
+
+	tlistbox* faction_list_;
+	tbutton* player_faction_;
 
 	bool shroud_;
 	bool fog_;

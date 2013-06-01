@@ -20,7 +20,6 @@
 #include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "hero.hpp"
 #include "team.hpp"
 #include "artifical.hpp"
 #include "gui/dialogs/helper.hpp"

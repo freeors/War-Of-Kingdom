@@ -549,5 +549,16 @@ SDL_Rect draw_wrapped_text(CVideo* gui, const SDL_Rect& area, int font_size,
 	return font::draw_text(gui, area, font_size, color, wrapped_text, x, y, false);
 }
 
+bool can_break(const wchar_t previous, const wchar_t ch)
+{
+	if (break_before(ch) && !no_break_after(previous))
+		return true;
+
+	if (break_after(previous) && !no_break_before(ch))
+		return true;
+
+	return false;
+}
+
 } // end namespace font
 

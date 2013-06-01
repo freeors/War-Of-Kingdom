@@ -20,8 +20,7 @@
 #include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "display.hpp"
-#include "hero.hpp"
+#include "game_display.hpp"
 #include "card.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/dialogs/combo_box.hpp"
@@ -89,8 +88,10 @@ namespace gui2 {
 
 REGISTER_DIALOG(tower_tent)
 
-ttower_tent::ttower_tent(display& gui, hero_map& heros, card_map& cards, const config& campaign_config, hero& player_hero)
-	: ttent(gui, heros, cards, campaign_config, player_hero, "tower")
+ttower_tent::ttower_tent(game_display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero)
+	: ttent(heros, cards, cfg, campaign_config, player_hero, "tower")
+	, trandom_map(cfg, TOWER_MODE)
+	, gui_(gui)
 {
 }
 
@@ -101,7 +102,9 @@ ttower_tent::~ttower_tent()
 void ttower_tent::pre_show(CVideo& video, twindow& window)
 {
 	ttent::pre_show(video, window);
+	trandom_map::pre_show(window);
 
+	employ_count_ = find_widget<tbutton>(&window, "employ_count", false, true);
 	ai_count_ = find_widget<tbutton>(&window, "ai_count", false, true);
 	turns_ = find_widget<tbutton>(&window, "turns", false, true);
 
@@ -109,6 +112,12 @@ void ttower_tent::pre_show(CVideo& video, twindow& window)
 		*ai_count_
 		, boost::bind(
 			&ttower_tent::ai_count
+			, this
+			, boost::ref(window)));
+	connect_signal_mouse_left_click(
+		*employ_count_
+		, boost::bind(
+			&ttower_tent::employ_count
 			, this
 			, boost::ref(window)));
 	connect_signal_mouse_left_click(
@@ -124,6 +133,11 @@ void ttower_tent::pre_show(CVideo& video, twindow& window)
 	strstr << tent::ai_count;
 	ai_count_->set_label(strstr.str());
 
+	strstr.str("");
+	tent::employ_count = 6;
+	strstr << tent::employ_count;
+	employ_count_->set_label(strstr.str());
+
 	tent::turns = 20;
 	strstr.str("");
 	strstr << tent::turns;
@@ -134,19 +148,19 @@ void ttower_tent::ai_count(twindow& window)
 {
 	// The possible eras to play
 	std::vector<std::string> items;
-	std::map<int, tcount_str> ai_count_map;
+	std::map<int, tval_str> ai_count_map;
 	int actived_index = 0;
 
 
-	ai_count_map.insert(std::make_pair(0, tcount_str(30, "30")));
-	ai_count_map.insert(std::make_pair(1, tcount_str(40, "40")));
-	ai_count_map.insert(std::make_pair(2, tcount_str(50, "50")));
-	ai_count_map.insert(std::make_pair(3, tcount_str(60, "60")));
-	ai_count_map.insert(std::make_pair(4, tcount_str(70, "70")));
+	ai_count_map.insert(std::make_pair(0, tval_str(30, "30")));
+	ai_count_map.insert(std::make_pair(1, tval_str(40, "40")));
+	ai_count_map.insert(std::make_pair(2, tval_str(50, "50")));
+	ai_count_map.insert(std::make_pair(3, tval_str(60, "60")));
+	ai_count_map.insert(std::make_pair(4, tval_str(70, "70")));
 
-	for (std::map<int, tcount_str>::iterator it = ai_count_map.begin(); it != ai_count_map.end(); ++ it) {
+	for (std::map<int, tval_str>::iterator it = ai_count_map.begin(); it != ai_count_map.end(); ++ it) {
 		items.push_back(it->second.str);
-		if (tent::ai_count == it->second.count) {
+		if (tent::ai_count == it->second.val) {
 			actived_index = std::distance(ai_count_map.begin(), it);
 		}
 	}
@@ -155,30 +169,59 @@ void ttower_tent::ai_count(twindow& window)
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	tent::ai_count = ai_count_map.find(selected)->second.count;
+	tent::ai_count = ai_count_map.find(selected)->second.val;
 
 	std::stringstream strstr;
 	strstr << tent::ai_count;
 	ai_count_->set_label(strstr.str());
 }
 
+void ttower_tent::employ_count(twindow& window)
+{
+	std::vector<std::string> items;
+	std::vector<tval_str> employ_count_map;
+	int actived_index = 0;
+	
+	employ_count_map.push_back(tval_str(0, "0"));
+	employ_count_map.push_back(tval_str(3, "3"));
+	employ_count_map.push_back(tval_str(6, "6"));
+	employ_count_map.push_back(tval_str(9, "9"));
+
+	for (std::vector<tval_str>::iterator it = employ_count_map.begin(); it != employ_count_map.end(); ++ it) {
+		items.push_back(it->str);
+		if (tent::employ_count == it->val) {
+			actived_index = std::distance(employ_count_map.begin(), it);
+		}
+	}
+	
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(gui_.video());
+
+	int selected = dlg.selected_index();
+	tent::employ_count = employ_count_map[selected].val;
+
+	std::stringstream strstr;
+	strstr << tent::employ_count;
+	employ_count_->set_label(strstr.str());
+}
+
 void ttower_tent::turns(twindow& window)
 {
 	// The possible eras to play
 	std::vector<std::string> items;
-	std::map<int, tcount_str> turns_map;
+	std::map<int, tval_str> turns_map;
 	int actived_index = 0;
 
-	turns_map.insert(std::make_pair(0, tcount_str(10, "10")));
-	turns_map.insert(std::make_pair(1, tcount_str(20, "20")));
-	turns_map.insert(std::make_pair(2, tcount_str(30, "30")));
-	turns_map.insert(std::make_pair(3, tcount_str(50, "50")));
-	turns_map.insert(std::make_pair(4, tcount_str(70, "70")));
-	turns_map.insert(std::make_pair(5, tcount_str(100, "100")));
+	turns_map.insert(std::make_pair(0, tval_str(10, "10")));
+	turns_map.insert(std::make_pair(1, tval_str(20, "20")));
+	turns_map.insert(std::make_pair(2, tval_str(30, "30")));
+	turns_map.insert(std::make_pair(3, tval_str(50, "50")));
+	turns_map.insert(std::make_pair(4, tval_str(70, "70")));
+	turns_map.insert(std::make_pair(5, tval_str(100, "100")));
 
-	for (std::map<int, tcount_str>::iterator it = turns_map.begin(); it != turns_map.end(); ++ it) {
+	for (std::map<int, tval_str>::iterator it = turns_map.begin(); it != turns_map.end(); ++ it) {
 		items.push_back(it->second.str);
-		if (tent::turns == it->second.count) {
+		if (tent::turns == it->second.val) {
 			actived_index = std::distance(turns_map.begin(), it);
 		}
 	}
@@ -187,11 +230,15 @@ void ttower_tent::turns(twindow& window)
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	tent::turns = turns_map.find(selected)->second.count;
+	tent::turns = turns_map.find(selected)->second.val;
 
 	std::stringstream strstr;
 	strstr << tent::turns;
 	turns_->set_label(strstr.str());
+}
+
+void ttower_tent::update_map_settings(twindow& window)
+{
 }
 
 } // namespace gui2

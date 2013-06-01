@@ -413,7 +413,7 @@ void game_display::taccess_list::enable(game_display& gui, menu_button_map* acce
 	// 修改图像参数, 向头部增加该图像
 	if (type_ == TROOP) {
 		btn->set_image(u->master().image(), u->level(), false, u->has_mayor());
-	} else if (type_ == TROOP) {
+	} else if (type_ == HERO) {
 		if (h->utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h->utype_);
 			btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
@@ -1469,6 +1469,18 @@ void game_display::draw_game_status()
 
 void game_display::show_unit_tip(const unit& troop, const map_location& loc)
 {
+	if (!game_config::tiny_gui) {
+		// hide tactic slots
+		std::stringstream name;
+		for (int index = 0; index < game_config::active_tactic_slots; index ++) {
+			name.str("");
+			name << "tactic" << index;
+			gui::button* btn = find_button(name.str());
+			btn->hide();
+		}
+		invalidate_all();
+	}
+	
 	if (main_tip_handle_) {
 		for (std::map<map_location, std::string>::const_iterator it = tip_locs_.begin(); it != tip_locs_.end(); ++ it) {
 			invalidate(it->first);
@@ -1591,6 +1603,7 @@ void game_display::hide_tip()
 		font::remove_floating_label(main_tip_handle_);
 		main_tip_handle_ = 0;
 	}
+	teams_[playing_team()].refresh_tactic_slots(*this);
 }
 
 void game_display::draw_sidebar()
@@ -2069,7 +2082,7 @@ surface game_display::get_big_flag(const map_location& loc)
 						}
 					} else {
 						if (chars == 1) {
-							font_size = font::SIZE_PLUS;
+							font_size = font::SIZE_NORMAL;
 							xstart = 30;
 							ystart = 6;
 						} else if (chars == 2) {
@@ -2086,8 +2099,8 @@ surface game_display::get_big_flag(const map_location& loc)
 							ystart = 10;
 						}
 					}
-					text_surf = font::get_rendered_text(teams_[i].leader()->surname(), font_size, font::BIGMAP_COLOR);
-					back_surf = font::get_rendered_text(teams_[i].leader()->surname(), font_size, font::BLACK_COLOR);
+					text_surf = font::get_rendered_text2(teams_[i].leader()->surname(), -1, font_size, font::BIGMAP_COLOR);
+					back_surf = font::get_rendered_text2(teams_[i].leader()->surname(), -1, font_size, font::BLACK_COLOR);
 
 					SDL_Rect dst;
 					for (int dy=-1; dy <= 1; ++dy) {
@@ -2398,8 +2411,17 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 	invalidate(interior_indicator_);
 	interior_indicator_ = map_location();
 
-	if (tent::mode == TOWER_MODE || !attack || (!attack->is_artifical() && !attack->attacks_left())) {
+	if (!attack) {
 		return;
+	}
+
+	const team& current_team = teams_[attack->side() - 1];
+	std::vector<unit*> actives = current_team.active_tactics();
+
+	if (tent::mode != TOWER_MODE) {
+		if (!attack->is_artifical() && !attack->attacks_left()) {
+			return;
+		}
 	}
 
 	map_offset* adjacent_ptr;
@@ -2410,14 +2432,16 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 	size_t i, size;
 	int range;
 	bool find;
-	const team& current_team = teams_[attack->side() - 1];
-
+	
 	if (!attack->is_artifical()) {
 		if (browse) {
 			return;
 		}
 		std::vector<attack_type>& attacks = attack->attacks();
 		for (std::vector<attack_type>::const_iterator at_it = attacks.begin(); at_it != attacks.end(); ++ at_it, i ++) {
+			if (tent::mode == TOWER_MODE) {
+				continue;
+			}
 			if (at_it->range() == "melee") {
 				// range: 1
 				range = 1;
@@ -2480,6 +2504,7 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 			(attack->third().valid() && attack->third().tactic_ != HEROS_NO_TACTIC)) {
 			tactic_indicator_ = loc;
 		}
+
 	} else if (attack->is_city()) {
 		interior_indicator_ = loc;
 	}
@@ -2505,6 +2530,9 @@ void game_display::set_hero_indicator(const hero& h)
 	const gamemap& map = *map_;
 	int gold = current_team.gold();
 	int cost_exponent = current_team.cost_exponent();
+	unit_map::const_iterator adj;
+	int n;
+	map_location adjs[6];
 
 	int border_size = map.border_size();
 	for (int y_off = 0; y_off < map.h(); ++ y_off) {
@@ -2513,7 +2541,7 @@ void game_display::set_hero_indicator(const hero& h)
 			const map_location loc = map_location(x_off, y_off);
 			const t_translation::t_terrain terrain = map.get_terrain(loc);
 			const unit* u = find_unit(units_, loc);
-			if (u) {
+			if (u && !u->base()) {
 				if (!u->is_artifical() && !u->third().valid() && h.side_ + 1 == u->side()) {
 					joinable_indicator_.insert(loc);
 					invalidate(loc);
@@ -2522,8 +2550,53 @@ void game_display::set_hero_indicator(const hero& h)
 				const unit_type* ut = unit_types.keytype(h.utype_);
 				const unit_movement_type& mtype = ut->movement_type();
 				if (gold >= ut->cost() * cost_exponent / 100 && mtype.movement_cost(map, terrain) != unit_movement_type::UNREACHABLE) {
-					placable_indicator_.insert(loc);
-					invalidate(loc);
+					get_adjacent_tiles(loc, adjs);
+					for (n = 0; n < 6; n ++) {
+						adj = units_.find(adjs[n]);
+						if (adj.valid() && adj->is_city() && current_team.is_enemy(adj->side())) {
+							break;
+						}
+					}
+					if (n == 6) {
+						placable_indicator_.insert(loc);
+						invalidate(loc);
+					}
+				}
+			}
+		}
+	}
+}
+
+void game_display::set_placable_indicator(const unit& u)
+{
+	const team& current_team = teams_[u.side() - 1];
+	const gamemap& map = *map_;
+	unit_map::const_iterator adj;
+	int n;
+	map_location adjs[6];
+
+	int border_size = map.border_size();
+	for (int y_off = 0; y_off < map.h(); ++ y_off) {
+		for (int x_off = 0; x_off < map.w(); ++ x_off) {
+			
+			const map_location loc = map_location(x_off, y_off);
+			const t_translation::t_terrain terrain = map.get_terrain(loc);
+			const unit* find = find_unit(units_, loc);
+			if (x_off >=3 && (!find || find->base())) {
+				const unit_type* ut = u.packee_type();
+				const unit_movement_type& mtype = ut->movement_type();
+				if (mtype.movement_cost(map, terrain) != unit_movement_type::UNREACHABLE) {
+					get_adjacent_tiles(loc, adjs);
+					for (n = 0; n < 6; n ++) {
+						adj = units_.find(adjs[n]);
+						if (adj.valid() && adj->is_city() && current_team.is_enemy(adj->side())) {
+							break;
+						}
+					}
+					if (n == 6) {
+						placable_indicator_.insert(loc);
+						invalidate(loc);
+					}
 				}
 			}
 		}
@@ -2595,7 +2668,7 @@ void game_display::set_build_indicator(const unit* builder, const artifical* new
 			u_itor = units_.find(relative_loc, false);
 		}
 		if (!u_itor.valid() && new_art->terrain_matches(map_->get_terrain(relative_loc))) {
-			if (new_art->type() == unit_types.find_wall() || new_art->type() == unit_types.find_keep()) {
+			if (new_art->type()->master() == hero::number_wall || new_art->type()->master() == hero::number_keep) {
 				map_offset* adjacent2_ptr = adjacent_1[relative_loc.x & 0x1];
 				size_t i2, size2 = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
 				for (i2 = 0; i2 < size2; i2 ++) {
@@ -2631,6 +2704,14 @@ void game_display::set_build_indicator(const unit* builder, const artifical* new
 				}
 				if (i2 == size2) {
 					build_indicator_dst_.insert(relative_loc);
+				}
+			} else if (new_art->type()->master() == hero::number_tactic) {
+				std::map<const map_location, int>::const_iterator it = unit_map::economy_areas_.find(relative_loc);
+				if (it != unit_map::economy_areas_.end()) {
+					artifical& city = *units_.city_from_cityno(it->second);
+					if (!city.tactic_on_ea()) {
+						build_indicator_dst_.insert(relative_loc);
+					}
 				}
 			} else {
 				build_indicator_dst_.insert(relative_loc);
@@ -3016,12 +3097,12 @@ void game_display::add_chat_message(const time_t& time, const std::string& speak
 
 	if(type ==  events::chat_handler::MESSAGE_PUBLIC) {
 		if(action) {
-			str << "<" << speaker << " " << msg << ">";
+			str << "\\<" << speaker << " " << msg << ">";
 			message_color = speaker_color;
 			message_str << " ";
 		} else {
 			if (!speaker.empty())
-				str << "<" << speaker << ">";
+				str << "\\<" << speaker << ">";
 			message_str << msg;
 		}
 	} else {

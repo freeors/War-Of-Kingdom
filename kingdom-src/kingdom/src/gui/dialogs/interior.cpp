@@ -23,7 +23,6 @@
 #include "gettext.hpp"
 #include "game_display.hpp"
 #include "team.hpp"
-#include "hero.hpp"
 #include "artifical.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/button.hpp"
@@ -175,12 +174,13 @@ void tinterior::refresh_tooltip(twindow& window)
 			strstr << d_it->exploiture_ << "%";
 		} else {
 			int exploiture = calculate_exploiture(city_.master(), checked_hero_ != -1? *(fresh_heros_[checked_hero_]): hero_invalid, d_it->type_);
+			strstr << "<format>";
 			if (exploiture > d_it->exploiture_) {
-				strstr << "<0,255,0>";
+				strstr << "color=green ";
 			} else if (exploiture < d_it->exploiture_) {
-				strstr << "<255,0,0>";
+				strstr << "color=red ";
 			}
-			strstr << exploiture << "%";
+			strstr << "text='" << exploiture << "%" << "'</format>";
 		}
 		control->set_label(strstr.str());
 	}
@@ -199,9 +199,12 @@ void tinterior::appoint(twindow& window)
 		hero& h = *fresh_heros_[index];
 		strstr.str("");
 		if (h.official_ == hero_official_mayor) {
-			strstr << "<0,0,255>";
+			strstr << "<format>color=blue text='";
 		}
 		strstr << h.name();
+		if (h.official_ == hero_official_mayor) {
+			strstr << "'</format>";
+		}
 		control->set_label(strstr.str());
 	}
 
@@ -505,13 +508,13 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 
 		if (catalog == ABILITY_PAGE) {
 			str.str("");
-			table_item["use_markup"] = "true";
+			str << "<format>";
 			if (h->official_ == hero_official_mayor) {
-				str << "<0,0,255>";
+				str << "color=blue ";
 			} else if (h->official_ != HEROS_NO_OFFICIAL) {
-				str << "<255,0,0>";
+				str << "color=red ";
 			}
-			str << h->name();
+			str << "text='" << h->name() << "'</format>";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 			
@@ -553,13 +556,13 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 
 		} else if (catalog == ADAPTABILITY_PAGE) {
 			str.str("");
-			table_item["use_markup"] = "true";
+			str << "<format>";
 			if (h->official_ == hero_official_mayor) {
-				str << "<0,0,255>";
+				str << "color=blue ";
 			} else if (h->official_ != HEROS_NO_OFFICIAL) {
-				str << "<255,0,0>";
+				str << "color=red ";
 			}
-			str << h->name();
+			str << "text='" << h->name() << "'</format>";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 
@@ -580,13 +583,13 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 
 		} else if (catalog == RELATION_PAGE) {
 			str.str("");
-			table_item["use_markup"] = "true";
+			str << "<format>";
 			if (h->official_ == hero_official_mayor) {
-				str << "<0,0,255>";
+				str << "color=blue ";
 			} else if (h->official_ != HEROS_NO_OFFICIAL) {
-				str << "<255,0,0>";
+				str << "color=red ";
 			}
-			str << h->name();
+			str << "text='" << h->name() << "'</format>";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 

@@ -44,6 +44,11 @@
 #include <cctype>
 #include <boost/bind.hpp>
 
+namespace savegame {
+extern std::string format_time_local(time_t t);
+extern std::string format_time_elapse(time_t elapse);
+}
+
 namespace gui2 {
 
 /*WIKI
@@ -250,7 +255,8 @@ void tgame_load::display_savegame(twindow& window)
 		find_widget<tlabel>(&window, "lblScenario", false).set_label(game.name);
 
 		std::stringstream str;
-		str << game.format_time_local();
+		str << game.format_time_local() << "\n";
+		str << _("Total time") << ": " << savegame::format_time_elapse(game.time_modified - cfg_summary["create"].to_long());
 		evaluate_summary_string(str, cfg_summary);
 
 		find_widget<tlabel>(&window, "lblSummary", false).set_label(str.str());
@@ -308,9 +314,6 @@ void tgame_load::evaluate_summary_string(std::stringstream& str
 		} else {
 			str << _("Scenario Start");
 		}
-
-		str << "\n" << _("Difficulty: ")
-				<< string_table[cfg_summary["difficulty"]];
 
 		if(!cfg_summary["version"].empty()) {
 			str << "\n" << _("Version: ") << cfg_summary["version"];

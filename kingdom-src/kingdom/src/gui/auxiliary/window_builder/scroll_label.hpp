@@ -33,6 +33,12 @@ struct tbuilder_scroll_label
 
 	tscrollbar_container::tscrollbar_mode vertical_scrollbar_mode;
 	tscrollbar_container::tscrollbar_mode horizontal_scrollbar_mode;
+
+	/** The width of the widget. */
+	tformula<unsigned> width;
+
+	/** The height of the widget. */
+	tformula<unsigned> height;
 };
 
 } // namespace implementation

@@ -2,8 +2,8 @@ local helper = wesnoth.require "lua/helper.lua"
 local wml_actions = wesnoth.wml_actions
 local game_events = wesnoth.game_events
 
-local function color_prefix(r, g, b)
-	return string.format('<%d,%d,%d>', r, g, b)
+local function color_prefix(color)
+	return string.format('color="%s"', color)
 end
 
 local function insert_before_nl(s, t)
@@ -85,7 +85,7 @@ local function generate_objectives(cfg)
 					win_objectives = win_objectives .. caption .. "\n"
 				end
 
-				win_objectives = win_objectives .. color_prefix(r, g, b) .. objective_bullet .. description .. turn_counter .. "\n"
+				win_objectives = win_objectives .. "<format>" .. color_prefix("green") .. " text='" .. objective_bullet .. description .. turn_counter .. "'</format>\n"
 			elseif condition == "lose" then
 				local caption = obj.caption
 				local r = obj.red or 255
@@ -96,7 +96,7 @@ local function generate_objectives(cfg)
 					lose_objectives = lose_objectives .. caption .. "\n"
 				end
 
-				lose_objectives = lose_objectives .. color_prefix(r, g, b) .. objective_bullet .. description .. turn_counter .. "\n"
+				lose_objectives = lose_objectives .. "<format>" .. color_prefix("red") .. " text='" .. objective_bullet .. description .. turn_counter .. "'</format>\n"
 			else
 				wesnoth.message "Unknown condition, ignoring."
 			end

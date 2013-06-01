@@ -31,7 +31,7 @@ public:
 
 	bool allow_user_config() const { return true; }
 	// This is a pure virtual function in the base class, so must be here
-	void user_config(display& /* disp*/, const config& /* cfg*/) { return; }
+	bool user_config(display& /* disp*/, const config& /* cfg*/, int max_players = -1, int min_w = -1, int max_w = -1, int min_h = -1, int max_h = -1) { return false; }
 
 	std::string name() const { return "cave"; }
 

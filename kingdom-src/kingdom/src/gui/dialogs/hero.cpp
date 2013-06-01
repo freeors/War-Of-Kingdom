@@ -28,6 +28,7 @@
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/scroll_label.hpp"
+#include "gui/widgets/scrollbar_panel.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "preferences_display.hpp"
@@ -110,7 +111,7 @@ thero::thero(hero_map& heros, hero& h)
 	: heros_(heros)
 	, h_(h)
 	, current_page_(NONE_PAGE)
-	, page_grid_(NULL)
+	, page_panel_(NULL)
 {
 }
 
@@ -185,7 +186,7 @@ void thero::pre_show(CVideo& video, twindow& window)
 		it->second->set_data(it->first);
 	}
 
-	page_grid_ = find_widget<tgrid>(&window, "page", false, true);
+	page_panel_ = find_widget<tscrollbar_panel>(&window, "page", false, true);
 	swap_page(window, BASE_PAGE, false);
 	sheet_.begin()->second->set_value(true);
 }
@@ -244,7 +245,6 @@ void thero::fill_base(twindow& window)
 
 void thero::fill_biography(twindow& window)
 {
-	// twindow::tinvalidate_layout_blocker invalidate_layout_blocker(window);
 	std::stringstream strstr;
 
 	ttext_box* text_box = find_widget<ttext_box>(&window, "treasure", false, true);
@@ -274,15 +274,8 @@ void thero::swap_page(twindow& window, int page, bool swap)
 		// desired page is the displaying page, do nothing.
 		return;
 	}
-	if (page == BIOGRAPHY_PAGE) {
-		window.set_maximum_size(window.get_width(), window.get_height());
-	}
-
-	window.alternate_uh(page_grid_, index);
-
-	if (swap) {
-		window.alternate_bh(page_grid_, index);
-	}
+	window.alternate_uh(page_panel_, index);
+	window.alternate_bh(swap? page_panel_: NULL, index);
 
 	if (page == BASE_PAGE) {
 		fill_base(window);

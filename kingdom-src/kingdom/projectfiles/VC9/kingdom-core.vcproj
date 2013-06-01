@@ -160,6 +160,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\config_cache.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\filesystem.cpp"
 				>
 			</File>

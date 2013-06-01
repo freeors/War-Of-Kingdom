@@ -20,7 +20,6 @@
 
 #include "team.hpp"
 
-// #include "log.hpp"
 #include "ai/manager.hpp"
 #include "foreach.hpp"
 #include "game_events.hpp"
@@ -34,6 +33,7 @@
 #include "wml_exception.hpp"
 #include "formula_string_utils.hpp"
 #include "play_controller.hpp"
+#include "gettext.hpp"
 
 static std::vector<team> *&teams = resources::teams;
 
@@ -265,6 +265,9 @@ team_::team_()
 	, village_gold_increase_(100)
 	, market_increase_(100)
 	, technology_increase_(100)
+	, cause_damage_(0)
+	, been_damage_(0)
+	, defeat_units_(0)
 	, can_build_()
 {
 	for (int i = 0; i < sizeof(arms_speed_) / sizeof(arms_speed_[0]); i ++) {
@@ -285,6 +288,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	villages_(),
 	navigation_(0),
 	tactic_point_(0),
+	bomb_turns_(0),
 	shroud_(),
 	fog_(),
 	auto_shroud_updates_(true),
@@ -335,12 +339,20 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 		}
 	}
 	// ensure both wall and keep are exist or not.
-	if ((keep_existed && !wall_existed) || (!keep_existed && wall_existed)) {
-		if (!keep_existed) {
-			can_build_.insert(unit_types.find_keep());
+	if (tent::mode != TOWER_MODE) {
+		if ((keep_existed && !wall_existed) || (!keep_existed && wall_existed)) {
+			if (!keep_existed) {
+				can_build_.insert(unit_types.find_keep());
+			}
+			if (!wall_existed) {
+				can_build_.insert(unit_types.find_wall());
+			}
 		}
-		if (!wall_existed) {
-			can_build_.insert(unit_types.find_wall());
+	} else {
+		if (can_build_.size() > 1) {
+			throw game::game_error("invalid build attribute in side(" + str_cast(info_.side) + ") tag");
+		} else if (can_build_.size() == 1 && *can_build_.begin() != unit_types.find_wall()) {
+			throw game::game_error("invalid build attribute in side(" + str_cast(info_.side) + ") tag, tower mode can build wall only!");
 		}
 	}
 
@@ -378,7 +390,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 	if (!str.empty()) {
 		leader_ = cfg["leader"].to_int();
 	} else {
-		leader_ = 228;
+		leader_ = hero::number_empty_leader;
 	}
 	heros_[leader_].official_ = hero_official_leader;
 	if (info_.name.empty()) {
@@ -405,6 +417,10 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg,
 		str = resources::state_of_game->get_variable(str.substr(1)).str();
 	}
 	tactic_point_ = atoi(str.c_str());
+
+	// bomb_turns
+	bomb_turns_ = cfg["bomb_turns"].to_int();
+
 	// fog
 	str = cfg["fog"].str();
 	if (!str.empty() && str.at(0) == '$') {
@@ -502,6 +518,7 @@ team::team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem
 	villages_(),
 	navigation_(0),
 	tactic_point_(0),
+	bomb_turns_(0),
 	shroud_(),
 	fog_(),
 	auto_shroud_updates_(true),
@@ -567,6 +584,7 @@ team::team(const team& that) :
 	max_tactic_point_(that.max_tactic_point_),
 	navigation_(that.navigation_),
 	tactic_point_(that.tactic_point_),
+	bomb_turns_(that.bomb_turns_),
 	shroud_(that.shroud_),
 	fog_(that.fog_),
 	auto_shroud_updates_(that.auto_shroud_updates_),
@@ -606,6 +624,7 @@ team& team::operator=(const team& that)
 	holded_cities_ = that.holded_cities_;
 	navigation_ = that.navigation_;
 	tactic_point_ = that.tactic_point_;
+	bomb_turns_ = that.bomb_turns_;
 	shroud_ = that.shroud_;
 	fog_ = that.fog_;
 	auto_shroud_updates_ = that.auto_shroud_updates_;
@@ -673,6 +692,7 @@ void team::write(config& cfg) const
 	cfg["gold"] = gold_;
 	cfg["navigation"] = navigation_;
 	cfg["tactic_point"] = tactic_point_;
+	cfg["bomb_turns"] = bomb_turns_;
 
 	// write card
 	std::stringstream str;
@@ -790,6 +810,11 @@ void team::write(uint8_t* mem) const
 	fields->hidden_ = info_.hidden? 1: 0;
 	fields->scroll_to_leader_ = info_.scroll_to_leader? 1: 0;
 	fields->controller_ = info_.controller;
+	// statstic
+	fields->cause_damage_ = cause_damage_;
+	fields->been_damage_ = been_damage_;
+	fields->defeat_units_ = defeat_units_;
+
 	fields->share_maps_ = info_.share_maps? 1: 0;
 	fields->share_view_ = info_.share_view? 1: 0;
 	fields->persistent_ = info_.persistent? 1: 0;
@@ -799,6 +824,7 @@ void team::write(uint8_t* mem) const
 	fields->gold_ = gold_;
 	fields->navigation_ = navigation_;
 	fields->tactic_point_ = tactic_point_;
+	fields->bomb_turns_ = bomb_turns_;
 
 	bool first;
 	int offset = sizeof(team_fields_t);
@@ -1192,6 +1218,11 @@ void team::read(const uint8_t* mem, const gamemap& map)
 	info_.hidden = fields->hidden_? true: false;
 	info_.scroll_to_leader = fields->scroll_to_leader_? true: false;
 	info_.controller = (team_info::CONTROLLER)fields->controller_;
+	// statistic
+	cause_damage_ = fields->cause_damage_;
+	been_damage_ = fields->been_damage_;
+	defeat_units_ = fields->defeat_units_;
+
 	if (info_.controller == team_info::EMPTY && team::empty_side_ == -1) {
 		team::empty_side_ = info_.side;
 	}
@@ -1203,6 +1234,7 @@ void team::read(const uint8_t* mem, const gamemap& map)
 	set_fog(fields->fog_? true: false);
 	navigation_ = fields->navigation_;
 	tactic_point_ = fields->tactic_point_;
+	bomb_turns_ = fields->bomb_turns_;
 
 	std::string str;
 	// diplomatisms_, (ally, forbided)
@@ -1264,12 +1296,20 @@ void team::read(const uint8_t* mem, const gamemap& map)
 		}
 	}
 	// ensure both wall and keep are exist or not.
-	if ((keep_existed && !wall_existed) || (!keep_existed && wall_existed)) {
-		if (!keep_existed) {
-			can_build_.insert(unit_types.find_keep());
+	if (tent::mode != TOWER_MODE) {
+		if ((keep_existed && !wall_existed) || (!keep_existed && wall_existed)) {
+			if (!keep_existed) {
+				can_build_.insert(unit_types.find_keep());
+			}
+			if (!wall_existed) {
+				can_build_.insert(unit_types.find_wall());
+			}
 		}
-		if (!wall_existed) {
-			can_build_.insert(unit_types.find_wall());
+	} else {
+		if (can_build_.size() > 1) {
+			throw game::game_error("invalid build attribute in side(" + str_cast(info_.side) + ") tag");
+		} else if (can_build_.size() == 1 && *can_build_.begin() != unit_types.find_wall()) {
+			throw game::game_error("invalid build attribute in side(" + str_cast(info_.side) + ") tag, tower mode can build wall only!");
 		}
 	}
 
@@ -1398,6 +1438,20 @@ int team::base_income() const
 	return rpg_bonus + info_.income + game_config::base_income; 
 }
 
+bool team::gold_can_build_ea() const
+{
+	if (gold_ < unit_types.find_market()->cost()) {
+		return false;
+	} 
+	if (gold_ < unit_types.find_technology()->cost()) {
+		return false;
+	}
+	if (gold_ < unit_types.find_tactic()->cost()) {
+		return false;
+	}
+	return true;
+}
+
 int team::total_income() const 
 {
 	// bool magnate_found;
@@ -1453,12 +1507,12 @@ int team::total_technology_income() const
 	if (income) {
 		int multiplier = 1;
 		int divisor = holded_cities_.size();
-		const int max_safe_turn = 200;
+		const int max_safe_turn = 500;
 
 		int exponent = cost_exponent();
-		if (exponent > 350) {
+		if (exponent > 400) {
 			multiplier *= 100;
-			divisor *= 100 + (exponent - 350);
+			divisor *= 100 + (exponent - 400);
 		}
 
 		int turn = resources::controller->turn();
@@ -1500,6 +1554,8 @@ void team::new_turn()
 { 
 	gold_ += total_income();
 	add_tactic_point(game_config::increase_tactic_point * recover_tactic_increase_ / 100);
+	increase_bomb_turns();
+	refresh_tactic_slots(*resources::screen);
 
 	// research technology
 	int income = total_technology_income();
@@ -1512,8 +1568,8 @@ void team::new_turn()
 				utils::string_map symbols;
 				std::string message;
 
-				symbols["end"] = ing_technology_->name();
-				symbols["side"] = name();
+				symbols["end"] = help::tintegrate::generate_format(ing_technology_->name(), help::tintegrate::tactic_color);
+				symbols["side"] = help::tintegrate::generate_format(name(), help::tintegrate::hero_color);
 
 				holded_technologies_.push_back(ing_technology_);
 				// apply this technology
@@ -1536,7 +1592,7 @@ void team::new_turn()
 				select_ing_technology();
 
 				if (ing_technology_) {
-					symbols["begin"] = ing_technology_->name();
+					symbols["begin"] = help::tintegrate::generate_format(ing_technology_->name(), help::tintegrate::tactic_color);
 					message = vgettext("$side finished researching $end, will begin to research $begin!", symbols);
 				} else {
 					message = vgettext("$side finished researching $end, and have gotten all technology!", symbols);
@@ -1631,7 +1687,7 @@ void team::erase_strategy(int target, bool dialog)
 		if (it->target_ == target) {
 			// terminate relative treaty.
 			artifical* target_city = units_.city_from_cityno(it->target_);
-			symbols["city"] = target_city->name();
+			symbols["city"] = help::tintegrate::generate_format(target_city->name(), help::tintegrate::object_color);
 
 			for (std::set<int>::const_iterator it_ally = it->allies_.begin(); it_ally != it->allies_.end(); ++ it_ally) {
 				team& allied_team = (*teams)[*it_ally - 1];
@@ -1640,8 +1696,8 @@ void team::erase_strategy(int target, bool dialog)
 				allied_team.set_ally(info_.side, false);
 
 				if (dialog) {
-					symbols["first"] = name();
-					symbols["second"] = allied_team.name();
+					symbols["first"] = help::tintegrate::generate_format(name(), help::tintegrate::hero_color);
+					symbols["second"] = help::tintegrate::generate_format(allied_team.name(), help::tintegrate::hero_color);
 					if (it->type_ == strategy::AGGRESS) {
 						message = vgettext("End aggressing upon $city, $first and $second terminate treaty of alliance.", symbols);
 					} else if (it->type_ == strategy::DEFEND) {
@@ -2240,6 +2296,107 @@ bool team::defeat_vote() const
 	}
 }
 
+int team::may_build_count() const
+{
+	const int max_artificals = 5;
+
+	int exist_artificals = 0;
+	for (size_t i = 0; i < field_troops_vsize_; i ++) {
+		const unit_type* ut = field_troops_[i]->type();
+		int master = ut->master();
+		if (master == hero::number_wall) {
+			exist_artificals ++;
+		}
+	}
+	if (exist_artificals >= max_artificals) {
+		return 0;
+	}
+	return max_artificals - exist_artificals;
+}
+
+std::string team::form_results_of_battle_tip(const std::string& prefix) const
+{
+	std::stringstream strstr;
+
+	if (!prefix.empty()) {
+		strstr << prefix;
+		strstr << "\n\n";
+		strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Results of battle"), "", 0, true, true);
+		strstr << help::tintegrate::generate_img("misc/tintegrate-split-line.png") << "\n";
+	}
+	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Cause damage"), "green") << ": ";
+	strstr << cause_damage_ << "\n";
+
+	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Been damage"), "green") << ": ";
+	strstr << been_damage_ << "\n";
+
+	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Defeat units"), "green") << ": ";
+	strstr << defeat_units_;
+
+	return strstr.str();
+}
+
+std::vector<unit*> team::active_tactics() const
+{
+	std::vector<unit*> ret;
+	for (std::vector<unit*>::const_iterator it = tactic_cache::cache.begin(); it != tactic_cache::cache.end(); ++ it) {
+		if ((*it)->side() == info_.side) {
+			ret.push_back(*it);
+		}
+	}
+	return ret;
+}
+
+void team::refresh_tactic_slots(game_display& disp) const
+{
+	static int theme_tactic_slots = 3;
+	std::vector<unit*> tactics = active_tactics();
+	int index = 0;
+	std::stringstream name;
+	gui::button* btn;
+	if (tent::mode == TOWER_MODE) {
+		for (std::vector<unit*>::const_iterator it = tactics.begin(); it != tactics.end(); ++ it, index ++) {
+			hero& h = *(*it)->tactic_hero();
+			name.str("");
+			name << "tactic" << index;
+			btn = disp.find_button(name.str());
+			if (btn) {
+				// see remark#31
+				btn->set_tactic_image(h);
+				btn->hide(false);
+			}
+		}
+		for (; index < game_config::active_tactic_slots; index ++) {
+			name.str("");
+			name << "tactic" << index;
+			btn = disp.find_button(name.str());
+			btn->set_tactic_image(hero_invalid);
+			btn->hide(!is_human());
+		}
+		for (; index < theme_tactic_slots; index ++) {
+			name.str("");
+			name << "tactic" << index;
+			btn = disp.find_button(name.str());
+			btn->hide();
+		}
+	} else {
+		for (index = 0; index < theme_tactic_slots; index ++) {
+			name.str("");
+			name << "tactic" << index;
+			btn = disp.find_button(name.str());
+			btn->hide();
+		}
+	}
+
+	btn = disp.find_button("bomb");
+	if (tent::mode == TOWER_MODE && is_human()) {
+		btn->set_bomb_image(bomb_turns_);
+		btn->hide(false);
+	} else {
+		btn->hide();
+	}
+}
+
 void team::add_city(artifical* city)
 {
 	// extend rectange of holded cities
@@ -2248,20 +2405,9 @@ void team::add_city(artifical* city)
 	if (holded_cities_.empty()) {
 		city_rect_.x = loc.x;
 		city_rect_.y = loc.y;
-		city_rect_.w = city_rect_.h = 0;
+		city_rect_.w = city_rect_.h = 1;
 	} else {
-		if (loc.x < city_rect_.x) {
-			city_rect_.w += city_rect_.x - loc.x;
-			city_rect_.x = loc.x;
-		} else if (loc.x > city_rect_.x + city_rect_.w) {
-			city_rect_.w = loc.x - city_rect_.x;
-		}
-		if (loc.y < city_rect_.y) {
-			city_rect_.h += city_rect_.y - loc.y;
-			city_rect_.y = loc.y;
-		} else if (loc.y > city_rect_.y + city_rect_.h) {
-			city_rect_.h = loc.y - city_rect_.y;
-		}
+		expand_rect_loc(city_rect_, loc);
 	}
 
 	// push this city to holded cities
@@ -2362,39 +2508,54 @@ bool team::erase_card(int index, bool replay, bool dialog)
 	return true;
 }
 
-bool team::add_random_decree(artifical& city, int random)
+int team::get_random_decree(artifical& city, int random)
 {
-	if ((int)holded_cards_.size() >= game_config::max_cards) {
-		return false;
+	std::vector<int> candidate;
+	const std::map<int, tdecree>& decrees = unit_types.decrees();
+	bool found;
+
+	for (std::map<int, tdecree>::const_iterator it = decrees.begin(); it != decrees.end(); ++ it) {
+		const tdecree& d = it->second;
+		// front
+		if (d.front() && !city.is_front(true)) {
+			continue;
+		}
+		// min level
+		if (city.level() < d.min_level()) {
+			continue;
+		}
+		// artifical
+		const std::set<int>& require = d.require_artifical();
+		if (!require.empty()) {
+			found = false;
+			const std::vector<map_location>& eas = city.economy_area();
+			for (std::vector<map_location>::const_iterator ea = eas.begin(); ea != eas.end(); ++ ea) {
+				unit_map::const_iterator find = units_.find(*ea);
+				if (!find.valid()) {
+					continue;
+				}
+				if (require.find(find->type()->master()) != require.end()) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				continue;
+			}
+		}
+		candidate.push_back(it->first);
 	}
-
-	// if (!replay) {
-	//	recorder.add_card(info_.side, number, dialog);
-	// }
-
-	const std::vector<card*>& decrees = cards_.decrees();
-	if (decrees.empty()) {
-		return false;
+	
+	if (!candidate.empty()) {
+		return candidate[random % candidate.size()];
 	}
-
-	holded_cards_.push_back(decrees[random % decrees.size()]->number_);
-
-	if (is_human()) {
-		game_display& disp = *resources::screen;
-		refresh_card_button(*this, disp);
-		// card
-		utils::string_map symbols;
-		symbols["city"] = city.name();
-		symbols["decree"] = holded_card(holded_cards().size() - 1).name();
-		game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$city investigats decree: $decree.", symbols), game_events::INCIDENT_CARD);
-	}
-	return true;
+	return NO_DECREE;
 }
 
-bool team::condition_card(card& c, const map_location& loc)
+bool team::condition_card(const card& c, const map_location& loc)
 {
 	unit_map::iterator itor = find_visible_unit(loc, *this);
-	config& cond_cfg = c.get_cfg().child("condition");
+	const config& cond_cfg = c.get_cfg().child("condition");
 
 	std::string unit_str = cond_cfg["unit"].str();
 	std::string side_str = cond_cfg["side"].str();
@@ -2462,10 +2623,10 @@ bool team::condition_card(card& c, const map_location& loc)
 	return true;
 }
 
-void team::consume_card(card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& touched, int index, bool to_recorder)
+void team::consume_card(const card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& touched, int index, bool to_recorder)
 {
-	config& range_cfg = c.get_cfg().child("range");
-	config& action_cfg = c.get_cfg().child("action");
+	const config& range_cfg = c.get_cfg().child("range");
+	const config& action_cfg = c.get_cfg().child("action");
 	if (!range_cfg || !action_cfg) {
 		if (index >= 0) {
 			holded_cards_.erase(holded_cards_.begin() + index);
@@ -2503,7 +2664,9 @@ void team::consume_card(card& c, const map_location& loc, std::vector<std::pair<
 	}
 
 	if (index >= 0) {
-		holded_cards_.erase(holded_cards_.begin() + index);
+		std::vector<size_t>::iterator it = holded_cards_.begin();
+		std::advance(it, index);
+		holded_cards_.erase(it);
 	}
 }
 
@@ -2586,10 +2749,10 @@ void touched_troops_internal(unit_map::iterator& u_itor, const std::vector<std::
 	}
 }
 
-void team::card_touched(card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str)
+void team::card_touched(const card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str)
 {
-	config& cond_cfg = c.get_cfg().child("condition");
-	config& range_cfg = c.get_cfg().child("range");
+	const config& cond_cfg = c.get_cfg().child("condition");
+	const config& range_cfg = c.get_cfg().child("range");
 	if (!range_cfg) {
 		return;
 	}
@@ -2631,7 +2794,7 @@ void team::card_touched(card& c, const map_location& loc, std::vector<std::pair<
 	}
 	disable_str = cond_cfg["disable"].str();
 }
-
+/*
 card& team::holded_card(int index)
 {
 	if (index >= (int)holded_cards_.size()) {
@@ -2639,7 +2802,7 @@ card& team::holded_card(int index)
 	}
 	return cards_[holded_cards_[index]];
 }
-
+*/
 const card& team::holded_card(int index) const
 {
 	if (index >= (int)holded_cards_.size()) {
@@ -2658,8 +2821,8 @@ void team::find_treasure(hero_map& heros, play_controller& controller, int pos)
 	// card
 	utils::string_map symbols;
 	const ttreasure& t = unit_types.treasure(holded_treasures_.back());
-	symbols["first"] = t.name();
-	symbols["second"] = hero::feature_str(t.feature());
+	symbols["first"] = help::tintegrate::generate_format(t.name(), help::tintegrate::object_color);
+	symbols["second"] = help::tintegrate::generate_format(hero::feature_str(t.feature()), help::tintegrate::tactic_color);
 	game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("Find treasure: $first($second)!", symbols), game_events::INCIDENT_CARD);
 }
 
@@ -2813,6 +2976,21 @@ int team::add_tactic_point(int increment)
 	return tactic_point_;
 }
 
+void team::increase_bomb_turns()
+{
+	bomb_turns_ ++;
+	if (bomb_turns_ < 0) {
+		bomb_turns_ = 0;
+	} else if (bomb_turns_ > game_config::max_bomb_turns) {
+		bomb_turns_ = game_config::max_bomb_turns;
+	}
+}
+
+bool team::can_bomb() const
+{
+	return bomb_turns_ >= game_config::max_bomb_turns;
+}
+
 void team::add_modification_internal(int apply_to, const config& effect)
 {
 	if (apply_to == apply_to_tag::CIVILIZATION) {
@@ -2844,8 +3022,6 @@ void team::add_modification_internal(int apply_to, const config& effect)
 			technology_increase_ = utils::apply_modifier(technology_increase_, increase);
 		}
 	} else if (apply_to == apply_to_tag::POLITICS) {
-
-	} else if (apply_to == apply_to_tag::HEAL) {
 
 	} else if (apply_to == apply_to_tag::STRATEGIC) {
 		const std::string& strategic= effect["strategic"];

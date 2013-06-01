@@ -58,6 +58,7 @@ private:
 	enum {MIN_PAGE = 0, ABILITY_PAGE = MIN_PAGE, ADAPTABILITY_PAGE, PERSONAL_PAGE, RELATION_PAGE, MAX_PAGE = RELATION_PAGE};
 	void catalog_page(twindow& window, int catalog, bool swap);
 
+	void type_selected2(twindow& window);
 	void type_selected(twindow& window);
 	void refresh_tooltip(twindow& window);
 

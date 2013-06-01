@@ -50,9 +50,12 @@ struct team_fields_t
 	int32_t share_view_;
 	int32_t village_gold_;
 	int32_t controller_;
-	int32_t ai_aggression_; // * 100
-	int32_t ai_attack_depth_;
-	int32_t ai_td_mode_;
+	int32_t bomb_turns_;
+
+	// statistic
+	int32_t cause_damage_;
+	int32_t been_damage_;
+	int32_t defeat_units_;
 
 	unit_segment id_;
 	unit_segment save_id_;
@@ -155,6 +158,11 @@ public:
 	int village_gold_increase_;
 	int market_increase_;
 	int technology_increase_;
+
+	// statistic
+	int cause_damage_;
+	int been_damage_;
+	int defeat_units_;
 
 protected:
 	std::set<const unit_type*> can_build_;
@@ -276,6 +284,7 @@ public:
 	int recall_cost() const { return info_.recall_cost; }
 	void set_village_gold(int income) { info_.income_per_village = income; }
 	void set_recall_cost(int cost) { info_.recall_cost = cost; }
+	bool gold_can_build_ea() const;
 	int total_income() const;
 	int side_upkeep() const;
 	int total_technology_income() const;
@@ -300,6 +309,11 @@ public:
 	int tactic_point() const { return tactic_point_; }
 	void set_tactic_point(int tactic_point) { tactic_point_ = tactic_point; }
 	int add_tactic_point(int increment);
+
+	int bomb_turns() const { return bomb_turns_; }
+	void set_bomb_turns(int turns) { bomb_turns_ = turns; }
+	void increase_bomb_turns();
+	bool can_bomb() const;
 
 	void add_modification_internal(int apply_to, const config& effect);
 	void apply_holded_technologies_finish();
@@ -402,15 +416,15 @@ public:
 
 	bool add_card(size_t number, bool replay = false, bool dialog = false);
 	bool erase_card(int index, bool replay = false, bool dialog = false);
-	bool add_random_decree(artifical& city, int random);
-	bool condition_card(card& c, const map_location& loc);
-	void consume_card(card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& touched = unit::null_int_unitp_pair, int index = -1, bool to_recorder = false);
-	void card_touched(card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str);
+	int get_random_decree(artifical& city, int random);
+	bool condition_card(const card& c, const map_location& loc);
+	void consume_card(const card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& touched = unit::null_int_unitp_pair, int index = -1, bool to_recorder = false);
+	void card_touched(const card& c, const map_location& loc, std::vector<std::pair<int, unit*> >& pairs, std::string& disable_str);
 	std::vector<size_t>& candidate_cards() { return candidate_cards_; }
 	const std::vector<size_t>& candidate_cards() const { return candidate_cards_; }
 	std::vector<size_t>& holded_cards() { return holded_cards_; }
 	const std::vector<size_t>& holded_cards() const { return holded_cards_; }
-	card& holded_card(int index);
+	// card& holded_card(int index);
 	const card& holded_card(int index) const;
 
 	std::vector<size_t>& holded_treasures() { return holded_treasures_; }
@@ -495,6 +509,12 @@ public:
 	const std::vector<hero*>& commercials() const { return commercials_; }
 
 	bool defeat_vote() const;
+	int may_build_count() const;
+
+	std::string form_results_of_battle_tip(const std::string& prefix = null_str) const;
+
+	std::vector<unit*> active_tactics() const;
+	void refresh_tactic_slots(game_display& disp) const;
 
 private:
 	//Make these public if you need them, but look at knows_about_team(...) first.
@@ -519,7 +539,7 @@ private:
 	const technology* ing_technology_;
 
 	int max_tactic_point_;
-
+	
 	int leader_;
 	std::vector<artifical*> holded_cities_;
 	std::map<int, int> character_;
@@ -528,6 +548,7 @@ private:
 	std::set<map_location> villages_;
 	int navigation_;
 	int tactic_point_;
+	int bomb_turns_;
 
 	shroud_map shroud_, fog_;
 

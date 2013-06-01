@@ -22,7 +22,6 @@
 #include "gettext.hpp"
 #include "game_display.hpp"
 #include "team.hpp"
-#include "hero.hpp"
 #include "artifical.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/button.hpp"
@@ -35,6 +34,7 @@
 #include "gui/widgets/listbox.hpp"
 #endif
 #include "gui/widgets/settings.hpp"
+#include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/stacked_widget.hpp"
 #include "gui/widgets/window.hpp"
 #include "resources.hpp"
@@ -105,6 +105,12 @@ trecruit::trecruit(game_display& gui, std::vector<team>& teams, unit_map& units,
 {
 }
 
+void trecruit::type_selected2(twindow& window)
+{
+	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(window);
+	type_selected(window);
+}
+
 void trecruit::type_selected(twindow& window)
 {
 	int gold = current_team_.gold();
@@ -165,19 +171,17 @@ void trecruit::hero_toggled(twidget* widget)
 	} else {
 		ok->set_active(false);
 	}
+
+	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(*window);
 	refresh_tooltip(*window);
 }
 
 void trecruit::refresh_tooltip(twindow& window)
 {
-	int idx_in_resistances;
-	std::stringstream text;
-
 	tstacked_widget* stacked = find_widget<tstacked_widget>(&window, "middle_top_part", false, true);
 	stacked->set_dirty(true);
-	stacked = find_widget<tstacked_widget>(&window, "right_part", false, true);
-	stacked->set_dirty(true);
-	
+
+	tscroll_label* tip = find_widget<tscroll_label>(&window, "tip", false, true);
 	if (checked_heros_.empty()) {
 		// It is necessary set all relative tips to empty.
 		tcontrol* control = find_widget<tcontrol>(&window, "master_png", false, true);
@@ -205,45 +209,7 @@ void trecruit::refresh_tooltip(twindow& window)
 		label = find_widget<tlabel>(&window, "tip_charm", false, true);
 		label->set_label("");
 
-		// hp
-		label = find_widget<tlabel>(&window, "tip_hp", false, true);
-		label->set_label("");
-
-		// xp
-		label = find_widget<tlabel>(&window, "tip_xp", false, true);
-		label->set_label("");
-
-		// movement
-		label = find_widget<tlabel>(&window, "tip_movement", false, true);
-		label->set_label("");
-
-		// arm
-		label = find_widget<tlabel>(&window, "tip_arm", false, true);
-		label->set_label("");
-
-		// adaptability
-		label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
-		label->set_label("");
-
-		// abilities
-		label = find_widget<tlabel>(&window, "tip_abilities", false, true);
-		label->set_label("");
-
-		// feature
-		label = find_widget<tlabel>(&window, "tip_feature", false, true);
-		label->set_label("");
-
-		// attack
-		label = find_widget<tlabel>(&window, "tip_attack", false, true);
-		label->set_label("");
-	
-		// resistance
-		for (idx_in_resistances = 0; idx_in_resistances < 7; idx_in_resistances ++) {
-			text.str("");
-			text << "tip_resistance" << idx_in_resistances;
-			label = find_widget<tlabel>(&window, text.str(), false, true);
-			label->set_label("");
-		}
+		tip->set_label("");
 		return;
 	}
 
@@ -262,7 +228,6 @@ void trecruit::refresh_tooltip(twindow& window)
 	type_heros_pair pair(t, v);
 	unit temp(units_, heros_, teams_, pair, city_.cityno(), false);
 
-	std::stringstream str;
 	// refresh to gui
 	tcontrol* control = find_widget<tcontrol>(&window, "master_png", false, true);
 	control->set_label(temp.master().image());
@@ -309,126 +274,7 @@ void trecruit::refresh_tooltip(twindow& window)
 	label = find_widget<tlabel>(&window, "tip_charm", false, true);
 	label->set_label(lexical_cast<std::string>(temp.charm_));
 
-	// hp
-	label = find_widget<tlabel>(&window, "tip_hp", false, true);
-	label->set_label(lexical_cast<std::string>(temp.max_hitpoints()));
-
-	// xp
-	label = find_widget<tlabel>(&window, "tip_xp", false, true);
-	label->set_label(lexical_cast<std::string>(temp.max_experience()));
-
-	// movement
-	label = find_widget<tlabel>(&window, "tip_movement", false, true);
-	label->set_label(lexical_cast<std::string>(temp.total_movement()));
-
-	// arm
-	label = find_widget<tlabel>(&window, "tip_arm", false, true);
-	str << temp.type_name() << "(Lv" << temp.level() << ")";
-	label->set_label(str.str());
-
-	// adaptability
-	str.str("");
-	label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
-	str << hero::arms_str(temp.arms()) << "(" << hero::adaptability_str2(ftofxp12(temp.adaptability_[temp.arms()])) << ")";
-	label->set_label(str.str());
-
-	// abilities
-	str.str("");
-	std::vector<std::string> abilities_tt;
-	abilities_tt = temp.ability_tooltips(true);
-	if (!abilities_tt.empty()) {
-		std::vector<t_string> abilities;
-		for (std::vector<std::string>::const_iterator a = abilities_tt.begin(); a != abilities_tt.end(); a += 2) {
-			abilities.push_back(*a);
-		}
-
-		for (std::vector<t_string>::const_iterator a = abilities.begin(); a != abilities.end(); a++) {
-			if (a != abilities.begin()) {
-				if (a - abilities.begin() != 2) {
-					str << ", ";
-				} else {
-					str << "\n";
-				}
-			}
-			str << (*a);
-		}
-	}
-	label = find_widget<tlabel>(&window, "tip_abilities", false, true);
-	label->set_label(str.str());
-
-	// feature
-	str.str("");
-	index = 0;
-	for (int i = 0; i < HEROS_MAX_FEATURE; i ++) {
-		if (unit_feature_val2(temp, i) == hero_feature_single_result) {
-			if (index > 0) {
-				if (index != 2) {
-					str << ", ";
-				} else {
-					str << "\n";
-				}
-			}
-			index ++;
-			str << temp.master().feature_str(i);
-		}
-	}
-	label = find_widget<tlabel>(&window, "tip_feature", false, true);
-	label->set_label(str.str());
-
-	// attack
-	str.str("");
-	std::vector<attack_type>* attacks_ptr = const_cast<std::vector<attack_type>*>(&temp.attacks());
-	for (std::vector<attack_type>::const_iterator at_it = attacks_ptr->begin(); at_it != attacks_ptr->end(); ++at_it) {
-		// see generate_report() in generate_report.cpp
-		str << at_it->name() << " (" << dgettext("wesnoth", at_it->type().c_str()) << ")\n";
-
-		std::string accuracy = at_it->accuracy_parry_description();
-		if(accuracy.empty() == false) {
-			accuracy += " ";
-		}
-
-		str << "  " << at_it->damage() << "-" << at_it->num_attacks()
-			<< " " << accuracy << "- " << dgettext("wesnoth", at_it->range().c_str());
-
-		std::string special = at_it->weapon_specials(true);
-		if (!special.empty()) {
-			str << "(" << special << ")";
-		}
-		str << "\n";
-	}
-	label = find_widget<tlabel>(&window, "tip_attack", false, true);
-	label->set_label(str.str());
-	
-	// resistance
-	std::set<std::string> resistances_table;
-	utils::string_map resistances = temp.get_base_resistances();
-	bool att_def_diff = false;
-	const map_location& loc = temp.get_location();
-	idx_in_resistances = 0;
-	for (utils::string_map::iterator resist = resistances.begin(); resist != resistances.end(); ++resist, idx_in_resistances ++) {
-		// str << gettext(resist->first.c_str()) << ": ";
-		str.str("");
-
-		if (loc.valid()) {
-			// Some units have different resistances when
-			// attacking or defending.
-			int res_att = 100 - temp.resistance_against(resist->first, true, loc);
-			int res_def = 100 - temp.resistance_against(resist->first, false, loc);
-			if (res_att == res_def) {
-				str << res_def;
-			} else {
-				str << res_att << "% / " << res_def; // (Att / Def)
-				att_def_diff = true;
-			}
-		} else {
-			str << 100 - lexical_cast_default<int>(resist->second.c_str());
-		}
-		str << "%";
-		text.str("");
-		text << "tip_resistance" << idx_in_resistances;
-		label = find_widget<tlabel>(&window, text.str(), false, true);
-		label->set_label(str.str());
-	}
+	tip->set_label(temp.form_recruit_tip());
 }
 
 void trecruit::pre_show(CVideo& /*video*/, twindow& window)
@@ -446,7 +292,7 @@ void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 
 	switch_type_internal(window);
 
-	list->set_callback_value_change(dialog_callback<trecruit, &trecruit::type_selected>);
+	list->set_callback_value_change(dialog_callback<trecruit, &trecruit::type_selected2>);
 
 	hero_table_ = find_widget<tlistbox>(&window, "hero_table", false, true);
 	fresh_heros_ = city_.fresh_heros();
@@ -539,6 +385,10 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 		return;
 	}
 
+
+	// avoid to effect unit_type listbox.
+	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(window);
+
 	std::vector<int> features;
 	std::stringstream str;
 
@@ -561,14 +411,14 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 		hero* h = *itor;
 
 		if (catalog == ABILITY_PAGE) {
-			table_item["use_markup"] = "true";
 			str.str("");
+			str << "<format>";
 			if (h->official_ == hero_official_commercial) {
-				str << "<0,0,255>";
+				str << "color=blue ";
 			} else if (h->activity_ < HEROS_FULL_ACTIVITY) {
-				str << "<255,0,0>";
+				str << "color=red ";
 			}
-			str << h->name();
+			str << "text='" << h->name() << "'</format>";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 			
@@ -638,12 +488,13 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 		} else if (catalog == ADAPTABILITY_PAGE) {
 			table_item["use_markup"] = "true";
 			str.str("");
+			str << "<format>";
 			if (h->official_ == hero_official_commercial) {
-				str << "<0,0,255>";
+				str << "color=blue ";
 			} else if (h->activity_ < HEROS_FULL_ACTIVITY) {
-				str << "<255,0,0>";
+				str << "color=red ";
 			}
-			str << h->name();
+			str << "text='" << h->name() << "'</format>";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 
@@ -665,12 +516,13 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 		} else if (catalog == PERSONAL_PAGE) {
 			table_item["use_markup"] = "true";
 			str.str("");
+			str << "<format>";
 			if (h->official_ == hero_official_commercial) {
-				str << "<0,0,255>";
+				str << "color=blue ";
 			} else if (h->activity_ < HEROS_FULL_ACTIVITY) {
-				str << "<255,0,0>";
+				str << "color=red ";
 			}
-			str << h->name();
+			str << "text='" << h->name() << "'</format>";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 
@@ -691,12 +543,13 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 		} else if (catalog == RELATION_PAGE) {
 			table_item["use_markup"] = "true";
 			str.str("");
+			str << "<format>";
 			if (h->official_ == hero_official_commercial) {
-				str << "<0,0,255>";
+				str << "color=blue ";
 			} else if (h->activity_ < HEROS_FULL_ACTIVITY) {
-				str << "<255,0,0>";
+				str << "color=red ";
 			}
-			str << h->name();
+			str << "text='" << h->name() << "'</format>";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("name", table_item));
 
@@ -807,6 +660,7 @@ void trecruit::switch_type(twindow& window, bool next)
 		}
 		game_config::current_level --;
 	}
+	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(window);
 	switch_type_internal(window);
 }
 

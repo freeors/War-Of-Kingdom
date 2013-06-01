@@ -21,17 +21,18 @@
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include "gui/widgets/label.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/listbox.hpp"
 #include <boost/bind.hpp>
 #include "game_display.hpp"
 #include "team.hpp"
 #include "unit_map.hpp"
-#include "hero.hpp"
 #include "gamestatus.hpp"
 #include "play_controller.hpp"
 #include "resources.hpp"
 #include "marked-up_text.hpp"
+#include "gettext.hpp"
 
 namespace gui2 {
 
@@ -68,14 +69,16 @@ namespace gui2 {
 
 REGISTER_DIALOG(tactic)
 
-ttactic::ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, unit& tactician)
+ttactic::ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, unit& tactician, bool cast)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, tactician_(tactician)
+	, cast_(cast)
 	, candidate_()
 	, valid_()
+	, cannot_valid_(false)
 	, selected_(-1)
 {
 	if (tactician_.master().tactic_ != HEROS_NO_TACTIC) {
@@ -86,6 +89,13 @@ ttactic::ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, h
 	}
 	if (tactician_.third().valid() && tactician_.third().tactic_ != HEROS_NO_TACTIC) {
 		candidate_.push_back(&tactician_.third());
+	}
+	if (!cast) {
+		std::vector<unit*> actives = teams_[tactician.side() - 1].active_tactics();
+		if ((int)actives.size() >= game_config::active_tactic_slots || 
+			std::find(actives.begin(), actives.end(), &tactician) != actives.end()) {
+			cannot_valid_ = true;
+		}
 	}
 }
 
@@ -102,6 +112,17 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 {
 	std::vector<hero*> captain;
 	std::stringstream strstr;
+	std::string color;
+
+	tlabel* title = find_widget<tlabel>(&window, "title", false, true);
+	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
+	if (cast_) {
+		title->set_label(_("Cast tactic"));
+		ok->set_label(_("tactic^Cast"));
+	} else {
+		title->set_label(_("Active tactic"));
+		ok->set_label(_("tactic^Active"));
+	}
 
 	tlistbox& tactic_list =
 			find_widget<tlistbox>(&window, "tactic_list", false);
@@ -117,8 +138,8 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 		std::map<std::string, string_map> data;
 		string_map item;
 
-		touched = t.touch_units(units_, tactician_);
 		has_effect_unit = false;
+		touched = t.touch_units(units_, tactician_);
 		for (std::map<int, std::vector<map_location> >::const_iterator it2 = touched.begin(); it2 != touched.end(); ++ it2) {
 			if (!it2->second.empty()) {
 				has_effect_unit =true;
@@ -128,34 +149,40 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 
 		strstr.str("");
 		strstr << h.image();
-		if (tactician_.provoked_turns() || !has_effect_unit) {
+		if (cast_ && (tactician_.provoked_turns() || !has_effect_unit)) {
 			strstr << "~GS()";
 		}
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("icon", item));
 
-		item["use_markup"] = "true";
 		strstr.str("");
-		strstr << font::LARGE_TEXT << font::BOLD_TEXT;
 		if (side_point < t.point()) {
-			strstr << "<255,0,0>";
+			color = "red";
+		} else {
+			color = "";
 		}
-		strstr << t.point();
+		if (!cast_) {
+			strstr << "--/";
+		}
+		strstr << help::tintegrate::generate_format(t.point(), color, 16, true);
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("point", item));
 
 		item["label"] = t.name();
 		data.insert(std::make_pair("name", item));
 
-		item["use_markup"] = "true";
 		strstr.str("");
-		strstr << font::LARGE_TEXT;
-		strstr << "<0,0,255>";
-		strstr << ::ttactic::calculate_turn(fxptoi9(h.force_), fxptoi9(h.intellect_));
+		strstr << help::tintegrate::generate_format(::ttactic::calculate_turn(fxptoi9(h.force_), fxptoi9(h.intellect_)), "blue", 16);
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("turn", item));
 
-		valid_.push_back(!tactician_.provoked_turns() && has_effect_unit && side_point >= t.point());
+		if (cannot_valid_) {
+			valid_.push_back(false);
+		} else if (cast_) {
+			valid_.push_back(!tactician_.provoked_turns() && has_effect_unit && side_point >= t.point());
+		} else {
+			valid_.push_back(!tactician_.provoked_turns());
+		}
 		tactic_list.add_row(data);
 	}
 

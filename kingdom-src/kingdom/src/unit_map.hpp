@@ -190,10 +190,11 @@ city_map::iterator_base<iter_types> city_map::iterator_base<iter_types>::operato
 
 struct tmess_data {
 	struct tadjacent_data {
-		tadjacent_data(size_t _friends = 0, size_t _unhides = 0, size_t _unnormals = 0, size_t _unprovoks = 0, size_t _enemies = 0) 
+		tadjacent_data(size_t _friends = 0, size_t _unhides = 0, size_t _unnormals = 0, size_t _healables = 0, size_t _unprovoks = 0, size_t _enemies = 0) 
 			: friends(_friends)
 			, unhides(_unhides)
 			, unnormals(_unnormals)
+			, healables(_healables)
 			, unprovoks(_unprovoks)
 			, enemies(_enemies)
 		{}
@@ -210,6 +211,7 @@ struct tmess_data {
 		size_t friends;
 		size_t unhides;
 		size_t unnormals;
+		size_t healables;
 		size_t unprovoks;
 		size_t enemies;
 	};

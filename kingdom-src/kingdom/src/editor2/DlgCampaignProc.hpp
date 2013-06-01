@@ -322,7 +322,7 @@ public:
 		{}
 		virtual ~tcommand() {};
 
-		enum {SET_VARIABLE, KILL, ENDLEVEL, JOIN, UNIT, IF, CONDITION};
+		enum {SET_VARIABLE, KILL, ENDLEVEL, JOIN, UNIT, MODIFY_UNIT, IF, CONDITION};
 
 		virtual void from_config(const config& cfg) {};
 		virtual void from_ui_special(HWND) {};
@@ -525,6 +525,41 @@ public:
 		std::string city_; // diff cfg, hero number of city
 		std::string x_;
 		std::string y_;
+	};
+
+	// [unit]
+	class tmodify_unit : public tcommand
+	{
+	public:
+		tmodify_unit()
+			: tcommand(MODIFY_UNIT)
+			, master_hero_(lexical_cast_default<std::string>(HEROS_INVALID_NUMBER))
+			, effect_()
+		{}
+
+		void from_config(const config& cfg);
+		void from_ui_special(HWND hdlgP);
+		void update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const;
+		void update_to_ui_special(HWND hdlgP) const;
+
+		void generate(std::stringstream& strstr, const std::string& prefix) const;
+
+		bool is_null() const
+		{
+			if (master_hero_ == lexical_cast_default<std::string>(HEROS_INVALID_NUMBER)) return true;
+			if (effect_.empty()) return true;
+			return false;
+		}
+		bool operator==(const tmodify_unit& that) const
+		{
+			if (master_hero_ != that.master_hero_) return false;
+			if (effect_ != that.effect_) return false;
+			return true;
+		}
+		bool operator!=(const tmodify_unit& that) const { return !operator==(that); }
+	public:
+		std::string master_hero_;
+		config effect_;
 	};
 
 	// condition.[variable]

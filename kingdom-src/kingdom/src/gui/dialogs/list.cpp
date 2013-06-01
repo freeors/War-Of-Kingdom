@@ -33,7 +33,6 @@
 #include "game_display.hpp"
 #include "team.hpp"
 #include "unit_map.hpp"
-#include "hero.hpp"
 #include "gamestatus.hpp"
 #include "play_controller.hpp"
 #include "resources.hpp"
@@ -193,7 +192,7 @@ void tlist::objectives(twindow& window, bool global)
 	game_events::handle_event_command("show_objectives", game_events::queued_event("_from_interface", map_location(),
 			map_location(), config()), vconfig(cfg));
 
-	dialogs::show_objectives(controller->level(), current_team_.objectives());
+	dialogs::show_objectives(controller->level(), current_team_);
 	current_team_.reset_objectives_changed();
 }
 

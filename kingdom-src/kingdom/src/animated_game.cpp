@@ -21,10 +21,14 @@
 #include "animated.i"
 // Force compilation of the following template instantiations
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 #include "unit_frame.hpp"
+#endif
 #include "image.hpp"
 
 template class animated< image::locator >;
 template class animated< std::string >;
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 template class animated< unit_frame >;
+#endif
 

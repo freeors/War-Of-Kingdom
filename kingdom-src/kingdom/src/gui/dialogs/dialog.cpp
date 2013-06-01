@@ -43,13 +43,13 @@ bool tdialog::show(CVideo& video, const unsigned auto_close_time)
 	// hide tooltip current shown.
 	tooltips::process(-1, -1);
 
-	// I want display volatile control, for example rpg button.
-	events::raise_volatile_draw_event();
-
 	// hide unit tip if necessary.
 	if (resources::screen) {
 		resources::screen->hide_tip();
 	}
+
+	// I want display volatile control, for example rpg button.
+	events::raise_volatile_draw_event();
 
 	std::auto_ptr<twindow> window(build_window(video));
 	assert(window.get());

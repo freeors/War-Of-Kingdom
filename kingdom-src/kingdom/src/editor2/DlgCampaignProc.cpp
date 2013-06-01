@@ -6,6 +6,7 @@
 #include "loadscreen.hpp"
 #include "DlgCampaignProc.hpp"
 #include <string.h>
+#include "sdl_utils.hpp"
 
 #include "resource.h"
 
@@ -22,8 +23,6 @@ void campaign_refresh(HWND hdlgP);
 
 BOOL CALLBACK DlgCampaignMainProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgCampaignScenarioProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
-
-const std::string null_str = "";
 
 namespace ns {
 	int empty_leader = 228;
@@ -125,11 +124,10 @@ void tcampaign::init_hero_state(hero_map& heros)
 	}
 
 	artifical_utype_.clear();
-	const std::map<std::string, const unit_type*>& artifical_types = unit_types.artifical_types();
-	const unit_type* keep_type = unit_types.find_keep();
-	for (std::map<std::string, const unit_type*>::const_iterator it = artifical_types.begin(); it != artifical_types.end(); ++ it) {
-		if (it->second != keep_type) {
-			artifical_utype_.push_back(std::make_pair<std::string, const unit_type*>(it->first, it->second));
+	for (int number = hero::number_artifical_min; number <= hero::number_artifical_max; number ++) {
+		if (number != hero::number_keep) {
+			const unit_type* ut = unit_types.master_type(number);
+			artifical_utype_.push_back(std::make_pair(ut->id(), ut));
 		}
 	}
 
@@ -707,7 +705,7 @@ void tside::from_ui(HWND hdlgP)
 	} else {
 		leader_ = HEROS_INVALID_NUMBER;
 	}
-	if (leader_ == ns::empty_leader) {
+	if (leader_ == ns::empty_leader && ns::_main.mode_ != TOWER_MODE) {
 		controller_ = EMPTY;
 	} else {
 		hctl = GetDlgItem(hdlgP, IDC_CMB_SIDEEDIT_CONTROLLER);
@@ -857,6 +855,7 @@ void tside::update_to_ui(HWND hdlgP) const
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 10;
 	strstr.str("");
+	strstr << "(" << build_.size() << ")";
 	for (std::set<std::string>::const_iterator it = build_.begin(); it != build_.end(); ++ it) {
 		if (it == build_.begin()) {
 			strstr << utf8_2_ansi(unit_types.find(*it)->type_name().c_str());
@@ -1014,6 +1013,9 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 				ListView_SetCheckState(hctl, lvi.iItem, FALSE);
 			}
 		}
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Buildable")) << "(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_BUILD), strstr.str().c_str());
 
 		// technology
 		hctl = GetDlgItem(hdlgP, IDC_LV_SIDEEDIT_TECHNOLOGY);
@@ -2218,16 +2220,20 @@ std::string tscenario::file(bool absolute) const
 std::string tscenario::map_file(bool absolute) const
 { 
 	std::stringstream strstr;
-	if (absolute) {
-		strstr << game_config::path << "\\data\\campaigns\\";
-		strstr << campaign_id_ << "\\maps\\";
-		strstr << std::setw(2) << std::setfill('0') << index_ + 1 << "_";
-		strstr << id_ << ".map";
+	if (ns::_main.mode_ != TOWER_MODE) {
+		if (absolute) {
+			strstr << game_config::path << "\\data\\campaigns\\";
+			strstr << campaign_id_ << "\\maps\\";
+			strstr << std::setw(2) << std::setfill('0') << index_ + 1 << "_";
+			strstr << id_ << ".map";
+		} else {
+			strstr << "campaigns/";
+			strstr << campaign_id_ << "/maps/";
+			strstr << std::setw(2) << std::setfill('0') << index_ + 1 << "_";
+			strstr << id_ << ".map";
+		}
 	} else {
-		strstr << "campaigns/";
-		strstr << campaign_id_ << "/maps/";
-		strstr << std::setw(2) << std::setfill('0') << index_ + 1 << "_";
-		strstr << id_ << ".map";
+		strstr.str("");
 	}
 	return strstr.str();
 }
@@ -2314,9 +2320,12 @@ void tscenario::from_config(int index, const config& scenario_cfg)
 
 	id_ = scenario_cfg["id"].str();
 
-	// map_data_ = scenario_cfg["map_data"].str();
-	map_data_ = map_data_from_file(map_file(true));
-
+	if (ns::_main.mode_ != TOWER_MODE) {
+		map_data_ = map_data_from_file(map_file(true));
+	} else {
+		map_data_ = "";
+	}
+	
 	next_scenario_ = scenario_cfg["next_scenario"].str();
 	turns_ = scenario_cfg["turns"].to_int();
 	maximal_defeated_activity_ = scenario_cfg["maximal_defeated_activity"].to_int();
@@ -2642,10 +2651,12 @@ void tscenario::generate()
 	if (fp == INVALID_FILE) {
 		return;
 	}
-	posix_fopen(map_file(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp_map);
-	if (fp_map == INVALID_FILE) {
-		posix_fclose(fp);
-		return;
+	if (ns::_main.mode_ != TOWER_MODE) {
+		posix_fopen(map_file(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp_map);
+		if (fp_map == INVALID_FILE) {
+			posix_fclose(fp);
+			return;
+		}
 	}
 
 	//
@@ -2658,7 +2669,9 @@ void tscenario::generate()
 	strstr << "\tid = " << id_ << "\n";
 	strstr << "\tnext_scenario = " << next_scenario_ << "\n";
 	strstr << "\tname = _ \"" << id_ << "\"\n";
-	strstr << "\tmap_data = \"{" << map_file() << "}\"\n";
+	if (ns::_main.mode_ != TOWER_MODE) {
+		strstr << "\tmap_data = \"{" << map_file() << "}\"\n";
+	}
 	strstr << "\tturns = " << turns_ << "\n";
 	// strstr << "\tmaximal_defeated_activity = " << maximal_defeated_activity_ << "\n";
 	if (duel_ == NO_DUEL) {
@@ -3059,7 +3072,7 @@ void OnSaveBt(HWND hdlgP)
 	std::stringstream strstr;
 	// verify _main/_scenario
 	for (std::vector<tscenario>::const_iterator it = ns::_scenario.begin(); it != ns::_scenario.end(); ++ it) {
-		if (it->map_data_.empty()) {
+		if ((ns::_main.mode_ != TOWER_MODE) && it->map_data_.empty()) {
 			strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), it->id_.c_str())) << "，关卡没设置有效地图";
 			posix_print_mb(strstr.str().c_str());
 			return;
@@ -3578,6 +3591,7 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_GOLD), utf8_2_ansi(_("Base gold")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NAVIGATION), dgettext_2_ansi("wesnoth-lib", "Navigation civilization"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_BUILD), utf8_2_ansi(_("Buildable")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FEATURE), dgettext_2_ansi("wesnoth-hero", "feature"));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TECHNOLOGY), dgettext_2_ansi("wesnoth-lib", "Technology"));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITY), utf8_2_ansi(_("City")));
@@ -5121,8 +5135,13 @@ BOOL On_DlgSideEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 				ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, TRUE);
 			}
 			strstr.str("");
-			strstr << dgettext_2_ansi("wesnoth-lib", "Technology") << "(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
-			Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TECHNOLOGY), strstr.str().c_str());
+			if (lpNMHdr->idFrom == IDC_LV_SIDEEDIT_BUILD) {
+				strstr << utf8_2_ansi(_("Buildable")) << "(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
+				Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_BUILD), strstr.str().c_str());
+			} else if (lpNMHdr->idFrom == IDC_LV_SIDEEDIT_TECHNOLOGY) {
+				strstr << dgettext_2_ansi("wesnoth-lib", "Technology") << "(" << editor_config::ListView_GetCheckedCount(lpNMHdr->hwndFrom) << ")";
+				Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TECHNOLOGY), strstr.str().c_str());
+			} 
 		}
 
 	} else if (lpNMHdr->code == NM_RCLICK) {
@@ -5193,11 +5212,16 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_NAME), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), scenario.id_.c_str())));
 
 	strstr.str("");
-	strstr << "(" << scenario.map_file() << ")";
-	if (scenario.map_data_size(scenario.map_data_).valid()) {
-		strstr << utf8_2_ansi(_("Exist"));
+	if (ns::_main.mode_ != TOWER_MODE) {
+		strstr << "(" << scenario.map_file() << ")";
+		if (scenario.map_data_size(scenario.map_data_).valid()) {
+			strstr << utf8_2_ansi(_("Exist"));
+		} else {
+			strstr << utf8_2_ansi(_("Not exist"));
+		}
 	} else {
-		strstr << utf8_2_ansi(_("Not exist"));
+		strstr << "(" << utf8_2_ansi(_("Random map")) << ")";
+		Button_Enable(GetDlgItem(hdlgP, IDC_BT_CAMPSCENARIO_BROWSEMAP), FALSE);
 	}
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_MAP), strstr.str().c_str());
 
@@ -5214,7 +5238,7 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// duel
 	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPSCENARIO_DUEL);
 	std::map<int, std::string> duel_map;
-	duel_map.insert(std::make_pair((int)NO_DUEL, _("have^No")));
+	duel_map.insert(std::make_pair((int)NO_DUEL, _("Hasn't")));
 	duel_map.insert(std::make_pair((int)RANDOM_DUEL, _("Random")));
 	duel_map.insert(std::make_pair((int)ALWAYS_DUEL, _("Always")));
 	for (std::map<int, std::string>::const_iterator it = duel_map.begin(); it != duel_map.end(); ++ it) {
@@ -5359,7 +5383,7 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	lvc.cx = 40;
 	lvc.iSubItem = 9;
-	strcpy(text, dgettext_2_ansi("wesnoth-lib", "Character"));
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
 	lvc.pszText = text;
 	ListView_InsertColumn(hctl, 9, &lvc);
 

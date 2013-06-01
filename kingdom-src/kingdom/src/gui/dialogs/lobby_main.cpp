@@ -413,13 +413,12 @@ void set_visible_if_exists(tgrid* grid, const char* id, bool visible)
 
 std::string colorize(const std::string& str, const std::string& color)
 {
-	// return "<span color=\"" + color +"\">" + str + "</span>";
-	return color + str;
+	return "<format>color='" + color +"' text='" + str + "'</format>";
 }
 
 std::string tag(const std::string& str, const std::string& tag)
 {
-	return "<" + tag + ">" + str + "</" + tag + ">";
+	return str;
 }
 
 } //end anonymous namespace
@@ -561,19 +560,19 @@ std::map<std::string, string_map> tlobby_main::make_game_row_data(const game_inf
 	const char* color_string;
 	if (game.vacant_slots > 0) {
 		if (game.reloaded || game.started) {
-			color_string = "<255,255,0>"; // yellow
+			color_string = "yellow"; // yellow
 		} else {
-			color_string = "<0,255,0>"; // green"
+			color_string = "green"; // green"
 		}
 	} else {
 		if (game.observers) {
-			color_string = "<221,221,221>"; // #ddd
+			color_string = "white"; // #ddd
 		} else {
-			color_string = "<255,0,0>"; // red
+			color_string = "red"; // red
 		}
 	}
 	if (!game.have_era && (game.vacant_slots > 0 || game.observers)) {
-		color_string = "<68,68,68>"; // #444
+		color_string = "black"; // #444
 	}
 
 	add_label_data(data, "status", colorize(game.status, color_string));
@@ -723,12 +722,12 @@ void tlobby_main::update_playerlist()
 				target_list = &player_list_.other_rooms;
 				break;
 			case user_info::SEL_GAME:
-				name = colorize(name, "<0,255,255>"); // cyan
+				name = colorize(name, "cyan"); // cyan
 				icon_ss << (user.observing ? "-obs" : "-playing");
 				target_list = &player_list_.active_game;
 				break;
 			case user_info::GAME:
-				name = colorize(name, "<255,0,0>"); // red
+				name = colorize(name, "red"); // red
 				icon_ss << (user.observing ? "-obs" : "-playing");
 				target_list = &player_list_.other_games;
 				break;
@@ -1015,7 +1014,8 @@ void tlobby_main::increment_waiting_messages(const std::string& room)
 void tlobby_main::add_whisper_window_whisper(const std::string& sender, const std::string& message)
 {
 	std::stringstream ss;
-	ss << "<" << sender << ">" << message;
+	// avoid tintegrate to tag.
+	ss << "\\<" << sender << ">" << message;
 	tlobby_chat_window* t = whisper_window_open(sender, false);
 	if (!t) {
 		ERR_LB << "Whisper window not open in add_whisper_window_whisper for " << sender << "\n";
@@ -1027,7 +1027,7 @@ void tlobby_main::add_whisper_window_whisper(const std::string& sender, const st
 void tlobby_main::add_active_window_whisper(const std::string& sender, const std::string& message)
 {
 	std::stringstream ss;
-	ss << "<" << "whisper: " << sender << ">" << message;
+	ss << "\\<" << "whisper: " << sender << ">" << message;
 	append_to_chatbox(ss.str());
 }
 
@@ -1035,7 +1035,7 @@ void tlobby_main::add_room_window_message(const std::string& room,
 	const std::string& sender, const std::string& message)
 {
 	std::stringstream ss;
-	ss << "<" << sender << ">" << message;
+	ss << "\\<" << sender << ">" << message;
 	tlobby_chat_window* t = room_window_open(room, false);
 	if (!t) {
 		ERR_LB << "Room window not open in add_room_window_message for " << room << "\n";
@@ -1047,7 +1047,7 @@ void tlobby_main::add_room_window_message(const std::string& room,
 void tlobby_main::add_active_window_message(const std::string& sender, const std::string& message)
 {
 	std::stringstream ss;
-	ss << "<" << sender << ">" << message;
+	ss << "\\<" << sender << ">" << message;
 	append_to_chatbox(ss.str());
 }
 

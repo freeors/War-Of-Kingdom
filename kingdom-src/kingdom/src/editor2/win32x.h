@@ -253,7 +253,7 @@ BOOL is_directory(const char* fname);
 BOOL is_file(const char *fname);
 BOOL delfile(char *fname);
 BOOL delfile1(const char *fname);
-BOOL copyfile(char *src, char *dst);
+BOOL copyfile(const char *src, const char *dst);
 
 //
 // -------------------------------------------------------------------------

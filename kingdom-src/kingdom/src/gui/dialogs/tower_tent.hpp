@@ -16,30 +16,34 @@
 #ifndef GUI_DIALOGS_TOWER_TENT_HPP_INCLUDED
 #define GUI_DIALOGS_TOWER_TENT_HPP_INCLUDED
 
-#include "gui/dialogs/dialog.hpp"
-
+#include "gui/dialogs/random_map.hpp"
 #include "tent.hpp"
 
 namespace gui2 {
 
-class ttower_tent : public ttent
+class ttower_tent : public ttent, public trandom_map
 {
 public:
-	explicit ttower_tent(display& gui, hero_map& heros, card_map& cards, const config& campaign_config, hero& player_hero);
+	explicit ttower_tent(game_display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero);
 	~ttower_tent();
 
 protected:
 	/** Inherited from tdialog. */
 	virtual void pre_show(CVideo& video, twindow& window);
 
+	void update_map_settings(twindow& window);
+	game_display& gui() { return gui_; }
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
 	void ai_count(twindow& window);
+	void employ_count(twindow& window);
 	void turns(twindow& window);
 
 private:
+	game_display& gui_;
+	tbutton* employ_count_;
 	tbutton* ai_count_;
 	tbutton* turns_;
 };

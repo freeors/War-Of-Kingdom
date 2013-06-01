@@ -63,8 +63,6 @@ mouse_handler_base::mouse_handler_base()
 	, show_menu_(false)
 	, moving_(false)
 	, expediting_(false)
-	, building_(false)
-	, card_playing_(false)
 	, selecting_(false)
 {
 }

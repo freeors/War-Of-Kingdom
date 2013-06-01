@@ -22,7 +22,6 @@
 #include "gettext.hpp"
 #include "game_display.hpp"
 #include "team.hpp"
-#include "hero.hpp"
 #include "artifical.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/button.hpp"
@@ -130,7 +129,7 @@ void trpg_detail::rpg_2_ui(twindow& window)
 	// official
 	str.str("");
 	label = find_widget<tlabel>(&window, "tip_official", false, true);
-	str << _("Official") << ": " << hero::official_str(rpg::h->official_);
+	str << dsgettext("wesnoth-hero", "official") << ": " << hero::official_str(rpg::h->official_);
 	label->set_label(str.str());
 
 	// ownership
@@ -143,7 +142,7 @@ void trpg_detail::rpg_2_ui(twindow& window)
 	// meritorious
 	str.str("");
 	value = rpg::h->meritorious_;
-	str << _("Meritorious") << ": " << value;
+	str << dsgettext("wesnoth-hero", "meritorious") << ": " << value;
 	label = find_widget<tlabel>(&window, "tip_meritorious", false, true);
 	label->set_label(str.str());
 	str.str("");

@@ -20,7 +20,6 @@
 #include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "hero.hpp"
 #include "team.hpp"
 #include "artifical.hpp"
 #include "game_display.hpp"
@@ -466,7 +465,7 @@ void tside_list::fill_table(int catalog)
 
 			str.str("");
 			if (survived && (teams_[n].is_ai() || rpg::stratum != hero_stratum_leader) && !plan.mrs_[0].own_front_cities.empty()) {
-				str << "[" << plan.mrs_[0].own_front_cities.size() << "]";
+				str << "(" << plan.mrs_[0].own_front_cities.size() << ")";
 				str << "(" << plan.mrs_[0].own_front_cities[0]->get_location().x << ", " << plan.mrs_[0].own_front_cities[0]->get_location().y << ")";
 				str << plan.mrs_[0].own_front_cities[0]->name();
 			} else {
@@ -477,7 +476,7 @@ void tside_list::fill_table(int catalog)
 
 			str.str("");
 			if (survived && (teams_[n].is_ai() || rpg::stratum != hero_stratum_leader) && !plan.mrs_[0].enemy_cities.empty()) {
-				str << "[" << plan.mrs_[0].enemy_cities.size() << "]";
+				str << "(" << plan.mrs_[0].enemy_cities.size() << ")";
 				str << "(" << plan.mrs_[0].enemy_cities[0]->get_location().x << ", " << plan.mrs_[0].enemy_cities[0]->get_location().y << ")";
 				str << plan.mrs_[0].enemy_cities[0]->name();
 			} else {

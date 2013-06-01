@@ -65,8 +65,9 @@ const std::map<std::string, tscrollbar_::tscroll>& scroll_lookup()
 
 } // namespace
 
-tscrollbar_container::tscrollbar_container(const unsigned canvas_count)
+tscrollbar_container::tscrollbar_container(const unsigned canvas_count, bool listbox)
 	: tcontainer_(canvas_count)
+	, listbox_(listbox)
 	, state_(ENABLED)
 	, vertical_scrollbar_mode_(auto_visible_first_run)
 	, horizontal_scrollbar_mode_(auto_visible_first_run)
@@ -77,6 +78,8 @@ tscrollbar_container::tscrollbar_container(const unsigned canvas_count)
 	, content_grid_(NULL)
 	, content_(NULL)
 	, content_visible_area_()
+	, best_size_(0, 0)
+	, size_calculated_(false)
 {
 	connect_signal<event::SDL_KEY_DOWN>(boost::bind(
 			&tscrollbar_container::signal_handler_sdl_key_down
@@ -118,6 +121,7 @@ tscrollbar_container::tscrollbar_container(const unsigned canvas_count)
 
 void tscrollbar_container::layout_init(const bool full_initialization)
 {
+	size_calculated_ = false;
 	// Inherited.
 	tcontainer_::layout_init(full_initialization);
 
@@ -156,23 +160,35 @@ void tscrollbar_container::layout_init(const bool full_initialization)
 	content_grid_->layout_init(full_initialization);
 }
 
+void tscrollbar_container::set_best_size(const tpoint& best_size) 
+{ 
+	best_size_ = best_size;
+}
+
 void tscrollbar_container::request_reduce_height(
 		const unsigned maximum_height)
 {
 	DBG_GUI_L << LOG_HEADER
 			<< " requested height " << maximum_height
 			<< ".\n";
+
+	if (best_size_ != tpoint(0, 0) && listbox_) {
+		// fixed size case, do nothing
+		return;
+	}
 	/*
 	 * First ask the content to reduce it's height. This seems to work for now,
 	 * but maybe some sizing hints will be required later.
 	 */
 	/** @todo Evaluate whether sizing hints are required. */
 	assert(content_grid_);
-	const unsigned offset = horizontal_scrollbar_grid_
-			&& horizontal_scrollbar_grid_->get_visible() != twidget::INVISIBLE
-				?  horizontal_scrollbar_grid_->get_best_size().y
-				: 0;
-	content_grid_->request_reduce_height(maximum_height - offset);
+	if (!listbox_) {
+		const unsigned offset = horizontal_scrollbar_grid_
+				&& horizontal_scrollbar_grid_->get_visible() != twidget::INVISIBLE
+					?  horizontal_scrollbar_grid_->get_best_size().y
+					: 0;
+		content_grid_->request_reduce_height(maximum_height - offset);
+	}
 
 	// Did we manage to achieve the wanted size?
 	tpoint size = get_best_size();
@@ -236,14 +252,20 @@ void tscrollbar_container::request_reduce_width(
 			<< " requested width " << maximum_width
 			<< ".\n";
 
+	if (best_size_ != tpoint(0, 0) && listbox_) {
+		// fixed size case, do nothing
+		return;
+	}
 	// First ask our content, it might be able to wrap which looks better as
 	// a scrollbar.
 	assert(content_grid_);
-	const unsigned offset = vertical_scrollbar_grid_
-			&& vertical_scrollbar_grid_->get_visible() != twidget::INVISIBLE
-				?  vertical_scrollbar_grid_->get_best_size().x
-				: 0;
-	content_grid_->request_reduce_width(maximum_width - offset);
+	if (!listbox_) {
+		const unsigned offset = vertical_scrollbar_grid_
+				&& vertical_scrollbar_grid_->get_visible() != twidget::INVISIBLE
+					?  vertical_scrollbar_grid_->get_best_size().x
+					: 0;
+		content_grid_->request_reduce_width(maximum_width - offset);
+	}
 
 	// Did we manage to achieve the wanted size?
 	tpoint size = get_best_size();
@@ -294,8 +316,12 @@ void tscrollbar_container::request_reduce_width(
 
 tpoint tscrollbar_container::calculate_best_size() const
 {
-	log_scope2(log_gui_layout, LOG_SCOPE_HEADER);
+	bool from_best_size = (best_size_ != tpoint(0, 0))? true: false;
 
+	if (from_best_size && listbox_ && size_calculated_) {
+		return best_size_;
+	}
+	
 	/***** get vertical scrollbar size *****/
 	const tpoint vertical_scrollbar =
 			vertical_scrollbar_grid_->get_visible() == twidget::INVISIBLE
@@ -312,20 +338,35 @@ tpoint tscrollbar_container::calculate_best_size() const
 	assert(content_grid_);
 	const tpoint content = content_grid_->get_best_size();
 
-	const tpoint result(
+	if (from_best_size && listbox_) {
+		bool visiable_horizontal_bar = false;
+		if (best_size_.x < content.x) {
+			VALIDATE(horizontal_scrollbar_mode_ != always_invisible, "request failed due to scrollbar mode.");
+			horizontal_scrollbar_grid_->set_visible(twidget::VISIBLE);
+			visiable_horizontal_bar = true;
+		} else {
+			horizontal_scrollbar_grid_->set_visible(twidget::INVISIBLE);
+		}
+		if ((best_size_.y - (visiable_horizontal_bar? horizontal_scrollbar_grid_->get_best_size().y: 0)) < content.y) {
+			VALIDATE(vertical_scrollbar_mode_ != always_invisible, "request failed due to scrollbar mode.");
+			vertical_scrollbar_grid_->set_visible(twidget::VISIBLE);
+		} else {
+			vertical_scrollbar_grid_->set_visible(twidget::INVISIBLE);
+		}
+		size_calculated_ = true;
+		return best_size_;
+	} else {
+		tpoint result(
 			vertical_scrollbar.x +
 				std::max(horizontal_scrollbar.x, content.x),
 			horizontal_scrollbar.y +
 				std::max(vertical_scrollbar.y,  content.y));
-
-	DBG_GUI_L << LOG_HEADER
-			<< " vertical_scrollbar " << vertical_scrollbar
-			<< " horizontal_scrollbar " << horizontal_scrollbar
-			<< " content " << content
-			<< " result " << result
-			<< ".\n";
-
-	return result;
+		if (from_best_size) {
+			result.x = (result.x >= best_size_.x)? result.x: best_size_.x;
+			result.y = (result.y >= best_size_.y)? result.y: best_size_.y;
+		}
+		return result;
+	}
 }
 
 static void set_scrollbar_mode(tgrid* scrollbar_grid, tscrollbar_* scrollbar,

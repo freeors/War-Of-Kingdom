@@ -25,6 +25,7 @@ class game_display;
 class replay;
 struct combatant;
 class team;
+class play_controller;
 struct time_of_day;
 
 #include "global.hpp"
@@ -47,7 +48,6 @@ public:
 		bool is_poisoned;		/**< True if the unit is poisoned at the beginning of the battle. */
 		bool is_slowed;			/**< True if the unit is slowed at the beginning of the battle. */
 		bool is_broken;			/**< True if the unit is broken at the beginning of the battle. */
-		bool is_reinforced;		/**< True if the unit is reinforced at the beginning of the battle. */
 		bool slows;				/**< Attack slows opponent when it hits. */
 		bool breaks;			/**< Attack breaks opponent when it hits. */
 		bool drains;			/**< Attack drains opponent when it hits. */
@@ -73,6 +73,7 @@ public:
 		unsigned int swarm_max;	/**< Maximum number of blows with swarm (equal to num_blows if swarm isn't used). */
 
 		std::string plague_type; /**< The plague type used by the attack, if any. */
+		map_location effecting_tactic;
 
 		unit_stats(const unit &u, const map_location& u_loc,
 				   int u_attack_num, bool attacking,
@@ -285,11 +286,15 @@ void erase_random_card(team& t, game_display& disp, unit_map& units, hero_map& h
 
 void unit_die(unit_map& units, unit& die, void* a_info_p = NULL, int die_activity = 0, int a_side = HEROS_INVALID_SIDE);
 
+artifical* artifical_existed_ea(unit_map& units, const map_location& loc);
+
 void calculate_wall_tiles(unit_map& units, gamemap& map, artifical& owner, std::vector<map_location*>& keeps, std::vector<map_location*>& wall_vacants, std::vector<map_location*>& keep_vacants);
 
 size_t calculate_keeps(unit_map& units, const artifical& owner);
 
 artifical* find_city_for_wall(unit_map& units, const map_location& loc);
+
+void expand_rect_loc(SDL_Rect& rect, const map_location& loc);
 
 SDL_Rect extend_rectangle(const gamemap& map, const SDL_Rect& src, int radius);
 
@@ -301,9 +306,9 @@ int calculate_exploiture(const hero& h1, const hero& h2, int type);
 
 int calculate_disband_income(const unit& u, int cost_exponent, bool hp = false);
 
-void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost_exponent, bool human);
+void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost, bool human, bool to_recorder);
 
-void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, hero& h, unit* special, bool replay = false);
+void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, hero& h, unit* special, bool to_recorder = true, bool consume = true);
 
 void multi_attack(unit_map& units, unit* attacker, const std::string& type, const std::map<unit*, int>& touched, int a_side);
 
@@ -319,8 +324,24 @@ bool no_fightback_attack(unit& attacker, unit& defender);
 
 void reform_captain(unit_map& units, unit& u, hero& h, bool join, bool replay);
 
-void do_demolish(game_display& gui, unit_map& units, team& current_team, unit* u, int income, bool replay);
+void do_demolish(game_display& gui, unit_map& units, team& current_team, unit* u, int income, bool to_recorder);
+
+void do_employ(play_controller& controller, unit_map& units, team& current_team, hero& h, int cost, bool replay);
 
 void do_fresh_heros(team& current_team, bool replay);
+
+bool adjacent_has_enemy(const unit_map& units, const team& current_team, const unit& u);
+
+void do_add_active_tactic(unit& u, hero& h, bool to_recorder);
+
+void do_remove_active_tactic(unit& u, bool to_recorder);
+
+void do_direct_expedite(std::vector<team>& teams, unit_map& units, gamemap& map, artifical& city, int index, const map_location to, bool to_recorder);
+
+void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, unit&u, const map_location from, const map_location to, bool to_recorder);
+
+void do_bomb(game_display& gui, team& t, bool to_recorder);
+
+void do_scenario_env(const tscenario_env& env, play_controller& controller, bool to_recorder);
 
 #endif

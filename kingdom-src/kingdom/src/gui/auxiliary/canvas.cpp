@@ -31,6 +31,7 @@
 #include "gui/widgets/helper.hpp"
 #include "../../text.hpp"
 #include "wml_exception.hpp"
+#include "font.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -1341,6 +1342,7 @@ void ttext::draw(surface& canvas
 		return;
 	}
 
+/*
 	static font::ttext text_renderer;
 	text_renderer.set_text(text, text_markup_(variables));
 
@@ -1357,6 +1359,17 @@ void ttext::draw(surface& canvas
 			.set_characters_per_line(characters_per_line_);
 
 	surface surf = text_renderer.render();
+
+	if (text == "Cancel") {
+		surface screen = surf;
+		surf = create_neutral_surface(surf->w, surf->h);
+		SDL_SetAlpha(screen, SDL_RLEACCEL, 0); // direct blit without alpha blending
+		sdl_blit(screen, NULL, surf, NULL);
+	}
+*/
+
+	surface surf = font::get_rendered_text2(text, maximum_width_(variables), font_size_, int_to_color(color_ >> 8));
+
 	if(surf->w == 0) {
 		DBG_GUI_D  << "Text: Rendering '"
 				<< text << "' resulted in an empty canvas, leave.\n";

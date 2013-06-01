@@ -25,8 +25,12 @@ tartifical_::tartifical_()
 	, generate_speed_(100)
 	, trade_speed_(100)
 	, business_speed_(100)
+	, business_income_ratio_(100)
 	, technology_speed_(100)
+	, technology_income_ratio_(100)
 	, revenue_income_(100)
+	, demolish_hp_(0)
+	, heal_hp_(0)
 {
 }
 
@@ -36,8 +40,12 @@ void tartifical_::reset_commoner_speed()
 	generate_speed_ = 100;
 	trade_speed_ = 100;
 	business_speed_ = 100;
+	business_income_ratio_ = 100;
 	technology_speed_ = 100;
+	technology_income_ratio_ = 100;
 	revenue_income_ = 100;
+	demolish_hp_ = 0;
+	heal_hp_ = 0;
 }
 
 artifical::artifical(const config& cfg) :
@@ -69,13 +77,15 @@ artifical::artifical(const config& cfg) :
 	, police_(game_config::max_police / 2)
 	, not_recruit_()
 	, can_recruit_map_()
-	, decree_(std::make_pair((card*)NULL, 0))
+	, decree_(NULL)
 	, max_recruit_cost_(-1)
 {
 	// 设置[city]级字段
 	read(cfg);
 
-	apply_issur_decree(decree_.first, decree_.second);
+	if (decree_) {
+		apply_issur_decree(*decree_, false);
+	}
 	calculate_exploiture();
 }
 
@@ -108,13 +118,15 @@ artifical::artifical(const uint8_t* mem) :
 	, police_(game_config::max_police / 2)
 	, not_recruit_()
 	, can_recruit_map_()
-	, decree_(std::make_pair((card*)NULL, 0))
+	, decree_(NULL)
 	, max_recruit_cost_(-1)
 {
 	// 设置[city]级字段
 	read(mem);
 
-	apply_issur_decree(decree_.first, decree_.second);
+	if (decree_) {
+		apply_issur_decree(*decree_, false);
+	}
 	calculate_exploiture();
 }
 
@@ -188,7 +200,7 @@ artifical::artifical(unit_map& units, hero_map& heros, std::vector<team>& teams,
 	, police_(game_config::max_police / 2)
 	, not_recruit_()
 	, can_recruit_map_()
-	, decree_(std::make_pair((card*)NULL, 0))
+	, decree_(NULL)
 	, max_recruit_cost_(-1)
 {
 	calculate_exploiture();
@@ -400,6 +412,7 @@ void artifical::write(uint8_t* mem) const
 	fields->gold_bonus_ = gold_bonus_;
 	fields->technology_bonus_ = technology_bonus_;
 	fields->max_commoners_ = max_commoners_;
+	fields->decree_ = decree_? decree_->index(): NO_DECREE;
 	fields->research_turns_ = research_turns_;
 
 	str.str("");
@@ -482,19 +495,6 @@ void artifical::write(uint8_t* mem) const
 	}
 	offset += fields->not_recruit_.size_;
 
-	str.str("");
-	// decree
-	if (decree_.first) {
-		str << decree_.first->number_ << "," << decree_.second;
-		fields->decree_.offset_ = offset;
-		fields->decree_.size_ = str.str().length();
-		memcpy(mem + offset, str.str().c_str(), fields->decree_.size_);
-	} else {
-		fields->decree_.offset_ = -1;
-		fields->decree_.size_ = 0;
-	}
-	offset += fields->decree_.size_;
-
 	// align 4
 	offset = (offset + 3) & ~3;
 
@@ -530,6 +530,7 @@ void artifical::read(const uint8_t* mem)
 	gold_bonus_ = fields->gold_bonus_;
 	technology_bonus_ = fields->technology_bonus_;
 	max_commoners_ = fields->max_commoners_;
+	decree_ = fields->decree_ != NO_DECREE? &unit_types.decree(fields->decree_): NULL;
 	research_turns_ = fields->research_turns_;
 
 	// fresh_heros_
@@ -626,14 +627,6 @@ void artifical::read(const uint8_t* mem)
 
 		unit_fields_t* u_fields = (unit_fields_t*)(mem + offset);
 		offset += u_fields->size_;
-	}
-
-	// decree
-	if (fields->decree_.size_) {
-		str.assign((const char*)mem + fields->decree_.offset_, fields->decree_.size_);
-		v_str = utils::split(str);
-		decree_.first = &resources::controller->cards()[lexical_cast_default<int>(v_str[0])];
-		decree_.second = lexical_cast_default<int>(v_str[1]);
 	}
 
 	offset = fields->reside_commoners_.offset_;
@@ -759,31 +752,33 @@ void artifical::set_location(const map_location &loc)
 
 void artifical::issue_decree(const config& effect)
 {
-	const std::string& type = effect["type"];
+	int apply_to = apply_to_tag::find(effect["apply_to"].str());
 	const std::string& increase = effect["increase"];
 
 	if (increase.empty()) return;
 
-	if (type == "business") {
+	if (apply_to == apply_to_tag::BUSINESS) {
 		business_speed_ = utils::apply_modifier(business_speed_, increase);
 		if (business_speed_ > 200) {
 			business_speed_ = 200;
 		}
-	} else if (type == "technology") {
+		const std::string& increase_income = effect["increase_income"].str();
+		if (!increase_income.empty()) {
+			business_income_ratio_ = utils::apply_modifier(business_income_ratio_, increase_income);
+		}
+	} else if (apply_to == apply_to_tag::TECH) {
 		technology_speed_ = utils::apply_modifier(technology_speed_, increase);
 		if (technology_speed_ > 200) {
 			technology_speed_ = 200;
 		}
-	} else if (type == "police") {
-		police_speed_ = utils::apply_modifier(police_speed_, increase);
-		if (police_speed_ < 50) {
-			police_speed_ = 50;
+		const std::string& increase_income = effect["increase_income"].str();
+		if (!increase_income.empty()) {
+			technology_income_ratio_ = utils::apply_modifier(technology_income_ratio_, increase_income);
 		}
-	} else if (type == "revenue") {
-		revenue_income_ = utils::apply_modifier(revenue_income_, increase);
-		if (revenue_income_ < 50) {
-			revenue_income_ = 50;
-		}
+	} else if (apply_to == apply_to_tag::DEMOLISH) {
+		demolish_hp_ = atoi(increase.c_str());
+	} else if (apply_to == apply_to_tag::HEAL) {
+		heal_hp_ = atoi(increase.c_str());
 	}
 }
 
@@ -833,7 +828,10 @@ void artifical::redraw_unit()
 	if (get_state(STATE_POISONED)){
 		params.blend_with = disp.rgb(0,255,0);
 		params.blend_ratio = 0.25;
-	}
+	} else if (temporary_state_ & BIT_2_MASK(BIT_STRONGER)) {
+		params.blend_with = disp.rgb(255, 32, 32);
+		params.blend_ratio = 0.40;
+	} 
 	params.image_mod = image_mods();
 	if (get_state(STATE_PETRIFIED)) params.image_mod +="~GS()";
 	if (terrain_ == t_translation::NONE_TERRAIN) {
@@ -1006,6 +1004,30 @@ void artifical::fill_ai_hero(std::set<int>& candidate, int count, int& random)
 	}
 }
 
+hero* artifical::select_leader(int random) const
+{
+	int best_score = -1;
+	hero* best_hero = NULL;
+	for (std::vector<hero*>::const_iterator it = fresh_heros_.begin(); it != fresh_heros_.end(); ++ it) {
+		hero& h = **it;
+		if (h.get_flag(hero_flag_roam)) {
+			continue;
+		}
+		int score = fxptoi9(h.leadership_) + fxptoi9(h.charm_);
+		if (h.utype_ != HEROS_NO_UTYPE) {
+			const unit_type* ut = unit_types.keytype(h.utype_);
+			if (ut->leader()) {
+				score += 256;
+			}
+		}
+		if (score > best_score) {
+			best_score = score;
+			best_hero = &h;
+		}
+	}
+	return best_hero;
+}
+
 bool artifical::new_turn()
 {
 	unit::new_turn();
@@ -1096,7 +1118,7 @@ bool artifical::new_turn()
 		u.set_movement(u.total_movement());
 		u.set_attacks(u.attacks_total());
 		u.increase_loyalty(-1 * game_config::reside_troop_increase_loyalty);
-		u.increase_activity(10);
+		u.increase_activity(20);
 		if (u.hide_turns()) {
 			u.set_hide_turns(0);
 		}
@@ -1138,7 +1160,7 @@ bool artifical::new_turn()
 		hero& h = **itor;
 		if (h.activity_ < HEROS_FULL_ACTIVITY) {
 			if (10 + h.activity_ < HEROS_FULL_ACTIVITY) {
-				h.activity_ += 15;
+				h.activity_ += 20;
 			} else {
 				h.activity_ = HEROS_FULL_ACTIVITY;
 			}
@@ -1154,32 +1176,82 @@ bool artifical::new_turn()
 	increase_police(1);
 
 	if (tent::mode != TOWER_MODE) {
-		if (decree_.first) {
-			VALIDATE(decree_.second > 0, "artifical::new_turn, when issue decree, effect turns must > 0!");
-			decree_.second = decree_.second - 1;
-			if (!decree_.second) {
-				apply_issur_decree();
-			}
-		}
-		const std::vector<size_t>& holded_cards = current_team.holded_cards();
-		if (police_ >= game_config::min_researchable_police && (int)holded_cards.size() < game_config::max_cards) {
+		// const std::vector<size_t>& holded_cards = current_team.holded_cards();
 			VALIDATE(research_turns_ >= 0, "artifical::new_turn, research must not < 0!");
 			research_turns_ ++;
-			// a turn amone [26..50]
-			if (research_turns_ > 25) {
-				int random = get_random();
-				if (random % 25 < research_turns_ - 25) {
-					if (current_team.add_random_decree(*this, random)) {
-						if (!current_team.is_human()) {
-							card& c = current_team.holded_card(holded_cards.size() - 1);
+			int random = get_random();
 
-							apply_issur_decree(&c, game_config::default_decree_turns, holded_cards.size() - 1);
+			// carry out decree
+			int adjacented_hp = demolish_hp_ * police_ / 100;
+			if (adjacented_hp) {
+				// select "lowest" enemy city.
+				int lowest_hp = -1;
+				bool lowest_is_full = true;
+				artifical* selected = NULL;
+				for (std::set<int>::const_iterator it2 = roaded_cities_.begin(); it2 != roaded_cities_.end(); ++ it2) {
+					artifical& roaded = *units_.city_from_cityno(*it2);
+					if (roaded.side() != team::empty_side_ && current_team.is_enemy(roaded.side())) {
+						if (lowest_is_full) {
+							if (roaded.hitpoints() != roaded.max_hitpoints()) {
+								lowest_is_full = false;
+								lowest_hp = roaded.hitpoints();
+								selected = &roaded;
+							} else if (lowest_hp == -1 || roaded.hitpoints() < lowest_hp) {
+								lowest_hp = roaded.hitpoints();
+								selected = &roaded;
+							}
+						} else if (roaded.hitpoints() < lowest_hp && roaded.hitpoints() != roaded.max_hitpoints()) {
+							lowest_hp = roaded.hitpoints();
+							selected = &roaded;
 						}
+					} 
+				}
+				if (selected) {
+					demolish_to(*selected, adjacented_hp, random);
+				}
+			}
+
+			adjacented_hp = heal_hp_ * police_ / 100;
+			if (adjacented_hp) {
+				const std::pair<unit**, size_t> p = current_team.field_troop();
+				unit** troops = p.first;
+				size_t troops_vsize = p.second;
+				unit* selected = NULL;
+				int max_damage = -1;
+				for (size_t i = 0; i < troops_vsize; i ++) {
+					unit& u = *(troops[i]);
+					if (u.is_artifical()) {
+						continue;
+					}
+					int damage = u.max_hitpoints() - u.hitpoints();
+					if (damage > max_damage) {
+						max_damage = damage;
+						selected = &u;
+					}
+				}
+				if (selected) {
+					selected->heal(adjacented_hp);
+					std::stringstream strstr;
+					strstr << adjacented_hp;
+					unit_display::unit_text(*selected, false, strstr.str());
+				}
+			}
+
+			// a turn amone [16..20]
+			if (research_turns_ > 15) {
+				if (random % 5 < research_turns_ - 15) {
+					int index = current_team.get_random_decree(*this, random);
+					if (index != NO_DECREE) {
+						const tdecree& d = unit_types.decree(index);
+						apply_issur_decree(d, true);
+
 						research_turns_ = 0;
+
+					} else if (research_turns_ >= 5) {
+						research_turns_ -= 5;
 					}
 				}
 			}
-		}
 	}
 
 	get_experience(increase_xp::attack_ublock(*this), turn_experience_);
@@ -1188,26 +1260,49 @@ bool artifical::new_turn()
 	return false;
 }
 
-void artifical::apply_issur_decree(card* c, int turns, int index, bool to_recorder)
+// @damage: negative
+void artifical::demolish_to(artifical& to, int damage, int random)
+{
+	artifical* t = to.tactic_on_ea();
+	bool miss = false;
+
+	if (t) {
+		if (random % 100 < t->miss_income()) {
+			miss = true;
+		}
+		damage /= 2;
+	}
+
+	if (!miss) {
+		std::map<unit*, int> touched;
+		// demolish cannot capture city
+		if (damage < 0 && to.hitpoints() + damage <= 0) {
+			damage = -1 * (to.hitpoints() - 1);
+		}
+		touched.insert(std::make_pair(&to, -1 * damage));
+		multi_attack(units_, NULL, "", touched, side_);
+	} else {
+		unit_display::unit_text(to, false, _("Miss"));
+	}
+}
+
+void artifical::apply_issur_decree(const tdecree& d, bool anim)
 {
 	reset_commoner_speed();
 
-	decree_.first = c;
-	decree_.second = turns;
+	decree_ = &d;
 
-	if (c) {
-		team& current_team = teams_[side_ - 1];
+	team& current_team = teams_[side_ - 1];
+	const std::vector<const tdecree*>& parts = d.parts();
+	for (std::vector<const tdecree*>::const_iterator it = parts.begin(); it != parts.end(); ++ it) {
+		const tdecree& p = **it;
+		issue_decree(p.effect_cfg());
+	}
 
-		std::vector<std::pair<int, unit*> > maps;
-		maps.push_back(std::make_pair(-1, this));
-		// std::string disable_str;
-
-		// current_team.card_touched(*c, loc_, maps, disable_str);
-		current_team.consume_card(*c, loc_, maps, index, to_recorder);
-		if (index >= 0) {
-			std::vector<unit*> touchers(1, this);
-			unit_display::unit_text(*this, false, c->name());
-		}
+	if (anim) {
+		const events::command_disabler disable_commands;
+		std::vector<unit*> touchers(1, this);
+		unit_display::unit_text(*this, false, d.name());
 	}
 }
 
@@ -1285,8 +1380,17 @@ bool artifical::troop_come_into(unit* uobj, int pos, bool create)
 	u.set_goto(map_location());
 	u.set_block_turns(0);
 	u.clear_visibility_cache();
+	if (u.alert_turns()) {
+		u.set_alert_turns(0);
+		can_undo = false;
+	}
 	if (u.provoked_turns()) {
 		u.set_provoked_turns_next(u, 0);
+		can_undo = false;
+	}
+	if (u.tactic_hero()) {
+		u.remove_from_tactic_cache();
+		can_undo = false;
 	}
 
 	if (!u.human()) {
@@ -1463,16 +1567,14 @@ void artifical::field_arts_erase(const artifical* art)
 
 void artifical::hero_go_out(const hero& h)
 {
-	for (std::vector<hero*>::iterator it = fresh_heros_.begin(); it != fresh_heros_.end(); ++it) {
-		if ((*it)->number_ == h.number_) {
-			game_display* disp = game_display::get_singleton();
-			if (disp) {
-				disp->refresh_access_heros(side_ - 1, game_display::REFRESH_ERASE, *it);
-			}
-			fresh_heros_.erase(it);
-			break;
-		}
+	std::vector<hero*>::iterator find = std::find(fresh_heros_.begin(), fresh_heros_.end(), &h);
+	VALIDATE(find != fresh_heros_.end(), "artifical::hero_go_out, cannot fnind going out hero!");
+
+	game_display* disp = game_display::get_singleton();
+	if (disp) {
+		disp->refresh_access_heros(side_ - 1, game_display::REFRESH_ERASE, *find);
 	}
+	fresh_heros_.erase(find);
 }
 
 void artifical::fresh_into(hero& h)
@@ -1531,12 +1633,13 @@ void artifical::finish_2_fresh()
 	for (std::vector<hero*>::iterator it = finish_heros_.begin(); it != finish_heros_.end(); ++ it) {
 		hero& h = **it;
 		if (disp) {
-			disp->refresh_access_heros(side_ - 1, game_display::REFRESH_ERASE, &h);
+			// disp->refresh_access_heros(side_ - 1, game_display::REFRESH_ERASE, &h);
 		}
 		h.status_ = hero_status_idle;
 		fresh_heros_.push_back(&h);
 		if (disp) {
-			disp->refresh_access_heros(side_ - 1, game_display::REFRESH_INSERT, &h);
+			// disp->refresh_access_heros(side_ - 1, game_display::REFRESH_INSERT, &h);
+			disp->refresh_access_heros(side_ - 1, game_display::REFRESH_ENABLE, &h);
 		}
 	}
 	finish_heros_.clear();
@@ -1748,13 +1851,17 @@ void artifical::change_to_special_unit(int attacker_side, int random, bool repla
 
 	if (!specialable.empty()) {
 		std::vector<const unit*> sample_units_ptr;
+		bool has_human = false;
 		for (std::vector<std::pair<unit*, unit> >::const_iterator it = specialable.begin(); it != specialable.end(); ++ it) {
 			sample_units_ptr.push_back(&it->second);
+			if (it->first->human()) {
+				has_human = true;
+			}
 		}
 		game_display& gui = *resources::screen;
 		int res = 0;
 		if (specialable.size() >= 2) {
-			if (attacker_team.is_human()) {
+			if (has_human) {
 				std::string name = "input";
 				if (!replaying) {
 					gui2::tselect_unit dlg(gui, teams_, units_, heros_, sample_units_ptr, gui2::tselect_unit::CHANGE);
@@ -1872,9 +1979,9 @@ void artifical::fallen(int a_side, unit* attacker)
 			current_troop->adjust();
 			if (current_troop->second().valid()) {
 				strstr.str("");
-				strstr << current_troop->master().name() << ", " << current_troop->second().name();
+				strstr << help::tintegrate::generate_format(current_troop->master().name(), help::tintegrate::hero_color) << ", " << help::tintegrate::generate_format(current_troop->second().name(), help::tintegrate::hero_color);
 				if (current_troop->third().valid()) {
-					strstr << ", " << current_troop->third().name();
+					strstr << ", " << help::tintegrate::generate_format(current_troop->third().name(), help::tintegrate::hero_color);
 				}
 				symbols["first"] = strstr.str();
 				message = vgettext("Find wise leader, $first would like to lead troop join in.", symbols);
@@ -1898,7 +2005,7 @@ void artifical::fallen(int a_side, unit* attacker)
 		random = get_random();
 		join_to_city = NULL;
 
-		if (city_same_side && (h == rpg::h || h->ambition_ > hero_ambition_0)) {
+		if (city_same_side && (h == rpg::h || !h->get_flag(hero_flag_roam))) {
 			city_same_side->move_into(*h);
 		} else if (fallen_to_unstage) {
 			h->to_unstage();
@@ -1930,6 +2037,7 @@ void artifical::fallen(int a_side, unit* attacker)
 		unit* current_troop = *itor;
 
 		current_troop->remove_from_provoke_cache();
+		current_troop->remove_from_tactic_cache();
 		current_troop->set_movement(0);
 		current_troop->set_attacks(0);
 		current_troop->set_goto(map_location());
@@ -1999,9 +2107,9 @@ void artifical::fallen(int a_side, unit* attacker)
 
 			if (current_troop->second().valid()) {
 				strstr.str("");
-				strstr << current_troop->master().name() << ", " << current_troop->second().name();
+				strstr << help::tintegrate::generate_format(current_troop->master().name(), help::tintegrate::hero_color) << ", " << help::tintegrate::generate_format(current_troop->second().name(), help::tintegrate::hero_color);
 				if (current_troop->third().valid()) {
-					strstr << ", " << current_troop->third().name();
+					strstr << ", " << help::tintegrate::generate_format(current_troop->third().name(), help::tintegrate::hero_color);
 				}
 				symbols["first"] = strstr.str();
 				message = vgettext("Find wise leader, $first would like to lead troop join in.", symbols);
@@ -2086,8 +2194,8 @@ void artifical::fallen(int a_side, unit* attacker)
 	attacker_team.add_city(this);
 	
 	if (!attacker_team.is_human()) {
-		symbols["first"] = attacker_team.name();
-		symbols["second"] = name();
+		symbols["first"] = help::tintegrate::generate_format(attacker_team.name(), help::tintegrate::hero_color);
+		symbols["second"] = help::tintegrate::generate_format(name(), help::tintegrate::object_color);
 		if (attacker_team.side() != team::empty_side_) {
 			game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$first occupy $second.", symbols), game_events::INCIDENT_FALLEN);
 		} else {
@@ -2109,7 +2217,7 @@ void artifical::fallen(int a_side, unit* attacker)
 			}
 		}
 
-		symbols["first"] = defender_team.name();
+		symbols["first"] = help::tintegrate::generate_format(defender_team.name(), help::tintegrate::hero_color);
 		game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$first is defeated.", symbols), game_events::INCIDENT_DEFEAT);
 	}
 
@@ -2139,6 +2247,10 @@ void artifical::fallen(int a_side, unit* attacker)
 	}
 	hit_points_ = std::max(max_hit_points_ / 2, 1);
 	experience_ = 0;
+
+	if (decree_) {
+		decree_ = NULL;
+	}
 
 	// get one card random
 	if (!controller.is_replaying()) {
@@ -2282,6 +2394,7 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 	for (std::vector<unit*>::iterator it = field_troops.begin(); it != field_troops.end();  ++ it) {
 		unit* current_troop = *it;
 		current_troop->remove_from_provoke_cache();
+		current_troop->remove_from_tactic_cache();
 		if (independenced) {
 			if ((current_troop != from_leader_unit && current_troop->human()) || !aggressing) {
 				if (!current_troop->human()) {
@@ -2360,6 +2473,34 @@ bool artifical::is_surrounded() const
 	return true;
 }
 
+bool artifical::is_front(bool must_enemy) const
+{
+	for (std::set<int>::const_iterator it = roaded_cities_.begin(); it != roaded_cities_.end(); ++ it) {
+		int roaded_side = units_.city_from_cityno(*it)->side();
+		if (roaded_side != team::empty_side_ && roaded_side != side_) {
+			if (!must_enemy || teams_[side_ - 1].is_enemy(roaded_side)) {
+				return true;
+			}
+		} 
+	}
+	return false;
+}
+
+std::vector<artifical*> artifical::adjacent_other_cities(bool must_enemy) const
+{
+	std::vector<artifical*> v;
+	for (std::set<int>::const_iterator it = roaded_cities_.begin(); it != roaded_cities_.end(); ++ it) {
+		artifical* roaded = units_.city_from_cityno(*it);
+		int roaded_side = roaded->side();
+		if (roaded_side != team::empty_side_ && roaded_side != side_) {
+			if (!must_enemy || teams_[side_ - 1].is_enemy(roaded_side)) {
+				v.push_back(roaded);
+			}
+		} 
+	}
+	return v;
+}
+
 void artifical::extract_heros_number()
 {
 	unit::extract_heros_number();
@@ -2422,12 +2563,12 @@ void show_mayor_message(hero_map& heros, hero& mayor, artifical& city, bool term
 	std::string message;
 
 	int incident = game_events::INCIDENT_APPOINT;
-	symbols["city"] = city.name();
+	symbols["city"] = help::tintegrate::generate_format(city.name(), help::tintegrate::object_color);
 	if (terminate) {
 		if (&mayor == rpg::h) {
 			message = vgettext("Your official of $city's mayor is terminated.", symbols);
 		} else if (mayor.valid()) {
-			symbols["hero"] = mayor.name();
+			symbols["hero"] = help::tintegrate::generate_format(mayor.name(), help::tintegrate::hero_color);
 			message = vgettext("$hero official of $city's mayor is terminated.", symbols);
 		}
 		incident = game_events::INCIDENT_INVALID;
@@ -2435,7 +2576,7 @@ void show_mayor_message(hero_map& heros, hero& mayor, artifical& city, bool term
 		if (&mayor == rpg::h) {
 			message = vgettext("Congratulate! You are appointed $city mayor.", symbols);
 		} else if (mayor.valid()) {
-			symbols["hero"] = mayor.name();
+			symbols["hero"] = help::tintegrate::generate_format(mayor.name(), help::tintegrate::hero_color);
 			message = vgettext("Congratulate! $hero is appointed $city mayor.", symbols);
 		}
 		incident = game_events::INCIDENT_APPOINT;
@@ -2598,9 +2739,8 @@ std::pair<bool, bool> artifical::calculate_feature() const
 
 void artifical::active_exploiture()
 {
-	std::vector<const map_location*> ea_vacants;
-	int markets, technologies;
-	calculate_ea_tiles(ea_vacants, markets, technologies);
+	int markets, technologies, tactics;
+	calculate_ea_tiles(markets, technologies, tactics);
 
 	if (!markets && !technologies) {
 		return;
@@ -2632,11 +2772,12 @@ void artifical::active_exploiture()
 	calculate_exploiture();
 }
 
-void artifical::calculate_ea_tiles(std::vector<const map_location*>& ea_vacants, int& markets, int& technologies)
+void artifical::calculate_ea_tiles(std::vector<const map_location*>& ea_vacants, int& markets, int& technologies, int& tactics) const
 {
 	ea_vacants.clear();
 	markets = 0;
 	technologies = 0;
+	tactics = 0;
 	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
 		unit_map::const_iterator find = units_.find(*ea);
 		if (!find.valid()) {
@@ -2645,6 +2786,103 @@ void artifical::calculate_ea_tiles(std::vector<const map_location*>& ea_vacants,
 			markets ++;
 		} else if (find->type()->master() == hero::number_technology) {
 			technologies ++;
+		} else if (find->type()->master() == hero::number_tactic) {
+			tactics ++;
+		}
+	}
+}
+
+void artifical::calculate_ea_tiles(int& markets, int& technologies, int& tactics) const
+{
+	markets = 0;
+	technologies = 0;
+	tactics = 0;
+	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
+		unit_map::const_iterator find = units_.find(*ea);
+		if (!find.valid()) {
+			continue;
+		} else if (find->type()->master() == hero::number_market) {
+			markets ++;
+		} else if (find->type()->master() == hero::number_technology) {
+			technologies ++;
+		} else if (find->type()->master() == hero::number_tactic) {
+			tactics ++;
+		}
+	}
+}
+
+artifical* artifical::tactic_on_ea() const
+{
+	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
+		unit_map::iterator find = units_.find(*ea);
+		if (find.valid() && find->type()->master() == hero::number_tactic) {
+			return unit_2_artifical(&*find);
+		}
+	}
+	return NULL;
+}
+
+int tactic_requrie_min_adjacents = 4;
+const unit_type* artifical::next_ea_utype(std::vector<const map_location*>& ea_vacants) const
+{
+	int markets, technologies, tactics;
+	calculate_ea_tiles(ea_vacants, markets, technologies, tactics);
+	if (ea_vacants.empty()) {
+		return NULL;
+	}
+
+	std::vector<artifical*> adjacent = adjacent_other_cities();
+	if (!markets || (technologies && tactics)) {
+		return unit_types.find_market();
+	} else if (!tactics && (hit_points_ < max_hit_points_ * 2 / 3 || (int)adjacent.size() >= tactic_requrie_min_adjacents)) {
+		return unit_types.find_tactic();
+	} else {
+		return unit_types.find_technology();
+	}
+}
+
+void artifical::demolish_ea()
+{
+	// don't demolish as long as has vacant ea.
+	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
+		unit_map::const_iterator find = units_.find(*ea);
+		if (!find.valid()) {
+			return;
+		} else {
+			int master = find->type()->master();
+			if (!hero::is_ea_artifical(master)) {
+				return;
+			}
+		}
+	}
+
+	// only demolish tactic or technology
+	int markets, technologies, tactics;
+	calculate_ea_tiles(markets, technologies, tactics);
+	if (!technologies && !tactics) {
+		return;
+	}
+
+	team& current_team = teams_[side_ - 1];
+	std::vector<artifical*> adjacent = adjacent_other_cities();
+	artifical* t = tactic_on_ea();
+	if (t && t->level() < 3 && !fronts() && hit_points_ == max_hit_points_) {
+		if ((int)adjacent.size() < tactic_requrie_min_adjacents) {
+			// no ajdacent cities, demolish tactic
+			if (!adjacent_has_enemy(units_, current_team, *t)) {
+				do_demolish(*resources::screen, units_, current_team, t, 0, false);
+			}
+		}
+	} else if ((hit_points_ < max_hit_points_ / 2 || (int)adjacent.size() >= tactic_requrie_min_adjacents) && !t && technologies) {
+		// demolish a technologies
+		for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
+			unit_map::const_iterator find = units_.find(*ea);
+			if (find.valid() && find->type()->master() == hero::number_technology && find->level() < 3) {
+				if (!adjacent_has_enemy(units_, current_team, *find)) {
+					do_demolish(*resources::screen, units_, current_team, &*find, 0, false);
+					break;
+				}
+			}
 		}
 	}
 }
@@ -2797,6 +3035,7 @@ int artifical::total_gold_income(int market_increase) const
 			income += income_per_businessman;
 		}
 	}
+	income = income * business_income_ratio_ / 100;
 	return income;
 }
 
@@ -2819,6 +3058,6 @@ int artifical::total_technology_income(int technology_increase) const
 			income += income_per_scholar;
 		}
 	}
-
+	income = income * technology_income_ratio_ / 100;
 	return income;
 }

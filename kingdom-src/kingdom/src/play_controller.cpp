@@ -21,7 +21,6 @@
 
 #include "play_controller.hpp"
 #include "dialogs.hpp"
-#include "foreach.hpp"
 #include "game_events.hpp"
 #include "gettext.hpp"
 #include "halo.hpp"
@@ -45,6 +44,7 @@
 #include "artifical.hpp"
 #include "unit_display.hpp"
 
+#include "gui/dialogs/employ.hpp"
 #include "gui/dialogs/camp_armory.hpp"
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/recruit.hpp"
@@ -56,6 +56,8 @@
 #include "gui/dialogs/independence.hpp"
 #include "gui/widgets/window.hpp"
 
+#include <boost/foreach.hpp>
+
 static lg::log_domain log_engine("engine");
 #define LOG_NG LOG_STREAM(info, log_engine)
 #define DBG_NG LOG_STREAM(debug, log_engine)
@@ -66,6 +68,8 @@ static lg::log_domain log_display("display");
 namespace null_val {
 	const std::vector<map_location> vector_location;
 }
+
+double tower_cost_ratio = 9.0;
 
 static void clear_resources()
 {
@@ -137,7 +141,8 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	fallen_to_unstage_(level_["fallen_to_unstage"].to_bool()),
 	card_mode_(level_["card_mode"].to_bool()),
 	duel_(RANDOM_DUEL),
-	treasures_()
+	treasures_(), 
+	emploies_()
 {
 	resources::game_map = &map_;
 	resources::units = &units_;
@@ -164,7 +169,7 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 		init(video);
 	
 		// Setup treasures
-		const std::vector<std::string> vstr = utils::split(level_["treasures"]);
+		std::vector<std::string> vstr = utils::split(level["treasures"]);
 		const std::vector<ttreasure>& treasures = unit_types.treasures();
 		for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 			int t = lexical_cast_default<int>(*it, -1);
@@ -174,17 +179,31 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 			treasures_.push_back(t);
 		}
 
-		if (!level_["final_capital"].empty()) {
+		// emploies
+		vstr = utils::split(level["emploies"]);
+		for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+			int number = lexical_cast_default<int>(*it, HEROS_INVALID_NUMBER);
+			if (number == HEROS_INVALID_NUMBER || number >= (int)heros_.size()) {
+				throw game::load_game_failed("emploies, invalid number!");
+			}
+			hero& h = heros_[number];
+			if (std::find(emploies_.begin(), emploies_.end(), &h) != emploies_.end()) {
+				throw game::load_game_failed("emploies, duplicate number!");
+			}
+			emploies_.push_back(&h);
+		}
+
+		if (!level["final_capital"].empty()) {
 			const std::vector<std::string> capitals = utils::split(level_["final_capital"]);
 			final_capital_.first = units_.city_from_cityno(lexical_cast_default<int>(capitals[0]));
 			final_capital_.second = units_.city_from_cityno(lexical_cast_default<int>(capitals[1]));
 		}
-		if (!level_["maximal_defeated_activity"].empty()) {
-			game_config::maximal_defeated_activity = level_["maximal_defeated_activity"].to_int(100);
+		if (!level["maximal_defeated_activity"].empty()) {
+			game_config::maximal_defeated_activity = level["maximal_defeated_activity"].to_int(100);
 		}
 		if (tent::duel == -1) {
-			if (level_.has_attribute("duel")) {
-				const std::string& duel = level_["duel"];
+			if (level.has_attribute("duel")) {
+				const std::string& duel = level["duel"];
 				if (duel == "no") {
 					duel_ = NO_DUEL;
 				} else if (duel == "always") {
@@ -252,6 +271,7 @@ play_controller::~play_controller()
 void play_controller::init(CVideo& video)
 {
 	provoke_cache_ready = false;
+	tactic_cache::ready = false;
 	uint32_t start = SDL_GetTicks();
 
 	util::scoped_resource<loadscreen::global_loadscreen_manager*, util::delete_item> scoped_loadscreen_manager;
@@ -264,9 +284,10 @@ void play_controller::init(CVideo& video)
 	loadscreen::start_stage("load level");
 	// If the recorder has no event, adds an "game start" event
 	// to the recorder, whose only goal is to initialize the RNG
+	bool tent_valid = false;
 	if (recorder.empty()) {
 		recorder.add_start();
-		recorder.add_tent(tent::ai_count, tent::duel);
+		tent_valid = true;
 	} else {
 		recorder.pre_replay();
 	}
@@ -274,12 +295,7 @@ void play_controller::init(CVideo& video)
 
 	bool snapshot = level_["snapshot"].to_bool();
 
-	if (level_["modify_placing"].to_bool()) {
-		// modifying placing...
-		place_sides_in_preferred_locations();
-	}
-
-	foreach (const config &t, level_.child_range("time_area")) {
+	BOOST_FOREACH (const config &t, level_.child_range("time_area")) {
 		tod_manager_.add_time_area(t);
 	}
 
@@ -301,7 +317,7 @@ void play_controller::init(CVideo& video)
 			break;
 		}
 		// troops of armory
-		foreach (config &i, armory_cfg.child_range("unit")) {
+		BOOST_FOREACH (config &i, armory_cfg.child_range("unit")) {
 			// i["cityno"] = 0;
 			unit* u = new unit(units_, heros_, teams_, i); // ???
 			u->new_turn();
@@ -383,6 +399,30 @@ void play_controller::init(CVideo& video)
 	rpg::forbids = 0;
 	team::empty_side_ = -1;
 
+	tent::mode = NONE_MODE;
+	if (gamestate_.classification().mode == "rpg") {
+		tent::mode = RPG_MODE;
+	} else if (gamestate_.classification().mode == "tower") {
+		tent::mode = TOWER_MODE;
+	}
+	if (tent::mode != TOWER_MODE) {
+		increase_xp::ability_per_xp = 1;
+		increase_xp::arms_per_xp = 3;
+		increase_xp::skill_per_xp = 16;
+		increase_xp::meritorious_per_xp = 5;
+		increase_xp::navigation_per_xp = 2;
+	} else {
+		increase_xp::ability_per_xp = 3;
+		increase_xp::arms_per_xp = 9;
+		increase_xp::skill_per_xp = 48;
+		increase_xp::meritorious_per_xp = 15;
+		increase_xp::navigation_per_xp = 6;
+	}
+	if (level_["modify_placing"].to_bool()) {
+		// modifying placing...
+		place_sides_in_preferred_locations();
+	}
+
 	config& player_cfg = gamestate_.get_variables().child("player");
 	if (!player_cfg || !player_cfg.has_attribute("hero")) {
 		rpg::stratum = hero_stratum_leader;
@@ -395,7 +435,7 @@ void play_controller::init(CVideo& video)
 	config side_cfg;
 	if (level_.child_count("side")) {
 		// calculate count of team.
-		foreach (const config &side, level_.child_range("side")) {
+		BOOST_FOREACH (const config &side, level_.child_range("side")) {
 			if (side["controller"].str() == "null") {
 				team_size ++;
 			}
@@ -412,7 +452,7 @@ void play_controller::init(CVideo& video)
 		}
 
 		// [side] ---> class team
-		foreach (const config &side, level_.child_range("side")) {
+		BOOST_FOREACH (const config &side, level_.child_range("side")) {
 			side_cfg = side;
 			game_events::wml_expand_if(side_cfg);
 			if (first_human_team_ == -1) {
@@ -508,43 +548,47 @@ void play_controller::init(CVideo& video)
 		}
 	}
 
-	if (replaying_) {
-		// first command: start, second command: tent
-		do_replay_handle(1, "");
-	}
-
-	if (tent::ai_count) {
+	if (level_.has_attribute("employ_count") || level_.has_attribute("ai_count")) {
+		int random = get_random();
 		std::set<int> candidate;
 		for (hero_map::iterator it = heros_.begin(); it != heros_.end(); ++ it) {
 			hero& h = *it;
 			if (hero::is_commoner(h.number_) || hero::is_system(h.number_)) {
 				continue;
 			}
-			if (h.status_ == hero_status_unstage && h.gender_ != hero_gender_neutral && h.ambition_ != hero_ambition_4) {
+			if (h.status_ == hero_status_unstage && h.gender_ != hero_gender_neutral && !h.get_flag(hero_flag_robber)) {
 				candidate.insert(h.number_);
 			}
 		}
-		int random = get_random();
+		int employ_count = level_["employ_count"].to_int();
+		for (std::vector<team>::iterator it = teams_.begin(); it != teams_.end(); ++ it) {
+			team& t = *it;
+			if (!t.is_ai()) continue;
+			fill_employ_hero(candidate, employ_count, random);
+		}
+	
+		int ai_count = level_["ai_count"].to_int();
 		for (std::vector<team>::iterator it = teams_.begin(); it != teams_.end(); ++ it) {
 			team& t = *it;
 			if (!t.is_ai()) continue;
 			std::vector<artifical*>& holded = t.holded_cities();
 			for (std::vector<artifical*>::iterator it2 = holded.begin(); it2 != holded.end(); ++ it2) {
 				artifical& c = **it2;
-				c.fill_ai_hero(candidate, tent::ai_count, random);
+				c.fill_ai_hero(candidate, ai_count, random);
+				std::vector<hero*>& freshes = c.fresh_heros();
+				if (t.leader()->number_ == hero::number_empty_leader && !freshes.empty()) {
+					hero* l = c.select_leader(random);
+					if (l) {
+						t.set_leader(l);
+					}
+				}
 			}
 		}
-		tent::ai_count = 0;
 	}
 
 	str_2_provoke_cache(units_, heros_, level_["provoke_cache"]);
-/*
-	{
-		int ii = 0;
-		find_unit(units_, heros_[70])->do_provoked(*find_unit(units_, heros_[123]), 2);
-		teams_[1].set_tactic_point(10);
-	}
-*/
+	tactic_cache::str_2_cache(units_, heros_, level_["tactic_cache"]);
+
 	// mouse_handler expects at least one team for linger mode to work.
 	if (teams_.empty()) end_level_data_.linger_mode = false;
 
@@ -559,13 +603,6 @@ void play_controller::init(CVideo& video)
 	loadscreen::start_stage("init theme");
 	const config &theme_cfg = get_theme(game_config_, level_["theme"]);
 
-	tent::mode = NONE_MODE;
-	if (gamestate_.classification().mode == "rpg") {
-		tent::mode = RPG_MODE;
-	} else if (gamestate_.classification().mode == "tower") {
-		tent::mode = TOWER_MODE;
-	}	
-	
 	// building terrain rules...
 	loadscreen::start_stage("build terrain");
 	gui_.reset(new game_display(units_, this, video, map_, tod_manager_, teams_, theme_cfg, level_));
@@ -585,6 +622,16 @@ void play_controller::init(CVideo& video)
 	// done initializing display...
 	if (first_human_team_ != -1) {
 		gui_->set_team(first_human_team_);
+		if (tent::mode == TOWER_MODE) {
+			std::vector<artifical*>& cities = teams_[first_human_team_].holded_cities();
+			for (std::vector<artifical*>::iterator it = cities.begin(); it != cities.end(); ++ it) {
+				artifical& city = **it;
+				if (!city.mayor()->valid()) {
+					city.select_mayor(NULL, false);
+				}
+			}
+		}
+
 	} else if (is_observer()) {
 		// Find first team that is allowed to be observered.
 		// If not set here observer would be without fog untill
@@ -627,7 +674,7 @@ void play_controller::init_managers()
 	LOG_NG << "done initializing managers... " << (SDL_GetTicks() - ticks_) << "\n";
 }
 
-static int placing_score(const config& side, const gamemap& map, const map_location& pos)
+static int placing_score(int mode, const config& side, const gamemap& map, const map_location& pos)
 {
 	int positions = 0, liked = 0;
 	const t_translation::t_list terrain = t_translation::read_list(side["terrain_liked"]);
@@ -644,7 +691,18 @@ static int placing_score(const config& side, const gamemap& map, const map_locat
 		}
 	}
 
-	return (100*liked)/positions;
+	int mode_bonus = 0;
+	if (mode == TOWER_MODE) {
+		// ensure side#1 to right, side#2 to left
+		int s = side["side"].to_int();
+		if (s == 1) {
+			mode_bonus = pos.x * 100;
+		} else {
+			mode_bonus = (map.w() - pos.x) * 100;
+		}
+	}
+
+	return (100*liked)/positions + mode_bonus;
 }
 
 struct placing_info {
@@ -669,11 +727,11 @@ void play_controller::place_sides_in_preferred_locations()
 	int num_pos = map_.num_valid_starting_positions();
 
 	int side_num = 1;
-	foreach (const config &side, level_.child_range("side"))
+	BOOST_FOREACH (const config &side, level_.child_range("side"))
 	{
 		for(int p = 1; p <= num_pos; ++p) {
 			const map_location& pos = map_.starting_position(p);
-			int score = placing_score(side, map_, pos);
+			int score = placing_score(tent::mode, side, map_, pos);
 			placing_info obj;
 			obj.side = side_num;
 			obj.score = score;
@@ -987,10 +1045,10 @@ void play_controller::rpg_exchange(const std::vector<size_t>& human_p, size_t ai
 		if (it != human_heros.begin()) {
 			str << ", ";
 		}
-		str << h.name();
+		str << help::tintegrate::generate_format(h.name(), help::tintegrate::hero_color);
 	}
 	symbols["human"] = str.str();
-	symbols["ai"] = ai_hero->name();
+	symbols["ai"] = help::tintegrate::generate_format(ai_hero->name(), help::tintegrate::hero_color);
 	game_events::show_hero_message(rpg::h, NULL, vgettext("You exchanged $ai using $human.", symbols), game_events::INCIDENT_INVALID);
 
 
@@ -1042,14 +1100,14 @@ void play_controller::rpg_independence(bool replaying)
 	std::string message;
 	utils::string_map symbols;
 	
-	symbols["first"] = rpg::h->name();
-	symbols["second"] = rpg_city->name();
+	symbols["first"] = help::tintegrate::generate_format(rpg::h->name(), help::tintegrate::hero_color);
+	symbols["second"] = help::tintegrate::generate_format(rpg_city->name(), help::tintegrate::hero_color);
 	game_events::show_hero_message(rpg::h, rpg_city, vgettext("$first declared independence.", symbols), game_events::INCIDENT_INDEPENDENCE);
 
 	if (from_team.defeat_vote()) {
 		aggressing = NULL;
 
-		symbols["first"] = from_team.name();
+		symbols["first"] = help::tintegrate::generate_format(from_team.name(), help::tintegrate::hero_color);
 		game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$first is defeated.", symbols), game_events::INCIDENT_DEFEAT);
 	}
 	hero* from_leader = from_team.leader();
@@ -1137,8 +1195,8 @@ void play_controller::rpg_independence(bool replaying)
 		}
 		city->independence(independenced, to_team, rpg_city, from_team, aggressing, from_leader, from_leader_unit);
 		if (independenced && city != rpg_city) {
-			symbols["first"] = city->name();
-			symbols["second"] = rpg::h->name();
+			symbols["first"] = help::tintegrate::generate_format(city->name(), help::tintegrate::object_color);
+			symbols["second"] = help::tintegrate::generate_format(rpg::h->name(), help::tintegrate::hero_color);
 			game_events::show_hero_message(&heros_[hero::number_scout], city, vgettext("$first declared belonging to $second.", symbols), game_events::INCIDENT_INVALID);
 		}
 	}
@@ -1178,6 +1236,10 @@ void play_controller::rpg_independence(bool replaying)
 	to_team.apply_holded_technologies_finish();
 	to_team.apply_holded_technologies_modify();
 
+	// statistic
+	to_team.cause_damage_ = from_team.cause_damage_;
+	to_team.been_damage_ = from_team.been_damage_;
+	to_team.defeat_units_ = from_team.defeat_units_;
 
 	// villages
 	std::set<map_location> villages = from_team.villages();
@@ -1206,6 +1268,31 @@ void play_controller::interior()
 void play_controller::technology_tree()
 {
 	menu_handler_.technology_tree(gui_->viewing_team() + 1);
+}
+
+void play_controller::employ()
+{
+	if (emploies_.empty()) {
+		gui2::show_transient_message(gui_->video(), "", _("There is no employable hero."));
+		return;
+	}
+	double ratio = 2.0;
+	gui2::temploy dlg(*gui_, teams_, units_, heros_, *this, emploies_, gui_->viewing_team() + 1, ratio, replaying_);
+	try {
+		dlg.show(gui_->video());
+	} catch(twml_exception& e) {
+		e.show(*gui_);
+		return;
+	}
+	if (dlg.get_retval() != gui2::twindow::OK) {
+		return;
+	}
+	team& current_team = teams_[gui_->viewing_team()];
+	hero& h = *emploies_[dlg.get_cursel()];
+	int cost = h.cost_ * ratio;
+	do_employ(*this, units_, current_team, h, cost, false);
+
+	show_context_menu(NULL, *gui_);
 }
 
 void play_controller::final_battle(int side_num, int human_capital, int ai_capital)
@@ -1280,6 +1367,23 @@ void play_controller::list()
 void play_controller::system()
 {
 	menu_handler_.system(gui_->viewing_team() + 1);
+}
+
+void play_controller::remove_active_tactic(int slot)
+{
+	const team& current_team = teams_[gui_->viewing_team()];
+	std::vector<unit*> actives = current_team.active_tactics();
+	if (slot < 0 || slot >= (int)actives.size()) {
+		return;
+	}
+	unit* u = actives[slot];
+	do_remove_active_tactic(*u, true);
+}
+
+void play_controller::bomb()
+{
+	team& current_team = teams_[gui_->viewing_team()];
+	mouse_handler_.set_card_playing(current_team, -1);
 }
 
 void play_controller::switch_list()
@@ -1468,6 +1572,7 @@ void play_controller::init_side(const unsigned int team_index, bool is_replay, b
 void play_controller::do_init_side(const unsigned int team_index)
 {
 	team& current_team = teams_[team_index];
+	std::stringstream strstr;
 
 	const std::string turn_num = str_cast(turn());
 	const std::string side_num = str_cast(team_index + 1);
@@ -1518,8 +1623,8 @@ void play_controller::do_init_side(const unsigned int team_index)
 			current_team.select_ing_technology();
 			if (current_team.ing_technology()) {
 				utils::string_map symbols;
-				symbols["begin"] = current_team.ing_technology()->name();
-				symbols["side"] = current_team.name();
+				symbols["begin"] = help::tintegrate::generate_format(current_team.ing_technology()->name(), "blue");
+				symbols["side"] = help::tintegrate::generate_format(current_team.name(), "green");
 				artifical* city = units_.city_from_cityno(current_team.leader()->city_);
 				if (city && tent::mode != TOWER_MODE) {
 					game_events::show_hero_message(&heros_[229], city, 
@@ -1585,18 +1690,34 @@ void play_controller::do_init_side(const unsigned int team_index)
 			current_team.spend_gold(expense);
 		}
 
-		uint32_t gold = SDL_GetTicks();
-		posix_print("(gold)used time: %u ms\n", gold - new_turn);
+		{
+			// cast active tactics before calculate healing.
+			// some tactic maybe clear poision state, so that can heal.
+			const events::command_disabler disable_commands;
 
-		calculate_healing(player_number_, !skip_replay_);
-		uint32_t healing = SDL_GetTicks();
-		posix_print("(healing)used time: %u ms\n", healing - new_turn);
+			// cast active tactic
+			std::vector<unit*> tactics = current_team.active_tactics();
+			for (std::vector<unit*>::const_iterator it = tactics.begin(); it != tactics.end(); ++ it) {
+				unit& u = **it;
+				hero& h = *u.tactic_hero();
+				// why below tow statement need notice order. see remark#31
+				do_remove_active_tactic(u, false);
+				cast_tactic(teams_, units_, u, h, NULL, false, false);
+			}
 
-		reset_resting(units_, player_number_);
-		uint32_t resting = SDL_GetTicks();
-		posix_print("(resting)used time: %u ms\n", resting - healing);
+			uint32_t gold = SDL_GetTicks();
+			posix_print("(gold)used time: %u ms\n", gold - new_turn);
 
-		road_guarding(units_, teams_, gui_->road_locs(), player_number_);
+			calculate_healing(player_number_, !skip_replay_);
+			uint32_t healing = SDL_GetTicks();
+			posix_print("(healing)used time: %u ms\n", healing - new_turn);
+
+			reset_resting(units_, player_number_);
+			uint32_t resting = SDL_GetTicks();
+			posix_print("(resting)used time: %u ms\n", resting - healing);
+
+			road_guarding(units_, teams_, gui_->road_locs(), player_number_);
+		}
 	}
 
 	if (!loading_game_) {
@@ -1630,16 +1751,30 @@ void play_controller::to_config(config& cfg) const
 
 	cfg.merge_attributes(level_);
 
+	cfg.remove_attribute("employ_count");
+	cfg.remove_attribute("ai_count");
+	cfg.remove_attribute("modify_placing");
+
 	std::stringstream strstr;
 	strstr.str("");
 	for (std::vector<int>::const_iterator it = treasures_.begin(); it != treasures_.end(); ++ it) {
 		if (it != treasures_.begin()) {
-			strstr << ", " << *it;
-		} else {
-			strstr << *it;
+			strstr << ", ";
 		}
+		strstr << *it;
 	}
 	cfg["treasures"] = strstr.str();
+
+	// emploies
+	strstr.str("");
+	for (std::vector<hero*>::const_iterator it = emploies_.begin(); it != emploies_.end(); ++ it) {
+		int number = (*it)->number_;
+		if (it != emploies_.begin()) {
+			strstr << ", ";
+		}
+		strstr << number;
+	}
+	cfg["emploies"] = strstr.str();
 
 	if (final_capital_.first && !cfg.has_attribute("final_capital")) {
 		strstr.str("");
@@ -1651,9 +1786,12 @@ void play_controller::to_config(config& cfg) const
 		cfg["duel"] = "no";
 	} else if (duel_ == ALWAYS_DUEL) {
 		cfg["duel"] = "always";
+	} else {
+		cfg.remove_attribute("duel");
 	}
 
-	cfg["provoke_cache"] = provoke_cache_2_str(); 
+	cfg["provoke_cache"] = provoke_cache_2_str();
+	cfg["tactic_cache"] = tactic_cache::cache_2_str(); 
 
 	if (all_ai_allied_) {
 		cfg["ai_allied"] = all_ai_allied_;
@@ -1707,7 +1845,7 @@ void play_controller::to_config(config& cfg) const
 	cfg.merge_with(tod_manager_.to_config());
 
 	// Write terrain_graphics data in snapshot, too
-	foreach (const config &tg, level_.child_range("terrain_graphics")) {
+	BOOST_FOREACH (const config &tg, level_.child_range("terrain_graphics")) {
 		cfg.add_child("terrain_graphics", tg);
 	}
 
@@ -1715,9 +1853,22 @@ void play_controller::to_config(config& cfg) const
 	cfg["map_data"] = map_.write();
 }
 
+bool play_controller::scenario_env_changed(const tscenario_env& env) const
+{
+	if (env.duel != duel_) return true;
+	if (env.maximal_defeated_activity != game_config::maximal_defeated_activity) return true;
+	return false;
+}
+
 void play_controller::erase_treasure(int pos)
 {
 	treasures_.erase(treasures_.begin() + pos);
+}
+
+void play_controller::erase_employ(hero& h)
+{
+	std::vector<hero*>::iterator find = std::find(emploies_.begin(), emploies_.end(), &h);
+	emploies_.erase(find);
 }
 
 void play_controller::finish_side_turn()
@@ -1789,12 +1940,11 @@ bool play_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int in
 {
 	if (index >= 0) {
 		unsigned i = static_cast<unsigned>(index);
-		if((i < savenames_.size() && !savenames_[i].empty())
-		|| (i < wml_commands_.size() && wml_commands_[i] != NULL)) {
+		if ((i < savenames_.size() && !savenames_[i].empty()) || (i < wml_commands_.size() && wml_commands_[i] != NULL)) {
 			return true;
 		}
 	}
-	switch(command) {
+	switch (command) {
 
 	// Commands we can always do:
 	case hotkey::HOTKEY_ZOOM_IN:
@@ -1863,13 +2013,13 @@ void play_controller::tab()
 	switch(mode) {
 	case gui::TEXTBOX_MESSAGE:
 	{
-		foreach(const team& t, teams_) {
+		BOOST_FOREACH (const team& t, teams_) {
 			if(!t.is_empty())
 				dictionary.insert(t.current_player());
 		}
 
 		// Add observers
-		foreach(const std::string& o, gui_->observers()){
+		BOOST_FOREACH (const std::string& o, gui_->observers()){
 			dictionary.insert(o);
 		}
 		//Exclude own nick from tab-completion.
@@ -1919,6 +2069,28 @@ int play_controller::find_human_team_before(const size_t team_num) const
 		}
 	}
 	return human_side+1;
+}
+
+void play_controller::fill_employ_hero(std::set<int>& candidate, int count, int& random)
+{
+	// 1/3: wander
+	while (count && !candidate.empty()) {
+		int pos = random % candidate.size();
+		std::set<int>::iterator it = candidate.begin();
+		std::advance(it, pos);
+		hero& h = heros_[*it];
+
+		if (h.leadership_ >= ftofxp9(85) || h.charm_ >= ftofxp9(85)) {
+			h.status_ = hero_status_employable;
+			emploies_.push_back(&h);
+
+			candidate.erase(it);
+			count --;
+		}
+
+		random = random * 1103515245 + 12345;
+		random = (static_cast<unsigned>(random / 65536) % 32768);
+	}
 }
 
 void play_controller::slice_before_scroll() {
@@ -2149,6 +2321,9 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		if (rpging_ || tent::mode == TOWER_MODE) {
 			return false;
 		}
+		if (mouse_handler_.in_multistep_state()) {
+			return false;
+		}
 		// loc is in myself city.
 		city = units_.city_from_loc(loc);
 		if (itor.valid() && city && (city->side() == player_number_)) {
@@ -2164,13 +2339,18 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		if (rpging_) {
 			return false;
 		}
-		if (itor.valid() && !itor->is_artifical() && itor->human() && itor->attacks_left()) {
-			return true;
+		if (itor.valid() && !itor->is_artifical() && itor->human()) {
+			if (tent::mode == TOWER_MODE || itor->attacks_left()) {
+				return true;
+			}
 		}
 		break;
 
 	case hotkey::HOTKEY_EXTRACT:
 		if (tent::mode != TOWER_MODE) {
+			return false;
+		}
+		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
 		if (itor.valid() && !itor->is_artifical() && (itor->side() == player_number_)) {
@@ -2179,6 +2359,9 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		break;
 
 	case hotkey::HOTKEY_DEMOLISH:
+		if (mouse_handler_.in_multistep_state()) {
+			return false;
+		}
 		if (rpging_) {
 			return false;
 		}
@@ -2191,18 +2374,36 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		break;
 
 	case hotkey::HOTKEY_INTERIOR:
+		if (mouse_handler_.in_multistep_state()) {
+			return false;
+		}
 		if (rpging_) {
 			return false;
 		}
 		return !events::commands_disabled && !itor.valid();
 
 	case hotkey::HOTKEY_TECHNOLOGY_TREE:
+		if (mouse_handler_.in_multistep_state()) {
+			return false;
+		}
 		if (rpging_ || tent::mode == TOWER_MODE) {
 			return false;
 		}
 		return !events::commands_disabled && !itor.valid();
 
+	case hotkey::HOTKEY_EMPLOY:
+		if (mouse_handler_.in_multistep_state()) {
+			return false;
+		}
+		if (rpging_ || tent::mode != TOWER_MODE) {
+			return false;
+		}
+		return replaying_ || (!events::commands_disabled && !itor.valid());
+
 	case hotkey::HOTKEY_FINAL_BATTLE:
+		if (mouse_handler_.in_multistep_state()) {
+			return false;
+		}
 		if (rpging_ || tent::mode == TOWER_MODE) {
 			return false;
 		}
@@ -2210,6 +2411,9 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 
 	case hotkey::HOTKEY_LIST:
 	case hotkey::HOTKEY_SYSTEM:
+		if (mouse_handler_.in_multistep_state()) {
+			return false;
+		}
 		if (rpging_) {
 			return false;
 		}
@@ -2222,6 +2426,9 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		}
 	case hotkey::HOTKEY_RPG_DETAIL:
 	case hotkey::HOTKEY_RPG_TREASURE:
+		if (mouse_handler_.in_multistep_state()) {
+			return false;
+		}
 		if (rpging_) {
 			return true;
 		}
@@ -2245,7 +2452,24 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 	const artifical* city = units_.city_from_loc(loc);
 
 	switch(command) {
-	// Only display these if the mouse is over a castle or keep tile
+	case hotkey::HOTKEY_EMPLOY:
+		return !emploies_.empty();
+
+	case hotkey::HOTKEY_BUILD_M:
+		if (tent::mode == TOWER_MODE) {
+			if (units_.count(loc, false)) {
+				return false;
+			}
+			const unit_type* wall = unit_types.find_wall();
+			if (!wall->terrain_matches(map_.get_terrain(loc))) {
+				return false;
+			}
+			if (!current_team.may_build_count()) {
+				return false;
+			}
+		}
+		break;
+
 	case hotkey::HOTKEY_RECRUIT:
 		if (rpg::stratum == hero_stratum_citizen) {
 			return false;
@@ -2303,7 +2527,7 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 		if (!itor.valid() || itor->side() != player_number_ || unit_is_city(&*itor)) {
 			return false;
 		}
-		if (itor->is_artifical()) {
+		if (itor->is_artifical() && tent::mode != TOWER_MODE) {
 			const artifical* art = unit_2_artifical(&*itor);
 			const map_location* tiles;
 			size_t adjacent_size;
@@ -2390,6 +2614,27 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 	case hotkey::HOTKEY_RPG_INDEPENDENCE:
 		if (holded_cities.size() < 2) {
 			return false;
+		}
+		break;
+
+	case hotkey::HOTKEY_BUILD_TACTIC:
+		{
+			map_location adjs[6];
+			get_adjacent_tiles(loc, adjs);
+			BOOST_FOREACH (const map_location &adj, adjs) {
+				if (!map_.on_board(adj)) continue;
+				// Add the tile to be checked if it hasn't already been and
+				// isn't being checked.
+				if (map_.is_ea(adj)) {
+					std::map<const map_location, int>::const_iterator it = unit_map::economy_areas_.find(adj);
+					if (it != unit_map::economy_areas_.end()) {
+						const artifical& city = *units_.city_from_cityno(it->second);
+						if (city.tactic_on_ea()) {
+							return false;
+						}
+					}
+				}
+			}
 		}
 		break;
 	}	
@@ -2544,7 +2789,7 @@ void play_controller::check_victory()
 
 	if (non_interactive()) {
 		std::cout << "winner: ";
-		foreach (unsigned l, cities_teams) {
+		BOOST_FOREACH (unsigned l, cities_teams) {
 			std::string ai = ai::manager::get_active_ai_identifier_for_side(l);
 			if (ai.empty()) ai = "default ai";
 			std::cout << l << " (using " << ai << ") ";
@@ -2629,17 +2874,14 @@ bool play_controller::do_recruit(artifical* city, int cost_exponent, bool rpg_mo
 	// generated troop: 1)can full movement; 2)can full attack.
 	std::vector<const hero*> v;
 	v.push_back(&heros_[master->number_]);
-	city->hero_go_out(*master);
 	if (second->valid()) {
 		v.push_back(&heros_[second->number_]);
-		city->hero_go_out(*second);
 	}
 	if (third->valid()) {
 		v.push_back(&heros_[third->number_]);
-		city->hero_go_out(*third);
 	}
 
-	::do_recruit(units_, heros_, teams_, current_team, ut, v, *city, cost_exponent, true);
+	::do_recruit(units_, heros_, teams_, current_team, ut, v, *city, ut->cost() * cost_exponent / 100, true, true);
 
 	menu_handler_.clear_undo_stack(side_num);
 	refresh_city_buttons(*city);
@@ -2877,6 +3119,7 @@ map_location play_controller::move_unit(bool troop, team& current_team, const st
 	} else {
 		unit_ptr = pair.first;
 	}
+
 	map_location from = unit_ptr->get_location();
 	map_location unit_location_ = from;
 
@@ -3361,9 +3604,9 @@ bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int
 
 	// display dialog
 	utils::string_map symbols;
-	symbols["city"] = target_city->name();
-	symbols["first"] = my_team.name();
-	symbols["second"] = to_ally_team.name();
+	symbols["city"] = help::tintegrate::generate_format(target_city->name(), help::tintegrate::object_color);
+	symbols["first"] = help::tintegrate::generate_format(my_team.name(), help::tintegrate::hero_color);
+	symbols["second"] = help::tintegrate::generate_format(to_ally_team.name(), help::tintegrate::hero_color);
 	
 	if (s.type_ != strategy::DEFEND || !target_team.is_human() || !to_ally_team.is_enemy(target_side)) {
 		// calculate to_ally_team aggreen with whether or not.
@@ -3538,6 +3781,67 @@ const std::vector<map_location>& play_controller::road(const unit& u) const
 		stop_city = units_.city_from_cityno(u.cityno());
 	}
 	return road(start_city->cityno(), stop_city->cityno());
+}
+
+void play_controller::do_build(unit& builder, const unit_type* ut, const map_location& art_loc, int cost)
+{
+	// below maybe use animation, use disable_commands to avoid re-enter.
+	const events::command_disabler disable_commands;
+	const map_location& builder_loc = builder.get_location();
+	bool replay = cost >= 0;
+	team& builder_team = teams_[builder.side() - 1];
+
+	gui_->remove_temporary_unit();
+	// 单位站的格子和建造格子肯定相邻,不必移动
+	// 生成建筑
+	if (cost < 0) {
+		int cost_exponent = teams_[builder.side() - 1].cost_exponent();
+		cost = ut->cost() * cost_exponent / 100;
+		if (tent::mode == TOWER_MODE && builder_team.is_human()) {
+			// increase wall's cost.
+			cost *= tower_cost_ratio;
+		}
+	}
+	builder_team.spend_gold(cost);
+
+	// find city that owner this economy grid.
+	artifical* ownership_city = NULL;
+	std::map<const map_location, int>::const_iterator it = unit_map::economy_areas_.find(art_loc);
+	if (it != unit_map::economy_areas_.end()) {
+		ownership_city = units_.city_from_cityno(it->second);
+	} else if (tent::mode != TOWER_MODE && (ut == unit_types.find_keep() || ut == unit_types.find_wall())) {
+		ownership_city = find_city_for_wall(units_, art_loc);
+	}
+
+	if (!ownership_city) {
+		// this artifical isn't in city's economy area.
+		ownership_city = units_.city_from_cityno(builder.cityno());
+	}
+
+	if (!replay) {
+		recorder.add_build(ut, ownership_city->get_location(), builder_loc, art_loc, cost);
+		// 取消单位选中
+		mouse_handler_.select_hex(map_location(), false);
+	}
+
+	// reconstruct artifical that has trait
+	std::vector<const hero*> v;
+	if (ut->master() != HEROS_INVALID_NUMBER) {
+		v.push_back(&heros_[ut->master()]);
+	} else {
+		v.push_back(&ownership_city->master());
+	}
+	type_heros_pair pair(ut, v);
+	artifical new_art(units_, heros_, teams_, pair, ownership_city->cityno(), true);
+
+	units_.add(art_loc, &new_art);
+	
+	if (tent::mode != TOWER_MODE) {
+		// build hero endes turn.
+		builder.set_movement(0);
+		builder.set_attacks(0);
+		builder.set_goto(map_location());
+	}
 }
 
 int play_controller::human_players()

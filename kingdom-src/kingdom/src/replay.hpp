@@ -32,6 +32,7 @@ class unit_map;
 class play_controller;
 class unit_type;
 struct time_of_day;
+class tscenario_env;
 
 class replay: public rand_rng::rng, public command_pool
 {
@@ -45,19 +46,20 @@ public:
 	bool is_skipping() const;
 
 	void add_start();
-	void add_tent(int ai_count, int duel);
 	void add_recruit(const std::string& type, const map_location& loc, std::vector<const hero*>& troop_heros, int cost, bool human);
-	void add_expedite(bool troop, int index, const std::vector<map_location>& steps, bool zero = false);
 	void add_disband(int unit_index, const map_location& loc, int income = 0);
+	void add_employ(hero& h, int cost = 0);
 	void add_armory(const map_location& loc, const std::vector<size_t>& diff);
 	void add_move_heros(const map_location& src, const map_location& dst, std::set<size_t>& heros);
 	void add_belong_to(const unit* u, const artifical* to, bool loyalty);
 	void add_build_begin(const std::string& type);
 	void add_build(const unit_type* type, const map_location& city_loc, const map_location& builder_loc, const map_location& art_loc, int cost);
-	void add_cast_tactic(const unit& tactician, const hero& h, const unit* special);
+	void add_cast_tactic(const unit& tactician, const hero& h, const unit* special, bool consume);
 	void add_build_cancel();
 	void add_countdown_update(int value,int team);
-	void add_movement(const std::vector<map_location>& steps);
+	void add_movement(const std::vector<map_location>& steps, bool direct = false);
+	void add_expedite(bool troop, int index, const std::vector<map_location>& steps, bool zero = false, bool direct = false);
+	void add_bomb(const team& t);
 	void add_attack(const unit& a, const unit& b,
 		int att_weapon, int def_weapon, const std::string& attacker_type_id,
 		const std::string& defender_type_id, int attacker_lvl,
@@ -77,6 +79,7 @@ public:
 	void erase_card(int side, int index, const map_location& loc, std::vector<std::pair<int, unit*> >& touched, bool dialog);
 	void add_interior(const artifical& city);
 	void add_reform_captain(const unit& u, const hero& h, bool join);
+	void active_tactic(bool add, const unit& u, const hero& h);
 	void init_side();
 	void end_turn();
 	void init_ai();
@@ -88,6 +91,7 @@ public:
 	void add_assemble_treasure(const std::map<int, int>& diff);
 	void add_rpg_exchange(const std::set<size_t>& checked_human, size_t checked_ai);
 	void add_ing_technology(const std::string& id);
+	void add_scenario_env(const tscenario_env& env);
 
 	void add_log_data(const std::string &key, const std::string &var);
 	void add_log_data(const std::string &category, const std::string &key, const std::string &var);

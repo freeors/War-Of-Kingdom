@@ -19,9 +19,6 @@
 
 #include "map.hpp"
 
-#define core_enable_save_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_core, IDM_SAVE, fEnable)
-#define core_get_save_btn()				(ToolBar_GetState(gdmgr._htb_core, IDM_SAVE) & TBSTATE_ENABLED)
-
 namespace ns {
 	int clicked_utype;
 	int clicked_attack;
@@ -105,6 +102,8 @@ void tunit_type::from_config(const unit_type* ut)
 		income_ = ut->gold_income();
 	} else if (master_ == hero::number_technology || master_ == hero::number_scholar) {
 		income_ = ut->technology_income();
+	} else if (master_ == hero::number_tactic) {
+		income_ = ut->miss_income();
 	} else {
 		income_ = 0;
 	}
@@ -304,7 +303,7 @@ void tunit_type::from_ui_utype_type(HWND hdlgP)
 		hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPEARTIFICAL_GUARD);
 		guard_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
-		if (master_ == hero::number_market || master_ == hero::number_technology) {
+		if (master_ == hero::number_market || master_ == hero::number_technology || master_ == hero::number_tactic) {
 			income_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_UTYPEARTIFICAL_INCOME));
 		}
 	}
@@ -494,12 +493,14 @@ void tunit_type::update_to_ui_utype_edit_type(HWND hdlgP) const
 		if (guard_ != NO_GUARD) {
 			strstr << utf8_2_ansi(dgettext(PACKAGE, attacks_[guard_].id_.c_str()));
 		}
-		if (master_ == hero::number_market || master_ == hero::number_technology) {
+		if (master_ == hero::number_market || master_ == hero::number_technology || master_ == hero::number_tactic) {
 			strstr << "\r\n";
 			if (master_ == hero::number_market) {
 				strstr << utf8_2_ansi(_("Base income gold"));
 			} else if (master_ == hero::number_technology) {
 				strstr << utf8_2_ansi(_("Base income technology"));
+			} else if (master_ == hero::number_tactic) {
+				strstr << utf8_2_ansi(_("Miss ratio"));
 			}
 			strstr << ": " << income_;
 		}
@@ -749,17 +750,17 @@ void tunit_type::generate() const
 				strstr << "\tguard = " << guard_ << "\n";
 			}
 			if (master_ == hero::number_wall) {
-				strstr << "\tmatch = G*^*,R*^*,S*^*,H*^*" << "\n";
+				strstr << "\tmatch = G*^*,R*^*,S*^*,H*^*,D*^*" << "\n";
 				strstr << "\tterrain = Ch" << "\n";
 				strstr << "\tbase = yes" << "\n";
 				strstr << "\twall = yes" << "\n";
 				strstr << "\twalk_wall = yes" << "\n";
 			} else if (master_ == hero::number_keep) {
-				strstr << "\tmatch = G*^*,R*^*,S*^*,H*^*" << "\n";
+				strstr << "\tmatch = G*^*,R*^*,S*^*,H*^*,D*^*" << "\n";
 				strstr << "\tterrain = Kud" << "\n";
 				strstr << "\twalk_wall = yes" << "\n";
 				strstr << "\tcancel_zoc = yes" << "\n";
-			} else if (master_ == hero::number_market || master_ == hero::number_technology) {
+			} else if (master_ == hero::number_market || master_ == hero::number_technology || master_ == hero::number_tactic) {
 				strstr << "\tmatch = Ea" << "\n";
 				strstr << "\tincome = " << income_ << "\n";
 			} else if (master_ == hero::number_tower) {
@@ -2500,7 +2501,11 @@ BOOL On_DlgUTypeCommonerInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	strstr << "(-1: ";
 	strstr << utf8_2_ansi(_("Unrestricted")) << ")";
 	Button_SetText(GetDlgItem(hdlgP, IDC_STATIC_UNRESTRAINT), strstr.str().c_str());
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income gold")));
+	if (ns::utype.master_ == hero::number_scholar) {
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income technology")));
+	} else {
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income gold")));
+	}
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPECOMMONER_MASTER);
 	int selected_row = -1;
@@ -2659,7 +2664,13 @@ BOOL On_DlgUTypeArtificalInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("Type")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HEAL), utf8_2_ansi(_("Recover HP per turn")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_GUARD), utf8_2_ansi(_("Guard attack")));
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income gold")));
+	if (ns::utype.master_ == hero::number_technology) {
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income technology")));
+	} else if (ns::utype.master_ == hero::number_tactic) {
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Miss ratio")));
+	} else {
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income gold")));
+	}
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPEARTIFICAL_MASTER);
 	int selected_row = -1;
@@ -2695,9 +2706,13 @@ BOOL On_DlgUTypeArtificalInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// income
 	hctl = GetDlgItem(hdlgP, IDC_UD_UTYPEARTIFICAL_INCOME);
-	UpDown_SetRange(hctl, 0, 1000);	// [0, 1000]
+	if (ns::utype.master_ != hero::number_tactic) {
+		UpDown_SetRange(hctl, 0, 1000);	// [0, 1000]
+	} else {
+		UpDown_SetRange(hctl, 0, 100);	// [0, 100]
+	}
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_UTYPEARTIFICAL_INCOME));
-	if (ns::utype.master_ == hero::number_market || ns::utype.master_ == hero::number_technology) {
+	if (ns::utype.master_ == hero::number_market || ns::utype.master_ == hero::number_technology || ns::utype.master_ == hero::number_tactic) {
 		UpDown_SetPos(hctl, ns::utype.income_);
 	} else {
 		UpDown_SetPos(hctl, 0);
@@ -2721,7 +2736,7 @@ void OnUTypeArtificalCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	int master = ComboBox_GetItemData(hwndCtrl, ComboBox_GetCurSel(hwndCtrl));
 	
 	HWND hctl = GetDlgItem(hdlgP, IDC_UD_UTYPEARTIFICAL_INCOME);
-	if (master == hero::number_market || master == hero::number_technology) {
+	if (master == hero::number_market || master == hero::number_technology || master == hero::number_tactic) {
 		UpDown_SetPos(hctl, ns::utype.income_);
 		Edit_Enable(GetDlgItem(hdlgP, IDC_ET_UTYPEARTIFICAL_INCOME), TRUE);
 		EnableWindow(hctl, TRUE);
@@ -3596,7 +3611,13 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.mask = LVIF_TEXT;
 			lvi.iSubItem = index ++;
 			strstr.str("");
-			strstr << (ut->gold_income()? ut->gold_income(): ut->technology_income());
+			if (ut->master() == hero::number_market || ut->master() == hero::number_businessman) {
+				strstr << ut->gold_income();
+			} else if (ut->master() == hero::number_technology || ut->master() == hero::number_scholar) {
+				strstr << ut->technology_income();
+			} else if (ut->master() == hero::number_tactic) {
+				strstr << ut->miss_income();
+			}
 			strcpy(text, strstr.str().c_str());
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);

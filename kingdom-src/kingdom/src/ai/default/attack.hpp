@@ -48,11 +48,9 @@ public:
 	attack_analysis& operator=(const attack_analysis& that);
 
 	void analyze(const gamemap& map, unit_map& units,
-				std::map<std::pair<const unit*, const unit_type*>, battle_context*>& unit_stats_cache,
+				std::map<std::pair<const unit*, const unit*>, battle_context*>& unit_stats_cache,
 				const std::vector<std::pair<unit*, int> >& units2,
-				const std::multimap<map_location, int>& srcdst2, const std::multimap<int, map_location>& dstsrc2,
-				std::map<unit*, std::pair<map_location, unit*>* >& reside_cache,
-				double aggression);
+				const std::multimap<map_location, int>& srcdst2, const std::multimap<int, map_location>& dstsrc2);
 
 	double rating(double aggression) const;
 
@@ -73,8 +71,8 @@ public:
 
 	int target_starting_damage;
 
-	/** The average hitpoints damage taken. */
-	double avg_damage_taken;
+	/** whether target had dead or not. */
+	bool target_dead;
 
 	/** The sum of the values of units used in the attack. */
 	double resources_used;
@@ -98,7 +96,7 @@ private:
 	double chance_to_kill_;
 	double avg_losses_;
 	double avg_damage_inflicted_;
-	double avg_damage_taken_;
+	double target_dead_;
 	double resources_used_;
 	double terrain_quality_;
 	double def_avg_experience_;

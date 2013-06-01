@@ -22,7 +22,6 @@
 #include "gettext.hpp"
 #include "game_display.hpp"
 #include "team.hpp"
-#include "hero.hpp"
 #include "artifical.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/button.hpp"
@@ -36,6 +35,7 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -126,7 +126,7 @@ void tfinal_battle::pre_show(CVideo& /*video*/, twindow& window)
 	symbols["count"] = str.str();
 	label->set_use_markup(true);
 	str.str("");
-	str << "<255,0,0>" << vgettext("wesnoth-lib", "If capture $count cities again, all AI will ally.", symbols);
+	str << help::tintegrate::generate_format(vgettext("wesnoth-lib", "If capture $count cities again, all AI will ally.", symbols), "red");
 	label->set_label(str.str());
 
 	tlistbox* list = find_widget<tlistbox>(&window, "city_list", false, true);

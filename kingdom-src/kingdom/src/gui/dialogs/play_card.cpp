@@ -266,12 +266,7 @@ void tplay_card::refresh_tooltip(twindow& window)
 
 	// contex button
 	tbutton* button = find_widget<tbutton>(&window, "tip_button", false, true);
-	if (!c.decree()) {
-		button->set_visible(twidget::INVISIBLE);
-	} else {
-		button->set_label(_("Our cities"));
-		button->set_visible(twidget::VISIBLE);
-	}
+	button->set_visible(twidget::INVISIBLE);
 }
 
 void tplay_card::pre_show(CVideo& /*video*/, twindow& window)

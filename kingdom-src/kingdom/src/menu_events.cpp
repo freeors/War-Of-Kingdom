@@ -77,6 +77,8 @@
 
 #include <boost/bind.hpp>
 
+extern double tower_cost_ratio;
+
 namespace events{
 
 class disband_reside_troop : public gui2::button_action
@@ -251,7 +253,7 @@ void menu_handler::objectives(int side_num)
 		game_events::queued_event("_from_interface", map_location(),
 			map_location(), config()), vconfig(cfg));
 	team &current_team = teams_[side_num - 1];
-	dialogs::show_objectives(level_, current_team.objectives());
+	dialogs::show_objectives(level_, current_team);
 	current_team.reset_objectives_changed();
 }
 
@@ -628,7 +630,7 @@ void menu_handler::expedite(int side_num, const map_location &last_hex)
 
 	units_.set_expediting(city, true, troop_index);
 	events::mouse_handler* mousehandler = events::mouse_handler::get_singleton();
-	mousehandler->set_recalling(city, troop_index);
+	mousehandler->set_expedite(city, troop_index);
 
 	gui_->clear_attack_indicator();
 	return;
@@ -662,7 +664,7 @@ void menu_handler::play_card(bool browse, int side_num)
 			return;
 		}
 		events::mouse_handler* mousehandler = events::mouse_handler::get_singleton();
-		mousehandler->set_card_playing(dlg.card_index());
+		mousehandler->set_card_playing(current_team, dlg.card_index());
 
 		gui_->hide_context_menu(NULL, true);
 	}	
@@ -728,10 +730,8 @@ void menu_handler::move(bool browse, int side_num, const map_location &last_hex)
 
 	for (std::set<size_t>::iterator itor = checked_heros.begin(); itor != checked_heros.end(); ++ itor) {
 		hero* h = heros[*itor - has_erase_heros];
+		src_city->hero_go_out(*h);
 		dst_city->move_into(*h);
-		// 注意: 后面那个括号一定要加
-		// 例: heros原来有7项, 删了四项后剩三项, has_erase_heros=4, 使得heors.begin() + *itor已是非法
-		heros.erase(heros.begin() + (*itor - has_erase_heros));
 		has_erase_heros ++;
 	}
 	gui_->invalidate(src_city->get_location());
@@ -742,25 +742,17 @@ void menu_handler::move(bool browse, int side_num, const map_location &last_hex)
 	resources::controller->refresh_city_buttons(*src_city);
 }
 
-void menu_handler::build(const std::string& type1, mouse_handler& mousehandler, unit& builder)
+void menu_handler::build(const std::string& type, mouse_handler& mousehandler, unit& builder)
 {
 	team& current_team = teams_[builder.side() - 1];
 	int cost_exponent = current_team.cost_exponent();
-	std::string type;
-	if (type1 == "market") {
-		type = unit_types.find_market()->id();
-	} else if (type1 == "technology") {
-		type = unit_types.find_technology()->id();
-	} else if (type1 == "keep") {
-		type = unit_types.find_keep()->id();
-	} else if (type1 == "wall") {
-		type = unit_types.find_wall()->id();
-	} else if (type1 == "tower") {
-		type = unit_types.find_tower()->id();
-	}
-	const unit_type* ut = unit_types.find(type);
 
-	if (ut->cost() * cost_exponent / 100 > current_team.gold()) {
+	const unit_type* ut = unit_types.id_type(type);
+	int cost = ut->cost() * cost_exponent / 100;
+	if (tent::mode == TOWER_MODE) {
+		cost *= tower_cost_ratio;
+	}
+	if (cost > current_team.gold()) {
 		gui2::show_transient_message(gui_->video(), "", _("You don't have enough gold to build that artifical"));
 		return;
 	}
@@ -768,57 +760,60 @@ void menu_handler::build(const std::string& type1, mouse_handler& mousehandler, 
 	// recorder.add_build_begin(builder.get_location(), type);
 	// recorder.add_build_begin(type);
 	
-	// construct a temporary artifical used to show animiator to player.
-	artifical* city = units_.city_from_cityno(builder.cityno());
-	std::vector<const hero*> v;
-	if (ut->master() != HEROS_INVALID_NUMBER) {
-		v.push_back(&heros_[ut->master()]);
-	} else {
-		v.push_back(&city->master());
-	}
-	type_heros_pair pair(ut, v);
-	artifical* new_unit = new artifical(units_, heros_, teams_, pair, builder.cityno(), false);
-		
-	gui_->set_build_indicator(&builder, new_unit);
-	if (gui_->build_indicator().empty()) {
-		// recorder.add_build_cancel();
-		if (!new_unit->wall()) {
-			gui2::show_transient_message(gui_->video(), "", _("There hasn't valid grid to build that artifical."));
+	if (tent::mode != TOWER_MODE) {
+		// construct a temporary artifical used to show animiator to player.
+		artifical* city = units_.city_from_cityno(builder.cityno());
+		std::vector<const hero*> v;
+		if (ut->master() != HEROS_INVALID_NUMBER) {
+			v.push_back(&heros_[ut->master()]);
 		} else {
-			// will build is wall, find proper reason.
-			size_t i, i2;
-			for (i = 0; i < builder.adjacent_size_; i ++) {
-				const map_location& adj_loc = builder.adjacent_[i];
-				unit_map::const_iterator u_itor = units_.find(adj_loc);
-				if (!u_itor.valid()) {
-					u_itor = units_.find(adj_loc, false);
-				}
-				if (!u_itor.valid() && new_unit->terrain_matches(map_.get_terrain(adj_loc))) {
-					map_offset* adjacent2_ptr = adjacent_2[adj_loc.x & 0x1];
-					size_t size2 = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
-					for (i2 = 0; i2 < size2; i2 ++) {
-						artifical* city = units_.city_from_loc(map_location(adj_loc.x + adjacent2_ptr[i2].x, adj_loc.y + adjacent2_ptr[i2].y));
-						if (city && city->side() == new_unit->side() && calculate_keeps(units_, *city) < 2) {
+			v.push_back(&city->master());
+		}
+		type_heros_pair pair(ut, v);
+		artifical* new_unit = new artifical(units_, heros_, teams_, pair, builder.cityno(), false);
+	
+		gui_->set_build_indicator(&builder, new_unit);
+
+		if (gui_->build_indicator().empty()) {
+			// recorder.add_build_cancel();
+			if (!new_unit->wall()) {
+				gui2::show_transient_message(gui_->video(), "", _("There hasn't valid grid to build that artifical."));
+			} else {
+				// will build is wall, find proper reason.
+				size_t i, i2;
+				for (i = 0; i < builder.adjacent_size_; i ++) {
+					const map_location& adj_loc = builder.adjacent_[i];
+					unit_map::const_iterator u_itor = units_.find(adj_loc);
+					if (!u_itor.valid()) {
+						u_itor = units_.find(adj_loc, false);
+					}
+					if (!u_itor.valid() && new_unit->terrain_matches(map_.get_terrain(adj_loc))) {
+						map_offset* adjacent2_ptr = adjacent_2[adj_loc.x & 0x1];
+						size_t size2 = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
+						for (i2 = 0; i2 < size2; i2 ++) {
+							artifical* city = units_.city_from_loc(map_location(adj_loc.x + adjacent2_ptr[i2].x, adj_loc.y + adjacent2_ptr[i2].y));
+							if (city && city->side() == new_unit->side() && calculate_keeps(units_, *city) < 2) {
+								break;
+							}
+						}
+						if (i2 != size2) {
 							break;
 						}
 					}
-					if (i2 != size2) {
-						break;
-					}
+				}
+				if (i == builder.adjacent_size_) {
+					gui2::show_transient_message(gui_->video(), "", _("There hasn't valid grid to build that artifical."));
+				} else {
+					gui2::show_transient_message(gui_->video(), "", _("Must exist tow keep at least before building wall."));
 				}
 			}
-			if (i == builder.adjacent_size_) {
-				gui2::show_transient_message(gui_->video(), "", _("There hasn't valid grid to build that artifical."));
-			} else {
-				gui2::show_transient_message(gui_->video(), "", _("Must exist tow keep at least before building wall."));
-			}
+			delete new_unit;
+			return;
 		}
-		delete new_unit;
-		// mousehandler.set_show_menu(true);
-		return;
+		mousehandler.set_building(new_unit);
+	} else {
+		resources::controller->do_build(builder, ut, builder.get_location());
 	}
-
-	mousehandler.set_building(new_unit);
 }
 
 void menu_handler::extract(mouse_handler& mousehandler, unit& u)
@@ -867,9 +862,14 @@ void menu_handler::extract(mouse_handler& mousehandler, unit& u)
 
 void menu_handler::demolish(mouse_handler& mousehandler, unit* u)
 {
-	std::string message;
+	std::string message, color;
 	utils::string_map symbols;
-	symbols["type"] = u->name();
+	if (u->is_artifical()) {
+		color = help::tintegrate::object_color;
+	} else {
+		color = help::tintegrate::hero_color;
+	}
+	symbols["type"] = help::tintegrate::generate_format(u->name(), color);
 	message = vgettext("Do you really want to demolish $type?", symbols);
 	int res = gui2::show_message(gui_->video(), "", message, gui2::tmessage::yes_no_buttons);
 	if (res != gui2::twindow::OK) {
@@ -878,35 +878,12 @@ void menu_handler::demolish(mouse_handler& mousehandler, unit* u)
 
 	int side = u->side();
 	team& current_team = teams_[side - 1];
-/*	artifical* city = units_.city_from_cityno(u->cityno());
-	map_location loc = u->get_location();
-
-	std::vector<hero*> vh;
-	if (!u->is_artifical()) {
-		vh.push_back(&u->master());
-		if (u->second().valid()) {
-			vh.push_back(&u->second());
-		}
-		if (u->third().valid()) {
-			vh.push_back(&u->third());
-		}
-	}
-
-	units_.erase(u);
-	recorder.add_disband(u->base()? -1 * unit_map::BASE: -1 * unit_map::OVERLAY, loc);
-*/
 	int income = u->is_artifical()? 0: calculate_disband_income(*u, current_team.cost_exponent(), true);
-	do_demolish(*gui_, units_, current_team, u, income, false);
+	do_demolish(*gui_, units_, current_team, u, income, true);
 
 	mousehandler.clear();
 	clear_undo_stack(side);
-/*
-	if (!u->is_artifical()) {
-		for (std::vector<hero*>::iterator it = vh.begin(); it != vh.end(); ++ it) {
-			city->finish_into(**it, hero_status_backing);
-		}
-	}
-*/
+
 	gui_->goto_main_context_menu();
 }
 
@@ -1184,15 +1161,31 @@ void menu_handler::update_shroud_now(int side_num)
 
 bool menu_handler::end_turn(int side_num)
 {
-	if (tent::mode == TOWER_MODE || rpg::stratum == hero_stratum_citizen) {
-		return true;
-	}
-
 	const team& current_team = teams_[side_num - 1];
+	std::stringstream strstr;
+	utils::string_map symbols;
 	if (!current_team.is_human()) {
 		return true;
 	}
-	
+
+	if (tent::mode == TOWER_MODE) {
+		std::vector<unit*> actives = current_team.active_tactics();
+		if ((int)actives.size() >= game_config::active_tactic_slots) {
+			return true;
+		}
+		symbols["count"] = help::tintegrate::generate_format(game_config::active_tactic_slots - actives.size(), help::tintegrate::hero_color, 0, true, true);
+		
+		strstr << vgettext("There is $count vacant tactic. Do you really want to end your turn?", symbols);
+		int res = gui2::show_message(gui_->video(), "", strstr.str(), gui2::tmessage::yes_no_buttons, "hero-256/230.png");
+		if (res != gui2::twindow::OK) {
+			return false;
+		}
+		return true;
+	}
+	if (rpg::stratum == hero_stratum_citizen) {
+		return true;
+	}
+
 	const std::vector<artifical*>& holded_cities = current_team.holded_cities();
 
 	size_t freshes = 0;
@@ -1234,23 +1227,22 @@ bool menu_handler::end_turn(int side_num)
 	}
 
 	if (fresh_imloyalty) {
-		std::stringstream str;
-		utils::string_map symbols;
+		strstr.str("");
 		symbols["city"] = (*fresh_imloyalty_cities.begin())->name();
-		str.str("");
-		str << fresh_imloyalty_cities.size();
-		symbols["cities"] = str.str();
-		str.str("");
-		str << fresh_imloyalty;
-		symbols["heros"] = str.str();
+		strstr.str("");
+		strstr << fresh_imloyalty_cities.size();
+		symbols["cities"] = strstr.str();
+		strstr.str("");
+		strstr << fresh_imloyalty;
+		symbols["heros"] = strstr.str();
 
-		str.str("");
+		strstr.str("");
 		if (fresh_imloyalty_cities.size() > 1) {
-			str << vgettext("$city and other $cities cities have $heros low loyalty heros. If not process, heros may wander in next turn. Do you really want to end your turn?", symbols);
+			strstr << vgettext("$city and other $cities cities have $heros low loyalty heros. If not process, heros may wander in next turn. Do you really want to end your turn?", symbols);
 		} else {
-			str << vgettext("$city has $heros low loyalty heros. If not process, heros may wander in next turn. Do you really want to end your turn?", symbols);
+			strstr << vgettext("$city has $heros low loyalty heros. If not process, heros may wander in next turn. Do you really want to end your turn?", symbols);
 		}
-		int res = gui2::show_message(gui_->video(), "", str.str(), gui2::tmessage::yes_no_buttons, "hero-256/230.png");
+		int res = gui2::show_message(gui_->video(), "", strstr.str(), gui2::tmessage::yes_no_buttons, "hero-256/230.png");
 		if (res != gui2::twindow::OK) {
 			return false;
 		}

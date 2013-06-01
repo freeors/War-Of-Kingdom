@@ -20,7 +20,6 @@
 #include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "hero.hpp"
 #include "team.hpp"
 #include "artifical.hpp"
 #include "card.hpp"
@@ -263,8 +262,8 @@ void tcity_list::fill_table(int catalog)
 
 		} else if (catalog == INTERIOR_PAGE) {
 			str.str("");
-			if (i->decree().first) {
-				str << i->decree().first->name() << "(" << i->decree().second << ")";
+			if (i->decree()) {
+				str << i->decree()->name();
 			} else {
 				str << dgettext("wesnoth-lib", "None");
 			}

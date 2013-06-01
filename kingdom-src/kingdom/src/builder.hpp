@@ -78,6 +78,11 @@ public:
 	typedef std::vector<animated<image::locator> > imagelist;
 
 	/** Constructor for the terrain_builder class.
+	 * used to generate tb.dat
+	 */
+	terrain_builder(const std::string& offmap_image, uint32_t nfiles, uint32_t sum_size, uint32_t modified);
+
+	/** Constructor for the terrain_builder class.
 	 *
 	 * @param level		A level (scenario)-specific configuration file,
 	 *		    containing scenario-specific [terrain_graphics] rules.
@@ -88,8 +93,7 @@ public:
 	 *						This image automatically gets the 'terrain/' prefix
 	 *						and '.png' suffix
 	 */
-	terrain_builder(const config &level, const gamemap* map,
-			const std::string& offmap_image);
+	terrain_builder(const gamemap* map);
 	~terrain_builder();
 
 	/**  Set the config where we will parse the global terrain rules.
@@ -169,9 +173,7 @@ public:
 		rule_image_variant(const std::string &image_string, const std::string& variations, bool random_start = true) :
 			image_string(image_string),
 			variations(variations),
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 			images(),
-#endif
 			tods(),
 			random_start(random_start)
 			{};
@@ -207,9 +209,7 @@ public:
 		 * This will be the image locator which will actually
 		 * be returned to the user.
 		 */
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 		std::vector< animated<image::locator> > images;
-#endif
 
 		/** The Time of Day associated to this variant (if any)*/
 		std::set<std::string> tods;

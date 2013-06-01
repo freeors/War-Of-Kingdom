@@ -316,13 +316,14 @@ void controller_base::play_slice(bool is_delay_enabled)
 	const theme::menu* m = loc.first;
 	if (m && (m == gui.access_troop_menu())) {
 		map_location pressed_loc = gui.access_list_press(loc.second);
+		events::mouse_handler& m_handler = *events::mouse_handler::get_singleton();
 		if (pressed_loc.x == MAGIC_HERO && pressed_loc.y >= 0) {
 			hero& h = (*resources::heros)[pressed_loc.y];
-			events::mouse_handler::get_singleton()->set_hero_placing(&h);
+			m_handler.set_hero_placing(&h);
 			
-		} else if (pressed_loc.valid() && !get_mouse_handler_base().is_moving() && !get_mouse_handler_base().is_recalling() && !get_mouse_handler_base().is_building() && !get_mouse_handler_base().is_card_playing()) {
+		} else if (pressed_loc.valid() && !m_handler.in_multistep_state()) {
 			gui.scroll_to_tile(pressed_loc, display::WARP);
-			events::mouse_handler::get_singleton()->select_hex(map_location(), false);
+			m_handler.select_hex(map_location(), false);
 			// gui.select_hex(pressed_loc);
 			// sound::play_UI_sound("select-unit.wav");
 			resources::units->find(pressed_loc)->set_selecting();

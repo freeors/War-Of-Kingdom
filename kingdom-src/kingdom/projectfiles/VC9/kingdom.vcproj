@@ -204,10 +204,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\attack_prediction_display.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\boilerplate-header.cpp"
 				>
 			</File>
@@ -651,10 +647,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\attack_prediction.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\attack_prediction_display.hpp"
 				>
 			</File>
 			<File
@@ -1947,6 +1939,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\employ.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\employ.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\exchange.cpp"
 					>
 					<FileConfiguration
@@ -2367,6 +2383,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\map_generator.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\map_generator.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\message.cpp"
 					>
 					<FileConfiguration
@@ -2724,6 +2764,14 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\preferences.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\random_map.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\random_map.hpp"
 					>
 				</File>
 				<File

@@ -34,7 +34,7 @@ namespace ai {
 class ai_default : public ai_interface, public events::observer 
 {
 public:
-	static std::map<std::pair<const unit*, const unit_type*>, battle_context*>& unit_stats_cache();
+	static std::map<std::pair<const unit*, const unit*>, battle_context*>& unit_stats_cache();
 	static void clear_stats_cache();
 
 	typedef map_location location;//will get rid of this later
@@ -58,7 +58,7 @@ public:
 private:
 	void do_move();
 
-	bool do_combat(bool unmovementable = false);
+	bool do_combat();
 
 	bool do_recruitment(artifical& city);
 
@@ -69,7 +69,7 @@ private:
 	// map_location move_unit(const std::pair<unit*, int>& pair, location to, bool dst_must_reachable = true);
 
 	// attacks
-	void analyze_targets(std::vector<attack_analysis>& res, bool unmovementable);
+	void analyze_targets(std::vector<attack_analysis>& res);
 
 	void do_attack_analysis(
 	                unit* target_ptr,
@@ -88,11 +88,6 @@ private:
 		const terrain_filter* remove_destinations = NULL,
 		bool see_all = false) const;
 
-	void calculate_possible_moves2(std::pair<unit*, int>& troop,
-		pathfind::paths& res, std::vector<map_location>& srcdst,
-		bool enemy, bool assume_full_movement = false,
-		const terrain_filter* remove_destinations = NULL, bool see_all = false) const;
-
 	bool can_allied(const team& to, int target_side, artifical* aggressed);
 	void do_diplomatism(int index);
 	bool do_tactic(int index, bool first);
@@ -107,7 +102,7 @@ private:
 	const terrain_filter* get_avoid() const;
 
 private:
-	static std::map<std::pair<const unit*, const unit_type*>, battle_context*> unit_stats_cache_;
+	static std::map<std::pair<const unit*, const unit*>, battle_context*> unit_stats_cache_;
 
 	game_display& disp_;
 	gamemap& map_;
@@ -134,7 +129,6 @@ private:
 	double aggression_;
 	int attack_depth_;
 
-	std::map<unit*, std::pair<map_location, unit*>* > reside_cache_;
 	int* side_cache_int_;
 	size_t side_cache_size_;
 

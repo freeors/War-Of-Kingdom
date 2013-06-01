@@ -180,13 +180,14 @@ pathfind::plain_route pathfind::a_star_search(const map_location& src, const map
 
 	DBG_PF << "A* search: " << src << " -> " << dst << '\n';
 
-	if (calc->cost(dst, 0.8888) >= stop_at) {
+	double dst_cost = calc->cost(dst, 0.8888);
+	if (dst_cost >= stop_at) {
 		LOG_PF << "aborted A* search because Start or Dest is invalid\n";
 		pathfind::plain_route locRoute;
 		locRoute.move_cost = int(calc->getNoPathValue());
 		return locRoute;
 	}
-
+	
 	if (teleports && teleports->empty()) teleports = NULL;
 
 	std::vector<map_location> locs(teleports ? 6 + teleports->size() : 6 );
@@ -196,9 +197,10 @@ pathfind::plain_route pathfind::a_star_search(const map_location& src, const map
 
 	// increment search_counter but skip the range equivalent to uninitialized
 	search_counter += 2;
-	if (search_counter - bad_search_counter <= 1u)
+	if (search_counter - bad_search_counter <= 1u) {
 		search_counter += 2;
-
+	}
+	
 	static std::vector<node> nodes;
 	nodes.resize(width * height);  // this create uninitalized nodes
 
@@ -207,6 +209,14 @@ pathfind::plain_route pathfind::a_star_search(const map_location& src, const map
 
 	nodes[index(dst)].g = stop_at + 1;
 	nodes[index(src)] = node(0, src, map_location::null_location, dst, true, teleports);
+
+	// rember destination cost.
+	// is destination is all, don't remember! make below code find out right path.
+	// [see remark#40]
+	if (!is_wall) {
+		hash[index(dst)].in = search_counter;
+		hash[index(dst)].cost = dst_cost;
+	}
 
 	std::vector<int> pq;
 	pq.push_back(index(src));

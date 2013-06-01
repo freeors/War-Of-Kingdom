@@ -16,10 +16,7 @@
 #ifndef GUI_DIALOGS_MP_CREATE_GAME_HPP_INCLUDED
 #define GUI_DIALOGS_MP_CREATE_GAME_HPP_INCLUDED
 
-#include "gui/dialogs/dialog.hpp"
-#include "mp_game_settings.hpp"
-#include "mapgen.hpp"
-#include "scoped_resource.hpp"
+#include "random_map.hpp"
 #include "gui/dialogs/lobby/lobby_info.hpp"
 
 class config;
@@ -31,14 +28,19 @@ class tbutton;
 class tlabel;
 class ttext_box;
 
-class tmp_create_game : public tdialog, public lobby_base
+class tmp_create_game : public tdialog, public lobby_base, public trandom_map
 {
 public:
 
 	explicit tmp_create_game(game_display& gui, const config& cfg);
 
-	mp_game_settings& get_parameters();
 	int num_turns() const { return num_turns_; }
+
+protected:
+	void update_map_settings(twindow& window);
+	void post_update_map(twindow& window, int select);
+
+	game_display& gui() { return gui_; }
 private:
 
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
@@ -54,8 +56,6 @@ private:
 	 * Network polling callback
 	 */
 	void process_network_data(const config& data, const network::connection sock);
-
-	const config& cfg_;
 
 	/**
 	 * All fields are also in the normal field vector, but they need to be
@@ -77,37 +77,19 @@ private:
 
 public:
 
-	// another map selected
-	void update_map(twindow& window);
-
-	// use_map_settings toggled (also called in other cases.)
-	void generate_map(twindow& window);
-	void update_map_settings(twindow& window);
-
-	void regenerate_map(twindow& window);
-	void generator_settings(twindow& window);
 	void era(twindow& window);
 	void password(twindow& window);
 	void maximal_defeated_activity(twindow& window);
 
 private:
 	game_display& gui_;
-	std::vector<std::string> user_maps_;
-	util::scoped_ptr<map_generator> generator_;
-
 	int num_turns_;
 	int era_index_;
-	mp_game_settings parameters_;
 
 	ttext_box* name_entry_;
 
-	tbutton* generator_settings_;
-	tbutton* regenerate_map_;
 	tbutton* era_;
 	tbutton* launch_game_;
-
-	tlabel* num_players_label_;
-	tlabel* map_size_label_;
 
 	tbutton* maximal_defeated_activity_;
 };

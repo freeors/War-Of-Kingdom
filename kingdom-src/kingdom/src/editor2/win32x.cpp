@@ -574,7 +574,7 @@ void GetCurrentExePath(char *szCurExeDir)
 // @src: 可能是文件也可能是目录
 // @dst: 可能是文件也可能是目录
 // src时目录时，dst的base(dst)如果scr(base)，那么在dst下创建base(src)目录
-BOOL copyfile(char *src, char *dst)
+BOOL copyfile(const char *src, const char *dst)
 {
 	WIN32_FILE_ATTRIBUTE_DATA		fattrdata;
 	BOOL							fok = TRUE;

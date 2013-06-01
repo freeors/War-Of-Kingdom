@@ -17,17 +17,22 @@ std::string hero::feature_desc_str_[HEROS_MAX_FEATURE] = {};
 std::string hero::stratum_str_[HEROS_STRATUMS] = {};
 std::string hero::status_str_[HEROS_STATUSES] = {};
 std::string hero::official_str_[HEROS_OFFICIALS] = {};
+std::string hero::flag_str_[HEROS_FLAGS] = {};
 std::vector<int> hero::valid_features_;
 
+int hero::number_artifical_min = 272;
+int hero::number_artifical_max = 277;
 int hero::number_market = 272;
 int hero::number_wall = 273;
 int hero::number_keep = 274;
 int hero::number_tower = 275;
 int hero::number_technology = 276;
+int hero::number_tactic = 277;
 
 int hero::number_system_min = 227;
 int hero::number_system_max = 230;
 int hero::number_scout = 227;
+int hero::number_empty_leader = 228;
 
 int hero::number_commoner_min = 360;
 int hero::number_commoner_max = 369;
@@ -118,10 +123,11 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	character_ = HEROS_NO_CHARACTER;
 	tactic_ = HEROS_NO_TACTIC;
 	activity_ = HEROS_DEFAULT_ACTIVITY;
+	cost_ = 128;
 	meritorious_ = 0;
 	base_catalog_ = HEROS_DEFAULT_BASE_CATALOG;
 	float_catalog_ = ftofxp8(base_catalog_);
-	ambition_ = HEROS_DEFAULT_AMBITION;
+	flags_ = 0;
 	heart_ = HEROS_DEFAULT_HEART;
 	treasure_ = HEROS_NO_TREASURE;
 	utype_ = HEROS_NO_UTYPE;
@@ -368,7 +374,7 @@ int hero::increase_loyalty(int inc, hero& leader)
 	}
 	
 	// effect factor: amtition, heart
-	double inc_catalog_float = 1.0 * ambition_ * INC_CATALOG_UNIT_AMBITION + 1.0 * (255 - heart_) / 64 * INC_CATALOG_UNIT_HEART;
+	double inc_catalog_float = 1.0 * (255 - heart_) / 32 * INC_CATALOG_UNIT_HEART;
 	int inc_catalog = inc * std::max<int>((int)inc_catalog_float, INC_CATALOG_UNIT_AMBITION + INC_CATALOG_UNIT_HEART);
 	// effect factor: base catalog
 	int mid = posix_abs((int)leader.base_catalog_ - base_catalog_);
@@ -560,13 +566,41 @@ std::string& hero::heart_str()
 	return heart_str_;
 }
 
-std::string& hero::ambition_str()
+const std::string& hero::flag_str(int flag)
 {
-	char text[_MAX_PATH];
-	sprintf(text, "%s%u", HERO_PREFIX_STR_AMBITION, ambition_);
-	ambition_str_ = dgettext("wesnoth-hero", text);
+	if (flag >= HEROS_FLAGS) {
+		return null_str;
+	}
+	if (flag_str_[flag].empty()) {
+		char text[_MAX_PATH];
+		sprintf(text, "%s%u", HERO_PREFIX_STR_FLAG, flag);
+		flag_str_[flag] = dgettext("wesnoth-hero", text);
+	}
+	return flag_str_[flag];
+}
 
-	return ambition_str_;
+void hero::set_flag(int flag)
+{
+	if (flag >= HEROS_FLAGS) {
+		return;
+	}
+	flags_ |= 1 << flag; 
+}
+
+void hero::clear_flag(int flag)
+{
+	if (flag >= HEROS_FLAGS) {
+		return;
+	}
+	flags_ &= ~(1 << flag);
+}
+
+bool hero::get_flag(int flag) const
+{
+	if (flag >= HEROS_FLAGS) {
+		return false;
+	}
+	return flags_ & (1 << flag);
 }
 
 const std::string& hero::stratum_str(int stratum)
@@ -616,7 +650,7 @@ const std::string& hero::feature_str(int feature)
 	if (feature_str_[feature].empty()) {
 		char text[_MAX_PATH];
 		sprintf(text, "%s%i", HERO_PREFIX_STR_FEATURE, feature);
-		feature_str_[feature] = dgettext("wesnoth-hero", text);
+		feature_str_[feature] = dgettext("wesnoth-card", text);
 	}
 	return feature_str_[feature];
 }
@@ -629,7 +663,7 @@ const std::string& hero::feature_desc_str(int feature)
 	if (feature_desc_str_[feature].empty()) {
 		char text[_MAX_PATH];
 		sprintf(text, "%s%u", HERO_PREFIX_STR_FEATURE_DESC, feature);
-		feature_desc_str_[feature] = dgettext("wesnoth-hero", text);
+		feature_desc_str_[feature] = dgettext("wesnoth-card", text);
 	}
 	return feature_desc_str_[feature];
 }
@@ -640,7 +674,7 @@ std::vector<int>& hero::valid_features()
 		char text[_MAX_PATH];
 		for (int idx = 0; idx <= hero_feature_max; idx ++) {
 			sprintf(text, "%s%i", HERO_PREFIX_STR_FEATURE, idx);
-			char* ptr = dgettext("wesnoth-hero", text);
+			char* ptr = dgettext("wesnoth-card", text);
 			if (strncmp(ptr, HERO_PREFIX_STR_FEATURE, strlen(HERO_PREFIX_STR_FEATURE))) {
 				valid_features_.push_back(idx);
 			}
@@ -684,6 +718,16 @@ std::string hero::adaptability_str2(uint16_t adaptability)
 	char text[_MAX_PATH];
 	sprintf(text, "%s%u", HERO_PREFIX_STR_ADAPTABILITY, fxptoi12(adaptability));
 	return dgettext("wesnoth-hero", text);
+}
+
+bool hero::is_artifical(int h)
+{
+	return h >= number_artifical_min && h <= number_artifical_max;
+}
+
+bool hero::is_ea_artifical(int h)
+{
+	return h == number_market || h == number_technology || h == number_tactic;
 }
 
 bool hero::is_commoner(int h)
@@ -926,6 +970,22 @@ ublock& attack_ublock(const unit& attack, bool opp_is_artifical)
 		if (opp_is_artifical) {
 			ub.skill[hero_skill_demolish] = true;
 		}
+		// effect: character
+		int level = attack.character_level(apply_to_tag::INDUSTRIOUS);
+		if (level) {
+			int bonus = level / 2;
+			ub.leadership_speed = ub.force_speed = ub.intellect_speed = ub.charm_speed = bonus;
+		}
+		level = attack.character_level(apply_to_tag::EXPANSIVE);
+		if (level) {
+			ub.arms_speed = level / 2;
+		}
+		level = attack.character_level(apply_to_tag::CREATIVE);
+		if (level) {
+			ub.skill_speed[hero_skill_demolish] = level / 2;
+		}
+		
+		// effect: feature
 		if (unit_feature_val2(attack, hero_feature_guide)) {
 			ub.abilityx2 = true;
 		}
@@ -944,6 +1004,10 @@ ublock& turn_ublock(const unit& u)
 {
 	memset(&ub, 0, sizeof(ublock));
 	ub.skill[hero_skill_encourage] = true;
+	int level = u.character_level(apply_to_tag::CREATIVE);
+	if (level) {
+		ub.skill_speed[hero_skill_encourage] = level / 2;
+	}
 	if (unit_feature_val2(u, hero_feature_skill)) {
 		ub.skillx2 = true;
 	}
@@ -1325,14 +1389,6 @@ void hero_map::erase(const uint16_t number)
 	}
 }
 
-struct tmp_s {
-	hero_feeling consort_[2];
-	hero_feeling oath_[2];
-	hero_feeling intimate_[3];
-	hero_feeling hate_[3];
-};
-
-
 bool hero_map::map_from_file(const std::string& fname)
 {
 	posix_file_t fp = INVALID_FILE;
@@ -1360,6 +1416,7 @@ bool hero_map::map_from_file(const std::string& fname)
 	realloc_hero_map(HEROS_MAX_HEROS);
 	while (rdpos + HEROS_BYTES_PER_HERO <= bytertd) {
 		hero h(fdata + rdpos);
+
 		if (h.valid()) {
 			add(h);
 		}

@@ -63,7 +63,7 @@ public:
 	std::string completion;                          /**< running. victory, or defeat */
 	std::string end_text;                            /**< end-of-campaign text */
 	unsigned int end_text_duration;                  /**< for how long the end-of-campaign text is shown */
-	std::string difficulty; /**< The difficulty level the game is being played on. */
+	long create; /**< The create time the game is being played at. */
 
 	std::string player_hero;
 	std::string player_side;
@@ -204,6 +204,7 @@ private:
 
 
 std::string generate_game_uuid();
+void level_to_gamestate(config& level, command_pool& replay_data, game_state& state);
 
 void write_players(game_state& gamestate, config& cfg, const bool use_snapshot=true, const bool merge_side = false);
 

@@ -152,14 +152,6 @@ report generate_report(TYPE type,
 
 		return report(str.str(), "", tooltip.str());
 	}
-	case UNIT_AMLA: {
-		report res;
-		typedef std::pair<std::string, std::string> pair_string;
-		foreach(const pair_string& ps, u->amla_icons()) {
-			res.add_image(ps.first,ps.second);
-		}
-		return(res);
-	}
 	case UNIT_TRAITS: {
 		report res;
 		const std::vector<t_string>& traits = u->trait_names();
@@ -189,36 +181,6 @@ report generate_report(TYPE type,
 		break;
 	}
 
-	case UNIT_ALIGNMENT: {
-		const std::string &align = unit_type::alignment_description(u->alignment(), u->gender());
-		const std::string &align_id = unit_type::alignment_id(u->alignment());
-		int cm = combat_modifier(loc, u->alignment(), u->is_fearless());
-
-		str << align << " (" << signed_percent(cm) << ")";
-		tooltip << _("Alignment: ")
-			<< "<b>" << align << "</b>\n"
-			<< string_table[align_id + "_description"];
-		return report(str.str(), "", tooltip.str(), "time_of_day");
-	}
-	case UNIT_ABILITIES: {
-		report res;
-		const std::vector<std::string> &abilities = u->ability_tooltips();
-		for(std::vector<std::string>::const_iterator i = abilities.begin(); i != abilities.end(); ++i) {
-			const std::string& name = gettext(i->c_str());
-			str << name;
-			if(i+2 != abilities.end())
-				str << ", ";
-			++i;
-			//FIXME pull out ability's name from description
-			tooltip << _("Ability: ")
-				<< *i;
-			const std::string help_page = "ability_" + name;
-
-			res.add_text(flush(str), flush(tooltip), help_page);
-		}
-
-		return res;
-	}
 	case UNIT_HP: {
 		str << font::color2markup(u->hp_color()) << u->hitpoints()
 			<< '/' << u->max_hitpoints();
@@ -231,15 +193,7 @@ report generate_report(TYPE type,
 
 		return report(str.str(), "", tooltip.str());
 	}
-	case UNIT_ADVANCEMENT_OPTIONS: {
-		report res;
-		typedef std::pair<std::string, std::string> pair_string;
-		foreach(const pair_string& ps, u->advancement_icons()){
-			res.add_image(ps.first,ps.second);
-		}
-		return res;
-	}
-	case UNIT_WEAPONS: {
+	case UNIT_SECOND: {
 		if (!u->is_city()) {
 			if (u->second().valid()) {
 				str << u->second().name();
@@ -249,8 +203,8 @@ report generate_report(TYPE type,
 			}
 		} else {
 			const artifical* city = const_unit_2_artifical(u);
-			if (city->decree().first) {
-				str << city->decree().first->name() << "(" << city->decree().second << ")";
+			if (city->decree()) {
+				str << city->decree()->name();
 			} else {
 				// str << dgettext("wesnoth-lib", "None");
 			}
@@ -360,9 +314,16 @@ report generate_report(TYPE type,
 			str << font::BAD_TEXT;
 
 		str << data.net_income;
-		if (tent::mode != TOWER_MODE) {
-			str << "/" << data.technology_net_income;
-		}
+		break;
+	}
+	 case TECH_INCOME: {
+		team_data data = calculate_team_data(viewing_team, current_side);
+		if (current_side != playing_side)
+			str << font::GRAY_TEXT;
+		else if (data.net_income < 0)
+			str << font::BAD_TEXT;
+
+		str << data.technology_net_income;
 		break;
 	}
 	case TACTIC: {
@@ -381,16 +342,17 @@ report generate_report(TYPE type,
 		break;
 	}
 	case TERRAIN: {
-		if(!map.on_board(mouseover) || viewing_team.shrouded(mouseover))
+		if (!map.on_board(mouseover) || viewing_team.shrouded(mouseover))
 			break;
 
 		const t_translation::t_terrain terrain = map.get_terrain(mouseover);
-		if (terrain == t_translation::OFF_MAP_USER)
+		if (terrain == t_translation::OFF_MAP_USER) {
 			break;
+		}
 
 		const t_translation::t_list& underlying = map.underlying_union_terrain(terrain);
 
-		if(map.is_village(mouseover)) {
+		if (map.is_village(mouseover)) {
 			int owner = village_owner(mouseover, teams) + 1;
 			if(owner == 0 || viewing_team.fogged(mouseover)) {
 				str << map.get_terrain_info(terrain).income_description();
@@ -403,17 +365,14 @@ report generate_report(TYPE type,
 			}
 			str << " ";
 		} else {
-		        str << map.get_terrain_info(terrain).description();
+			str << map.get_terrain_info(terrain).description();
 		}
 
-		if(underlying.size() != 1 || underlying.front() != terrain) {
+		if (underlying.size() != 1 || underlying.front() != terrain) {
 			str << " (";
-
-			for(t_translation::t_list::const_iterator i =
-					underlying.begin(); i != underlying.end(); ++i) {
-
-			str << map.get_terrain_info(*i).name();
-				if(i+1 != underlying.end()) {
+			for (t_translation::t_list::const_iterator i = underlying.begin(); i != underlying.end(); ++i) {
+				str << map.get_terrain_info(*i).name();
+				if (i+1 != underlying.end()) {
 					str << ",";
 				}
 			}
@@ -478,7 +437,7 @@ report generate_report(TYPE type,
 			std::map<const map_location, int>::const_iterator it = unit_map::economy_areas_.find(mouseover);
 			if (it != unit_map::economy_areas_.end()) {
 				str << "(" << units.city_from_cityno(it->second)->name() << ")";
-			} else if (terrain == t_translation::TERRAIN_ECONOMY_AREA) {
+			} else if (terrain == t_translation::ECONOMY_AREA) {
 				str << "(--)";
 			}
 

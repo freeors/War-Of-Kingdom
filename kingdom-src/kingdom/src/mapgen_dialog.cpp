@@ -23,10 +23,9 @@
 #include "gettext.hpp"
 #include "log.hpp"
 #include "map.hpp"
-#include "marked-up_text.hpp"
-#include "show_dialog.hpp"
-
-#include "widgets/slider.hpp"
+#include "gui/widgets/window.hpp"
+#include "gui/dialogs/map_generator.hpp"
+#include "wml_exception.hpp"
 
 static lg::log_domain log_engine("engine");
 #define DBG_NG LOG_STREAM(debug, log_engine)
@@ -89,9 +88,6 @@ default_map_generator::default_map_generator(const config &cfg) :
 	if (nplayers > 0)
 		nplayers_ = nplayers;
 
-	// nplayers_ = 3;
-	// int ii = 0;
-
 	int island_size = cfg["island_size"];
 	if (island_size > 0)
 		island_size_ = island_size;
@@ -99,239 +95,29 @@ default_map_generator::default_map_generator(const config &cfg) :
 
 bool default_map_generator::allow_user_config() const { return true; }
 
-void default_map_generator::user_config(display& disp, const config& cfg)
+bool default_map_generator::user_config(display& disp, const config& cfg, int max_players, int min_w, int max_w, int min_h, int max_h)
 {
-	const resize_lock prevent_resizing;
-	const events::event_context dialog_events_context;
-
-	CVideo& screen = disp.video();
-
-	const int width = 600;
-	const int height = 400;
-	const int xpos = screen.getx()/2 - width/2;
-	int ypos = screen.gety()/2 - height/2;
-
-	gui::button close_button(screen,_("Close Window"));
-	std::vector<gui::button*> buttons(1,&close_button);
-
-	gui::dialog_frame f(screen,_("Map Generator"),gui::dialog_frame::default_style,true,&buttons);
-	f.layout(xpos,ypos,width,height);
-	f.draw();
-
-	SDL_Rect dialog_rect = create_rect(xpos, ypos, width, height);
-	surface_restorer dialog_restorer(&screen,dialog_rect);
-
-	const std::string& players_label = _("Players:");
-	const std::string& width_label = _("Width:");
-	const std::string& height_label = _("Height:");
-	const std::string& iterations_label = _("Number of Hills:");
-	const std::string& hillsize_label = _("Max Hill Size:");
-	const std::string& villages_label = _("Villages:");
-	const std::string& castlesize_label = _("Castle Size:");
-	const std::string& landform_label = _("Landform:");
-
-	SDL_Rect players_rect = font::draw_text(NULL,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,players_label,0,0);
-	SDL_Rect width_rect = font::draw_text(NULL,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,width_label,0,0);
-	SDL_Rect height_rect = font::draw_text(NULL,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,height_label,0,0);
-	SDL_Rect iterations_rect = font::draw_text(NULL,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,iterations_label,0,0);
-	SDL_Rect hillsize_rect = font::draw_text(NULL,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,hillsize_label,0,0);
-	SDL_Rect villages_rect = font::draw_text(NULL,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,villages_label,0,0);
-	SDL_Rect castlesize_rect = font::draw_text(NULL,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,castlesize_label,0,0);
-	SDL_Rect landform_rect = font::draw_text(NULL,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,landform_label,0,0);
-
-	const int horz_margin = 15;
-	const int text_right = xpos + horz_margin +
-	        std::max<int>(std::max<int>(std::max<int>(std::max<int>(std::max<int>(std::max<int>(
-		         players_rect.w,width_rect.w),height_rect.w),iterations_rect.w),hillsize_rect.w),villages_rect.w),castlesize_rect.w);
-
-	players_rect.x = text_right - players_rect.w;
-	width_rect.x = text_right - width_rect.w;
-	height_rect.x = text_right - height_rect.w;
-	iterations_rect.x = text_right - iterations_rect.w;
-	hillsize_rect.x = text_right - hillsize_rect.w;
-	villages_rect.x = text_right - villages_rect.w;
-	castlesize_rect.x = text_right - castlesize_rect.w;
-	landform_rect.x = text_right - landform_rect.w;
-
-	const int vertical_margin = 20;
-	players_rect.y = ypos + vertical_margin*2;
-	width_rect.y = players_rect.y + players_rect.h + vertical_margin;
-	height_rect.y = width_rect.y + width_rect.h + vertical_margin;
-	iterations_rect.y = height_rect.y + height_rect.h + vertical_margin;
-	hillsize_rect.y = iterations_rect.y + iterations_rect.h + vertical_margin;
-	villages_rect.y = hillsize_rect.y + hillsize_rect.h + vertical_margin;
-	castlesize_rect.y = villages_rect.y + iterations_rect.h + vertical_margin;
-	landform_rect.y = castlesize_rect.y + villages_rect.h + vertical_margin;
-
-	const int right_space = 150;
-
-	const int slider_left = text_right + 10;
-	const int slider_right = xpos + width - horz_margin - right_space;
-	SDL_Rect slider_rect = create_rect(slider_left
-			, players_rect.y
-			, slider_right - slider_left
-			, players_rect.h);
-
-	gui::slider players_slider(screen);
-	players_slider.set_location(slider_rect);
-	players_slider.set_min(2);
-	if (cfg.child_count("faction")) {
-		players_slider.set_max(cfg.child_count("faction"));
-	} else {
-		players_slider.set_max(gamemap::MAX_PLAYERS);
+	int max = gamemap::MAX_PLAYERS;
+	int factions = cfg.child_count("faction");
+	if (factions && max > factions) {
+		max = factions;
 	}
-	players_slider.set_value(nplayers_);
-
-	const int min_width = 20;
-	const int max_width = 100;
-	const int max_height = 100;
-	const int extra_size_per_player = 2;
-
-	slider_rect.y = width_rect.y;
-	gui::slider width_slider(screen);
-	width_slider.set_location(slider_rect);
-	width_slider.set_min(min_width+(players_slider.value()-2)*extra_size_per_player);
-	width_slider.set_max(max_width);
-	width_slider.set_value(width_);
-
-	slider_rect.y = height_rect.y;
-	gui::slider height_slider(screen);
-	height_slider.set_location(slider_rect);
-	height_slider.set_min(min_width+(players_slider.value()-2)*extra_size_per_player);
-	height_slider.set_max(max_height);
-	height_slider.set_value(height_);
-
-	const int min_iterations = 10;
-	const int max_iterations = 3000;
-
-	slider_rect.y = iterations_rect.y;
-	gui::slider iterations_slider(screen);
-	iterations_slider.set_location(slider_rect);
-	iterations_slider.set_min(min_iterations);
-	iterations_slider.set_max(max_iterations);
-	iterations_slider.set_value(iterations_);
-
-	const int min_hillsize = 1;
-	const int max_hillsize = 50;
-
-	slider_rect.y = hillsize_rect.y;
-	gui::slider hillsize_slider(screen);
-	hillsize_slider.set_location(slider_rect);
-	hillsize_slider.set_min(min_hillsize);
-	hillsize_slider.set_max(max_hillsize);
-	hillsize_slider.set_value(hill_size_);
-
-	const int min_villages = 0;
-	const int max_villages = 50;
-
-	slider_rect.y = villages_rect.y;
-	gui::slider villages_slider(screen);
-	villages_slider.set_location(slider_rect);
-	villages_slider.set_min(min_villages);
-	villages_slider.set_max(max_villages);
-	villages_slider.set_value(nvillages_);
-
-	const int min_castlesize = 2;
-	const int max_castlesize = 14;
-
-	slider_rect.y = castlesize_rect.y;
-	gui::slider castlesize_slider(screen);
-	castlesize_slider.set_location(slider_rect);
-	castlesize_slider.set_min(min_castlesize);
-	castlesize_slider.set_max(max_castlesize);
-	castlesize_slider.set_value(castle_size_);
-
-
-	const int min_landform = 0;
-	const int max_landform = int(max_island);
-	slider_rect.y = landform_rect.y;
-	gui::slider landform_slider(screen);
-	landform_slider.set_location(slider_rect);
-	landform_slider.set_min(min_landform);
-	landform_slider.set_max(max_landform);
-	landform_slider.set_value(island_size_);
-
-	SDL_Rect link_rect = slider_rect;
-	link_rect.y = link_rect.y + link_rect.h + vertical_margin;
-
-	gui::button link_castles(screen,_("Roads Between Castles"),gui::button::TYPE_CHECK);
-	link_castles.set_check(link_castles_);
-	link_castles.set_location(link_rect);
-
-	for(bool draw = true;; draw = false) {
-		nplayers_ = players_slider.value();
-		width_ = width_slider.value();
-		height_ = height_slider.value();
-		iterations_ = iterations_slider.value();
-		hill_size_ = hillsize_slider.value();
-		nvillages_ = villages_slider.value();
-		castle_size_ = castlesize_slider.value();
-		island_size_ = landform_slider.value();
-
-		dialog_restorer.restore();
-		close_button.set_dirty(true);
-		if (close_button.pressed())
-			break;
-
-		players_slider.set_dirty();
-		width_slider.set_dirty();
-		height_slider.set_dirty();
-		iterations_slider.set_dirty();
-		hillsize_slider.set_dirty();
-		villages_slider.set_dirty();
-		castlesize_slider.set_dirty();
-		landform_slider.set_dirty();
-		link_castles.set_dirty();
-
-		width_slider.set_min(min_width+(players_slider.value()-2)*extra_size_per_player);
-		height_slider.set_min(min_width+(players_slider.value()-2)*extra_size_per_player);
-
-		events::raise_process_event();
-		events::raise_draw_event();
-
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,players_label,players_rect.x,players_rect.y);
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,width_label,width_rect.x,width_rect.y);
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,height_label,height_rect.x,height_rect.y);
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,iterations_label,iterations_rect.x,iterations_rect.y);
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,hillsize_label,hillsize_rect.x,hillsize_rect.y);
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,villages_label,villages_rect.x,villages_rect.y);
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,castlesize_label,castlesize_rect.x,castlesize_rect.y);
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,landform_label,landform_rect.x,landform_rect.y);
-
-		font::draw_text(&screen, screen_area(), font::SIZE_NORMAL,
-			font::NORMAL_COLOR, str_cast(nplayers_),
-			slider_right + horz_margin, players_rect.y);
-
-		font::draw_text(&screen, screen_area(), font::SIZE_NORMAL,
-			font::NORMAL_COLOR, str_cast(width_),
-			slider_right + horz_margin, width_rect.y);
-
-		font::draw_text(&screen, screen_area(), font::SIZE_NORMAL,
-			font::NORMAL_COLOR, str_cast(height_),
-			slider_right+horz_margin,height_rect.y);
-
-		std::stringstream villages_str;
-		villages_str << nvillages_ << _("/1000 tiles");
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,villages_str.str(),
-		                slider_right+horz_margin,villages_rect.y);
-
-		font::draw_text(&screen, screen_area(), font::SIZE_NORMAL,
-			font::NORMAL_COLOR, str_cast(castle_size_),
-			slider_right + horz_margin, castlesize_rect.y);
-
-		std::stringstream landform_str;
-		landform_str << gettext(island_size_ == 0 ? N_("Inland") : (island_size_ < max_coastal ? N_("Coastal") : N_("Island")));
-		font::draw_text(&screen,screen_area(),font::SIZE_NORMAL,font::NORMAL_COLOR,landform_str.str(),
-			            slider_right+horz_margin,landform_rect.y);
-
-		update_rect(xpos,ypos,width,height);
-
-		disp.update_display();
-		disp.delay(100);
-		events::pump();
+	if (max_players != -1 && max > max_players) {
+		max = max_players;
 	}
+	gui2::tmap_generator dlg(disp, *this, max, min_w, max_w, min_h, max_h);
+	try {
+		dlg.show(disp.video());
+	} catch(twml_exception& e) {
+		e.show(disp);
+		return false;
+	}
+	if (dlg.get_retval() != gui2::twindow::OK || !dlg.changed()) {
+		return false;
+	}
+	dlg.apply_change();
 
-	link_castles_ = link_castles.checked();
+	return true;
 }
 
 std::string default_map_generator::name() const { return "default"; }
@@ -422,7 +208,7 @@ config default_map_generator::create_scenario(const std::vector<std::string>& ar
 	try{
 		res["map_data"] = generate_map(args,&labels);
 	}
-	catch (mapgen_exception exc){
+	catch (mapgen_exception& exc){
 		res["map_data"] = "";
 		res["error_message"] = exc.message;
 	}

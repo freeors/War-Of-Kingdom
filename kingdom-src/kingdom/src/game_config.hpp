@@ -51,9 +51,8 @@ namespace game_config
 	extern int increase_feeling;
 	extern int max_police;
 	extern int min_tradable_police;
-	extern int min_researchable_police;
-	extern int default_decree_turns;
 	extern int max_commoners;
+	extern int active_tactic_slots;
 
 	extern int minimal_activity;
 	extern int maximal_defeated_activity;
@@ -66,6 +65,8 @@ namespace game_config
 
 	extern int max_tactic_point;
 	extern int increase_tactic_point;
+
+	extern int max_bomb_turns;
 
 	int kill_xp(int level);
 	int attack_xp(int level);

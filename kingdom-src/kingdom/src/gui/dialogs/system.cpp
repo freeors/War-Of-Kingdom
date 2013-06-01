@@ -26,7 +26,6 @@
 #include "game_display.hpp"
 #include "team.hpp"
 #include "unit_map.hpp"
-#include "hero.hpp"
 #include "gamestatus.hpp"
 #include "play_controller.hpp"
 #include "resources.hpp"

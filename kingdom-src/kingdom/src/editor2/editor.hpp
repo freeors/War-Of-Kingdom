@@ -53,7 +53,7 @@ namespace preferences
 class editor
 {
 public:
-	enum BIN_TYPE {BIN_MIN = 0, MAIN_DATA = BIN_MIN, MULTI_PLAYER, EDITOR, GUI, LANGUAGE, BIN_SYSTEM_MAX = LANGUAGE, SCENARIO_DATA, CAMPAIGNS, BIN_MAX = CAMPAIGNS};
+	enum BIN_TYPE {BIN_MIN = 0, MAIN_DATA = BIN_MIN, EDITOR, GUI, LANGUAGE, BIN_SYSTEM_MAX = LANGUAGE, SCENARIO_DATA, CAMPAIGNS, BIN_MAX = CAMPAIGNS};
 	struct wml2bin_desc {
 		wml2bin_desc();
 		std::string bin_name;
@@ -78,6 +78,8 @@ public:
 	const std::vector<std::pair<BIN_TYPE, wml2bin_desc> >& wml2bin_descs() const { return wml2bin_descs_; }
 
 	const config& campaigns_config() const { return campaigns_config_; }
+private:
+	void write_tb_dat_if() const;
 
 private:
 	config game_config_;

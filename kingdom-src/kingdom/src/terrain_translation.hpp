@@ -100,6 +100,8 @@ namespace t_translation {
 
 	/**  Contains an x and y coordinate used for starting positions in maps. */
 	struct coordinate {
+		coordinate();
+		coordinate(const size_t x_, const size_t y_);
 		size_t x;
 		size_t y;
 	};
@@ -130,7 +132,7 @@ namespace t_translation {
 	extern const t_terrain FOREST;
 	extern const t_terrain MOUNTAIN;
 	extern const t_terrain HILL;
-	extern const t_terrain TERRAIN_ECONOMY_AREA;
+	extern const t_terrain ECONOMY_AREA;
 
 	extern const t_terrain CAVE_WALL;
 	extern const t_terrain CAVE;

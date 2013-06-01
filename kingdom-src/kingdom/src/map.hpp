@@ -68,6 +68,8 @@ public:
 		{ return get_terrain_info(terrain).is_castle(); }
 	bool is_keep(t_translation::t_terrain terrain) const
 		{ return get_terrain_info(terrain).is_keep(); }
+	bool is_ea(t_translation::t_terrain terrain) const
+		{ return terrain == t_translation::ECONOMY_AREA; }
 
 	bool is_village(const map_location& loc) const
 		{ return on_board(loc) && is_village(get_terrain(loc)); }
@@ -77,6 +79,8 @@ public:
 		{ return on_board(loc) && is_castle(get_terrain(loc)); }
 	bool is_keep(const map_location& loc) const
 		{ return on_board(loc) && is_keep(get_terrain(loc)); }
+	bool is_ea(const map_location& loc) const
+		{ return on_board(loc) && is_ea(get_terrain(loc)); }
 
 	enum tborder {
 		NO_BORDER = 0,

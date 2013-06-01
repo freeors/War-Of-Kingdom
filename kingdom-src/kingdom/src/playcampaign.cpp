@@ -127,23 +127,18 @@ static LEVEL_RESULT playsingle_scenario(const config& game_config,
 {
 	const int ticks = SDL_GetTicks();
 	int num_turns = (*level)["turns"].to_int();
-	if (tent::turns != -1) {
-		num_turns = tent::turns;
-		tent::turns = -1;
-	}
 
-	LOG_NG << "creating objects... " << (SDL_GetTicks() - ticks) << "\n";
 	posix_print("playsingle_scenerio, begin construct playsingle_controller......\n");
 	playsingle_controller playcontroller(*level, state_of_game, heros, heros_start, cards, ticks, num_turns, game_config, disp.video(), skip_replay);
 	posix_print("playsingle_controller, construct used time: %u ms\n", SDL_GetTicks() - ticks);
-	LOG_NG << "created objects... " << (SDL_GetTicks() - playcontroller.get_ticks()) << "\n";
 
 	LEVEL_RESULT res = playcontroller.play_scenario(story, skip_replay);
 	end_level = playcontroller.get_end_level_data();
 
 	if (res == DEFEAT) {
-		if (resources::persist != NULL)
+		if (resources::persist != NULL) {
 			resources::persist->end_transaction();
+		}
 		gui2::show_transient_message(disp.video(),
 				    _("Defeat"),
 				    _("You have been defeated!")
@@ -217,8 +212,9 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 		io_type_t io_type, bool skip_replay)
 {
 	std::string type = gamestate.classification().campaign_type;
-	if(type.empty())
+	if (type.empty()) {
 		type = "scenario";
+	}
 
 	config const* scenario = NULL;
 
@@ -235,11 +231,13 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 		// If the gamestate already contains a starting_pos,
 		// then we are starting a fresh multiplayer game.
 		// Otherwise this is the start of a campaign scenario.
-		if(gamestate.starting_pos["id"].empty() == false) {
+		VALIDATE(!gamestate.starting_pos["id"].empty(), "play_game, gamestate.starting_pos[id] is empty!");
+		if (gamestate.starting_pos["id"].empty() == false) {
 			LOG_G << "loading starting position...\n";
 			starting_pos = gamestate.starting_pos;
 			scenario = &starting_pos;
 		} else {
+/*
 			//reload of the scenario, as starting_pos contains carryover information only
 			LOG_G << "loading scenario: '" << gamestate.classification().scenario << "'\n";
 			scenario = &game_config.find_child(type, "id", gamestate.classification().scenario);
@@ -252,6 +250,7 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 			} else
 				scenario = NULL;
 			LOG_G << "scenario found: " << (scenario != NULL ? "yes" : "no") << "\n";
+*/
 		}
 	} else {
 		// This game was started from a savegame

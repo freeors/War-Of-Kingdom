@@ -24,6 +24,7 @@ void OnEventKillEditBt(HWND hdlgP);
 void OnEventEndlevelEditBt(HWND hdlgP);
 void OnEventJoinEditBt(HWND hdlgP);
 void OnEventUnitEditBt(HWND hdlgP);
+void OnEventModifyUnitEditBt(HWND hdlgP);
 void OnConditionEditBt(HWND hdlgP);
 BOOL CALLBACK DlgVariableProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgHaveUnitProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -178,6 +179,8 @@ void tevent::from_config_branch(const config& cfg, std::vector<tcommand*>& b)
 			c = new tjoin();
 		} else if (tmp.key == "unit") {
 			c = new tunit();
+		} else if (tmp.key == "modify_unit2") {
+			c = new tmodify_unit();
 		} else if (tmp.key == "if") {
 			c = new tif();
 		}
@@ -204,6 +207,8 @@ void tevent::copy_commands(const std::vector<tcommand*>& src, std::vector<tcomma
 			new_cmd = new tjoin(*dynamic_cast<const tjoin*>(cmd));
 		} else if (cmd->type_ == tcommand::UNIT) {
 			new_cmd = new tunit(*dynamic_cast<const tunit*>(cmd));
+		} else if (cmd->type_ == tcommand::MODIFY_UNIT) {
+			new_cmd = new tmodify_unit(*dynamic_cast<const tmodify_unit*>(cmd));
 		} else if (cmd->type_ == tcommand::IF) {
 			new_cmd = new tif(*dynamic_cast<const tif*>(cmd));
 		}
@@ -234,6 +239,9 @@ bool tevent::compare_commands(const std::vector<tevent::tcommand*>& left, const 
 
 		} else if (a->type_ == tcommand::UNIT) {
 			if (*dynamic_cast<const tunit*>(a) != *dynamic_cast<const tunit*>(b)) return false;
+
+		} else if (a->type_ == tcommand::MODIFY_UNIT) {
+			if (*dynamic_cast<const tmodify_unit*>(a) != *dynamic_cast<const tmodify_unit*>(b)) return false;
 
 		} else if (a->type_ == tcommand::IF) {
 			if (*dynamic_cast<const tif*>(a) != *dynamic_cast<const tif*>(b)) return false;
@@ -585,6 +593,8 @@ bool tevent::do_edit(HWND hwndtv)
 			OnEventEndlevelEditBt(hdlgP);
 		} else if (ns::clicked_command->type_ == tcommand::JOIN) {
 			OnEventJoinEditBt(hdlgP);
+		} else if (ns::clicked_command->type_ == tcommand::MODIFY_UNIT) {
+			OnEventModifyUnitEditBt(hdlgP);
 		} else if (ns::clicked_command->type_ == tcommand::CONDITION) {
 			OnConditionEditBt(hdlgP);
 		} else {
@@ -1712,6 +1722,153 @@ void tevent::tunit::generate(std::stringstream& strstr, const std::string& prefi
 	strstr << prefix << "[/unit]\n";
 }
 
+void tevent::tmodify_unit::from_config(const config& cfg)
+{
+	master_hero_ = cfg["master_hero"];
+	effect_.clear();
+	BOOST_FOREACH (const config &c, cfg.child_range("effect")) {
+		effect_.add_child("effect", c);
+	}
+}
+
+void tevent::tmodify_unit::from_ui_special(HWND hdlgP)
+{
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+
+	HWND hctl;
+
+	// master_hero
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYUNIT_MASTERHERO), text, _MAX_PATH);
+	if (text[0] == '\0') {
+		hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYUNIT_MASTERHERO);
+		strstr.str("");
+		strstr << ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+		master_hero_ = strstr.str();
+	} else {
+		master_hero_ = text;
+	}
+	// effect
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYUNIT_EFFECT), text, _MAX_PATH);
+	try {
+		::read(effect_, text);
+	} catch(config::error& e) {
+		posix_print_mb(e.message.c_str());
+		effect_ = config();
+	}
+	int index = 0;
+	BOOST_FOREACH (const config &c, effect_.child_range("effect")) {
+		index ++;
+		const std::string& apply_to = c["apply_to"].str();
+		if (apply_to_tag::find(apply_to) == apply_to_tag::NONE) {
+			strstr.str("");
+			strstr << "#" << index << "[effect], " << "Unsupport apply to: " << apply_to;
+			posix_print_mb(strstr.str().c_str());
+		}
+	}
+}
+
+void tevent::tmodify_unit::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
+{
+	std::stringstream strstr;
+	char text[_MAX_PATH];
+
+	HTREEITEM htvi1 = TreeView_AddLeaf(hctl, branch);
+	strstr.str("");
+	strstr << "modify_unit2";
+	strcpy(text, strstr.str().c_str());
+	TreeView_SetItem1(hctl, htvi1, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+		(LPARAM)(tcommand*)(this), ns::iico_evt_command, ns::iico_evt_command, 1, text);
+
+	HTREEITEM htvi = TreeView_AddLeaf(hctl, htvi1);
+	strstr.str("");
+	strstr << "master_hero = ";
+	if (valuex::is_variable(master_hero_)) {
+		strstr << master_hero_;
+	} else {
+		int number = valuex::to_int(master_hero_, HEROS_INVALID_NUMBER);
+		if ((int)gdmgr.heros_.size() > number) {
+			strstr << utf8_2_ansi(gdmgr.heros_[number].name().c_str());
+		}
+	}
+	strcpy(text, strstr.str().c_str());
+	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+
+	// effect
+	htvi = TreeView_AddLeaf(hctl, htvi1);
+	strstr.str("");
+	strstr << "effect = ";
+	int index = 0;
+	BOOST_FOREACH (const config &c, effect_.child_range("effect")) {
+		if (index ++) {
+			strstr << ", ";
+		}
+		strstr << c["apply_to"].str();
+	}
+	strcpy(text, strstr.str().c_str());
+	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+}
+
+void tevent::tmodify_unit::update_to_ui_special(HWND hdlgP) const
+{
+	std::stringstream strstr;
+	
+	bool is_variable = valuex::is_variable(master_hero_);
+	HWND hctl = GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYUNIT_MASTERHERO);
+	if (is_variable) {
+		Edit_SetText(hctl, master_hero_.c_str());
+	} else {
+		Edit_SetText(hctl, "");
+	}
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYUNIT_MASTERHERO);
+	ComboBox_ResetContent(hctl);
+	int selected_row = 0;
+	int master_hero = HEROS_INVALID_NUMBER;
+	if (!is_variable) {
+		master_hero = valuex::to_int(master_hero_, HEROS_INVALID_NUMBER);
+	}
+	ComboBox_AddString(hctl, "");
+	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
+	int index = 1;
+	for (std::map<int, tcampaign::hero_state>::const_iterator it = ns::campaign.persons_.begin(); it != ns::campaign.persons_.end(); ++ it, index ++) {
+		hero& h = gdmgr.heros_[it->first];
+		ComboBox_AddString(hctl, utf8_2_ansi(h.name().c_str()));
+		ComboBox_SetItemData(hctl, index, h.number_);
+		if (!is_variable && h.number_ == master_hero) {
+			selected_row = index;
+		}
+	}
+	ComboBox_SetCurSel(hctl, selected_row);
+
+	// [effect]
+	strstr.str("");
+	::write(strstr, effect_);
+
+	const std::vector<std::string> vstr = utils::split(strstr.str(), '\n', 0);
+	strstr.str("");
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		if (it != vstr.begin()) {
+			if (it->empty() || it->at(it->size() - 1) != '\r') {
+				strstr << '\r';
+			}
+			strstr << '\n';
+		}
+		strstr << *it;
+	}
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYUNIT_EFFECT), strstr.str().c_str());
+}
+
+void tevent::tmodify_unit::generate(std::stringstream& strstr, const std::string& prefix) const
+{
+	strstr << prefix << "[modify_unit2]\n";
+	strstr << prefix << "\tmaster_hero = " << master_hero_ << "\n";
+	::write(strstr, effect_, std::count(prefix.begin(), prefix.end(), '\t') + 1);
+	strstr << prefix << "[/modify_unit2]\n";
+}
+
 std::vector<std::pair<std::string, std::string> > tevent::tvariable::op_map;
 
 tevent::tvariable::tvariable()
@@ -2668,6 +2825,126 @@ void OnEventJoinEditBt(HWND hdlgP)
 	return;
 }
 
+BOOL On_DlgEventModifyUnitInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	editor_config::move_subcfg_right_position(hdlgP, lParam);
+
+	if (ns::action_event_item == ma_edit) {
+		SetWindowText(hdlgP, "编辑操作：修改单位");
+		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+	} else {
+		SetWindowText(hdlgP, "添加操作：修改单位");
+	}
+
+	ns::hpopup_variable = CreatePopupMenu();
+	AppendMenu(ns::hpopup_variable, MF_STRING, IDM_VARIABLE_ITEM0, "到主将");
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	tevent& evt = scenario.event_[ns::clicked_event];
+
+	// variable
+	valuex::cumulate_variables_to_lv(hdlgP);
+
+	ns::clicked_command->update_to_ui_special(hdlgP);
+	return FALSE;
+}
+
+void OnEventModifyUnitEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	char text[_MAX_PATH];
+	HWND hctl1;
+	HWND hctl2 = NULL;
+
+	if (codeNotify != EN_CHANGE) {
+		return;
+	}
+
+	Edit_GetText(hwndCtrl, text, sizeof(text) / sizeof(text[0]));
+	if (id == IDC_ET_EVENTMODIFYUNIT_MASTERHERO) {
+		hctl1 = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYUNIT_MASTERHERO);
+
+	} else {
+		return;
+	}
+	ShowWindow(hctl1, (text[0] == '\0')? SW_RESTORE: SW_HIDE);
+	if (hctl2) {
+		ShowWindow(hctl2, (text[0] == '\0')? SW_RESTORE: SW_HIDE);
+	}
+
+	return;
+}
+
+void On_DlgEventModifyUnitCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	BOOL changed = FALSE;
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	tevent& evt = scenario.event_[ns::clicked_event];
+
+	switch (id) {
+	case IDM_VARIABLE_ITEM0: // type
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYUNIT_MASTERHERO), ns::clicked_variable.c_str());
+		break;
+
+	case IDC_ET_EVENTMODIFYUNIT_MASTERHERO:
+		OnEventModifyUnitEt(hdlgP, id, hwndCtrl, codeNotify);
+		break;
+
+	case IDOK:
+		changed = TRUE;
+		ns::clicked_command->from_ui_special(hdlgP);
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL On_DlgEventModifyUnitNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	if (lpNMHdr->code == NM_RCLICK) {
+		valuex::cumulate_variables_notify_handler_rclick(hdlgP, lpNMHdr);
+	}
+	return FALSE;
+}
+
+void On_DlgEventModifyUnitDestroy(HWND hdlgP)
+{
+	DestroyMenu(ns::hpopup_variable);
+}
+
+BOOL CALLBACK DlgEventModifyUnitProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(uMsg) {
+	case WM_INITDIALOG:
+		return On_DlgEventModifyUnitInitDialog(hdlgP, (HWND)(wParam), lParam);
+	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgEventModifyUnitCommand);
+	HANDLE_MSG(hdlgP, WM_DRAWITEM, editor_config::On_DlgDrawItem);
+	HANDLE_MSG(hdlgP, WM_NOTIFY, On_DlgEventModifyUnitNotify);
+	HANDLE_MSG(hdlgP, WM_DESTROY, On_DlgEventModifyUnitDestroy);
+	}
+	
+	return FALSE;
+}
+
+void OnEventModifyUnitEditBt(HWND hdlgP)
+{
+	RECT		rcBtn;
+	LPARAM		lParam;
+	
+	GetWindowRect(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), &rcBtn);
+	lParam = posix_mku32((rcBtn.left > 0)? rcBtn.left: rcBtn.right, rcBtn.top);
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	tevent& evt = scenario.event_[ns::clicked_event];
+
+	ns::action_event_item = ma_edit;
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTMODIFYUNIT), hdlgP, DlgEventModifyUnitProc, lParam)) {
+		TreeView_DeleteAllItems(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER));
+		evt.update_to_ui_event_edit(hdlgP);
+	}
+
+	return;
+}
+
 BOOL On_DlgSetVariableInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
@@ -3192,6 +3469,7 @@ BOOL On_DlgEventEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM3, utf8_2_ansi(_("Kill troop")));
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM4, utf8_2_ansi(_("End level")));
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM5, utf8_2_ansi(_("Join in troop")));
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM6, utf8_2_ansi(_("Modify unit(troop, city, artifical)")));
 
 	ns::hpopup_event = CreatePopupMenu();
 	AppendMenu(ns::hpopup_event, MF_POPUP, (UINT_PTR)(ns::hpopup_new), utf8_2_ansi(_("Append after it")));
@@ -3267,6 +3545,12 @@ void On_DlgEventEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	case IDM_NEW_ITEM5: // join
 		if (!new_cmd) {
 			new_cmd = new tevent::tjoin();
+		}
+		evt.new_command(new_cmd, hdlgP);
+		break;
+	case IDM_NEW_ITEM6: // modify unit
+		if (!new_cmd) {
+			new_cmd = new tevent::tmodify_unit();
 		}
 		evt.new_command(new_cmd, hdlgP);
 		break;

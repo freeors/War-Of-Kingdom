@@ -20,8 +20,7 @@
 #include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "display.hpp"
-#include "hero.hpp"
+#include "game_display.hpp"
 #include "card.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/dialogs/combo_box.hpp"
@@ -89,10 +88,9 @@ namespace gui2 {
 
 REGISTER_DIALOG(player_selection)
 
-tplayer_selection::tplayer_selection(display& gui, hero_map& heros, card_map& cards, const config& campaign_config, hero& player_hero)
-	: ttent(gui, heros, cards, campaign_config, player_hero, "rpg")
-	, maximal_defeated_activity_(NULL)
-	, duel_(NULL)
+tplayer_selection::tplayer_selection(game_display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero)
+	: ttent(heros, cards, cfg, campaign_config, player_hero, "rpg")
+	, gui_(gui)
 {
 }
 
@@ -104,45 +102,17 @@ void tplayer_selection::pre_show(CVideo& video, twindow& window)
 {
 	ttent::pre_show(video, window);
 
-	maximal_defeated_activity_ = find_widget<tbutton>(&window, "maximal_defeated_activity", false, true);
-	duel_ = find_widget<tbutton>(&window, "duel", false, true);
-
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "player_city", false)
 		, boost::bind(
 		&tplayer_selection::player_city
 		, this
 		, boost::ref(window)));
-	connect_signal_mouse_left_click(
-		*maximal_defeated_activity_
-		, boost::bind(
-			&tplayer_selection::maximal_defeated_activity
-			, this
-			, boost::ref(window)));
-	connect_signal_mouse_left_click(
-		*duel_
-		, boost::bind(
-			&tplayer_selection::duel
-			, this
-			, boost::ref(window)));
-
-	std::stringstream strstr;
-	strstr.str("");
-	strstr << game_config::maximal_defeated_activity;
-	maximal_defeated_activity_->set_label(strstr.str());
 
 	tcontrol* control = find_widget<tcontrol>(&window, "player_city", false, true);
 	if (rows_mem_[player_].hero_ == player_hero_->number_) {
-		strstr.str("");
-		tent::duel = RANDOM_DUEL;
-		strstr << _("Random");
-		duel_->set_label(strstr.str());
 	} else {
 		control->set_visible(twidget::INVISIBLE);
-
-		control = find_widget<tcontrol>(&window, "duel_label", false, true);
-		control->set_visible(twidget::INVISIBLE);
-		duel_->set_visible(twidget::INVISIBLE);
 	}
 
 	control = find_widget<tcontrol>(&window, "ok", false, true);
@@ -199,71 +169,6 @@ void tplayer_selection::player_city(twindow& window)
 
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 	ok->set_active(rows_mem_[player_].city_ != -1);
-}
-
-void tplayer_selection::maximal_defeated_activity(twindow& window)
-{
-	// The possible eras to play
-	std::vector<std::string> activities;
-	activities.push_back("0");
-	activities.push_back("50");
-	activities.push_back("100");
-	activities.push_back("150");
-	
-	int activity_index;
-	if (game_config::maximal_defeated_activity <= 0) {
-		activity_index = 0;
-	} else if (game_config::maximal_defeated_activity <= 50) {
-		activity_index = 1;
-	} else if (game_config::maximal_defeated_activity <= 100) {
-		activity_index = 2;
-	} else {
-		activity_index = 3;
-	}
-
-	gui2::tcombo_box dlg(activities, activity_index);
-	dlg.show(gui_.video());
-
-	activity_index = dlg.selected_index();
-	if (activity_index == 0) {
-		game_config::maximal_defeated_activity = 0;
-	} else if (activity_index == 1) {
-		game_config::maximal_defeated_activity = 50;
-	} else if (activity_index == 2) {
-		game_config::maximal_defeated_activity = 100;
-	} else {
-		game_config::maximal_defeated_activity = 150;
-	}
-
-	std::stringstream str;
-	str << game_config::maximal_defeated_activity;
-	maximal_defeated_activity_->set_label(str.str());
-}
-
-void tplayer_selection::duel(twindow& window)
-{
-	// The possible eras to play
-	std::vector<std::string> items;
-	std::vector<tcount_str> duel_map;
-	int actived_index = 0;
-
-	duel_map.push_back(tcount_str(NO_DUEL, _("Hasn't")));
-	duel_map.push_back(tcount_str(RANDOM_DUEL, _("Random")));
-
-	for (std::vector<tcount_str>::iterator it = duel_map.begin(); it != duel_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (tent::duel == it->count) {
-			actived_index = std::distance(duel_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
-	dlg.show(gui_.video());
-
-	int selected = dlg.selected_index();
-	tent::duel = duel_map[selected].count;
-
-	duel_->set_label(duel_map[selected].str);
 }
 
 } // namespace gui2

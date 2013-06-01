@@ -216,7 +216,7 @@ void playsingle_controller::check_end_level()
 	{
 		team &t = teams_[gui_->viewing_team()];
 		if (!browse_ && t.objectives_changed()) {
-			dialogs::show_objectives(level_, t.objectives());
+			dialogs::show_objectives(level_, t);
 			t.reset_objectives_changed();
 		}
 		return;
@@ -601,6 +601,7 @@ void playsingle_controller::play_side(const unsigned int team_index, bool save)
 					}
 				}
 				before_human_turn(save);
+
 				play_human_turn();
 				after_human_turn();
 			} catch(end_turn_exception& end_turn) {
@@ -650,6 +651,8 @@ void playsingle_controller::before_human_turn(bool save)
 		save.autosave(game_config::disable_autosave, preferences::autosavemax(), preferences::INFINITE_AUTO_SAVES);
 		// uint32_t mid3 = SDL_GetTicks();
 		// posix_print("(mid3)used time: %u ms\n", mid3 - mid2);
+	} else {
+		teams_[player_number_ - 1].refresh_tactic_slots(*gui_);
 	}
 
 	if (preferences::turn_bell()) {
@@ -927,10 +930,16 @@ void playsingle_controller::play_ai_turn()
 	total_move = 0;
 	total_diplomatism = 0;
 
-	if (card_mode_) {
-		execute_card_uh(turn(), player_number_);
+	team& current_team = teams_[player_number_ - 1];
+
+	{
+		const events::command_disabler disable_commands;
+
+		if (card_mode_) {
+			execute_card_uh(turn(), player_number_);
+		}
+		execute_guard_attack(player_number_);
 	}
-	execute_guard_attack(player_number_);
 
 	gui_->enable_menu("play_card", false);
 	gui_->enable_menu("undo", false);
@@ -954,7 +963,7 @@ void playsingle_controller::play_ai_turn()
 	}
 	turn_data.sync_network();
 
-	if (!teams_[player_number_ - 1].is_human()) {
+	if (!current_team.is_human()) {
 		gui_->recalculate_minimap();
 		::clear_shroud(player_number_);
 		gui_->invalidate_unit();
@@ -1095,9 +1104,9 @@ void playsingle_controller::store_gold(bool obs)
 bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int index) const
 {
 	bool res = true;
-	switch (command){
+	switch (command) {
 		case hotkey::HOTKEY_PLAY_CARD:
-			return !browse_ && !linger_ && !events::commands_disabled;
+			return !browse_ && !linger_ && !events::commands_disabled && !mouse_handler_.in_multistep_state();
 		case hotkey::HOTKEY_ENDTURN:
 			return (!browse_ || linger_) && !events::commands_disabled;
 
@@ -1123,6 +1132,7 @@ bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, 
 			res = !is_observer();
 			break;
 		case hotkey::HOTKEY_LABEL_TEAM_TERRAIN:
+
 		case hotkey::HOTKEY_LABEL_TERRAIN: {
 			const terrain_label *label = resources::screen->labels().get_label(mouse_handler_.get_last_hex());
 			res = !events::commands_disabled && map_.on_board(mouse_handler_.get_last_hex())
@@ -1131,6 +1141,15 @@ bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, 
 				&& (!label || !label->immutable());
 			break;
 		}
+
+		case hotkey::HOTKEY_BOMB:
+			if (!current_team().can_bomb()) {
+				return false;
+			}
+		case hotkey::HOTKEY_TACTIC0:
+		case hotkey::HOTKEY_TACTIC1:
+		case hotkey::HOTKEY_TACTIC2:
+			return !rpging_ && !replaying_ && !events::commands_disabled && !browse_ && current_team().is_human() && !mouse_handler_.in_multistep_state();
 
 		default: 
 			return play_controller::can_execute_command(command, index);

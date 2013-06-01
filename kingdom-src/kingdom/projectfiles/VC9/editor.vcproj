@@ -179,7 +179,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\config_cache.cpp"
+				RelativePath="..\..\src\animated_game.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\builder.cpp"
 				>
 			</File>
 			<File
@@ -191,7 +195,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\image.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\image_function.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\loadscreen_empty.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\sdl_utils.cpp"
 				>
 			</File>
 			<File
@@ -218,6 +234,10 @@
 			>
 			<File
 				RelativePath="..\..\src\config_cache.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\DlgBuilderProc.hpp"
 				>
 			</File>
 			<File
@@ -563,7 +583,7 @@
 			Name="editor2"
 			>
 			<File
-				RelativePath="..\..\src\editor2\DlgAboutProc.cpp"
+				RelativePath="..\..\src\editor2\DlgBuilderProc.cpp"
 				>
 			</File>
 			<File
@@ -603,7 +623,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\editor2\faction.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\editor2\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\terrain.cpp"
 				>
 			</File>
 			<File

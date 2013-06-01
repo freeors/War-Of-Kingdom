@@ -11,10 +11,10 @@ static HWND init_toolbar_sys(HINSTANCE hinst, HWND hdlgP);
 
 #define title_enable_sync_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_SYNC, fEnable)
 #define title_enable_wgen_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_WGEN, fEnable)
-#define title_enable_xchg_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_XCHG, fEnable)
+#define title_enable_xchg_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_CORE, fEnable)
 #define title_enable_play_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_PLAY, fEnable)
 #define title_enable_update_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_TBOX, fEnable)
-#define title_enable_about_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_ABOUT, fEnable)
+#define title_enable_terrain_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_BUILDER, fEnable)
 
 void title_enable_ui(BOOL fEnable)
 {
@@ -24,7 +24,7 @@ void title_enable_ui(BOOL fEnable)
 	title_enable_xchg_btn(fEnable);
 	title_enable_play_btn(fEnable);
 	title_enable_update_btn(fEnable);
-	title_enable_about_btn(TRUE);
+	title_enable_terrain_btn(fEnable);
 
 	return;
 }
@@ -45,7 +45,7 @@ void On_DlgTitleCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	case IDM_SYS_WGEN:
 		title_select(da_wgen);
 		break;
-	case IDM_SYS_XCHG:
+	case IDM_SYS_CORE:
 		title_select(da_core);
 		break;
 	case IDM_SYS_PLAY:
@@ -53,9 +53,6 @@ void On_DlgTitleCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 	case IDM_SYS_TBOX:
 		title_select(da_campaign);
-		break;
-	case IDM_SYS_ABOUT:
-		title_select(da_about);
 		break;
 	default:
 		break;
@@ -82,14 +79,14 @@ BOOL On_DlgTitleNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		} else if (lpttt->hdr.idFrom == IDM_SYS_WGEN) {
             lpttt->lpszText = MAKEINTRESOURCE(IDM_SYS_WGEN); 
             
-		} else if (lpttt->hdr.idFrom == IDM_SYS_XCHG) {
-            lpttt->lpszText = MAKEINTRESOURCE(IDM_SYS_XCHG); 
+		} else if (lpttt->hdr.idFrom == IDM_SYS_CORE) {
+            lpttt->lpszText = MAKEINTRESOURCE(IDM_SYS_CORE); 
 
         } else if (lpttt->hdr.idFrom == IDM_SYS_TBOX) {
             lpttt->lpszText = MAKEINTRESOURCE(IDM_SYS_TBOX);
 
-        } else if (lpttt->hdr.idFrom == IDM_SYS_ABOUT) {
-            lpttt->lpszText = MAKEINTRESOURCE(IDM_SYS_ABOUT); 
+        } else if (lpttt->hdr.idFrom == IDM_SYS_BUILDER) {
+            lpttt->lpszText = MAKEINTRESOURCE(IDM_SYS_BUILDER); 
 
         } else if (lpttt->hdr.idFrom == IDM_SYS_PLAY) {
             lpttt->lpszText = MAKEINTRESOURCE(IDM_SYS_PLAY); 
@@ -143,7 +140,7 @@ HWND init_toolbar_sys(HINSTANCE hinst, HWND hdlgP)
 
 	idx ++;
 	gdmgr._tbBtns_sys[idx].iBitmap = MAKELONG(gdmgr._iico_title_xchg, 0);
-	gdmgr._tbBtns_sys[idx].idCommand = IDM_SYS_XCHG;
+	gdmgr._tbBtns_sys[idx].idCommand = IDM_SYS_CORE;
 	gdmgr._tbBtns_sys[idx].fsState = TBSTATE_ENABLED;
 	gdmgr._tbBtns_sys[idx].fsStyle = TBSTYLE_BUTTON;
 	gdmgr._tbBtns_sys[idx].dwData = 0L;
@@ -167,7 +164,7 @@ HWND init_toolbar_sys(HINSTANCE hinst, HWND hdlgP)
 
 	idx ++;
 	gdmgr._tbBtns_sys[idx].iBitmap = MAKELONG(gdmgr._iico_title_about, 0);
-	gdmgr._tbBtns_sys[idx].idCommand = IDM_SYS_ABOUT;
+	gdmgr._tbBtns_sys[idx].idCommand = IDM_SYS_BUILDER;
 	gdmgr._tbBtns_sys[idx].fsState = TBSTATE_ENABLED;
 	gdmgr._tbBtns_sys[idx].fsStyle = TBSTYLE_BUTTON;
 	gdmgr._tbBtns_sys[idx].dwData = 0L;
@@ -213,17 +210,16 @@ void title_select(do_action_t da)
 	
 	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_SYNC, 0);
 	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_WGEN, 0);
-	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_XCHG, 0);
+	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_CORE, 0);
 	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_PLAY, 0);
 	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_TBOX, 0);
-	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_ABOUT, 0);
+	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_BUILDER, 0);
 
 	ShowWindow(gdmgr._hdlg_sync, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_wgen, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_core, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_visual, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_campaign, SW_HIDE);
-	ShowWindow(gdmgr._hdlg_about, SW_HIDE);
 
 	// 记住当前正在执行的会话
 	gdmgr._da = da;
@@ -240,7 +236,7 @@ void title_select(do_action_t da)
 
 	} else if (da == da_core) {
 		ShowWindow(gdmgr._hdlg_core, SW_RESTORE);
-		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_XCHG, 1);
+		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_CORE, 1);
 		core_enter_ui();
 
 	} else if (da == da_visual) {
@@ -252,10 +248,6 @@ void title_select(do_action_t da)
 		ShowWindow(gdmgr._hdlg_campaign, SW_RESTORE);
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_TBOX, 1);
 		campaign_enter_ui();
-
-	} else if (da == da_about) {
-		ShowWindow(gdmgr._hdlg_about, SW_RESTORE);
-		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_ABOUT, 1);
 
 	}
 	return;

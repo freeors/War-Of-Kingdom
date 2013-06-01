@@ -17,12 +17,13 @@
 #define GUI_DIALOGS_PREFERENCES_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
+#include "unit.hpp"
 
 class display;
 
 namespace gui2 {
 
-class tgrid;
+class tscrollbar_panel;
 class tbutton;
 class tslider;
 
@@ -39,7 +40,7 @@ public:
 private:
 	friend void show_preferences_dialog(display& disp);
 
-	enum {MIN_PAGE = 0, GENERAL_PAGE = MIN_PAGE, DISPLAY_PAGE, MUSIC_PAGE, MULTIPLAYER_PAGE, ADVANCED_PAGE, MAX_PAGE = ADVANCED_PAGE};
+	enum {MIN_PAGE = 0, GENERAL_PAGE = MIN_PAGE, DISPLAY_PAGE, MUSIC_PAGE, ADVANCED_PAGE, SCENARIO_PAGE, MAX_PAGE = SCENARIO_PAGE};
 
 	/** Called when another page is selected. */
 	void page_selected(twindow& window);
@@ -82,23 +83,29 @@ private:
 	void UI_sound_toggled(twidget* widget);
 	void UI_sound_changed(tslider* widget, int value);
 	// multiplayer
-	void chat_timestamp_toggled(twidget* widget);
+	void maximal_defeated_activity(twindow& window);
+	void duel(twindow& window);
 	// advanced
+	void chat_timestamp_toggled(twidget* widget);
 	void scroll_when_mouse_outside_toggled(twidget* widget);
-	void whiteboard_on_start_toggled(twidget* widget);
 	void interrupt_when_ally_sighted_toggled(twidget* widget);
 	void scroll_to_action_toggled(twidget* widget);
 	void show_color_cursors_toggled(twidget* widget);
 	void zoom_button(twindow& window);
 	void show_grid_toggled(twidget* widget);
 
+	const tscenario_env& get_scenario_env() const { return env_; }
 private:
 	/** The chosen campaign. */
 	display& disp_;
 	int start_page_;
 	int page_;
-	tgrid* options_grid_;
+	tscrollbar_panel* options_grid_;
+
+	tscenario_env env_;
 	tbutton* zoom_;
+	tbutton* maximal_defeated_activity_;
+	tbutton* duel_;
 };
 
 } // namespace gui2

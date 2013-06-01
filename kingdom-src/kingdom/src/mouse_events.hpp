@@ -60,10 +60,12 @@ public:
 	void set_gui(game_display* gui) { gui_ = gui; }
 	void set_undo(const bool undo) { undo_ = undo; }
 
-	void set_recalling(artifical *c, int u);
+	void set_expedite(artifical *c, int u);
 	void set_building(artifical* bldg);
-	void set_card_playing(int index);
+	void set_card_playing(team& t, int index);
 	void set_hero_placing(hero* h);
+
+	void set_unit_placing(unit& u);
 
 	unit_map::iterator selected_unit();
 
@@ -87,7 +89,14 @@ public:
 
 	map_location move_unit_along_current_route(const std::vector<map_location>& caller_steps, bool check_shroud, bool attackmove = false);
 
+	bool in_tip_state() const;
+	bool in_multistep_state() const;
+
+	void exit_building(bool ok);
+	void exit_playing_card(bool ok);
 	void exit_placing_hero();
+	void exit_placing_unit(bool ok);
+
 protected:
 	/**
 	 * Due to the way this class is constructed we can assume that the
@@ -103,7 +112,6 @@ protected:
 
 	int drag_threshold() const;
 
-	bool in_tip_state() const;
 	/**
 	 * Use update to force an update of the mouse state.
 	 */
@@ -127,12 +135,14 @@ protected:
 	void place_at(const map_location& at, hero& h);
 	void join_in(const map_location& at, hero& h);
 
+	// move a field troop from a to b.
+	void direct_move_unit(unit& u, const map_location& from, const map_location& to);
+
 	bool interior(bool browse, unit& u);
 
 	// the perform attack function called after a random seed is obtained
 	void perform_attack(unit& attacker, unit& defender, int attacker_weapon, int defender_weapon, rand_rng::seed_t seed);
 
-	void show_attack_options(const unit_map::const_iterator &u);
 	map_location current_unit_attacks_from(const map_location& loc);
 	map_location current_unit_tactic_from(const map_location& loc);
 	map_location current_unit_interior_from(const map_location& loc);
@@ -144,7 +154,6 @@ protected:
 
 	unit_map::const_iterator find_unit(const map_location& hex) const;
 	unit_map::iterator find_unit(const map_location& hex);
-	bool unit_in_cycle(unit_map::const_iterator it);
 
 private:
 	gamemap& map_;
@@ -187,6 +196,7 @@ private:
 	//
 	// card playing
 	//
+	const card* playing_card_;
 	int card_index_;
 
 	//

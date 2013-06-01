@@ -371,7 +371,6 @@ int tcontrol::get_text_maximum_width() const
 int tcontrol::get_text_maximum_height() const
 {
 	assert(config_);
-
 	return get_height() - config_->text_extra_height;
 }
 
@@ -426,12 +425,12 @@ tpoint tcontrol::get_best_text_size(
 	tpoint size = minimum_size - border;
 
 	if (!label_size_.second.x || (maximum_size.x != label_size_.first)) {
+/*
 		font::ttext renderer_;
 		renderer_.set_text(label_, use_markup_);
 
 		renderer_.set_font_size(config_->text_font_size);
 		renderer_.set_font_style(config_->text_font_style);
-		// renderer_.set_alignment(text_alignment_);
 
 		// Try with the minimum wanted size.
 		const int maximum_width = text_maximum_width_ != 0
@@ -440,21 +439,10 @@ tpoint tcontrol::get_best_text_size(
 
 		renderer_.set_maximum_width(maximum_width);
 
-		if(can_wrap()) {
+		if (can_wrap()) {
 			renderer_.set_ellipse_mode(PANGO_ELLIPSIZE_NONE);
 		}
-/*
-		DBG_GUI_L << LOG_HEADER
-				<< " label '" << debug_truncate(label_)
-				<< "' status: "
-				<< " minimum_size " << minimum_size
-				<< " maximum_size " << maximum_size
-				<< " text_maximum_width_ " << text_maximum_width_
-				<< " can_wrap " << can_wrap()
-				<< " truncated " << renderer_.is_truncated()
-				<< " renderer size " << renderer_.get_size()
-				<< ".\n";
-*/
+
 		// If doesn't fit try the maximum.
 		if (renderer_.is_truncated() && !can_wrap()) {
 			// FIXME if maximum size is defined we should look at that
@@ -464,8 +452,19 @@ tpoint tcontrol::get_best_text_size(
 					? maximum_size.x - border.x
 					: -1);
 		}
+
 		label_size_.first = maximum_size.x;
 		label_size_.second = renderer_.get_size();
+
+*/
+		// Try with the minimum wanted size.
+		const int maximum_width = text_maximum_width_ != 0
+				? text_maximum_width_
+				: maximum_size.x;
+
+
+		label_size_.first = maximum_size.x;
+		label_size_.second = font::get_rendered_text_size(label_, maximum_width, config_->text_font_size);
 	}
 
 	size = label_size_.second + border;

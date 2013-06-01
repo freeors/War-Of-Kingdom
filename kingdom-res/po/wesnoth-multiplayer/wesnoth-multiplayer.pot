@@ -1516,3 +1516,6 @@ msgid ""
 "A wesnoth benchmark, use --no-delay --multiplayer --"
 "scenario=wesbench_shroud_walk --exit-at-end."
 msgstr ""
+
+msgid "Tower(16x6)"
+msgstr ""

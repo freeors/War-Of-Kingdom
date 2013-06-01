@@ -35,7 +35,6 @@
 #include "map.hpp"
 #include "savegame.hpp"
 #include "unit_id.hpp"
-#include "hero.hpp"
 #include "replay.hpp"
 #include "wml_separators.hpp"
 
@@ -92,102 +91,6 @@ void check_response(network::connection res, const config& data)
 	}
 }
 
-void level_to_gamestate(config& level, command_pool& replay_data, game_state& state)
-{
-	//any replay data is only temporary and should be removed from
-	//the level data in case we want to save the game later
-	if (replay_data.pool_pos_vsize()) {
-		state.replay_data = replay_data;
-		recorder = replay(state.replay_data);
-		if(!recorder.empty()) {
-			recorder.set_skip(false);
-			recorder.set_to_end();
-		}
-	}
-
-	//set random
-	const std::string seed = level["random_seed"];
-	if(! seed.empty()) {
-		const unsigned calls = lexical_cast_default<unsigned>(level["random_calls"]);
-		state.rng().seed_random(lexical_cast<int>(seed), calls);
-	} else {
-		// ERR_NG << "No random seed found, random "
-		//	"events will probably be out of sync.\n";
-	}
-
-	//adds the starting pos to the level
-	if (!level.child("replay_start")) {
-		level.add_child("replay_start", level);
-		level.child("replay_start").remove_child("multiplayer", 0);
-	}
-	//this is important, if it does not happen, the starting position is missing and
-	//will be drawn from the snapshot instead (which is not what we want since we have
-	//all needed information here already)
-	state.starting_pos = level.child("replay_start");
-
-	level["campaign_type"] = "multiplayer";
-	state.classification().campaign_type = "multiplayer";
-	state.classification().completion = level["completion"].str();
-	state.classification().version = level["version"].str();
-
-	if (const config &vars = level.child("variables")) {
-		state.set_variables(vars);
-	}
-	state.set_menu_items(level.child_range("menu_item"));
-	state.mp_settings().set_from_config(level);
-
-	//Check whether it is a save-game by looking for snapshot data
-	const config &snapshot = level.child("snapshot");
-	const bool saved_game = snapshot && snapshot.child("side");
-
-	//It might be a MP campaign start-of-scenario save
-	//In this case, it's not entirely a new game, but not a save, either
-	//Check whether it is no savegame and the starting_pos contains [player] information
-	bool start_of_scenario = !saved_game && state.starting_pos.child("player");
-
-	//If we start a fresh game, there won't be any snapshot information. If however this
-	//is a savegame, we got a valid snapshot here.
-	if (saved_game) {
-		state.snapshot = snapshot;
-		if (const config &v = snapshot.child("variables")) {
-			state.set_variables(v);
-		}
-		state.set_menu_items(snapshot.child_range("menu_item"));
-	}
-
-	//In any type of reload(normal save or start-of-scenario) the players could have
-	//changed and need to be replaced
-	if(saved_game || start_of_scenario){
-		config::child_itors saved_sides = saved_game ?
-			state.snapshot.child_range("side") :
-			state.starting_pos.child_range("side");
-		config::const_child_itors level_sides = level.child_range("side");
-
-		foreach (config &side, saved_sides)
-		{
-			foreach (const config &lside, level_sides)
-			{
-				if (side["side"] == lside["side"] &&
-						(side["current_player"] != lside["current_player"] ||
-						 side["controller"] != lside["controller"]))
-				{
-					side["current_player"] = lside["current_player"];
-					side["id"] = lside["id"];
-					side["save_id"] = lside["save_id"];
-					side["controller"] = lside["controller"];
-					break;
-				}
-			}
-		}
-	}
-	if(state.get_variables().empty()) {
-		// LOG_NG << "No variables were found for the game_state." << std::endl;
-	} else {
-		// LOG_NG << "Variables found and loaded into game_state:" << std::endl;
-		// LOG_NG << state.get_variables();
-	}
-}
-
 std::string get_color_string(int id)
 {
 	std::string prefix = team::get_side_highlight(id);
@@ -199,7 +102,7 @@ std::string get_color_string(int id)
 		return prefix + _("Invalid Color");
 	}
 */
-	return prefix + game_config::team_rgb_name[id % game_config::team_rgb_name.size()].second;
+	return game_config::team_rgb_name[id % game_config::team_rgb_name.size()].second;
 }
 
 REGISTER_DIALOG(mp_side_creator)
@@ -480,7 +383,7 @@ void tmp_side_creator::load_game(twindow& window)
 	level_["observer"] = params_.allow_observers;
 
 	if(level_["objectives"].empty()) {
-		level_["objectives"] = "*" + t_string(N_("Victory:"), "wesnoth") + "\n<0,255,0>. " +
+		level_["objectives"] = "*" + t_string(N_("Victory:"), "wesnoth") + "\n. " +
 			t_string(N_("Defeat enemy leader(s)"), "wesnoth");
 	}
 }
@@ -530,7 +433,7 @@ void tmp_side_creator::lists_init()
 
 	// side features
 	// #0: no feature
-	side_features_.push_back(_("<NONE>"));
+	side_features_.push_back(_("(NONE)"));
 	// #1: random 
 	side_features_.push_back(_("Random"));
 	// #2...
@@ -751,10 +654,11 @@ void tmp_side_creator::update_user_combos()
 	player_xtypes_ = player_types_;
 	connected_user_list::const_iterator itor;
 	for (itor = users_.begin(); itor != users_.end(); ++itor) {
+		str << "<format>";
 		if (itor->controller_ == CNTR_LOCAL) {
-			str << "<0,255,0>";
+			str << "color='green' ";
 		}
-		str << itor->name << "\n";
+		str << "text='" << itor->name << "'</format>\n";
 
 		player_xtypes_.push_back(std::make_pair<std::string, int>(itor->name, itor->controller_ + CNTR_LAST));
 	}

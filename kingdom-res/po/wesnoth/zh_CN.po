@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-03-22 16:18+0800\n"
+"PO-Revision-Date: 2013-05-23 21:21+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -766,130 +766,6 @@ msgstr ""
 "当您在场景中获胜后，地图将变为灰色，而“结束回合”按钮会变成“结束场景”。在按下"
 "该按钮继续之前，您可以做些别的事，例如改变游戏存档选项，或者（在多人游戏中）"
 "和其他玩家交流。"
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:171
-msgid "Recruiting and Recalling"
-msgstr "征募与召回"
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:172
-#, fuzzy
-msgid ""
-"Each side begins with one leader in their keep. At the start of any battle, "
-"and at times during it, you will need to recruit <ref>dst='..units' "
-"text='units'</ref> into your army. To recruit, you must have your leader "
-"(for instance, Konrad in the Heir to the Throne campaign) on the Keep square "
-"of a <ref>dst='terrain_castle' text='Castle'</ref>. Then you may recruit by "
-"either choosing Recruit from the menu or right-clicking on a hex and "
-"selecting <bold>text=Recruit</bold>. This brings up the recruit menu, which "
-"lists units available for recruitment, along with their gold cost. Click on "
-"a unit to see its statistics, then press the recruit button to recruit it."
-msgstr ""
-"游戏开始时，每一方都有一位领袖在城堡主楼里。在战斗开始时，以及战斗过程中，您"
-"可能需要为您的部队征募<ref>dst='..units' text='单位'</ref>。要想征募单位，您"
-"的首领（例如“王座继承者”战役中的科纳德）必须位于<ref>dst='terrain_castle' "
-"text='城堡'</ref>的主楼上。而后您将可以在菜单中选择“征募”或右键点击城堡内的一"
-"个格子并选择<italic>text=征募</italic>。此时会弹出征募菜单，其中列出了所有可"
-"以征募的单位类别和所需金币数。点击一个单位可以查看其数据，然后点击征募按钮就"
-"可将其征募。"
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:174
-msgid ""
-"\n"
-"\n"
-"If you right-clicked on a castle hex and selected recruit, the new unit will "
-"appear in that square. Otherwise, it will appear in a free square near the "
-"keep. You may only recruit as many units as you have free hexes in your "
-"castle, and you cannot spend more gold than you actually have on recruiting."
-msgstr ""
-"\n"
-"\n"
-"如果您是右击城堡里的格子后选择征募的，那么新的单位将出现在该格内。否则，新兵"
-"将出现在主楼旁的某一个空地块里。您最多只能征募与城堡内空格数相同个数的单位，"
-"并且在招募时，您的总花费却不能超出您所拥有的金币数量。"
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:176
-msgid ""
-"\n"
-"\n"
-"Recruited units come with two random <ref>dst='..traits_section' "
-"text='Traits'</ref> which modify their statistics."
-msgstr ""
-"\n"
-"\n"
-"新兵具有两项随机的<ref>dst='..traits_section' text='特质'</ref>，对其数据稍有"
-"影响。"
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:178
-msgid ""
-"\n"
-"\n"
-"In later scenarios, you may also Recall survivors from earlier battles. "
-"Recalling costs a standard 20 gold and presents you with a list of all "
-"surviving units from previous scenarios."
-msgstr ""
-"\n"
-"\n"
-"在以后的战役中，您也可以召回早先战斗中的生还者。召回一律花费20金币。在召回时"
-"您将看到一张先前场景中全部生还单位的清单。"
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:180
-msgid ""
-"\n"
-"\n"
-"Units not only cost gold to Recruit or Recall, they also require money to "
-"support. See <ref>dst='income_and_upkeep' text='Income and Upkeep'</ref> for "
-"more information."
-msgstr ""
-"\n"
-"\n"
-"单位不仅仅需要花费金币去征募或召回，还需要金钱来进行维护。参见"
-"<ref>dst='income_and_upkeep' text='收入与维护费用'</ref>以获取更多信息。"
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:187
-msgid "Orbs"
-msgstr "行动状态球"
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:188
-msgid ""
-"On top of the energy bar shown next to each unit of yours is an orb. For "
-"units you control, this orb is:"
-msgstr ""
-"在您的每一个单位的能量条上方是一个行动状态球。对于您所控制的单位，行动状态球"
-"有以下状态："
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:189
-msgid "green if it hasn’t moved this turn,"
-msgstr "绿色，表明本单位本回合没有移动过，"
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:190
-msgid "yellow if it has moved, but could still move further or attack, or"
-msgstr "黄色，表明本单位移动过，但还可以继续移动或攻击，"
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:191
-msgid ""
-"red if it has finished its turn (might still be able to move or attack)."
-msgstr ""
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:192
-msgid "The orb is blue if the unit is an ally you do not control."
-msgstr "行动状态球为蓝色，表明这是一个您不能控制的友军单位。"
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:193
-msgid "Enemy units have no orb on top of their energy bar."
-msgstr "敌方单位的能量条上方没有行动状态球。"
 
 #. [topic]: id=hitpoints
 #: data/core/help.cfg:200
@@ -1788,14 +1664,6 @@ msgstr "对光明或者黑暗的不适绝不可能使这些勇敢的战士动摇
 msgid "Feral"
 msgstr "总计"
 
-#. [topic]: id=traits_feral
-#: data/core/help.cfg:409
-msgid ""
-"Dwellings of sentient beings are not easily used for cover by feral "
-"creatures of low intelligence. As a result, feral units receive a maximum of "
-"40% defense in any land-based village regardless of base terrain."
-msgstr ""
-
 #. [topic]: id=traits_loyal
 #: data/core/help.cfg:414
 msgid "Loyal"
@@ -1937,30 +1805,6 @@ msgstr ""
 "\n"
 "活力单位天生拥有1点附加生命值，每次升级所增加的生命值也多1点。并且在每个无战"
 "斗的回合后都会休息并恢复2点生命值。他们中毒时受到的伤害也减少1/4。"
-
-#. [topic]: id=traits_dim
-#: data/core/help.cfg:454
-msgid "Dim"
-msgstr "愚笨"
-
-#. [topic]: id=traits_dim
-#: data/core/help.cfg:455
-msgid ""
-"Units with trait Dim suffer a 20% increase in experience required to advance."
-msgstr "有愚笨特质的单位升级所需的经验值比一般单位多20%。"
-
-#. [topic]: id=traits_dim
-#: data/core/help.cfg:457
-msgid ""
-"\n"
-"\n"
-"Dim is a trait all too common in goblins and other lesser species. There are "
-"reasons these species are lesser, and this is one of them."
-msgstr ""
-"\n"
-"\n"
-"愚笨在地精等数量较少的种族中是常见得过头的特质。这些种族之所以数量较少是有原"
-"因的，而愚笨便是其中之一。"
 
 #. [topic]: id=traits_slow
 #: data/core/help.cfg:462
@@ -4973,33 +4817,6 @@ msgstr "无畏"
 msgid "Fights normally during unfavorable times of day/night"
 msgstr "在不适应的时段（昼间/夜间）也能正常作战"
 
-#. [trait]: id=feral
-#: data/core/macros/traits.cfg:190
-#, fuzzy
-msgid "feral"
-msgstr "总计"
-
-#. [trait]: id=feral
-#: data/core/macros/traits.cfg:191
-#, fuzzy
-msgid "female^feral"
-msgstr "中立"
-
-#. [trait]: id=feral
-#: data/core/macros/traits.cfg:192
-msgid "Receive only 40% defense in land-based villages"
-msgstr ""
-
-#. [trait]: id=weak
-#: data/core/macros/traits.cfg:208
-msgid "weak"
-msgstr "虚弱"
-
-#. [trait]: id=weak
-#: data/core/macros/traits.cfg:209
-msgid "female^weak"
-msgstr "虚弱"
-
 #. [trait]: id=slow
 #: data/core/macros/traits.cfg:226
 msgid "slow"
@@ -7045,6 +6862,9 @@ msgstr "维护费用"
 msgid "income"
 msgstr "收入"
 
+msgid "Technology income"
+msgstr "技法收入"
+
 msgid "Tactic"
 msgstr "战法"
 
@@ -7643,6 +7463,9 @@ msgstr "不要再问我！"
 msgid "%a %b %d %H:%M %Y"
 msgstr "%Y年%m月%d日，%H时%M分"
 
+msgid "$d days"
+msgstr "$d天"
+
 #: src/dialogs.cpp:470
 msgid "#(Invalid)"
 msgstr "#（无效的）"
@@ -7690,7 +7513,7 @@ msgstr "%H:%M"
 
 #: src/dialogs.cpp:547 src/savegame.cpp:173
 msgid "%A, %H:%M"
-msgstr "%A, %H:%M"
+msgstr "%m月%d日 %H:%M"
 
 #: src/dialogs.cpp:550 src/savegame.cpp:176
 msgid "%b %d"
@@ -8600,6 +8423,9 @@ msgid "You must have at least 1 gold piece to recall a unit"
 msgid_plural "You must have at least $cost gold pieces to recall a unit"
 msgstr[0] "要召回一个单位，您至少需要有1个金币"
 msgstr[1] "要召回一个单位，您至少需要有$cost个金币"
+
+msgid "There is $count vacant tactic. Do you really want to end your turn?"
+msgstr "您在这回合还可预激活$count个战法，您真的想结束本回合吗？"
 
 msgid ""
 "$city and other $cities cities have $heros low loyalty heros. If not "
@@ -10699,6 +10525,15 @@ msgstr "$side完成研究$end，已研究完所有科技！"
 msgid "Select a grid to place, or a troop to join"
 msgstr "选择哪格子放置部队，或加入哪部队"
 
+msgid "Select a grid to move at"
+msgstr "选择要移动到格子"
+
+msgid "Select a unit to action on"
+msgstr "选择要作用到单位"
+
+msgid "Select a grid to build on"
+msgstr "选择建筑物要造在的格子"
+
 msgid "short sword"
 msgstr "短剑"
 
@@ -10761,3 +10596,135 @@ msgstr "击败所有势力"
 
 msgid "No city you holded"
 msgstr "没了能控制城市"
+
+msgid "Miss"
+msgstr "闪避"
+
+#~ msgid "Recruiting and Recalling"
+#~ msgstr "征募与召回"
+
+#, fuzzy
+#~ msgid ""
+#~ "Each side begins with one leader in their keep. At the start of any "
+#~ "battle, and at times during it, you will need to recruit <ref>dst='.."
+#~ "units' text='units'</ref> into your army. To recruit, you must have your "
+#~ "leader (for instance, Konrad in the Heir to the Throne campaign) on the "
+#~ "Keep square of a <ref>dst='terrain_castle' text='Castle'</ref>. Then you "
+#~ "may recruit by either choosing Recruit from the menu or right-clicking on "
+#~ "a hex and selecting <bold>text=Recruit</bold>. This brings up the recruit "
+#~ "menu, which lists units available for recruitment, along with their gold "
+#~ "cost. Click on a unit to see its statistics, then press the recruit "
+#~ "button to recruit it."
+#~ msgstr ""
+#~ "游戏开始时，每一方都有一位领袖在城堡主楼里。在战斗开始时，以及战斗过程中，"
+#~ "您可能需要为您的部队征募<ref>dst='..units' text='单位'</ref>。要想征募单"
+#~ "位，您的首领（例如“王座继承者”战役中的科纳德）必须位于"
+#~ "<ref>dst='terrain_castle' text='城堡'</ref>的主楼上。而后您将可以在菜单中"
+#~ "选择“征募”或右键点击城堡内的一个格子并选择<italic>text=征募</italic>。此时"
+#~ "会弹出征募菜单，其中列出了所有可以征募的单位类别和所需金币数。点击一个单位"
+#~ "可以查看其数据，然后点击征募按钮就可将其征募。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "If you right-clicked on a castle hex and selected recruit, the new unit "
+#~ "will appear in that square. Otherwise, it will appear in a free square "
+#~ "near the keep. You may only recruit as many units as you have free hexes "
+#~ "in your castle, and you cannot spend more gold than you actually have on "
+#~ "recruiting."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "如果您是右击城堡里的格子后选择征募的，那么新的单位将出现在该格内。否则，新"
+#~ "兵将出现在主楼旁的某一个空地块里。您最多只能征募与城堡内空格数相同个数的单"
+#~ "位，并且在招募时，您的总花费却不能超出您所拥有的金币数量。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Recruited units come with two random <ref>dst='..traits_section' "
+#~ "text='Traits'</ref> which modify their statistics."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "新兵具有两项随机的<ref>dst='..traits_section' text='特质'</ref>，对其数据"
+#~ "稍有影响。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "In later scenarios, you may also Recall survivors from earlier battles. "
+#~ "Recalling costs a standard 20 gold and presents you with a list of all "
+#~ "surviving units from previous scenarios."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "在以后的战役中，您也可以召回早先战斗中的生还者。召回一律花费20金币。在召回"
+#~ "时您将看到一张先前场景中全部生还单位的清单。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Units not only cost gold to Recruit or Recall, they also require money to "
+#~ "support. See <ref>dst='income_and_upkeep' text='Income and Upkeep'</ref> "
+#~ "for more information."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "单位不仅仅需要花费金币去征募或召回，还需要金钱来进行维护。参见"
+#~ "<ref>dst='income_and_upkeep' text='收入与维护费用'</ref>以获取更多信息。"
+
+#~ msgid "Orbs"
+#~ msgstr "行动状态球"
+
+#~ msgid ""
+#~ "On top of the energy bar shown next to each unit of yours is an orb. For "
+#~ "units you control, this orb is:"
+#~ msgstr ""
+#~ "在您的每一个单位的能量条上方是一个行动状态球。对于您所控制的单位，行动状态"
+#~ "球有以下状态："
+
+#~ msgid "green if it hasn’t moved this turn,"
+#~ msgstr "绿色，表明本单位本回合没有移动过，"
+
+#~ msgid "yellow if it has moved, but could still move further or attack, or"
+#~ msgstr "黄色，表明本单位移动过，但还可以继续移动或攻击，"
+
+#~ msgid "The orb is blue if the unit is an ally you do not control."
+#~ msgstr "行动状态球为蓝色，表明这是一个您不能控制的友军单位。"
+
+#~ msgid "Enemy units have no orb on top of their energy bar."
+#~ msgstr "敌方单位的能量条上方没有行动状态球。"
+
+#~ msgid "Dim"
+#~ msgstr "愚笨"
+
+#~ msgid ""
+#~ "Units with trait Dim suffer a 20% increase in experience required to "
+#~ "advance."
+#~ msgstr "有愚笨特质的单位升级所需的经验值比一般单位多20%。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Dim is a trait all too common in goblins and other lesser species. There "
+#~ "are reasons these species are lesser, and this is one of them."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "愚笨在地精等数量较少的种族中是常见得过头的特质。这些种族之所以数量较少是有"
+#~ "原因的，而愚笨便是其中之一。"
+
+#, fuzzy
+#~ msgid "feral"
+#~ msgstr "总计"
+
+#, fuzzy
+#~ msgid "female^feral"
+#~ msgstr "中立"
+
+#~ msgid "weak"
+#~ msgstr "虚弱"
+
+#~ msgid "female^weak"
+#~ msgstr "虚弱"

@@ -140,6 +140,7 @@ enum {
 	hero_status_max_office = hero_status_military,
 	hero_status_wander,
 	hero_status_unstage,
+	hero_status_employable,
 	hero_status_die,
 	HEROS_STATUSES,
 };
@@ -175,16 +176,14 @@ enum {
 };
 #define HEROS_DEFAULT_HEART			hero_heart_0
 
-#define HERO_PREFIX_STR_AMBITION	"ambition-"
+#define HEROS_FLAGS					8
+#define HERO_PREFIX_STR_FLAG	"flag-"
 enum {
-	hero_ambition_0 = 0,
-	hero_ambition_1,
-	hero_ambition_2,
-	hero_ambition_3,
-	hero_ambition_4,
-	hero_ambition_max = hero_ambition_4,
+	hero_flag_min = 0,
+	hero_flag_robber = hero_flag_min,
+	hero_flag_roam,
+	hero_flag_max = hero_flag_roam,
 };
-#define HEROS_DEFAULT_AMBITION		hero_ambition_3
 
 #define HEROS_MAX_ARMS	6
 #define HERO_PREFIX_STR_ARMS		"arms-"
@@ -273,6 +272,7 @@ enum {
 	hero_feature_nightattack,
 	hero_featrue_frighten,
 	hero_featrue_indomitable,
+	hero_featrue_backstab, // --> 60
 
 	hero_feature_complex_min = HEROS_BASE_FEATURE_COUNT,
 
@@ -327,6 +327,10 @@ enum {
 #define HERO_PREFIX_STR_CHARACTER	"character-"
 #define HERO_PREFIX_STR_CHARACTER_DESC	"character_desc-"
 
+#define NO_DECREE				-1
+#define HERO_PREFIX_STR_DECREE		"decree-"
+#define HERO_PREFIX_STR_DECREE_DESC	"decree_desc-"
+
 struct hero_5fields_t {
 	uint16_t leadership_;
 	uint16_t force_;
@@ -348,13 +352,15 @@ struct hero_feeling {
 	uint8_t official_;	\
 	uint8_t base_catalog_;	\
 	uint8_t	activity_;	\
-	uint8_t ambition_;	\
+	uint8_t flags_;	\
 	uint8_t character_;	\
 	uint8_t side_;	\
 	uint8_t heart_;	\
 	uint8_t side_feature_;	\
 	uint8_t treasure_;	\
 	uint8_t tactic_;	\
+	uint8_t cost_;	\
+	uint8_t reserve1_;	\
 	uint16_t image_;	\
 	uint16_t leadership_;	\
 	uint16_t force_;	\
@@ -374,7 +380,7 @@ struct hero_feeling {
 	hero_feeling oath_[HEROS_MAX_OATH];	\
 	hero_feeling intimate_[HEROS_MAX_INTIMATE];	\
 	hero_feeling hate_[HEROS_MAX_HATE];	\
-	char reserve3_[16];
+	char reserve3_[14];
 
 struct hero_fields_t {
 	HERO_FIELDS;
@@ -407,6 +413,7 @@ struct ublock {
 	bool meritorious;
 	bool abilityx2;
 	bool arms;
+	int arms_speed;
 	bool armsx2;
 	bool skill[HEROS_MAX_SKILL];
 	int skill_speed[HEROS_MAX_SKILL];
@@ -455,12 +462,18 @@ public:
 	static const std::string& stratum_str(int stratum);
 	static const std::string& status_str(int status);
 	static const std::string& official_str(int offical);
+	static const std::string& flag_str(int flag);
 
 	static int number_market;
 	static int number_technology;
 	static int number_wall;
 	static int number_keep;
 	static int number_tower;
+	static int number_tactic;
+	static int number_artifical_min;
+	static int number_artifical_max;
+	static bool is_artifical(int h);
+	static bool is_ea_artifical(int h);
 
 	static int number_businessman;
 	static int number_scholar;
@@ -469,6 +482,7 @@ public:
 	static bool is_commoner(int h);
 
 	static int number_scout;
+	static int number_empty_leader;
 	static int number_system_min;
 	static int number_system_max;
 	static bool is_system(int h);
@@ -497,6 +511,10 @@ public:
 	void set_loyalty(hero& leader, int level, bool fixed = false);
 	void set_loyalty2(hero& leader, int level, bool fixed = false);
 
+	void set_flag(int flag);
+	void clear_flag(int flag);
+	bool get_flag(int flag) const;
+
 	int increase_feeling(hero& to, int inc, int& descent_number);
 
 	void to_unstage();
@@ -514,8 +532,6 @@ public:
 	const char* biography();
 
 	std::string& heart_str();
-
-	std::string& ambition_str();
 
 	enum {ARMS, SKILL};
 
@@ -541,6 +557,7 @@ private:
 	static std::string stratum_str_[HEROS_STRATUMS];
 	static std::string status_str_[HEROS_STATUSES];
 	static std::string official_str_[HEROS_OFFICIALS];
+	static std::string flag_str_[HEROS_FLAGS];
 	static std::vector<int> valid_features_;
 
 	char imgfile_[32];
@@ -548,7 +565,6 @@ private:
 	std::string name_str_;
 	std::string surname_str_;
 	std::string heart_str_;
-	std::string ambition_str_;
 };
 
 

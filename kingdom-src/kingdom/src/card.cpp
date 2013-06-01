@@ -24,10 +24,10 @@ card::card()
 	, number_(CARDS_INVALID_NUMBER)
 	, target_hero_(false)
 	, multitudinous_(false)
-	, decree_(false)
 	, points_(-1)
 	, range_(NONE)
 	, mode_()
+	, bomb_(false)
 {
 }
 
@@ -39,10 +39,10 @@ card::card(const config& card_cfg)
 	, number_(CARDS_INVALID_NUMBER)
 	, target_hero_(card_cfg["hero"].to_bool())
 	, multitudinous_(card_cfg["multitudinous"].to_bool())
-	, decree_(card_cfg["decree"].to_bool())
 	, points_(-1)
 	, range_(NONE)
 	, mode_(card_cfg["mode"].str())
+	, bomb_(card_cfg["bomb"].to_bool())
 {
 	if (!condition_cfg_) {
 		throw config::error("[card] error, " + name() + " no [condition].");
@@ -53,65 +53,21 @@ card::card(const config& card_cfg)
 	if (!action_cfg_) {
 		throw config::error("[card] error, " + name() + " no [action].");
 	}
-}
+	name_str_ = cfg_["name"].str();
+	desc_str_ = cfg_["description"].str();
 
-card::card(const card& that)
-	: cfg_(that.cfg_)
-	, condition_cfg_(that.condition_cfg_)
-	, range_cfg_(that.range_cfg_)
-	, action_cfg_(that.action_cfg_)
-	, number_(that.number_)
-	, target_hero_(that.target_hero_)
-	, multitudinous_(that.multitudinous_)
-	, decree_(that.decree_)
-	, points_(that.points_)
-	, range_(that.range_)
-	, mode_(that.mode_)
-{
-}
-
-std::string& card::name()
-{
-	if (name_str_.empty()) {
-		name_str_ = cfg_["name"].str();
+	uint32_t fsize_low, fsize_high;
+	image_str_ = image_file_root_ + "/card/" + cfg_["image"];
+	posix_fsize_byname(image_str_.c_str(), fsize_low, fsize_high);
+	if (!fsize_low && !fsize_high) {
+		image_str_ = "card/default.png";
+	} else {
+		image_str_ = std::string("card/") + cfg_["image"];
 	}
-	return name_str_;
-}
 
-std::string& card::desc()
-{
-	if (desc_str_.empty()) {
-		desc_str_ = cfg_["description"].str();
-	}
-	return desc_str_;
-}
+	points_ = cfg_["points"].to_int();
 
-std::string& card::image()
-{
-	if (image_str_.empty()) {
-		uint32_t fsize_low, fsize_high;
-		image_str_ = image_file_root_ + "/card/" + cfg_["image"];
-		posix_fsize_byname(image_str_.c_str(), fsize_low, fsize_high);
-		if (!fsize_low && !fsize_high) {
-			image_str_ = "card/default.png";
-		} else {
-			image_str_ = std::string("card/") + cfg_["image"];
-		}
-	}
-	return image_str_;
-}
-
-int card::points()
-{
-	if (points_ == -1) {
-		points_ = cfg_["points"].to_int();
-	}
-	return points_;
-}
-
-int card::range()
-{
-	if (range_ == NONE && range_cfg_) {
+	if (range_cfg_) {
 		int ranges = 0;
 		if (range_cfg_["self"].to_bool()) {
 			ranges ++;
@@ -132,7 +88,21 @@ int card::range()
 			range_ = NONE;
 		}
 	}
-	return range_;
+}
+
+card::card(const card& that)
+	: cfg_(that.cfg_)
+	, condition_cfg_(that.condition_cfg_)
+	, range_cfg_(that.range_cfg_)
+	, action_cfg_(that.action_cfg_)
+	, number_(that.number_)
+	, target_hero_(that.target_hero_)
+	, multitudinous_(that.multitudinous_)
+	, points_(that.points_)
+	, range_(that.range_)
+	, mode_(that.mode_)
+	, bomb_(that.bomb_)
+{
 }
 
 //
@@ -143,7 +113,7 @@ card_map::card_map(const std::string& path) :
 	, map_size_(0)
 	, map_(NULL)
 	, map_vsize_(0)
-	, decrees_()
+	, bomb_(-1)
 {
 	card::image_file_root_ = path + "/data/core/images";
 }
@@ -215,10 +185,6 @@ void card_map::add(const card& h)
 	card* p = new card(h);
 	p->number_ = map_vsize_;
 	map_[map_vsize_ ++] = p;
-
-	if (p->decree()) {
-		decrees_.push_back(p);
-	}
 }
 
 card& card_map::operator[](size_t num)
@@ -244,9 +210,6 @@ void card_map::erase(size_t number)
 		return;
 	}
 	card* p = map_[number];
-	if (p->decree()) {
-		decrees_.erase(std::find(decrees_.begin(), decrees_.end(), p));
-	}
 	delete p;
 	if (number != (map_vsize_ - 1)) {
 		memcpy(&(map_[number]), &(map_[number + 1]), (map_vsize_ - number - 1) * sizeof(card*));
@@ -262,6 +225,7 @@ void card_map::map_from_cfg(const config& cfg)
 {
 	// realloc map memory in card_map
 	realloc_hero_map(CARDS_MAX_CARDS);
+	bomb_ = -1;
 
 	foreach (const config &tf, cfg.child_range("card")) {
 		if (tf["name"].empty()) {
@@ -271,9 +235,13 @@ void card_map::map_from_cfg(const config& cfg)
 		t->number_ = map_vsize_;
 		map_[map_vsize_ ++] = t;
 
-		if (t->decree()) {
-			decrees_.push_back(t);
+		if (t->bomb()) {
+			bomb_ = t->number_;
 		}
+	}
+
+	if (bomb_ == -1) {
+		throw config::error("card config error, no bomb card");
 	}
 
 	//
@@ -287,6 +255,11 @@ void card_map::map_from_cfg(const config& cfg)
 	// load global animations
 	//
 	unit_display::load_global_animations(cfg);
+}
+
+card& card_map::bomb() const
+{
+	return *map_[bomb_];
 }
 
 unit_animation* card_map::animation(int type)

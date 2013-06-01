@@ -221,6 +221,21 @@ void ttree_view::finalize_setup()
 			, 0);
 }
 
+twidget* ttree_view::find_at(
+		const tpoint& coordinate, const bool must_be_active)
+{
+	twidget* w = tscrollbar_container::find_at(coordinate, must_be_active);
+	if (!w && selected_item_) {
+		// to support SDL_WHEEL_DOWN/SDL_WHEEL_UP, must can find at "empty" area.
+		// as find, function is called in event chain, so finded must be child, here select selected_item_ as child.
+		w = twidget::find_at(coordinate, must_be_active);
+		if (w) {
+			w = selected_item_;
+		}
+	}
+	return w;
+}
+
 const std::string& ttree_view::get_control_type() const
 {
 	static const std::string type = "tree_view";

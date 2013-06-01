@@ -8,8 +8,10 @@
 #include "editor.hpp"
 #include "posix.h"
 #include <set>
+#include <sys/stat.h>
 
 #include "unit_types.hpp"
+#include "builder.hpp"
 
 // language.cpp有init_textdomains函数体,但要把language.cpp加起来会出现很多unsoluve linke, 在这里实现一个
 // 这里实现和language.cpp中是一样的
@@ -49,14 +51,14 @@ editor::wml2bin_desc::wml2bin_desc() :
 #define BASENAME_DATA		"data.bin"
 #define BASENAME_DATA2		"data2.bin"
 #define BASENAME_EDITOR		"editor.bin"
-#define BASENAME_MPLAYER	"mplayer.bin"
 #define BASENAME_GUI		"gui.bin"
 #define BASENAME_LANGUAGE	"language.bin"
 #define BASENAME_CAMPAIGNS	"campaigns.bin"
+#define BASENAME_TB			"tb.dat"
 
 editor::editor() :
-	cache_(game_config::config_cache::instance()),
-	wml2bin_descs_()
+	cache_(game_config::config_cache::instance())
+	, wml2bin_descs_()
 {
 }
 
@@ -289,35 +291,6 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 				wml_config_to_file(game_config::path + "/xwml/campaigns/" + name, refcfg, nfiles, sum_size, modified);
 			}
 
-		} else if (type == editor::MULTI_PLAYER) {
-			cache_.add_define("MULTIPLAYER");
-			cache_.get_config(game_config::path + "/data", game_config_);
-			// ::init_textdomains(game_config_);
-
-			// 抽取一个[scenario]和一个[binary_path]
-			foreach (const config &i, game_config_.child_range("era")) {
-				tmpcfg.add_child("era", i);
-			}
-			foreach (const config &i, game_config_.child_range("faction")) {
-				tmpcfg.add_child("faction", i);
-			}
-			foreach (const config &i, game_config_.child_range("multiplayer")) {
-				tmpcfg.add_child("multiplayer", i);
-			}
-			foreach (const config &i, game_config_.child_range("textdomain")) {
-				tmpcfg.add_child("textdomain", i);
-			}
-
-			// check scenario config valid
-			std::string err_str = check_mplayer_bin(tmpcfg);
-			if (!err_str.empty()) {
-				throw game::error(std::string("<") + BASENAME_MPLAYER + std::string(">") + err_str);
-			}
-
-			if (write_file) {
-				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_MPLAYER, tmpcfg, nfiles, sum_size, modified);
-			}
-
 		} else if (type == editor::EDITOR) {
 			cache_.add_define("EDITOR");
 			cache_.add_define("CORE");
@@ -371,6 +344,8 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 
 			if (write_file) {
 				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_DATA2, game_config_, nfiles, sum_size, modified);
+
+				write_tb_dat_if();
 			}
 			// remove all [terrain_graphics] tags
 			game_config_.clear_children("terrain_graphics");
@@ -399,7 +374,7 @@ void editor::reload_campaigns_cfg()
 	t_string::reset_translations();
 }
 
-// @path: c:\kingdom-src\data
+// @path: c:\kingdom-res\data
 void editor::get_wml2bin_desc_from_wml(std::string& path)
 {
 	editor::wml2bin_desc desc;
@@ -443,15 +418,6 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 			bin_to_path = game_config::path + "/xwml/campaigns";
 
 			campaign_index ++;
-
-		} else if (type == editor::MULTI_PLAYER) {
-			short_paths.push_back("data/core");
-			short_paths.push_back("data/multiplayer");
-
-			desc.bin_name = BASENAME_MPLAYER;
-
-			defines_string << path;
-			defines_string << "MULTIPLAYER";
 
 		} else if (type == editor::EDITOR) {
 			short_paths.push_back("data/core");
@@ -505,4 +471,44 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 	}
 
 	return;
+}
+
+void editor::write_tb_dat_if() const
+{
+	editor::wml2bin_desc desc;
+	file_tree_checksum dir_checksum;
+	std::vector<std::string> short_paths;
+	const std::string bin_to_path = game_config::path + "/xwml";
+
+	short_paths.push_back("data/core/terrain-graphics");
+	short_paths.push_back("data/core/images/terrain");
+	desc.bin_name = BASENAME_TB;
+
+	int filter = 0;
+	data_tree_checksum(short_paths, dir_checksum, filter);
+	desc.wml_nfiles = dir_checksum.nfiles;
+	desc.wml_sum_size = dir_checksum.sum_size;
+	desc.wml_modified = dir_checksum.modified;
+
+	struct stat st;
+	const std::string terrain_graphics_cfg = game_config::path + "/data/core/terrain-graphics.cfg";
+	if (::stat(terrain_graphics_cfg.c_str(), &st) != -1) {
+		if (st.st_mtime > desc.wml_modified) {
+			desc.wml_modified = st.st_mtime;
+		}
+		desc.wml_sum_size += st.st_size;
+		desc.wml_nfiles ++;
+	}
+
+	if (!wml_checksum_from_file(bin_to_path + "/" + desc.bin_name, &desc.bin_nfiles, &desc.bin_sum_size, (uint32_t*)&desc.bin_modified)) {
+		desc.bin_nfiles = desc.bin_sum_size = desc.bin_modified = 0;
+	}
+
+	if (desc.wml_nfiles != desc.bin_nfiles || desc.wml_sum_size != desc.bin_sum_size || desc.wml_modified != desc.bin_modified) {
+		binary_paths_manager paths_manager(game_config_);
+		terrain_builder::release_heap();
+		terrain_builder::set_terrain_rules_cfg(game_config_);
+
+		terrain_builder("off-map/alpha.png", desc.wml_nfiles, desc.wml_sum_size, desc.wml_modified);
+	}
 }

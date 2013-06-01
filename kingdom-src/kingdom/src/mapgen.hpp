@@ -49,7 +49,7 @@ public:
 	 * to modify how the generator behaves.
 	 * (This function will not be called if allow_user_config() returns false).
 	 */
-	virtual void user_config(display& disp, const config& cfg) = 0;
+	virtual bool user_config(display& disp, const config& cfg, int max_players = -1, int min_w = -1, int max_w = -1, int min_h = -1, int max_h = -1) = 0;
 
 	/**
 	 * Returns a string identifying the generator by name.

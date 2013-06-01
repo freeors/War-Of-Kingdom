@@ -37,8 +37,6 @@ enum controller { CNTR_NETWORK = 0, CNTR_LOCAL, CNTR_COMPUTER, CNTR_EMPTY, CNTR_
 
 void check_response(network::connection res, const config& data);
 
-void level_to_gamestate(config& level, command_pool& replay_data, game_state& state);
-
 std::string get_color_string(int id);
 
 /** this class memorizes a chat session. */

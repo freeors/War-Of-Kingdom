@@ -5,16 +5,17 @@
 #include "hero.hpp"
 #include "serialization/string_utils.hpp"
 #include "filesystem.hpp"
+#include "terrain_translation.hpp"
 
 #ifndef NUMELMS
    #define NUMELMS(aa) (sizeof(aa)/sizeof((aa)[0]))
 #endif
 
-#define MAX_BYTES_PERLINE			8
-#define TB_BTNS_COUNT_SYS			6
-#define TB_BTNS_COUNT_SYNC			6
-#define TB_BTNS_COUNT_WGEN			17
-#define TB_BTNS_COUNT_CAMPAIGN		7
+#define MAX_BYTES_PERLINE		8
+#define TB_BTNS_COUNT_SYS		6
+#define TB_BTNS_COUNT_SYNC		6
+#define TB_BTNS_COUNT_WGEN		17
+#define TB_BTNS_COUNT_CAMPAIGN	7
 #define TB_BTNS_COUNT_CORE		7
 
 typedef enum {
@@ -24,7 +25,6 @@ typedef enum {
 	da_core,
 	da_visual,
 	da_campaign,
-	da_about,
 } do_action_t;
 
 typedef struct tag_dlghdr {
@@ -61,7 +61,6 @@ typedef struct {
 	HWND			_hdlg_core;
 	HWND			_hdlg_visual;
 	HWND			_hdlg_campaign;
-	HWND			_hdlg_about;
 	HWND			_hwnd_status;
 	HWND			_hpb_task;		// 任务进度条
 
@@ -143,6 +142,7 @@ typedef struct {
 
 	HMENU			_hpopup_ddesc;
 	HMENU			_hpopup_new;
+	HMENU			_hpopup_star;
 	HMENU			_hpopup_explorer;
 	HMENU			_hpopup_delete;
 	HMENU			_hpopup_delete2;
@@ -184,6 +184,11 @@ bool isvalid_id(const std::string& id);
 HBITMAP LoadBitmap(char *fname, DWORD *biWidth, DWORD *biHeight);
 void transparent_24bmp(HBITMAP hBitmap, DWORD transparentclr);
 void title_select(do_action_t da);
+
+#define null_2_space(c) ((c) != '\0'? (c): '$')
+std::string format_t_terrain(const t_translation::t_terrain& t);
+std::string t_terrain_2_str(const t_translation::t_terrain& t);
+std::string hex_t_terrain(const t_translation::t_terrain& t);
 
 void OnLSBt(BOOL checkrunning);
 int CALLBACK fn_dvr_compare(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);

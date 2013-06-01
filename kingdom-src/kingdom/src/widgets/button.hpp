@@ -63,7 +63,9 @@ public:
 	virtual void enable(bool new_val=true);
 	void release();
 
+	void set_tactic_image(hero& h);
 	void set_rpg_image(hero* h, bool greyscale = false);
+	void set_bomb_image(int bomb_turns);
 	void set_image(const std::string& stem, int digit, bool greyscale = false, bool special = false, const std::string& icon = null_str);
 
 	void* cookie_;
@@ -80,6 +82,7 @@ protected:
 private:
 
 	void calculate_size();
+	void generate_other_image();
 
 	std::string label_;
 	surface image_, pressedImage_, activeImage_, pressedActiveImage_;
@@ -101,6 +104,7 @@ private:
 	button_hook* hook_;
 	const void* menu_;
 
+	hero* tactic_hero_;
 }; //end class button
 
 }

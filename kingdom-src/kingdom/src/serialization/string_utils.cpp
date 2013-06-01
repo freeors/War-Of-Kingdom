@@ -1,8 +1,8 @@
-/* $Id: string_utils.cpp 46186 2010-09-01 21:12:38Z silene $ */
+/* $Id: string_utils.cpp 56274 2013-02-10 18:59:33Z boucman $ */
 /*
    Copyright (C) 2003 by David White <dave@whitevine.net>
    Copyright (C) 2005 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
-   Copyright (C) 2005 - 2010 by Philippe Plantier <ayin@anathas.org>
+   Copyright (C) 2005 - 2013 by Philippe Plantier <ayin@anathas.org>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,9 @@
 #include "gettext.hpp"
 #include "log.hpp"
 #include "serialization/string_utils.hpp"
-#include "../util.hpp"
+#include "util.hpp"
+#include <boost/array.hpp>
+#include <boost/lexical_cast.hpp>
 
 static lg::log_domain log_engine("engine");
 #define ERR_GENERAL LOG_STREAM(err, lg::general)
@@ -33,7 +35,14 @@ static lg::log_domain log_engine("engine");
 
 namespace utils {
 
+const std::string ellipsis = "...";
+
 const std::string unicode_minus = "-";
+const std::string unicode_en_dash = "-";
+const std::string unicode_em_dash = "-";
+const std::string unicode_figure_dash = "-";
+const std::string unicode_multiplication_sign = "-";
+const std::string unicode_bullet = "-";
 
 bool isnewline(const char c)
 {
@@ -71,23 +80,35 @@ std::string &strip(std::string &str)
 	return str;
 }
 
-std::vector< std::string > split(std::string const &val, char c, int flags)
+std::string &strip_end(std::string &str)
+{
+	str.erase(std::find_if(str.rbegin(), str.rend(), notspace).base(), str.end());
+
+	return str;
+}
+
+std::vector< std::string > split(std::string const &val, const char c, const int flags)
 {
 	std::vector< std::string > res;
 
 	std::string::const_iterator i1 = val.begin();
-	std::string::const_iterator i2 = val.begin();
-
+	std::string::const_iterator i2;
+	if (flags & STRIP_SPACES) {
+		while (i1 != val.end() && portable_isspace(*i1))
+			++i1;
+	}
+	i2=i1;
+			
 	while (i2 != val.end()) {
 		if (*i2 == c) {
 			std::string new_val(i1, i2);
 			if (flags & STRIP_SPACES)
-				strip(new_val);
+				strip_end(new_val);
 			if (!(flags & REMOVE_EMPTY) || !new_val.empty())
 				res.push_back(new_val);
 			++i2;
 			if (flags & STRIP_SPACES) {
-				while (i2 != val.end() && *i2 == ' ')
+				while (i2 != val.end() && portable_isspace(*i2))
 					++i2;
 			}
 
@@ -99,27 +120,197 @@ std::vector< std::string > split(std::string const &val, char c, int flags)
 
 	std::string new_val(i1, i2);
 	if (flags & STRIP_SPACES)
-		strip(new_val);
+		strip_end(new_val);
 	if (!(flags & REMOVE_EMPTY) || !new_val.empty())
 		res.push_back(new_val);
 
 	return res;
 }
 
+std::vector< std::string > square_parenthetical_split(std::string const &val,
+		const char separator, std::string const &left,
+		std::string const &right,const int flags)
+{
+	std::vector< std::string > res;
+	std::vector<char> part;
+	bool in_parenthesis = false;
+	std::vector<std::string::const_iterator> square_left;
+	std::vector<std::string::const_iterator> square_right;
+	std::vector< std::string > square_expansion;
+
+	std::string lp=left;
+	std::string rp=right;
+
+	std::string::const_iterator i1 = val.begin();
+	std::string::const_iterator i2;
+	std::string::const_iterator j1;
+	if (flags & STRIP_SPACES) {
+		while (i1 != val.end() && portable_isspace(*i1))
+			++i1;
+	}
+	i2=i1;
+	j1=i1;
+
+	if (i1 == val.end()) return res;
+	
+	if (!separator) {
+		ERR_GENERAL << "Separator must be specified for square bracket split funtion.\n";
+		return res;
+	}
+
+	if(left.size()!=right.size()){
+		ERR_GENERAL << "Left and Right Parenthesis lists not same length\n";
+		return res;
+	}
+
+	while (true) {
+		if(i2 == val.end() || (!in_parenthesis && *i2 == separator)) {
+			//push back square contents
+			size_t size_square_exp = 0;
+			for (size_t i=0; i < square_left.size(); i++) {
+				std::string tmp_val(square_left[i]+1,square_right[i]);
+				std::vector< std::string > tmp = split(tmp_val);
+				std::vector<std::string>::const_iterator itor = tmp.begin();
+				for(; itor != tmp.end(); ++itor) {
+					size_t found_tilde = (*itor).find_first_of('~');
+					if (found_tilde == std::string::npos) {
+						size_t found_asterisk = (*itor).find_first_of('*');
+						if (found_asterisk == std::string::npos) {
+							std::string tmp = (*itor);
+							square_expansion.push_back(strip(tmp));
+						}
+						else { //'*' multiple expansion
+							std::string s_begin = (*itor).substr(0,found_asterisk);
+							s_begin = strip(s_begin);
+							std::string s_end = (*itor).substr(found_asterisk+1);
+							s_end = strip(s_end);
+							for (int ast=atoi(s_end.c_str()); ast>0; --ast)
+								square_expansion.push_back(s_begin);
+						}
+					}
+					else { //expand number range
+						std::string s_begin = (*itor).substr(0,found_tilde);
+						s_begin = strip(s_begin);
+						int begin = atoi(s_begin.c_str());
+						size_t padding = 0;
+						while (padding<s_begin.size() && s_begin[padding]=='0') {
+							padding++;
+						}
+						std::string s_end = (*itor).substr(found_tilde+1);
+						s_end = strip(s_end);
+						int end = atoi(s_end.c_str());
+						if (padding==0) {
+							while (padding<s_end.size() && s_end[padding]=='0') {
+								padding++;
+							}
+						}
+						int increment = (end >= begin ? 1 : -1);
+						end+=increment; //include end in expansion
+						for (int k=begin; k!=end; k+=increment) {
+							std::string pb = boost::lexical_cast<std::string>(k);
+							for (size_t p=pb.size(); p<=padding; p++)
+								pb = std::string("0") + pb;
+							square_expansion.push_back(pb);
+						}
+					}
+				}
+				if (i*square_expansion.size() != (i+1)*size_square_exp ) {
+					std::string tmp(i1, i2);
+					ERR_GENERAL << "Square bracket lengths do not match up: "+tmp+"\n";
+					return res;
+				}
+				size_square_exp = square_expansion.size();
+			}
+			
+			//combine square contents and rest of string for comma zone block
+			size_t j = 0;
+			size_t j_max = 0;
+			if (square_left.size() != 0)
+				j_max = square_expansion.size() / square_left.size();
+			do {
+				j1 = i1;
+				std::string new_val;
+				for (size_t i=0; i < square_left.size(); i++) {
+					std::string tmp_val(j1, square_left[i]);
+					new_val.append(tmp_val);
+					size_t k = j+i*j_max;
+					if (k < square_expansion.size())
+						new_val.append(square_expansion[k]);
+					j1 = square_right[i]+1;
+				}
+				std::string tmp_val(j1, i2);
+				new_val.append(tmp_val);
+				if (flags & STRIP_SPACES)
+					strip_end(new_val);
+				if (!(flags & REMOVE_EMPTY) || !new_val.empty())
+					res.push_back(new_val);
+				j++;
+			} while (j<j_max);
+			
+			if (i2 == val.end()) //escape loop
+				break;
+			++i2;
+			if (flags & STRIP_SPACES) { //strip leading spaces
+				while (i2 != val.end() && portable_isspace(*i2))
+					++i2;
+			}
+			i1=i2;
+			square_left.clear();
+			square_right.clear();
+			square_expansion.clear();
+			continue;
+		}
+		if(!part.empty() && *i2 == part.back()) {
+			part.pop_back();
+			if (*i2 == ']') square_right.push_back(i2);
+			if (part.empty())
+				in_parenthesis = false;
+			++i2;
+			continue;
+		}
+		bool found=false;
+		for(size_t i=0; i < lp.size(); i++) {
+			if (*i2 == lp[i]){
+				if (*i2 == '[')
+					square_left.push_back(i2);
+				++i2;
+				part.push_back(rp[i]);
+				found=true;
+				break;
+			}
+		}
+		if(!found){
+			++i2;
+		} else
+			in_parenthesis = true;
+	}
+
+	if(!part.empty()){
+			ERR_GENERAL << "Mismatched parenthesis:\n"<<val<<"\n";;
+	}
+
+	return res;
+}
+
 std::vector< std::string > parenthetical_split(std::string const &val,
 		const char separator, std::string const &left,
-		std::string const &right,int flags)
+		std::string const &right,const int flags)
 {
 	std::vector< std::string > res;
 	std::vector<char> part;
 	bool in_parenthesis = false;
 
-	std::string::const_iterator i1 = val.begin();
-	std::string::const_iterator i2 = val.begin();
-
 	std::string lp=left;
 	std::string rp=right;
 
+	std::string::const_iterator i1 = val.begin();
+	std::string::const_iterator i2;
+	if (flags & STRIP_SPACES) {
+		while (i1 != val.end() && portable_isspace(*i1))
+			++i1;
+	}
+	i2=i1;
+	
 	if(left.size()!=right.size()){
 		ERR_GENERAL << "Left and Right Parenthesis lists not same length\n";
 		return res;
@@ -129,12 +320,12 @@ std::vector< std::string > parenthetical_split(std::string const &val,
 		if(!in_parenthesis && separator && *i2 == separator){
 			std::string new_val(i1, i2);
 			if (flags & STRIP_SPACES)
-				strip(new_val);
+				strip_end(new_val);
 			if (!(flags & REMOVE_EMPTY) || !new_val.empty())
 				res.push_back(new_val);
 			++i2;
 			if (flags & STRIP_SPACES) {
-				while (i2 != val.end() && *i2 == ' ')
+				while (i2 != val.end() && portable_isspace(*i2))
 					++i2;
 			}
 			i1=i2;
@@ -268,6 +459,89 @@ std::string signed_value(int val)
 	std::ostringstream oss;
 	oss << (val >= 0 ? "+" : unicode_minus) << abs(val);
 	return oss.str();
+}
+
+std::string half_signed_value(int val)
+{
+	std::ostringstream oss;
+	if (val < 0)
+		oss << unicode_minus;
+	oss << abs(val);
+	return oss.str();
+}
+
+static void si_string_impl_stream_write(std::stringstream &ss, double input) {
+#ifdef _MSC_VER
+	// Visual C++ makes 'precision' set the number of decimal places.
+	// Other platforms make it set the number of significant figures
+	ss.precision(1);
+	ss << std::fixed
+	   << input;
+#else
+	// Workaround to display 1023 KiB instead of 1.02e3 KiB
+	if (input >= 1000)
+		ss.precision(4);
+	else
+		ss.precision(3);
+	ss << input;
+#endif
+}
+
+std::string si_string(double input, bool base2, std::string unit) {
+	const double multiplier = base2 ? 1024 : 1000;
+
+	typedef boost::array<std::string, 9> strings9;
+
+	strings9 prefixes;
+	strings9::const_iterator prefix;
+	if (input < 1.0) {
+		strings9 tmp = { {
+			"",
+			_("prefix_milli^m"),
+			_("prefix_micro^µ"),
+			_("prefix_nano^n"),
+			_("prefix_pico^p"),
+			_("prefix_femto^f"),
+			_("prefix_atto^a"),
+			_("prefix_zepto^z"),
+			_("prefix_yocto^y")
+		} };
+		prefixes = tmp;
+		prefix = prefixes.begin();
+		while (input < 1.0  && *prefix != prefixes.back()) {
+			input *= multiplier;
+			++prefix;
+		}
+	} else {
+		strings9 tmp = { {
+			"",
+			(base2 ?
+				_("prefix_kibi^K") :
+				_("prefix_kilo^k")
+			),
+			_("prefix_mega^M"),
+			_("prefix_giga^G"),
+			_("prefix_tera^T"),
+			_("prefix_peta^P"),
+			_("prefix_exa^E"),
+			_("prefix_zetta^Z"),
+			_("prefix_yotta^Y")
+		} };
+		prefixes = tmp;
+		prefix = prefixes.begin();
+		while (input > multiplier && *prefix != prefixes.back()) {
+			input /= multiplier;
+			++prefix;
+		}
+	}
+
+	std::stringstream ss;
+	si_string_impl_stream_write(ss, input);
+	ss << ' '
+	   << *prefix
+	   << (base2 && (*prefix != "") ? _("infix_binary^i") : "")
+	   << unit;
+	return ss.str();
 }
 
 static bool is_username_char(char c) {
@@ -621,7 +895,7 @@ std::string wstring_to_string(const wide_string &src)
 
 		return ret;
 	}
-	catch(invalid_utf8_exception e) {
+	catch(invalid_utf8_exception&) {
 		ERR_GENERAL << "Invalid wide character string\n";
 		return ret;
 	}
@@ -648,7 +922,7 @@ wide_string string_to_wstring(const std::string &src)
 			++i1;
 		}
 	}
-	catch(invalid_utf8_exception e) {
+	catch(invalid_utf8_exception&) {
 		ERR_GENERAL << "Invalid UTF-8 string: \"" << src << "\"\n";
 		return res;
 	}
@@ -658,7 +932,7 @@ wide_string string_to_wstring(const std::string &src)
 
 utf8_string lowercase(const utf8_string& s)
 {
-	if(s.size() > 0) {
+	if(!s.empty()) {
 		utf8_iterator itor(s);
 		std::string res;
 
@@ -686,6 +960,17 @@ void truncate_as_wstring(std::string& str, const size_t size)
 	if(utf8_str.size() > size) {
 		utf8_str.resize(size);
 		str = utils::wstring_to_string(utf8_str);
+	}
+}
+
+void ellipsis_truncate(std::string& str, const size_t size)
+{
+	const size_t prev_size = str.length();
+
+	truncate_as_wstring(str, size);
+
+	if(str.length() != prev_size) {
+		str += ellipsis;
 	}
 }
 

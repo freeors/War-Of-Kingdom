@@ -761,6 +761,26 @@ WML_HANDLER_FUNCTION(inspect, /*event_info*/, cfg)
 	}
 }
 
+WML_HANDLER_FUNCTION(modify_unit2, event_info, cfg)
+{
+	unit_map& units = *resources::units;
+	hero_map& heros = *resources::heros;
+
+	int number = cfg["master_hero"].to_int();
+	hero& h = heros[number];
+	unit* holder = find_unit(units, h);
+	if (!holder) {
+		return;
+	}
+
+	BOOST_FOREACH (const config &effect, cfg.get_config().child_range("effect")) {
+		int tag = apply_to_tag::find(effect["apply_to"].str());
+		if (tag == apply_to_tag::NONE) continue;
+		holder->add_modification_internal(tag, effect, true);
+	}
+	return;
+}
+
 WML_HANDLER_FUNCTION(modify_ai, /*event_info*/, cfg)
 {
 	int side_num = cfg["side"].to_int(1);
@@ -3250,8 +3270,8 @@ namespace game_events {
 		std::string message;
 		int incident;
 		utils::string_map symbols;
-		symbols["first"] = h1.name();
-		symbols["second"] = h2.name();
+		symbols["first"] = help::tintegrate::generate_format(h1.name(), help::tintegrate::hero_color);
+		symbols["second"] = help::tintegrate::generate_format(h2.name(), help::tintegrate::hero_color);
 		
 		if (carry_to == hero::FEELING_CONSORT) {
 			if (!h2.is_consort(h1)) {
@@ -3311,8 +3331,8 @@ namespace game_events {
 
 		utils::string_map symbols;
 		std::string str;
-		symbols["first"] = h1.name();
-		symbols["second"] = h2.name();
+		symbols["first"] = help::tintegrate::generate_format(h1.name(), help::tintegrate::hero_color);
+		symbols["second"] = help::tintegrate::generate_format(h2.name(), help::tintegrate::hero_color);
 		if (carry_to == hero::FEELING_CONSORT) {
 			str = vgettext("$first want to marry with $second, do you agree?", symbols);
 		} else if (carry_to == hero::FEELING_OATH) {

@@ -65,9 +65,6 @@ public:
 	void set_show_menu(bool show_menu) { show_menu_ = show_menu; }
 
 	bool is_moving() const { return moving_; }
-	bool is_recalling() const { return expediting_; }
-	bool is_building() const { return building_; }
-	bool is_card_playing() const { return card_playing_; }
 	bool is_selecting() const { return selecting_; }
 
 	void current_position(int* x, int* y);
@@ -170,8 +167,6 @@ protected:
 
 	bool moving_;
 	bool expediting_;
-	bool building_;
-	bool card_playing_;
 	bool selecting_;
 };
 

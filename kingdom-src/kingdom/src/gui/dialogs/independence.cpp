@@ -22,7 +22,6 @@
 #include "gettext.hpp"
 #include "game_display.hpp"
 #include "team.hpp"
-#include "hero.hpp"
 #include "artifical.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/button.hpp"
@@ -112,11 +111,13 @@ void tindependence::pre_show(CVideo& /*video*/, twindow& window)
 	symbols["side"] = current_team_.name();
 	label->set_use_markup(true);
 	str.str("");
+	str << "<format>";
 	if (current_team_.defeat_vote()) {
-		str << "<0,255,0>" << vgettext("wesnoth-lib", "It is all up with the wind, $side will fallen.", symbols);
+		str << "color='green' text='" << vgettext("wesnoth-lib", "It is all up with the wind, $side will fallen.", symbols);
 	} else {
-		str << "<255,0,0>" << vgettext("wesnoth-lib", "There are enough troops, $side will be again you.", symbols);
+		str << "color='red' text='" << vgettext("wesnoth-lib", "There are enough troops, $side will be again you.", symbols);
 	}
+	str << "'</format>";
 	label->set_label(str.str());
 
 	tlistbox* list = find_widget<tlistbox>(&window, "city_list", false, true);

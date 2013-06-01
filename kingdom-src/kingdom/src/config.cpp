@@ -134,11 +134,17 @@ config::attribute_value &config::attribute_value::operator=(size_t v)
 
 config::attribute_value &config::attribute_value::operator=(long v)
 {
+#ifdef VERBOSE_CONFIG
+	verbose = str_cast(v);
+#endif
 	value = double(v);
 	return *this;
 }
 config::attribute_value &config::attribute_value::operator=(double v)
 {
+#ifdef VERBOSE_CONFIG
+	verbose = str_cast(v);
+#endif
 	value = v;
 	return *this;
 }

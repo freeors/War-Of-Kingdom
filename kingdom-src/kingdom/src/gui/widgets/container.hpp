@@ -82,7 +82,7 @@ public:
 	/** Inherited from twidget. */
 	void demand_reduce_height(const unsigned maximum_height);
 
-private:
+protected:
 	/** Inherited from twidget. */
 	tpoint calculate_best_size() const;
 public:

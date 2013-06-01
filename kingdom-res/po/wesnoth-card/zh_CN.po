@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-03-30 23:55+0800\n"
+"PO-Revision-Date: 2013-05-26 15:32+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -71,23 +71,11 @@ msgstr "交流"
 msgid "communicate description"
 msgstr "大幅增加我方两武将间的情感度"
 
-msgid "Develop business"
-msgstr "开发商业"
+msgid "Move"
+msgstr "移动"
 
-msgid "develop business description"
-msgstr "加倍涨城市和太守的政治、商才"
-
-msgid "Develop technology"
-msgstr "开发科技"
-
-msgid "develop technology description"
-msgstr "加倍涨城市和太守的智力、发明"
-
-msgid "Balance revenue"
-msgstr "平衡税收"
-
-msgid "balance revenue description"
-msgstr "提高贸易成功获得的收益"
+msgid "move description"
+msgstr "移动一只我方部队"
 
 #
 # technology section
@@ -434,6 +422,36 @@ msgstr "乱世枭雄"
 msgid "character_desc-ambitious"
 msgstr "乱世枭雄"
 
+msgid "decree-business"
+msgstr "开发商业"
+
+msgid "decree_desc-business"
+msgstr "加倍涨城市和太守的政治、商才；该城回合金收入增加5%"
+
+msgid "decree-technology"
+msgstr "开发科技"
+
+msgid "decree_desc-technology"
+msgstr "加倍涨城市和太守的智力、发明；该城回合技法收入增加5%"
+
+msgid "decree-demolish"
+msgstr "破坏城防"
+
+msgid "decree_desc-demolish"
+msgstr "每回合降低某一毗邻敌方城市HP"
+
+msgid "decree-heal"
+msgstr "支援部队"
+
+msgid "decree_desc-heal"
+msgstr "每回合增加我方一部队HP"
+
+msgid "decree-interior"
+msgstr "开发内政"
+
+msgid "decree_desc-interior"
+msgstr "开发商业+开发科技"
+
 msgid "especial-0"
 msgstr "西凉"
 
@@ -622,16 +640,1024 @@ msgstr "玉玺"
 
 #, fuzzy
 msgid "treasure-46"
-msgstr "水将"
+msgstr "白龙"
 
 #, fuzzy
 msgid "treasure-47"
-msgstr "水将"
+msgstr "白龙"
 
 #, fuzzy
 msgid "treasure-48"
-msgstr "水将"
+msgstr "白龙"
 
 #, fuzzy
 msgid "treasure-49"
+msgstr "白龙"
+
+msgid "feature-0"
+msgstr "步将"
+
+msgid "feature_desc-0"
+msgstr "增强步兵战法的攻击力和抗性（小）"
+
+msgid "feature-1"
+msgstr "骑将"
+
+msgid "feature_desc-1"
+msgstr "增强骑兵战法的攻击力和抗性（小）"
+
+msgid "feature-2"
+msgstr "工将"
+
+msgid "feature_desc-2"
+msgstr "增强兵器战法的攻击力和抗性（小）"
+
+msgid "feature-3"
+msgstr "谋士"
+
+msgid "feature_desc-3"
+msgstr "增强学术战法的攻击力和抗性（小）"
+
+msgid "feature-4"
 msgstr "水将"
+
+msgid "feature_desc-4"
+msgstr "增强水军战法的攻击力和抗性（小）"
+
+msgid "feature-5"
+msgstr ""
+
+msgid "feature_desc-5"
+msgstr ""
+
+msgid "feature-6"
+msgstr "步神"
+
+msgid "feature_desc-6"
+msgstr "增强步兵战法的攻击力和抗性（大）"
+
+msgid "feature-7"
+msgstr "骑神"
+
+msgid "feature_desc-7"
+msgstr "增强骑兵战法的攻击力和抗性（大）"
+
+msgid "feature-8"
+msgstr "工神"
+
+msgid "feature_desc-8"
+msgstr "增强兵器战法的攻击力和抗性（大）"
+
+msgid "feature-9"
+msgstr "军师"
+
+msgid "feature_desc-9"
+msgstr "增强学术战法的攻击力和抗性（大）"
+
+msgid "feature-10"
+msgstr "水神"
+
+msgid "feature_desc-10"
+msgstr "增强水军战法的攻击力和抗性（大）"
+
+msgid "feature-11"
+msgstr ""
+
+msgid "feature_desc-11"
+msgstr ""
+
+msgid "feature-12"
+msgstr "急行"
+
+msgid "feature_desc-12"
+msgstr "步兵移动力+1"
+
+msgid "feature-13"
+msgstr "长驱"
+
+msgid "feature_desc-13"
+msgstr "骑兵移动力+1"
+
+msgid "feature-14"
+msgstr "机关"
+
+msgid "feature_desc-14"
+msgstr "兵器移动力+1"
+
+msgid "feature-15"
+msgstr "凌波"
+
+msgid "feature_desc-15"
+msgstr "学术移动力+1"
+
+msgid "feature-16"
+msgstr "操舵"
+
+msgid "feature_desc-16"
+msgstr "水军移动力+1"
+
+msgid "feature-17"
+msgstr ""
+
+msgid "feature_desc-17"
+msgstr ""
+
+msgid "feature-18"
+msgstr ""
+
+msgid "feature_desc-18"
+msgstr ""
+
+msgid "feature-19"
+msgstr ""
+
+msgid "feature_desc-19"
+msgstr ""
+
+msgid "feature-20"
+msgstr ""
+
+msgid "feature_desc-20"
+msgstr ""
+
+msgid "feature-21"
+msgstr ""
+
+msgid "feature_desc-21"
+msgstr ""
+
+msgid "feature-22"
+msgstr ""
+
+msgid "feature_desc-22"
+msgstr ""
+
+msgid "feature-23"
+msgstr ""
+
+msgid "feature_desc-23"
+msgstr ""
+
+msgid "feature-24"
+msgstr "斗士"
+
+msgid "feature_desc-24"
+msgstr "增强近战战法的攻击力（小）"
+
+msgid "feature-25"
+msgstr "弓将"
+
+msgid "feature_desc-25"
+msgstr "增强远程战法的攻击力（小）"
+
+msgid "feature-26"
+msgstr "投将"
+
+msgid "feature_desc-26"
+msgstr "增强投射战法的攻击力（小）"
+
+msgid "feature-27"
+msgstr "斗神"
+
+msgid "feature_desc-27"
+msgstr "增强近战战法的攻击力（大）"
+
+msgid "feature-28"
+msgstr "弓神"
+
+msgid "feature_desc-28"
+msgstr "增强远程战法的攻击力（大）"
+
+msgid "feature-29"
+msgstr "投神"
+
+msgid "feature_desc-29"
+msgstr "增强投射战法的攻击力（大）"
+
+msgid "feature-30"
+msgstr "纯化"
+
+msgid "feature_desc-30"
+msgstr "所有战法拥有减速效果"
+
+msgid "feature-31"
+msgstr "指导"
+
+msgid "feature_desc-31"
+msgstr "战斗时五维经验加倍"
+
+msgid "feature-32"
+msgstr "昂扬"
+
+msgid "feature_desc-32"
+msgstr "战斗时兵科经验加倍"
+
+msgid "feature-33"
+msgstr "施毒"
+
+msgid "feature_desc-33"
+msgstr "所有战法拥有毒素效果，免疫毒素"
+
+msgid "feature-34"
+msgstr "金刚"
+
+msgid "feature_desc-34"
+msgstr "被攻击时，30%机率不受损伤"
+
+msgid "feature-35"
+msgstr "遁走"
+
+msgid "feature_desc-35"
+msgstr "无视陆上障碍"
+
+msgid "feature-36"
+msgstr "攻心"
+
+msgid "feature_desc-36"
+msgstr "攻击时，增加己方所造成伤害的20%的HP"
+
+msgid "feature-37"
+msgstr "坚固"
+
+msgid "feature_desc-37"
+msgstr "强化部队防御"
+
+msgid "feature-38"
+msgstr "侦察"
+
+msgid "feature_desc-38"
+msgstr "每格子消耗1去揭开迷雾/黑幕"
+
+msgid "feature-39"
+msgstr "技巧"
+
+msgid "feature_desc-39"
+msgstr "技能经验加倍"
+
+msgid "feature-40"
+msgstr "富豪"
+
+msgid "feature_desc-40"
+msgstr "所在部队不耗金"
+
+msgid "feature-41"
+msgstr "伏击"
+
+msgid "feature_desc-41"
+msgstr "可以隐藏在森林里，不会被敌人发觉"
+
+msgid "feature-42"
+msgstr "隐蔽"
+
+msgid "feature_desc-42"
+msgstr "可以隐藏在村庄里（水中村庄除外）而不会被敌人发觉"
+
+msgid "feature-43"
+msgstr "戏子"
+
+msgid "feature_desc-43"
+msgstr "战斗时，攻击它的部队获得五维、适性经验加倍"
+
+msgid "feature-44"
+msgstr "名声"
+
+msgid "feature_desc-44"
+msgstr "HP增加20%"
+
+msgid "feature-45"
+msgstr "改革"
+
+msgid "feature_desc-45"
+msgstr "需要XP减少20%"
+
+msgid "feature-46"
+msgstr "监队"
+
+msgid "feature_desc-46"
+msgstr "所在部队不会掉忠诚度"
+
+msgid "feature-47"
+msgstr "好学"
+
+msgid "feature_desc-47"
+msgstr "获得XP加倍"
+
+msgid "feature-48"
+msgstr "说客"
+
+msgid "feature_desc-48"
+msgstr "敌方势力被灭时，和他毗邻的敌方部队必归顺"
+
+msgid "feature-49"
+msgstr "破阵"
+
+msgid "feature_desc-49"
+msgstr "降低被攻击部队防御"
+
+msgid "feature-50"
+msgstr "明镜"
+
+msgid "feature_desc-50"
+msgstr "免疫纯化、破阵"
+
+msgid "feature-51"
+msgstr "猛者"
+
+msgid "feature_desc-51"
+msgstr "主动攻击时，20%机率造成对方受伤"
+
+msgid "feature-52"
+msgstr "自疗"
+
+msgid "feature_desc-52"
+msgstr "每回合恢复32HP"
+
+msgid "feature-53"
+msgstr "内讧"
+
+msgid "feature_desc-53"
+msgstr "范围攻击时，波及到单位增加20%伤害"
+
+msgid "feature-54"
+msgstr "连环"
+
+msgid "feature_desc-54"
+msgstr "范围攻击时，波及到单位增加50%伤害"
+
+msgid "feature-55"
+msgstr "水遁"
+
+msgid "feature_desc-55"
+msgstr "可以隐藏在深水里，不会被敌人发觉"
+
+msgid "feature-56"
+msgstr "昼战"
+
+msgid "feature_desc-56"
+msgstr "白天时增加25%攻击力"
+
+msgid "feature-57"
+msgstr "夜袭"
+
+msgid "feature_desc-57"
+msgstr "黑夜时增加25%攻击力"
+
+msgid "feature-58"
+msgstr "震摄"
+
+msgid "feature_desc-58"
+msgstr "攻击后无反击"
+
+msgid "feature-59"
+msgstr "底力"
+
+msgid "feature_desc-59"
+msgstr "部队低HP时有一定概率减少伤害"
+
+msgid "feature-60"
+msgstr "背刺"
+
+msgid "feature_desc-60"
+msgstr "主动攻击时目标背后有友军部队，增强攻击"
+
+msgid "feature-61"
+msgstr ""
+
+msgid "feature_desc-61"
+msgstr ""
+
+msgid "feature-62"
+msgstr ""
+
+msgid "feature_desc-62"
+msgstr ""
+
+msgid "feature-63"
+msgstr ""
+
+msgid "feature_desc-63"
+msgstr ""
+
+msgid "feature-64"
+msgstr ""
+
+msgid "feature_desc-64"
+msgstr ""
+
+msgid "feature-65"
+msgstr ""
+
+msgid "feature_desc-65"
+msgstr ""
+
+msgid "feature-66"
+msgstr ""
+
+msgid "feature_desc-66"
+msgstr ""
+
+msgid "feature-67"
+msgstr ""
+
+msgid "feature_desc-67"
+msgstr ""
+
+msgid "feature-68"
+msgstr ""
+
+msgid "feature_desc-68"
+msgstr ""
+
+msgid "feature-69"
+msgstr ""
+
+msgid "feature_desc-69"
+msgstr ""
+
+msgid "feature-70"
+msgstr "霸王"
+
+msgid "feature_desc-70"
+msgstr "增强所有兵科战法的攻击力和抗性"
+
+msgid "feature-71"
+msgstr "妖道"
+
+msgid "feature_desc-71"
+msgstr "增强学术战法的攻击力和抗性，攻击时吸收HP"
+
+msgid "feature-72"
+msgstr "勇将"
+
+msgid "feature_desc-72"
+msgstr "增强步兵、骑兵战法的攻击力和抗性（小）"
+
+msgid "feature-73"
+msgstr "神将"
+
+msgid "feature_desc-73"
+msgstr "增强步兵、骑兵战法的攻击力和抗性（大）"
+
+msgid "feature-74"
+msgstr "飞将"
+
+msgid "feature_desc-74"
+msgstr "破阵，无视障碍，增强步兵、骑兵的攻击力和抗性（大）"
+
+msgid "feature-75"
+msgstr "精妙"
+
+msgid "feature_desc-75"
+msgstr "战斗时五维、兵科经验加倍"
+
+msgid "feature-76"
+msgstr "强行"
+
+msgid "feature_desc-76"
+msgstr "增加所有陆上部队移动力"
+
+msgid "feature-77"
+msgstr "倾国"
+
+msgid "feature_desc-77"
+msgstr "战法拥有减速效果，攻击时吸收HP，获得XP加倍"
+
+msgid "feature-78"
+msgstr "枭雄"
+
+msgid "feature_desc-78"
+msgstr "增强所有兵科战法的攻击力和抗性（小）"
+
+msgid "feature-79"
+msgstr "变法"
+
+msgid "feature_desc-79"
+msgstr "名声+改革"
+
+msgid "feature-80"
+msgstr "魅惑"
+
+msgid "feature_desc-80"
+msgstr "好学+攻心"
+
+msgid "feature-81"
+msgstr "劫营"
+
+msgid "feature_desc-81"
+msgstr "降低被攻击部队防御，战斗后获得五维、兵科经验加倍"
+
+msgid "feature-82"
+msgstr "医疗"
+
+msgid "feature_desc-82"
+msgstr "战法拥有减速效果，每回合恢复32HP"
+
+msgid "feature-83"
+msgstr "兵法"
+
+msgid "feature_desc-83"
+msgstr "五维、兵科、技能经验加倍"
+
+msgid "feature-84"
+msgstr "地遁"
+
+msgid "feature_desc-84"
+msgstr "可以隐藏在森林、村庄，不会被敌人发觉"
+
+msgid "feature-85"
+msgstr "循形"
+
+msgid "feature_desc-85"
+msgstr "可以隐藏在森林、村庄和深水，不会被敌人发觉"
+
+msgid "feature-86"
+msgstr ""
+
+msgid "feature_desc-86"
+msgstr ""
+
+msgid "feature-87"
+msgstr ""
+
+msgid "feature_desc-87"
+msgstr ""
+
+msgid "feature-88"
+msgstr ""
+
+msgid "feature_desc-88"
+msgstr ""
+
+msgid "feature-89"
+msgstr ""
+
+msgid "feature_desc-89"
+msgstr ""
+
+msgid "feature-90"
+msgstr ""
+
+msgid "feature_desc-90"
+msgstr ""
+
+msgid "feature-91"
+msgstr ""
+
+msgid "feature_desc-91"
+msgstr ""
+
+msgid "feature-92"
+msgstr ""
+
+msgid "feature_desc-92"
+msgstr ""
+
+msgid "feature-93"
+msgstr ""
+
+msgid "feature_desc-93"
+msgstr ""
+
+msgid "feature-94"
+msgstr ""
+
+msgid "feature_desc-94"
+msgstr ""
+
+msgid "feature-95"
+msgstr ""
+
+msgid "feature_desc-95"
+msgstr ""
+
+msgid "feature-96"
+msgstr ""
+
+msgid "feature_desc-96"
+msgstr ""
+
+msgid "feature-97"
+msgstr ""
+
+msgid "feature_desc-97"
+msgstr ""
+
+msgid "feature-98"
+msgstr ""
+
+msgid "feature_desc-98"
+msgstr ""
+
+msgid "feature-99"
+msgstr ""
+
+msgid "feature_desc-99"
+msgstr ""
+
+msgid "tactic-attack"
+msgstr "攻击强化"
+
+msgid "tactic_desc-attack"
+msgstr "提升自身攻击力"
+
+msgid "tactic-more attack"
+msgstr "攻击较大强化"
+
+msgid "tactic_desc-more attack"
+msgstr "较大提升自身攻击力"
+
+msgid "tactic-best attack"
+msgstr "攻击深度强化"
+
+msgid "tactic_desc-best attack"
+msgstr "深度提升自身攻击力"
+
+msgid "tactic-attacks"
+msgstr "全攻击强化"
+
+msgid "tactic_desc-attacks"
+msgstr "提升范围内友方的攻击"
+
+msgid "tactic-more attacks"
+msgstr "全攻击较大强化"
+
+msgid "tactic_desc-more attacks"
+msgstr "较大提升范围内友方的攻击"
+
+msgid "tactic-weaken attacks"
+msgstr "全攻击弱化"
+
+msgid "tactic_desc-weaken attacks"
+msgstr "弱化范围内敌方的攻击"
+
+msgid "tactic-weaken more attacks"
+msgstr "全攻击较大弱化"
+
+msgid "tactic_desc-weaken more attacks"
+msgstr "较大弱化范围内敌方的攻击"
+
+msgid "tactic-firm"
+msgstr "防御强化"
+
+msgid "tactic_desc-firm"
+msgstr "提升自身的防御力"
+
+msgid "tactic-more firm"
+msgstr "防御较大强化"
+
+msgid "tactic_desc-more firm"
+msgstr "较大提升自身的防御力"
+
+msgid "tactic-best firm"
+msgstr "防御深度强化"
+
+msgid "tactic_desc-best firm"
+msgstr "深度提升自身的防御力"
+
+msgid "tactic-firms"
+msgstr "全防御强化"
+
+msgid "tactic_desc-firms"
+msgstr "提升范围内友军的防御力"
+
+msgid "tactic-more firms"
+msgstr "全防御较大强化"
+
+msgid "tactic_desc-more firms"
+msgstr "较大提升范围内友军的防御力"
+
+msgid "tactic-breaks"
+msgstr "全防御弱化"
+
+msgid "tactic_desc-breaks"
+msgstr "弱化范围内敌方防御"
+
+msgid "tactic-more breaks"
+msgstr "全防御较大弱化"
+
+msgid "tactic_desc-more breaks"
+msgstr "较大弱化范围内敌军防御"
+
+msgid "tactic-encourage"
+msgstr "士气强化"
+
+msgid "tactic_desc-encourage"
+msgstr "提升自身士气"
+
+msgid "tactic-more encourage"
+msgstr "士气较大强化"
+
+msgid "tactic_desc-more encourage"
+msgstr "较大提升自身士气"
+
+msgid "tactic-best encourage"
+msgstr "士气深度强化"
+
+msgid "tactic_desc-best encourage"
+msgstr "深度提升自身士气"
+
+msgid "tactic-encourages"
+msgstr "全士气强化"
+
+msgid "tactic_desc-encourages"
+msgstr "提升范围内友军的士气"
+
+msgid "tactic-more encourages"
+msgstr "全士气较大强化"
+
+msgid "tactic_desc-more encourages"
+msgstr "较大提升范围内友军的士气"
+
+msgid "tactic-weaken encourages"
+msgstr "全士气弱化"
+
+msgid "tactic_desc-weaken encourages"
+msgstr "降低范围内敌方的士气"
+
+msgid "tactic-weaken more encourages"
+msgstr "全士气较大弱化"
+
+msgid "tactic_desc-weaken more encourages"
+msgstr "较大降低范围内敌方的士气"
+
+msgid "tactic-demolish"
+msgstr "破坏强化"
+
+msgid "tactic_desc-demolish"
+msgstr "提升自身破坏力"
+
+msgid "tactic-more demolish"
+msgstr "破坏较大强化"
+
+msgid "tactic_desc-more demolish"
+msgstr "较大提升自身破坏力"
+
+msgid "tactic-demolishes"
+msgstr "全破化强化"
+
+msgid "tactic_desc-demolishes"
+msgstr "提升范围内友军的破坏力"
+
+msgid "tactic-more demolishes"
+msgstr "全破化较大强化"
+
+msgid "tactic_desc-more demolishes"
+msgstr "较大提升范围内友军的破坏力"
+
+msgid "tactic-weaken demolishes"
+msgstr "全破坏弱化"
+
+msgid "tactic_desc-weaken demolishes"
+msgstr "弱化范围内敌方的破坏力"
+
+msgid "tactic-weaken more demolishes"
+msgstr "全破坏较大弱化"
+
+msgid "tactic_desc-weaken more demolishes"
+msgstr "较大弱化范围内敌方的破坏力"
+
+msgid "tactic-blade"
+msgstr "剑刃"
+
+msgid "tactic_desc-blade"
+msgstr "对范围内敌方造成剑刃伤害"
+
+msgid "tactic-pierce"
+msgstr "穿刺"
+
+msgid "tactic_desc-pierce"
+msgstr "对范围内敌方造成穿刺伤害"
+
+msgid "tactic-impact"
+msgstr "冲击"
+
+msgid "tactic_desc-impact"
+msgstr "对范围内敌方造成冲击伤害"
+
+msgid "tactic-fire"
+msgstr "火焰"
+
+msgid "tactic_desc-fire"
+msgstr "对范围内敌方造成火焰伤害"
+
+msgid "tactic-hide"
+msgstr "隐藏"
+
+msgid "tactic_desc-hide"
+msgstr "隐藏自身"
+
+msgid "tactic-hides"
+msgstr "隐阵"
+
+msgid "tactic_desc-hides"
+msgstr "隐藏范围内友军"
+
+msgid "tactic-accelerate"
+msgstr "加速"
+
+msgid "tactic_desc-accelerate"
+msgstr "增加自身移动力"
+
+msgid "tactic-accelerates"
+msgstr "速战"
+
+msgid "tactic_desc-accelerates"
+msgstr "提升范围内友方的移动力"
+
+msgid "tactic-decelerates"
+msgstr "减速"
+
+msgid "tactic_desc-decelerates"
+msgstr "弱化范围内敌军的移动力"
+
+msgid "tactic-alert"
+msgstr "预警"
+
+msgid "tactic_desc-alert"
+msgstr "对进入范围敌部队执行预警攻击"
+
+msgid "tactic-provoke"
+msgstr "挑衅"
+
+msgid "tactic_desc-provoke"
+msgstr "范围内敌方部队向我方移动"
+
+msgid "tactic-clear"
+msgstr "镇队"
+
+msgid "tactic_desc-clear"
+msgstr "解除自身异常状态"
+
+msgid "tactic-clears"
+msgstr "镇军"
+
+msgid "tactic_desc-clears"
+msgstr "解除范围友部队异常状态"
+
+msgid "tactic-heal"
+msgstr "治疗"
+
+msgid "tactic_desc-heal"
+msgstr "恢复自身HP"
+
+msgid "tactic-heals"
+msgstr "大治疗"
+
+msgid "tactic_desc-heals"
+msgstr "恢复范围内友军HP"
+
+msgid "tactic-divine wei wu"
+msgstr "魏武之强"
+
+msgid "tactic_desc-divine wei wu"
+msgstr "较大提升范围内友军攻击、防御"
+
+msgid "tactic-dragon in people"
+msgstr "人中吕布"
+
+msgid "tactic_desc-dragon in people"
+msgstr "较大提升自身攻击、防御、士气，并降低敌军防御"
+
+msgid "tactic-integrate attack and defend"
+msgstr "攻防一体"
+
+msgid "tactic_desc-integrate attack and defend"
+msgstr "较大提升范围自身攻击、防御"
+
+msgid "tactic-speedy solo"
+msgstr "单骑驱"
+
+msgid "tactic_desc-speedy solo"
+msgstr "提升自身攻击、防御、士气、移动"
+
+msgid "tactic-remote strike"
+msgstr "千里行"
+
+msgid "tactic_desc-remote strike"
+msgstr "提升自身攻击、防御、破坏"
+
+msgid "tactic-again thousands"
+msgstr "万人敌"
+
+msgid "tactic_desc-again thousands"
+msgstr "深度提升自身攻击"
+
+msgid "tactic-ironman"
+msgstr "铁壁"
+
+msgid "tactic_desc-ironman"
+msgstr "深度提升自身的防御力"
+
+msgid "tactic-brave ironman"
+msgstr "刚勇"
+
+msgid "tactic_desc-brave ironman"
+msgstr "深度提升自身的防御力"
+
+msgid "tactic-storm attack"
+msgstr "强袭"
+
+msgid "tactic_desc-storm attack"
+msgstr "深度提升自身的攻击力"
+
+msgid "tactic-break through"
+msgstr "突破"
+
+msgid "tactic_desc-break through"
+msgstr "较大提升自身攻击、破坏"
+
+msgid "tactic-military defense"
+msgstr "全军防御"
+
+msgid "tactic_desc-military defense"
+msgstr "提升范围内友军的防御、士气"
+
+msgid "tactic-military encourage"
+msgstr "全军兵击"
+
+msgid "tactic_desc-military encourage"
+msgstr "提升友军士气"
+
+msgid "tactic-military attack"
+msgstr "全军猛攻"
+
+msgid "tactic_desc-military attack"
+msgstr "较大提升友军攻击力"
+
+msgid "tactic-spy infiltrate"
+msgstr "埋伏之毒"
+
+msgid "tactic_desc-spy infiltrate"
+msgstr "弱化敌方攻击、防御"
+
+msgid "tactic-fire stratagem"
+msgstr "火计"
+
+msgid "tactic_desc-fire stratagem"
+msgstr "对范围内敌军造成火焰伤害"
+
+msgid "tactic-divine fire"
+msgstr "神火计"
+
+msgid "tactic_desc-divine fire"
+msgstr "对范围内敌军造成火焰伤害"
+
+msgid "tactic-big strike"
+msgstr "大打击"
+
+msgid "tactic_desc-big strike"
+msgstr "对范围内敌军造成冲击伤害"
+
+msgid "tactic-ambush"
+msgstr "伏兵"
+
+msgid "tactic_desc-ambush"
+msgstr "自身部队发动伏兵效果"
+
+msgid "tactic-divine ambushes"
+msgstr "伏兵八阵"
+
+msgid "tactic_desc-divine ambushes"
+msgstr "范围内友军发动伏兵效果"
+
+msgid "tactic-ambush accelerate"
+msgstr "伏兵神速"
+
+msgid "tactic_desc-ambush accelerate"
+msgstr "加速自身并发动伏兵效果"
+
+msgid "tactic-accelerate firms"
+msgstr "速战固守"
+
+msgid "tactic_desc-accelerate firms"
+msgstr "提升范围内友军的防御、移动"
+
+msgid "tactic-beautiful interlink"
+msgstr "美女连环"
+
+msgid "tactic_desc-beautiful interlink"
+msgstr "弱化范围内敌军防御、移动"
+
+msgid "tactic-alert attack"
+msgstr "预警攻击"
+
+msgid "tactic_desc-alert attack"
+msgstr "对进入范围敌部队执行预警攻击"
+
+msgid "tactic-divine provoke"
+msgstr "虚诱掩杀"
+
+msgid "tactic_desc-divine provoke"
+msgstr "范围内敌方部队向我方移动"
+
+msgid "tactic-divine clear"
+msgstr "镇静"
+
+msgid "tactic_desc-divine clear"
+msgstr "解除范围内全军异常状态"
+
+msgid "tactic-divine heal"
+msgstr "义勇军"
+
+msgid "tactic_desc-divine heal"
+msgstr "恢复范围内全军HP"

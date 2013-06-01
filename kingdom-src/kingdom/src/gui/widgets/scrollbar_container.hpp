@@ -53,7 +53,7 @@ class tscrollbar_container
 
 public:
 
-	explicit tscrollbar_container(const unsigned canvas_count);
+	explicit tscrollbar_container(const unsigned canvas_count, bool listbox = false);
 
 	~tscrollbar_container() { delete content_grid_; }
 
@@ -191,6 +191,7 @@ public:
 	void horizontal_scrollbar_moved()
 		{ scrollbar_moved(); }
 
+	void set_best_size(const tpoint& best_size);
 protected:
 
 	/**
@@ -396,6 +397,12 @@ protected:
 	 *                            changing.
 	 */
 	virtual void handle_key_right_arrow(SDLMod modifier, bool& handled);
+
+	/** When we're used as a fixed size item, this holds the best size. */
+	tpoint best_size_;
+	// mutable tpoint content_size_;
+	bool listbox_;
+	mutable bool size_calculated_;
 private:
 
 	/**

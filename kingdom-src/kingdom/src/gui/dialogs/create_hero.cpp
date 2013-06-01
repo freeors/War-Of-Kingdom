@@ -29,7 +29,6 @@
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "preferences_display.hpp"
-#include "hero.hpp"
 #include "formula_string_utils.hpp"
 
 #include <boost/bind.hpp>

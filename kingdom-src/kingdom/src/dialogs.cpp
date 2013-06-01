@@ -246,11 +246,13 @@ bool animate_unit_advancement(unit& u, size_t choice)
 	return true;
 }
 
-void show_objectives(const config &level, const std::string &objectives)
+void show_objectives(const config &level, const team& t)
 {
 	static const std::string no_objectives(_("No objectives available"));
-	gui2::show_transient_message(resources::screen->video(), level["name"],
-		(objectives.empty() ? no_objectives : objectives), "", true);
+	const std::string& objectives = t.objectives();
+
+	gui2::show_transient_message(resources::screen->video(), level["name"],	
+		t.form_results_of_battle_tip(objectives.empty() ? no_objectives : objectives), "", true);
 }
 
 void show_unit_description(const unit &u)

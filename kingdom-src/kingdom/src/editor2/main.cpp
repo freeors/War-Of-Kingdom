@@ -10,6 +10,7 @@
 #include "formula_string_utils.hpp"
 #include "language.hpp"
 #include "unit_types.hpp"
+#include "builder.hpp"
 
 #include "stdafx.h"
 #include <windowsx.h>
@@ -35,7 +36,6 @@ extern BOOL CALLBACK DlgWGenProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lP
 extern BOOL CALLBACK DlgCoreProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgCfgProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgCampaignProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK DlgAboutProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 #define CLASSNAME			"slgmaker"
 
@@ -134,7 +134,7 @@ void create_subcfg_toolbar(HWND hwndP)
 	// Send the TB_BUTTONSTRUCTSIZE message, which is required for backward compatibility
 	ToolBar_ButtonStructSize(gdmgr._htb_subcfg, sizeof(TBBUTTON));
 	ToolBar_SetButtonSize(gdmgr._htb_subcfg, 30, 30);
-	
+
 	tbBtns[0].iBitmap = MAKELONG(gdmgr._iico_reset, 0);
 	tbBtns[0].idCommand = IDM_RESET;	
 	tbBtns[0].fsState = TBSTATE_ENABLED;
@@ -143,6 +143,7 @@ void create_subcfg_toolbar(HWND hwndP)
 	tbBtns[0].iString = -1;
 
 	ToolBar_AddButtons(gdmgr._htb_subcfg, 1, &tbBtns);
+
 	ToolBar_AutoSize(gdmgr._htb_subcfg);
 	ToolBar_SetExtendedStyle(gdmgr._htb_subcfg, TBSTYLE_EX_DRAWDDARROWS);
 	ToolBar_SetImageList(gdmgr._htb_subcfg, gdmgr._himl_24x24, 0);
@@ -292,6 +293,93 @@ DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName)
 
 }
 
+// 执行透明处理,(255, 255, 255)[0x00ffffff] ---> COLOR_BTNFACE
+DWORD SetBitmapBits(uint8_t *bmBits, DWORD biBitCount, DWORD dwCount, const void* lpBits, DWORD transparentclr) 
+{ 
+	DWORD		rgb = GetSysColor(COLOR_BTNFACE);		// COLOR_BTNFACE, COLOR_WINDOW
+	DWORD		u32n;
+	uint32_t	idx = 0;
+	uint8_t		r, g, b;
+
+	r = GetRValue(rgb);
+	g = GetGValue(rgb);
+	b = GetBValue(rgb);
+
+	if (biBitCount == 24) {
+		for (idx = 0; idx < dwCount; idx += 3) {
+			u32n = *(DWORD *)((uint8_t *)lpBits + idx) & 0xffffff;
+			if (u32n == transparentclr) {
+				memcpy((uint8_t *)bmBits + idx, &rgb, 3);
+				bmBits[idx] = b;
+				bmBits[idx + 1] = g;
+				bmBits[idx + 2] = r;
+			} else {
+				memcpy(bmBits + idx, (uint8_t *)lpBits + idx, 3);
+			}
+		}
+	} else {
+		memcpy(bmBits, lpBits, dwCount); 
+	}
+	return dwCount; 
+} 
+
+void transparent_24bmp(HBITMAP hBitmap, DWORD transparentclr)
+{
+    BITMAP bmp; 
+	GetObject(hBitmap, sizeof(BITMAP), &bmp);
+    DWORD dwCount = (DWORD)bmp.bmWidthBytes * bmp.bmHeight; 
+
+	SetBitmapBits((uint8_t *)bmp.bmBits, 24, dwCount, bmp.bmBits, transparentclr);
+
+	return;
+}
+
+#define null_2_space(c) ((c) != '\0'? (c): '$')
+#define null_2_null(c) ((c) != '\0'? (c): '')
+std::string format_t_terrain(const t_translation::t_terrain& t)
+{
+	char text[MAX_PATH];
+	sprintf(text, "(%c%c%c%c, %c%c%c%c)", 
+		null_2_space((t.base & 0xff000000) >> 24), null_2_space((t.base & 0xff0000) >> 16), null_2_space((t.base & 0xff00) >> 8), null_2_space(t.base & 0xff),
+		null_2_space((t.overlay & 0xff000000) >> 24), null_2_space((t.overlay & 0xff0000) >> 16), null_2_space((t.overlay & 0xff00) >> 8), null_2_space(t.overlay & 0xff));
+
+	return std::string(text);
+}
+
+std::string t_terrain_2_str(const t_translation::t_terrain& t)
+{
+	std::stringstream strstr;
+
+	if (t.base != t_translation::NO_LAYER) {
+		for (int i = 24; i >= 0; i -= 8) {
+			int mask = 0xff << i;
+			char c = (t.base & mask) >> i;
+			if (c == '\0') break;
+			strstr << c;
+		}
+	}
+	if (t.overlay != t_translation::NO_LAYER) {
+		strstr << '^';
+		for (int i = 24; i >= 0; i -= 8) {
+			int mask = 0xff << i;
+			char c = (t.overlay & mask) >> i;
+			if (c == '\0') break;
+			strstr << c;
+		}
+	}
+	return strstr.str();
+}
+
+std::string hex_t_terrain(const t_translation::t_terrain& t)
+{
+	char text[MAX_PATH];
+	sprintf(text, "(0x%02x%02x%02x%02x, 0x%02x%02x%02x%02x)", 
+		(t.base & 0xff000000) >> 24, (t.base & 0xff0000) >> 16, (t.base & 0xff00) >> 8, t.base & 0xff,
+		(t.overlay & 0xff000000) >> 24, (t.overlay & 0xff0000) >> 16, (t.overlay & 0xff00) >> 8, t.overlay & 0xff);
+
+	return std::string(text);
+}
+
 namespace {
 	config prefs;
 }
@@ -384,6 +472,9 @@ void set_language(const std::string& s)
 
 const char* dgettext_2_ansi(const char* domain, const char* msgid)
 {
+	if (!msgid || msgid[0] == '\0') {
+		return null_str.c_str();
+	}
 	return utf8_2_ansi(dgettext(domain, msgid));
 }
 
@@ -674,13 +765,10 @@ void init_dvrmgr_struct(void)
 
 	// 针对refresh按钮的位图
 	gdmgr._hbm_refresh_select = (HBITMAP)LoadImage(gdmgr._hinst, MAKEINTRESOURCE(IDB_REFRESH_UNSELECT), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
-    // gdmgr._hbm_refresh_select = LoadBitmap(gdmgr._hinst, MAKEINTRESOURCE(IDB_REFRESH_UNSELECT/*IDB_REFRESH_SELECT*/)); 
 	transparent_24bmp(gdmgr._hbm_refresh_select, 0x00000000);
 	gdmgr._hbm_refresh_unselect = (HBITMAP)LoadImage(gdmgr._hinst, MAKEINTRESOURCE(IDB_REFRESH_UNSELECT), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
-	// gdmgr._hbm_refresh_unselect = LoadBitmap(gdmgr._hinst, MAKEINTRESOURCE(IDB_REFRESH_UNSELECT));
 	transparent_24bmp(gdmgr._hbm_refresh_unselect, 0x00000000);
 	gdmgr._hbm_refresh_disable = (HBITMAP)LoadImage(gdmgr._hinst, MAKEINTRESOURCE(IDB_REFRESH_UNSELECT), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
-	// gdmgr._hbm_refresh_disable = LoadBitmap(gdmgr._hinst, MAKEINTRESOURCE(IDB_REFRESH_UNSELECT/*IDB_REFRESH_DISABLE*/));
 	transparent_24bmp(gdmgr._hbm_refresh_disable, 0x00000000);
 }
 
@@ -692,6 +780,14 @@ void prepare_popup_menu()
 	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_EXTRAINSDIST, utf8_2_ansi(_("Extract release package to C:\\kingdom-ins")));
 	AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
 	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_CAMPAIGN, dgettext_2_ansi("wesnoth-lib", "Campaign"));
+
+	// star
+	gdmgr._hpopup_star = CreatePopupMenu();
+	AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_RESOURCE, utf8_2_ansi(_("Generate resource package to C:\\kingdom-star")));
+	AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_PATCH, utf8_2_ansi(_("Extract different files to C:\\wesnoth\\kingdom-star-patch")));
+
+	AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
+	AppendMenu(gdmgr._hpopup_new, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_star), utf8_2_ansi(_("Star")));
 
 	// menu item: coherence
 	gdmgr._hpopup_explorer = CreatePopupMenu();
@@ -809,6 +905,9 @@ void uninit_dvrmgr_struct(void)
 	}
 	if (gdmgr._hpopup_new) {
 		DestroyMenu(gdmgr._hpopup_new);
+	}
+	if (gdmgr._hpopup_star) {
+		DestroyMenu(gdmgr._hpopup_star);
 	}
 	if (gdmgr._hpopup_explorer) {
 		DestroyMenu(gdmgr._hpopup_explorer);
@@ -930,11 +1029,6 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	gdmgr._hdlg_campaign = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_CAMPAIGN), hwndP, DlgCampaignProc, NULL);
 	MoveWindow(gdmgr._hdlg_campaign, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
 	ShowWindow(gdmgr._hdlg_campaign, SW_HIDE);
-
-	// 会话窗口: IDD_ABOUT
-	gdmgr._hdlg_about = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_ABOUT), hwndP, DlgAboutProc, NULL);
-	MoveWindow(gdmgr._hdlg_about, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
-	ShowWindow(gdmgr._hdlg_about, SW_HIDE);
 
 	gdmgr._video_area.left = rcDDesc.right;
 	gdmgr._video_area.top = rcTitle.bottom;
@@ -1558,6 +1652,8 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 	uninit_dvrmgr_struct();
 
 	CloseHandle(hvtdvrmgr);
-	
+
+	terrain_builder::release_heap();
+
 	return (int) msg.wParam;
 }

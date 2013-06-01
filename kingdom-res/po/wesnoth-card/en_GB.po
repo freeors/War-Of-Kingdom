@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: en_GB\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-03-31 00:00+0800\n"
+"PO-Revision-Date: 2013-04-26 10:02+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: English (British) <en@li.org>\n"
 "Language: en_GB\n"
@@ -70,24 +70,20 @@ msgstr "communicate"
 msgid "Develop business"
 msgstr ""
 
-#, fuzzy
 msgid "develop business description"
-msgstr "advance"
+msgstr "develop business"
 
-#, fuzzy
 msgid "Develop technology"
-msgstr "technology"
+msgstr "Develop technology"
 
-#, fuzzy
 msgid "develop technology description"
-msgstr "navigation"
+msgstr "develop technology"
 
 msgid "Balance revenue"
 msgstr ""
 
-#, fuzzy
 msgid "balance revenue description"
-msgstr "advance"
+msgstr "balance revenue"
 
 #
 # technology section
@@ -360,82 +356,82 @@ msgstr "strategic"
 # character section
 #
 msgid "character-aggressive"
-msgstr ""
+msgstr "Aggressive"
 
 msgid "character_desc-aggressive"
-msgstr ""
+msgstr "Aggressive"
 
 msgid "character-united"
-msgstr ""
+msgstr "United"
 
 msgid "character_desc-united"
-msgstr ""
+msgstr "United"
 
 msgid "character-charismatic"
-msgstr ""
+msgstr "Charismatic"
 
 msgid "character_desc-charismatic"
-msgstr ""
+msgstr "Charismatic"
 
 msgid "character-creative"
-msgstr ""
+msgstr "Creative"
 
 msgid "character_desc-creative"
-msgstr ""
+msgstr "Creative"
 
 msgid "character-expansive"
-msgstr ""
+msgstr "Expansive"
 
 msgid "character_desc-expansive"
-msgstr ""
+msgstr "Expansive"
 
 msgid "character-financial"
-msgstr ""
+msgstr "Financial"
 
 msgid "character_desc-financial"
-msgstr ""
+msgstr "Financial"
 
 msgid "character-industrious"
-msgstr ""
+msgstr "Industrious"
 
 msgid "character_desc-industrious"
-msgstr ""
+msgstr "Industrious"
 
 msgid "character-organized"
-msgstr ""
+msgstr "Organized"
 
 msgid "character_desc-organized"
-msgstr ""
+msgstr "Organized"
 
 msgid "character-protective"
-msgstr ""
+msgstr "Protective"
 
 msgid "character_desc-protective"
-msgstr ""
+msgstr "Protective"
 
 msgid "character-philosophical"
-msgstr ""
+msgstr "Philosophical"
 
 msgid "character_desc-philosophical"
-msgstr ""
+msgstr "Philosophical"
 
 msgid "character-spiritual"
-msgstr ""
+msgstr "Spiritual"
 
 msgid "character_desc-spiritual"
-msgstr ""
+msgstr "Spiritual"
 
 msgid "character-imperialistic"
-msgstr ""
+msgstr "Imperialistic"
 
 msgid "character_desc-imperialistic"
-msgstr ""
+msgstr "Imperialistic"
 
 msgid "character-ambitious"
-msgstr ""
+msgstr "Ambitious"
 
 msgid "character_desc-ambitious"
-msgstr ""
+msgstr "Ambitious"
 
 msgid "especial-0"
 msgstr "Desert"
@@ -638,3 +634,1014 @@ msgstr "Lobbyist"
 #, fuzzy
 msgid "treasure-49"
 msgstr "Break"
+
+msgid "feature-0"
+msgstr "Footman"
+
+msgid "feature_desc-0"
+msgstr "Enhance footman's attack and defend(small)"
+
+msgid "feature-1"
+msgstr "Horseman"
+
+msgid "feature_desc-1"
+msgstr "Enhance horseman's attack and defend(small)"
+
+msgid "feature-2"
+msgstr "Catapult"
+
+msgid "feature_desc-2"
+msgstr "Enhance catapult's attack and defend(small)"
+
+msgid "feature-3"
+msgstr "Mage"
+
+msgid "feature_desc-3"
+msgstr "Enhance mage's attack and defend(small)"
+
+msgid "feature-4"
+msgstr "Navy"
+
+msgid "feature_desc-4"
+msgstr "Enhance navy's attack and defend(small)"
+
+msgid "feature-5"
+msgstr ""
+
+msgid "feature_desc-5"
+msgstr ""
+
+msgid "feature-6"
+msgstr "Divine footman"
+
+msgid "feature_desc-6"
+msgstr "Enhance footman's attack and defend(large)"
+
+msgid "feature-7"
+msgstr "Divine horse man"
+
+msgid "feature_desc-7"
+msgstr "Enhance horseman's attack and defend(large)"
+
+msgid "feature-8"
+msgstr "Divine catapult"
+
+msgid "feature_desc-8"
+msgstr "Enhance catapult's attack and defend(large)"
+
+msgid "feature-9"
+msgstr "Divine mage"
+
+msgid "feature_desc-9"
+msgstr "Enhance mage's attack and defend(large)"
+
+msgid "feature-10"
+msgstr "Divine navy"
+
+msgid "feature_desc-10"
+msgstr "Enhance navy's attack and defend(large)"
+
+msgid "feature-11"
+msgstr ""
+
+msgid "feature_desc-11"
+msgstr ""
+
+msgid "feature-12"
+msgstr "Forced footman"
+
+msgid "feature_desc-12"
+msgstr "Improves footman MOV"
+
+msgid "feature-13"
+msgstr "Forced horseman"
+
+msgid "feature_desc-13"
+msgstr "Improves horseman MOV"
+
+msgid "feature-14"
+msgstr "Forced catapult"
+
+msgid "feature_desc-14"
+msgstr "Improves catapult MOV"
+
+msgid "feature-15"
+msgstr "Forced mage"
+
+msgid "feature_desc-15"
+msgstr "Improves mage MOV"
+
+msgid "feature-16"
+msgstr "Forced navy"
+
+msgid "feature_desc-16"
+msgstr "Improves navy MOV"
+
+msgid "feature-17"
+msgstr ""
+
+msgid "feature_desc-17"
+msgstr ""
+
+msgid "feature-18"
+msgstr ""
+
+msgid "feature_desc-18"
+msgstr ""
+
+msgid "feature-19"
+msgstr ""
+
+msgid "feature_desc-19"
+msgstr ""
+
+msgid "feature-20"
+msgstr ""
+
+msgid "feature_desc-20"
+msgstr ""
+
+msgid "feature-21"
+msgstr ""
+
+msgid "feature_desc-21"
+msgstr ""
+
+msgid "feature-22"
+msgstr ""
+
+msgid "feature_desc-22"
+msgstr ""
+
+msgid "feature-23"
+msgstr ""
+
+msgid "feature_desc-23"
+msgstr ""
+
+msgid "feature-24"
+msgstr "Melee"
+
+msgid "feature_desc-24"
+msgstr "Enhance attack and defend when melee(small)"
+
+msgid "feature-25"
+msgstr "Range"
+
+msgid "feature_desc-25"
+msgstr "Enhance attack and defend when range(small)"
+
+msgid "feature-26"
+msgstr "Cast"
+
+msgid "feature_desc-26"
+msgstr "Enhance attack and defend when cast(small)"
+
+msgid "feature-27"
+msgstr "Divine melee"
+
+msgid "feature_desc-27"
+msgstr "Enhance attack and defend when melee(large)"
+
+msgid "feature-28"
+msgstr "Divine range"
+
+msgid "feature_desc-28"
+msgstr "Enhance attack and defend when range(large)"
+
+msgid "feature-29"
+msgstr "Divine cast"
+
+msgid "feature_desc-29"
+msgstr "Enhance attack and defend when cast(large)"
+
+msgid "feature-30"
+msgstr "Pure"
+
+msgid "feature_desc-30"
+msgstr "Halve defender's ATK and MOV"
+
+msgid "feature-31"
+msgstr "Pedagogy"
+
+msgid "feature_desc-31"
+msgstr "Leadership, force, intellect ect doubled"
+
+msgid "feature-32"
+msgstr "Promotion"
+
+msgid "feature_desc-32"
+msgstr "Arms experience x2"
+
+msgid "feature-33"
+msgstr "Poison"
+
+msgid "feature_desc-33"
+msgstr "Wips posion off and guards against poison"
+
+msgid "feature-34"
+msgstr "Diamond"
+
+msgid "feature_desc-34"
+msgstr "Be attacked, 50% chance of taking no dmg"
+
+msgid "feature-35"
+msgstr "Fleetness"
+
+msgid "feature_desc-35"
+msgstr "Ignore ZOC"
+
+msgid "feature-36"
+msgstr "Drain"
+
+msgid "feature_desc-36"
+msgstr "Enemy troops defect on defeating unit"
+
+msgid "feature-37"
+msgstr "Firm"
+
+msgid "feature_desc-37"
+msgstr "Enhance defend"
+
+msgid "feature-38"
+msgstr "Scout"
+
+msgid "feature_desc-38"
+msgstr "Uncover one grid fog/shroud use one MOV"
+
+msgid "feature-39"
+msgstr "Skill"
+
+msgid "feature_desc-39"
+msgstr "Skill experience x2"
+
+msgid "feature-40"
+msgstr "Magnate"
+
+msgid "feature_desc-40"
+msgstr "No upkeep"
+
+msgid "feature-41"
+msgstr "Ambush"
+
+msgid "feature_desc-41"
+msgstr "Hide in forest, remain undetected by enemies"
+
+msgid "feature-42"
+msgstr "Concealment"
+
+msgid "feature_desc-42"
+msgstr "Hide in village, remain undetected by enemies"
+
+msgid "feature-43"
+msgstr "Entertainer"
+
+msgid "feature_desc-43"
+msgstr "Opposer get XP x2 when attack"
+
+msgid "feature-44"
+msgstr "Renown"
+
+msgid "feature_desc-44"
+msgstr "Increase HP"
+
+msgid "feature-45"
+msgstr "Innovate"
+
+msgid "feature_desc-45"
+msgstr "Decrease needed experience of advance"
+
+msgid "feature-46"
+msgstr "Surveillance"
+
+msgid "feature_desc-46"
+msgstr "Will not decrease loyalty"
+
+msgid "feature-47"
+msgstr "Curiousness"
+
+msgid "feature_desc-47"
+msgstr "Get XP x2"
+
+msgid "feature-48"
+msgstr "Lobbyist"
+
+msgid "feature_desc-48"
+msgstr "Side fallen, adjacent enemy's troop will come over"
+
+msgid "feature-49"
+msgstr "Break"
+
+msgid "feature_desc-49"
+msgstr "Decrease opposer's defend"
+
+msgid "feature-50"
+msgstr "Penetrate"
+
+msgid "feature_desc-50"
+msgstr "Cannot be pure, break"
+
+msgid "feature-51"
+msgstr "Fearless"
+
+msgid "feature_desc-51"
+msgstr "Attacking, 20% chance let opposer injure"
+
+msgid "feature-52"
+msgstr "Heal"
+
+msgid "feature_desc-52"
+msgstr "Recover 32HP every turn"
+
+msgid "feature-53"
+msgstr "Faction"
+
+msgid "feature_desc-53"
+msgstr "Mult-attack increase affected unit 20% damage"
+
+msgid "feature-54"
+msgstr "Interlink"
+
+msgid "feature_desc-54"
+msgstr "Mult-attack increase affected unit 50% damage"
+
+msgid "feature-55"
+msgstr "Submerge"
+
+msgid "feature_desc-55"
+msgstr "Hide in deep water,remain undetected by enemies"
+
+msgid "feature-56"
+msgstr "Dayattack"
+
+msgid "feature_desc-56"
+msgstr "Increase 25% ATK duration daytime"
+
+msgid "feature-57"
+msgstr "nightattack"
+
+msgid "feature_desc-57"
+msgstr "Increase 25% ATK duration nighttime"
+
+msgid "feature-58"
+msgstr "Frighten"
+
+msgid "feature_desc-58"
+msgstr "No fight back when attacking"
+
+msgid "feature-59"
+msgstr "Indomitable"
+
+msgid "feature_desc-59"
+msgstr "Chance reduce damage when low HP"
+
+msgid "feature-60"
+msgstr ""
+
+msgid "feature_desc-60"
+msgstr ""
+
+msgid "feature-61"
+msgstr ""
+
+msgid "feature_desc-61"
+msgstr ""
+
+msgid "feature-62"
+msgstr ""
+
+msgid "feature_desc-62"
+msgstr ""
+
+msgid "feature-63"
+msgstr ""
+
+msgid "feature_desc-63"
+msgstr ""
+
+msgid "feature-64"
+msgstr ""
+
+msgid "feature_desc-64"
+msgstr ""
+
+msgid "feature-65"
+msgstr ""
+
+msgid "feature_desc-65"
+msgstr ""
+
+msgid "feature-66"
+msgstr ""
+
+msgid "feature_desc-66"
+msgstr ""
+
+msgid "feature-67"
+msgstr ""
+
+msgid "feature_desc-67"
+msgstr ""
+
+msgid "feature-68"
+msgstr ""
+
+msgid "feature_desc-68"
+msgstr ""
+
+msgid "feature-69"
+msgstr ""
+
+msgid "feature_desc-69"
+msgstr ""
+
+msgid "feature-70"
+msgstr "Puissance"
+
+msgid "feature_desc-70"
+msgstr "Enhance all unit's attack and defend(large)"
+
+msgid "feature-71"
+msgstr "Taoist"
+
+msgid "feature_desc-71"
+msgstr "Enhance mage's attack and defend and drain"
+
+msgid "feature-72"
+msgstr "Valiant general"
+
+msgid "feature_desc-72"
+msgstr "Enhance footman and horseman's attack and defend(small)"
+
+msgid "feature-73"
+msgstr "God's Command"
+
+msgid "feature_desc-73"
+msgstr "Enhance footman and horseman's attack and defend(large)"
+
+msgid "feature-74"
+msgstr "Flying General"
+
+msgid "feature_desc-74"
+msgstr "Ignore ZOC, enhance footman and horseman's ATK and DEf"
+
+msgid "feature-75"
+msgstr "Masterful"
+
+msgid "feature_desc-75"
+msgstr "Ability and arms experience x2"
+
+msgid "feature-76"
+msgstr "Forced march"
+
+msgid "feature_desc-76"
+msgstr "Improves MOV(land)"
+
+msgid "feature-77"
+msgstr "Siren"
+
+msgid "feature_desc-77"
+msgstr "Halve defender's ATK, MOV, and drain"
+
+msgid "feature-78"
+msgstr "Braver"
+
+msgid "feature_desc-78"
+msgstr "Enhance all unit's attack and defend(small)"
+
+msgid "feature-79"
+msgstr "Political reform"
+
+msgid "feature_desc-79"
+msgstr "Increase HP and decrease XP"
+
+msgid "feature-80"
+msgstr "Beguile"
+
+msgid "feature_desc-80"
+msgstr "Get XP x2, and drain"
+
+msgid "feature-81"
+msgstr "Intrepidity"
+
+msgid "feature_desc-81"
+msgstr "break opper's defend, ability and arms experience x2"
+
+msgid "feature-82"
+msgstr "Medical"
+
+msgid "feature_desc-82"
+msgstr "Halve defender's ATK, MOV, recover 32HP every turn"
+
+msgid "feature-83"
+msgstr "Military science"
+
+msgid "feature_desc-83"
+msgstr "Ability, arms and skill experience x2"
+
+msgid "feature-84"
+msgstr "Hide land"
+
+msgid "feature_desc-84"
+msgstr "Hide in forest and village"
+
+msgid "feature-85"
+msgstr "Hide"
+
+msgid "feature_desc-85"
+msgstr "Hide in forest, village and deep water"
+
+msgid "feature-86"
+msgstr ""
+
+msgid "feature_desc-86"
+msgstr ""
+
+msgid "feature-87"
+msgstr ""
+
+msgid "feature_desc-87"
+msgstr ""
+
+msgid "feature-88"
+msgstr ""
+
+msgid "feature_desc-88"
+msgstr ""
+
+msgid "feature-89"
+msgstr ""
+
+msgid "feature_desc-89"
+msgstr ""
+
+msgid "feature-90"
+msgstr ""
+
+msgid "feature_desc-90"
+msgstr ""
+
+msgid "feature-91"
+msgstr ""
+
+msgid "feature_desc-91"
+msgstr ""
+
+msgid "feature-92"
+msgstr ""
+
+msgid "feature_desc-92"
+msgstr ""
+
+msgid "feature-93"
+msgstr ""
+
+msgid "feature_desc-93"
+msgstr ""
+
+msgid "feature-94"
+msgstr ""
+
+msgid "feature_desc-94"
+msgstr ""
+
+msgid "feature-95"
+msgstr ""
+
+msgid "feature_desc-95"
+msgstr ""
+
+msgid "feature-96"
+msgstr ""
+
+msgid "feature_desc-96"
+msgstr ""
+
+msgid "feature-97"
+msgstr ""
+
+msgid "feature_desc-97"
+msgstr ""
+
+msgid "feature-98"
+msgstr ""
+
+msgid "feature_desc-98"
+msgstr ""
+
+msgid "feature-99"
+msgstr ""
+
+msgid "feature_desc-99"
+msgstr ""
+
+msgid "tactic-attack"
+msgstr "Enhance ATK"
+
+msgid "tactic_desc-attack"
+msgstr "Enhance local troop ATK"
+
+msgid "tactic-more attack"
+msgstr "Enhance more ATK"
+
+msgid "tactic_desc-more attack"
+msgstr "Enhance local troops more ATK"
+
+msgid "tactic-best attack"
+msgstr "Enhance best ATK"
+
+msgid "tactic_desc-best attack"
+msgstr "Enhance local troop best ATK"
+
+msgid "tactic-attacks"
+msgstr "Enhance ATK.S"
+
+msgid "tactic_desc-attacks"
+msgstr "Enhance friend troops ATK"
+
+msgid "tactic-more attacks"
+msgstr "Enhance more ATK.S"
+
+msgid "tactic_desc-more attacks"
+msgstr "Enhance friend troops more ATK"
+
+msgid "tactic-weaken attacks"
+msgstr "Weaken ATK.S"
+
+msgid "tactic_desc-weaken attacks"
+msgstr "Weaken enemy troops ATK"
+
+msgid "tactic-weaken more attacks"
+msgstr "Weaken more ATK.S"
+
+msgid "tactic_desc-weaken more attacks"
+msgstr "Weaken enemy troops more ATK"
+
+msgid "tactic-firm"
+msgstr "Enhance DEF"
+
+msgid "tactic_desc-firm"
+msgstr "Enhance local troop DEF"
+
+msgid "tactic-more firm"
+msgstr "Enhance more DEF"
+
+msgid "tactic_desc-more firm"
+msgstr "Enhance local troop more DEF"
+
+msgid "tactic-best firm"
+msgstr "Enhance best DEF"
+
+msgid "tactic_desc-best firm"
+msgstr "Enhance local troop best DEF"
+
+msgid "tactic-firms"
+msgstr "Enhance DEF.S"
+
+msgid "tactic_desc-firms"
+msgstr "Enhance friend troops DEF"
+
+msgid "tactic-more firms"
+msgstr "Enhance more DEF.S"
+
+msgid "tactic_desc-more firms"
+msgstr "Enhance friend troops more DEF"
+
+msgid "tactic-breaks"
+msgstr "Weaken DEF.S"
+
+msgid "tactic_desc-breaks"
+msgstr "Weaken enemy troops DEF"
+
+msgid "tactic-more breaks"
+msgstr "Weaken more DEF.S"
+
+msgid "tactic_desc-more breaks"
+msgstr "Weaken enemy troops more DEF"
+
+msgid "tactic-encourage"
+msgstr "Encourage"
+
+msgid "tactic_desc-encourage"
+msgstr "Enhance local troop will"
+
+msgid "tactic-more encourage"
+msgstr "More encourage"
+
+msgid "tactic_desc-more encourage"
+msgstr "Enhance local troop more will"
+
+msgid "tactic-best encourage"
+msgstr "Best encourage"
+
+msgid "tactic_desc-best encourage"
+msgstr "Enhance local troop best will"
+
+msgid "tactic-encourages"
+msgstr "Encourage.S"
+
+msgid "tactic_desc-encourages"
+msgstr "Enhance friend troops will"
+
+msgid "tactic-more encourages"
+msgstr "More encourage.S"
+
+msgid "tactic_desc-more encourages"
+msgstr "Enhance enemy troops will"
+
+msgid "tactic-weaken encourages"
+msgstr "Discourage.S"
+
+msgid "tactic_desc-weaken encourages"
+msgstr "Weaken enemy troops will"
+
+msgid "tactic-weaken more encourages"
+msgstr "More discourage.S"
+
+msgid "tactic_desc-weaken more encourages"
+msgstr "Weaken enemy troops more will"
+
+msgid "tactic-demolish"
+msgstr "Demolish"
+
+msgid "tactic_desc-demolish"
+msgstr "Enhance local troop demolish"
+
+msgid "tactic-more demolish"
+msgstr "More demolish"
+
+msgid "tactic_desc-more demolish"
+msgstr "Enhance local troop more demolish"
+
+msgid "tactic-demolishes"
+msgstr "Demolishe.S"
+
+msgid "tactic_desc-demolishes"
+msgstr "Enhance friend troops demolish"
+
+msgid "tactic-more demolishes"
+msgstr "More demolishe.S"
+
+msgid "tactic_desc-more demolishes"
+msgstr "Enhance friend troops more demolish"
+
+msgid "tactic-weaken demolishes"
+msgstr "Weaken demolishe.S"
+
+msgid "tactic_desc-weaken demolishes"
+msgstr "Weaken enemy troops demolish"
+
+msgid "tactic-weaken more demolishes"
+msgstr "Weaken more demolishe.S"
+
+msgid "tactic_desc-weaken more demolishes"
+msgstr "Weaken enemy troops more demolish"
+
+msgid "tactic-blade"
+msgstr "Blade"
+
+msgid "tactic_desc-blade"
+msgstr "Damage enemy troops by blade attack"
+
+msgid "tactic-pierce"
+msgstr "Pierce"
+
+msgid "tactic_desc-pierce"
+msgstr "Damage enemy troops by pierce attack"
+
+msgid "tactic-impact"
+msgstr "Impact"
+
+msgid "tactic_desc-impact"
+msgstr "Damage enemy troops by impact attack"
+
+msgid "tactic-fire"
+msgstr "Fire"
+
+msgid "tactic_desc-fire"
+msgstr "Damage enemy troops by fire attack"
+
+msgid "tactic-hide"
+msgstr "Hide"
+
+msgid "tactic_desc-hide"
+msgstr "Make local troop invisiable"
+
+msgid "tactic-hides"
+msgstr "Hide.S"
+
+msgid "tactic_desc-hides"
+msgstr "Make friend troops invisiable"
+
+msgid "tactic-accelerate"
+msgstr "Accelerate"
+
+msgid "tactic_desc-accelerate"
+msgstr "Enspeed local troop"
+
+msgid "tactic-accelerates"
+msgstr "Accelerate.S"
+
+msgid "tactic_desc-accelerates"
+msgstr "Accelerate friend troops"
+
+msgid "tactic-decelerates"
+msgstr "Decelerate.S"
+
+msgid "tactic_desc-decelerates"
+msgstr "Decelerate enemy troops"
+
+msgid "tactic-alert"
+msgstr "Alert"
+
+msgid "tactic_desc-alert"
+msgstr "Alert"
+
+msgid "tactic-provoke"
+msgstr "Provoke"
+
+msgid "tactic_desc-provoke"
+msgstr "Provoke"
+
+msgid "tactic-clear"
+msgstr "Clear"
+
+msgid "tactic_desc-clear"
+msgstr "Clear"
+
+msgid "tactic-clears"
+msgstr "Clears"
+
+msgid "tactic_desc-clears"
+msgstr "Clears"
+
+msgid "tactic-heal"
+msgstr "Heal"
+
+msgid "tactic_desc-heal"
+msgstr "Recover local troop HP"
+
+msgid "tactic-heals"
+msgstr "Heal.S"
+
+msgid "tactic_desc-heals"
+msgstr "Recover friend troops HP"
+
+msgid "tactic-divine wei wu"
+msgstr "Divine wei wu"
+
+msgid "tactic_desc-divine wei wu"
+msgstr "Enhance friend troops more ATK and DEF"
+
+msgid "tactic-dragon in people"
+msgstr "Dragon in People"
+
+msgid "tactic_desc-dragon in people"
+msgstr "Enhance local troops more ATK, DEF and WILL"
+
+msgid "tactic-integrate attack and defend"
+msgstr "Integrate ATK and DEF"
+
+msgid "tactic_desc-integrate attack and defend"
+msgstr "Enhance local troops more ATK, DEF"
+
+msgid "tactic-speedy solo"
+msgstr "Speedy Solo"
+
+msgid "tactic_desc-speedy solo"
+msgstr "Enhance local troops ATK, DEF and WILL"
+
+msgid "tactic-remote strike"
+msgstr "Remote Strike"
+
+msgid "tactic_desc-remote strike"
+msgstr "Enhance local troops ATK, DEF and demolish"
+
+msgid "tactic-again thousands"
+msgstr "Again Thousands"
+
+msgid "tactic_desc-again thousands"
+msgstr "Enhance local troops best ATK"
+
+msgid "tactic-ironman"
+msgstr "Ironman"
+
+msgid "tactic_desc-ironman"
+msgstr "Enhance local troops best DEF"
+
+msgid "tactic-brave ironman"
+msgstr "Brave Ironman"
+
+msgid "tactic_desc-brave ironman"
+msgstr "Enhance local troops best DEF"
+
+msgid "tactic-storm attack"
+msgstr "Storm Attack"
+
+msgid "tactic_desc-storm attack"
+msgstr "Enhance local troop best ATK"
+
+msgid "tactic-break through"
+msgstr "Break Through"
+
+msgid "tactic_desc-break through"
+msgstr "Enhance local troop more ATK and demolish"
+
+msgid "tactic-military defense"
+msgstr "Military Defense"
+
+msgid "tactic_desc-military defense"
+msgstr "Enhance friend troops more DEF"
+
+msgid "tactic-military encourage"
+msgstr "Military Encourage"
+
+msgid "tactic_desc-military encourage"
+msgstr "Enhance friends will"
+
+msgid "tactic-military attack"
+msgstr "Military Attack"
+
+msgid "tactic_desc-military attack"
+msgstr "Enhance friends ATK"
+
+msgid "tactic-spy infiltrate"
+msgstr "Spy Infiltrate"
+
+msgid "tactic_desc-spy infiltrate"
+msgstr "Weaken enemy troops ATK and DEF"
+
+msgid "tactic-fire stratagem"
+msgstr "Fire stratagem"
+
+msgid "tactic_desc-fire stratagem"
+msgstr "Damage enemy troops by fire attack"
+
+msgid "tactic-divine fire"
+msgstr "Divine fire"
+
+msgid "tactic_desc-divine fire"
+msgstr "Damage enemy troops by fire attack"
+
+msgid "tactic-big strike"
+msgstr "Big strike"
+
+msgid "tactic_desc-big strike"
+msgstr "Damage enemy troops by impact attack"
+
+msgid "tactic-ambush"
+msgstr "Ambush"
+
+msgid "tactic_desc-ambush"
+msgstr "Make local troop invisiable"
+
+msgid "tactic-divine ambushes"
+msgstr "Divine ambushes"
+
+msgid "tactic_desc-divine ambushes"
+msgstr "Make friend troops invisiable"
+
+msgid "tactic-ambush accelerate"
+msgstr "Ambush accelerate"
+
+msgid "tactic_desc-ambush accelerate"
+msgstr "Make local troop invisiable"
+
+msgid "tactic-accelerate firms"
+msgstr "Accelerate firms"
+
+msgid "tactic_desc-accelerate firms"
+msgstr "Enspeed friend troops"
+
+msgid "tactic-beautiful interlink"
+msgstr "Beautiful interlink"
+
+msgid "tactic_desc-beautiful interlink"
+msgstr "Decelerate enemy troops"
+
+msgid "tactic-alert attack"
+msgstr "Alert attack"
+
+msgid "tactic_desc-alert attack"
+msgstr "Alert attack"
+
+msgid "tactic-divine provoke"
+msgstr "Divine provoke"
+
+msgid "tactic_desc-divine provoke"
+msgstr "Divine provoke"
+
+msgid "tactic-divine clear"
+msgstr "Divine clear"
+
+msgid "tactic_desc-divine clear"
+msgstr "Divine clear"
+
+msgid "tactic-divine heal"
+msgstr "Divine heal"
+
+msgid "tactic_desc-divine heal"
+msgstr "Divine heal"
+
+#~ msgid "tactic"
+#~ msgstr "Tactic"

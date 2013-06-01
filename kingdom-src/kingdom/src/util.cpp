@@ -1,6 +1,6 @@
-/* $Id: util.cpp 46186 2010-09-01 21:12:38Z silene $ */
+/* $Id: util.cpp 55983 2013-01-01 09:22:03Z mordante $ */
 /*
-   Copyright (C) 2005 - 2010 by Philippe Plantier <ayin@anathas.org>
+   Copyright (C) 2005 - 2013 by Philippe Plantier <ayin@anathas.org>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -21,7 +21,122 @@
 #include "util.hpp"
 
 #include <cstdlib>
+template<>
+size_t lexical_cast<size_t, const std::string&>(const std::string& a)
+{
+	char* endptr;
+	size_t res = strtoul(a.c_str(), &endptr, 10);
 
+	if (a.empty() || *endptr != '\0') {
+		throw bad_lexical_cast();
+	} else {
+		return res;
+	}
+}
+
+#ifndef MSVC_DO_UNIT_TESTS
+template<>
+size_t lexical_cast<size_t, const char*>(const char* a)
+{
+	char* endptr;
+	size_t res = strtoul(a, &endptr, 10);
+
+	if (*a == '\0' || *endptr != '\0') {
+		throw bad_lexical_cast();
+	} else {
+		return res;
+	}
+}
+#endif
+template<>
+size_t lexical_cast_default<size_t, const std::string&>(const std::string& a, size_t def)
+{
+	if(a.empty()) {
+		return def;
+	}
+
+	char* endptr;
+	size_t res = strtoul(a.c_str(), &endptr, 10);
+
+	if (*endptr != '\0') {
+		return def;
+	} else {
+		return res;
+	}
+}
+template<>
+size_t lexical_cast_default<size_t, const char*>(const char* a, size_t def)
+{
+	if(*a == '\0') {
+		return def;
+	}
+
+	char* endptr;
+	size_t res = strtoul(a, &endptr, 10);
+
+	if (*endptr != '\0') {
+		return def;
+	} else {
+		return res;
+	}
+}
+template<>
+long lexical_cast<long, const std::string&>(const std::string& a)
+{
+	char* endptr;
+	long res = strtol(a.c_str(), &endptr, 10);
+
+	if (a.empty() || *endptr != '\0') {
+		throw bad_lexical_cast();
+	} else {
+		return res;
+	}
+}
+
+template<>
+long lexical_cast<long, const char*>(const char* a)
+{
+	char* endptr;
+	long res = strtol(a, &endptr, 10);
+
+	if (*a == '\0' || *endptr != '\0') {
+		throw bad_lexical_cast();
+	} else {
+		return res;
+	}
+}
+template<>
+long lexical_cast_default<long, const std::string&>(const std::string& a, long def)
+{
+	if(a.empty()) {
+		return def;
+	}
+
+	char* endptr;
+	long res = strtol(a.c_str(), &endptr, 10);
+
+	if (*endptr != '\0') {
+		return def;
+	} else {
+		return res;
+	}
+}
+template<>
+long lexical_cast_default<long, const char*>(const char* a, long def)
+{
+	if(*a == '\0') {
+		return def;
+	}
+
+	char* endptr;
+	long res = strtol(a, &endptr, 10);
+
+	if (*endptr != '\0') {
+		return def;
+	} else {
+		return res;
+	}
+}
 template<>
 int lexical_cast<int, const std::string&>(const std::string& a)
 {
@@ -35,6 +150,7 @@ int lexical_cast<int, const std::string&>(const std::string& a)
 	}
 }
 
+#ifndef MSVC_DO_UNIT_TESTS
 template<>
 int lexical_cast<int, const char*>(const char* a)
 {
@@ -47,6 +163,7 @@ int lexical_cast<int, const char*>(const char* a)
 		return res;
 	}
 }
+#endif
 
 template<>
 int lexical_cast_default<int, const std::string&>(const std::string& a, int def)
@@ -83,19 +200,104 @@ int lexical_cast_default<int, const char*>(const char* a, int def)
 }
 
 template<>
-double lexical_cast_default<double, const std::string&>(const std::string& a, double def)
+double lexical_cast<double, const std::string&>(const std::string& a)
 {
-	if(a.empty()) {
-		return def;
-	}
-
 	char* endptr;
 	double res = strtod(a.c_str(), &endptr);
 
-	if (*endptr != '\0') {
+	if (a.empty() || *endptr != '\0') {
+		throw bad_lexical_cast();
+	} else {
+		return res;
+	}
+}
+
+template<>
+double lexical_cast<double, const char*>(const char* a)
+{
+	char* endptr;
+	double res = strtod(a, &endptr);
+
+	if (*a == '\0' || *endptr != '\0') {
+		throw bad_lexical_cast();
+	} else {
+		return res;
+	}
+}
+
+template<>
+double lexical_cast_default<double, const std::string&>(const std::string& a, double def)
+{
+	char* endptr;
+	double res = strtod(a.c_str(), &endptr);
+
+	if (a.empty() || *endptr != '\0') {
+		return def;;
+	} else {
+		return res;
+	}
+}
+
+template<>
+double lexical_cast_default<double, const char*>(const char* a, double def)
+{
+	char* endptr;
+	double res = strtod(a, &endptr);
+
+	if (*a == '\0' || *endptr != '\0') {
 		return def;
 	} else {
 		return res;
 	}
 }
 
+template<>
+float lexical_cast<float, const std::string&>(const std::string& a)
+{
+	char* endptr;
+	float res = static_cast<float>(strtod(a.c_str(), &endptr));
+
+	if (a.empty() || *endptr != '\0') {
+		throw bad_lexical_cast();
+	} else {
+		return res;
+	}
+}
+
+template<>
+float lexical_cast<float, const char*>(const char* a)
+{
+	char* endptr;
+	float res = static_cast<float>(strtod(a, &endptr));
+
+	if (*a == '\0' || *endptr != '\0') {
+		throw bad_lexical_cast();
+	} else {
+		return res;
+	}
+}
+template<>
+float lexical_cast_default<float, const std::string&>(const std::string& a, float def)
+{
+	char* endptr;
+	float res = static_cast<float>(strtod(a.c_str(), &endptr));
+
+	if (a.empty() || *endptr != '\0') {
+		return def;;
+	} else {
+		return res;
+	}
+}
+
+template<>
+float lexical_cast_default<float, const char*>(const char* a, float def)
+{
+	char* endptr;
+	float res = static_cast<float>(strtod(a, &endptr));
+
+	if (*a == '\0' || *endptr != '\0') {
+		return def;
+	} else {
+		return res;
+	}
+}

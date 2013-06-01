@@ -46,6 +46,7 @@ button::button(CVideo& video, const std::string& label, button::TYPE type,
 	  spacing_(spacing), base_height_(base_height), base_width_(base_width),
 	  hook_(hook), menu_(menu), btnidx_(btnidx), cookie_(NULL)
 	  , color_(font::BUTTON_COLOR)
+	  , tactic_hero_(NULL)
 {
 	if (button_image_name.empty() && type == TYPE_PRESS) {
 		button_image_name = "button";
@@ -134,13 +135,72 @@ void button::set_rpg_image(hero* h, bool greyscale)
 	masked_sur = scale_surface(masked_sur, location().w, location().h);
 	image_.assign(masked_sur);
 
-	// Get active/pressed_image from button_image
-	activeImage_ = adjust_surface_color(image_, 40, 40, 40);
+	generate_other_image();
+}
 
-	SDL_Rect src_clip = ::create_rect(0, 0, activeImage_->w - 2, activeImage_->h - 2);
-	SDL_Rect dst_clip = ::create_rect(2, 2, 0, 0);
-	pressedImage_.assign(create_neutral_surface(activeImage_->w, activeImage_->h));
-	SDL_BlitSurface(activeImage_, &src_clip, pressedImage_, &dst_clip);
+void button::set_tactic_image(hero& h)
+{
+	int width = location().w;
+	int height = location().h;
+
+	image_.assign(NULL);
+	image_ = make_neutral_surface(image::get_image("themes/tactic-bg.png"));
+
+	if (h.valid()) {
+		tactic_hero_ = &h;
+		const ttactic& t = unit_types.tactic(h.tactic_);
+
+		std::stringstream strstr;
+		strstr << h.image() << "~SCALE(36, 45)";
+
+		surface hero_sur = image::get_image(strstr.str());
+
+		SDL_Rect clip = ::create_rect(1, 1, 0, 0);
+		sdl_blit(hero_sur, NULL, image_, &clip);
+
+		image_ = scale_surface(image_, location().w, location().h);
+		label_ = t.name();
+	} else {
+		tactic_hero_ = NULL;
+		label_ = "";
+	}
+
+	generate_other_image();
+}
+
+void button::set_bomb_image(int bomb_turns)
+{
+	std::stringstream strstr;
+	int width = location().w;
+	int height = location().h;
+
+	image_.assign(NULL);
+	if (bomb_turns < game_config::max_bomb_turns) {
+		image_ = make_neutral_surface(image::get_image("themes/bomb-bg.png"));
+	} else {
+		image_ = make_neutral_surface(image::get_image("themes/bomb-full-bg.png"));
+	}
+	
+	
+	SDL_Rect dst_clip = create_rect(26, 20, 0, 0);
+	// if (bomb_turns < game_config::max_bomb_turns) {
+		strstr.str("");
+		strstr << "misc/digit.png~CROP(" << 8 * bomb_turns << ", 0, 8, 12)";
+		sdl_blit(image::get_image(strstr.str()), NULL, image_, &dst_clip);
+
+		strstr.str("");
+		strstr << "misc/digit.png~CROP(" << 8 * 10 << ", 0, 8, 12)";
+		dst_clip.x += 8;
+		sdl_blit(image::get_image(strstr.str()), NULL, image_, &dst_clip);
+
+		strstr.str("");
+		strstr << "misc/digit.png~CROP(" << 8 * game_config::max_bomb_turns << ", 0, 8, 12)";
+		dst_clip.x += 8;
+		sdl_blit(image::get_image(strstr.str()), NULL, image_, &dst_clip);
+	// }
+	image_ = scale_surface(image_, width, height);
+	
+	generate_other_image();
 }
 
 void button::set_image(const std::string& stem, int integer, bool greyscale, bool special, const std::string& icon)
@@ -202,11 +262,16 @@ void button::set_image(const std::string& stem, int integer, bool greyscale, boo
 		SDL_BlitSurface(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
 	}
 
+	generate_other_image();
+}
+
+void button::generate_other_image()
+{
 	// Get active/pressed_image from button_image
 	activeImage_ = adjust_surface_color(image_, 40, 40, 40);
 
 	SDL_Rect src_clip = ::create_rect(0, 0, activeImage_->w - 2, activeImage_->h - 2);
-	dst_clip = ::create_rect(2, 2, 0, 0);
+	SDL_Rect dst_clip = ::create_rect(2, 2, 0, 0);
 	pressedImage_.assign(create_neutral_surface(activeImage_->w, activeImage_->h));
 	SDL_BlitSurface(activeImage_, &src_clip, pressedImage_, &dst_clip);
 }
@@ -338,6 +403,10 @@ void button::draw_contents()
 	else {
 		clipArea.w += image_w + checkbox_horizontal_padding;
 		textx = loc.x + image_w + checkbox_horizontal_padding / 2;
+	}
+
+	if (tactic_hero_) {
+		textx = 36;
 	}
 
 	SDL_Color button_color = color_;

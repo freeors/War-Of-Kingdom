@@ -32,6 +32,8 @@
 #include "serialization/preprocessor.hpp"
 #include "serialization/string_utils.hpp"
 #include "help.hpp"
+#include "gui/widgets/helper.hpp"
+#include "wml_exception.hpp"
 
 #include <list>
 #include <set>
@@ -689,89 +691,33 @@ static surface render_text(const std::string& text, int fontsize, const SDL_Colo
 	ttext text_;
 	text_.set_foreground_color((color.r << 24) | (color.g << 16) | (color.b << 8) | 255);
 	text_.set_font_size(fontsize);
+	text_.set_font_style(style);
 	// text_.set_maximum_width(width_ < 0 ? clip_rect_.w : width_);
 	// text_.set_maximum_height(clip_rect_.h);
 
 	text_.set_text(text, use_markup);
 
 	return text_.render();
-/*
-	// we keep blank lines and spaces (may be wanted for indentation)
-	const std::vector<std::string> lines = utils::split(text, '\n', 0);
-	std::vector<std::vector<surface> > surfaces;
-	surfaces.reserve(lines.size());
-	size_t width = 0, height = 0;
-
-	for(std::vector< std::string >::const_iterator ln = lines.begin(), ln_end = lines.end(); ln != ln_end; ++ln) {
-
-		int sz = fontsize;
-		int text_style = style;
-
-		std::string::const_iterator after_markup = use_markup ?
-			parse_markup(ln->begin(), ln->end(), &sz, NULL, &text_style) : ln->begin();
-		text_surface txt_surf(sz, color, text_style);
-
-		if (after_markup == ln->end() && (ln+1 != ln_end || lines.begin()+1 == ln_end)) {
-			// we replace empty line by a space (to have a line height)
-			// except for the last line if we have several
-			txt_surf.set_text(" ");
-		} else if (after_markup == ln->begin()) {
-		 	// simple case, no markup to skip
-			txt_surf.set_text(*ln);
-		} else  {
-			const std::string line(after_markup,ln->end());
-			txt_surf.set_text(line);
-		}
-
-		const text_surface& cached_surf = text_cache::find(txt_surf);
-		const std::vector<surface>&res = cached_surf.get_surfaces();
-
-		if (!res.empty()) {
-			surfaces.push_back(res);
-			width = std::max<size_t>(cached_surf.width(), width);
-			height += cached_surf.height();
-		}
-	}
-
-	if (surfaces.empty()) {
-		return surface();
-	} else if (surfaces.size() == 1 && surfaces.front().size() == 1) {
-		surface surf = surfaces.front().front();
-		SDL_SetAlpha(surf, SDL_SRCALPHA | SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
-		return surf;
-	} else {
-
-		surface res(create_compatible_surface(surfaces.front().front(),width,height));
-		if (res.null())
-			return res;
-
-		size_t ypos = 0;
-		for(std::vector< std::vector<surface> >::const_iterator i = surfaces.begin(),
-		    i_end = surfaces.end(); i != i_end; ++i) {
-			size_t xpos = 0;
-			size_t height = 0;
-
-			for(std::vector<surface>::const_iterator j = i->begin(),
-					j_end = i->end(); j != j_end; ++j) {
-				SDL_SetAlpha(*j, 0, 0); // direct blit without alpha blending
-				SDL_Rect dstrect = create_rect(xpos, ypos, 0, 0);
-				sdl_blit(*j, NULL, res, &dstrect);
-				xpos += (*j)->w;
-				height = std::max<size_t>((*j)->h, height);
-			}
-			ypos += height;
-		}
-
-		SDL_SetAlpha(res, SDL_SRCALPHA | SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
-		return res;
-	}
-*/
 }
 
+surface get_rendered_text2(const std::string& text, int maximum_width, int font_size, const SDL_Color& color)
+{
+	if (maximum_width <= 0) maximum_width = 480;
+	help::tintegrate integrate(text, maximum_width, -1, font_size, color);
+	return integrate.get_surface();
+}
 
+gui2::tpoint get_rendered_text_size(const std::string& text, int maximum_width, int font_size, const SDL_Color& color)
+{
+	if (maximum_width <= 0) maximum_width = 480;
+	help::tintegrate integrate(text, maximum_width, -1, font_size, color);
+	SDL_Rect rc = integrate.get_size();
+	return gui2::tpoint(rc.w, rc.h);
+}
+
+// it is called by tintegrate
 surface get_rendered_text(const std::string& str, int size, const SDL_Color& color, int style)
 {
-	// TODO maybe later also to parse markup here, but a lot to check
 	return render_text(str, size, color, style, false);
 }
 
@@ -971,21 +917,26 @@ std::string make_text_hide(const std::string& text, bool always, size_t front_sh
 }
 
 namespace {
-	const int title2_size = font::SIZE_15;
+	const int title2_size = font::SIZE_NORMAL;
 	const int box_width = 2;
 	const int normal_font_size = font::SIZE_SMALL;
 
 	/// Thrown when the help system fails to parse something.
 	struct parse_error : public game::error
 	{
-		parse_error(const std::string& msg) : game::error(msg) {}
+		parse_error(const std::string& msg) : game::error(msg) 
+		{
+			VALIDATE(false, std::string("tintegrate, ") + msg);
+		}
 	};
 }
 
 namespace help {
 
-void tintegrate::generate_img(std::stringstream& strstr, const std::string& src, tintegrate::ALIGNMENT align, bool floating)
+std::string tintegrate::generate_img(const std::string& src, tintegrate::ALIGNMENT align, bool floating)
 {
+	std::stringstream strstr;
+
 	strstr << "<img>src='" << src << "'";
 	std::string str = align_to_string(align);
 	if (!str.empty()) {
@@ -1005,12 +956,15 @@ void tintegrate::generate_img(std::stringstream& strstr, const std::string& src,
 		strstr << "</jump>";
 	}
 */
+	return strstr.str();
 }
 
-void tintegrate::generate_format(std::stringstream& strstr, const std::string& text, const std::string& color, int font_size, bool bold, bool italic)
+std::string tintegrate::generate_format(const std::string& text, const std::string& color, int font_size, bool bold, bool italic)
 {
+	std::stringstream strstr;
+
 	if (text.empty()) {
-		return;
+		return null_str;
 	}
 	// text maybe have sapce character.
 	strstr << "<format>text='" << text << "'";
@@ -1027,11 +981,31 @@ void tintegrate::generate_format(std::stringstream& strstr, const std::string& t
 		strstr << " italic=yes";
 	}
 	strstr << "</format>";
+
+	return strstr.str();
 }
 
-void generate_format(std::stringstream& strstr, const std::string& text, const std::string& color, int font_size, bool bold, bool italic)
+std::string tintegrate::generate_format(int val, const std::string& color, int font_size, bool bold, bool italic)
 {
-	tintegrate::generate_format(strstr, text, color, font_size, bold, italic);
+	std::stringstream strstr;
+
+	// text maybe have sapce character.
+	strstr << "<format>text='" << val << "'";
+	if (!color.empty()) {
+		strstr << " color=" << color;
+	}
+	if (font_size) {
+		strstr << " font_size=" << font_size;
+	}
+	if (bold) {
+		strstr << " bold=yes";
+	}
+	if (italic) {
+		strstr << " italic=yes";
+	}
+	strstr << "</format>";
+
+	return strstr.str();
 }
 
 tintegrate::item::item(surface surface, int x, int y, const std::string& _text,
@@ -1064,6 +1038,10 @@ tintegrate::item::item(surface surface, int x, int y, bool _floating,
 	rect.w = box ? surface->w + box_width * 2 : surface->w;
 	rect.h = box ? surface->h + box_width * 2 : surface->h;
 }
+
+std::string tintegrate::hero_color = "green";
+std::string tintegrate::object_color = "yellow";
+std::string tintegrate::tactic_color = "blue";
 
 tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_height, int default_font_size, const SDL_Color& default_font_color)
 	: items_()
@@ -1285,7 +1263,7 @@ void tintegrate::add_text_item(const std::string& text, const SDL_Color& text_co
 		add_text_item(s, text_color, ref_dst, broken_link, _font_size, bold, italic);
 	}
 	else {
-		std::vector<std::string> parts = split_in_width(text, font_size, remaining_width);
+		std::vector<std::string> parts = split_in_width(text, font_size, remaining_width, state);
 		std::string first_part = parts.front();
 		// Always override the color if we have a cross reference.
 		SDL_Color color;
@@ -1297,8 +1275,11 @@ void tintegrate::add_text_item(const std::string& text, const SDL_Color& text_co
 			color = font::YELLOW_COLOR;
 
 		surface surf(font::get_rendered_text(first_part, font_size, color, state));
-		if (!surf.null())
+		if (!surf.null()) {
+			// [See remark#22]
+			SDL_SetAlpha(surf, 0, 0); // direct blit without alpha blending
 			add_item(item(surf, curr_loc_.first, curr_loc_.second, first_part, ref_dst));
+		}
 		if (parts.size() > 1) {
 
 			std::string& s = parts.back();
@@ -1476,6 +1457,10 @@ void tintegrate::down_one_line()
 	last_row_.clear();
 	// curr_loc_.second += curr_row_height_ + (curr_row_height_ == min_row_height_ ? 0 : 2);
 	curr_loc_.second += curr_row_height_ + (curr_row_height_ == min_row_height_ ? 0 : 0);
+	// [see remark#25]
+	if (curr_loc_.first > maximum_width_) {
+		maximum_width_ = curr_loc_.first;
+	}
 	curr_row_height_ = min_row_height_;
 	contents_height_ = std::max<int>(curr_loc_.second + curr_row_height_, contents_height_);
 	curr_loc_.first = get_min_x(curr_loc_.second, curr_row_height_);
@@ -1981,8 +1966,6 @@ void cache_mode(CACHE mode)
 
 
 }
-
-#include "gui/widgets/helper.hpp"
 
 namespace font {
 

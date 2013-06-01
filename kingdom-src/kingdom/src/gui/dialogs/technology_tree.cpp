@@ -22,7 +22,6 @@
 #include "gettext.hpp"
 #include "game_display.hpp"
 #include "team.hpp"
-#include "hero.hpp"
 #include "artifical.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/button.hpp"
@@ -168,14 +167,14 @@ void ttechnology_tree::technology_tree_2_tv_internal(ttree_view_node* htvroot, c
 		const technology* current = dynamic_cast<const technology*>(it->current);
 		bool hold = std::find(holded.begin(), holded.end(), current) != holded.end();
 
-		tree_group_field["use_markup"] = "true";
 		strstr.str("");
 		strstr << current->name() << "\n";
+		strstr << "<format>";
 		int max_experience = current_team_.technology_max_experience(*current);
 		if (max_experience != current->max_experience()) {
-			strstr << "<0,0,255>";
+			strstr << "color=blue ";
 		}
-		strstr << "(" << exp_str(*current) << "/" << max_experience << ")";
+		strstr << "text='(" << exp_str(*current) << "/" << max_experience << ")'</format>";
 		tree_group_field["label"] = strstr.str();
 		if (hold) {
 			tree_group_field["icon"] = "misc/ok2.png";
@@ -245,14 +244,14 @@ void ttechnology_tree::pre_show(CVideo& /*video*/, twindow& window)
 		const technology* current = dynamic_cast<const technology*>(n->current);
 		bool hold = std::find(holded.begin(), holded.end(), current) != holded.end();
 
-		tree_group_field["use_markup"] = "true";
 		strstr.str("");
 		strstr << current->name() << "\n";
+		strstr << "<format>";
 		int max_experience = current_team_.technology_max_experience(*current);
 		if (max_experience != current->max_experience()) {
-			strstr << "<0,0,255>";
+			strstr << "color=blue ";
 		}
-		strstr << "(" << exp_str(*current) << "/" << max_experience << ")";
+		strstr << "text='(" << exp_str(*current) << "/" << max_experience << ")'</format>";
 		tree_group_field["label"] = strstr.str();
 		if (hold) {
 			tree_group_field["icon"] = "misc/ok2.png";

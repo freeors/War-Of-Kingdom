@@ -106,7 +106,8 @@ void unit_sheath_weapon( const map_location& loc, unit* u=NULL, const attack_typ
  */
 void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	const attack_type* attack, const attack_type* secondary_attack,
-	int swing, std::vector<std::string>& hit_text_vec, bool drain, bool stronger, const std::string& att_text);
+	int swing, std::vector<std::string>& hit_text_vec, bool drain, bool stronger, const std::string& att_text,
+	artifical* effecting_tactic);
 
 void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	 std::vector<std::string>& hit_text_vec);
@@ -137,7 +138,7 @@ void unit_taxing(unit& taxed, map_location& taxed_loc, std::vector<unit_map::ite
 void wml_animation(const vconfig &cfg,
 	const map_location& default_location=map_location::null_location);
 
-void card_start(card_map& cards, card& c);
+void card_start(card_map& cards, const card& c);
 
 void tactic_start(hero& h);
 

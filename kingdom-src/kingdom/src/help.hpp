@@ -68,7 +68,7 @@ private:
 std::vector<std::string> parse_text(const std::string &text);
 
 SDL_Color string_to_color(const std::string &s);
-std::vector<std::string> split_in_width(const std::string &s, const int font_size, const unsigned width);
+std::vector<std::string> split_in_width(const std::string &s, const int font_size, const unsigned width, int style = TTF_STYLE_NORMAL);
 std::string remove_first_space(const std::string& text);
 std::string get_first_word(const std::string &s);
 
@@ -76,9 +76,14 @@ std::string get_first_word(const std::string &s);
 class tintegrate
 {
 public:
+	static std::string hero_color;
+	static std::string object_color;
+	static std::string tactic_color;
+
 	enum ALIGNMENT {LEFT, MIDDLE, RIGHT, HERE, BACK};
-	static void generate_img(std::stringstream& strstr, const std::string& src, ALIGNMENT align = HERE, bool floating = false);
-	static void generate_format(std::stringstream& strstr, const std::string& text, const std::string& color = "", int font_size = 0, bool bold = false, bool italic = false);
+	static std::string generate_img(const std::string& src, ALIGNMENT align = HERE, bool floating = false);
+	static std::string generate_format(const std::string& text, const std::string& color = "", int font_size = 0, bool bold = false, bool italic = false);
+	static std::string generate_format(int val, const std::string& color = "", int font_size = 0, bool bold = false, bool italic = false);
 
 	tintegrate(const std::string& src, int maximum_width, int maximum_height, int default_font_size, const SDL_Color& default_font_color);
 

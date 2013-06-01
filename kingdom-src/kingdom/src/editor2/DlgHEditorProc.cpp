@@ -184,7 +184,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	std::string tstr;
 	std::stringstream strstr;
 	uint16_t count;
-	int i, val;
+	int i, val, column = 0;
 	HWND hctl = GetDlgItem(hdlgP, IDC_LV_WGEN_EDITOR);
 
 	count = ListView_GetItemCount(hctl);
@@ -196,7 +196,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	} else {
 		lvi.iItem = general.number_;
 	}
-	lvi.iSubItem = 0;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u", general.number_);
 	lvi.pszText = text;
 	lvi.lParam = (LPARAM)0;
@@ -209,91 +209,100 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 姓名
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 1;
+	lvi.iSubItem = column ++;
 	strcpy(text, utf8_2_ansi(general.name().c_str()));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 姓
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 2;
+	lvi.iSubItem = column ++;
 	strcpy(text, utf8_2_ansi(general.surname().c_str()));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 统率
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 3;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u.%u", fxptoi9(general.leadership_), fxpmod9(general.leadership_));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 武力
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 4;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u.%u", fxptoi9(general.force_), fxpmod9(general.force_));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 智力
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 5;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u.%u", fxptoi9(general.intellect_), fxpmod9(general.intellect_));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 政治
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 6;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u.%u", fxptoi9(general.politics_), fxpmod9(general.politics_));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 魅力
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 7;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u.%u", fxptoi9(general.charm_), fxpmod9(general.charm_));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 性别
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 8;
+	lvi.iSubItem = column ++;
 	strcpy(text, utf8_2_ansi(hero::gender_str(general.gender_).c_str()));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 图像编号
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 9;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u", general.image_);
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 基本/浮动相性
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 10;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u/%u.%u", general.base_catalog_, fxptoi8(general.float_catalog_), fxpmod8(general.float_catalog_));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
-	// 野心
+	// flag
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 11;
-	strcpy(text, utf8_2_ansi(general.ambition_str().c_str()));
+	lvi.iSubItem = column ++;
+	strstr.str("");
+	for (i = hero_flag_min; i <= hero_flag_max; i ++) {
+		if (general.get_flag(i)) {
+			if (!strstr.str().empty()) {
+				strstr << ", ";
+			}
+			strstr << hero::flag_str(i);
+		}
+	}
+	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 义理
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 12;
+	lvi.iSubItem = column ++;
 	strcpy(text, utf8_2_ansi(general.heart_str().c_str()));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 特技
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 13;
+	lvi.iSubItem = column ++;
 	if (general.feature_ != HEROS_NO_FEATURE) {
 		strcpy(text, utf8_2_ansi(hero::feature_str(general.feature_).c_str()));
 		lvi.pszText = text;
@@ -304,7 +313,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 势力特技
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 14;
+	lvi.iSubItem = column ++;
 	if (general.side_feature_ != HEROS_NO_FEATURE) {
 		strcpy(text, utf8_2_ansi(hero::feature_str(general.side_feature_).c_str()));
 		lvi.pszText = text;
@@ -313,9 +322,16 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	}
 	ListView_SetItem(hctl, &lvi);
 
+	// Cost
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = column ++;
+	sprintf(text, "%i", general.cost_);
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+
 	// 性格
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 15;
+	lvi.iSubItem = column ++;
 	if (general.character_ != HEROS_NO_CHARACTER) {
 		strcpy(text, utf8_2_ansi(unit_types.character(general.character_).name().c_str()));
 		lvi.pszText = text;
@@ -326,7 +342,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 战法
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 16;
+	lvi.iSubItem = column ++;
 	if (general.tactic_ != HEROS_NO_TACTIC) {
 		strcpy(text, utf8_2_ansi(unit_types.tactic(general.tactic_).name().c_str()));
 		lvi.pszText = text;
@@ -337,7 +353,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 兵种
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 17;
+	lvi.iSubItem = column ++;
 	if (general.utype_ != HEROS_NO_UTYPE) {
 		const unit_type* ut = unit_types.keytype2(general.utype_);
 		if (ut) {
@@ -354,77 +370,77 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 步兵适性
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 18;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.arms_[hero_arms_t0]).c_str()), fxpmod12(general.arms_[0]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 骑兵适性
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 19;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.arms_[hero_arms_t1]).c_str()), fxpmod12(general.arms_[1]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 兵器适性
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 20;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.arms_[hero_arms_t2]).c_str()), fxpmod12(general.arms_[2]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 学院适性
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 21;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.arms_[hero_arms_t3]).c_str()), fxpmod12(general.arms_[3]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 水军适性
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 22;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.arms_[hero_arms_t4]).c_str()), fxpmod12(general.arms_[4]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// skill: commercial
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 23;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.skill_[hero_skill_commercial]).c_str()), fxpmod12(general.skill_[hero_skill_commercial]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// skill: technology
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 24;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.skill_[hero_skill_invent]).c_str()), fxpmod12(general.skill_[hero_skill_invent]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// skill: encourage
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 25;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.skill_[hero_skill_encourage]).c_str()), fxpmod12(general.skill_[hero_skill_encourage]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// skill: hero
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 26;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.skill_[hero_skill_hero]).c_str()), fxpmod12(general.skill_[hero_skill_hero]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// skill: demolish
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 27;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.skill_[hero_skill_demolish]).c_str()), fxpmod12(general.skill_[hero_skill_demolish]));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 父母
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 28;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	if (general.parent_[0].hero_ != HEROS_INVALID_NUMBER) {
 		strstr << utf8_2_ansi(gdmgr.heros_[general.parent_[0].hero_].name().c_str());
@@ -445,7 +461,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 配偶
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 29;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	for (i = 0; i < HEROS_MAX_CONSORT; i ++) {
 		if (general.consort_[i].hero_ != HEROS_INVALID_NUMBER) {
@@ -464,7 +480,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 义兄弟
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 30;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	for (i = 0; i < HEROS_MAX_OATH; i ++) {
 		if (general.oath_[i].hero_ != HEROS_INVALID_NUMBER) {
@@ -483,7 +499,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 亲近武将
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 31;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	for (i = 0; i < HEROS_MAX_INTIMATE; i ++) {
 		if (general.intimate_[i].hero_ != HEROS_INVALID_NUMBER) {
@@ -502,7 +518,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 厌恶武将
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 32;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	for (i = 0; i < HEROS_MAX_HATE; i ++) {
 		if (general.hate_[i].hero_ != HEROS_INVALID_NUMBER) {
@@ -521,28 +537,28 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 功勋
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 33;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%u", general.meritorious_);
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 状态
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 34;
+	lvi.iSubItem = column ++;
 	sprintf(text, "%s/%u", utf8_2_ansi(hero::status_str(general.status_).c_str()), general.activity_);
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 官职
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 35;
+	lvi.iSubItem = column ++;
 	sprintf(text, utf8_2_ansi(hero::official_str(general.official_).c_str()));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 宝物
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 36;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	if (general.treasure_ != HEROS_NO_TREASURE) {
 		strstr << unit_types.treasure(general.treasure_).name();
@@ -555,7 +571,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 
 	// 列传
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 37;
+	lvi.iSubItem = column ++;
 	lvi.pszText = const_cast<char*>(utf8_2_ansi(general.biography()));
 	ListView_SetItem(hctl, &lvi);
 
@@ -570,6 +586,7 @@ BOOL On_DlgWGenInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	LVCOLUMN lvc;
 	char text[_MAX_PATH];
 	std::stringstream strstr;
+	int column = 0;
 
 	gdmgr._hdlg_wgen = hdlgP;
 	gdmgr._htb_wgen = init_toolbar(gdmgr._hinst, hdlgP);
@@ -584,298 +601,306 @@ BOOL On_DlgWGenInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	strcpy(text, utf8_2_ansi(_("Number")));
 	lvc.pszText = text;
 	lvc.cchTextMax = 0;
-	lvc.iSubItem = 0;
-	ListView_InsertColumn(hctl, 0, &lvc);
+	lvc.iSubItem = column;
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
-	lvc.iSubItem = 1;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "name";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 1, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 48;
-	lvc.iSubItem = 2;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "surname";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 2, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 54;
-	lvc.iSubItem = 3;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "leadership";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 3, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 54;
-	lvc.iSubItem = 4;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "force";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 4, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 54;
-	lvc.iSubItem = 5;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "intellect";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 5, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 54;
-	lvc.iSubItem = 6;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "politics";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 6, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 54;
-	lvc.iSubItem = 7;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "charm";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 7, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 8;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "gender";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 8, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 9;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strcpy(text, utf8_2_ansi(_("Picture number")));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 9, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 90;
-	lvc.iSubItem = 10;
+	lvc.iSubItem = column;
 	strcpy(text, utf8_2_ansi(_("Base/Float catalog")));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 10, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 60;
-	lvc.iSubItem = 11;
+	lvc.iSubItem = column;
 	strstr.str("");
-	strstr << "ambition";
+	strstr << "flag";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 11, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 12;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "heart";
 	strcpy(text, utf8_2_ansi(dsgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 12, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 13;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "feature";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 13, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 14;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "side feature";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 14, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
+
+	lvc.cx = 40;
+	lvc.iSubItem = column;
+	strstr.str("");
+	strstr << "Cost";
+	strcpy(text, utf8_2_ansi(dgettext("wesnoth-lib", strstr.str().c_str())));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 80;
-	lvc.iSubItem = 15;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "Character";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-lib", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 15, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 80;
-	lvc.iSubItem = 16;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "tactic";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 16, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 80;
-	lvc.iSubItem = 17;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strcpy(text, utf8_2_ansi(_("arms^Type")));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 17, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 18;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "arms-0";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 18, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 19;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "arms-1";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 19, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 20;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "arms-2";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 20, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 21;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "arms-3";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 21, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 22;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "arms-4";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 22, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 23;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "skill-0";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 23, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 24;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "skill-1";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 24, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 25;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "skill-3";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 25, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 26;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "skill-4";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 26, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 27;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "skill-5";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 27, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 70;
-	lvc.iSubItem = 28;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "parent";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 28, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 60;
-	lvc.iSubItem = 29;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "consort";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 29, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 70;
-	lvc.iSubItem = 30;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "oath";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 30, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 70;
-	lvc.iSubItem = 31;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "intimate";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 31, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 70;
-	lvc.iSubItem = 32;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "hate";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 32, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 33;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "meritorious";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 33, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 80;
-	lvc.iSubItem = 34;
+	lvc.iSubItem = column;
 	strcpy(text, utf8_2_ansi(_("Status/Activity")));
-	ListView_InsertColumn(hctl, 34, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 60;
-	lvc.iSubItem = 35;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "official";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 35, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 100;
-	lvc.iSubItem = 36;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "treasure";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 36, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 400;
-	lvc.iSubItem = 37;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "biography";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 37, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
 
@@ -1601,6 +1626,9 @@ void update_hero_edit(HWND hdlgP, hero& h)
 	// image number
     UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_IMAGE), h.image_);
 
+	// cost
+    UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_COST), h.cost_);
+
 	// leadership
     UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_LEADERSHIP), fxptoi9(h.leadership_));
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_LEADERSHIPXP), fxpmod9(h.leadership_));
@@ -1633,8 +1661,9 @@ void update_hero_edit(HWND hdlgP, hero& h)
 	// gender
 	ComboBox_SetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_GENDER), h.gender_);
 
-	// ambition
-	ComboBox_SetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_AMBITION), h.ambition_);
+	// flags
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROBBER), h.get_flag(hero_flag_robber)); 
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROAM), h.get_flag(hero_flag_roam)); 
 
 	// treasure
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_TREASURE0);
@@ -1749,6 +1778,13 @@ BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 		gdmgr.heros_[gdmgr._menu_lparam].image_ = u32n;
 	}
 
+	// cost
+	u32n = (uint32_t)UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_COST));
+	if (gdmgr.heros_[gdmgr._menu_lparam].cost_ != u32n) {
+		*changed = TRUE;
+		gdmgr.heros_[gdmgr._menu_lparam].cost_ = u32n;
+	}
+
 	// leadership
 	u32n1 = (uint32_t)UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_LEADERSHIP));
 	u32n2 = (uint32_t)UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_LEADERSHIPXP));
@@ -1813,10 +1849,16 @@ BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 	}
 
 	// ambition
-	u32n = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_AMBITION));
-	if (gdmgr.heros_[gdmgr._menu_lparam].ambition_ != u32n) {
+	u32n = 0;
+	if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROBBER))) {
+		u32n |= 1 << hero_flag_robber;
+	}
+	if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROAM))) {
+		u32n |= 1 << hero_flag_roam;
+	}
+	if (gdmgr.heros_[gdmgr._menu_lparam].flags_ != u32n) {
 		*changed = TRUE;
-		gdmgr.heros_[gdmgr._menu_lparam].ambition_ = u32n;
+		gdmgr.heros_[gdmgr._menu_lparam].flags_ = u32n;
 	}
 
 	// treasure
@@ -2449,10 +2491,11 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	std::stringstream strstr;
 
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
-	editor_config::create_subcfg_toolbar(hdlgP);
+	// editor_config::create_subcfg_toolbar(hdlgP);
 
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NUMBER), utf8_2_ansi(_("Number")));
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_PICTURENUMBER), utf8_2_ansi(_("Picture number")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NUMBER), utf8_2_ansi(_("NO.")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_PICTURENUMBER), utf8_2_ansi(_("Picture NO.")));
+	set_language_text(hdlgP, IDC_STATIC_COST, "wesnoth-lib", "Cost");
 	set_language_text(hdlgP, IDC_STATIC_NAME, "wesnoth-hero", "name");
 	set_language_text(hdlgP, IDC_STATIC_GENDER, "wesnoth-hero", "gender");
 	set_language_text(hdlgP, IDC_STATIC_CATALOG, "wesnoth-hero", "catalog");
@@ -2483,7 +2526,6 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	set_language_text(hdlgP, IDC_STATIC_HATE, "wesnoth-hero", "hate");
 	set_language_text(hdlgP, IDC_STATIC_FEATURE, "wesnoth-hero", "feature");
 	set_language_text(hdlgP, IDC_STATIC_SIDEFEATURE, "wesnoth-hero", "side feature");
-	set_language_text(hdlgP, IDC_STATIC_AMBITION, "wesnoth-hero", "ambition");
 	set_language_text(hdlgP, IDC_STATIC_TACTIC, "wesnoth-hero", "tactic");
 	set_language_text(hdlgP, IDC_STATIC_CHARACTER, "wesnoth-lib", "Character");
 	set_language_text(hdlgP, IDC_STATIC_TREASURE, "wesnoth-hero", "treasure");
@@ -2497,12 +2539,9 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		ComboBox_AddString(hctl, utf8_2_ansi(dgettext("wesnoth-hero", text)));
 	}
 
-	// ambition
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_AMBITION);
-	for (int idx = 0; idx <= hero_ambition_max; idx ++) {
-		sprintf(text, "%s%i", HERO_PREFIX_STR_AMBITION, idx);
-		ComboBox_AddString(hctl, utf8_2_ansi(dgettext("wesnoth-hero", text))); 
-	}
+	// flags
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROBBER), utf8_2_ansi(hero::flag_str(hero_flag_robber).c_str()));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROAM), utf8_2_ansi(hero::flag_str(hero_flag_roam).c_str()));
 
 	// treasure
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_TREASURE0);
@@ -2534,7 +2573,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	std::vector<int>& features = hero::valid_features();
 	for (std::vector<int>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
 		sprintf(text, "%s%i", HERO_PREFIX_STR_FEATURE, *itor);
-		ComboBox_AddString(hctl, utf8_2_ansi(dgettext("wesnoth-hero", text))); 
+		ComboBox_AddString(hctl, utf8_2_ansi(dgettext("wesnoth-card", text))); 
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *itor);
 	}
 
@@ -2544,7 +2583,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ComboBox_SetItemData(hctl, 0, HEROS_NO_FEATURE);
 	for (std::vector<int>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
 		sprintf(text, "%s%i", HERO_PREFIX_STR_FEATURE, *itor);
-		ComboBox_AddString(hctl, utf8_2_ansi(dgettext("wesnoth-hero", text))); 
+		ComboBox_AddString(hctl, utf8_2_ansi(dgettext("wesnoth-card", text))); 
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *itor);
 	}
 
@@ -2580,6 +2619,11 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		UpDown_SetRange(hctl, 0, 0);	// [0, 0]
 	}
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_IMAGE));
+
+	// cost
+	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_COST);
+	UpDown_SetRange(hctl, 0, 255);	// [0, 255]
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_COST));
 
 	// leadership
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_LEADERSHIP);
@@ -2824,7 +2868,7 @@ BOOL CALLBACK DlgHeroEditProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lPara
 		return On_DlgHeroEditInitDialog(hdlgP, (HWND)(wParam), lParam);
 	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgHeroEditCommand);
 	HANDLE_MSG(hdlgP, WM_HSCROLL, On_DlgHeroEditHScroll);
-	HANDLE_MSG(hdlgP, WM_DRAWITEM, On_DlgPopupDrawItem);
+	HANDLE_MSG(hdlgP, WM_DRAWITEM, editor_config::On_DlgDrawItem);
 	HANDLE_MSG(hdlgP, WM_NOTIFY, On_DlgPopupNotify);
 	}
 	

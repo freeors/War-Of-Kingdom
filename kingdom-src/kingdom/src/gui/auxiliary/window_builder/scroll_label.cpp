@@ -33,6 +33,9 @@ tbuilder_scroll_label::tbuilder_scroll_label(const config& cfg)
 			get_scrollbar_mode(cfg["vertical_scrollbar_mode"]))
 	, horizontal_scrollbar_mode(
 			get_scrollbar_mode(cfg["horizontal_scrollbar_mode"]))
+	, width(cfg["width"])
+	, height(cfg["height"])
+
 {
 }
 
@@ -41,6 +44,16 @@ twidget* tbuilder_scroll_label::build() const
 	tscroll_label* widget = new tscroll_label();
 
 	init_control(widget);
+
+	const game_logic::map_formula_callable& size =
+			get_screen_size_variables();
+
+	const unsigned w = width(size);
+	const unsigned h = height(size);
+
+	if (w || h) {
+		widget->set_best_size(tpoint(w, h));
+	}
 
 	widget->set_vertical_scrollbar_mode(vertical_scrollbar_mode);
 	widget->set_horizontal_scrollbar_mode(horizontal_scrollbar_mode);

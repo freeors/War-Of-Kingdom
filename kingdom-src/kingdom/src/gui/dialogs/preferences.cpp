@@ -30,6 +30,7 @@
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/slider.hpp"
+#include "gui/widgets/scrollbar_panel.hpp"
 #include "gui/widgets/window.hpp"
 #include "serialization/string_utils.hpp"
 #include "gettext.hpp"
@@ -37,6 +38,8 @@
 #include "game_preferences.hpp"
 #include "preferences_display.hpp"
 #include "display.hpp"
+#include "play_controller.hpp"
+#include "resources.hpp"
 
 #include <boost/bind.hpp>
 
@@ -95,10 +98,17 @@ struct video_mode_change_exception
 void show_preferences_dialog(display& disp)
 {
 	int start_page = tpreferences::GENERAL_PAGE;
+
 	for (;;) {
 		try {
 			tpreferences dlg(disp, start_page);
 			dlg.show(disp.video());
+			if (disp.in_game() && !resources::controller->is_replaying()) {
+				play_controller& controller = *resources::controller;
+				if (controller.scenario_env_changed(dlg.get_scenario_env())) {
+					do_scenario_env(dlg.get_scenario_env(), controller, true);
+				}
+			}
 			return;
 		} catch (video_mode_change_exception& e) {
 			switch(e.type) {
@@ -114,7 +124,7 @@ void show_preferences_dialog(display& disp)
 			}
 			start_page = tpreferences::DISPLAY_PAGE;
 
-		} catch(twml_exception& e) {
+		} catch (twml_exception& e) {
 			e.show(disp);
 			return;
 		}
@@ -124,10 +134,17 @@ void show_preferences_dialog(display& disp)
 tpreferences::tpreferences(display& disp, int start_page)
 	: disp_(disp)
 	, start_page_(start_page)
+	, env_(RANDOM_DUEL, 0)
 	, page_(-1)
 	, options_grid_(NULL)
 	, zoom_(NULL)
+	, maximal_defeated_activity_(NULL)
+	, duel_(NULL)
 {
+	if (disp_.in_game()) {
+		env_.duel = resources::controller->duel();
+		env_.maximal_defeated_activity = game_config::maximal_defeated_activity;
+	}
 }
 
 void tpreferences::page_selected(twindow& window)
@@ -139,7 +156,7 @@ void tpreferences::page_selected(twindow& window)
 
 void tpreferences::pre_show(CVideo& /*video*/, twindow& window)
 {
-	options_grid_ = find_widget<tgrid>(&window, "options", false, true);
+	options_grid_ = find_widget<tscrollbar_panel>(&window, "options", false, true);
 
 	swap_page(window, start_page_, false);
 
@@ -175,17 +192,20 @@ void tpreferences::pre_show(CVideo& /*video*/, twindow& window)
 			list_item["label"] = sgettext("Prefs section^Sound");
 			list_item_item.insert(std::make_pair("name", list_item));
 
-		} else if (index == MULTIPLAYER_PAGE) {
-			list_item["label"] = "icons/icon-multiplayer.png";
-			list_item_item.insert(std::make_pair("icon", list_item));
-			list_item["label"] = sgettext("Prefs section^Multiplayer");
-			list_item_item.insert(std::make_pair("name", list_item));
-
 		} else if (index == ADVANCED_PAGE) {
 			list_item["label"] = "icons/icon-advanced.png";
 			list_item_item.insert(std::make_pair("icon", list_item));
 			list_item["label"] = sgettext("Advanced section^Advanced");
 			list_item_item.insert(std::make_pair("name", list_item));
+		} else if (index == SCENARIO_PAGE) {
+			if (!disp_.in_game()) {
+				continue;
+			}
+			list_item["label"] = "icons/icon-scenario.png";
+			list_item_item.insert(std::make_pair("icon", list_item));
+			list_item["label"] = sgettext("Prefs section^Scenario");
+			list_item_item.insert(std::make_pair("name", list_item));
+
 		} 
 
 		list.add_row(list_item_item);
@@ -353,25 +373,75 @@ void tpreferences::UI_sound_changed(tslider* widget, int value)
 //
 // multiplayer
 //
+void tpreferences::maximal_defeated_activity(twindow& window)
+{
+	std::vector<std::string> items;
+	std::vector<tval_str> mda_map;
+	int actived_index = 0;
+
+	mda_map.push_back(tval_str(0, "0"));
+	mda_map.push_back(tval_str(50, "50"));
+	mda_map.push_back(tval_str(100, "100"));
+	mda_map.push_back(tval_str(150, "150"));
+
+	for (std::vector<tval_str>::iterator it = mda_map.begin(); it != mda_map.end(); ++ it) {
+		items.push_back(it->str);
+		if (env_.maximal_defeated_activity == it->val) {
+			actived_index = std::distance(mda_map.begin(), it);
+		}
+	}
+	
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(disp_.video());
+
+	int selected = dlg.selected_index();
+	if (selected == actived_index) {
+		return;
+	}
+	env_.maximal_defeated_activity = mda_map[selected].val;
+
+	maximal_defeated_activity_->set_label(mda_map[selected].str);
+}
+
+void tpreferences::duel(twindow& window)
+{
+	// The possible eras to play
+	std::vector<std::string> items;
+	std::vector<tval_str> duel_map;
+	int actived_index = 0;
+
+	duel_map.push_back(tval_str(NO_DUEL, _("Hasn't")));
+	duel_map.push_back(tval_str(RANDOM_DUEL, _("Random")));
+
+	for (std::vector<tval_str>::iterator it = duel_map.begin(); it != duel_map.end(); ++ it) {
+		items.push_back(it->str);
+		if (env_.duel == it->val) {
+			actived_index = std::distance(duel_map.begin(), it);
+		}
+	}
+	
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(disp_.video());
+
+	int selected = dlg.selected_index();
+	env_.duel = duel_map[selected].val;
+
+	duel_->set_label(duel_map[selected].str);
+}
+
+//
+// advanced
+//
 void tpreferences::chat_timestamp_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
 	preferences::set_chat_timestamping(toggle->get_value());
 }
 
-//
-// advanced
-//
 void tpreferences::scroll_when_mouse_outside_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
 	preferences::set("scroll_when_mouse_outside", toggle->get_value());
-}
-
-void tpreferences::whiteboard_on_start_toggled(twidget* widget)
-{
-	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set_enable_whiteboard_mode_on_start(toggle->get_value());
 }
 
 void tpreferences::interrupt_when_ally_sighted_toggled(twidget* widget)
@@ -479,10 +549,7 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 	}
 	
 	window.alternate_uh(options_grid_, index);
-
-	if (swap) {
-		window.alternate_bh(options_grid_, index);
-	}
+	window.alternate_bh(swap? options_grid_: NULL, index);
 
 	if (index == GENERAL_PAGE) {
 		tslider* slider = dynamic_cast<tslider*>(options_grid_->find("scroll_slider", false));
@@ -588,23 +655,14 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		slider->set_value(preferences::UI_volume());
 		slider->set_active(false);
 
-	} else if (index == MULTIPLAYER_PAGE) {
+	} else if (index == ADVANCED_PAGE) {
 		ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("chat_timestamp_button", false));
 		toggle->set_callback_state_change(boost::bind(&tpreferences::chat_timestamp_toggled, this, _1));
 		toggle->set_value(preferences::chat_timestamping());
 
-	} else if (index == ADVANCED_PAGE) {
-		ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("scroll_when_mouse_outside", true));
+		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("scroll_when_mouse_outside", true));
 		toggle->set_callback_state_change(boost::bind(&tpreferences::scroll_when_mouse_outside_toggled, this, _1));
 		toggle->set_value(preferences::get("scroll_when_mouse_outside", true));
-
-		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("whiteboard_on_start_button", false));
-#if 0
-		toggle->set_callback_state_change(boost::bind(&tpreferences::whiteboard_on_start_toggled, this, _1));
-		toggle->set_value(preferences::enable_whiteboard_mode_on_start());
-#else
-		toggle->set_visible(twidget::INVISIBLE);
-#endif
 
 		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("interrupt_when_ally_sighted_button", false));
 		toggle->set_callback_state_change(boost::bind(&tpreferences::interrupt_when_ally_sighted_toggled, this, _1));
@@ -641,7 +699,42 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("show_grid_button", false));
 		toggle->set_value(preferences::grid());
 		toggle->set_callback_state_change(boost::bind(&tpreferences::show_grid_toggled, this, _1));
-	}
+
+	} else if (index == SCENARIO_PAGE) {
+		maximal_defeated_activity_ = dynamic_cast<tbutton*>(options_grid_->find("maximal_defeated_activity", false));
+		connect_signal_mouse_left_click(
+			*maximal_defeated_activity_
+			, boost::bind(
+				&tpreferences::maximal_defeated_activity
+				, this
+				, boost::ref(window)));
+		std::stringstream strstr;
+		strstr << env_.maximal_defeated_activity;
+		maximal_defeated_activity_->set_label(strstr.str());
+		if (tent::mode != RPG_MODE || resources::controller->is_replaying()) {
+			maximal_defeated_activity_->set_active(false);
+		}
+
+		duel_ = dynamic_cast<tbutton*>(options_grid_->find("duel", false));
+		connect_signal_mouse_left_click(
+			*duel_
+			, boost::bind(
+				&tpreferences::duel
+				, this
+				, boost::ref(window)));
+		strstr.str("");
+		if (env_.duel == NO_DUEL) {
+			strstr << _("Hasn't");
+		} else if (env_.duel == ALWAYS_DUEL) {
+			strstr << _("Always");
+		} else {
+			strstr << _("Random");
+		}
+		duel_->set_label(strstr.str());
+		if (tent::mode != RPG_MODE || resources::controller->is_replaying()) {
+			duel_->set_active(false);
+		}
+	} 
 	
 }
 

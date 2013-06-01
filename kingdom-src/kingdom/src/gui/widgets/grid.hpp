@@ -287,7 +287,6 @@ public:
 	 * @param cols                Parameter to call set_cols with.
 	 */
 	void set_rows_cols(const unsigned rows, const unsigned cols);
-
 private:
 	/** Child item of the grid. */
 	class tchild

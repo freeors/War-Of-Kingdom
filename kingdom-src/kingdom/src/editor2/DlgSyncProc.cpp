@@ -409,7 +409,6 @@ DWORD WINAPI ThdSyncProc(LPVOID ctx)
 	sync_enable_sync_btn(FALSE);
 	// ª“µÙœ‡πÿ∞¥≈•
 	sync_enable_refresh_btn(FALSE);
-	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_ABOUT, FALSE);
 	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), FALSE);
 
 	count = ListView_GetItemCount(hctl);
@@ -488,7 +487,6 @@ DWORD WINAPI ThdSyncProc(LPVOID ctx)
 	ProgressBar_SetRange(gdmgr._hpb_task, 0, 0);
 	StatusBar_SetText(gdmgr._hwnd_status, 2, "");
 	sync_enable_refresh_btn(TRUE);
-	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_ABOUT, TRUE);
 	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), TRUE);
 
 	gdmgr._syncing = FALSE;
@@ -526,7 +524,6 @@ DWORD WINAPI ThdSync2Proc(LPVOID ctx)
 	set_increment_progress progress(increment_progress_cb, &increment_ctx);
 
 	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_SYNC, FALSE);
-	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_ABOUT, FALSE);
 	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), FALSE);
 
 	EnableWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), FALSE);
@@ -566,7 +563,6 @@ DWORD WINAPI ThdSync2Proc(LPVOID ctx)
 	ProgressBar_SetRange(gdmgr._hpb_task, 0, 0);
 	StatusBar_SetText(gdmgr._hwnd_status, 2, "");
 	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_SYNC, TRUE);
-	ToolBar_EnableButton(gdmgr._htb_sys, IDM_SYS_ABOUT, TRUE);
 	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), TRUE);
 
 	EnableWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), TRUE);

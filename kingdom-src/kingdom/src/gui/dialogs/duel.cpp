@@ -25,7 +25,6 @@
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
-#include "hero.hpp"
 #include "resources.hpp"
 #include "play_controller.hpp"
 

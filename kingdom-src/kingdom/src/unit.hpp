@@ -28,6 +28,20 @@ class game_state;
 class vconfig;
 class team;
 
+#define BIT_2_MASK(bit)		(1 << (bit))
+
+class tscenario_env 
+{
+public:
+	tscenario_env(int _duel, int _maximal_defeated_activity)
+		: duel(_duel)
+		, maximal_defeated_activity(_maximal_defeated_activity)
+	{}
+
+	int duel;
+	int maximal_defeated_activity;
+};
+
 class move_unit_spectator {
 public:
 	/** add a location of a seen friend */
@@ -176,6 +190,7 @@ struct tactic_fields {
 	int32_t hide_turns_;	\
 	int32_t alert_turns_;	\
 	int32_t provoked_turns_;	\
+	int32_t tactic_hero_;	\
 	int32_t task_;	\
 	int32_t especial_; \
 	int32_t human_;	\
@@ -296,8 +311,10 @@ public:
 	void calculate_5fields();
 	void modify_according_to_hero(bool fill_up_hp = true, bool fill_up_movement = false);
 	void adjust();
-	std::string form_tip() const;
+	std::string form_tip(bool gui2 = false) const;
 	std::string form_tiny_tip() const;
+	std::string form_gui2_tip() const;
+	std::string form_recruit_tip() const;
 	// it's better name is can_recruit(), but back-compitable used
 	bool can_recruits() const { return can_recruit_; }
 	bool can_reside() const { return can_reside_; }
@@ -318,6 +335,7 @@ public:
 	int guard_attack();
 
 	bool uncleared() const;
+	bool healable() const;
 	bool incapacitated() const { return get_state(STATE_PETRIFIED); }
 	int total_movement() const { return max_movement_; }
 	int movement_left() const { return (movement_ == 0 || incapacitated()) ? 0 : movement_; }
@@ -347,13 +365,13 @@ public:
 
 	void increase_feeling(int inc);
 
-	void increase_activity(int inc, bool adjusting = true);
+	bool increase_activity(int inc, bool adjusting = true);
 
 	const std::map<std::string,std::string> get_states() const;
 	bool get_state(const std::string& state) const;
 	void set_state(const std::string &state, bool value);
 	enum state_t { STATE_MIN = 0, STATE_SLOWED = STATE_MIN, STATE_BROKEN, STATE_POISONED, STATE_PETRIFIED,
-		STATE_UNCOVERED, STATE_NOT_MOVED, STATE_REINFORCED, STATE_LEGERITIED, STATE_BLOCKED, STATE_COUNT, STATE_UNKNOWN = -1 };
+		STATE_UNCOVERED, STATE_NOT_MOVED, STATE_LEGERITIED, STATE_BLOCKED, STATE_COUNT, STATE_UNKNOWN = -1 };
 	void set_state(state_t state, bool value);
 	bool get_state(state_t state) const;
 	static state_t get_known_boolean_state_id(const std::string &state);
@@ -403,6 +421,7 @@ public:
 	int turn_experience() const { return turn_experience_; }
 
 	int technology_income() const;
+	int miss_income() const;
 
 	int keep_turns() const { return keep_turns_; }
 	void set_keep_turns(int turns) { keep_turns_ = turns; }
@@ -419,6 +438,9 @@ public:
 	// it is search tactician using provoked from golbal provoke_cache.
 	void set_provoked_turns_next(const unit& provoked, int turns);
 	void remove_from_provoke_cache();
+	hero* tactic_hero() const { return tactic_hero_; }
+	void set_tactic_hero(hero& h);
+	void remove_from_tactic_cache();
 	bool human() const { return human_; }
 	void set_human(bool val);
 
@@ -546,6 +568,12 @@ public:
 	int character_level(int apply_to) const;
 	hero* character_hero(int apply_to) const;
 
+	int max_range() const;
+
+	void manage_attackable_rect(bool start);
+	void fill_movable_loc(const map_location& loc);
+	const SDL_Rect& attackable_rect() const { return attackable_rect_; }
+
 	bool has_mayor() const;
 	/**
 	 * Clears the cache.
@@ -666,6 +694,7 @@ protected:
 	int hide_turns_;
 	int alert_turns_;
 	int provoked_turns_;
+	hero* tactic_hero_;
 	bool human_;
 	bool verifying_;
 
@@ -686,6 +715,7 @@ protected:
 	int unit_value_;
 	int gold_income_;
 	int technology_income_;
+	int miss_income_;
 	int heal_;
 	int turn_experience_;
 	map_location goto_;
@@ -748,16 +778,21 @@ protected:
 	int tactic_compare_movement_;
 
 	uint32_t temporary_state_;
+	SDL_Rect attackable_rect_;
 };
 
 enum {NONE_MODE, RPG_MODE, TOWER_MODE};
 enum {NO_DUEL, RANDOM_DUEL, ALWAYS_DUEL};
 namespace tent {
 	extern hero* leader;
+	extern int human_leader_number;
+	extern int human_count;
 	extern int ai_count;
+	extern int employ_count;
 	extern int mode;
 	extern int turns;
 	extern int duel;
+	extern void reset();
 }
 
 /** Object which temporarily resets a unit's movement */
@@ -830,5 +865,14 @@ extern bool provoke_cache_ready;
 std::string provoke_cache_2_str();
 void str_2_provoke_cache(unit_map& units, hero_map& heros, const std::string& str);
 unit* find_provoke(const unit* provoked);
+
+namespace tactic_cache {
+
+extern std::vector<unit*> cache;
+extern bool ready;
+std::string cache_2_str();
+void str_2_cache(unit_map& units, hero_map& heros, const std::string& str);
+
+}
 
 #endif

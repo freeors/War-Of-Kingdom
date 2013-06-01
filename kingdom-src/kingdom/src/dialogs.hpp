@@ -18,6 +18,7 @@ class config;
 class unit;
 class unit_type;
 class hero;
+class team;
 
 #include "map_location.hpp"
 #include "construct_dialog.hpp"
@@ -44,7 +45,7 @@ bool advance_unit(unit& u, bool random_choice = false, bool choose_from_random =
 
 bool animate_unit_advancement(unit& u, size_t choice);
 
-void show_objectives(const config &level, const std::string &objectives);
+void show_objectives(const config &level, const team& t);
 
 void show_unit_description(const unit_type &t);
 void show_unit_description(const unit &u);

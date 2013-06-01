@@ -60,11 +60,20 @@ enum HOTKEY_COMMAND {
 	HOTKEY_UNIT_DETAIL,
 	HOTKEY_PLAY_CARD,
 
-	HOTKEY_INTERIOR_M, HOTKEY_INTERIOR,
+	HOTKEY_INTERIOR,
 	HOTKEY_TECHNOLOGY_TREE,
 	HOTKEY_FINAL_BATTLE,
+	HOTKEY_EMPLOY,
 	HOTKEY_LIST,
 	HOTKEY_SYSTEM,
+
+	HOTKEY_TACTIC0, HOTKEY_TACTIC1, HOTKEY_TACTIC2,
+	HOTKEY_BOMB,
+
+	// build item
+	HOTKEY_BUILD_KEEP, HOTKEY_BUILD_WALL, 
+	HOTKEY_INTERIOR_M, 
+	HOTKEY_BUILD_MARKET, HOTKEY_BUILD_TECHNOLOGY, HOTKEY_BUILD_TACTIC, 
 
 #ifndef DISABLE_EDITOR
 	HOTKEY_EDITOR_QUIT_TO_DESKTOP,
@@ -289,8 +298,12 @@ public:
 	virtual void interior() {};
 	virtual void technology_tree() {};
 	virtual void final_battle(int side_num = -1, int human_capital = -1, int ai_capital = -1) {}
+	virtual void employ() {};
 	virtual void list() {}
 	virtual void system() {}
+
+	virtual void remove_active_tactic(int slot) {}
+	virtual void bomb() {}
 
 	//Gets the action's image (if any). Displayed left of the action text in menus.
 	virtual std::string get_action_image(hotkey::HOTKEY_COMMAND /*command*/, int /*index*/) const { return ""; }

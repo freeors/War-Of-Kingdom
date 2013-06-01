@@ -1,6 +1,6 @@
-/* $Id: terrain.cpp 54604 2012-07-07 00:49:45Z loonycyborg $ */
+/* $Id: terrain.cpp 55983 2013-01-01 09:22:03Z mordante $ */
 /*
-   Copyright (C) 2003 - 2012 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2013 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -48,6 +48,8 @@ terrain_type::terrain_type() :
 		submerge_(0.0),
 		submerge_set_(false),
 		light_modification_(0),
+		max_light_(0),
+		min_light_(0),
 		heals_(0),
 		income_description_(),
 		income_description_ally_(),
@@ -75,11 +77,14 @@ terrain_type::terrain_type(const config& cfg) :
 		mvt_type_(),
 		def_type_(),
 		union_type_(),
+		aliasof_(),
 		height_adjust_(cfg["unit_height_adjust"]),
 		height_adjust_set_(!cfg["unit_height_adjust"].empty()),
 		submerge_(cfg["submerge"].to_double()),
 		submerge_set_(!cfg["submerge"].empty()),
 		light_modification_(cfg["light"]),
+		max_light_(cfg["max_light"].to_int(light_modification_)),
+		min_light_(cfg["min_light"].to_int(light_modification_)),
 		heals_(cfg["heals"]),
 		income_description_(),
 		income_description_ally_(),
@@ -98,7 +103,7 @@ terrain_type::terrain_type(const config& cfg) :
  *  @todo reenable these validations. The problem is that all MP
  *  scenarios/campaigns share the same namespace and one rogue scenario
  *  can avoid the player to create a MP game. So every scenario/campaign
- *  should get it's own namespace to be safe.
+ *  should get its own namespace to be safe.
  */
 #if 0
 	VALIDATE(number_ != t_translation::NONE_TERRAIN,
@@ -117,7 +122,8 @@ terrain_type::terrain_type(const config& cfg) :
 
 	mvt_type_.push_back(number_);
 	def_type_.push_back(number_);
-	const t_translation::t_list& alias = t_translation::read_list(cfg["aliasof"]);
+	aliasof_ = cfg["aliasof"].str();
+	const t_translation::t_list& alias = t_translation::read_list(aliasof_);
 	if(!alias.empty()) {
 		mvt_type_ = alias;
 		def_type_ = alias;
@@ -184,11 +190,14 @@ terrain_type::terrain_type(const terrain_type& base, const terrain_type& overlay
 	mvt_type_(overlay.mvt_type_),
 	def_type_(overlay.def_type_),
 	union_type_(),
+	aliasof_(),
 	height_adjust_(base.height_adjust_),
 	height_adjust_set_(base.height_adjust_set_),
 	submerge_(base.submerge_),
 	submerge_set_(base.submerge_set_),
 	light_modification_(base.light_modification_ + overlay.light_modification_),
+	max_light_(std::max(base.max_light_, overlay.max_light_)),
+	min_light_(std::min(base.min_light_, overlay.min_light_)),
 	heals_(std::max<int>(base.heals_, overlay.heals_)),
 	income_description_(),
 	income_description_ally_(),
@@ -272,6 +281,8 @@ bool terrain_type::operator==(const terrain_type& other) const {
 		&& submerge_              == other.submerge_
 		&& submerge_set_          == other.submerge_set_
 		&& light_modification_    == other.light_modification_
+		&& max_light_             == other.max_light_
+		&& min_light_             == other.min_light_
 		&& heals_                 == other.heals_
 		&& village_               == other.village_
 		&& castle_                == other.castle_

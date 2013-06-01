@@ -24,6 +24,7 @@ struct artifical_fields_t
 	int32_t gold_bonus_;
 	int32_t technology_bonus_;
 	int32_t max_commoners_;
+	int32_t decree_;
 	int32_t research_turns_;
 	unit_segment fresh_heros_;
 	unit_segment wander_heros_;
@@ -31,7 +32,6 @@ struct artifical_fields_t
 	unit_segment economy_area_;
 	unit_segment district_;
 	unit_segment not_recruit_;
-	unit_segment decree_;
 	unit_segment reside_troops_;
 	unit_segment reside_commoners_;
 };
@@ -47,8 +47,12 @@ public:
 	int generate_speed_;
 	int trade_speed_;
 	int business_speed_;
+	int business_income_ratio_;
 	int technology_speed_;
+	int technology_income_ratio_;
 	int revenue_income_;
+	int demolish_hp_;
+	int heal_hp_;
 };
 
 class artifical : public unit, public tartifical_
@@ -127,12 +131,14 @@ public:
 	void hero_go_out(const hero& h);
 	// 解散城内一支部队
 	void disband(const int index_of_army);
-	// 沦陷
 	void fallen(int a_side, unit* attacker = NULL);
+
 	void independence(bool independenced, team& to_team, artifical* rpg_city, team& from_team, artifical* aggressing, hero* from_leader, unit* from_leader_unit);
 	void change_to_special_unit(int attacker_side, int random, bool replaying);
-	// 判断是否被包围
+	// whether surrounded or not
 	bool is_surrounded() const;
+	bool is_front(bool must_enemy = false) const;
+	std::vector<artifical*> adjacent_other_cities(bool must_enemy = false) const;
 
 	bool independence_vote(const artifical* aggressing) const;
 
@@ -161,7 +167,12 @@ public:
 	void add_technology_bonus(int bonus) { technology_bonus_ += bonus; }
 	int max_commoners() const { return max_commoners_; }
 
-	void calculate_ea_tiles(std::vector<const map_location*>& ea_vacants, int& markets, int& technologies);
+	void calculate_ea_tiles(std::vector<const map_location*>& ea_vacants, int& markets, int& technologies, int& tactics) const;
+	void calculate_ea_tiles(int& markets, int& technologies, int& tactics) const;
+	const unit_type* next_ea_utype(std::vector<const map_location*>& ea_vacants) const;
+	artifical* tactic_on_ea() const;
+	void demolish_ea();
+
 	//
 	// override
 	//
@@ -171,13 +182,14 @@ public:
 	bool new_turn();
 
 	void fill_ai_hero(std::set<int>& candidate, int count, int& random);
+	hero* select_leader(int random) const;
 
 	void read(const config& cfg, bool use_traits=true, game_state* state = 0);
 	void write(config& cfg) const;
 
 	void set_location(const map_location &loc);
 	void issue_decree(const config& effect);
-	void apply_issur_decree(card* c = (card*)NULL, int turns = 0, int index = -1, bool to_recorder = false);
+	void apply_issur_decree(const tdecree& d, bool anim);
 
 	void set_resting(bool rest);
 	int upkeep() const;
@@ -196,7 +208,7 @@ public:
 	void increase_police(int increase);
 	void set_police(int val);
 
-	const std::pair<card*, int>& decree() const { return decree_; }
+	const tdecree* decree() const { return decree_; }
 	
 	void write(uint8_t* mem) const;
 	void read(const uint8_t* mem);
@@ -207,6 +219,8 @@ public:
 
 	int total_gold_income(int market_increase) const;
 	int total_technology_income(int technology_increase) const;
+
+	void demolish_to(artifical& to, int damage, int random);
 
 	// recruit
 	int max_recruit_cost();
@@ -241,7 +255,7 @@ private:
 	hero* mayor_;
 	int fronts_;
 	int police_;
-	std::pair<card*, int> decree_;
+	const tdecree* decree_;
 	int research_turns_;
 
 	int commercial_exploiture_;

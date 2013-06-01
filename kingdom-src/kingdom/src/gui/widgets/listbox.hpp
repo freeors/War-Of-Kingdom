@@ -225,16 +225,6 @@ public:
 
 	void invalidate_layout() { need_layout_ = true; }
 
-	void set_best_size(const tpoint& best_size);
-
-	/** Inherited from tcontainer_. */
-	void layout_init(const bool full_initialization);
-
-	/** Inherited from twidget. */
-	void request_reduce_height(const unsigned maximum_height);
-
-	/** Inherited from tcontrol. */
-	void request_reduce_width(const unsigned maximum_width);
 protected:
 
 	/***** ***** ***** ***** keyboard functions ***** ***** ***** *****/
@@ -252,9 +242,6 @@ protected:
 	void handle_key_right_arrow(SDLMod modifier, bool& handled);
 
 private:
-	/** Inherited from tcontrol. */
-	tpoint calculate_best_size() const;
-
 	/**
 	 * @todo A listbox must have the following config parameters in the
 	 * instanciation:
@@ -328,11 +315,6 @@ private:
 
 	/** Inherited from tscrollbar_container. */
 	virtual void set_content_size(const tpoint& origin, const tpoint& size);
-
-	/** When we're used as a fixed size item, this holds the best size. */
-	tpoint best_size_;
-
-	mutable tpoint content_size_;
 
 	/** Inherited from tcontrol. */
 	const std::string& get_control_type() const;

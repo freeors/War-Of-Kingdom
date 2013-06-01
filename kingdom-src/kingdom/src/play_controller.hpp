@@ -94,8 +94,11 @@ public:
 	virtual void interior();
 	virtual void technology_tree();
 	virtual void final_battle(int side_num, int human_capital, int ai_capital);
+	virtual void employ();
 	virtual void list();
 	virtual void system();
+	virtual void remove_active_tactic(int slot);
+	virtual void bomb();
 	virtual void unit_detail();
 	virtual void switch_list();
 
@@ -145,11 +148,17 @@ public:
 	bool all_ai_allied() const { return all_ai_allied_; }
 	bool fallen_to_unstage() const { return fallen_to_unstage_; }
 	bool card_mode() const { return card_mode_; }
+
 	int duel() const { return duel_; }
-	
+	void set_duel(int duel) { duel_ = duel; }
+
+	bool scenario_env_changed(const tscenario_env& env) const;
+
 	std::vector<int>& treasures() { return treasures_; }
 	const std::vector<int>& treasures() const { return treasures_; }
 	void erase_treasure(int pos);
+
+	void erase_employ(hero& h);
 
 	void set_final_capital(artifical* human, artifical* ai);
 	std::pair<artifical*, artifical*>& final_capital() { return final_capital_; }
@@ -178,6 +187,8 @@ public:
 	const std::vector<map_location>& road(int a, int b) const;
 	const std::vector<map_location>& road(const unit& u) const;
 	
+	void do_build(unit& builder, const unit_type* ut, const map_location& art_loc, int cost = -1);
+
 	int human_players();
 	int first_human_team() const { return first_human_team_; }
 	const config& level() const { return level_; }
@@ -225,6 +236,8 @@ protected:
 	/** Find a human team (ie one we own) starting backwards from 'team_num'. */
 	int find_human_team_before(const size_t team) const;
 
+	void fill_employ_hero(std::set<int>& candidate, int count, int& random);
+
 	//managers
 	boost::scoped_ptr<preferences::display_manager> prefs_disp_manager_;
 	boost::scoped_ptr<tooltips::manager> tooltips_manager_;
@@ -271,6 +284,8 @@ protected:
 	bool card_mode_;
 	int duel_;
 	std::vector<int> treasures_;
+	std::vector<hero*> emploies_;
+	bool rpging_;
 
 	const std::string& select_victory_music() const;
 	const std::string& select_defeat_music()  const;
@@ -290,7 +305,6 @@ private:
 	static const size_t MAX_WML_COMMANDS = 7;
 
 	int human_players_;
-	bool rpging_;
 
 	unit** troops_cache_;
 	size_t troops_cache_vsize_;

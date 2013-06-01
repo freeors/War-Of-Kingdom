@@ -8,6 +8,10 @@
 #include "editor.hpp"
 #include "hero.hpp"
 #include "unit_types.hpp"
+#include "terrain.hpp"
+#include "dlgbuilderproc.hpp"
+
+class terrain_builder;
 
 #define core_enable_save_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_core, IDM_SAVE, fEnable)
 #define core_get_save_btn()				(ToolBar_GetState(gdmgr._htb_core, IDM_SAVE) & TBSTATE_ENABLED)
@@ -233,10 +237,164 @@ private:
 	std::vector<tattack> attacks_from_cfg_;
 };
 
+class tterrain_
+{
+public:
+	tterrain_() 
+		: textdomain_(PACKAGE "-lib")
+		, symbol_image_()
+		, editor_image_()
+		, string_()
+		, id_()
+		, name_()
+		, editor_name_()
+		, aliasof_()
+		, mvt_alias_()
+		, def_alias_()
+		, height_adjust_(0)
+		, submerge_(0)
+		, light_modification_(0)
+		, max_light_(0)
+		, min_light_(0)
+		, heals_(0)
+		, village_(false)
+		, editor_group_()
+		, editor_default_base_()
+		, hide_in_editor_(false)
+	{}
+
+	bool operator==(const tterrain_& that) const
+	{
+		if (textdomain_ != that.textdomain_) return false;
+		if (symbol_image_ != that.symbol_image_) return false;
+		if (editor_image_ != that.editor_image_) return false;
+		if (string_ != that.string_) return false;
+		if (id_ != that.id_) return false;
+		if (name_ != that.name_) return false;
+		if (editor_name_ != that.editor_name_) return false;
+		if (aliasof_ != that.aliasof_) return false;
+		if (mvt_alias_ != that.mvt_alias_) return false;
+		if (def_alias_ != that.def_alias_) return false;
+		if (height_adjust_ != that.height_adjust_) return false;
+		if (submerge_ != that.submerge_) return false;
+		if (light_modification_ != that.light_modification_) return false;
+		if (max_light_ != that.max_light_) return false;
+		if (min_light_ != that.min_light_) return false;
+		if (heals_ != that.heals_) return false;
+		if (village_ != that.village_) return false;
+		if (editor_group_ != that.editor_group_) return false;
+		if (editor_default_base_ != that.editor_default_base_) return false;
+		if (hide_in_editor_ != that.hide_in_editor_) return false;
+		return true;
+	}
+	bool operator!=(const tterrain_& that) const { return !operator==(that); }
+
+public:
+	std::string textdomain_;
+	std::string symbol_image_;
+	std::string string_;
+	std::string id_;
+	std::string name_;
+	std::string editor_name_;
+	std::string aliasof_;
+	std::string mvt_alias_;
+	std::string def_alias_;
+	int height_adjust_;
+	double submerge_;
+	int light_modification_;
+	int max_light_;
+	int min_light_;
+	int heals_;
+	bool village_;
+	std::string editor_group_;
+	std::string editor_image_;
+	std::string editor_default_base_;
+	bool hide_in_editor_;
+};
+
+class tterrain: public tterrain_
+{
+public:
+	tterrain()
+		: tterrain_()
+		, terrain_from_cfg_()
+		, edit_invalid_(0)
+	{}
+
+	void from_config(const terrain_type& info);
+	void from_ui(HWND hdlgP);
+	void from_ui_terrain_edit(HWND hdlgP);
+	void from_ui_utype_type(HWND hdlgP);
+	void update_to_ui_terrain_edit(HWND hdlgP) const;
+	void update_to_ui_utype_edit_mtype(HWND hdlgP) const;
+	void update_to_ui_utype_edit_type(HWND hdlgP) const;
+	void update_to_ui_mtype_edit(HWND hdlgP) const;
+	void update_to_ui_utype_type(HWND hdlgP) const;
+	void generate(std::stringstream& strstr) const;
+
+	bool dirty() const;
+
+	enum {EDITBIT_NONE = 0, EDITBIT_STRING, EDITBIT_ID, EDITBIT_NAME,
+	EDITBIT_ALIAS, EDITBIT_MVTALIAS, EDITBIT_DEFALIAS};
+	void set_edit_invalid(int bit, bool set, HWND ok);
+
+public:
+	tterrain_ terrain_from_cfg_;
+	int edit_invalid_;
+};
+
+class tfaction_
+{
+public:
+	tfaction_() 
+		: leader_(HEROS_INVALID_NUMBER)
+		, city_(HEROS_INVALID_NUMBER)
+		, freshes_()
+		, wanderes_()
+	{}
+
+	bool operator==(const tfaction_& that) const
+	{
+		if (leader_ != that.leader_) return false;
+		if (city_ != that.city_) return false;
+		if (freshes_ != that.freshes_) return false;
+		if (wanderes_ != that.wanderes_) return false;
+		return true;
+	}
+	bool operator!=(const tfaction_& that) const { return !operator==(that); }
+
+public:
+	int leader_;
+	int city_;
+	std::set<int> freshes_;
+	std::set<int> wanderes_;
+};
+
+class tfaction: public tfaction_
+{
+public:
+	tfaction()
+		: tfaction_()
+		, faction_from_cfg_()
+	{}
+
+	void from_config(const config& cfg, std::set<int>& used_heros, std::set<int>& used_cities);
+	void from_ui(HWND hdlgP);
+	void from_ui_faction_edit(HWND hdlgP);
+	void update_to_ui_faction_edit(HWND hdlgP) const;
+	void update_to_ui_row(HWND hdlgP) const;
+	std::string generate() const;
+
+	bool dirty() const;
+
+public:
+	tfaction_ faction_from_cfg_;
+};
+
 class tcore
 {
 public:
-	enum {UNIT_TYPE = 0, TACTIC, CHARACTER, TECH, TREASURE, SECTIONS};
+	enum {UNIT_TYPE = 0, TACTIC, CHARACTER, DECREE, TECH, TREASURE, TERRAIN, BUILDER, FACTION, SECTIONS};
 
 	static std::map<int, std::string> name_map;
 	static std::map<int, int> idd_map;
@@ -249,9 +407,14 @@ public:
 	void refresh_utype(HWND hdlgP);
 	void refresh_tactic(HWND hdlgP);
 	void refresh_character(HWND hdlgP);
+	void refresh_decree(HWND hdlgP);
 	void refresh_technology(HWND hdlgP);
 	void refresh_treasure(HWND hdlgP);
+	void refresh_terrain(HWND hdlgP);
+	void refresh_builder(HWND hdlgP);
+	void refresh_faction(HWND hdlgP);
 
+	void init_cache();
 	void switch_section(HWND hdlgP, int to, bool init);
 
 	void utype_tree_2_tv(HWND hctl, HTREEITEM htvroot);
@@ -265,7 +428,7 @@ public:
 
 	bool types_dirty() const;
 
-	enum {BIT_UTYPE = 0, BIT_CHARACTER, BIT_TREASURE};
+	enum {BIT_UTYPE = 0, BIT_CHARACTER, BIT_TREASURE, BIT_TERRAIN, BIT_BUILDER, BIT_FACTION};
 	void set_dirty(int bit, bool set);
 	bool bit_dirty(int bit) const;
 
@@ -279,9 +442,32 @@ public:
 	void from_ui_treasure_edit(HWND hdlgP);
 	bool treasures_dirty() const { return treasures_from_cfg_ != treasures_updating_; }
 
+	// section: terrain
+	void update_to_ui_terrain(HWND hdlgP);
+	// void update_to_ui_treasure_edit(HWND hdlgP);
+	// void from_ui_treasure_edit(HWND hdlgP);
+	// bool treasures_dirty() const { return treasures_from_cfg_ != treasures_updating_; }
+
+	// section: builder
+	void update_to_ui_builder(HWND hdlgP);
+	void release_builder();
+	void copy_brules(const std::vector<tbuilding_rule*>& src, std::vector<tbuilding_rule*>& dst);
+	bool brules_dirty() const;
+	std::string terrain_graphics_tpl(bool absolute = false) const;
+	std::string terrain_graphics_cfg(bool absolute = false) const;
+	void generate_terrain_graphics_cfg() const;
+		
+	// section: faction
+	void update_to_ui_faction(HWND hdlgP, int clicked_faction);
+	bool factions_dirty() const;
+	std::string factions_cfg(bool absolute = false) const;
+	void generate_factions_cfg() const;
+	
 private:
 	std::string units_internal(bool absolute = false) const;
 	void generate_units_internal() const;
+	std::string terrain_cfg(bool absolute = false) const;
+	void generate_terrain_cfg() const;
 
 	void generate_utype_tree();
 
@@ -292,12 +478,23 @@ public:
 	std::vector<std::pair<std::string, std::vector<std::string> > > technology_tv_;
 
 	gamemap* map_;
+	t_translation::t_list terrains_;
 	t_translation::t_list alias_terrains_;
+	terrain_builder* builder_;
 
 	std::map<int, tunit_type> types_updating_;
 
 	std::map<int, int> treasures_from_cfg_;
 	std::map<int, int> treasures_updating_;
+
+	std::vector<tterrain> terrains_from_cfg_;
+	std::vector<tterrain> terrains_updating_;
+
+	std::vector<tbuilding_rule*> brules_from_cfg_;
+	std::vector<tbuilding_rule*> brules_updating_;
+
+	std::vector<tfaction> factions_from_cfg_;
+	std::vector<tfaction> factions_updating_;
 
 	HTREEITEM htvroot_utype_;
 	HTREEITEM htvroot_technology_;
@@ -307,6 +504,9 @@ public:
 
 	HTREEITEM htvroot_character_atom_;
 	HTREEITEM htvroot_character_complex_;
+
+	HTREEITEM htvroot_decree_atom_;
+	HTREEITEM htvroot_decree_complex_;
 
 	HTREEITEM htvroot_technology_atom_;
 	HTREEITEM htvroot_technology_complex_;
@@ -333,12 +533,17 @@ namespace ns {
 	extern int action_treasure;
 
 	extern int type;
+	extern int clicked_hero;
 }
 
-extern BOOL CALLBACK DlgUTypeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK DlgTacticProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK DlgCharacterProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK DlgTechnologyProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
-extern BOOL CALLBACK DlgTreasureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgUTypeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgTacticProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgCharacterProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgDecreeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgTechnologyProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgTreasureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgTerrainProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgBuilderProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgFactionProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 #endif // __DLGCOREPROC_HPP_

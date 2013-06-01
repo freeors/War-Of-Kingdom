@@ -32,7 +32,7 @@ namespace gui2 {
 class ttactic : public tdialog
 {
 public:
-	explicit ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, unit& tactician);
+	explicit ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, unit& tactician, bool cast);
 
 	hero* get_selected_hero() const;
 private:
@@ -55,8 +55,10 @@ private:
 	hero_map& heros_;
 
 	unit& tactician_;
+	bool cast_;
 	std::vector<hero*> candidate_;
 	std::vector<bool> valid_;
+	bool cannot_valid_;
 	int selected_;
 };
 

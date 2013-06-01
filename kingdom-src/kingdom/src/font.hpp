@@ -22,6 +22,10 @@
 
 class t_string;
 
+namespace gui2 {
+	struct tpoint;
+}
+
 namespace font {
 
 //object which initializes and destroys structures needed for fonts
@@ -53,38 +57,24 @@ extern const SDL_Color NORMAL_COLOR, GRAY_COLOR, LOBBY_COLOR, GOOD_COLOR, BAD_CO
                        PETRIFIED_COLOR, TITLE_COLOR, DISABLED_COLOR, LABEL_COLOR, BLUE_COLOR;
 
 // font sizes, to be made theme parameters
-#ifdef USE_TINY_GUI
-// this is not meant for normal play, just for checking other dimensions get adapted accordingly
-const int SIZE_NORMAL = 9;
-#else
-const int SIZE_NORMAL = 14;
-#endif
+const int SIZE_NORMAL = 16;
 inline int relative_size(int size)
 {
-	return (SIZE_NORMAL * size / 14);
+	return (SIZE_NORMAL * size / 16);
 }
 
 // automatic computation of other font sizes, to be made a default for theme-provided values
-#ifdef USE_TINY_GUI
-	const int
-	SIZE_TINY	= 8,
-	SIZE_SMALL	= 8,
-	SIZE_15		= 9,
-	SIZE_PLUS	= 9,
-	SIZE_LARGE	= 10,
-	SIZE_XLARGE	= 10
-  ;
-#else
 const int
-	SIZE_TINY       = relative_size(10),
-	SIZE_SMALL      = relative_size(12),
+	SIZE_TINY       = relative_size(12),
+	SIZE_SMALL      = relative_size(14),
 
-	SIZE_15         = relative_size(15),
-	SIZE_PLUS       = relative_size(16),
 	SIZE_LARGE      = relative_size(18),
 	SIZE_XLARGE     = relative_size(24)
   ;
-#endif
+
+// using tintegrate
+surface get_rendered_text2(const std::string& text, int maximum_width = -1, int font_size = SIZE_NORMAL, const SDL_Color& color = NORMAL_COLOR);
+gui2::tpoint get_rendered_text_size(const std::string& text, int maximum_width = -1, int font_size = SIZE_NORMAL, const SDL_Color& color = NORMAL_COLOR);
 
 // Returns a SDL surface containing the text rendered in a given color.
 surface get_rendered_text(const std::string& text, int size, const SDL_Color& color, int style=0);

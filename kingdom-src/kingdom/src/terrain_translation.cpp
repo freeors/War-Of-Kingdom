@@ -130,7 +130,7 @@ const t_terrain GRASS_LAND = string_to_number_("Gg");
 const t_terrain FOREST = string_to_number_("Gg^Ff");
 const t_terrain MOUNTAIN = string_to_number_("Mm");
 const t_terrain HILL = string_to_number_("Hh");
-const t_terrain TERRAIN_ECONOMY_AREA = string_to_number_("Ea");
+const t_terrain ECONOMY_AREA = string_to_number_("Ea");
 
 const t_terrain CAVE_WALL = string_to_number_("Xu");
 const t_terrain CAVE = string_to_number_("Uu");
@@ -200,6 +200,18 @@ t_match::t_match(const t_terrain& tcode):
 		mask[i] = t_translation::get_mask_(terrain[i]);
 		masked_terrain[i] = mask[i] & terrain[i];
 	}
+}
+
+coordinate::coordinate()
+	: x(0)
+	, y(0)
+{
+}
+
+coordinate::coordinate(const size_t x_, const size_t y_)
+	: x(x_)
+	, y(y_)
+{
 }
 
 t_terrain read_terrain_code(const std::string& str, const t_layer filler)
@@ -300,7 +312,7 @@ t_map read_game_map(const std::string& str,	std::map<int, coordinate>& starting_
 				starting_positions[starting_position].y = y;
 			} else {
 				// Add new position
-				const struct coordinate coord = {x, y};
+				const struct coordinate coord(x, y);
 				starting_positions.insert(std::pair<int, coordinate>(starting_position, coord));
 			}
 		}

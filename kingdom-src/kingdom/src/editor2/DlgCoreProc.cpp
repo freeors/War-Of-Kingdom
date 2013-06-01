@@ -2,7 +2,6 @@
 
 #include "global.hpp"
 #include "game_config.hpp"
-#include "foreach.hpp"
 #include "loadscreen.hpp"
 #include "DlgCoreProc.hpp"
 #include "gettext.hpp"
@@ -15,7 +14,10 @@
 #include "win32x.h"
 #include "struct.h"
 
+#include "serialization/parser.hpp"
+#include <boost/foreach.hpp>
 #include "map.hpp"
+#include "builder.hpp"
 
 BOOL CALLBACK DlgTreasureEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -54,6 +56,12 @@ tcore::tcore()
 	, types_updating_()
 	, treasures_from_cfg_()
 	, treasures_updating_()
+	, terrains_from_cfg_()
+	, terrains_updating_()
+	, brules_from_cfg_()
+	, brules_updating_()
+	, factions_from_cfg_()
+	, factions_updating_()
 	, dirty_(0)
 {
 	attack_range_vstr.push_back("melee");
@@ -75,8 +83,14 @@ tcore::~tcore()
 	if (map_) {
 		delete map_;
 	}
+	if (builder_) {
+		terrain_builder::release_heap();
+		delete builder_;
+	}
 	attack_range_vstr.clear();
 	attack_type_vstr.clear();
+
+	release_builder();
 }
 
 HWND tcore::init_toolbar(HINSTANCE hinst, HWND hdlgP)
@@ -355,8 +369,26 @@ bool tcore::save_if_dirty()
 void tcore::save(HWND hdlgP)
 {
 	std::stringstream strstr;
-	// verify unit type
+	//
+	// verify core data
+	//
+	for (std::vector<tfaction>::iterator it = factions_updating_.begin(); it != factions_updating_.end(); ++ it) {
+		const tfaction& f = *it;
+		if (f.leader_ == HEROS_INVALID_NUMBER) {
+			strstr << "#" << std::distance(factions_updating_.begin(), it) << "集团没设置君主";
+			posix_print_mb(strstr.str().c_str());
+			return;
+		}
+		if (f.city_ == HEROS_INVALID_NUMBER) {
+			strstr << "#" << std::distance(factions_updating_.begin(), it) << "集团没设置城市";
+			posix_print_mb(strstr.str().c_str());
+			return;
+		}
+	}
 
+	//
+	// write section
+	//
 	// one or more utype.id changed, delete <units>/<race>/<id>.cfg.
 	for (std::map<int, tunit_type>::const_iterator it = types_updating_.begin(); it != types_updating_.end(); ++ it) {
 		const tunit_type& type = it->second;
@@ -372,11 +404,32 @@ void tcore::save(HWND hdlgP)
 	}
 	types_updating_.clear();
 
+	// treasure
 	if (bit_dirty(BIT_TREASURE)) {
 		generate_units_internal();
 	}
 	treasures_from_cfg_.clear();
 	treasures_updating_.clear();
+
+	// terrain
+	if (bit_dirty(BIT_TERRAIN)) {
+		generate_terrain_cfg();
+	}
+	terrains_from_cfg_.clear();
+	terrains_updating_.clear();
+
+	// builder
+	if (bit_dirty(BIT_BUILDER)) {
+		generate_terrain_graphics_cfg();
+	}
+	release_builder();
+
+	// faction
+	if (bit_dirty(BIT_FACTION)) {
+		generate_factions_cfg();
+	}
+	factions_from_cfg_.clear();
+	factions_updating_.clear();
 
 	core_enable_save_btn(FALSE);
 	// clear updating flag
@@ -402,22 +455,6 @@ void tcore::refresh_utype(HWND hdlgP)
 	char text[_MAX_PATH];
 	std::stringstream strstr;
 
-	if (!map_) {
-		const config::const_child_itors& terrains = editor_config::data_cfg.child_range("terrain_type");
-		foreach (const config &t, terrains) {
-			gamemap::terrain_types.add_child("terrain_type", t);
-		}
-		map_ = new gamemap(editor_config::data_cfg, "");
-		alias_terrains_.clear();
-		const t_translation::t_list& terrainList = map_->get_terrain_list();
-		for (t_translation::t_list::const_iterator it = terrainList.begin(); it != terrainList.end(); ++ it) {
-			const t_translation::t_terrain& terrain = *it;
-			const terrain_type& info = map_->get_terrain_info(terrain);
-			if (info.union_type().size() == 1 && info.union_type()[0] == info.number() && info.is_nonnull()) {
-				alias_terrains_.push_back(terrain);
-			}
-		}
-	}
 	if (tunit_type::type_map_.empty()) {
 		tunit_type::type_map_[tunit_type::TYPE_TROOP] = utf8_2_ansi(_("Troop"));
 		tunit_type::type_map_[tunit_type::TYPE_COMMONER] = utf8_2_ansi(_("Commoner"));
@@ -426,11 +463,9 @@ void tcore::refresh_utype(HWND hdlgP)
 	}
 	tunit_type::artifical_hero_.clear();
 	if (gdmgr.heros_.size()) {
-		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_market]);
-		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_wall]);
-		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_keep]);
-		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_tower]);
-		tunit_type::artifical_hero_.insert(&gdmgr.heros_[hero::number_technology]);
+		for (int number = hero::number_artifical_min; number <= hero::number_artifical_max; number ++) {
+			tunit_type::artifical_hero_.insert(&gdmgr.heros_[number]);
+		}
 	}
 	tunit_type::commoner_hero_.clear();
 	if (gdmgr.heros_.size()) {
@@ -648,69 +683,8 @@ void tcore::refresh_character(HWND hdlgP)
 		htvroot = htvi_character;
 
 		if (t.index() < tcharacter::min_complex_index) {
-/*
-			int apply_to = t.apply_to();
-			HTREEITEM branch = TreeView_AddLeaf(hctl, htvroot);
-			strstr.str("");
-			if (apply_to == apply_to_tag::THOUGHT) {
-				strstr << utf8_2_ansi(_("Thought"));
-			} else if (apply_to == apply_to_tag::COOPERATION) {
-				strstr << utf8_2_ansi(_("Cooperation"));
-			} else if (apply_to == apply_to_tag::GODLINESS) {
-				strstr << utf8_2_ansi(_("Godliness"));
-			} else if (apply_to == apply_to_tag::EXPLOIT) {
-				strstr << utf8_2_ansi(_("Exploit"));
-			} else if (apply_to == apply_to_tag::DILIGENCE) {
-				strstr << utf8_2_ansi(_("Diligence"));
-			} else if (apply_to == apply_to_tag::AGGRESSION) {
-				strstr << utf8_2_ansi(_("Aggression"));
-			} else if (apply_to == apply_to_tag::INNOVATE) {
-				strstr << utf8_2_ansi(_("Innovate"));
-			} else if (apply_to == apply_to_tag::FINANCING) {
-				strstr << utf8_2_ansi(_("Financing"));
-			}
-			strcpy(text, strstr.str().c_str());
-			TreeView_SetItem2(hctl, branch, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_tactic_action, ns::iico_tactic_action, 1, text);
-*/
 			htvi = TreeView_AddLeaf(hctl, htvroot);
-			strstr.str("");
-			if (t.leadership_) {
-				strstr << dgettext_2_ansi("wesnoth-hero", "leadership");
-				strstr << ": " << t.leadership_;
-				strcpy(text, strstr.str().c_str());
-			}
-			if (t.force_) {
-				if (!strstr.str().empty()) {
-					strstr << "    ";
-				}
-				strstr << dgettext_2_ansi("wesnoth-hero", "force");
-				strstr << ": " << t.force_;
-				strcpy(text, strstr.str().c_str());
-			}
-			if (t.intellect_) {
-				if (!strstr.str().empty()) {
-					strstr << "    ";
-				}
-				strstr << dgettext_2_ansi("wesnoth-hero", "intellect");
-				strstr << ": " << t.intellect_;
-				strcpy(text, strstr.str().c_str());
-			}
-			if (t.politics_) {
-				if (!strstr.str().empty()) {
-					strstr << "    ";
-				}
-				strstr << dgettext_2_ansi("wesnoth-hero", "politics");
-				strstr << ": " << t.politics_;
-				strcpy(text, strstr.str().c_str());
-			}
-			if (t.charm_) {
-				if (!strstr.str().empty()) {
-					strstr << "    ";
-				}
-				strstr << dgettext_2_ansi("wesnoth-hero", "charm");
-				strstr << ": " << t.charm_;
-				strcpy(text, strstr.str().c_str());
-			}
+			strcpy(text, utf8_2_ansi(t.expression().c_str()));
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_tactic_action, ns::iico_tactic_action, 0, text);
 
 		} else {
@@ -734,6 +708,130 @@ void tcore::refresh_character(HWND hdlgP)
 
 	TreeView_Expand(hctl_atom, htvroot_character_atom_, TVE_EXPAND);
 	TreeView_Expand(hctl_complex, htvroot_character_complex_, TVE_EXPAND);
+}
+
+void tcore::refresh_decree(HWND hdlgP)
+{
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+
+	HWND hctl_atom = GetDlgItem(hdlgP, IDC_TV_DECREE_ATOM);
+	HWND hctl_complex = GetDlgItem(hdlgP, IDC_TV_DECREE_COMPLEX);
+
+	// 1. clear treeview
+	TreeView_DeleteAllItems(hctl_atom);
+	TreeView_DeleteAllItems(hctl_complex);
+
+	// 2. fill content
+	htvroot_decree_atom_ = TreeView_AddLeaf(hctl_atom, TVI_ROOT);
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Atomic decree"));
+	strcpy(text, strstr.str().c_str());
+	// 这里一定要设TVIF_CHILDREN, 否则接下折叠后将判断出其cChildren为0, 再不能展开
+	TreeView_SetItem1(hctl_atom, htvroot_decree_atom_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
+		1, text);
+
+	htvroot_decree_complex_ = TreeView_AddLeaf(hctl_complex, TVI_ROOT);
+	strstr.str("");
+	strstr << utf8_2_ansi(_("Complex decree"));
+	strcpy(text, strstr.str().c_str());
+	TreeView_SetItem1(hctl_complex, htvroot_decree_complex_, TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN, 0, 0, 0, 
+		1, text);
+
+	HTREEITEM htvi_decree, htvi;
+	utils::string_map symbols;
+
+	const std::map<int, tdecree>& decrees = unit_types.decrees();
+	for (std::map<int, tdecree>::const_iterator it = decrees.begin(); it != decrees.end(); ++ it) {
+		const tdecree& t = it->second;
+		HWND hctl;
+		HTREEITEM htvroot;
+		int index;
+		if (t.index() < tdecree::min_complex_index) {
+			hctl = hctl_atom;
+			htvroot = htvroot_decree_atom_;
+			index = t.index();
+		} else {
+			hctl = hctl_complex;
+			htvroot = htvroot_decree_complex_;
+			index = t.index() - tdecree::min_complex_index;
+		}
+		htvi_decree = TreeView_AddLeaf(hctl, htvroot);
+		LPARAM lParam = t.index();
+		strstr.str("");
+		strstr << std::setw(2) << std::setfill('0') << index << ": " << utf8_2_ansi(t.name().c_str()) << "(" << t.id() << ")";
+		strstr << utf8_2_ansi(_("Description")) << ": ";
+		strstr << utf8_2_ansi(t.description().c_str());
+		strcpy(text, strstr.str().c_str());
+		TreeView_SetItem2(hctl, htvi_decree, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
+
+		htvroot = htvi_decree;
+
+		htvi = TreeView_AddLeaf(hctl, htvroot);
+		strstr.str("");
+		if (t.front()) {
+			strcpy(text, "Front");
+			strstr << dgettext("wesnoth-lib", text);
+		}
+		if (t.min_level()) {
+			if (!strstr.str().empty()) {
+				strstr << "  ";
+			}
+			symbols["level"] = lexical_cast_default<std::string>(t.min_level());
+			strstr << vgettext2("At least Lv$level", symbols);
+		}
+		if (!t.require_artifical().empty()) {
+			if (!strstr.str().empty()) {
+				strstr << "  ";
+			}
+			const std::set<int>& require_artifical = t.require_artifical();
+			std::stringstream artifical_str;
+			for (std::set<int>::const_iterator it2 = require_artifical.begin(); it2 != require_artifical.end(); ++ it2) {
+				if (it2 != require_artifical.begin()) {
+					artifical_str << ", ";
+				}
+				artifical_str << gdmgr.heros_[*it2].name();
+			}
+			symbols.clear();
+			symbols["artifical"] = artifical_str.str();
+			strstr << vgettext2("Require $artifical", symbols);
+		}
+		if (strstr.str().empty()) {
+			strstr << _("None");
+		}
+		strcpy(text, strstr.str().c_str());
+		strstr.str("");
+		strstr << _("Condition") << ": " << text;
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_tactic_action, ns::iico_tactic_action, 0, text);
+
+		if (t.index() < tdecree::min_complex_index) {
+			htvi = TreeView_AddLeaf(hctl, htvroot);
+			strcpy(text, utf8_2_ansi(t.expression().c_str()));
+
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_tactic_action, ns::iico_tactic_action, 0, text);
+
+		} else {
+			strstr.str("");
+			strstr << utf8_2_ansi(_("decree^Child")) << ": ";
+			const std::vector<const tdecree*>& parts = t.parts();
+			for (std::vector<const tdecree*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
+				const tdecree& part = **it2;
+				if (it2 != parts.begin()) {
+					strstr << ", ";
+				}
+				strstr << std::setw(2) << std::setfill('0') << part.index() << ": " << utf8_2_ansi(part.name().c_str()) << "(" << part.id() << ")";
+			}
+			strcpy(text, strstr.str().c_str());
+			htvi = TreeView_AddLeaf(hctl, htvroot);
+			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_tactic_txt, ns::iico_tactic_txt, 0, text);
+		}
+
+		TreeView_Expand(hctl, htvi_decree, TVE_EXPAND);
+	}
+
+	TreeView_Expand(hctl_atom, htvroot_decree_atom_, TVE_EXPAND);
+	TreeView_Expand(hctl_complex, htvroot_decree_complex_, TVE_EXPAND);
 }
 
 void tcore::refresh_technology(HWND hdlgP)
@@ -804,16 +902,237 @@ void tcore::refresh_treasure(HWND hdlgP)
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
-	if (treasures_from_cfg_.empty()) {
-		const std::vector<ttreasure>& treasures = unit_types.treasures();
-		for (std::vector<ttreasure>::const_iterator it = treasures.begin(); it != treasures.end(); ++ it) {
-			const ttreasure& t = *it;
-			treasures_from_cfg_.insert(std::make_pair(t.index(), t.feature()));
-		}
-		treasures_updating_ = treasures_from_cfg_;
-	}
-
 	update_to_ui_treasure(hdlgP);
+}
+
+void tcore::refresh_terrain(HWND hdlgP)
+{
+	update_to_ui_terrain(hdlgP);
+}
+
+void tcore::refresh_builder(HWND hdlgP)
+{
+	update_to_ui_builder(hdlgP);
+}
+
+void tcore::refresh_faction(HWND hdlgP)
+{
+	update_to_ui_faction(hdlgP, -1);
+}
+
+void tcore::init_cache()
+{
+	// unit type
+	if (map_) {
+		delete map_;
+	}
+	if (builder_) {
+		terrain_builder::release_heap();
+		delete builder_;
+	}
+	const config::const_child_itors& terrains = editor_config::data_cfg.child_range("terrain_type");
+	gamemap::terrain_types.clear();
+	BOOST_FOREACH (const config &t, terrains) {
+		gamemap::terrain_types.add_child("terrain_type", t);
+	}
+	map_ = new gamemap(editor_config::data_cfg, "");
+	// builder_ = new terrain_builder(true, map_, "off-map/alpha.png");
+
+	terrains_.clear();
+	alias_terrains_.clear();
+	const t_translation::t_list& terrainList = map_->get_terrain_list();
+	for (t_translation::t_list::const_iterator it = terrainList.begin(); it != terrainList.end(); ++ it) {
+		const t_translation::t_terrain& terrain = *it;
+		const terrain_type& info = map_->get_terrain_info(terrain);
+		if (info.union_type().size() == 1 && info.union_type()[0] == info.number() && info.is_nonnull()) {
+			alias_terrains_.push_back(terrain);
+		}
+		terrains_.push_back(terrain);
+	}
+	
+	// treasure
+	treasures_from_cfg_.clear();
+	treasures_updating_.clear();
+
+	const std::vector<ttreasure>& treasures = unit_types.treasures();
+	for (std::vector<ttreasure>::const_iterator it = treasures.begin(); it != treasures.end(); ++ it) {
+		const ttreasure& t = *it;
+		treasures_from_cfg_.insert(std::make_pair(t.index(), t.feature()));
+	}
+	treasures_updating_ = treasures_from_cfg_;
+
+	// terrain
+	terrains_from_cfg_.clear();
+	terrains_updating_.clear();
+
+	for (t_translation::t_list::const_iterator it = terrains_.begin(); it != terrains_.end(); ++ it) {
+		const terrain_type& info = map_->get_terrain_info(*it);
+
+		tterrain t;
+		t.from_config(info);
+		terrains_from_cfg_.push_back(t);
+	}
+	terrains_updating_ = terrains_from_cfg_;
+
+	// builder
+	release_builder();
+	config cfg;
+	scoped_istream stream = istream_file(terrain_graphics_tpl(true));
+	read(cfg, *stream);
+	BOOST_FOREACH (const config &c, cfg.child_range("macro")) {
+		int type = tbuilding_rule::macro_type(c["type"].str());
+		tbuilding_rule* rule = NULL;
+		if (type == tbuilding_rule::NONE) {
+			rule = new tnone_brule();
+		} else if (type == tbuilding_rule::TRANSITION_COMPLETE_LF) {
+			rule = new ttransition_complete_lf_brule();
+		} else if (type == tbuilding_rule::TRANSITION_COMPLETE_LB) {
+			rule = new ttransition_complete_lb_brule();
+		} else if (type == tbuilding_rule::TRANSITION_COMPLETE_L) {
+			rule = new ttransition_complete_l_brule();
+		} else if (type == tbuilding_rule::EDITOR_OVERLAY) {
+			rule = new teditor_overlay_brule();
+		} else if (type == tbuilding_rule::BRIDGE_STRAIGHTS) {
+			rule = new tbridge_straights_brule();
+		} else if (type == tbuilding_rule::BRIDGE_ENDS) {
+			rule = new tbridge_ends_brule();
+		} else if (type == tbuilding_rule::BRIDGE_JOINTS) {
+			rule = new tbridge_joints_brule();
+		} else if (type == tbuilding_rule::BRIDGE_CORNERS) {
+			rule = new tbridge_corners_brule();
+		} else if (type == tbuilding_rule::LAYOUT_TRACKS_F) {
+			rule = new tlayout_tracks_f_brule();
+		} else if (type == tbuilding_rule::TRACK_COMPLETE) {
+			rule = new ttrack_complete_brule();
+		} else if (type == tbuilding_rule::TRACK_BORDER_RESTRICTED_PLF) {
+			rule = new ttrack_border_restricted_plf_brule();
+		} else if (type == tbuilding_rule::NEW_FOREST) {
+			rule = new tnew_forest_brule();
+		} else if (type == tbuilding_rule::OVERLAY_RANDOM) {
+			rule = new toverlay_random_brule();
+		} else if (type == tbuilding_rule::OVERLAY_RANDOM_LF) {
+			rule = new toverlay_random_lf_brule();
+		} else if (type == tbuilding_rule::OVERLAY_RANDOM_L) {
+			rule = new toverlay_random_l_brule();
+		} else if (type == tbuilding_rule::OVERLAY_LF) {
+			rule = new toverlay_lf_brule();
+		} else if (type == tbuilding_rule::OVERLAY_F) {
+			rule = new toverlay_f_brule();
+		} else if (type == tbuilding_rule::OVERLAY_P) {
+			rule = new toverlay_p_brule();
+		} else if (type == tbuilding_rule::OVERLAY_B) {
+			rule = new toverlay_b_brule();
+		} else if (type == tbuilding_rule::OVERLAY) {
+			rule = new toverlay_brule();
+		} else if (type == tbuilding_rule::TERRAIN_BASE_RANDOM) {
+			rule = new tterrain_base_random_brule();
+		} else if (type == tbuilding_rule::TERRAIN_BASE_P) {
+			rule = new tterrain_base_p_brule();
+		} else if (type == tbuilding_rule::TERRAIN_BASE_F) {
+			rule = new tterrain_base_f_brule();
+		} else if (type == tbuilding_rule::TERRAIN_BASE) {
+			rule = new tterrain_base_brule();
+		} else if (type == tbuilding_rule::KEEP_BASE) {
+			rule = new tkeep_base_brule();
+		} else if (type == tbuilding_rule::KEEP_BASE_RANDOM) {
+			rule = new tkeep_base_random_brule();
+		} else if (type == tbuilding_rule::TERRAIN_BASE_SINGLEHEX_LB) {
+			rule = new tterrain_base_singlehex_lb_brule();
+		} else if (type == tbuilding_rule::TERRAIN_BASE_SINGLEHEX_B) {
+			rule = new tterrain_base_singlehex_b_brule();
+		} else if (type == tbuilding_rule::OVERLAY_COMPLETE_LF) {
+			rule = new toverlay_complete_lf_brule();
+		} else if (type == tbuilding_rule::OVERLAY_COMPLETE_L) {
+			rule = new toverlay_complete_l_brule();
+		} else if (type == tbuilding_rule::OVERLAY_COMPLETE_F) {
+			rule = new toverlay_complete_f_brule();
+		} else if (type == tbuilding_rule::OVERLAY_COMPLETE) {
+			rule = new toverlay_complete_brule();
+		} else if (type == tbuilding_rule::VOLCANO_2x2) {
+			rule = new tvolcano_2x2_brule();
+		} else if (type == tbuilding_rule::OVERLAY_RESTRICTED3_F) {
+			rule = new toverlay_restricted3_f_brule();
+		} else if (type == tbuilding_rule::OVERLAY_RESTRICTED2_F) {
+			rule = new toverlay_restricted2_f_brule();
+		} else if (type == tbuilding_rule::OVERLAY_RESTRICTED_P) {
+			rule = new toverlay_restricted_p_brule();
+		} else if (type == tbuilding_rule::OVERLAY_RESTRICTED_F) {
+			rule = new toverlay_restricted_f_brule();
+		} else if (type == tbuilding_rule::OVERLAY_ROTATION_RESTRICTED2_F) {
+			rule = new toverlay_rotation_restricted2_f_brule();
+		} else if (type == tbuilding_rule::OVERLAY_ROTATION_RESTRICTED_F) {
+			rule = new toverlay_rotation_restricted_f_brule();
+		} else if (type == tbuilding_rule::MOUNTAINS_2x4_NW_SE) {
+			rule = new tmountains_2x4_nw_se_brule();
+		} else if (type == tbuilding_rule::MOUNTAINS_2x4_SW_NE) {
+			rule = new tmountains_2x4_sw_ne_brule();
+		} else if (type == tbuilding_rule::MOUNTAINS_1x3_NW_SE) {
+			rule = new tmountains_1x3_nw_se_brule();
+		} else if (type == tbuilding_rule::MOUNTAINS_1x3_SW_NE) {
+			rule = new tmountains_1x3_sw_ne_brule();
+		} else if (type == tbuilding_rule::MOUNTAINS_2x2) {
+			rule = new tmountains_2x2_brule();
+		} else if (type == tbuilding_rule::MOUNTAIN_SINGLE_RANDOM) {
+			rule = new tmountain_single_random_brule();
+		} else if (type == tbuilding_rule::PEAKS_1x2_SW_NE) {
+			rule = new tpeaks_1x2_sw_ne_brule();
+		} else if (type == tbuilding_rule::PEAKS_LARGE) {
+			rule = new tpeaks_large_brule();
+		} else if (type == tbuilding_rule::VILLAGE) {
+			rule = new tvillage_brule();
+		} else if (type == tbuilding_rule::VILLAGE_A3) {
+			rule = new tvillage_a3_brule();
+		} else if (type == tbuilding_rule::VILLAGE_A4) {
+			rule = new tvillage_a4_brule();
+		} else if (type == tbuilding_rule::NEW_FENCE) {
+			rule = new tnew_fence_brule();
+		} else if (type == tbuilding_rule::NEW_WALL_P) {
+			rule = new tnew_wall_p_brule();
+		} else if (type == tbuilding_rule::NEW_WALL) {
+			rule = new tnew_wall_brule();
+		} else if (type == tbuilding_rule::NEW_WALL2_P) {
+			rule = new tnew_wall2_p_brule();
+		} else if (type == tbuilding_rule::NEW_WALL2) {
+			rule = new tnew_wall2_brule();
+		} else if (type == tbuilding_rule::NEW_WAVES) {
+			rule = new tnew_waves_brule();
+		} else if (type == tbuilding_rule::NEW_BEACH) {
+			rule = new tnew_beach_brule();
+		} else if (type == tbuilding_rule::WALL_TRANSITION3) {
+			rule = new twall_transition3_brule();
+		} else if (type == tbuilding_rule::WALL_TRANSITION2_LF) {
+			rule = new twall_transition2_lf_brule();
+		} else if (type == tbuilding_rule::WALL_TRANSITION_LF) {
+			rule = new twall_transition_lf_brule();
+		} else if (type == tbuilding_rule::WALL_ADJACENT_TRANSITION) {
+			rule = new twall_adjacent_transition_brule();
+		} else if (type == tbuilding_rule::ANIMATED_WATER_15) {
+			rule = new tanimated_water_15_brule();
+		} else if (type == tbuilding_rule::ANIMATED_WATER_15_TRANSITION) {
+			rule = new tanimated_water_15_transition_brule();
+		} else if (type == tbuilding_rule::DISABLE_BASE_TRANSITIONS) {
+			rule = new tdisable_base_transitions_brule();
+		}
+		
+								
+		rule->from_config(c.child("cfg"), c["postfix"].str());
+		brules_from_cfg_.push_back(rule);
+
+	}
+	copy_brules(brules_from_cfg_, brules_updating_);
+
+	// faction
+	factions_from_cfg_.clear();
+	factions_updating_.clear();
+
+	const config::const_child_itors& factions = editor_config::data_cfg.child_range("faction");
+	std::set<int> used_heros, used_cities;
+	BOOST_FOREACH (const config &cfg, factions) {
+		tfaction f;
+		f.from_config(cfg, used_heros, used_cities);
+		factions_from_cfg_.push_back(f);
+	}
+	factions_updating_ = factions_from_cfg_;
 }
 
 void tcore::switch_section(HWND hdlgP, int to, bool init)
@@ -824,38 +1143,48 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 	if (name_map.empty()) {
 		name_map[UNIT_TYPE] = utf8_2_ansi(_("arms^Type"));
 		strstr.str("");
-		strstr << _("Tactic") << "(" << _("Read only") << ")";
+		strstr << dsgettext("wesnoth-hero", "tactic") << "(" << _("Read only") << ")";
 		name_map[TACTIC] = utf8_2_ansi(strstr.str().c_str());
 		strstr.str("");
 		strcpy(text, "Character");
 		strstr << dgettext("wesnoth-lib", text) << "(" << _("Read only") << ")";
 		name_map[CHARACTER] = utf8_2_ansi(strstr.str().c_str());
 		strstr.str("");
+		strcpy(text, "Decree");
+		strstr << dgettext("wesnoth-lib", text) << "(" << _("Read only") << ")";
+		name_map[DECREE] = utf8_2_ansi(strstr.str().c_str());
+		strstr.str("");
 		strcpy(text, "Technology");
 		strstr << dgettext("wesnoth-lib", text) << "(" << _("Read only") << ")";
 		name_map[TECH] = utf8_2_ansi(strstr.str().c_str());
-		name_map[TREASURE] = dgettext_2_ansi("wesnoth-lib", "Treasure");
+		name_map[TREASURE] = dgettext_2_ansi("wesnoth-hero", "treasure");
+		name_map[TERRAIN] = dgettext_2_ansi("wesnoth", "Terrain");
+		name_map[BUILDER] = utf8_2_ansi(_("Building rule"));
+		name_map[FACTION] = dgettext_2_ansi("wesnoth-lib", "Faction");
 	}
 	if (idd_map.empty()) {
 		idd_map[UNIT_TYPE] = IDD_UTYPE;
 		idd_map[TACTIC] = IDD_TACTIC;
 		idd_map[CHARACTER] = IDD_CHARACTER;
+		idd_map[DECREE] = IDD_DECREE;
 		idd_map[TECH] = IDD_TECHNOLOGY;
 		idd_map[TREASURE] = IDD_TREASURE;
+		idd_map[TERRAIN] = IDD_TERRAIN;
+		idd_map[BUILDER] = IDD_BUILDER;
+		idd_map[FACTION] = IDD_FACTION;
 	}
 	if (dlgproc_map.empty()) {
 		dlgproc_map[UNIT_TYPE] = DlgUTypeProc;
 		dlgproc_map[TACTIC] = DlgTacticProc;
 		dlgproc_map[CHARACTER] = DlgCharacterProc;
+		dlgproc_map[DECREE] = DlgDecreeProc;
 		dlgproc_map[TECH] = DlgTechnologyProc;
 		dlgproc_map[TREASURE] = DlgTreasureProc;
+		dlgproc_map[TERRAIN] = DlgTerrainProc;
+		dlgproc_map[BUILDER] = DlgBuilderProc;
+		dlgproc_map[FACTION] = DlgFactionProc;
 	}
-	if (init) {
-		// treasure section
-		treasures_from_cfg_.clear();
-		treasures_updating_.clear();
-	}
-
+	
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLong(hdlgP, GWL_USERDATA);
 
 	if (!init && pHdr && to == section_) {
@@ -910,17 +1239,29 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 
 	section_ = to;
 
+	if (init) {
+		init_cache();
+	}
+
 	if (section_ == UNIT_TYPE) {
-		ns::core.refresh_utype(pHdr->hwndDisplay);
+		refresh_utype(pHdr->hwndDisplay);
 	} else if (section_ == TACTIC) {
-		ns::core.refresh_tactic(pHdr->hwndDisplay);
+		refresh_tactic(pHdr->hwndDisplay);
 	} else if (section_ == CHARACTER) {
-		ns::core.refresh_character(pHdr->hwndDisplay);
+		refresh_character(pHdr->hwndDisplay);
+	} else if (section_ == DECREE) {
+		refresh_decree(pHdr->hwndDisplay);
 	} else if (section_ == TECH) {
-		ns::core.refresh_technology(pHdr->hwndDisplay);
+		refresh_technology(pHdr->hwndDisplay);
 	} else if (section_ == TREASURE) {
-		ns::core.refresh_treasure(pHdr->hwndDisplay);
-	} 
+		refresh_treasure(pHdr->hwndDisplay);
+	} else if (section_ == TERRAIN) {
+		refresh_terrain(pHdr->hwndDisplay);
+	} else if (section_ == BUILDER) {
+		refresh_builder(pHdr->hwndDisplay);
+	} else if (section_ == FACTION) {
+		refresh_faction(pHdr->hwndDisplay);
+	}
 }
 
 void tcore::update_to_ui_treasure(HWND hdlgP)
@@ -1041,6 +1382,167 @@ void tcore::generate_units_internal() const
 	}
 	strstr << "\n";
 	strstr << "[/treasure]\n";
+
+	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
+	posix_fclose(fp);
+}
+
+std::string tcore::terrain_cfg(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\core\\terrain.cfg";
+	} else {
+		strstr << "data/core/terrain.cfg";
+	}
+	return strstr.str();
+}
+
+void tcore::generate_terrain_cfg() const
+{
+	std::stringstream strstr;
+	uint32_t bytertd;
+
+	posix_file_t fp = INVALID_FILE;
+	posix_fopen(terrain_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+	if (fp == INVALID_FILE) {
+		return;
+	}
+
+	strstr << "#textdomain wesnoth-lib\n";
+	strstr << "# Terrain configuration file. Defines how the terrain _work_ in the game. How\n";
+	strstr << "# the terrains _look_ is defined in terrain_graphics.cfg .\n";
+	strstr << "\n";
+	strstr << "# NOTE: terrain id's are used implicitly by the in-game help:\n";
+	strstr << "# each \"[terrain_type] id=some_id\" corresponds to \"[section] id=terrain_some_id\"\n";
+	strstr << "# or \"[topic] id=terrain_some_id\" identifying its description in [help]\n";
+	strstr << "\n";
+	strstr << "# NOTE: this list is sorted to group things comprehensibly in the editor\n";
+	strstr << "\n";
+
+	for (std::vector<tterrain>::const_iterator it = terrains_updating_.begin(); it != terrains_updating_.end(); ++ it) {
+		const tterrain& t = *it;
+		t.generate(strstr);
+	}
+
+	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
+	posix_fclose(fp);
+}
+
+std::string tcore::terrain_graphics_tpl(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\core\\terrain-graphics.tpl";
+	} else {
+		strstr << "data/core/terrain-graphics.tpl";
+	}
+	return strstr.str();
+}
+
+std::string tcore::terrain_graphics_cfg(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\core\\terrain-graphics.cfg";
+	} else {
+		strstr << "data/core/terrain-graphics.cfg";
+	}
+	return strstr.str();
+}
+
+void tcore::generate_terrain_graphics_cfg() const
+{
+	std::stringstream strstr;
+	uint32_t bytertd;
+
+	posix_file_t fp = INVALID_FILE, tpl = INVALID_FILE;
+	posix_fopen(terrain_graphics_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+	if (fp == INVALID_FILE) {
+		return;
+	}
+	posix_fopen(terrain_graphics_tpl(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, tpl);
+	if (tpl == INVALID_FILE) {
+		posix_fclose(fp);
+		return;
+	}
+
+	strstr << "#textdomain wesnoth\n";
+	strstr << "#wmlindent: start ignoring\n";
+	strstr << "# This file needs to be processed *after* all others in this directory\n";
+	strstr << "#\n";
+	strstr << "# The following flags are defined to have a meaning\n";
+	strstr << "#\n";
+	strstr << "# * base : the corresponding tile has already graphics for the terrain\n";
+	strstr << "# base. No other one should be added.\n";
+	strstr << "# * transition-$direction : the corresponding tile already has the transition\n";
+	strstr << "# in the given direction (or should not have one). No other one should be\n";
+	strstr << "# added.\n";
+	strstr << "#\n";
+	strstr << "# when adding new probabilities update the commented line\n";
+	strstr << "# the proper way to calculate the propabilities is described here\n";
+	strstr << "# http://www.wesnoth.org/wiki/TerrainGraphicsTutorial#Cumulative_Probabilities\n";
+	strstr << "\n";
+	strstr << "# NOTE the terrain _off^_usr gets its definition from the code since it's\n";
+	strstr << "# themable\n";
+
+	for (std::vector<tbuilding_rule*>::const_iterator it = brules_updating_.begin(); it != brules_updating_.end(); ++ it) {
+		const tbuilding_rule& r = **it;
+		if (it != brules_updating_.begin()) {
+			strstr << "\n";
+		}
+		strstr << r.generate();
+	}
+
+	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
+	posix_fclose(fp);
+
+	// tpl
+	strstr.str("");
+	for (std::vector<tbuilding_rule*>::const_iterator it = brules_updating_.begin(); it != brules_updating_.end(); ++ it) {
+		const tbuilding_rule& r = **it;
+		if (it != brules_updating_.begin()) {
+			strstr << "\n";
+		}
+		strstr << r.generate(true);
+	}
+
+	posix_fwrite(tpl, strstr.str().c_str(), strstr.str().length(), bytertd);
+	posix_fclose(tpl);
+}
+
+std::string tcore::factions_cfg(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\multiplayer\\factions.cfg";
+	} else {
+		strstr << "data/multiplayer/factions.cfg";
+	}
+	return strstr.str();
+}
+
+void tcore::generate_factions_cfg() const
+{
+	std::stringstream strstr;
+	uint32_t bytertd;
+
+	posix_file_t fp = INVALID_FILE;
+	posix_fopen(factions_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+	if (fp == INVALID_FILE) {
+		return;
+	}
+
+	strstr << "#textdomain wesnoth-multiplayer\n";
+	strstr << "\n";
+
+	for (std::vector<tfaction>::const_iterator it = factions_updating_.begin(); it != factions_updating_.end(); ++ it) {
+		if (it != factions_updating_.begin()) {
+			strstr << "\n";
+		}
+		const tfaction& f = *it;
+		strstr << f.generate();
+	}
 
 	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
 	posix_fclose(fp);
@@ -1186,6 +1688,40 @@ BOOL CALLBACK DlgCharacterProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lPar
 		return On_DlgCharacterInitDialog(hdlgP, (HWND)(wParam), lParam);
 	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgCharacterCommand);
 	HANDLE_MSG(hdlgP, WM_DESTROY,  On_DlgCharacterDestroy);
+	}
+	
+	return FALSE;
+}
+
+//
+// character section
+//
+BOOL On_DlgDecreeInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	HWND hwndParent = GetParent(hdlgP); 
+    DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
+    SetWindowPos(hdlgP, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE); 
+
+	return FALSE;
+}
+
+void On_DlgDecreeCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	return;
+}
+
+void On_DlgDecreeDestroy(HWND hdlgP)
+{
+	return;
+}
+
+BOOL CALLBACK DlgDecreeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	switch(uMsg) {
+	case WM_INITDIALOG:
+		return On_DlgDecreeInitDialog(hdlgP, (HWND)(wParam), lParam);
+	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgDecreeCommand);
+	HANDLE_MSG(hdlgP, WM_DESTROY,  On_DlgDecreeDestroy);
 	}
 	
 	return FALSE;

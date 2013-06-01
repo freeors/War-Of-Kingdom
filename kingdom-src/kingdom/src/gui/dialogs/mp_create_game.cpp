@@ -27,13 +27,8 @@
 #include "gui/widgets/integer_selector.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/button.hpp"
+#include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/text_box.hpp"
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-#include "gui/widgets/list.hpp"
-#else
-#include "gui/widgets/listbox.hpp"
-#endif
-#include "gui/widgets/minimap.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/slider.hpp"
 #include "../../settings.hpp"
@@ -53,49 +48,44 @@ namespace gui2 {
 REGISTER_DIALOG(mp_create_game)
 
 tmp_create_game::tmp_create_game(game_display& gui, const config& cfg) :
-	gui_(gui),
-	cfg_(cfg),
-	user_maps_(),
-	generator_(NULL),
-	num_turns_(0),
-	era_index_(0),
-	parameters_(),
-	generator_settings_(NULL),
-	regenerate_map_(NULL),
-	era_(NULL),
-	launch_game_(NULL),
-	maximal_defeated_activity_(NULL),
-	use_map_settings_(register_bool("use_map_settings",
+	trandom_map(cfg)
+	, gui_(gui)
+	, num_turns_(0)
+	, era_index_(0)
+	, era_(NULL)
+	, launch_game_(NULL)
+	, maximal_defeated_activity_(NULL)
+	, use_map_settings_(register_bool("use_map_settings",
 		true,
 		preferences::use_map_settings,
 		preferences::set_use_map_settings,
-		dialog_callback<tmp_create_game, &tmp_create_game::update_map_settings>)),
-	fog_(register_bool("fog",
+		dialog_callback<tmp_create_game, &tmp_create_game::update_map_settings>))
+	, fog_(register_bool("fog",
 			true,
 			preferences::fog,
-			preferences::set_fog)),
-	observers_(register_bool("observers",
+			preferences::set_fog))
+	, observers_(register_bool("observers",
 			true,
 			preferences::allow_observers,
-			preferences::set_allow_observers)),
-	shroud_(register_bool("shroud",
+			preferences::set_allow_observers))
+	, shroud_(register_bool("shroud",
 			true,
 			preferences::shroud,
-			preferences::set_shroud)),
-	start_time_(register_bool("random_start_time",
+			preferences::set_shroud))
+	, start_time_(register_bool("random_start_time",
 			true,
 			preferences::random_start_time,
-			preferences::set_random_start_time)),
+			preferences::set_random_start_time))
 
-	turns_(register_integer("turn_count",
+	, turns_(register_integer("turn_count",
 		true,
 		preferences::turns ,
-		preferences::set_turns)),
-	gold_(register_integer("village_gold",
+		preferences::set_turns))
+	, gold_(register_integer("village_gold",
 		true,
 		preferences::village_gold ,
-		preferences::set_village_gold)),
-	experience_(register_integer("experience_modifier",
+		preferences::set_village_gold))
+	, experience_(register_integer("experience_modifier",
 		true,
 		preferences::xp_modifier ,
 		preferences::set_xp_modifier))
@@ -104,75 +94,18 @@ tmp_create_game::tmp_create_game(game_display& gui, const config& cfg) :
 
 void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 {
-	find_widget<tminimap>(&window, "minimap", false).set_config(&cfg_);
-
 	name_entry_ = find_widget<ttext_box>(&window, "game_name", false, true);
 
-	num_players_label_ = find_widget<tlabel>(&window, "map_players", false, true);
-	map_size_label_ = find_widget<tlabel>(&window, "map_size", false, true);
-
-	regenerate_map_ = find_widget<tbutton>(&window, "regenerate", false, true);
-	generator_settings_ = find_widget<tbutton>(&window, "settings", false, true);
 	era_ = find_widget<tbutton>(&window, "era", false, true);
 	launch_game_ = find_widget<tbutton>(&window, "ok", false, true);
 
+	find_widget<tslider>(&window, "experience_modifier", false, true)->set_visible(twidget::INVISIBLE);
+	find_widget<ttoggle_button>(&window, "observers", false, true)->set_visible(twidget::INVISIBLE);
+	find_widget<ttoggle_button>(&window, "time_limit", false, true)->set_visible(twidget::INVISIBLE);
+	find_widget<ttoggle_button>(&window, "random_start_time", false, true)->set_visible(twidget::INVISIBLE);
+			
 	maximal_defeated_activity_ = find_widget<tbutton>(&window, "maximal_defeated_activity", false, true);
 	
-	tlistbox& list = find_widget<tlistbox>(&window, "map_list", false);
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-	connect_signal_notify_modified(list, boost::bind(
-				  &tmp_create_game::update_map
-				, *this
-				, boost::ref(window)));
-#else
-	list.set_callback_value_change(
-			dialog_callback<tmp_create_game, &tmp_create_game::update_map>);
-#endif
-
-	// Load option (might turn it into a button later).
-	string_map item;
-	item.insert(std::make_pair("label", _("Load Game")));
-	item.insert(std::make_pair("tooltip", _("Load Game...")));
-	list.add_row(item);
-
-	// User maps
-/*	FIXME implement user maps
-	std::vector<std::string> maps;
-	get_files_in_dir(get_user_data_dir() + "/editor/maps", &maps, NULL, FILE_NAME_ONLY);
-
-	foreach(const std::string& map, maps) {
-		std::map<std::string, t_string> item;
-		item.insert(std::make_pair("label", map));
-		list->add_row(item);
-	}
-*/
-
-	// Standard maps
-	foreach (const config &map, cfg_.child_range("multiplayer"))
-	{
-		if (map["allow_new_game"].to_bool(true)) {
-			string_map item;
-			item.insert(std::make_pair("label", map["name"].str()));
-			item.insert(std::make_pair("tooltip", map["name"].str()));
-			list.add_row(item);
-		}
-	}
-
-	// if (size_t(preferences::map()) < list.get_item_count())
-	//	list.select_row(preferences::map());
-
-	connect_signal_mouse_left_click(
-		*regenerate_map_
-		, boost::bind(
-			&tmp_create_game::regenerate_map
-			, this
-			, boost::ref(window)));
-	connect_signal_mouse_left_click(
-		*generator_settings_
-		, boost::bind(
-			&tmp_create_game::generator_settings
-			, this
-			, boost::ref(window)));
 	connect_signal_mouse_left_click(
 		*era_
 		, boost::bind(
@@ -207,20 +140,9 @@ void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 	str << game_config::maximal_defeated_activity;
 	maximal_defeated_activity_->set_label(str.str());
 
-	parameters_.saved_game = true;
-
-	generator_settings_->set_visible(generator_? twidget::VISIBLE: twidget::INVISIBLE);
-	regenerate_map_->set_visible(generator_? twidget::VISIBLE: twidget::INVISIBLE);
-	if (game_config::tiny_gui) {
-		generator_settings_->set_active(false);
-	}
-
-	update_map_settings(window);
-
 	observers_->set_widget_value(window, preferences::allow_observers());
 
-	// Support "load game" in future.
-	launch_game_->set_active(false);
+	trandom_map::pre_show(window);
 
 	// Force first update to be directly.
 	lobby_base::network_handler();
@@ -229,130 +151,10 @@ void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 			, true);
 }
 
-void tmp_create_game::update_map(twindow& window)
+void tmp_create_game::post_update_map(twindow& window, int select)
 {
-	const size_t select = find_widget<tlistbox>(
-			&window, "map_list", false).get_selected_row();
-
-	generator_.assign(NULL);
-
-	if (select > 0 && select <= user_maps_.size()) {
-		parameters_.saved_game = false;
-		if (const config &generic_multiplayer = cfg_.child("generic_multiplayer")) {
-			parameters_.scenario_data = generic_multiplayer;
-			parameters_.scenario_data["map_data"] = read_map(user_maps_[select-1]);
-		}
-
-	} else if (select > user_maps_.size()) {
-		parameters_.saved_game = false;
-		size_t index = select - user_maps_.size() - 1;
-
-		config::const_child_itors levels = cfg_.child_range("multiplayer");
-		std::advance(levels.first, index);
-
-		if (levels.first != levels.second) {
-			const config &level = *levels.first;
-			parameters_.scenario_data = level;
-			std::string map_data = level["map_data"];
-
-			if (map_data.empty() && !level["map"].empty()) {
-				map_data = read_map(level["map"]);
-			}
-
-			// If the map should be randomly generated.
-			if (!level["map_generation"].empty()) {
-				generator_.assign(create_map_generator(level["map_generation"], level.child("generator")));
-			}
-
-
-		}
-	} else {
-		parameters_.scenario_data.clear();
-		parameters_.saved_game = true;
-	}
-
-	generate_map(window);
-
 	// Support "load game" in future.
 	launch_game_->set_active(select? true: false);
-}
-
-void tmp_create_game::generate_map(twindow& window)
-{
-	tminimap& minimap = find_widget<tminimap>(&window, "minimap", false);
-
-	if (generator_ != NULL) {
-		const cursor::setter cursor_setter(cursor::WAIT);
-
-		// Generate the random map
-		cursor::setter cur(cursor::WAIT);
-		parameters_.scenario_data = generator_->create_scenario(std::vector<std::string>());
-
-		if (!parameters_.scenario_data["error_message"].empty())
-			gui2::show_message(gui_.video(), "map generation error", parameters_.scenario_data["error_message"]);
-
-		// Set the scenario to have placing of sides
-		// based on the terrain they prefer
-		parameters_.scenario_data["modify_placing"] = "true";
-	}
-
-	generator_settings_->set_visible(generator_? twidget::VISIBLE: twidget::INVISIBLE);
-	regenerate_map_->set_visible(generator_? twidget::VISIBLE: twidget::INVISIBLE);
-
-	minimap.set_map_data(parameters_.scenario_data["map_data"]);
-
-	const std::string& map_data = parameters_.scenario_data["map_data"];
-
-	util::unique_ptr<gamemap> map;
-	try {
-		map.reset(new gamemap(cfg_, map_data));
-	} catch (incorrect_map_format_error& e) {
-		std::stringstream err;
-		err << "map could not be loaded: " << e.message;
-		gui2::show_message(gui_.video(), "error", err.str());
-
-	} catch(twml_exception& e) {
-		std::stringstream err;
-		err <<  "map could not be loaded: " << e.dev_message;
-		gui2::show_message(gui_.video(), "error", err.str());
-	}
-
-	// launch_game_->set_active(map.get() != NULL);
-	
-	// If there are less sides in the configuration than there are
-	// starting positions, then generate the additional sides
-	const int map_positions = map.get() != NULL ? map->num_valid_starting_positions() : 0;
-
-	for (int pos = parameters_.scenario_data.child_count("side"); pos < map_positions; ++pos) {
-		config& side = parameters_.scenario_data.add_child("side");
-		side["side"] = pos + 1;
-		side["team_name"] = pos + 1;
-		side["controller"] = "human";
-
-		std::stringstream str;
-		str << "economy_area" << pos + 1;
-		side["economy_area"] = parameters_.scenario_data[str.str()];
-		parameters_.scenario_data.remove_attribute(str.str());
-	}
-
-	int nsides = 0;
-	foreach (const config &k, parameters_.scenario_data.child_range("side")) {
-		if (k["allow_player"].to_bool(true)) ++nsides;
-	}
-
-	std::stringstream players;
-	std::stringstream map_size;
-	if (map.get() != NULL) {
-		players << _("Players: ") << nsides;
-		map_size << _("Size: ") << map.get()->w() << "x" << map.get()->h();
-	} else {
-		players << _("Error");
-		map_size << "";
-	}
-	num_players_label_->set_label(players.str());
-	map_size_label_->set_label(map_size.str());
-
-	update_map_settings(window);
 }
 
 void tmp_create_game::update_map_settings(twindow& window)
@@ -393,17 +195,6 @@ void tmp_create_game::update_map_settings(twindow& window)
 		gold_->set_widget_value(window, preferences::village_gold());
 		experience_->set_widget_value(window, preferences::xp_modifier());
 	}
-}
-
-void tmp_create_game::regenerate_map(twindow& window)
-{
-	generate_map(window);
-}
-
-void tmp_create_game::generator_settings(twindow& window)
-{
-	generator_->user_config(gui_, cfg_);
-	generate_map(window);
 }
 
 void tmp_create_game::era(twindow& window)
@@ -515,11 +306,6 @@ void tmp_create_game::post_show(twindow& window)
 
 	remove_timer(lobby_update_timer_);
 	lobby_update_timer_ = 0;
-}
-
-mp_game_settings& tmp_create_game::get_parameters()
-{
-	return parameters_;
 }
 
 void tmp_create_game::process_network_data(const config& data, const network::connection sock)

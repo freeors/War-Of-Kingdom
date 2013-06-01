@@ -418,7 +418,8 @@ public:
 	void alternate_bh(twidget* holder, int index = 0);
 
 	std::vector<std::vector<twidget*> >& dirty_list();
-	void set_maximum_size(int w, int h);
+	void set_keep_rect(int x, int y = -1, int w = -1, int h = -1);
+	const SDL_Rect& keep_rect() const { return keep_rect_; }
 private:
 
 	/** Needed so we can change what's drawn on the screen. */
@@ -577,6 +578,7 @@ private:
 	std::map<std::string, tlinked_size> linked_size_;
 
 	int alternate_index_;
+	SDL_Rect keep_rect_;
 	const twindow_builder::tresolution* definition_;
 
 	/**

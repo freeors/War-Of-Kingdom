@@ -331,6 +331,27 @@ msgid "technology3 description"
 msgstr ""
 
 #
+# tactic
+#
+msgid "tactic1"
+msgstr ""
+
+msgid "tactic1 description"
+msgstr ""
+
+msgid "tactic2"
+msgstr ""
+
+msgid "tactic2 description"
+msgstr ""
+
+msgid "tactic3"
+msgstr ""
+
+msgid "tactic3 description"
+msgstr ""
+
+#
 # tower
 #
 msgid "tower1"

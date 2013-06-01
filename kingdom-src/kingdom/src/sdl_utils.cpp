@@ -30,6 +30,17 @@
 
 const std::string null_str = "";
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+#else
+surface display_format_alpha(surface surf)
+{
+	return surf;
+}
+void update_rect(const SDL_Rect& rect_value)
+{
+}
+#endif
+
 void surface::sdl_add_ref(SDL_Surface *surf)
 {
 	if (surf != NULL)
@@ -227,8 +238,6 @@ surface create_optimized_surface(const surface &surf)
 		return NULL;
 
 	SDL_PixelFormat* vf = surf.get()->format;
-	// if (vf->Amask != 0xff000000 || vf->Gmask != 0x0000ff00) {
-	// if (vf->BitsPerPixel != 32) {
 	if (SDL_BITSPERPIXEL(vf->format) != 32) {
 		// don't use (vf->BitsPerPixel != 32), it will result access invalidate in uncopy_32(SDL)!
 		surface const result = display_format_alpha(surf);
@@ -1871,6 +1880,7 @@ surface_restorer::~surface_restorer()
 
 void surface_restorer::restore(SDL_Rect const &dst) const
 {
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	if (surface_.null())
 		return;
 	SDL_Rect dst2 = intersect_rects(dst, rect_);
@@ -1881,23 +1891,28 @@ void surface_restorer::restore(SDL_Rect const &dst) const
 	src.y -= rect_.y;
 	sdl_blit(surface_, &src, target_->getSurface(), &dst2);
 	update_rect(dst2);
+#endif
 }
 
 void surface_restorer::restore() const
 {
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	if (surface_.null())
 		return;
 	SDL_Rect dst = rect_;
 	sdl_blit(surface_, NULL, target_->getSurface(), &dst);
 	update_rect(rect_);
+#endif
 }
 
 void surface_restorer::update()
 {
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	if(rect_.w == 0 || rect_.h == 0)
 		surface_.assign(NULL);
 	else
 		surface_.assign(::get_surface_portion(target_->getSurface(),rect_));
+#endif
 }
 
 void surface_restorer::cancel()

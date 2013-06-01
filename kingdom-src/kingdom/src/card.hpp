@@ -28,21 +28,21 @@ public:
 
 	void set_config(const config& card_cfg) { cfg_ = card_cfg; }
 	const config& get_cfg() const { return cfg_; }
-	config& get_cfg() { return cfg_; }
-	config& get_condition() { return condition_cfg_; }
-	config& get_range() { return range_cfg_; }
-	config& get_action() { return action_cfg_; }
+	// config& get_cfg() { return cfg_; }
+	const config& get_condition() const { return condition_cfg_; }
+	const config& get_range() const { return range_cfg_; }
+	const config& get_action() const { return action_cfg_; }
 	
-	std::string& name();
-	std::string& desc();
-	std::string& image();
-	int points();
-	int range();
+	const std::string& name() const { return name_str_; }
+	const std::string& desc() const { return desc_str_; }
+	const std::string& image() const { return image_str_; }
+	int points() const { return points_; }
+	int range() const { return range_; }
 	bool target_hero() const { return target_hero_; }
 	bool multitudinous() const { return multitudinous_; }
-	bool decree() const { return decree_; }
 	const std::string& mode() const { return mode_; }
 
+	bool bomb() const { return bomb_; }
 // attribute
 public:
 	size_t number_;
@@ -58,13 +58,13 @@ private:
 
 	bool target_hero_;
 	bool multitudinous_;
-	bool decree_;
 	std::string mode_;
 	std::string name_str_;
 	std::string desc_str_;
 	std::string image_str_;
 	int points_;
 	int range_;
+	bool bomb_;
 };
 
 class card_map
@@ -164,7 +164,6 @@ public:
 	const_iterator end() const;
 
 	size_t size() const { return map_vsize_; }
-	const std::vector<card*>& decrees() const { return decrees_; }
 	
 	void clear_map();
 
@@ -176,6 +175,8 @@ public:
 	enum ANIM_TYPE {ANIM_START = 0, ANIM_MIN = ANIM_START, ANIM_END, ANIM_MAX = ANIM_START};
 	unit_animation* animation(int type);
 
+	card& bomb() const;
+
 private:
 	std::map<int, unit_animation> animations_;
 
@@ -184,7 +185,7 @@ private:
 	card** map_;
 	size_t map_vsize_;
 
-	std::vector<card*> decrees_;
+	int bomb_;
 };
 
 // define allowed conversions.

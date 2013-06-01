@@ -703,103 +703,6 @@ msgid ""
 "advance."
 msgstr ""
 
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:171
-msgid "Recruiting and Recalling"
-msgstr ""
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:172
-msgid ""
-"Each side begins with one leader in their keep. At the start of any battle, "
-"and at times during it, you will need to recruit <ref>dst='..units' "
-"text='units'</ref> into your army. To recruit, you must have your leader "
-"(for instance, Konrad in the Heir to the Throne campaign) on the Keep square "
-"of a <ref>dst='terrain_castle' text='Castle'</ref>. Then you may recruit by "
-"either choosing Recruit from the menu or right-clicking on a hex and "
-"selecting <bold>text=Recruit</bold>. This brings up the recruit menu, which "
-"lists units available for recruitment, along with their gold cost. Click on "
-"a unit to see its statistics, then press the recruit button to recruit it."
-msgstr ""
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:174
-msgid ""
-"\n"
-"\n"
-"If you right-clicked on a castle hex and selected recruit, the new unit will "
-"appear in that square. Otherwise, it will appear in a free square near the "
-"keep. You may only recruit as many units as you have free hexes in your "
-"castle, and you cannot spend more gold than you actually have on recruiting."
-msgstr ""
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:176
-msgid ""
-"\n"
-"\n"
-"Recruited units come with two random <ref>dst='..traits_section' "
-"text='Traits'</ref> which modify their statistics."
-msgstr ""
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:178
-msgid ""
-"\n"
-"\n"
-"In later scenarios, you may also Recall survivors from earlier battles. "
-"Recalling costs a standard 20 gold and presents you with a list of all "
-"surviving units from previous scenarios."
-msgstr ""
-
-#. [topic]: id=recruit_and_recall
-#: data/core/help.cfg:180
-msgid ""
-"\n"
-"\n"
-"Units not only cost gold to Recruit or Recall, they also require money to "
-"support. See <ref>dst='income_and_upkeep' text='Income and Upkeep'</ref> for "
-"more information."
-msgstr ""
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:187
-msgid "Orbs"
-msgstr ""
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:188
-msgid ""
-"On top of the energy bar shown next to each unit of yours is an orb. For "
-"units you control, this orb is:"
-msgstr ""
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:189
-msgid "green if it hasn’t moved this turn,"
-msgstr ""
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:190
-msgid "yellow if it has moved, but could still move further or attack, or"
-msgstr ""
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:191
-msgid ""
-"red if it has finished its turn (might still be able to move or attack)."
-msgstr ""
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:192
-msgid "The orb is blue if the unit is an ally you do not control."
-msgstr ""
-
-#. [topic]: id=orbs
-#: data/core/help.cfg:193
-msgid "Enemy units have no orb on top of their energy bar."
-msgstr ""
-
 #. [topic]: id=hitpoints
 #: data/core/help.cfg:200
 msgid "Hitpoints and Experience"
@@ -1475,14 +1378,6 @@ msgstr ""
 msgid "Feral"
 msgstr ""
 
-#. [topic]: id=traits_feral
-#: data/core/help.cfg:409
-msgid ""
-"Dwellings of sentient beings are not easily used for cover by feral "
-"creatures of low intelligence. As a result, feral units receive a maximum of "
-"40% defense in any land-based village regardless of base terrain."
-msgstr ""
-
 #. [topic]: id=traits_loyal
 #: data/core/help.cfg:414
 msgid "Loyal"
@@ -1596,26 +1491,6 @@ msgid ""
 "Healthy units have 1 HP plus 1 HP per level more than usual and rest heal "
 "the usual 2 HP after each turn they did not fight. They also suffer a "
 "quarter less damage from poison."
-msgstr ""
-
-#. [topic]: id=traits_dim
-#: data/core/help.cfg:454
-msgid "Dim"
-msgstr ""
-
-#. [topic]: id=traits_dim
-#: data/core/help.cfg:455
-msgid ""
-"Units with trait Dim suffer a 20% increase in experience required to advance."
-msgstr ""
-
-#. [topic]: id=traits_dim
-#: data/core/help.cfg:457
-msgid ""
-"\n"
-"\n"
-"Dim is a trait all too common in goblins and other lesser species. There are "
-"reasons these species are lesser, and this is one of them."
 msgstr ""
 
 #. [topic]: id=traits_slow
@@ -3914,31 +3789,6 @@ msgstr ""
 msgid "Fights normally during unfavorable times of day/night"
 msgstr ""
 
-#. [trait]: id=feral
-#: data/core/macros/traits.cfg:190
-msgid "feral"
-msgstr ""
-
-#. [trait]: id=feral
-#: data/core/macros/traits.cfg:191
-msgid "female^feral"
-msgstr ""
-
-#. [trait]: id=feral
-#: data/core/macros/traits.cfg:192
-msgid "Receive only 40% defense in land-based villages"
-msgstr ""
-
-#. [trait]: id=weak
-#: data/core/macros/traits.cfg:208
-msgid "weak"
-msgstr ""
-
-#. [trait]: id=weak
-#: data/core/macros/traits.cfg:209
-msgid "female^weak"
-msgstr ""
-
 #. [trait]: id=slow
 #: data/core/macros/traits.cfg:226
 msgid "slow"
@@ -5640,6 +5490,9 @@ msgstr ""
 msgid "income"
 msgstr ""
 
+msgid "Technology income"
+msgstr ""
+
 msgid "Tactic"
 msgstr ""
 
@@ -6229,6 +6082,9 @@ msgstr ""
 
 #: src/dialogs.cpp:455 src/savegame.cpp:135
 msgid "%a %b %d %H:%M %Y"
+msgstr ""
+
+msgid "$d days"
 msgstr ""
 
 #: src/dialogs.cpp:470
@@ -7149,6 +7005,9 @@ msgid "You must have at least 1 gold piece to recall a unit"
 msgid_plural "You must have at least $cost gold pieces to recall a unit"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "There is $count vacant tactic. Do you really want to end your turn?"
+msgstr ""
 
 msgid ""
 "$city and other $cities cities have $heros low loyalty heros. If not "
@@ -9203,6 +9062,15 @@ msgstr ""
 msgid "Select a grid to place, or a troop to join"
 msgstr ""
 
+msgid "Select a grid to move at"
+msgstr ""
+
+msgid "Select a unit to action on"
+msgstr ""
+
+msgid "Select a grid to build on"
+msgstr ""
+
 #
 # weapon name
 #
@@ -9270,4 +9138,7 @@ msgid "Defeat all sides"
 msgstr ""
 
 msgid "No city you holded"
+msgstr ""
+
+msgid "Miss"
 msgstr ""

@@ -1,7 +1,7 @@
-/* $Id: string_utils.hpp 46186 2010-09-01 21:12:38Z silene $ */
+/* $Id: string_utils.hpp 56274 2013-02-10 18:59:33Z boucman $ */
 /*
    Copyright (C) 2003 by David White <dave@whitevine.net>
-   Copyright (C) 2005 - 2010 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
+   Copyright (C) 2005 - 2013 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,11 @@ class t_string;
 namespace utils {
 
 extern const std::string unicode_minus;
+extern const std::string unicode_en_dash;
+extern const std::string unicode_em_dash;
+extern const std::string unicode_figure_dash;
+extern const std::string unicode_multiplication_sign;
+extern const std::string unicode_bullet;
 
 bool isnewline(const char c);
 bool portable_isspace(const char c);
@@ -48,7 +53,7 @@ enum { REMOVE_EMPTY = 0x01,	/**< REMOVE_EMPTY : remove empty elements. */
 	  STRIP_SPACES  = 0x02	/**< STRIP_SPACES : strips leading and trailing blank spaces. */
 };
 
-std::vector< std::string > split(std::string const &val, char c = ',', int flags = REMOVE_EMPTY | STRIP_SPACES);
+std::vector< std::string > split(std::string const &val, const char c = ',', const int flags = REMOVE_EMPTY | STRIP_SPACES);
 
 /**
  * Splits a string based either on a separator where text within parenthesis
@@ -72,8 +77,40 @@ std::vector< std::string > split(std::string const &val, char c = ',', int flags
  */
 std::vector< std::string > parenthetical_split(std::string const &val,
 	const char separator = 0 , std::string const &left="(",
-	std::string const &right=")",int flags = REMOVE_EMPTY | STRIP_SPACES);
+	std::string const &right=")",const int flags = REMOVE_EMPTY | STRIP_SPACES);
 
+/**
+ * Similar to parenthetical_split, but also expands embedded square brackets.
+ * Separator must be specified and number of entries in each square bracket
+ * must match in each section.
+ * Leading zeros are preserved if specified between square brackets.
+ * An asterisk as in [a*n] indicates to expand 'a' n times
+ * 
+ * This is useful to expand animation WML code.
+ * Examples:
+ * square_parenthetical_split("a[1-3](1,[5,6,7]),b[8,9]",",") should return
+ * <"a1(1,5)","a2(1,6)","a3(1,7)","b8","b9">
+ * square_parenthetical_split("abc[07-10]") should return
+ * <"abc07","abc08","abc09","abc10">
+ * square_parenthetical_split("a[1,2]b[3-4]:c[5,6]") should return
+ * <"a1b3:c5","a2b4:c6">
+ * square_parenthetical_split("abc[3,1].png") should return
+ * <"abc3.png","abc2.png","abc1.png">
+ * square_parenthetical_split("abc[de,xyz]") should return
+ * <"abcde","abcxyz">
+ * square_parenthetical_split("abc[1*3]") should return
+ * <"abc1","abc1","abc1">
+ */
+std::vector< std::string > square_parenthetical_split(std::string const &val,
+	const char separator = ',' , std::string const &left="([",
+	std::string const &right=")]",const int flags = REMOVE_EMPTY | STRIP_SPACES);
+
+/**
+ * Generates a new string joining container items in a list.
+ *
+ * @param v A container with elements.
+ * @param s List delimiter.
+ */
 template <typename T>
 std::string join(T const &v, const std::string& s = ",")
 {
@@ -85,6 +122,32 @@ std::string join(T const &v, const std::string& s = ",")
         }
 
         return str.str();
+}
+
+/**
+ * Generates a new string containing a bullet list.
+ *
+ * List items are preceded by the indentation blanks, a bullet string and
+ * another blank; all but the last item are followed by a newline.
+ *
+ * @param v A container with elements.
+ * @param indent Number of indentation blanks.
+ * @param bullet The leading bullet string.
+ */
+template<typename T>
+std::string bullet_list(const T& v, size_t indent = 4, const std::string& bullet = unicode_bullet)
+{
+	std::ostringstream str;
+
+	for(typename T::const_iterator i = v.begin(); i != v.end(); ++i) {
+		if(i != v.begin()) {
+			str << '\n';
+		}
+
+		str << std::string(indent, ' ') << bullet << ' ' << *i;
+	}
+
+	return str.str();
 }
 
 /**
@@ -126,14 +189,31 @@ std::string unescape(const std::string &str);
 /** Remove whitespace from the front and back of the string 'str'. */
 std::string &strip(std::string &str);
 
+/** Remove whitespace from the back of the string 'str'. */
+std::string &strip_end(std::string &str);
+
 /** Convert no, false, off, 0, 0.0 to false, empty to def, and others to true */
 bool string_bool(const std::string& str,bool def=false);
 
-/** Convert into a signed value (using the Unicode "?" and +0 convention */
+/** Convert into a signed value (using the Unicode "−" and +0 convention */
 std::string signed_value(int val);
 
-/** Convert into a percentage (using the Unicode "?" and +0% convention */
+/** Sign with Unicode "−" if negative */
+std::string half_signed_value(int val);
+
+/** Convert into a percentage (using the Unicode "−" and +0% convention */
 inline std::string signed_percent(int val) {return signed_value(val) + "%";}
+
+/**
+ * Convert into a string with an SI-postfix.
+ *
+ * If the unit is to be translatable,
+ * a t_string should be passed as the third argument.
+ * _("unit_byte^B") is suggested as standard.
+ *
+ * There are no default values because they would not be translatable.
+ */
+std::string si_string(double input, bool base2, std::string unit);
 
 /**
  * Try to complete the last word of 'text' with the 'wordlist'.
@@ -228,6 +308,11 @@ utf8_string lowercase(const utf8_string&);
  * @param size         The size to truncate at.
  */
 void truncate_as_wstring(std::string& str, const size_t size);
+
+/**
+ * Truncates a string to a given utf-8 character count and then appends an ellipsis.
+ */
+void ellipsis_truncate(std::string& str, const size_t size);
 
 /** Compare tow utf8 string. */
 bool utf8str_compare(const std::string& str1, const std::string& str2);

@@ -282,27 +282,6 @@ void tvisual::br_2_tv(HWND hctl, HTREEITEM htvroot, terrain_builder::building_ru
 	return;
 }
 
-#define null_2_space(c) ((c) != '\0'? (c): '$')
-static std::string format_t_terrain(t_translation::t_terrain t)
-{
-	char text[MAX_PATH];
-	sprintf(text, "(%c%c%c%c, %c%c%c%c)", 
-		null_2_space((t.base & 0xff000000) >> 24), null_2_space((t.base & 0xff0000) >> 16), null_2_space((t.base & 0xff00) >> 8), null_2_space(t.base & 0xff),
-		null_2_space((t.overlay & 0xff000000) >> 24), null_2_space((t.overlay & 0xff0000) >> 16), null_2_space((t.overlay & 0xff00) >> 8), null_2_space(t.overlay & 0xff));
-
-	return std::string(text);
-}
-
-static std::string hex_t_terrain(t_translation::t_terrain t)
-{
-	char text[MAX_PATH];
-	sprintf(text, "(0x%02x%02x%02x%02x, 0x%02x%02x%02x%02x)", 
-		(t.base & 0xff000000) >> 24, (t.base & 0xff0000) >> 16, (t.base & 0xff00) >> 8, t.base & 0xff,
-		(t.overlay & 0xff000000) >> 24, (t.overlay & 0xff0000) >> 16, (t.overlay & 0xff00) >> 8, t.overlay & 0xff);
-
-	return std::string(text);
-}
-
 void tvisual::br_2_tv_fields(HWND hctl, HTREEITEM htvroot, const terrain_builder::building_rule& rule)
 {
 	char text[_MAX_PATH];

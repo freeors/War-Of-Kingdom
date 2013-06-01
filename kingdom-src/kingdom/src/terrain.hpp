@@ -1,6 +1,6 @@
-/* $Id: terrain.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: terrain.hpp 55983 2013-01-01 09:22:03Z mordante $ */
 /*
-   Copyright (C) 2003 - 2012 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2013 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -17,6 +17,7 @@
 
 #include "config.hpp"
 #include "terrain_translation.hpp"
+#include "util.hpp"
 
 class terrain_type
 {
@@ -43,10 +44,17 @@ public:
 	const t_translation::t_list& mvt_type() const { return mvt_type_; }
 	const t_translation::t_list& def_type() const { return def_type_; }
 	const t_translation::t_list& union_type() const { return union_type_; }
+	const std::string& aliasof() const { return aliasof_; }
 
 	bool is_nonnull() const { return  (number_ != t_translation::NONE_TERRAIN) &&
 		(number_ != t_translation::VOID_TERRAIN ); }
+	/// Returns the light (lawful) bonus for this terrain when the time of day
+	/// gives a @a base bonus.
+	int light_bonus(int base) const
+		{ return bounded_add(base, light_modification_, max_light_, min_light_); }
 	int light_modification() const { return light_modification_; }
+	int max_light() const { return max_light_; }
+	int min_light() const { return min_light_; }
 
 	int unit_height_adjust() const { return height_adjust_; }
 	double unit_submerge() const { return submerge_; }
@@ -96,6 +104,7 @@ private:
 	t_translation::t_list mvt_type_;
 	t_translation::t_list def_type_;
 	t_translation::t_list union_type_;
+	std::string aliasof_;
 
 	int height_adjust_;
 	bool height_adjust_set_;
@@ -103,7 +112,10 @@ private:
 	double submerge_;
 	bool submerge_set_;
 
-	int light_modification_, heals_;
+	int light_modification_;
+	int max_light_;
+	int min_light_;
+	int heals_;
 
 	t_string income_description_;
 	t_string income_description_ally_;

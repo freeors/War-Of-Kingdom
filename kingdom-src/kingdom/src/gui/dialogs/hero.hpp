@@ -25,7 +25,7 @@ class hero_map;
 namespace gui2 {
 
 class ttoggle_button;
-class tgrid;
+class tscrollbar_panel;
 
 /** Do we wish to show the button for the debug clock. */
 /**
@@ -70,7 +70,7 @@ private:
 
 	int current_page_;
 	std::map<int, ttoggle_button*> sheet_;
-	tgrid* page_grid_;
+	tscrollbar_panel* page_panel_;
 };
 
 } // namespace gui2

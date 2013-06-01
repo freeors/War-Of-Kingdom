@@ -329,6 +329,27 @@ msgstr "三级技法所"
 msgid "technology3 description"
 msgstr "三级技法所"
 
+#
+# tactic
+#
+msgid "tactic1"
+msgstr "一级计略府"
+
+msgid "tactic1 description"
+msgstr "一级计略府"
+
+msgid "tactic2"
+msgstr "二级计略府"
+
+msgid "tactic2 description"
+msgstr "二级计略府"
+
+msgid "tactic3"
+msgstr "三级计略府"
+
+msgid "tactic3 description"
+msgstr "三级计略府"
+
 # actor
 msgid "tower1"
 msgstr "箭塔"

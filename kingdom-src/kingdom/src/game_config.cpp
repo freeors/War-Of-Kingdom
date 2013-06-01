@@ -50,7 +50,7 @@ namespace game_config
 	int field_troop_increase_loyalty = 8;
 	int wander_loyalty_threshold = 112; // HERO_MAX_LOYALTY / 4 * 3
 	int move_loyalty_threshold = 130; // HERO_MAX_LOYALTY - 20
-	int ai_keep_loyalty_threshold = wander_loyalty_threshold + 8;
+	int ai_keep_loyalty_threshold = wander_loyalty_threshold + 13;
 	int ai_keep_hp_threshold = 50;
 	int max_keep_turns = 10;
 	int increase_feeling = 1024; // HERO_MAX_FEELING / 64. 64 turns will carry.
@@ -58,9 +58,8 @@ namespace game_config
 	int maximal_defeated_activity = 0;
 	int max_police = 100;
 	int min_tradable_police = max_police / 2;
-	int min_researchable_police = max_police / 2;
-	int default_decree_turns = 20;
 	int max_commoners = 5;
+	int active_tactic_slots = 2;
 
 	int default_human_level = 1;
 	int default_ai_level = 2;
@@ -70,6 +69,8 @@ namespace game_config
 
 	int max_tactic_point = 15;
 	int increase_tactic_point = 4;
+
+	int max_bomb_turns = 2;
 
 	int kill_xp(int level)
 	{
@@ -228,13 +229,11 @@ namespace game_config
 		field_troop_increase_loyalty = v["field_troop_increase_loyalty"].to_int(4);
 		wander_loyalty_threshold = v["wander_loyalty_threshold"].to_int(112); // HERO_MAX_LOYALTY / 4 * 3
 		move_loyalty_threshold = v["wander_loyalty_threshold"].to_int(130); // HERO_MAX_LOYALTY - 20
-		ai_keep_loyalty_threshold = wander_loyalty_threshold + 8;
+		ai_keep_loyalty_threshold = wander_loyalty_threshold + 13;
 		ai_keep_hp_threshold = v["ai_keep_hp_threshold"].to_int(50);
 		max_keep_turns = v["max_keep_turns"].to_int(10);
 		max_police = v["max_police"].to_int(100);
 		min_tradable_police = v["min_tradable_police"].to_int(max_police / 2);
-		min_researchable_police = v["min_researchable_police"].to_int(max_police / 2);
-		default_decree_turns = v["default_decree_turns"].to_int(20);
 		max_commoners = v["max_commoners"].to_int(5);
 
 		minimal_activity = v["minimal_activity"].to_int(175);

@@ -58,7 +58,6 @@ public:
 	unsigned get_state() const { return 0; }
 
 private:
-
 	/** Inherited from tcontrol. */
 	void impl_draw_background(surface& frame_buffer);
 	void impl_draw_background(

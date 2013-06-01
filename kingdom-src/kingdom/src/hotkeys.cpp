@@ -58,12 +58,16 @@ const struct {
 	{ hotkey::HOTKEY_SCREENSHOT, "screenshot", N_("Screenshot"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_MAP_SCREENSHOT, "mapscreenshot", N_("Map Screenshot"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_ACCELERATED, "accelerated", N_("Accelerated"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_INTERIOR_M, "interior_m", N_("Interior"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_INTERIOR, "interior", N_("Interior"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_TECHNOLOGY_TREE, "technologytree", N_("Technology tree"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_FINAL_BATTLE, "finalbattle", N_("Final Battle"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_EMPLOY, "employ", N_("Employ"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_LIST, "list", N_("List"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_SYSTEM, "system", N_("System"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_TACTIC0, "delete_tactic0", N_("System"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_TACTIC1, "delete_tactic1", N_("System"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_TACTIC2, "delete_tactic2", N_("System"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_BOMB, "bomb", N_("Bomb"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG, "rpg", N_("RPG"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG_DETAIL, "rpg-detail", N_("RPG Detail"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG_TREASURE, "assemble-treasure", N_("Assemble Treasure"), false, hotkey::SCOPE_GAME },
@@ -108,6 +112,13 @@ const struct {
 	{ hotkey::HOTKEY_REPLAY_SHOW_TEAM1, "replayshowteam1",
 	  N_("Team 1"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_REPLAY_SKIP_ANIMATION, "replayskipanimation", N_("Skip animation"), false, hotkey::SCOPE_GAME },
+
+	{ hotkey::HOTKEY_BUILD_KEEP, "build_c:keep", N_("Keep"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_BUILD_WALL, "build_c:wall", N_("Wall"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_INTERIOR_M, "interior_m", N_("Interior"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_BUILD_MARKET, "build_c:market", N_("Market"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_BUILD_TECHNOLOGY, "build_c:technology", N_("Technology"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_BUILD_TACTIC, "build_c:tactic", N_("Tactic"), false, hotkey::SCOPE_GAME },
 
 #ifndef DISABLE_EDITOR
 	{ hotkey::HOTKEY_EDITOR_QUIT_TO_DESKTOP, "editor-quit-to-desktop", N_("Quit to Desktop"), false, hotkey::SCOPE_EDITOR },
@@ -703,11 +714,22 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 		case HOTKEY_FINAL_BATTLE:
 			final_battle();
 			break;
+		case HOTKEY_EMPLOY:
+			employ();
+			break;
 		case HOTKEY_LIST:
 			list();
 			break;
 		case HOTKEY_SYSTEM:
 			system();
+			break;
+		case HOTKEY_TACTIC0:
+		case HOTKEY_TACTIC1:
+		case HOTKEY_TACTIC2:
+			remove_active_tactic(command - HOTKEY_TACTIC0);
+			break;
+		case HOTKEY_BOMB:
+			bomb();
 			break;
 		case HOTKEY_RPG:
 			show_rpg();

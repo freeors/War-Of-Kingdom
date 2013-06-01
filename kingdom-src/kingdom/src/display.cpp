@@ -45,6 +45,8 @@
 extern uint32_t total_draw;
 extern int total_draws;
 
+extern double tower_cost_ratio;
+
 #ifdef __SUNPRO_CC
 // GCC doesn't have hypot in cmath so include it for Sun Studio
 #include <math.h>
@@ -91,7 +93,7 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 	last_map_h_(0),
 	theme_(theme_cfg, screen_area()),
 	zoom_(default_zoom_),
-	builder_(new terrain_builder(level, map, theme_.border().tile_image)),
+	builder_(new terrain_builder(map/*, theme_.border().tile_image*/)),
 	minimap_(NULL),
 	minimap_location_(empty_rect),
 	redrawMinimap_(false),
@@ -672,12 +674,10 @@ void display::create_buttons()
 		if (!i->tooltip().empty()) {
 			tooltips::add_tooltip(loc, i->tooltip());
 		}
-		if(rects_overlap(b.location(),map_outside_area())) {
+		if (rects_overlap(b.location(), map_outside_area())) {
 			b.set_volatile(true);
 		}
 		if (b.id() == "rpg") {
-			// team& human = teams[controller.first_human_team()];
-			// b.set_rpg_image(human.leader());
 			b.set_rpg_image(rpg::h);
 		} else if (b.id() == "skip-animation") {
 			b.set_check((unit_display::player_number_ >= 0)? true: false);
@@ -692,6 +692,14 @@ void display::create_buttons()
 					b.hide();
 				}
 			}
+		} else if (b.id() == "tactic0") {
+			b.hide();
+		} else if (b.id() == "tactic1") {
+			b.hide();
+		} else if (b.id() == "tactic2") {
+			b.hide();
+		} else if (b.id() == "bomb") {
+			b.hide();
 		}
 
 		gui::button* b_prev = find_button(b.id());
@@ -1374,8 +1382,8 @@ void display::draw_text_in_hex(const map_location& loc,
 
 	const size_t font_sz = static_cast<size_t>(font_size * get_zoom_factor());
 
-	surface text_surf = font::get_rendered_text(text, font_sz, color);
-	surface back_surf = font::get_rendered_text(text, font_sz, font::BLACK_COLOR);
+	surface text_surf = font::get_rendered_text2(text, -1, font_sz, color);
+	surface back_surf = font::get_rendered_text2(text, -1, font_sz, font::BLACK_COLOR);
 	const int x = get_location_x(loc) - text_surf->w/2
 	              + static_cast<int>(x_in_hex* hex_size());
 	const int y = get_location_y(loc) - text_surf->h/2
@@ -1399,18 +1407,8 @@ void display::draw_text_in_hex2(const map_location& loc,
 
 	const size_t font_sz = static_cast<size_t>(font_size * get_zoom_factor());
 
-	surface text_surf;
-	surface back_surf;
-	if (true) {
-		text_surf = font::get_rendered_text(text, font_sz, color);
-		back_surf = font::get_rendered_text(text, font_sz, font::BLACK_COLOR);
-	} else {
-		help::tintegrate integrate(text, 800, 600, font_sz, color);
-		text_surf = integrate.get_surface();
-
-		help::tintegrate integrate_bg(text, 800, 600, font_sz, font::BLACK_COLOR);
-		back_surf = integrate_bg.get_surface();
-	}
+	surface	text_surf = font::get_rendered_text2(text, -1, font_sz, color);
+	surface	back_surf = font::get_rendered_text2(text, -1, font_sz, font::BLACK_COLOR);
 
 	for (int dy=-1; dy <= 1; ++dy) {
 		for (int dx=-1; dx <= 1; ++dx) {
@@ -1516,7 +1514,7 @@ void display::set_diagnostic(const std::string& msg)
 
 	if(msg != "") {
 		font::floating_label flabel(msg);
-		flabel.set_font_size(font::SIZE_PLUS);
+		flabel.set_font_size(font::SIZE_NORMAL);
 		flabel.set_color(font::YELLOW_COLOR);
 		flabel.set_position(300, 50);
 		flabel.set_clip_rect(map_outside_area());
@@ -1676,39 +1674,58 @@ void display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags,
 			break;
 		}
 	}
-	if (!hide && (m_adjusted->get_id() == "build" || m_adjusted->get_id() == "interior")) {
+	if (!hide) {
 		std::vector<team>& teams = *resources::teams;
 		play_controller& controller = *resources::controller;
 		team& current_team = teams[controller.current_side() - 1];
-		int cost_exponent = current_team.cost_exponent();
+		std::stringstream strstr;
 
-		const std::set<const unit_type*>& can_build = current_team.builds();
+		if (m_adjusted->get_id() == "build" || m_adjusted->get_id() == "interior") {
+			int cost_exponent = current_team.cost_exponent();
 
-		for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
-			gui::button* b = buttons_ctx_[i].buttons_[i2];
-			const unit_type* ut = NULL;
-			if (b->id() == "market") {
-				ut = unit_types.find_market();
-			} else if (b->id() == "technology") {
-				ut = unit_types.find_technology();
-			} else if (b->id() == "keep") {
-				ut = unit_types.find_keep();
-			} else if (b->id() == "wall") {
-				ut = unit_types.find_wall();
-			} else if (b->id() == "tower") {
-				ut = unit_types.find_tower();
+			const std::set<const unit_type*>& can_build = current_team.builds();
+
+			for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
+				gui::button* b = buttons_ctx_[i].buttons_[i2];
+				const unit_type* ut = unit_types.id_type(b->id());
+
+				if (!ut) {
+					if (b->id() == "interior_m") {
+						if (can_build.find(unit_types.find_market()) == can_build.end() && 
+							can_build.find(unit_types.find_technology()) == can_build.end() &&
+							can_build.find(unit_types.find_tactic()) == can_build.end()) {
+							flags &= ~ (1 << i2);
+						}
+					}
+					continue;
+				}
+				if (can_build.find(ut) == can_build.end()) {
+					flags &= ~ (1 << i2);
+				}
+				strstr.str("");
+				strstr << "buttons/" << b->id() << ".png";
+				int cost = ut->cost() * cost_exponent / 100;
+				if (tent::mode == TOWER_MODE) {
+					// increase wall's cost.
+					cost *= tower_cost_ratio;
+				}
+				b->set_image(strstr.str(), cost);
 			}
-			if (!ut) {
-				continue;
+		} else if (tent::mode == TOWER_MODE && m_adjusted->get_id() == "main") {
+			for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
+				if (!(flags & (1 << i2))) {
+					continue;
+				}
+				gui::button* b = buttons_ctx_[i].buttons_[i2];
+				if (b->id() == "build_m") {
+					strstr.str("");
+					strstr << "buttons/" << b->id() << ".png";
+					b->set_image(strstr.str(), current_team.may_build_count());
+				}
 			}
-			if (can_build.find(ut) == can_build.end()) {
-				flags &= ~ (1 << i2);
-			}
-			std::stringstream str;
-			str << "buttons/" << b->id() << ".png"; 
-			b->set_image(str.str(), ut->cost() * cost_exponent / 100);
 		}
 	}
+
 	for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
 		gui::button* b = buttons_ctx_[i].buttons_[i2];
 		if (flags & (1 << i2)) {
@@ -2551,8 +2568,8 @@ void display::draw_hex(const map_location& loc)
 		if (draw_coordinates_) {
 			int off_x = xpos + hex_size()/2;
 			int off_y = ypos + hex_size()/2;
-			// surface text = font::get_rendered_text(lexical_cast<std::string>(loc), font::SIZE_SMALL, font::NORMAL_COLOR);
-			surface text = font::get_rendered_text(lexical_cast<std::string>(map_location(loc.x - 1, loc.y - 1)), font::SIZE_SMALL, font::NORMAL_COLOR);
+			surface text = font::get_rendered_text2(lexical_cast<std::string>(map_location(loc.x - 1, loc.y - 1)), -1, font::SIZE_SMALL, font::NORMAL_COLOR);
+
 			surface bg = create_neutral_surface(text->w, text->h);
 			SDL_Rect bg_rect = create_rect(0, 0, text->w, text->h);
 			sdl_fill_rect(bg, &bg_rect, 0xaa000000);
@@ -2568,7 +2585,7 @@ void display::draw_hex(const map_location& loc)
 		if (draw_terrain_codes_ && (game_config::debug || !shrouded(loc))) {
 			int off_x = xpos + hex_size()/2;
 			int off_y = ypos + hex_size()/2;
-			surface text = font::get_rendered_text(lexical_cast<std::string>(get_map().get_terrain(loc)), font::SIZE_SMALL, font::NORMAL_COLOR);
+			surface text = font::get_rendered_text2(lexical_cast<std::string>(get_map().get_terrain(loc)), -1, font::SIZE_SMALL, font::NORMAL_COLOR);
 			surface bg = create_neutral_surface(text->w, text->h);
 			SDL_Rect bg_rect = create_rect(0, 0, text->w, text->h);
 			sdl_fill_rect(bg, &bg_rect, 0xaa000000);

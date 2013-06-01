@@ -291,6 +291,7 @@ public:
 
 	void set_hero_indicator(const hero& h);
 	void clear_hero_indicator();
+	void set_placable_indicator(const unit& u);
 	const std::set<map_location>& joinable_indicator() const { return joinable_indicator_; }
 	const std::set<map_location>& placable_indicator() const { return placable_indicator_; }
 

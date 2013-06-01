@@ -88,6 +88,9 @@ public:
 	void set_left_align() { left_align_ = true; } 
 
 	/** Inherited from tscrollbar_container. */
+	twidget* find_at(const tpoint& coordinate, const bool must_be_active);
+
+	/** Inherited from tscrollbar_container. */
 	tpoint adjust_content_size(const tpoint& size);
 	void adjust_offset(int& x_offset, int& y_offset);
 protected:

@@ -20,8 +20,7 @@
 #include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "display.hpp"
-#include "hero.hpp"
+#include "game_display.hpp"
 #include "card.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/dialogs/combo_box.hpp"
@@ -87,12 +86,12 @@ namespace gui2 {
  * @end{table}
  */
 
-	ttent::ttent(display& gui, hero_map& heros, card_map& cards, const config& campaign_config, hero& player_hero, const std::string& mode_id)
+ttent::ttent(hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero, const std::string& mode_id)
 	: chk_shroud_(register_bool("shroud", false))
 	, chk_fog_(register_bool("fog", false))
-	, gui_(gui)
 	, heros_(heros)
 	, cards_(cards)
+	, cfg_(cfg)
 	, mode_id_(mode_id)
 	, campaign_config_(campaign_config)
 	, card_table_(NULL)
@@ -106,7 +105,10 @@ namespace gui2 {
 	, player_hero_(&player_hero)
 	, city_map_()
 	, city_leader_map_()
+	, faction_list_()
+	, player_faction_(NULL)
 {
+	tent::reset();
 }
 
 ttent::~ttent()
@@ -140,22 +142,19 @@ void ttent::card_toggled(twidget* widget)
 	}
 }
 
-void ttent::pre_show(CVideo& /*video*/, twindow& window)
+void ttent::init_player_list(tlistbox& list, twindow& window)
 {
-	tlistbox* list = find_widget<tlistbox>(&window, "player_list", false, true);
-	std::string text;
-	config cfg_from_file;
-	rpg_mode_ = campaign_config_["mode"].str() == "rpg";
-
-	wml_config_from_file(game_config::path + "/xwml/campaigns/" + campaign_config_["id"].str() + ".bin", cfg_from_file);
-	const config& scenario = cfg_from_file.child("scenario");
-
 	if (player_hero_->valid() && rpg_mode_) {
 		rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * (heros_.size() + 1));
 		add_row_to_heros(list, player_hero_->number_, -1, -1, hero_stratum_citizen);
 	} else {
 		rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * heros_.size());
 	}
+
+	std::string text;
+	config cfg_from_file;
+	wml_config_from_file(game_config::path + "/xwml/campaigns/" + campaign_config_["id"].str() + ".bin", cfg_from_file);
+	const config& scenario = cfg_from_file.child("scenario");
 
 	std::map<int, int> mayor_map;
 	std::vector<std::string> v;
@@ -234,10 +233,64 @@ void ttent::pre_show(CVideo& /*video*/, twindow& window)
 		}
 	}
 
-	list->set_callback_value_change(dialog_callback<ttent, &ttent::player_selected>);
+	list.set_callback_value_change(dialog_callback<ttent, &ttent::player_selected>);
+
+	// disable all sort button
+	tbutton* button = find_widget<tbutton>(&window, "hero_name", false, true);
+	button->set_active(false);
+	button = find_widget<tbutton>(&window, "hero_stratum", false, true);
+	button->set_active(false);
+	button = find_widget<tbutton>(&window, "hero_side", false, true);
+	button->set_active(false);
+	button = find_widget<tbutton>(&window, "hero_city", false, true);
+	button->set_active(false);
+}
+
+void ttent::init_faction_list(tlistbox& list, twindow& window)
+{
+	faction_list_ = &list;
+
+	player_faction_ = find_widget<tbutton>(&window, "player_faction", false, true);
+	connect_signal_mouse_left_click(
+		*player_faction_
+		, boost::bind(
+			&ttent::player_faction
+			, this
+			, boost::ref(window)));
+
+
+	const config& cfg = cfg_.child("faction");
+	if (cfg) {
+		add_row_to_factions(*faction_list_, cfg);
+		tent::human_leader_number = cfg["leader"].to_int();
+		player_faction_->set_label(heros_[tent::human_leader_number].name());
+	}
+
+	// disable all sort button
+	tbutton* button = find_widget<tbutton>(&window, "hero_fresh", false, true);
+	button->set_active(false);
+	button = find_widget<tbutton>(&window, "hero_wander", false, true);
+	button->set_active(false);
+	button = find_widget<tbutton>(&window, "hero_city", false, true);
+	button->set_active(false);
+}
+
+void ttent::pre_show(CVideo& /*video*/, twindow& window)
+{
+	rpg_mode_ = campaign_config_["mode"].str() == "rpg";
+
+	tlistbox* list = find_widget<tlistbox>(&window, "player_list", false, false);
+	if (list) {
+		init_player_list(*list, window);
+		VALIDATE(list->get_item_count(), _("ttent::pre_show, there is no item in player_list!"));
+	}
+
+	list = find_widget<tlistbox>(&window, "faction_list", false, false);
+	if (list) {
+		init_faction_list(*list, window);
+	}
 
 	// card table
-	int player_size = campaign_config_.child_count("player");
 	size_t card_size = cards_.size();
 	if (!card_size) {
 		return;
@@ -248,7 +301,7 @@ void ttent::pre_show(CVideo& /*video*/, twindow& window)
 
 	int card_index = 0;
 	for (card_map::iterator c = cards_.begin(); c != cards_.end(); ++ c, card_index ++) {
-		if (c->decree() || !card_valid(c->mode())) {
+		if (!card_valid(c->mode()) || c->bomb()) {
 			checked_card_.insert(std::make_pair(card_index, false));
 			continue;
 		}
@@ -277,16 +330,6 @@ void ttent::pre_show(CVideo& /*video*/, twindow& window)
 		toggle->set_value(true);
 		checked_card_.insert(std::make_pair(card_index, true));
 	}
-
-	// disable all sort button
-	tbutton* button = find_widget<tbutton>(&window, "hero_name", false, true);
-	button->set_active(false);
-	button = find_widget<tbutton>(&window, "hero_stratum", false, true);
-	button->set_active(false);
-	button = find_widget<tbutton>(&window, "hero_side", false, true);
-	button->set_active(false);
-	button = find_widget<tbutton>(&window, "hero_city", false, true);
-	button->set_active(false);
 }
 
 void ttent::post_show(twindow& window)
@@ -309,8 +352,14 @@ config ttent::player() const
 {
 	config cfg;
 
-	cfg["leader"] = rows_mem_[player_].leader_;
-	cfg["hero"] = rows_mem_[player_].hero_;
+	if (tent::human_leader_number == HEROS_INVALID_NUMBER) {
+		cfg["leader"] = rows_mem_[player_].leader_;
+		cfg["hero"] = rows_mem_[player_].hero_;
+	} else {
+		cfg["leader"] = tent::human_leader_number;
+		cfg["hero"] = tent::human_leader_number;
+	}
+
 	if (rpg_mode_) {
 		cfg["city"] = rows_mem_[player_].city_;
 		cfg["stratum"] = rows_mem_[player_].stratum_;
@@ -329,7 +378,7 @@ std::vector<bool> ttent::checked_card() const
 	return ret;
 }
 
-void ttent::add_row_to_heros(tlistbox* list, int h, int leader, int city, int stratum)
+void ttent::add_row_to_heros(tlistbox& list, int h, int leader, int city, int stratum)
 {
 	// Add list item
 	string_map list_item;
@@ -364,10 +413,10 @@ void ttent::add_row_to_heros(tlistbox* list, int h, int leader, int city, int st
 	list_item["label"] = hero::stratum_str(stratum);
 	list_item_item.insert(std::make_pair("stratum", list_item));
 	
-	list->add_row(list_item_item);
+	list.add_row(list_item_item);
 
 	if (rpg_mode_) {
-		tgrid* grid_ptr = list->get_row_grid(mem_vsize_);
+		tgrid* grid_ptr = list.get_row_grid(mem_vsize_);
 		tcontrol* control = dynamic_cast<tcontrol*>(grid_ptr->find("icon", true));
 		control->set_visible(twidget::INVISIBLE);
 	}
@@ -376,6 +425,67 @@ void ttent::add_row_to_heros(tlistbox* list, int h, int leader, int city, int st
 	rows_mem_[mem_vsize_].leader_ = leader;
 	rows_mem_[mem_vsize_].city_ = city;
 	rows_mem_[mem_vsize_ ++].stratum_ = stratum;
+}
+
+void ttent::add_row_to_factions(tlistbox& list, const config& cfg)
+{
+	// Add list item
+	string_map list_item;
+	std::map<std::string, string_map> list_item_item;
+
+	int number = cfg["leader"].to_int();
+	list_item["label"] = heros_[number].image();
+	list_item_item.insert(std::make_pair("icon", list_item));
+	
+	const config& art_cfg = cfg.child("artifical");
+	std::vector<std::string> vstr = utils::split(art_cfg["service_heros"].str());
+	list_item["label"] = lexical_cast_default<std::string>(vstr.size());
+	list_item_item.insert(std::make_pair("fresh", list_item));
+
+	vstr = utils::split(art_cfg["wander_heros"].str());
+	list_item["label"] = lexical_cast_default<std::string>(vstr.size());
+	list_item_item.insert(std::make_pair("wander", list_item));
+
+	number = art_cfg["heros_army"].to_int();
+	list_item["label"] = heros_[number].name();
+	list_item_item.insert(std::make_pair("city", list_item));
+
+	list.add_row(list_item_item);
+}
+
+void ttent::player_faction(twindow& window)
+{
+	// The possible eras to play
+	std::vector<std::string> items;
+	std::map<int, tval_str> factions_map;
+	int actived_index = 0;
+
+	const config::const_child_itors& factions = cfg_.child_range("faction");
+	int index = 0;
+	BOOST_FOREACH (const config &cfg, factions) {
+		int number = cfg["leader"].to_int();
+		factions_map.insert(std::make_pair(index ++, tval_str(number, heros_[number].name())));
+	}
+
+	for (std::map<int, tval_str>::iterator it = factions_map.begin(); it != factions_map.end(); ++ it) {
+		items.push_back(it->second.str);
+		if (tent::human_leader_number == it->second.val) {
+			actived_index = std::distance(factions_map.begin(), it);
+		}
+	}
+	
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(gui().video());
+
+	int selected = dlg.selected_index();
+	if (selected == actived_index) {
+		return;
+	}
+	tent::human_leader_number = factions_map.find(selected)->second.val;
+
+	player_faction_->set_label(heros_[tent::human_leader_number].name());
+	faction_list_->remove_row(0);
+	add_row_to_factions(*faction_list_, cfg_.child("faction", selected));
 }
 
 } // namespace gui2

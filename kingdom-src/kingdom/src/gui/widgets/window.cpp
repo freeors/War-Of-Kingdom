@@ -39,6 +39,7 @@
 #ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
 #include "gui/widgets/debug.hpp"
 #endif
+#include "gui/widgets/scrollbar_panel.hpp"
 #include <preferences.hpp>
 #include "preferences_display.hpp"
 #include "video.hpp"
@@ -303,6 +304,7 @@ twindow::twindow(CVideo& video,
 	, w_(w)
 	, h_(h)
 	, alternate_index_(-1)
+	, keep_rect_(::create_rect(-1, -1, -1, -1))
 	, tooltip_(tooltip)
 	, helptip_(helptip)
 	, click_dismiss_(false)
@@ -896,10 +898,9 @@ std::vector<std::vector<twidget*> >& twindow::dirty_list()
 	return dirty_list_;
 }
 
-void twindow::set_maximum_size(int w, int h)
+void twindow::set_keep_rect(int x, int y, int w, int h)
 { 
-	maximum_width_ = w;
-	maximum_height_ = h;
+	keep_rect_ = ::create_rect(x, y, w, h);
 }
 
 void twindow::undraw()
@@ -916,13 +917,13 @@ void twindow::undraw()
 twindow::tinvalidate_layout_blocker::tinvalidate_layout_blocker(twindow& window)
 	: window_(window)
 {
-	assert(!window_.invalidate_layout_blocked_);
+	VALIDATE(!window_.invalidate_layout_blocked_, "tinvalidate_layout_block, (1)reenter!");
 	window_.invalidate_layout_blocked_ = true;
 }
 
 twindow::tinvalidate_layout_blocker::~tinvalidate_layout_blocker()
 {
-	assert(window_.invalidate_layout_blocked_);
+	VALIDATE(window_.invalidate_layout_blocked_, "tinvalidate_layout_block, (2)reenter!");
 	window_.invalidate_layout_blocked_ = false;
 }
 
@@ -1001,17 +1002,27 @@ void twindow::layout()
 	variables_.add("volatile_width", variant(settings::screen_width));
 	variables_.add("volatile_height", variant(settings::screen_height));
 
-	const int maximum_width = automatic_placement_
+	int maximum_width;
+	 if (keep_rect_.x != -1) {
+		maximum_width = keep_rect_.w;
+	} else {
+		maximum_width = automatic_placement_
 			?  maximum_width_
 				? std::min(maximum_width_, settings::screen_width)
 				: settings::screen_width
 			: w_(variables_);
+	}
 
-	const int maximum_height = automatic_placement_
+	int maximum_height;
+	if (keep_rect_.x != -1) {
+		maximum_height = keep_rect_.h;
+	} else {
+		maximum_height = automatic_placement_
 			? maximum_height_
 				? std::min(maximum_height_, settings::screen_height)
 				: settings::screen_height
 			: h_(variables_);
+	}
 
 	/***** Handle click dismiss status. *****/
 	tbutton* click_dismiss_button = NULL;
@@ -1117,7 +1128,13 @@ void twindow::layout()
 
 	tpoint origin(0, 0);
 
-	if (automatic_placement_) {
+	if (keep_rect_.x != -1) {
+		origin.x = keep_rect_.x;
+		origin.y = keep_rect_.y;
+		size.x = keep_rect_.w;
+		size.y = keep_rect_.h;
+
+	} else if (automatic_placement_) {
 		switch (horizontal_placement_) {
 			case tgrid::HORIZONTAL_ALIGN_LEFT :
 				// Do nothing
@@ -1429,6 +1446,9 @@ void twindow::alternate_uh(twidget* holder, int index)
 				lg.id, lg.fixed_width, lg.fixed_height, true);
 	}
 
+	// keyboard focus maybe in delete control, set keyboard_focus_ to null.
+	// keyboard_capture(NULL);
+
 	if (definition_->alternate_items[index].row) {
 		tlistbox* table = dynamic_cast<tlistbox*>(holder);
 
@@ -1438,17 +1458,22 @@ void twindow::alternate_uh(twidget* holder, int index)
 		tgrid* grid_ptr = new tgrid();
 		definition_->alternate_items[index].header->build(grid_ptr);
 		grid_ptr->set_id("_header_grid");
-		twidget* widget = table->content_grid()->swap_child("_header_grid", grid_ptr, true);
+		twidget* widget = table->content_grid()->swap_child("_header_grid", grid_ptr, true, this);
 		VALIDATE(widget, "original grid cannot find table_header id");
 		delete widget;
 	} else {
-		tgrid* g = dynamic_cast<tgrid*>(holder);
+		tscrollbar_panel* panel = dynamic_cast<tscrollbar_panel*>(holder);
 
+		if (alternate_index_ >= 0 && keep_rect_.x == -1) {
+			// from a valid page to another page.
+			set_keep_rect(get_x(), get_y(), get_width(), get_height());
+			panel->set_best_size(gui2::tpoint(panel->get_width(), panel->get_height()));
+		}
 		// _grid
 		tgrid* grid_ptr = new tgrid();
 		definition_->alternate_items[index].header->build(grid_ptr);
 		grid_ptr->set_id("_grid");
-		twidget* widget = g->swap_child("_grid", grid_ptr, false);
+		twidget* widget = panel->content_grid()->swap_child("_grid", grid_ptr, false, this);
 		VALIDATE(widget, "original grid cannot find _grid id");
 		delete widget;
 	}
@@ -1457,23 +1482,20 @@ void twindow::alternate_uh(twidget* holder, int index)
 void twindow::alternate_bh(twidget* holder, int index)
 {
 	if (definition_->alternate_items[index].row) {
-		tlistbox* table = dynamic_cast<tlistbox*>(holder);
+		if (holder) {
+			tlistbox* table = dynamic_cast<tlistbox*>(holder);
 
-		table->layout_init(true);
-		layout_linked_widgets();
-		// content_grid_ is changed, get new all size, include content_grid_'s size.
-		// immediate, tlistbox::layout_children will call, must make sure content_grid's size is right.
-		table->get_best_size();
+			table->layout_init(true);
+			layout_linked_widgets();
+			// content_grid_ is changed, get new all size, include content_grid_'s size.
+			// immediate, tlistbox::layout_children will call, must make sure content_grid's size is right.
+			table->get_best_size();
+		}
 	} else {
-		tgrid* g = dynamic_cast<tgrid*>(holder);
-
-		g->layout_init(true);
-		layout_linked_widgets();
-		
-		// FIXME: Find a better way to change the grid content
-		// g->place(g->get_origin(), g->get_best_size());
-		// g->set_dirty();
-		invalidate_layout();
+		if (holder) {
+			// layout window.
+			invalidate_layout();
+		}
 	}
 
 	// remember this index

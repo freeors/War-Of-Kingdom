@@ -448,7 +448,7 @@ wml_building_rules_from_file只是将近用了4秒
 	}	\
 } while (0)
 
-void wml_building_rules_to_file(const std::string& fname, terrain_builder::building_rule* rules, uint32_t rules_size)
+void wml_building_rules_to_file(const std::string& fname, terrain_builder::building_rule* rules, uint32_t rules_size, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
 {
 	posix_file_t						fp = INVALID_FILE;
 	uint32_t							max_str_len, bytertd, u32n, idx, size, size1; 
@@ -463,7 +463,14 @@ void wml_building_rules_to_file(const std::string& fname, terrain_builder::build
 
 	// max str len
 	max_str_len = 63;
-	posix_fseek(fp, sizeof(max_str_len), 0);
+	// 0--15
+	u32n = mmioFOURCC('X', 'W', 'M', 'L');
+	posix_fwrite(fp, &u32n, 4, bytertd);
+	posix_fwrite(fp, &nfiles, 4, bytertd);
+	posix_fwrite(fp, &sum_size, 4, bytertd);
+	posix_fwrite(fp, &modified, 4, bytertd);
+
+	posix_fseek(fp, 16 + sizeof(max_str_len), 0);
 	// rules size
 	posix_fwrite(fp, &rules_size, sizeof(rules_size), bytertd);
 
@@ -628,7 +635,7 @@ void wml_building_rules_to_file(const std::string& fname, terrain_builder::build
 	}
 
 	// 更新最大的存储区大小
-	posix_fseek(fp, 0, 0);
+	posix_fseek(fp, 16, 0);
 	posix_fwrite(fp, &max_str_len, sizeof(max_str_len), bytertd);
 
 	posix_fclose(fp);
@@ -650,7 +657,7 @@ terrain_builder::building_rule* wml_building_rules_from_file(const std::string& 
 	uint32_t datalen, max_str_len, rules_size, fsizelow, fsizehigh, bytertd, idx, len, size, size1, idx1, size2, idx2;
 	uint8_t* data = NULL, *strbuf = NULL, *variations = NULL;
 	uint8_t* rdpos;
-	terrain_builder::building_rule * rules;
+	terrain_builder::building_rule * rules = NULL;
 	map_location loc;
 	tmp_pair tmppair;
 
@@ -666,11 +673,15 @@ terrain_builder::building_rule* wml_building_rules_from_file(const std::string& 
 		return NULL;
 	}
 	posix_fsize(fp, fsizelow, fsizehigh);
-	posix_fseek(fp, 0, 0);
+	if (fsizelow <= 16 + sizeof(max_str_len) + sizeof(rules_size)) {
+		posix_fclose(fp);
+		return NULL;
+	}
+	posix_fseek(fp, 16, 0);
 	posix_fread(fp, &max_str_len, sizeof(max_str_len), bytertd);
 	posix_fread(fp, &rules_size, sizeof(rules_size), bytertd);
 
-	datalen = fsizelow - sizeof(max_str_len) - sizeof(rules_size);
+	datalen = fsizelow - 16 - sizeof(max_str_len) - sizeof(rules_size);
 	data = (uint8_t *)malloc(datalen);
 	strbuf = (uint8_t *)malloc(max_str_len + 1);
 	variations = (uint8_t *)malloc(max_str_len + 1);
@@ -865,9 +876,6 @@ terrain_builder::building_rule* wml_building_rules_from_file(const std::string& 
 		stop = SDL_GetTicks();
 		posix_print("), expend %u ms\n", stop - start);
 */
-#ifdef _KINGDOM_EXE
-		// builder->load_images(pbr);
-#endif // _KINGDOM_EXE
 		rule_index ++;
 	}
 

@@ -36,7 +36,6 @@
 #include "map.hpp"
 #include "savegame.hpp"
 #include "unit_id.hpp"
-#include "hero.hpp"
 #include "replay.hpp"
 #include "wml_separators.hpp"
 #include "statistics.hpp"
@@ -77,7 +76,6 @@ namespace gui2 {
  */
 
 extern void check_response(network::connection res, const config& data);
-extern void level_to_gamestate(config& level, command_pool& replay_data, game_state& state);
 extern std::string get_color_string(int id);
 
 REGISTER_DIALOG(mp_side_wait)

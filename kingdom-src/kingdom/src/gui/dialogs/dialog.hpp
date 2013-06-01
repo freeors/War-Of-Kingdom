@@ -160,7 +160,7 @@ public:
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
 	int get_retval() const { return retval_; }
-
+	
 	void set_always_save_fields(const bool always_save_fields)
 	{
 		always_save_fields_ = always_save_fields;
@@ -393,6 +393,14 @@ public:
 	virtual ~button_action() {}
 
 	virtual int button_pressed(int menu_selection) = 0;
+};
+
+struct tval_str {
+	tval_str(int v, const std::string& s)
+		: val(v), str(s)
+	{}
+	int val;
+	std::string str;
 };
 
 } // namespace gui2
