@@ -18,6 +18,7 @@
 #include "gui/dialogs/lobby_player_info.hpp"
 #include "gui/dialogs/field.hpp"
 #include "gui/dialogs/helper.hpp"
+#include "gui/dialogs/message.hpp"
 
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/timer.hpp"
@@ -38,7 +39,6 @@
 #include "gui/widgets/toggle_panel.hpp"
 #include "gui/widgets/tree_view_node.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
@@ -50,6 +50,7 @@
 #include "sound.hpp"
 
 #include <time.h>
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 static lg::log_domain log_network("network");
@@ -221,6 +222,9 @@ void tlobby_main::add_chat_room_message_received(const std::string& room,
 		}
 		if (speaker == "server") {
 			notify_mode = NOTIFY_SERVER_MESSAGE;
+			if (message == "Incorrect password.") {
+				gui2::show_message(disp_.video(), _("Checksum dismatch"), _("You or creator has modified resource file, cannot join!"));
+			}
 		} else if (utils::word_match(message, preferences::login())) {
 			notify_mode = NOTIFY_OWN_NICK;
 		} else if (preferences::is_friend(speaker)) {
@@ -386,14 +390,14 @@ void add_tooltip_data(std::map<std::string, string_map>& map,
 void modify_grid_with_data(tgrid* grid, const std::map<std::string, string_map>& map)
 {
 	typedef std::map<std::string, string_map> strstrmap;
-	foreach (const strstrmap::value_type v, map) {
+	BOOST_FOREACH (const strstrmap::value_type v, map) {
 		const std::string& key = v.first;
 		const string_map& strmap = v.second;
 		twidget* w = grid->find(key, false);
 		if (w == NULL) continue;
 		tcontrol* c = dynamic_cast<tcontrol*>(w);
 		if (c == NULL) continue;
-		foreach (const string_map::value_type& vv, strmap) {
+		BOOST_FOREACH (const string_map::value_type& vv, strmap) {
 			if (vv.first == "label") {
 				c->set_label(vv.second);
 			} else if (vv.first == "tooltip") {
@@ -588,7 +592,6 @@ std::map<std::string, string_map> tlobby_main::make_game_row_data(const game_inf
 	add_label_data(data, "xp_text", game.xp);
 	add_label_data(data, "vision_text", game.vision);
 	add_label_data(data, "time_limit_text", game.time_limit);
-	add_label_data(data, "status", game.status);
 	if (game.observers) {
 		add_label_data(data, "observer_icon", "misc/eye.png");
 		add_tooltip_data(data, "observer_icon", _("Observers allowed"));
@@ -618,10 +621,6 @@ std::map<std::string, string_map> tlobby_main::make_game_row_data(const game_inf
 
 void tlobby_main::adjust_game_row_contents(const game_info& game, int idx, tgrid* grid)
 {
-	find_widget<tcontrol>(grid, "name", false).set_use_markup(true);
-
-	find_widget<tcontrol>(grid, "status", false).set_use_markup(true);
-
 	ttoggle_panel& row_panel =
 			find_widget<ttoggle_panel>(grid, "panel", false);
 
@@ -638,7 +637,6 @@ void tlobby_main::adjust_game_row_contents(const game_info& game, int idx, tgrid
 	set_visible_if_exists(grid, "needs_password", game.password_required);
 	set_visible_if_exists(grid, "reloaded", game.reloaded);
 	set_visible_if_exists(grid, "started", game.started);
-	set_visible_if_exists(grid, "use_map_settings", game.use_map_settings);
 	set_visible_if_exists(grid, "no_era", !game.have_era);
 
 
@@ -701,7 +699,7 @@ void tlobby_main::update_playerlist()
 	player_list_.other_games.tree->clear();
 	player_list_.other_rooms.tree->clear();
 
-	foreach (user_info* userptr, lobby_info_.users_sorted())
+	BOOST_FOREACH (user_info* userptr, lobby_info_.users_sorted())
 	{
 		user_info& user = *userptr;
 		tsub_player_list* target_list(NULL);
@@ -932,7 +930,7 @@ tlobby_chat_window* tlobby_main::whisper_window_open(const std::string& name, bo
 
 tlobby_chat_window* tlobby_main::search_create_window(const std::string& name, bool whisper, bool open_new)
 {
-	foreach (tlobby_chat_window& t, open_windows_) {
+	BOOST_FOREACH (tlobby_chat_window& t, open_windows_) {
 		if (t.name == name && t.whisper == whisper) return &t;
 	}
 	if (open_new) {
@@ -984,7 +982,6 @@ void tlobby_main::increment_waiting_whsipers(const std::string& name)
 			tgrid* grid = roomlistbox_->get_row_grid(t - &open_windows_[0]);
 			//this breaks for some reason
 			//tlabel& label = grid->get_widget<tlabel>("room", false);
-			//label.set_use_markup(true);
 			//label.set_label(colorize("<" + t->name + ">", "red"));
 			find_widget<timage>(grid, "pending_messages", false)
 					.set_visible(twidget::VISIBLE);
@@ -1003,7 +1000,6 @@ void tlobby_main::increment_waiting_messages(const std::string& room)
 			tgrid* grid = roomlistbox_->get_row_grid(idx);
 			//this breaks for some reason
 			//tlabel& label = grid->get_widget<tlabel>("room", false);
-			//label.set_use_markup(true);
 			//label.set_label(colorize(t->name, "red"));
 			find_widget<timage>(grid, "pending_messages", false)
 					.set_visible(twidget::VISIBLE);
@@ -1309,7 +1305,7 @@ void tlobby_main::process_room_query_response(const config& data)
 			//TODO: this should really open a nice join room dialog instead
 			std::stringstream ss;
 			ss << "Rooms:";
-			foreach (const config& r, rooms.child_range("room")) {
+			BOOST_FOREACH (const config& r, rooms.child_range("room")) {
 				ss << " " << r["name"];
 			}
 			add_active_window_message("server", ss.str());
@@ -1398,19 +1394,8 @@ bool tlobby_main::do_game_join(int idx, bool observe)
 	join["id"] = lexical_cast<std::string>(game.id);
 	join["observe"] = observe;
 	if (join && !observe && game.password_required) {
-		std::string password;
-/*
-		//TODO replace with a gui2 dialog
-		const int res = gui::show_dialog(disp_, NULL, _("Password Required"),
-		          _("Joining this game requires a password."),
-		          gui::OK_CANCEL, NULL, NULL, _("Password: "), &password);
-		if (res != 0) {
-			return false;
-		}
-*/
-		password = game_config::checksum;
-
-		if(!password.empty()) {
+		std::string password = game_config::checksum;
+		if (!password.empty()) {
 			join["password"] = password;
 		}
 	}
@@ -1486,7 +1471,7 @@ void tlobby_main::chat_input_keypress_callback(
 		const std::vector<user_info>& match_infos = lobby_info_.users();
 		std::vector<std::string> matches;
 
-		foreach(const user_info& ui, match_infos) {
+		BOOST_FOREACH (const user_info& ui, match_infos) {
 			if(ui.name != preferences::login()) {
 				matches.push_back(ui.name);
 			}

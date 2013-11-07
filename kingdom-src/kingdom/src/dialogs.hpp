@@ -50,10 +50,36 @@ void show_objectives(const config &level, const team& t);
 void show_unit_description(const unit_type &t);
 void show_unit_description(const unit &u);
 
-network::connection network_send_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num=0);
-network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num=0);
-network::connection network_connect_dialog(display& disp, const std::string& msg, const std::string& hostname, int port);
+network::connection network_connect_dialog(display& disp, const std::string& msg, const std::string& hostname, int port, bool quiet = false);
+void network_receive_dialog(display& disp, const std::string& msg, std::vector<char>& buf, network::connection connection_num);
+network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num = 0);
+void network_send_dialog(display& disp, const std::string& msg, const char* buf, int len, network::connection connection_num);
 
 } //end namespace dialogs
+
+namespace network_asio {
+
+class connection
+{
+public:
+	connection(network::connection connection_num);
+
+	virtual void poll() = 0;
+	void cancel() { done_ = true; }
+
+	// upload
+	size_t bytes_written();
+	size_t bytes_to_write();
+	// download
+	size_t bytes_read();
+	size_t bytes_to_read();
+
+	bool done() const { return done_; }
+protected:
+	network::connection connection_num_;
+	bool done_;
+};
+
+}
 
 #endif

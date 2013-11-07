@@ -19,7 +19,6 @@
 #include "display.hpp"
 #include "filesystem.hpp"
 #include "filechooser.hpp"
-#include "foreach.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
 #include "gui/dialogs/simple_item_selector.hpp"

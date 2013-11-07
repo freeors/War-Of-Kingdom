@@ -57,10 +57,7 @@
 		+ " [" + window.id() + "] " + __func__
 #define LOG_IMPL_HEADER LOG_IMPL_SCOPE_HEADER + ':'
 
-int dbg_output;
 extern bool exit_app;
-
-extern map_location selected_loc;
 
 namespace gui2{
 
@@ -507,6 +504,8 @@ twindow::tretval twindow::get_retval_by_id(const std::string& id)
 		return static_cast<tretval>(ttitle_screen::CHANGE_LANGUAGE);
 	} else if(id == "preferences") {
 		return static_cast<tretval>(ttitle_screen::EDIT_PREFERENCES);
+	} else if(id == "shop") {
+		return static_cast<tretval>(ttitle_screen::INAPP_PURCHASE);
 
 	// default if nothing matched
 	} else {
@@ -636,7 +635,6 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 
 	try {
 		// Start our loop drawing will happen here as well.
-		dbg_output = 1;
 		for (status_ = (status_ == REQUEST_CLOSE)? status_: SHOWING; status_ != REQUEST_CLOSE; ) {
 			// process installed callback if valid, to allow e.g. network polling
 			events::pump();
@@ -733,11 +731,6 @@ void twindow::draw()
 		}
 	}
 
-	uint32_t end_layout = SDL_GetTicks();
-	if (dbg_output) {
-		posix_print("twindow(%p)::draw, layout, need_layout_: %s, used time: %u ms\n", this, need_layout_org? "true": "false", end_layout - start);
-	}
-
 	if(dirty_list_.empty()) {
 		if(preferences::use_color_cursors() || sunset_) {
 			surface frame_buffer = get_video_surface();
@@ -754,10 +747,6 @@ void twindow::draw()
 					update_rect(r);
 				}
 			}
-		}
-		uint32_t end_draw = SDL_GetTicks();
-		if (dbg_output) {
-			posix_print("twindow(%p)::draw, draw, dirty_list_ empty, used time: %u ms\n", this, end_draw - end_layout);
 		}
 		return;
 	}
@@ -877,10 +866,6 @@ void twindow::draw()
 		}
 
 		update_rect(dirty_rect);
-	}
-	uint32_t end_draw = SDL_GetTicks();
-	if (dbg_output) {
-		posix_print("twindow(%p)::draw, draw, used time: %u ms\n", this, end_draw - end_layout);
 	}
 
 	dirty_list_.clear();
@@ -1045,14 +1030,7 @@ void twindow::layout()
 	layout_init(true);
 	generate_dot_file("layout_init", LAYOUT);
 
-	uint32_t end_layout_init = SDL_GetTicks();
-	posix_print("twindow::layout, layout_init, used time: %u\n", end_layout_init - start);
-
-
 	layout_linked_widgets();
-
-	uint32_t end_layout_linked_widgets = SDL_GetTicks();
-	posix_print("twindow::layout, layout_linked_widgets, used time: %u\n", end_layout_linked_widgets - end_layout_init);
 
 	try {
 		twindow_implementation::layout(*this, maximum_width, maximum_height);
@@ -1073,9 +1051,6 @@ void twindow::layout()
 		throw twml_exception(_("Failed to show a dialog, "
 				"which doesn't fit on the screen."), sstr.str());
 	}
-
-	uint32_t end_layout = SDL_GetTicks();
-	posix_print("twindow::layout, layout, used time: %u\n", end_layout - end_layout_linked_widgets);
 
 	/****** Validate click dismiss status. *****/
 	if(click_dismiss_ && disable_click_dismiss()) {
@@ -1117,9 +1092,6 @@ void twindow::layout()
 						"which doesn't fit on the screen."), sstr.str());
 		}
 	}
-
-	uint32_t end_dismiss_status = SDL_GetTicks();
-	posix_print("twindow::layout, dismiss status, used time: %u\n", end_dismiss_status - end_layout);
 
 	/***** Get the best location for the window *****/
 	tpoint size = get_best_size();
@@ -1168,30 +1140,6 @@ void twindow::layout()
 		size.x = w_(variables_);
 		size.y = h_(variables_);
 
-		const game_display* gui = resources::screen;
-		int xpos = 0, ypos = 0;
-		if (gui) {
-			const map_location loc = selected_loc;
-
-			if (loc.valid()) {
-				xpos = gui->get_location_x(loc);
-				ypos = gui->get_location_y(loc);
-			}
-
-			int reserved_gap = 3 * gui->hex_size();
-
-			if (xpos >= size.x + reserved_gap) {
-				xpos = xpos - size.x - reserved_gap;
-			} else {
-				xpos = xpos + gui->hex_size() + reserved_gap;
-			}
-			const SDL_Rect& map_area = gui->map_outside_area();
-			ypos = map_area.x;
-		}
-
-		variables_.add("xpos", variant(xpos));
-		variables_.add("ypos", variant(ypos));
-
 		variables_.add("width", variant(size.x));
 		variables_.add("height", variant(size.y));
 
@@ -1201,8 +1149,6 @@ void twindow::layout()
 
 	/***** Set the window size *****/
 	place(origin, size);
-	uint32_t stop = SDL_GetTicks();
-	posix_print("twindow::layout, place, used time: %u\n", stop - end_dismiss_status);
 
 	generate_dot_file("layout_finished", LAYOUT);
 	need_layout_ = false;
@@ -1342,8 +1288,6 @@ void twindow_implementation::layout(twindow& window,
 	 */
 
 	try {
-		uint32_t start = SDL_GetTicks();
-
 		tpoint size = window.get_best_size();
 
 		DBG_GUI_L << LOG_IMPL_HEADER
@@ -1356,9 +1300,6 @@ void twindow_implementation::layout(twindow& window,
 			DBG_GUI_L << LOG_IMPL_HEADER << " Result: Fits, nothing to do.\n";
 			return;
 		}
-
-		uint32_t end_get_best_size = SDL_GetTicks();
-		posix_print("twindow_implementation, get_best_size, used time: %u ms\n", end_get_best_size - start);
 
 		if(size.x > static_cast<int>(maximum_width)) {
 			window.reduce_width(maximum_width);
@@ -1376,9 +1317,6 @@ void twindow_implementation::layout(twindow& window,
 					<< " Status: Resize width succeeded.\n";
 		}
 
-		uint32_t end_reduce_width = SDL_GetTicks();
-		posix_print("twindow_implementation, reduce_width, used time: %u ms\n", end_reduce_width - end_get_best_size);
-
 		if(size.y > static_cast<int>(maximum_height)) {
 			window.reduce_height(maximum_height);
 
@@ -1393,9 +1331,6 @@ void twindow_implementation::layout(twindow& window,
 			DBG_GUI_L << LOG_IMPL_HEADER
 					<< " Status: Resize height succeeded.\n";
 		}
-
-		uint32_t end_reduce_height = SDL_GetTicks();
-		posix_print("twindow_implementation, reduce_height, used time: %u ms\n", end_reduce_height - end_reduce_width);
 
 		assert(size.x <= static_cast<int>(maximum_width)
 				&& size.y <= static_cast<int>(maximum_height));
@@ -1489,6 +1424,7 @@ void twindow::alternate_bh(twidget* holder, int index)
 			layout_linked_widgets();
 			// content_grid_ is changed, get new all size, include content_grid_'s size.
 			// immediate, tlistbox::layout_children will call, must make sure content_grid's size is right.
+			table->invalidate_layout(); // 
 			table->get_best_size();
 		}
 	} else {

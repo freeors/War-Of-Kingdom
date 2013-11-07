@@ -36,10 +36,6 @@ void tpopup::show(CVideo& video
 		, const bool allow_interaction
 		, const unsigned /*auto_close_time*/)
 {
-	if(video.faked()) {
-		return;
-	}
-
 	hide();
 
 	window_ = build_window(video);

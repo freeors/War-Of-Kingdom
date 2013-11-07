@@ -34,7 +34,6 @@
 Growl_Delegate growl_obj;
 #endif
 
-#include "foreach.hpp"
 #include "halo.hpp"
 #include "log.hpp"
 #include "map.hpp"
@@ -50,6 +49,8 @@ Growl_Delegate growl_obj;
 #include "gettext.hpp"
 #include "builder.hpp"
 #include "play_controller.hpp"
+
+#include <boost/foreach.hpp>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -129,7 +130,7 @@ void game_display::taccess_list::reload(game_display& gui, menu_button_map* acce
 					// 部队不可移动, 直接追加在末尾
 					btn = tmp[i] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, u->master().image(), gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, i, NULL, loc.w, loc.h);
 					btn->cookie_ = const_cast<unit*>(u);
-					btn->set_image(u->master().image(), u->level(), true, u->has_mayor());
+					btn->set_image(u->master().image(), u->level(), true, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
 				} else {
 					// 部队可移动, 追加可移动末尾
 					if (actable_count_ < i - 2) {
@@ -137,7 +138,7 @@ void game_display::taccess_list::reload(game_display& gui, menu_button_map* acce
 					}
 					btn = tmp[actable_count_ + 2] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, (*itor2)->master().image(), gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, actable_count_ + 2, NULL, loc.w, loc.h);
 					btn->cookie_ = const_cast<unit*>(u);
-					btn->set_image(u->master().image(), u->level(), false, u->has_mayor());
+					btn->set_image(u->master().image(), u->level(), false, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
 					actable_count_ ++;
 				}
 				i ++;
@@ -158,7 +159,11 @@ void game_display::taccess_list::reload(game_display& gui, menu_button_map* acce
 				btn->cookie_ = h;
 				if (h->utype_ != HEROS_NO_UTYPE) {
 					const unit_type* ut = unit_types.keytype(h->utype_);
-					btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+					if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
+						btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+					} else {
+						btn->set_image(h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
+					}
 				} else {
 					btn->set_image(h->image(), -1, false);
 				}
@@ -228,15 +233,19 @@ void game_display::taccess_list::insert(game_display& gui, menu_button_map* acce
 	if (type_ == TROOP) {
 		if (!unit_can_move(*u)) {
 			// 1. 城市被攻占, 城外部队可能并入了本阵营, 这时那些部队应该被灰色
-			btn->set_image(image, u->level(), true, u->has_mayor());
+			btn->set_image(image, u->level(), true, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
 		} else {
-			btn->set_image(image, u->level(), false, u->has_mayor());
+			btn->set_image(image, u->level(), false, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
 			actable_count_ ++;
 		}
 	} else if (type_ == HERO) {
 		if (h->utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h->utype_);
-			btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+			if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
+				btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+			} else {
+				btn->set_image(h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
+			}
 		} else {
 			btn->set_image(h->image(), -1, false);
 		}
@@ -352,11 +361,15 @@ void game_display::taccess_list::disable(game_display& gui, menu_button_map* acc
 	}
 	// 修改图像参数, 向未尾增加该图像
 	if (type_ == TROOP) {
-		btn->set_image(u->master().image(), u->level(), true, u->has_mayor());
+		btn->set_image(u->master().image(), u->level(), true, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
 	} else if (type_ == HERO) {
 		if (h->utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h->utype_);
-			btn->set_image(h->image(), ut->cost(), true, false, ut->icon());
+			if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
+				btn->set_image(h->image(), ut->cost(), true, false, ut->icon());
+			} else {
+				btn->set_image(h->image(), ut->cost(), true, false, ut->icon(), "misc/formation.png");
+			}
 		} else {
 			btn->set_image(h->image(), -1, true);
 		}
@@ -412,11 +425,15 @@ void game_display::taccess_list::enable(game_display& gui, menu_button_map* acce
 
 	// 修改图像参数, 向头部增加该图像
 	if (type_ == TROOP) {
-		btn->set_image(u->master().image(), u->level(), false, u->has_mayor());
+		btn->set_image(u->master().image(), u->level(), false, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
 	} else if (type_ == HERO) {
 		if (h->utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h->utype_);
-			btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+			if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
+				btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+			} else {
+				btn->set_image(h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
+			}
 		} else {
 			btn->set_image(h->image(), -1, false);
 		}
@@ -438,6 +455,7 @@ game_display::game_display(unit_map& units, play_controller* controller, CVideo&
 		attack_indicator_dst_(),
 		selectable_indicator_(),
 		tactic_indicator_(),
+		formation_indicator_(),
 		interior_indicator_(),
 		alternatable_indicator_(),
 		energy_bar_rects_(),
@@ -463,7 +481,8 @@ game_display::game_display(unit_map& units, play_controller* controller, CVideo&
 		big_flags_cache_(),
 		temp_unit_(NULL),
 		expedite_city_(NULL),
-		screen_anim_(NULL),
+		screen_anims_(),
+		pass_scenario_anim_id_(-1),
 		terrain_dirty_(true),
 		disctrict_(),
 		disctrict_old_(),
@@ -1130,7 +1149,7 @@ void game_display::scroll_to_leader(unit_map& units, int side, SCROLL_TYPE scrol
 		// YogiHH: I can't see why we need another key_handler here,
 		// therefore I will comment it out :
 		/*
-		const hotkey::basic_handler key_events_handler(gui_);
+		const hotkey::basic_handler key_events_handler(gui_)
 		*/
 		scroll_to_tile(leader->get_location(), scroll_type, true, force);
 	}
@@ -1138,11 +1157,41 @@ void game_display::scroll_to_leader(unit_map& units, int side, SCROLL_TYPE scrol
 
 void game_display::pre_draw(rect_of_hexes& hexes) 
 {
-	// 形成大地图窗口内所有单位列表
+	// generate all units in current win.
 	if (resources::units) {
 		draw_area_unit_size_ = units_.units_from_rect(draw_area_unit_, draw_area_rect_);
 	} else {
 		draw_area_unit_size_ = 0;
+	}
+
+	// generate possible tactical formation.
+	std::vector<tformation> formations;
+	std::set<const unit*> uncalculated;
+	for (size_t i = 0; i < draw_area_unit_size_; i ++) {
+		unit* u = draw_area_unit_[i];
+		if (u->is_artifical() || u->is_commoner()) {
+			continue;
+		}
+		u->set_formation_flag(unit::FORMATION_NONE);
+		uncalculated.insert(u);
+	}
+
+	calculate_formations(teams_, units_, activeTeam_ + 1, uncalculated, &draw_area_rect_, false, formations);
+
+	// generate tactical formation's animation
+	for (std::vector<tformation>::iterator it = formations.begin(); it != formations.end(); ++ it) {
+		tformation& formation = *it;
+		int flag2 = 0;
+		for (std::map<int, unit*>::iterator it2 = formation.adjacent_.begin(); it2 != formation.adjacent_.end(); ++ it2) {
+			unit* adj = it2->second;
+			adj->set_formation_flag(unit::FORMATION_SECOND);
+			flag2 |= 1 << it2->first;
+		}
+		if (!formation.disable_) {
+			formation.u_->set_formation_flag(unit::FORMATION_MASTER + (formation.profile_->index() + 1) * 100, flag2);
+		} else {
+			formation.u_->set_formation_flag(unit::FORMATION_MASTER_DISABLE + (formation.profile_->index() + 1) * 100, flag2);
+		}
 	}
 
 	process_reachmap_changes();
@@ -1335,7 +1384,11 @@ void game_display::draw_hex(const map_location& loc)
 		if (attack_indicator_dst_.find(loc) != attack_indicator_dst_.end()) {
 			// Draw the attack direction indicator
 			if (alternatable_indicator_.find(loc) == alternatable_indicator_.end()) {
-				drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/attack-indicator-dst.png", image::SCALED_TO_HEX));
+				if (!formation_indicator_.second.valid()) {
+					drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/attack-indicator-dst.png", image::SCALED_TO_HEX));
+				} else {
+					drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/attack-marker.png", image::SCALED_TO_HEX));
+				}
 			} else if (!preferences::default_move()) {
 				drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/selectable-indicator.png", image::SCALED_TO_HEX));
 			}
@@ -1378,7 +1431,7 @@ void game_display::draw_hex(const map_location& loc)
 
 	// Linger overlay unconditionally otherwise it might give glitches
 	// so it's drawn over the shroud and fog.
-	if(game_mode_ != RUNNING) {
+	if (game_mode_ != RUNNING) {
 		static const image::locator linger(game_config::images::linger);
 		drawing_buffer_add(LAYER_LINGER_OVERLAY, loc, xpos, ypos,
 			image::get_image(linger, image::TOD_COLORED));
@@ -1390,9 +1443,14 @@ void game_display::draw_hex(const map_location& loc)
 				image::get_image(selected, image::SCALED_TO_HEX));
 	}
 
-	// Show def% and turn to reach info
-	if (!is_shrouded && on_map && !units_.city_from_loc(loc)) {
-		draw_movement_info(loc);
+	// Draw the fomration indicator
+	if (on_map && loc == formation_indicator_.second) {
+		drawing_buffer_add(LAYER_ATTACK_INDICATOR, loc, xpos, ypos, image::get_image("misc/formation-indicator.png", image::SCALED_TO_HEX));
+	} else {
+		// Show def% and turn to reach info
+		if (!is_shrouded && on_map && !units_.city_from_loc(loc)) {
+			draw_movement_info(loc);
+		}
 	}
 
 	if(game_config::debug) {
@@ -1409,7 +1467,7 @@ void game_display::redraw_units(const std::vector<map_location>& invalidated_uni
 {
 	// Units can overlap multiple hexes, so we need
 	// to redraw them last and in the good sequence.
-	foreach (map_location loc, invalidated_unit_locations) {
+	BOOST_FOREACH (map_location loc, invalidated_unit_locations) {
 		if (expedite_city_ && expedite_city_->get_location() == loc) {
 			expedite_city_->redraw_unit();
 			//simulate_delay += 1;
@@ -1426,9 +1484,9 @@ void game_display::redraw_units(const std::vector<map_location>& invalidated_uni
 			temp_unit_->redraw_unit();
 		}
 	}
-	if (screen_anim_) {
-		screen_anim_->update_last_draw_time();
-		screen_anim_->redraw(frame_parameters::null_param);
+	for (std::map<int, unit_animation>::iterator it = screen_anims_.begin(); it != screen_anims_.end(); ++ it) {
+		it->second.update_last_draw_time();
+		it->second.redraw();
 	}
 }
 
@@ -1626,7 +1684,7 @@ void game_display::draw_sidebar()
 
 		invalidateUnit_ = false;
 
-		if (resources::controller->is_replaying() || !events::commands_disabled) {
+		if (resources::controller->is_recovering(currentTeam_ + 1) || !events::commands_disabled) {
 #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
 			unit_map::const_iterator selected_it = find_visible_unit(selectedHex_, teams_[currentTeam_]);
 			if (selected_it.valid() && !fogged(selectedHex_)) {
@@ -1953,19 +2011,14 @@ surface game_display::get_flag(const map_location& loc)
 		return surface(NULL);
 	}
 
-	if (side) {
-		if (fogged(loc) && teams_[currentTeam_].is_enemy(side)) {
-			side = 0;
-		}
-	} else {
-		for (size_t i = 0; i != teams_.size(); ++i) {
-			if (teams_[i].owns_village(loc) && (!fogged(loc) || !teams_[currentTeam_].is_enemy(i+1))) {
-				side = i + 1;
-				break;
-			}
+	if (!side) {
+		side = player_teams::village_owner(loc) + 1;
+		unit_map::const_iterator it = units_.find(loc, false);
+		if (it != units_.end()) {
+			side = it->side();
 		}
 	}
-	if (side) {
+	if (side && (!fogged(loc) || teams_[currentTeam_].is_enemy(side))) {
 		flags_[side - 1].update_last_draw_time();
 		const image::locator &image_flag = animate_map_? flags_[side - 1].get_current_frame() : flags_[side - 1].get_first_frame();
 		return image::get_image(image_flag, image::TOD_COLORED);
@@ -2019,7 +2072,10 @@ surface game_display::get_big_flag(const map_location& loc)
 					// must use a copy. or result to overlapped!
 					surface flag_surf = make_neutral_surface(surf);
 
-					std::string& surname = teams_[i].leader()->surname();
+					std::string surname = "--";
+					if (teams_[i].side() != team::empty_side_) {
+						surname = teams_[i].leader()->surname();
+					}
 					size_t chars = utf8str_len(surname);
 
 					surface text_surf;
@@ -2099,8 +2155,8 @@ surface game_display::get_big_flag(const map_location& loc)
 							ystart = 10;
 						}
 					}
-					text_surf = font::get_rendered_text2(teams_[i].leader()->surname(), -1, font_size, font::BIGMAP_COLOR);
-					back_surf = font::get_rendered_text2(teams_[i].leader()->surname(), -1, font_size, font::BLACK_COLOR);
+					text_surf = font::get_rendered_text2(surname, -1, font_size, font::BIGMAP_COLOR);
+					back_surf = font::get_rendered_text2(surname, -1, font_size, font::BLACK_COLOR);
 
 					SDL_Rect dst;
 					for (int dy=-1; dy <= 1; ++dy) {
@@ -2136,7 +2192,7 @@ void game_display::highlight_reach(const pathfind::paths &paths_list)
 void game_display::highlight_another_reach(const pathfind::paths &paths_list)
 {
 	// Fold endpoints of routes into reachability map.
-	foreach (const pathfind::paths::step &dest, paths_list.destinations) {
+	BOOST_FOREACH (const pathfind::paths::step &dest, paths_list.destinations) {
 		reach_map_[dest.curr]++;
 	}
 	reach_map_changed_ = true;
@@ -2294,9 +2350,14 @@ const SDL_Rect& game_display::calculate_energy_bar(surface surf)
 	return calculate_energy_bar(surf);
 }
 
-void game_display::invalidate_animations_location(const map_location& loc) {
+void game_display::invalidate_animations_location(const map_location& loc) 
+{
 	if (get_map().is_village(loc)) {
-		const int owner = player_teams::village_owner(loc);
+		int owner = player_teams::village_owner(loc);
+		unit_map::const_iterator it = units_.find(loc, false);
+		if (it != units_.end()) {
+			owner = it->side() - 1;
+		}
 		if (owner >= 0 && flags_[owner].need_update()
 		&& (!fogged(loc) || !teams_[currentTeam_].is_enemy(owner+1))) {
 			invalidate(loc);
@@ -2317,8 +2378,8 @@ void game_display::invalidate_animations()
 		get_builder().rebuild_terrain();
 		terrain_dirty_ = false;
 	}
-	if (screen_anim_) {
-		screen_anim_->invalidate(frame_parameters::null_param);
+	for (std::map<int, unit_animation>::iterator it = screen_anims_.begin(); it != screen_anims_.end(); ++ it) {
+		it->second.invalidate();
 	}
 	if (expedite_city_) {
 		expedite_city_->refresh();
@@ -2408,6 +2469,9 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 	invalidate(tactic_indicator_);
 	tactic_indicator_ = map_location();
 
+	invalidate(formation_indicator_.second);
+	formation_indicator_ = std::make_pair(map_location(), map_location());
+
 	invalidate(interior_indicator_);
 	interior_indicator_ = map_location();
 
@@ -2437,6 +2501,23 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 		if (browse) {
 			return;
 		}
+
+		tformation formation;
+		if (tent::mode != TOWER_MODE) {
+			formation = calculate_attack_formation(teams_, units_, *attack, false);
+		}
+		if (formation.valid() && !formation.disable_) {
+			for (int adj = attack->adjacent_size_ - 1; adj >= 0; adj --) {
+				const unit* that = units_.find_unit(attack->adjacent_[adj]);
+				if (that && !current_team.is_enemy(that->side()) && !that->base()) {
+					// don't use vacant, it will can moveable.
+					formation_indicator_ = std::make_pair(attack->get_location(), attack->adjacent_[adj]);
+					invalidate(formation_indicator_.second);
+					break;
+				}
+			}
+		}
+
 		std::vector<attack_type>& attacks = attack->attacks();
 		for (std::vector<attack_type>::const_iterator at_it = attacks.begin(); at_it != attacks.end(); ++ at_it, i ++) {
 			if (tent::mode == TOWER_MODE) {
@@ -2452,6 +2533,14 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 				// other to range: 3
 				range = 3;
 			}
+			each_dst.clear();
+
+			if (!at_it->attack_weight()) {
+				// although cannot use, place null item into.
+				attack_indicator_each_dst_.push_back(std::pair<int, std::set<map_location> >(range, each_dst));
+				continue;
+			}
+			
 			// 检查此种range在此次是否已遇到过
 			find = false;
 			for (std::vector<range_locs_pair>::iterator itor = attack_indicator_each_dst_.begin(); itor != attack_indicator_each_dst_.end(); ++ itor) {
@@ -2485,8 +2574,19 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 						other = units_.find(relative_loc, false);
 					}
 					if (!current_team.fogged(relative_loc) && current_team.is_enemy(other->side()) && !other->invisible(relative_loc)) {
-						each_dst.insert(relative_loc);
-						attack_indicator_dst_.insert(relative_loc);
+						bool insert_to = false;
+						if (!formation.valid() || formation.disable_) {
+							insert_to = true;
+						} else {
+							const tformation_profile& profile = *formation.profile_;
+							if (attack->weapon(profile.arms_type_, profile.arms_range_id_) >= 0 && profile.arms_range_ == range - 1) {
+								insert_to = true;
+							}
+						}
+						if (insert_to) {
+							each_dst.insert(relative_loc);
+							attack_indicator_dst_.insert(relative_loc);
+						}
 
 						const unit& enemy = *other;
 						if (enemy.wall() && teams_[currentTeam_].land_enemy_wall_ && attack->land_wall()) {
@@ -2540,7 +2640,7 @@ void game_display::set_hero_indicator(const hero& h)
 			
 			const map_location loc = map_location(x_off, y_off);
 			const t_translation::t_terrain terrain = map.get_terrain(loc);
-			const unit* u = find_unit(units_, loc);
+			const unit* u = units_.find_unit(loc);
 			if (u && !u->base()) {
 				if (!u->is_artifical() && !u->third().valid() && h.side_ + 1 == u->side()) {
 					joinable_indicator_.insert(loc);
@@ -2581,7 +2681,7 @@ void game_display::set_placable_indicator(const unit& u)
 			
 			const map_location loc = map_location(x_off, y_off);
 			const t_translation::t_terrain terrain = map.get_terrain(loc);
-			const unit* find = find_unit(units_, loc);
+			const unit* find = units_.find_unit(loc);
 			if (x_off >=3 && (!find || find->base())) {
 				const unit_type* ut = u.packee_type();
 				const unit_movement_type& mtype = ut->movement_type();
@@ -2726,9 +2826,45 @@ void game_display::clear_build_indicator()
 	set_build_indicator(NULL);
 }
 
-void game_display::set_screen_anim(unit_animation* anim)
+unit_animation& game_display::insert_screen_anim_pass_scenario(const unit_animation& anim)
 {
-	screen_anim_ = anim;
+	pass_scenario_anim_id_ = insert_screen_anim(anim);
+	return screen_anims_.find(pass_scenario_anim_id_)->second;
+}
+
+unit_animation& game_display::screen_anim(int id)
+{
+	return screen_anims_.find(id)->second;
+}
+
+int game_display::insert_screen_anim(const unit_animation& anim)
+{
+	int id = -1;
+	for (std::map<int, unit_animation>::reverse_iterator it = screen_anims_.rbegin(); it != screen_anims_.rend(); ++ it) {
+		id = it->first;
+		break;
+	}
+	id ++;
+	screen_anims_.insert(std::make_pair(id, anim));
+	return id;
+}
+
+void game_display::erase_screen_anim(int id)
+{
+	std::map<int, unit_animation>::iterator find = screen_anims_.find(id);
+	VALIDATE(find != screen_anims_.end(), "game_display::erase_screen_anim, cannot find 'id' screen anim!");
+
+	if (id != pass_scenario_anim_id_) {
+		find->second.invalidate();
+	} else {
+		invalidate_all();
+	}
+
+	screen_anims_.erase(find);
+	if (id == pass_scenario_anim_id_) {
+		pass_scenario_anim_id_ = -1;
+	}
+	draw();
 }
 
 void game_display::set_terrain_dirty()
@@ -2781,7 +2917,7 @@ void game_display::parse_team_overlays()
 {
 	const team& curr_team = teams_[playing_team()];
 	const team& prev_team = teams_[playing_team()-1 < teams_.size() ? playing_team()-1 : teams_.size()-1];
-	foreach (const game_display::overlay_map::value_type i, overlays_) {
+	BOOST_FOREACH (const game_display::overlay_map::value_type i, overlays_) {
 		const overlay& ov = i.second;
 		if (!ov.team_name.empty() &&
 			((ov.team_name.find(curr_team.team_name()) + 1) != 0) !=
@@ -3173,7 +3309,7 @@ void game_display::prune_chat_messages(bool remove_all)
 		chat_messages_.erase(chat_messages_.begin());
 	}
 
-	foreach (const chat_message &cm, chat_messages_) {
+	BOOST_FOREACH (const chat_message &cm, chat_messages_) {
 		font::move_floating_label(cm.speaker_handle, 0, - movement);
 		font::move_floating_label(cm.handle, 0, - movement);
 	}

@@ -33,13 +33,15 @@ class team;
 class tscenario_env 
 {
 public:
-	tscenario_env(int _duel, int _maximal_defeated_activity)
+	explicit tscenario_env(int _duel, int _maximal_defeated_activity, bool _vip)
 		: duel(_duel)
 		, maximal_defeated_activity(_maximal_defeated_activity)
+		, vip(_vip)
 	{}
 
 	int duel;
 	int maximal_defeated_activity;
+	bool vip;
 };
 
 class move_unit_spectator {
@@ -185,7 +187,7 @@ struct tactic_fields {
 	int32_t from_x_;	\
 	int32_t from_y_;	\
 	int32_t facing_;	\
-	int32_t keep_turns_;	\
+	int32_t food_;	\
 	int32_t block_turns_;	\
 	int32_t hide_turns_;	\
 	int32_t alert_turns_;	\
@@ -208,6 +210,13 @@ struct unit_fields_t
 	UNIT_FIELDS;
 };
 
+class dont_wander_lock
+{
+public:
+	dont_wander_lock();
+	~dont_wander_lock();
+};
+
 typedef std::pair<const unit_type*, std::vector<const hero*> > type_heros_pair;
 
 #define unit_feature_val(i)		((feature_[(i) >> 2] >> (((i) % 4) << 1)) & 0x3)
@@ -227,11 +236,8 @@ public:
 	 */
 	static void clear_status_caches();
 	static bool draw_desc_;
-	static bool ignore_pack_;
-
-	// if allocate static, iOS may be not align 4! 
-	// use dynamic alloc by alloc.
-	static unsigned char* savegame_cache_;
+	static bool ignore_pack;
+	static bool dont_wander;
 
 	friend struct unit_movement_resetter;
 	// Copy constructor
@@ -245,8 +251,7 @@ public:
 	unit& operator=(const unit&);
 
 	/** Advances this unit to another type */
-	void advance_to(const unit_type *t, bool use_traits = false,
-		game_state *state = 0);
+	virtual void advance_to(const unit_type *t, bool use_traits = false, game_state *state = 0);
 	const std::vector<std::string>& advances_to() const;
 
 	void pack_to(const unit_type* t);
@@ -272,11 +277,16 @@ public:
 
 	/** The unit name for display */
 	const t_string &name() const;
+	void regenerate_name();
 
 	/** The unit's profile */
 	std::string profile() const;
 	/** Information about the unit -- a detailed description of it */
 	t_string unit_description() const;
+
+	bool can_formation_master() const;
+	bool can_formation_attack() const;
+	bool formation_attack_enable() const;
 
 	int hitpoints() const { return hit_points_; }
 	int max_hitpoints() const { return max_hit_points_; }
@@ -289,6 +299,7 @@ public:
 	 * Adds 'xp' points to the units experience; returns true if advancement
 	 * should occur
 	 */
+	bool can_increase_experience() const;
 	virtual void get_experience(const increase_xp::ublock& ub, int xp, bool master = true, bool second = true, bool third = true);
 
 	/** Colors for the unit's hitpoints. */
@@ -304,8 +315,10 @@ public:
 	fixed_t alpha() const { return alpha_; }
 
 	bool is_commoner() const { return commoner_; }
+	bool is_path_along_road() const { return path_along_road_; }
 	bool is_artifical() const { return artifical_; } 
 	bool is_city() const { return artifical_ && can_reside_; } 
+	bool is_soldier() const { return hero::is_soldier(master_->number_); }
 	int cityno() const { return cityno_; } 
 	void set_cityno(int new_cityno);
 	void calculate_5fields();
@@ -313,13 +326,15 @@ public:
 	void adjust();
 	std::string form_tip(bool gui2 = false) const;
 	std::string form_tiny_tip() const;
-	std::string form_gui2_tip() const;
 	std::string form_recruit_tip() const;
 	// it's better name is can_recruit(), but back-compitable used
 	bool can_recruits() const { return can_recruit_; }
 	bool can_reside() const { return can_reside_; }
 	bool base() const { return base_; }
 	bool wall() const { return wall_; }
+	bool fort() const { return fort_; }
+	bool transport() const { return transport_; }
+	bool can_stand(const unit& mover) const;
 	bool land_wall() const { return land_wall_; }
 	bool walk_wall() const { return walk_wall_; }
 	int arms() const { return arms_; }
@@ -352,6 +367,7 @@ public:
 	void refresh();
 
 	void new_turn_tactics();
+	void terminate_noble(bool show_message) const;
 
 	void set_hitpoints(int hitpoints) { hit_points_ = hitpoints; }
 	bool take_hit(int damage) { hit_points_ -= damage; return hit_points_ <= 0; }
@@ -362,6 +378,7 @@ public:
 	void increase_loyalty(int inc);
 	void set_loyalty(int level, bool fixed = false);
 	bool has_less_loyalty(int loyalty, const hero& leader);
+	bool consider_loyalty() const;
 
 	void increase_feeling(int inc);
 
@@ -371,7 +388,7 @@ public:
 	bool get_state(const std::string& state) const;
 	void set_state(const std::string &state, bool value);
 	enum state_t { STATE_MIN = 0, STATE_SLOWED = STATE_MIN, STATE_BROKEN, STATE_POISONED, STATE_PETRIFIED,
-		STATE_UNCOVERED, STATE_NOT_MOVED, STATE_LEGERITIED, STATE_BLOCKED, STATE_COUNT, STATE_UNKNOWN = -1 };
+		STATE_UNCOVERED, STATE_FORMATION_ATTACKED, STATE_LEGERITIED, STATE_BLOCKED, STATE_COUNT, STATE_UNKNOWN = -1 };
 	void set_state(state_t state, bool value);
 	bool get_state(state_t state) const;
 	static state_t get_known_boolean_state_id(const std::string &state);
@@ -388,7 +405,10 @@ public:
 
 	const std::vector<attack_type>& attacks() const { return attacks_; }
 	std::vector<attack_type>& attacks() { return attacks_; }
-
+	int weapon(const std::string& id, const std::string& range = null_str) const;
+	int weapon(const std::set<std::string>& id, const std::string& range = null_str) const;
+	bool has_attack_weapon() const;
+	
 	int damage_from(const attack_type& attack,bool attacker,const map_location& loc) const { return resistance_against(attack,attacker,loc); }
 
 	/** A SDL surface, ready for display for place where we need a still-image of the unit. */
@@ -421,10 +441,18 @@ public:
 	int turn_experience() const { return turn_experience_; }
 
 	int technology_income() const;
+	int food_income() const;
 	int miss_income() const;
 
-	int keep_turns() const { return keep_turns_; }
-	void set_keep_turns(int turns) { keep_turns_ = turns; }
+	int food() const { return food_; }
+	void set_food(int food) { food_ = food; }
+	void increase_food(int addend);
+	bool lack_of_food() const;
+	int max_food() const;
+	int value_consider_food(int value, bool decrease = true) const;
+	void input_food(unit& tactician);
+	bool consider_food() const;
+
 	int block_turns() const { return block_turns_; }
 	void set_block_turns(int turns) { block_turns_ = turns; }
 	void inching_block_turns(bool increase);
@@ -444,7 +472,7 @@ public:
 	bool human() const { return human_; }
 	void set_human(bool val);
 
-	enum {TASK_NONE, TASK_BACK, TASK_TRADE, TASK_TRANSFER};
+	enum {TASK_NONE, TASK_BACK, TASK_TRADE, TASK_TRANSFER, TASK_TRANSPORT};
 	int task() const { return task_; }
 	void set_task(int t) { task_ = t; }
 
@@ -470,6 +498,8 @@ public:
 	virtual int upkeep() const;
 	bool loyal() const;
 
+	bool has_female() const;
+	bool has_guard_center() const;
 	int tactic_effect(int type, const std::string& field) const;
 
 	void set_hidden(bool state);
@@ -575,6 +605,8 @@ public:
 	const SDL_Rect& attackable_rect() const { return attackable_rect_; }
 
 	bool has_mayor() const;
+	enum {FORMATION_NONE, FORMATION_SECOND, FORMATION_MASTER, FORMATION_MASTER_DISABLE};
+	void set_formation_flag(int flag, int flag2 = 0);
 	/**
 	 * Clears the cache.
 	 *
@@ -613,6 +645,8 @@ public:
 
 	map_location adjacent_3_[24];	// 和loc_邻近的最多24个格子
 	size_t adjacent_size_3_;
+
+	mutable std::vector<unit*> resist_helper_;
 protected:
 	bool internal_matches_filter(const vconfig& cfg,const map_location& loc,
 		bool use_flat_tod) const;
@@ -689,7 +723,7 @@ protected:
 	int attacks_left_;
 	int max_attacks_;
 
-	int keep_turns_;
+	int food_;
 	int block_turns_;
 	int hide_turns_;
 	int alert_turns_;
@@ -715,6 +749,7 @@ protected:
 	int unit_value_;
 	int gold_income_;
 	int technology_income_;
+	int food_income_;
 	int miss_income_;
 	int heal_;
 	int turn_experience_;
@@ -722,6 +757,7 @@ protected:
 	map_location from_;
 
 	bool flying_;
+	size_t redraw_counter_;
 
 	// Animations:
 	unit_animation *anim_;
@@ -751,6 +787,7 @@ protected:
 	move_unit_spectator move_spectator_;
 
 	bool commoner_;
+	bool path_along_road_;
 	//
 	// artifical
 	//
@@ -759,6 +796,8 @@ protected:
 	bool can_reside_;
 	bool base_;
 	bool wall_;
+	bool fort_;
+	bool transport_;
 	bool land_wall_;
 	bool walk_wall_;
 	t_translation::t_terrain terrain_;
@@ -777,6 +816,8 @@ protected:
 	std::map<std::string, int> tactic_compare_damage_;
 	int tactic_compare_movement_;
 
+	int formation_flag_;
+	int formation_flag2_;
 	uint32_t temporary_state_;
 	SDL_Rect attackable_rect_;
 };
@@ -784,15 +825,22 @@ protected:
 enum {NONE_MODE, RPG_MODE, TOWER_MODE};
 enum {NO_DUEL, RANDOM_DUEL, ALWAYS_DUEL};
 namespace tent {
-	extern hero* leader;
-	extern int human_leader_number;
-	extern int human_count;
-	extern int ai_count;
-	extern int employ_count;
-	extern int mode;
-	extern int turns;
-	extern int duel;
-	extern void reset();
+struct tlobby_side_param {
+	std::string current_player;
+	std::string ally;
+};
+extern std::vector<tlobby_side_param> lobby_side_params;
+extern int io_type;
+
+extern hero* leader;
+extern int human_leader_number;
+extern int human_count;
+extern int ai_count;
+extern int employ_count;
+extern int mode;
+extern int turns;
+extern int duel;
+extern void reset();
 }
 
 /** Object which temporarily resets a unit's movement */
@@ -856,9 +904,7 @@ private:
 	std::pair<map_location, unit*>* temp_;
 };
 
-unit* find_unit(unit_map& units, const hero& h);
 bool extract_hero(unit_map& units, const hero& h);
-unit* find_unit(unit_map& units, const map_location& loc);
 
 unit* loc_in_alert_area(unit& u, const map_location& from, const map_location& to);
 extern bool provoke_cache_ready;

@@ -16,7 +16,6 @@
 #include "global.hpp"
 
 #include "filesystem.hpp"
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "language.hpp"
 #include "log.hpp"
@@ -27,6 +26,7 @@
 
 #include <stdexcept>
 #include <clocale>
+#include <boost/foreach.hpp>
 #include <boost/scoped_array.hpp>
 
 #ifdef _WIN32
@@ -109,7 +109,7 @@ bool load_language_list()
 	known_languages.push_back(
 		language_def("", t_string(N_("System default language"), "wesnoth"), "ltr", "", "A"));
 
-	foreach (const config &lang, cfg.child_range("locale"))
+	BOOST_FOREACH (const config &lang, cfg.child_range("locale"))
 	{
 		known_languages.push_back(
 			language_def(lang["locale"], lang["name"], lang["dir"],
@@ -239,7 +239,7 @@ bool set_language(const language_def& locale)
 		return false;
 	}
 
-	foreach (const config::attribute &j, langp.attribute_range()) {
+	BOOST_FOREACH (const config::attribute &j, langp.attribute_range()) {
 		strings_[j.first] = j.second;
 	}
 	// end of string_table fill
@@ -291,7 +291,7 @@ const language_def& get_locale()
 
 void init_textdomains(const config& cfg)
 {
-	foreach (const config &t, cfg.child_range("textdomain"))
+	BOOST_FOREACH (const config &t, cfg.child_range("textdomain"))
 	{
 		const std::string &name = t["name"];
 		const std::string &path = t["path"];

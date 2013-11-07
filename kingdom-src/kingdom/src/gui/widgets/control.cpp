@@ -42,8 +42,8 @@ namespace gui2 {
 tcontrol::tcontrol(const unsigned canvas_count)
 	: definition_("default")
 	, label_()
-	, label_size_(std::make_pair<int, tpoint>(0, tpoint(0, 0)))
-	, use_markup_(false)
+	, label_size_(std::make_pair(0, tpoint(0, 0)))
+	, use_markup_(true)
 	, use_tooltip_on_label_overflow_(true)
 	, tooltip_()
 	, help_message_()
@@ -82,8 +82,8 @@ tcontrol::tcontrol(
 	: twidget(builder)
 	, definition_(builder.definition)
 	, label_(builder.label)
-	, label_size_(std::make_pair<int, tpoint>(0, tpoint(0, 0)))
-	, use_markup_(false)
+	, label_size_(std::make_pair(0, tpoint(0, 0)))
+	, use_markup_(true)
 	, use_tooltip_on_label_overflow_(builder.use_tooltip_on_label_overflow)
 	, tooltip_(builder.tooltip)
 	, help_message_(builder.help)
@@ -464,7 +464,7 @@ tpoint tcontrol::get_best_text_size(
 
 
 		label_size_.first = maximum_size.x;
-		label_size_.second = font::get_rendered_text_size(label_, maximum_width, config_->text_font_size);
+		label_size_.second = font::get_rendered_text_size(label_, maximum_width, config_->text_font_size, font::NORMAL_COLOR);
 	}
 
 	size = label_size_.second + border;

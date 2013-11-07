@@ -33,7 +33,7 @@
 #include "boost/preprocessor/repeat.hpp"
 #include "boost/type_traits/is_same.hpp"
 #include "boost/type_traits/has_nothrow_copy.hpp"
-#include "boost/variant/detail/has_nothrow_move.hpp"
+#include "boost/type_traits/is_nothrow_move_constructible.hpp"
 
 #if BOOST_WORKAROUND(BOOST_MSVC, >= 1400) 
 # pragma warning (push) 
@@ -163,11 +163,11 @@ visitation_impl_invoke(
 {
     typedef typename mpl::or_<
           NoBackupFlag
-        , has_nothrow_move_constructor<T>
+        , is_nothrow_move_constructible<T>
         , has_nothrow_copy<T>
         >::type never_uses_backup;
 
-    return visitation_impl_invoke_impl(
+    return (visitation_impl_invoke_impl)(
           internal_which, visitor, storage, t
         , never_uses_backup()
         );
@@ -246,7 +246,7 @@ visitation_impl(
     // ...applying the appropriate case:
 #   define BOOST_VARIANT_AUX_APPLY_VISITOR_STEP_CASE(z, N, _) \
     case (Which::value + (N)): \
-        return visitation_impl_invoke( \
+        return (visitation_impl_invoke)( \
               internal_which, visitor, storage \
             , static_cast<BOOST_PP_CAT(T,N)*>(0) \
             , no_backup_flag, 1L \
@@ -261,6 +261,7 @@ visitation_impl(
 
 #   undef BOOST_VARIANT_AUX_APPLY_VISITOR_STEP_CASE
 
+    default: break;
     }
 
     // If not handled in this iteration, continue unrolling:

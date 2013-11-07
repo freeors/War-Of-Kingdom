@@ -150,7 +150,7 @@ inline RealType pdf(const inverse_gamma_distribution<RealType, Policy>& dist, co
    RealType shape = dist.shape();
    RealType scale = dist.scale();
 
-   RealType result;
+   RealType result = 0;
    if(false == detail::check_inverse_gamma(function, scale, shape, &result, Policy()))
    { // distribution parameters bad.
       return result;
@@ -198,7 +198,7 @@ inline RealType cdf(const inverse_gamma_distribution<RealType, Policy>& dist, co
    RealType shape = dist.shape();
    RealType scale = dist.scale();
 
-   RealType result;
+   RealType result = 0;
    if(false == detail::check_inverse_gamma(function, scale, shape, &result, Policy()))
    { // distribution parameters bad.
       return result;
@@ -227,7 +227,7 @@ inline RealType quantile(const inverse_gamma_distribution<RealType, Policy>& dis
    RealType shape = dist.shape();
    RealType scale = dist.scale();
 
-   RealType result;
+   RealType result = 0;
    if(false == detail::check_inverse_gamma(function, scale, shape, &result, Policy()))
       return result;
    if(false == detail::check_probability(function, p, &result, Policy()))
@@ -253,11 +253,14 @@ inline RealType cdf(const complemented2_type<inverse_gamma_distribution<RealType
    RealType shape = c.dist.shape();
    RealType scale = c.dist.scale();
 
-   RealType result;
+   RealType result = 0;
    if(false == detail::check_inverse_gamma(function, scale, shape, &result, Policy()))
       return result;
    if(false == detail::check_inverse_gamma_x(function, c.param, &result, Policy()))
       return result;
+
+   if(c.param == 0)
+      return 1; // Avoid division by zero
 
    //result = 1. - gamma_q(shape, c.param / scale, Policy());
    result = gamma_p(shape, scale/c.param, Policy());
@@ -275,7 +278,7 @@ inline RealType quantile(const complemented2_type<inverse_gamma_distribution<Rea
    RealType scale = c.dist.scale();
    RealType q = c.param;
 
-   RealType result;
+   RealType result = 0;
    if(false == detail::check_inverse_gamma(function, scale, shape, &result, Policy()))
       return result;
    if(false == detail::check_probability(function, q, &result, Policy()))
@@ -302,7 +305,7 @@ inline RealType mean(const inverse_gamma_distribution<RealType, Policy>& dist)
    RealType shape = dist.shape();
    RealType scale = dist.scale();
 
-   RealType result;
+   RealType result = 0;
 
    if(false == detail::check_scale(function, scale, &result, Policy()))
    {
@@ -329,7 +332,7 @@ inline RealType variance(const inverse_gamma_distribution<RealType, Policy>& dis
    RealType shape = dist.shape();
    RealType scale = dist.scale();
 
-   RealType result;
+   RealType result = 0;
       if(false == detail::check_scale(function, scale, &result, Policy()))
    {
      return result;
@@ -355,7 +358,7 @@ inline RealType mode(const inverse_gamma_distribution<RealType, Policy>& dist)
    RealType shape = dist.shape();
    RealType scale = dist.scale();
 
-   RealType result;
+   RealType result = 0;
    if(false == detail::check_inverse_gamma(function, scale, shape, &result, Policy()))
    {
       return result;
@@ -381,7 +384,7 @@ inline RealType skewness(const inverse_gamma_distribution<RealType, Policy>& dis
 
    RealType shape = dist.shape();
    RealType scale = dist.scale();
-   RealType result;
+   RealType result = 0;
 
    if(false == detail::check_scale(function, scale, &result, Policy()))
    {
@@ -408,7 +411,7 @@ inline RealType kurtosis_excess(const inverse_gamma_distribution<RealType, Polic
    RealType shape = dist.shape();
    RealType scale = dist.scale();
 
-   RealType result;
+   RealType result = 0;
    if(false == detail::check_scale(function, scale, &result, Policy()))
    {
      return result;
@@ -431,7 +434,7 @@ inline RealType kurtosis(const inverse_gamma_distribution<RealType, Policy>& dis
    RealType shape = dist.shape();
    RealType scale = dist.scale();
 
-   RealType result;
+   RealType result = 0;
 
   if(false == detail::check_scale(function, scale, &result, Policy()))
    {

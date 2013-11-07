@@ -24,6 +24,42 @@ BOOL CALLBACK DlgTreasureEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM
 std::vector<std::string> attack_range_vstr;
 std::vector<std::string> attack_type_vstr;
 
+namespace explorer_technology {
+int explorer = NONE;
+
+void update_to_ui_special(HWND hdlgP, int flag)
+{
+	if (flag == NONE) {
+		return;
+	}
+
+	std::stringstream strstr;
+	std::set<std::string>* technology = NULL;
+	if (flag == explorer_technology::SCENARIO) {
+		tscenario& scenario = ns::_scenario[ns::current_scenario];
+		tside& side = scenario.side_[ns::clicked_side];
+		technology = &side.technologies_;
+	} else if (flag == explorer_technology::MODIFY_SIDE) {
+		tevent::tmodify_side* modify_side = dynamic_cast<tevent::tmodify_side*>(ns::clicked_command);
+		technology = &modify_side->technology_;
+	}
+	strstr.str("");
+	for (std::set<std::string>::const_iterator it = technology->begin(); it != technology->end(); ++ it) {
+		if (it != technology->begin()) {
+			strstr << ", ";
+		}
+		const ttechnology& t = unit_types.technology(*it);
+		strstr << t.name();
+	}
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_TECHNOLOGY), utf8_2_ansi(strstr.str().c_str()));
+
+	strstr.str("");
+	strstr << dgettext_2_ansi("wesnoth-lib", "Technology") << "(" << technology->size() << ")";
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TECHNOLOGY), strstr.str().c_str());
+}
+
+};
+
 namespace ns {
 	const std::string default_utype_textdomain = "wesnoth-tk-units";
 	const std::string default_utype_id = "utype_id_";
@@ -51,9 +87,11 @@ std::map<int, int> tcore::idd_map;
 std::map<int, DLGPROC> tcore::dlgproc_map;
 
 tcore::tcore()
-	: section_(UNIT_TYPE)
+	: section_(CONFIG)
 	, map_(NULL)
 	, types_updating_()
+	, features_from_cfg_()
+	, features_updating_()
 	, treasures_from_cfg_()
 	, treasures_updating_()
 	, terrains_from_cfg_()
@@ -62,6 +100,10 @@ tcore::tcore()
 	, brules_updating_()
 	, factions_from_cfg_()
 	, factions_updating_()
+	, anims_from_cfg_()
+	, anims_updating_()
+	, config_from_cfg_()
+	, config_updating_()
 	, dirty_(0)
 {
 	attack_range_vstr.push_back("melee");
@@ -113,7 +155,29 @@ HWND tcore::init_toolbar(HINSTANCE hinst, HWND hdlgP)
 	gdmgr._tbBtns_core[0].dwData = 0L;
 	gdmgr._tbBtns_core[0].iString = -1;
 
-	ToolBar_AddButtons(gdmgr._htb_core, 1, &gdmgr._tbBtns_core);
+	gdmgr._tbBtns_core[1].iBitmap = 100;
+	gdmgr._tbBtns_core[1].idCommand = 0;	
+	gdmgr._tbBtns_core[1].fsState = 0;
+	gdmgr._tbBtns_core[1].fsStyle = TBSTYLE_SEP;
+	gdmgr._tbBtns_core[1].dwData = 0L;
+	gdmgr._tbBtns_core[1].iString = 0;
+
+	gdmgr._tbBtns_core[2].iBitmap = MAKELONG(gdmgr._iico_new, 0);
+	gdmgr._tbBtns_core[2].idCommand = IDM_NEW;	
+	gdmgr._tbBtns_core[2].fsState = TBSTATE_ENABLED;
+	gdmgr._tbBtns_core[2].fsStyle = BTNS_BUTTON;
+	gdmgr._tbBtns_core[2].dwData = 0L;
+	gdmgr._tbBtns_core[2].iString = -1;
+
+
+	gdmgr._tbBtns_core[3].iBitmap = MAKELONG(gdmgr._iico_del, 0);
+	gdmgr._tbBtns_core[3].idCommand = IDM_DELETE;	
+	gdmgr._tbBtns_core[3].fsState = TBSTATE_ENABLED;
+	gdmgr._tbBtns_core[3].fsStyle = BTNS_BUTTON;
+	gdmgr._tbBtns_core[3].dwData = 0L;
+	gdmgr._tbBtns_core[3].iString = -1;
+
+	ToolBar_AddButtons(gdmgr._htb_core, 4, &gdmgr._tbBtns_core);
 
 	ToolBar_AutoSize(gdmgr._htb_core);
 	
@@ -146,7 +210,7 @@ void tcore::utype_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::ve
 		strcpy(text, strstr.str().c_str());
 		// 枚举到此为止,此个config一定有孩子,强制让出来前面+符号
 		LPARAM lParam = tv_tree_.size();
-		tv_tree_.push_back(std::make_pair<std::string, std::vector<std::string> >(current->id(), advances_from));
+		tv_tree_.push_back(std::make_pair(current->id(), advances_from));
 		if (it->advances_to.empty()) {
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
 		} else {
@@ -185,7 +249,7 @@ void tcore::utype_tree_2_tv(HWND hctl, HTREEITEM htvroot)
 		// 枚举到此为止,此个config一定有孩子,强制让出来前面+符号
 		LPARAM lParam = tv_tree_.size();
 		advances_from.clear();
-		tv_tree_.push_back(std::make_pair<std::string, std::vector<std::string> >(current->id(), advances_from));
+		tv_tree_.push_back(std::make_pair(current->id(), advances_from));
 		if (n->advances_to.empty()) {
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
 		} else {
@@ -207,7 +271,7 @@ void tcore::technology_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const st
 
 	size_t index = 0;
 	for (std::vector<advance_tree::node>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it, index ++) {
-		const technology* current = dynamic_cast<const technology*>(it->current);
+		const ttechnology* current = dynamic_cast<const ttechnology*>(it->current);
 		htvi = TreeView_AddLeaf(hctl, htvroot);
 		strstr.str("");
 		strstr << utf8_2_ansi(current->name().c_str()) << "(" << current->id() << ")[";
@@ -216,7 +280,7 @@ void tcore::technology_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const st
 		strcpy(text, strstr.str().c_str());
 		// 枚举到此为止,此个config一定有孩子,强制让出来前面+符号
 		LPARAM lParam = technology_tv_.size();
-		technology_tv_.push_back(std::make_pair<std::string, std::vector<std::string> >(current->id(), advances_from));
+		technology_tv_.push_back(std::make_pair(current->id(), advances_from));
 		if (it->advances_to.empty()) {
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
 		} else {
@@ -240,7 +304,10 @@ void tcore::technology_tree_2_tv(HWND hctl, HTREEITEM htvroot)
 	const std::vector<advance_tree::node*>& technology_tree = unit_types.technology_tree();
 	for (std::vector<advance_tree::node*>::const_iterator it = technology_tree.begin(); it != technology_tree.end(); ++ it, index ++) {
 		const advance_tree::node* n = *it;
-		const technology* current = dynamic_cast<const technology*>(n->current);
+		const ttechnology* current = dynamic_cast<const ttechnology*>(n->current);
+		if (explorer_technology::explorer != explorer_technology::NONE && n->advances_to.empty()) {
+			continue;
+		}
 		htvi = TreeView_AddLeaf(hctl, htvroot);
 		strstr.str("");
 		strstr << std::setw(2) << std::setfill('0') << index << ": " << utf8_2_ansi(current->name().c_str()) << "(" << current->id() << ")";
@@ -250,7 +317,7 @@ void tcore::technology_tree_2_tv(HWND hctl, HTREEITEM htvroot)
 		// 枚举到此为止,此个config一定有孩子,强制让出来前面+符号
 		LPARAM lParam = technology_tv_.size();
 		advances_from.clear();
-		technology_tv_.push_back(std::make_pair<std::string, std::vector<std::string> >(current->id(), advances_from));
+		technology_tv_.push_back(std::make_pair(current->id(), advances_from));
 		if (n->advances_to.empty()) {
 			TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM, lParam, gdmgr._iico_dir, gdmgr._iico_dir, 1, text);
 		} else {
@@ -279,7 +346,7 @@ bool tcore::new_utype()
 		}
 	}	
 
-	tv_tree_.push_back(std::make_pair<std::string, std::vector<std::string> >(new_id.str(), std::vector<std::string>()));
+	tv_tree_.push_back(std::make_pair(new_id.str(), std::vector<std::string>()));
 	types_updating_[tv_tree_.size() - 1] = tunit_type(new_id.str());
 
 	tunit_type& utype = types_updating_.find(tv_tree_.size() - 1)->second;
@@ -369,9 +436,20 @@ bool tcore::save_if_dirty()
 void tcore::save(HWND hdlgP)
 {
 	std::stringstream strstr;
+	DLGHDR* pHdr = (DLGHDR *) GetWindowLong(hdlgP, GWL_USERDATA);
+
 	//
 	// verify core data
 	//
+	for (std::vector<tfeature>::iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
+		const tfeature& f = *it;
+		if (f.items_.empty()) {
+			strstr << "#" << f.index_ << "没设置原子特技";
+			posix_print_mb(strstr.str().c_str());
+			return;
+		}
+	}
+
 	for (std::vector<tfaction>::iterator it = factions_updating_.begin(); it != factions_updating_.end(); ++ it) {
 		const tfaction& f = *it;
 		if (f.leader_ == HEROS_INVALID_NUMBER) {
@@ -382,6 +460,12 @@ void tcore::save(HWND hdlgP)
 		if (f.city_ == HEROS_INVALID_NUMBER) {
 			strstr << "#" << std::distance(factions_updating_.begin(), it) << "集团没设置城市";
 			posix_print_mb(strstr.str().c_str());
+			return;
+		}
+	}
+
+	if (bit_dirty(BIT_MULTIPLAYER)) {
+		if (!campaign_can_save(section_ == MULTIPLAYER? pHdr->hwndDisplay: NULL, false)) {
 			return;
 		}
 	}
@@ -399,17 +483,22 @@ void tcore::save(HWND hdlgP)
 			delfile1(strstr.str().c_str());
 		}
 		if (!type.id_.empty() && type.dirty()) {
-			type.generate();
+			type.generate(false);
 		}
 	}
 	types_updating_.clear();
 
-	// treasure
-	if (bit_dirty(BIT_TREASURE)) {
+	// units_internal.cfg, include feature/treasure
+	if (bit_dirty(BIT_FEATURE) || bit_dirty(BIT_TREASURE)) {
 		generate_units_internal();
 	}
-	treasures_from_cfg_.clear();
-	treasures_updating_.clear();
+
+	// noble
+	if (bit_dirty(BIT_NOBLE)) {
+		generate_noble_cfg();
+	}
+	nobles_from_cfg_.clear();
+	nobles_updating_.clear();
 
 	// terrain
 	if (bit_dirty(BIT_TERRAIN)) {
@@ -431,21 +520,41 @@ void tcore::save(HWND hdlgP)
 	factions_from_cfg_.clear();
 	factions_updating_.clear();
 
+	// anim
+	if (bit_dirty(BIT_ANIM)) {
+		generate_anims_cfg();
+	}
+	anims_from_cfg_.clear();
+	anims_updating_.clear();
+
+	// multiplayer
+	if (bit_dirty(BIT_MULTIPLAYER)) {
+		multiplayer_.generate();
+	}
+	multiplayer_.clear();
+
+	// game config
+	if (bit_dirty(BIT_CONFIG)) {
+		generate_config_cfg();
+	}
+	config_from_cfg_.clear();
+	config_updating_.clear();
+
 	core_enable_save_btn(FALSE);
 	// clear updating flag
 	dirty_ = 0;
 
-	editor_config::campaign_id = "";
-	do_sync2();
+	editor_config::campaign_id = "multiplayer";
+	sync_refresh_sync();
 }
 
-void tcore::generate_utypes() const
+void tcore::generate_utypes(bool with_anim) const
 {
 	const unit_type_data::unit_type_map& types = unit_types.types();
 	for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
 		const unit_type& ut = it->second;
 		ns::utype.from_config(&ut);
-		ns::utype.generate();
+		ns::utype.generate(with_anim);
 	}
 	core_enable_save_btn(TRUE);
 }
@@ -471,6 +580,7 @@ void tcore::refresh_utype(HWND hdlgP)
 	if (gdmgr.heros_.size()) {
 		tunit_type::commoner_hero_.insert(&gdmgr.heros_[hero::number_businessman]);
 		tunit_type::commoner_hero_.insert(&gdmgr.heros_[hero::number_scholar]);
+		tunit_type::commoner_hero_.insert(&gdmgr.heros_[hero::number_transport]);
 	}
 	if (types_updating_.empty()) {
 		generate_utype_tree();
@@ -493,6 +603,11 @@ void tcore::refresh_utype(HWND hdlgP)
 	utype_tree_2_tv(hctl, htvroot_utype_);
 
 	TreeView_Expand(hctl, htvroot_utype_, TVE_EXPAND);
+}
+
+void tcore::refresh_feature(HWND hdlgP)
+{
+	update_to_ui_feature(hdlgP);
 }
 
 void tcore::refresh_tactic(HWND hdlgP)
@@ -858,50 +973,18 @@ void tcore::refresh_technology(HWND hdlgP)
 	TreeView_Expand(hctl, htvroot_technology_, TVE_EXPAND);
 }
 
+void tcore::refresh_formation(HWND hdlgP)
+{
+	update_to_ui_formation(hdlgP);
+}
+
+void tcore::refresh_noble(HWND hdlgP)
+{
+	update_to_ui_noble(hdlgP);
+}
+
 void tcore::refresh_treasure(HWND hdlgP)
 {
-	std::stringstream strstr;
-
-	HWND hctl = GetDlgItem(hdlgP, IDC_LV_TREASURE_EXPLORER);
-	LVCOLUMN lvc;
-	int index = 0;
-	char text[_MAX_PATH];
-
-	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-	lvc.fmt = LVCFMT_LEFT;
-	lvc.cx = 40;
-	strcpy(text, utf8_2_ansi(_("Number")));
-	lvc.pszText = text;
-	lvc.cchTextMax = 0;
-	lvc.iSubItem = index;
-	ListView_InsertColumn(hctl, index ++, &lvc);
-
-	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-	lvc.cx = 90;
-	lvc.iSubItem = index;
-	strstr.str("");
-	strstr << _("Name");
-	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
-	lvc.pszText = text;
-	ListView_InsertColumn(hctl, index ++, &lvc);
-
-	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-	lvc.cx = 60;
-	lvc.iSubItem = index;
-	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
-	lvc.pszText = text;
-	ListView_InsertColumn(hctl, index ++, &lvc);
-
-	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-	lvc.cx = 400;
-	lvc.iSubItem = index;
-	strcpy(text, utf8_2_ansi(_("Image")));
-	lvc.pszText = text;
-	ListView_InsertColumn(hctl, index ++, &lvc);
-
-	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
-	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
-
 	update_to_ui_treasure(hdlgP);
 }
 
@@ -918,6 +1001,21 @@ void tcore::refresh_builder(HWND hdlgP)
 void tcore::refresh_faction(HWND hdlgP)
 {
 	update_to_ui_faction(hdlgP, -1);
+}
+
+void tcore::refresh_anim(HWND hdlgP)
+{
+	update_to_ui_anim(hdlgP);
+}
+
+void tcore::refresh_multiplayer(HWND hdlgP)
+{
+	update_to_ui_multiplayer(hdlgP);
+}
+
+void tcore::refresh_config(HWND hdlgP)
+{
+	update_to_ui_config(hdlgP);
 }
 
 void tcore::init_cache()
@@ -950,6 +1048,30 @@ void tcore::init_cache()
 		terrains_.push_back(terrain);
 	}
 	
+	// feature
+	features_from_cfg_.clear();
+	features_updating_.clear();
+
+	const complex_feature_map& features = unit_types.complex_feature();
+	for (std::map<int, std::vector<int> >::const_iterator it = features.begin(); it != features.end(); ++ it) {
+		tfeature f;
+		f.from_config(it->first, it->second);
+		features_from_cfg_.push_back(f);
+	}
+	features_updating_ = features_from_cfg_;
+
+	// noble
+	nobles_from_cfg_.clear();
+	nobles_updating_.clear();
+
+	for (int i = 0; i < unit_types.noble_count(); i ++) {
+		const tnoble& noble = unit_types.noble(i);
+		tnoble2 nbl;
+		nbl.from_config(noble);
+		nobles_from_cfg_.push_back(nbl);
+	}
+	nobles_updating_ = nobles_from_cfg_;
+
 	// treasure
 	treasures_from_cfg_.clear();
 	treasures_updating_.clear();
@@ -1133,6 +1255,168 @@ void tcore::init_cache()
 		factions_from_cfg_.push_back(f);
 	}
 	factions_updating_ = factions_from_cfg_;
+
+	// anim
+	anims_from_cfg_.clear();
+	anims_updating_.clear();
+	if (tanim::anim_types.empty()) {
+		tanim::anim_types.push_back(tanim_type("defend", _("anim^defend")));
+		tanim::anim_types.back().variables_.push_back("$base_png");
+		tanim::anim_types.back().variables_.push_back("$hit_png");
+		tanim::anim_types.back().variables_.push_back("$miss_png");
+
+		tanim::anim_types.push_back(tanim_type("resistance", _("anim^resistance")));
+		tanim::anim_types.back().variables_.push_back("$leading_png");
+
+		tanim::anim_types.push_back(tanim_type("leading", _("anim^leading")));
+		tanim::anim_types.back().variables_.push_back("$leading_png");
+
+		tanim::anim_types.push_back(tanim_type("healing", _("anim^healing")));
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+
+		tanim::anim_types.push_back(tanim_type("idle", _("anim^idle")));
+		tanim::anim_types.back().variables_.push_back("$idle_1_png");
+		tanim::anim_types.back().variables_.push_back("$idle_2_png");
+		tanim::anim_types.back().variables_.push_back("$idle_3_png");
+		tanim::anim_types.back().variables_.push_back("$idle_4_png");
+
+		tanim::anim_types.push_back(tanim_type("healed", _("anim^healed")));
+		tanim::anim_types.back().variables_.push_back("$idle_1_png");
+		tanim::anim_types.back().variables_.push_back("$idle_2_png");
+		tanim::anim_types.back().variables_.push_back("$idle_3_png");
+		tanim::anim_types.back().variables_.push_back("$idle_4_png");
+
+		tanim::anim_types.push_back(tanim_type("melee_attack", _("anim^melee_attack")));
+		tanim::anim_types.back().variables_.push_back("$attack_id");
+		tanim::anim_types.back().variables_.push_back("$range");
+		tanim::anim_types.back().variables_.push_back("$hit_sound");
+		tanim::anim_types.back().variables_.push_back("$miss_sound");
+		tanim::anim_types.back().variables_.push_back("$melee_attack_1_png");
+		tanim::anim_types.back().variables_.push_back("$melee_attack_2_png");
+		tanim::anim_types.back().variables_.push_back("$melee_attack_3_png");
+		tanim::anim_types.back().variables_.push_back("$melee_attack_4_png");
+
+		tanim::anim_types.push_back(tanim_type("ranged_attack", _("anim^ranged_attack")));
+		tanim::anim_types.back().variables_.push_back("$attack_id");
+		tanim::anim_types.back().variables_.push_back("$range");
+		tanim::anim_types.back().variables_.push_back("$image_png");
+		tanim::anim_types.back().variables_.push_back("$image_diagonal_png");
+		tanim::anim_types.back().variables_.push_back("$hit_sound");
+		tanim::anim_types.back().variables_.push_back("$miss_sound");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+
+		tanim::anim_types.push_back(tanim_type("magic_missile_attack", _("anim^magic_missile_attack")));
+		tanim::anim_types.back().variables_.push_back("$attack_id");
+		tanim::anim_types.back().variables_.push_back("$range");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+
+		tanim::anim_types.push_back(tanim_type("lightbeam_attack", _("anim^lightbeam_attack")));
+		tanim::anim_types.back().variables_.push_back("$attack_id");
+		tanim::anim_types.back().variables_.push_back("$range");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+
+		tanim::anim_types.push_back(tanim_type("fireball_attack", _("anim^fireball_attack")));
+		tanim::anim_types.back().variables_.push_back("$attack_id");
+		tanim::anim_types.back().variables_.push_back("$range");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+
+		tanim::anim_types.push_back(tanim_type("iceball_attack", _("anim^iceball_attack")));
+		tanim::anim_types.back().variables_.push_back("$attack_id");
+		tanim::anim_types.back().variables_.push_back("$range");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+
+		tanim::anim_types.push_back(tanim_type("lightning_attack", _("anim^lightning_attack")));
+		tanim::anim_types.back().variables_.push_back("$attack_id");
+		tanim::anim_types.back().variables_.push_back("$range");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
+		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+
+		tanim::anim_types.push_back(tanim_type("card", _("anim^card")));
+		tanim::anim_types.push_back(tanim_type("reinforce", _("anim^reinforce")));
+		tanim::anim_types.push_back(tanim_type("individuality", _("anim^individuality")));
+		tanim::anim_types.push_back(tanim_type("tactic", _("anim^tactic")));
+		tanim::anim_types.push_back(tanim_type("blade", _("anim^blade")));
+		tanim::anim_types.push_back(tanim_type("fire", _("anim^fire")));
+		tanim::anim_types.push_back(tanim_type("magic", _("anim^magic")));
+		tanim::anim_types.push_back(tanim_type("heal", _("anim^heal")));
+		tanim::anim_types.push_back(tanim_type("destruct", _("anim^destruct")));
+		tanim::anim_types.push_back(tanim_type("formation_attack", _("anim^formation attack")));
+		tanim::anim_types.push_back(tanim_type("formation_defend", _("anim^formation defend")));
+		tanim::anim_types.push_back(tanim_type("pass_scenario", _("anim^pass scenario")));
+		tanim::anim_types.push_back(tanim_type("perfect", _("anim^perfect")));
+	}
+/*
+	const std::map<std::string, const config>& utype_anims = unit_types.utype_anims();
+	for (std::map<std::string, const config>::const_iterator it = utype_anims.begin(); it != utype_anims.end(); ++ it) {
+		tanim anim;
+		anim.from_config(it->first, it->second, false);
+		anims_from_cfg_.push_back(anim);
+	}
+*/
+	const config::const_child_itors& utype_anims = editor_config::data_cfg.child("units").child_range("utype_anim");
+	BOOST_FOREACH (const config &cfg, utype_anims) {
+		tanim anim;
+		anim.from_config(cfg, false);
+		anims_from_cfg_.push_back(anim);
+	}
+	const config::const_child_itors& global_anims = editor_config::data_cfg.child("units").child_range("global_anim");
+	BOOST_FOREACH (const config &cfg, global_anims) {
+		tanim anim;
+		anim.from_config(cfg, true);
+		anims_from_cfg_.push_back(anim);
+	}
+
+	anims_updating_ = anims_from_cfg_;
+
+	// multiplayer
+	ns::_scenario.clear();
+	ns::current_scenario = 0;
+	const config::const_child_itors& multiplayers = editor_config::data_cfg.child_range("multiplayer");
+	BOOST_FOREACH (const config &cfg, multiplayers) {
+		if (cfg["map_generation"].str() == "default") {
+			continue;
+		}
+		if (cfg["id"].str() == "td") {
+			continue;
+		}
+		ns::_scenario.push_back(tscenario("multiplayer"));
+		tscenario& s = ns::_scenario.back();
+		s.multiplayer_ = true;
+		s.init_hero_state(gdmgr.heros_);
+		// sub-object's from_config will use ns::current_scenario, set it correctly.
+		s.from_config(ns::current_scenario, cfg);
+		ns::current_scenario ++;
+	}
+	ns::current_scenario = 0;
+
+	// game config
+	config_from_cfg_.clear();
+	config_updating_.clear();
+
+	const config& game_config = editor_config::data_cfg.child("game_config");
+	config_from_cfg_.from_config(game_config);
+
+	config_updating_ = config_from_cfg_;
 }
 
 void tcore::switch_section(HWND hdlgP, int to, bool init)
@@ -1141,7 +1425,9 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 	std::stringstream strstr;
 
 	if (name_map.empty()) {
+		name_map[CONFIG] = utf8_2_ansi(_("game^Config"));
 		name_map[UNIT_TYPE] = utf8_2_ansi(_("arms^Type"));
+		name_map[FEATURE] = dgettext_2_ansi("wesnoth-hero", "feature");
 		strstr.str("");
 		strstr << dsgettext("wesnoth-hero", "tactic") << "(" << _("Read only") << ")";
 		name_map[TACTIC] = utf8_2_ansi(strstr.str().c_str());
@@ -1157,32 +1443,51 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		strcpy(text, "Technology");
 		strstr << dgettext("wesnoth-lib", text) << "(" << _("Read only") << ")";
 		name_map[TECH] = utf8_2_ansi(strstr.str().c_str());
+		strstr.str("");
+		strcpy(text, "tactical^Formation");
+		strstr << dgettext("wesnoth-lib", text) << "(" << _("Read only") << ")";
+		name_map[FORMATION] = utf8_2_ansi(strstr.str().c_str());
+		name_map[NOBLE] = dgettext_2_ansi("wesnoth-hero", "noble");
 		name_map[TREASURE] = dgettext_2_ansi("wesnoth-hero", "treasure");
 		name_map[TERRAIN] = dgettext_2_ansi("wesnoth", "Terrain");
 		name_map[BUILDER] = utf8_2_ansi(_("Building rule"));
 		name_map[FACTION] = dgettext_2_ansi("wesnoth-lib", "Faction");
+		name_map[ANIM] = utf8_2_ansi(_("Animation"));
+		name_map[MULTIPLAYER] = utf8_2_ansi(_("Multiplayer"));
 	}
 	if (idd_map.empty()) {
+		idd_map[CONFIG] = IDD_CONFIG;
 		idd_map[UNIT_TYPE] = IDD_UTYPE;
+		idd_map[FEATURE] = IDD_FEATURE;
 		idd_map[TACTIC] = IDD_TACTIC;
 		idd_map[CHARACTER] = IDD_CHARACTER;
 		idd_map[DECREE] = IDD_DECREE;
 		idd_map[TECH] = IDD_TECHNOLOGY;
+		idd_map[FORMATION] = IDD_FORMATION;
+		idd_map[NOBLE] = IDD_NOBLE;
 		idd_map[TREASURE] = IDD_TREASURE;
 		idd_map[TERRAIN] = IDD_TERRAIN;
 		idd_map[BUILDER] = IDD_BUILDER;
 		idd_map[FACTION] = IDD_FACTION;
+		idd_map[ANIM] = IDD_ANIM;
+		idd_map[MULTIPLAYER] = IDD_MULTIPLAYER;
 	}
 	if (dlgproc_map.empty()) {
+		dlgproc_map[CONFIG] = DlgConfigProc;
 		dlgproc_map[UNIT_TYPE] = DlgUTypeProc;
+		dlgproc_map[FEATURE] = DlgFeatureProc;
 		dlgproc_map[TACTIC] = DlgTacticProc;
 		dlgproc_map[CHARACTER] = DlgCharacterProc;
 		dlgproc_map[DECREE] = DlgDecreeProc;
 		dlgproc_map[TECH] = DlgTechnologyProc;
+		dlgproc_map[FORMATION] = DlgFormationProc;
+		dlgproc_map[NOBLE] = DlgNobleProc;
 		dlgproc_map[TREASURE] = DlgTreasureProc;
 		dlgproc_map[TERRAIN] = DlgTerrainProc;
 		dlgproc_map[BUILDER] = DlgBuilderProc;
 		dlgproc_map[FACTION] = DlgFactionProc;
+		dlgproc_map[ANIM] = DlgAnimProc;
+		dlgproc_map[MULTIPLAYER] = DlgMultiplayerProc;
 	}
 	
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLong(hdlgP, GWL_USERDATA);
@@ -1227,7 +1532,8 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		OffsetRect(&pHdr->rcDisplay, 0, rc.bottom);
 
 	} else if (pHdr->hwndDisplay && section_ != to) {
-		DestroyWindow(pHdr->hwndDisplay);
+		int retval = DestroyWindow(pHdr->hwndDisplay);
+		DWORD err = GetLastError();
 		pHdr->hwndDisplay = NULL;
 	}
 
@@ -1243,8 +1549,15 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		init_cache();
 	}
 
-	if (section_ == UNIT_TYPE) {
+	core_enable_new_btn(section_ == MULTIPLAYER);
+	core_enable_delete_btn(section_ == MULTIPLAYER);
+
+	if (section_ == CONFIG) {
+		refresh_config(pHdr->hwndDisplay);
+	} else if (section_ == UNIT_TYPE) {
 		refresh_utype(pHdr->hwndDisplay);
+	} else if (section_ == FEATURE) {
+		refresh_feature(pHdr->hwndDisplay);
 	} else if (section_ == TACTIC) {
 		refresh_tactic(pHdr->hwndDisplay);
 	} else if (section_ == CHARACTER) {
@@ -1253,6 +1566,10 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		refresh_decree(pHdr->hwndDisplay);
 	} else if (section_ == TECH) {
 		refresh_technology(pHdr->hwndDisplay);
+	} else if (section_ == FORMATION) {
+		refresh_formation(pHdr->hwndDisplay);
+	} else if (section_ == NOBLE) {
+		refresh_noble(pHdr->hwndDisplay);
 	} else if (section_ == TREASURE) {
 		refresh_treasure(pHdr->hwndDisplay);
 	} else if (section_ == TERRAIN) {
@@ -1261,6 +1578,10 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		refresh_builder(pHdr->hwndDisplay);
 	} else if (section_ == FACTION) {
 		refresh_faction(pHdr->hwndDisplay);
+	} else if (section_ == ANIM) {
+		refresh_anim(pHdr->hwndDisplay);
+	} else if (section_ == MULTIPLAYER) {
+		refresh_multiplayer(pHdr->hwndDisplay);
 	}
 }
 
@@ -1361,7 +1682,7 @@ std::string tcore::units_internal(bool absolute) const
 	return strstr.str();
 }
 
-void tcore::generate_units_internal() const
+void tcore::generate_units_internal()
 {
 	std::stringstream strstr;
 	uint32_t bytertd;
@@ -1372,6 +1693,19 @@ void tcore::generate_units_internal() const
 		return;
 	}
 
+	// feature
+	strstr << "[complexfeature]\n";
+	for (std::vector<tfeature>::const_iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
+		strstr << it->generate("\t");
+	}
+	strstr << "[/complexfeature]\n";
+
+	features_from_cfg_.clear();
+	features_updating_.clear();
+
+	strstr << "\n";
+
+	// treasure
 	strstr << "[treasure]\n";
 	strstr << "\tfeature = ";
 	for (std::map<int, int>::const_iterator it = treasures_updating_.begin(); it != treasures_updating_.end(); ++ it) {
@@ -1382,6 +1716,43 @@ void tcore::generate_units_internal() const
 	}
 	strstr << "\n";
 	strstr << "[/treasure]\n";
+
+	treasures_from_cfg_.clear();
+	treasures_updating_.clear();
+
+	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
+	posix_fclose(fp);
+}
+
+std::string tcore::noble_cfg(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\core\\units-internal\\noble.cfg";
+	} else {
+		strstr << "data/core/units-internal/noble.cfg";
+	}
+	return strstr.str();
+}
+
+void tcore::generate_noble_cfg() const
+{
+	std::stringstream strstr;
+	uint32_t bytertd;
+
+	posix_file_t fp = INVALID_FILE;
+	posix_fopen(noble_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+	if (fp == INVALID_FILE) {
+		return;
+	}
+
+	for (std::vector<tnoble2>::const_iterator it = nobles_updating_.begin(); it != nobles_updating_.end(); ++ it) {
+		if (it != nobles_updating_.begin()) {
+			strstr << "\n";
+		}
+		const tnoble2& n = *it;
+		strstr << n.generate("");
+	}
 
 	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
 	posix_fclose(fp);
@@ -1548,8 +1919,72 @@ void tcore::generate_factions_cfg() const
 	posix_fclose(fp);
 }
 
+std::string tcore::anims_cfg(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\core\\units-internal\\animation.cfg";
+	} else {
+		strstr << "data/core/units-internal/animation.cfg";
+	}
+	return strstr.str();
+}
+
+void tcore::generate_anims_cfg() const
+{
+	std::stringstream strstr;
+	uint32_t bytertd;
+
+	posix_file_t fp = INVALID_FILE;
+	posix_fopen(anims_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+	if (fp == INVALID_FILE) {
+		return;
+	}
+
+	for (std::vector<tanim>::const_iterator it = anims_updating_.begin(); it != anims_updating_.end(); ++ it) {
+		if (it != anims_updating_.begin()) {
+			strstr << "\n";
+		}
+		const tanim& anim = *it;
+		strstr << anim.generate();
+	}
+
+	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
+	posix_fclose(fp);
+}
+
+std::string tcore::config_cfg(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\game_config-internal.cfg";
+	} else {
+		strstr << "data/game_config-internal.cfg";
+	}
+	return strstr.str();
+}
+
+void tcore::generate_config_cfg() const
+{
+	std::stringstream strstr;
+	uint32_t bytertd;
+
+	posix_file_t fp = INVALID_FILE;
+	posix_fopen(config_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+	if (fp == INVALID_FILE) {
+		return;
+	}
+
+	strstr << config_updating_.generate();
+
+	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
+	posix_fclose(fp);
+}
+
 void core_enter_ui(void)
 {
+	scenario_selector::switch_to(true);
+
 	StatusBar_Idle();
 
 	strcpy(gdmgr.cfg_fname_, gdmgr._menu_text);
@@ -1727,14 +2162,54 @@ BOOL CALLBACK DlgDecreeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return FALSE;
 }
 
+void cb_treeview_walk_mark(HWND hctl, HTREEITEM htvi, uint32_t* ctx)
+{
+	TVITEMEX tvi;
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	tside& side = scenario.side_[ns::clicked_side];
+	
+	TreeView_GetItem1(hctl, htvi, &tvi, TVIF_PARAM, NULL);
+	const std::string& id = ns::core.technology_tv_[tvi.lParam].first;
+	if (explorer_technology::explorer == explorer_technology::SCENARIO) {
+		if (side.technologies_.find(id) != side.technologies_.end()) {
+			TreeView_SetItemState(hctl, htvi, INDEXTOSTATEIMAGEMASK(1), TVIS_STATEIMAGEMASK);
+		}
+
+	} else if (explorer_technology::explorer == explorer_technology::MODIFY_SIDE) {
+		if (side.technologies_.find(id) != side.technologies_.end()) {
+			TreeView_SetItemState(hctl, htvi, TVIS_BOLD, TVIS_BOLD);
+		}
+		const tevent::tmodify_side* modify_side = dynamic_cast<const tevent::tmodify_side*>(ns::clicked_command);
+		if (modify_side->technology_.find(id) != modify_side->technology_.end()) {
+			TreeView_SetItemState(hctl, htvi, INDEXTOSTATEIMAGEMASK(1), TVIS_STATEIMAGEMASK);
+		}
+	}
+}
+
+void explorer_technology_mark_tree(HWND hdlgP)
+{
+	HWND htv = GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_EXPLORER);
+	
+	TreeView_Walk(htv, TVI_ROOT, TRUE, cb_treeview_walk_mark, NULL, FALSE);
+}
+
 //
 // technology section
 //
 BOOL On_DlgTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
-	HWND hwndParent = GetParent(hdlgP); 
-    DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
-    SetWindowPos(hdlgP, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE); 
+	if (explorer_technology::explorer == explorer_technology::NONE) {
+		HWND hwndParent = GetParent(hdlgP);
+		DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
+		SetWindowPos(hdlgP, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE); 
+	} else {
+		editor_config::move_subcfg_right_position(hdlgP, lParam);
+	
+		std::stringstream strstr;
+		strstr << utf8_2_ansi(_("Edit technology"));
+		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+		SetWindowText(hdlgP, strstr.str().c_str());
+	}
 
 	ns::himl_technology = ImageList_Create(15, 15, ILC_COLOR24, 3, 0);
 	ImageList_SetBkColor(ns::himl_technology, RGB(236, 233, 216));
@@ -1754,19 +2229,13 @@ BOOL On_DlgTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	TreeView_SetImageList(GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_ATOM), ns::himl_technology, TVSIL_NORMAL);
 	TreeView_SetImageList(GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_COMPLEX), ns::himl_technology, TVSIL_NORMAL);
 
-	return FALSE;
-}
+	if (explorer_technology::explorer != explorer_technology::NONE) {
+		TreeView_SetImageList(GetDlgItem(hdlgP, IDC_TV_TECHNOLOGY_EXPLORER), gdmgr._himl_checkbox, LVSIL_STATE); 
 
-void On_DlgTechnology2Command(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
-{
-	BOOL changed = FALSE;
-	switch (id) {
-	case IDOK:
-		changed = TRUE;
-	case IDCANCEL:
-		EndDialog(hdlgP, changed? 1: 0);
-		break;
+		ns::core.refresh_technology(hdlgP);
+		explorer_technology_mark_tree(hdlgP);
 	}
+	return FALSE;
 }
 
 BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
@@ -1856,8 +2325,8 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	int iItem = 0;
 	bool first;
 	int apply_to;
-	for (std::map<std::string, technology>::const_iterator it = unit_types.technologies().begin(); it != unit_types.technologies().end(); ++ it) {
-		const technology& t = it->second;
+	for (std::map<std::string, ttechnology>::const_iterator it = unit_types.technologies().begin(); it != unit_types.technologies().end(); ++ it) {
+		const ttechnology& t = it->second;
 
 		if (ns::type == IDM_TECHNOLOGY_ATOMIC) {
 			if (t.complex()) {
@@ -1906,9 +2375,9 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.mask = LVIF_TEXT;
 			lvi.iSubItem = index ++;
 			strstr.str("");
-			if (t.occasion() == technology::MODIFY) {
+			if (t.occasion() == ttechnology::MODIFY) {
 				strstr << utf8_2_ansi(_("Adjust unit"));
-			} else if (t.occasion() == technology::FINISH) {
+			} else if (t.occasion() == ttechnology::FINISH) {
 				strstr << utf8_2_ansi(_("Finish research"));
 			}
 			strcpy(text, strstr.str().c_str());
@@ -1983,9 +2452,9 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.mask = LVIF_TEXT;
 			lvi.iSubItem = index ++;
 			strstr.str("");
-			const std::vector<const technology*>& parts = t.parts();
-			for (std::vector<const technology*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
-				const technology& part = **it2;
+			const std::vector<const ttechnology*>& parts = t.parts();
+			for (std::vector<const ttechnology*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
+				const ttechnology& part = **it2;
 				if (it2 != parts.begin()) {
 					strstr << ", ";
 				}
@@ -2024,13 +2493,35 @@ BOOL CALLBACK DlgReportTechnologyProc(HWND hDlg, UINT message, WPARAM wParam, LP
 	return FALSE;
 }
 
+extern void from_ui_technology(HWND hdlgP, std::set<std::string>& technologies);
+
 void On_DlgTechnologyCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
+	BOOL changed = FALSE;
+
 	switch (id) {
 	case IDM_TECHNOLOGY_ATOMIC:
 	case IDM_TECHNOLOGY_COMPLEX:
 		ns::type = id;
 		DialogBox(gdmgr._hinst, MAKEINTRESOURCE(IDD_VISUAL2), NULL, DlgReportTechnologyProc);
+		break;
+
+	case IDOK:
+		changed = TRUE;
+		if (explorer_technology::explorer != explorer_technology::NONE) {
+			tscenario& scenario = ns::_scenario[ns::current_scenario];
+			tside& side = scenario.side_[ns::clicked_side];
+			if (explorer_technology::explorer == explorer_technology::SCENARIO) {
+				from_ui_technology(hdlgP, side.technologies_);
+			} else {
+				tevent::tmodify_side* modify_side = dynamic_cast<tevent::tmodify_side*>(ns::clicked_command);
+				from_ui_technology(hdlgP, modify_side->technology_);
+			}
+		}
+	case IDCANCEL:
+		if (explorer_technology::explorer != explorer_technology::NONE) {
+			EndDialog(hdlgP, changed? 1: 0);
+		}
 		break;
 	}
 	return;
@@ -2044,16 +2535,15 @@ void technology_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 	POINT					point;
 	std::stringstream strstr;
 
+	if (explorer_technology::explorer != explorer_technology::NONE) {
+		return;
+	}
 	if (lpNMHdr->idFrom != IDC_TV_TECHNOLOGY_EXPLORER) {
 		return;
 	}
 
 	lpnmitem = (LPNMTREEVIEW)lpNMHdr;
 
-	// NM_RCLICK/NM_CLICK/NM_DBLCLK这些通知被发来后,其附代参数没法指定是哪个叶子句柄,
-	// 需通过判断鼠标坐标来判断是哪个叶子被按下?
-	// 1. GetCursorPos, 得到屏幕坐标系下的鼠标坐标
-	// 2. TreeView_HitTest1(自写宏),由屏幕坐标系下的鼠标坐标返回指向的叶子句柄
 	GetCursorPos(&point);	// 得到的是屏幕坐标
 	TreeView_HitTest1(lpNMHdr->hwndFrom, point, htvi);
 	
@@ -2074,29 +2564,9 @@ void technology_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		AppendMenu(hpopup_explorer, MF_STRING, IDM_TECHNOLOGY_COMPLEX, strstr.str().c_str());
 
 		HMENU hpopup_technology = CreatePopupMenu();
-/*
-		AppendMenu(hpopup_utype, MF_STRING, IDM_ADD, utf8_2_ansi(_("Add...")));
-		AppendMenu(hpopup_utype, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
-		AppendMenu(hpopup_utype, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
-		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
-		AppendMenu(hpopup_utype, MF_STRING, IDM_GENERATE_ITEM2, utf8_2_ansi(_("Regenerate all type's cfg and relatve image")));
-		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
-*/
 		AppendMenu(hpopup_technology, MF_POPUP, (UINT_PTR)(hpopup_explorer), utf8_2_ansi(_("Report format")));
-/*
-		if (!htvi || htvi == ns::core.htvroot_utype_) {
-			EnableMenuItem(hpopup_utype, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
-			EnableMenuItem(hpopup_utype, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
-		} else {
-			const std::string& id = ns::core.tv_tree_[tvi.lParam].first;
-			const unit_type* ut = unit_types.find(id);
-			if (ut->packer()) {
-				EnableMenuItem(hpopup_utype, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
-			}
-		}
-*/
+
 		if (core_get_save_btn()) {
-			// EnableMenuItem(hpopup_technology, IDM_GENERATE_ITEM2, MF_BYCOMMAND | MF_GRAYED);
 			EnableMenuItem(hpopup_technology, (UINT_PTR)(hpopup_explorer), MF_BYCOMMAND | MF_GRAYED);
 		}
 		
@@ -2113,10 +2583,76 @@ void technology_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 	}
 }
 
+void technology_notify_handler_dblclk(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	LPNMTREEVIEW			lpnmitem;
+	HTREEITEM				htvi;
+	POINT					point;
+
+	if (explorer_technology::explorer == explorer_technology::NONE) {
+		return;
+	}
+
+	if (lpNMHdr->idFrom != IDC_TV_TECHNOLOGY_EXPLORER) {
+		return;
+	}
+	lpnmitem = (LPNMTREEVIEW)lpNMHdr;
+
+	GetCursorPos(&point);	// 得到的是屏幕坐标
+	TreeView_HitTest1(lpNMHdr->hwndFrom, point, htvi);
+	if (!htvi || htvi == ns::core.htvroot_technology_) {
+		return;
+	}
+
+	if (explorer_technology::explorer != explorer_technology::SCENARIO) {
+		if (TreeView_GetItemState(lpNMHdr->hwndFrom, htvi, 0) & TVIS_BOLD) {
+			return;
+		}
+	}
+
+	if (TreeView_GetItemState(lpNMHdr->hwndFrom, htvi, TVIS_STATEIMAGEMASK) & INDEXTOSTATEIMAGEMASK(1)) {
+		TreeView_SetItemState(lpNMHdr->hwndFrom, htvi, 0, TVIS_STATEIMAGEMASK);
+	} else {
+		TreeView_SetItemState(lpNMHdr->hwndFrom, htvi, INDEXTOSTATEIMAGEMASK(1), TVIS_STATEIMAGEMASK);
+	}
+}
+
+BOOL technology_notify_handler_itemexpanding(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	LPNMTREEVIEW			lpnmitem;
+	HTREEITEM				htvi;
+	POINT					point;
+	std::stringstream strstr;
+
+	if (explorer_technology::explorer == explorer_technology::NONE) {
+		return FALSE;
+	}
+
+	if (lpNMHdr->idFrom != IDC_TV_TECHNOLOGY_EXPLORER) {
+		return FALSE;
+	}
+	lpnmitem = (LPNMTREEVIEW)lpNMHdr;
+	GetCursorPos(&point);	// 得到的是屏幕坐标
+	TreeView_HitTest1(lpNMHdr->hwndFrom, point, htvi);
+
+	if (!htvi || lpnmitem->action != TVE_COLLAPSE) {
+		return FALSE;
+	}
+
+	// TRUE prevents the list from expanding or collapsing.
+	// return value should set both SetWindowLong and function return.
+	SetWindowLong(hdlgP, DWL_MSGRESULT, TRUE);
+	return TRUE;
+}
+
 BOOL On_DlgTechnologyNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 {
 	if (lpNMHdr->code == NM_RCLICK) {
 		technology_notify_handler_rclick(hdlgP, DlgItem, lpNMHdr);
+	} else if (lpNMHdr->code == NM_DBLCLK) {
+		technology_notify_handler_dblclk(hdlgP, DlgItem, lpNMHdr);
+	} else if (lpNMHdr->code == TVN_ITEMEXPANDING) {
+		return technology_notify_handler_itemexpanding(hdlgP, DlgItem, lpNMHdr);
 	}
 	return FALSE;
 }
@@ -2150,7 +2686,50 @@ BOOL On_DlgTreasureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
     DLGHDR *pHdr = (DLGHDR *) GetWindowLong(hwndParent, GWL_USERDATA);
     SetWindowPos(hdlgP, HWND_TOP, pHdr->rcDisplay.left, pHdr->rcDisplay.top, 0, 0, SWP_NOSIZE); 
 
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_REMARK), utf8_2_ansi(_("Treasure remark")));	
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_REMARK), utf8_2_ansi(_("Treasure remark")));
+
+	std::stringstream strstr;
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_LV_TREASURE_EXPLORER);
+	LVCOLUMN lvc;
+	int index = 0;
+	char text[_MAX_PATH];
+
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 40;
+	strcpy(text, utf8_2_ansi(_("Number")));
+	lvc.pszText = text;
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = index;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 90;
+	lvc.iSubItem = index;
+	strstr.str("");
+	strstr << _("Name");
+	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 60;
+	lvc.iSubItem = index;
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 400;
+	lvc.iSubItem = index;
+	strcpy(text, utf8_2_ansi(_("Image")));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
 	return FALSE;
 }
 
@@ -2372,6 +2951,13 @@ BOOL On_DlgCoreInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 void On_DlgCoreCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	switch (id) {
+	case IDM_NEW:
+		ns::new_scenario();
+		break;
+	case IDM_DELETE:
+		ns::delete_scenario(hdlgP);
+		break;
+
 	case IDM_SAVE:
 		ns::core.save(hdlgP);
 		break;

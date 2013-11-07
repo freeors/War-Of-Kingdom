@@ -1,6 +1,5 @@
-/* $Id: player.hpp 47828 2010-12-05 18:09:15Z mordante $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2013 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -54,7 +53,6 @@ public:
 
 	const simple_wml::node* config_address() const { return &cfg_; }
 
-	bool silenced() const { return messages_since_flood_start_ > MaxMessages; }
 	bool is_message_flooding();
 
 	/**

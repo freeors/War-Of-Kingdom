@@ -28,7 +28,6 @@
 #include "construct_dialog.hpp"
 #include "cursor.hpp"
 #include "dialogs.hpp"
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "game_preferences.hpp"
 #include "builder.hpp"
@@ -43,9 +42,11 @@
 #include "gui/dialogs/player_selection.hpp"
 #include "gui/dialogs/tower_tent.hpp"
 #include "gui/dialogs/language_selection.hpp"
+#include "gui/dialogs/inapp_purchase.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/mp_method_selection.hpp"
 #include "gui/dialogs/title_screen.hpp"
+#include "gui/dialogs/mp_login.hpp"
 #include "gui/dialogs/preferences.hpp"
 #include "gui/dialogs/create_hero.hpp"
 #include "gui/dialogs/transient_message.hpp"
@@ -84,6 +85,7 @@
 #include "version.hpp"
 #include "resources.hpp"
 #include "card.hpp"
+#include "formula_string_utils.hpp"
 
 #ifndef DISABLE_EDITOR
 #include "editor/editor_main.hpp"
@@ -103,6 +105,7 @@
 #include <string>
 
 
+#include <boost/foreach.hpp>
 // #include <boost/iostreams/copy.hpp>
 // #include <boost/iostreams/filtering_streambuf.hpp>
 // #include <boost/iostreams/filter/gzip.hpp>
@@ -136,8 +139,55 @@ static bool less_campaigns_rank(const config &a, const config &b) {
 }
 
 extern bool exit_app;
-int exe_type = exe_kingdom;
-size_t hero_size_from_dat = 0;
+
+namespace tent {
+
+std::vector<tlobby_side_param> lobby_side_params;
+int io_type;
+
+// only used for calculate_5fields and when teams is empty.
+hero* leader;
+
+int human_leader_number = HEROS_INVALID_NUMBER;
+int human_count = 0;
+int ai_count = 0;
+int employ_count = 0;
+int mode;
+int turns = -1;
+int duel = -1;
+
+void reset()
+{
+	lobby_side_params.clear();
+
+	human_leader_number = HEROS_INVALID_NUMBER;
+	human_count = 0;
+	ai_count = 0;
+	employ_count = 0;
+	mode;
+	turns = -1;
+	duel = -1;
+}
+
+class lock
+{
+public:
+	lock()
+		: clear_(true)
+	{}
+	~lock()
+	{
+		if (clear_) {
+			reset();
+		}
+	}
+
+	void set_clear(bool value) { clear_ = value; }
+private:
+	bool clear_;
+};
+
+}
 
 class game_controller
 {
@@ -150,8 +200,8 @@ public:
 	bool init_video();
 	bool init_config(const bool force=false);
 	bool init_language();
-	bool play_multiplayer_mode();
 	bool play_screenshot_mode();
+	std::string calculate_res_checksum() const;
 
 	void reload_changed_game_config();
 
@@ -160,11 +210,12 @@ public:
 	bool load_game();
 	void set_tutorial();
 
-	void level_to_gamestate(const std::string& map_data = null_str, bool modify_placing = false);
-	bool new_campaign();
+	void level_to_gamestate(bool fog, bool shroud, const std::string& map_data = null_str, bool modify_placing = false);
+	int new_campaign(int catalog);
 	bool goto_multiplayer();
 	bool play_multiplayer(bool random_map = false);
 	bool change_language();
+	bool inapp_purchase();
 	
 	void show_preferences();
 
@@ -178,7 +229,7 @@ public:
 	const config& game_config() const { return game_config_; }
 
 	hero_map& heros() { return heros_; }
-	hero& player_hero() { return player_hero_; }
+
 private:
 	game_controller(const game_controller&);
 	void operator=(const game_controller&);
@@ -209,7 +260,7 @@ private:
 	resize_monitor resize_monitor_;
 	binary_paths_manager paths_manager_;
 
-	bool multiplayer_mode_, no_gui_, screenshot_mode_;
+	bool screenshot_mode_;
 	std::string screenshot_map_, screenshot_filename_;
 	int force_bpp_;
 
@@ -225,7 +276,6 @@ private:
 	util::scoped_ptr<game_display> disp_;
 
 	game_state state_;
-	hero player_hero_;
 
 	std::string multiplayer_server_;
 	bool jump_to_multiplayer_;
@@ -247,8 +297,6 @@ game_controller::game_controller(int argc, char** argv) :
 	music_thinker_(),
 	resize_monitor_(),
 	paths_manager_(),
-	multiplayer_mode_(false),
-	no_gui_(false),
 	screenshot_mode_(false),
 	screenshot_map_(),
 	screenshot_filename_(),
@@ -263,17 +311,14 @@ game_controller::game_controller(int argc, char** argv) :
 	state_(),
 	multiplayer_server_(),
 	jump_to_multiplayer_(false),
-	cache_(game_config::config_cache::instance()),
-	player_hero_(hero(HEROS_INVALID_NUMBER))
+	cache_(game_config::config_cache::instance())
 {
 	bool no_music = false;
 	bool no_sound = false;
 
-	resources::heros_start = &heros_start_;
-
 	// if allocate static, iOS may be not align 4! 
 	// it necessary to ensure align great equal than 4.
-	unit::savegame_cache_ = (unsigned char*)malloc(CONSTANT_1M);
+	game_config::savegame_cache = (unsigned char*)malloc(game_config::savegame_cache_size);
 
 	// The path can be hardcoded and it might be a relative path.
 	if(!game_config::path.empty() &&
@@ -345,10 +390,6 @@ game_controller::game_controller(int argc, char** argv) :
 		} else if(val == "--with-replay") {
 			game::load_game_exception::show_replay = true;
 
-		} else if(val == "--nogui") {
-			no_gui_ = true;
-			no_sound = true;
-			preferences::disable_preferences_save();
 		}
 #ifndef DISABLE_EDITOR
 		else if(val == "--screenshot") {
@@ -386,25 +427,8 @@ game_controller::game_controller(int argc, char** argv) :
 					multiplayer_server_ = "";
 			}
 
-		} else if(val == "--multiplayer" || val == "-m") {
-			multiplayer_mode_ = true;
-			break; //parse the rest of the arguments when we set up the game
-		} else if(val == "--debug" || val == "-d") {
-			game_config::debug = true;
-			game_config::mp_debug = true;
-			//set the wml log domain to level "debug"
-			std::string s = "wml";
-			int severity = 3;
-			lg::set_log_domain_severity(s, severity);
-#ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
-		 } else if (val.substr(0, 18) == "--debug-dot-level=") {
-			 gui2::tdebug_layout_graph::set_level(val.substr(18));
-		 } else if (val.substr(0, 19) == "--debug-dot-domain=") {
-			 gui2::tdebug_layout_graph::set_domain(val.substr(19));
-#endif
 		} else if(val == "--no-delay") {
 			game_config::no_delay = true;
-		} else if (val.substr(0, 6) == "--log-") {
 		} else if (val == "--rng-seed") {
 			++arg_;
 		} else if(val == "--nosound") {
@@ -484,6 +508,21 @@ game_controller::game_controller(int argc, char** argv) :
 		}
 	}
 
+#if defined(_WIN32)
+	// game_config::path is ansi format.
+	for (std::string::const_iterator it = game_config::path.begin(); it != game_config::path.end(); ++ it) {
+		if (*it & 0x80) {
+			std::stringstream err;
+			std::string path = game_config::path;
+			std::replace(path.begin(), path.end(), '/', '\\');
+
+			err << path << " include invalid character! Please use english path.";
+			MessageBox(NULL, err.str().c_str(), "Error", MB_OK);
+			throw game::error(err.str());
+		}
+	}
+#endif
+
 	std::cerr << '\n';
 	std::cerr << "Data directory: " << game_config::path
 		<< "\nUser configuration directory: " << get_user_config_dir()
@@ -509,13 +548,18 @@ game_controller::game_controller(int argc, char** argv) :
 		preferences::set_music(false);
 	}
 
+	game_config::reserve_players.insert("");
+	game_config::reserve_players.insert("Player");
+	game_config::reserve_players.insert(_("Player"));
+
 	heros_.map_from_file(game_config::path + "/xwml/" + "hero.dat");
-	if (!preferences::get_hero(player_hero_, heros_.size())) {
+	hero& player_hero = group.leader();
+	if (!preferences::get_hero(player_hero, heros_.size())) {
 		// write [hero] to preferences
-		preferences::set_hero(player_hero_);
+		preferences::set_hero(player_hero);
 	}
-	hero_size_from_dat = heros_.size();
-	player_hero_.number_ = (int)heros_.size();
+	hero_map::map_size_from_dat = heros_.size();
+	player_hero.number_ = (int)heros_.size();
 }
 
 game_display& game_controller::disp()
@@ -531,16 +575,6 @@ game_display& game_controller::disp()
 
 bool game_controller::init_video()
 {
-	if (no_gui_) {
-		if( !(multiplayer_mode_ || screenshot_mode_) ) {
-			std::cerr << "--nogui flag is only valid with --multiplayer flag or --screenshot flag\n";
-			return false;
-		}
-		video_.make_fake();
-		game_config::no_delay = true;
-		return true;
-	}
-
 #ifdef _WIN32
 	icon_ = image::get_image("game-icon.png", image::UNSCALED);
 	if (icon_ != NULL) {
@@ -587,13 +621,38 @@ bool game_controller::init_video()
 	return true;
 }
 
+std::string game_controller::calculate_res_checksum() const
+{
+	uint32_t bin_nfiles, bin_sum_size, bin_modified;
+	std::stringstream strstr;
+
+	std::string str;
+
+	// requrie check file: data.bin, gui.bin, hero.dat.
+	if (!wml_checksum_from_file(game_config::path + "/xwml/data.bin", &bin_nfiles, &bin_sum_size, &bin_modified)) {
+		bin_nfiles = bin_sum_size = bin_modified = 0;
+	}
+	strstr << bin_nfiles << "," << bin_sum_size << "," << bin_modified;
+	str = strstr.str();
+
+	if (!wml_checksum_from_file(game_config::path + "/xwml/gui.bin", &bin_nfiles, &bin_sum_size, &bin_modified)) {
+		bin_nfiles = bin_sum_size = bin_modified = 0;
+	}
+	strstr << "," << bin_nfiles << "," << bin_sum_size << "," << bin_modified;
+	str = strstr.str();
+
+	int checksum = calcuate_xor_from_file(game_config::path + "/xwml/hero.dat");
+	strstr << "," << checksum;
+	str = strstr.str();
+
+	sha1_hash sha(strstr.str());
+	str = sha.display();
+	return str;
+}
+
 bool game_controller::init_config(const bool force)
 {
 	cache_.clear_defines();
-
-	// make sure that multiplayer mode is set if command line parameter is selected
-	if (!multiplayer_mode_)
-		cache_.add_define("TITLE_SCREEN");
 
 	load_game_cfg(force);
 
@@ -615,17 +674,17 @@ bool game_controller::init_config(const bool force)
 
 bool game_controller::init_language()
 {
-	if(!::load_language_list())
+	if (!::load_language_list()) {
 		return false;
-
-	if (!::set_language(get_locale()))
-		return false;
-
-	if(!no_gui_) {
-		std::string wm_title_string = _("The Battle for Wesnoth");
-		wm_title_string += " - " + game_config::revision;
-		SDL_WM_SetCaption(wm_title_string.c_str(), NULL);
 	}
+
+	if (!::set_language(get_locale())) {
+		return false;
+	}
+
+	std::string wm_title_string = _("The War of Kingdom");
+	wm_title_string += " - " + game_config::revision;
+	SDL_WM_SetCaption(wm_title_string.c_str(), NULL);
 
 	hotkey::load_descriptions();
 
@@ -650,221 +709,6 @@ bool game_controller::play_screenshot_mode()
 #else
 	return false;
 #endif
-}
-
-bool game_controller::play_multiplayer_mode()
-{
-	state_ = game_state();
-
-	if(!multiplayer_mode_) {
-		return true;
-	}
-
-	std::string era = "era_default";
-	std::string scenario = "multiplayer_The_Freelands";
-	std::map<int,std::string> side_types, side_controllers, side_algorithms, side_ai_configs;
-	std::map<int,utils::string_map> side_parameters;
-	std::string turns = "50";
-	std::string label = "";
-
-	size_t sides_counted = 0;
-
-	for(++arg_; arg_ < argc_; ++arg_) {
-		const std::string val(argv_[arg_]);
-		if(val.empty()) {
-			continue;
-		}
-
-		std::vector<std::string> name_value = utils::split(val, '=');
-		if(name_value.size() > 2) {
-			std::cerr << "invalid argument '" << val << "'\n";
-			return false;
-		} else if(name_value.size() == 2) {
-			const std::string name = name_value.front();
-			const std::string value = name_value.back();
-
-			const std::string name_head = name.substr(0,name.size()-1);
-			const char name_tail = name[name.size()-1];
-			const bool last_digit = isdigit(name_tail) ? true:false;
-			const size_t side = name_tail - '0';
-
-			if(last_digit && side > sides_counted) {
-				std::cerr << "counted sides: " << side << "\n";
-				sides_counted = side;
-			}
-
-			if(name == "--scenario") {
-				scenario = value;
-			} else if(name == "--turns") {
-				turns = value;
-			} else if(name == "--era") {
-				era = value;
-			} else if(name == "--label") {
-				label = value;
-			} else if(last_digit && name_head == "--controller") {
-				side_controllers[side] = value;
-			} else if(last_digit && name_head == "--ai_config") {
-				side_ai_configs[side] = value;
-			} else if(last_digit && name_head == "--algorithm") {
-				side_algorithms[side] = value;
-			} else if(last_digit && name_head == "--side") {
-				side_types[side] = value;
-			} else if(last_digit && name_head == "--parm") {
-				const std::vector<std::string> name_value = utils::split(value, ':');
-				if(name_value.size() != 2) {
-					std::cerr << "argument to '" << name << "' must be in the format name:value\n";
-					return false;
-				}
-
-				side_parameters[side][name_value.front()] = name_value.back();
-			} else {
-				std::cerr << "unrecognized option: '" << name << "'\n";
-				return false;
-			}
-		} else {
-			if (val == "--exit-at-end") {
-				game_config::exit_at_end = true;
-			}
-		}
-	}
-
-	const config &lvl = game_config().find_child("multiplayer", "id", scenario);
-	if (!lvl) {
-		std::cerr << "Could not find scenario '" << scenario << "'\n";
-		return false;
-	}
-
-	state_.classification().campaign_type = "multiplayer";
-	state_.classification().scenario = "";
-	state_.snapshot = config();
-
-	config level = lvl;
-	std::vector<config*> story;
-
-	const config &era_cfg = game_config().find_child("era","id",era);
-	if (!era_cfg) {
-		std::cerr << "Could not find era '" << era << "'\n";
-		return false;
-	}
-
-	level["turns"] = turns;
-
-	const config &side = era_cfg.child("multiplayer_side");
-	if (!side) {
-		std::cerr << "Could not find multiplayer side\n";
-		return false;
-	}
-
-	while (level.child_count("side") < sides_counted) {
-		std::cerr << "now adding side...\n";
-		level.add_child("side");
-	}
-
-	int side_num = 1;
-	foreach (config &s, level.child_range("side"))
-	{
-		std::map<int,std::string>::const_iterator type = side_types.find(side_num),
-		                                          controller = side_controllers.find(side_num),
-		                                          algorithm = side_algorithms.find(side_num),
-							  ai_config = side_ai_configs.find(side_num);
-
-		const config* side = type == side_types.end() ?
-			&era_cfg.find_child("multiplayer_side", "random_faction", "yes") :
-			&era_cfg.find_child("multiplayer_side", "id", type->second);
-
-		if (!*side) {
-			std::string side_name = (type == side_types.end() ? "default" : type->second);
-			std::cerr << "Could not find side '" << side_name << "' for side " << side_num << "\n";
-			return false;
-		}
-
-		if ((*side)["random_faction"].to_bool())
-		{
-			std::vector<std::string> faction_choices, faction_excepts;
-			faction_choices = utils::split((*side)["choices"]);
-			if(faction_choices.size() == 1 && faction_choices.front() == "") {
-				faction_choices.clear();
-			}
-			faction_excepts = utils::split((*side)["except"]);;
-			if(faction_excepts.size() == 1 && faction_excepts.front() == "") {
-				faction_excepts.clear();
-			}
-			unsigned j = 0;
-			foreach (const config &faction, era_cfg.child_range("multiplayer_side"))
-			{
-				if (faction["random_faction"].to_bool()) continue;
-				const std::string &faction_id = faction["id"];
-				if (!faction_choices.empty() &&
-				    std::find(faction_choices.begin(), faction_choices.end(), faction_id) == faction_choices.end())
-					continue;
-				if (!faction_excepts.empty() &&
-				    std::find(faction_excepts.begin(), faction_excepts.end(), faction_id) != faction_excepts.end())
-					continue;
-				if (rand() % ++j == 0)
-					side = &faction;
-			}
-			if ((*side)["random_faction"].to_bool()) {
-				std::string side_name = (type == side_types.end() ? "default" : type->second);
-				std::cerr << "Could not find any non-random faction for side " << side_num << "\n";
-				return false;
-			}
-			std::cerr << " Faction " << (*side)["name"] <<
-				" selected for side " << side_num << ".\n";
-		}
-
-		s["side"] = side_num;
-
-		s.append(*side);
-
-		if(controller != side_controllers.end()) {
-			s["controller"] = controller->second;
-		}
-
-		if(algorithm != side_algorithms.end()) {
-			s["ai_algorithm"] = algorithm->second;
-		}
-
-		if(ai_config != side_ai_configs.end()) {
-			s["ai_config"] = ai_config->second;
-		}
-
-		config& ai_params = s.add_child("ai");
-
-		//now add in any arbitrary parameters given to the side
-		for(utils::string_map::const_iterator j = side_parameters[side_num].begin(); j != side_parameters[side_num].end(); ++j) {
-			s[j->first] = j->second;
-			ai_params[j->first] = j->second;
-		}
-		++side_num;
-	}
-	level.add_child("era", era_cfg);
-
-	try {
-		//check if all sides are AI and we are using new uploader -> log these games
-		bool all_ai = true;
-		foreach (config &s, level.child_range("side")) {
-			if( s["controller"] != "ai" ) {
-				all_ai = false;
-			}
-		}
-
-		recorder.add_log_data("ai_log","ai_label",label);
-
-		state_.snapshot = level;
-		play_game(disp(), state_, game_config(), heros_, heros_start_, cards_);
-	} catch (game::load_game_exception &) {
-		//the user's trying to load a game, so go into the normal title screen loop and load one
-		return true;
-	} catch(twml_exception& e) {
-		e.show(disp());
-		return false;
-	} catch(std::exception& e) {
-		std::cerr << "caught exception: " << e.what() << "\n";
-	} catch(...) {
-		std::cerr << "caught unknown error playing level...\n";
-	}
-
-	return false;
 }
 
 bool game_controller::is_loading() const
@@ -948,7 +792,7 @@ bool game_controller::load_game()
 	}
 
 	if(state_.classification().campaign_type == "multiplayer") {
-		foreach (config &side, state_.snapshot.child_range("side"))
+		BOOST_FOREACH (config &side, state_.snapshot.child_range("side"))
 		{
 			if (side["controller"] == "network")
 				side["controller"] = "human";
@@ -958,10 +802,10 @@ bool game_controller::load_game()
 	}
 
 	if (load.cancel_orders()) {
-		foreach (config &side, state_.snapshot.child_range("side"))
+		BOOST_FOREACH (config &side, state_.snapshot.child_range("side"))
 		{
 			if (side["controller"] != "human") continue;
-			foreach (config &unit, side.child_range("unit"))
+			BOOST_FOREACH (config &unit, side.child_range("unit"))
 			{
 				unit["goto_x"] = -999;
 				unit["goto_y"] = -999;
@@ -974,13 +818,14 @@ bool game_controller::load_game()
 
 void game_controller::set_tutorial()
 {
+	const std::string campaign_id = "tutorial";
+	const config& tutorial_cfg = game_config().find_child("campaign", "id", campaign_id);
+
 	state_ = game_state();
-	state_.classification().campaign = "tutorial";
-	// state_.classification().abbrev = _ ("Wesnoth Tutorial");
-	state_.classification().campaign_type = "tutorial";
-	state_.classification().scenario = "tutorial";
-	state_.classification().campaign_define = "CAMPAIGN_TUTORIAL";
-	state_.classification().create = (long)time(NULL);
+	state_.classification().campaign = campaign_id;
+	state_.classification().campaign_type = "scenario";
+	state_.classification().scenario = tutorial_cfg["first_scenario"].str();
+	state_.classification().campaign_define = tutorial_cfg["define"].str();
 	state_.classification().version = game_config::version;
 	cache_.clear_defines();
 	cache_.add_define("EASY");
@@ -992,20 +837,22 @@ void game_controller::set_tutorial()
 	}
 	heros_start_ = heros_;
 
-	level_to_gamestate();
+	level_to_gamestate(false, false);
 }
 
 void game_controller::mark_completed_campaigns(std::vector<config> &campaigns)
 {
-	foreach (config &campaign, campaigns) {
+	BOOST_FOREACH (config &campaign, campaigns) {
 		campaign["completed"] = preferences::is_campaign_completed(campaign["id"]);
 	}
 }
 
-void game_controller::level_to_gamestate(const std::string& map_data, bool modify_placing)
+void game_controller::level_to_gamestate(bool fog, bool shroud, const std::string& map_data, bool modify_placing)
 {
 	load_campaign_cfg();
 	config scenario = game_config().find_child("scenario", "id", state_.classification().scenario);
+	scenario["fog"] = fog;
+	scenario["shroud"] = shroud;
 	if (tent::turns != -1) {
 		scenario["turns"] = tent::turns;
 		tent::turns = -1;
@@ -1062,10 +909,52 @@ void game_controller::level_to_gamestate(const std::string& map_data, bool modif
 			if (cfg["leader"].to_int() == tent::human_leader_number) {
 				config& s = *human_side;
 				s["leader"] = cfg["leader"];
-				const config& sub_cfg = cfg.child("artifical");
+								
+				std::stringstream strstr;
+				strstr << cfg["service_heros"].str() << ", " << cfg["wander_heros"].str();
+				
+				std::set<int> towers;
+				std::vector<std::string> vstr = utils::split(cfg["tower_heros"]);
+				for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+					int number = lexical_cast_default<int>(*it, -1);
+					if (number != -1) {
+						towers.insert(number);
+					}
+				}
+				vstr = utils::split(strstr.str());
+				std::set<int> candidate;
+				for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+					int number = lexical_cast_default<int>(*it, -1);
+					if (number != -1 && towers.find(number) == towers.end()) {
+						candidate.insert(number);
+					}
+				}
+				while ((int)towers.size() < game_config::tower_fix_heros && !candidate.empty()) {
+					std::set<int>::iterator it = candidate.begin();
+					std::advance(it, rand() % candidate.size());
+					int select_number = *it;
+					towers.insert(select_number);
+					candidate.erase(select_number);
+				}
+				
 				config& sub_s = *human_artifical;
-				sub_s["service_heros"] = sub_cfg["service_heros"];
-				sub_s["wander_heros"] = sub_cfg["wander_heros"];
+				strstr.str("");
+				for (std::set<int>::const_iterator it = towers.begin(); it != towers.end(); ++ it) {
+					if (it != towers.begin()) {
+						strstr << ", ";
+					}
+					strstr << *it;
+				}
+				sub_s["service_heros"] = strstr.str();
+
+				strstr.str("");
+				for (std::set<int>::const_iterator it = candidate.begin(); it != candidate.end(); ++ it) {
+					if (it != candidate.begin()) {
+						strstr << ", ";
+					}
+					strstr << *it;
+				}
+				sub_s["wander_heros"] = strstr.str();
 				break;
 			}
 		}
@@ -1074,10 +963,13 @@ void game_controller::level_to_gamestate(const std::string& map_data, bool modif
 
 	command_pool replay_data;
 	scenario["random_seed"] = state_.rng().get_random_seed();
-	::level_to_gamestate(scenario, replay_data, state_);
+	::level_to_gamestate(scenario, replay_data, state_, state_.classification().campaign_type);
 }
 
-bool game_controller::new_campaign()
+// <0(-1): cancel
+// 0: next dialog is canceled
+// >0(1): start a new campaign
+int game_controller::new_campaign(int catalog)
 {
 	state_ = game_state();
 	state_.classification().campaign_type = "scenario";
@@ -1088,26 +980,25 @@ bool game_controller::new_campaign()
 	std::sort(campaigns.begin(),campaigns.end(),less_campaigns_rank);
 
 
-	if(campaigns.begin() == campaigns.end()) {
-	  gui2::show_error_message(disp().video(),
-				  _("No campaigns are available.\n"));
-		return false;
+	if (campaigns.begin() == campaigns.end()) {
+		gui2::show_error_message(disp().video(), _("No campaigns are available.\n"));
+		return -1;
 	}
 
 	int campaign_num = -1;
 	// No campaign selected from command line
 	{
-		gui2::tcampaign_selection dlg(campaigns);
+		gui2::tcampaign_selection dlg(campaigns, catalog);
 
 		try {
 			dlg.show(disp().video());
 		} catch(twml_exception& e) {
 			e.show(disp());
-			return false;
+			return -1;
 		}
 
 		if (dlg.get_retval() != gui2::twindow::OK) {
-			return false;
+			return -1;
 		}
 
 		campaign_num = dlg.get_choice();
@@ -1117,8 +1008,7 @@ bool game_controller::new_campaign()
 
 	state_.classification().campaign = campaign["id"].str();
 	state_.classification().abbrev = campaign["abbrev"].str();
-	state_.classification().mode = campaign["mode"].str();
-
+	
 	// we didn't specify in the command line the scenario to be started
 	state_.classification().scenario = campaign["first_scenario"].str();
 	state_.classification().end_text = campaign["end_text"].str();
@@ -1131,42 +1021,42 @@ bool game_controller::new_campaign()
 	std::string hero_filename = get_wml_location(campaign["hero_data"]);
 	if (!heros_.map_from_file(hero_filename)) {
 		gui2::show_error_message(disp().video(), _("Can not find valid hero.dat in [campaign] tag"));
-		return new_campaign();
+		return 0;
 	}
 	heros_start_ = heros_;
 
 	{
-		gui2::ttent* tent = NULL;
+		tent::lock lock;
+		gui2::ttent* dlg = NULL;
 		const std::string mode = campaign["mode"].str();
 		if (mode == "tower") {
-			tent = new gui2::ttower_tent(disp(), heros_, cards_, game_config(), campaign, player_hero_);
+			dlg = new gui2::ttower_tent(disp(), heros_, cards_, game_config(), campaign, group.leader());
 		} else {
-			tent = new gui2::tplayer_selection(disp(), heros_, cards_, game_config(), campaign, player_hero_);
+			dlg = new gui2::tplayer_selection(disp(), heros_, cards_, game_config(), campaign, group.leader());
 		}
 
 		try {
-			tent->show(disp().video());
+			dlg->show(disp().video());
 		} catch(twml_exception& e) {
 			e.show(disp());
-			delete tent;
-			return false;
+			delete dlg;
+			return -1;
 		}
 
-		if (tent->get_retval() != gui2::twindow::OK) {
+		if (dlg->get_retval() != gui2::twindow::OK) {
 			// relaunch the campaign selection dialog
-			delete tent;
-			return new_campaign();
+			delete dlg;
+			return 0;
 		}
-		checked_card_ = tent->checked_card();
+		lock.set_clear(false);
+		checked_card_ = dlg->checked_card();
 		
-		config player = tent->player();
-		if (player["hero"].to_int() == player_hero_.number_) {
-			heros_.add(player_hero_);
-			heros_start_.add(player_hero_);
+		config player = dlg->player();
+		if (player["hero"].to_int() == group.leader().number_) {
+			heros_.add(group.leader());
+			heros_start_.add(group.leader());
 		}
 
-		player["shroud"] = tent->shroud()? "yes": "no";
-		player["fog"] = tent->fog()? "yes": "no";
 		// candidate_cards
 		std::stringstream str;
 		int index = 0;
@@ -1210,23 +1100,23 @@ bool game_controller::new_campaign()
 		// there is invalid here, so doesn't do it.
 		// state_.set_variable("player", state_.classification().player);		
 
-		state_.classification().create = (long)time(NULL);
+		state_.classification().mode = dlg->mode_str();
 		state_.classification().version = game_config::version;
 		state_.classification().campaign_define = campaign["define"].str();
 		cache_.clear_defines();
 		cache_.add_define("EASY");
 		
 		if (mode == "tower") {
-			gui2::ttower_tent* tower_tent = dynamic_cast<gui2::ttower_tent*>(tent);
+			gui2::ttower_tent* tower_tent = dynamic_cast<gui2::ttower_tent*>(dlg);
 			const config& scenario_data = tower_tent->scenario_data();
-			level_to_gamestate(scenario_data["map_data"].str(), scenario_data["modify_placing"].to_bool());
+			level_to_gamestate(dlg->fog(), dlg->shroud(), scenario_data["map_data"].str(), scenario_data["modify_placing"].to_bool());
 		} else {
-			level_to_gamestate();
+			level_to_gamestate(dlg->fog(), dlg->shroud());
 		}
 
-		delete tent;
+		delete dlg;
 	}
-	return true;
+	return 1;
 }
 
 bool game_controller::goto_multiplayer()
@@ -1242,14 +1132,14 @@ bool game_controller::goto_multiplayer()
 	return true;
 }
 
-	void game_controller::reload_changed_game_config()
-	{
-		//force a reload of configuration information
-		cache_.recheck_filetree_checksum();
-		old_defines_map_.clear();
-		clear_binary_paths_cache();
-		init_config(true);
-	}
+void game_controller::reload_changed_game_config()
+{
+	//force a reload of configuration information
+	cache_.recheck_filetree_checksum();
+	old_defines_map_.clear();
+	clear_binary_paths_cache();
+	init_config(true);
+}
 
 void game_controller::start_wesnothd()
 {
@@ -1284,14 +1174,33 @@ void game_controller::start_wesnothd()
 
 bool game_controller::play_multiplayer(bool random_map)
 {
-	int res;
+	if (game_config::is_reserve_player(preferences::login())) {
+		utils::string_map symbols;
+		std::string message;
+		symbols["username"] = help::tintegrate::generate_format(preferences::login(), "red");
+		message = vgettext("$username is reserved! Please modify to your username. To modify: Enter your username in \"Player profile\" Setting.", symbols);
+
+		gui2::show_message(disp().video(), "", message);
+		return false;
+	}
 /*
-	hero h = hero_invalid;
-	if (!preferences::get_hero(h, HEROS_INVALID_NUMBER)) {
-		gui2::show_message(disp().video(), "", _("You must create hero before play it."), gui2::tmessage::ok_button, "hero-256/230.png", "");
+	{
+		int ii = 0;
+		for (std::map<int, std::string>::const_iterator it = game_config::inapp_items.begin(); it != game_config::inapp_items.end(); ++ it) {
+			preferences::set_inapp_purchased(it->first, false);
+		}
+		preferences::write_preferences();
 		return false;
 	}
 */
+	int res;
+
+	// other module may modified game_config, and more data.
+	// map editor may result twice multiplayer scenario.
+	if (!old_defines_map_.empty()) {
+		reload_changed_game_config();
+	}
+
 	state_ = game_state();
 	state_.classification().campaign_type = "multiplayer";
 	state_.classification().campaign_define = "MULTIPLAYER";
@@ -1439,10 +1348,23 @@ bool game_controller::change_language()
 	dlg.show(disp().video());
 	if (dlg.get_retval() != gui2::twindow::OK) return false;
 
-	if (!no_gui_) {
-		std::string wm_title_string = _("The Battle for Wesnoth");
-		wm_title_string += " - " + game_config::revision;
-		SDL_WM_SetCaption(wm_title_string.c_str(), NULL);
+	std::string wm_title_string = _("The War of Kingdom");
+	wm_title_string += " - " + game_config::revision;
+	SDL_WM_SetCaption(wm_title_string.c_str(), NULL);
+	return true;
+}
+
+bool game_controller::inapp_purchase()
+{
+	bool browse = true;
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+	browse = false;
+#endif
+
+	gui2::tinapp_purchase dlg(browse);
+	dlg.show(disp().video());
+	if (dlg.get_retval() != gui2::twindow::OK) {
+		return false;
 	}
 	return true;
 }
@@ -1505,7 +1427,7 @@ void game_controller::load_game_cfg(const bool force)
 {
 	// make sure that 'debug mode' symbol is set if command line parameter is selected
 	// also if we're in multiplayer and actual debug mode is disabled
-	if (game_config::debug || game_config::mp_debug) {
+	if (game_config::debug) {
 		cache_.add_define("DEBUG_MODE");
 	}
 
@@ -1545,7 +1467,7 @@ void game_controller::load_game_cfg(const bool force)
 		
 
 			const config::const_child_itors& terrains = game_config_.child_range("terrain_type");
-			foreach (const config &t, terrains) {
+			BOOST_FOREACH (const config &t, terrains) {
 				gamemap::terrain_types.add_child("terrain_type", t);
 			}
 			game_config_.clear_children("terrain_type");
@@ -1645,7 +1567,7 @@ void game_controller::load_game_cfg(const bool force)
 		// game_config_.splice_children(core_terrain_rules, "terrain_graphics");
 
 		config& hashes = game_config_.add_child("multiplayer_hashes");
-		foreach (const config &ch, game_config_.child_range("multiplayer")) {
+		BOOST_FOREACH (const config &ch, game_config_.child_range("multiplayer")) {
 			hashes[ch["id"]] = ch.hash();
 		}
 
@@ -1664,12 +1586,7 @@ void game_controller::launch_game(RELOAD_GAME_DATA reload)
 {
 	loadscreen::global_loadscreen_manager loadscreen_manager(disp().video());
 	loadscreen::start_stage("load data");
-/*
-	// if (reload == RELOAD_DATA) {
-	if (state_.starting_pos.empty()) {
-		load_campaign_cfg();
-	}
-*/
+
 	const binary_paths_manager bin_paths_manager(game_config());
 
 	try {
@@ -1732,9 +1649,9 @@ game_controller::~game_controller()
 	if (icon_ != NULL) {
 		icon_.get()->refcount --;
 	}
-	if (unit::savegame_cache_) {
-		free(unit::savegame_cache_);
-		unit::savegame_cache_ = NULL;
+	if (game_config::savegame_cache) {
+		free(game_config::savegame_cache);
+		game_config::savegame_cache = NULL;
 	}
 	terrain_builder::release_heap();
 	pathfind::release_pq();
@@ -2027,7 +1944,7 @@ static int process_command_args(int argc, char** argv) {
 
 				int read = 0;
 				// use static preproc_define::read_pair(config) to make a object
-				foreach (const config::any_child &value, cfg.all_children_range()) {
+				BOOST_FOREACH (const config::any_child &value, cfg.all_children_range()) {
 					const preproc_map::value_type def = preproc_define::read_pair(value.cfg);
 					preproc.input_macros_[def.first] = def.second;
 					++read;
@@ -2199,7 +2116,7 @@ static int do_gameloop(int argc, char** argv)
 	set_preferences_dir("kingdom");
 #endif
 	int finished = process_command_args(argc, argv);
-	if(finished != -1) {
+	if (finished != -1) {
 		return finished;
 	}
 
@@ -2263,154 +2180,156 @@ static int do_gameloop(int argc, char** argv)
 	SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
 #endif
 
-	config tips_of_day;
+	game_config::checksum = game.calculate_res_checksum();
 
 	loadscreen::start_stage("titlescreen");
 
-	LOG_CONFIG << "time elapsed: "<<  (SDL_GetTicks() - start_ticks) << " ms\n";
-
-	for (;;)
-	{
-		if (exit_app) {
-			posix_print("do_gameloop, exit app is ture, exit!\n");
+	try {
+		for (;;) {
+			if (exit_app) {
+				posix_print("do_gameloop, exit app is ture, exit!\n");
 #ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "SDL", "do_gameloop, exit app is ture, exit!\n");
+				__android_log_print(ANDROID_LOG_INFO, "SDL", "do_gameloop, exit app is ture, exit!\n");
 #endif
-			return 0;
-		} else {
-#ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "SDL", "do_gameloop, exit app is false!\n");
-#endif
-		}
-
-		// reset the TC, since a game can modify it, and it may be used
-		// by images in add-ons or campaigns dialogs
-		image::set_team_colors();
-
-		statistics::fresh_stats();
-
-        if (!game.is_loading()) {
-			const config &cfg = game.game_config().child("titlescreen_music");
-			if (cfg) {
-	            sound::play_music_repeatedly(game_config::title_music);
-				foreach (const config &i, cfg.child_range("music")) {
-					sound::play_music_config(i);
-				}
-				sound::commit_music_changes();
+				return 0;
 			} else {
-				sound::empty_playlist();
-				sound::stop_music();
-			}
-        }
-
-		if(game.play_multiplayer_mode() == false) {
-			return 0;
-		}
-
-		if(game.play_screenshot_mode() == false) {
-			return 0;
-		}
-
-		recorder.clear();
-
-		//Start directly a multiplayer
-		//Eventually with a specified server
-		if(game.goto_multiplayer() == false){
-			continue; //Go to main menu
-		}
-
-		loadscreen_manager.reset();
-
-		gui2::ttitle_screen::tresult res = game.is_loading()
-				? gui2::ttitle_screen::LOAD_GAME
-				: gui2::ttitle_screen::NOTHING;
-
-		const preferences::display_manager disp_manager(&game.disp());
-
-		const font::floating_label_context label_manager;
-
-		cursor::set(cursor::NORMAL);
-		if(res == gui2::ttitle_screen::NOTHING) {
-			const hotkey::basic_handler key_handler(&game.disp());
-			gui2::ttitle_screen dlg(game.disp(), game.heros(), game.player_hero());
-			dlg.show(game.disp().video());
-
-			res = static_cast<gui2::ttitle_screen::tresult>(dlg.get_retval());
-		}
-
-		game_controller::RELOAD_GAME_DATA should_reload = game_controller::RELOAD_DATA;
-
-		if (exit_app || res == gui2::ttitle_screen::QUIT_GAME) {
-			posix_print("do_gameloop, after received QUIT_GAME, ticks: %u\n", SDL_GetTicks());
 #ifdef ANDROID
-			__android_log_print(ANDROID_LOG_INFO, "SDL", "do_gameloop, after received QUIT_GAME, ticks: %u", SDL_GetTicks());
+				__android_log_print(ANDROID_LOG_INFO, "SDL", "do_gameloop, exit app is false!\n");
 #endif
-			return 0;
-		} else if(res == gui2::ttitle_screen::LOAD_GAME) {
-			if(game.load_game() == false) {
-				game.clear_loaded_game();
-				res = gui2::ttitle_screen::NOTHING;
-				continue;
 			}
 
-			should_reload = game_controller::NO_RELOAD_DATA;
-		} else if(res == gui2::ttitle_screen::TUTORIAL) {
-			game.set_tutorial();
-		} else if(res == gui2::ttitle_screen::NEW_CAMPAIGN) {
-			if(game.new_campaign() == false) {
-				continue;
+			// reset the TC, since a game can modify it, and it may be used
+			// by images in add-ons or campaigns dialogs
+			image::set_team_colors();
+
+			statistics::fresh_stats();
+
+			if (!game.is_loading()) {
+				const config &cfg = game.game_config().child("titlescreen_music");
+				if (cfg) {
+					sound::play_music_repeatedly(game_config::title_music);
+					BOOST_FOREACH (const config &i, cfg.child_range("music")) {
+						sound::play_music_config(i);
+					}
+					sound::commit_music_changes();
+				} else {
+					sound::empty_playlist();
+					sound::stop_music();
+				}
 			}
-		} else if(res == gui2::ttitle_screen::RANDOM_MAP) {
-			if (!game_config::mp_debug) {
-				game_config::debug = false;
-			}
-			if(game.play_multiplayer(true) == false) {
-				continue;
-			}
-		} else if(res == gui2::ttitle_screen::MULTIPLAYER) {
-			if (!game_config::mp_debug) {
-				game_config::debug = false;
-			}
-			if(game.play_multiplayer() == false) {
-				continue;
-			}
-		} else if(res == gui2::ttitle_screen::CHANGE_LANGUAGE) {
-			if (game.change_language()) {
-				tips_of_day.clear();
-				t_string::reset_translations();
-				image::flush_cache();
-			}
-			continue;
-		} else if(res == gui2::ttitle_screen::EDIT_PREFERENCES) {
-			game.show_preferences();
-			continue;
-		} else if(res == gui2::ttitle_screen::SHOW_ABOUT) {
-			about::show_about(game.disp());
-			continue;
-		} else if(res == gui2::ttitle_screen::SHOW_HELP) {
-			help::help_manager help_manager(&game.game_config(), NULL);
-			help::show_help(game.disp());
-			continue;
-		} else if(res == gui2::ttitle_screen::RELOAD_GAME_DATA) {
-			loadscreen::global_loadscreen_manager loadscreen(game.disp().video());
-			game.reload_changed_game_config();
-			image::flush_cache();
-			continue;
-#ifndef DISABLE_EDITOR
-		} else if(res == gui2::ttitle_screen::START_MAP_EDITOR) {
-			///@todo editor can ask the game to quit completely
-			if (game.start_editor() == editor::EXIT_QUIT_TO_DESKTOP) {
+
+			if (game.play_screenshot_mode() == false) {
 				return 0;
 			}
-			continue;
+
+			recorder.clear();
+
+			// Start directly a multiplayer
+			// Eventually with a specified server
+			if (game.goto_multiplayer() == false){
+				continue; // Go to main menu
+			}
+
+			loadscreen_manager.reset();
+
+			gui2::ttitle_screen::tresult res = game.is_loading()
+					? gui2::ttitle_screen::LOAD_GAME
+					: gui2::ttitle_screen::NOTHING;
+
+			const preferences::display_manager disp_manager(&game.disp());
+
+			const font::floating_label_context label_manager;
+
+			cursor::set(cursor::NORMAL);
+			if (game_config::is_reserve_player(group.leader().name())) {
+				utils::string_map symbols;
+				symbols["account"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Register, config account"), "yellow");
+				symbols["ps"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "green");
+
+				gui2::tmp_login dlg(game.disp(), vgettext("wesnoth-lib", "account^detect invalid($account, $ps)", symbols));
+				dlg.show(game.disp().video());
+			}
+			if (res == gui2::ttitle_screen::NOTHING) {
+				const hotkey::basic_handler key_handler(&game.disp());
+				gui2::ttitle_screen dlg(game.disp(), game.heros(), group.leader());
+				dlg.show(game.disp().video());
+				res = static_cast<gui2::ttitle_screen::tresult>(dlg.get_retval());
+			}
+
+			game_controller::RELOAD_GAME_DATA should_reload = game_controller::RELOAD_DATA;
+
+			if (exit_app || res == gui2::ttitle_screen::QUIT_GAME) {
+				posix_print("do_gameloop, after received QUIT_GAME, ticks: %u\n", SDL_GetTicks());
+#ifdef ANDROID
+				__android_log_print(ANDROID_LOG_INFO, "SDL", "do_gameloop, after received QUIT_GAME, ticks: %u", SDL_GetTicks());
 #endif
+				return 0;
+			} else if(res == gui2::ttitle_screen::LOAD_GAME) {
+				if(game.load_game() == false) {
+					game.clear_loaded_game();
+					res = gui2::ttitle_screen::NOTHING;
+					continue;
+				}
+
+				should_reload = game_controller::NO_RELOAD_DATA;
+			} else if (res == gui2::ttitle_screen::TUTORIAL || res == gui2::ttitle_screen::NEW_CAMPAIGN) {
+				int retval;
+				do {
+					retval = game.new_campaign(res == gui2::ttitle_screen::NEW_CAMPAIGN? NONE_CATALOG: TUTORIAL_CATALOG);
+				} while (retval == 0);
+				if (retval < 0) {
+					continue;
+				}
+
+			} else if(res == gui2::ttitle_screen::RANDOM_MAP) {
+				game_config::debug = false;
+				if (game.play_multiplayer(true) == false) {
+					continue;
+				}
+			} else if(res == gui2::ttitle_screen::MULTIPLAYER) {
+				game_config::debug = false;
+				if(game.play_multiplayer() == false) {
+					continue;
+				}
+			} else if(res == gui2::ttitle_screen::CHANGE_LANGUAGE) {
+				if (game.change_language()) {
+					t_string::reset_translations();
+					image::flush_cache();
+				}
+				continue;
+			} else if(res == gui2::ttitle_screen::INAPP_PURCHASE) {
+				if (game.inapp_purchase()) {
+				}
+				continue;
+			} else if(res == gui2::ttitle_screen::EDIT_PREFERENCES) {
+				game.show_preferences();
+				continue;
+			} else if(res == gui2::ttitle_screen::SHOW_ABOUT) {
+				about::show_about(game.disp());
+				continue;
+			} else if(res == gui2::ttitle_screen::SHOW_HELP) {
+				help::help_manager help_manager(&game.game_config(), NULL);
+				help::show_help(game.disp());
+				continue;
+#ifndef DISABLE_EDITOR
+			} else if(res == gui2::ttitle_screen::START_MAP_EDITOR) {
+				// @todo editor can ask the game to quit completely
+				if (game.start_editor() == editor::EXIT_QUIT_TO_DESKTOP) {
+					return 0;
+				}
+				continue;
+#endif
+			}
+
+			if (recorder.at_end()){
+				game.launch_game(should_reload);
+			} else {
+				game.play_replay();
+			}
 		}
 
-		if (recorder.at_end()){
-			game.launch_game(should_reload);
-		} else {
-			game.play_replay();
-		}
+	} catch(twml_exception& e) {
+		e.show(game.disp());
 	}
 
 	return 0;
@@ -2426,7 +2345,10 @@ static Uint32 sysevent_callback(const Uint32 sysevent, void* event)
 		posix_print("sysevent = 1, will call throw CVideo::quit()\n");
 		longjmp(env1, 1);
 	} else if (sysevent == 2) {
-		if (!resources::units) {
+		if (gui2::tinapp_purchase::get_singleton()) {
+			posix_print("sysevent = 2, but in inapp_purchasing, do nothing!\n");
+			return 0;
+		} else if (!resources::units) {
 			posix_print("sysevent = 2, resources::units is NULL\n");
 		} else {
 			posix_print("sysevent = 2, resources::units is non-null\n");
@@ -2435,8 +2357,13 @@ static Uint32 sysevent_callback(const Uint32 sysevent, void* event)
 		// longjmp(env2, 2);
 		longjmp(env1, 2);
 	} else if (sysevent == 3) {
-		posix_print("sysevent = 3, will call throw CVideo::quit()\n");
-		longjmp(env1, 3);
+		if (gui2::tinapp_purchase::get_singleton()) {
+			posix_print("sysevent = 3, but in inapp_purchasing, do nothing!\n");
+			return 0;
+		} else {
+			posix_print("sysevent = 3, will call throw CVideo::quit()\n");
+			longjmp(env1, 3);
+		}
 	}
 	return 0;
 }

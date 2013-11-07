@@ -97,6 +97,7 @@ struct end_level_data
 		, custom_endlevel_music()
 		, reveal_map(true)
 		, disabled(false)
+		, result(NONE)
 	{}
 
 	bool carryover_report;             /**< Should a summary of the scenario outcome be displayed? */
@@ -109,6 +110,7 @@ struct end_level_data
 	std::string custom_endlevel_music; /**< Custom short music played at the end. */
 	bool reveal_map;                   /**< Should we reveal map when game is ended? (Multiplayer only) */
 	bool disabled;                     /**< Limits execution of tag [endlevel] to a single time > */
+	LEVEL_RESULT result;
 
 	void write(config& cfg) const {
 		cfg["prescenario_save"] = prescenario_save;

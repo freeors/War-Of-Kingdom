@@ -19,7 +19,6 @@
 
 #include "gui/widgets/list.hpp"
 
-#include "foreach.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/widget_definition/listbox.hpp"
 #include "gui/auxiliary/window_builder/listbox.hpp"
@@ -27,6 +26,7 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
@@ -137,7 +137,7 @@ void tlist::add_row(
 
 void tlist::append_rows(const std::vector<string_map>& items)
 {
-	foreach(const string_map& item, items) {
+	BOOST_FOREACH (const string_map& item, items) {
 		add_row(item);
 	}
 }

@@ -18,13 +18,13 @@
 
 #include "color_range.hpp"
 #include "config.hpp"
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "log.hpp"
 #include "util.hpp"
 #include "version.hpp"
 #include "wesconfig.h"
 #include "serialization/string_utils.hpp"
+#include <boost/foreach.hpp>
 #ifdef HAVE_REVISION
 #include "revision.hpp"
 #endif /* HAVE_REVISION */
@@ -32,6 +32,15 @@
 static lg::log_domain log_engine("engine");
 #define DBG_NG LOG_STREAM(debug, log_engine)
 #define ERR_NG LOG_STREAM(err, log_engine)
+
+#if defined(__APPLE__) && TARGET_OS_IPHONE
+extern "C" void get_serialnumber(char* sn);
+#else
+void get_serialnumber(char* sn)
+{
+	strcpy(sn, "CCQJPWCUF4K1");
+}
+#endif
 
 namespace game_config
 {
@@ -46,20 +55,23 @@ namespace game_config
 	unsigned lobby_refresh = 4000;
 	const int gold_carryover_percentage = 80;
 	const std::string version = VERSION;
-	int reside_troop_increase_loyalty = 30;
-	int field_troop_increase_loyalty = 8;
+	int reside_troop_increase_loyalty = 50;
+	int field_troop_increase_loyalty = 10;
 	int wander_loyalty_threshold = 112; // HERO_MAX_LOYALTY / 4 * 3
 	int move_loyalty_threshold = 130; // HERO_MAX_LOYALTY - 20
 	int ai_keep_loyalty_threshold = wander_loyalty_threshold + 13;
 	int ai_keep_hp_threshold = 50;
-	int max_keep_turns = 10;
+	int max_troop_food = 15;
 	int increase_feeling = 1024; // HERO_MAX_FEELING / 64. 64 turns will carry.
 	int minimal_activity = 175;
 	int maximal_defeated_activity = 0;
+	int tower_fix_heros = 6;
+	bool score_dirty = true;
 	int max_police = 100;
 	int min_tradable_police = max_police / 2;
 	int max_commoners = 5;
-	int active_tactic_slots = 2;
+	int fixed_tactic_slots = 2;
+	int active_tactic_slots = fixed_tactic_slots;
 
 	int default_human_level = 1;
 	int default_ai_level = 2;
@@ -67,10 +79,14 @@ namespace game_config
 	int min_level = 1;
 	int max_level = 3;
 
+	int max_noble_level = 4;
 	int max_tactic_point = 15;
 	int increase_tactic_point = 4;
+	int formation_least_adjacent = 3;
 
 	int max_bomb_turns = 2;
+	bool no_messagebox = false;
+	bool hide_tactic_slot = false;
 
 	int kill_xp(int level)
 	{
@@ -84,9 +100,9 @@ namespace game_config
 	}
 
 	const std::string revision = VERSION;
-	const std::string checksum = "0123456789abcdef";
+	std::string checksum;
 	std::string wesnoth_program_dir;
-	bool debug = false, editor = false, ignore_replay_errors = false, mp_debug = false, exit_at_end = false, no_delay = false, disable_autosave = false;
+	bool debug = false, editor = false, no_delay = false, disable_autosave = false;
 
 	bool use_bin = true;
 	int cache_compression_level = 6;
@@ -94,6 +110,9 @@ namespace game_config
 	int start_cards = 6;
 	int cards_per_turn = 2;
 	int max_cards = 20;
+
+	std::string sn;
+	std::map<int, std::string> inapp_items;
 
 	int title_logo_x = 0, title_logo_y = 0, title_buttons_x = 0, title_buttons_y = 0, title_buttons_padding = 0,
 	    title_tip_x = 0, title_tip_width = 0, title_tip_padding = 0;
@@ -172,6 +191,10 @@ namespace game_config
 	// ai part
 	int navigation_per_level = 10000;
 
+	unsigned char* savegame_cache = NULL;
+	int savegame_cache_size = 1024 * 1024; // 1M
+
+
 	namespace sounds {
 		const std::string turn_bell = "bell.wav",
 		timer_bell = "timer.wav",
@@ -207,12 +230,15 @@ namespace game_config
 	std::string preferences_dir = "";
 	std::string preferences_dir_utf8 = "";
 
+	std::set<std::string> reserve_players;
 	std::vector<server_info> server_list;
+	bbs_server_info bbs_server;
 
 	void load_config(const config* cfg)
 	{
-		if(cfg == NULL)
+		if (cfg == NULL) {
 			return;
+		}
 
 		const config& v = *cfg;
 
@@ -231,7 +257,7 @@ namespace game_config
 		move_loyalty_threshold = v["wander_loyalty_threshold"].to_int(130); // HERO_MAX_LOYALTY - 20
 		ai_keep_loyalty_threshold = wander_loyalty_threshold + 13;
 		ai_keep_hp_threshold = v["ai_keep_hp_threshold"].to_int(50);
-		max_keep_turns = v["max_keep_turns"].to_int(10);
+		max_troop_food = v["max_troop_food"].to_int(15);
 		max_police = v["max_police"].to_int(100);
 		min_tradable_police = v["min_tradable_police"].to_int(max_police / 2);
 		max_commoners = v["max_commoners"].to_int(5);
@@ -245,6 +271,13 @@ namespace game_config
 
 		max_cards = v["max_cards"].to_int(20);
 		default_ai_level = v["default_ai_level"].to_int(2);
+
+		{
+			char _sn[128];
+			get_serialnumber(_sn);
+			sn = _sn;
+		}
+		inapp_items[INAPP_VIP] = "vip";
 
 		title_music = v["title_music"].str();
 		lobby_music = v["lobby_music"].str();
@@ -324,18 +357,45 @@ namespace game_config
 		}
 
 		server_list.clear();
-		foreach (const config &server, v.child_range("server"))
+		BOOST_FOREACH (const config &server, v.child_range("server"))
 		{
 			server_info sinf;
 			sinf.name = server["name"].str();
 			sinf.address = server["address"].str();
 			server_list.push_back(sinf);
 		}
+
+		if (const config& c = v.child("bbs_server")) {
+			bbs_server.name = c["name"].str();
+			const std::string& address = c["address"];
+			int pos = address.find_first_of(":");
+			if	(pos == -1) {
+				bbs_server.host = address;
+				bbs_server.port = 80;
+			} else {
+				bbs_server.host = address.substr(0, pos);
+				bbs_server.port = lexical_cast_default<unsigned int>(address.substr(pos + 1), 80);
+			}
+			bbs_server.url = c["url"].str();
+			if (bbs_server.url.empty() || bbs_server.url[0] != '/') {
+				bbs_server.url = std::string("/") + bbs_server.url;
+			}
+		} else {
+			bbs_server.name = "localhost";
+			bbs_server.host = "localhost";
+			bbs_server.port = 80;
+			bbs_server.url = "/bbs";
+		}
+	}
+
+	bool is_reserve_player(const std::string& player)
+	{
+		return reserve_players.find(player) != reserve_players.end();
 	}
 
 	void add_color_info(const config &v)
 	{
-		foreach (const config &teamC, v.child_range("color_range"))
+		BOOST_FOREACH (const config &teamC, v.child_range("color_range"))
 		{
 			const config::attribute_value *a1 = teamC.get("id"),
 				*a2 = teamC.get("rgb");
@@ -343,7 +403,7 @@ namespace game_config
 			std::string id = *a1;
 			std::vector<Uint32> temp = string2rgb(*a2);
 			team_rgb_range.insert(std::make_pair(id,color_range(temp)));
-			team_rgb_name.push_back(std::make_pair<std::string, t_string>(id, teamC["name"]));
+			team_rgb_name.push_back(std::make_pair(id, teamC["name"].t_str()));
 			//generate palette of same name;
 			std::vector<Uint32> tp = palette(team_rgb_range[id]);
 			if (tp.empty()) continue;
@@ -368,9 +428,9 @@ namespace game_config
 		std::vector<std::pair<std::string, t_string > >& team_rgb_name_p = team_rgb_name;
 		std::map<std::string, std::vector<Uint32> >& team_rgb_colors_p = team_rgb_colors;
 
-		foreach (const config &cp, v.child_range("color_palette"))
+		BOOST_FOREACH (const config &cp, v.child_range("color_palette"))
 		{
-			foreach (const config::attribute &rgb, cp.attribute_range())
+			BOOST_FOREACH (const config::attribute &rgb, cp.attribute_range())
 			{
 				try {
 					team_rgb_colors.insert(std::make_pair(rgb.first, string2rgb(rgb.second)));

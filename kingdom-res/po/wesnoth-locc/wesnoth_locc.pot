@@ -1,0 +1,143 @@
+﻿msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: li zhuo <zuoli@zowietek.cn>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "legend_of_cao_cao"
+msgstr ""
+
+msgid "legend_of_cao_cao description"
+msgstr ""
+
+msgid "LOCC"
+msgstr ""
+
+msgid "Turns run out"
+msgstr ""
+
+msgid "03yanzhou"
+msgstr ""
+
+msgid "Juancheng"
+msgstr ""
+
+# win condition
+msgid "Capture Xuzhou"
+msgstr ""
+
+msgid "Capture Puyang and Chenliu"
+msgstr ""
+
+# lost condition
+msgid "Juancheng is fallen"
+msgstr ""
+
+msgid "Taoqian is a man of honour. Second younger brother, third younger brother and Zhilong, I will go to Xuzhou!"
+msgstr ""
+
+msgid "By go on a punitive expedition to Xuzhou, there no soldier in Yanzhou, Lv bu and Chengong persuade Zhangmao, and capture Puyang."
+msgstr ""
+
+msgid "There are too many enemy, we maybe fail. Xuzhou is along, maybe not into war, do you agree with Tao Qian?"
+msgstr ""
+
+msgid "04zhangyuan"
+msgstr ""
+
+msgid "Capture Wan"
+msgstr ""
+
+msgid "Capture Wan, Shouchun"
+msgstr ""
+
+msgid "Xuchang is fallen"
+msgstr ""
+
+msgid "Caocao is stronger, we will fail in all probability, it would be better to surrender."
+msgstr ""
+
+msgid "This city has a prostitute or not?"
+msgstr ""
+
+msgid "See a woman last night, she is beautiful. Ask, she is Zhangji's wife."
+msgstr ""
+
+msgid "Caocao insult me too! I must kill him!"
+msgstr ""
+
+msgid "Han Gaozu is a villager, and hold countrywide. By far four hundred years, I noble birth and have Imperial Seal, should be emperor!"
+msgstr ""
+
+msgid "Yuanshu aggrandize oneself, it is time to defeat it."
+msgstr ""
+
+msgid "Zhangxiu is a disease in our very vitals. Continue to defeat it."
+msgstr ""
+
+msgid "Wan is Jingzhou's door, it is necessary to succor."
+msgstr ""
+
+msgid "It is time to extend results of battle!"
+msgstr ""
+
+msgid "The unification objective was thrown into the eastward flowing stream."
+msgstr ""
+
+msgid "story prologue: 1"
+msgstr ""
+
+msgid "story prologue: 2"
+msgstr ""
+
+msgid "battle_nanjun"
+msgstr ""
+
+# win condition
+msgid "capture jiangling"
+msgstr ""
+
+# union name
+msgid "union_sl"
+msgstr ""
+
+msgid "wei"
+msgstr ""
+
+# start word
+msgid "start word: 1"
+msgstr ""
+
+msgid "start word: 2"
+msgstr ""
+
+msgid "start word: 3"
+msgstr ""
+
+msgid "start word: 4"
+msgstr ""
+
+msgid "start word: 5"
+msgstr ""
+
+msgid "start word: 6"
+msgstr ""
+
+msgid "start word: 7"
+msgstr ""
+
+msgid "stop word: 1"
+msgstr ""
+
+msgid "stop word: 2"
+msgstr ""
+
+msgid "liubei stop: 1"
+msgstr ""
+
+

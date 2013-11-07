@@ -18,6 +18,8 @@
 #include "util.hpp"
 
 #include <cassert>
+#include <iomanip>
+#include <functional>
 
 version_info::version_info(const version_info& o)
 	: nums_                 (o.nums_),
@@ -164,6 +166,17 @@ unsigned int version_info::revision_level() const {
 
 bool version_info::is_canonical() const {
 	return nums_.size() <= 3 && sane_;
+}
+
+std::pair<int, std::string> version_info::transfer_format() const
+{
+	int version = 0;
+	for (int i = 0; i < (int)nums_.size(); i ++) {
+		version += nums_[nums_.size() - 1 - i] * pow(10.0, i * 2);
+	}
+	std::stringstream strstr;
+	strstr << std::setbase(16) << std::setfill('0') << std::setw(8) << version;
+	return std::make_pair(version, strstr.str());
 }
 
 namespace {

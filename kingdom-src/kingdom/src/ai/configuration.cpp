@@ -21,7 +21,6 @@
 #include "configuration.hpp"
 
 #include "../filesystem.hpp"
-#include "../foreach.hpp"
 #include "../log.hpp"
 #include "../serialization/parser.hpp"
 #include "../serialization/preprocessor.hpp"

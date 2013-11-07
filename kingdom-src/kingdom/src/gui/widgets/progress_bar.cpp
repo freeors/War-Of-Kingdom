@@ -34,7 +34,7 @@ REGISTER_WIDGET(progress_bar)
 
 void tprogress_bar::set_percentage(const unsigned percentage)
 {
-	assert(percentage <= 100);
+	VALIDATE(percentage <= 100, "tprogress_bar::set_percentage, must not set percentage > 100!");
 
 	if(percentage_ != percentage) {
 		percentage_ = percentage;

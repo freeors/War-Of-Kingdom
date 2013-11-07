@@ -17,7 +17,6 @@
 #include "playmp_controller.hpp"
 
 #include "dialogs.hpp"
-#include "foreach.hpp"
 #include "game_end_exceptions.hpp"
 #include "gettext.hpp"
 #include "log.hpp"
@@ -27,6 +26,8 @@
 #include "savegame.hpp"
 #include "sound.hpp"
 #include "formula_string_utils.hpp"
+
+#include <boost/foreach.hpp>
 
 static lg::log_domain log_engine("engine");
 #define LOG_NG LOG_STREAM(info, log_engine)
@@ -346,6 +347,7 @@ void playmp_controller::linger()
 		gui_->draw(true,true);
 	}
 	bool quit;
+	start_pass_scenario_anim(get_end_level_data().result);
 	do {
 		quit = true;
 		try {
@@ -379,6 +381,10 @@ void playmp_controller::linger()
 		}
 	} while (!quit);
 
+	if (gui_->pass_scenario_anim_id() != -1) {
+		gui_->erase_screen_anim(gui_->pass_scenario_anim_id());
+	}
+
 	reset_end_scenario_button();
 
 	LOG_NG << "ending end-of-scenario linger\n";
@@ -398,8 +404,7 @@ void playmp_controller::wait_for_upload()
 	while(true) {
 		try {
 			config cfg;
-			const network::connection res = dialogs::network_receive_dialog(
-				*gui_, _("Waiting for next scenario..."), cfg);
+			const network::connection res = dialogs::network_receive_dialog(*gui_, _("Waiting for next scenario..."), cfg);
 
 			std::deque<config> backlog;
 			if(res != network::null_connection) {
@@ -433,13 +438,13 @@ void playmp_controller::after_human_turn(){
 		recorder.add_countdown_update(current_team().countdown_time(),player_number_);
 	}
 	LOG_NG << "playmp::after_human_turn...\n";
-	end_turn_record();
 
 	//ensure that turn_data_ is constructed before it is used.
 	if (turn_data_ == NULL) init_turn_data();
 
-	//send one more time to make sure network is up-to-date.
+	// Normal post-processing for human turns (clear undos, end the turn, etc.)
 	playsingle_controller::after_human_turn();
+	//send one more time to make sure network is up-to-date.
 	turn_data_->send_data();
 	if (turn_data_ != NULL){
 		turn_data_->host_transfer().detach_handler(this);
@@ -463,6 +468,7 @@ void playmp_controller::finish_side_turn(){
 void playmp_controller::play_network_turn(){
 	LOG_NG << "is networked...\n";
 
+	gui_->enable_menu("undo", false);
 	gui_->enable_menu("endturn", false);
 	turn_info turn_data(player_number_, replay_sender_, undo_stack_);
 	turn_data.host_transfer().attach_handler(this);
@@ -541,7 +547,7 @@ void playmp_controller::process_oos(const std::string& err_msg) const {
 
 	config snapshot;
 	to_config(snapshot);
-	savegame::oos_savegame save(heros_, snapshot);
+	savegame::oos_savegame save(heros_, heros_start_, snapshot);
 	save.save_game_interactive(resources::screen->video(), temp_buf.str(), gui::YES_NO);
 }
 
@@ -563,9 +569,12 @@ void playmp_controller::handle_generic_event(const std::string& name){
 			gui_->invalidate_theme();
 		}
 	}
+/*
+	// why remark, reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21952&page=1&extra=#pid30175
 	if (end_turn_) {
 		throw end_turn_exception();
 	}
+*/
 }
 
 bool playmp_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int index) const

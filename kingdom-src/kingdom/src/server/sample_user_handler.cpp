@@ -1,6 +1,5 @@
-/* $Id: sample_user_handler.cpp 47847 2010-12-05 21:12:23Z shadowmaster $ */
 /*
-   Copyright (C) 2008 - 2010 by Thomas Baumhauer <thomas.baumhauer@NOSPAMgmail.com>
+   Copyright (C) 2008 - 2013 by Thomas Baumhauer <thomas.baumhauer@NOSPAMgmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -39,7 +38,7 @@ suh::suh(config c)
 }
 
 void suh::add_user(const std::string& name, const std::string& mail, const std::string& password) {
-	if(user_exists(name)) throw error("This nick is already registered");
+	if(user_exists(name)) throw error("This nickname is already registered");
 
 	users_.insert(std::pair<std::string, user>(name, user()));
 
@@ -50,7 +49,7 @@ void suh::add_user(const std::string& name, const std::string& mail, const std::
 }
 
 void suh::remove_user(const std::string& name) {
-	if(!user_exists(name)) throw error("This nick is not registered");
+	if(!user_exists(name)) throw error("This nickname is not registered");
 
 	users_.erase(name);
 }
@@ -59,6 +58,11 @@ bool suh::user_exists(const std::string& name) {
 	std::map<std::string,user>::const_iterator u = users_.find(name);
 
 	return (u != users_.end());
+}
+
+bool suh::user_is_active(const std::string& /*name*/) {
+	// FIXME: add support for inactive users maybe?
+	return true;
 }
 
 std::vector<std::string> suh::users() {
@@ -217,12 +221,21 @@ std::string suh::user_info(const std::string& name) {
 	time_t ll_date = get_lastlogin(name);
 
 	std::string reg_string = ctime(&reg_date);
-	std::string ll_string = ctime(&ll_date);
+	std::string ll_string;
+
+	if(ll_date) {
+		ll_string = ctime(&ll_date);
+	} else {
+		ll_string = "Never\n";
+	}
 
 	std::stringstream info;
 	info << "Name: " << name << "\n"
 		 << "Real name: " << get_realname(name) << "\n"
 		 << "Registered: " << reg_string
 		 << "Last login: " << ll_string;
+	if(!user_is_active(name)) {
+		info << "This account is currently inactive.\n";
+	}
 	return info.str();
 }

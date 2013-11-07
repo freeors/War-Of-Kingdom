@@ -99,6 +99,7 @@ public:
 
 protected:
 	friend class unit_animation;
+	friend class tanim;
 	int starting_frame_time_;
         void remove_frames_until(int starting_time);
         void set_end_time(int ending_time);

@@ -26,7 +26,6 @@
 #include "dialogs.hpp"
 #include "formatter.hpp"
 #include "filechooser.hpp"
-#include "foreach.hpp"
 #include "game_end_exceptions.hpp"
 #include "game_events.hpp"
 #include "gettext.hpp"
@@ -368,7 +367,7 @@ void menu_handler::interior(int side_num)
 		e.show(*gui_);
 		return;
 	}
-	const technology* ret = dlg.ing_technology();
+	const ttechnology* ret = dlg.ing_technology();
 	team& current_team = teams_[side_num - 1];
 	if (!browse && ret != current_team.ing_technology()) {
 		current_team.select_ing_technology(ret);
@@ -386,9 +385,11 @@ void menu_handler::technology_tree(int side_num)
 		e.show(*gui_);
 		return;
 	}
-	const technology* ret = dlg.ing_technology();
+	const ttechnology* ret = dlg.ing_technology();
 	team& current_team = teams_[side_num - 1];
 	if (!browse && ret != current_team.ing_technology()) {
+		clear_undo_stack(side_num);
+
 		current_team.select_ing_technology(ret);
 		recorder.add_ing_technology(ret->id());
 	}
@@ -408,10 +409,32 @@ void menu_handler::list(int side_num)
 void menu_handler::system(int side_num)
 {
 	play_controller* controller = resources::controller;
+	enum {_SAVE, _SAVEREPLAY, _SAVEMAP, _LOAD, _PREFERENCES, _HELP, _QUIT};
 
-	int retval = gui2::tsystem::NONE;
+	int retval;
+	std::vector<gui2::tsystem::titem> items;
+	std::vector<int> rets;
 	{
-		gui2::tsystem dlg(*gui_, teams_, units_, heros_, gamestate_);
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Save Game"), !controller->is_replaying()));
+		rets.push_back(_SAVE);
+
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Save Replay"), !controller->is_replaying()));
+		rets.push_back(_SAVEREPLAY);
+
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Load Game")));
+		rets.push_back(_LOAD);
+
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Preferences")));
+		rets.push_back(_PREFERENCES);
+
+		if (!game_config::tiny_gui) {
+			items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Help")));
+			rets.push_back(_HELP);
+		}
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Quit")));
+		rets.push_back(_QUIT);
+
+		gui2::tsystem dlg(*gui_, items);
 		try {
 			dlg.show(gui_->video());
 			retval = dlg.get_retval();
@@ -419,28 +442,31 @@ void menu_handler::system(int side_num)
 			e.show(*gui_);
 			return;
 		}
+		if (retval == gui2::twindow::OK) {
+			return;
+		}
 	}
-	if (retval == gui2::tsystem::SAVE) {
+	if (rets[retval] == _SAVE) {
 		controller->save_game();
 
-	} else if (retval == gui2::tsystem::SAVEREPLAY) {
+	} else if (rets[retval] == _SAVEREPLAY) {
 		controller->save_replay();
 
-	} else if (retval == gui2::tsystem::SAVEMAP) {
+	} else if (rets[retval] == _SAVEMAP) {
 		controller->save_map();
 
-	} else if (retval == gui2::tsystem::LOAD) {
+	} else if (rets[retval] == _LOAD) {
 		controller->load_game();
 
-	} else if (retval == gui2::tsystem::PREFERENCES) {
+	} else if (rets[retval] == _PREFERENCES) {
 		controller->preferences();
 
-	} else if (retval == gui2::tsystem::HELP) {
+	} else if (rets[retval] == _HELP) {
 		controller->show_help();
 
-	} else if (retval == gui2::tsystem::QUIT) {
+	} else if (rets[retval] == _QUIT) {
 		if (gui_->in_game()) {
-			const int res = gui2::show_message(gui_->video(), _("Quit"), dgettext("wesnoth-lib", "Do you really want to quit?"), gui2::tmessage::yes_no_buttons, "hero-256/230.png");
+			const int res = gui2::show_message(gui_->video(), _("Quit"), dgettext("wesnoth-lib", "Do you really want to quit?"), gui2::tmessage::yes_no_buttons, "hero-256/0.png");
 			if (res != gui2::twindow::CANCEL) {
 				throw end_level_exception(QUIT);
 			}
@@ -591,7 +617,7 @@ void menu_handler::expedite(int side_num, const map_location &last_hex)
 
 	{
 		disband_reside_troop disbander(*this, *gui_, current_team, *city, reside_troops);
-		gui2::texpedite dlg(*gui_, map_, teams_, units_, heros_, *city, &disbander);
+		gui2::texpedite dlg(*this, *gui_, map_, teams_, units_, heros_, *city, &disbander);
 		try {
 			dlg.show(gui_->video());
 		} catch(twml_exception& e) {
@@ -1041,9 +1067,9 @@ void menu_handler::undo(int side_num)
 			}
 		}
 		if (!unit_is_city(&*u)) {
-			// 起点: 非城市
+			// start: non-city
 			if (!u_end.valid() || !unit_is_city(&*u_end)) {
-				// 终点: 非城市
+				// end: non-city
 				action.starting_moves = u->movement_left();
 
 				unit_display::move_unit(route, *u, teams_);
@@ -1057,22 +1083,25 @@ void menu_handler::undo(int side_num)
 
 				gui_->refresh_access_troops(side_num - 1, game_display::REFRESH_ENABLE, up->second);
 			} else {
-				// 终点: 城市
+				// end: city
 				unit_display::move_unit(route, *u, teams_);
 				u->set_goto(map_location());
 				u->set_movement(starting_moves);
 							
 				artifical* stop_city = unit_2_artifical(&*u_end);
-				stop_city->troop_come_into(&*u, action.recall_pos);
+
+				stop_city->troop_come_into2(&*u, action.recall_pos);
 
 				gui_->refresh_access_troops(side_num - 1, game_display::REFRESH_ERASE, &*u);
 				// unit_display::move_unit will update centor location of u->second to location of city.
 				// Centor location of u->second must be back to u->first before call units_.erase.
 				// u->second.set_location(u->first);
-				units_.erase(&*u);
+				// units_.erase(&*u, false);
 			}
 		} else {
-			// 起点: 城市
+			// start: city (end must is non-city)
+			VALIDATE(!u_end.valid() || !unit_is_city(&*u_end), "menu_handler::undo, cannot support one turn to out and home between city, check map!");
+
 			artifical* start_city = unit_2_artifical(&*u);
 			unit& undo_troop = *start_city->reside_troops().back();
 
@@ -1080,17 +1109,7 @@ void menu_handler::undo(int side_num)
 			undo_troop.set_goto(map_location());
 			undo_troop.set_movement(starting_moves);
 
-			if (!u_end.valid() || !unit_is_city(&*u_end)) {
-				// 终点: 非城市
-				units_.add(route.back(), &undo_troop);
-			} else {
-				// 终点: 城市
-				u->set_goto(map_location());
-				u->set_movement(starting_moves);
-
-				artifical* stop_city = unit_2_artifical(&*u_end);
-				stop_city->troop_come_into(&undo_troop, action.recall_pos);
-			}
+			units_.add(route.back(), &undo_troop);
 			start_city->troop_go_out(start_city->reside_troops().size() - 1);
 		}
 		unit::clear_status_caches();
@@ -1176,15 +1195,16 @@ bool menu_handler::end_turn(int side_num)
 		symbols["count"] = help::tintegrate::generate_format(game_config::active_tactic_slots - actives.size(), help::tintegrate::hero_color, 0, true, true);
 		
 		strstr << vgettext("There is $count vacant tactic. Do you really want to end your turn?", symbols);
-		int res = gui2::show_message(gui_->video(), "", strstr.str(), gui2::tmessage::yes_no_buttons, "hero-256/230.png");
+		int res = gui2::show_message(gui_->video(), "", strstr.str(), gui2::tmessage::yes_no_buttons, "hero-256/0.png");
 		if (res != gui2::twindow::OK) {
 			return false;
 		}
 		return true;
-	}
-	if (rpg::stratum == hero_stratum_citizen) {
+
+	} else if (tent::mode == NONE_MODE || rpg::stratum == hero_stratum_citizen) {
 		return true;
 	}
+	
 
 	const std::vector<artifical*>& holded_cities = current_team.holded_cities();
 
@@ -1242,7 +1262,7 @@ bool menu_handler::end_turn(int side_num)
 		} else {
 			strstr << vgettext("$city has $heros low loyalty heros. If not process, heros may wander in next turn. Do you really want to end your turn?", symbols);
 		}
-		int res = gui2::show_message(gui_->video(), "", strstr.str(), gui2::tmessage::yes_no_buttons, "hero-256/230.png");
+		int res = gui2::show_message(gui_->video(), "", strstr.str(), gui2::tmessage::yes_no_buttons, "hero-256/0.png");
 		if (res != gui2::twindow::OK) {
 			return false;
 		}
@@ -1416,7 +1436,7 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 			bool show_move = ui.movement_left() >= route.move_cost;
 			if (!show_move) {
 				// whether turn1's "end" exist city. Not path!
-				const unit* u = find_unit(units_, next_stop);
+				const unit* u = units_.find_unit(next_stop);
 				if (u && u->is_city()) {
 					show_move = true;
 				}
@@ -1435,7 +1455,7 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 					adjacent_loc.x = next_stop.x + adjacent_ptr[i].x;
 					adjacent_loc.y = next_stop.y + adjacent_ptr[i].y;
 					if (map_.on_board(adjacent_loc)) {
-						u = find_unit(units_, adjacent_loc);
+						u = units_.find_unit(adjacent_loc);
 						if (u && current_team.is_enemy(u->side())) {
 							show_move = true;
 						}
@@ -1448,7 +1468,7 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 					adjacent_loc.x = next_stop.x + adjacent_ptr[i].x;
 					adjacent_loc.y = next_stop.y + adjacent_ptr[i].y;
 					if (map_.on_board(adjacent_loc)) {
-						u = find_unit(units_, adjacent_loc);
+						u = units_.find_unit(adjacent_loc);
 						if (u && current_team.is_enemy(u->side())) {
 							show_move = true;
 						} 
@@ -1461,7 +1481,7 @@ void menu_handler::execute_gotos(mouse_handler &mousehandler, int side)
 					adjacent_loc.x = next_stop.x + adjacent_ptr[i].x;
 					adjacent_loc.y = next_stop.y + adjacent_ptr[i].y;
 					if (map_.on_board(adjacent_loc)) {
-						u = find_unit(units_, adjacent_loc);
+						u = units_.find_unit(adjacent_loc);
 						if (u && current_team.is_enemy(u->side())) {
 							show_move = true;
 						}

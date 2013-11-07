@@ -54,6 +54,7 @@ private:
 	void fill_table(int catalog);
 	void fill_table_row(team& t, int catalog);
 
+	void noble_list(int n);
 	void technology_tree(int n);
 private:
 	game_display& gui_;

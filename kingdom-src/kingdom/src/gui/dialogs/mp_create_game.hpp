@@ -63,12 +63,10 @@ private:
 	 */
 
 	tfield_bool
-		*use_map_settings_,
 		*fog_,
 		*observers_,
 		*shroud_,
-		*time_limit,
-		*start_time_;
+		*time_limit;
 
 	tfield_integer
 		*turns_,

@@ -72,6 +72,7 @@ private:
 	unit_map& units_;
 	hero_map& heros_;
 
+	int max_level_;
 	team& current_team_;
 	artifical& city_;
 	int cost_exponent_;

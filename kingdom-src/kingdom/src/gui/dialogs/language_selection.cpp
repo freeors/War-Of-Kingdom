@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/language_selection.hpp"
 
-#include "foreach.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 #include "gui/widgets/list.hpp"
 #else
@@ -27,6 +26,9 @@
 #include "gui/widgets/window.hpp"
 #include "language.hpp"
 #include <preferences.hpp>
+#include <hero.hpp>
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -65,14 +67,26 @@ void tlanguage_selection::pre_show(CVideo& /*video*/, twindow& window)
 
 	const std::vector<language_def>& languages = get_languages();
 	const language_def& current_language = get_language();
-	foreach(const language_def& lang, languages) {
-		string_map item;
-		item.insert(std::make_pair("label", lang.language));
+	std::stringstream strstr;
+	int number = hero::number_normal_min;
+	BOOST_FOREACH (const language_def& lang, languages) {
+		string_map list_item;
+		std::map<std::string, string_map> list_item_item;
 
-		list.add_row(item);
-		if(lang == current_language) {
+		strstr.str("");
+		strstr << "hero-64/" << number << ".png";
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("icon", list_item));
+
+		list_item["label"] = lang.language;
+		list_item_item.insert(std::make_pair("name", list_item));
+
+		list.add_row(list_item_item);
+
+		if (lang == current_language) {
 			list.select_row(list.get_item_count() - 1);
 		}
+		number ++;
 	}
 }
 

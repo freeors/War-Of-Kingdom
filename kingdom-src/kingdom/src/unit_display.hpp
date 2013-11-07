@@ -29,6 +29,8 @@ class team;
 class unit;
 class card;
 class hero;
+class game_display;
+class tformation;
 
 /**
  *  Contains a number of free functions which display units
@@ -40,13 +42,6 @@ namespace unit_display
 /**
  * global animations
  */
-enum GLOBAL_ANIM {ANIM_REINFORCE = 0, ANIM_INDIVIDUALITY, ANIM_TACTIC, 
-	ANIM_BLADE, ANIM_PIERCE, ANIM_IMPACT, ANIM_ARCHERY, ANIM_COLLAPSE, ANIM_ARCANE, ANIM_FIRE, ANIM_COLD,
-	ANIM_STRIKE, ANIM_MAGIC
-};
-
-void load_global_animations(const config& cfg);
-
 void global_anim_2(int type, const std::string& id1, const std::string& id2);
 
 
@@ -107,10 +102,14 @@ void unit_sheath_weapon( const map_location& loc, unit* u=NULL, const attack_typ
 void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	const attack_type* attack, const attack_type* secondary_attack,
 	int swing, std::vector<std::string>& hit_text_vec, bool drain, bool stronger, const std::string& att_text,
-	artifical* effecting_tactic);
+	artifical* effecting_tactic, const tformation& defender_formation);
 
 void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& def_ptr_vec, std::vector<int>& damage_vec,
 	 std::vector<std::string>& hit_text_vec);
+
+void unit_heal2(std::vector<team>& teams, unit_map& units, unit* doctor, unit& patient, int healing);
+
+void unit_destruct(std::vector<team>& teams, unit_map& units, unit* attacker, artifical& defender, const std::string& text, artifical* effecting_tactic);
 
 void unit_recruited(const map_location& loc,
 	const map_location& leader_loc=map_location::null_location);
@@ -142,9 +141,41 @@ void card_start(card_map& cards, const card& c);
 
 void tactic_start(hero& h);
 
-void unit_touching(const map_location& loc, std::vector<unit *>& touchers, int touching, const std::string& prefix);
+void formation_attack_start(const tformation& formation);
+
+void perfect_anim();
+
+void unit_touching(unit& u, std::vector<unit *>& touchers, int touching, const std::string& prefix);
 
 void unit_text(unit& u, bool poisoned, const std::string& text);
+
+class tactic_anim_lock
+{
+public:
+	tactic_anim_lock(game_display& disp, const unit& u, bool scroll = true);
+	~tactic_anim_lock();
+
+private:
+	game_display& disp_;
+	const unit& u_;
+	bool scroll_;
+};
+
+class formation_anim_lock
+{
+public:
+	formation_anim_lock(game_display& disp, tformation& formation);
+	~formation_anim_lock();
+
+	void push_defender(const unit* def);
+	void flush();
+
+	tformation& formation_;
+private:
+	game_display& disp_;
+	std::vector<const unit*> defender_;
+	bool started_;
+};
 
 }
 

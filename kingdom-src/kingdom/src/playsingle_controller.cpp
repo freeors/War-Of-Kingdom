@@ -26,7 +26,6 @@
 #include "ai/manager.hpp"
 #include "ai/game_info.hpp"
 #include "dialogs.hpp"
-#include "foreach.hpp"
 #include "game_end_exceptions.hpp"
 #include "game_events.hpp"
 #include "game_preferences.hpp"
@@ -48,6 +47,8 @@
 #include "util.hpp"
 #include "unit_display.hpp"
 #include "artifical.hpp"
+
+#include <boost/foreach.hpp>
 
 static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
@@ -73,6 +74,9 @@ playsingle_controller::playsingle_controller(const config& level,
 	skip_next_turn_(false),
 	level_result_(NONE)
 {
+	game_config::no_messagebox = false;
+	game_config::hide_tactic_slot = false;
+
 	// game may need to start in linger mode
 	if (state_of_game.classification().completion == "victory" || state_of_game.classification().completion == "defeat")
 	{
@@ -100,8 +104,8 @@ void playsingle_controller::init_gui()
 	uint32_t end_parent_init_gui = SDL_GetTicks();
 	posix_print("playsingle_controller::init_gui, play_controller::init_gui(), used time: %u ms\n", end_parent_init_gui - start);
 	
-	if(first_human_team_ != -1) {
-		gui_->scroll_to_tile(map_.starting_position(first_human_team_ + 1), game_display::WARP);
+	if (human_team_ != -1) {
+		gui_->scroll_to_tile(map_.starting_position(human_team_ + 1), game_display::WARP);
 	}
 	gui_->scroll_to_tile(map_.starting_position(1), game_display::WARP);
 	if (tent::mode != TOWER_MODE) {
@@ -196,9 +200,9 @@ void playsingle_controller::update_shroud_now(){
 }
 
 void playsingle_controller::end_turn(){
-	if (linger_)
+	if (linger_) {
 		end_turn_ = true;
-	else if (!browse_){
+	} else if (!browse_){
 		browse_ = true;
 		end_turn_ = menu_handler_.end_turn(player_number_);
 		browse_ = end_turn_;
@@ -318,7 +322,7 @@ LEVEL_RESULT playsingle_controller::play_scenario(
 	//   new game: [scenario] in <scenarios>.cfg
 
 	// Start music.
-	foreach (const config &m, level_.child_range("music")) {
+	BOOST_FOREACH (const config &m, level_.child_range("music")) {
 		sound::play_music_config(m);
 	}
 	sound::commit_music_changes();
@@ -331,7 +335,7 @@ LEVEL_RESULT playsingle_controller::play_scenario(
 
 	// Read sound sources
 	assert(soundsources_manager_ != NULL);
-	foreach (const config &s, level_.child_range("sound_source")) {
+	BOOST_FOREACH (const config &s, level_.child_range("sound_source")) {
 		soundsource::sourcespec spec(s);
 		soundsources_manager_->add(spec);
 	}
@@ -339,7 +343,7 @@ LEVEL_RESULT playsingle_controller::play_scenario(
 	uint32_t end_sound_sources = SDL_GetTicks();
 	posix_print("playsingle_controller::play_scenario, sound sources, used time: %u ms\n", end_sound_sources - start);
 				
-	set_victory_when_enemies_defeated(level_["victory_when_enemies_defeated"].to_bool(true));
+	set_victory_when_enemy_no_city(level_["victory_when_enemy_no_city"].to_bool(true));
 	end_level_data &end_level = get_end_level_data();
 	end_level.carryover_percentage = level_["carryover_percentage"].to_int(game_config::gold_carryover_percentage);
 	end_level.carryover_add = level_["carryover_add"].to_bool();
@@ -412,9 +416,6 @@ LEVEL_RESULT playsingle_controller::play_scenario(
 			return VICTORY; // this is probably only a story scenario, i.e. has its endlevel in the prestart event
 		}
 		const bool obs = is_observer();
-		if (game_config::exit_at_end) {
-			exit(0);
-		}
 		if (end_level_result == DEFEAT || end_level_result == VICTORY)
 		{
 			gamestate_.classification().completion = (end_level_exn.result == VICTORY) ? "victory" : "defeat";
@@ -499,7 +500,7 @@ LEVEL_RESULT playsingle_controller::play_scenario(
 
 		config snapshot;
 		to_config(snapshot);
-		savegame::game_savegame save(heros_, gamestate_, *gui_, snapshot);
+		savegame::game_savegame save(heros_, heros_start_, gamestate_, *gui_, snapshot);
 		save.save_game_interactive(gui_->video(), _("A network disconnection has occurred, and the game cannot continue. Do you want to save the game?"), gui::YES_NO);
 		if(disconnect) {
 			throw network::error();
@@ -519,10 +520,6 @@ void playsingle_controller::play_turn(bool save)
 	gui_->invalidate_game_status();
 	events::raise_draw_event();
 
-	if (non_interactive())
-		std::cout << "Turn " << turn() << ":" << std::endl;
-
-
 	for (player_number_ = first_player_; player_number_ <= int(teams_.size()); ++player_number_) {
 		unit_display::player_number_ = player_number_;
 		// If a side is empty skip over it.
@@ -539,29 +536,17 @@ void playsingle_controller::play_turn(bool save)
 			continue;
 		}
 
-		/* if (replaying_) {
-			LOG_NG << "doing replay " << player_number_ << "\n";
-			replaying_ = ::do_replay(player_number_);
-			LOG_NG << "result of replay: " << (replaying_?"true":"false") << "\n";
-		} else */ {
-			// If a side is dead end the turn.
-			if (current_team().is_human() && side_units(player_number_) == 0) {
-				turn_info turn_data(player_number_, replay_sender_, undo_stack_);
-				recorder.end_turn();
-				turn_data.sync_network();
-				continue;
-			}
-
-			play_side(player_number_, save);
+		// If a side is dead end the turn.
+		if (current_team().is_human() && side_units(player_number_) == 0) {
+			turn_info turn_data(player_number_, replay_sender_, undo_stack_);
+			recorder.end_turn();
+			turn_data.sync_network();
+			continue;
 		}
+
+		play_side(player_number_, save);
 
 		finish_side_turn();
-
-		if(non_interactive()) {
-			std::cout << " Player " << player_number_ << ": " <<
-				current_team().villages().size() << " Villages" <<
-				std::endl;
-		}
 
 		check_victory();
 
@@ -645,7 +630,7 @@ void playsingle_controller::before_human_turn(bool save)
 		to_config(snapshot);
 		// uint32_t mid1 = SDL_GetTicks();
 		// posix_print("(mid1)used time: %u ms\n", mid1 - start);
-		savegame::autosave_savegame save(heros_, gamestate_, *gui_, snapshot);
+		savegame::autosave_savegame save(heros_, heros_start_, gamestate_, *gui_, snapshot);
 		// uint32_t mid2 = SDL_GetTicks();
 		// posix_print("(mid2)used time: %u ms\n", mid2 - mid1);
 		save.autosave(game_config::disable_autosave, preferences::autosavemax(), preferences::INFINITE_AUTO_SAVES);
@@ -846,6 +831,9 @@ void playsingle_controller::linger()
 	for (unit_map::iterator u = units_.begin(); u != units_.end(); ++u) {
 		u->set_user_end_turn(true);
 	}
+
+	start_pass_scenario_anim(get_end_level_data().result);
+
 	try {
 		// Same logic as single-player human turn, but
 		// *not* the same as multiplayer human turn.
@@ -862,6 +850,10 @@ void playsingle_controller::linger()
 			gamestate_ = game_state();
 		}
 		throw lge;
+	}
+
+	if (gui_->pass_scenario_anim_id() != -1) {
+		gui_->erase_screen_anim(gui_->pass_scenario_anim_id());
 	}
 
 	// revert the end-turn button text to its normal label
@@ -904,6 +896,7 @@ void playsingle_controller::after_human_turn()
 	// hide context-menu
 	gui_->hide_context_menu(NULL, true);
 
+	// Mark the turn as done.
 	browse_ = true;
 	end_turn_record();
 	end_turn_record_unlock();
@@ -914,6 +907,7 @@ void playsingle_controller::after_human_turn()
 		recalculate_fog(player_number_);
 	}
 
+	// Clear moves from the GUI.
 	gui_->set_route(NULL);
 	gui_->unhighlight_reach();
 }
@@ -990,9 +984,12 @@ void playsingle_controller::handle_generic_event(const std::string& name)
 	if (name == "ai_user_interact"){
 		play_slice(false);
 	}
+/*
+	// why remark, reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21952&page=1&extra=#pid30175
 	if (end_turn_){
 		throw end_turn_exception();
 	}
+*/
 }
 
 void playsingle_controller::check_time_over()
@@ -1003,10 +1000,6 @@ void playsingle_controller::check_time_over()
 		// if turns are added while handling 'time over' event
 		if (tod_manager_.is_time_left()) {
 			return;
-		}
-
-		if (non_interactive()) {
-			std::cout << "time over (draw)\n";
 		}
 
 		check_end_level();
@@ -1031,28 +1024,21 @@ void playsingle_controller::store_gold(bool obs)
 	} else {
 		persist_.end_transaction();
 		title = _("Victory");
-		report << font::LARGE_TEXT << _("You have emerged victorious!") << "\n\n";
-	}
-
-	int persistent_teams = 0;
-	foreach (const team &t, teams_) {
-		if (t.persistent()) ++persistent_teams;
+		report << help::tintegrate::generate_format(_("You have emerged victorious!"), "green") << "\n\n";
 	}
 
 	end_level_data &end_level = get_end_level_data();
 
-	if (persistent_teams > 0 && (has_next_scenario ||
-		gamestate_.classification().campaign_type == "test"))
-	{
+	if (has_next_scenario || gamestate_.classification().campaign_type == "test") {
 		int finishing_bonus_per_turn =
 			map_.villages().size() * game_config::village_income +
 			game_config::base_income;
 		int turns_left = std::max<int>(0, tod_manager_.number_of_turns() - turn());
 		int finishing_bonus = (end_level.gold_bonus && turns_left > -1) ?
 			finishing_bonus_per_turn * turns_left : 0;
-		foreach (const team &t, teams_)
+		BOOST_FOREACH (const team &t, teams_)
 		{
-			if (!t.persistent()) continue;
+			if (true) continue;
 			int carryover_gold = div100rounded((t.gold() + finishing_bonus) * end_level.carryover_percentage);
 			config::child_itors side_range = gamestate_.snapshot.child_range("side");
 			config::child_iterator side_it = side_range.first;
@@ -1062,8 +1048,6 @@ void playsingle_controller::store_gold(bool obs)
 				if ((*side_it)["save_id"] == t.save_id()) {
 					(*side_it)["gold"] = str_cast<int>(carryover_gold);
 					(*side_it)["gold_add"] = end_level.carryover_add;
-					///@deprecated 1.9.2 'colour' also written in save
-					(*side_it)["colour"] = t.color();
 					(*side_it)["color"] = t.color();
 					(*side_it)["current_player"] = t.current_player();
 					(*side_it)["name"] = t.name();
@@ -1079,18 +1063,12 @@ void playsingle_controller::store_gold(bool obs)
 				new_side["gold"] = str_cast<int>(carryover_gold);
 				new_side["gold_add"] = end_level.carryover_add;
 				new_side["color"] = t.color();
-				///@deprecated 1.9.2 'colour' also written in save
-				new_side["colour"] = t.color();
 				new_side["current_player"] = t.current_player();
 				new_side["name"] = t.name();
 			}
 
 			// Only show the report for ourselves.
 			if (!t.is_human()) continue;
-
-			if (persistent_teams > 1) {
-				report << "\n" << font::LARGE_TEXT << t.current_player() << "\n";
-			}
 
 			report_victory(report, carryover_gold, t.gold(), finishing_bonus_per_turn, turns_left, finishing_bonus);
 		}
@@ -1143,9 +1121,6 @@ bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, 
 		}
 
 		case hotkey::HOTKEY_BOMB:
-			if (!current_team().can_bomb()) {
-				return false;
-			}
 		case hotkey::HOTKEY_TACTIC0:
 		case hotkey::HOTKEY_TACTIC1:
 		case hotkey::HOTKEY_TACTIC2:

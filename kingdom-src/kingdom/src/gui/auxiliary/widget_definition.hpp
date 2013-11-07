@@ -17,7 +17,6 @@
 #define GUI_AUXILIARY_WIDGET_DEFINITION_HPP_INCLUDED
 
 #include "config.hpp"
-#include "foreach.hpp"
 #include "gui/auxiliary/canvas.hpp"
 
 #include <boost/foreach.hpp>

@@ -15,18 +15,21 @@ msgstr "塔防休闲"
 
 msgid "tower_defense description"
 msgstr ""
-"防守，防守！只要坚持到满回合，你就过关了。在这里你可在任意地方放置部队，加"
-"入、抽取部队内武将，目的就是要防止AI占据你的据点。"
+"防守，防守！只要坚持到满回合，你就过关了。当然，你最好能占领对方据点。在这里"
+"你可在任意地方放置部队，加入、抽取部队内武将。"
 
 # scenario
 msgid "td_1_1"
-msgstr "塔防（魏）"
+msgstr "塔防"
 
 msgid "defense Bei Liu"
 msgstr "防守刘备"
 
 msgid "Persist in required turns"
 msgstr "坚持到满回合"
+
+msgid "Capture enemy fort"
+msgstr "占领敌方据点"
 
 msgid "No city you holden"
 msgstr "没有能控制城市"

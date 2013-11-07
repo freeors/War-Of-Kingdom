@@ -9,7 +9,6 @@
 #include "halo.hpp"
 #include "game_preferences.hpp"
 #include "resources.hpp"
-#include "foreach.hpp"
 #include "unit_display.hpp"
 #include "play_controller.hpp"
 #include "gettext.hpp"
@@ -20,6 +19,8 @@
 #include "dialogs.hpp"
 #include "gui/dialogs/select_unit.hpp"
 
+#include <boost/foreach.hpp>
+
 tartifical_::tartifical_()
 	: police_speed_(100)
 	, generate_speed_(100)
@@ -29,12 +30,12 @@ tartifical_::tartifical_()
 	, technology_speed_(100)
 	, technology_income_ratio_(100)
 	, revenue_income_(100)
-	, demolish_hp_(0)
+	, destruct_hp_(0)
 	, heal_hp_(0)
 {
 }
 
-void tartifical_::reset_commoner_speed()
+void tartifical_::reset_decree_effect()
 {
 	police_speed_ = 100;
 	generate_speed_ = 100;
@@ -44,7 +45,7 @@ void tartifical_::reset_commoner_speed()
 	technology_speed_ = 100;
 	technology_income_ratio_ = 100;
 	revenue_income_ = 100;
-	demolish_hp_ = 0;
+	destruct_hp_ = 0;
 	heal_hp_ = 0;
 }
 
@@ -75,11 +76,14 @@ artifical::artifical(const config& cfg) :
 	, research_turns_(0)
 	, fronts_(0)
 	, police_(game_config::max_police / 2)
+	, soldiers_(0)
 	, not_recruit_()
 	, can_recruit_map_()
 	, decree_(NULL)
 	, max_recruit_cost_(-1)
 {
+	max_level_ = level_;
+
 	// 设置[city]级字段
 	read(cfg);
 
@@ -116,11 +120,14 @@ artifical::artifical(const uint8_t* mem) :
 	, research_turns_(0)
 	, fronts_(0)
 	, police_(game_config::max_police / 2)
+	, soldiers_(0)
 	, not_recruit_()
 	, can_recruit_map_()
 	, decree_(NULL)
 	, max_recruit_cost_(-1)
 {
+	max_level_ = level_;
+
 	// 设置[city]级字段
 	read(mem);
 
@@ -156,8 +163,10 @@ artifical::artifical(const artifical& that) :
 	, technology_bonus_(that.technology_bonus_)
 	, max_commoners_(that.max_commoners_)
 	, research_turns_(that.research_turns_)
+	, max_level_(that.max_level_)
 	, fronts_(that.fronts_)
 	, police_(that.police_)
+	, soldiers_(that.soldiers_)
 	, not_recruit_(that.not_recruit_)
 	, can_recruit_map_(that.can_recruit_map_)
 	, decree_(that.decree_)
@@ -198,6 +207,7 @@ artifical::artifical(unit_map& units, hero_map& heros, std::vector<team>& teams,
 	, research_turns_(0)
 	, fronts_(0)
 	, police_(game_config::max_police / 2)
+	, soldiers_(0)
 	, not_recruit_()
 	, can_recruit_map_()
 	, decree_(NULL)
@@ -228,7 +238,7 @@ void artifical::read(const config& cfg, bool use_traits, game_state* state)
 		fresh_heros_.back()->side_ = side_ - 1;
 	}
 
-	// “在野”武将
+	// "wander" heros
 	const std::vector<std::string> wander_heros = utils::split(cfg_["wander_heros"]);
 	for (tmp = wander_heros.begin(); tmp != wander_heros.end(); ++ tmp) {
 		wander_heros_.push_back(&heros_[lexical_cast_default<int>(*tmp)]);
@@ -298,6 +308,7 @@ void artifical::read(const config& cfg, bool use_traits, game_state* state)
 		}
 		fronts_ = cfg["fronts"].to_int();
 		police_ = cfg["police"].to_int(50);
+		soldiers_ = cfg["soldiers"].to_int();
 		research_turns_ = cfg["research_turns"].to_int();
 
 		// not recruit
@@ -313,11 +324,11 @@ void artifical::read(const config& cfg, bool use_traits, game_state* state)
 	}
 
 	// read [unit] to reside troop
-	foreach (config &i, cfg_.child_range("unit")) {
+	BOOST_FOREACH (config &i, cfg_.child_range("unit")) {
 		reside_troops_.push_back(new unit(units_, heros_, teams_, i));
 	}
 	// read [commoner] to reside commoner
-	foreach (config &i, cfg_.child_range("commoner")) {
+	BOOST_FOREACH (config &i, cfg_.child_range("commoner")) {
 		reside_commoners_.push_back(new unit(units_, heros_, teams_, i));
 	}
 }
@@ -373,6 +384,7 @@ void artifical::write(config& cfg) const
 	if (this_is_city()) {
 		cfg["fronts"] = fronts_;
 		cfg["police"] = police_;
+		cfg["soldiers"] = soldiers_;
 		cfg["mayor"] = mayor_->number_;
 
 		str.str("");
@@ -409,11 +421,13 @@ void artifical::write(uint8_t* mem) const
 	fields->mayor_ = mayor_->number_;
 	fields->fronts_ = fronts_;
 	fields->police_ = police_;
+	fields->soldiers_ = soldiers_;
 	fields->gold_bonus_ = gold_bonus_;
 	fields->technology_bonus_ = technology_bonus_;
 	fields->max_commoners_ = max_commoners_;
 	fields->decree_ = decree_? decree_->index(): NO_DECREE;
 	fields->research_turns_ = research_turns_;
+	fields->max_level_ = max_level_;
 
 	str.str("");
 	// fresh_heros
@@ -527,11 +541,13 @@ void artifical::read(const uint8_t* mem)
 	mayor_ = &heros_[fields->mayor_];
 	fronts_ = fields->fronts_;
 	police_ = fields->police_;
+	soldiers_ = fields->soldiers_;
 	gold_bonus_ = fields->gold_bonus_;
 	technology_bonus_ = fields->technology_bonus_;
 	max_commoners_ = fields->max_commoners_;
 	decree_ = fields->decree_ != NO_DECREE? &unit_types.decree(fields->decree_): NULL;
 	research_turns_ = fields->research_turns_;
+	max_level_ = fields->max_level_;
 
 	// fresh_heros_
 	str.assign((const char*)mem + fields->fresh_heros_.offset_, fields->fresh_heros_.size_);
@@ -699,6 +715,10 @@ void artifical::set_location(const map_location &loc)
 				std::stringstream str;
 				str << "A location of " << master_->name() << "(" << loc << ") is out of map!";
 				throw game::load_game_failed(str.str());
+			} else if (map_.is_village(offset)) {
+				std::stringstream str;
+				str << "A location of " << master_->name() << "(" << loc << ") is village!";
+				throw game::load_game_failed(str.str());
 			}
 			touch_locs_.insert(offset);
 		}
@@ -776,7 +796,7 @@ void artifical::issue_decree(const config& effect)
 			technology_income_ratio_ = utils::apply_modifier(technology_income_ratio_, increase_income);
 		}
 	} else if (apply_to == apply_to_tag::DEMOLISH) {
-		demolish_hp_ = atoi(increase.c_str());
+		destruct_hp_ = atoi(increase.c_str());
 	} else if (apply_to == apply_to_tag::HEAL) {
 		heal_hp_ = atoi(increase.c_str());
 	}
@@ -852,8 +872,8 @@ void artifical::redraw_unit()
 
 
 
-	const int x = static_cast<int>(adjusted_params.offset * xdst + (1.0-adjusted_params.offset) * xsrc) + d2;
-	const int y = static_cast<int>(adjusted_params.offset * ydst + (1.0-adjusted_params.offset) * ysrc) + d2;
+	const int x = static_cast<int>(adjusted_params.offset_x * xdst + (1.0-adjusted_params.offset_x) * xsrc) + d2;
+	const int y = static_cast<int>(adjusted_params.offset_y * ydst + (1.0-adjusted_params.offset_y) * ysrc) + d2;
 
 
 	if(unit_halo_ == halo::NO_HALO && !image_halo().empty()) {
@@ -876,17 +896,18 @@ void artifical::redraw_unit()
 		draw_bars = rects_overlap(unit_rect, disp.map_outside_area());
 	}
 
+	std::stringstream strstr;
+	strstr.str("");
 	if (!expediting_from_it && can_reside_) {
-		std::stringstream str;
-		str << fresh_heros_.size() + finish_heros_.size() << "(" << fresh_heros_.size() << ")/" << reside_troops_.size();
+		strstr << fresh_heros_.size() + finish_heros_.size() << "(" << fresh_heros_.size() << ")/" << reside_troops_.size();
 		if (display::default_zoom_ == display::ZOOM_48) {
-			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, str.str(), 15, font::NORMAL_COLOR, xsrc + 24, ysrc - 22);
+			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, strstr.str(), 15, font::NORMAL_COLOR, xsrc + 24, ysrc - 22);
 		} else if (display::default_zoom_ == display::ZOOM_56) {
-			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, str.str(), 15, font::NORMAL_COLOR, xsrc + 27, ysrc - 26);
+			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, strstr.str(), 15, font::NORMAL_COLOR, xsrc + 27, ysrc - 26);
 		} else if (display::default_zoom_ == display::ZOOM_64) {
-			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, str.str(), 15, font::NORMAL_COLOR, xsrc + 30, ysrc - 30);
+			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, strstr.str(), 15, font::NORMAL_COLOR, xsrc + 30, ysrc - 30);
 		} else {
-			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, str.str(), 15, font::NORMAL_COLOR, xsrc + 32, ysrc - 32);
+			disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, strstr.str(), 15, font::NORMAL_COLOR, xsrc + 32, ysrc - 32);
 		}
 	}
 
@@ -910,6 +931,8 @@ void artifical::redraw_unit()
 		const int hp_bar_height = static_cast<int>(max_hitpoints()*game_config::hp_bar_scaling);
 
 		const fixed_t bar_alpha = (loc_ == disp.mouseover_hex() || loc_ == disp.selected_hex()) ? ftofxp(1.0): ftofxp(0.8);
+		strstr.str("");
+		strstr << food_;
 		if (display::default_zoom_ == display::ZOOM_48) {
 			if (is_city()) {
 				disp.draw_bar(*energy_file, xsrc + 20, ysrc - 24, 
@@ -918,6 +941,9 @@ void artifical::redraw_unit()
 					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 2, ysrc - 16, image::get_image(unit_types.especial(especial_).image_));
 				}
 			} else {
+				if (fort_) {
+					disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, strstr.str(), 15, font::NORMAL_COLOR, xsrc + 15, ysrc);
+				}
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 14, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 			}
@@ -929,6 +955,9 @@ void artifical::redraw_unit()
 					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 2, ysrc - 16, image::get_image(unit_types.especial(especial_).image_));
 				}
 			} else {
+				if (fort_) {
+					disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, strstr.str(), 15, font::NORMAL_COLOR, xsrc + 15, ysrc);
+				}
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 17, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 			}
@@ -940,6 +969,9 @@ void artifical::redraw_unit()
 					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 4, ysrc - 16, image::get_image(unit_types.especial(especial_).image_));
 				}
 			} else {
+				if (fort_) {
+					disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, strstr.str(), 15, font::NORMAL_COLOR, xsrc + 15, ysrc);
+				}
 				disp.draw_bar(*energy_file, xsrc + 4, ysrc - 21, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 			}
@@ -951,6 +983,9 @@ void artifical::redraw_unit()
 					disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc + 6, ysrc - 16, image::get_image(unit_types.especial(especial_).image_));
 				}
 			} else {
+				if (fort_) {
+					disp.draw_text_in_hex2(loc_, display::LAYER_BORDER, strstr.str(), 15, font::NORMAL_COLOR, xsrc + 15, ysrc);
+				}
 				disp.draw_bar(*energy_file, xsrc + 5, ysrc - 25, 
 					loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 			}
@@ -990,7 +1025,7 @@ void artifical::fill_ai_hero(std::set<int>& candidate, int count, int& random)
 		std::advance(it, pos);
 		hero& h = heros_[*it];
 
-		if (count % 3) {
+		if (count % 5 < 3) {
 			fresh_into(h);
 		} else {
 			wander_into(h, false);
@@ -1016,7 +1051,7 @@ hero* artifical::select_leader(int random) const
 		int score = fxptoi9(h.leadership_) + fxptoi9(h.charm_);
 		if (h.utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h.utype_);
-			if (ut->leader()) {
+			if (ut->require() == unit_type::REQUIRE_LEADER) {
 				score += 256;
 			}
 		}
@@ -1067,7 +1102,7 @@ bool artifical::new_turn()
 
 	hero& leader = *current_team.leader();
 
-	if (tent::mode != TOWER_MODE) {
+	if (tent::mode == RPG_MODE) {
 		for (std::vector<hero*>::iterator it = fresh_heros_.begin(); it != fresh_heros_.end();) {
 			hero* h = *it;
 			if (h != rpg::h && h->loyalty(leader) < game_config::wander_loyalty_threshold) {
@@ -1081,26 +1116,6 @@ bool artifical::new_turn()
 				break;
 			} else {
 				++ it;
-			}
-		}
-
-		// inside hero, decrease loyalty
-		int decrease = 0;
-		for (size_t i = 0; i < adjacent_size_; i ++) {
-			unit_map::iterator itor = units_.find(adjacent_[i]);
-			if (itor.valid() && current_team.is_enemy(itor->side())) {
-				decrease ++;
-			}
-		}
-		if (decrease) {
-			if (decrease > (int)adjacent_size_) {
-				decrease = (int)adjacent_size_;
-			}
-			for (std::vector<hero*>::iterator itor = fresh_heros_.begin(); itor != fresh_heros_.end(); ++ itor) {
-				(*itor)->increase_loyalty(decrease * game_config::field_troop_increase_loyalty, leader);
-			}
-			for (std::vector<hero*>::iterator itor = finish_heros_.begin(); itor != finish_heros_.end(); ++ itor) {
-				(*itor)->increase_loyalty(decrease * game_config::field_troop_increase_loyalty, leader);
 			}
 		}
 	}
@@ -1117,7 +1132,9 @@ bool artifical::new_turn()
 		unit& u = **it;
 		u.set_movement(u.total_movement());
 		u.set_attacks(u.attacks_total());
-		u.increase_loyalty(-1 * game_config::reside_troop_increase_loyalty);
+		if (u.consider_loyalty()) {
+			u.increase_loyalty(-1 * game_config::reside_troop_increase_loyalty);
+		}
 		u.increase_activity(20);
 		if (u.hide_turns()) {
 			u.set_hide_turns(0);
@@ -1182,7 +1199,7 @@ bool artifical::new_turn()
 			int random = get_random();
 
 			// carry out decree
-			int adjacented_hp = demolish_hp_ * police_ / 100;
+			int adjacented_hp = destruct_hp_ * police_ / 100;
 			if (adjacented_hp) {
 				// select "lowest" enemy city.
 				int lowest_hp = -1;
@@ -1223,6 +1240,9 @@ bool artifical::new_turn()
 					if (u.is_artifical()) {
 						continue;
 					}
+					if (u.is_commoner()) {
+						continue;
+					}
 					int damage = u.max_hitpoints() - u.hitpoints();
 					if (damage > max_damage) {
 						max_damage = damage;
@@ -1231,9 +1251,7 @@ bool artifical::new_turn()
 				}
 				if (selected) {
 					selected->heal(adjacented_hp);
-					std::stringstream strstr;
-					strstr << adjacented_hp;
-					unit_display::unit_text(*selected, false, strstr.str());
+					unit_display::unit_heal2(teams_, units_, this, *selected, adjacented_hp);
 				}
 			}
 
@@ -1260,6 +1278,14 @@ bool artifical::new_turn()
 	return false;
 }
 
+void artifical::advance_to(const unit_type *t, bool use_traits, game_state* state)
+{
+	unit::advance_to(t, use_traits, state);
+	if (is_city()) {
+		max_level_ = std::max(t->level(), max_level_);
+	}
+}
+
 // @damage: negative
 void artifical::demolish_to(artifical& to, int damage, int random)
 {
@@ -1273,22 +1299,29 @@ void artifical::demolish_to(artifical& to, int damage, int random)
 		damage /= 2;
 	}
 
+	std::string text;
 	if (!miss) {
 		std::map<unit*, int> touched;
 		// demolish cannot capture city
 		if (damage < 0 && to.hitpoints() + damage <= 0) {
 			damage = -1 * (to.hitpoints() - 1);
 		}
-		touched.insert(std::make_pair(&to, -1 * damage));
-		multi_attack(units_, NULL, "", touched, side_);
+		to.take_hit(-1 * damage);
+		text = lexical_cast<std::string>(-1 * damage);
 	} else {
-		unit_display::unit_text(to, false, _("Miss"));
+		text = _("Miss");
 	}
+	unit_display::unit_destruct(teams_, units_, this, to, text, t); 
+}
+
+void artifical::ally_terminate_adjust(team& adjusting_team)
+{
+	units_.ally_terminate_adjust(adjusting_team, alert_rect_);
 }
 
 void artifical::apply_issur_decree(const tdecree& d, bool anim)
 {
-	reset_commoner_speed();
+	reset_decree_effect();
 
 	decree_ = &d;
 
@@ -1304,6 +1337,12 @@ void artifical::apply_issur_decree(const tdecree& d, bool anim)
 		std::vector<unit*> touchers(1, this);
 		unit_display::unit_text(*this, false, d.name());
 	}
+}
+
+void artifical::clear_decree()
+{
+	reset_decree_effect();
+	decree_ = NULL;
 }
 
 void artifical::set_resting(bool rest)
@@ -1335,96 +1374,109 @@ void artifical::get_experience(const increase_xp::ublock& ub, int xp, bool maste
 }
 
 // retval indicates whether cannot-undo triggered, for exapmle change mayor. 
-bool artifical::troop_come_into(unit* uobj, int pos, bool create)
+bool artifical::troop_come_into(unit* that, int pos)
 {
-	unit* that = uobj;
+	bool side_changed = that->side() != side_;
+	unit* u = that;
+/*
 	if (create) {
-		that = new unit(*uobj);
+		u = new unit(*that);
 	}
-
-	std::vector<unit*>::iterator it;
+*/
 	if (pos >= 0) {
-		it = reside_troops_.insert(reside_troops_.begin() + pos, that);
+		if (!u->is_commoner()) {
+			reside_troops_.insert(reside_troops_.begin() + pos, u);
+		} else {
+			reside_commoners_.insert(reside_commoners_.begin() + pos, u);
+		}
 	} else {
-		reside_troops_.push_back(that);
-		it = reside_troops_.begin() + (reside_troops_.size() - 1);
+		if (!u->is_commoner()) {
+			reside_troops_.push_back(u);
+		} else {
+			reside_commoners_.push_back(u);
+		}
 	}
 
 	bool can_undo = true;
-	// get ride of (official_ == hero_official_mayor)
-	unit& u = **it;
-	if (u.cityno() != cityno_) {
-		for (int i = 0; i < 3; i ++) {
-			hero* h = NULL;
-			if (i == 0) {
-				h = &u.master();
-			} else if (i == 1) {
-				h = &u.second();
-			} else {
-				h = &u.third();
-			}
-			if (!h->valid()) {
-				break;
-			}
-			if (h->official_ == hero_official_mayor) {
-				artifical* from = units_.city_from_cityno(h->city_);
-				if (from->select_mayor(&hero_invalid)) {
-					can_undo = false;
+	if (!u->is_commoner()) {
+		// get ride of (official_ == hero_official_mayor)
+		if (u->cityno() != cityno_) {
+			for (int i = 0; i < 3; i ++) {
+				hero* h = NULL;
+				if (i == 0) {
+					h = &u->master();
+				} else if (i == 1) {
+					h = &u->second();
+				} else {
+					h = &u->third();
+				}
+				if (!h->valid()) {
+					break;
+				}
+				if (h->official_ == hero_official_mayor) {
+					artifical* from = units_.city_from_cityno(h->city_);
+					if (from->select_mayor(&hero_invalid)) {
+						can_undo = false;
+					}
 				}
 			}
 		}
 	}
-	u.set_side(side_);
-	u.set_cityno(cityno_);
-	u.set_location(loc_);
-	u.set_goto(map_location());
-	u.set_block_turns(0);
-	u.clear_visibility_cache();
-	if (u.alert_turns()) {
-		u.set_alert_turns(0);
-		can_undo = false;
-	}
-	if (u.provoked_turns()) {
-		u.set_provoked_turns_next(u, 0);
-		can_undo = false;
-	}
-	if (u.tactic_hero()) {
-		u.remove_from_tactic_cache();
-		can_undo = false;
-	}
-
-	if (!u.human()) {
-		if ((rpg::stratum == hero_stratum_leader && side_ == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor_ == rpg::h)) {
-			u.set_human(true);
-		}
-	}
-
-	return can_undo;
-}
-
-void artifical::commoner_come_into(unit* that, int pos, bool create)
-{
-	unit* u = that;
-	if (create) {
-		u = new unit(*that);
-	}
-	if (pos >= 0) {
-		reside_commoners_.insert(reside_commoners_.begin() + pos, u);
-	} else {
-		reside_commoners_.push_back(u);
+	if (side_changed) {
+		u->terminate_noble(true);
 	}
 
 	u->set_side(side_);
 	u->set_cityno(cityno_);
 	u->set_location(loc_);
+	if (!u->transport()) {
+		u->set_goto(map_location());
+	}
 	u->set_from(map_location());
-	u->set_goto(map_location());
+	u->set_block_turns(0);
+	u->set_resting(false);
+	u->set_state(unit::STATE_FORMATION_ATTACKED, false);
 	u->clear_visibility_cache();
+	if (u->alert_turns()) {
+		u->set_alert_turns(0);
+		can_undo = false;
+	}
+	if (u->provoked_turns()) {
+		u->set_provoked_turns_next(*u, 0);
+		can_undo = false;
+	}
+	if (u->tactic_hero()) {
+		u->remove_from_tactic_cache();
+		can_undo = false;
+	}
+
+	if (!u->is_commoner() && !u->human()) {
+		if ((rpg::stratum == hero_stratum_leader && side_ == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor_ == rpg::h)) {
+			u->set_human(true);
+		}
+	}
+
+	if (side_changed) {
+		u->adjust();
+	}
+
+	return can_undo;
 }
 
-// before call unit_belong_to, don't update cityno and side!
-void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
+// used to field troop come into
+bool artifical::troop_come_into2(unit* troop, int pos)
 {
+	units_.erase(troop, false);
+
+	// below state will change belong city of troop, must place after .erase.
+	return troop_come_into(troop, pos);
+}
+
+void unit_belong_to2(std::vector<team>& teams, unit_map& units, int to_cityno, unit* troop, bool loyalty, bool to_recorder)
+{
+	artifical* to = units.city_from_cityno(to_cityno);
+	int side = to? to->side(): team::empty_side_;
+
 	for (int i = 0; i < 3; i ++) {
 		hero* h = NULL;
 		if (i == 0) {
@@ -1438,20 +1490,24 @@ void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
 			break;
 		}
 		if (h->official_ == hero_official_mayor) {
-			artifical* from = units_.city_from_cityno(h->city_);
+			artifical* from = units.city_from_cityno(h->city_);
 			from->select_mayor(&hero_invalid);
 		}
 	}
 
-	std::vector<team>& teams = *resources::teams;
-	team& prevous_team = teams[troop->side() - 1];
-	team& current_team = teams[side_ - 1];
+	team& previous_team = teams[troop->side() - 1];
+	team& current_team = teams[side - 1];
+
+	if (previous_team.side() != current_team.side()) {
+		troop->terminate_noble(true);
+	}
 
 	if (to_recorder) {
-		recorder.add_belong_to(troop, this, loyalty);
+		VALIDATE(to, "unit_belong_to2, when to is ROAM city, to must not NULL!");
+		recorder.add_belong_to(troop, to, loyalty);
 	}
 	// 1. 将troop从它原属城市的城外部队列表删除
-	artifical* src_city = units_.city_from_cityno(troop->cityno());
+	artifical* src_city = units.city_from_cityno(troop->cityno());
 	if (src_city) {
 		if (!troop->is_artifical()) {
 			if (!troop->is_commoner()) {
@@ -1465,36 +1521,49 @@ void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
 	}
 
 	// 2. set troop attribute(city, side, human)
-	troop->set_cityno(cityno_);
-	troop->set_side(side_);
+	troop->set_cityno(to_cityno);
+	troop->set_side(side);
 	// set human must before field_troops_add, 
 	// field_troops_add use human flag to refresh access_troops. 
-	if (!troop->is_artifical() && !troop->human() && !troop->is_commoner()) {
-		if ((rpg::stratum == hero_stratum_leader && side_ == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor_ == rpg::h)) {
+	if (to && !troop->is_artifical() && !troop->human() && !troop->is_commoner()) {
+		hero* mayor = to->mayor();
+		if ((rpg::stratum == hero_stratum_leader && side == rpg::h->side_ + 1) || (rpg::stratum == hero_stratum_mayor && mayor == rpg::h)) {
 			troop->set_human(true);
 		}
 	}
 
 	// 3. 把troop加入将属城市的城外部队列表
-	if (!troop->is_artifical()) {
-		if (!troop->is_commoner()) {
-			field_troops_add(troop);
-			if (loyalty) {
-				// adjust loyalty, avoid to wander immediately.
-				troop->set_loyalty(game_config::wander_loyalty_threshold + 1);
+	if (to) {
+		if (!troop->is_artifical()) {
+			if (!troop->is_commoner()) {
+				to->field_troops_add(troop);
+				if (loyalty) {
+					// adjust loyalty, avoid to wander immediately.
+					troop->set_loyalty(game_config::wander_loyalty_threshold + 1);
+				}
+			} else {
+				to->field_commoners_add(troop);
 			}
 		} else {
-			field_commoners_add(troop);
+			to->field_arts_add(unit_2_artifical(troop));
 		}
-	} else {
-		field_arts_add(unit_2_artifical(troop));
-	}	
+	}
 
 	// of course, current side of troop maybe equal prevous, but need call below.
 	// must keep sort-consistent between team.field_troop and artifical[n].field_troop.
 	// moved troop are added to end regardless team.field_troop or artifical[n].field_troop.
-	prevous_team.erase_troop(troop);
+	previous_team.erase_troop(troop);
 	current_team.add_troop(troop);
+
+	if (previous_team.side() != current_team.side()) {
+		troop->adjust();
+	}
+}
+
+// before call unit_belong_to, don't update cityno and side!
+void artifical::unit_belong_to(unit* troop, bool loyalty, bool to_recorder)
+{
+	unit_belong_to2(teams_, units_, cityno_, troop, loyalty, to_recorder);
 }
 
 // 出城
@@ -1579,6 +1648,9 @@ void artifical::hero_go_out(const hero& h)
 
 void artifical::fresh_into(hero& h)
 {
+	if (h.side_ != side_ - 1 && h.has_nomal_noble()) {
+		teams_[h.side_].appoint_noble(h, HEROS_NO_NOBLE, true);
+	}
 	h.status_ = hero_status_idle;
 	h.city_ = cityno_;
 	h.side_ = side_ - 1;
@@ -1592,29 +1664,21 @@ void artifical::fresh_into(hero& h)
 
 void artifical::fresh_into(const unit* troop)
 {
-	hero* h = &troop->master();
-	h->status_ = hero_status_idle;
-	h->city_ = cityno_;
-	h->side_ = side_ - 1;
-	fresh_heros_.push_back(h);
-	h = &troop->second();
-	if (h->valid()) {
-		h->status_ = hero_status_idle;
-		h->city_ = cityno_;
-		h->side_ = side_ - 1;
-		fresh_heros_.push_back(h);
+	fresh_into(troop->master());
+	
+	if (troop->second().valid()) {
+		fresh_into(troop->second());
 	}
-	h = &troop->third();
-	if (h->valid()) {
-		h->status_ = hero_status_idle;
-		h->city_ = cityno_;
-		h->side_ = side_ - 1;
-		fresh_heros_.push_back(h);
+	if (troop->third().valid()) {
+		fresh_into(troop->third());
 	}
 }
 
 void artifical::finish_into(hero& h, uint8_t status)
 {
+	if (h.side_ != side_ - 1 && h.has_nomal_noble()) {
+		teams_[h.side_].appoint_noble(h, HEROS_NO_NOBLE, true);
+	}
 	h.status_ = status;
 	h.city_ = cityno_;
 	h.side_ = side_ - 1;
@@ -1647,70 +1711,23 @@ void artifical::finish_2_fresh()
 
 void artifical::wander_into(const unit* troop, bool dialog)
 {
-	std::string message;
-	if (dialog) {
-		message = _("Go here, Can live the life I would like to?");
+	wander_into(troop->master(), dialog);
+	if (troop->second().valid()) {
+		wander_into(troop->second(), dialog);
 	}
-
-	hero* h = &troop->master();
-	if (h->official_ == hero_official_mayor) {
-		artifical* from = units_.city_from_cityno(h->city_);
-		from->select_mayor(&hero_invalid);
-	}
-	h->status_ = hero_status_wander;
-	h->city_ = cityno_;
-	h->side_ = HEROS_INVALID_SIDE;
-	h->float_catalog_ = ftofxp8(h->base_catalog_);
-	wander_heros_.push_back(h);
-	if (dialog) {
-		game_events::show_hero_message(h, this, message, game_events::INCIDENT_ENTER);
-	}
-	map_location loc2(MAGIC_HERO, h->number_);
-	game_events::fire("post_wander", loc_, loc2);
-
-	h = &troop->second();
-	if (h->valid()) {
-		if (h->official_ == hero_official_mayor) {
-			artifical* from = units_.city_from_cityno(h->city_);
-			from->select_mayor(&hero_invalid);
-		}
-		h->status_ = hero_status_wander;
-		h->city_ = cityno_;
-		h->side_ = HEROS_INVALID_SIDE;
-		h->float_catalog_ = ftofxp8(h->base_catalog_);
-		wander_heros_.push_back(h);
-		if (dialog) {
-			game_events::show_hero_message(h, this, message, game_events::INCIDENT_ENTER);
-		}
-		loc2.y = h->number_;
-		game_events::fire("post_wander", loc_, loc2);
-	}
-	h = &troop->third();
-	if (h->valid()) {
-		if (h->official_ == hero_official_mayor) {
-			artifical* from = units_.city_from_cityno(h->city_);
-			from->select_mayor(&hero_invalid);
-		}
-		h->status_ = hero_status_wander;
-		h->city_ = cityno_;
-		h->side_ = HEROS_INVALID_SIDE;
-		h->float_catalog_ = ftofxp8(h->base_catalog_);
-		wander_heros_.push_back(h);
-		if (dialog) {
-			game_events::show_hero_message(h, this, message, game_events::INCIDENT_ENTER);
-		}
-		loc2.y = h->number_;
-		game_events::fire("post_wander", loc_, loc2);
+	if (troop->third().valid()) {
+		wander_into(troop->third(), dialog);
 	}
 }
 
 void artifical::wander_into(hero& h, bool dialog)
 {
-	std::vector<team>& teams = *resources::teams;
-
 	if (h.official_ == hero_official_mayor) {
 		artifical* from = units_.city_from_cityno(h.city_);
 		from->select_mayor(&hero_invalid);
+	}
+	if (h.has_nomal_noble()) {
+		teams_[h.side_].appoint_noble(h, HEROS_NO_NOBLE, dialog);
 	}
 
 	h.status_ = hero_status_wander;
@@ -1794,7 +1811,7 @@ bool exist_from_internal(const unit_type* to, std::set<const unit_type*>& from)
 	return false;
 }
 
-void artifical::change_to_special_unit(int attacker_side, int random, bool replaying)
+void artifical::change_to_special_unit(game_display& gui, int attacker_side, int random)
 {
 	std::vector<unit*> desire;
 	const map_location* tiles = adjacent_;
@@ -1830,7 +1847,6 @@ void artifical::change_to_special_unit(int attacker_side, int random, bool repla
 		return;
 	}
 
-	std::vector<std::pair<unit*, unit> >specialable;
 	for (std::vector<unit*>::iterator it = desire.begin(); it != desire.end(); ++ it) {
 		unit& u = **it;
 		std::map<int, std::vector<const unit_type*> >::iterator find = special.find(u.level());
@@ -1842,58 +1858,30 @@ void artifical::change_to_special_unit(int attacker_side, int random, bool repla
 		for (std::vector<const unit_type*>::const_iterator it2 = find->second.begin(); it2 != find->second.end(); ++ it2) {
 			const unit_type* ut = *it2;
 			if (ut->arms() == u.packee_type()->arms() && exist_from_internal(ut, from)) {
-				unit* sample_unit = ::get_advanced_unit(&u, ut->id(), false);
-				specialable.push_back(std::make_pair(&u, *sample_unit));
-				delete sample_unit;
+				u.change_to(gui, ut);
 			}
 		}
-	}
-
-	if (!specialable.empty()) {
-		std::vector<const unit*> sample_units_ptr;
-		bool has_human = false;
-		for (std::vector<std::pair<unit*, unit> >::const_iterator it = specialable.begin(); it != specialable.end(); ++ it) {
-			sample_units_ptr.push_back(&it->second);
-			if (it->first->human()) {
-				has_human = true;
-			}
-		}
-		game_display& gui = *resources::screen;
-		int res = 0;
-		if (specialable.size() >= 2) {
-			if (has_human) {
-				std::string name = "input";
-				if (!replaying) {
-					gui2::tselect_unit dlg(gui, teams_, units_, heros_, sample_units_ptr, gui2::tselect_unit::CHANGE);
-					try {
-						dlg.show(gui.video());
-					} catch(twml_exception& e) {
-						e.show(gui);
-					}
-					res = dlg.troop_index();
-
-					config cfg;
-					cfg["value"] = res;
-					recorder.user_input(name, cfg);
-				} else {
-					do_replay_handle(attacker_side, name);
-					const config *action = get_replay_source().get_next_action();
-					if (!action || !*(action = &action->child(name))) {
-						replay::process_error("[" + name + "] expected but none found\n");
-					}
-					res = action->get("value")->to_int(-1);
-				}
-			} else {
-				res = random % specialable.size();
-			}
-		}
-		// reference to get_advanced_unit2(...)
-		unit& u = *specialable[res].first;
-		u.change_to(gui, specialable[res].second.type());
 	}
 }
 
 int belong_max_loyalty_diff	= 35;
+
+void artifical::decrease_level()
+{
+	modifications_.clear();
+	const std::vector<std::string> from = unit_type_->advances_from();
+	if (from.empty()) {
+		adjust();
+	} else {
+		// reference to get_advanced_unit2(...)
+		const unit_type* new_type = unit_types.find(from[0]);
+		advance_to(new_type);
+		calculate_5fields();
+		modify_according_to_hero(false);
+	}
+	hit_points_ = std::max(max_hit_points_ / 2, 1);
+	experience_ = 0;
+}
 
 // fallen
 // @attacker: troop that captures this artifical.
@@ -1944,39 +1932,38 @@ void artifical::fallen(int a_side, unit* attacker)
 		// 强制置为“完”状态
 		unit* current_troop = *itor;
 		
-		current_troop->set_movement(0);
-		current_troop->set_attacks(0);
-
 		random = get_random();
 		join_to_city = NULL;
 
-		if (current_troop->packee_type()->leader()) {
+		if (current_troop->packee_type()->require() == unit_type::REQUIRE_LEADER) {
 			force_wander = true;
 		} else {
 			force_wander = false;
 		}
 
-		if (city_same_side) {
-			city_same_side->troop_come_into(current_troop, -1, false);
-		} else if (!force_wander && fallen_to_unstage) {
+		if (current_troop->is_soldier()) {
+			delete current_troop;
+			continue;
+		} else if (city_same_side) {
+			city_same_side->troop_come_into(current_troop, -1);
+		} else if (fallen_to_unstage) {
 			current_troop->to_unstage();
 		} else if (!force_wander && a_side != team::empty_side_ && current_troop->master().base_catalog_ == attacker_leader->base_catalog_) {
-			troop_come_into(current_troop, -1, false);
+			troop_come_into(current_troop, -1);
 			join_to_city = this;
 		} else if (!force_wander && a_side != team::empty_side_ && (random % belong_max_loyalty_diff + current_troop->master().base_loyalty(*attacker_leader)) > HERO_MAX_LOYALTY) {
-			troop_come_into(current_troop, -1, false);
+			troop_come_into(current_troop, -1);
 			join_to_city = this;
 		} else {
 			artifical* cobj = citys[random % citys.size()];
 			if (force_wander || cobj->side() == team::empty_side_ || random % 2) {
 				cobj->wander_into(current_troop, teams_[cobj->side() - 1].is_human()? true: false);
 			} else {
-				cobj->troop_come_into(current_troop, -1, false);
+				cobj->troop_come_into(current_troop, -1);
 				join_to_city = cobj;
 			}
 		}
 		if (join_to_city) {
-			current_troop->adjust();
 			if (current_troop->second().valid()) {
 				strstr.str("");
 				strstr << help::tintegrate::generate_format(current_troop->master().name(), help::tintegrate::hero_color) << ", " << help::tintegrate::generate_format(current_troop->second().name(), help::tintegrate::hero_color);
@@ -1988,7 +1975,7 @@ void artifical::fallen(int a_side, unit* attacker)
 			} else {
 				message = _("Find wise leader, I would like to lead troop join in.");
 			}
-			game_events::show_hero_message(&current_troop->master(), join_to_city, message, game_events::INCIDENT_RECOMMENDONESELF);
+			join_anim(&current_troop->master(), join_to_city, message);
 		}
 		if (!city_same_side && !join_to_city) {
 			delete current_troop;
@@ -2026,7 +2013,7 @@ void artifical::fallen(int a_side, unit* attacker)
 		}
 		if (join_to_city) {
 			message = _("Find wise leader, let me join in.");
-			game_events::show_hero_message(h, join_to_city, message, game_events::INCIDENT_RECOMMENDONESELF);
+			join_anim(h, join_to_city, message);
 		}
 	}
 	// 处理城外部队: 如果还存在同阵营城市, 全部迁置为属于该城市, 否则随机分配到其它城市
@@ -2038,20 +2025,21 @@ void artifical::fallen(int a_side, unit* attacker)
 
 		current_troop->remove_from_provoke_cache();
 		current_troop->remove_from_tactic_cache();
-		current_troop->set_movement(0);
-		current_troop->set_attacks(0);
 		current_troop->set_goto(map_location());
 
 		random = get_random();
 		join_to_city = NULL;
 
-		if (current_troop->packee_type()->leader()) {
+		if (current_troop->packee_type()->require() == unit_type::REQUIRE_LEADER) {
 			force_wander = true;
 		} else {
 			force_wander = false;
 		}
 
-		if (city_same_side) {
+		if (current_troop->is_soldier()) {
+			units_.erase(current_troop);
+			
+		} else if (city_same_side) {
 			city_same_side->unit_belong_to(current_troop, false);
 
 		} else {
@@ -2076,7 +2064,7 @@ void artifical::fallen(int a_side, unit* attacker)
 			if (join_to_city) {
 				join_to_city->unit_belong_to(current_troop);
 
-			} else if (!force_wander && fallen_to_unstage) {
+			} else if (fallen_to_unstage) {
 				current_troop->to_unstage();
 				units_.erase(current_troop);
 
@@ -2102,9 +2090,6 @@ void artifical::fallen(int a_side, unit* attacker)
 			}
 		}
 		if (join_to_city) {
-			// leader is changed, recalculate fields
-			current_troop->adjust();
-
 			if (current_troop->second().valid()) {
 				strstr.str("");
 				strstr << help::tintegrate::generate_format(current_troop->master().name(), help::tintegrate::hero_color) << ", " << help::tintegrate::generate_format(current_troop->second().name(), help::tintegrate::hero_color);
@@ -2116,7 +2101,7 @@ void artifical::fallen(int a_side, unit* attacker)
 			} else {
 				message = _("Find wise leader, I would like to lead troop join in.");
 			}
-			game_events::show_hero_message(&current_troop->master(), join_to_city, message, game_events::INCIDENT_RECOMMENDONESELF);
+			join_anim(&current_troop->master(), join_to_city, message);
 		}
 	}
 
@@ -2125,14 +2110,17 @@ void artifical::fallen(int a_side, unit* attacker)
 		// 强制置为“完”状态
 		unit* current_troop = *itor;
 
-		current_troop->set_movement(0);
-		current_troop->set_attacks(0);
-		current_troop->set_goto(map_location());
+		if (city_same_side && current_troop->transport()) {
+			city_same_side->unit_belong_to(current_troop, false);
 
-		random = get_random();
-		join_to_city = NULL;
+		} else {
+			current_troop->set_goto(map_location());
 
-		units_.erase(current_troop);
+			random = get_random();
+			join_to_city = NULL;
+
+			units_.erase(current_troop);
+		}
 	}
 
 	// 处理城外建筑物: 如果还存在同阵营城市, 全部迁置为属于该城市, 否则随机分配到其它城市
@@ -2140,16 +2128,18 @@ void artifical::fallen(int a_side, unit* attacker)
 	for (std::vector<artifical*>::iterator itor = cache_field_arts.begin(); itor != cache_field_arts.end(); ++itor) {
 		artifical* current_art = *itor;
 		std::map<const map_location, int>::const_iterator it2 = unit_map::economy_areas_.find(current_art->get_location());
+
 		if (current_art->wall() || current_art->type() == unit_types.find_keep()) {
 			units_.erase(current_art);
 
 		} else if (it2 != unit_map::economy_areas_.end()) {
 			unit_belong_to(current_art);
-			// leader is changed, recalculate fields
-			current_art->adjust();
 
 		} else if (city_same_side) {
 			city_same_side->unit_belong_to(current_art);
+
+		} else if (current_art->fort()) {
+			unit_belong_to2(teams_, units_, HEROS_ROAM_CITY, current_art, false, false);
 
 		} else {
 			// 随机取一个城市
@@ -2157,8 +2147,6 @@ void artifical::fallen(int a_side, unit* attacker)
 			if (cobj->side() != team::empty_side_) {
 				cobj->unit_belong_to(current_art);
 
-				// leader is changed, recalculate fields
-				current_art->adjust();
 			} else {
 				units_.erase(current_art);
 			}
@@ -2171,25 +2159,13 @@ void artifical::fallen(int a_side, unit* attacker)
 		// 强制置为“完”状态
 		unit* current_troop = *itor;
 		
-		current_troop->set_movement(0);
-		current_troop->set_attacks(0);
-
 		random = get_random();
 		join_to_city = NULL;
 
 		delete current_troop;
 	}
 
-	if (this_is_city()) {
-		change_to_special_unit(a_side, get_random(), controller.is_replaying());
-	}
-
-	// 4.攻占者进入城市
-	if (attacker) {
-		troop_come_into(attacker);
-	}
-
-	// 5.改变两个相关阵营拥有的城市数
+	// 5. change city
 	defender_team.erase_city(this);
 	attacker_team.add_city(this);
 	
@@ -2206,6 +2182,7 @@ void artifical::fallen(int a_side, unit* attacker)
 	if (defender_team.side() != team::empty_side_ && defender_team.holded_cities().empty()) {
 		hero* defender_leader = defender_team.leader();
 		defender_leader->official_ = HEROS_NO_OFFICIAL;
+		defender_leader->noble_ = HEROS_NO_NOBLE;
 
 		// erase all strategy that this side holded
 		defender_team.erase_strategies(false);
@@ -2217,8 +2194,20 @@ void artifical::fallen(int a_side, unit* attacker)
 			}
 		}
 
+		defender_team.change_controller(team::team_info::EMPTY);
+
 		symbols["first"] = help::tintegrate::generate_format(defender_team.name(), help::tintegrate::hero_color);
 		game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$first is defeated.", symbols), game_events::INCIDENT_DEFEAT);
+	}
+
+	if (this_is_city()) {
+		change_to_special_unit(gui, a_side, get_random());
+		attacker_team.select_leader_noble(true);
+	}
+
+	// 4. attacker come into city
+	if (attacker) {
+		troop_come_into2(attacker);
 	}
 
 	// side is changed, set master_'s side_. city_ is unthouched. Only when is city. don't set when artifical.
@@ -2233,27 +2222,17 @@ void artifical::fallen(int a_side, unit* attacker)
 	}
 
 	// leader is changed, recalculate fields
-	// decrease level_
-	modifications_.clear();
-	const std::vector<std::string> from = unit_type_->advances_from();
-	if (from.empty()) {
-		adjust();
-	} else {
-		// reference to get_advanced_unit2(...)
-		const unit_type* new_type = unit_types.find(from[0]);
-		advance_to(new_type);
-		calculate_5fields();
-		modify_according_to_hero(false);
-	}
-	hit_points_ = std::max(max_hit_points_ / 2, 1);
-	experience_ = 0;
+	decrease_level();
 
 	if (decree_) {
-		decree_ = NULL;
+		clear_decree();
+	}
+	if (soldiers_) {
+		soldiers_ = 0;
 	}
 
 	// get one card random
-	if (!controller.is_replaying()) {
+	if (!controller.is_recovering(a_side)) {
 /*
 		为阻止玩家靠攻城来刷卡, 先取消攻城得卡/失城掉设置, 等将来对攻城刷卡有惩罚措施后再打开
 		get_random_card(attacker_team, *resources::screen, units_, heros_);
@@ -2268,7 +2247,7 @@ void artifical::fallen(int a_side, unit* attacker)
 		}
 
 		if (rpg::stratum != hero_stratum_leader && attacker && attacker->human()) {
-			units_.ai_capture_aggressed(*this, side_, !controller.is_replaying());
+			units_.ai_capture_aggressed(*this, side_, !controller.is_recovering(a_side));
 		}
 	}
 
@@ -2276,6 +2255,45 @@ void artifical::fallen(int a_side, unit* attacker)
 	gui.invalidate_all();
 
 	return;
+}
+
+void artifical::fort_fallen(int a_side)
+{
+	std::stringstream str;
+	str << "artifical::fort_fallen, invalid a_side: " << a_side;
+	VALIDATE(a_side > 0 && a_side <= (int)teams_.size(), str.str()); 
+
+	play_controller& controller = *resources::controller;
+	game_display& gui = *resources::screen;
+	team& defender_team = teams_[side_ - 1];
+	team& attacker_team = teams_[a_side - 1];
+	int to_cityno = HEROS_ROAM_CITY;
+
+	// change cityno_
+	std::vector<artifical*>& holden = attacker_team.holded_cities();
+	if (attacker_team.side() != team::empty_side_ && !holden.empty()) {
+		std::vector<artifical*>::iterator it = holden.begin();
+		std::vector<artifical*>::iterator choice = it;
+		artifical& current = **it;
+
+		size_t min_distance = distance_between(loc_, current.get_location());
+		for (++ it; it != holden.end(); ++ it) {
+			artifical& current = **it;
+			size_t distance = distance_between(loc_, current.get_location());
+			if (distance < min_distance) {
+				min_distance = distance;
+				choice = it;
+			}
+		}
+		to_cityno = (*choice)->cityno();
+	}
+
+	if (cityno_ != to_cityno) {
+		unit_belong_to2(teams_, units_, to_cityno, this, false, false);
+	}
+	
+	decrease_level();
+	food_ /= 10;
 }
 
 bool artifical::independence_vote(const artifical* aggressing) const
@@ -2329,24 +2347,27 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 	for (std::vector<unit*>::iterator it = reside_troops_.begin(); it != reside_troops_.end(); ) {
 		unit* current_troop = *it;
 		if (independenced) {
-			if ((current_troop != from_leader_unit && current_troop->human()) || !aggressing) {
+			if (current_troop->is_soldier()) {
+				delete current_troop;
+				it = reside_troops_.erase(it);
+			} else if ((current_troop != from_leader_unit && current_troop->human()) || !aggressing) {
 				if (!current_troop->human()) {
 					current_troop->set_human(true);
 				}
 				current_troop->set_side(to_side);
 				current_troop->adjust();
+				
 				++ it;
 			} else {
 				if (current_troop->human()) {
 					current_troop->set_human(false);
 				}
-				aggressing->troop_come_into(current_troop, -1, false);
+				aggressing->troop_come_into(current_troop, -1);
 				it = reside_troops_.erase(it);
 			}
 		} else {
 			if (current_troop != from_leader_unit && current_troop->human()) {
-				current_troop->adjust();
-				rpg_city->troop_come_into(current_troop, -1, false);
+				rpg_city->troop_come_into(current_troop, -1);
 				it = reside_troops_.erase(it);
 			} else {
 				if (current_troop->human()) {
@@ -2396,13 +2417,15 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 		current_troop->remove_from_provoke_cache();
 		current_troop->remove_from_tactic_cache();
 		if (independenced) {
-			if ((current_troop != from_leader_unit && current_troop->human()) || !aggressing) {
+			if (current_troop->is_soldier()) {
+				units_.erase(current_troop);
+
+			} else if ((current_troop != from_leader_unit && current_troop->human()) || !aggressing) {
 				if (!current_troop->human()) {
 					// current_troop->set_human(true);
 					current_troop->set_goto(map_location());
 				}
 				unit_belong_to(current_troop);
-				current_troop->adjust();
 			} else {
 				if (current_troop->human()) {
 					current_troop->set_human(false);
@@ -2412,7 +2435,6 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 		} else {
 			if (current_troop != from_leader_unit && current_troop->human()) {
 				rpg_city->unit_belong_to(current_troop);
-				rpg_city->field_troops().back()->adjust();
 			} else {
 				if (current_troop->human()) {
 					current_troop->set_human(false);
@@ -2428,7 +2450,6 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 		unit* current_troop = *it;
 		if (independenced) {
 			unit_belong_to(current_troop);
-			current_troop->adjust();
 		} else {
 			unit_belong_to(current_troop);
 		}
@@ -2442,8 +2463,6 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 			//	units_.erase(current_art);
 			// }
 			unit_belong_to(current_art);
-			// leader is changed, recalculate fields
-			current_art->adjust();
 		}
 
 		from_team.erase_city(this);
@@ -2456,17 +2475,21 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 		for (size_t i = 0; i < teams_.size(); i ++) {
 			teams_[i].erase_strategy(this->cityno());
 		}
+
+		if (soldiers_) {
+			soldiers_ = 0;
+		}
 	}
 }
 
 bool artifical::is_surrounded() const
 {
-	unit_map::const_iterator itor;
-	team  &city_team = (*resources::teams)[side_ - 1];
+	unit_map::const_iterator it;
+	const team& city_team = teams_[side_ - 1];
 
 	for (size_t i = 0; i < adjacent_size_; i ++) {
-		itor = units_.find(adjacent_[i]);
-		if ((itor == units_.end()) || !city_team.is_enemy(itor->side())) {
+		it = units_.find(adjacent_[i]);
+		if ((it == units_.end()) || !city_team.is_enemy(it->side())) {
 			return false;
 		}
 	}
@@ -2582,7 +2605,7 @@ void show_mayor_message(hero_map& heros, hero& mayor, artifical& city, bool term
 		incident = game_events::INCIDENT_APPOINT;
 	}
 	if (!message.empty()) {
-		game_events::show_hero_message(&heros[229], &city, message, incident);
+		game_events::show_hero_message(&heros[hero::number_civilian], &city, message, incident);
 	}
 }
 
@@ -2750,7 +2773,7 @@ void artifical::active_exploiture()
 
 	get_experience(increase_xp::exploiture_ublock(markets, technologies, business_speed_, technology_speed_, relative_feature.first, relative_feature.second), xp, true, false, false);
 	if (mayor_->valid()) {
-		unit* u = find_unit(units_, *mayor_);
+		unit* u = units_.find_unit(*mayor_);
 		if (!u->is_artifical()) {
 			bool master = false;
 			bool second = false;
@@ -2823,25 +2846,37 @@ artifical* artifical::tactic_on_ea() const
 }
 
 int tactic_requrie_min_adjacents = 4;
-const unit_type* artifical::next_ea_utype(std::vector<const map_location*>& ea_vacants) const
+const unit_type* artifical::next_ea_utype(std::vector<const map_location*>& ea_vacants, const std::set<const unit_type*>& can_build_ea) const
 {
 	int markets, technologies, tactics;
 	calculate_ea_tiles(ea_vacants, markets, technologies, tactics);
 	if (ea_vacants.empty()) {
 		return NULL;
 	}
+	if (can_build_ea.empty()) {
+		return NULL;
+	} else if (can_build_ea.size() == 1) {
+		return *can_build_ea.begin();
+	}
+
+	bool can_market = can_build_ea.find(unit_types.find_market()) != can_build_ea.end();
+	bool can_technology = can_build_ea.find(unit_types.find_technology()) != can_build_ea.end();
+	bool can_tactic = can_build_ea.find(unit_types.find_tactic()) != can_build_ea.end();
 
 	std::vector<artifical*> adjacent = adjacent_other_cities();
-	if (!markets || (technologies && tactics)) {
+	if (can_market && (!markets || ((!can_technology || technologies) && (!can_tactic || tactics)))) {
 		return unit_types.find_market();
-	} else if (!tactics && (hit_points_ < max_hit_points_ * 2 / 3 || (int)adjacent.size() >= tactic_requrie_min_adjacents)) {
+	} else if (can_tactic && !tactics && (!can_technology || (hit_points_ < max_hit_points_ * 2 / 3 || (int)adjacent.size() >= tactic_requrie_min_adjacents))) {
 		return unit_types.find_tactic();
-	} else {
+	} else if (can_technology) {
 		return unit_types.find_technology();
+	} else {
+		VALIDATE(false, "next_ea_utype, unknown branch!");
+		return NULL;
 	}
 }
 
-void artifical::demolish_ea()
+void artifical::demolish_ea(const std::set<const unit_type*>& can_build_ea)
 {
 	// don't demolish as long as has vacant ea.
 	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
@@ -2856,24 +2891,27 @@ void artifical::demolish_ea()
 		}
 	}
 
+	bool can_technology = can_build_ea.find(unit_types.find_technology()) != can_build_ea.end();
+	bool can_tactic = can_build_ea.find(unit_types.find_tactic()) != can_build_ea.end();
+
 	// only demolish tactic or technology
 	int markets, technologies, tactics;
 	calculate_ea_tiles(markets, technologies, tactics);
-	if (!technologies && !tactics) {
+	if ((!technologies || !can_tactic) && (!tactics || !can_technology)) {
 		return;
 	}
 
 	team& current_team = teams_[side_ - 1];
 	std::vector<artifical*> adjacent = adjacent_other_cities();
 	artifical* t = tactic_on_ea();
-	if (t && t->level() < 3 && !fronts() && hit_points_ == max_hit_points_) {
+	if (can_technology && t && t->level() < 3 && !fronts() && hit_points_ == max_hit_points_) {
 		if ((int)adjacent.size() < tactic_requrie_min_adjacents) {
 			// no ajdacent cities, demolish tactic
 			if (!adjacent_has_enemy(units_, current_team, *t)) {
 				do_demolish(*resources::screen, units_, current_team, t, 0, false);
 			}
 		}
-	} else if ((hit_points_ < max_hit_points_ / 2 || (int)adjacent.size() >= tactic_requrie_min_adjacents) && !t && technologies) {
+	} else if (can_tactic && (hit_points_ < max_hit_points_ / 2 || (int)adjacent.size() >= tactic_requrie_min_adjacents) && !t && technologies) {
 		// demolish a technologies
 		for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
 			unit_map::const_iterator find = units_.find(*ea);
@@ -2937,6 +2975,29 @@ void artifical::set_police(int val)
 	} else if (police_ > game_config::max_police) {
 		police_ = game_config::max_police;
 	}
+}
+
+void artifical::set_soldiers(int val)
+{
+	soldiers_ = val;
+}
+
+int artifical::current_soldiers() const
+{
+	int soldiers = 0;
+	for (std::vector<unit*>::const_iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
+		const unit& u = **it;
+		if (u.is_soldier()) {
+			soldiers ++;
+		}
+	}
+	for (std::vector<unit*>::const_iterator it = field_troops_.begin(); it != field_troops_.end(); ++ it) {
+		const unit& u = **it;
+		if (u.is_soldier()) {
+			soldiers ++;
+		}
+	}
+	return soldiers;
 }
 
 int artifical::max_recruit_cost()

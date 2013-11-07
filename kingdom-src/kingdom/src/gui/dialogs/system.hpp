@@ -21,19 +21,24 @@
 #include <vector>
 
 class game_display;
-class team;
-class unit_map;
-class hero_map;
-class game_state;
 
 namespace gui2 {
 
 class tsystem : public tdialog
 {
 public:
-	explicit tsystem(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate);
+	struct titem {
+		explicit titem(const std::string& _name, bool _enable = true)
+			: name(_name)
+			, enable(_enable)
+		{}
 
-	enum {NONE, SAVE, SAVEREPLAY, SAVEMAP, LOAD, PREFERENCES, HELP, QUIT};
+		std::string name;
+		bool enable;
+	};
+
+	explicit tsystem(game_display& gui, const std::vector<titem>& items);
+
 	int get_retval() const { return retval_; }
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
@@ -42,16 +47,10 @@ private:
 	/** Inherited from tdialog. */
 	void pre_show(CVideo& video, twindow& window);
 
-	/** Inherited from tdialog. */
-	void post_show(twindow& window);
-
 	void set_retval(twindow& window, int val);
 private:
 	game_display& gui_;
-	std::vector<team>& teams_;
-	unit_map& units_;
-	hero_map& heros_;
-	game_state& gamestate_;
+	const std::vector<titem>& items_;
 
 	int retval_;
 };

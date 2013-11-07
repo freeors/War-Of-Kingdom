@@ -18,7 +18,6 @@
  *  Manage unit-abilities, like heal, cure, and weapon_specials.
  */
 
-#include "foreach.hpp"
 #include "gamestatus.hpp"
 #include "resources.hpp"
 #include "terrain_filter.hpp"
@@ -26,7 +25,7 @@
 #include "team.hpp"
 #include "unit_abilities.hpp"
 
-
+#include <boost/foreach.hpp>
 
 /*
  *
@@ -117,7 +116,7 @@ static bool affects_side(const config& cfg, const std::vector<team>& teams, size
 
 bool unit::get_ability_bool(const std::string& ability, const map_location& loc) const
 {
-	const team& current_team = (*resources::teams)[side_ - 1];
+	const team& current_team = teams_[side_ - 1];
 
 	// first check ability that feature resulted
 	if (ability == "skirmisher") {
@@ -139,9 +138,27 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 		if (hide_turns_) {
 			return true;
 		}
-		if (unit_feature_val(hero_feature_ambush) || unit_feature_val(hero_feature_concealment) || unit_feature_val(hero_feature_submerge)) {
-			static config ambush_cfg, concealment_cfg, submerge_cfg;
+		if (unit_feature_val(hero_feature_concealment)) {
+			if (loc == loc_) {
+				unit_map::const_iterator it;
+				for (size_t i = 0; i < adjacent_size_; i ++) {
+					it = units_.find(adjacent_[i], false);
+					if (it.valid() && it->fort() && it->side() == side_) {
+						return true;
+					}
+				}
+			}
+		}
+		if (unit_feature_val(hero_feature_ground) || unit_feature_val(hero_feature_ambush) || unit_feature_val(hero_feature_submerge)) {
+			static config ground_cfg, ambush_cfg, submerge_cfg;
 			std::vector<config*> cfgs;
+			if (unit_feature_val(hero_feature_ground)) {
+				if (ground_cfg.empty()) {
+					config& filter_location = ground_cfg.add_child("filter_location");
+					filter_location["terrain"] = "G*,R*,A*,D*";
+				}
+				cfgs.push_back(&ground_cfg);
+			}
 			if (unit_feature_val(hero_feature_ambush)) {
 				if (ambush_cfg.empty()) {
 					config& filter_location = ambush_cfg.add_child("filter_location");
@@ -149,17 +166,10 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 				}
 				cfgs.push_back(&ambush_cfg);
 			}
-			if (unit_feature_val(hero_feature_concealment)) {
-				if (concealment_cfg.empty()) {
-					config& filter_location = concealment_cfg.add_child("filter_location");
-					filter_location["terrain"] = "*^V*";
-				}
-				cfgs.push_back(&concealment_cfg);
-			}
 			if (unit_feature_val(hero_feature_submerge)) {
 				if (submerge_cfg.empty()) {
 					config& filter_location = submerge_cfg.add_child("filter_location");
-					filter_location["terrain"] = "Wo";
+					filter_location["terrain"] = "Wo*";
 				}
 				cfgs.push_back(&submerge_cfg);
 			}
@@ -192,17 +202,16 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 		}
 	}
 
-	const unit_map& units = *resources::units;
 	map_location adjacent[6];
 	get_adjacent_tiles(loc,adjacent);
 	for(int i = 0; i != 6; ++i) {
-		const unit_map::const_iterator it = units.find(adjacent[i]);
-		if (it == units.end() || it->incapacitated())
+		unit* that = units_.find_unit(adjacent[i]);
+		if (!that || that->incapacitated())
 			continue;
-		if (it->packed()) {
-			abilities = &it->packee_type()->abilities_cfg();
+		if (that->packed()) {
+			abilities = &that->packee_type()->abilities_cfg();
 		} else {
-			abilities = &it->type()->abilities_cfg();
+			abilities = &that->type()->abilities_cfg();
 		}
 		if (abilities->empty())
 			continue;
@@ -211,8 +220,8 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 				continue;
 			}
 			const config& j = *it2->second;
-			if (unit_abilities::affects_side(j, teams_manager::get_teams(), side(), it->side()) &&
-			    it->ability_active(ability, j, adjacent[i]) &&
+			if (unit_abilities::affects_side(j, teams_manager::get_teams(), side(), that->side()) &&
+			    that->ability_active(ability, j, adjacent[i]) &&
 			    ability_affects_adjacent(ability,  j, i, loc))
 				return true;
 		}
@@ -272,19 +281,17 @@ unit_ability_list unit::get_abilities(const std::string& ability, const map_loca
 		}
 	}
 
-
 	// adjacent
-	const unit_map& units = *resources::units;
 	map_location adjacent[6];
 	get_adjacent_tiles(loc,adjacent);
 	for(int i = 0; i != 6; ++i) {
-		const unit_map::const_iterator it = units.find(adjacent[i]);
-		if (it == units.end() || it->incapacitated())
+		unit* that = units_.find_unit(adjacent[i]);
+		if (!that || that->incapacitated())
 			continue;
-		if (it->packed()) {
-			abilities = &it->packee_type()->abilities_cfg();
+		if (that->packed()) {
+			abilities = &that->packee_type()->abilities_cfg();
 		} else {
-			abilities = &it->type()->abilities_cfg();
+			abilities = &that->type()->abilities_cfg();
 		}
 		if (abilities->empty())
 			continue;
@@ -293,9 +300,9 @@ unit_ability_list unit::get_abilities(const std::string& ability, const map_loca
 				continue;
 			}
 			const config& j = *it2->second;
-			if (unit_abilities::affects_side(j, teams_manager::get_teams(), side(), it->side()) &&
-			    it->ability_active(ability, j, adjacent[i]) && ability_affects_adjacent(ability, j, i, loc))
-				res.cfgs.push_back(std::pair<const config *, unit*>(&j, &*it));
+			if (unit_abilities::affects_side(j, teams_manager::get_teams(), side(), that->side()) &&
+			    that->ability_active(ability, j, adjacent[i]) && ability_affects_adjacent(ability, j, i, loc))
+				res.cfgs.push_back(std::pair<const config *, unit*>(&j, that));
 		}
 	}
 
@@ -366,9 +373,9 @@ bool unit::ability_active(const std::string& ability,const config& cfg,const map
 	get_adjacent_tiles(loc,adjacent);
 	const unit_map& units = *resources::units;
 
-	foreach (const config &i, cfg.child_range("filter_adjacent"))
+	BOOST_FOREACH (const config &i, cfg.child_range("filter_adjacent"))
 	{
-		foreach (const std::string &j, utils::split(i["adjacent"]))
+		BOOST_FOREACH (const std::string &j, utils::split(i["adjacent"]))
 		{
 			map_location::DIRECTION index =
 				map_location::parse_direction(j);
@@ -383,9 +390,9 @@ bool unit::ability_active(const std::string& ability,const config& cfg,const map
 		}
 	}
 
-	foreach (const config &i, cfg.child_range("filter_adjacent_location"))
+	BOOST_FOREACH (const config &i, cfg.child_range("filter_adjacent_location"))
 	{
-		foreach (const std::string &j, utils::split(i["adjacent"]))
+		BOOST_FOREACH (const std::string &j, utils::split(i["adjacent"]))
 		{
 			map_location::DIRECTION index = map_location::parse_direction(j);
 			if (index == map_location::NDIRECTIONS) {
@@ -411,7 +418,7 @@ bool unit::ability_affects_adjacent(const std::string& ability, const config& cf
 
 	assert(dir >=0 && dir <= 5);
 	static const std::string adjacent_names[6] = {"n","ne","se","s","sw","nw"};
-	foreach (const config &i, cfg.child_range("affect_adjacent"))
+	BOOST_FOREACH (const config &i, cfg.child_range("affect_adjacent"))
 	{
 		std::vector<std::string> dirs = utils::split(i["adjacent"]);
 		if (std::find(dirs.begin(),dirs.end(),adjacent_names[dir]) != dirs.end()) {
@@ -476,7 +483,7 @@ std::pair<int,map_location> unit_ability_list::highest(const std::string& key, i
 	int flat = 0;
 	int stack = 0;
 	typedef std::pair<const config *, unit *> pt;
-	foreach (pt const &p, cfgs)
+	BOOST_FOREACH (pt const &p, cfgs)
 	{
 		int value = (*p.first)[key].to_int(def);
 		if ((*p.first)["cumulative"].to_bool()) {
@@ -508,7 +515,7 @@ std::pair<int,map_location> unit_ability_list::lowest(const std::string& key, in
 	int flat = 0;
 	int stack = 0;
 	typedef std::pair<const config *, unit *> pt;
-	foreach (pt const &p, cfgs)
+	BOOST_FOREACH (pt const &p, cfgs)
 	{
 		int value = (*p.first)[key].to_int(def);
 		if ((*p.first)["cumulative"].to_bool()) {
@@ -541,7 +548,7 @@ void unit_ability_list::merge(const unit_ability_list& other)
 		if (cfg != cfgs.end()) {
 			continue;
 		}
-		need_append_cfgs.push_back(std::make_pair<const config *, unit *>(other_cfg->first, other_cfg->second));
+		need_append_cfgs.push_back(std::make_pair(other_cfg->first, other_cfg->second));
 	}
 	std::copy(need_append_cfgs.begin(), need_append_cfgs.end(), std::back_inserter(cfgs));
 }
@@ -577,7 +584,7 @@ void unit_ability_list::merge(const unit_ability_list& other)
 namespace {
 	bool get_special_children(std::vector<const config*>& result, const config& parent,
 	                           const std::string& id, bool just_peeking=false) {
-		foreach (const config::any_child &sp, parent.all_children_range())
+		BOOST_FOREACH (const config::any_child &sp, parent.all_children_range())
 		{
 			if (sp.key == id || sp.cfg["id"] == id) {
 				if(just_peeking) {
@@ -624,7 +631,7 @@ unit_ability_list attack_type::get_specials(const std::string& special) const
 	unit_ability_list res;
 	if (const config &specials = cfg_.child("specials"))
 	{
-		foreach (const config &i, specials.child_range(special)) {
+		BOOST_FOREACH (const config &i, specials.child_range(special)) {
 			if (special_active(i, true))
 				res.cfgs.push_back(std::pair<const config *, unit *>
 					(&i, attacker_ ? aloc_ : dloc_));
@@ -633,7 +640,7 @@ unit_ability_list attack_type::get_specials(const std::string& special) const
 	if (!other_attack_) return res;
 	if (const config &specials = other_attack_->cfg_.child("specials"))
 	{
-		foreach (const config &i, specials.child_range(special)) {
+		BOOST_FOREACH (const config &i, specials.child_range(special)) {
 			if (other_attack_->special_active(i, false))
 				res.cfgs.push_back(std::pair<const config *, unit *>
 					(&i, attacker_ ? dloc_ : aloc_));
@@ -648,7 +655,7 @@ std::vector<t_string> attack_type::special_tooltips(bool force) const
 	const config &specials = cfg_.child("specials");
 	if (!specials) return res;
 
-	foreach (const config::any_child &sp, specials.all_children_range())
+	BOOST_FOREACH (const config::any_child &sp, specials.all_children_range())
 	{
 		if (force || special_active(sp.cfg, true)) {
 			const t_string &name = sp.cfg["name"];
@@ -673,7 +680,7 @@ std::string attack_type::weapon_specials(bool force) const
 	const config &specials = cfg_.child("specials");
 	if (!specials) return res;
 
-	foreach (const config::any_child &sp, specials.all_children_range())
+	BOOST_FOREACH (const config::any_child &sp, specials.all_children_range())
 	{
 		char const *s = force || special_active(sp.cfg, true) ?
 			"name" : "name_inactive";
@@ -808,9 +815,9 @@ bool attack_type::special_active(const config& cfg, bool self) const
 		get_adjacent_tiles(dloc_->get_location(), adjacent);
 	}
 
-	foreach (const config &i, cfg.child_range("filter_adjacent"))
+	BOOST_FOREACH (const config &i, cfg.child_range("filter_adjacent"))
 	{
-		foreach (const std::string &j, utils::split(i["adjacent"]))
+		BOOST_FOREACH (const std::string &j, utils::split(i["adjacent"]))
 		{
 			map_location::DIRECTION index =
 				map_location::parse_direction(j);
@@ -823,9 +830,9 @@ bool attack_type::special_active(const config& cfg, bool self) const
 		}
 	}
 
-	foreach (const config &i, cfg.child_range("filter_adjacent_location"))
+	BOOST_FOREACH (const config &i, cfg.child_range("filter_adjacent_location"))
 	{
-		foreach (const std::string &j, utils::split(i["adjacent"]))
+		BOOST_FOREACH (const std::string &j, utils::split(i["adjacent"]))
 		{
 			map_location::DIRECTION index =
 				map_location::parse_direction(j);

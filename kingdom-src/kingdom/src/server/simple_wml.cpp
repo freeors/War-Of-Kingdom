@@ -1,7 +1,25 @@
+/*
+   Copyright (C) 2008 - 2013
+   Part of the Battle for Wesnoth Project http://www.wesnoth.org
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License 2
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY.
+
+   See the COPYING file for more details.
+*/
+
 #include <iostream>
 #include <sstream>
 
+#include "global.hpp"
+
+#include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
 #include "simple_wml.hpp"
@@ -28,7 +46,11 @@ char* uncompress_buffer(const string_span& input, string_span* span)
 		state = 1;
 		boost::iostreams::filtering_stream<boost::iostreams::input> filter;
 		state = 2;
-		filter.push(boost::iostreams::gzip_decompressor());
+		if (!span->empty() && *span->begin() == 'B') {
+			filter.push(boost::iostreams::bzip2_decompressor());
+		} else {
+			filter.push(boost::iostreams::gzip_decompressor());
+		}
 		filter.push(stream);
 		state = 3;
 
@@ -76,7 +98,14 @@ char* uncompress_buffer(const string_span& input, string_span* span)
 	}
 }
 
-char* compress_buffer(const char* input, string_span* span)
+class charbuf : public std::stringbuf {
+public:
+	charbuf(char *buffer, int len) {
+		this->setbuf(buffer, len);
+	}
+};
+
+char* compress_buffer(const char* input, string_span* span, bool bzip2)
 {
 	int nalloc = strlen(input);
 	int state = 0;
@@ -87,7 +116,11 @@ char* compress_buffer(const char* input, string_span* span)
 		state = 2;
 		boost::iostreams::filtering_stream<boost::iostreams::input> filter;
 		state = 3;
-		filter.push(boost::iostreams::gzip_compressor());
+		if (bzip2) {
+			filter.push(boost::iostreams::bzip2_compressor());
+		} else {
+			filter.push(boost::iostreams::gzip_compressor());
+		}
 		filter.push(stream);
 		state = 4;
 		nalloc = in.size()*2 + 80;
@@ -110,7 +143,7 @@ char* compress_buffer(const char* input, string_span* span)
 		state = 8;
 
 		*span = string_span(small_out, len);
-		assert(*small_out == 31);
+		assert(*small_out == (bzip2 ? 'B' : 31));
 		state = 9;
 		return small_out;
 	} catch (std::bad_alloc& e) {
@@ -182,6 +215,10 @@ node::node(document& doc, node* parent) :
 {
 }
 
+#ifdef _MSC_VER
+#pragma warning (push)
+#pragma warning (disable: 4706)
+#endif
 node::node(document& doc, node* parent, const char** str, int depth) :
 	doc_(&doc),
 	attr_(),
@@ -236,14 +273,14 @@ node::node(document& doc, node* parent, const char** str, int depth) :
 		case '#':
 			s = strchr(s, '\n');
 			if(s == NULL) {
-				throw error("could not find newline after #");
+				throw error("did not find newline after '#'");
 			}
 			break;
 		default: {
 			const char* end = strchr(s, '=');
 			if(end == NULL) {
 				ERR_SWML << "attribute: " << s << "\n";
-				throw error("could not find '=' after attribute");
+				throw error("did not find '=' after attribute");
 			}
 
 			string_span name(s, end - s);
@@ -251,7 +288,7 @@ node::node(document& doc, node* parent, const char** str, int depth) :
 			if(*s == '_') {
 				s = strchr(s, '"');
 				if(s == NULL) {
-					throw error("could not find '\"' after _");
+					throw error("did not find '\"' after '_'");
 				}
 			}
 
@@ -261,34 +298,48 @@ node::node(document& doc, node* parent, const char** str, int depth) :
 					ERR_SWML << "ATTR: '" << name << "' (((" << s << ")))\n";
 					throw error("did not find end of attribute");
 				}
+				if (memchr(s, '"', end - s))
+					throw error("found stray quotes in unquoted value");
 				goto read_attribute;
 			}
-
 			end = s;
-
-			for(;;) {
+			for(;;)
+			{
+				// Read until the first single double quote.
 				while((end = strchr(end+1, '"')) && end[1] == '"') {
+#ifdef _MSC_VER
+#pragma warning (pop)
+#endif
 					++end;
 				}
-
-				if(end == NULL) {
-					ERR_SWML << "ATTR: '" << name << "' (((" << s << ")))\n";
+				if(end == NULL)
 					throw error("did not find end of attribute");
-				}
 
-				const char* endline = end;
-				while(*endline && *endline != '\n' && *endline != '+') {
+				// Stop if newline.
+				const char *endline = end + 1;
+				while (*endline == ' ') ++endline;
+				if (*endline == '\n') break;
+
+				// Read concatenation marker.
+				if (*(endline++) != '+')
+					throw error("did not find newline after end of attribute");
+				if (*(endline++) != '\n')
+					throw error("did not find newline after '+'");
+
+				// Read textdomain marker.
+				if (*endline == '#') {
+					endline = strchr(endline + 1, '\n');
+					if (!endline)
+						throw error("did not find newline after '#'");
 					++endline;
 				}
 
-				if(*endline != '+') {
-					break;
-				}
-
-				end = strchr(endline, '"');
-				if(end == NULL) {
-					throw error("did not find quotes after +");
-				}
+				// Read indentation and start of string.
+				while (*endline == '\t') ++endline;
+				if (*endline == '_') ++endline;
+				if (*endline != '"')
+					throw error("did not find quotes after '+'");
+				end = endline;
 			}
 
 			++s;
@@ -944,6 +995,7 @@ document::document(string_span compressed_buf) :
 	buffers_.push_back(uncompress_buffer(compressed_buf, &uncompressed_buf));
 	output_ = uncompressed_buf.begin();
 	const char* cbuf = output_;
+
 	try {
 		root_ = new node(*this, NULL, &cbuf);
 	} catch(...) {
@@ -1020,16 +1072,16 @@ const char* document::output()
 	return output_;
 }
 
-string_span document::output_compressed()
+string_span document::output_compressed(bool bzip2)
 {
 	if(compressed_buf_.empty() == false &&
 	   (root_ == NULL || root_->is_dirty() == false)) {
-		assert(*compressed_buf_.begin() == 31);
+		assert(*compressed_buf_.begin() == (bzip2 ? 'B' : 31));
 		return compressed_buf_;
 	}
 
-	buffers_.push_back(compress_buffer(output(), &compressed_buf_));
-	assert(*compressed_buf_.begin() == 31);
+	buffers_.push_back(compress_buffer(output(), &compressed_buf_, bzip2));
+	assert(*compressed_buf_.begin() == (bzip2 ? 'B' : 31));
 
 	return compressed_buf_;
 }

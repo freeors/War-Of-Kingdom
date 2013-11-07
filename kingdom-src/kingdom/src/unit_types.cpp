@@ -23,7 +23,6 @@
 #include "unit_types.hpp"
 
 #include "asserts.hpp"
-#include "foreach.hpp"
 #include "game_config.hpp"
 #include "gettext.hpp"
 #include "loadscreen.hpp"
@@ -36,6 +35,8 @@
 #include "unit.hpp"
 
 #include "formula_string_utils.hpp"
+
+#include <boost/foreach.hpp>
 
 department::department(int type, const std::string& name, const std::string& image, const std::string& portrait)
 	: type_(type)
@@ -192,7 +193,7 @@ ttactic::ttactic(int index, int complex_index, const config& cfg)
 		int total_value = 0;
 		if (apply_to_ == apply_to_tag::RESISTANCE) {
 			const config& resistance = effect.child("resistance");
-			foreach (const config::attribute &istrmap, resistance.attribute_range()) {
+			BOOST_FOREACH (const config::attribute &istrmap, resistance.attribute_range()) {
 				total_value += lexical_cast<int>(istrmap.second);
 			}
 			profit += total_value / 2;
@@ -295,7 +296,7 @@ bool ttactic::select_one() const
 {
 	for (std::vector<const ttactic*>::const_iterator it = parts_.begin(); it != parts_.end(); ++ it) {
 		const ttactic& t = **it;
-		if (t.apply_to() == apply_to_tag::PROVOKE) {
+		if (t.apply_to() == apply_to_tag::PROVOKE || t.apply_to() == apply_to_tag::FOOD) {
 			return true;
 		}
 	}
@@ -360,6 +361,10 @@ std::map<int, std::vector<map_location> > ttactic::touch_units(unit_map& units, 
 						if (!(type & t.type_filter())) {
 							continue;
 						}
+					}
+					// special
+					if (t.apply_to() == apply_to_tag::FOOD && u_it->food() >= u_it->max_food()) {
+						continue;
 					}
 					touched.push_back(u_it->get_location());
 				}
@@ -677,6 +682,65 @@ int tdecree::level(const hero& h) const
 	return l;
 }
 
+std::string tnoble::form_name_msgid(const std::string& id)
+{
+	std::stringstream strstr;
+	strstr << HERO_PREFIX_STR_NOBLE << id;
+	return strstr.str();
+}
+
+std::string tnoble::form_name(const std::string& id)
+{
+	std::stringstream strstr;
+	strstr << HERO_PREFIX_STR_NOBLE << id;
+	return dgettext("wesnoth-card", strstr.str().c_str());
+}
+
+tnoble::tnoble(int index, const config& cfg)
+	: index_(index)
+	, id_(cfg["id"].str())
+	, level_()
+	, leader_(false)
+	, formation_(false)
+	, name_()
+{
+	memset(&condition_, 0, sizeof(tcondition));
+	memset(&effect_, 0, sizeof(hblock));
+
+	level_ = cfg["level"].to_int();
+	if (level_ < 0 || level_ > game_config::max_noble_level) {
+		throw config::error("[noble] error, " + id_ + " is invalid level!");
+	}
+	leader_ = cfg["leader"].to_bool();
+	if (leader_) {
+		formation_ = true;
+	} else {
+		formation_ = cfg["formation"].to_bool();
+	}
+
+	const config& cond = cfg.child("condition");
+	if (cond) {
+		condition_.city = cond["city"].to_int(0);
+		condition_.meritorious = cond["meritorious"].to_int(0);
+	}
+
+	const config& effect = cfg.child("effect");
+	if (effect) {
+		effect_.leadership = effect["leadership"].to_int(0);
+		effect_.force = effect["force"].to_int(0);
+		effect_.intellect = effect["intellect"].to_int(0);
+		effect_.politics = effect["politics"].to_int(0);
+		effect_.charm = effect["charm"].to_int(0);
+	}
+
+	name_ = form_name(id_);
+}
+
+bool tnoble::operator<(const tnoble& that) const
+{
+	return index_ <= that.index_;
+}
+
 ttreasure::ttreasure(int index, int feature)
 	: index_(index)
 	, feature_(feature)
@@ -791,7 +855,7 @@ void generate_advance_tree(const std::map<std::string, const base*>& src, std::v
 }
 }
 
-technology::technology(const config& cfg)
+ttechnology::ttechnology(const config& cfg)
 	: id_()
 	, name_()
 	, description_()
@@ -816,16 +880,16 @@ technology::technology(const config& cfg)
 
 	std::vector<std::string> parts = utils::split(cfg["parts"].str());
 	if (!parts.empty()) {
-		const std::map<std::string, technology>& technologies = unit_types.technologies();
+		const std::map<std::string, ttechnology>& technologies = unit_types.technologies();
 		for (std::vector<std::string>::const_iterator it = parts.begin(); it != parts.end(); ++ it) {
-			std::map<std::string, technology>::const_iterator find = technologies.find(*it);
+			std::map<std::string, ttechnology>::const_iterator find = technologies.find(*it);
 			if (find == technologies.end()) {
 				throw config::error("[technology] error, " + id_ + " is complex technology, but cannot find part: " + *it);
 			}
 			if (find->second.complex()) {
 				throw config::error("[technology] error, " + id_ + " is complex technology, " + *it + " is complex also.");
 			}
-			const technology* t = &(find->second);
+			const ttechnology* t = &(find->second);
 			if (std::find(parts_.begin(), parts_.end(), t) != parts_.end()) {
 				throw config::error("[technology] error, " + id_ + " is complex technology, its sub-technology " + *it + " duplicated.");
 			}
@@ -863,7 +927,7 @@ technology::technology(const config& cfg)
 		}
 		apply_to_ = tag;
 
-		const std::map<std::string, technology>& technologies = unit_types.technologies();
+		const std::map<std::string, ttechnology>& technologies = unit_types.technologies();
 		const config& filter_cfg = cfg.child("filter");
 		if (filter_cfg) {
 			std::vector<std::string> vstr = utils::split(filter_cfg["type"]);
@@ -905,7 +969,7 @@ technology::technology(const config& cfg)
 	}
 }
 
-bool technology::filter(int type, int arms) const
+bool ttechnology::filter(int type, int arms) const
 {
 	if (type_filter_ && !(type & type_filter_)) {
 		return false;
@@ -914,6 +978,82 @@ bool technology::filter(int type, int arms) const
 		return false;
 	}
 	return true;
+}
+
+tformation_profile::tformation_profile(int index, const config& cfg)
+	: index_(index)
+	, attack_flag_(0)
+	, arms_type_()
+	, arms_range_id_()
+	, arms_range_(0)
+	, arms_count_(0)
+{
+	id_ = cfg["id"].str();
+
+	std::stringstream strstr;
+	strstr << HERO_PREFIX_STR_FORMATION << id_;
+	name_ = dgettext("wesnoth-card", strstr.str().c_str());
+
+	strstr.str("");
+	strstr << HERO_PREFIX_STR_FORMATION_DESC << id_;
+	description_ = dgettext("wesnoth-card", strstr.str().c_str());
+
+	std::vector<std::string> vstr = utils::split(cfg["attack"].str());
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		if (*it == "slow") {
+			attack_flag_ |= SLOW;
+		} else if (*it == "break") {
+			attack_flag_ |= BREAK;
+		} else if (*it == "poison") {
+			attack_flag_ |= POISON;
+		} 
+	}
+
+	const config& arms = cfg.child("arms");
+	if (!arms) {
+		throw config::error("[formation] error, " + id_ + " has not [arms].");
+	}
+	vstr = utils::split(arms["type"].str());
+	const std::vector<std::string>& atype_ids = unit_types.atype_ids();
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		if (std::find(atype_ids.begin(), atype_ids.end(), *it) == atype_ids.end()) {
+			throw config::error("[formation] error, " + id_ + " 's [arms] hasn't invalid atype: " + *it + ".");
+		}
+		arms_type_.insert(*it);
+	}
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	std::vector<std::string>::const_iterator find = std::find(range_ids.begin(), range_ids.end(), arms["range"].str());
+	if (find == range_ids.end()) {
+		throw config::error("[formation] error, " + id_ + " 's [arms] hasn't valid range attribute.");
+	}
+	arms_range_id_ = *find;
+	arms_range_ = std::distance(range_ids.begin(), find);
+	arms_count_ = arms["count"].to_int();
+	if (arms_count_ <= 0 || arms_count_ >= 7) {
+		throw config::error("[formation] error, " + id_ + " 's [arms] hasn't valid count attribute.");
+	}
+
+	strstr.str("");
+	strstr << game_config::path << "/data/core/images/formation/" << HERO_PREFIX_STR_FORMATION_ICON << id_ << ".png";
+	if (file_exists(strstr.str())) {
+		strstr.str("");
+		strstr << "formation/" << HERO_PREFIX_STR_FORMATION_ICON << id_ << ".png";
+	} else {
+		strstr.str("");
+		strstr << "formation/" << HERO_PREFIX_STR_FORMATION_ICON << "default.png";
+	}
+	icon_ = strstr.str();
+
+	strstr.str("");
+	strstr << game_config::path << "/data/core/images/formation/" << HERO_PREFIX_STR_FORMATION_BG << id_ << ".png";
+	if (file_exists(strstr.str())) {
+		strstr.str("");
+		strstr << "formation/" << HERO_PREFIX_STR_FORMATION_BG << id_ << ".png";
+	} else {
+		strstr.str("");
+		strstr << "formation/" << HERO_PREFIX_STR_FORMATION_BG << "default.png";
+	}
+	bg_image_ = strstr.str();
 }
 
 attack_type::attack_type(const config& cfg) :
@@ -958,7 +1098,7 @@ attack_type::attack_type(const config& cfg) :
 		if (result == units_specials.end()) {
 			throw config::error("[attack]'s specials error, cannot find " + *it);
 		}
-		foreach (const config::any_child &c, result->second.all_children_range()) {
+		BOOST_FOREACH (const config::any_child &c, result->second.all_children_range()) {
 			specials_cfg.add_child(c.key, c.cfg);
 		}
 	}
@@ -1051,7 +1191,7 @@ bool attack_type::apply_modification(const config& cfg,std::string* description)
 		if (config &specials = cfg_.child("specials"))
 		{
 			config new_specials;
-			foreach (const config::any_child &vp, specials.all_children_range()) {
+			BOOST_FOREACH (const config::any_child &vp, specials.all_children_range()) {
 				std::vector<std::string>::const_iterator found_id =
 					std::find(dsl.begin(), dsl.end(), vp.cfg["id"].str());
 				if (found_id == dsl.end()) {
@@ -1069,7 +1209,7 @@ bool attack_type::apply_modification(const config& cfg,std::string* description)
 			cfg_.clear_children("specials");
 		}
 		config &new_specials = cfg_.child_or_add("specials");
-		foreach (const config::any_child &value, set_specials.all_children_range()) {
+		BOOST_FOREACH (const config::any_child &value, set_specials.all_children_range()) {
 			new_specials.add_child(value.key, value.cfg);
 		}
 	}
@@ -1256,7 +1396,7 @@ utils::string_map unit_movement_type::damage_table() const
 
 	if (const config &resistance = cfg_.child("resistance"))
 	{
-		foreach (const config::attribute &i, resistance.attribute_range()) {
+		BOOST_FOREACH (const config::attribute &i, resistance.attribute_range()) {
 			res[i.first] = i.second;
 		}
 	}
@@ -1564,74 +1704,76 @@ std::string unit_type::attack_image(const std::string& race, const std::string& 
 
 static void replace_anim_cfg_inernal(const config& src, config& dst, const utils::string_map& symbols)
 {
-	foreach (const config::any_child& c, src.all_children_range()) {
+	BOOST_FOREACH (const config::any_child& c, src.all_children_range()) {
 		config& adding = dst.add_child(c.key);
-		foreach (const config::attribute &i, c.cfg.attribute_range()) {
+		BOOST_FOREACH (const config::attribute &i, c.cfg.attribute_range()) {
 			adding[i.first] = utils::interpolate_variables_into_string(i.second, &symbols);
 		}
 		replace_anim_cfg_inernal(c.cfg, adding, symbols);
 	}
 }
 
-static void replace_anim_cfg(const std::string& src, config& dst, const utils::string_map& symbols)
+static void replace_anim_cfg(const std::string& tag, const std::string& src, config& dst, const utils::string_map& symbols)
 {
-	const config& anim_cfg = unit_types.utype_anims().find(src)->second;
-	// replace
-	foreach (const config::attribute &i, anim_cfg.attribute_range()) {
-		dst[i.first] = utils::interpolate_variables_into_string(i.second, &symbols);
+	typedef std::multimap<std::string, const config>::const_iterator Itor;
+	std::pair<Itor, Itor> its = unit_types.utype_anims().equal_range(src);
+	while (its.first != its.second) {
+		config& sub_cfg = dst.add_child(tag);
+		if (symbols.count("offset_x")) {
+			sub_cfg["offset_x"] = symbols.find("offset_x")->second;
+		}
+		if (symbols.count("offset_y")) {
+			sub_cfg["offset_y"] = symbols.find("offset_y")->second;
+		}
+		const config& anim_cfg = its.first->second;
+		// replace
+		BOOST_FOREACH (const config::attribute &i, anim_cfg.attribute_range()) {
+			sub_cfg[i.first] = utils::interpolate_variables_into_string(i.second, &symbols);
+		}
+		replace_anim_cfg_inernal(anim_cfg, sub_cfg, symbols);
+		++ its.first;
 	}
-	replace_anim_cfg_inernal(anim_cfg, dst, symbols);
 }
 
-void unit_type::defend_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::defend_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	symbols["base_png"] = image(race, id, terrain);
 	symbols["hit_png"] = hit(race, id, terrain);
 	symbols["miss_png"] = miss(race, id, terrain);
 
-	replace_anim_cfg("defend", cfg, symbols);
+	replace_anim_cfg(tag, "defend", cfg, symbols);
 }
 
-void unit_type::resistance_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::resistance_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	symbols["leading_png"] = leading(race, id, terrain);
 
-	replace_anim_cfg("resistance", cfg, symbols);
+	replace_anim_cfg(tag, "resistance", cfg, symbols);
 }
 
-void unit_type::leading_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::leading_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	symbols["leading_png"] = leading(race, id, terrain);
 
-	replace_anim_cfg("leading", cfg, symbols);
+	replace_anim_cfg(tag, "leading", cfg, symbols);
 }
 
-void unit_type::healing_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::healing_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
 	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
 	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
 	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
 
-	replace_anim_cfg("healing", cfg, symbols);
+	replace_anim_cfg(tag, "healing", cfg, symbols);
 }
 
-void unit_type::idle_anim(const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::idle_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	std::string idle1 = get_binary_file_location("images", idle(race, id, terrain, 1));
 	if (!idle1.empty()) {
@@ -1646,18 +1788,35 @@ void unit_type::idle_anim(const std::string& race, const std::string& id, bool t
 		symbols["idle_4_png"] = attack_image(race, id, terrain, 1, 3);
 	}
 
-	replace_anim_cfg("idle", cfg, symbols);
+	replace_anim_cfg(tag, "idle", cfg, symbols);
 }
 
-void unit_type::attack_anim_melee(const std::string& aid, const std::string& aicon, bool troop, const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::healed_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	utils::string_map symbols;
+	std::string idle1 = get_binary_file_location("images", idle(race, id, terrain, 1));
+	if (!idle1.empty()) {
+		symbols["idle_1_png"] = idle(race, id, terrain, 1);
+		symbols["idle_2_png"] = idle(race, id, terrain, 2);
+		symbols["idle_3_png"] = idle(race, id, terrain, 3);
+		symbols["idle_4_png"] = idle(race, id, terrain, 4);
+	} else {
+		symbols["idle_1_png"] = miss(race, id, terrain);
+		symbols["idle_2_png"] = attack_image(race, id, terrain, 1, 1);
+		symbols["idle_3_png"] = attack_image(race, id, terrain, 1, 2);
+		symbols["idle_4_png"] = attack_image(race, id, terrain, 1, 3);
+	}
+
+	replace_anim_cfg(tag, "healed", cfg, symbols);
+}
+
+void unit_type::attack_anim_melee(const std::string& tag, const std::string& aid, const std::string& aicon, bool troop, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
 	std::string hit_sound = "sword-1.ogg"; // {SOUND_LIST:SWORD_SWISH}
 	std::string miss_sound = "miss-1.ogg,miss-2.ogg,miss-3.ogg"; // {SOUND_LIST:MISS}
 	if (aicon.find("staff") != std::string::npos) {
 		hit_sound = "staff.wav";
 	}
-
-	cfg.clear();
 
 	utils::string_map symbols;
 	const std::vector<std::string>& range_ids = unit_types.range_ids();
@@ -1675,14 +1834,15 @@ void unit_type::attack_anim_melee(const std::string& aid, const std::string& aic
 	symbols["melee_attack_3_png"] = attack_image(race, id, terrain, 0, 3);
 	symbols["melee_attack_4_png"] = attack_image(race, id, terrain, 0, 4);
 
-	replace_anim_cfg("melee_attack", cfg, symbols);
-
 	if (!troop) {
-		cfg["offset"] = 0;
+		symbols["offset_x"] = "0";
+		symbols["offset_y"] = "0";
 	}
+
+	replace_anim_cfg(tag, "melee_attack", cfg, symbols);
 }
 
-void unit_type::attack_anim_ranged(const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::attack_anim_ranged(const std::string& tag, const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
 	std::string image = "projectiles/missile-n.png";
 	std::string image_diagonal = "projectiles/missile-ne.png";
@@ -1692,8 +1852,6 @@ void unit_type::attack_anim_ranged(const std::string& aid, const std::string& ai
 		image = "projectiles/stone-large.png";
 		image_diagonal = "";
 	}
-
-	cfg.clear();
 
 	utils::string_map symbols;
 	const std::vector<std::string>& range_ids = unit_types.range_ids();
@@ -1713,13 +1871,11 @@ void unit_type::attack_anim_ranged(const std::string& aid, const std::string& ai
 	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
 	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
 
-	replace_anim_cfg("ranged_attack", cfg, symbols);
+	replace_anim_cfg(tag, "ranged_attack", cfg, symbols);
 }
 
-void unit_type::attack_anim_ranged_magic_missile(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::attack_anim_ranged_magic_missile(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	const std::vector<std::string>& range_ids = unit_types.range_ids();
 	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
@@ -1734,13 +1890,11 @@ void unit_type::attack_anim_ranged_magic_missile(const std::string& aid, const s
 	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
 	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
 
-	replace_anim_cfg("magic_missile_attack", cfg, symbols);
+	replace_anim_cfg(tag, "magic_missile_attack", cfg, symbols);
 }
 
-void unit_type::attack_anim_ranged_lightbeam(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::attack_anim_ranged_lightbeam(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	const std::vector<std::string>& range_ids = unit_types.range_ids();
 	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
@@ -1755,13 +1909,11 @@ void unit_type::attack_anim_ranged_lightbeam(const std::string& aid, const std::
 	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
 	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
 
-	replace_anim_cfg("lightbeam_attack", cfg, symbols);
+	replace_anim_cfg(tag, "lightbeam_attack", cfg, symbols);
 }
 
-void unit_type::attack_anim_ranged_fireball(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::attack_anim_ranged_fireball(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	const std::vector<std::string>& range_ids = unit_types.range_ids();
 	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
@@ -1776,13 +1928,11 @@ void unit_type::attack_anim_ranged_fireball(const std::string& aid, const std::s
 	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
 	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
 
-	replace_anim_cfg("fireball_attack", cfg, symbols);
+	replace_anim_cfg(tag, "fireball_attack", cfg, symbols);
 }
 
-void unit_type::attack_anim_ranged_iceball(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::attack_anim_ranged_iceball(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	const std::vector<std::string>& range_ids = unit_types.range_ids();
 	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
@@ -1797,13 +1947,11 @@ void unit_type::attack_anim_ranged_iceball(const std::string& aid, const std::st
 	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
 	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
 
-	replace_anim_cfg("iceball_attack", cfg, symbols);
+	replace_anim_cfg(tag, "iceball_attack", cfg, symbols);
 }
 
-void unit_type::attack_anim_ranged_lightning(const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+void unit_type::attack_anim_ranged_lightning(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
-	cfg.clear();
-
 	utils::string_map symbols;
 	const std::vector<std::string>& range_ids = unit_types.range_ids();
 	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
@@ -1818,7 +1966,7 @@ void unit_type::attack_anim_ranged_lightning(const std::string& aid, const std::
 	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
 	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
 
-	replace_anim_cfg("lightning_attack", cfg, symbols);
+	replace_anim_cfg(tag, "lightning_attack", cfg, symbols);
 }
 
 unit_type::unit_type(const unit_type& o) :
@@ -1834,6 +1982,7 @@ unit_type::unit_type(const unit_type& o) :
 	cost_(o.cost_),
 	gold_income_(o.gold_income_),
 	technology_income_(o.technology_income_),
+	food_income_(o.food_income_),
 	miss_income_(o.miss_income_),
 	heal_(o.heal_),
 	turn_experience_(o.turn_experience_),
@@ -1851,7 +2000,7 @@ unit_type::unit_type(const unit_type& o) :
 	ability_tooltips_(o.ability_tooltips_),
 	zoc_(o.zoc_),
 	cancel_zoc_(o.cancel_zoc_),
-	leader_(o.leader_),
+	require_(o.require_),
 	hide_help_(o.hide_help_),
 	advances_to_(o.advances_to_),
 	advancement_(o.advancement_),
@@ -1873,6 +2022,8 @@ unit_type::unit_type(const unit_type& o) :
 	can_reside_(o.can_reside_),
 	base_(o.base_),
 	wall_(o.wall_),
+	fort_(o.fort_),
+	transport_(o.transport_),
 	land_wall_(o.land_wall_),
 	walk_wall_(o.walk_wall_),
 	arms_(o.arms_),
@@ -1906,6 +2057,7 @@ unit_type::unit_type(config &cfg) :
 	cost_(0),
 	gold_income_(0),
 	technology_income_(0),
+	food_income_(0),
 	miss_income_(0),
 	heal_(0),
 	turn_experience_(0),
@@ -1924,7 +2076,7 @@ unit_type::unit_type(config &cfg) :
 	ability_tooltips_(),
 	zoc_(false),
 	cancel_zoc_(false),
-	leader_(false),
+	require_(REQUIRE_NONE),
 	hide_help_(false),
 	advances_to_(),
 	advancement_(),
@@ -1946,6 +2098,8 @@ unit_type::unit_type(config &cfg) :
 	can_reside_(false),
 	base_(false),
 	wall_(false),
+	fort_(false),
+	transport_(false),
 	land_wall_(true),
 	walk_wall_(false),
 	arms_(0),
@@ -1955,12 +2109,12 @@ unit_type::unit_type(config &cfg) :
 	touch_dirs_(),
 	packer_(false)
 {
-	foreach (const config::any_child& c, cfg.all_children_range()) {
+	BOOST_FOREACH (const config::any_child& c, cfg.all_children_range()) {
 		if (c.key == "attack") continue;
 		cfg_.add_child(c.key, c.cfg);
 	}
 
-	foreach (config &att, cfg.child_range("attack")) {
+	BOOST_FOREACH (config &att, cfg.child_range("attack")) {
 		attacks_.push_back(attack_type(att));
 		if (attacks_.size() == 3) {
 			break;
@@ -1970,19 +2124,29 @@ unit_type::unit_type(config &cfg) :
 	// AI need this flag, may be before build_all status. duraton ai's interior
 	master_ = cfg["master"].to_int(HEROS_INVALID_NUMBER);
 	wall_ = cfg["wall"].to_bool();
+	fort_ = master_ == hero::number_fort;
+	transport_ = master_ == hero::number_transport;
 	walk_wall_ = cfg["walk_wall"].to_bool();
 	int income = cfg["income"].to_int();
 	if (master_ == hero::number_market || master_ == hero::number_businessman) {
 		gold_income_ = income;
 		technology_income_ = 0;
+		food_income_ = 0;
 		miss_income_ = 0;
 	} else if (master_ == hero::number_technology || master_ == hero::number_scholar) {
 		gold_income_ = 0;
 		technology_income_ = income;
+		food_income_ = 0;
+		miss_income_ = 0;
+	} else if (master_ == hero::number_transport) {
+		gold_income_ = 0;
+		technology_income_ = 0;
+		food_income_ = income;
 		miss_income_ = 0;
 	} else if (master_ == hero::number_tactic) {
 		gold_income_ = 0;
 		technology_income_ = 0;
+		food_income_ = 0;
 		miss_income_ = income;
 	}
 }
@@ -2041,7 +2205,7 @@ void unit_type::build_full(const config& cfg, const movement_type_map &mv_types,
 		if (cfg["ignore_race_traits"].to_bool()) {
 			possibleTraits_.clear();
 		} else {
-			foreach (const config &t, race_->additional_traits())
+			BOOST_FOREACH (const config &t, race_->additional_traits())
 			{
 				if (alignment_ != NEUTRAL || t["id"] != "fearless")
 					possibleTraits_.add_child("trait", t);
@@ -2051,7 +2215,7 @@ void unit_type::build_full(const config& cfg, const movement_type_map &mv_types,
 */
 	zoc_ = cfg["zoc"].to_bool(level_ > 0);
 	cancel_zoc_ = cfg["cancel_zoc"].to_bool();
-	leader_ = cfg["leader"].to_bool();
+	require_ = cfg["require"].to_int(REQUIRE_NONE);
 
 	const std::string& alpha_blend = cfg["alpha"];
 	if(alpha_blend.empty() == false) {
@@ -2147,9 +2311,9 @@ void unit_type::fill_abilities_cfg(const std::string& abilities)
 		if (result == units_abilities.end()) {
 			throw config::error("[unit_type]'s abilities error, cannot find " + *it);
 		}
-		foreach (const config::any_child &c, result->second.all_children_range()) {
+		BOOST_FOREACH (const config::any_child &c, result->second.all_children_range()) {
 			// abilities_cfg.add_child(c.key, c.cfg);
-			abilities_cfg_.insert(std::make_pair<const std::string, const config*>(c.key, &c.cfg));
+			abilities_cfg_.insert(std::make_pair(c.key, &c.cfg));
 		}
 	}
 }
@@ -2306,63 +2470,55 @@ const std::vector<unit_animation>& unit_type::animations() const
 	config utype_cfg;
 
 	if (!use_terrain_image()) {
-		config& cfg = utype_cfg.add_child("defend");
-		unit_type::defend_anim(race_->id(), id_, use_terrain_image(), cfg);
+		unit_type::defend_anim("defend", race_->id(), id_, use_terrain_image(), utype_cfg);
 	}
 
 	if (has_resistance_anim(abilities)) {
-		config& cfg = utype_cfg.add_child("resistance_anim");
-		unit_type::resistance_anim(race_->id(), id_, use_terrain_image(), cfg);
+		unit_type::resistance_anim("resistance_anim", race_->id(), id_, use_terrain_image(), utype_cfg);
 	}
 	if (has_leading_anim(abilities)) {
-		config& cfg = utype_cfg.add_child("leading_anim");
-		unit_type::leading_anim(race_->id(), id_, use_terrain_image(), cfg);
+		unit_type::leading_anim("leading_anim", race_->id(), id_, use_terrain_image(), utype_cfg);
 	}
 	if (has_healing_anim(abilities)) {
-		config& cfg = utype_cfg.add_child("healing_anim");
-		unit_type::healing_anim(race_->id(), id_, use_terrain_image(), cfg);
+		unit_type::healing_anim("healing_anim", race_->id(), id_, use_terrain_image(), utype_cfg);
 	}
 
-	config& cfg = utype_cfg.add_child("idle_anim");
-	unit_type::idle_anim(race_->id(), id_, use_terrain_image(), cfg);
+	unit_type::idle_anim("idle_anim", race_->id(), id_, use_terrain_image(), utype_cfg);
+	unit_type::healed_anim("healed_anim", race_->id(), id_, use_terrain_image(), utype_cfg);
 
 	if (!packer_) {
 		for (std::vector<attack_type>::const_iterator it = attacks_.begin(); it != attacks_.end(); ++ it) {
-			config& cfg = utype_cfg.add_child("attack_anim");
 			if (it->range() == "melee") {
 				bool not_artifical_master = (master_ == HEROS_INVALID_NUMBER) || hero::is_commoner(master_);
-				unit_type::attack_anim_melee(it->id(), it->icon(), not_artifical_master && !can_recruit_, race_->id(), id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_melee("attack_anim", it->id(), it->icon(), not_artifical_master && !can_recruit_, race_->id(), id_, use_terrain_image(), utype_cfg);
 
 			} else if (it->icon().find("magic-missile") != std::string::npos) {
-				unit_type::attack_anim_ranged_magic_missile(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_magic_missile("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
 
 			} else if (it->icon().find("lightbeam") != std::string::npos) {
-				unit_type::attack_anim_ranged_lightbeam(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_lightbeam("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
 
 			} else if (it->icon().find("fireball") != std::string::npos) {
-				unit_type::attack_anim_ranged_fireball(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_fireball("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
 
 			} else if (it->icon().find("iceball") != std::string::npos) {
-				unit_type::attack_anim_ranged_iceball(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_iceball("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
 
 			} else if (it->icon().find("lightning") != std::string::npos) {
-				unit_type::attack_anim_ranged_lightning(it->id(), race_->id(), id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_lightning("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
 
 			} else {
-				unit_type::attack_anim_ranged(it->id(), it->icon(), race_->id(), id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged("attack_anim", it->id(), it->icon(), race_->id(), id_, use_terrain_image(), utype_cfg);
 			}
 		}
 	} else {
 		const std::vector<std::string>& range_ids = unit_types.range_ids();
 
-		config* cfg = &utype_cfg.add_child("attack_anim");
-		unit_type::attack_anim_melee(range_ids[0], "staff-magic.png", true, race_->id(), id_, use_terrain_image(), *cfg);
+		unit_type::attack_anim_melee("attack_anim", range_ids[0], "staff-magic.png", true, race_->id(), id_, use_terrain_image(), utype_cfg);
 
-		cfg = &utype_cfg.add_child("attack_anim");
-		unit_type::attack_anim_ranged_magic_missile(range_ids[1], race_->id(), id_, use_terrain_image(), *cfg);
+		unit_type::attack_anim_ranged_magic_missile("attack_anim", range_ids[1], race_->id(), id_, use_terrain_image(), utype_cfg);
 
-		cfg = &utype_cfg.add_child("attack_anim");
-		unit_type::attack_anim_ranged(range_ids[2], "sling.png", race_->id(), id_, use_terrain_image(), *cfg);
+		unit_type::attack_anim_ranged("attack_anim", range_ids[2], "sling.png", race_->id(), id_, use_terrain_image(), utype_cfg);
 	}
 
 	const std::string& default_image = (terrain_ == t_translation::NONE_TERRAIN)? image_: "";
@@ -2434,7 +2590,7 @@ static void advancement_tree_internal(const std::string& id, std::set<std::strin
 		return;
 
 	std::vector<std::string> vstr = ut->advances_to();
-	foreach(const std::string& adv, vstr) {
+	BOOST_FOREACH (const std::string& adv, vstr) {
 		if (tree.insert(adv).second) {
 			// insertion succeed, expand the new type
 			advancement_tree_internal(adv, tree);
@@ -2464,10 +2620,10 @@ std::vector<std::string> unit_type::advances_to(int spe) const
 const std::vector<std::string> unit_type::advances_from() const
 {
 	std::vector<std::string> adv_from;
-	foreach (const unit_type_data::unit_type_map::value_type &ut, unit_types.types())
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &ut, unit_types.types())
 	{
 		std::vector<std::string> vstr = ut.second.advances_to();
-		foreach(const std::string& adv, vstr) {
+		BOOST_FOREACH (const std::string& adv, vstr) {
 			if (adv == id_)
 				adv_from.push_back(ut.second.id());
 		}
@@ -2492,10 +2648,18 @@ unit_type_data::unit_type_data() :
 	decrees_(),
 	decrees_id_(),
 	technologies_(),
+	nobles_(),
+	sort_nobles_(),
+	formations_(),
+	formations_id_(),
 	arms_ids_(),
+	atype_ids_(),
 	range_ids_(),
 	especials_(),
 	utype_anims_(),
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+	global_anims_(),
+#endif
 	can_recruit_(),
 	navigation_types_(),
 	utype_tree_(),
@@ -2547,6 +2711,7 @@ void fill_tags()
 	tags.insert(std::make_pair("provoke", (int)PROVOKE));
 	tags.insert(std::make_pair("clear", (int)CLEAR));
 	tags.insert(std::make_pair("heal", (int)HEAL));
+	tags.insert(std::make_pair("food", (int)FOOD));
 	tags.insert(std::make_pair("decree", (int)DECREE));
 
 	// side <=
@@ -2657,7 +2822,7 @@ void unit_type_data::set_config(config &cfg)
 
 	std::stringstream err;
 
-	foreach (const config &mt, cfg.child_range("movetype"))
+	BOOST_FOREACH (const config &mt, cfg.child_range("movetype"))
 	{
 		const unit_movement_type move_type(mt);
 		movement_types_.insert(
@@ -2665,16 +2830,16 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
-	foreach (const config &r, cfg.child_range("race"))
+	BOOST_FOREACH (const config &r, cfg.child_range("race"))
 	{
 		const unit_race race(r);
 		races_.insert(std::pair<std::string,unit_race>(race.id(),race));
 		loadscreen::increment_progress();
 	}
 
-	foreach (const config &modification, cfg.child_range("modifications"))
+	BOOST_FOREACH (const config &modification, cfg.child_range("modifications"))
 	{
-		foreach (const config::any_child &c, modification.all_children_range()) {
+		BOOST_FOREACH (const config::any_child &c, modification.all_children_range()) {
 			if (c.cfg["id"].empty()) {
 				throw config::error("[modification] error, no id attribute");
 			}
@@ -2687,9 +2852,9 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 	
-	foreach (const config &trait, cfg.child_range("traits"))
+	BOOST_FOREACH (const config &trait, cfg.child_range("traits"))
 	{
-		foreach (const config::any_child &c, trait.all_children_range()) {
+		BOOST_FOREACH (const config::any_child &c, trait.all_children_range()) {
 			if (c.cfg["id"].empty()) {
 				throw config::error("[trait] error, no id attribute");
 			}
@@ -2702,24 +2867,24 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
-	foreach (const config &af, cfg.child_range("complexfeature"))
-	{
-		if (af["id"].empty()) {
-			throw config::error("armsfeature error, no id attribute");
-		}
-		int id = af["id"].to_int();
+	const config& complexfeature = cfg.child("complexfeature");
+	if (!complexfeature) {
+		throw config::error("complex feature error, no complex feature");
+	}
+	BOOST_FOREACH (const config::attribute &i, complexfeature.attribute_range()) {
+		int id = lexical_cast_default<int>(i.first, -1);
 		if (id < HEROS_BASE_FEATURE_COUNT || id >= HEROS_MAX_FEATURE) {
-			throw config::error("armsfeature error, id=" + af["id"].str() + ", invalid id");
+			throw config::error("complex feature error, id=" + i.first + ", invalid id");
 		}
-		if (af["features"].empty()) {
-			throw config::error("armsfeature error, id=" + af["id"].str() + ", no features attribute");
+		if (i.second.empty()) {
+			throw config::error("complex feature error, id=" + i.first + ", no atomic feature");
 		}
-		const std::vector<std::string> features = utils::split(af["features"].str());
+		const std::vector<std::string> features = utils::split(i.second.str());
 		std::vector<int> v;
-		for (std::vector<std::string>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
-			int feature = lexical_cast_default<int>(*itor, HEROS_BASE_FEATURE_COUNT);
+		for (std::vector<std::string>::const_iterator it2 = features.begin(); it2 != features.end(); ++ it2) {
+			int feature = lexical_cast_default<int>(*it2, HEROS_BASE_FEATURE_COUNT);
 			if (feature < 0 || feature >= HEROS_BASE_FEATURE_COUNT) {
-				throw config::error("armsfeature error, id=" + af["id"].str() + ", invalid features");
+				throw config::error("complex feature error, id=" + i.first + ", invalid atomic feature");
 			}
 			v.push_back(feature);
 		}
@@ -2727,7 +2892,7 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
-	foreach (const config &af, cfg.child_range("treasure"))
+	BOOST_FOREACH (const config &af, cfg.child_range("treasure"))
 	{
 		if (af["feature"].empty()) {
 			throw config::error("treasure error, no feature attribute");
@@ -2748,10 +2913,10 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
-	foreach (const config &ability, cfg.child_range("abilities"))
+	BOOST_FOREACH (const config &ability, cfg.child_range("abilities"))
 	{
 		bool first = true;
-		foreach (const config::any_child &c, ability.all_children_range()) {
+		BOOST_FOREACH (const config::any_child &c, ability.all_children_range()) {
 			if (first) {
 				if (c.cfg["id"].empty()) {
 					throw config::error("[abilities] error, first must has id attribute");
@@ -2776,27 +2941,81 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
-	foreach (const config &anim, cfg.child_range("utype_anim"))
+	BOOST_FOREACH (const config &anim, cfg.child_range("utype_anim"))
 	{
 		const std::string id = anim["id"].str();
 		if (id.empty()) {
 			throw config::error("[utype_anim] error, utype_anim must has id attribute");
 		}
+/*
 		if (utype_anims_.find(id) != utype_anims_.end()) {
 			throw config::error("[utype_anim] error, duplicate id: " + id);
 		}
+*/
 		const config& sub = anim.child("anim");
 		if (!sub) {
 			throw config::error("[utype_anim] error, utype_anim must has [anim] tag");
 		}
-		utype_anims_[id] = sub;
+		utype_anims_.insert(std::make_pair(id, sub));
 
 		loadscreen::increment_progress();
 	}
 
-	foreach (const config &sp, cfg.child_range("specials"))
+	BOOST_FOREACH (const config &anim, cfg.child_range("global_anim"))
 	{
-		foreach (const config::any_child &c, sp.all_children_range()) {
+		const std::string id = anim["id"].str();
+		if (id.empty()) {
+			throw config::error("[global_anim] error, global_anim must has id attribute");
+		}
+		const config& sub = anim.child("anim");
+		if (!sub) {
+			throw config::error("[global_anim] error, global_anim must has [anim] tag");
+		}
+		int type = apply_to_tag::NONE;
+		if (id == "card") {
+			type = GLB_ANIM_CARD;
+		} else if (id == "reinforce") { 
+			type = GLB_ANIM_REINFORCE;
+		} else if (id == "individuality") { 
+			type = GLB_ANIM_INDIVIDUALITY;
+		} else if (id == "tactic") { 
+			type = GLB_ANIM_TACTIC;
+		} else if (id == "blade") { 
+			type = GLB_ANIM_BLADE;
+		} else if (id == "fire") { 
+			type = GLB_ANIM_FIRE;
+		} else if (id == "strike") { 
+			type = GLB_ANIM_STRIKE;
+		} else if (id == "magic") { 
+			type = GLB_ANIM_MAGIC;
+		} else if (id == "heal") {
+			type = GLB_ANIM_HEAL;
+		} else if (id == "destruct") {
+			type = GLB_ANIM_DESTRUCT;
+		} else if (id == "formation_attack") {
+			type = GLB_ANIM_FORMATION_ATTACK;
+		} else if (id == "formation_defend") {
+			type = GLB_ANIM_FORMATION_DEFEND;
+		} else if (id == "pass_scenario") {
+			type = GLB_ANIM_PASS_SCENARIO;
+		} else if (id == "perfect") {
+			type = GLB_ANIM_PERFECT;
+		} else {
+			throw config::error("[global_anim] error, global_anim has invalid id: " + id);
+		}
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+		if (global_anims_.find(type) != global_anims_.end()) {
+			throw config::error("[global_anim] error, duplicate id: " + id);
+		}
+		global_anims_.insert(std::make_pair(type, unit_animation(sub)));
+#endif
+
+		loadscreen::increment_progress();
+	}
+
+	BOOST_FOREACH (const config &sp, cfg.child_range("specials"))
+	{
+		BOOST_FOREACH (const config::any_child &c, sp.all_children_range()) {
 			if (c.cfg["id"].empty()) {
 				throw config::error("[specials] error, no id attribute");
 			}
@@ -2810,7 +3029,7 @@ void unit_type_data::set_config(config &cfg)
 	}
 
 	int index = 0, complex_index = ttactic::min_complex_index;
-	foreach (const config &tactic, cfg.child_range("tactic"))
+	BOOST_FOREACH (const config &tactic, cfg.child_range("tactic"))
 	{
 		const std::string id = tactic["id"].str();
 		if (id.empty()) {
@@ -2835,7 +3054,7 @@ void unit_type_data::set_config(config &cfg)
 	}
 
 	index = 0, complex_index = tcharacter::min_complex_index;
-	foreach (const config &character, cfg.child_range("character"))
+	BOOST_FOREACH (const config &character, cfg.child_range("character"))
 	{
 		const std::string id = character["id"].str();
 		if (id.empty()) {
@@ -2871,6 +3090,19 @@ void unit_type_data::set_config(config &cfg)
 				break;
 			}
 			arms_ids_.push_back(ids[i]);
+		}
+
+		// identifier of attack type
+		if (id_cfg["atype"].empty()) {
+			throw config::error("[identifier] error, no atype attribute");
+		}
+		ids = utils::split(id_cfg["atype"]);
+		if (ids.empty()) {
+			throw config::error("[identifier] error, size of atype cannot be 0.");
+		}
+		size = ids.size();
+		for (size_t i = 0; i < size; i ++) {
+			atype_ids_.push_back(ids[i]);
 		}
 
 		// identifier of range
@@ -2926,7 +3158,7 @@ void unit_type_data::set_config(config &cfg)
 	}
 
 	// technology
-	foreach (const config &tech, cfg.child_range("technology"))
+	BOOST_FOREACH (const config &tech, cfg.child_range("technology"))
 	{
 		const std::string id = tech["id"].str();
 		if (id.empty()) {
@@ -2936,8 +3168,8 @@ void unit_type_data::set_config(config &cfg)
 			throw config::error("[technology] error, duplicate id " + id);
 		}
 		
-		technology t(tech);
-		std::pair<std::map<std::string, technology>::iterator, bool> ins = technologies_.insert(std::make_pair(t.id(), t));
+		ttechnology t(tech);
+		std::pair<std::map<std::string, ttechnology>::iterator, bool> ins = technologies_.insert(std::make_pair(t.id(), t));
 		
 		if (!t.complex()) {
 			ins.first->second.set_atom_part();
@@ -2946,8 +3178,8 @@ void unit_type_data::set_config(config &cfg)
 		loadscreen::increment_progress();
 	}
 
-	for (std::map<std::string, technology>::const_iterator it = technologies_.begin(); it != technologies_.end(); ++ it) {
-		const technology& t = it->second;
+	for (std::map<std::string, ttechnology>::const_iterator it = technologies_.begin(); it != technologies_.end(); ++ it) {
+		const ttechnology& t = it->second;
 		const std::vector<std::string>& advances_to = t.advances_to();
 		for (std::vector<std::string>::const_iterator it2 = advances_to.begin(); it2 != advances_to.end(); ++ it2) {
 			if (*it2 == it->first) {
@@ -2959,8 +3191,71 @@ void unit_type_data::set_config(config &cfg)
 		}
 	}
 
+	// technology
+	index = 0;
+	BOOST_FOREACH (const config &n, cfg.child_range("noble"))
+	{
+		const std::string id = n["id"].str();
+		if (id.empty()) {
+			throw config::error("[noble] error, no id attribute");
+		}
+		for (std::map<int, std::set<tnoble> >::const_iterator it = nobles_.begin(); it != nobles_.end(); ++ it) {
+			for (std::set<tnoble>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+				if (it2->id() == id) {
+					throw config::error("[noble] error, duplicate id " + id);
+				}
+			}
+		}
+		
+		tnoble nbl(index ++, n);
+		std::map<int, std::set<tnoble> >::iterator it = nobles_.find(nbl.level());
+		if (it == nobles_.end()) {
+			std::set<tnoble> level_nobles;
+			level_nobles.insert(nbl);
+			nobles_.insert(std::make_pair(nbl.level(), level_nobles));
+		} else {
+			it->second.insert(nbl);
+		}
+
+		loadscreen::increment_progress();
+	}
+
+	if (!nobles_.empty()) {
+		std::map<int, const tnoble*> middle;
+		for (std::map<int, std::set<tnoble> >::const_iterator it = nobles_.begin(); it != nobles_.end(); ++ it) {
+			for (std::set<tnoble>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+				middle.insert(std::make_pair(it2->index(), &*it2));;
+			}
+		}
+
+		for (std::map<int, const tnoble*>::const_iterator it = middle.begin(); it != middle.end(); ++ it) {
+			sort_nobles_.push_back(it->second);
+		}
+				
+		loadscreen::increment_progress();
+	}
+
+	index = 0;
+	BOOST_FOREACH (const config &formation, cfg.child_range("formation"))
+	{
+		const std::string id = formation["id"].str();
+		if (id.empty()) {
+			throw config::error("[formation] error, no id attribute");
+		}
+		if (formations_id_.find(id) != formations_id_.end()) {
+			throw config::error("[formation] error, duplicate id " + id);
+		}
+		
+		tformation_profile f(index, formation);
+		std::pair<std::map<int, tformation_profile>::iterator, bool> ins = formations_.insert(std::make_pair(f.index(), f));
+		formations_id_[id] = f.index();
+
+		index ++;
+		loadscreen::increment_progress();
+	}
+
 	std::map<unit_type*, const config*> ut_cfg_map;
-	foreach (config &ut, cfg.child_range("unit_type"))
+	BOOST_FOREACH (config &ut, cfg.child_range("unit_type"))
 	{
 		std::string id = ut["id"];
 		// cannot support base_unit again.(wesnoth support it)
@@ -2991,9 +3286,9 @@ void unit_type_data::set_config(config &cfg)
 	generate_utype_tree();
 	generate_technology_tree();
 	
-	foreach (const config &ktype, cfg.child_range("keytype"))
+	BOOST_FOREACH (const config &ktype, cfg.child_range("keytype"))
 	{
-		foreach (const config::attribute &i, ktype.attribute_range()) {
+		BOOST_FOREACH (const config::attribute &i, ktype.attribute_range()) {
 			int id = lexical_cast_default<int>(i.first, -1);
 			if (id == -1) {
 				throw config::error("keytype error, invalid keytype number.");
@@ -3055,6 +3350,12 @@ void unit_type_data::set_config(config &cfg)
 				// build all, form other field
 				find(it->first);
 			}
+		} else if (master == hero::number_fort) {
+			if (!fort_type_ || fort_type_->level() > ut.level()) {
+				fort_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}
 		} else if (master == hero::number_businessman) {
 			if (!businessman_type_ || businessman_type_->level() > ut.level()) {
 				businessman_type_ = &ut;
@@ -3064,6 +3365,12 @@ void unit_type_data::set_config(config &cfg)
 		} else if (master == hero::number_scholar) {
 			if (!scholar_type_ || scholar_type_->level() > ut.level()) {
 				scholar_type_ = &ut;
+				// build all, form other field
+				find(it->first);
+			}
+		} else if (master == hero::number_transport) {
+			if (!transport_type_ || transport_type_->level() > ut.level()) {
+				transport_type_ = &ut;
 				// build all, form other field
 				find(it->first);
 			}
@@ -3101,6 +3408,10 @@ void unit_type_data::set_config(config &cfg)
 		artifical_types_[tower_type_->id()] = tower_type_;
 		master_types_.insert(std::make_pair(tower_type_->master(), tower_type_));
 	}
+	if (fort_type_) {
+		artifical_types_[fort_type_->id()] = fort_type_;
+		master_types_.insert(std::make_pair(fort_type_->master(), fort_type_));
+	}
 	if (businessman_type_) {
 		artifical_types_[businessman_type_->id()] = businessman_type_;
 		master_types_.insert(std::make_pair(businessman_type_->master(), businessman_type_));
@@ -3108,6 +3419,10 @@ void unit_type_data::set_config(config &cfg)
 	if (scholar_type_) {
 		artifical_types_[scholar_type_->id()] = scholar_type_;
 		master_types_.insert(std::make_pair(scholar_type_->master(), scholar_type_));
+	}
+	if (transport_type_) {
+		artifical_types_[transport_type_->id()] = transport_type_;
+		master_types_.insert(std::make_pair(transport_type_->master(), transport_type_));
 	}
 
 	if (const config recruit_cfg = cfg.child("recruit")) {
@@ -3131,7 +3446,7 @@ void unit_type_data::set_config(config &cfg)
 	}
 
 	index = 0, complex_index = tdecree::min_complex_index;
-	foreach (const config &decree, cfg.child_range("decree"))
+	BOOST_FOREACH (const config &decree, cfg.child_range("decree"))
 	{
 		const std::string id = decree["id"].str();
 		if (id.empty()) {
@@ -3197,10 +3512,18 @@ void unit_type_data::clear()
 	decrees_.clear();
 	decrees_id_.clear();
 	technologies_.clear();
+	nobles_.clear();
+	sort_nobles_.clear();
+	formations_.clear();
+	formations_id_.clear();
 	arms_ids_.clear();
+	atype_ids_.clear();
 	range_ids_.clear();
 	especials_.clear();
 	utype_anims_.clear();
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+	global_anims_.clear();
+#endif
 	can_recruit_.clear();
 	navigation_types_.clear();
 
@@ -3221,9 +3544,11 @@ void unit_type_data::clear()
 	technology_type_ = NULL;
 	tactic_type_ = NULL;
 	tower_type_ = NULL;
+	fort_type_ = NULL;
 	businessman_type_ = NULL;
 	scholar_type_ = NULL;
 	scout_type_ = NULL;
+	transport_type_ = NULL;
 
 	hide_help_all_ = false;
 	hide_help_race_.clear();
@@ -3237,6 +3562,15 @@ const unit_type* unit_type_data::keytype2(int index) const
 		return find->second;
 	}
 	return NULL;
+}
+
+const unit_type* unit_type_data::master_type(int number) const 
+{ 
+	std::map<int, const unit_type*>::const_iterator find = master_types_.find(number);
+	if (find == master_types_.end()) {
+		return NULL;
+	}
+	return find->second;
 }
 
 const unit_type* unit_type_data::id_type(const std::string& id) const
@@ -3284,7 +3618,7 @@ void unit_type_data::read_hide_help(const config& cfg)
 
 	std::vector<std::string> trees = utils::split(cfg["type_adv_tree"]);
 	hide_help_type_.back().insert(trees.begin(), trees.end());
-	foreach(const std::string& t_id, trees) {
+	BOOST_FOREACH (const std::string& t_id, trees) {
 		unit_type_map::iterator ut = types_.find(t_id);
 		if (ut != types_.end()) {
 			std::set<std::string> adv_tree = ut->second.advancement_tree();
@@ -3309,6 +3643,27 @@ bool unit_type_data::hide_help(const std::string& type, const std::string& race)
 			res = !res; // each level is a [not]
 	}
 	return res;
+}
+
+const ttechnology& unit_type_data::technology(const std::string& id) const
+{
+	std::map<std::string, ttechnology>::const_iterator it = technologies_.find(id);
+	return it->second;
+}
+
+int unit_type_data::level_noble_count(int level) const
+{
+	std::map<int, std::set<tnoble> >::const_iterator it = nobles_.find(level);
+	if (it != nobles_.end()) {
+		return it->second.size();
+	} else {
+		return 0;
+	}
+}
+
+const tnoble& unit_type_data::noble(int index) const
+{
+	return *sort_nobles_[index];
 }
 
 int unit_type_data::arms_from_id(const std::string& id) const
@@ -3388,7 +3743,7 @@ void unit_type_data::generate_technology_tree()
 	technology_tree_.clear();
 
 	std::map<std::string, const advance_tree::base*> src;
-	for (std::map<std::string, technology>::const_iterator it = technologies_.begin(); it != technologies_.end(); ++ it) {
+	for (std::map<std::string, ttechnology>::const_iterator it = technologies_.begin(); it != technologies_.end(); ++ it) {
 		src.insert(std::make_pair(it->first, &it->second));
 	}
 	generate_advance_tree(src, technology_tree_);
@@ -3412,5 +3767,16 @@ const unit_race *unit_type_data::find_race(const std::string &key) const
 	race_map::const_iterator i = races_.find(key);
 	return i != races_.end() ? &i->second : NULL;
 }
+
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+const unit_animation* unit_type_data::global_anim(int type) const
+{
+	std::map<int, unit_animation>::const_iterator i = global_anims_.find(type);
+	if (i != global_anims_.end()) {
+		return &i->second;
+	}
+	return NULL;
+}
+#endif
 
 unit_type_data unit_types;

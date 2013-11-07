@@ -1,7 +1,6 @@
-/* $Id: player_network.cpp 47742 2010-11-28 15:58:31Z silene $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
-   Copyright (C) 2009 - 2010 by Tomasz Sniatowski <kailoran@gmail.com>
+   Copyright (C) 2003 - 2013 by David White <dave@whitevine.net>
+   Copyright (C) 2009 - 2013 by Tomasz Sniatowski <kailoran@gmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify

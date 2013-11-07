@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/message.hpp"
 
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/image.hpp"
@@ -25,6 +24,9 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "log.hpp"
+#include "game_config.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -83,7 +85,6 @@ void tmessage::pre_show(CVideo& /*video*/, twindow& window)
 
 	tcontrol& label = find_widget<tcontrol>(&window, "label", false);
 	label.set_label(message_);
-	label.set_use_markup(true);
 
 	// The label might not always be a scroll_label but the capturing
 	// shouldn't hurt.
@@ -95,7 +96,7 @@ void tmessage::pre_show(CVideo& /*video*/, twindow& window)
 
 void tmessage::post_show(twindow& /*window*/)
 {
-	foreach(tbutton_status& button_status, buttons_) {
+	BOOST_FOREACH (tbutton_status& button_status, buttons_) {
 		button_status.button = NULL;
 	}
 }
@@ -156,12 +157,10 @@ int show_message(CVideo& video, const std::string& title,
 	const std::string& message, const tmessage::tbutton_style button_style,
 	const std::string& portrait, const std::string& incident)
 {
-/*
-	int ii = 0;
-	if (button_style == tmessage::auto_close) {
+	if (game_config::no_messagebox && button_style == tmessage::auto_close) {
 		return twindow::OK;
 	}
-*/
+
 	tmessage* dlg;
 	
 	if (portrait.empty()) {
@@ -207,7 +206,7 @@ void show_error_message(CVideo& video, const std::string& message,
 {
 	LOG_STREAM(err, lg::general) << message << '\n';
 	show_message(video, _("Error"), message,
-			tmessage::ok_button, "hero-256/230.png", "");
+			tmessage::ok_button, "hero-256/0.png", "");
 }
 
 } // namespace gui2

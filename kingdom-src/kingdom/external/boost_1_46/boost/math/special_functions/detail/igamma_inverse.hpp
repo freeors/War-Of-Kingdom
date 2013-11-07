@@ -280,7 +280,6 @@ T find_inverse_gamma(T a, T p, T q, const Policy& pol, bool* p_has_10_digits)
          {
             // DiDonato and Morris Eq 35:
             T v = log(p) + boost::math::lgamma(ap1, pol);
-            T s = 1;
             z = exp((v + w) / a);
             s = boost::math::log1p(z / ap1 * (1 + z / ap2));
             z = exp((v + z - s) / a);
@@ -342,7 +341,7 @@ struct gamma_p_inverse_func
       // flag is set, then Q(x) - q and it's derivatives.
       //
       typedef typename policies::evaluation<T, Policy>::type value_type;
-      typedef typename lanczos::lanczos<T, Policy>::type evaluation_type;
+      // typedef typename lanczos::lanczos<T, Policy>::type evaluation_type;
       typedef typename policies::normalise<
          Policy, 
          policies::promote_float<false>, 
@@ -379,7 +378,7 @@ struct gamma_p_inverse_func
          f2 = -f2;
       }
 
-      return boost::math::make_tuple(f - p, f1, f2);
+      return boost::math::make_tuple(static_cast<T>(f - p), f1, f2);
    }
 private:
    T a, p;
@@ -442,7 +441,7 @@ T gamma_p_inv_imp(T a, T p, const Policy& pol)
       tools::max_value<T>(),
       digits,
       max_iter);
-   policies::check_root_iterations(function, max_iter, pol);
+   policies::check_root_iterations<T>(function, max_iter, pol);
    BOOST_MATH_INSTRUMENT_VARIABLE(guess);
    if(guess == lower)
       guess = policies::raise_underflow_error<T>(function, "Expected result known to be non-zero, but is smaller than the smallest available number.", pol);
@@ -501,7 +500,7 @@ T gamma_q_inv_imp(T a, T q, const Policy& pol)
       tools::max_value<T>(),
       digits,
       max_iter);
-   policies::check_root_iterations(function, max_iter, pol);
+   policies::check_root_iterations<T>(function, max_iter, pol);
    if(guess == lower)
       guess = policies::raise_underflow_error<T>(function, "Expected result known to be non-zero, but is smaller than the smallest available number.", pol);
    return guess;

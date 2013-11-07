@@ -422,7 +422,7 @@ private:
 template<class charT, class traits>
 void test_regex_grep(boost::basic_regex<charT, traits>& r)
 {
-   typedef typename std::basic_string<charT>::const_iterator const_iterator;
+   //typedef typename std::basic_string<charT>::const_iterator const_iterator;
    const std::basic_string<charT>& search_text = test_info<charT>::search_text();
    boost::regex_constants::match_flag_type opts = test_info<charT>::match_options();
    const int* answer_table = test_info<charT>::answer_table();
@@ -481,6 +481,10 @@ void test(boost::basic_regex<charT, traits>& r, const test_regex_search_tag&)
       if(r.status())
       {
          BOOST_REGEX_TEST_ERROR("Expression did not compile when it should have done, error code = " << r.status(), charT);
+      }
+      if(expression != std::basic_string<charT>(r.begin(), r.end()))
+      {
+         BOOST_REGEX_TEST_ERROR("Stored expression string was incorrect", charT);
       }
       test_simple_search(r);
       test_regex_iterator(r);

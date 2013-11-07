@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/tower_tent.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -138,7 +137,7 @@ void ttower_tent::pre_show(CVideo& video, twindow& window)
 	strstr << tent::employ_count;
 	employ_count_->set_label(strstr.str());
 
-	tent::turns = 20;
+	tent::turns = 50;
 	strstr.str("");
 	strstr << tent::turns;
 	turns_->set_label(strstr.str());
@@ -212,12 +211,11 @@ void ttower_tent::turns(twindow& window)
 	std::map<int, tval_str> turns_map;
 	int actived_index = 0;
 
-	turns_map.insert(std::make_pair(0, tval_str(10, "10")));
-	turns_map.insert(std::make_pair(1, tval_str(20, "20")));
-	turns_map.insert(std::make_pair(2, tval_str(30, "30")));
-	turns_map.insert(std::make_pair(3, tval_str(50, "50")));
-	turns_map.insert(std::make_pair(4, tval_str(70, "70")));
-	turns_map.insert(std::make_pair(5, tval_str(100, "100")));
+	turns_map.insert(std::make_pair(0, tval_str(20, "20")));
+	turns_map.insert(std::make_pair(1, tval_str(30, "30")));
+	turns_map.insert(std::make_pair(2, tval_str(50, "50")));
+	turns_map.insert(std::make_pair(3, tval_str(70, "70")));
+	turns_map.insert(std::make_pair(4, tval_str(100, "100")));
 
 	for (std::map<int, tval_str>::iterator it = turns_map.begin(); it != turns_map.end(); ++ it) {
 		items.push_back(it->second.str);

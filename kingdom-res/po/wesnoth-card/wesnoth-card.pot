@@ -45,10 +45,10 @@ msgstr ""
 msgid "office description"
 msgstr ""
 
-msgid "Wande"
+msgid "Wander"
 msgstr ""
 
-msgid "wande description"
+msgid "wander description"
 msgstr ""
 
 msgid "Advance"
@@ -1510,6 +1510,12 @@ msgstr ""
 msgid "tactic_desc-heals"
 msgstr ""
 
+msgid "tactic-food"
+msgstr ""
+
+msgid "tactic_desc-food"
+msgstr ""
+
 msgid "tactic-divine wei wu"
 msgstr ""
 
@@ -1664,4 +1670,106 @@ msgid "tactic-divine heal"
 msgstr ""
 
 msgid "tactic_desc-divine heal"
+msgstr ""
+
+#
+# formation
+#
+msgid "formation-mage"
+msgstr ""
+
+msgid "formation_desc-mage"
+msgstr ""
+
+msgid "formation-horse"
+msgstr ""
+
+msgid "formation_desc-horse"
+msgstr ""
+
+msgid "formation-pike"
+msgstr ""
+
+msgid "formation_desc-pike"
+msgstr ""
+
+msgid "formation-catapult"
+msgstr ""
+
+msgid "formation_desc-catapult"
+msgstr ""
+
+msgid "formation-bow"
+msgstr ""
+
+msgid "formation_desc-bow"
+msgstr ""
+
+#
+# noble
+#
+msgid "noble-emperor"
+msgstr ""
+
+msgid "noble-grand commandant"
+msgstr ""
+
+msgid "noble-grand preceptor"
+msgstr ""
+
+msgid "noble-king"
+msgstr ""
+
+msgid "noble-general of the flying cavalry"
+msgstr ""
+
+msgid "noble-general of chariots and cavalry"
+msgstr ""
+
+msgid "noble-chief"
+msgstr ""
+
+msgid "noble-chief of palace administration"
+msgstr ""
+
+msgid "noble-chief of the capital guard"
+msgstr ""
+
+msgid "noble-nomarch"
+msgstr ""
+
+msgid "noble-imperial minister"
+msgstr ""
+
+msgid "noble-general of valiant cavalry"
+msgstr ""
+
+msgid "noble-mayor"
+msgstr ""
+
+msgid "noble-assistant general"
+msgstr ""
+
+msgid "noble-deputy general"
+msgstr ""
+
+#
+# inapp-purchase
+#
+msgid "inapp-noncard"
+msgstr ""
+
+msgid "inapp_desc-noncard"
+msgstr ""
+
+msgid "inapp-nontacticslot"
+msgstr ""
+
+msgid "inapp_desc-nontacticslot"
+msgstr ""
+
+msgid "inapp-vip"
+msgstr ""
+
+msgid "inapp_desc-vip"
 msgstr ""

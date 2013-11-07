@@ -1389,12 +1389,6 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
-#. [button]: id=restore
-#: data/gui/default/window/data_manage.cfg:275
-#: data/gui/default/window/data_manage.cfg:276
-msgid "Restore"
-msgstr ""
-
 #. [button]: id=backup
 #: data/gui/default/window/data_manage.cfg:292
 #: data/gui/default/window/data_manage.cfg:293
@@ -1668,10 +1662,25 @@ msgstr ""
 msgid "Load Game"
 msgstr ""
 
+msgid "Local"
+msgstr ""
+
+msgid "Network"
+msgstr ""
+
 #. [button]: id=delete
 #: data/gui/default/window/game_load.cfg:352
 #: data/gui/default/window/game_load.cfg:353
 msgid "Delete"
+msgstr ""
+
+msgid "Upload"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Uploader"
 msgstr ""
 
 #. [toggle_button]: id=show_replay
@@ -2369,6 +2378,9 @@ msgstr ""
 msgid "View the credits"
 msgstr ""
 
+msgid "Purchase item"
+msgstr ""
+
 #. [grid]
 #: data/gui/default/window/title_screen.cfg:232
 msgid "Quit the game"
@@ -2467,6 +2479,16 @@ msgstr ""
 
 #: src/game_preferences_display.cpp:166
 msgid "Show Grid"
+msgstr ""
+
+msgid "Get one card every 25 turns"
+msgstr ""
+
+msgid "More tactic slot"
+msgstr ""
+
+#: src/game_preferences_display.cpp:166
+msgid "Don't display message when replay"
 msgstr ""
 
 #: src/game_preferences_display.cpp:167 src/game_preferences_display.cpp:350
@@ -3738,6 +3760,9 @@ msgstr ""
 msgid "Task"
 msgstr ""
 
+msgid "Soldiers"
+msgstr ""
+
 msgid "side list"
 msgstr ""
 
@@ -3784,6 +3809,9 @@ msgid "Select player"
 msgstr ""
 
 msgid "Start a random map campaign"
+msgstr ""
+
+msgid "Profile player hero"
 msgstr ""
 
 msgid "List"
@@ -4367,13 +4395,22 @@ msgstr ""
 msgid "Side feature"
 msgstr ""
 
+msgid "Register"
+msgstr ""
+
+msgid "Synchronize"
+msgstr ""
+
 msgid "Create"
 msgstr ""
 
 msgid "Stronger"
 msgstr ""
 
-msgid "Don't accept empty, invalid '$key' value"
+msgid "Invalid '$key' value, not accept empty"
+msgstr ""
+
+msgid "Include unsupportable character: $char, invalid '$str' value"
 msgstr ""
 
 msgid "Range is [$min, $max], invalid '$key' value:"
@@ -4506,4 +4543,154 @@ msgid "Field"
 msgstr ""
 
 msgid "Economy area"
+msgstr ""
+
+#
+# formation
+#
+msgid "tactical^Formation"
+msgstr ""
+
+#
+# Inapp purchase
+#
+msgid "Shop"
+msgstr ""
+
+msgid "Only $platforms support in-app purchase"
+msgstr ""
+
+msgid "Please choose item you want to purchase"
+msgstr ""
+
+msgid "Restore"
+msgstr ""
+
+msgid "Purchase"
+msgstr ""
+
+msgid "Notice"
+msgstr ""
+
+msgid "Effect mode"
+msgstr ""
+
+msgid "Uninstall \"War of Kingdom\" will clear purchase recorder"
+msgstr ""
+
+msgid "Update \"War of Kingdom\" will clear purchase recorder"
+msgstr ""
+
+msgid "Purchasing '$name'"
+msgstr ""
+
+msgid "Purchas '$name' $result|!"
+msgstr ""
+
+msgid "Restoring purchased items"
+msgstr ""
+
+msgid "Restore purchased items $result|!"
+msgstr ""
+
+msgid "Success"
+msgstr ""
+
+msgid "Failed"
+msgstr ""
+
+msgid "Checksum dismatch"
+msgstr ""
+
+msgid "You or creator has modified resource file, cannot join!"
+msgstr ""
+
+#
+# noble
+#
+msgid "Appoint Noble"
+msgstr ""
+
+msgid "noble^Level"
+msgstr ""
+
+msgid "noble^Lv$level"
+msgstr ""
+
+msgid "Adjust"
+msgstr ""
+
+#
+# user report
+#
+msgid "Display user report"
+msgstr ""
+
+msgid "Username"
+msgstr ""
+
+msgid "Player pass"
+msgstr ""
+
+msgid "Rank pass"
+msgstr ""
+
+msgid "Rank score"
+msgstr ""
+
+msgid "kingdom^Score"
+msgstr ""
+
+msgid "kingdom^Coin"
+msgstr ""
+
+#
+# pass scenario animation
+#
+msgid "scenario^Difficulty"
+msgstr ""
+
+msgid "scenario^Turns"
+msgstr ""
+
+msgid "scenario^Capture fort"
+msgstr ""
+
+msgid "scenario^Perfect turns"
+msgstr ""
+
+msgid "perfect^Perfect"
+msgstr ""
+
+#
+# register, config account
+#
+msgid "Register, config account"
+msgstr ""
+
+msgid "Validate password"
+msgstr ""
+
+msgid "Password"
+msgstr ""
+
+msgid "account^remark($server, $host, $register, $ok)"
+msgstr ""
+
+msgid "account^detect invalid($account, $ps)"
+msgstr ""
+
+msgid "PS"
+msgstr ""
+
+msgid "$validate_password isn't same as $password"
+msgstr ""
+
+msgid "'$key' value must combine $min to $max characters"
+msgstr ""
+
+msgid "Invalid '$key' value, $username is reserved!"
+msgstr ""
+
+msgid "VIP exclusive"
 msgstr ""

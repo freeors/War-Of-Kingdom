@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/tactic.hpp"
 
-#include "foreach.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"

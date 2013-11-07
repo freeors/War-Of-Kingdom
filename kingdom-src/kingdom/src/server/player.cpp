@@ -1,6 +1,5 @@
-/* $Id: player.cpp 46186 2010-09-01 21:12:38Z silene $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2013 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -92,7 +91,7 @@ bool wesnothd::player::is_message_flooding()
 	if (now - flood_start_ > TimePeriod) {
 		messages_since_flood_start_ = 0;
 		flood_start_ = now;
-	} else if (messages_since_flood_start_ == MaxMessages) {
+	} else if (messages_since_flood_start_ >= MaxMessages) {
 		return true;
 	}
 	return false;

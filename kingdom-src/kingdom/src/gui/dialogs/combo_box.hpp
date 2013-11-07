@@ -18,7 +18,6 @@
 
 #include "gui/dialogs/dialog.hpp"
 
-#include "gui/auxiliary/old_markup.hpp"
 #include <vector>
 
 namespace gui2 {
@@ -26,6 +25,12 @@ namespace gui2 {
 class tcombo_box : public tdialog
 {
 public:
+	struct titem {
+		titem(const std::string& str);
+
+		std::string icon;
+		std::string label;
+	};
 	enum {NONE, EXTRACT};
 
 	explicit tcombo_box(const std::vector<std::string>& items, int index = 0, int type = NONE);
@@ -50,7 +55,7 @@ private:
 
 private:
 	int index_;
-	std::vector<tlegacy_menu_item> items_;
+	std::vector<titem> items_;
 	int type_;
 };
 

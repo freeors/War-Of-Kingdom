@@ -18,7 +18,6 @@
 #include "gui/dialogs/interior.hpp"
 
 #include "actions.hpp"
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -168,7 +167,6 @@ void tinterior::refresh_tooltip(twindow& window)
 		tgrid* grid_ptr = list->get_row_grid(d_it->type_);
 
 		tcontrol* control = find_widget<tcontrol>(grid_ptr, "new_exploiture", false, true);
-		control->set_use_markup(true);
 		strstr.str("");
 		if ((!mayor->valid() && checked_hero_ == -1) || (mayor->valid() && checked_hero_ != -1 && mayor->number_ == fresh_heros_[checked_hero_]->number_)) {
 			strstr << d_it->exploiture_ << "%";

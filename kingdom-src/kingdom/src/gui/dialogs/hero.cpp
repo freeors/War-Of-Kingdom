@@ -283,7 +283,9 @@ void thero::swap_page(twindow& window, int page, bool swap)
 	} else if (page == BIOGRAPHY_PAGE) {
 		fill_biography(window);
 
-	}	
+	}
+
+	current_page_ = page;
 }
 
 } // namespace gui2

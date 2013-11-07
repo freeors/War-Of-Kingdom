@@ -6,7 +6,7 @@ msgstr ""
 "Project-Id-Version: en_GB\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-04-26 10:02+0800\n"
+"PO-Revision-Date: 2013-10-26 15:32+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: English (British) <en@li.org>\n"
 "Language: en_GB\n"
@@ -43,10 +43,11 @@ msgstr ""
 msgid "office description"
 msgstr "office"
 
-msgid "Wande"
+msgid "Wander"
 msgstr ""
 
-msgid "wande description"
+#, fuzzy
+msgid "wander description"
 msgstr "wande"
 
 msgid "Advance"
@@ -67,23 +68,12 @@ msgstr ""
 msgid "communicate description"
 msgstr "communicate"
 
-msgid "Develop business"
+msgid "Move"
 msgstr ""
 
-msgid "develop business description"
-msgstr "develop business"
-
-msgid "Develop technology"
-msgstr "Develop technology"
-
-msgid "develop technology description"
-msgstr "develop technology"
-
-msgid "Balance revenue"
-msgstr ""
-
-msgid "balance revenue description"
-msgstr "balance revenue"
+#, fuzzy
+msgid "move description"
+msgstr "office"
 
 #
 # technology section
@@ -432,6 +422,45 @@ msgstr "Ambitious"
 
 msgid "character_desc-ambitious"
 msgstr "Ambitious"
+
+#
+# decree section
+#
+msgid "decree-business"
+msgstr ""
+
+msgid "decree_desc-business"
+msgstr ""
+
+#, fuzzy
+msgid "decree-technology"
+msgstr "Develop technology"
+
+#, fuzzy
+msgid "decree_desc-technology"
+msgstr "technology"
+
+#, fuzzy
+msgid "decree-demolish"
+msgstr "Enhance local troop demolish"
+
+#, fuzzy
+msgid "decree_desc-demolish"
+msgstr "Enhance local troop demolish"
+
+msgid "decree-heal"
+msgstr ""
+
+#, fuzzy
+msgid "decree_desc-heal"
+msgstr "Recover local troop HP"
+
+msgid "decree-interior"
+msgstr ""
+
+#, fuzzy
+msgid "decree_desc-interior"
+msgstr "Industrious"
 
 msgid "especial-0"
 msgstr "Desert"
@@ -891,7 +920,7 @@ msgid "feature-42"
 msgstr "Concealment"
 
 msgid "feature_desc-42"
-msgstr "Hide in village, remain undetected by enemies"
+msgstr "Hide around fort, remain undetected by enemies"
 
 msgid "feature-43"
 msgstr "Entertainer"
@@ -996,28 +1025,28 @@ msgid "feature_desc-59"
 msgstr "Chance reduce damage when low HP"
 
 msgid "feature-60"
-msgstr ""
+msgstr "Backstab"
 
 msgid "feature_desc-60"
-msgstr ""
+msgstr "When used offensively, this attack deals double damage"
 
 msgid "feature-61"
-msgstr ""
+msgstr "Inspirit"
 
 msgid "feature_desc-61"
-msgstr ""
+msgstr "Not weak when no food"
 
 msgid "feature-62"
-msgstr ""
+msgstr "Granary"
 
 msgid "feature_desc-62"
-msgstr ""
+msgstr "Maximun food increase 50%"
 
 msgid "feature-63"
-msgstr ""
+msgstr "Prowl"
 
 msgid "feature_desc-63"
-msgstr ""
+msgstr "Hide in land, remain undetected by enemies"
 
 msgid "feature-64"
 msgstr ""
@@ -1487,6 +1516,12 @@ msgstr "Heal.S"
 msgid "tactic_desc-heals"
 msgstr "Recover friend troops HP"
 
+msgid "tactic-food"
+msgstr "Food"
+
+msgid "tactic_desc-food"
+msgstr "Feeding other troop 2/3 food"
+
 msgid "tactic-divine wei wu"
 msgstr "Divine wei wu"
 
@@ -1642,6 +1677,132 @@ msgstr "Divine heal"
 
 msgid "tactic_desc-divine heal"
 msgstr "Divine heal"
+
+#
+# formation
+#
+msgid "formation-mage"
+msgstr ""
+
+#, fuzzy
+msgid "formation_desc-mage"
+msgstr "mage"
+
+msgid "formation-horse"
+msgstr ""
+
+#, fuzzy
+msgid "formation_desc-horse"
+msgstr "Make local troop invisiable"
+
+msgid "formation-pike"
+msgstr ""
+
+#, fuzzy
+msgid "formation_desc-pike"
+msgstr "Damage enemy troops by pierce attack"
+
+msgid "formation-catapult"
+msgstr ""
+
+#, fuzzy
+msgid "formation_desc-catapult"
+msgstr "Alert"
+
+msgid "formation-bow"
+msgstr ""
+
+msgid "formation_desc-bow"
+msgstr ""
+
+#, fuzzy
+msgid "noble-emperor"
+msgstr "Mayor"
+
+msgid "noble-grand commandant"
+msgstr "Grand Commandant"
+
+msgid "noble-grand preceptor"
+msgstr "Grand Preceptor"
+
+#
+# noble
+#
+msgid "noble-king"
+msgstr "King"
+
+msgid "noble-general of the flying cavalry"
+msgstr "General of the Flying Cavalry"
+
+msgid "noble-general of chariots and cavalry"
+msgstr "General of Chariots and Cavalry"
+
+msgid "noble-chief"
+msgstr "Chief"
+
+msgid "noble-chief of palace administration"
+msgstr "Chief of Palace Administration"
+
+msgid "noble-chief of the capital guard"
+msgstr "Chief of the Capital Guard"
+
+msgid "noble-nomarch"
+msgstr "Nomarch"
+
+msgid "noble-imperial minister"
+msgstr "Imperial Minister"
+
+msgid "noble-general of valiant cavalry"
+msgstr "General of Valiant Cavalry"
+
+msgid "noble-mayor"
+msgstr "Mayor"
+
+msgid "noble-assistant general"
+msgstr "Assistant General"
+
+msgid "noble-deputy general"
+msgstr "Deputy General"
+
+#
+# inapp-purchase
+#
+msgid "inapp-noncard"
+msgstr "One card every 25 turns"
+
+msgid "inapp_desc-noncard"
+msgstr ""
+"In RPG scenario, get a \"Wander\" or \"Office\" card every 25 turns. If "
+"\"Wander\" count is not more than \"Office\" in holden cards, will get "
+"\"Wander\", or \"Office\"."
+
+msgid "inapp-nontacticslot"
+msgstr "More tactic slot"
+
+msgid "inapp_desc-nontacticslot"
+msgstr ""
+"In Tower Mode scenario, get more one tactic slot. Default is 2 slot, if hold "
+"it, there is to 3."
+
+msgid "inapp-vip"
+msgstr "Join VIP"
+
+msgid "inapp_desc-vip"
+msgstr ""
+"VIP hold some privilege. In RPG scenario, get a \"Wander\" or \"Office\" "
+"card every 25 turns. In Tower Mode scenario, get more one tactic slot."
+
+#~ msgid "noble-prince"
+#~ msgstr "Prince"
+
+#~ msgid "develop business description"
+#~ msgstr "develop business"
+
+#~ msgid "develop technology description"
+#~ msgstr "develop technology"
+
+#~ msgid "balance revenue description"
+#~ msgstr "balance revenue"
 
 #~ msgid "tactic"
 #~ msgstr "Tactic"

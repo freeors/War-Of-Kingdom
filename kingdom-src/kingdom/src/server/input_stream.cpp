@@ -1,6 +1,5 @@
-/* $Id: input_stream.cpp 46186 2010-09-01 21:12:38Z silene $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2013 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -72,9 +71,9 @@ void input_stream::stop()
 #endif
 }
 
+#ifndef _WIN32
 bool input_stream::read_line(std::string& str)
 {
-#ifndef _WIN32
 	if(fd_ == -1) {
 		return false;
 	}
@@ -94,7 +93,10 @@ bool input_stream::read_line(std::string& str)
 	} else {
 		return false;
 	}
-#else
-	return false;
-#endif
 }
+#else
+bool input_stream::read_line(std::string&)
+{
+	return false;
+}
+#endif

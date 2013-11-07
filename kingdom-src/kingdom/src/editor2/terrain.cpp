@@ -2,7 +2,6 @@
 
 #include "global.hpp"
 #include "game_config.hpp"
-#include "foreach.hpp"
 #include "loadscreen.hpp"
 #include "DlgCoreProc.hpp"
 #include "gettext.hpp"
@@ -18,6 +17,7 @@
 #include "struct.h"
 
 #include "map.hpp"
+#include <boost/foreach.hpp>
 
 namespace ns {
 	int clicked_terrain;
@@ -790,32 +790,6 @@ void OnTerrainEditBt(HWND hdlgP)
 
 void On_DlgTerrainCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
-/*
-	switch (id) {
-	case IDM_ADD:
-		OnUTypeAddBt(hdlgP);
-		break;
-	case IDM_DELETE:
-		OnUTypeDelBt(hdlgP);
-		break;
-	case IDM_EDIT:
-		OnUTypeEditBt(hdlgP);
-		break;
-	case IDM_GENERATE_ITEM2:
-		ns::core.generate_utypes();
-		posix_print_mb(utf8_2_ansi(_("Regenerate all type's cfg and relative image success.")));
-		break;
-
-	case IDM_UTYPE_GENERAL:
-	case IDM_UTYPE_MTYPE:
-	case IDM_UTYPE_ATTACKI:
-	case IDM_UTYPE_ATTACKII:
-	case IDM_UTYPE_ATTACKIII:
-		ns::type = id;
-		DialogBox(gdmgr._hinst, MAKEINTRESOURCE(IDD_VISUAL2), NULL, DlgVisual2Proc);
-		break;
-	}
-*/
 	return;
 }
 

@@ -53,7 +53,7 @@
 
 <P>Here the member type <A HREF="../guide/traits.html#char_type"><CODE>char_type</CODE></A> indicates the type of characters handled by my_source, which will almost always be <CODE>char</CODE> or <CODE>wchar_t</CODE>. The member type <A HREF="../guide/traits.html#char_type">category</A> indicates which of the fundamental i/o operations are supported by the device. The category tag <A HREF="../guide/traits.html#category_tags"><CODE>source_tag</CODE></A> indicates that only <A HREF="../functions/read.html"><CODE>read</CODE></A> is supported.</P>
 
-<P>The member function <CODE>read</CODE> reads up to <CODE>n</CODE> character into the buffer <CODE>s</CODE> and returns the number of character read, unless that number is <CODE>0</CODE> and end-of-stream has been reached, in which case the special value <CODE>-1</CODE> is returned. In general, a Source's member function <CODE>read</CODE> may return fewer characters than requested even though end-of-stream has not been reached; such Sources are called <I>non-blocking</I>. Non-blocking Devices do not interact well with standard streams and stream buffers, however, so most devices should be <A HREF="../concepts/blocking.html">Blocking</A>. <I>See</I> <A HREF="../guide/asynchronous.html">Asynchronous and Non-Blocking I/O</A>.</P>
+<P>The member function <CODE>read</CODE> reads up to <CODE>n</CODE> characters into the buffer <CODE>s</CODE> and returns the number of characters read, unless that number is <CODE>0</CODE> and end-of-stream has been reached, in which case the special value <CODE>-1</CODE> is returned. In general, a Source's member function <CODE>read</CODE> may return fewer characters than requested even though end-of-stream has not been reached; such Sources are called <I>non-blocking</I>. Non-blocking Devices do not interact well with standard streams and stream buffers, however, so most devices should be <A HREF="../concepts/blocking.html">Blocking</A>. <I>See</I> <A HREF="../guide/asynchronous.html">Asynchronous and Non-Blocking I/O</A>.</P>
 
 <P>You could also write the above example as follows:</P>
 
@@ -81,7 +81,7 @@
 <SPAN CLASS='keyword'>public</SPAN>:
     <SPAN CLASS='keyword'>typedef</SPAN> <SPAN CLASS='keyword'>typename</SPAN> Container::value_type  char_type;
     <SPAN CLASS='keyword'>typedef</SPAN> source_tag                      category;
-    container_source(Container& container) 
+    container_source(Container&amp; container)
         : container_(container), pos_(<SPAN CLASS='numeric_literal'>0</SPAN>)
         { }
     std::streamsize read(char_type* s, std::streamsize n)
@@ -99,10 +99,10 @@
             <SPAN CLASS='keyword'>return</SPAN> <SPAN CLASS='numeric_literal'>-1</SPAN>; <SPAN CLASS='comment'>// EOF</SPAN>
         }
     }
-    Container& container() { <SPAN CLASS='keyword'>return</SPAN> container_; }
+    Container&amp; container() { <SPAN CLASS='keyword'>return</SPAN> container_; }
 <SPAN CLASS='keyword'>private</SPAN>:
     <SPAN CLASS='keyword'>typedef</SPAN> <SPAN CLASS='keyword'>typename</SPAN> Container::size_type   size_type;
-    Container&  container_;
+    Container&amp;  container_;
     size_type   pos_;
 };
 
@@ -173,7 +173,6 @@
 
 <HR>
 
-<P CLASS="copyright">Revised 02 Feb 2008</P>
 
 <P CLASS="copyright">&copy; Copyright 2008 <a href="http://www.coderage.com/" target="_top">CodeRage, LLC</a><br/>&copy; Copyright 2004-2007 <a href="http://www.coderage.com/turkanis/" target="_top">Jonathan Turkanis</a></P>
 <P CLASS="copyright"> 

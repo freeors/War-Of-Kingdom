@@ -103,5 +103,6 @@ void increment_preprocessor_progress(std::string const &name, bool is_file);
 void wml_config_to_file(const std::string &fname, config &cfg, uint32_t nfiles = 0, uint32_t sum_size = 0, uint32_t modified = 0);
 void wml_config_from_file(const std::string &fname, config &cfg, uint32_t* nfiles = NULL, uint32_t* sum_size = NULL, uint32_t* modified = NULL);
 bool wml_checksum_from_file(const std::string &fname, uint32_t* nfiles = NULL, uint32_t* sum_size = NULL, uint32_t* modified = NULL);
+unsigned char calcuate_xor_from_file(const std::string &fname);
 
 #endif

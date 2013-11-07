@@ -67,6 +67,12 @@ namespace preferences {
 	std::pair<int,int> resolution();
 	void _set_resolution(const std::pair<int,int>& res);
 
+	void set_coin(int value);
+	int coin();
+
+	void set_score(int value);
+	int score();
+
 	bool turbo();
 	void _set_turbo(bool ison);
 
@@ -75,9 +81,6 @@ namespace preferences {
 
 	bool default_move();
 	void _set_default_move(const bool ison);
-
-	int idle_anim_rate();
-	void _set_idle_anim_rate(const int rate);
 
 	std::string language();
 	void set_language(const std::string& s);

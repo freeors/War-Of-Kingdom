@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/dialog.hpp"
 
-#include "foreach.hpp"
 #include "gui/dialogs/field.hpp"
 #include "gui/widgets/integer_selector.hpp"
 #include "video.hpp"
@@ -25,21 +24,19 @@
 #include "game_display.hpp"
 #include "resources.hpp"
 
+#include <boost/foreach.hpp>
+
 namespace gui2 {
 
 tdialog::~tdialog()
 {
-	foreach(tfield_* field, fields_) {
+	BOOST_FOREACH (tfield_* field, fields_) {
 		delete field;
 	}
 }
 
 bool tdialog::show(CVideo& video, const unsigned auto_close_time)
 {
-	if(video.faked()) {
-		return false;
-	}
-
 	// hide tooltip current shown.
 	tooltips::process(-1, -1);
 
@@ -209,7 +206,7 @@ twindow* tdialog::build_window(CVideo& video) const
 
 void tdialog::init_fields(twindow& window)
 {
-	foreach(tfield_* field, fields_) {
+	BOOST_FOREACH (tfield_* field, fields_) {
 		field->attach_to_window(window);
 		field->widget_init(window);
 	}
@@ -223,7 +220,7 @@ void tdialog::init_fields(twindow& window)
 
 void tdialog::finalize_fields(twindow& window, const bool save_fields)
 {
-	foreach(tfield_* field, fields_) {
+	BOOST_FOREACH (tfield_* field, fields_) {
 		if(save_fields) {
 			field->widget_finalize(window);
 		}

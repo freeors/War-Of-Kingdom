@@ -16,12 +16,12 @@
 #include "global.hpp"
 
 #include "display.hpp"
-#include "foreach.hpp"
 #include "gamestatus.hpp"
 #include "map_label.hpp"
 #include "resources.hpp"
 #include "formula_string_utils.hpp"
 
+#include <boost/foreach.hpp>
 
 namespace {
 	const size_t max_label_size = 32;
@@ -64,7 +64,7 @@ void map_labels::read(const config &cfg)
 {
 	clear_all();
 
-	foreach (const config &i, cfg.child_range("label"))
+	BOOST_FOREACH (const config &i, cfg.child_range("label"))
 	{
 		const map_location loc(i, resources::state_of_game);
 		terrain_label *label = new terrain_label(*this, i);
@@ -235,7 +235,7 @@ void map_labels::clear_map(label_map &m, bool force)
 
 void map_labels::clear_all()
 {
-	foreach (team_label_map::value_type &m, labels_)
+	BOOST_FOREACH (team_label_map::value_type &m, labels_)
 	{
 		clear_map(m.second, true);
 	}
@@ -244,9 +244,9 @@ void map_labels::clear_all()
 
 void map_labels::recalculate_labels()
 {
-	foreach (team_label_map::value_type &m, labels_)
+	BOOST_FOREACH (team_label_map::value_type &m, labels_)
 	{
-		foreach (label_map::value_type &l, m.second)
+		BOOST_FOREACH (label_map::value_type &l, m.second)
 		{
 			l.second->recalculate();
 		}
@@ -262,9 +262,9 @@ bool map_labels::visible_global_label(const map_location& loc) const
 
 void map_labels::recalculate_shroud()
 {
-	foreach (team_label_map::value_type &m, labels_)
+	BOOST_FOREACH (team_label_map::value_type &m, labels_)
 	{
-		foreach (label_map::value_type &l, m.second)
+		BOOST_FOREACH (label_map::value_type &l, m.second)
 		{
 			l.second->calculate_shroud();
 		}
@@ -323,9 +323,7 @@ void terrain_label::read(const config &cfg)
 	loc_ = map_location(cfg, &vs);
 	SDL_Color color = font::LABEL_COLOR;
 
-	///@deprecated 1.9.2 'colour' in [label]
-	const std::string colour_error = "Usage of 'colour' in [label] is deprecated, support will be removed in 1.9.2.\n";
-	std::string tmp_color = cfg.get_old_attribute("color","colour", colour_error);
+	std::string tmp_color = cfg["color"].str();
 
 	text_ = cfg["text"];
 	team_name_ = cfg["team_name"].str();
@@ -357,8 +355,6 @@ void terrain_label::write(config& cfg) const
 	cfg["text"] = text();
 	cfg["team_name"] = (this->team_name());
 	cfg["color"] = cfg_color();
-	///@deprecated 1.9.2 'colour' also written in label
-	cfg["colour"] = cfg_color();
 	cfg["visible_in_fog"] = visible_in_fog_;
 	cfg["visible_in_shroud"] = visible_in_shroud_;
 	cfg["immutable"] = immutable_;

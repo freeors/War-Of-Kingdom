@@ -261,13 +261,66 @@ void ttext_::handle_key_delete(SDLMod /*modifier*/, bool& handled)
 	fire(event::NOTIFY_MODIFIED, *this, NULL);
 }
 
-void ttext_::handle_key_default(
-		bool& handled, SDLKey /*key*/, SDLMod /*modifier*/, Uint16 unicode)
+Uint16 shift_unicode(SDLMod modifier, Uint16 c)
 {
-	DBG_GUI_E << LOG_SCOPE_HEADER << '\n';
+	if (!(modifier & (KMOD_LSHIFT | KMOD_RSHIFT))) return c;
 
+	if (c >= 0x30 && c <= 0x39) {
+		if (c == 0x30) {
+			return 0x29;
+		} else if (c == 0x31) {
+			return 0x21;
+		} else if (c == 0x32) {
+			return 0x40;
+		} else if (c == 0x33) {
+			return 0x23;
+		} else if (c == 0x34) {
+			return 0x24;
+		} else if (c == 0x35) {
+			return 0x25;
+		} else if (c == 0x36) {
+			return 0x5e;
+		} else if (c == 0x37) {
+			return 0x26;
+		} else if (c == 0x38) {
+			return 0x2a;
+		} else {
+			return 0x28;
+		}
+	} else if (c == '`') {
+		return 0x7e;
+	} else if (c == '-') {
+		return 0x5f;
+	} else if (c == '=') {
+		return 0x2b;
+	} else if (c == '[') {
+		return 0x7b;
+	} else if (c == ']') {
+		return 0x7d;
+	} else if (c == '\\') {
+		return 0x7c;
+	} else if (c == ';') {
+		return 0x3a;
+	} else if (c == '\'') {
+		return 0x22;
+	} else if (c == ',') {
+		return 0x3c;
+	} else if (c == '.') {
+		return 0x3e;
+	} else if (c == '/') {
+		return 0x3f;
+	}
+	return c;
+}
+
+void ttext_::handle_key_default(
+		bool& handled, SDLKey /*key*/, SDLMod modifier, Uint16 unicode)
+{
 	if(unicode >= 32 && unicode != 127) {
 		handled = true;
+
+		// sdl.dll can shift 'a' to 'z', other don't.
+		unicode = shift_unicode(modifier, unicode);
 		insert_char(unicode);
 		fire(event::NOTIFY_MODIFIED, *this, NULL);
 	}

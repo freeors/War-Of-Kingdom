@@ -1,6 +1,5 @@
-/* $Id: forum_user_handler.cpp 46186 2010-09-01 21:12:38Z silene $ */
 /*
-   Copyright (C) 2008 - 2010 by Thomas Baumhauer <thomas.baumhauer@NOSPAMgmail.com>
+   Copyright (C) 2008 - 2013 by Thomas Baumhauer <thomas.baumhauer@NOSPAMgmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -29,16 +28,20 @@ static lg::log_domain log_mp_user_handler("mp_user_handler");
 #define LOG_UH LOG_STREAM(info, log_mp_user_handler)
 #define DBG_UH LOG_STREAM(debug, log_mp_user_handler)
 
-fuh::fuh(const config& c) {
-	db_name_ = c["db_name"].str();
-	db_host_ = c["db_host"].str();
-	db_user_ = c["db_user"].str();
-	db_password_ = c["db_password"].str();
-	db_users_table_ = c["db_users_table"].str();
-	db_extra_table_ = c["db_extra_table"].str();
+namespace {
+	const int USER_INACTIVE = 1;
+	const int USER_IGNORE = 2;
+}
 
-	conn = mysql_init(NULL);
-
+fuh::fuh(const config& c)
+	: db_name_(c["db_name"].str())
+	, db_host_(c["db_host"].str())
+	, db_user_(c["db_user"].str())
+	, db_password_(c["db_password"].str())
+	, db_users_table_(c["db_users_table"].str())
+	, db_extra_table_(c["db_extra_table"].str())
+	, conn(mysql_init(NULL))
+{
 	if(!conn || !mysql_real_connect(conn, db_host_.c_str(),  db_user_.c_str(), db_password_.c_str(), db_name_.c_str(), 0, NULL, 0)) {
 		ERR_UH << "Could not connect to database: " << mysql_errno(conn) << ": " << mysql_error(conn) << std::endl;
 	}
@@ -53,7 +56,7 @@ void fuh::add_user(const std::string& /*name*/, const std::string& /*mail*/, con
 }
 
 void fuh::remove_user(const std::string& /*name*/) {
-	throw error("'Dropping your nick is currently impossible");
+	throw error("'Dropping your nickname is currently impossible");
 }
 
 // The hashing code is basically taken from forum_auth.cpp
@@ -65,7 +68,7 @@ bool fuh::login(const std::string& name, const std::string& password, const std:
 
 	try {
 		hash = get_hash(name);
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not retrieve hash for user '" << name << "' :" << e.message << std::endl;
 		return false;
 	}
@@ -85,7 +88,7 @@ bool fuh::login(const std::string& name, const std::string& password, const std:
 
 std::string fuh::create_pepper(const std::string& name) {
 
-	// Some doulbe security, this should never be neeeded
+	// Some double security, this should never be needed
 	if(!(user_exists(name))) {
 		return "";
 	}
@@ -94,7 +97,7 @@ std::string fuh::create_pepper(const std::string& name) {
 
 	try {
 		hash = get_hash(name);
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not retrieve hash for user '" << name << "' :" << e.message << std::endl;
 		return "";
 	}
@@ -113,9 +116,19 @@ bool fuh::user_exists(const std::string& name) {
 	// Make a test query for this username
 	try {
 		return mysql_fetch_row(db_query("SELECT username FROM " + db_users_table_ + " WHERE UPPER(username)=UPPER('" + name + "')"));
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not execute test query for user '" << name << "' :" << e.message << std::endl;
 		// If the database is down just let all usernames log in
+		return false;
+	}
+}
+
+bool fuh::user_is_active(const std::string& name) {
+	try {
+		int user_type = atoi(get_detail_for_user(name, "user_type").c_str());
+		return user_type != USER_INACTIVE && user_type != USER_IGNORE;
+	} catch (error& e) {
+		ERR_UH << "Could not retrieve user type for user '" << name << "' :" << e.message << std::endl;
 		return false;
 	}
 }
@@ -126,7 +139,7 @@ bool fuh::user_is_moderator(const std::string& name) {
 
 	try {
 		return get_writable_detail_for_user(name, "user_is_moderator") == "1";
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not query user_is_moderator for user '" << name << "' :" << e.message << std::endl;
 		// If the database is down mark nobody as a mod
 		return false;
@@ -139,7 +152,7 @@ void fuh::set_is_moderator(const std::string& name, const bool& is_moderator) {
 
 	try {
 		write_detail(name, "user_is_moderator", is_moderator ? "1" : "0");
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not set is_moderator for user '" << name << "' :" << e.message << std::endl;
 	}
 }
@@ -158,12 +171,21 @@ std::string fuh::user_info(const std::string& name) {
 	time_t ll_date = get_lastlogin(name);
 
 	std::string reg_string = ctime(&reg_date);
-	std::string ll_string = ctime(&ll_date);
+	std::string ll_string;
+
+	if(ll_date) {
+		ll_string = ctime(&ll_date);
+	} else {
+		ll_string = "Never\n";
+	}
 
 	std::stringstream info;
 	info << "Name: " << name << "\n"
 		 << "Registered: " << reg_string
 		 << "Last login: " << ll_string;
+	if(!user_is_active(name)) {
+		info << "This account is currently inactive.\n";
+	}
 
 	return info.str();
 }
@@ -179,7 +201,7 @@ std::string fuh::get_valid_details() {
 std::string fuh::get_hash(const std::string& user) {
 	try {
 		return get_detail_for_user(user, "user_password");
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not retrieve password for user '" << user << "' :" << e.message << std::endl;
 		return time_t(0);
 	}
@@ -188,7 +210,7 @@ std::string fuh::get_hash(const std::string& user) {
 std::string fuh::get_mail(const std::string& user) {
 	try {
 		return get_detail_for_user(user, "user_email");
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not retrieve email for user '" << user << "' :" << e.message << std::endl;
 		return time_t(0);
 	}
@@ -198,7 +220,7 @@ time_t fuh::get_lastlogin(const std::string& user) {
 	try {
 		int time_int = atoi(get_writable_detail_for_user(user, "user_lastvisit").c_str());
 		return time_t(time_int);
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not retrieve last visit for user '" << user << "' :" << e.message << std::endl;
 		return time_t(0);
 	}
@@ -208,7 +230,7 @@ time_t fuh::get_registrationdate(const std::string& user) {
 	try {
 		int time_int = atoi(get_detail_for_user(user, "user_regdate").c_str());
 		return time_t(time_int);
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not retrieve registration date for user '" << user << "' :" << e.message << std::endl;
 		return time_t(0);
 	}
@@ -221,7 +243,7 @@ void fuh::set_lastlogin(const std::string& user, const time_t& lastlogin) {
 
 	try {
 		write_detail(user, "user_lastvisit", ss.str());
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not set last visit for user '" << user << "' :" << e.message << std::endl;
 	}
 }
@@ -261,7 +283,7 @@ void fuh::write_detail(const std::string& name, const std::string& detail, const
 			db_query("INSERT INTO " + db_extra_table_ + " VALUES('" + name + "','" + value + "','0')");
 		}
 		db_query("UPDATE " + db_extra_table_ + " SET " + detail + "='" + value + "' WHERE UPPER(username)=UPPER('" + name + "')");
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not set detail for user '" << name << "': " << e.message << std::endl;
 	}
 }
@@ -271,7 +293,7 @@ bool fuh::extra_row_exists(const std::string& name) {
 	// Make a test query for this username
 	try {
 		return mysql_fetch_row(db_query("SELECT username FROM " + db_extra_table_ + " WHERE UPPER(username)=UPPER('" + name + "')"));
-	} catch (error e) {
+	} catch (error& e) {
 		ERR_UH << "Could not execute test query for user '" << name << "' :" << e.message << std::endl;
 		return false;
 	}

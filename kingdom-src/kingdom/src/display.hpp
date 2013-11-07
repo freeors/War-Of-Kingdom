@@ -428,10 +428,6 @@ public:
 
 	void set_turbo_speed(const double speed) { turbo_speed_ = speed; }
 
-	/** control unit idle animations and their frequency */
-	void set_idle_anim_rate(int rate);
-	double idle_anim_rate() const { return idle_anim_rate_; }
-
 	void bounds_check_position();
 	void bounds_check_position(int& xpos, int& ypos);
 
@@ -656,7 +652,6 @@ protected:
 	bool local_tod_light_;
 
 	struct menu_button_map {
-		menu_button_map(): menu_(NULL), buttons_(NULL), button_count_(0) {}
 		theme::menu *menu_;
 		gui::button **buttons_;
 		size_t button_count_;
@@ -754,7 +749,7 @@ public:
 
 	void draw_text_in_hex2(const map_location& loc,
 		const tdrawing_layer layer, const std::string& text,
-		size_t font_size, SDL_Color color, int x, int y, fixed_t alpha = 255);
+		size_t font_size, SDL_Color color, int x, int y, fixed_t alpha = 255, bool center = false);
 
 protected:
 	/**

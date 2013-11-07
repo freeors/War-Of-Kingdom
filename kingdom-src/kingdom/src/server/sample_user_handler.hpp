@@ -1,6 +1,5 @@
-/* $Id: sample_user_handler.hpp 46186 2010-09-01 21:12:38Z silene $ */
 /*
-   Copyright (C) 2008 - 2010 by Thomas Baumhauer <thomas.baumhauer@NOSPAMgmail.com>
+   Copyright (C) 2008 - 2013 by Thomas Baumhauer <thomas.baumhauer@NOSPAMgmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -42,6 +41,7 @@ class suh : public user_handler {
 		void password_reminder(const std::string& name);
 
 		bool user_exists(const std::string& name);
+		bool user_is_active(const std::string& name);
 
 		bool user_is_moderator(const std::string& name);
 		void set_is_moderator(const std::string& name, const bool& is_moderator);

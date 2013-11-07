@@ -43,7 +43,7 @@
               
 <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Source, <SPAN CLASS="keyword">typename</SPAN> Sink&gt;
 std::streamsize
-copy( [<SPAN CLASS="keyword">const</SPAN>] Source& src, [<SPAN CLASS="keyword">const</SPAN>] Sink& sink,
+copy( [<SPAN CLASS="keyword">const</SPAN>] Source&amp; src, [<SPAN CLASS="keyword">const</SPAN>] Sink&amp; sink,
       std::streamsize buffer_size = <SPAN CLASS="omitted">default value</SPAN> );
 
 } } <SPAN CLASS="comment">// End namespace boost::io</SPAN></PRE>
@@ -52,7 +52,6 @@ copy( [<SPAN CLASS="keyword">const</SPAN>] Source& src, [<SPAN CLASS="keyword">c
 <!-- Begin Footer -->
 
 <HR>
-<P CLASS="copyright">Revised 02 Feb 2008</P>
 
 <P CLASS="copyright">&copy; Copyright 2008 <a href="http://www.coderage.com/" target="_top">CodeRage, LLC</a><br/>&copy; Copyright 2004-2007 <a href="http://www.coderage.com/turkanis/" target="_top">Jonathan Turkanis</a></P>
 <P CLASS="copyright"> 

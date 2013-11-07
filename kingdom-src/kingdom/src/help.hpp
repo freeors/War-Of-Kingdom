@@ -26,6 +26,12 @@ class gamemap;
 
 namespace help {
 
+/// Thrown when the help system fails to parse something.
+struct parse_error : public game::error
+{
+	parse_error(const std::string& msg);
+};
+
 struct help_manager {
 	help_manager(const config *game_config, gamemap *map);
 	~help_manager();

@@ -31,6 +31,10 @@ class artifical;
 class unit_type;
 class gamemap;
 
+namespace events {
+class menu_handler;
+}
+
 namespace gui2 {
 
 class tlistbox;
@@ -39,7 +43,7 @@ class twindow;
 class texpedite : public tdialog
 {
 public:
-	explicit texpedite(game_display& gui, const gamemap& map, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, button_action* disband);
+	explicit texpedite(events::menu_handler& menu_handler, game_display& gui, const gamemap& map, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, button_action* disband);
 
 	int troop_index() const { return troop_index_; }
 
@@ -59,9 +63,11 @@ private:
 	void type_selected(twindow& window);
 	void refresh_tooltip(twindow& window);
 
+	void hero_list(twindow& window);
 	void merit(twindow& window);
 	bool can_move(const unit& u);
 private:
+	events::menu_handler& menu_handler_;
 	game_display& gui_;
 	const gamemap& map_;
 	std::vector<team>& teams_;

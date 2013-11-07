@@ -2,6 +2,7 @@
 #include "hero.hpp"
 #include "gettext.hpp"
 #include "unit_types.hpp"
+#include "filesystem.hpp"
 
 hero hero_invalid = hero(HEROS_INVALID_NUMBER);
 
@@ -20,24 +21,34 @@ std::string hero::official_str_[HEROS_OFFICIALS] = {};
 std::string hero::flag_str_[HEROS_FLAGS] = {};
 std::vector<int> hero::valid_features_;
 
-int hero::number_artifical_min = 272;
-int hero::number_artifical_max = 277;
-int hero::number_market = 272;
-int hero::number_wall = 273;
-int hero::number_keep = 274;
-int hero::number_tower = 275;
-int hero::number_technology = 276;
-int hero::number_tactic = 277;
+int hero::number_system = 0;
+int hero::number_civilian = 1;
+int hero::number_empty_leader = 2;
+int hero::number_scout = 3;
+int hero::number_system_min = 0;
+int hero::number_system_max = 9;
 
-int hero::number_system_min = 227;
-int hero::number_system_max = 230;
-int hero::number_scout = 227;
-int hero::number_empty_leader = 228;
+int hero::number_soldier_min = 10;
+int hero::number_soldier_max = 19;
 
-int hero::number_commoner_min = 360;
-int hero::number_commoner_max = 369;
-int hero::number_businessman = 360;
-int hero::number_scholar = 361;
+int hero::number_market = 20;
+int hero::number_wall = 21;
+int hero::number_keep = 22;
+int hero::number_tower = 23;
+int hero::number_technology = 24;
+int hero::number_tactic = 25;
+int hero::number_fort = 26;
+int hero::number_artifical_min = 20;
+int hero::number_artifical_max = 34;
+
+int hero::number_businessman = 35;
+int hero::number_scholar = 36;
+int hero::number_transport = 37;
+int hero::number_commoner_min = 35;
+int hero::number_commoner_max = 49;
+
+int hero::number_city_min = 50;
+int hero::number_normal_min = 100;
 
 std::vector<hero*> empty_vector_hero_ptr = std::vector<hero*>();
 std::vector<size_t> empty_vector_size_t = std::vector<size_t>();
@@ -88,20 +99,20 @@ bool u16_get_experience_i12(uint16_t* field, uint16_t inc_xp)
 hero::hero(const hero& that)
 	: name_str_(that.name_str_)
 	, surname_str_(that.surname_str_)
+	, imgfile_()
+	, imgfile2_()
 {
 	const hero_fields_t* that_parent = (const hero_fields_t*)&that;
 	hero_fields_t* this_parent = (hero_fields_t*)this;
 
 	memcpy(this_parent, that_parent, sizeof(hero_fields_t));
-
-	// portrait image file
-	strcpy(imgfile_, that.imgfile_);
-	strcpy(imgfile2_, that.imgfile2_);
 }
 
-hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intellect, uint16_t politics, uint16_t charm) :
-	name_str_(),
-	surname_str_()
+hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intellect, uint16_t politics, uint16_t charm)
+	: name_str_()
+	, surname_str_()
+	, imgfile_()
+	, imgfile2_()
 {
 	uint32_t idx;
 
@@ -115,7 +126,7 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	gender_ = HEROS_DEFAULT_GENDER;
 	image_ = number;
 	side_ = HEROS_INVALID_SIDE;
-	city_ = HEROS_DEFAULT_CITY;
+	city_ = HEROS_ROAM_CITY;
 	status_ = HEROS_DEFAULT_STATUS;
 	official_ = HEROS_DEFAULT_OFFICIAL;
 	feature_ = HEROS_NO_FEATURE;
@@ -124,6 +135,7 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	tactic_ = HEROS_NO_TACTIC;
 	activity_ = HEROS_DEFAULT_ACTIVITY;
 	cost_ = 128;
+	noble_ = HEROS_NO_NOBLE;
 	meritorious_ = 0;
 	base_catalog_ = HEROS_DEFAULT_BASE_CATALOG;
 	float_catalog_ = ftofxp8(base_catalog_);
@@ -131,10 +143,6 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	heart_ = HEROS_DEFAULT_HEART;
 	treasure_ = HEROS_NO_TREASURE;
 	utype_ = HEROS_NO_UTYPE;
-
-	// portrait image file
-	imgfile_[0] ='\0';
-	imgfile2_[0] ='\0';
 
 	//
 	// initial some field
@@ -169,15 +177,13 @@ hero::hero(uint16_t number, uint16_t leadership, uint16_t force, uint16_t intell
 	}
 }
 
-hero::hero(const uint8_t* mem) :
-	name_str_(),
-	surname_str_()
+hero::hero(const uint8_t* mem)
+	: name_str_()
+	, surname_str_()
+	, imgfile_()
+	, imgfile2_()
 {
 	read(mem);
-
-	// portrait image file
-	imgfile_[0] ='\0';
-	imgfile2_[0] ='\0';
 }
 
 void hero::write(uint8_t* mem)
@@ -360,8 +366,7 @@ int hero::base_loyalty(const hero& leader) const
 	return mid;
 }
 
-#define INC_CATALOG_UNIT_AMBITION	1
-#define INC_CATALOG_UNIT_HEART		3
+#define INC_CATALOG_HEART_RATIO		20
 // @inc: >0, decrease loyalty; < 0, increase loyalty
 int hero::increase_loyalty(int inc, hero& leader)
 {
@@ -373,9 +378,9 @@ int hero::increase_loyalty(int inc, hero& leader)
 		return loyalty(leader);
 	}
 	
-	// effect factor: amtition, heart
-	double inc_catalog_float = 1.0 * (255 - heart_) / 32 * INC_CATALOG_UNIT_HEART;
-	int inc_catalog = inc * std::max<int>((int)inc_catalog_float, INC_CATALOG_UNIT_AMBITION + INC_CATALOG_UNIT_HEART);
+	// effect factor: heart
+	double inc_catalog_float = 1.0 * (255 - heart_) / INC_CATALOG_HEART_RATIO;
+	int inc_catalog = inc * std::max<int>((int)inc_catalog_float, 4);
 	// effect factor: base catalog
 	int mid = posix_abs((int)leader.base_catalog_ - base_catalog_);
 	if (mid > HERO_MAX_LOYALTY / 2) {
@@ -473,40 +478,66 @@ void hero::set_loyalty2(hero& leader, int level, bool fixed)
 
 const char* hero::image(bool big)
 {
-	char* to;
+	if (!big) {
+		if (!imgfile_.empty()) {
+			return imgfile_.c_str();
+		}
+	} else {
+		if (!imgfile2_.empty()) {
+			return imgfile2_.c_str();
+		}
+	}
+
+	std::string full_name, save_name;
+	std::stringstream strstr;
+	int i32 = image_;
+	uint32_t fsize_low = 0, fsize_high = 0;
+
+	if (number_ >= hero_map::map_size_from_dat) {
+		if (!big) {
+			full_name = get_addon_campaigns_dir() + "/avatar_small.png";
+		} else {
+			full_name = get_addon_campaigns_dir() + "/avatar_middle.png";
+		}
+		save_name = full_name; // save_name should utf8.
+#ifdef _WIN32
+		full_name = conv_ansi_utf8_2(full_name, false);
+#endif
+		posix_fsize_byname(full_name.c_str(), fsize_low, fsize_high);
+	}
+	if (!fsize_low && !fsize_high) {
+		strstr.str("");
+		if (!big) {
+			strstr << "hero-64/" << i32 << ".png";
+		} else {
+			strstr << "hero-256/" << i32 << ".png";
+		}
+		save_name = strstr.str();
+		full_name = image_file_root_ + "/" + save_name;
+		posix_fsize_byname(full_name.c_str(), fsize_low, fsize_high);
+	}
+	if (!fsize_low && !fsize_high) {
+		if (!big) {
+			save_name = "hero-64/default.png";
+		} else {
+			save_name = "hero-256/default.png";
+		}
+	}
 
 	if (!big) {
-		to = imgfile_;
+		imgfile_ = save_name;
+		return imgfile_.c_str();
 	} else {
-		to = imgfile2_;
-		
+		imgfile2_ = save_name;
+		return imgfile2_.c_str();
 	}
-	if (!to[0]) {
-		char text[_MAX_PATH];
-		uint32_t fsize_low, fsize_high;
-		if (!big) {
-			sprintf(to, "hero-64/%u.png", image_);
-		} else {
-			sprintf(to, "hero-256/%u.png", image_);
-		}
-		sprintf(text, "%s//%s", image_file_root_.c_str(), to);
-		posix_fsize_byname(text, fsize_low, fsize_high);
-		if (!fsize_low && !fsize_high) {
-			if (!big) {
-				strcpy(to, "hero-64/default.png");
-			} else {
-				strcpy(to, "hero-256/default.png");
-			}
-		}
-	}
-	return to;
 }
 
 void hero::set_image(int image)
 {
 	image_ = image;
-	imgfile_[0] = '\0';
-	imgfile2_[0] = '\0';
+	imgfile_ = "";
+	imgfile2_ = "";
 }
 
 std::string& hero::name()
@@ -553,17 +584,11 @@ const char* hero::biography()
 	return default_str;
 }
 
-std::string& hero::heart_str()
+std::string hero::heart_str()
 {
 	char text[_MAX_PATH];
-/*
-	sprintf(text, "%s%u", HERO_PREFIX_STR_HEART, heart_);
-	heart_str_ = dgettext("wesnoth-hero", text);
-*/
 	sprintf(text, "%u", heart_);
-	heart_str_ = text;
-
-	return heart_str_;
+	return text;
 }
 
 const std::string& hero::flag_str(int flag)
@@ -720,6 +745,16 @@ std::string hero::adaptability_str2(uint16_t adaptability)
 	return dgettext("wesnoth-hero", text);
 }
 
+bool hero::is_system(int h)
+{
+	return h >= number_system_min && h <= number_system_max;
+}
+
+bool hero::is_soldier(int h)
+{
+	return h >= number_soldier_min && h <= number_soldier_max;
+}
+
 bool hero::is_artifical(int h)
 {
 	return h >= number_artifical_min && h <= number_artifical_max;
@@ -735,16 +770,10 @@ bool hero::is_commoner(int h)
 	return h >= number_commoner_min && h <= number_commoner_max;
 }
 
-bool hero::is_system(int h)
-{
-	return h >= number_system_min && h <= number_system_max;
-}
-
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
 #include "unit.hpp"
 #include "artifical.hpp"
 #include "unit_display.hpp"
-#include "foreach.hpp"
 #include "game_events.hpp"
 #include "team.hpp"
 #include "resources.hpp"
@@ -754,6 +783,9 @@ bool hero::is_system(int h)
 #include "gui/widgets/window.hpp"
 #include "formula_string_utils.hpp"
 #include "construct_dialog.hpp"
+#include "actions.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace rpg {
 	hero* h = &hero_invalid;
@@ -771,9 +803,20 @@ void hero::to_unstage()
 	} else if (official_ != HEROS_NO_OFFICIAL) {
 		official_ = HEROS_NO_OFFICIAL;
 	}
+	if (has_nomal_noble()) {
+		std::vector<team>& teams = *resources::teams;
+		teams[side_].appoint_noble(*this, HEROS_NO_NOBLE, true);
+	}
 	status_ = hero_status_unstage;
-	city_ = HEROS_DEFAULT_CITY;
+	city_ = HEROS_ROAM_CITY;
 	side_ = HEROS_INVALID_SIDE;
+}
+
+bool hero::has_nomal_noble() const
+{
+	if (noble_ == HEROS_NO_NOBLE) return false;
+	const tnoble& n = unit_types.noble(noble_);
+	return !n.leader();
 }
 
 void hero::increase_feeling_each(unit_map& units, hero_map& heros, hero& to, int inc)
@@ -791,14 +834,14 @@ void hero::increase_feeling_each(unit_map& units, hero_map& heros, hero& to, int
 		if (carry_to != FEELING_NONE) {
 			game_events::show_relation_message(units, heros, i? to: *this, i? *this: to, carry_to);
 
-			u = find_unit(units, *this);
+			u = units.find_unit(*this);
 			if (!u->is_artifical() && std::find(adjusted.begin(), adjusted.end(), u) == adjusted.end()) {
 				u->adjust();
 				adjusted.push_back(u);
 			}
 		}
 		if (descent_number != HEROS_INVALID_NUMBER) {
-			u = find_unit(units, heros[descent_number]);
+			u = units.find_unit(heros[descent_number]);
 			if (u && !u->is_artifical() && std::find(adjusted.begin(), adjusted.end(), u) == adjusted.end()) {
 				u->adjust();
 				adjusted.push_back(u);
@@ -809,7 +852,7 @@ void hero::increase_feeling_each(unit_map& units, hero_map& heros, hero& to, int
 
 void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>& teams, const config& mod, unit* u, hero* leader)
 {
-	foreach (const config &effect, mod.child_range("effect")) {
+	BOOST_FOREACH (const config &effect, mod.child_range("effect")) {
 		const std::string &apply_to = effect["apply_to"];
 
 		if (apply_to == "loyalty") {
@@ -829,22 +872,26 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 				} else {
 					touchers.push_back(u);
 				}
-				unit_display::unit_touching(u->get_location(), touchers, increase, str.str());
+				unit_display::unit_touching(*u, touchers, increase, str.str());
 			}			
 		} else if (apply_to == "office") {
 			artifical* selected_city = unit_2_artifical(u);
 
-			selected_city->finish_into(*this, hero_status_backing);
+			if (tent::mode != TOWER_MODE) {
+				selected_city->finish_into(*this, hero_status_backing);
+			} else {
+				selected_city->fresh_into(*this);
+			}
 			std::vector<hero*>& wander_heros = selected_city->wander_heros();
 			wander_heros.erase(std::find(wander_heros.begin(), wander_heros.end(), this));
 
 			std::string message = _("Let me join in. I will do my best to maintenance our honor.");
-			show_hero_message(this, selected_city, message, game_events::INCIDENT_RECOMMENDONESELF);
+			join_anim(this, selected_city, message);
 
 			map_location loc2(MAGIC_HERO, number_);
 			game_events::fire("post_recommend", selected_city->get_location(), loc2);
 
-		} else if (apply_to == "wande") {
+		} else if (apply_to == "wander") {
 			std::vector<hero*> captains;
 			if (artifical* city = units.city_from_loc(u->get_location())) {
 				// fresh/finish/reside troop
@@ -902,11 +949,11 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 				if (h.side_ != side_ || h.number_ == number_) {
 					continue;
 				}
-				unit* u = find_unit(units, h);
+				unit* u = units.find_unit(h);
 				if (u->is_city() && h.number_ == u->master().number_) {
 					continue;
 				}
-				pairs.push_back(std::make_pair<size_t, unit*>(h.number_, u));
+				pairs.push_back(std::make_pair(h.number_, u));
 			}
 			if (increase && !pairs.empty()) {
 				// display hero selection dialog
@@ -1004,15 +1051,29 @@ ublock& turn_ublock(const unit& u)
 {
 	memset(&ub, 0, sizeof(ublock));
 	ub.skill[hero_skill_encourage] = true;
+	ub.skill[hero_skill_formation] = true;
+	ub.skill_speed[hero_skill_formation] = -50;
 	int level = u.character_level(apply_to_tag::CREATIVE);
 	if (level) {
-		ub.skill_speed[hero_skill_encourage] = level / 2;
+		ub.skill_speed[hero_skill_encourage] += level / 2;
+		ub.skill_speed[hero_skill_formation] += level / 2;
 	}
 	if (unit_feature_val2(u, hero_feature_skill)) {
 		ub.skillx2 = true;
 	}
 	return ub;
 }
+
+ublock& duel_ublock(const unit& u)
+{
+	memset(&ub, 0, sizeof(ublock));
+	ub.skill[hero_skill_hero] = true;
+	if (unit_feature_val2(u, hero_feature_skill)) {
+		ub.skillx2 = true;
+	}
+	return ub;
+}
+
 #endif
 
 ublock& exploiture_ublock(int markets, int technologies, int business_speed, int technology_speed, bool abilityx2, bool skillx2)
@@ -1068,7 +1129,7 @@ hblock& exploiture_hblock(int markets, int technologies, int business_speed, int
 
 }
 
-bool hero::get_xp(const increase_xp::hblock& hb)
+bool hero::get_xp(const hblock& hb)
 {
 	bool has_carry = false;
 
@@ -1279,6 +1340,8 @@ int hero::increase_feeling(hero& to, int inc, int& descent_number)
 	return (carry_to == FEELING_INTIMATE)? FEELING_NONE: carry_to;
 }
 
+size_t hero_map::map_size_from_dat = 0;
+
 hero_map::hero_map(const std::string& path) :
 	map_size_(0),
 	map_(NULL),
@@ -1389,6 +1452,60 @@ void hero_map::erase(const uint16_t number)
 	}
 }
 
+bool check_hero_valid(const hero& h)
+{
+	for (int i = 0; i < HEROS_MAX_PARENT; i ++) {
+		if (h.number_ < hero::number_normal_min) {
+			if (h.parent_[i].hero_ != HEROS_INVALID_NUMBER) {
+				return false;
+			}
+		} else if (h.parent_[i].hero_ < hero::number_normal_min) {
+			return false;
+		}
+	}
+
+	for (int i = 0; i < HEROS_MAX_CONSORT; i ++) {
+		if (h.number_ < hero::number_normal_min) {
+			if (h.consort_[i].hero_ != HEROS_INVALID_NUMBER) {
+				return false;
+			}
+		} else if (h.consort_[i].hero_ < hero::number_normal_min) {
+			return false;
+		}
+	}
+
+	for (int i = 0; i < HEROS_MAX_OATH; i ++) {
+		if (h.number_ < hero::number_normal_min) {
+			if (h.oath_[i].hero_ != HEROS_INVALID_NUMBER) {
+				return false;
+			}
+		} else if (h.oath_[i].hero_ < hero::number_normal_min) {
+			return false;
+		}
+	}
+
+	for (int i = 0; i < HEROS_MAX_INTIMATE; i ++) {
+		if (h.number_ < hero::number_normal_min) {
+			if (h.intimate_[i].hero_ != HEROS_INVALID_NUMBER) {
+				return false;
+			}
+		} else if (h.intimate_[i].hero_ < hero::number_normal_min) {
+			return false;
+		}
+	}
+
+	for (int i = 0; i < HEROS_MAX_HATE; i ++) {
+		if (h.number_ < hero::number_normal_min) {
+			if (h.hate_[i].hero_ != HEROS_INVALID_NUMBER) {
+				return false;
+			}
+		} else if (h.hate_[i].hero_ < hero::number_normal_min) {
+			return false;
+		}
+	}
+	return true;
+}
+
 bool hero_map::map_from_file(const std::string& fname)
 {
 	posix_file_t fp = INVALID_FILE;
@@ -1417,6 +1534,15 @@ bool hero_map::map_from_file(const std::string& fname)
 	while (rdpos + HEROS_BYTES_PER_HERO <= bytertd) {
 		hero h(fdata + rdpos);
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+#else
+		if (!check_hero_valid(h)) {
+			std::stringstream strstr;
+			strstr << h.name() << "'s set is invalid!";
+			posix_print_mb(utf8_2_ansi(strstr.str().c_str()));
+		}
+		
+#endif
 		if (h.valid()) {
 			add(h);
 		}
@@ -1478,6 +1604,27 @@ exit:
 	}
 
 	return fok;
+}
+
+bool hero_map::map_from_mem(const uint8_t* mem, int len)
+{
+	if (len < HEROS_FILE_PREFIX_BYTES) {
+		return false;
+	}
+
+	int rdpos = HEROS_FILE_PREFIX_BYTES;
+	// realloc map memory in hero_map
+	realloc_hero_map(HEROS_MAX_HEROS);
+	while (rdpos + HEROS_BYTES_PER_HERO <= len) {
+		hero h(mem + rdpos);
+
+		if (h.valid()) {
+			add(h);
+		}
+		rdpos += HEROS_BYTES_PER_HERO;
+	}
+
+	return true;
 }
 
 /*
@@ -1582,7 +1729,7 @@ void hero_map::reset_to_unstage()
 {
 	for (uint32_t idx = 0; idx < map_vsize_; idx ++) {
 		map_[idx]->side_ = HEROS_INVALID_SIDE;
-		map_[idx]->city_ = HEROS_DEFAULT_CITY;
+		map_[idx]->city_ = HEROS_ROAM_CITY;
 		map_[idx]->status_ = HEROS_DEFAULT_STATUS;
 		map_[idx]->activity_ = HEROS_DEFAULT_ACTIVITY;
 
@@ -1615,3 +1762,5 @@ void hero_map::change_language()
 		hero::official_str_[i].clear();
 	}
 }
+
+tgroup group;

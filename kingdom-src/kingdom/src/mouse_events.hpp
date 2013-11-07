@@ -84,7 +84,7 @@ public:
 	// moving
 	//
 	void begin_moving(const map_location& src, const map_location& dst);
-	void end_moving();
+	void end_moving(const map_location& stop_loc);
 	bool post_move_unit(unit& mover, const map_location& stop_loc);
 
 	map_location move_unit_along_current_route(const std::vector<map_location>& caller_steps, bool check_shroud, bool attackmove = false);
@@ -132,6 +132,8 @@ protected:
 	bool cast_tactic(unit& tactician, const map_location& target_loc);
 	void cast_tactic_special(unit& tactician, unit& special);
 
+	bool do_formation_attack(unit& attacker);
+
 	void place_at(const map_location& at, hero& h);
 	void join_in(const map_location& at, hero& h);
 
@@ -145,6 +147,7 @@ protected:
 
 	map_location current_unit_attacks_from(const map_location& loc);
 	map_location current_unit_tactic_from(const map_location& loc);
+	map_location current_unit_formation_from(const map_location& loc);
 	map_location current_unit_interior_from(const map_location& loc);
 	map_location current_unit_alternate_from(const map_location& loc);
 	map_location current_unit_select_from(const map_location& loc);

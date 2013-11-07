@@ -1,6 +1,5 @@
-/* $Id: multiplayer_error_codes.hpp 46186 2010-09-01 21:12:38Z silene $ */
 /*
-   Copyright (C) 2009 - 2010 by Thomas Baumhauer <thomas.baumhauer@NOSPAMgmail.com>
+   Copyright (C) 2009 - 2013 by Thomas Baumhauer <thomas.baumhauer@NOSPAMgmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -27,11 +26,13 @@
 #define MP_NAME_TOO_LONG_ERROR				"103"
 #define MP_NAME_RESERVED_ERROR				"104"
 #define MP_NAME_UNREGISTERED_ERROR			"105"
+#define MP_NAME_INACTIVE_WARNING			"106"
 
 #define MP_PASSWORD_REQUEST				"200"
 #define MP_PASSWORD_REQUEST_FOR_LOGGED_IN_NAME		"201"
 #define MP_NO_SEED_ERROR				"202"
 #define MP_INCORRECT_PASSWORD_ERROR			"203"
+#define MP_TOO_MANY_ATTEMPTS_ERROR			"204"
 
 #endif // MULTIPLAYER_ERROR_CODES_HPP_INCLUDES
 

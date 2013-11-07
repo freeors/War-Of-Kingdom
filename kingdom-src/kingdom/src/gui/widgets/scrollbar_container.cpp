@@ -23,10 +23,10 @@
 #include "gui/widgets/spacer.hpp"
 #include "gui/widgets/window.hpp"
 
+#include "posix.h"
+
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
-
-#include "posix.h"
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'

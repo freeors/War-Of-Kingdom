@@ -195,13 +195,13 @@ std::string &strip_end(std::string &str);
 /** Convert no, false, off, 0, 0.0 to false, empty to def, and others to true */
 bool string_bool(const std::string& str,bool def=false);
 
-/** Convert into a signed value (using the Unicode "−" and +0 convention */
+/** Convert into a signed value (using the Unicode "-" and +0 convention */
 std::string signed_value(int val);
 
-/** Sign with Unicode "−" if negative */
+/** Sign with Unicode "-" if negative */
 std::string half_signed_value(int val);
 
-/** Convert into a percentage (using the Unicode "−" and +0% convention */
+/** Convert into a percentage (using the Unicode "-" and +0% convention */
 inline std::string signed_percent(int val) {return signed_value(val) + "%";}
 
 /**

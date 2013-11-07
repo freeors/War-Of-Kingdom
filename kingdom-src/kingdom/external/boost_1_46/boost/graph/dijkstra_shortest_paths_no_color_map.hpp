@@ -113,16 +113,17 @@ namespace boost {
           distance_weight_combine, distance_compare);
   
         if (was_edge_relaxed) {
-          vertex_queue.update(neighbor_vertex);
           visitor.edge_relaxed(current_edge, graph);
+          if (is_neighbor_undiscovered) {
+            visitor.discover_vertex(neighbor_vertex, graph);
+            vertex_queue.push(neighbor_vertex);
+          } else {
+            vertex_queue.update(neighbor_vertex);
+          }
         } else {
           visitor.edge_not_relaxed(current_edge, graph);
         }
   
-        if (is_neighbor_undiscovered) {
-          visitor.discover_vertex(neighbor_vertex, graph);
-          vertex_queue.push(neighbor_vertex);
-        }
       } // end out edge iteration
   
       visitor.finish_vertex(min_vertex, graph);
@@ -186,6 +187,9 @@ namespace boost {
       dummy_property_map predecessor_map;
 
       typedef typename property_traits<DistanceMap>::value_type DistanceType;
+      DistanceType inf =
+        choose_param(get_param(params, distance_inf_t()),
+                     (std::numeric_limits<DistanceType>::max)());
       dijkstra_shortest_paths_no_color_map
         (graph, start_vertex,
          choose_param(get_param(params, vertex_predecessor), predecessor_map),
@@ -193,9 +197,8 @@ namespace boost {
          choose_param(get_param(params, distance_compare_t()),
                       std::less<DistanceType>()),
          choose_param(get_param(params, distance_combine_t()),
-                      closed_plus<DistanceType>()),
-         choose_param(get_param(params, distance_inf_t()),
-                      (std::numeric_limits<DistanceType>::max)()),
+                      closed_plus<DistanceType>(inf)),
+         inf,
          choose_param(get_param(params, distance_zero_t()),
                       DistanceType()),
          choose_param(get_param(params, graph_visitor),

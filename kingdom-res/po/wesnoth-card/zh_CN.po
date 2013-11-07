@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-05-26 15:32+0800\n"
+"PO-Revision-Date: 2013-10-26 15:17+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -47,10 +47,10 @@ msgstr "仕官"
 msgid "office description"
 msgstr "强制登用一个位于我方城市内的在野武将"
 
-msgid "Wande"
+msgid "Wander"
 msgstr "下野"
 
-msgid "wande description"
+msgid "wander description"
 msgstr "强制下野一个敌方武将到我方城市"
 
 msgid "Advance"
@@ -658,31 +658,31 @@ msgid "feature-0"
 msgstr "步将"
 
 msgid "feature_desc-0"
-msgstr "增强步兵战法的攻击力和抗性（小）"
+msgstr "增强步兵部队的攻击力和抗性（小）"
 
 msgid "feature-1"
 msgstr "骑将"
 
 msgid "feature_desc-1"
-msgstr "增强骑兵战法的攻击力和抗性（小）"
+msgstr "增强骑兵部队的攻击力和抗性（小）"
 
 msgid "feature-2"
 msgstr "工将"
 
 msgid "feature_desc-2"
-msgstr "增强兵器战法的攻击力和抗性（小）"
+msgstr "增强兵器部队的攻击力和抗性（小）"
 
 msgid "feature-3"
 msgstr "谋士"
 
 msgid "feature_desc-3"
-msgstr "增强学术战法的攻击力和抗性（小）"
+msgstr "增强学术部队的攻击力和抗性（小）"
 
 msgid "feature-4"
 msgstr "水将"
 
 msgid "feature_desc-4"
-msgstr "增强水军战法的攻击力和抗性（小）"
+msgstr "增强水军部队的攻击力和抗性（小）"
 
 msgid "feature-5"
 msgstr ""
@@ -694,31 +694,31 @@ msgid "feature-6"
 msgstr "步神"
 
 msgid "feature_desc-6"
-msgstr "增强步兵战法的攻击力和抗性（大）"
+msgstr "增强步兵部队的攻击力和抗性（大）"
 
 msgid "feature-7"
 msgstr "骑神"
 
 msgid "feature_desc-7"
-msgstr "增强骑兵战法的攻击力和抗性（大）"
+msgstr "增强骑兵部队的攻击力和抗性（大）"
 
 msgid "feature-8"
 msgstr "工神"
 
 msgid "feature_desc-8"
-msgstr "增强兵器战法的攻击力和抗性（大）"
+msgstr "增强兵器部队的攻击力和抗性（大）"
 
 msgid "feature-9"
 msgstr "军师"
 
 msgid "feature_desc-9"
-msgstr "增强学术战法的攻击力和抗性（大）"
+msgstr "增强学术部队的攻击力和抗性（大）"
 
 msgid "feature-10"
 msgstr "水神"
 
 msgid "feature_desc-10"
-msgstr "增强水军战法的攻击力和抗性（大）"
+msgstr "增强水军部队的攻击力和抗性（大）"
 
 msgid "feature-11"
 msgstr ""
@@ -730,31 +730,31 @@ msgid "feature-12"
 msgstr "急行"
 
 msgid "feature_desc-12"
-msgstr "步兵移动力+1"
+msgstr "步兵部队移动力+1"
 
 msgid "feature-13"
 msgstr "长驱"
 
 msgid "feature_desc-13"
-msgstr "骑兵移动力+1"
+msgstr "骑兵部队移动力+1"
 
 msgid "feature-14"
 msgstr "机关"
 
 msgid "feature_desc-14"
-msgstr "兵器移动力+1"
+msgstr "兵器部队移动力+1"
 
 msgid "feature-15"
 msgstr "凌波"
 
 msgid "feature_desc-15"
-msgstr "学术移动力+1"
+msgstr "学术部队移动力+1"
 
 msgid "feature-16"
 msgstr "操舵"
 
 msgid "feature_desc-16"
-msgstr "水军移动力+1"
+msgstr "水军部队移动力+1"
 
 msgid "feature-17"
 msgstr ""
@@ -802,43 +802,43 @@ msgid "feature-24"
 msgstr "斗士"
 
 msgid "feature_desc-24"
-msgstr "增强近战战法的攻击力（小）"
+msgstr "增强近战攻击的攻击力（小）"
 
 msgid "feature-25"
 msgstr "弓将"
 
 msgid "feature_desc-25"
-msgstr "增强远程战法的攻击力（小）"
+msgstr "增强远程攻击的攻击力（小）"
 
 msgid "feature-26"
 msgstr "投将"
 
 msgid "feature_desc-26"
-msgstr "增强投射战法的攻击力（小）"
+msgstr "增强投射攻击的攻击力（小）"
 
 msgid "feature-27"
 msgstr "斗神"
 
 msgid "feature_desc-27"
-msgstr "增强近战战法的攻击力（大）"
+msgstr "增强近战攻击的攻击力（大）"
 
 msgid "feature-28"
 msgstr "弓神"
 
 msgid "feature_desc-28"
-msgstr "增强远程战法的攻击力（大）"
+msgstr "增强远程攻击的攻击力（大）"
 
 msgid "feature-29"
 msgstr "投神"
 
 msgid "feature_desc-29"
-msgstr "增强投射战法的攻击力（大）"
+msgstr "增强投射攻击的攻击力（大）"
 
 msgid "feature-30"
 msgstr "纯化"
 
 msgid "feature_desc-30"
-msgstr "所有战法拥有减速效果"
+msgstr "所有攻击拥有减速效果"
 
 msgid "feature-31"
 msgstr "指导"
@@ -856,7 +856,7 @@ msgid "feature-33"
 msgstr "施毒"
 
 msgid "feature_desc-33"
-msgstr "所有战法拥有毒素效果，免疫毒素"
+msgstr "所有攻击拥有毒素效果，免疫毒素"
 
 msgid "feature-34"
 msgstr "金刚"
@@ -868,7 +868,7 @@ msgid "feature-35"
 msgstr "遁走"
 
 msgid "feature_desc-35"
-msgstr "无视陆上障碍"
+msgstr "无视ZOC"
 
 msgid "feature-36"
 msgstr "攻心"
@@ -910,7 +910,7 @@ msgid "feature-42"
 msgstr "隐蔽"
 
 msgid "feature_desc-42"
-msgstr "可以隐藏在村庄里（水中村庄除外）而不会被敌人发觉"
+msgstr "可以隐藏在据点周围，不会被敌人发觉"
 
 msgid "feature-43"
 msgstr "戏子"
@@ -949,7 +949,7 @@ msgid "feature_desc-48"
 msgstr "敌方势力被灭时，和他毗邻的敌方部队必归顺"
 
 msgid "feature-49"
-msgstr "破阵"
+msgstr "破防"
 
 msgid "feature_desc-49"
 msgstr "降低被攻击部队防御"
@@ -958,7 +958,7 @@ msgid "feature-50"
 msgstr "明镜"
 
 msgid "feature_desc-50"
-msgstr "免疫纯化、破阵"
+msgstr "免疫纯化、破防"
 
 msgid "feature-51"
 msgstr "猛者"
@@ -1021,22 +1021,22 @@ msgid "feature_desc-60"
 msgstr "主动攻击时目标背后有友军部队，增强攻击"
 
 msgid "feature-61"
-msgstr ""
+msgstr "激励"
 
 msgid "feature_desc-61"
-msgstr ""
+msgstr "所在部队缺粮时不发生动摇"
 
 msgid "feature-62"
-msgstr ""
+msgstr "屯粮"
 
 msgid "feature_desc-62"
-msgstr ""
+msgstr "部队最多可带粮草增加50%"
 
 msgid "feature-63"
-msgstr ""
+msgstr "潜行"
 
 msgid "feature_desc-63"
-msgstr ""
+msgstr "可以隐藏在平地，不会被敌人发觉"
 
 msgid "feature-64"
 msgstr ""
@@ -1078,31 +1078,31 @@ msgid "feature-70"
 msgstr "霸王"
 
 msgid "feature_desc-70"
-msgstr "增强所有兵科战法的攻击力和抗性"
+msgstr "增强所有部队的攻击力和抗性（大）"
 
 msgid "feature-71"
 msgstr "妖道"
 
 msgid "feature_desc-71"
-msgstr "增强学术战法的攻击力和抗性，攻击时吸收HP"
+msgstr "增强学术部队的攻击力和抗性，攻击时吸收HP"
 
 msgid "feature-72"
 msgstr "勇将"
 
 msgid "feature_desc-72"
-msgstr "增强步兵、骑兵战法的攻击力和抗性（小）"
+msgstr "增强步兵、骑兵部队的攻击力和抗性（小）"
 
 msgid "feature-73"
 msgstr "神将"
 
 msgid "feature_desc-73"
-msgstr "增强步兵、骑兵战法的攻击力和抗性（大）"
+msgstr "增强步兵、骑兵部队的攻击力和抗性（大）"
 
 msgid "feature-74"
 msgstr "飞将"
 
 msgid "feature_desc-74"
-msgstr "破阵，无视障碍，增强步兵、骑兵的攻击力和抗性（大）"
+msgstr "破防，无视ZOC，增强步兵、骑兵的攻击力和抗性（大）"
 
 msgid "feature-75"
 msgstr "精妙"
@@ -1120,13 +1120,13 @@ msgid "feature-77"
 msgstr "倾国"
 
 msgid "feature_desc-77"
-msgstr "战法拥有减速效果，攻击时吸收HP，获得XP加倍"
+msgstr "攻击拥有减速效果，攻击时吸收HP，获得XP加倍"
 
 msgid "feature-78"
 msgstr "枭雄"
 
 msgid "feature_desc-78"
-msgstr "增强所有兵科战法的攻击力和抗性（小）"
+msgstr "增强所有兵科的攻击力和抗性（小）"
 
 msgid "feature-79"
 msgstr "变法"
@@ -1150,7 +1150,7 @@ msgid "feature-82"
 msgstr "医疗"
 
 msgid "feature_desc-82"
-msgstr "战法拥有减速效果，每回合恢复32HP"
+msgstr "攻击拥有减速效果，每回合恢复32HP"
 
 msgid "feature-83"
 msgstr "兵法"
@@ -1162,13 +1162,13 @@ msgid "feature-84"
 msgstr "地遁"
 
 msgid "feature_desc-84"
-msgstr "可以隐藏在森林、村庄，不会被敌人发觉"
+msgstr "可以隐藏在平地、森林，不会被敌人发觉"
 
 msgid "feature-85"
 msgstr "循形"
 
 msgid "feature_desc-85"
-msgstr "可以隐藏在森林、村庄和深水，不会被敌人发觉"
+msgstr "可以隐藏在平地、森林和深水，不会被敌人发觉"
 
 msgid "feature-86"
 msgstr ""
@@ -1506,6 +1506,12 @@ msgstr "大治疗"
 msgid "tactic_desc-heals"
 msgstr "恢复范围内友军HP"
 
+msgid "tactic-food"
+msgstr "输粮"
+
+msgid "tactic_desc-food"
+msgstr "向我方一部队输送2/3粮草"
+
 msgid "tactic-divine wei wu"
 msgstr "魏武之强"
 
@@ -1661,3 +1667,125 @@ msgstr "义勇军"
 
 msgid "tactic_desc-divine heal"
 msgstr "恢复范围内全军HP"
+
+#
+# formation
+#
+msgid "formation-mage"
+msgstr "群魔乱舞"
+
+msgid "formation_desc-mage"
+msgstr "学术部队发动远程攻击"
+
+#
+# formation
+#
+msgid "formation-horse"
+msgstr "车悬"
+
+msgid "formation_desc-horse"
+msgstr "骑兵发动近战攻击"
+
+#
+# formation
+#
+msgid "formation-pike"
+msgstr "枪阵"
+
+msgid "formation_desc-pike"
+msgstr "枪兵发动近战攻击"
+
+#
+# formation
+#
+msgid "formation-catapult"
+msgstr "毒蜂炮"
+
+msgid "formation_desc-catapult"
+msgstr "炮兵发动附带毒素的投射攻击"
+
+#
+# formation
+#
+msgid "formation-bow"
+msgstr "万箭齐发"
+
+msgid "formation_desc-bow"
+msgstr "弓兵发动附带破防的远程攻击"
+
+msgid "noble-emperor"
+msgstr "帝"
+
+msgid "noble-grand commandant"
+msgstr "太尉"
+
+msgid "noble-grand preceptor"
+msgstr "太傅"
+
+#
+# noble
+#
+msgid "noble-king"
+msgstr "王"
+
+msgid "noble-general of the flying cavalry"
+msgstr "骠骑将军"
+
+msgid "noble-general of chariots and cavalry"
+msgstr "车骑将军"
+
+msgid "noble-chief"
+msgstr "公"
+
+msgid "noble-chief of palace administration"
+msgstr "光禄勋"
+
+msgid "noble-chief of the capital guard"
+msgstr "执金吾"
+
+msgid "noble-nomarch"
+msgstr "侯"
+
+msgid "noble-imperial minister"
+msgstr "御史中丞"
+
+msgid "noble-general of valiant cavalry"
+msgstr "骁骑将军"
+
+msgid "noble-mayor"
+msgstr "伯"
+
+msgid "noble-assistant general"
+msgstr "偏将军"
+
+msgid "noble-deputy general"
+msgstr "裨将军"
+
+#
+# inapp-purchase
+#
+msgid "inapp-noncard"
+msgstr "自动得到卡"
+
+msgid "inapp_desc-noncard"
+msgstr ""
+"在RPG剧本，每隔25回合自动得到一张下野或仕官卡。当库存卡牌中下野卡数不大于仕官"
+"卡数时得到下野卡，否则得到的是仕官卡。"
+
+msgid "inapp-nontacticslot"
+msgstr "更多预激活战法"
+
+msgid "inapp_desc-nontacticslot"
+msgstr ""
+"在塔防剧本，多一个预激活战法。默认是两个预激活战法，有了它后增加到三个。"
+
+msgid "inapp-vip"
+msgstr "成为会员"
+
+msgid "inapp_desc-vip"
+msgstr ""
+"成为会员后可享受一些特权。像在RPG剧本，每隔25回合自动得到一张下野或仕官卡；在"
+"塔防剧本，多一个预激活战法。"
+
+#~ msgid "noble-prince"
+#~ msgstr "公"

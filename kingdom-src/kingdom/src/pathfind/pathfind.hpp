@@ -45,9 +45,10 @@ enum VACANT_TILE_TYPE { VACANT_CASTLE, VACANT_ANY };
  * If no valid location can be found, it will return a null location.
  */
 map_location find_vacant_tile(const gamemap& map,
-                                   const unit_map& un,
-                                   const map_location& loc,
-                                   const unit* pass_check=NULL);
+							  const std::vector<team>& teams,
+                              const unit_map& un,
+                              const map_location& loc,
+                              const unit* pass_check=NULL);
 
 /** Function which determines if a given location is in an enemy zone of control. */
 bool enemy_zoc(std::vector<team> const &teams, map_location const &loc,

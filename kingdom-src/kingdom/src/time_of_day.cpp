@@ -18,8 +18,9 @@
 #include "global.hpp"
 
 #include "config.hpp"
-#include "foreach.hpp"
 #include "time_of_day.hpp"
+
+#include <boost/foreach.hpp>
 
 time_of_day::time_of_day(const config& cfg):
 	lawful_bonus(cfg["lawful_bonus"]),
@@ -66,7 +67,7 @@ void time_of_day::write(config& cfg) const
 
 void time_of_day::parse_times(const config& cfg, std::vector<time_of_day>& normal_times)
 {
-	foreach (const config &t, cfg.child_range("time")) {
+	BOOST_FOREACH (const config &t, cfg.child_range("time")) {
 		normal_times.push_back(time_of_day(t));
 	}
 

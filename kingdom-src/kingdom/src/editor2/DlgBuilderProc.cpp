@@ -230,25 +230,22 @@ std::pair<std::string, std::string> tnone_brule::get_flag(const config& tile) co
 	return std::make_pair("", "");
 }
 
-static bool is_return_char(char c) 
+static bool is_return_char(char c)
 {
 	return c == '\r';
 }
 
-void tnone_brule::from_ui_brule_edit(HWND hdlgP)
+std::string get_rid_of_return(const std::string& str)
 {
-	char text[_MAX_PATH];
-
-	Static_GetText(GetDlgItem(hdlgP, IDC_ET_BRULENONE_MAP), text, _MAX_PATH);
-	std::string str = text;
-	str.erase(std::remove_if(str.begin(), str.end(), is_return_char), str.end());
-	cfg_["map"] = str;
+	std::string ret = str;
+	ret.erase(std::remove_if(ret.begin(), ret.end(), is_return_char), ret.end());
+	return ret;
 }
 
-void tnone_brule::update_to_ui_brule_edit(HWND hdlgP) const
+std::string insert_return(const std::string& str)
 {
-	const std::vector<std::string> vstr = utils::split(cfg_["map"].str(), '\n', 0);
 	std::stringstream strstr;
+	const std::vector<std::string> vstr = utils::split(str, '\n', 0);
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		if (it != vstr.begin()) {
 			if (it->empty() || it->at(it->size() - 1) != '\r') {
@@ -258,8 +255,22 @@ void tnone_brule::update_to_ui_brule_edit(HWND hdlgP) const
 		}
 		strstr << *it;
 	}
-	Static_SetText(GetDlgItem(hdlgP, IDC_ET_BRULENONE_MAP), strstr.str().c_str());
+	return strstr.str();
+}
 
+void tnone_brule::from_ui_brule_edit(HWND hdlgP)
+{
+	char text[_MAX_PATH];
+
+	Static_GetText(GetDlgItem(hdlgP, IDC_ET_BRULENONE_MAP), text, _MAX_PATH);
+	cfg_["map"] = get_rid_of_return(text);
+}
+
+void tnone_brule::update_to_ui_brule_edit(HWND hdlgP) const
+{
+	Static_SetText(GetDlgItem(hdlgP, IDC_ET_BRULENONE_MAP), insert_return(cfg_["map"].str()).c_str());
+
+	std::stringstream strstr;
 	// tile
 	LVCOLUMN lvc;
 	LVITEM lvi;
@@ -395,14 +406,6 @@ void tnone_brule::update_to_ui_brule_edit(HWND hdlgP) const
 
 void tnone_brule::from_ui_tile_edit(HWND hdlgP)
 {
-/*
-	char text[_MAX_PATH];
-
-	Static_GetText(GetDlgItem(hdlgP, IDC_ET_BRULENONE_MAP), text, _MAX_PATH);
-	std::string str = text;
-	str.erase(std::remove_if(str.begin(), str.end(), is_return_char), str.end());
-	cfg_["map"] = str;
-*/
 }
 
 void tnone_brule::update_to_ui_tile_edit(HWND hdlgP) const
@@ -426,14 +429,6 @@ void tnone_brule::update_to_ui_tile_edit(HWND hdlgP) const
 
 void tnone_brule::from_ui_image_edit(HWND hdlgP)
 {
-/*
-	char text[_MAX_PATH];
-
-	Static_GetText(GetDlgItem(hdlgP, IDC_ET_BRULENONE_MAP), text, _MAX_PATH);
-	std::string str = text;
-	str.erase(std::remove_if(str.begin(), str.end(), is_return_char), str.end());
-	cfg_["map"] = str;
-*/
 }
 
 void tnone_brule::update_to_ui_image_edit(HWND hdlgP) const

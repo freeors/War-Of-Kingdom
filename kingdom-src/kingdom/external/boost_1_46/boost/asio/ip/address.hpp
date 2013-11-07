@@ -2,7 +2,7 @@
 // ip/address.hpp
 // ~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2011 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -21,9 +21,9 @@
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio/ip/address_v6.hpp>
 
-#if !defined(BOOST_NO_IOSTREAM)
+#if !defined(BOOST_ASIO_NO_IOSTREAM)
 # include <iosfwd>
-#endif // !defined(BOOST_NO_IOSTREAM)
+#endif // !defined(BOOST_ASIO_NO_IOSTREAM)
 
 #include <boost/asio/detail/push_options.hpp>
 
@@ -55,8 +55,18 @@ public:
   /// Copy constructor.
   BOOST_ASIO_DECL address(const address& other);
 
+#if defined(BOOST_ASIO_HAS_MOVE)
+  /// Move constructor.
+  BOOST_ASIO_DECL address(address&& other);
+#endif // defined(BOOST_ASIO_HAS_MOVE)
+
   /// Assign from another address.
   BOOST_ASIO_DECL address& operator=(const address& other);
+
+#if defined(BOOST_ASIO_HAS_MOVE)
+  /// Move-assign from another address.
+  BOOST_ASIO_DECL address& operator=(address&& other);
+#endif // defined(BOOST_ASIO_HAS_MOVE)
 
   /// Assign from an IPv4 address.
   BOOST_ASIO_DECL address& operator=(
@@ -108,6 +118,15 @@ public:
   BOOST_ASIO_DECL static address from_string(
       const std::string& str, boost::system::error_code& ec);
 
+  /// Determine whether the address is a loopback address.
+  BOOST_ASIO_DECL bool is_loopback() const;
+
+  /// Determine whether the address is unspecified.
+  BOOST_ASIO_DECL bool is_unspecified() const;
+
+  /// Determine whether the address is a multicast address.
+  BOOST_ASIO_DECL bool is_multicast() const;
+
   /// Compare two addresses for equality.
   BOOST_ASIO_DECL friend bool operator==(const address& a1, const address& a2);
 
@@ -149,7 +168,7 @@ private:
   boost::asio::ip::address_v6 ipv6_address_;
 };
 
-#if !defined(BOOST_NO_IOSTREAM)
+#if !defined(BOOST_ASIO_NO_IOSTREAM)
 
 /// Output an address as a string.
 /**
@@ -167,7 +186,7 @@ template <typename Elem, typename Traits>
 std::basic_ostream<Elem, Traits>& operator<<(
     std::basic_ostream<Elem, Traits>& os, const address& addr);
 
-#endif // !defined(BOOST_NO_IOSTREAM)
+#endif // !defined(BOOST_ASIO_NO_IOSTREAM)
 
 } // namespace ip
 } // namespace asio

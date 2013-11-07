@@ -18,7 +18,6 @@
 #include "gui/dialogs/mp_create_game.hpp"
 
 #include "game_display.hpp"
-#include "foreach.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/timer.hpp"
@@ -41,6 +40,8 @@
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "formula_string_utils.hpp"
+
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 namespace gui2 {
@@ -55,11 +56,6 @@ tmp_create_game::tmp_create_game(game_display& gui, const config& cfg) :
 	, era_(NULL)
 	, launch_game_(NULL)
 	, maximal_defeated_activity_(NULL)
-	, use_map_settings_(register_bool("use_map_settings",
-		true,
-		preferences::use_map_settings,
-		preferences::set_use_map_settings,
-		dialog_callback<tmp_create_game, &tmp_create_game::update_map_settings>))
 	, fog_(register_bool("fog",
 			true,
 			preferences::fog,
@@ -72,10 +68,6 @@ tmp_create_game::tmp_create_game(game_display& gui, const config& cfg) :
 			true,
 			preferences::shroud,
 			preferences::set_shroud))
-	, start_time_(register_bool("random_start_time",
-			true,
-			preferences::random_start_time,
-			preferences::set_random_start_time))
 
 	, turns_(register_integer("turn_count",
 		true,
@@ -102,7 +94,6 @@ void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 	find_widget<tslider>(&window, "experience_modifier", false, true)->set_visible(twidget::INVISIBLE);
 	find_widget<ttoggle_button>(&window, "observers", false, true)->set_visible(twidget::INVISIBLE);
 	find_widget<ttoggle_button>(&window, "time_limit", false, true)->set_visible(twidget::INVISIBLE);
-	find_widget<ttoggle_button>(&window, "random_start_time", false, true)->set_visible(twidget::INVISIBLE);
 			
 	maximal_defeated_activity_ = find_widget<tbutton>(&window, "maximal_defeated_activity", false, true);
 	
@@ -153,44 +144,32 @@ void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 
 void tmp_create_game::post_update_map(twindow& window, int select)
 {
-	// Support "load game" in future.
-	launch_game_->set_active(select? true: false);
 }
 
 void tmp_create_game::update_map_settings(twindow& window)
 {
-	const bool use_map_settings = use_map_settings_->get_widget_value(window);
+	const bool use_scenario_settings = parameters_.saved_game;
 
-	fog_->widget_set_enabled(window, !use_map_settings, false);
-	shroud_->widget_set_enabled(window, !use_map_settings, false);
-	start_time_->widget_set_enabled(window, !use_map_settings, false);
+	fog_->widget_set_enabled(window, !use_scenario_settings, false);
+	shroud_->widget_set_enabled(window, !use_scenario_settings, false);
+	
+	turns_->widget_set_enabled(window, !use_scenario_settings, false);
+	gold_->widget_set_enabled(window, !use_scenario_settings, false);
+	experience_->widget_set_enabled(window, !use_scenario_settings, false);
 
-	turns_->widget_set_enabled(window, !use_map_settings, false);
-	gold_->widget_set_enabled(window, !use_map_settings, false);
-	experience_->widget_set_enabled(window, !use_map_settings, false);
-
-	if (use_map_settings) {
-		config::const_child_itors sides = parameters_.scenario_data.child_range("side");
-		if (sides.first != sides.second) {
-			const config &side = parameters_.scenario_data.child("side");
-
-			fog_->set_widget_value(window, side["fog"].to_bool(true));
-			shroud_->set_widget_value(window, side["shroud"].to_bool(false));
-			gold_->set_widget_value(window, ::settings::get_village_gold(side["village_gold"]));
-		}
-		start_time_->set_widget_value(window, parameters_.scenario_data["random_start_time"].to_bool(true));
-
+	if (use_scenario_settings) {
+		fog_->set_widget_value(window, parameters_.scenario_data["fog"].to_bool());
+		shroud_->set_widget_value(window, parameters_.scenario_data["shroud"].to_bool());
+	
 		turns_->set_widget_value(window, ::settings::get_turns(parameters_.scenario_data["turns"]));
 		experience_->set_widget_value(window, ::settings::get_xp_modifier(parameters_.scenario_data["experience_modifier"]));
-		// No scenario selected just leave the state unchanged for now.
 
 	} else {
 
 		// Fixme we should store the value and reuse it later...
 		fog_->set_widget_value(window, preferences::fog());
 		shroud_->set_widget_value(window, preferences::shroud());
-		start_time_->set_widget_value(window, preferences::random_start_time());
-
+		
 		turns_->set_widget_value(window, preferences::turns());
 		gold_->set_widget_value(window, preferences::village_gold());
 		experience_->set_widget_value(window, preferences::xp_modifier());
@@ -201,7 +180,7 @@ void tmp_create_game::era(twindow& window)
 {
 	// The possible eras to play
 	std::vector<std::string> eras;
-	foreach (const config &er, cfg_.child_range("era")) {
+	BOOST_FOREACH (const config &er, cfg_.child_range("era")) {
 		eras.push_back(er["name"]);
 	}
 	if (eras.empty()) {
@@ -291,8 +270,6 @@ void tmp_create_game::post_show(twindow& window)
 	parameters_.mp_countdown = false;
 	parameters_.village_gold = gold_->get_widget_value(window);
 	parameters_.xp_modifier = experience_->get_widget_value(window);
-	parameters_.use_map_settings = use_map_settings_->get_widget_value(window);
-	parameters_.random_start_time = start_time_->get_widget_value(window);
 	parameters_.fog_game = fog_->get_widget_value(window);
 	parameters_.shroud_game = shroud_->get_widget_value(window);
 	parameters_.allow_observers = observers_->get_widget_value(window);

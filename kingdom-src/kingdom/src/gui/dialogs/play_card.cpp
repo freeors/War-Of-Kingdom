@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/play_card.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"

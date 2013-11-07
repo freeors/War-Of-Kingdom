@@ -68,7 +68,7 @@ consiting of one or more filters and an optional device, joined using <CODE>oper
 <SPAN CLASS="keyword">public:</SPAN>
     <SPAN CLASS='omitted'>...</SPAN>
     <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Source&gt;
-    <SPAN CLASS="keyword">int</SPAN> get(Source& src)
+    <SPAN CLASS="keyword">int</SPAN> get(Source&amp; src)
     {
        <SPAN CLASS='omitted'> ...</SPAN>
     }
@@ -131,7 +131,6 @@ BOOST_IOSTREAMS_PIPABLE(my_filter, 0)
 <!-- Begin Footer -->
 
 <HR STYLE="margin-top:1em">
-<P CLASS="copyright">Revised 02 Feb 2008</P>
 
 <P CLASS="copyright">&copy; Copyright 2008 <a href="http://www.coderage.com/" target="_top">CodeRage, LLC</a><br/>&copy; Copyright 2004-2007 <a href="http://www.coderage.com/turkanis/" target="_top">Jonathan Turkanis</a></P>
 <P CLASS="copyright"> 

@@ -18,7 +18,6 @@
 #include "config.hpp"
 #include "game_preferences.hpp"
 #include "filesystem.hpp"
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "network.hpp"
@@ -27,6 +26,7 @@
 #include "map_exception.hpp"
 #include "wml_exception.hpp"
 
+#include <boost/foreach.hpp>
 #include <iterator>
 
 static lg::log_domain log_config("config");
@@ -89,7 +89,7 @@ void room_info::remove_member(const std::string& user)
 void room_info::process_room_members(const config& data)
 {
 	members_.clear();
-	foreach (const config& m, data.child_range("member")) {
+	BOOST_FOREACH (const config& m, data.child_range("member")) {
 		members_.insert(m["name"]);
 	}
 }
@@ -180,7 +180,6 @@ game_info::game_info(const config& game, const config& game_config)
 , shroud(game["mp_shroud"].to_bool())
 , observers(game["observer"].to_bool(true))
 , shuffle_sides(game["shuffle_sides"].to_bool(true))
-, use_map_settings(game["mp_use_map_settings"].to_bool())
 , verified(true)
 , password_required(game["password"].to_bool())
 , have_era(true)
@@ -255,7 +254,7 @@ game_info::game_info(const config& game, const config& game_config)
 				if (const config& hashes = game_config.child("multiplayer_hashes")) {
 					std::string hash = game["hash"];
 					bool hash_found = false;
-					foreach (const config::attribute &i, hashes.attribute_range()) {
+					BOOST_FOREACH (const config::attribute &i, hashes.attribute_range()) {
 						if (i.first == game["mp_scenario"] && i.second == hash) {
 							hash_found = true;
 							break;
@@ -297,10 +296,10 @@ game_info::game_info(const config& game, const config& game_config)
 		status = _("Turn ") + turn;
 	} else {
 		started = false;
-		if (vacant_slots > 0) {
+		// if (vacant_slots > 0) {
 			status = std::string(_n("Vacant Slot:", "Vacant Slots:",
 					vacant_slots)) + " " + game["slots"];
-		}
+		// }
 	}
 
 	if (fog) {
@@ -358,7 +357,7 @@ game_filter_stack::game_filter_stack()
 
 game_filter_stack::~game_filter_stack()
 {
-	foreach (game_filter_base* f, filters_) {
+	BOOST_FOREACH (game_filter_base* f, filters_) {
 		delete f;
 	}
 }
@@ -370,7 +369,7 @@ void game_filter_stack::append(game_filter_base *f)
 
 void game_filter_stack::clear()
 {
-	foreach (game_filter_base* f, filters_) {
+	BOOST_FOREACH (game_filter_base* f, filters_) {
 		delete f;
 	}
 	filters_.clear();
@@ -378,7 +377,7 @@ void game_filter_stack::clear()
 
 bool game_filter_and_stack::match(const game_info &game) const
 {
-	foreach (game_filter_base* f, filters_) {
+	BOOST_FOREACH (game_filter_base* f, filters_) {
 		if (!f->match(game)) return false;
 	}
 	return true;

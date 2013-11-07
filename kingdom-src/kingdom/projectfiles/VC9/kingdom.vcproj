@@ -364,10 +364,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\leader_list.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\loadscreen.cpp"
 				>
 			</File>
@@ -802,10 +798,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\leader_list.hpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\loadscreen.hpp"
 				>
 			</File>
@@ -1108,11 +1100,11 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\kingdom.ico"
+				RelativePath="..\..\packaging\windows\kingdom.ico"
 				>
 			</File>
 			<File
-				RelativePath="..\..\packaging\windows\kingdom.ico"
+				RelativePath=".\kingdom.ico"
 				>
 			</File>
 			<File
@@ -2043,6 +2035,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\formation_attack.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\formation_attack.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\formula_debugger.cpp"
 					>
 					<FileConfiguration
@@ -2236,6 +2252,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\hero_selection.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\inapp_purchase.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\inapp_purchase.hpp"
 					>
 				</File>
 				<File
@@ -2668,6 +2708,54 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\network_transmission.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\noble.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\noble.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\noble_list.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\noble_list.hpp"
 					>
 				</File>
 				<File
@@ -3348,6 +3436,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\unit_merit.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\user_report.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\user_report.hpp"
 					>
 				</File>
 				<Filter

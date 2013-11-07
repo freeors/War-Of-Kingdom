@@ -17,14 +17,14 @@
 
 #include "gui/dialogs/title_screen.hpp"
 
-#include "display.hpp"
+#include "game_display.hpp"
 #include "game_config.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
-// #include "log.hpp"
 #include "gui/auxiliary/timer.hpp"
 #include "gui/dialogs/language_selection.hpp"
 #include "gui/dialogs/create_hero.hpp"
+#include "gui/dialogs/user_report.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/progress_bar.hpp"
@@ -32,6 +32,9 @@
 #include "gui/widgets/text_box.hpp"
 #include "gui/widgets/window.hpp"
 #include "preferences_display.hpp"
+#include "help.hpp"
+#include "version.hpp"
+#include <time.h>
 
 #include <boost/bind.hpp>
 
@@ -112,7 +115,9 @@ static bool hotkey(twindow& window, const ttitle_screen::tresult result)
 	return true;
 }
 
-ttitle_screen::ttitle_screen(display& gui, hero_map& heros, hero& player_hero)
+http::membership ttitle_screen::member;
+
+ttitle_screen::ttitle_screen(game_display& gui, hero_map& heros, hero& player_hero)
 	: gui_(gui)
 	, heros_(heros)
 	, player_hero_(player_hero)
@@ -169,8 +174,8 @@ void ttitle_screen::post_build(CVideo& video, twindow& window)
 {
 }
 
-static int nb_items = 10;
 static const char* menu_items[] = {
+	"report",
 	"campaign",
 	"randommap",
 	"multiplayer",
@@ -180,10 +185,10 @@ static const char* menu_items[] = {
 	"tutorial",
 	"editor",
 	"credits",
+	"shop",
 	"quit"
 };
-
-const size_t max_login_size = 20;
+static int nb_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
 void ttitle_screen::pre_show(CVideo& video, twindow& window)
 {
@@ -192,9 +197,47 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	window.set_enter_disabled(true);
 	window.set_escape_disabled(true);
 
+	std::stringstream strstr;
+	if (game_config::score_dirty) {
+		member = http::membership_hero(gui_, player_hero_, true);
+		if (member.vip >= 0) {
+			preferences::set_coin(member.coin);
+			preferences::set_score(member.score);
+
+			if (!member.vip && preferences::inapp_purchased(game_config::INAPP_VIP)) {
+				std::pair<bool, int> ret = http::renew(gui_, version_info(game_config::version).transfer_format().first);
+				if (ret.first) {
+					member.vip = ret.second;
+				}
+			}
+			if (member.vip > 0 && !preferences::inapp_purchased(game_config::INAPP_VIP)) {
+				preferences::set_inapp_purchased(game_config::INAPP_VIP, true);
+			}
+		}
+		game_config::score_dirty = false;
+	}
+	const std::string color = member.vip >= 0? "green": "red";
+
+	member.coin = preferences::coin();
+	member.score = preferences::score();
+	
+	strstr.str("");
+	tlabel* label = find_widget<tlabel>(&window, "coin", true, true);
+	strstr << help::tintegrate::generate_format(member.coin, color, 17);
+	label->set_label(strstr.str());
+
+	strstr.str("");
+	label = find_widget<tlabel>(&window, "score", true, true);
+	strstr << help::tintegrate::generate_format(member.score, color, 17);
+	label->set_label(strstr.str());
+
+	tcontrol* control = find_widget<tcontrol>(&window, "icon_vip", true, true);
+	if (!preferences::inapp_purchased(game_config::INAPP_VIP)) {
+		control->set_visible(twidget::INVISIBLE);
+	}
+
 	/**** Set the version number ****/
-	if (tcontrol* control
-			= find_widget<tcontrol>(&window, "revision_number", false, false)) {
+	if (control = find_widget<tcontrol>(&window, "revision_number", false, false)) {
 
 		control->set_label(_("Version ") + game_config::revision);
 		// control->set_label(_("Version ") + game_config::revision + "-alpha");
@@ -223,10 +266,10 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 			b->canvas()[i].set_variable("image", variant(player_name));
 		}
 	}
+
 	player_name = player_hero_.name();
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "player_name", false, true);
 	user_widget->set_value(player_name);
-	// user_widget->set_maximum_length(max_login_size);
 	user_widget->set_active(false);
 
 	for (int item = 0; item < nb_items; item ++) {
@@ -250,14 +293,15 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 		if (b) {
 			b->set_visible(twidget::INVISIBLE);
 		}
-		b = find_widget<tbutton>(&window, "credits", false, false);
-		if (b) {
-			b->set_visible(twidget::INVISIBLE);
-		}
 		b = find_widget<tbutton>(&window, "quit", false, false);
 		if (b) {
 			// b->set_visible(twidget::INVISIBLE);
 		}
+	}
+
+	b = find_widget<tbutton>(&window, "credits", false, false);
+	if (b) {
+		b->set_visible(twidget::INVISIBLE);
 	}
 
 #if defined(__APPLE__) && TARGET_OS_IPHONE
@@ -274,10 +318,6 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 		b->set_visible(twidget::INVISIBLE);
 	}
 #endif
-	b = find_widget<tbutton>(&window, "tutorial", false, false);
-	if (b) {
-		b->set_visible(twidget::INVISIBLE);
-	}
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "player", false)
@@ -285,10 +325,28 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 		&ttitle_screen::player
 			, this
 			, boost::ref(window)));
+
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "report", false)
+		, boost::bind(
+		&ttitle_screen::report
+			, this
+			, boost::ref(window)));
 }
 
 void ttitle_screen::post_show(twindow& window)
 {
+}
+
+void ttitle_screen::version_2_plug(twindow& window) const
+{
+	http::version(gui_, time(NULL));
+}
+
+void ttitle_screen::report(twindow& window)
+{
+	gui2::tuser_report dlg(gui_, heros_);
+	dlg.show(gui_.video());
 }
 
 void ttitle_screen::player(twindow& window)
@@ -310,6 +368,9 @@ void ttitle_screen::player(twindow& window)
 	player_name = player_hero_.name();
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "player_name", false, true);
 	user_widget->set_value(player_name);
+
+	tcontrol* control = find_widget<tcontrol>(&window, "icon_vip", true, true);
+	control->set_visible(preferences::inapp_purchased(game_config::INAPP_VIP)? twidget::VISIBLE: twidget::INVISIBLE);
 }
 
 } // namespace gui2

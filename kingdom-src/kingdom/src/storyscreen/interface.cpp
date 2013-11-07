@@ -19,7 +19,6 @@
  */
 
 #include "global.hpp"
-#include "foreach.hpp"
 #include "variable.hpp"
 
 #include "storyscreen/interface.hpp"
@@ -33,6 +32,8 @@
 #include "log.hpp"
 #include "sound.hpp"
 #include "text.hpp"
+
+#include <boost/foreach.hpp>
 
 static lg::log_domain log_engine("engine");
 #define LOG_NG LOG_STREAM(info, log_engine)

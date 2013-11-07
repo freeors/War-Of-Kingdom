@@ -25,7 +25,6 @@
 #include "color_range.hpp"
 #include "config.hpp"
 #include "filesystem.hpp"
-#include "foreach.hpp"
 #include "game_config.hpp"
 #include "image.hpp"
 #include "image_function.hpp"
@@ -35,12 +34,11 @@
 
 #include "SDL_image.h"
 
+#include <boost/foreach.hpp>
 #include <boost/functional/hash.hpp>
 
 #include <list>
 #include <set>
-
-#include "posix.h"
 
 static lg::log_domain log_display("display");
 #define ERR_DP LOG_STREAM(err, log_display)
@@ -103,9 +101,9 @@ public:
 		delete []content_;
 	}
 
-	void flush() 
+	void flush(bool force = false) 
 	{ 
-		if (clear_cookie_) {
+		if (force || clear_cookie_) {
 			for (int index = cache_max_size_ - 1; index >= 0; index --) {
 				cache_item<T>& elt = content_[index];
 				if (elt.pos_in_locator_table != -1) {
@@ -287,18 +285,19 @@ namespace image {
 mini_terrain_cache_map mini_terrain_cache;
 mini_terrain_cache_map mini_fogged_terrain_cache;
 
-void flush_cache()
+void flush_cache(bool force)
 {
-	images_.flush();
-	tod_colored_images_.flush();
-	scaled_to_zoom_.flush();
-	scaled_to_hex_images_.flush();
-	brightened_images_.flush();
+	images_.flush(force);
+	tod_colored_images_.flush(force);
+	scaled_to_zoom_.flush(force);
+	scaled_to_hex_images_.flush(force);
+	brightened_images_.flush(force);
 #if !defined(__APPLE__) || !TARGET_OS_IPHONE
-	semi_brightened_images_.flush();
+	semi_brightened_images_.flush(force);
 #endif
-	in_hex_info_.flush();
-	is_empty_hex_.flush();
+	in_hex_info_.flush(force);
+	is_empty_hex_.flush(force);
+
 	mini_terrain_cache.clear();
 	mini_fogged_terrain_cache.clear();
 	reversed_images_.clear();
@@ -473,7 +472,7 @@ static bool localized_file_uptodate (const std::string& loc_file)
 		std::string trackpath = get_binary_file_location("", "l10n-track");
 		std::string contents = read_file(trackpath);
 		std::vector<std::string> lines = utils::split(contents, '\n');
-		foreach (const std::string &line, lines) {
+		BOOST_FOREACH (const std::string &line, lines) {
 			size_t p1 = line.find(fsep);
 			if (p1 == std::string::npos)
 				continue;
@@ -520,7 +519,7 @@ static std::string get_localized_path (const std::string& file, const std::strin
 	// add en_US with lowest priority, since the message above will
 	// not have it when translated.
 	langs.push_back("en_US");
-	foreach (const std::string &lang, langs) {
+	BOOST_FOREACH (const std::string &lang, langs) {
 		std::string loc_file = dir + "l10n" + "/" + lang + "/" + loc_base;
 		if (file_exists(loc_file) && localized_file_uptodate(loc_file)) {
 			return loc_file;
@@ -544,12 +543,26 @@ static void add_localized_overlay (const std::string& ovr_file, surface &orig_su
 	sdl_blit(ovr_surf, 0, orig_surf, &area);
 }
 
+bool is_full_filename(const std::string& filename)
+{
+#ifdef _WIN32
+	return filename.size() >= 2 && filename[1] == ':';
+#else
+	return filename[0] == '/';
+#endif
+}
+
 surface locator::load_image_file() const
 {
 	surface res;
 
-	std::string location = get_binary_file_location("images", val_.filename_);
-
+	std::string location;
+	if (is_full_filename(val_.filename_)) {
+		// IMG_Load need utf8 format filename, don't transcode.		
+		location = val_.filename_;
+	} else {
+		location = get_binary_file_location("images", val_.filename_);
+	}
 
 	{
 		if (!location.empty()) {
@@ -619,7 +632,7 @@ surface locator::load_image_sub_file() const
 
 		const std::vector<std::string> modlist = utils::parenthetical_split(val_.modifications_,'~');
 
-		foreach(const std::string& s, modlist) {
+		BOOST_FOREACH (const std::string& s, modlist) {
 			const std::vector<std::string> tmpmod = utils::parenthetical_split(s);
 			std::vector<std::string>::const_iterator j = tmpmod.begin();
 			while(j!= tmpmod.end()){
@@ -683,7 +696,7 @@ surface locator::load_image_sub_file() const
 							tmp_map.clear();
 						}
 
-						foreach(const rc_entry_type& rc_entry, tmp_map) {
+						BOOST_FOREACH (const rc_entry_type& rc_entry, tmp_map) {
 							rc.map()[rc_entry.first] = rc_entry.second;
 						}
 					}
@@ -722,7 +735,7 @@ surface locator::load_image_sub_file() const
 							tmp_map.clear();
 						}
 
-						foreach(const rc_entry_type& rc_entry, tmp_map) {
+						BOOST_FOREACH (const rc_entry_type& rc_entry, tmp_map) {
 							rc.map()[rc_entry.first] = rc_entry.second;
 						}
 					}
@@ -758,7 +771,7 @@ surface locator::load_image_sub_file() const
 							tmp_map.clear();
 						}
 
-						foreach(const rc_entry_type& rc_entry, tmp_map) {
+						BOOST_FOREACH (const rc_entry_type& rc_entry, tmp_map) {
 							rc.map()[rc_entry.first] = rc_entry.second;
 						}
 					}
@@ -963,7 +976,7 @@ surface locator::load_image_sub_file() const
 			surf = fl(surf);
 		}
 
-		foreach(function_base* f, functor_queue) {
+		BOOST_FOREACH (function_base* f, functor_queue) {
 			surf = (*f)(surf);
 			delete f;
 		}

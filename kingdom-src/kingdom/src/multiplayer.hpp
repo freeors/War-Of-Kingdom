@@ -22,10 +22,13 @@ class game_display;
 class hero_map;
 class card_map;
 
-namespace mp {
+namespace savegame {
 
-// max. length of a player name
-const size_t max_login_size = 20;
+struct www_save_info;
+
+}
+
+namespace mp {
 
 /*
  * This is the main entry points of multiplayer mode.
@@ -51,4 +54,66 @@ void start_client(game_display& disp, const config& game_config, hero_map& heros
 
 
 }
+
+namespace http {
+
+bool version(game_display& disp, time_t time);
+bool register_user(game_display& disp, bool check_exist = false);
+struct membership 
+{
+	membership():
+	  vip(-1)
+	  , score(0)
+	  , coin(0)
+	 {}
+
+	int vip; // vip = -1 indicate network fail.
+	int score;
+	int coin;
+};
+membership membership_hero(game_display& disp, const hero& h, bool quiet);
+bool avatar_hero(game_display& disp, const hero& h);
+bool download_avatar(game_display& disp);
+bool upload_save(game_display& disp, const std::string& name);
+std::string download_save(game_display& disp, int sid);
+std::vector<savegame::www_save_info> list_save(game_display& disp);
+
+struct pass_statistic {
+	std::string username;
+	time_t create_time;
+	int duration;
+	int version;
+	int coin;
+	int score;
+	int type;
+	int hash;
+};
+
+enum BOARD_TYPE {BOARD_SCORE, BOARD_PASS};
+
+struct board_statistic {
+	int type;
+	std::string username;
+	struct {
+		int vip;
+		int coin;
+		int score;
+	} score;
+	struct {
+		time_t create_time;
+		int duration;
+		int version;
+		int coin;
+		int score;
+		int type;
+	} pass;
+};
+
+bool upload_pass(game_display& disp, const pass_statistic& stat);
+std::vector<pass_statistic> list_pass(game_display& disp);
+std::vector<board_statistic> list_board(game_display& disp, BOARD_TYPE type);
+std::pair<bool, int> renew(game_display& disp, time_t time);
+
+}
+
 #endif

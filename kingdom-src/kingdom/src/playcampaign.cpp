@@ -21,7 +21,6 @@
 
 #include "global.hpp"
 
-#include "foreach.hpp"
 #include "game_preferences.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/transient_message.hpp"
@@ -31,7 +30,6 @@
 #include "persist_manager.hpp"
 #include "playmp_controller.hpp"
 #include "replay_controller.hpp"
-#include "log.hpp"
 #include "map_exception.hpp"
 #include "dialogs.hpp"
 #include "gettext.hpp"
@@ -42,32 +40,7 @@
 #include "formula_string_utils.hpp"
 #include "loadscreen.hpp"
 
-#define LOG_G LOG_STREAM(info, lg::general)
-
-static lg::log_domain log_engine("engine");
-#define LOG_NG LOG_STREAM(info, log_engine)
-
-namespace {
-
-struct player_controller
-{
-	player_controller() :
-		controller(),
-		description()
-		{}
-
-	player_controller(const std::string& controller, const std::string& description) :
-		controller(controller),
-		description(description)
-		{}
-
-	std::string controller;
-	std::string description;
-};
-
-typedef std::map<std::string, player_controller> controller_map;
-
-} // end anon namespace
+#include <boost/foreach.hpp>
 
 void play_replay(display& disp, game_state& gamestate, const config& game_config, 
 	hero_map& heros, hero_map& heros_start, card_map& cards, CVideo& video)
@@ -128,11 +101,10 @@ static LEVEL_RESULT playsingle_scenario(const config& game_config,
 	const int ticks = SDL_GetTicks();
 	int num_turns = (*level)["turns"].to_int();
 
-	posix_print("playsingle_scenerio, begin construct playsingle_controller......\n");
 	playsingle_controller playcontroller(*level, state_of_game, heros, heros_start, cards, ticks, num_turns, game_config, disp.video(), skip_replay);
-	posix_print("playsingle_controller, construct used time: %u ms\n", SDL_GetTicks() - ticks);
 
 	LEVEL_RESULT res = playcontroller.play_scenario(story, skip_replay);
+	playcontroller.get_end_level_data().result = res;
 	end_level = playcontroller.get_end_level_data();
 
 	if (res == DEFEAT) {
@@ -145,7 +117,7 @@ static LEVEL_RESULT playsingle_scenario(const config& game_config,
 				    );
 	}
 
-	if (!disp.video().faked() && res != QUIT && end_level.linger_mode)
+	if (res != QUIT && end_level.linger_mode)
 	{
 		try {
 			playcontroller.linger();
@@ -171,7 +143,9 @@ static LEVEL_RESULT playmp_scenario(const config& game_config,
 	playmp_controller playcontroller(*level, state_of_game, heros, heros_start, cards,
 		ticks, num_turns, game_config, disp.video(), skip_replay, io_type == IO_SERVER);
 	LEVEL_RESULT res = playcontroller.play_scenario(story, skip_replay);
+	playcontroller.get_end_level_data().result = res;
 	end_level = playcontroller.get_end_level_data();
+
 	//Check if the player started as mp client and changed to host
 	if (io_type == IO_CLIENT && playcontroller.is_host())
 		io_type = IO_SERVER;
@@ -185,7 +159,7 @@ static LEVEL_RESULT playmp_scenario(const config& game_config,
 				    );
 	}
 
-	if (!disp.video().faked() && res != QUIT) {
+	if (res != QUIT) {
 		if (!end_level.linger_mode) {
 			if(!playcontroller.is_host()) {
 				// If we continue without lingering we need to
@@ -207,10 +181,25 @@ static LEVEL_RESULT playmp_scenario(const config& game_config,
 	return res;
 }
 
+const config& load_campagin_scenario(const std::string& campaign_id, const std::string& scenario_id, const std::string& type)
+{
+	config campaign_cfg;
+	static config scenario_cfg;
+
+	if (!scenario_id.empty() && scenario_id != "null") {
+		wml_config_from_file(game_config::path + "/xwml/campaigns/" + campaign_id + ".bin", campaign_cfg);
+		scenario_cfg = campaign_cfg.find_child(type, "id", scenario_id);
+	} else {
+		scenario_cfg.clear();
+	}
+	return scenario_cfg;
+}
+
 LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards,
 		io_type_t io_type, bool skip_replay)
 {
+	tent::io_type = io_type;
 	std::string type = gamestate.classification().campaign_type;
 	if (type.empty()) {
 		type = "scenario";
@@ -224,37 +213,25 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 	// Do we have any snapshot data?
 	// yes => this must be a savegame
 	// no  => we are starting a fresh scenario
-	if (!gamestate.snapshot["runtime"].to_bool() || !recorder.at_end())
-	{
+	if (!gamestate.snapshot["runtime"].to_bool() || !recorder.at_end()) {
 		gamestate.classification().completion = "running";
 		// Campaign or Multiplayer?
 		// If the gamestate already contains a starting_pos,
 		// then we are starting a fresh multiplayer game.
 		// Otherwise this is the start of a campaign scenario.
-		VALIDATE(!gamestate.starting_pos["id"].empty(), "play_game, gamestate.starting_pos[id] is empty!");
 		if (gamestate.starting_pos["id"].empty() == false) {
-			LOG_G << "loading starting position...\n";
 			starting_pos = gamestate.starting_pos;
 			scenario = &starting_pos;
 		} else {
-/*
-			//reload of the scenario, as starting_pos contains carryover information only
-			LOG_G << "loading scenario: '" << gamestate.classification().scenario << "'\n";
-			scenario = &game_config.find_child(type, "id", gamestate.classification().scenario);
-			if (*scenario) {
-				starting_pos = *scenario;
-				config temp(starting_pos);
-				write_players(gamestate, temp, false, true);
-				gamestate.starting_pos = temp;
-				scenario = &starting_pos;
-			} else
-				scenario = NULL;
-			LOG_G << "scenario found: " << (scenario != NULL ? "yes" : "no") << "\n";
-*/
+			// reload of the scenario, as starting_pos contains carryover information only
+			scenario = &load_campagin_scenario(gamestate.classification().campaign, gamestate.classification().scenario, type);
+			VALIDATE(!scenario->empty(), std::string("play_game, cannot load scenario id = ") + gamestate.classification().scenario + " in game_config!");
+			gamestate.starting_pos = *scenario;
+			starting_pos = gamestate.starting_pos;
+			scenario = &starting_pos;
 		}
 	} else {
 		// This game was started from a savegame
-		LOG_G << "loading snapshot...\n";
 		starting_pos = gamestate.starting_pos;
 		scenario = &gamestate.snapshot;
 		// When starting wesnoth --multiplayer there might be
@@ -269,38 +246,15 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 		}
 	}
 
-	controller_map controllers;
+	bool fog = scenario->get("fog")->to_bool();
+	bool shroud = scenario->get("shroud")->to_bool();
 
-	if(io_type == IO_SERVER) {
-		foreach (config &side, const_cast<config *>(scenario)->child_range("side"))
-		{
-			if (side["current_player"] == preferences::login()) {
-				side["controller"] = preferences::client_type();
-			}
-			std::string id = side["save_id"];
-			if(id.empty())
-				continue;
-			controllers[id] = player_controller(side["controller"], side["id"]);
-		}
-	}
-
-	while(scenario != NULL) {
+	while (scenario != NULL) {
 		// If we are a multiplayer client, tweak the controllers
-		if(io_type == IO_CLIENT) {
-			if(scenario != &starting_pos) {
+		if (io_type == IO_CLIENT) {
+			if (scenario != &starting_pos) {
 				starting_pos = *scenario;
 				scenario = &starting_pos;
-			}
-
-			foreach (config &side, starting_pos.child_range("side"))
-			{
-				if (side["current_player"] == preferences::login()) {
-					side["controller"] = preferences::client_type();
-				} else if (side["controller"] != "null") {
-					/// @todo Fix logic to use network_ai controller
-					// if it is networked ai
-					side["controller"] = "network";
-				}
 			}
 		}
 
@@ -329,8 +283,7 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 			}
 
 			// If the entire scenario should be randomly generated
-			if((*scenario)["scenario_generation"] != "") {
-				LOG_G << "randomly generating scenario...\n";
+			if ((*scenario)["scenario_generation"] != "") {
 				const cursor::setter cursor_setter(cursor::WAIT);
 
 				static config scenario2;
@@ -338,7 +291,6 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 				//level_ = scenario;
 				//merge carryover information into the newly generated scenario
 				config temp(scenario2);
-				write_players(gamestate, temp, false, true);
 				gamestate.starting_pos = temp;
 				scenario = &scenario2;
 			}
@@ -362,9 +314,7 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 
 				//merge carryover information into the scenario
 				config temp(new_level);
-				write_players(gamestate, temp, false, true);
 				gamestate.starting_pos = temp;
-				LOG_G << "generated map\n";
 			}
 
 			sound::empty_playlist();
@@ -419,12 +369,10 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 		recorder.clear();
 		gamestate.replay_data.clear();
 		gamestate.start_scenario_ss.str("");
-		// gamestate.start_hero_ss.str("");
 		gamestate.clear_start_hero_data();
 
 		// On DEFEAT, QUIT, or OBSERVER_END, we're done now
-		if (res != VICTORY)
-		{
+		if (res != VICTORY) {
 			if (res != OBSERVER_END || gamestate.classification().next_scenario.empty()) {
 				gamestate.snapshot = config();
 				return res;
@@ -434,7 +382,7 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 				_("This scenario has ended. Do you want to continue the campaign?"),
 				gui2::tmessage::yes_no_buttons);
 
-			if(dlg_res == gui2::twindow::CANCEL) {
+			if (dlg_res == gui2::twindow::CANCEL) {
 				gamestate.snapshot = config();
 				return res;
 			}
@@ -442,139 +390,34 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 
 		// Continue without saving is like a victory,
 		// but the save game dialog isn't displayed
-		if (!end_level.prescenario_save)
+		if (!end_level.prescenario_save) {
 			save_game_after_scenario = false;
+		}
 
 		// Switch to the next scenario.
 		gamestate.classification().scenario = gamestate.classification().next_scenario;
 		gamestate.rng().rotate_random();
 		// gamestate.rng().seed_random(rand(), 0);
-		// reset hero data
-		heros.reset_to_unstage();
-		*resources::heros_start = heros;
-		
-		if(io_type == IO_CLIENT) {
-			if (gamestate.classification().next_scenario.empty()) {
-				gamestate.snapshot = config();
-				return res;
-			}
 
-			// Ask for the next scenario data.
-			network::send_data(config("load_next_scenario"), 0);
-			config cfg;
-			std::string msg = _("Downloading next scenario...");
-			do {
-				cfg.clear();
-				network::connection data_res = dialogs::network_receive_dialog(disp,
-						msg, cfg);
-				if(!data_res) {
-					gamestate.snapshot = config();
-					return QUIT;
-				}
-			} while (!cfg.child("next_scenario"));
-
-			if (const config &c = cfg.child("next_scenario")) {
-				starting_pos = c;
-				scenario = &starting_pos;
-				command_pool cmdpool;
-				gamestate = game_state(starting_pos, cmdpool);
-			} else {
-				gamestate.snapshot = config();
-				return QUIT;
-			}
-		} else {
-			scenario = &game_config.find_child(type, "id", gamestate.classification().scenario);
-			if (!*scenario)
+		scenario = NULL;
+		if (io_type == IO_NONE) {
+			scenario = &load_campagin_scenario(gamestate.classification().campaign, gamestate.classification().scenario, type);
+			if (scenario->empty()) {
 				scenario = NULL;
-			else
-			{
+			} else{
 				starting_pos = *scenario;
+				starting_pos["fog"] = fog;
+				starting_pos["shroud"] = shroud;
 				scenario = &starting_pos;
-			}
-
-			if(io_type == IO_SERVER && scenario != NULL) {
-				// Tweaks sides to adapt controllers and descriptions.
-				foreach (config &side, starting_pos.child_range("side"))
-				{
-					std::string id = side["save_id"];
-					if(id.empty()) {
-						id = side["id"].str();
-					}
-					if(!id.empty()) {
-						/* Update side info to match current_player info
-						 * to allow it taking the side in next scenario
-						 * and to be set in the players list on side server
-						 */
-						controller_map::const_iterator ctr = controllers.find(id);
-						if(ctr != controllers.end()) {
-							if (const config& c = gamestate.snapshot.find_child("side", "save_id", id)) {
-								side["current_player"] = c["current_player"];
-							}
-							side["controller"] = ctr->second.controller;
-						}
-					}
-					if (side["controller"].empty())
-						side["controller"] = "ai";
-				}
-
-				// If the entire scenario should be randomly generated
-				if((*scenario)["scenario_generation"] != "") {
-					LOG_G << "randomly generating scenario...\n";
-					const cursor::setter cursor_setter(cursor::WAIT);
-
-					static config scenario2;
-					scenario2 = random_generate_scenario((*scenario)["scenario_generation"], scenario->child("generator"));
-					//level_ = scenario;
-					gamestate.starting_pos = scenario2;
-					scenario = &scenario2;
-				}
-				std::string map_data = (*scenario)["map_data"];
-				if(map_data.empty() && (*scenario)["map"] != "") {
-					map_data = read_map((*scenario)["map"]);
-				}
-
-				// If the map should be randomly generated
-				if(map_data.empty() && (*scenario)["map_generation"] != "") {
-					const cursor::setter cursor_setter(cursor::WAIT);
-					map_data = random_generate_map((*scenario)["map_generation"],scenario->child("generator"));
-
-					// Since we've had to generate the map,
-					// make sure that when we save the game,
-					// it will not ask for the map to be generated again on reload
-					static config new_level;
-					new_level = *scenario;
-					new_level["map_data"] = map_data;
-					scenario = &new_level;
-
-					gamestate.starting_pos = new_level;
-					LOG_G << "generated map\n";
-				}
-
-				// Sends scenario data
-				config cfg;
-				config& next_cfg = cfg.add_child("store_next_scenario", *scenario);
-
-				// Adds player information, and other state
-				// information, to the configuration object
-				gamestate.write_snapshot(next_cfg);
-				next_cfg["next_scenario"] = (*scenario)["next_scenario"];
-				next_cfg.add_child("snapshot");
-				//move the player information into the hosts gamestate
-				write_players(gamestate, starting_pos, true, true);
-				gamestate.starting_pos = *scenario;
-
-				next_cfg.add_child("multiplayer", gamestate.mp_settings().to_config());
-				next_cfg.add_child("replay_start", gamestate.starting_pos);
-				//move side information from gamestate into the config that is sent to the other clients
-				next_cfg.clear_children("side");
-				foreach (config& side, gamestate.starting_pos.child_range("side"))
-					next_cfg.add_child("side", side);
-
-				network::send_data(cfg, 0);
 			}
 		}
 
 		if (scenario != NULL) {
+			// to single-player campaign, there are multi-secenario, 
+			// set this result to next start hero data
+			heros.reset_to_unstage();
+			heros_start = heros;
+
 			loadscreen::global_loadscreen_manager* loadscreen_manager = loadscreen::global_loadscreen_manager::get();
 			if (loadscreen_manager) {
 				loadscreen_manager->reset();
@@ -594,7 +437,7 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 			}
 
 			// If this isn't the last scenario, then save the game
-			if(save_game_after_scenario) {
+			if (save_game_after_scenario) {
 
 				// For multiplayer, we want the save
 				// to contain the starting position.
@@ -609,7 +452,7 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 				//add the variables to the starting position
 				gamestate.starting_pos.add_child("variables", gamestate.get_variables());
 
-				savegame::scenariostart_savegame save(heros, gamestate);
+				savegame::scenariostart_savegame save(heros, heros_start, gamestate);
 
 				save.save_game_automatic(disp.video());
 			}
@@ -618,7 +461,6 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 				gamestate.starting_pos = *scenario;
 				//add the variables to the starting position
 				gamestate.starting_pos.add_child("variables", gamestate.get_variables());
-				write_players(gamestate, gamestate.starting_pos, true, true);
 			}
 			gamestate.start_scenario_ss.str("");
 		}
@@ -635,8 +477,9 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 	}
 
 	if (gamestate.classification().campaign_type == "scenario"){
-		if (preferences::delete_saves())
+		if (preferences::delete_saves()) {
 			savegame::manager::clean_saves(gamestate.classification().label);
+		}
 	}
 	return VICTORY;
 }

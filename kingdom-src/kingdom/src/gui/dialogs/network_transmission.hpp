@@ -18,6 +18,13 @@
 
 #include "gui/dialogs/dialog.hpp"
 #include "gui/widgets/control.hpp"
+#include <boost/optional.hpp>
+
+namespace network_asio {
+
+class connection;
+
+}
 
 namespace gui2 {
 
@@ -31,10 +38,30 @@ class tnetwork_transmission;
  */
 class tnetwork_transmission : public tdialog
 {
+	network_asio::connection& connection_;
+
+	bool track_upload_;
+
+	class pump_monitor : public events::pump_monitor
+	{
+		network_asio::connection& connection_;
+		bool& track_upload_;
+		virtual void process(events::pump_info&);
+		public:
+		pump_monitor(network_asio::connection& connection, bool& track_upload)
+			: connection_(connection)
+			, track_upload_(track_upload)
+			, window_()
+		{
+		}
+
+		boost::optional<twindow&> window_;
+	} pump_monitor_;
 public:
-	tnetwork_transmission(const std::string& title)
-		: title_(title)
-	{}
+	tnetwork_transmission(network_asio::connection& connection, const std::string& title, const std::string& subtitle);
+
+	void set_subtitle(const std::string&);
+	void set_track_upload(bool track_upload) { track_upload_ = track_upload; }
 
 protected:
 	/** Inherited from tdialog. */
@@ -46,6 +73,14 @@ protected:
 private:
 	/** The title for the dialog. */
 	std::string title_;
+
+	/**
+	 * The subtitle for the dialog.
+	 *
+	 * This field commenly shows the action in progress eg connecting,
+	 * uploading, downloading etc..
+	 */
+	std::string subtitle_;
 
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;

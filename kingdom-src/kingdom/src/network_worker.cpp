@@ -1,6 +1,5 @@
-/* $Id: network_worker.cpp 47596 2010-11-19 11:55:53Z ai0867 $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2013 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -32,6 +31,7 @@
 #include "serialization/binary_or_text.hpp"
 #include "serialization/parser.hpp"
 #include "wesconfig.h"
+#include "util.hpp"
 
 #include <cerrno>
 #include <deque>
@@ -134,7 +134,7 @@ struct buffer {
 };
 
 
-bool managed = false, raw_data_only = false;
+bool managed = false, raw_data_only = false, xmit_http_data = false;
 typedef std::vector< buffer* > buffer_set;
 buffer_set outgoing_bufs[NUM_SHARDS];
 
@@ -197,18 +197,21 @@ void check_send_buffer_size(TCPsocket& s)
 
 bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 		bool update_stats=false, int idle_timeout_ms=30000,
-		int total_timeout_ms=300000)
+		int total_timeout_ms=300000, int* ret_size = NULL)
 {
 #if !defined(USE_POLL) && !defined(USE_SELECT)
 	int startTicks = SDL_GetTicks();
 	int time_used = 0;
 #endif
 	int timeout_ms = idle_timeout_ms;
+	if (ret_size) {
+		*ret_size = 0;
+	}
 	while(nbytes > 0) {
 		const int bytes_read = receive_bytes(s, buf, nbytes);
-		if(bytes_read == 0) {
-			return false;
-		} else if(bytes_read < 0) {
+		if (bytes_read == 0) {
+			return (ret_size && *ret_size)? true: false;
+		} else if (bytes_read < 0) {
 #if defined(EAGAIN) && !defined(__BEOS__) && !defined(_WIN32)
 			if(errno == EAGAIN)
 #elif defined(EWOULDBLOCK)
@@ -220,6 +223,9 @@ bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 			if(false)
 #endif
 			{
+				if (ret_size) {
+					return *ret_size? true: false;
+				}
 #ifdef USE_POLL
 				struct pollfd fd = { ((_TCPsocket*)s)->channel, POLLIN, 0 };
 				int poll_res;
@@ -285,7 +291,7 @@ bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 							return false;
 						}
 					}
-				} while(retval == 0 || retval == -1 && errno == EINTR);
+				} while(retval == 0 || (retval == -1 && errno == EINTR));
 
 				if (retval < 1) {
 					return false;
@@ -304,9 +310,12 @@ bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 		} else {
 			timeout_ms = idle_timeout_ms;
 			buf += bytes_read;
-			if(update_stats && !raw_data_only) {
+			if(update_stats && (!raw_data_only || xmit_http_data)) {
 				const threading::lock lock(*stats_mutex);
 				transfer_stats[s].second.transfer(static_cast<size_t>(bytes_read));
+			}
+			if (ret_size) {
+				*ret_size = *ret_size + bytes_read;
 			}
 
 			if(bytes_read > static_cast<int>(nbytes)) {
@@ -360,7 +369,7 @@ static SOCKET_STATE send_buffer(TCPsocket sock, std::vector<char>& buf, int in_s
 		size = in_size;
 	int send_len = 0;
 
-	if (!raw_data_only)
+	if (!raw_data_only || xmit_http_data)
 	{
 		const threading::lock lock(*stats_mutex);
 		transfer_stats[sock].first.fresh_current(size);
@@ -380,11 +389,28 @@ static SOCKET_STATE send_buffer(TCPsocket sock, std::vector<char>& buf, int in_s
 			}
 		}
 		send_len = static_cast<int>(size - upto);
-		const int res = SDLNet_TCP_Send(sock, &buf[upto],send_len);
+		int res;
+		
+		if (!xmit_http_data) {
+			res = SDLNet_TCP_Send(sock, &buf[upto],send_len);
+		} else {
+			// 8 * 1024, keep consistance with send_file
+			send_len = send_len <= 8 * 1024? send_len: 8 * 1024;
+			res = SDLNet_TCP_Send(sock, &buf[upto], send_len);
+			if (res == send_len) {
+				upto += static_cast<size_t>(res);
+				if (upto != size) {
+					const threading::lock lock(*stats_mutex);
+					transfer_stats[sock].first.transfer(static_cast<size_t>(res));
+
+					continue;
+				}
+			}
+		}
 
 
 		if( res == send_len) {
-			if (!raw_data_only)
+			if (!raw_data_only || xmit_http_data)
 			{
 				const threading::lock lock(*stats_mutex);
 				transfer_stats[sock].first.transfer(static_cast<size_t>(res));
@@ -401,7 +427,7 @@ static SOCKET_STATE send_buffer(TCPsocket sock, std::vector<char>& buf, int in_s
 		{
 			// update how far we are
 			upto += static_cast<size_t>(res);
-			if (!raw_data_only)
+			if (!raw_data_only || xmit_http_data)
 			{
 				const threading::lock lock(*stats_mutex);
 				transfer_stats[sock].first.transfer(static_cast<size_t>(res));
@@ -616,6 +642,71 @@ static SOCKET_STATE receive_buf(TCPsocket sock, std::vector<char>& buf)
 	return SOCKET_READY;
 }
 
+static SOCKET_STATE receive_http_buf(TCPsocket sock, std::vector<char>& buf)
+{
+	const int support_max_header_size = 1024;
+	int read_size, total_size, ret_size;
+
+	size_t end_header;
+	std::string header;
+	header.resize(support_max_header_size);
+	read_size = 0;
+	{
+		const threading::lock lock(*stats_mutex);
+		transfer_stats[sock].second.fresh_current(support_max_header_size * 100);
+	}
+
+	do {
+		bool res = receive_with_timeout(sock, &header[read_size], support_max_header_size - read_size, true, 30000, 300000, &ret_size);
+		if (!res) {
+			return SOCKET_ERRORED;
+		}
+		if (!ret_size) {
+			// resumme can read header with continue.
+			return SOCKET_ERRORED;
+		}
+		read_size += ret_size;
+		end_header = header.find("\r\n\r\n");
+	} while (end_header == std::string::npos);
+
+	int content_length = 0;
+	size_t start = header.find("Content-Length:", 0);
+	if (start != std::string::npos && start < end_header) {
+		start += 15;
+		size_t end = header.find("\r\n", start);
+		if (end != std::string::npos && end <= end_header) {
+			std::string str = header.substr(start, end - start);
+			content_length = lexical_cast<int>(str);
+		}
+	}
+	
+	total_size = end_header + 4 + content_length;
+	if (total_size < read_size) {
+		// invalid http response
+		// return SOCKET_ERRORED;
+
+		buf.resize(read_size);
+		memcpy(&buf[0], &header[0], read_size);
+		return SOCKET_READY;
+	}
+	buf.resize(total_size);
+	memcpy(&buf[0], &header[0], read_size);
+	if  (total_size - read_size > 0) {
+		{
+			const threading::lock lock(*stats_mutex);
+			transfer_stats[sock].second.fresh_current(total_size);
+			transfer_stats[sock].second.transfer(read_size);
+		}
+
+		bool res = receive_with_timeout(sock, &buf[read_size], total_size - read_size, true);
+		if (!res) {
+			return SOCKET_ERRORED;
+		}
+	}
+
+	return SOCKET_READY;
+}
+
 inline void check_socket_result(TCPsocket& sock, SOCKET_STATE& result)
 {
 	const size_t shard = get_shard(sock);
@@ -623,7 +714,7 @@ inline void check_socket_result(TCPsocket& sock, SOCKET_STATE& result)
 	socket_state_map::iterator lock_it = sockets_locked[shard].find(sock);
 	assert(lock_it != sockets_locked[shard].end());
 	lock_it->second = result;
-	if(result == SOCKET_ERRORED) {
+	if(lock_it->second == SOCKET_ERRORED) {
 		++socket_errors[shard];
 	}
 }
@@ -650,7 +741,7 @@ static int process_queue(void* shard_num)
 				delete zombie;
 
 			}
-			if(min_threads && waiting_threads[shard] >= min_threads) {
+			if(outgoing_bufs[shard].empty() && min_threads && waiting_threads[shard] >= min_threads) {
 					DBG_NW << "worker thread exiting... not enough jobs\n";
 					to_clear[shard].push_back(threading::get_current_thread_id());
 					return 0;
@@ -732,7 +823,11 @@ static int process_queue(void* shard_num)
 			}
 			delete sent_buf;
 		} else {
-			result = receive_buf(sock,buf);
+			if (!xmit_http_data) {
+				result = receive_buf(sock,buf);
+			} else {
+				result = receive_http_buf(sock,buf);
+			}
 		}
 
 
@@ -744,7 +839,7 @@ static int process_queue(void* shard_num)
 		//if we received data, add it to the queue
 		buffer* received_data = new buffer(sock);
 
-		if(raw_data_only) {
+		if (xmit_http_data || raw_data_only) {
 			received_data->raw_buffer.swap(buf);
 		} else {
 			std::string buffer(buf.begin(), buf.end());
@@ -865,6 +960,11 @@ void set_raw_data_only()
 	raw_data_only = true;
 }
 
+void set_http_data(bool set)
+{
+	xmit_http_data = set;
+}
+
 void set_use_system_sendfile(bool use)
 {
 	network_use_system_sendfile = use;
@@ -919,7 +1019,7 @@ TCPsocket get_received_data(TCPsocket sock, config& cfg, network::bandwidth_in_p
 
 TCPsocket get_received_data(std::vector<char>& out)
 {
-	assert(raw_data_only);
+	assert(raw_data_only || xmit_http_data);
 	const threading::lock lock_received(*received_mutex);
 	if(received_data_queue.empty()) {
 		return NULL;
@@ -953,6 +1053,13 @@ void queue_raw_data(TCPsocket sock, const char* buf, int len)
 	queue_buffer(sock, queued_buf);
 }
 
+void queue_http_data(TCPsocket sock, const char* buf, int len)
+{
+	buffer* queued_buf = new buffer(sock);
+	queued_buf->raw_buffer.resize(len);
+	memcpy(&queued_buf->raw_buffer[0], buf, len);
+	queue_buffer(sock, queued_buf);
+}
 
 void queue_file(TCPsocket sock, const std::string& filename)
 {

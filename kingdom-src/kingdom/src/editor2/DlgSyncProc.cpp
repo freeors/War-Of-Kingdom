@@ -15,8 +15,8 @@
 #include "win32x.h"
 #include <utility>
 
-#include "foreach.hpp"
 #include "language.hpp"
+#include <boost/foreach.hpp>
 
 extern editor editor_;
 
@@ -53,7 +53,7 @@ void sync_enter_ui(void)
 	ComboBox_ResetContent(hctl);
 	const std::vector<language_def>& languages = get_languages();
 	const language_def& current_language = get_language();
-	foreach (const language_def& lang, languages) {
+	BOOST_FOREACH (const language_def& lang, languages) {
 		ComboBox_AddString(hctl, utf8_2_ansi(lang.language.c_str()));
 		if (lang == current_language) {
 			ComboBox_SetCurSel(hctl, ComboBox_GetCount(hctl) - 1);
@@ -135,7 +135,10 @@ void sync_update_task_desc(HWND hctl)
 			ListView_SetCheckState(hctl, lvi.iItem, TRUE);
 		}
 		if (itor->first == editor::SCENARIO_DATA && (itor->second.wml_nfiles != itor->second.bin_nfiles || itor->second.wml_sum_size != itor->second.bin_sum_size || itor->second.wml_modified != itor->second.bin_modified)) {
-			ListView_SetCheckState(hctl, lvi.iItem, TRUE);
+			const std::string id = offextname(itor->second.bin_name.c_str());
+			if (editor_config::campaign_id.empty() || id == editor_config::campaign_id) {
+				ListView_SetCheckState(hctl, lvi.iItem, TRUE);
+			}
 		}
 	}
 	if (editor_config::ListView_GetCheckedCount(hctl)) {
@@ -490,6 +493,7 @@ DWORD WINAPI ThdSyncProc(LPVOID ctx)
 	Button_Enable(GetDlgItem(gdmgr._hdlg_ddesc, IDC_BT_DDESC_BROWSE), TRUE);
 
 	gdmgr._syncing = FALSE;
+	editor_config::campaign_id.clear();
 
 	return 0;
 }
@@ -573,12 +577,10 @@ DWORD WINAPI ThdSync2Proc(LPVOID ctx)
 	}
 
 	gdmgr._syncing = FALSE;
+	editor_config::campaign_id.clear();
 
-	// postfix work.
-	if (gdmgr._da == da_core) {
-		core_enter_ui();
-	}
-
+	// don' call statement(core_enter_ui etc.) may result operator window.
+	// window function(DestroyWindow etc.) will fail because this thread is'n same as create window thread.
 	return 0;
 }
 

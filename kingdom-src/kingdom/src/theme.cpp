@@ -18,7 +18,6 @@
 #include "global.hpp"
 
 #include "font.hpp"
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "hotkeys.hpp"
 #include "log.hpp"
@@ -26,6 +25,8 @@
 #include "theme.hpp"
 #include "wml_exception.hpp"
 #include "game_config.hpp"
+
+#include <boost/foreach.hpp>
 
 static lg::log_domain log_display("display");
 #define DBG_DP LOG_STREAM(debug, log_display)
@@ -165,7 +166,7 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 {
 	std::vector<config> res_cfgs_;
 	// resolve all the partialresolutions
-	foreach (const config &part, top_cfg.child_range("partialresolution")) {
+	BOOST_FOREACH (const config &part, top_cfg.child_range("partialresolution")) {
 		int width = part["width"].to_int();
 		int height = part["height"].to_int();
 
@@ -214,11 +215,11 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 		while (!parent_stack.empty()) {
 			//override attributes
 			res_cfgs_.back().merge_attributes(*parent_stack.back());
-			foreach (const config &rm, parent_stack.back()->child_range("remove")) {
+			BOOST_FOREACH (const config &rm, parent_stack.back()->child_range("remove")) {
 				find_ref(rm["id"], res_cfgs_.back(), true);
 			}
 
-			foreach (const config &chg, parent_stack.back()->child_range("change"))
+			BOOST_FOREACH (const config &chg, parent_stack.back()->child_range("change"))
 			{
 				config &target = find_ref(chg["id"], res_cfgs_.back());
 				target.merge_attributes(chg);
@@ -227,7 +228,7 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 			// cannot add [status] sub-elements, but who cares
 			if (const config &c = parent_stack.back()->child("add"))
 			{
-				foreach (const config::any_child &j, c.all_children_range()) {
+				BOOST_FOREACH (const config::any_child &j, c.all_children_range()) {
 					res_cfgs_.back().add_child(j.key, j.cfg);
 				}
 			}
@@ -237,7 +238,7 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 	}
 	// Add all the resolutions
 	std::string theme_name = top_cfg["name"].str();
-	foreach (const config &res, top_cfg.child_range("resolution")) {
+	BOOST_FOREACH (const config &res, top_cfg.child_range("resolution")) {
 		int width = res["width"].to_int();
 		int height = res["height"].to_int();
 
@@ -273,7 +274,7 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 static void do_resolve_rects(const config& cfg, config& resolved_config, config* resol_cfg = NULL) 
 {
 	// recursively resolve children
-	foreach (const config::any_child &value, cfg.all_children_range()) {
+	BOOST_FOREACH (const config::any_child &value, cfg.all_children_range()) {
 		config &childcfg = resolved_config.add_child(value.key);
 		do_resolve_rects(value.cfg, childcfg,
 			value.key == "resolution" ? &childcfg : resol_cfg);
@@ -626,7 +627,7 @@ bool theme::set_resolution(const SDL_Rect& screen)
 
 	int current_rating = 1000000;
 	const config *current = NULL;
-	foreach (const config &i, cfg_.child_range("resolution"))
+	BOOST_FOREACH (const config &i, cfg_.child_range("resolution"))
 	{
 		int width = i["width"];
 		int height = i["height"];
@@ -690,7 +691,7 @@ void theme::add_object(const config& cfg)
 
 	if (const config &status_cfg = cfg.child("status"))
 	{
-		foreach (const config::any_child &i, status_cfg.all_children_range()) {
+		BOOST_FOREACH (const config::any_child &i, status_cfg.all_children_range()) {
 			status_.insert(std::pair<std::string, status_item>(i.key, status_item(i.cfg)));
 		}
 		if (const config &unit_image_cfg = status_cfg.child("unit_image")) {
@@ -700,7 +701,7 @@ void theme::add_object(const config& cfg)
 		}
 	}
 
-	foreach (const config &p, cfg.child_range("panel")) {
+	BOOST_FOREACH (const config &p, cfg.child_range("panel")) {
 		panel new_panel(p);
 		set_object_location(new_panel, p["rect"], p["ref"]);
 		panels_.push_back(new_panel);
@@ -715,14 +716,14 @@ void theme::add_object(const config& cfg)
 		}
 	}
 
-	foreach (const config &lb, cfg.child_range("label")) {
+	BOOST_FOREACH (const config &lb, cfg.child_range("label")) {
 		label new_label(lb);
 
 		set_object_location(new_label, lb["rect"], lb["ref"]);
 		labels_.push_back(new_label);
 	}
 
-	foreach (const config &m, cfg.child_range("menu"))
+	BOOST_FOREACH (const config &m, cfg.child_range("menu"))
 	{
 		menu new_menu(m);
 		DBG_DP << "adding menu: " << (new_menu.is_context() ? "is context" : "not context") << "\n";
@@ -794,7 +795,7 @@ void theme::modify(const config &cfg)
 	}
 
 	// Change existing theme objects.
-	foreach (const config &c, cfg.child_range("change"))
+	BOOST_FOREACH (const config &c, cfg.child_range("change"))
 	{
 		std::string id = c["id"];
 		std::string ref_id = c["ref"];
@@ -804,12 +805,12 @@ void theme::modify(const config &cfg)
 	}
 
 	// Add new theme objects.
-	foreach (const config &c, cfg.child_range("add")) {
+	BOOST_FOREACH (const config &c, cfg.child_range("add")) {
 		add_object(c);
 	}
 
 	// Remove existent theme objects.
-	foreach (const config &c, cfg.child_range("remove")) {
+	BOOST_FOREACH (const config &c, cfg.child_range("remove")) {
 		remove_object(c["id"]);
 	}
 
@@ -853,7 +854,7 @@ void theme::set_known_themes(const config* cfg)
 	if (!cfg)
 		return;
 
-	foreach (const config &thm, cfg->child_range("theme"))
+	BOOST_FOREACH (const config &thm, cfg->child_range("theme"))
 	{
 		std::string thm_name = thm["name"];
 		if (thm_name != "null" && thm_name != "editor")
@@ -873,7 +874,7 @@ std::vector<std::string> theme::get_known_themes(){
 
 const theme::menu *theme::get_menu_item(const std::string &key) const
 {
-	foreach (const theme::menu &m, menus_) {
+	BOOST_FOREACH (const theme::menu &m, menus_) {
 		if (m.get_id() == key) return &m;
 	}
 	return NULL;
@@ -881,7 +882,7 @@ const theme::menu *theme::get_menu_item(const std::string &key) const
 
 theme::menu *theme::get_menu_item(const std::string &key)
 {
-	foreach (theme::menu &m, menus_) {
+	BOOST_FOREACH (theme::menu &m, menus_) {
 		if (m.get_id() == key) return &m;
 	}
 	return NULL;

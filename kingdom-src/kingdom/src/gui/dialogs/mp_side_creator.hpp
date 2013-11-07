@@ -68,13 +68,17 @@ public:
 	class side 
 	{
 	public:
+		friend class tmp_side_creator;
+
 		side(tlistbox* sides_table, tmp_side_creator& parent, const config& cfg, int index);
 
-		side(const side& a);
+		// side(const side& a);
 
 		void player(twindow& window);
 		void faction(twindow& window);
 		void feature(twindow& window);
+		void ally(twindow& window);
+		void income(twindow& window);
 
 		/**
 		 * Gets a config object representing this side.
@@ -107,9 +111,6 @@ public:
 
 		/** Sets the username of this side. */
 		void set_player_id(const std::string& player_id);
-
-		/** Sets if the joining player has chosen his leader. */
-		void set_ready_for_start(bool ready_for_start);
 
 		/**
 		 * Imports data from the network into this side, and updates the UI
@@ -144,20 +145,16 @@ public:
 
 		// Configurable variables
 		int index_;
-		std::string id_;
 		std::string player_id_;
-		std::string save_id_;
 		controller controller_;
-		int team_;
+		int ally_;
 		int color_;
 		int gold_;
 		int income_;
-		std::string ai_algorithm_;
-		bool ready_for_start_;
 
 		bool allow_player_;
 		bool allow_changes_;
-		bool enabled_;
+		bool faction_changeable_;
 		bool changed_;
 
 		int selected_feature_;
@@ -165,8 +162,8 @@ public:
 		tbutton* player_button_;
 		tbutton* faction_button_;
 		tbutton* feature_button_;
-		tbutton* team_button_;
-		tbutton* color_button_;
+		tbutton* ally_button_;
+		tbutton* income_button_;
 	};
 
 	friend class side;
@@ -182,7 +179,7 @@ public:
 	std::vector<int> get_candidate_factions(int side) const;
 	void set_faction(int side, int faction);
 
-	explicit tmp_side_creator(hero_map& heros, game_display& gui, gamemap& gmap, const config& game_config,
+	explicit tmp_side_creator(hero_map& heros, hero_map& heros_start, game_display& gui, gamemap& gmap, const config& game_config,
 			config& gamelist, const mp_game_settings& params, const int num_turns,
 			mp::controller default_controller, bool local_players_only = false);
 
@@ -221,8 +218,13 @@ private:
 	void player(twindow& window, int side);
 	void faction(twindow& window, int side);
 	void feature(twindow& window, int side);
+	void ally(twindow& window, int side);
+	void income(twindow& window, int side);
 
 	void update_playerlist();
+
+	std::string form_binary_header(int type) const;
+	void send_binary_data(char* buf, int data_len, int buf_len) const;
 private:
 	// Those 2 functions are actually the steps of the (complex)
 	// construction of this class.
@@ -277,6 +279,9 @@ private:
 	void process_network_data(const config& data, const network::connection sock);
 	void process_network_error(network::error& error);
 
+private:
+	hero_map& heros_start_;
+
 	bool local_only_;
 
 	config level_;
@@ -299,13 +304,9 @@ private:
 	std::vector<std::pair<std::string, int> >player_xtypes_;
 	std::vector<std::string> player_factions_;
 	std::vector<std::string> side_features_;
-	std::vector<std::string> player_teams_;
-	std::vector<std::string> player_colors_;
 
 	// team_name list and "Team" prefix
-	std::vector<std::string> team_names_;
-	std::vector<std::string> user_team_names_;
-	const std::string team_prefix_;
+	std::vector<int> allies_;
 
 	side_list sides_;
 	connected_user_list users_;

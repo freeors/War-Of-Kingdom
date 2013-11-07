@@ -12,7 +12,6 @@
    See the COPYING file for more details.
  */
 
-#include "foreach.hpp"
 #include "tod_manager.hpp"
 #include "wml_exception.hpp"
 #include "gettext.hpp"

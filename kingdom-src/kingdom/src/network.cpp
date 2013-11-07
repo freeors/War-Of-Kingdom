@@ -88,6 +88,7 @@ struct connection_details {
 
 typedef std::map<network::connection,connection_details> connection_map;
 connection_map connections;
+bool xmit_http_data = false;
 
 network::connection connection_id = 1;
 
@@ -95,6 +96,11 @@ network::connection connection_id = 1;
 time_t last_ping, last_ping_check = 0;
 
 } // end anon namespace
+
+namespace network_worker_pool {
+	extern void queue_http_data(TCPsocket sock, const char* buf, int len);
+	extern void set_http_data(bool set);
+}
 
 static int create_connection(TCPsocket sock, const std::string& host, int port)
 {
@@ -278,6 +284,25 @@ void set_raw_data_only()
 	network_worker_pool::set_raw_data_only();
 }
 
+class http_data_lock
+{
+public:
+	http_data_lock();
+	~http_data_lock();
+};
+
+http_data_lock::http_data_lock()
+{
+	network_worker_pool::set_http_data(true);
+	xmit_http_data = true;
+}
+
+http_data_lock::~http_data_lock()
+{
+	xmit_http_data = false;
+	network_worker_pool::set_http_data(false);
+}
+
 // --- Proxy methods
 void enable_connection_through_proxy()
 {
@@ -418,10 +443,12 @@ void connect_operation::run()
 	}
 #endif
 
+
 // Use non blocking IO
 #if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
 	{
 		unsigned long mode = 1;
+
 		ioctlsocket (((_TCPsocket*)sock)->channel, FIONBIO, &mode);
 	}
 #elif !defined(__BEOS__)
@@ -455,14 +482,16 @@ void connect_operation::run()
 		return;
 	}
 
-	// Send data telling the remote host that this is a new connection
-	char buf[4] ALIGN_4;
-	SDLNet_Write32(0, reinterpret_cast<void*>(buf));
-	const int nbytes = SDLNet_TCP_Send(sock,buf,4);
-	if(nbytes != 4) {
-		SDLNet_TCP_Close(sock);
-		error_ = "Could not send initial handshake";
-		return;
+	if (!xmit_http_data) {
+		// Send data telling the remote host that this is a new connection
+		char buf[4] ALIGN_4;
+		SDLNet_Write32(0, reinterpret_cast<void*>(buf));
+		const int nbytes = SDLNet_TCP_Send(sock,buf,4);
+		if(nbytes != 4) {
+			SDLNet_TCP_Close(sock);
+			error_ = "Could not send initial handshake";
+			return;
+		}
 	}
 
 	// No blocking operations from here on
@@ -846,19 +875,21 @@ connection receive_data(std::vector<char>& buf, bandwidth_in_ptr* bandwidth_in)
 		const TCPsocket sock = details.sock;
 		if(SDLNet_SocketReady(sock)) {
 
-			// See if this socket is still waiting for it to be assigned its remote handle.
-			// If it is, then the first 4 bytes must be the remote handle.
-			if(is_pending_remote_handle(*i)) {
-				char buf[4] ALIGN_4;
-				int len = SDLNet_TCP_Recv(sock,buf,4);
-				if(len != 4) {
-					throw error("Remote host disconnected",*i);
+			if (!xmit_http_data) {
+				// See if this socket is still waiting for it to be assigned its remote handle.
+				// If it is, then the first 4 bytes must be the remote handle.
+				if(is_pending_remote_handle(*i)) {
+					char buf[4] ALIGN_4;
+					int len = SDLNet_TCP_Recv(sock,buf,4);
+					if(len != 4) {
+						throw error("Remote host disconnected",*i);
+					}
+
+					const int remote_handle = SDLNet_Read32(reinterpret_cast<void*>(buf));
+					set_remote_handle(*i,remote_handle);
+
+					continue;
 				}
-
-				const int remote_handle = SDLNet_Read32(reinterpret_cast<void*>(buf));
-				set_remote_handle(*i,remote_handle);
-
-				continue;
 			}
 
 			waiting_sockets.erase(i++);
@@ -1113,10 +1144,13 @@ void send_raw_data(const char* buf, int len, connection connection_num, const st
 			<< "\tnot found in connection_map. Not sending...\n";
 		return;
 	}
-	const int packet_headers = 4;
-	add_bandwidth_out(packet_type, len + packet_headers);
 
-	network_worker_pool::queue_raw_data(info->second.sock, buf, len);
+	add_bandwidth_out(packet_type, len + xmit_http_data? 0: 4);
+	if (!xmit_http_data) {
+		network_worker_pool::queue_raw_data(info->second.sock, buf, len);
+	} else {
+		network_worker_pool::queue_http_data(info->second.sock, buf, len);
+	}
 }
 
 void process_send_queue(connection, size_t)

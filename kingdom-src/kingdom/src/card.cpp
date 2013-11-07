@@ -1,11 +1,12 @@
 #include "global.hpp"
 #include "card.hpp"
 #include "gettext.hpp"
-#include "foreach.hpp"
-#include "posix.h"
 #include "serialization/string_utils.hpp"
 #include "map_location.hpp"
 #include "unit_display.hpp"
+#include "hero.hpp"
+
+#include <boost/foreach.hpp>
 
 card card::null_card;
 
@@ -109,11 +110,12 @@ card::card(const card& that)
 // card_map
 //
 card_map::card_map(const std::string& path) :
-	animations_()
-	, map_size_(0)
+	map_size_(0)
 	, map_(NULL)
 	, map_vsize_(0)
 	, bomb_(-1)
+	, wander_(-1)
+	, office_(-1)
 {
 	card::image_file_root_ = path + "/data/core/images";
 }
@@ -226,8 +228,10 @@ void card_map::map_from_cfg(const config& cfg)
 	// realloc map memory in card_map
 	realloc_hero_map(CARDS_MAX_CARDS);
 	bomb_ = -1;
+	office_ = -1;
+	wander_ = -1;
 
-	foreach (const config &tf, cfg.child_range("card")) {
+	BOOST_FOREACH (const config &tf, cfg.child_range("card")) {
 		if (tf["name"].empty()) {
 			throw config::error("card config error, no id attribute");
 		}
@@ -237,24 +241,20 @@ void card_map::map_from_cfg(const config& cfg)
 
 		if (t->bomb()) {
 			bomb_ = t->number_;
+		} else {
+			const config& effect_cfg = t->get_cfg().child("action").child("effect");
+			const std::string& apply_to = effect_cfg["apply_to"];
+			if (apply_to == "wander") {
+				wander_ = t->number_;
+			} else if (apply_to == "office") {
+				office_ = t->number_;
+			}
 		}
 	}
 
-	if (bomb_ == -1) {
-		throw config::error("card config error, no bomb card");
+	if (bomb_ == -1 || wander_ == -1 || office_ == -1) {
+		throw config::error("card config error, no bomb or wander or office card");
 	}
-
-	//
-	// load animations
-	//
-	foreach (const config &anim, cfg.child_range("card_anim")) {
-		animations_.insert(std::make_pair<int, unit_animation>(ANIM_START, unit_animation(anim)));
-	}
-
-	//
-	// load global animations
-	//
-	unit_display::load_global_animations(cfg);
 }
 
 card& card_map::bomb() const
@@ -262,14 +262,12 @@ card& card_map::bomb() const
 	return *map_[bomb_];
 }
 
-unit_animation* card_map::animation(int type)
+card& card_map::wander() const
 {
-	if (type < ANIM_MIN || type > ANIM_MAX) {
-		return NULL;
-	}
-	std::map<int, unit_animation>::iterator i = animations_.find(type);
-	if (i != animations_.end()) {
-		return &i->second;
-	}
-	return NULL;
+	return *map_[wander_];
+}
+
+card& card_map::office() const
+{
+	return *map_[office_];
 }

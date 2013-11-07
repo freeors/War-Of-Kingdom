@@ -298,6 +298,8 @@ public:
 	map_location& tactic_indicator() { return tactic_indicator_; }
 	const map_location& tactic_indicator() const { return tactic_indicator_; }
 
+	const std::pair<map_location, map_location>& formation_indicator() const { return formation_indicator_; }
+
 	map_location& interior_indicator() { return interior_indicator_; }
 	const map_location& interior_indicator() const { return interior_indicator_; }
 
@@ -311,7 +313,13 @@ public:
 	std::set<map_location>& build_indicator() { return build_indicator_dst_; }
 	void clear_build_indicator();
 
-	void set_screen_anim(unit_animation* anim = NULL);
+	unit_animation& insert_screen_anim_pass_scenario(const unit_animation& anim);
+	int pass_scenario_anim_id() const { return pass_scenario_anim_id_; }
+	unit_animation& screen_anim(int id);
+
+	int insert_screen_anim(const unit_animation& anim);
+	void erase_screen_anim(int id);
+	
 	void set_terrain_dirty();
 
 	/** Set the move source location. */
@@ -439,7 +447,8 @@ private:
 	unit* temp_unit_;
 	artifical* expedite_city_;
 
-	unit_animation* screen_anim_;
+	std::map<int, unit_animation> screen_anims_;
+	int pass_scenario_anim_id_;
 
 	bool terrain_dirty_;
 
@@ -449,6 +458,7 @@ private:
 
 	std::set<map_location> selectable_indicator_;
 	map_location tactic_indicator_;
+	std::pair<map_location, map_location> formation_indicator_;
 	map_location interior_indicator_;
 	std::set<map_location> alternatable_indicator_;
 

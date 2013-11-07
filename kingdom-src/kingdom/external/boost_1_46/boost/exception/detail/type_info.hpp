@@ -5,7 +5,7 @@
 
 #ifndef UUID_C3E1741C754311DDB2834CCA55D89593
 #define UUID_C3E1741C754311DDB2834CCA55D89593
-#if defined(__GNUC__) && !defined(BOOST_EXCEPTION_ENABLE_WARNINGS)
+#if (__GNUC__*100+__GNUC_MINOR__>301) && !defined(BOOST_EXCEPTION_ENABLE_WARNINGS)
 #pragma GCC system_header
 #endif
 #if defined(_MSC_VER) && !defined(BOOST_EXCEPTION_ENABLE_WARNINGS)
@@ -53,11 +53,11 @@ boost
         struct
         type_info_
             {
-            detail::sp_typeinfo const & type_;
+            detail::sp_typeinfo const * type_;
 
             explicit
             type_info_( detail::sp_typeinfo const & type ):
-                type_(type)
+                type_(&type)
                 {
                 }
 
@@ -65,7 +65,7 @@ boost
             bool
             operator<( type_info_ const & a, type_info_ const & b )
                 {
-                return 0!=(a.type_.before(b.type_));
+                return 0!=(a.type_->before(*b.type_));
                 }
             };
         }

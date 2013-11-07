@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/technology_tree.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -97,16 +96,16 @@ ttechnology_tree::ttechnology_tree(game_display& gui, std::vector<team>& teams, 
 void ttechnology_tree::signal_handler_mouse_enter(ttoggle_button& widget)
 {
 	int toggled_index = widget.get_data();
-	const technology& t = unit_types.technologies().find(technology_tv_[toggled_index].first)->second;
+	const ttechnology& t = unit_types.technologies().find(technology_tv_[toggled_index].first)->second;
 
 	show_tip(t);
 }
 
-std::string ttechnology_tree::exp_str(const technology& t)
+std::string ttechnology_tree::exp_str(const ttechnology& t)
 {
-	std::map<const technology*, int>& halvies = current_team_.half_technologies();
-	std::vector<const technology*>& holded = current_team_.holded_technologies();
-	std::map<const technology*, int>::const_iterator find = halvies.find(&t);
+	std::map<const ttechnology*, int>& halvies = current_team_.half_technologies();
+	std::vector<const ttechnology*>& holded = current_team_.holded_technologies();
+	std::map<const ttechnology*, int>::const_iterator find = halvies.find(&t);
 
 	std::stringstream strstr;
 	if (find != halvies.end()) {
@@ -119,7 +118,7 @@ std::string ttechnology_tree::exp_str(const technology& t)
 	return strstr.str();
 }
 
-void ttechnology_tree::show_tip(const technology& t)
+void ttechnology_tree::show_tip(const ttechnology& t)
 {
 	std::stringstream strstr;
 	
@@ -148,7 +147,7 @@ void ttechnology_tree::technology_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
 	int toggled_index = toggle->get_data();
-	const technology& t = unit_types.technologies().find(technology_tv_[toggled_index].first)->second;
+	const ttechnology& t = unit_types.technologies().find(technology_tv_[toggled_index].first)->second;
 
 	ing_technology_ = &t;
 }
@@ -162,9 +161,9 @@ void ttechnology_tree::technology_tree_2_tv_internal(ttree_view_node* htvroot, c
 	string_map tree_group_field;
 	std::map<std::string, string_map> tree_group_item;
 
-	const std::vector<const technology*>& holded = current_team_.holded_technologies();
+	const std::vector<const ttechnology*>& holded = current_team_.holded_technologies();
 	for (std::vector<advance_tree::node>::const_iterator it = advances_to.begin(); it != advances_to.end(); ++ it) {
-		const technology* current = dynamic_cast<const technology*>(it->current);
+		const ttechnology* current = dynamic_cast<const ttechnology*>(it->current);
 		bool hold = std::find(holded.begin(), holded.end(), current) != holded.end();
 
 		strstr.str("");
@@ -236,12 +235,12 @@ void ttechnology_tree::pre_show(CVideo& /*video*/, twindow& window)
 	std::vector<std::string> advances_from;
 	ttree_view_node* htvi;
 
-	const std::vector<const technology*>& holded = current_team_.holded_technologies();
+	const std::vector<const ttechnology*>& holded = current_team_.holded_technologies();
 
 	const std::vector<advance_tree::node*>& technology_tree = unit_types.technology_tree();
 	for (std::vector<advance_tree::node*>::const_iterator it = technology_tree.begin(); it != technology_tree.end(); ++ it) {
 		const advance_tree::node* n = *it;
-		const technology* current = dynamic_cast<const technology*>(n->current);
+		const ttechnology* current = dynamic_cast<const ttechnology*>(n->current);
 		bool hold = std::find(holded.begin(), holded.end(), current) != holded.end();
 
 		strstr.str("");

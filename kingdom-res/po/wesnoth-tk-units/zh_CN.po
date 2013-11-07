@@ -375,6 +375,24 @@ msgstr "城楼"
 msgid "keep2 description"
 msgstr "城楼"
 
+#
+# fort
+#
+msgid "fort1"
+msgstr "据点"
+
+msgid "fort1 description"
+msgstr "据点"
+
+#
+# fort
+#
+msgid "fort2"
+msgstr "要塞"
+
+msgid "fort2 description"
+msgstr "要塞"
+
 msgid "desert horseman2"
 msgstr "羌骑兵"
 
@@ -686,3 +704,21 @@ msgstr "三级学者"
 
 msgid "scholar3 description"
 msgstr "三级学者"
+
+msgid "transport1"
+msgstr "一级运输"
+
+msgid "transport1 description"
+msgstr "一级运输"
+
+msgid "transport2"
+msgstr "二级运输"
+
+msgid "transport2 description"
+msgstr "二级运输"
+
+msgid "transport3"
+msgstr "三级运输"
+
+msgid "transport3 description"
+msgstr "三级运输"

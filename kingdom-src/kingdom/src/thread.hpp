@@ -24,6 +24,10 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/smart_ptr.hpp>
 
+namespace network_asio {
+	class connection_open;
+}
+
 // Threading primitives wrapper for SDL_Thread.
 //
 // This module defines primitives for wrapping C++ around SDL's threading
@@ -187,18 +191,18 @@ private:
 	SDL_cond* const cond_;
 };
 
+class async_operation;
+
+typedef boost::shared_ptr<async_operation> async_operation_ptr;
+
 //class which defines an interface for waiting on an asynchronous operation
 class waiter {
 public:
 	enum ACTION { WAIT, ABORT };
 
 	virtual ~waiter() {}
-	virtual ACTION process() = 0;
+	virtual ACTION process(async_operation_ptr op) = 0;
 };
-
-class async_operation;
-
-typedef boost::shared_ptr<async_operation> async_operation_ptr;
 
 typedef std::list<async_operation_ptr> active_operation_list;
 
@@ -241,6 +245,8 @@ public:
 	bool is_aborted() const { return aborted_; }
 
 private:
+	friend class network_asio::connection_open;
+
 	boost::scoped_ptr<thread> thread_;
 	bool aborted_;
 	condition finished_;

@@ -17,14 +17,15 @@
 
 #include "gui/dialogs/game_load.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
+#include "game_display.hpp"
 #include "game_config.hpp"
 #include "game_preferences.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/dialogs/field.hpp"
 #include "gui/dialogs/game_delete.hpp"
+#include "gui/dialogs/message.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/image.hpp"
@@ -37,17 +38,17 @@
 #include "gui/widgets/minimap.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/text_box.hpp"
+#include "gui/widgets/toggle_button.hpp"
+#include "gui/widgets/scrollbar_panel.hpp"
 #include "gui/widgets/window.hpp"
 #include "language.hpp"
 #include "preferences_display.hpp"
+#include "multiplayer.hpp"
+#include "help.hpp"
 
 #include <cctype>
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
-
-namespace savegame {
-extern std::string format_time_local(time_t t);
-extern std::string format_time_elapse(time_t elapse);
-}
 
 namespace gui2 {
 
@@ -95,46 +96,46 @@ namespace gui2 {
 
 REGISTER_DIALOG(game_load)
 
-tgame_load::tgame_load(const config& cache_config)
-	: txtFilter_(register_text("txtFilter", true))
+tgame_load::tgame_load(game_display& disp, const config& cache_config)
+	: disp_(disp)
 	, filename_()
 	, games_()
+	, www_saves_()
 	, cache_config_(cache_config)
-	, last_words_()
+	, current_page_(NONE_PAGE)
+	, savegame_list_(NULL)
 {
+}
+
+void tgame_load::sheet_toggled(twidget* widget)
+{
+	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
+	int toggled_page = toggle->get_data();
+
+	if (!toggle->get_value()) {
+		// At most select one page. recheck it!
+		toggle->set_value(true);
+	} else {
+		for (std::map<int, ttoggle_button*>::iterator it = sheet_.begin(); it != sheet_.end(); ++ it) {
+			if (it->second == toggle) {
+				continue;
+			}
+			it->second->set_value(false);
+		}
+		swap_page(*toggle->get_window(), toggled_page, true);
+	}
 }
 
 void tgame_load::pre_show(CVideo& /*video*/, twindow& window)
 {
-	assert(txtFilter_);
-
 	find_widget<tminimap>(&window, "minimap", false).set_config(&cache_config_);
 
-	ttext_box* filter = find_widget<ttext_box>(
-			&window, "txtFilter", false, true);
-	window.keyboard_capture(filter);
-	filter->set_text_changed_callback(boost::bind(
-			&tgame_load::filter_text_changed, this, _1, _2));
-
-	tlistbox* list = find_widget<tlistbox>(
-			&window, "savegame_list", false, true);
-	window.keyboard_capture(list);
-
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-	connect_signal_notify_modified(*list, boost::bind(
-				  &tgame_load::list_item_clicked
-				, *this
-				, boost::ref(window)));
-#else
-	list->set_callback_value_change(
-			dialog_callback<tgame_load, &tgame_load::list_item_clicked>);
-#endif
-
-	{
-		cursor::setter cur(cursor::WAIT);
-		games_ = savegame::manager::get_saves_list();
+	sheet_.insert(std::make_pair(LOCAL_PAGE, find_widget<ttoggle_button>(&window, "local", false, true)));
+	sheet_.insert(std::make_pair(NETWORK_PAGE, find_widget<ttoggle_button>(&window, "network", false, true)));
+	for (std::map<int, ttoggle_button*>::iterator it = sheet_.begin(); it != sheet_.end(); ++ it) {
+		it->second->set_callback_state_change(boost::bind(&tgame_load::sheet_toggled, this, _1));
+		it->second->set_data(it->first);
 	}
-	fill_game_list(window, games_);
 
 	connect_signal_mouse_left_click(
 			find_widget<tbutton>(&window, "delete", false)
@@ -143,26 +144,32 @@ void tgame_load::pre_show(CVideo& /*video*/, twindow& window)
 				, this
 				, boost::ref(window)));
 
-	display_savegame(window);
-}
+	connect_signal_mouse_left_click(
+			find_widget<tbutton>(&window, "xmit", false)
+			, boost::bind(
+				  &tgame_load::xmit_button_callback
+				, this
+				, boost::ref(window)));
 
-void tgame_load::fill_game_list(twindow& window
-		, std::vector<savegame::save_info>& games)
-{
-	tlistbox& list = find_widget<tlistbox>(&window, "savegame_list", false);
-	list.clear();
+	savegame_list_ = find_widget<tlistbox>(&window, "savegame_list", false, true);
+	sheet_.begin()->second->set_value(true);
 
-	foreach(const savegame::save_info game, games) {
-		std::map<std::string, string_map> data;
-		string_map item;
+	swap_page(window, LOCAL_PAGE, false);
+#ifdef GUI2_EXPERIMENTAL_LISTBOX
+	connect_signal_notify_modified(*list, boost::bind(
+				  &tgame_load::list_item_clicked
+				, *this
+				, boost::ref(window)));
+#else
+	savegame_list_->set_callback_value_change(
+			dialog_callback<tgame_load, &tgame_load::list_item_clicked>);
+#endif
 
-		item["label"] = game.name;
-		data.insert(std::make_pair("filename", item));
 
-		item["label"] = game.format_time_summary();
-		data.insert(std::make_pair("date", item));
-
-		list.add_row(data);
+	if (disp_.in_game()) {
+		find_widget<tbutton>(&window, "xmit", false).set_visible(twidget::INVISIBLE);
+		find_widget<ttoggle_button>(&window, "local", false).set_visible(twidget::INVISIBLE);
+		find_widget<ttoggle_button>(&window, "network", false).set_visible(twidget::INVISIBLE);
 	}
 }
 
@@ -171,67 +178,20 @@ void tgame_load::list_item_clicked(twindow& window)
 	display_savegame(window);
 }
 
-bool tgame_load::filter_text_changed(ttext_* textbox, const std::string& text)
-{
-	twindow& window = *textbox->get_window();
-
-	tlistbox& list = find_widget<tlistbox>(&window, "savegame_list", false);
-
-	const std::vector<std::string> words = utils::split(text, ' ');
-
-	if (words == last_words_)
-		return false;
-	last_words_ = words;
-
-	std::vector<bool> show_items(list.get_item_count(), true);
-
-	if(!text.empty()) {
-		for(unsigned int i = 0; i < list.get_item_count(); i++) {
-			tgrid* row = list.get_row_grid(i);
-
-			tgrid::iterator it = row->begin();
-			tlabel& filename_label =
-				find_widget<tlabel>(*it, "filename", false);
-
-			bool found = false;
-			foreach (const std::string& word, words){
-				found = std::search(filename_label.label().str().begin()
-						, filename_label.label().str().end()
-						, word.begin(), word.end()
-						, chars_equal_insensitive)
-					!= filename_label.label().str().end();
-
-				if (! found) {
-					// one word doesn't match, we don't reach words.end()
-					break;
-				}
-			}
-
-			show_items[i] = found;
-		}
-	}
-
-	list.set_row_shown(show_items);
-
-	return false;
-}
-
 void tgame_load::post_show(twindow& window)
 {
 }
 
 void tgame_load::display_savegame(twindow& window)
 {
-	const int selected_row =
-			find_widget<tlistbox>(&window, "savegame_list", false)
-				.get_selected_row();
+	const int selected_row = savegame_list_->get_selected_row();
 
 	twidget& preview_pane =
 			find_widget<twidget>(&window, "preview_pane", false);
 
-	if(selected_row == -1) {
+	if (selected_row == -1) {
 		preview_pane.set_visible(twidget::HIDDEN);
-	} else {
+	} else if (current_page_ == LOCAL_PAGE) {
 		preview_pane.set_visible(twidget::VISIBLE);
 
 		savegame::save_info& game = games_[selected_row];
@@ -255,14 +215,26 @@ void tgame_load::display_savegame(twindow& window)
 		find_widget<tlabel>(&window, "lblScenario", false).set_label(game.name);
 
 		std::stringstream str;
-		str << game.format_time_local() << "\n";
-		str << _("Total time") << ": " << savegame::format_time_elapse(game.time_modified - cfg_summary["create"].to_long());
+		str << format_time_local(cfg_summary["create"].to_long()) << "\n";
+		str << _("Total time") << ": " << format_time_elapse(cfg_summary["duration"].to_int());
+		str << "(" << help::tintegrate::generate_format(cfg_summary["hash"].to_int(), "yellow") << ")";
 		evaluate_summary_string(str, cfg_summary);
 
 		find_widget<tlabel>(&window, "lblSummary", false).set_label(str.str());
 
-		// FIXME: Find a better way to change the label width
-		// window.invalidate_layout();
+		window.invalidate_layout();
+
+	} else if (current_page_ == NETWORK_PAGE) {
+		preview_pane.set_visible(twidget::VISIBLE);
+
+		savegame::www_save_info& game = www_saves_[selected_row];
+		filename_ = game.name;
+
+		find_widget<tminimap>(&window, "minimap", false).set_map_data("");
+
+		find_widget<tlabel>(&window, "lblScenario", false).set_label(game.name);
+
+		find_widget<tlabel>(&window, "lblSummary", false).set_label("");
 	}
 }
 
@@ -323,13 +295,15 @@ void tgame_load::evaluate_summary_string(std::stringstream& str
 
 void tgame_load::delete_button_callback(twindow& window)
 {
-	tlistbox& list = find_widget<tlistbox>(&window, "savegame_list", false);
+	if (current_page_ != LOCAL_PAGE) {
+		return;
+	}
 
-	const size_t index = size_t(list.get_selected_row());
-	if(index < games_.size()) {
+	const size_t index = size_t(savegame_list_->get_selected_row());
+	if (index < games_.size()) {
 
 		// See if we should ask the user for deletion confirmation
-		if(preferences::ask_delete_saves()) {
+		if (preferences::ask_delete_saves()) {
 			if(!gui2::tgame_delete::execute(window.video())) {
 				return;
 			}
@@ -340,10 +314,116 @@ void tgame_load::delete_button_callback(twindow& window)
 
 		// Remove it from the list of saves
 		games_.erase(games_.begin() + index);
-		list.remove_row(index);
+		savegame_list_->remove_row(index);
 
 		display_savegame(window);
 	}
+}
+
+void tgame_load::xmit_button_callback(twindow& window)
+{
+	const size_t index = size_t(savegame_list_->get_selected_row());
+	if (current_page_ == LOCAL_PAGE) {
+		if (index < games_.size()) {
+			// See if we should ask the user for deletion confirmation
+			std::string message = dsgettext("wesnoth", "You can upload one only, it will delete existed, continue?");
+			const int res = gui2::show_message(disp_.video(), dsgettext("wesnoth", "Confirm"), message, gui2::tmessage::yes_no_buttons);
+			if (res == gui2::twindow::CANCEL) {
+				return;
+			}
+			http::upload_save(disp_, get_saves_dir() + "/" + games_[index].name);
+		}
+	} else if (current_page_ == NETWORK_PAGE) {
+		if (index < www_saves_.size()) {
+
+			std::string fname = http::download_save(disp_, www_saves_[index].sid);
+			if (!fname.empty()) {
+				sheet_.find(LOCAL_PAGE)->second->set_value(true);
+				sheet_toggled(sheet_.find(LOCAL_PAGE)->second);
+			}
+		}
+	}
+}
+
+void tgame_load::fill_local(twindow& window)
+{
+	find_widget<tcontrol>(&window, "delete", false).set_active(true);
+	find_widget<tcontrol>(&window, "ok", false).set_active(true);
+	std::string str = help::tintegrate::generate_format(_("Upload"), "blue");
+	find_widget<tcontrol>(&window, "xmit", false).set_label(str);
+
+	{
+		cursor::setter cur(cursor::WAIT);
+		games_ = savegame::manager::get_saves_list();
+	}
+	savegame_list_->clear();
+	BOOST_FOREACH (const savegame::save_info game, games_) {
+		std::map<std::string, string_map> data;
+		string_map item;
+
+		item["label"] = game.name;
+		data.insert(std::make_pair("filename", item));
+
+		item["label"] = game.format_time_summary();
+		data.insert(std::make_pair("date", item));
+
+		savegame_list_->add_row(data);
+	}
+	display_savegame(window);
+}
+
+void tgame_load::fill_network(twindow& window)
+{
+	find_widget<tcontrol>(&window, "delete", false).set_active(false);
+	find_widget<tcontrol>(&window, "ok", false).set_active(false);
+	std::string str = help::tintegrate::generate_format(_("Download"), "blue");
+	find_widget<tcontrol>(&window, "xmit", false).set_label(str);
+
+	{
+		cursor::setter cur(cursor::WAIT);
+		www_saves_ = http::list_save(disp_);
+	}
+	savegame_list_->clear();
+	BOOST_FOREACH (const savegame::www_save_info save, www_saves_) {
+		std::map<std::string, string_map> data;
+		string_map item;
+
+		item["label"] = save.name;;
+		data.insert(std::make_pair("filename", item));
+
+		item["label"] = save.username;
+		data.insert(std::make_pair("username", item));
+
+		item["label"] = save.format_time_upload();
+		data.insert(std::make_pair("date", item));
+
+		savegame_list_->add_row(data);
+	}
+	display_savegame(window);
+}
+
+void tgame_load::swap_page(twindow& window, int page, bool swap)
+{
+	if (page < MIN_PAGE || page > MAX_PAGE) {
+		return;
+	}
+	int index = page - MIN_PAGE;
+
+	if (window.alternate_index() == index) {
+		// desired page is the displaying page, do nothing.
+		return;
+	}
+	window.alternate_uh(savegame_list_, index);
+
+	current_page_ = page;
+
+	if (page == LOCAL_PAGE) {
+		fill_local(window);
+
+	} else if (page == NETWORK_PAGE) {
+		fill_network(window);
+	}
+	window.alternate_bh(swap? savegame_list_: NULL, index);
 }
 
 } // namespace gui2

@@ -107,9 +107,6 @@ namespace preferences {
 	void set_mp_server_program_name(const std::string&);
 	std::string get_mp_server_program_name();
 
-	bool random_start_time();
-	void set_random_start_time(bool value);
-
 	bool fog();
 	void set_fog(bool value);
 
@@ -142,9 +139,6 @@ namespace preferences {
 	int era();
 	void set_era(int value);
 
-	int map();
-	void set_map(int value);
-
 	bool eng_file_name();
 	void set_eng_file_name(bool value);
 
@@ -167,6 +161,12 @@ namespace preferences {
 	int autosavemax();
 
 	const int INFINITE_AUTO_SAVES = 61;
+
+	// dependent on inapp-purchase
+	void set_inapp_purchased(int id, bool value);
+	bool inapp_purchased(int id);
+
+	int vip2();
 
 	bool show_floating_labels();
 	void set_show_floating_labels(bool value);

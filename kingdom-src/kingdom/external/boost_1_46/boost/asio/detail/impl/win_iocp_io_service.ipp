@@ -2,7 +2,7 @@
 // detail/impl/win_iocp_io_service.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2011 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -19,11 +19,11 @@
 
 #if defined(BOOST_ASIO_HAS_IOCP)
 
-#include <boost/limits.hpp>
 #include <boost/asio/error.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/detail/handler_alloc_helpers.hpp>
 #include <boost/asio/detail/handler_invoke_helpers.hpp>
+#include <boost/asio/detail/limits.hpp>
 #include <boost/asio/detail/throw_error.hpp>
 #include <boost/asio/detail/win_iocp_io_service.hpp>
 
@@ -62,18 +62,18 @@ struct win_iocp_io_service::timer_thread_function
   win_iocp_io_service* io_service_;
 };
 
-win_iocp_io_service::win_iocp_io_service(boost::asio::io_service& io_service)
+win_iocp_io_service::win_iocp_io_service(
+    boost::asio::io_service& io_service, size_t concurrency_hint)
   : boost::asio::detail::service_base<win_iocp_io_service>(io_service),
     iocp_(),
     outstanding_work_(0),
     stopped_(0),
+    stop_event_posted_(0),
     shutdown_(0),
     dispatch_required_(0)
 {
-}
+  BOOST_ASIO_HANDLER_TRACKING_INIT;
 
-void win_iocp_io_service::init(size_t concurrency_hint)
-{
   iocp_.handle = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0,
       static_cast<DWORD>((std::min<size_t>)(concurrency_hint, DWORD(~0))));
   if (!iocp_.handle)
@@ -89,7 +89,7 @@ void win_iocp_io_service::shutdown_service()
 {
   ::InterlockedExchange(&shutdown_, 1);
 
-  if (timer_thread_)
+  if (timer_thread_.get())
   {
     LARGE_INTEGER timeout;
     timeout.QuadPart = 1;
@@ -125,7 +125,7 @@ void win_iocp_io_service::shutdown_service()
     }
   }
 
-  if (timer_thread_)
+  if (timer_thread_.get())
     timer_thread_->join();
 }
 
@@ -154,7 +154,8 @@ size_t win_iocp_io_service::run(boost::system::error_code& ec)
     return 0;
   }
 
-  call_stack<win_iocp_io_service>::context ctx(this);
+  win_iocp_thread_info this_thread;
+  thread_call_stack::context ctx(this, this_thread);
 
   size_t n = 0;
   while (do_one(true, ec))
@@ -172,7 +173,8 @@ size_t win_iocp_io_service::run_one(boost::system::error_code& ec)
     return 0;
   }
 
-  call_stack<win_iocp_io_service>::context ctx(this);
+  win_iocp_thread_info this_thread;
+  thread_call_stack::context ctx(this, this_thread);
 
   return do_one(true, ec);
 }
@@ -186,7 +188,8 @@ size_t win_iocp_io_service::poll(boost::system::error_code& ec)
     return 0;
   }
 
-  call_stack<win_iocp_io_service>::context ctx(this);
+  win_iocp_thread_info this_thread;
+  thread_call_stack::context ctx(this, this_thread);
 
   size_t n = 0;
   while (do_one(false, ec))
@@ -204,7 +207,8 @@ size_t win_iocp_io_service::poll_one(boost::system::error_code& ec)
     return 0;
   }
 
-  call_stack<win_iocp_io_service>::context ctx(this);
+  win_iocp_thread_info this_thread;
+  thread_call_stack::context ctx(this, this_thread);
 
   return do_one(false, ec);
 }
@@ -213,12 +217,15 @@ void win_iocp_io_service::stop()
 {
   if (::InterlockedExchange(&stopped_, 1) == 0)
   {
-    if (!::PostQueuedCompletionStatus(iocp_.handle, 0, 0, 0))
+    if (::InterlockedExchange(&stop_event_posted_, 1) == 0)
     {
-      DWORD last_error = ::GetLastError();
-      boost::system::error_code ec(last_error,
-          boost::asio::error::get_system_category());
-      boost::asio::detail::throw_error(ec, "pqcs");
+      if (!::PostQueuedCompletionStatus(iocp_.handle, 0, 0, 0))
+      {
+        DWORD last_error = ::GetLastError();
+        boost::system::error_code ec(last_error,
+            boost::asio::error::get_system_category());
+        boost::asio::detail::throw_error(ec, "pqcs");
+      }
     }
   }
 }
@@ -229,8 +236,7 @@ void win_iocp_io_service::post_deferred_completion(win_iocp_operation* op)
   op->ready_ = 1;
 
   // Enqueue the operation on the I/O completion port.
-  if (!::PostQueuedCompletionStatus(iocp_.handle,
-        0, overlapped_contains_result, op))
+  if (!::PostQueuedCompletionStatus(iocp_.handle, 0, 0, op))
   {
     // Out of resources. Put on completed queue instead.
     mutex::scoped_lock lock(dispatch_mutex_);
@@ -250,8 +256,7 @@ void win_iocp_io_service::post_deferred_completions(
     op->ready_ = 1;
 
     // Enqueue the operation on the I/O completion port.
-    if (!::PostQueuedCompletionStatus(iocp_.handle,
-          0, overlapped_contains_result, op))
+    if (!::PostQueuedCompletionStatus(iocp_.handle, 0, 0, op))
     {
       // Out of resources. Put on completed queue instead.
       mutex::scoped_lock lock(dispatch_mutex_);
@@ -262,13 +267,23 @@ void win_iocp_io_service::post_deferred_completions(
   }
 }
 
+void win_iocp_io_service::abandon_operations(
+    op_queue<win_iocp_operation>& ops)
+{
+  while (win_iocp_operation* op = ops.front())
+  {
+    ops.pop();
+    ::InterlockedDecrement(&outstanding_work_);
+    op->destroy();
+  }
+}
+
 void win_iocp_io_service::on_pending(win_iocp_operation* op)
 {
   if (::InterlockedCompareExchange(&op->ready_, 1, 0) == 1)
   {
     // Enqueue the operation on the I/O completion port.
-    if (!::PostQueuedCompletionStatus(iocp_.handle,
-          0, overlapped_contains_result, op))
+    if (!::PostQueuedCompletionStatus(iocp_.handle, 0, 0, op))
     {
       // Out of resources. Put on completed queue instead.
       mutex::scoped_lock lock(dispatch_mutex_);
@@ -411,17 +426,23 @@ size_t win_iocp_io_service::do_one(bool block, boost::system::error_code& ec)
     }
     else
     {
+      // Indicate that there is no longer an in-flight stop event.
+      ::InterlockedExchange(&stop_event_posted_, 0);
+
       // The stopped_ flag is always checked to ensure that any leftover
-      // interrupts from a previous run invocation are ignored.
+      // stop events from a previous run invocation are ignored.
       if (::InterlockedExchangeAdd(&stopped_, 0) != 0)
       {
         // Wake up next thread that is blocked on GetQueuedCompletionStatus.
-        if (!::PostQueuedCompletionStatus(iocp_.handle, 0, 0, 0))
+        if (::InterlockedExchange(&stop_event_posted_, 1) == 0)
         {
-          last_error = ::GetLastError();
-          ec = boost::system::error_code(last_error,
-              boost::asio::error::get_system_category());
-          return 0;
+          if (!::PostQueuedCompletionStatus(iocp_.handle, 0, 0, 0))
+          {
+            last_error = ::GetLastError();
+            ec = boost::system::error_code(last_error,
+                boost::asio::error::get_system_category());
+            return 0;
+          }
         }
 
         ec = boost::system::error_code();
@@ -455,7 +476,7 @@ void win_iocp_io_service::do_add_timer_queue(timer_queue_base& queue)
         &timeout, max_timeout_msec, 0, 0, FALSE);
   }
 
-  if (!timer_thread_)
+  if (!timer_thread_.get())
   {
     timer_thread_function thread_function = { this };
     timer_thread_.reset(new thread(thread_function, 65536));
@@ -471,7 +492,7 @@ void win_iocp_io_service::do_remove_timer_queue(timer_queue_base& queue)
 
 void win_iocp_io_service::update_timeout()
 {
-  if (timer_thread_)
+  if (timer_thread_.get())
   {
     // There's no point updating the waitable timer if the new timeout period
     // exceeds the maximum timeout. In that case, we might as well wait for the

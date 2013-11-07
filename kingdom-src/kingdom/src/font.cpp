@@ -21,7 +21,6 @@
 #include "config.hpp"
 #include "filesystem.hpp"
 #include "font.hpp"
-#include "foreach.hpp"
 #include "game_config.hpp"
 #include "log.hpp"
 #include "marked-up_text.hpp"
@@ -35,6 +34,7 @@
 #include "gui/widgets/helper.hpp"
 #include "wml_exception.hpp"
 
+#include <boost/foreach.hpp>
 #include <list>
 #include <set>
 #include <stack>
@@ -386,7 +386,7 @@ static void set_font_list(const std::vector<subset_descriptor>& fontlist)
 		const subset_id subset = font_names.size();
 		font_names.push_back(itor->name);
 
-		foreach (const subset_descriptor::range &cp_range, itor->present_codepoints) {
+		BOOST_FOREACH (const subset_descriptor::range &cp_range, itor->present_codepoints) {
 			char_blocks.insert(cp_range.first, cp_range.second, subset);
 		}
 	}
@@ -546,7 +546,7 @@ void text_surface::measure() const
 	w_ = 0;
 	h_ = 0;
 
-	foreach (text_chunk const &chunk, chunks_)
+	BOOST_FOREACH (text_chunk const &chunk, chunks_)
 	{
 		TTF_Font* ttfont = get_font(font_id(chunk.subset, font_size_));
 		if(ttfont == NULL)
@@ -571,7 +571,7 @@ size_t text_surface::measure_partial(const unsigned column)
 	if (chunks_.empty()) {
 		chunks_ = split_text(str_);
 	}
-	foreach (text_chunk const &chunk, chunks_) {
+	BOOST_FOREACH (text_chunk const &chunk, chunks_) {
 		TTF_Font* ttfont = get_font(font_id(chunk.subset, font_size_));
 		if (ttfont == NULL)
 			continue;
@@ -621,7 +621,7 @@ std::vector<surface> const &text_surface::get_surfaces() const
 	if(width() > max_text_line_width)
 		return surfs_;
 
-	foreach (text_chunk const &chunk, chunks_)
+	BOOST_FOREACH (text_chunk const &chunk, chunks_)
 	{
 		TTF_Font* ttfont = get_font(font_id(chunk.subset, font_size_));
 		if (ttfont == NULL)
@@ -920,7 +920,7 @@ namespace {
 	const int title2_size = font::SIZE_NORMAL;
 	const int box_width = 2;
 	const int normal_font_size = font::SIZE_SMALL;
-
+/*
 	/// Thrown when the help system fails to parse something.
 	struct parse_error : public game::error
 	{
@@ -929,6 +929,7 @@ namespace {
 			VALIDATE(false, std::string("tintegrate, ") + msg);
 		}
 	};
+*/
 }
 
 namespace help {
@@ -1057,7 +1058,16 @@ tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_he
 	, default_font_color_(default_font_color)
 {
 	// Parse and add the text.
-	std::vector<std::string> const& parsed_items = parse_text(src);
+	std::vector<std::string> parsed_items;
+
+	try {
+		parsed_items = parse_text(src);
+	} 
+	catch (help::parse_error& ) {
+		// [see remark#30] process character: '<' 
+		add_text_item(src, default_font_color_);
+	}
+
 	std::vector<std::string>::const_iterator it;
 	for (it = parsed_items.begin(); it != parsed_items.end(); ++it) {
 		if (*it != "" && (*it)[0] == '[') {
@@ -1083,13 +1093,11 @@ tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_he
 #undef TRY
 
 			}
-			catch (config::error e) {
-				std::stringstream msg;
-				msg << "Error when parsing help markup as WML: '" << e.message << "'";
-				throw parse_error(msg.str());
+			catch (config::error& e) {
+				// [see remark#30] process character: '<' 
+				add_text_item(*it, default_font_color_);
 			}
-		}
-		else {
+		} else {
 			add_text_item(*it, default_font_color_);
 		}
 	}
@@ -1223,7 +1231,9 @@ void tintegrate::handle_format_cfg(const config &cfg)
 {
 	const std::string text = cfg["text"];
 	if (text == "") {
-		throw parse_error("Format markup must have text attribute.");
+		// sorry, cannot avoid empty text
+		// throw parse_error("Format markup must have text attribute.");
+		return;
 	}
 	bool bold = cfg["bold"].to_bool();
 	bool italic = cfg["italic"].to_bool();
@@ -1589,7 +1599,11 @@ floating_label::floating_label(const std::string& text)
 		xpos_(0), ypos_(0),
 		xmove_(0), ymove_(0), lifetime_(-1),
 		width_(-1),
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 		clip_rect_(screen_area()),
+#else
+		clip_rect_(create_rect(0, 0, 800, 600)),
+#endif
 		alpha_change_(0), visible_(true), align_(CENTER_ALIGN),
 		border_(0), scroll_(ANCHOR_LABEL_SCREEN), use_markup_(true)
 {}
@@ -1932,7 +1946,7 @@ bool load_font_config()
 		return false;
 
 	std::set<std::string> known_fonts;
-	foreach (const config &font, fonts_config.child_range("font")) {
+	BOOST_FOREACH (const config &font, fonts_config.child_range("font")) {
 		known_fonts.insert(font["name"]);
 	}
 

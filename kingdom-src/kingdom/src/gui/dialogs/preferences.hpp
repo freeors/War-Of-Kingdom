@@ -71,7 +71,6 @@ private:
 	void show_floating_labels_toggled(twidget* widget);
 	void show_team_colors_toggled(twidget* widget);
 	void default_move_toggled(twidget* widget);
-	void idle_anim_changed(tslider* widget, int value);
 	void video_mode_button(twindow& window);
 	// music
 	void sound_toggled(twidget* widget);
@@ -82,9 +81,6 @@ private:
 	void turn_bell_changed(tslider* widget, int value);
 	void UI_sound_toggled(twidget* widget);
 	void UI_sound_changed(tslider* widget, int value);
-	// multiplayer
-	void maximal_defeated_activity(twindow& window);
-	void duel(twindow& window);
 	// advanced
 	void chat_timestamp_toggled(twidget* widget);
 	void scroll_when_mouse_outside_toggled(twidget* widget);
@@ -93,6 +89,10 @@ private:
 	void show_color_cursors_toggled(twidget* widget);
 	void zoom_button(twindow& window);
 	void show_grid_toggled(twidget* widget);
+	// scenario
+	void maximal_defeated_activity(twindow& window);
+	void duel(twindow& window);
+	void no_messagebox_toggled(twidget* widget);
 
 	const tscenario_env& get_scenario_env() const { return env_; }
 private:

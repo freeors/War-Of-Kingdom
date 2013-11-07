@@ -18,13 +18,14 @@
 
 #include "gui/dialogs/dialog.hpp"
 
+class game_display;
+
 namespace gui2 {
 
 class tmp_login : public tdialog
 {
 public:
-	tmp_login(const std::string& label,
-		const bool focus_password);
+	tmp_login(game_display& disp, const std::string& label);
 
 private:
 
@@ -36,6 +37,14 @@ private:
 
 	/** Inherited from tdialog. */
 	void post_show(twindow& window);
+
+	void register1(twindow& window);
+
+	std::string text_box_str(twindow& window, const std::string& id, const std::string& name, int min, int max);
+	bool create(twindow& window, bool close);
+
+private:
+	game_display& disp_;
 };
 
 } // namespace gui2

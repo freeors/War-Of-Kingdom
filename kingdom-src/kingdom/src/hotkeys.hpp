@@ -62,6 +62,7 @@ enum HOTKEY_COMMAND {
 
 	HOTKEY_INTERIOR,
 	HOTKEY_TECHNOLOGY_TREE,
+	HOTKEY_UPLOAD,
 	HOTKEY_FINAL_BATTLE,
 	HOTKEY_EMPLOY,
 	HOTKEY_LIST,
@@ -297,6 +298,7 @@ public:
 
 	virtual void interior() {};
 	virtual void technology_tree() {};
+	virtual void upload() {};
 	virtual void final_battle(int side_num = -1, int human_capital = -1, int ai_capital = -1) {}
 	virtual void employ() {};
 	virtual void list() {}

@@ -1,6 +1,5 @@
-/* $Id: ban.hpp 47300 2010-10-30 09:40:30Z silene $ */
 /*
-   Copyright (C) 2008 - 2010 by Pauli Nieminen <paniemin@cc.hut.fi>
+   Copyright (C) 2008 - 2013 by Pauli Nieminen <paniemin@cc.hut.fi>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -82,6 +81,7 @@ namespace wesnothd {
 
 		std::string get_human_end_time() const;
 		std::string get_human_start_time() const;
+		std::string get_human_time_span() const;
 		static std::string get_human_time(const time_t&);
 
 		std::string get_reason() const

@@ -57,6 +57,7 @@ public:
 
 protected:
 	virtual void init_gui();
+	void linger();
 
 private:
 	void init();

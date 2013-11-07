@@ -1,7 +1,6 @@
-/* $Id: log.hpp 46680 2010-09-24 01:46:20Z ai0867 $ */
 /*
    Copyright (C) 2003 by David White <dave@whitevine.net>
-                 2004 - 2010 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
+                 2004 - 2013 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -35,6 +34,35 @@
 
 namespace lg {
 
+/**
+ * Helper class to redirect the output of the logger in a certain scope.
+ *
+ * The main usage of the redirection is for the unit tests to validate the
+ * ourput on the logger with the expected output.
+ */
+class tredirect_output_setter
+{
+public:
+
+	/**
+	 * Constructor.
+	 *
+	 * @param stream              The stream to direct the output to.
+	 */
+	explicit tredirect_output_setter(std::ostream& stream);
+
+	~tredirect_output_setter();
+
+private:
+
+	/**
+	 * The previously set redirection.
+	 *
+	 * This value is stored here to be restored in this destructor.
+	 */
+	std::ostream* old_stream_;
+};
+
 class logger;
 
 typedef std::pair<const std::string, int> logd;
@@ -65,6 +93,7 @@ public:
 
 void timestamps(bool);
 std::string get_timestamp(const time_t& t, const std::string& format="%Y%m%d %H:%M:%S ");
+std::string get_timespan(const time_t& t);
 
 extern logger err, warn, info, debug;
 extern log_domain general;
@@ -77,14 +106,14 @@ class scope_logger
 public:
 	scope_logger(log_domain const &domain, const char* str) :
 		ticks_(0),
-		output_(0),
+		output_(NULL),
 		str_()
 	{
 		if (!debug.dont_log(domain)) do_log_entry(domain, str);
 	}
 	scope_logger(log_domain const &domain, const std::string& str) :
 		ticks_(0),
-		output_(0),
+		output_(NULL),
 		str_()
 	{
 		if (!debug.dont_log(domain)) do_log_entry(domain, str);
@@ -102,8 +131,8 @@ private:
 /**
  * Use this logger to send errors due to deprecated WML.
  * The preferred format is:
- * xxx is deprecated, support will be removed in version X. or
- * xxx is deprecated, support has been removed in version X.
+ * xxx is deprecated; support will be removed in version X. or
+ * xxx is deprecated; support has been removed in version X.
  *
  * After every wml-event the errors are shown to the user,
  * so they can inform the campaign maintainer.

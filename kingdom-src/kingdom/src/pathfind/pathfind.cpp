@@ -23,7 +23,6 @@
 
 #include "pathfind/pathfind.hpp"
 
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "gettext.hpp"
 #include "log.hpp"
@@ -35,6 +34,7 @@
 #include "wml_exception.hpp"
 #include "play_controller.hpp"
 
+#include <boost/foreach.hpp>
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -42,7 +42,34 @@
 static lg::log_domain log_engine("engine");
 #define ERR_PF LOG_STREAM(err, log_engine)
 
+bool can_generate(const gamemap& map, const std::vector<team>& teams, const unit_map& units, const unit& u, const map_location& loc)
+{
+	if (!map.on_board(loc)) {
+		return false;
+	}
+	if (u.movement_cost(map[loc]) == unit_movement_type::UNREACHABLE) {
+		return false;
+	}
+	unit_map::const_iterator it = units.find(loc, false);
+	if (it.valid() && !it->can_stand(u)) {
+		return false;
+	}
+
+	map_location locs[6];
+	get_adjacent_tiles(loc, locs);
+	for (int i = 0; i != 6; ++i) {
+		if (!map.on_board(locs[i])) {
+			continue;
+		}
+		if (u.movement_cost(map[locs[i]]) != unit_movement_type::UNREACHABLE) {
+			return true;
+		}
+	}
+	return false;
+}
+
 map_location pathfind::find_vacant_tile(const gamemap& map,
+				const std::vector<team>& teams,
 				const unit_map& units,
 				const map_location& loc,
 				const unit* pass_check)
@@ -56,12 +83,12 @@ map_location pathfind::find_vacant_tile(const gamemap& map,
 		std::set<map_location> tiles_checking;
 		tiles_checking.swap(pending_tiles_to_check);
 		//Iterate over all the hexes we need to check
-		foreach (const map_location &loc, tiles_checking)
+		BOOST_FOREACH (const map_location &loc, tiles_checking)
 		{
 			tiles_checked.insert(loc);
 
 			// If the unit cannot reach this area or it's not a castle but should, skip it.
-			if (!pass_check || pass_check->movement_cost(map[loc]) != unit_movement_type::UNREACHABLE) {
+			if (!pass_check || can_generate(map, teams, units, *pass_check, loc)) {
 				// If the hex is empty, return it.
 				if (units.find(loc) == units.end()) {
 					return loc;
@@ -69,7 +96,7 @@ map_location pathfind::find_vacant_tile(const gamemap& map,
 			}
 			map_location adjs[6];
 			get_adjacent_tiles(loc, adjs);
-			foreach (const map_location &loc, adjs)
+			BOOST_FOREACH (const map_location &loc, adjs)
 			{
 				if (!map.on_board(loc)) continue;
 				// Add the tile to be checked if it hasn't already been and
@@ -108,20 +135,6 @@ std::set<map_location> pathfind::get_teleport_locations(const unit &u,
 {
 	std::set<map_location> res;
 	if (!u.get_ability_bool("teleport")) return res;
-
-	const team &current_team = (*resources::teams)[u.side() - 1];
-	const map_location &loc = u.get_location();
-	foreach (const map_location &l, current_team.villages())
-	{
-		// This must be a vacant village (or occupied by the unit)
-		// to be able to teleport.
-		if (!see_all && viewing_team.is_enemy(u.side()) && viewing_team.fogged(l))
-			continue;
-		if (!ignore_units && l != loc &&
-		    get_visible_unit(l, viewing_team, see_all))
-			continue;
-		res.insert(l);
-	}
 	return res;
 }
 
@@ -203,7 +216,7 @@ static void find_routes(const gamemap& map, const unit_map& units,
 	  teleports = pathfind::get_teleport_locations(u, viewing_team, see_all, ignore_units);
 	}
 	const std::vector<map_location>* road = NULL;
-	if (u.is_commoner()) {
+	if (u.is_path_along_road()) {
 		road = &resources::controller->road(u);
 	}
 
@@ -302,14 +315,7 @@ static void find_routes(const gamemap& map, const unit_map& units,
 						continue;
 					}
 				}
-/*
-				// move cost in any terrain cannot be zero. it is zero indicate loc is self-city grid.
-				if (move_cost && (!v || !v->cancel_zoc()) && !force_ignore_zocs && t.movement_left > 0
-				    && pathfind::enemy_zoc(teams, locs[i], viewing_team, u.side(), see_all)
-						&& !u.get_ability_bool("skirmisher", locs[i])) {
-					t.movement_left = 0;
-				}
-*/
+
 				if (move_cost && !force_ignore_zocs && t.movement_left > 0
 				    && pathfind::enemy_zoc(teams, locs[i], viewing_team, u.side(), see_all)
 						&& !u.get_ability_bool("skirmisher", locs[i])) {
@@ -397,7 +403,7 @@ std::vector<map_location> pathfind::paths::dest_vect::get_path(const const_itera
 		const_iterator i = j;
 		do {
 			i = find(i->prev);
-			assert(i != end());
+			VALIDATE(i != end(), "paths::dest_vect::get_path, i != end()!");
 			path.push_back(i->curr);
 		} while (i->prev.valid());
 	}
@@ -473,7 +479,7 @@ pathfind::marked_route pathfind::mark_route(const plain_route &rt,
 		bool last_step = (i+1 == rt.steps.end());
 
 		// move_cost of the next step is irrelevant for the last step
-		assert(last_step || resources::game_map->on_board(*(i+1)));
+		VALIDATE(last_step || resources::game_map->on_board(*(i+1)), "pathfind::mark_route, last_step || on_board(...)!");
 
 		pathfind::last_location = *i;
 		int move_cost;
@@ -602,7 +608,7 @@ int pathfind::location_cost(const unit_map& units, const team& current_team, con
 
 double pathfind::shortest_path_calculator::cost(const map_location& loc, const double so_far) const
 {
-	assert(map_.on_board(loc));
+	VALIDATE(map_.on_board(loc), "shortest_path_calculator::cost, map_.on_board(loc)!");
 
 	const team& current_team = teams_[unit_.side() - 1];
 	pathfind::is_wall = false;
@@ -625,12 +631,13 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 			return getNoPathValue();
 		}
 	}
-
+/*
 	// loc is shrouded, consider it impassable
 	// NOTE: This is why AI must avoid to use shroud
+	// I mark it. so allow AI enable shroud.
 	if (!see_all_ && viewing_team_.shrouded(loc))
 		return getNoPathValue();
-
+*/
 	bool ignore_city = false;
 	if (so_far > 1.5 * total_movement_) {
 		ignore_city = true;
@@ -638,20 +645,30 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 
 	const t_translation::t_terrain terrain = map_[loc];
 	int terrain_cost;
+	bool is_enemy_fort = false;
 
 	// cost of wall
 	unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
 	// remark varible, so that caller can use it.
-	if (curr_node && curr_node->second->wall()) {
-		pathfind::is_wall = true;
+	if (curr_node) {
+		if (curr_node->second->wall()) {
+			pathfind::is_wall = true;
+		} else if (curr_node->second->fort() && current_team.is_enemy(curr_node->second->side())) {
+			is_enemy_fort = true;
+		}
 	}
+
 
 	bool enemy_wall = false;
 	if (so_far == 0.8888) {
 		// when so_far = 0.8888, it indicates judging dst.
 		terrain_cost = 1;
 
-	} else if (curr_node && curr_node->second->wall()) {
+	} /* else if (is_enemy_fort) {
+		// if not destination, all troop cann't stand on fort, include transport.
+		terrain_cost = unit_movement_type::UNREACHABLE;
+
+	} */ else if (pathfind::is_wall) {
 		const unit* w = curr_node->second;
 		enemy_wall = current_team.is_enemy(w->side());
 		terrain_cost = location_cost(units_, current_team, unit_, enemy_wall, ignore_city);
@@ -759,7 +776,7 @@ pathfind::emergency_path_calculator::emergency_path_calculator(const unit& u, co
 
 double pathfind::emergency_path_calculator::cost(const map_location& loc, const double) const
 {
-	assert(map_.on_board(loc));
+	VALIDATE(map_.on_board(loc), "emergency_path_calculator::cost, map_.on_board(loc)!");
 
 	return unit_.movement_cost(map_[loc]);
 }

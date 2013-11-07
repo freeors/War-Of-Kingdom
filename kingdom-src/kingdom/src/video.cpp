@@ -21,7 +21,6 @@
 #include "global.hpp"
 
 #include "font.hpp"
-#include "foreach.hpp"
 #include "image.hpp"
 #include "log.hpp"
 #include "preferences.hpp"
@@ -30,6 +29,7 @@
 #include "video.hpp"
 #include "display.hpp"
 
+#include <boost/foreach.hpp>
 #include <vector>
 #include <map>
 #include <algorithm>
@@ -111,7 +111,7 @@ static void calc_rects()
 {
 	events.clear();
 
-	foreach (SDL_Rect const &rect, update_rects) {
+	BOOST_FOREACH (SDL_Rect const &rect, update_rects) {
 		events.push_back(event(rect, true));
 		events.push_back(event(rect, false));
 	}
@@ -213,13 +213,10 @@ static void clear_updates()
 namespace {
 
 surface frameBuffer = NULL;
-bool fake_interactive = false;
 }
 
 bool non_interactive()
 {
-	if (fake_interactive)
-		return false;
 	return SDL_GetVideoSurface() == NULL;
 }
 
@@ -297,20 +294,9 @@ void update_whole_screen()
 {
 	update_all = true;
 }
-CVideo::CVideo(FAKE_TYPES type) : mode_changed_(false), bpp_(0), fake_screen_(false), help_string_(0), updatesLocked_(0)
+CVideo::CVideo() : mode_changed_(false), bpp_(0), help_string_(0), updatesLocked_(0)
 {
 	initSDL();
-	switch(type)
-	{
-		case NO_FAKE:
-			break;
-		case FAKE:
-			make_fake();
-			break;
-		case FAKE_TEST:
-			make_test_fake();
-			break;
-	}
 }
 
 void CVideo::initSDL()
@@ -339,24 +325,6 @@ void CVideo::blit_surface(int x, int y, surface surf, SDL_Rect* srcrect, SDL_Rec
 	sdl_blit(surf,srcrect,target,&dst);
 }
 
-void CVideo::make_fake()
-{
-	fake_screen_ = true;
-	frameBuffer = SDL_CreateRGBSurface(SDL_SWSURFACE,16,16,24,0xFF0000,0xFF00,0xFF,0);
-	image::set_pixel_format(frameBuffer->format);
-}
-
-void CVideo::make_test_fake(const unsigned width,
-			const unsigned height, const unsigned bpp)
-{
-	frameBuffer = SDL_CreateRGBSurface(SDL_SWSURFACE,
-			width, height, bpp, 0xFF0000, 0xFF00, 0xFF, 0);
-	image::set_pixel_format(frameBuffer->format);
-
-	fake_interactive = true;
-
-}
-
 int CVideo::modePossible( int x, int y, int bits_per_pixel, int flags, bool current_screen_optimal )
 {
 
@@ -380,7 +348,6 @@ int CVideo::setMode( int x, int y, int bits_per_pixel, int flags )
 	bool reset_zoom = frameBuffer? false: true;
 
 	update_rects.clear();
-	if (fake_screen_) return 0;
 	mode_changed_ = true;
 
 	flags = get_flags(flags);
@@ -436,14 +403,11 @@ int CVideo::gety() const
 
 void CVideo::flip()
 {
-	if(fake_screen_)
-		return;
-
-	if(update_all) {
+	if (update_all) {
 		::SDL_Flip(frameBuffer);
 	} else if(update_rects.empty() == false) {
 		calc_rects();
-		if(!update_rects.empty()) {
+		if (!update_rects.empty()) {
 			SDL_UpdateRects(frameBuffer, update_rects.size(), &update_rects[0]);
 		}
 	}

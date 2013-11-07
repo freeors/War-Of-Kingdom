@@ -77,6 +77,7 @@ public:
 	virtual void show_rpg();
 	virtual void rpg_detail();
 	virtual void assemble_treasure();
+	virtual void appoint_noble();
 	virtual void rpg_exchange(const std::vector<size_t>& human_p, size_t ai_p);
 	virtual void rpg_independence(bool replaying = false);
 
@@ -93,6 +94,7 @@ public:
 	virtual void toggle_grid();
 	virtual void interior();
 	virtual void technology_tree();
+	virtual void upload();
 	virtual void final_battle(int side_num, int human_capital, int ai_capital);
 	virtual void employ();
 	virtual void list();
@@ -125,8 +127,8 @@ public:
 	void commoner_back(artifical* entered_city, artifical* belong_city, const map_location& src_loc);
 	map_location move_unit(bool troop, team& current_team, const std::pair<unit*, int>& pair, map_location to, bool dst_must_reachable = true);
 
-	void set_victory_when_enemies_defeated(bool e)
-	{ victory_when_enemies_defeated_ = e; }
+	void set_victory_when_enemy_no_city(bool e)
+	{ victory_when_enemy_no_city_ = e; }
 	end_level_data &get_end_level_data()
 	{ return end_level_data_; }
 
@@ -145,14 +147,20 @@ public:
 
 	bool is_skipping_replay() const { return skip_replay_;}
 	bool is_replaying() const { return replaying_; }
+	bool is_recovering(int side) const;
 	bool all_ai_allied() const { return all_ai_allied_; }
 	bool fallen_to_unstage() const { return fallen_to_unstage_; }
 	bool card_mode() const { return card_mode_; }
 
+	int difficulty_level() const { return difficulty_level_; }
+
 	int duel() const { return duel_; }
 	void set_duel(int duel) { duel_ = duel; }
-
+	
 	bool scenario_env_changed(const tscenario_env& env) const;
+	void do_scenario_env(const tscenario_env& env, bool to_recorder);
+	void set_vip(bool vip);
+	bool vip() const { return vip_; }
 
 	std::vector<int>& treasures() { return treasures_; }
 	const std::vector<int>& treasures() const { return treasures_; }
@@ -186,11 +194,15 @@ public:
 	const std::map<std::pair<int, int>, std::vector<map_location> >& roads() const { return roads_; }
 	const std::vector<map_location>& road(int a, int b) const;
 	const std::vector<map_location>& road(const unit& u) const;
-	
-	void do_build(unit& builder, const unit_type* ut, const map_location& art_loc, int cost = -1);
 
-	int human_players();
-	int first_human_team() const { return first_human_team_; }
+	std::map<int, std::string>& renames() { return renames_; }
+	const std::map<int, std::string>& renames() const { return renames_; }
+	void insert_rename(int number, const std::string& name); 
+
+	void do_build(unit& builder, const unit_type* ut, const map_location& art_loc, int cost = -1);
+	void start_pass_scenario_anim(LEVEL_RESULT result) const;
+
+	int human_team() const { return human_team_; }
 	const config& level() const { return level_; }
 
 	card_map& cards() { return cards_; }
@@ -237,6 +249,9 @@ protected:
 	int find_human_team_before(const size_t team) const;
 
 	void fill_employ_hero(std::set<int>& candidate, int count, int& random);
+	void calculate_difficulty_level();
+	std::pair<int, int> calculate_score(LEVEL_RESULT result) const;
+	bool calculate_capture() const;
 
 	//managers
 	boost::scoped_ptr<preferences::display_manager> prefs_disp_manager_;
@@ -269,7 +284,7 @@ protected:
 	//instead of starting a fresh one. Gets reset to false after init_side
 	bool loading_game_;
 
-	int first_human_team_;
+	int human_team_;
 	int player_number_;
 	int first_player_;
 	unsigned int start_turn_;
@@ -287,6 +302,13 @@ protected:
 	std::vector<hero*> emploies_;
 	bool rpging_;
 
+	// dependent on inapp-purchase
+	bool vip_;
+	bool more_card_;
+	bool tactic_slot_;
+	
+	int difficulty_level_;
+
 	const std::string& select_victory_music() const;
 	const std::string& select_defeat_music()  const;
 
@@ -295,6 +317,7 @@ protected:
 
 private:
 	void init(CVideo &video);
+	void more_card(team& current_team, int turn);
 
 	// Expand AUTOSAVES in the menu items, setting the real savenames.
 	void expand_autosaves(std::vector<std::string>& items);
@@ -304,14 +327,13 @@ private:
 	std::vector<wml_menu_item *> wml_commands_;
 	static const size_t MAX_WML_COMMANDS = 7;
 
-	int human_players_;
-
 	unit** troops_cache_;
 	size_t troops_cache_vsize_;
 
 	std::map<std::pair<int, int>, std::vector<map_location> > roads_;
+	std::map<int, std::string> renames_;
 	
-	bool victory_when_enemies_defeated_;
+	bool victory_when_enemy_no_city_;
 	end_level_data end_level_data_;
 	std::vector<std::string> victory_music_;
 	std::vector<std::string> defeat_music_;

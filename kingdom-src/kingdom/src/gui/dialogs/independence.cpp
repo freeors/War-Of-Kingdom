@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/independence.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -109,7 +108,6 @@ void tindependence::pre_show(CVideo& /*video*/, twindow& window)
 	tlabel* label = find_widget<tlabel>(&window, "tip", false, true);
 	utils::string_map symbols;
 	symbols["side"] = current_team_.name();
-	label->set_use_markup(true);
 	str.str("");
 	str << "<format>";
 	if (current_team_.defeat_vote()) {

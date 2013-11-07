@@ -66,7 +66,7 @@ public:
 	gamemap& gmap_;
 	const config& game_config_;
 
-	explicit tmp_side_wait(hero_map& heros, game_display& gui, gamemap& gmap, const config& game_config,
+	explicit tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& gui, gamemap& gmap, const config& game_config,
 			config& gamelist, bool observe);
 
 	~tmp_side_wait();
@@ -110,6 +110,9 @@ private:
 	void process_network_data(const config& data, const network::connection sock);
 
 	void update_playerlist();
+
+private:
+	hero_map& heros_start_;
 
 	config level_;
 

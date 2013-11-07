@@ -158,7 +158,8 @@ frame_parameters::frame_parameters() :
 	blend_with(0),
 	blend_ratio(0.0),
 	highlight_ratio(1.0),
-	offset(0),
+	offset_x(0),
+	offset_y(0),
 	submerge(0.0),
 	x(0),
 	y(0),
@@ -187,7 +188,8 @@ frame_builder::frame_builder() :
 	blend_with_(0),
 	blend_ratio_(""),
 	highlight_ratio_(""),
-	offset_(""),
+	offset_x_(""),
+	offset_y_(""),
 	submerge_(""),
 	x_(""),
 	y_(""),
@@ -196,9 +198,10 @@ frame_builder::frame_builder() :
 	auto_vflip_(t_unset),
 	auto_hflip_(t_unset),
 	primary_frame_(t_unset),
-	drawing_layer_(str_cast(display::LAYER_UNIT_DEFAULT - display::LAYER_UNIT_FIRST)),
-	screen_mode_(false)
+	drawing_layer_(str_cast(display::LAYER_UNIT_DEFAULT - display::LAYER_UNIT_FIRST))
 {}
+
+const int default_text_color = 0xDDDDDD; // equal font::NORMAL_COLOR
 
 frame_builder::frame_builder(const config& cfg,const std::string& frame_string) :
 	duration_(1),
@@ -212,12 +215,13 @@ frame_builder::frame_builder(const config& cfg,const std::string& frame_string) 
 	halo_mod_(cfg[frame_string + "halo_mod"]),
 	sound_(cfg[frame_string + "sound"]),
 	text_(cfg[frame_string + "text"]),
-	text_color_(0),
+	text_color_(default_text_color),
 	font_size_(cfg[frame_string + "font_size"].to_int(0)),
 	blend_with_(0),
 	blend_ratio_(cfg[frame_string + "blend_ratio"]),
 	highlight_ratio_(cfg[frame_string + "alpha"]),
-	offset_(cfg[frame_string + "offset"]),
+	offset_x_(cfg[frame_string + "offset_x"]),
+	offset_y_(cfg[frame_string + "offset_y"]),
 	submerge_(cfg[frame_string + "submerge"]),
 	x_(cfg[frame_string + "x"]),
 	y_(cfg[frame_string + "y"]),
@@ -226,8 +230,7 @@ frame_builder::frame_builder(const config& cfg,const std::string& frame_string) 
 	auto_vflip_(t_unset),
 	auto_hflip_(t_unset),
 	primary_frame_(t_unset),
-	drawing_layer_(cfg[frame_string + "layer"]),
-	screen_mode_(cfg[frame_string + "screen_mode"].to_bool())
+	drawing_layer_(cfg[frame_string + "layer"])
 {
 	if(!cfg.has_attribute(frame_string + "auto_vflip")) {
 		auto_vflip_ = t_unset;
@@ -254,6 +257,7 @@ frame_builder::frame_builder(const config& cfg,const std::string& frame_string) 
 	if (color.size() == 3) {
 		text_color_ = display::rgb(atoi(color[0].c_str()),
 			atoi(color[1].c_str()), atoi(color[2].c_str()));
+		text_color_ &= 0xffffff;
 	}
 
 	if (const config::attribute_value *v = cfg.get(frame_string + "duration")) {
@@ -318,7 +322,14 @@ frame_builder & frame_builder::highlight(const std::string& highlight)
 }
 frame_builder & frame_builder::offset(const std::string& offset)
 {
-	offset_=offset;
+	offset_x_=offset;
+	offset_y_=offset;
+	return *this;
+}
+frame_builder & frame_builder::offset(const std::string& offset_x, const std::string& offset_y)
+{
+	offset_x_=offset_x;
+	offset_y_=offset_y;
 	return *this;
 }
 frame_builder & frame_builder::submerge(const std::string& submerge)
@@ -388,7 +399,8 @@ frame_parsed_parameters::frame_parsed_parameters(const frame_builder & builder, 
 	blend_with_(builder.blend_with_),
 	blend_ratio_(builder.blend_ratio_,duration_),
 	highlight_ratio_(builder.highlight_ratio_,duration_),
-	offset_(builder.offset_,duration_),
+	offset_x_(builder.offset_x_,duration_),
+	offset_y_(builder.offset_y_,duration_),
 	submerge_(builder.submerge_,duration_),
 	x_(builder.x_,duration_),
 	y_(builder.y_,duration_),
@@ -397,8 +409,7 @@ frame_parsed_parameters::frame_parsed_parameters(const frame_builder & builder, 
 	auto_vflip_(builder.auto_vflip_),
 	auto_hflip_(builder.auto_hflip_),
 	primary_frame_(builder.primary_frame_),
-	drawing_layer_(builder.drawing_layer_,duration_),
-	screen_mode_(builder.screen_mode_)
+	drawing_layer_(builder.drawing_layer_,duration_)
 {}
 
 
@@ -409,7 +420,8 @@ bool frame_parsed_parameters::does_not_change() const
 		halo_y_.does_not_change() &&
 		blend_ratio_.does_not_change() &&
 		highlight_ratio_.does_not_change() &&
-		offset_.does_not_change() &&
+		offset_x_.does_not_change() &&
+		offset_y_.does_not_change() &&
 		submerge_.does_not_change() &&
 		x_.does_not_change() &&
 		y_.does_not_change() &&
@@ -424,7 +436,8 @@ bool frame_parsed_parameters::need_update() const
 			!halo_y_.does_not_change() ||
 			!blend_ratio_.does_not_change() ||
 			!highlight_ratio_.does_not_change() ||
-			!offset_.does_not_change() ||
+			!offset_x_.does_not_change() ||
+			!offset_y_.does_not_change() ||
 			!submerge_.does_not_change() ||
 			!x_.does_not_change() ||
 			!y_.does_not_change() ||
@@ -455,7 +468,8 @@ const frame_parameters frame_parsed_parameters::parameters(int current_time) con
 	result.blend_with = blend_with_;
 	result.blend_ratio = blend_ratio_.get_current_element(current_time);
 	result.highlight_ratio = highlight_ratio_.get_current_element(current_time,1.0);
-	result.offset = offset_.get_current_element(current_time,-1000);
+	result.offset_x = offset_x_.get_current_element(current_time,-1000);
+	result.offset_y = offset_y_.get_current_element(current_time,-1000);
 	result.submerge = submerge_.get_current_element(current_time);
 	result.x = x_.get_current_element(current_time);
 	result.y = y_.get_current_element(current_time);
@@ -465,7 +479,6 @@ const frame_parameters frame_parsed_parameters::parameters(int current_time) con
 	result.auto_hflip = auto_hflip_;
 	result.primary_frame = primary_frame_;
 	result.drawing_layer = drawing_layer_.get_current_element(current_time,display::LAYER_UNIT_DEFAULT-display::LAYER_UNIT_FIRST);
-	result.screen_mode = screen_mode_;
 	return result;
 }
 
@@ -484,9 +497,14 @@ void frame_parsed_parameters::override( int duration
 		highlight_ratio_=progressive_double(highlight_ratio_.get_original(),duration);
 	}
 	if(!offset.empty()) {
-		offset_= progressive_double(offset,duration);
+		offset_x_= progressive_double(offset,duration);
 	} else  if(duration != duration_){
-		offset_=progressive_double(offset_.get_original(),duration);
+		offset_x_=progressive_double(offset_x_.get_original(),duration);
+	}
+	if(!offset.empty()) {
+		offset_y_= progressive_double(offset,duration);
+	} else  if(duration != duration_){
+		offset_y_=progressive_double(offset_y_.get_original(),duration);
 	}
 	if(!blend_ratio.empty()) {
 		blend_ratio_ = progressive_double(blend_ratio,duration);
@@ -516,7 +534,7 @@ void frame_parsed_parameters::override( int duration
 	}
 }
 
-
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 void unit_frame::redraw(const int frame_time,bool first_time,const map_location & src,const map_location & dst,int*halo_id,const frame_parameters & animation_val,const frame_parameters & engine_val)const
 {
 	const frame_parameters current_data = merge_parameters(frame_time,animation_val,engine_val);
@@ -532,7 +550,8 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 
 	const map_location::DIRECTION direction = src.get_relative_dir(dst);
 
-	double tmp_offset = current_data.offset;
+	double tmp_offset_x = current_data.offset_x;
+	double tmp_offset_y = current_data.offset_y;
 
 		// debug code allowing to see the number of frames and their position
 		// you need to add a '/n'
@@ -564,15 +583,11 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 		image=image::get_image(image_loc, image::SCALED_TO_ZOOM);
 	}
 
-	const int x = static_cast<int>(tmp_offset * xdst + (1.0-tmp_offset) * xsrc) + d2;
-	const int y = static_cast<int>(tmp_offset * ydst + (1.0-tmp_offset) * ysrc) + d2;
+	const int x = static_cast<int>(tmp_offset_x * xdst + (1.0-tmp_offset_x) * xsrc) + d2;
+	const int y = static_cast<int>(tmp_offset_y * ydst + (1.0-tmp_offset_y) * ysrc) + d2;
 
 	if (image != NULL) {
-#ifdef LOW_MEM
-		bool facing_west = false;
-#else
 		bool facing_west = direction == map_location::NORTH_WEST || direction == map_location::SOUTH_WEST;
-#endif
 		bool facing_north = direction == map_location::NORTH_WEST || direction == map_location::NORTH || direction == map_location::NORTH_EAST;
 		if(!current_data.auto_hflip) facing_west = false;
 		if(!current_data.auto_vflip) facing_north = true;
@@ -597,6 +612,7 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 	}
 	halo::remove(*halo_id);
 	*halo_id = halo::NO_HALO;
+
 	if(!current_data.halo.empty()) {
 		halo::ORIENTATION orientation;
 		switch(direction)
@@ -647,7 +663,8 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 void unit_frame::redraw_screen_mode(const int frame_time,bool first_time, const frame_parameters& current_data) const
 {
 	// const frame_parameters current_data = merge_parameters(frame_time,animation_val,engine_val);
-	double tmp_offset = current_data.offset;
+	double tmp_offset_x = current_data.offset_x;
+	double tmp_offset_y = current_data.offset_y;
 
 	// int d2 = game_display::get_singleton()->hex_size() / 2;
 	if (first_time ) {
@@ -660,7 +677,7 @@ void unit_frame::redraw_screen_mode(const int frame_time,bool first_time, const 
 
 	surface image;
 	if (!image_loc.is_void() && image_loc.get_filename() != "") { // invalid diag image, or not diagonal
-		image=image::get_image(image_loc, image::SCALED_TO_ZOOM);
+		image = image::get_image(image_loc, image::SCALED_TO_ZOOM);
 	}
 
 	game_display* disp = game_display::get_singleton();
@@ -668,13 +685,17 @@ void unit_frame::redraw_screen_mode(const int frame_time,bool first_time, const 
 	// int screen_width = disp->video().getx();
 	// int screen_height = disp->video().gety();
 
-	const int x = static_cast<int>(tmp_offset * map_area.w);
-	const int y = static_cast<int>(tmp_offset * map_area.h);
+	const int x = static_cast<int>(tmp_offset_x * map_area.w);
+	const int y = static_cast<int>(tmp_offset_y * map_area.h);
 
 	bool facing_west = false;
 	bool facing_north = true;
 
 	double zoom_factor = game_display::get_singleton()->get_zoom_factor();
+
+	const map_location zero_loc(0,0);
+	zero_x_ = disp->get_location_x(zero_loc);
+	zero_y_ = disp->get_location_y(zero_loc);
 
 	if (image != NULL) {
 		int my_x = x + int(current_data.x * zoom_factor - image->w/2);
@@ -691,8 +712,8 @@ void unit_frame::redraw_screen_mode(const int frame_time,bool first_time, const 
 		int my_y = y + int(current_data.y * zoom_factor);
 
 		disp->draw_text_in_hex2(map_location(), static_cast<display::tdrawing_layer>(display::LAYER_UNIT_FIRST+current_data.drawing_layer),
-			current_data.stext, current_data.font_size, font::NORMAL_COLOR, my_x, my_y,
-			       	ftofxp(current_data.highlight_ratio));
+			current_data.stext, current_data.font_size, int_to_color(current_data.text_color), my_x, my_y,
+			       	ftofxp(current_data.highlight_ratio), true);
 	}
 }
 
@@ -711,7 +732,8 @@ std::set<map_location> unit_frame::get_overlaped_hex(const int frame_time,const 
 	const map_location::DIRECTION direction = src.get_relative_dir(dst);
 
 	// const frame_parameters current_data = merge_parameters(frame_time,animation_val,engine_val);
-	double tmp_offset = current_data.offset;
+	double tmp_offset_x = current_data.offset_x;
+	double tmp_offset_y = current_data.offset_y;
 	int d2 = game_display::get_singleton()->hex_size() / 2;
 
 	image::locator image_loc;
@@ -725,7 +747,7 @@ std::set<map_location> unit_frame::get_overlaped_hex(const int frame_time,const 
 	// we always invalidate our own hex because we need to be called at redraw time even
 	// if we don't draw anything in the hex itself
 	std::set<map_location> result;
-	if(tmp_offset==0 && current_data.x == 0 && current_data.directional_x == 0 && image::is_in_hex(image_loc)) {
+	if(tmp_offset_x == 0 && tmp_offset_y == 0 && current_data.x == 0 && current_data.directional_x == 0 && image::is_in_hex(image_loc)) {
 		result.insert(src);
 		int my_y = current_data.y;
 		bool facing_north = direction == map_location::NORTH_WEST || direction == map_location::NORTH || direction == map_location::NORTH_EAST;
@@ -752,11 +774,7 @@ std::set<map_location> unit_frame::get_overlaped_hex(const int frame_time,const 
 					);
 		}
 		if (image != NULL) {
-#ifdef LOW_MEM
-			bool facing_west = false;
-#else
 			bool facing_west = direction == map_location::NORTH_WEST || direction == map_location::SOUTH_WEST;
-#endif
 			bool facing_north = direction == map_location::NORTH_WEST || direction == map_location::NORTH || direction == map_location::NORTH_EAST;
 			if(!current_data.auto_vflip) facing_north = true;
 			if(!current_data.auto_hflip) facing_west = false;
@@ -773,8 +791,8 @@ std::set<map_location> unit_frame::get_overlaped_hex(const int frame_time,const 
 				my_y -= current_data.directional_y;
 			}
 
-			const int x = static_cast<int>(tmp_offset * xdst + (1.0-tmp_offset) * xsrc)+my_x;
-			const int y = static_cast<int>(tmp_offset * ydst + (1.0-tmp_offset) * ysrc)+my_y;
+			const int x = static_cast<int>(tmp_offset_x * xdst + (1.0-tmp_offset_x) * xsrc)+my_x;
+			const int y = static_cast<int>(tmp_offset_y * ydst + (1.0-tmp_offset_y) * ysrc)+my_y;
 			const SDL_Rect r = create_rect(x, y, image->w, image->h);
 			// check if our underlying hexes are invalidated
 			// if we need to update ourselve because we changed, invalidate our hexes
@@ -799,7 +817,8 @@ std::set<map_location> unit_frame::get_overlaped_hex_screen_mode(const int frame
 	game_display* disp = game_display::get_singleton();
 
 	// const frame_parameters current_data = merge_parameters(frame_time,animation_val,engine_val);
-	double tmp_offset = current_data.offset;
+	double tmp_offset_x = current_data.offset_x;
+	double tmp_offset_y = current_data.offset_y;
 	// int d2 = game_display::get_singleton()->hex_size() / 2;
 
 	image::locator image_loc = image::locator(current_data.image, current_data.image_mod);
@@ -816,18 +835,42 @@ std::set<map_location> unit_frame::get_overlaped_hex_screen_mode(const int frame
 	// we always invalidate our own hex because we need to be called at redraw time even
 	// if we don't draw anything in the hex itself
 	std::set<map_location> result;
-	if (image != NULL) {
+	if (image != NULL || !current_data.stext.empty()) {
 		bool facing_west = false;
 		bool facing_north = false;
 
 		double zoom_factor = game_display::get_singleton()->get_zoom_factor();
-		int my_x = int(current_data.x * zoom_factor - image->w/2);
-		int my_y = int(current_data.y * zoom_factor - image->h/2);
+		int w, h;
+		if (image != NULL) {
+			w = image->w;
+			h = image->h;
+		} else {
+			const size_t font_sz = static_cast<size_t>(current_data.font_size * zoom_factor);
+			surface	text_surf = font::get_rendered_text2(current_data.stext, -1, current_data.font_size, font::NORMAL_COLOR);
+			// why add +1, reference draw_text_in_hex2, there is outline.
+			w = text_surf->w + 1;
+			h = text_surf->h + 1;
+		}
 
-		const int x = static_cast<int>(tmp_offset * map_area.w) + my_x;
-		const int y = static_cast<int>(tmp_offset * map_area.h) + my_y;
+		int my_x = int(current_data.x * zoom_factor - w/2);
+		int my_y = int(current_data.y * zoom_factor - h/2);
 
-		const SDL_Rect r = create_rect(x, y, image->w, image->h);
+		if (zero_x_ != -1 && zero_y_ != -1) {
+			const map_location zero_loc(0,0);
+			int zero_x = disp->get_location_x(zero_loc);
+			int zero_y = disp->get_location_y(zero_loc);
+			my_x += zero_x - zero_x_;
+			my_y += zero_y - zero_y_;
+		}
+
+		int x = static_cast<int>(tmp_offset_x * map_area.w) + my_x;
+		int y = static_cast<int>(tmp_offset_y * map_area.h) + my_y;
+		if (!image) {
+			x -= 1;
+			y -= 1;
+		}
+
+		SDL_Rect r = create_rect(x, y, w, h);
 		// check if our underlying hexes are invalidated
 		// if we need to update ourselve because we changed, invalidate our hexes
 		// and return whether or not our hexs was invalidated
@@ -843,6 +886,21 @@ void unit_frame::replace_image_name(const std::string& src, const std::string& d
 {
 	if (builder_.image_ == src) {
 		builder_.image_ = dst;
+	}
+}
+
+void unit_frame::replace_image_mod(const std::string& src, const std::string& dst)
+{
+	if (builder_.image_mod_ == src) {
+		builder_.image_mod_ = dst;
+	}
+}
+
+void unit_frame::replace_x(const std::string& src, const std::string& dst)
+{
+	if (builder_.x_.get_original() == src) {
+		int duration = builder_.x_.duration();
+		builder_.x_ = progressive_int(dst, duration);
 	}
 }
 
@@ -944,9 +1002,13 @@ const frame_parameters unit_frame::merge_parameters(int current_time,const frame
 	result.highlight_ratio = current_val.highlight_ratio!=1.0?current_val.highlight_ratio:animation_val.highlight_ratio;
 	if(primary && engine_val.highlight_ratio != 1.0) result.highlight_ratio = result.highlight_ratio +engine_val.highlight_ratio - 1.0; // selected unit
 
-	assert(engine_val.offset == 0);
-	result.offset = (current_val.offset!=-1000)?current_val.offset:animation_val.offset;
-	if(result.offset == -1000) result.offset = 0.0;
+	assert(engine_val.offset_x == 0);
+	result.offset_x = (current_val.offset_x!=-1000)?current_val.offset_x:animation_val.offset_x;
+	if(result.offset_x == -1000) result.offset_x = 0.0;
+
+	assert(engine_val.offset_y == 0);
+	result.offset_y = (current_val.offset_y!=-1000)?current_val.offset_y:animation_val.offset_y;
+	if(result.offset_y == -1000) result.offset_y = 0.0;
 
 	/** engine provides a submerge for units in water */
 	result.submerge = current_val.submerge?current_val.submerge:animation_val.submerge;
@@ -983,12 +1045,9 @@ const frame_parameters unit_frame::merge_parameters(int current_time,const frame
 		else result.auto_vflip = t_true;
 	}
 
-	// screen mode
-	result.screen_mode = current_val.screen_mode? current_val.screen_mode : animation_val.screen_mode;
-	if (engine_val.screen_mode) result.screen_mode = engine_val.screen_mode;
-
-	// sound filter
+	result.screen_mode = engine_val.screen_mode;
 	result.sound_filter = engine_val.sound_filter;
 
 	return result;
 }
+#endif

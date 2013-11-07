@@ -35,6 +35,23 @@ struct time_of_day;
 
 #include <deque>
 
+class tformation
+{
+public:
+	tformation();
+	tformation(unit* u, const std::map<int, unit*>& adjacent);
+	const tformation_profile* match_to();
+	bool valid(bool attacking = true) const;
+
+public:
+	unit* u_;
+	std::map<int, unit*> adjacent_;
+	std::set<unit*> necessary_;
+	const tformation_profile* profile_;
+	bool disable_;
+	int gold_;
+};
+
 /** Computes the statistics of a battle between an attacker and a defender unit. */
 class battle_context
 {
@@ -72,7 +89,7 @@ public:
 		unsigned int swarm_min;	/**< Minimum number of blows with swarm (equal to num_blows if swarm isn't used). */
 		unsigned int swarm_max;	/**< Maximum number of blows with swarm (equal to num_blows if swarm isn't used). */
 
-		std::string plague_type; /**< The plague type used by the attack, if any. */
+		tformation defender_formation;
 		map_location effecting_tactic;
 
 		unit_stats(const unit &u, const map_location& u_loc,
@@ -142,7 +159,7 @@ private:
 
 /** Performs an attack. */
 std::pair<map_location, map_location> attack_unit(unit& attacker, unit& defender,
-												  int attack_with, int defend_with, bool update_display = true, const config& duel = config::invalid, bool move = true);
+	int attack_with, int defend_with, bool update_display = true, const config& duel = config::invalid, bool move = true, bool formation = false);
 
 
 /**
@@ -163,11 +180,15 @@ bool get_village(const map_location& loc, int side, int *time_bonus = NULL);
  */
 void reset_resting(unit_map& units, int side);
 
+void calculate_end_turn(std::vector<team>& teams, int side);
+
 /**
  * Calculates healing for all units for the given side.
  * Should be called at the beginning of a side's turn.
  */
 void calculate_healing(int side, bool update_display);
+
+void calculate_supplying(std::vector<team>& teams, unit_map& units, int side);
 
 /**
  * Returns the advanced version of unit (with traits and items retained).
@@ -236,7 +257,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 				map_location *next_unit = NULL,
 				bool continue_move = false, bool should_clear_shroud=true, bool is_replay=false);
 
-std::pair<map_location, map_location> attack_enemy(unit* attacker, unit* defender, int att_weapon, int def_weapon, bool move = true);
+std::pair<map_location, map_location> attack_enemy(unit* attacker, unit* defender, int att_weapon, int def_weapon, bool move = true, bool constant_attacks = false);
 
 /** Function which recalculates the fog. */
 void recalculate_fog(int side);
@@ -276,9 +297,7 @@ bool unit_can_action(const unit &u);
  * an external check should be made to make sure the opposite unit
  * isn't also the attacker.
  */
-bool backstab_check(const map_location& attacker_loc,
-	const map_location& defender_loc,
-	const unit_map& units, const std::vector<team>& teams);
+bool backstab_check(const unit& attacker, const unit& defender, const unit_map& units, const std::vector<team>& teams);
 
 void refresh_card_button(const team& t, game_display& disp);
 void get_random_card(team& t, game_display& disp, unit_map& units, hero_map& heros);
@@ -318,15 +337,31 @@ void road_guarding(unit_map& units, std::vector<team>& teams, const std::map<map
 
 void do_trade(team& current_team, unit& commoner, artifical& owner, artifical& target, bool forward);
 
+void do_supply(team& current_team, unit_map& units, unit& transport, artifical& fort);
+
 int calculate_weapon(const unit& attacker, const unit& defender);
 
 bool no_fightback_attack(unit& attacker, unit& defender);
+
+void calculate_formations(const std::vector<team>& teams, const unit_map& units, int current_side, const std::set<const unit*>& origin, const rect_of_hexes* rect, bool must_enable, std::vector<tformation>& formations);
+void calculate_defender_formations(const std::vector<team>& teams, const unit_map& units, int current_side, const unit& defender, const std::set<const unit*>& helper, std::vector<tformation>& formations);
+
+tformation calculate_attack_formation(const std::vector<team>& teams, const unit_map& units, const unit& attacker, bool must_enable);
+
+bool formation_can_attack(unit_map& units, team& current_team, const tformation& formation);
+
+bool formation_attack_internal(unit_map& units, team& current_team, tformation& formation, bool replay);
+
+bool do_formation_attack(std::vector<team>& teams, unit_map& units, game_display& gui, team& current_team, unit& attacker, bool verify, bool replay);
 
 void reform_captain(unit_map& units, unit& u, hero& h, bool join, bool replay);
 
 void do_demolish(game_display& gui, unit_map& units, team& current_team, unit* u, int income, bool to_recorder);
 
 void do_employ(play_controller& controller, unit_map& units, team& current_team, hero& h, int cost, bool replay);
+
+enum {PURCHASE_MOVE = 0};
+void do_purchase(game_display& gui, team& current_team, int type, int cost, bool replay);
 
 void do_fresh_heros(team& current_team, bool replay);
 
@@ -342,6 +377,11 @@ void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, uni
 
 void do_bomb(game_display& gui, team& t, bool to_recorder);
 
-void do_scenario_env(const tscenario_env& env, play_controller& controller, bool to_recorder);
+void join_anim(hero* h, artifical* city, const std::string& message);
+
+bool field_can_appoint_noble();
+bool field_can_assamble_treasure();
+
+std::vector<std::pair<int, unit*> > form_human_pairs(const std::vector<team>& teams, bool include_field);
 
 #endif

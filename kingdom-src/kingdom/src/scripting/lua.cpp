@@ -29,6 +29,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <boost/variant.hpp>
 
@@ -39,7 +40,6 @@
 #include "ai/manager.hpp"
 #include "attack_prediction.hpp"
 #include "filesystem.hpp"
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "game_preferences.hpp"
 #include "gamestatus.hpp"
@@ -88,7 +88,7 @@ static config preload_config;
 void extract_preload_scripts(config const &game_config)
 {
 	preload_scripts.clear();
-	foreach (config const &cfg, game_config.child_range("lua")) {
+	BOOST_FOREACH (config const &cfg, game_config.child_range("lua")) {
 		preload_scripts.push_back(cfg);
 	}
 	preload_config = game_config.child("game_config");
@@ -255,7 +255,7 @@ static void luaW_filltable(lua_State *L, config const &cfg)
 		return;
 
 	int k = 1;
-	foreach (const config::any_child &ch, cfg.all_children_range())
+	BOOST_FOREACH (const config::any_child &ch, cfg.all_children_range())
 	{
 		lua_createtable(L, 2, 0);
 		lua_pushstring(L, ch.key.c_str());
@@ -265,7 +265,7 @@ static void luaW_filltable(lua_State *L, config const &cfg)
 		lua_rawseti(L, -2, 2);
 		lua_rawseti(L, -2, k++);
 	}
-	foreach (const config::attribute &attr, cfg.attribute_range())
+	BOOST_FOREACH (const config::attribute &attr, cfg.attribute_range())
 	{
 		luaW_pushscalar(L, attr.second);
 		lua_setfield(L, -2, attr.first.c_str());
@@ -536,7 +536,7 @@ unit *lua_unit::get()
 	if (ptr) return ptr;
 	if (side) {
 /*
-		foreach (unit &u, (*resources::teams)[side - 1].recall_list()) {
+		BOOST_FOREACH (unit &u, (*resources::teams)[side - 1].recall_list()) {
 			if (u.underlying_id() == uid) return &u;
 		}
 */
@@ -715,7 +715,7 @@ static int impl_vconfig_get(lua_State *L)
 	if (shallow_literal || strcmp(m, "__shallow_parsed") == 0)
 	{
 		lua_newtable(L);
-		foreach (const config::attribute &a, v->get_config().attribute_range()) {
+		BOOST_FOREACH (const config::attribute &a, v->get_config().attribute_range()) {
 			if (shallow_literal)
 				luaW_pushscalar(L, a.second);
 			else
@@ -818,7 +818,7 @@ static int impl_vconfig_collect(lua_State *L)
 		const std::vector<std::string>& vector = accessor; \
 		lua_createtable(L, vector.size(), 0); \
 		int i = 1; \
-		foreach (const std::string& s, vector) { \
+		BOOST_FOREACH (const std::string& s, vector) { \
 			lua_pushstring(L, s.c_str()); \
 			lua_rawseti(L, -2, i); \
 			++i; \
@@ -1172,14 +1172,14 @@ static int intf_get_units(lua_State *L)
 		if (!city) {
 			return 1;
 		}
-		int index = filter["index"].to_int();
-		if (index < city->reside_troops().size()) {
+		for (size_t index = 0; index < city->reside_troops().size(); index ++) {
 			unit* n = new unit(*city->reside_troops()[index]);
 			n->set_human(false);
 			new(lua_newuserdata(L, sizeof(lua_unit))) lua_unit(n);
 			lua_pushvalue(L, 1);
 			lua_setmetatable(L, 3);
 			lua_rawseti(L, 2, i);
+			++i;
 		}
 		return 1;
 	}
@@ -1242,7 +1242,7 @@ static int intf_get_recall_units(lua_State *L)
 	lua_rawget(L, LUA_REGISTRYINDEX);
 	lua_newtable(L);
 	int i = 1, s = 1;
-	foreach (team &t, *resources::teams)
+	BOOST_FOREACH (team &t, *resources::teams)
 	{
 		++s;
 	}
@@ -1485,8 +1485,6 @@ static int impl_side_get(lua_State *L)
 	return_bool_attrib("objectives_changed", t.objectives_changed());
 	return_bool_attrib("fog", t.uses_fog());
 	return_bool_attrib("shroud", t.uses_shroud());
-	return_bool_attrib("hidden", t.hidden());
-	return_tstring_attrib("user_team_name", t.user_team_name());
 	return_string_attrib("team_name", t.team_name());
 	return_string_attrib("name", t.name());
 	return_string_attrib("color", t.map_color_to());
@@ -1515,8 +1513,6 @@ static int impl_side_set(lua_State *L)
 	modify_int_attrib("recall_cost", t.set_recall_cost(value));
 	modify_int_attrib("base_income", t.set_base_income(value));
 	modify_bool_attrib("objectives_changed", t.set_objectives_changed(value));
-	modify_tstring_attrib("user_team_name", t.change_team(t.team_name(), value));
-	modify_string_attrib("team_name", t.change_team(value, t.user_team_name()));
 	modify_string_attrib("controller", t.change_controller(value));
 
 	return luaL_argerror(L, 2, "unknown modifiable property");
@@ -1707,8 +1703,6 @@ static int intf_set_village_owner(lua_State *L)
 			|| (new_side && !resources::units->find_leader(new_side).valid()))
 		return 0;
 
-	if (old_side) teams[old_side - 1].lose_village(loc);
-	// if (new_side) teams[new_side - 1].get_village(loc, old_side, lua_toboolean(L, 4));
 	return 0;
 }
 
@@ -2240,8 +2234,6 @@ static int intf_put_recall_unit(lua_State *L)
 
 	if (!side) side = u->side();
 	team &t = (*resources::teams)[side - 1];
-	if (!t.persistent())
-		return luaL_argerror(L, 2, "nonpersistent side");
 
 	std::vector<unit> &rl = t.recall_list();
 
@@ -2318,7 +2310,7 @@ static int intf_find_vacant_tile(lua_State *L)
 		}
 	}
 
-	map_location res = pathfind::find_vacant_tile(*resources::game_map,
+	map_location res = pathfind::find_vacant_tile(*resources::game_map, *resources::teams,
 		*resources::units, map_location(x, y), u);
 
 	if (fake_unit) delete u;
@@ -3036,7 +3028,7 @@ static int intf_get_locations(lua_State *L)
 
 	lua_createtable(L, res.size(), 0);
 	int i = 1;
-	foreach (map_location const &loc, res)
+	BOOST_FOREACH (map_location const &loc, res)
 	{
 		lua_createtable(L, 2, 0);
 		lua_pushinteger(L, loc.x + 1);
@@ -3133,7 +3125,7 @@ static int intf_get_sides(lua_State* L)
 	lua_rawget(L, LUA_REGISTRYINDEX);
 	lua_createtable(L, sides.size(), 0);
 	unsigned index = 1;
-	foreach(int side, sides) {
+	BOOST_FOREACH (int side, sides) {
 		// Create a full userdata containing a pointer to the team.
 		team** t = static_cast<team**>(lua_newuserdata(L, sizeof(team*)));
 		*t = &((*resources::teams)[side - 1]);
@@ -3664,7 +3656,7 @@ void LuaKernel::initialize()
 			, static_cast<void *>(const_cast<char *>(&gettypeKey)));
 	lua_rawget(L, LUA_REGISTRYINDEX);
 	lua_newtable(L);
-	foreach (const unit_type_data::unit_type_map::value_type &ut, unit_types.types())
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &ut, unit_types.types())
 	{
 		lua_createtable(L, 0, 1);
 		lua_pushstring(L, ut.first.c_str());
@@ -3683,7 +3675,7 @@ void LuaKernel::initialize()
 	lua_rawget(L, LUA_REGISTRYINDEX);
 	const race_map& races = unit_types.races();
 	lua_createtable(L, 0, races.size());
-	foreach(const race_map::value_type &race, races)
+	BOOST_FOREACH (const race_map::value_type &race, races)
 	{
 		lua_createtable(L, 0, 1);
 		char const* id = race.first.c_str();
@@ -3698,10 +3690,10 @@ void LuaKernel::initialize()
 
 	// Execute the preload scripts.
 	// game_config::load_config(preload_config);
-	foreach (const config &cfg, preload_scripts) {
+	BOOST_FOREACH (const config &cfg, preload_scripts) {
 		execute(cfg["code"].str().c_str(), 0, 0);
 	}
-	foreach (const config &cfg, level_.child_range("lua")) {
+	BOOST_FOREACH (const config &cfg, level_.child_range("lua")) {
 		execute(cfg["code"].str().c_str(), 0, 0);
 	}
 
@@ -3719,7 +3711,7 @@ static char const *handled_file_tags[] = {
 
 static bool is_handled_file_tag(const std::string &s)
 {
-	foreach (char const *t, handled_file_tags) {
+	BOOST_FOREACH (char const *t, handled_file_tags) {
 		if (s == t) return true;
 	}
 	return false;
@@ -3738,7 +3730,7 @@ void LuaKernel::load_game()
 
 	lua_newtable(L);
 	int k = 1;
-	foreach (const config::any_child &v, level_.all_children_range())
+	BOOST_FOREACH (const config::any_child &v, level_.all_children_range())
 	{
 		if (is_handled_file_tag(v.key)) continue;
 		lua_createtable(L, 2, 0);
@@ -3758,7 +3750,7 @@ void LuaKernel::load_game()
  */
 void LuaKernel::save_game(config &cfg)
 {
-	foreach (const config &v, level_.child_range("lua")) {
+	BOOST_FOREACH (const config &v, level_.child_range("lua")) {
 		cfg.add_child("lua", v);
 	}
 

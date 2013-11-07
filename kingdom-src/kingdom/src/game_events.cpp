@@ -23,7 +23,6 @@
 #include "actions.hpp"
 #include "ai/manager.hpp"
 #include "dialogs.hpp"
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "game_events.hpp"
 #include "game_preferences.hpp"
@@ -52,6 +51,7 @@
 #include "artifical.hpp"
 #include "side_filter.hpp"
 
+#include <boost/foreach.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lexical_cast.hpp>
@@ -374,7 +374,7 @@ namespace game_events {
 		const vconfig::child_list& variables = cond.get_children("variable");
 		backwards_compat = backwards_compat && variables.empty();
 
-		foreach (const vconfig &values, variables)
+		BOOST_FOREACH (const vconfig &values, variables)
 		{
 			const std::string name = values["name"];
 			config::attribute_value value;
@@ -487,12 +487,12 @@ namespace game_events {
 	void wml_expand_if(config& cfg)
 	{
 		// [side]下可能有多个[if]
-		foreach (config &if_cfg, cfg.child_range("if")) { 
+		BOOST_FOREACH (config &if_cfg, cfg.child_range("if")) { 
 			const std::string type = conditional_passed(vconfig(if_cfg)) ? "then" : "else";
 
 			// If the if statement passed, then execute all 'then' statements,
 			// otherwise execute 'else' statements
-			foreach (config& cmd, if_cfg.child_range(type)) { 
+			BOOST_FOREACH (config& cmd, if_cfg.child_range(type)) { 
 				// [then]/[else]下可能还有[if]
 				if (cmd.child_count("if")) {
 					wml_expand_if(cmd);
@@ -597,7 +597,7 @@ static void toggle_shroud(const bool remove, const vconfig& cfg)
 		filter.restrict_size(game_config::max_loop);
 		filter.get_locations(locs, true);
 
-		foreach (map_location const &loc, locs)
+		BOOST_FOREACH (map_location const &loc, locs)
 		{
 			if (remove) {
 				t.clear_shroud(loc);
@@ -644,7 +644,7 @@ WML_HANDLER_FUNCTION(teleport, event_info, cfg)
 	const unit *pass_check = &*u;
 	if (cfg["ignore_passability"].to_bool())
 		pass_check = NULL;
-	const map_location vacant_dst = pathfind::find_vacant_tile(*resources::game_map, *resources::units, dst, pass_check);
+	const map_location vacant_dst = pathfind::find_vacant_tile(*resources::game_map, *resources::teams, *resources::units, dst, pass_check);
 	if (!resources::game_map->on_board(vacant_dst)) return;
 
 	int side = u->side();
@@ -766,9 +766,9 @@ WML_HANDLER_FUNCTION(modify_unit2, event_info, cfg)
 	unit_map& units = *resources::units;
 	hero_map& heros = *resources::heros;
 
-	int number = cfg["master_hero"].to_int();
+	int number = cfg["hero"].to_int();
 	hero& h = heros[number];
-	unit* holder = find_unit(units, h);
+	unit* holder = units.find_unit(h);
 	if (!holder) {
 		return;
 	}
@@ -792,96 +792,174 @@ WML_HANDLER_FUNCTION(modify_ai, /*event_info*/, cfg)
 
 WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 {
-	std::vector<team> &teams = *resources::teams;
+	std::vector<team>& teams = *resources::teams;
+	hero_map& heros = *resources::heros;
 
-	std::string name = cfg["name"];
-	std::string team_name = cfg["team_name"];
-	std::string user_team_name = cfg["user_team_name"];
+	int side_num = cfg["side"].to_int();
+	const size_t team_index = side_num - 1;
+	if (team_index < 0 || team_index >= teams.size()) {
+		return;
+	}
+	team& current_team = teams[team_index];
+
+	std::string agree = cfg["agree"];
+	std::string terminate = cfg["terminate"];
 	std::string controller = cfg["controller"];
 	std::string recruit_str = cfg["not_recruit"];
 	std::string shroud_data = cfg["shroud_data"];
 	const config& parsed = cfg.get_parsed_config();
 	const config::const_child_itors &ai = parsed.child_range("ai");
+
+	std::vector<std::string> vstr;
+
 	/**
 	 * @todo also allow client to modify a side's color if it is possible
 	 * to change it on the fly without causing visual glitches
 	 */
+	if (!agree.empty()) {
+		vstr = utils::split(agree);
+		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
+			int side = lexical_cast_default<int>(*i);
+			current_team.set_ally(side, true, true);
+			teams[side - 1].set_ally(side_num, true, true);
+		}
+	}
+	if (!terminate.empty()) {
+		vstr = utils::split(terminate);
+		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
+			int side = lexical_cast_default<int>(*i);
+			current_team.set_ally(side, false, true, true);
+			teams[side - 1].set_ally(side_num, false, true, true);
+		}
+	}
 
-	int side_num = cfg["side"].to_int(1);
-	const size_t team_index = side_num-1;
+	// leader
+	int leader = cfg["leader"].to_int(HEROS_INVALID_NUMBER);
+	if (leader != HEROS_INVALID_NUMBER && leader != current_team.leader()->number_) {
+		current_team.set_leader(&heros[leader]);
+		current_team.readjust_all_unit();
+	}
 
-	if (team_index < teams.size())
-	{
-		LOG_NG << "modifying side: " << side_num << "\n";
-		if(!team_name.empty()) {
-			LOG_NG << "change side's team to team_name '" << team_name << "'\n";
-			teams[team_index].change_team(team_name,
-					user_team_name);
-		} else if(!user_team_name.empty()) {
-			LOG_NG << "change side's user_team_name to '" << user_team_name << "'\n";
-			teams[team_index].change_team(teams[team_index].team_name(),
-					user_team_name);
+	// income
+	int income = cfg["income"].to_int(-1);
+	if (income != -1) {
+		current_team.set_base_income(income + game_config::base_income);
+	}
+	// Modify total gold
+	int gold = cfg["gold"].to_int(-1);
+	if (gold) {
+		current_team.set_gold(gold);
+	}
+	// technology
+	std::string str = cfg["technology"].str();
+	if (!str.empty()) {
+		vstr = utils::split(str);
+		std::vector<const ttechnology*>& holden = current_team.holded_technologies();
+		bool adjust_unit = false;
+		for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+			const ttechnology& t = unit_types.technology(*it);
+			if (std::find(holden.begin(), holden.end(), &t) != holden.end()) {
+				continue;
+			}
+			holden.push_back(&t);
+			// apply this technology
+			const std::vector<const ttechnology*>& parts = t.parts();
+			for (std::vector<const ttechnology*>::const_iterator it = parts.begin(); it != parts.end(); ++ it) {
+				const ttechnology& t2 = **it;
+				if (t2.occasion() == ttechnology::FINISH) {
+					current_team.add_modification_internal(t2.apply_to(), t2.effect_cfg());
+				} else {
+					adjust_unit = true;
+				}
+			}
 		}
-		// Modify income
-		config::attribute_value income = cfg["income"];
-		if (!income.empty()) {
-			teams[team_index].set_base_income(income.to_int() + game_config::base_income);
+		if (adjust_unit) {
+			current_team.readjust_all_unit();
 		}
-		// Modify total gold
-		config::attribute_value gold = cfg["gold"];
-		if (!gold.empty()) {
-			teams[team_index].set_gold(gold);
+		if (std::find(holden.begin(), holden.end(), current_team.ing_technology()) != holden.end()) {
+			current_team.reselect_ing_technology();
 		}
-		// Set controller
-		if (!controller.empty()) {
-			teams[team_index].change_controller(controller);
-		}
-		// Set shroud
-		config::attribute_value shroud = cfg["shroud"];
-		if (!shroud.empty()) {
-			teams[team_index].set_shroud(shroud.to_bool(true));
-		}
-		// Merge shroud data
-		if (!shroud_data.empty()) {
-			teams[team_index].merge_shroud_map_data(shroud_data);
-		}
-		// Set whether team is hidden in status table
-		config::attribute_value hidden = cfg["hidden"];
-		if (!hidden.empty()) {
-			teams[team_index].set_hidden(hidden.to_bool(true));
-		}
-		// Set fog
-		config::attribute_value fog = cfg["fog"];
-		if (!fog.empty()) {
-			teams[team_index].set_fog(fog.to_bool(true));
-		}
-		// Set income per village
-		config::attribute_value village_gold = cfg["village_gold"];
-		if (!village_gold.empty()) {
-			teams[team_index].set_village_gold(village_gold);
-		}
-		// Override AI parameters
-		if (ai.first != ai.second) {
-			ai::manager::modify_active_ai_config_old_for_side(side_num,ai);
-		}
-		// Add shared view to current team
-		config::attribute_value share_view = cfg["share_view"];
-		if (!share_view.empty()){
-			teams[team_index].set_share_view(share_view.to_bool(true));
-			team::clear_caches();
-			resources::screen->recalculate_minimap();
-			resources::screen->invalidate_all();
-		}
-		// Add shared maps to current team
-		// IMPORTANT: this MUST happen *after* share_view is changed
-		config::attribute_value share_maps = cfg["share_maps"];
-		if (!share_maps.empty()){
-			teams[team_index].set_share_maps(share_maps.to_bool(true));
-			team::clear_caches();
-			resources::screen->recalculate_minimap();
-			resources::screen->invalidate_all();
-		}
+	}
 
+	// Set controller
+	if (!controller.empty()) {
+		teams[team_index].change_controller(controller);
+	}
+	// Set shroud
+	config::attribute_value shroud = cfg["shroud"];
+	if (!shroud.empty()) {
+		teams[team_index].set_shroud(shroud.to_bool(true));
+	}
+	// Merge shroud data
+	if (!shroud_data.empty()) {
+		teams[team_index].merge_shroud_map_data(shroud_data);
+	}
+	// Set fog
+	config::attribute_value fog = cfg["fog"];
+	if (!fog.empty()) {
+		teams[team_index].set_fog(fog.to_bool(true));
+	}
+	// Set income per village
+	config::attribute_value village_gold = cfg["village_gold"];
+	if (!village_gold.empty()) {
+		teams[team_index].set_village_gold(village_gold);
+	}
+	// Override AI parameters
+	if (ai.first != ai.second) {
+		ai::manager::modify_active_ai_config_old_for_side(side_num,ai);
+	}
+	// Add shared view to current team
+	config::attribute_value share_view = cfg["share_view"];
+	if (!share_view.empty()){
+		teams[team_index].set_share_view(share_view.to_bool(true));
+		team::clear_caches();
+		resources::screen->recalculate_minimap();
+		resources::screen->invalidate_all();
+	}
+	// Add shared maps to current team
+	// IMPORTANT: this MUST happen *after* share_view is changed
+	config::attribute_value share_maps = cfg["share_maps"];
+	if (!share_maps.empty()){
+		teams[team_index].set_share_maps(share_maps.to_bool(true));
+		team::clear_caches();
+		resources::screen->recalculate_minimap();
+		resources::screen->invalidate_all();
+	}
+}
+
+WML_HANDLER_FUNCTION(modify_city, /*event_info*/, cfg)
+{
+	std::vector<team>& teams = *resources::teams;
+	unit_map& units = *resources::units;
+	hero_map& heros = *resources::heros;
+
+	int city_number = cfg["city"].to_int(HEROS_INVALID_NUMBER);
+	unit* u = units.find_unit(heros[city_number]);
+	if (!u || !u->is_city()) {
+		return;
+	}
+	artifical& city = *unit_2_artifical(u);
+	team& current_team = teams[city.side() - 1];
+	std::stringstream err;
+
+	std::vector<std::string> vstr;
+	std::string service = cfg["service"];
+	if (!service.empty()) {
+		vstr = utils::split(service);
+		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
+			int number = lexical_cast_default<int>(*i);
+			hero& h = heros[number];
+			unit* u = units.find_unit(h);
+			if (u) {
+				err << "wml_func_modify_city, " << h.name() << " has been serviced, must not service again!";
+				VALIDATE(!u, err.str());
+			}
+			city.finish_into(h, hero_status_moving);
+		}
+	}
+	int soldiers = cfg["soldiers"].to_int(-1);
+	if (soldiers > 0) {
+		city.set_soldiers(soldiers);
 	}
 }
 
@@ -909,10 +987,7 @@ WML_HANDLER_FUNCTION(store_side, /*event_info*/, cfg)
 	state_of_game->get_variable(var_name+".village_gold") = teams[team_index].village_gold();
 	state_of_game->get_variable(var_name+".name") = teams[team_index].name();
 	state_of_game->get_variable(var_name+".team_name") = teams[team_index].team_name();
-	state_of_game->get_variable(var_name+".user_team_name") = teams[team_index].user_team_name();
 	state_of_game->get_variable(var_name+".color") = teams[team_index].map_color_to();
-	///@deprecated 1.9.2 'colour'
-	state_of_game->get_variable(var_name+".colour") = teams[team_index].map_color_to();
 
 	state_of_game->get_variable(var_name+".gold") = teams[team_index].gold();
 }
@@ -1162,7 +1237,7 @@ WML_HANDLER_FUNCTION(set_variable, /*event_info*/, cfg)
 
 		variable_info vi(array_name, true, variable_info::TYPE_ARRAY);
 		bool first = true;
-		foreach (const config &cfg, vi.as_array())
+		BOOST_FOREACH (const config &cfg, vi.as_array())
 		{
 			std::string current_string = cfg[key_name];
 			if (remove_empty && current_string.empty()) continue;
@@ -1286,7 +1361,7 @@ WML_HANDLER_FUNCTION(set_variables, /*event_info*/, cfg)
 				dest.vars->merge_with(data);
 			}
 		} else if(mode == "insert" || dest.explicit_index) {
-			foreach (const config &child, data.child_range(dest.key))
+			BOOST_FOREACH (const config &child, data.child_range(dest.key))
 			{
 				dest.vars->add_child_at(dest.key, child, dest.index++);
 			}
@@ -1320,14 +1395,12 @@ void change_terrain(const map_location &loc, const t_translation::t_terrain &t,
 
 	if (game_map->is_village(old_t) && !game_map->is_village(new_t)) {
 		int owner = village_owner(loc, *resources::teams);
-		if (owner != -1)
-			(*resources::teams)[owner].lose_village(loc);
 	}
 
 	game_map->set_terrain(loc, new_t);
 	screen_needs_rebuild = true;
 
-	foreach (const t_translation::t_terrain &ut, game_map->underlying_union_terrain(loc)) {
+	BOOST_FOREACH (const t_translation::t_terrain &ut, game_map->underlying_union_terrain(loc)) {
 		preferences::encountered_terrains().insert(ut);
 	}
 }
@@ -1355,13 +1428,7 @@ WML_HANDLER_FUNCTION(terrain_mask, /*event_info*/, cfg)
 
 static bool try_add_unit_to_recall_list(const map_location& loc, const unit& u)
 {
-	if((*resources::teams)[u.side()-1].persistent()) {
-		return true;
-	} else {
-		ERR_NG << "Cannot create unit: location (" << loc.x << "," << loc.y <<") is not on the map, and player "
-			<< u.side() << " has no recall list.\n";
-		return false;
-	}
+	return true;
 }
 
 // If we should spawn a new unit on the map somewhere
@@ -1372,6 +1439,17 @@ WML_HANDLER_FUNCTION(unit, /*event_info*/, cfg)
 	config parsed_cfg = cfg.get_parsed_config();
 
 	unit new_unit(units, *resources::heros, *resources::teams, parsed_cfg, true, resources::state_of_game);
+
+	// set human/menual
+	if (new_unit.side() == rpg::h->side_ + 1) {
+		if (rpg::stratum == hero_stratum_leader) {
+			new_unit.set_human(true);
+		} else if (rpg::stratum == hero_stratum_mayor) {
+			if (new_unit.cityno() == rpg::h->city_) {
+				new_unit.set_human(true);
+			}
+		}
+	}
 
 	config::attribute_value to_variable = cfg["to_variable"];
 	if (!to_variable.blank())
@@ -1398,7 +1476,8 @@ WML_HANDLER_FUNCTION(unit, /*event_info*/, cfg)
 		loc.y = resources::game_map->h() - 1;
 	}
 
-	loc = pathfind::find_vacant_tile(*resources::game_map, *resources::units, loc, &new_unit);
+	loc = pathfind::find_vacant_tile(*resources::game_map, *resources::teams, *resources::units, loc, &new_unit);
+
 	const bool show = resources::screen && !resources::screen->fogged(loc);
 	const bool animate = show && utils::string_bool(parsed_cfg["animate"], false);
 
@@ -1428,14 +1507,14 @@ WML_HANDLER_FUNCTION(join, /*event_info*/, cfg)
 	game_display& gui = *resources::screen;
 	const config& parsed_cfg = cfg.get_parsed_config();
 
-	std::string master_hero = parsed_cfg["master_hero"].str();
+	std::string master_hero = parsed_cfg["to"].str();
 	std::string join_hero = parsed_cfg["join"].str();
 
 	if (master_hero.empty() || join_hero.empty()) {
 		return;
 	}
 	hero& master = heros[atoi(master_hero.c_str())];
-	unit* master_troop = find_unit(units, master);
+	unit* master_troop = units.find_unit(master);
 	if (!master_troop || master_troop->third().valid()) {
 		return;
 	}
@@ -1489,33 +1568,36 @@ WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 			unit& u = **i2;
 			captains.clear();
 			leave_heros.clear();
+			
+				if ((dealing_heros_itor = dealing_heros.find(u.master().number_)) == dealing_heros.end()) {
+					leave_heros.push_back(&u.master());
+				} else {
+					dealing_heros.erase(dealing_heros_itor);
+					captains.push_back(&u.master());
+				}
+				if (u.second().valid()) {
+					if ((dealing_heros_itor = dealing_heros.find(u.second().number_)) == dealing_heros.end()) {
+						leave_heros.push_back(&u.second());
+					} else {
+						dealing_heros.erase(dealing_heros_itor);
+						captains.push_back(&u.second());
+					}
+				}
+				if (u.third().valid()) {
+					if ((dealing_heros_itor = dealing_heros.find(u.third().number_)) == dealing_heros.end()) {
+						leave_heros.push_back(&u.third());
+					} else {
+						dealing_heros.erase(dealing_heros_itor);
+						captains.push_back(&u.third());
+					}
+				}
 
-			if ((dealing_heros_itor = dealing_heros.find(u.master().number_)) == dealing_heros.end()) {
-				leave_heros.push_back(&u.master());
-			} else {
-				dealing_heros.erase(dealing_heros_itor);
-				captains.push_back(&u.master());
-			}
-			if (u.second().valid()) {
-				if ((dealing_heros_itor = dealing_heros.find(u.second().number_)) == dealing_heros.end()) {
-					leave_heros.push_back(&u.second());
-				} else {
-					dealing_heros.erase(dealing_heros_itor);
-					captains.push_back(&u.second());
-				}
-			}
-			if (u.third().valid()) {
-				if ((dealing_heros_itor = dealing_heros.find(u.third().number_)) == dealing_heros.end()) {
-					leave_heros.push_back(&u.third());
-				} else {
-					dealing_heros.erase(dealing_heros_itor);
-					captains.push_back(&u.third());
-				}
-			}
 			if (captains.empty()) {
 				units.erase(&u);
-			} else if (leave_heros.size()) {
-				u.replace_captains(captains);
+			} else {
+				if (leave_heros.size()) {
+					u.replace_captains(captains);
+				}
 			}
 			for (std::vector<hero*>::iterator i3 = leave_heros.begin(); i3 != leave_heros.end(); ++ i3) {
 				hero& h = **i3;
@@ -1531,35 +1613,37 @@ WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 			unit& u = **i2;
 			captains.clear();
 			leave_heros.clear();
-			if ((dealing_heros_itor = dealing_heros.find(u.master().number_)) == dealing_heros.end()) {
-				leave_heros.push_back(&u.master());
-			} else {
-				dealing_heros.erase(dealing_heros_itor);
-				captains.push_back(&u.master());
-			}
-			if (u.second().valid()) {
-				if ((dealing_heros_itor = dealing_heros.find(u.second().number_)) == dealing_heros.end()) {
-					leave_heros.push_back(&u.second());
+
+				if ((dealing_heros_itor = dealing_heros.find(u.master().number_)) == dealing_heros.end()) {
+					leave_heros.push_back(&u.master());
 				} else {
 					dealing_heros.erase(dealing_heros_itor);
-					captains.push_back(&u.second());
+					captains.push_back(&u.master());
 				}
-			}
-			if (u.third().valid()) {
-				if ((dealing_heros_itor = dealing_heros.find(u.third().number_)) == dealing_heros.end()) {
-					leave_heros.push_back(&u.third());
-				} else {
-					dealing_heros.erase(dealing_heros_itor);
-					captains.push_back(&u.third());
+				if (u.second().valid()) {
+					if ((dealing_heros_itor = dealing_heros.find(u.second().number_)) == dealing_heros.end()) {
+						leave_heros.push_back(&u.second());
+					} else {
+						dealing_heros.erase(dealing_heros_itor);
+						captains.push_back(&u.second());
+					}
 				}
-			}
+				if (u.third().valid()) {
+					if ((dealing_heros_itor = dealing_heros.find(u.third().number_)) == dealing_heros.end()) {
+						leave_heros.push_back(&u.third());
+					} else {
+						dealing_heros.erase(dealing_heros_itor);
+						captains.push_back(&u.third());
+					}
+				}
+
 			if (captains.empty()) {
 				delete &u;
 				i2 = reside_troops.erase(i2);
-			} else if (leave_heros.size()) {
-				++ i2;
-				u.replace_captains(captains);
 			} else {
+				if (leave_heros.size()) {
+					u.replace_captains(captains);
+				}
 				++ i2;
 			}
 			for (std::vector<hero*>::iterator i3 = leave_heros.begin(); i3 != leave_heros.end(); ++ i3) {
@@ -1611,7 +1695,7 @@ WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 		selected_city->fresh_heros().push_back(&h);
 
 		message = _("Let me join in. I will do my best to maintenance our honor.");
-		show_hero_message(&h, selected_city, message, game_events::INCIDENT_RECOMMENDONESELF);
+		join_anim(&h, selected_city, message);
 	}
 }
 
@@ -1723,21 +1807,29 @@ WML_HANDLER_FUNCTION(object, event_info, cfg)
 		}
 	}
 
-	foreach (const vconfig &cmd, cfg.get_children(command_type)) {
+	BOOST_FOREACH (const vconfig &cmd, cfg.get_children(command_type)) {
 		handle_event_commands(event_info, cmd);
 	}
 }
 
 WML_HANDLER_FUNCTION(print, /*event_info*/, cfg)
 {
+	bool clear = false;
 	// Remove any old message.
-	if (floating_label)
+	if (floating_label) {
 		font::remove_floating_label(floating_label);
+		clear = true;
+	}
 
 	// Display a message on-screen
 	std::string text = cfg["text"];
-	if(text.empty())
+	if (text.empty()) {
+		if (clear) {
+			resources::screen->invalidate_all();
+			resources::screen->draw();
+		}
 		return;
+	}
 
 	int size = cfg["size"].to_int(font::SIZE_SMALL);
 	int lifetime = cfg["duration"].to_int(50);
@@ -1803,7 +1895,7 @@ WML_HANDLER_FUNCTION(kill, event_info, cfg)
 	hero_map& heros = *resources::heros;
 
 	int a_side = cfg["a_side"].to_int(HEROS_INVALID_SIDE);
-	const std::vector<std::string> master_heros = utils::split(cfg["master_hero"]);
+	const std::vector<std::string> master_heros = utils::split(cfg["hero"]);
 
 	for (std::vector<std::string>::const_iterator tmp = master_heros.begin(); tmp != master_heros.end(); ++ tmp) {
 		unit* holder = NULL;
@@ -1812,7 +1904,7 @@ WML_HANDLER_FUNCTION(kill, event_info, cfg)
 			continue;
 		}
 
-		holder = find_unit(units, h);
+		holder = units.find_unit(h);
 		if (!holder) {
 			continue;
 		}
@@ -1843,6 +1935,21 @@ WML_HANDLER_FUNCTION(kill, event_info, cfg)
 		}
 	}
 	return;
+}
+
+WML_HANDLER_FUNCTION(rename, event_info, cfg)
+{
+	hero_map& heros = *resources::heros;
+	unit_map& units = *resources::units;
+	play_controller& controller = *resources::controller;
+
+	int number = cfg["number"].to_int(HEROS_INVALID_NUMBER);
+	std::string name = cfg["name"].str();
+
+	if (number < 0 || number >= (int)heros.size()) {
+		return;
+	}
+	controller.insert_rename(number, name);
 }
 
 // Setting of menu items
@@ -1958,14 +2065,19 @@ WML_HANDLER_FUNCTION(endlevel, /*event_info*/, cfg)
 	// In case a die event triggers an endlevel the dead unit is still as a
 	// 'ghost' in linger mode. After save loading in linger mode the unit
 	// is fully visible again.
-	unit_map::iterator u = units->begin();
-	while (u != units->end()) {
-		if (u->hitpoints() <= 0) {
-			units->erase(&*u);
-			// 删除一个之后须要重新获得迭器
-			u = units->begin();
+	unit_map::iterator it = units->begin();
+	while (it != units->end()) {
+		unit& u = *it;
+		if (u.hitpoints() <= 0) {
+			if (!u.is_city()) {
+				units->erase(&u);
+				it = units->begin();
+			} else {
+				u.heal(u.max_hitpoints() / 2);
+				++ it;
+			}
 		} else {
-			++u;
+			++ it;
 		}
 	}
 
@@ -2141,7 +2253,7 @@ static void if_while_handler(bool is_if, const game_events::queued_event &event_
 
 		// If the if statement passed, then execute all 'then' statements,
 		// otherwise execute 'else' statements
-		foreach (const vconfig &cmd, cfg.get_children(type)) {
+		BOOST_FOREACH (const vconfig &cmd, cfg.get_children(type)) {
 			handle_event_commands(event_info, cmd);
 		}
 	}
@@ -2181,68 +2293,20 @@ hero& handle_speaker(
 		const vconfig& cfg,
 		bool scroll)
 {
-	unit_map* units = resources::units;
+	unit_map& units = *resources::units;
 	game_display& screen = *resources::screen;
 	hero_map& heros = *resources::heros;
 	std::vector<team>& teams = *resources::teams;
 
-	unit_map::iterator speaker = units->end();
-	hero* speaker_hero_ptr = NULL;
-	const std::string speaker_str = cfg["speaker"];
 	bool pop_in_fog = cfg["pop_in_fog"].to_bool();
 
-	if(speaker_str == "unit") {
-		speaker = units->find(event_info.loc1);
-	} else if(speaker_str == "second_unit") {
-		speaker = units->find(event_info.loc2);
-	} else if(speaker_str != "narrator") {
-		// speaker_str is: 1)general of one troop; 2)hero in one city
-		int speaker_number = cfg["speaker"].to_int();
-		speaker_hero_ptr = &heros[speaker_number];
-		if (speaker_hero_ptr->status_ == hero_status_military) {
-			// 1)general of one troop
-			unit* speaker_ptr = NULL;
-			for (speaker = units->begin(); speaker != units->end(); ++speaker) {
-				if (unit_is_city(&*speaker)) {
-					artifical* city = unit_2_artifical(&*speaker);
-					std::vector<unit*>& reside_troops = city->reside_troops();
-					for (std::vector<unit*>::iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
-						unit& troop = **itor;
-						if (troop.master().number_ == speaker_number) {
-							speaker_ptr = &troop;
-						} else if (troop.second().number_ == speaker_number) {
-							speaker_ptr = &troop;
-						} else if (troop.third().number_ == speaker_number) {
-							speaker_ptr = &troop;
-						}
-						if (speaker_ptr) {
-							break;
-						}
-					}
-				} else if (!speaker->is_artifical()) {
-					unit& troop = *speaker;
-					if (troop.master().number_ == speaker_number) {
-						speaker_ptr = &troop;
-					} else if (troop.second().number_ == speaker_number) {
-						speaker_ptr = &troop;
-					} else if (troop.third().number_ == speaker_number) {
-						speaker_ptr = &troop;
-					}
-				}
-				if (speaker_ptr) {
-					break;
-				}
-			}
-		} else {
-			// 2)hero in one city
-			artifical* city = units->city_from_cityno(speaker_hero_ptr->city_);
-			if (city) {
-				speaker = units->find(city->get_location());
-			}
-		}
+	hero& h = heros[cfg["hero"].to_int()];
+	const unit* speaker = units.find_unit(h);
+	if (!speaker) {
+		return hero_invalid;
 	}
-	// current_team返回的是当前正在移动的阵营, 不玩家所在阵营
-	if (speaker.valid() && !pop_in_fog) {
+
+	if (!pop_in_fog) {
 		// 多人对战时play.side是无效的，所以用这种方法得到side有问题
 		// 用另一种方法代替，找到第一个controller是玩家的阵营（这种方法潜在危险就是选择了多个玩家）
 		// team& player_team = (*resources::teams)[lexical_cast<int>(resources::state_of_game->get_variable("player.side")) - 1];
@@ -2254,29 +2318,21 @@ hero& handle_speaker(
 			}
 		}
 		if (player_team && player_team->fogged(speaker->get_location())) { 
-			speaker = units->end();
+			speaker = NULL;
 		}
 	}
-	if(speaker != units->end()) {
-		LOG_NG << "set speaker to '" << speaker->name() << "'\n";
-		const map_location &spl = speaker->get_location();
-		// screen.highlight_hex(spl);
-		if(scroll) {
-			LOG_DP << "scrolling to speaker..\n";
+	if (speaker) {
+		const map_location& spl = speaker->get_location();
+		if (scroll) {
 			const int offset_from_center = std::max<int>(0, spl.y - 1);
 			screen.scroll_to_tile(map_location(spl.x, offset_from_center));
 		}
-		// screen.highlight_hex(spl);
-	} else if(speaker_str == "narrator") {
-		LOG_NG << "no speaker\n";
-		screen.highlight_hex(map_location::null_location);
 	} else {
-		return speaker.valid()? *speaker_hero_ptr: hero_invalid;
+		return hero_invalid;
 	}
 
 	screen.draw(false);
-	LOG_DP << "done scrolling to speaker...\n";
-	return speaker.valid()? *speaker_hero_ptr: hero_invalid;
+	return h;
 }
 
 /**
@@ -2305,11 +2361,9 @@ std::string get_image(const vconfig& cfg, unit_map::iterator speaker)
 		if(!locator.file_exists()) {
 			image = speaker->profile();
 
-#ifndef LOW_MEM
 			if(image == speaker->absolute_image()) {
 				image += speaker->image_mods();
 			}
-#endif
 		}
 	}
 	else if (!image.empty())
@@ -2358,12 +2412,12 @@ struct message_user_choice : mp_sync::user_choice
 	hero& speaker;
 	vconfig text_input_element;
 	bool has_text_input;
-	const std::vector<std::string> &options;
+	bool yesno;
 
 	message_user_choice(const vconfig &c, hero& s,
-		const vconfig &t, bool ht, const std::vector<std::string> &o)
+		const vconfig &t, bool ht, bool _yesno)
 		: cfg(c), speaker(s), text_input_element(t)
-		, has_text_input(ht), options(o)
+		, has_text_input(ht), yesno(_yesno)
 	{}
 
 	virtual config query_user() const
@@ -2387,15 +2441,17 @@ struct message_user_choice : mp_sync::user_choice
 			input_max_size = 256;
 		}
 
+		std::stringstream incident_str;
+		int incident = cfg["incident"].to_int(-1);
+		if (incident >= 0) {
+			incident_str << "incident/" << incident << ".png";	
+		}
 		int option_chosen;
-		int dlg_result;
-		if (options.size() == 2) {
-			const int res = gui2::show_message(resources::screen->video(), caption, cfg["message"], gui2::tmessage::yes_no_buttons, image);
+		if (yesno) {
+			const int res = gui2::show_message(resources::screen->video(), caption, cfg["message"], gui2::tmessage::yes_no_buttons, image, incident_str.str());
 			option_chosen = (res == gui2::twindow::OK)? 0: 1;
-			dlg_result = gui2::twindow::OK;
 		} else {
-			const int res = gui2::show_message(resources::screen->video(), caption, cfg["message"], gui2::tmessage::auto_close, image);
-			dlg_result = gui2::twindow::OK;
+			const int res = gui2::show_message(resources::screen->video(), caption, cfg["message"], gui2::tmessage::auto_close, image, incident_str.str());
 		}
 
 		/* Since gui2::show_message needs to do undrawing the
@@ -2405,14 +2461,10 @@ struct message_user_choice : mp_sync::user_choice
 		resources::screen->invalidate_all();
 		resources::screen->draw(true,true);
 
-		if (dlg_result == gui2::twindow::CANCEL) {
-			current_context->skip_messages = true;
-		}
-
-		config cfg;
-		if (!options.empty()) cfg["value"] = option_chosen;
-		if (has_text_input) cfg["text"] = text_input_content;
-		return cfg;
+		config ret;
+		if (yesno) ret["value"] = option_chosen;
+		if (has_text_input) ret["text"] = text_input_content;
+		return ret;
 	}
 
 	virtual config random_choice(rand_rng::simple_rng &) const
@@ -2431,12 +2483,12 @@ namespace game_events {
 int handle_message(const game_events::queued_event& event_info, const vconfig& cfg)
 {
 	// Check if there is any input to be made, if not the message may be skipped
-	const vconfig::child_list menu_items = cfg.get_children("option");
+	bool yesno = cfg["yesno"].to_bool();
 
 	const vconfig::child_list text_input_elements = cfg.get_children("text_input");
 	const bool has_text_input = (text_input_elements.size() == 1);
 
-	bool has_input= (has_text_input || !menu_items.empty() );
+	bool has_input = has_text_input || yesno;
 
 	// skip messages during quick replay
 	play_controller *controller = resources::controller;
@@ -2450,8 +2502,7 @@ int handle_message(const game_events::queued_event& event_info, const vconfig& c
 
 	// Check if this message is for this side
 	std::string side_for_raw = cfg["side_for"];
-	if (!side_for_raw.empty())
-	{
+	if (!side_for_raw.empty()) {
 		/* Always ignore side_for when the message has some input
 		   boxes, but display the error message only if side_for is
 		   used for an inactive side. */
@@ -2492,21 +2543,7 @@ int handle_message(const game_events::queued_event& event_info, const vconfig& c
 		return -1;
 	}
 
-	std::vector<std::string> options;
-	std::vector<vconfig::child_list> option_events;
-
-	for(vconfig::child_list::const_iterator mi = menu_items.begin();
-			mi != menu_items.end(); ++mi) {
-		std::string msg_str = (*mi)["message"];
-		if (!mi->has_child("show_if")
-			|| game_events::conditional_passed(mi->child("show_if")))
-		{
-			options.push_back(msg_str);
-			option_events.push_back((*mi).get_children("command"));
-		}
-	}
-
-	has_input = !options.empty() || has_text_input;
+	has_input = yesno || has_text_input;
 	if (!has_input && get_replay_source().is_skipping()) {
 		// No input to get and the user is not interested either.
 		return -1;
@@ -2516,7 +2553,7 @@ int handle_message(const game_events::queued_event& event_info, const vconfig& c
 		sound::play_sound(cfg["sound"]);
 	}
 
-	if(text_input_elements.size()>1) {
+	if (text_input_elements.size()>1) {
 		lg::wml_error << "too many text_input tags, only one accepted\n";
 	}
 
@@ -2528,40 +2565,26 @@ int handle_message(const game_events::queued_event& event_info, const vconfig& c
 
 	DBG_DP << "showing dialog...\n";
 
-	message_user_choice msg(cfg, speaker, text_input_element, has_text_input,
-		options);
-	if (!has_input)
-	{
+	message_user_choice msg(cfg, speaker, text_input_element, has_text_input, yesno);
+	if (!has_input) {
 		/* Always show the dialog if it has no input, whether we are
 		   replaying or not. */
 		msg.query_user();
-	}
-	else
-	{
+	} else {
 		config choice = mp_sync::get_user_choice("input", msg, 0, true);
-		option_chosen = choice["value"];
+		option_chosen = choice["value"];	
 		text_input_result = choice["text"].str();
+
+		// save yesno choice to variable: choice
+		config::attribute_value& var = resources::state_of_game->get_variable("choice");
+		var = option_chosen? false: true;
 	}
 
-	// Implement the consequences of the choice
-	if(options.empty() == false) {
-		if(size_t(option_chosen) >= menu_items.size()) {
-			std::stringstream errbuf;
-			errbuf << "invalid choice (" << option_chosen
-				<< ") was specified, choice 0 to " << (menu_items.size() - 1)
-				<< " was expected.\n";
-			replay::process_error(errbuf.str());
-			return -1;
-		}
-
-		foreach (const vconfig &cmd, option_events[option_chosen]) {
-			handle_event_commands(event_info, cmd);
-		}
-	}
-	if(has_text_input) {
+	if (has_text_input) {
 		std::string variable_name=text_input_element["variable"];
-		if(variable_name.empty())
+		if (variable_name.empty()) {
 			variable_name="input";
+		}
 		resources::state_of_game->set_variable(variable_name, text_input_result);
 	}
 	return option_chosen;
@@ -2579,7 +2602,7 @@ WML_HANDLER_FUNCTION(time_area, /*event_info*/, cfg)
 	if(remove) {
 		const std::vector<std::string> id_list =
 			utils::split(ids, ',', utils::STRIP_SPACES | utils::REMOVE_EMPTY);
-		foreach(const std::string& id, id_list) {
+		BOOST_FOREACH (const std::string& id, id_list) {
 			resources::tod_manager->remove_time_area(id);
 			LOG_NG << "event WML removed time_area '" << id << "'\n";
 		}
@@ -2715,7 +2738,7 @@ static void commit_wmi_commands() {
 			if(is_empty_command) {
 				mref->command.add_child("allow_undo");
 			}
-			// foreach(game_events::event_handler& hand, event_handlers) {
+			// BOOST_FOREACH (game_events::event_handler& hand, event_handlers) {
 			for (size_t i = 0; i < event_vsize; i ++) {
 				game_events::event_handler& hand = *event_handlers[i];
 				if (hand.is_menu_item() && hand.matches_name(mref->name)) {
@@ -2766,13 +2789,13 @@ static bool process_event(game_events::event_handler& handler, const game_events
 	vconfig filters(handler.get_config());
 
 
-	foreach (const vconfig &condition, filters.get_children("filter_condition")) {
+	BOOST_FOREACH (const vconfig &condition, filters.get_children("filter_condition")) {
 		if (!game_events::conditional_passed(condition)) {
 			return false;
 		}
 	}
 
-	foreach (const vconfig &f, filters.get_children("filter")) {
+	BOOST_FOREACH (const vconfig &f, filters.get_children("filter")) {
 		if (!unit1 || !game_events::unit_matches_filter(*unit1, f)) {
 			return false;
 		}
@@ -2783,7 +2806,7 @@ static bool process_event(game_events::event_handler& handler, const game_events
 
 	vconfig::child_list special_filters = filters.get_children("filter_attack");
 	bool special_matches = special_filters.empty();
-	foreach (const vconfig &f, special_filters)
+	BOOST_FOREACH (const vconfig &f, special_filters)
 	{
 		if (unit1 && game_events::matches_special_filter(ev.data.child("first"), f)) {
 			special_matches = true;
@@ -2796,7 +2819,7 @@ static bool process_event(game_events::event_handler& handler, const game_events
 		return false;
 	}
 
-	foreach (const vconfig &f, filters.get_children("filter_second")) {
+	BOOST_FOREACH (const vconfig &f, filters.get_children("filter_second")) {
 		if (!unit2 || !game_events::unit_matches_filter(*unit2, f)) {
 			return false;
 		}
@@ -2807,7 +2830,7 @@ static bool process_event(game_events::event_handler& handler, const game_events
 
 	special_filters = filters.get_children("filter_second_attack");
 	special_matches = special_filters.empty();
-	foreach (const vconfig &f, special_filters)
+	BOOST_FOREACH (const vconfig &f, special_filters)
 	{
 		if (unit2 && game_events::matches_special_filter(ev.data.child("second"), f)) {
 			special_matches = true;
@@ -2820,7 +2843,7 @@ static bool process_event(game_events::event_handler& handler, const game_events
 	// [filter_hero]
 	if (unit1 && unit1->is_city() && ev.loc2.x == MAGIC_HERO) {
 		hero& h = heros[ev.loc2.y];
-		foreach (const vconfig &f, filters.get_children("filter_hero")) {
+		BOOST_FOREACH (const vconfig &f, filters.get_children("filter_hero")) {
 			if (!h.internal_matches_filter(f)) {
 				return false;
 			}
@@ -3003,19 +3026,19 @@ namespace game_events {
 	{
 		std::vector<std::string> name;
 		assert(!manager_running);
-		foreach (const config &ev, cfg.child_range("event")) {
+		BOOST_FOREACH (const config &ev, cfg.child_range("event")) {
 			// event_handlers.push_back(game_events::event_handler(ev));
 			event_handlers[event_vsize ++] = new game_events::event_handler(ev);
 			name.push_back(ev["name"]);
 		}
-		foreach (const std::string &id, utils::split(cfg["unit_wml_ids"])) {
+		BOOST_FOREACH (const std::string &id, utils::split(cfg["unit_wml_ids"])) {
 			unit_wml_ids.insert(id);
 		}
 
 		resources::lua_kernel = new LuaKernel(cfg);
 		manager_running = true;
 
-		foreach (static_wml_action_map::value_type &action, static_wml_actions) {
+		BOOST_FOREACH (static_wml_action_map::value_type &action, static_wml_actions) {
 			resources::lua_kernel->set_wml_action(action.first, action.second);
 		}
 
@@ -3028,7 +3051,7 @@ namespace game_events {
 		}
 		int wmi_count = 0;
 		typedef std::pair<std::string, wml_menu_item *> item;
-		foreach (const item &itor, resources::state_of_game->wml_menu_items) {
+		BOOST_FOREACH (const item &itor, resources::state_of_game->wml_menu_items) {
 			if (!itor.second->command.empty()) {
 				// event_handlers.push_back(game_events::event_handler(itor.second->command, true));
 				event_handlers[event_vsize ++] = new game_events::event_handler(itor.second->command, true);
@@ -3120,7 +3143,7 @@ namespace game_events {
 	{
 		if(std::find(unit_wml_ids.begin(),unit_wml_ids.end(),id) == unit_wml_ids.end()) {
 			unit_wml_ids.insert(id);
-			foreach (const config &new_ev, cfgs) {
+			BOOST_FOREACH (const config &new_ev, cfgs) {
 				// std::vector<game_events::event_handler> &temp = (pump_manager::count()) ? new_handlers : event_handlers;
 				if (pump_manager::count()) {
 					std::vector<game_events::event_handler> &temp = new_handlers;
@@ -3172,7 +3195,7 @@ namespace game_events {
 
 			bool init_event_vars = true;
 
-			// foreach(game_events::event_handler& handler, event_handlers) {
+			// BOOST_FOREACH (game_events::event_handler& handler, event_handlers) {
 			for (size_t i = 0; i < event_vsize; ) {
 				game_events::event_handler& handler = *event_handlers[i];
 				if (!handler.matches_name(event_name)) {
@@ -3235,7 +3258,6 @@ namespace game_events {
 		if (!city || teams[city->side() - 1].is_human()) {
 			// Parse input text, if not available all fields are empty
 			std::string text_input_content;
-			// std::vector<std::string> options;
 			int option_chosen = 0;
 			std::stringstream title;
 			std::string incident_str;
@@ -3304,7 +3326,7 @@ namespace game_events {
 		unit_map& units = *resources::units;
 		if (!teams[h1.side_].is_human()) return true;
 		if (rpg::h != &h1 && rpg::h != &h2) {
-			unit* u = find_unit(units, h1);
+			unit* u = units.find_unit(h1);
 			if (!u->is_artifical()) {
 				if (!u->human()) {
 					return true;
@@ -3340,17 +3362,11 @@ namespace game_events {
 		}
 
 		config message;
-		message["speaker"] = h1.number_;
+		message["hero"] = h1.number_;
 		message["scroll"] = "no";
 		message["message"] = str;
-		for (int i = 0; i < 2; i ++) {
-			config& option = message.add_child("option");
-			if (i == 0) {
-				option["message"] = _("Yes");
-			} else {
-				option["message"] = _("No");
-			}
-		}
+		message["yesno"] = true;
+
 		vconfig vcfg(message);
 		game_events::queued_event event_info("message", map_location(), map_location(), config());
 		int option_chosen = game_events::handle_message(event_info, vcfg);

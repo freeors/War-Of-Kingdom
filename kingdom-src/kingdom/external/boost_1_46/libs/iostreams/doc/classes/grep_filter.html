@@ -30,7 +30,7 @@
     The class template <CODE>basic_grep_filter</CODE> filters a character sequence line by line using a regular expression provided at construction, in a manner similar to the command-line utility <i>grep</i> (<A CLASS="bib_ref" HREF="../bibliography.html#grep">[IEEE]</A>). The filter uses regular expressions from the <A HREF="http://www.boost.org/libs/regex" TARGET="_top">Boost Regular Expression Library</A> (<A CLASS="bib_ref" HREF="../bibliography.html#maddock">[Maddock]</A>).
 </P>
 <P>
-    By default, the filtered character sequence consists of those lines of the unfilitered sequence that contain a subsequence matching the regular expression. By specifying appropriate options at construction, <CODE>basic_grep_filter</CODE> can be made to pass through only those lines which exactly match the regular expression (as if the option <i>-x</i> had been  passed to the command-line utility) or only those lines that <i>do not</i> contain a match (as if the option <i>-v</i> had been  passed to the command-line utility).
+    By default, the filtered character sequence consists of those lines of the unfiltered sequence that contain a subsequence matching the regular expression. By specifying appropriate options at construction, <CODE>basic_grep_filter</CODE> can be made to pass through only those lines which exactly match the regular expression (as if the option <i>-x</i> had been  passed to the command-line utility) or only those lines that <i>do not</i> contain a match (as if the option <i>-v</i> had been  passed to the command-line utility).
 </P>
 <P>
     A running count of the lines in the filtered character sequence is available via the member function <code><a href="#count">count</a></code>.
@@ -72,7 +72,7 @@
           <SPAN CLASS="keyword">typename</SPAN> <A HREF="#template_params" CLASS="documented">Alloc</A> = std::allocator&lt;Ch&gt; &gt;
 <SPAN CLASS="keyword">class</SPAN> <A HREF="#template_params" CLASS="documented">basic_grep_filter</A> {   
 <SPAN CLASS="keyword">public:</SPAN>
-    <A CLASS="documented" HREF="#constructor">basic_grep_filter</A>( <SPAN CLASS="keyword">const</SPAN> basic_regex&lt;Ch, Tr, Alloc&gt;& pattern,
+    <A CLASS="documented" HREF="#constructor">basic_grep_filter</A>( <SPAN CLASS="keyword">const</SPAN> basic_regex&lt;Ch, Tr, Alloc&gt;&amp; pattern,
                        regex_constants::match_flag_type flags = 
                            regex_constants::match_default,
                        <SPAN CLASS="keyword">int</SPAN> options = <SPAN CLASS="numeric_literal">0</SPAN> );
@@ -106,7 +106,7 @@
 <A NAME="constructor"></A>
 <H4><CODE>basic_grep_filter::basic_grep_filter</CODE></H4>
 
-<PRE CLASS="broken_ie">    <B>basic_grep_filter</B>( <SPAN CLASS="keyword">const</SPAN> basic_regex&lt;Ch, Tr, Alloc&gt;& pattern,
+<PRE CLASS="broken_ie">    <B>basic_grep_filter</B>( <SPAN CLASS="keyword">const</SPAN> basic_regex&lt;Ch, Tr, Alloc&gt;&amp; pattern,
                        regex_constants::match_flag_type flags = 
                            regex_constants::match_default,
                        <SPAN CLASS="keyword">int</SPAN> options = <SPAN CLASS="numeric_literal">0</SPAN> );</PRE>
@@ -143,7 +143,6 @@
 <!-- Begin Footer -->
 
 <HR>
-<P CLASS="copyright">Revised 28 May 2008</P>
 
 <P CLASS="copyright">&copy; Copyright 2008 <a href="http://www.coderage.com/" target="_top">CodeRage, LLC</a></P>
 <P CLASS="copyright"> 

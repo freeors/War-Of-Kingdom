@@ -1,6 +1,5 @@
-/* $Id: room.cpp 47828 2010-12-05 18:09:15Z mordante $ */
 /*
-   Copyright (C) 2009 - 2010 by Tomasz Sniatowski <kailoran@gmail.com>
+   Copyright (C) 2009 - 2013 by Tomasz Sniatowski <kailoran@gmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -120,17 +119,15 @@ void room::send_data(simple_wml::document& data,
 	wesnothd::send_to_many(data, members(), exclude, packet_type);
 }
 
-void room::send_server_message_to_all(const char* message,
-									  network::connection exclude) const
+void room::send_server_message_to_all(const char* message, network::connection exclude) const
 {
 	simple_wml::document doc;
 	send_server_message(message, 0, &doc);
 	send_data(doc, exclude, "message");
 }
 
-void room::send_server_message(const char* message,
-							   network::connection sock,
-							   simple_wml::document* docptr) const
+void room::send_server_message(const char* message, network::connection sock,
+						   simple_wml::document* docptr) const
 {
 	simple_wml::document docbuf;
 	if(docptr == NULL) {

@@ -17,12 +17,13 @@
 #include "tooltips.hpp"
 
 #include "font.hpp"
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "help.hpp"
 #include "marked-up_text.hpp"
 #include "resources.hpp"
 #include "video.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace {
 
@@ -67,7 +68,11 @@ static void show_tooltip(const tooltip& tip)
 	clear_tooltip();
 
 	const SDL_Color bgcolor = {0,0,0,160};
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	SDL_Rect area = screen_area();
+#else
+	SDL_Rect area = create_rect(0, 0, 800, 600);
+#endif
 
 	unsigned int border = 10;
 
@@ -169,10 +174,12 @@ void process(int mousex, int mousey)
 
 bool click(int mousex, int mousey)
 {
-	foreach(tooltip tip, tips) {
+	BOOST_FOREACH (tooltip tip, tips) {
 		if(!tip.action.empty() && point_in_rect(mousex, mousey, tip.rect)) {
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 			display* disp = resources::screen;
 			help::show_help(*disp, tip.action);
+#endif
 			return true;
 		}
 	}

@@ -27,11 +27,11 @@
 <H2>2.2.6. Dictionary Filters</H2>
 
 <P>
-    A <SPAN CLASS='term'>dictionary filter</SPAN> is a Filter which peforms text substitution in the following manner. It maintains a collection of pairs of strings whose first components are words and whose second components represent replacement text &#8212; I'll call such a collection a <SPAN CLASS='term'>dictionary</SPAN>, and refer to the pairs it contains as <SPAN CLASS='term'>definitions</SPAN>.  When a dictionary filter encounters a word which appears as the first component of a definition, it forwards the replacement text instead of the original word. Other words, whitespace and punctuation are forwarded unchanged. 
+    A <SPAN CLASS='term'>dictionary filter</SPAN> is a Filter which performs text substitution in the following manner. It maintains a collection of pairs of strings whose first components are words and whose second components represent replacement text &#8212; I'll call such a collection a <SPAN CLASS='term'>dictionary</SPAN>, and refer to the pairs it contains as <SPAN CLASS='term'>definitions</SPAN>.  When a dictionary filter encounters a word which appears as the first component of a definition, it forwards the replacement text instead of the original word. Other words, whitespace and punctuation are forwarded unchanged. 
 </P>
 
 <P>
-    The basic algorithm is as follows.: You examine characters one at a time, appending them to a string which I'll call the <SPAN CLASS='term'>current word</SPAN>. When you encounter a non-alphabetic character, you consult the dictionary to determine whether the current word appears as the first component of a definition. If it does, you forward the replacement text followed by the non-alphabetic character. Otherwise, you forward the current word followed by the non-alphabetic character. When the end-of-stream is reached, you consult the dictionary again and forward either the curent word or its replacement, as appropriate.
+    The basic algorithm is as follows: You examine characters one at a time, appending them to a string which I'll call the <SPAN CLASS='term'>current word</SPAN>. When you encounter a non-alphabetic character, you consult the dictionary to determine whether the current word appears as the first component of a definition. If it does, you forward the replacement text followed by the non-alphabetic character. Otherwise, you forward the current word followed by the non-alphabetic character. When the end-of-stream is reached, you consult the dictionary again and forward either the curent word or its replacement, as appropriate.
 </P>
 
 <P>
@@ -50,8 +50,8 @@
 
 <SPAN CLASS="keyword">class</SPAN> dictionary {
 <SPAN CLASS="keyword">public</SPAN>:
-    <SPAN CLASS="keyword">void</SPAN> add(std::string key, <SPAN CLASS="keyword">const</SPAN> std::string& value);
-    <SPAN CLASS="keyword">void</SPAN> replace(std::string& key);
+    <SPAN CLASS="keyword">void</SPAN> add(std::string key, <SPAN CLASS="keyword">const</SPAN> std::string&amp; value);
+    <SPAN CLASS="keyword">void</SPAN> replace(std::string&amp; key);
 
     <SPAN CLASS='comment'>/* ... */</SPAN>
 };
@@ -59,7 +59,7 @@
 } } } <SPAN CLASS="comment">// End namespace boost::iostreams:example</SPAN></PRE>
 
 <P>
-    The member function <CODE>add</CODE> converts <CODE>key</CODE> to lower case then added the pair <CODE>key</CODE>, <CODE>value</CODE> to the dictionary. The member function <CODE>replace</CODE> searches for a definition whose first component is equal to the result of converting <CODE>key</CODE> to lower case. If it finds such a definition, it assigns the replacement text to <CODE>key</CODE>, adjusting the case of the first character to match the case of the first character of <CODE>key</CODE>. Otherwise, it does nothing.
+    The member function <CODE>add</CODE> converts <CODE>key</CODE> to lower case and adds the pair <CODE>key</CODE>, <CODE>value</CODE> to the dictionary. The member function <CODE>replace</CODE> searches for a definition whose first component is equal to the result of converting <CODE>key</CODE> to lower case. If it finds such a definition, it assigns the replacement text to <CODE>key</CODE>, adjusting the case of the first character to match the case of the first character of <CODE>key</CODE>. Otherwise, it does nothing.
 </P>
 
 <A NAME="dictionary_stdio_filter"></A>
@@ -75,7 +75,7 @@
 
 <SPAN CLASS="keyword">class</SPAN> dictionary_stdio_filter : <SPAN CLASS="keyword"><SPAN CLASS="keyword"><SPAN CLASS="keyword">public</SPAN></SPAN></SPAN> stdio_filter {
 <SPAN CLASS="keyword">public</SPAN>:
-    dictionary_stdio_filter(dictionary& d) : dictionary_(d) { }
+    dictionary_stdio_filter(dictionary&amp; d) : dictionary_(d) { }
 <SPAN CLASS="keyword">private</SPAN>:
     <SPAN CLASS="keyword">void</SPAN> do_filter()
     {
@@ -95,7 +95,7 @@
             }
         }
     }
-    dictionary&  dictionary_;
+    dictionary&amp;  dictionary_;
     std::string  current_word_;
 };
 
@@ -118,17 +118,17 @@
 
 <SPAN CLASS="keyword">class</SPAN> dictionary_input_filter : <SPAN CLASS="keyword"><SPAN CLASS="keyword"><SPAN CLASS="keyword">public</SPAN></SPAN></SPAN> input_filter {
 <SPAN CLASS="keyword">public</SPAN>:
-    dictionary_input_filter(dictionary& d)
+    dictionary_input_filter(dictionary&amp; d)
         : dictionary_(d), off_(std::string::npos), eof_(<SPAN CLASS="keyword">false</SPAN>)
         { }
 
     <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Source&gt;
-    <SPAN CLASS="keyword"><SPAN CLASS="keyword">int</SPAN></SPAN> get(Source& src);
+    <SPAN CLASS="keyword"><SPAN CLASS="keyword">int</SPAN></SPAN> get(Source&amp; src);
 
     <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Source&gt;
-    <SPAN CLASS="keyword">void</SPAN> close(Source&);
+    <SPAN CLASS="keyword">void</SPAN> close(Source&amp;);
 <SPAN CLASS="keyword">private</SPAN>:
-    dictionary&             dictionary_;
+    dictionary&amp;             dictionary_;
     std::string             current_word_;
     std::string::size_type  off_;
     <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN>                    eof_;
@@ -139,10 +139,10 @@
 <P>The function <CODE>get</CODE> is implemented as follows:</P>
 
 <PRE class="broken_ie">    <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Source&gt;
-    <SPAN CLASS="keyword"><SPAN CLASS="keyword">int</SPAN></SPAN> get(Source& src)
+    <SPAN CLASS="keyword"><SPAN CLASS="keyword">int</SPAN></SPAN> get(Source&amp; src)
     {
         <SPAN CLASS='comment'>// Handle unfinished business.</SPAN>
-        <SPAN CLASS="keyword">if</SPAN> (off_ != std::string::npos && off_ &lt; current_word_.size())
+        <SPAN CLASS="keyword">if</SPAN> (off_ != std::string::npos &amp;&amp; off_ &lt; current_word_.size())
             <SPAN CLASS="keyword">return</SPAN> current_word_[off_++];
         <SPAN CLASS="keyword">if</SPAN> (off_ == current_word_.size()) {
             current_word_.erase();
@@ -185,7 +185,7 @@
 <P>As usual, the function <CODE>close</CODE> resets the Filter's state:</P>
 
 <PRE class="broken_ie">    <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Source&gt;
-    <SPAN CLASS="keyword">void</SPAN> close(Source&)
+    <SPAN CLASS="keyword">void</SPAN> close(Source&amp;)
     {
         current_word_.erase();
         off_ = std::string::npos;
@@ -206,19 +206,19 @@
 <SPAN CLASS="keyword">class</SPAN> dictionary_output_filter : <SPAN CLASS="keyword"><SPAN CLASS="keyword"><SPAN CLASS="keyword">public</SPAN></SPAN></SPAN> output_filter {
 <SPAN CLASS="keyword">public</SPAN>:
     <SPAN CLASS="keyword">typedef</SPAN> std::map&lt;std::string, std::string&gt; map_type;
-    dictionary_output_filter(dictionary& d)
+    dictionary_output_filter(dictionary&amp; d)
         : dictionary_(d), off_(std::string::npos)
         { }
 
     <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-    <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN> put(Sink& dest, <SPAN CLASS="keyword"><SPAN CLASS="keyword">int</SPAN></SPAN> c);
+    <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN> put(Sink&amp; dest, <SPAN CLASS="keyword"><SPAN CLASS="keyword">int</SPAN></SPAN> c);
 
     <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-    <SPAN CLASS="keyword">void</SPAN> close(Sink& dest);
+    <SPAN CLASS="keyword">void</SPAN> close(Sink&amp; dest);
 <SPAN CLASS="keyword">private</SPAN>:
     <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-    <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN> write_current_word(Sink& dest);
-    dictionary&             dictionary_;
+    <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN> write_current_word(Sink&amp; dest);
+    dictionary&amp;             dictionary_;
     std::string             current_word_;
     std::string::size_type  off_;
 };
@@ -228,7 +228,7 @@
 <P>Let's look first at the helper function <CODE>write_current_word</CODE>:</P>
 
 <PRE class="broken_ie">    <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-    <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN> write_current_word(Sink& dest)
+    <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN> write_current_word(Sink&amp; dest)
     {
         <SPAN CLASS="keyword">using</SPAN> <SPAN CLASS="keyword">namespace</SPAN> std;
         streamsize amt = <SPAN CLASS="keyword">static_cast</SPAN>&lt;streamsize&gt;(current_word_.size() - off_);
@@ -251,9 +251,9 @@
 <P>Using <CODE>write_current_word</CODE> you can implement <CODE>put</CODE> as follows:</P>
 
 <PRE class="broken_ie">    <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-    <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN> put(Sink& dest, <SPAN CLASS="keyword"><SPAN CLASS="keyword">int</SPAN></SPAN> c)
+    <SPAN CLASS="keyword"><SPAN CLASS="keyword">bool</SPAN></SPAN> put(Sink&amp; dest, <SPAN CLASS="keyword"><SPAN CLASS="keyword">int</SPAN></SPAN> c)
     {
-        <SPAN CLASS="keyword">if</SPAN> (off_ != std::string::npos && !write_current_word(dest))
+        <SPAN CLASS="keyword">if</SPAN> (off_ != std::string::npos &amp;&amp; !write_current_word(dest))
             <SPAN CLASS="keyword">return</SPAN> <SPAN CLASS="keyword">false</SPAN>;
         <SPAN CLASS="keyword">if</SPAN> (!std::isalpha((<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>) c)) {
             dictionary_.replace(current_word_);
@@ -271,7 +271,7 @@
 <P>The function <CODE>close</CODE> has more work to do in this case than simply reseting the Filter's state. Unless the last character of the unfiltered sequence happened to be a non-alphabetic character, the contents of current_word_ will not yet have been written:</P>
 
 <PRE class="broken_ie">    <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-    void close(Sink& dest)
+    void close(Sink&amp; dest)
     {
         <SPAN CLASS='comment'>// Reset current_word_ and off_, saving old values.</SPAN>
         std::string             current_word;
@@ -309,7 +309,6 @@
 
 <HR>
 
-<P CLASS="copyright">Revised 02 Feb 2008</P>
 
 <P CLASS="copyright">&copy; Copyright 2008 <a href="http://www.coderage.com/" target="_top">CodeRage, LLC</a><br/>&copy; Copyright 2004-2007 <a href="http://www.coderage.com/turkanis/" target="_top">Jonathan Turkanis</a></P>
 <P CLASS="copyright"> 

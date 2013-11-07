@@ -64,6 +64,7 @@ private:
 
 	std::vector<hero*>& partial_heros_;
 	int side_;
+	std::map<int, int> row_2_hero_;
 
 	bool ascend_;
 	int current_page_;

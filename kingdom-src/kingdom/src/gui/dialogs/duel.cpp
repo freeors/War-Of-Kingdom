@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/duel.hpp"
 
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/toggle_button.hpp"
@@ -31,6 +30,7 @@
 #include "sound.hpp"
 #include "game_config.hpp"
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 namespace gui2 {
@@ -484,7 +484,7 @@ void tduel::end_turn(twindow& window)
 		// resume [scenario] music list
 		sound::empty_playlist();
 		const config& level = resources::controller->level();
-		foreach (const config &m, level.child_range("music")) {
+		BOOST_FOREACH (const config &m, level.child_range("music")) {
 			sound::play_music_config(m);
 		}
 		sound::commit_music_changes();

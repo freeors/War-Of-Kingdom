@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/tent.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -40,6 +39,7 @@
 #include "loadscreen.hpp"
 #include <preferences.hpp>
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 namespace gui2 {
@@ -108,7 +108,6 @@ ttent::ttent(hero_map& heros, card_map& cards, const config& cfg, const config& 
 	, faction_list_()
 	, player_faction_(NULL)
 {
-	tent::reset();
 }
 
 ttent::~ttent()
@@ -144,6 +143,25 @@ void ttent::card_toggled(twidget* widget)
 
 void ttent::init_player_list(tlistbox& list, twindow& window)
 {
+	config cfg_from_file;
+	wml_config_from_file(game_config::path + "/xwml/campaigns/" + campaign_config_["id"].str() + ".bin", cfg_from_file);
+	const config& scenario = cfg_from_file.find_child("scenario", "id", campaign_config_["first_scenario"]);
+
+	// decide NONE/RPG from NONE.
+	BOOST_FOREACH (const config& side, scenario.child_range("side")) {
+		if (side.has_attribute("controller")) {
+			continue;
+		}
+		if (const config& c = side.child("if")) {
+			if (const config& c1 = c.child("then")) {
+				if (c1["controller"].str() == "human") {
+					rpg_mode_ = true;
+					break;
+				}
+			}
+		}
+	}
+
 	if (player_hero_->valid() && rpg_mode_) {
 		rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * (heros_.size() + 1));
 		add_row_to_heros(list, player_hero_->number_, -1, -1, hero_stratum_citizen);
@@ -152,14 +170,11 @@ void ttent::init_player_list(tlistbox& list, twindow& window)
 	}
 
 	std::string text;
-	config cfg_from_file;
-	wml_config_from_file(game_config::path + "/xwml/campaigns/" + campaign_config_["id"].str() + ".bin", cfg_from_file);
-	const config& scenario = cfg_from_file.child("scenario");
 
 	std::map<int, int> mayor_map;
 	std::vector<std::string> v;
 	int leader, city, stratum;
-	foreach (const config& side, scenario.child_range("side")) {
+	BOOST_FOREACH (const config& side, scenario.child_range("side")) {
 		// city_map_.clear();
 		leader = side["leader"].to_int();
 		if (side.has_attribute("controller")) {
@@ -168,7 +183,7 @@ void ttent::init_player_list(tlistbox& list, twindow& window)
 				continue;
 			}
 		}
-		foreach (const config& c, side.child_range("artifical")) {
+		BOOST_FOREACH (const config& c, side.child_range("artifical")) {
 			int mayor = -1;
 			if (c.has_attribute("mayor")) {
 				mayor = c["mayor"].to_int();
@@ -205,11 +220,11 @@ void ttent::init_player_list(tlistbox& list, twindow& window)
 			}
 		}
 		// unit. they maybe leader
-		foreach (const config& u, side.child_range("unit")) {
+		BOOST_FOREACH (const config& u, side.child_range("unit")) {
 			v = utils::split(u["heros_army"].str());
 			for (std::vector<std::string>::const_iterator it = v.begin(); it != v.end(); ++ it) {
 				int cityno = u["cityno"].to_int();
-				if (cityno == HEROS_DEFAULT_CITY) {
+				if (cityno == HEROS_ROAM_CITY) {
 					continue;
 				}
 				int h = lexical_cast_default<int>(*it);
@@ -277,8 +292,6 @@ void ttent::init_faction_list(tlistbox& list, twindow& window)
 
 void ttent::pre_show(CVideo& /*video*/, twindow& window)
 {
-	rpg_mode_ = campaign_config_["mode"].str() == "rpg";
-
 	tlistbox* list = find_widget<tlistbox>(&window, "player_list", false, false);
 	if (list) {
 		init_player_list(*list, window);
@@ -369,6 +382,17 @@ config ttent::player() const
 	return cfg;
 }
 
+std::string ttent::mode_str() const
+{
+	if (campaign_config_["mode"].str() == "tower") {
+		return "tower";
+	} else if (rpg_mode_) {
+		return "rpg";
+	} else {
+		return null_str;
+	}
+}
+
 std::vector<bool> ttent::checked_card() const
 {
 	std::vector<bool> ret;
@@ -429,6 +453,7 @@ void ttent::add_row_to_heros(tlistbox& list, int h, int leader, int city, int st
 
 void ttent::add_row_to_factions(tlistbox& list, const config& cfg)
 {
+	std::stringstream strstr;
 	// Add list item
 	string_map list_item;
 	std::map<std::string, string_map> list_item_item;
@@ -437,15 +462,33 @@ void ttent::add_row_to_factions(tlistbox& list, const config& cfg)
 	list_item["label"] = heros_[number].image();
 	list_item_item.insert(std::make_pair("icon", list_item));
 	
-	const config& art_cfg = cfg.child("artifical");
-	std::vector<std::string> vstr = utils::split(art_cfg["service_heros"].str());
-	list_item["label"] = lexical_cast_default<std::string>(vstr.size());
+	std::vector<std::string> service_vstr = utils::split(cfg["service_heros"].str());
+	std::vector<std::string> wander_vstr = utils::split(cfg["wander_heros"].str());
+	int total = service_vstr.size() + wander_vstr.size();
+
+	strstr.str("");
+	if (mode_id_ != "tower") {
+		strstr << service_vstr.size();
+	} else if (total >= game_config::tower_fix_heros) {
+		strstr << game_config::tower_fix_heros;
+	} else {
+		strstr << total;
+	}
+	list_item["label"] = strstr.str();
 	list_item_item.insert(std::make_pair("fresh", list_item));
 
-	vstr = utils::split(art_cfg["wander_heros"].str());
-	list_item["label"] = lexical_cast_default<std::string>(vstr.size());
+	strstr.str("");
+	if (mode_id_ != "tower") {
+		strstr << service_vstr.size();
+	} else if (total >= game_config::tower_fix_heros) {
+		strstr << total - game_config::tower_fix_heros;
+	} else {
+		strstr << 0;
+	}
+	list_item["label"] = strstr.str();
 	list_item_item.insert(std::make_pair("wander", list_item));
 
+	const config& art_cfg = cfg.child("artifical");
 	number = art_cfg["heros_army"].to_int();
 	list_item["label"] = heros_[number].name();
 	list_item_item.insert(std::make_pair("city", list_item));

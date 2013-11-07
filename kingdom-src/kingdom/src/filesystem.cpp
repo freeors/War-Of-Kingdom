@@ -57,12 +57,14 @@ BPath be_path;
 
 #include "config.hpp"
 #include "filesystem.hpp"
-#include "foreach.hpp"
 #include "game_config.hpp"
 #include "game_preferences.hpp"
 #include "log.hpp"
 #include "loadscreen.hpp"
 #include "scoped_resource.hpp"
+#include "posix.h"
+
+#include <boost/foreach.hpp>
 
 #ifdef ANDROID
 #include <android/log.h>
@@ -199,9 +201,13 @@ void get_files_in_dir(const std::string &directory,
 					checksum->nfiles++;
 				}
 			} else if (S_ISDIR(st.st_mode)) {
-				if (filter & SKIP_MEDIA_DIR	&& (basename == "images"|| basename == "sounds" || basename == "music"))
+				if ((filter & SKIP_MEDIA_DIR) && (basename == "images"|| basename == "sounds" || basename == "music"))
 					continue;
-				if (filter & SKIP_SCENARIO_DIR	&& (basename == "scenarios"|| basename == "maps" || basename == "music"))
+				if ((filter & SKIP_SCENARIO_DIR) && (basename == "scenarios"|| basename == "maps" || basename == "music"))
+					continue;
+				if ((filter & SKIP_GUI_DIR) && basename == "gui")
+					continue;
+				if ((filter & SKIP_INTERNAL_DIR) && basename == "units-internal")
 					continue;
 
 				if (reorder == DO_REORDER &&
@@ -268,24 +274,28 @@ std::string get_prefs_file()
 	return get_user_data_dir_utf8() + "/preferences";
 }
 
-std::string get_saves_dir()
+std::string create_if_not(const std::string& dir_utf8) 
 {
-	const std::string dir_path = get_user_data_dir_utf8() + "/saves";
-	std::string dir_path_ansi = dir_path;
+	std::string dir_ansi = dir_utf8;
 #ifdef _WIN32
-	conv_ansi_utf8(dir_path_ansi, false);
+	conv_ansi_utf8(dir_ansi, false);
 #endif
-	if (get_dir(dir_path_ansi).empty()) {
+	if (get_dir(dir_ansi).empty()) {
 		return "";
 	}
-	return dir_path;
-	// return get_dir(dir_path);
+	return dir_utf8;
+}
+
+std::string get_saves_dir()
+{
+	const std::string dir_utf8 = get_user_data_dir_utf8() + "/saves";
+	return create_if_not(dir_utf8);
 }
 
 std::string get_addon_campaigns_dir()
 {
-	const std::string dir_path = get_user_data_dir() + "/data/add-ons";
-	return get_dir(dir_path);
+	const std::string dir_utf8 = get_user_data_dir_utf8() + "/data/add-ons";
+	return create_if_not(dir_utf8);
 }
 
 std::string get_intl_dir()
@@ -305,8 +315,8 @@ std::string get_intl_dir()
 
 std::string get_screenshot_dir()
 {
-	const std::string dir_path = get_user_data_dir() + "/screenshots";
-	return get_dir(dir_path);
+	const std::string dir_utf8 = get_user_data_dir_utf8() + "/screenshots";
+	return create_if_not(dir_utf8);
 }
 
 std::string get_next_filename(const std::string& name, const std::string& extension)
@@ -805,6 +815,34 @@ void write_file(const std::string& fname, const std::string& data)
 	}
 }
 
+void write_file(const std::string& fname, char* data, int len, bool to_utf16)
+{
+	posix_file_t fp;
+	uint32_t bytertd;
+
+#ifdef _WIN32
+	if (to_utf16) {
+		int wlen = MultiByteToWideChar(CP_UTF8, 0, fname.c_str(), -1, NULL, 0);
+		WCHAR *wc = new WCHAR[wlen];
+		MultiByteToWideChar(CP_UTF8, 0, fname.c_str(), -1, wc, wlen);
+		
+		fp = CreateFileW(wc, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+			CREATE_ALWAYS, 0, NULL);
+
+		delete [] wc;
+	} else {
+		posix_fopen(fname.c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+	}
+#else
+	posix_fopen(fname.c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+#endif
+
+	if (fp == INVALID_FILE) {
+		return;
+	}
+	posix_fwrite(fp, data, len, bytertd);
+	posix_fclose(fp);
+}
 
 std::string read_map(const std::string& name)
 {
@@ -1025,7 +1063,7 @@ void binary_paths_manager::set_paths(const config& cfg)
 	cleanup();
 	init_binary_paths();
 
-	foreach (const config &bp, cfg.child_range("binary_path"))
+	BOOST_FOREACH (const config &bp, cfg.child_range("binary_path"))
 	{
 		std::string path = bp["path"].str();
 		if (path.find("..") != std::string::npos) {
@@ -1072,7 +1110,7 @@ const std::vector<std::string>& get_binary_paths(const std::string& type)
 
 	init_binary_paths();
 
-	foreach (const std::string &path, binary_paths)
+	BOOST_FOREACH (const std::string &path, binary_paths)
 	{
 		res.push_back(get_user_data_dir() + "/" + path + type + "/");
 
@@ -1113,7 +1151,7 @@ std::string get_binary_file_location(const std::string& type, const std::string&
 		return std::string();
 	}
 
-	foreach (const std::string &path, get_binary_paths(type))
+	BOOST_FOREACH (const std::string &path, get_binary_paths(type))
 	{
 		const std::string file = path + filename;
 		DBG_FS << "  checking '" << path << "'\n";
@@ -1141,7 +1179,7 @@ std::string get_binary_dir_location(const std::string &type, const std::string &
 		return std::string();
 	}
 
-	foreach (const std::string &path, get_binary_paths(type))
+	BOOST_FOREACH (const std::string &path, get_binary_paths(type))
 	{
 		const std::string file = path + filename;
 		DBG_FS << "  checking '" << path << "'\n";
@@ -1310,7 +1348,7 @@ std::string normalize_path(const std::string &p1)
 	p4 << drive;
 #endif
 
-	foreach (const std::string &s, components)
+	BOOST_FOREACH (const std::string &s, components)
 	{
 		p4 << '/' << s;
 	}

@@ -17,7 +17,6 @@
 
 #include "config.hpp"
 #include "filesystem.hpp"
-#include "foreach.hpp"
 #include "game_preferences.hpp"
 #include "log.hpp"
 #include "serialization/string_utils.hpp"
@@ -27,6 +26,7 @@
 
 #include "SDL_mixer.h"
 
+#include <boost/foreach.hpp>
 #include <list>
 
 static lg::log_domain log_audio("audio");
@@ -71,11 +71,7 @@ const size_t n_reserved_channels = UI_sound_channel + 1; // sources, bell, timer
 
 // Max number of sound chunks that we want to cache
 // Keep this above number of available channels to avoid busy-looping
-#ifdef LOW_MEM
-unsigned max_cached_chunks = 64;
-#else
 unsigned max_cached_chunks = 256;
-#endif
 
 std::map< Mix_Chunk*, int > chunk_usage;
 
@@ -243,11 +239,6 @@ static std::string pick_one(const std::string &files)
 		return "";
 	if (ids.size() == 1)
 		return ids[0];
-
-#ifdef LOW_MEM
-	// We're memory constrained, so we shouldn't cache too many chunks
-	return ids[0];
-#endif
 
 	// We avoid returning same choice twice if we can avoid it.
 	static std::map<std::string,unsigned int> prev_choices;
@@ -596,7 +587,7 @@ void commit_music_changes()
 		return;
 
 	// If current track no longer on playlist, change it.
-	foreach (const music_track &m, current_track_list) {
+	BOOST_FOREACH (const music_track &m, current_track_list) {
 		if (current_track == m)
 			return;
 	}
@@ -614,7 +605,7 @@ void write_music_play_list(config& snapshot)
 {
 	// First entry clears playlist, others append to it.
 	bool append = false;
-	foreach (music_track &m, current_track_list) {
+	BOOST_FOREACH (music_track &m, current_track_list) {
 		m.write(snapshot, append);
 		append = true;
 	}

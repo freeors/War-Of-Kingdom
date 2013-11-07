@@ -24,6 +24,7 @@
 #include "sdl_utils.hpp"
 
 class unit;
+class hero;
 class team;
 class artifical;
 class unit_map;
@@ -304,6 +305,7 @@ public:
 
 	static surface desc_bg_[10];
 	static surface enemy_orb_, ally_orb_, moved_orb_, unmoved_orb_, partmoved_orb_, automatic_orb_, self_orb_;
+	static surface normal_food, lack_food;
 
 	static unit* scout_unit_;
 	static std::map<std::pair<int, int>, size_t> inter_city_move_cost_;
@@ -487,11 +489,10 @@ public:
 	// template <typename T>
 	// void erase(const T& iter);
 	bool erase(const map_location& loc, bool overlay = true);
-	bool erase(unit* u);
+	bool erase(unit* u, bool delete_unit = true);
 
 	/** Extract (like erase, but don't delete). */
 	std::pair<map_location, unit*>* extract(const map_location& loc);
-
 	void place(std::pair<map_location, unit*>* p);
 
 	bool valid(const map_location& loc, bool check_loc = true, bool overlay = true) const;
@@ -514,6 +515,7 @@ public:
 	bool side_survived(int side, int* residuals = NULL) const;
 
 	size_t units_from_rect(unit** draw_area_unit, const rect_of_hexes& draw_area_rect);
+	void ally_terminate_adjust(team& adjusting_team, const SDL_Rect& rect);
 
 	void calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool action = true);
 	void calculate_mr_rects_from_city_rect(std::vector<team>& teams, gamemap& map, std::vector<mr_data>& mrs, int side);
@@ -523,6 +525,9 @@ public:
 
 	void extract_heros_number();
 	void recalculate_heros_pointer();
+
+	unit* find_unit(const hero& h) const;
+	unit* find_unit(const map_location& loc) const;
 
 	// bool compare_front_cities(const mr_data& mr, artifical& a, artifical& b);
 	bool compare_enemy_cities(const mr_data& mr, artifical& a, artifical& b);

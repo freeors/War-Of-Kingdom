@@ -1,6 +1,5 @@
-/* $Id: game.hpp 47741 2010-11-28 15:58:29Z silene $ */
 /*
-   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2003 - 2013 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -132,6 +131,9 @@ public:
 	 */
 	bool process_turn(simple_wml::document& data, const player_map::const_iterator user);
 
+	/** Handles incoming [whiteboard] data. */
+	void process_whiteboard(simple_wml::document& data, const player_map::const_iterator user);
+
 	/**
 	 * Set the description to the number of available slots.
 	 *
@@ -140,11 +142,24 @@ public:
 	bool describe_slots();
 
 	void send_server_message_to_all(const char* message, network::connection exclude=0) const;
+	void send_server_message_to_all(const std::string& message, network::connection exclude=0) const
+	{
+		send_server_message_to_all(message.c_str(), exclude);
+	}
+
 	void send_server_message(const char* message, network::connection sock=0, simple_wml::document* doc=NULL) const;
+	void send_server_message(const std::string& message, network::connection sock=0, simple_wml::document* doc=NULL) const
+	{
+		send_server_message(message.c_str(), sock, doc);
+	}
 
 	/** Send data to all players in this game except 'exclude'. */
-	void send_and_record_server_message(const char* message,
-			const network::connection exclude=0);
+	void send_and_record_server_message(const char* message, const network::connection exclude=0);
+	void send_and_record_server_message(const std::string& message,	const network::connection exclude=0)
+	{
+		send_and_record_server_message(message.c_str(), exclude);
+	}
+
 	void send_data(simple_wml::document& data, const network::connection exclude=0, std::string packet_type = "") const;
 
 	void clear_history();

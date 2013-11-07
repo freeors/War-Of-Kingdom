@@ -17,20 +17,20 @@
 
 #include "gui/dialogs/combo_box.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "gui/auxiliary/old_markup.hpp"
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-	#include "gui/widgets/list.hpp"
-#else
-	#include "gui/widgets/listbox.hpp"
-#endif
+
 #include "gui/dialogs/helper.hpp"
+#ifdef GUI2_EXPERIMENTAL_LISTBOX
+#include "gui/widgets/list.hpp"
+#else
+#include "gui/widgets/listbox.hpp"
+#endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/toggle_panel.hpp"
 #include "gui/widgets/label.hpp"
+
 #include <boost/bind.hpp>
 
 namespace gui2 {
@@ -68,13 +68,52 @@ namespace gui2 {
 
 REGISTER_DIALOG(combo_box)
 
+tcombo_box::titem::titem(const std::string& str) 
+	: icon()
+	, label(str)
+{
+	if (label.empty()) {
+		return;
+	}
+
+	// Handle selection.
+	if (label[0] == '*') {
+		label.erase(0, 1);
+	}
+
+	// Handle the special case with an image.
+	std::string::size_type pos = label.find('=');
+	if (pos != std::string::npos && (label[0] == '&' || pos == 0)) {
+		if (pos) icon = label.substr(1, pos - 1);
+		label.erase(0, pos + 1);
+	}
+
+	// Search for an '=' symbol that is not inside markup.
+	std::string::size_type prev = 0;
+	bool open = false;
+	while ((pos = label.find('=', prev)) != std::string::npos) {
+		for (std::string::size_type i = prev; i != pos; ++i) {
+			switch (label[i]) {
+			case '<': open = true; break;
+			case '>': open = false; break;
+			}
+		}
+		if (!open) break;
+		prev = pos + 1;
+	}
+	if (pos != std::string::npos) {
+		label.erase(pos);
+	}
+}
+
 tcombo_box::tcombo_box(const std::vector<std::string>& items, int index, int type)
 	: index_(index)
 	, items_()
 	, type_(type)
 {
-	foreach(const std::string& it, items) {
-		items_.push_back(tlegacy_menu_item(it));
+	for (std::vector<std::string>::const_iterator it = items.begin(); it != items.end(); ++ it) {
+		const std::string& str = *it;
+		items_.push_back(titem(str));
 	}
 }
 
@@ -94,16 +133,12 @@ void tcombo_box::pre_show(CVideo& /*video*/, twindow& window)
 	std::map<std::string, string_map> data;
 
 	int item_index = 0;
-	foreach(const tlegacy_menu_item& item, items_) {
-		if(item.is_default()) {
-			index_ = list.get_item_count();
-		}
-
-		data["icon"]["label"] = item.icon();
-		data["label"]["label"] = item.label();
+	for (std::vector<titem>::const_iterator it = items_.begin(); it != items_.end(); ++ it) {
+		const titem& item = *it;
+		
+		data["icon"]["label"] = item.icon;
+		data["label"]["label"] = item.label;
 		data["label"]["use_markup"] = "true";
-		data["description"]["label"] = item.description();
-		data["description"]["use_markup"] = "true";
 
 		list.add_row(data);
 

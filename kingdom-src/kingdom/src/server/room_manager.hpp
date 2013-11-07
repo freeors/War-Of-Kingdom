@@ -1,6 +1,5 @@
-/* $Id: room_manager.hpp 47829 2010-12-05 18:09:18Z mordante $ */
 /*
-   Copyright (C) 2009 - 2010 by Tomasz Sniatowski <kailoran@gmail.com>
+   Copyright (C) 2009 - 2013 by Tomasz Sniatowski <kailoran@gmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify

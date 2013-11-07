@@ -135,7 +135,6 @@ struct game_info
 	bool shroud;
 	bool observers;
 	bool shuffle_sides;
-	bool use_map_settings;
 	bool verified;
 	bool password_required;
 	bool have_era;

@@ -1367,7 +1367,6 @@ void ttext::draw(surface& canvas
 		sdl_blit(screen, NULL, surf, NULL);
 	}
 */
-
 	surface surf = font::get_rendered_text2(text, maximum_width_(variables), font_size_, int_to_color(color_ >> 8));
 
 	if(surf->w == 0) {

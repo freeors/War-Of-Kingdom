@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL_ttf.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -138,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL_ttf.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -187,7 +187,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\font.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\formula_string_utils.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\help.cpp"
 				>
 			</File>
 			<File
@@ -207,11 +215,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\marked-up_text.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\sdl_utils.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\src\sha1.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\tooltips.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\unit_frame.cpp"
 				>
 			</File>
 			<File
@@ -233,6 +253,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\src\editor2\animation.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\config_cache.hpp"
 				>
 			</File>
@@ -253,7 +277,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\editor2\event.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\hero.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\multiplayer.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\rectangle.hpp"
 				>
 			</File>
 			<File
@@ -308,6 +344,14 @@
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\check.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\clock.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\clock.ico"
 				>
 			</File>
 			<File
@@ -367,19 +411,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor2\evt_filter.ico"
-				>
-			</File>
-			<File
 				RelativePath=".\evt_filter.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\evt_if.ico"
+				RelativePath="..\..\src\editor2\evt_filter.ico"
 				>
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\evt_if.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\evt_if.ico"
 				>
 			</File>
 			<File
@@ -388,6 +432,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\evt_then.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\icon11.ico"
 				>
 			</File>
 			<File
@@ -428,6 +476,14 @@
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\openpcdir_dis.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\particular.ico"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\particular.ico"
 				>
 			</File>
 			<File
@@ -583,6 +639,14 @@
 			Name="editor2"
 			>
 			<File
+				RelativePath="..\..\src\editor2\animation.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\config.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\editor2\DlgBuilderProc.cpp"
 				>
 			</File>
@@ -627,7 +691,34 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\editor2\feature.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\formation.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\editor2\main.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\multiplayer.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\noble.cpp"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\rectangle.cpp"
 				>
 			</File>
 			<File

@@ -2,7 +2,6 @@
 
 #include "global.hpp"
 #include "game_config.hpp"
-#include "foreach.hpp"
 #include "loadscreen.hpp"
 #include "DlgCoreProc.hpp"
 #include "gettext.hpp"
@@ -18,6 +17,7 @@
 #include "struct.h"
 
 #include "map.hpp"
+#include <boost/foreach.hpp>
 
 namespace ns {
 	int clicked_utype;
@@ -68,15 +68,15 @@ void tunit_type::from_config(const unit_type* ut)
 		utils::string_map::iterator dam_it = dam_tab.find(*it);
 		if (dam_it != dam_tab.end()) {
 			int resistance = 100 - atoi((*dam_it).second.c_str());
-			resistance_.insert(std::make_pair<std::string, int>(*it, resistance));
+			resistance_.insert(std::make_pair(*it, resistance));
 		} else {
 			// cannot enter it.
-			resistance_.insert(std::make_pair<std::string, int>(*it, -500));
+			resistance_.insert(std::make_pair(*it, -500));
 		}
 	}
 	zoc_ = ut->has_zoc();
 	land_wall_ = ut->land_wall();
-	leader_ = ut->leader();
+	require_ = ut->require();
 	advances_to_.clear();
 	for (std::vector<std::string>::const_iterator it = ut->advances_to().begin(); it != ut->advances_to().end(); ++ it) {
 		advances_to_.insert(*it);
@@ -102,6 +102,8 @@ void tunit_type::from_config(const unit_type* ut)
 		income_ = ut->gold_income();
 	} else if (master_ == hero::number_technology || master_ == hero::number_scholar) {
 		income_ = ut->technology_income();
+	} else if (master_ == hero::number_transport) {
+		income_ = ut->food_income();
 	} else if (master_ == hero::number_tactic) {
 		income_ = ut->miss_income();
 	} else {
@@ -111,7 +113,7 @@ void tunit_type::from_config(const unit_type* ut)
 	packer_ = ut->packer();
 	if (packer_) {
 		const config& pack_cfg = ut->get_cfg().child("pack");
-		foreach (const config &effect, pack_cfg.child_range("effect")) {
+		BOOST_FOREACH (const config &effect, pack_cfg.child_range("effect")) {
 			const std::string &apply_to = effect["apply_to"];
 			if (apply_to != "attack") {
 				continue;
@@ -211,7 +213,7 @@ void tunit_type::from_ui(HWND hdlgP)
 		}
 		index = 0;
 		for (abilities_map::const_iterator it = abilities_cfg.begin(); it != abilities_cfg.end(); ++ it) {
-			foreach (const config::any_child &c, it->second.all_children_range()) {
+			BOOST_FOREACH (const config::any_child &c, it->second.all_children_range()) {
 				const config& ab_cfg = c.cfg;
 				const std::string& id = ab_cfg["id"].str();
 				if (id.empty()) {
@@ -273,7 +275,8 @@ void tunit_type::from_ui_utype_type(HWND hdlgP)
 		character_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
 		land_wall_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPETROOP_LANDWALL))? true: false;
-		leader_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPETROOP_LEADER))? true: false;
+		hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPETROOP_REQUIRE);
+		require_ = ComboBox_GetCurSel(hctl);
 
 	} else if (ns::utype.type() == tunit_type::TYPE_COMMONER) {
 		hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPECOMMONER_MASTER);
@@ -355,7 +358,7 @@ void tunit_type::update_to_ui_utype_edit(HWND hdlgP) const
 	index = 0;
 	const abilities_map& abilities_cfg = unit_types.abilities();
 	for (abilities_map::const_iterator it = abilities_cfg.begin(); it != abilities_cfg.end(); ++ it) {
-		foreach (const config::any_child &c, it->second.all_children_range()) {
+		BOOST_FOREACH (const config::any_child &c, it->second.all_children_range()) {
 			const config& ab_cfg = c.cfg;
 			const std::string& id = ab_cfg["id"].str();
 			if (id.empty()) {
@@ -454,8 +457,14 @@ void tunit_type::update_to_ui_utype_edit_type(HWND hdlgP) const
 		strstr << "\r\n";
 		strstr << utf8_2_ansi(_("Can land on wall")) << ": ";
 		strstr << (land_wall_? utf8_2_ansi(_("Can")): utf8_2_ansi(_("Cannot"))) << "\r\n";
-		strstr << utf8_2_ansi(_("Only used to leader")) << ": ";
-		strstr << (leader_? utf8_2_ansi(_("YES")): utf8_2_ansi(_("No")));
+		if (require_) {
+			strstr << utf8_2_ansi(_("Require")) << ": ";
+			if (require_ == unit_type::REQUIRE_LEADER) {
+				strstr << utf8_2_ansi(_("Leader"));
+			} else if (require_ == unit_type::REQUIRE_FEMALE) {
+				strstr << utf8_2_ansi(_("Female"));
+			}
+		}
 
 	} else if (type() == TYPE_COMMONER) {
 		hero& h = **(tunit_type::commoner_hero_.find(&gdmgr.heros_[master_]));
@@ -475,6 +484,8 @@ void tunit_type::update_to_ui_utype_edit_type(HWND hdlgP) const
 			strstr << utf8_2_ansi(_("Base income gold"));
 		} else if (master_ == hero::number_scholar) {
 			strstr << utf8_2_ansi(_("Base income technology"));
+		} else if (master_ == hero::number_transport) {
+			strstr << utf8_2_ansi(_("Base income food"));
 		}
 		strstr << ": " << income_;
 
@@ -657,7 +668,7 @@ void tunit_type::vertify_core_images() const
 	vertify_attack_anim_ranged_images();
 }
 
-void tunit_type::generate() const
+void tunit_type::generate(bool with_anim) const
 {
 	std::stringstream strstr;
 	uint32_t bytertd;
@@ -727,8 +738,8 @@ void tunit_type::generate() const
 				if (character_ != NO_ESPECIAL) {
 					strstr << "\tespecial = " << unit_types.especial(character_).id_ << "\n";
 				}
-				if (leader_) {
-					strstr << "\tleader = yes\n";
+				if (require_) {
+					strstr << "\trequire = " << require_ << "\n";
 				}
 			} else if (t == TYPE_COMMONER) {
 				strstr << "\tmaster = " << master_ << "\n";
@@ -763,6 +774,10 @@ void tunit_type::generate() const
 			} else if (master_ == hero::number_market || master_ == hero::number_technology || master_ == hero::number_tactic) {
 				strstr << "\tmatch = Ea" << "\n";
 				strstr << "\tincome = " << income_ << "\n";
+			} else if (master_ == hero::number_fort) {
+				strstr << "\tmatch = *^V*" << "\n";
+				strstr << "\tterrain = Ce" << "\n";
+				strstr << "\tbase = yes" << "\n";
 			} else if (master_ == hero::number_tower) {
 				strstr << "\tmatch = G*^*,R*^*" << "\n";
 			}
@@ -834,87 +849,98 @@ void tunit_type::generate() const
 	strstr << "\tdescription = _\"" << description() << "\"\n";
 	strstr << "\tdie_sound = {SOUND_LIST:HUMAN_DIE}\n";
 
-	bool generate_anim = false;
-
 	config_writer out(strstr, false);
 	out.set_level(1);
 	config cfg;
 
-	if (!use_terrain_image() && generate_anim) {
-		unit_type::defend_anim(race_, id_, use_terrain_image(), cfg);
-		out.write_child("defend", cfg);
+	if (!use_terrain_image() && with_anim) {
+		cfg.clear();
+		unit_type::defend_anim("defend", race_, id_, use_terrain_image(), cfg);
+		out.write(cfg);
 	}
 
 	if (unit_type::has_resistance_anim(abilities_)) {
 		vertify_resistance_anim_images();
-		if (generate_anim) {
-			unit_type::resistance_anim(race_, id_, use_terrain_image(), cfg);
-			out.write_child("resistance_anim", cfg);
+		if (with_anim) {
+			cfg.clear();
+			unit_type::resistance_anim("resistance_anim", race_, id_, use_terrain_image(), cfg);
+			out.write(cfg);
 		}
 	}
 
 	if (unit_type::has_leading_anim(abilities_)) {
 		vertify_leading_anim_images();
-		if (generate_anim) {
-			unit_type::leading_anim(race_, id_, use_terrain_image(), cfg);
-			out.write_child("leading_anim", cfg);
+		if (with_anim) {
+			cfg.clear();
+			unit_type::leading_anim("leading_anim", race_, id_, use_terrain_image(), cfg);
+			out.write(cfg);
 		}
 
 	}
 	if (unit_type::has_healing_anim(abilities_)) {
 		vertify_healing_anim_images();
-		if (generate_anim) {
-			unit_type::healing_anim(race_, id_, use_terrain_image(), cfg);
-			out.write_child("healing_anim", cfg);
+		if (with_anim) {
+			cfg.clear();
+			unit_type::healing_anim("healing_anim", race_, id_, use_terrain_image(), cfg);
+			out.write(cfg);
 		}
 	}
 
 	// vertify_idle_anim_images();
-	if (generate_anim) {
-		unit_type::idle_anim(race_, id_, use_terrain_image(), cfg);
-		out.write_child("idle_anim", cfg);
+	if (with_anim) {
+		cfg.clear();
+		unit_type::idle_anim("idle_anim", race_, id_, use_terrain_image(), cfg);
+		out.write(cfg);
+
+		cfg.clear();
+		unit_type::healed_anim("healed_anim", race_, id_, use_terrain_image(), cfg);
+		out.write(cfg);
 	}
 	
 
 	if (!packer_) {
 		for (std::vector<tattack>::const_iterator it = attacks_.begin(); it != attacks_.end(); ++ it) {
 			it->generate(strstr, "\t");
-			if (!generate_anim) {
+			if (!with_anim) {
 				continue;
 			}
+			cfg.clear();
 			if (it->range_ == 0) {
-				unit_type::attack_anim_melee(it->id_, it->icon_, type() == TYPE_TROOP || type() == TYPE_COMMONER, race_, id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_melee("attack_anim", it->id_, it->icon_, type() == TYPE_TROOP || type() == TYPE_COMMONER, race_, id_, use_terrain_image(), cfg);
 
 			} else if (it->icon_.find("magic-missile") != std::string::npos) {
-				unit_type::attack_anim_ranged_magic_missile(it->id_, race_, id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_magic_missile("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
 
 			} else if (it->icon_.find("lightbeam") != std::string::npos) {
-				unit_type::attack_anim_ranged_lightbeam(it->id_, race_, id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_lightbeam("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
 
 			} else if (it->icon_.find("fireball") != std::string::npos) {
-				unit_type::attack_anim_ranged_fireball(it->id_, race_, id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_fireball("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
 
 			} else if (it->icon_.find("iceball") != std::string::npos) {
-				unit_type::attack_anim_ranged_iceball(it->id_, race_, id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_iceball("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
 
 			} else if (it->icon_.find("lightning") != std::string::npos) {
-				unit_type::attack_anim_ranged_lightning(it->id_, race_, id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged_lightning("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
 
 			} else {
-				unit_type::attack_anim_ranged(it->id_, it->icon_, race_, id_, use_terrain_image(), cfg);
+				unit_type::attack_anim_ranged("attack_anim", it->id_, it->icon_, race_, id_, use_terrain_image(), cfg);
 			}
-			out.write_child("attack_anim", cfg);
+			out.write(cfg);
 		}
 	} else {
-		if (generate_anim) {
-			unit_type::attack_anim_melee("melee", "staff-magic.png", type() == TYPE_TROOP, race_, id_, use_terrain_image(), cfg);
-			out.write_child("attack_anim", cfg);
+		if (with_anim) {
+			cfg.clear();
+			unit_type::attack_anim_melee("attack_anim", "melee", "staff-magic.png", type() == TYPE_TROOP, race_, id_, use_terrain_image(), cfg);
+			out.write(cfg);
 			
-			unit_type::attack_anim_ranged_magic_missile("ranged", race_, id_, use_terrain_image(), cfg);
-			out.write_child("attack_anim", cfg);
+			cfg.clear();
+			unit_type::attack_anim_ranged_magic_missile("attack_anim", "ranged", race_, id_, use_terrain_image(), cfg);
+			out.write(cfg);
 
-			unit_type::attack_anim_ranged("cast", "sling.png", race_, id_, use_terrain_image(), cfg);
-			out.write_child("attack_anim", cfg);
+			cfg.clear();
+			unit_type::attack_anim_ranged("attack_anim", "cast", "sling.png", race_, id_, use_terrain_image(), cfg);
+			out.write(cfg);
 		}
 	}
 
@@ -1063,7 +1089,7 @@ std::string tunit_type::cfg_file(bool absolute) const
 
 bool tunit_type::use_terrain_image() const
 {
-	return (master_ == hero::number_keep || master_ == hero::number_wall)? true: false;
+	return (master_ == hero::number_keep || master_ == hero::number_wall || master_ == hero::number_fort)? true: false;
 }
 
 std::string tunit_type::model_image() const
@@ -1240,6 +1266,12 @@ void tunit_type::tattack::from_config(const attack_type& attack)
 
 	damage_ = attack.damage();
 	number_ = attack.num_attacks();
+	attack_weight_ = attack.attack_weight() > 0;
+
+	if (damage_ == 1) {
+		number_ = 1;
+		attack_weight_ = false;
+	}
 }
 
 void tunit_type::tattack::from_ui(HWND hdlgP)
@@ -1252,6 +1284,8 @@ void tunit_type::tattack::from_ui(HWND hdlgP)
 
 	damage_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ATTACKEDIT_DAMAGE));
 	number_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ATTACKEDIT_NUMBER));
+
+	attack_weight_ = !Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_ATTACKEDIT_ATTACKWEIGHT));
 
 	specials_.clear();
 	hctl = GetDlgItem(hdlgP, IDC_LV_ATTACKEDIT_SPECIALS);
@@ -1279,6 +1313,7 @@ void tunit_type::tattack::update_to_ui_utype_edit(HWND hdlgP, int index) const
 
 	LVITEM lvi;
 	int count = ListView_GetItemCount(hctl);
+	int column = 0;
 
 	lvi.mask = LVIF_TEXT | LVIF_PARAM;
 	// 名称
@@ -1287,7 +1322,7 @@ void tunit_type::tattack::update_to_ui_utype_edit(HWND hdlgP, int index) const
 	} else {
 		lvi.iItem = index;
 	}
-	lvi.iSubItem = 0;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	strstr << utf8_2_ansi(dgettext(PACKAGE, id_.c_str())) << "(" << id_ << ")";
 	strcpy(text, strstr.str().c_str());
@@ -1301,7 +1336,7 @@ void tunit_type::tattack::update_to_ui_utype_edit(HWND hdlgP, int index) const
 
 	// 类型
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 1;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	strstr << utf8_2_ansi(dgettext(PACKAGE, type_.c_str()));
 	strcpy(text, strstr.str().c_str());
@@ -1310,14 +1345,14 @@ void tunit_type::tattack::update_to_ui_utype_edit(HWND hdlgP, int index) const
 
 	// 图标
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 2;
+	lvi.iSubItem = column ++;
 	strcpy(text, icon_.c_str());
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
 	// 距离
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 3;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	if (range_ < 0 || range_ >= (int)attack_range_vstr.size()) {
 		strstr << "无效距离";
@@ -1330,7 +1365,7 @@ void tunit_type::tattack::update_to_ui_utype_edit(HWND hdlgP, int index) const
 
 	// 特色
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 4;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	const specials_map& units_specials = unit_types.specials();
 	for (std::set<std::string>::const_iterator it = specials_.begin(); it != specials_.end(); ++ it) {
@@ -1349,7 +1384,7 @@ void tunit_type::tattack::update_to_ui_utype_edit(HWND hdlgP, int index) const
 
 	// 损伤
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 5;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	strstr << damage_;
 	strcpy(text, strstr.str().c_str());
@@ -1358,12 +1393,24 @@ void tunit_type::tattack::update_to_ui_utype_edit(HWND hdlgP, int index) const
 
 	// 次数
 	lvi.mask = LVIF_TEXT;
-	lvi.iSubItem = 6;
+	lvi.iSubItem = column ++;
 	strstr.str("");
 	strstr << number_;
 	strcpy(text, strstr.str().c_str());
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
+
+	// weight
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = column ++;
+	strstr.str("");
+	if (!attack_weight_) {
+		strstr << _("Disable on attack");
+	}
+	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+
 }
 
 void tunit_type::tattack::update_to_ui_attack_edit(HWND hdlgP) const
@@ -1390,6 +1437,9 @@ void tunit_type::tattack::generate(std::stringstream& strstr, const std::string&
 	}
 	strstr << prefix << "\tdamage = " << damage_ << "\n";
 	strstr << prefix << "\tnumber = " << number_ << "\n";
+	if (!attack_weight_) {
+		strstr << prefix << "\tattack_weight = 0.0\n";
+	}
 	strstr << prefix << "[/attack]\n";
 }
 
@@ -1541,7 +1591,7 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	hctl = GetDlgItem(hdlgP, IDC_LV_UTYPEEDIT_ADVANCESTO);
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
-	lvc.cx = 100;
+	lvc.cx = 160;
 	strcpy(text, utf8_2_ansi(_("Name(ID)")));
 	lvc.pszText = text;
 	lvc.cchTextMax = 0;
@@ -1607,6 +1657,7 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// 默认情况下，鼠标右键只是光亮该行的最前一个子项，并且只有在该子项上才能触发NM_RCLICK。改为光亮整行，并且在整行都能触发NM_RCLICK。
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
+	int column = 0;
 	// attacks
 	hctl = GetDlgItem(hdlgP, IDC_LV_UTYPEEDIT_ATTACK);
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
@@ -1616,49 +1667,55 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
-	ListView_InsertColumn(hctl, 0, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 60;
-	lvc.iSubItem = 1;
+	lvc.iSubItem = column;
 	strcpy(text, utf8_2_ansi(_("Type")));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 1, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 120;
-	lvc.iSubItem = 2;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << utf8_2_ansi(_("Icon")) << "(attacks/)";
 	strcpy(text, strstr.str().c_str());
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 2, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 40;
-	lvc.iSubItem = 3;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strcpy(text, utf8_2_ansi(_("attack^Range")));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 3, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 80;
-	lvc.iSubItem = 4;
+	lvc.iSubItem = column;
 	strstr.str("");
 	strstr << "Character";
 	strcpy(text, utf8_2_ansi(dsgettext("wesnoth-lib", strstr.str().c_str())));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 4, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 38;
-	lvc.iSubItem = 5;
+	lvc.iSubItem = column;
 	strcpy(text, utf8_2_ansi(_("Damage")));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 5, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.cx = 38;
-	lvc.iSubItem = 6;
+	lvc.iSubItem = column;
 	strcpy(text, utf8_2_ansi(_("damage^Number")));
 	lvc.pszText = text;
-	ListView_InsertColumn(hctl, 6, &lvc);
+	ListView_InsertColumn(hctl, column ++, &lvc);
+
+	lvc.cx = 120;
+	lvc.iSubItem = column;
+	strcpy(text, utf8_2_ansi(_("Phase")));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -1695,6 +1752,7 @@ BOOL On_DlgAttackEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_RANGE), utf8_2_ansi(_("attack^Range")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DAMAGE), utf8_2_ansi(_("Damage")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_NUMBER), utf8_2_ansi(_("damage^Number")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_ATTACKEDIT_ATTACKWEIGHT), utf8_2_ansi(_("Disable on attack")));
 	Button_SetText(GetDlgItem(hdlgP, IDC_BT_ATTACKEDIT_BROWSEICON), utf8_2_ansi(_("Browse...")));
 
 	tunit_type::tattack& attack = ns::utype.attacks_[ns::clicked_attack];
@@ -1746,6 +1804,8 @@ BOOL On_DlgAttackEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	UpDown_SetRange(hctl, 1, 10);	// [1, 10]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_ATTACKEDIT_NUMBER));
 	UpDown_SetPos(hctl, attack.number_);
+
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_ATTACKEDIT_ATTACKWEIGHT), !attack.attack_weight_);
 
 	LVCOLUMN lvc;
 	// attacks
@@ -2436,8 +2496,18 @@ BOOL On_DlgUTypeTroopInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// walk_wall
 	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPETROOP_LANDWALL), ns::utype.land_wall_);
-	// leader
-	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPETROOP_LEADER), ns::utype.leader_);
+	// require
+	hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPETROOP_REQUIRE);
+	strstr.str("");
+	strstr << _("None");
+	ComboBox_AddString(hctl, utf8_2_ansi(strstr.str().c_str()));
+	strstr.str("");
+	strstr << _("Leader");
+	ComboBox_AddString(hctl, utf8_2_ansi(strstr.str().c_str()));
+	strstr.str("");
+	strstr << _("Female");
+	ComboBox_AddString(hctl, utf8_2_ansi(strstr.str().c_str()));
+	ComboBox_SetCurSel(hctl, ns::utype.require_);
 
 	ns::utype.update_to_ui_utype_type(hdlgP);
 	return FALSE;
@@ -2503,6 +2573,8 @@ BOOL On_DlgUTypeCommonerInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Button_SetText(GetDlgItem(hdlgP, IDC_STATIC_UNRESTRAINT), strstr.str().c_str());
 	if (ns::utype.master_ == hero::number_scholar) {
 		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income technology")));
+	} else if (ns::utype.master_ == hero::number_transport) {
+		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income food")));
 	} else {
 		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INCOME), utf8_2_ansi(_("Base income gold")));
 	}
@@ -2922,7 +2994,7 @@ void OnUTypeEditCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	}
 	ns::utype.character_ = ns::utype.utype_from_cfg_.character_;
 	ns::utype.land_wall_ = ns::utype.utype_from_cfg_.land_wall_;
-	ns::utype.leader_ = ns::utype.utype_from_cfg_.leader_;
+	ns::utype.require_ = ns::utype.utype_from_cfg_.require_;
 	ns::utype.turn_experience_ = ns::utype.utype_from_cfg_.turn_experience_;
 	ns::utype.heal_ = ns::utype.utype_from_cfg_.heal_;
 	if (type == tunit_type::TYPE_ARTIFICAL && ns::utype.utype_from_cfg_.guard_ != NO_GUARD && ns::utype.utype_from_cfg_.guard_ >= (int)ns::utype.attacks_.size()) {
@@ -3527,6 +3599,13 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		strcpy(text, utf8_2_ansi(_("damage^Number")));
 		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 120;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("Phase")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
 	}
 
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
@@ -3546,11 +3625,20 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvi.iItem = iItem;
 		lvi.iSubItem = index ++;
 		strstr.str("");
-		strstr << utf8_2_ansi(ut->type_name().c_str());
-		if (ut->leader()) {
-			strstr << "(" << utf8_2_ansi("Leader") << ")";
+		strstr << ut->type_name();
+		if (ut->require()) {
+			strstr << "(";
+			if (ut->require() == unit_type::REQUIRE_LEADER) {
+				strstr << _("Leader");
+			} else if (ut->require() == unit_type::REQUIRE_FEMALE) {
+				strstr << _("Female");
+			}
+			strstr << ")";
 		}
-		strcpy(text, strstr.str().c_str());
+		if (ut->master() != HEROS_INVALID_NUMBER) {
+			strstr << "(" << gdmgr.heros_[ut->master()].name() << ")";
+		}
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		lvi.pszText = text;
 		lvi.lParam = (LPARAM)0;
 		ListView_InsertItem(hctl, &lvi);
@@ -3615,6 +3703,8 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 				strstr << ut->gold_income();
 			} else if (ut->master() == hero::number_technology || ut->master() == hero::number_scholar) {
 				strstr << ut->technology_income();
+			} else if (ut->master() == hero::number_transport) {
+				strstr << ut->food_income();
 			} else if (ut->master() == hero::number_tactic) {
 				strstr << ut->miss_income();
 			}
@@ -3783,6 +3873,16 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);
 
+			// weight
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			if (!attack.attack_weight()) {
+				strstr << _("Disable on attack");
+			}
+			strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
 		}
 	}
 
@@ -3838,7 +3938,8 @@ void On_DlgUTypeCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		OnUTypeEditBt(hdlgP);
 		break;
 	case IDM_GENERATE_ITEM2:
-		ns::core.generate_utypes();
+	case IDM_GENERATE_ITEM3:
+		ns::core.generate_utypes(id == IDM_GENERATE_ITEM3);
 		posix_print_mb(utf8_2_ansi(_("Regenerate all type's cfg and relative image success.")));
 		break;
 
@@ -3912,6 +4013,9 @@ void core_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		AppendMenu(hpopup_utype, MF_STRING, IDM_GENERATE_ITEM2, utf8_2_ansi(_("Regenerate all type's cfg and relatve image")));
 		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
 		AppendMenu(hpopup_utype, MF_POPUP, (UINT_PTR)(hpopup_explorer), utf8_2_ansi(_("Report format")));
+		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
+		AppendMenu(hpopup_utype, MF_SEPARATOR, 0, NULL);
+		AppendMenu(hpopup_utype, MF_STRING, IDM_GENERATE_ITEM3, utf8_2_ansi(_("Regenerate all type's cfg and relatve image(with animation)")));
 
 		if (!htvi || htvi == ns::core.htvroot_utype_) {
 			EnableMenuItem(hpopup_utype, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
@@ -3926,6 +4030,7 @@ void core_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		if (core_get_save_btn()) {
 			EnableMenuItem(hpopup_utype, IDM_GENERATE_ITEM2, MF_BYCOMMAND | MF_GRAYED);
 			EnableMenuItem(hpopup_utype, (UINT_PTR)(hpopup_explorer), MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_utype, IDM_GENERATE_ITEM3, MF_BYCOMMAND | MF_GRAYED);
 		}
 		
 		TrackPopupMenuEx(hpopup_utype, 0, 

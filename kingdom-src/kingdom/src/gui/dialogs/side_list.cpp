@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/side_list.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "team.hpp"
@@ -25,6 +24,7 @@
 #include "game_display.hpp"
 #include "gamestatus.hpp"
 #include "gui/dialogs/helper.hpp"
+#include "gui/dialogs/noble_list.hpp"
 #include "gui/dialogs/technology_tree.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/image.hpp"
@@ -199,6 +199,22 @@ void tside_list::hero_changed(twindow& window)
 	portrait->set_label(leader->image(true));
 }
 
+void tside_list::noble_list(int n)
+{
+	std::vector<std::pair<int, unit*> > human_pairs;
+	
+	if (n == rpg::h->side_) {
+		human_pairs = form_human_pairs(teams_, tent::mode != TOWER_MODE);
+	}
+	gui2::tnoble_list dlg(teams_, units_, heros_, human_pairs, n + 1);
+	try {
+		dlg.show(gui_.video());
+	} catch(twml_exception& e) {
+		e.show(gui_);
+		return;
+	}
+}
+
 void tside_list::technology_tree(int n)
 {
 	gui2::ttechnology_tree dlg(gui_, teams_, units_, heros_, n + 1, true);
@@ -219,9 +235,10 @@ void tside_list::fill_table(int catalog)
 	art_map[hero::number_tower] = 0;
 	
 	for (size_t n = 0; n != teams_.size(); ++n) {
-		if (teams_[n].is_empty() || teams_[n].hidden()) {
+		if (teams_[n].is_empty()) {
 			continue;
 		}
+		
 		const bool known = viewing_team.knows_about_team(n, network::nconnections() > 0);
 		const bool enemy = viewing_team.is_enemy(n + 1);
 		std::stringstream str;
@@ -242,6 +259,14 @@ void tside_list::fill_table(int catalog)
 			leader_name = leader->name();
 			table_item["label"] = leader->name();
 			table_item_item.insert(std::make_pair("leader", table_item));
+
+			str.str("");
+			if (leader->noble_ != HEROS_NO_NOBLE) {
+				const tnoble& noble = unit_types.noble(leader->noble_);
+				str << noble.name();
+			}
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("noble", table_item));
 
 			str.str("");
 			if (teams_[n].is_human()) {
@@ -507,7 +532,17 @@ void tside_list::fill_table(int catalog)
 		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true));
 		toggle->set_data(n);
 
-		if (catalog == TECHNOLOGY_PAGE) {
+		if (catalog == STATUS_PAGE) {
+			connect_signal_mouse_left_click(
+				find_widget<tbutton>(grid_ptr, "noble", true)
+				, boost::bind(
+					&tside_list::noble_list
+					, this
+					, (int)n));
+			if (teams_[n].leader()->noble_ == HEROS_NO_NOBLE) {
+				find_widget<tbutton>(grid_ptr, "noble", true).set_active(false);
+			}
+		} else if (catalog == TECHNOLOGY_PAGE) {
 			connect_signal_mouse_left_click(
 				find_widget<tbutton>(grid_ptr, "technology_tree", true)
 				, boost::bind(

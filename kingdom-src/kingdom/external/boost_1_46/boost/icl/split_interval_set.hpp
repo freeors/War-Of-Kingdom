@@ -21,7 +21,7 @@ namespace boost{namespace icl
 template 
 <
     typename                  DomainT, 
-    ICL_COMPARE               Compare  = ICL_COMPARE_INSTANCE(std::less, DomainT),
+    ICL_COMPARE               Compare  = ICL_COMPARE_INSTANCE(ICL_COMPARE_DEFAULT, DomainT),
     ICL_INTERVAL(ICL_COMPARE) Interval = ICL_INTERVAL_INSTANCE(ICL_INTERVAL_DEFAULT, DomainT, Compare),
     ICL_ALLOC                 Alloc    = std::allocator
 > 
@@ -105,6 +105,13 @@ public:
     explicit split_interval_set(const domain_type& itv): base_type() { this->add(itv); }
 
     /// Assignment operator
+    split_interval_set& operator = (const split_interval_set& src)
+    { 
+        base_type::operator=(src);
+        return *this;
+    }
+
+    /// Assignment operator for base type
     template<class SubType>
     split_interval_set& operator =
         (const interval_base_set<SubType,DomainT,Compare,Interval,Alloc>& src)
@@ -117,6 +124,25 @@ public:
         this->clear();
         this->_set.insert(src.begin(), src.end());
     }
+
+#   ifndef BOOST_ICL_NO_CXX11_RVALUE_REFERENCES
+    //==========================================================================
+    //= Move semantics
+    //==========================================================================
+
+    /// Move constructor
+    split_interval_set(split_interval_set&& src)
+        : base_type(boost::move(src))
+    {}
+
+    /// Move assignment operator
+    split_interval_set& operator = (split_interval_set&& src)
+    { 
+        base_type::operator=(boost::move(src));
+        return *this;
+    }
+    //==========================================================================
+#   endif // BOOST_ICL_NO_CXX11_RVALUE_REFERENCES
 
     
 private:
@@ -146,7 +172,7 @@ private:
 
     iterator add_over(const interval_type& addend)
     {
-        std::pair<iterator,iterator> overlap = this->_set.equal_range(addend);
+        std::pair<iterator,iterator> overlap = this->equal_range(addend);
         iterator first_ = overlap.first,
                  end_   = overlap.second,
                  last_  = end_; --last_;

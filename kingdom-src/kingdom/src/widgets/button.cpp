@@ -203,7 +203,7 @@ void button::set_bomb_image(int bomb_turns)
 	generate_other_image();
 }
 
-void button::set_image(const std::string& stem, int integer, bool greyscale, bool special, const std::string& icon)
+void button::set_image(const std::string& stem, int integer, bool greyscale, bool special, const std::string& icon, const std::string& lb_icon)
 {
 	int width = location().w;
 	int height = location().h;
@@ -253,6 +253,13 @@ void button::set_image(const std::string& stem, int integer, bool greyscale, boo
 		text << icon << "~SCALE(16, 16)";
 		dst_clip.x = 0;
 		dst_clip.y = 12;
+		SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
+	}
+	if (!lb_icon.empty()) {
+		text.str("");
+		text << lb_icon << "~SCALE(16, 16)";
+		dst_clip.x = 0;
+		dst_clip.y = image_->h - 16;
 		SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
 	}
 

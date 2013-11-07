@@ -34,7 +34,7 @@ class tlistbox;
 class ttreasure : public tdialog
 {
 public:
-	explicit ttreasure(std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<std::pair<size_t, unit*> >& human_pairs, bool replaying);
+	explicit ttreasure(std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<std::pair<int, unit*> >& human_pairs, bool replaying);
 
 protected:
 	/** Inherited from tdialog. */
@@ -62,7 +62,7 @@ private:
 	hero_map& heros_;
 	team& current_team_;
 
-	std::vector<std::pair<size_t, unit*> >& human_pairs_;
+	std::vector<std::pair<int, unit*> >& human_pairs_;
 	bool replaying_;
 
 	tlistbox* treasure_list_;

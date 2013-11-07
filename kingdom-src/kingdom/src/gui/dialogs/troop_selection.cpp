@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/troop_selection.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "team.hpp"

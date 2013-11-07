@@ -25,6 +25,9 @@ msgstr ""
 msgid "Persist in required turns"
 msgstr ""
 
+msgid "Capture enemy fort"
+msgstr ""
+
 msgid "No city you holden"
 msgstr ""
 

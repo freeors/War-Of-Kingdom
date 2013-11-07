@@ -49,6 +49,7 @@ public:
 	void add_recruit(const std::string& type, const map_location& loc, std::vector<const hero*>& troop_heros, int cost, bool human);
 	void add_disband(int unit_index, const map_location& loc, int income = 0);
 	void add_employ(hero& h, int cost = 0);
+	void add_purchase(int type, int cost);
 	void add_armory(const map_location& loc, const std::vector<size_t>& diff);
 	void add_move_heros(const map_location& src, const map_location& dst, std::set<size_t>& heros);
 	void add_belong_to(const unit* u, const artifical* to, bool loyalty);
@@ -63,7 +64,8 @@ public:
 	void add_attack(const unit& a, const unit& b,
 		int att_weapon, int def_weapon, const std::string& attacker_type_id,
 		const std::string& defender_type_id, int attacker_lvl,
-		int defender_lvl, const size_t turn, const time_of_day t, bool move = true);
+		int defender_lvl, const size_t turn, const time_of_day t, bool move = true, bool constant_attacks = false);
+	void add_formation_attack(const map_location& master_loc);
 	void add_duel(const hero& left, const hero& right, int percentage);
 	void add_seed(const char* child_name, rand_rng::seed_t seed);
 	void user_input(const std::string &, const config &);
@@ -80,7 +82,7 @@ public:
 	void add_interior(const artifical& city);
 	void add_reform_captain(const unit& u, const hero& h, bool join);
 	void active_tactic(bool add, const unit& u, const hero& h);
-	void init_side();
+	void init_side(const team& current_team);
 	void end_turn();
 	void init_ai();
 	void do_commoner();
@@ -89,6 +91,7 @@ public:
 	enum EVENT_TYPE {EVENT_ENCOURAGE, EVENT_RPG_INDEPENDENCE, EVENT_FIND_TREASURE};
 	void add_event(int type, const map_location& loc);
 	void add_assemble_treasure(const std::map<int, int>& diff);
+	void add_appoint_noble(const std::map<int, int>& diff);
 	void add_rpg_exchange(const std::set<size_t>& checked_human, size_t checked_ai);
 	void add_ing_technology(const std::string& id);
 	void add_scenario_env(const tscenario_env& env);
@@ -163,6 +166,7 @@ public:
 	};
 
 	void pool_2_config(config& cfg);
+	void from_config(const config& cfg);
 
 	static std::string last_replay_error;
 

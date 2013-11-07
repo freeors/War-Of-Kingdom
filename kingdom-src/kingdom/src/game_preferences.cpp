@@ -17,7 +17,6 @@
 
 #define GETTEXT_DOMAIN "wesnoth-lib"
 
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "game_preferences.hpp"
 #include "gamestatus.hpp"
@@ -30,7 +29,9 @@
 #include "unit.hpp"
 #include "unit_map.hpp"
 #include "wml_exception.hpp"
+#include "sha1.hpp"
 
+#include <boost/foreach.hpp>
 
 namespace {
 
@@ -86,9 +87,9 @@ manager::manager() :
 				message = foobar
 			[/line]
 */
-		foreach (const config::any_child &h, history.all_children_range())
+		BOOST_FOREACH (const config::any_child &h, history.all_children_range())
 		{
-			foreach (const config &l, h.cfg.child_range("line")) {
+			BOOST_FOREACH (const config &l, h.cfg.child_range("line")) {
 				history_map[h.key].push_back(l["message"]);
 			}
 		}
@@ -116,10 +117,10 @@ manager::~manager()
 */
 	config history;
 	typedef std::pair<std::string, std::vector<std::string> > hack;
-	foreach(const hack& history_id, history_map) {
+	BOOST_FOREACH (const hack& history_id, history_map) {
 
 		config history_id_cfg; // [history_id]
-		foreach(const std::string& line, history_id.second) {
+		BOOST_FOREACH (const std::string& line, history_id.second) {
 			config cfg; // [line]
 
 			cfg["message"] = line;
@@ -288,7 +289,7 @@ const std::vector<game_config::server_info>& server_list()
 		std::vector<game_config::server_info> &game_servers = game_config::server_list;
 		VALIDATE(!game_servers.empty(), _("No server has been defined."));
 		pref_servers.insert(pref_servers.begin(), game_servers.begin(), game_servers.end());
-		foreach (const config &server, get_prefs()->child_range("server")) {
+		BOOST_FOREACH (const config &server, get_prefs()->child_range("server")) {
 			game_config::server_info sinf;
 			sinf.name = server["name"].str();
 			sinf.address = server["address"].str();
@@ -341,45 +342,35 @@ std::string login()
 		return cfg["name"].str();
 	}
 	return res;
-/*
-	const std::string res = preferences::get("login");
-	if (res.empty()) {
-		char* const login = getenv("USER");
-		if(login != NULL) {
-			return login;
-		}
-
-		if(res.empty()) {
-			return _("player");
-		}
-	}
-*/
-	return res;
 }
 
-void set_login(const std::string& username)
+std::string encode_pw(const std::string& str)
 {
-	preferences::set("login", username);
+	return std::string("pw_") + str;
 }
 
-namespace prv {
-	std::string password;
+std::string decode_pw(const std::string& str)
+{
+	int pos = str.find("pw_");
+	if (pos != std::string::npos) {
+		return str.substr(3);
+	} else {
+		return str;
+	}
 }
 
 std::string password()
 {
-	if(remember_password()) {
-		return preferences::get("password");
-	} else {
-		return prv::password;
+	if (remember_password()) {
+		return decode_pw(preferences::get("password"));
 	}
+	return "";
 }
 
 void set_password(const std::string& password)
 {
-	prv::password = password;
-	if(remember_password()) {
-		preferences::set("password", password);
+	if (remember_password()) {
+		preferences::set("password", encode_pw(password));
 	}
 }
 
@@ -391,7 +382,6 @@ bool remember_password()
 void set_remember_password(bool remember)
 {
 	preferences::set("remember_password", remember);
-	preferences::set("password", remember ? prv::password : "");
 }
 
 bool turn_dialog()
@@ -464,16 +454,6 @@ void set_mp_server_program_name(const std::string& path)
 std::string get_mp_server_program_name()
 {
 	return preferences::get("mp_server_program_name");
-}
-
-bool random_start_time()
-{
-	return preferences::get("mp_random_start_time", true);
-}
-
-void set_random_start_time(bool value)
-{
-	preferences::set("mp_random_start_time", value);
 }
 
 bool fog()
@@ -600,16 +580,6 @@ void set_era(int value)
 	preferences::set("mp_era", value);
 }
 
-int map()
-{
-	return lexical_cast_default<int>(preferences::get("mp_map"), 0);
-}
-
-void set_map(int value)
-{
-	preferences::set("mp_map", value);
-}
-
 bool eng_file_name()
 {
 	return utils::string_bool(preferences::get("eng_file_name"), false);
@@ -678,6 +648,35 @@ int autosavemax()
 void set_autosavemax(int value)
 {
 	preferences::set("auto_save_max", value);
+}
+
+// dependent on inapp-purchase
+
+std::pair<std::string, std::string> inapp_item_equation(int id)
+{
+	const std::string short_id = game_config::inapp_items.find(id)->second;
+	std::stringstream key;
+	key << "inapp_" << short_id;
+
+	std::stringstream strstr;
+	strstr << game_config::sn << game_config::revision << short_id << group.leader().name();
+	sha1_hash sha(strstr.str());
+
+	return std::make_pair(key.str(), sha.display());
+}
+
+void set_inapp_purchased(int id, bool value)
+{
+	std::pair<std::string, std::string> equation = inapp_item_equation(id);
+	const std::string to = std::string("fl_") + equation.second;
+	preferences::set(equation.first, value? to: "");
+}
+
+bool inapp_purchased(int id)
+{
+	std::pair<std::string, std::string> equation = inapp_item_equation(id);
+	const std::string to = std::string("fl_") + equation.second;
+	return preferences::get(equation.first) == to;
 }
 
 std::string client_type()

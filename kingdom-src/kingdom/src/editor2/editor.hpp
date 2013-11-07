@@ -3,7 +3,10 @@
 
 #include "config_cache.hpp"
 #include "config.hpp"
+#include "unit_types.hpp"
 #include <windows.h>
+#include <set>
+
 
 typedef enum {
 	ma_new				= 1,
@@ -18,11 +21,23 @@ namespace editor_config
 	extern std::string campaign_id;
 	extern int type;
 
-	extern void move_subcfg_right_position(HWND hdlgP, LPARAM lParam);
-	extern void create_subcfg_toolbar(HWND hwndP);
-	extern void On_DlgDrawItem(HWND hdlgP, const DRAWITEMSTRUCT *lpdis);
-	extern UINT ListView_GetCheckedCount(HWND hwnd);
-	extern DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName);
+	extern std::vector<std::pair<std::string, std::string> > arms;
+	extern std::vector<std::pair<std::string, const unit_type*> > artifical_utype;
+	extern std::vector<std::pair<std::string, const unit_type*> > city_utypes;
+	extern std::vector<std::pair<std::string, const unit_type*> > troop_utypes;
+	extern std::vector<std::string> navigation;
+	extern std::vector<std::pair<std::string, const config*> > city_traits;
+	extern std::vector<std::pair<std::string, const config*> > troop_traits;
+
+	extern std::set<int> unallocatable_heros;
+
+	void reload_data_bin();
+
+	void move_subcfg_right_position(HWND hdlgP, LPARAM lParam);
+	void create_subcfg_toolbar(HWND hwndP);
+	void On_DlgDrawItem(HWND hdlgP, const DRAWITEMSTRUCT *lpdis);
+	UINT ListView_GetCheckedCount(HWND hwnd);
+	DLGTEMPLATE* WINAPI DoLockDlgRes(LPCSTR lpszResName);
 }
 
 namespace preferences 

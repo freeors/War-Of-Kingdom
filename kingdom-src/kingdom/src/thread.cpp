@@ -20,7 +20,6 @@
 #include "log.hpp"
 #include "thread.hpp"
 
-
 #define ERR_G LOG_STREAM(err, lg::general)
 
 
@@ -163,28 +162,13 @@ async_operation::RESULT async_operation::execute(async_operation_ptr this_ptr, w
 		active_.push_back(this_ptr);
 		thread_.reset(new thread(run_async_operation,&this_ptr));
 
-		bool completed = false;
-		while(wait.process() == waiter::WAIT) {
-			const condition::WAIT_TIMEOUT_RESULT res = finished_.wait_timeout(get_mutex(),20);
-			if(res == condition::WAIT_OK || finishedVar_) {
-				completed = true;
-				break;
-			}
-#ifndef __BEOS__
-			else if(res == condition::WAIT_ERROR) {
-				break;
-			}
-#endif
-		}
-
-		if(!completed) {
+		if (wait.process(this_ptr) == waiter::WAIT) {
+			return COMPLETED;
+		} else {
 			aborted_ = true;
 			return ABORTED;
 		}
 	}
-
-	return COMPLETED;
 }
-
 
 }

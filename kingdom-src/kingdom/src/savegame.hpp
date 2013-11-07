@@ -40,6 +40,17 @@ struct save_info {
 	const std::string format_time_local() const;
 };
 
+struct www_save_info {
+	www_save_info(int _sid, const std::string& n, const std::string& user, time_t t, int ver = 0);
+	const std::string format_time_upload() const;
+
+	int sid;
+	std::string name;
+	time_t time_upload;
+	std::string username;
+	int version;
+};
+
 /**
 Container for a couple of savefile manipulating methods.
 Note: You are not supposed to instantiate this class.
@@ -73,7 +84,7 @@ private:
 class loadgame
 {
 public:
-	loadgame(display& gui, const config& game_config, game_state& gamestate);
+	loadgame(game_display& gui, const config& game_config, game_state& gamestate);
 	virtual ~loadgame() {}
 
 	/** Load a game without providing any information. */
@@ -81,7 +92,7 @@ public:
 	/** Load a game with pre-setting information for the load-game dialog. */
 	void load_game(std::string& filename, bool show_replay, bool cancel_orders, hero_map& heros, hero_map* heros_start = NULL);
 	/** Loading a game from within the multiplayer-create dialog. */
-	void load_multiplayer_game();
+	void load_multiplayer_game(hero_map& heros, hero_map& heros_start);
 	/** Populates the level-config for multiplayer from the loaded savegame information. */
 	void fill_mplevel_config(config& level);
 	/** Generate the gamestate out of the loaded game config. */
@@ -102,7 +113,7 @@ private:
 	void copy_era(config& cfg);
 
 	const config& game_config_;
-	display& gui_;
+	game_display& gui_;
 
 	game_state& gamestate_; /** Primary output information. */
 	std::string filename_; /** Name of the savefile to be loaded. */
@@ -118,7 +129,7 @@ class savegame
 public:
 	/** The only constructor of savegame. The title parameter is only necessary if you
 		intend to do interactive saves. */
-	savegame(hero_map& heros, game_state& gamestate, config& snapshot, const std::string& title = "Save");
+	savegame(hero_map& heros, hero_map& heros_start, game_state& gamestate, config& snapshot, const std::string& title = "Save");
 
 	virtual ~savegame() {}
 
@@ -160,6 +171,7 @@ protected:
 	virtual void before_save();
 
 	hero_map& heros_;
+	hero_map& heros_start_;
 
 private:
 	/** Checks if a certain character is allowed in a savefile name. */
@@ -202,7 +214,7 @@ private:
 class game_savegame : public savegame
 {
 public:
-	game_savegame(hero_map& heros, game_state& gamestate,
+	game_savegame(hero_map& heros, hero_map& heros_start, game_state& gamestate,
 		game_display& gui, config& snapshot_cfg);
 
 private:
@@ -223,7 +235,7 @@ protected:
 class replay_savegame : public savegame
 {
 public:
-	replay_savegame(hero_map& heros, game_state& gamestate);
+	replay_savegame(hero_map& heros, hero_map& heros_start, game_state& gamestate);
 
 private:
 	/** Create a filename for automatic saves */
@@ -234,7 +246,7 @@ private:
 class autosave_savegame : public game_savegame
 {
 public:
-	autosave_savegame(hero_map& heros, game_state &gamestate, game_display& gui, config& snapshot_cfg);
+	autosave_savegame(hero_map& heros, hero_map& heros_start, game_state &gamestate, game_display& gui, config& snapshot_cfg);
 
 	void autosave(const bool disable_autosave, const int autosave_max, const int infinite_autosaves);
 private:
@@ -245,7 +257,7 @@ private:
 class oos_savegame : public game_savegame
 {
 public:
-	oos_savegame(hero_map& heros, config& snapshot_cfg);
+	oos_savegame(hero_map& heros, hero_map& heros_start, config& snapshot_cfg);
 
 private:
 	/** Display the save game dialog. */
@@ -256,7 +268,7 @@ private:
 class scenariostart_savegame : public savegame
 {
 public:
-	scenariostart_savegame(hero_map& heros, game_state& gamestate);
+	scenariostart_savegame(hero_map& heros, hero_map& heros_start, game_state& gamestate);
 
 private:
 	/** Adds the player information to the starting position (= [replay_start]). */
@@ -267,5 +279,9 @@ private:
 
 void replace_underbar2space(std::string &name);
 void replace_space2underbar(std::string &name);
+
+std::string format_time_date(time_t t);
+std::string format_time_local(time_t t);
+std::string format_time_elapse(time_t elapse);
 
 #endif

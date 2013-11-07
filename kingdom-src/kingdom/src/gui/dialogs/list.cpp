@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/list.hpp"
 
-#include "foreach.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
@@ -275,17 +274,13 @@ void tlist::artifical_list(twindow& window, bool global)
 
 void tlist::hero_list(twindow& window, bool global)
 {
-	std::vector<hero*> v;
-	if (!global) {
-		int side_index = current_team_.side() - 1;
-		for (hero_map::iterator h = heros_.begin(); h != heros_.end(); ++ h) {
-			if (h->side_ != side_index) {
-				continue;
-			}
-			v.push_back(&*h);
-		}
+	int side_num = current_team_.side();
+	if (global) {
+		side_num = -1;
 	}
-	gui2::thero_list dlg(&teams_, &units_, heros_, v);
+
+	std::vector<hero*> v;
+	gui2::thero_list dlg(&teams_, &units_, heros_, v, side_num);
 	try {
 		dlg.show(gui_.video());
 	} catch(twml_exception& e) {

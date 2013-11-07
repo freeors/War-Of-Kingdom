@@ -15,20 +15,16 @@
 #include "filesystem.hpp"
 #include "editor.hpp"
 #include "unit_types.hpp"
+#include "help.hpp"
 
 #include <sstream>
 #include <iosfwd>
 
 BOOL CALLBACK DlgHeroEditProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgAdjustProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 #define wgen_enable_save_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_wgen, IDM_SAVE, fEnable)
-
-#define MAX_CFGITEMS			9		// 第一项变成了自定义项,不在显示,在此最大项数变成9，位在内核中还是10
-#define INVALID_CFGIDX			-1		// 判断简单点
-
-#define NAME_CUSTOM_PROFILE		"Custom"
-
-static int				gcfgidx = -1;
+#define wgen_get_save_btn()				(ToolBar_GetState(gdmgr._htb_wgen, IDM_SAVE) & TBSTATE_ENABLED)
 
 typedef struct {
 	mgr_action_t	_ma;
@@ -37,7 +33,6 @@ cfgmgr_t			gcfgmgr;
 
 static char	gtext[_MAX_PATH];
 HINSTANCE	hinst = NULL;
-HMENU		ghmenuMain = NULL;
 
 // 对话框按钮函数
 void OnHeroAddBt(HWND hdlgP);
@@ -52,6 +47,14 @@ static void OnFindBt(HWND hdlgP);
 
 BOOL UpdateUIFromFile(HWND hdlgP, char *filename);
 static HWND init_toolbar(HINSTANCE hinst, HWND hdlgP);
+
+void extract_and_append(HWND hdlgP, hero_map& heros, int number);
+void exchange_hero(HWND hdlgP, hero_map& heros, int a_number, int b_number);
+
+namespace ns {
+	int id;
+	int that_number;
+}
 
 void wgen_enter_ui(void)
 {
@@ -199,7 +202,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	lvi.iSubItem = column ++;
 	sprintf(text, "%u", general.number_);
 	lvi.pszText = text;
-	lvi.lParam = (LPARAM)0;
+	lvi.lParam = (LPARAM)general.number_;
 	lvi.iImage = select_iimage_according_fname(text, 0);
 	if (lvi.iItem != count) {
 		ListView_SetItem(hctl, &lvi);
@@ -438,6 +441,13 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
+	// skill: formation
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = column ++;
+	sprintf(text, "%s.%u", utf8_2_ansi(hero::adaptability_str2(general.skill_[hero_skill_formation]).c_str()), fxpmod12(general.skill_[hero_skill_formation]));
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+
 	// 父母
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = column ++;
@@ -573,6 +583,19 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = column ++;
 	lvi.pszText = const_cast<char*>(utf8_2_ansi(general.biography()));
+
+	try {
+		// It is deathful fault if there is error in biography. 
+		// Check it first before kingdom.exe!
+		help::tintegrate integrate(general.biography(), 480, -1, 0, font::BIGMAP_COLOR);
+	}
+	catch (game::error& e) {
+		std::stringstream msg;
+		int number = general.number_;
+		msg << "Parse " << general.name() << "(" << number << ")'s biography error! Detail: " << e.message;
+		MessageBox(NULL, utf8_2_ansi(msg.str().c_str()), "Error", MB_OK | MB_ICONWARNING);
+	}
+
 	ListView_SetItem(hctl, &lvi);
 
 	return;
@@ -825,6 +848,14 @@ BOOL On_DlgWGenInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = text;
 	ListView_InsertColumn(hctl, column ++, &lvc);
 
+	lvc.cx = 40;
+	lvc.iSubItem = column;
+	strstr.str("");
+	strstr << "skill-6";
+	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, column ++, &lvc);
+
 	lvc.cx = 70;
 	lvc.iSubItem = column;
 	strstr.str("");
@@ -922,6 +953,16 @@ void On_DlgWGenCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 	case IDM_DELETE:
 		OnHeroDelBt(hdlgP);
+		break;
+
+	case IDM_EXCHANGE:
+		ns::id = id;
+		if (DialogBox(gdmgr._hinst, MAKEINTRESOURCE(IDD_ADJUST), NULL, DlgAdjustProc)) {
+			exchange_hero(hdlgP, gdmgr.heros_, gdmgr._menu_lparam, ns::that_number);
+		}
+		break;
+	case IDM_APPEND:
+		extract_and_append(hdlgP, gdmgr.heros_, gdmgr._menu_lparam);
 		break;
 
 	case IDC_ET_WGEN_FIND:
@@ -1078,8 +1119,85 @@ void OnFindEt(HWND hdlgP, UINT codeNotify)
 	return;
 }
 
+void listview_find_hero(HWND hlistview, HWND find_et)
+{
+	char text[_MAX_PATH];
+	LVITEM lvi;
+
+	Edit_GetText(find_et, text, sizeof(text) / sizeof(text[0]));
+	if (!strlen(text)) {
+		return;
+	}
+
+	RECT line0_rect;
+	ListView_GetItemRect(hlistview, 0, &line0_rect, LVIR_BOUNDS);
+	int data_line_height = line0_rect.bottom - line0_rect.top;
+	size_t first_viewed_line = ListView_GetTopIndex(hlistview);
+	size_t count_per_page = ListView_GetCountPerPage(hlistview);
+
+	size_t found, idx, count, hero_size = ListView_GetItemCount(hlistview);
+	size_t first_find_line = first_viewed_line + 1;
+	
+	if (first_viewed_line + count_per_page == hero_size) {
+		// current display is last screen. 
+		// if select item in this view, first_find_line is next to select item. or next to first viewed item.
+		for (idx = first_viewed_line; idx < hero_size; idx ++) {
+			if (ListView_GetItemState(hlistview, idx, LVIS_SELECTED)) {
+				break;
+			}
+		}
+		if (idx != hero_size) {
+			first_find_line = idx + 1;
+		}
+	}
+
+	for (found = idx = first_find_line; idx < hero_size; found ++, idx ++) {
+		lvi.iItem = idx;
+		lvi.mask = LVIF_PARAM;
+		lvi.iSubItem = 0;
+		ListView_GetItem(hlistview, &lvi);
+		hero& h = gdmgr.heros_[lvi.lParam];
+		size_t size = strlen(text);
+		if (!strncasecmp(text, utf8_2_ansi(h.name().c_str()), size)) {
+			break;
+		}
+	}
+	if (found == hero_size) {
+		for (found = 0, idx = 0; idx < first_find_line; found ++, idx ++) {
+			lvi.iItem = idx;
+			lvi.mask = LVIF_PARAM;
+			lvi.iSubItem = 0;
+			ListView_GetItem(hlistview, &lvi);
+			hero& h = gdmgr.heros_[lvi.lParam];
+			size_t size = strlen(text);
+			if (!strncasecmp(text, utf8_2_ansi(h.name().c_str()), size)) {
+				break;
+			}
+		}
+		if (found == first_find_line) {
+			found = hero_size;
+		}
+	}
+
+	if (found != hero_size) {
+		SetFocus(hlistview);
+		count = ListView_GetItemCount(hlistview);
+		for (idx = 0; idx < count; idx ++) {
+			if (idx != found) {
+				ListView_SetItemState(hlistview, idx, 0, LVIS_SELECTED | LVIS_FOCUSED);
+			} else {
+				ListView_SetItemState(hlistview, idx, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
+			}
+		}
+		ListView_Scroll(hlistview, 0, (found - first_viewed_line) * data_line_height);
+	}
+	return;
+}
+
 void OnFindBt(HWND hdlgP)
 {
+	listview_find_hero(GetDlgItem(hdlgP, IDC_LV_WGEN_EDITOR), GetDlgItem(gdmgr._htb_wgen, IDC_ET_WGEN_FIND));
+/*
 	HWND hctl = GetDlgItem(hdlgP, IDC_LV_WGEN_EDITOR);
 	char text[_MAX_PATH];
 
@@ -1142,6 +1260,7 @@ void OnFindBt(HWND hdlgP)
 		}
 		ListView_Scroll(hctl, 0, (found - first_viewed_line) * data_line_height);
 	}
+*/
 	return;
 }
 
@@ -1210,22 +1329,42 @@ void wgen_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 
 		icount = ListView_GetItemCount(lpNMHdr->hwndFrom);
 
-		EnableMenuItem(gdmgr._hpopup_editor, IDM_ADD, MF_BYCOMMAND);
-		if (lpnmitem->iItem < 0) {
-			EnableMenuItem(gdmgr._hpopup_editor, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
-			EnableMenuItem(gdmgr._hpopup_editor, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
-		}		
+		std::stringstream strstr;
+		HMENU hpopup_adjust = CreatePopupMenu();
+		strstr.str("");
+		strstr << _("Exchange") << "...";
+		AppendMenu(hpopup_adjust, MF_STRING, IDM_EXCHANGE, utf8_2_ansi(strstr.str().c_str()));
+		strstr.str("");
+		strstr << _("Extract and append") << "...";
+		AppendMenu(hpopup_adjust, MF_STRING, IDM_APPEND, utf8_2_ansi(strstr.str().c_str()));
 
-		TrackPopupMenuEx(gdmgr._hpopup_editor, 0, 
+		HMENU hpopup_editor = CreatePopupMenu();
+		AppendMenu(hpopup_editor, MF_STRING, IDM_ADD, utf8_2_ansi(_("Add...")));
+		AppendMenu(hpopup_editor, MF_STRING, IDM_EDIT, utf8_2_ansi(_("Edit...")));
+
+		AppendMenu(hpopup_editor, MF_SEPARATOR, 0, NULL);
+		AppendMenu(hpopup_editor, MF_POPUP, (UINT_PTR)(hpopup_adjust), utf8_2_ansi(_("Adjust number")));
+		AppendMenu(hpopup_editor, MF_SEPARATOR, 0, NULL);
+
+		AppendMenu(hpopup_editor, MF_STRING, IDM_DELETE, utf8_2_ansi(_("Delete...")));
+
+		EnableMenuItem(hpopup_editor, IDM_ADD, MF_BYCOMMAND);
+		if (lpnmitem->iItem < 0) {
+			EnableMenuItem(hpopup_editor, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_editor, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
+
+			EnableMenuItem(hpopup_editor, (UINT_PTR)(hpopup_adjust), MF_BYCOMMAND | MF_GRAYED);
+		} else if (wgen_get_save_btn()) {
+			EnableMenuItem(hpopup_editor, (UINT_PTR)(hpopup_adjust), MF_BYCOMMAND | MF_GRAYED);
+		}
+
+		TrackPopupMenuEx(hpopup_editor, 0, 
 			point.x, 
 			point.y, 
 			hdlgP, 
 			NULL);
 
-		// 恢复回去
-		EnableMenuItem(gdmgr._hpopup_editor, IDM_ADD, MF_BYCOMMAND | MF_ENABLED);
-		EnableMenuItem(gdmgr._hpopup_editor, IDM_EDIT, MF_BYCOMMAND | MF_ENABLED);
-		EnableMenuItem(gdmgr._hpopup_editor, IDM_DELETE, MF_BYCOMMAND | MF_ENABLED);
+		DestroyMenu(hpopup_editor);
 
 		gdmgr._menu_lparam = lpnmitem->iItem;
 	
@@ -1758,6 +1897,10 @@ void update_hero_edit(HWND hdlgP, hero& h)
 	// adaptability-skill_demolish
 	ComboBox_SetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_SKILL5), fxptoi12(h.skill_[hero_skill_demolish]));
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_SKILL5XP), fxpmod12(h.skill_[hero_skill_demolish]));
+
+	// adaptability-skill_formation
+	ComboBox_SetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_SKILL6), fxptoi12(h.skill_[hero_skill_formation]));
+	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_SKILL6XP), fxpmod12(h.skill_[hero_skill_formation]));
 }
 
 
@@ -1997,6 +2140,15 @@ BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 	if (gdmgr.heros_[gdmgr._menu_lparam].skill_[hero_skill_demolish] != u32n) {
 		*changed = TRUE;
 		gdmgr.heros_[gdmgr._menu_lparam].skill_[hero_skill_demolish] = u32n;
+	}
+
+	// adaptability-skill_formation
+	u32n1 = (uint32_t)ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_SKILL6));
+	u32n2 = (uint32_t)UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_SKILL6XP));
+	u32n = ftofxp12(u32n1) + u32n2;
+	if (gdmgr.heros_[gdmgr._menu_lparam].skill_[hero_skill_formation] != u32n) {
+		*changed = TRUE;
+		gdmgr.heros_[gdmgr._menu_lparam].skill_[hero_skill_formation] = u32n;
 	}
 
 	// consort[0]
@@ -2518,6 +2670,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	set_language_text(hdlgP, IDC_STATIC_SKILL3, "wesnoth-hero", "skill-3");
 	set_language_text(hdlgP, IDC_STATIC_SKILL4, "wesnoth-hero", "skill-4");
 	set_language_text(hdlgP, IDC_STATIC_SKILL5, "wesnoth-hero", "skill-5");
+	set_language_text(hdlgP, IDC_STATIC_SKILL6, "wesnoth-hero", "skill-6");
 	set_language_text(hdlgP, IDC_STATIC_RELATION, "wesnoth-lib", "Relation");
 	set_language_text(hdlgP, IDC_STATIC_PARENT, "wesnoth-hero", "parent");
 	set_language_text(hdlgP, IDC_STATIC_CONSORT, "wesnoth-hero", "consort");
@@ -2765,6 +2918,16 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	UpDown_SetRange(hctl, 0, 4095);	// [0, 4095]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_SKILL5XP));
 
+	// adaptability-skill_formation
+	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_SKILL6);
+	for (int idx = 0; idx <= hero_adaptability_max; idx ++) {
+		sprintf(text, "%s%i", HERO_PREFIX_STR_ADAPTABILITY, idx);
+		ComboBox_AddString(hctl, utf8_2_ansi(dgettext("wesnoth-hero", text))); 
+	}
+	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_SKILL6XP);
+	UpDown_SetRange(hctl, 0, 4095);	// [0, 4095]
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_SKILL6XP));
+
 	// catalog
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_CATALOG);
 	UpDown_SetRange(hctl, 0, HERO_MAX_LOYALTY - 1);	// [0, HERO_MAX_LOYALTY - 1]
@@ -2870,6 +3033,393 @@ BOOL CALLBACK DlgHeroEditProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lPara
 	HANDLE_MSG(hdlgP, WM_HSCROLL, On_DlgHeroEditHScroll);
 	HANDLE_MSG(hdlgP, WM_DRAWITEM, editor_config::On_DlgDrawItem);
 	HANDLE_MSG(hdlgP, WM_NOTIFY, On_DlgPopupNotify);
+	}
+	
+	return FALSE;
+}
+
+void exchange_number(hero& h, int a, int b)
+{
+	if (h.parent_[0].hero_ == a) {
+		h.parent_[0].hero_ = b;
+	} else if (h.parent_[0].hero_ == b) {
+		h.parent_[0].hero_ = a;
+	}
+	if (h.parent_[1].hero_ == a) {
+		h.parent_[1].hero_ = b;
+	} else if (h.parent_[1].hero_ == b) {
+		h.parent_[1].hero_ = a;
+	}
+
+	for (int i = 0; i < HEROS_MAX_CONSORT; i ++) {
+		if (h.consort_[i].hero_ == a) {
+			h.consort_[i].hero_ = b;
+		} else if (h.consort_[i].hero_ == b) {
+			h.consort_[i].hero_ = a;
+		}
+	}
+
+	for (int i = 0; i < HEROS_MAX_OATH; i ++) {
+		if (h.oath_[i].hero_ == a) {
+			h.oath_[i].hero_ = b;
+		} else if (h.oath_[i].hero_ == b) {
+			h.oath_[i].hero_ = a;
+		}
+	}
+
+	for (int i = 0; i < HEROS_MAX_INTIMATE; i ++) {
+		if (h.intimate_[i].hero_ == a) {
+			h.intimate_[i].hero_ = b;
+		} else if (h.intimate_[i].hero_ == b) {
+			h.intimate_[i].hero_ = a;
+		}
+	}
+
+	for (int i = 0; i < HEROS_MAX_HATE; i ++) {
+		if (h.hate_[i].hero_ == a) {
+			h.hate_[i].hero_ = b;
+		} else if (h.hate_[i].hero_ == b) {
+			h.hate_[i].hero_ = a;
+		}
+	}
+}
+
+void copyfile2(const std::string& src, const std::string& dst)
+{
+	BOOL fok = CopyFile(src.c_str(), dst.c_str(), FALSE);
+	if (!fok) {
+		std::stringstream strstr;
+		utils::string_map symbols;
+
+		symbols["src"] = src;
+		symbols["dst"] = dst;
+		symbols["result"] = fok? "success": "fail";
+		strstr.str("");
+		strstr << utf8_2_ansi(vgettext2("Copy \"$src\" to \"$dst\" $result!", symbols).c_str());
+		posix_print_mb(strstr.str().c_str());
+	}
+}
+
+void exchange_image(int from, int to)
+{
+	std::stringstream strstr;
+	std::string from_image, to_image, temporary;
+	uint32_t fsize_low, fsize_high;
+	bool from_existed, to_existed;
+
+	for (int step = 0; step < 2; step ++) {
+		strstr.str("");
+		if (step == 0) {
+			strstr << hero::image_file_root_ + "/" << "hero-64/" << from << ".png";
+			from_image = strstr.str();
+
+			strstr.str("");
+			strstr << hero::image_file_root_ + "/" << "hero-64/" << to << ".png";
+			to_image = strstr.str();
+
+		} else {
+			strstr << hero::image_file_root_ + "/" << "hero-256/" << from << ".png";
+			from_image = strstr.str();
+
+			strstr.str("");
+			strstr << hero::image_file_root_ + "/" << "hero-256/" << to << ".png";
+			to_image = strstr.str();
+		}
+
+		posix_fsize_byname(from_image.c_str(), fsize_low, fsize_high);
+		from_existed = fsize_low || fsize_high;
+
+		posix_fsize_byname(to_image.c_str(), fsize_low, fsize_high);
+		to_existed = fsize_low || fsize_high;
+
+		if (from_existed && !to_existed) {
+			copyfile2(from_image, to_image);
+			delfile1(from_image.c_str());
+
+		} else if (!from_existed && to_existed) {
+			copyfile2(to_image, from_image);
+			delfile1(to_image.c_str());
+
+		} else if (from_existed && to_existed) {
+			const std::string temporary = get_user_data_dir() + "/_temporary.png";
+			copyfile2(from_image, temporary);
+			copyfile2(to_image, from_image);
+			copyfile2(temporary, to_image);
+			delfile1(temporary.c_str());
+		}
+	}	
+}
+
+void exchange_po(int from, int to)
+{
+	return;
+	// 非清楚代码功能的不要使用这函数
+	// 要确保这函数起作, 须具备以下条件
+	// 1.zh_CN.po/en_GB.po中不存在fuzzy翻译. 一些msgid可能在fuzzy中, 修改fuzzy会破坏poedit要求.
+	// 2.zh_CN.po/en_GB.po中必须已在相关msgid. 先得手工在pot添加, 然后倒入po.
+	std::string name = game_config::path + "/po/wesnoth-hero/zh_CN.po";
+	posix_file_t fp;
+
+	uint32_t bytertd, fsizelow, fsizehigh;
+	char* fdata = NULL;
+	int from_msgstr_len, to_msgstr_len;
+	char* from_msgstr = NULL;
+	char* to_msgstr = NULL;
+	std::stringstream from_key, to_key;
+
+	for (int lang = 0; lang < 2; lang ++) {
+		if (lang == 1) {
+			name = game_config::path + "/po/wesnoth-hero/en_GB.po";
+		}
+		posix_fopen(name.c_str(), GENERIC_READ | GENERIC_WRITE, OPEN_EXISTING, fp);
+		if (fp == INVALID_FILE) {
+			goto exit;
+		}
+
+		posix_fsize(fp, fsizelow, fsizehigh);
+		if (!fsizelow && !fsizehigh) {
+			goto exit;
+		}
+		fdata = (char*)malloc(fsizelow);
+		if (!fdata) {
+			goto exit;
+		}
+		posix_fseek(fp, 0, 0);
+		posix_fread(fp, fdata, fsizelow, bytertd);
+
+		int step;
+		for (step = 0; step < 3; step ++) {
+			from_key.str("");
+			to_key.str("");
+			if (step == 0) {
+				from_key << HERO_PREFIX_STR_NAME << from;
+				to_key << HERO_PREFIX_STR_NAME << to;
+			} else if (step == 1) {
+				from_key << HERO_PREFIX_STR_SURNAME << from;
+				to_key << HERO_PREFIX_STR_SURNAME << to;
+			} else if (step == 2) {
+				from_key << HERO_PREFIX_STR_BIOGRAPHY << from;
+				to_key << HERO_PREFIX_STR_BIOGRAPHY << to;
+			}
+
+			char* from_ptr = strstr(fdata, from_key.str().c_str());
+			if (!from_ptr) {
+				break;
+			}
+			from_ptr = strstr(from_ptr, "msgstr");
+			if (!from_ptr) {
+				break;
+			}
+
+			char* to_ptr = strstr(fdata, to_key.str().c_str());
+			if (!to_ptr) {
+				break;
+			}
+			to_ptr = strstr(to_ptr, "msgstr");
+			if (!to_ptr) {
+				break;
+			}
+			// ensure from_ptr less than to_ptr
+			if (from_ptr > to_ptr) {
+				char* temp = to_ptr;
+				to_ptr = from_ptr;
+				from_ptr = temp;
+			}
+
+			char* end = strstr(from_ptr, "\n\n");
+			if (!end) {
+				// if need replace last msgid, nextlline!
+				break;
+			}
+			from_msgstr_len = end - from_ptr;
+
+			end = strstr(to_ptr, "\n\n");
+			if (!end) {
+				// if need replace last msgid, nextlline!
+				break;
+			}
+			to_msgstr_len = end - to_ptr;
+
+			from_msgstr = (char*)malloc(from_msgstr_len + 1);
+			memcpy(from_msgstr, from_ptr, from_msgstr_len);
+			from_msgstr[from_msgstr_len] = '\0';
+			
+			to_msgstr = (char*)malloc(to_msgstr_len + 1);
+			memcpy(to_msgstr, to_ptr, to_msgstr_len);
+			to_msgstr[to_msgstr_len] = '\0';
+
+			int middle_len = to_ptr - from_ptr - from_msgstr_len;
+			// move
+			memcpy(from_ptr + to_msgstr_len, from_ptr + from_msgstr_len, middle_len);
+			memcpy(from_ptr, to_msgstr, to_msgstr_len);
+			memcpy(from_ptr + to_msgstr_len + middle_len, from_msgstr, from_msgstr_len);
+
+			free(from_msgstr);
+			free(to_msgstr);
+
+		}
+		if (step == 3) {
+			posix_fseek(fp, 0, 0);
+			posix_fwrite(fp, fdata, fsizelow, bytertd);
+		}
+		posix_fclose(fp);
+		fp = INVALID_FILE;
+
+		free(fdata);
+		fdata = NULL;
+	}
+exit:
+	if (fp != INVALID_FILE) {
+		posix_fclose(fp);
+	}
+	if (fdata) {
+		free(fdata);
+	}
+}
+
+void exchange_hero(HWND hdlgP, hero_map& heros, int a_number, int b_number)
+{
+	if (a_number < 0 || a_number >= (int)heros.size()) {
+		return;
+	}
+	if (b_number < 0 || b_number >= (int)heros.size()) {
+		return;
+	}
+	if (a_number == b_number) {
+		return;
+	}
+
+	for (hero_map::iterator it = heros.begin(); it != heros.end(); ++ it) {
+		hero& h = *it;
+		exchange_number(h, a_number, b_number);
+	}
+
+	hero a = heros[a_number];
+	hero temp = a;
+
+	temp.number_ = b_number;
+	temp.image_ = heros[b_number].image_;
+	temp.set_name("");
+	temp.set_surname("");
+	
+	hero b = heros[b_number];
+	heros[b_number] = temp;
+	temp = b;
+
+	temp.number_ = a_number;
+	temp.image_ = a.image_;
+	temp.set_name("");
+	temp.set_surname("");
+	heros[a_number] = temp;
+
+	exchange_image(a_number, b_number);
+	exchange_po(a_number, b_number);
+
+	OnSaveBt(hdlgP);
+	refresh_editor_use_heros(hdlgP);
+
+	std::stringstream strstr;
+	utils::string_map symbols;
+	symbols["a"] = heros[a_number].name();
+	symbols["b"] = heros[b_number].name();
+	strstr << vgettext2("Exchange $a and $b success! To complete, you need edit wesnoth-hero.po manually.", symbols);
+	posix_print_mb(utf8_2_ansi(strstr.str().c_str()));
+}
+
+void extract_and_append(HWND hdlgP, hero_map& heros, int number)
+{
+	if (number < 0 || number >= (int)heros.size()) {
+		return;
+	}
+
+	std::stringstream strstr;
+	utils::string_map symbols;
+	symbols["hero"] = heros[number].name();
+	strstr << utf8_2_ansi(vgettext2("Do you want to extract $hero and append?", symbols).c_str());
+
+	int retval = MessageBox(gdmgr._hwnd_main, strstr.str().c_str(), utf8_2_ansi(_("Confirm")), MB_YESNO);
+	if (retval == IDNO) {
+		return;
+	}
+
+	hero append = heros[number];
+	append.number_ = heros.size();
+	append.image_ = append.number_;
+	append.set_name("");
+	append.set_surname("");
+	
+	for (hero_map::iterator it = heros.begin(); it != heros.end(); ++ it) {
+		hero& h = *it;
+		exchange_number(h, number, append.number_);
+	}
+	exchange_image(number, append.number_);
+	exchange_po(number, append.number_);
+
+	heros.add(append);
+	OnSaveBt(hdlgP);
+	refresh_editor_use_heros(hdlgP);
+
+	strstr.str("");
+	strstr << vgettext2("Extract $hero and append success! To complete, you need edit wesnoth-hero.po manually.", symbols);
+	posix_print_mb(utf8_2_ansi(strstr.str().c_str()));
+}
+
+BOOL On_DlgAdjustInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	std::stringstream strstr;
+	int this_number = gdmgr._menu_lparam;
+
+	if (ns::id == IDM_EXCHANGE) {
+		strstr << _("Exchange");
+	}
+	SetWindowText(hdlgP, utf8_2_ansi(strstr.str().c_str()));
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ADJUST), utf8_2_ansi(_("Exchange")));
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_ET_ADJUST_THIS);
+	strstr.str("");
+	hero& this_hero = gdmgr.heros_[this_number];
+	strstr << std::setfill('0') << std::setw(3) << this_number << ": " << this_hero.name();
+	Edit_SetText(hctl, utf8_2_ansi(strstr.str().c_str()));
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_ADJUST_THAT);
+	for (hero_map::iterator it = gdmgr.heros_.begin(); it != gdmgr.heros_.end(); ++ it) {
+		hero& h = *it;
+		if (h.number_ == this_number) {
+			continue;
+		}
+		strstr.str("");
+		int number = h.number_;
+		strstr << std::setfill('0') << std::setw(3) << number << ": " << h.name();
+		ComboBox_AddString(hctl, utf8_2_ansi(strstr.str().c_str()));
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, h.number_);
+	}
+	ComboBox_SetCurSel(hctl, 0);
+	return FALSE;
+}
+
+void On_DlgAdjustCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	BOOL changed = FALSE;
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_ADJUST_THAT);
+
+	switch (id) {
+	case IDOK:
+		ns::that_number = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+		changed = TRUE;
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL CALLBACK DlgAdjustProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch(message) {
+	case WM_INITDIALOG:
+		return On_DlgAdjustInitDialog(hDlg, (HWND)(wParam), lParam);
+	HANDLE_MSG(hDlg, WM_COMMAND, On_DlgAdjustCommand);
+	HANDLE_MSG(hDlg, WM_DRAWITEM, editor_config::On_DlgDrawItem);
 	}
 	
 	return FALSE;

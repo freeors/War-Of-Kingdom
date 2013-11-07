@@ -48,6 +48,9 @@
 # define BOOST_ACCUMULATORS_PROTO_DISABLE_IF_IS_CONST(T)
 #endif
 
+#define BOOST_ACCUMULATORS_GCC_VERSION                                                              \
+  (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+
 namespace boost { namespace accumulators
 {
 
@@ -182,8 +185,18 @@ namespace detail
 
     inline void ignore_variable(void const *) {}
 
-  #define BOOST_ACCUMULATORS_IGNORE_GLOBAL(X)\
-    namespace detail { inline void BOOST_PP_CAT(ignore_, X)() { boost::accumulators::detail::ignore_variable(&X); } }
+#define BOOST_ACCUMULATORS_IGNORE_GLOBAL(X)                             \
+    namespace detail                                                    \
+    {                                                                   \
+        struct BOOST_PP_CAT(ignore_, X)                                 \
+        {                                                               \
+            void ignore()                                               \
+            {                                                           \
+                boost::accumulators::detail::ignore_variable(&X);       \
+            }                                                           \
+        };                                                              \
+    }                                                                   \
+    /**/
 }
 
 }} // namespace boost::accumulators

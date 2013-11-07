@@ -7,6 +7,7 @@ LOCAL_MODULE := kingdom
 SDL_PATH := ../SDL/SDL-1.3.0-6217
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/external/boost_1_46 \
+	$(LOCAL_PATH)/external/bzip2-1.0.6 \
 	$(LOCAL_PATH)/external/zlib123 \
 	$(LOCAL_PATH)/../gettext/gettext-framework/include \
 	$(LOCAL_PATH)/../SDL/SDL-dev-framework/SDL-1.3.x/include \
@@ -64,6 +65,8 @@ LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.cpp \
 	$(wildcard $(LOCAL_PATH)/external/boost_1_46/libs/iostreams/src/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/external/boost_1_46/libs/regex/src/*.c) \
 	$(wildcard $(LOCAL_PATH)/external/boost_1_46/libs/regex/src/*.cpp) \
+	$(wildcard $(LOCAL_PATH)/external/bzip2-1.0.6/*.c) \
+	$(wildcard $(LOCAL_PATH)/external/bzip2-1.0.6/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/external/zlib123/*.c) \
 	$(wildcard $(LOCAL_PATH)/external/zlib123/*.cpp)) 
 	

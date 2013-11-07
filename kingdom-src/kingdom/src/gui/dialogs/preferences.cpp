@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/preferences.hpp"
 
-#include "foreach.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "gui/widgets/image.hpp"
@@ -40,6 +39,7 @@
 #include "display.hpp"
 #include "play_controller.hpp"
 #include "resources.hpp"
+#include "network.hpp"
 
 #include <boost/bind.hpp>
 
@@ -106,7 +106,7 @@ void show_preferences_dialog(display& disp)
 			if (disp.in_game() && !resources::controller->is_replaying()) {
 				play_controller& controller = *resources::controller;
 				if (controller.scenario_env_changed(dlg.get_scenario_env())) {
-					do_scenario_env(dlg.get_scenario_env(), controller, true);
+					controller.do_scenario_env(dlg.get_scenario_env(), true);
 				}
 			}
 			return;
@@ -134,7 +134,7 @@ void show_preferences_dialog(display& disp)
 tpreferences::tpreferences(display& disp, int start_page)
 	: disp_(disp)
 	, start_page_(start_page)
-	, env_(RANDOM_DUEL, 0)
+	, env_(RANDOM_DUEL, 0, false)
 	, page_(-1)
 	, options_grid_(NULL)
 	, zoom_(NULL)
@@ -142,8 +142,10 @@ tpreferences::tpreferences(display& disp, int start_page)
 	, duel_(NULL)
 {
 	if (disp_.in_game()) {
-		env_.duel = resources::controller->duel();
+		play_controller& controller = *resources::controller;
+		env_.duel = controller.duel();
 		env_.maximal_defeated_activity = game_config::maximal_defeated_activity;
+		env_.vip = controller.vip();
 	}
 }
 
@@ -311,11 +313,6 @@ void tpreferences::default_move_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
 	preferences::set_default_move(toggle->get_value());
-}
-
-void tpreferences::idle_anim_changed(tslider* widget, int value)
-{
-	preferences::set_idle_anim_rate(value);
 }
 
 void tpreferences::video_mode_button(twindow& window)
@@ -536,6 +533,12 @@ int turbo_slider_get_value()
 	}
 }
 
+void tpreferences::no_messagebox_toggled(twidget* widget)
+{
+	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
+	game_config::no_messagebox = !game_config::no_messagebox;
+}
+
 void tpreferences::swap_page(twindow& window, int page, bool swap)
 {
 	if (page < MIN_PAGE || page > MAX_PAGE) {
@@ -601,10 +604,6 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		toggle->set_value(preferences::default_move());
 		toggle->set_callback_state_change(boost::bind(&tpreferences::default_move_toggled, this, _1));
 
-		tslider* slider = dynamic_cast<tslider*>(options_grid_->find("idle_anim_slider", false));
-		slider->set_callback_value_change(boost::bind(&tpreferences::idle_anim_changed, this, _1, _2));
-		slider->set_value(preferences::idle_anim_rate());
-		
 #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
 		options_grid_->find("fullscreen_button", false)->set_visible(twidget::INVISIBLE);
 		find_widget<tbutton>(&window, "video_mode_button", false).set_visible(twidget::INVISIBLE);
@@ -711,7 +710,7 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		std::stringstream strstr;
 		strstr << env_.maximal_defeated_activity;
 		maximal_defeated_activity_->set_label(strstr.str());
-		if (tent::mode != RPG_MODE || resources::controller->is_replaying()) {
+		if (tent::mode == TOWER_MODE || resources::controller->is_replaying() || network::nconnections()) {
 			maximal_defeated_activity_->set_active(false);
 		}
 
@@ -731,8 +730,30 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 			strstr << _("Random");
 		}
 		duel_->set_label(strstr.str());
-		if (tent::mode != RPG_MODE || resources::controller->is_replaying()) {
+		if (tent::mode == TOWER_MODE || resources::controller->is_replaying() || network::nconnections()) {
 			duel_->set_active(false);
+		}
+
+		ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("card_button", false));
+		toggle->set_value(env_.vip);
+		toggle->set_active(false);
+		if (tent::mode == TOWER_MODE) {
+			toggle->set_visible(twidget::INVISIBLE);
+		}
+		
+		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("tactic_slot_button", false));
+		toggle->set_value(env_.vip);
+		toggle->set_active(false);
+		if (tent::mode != TOWER_MODE) {
+			toggle->set_visible(twidget::INVISIBLE);
+		}
+
+		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("no_messagebox_button", false));
+		if (resources::controller->is_replaying()) {
+			toggle->set_callback_state_change(boost::bind(&tpreferences::no_messagebox_toggled, this, _1));
+			toggle->set_value(game_config::no_messagebox);
+		} else {
+			toggle->set_visible(twidget::INVISIBLE);
 		}
 	} 
 	

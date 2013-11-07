@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/final_battle.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -124,7 +123,6 @@ void tfinal_battle::pre_show(CVideo& /*video*/, twindow& window)
 	utils::string_map symbols;
 	str << again;
 	symbols["count"] = str.str();
-	label->set_use_markup(true);
 	str.str("");
 	str << help::tintegrate::generate_format(vgettext("wesnoth-lib", "If capture $count cities again, all AI will ally.", symbols), "red");
 	label->set_label(str.str());

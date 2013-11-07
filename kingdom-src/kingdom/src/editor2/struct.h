@@ -180,6 +180,7 @@ extern dvrmgr_t			gdmgr;
 // -------------------------------------------------------
 //
 bool isvalid_id(const std::string& id);
+bool isvalid_variable(const std::string& id);
 
 HBITMAP LoadBitmap(char *fname, DWORD *biWidth, DWORD *biHeight);
 void transparent_24bmp(HBITMAP hBitmap, DWORD transparentclr);
@@ -245,5 +246,8 @@ BOOL check_wok_root_folder(const std::string& folder);
 std::string vgettext2(const char *msgid, const utils::string_map& symbols);
 const char* dgettext_2_ansi(const char* domain, const char* msgid);
 void set_language_text(HWND hdlgP, int id, const char* domain, const char* msgid);
+
+std::string get_rid_of_return(const std::string& str);
+std::string insert_return(const std::string& str);
 
 #endif // __STRUCT_H_

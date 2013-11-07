@@ -143,13 +143,13 @@ local function generate_objectives(cfg)
 
 	local summary = cfg.summary
 	if summary then
-		objectives = "*" .. insert_before_nl(summary, " ") .. "\n"
+		objectives = "<format>text='" .. insert_before_nl(summary, " ") .. "' size=16</format>\n"
 	end
 	if win_objectives ~= "" then
-		objectives = objectives .. "*" .. win_string .. "\n" .. win_objectives
+		objectives = objectives .. "<format>text='" .. win_string .. "' size=16</format>\n" .. win_objectives
 	end
 	if lose_objectives ~= "" then
-		objectives = objectives .. "*" .. lose_string .. "\n" .. lose_objectives
+		objectives = objectives .. "<format>text='" .. lose_string .. "' size=16</format>\n" .. lose_objectives
 	end
 	if gold_carryover ~= "" then
 		objectives = objectives .. gold_carryover_string .. "\n" .. gold_carryover

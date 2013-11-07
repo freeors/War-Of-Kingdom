@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/simple_item_selector.hpp"
 
-#include "foreach.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
@@ -27,6 +26,8 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace gui2 {
 
@@ -84,12 +85,10 @@ void tsimple_item_selector::pre_show(CVideo& /*video*/, twindow& window)
 	window.keyboard_capture(&list);
 
 	ltitle.set_label(title_);
-	ltitle.set_use_markup(markup_title_);
 
 	lmessage.set_label(msg_);
-	lmessage.set_use_markup(markup_msg_);
 
-	foreach(const tsimple_item_selector::item_type& it, items_) {
+	BOOST_FOREACH (const tsimple_item_selector::item_type& it, items_) {
 		std::map<std::string, string_map> data;
 		string_map column;
 

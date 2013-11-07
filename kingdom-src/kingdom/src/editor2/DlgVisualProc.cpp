@@ -7,7 +7,6 @@
 #include "global.hpp"
 #include "game_config.hpp"
 #include "config.hpp"
-#include "foreach.hpp"
 #include "editor.hpp"
 #include "loadscreen.hpp"
 #include "stdafx.h"
@@ -16,6 +15,7 @@
 #include <shlobj.h> // SHBrowseForFolder
 
 #include "resource.h"
+#include <boost/foreach.hpp>
 
 #include "xfunc.h"
 #include "win32x.h"
@@ -127,7 +127,7 @@ void tvisual::on_rclick(LPNMHDR lpNMHdr, HTREEITEM htvi)
 					continue;
 				}
 				cfg_index = 0;
-				foreach (const config::any_child& value, cfg->all_children_range()) {
+				BOOST_FOREACH (const config::any_child& value, cfg->all_children_range()) {
 					if (cfg_index ++ == ritor->first) {
 						cfg = &value.cfg;
 						break;
@@ -225,13 +225,13 @@ void walk_cfg_recursion(const config& cfg, HTREEITEM htvroot, char* text, uint16
 	
 	// attribute
 	attribute_index = 0;
-	foreach (const config::attribute &istrmap, cfg.attribute_range()) {
+	BOOST_FOREACH (const config::attribute &istrmap, cfg.attribute_range()) {
 		htvi_attribute = TreeView_AddLeaf(wcp->hctl, htvroot);
 		sprintf(text, "%s=%s", istrmap.first.c_str(), utf8_2_ansi(istrmap.second.str().c_str()));
 		TreeView_SetItem2(wcp->hctl, htvi_attribute, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_CHILDREN, attribute_index ++, gdmgr._iico_txt, gdmgr._iico_txt, 0, text);
 	}
 	// recursively resolve children
-	foreach (const config::any_child& value, cfg.all_children_range()) {
+	BOOST_FOREACH (const config::any_child& value, cfg.all_children_range()) {
 		// key
 		htvi = TreeView_AddLeaf(wcp->hctl, htvroot);
 		strcpy(text, value.key.c_str());

@@ -46,24 +46,25 @@ public:
 
 	config to_config() const;
 
-	std::string label;                               /**< Name of the game (e.g. name of save file). */
-	std::string original_label;                      /**< Name of the game (used to save file). */
-	std::string parent;                              /**< Parent of the game (for save-threading purposes). */
-	std::string version;                             /**< Version game was created with. */
-	std::string campaign_type;                       /**< Type of the game - campaign, multiplayer etc. */
-	std::string campaign_define;                     /**< If there is a define the campaign uses to customize data */
-	std::vector<std::string> campaign_xtra_defines;  /**< more customization of data */
+	std::string label;								/**< Name of the game (e.g. name of save file). */
+	std::string original_label;						/**< Name of the game (used to save file). */
+	std::string parent;								/**< Parent of the game (for save-threading purposes). */
+	std::string version;							/**< Version game was created with. */
+	std::string campaign_type;						/**< Type of the game - campaign, multiplayer etc. */
+	std::string campaign_define;					/**< If there is a define the campaign uses to customize data */
 
-	std::string campaign;                            /**< the campaign being played */
-	std::string history;                             /**< ancestral IDs */
-	std::string abbrev;                              /**< the campaign abbreviation */
+	std::string campaign;							/**< the campaign being played */
+	std::string history;							/**< ancestral IDs */
+	std::string abbrev;								/**< the campaign abbreviation */
 	std::string mode;
-	std::string scenario;                            /**< the scenario being played */
-	std::string next_scenario;                       /**< the scenario coming next (for campaigns) */
-	std::string completion;                          /**< running. victory, or defeat */
-	std::string end_text;                            /**< end-of-campaign text */
-	unsigned int end_text_duration;                  /**< for how long the end-of-campaign text is shown */
-	long create; /**< The create time the game is being played at. */
+	std::string scenario;							/**< the scenario being played */
+	std::string next_scenario;						/**< the scenario coming next (for campaigns) */
+	std::string completion;							/**< running. victory, or defeat */
+	std::string end_text;							/**< end-of-campaign text */
+	unsigned int end_text_duration;					/**< for how long the end-of-campaign text is shown */
+	long create;									/**< The create time the game is being played at. */
+	int duration;									/**< The total time the game is playing. */	
+	int hash;										/**< And create idendify this scenario. */	
 
 	std::string player_hero;
 	std::string player_side;
@@ -140,7 +141,7 @@ public:
 	void build_team(const config& side_cfg, std::vector<team>& teams, const config& level, gamemap& map, 
 		unit_map& units, hero_map& heros, card_map& cards, bool snapshot, size_t team_size);
 	void build_team(const uint8_t* mem, std::vector<team>& teams, const config& level, gamemap& map, 
-		unit_map& units, hero_map& heros, card_map& cards, bool snapshot);
+		unit_map& units, hero_map& heros, card_map& cards, bool snapshot, size_t team_size);
 
 	game_classification& classification() { return classification_; }
 	const game_classification& classification() const { return classification_; } //FIXME: const getter to allow use from const gamestatus::sog() (see ai.cpp:344) - remove after merge?
@@ -148,6 +149,9 @@ public:
 	/** Multiplayer parameters for this game */
 	mp_game_settings& mp_settings() { return mp_settings_; }
 	const mp_game_settings& mp_settings() const { return mp_settings_; }
+
+	void set_session_start(time_t t);
+	int duration(time_t stop) const;
 
 	/**
 	 * If the game is saved mid-level, we have a series of replay steps
@@ -200,12 +204,12 @@ private:
 	game_classification classification_;
 	mp_game_settings mp_settings_;
 	PHASE phase_;
+	time_t session_start_;
 };
 
 
 std::string generate_game_uuid();
-void level_to_gamestate(config& level, command_pool& replay_data, game_state& state);
-
-void write_players(game_state& gamestate, config& cfg, const bool use_snapshot=true, const bool merge_side = false);
+void level_to_gamestate(config& level, command_pool& replay_data, game_state& state, const std::string& campaign_type = "multiplayer");
+std::vector<std::set<int> > generate_team_names_from_side_mem(uint8_t* mem);
 
 #endif

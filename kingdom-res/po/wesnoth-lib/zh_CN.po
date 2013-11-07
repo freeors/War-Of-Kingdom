@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-05-26 18:17+0800\n"
+"PO-Revision-Date: 2013-10-29 11:03+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -1399,12 +1399,6 @@ msgstr "日期"
 msgid "Clear"
 msgstr ""
 
-#. [button]: id=restore
-#: data/gui/default/window/data_manage.cfg:275
-#: data/gui/default/window/data_manage.cfg:276
-msgid "Restore"
-msgstr ""
-
 #. [button]: id=backup
 #: data/gui/default/window/data_manage.cfg:292
 #: data/gui/default/window/data_manage.cfg:293
@@ -1681,11 +1675,26 @@ msgstr "否"
 msgid "Load Game"
 msgstr "读取游戏"
 
+msgid "Local"
+msgstr "本地"
+
+msgid "Network"
+msgstr "网络"
+
 #. [button]: id=delete
 #: data/gui/default/window/game_load.cfg:352
 #: data/gui/default/window/game_load.cfg:353
 msgid "Delete"
 msgstr "删除"
+
+msgid "Upload"
+msgstr "上传"
+
+msgid "Download"
+msgstr "下载"
+
+msgid "Uploader"
+msgstr "上传人"
 
 #. [toggle_button]: id=show_replay
 #: data/gui/default/window/game_load.cfg:371
@@ -2384,6 +2393,9 @@ msgstr "贡献者"
 msgid "View the credits"
 msgstr "查看制作者名单"
 
+msgid "Purchase item"
+msgstr "购买项目"
+
 #. [grid]
 #: data/gui/default/window/title_screen.cfg:232
 msgid "Quit the game"
@@ -2483,6 +2495,16 @@ msgstr "格子尺寸"
 #: src/game_preferences_display.cpp:166
 msgid "Show Grid"
 msgstr "显示网格"
+
+msgid "Get one card every 25 turns"
+msgstr "每隔25回合得到一张卡"
+
+msgid "More tactic slot"
+msgstr "更多预激活战法"
+
+#: src/game_preferences_display.cpp:166
+msgid "Don't display message when replay"
+msgstr "回放时不显示信息框"
 
 #: src/game_preferences_display.cpp:167 src/game_preferences_display.cpp:350
 msgid "Save Replay on SP/MP Victory or MP Defeat"
@@ -3774,6 +3796,9 @@ msgstr "治安"
 msgid "Task"
 msgstr "任务"
 
+msgid "Soldiers"
+msgstr "士兵部队"
+
 msgid "side list"
 msgstr "全势力"
 
@@ -3821,6 +3846,9 @@ msgstr "玩择玩家"
 
 msgid "Start a random map campaign"
 msgstr "战役（随机地图）"
+
+msgid "Profile player hero"
+msgstr "配置玩家武将"
 
 msgid "List"
 msgstr "情报"
@@ -4368,14 +4396,23 @@ msgstr "姓"
 msgid "Side feature"
 msgstr "势力特技"
 
+msgid "Register"
+msgstr "注册"
+
+msgid "Synchronize"
+msgstr "同步"
+
 msgid "Create"
 msgstr "创建"
 
 msgid "Stronger"
 msgstr "较强"
 
-msgid "Don't accept empty, invalid '$key' value"
-msgstr "不允许是空，无效“$key”值"
+msgid "Invalid '$key' value, not accept empty"
+msgstr "无效“$key”值，不能是空"
+
+msgid "Include unsupportable character: $char, invalid '$str' value"
+msgstr "包含不支持的字符：$char，无效“$str”值"
 
 msgid "Range is [$min, $max], invalid '$key' value:"
 msgstr "范围[$min, $max]，无效“$key”值："
@@ -4509,11 +4546,158 @@ msgstr "城外"
 msgid "Economy area"
 msgstr "经济区"
 
-#~ msgid "Prefs section^Multiplayer"
-#~ msgstr "多人游戏"
+msgid "tactical^Formation"
+msgstr "阵法"
 
-#~ msgid "Lower CPU usage"
-#~ msgstr "降低CPU使用率"
+#
+# Inapp purchase
+#
+msgid "Shop"
+msgstr "商店"
 
-#~ msgid "Difficulty: "
-#~ msgstr "难度："
+msgid "Only $platforms support in-app purchase"
+msgstr "只$platforms平台支持内购"
+
+msgid "Please choose item you want to purchase"
+msgstr "请选择您要购买的项目"
+
+msgid "Restore"
+msgstr "恢复"
+
+msgid "Purchase"
+msgstr "购买"
+
+msgid "Notice"
+msgstr "注意"
+
+msgid "Effect mode"
+msgstr "影响模式"
+
+msgid "Uninstall \"War of Kingdom\" will clear purchase recorder"
+msgstr "卸载“王国战争”会清除购买记录"
+
+msgid "Update \"War of Kingdom\" will clear purchase recorder"
+msgstr "更新“王国战争”会清除购买记录"
+
+msgid "Purchasing '$name'"
+msgstr "正在购买“$name”"
+
+msgid "Purchas '$name' $result|!"
+msgstr "购买“$name”$result|！"
+
+msgid "Restoring purchased items"
+msgstr "正在恢复已购买项目"
+
+msgid "Restore purchased items $result|!"
+msgstr "恢复已购买项目$result|！"
+
+msgid "Success"
+msgstr "成功"
+
+msgid "Failed"
+msgstr "失败"
+
+msgid "Checksum dismatch"
+msgstr "较验和不匹配"
+
+msgid "You or creator has modified resource file, cannot join!"
+msgstr "你或创建者修改了资源文件，不能加入！"
+
+msgid "Appoint Noble"
+msgstr "赐与爵位"
+
+#
+# City List Dialog
+#
+msgid "noble^Level"
+msgstr "品级"
+
+msgid "noble^Lv$level"
+msgstr "$level品"
+
+msgid "Adjust"
+msgstr "调整"
+
+#
+# user report
+#
+msgid "Display user report"
+msgstr "显示用户报表"
+
+#
+# Create Hero
+#
+msgid "Username"
+msgstr "用户"
+
+msgid "Player pass"
+msgstr "通关记录"
+
+msgid "Rank pass"
+msgstr "通关排名"
+
+msgid "Rank score"
+msgstr "积分排名"
+
+msgid "kingdom^Score"
+msgstr "积分"
+
+msgid "kingdom^Coin"
+msgstr "王国币"
+
+msgid "scenario^Difficulty"
+msgstr "难度"
+
+msgid "scenario^Turns"
+msgstr "回合数"
+
+msgid "scenario^Capture fort"
+msgstr "占领据点"
+
+msgid "scenario^Perfect turns"
+msgstr "完美回合数"
+
+msgid "perfect^Perfect"
+msgstr "完美"
+
+#
+# register, config account
+#
+msgid "Register, config account"
+msgstr "注册、设置账号"
+
+msgid "Validate password"
+msgstr "确认密码"
+
+msgid "Password"
+msgstr "密码"
+
+msgid "account^remark($server, $host, $register, $ok)"
+msgstr ""
+"一、请正确输入$server上的账号/密码\n"
+"二、若没有账号请按以下两种方法之一注册。1）在这里输入账号/密码，然后"
+"按“$register”；2）运行浏览器打开$host，注册个论坛账号\n"
+"三、若希望将来设置或只玩单机，那只要输入非空账号/密码，然后按“$ok”即可"
+
+msgid "account^detect invalid($account, $ps)"
+msgstr ""
+"检测到无效账号，请正确设置账号/密码\n"
+"$ps：进入游戏后，可通过“玩家武将”窗口中的“$account”再次弹出此窗口"
+
+msgid "PS"
+msgstr "注"
+
+msgid "$validate_password isn't same as $password"
+msgstr "$validate_password和$password不一致"
+
+msgid "'$key' value must combine $min to $max characters"
+msgstr "“$key”必须由$min到$max个字符组成"
+
+msgid "Invalid '$key' value, $username is reserved!"
+msgstr "无效“$key”值，$username是保留字符串！"
+
+msgid "VIP exclusive"
+msgstr "会员专有"
+
+#~ msgid "Don't accept empty, invalid '$key' value"
+#~ msgstr "不允许是空，无效“$key”值"

@@ -105,7 +105,7 @@ class vconfig;
 
 #define HEROS_INVALID_NUMBER	0xffff
 #define HEROS_INVALID_SIDE		0xff
-#define HEROS_DEFAULT_CITY		0
+#define HEROS_ROAM_CITY			0
 #define HEROS_DEFAULT_STATUS	hero_status_unstage
 #define HEROS_NO_FEATURE		0xff
 
@@ -222,7 +222,7 @@ enum {
 	hero_skill_encourage,
 	hero_skill_hero,
 	hero_skill_demolish,
-	hero_skill_t6,
+	hero_skill_formation,
 	hero_skill_t7,
 	hero_skill_max = hero_skill_t7,
 };
@@ -273,6 +273,9 @@ enum {
 	hero_featrue_frighten,
 	hero_featrue_indomitable,
 	hero_featrue_backstab, // --> 60
+	hero_feature_inspirit,
+	hero_feature_granary,
+	hero_feature_ground,
 
 	hero_feature_complex_min = HEROS_BASE_FEATURE_COUNT,
 
@@ -323,6 +326,11 @@ enum {
 #define HERO_PREFIX_STR_TECHNOLOGY	"technology-"
 #define HERO_PREFIX_STR_TECHNOLOGY_DESC	"technology_desc-"
 
+#define HERO_PREFIX_STR_FORMATION		"formation-"
+#define HERO_PREFIX_STR_FORMATION_DESC	"formation_desc-"
+#define HERO_PREFIX_STR_FORMATION_ICON	"icon-"
+#define HERO_PREFIX_STR_FORMATION_BG	"bg_image-"
+
 #define HEROS_NO_CHARACTER		0xff
 #define HERO_PREFIX_STR_CHARACTER	"character-"
 #define HERO_PREFIX_STR_CHARACTER_DESC	"character_desc-"
@@ -330,6 +338,9 @@ enum {
 #define NO_DECREE				-1
 #define HERO_PREFIX_STR_DECREE		"decree-"
 #define HERO_PREFIX_STR_DECREE_DESC	"decree_desc-"
+
+#define HEROS_NO_NOBLE			0xff
+#define HERO_PREFIX_STR_NOBLE		"noble-"
 
 struct hero_5fields_t {
 	uint16_t leadership_;
@@ -360,7 +371,7 @@ struct hero_feeling {
 	uint8_t treasure_;	\
 	uint8_t tactic_;	\
 	uint8_t cost_;	\
-	uint8_t reserve1_;	\
+	uint8_t noble_;	\
 	uint16_t image_;	\
 	uint16_t leadership_;	\
 	uint16_t force_;	\
@@ -385,6 +396,18 @@ struct hero_feeling {
 struct hero_fields_t {
 	HERO_FIELDS;
 }; 
+
+// use to increase hero's xp
+struct hblock {
+	int leadership;
+	int force;
+	int intellect;
+	int politics;
+	int charm;
+	int meritorious;
+	int arms[HEROS_MAX_ARMS];
+	int skill[HEROS_MAX_SKILL];
+};
 
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
 class hero;
@@ -420,23 +443,12 @@ struct ublock {
 	bool skillx2;
 };
 
-// use to increase hero's xp
-struct hblock {
-	int leadership;
-	int force;
-	int intellect;
-	int politics;
-	int charm;
-	int meritorious;
-	int arms[HEROS_MAX_ARMS];
-	int skill[HEROS_MAX_SKILL];
-};
-
 extern ublock ub;
 ublock& generic_ublock();
 ublock& attack_ublock(const unit& attack, bool opp_is_artifical = false);
 ublock& turn_ublock(const unit& u);
 ublock& exploiture_ublock(int markets, int technologies, int business_speed, int technology_speed, bool abilityx2, bool skillx2);
+ublock& duel_ublock(const unit& u);
 
 extern hblock hb;
 hblock& generic_hblock();
@@ -452,6 +464,8 @@ extern int navigation_per_xp;
 class hero: public hero_fields_t
 {
 public:
+	static std::string image_file_root_;
+
 	static std::string adaptability_str2(uint16_t adaptability);
 	static std::string& gender_str(int gender);
 	static std::string& arms_str(int arms);
@@ -464,10 +478,23 @@ public:
 	static const std::string& official_str(int offical);
 	static const std::string& flag_str(int flag);
 
+	static int number_system;
+	static int number_civilian;
+	static int number_scout;
+	static int number_empty_leader;
+	static int number_system_min;
+	static int number_system_max;
+	static bool is_system(int h);
+
+	static int number_soldier_min;
+	static int number_soldier_max;
+	static bool is_soldier(int h);
+
 	static int number_market;
 	static int number_technology;
 	static int number_wall;
 	static int number_keep;
+	static int number_fort;
 	static int number_tower;
 	static int number_tactic;
 	static int number_artifical_min;
@@ -477,15 +504,13 @@ public:
 
 	static int number_businessman;
 	static int number_scholar;
+	static int number_transport;
 	static int number_commoner_min;
 	static int number_commoner_max;
 	static bool is_commoner(int h);
 
-	static int number_scout;
-	static int number_empty_leader;
-	static int number_system_min;
-	static int number_system_max;
-	static bool is_system(int h);
+	static int number_city_min;
+	static int number_normal_min;
 
 	hero(uint16_t number, uint16_t leadership = 0, uint16_t force = 0, uint16_t intellect = 0, uint16_t politics = 0, uint16_t charm = 0);
 	hero(const hero& that);
@@ -516,6 +541,7 @@ public:
 	bool get_flag(int flag) const;
 
 	int increase_feeling(hero& to, int inc, int& descent_number);
+	bool has_nomal_noble() const;
 
 	void to_unstage();
 	void change_language();
@@ -531,7 +557,7 @@ public:
 
 	const char* biography();
 
-	std::string& heart_str();
+	std::string heart_str();
 
 	enum {ARMS, SKILL};
 
@@ -540,7 +566,7 @@ public:
 	bool internal_matches_filter(const vconfig& cfg);
 	void increase_feeling_each(unit_map& units, hero_map& heros, hero& to, int inc);
 #endif
-	bool get_xp(const increase_xp::hblock& hb);
+	bool get_xp(const hblock& hb);
 
 // attribute
 public:
@@ -548,7 +574,6 @@ public:
 
 private:
 	friend class hero_map;
-	static std::string image_file_root_;
 	static std::string gender_str_[HEROS_MAX_GENDER];
 	static std::string feature_str_[HEROS_MAX_FEATURE];
 	static std::string feature_desc_str_[HEROS_MAX_FEATURE];
@@ -560,11 +585,10 @@ private:
 	static std::string flag_str_[HEROS_FLAGS];
 	static std::vector<int> valid_features_;
 
-	char imgfile_[32];
-	char imgfile2_[32];
+	std::string imgfile_;
+	std::string imgfile2_;
 	std::string name_str_;
 	std::string surname_str_;
-	std::string heart_str_;
 };
 
 
@@ -579,6 +603,8 @@ extern std::vector<size_t> empty_vector_size_t;
 class hero_map
 {
 public:
+	static size_t map_size_from_dat;
+
 	hero_map(const std::string& path = "");
 	~hero_map();
 
@@ -660,6 +686,8 @@ public:
 	bool map_to_file_fp(posix_file_t fp);
 	bool map_from_file(const std::string& fname);
 	bool map_from_file_fp(posix_file_t fp, uint32_t file_offset = 0, uint32_t valid_bytes = 0);
+
+	bool map_from_mem(const uint8_t* mem, int len);
 	uint32_t map_to_mem(uint8_t* data) const;
 
 	iterator find(const size_t num);
@@ -698,6 +726,21 @@ private:
 	hero** map_;
 	uint16_t map_vsize_;
 };
+
+class tgroup
+{
+public:
+	tgroup()
+		: leader_(hero(HEROS_INVALID_NUMBER))
+	{}
+
+	hero& leader() { return leader_; }
+	const hero& leader() const { return leader_; }
+
+private:
+	hero leader_;
+};
+extern tgroup group;
 
 // define allowed conversions.
 template <>

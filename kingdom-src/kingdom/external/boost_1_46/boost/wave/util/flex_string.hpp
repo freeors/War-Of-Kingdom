@@ -102,12 +102,7 @@ class StoragePolicy
 #include <functional>
 #include <limits>
 #include <stdexcept>
-
-#if defined(__PATHSCALE__)
-  #include <ios>
-#else
-  #include <iosfwd>
-#endif
+#include <ios>
 
 #include <cstddef>
 #include <cstring>
@@ -144,13 +139,13 @@ namespace flex_string_details
         case 0:
             while (b != e)
             {
-                *b = c; ++b;
-        case 7: *b = c; ++b;
-        case 6: *b = c; ++b;
-        case 5: *b = c; ++b;
-        case 4: *b = c; ++b;
-        case 3: *b = c; ++b;
-        case 2: *b = c; ++b;
+                *b = c; ++b; BOOST_FALLTHROUGH;
+        case 7: *b = c; ++b; BOOST_FALLTHROUGH;
+        case 6: *b = c; ++b; BOOST_FALLTHROUGH;
+        case 5: *b = c; ++b; BOOST_FALLTHROUGH;
+        case 4: *b = c; ++b; BOOST_FALLTHROUGH;
+        case 3: *b = c; ++b; BOOST_FALLTHROUGH;
+        case 2: *b = c; ++b; BOOST_FALLTHROUGH;
         case 1: *b = c; ++b;
             }
         }

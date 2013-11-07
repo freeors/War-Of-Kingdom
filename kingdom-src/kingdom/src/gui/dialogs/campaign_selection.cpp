@@ -17,9 +17,9 @@
 
 #include "gui/dialogs/campaign_selection.hpp"
 
-#include "foreach.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/image.hpp"
+#include "gui/widgets/label.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 #include "gui/widgets/list.hpp"
 #else
@@ -31,7 +31,9 @@
 #include "gui/widgets/toggle_panel.hpp"
 #include "gui/widgets/window.hpp"
 #include "serialization/string_utils.hpp"
+#include "gettext.hpp"
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 namespace gui2 {
@@ -90,6 +92,11 @@ void tcampaign_selection::campaign_selected(twindow& window)
 
 void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 {
+	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
+	if (catalog_ == TUTORIAL_CATALOG) {
+		label->set_label(_("Tutorial"));
+	}
+
 	/***** Setup campaign list. *****/
 	tlistbox& list =
 			find_widget<tlistbox>(&window, "campaign_list", false);
@@ -111,11 +118,20 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 			&window, "campaign_details", false);
 
 	size_t n = 0;
-	foreach (const config &c, campaigns_) {
-		if (c["id"] == "tutorial") {
-			n ++;
-			continue;
+	BOOST_FOREACH (const config &c, campaigns_) {
+		const std::string catalog = c["catalog"].str();
+		if (catalog_ == NONE_CATALOG) {
+			if (!catalog.empty()) {
+				n ++;
+				continue;
+			}
+		} else if (catalog_ == TUTORIAL_CATALOG) {
+			if (catalog != "tutorial") {
+				n ++;
+				continue;
+			}
 		}
+
 		/*** Add list item ***/
 		string_map list_item;
 		std::map<std::string, string_map> list_item_item;
@@ -134,10 +150,10 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 		tcontrol* widget = dynamic_cast<tcontrol*>(grid->find("mode", false));
 		if (widget) {
 			const std::string& mode = c["mode"].str();
-			if (mode == "rpg") {
-				widget->set_label("misc/mode-rpg.png");
-			} else if (mode == "tower") {
+			if (mode == "tower") {
 				widget->set_label("misc/mode-tower.png");
+			} else if (c["rank"].to_int() == 100) {
+				widget->set_label("misc/mode-rpg.png");
 			}
 		}
 

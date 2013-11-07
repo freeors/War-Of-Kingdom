@@ -66,14 +66,18 @@
     <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="keyword">typename</SPAN> Codecvt::intern_type  char_type;
     <SPAN CLASS="keyword">typedef</SPAN> <SPAN CLASS="omitted">implementation-defined</SPAN>         category;
     <A CLASS="documented" HREF="#constructors">code_converter</A>();
-    <A CLASS="documented" HREF="#constructors">code_converter</A>( <SPAN CLASS="keyword">const</SPAN> Device& dev, 
-                    std::streamsize buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );
-    <SPAN CLASS="keyword">void</SPAN> <A CLASS="documented" HREF="#open">open</A>( <SPAN CLASS="keyword">const</SPAN> Device& dev, 
-               std::streamsize buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );
+    <A CLASS="documented" HREF="#constructors">code_converter</A>( <SPAN CLASS="keyword">const</SPAN> Device&amp; dev, 
+                    int buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );
+    <A CLASS="documented" HREF="code_converter.html#constructors">code_converter</A>( <SPAN CLASS="omitted">device-constructor-args...</SPAN>,
+                    int buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );
+    <SPAN CLASS="keyword">void</SPAN> <A CLASS="documented" HREF="code_converter.html#open">open</A>( <SPAN CLASS="keyword">const</SPAN> Device&amp; dev, 
+               int buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );
+    <SPAN CLASS="keyword">void</SPAN> <A CLASS="documented" HREF="code_converter.html#open">open</A>( <SPAN CLASS="omitted">device-constructor-args...</SPAN>,
+               int buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );
     <SPAN CLASS="keyword">bool</SPAN> <A CLASS="documented" HREF="#is_open">is_open</A>() <SPAN CLASS="keyword">const</SPAN>;
     <SPAN CLASS="keyword">void</SPAN> <A CLASS="documented" HREF="#close">close</A>();
-    std::locale <A CLASS="documented" HREF="#imbue">imbue</A>(<SPAN CLASS="keyword">const</SPAN> std::locale& loc); 
-    Device& <A CLASS="documented" HREF="#operator_star">operator*</A>();
+    std::locale <A CLASS="documented" HREF="#imbue">imbue</A>(<SPAN CLASS="keyword">const</SPAN> std::locale&amp; loc);
+    Device&amp; <A CLASS="documented" HREF="#operator_star">operator*</A>();
     Device* <A CLASS="documented" HREF="#operator_arrow">operator-&gt;</A>();
 };
 
@@ -106,8 +110,10 @@
 <H4><CODE>code_converter::code_converter</CODE></H4>
 
 <PRE CLASS="broken_ie">    code_converter();
-    code_converter( <SPAN CLASS="keyword">const</SPAN> Device& dev, 
-                    std::streamsize buffer_size );</PRE>
+    code_converter( <SPAN CLASS="keyword">const</SPAN> Device&amp; dev, 
+                    int buffer_size );
+    code_converter( <SPAN CLASS="omitted">device-constructor-args...</SPAN>, 
+                    int buffer_size );</PRE>
     
 <P>
     The first member constructs a <CODE>code_converter</CODE> with no associated instance of the Device type <CODE>Device</CODE>. Before the instance can be used for i/o, the member function <CODE>open()</CODE> must be invoked. 
@@ -117,10 +123,14 @@
     The second member constructs a <CODE>code_converter</CODE> based on the given instance of <CODE>Device</CODE>. The second parameter determines the size of the buffers or buffers used for code conversion. If a <CODE>std::codecvt</CODE> was specified as a template parameter, an instance of it will be default constructed. Otherwise, a copy of the global <CODE>locale</CODE> will be made, and an instance of <CODE>std::codecvt&lt;wchar_t, char, std::mbstate_t&gt;</CODE> will be fetched from it.
 </P>
 
+<P>
+    The third member constructs a <CODE>code_converter</CODE> based on the given instance of <CODE>Device</CODE> constructed with the forwarded arguments. Take care as the <CODE>buffer_size</CODE> can be confused for a constructor argument if it isn't an <CODE>int</CODE>.<br>
+</P>
+
 <A NAME="imbue"></A>
 <H4><CODE>code_converter::imbue</CODE></H4>
 
-<PRE CLASS="broken_ie">    std::locale imbue(<SPAN CLASS="keyword">const</SPAN> std::locale& loc);</PRE>
+<PRE CLASS="broken_ie">    std::locale imbue(<SPAN CLASS="keyword">const</SPAN> std::locale&amp; loc);</PRE>
 
 <P>
     Used to specify a locale from which a <CODE>std::codecvt</CODE> facet will be fetched to perform code conversion. The effect of invoking imbue while code conversion is in progress is undefined.
@@ -133,11 +143,16 @@
 <A NAME="open"></A>
 <H4><CODE>code_converter::open</CODE></H4>
 
-<PRE CLASS="broken_ie">     <SPAN CLASS="keyword">void</SPAN> open( <SPAN CLASS="keyword">const</SPAN> Device& dev, 
-                std::streamsize buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );</PRE>
+<PRE CLASS="broken_ie">     <SPAN CLASS="keyword">void</SPAN> open( <SPAN CLASS="keyword">const</SPAN> Device&amp; dev,
+                std::streamsize buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );
+     <SPAN CLASS="keyword">void</SPAN> open( <SPAN CLASS="omitted">device-constructor-args</SPAN>,
+                std::streamsize buffer_size = <SPAN CLASS="omitted">default_value</SPAN> );<br></PRE>
 
 <P>
-    Assocaites the given instance of <CODE>Device</CODE> with <CODE>this</CODE> instance of <CODE>code_converter</CODE>, if there is no such instance currently associated; otherwise, throws <CODE>std::ios_base::failure</CODE>. The second parameter determines the size of the buffer or buffers used for code conversion. If a <CODE>std::codecvt</CODE> was specified as a template parameter, an instance of it will be default constructed. Otherwise, a copy of the global <CODE>locale</CODE> will be made, and an instance of <CODE>std::codecvt&lt;wchar_t, char, std::mbstate_t&gt;</CODE> will be fetched from it.
+    Associates the given instance of <CODE>Device</CODE> with <CODE>this</CODE> instance of <CODE>code_converter</CODE>, if there is no such instance currently associated; otherwise, throws <CODE>std::ios_base::failure</CODE>. The second parameter determines the size of the buffer or buffers used for code conversion. If a <CODE>std::codecvt</CODE> was specified as a template parameter, an instance of it will be default constructed. Otherwise, a copy of the global <CODE>locale</CODE> will be made, and an instance of <CODE>std::codecvt&lt;wchar_t, char, std::mbstate_t&gt;</CODE> will be fetched from it.
+</P>
+<P>
+    The second member constructs a <CODE>Device</CODE> with the forwarded arguments. Take care as the <CODE>buffer_size</CODE> can be confused for a constructor argument if it isn't an <CODE>int</CODE>.
 </P>
 
 <A NAME="is_open"></A>
@@ -159,7 +174,7 @@
 <A NAME="operator_star"></A>
 <H4><CODE>code_converter::operator*</CODE></H4>
 
-<PRE CLASS="broken_ie">    Device& operator*();</PRE>
+<PRE CLASS="broken_ie">    Device&amp; operator*();</PRE>
 
 <P>
      Returns a reference to the instance of Device associated with this instance of <CODE>code_converter</CODE>, which must be <A HREF="#is_open">open</A>.
@@ -177,7 +192,6 @@
 <!-- Begin Footer -->
 
 <HR>
-<P CLASS="copyright">Revised 02 Feb 2008</P>
 
 <P CLASS="copyright">&copy; Copyright 2008 <a href="http://www.coderage.com/" target="_top">CodeRage, LLC</a><br/>&copy; Copyright 2004-2007 <a href="http://www.coderage.com/turkanis/" target="_top">Jonathan Turkanis</a></P>
 <P CLASS="copyright"> 

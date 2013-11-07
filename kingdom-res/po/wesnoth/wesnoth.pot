@@ -2344,6 +2344,18 @@ msgstr ""
 msgid "indomitable desc"
 msgstr ""
 
+msgid "bewitch"
+msgstr ""
+
+msgid "bewitch desc"
+msgstr ""
+
+msgid "guard"
+msgstr ""
+
+msgid "guard desc"
+msgstr ""
+
 #. [hides]: id=ambush
 #: data/core/macros/abilities.cfg:390 data/core/macros/abilities.cfg:392
 msgid "ambush"
@@ -4589,6 +4601,9 @@ msgstr ""
 msgid "Official Wesnoth Server"
 msgstr ""
 
+msgid "Official Kingdom Server"
+msgstr ""
+
 #. [server]
 #: data/game_config.cfg:8 data/game_config.cfg:12
 msgid "Alternate Wesnoth Server"
@@ -6155,10 +6170,6 @@ msgstr ""
 msgid "Date"
 msgstr ""
 
-#: src/dialogs.cpp:614 src/multiplayer_create.cpp:109
-msgid "Load Game"
-msgstr ""
-
 #: src/dialogs.cpp:615
 msgid "Choose the game to load"
 msgstr ""
@@ -6196,7 +6207,7 @@ msgid "Moves: "
 msgstr ""
 
 #: src/game.cpp:673 src/game.cpp:1469
-msgid "The Battle for Wesnoth"
+msgid "The War of Kingdom"
 msgstr ""
 
 #: src/game.cpp:992 src/game.cpp:1010
@@ -7310,10 +7321,6 @@ msgstr ""
 msgid "Show fps."
 msgstr ""
 
-#: src/menu_events.cpp:2516
-msgid "Save game."
-msgstr ""
-
 #: src/menu_events.cpp:2518
 msgid "Quit game."
 msgstr ""
@@ -7660,11 +7667,14 @@ msgid "Choose weapon:"
 msgstr ""
 
 #: src/multiplayer.cpp:142 src/multiplayer.cpp:179
-msgid "Connecting to Server..."
+msgid "Connecting to $server..."
 msgstr ""
 
 #: src/multiplayer.cpp:152
-msgid "Reading from Server..."
+msgid "Reading from $server..."
+msgstr ""
+
+msgid "Sending to $server..."
 msgstr ""
 
 #: src/multiplayer.cpp:162
@@ -8058,10 +8068,6 @@ msgstr ""
 msgid "Quick Replays"
 msgstr ""
 
-#: src/multiplayer_lobby.cpp:734
-msgid "Preferences"
-msgstr ""
-
 #: src/multiplayer_lobby.cpp:736
 msgid "Quit"
 msgstr ""
@@ -8446,16 +8452,8 @@ msgstr ""
 msgid "Could not write to file"
 msgstr ""
 
-#: src/savegame.cpp:943
-msgid "Save Replay"
-msgstr ""
-
 #: src/savegame.cpp:961
 msgid "Could not auto save the game. Please save the game manually."
-msgstr ""
-
-#: src/savegame.cpp:1012
-msgid "Save Game"
 msgstr ""
 
 #: src/serialization/parser.cpp:124
@@ -8808,6 +8806,12 @@ msgstr ""
 msgid "End defending $city, $first and $second terminate treaty of alliance."
 msgstr ""
 
+msgid "$first and $second concluded treaty of alliance."
+msgstr ""
+
+msgid "$first and $second terminate treaty of alliance."
+msgstr ""
+
 msgid "$first occupy $second."
 msgstr ""
 
@@ -9041,6 +9045,12 @@ msgstr ""
 msgid "$hero official of $city's mayor is terminated."
 msgstr ""
 
+msgid "Congratulate! You are appointed $noble."
+msgstr ""
+
+msgid "Congratulate! $hero is appointed $noble."
+msgstr ""
+
 msgid "You exchanged $ai using $human."
 msgstr ""
 
@@ -9069,6 +9079,76 @@ msgid "Select a unit to action on"
 msgstr ""
 
 msgid "Select a grid to build on"
+msgstr ""
+
+msgid "Do you want to spend $cost gold to purchase move?"
+msgstr ""
+
+msgid "If have $cost gold, you can purchase move."
+msgstr ""
+
+msgid "$username is reserved! Please modify to your username. To modify: Enter your username in \"Player profile\" Setting."
+msgstr ""
+
+msgid "Upload successfully!"
+msgstr ""
+
+#
+# http server
+#
+msgid "Invalid access! Please check your $server login information. "
+"To set up: Press $account in \"Player profile\" Setting."
+msgstr ""
+
+msgid "Invalid access! pre_kingdom_version table on $server isn't ready."
+msgstr ""
+
+msgid "$file maybe deleted by server. Download fail!"
+msgstr ""
+
+msgid "Had uploaded pass that create at $create, cannot upload again!"
+msgstr ""
+
+msgid "$response\n\nPlease check setting of BBS Server!"
+msgstr ""
+
+msgid "You can upload one only, it will delete existed, continue?"
+msgstr ""
+
+msgid "No avater on $server. You can upload $middle and $small to custom visualization."
+msgstr ""
+
+msgid "Download $name fail! $name format (size: $size, type: png), please check uploaded file on $server."
+msgstr ""
+
+msgid "Receive unkonwn data!\n\nPlease check if your version is the newest."
+msgstr ""
+
+msgid "Register success!"
+msgstr ""
+
+msgid "Username is duplicated!"
+msgstr ""
+
+msgid "Username is protected!"
+msgstr ""
+
+msgid "Unknown error!"
+msgstr ""
+
+msgid "middle avatar"
+msgstr ""
+
+msgid "small avatar"
+msgstr ""
+
+msgid "localhost"
+msgstr ""
+
+msgid "www.freeors.com"
+msgstr ""
+
+msgid "www.sanguohero.com"
 msgstr ""
 
 #
@@ -9129,6 +9209,18 @@ msgid "chill wave"
 msgstr ""
 
 msgid "lightning"
+msgstr ""
+
+msgid "Scenario"
+msgstr ""
+
+msgid "RPG"
+msgstr ""
+
+msgid "Tower"
+msgstr ""
+
+msgid "Unknown"
 msgstr ""
 
 #

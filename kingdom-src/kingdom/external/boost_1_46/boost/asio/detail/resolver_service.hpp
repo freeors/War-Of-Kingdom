@@ -2,7 +2,7 @@
 // detail/resolver_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2011 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,6 +18,7 @@
 #include <boost/asio/detail/config.hpp>
 #include <boost/asio/ip/basic_resolver_iterator.hpp>
 #include <boost/asio/ip/basic_resolver_query.hpp>
+#include <boost/asio/detail/addressof.hpp>
 #include <boost/asio/detail/resolve_endpoint_op.hpp>
 #include <boost/asio/detail/resolve_op.hpp>
 #include <boost/asio/detail/resolver_service_base.hpp>
@@ -67,15 +68,17 @@ public:
 
   // Asynchronously resolve a query to a list of entries.
   template <typename Handler>
-  void async_resolve(implementation_type& impl, const query_type& query,
-      Handler handler)
+  void async_resolve(implementation_type& impl,
+      const query_type& query, Handler& handler)
   {
     // Allocate and construct an operation to wrap the handler.
     typedef resolve_op<Protocol, Handler> op;
-    typename op::ptr p = { boost::addressof(handler),
+    typename op::ptr p = { boost::asio::detail::addressof(handler),
       boost_asio_handler_alloc_helpers::allocate(
         sizeof(op), handler), 0 };
     p.p = new (p.v) op(impl, query, io_service_impl_, handler);
+
+    BOOST_ASIO_HANDLER_CREATION((p.p, "resolver", &impl, "async_resolve"));
 
     start_resolve_op(p.p);
     p.v = p.p = 0;
@@ -97,15 +100,17 @@ public:
 
   // Asynchronously resolve an endpoint to a list of entries.
   template <typename Handler>
-  void async_resolve(implementation_type& impl, const endpoint_type& endpoint,
-      Handler handler)
+  void async_resolve(implementation_type& impl,
+      const endpoint_type& endpoint, Handler& handler)
   {
     // Allocate and construct an operation to wrap the handler.
     typedef resolve_endpoint_op<Protocol, Handler> op;
-    typename op::ptr p = { boost::addressof(handler),
+    typename op::ptr p = { boost::asio::detail::addressof(handler),
       boost_asio_handler_alloc_helpers::allocate(
         sizeof(op), handler), 0 };
     p.p = new (p.v) op(impl, endpoint, io_service_impl_, handler);
+
+    BOOST_ASIO_HANDLER_CREATION((p.p, "resolver", &impl, "async_resolve"));
 
     start_resolve_op(p.p);
     p.v = p.p = 0;

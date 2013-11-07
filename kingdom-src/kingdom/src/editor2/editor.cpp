@@ -3,7 +3,6 @@
 #include "filesystem.hpp"
 #include "sha1.hpp"
 #include "language.hpp"
-#include "foreach.hpp"
 #include "loadscreen.hpp"
 #include "editor.hpp"
 #include "posix.h"
@@ -12,12 +11,13 @@
 
 #include "unit_types.hpp"
 #include "builder.hpp"
+#include <boost/foreach.hpp>
 
 // language.cpp有init_textdomains函数体,但要把language.cpp加起来会出现很多unsoluve linke, 在这里实现一个
 // 这里实现和language.cpp中是一样的
 static void init_textdomains(const config& cfg)
 {
-	foreach (const config &t, cfg.child_range("textdomain"))
+	BOOST_FOREACH (const config &t, cfg.child_range("textdomain"))
 	{
 		const std::string &name = t["name"];
 		const std::string &path = t["path"];
@@ -79,9 +79,9 @@ std::string editor::check_scenario_cfg(const config& scenario_cfg)
 	std::vector<std::string>::const_iterator tmp;
 	std::stringstream str;
 
-	foreach (const config& side, scenario_cfg.child_range("side")) {
+	BOOST_FOREACH (const config& side, scenario_cfg.child_range("side")) {
 		const std::string leader = side["leader"];
-		foreach (const config& art, side.child_range("artifical")) {
+		BOOST_FOREACH (const config& art, side.child_range("artifical")) {
 			officialed_str.clear();
 			const std::string cityno = art["cityno"].str();
 			mayor_map[cityno] = art["mayor"].str();
@@ -131,7 +131,7 @@ std::string editor::check_scenario_cfg(const config& scenario_cfg)
 			}
 			officialed_map[cityno] = officialed_str;
 		}
-		foreach (const config& u, side.child_range("unit")) {
+		BOOST_FOREACH (const config& u, side.child_range("unit")) {
 			const std::string cityno = u["cityno"].str();
 			std::map<std::string, std::set<std::string> >::iterator find_it = officialed_map.find(cityno);
 			if (cityno != "0" && find_it == officialed_map.end()) {
@@ -187,8 +187,8 @@ std::string editor::check_mplayer_bin(const config& mplayer_cfg)
 	std::vector<std::string>::const_iterator tmp;
 	std::stringstream str;
 
-	foreach (const config& faction, mplayer_cfg.child_range("faction")) {
-		foreach (const config& art, faction.child_range("artifical")) {
+	BOOST_FOREACH (const config& faction, mplayer_cfg.child_range("faction")) {
+		BOOST_FOREACH (const config& art, faction.child_range("artifical")) {
 			str_vec = utils::split(art["heros_army"]);
 			for (tmp = str_vec.begin(); tmp != str_vec.end(); ++ tmp) {
 				if (holded_str.count(*tmp)) {
@@ -241,7 +241,7 @@ std::string editor::check_data_bin(const config& data_cfg)
 {
 	std::stringstream str;
 
-	foreach (const config& campaign, data_cfg.child_range("campaign")) {
+	BOOST_FOREACH (const config& campaign, data_cfg.child_range("campaign")) {
 		if (!campaign.has_attribute("id")) {
 			str << "Compaign hasn't id!";
 			return str.str();
@@ -275,12 +275,12 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 			
 			// extract [compaign_addon] block
 			config& refcfg = game_config_.child("campaign_addon");
-			foreach (const config &i, game_config_.child_range("textdomain")) {
+			BOOST_FOREACH (const config &i, game_config_.child_range("textdomain")) {
 				refcfg.add_child("textdomain", i);
 			}
 
 			// check scenario config valid
-			foreach (const config& scenario, refcfg.child_range("scenario")) {
+			BOOST_FOREACH (const config& scenario, refcfg.child_range("scenario")) {
 				std::string err_str = check_scenario_cfg(scenario);
 				if (!err_str.empty()) {
 					throw game::error(std::string("<") + name + std::string(">") + err_str);
@@ -299,7 +299,7 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 
 			// extract [editor] block
 			config& refcfg = game_config_.child("editor");
-			foreach (const config &i, game_config_.child_range("textdomain")) {
+			BOOST_FOREACH (const config &i, game_config_.child_range("textdomain")) {
 				refcfg.add_child("textdomain", i);
 			}
 
@@ -353,7 +353,8 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_DATA, game_config_, nfiles, sum_size, modified);
 			}
 			editor_config::data_cfg = game_config_;
-			unit_types.set_config(editor_config::data_cfg.child("units"));
+
+			editor_config::reload_data_bin();
 		} 
 	}
 	catch (game::error& e) {
@@ -391,7 +392,7 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 	std::string campaigns_path = path + "/campaigns";
 	std::vector<std::string> campaigns;
 
-	foreach (const config& cfg, campaigns_config_.child_range("campaign")) {
+	BOOST_FOREACH (const config& cfg, campaigns_config_.child_range("campaign")) {
 		campaigns.push_back(cfg["id"].str());
 		bin_types.push_back(editor::SCENARIO_DATA);
 	}
@@ -408,6 +409,7 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 		if (type == editor::SCENARIO_DATA) {
 			short_paths.push_back("data/core");
 			short_paths.push_back(std::string("data/campaigns/") + campaigns[campaign_index]);
+			filter |= SKIP_GUI_DIR | SKIP_INTERNAL_DIR;
 
 			desc.bin_name = campaigns[campaign_index] + ".bin";
 			
@@ -422,7 +424,7 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 		} else if (type == editor::EDITOR) {
 			short_paths.push_back("data/core");
 			short_paths.push_back("data/themes");
-			filter |= SKIP_SCENARIO_DIR;
+			filter |= SKIP_SCENARIO_DIR | SKIP_GUI_DIR | SKIP_INTERNAL_DIR;
 			
 			desc.bin_name = BASENAME_EDITOR;
 
@@ -447,7 +449,7 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 			// (type == editor::MAIN_DATA)
 			// no pre-defined
 			short_paths.push_back("data");
-			filter |= SKIP_SCENARIO_DIR;
+			filter |= SKIP_SCENARIO_DIR | SKIP_GUI_DIR;
 
 			desc.bin_name = BASENAME_DATA;
 

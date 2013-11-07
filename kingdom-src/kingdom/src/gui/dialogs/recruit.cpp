@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/recruit.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -41,6 +40,18 @@
 #include "play_controller.hpp"
 
 #include <boost/bind.hpp>
+
+bool sort_recruit::operator()(const hero* lhs, const hero* rhs) const
+{
+	if (lhs->official_ == hero_official_leader) return true;
+	if (rhs->official_ == hero_official_leader) return false;
+	if (ut_ && ut_->require() == unit_type::REQUIRE_FEMALE) {
+		if (lhs->gender_ != rhs->gender_) {
+			return lhs->gender_ == hero_gender_female;
+		}
+	}
+	return (lhs->leadership_ > rhs->leadership_) || (lhs->leadership_ == rhs->leadership_ && lhs->number_ < rhs->number_);
+}
 
 namespace gui2 {
 
@@ -94,6 +105,7 @@ trecruit::trecruit(game_display& gui, std::vector<team>& teams, unit_map& units,
 	, units_(units)
 	, heros_(heros)
 	, current_team_(teams_[city.side() - 1])
+	, max_level_(city.level())
 	, city_(city)
 	, cost_exponent_(cost_exponent)
 	, fresh_heros_()
@@ -103,6 +115,7 @@ trecruit::trecruit(game_display& gui, std::vector<team>& teams, unit_map& units,
 	, hero_table_(NULL)
 	, rpg_mode_(rpg_mode)
 {
+	max_level_ = std::max(max_level_, game_config::min_level);
 }
 
 void trecruit::type_selected2(twindow& window)
@@ -119,18 +132,6 @@ void trecruit::type_selected(twindow& window)
 
 	type_index_ = list.get_selected_row();
 	
-	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
-	const unit_type* t = unit_types_[type_index_];
-	if (!checked_heros_.empty() && gold >= t->cost() * cost_exponent_ / 100) {
-		if (!t->leader() || master()->official_ == hero_official_leader) {
-			ok->set_active(true);
-		} else {
-			ok->set_active(false);
-		}
-	} else {
-		ok->set_active(false);
-	}
-
 	refresh_tooltip(window);
 }
 
@@ -160,17 +161,6 @@ void trecruit::hero_toggled(twidget* widget)
 	}
 
 	twindow* window = toggle->get_window();
-	tbutton* ok = find_widget<tbutton>(window, "ok", false, true);
-	const unit_type* t = unit_types_[type_index_];
-	if (!checked_heros_.empty() && current_team_.gold() >= t->cost() * cost_exponent_ / 100) {
-		if (!t->leader() || master()->official_ == hero_official_leader) {
-			ok->set_active(true);
-		} else {
-			ok->set_active(false);
-		}
-	} else {
-		ok->set_active(false);
-	}
 
 	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(*window);
 	refresh_tooltip(*window);
@@ -180,6 +170,7 @@ void trecruit::refresh_tooltip(twindow& window)
 {
 	tstacked_widget* stacked = find_widget<tstacked_widget>(&window, "middle_top_part", false, true);
 	stacked->set_dirty(true);
+	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 
 	tscroll_label* tip = find_widget<tscroll_label>(&window, "tip", false, true);
 	if (checked_heros_.empty()) {
@@ -210,6 +201,7 @@ void trecruit::refresh_tooltip(twindow& window)
 		label->set_label("");
 
 		tip->set_label("");
+		ok->set_active(false);
 		return;
 	}
 
@@ -225,6 +217,7 @@ void trecruit::refresh_tooltip(twindow& window)
 			v.push_back(fresh_heros_[*itor]);
 		}
 	}
+	std::sort(v.begin(), v.end(), sort_recruit(t));
 	type_heros_pair pair(t, v);
 	unit temp(units_, heros_, teams_, pair, city_.cityno(), false);
 
@@ -275,11 +268,21 @@ void trecruit::refresh_tooltip(twindow& window)
 	label->set_label(lexical_cast<std::string>(temp.charm_));
 
 	tip->set_label(temp.form_recruit_tip());
+	if (current_team_.gold() >= t->cost() * cost_exponent_ / 100) {
+		if (t->require() == unit_type::REQUIRE_LEADER) {
+			ok->set_active(temp.master().official_ == hero_official_leader);
+		} else if (t->require() == unit_type::REQUIRE_FEMALE) {
+			ok->set_active(temp.master().gender_ == hero_gender_female);
+		} else {
+			ok->set_active(true);
+		}
+	} else {
+		ok->set_active(false);
+	}
 }
 
 void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 {
-	// int side_num = city_.side();
 	std::stringstream str;
 
 	tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
@@ -290,13 +293,14 @@ void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 	str << _("Recruit") << "(" << gold << sngettext("unit^Gold", "Gold", gold) << ")";
 	label->set_label(str.str());
 
+	game_config::current_level = std::min(game_config::current_level, max_level_);
 	switch_type_internal(window);
 
 	list->set_callback_value_change(dialog_callback<trecruit, &trecruit::type_selected2>);
 
 	hero_table_ = find_widget<tlistbox>(&window, "hero_table", false, true);
 	fresh_heros_ = city_.fresh_heros();
-	std::sort(fresh_heros_.begin(), fresh_heros_.end(), compare_recruit);
+	std::sort(fresh_heros_.begin(), fresh_heros_.end(), sort_recruit(NULL));
 
 	// fill data to hero_table
 	catalog_page(window, ABILITY_PAGE, false);
@@ -350,17 +354,6 @@ void trecruit::pre_show(CVideo& /*video*/, twindow& window)
 			, boost::ref(window)
 			, true));
 
-	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
-	const unit_type* t = unit_types_[type_index_];
-	if (!checked_heros_.empty() && gold >= t->cost() * cost_exponent_ / 100) {
-		if (!t->leader() || master()->official_ == hero_official_leader) {
-			ok->set_active(true);
-		} else {
-			ok->set_active(false);
-		}
-	} else {
-		ok->set_active(false);
-	}
 	tbutton* cancel = find_widget<tbutton>(&window, "cancel", false, true);
 	cancel->set_visible(rpg_mode_? twidget::INVISIBLE: twidget::VISIBLE);
 
@@ -650,7 +643,7 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 void trecruit::switch_type(twindow& window, bool next)
 {
 	if (next) {
-		if (game_config::current_level == game_config::max_level) {
+		if (game_config::current_level == max_level_) {
 			return;
 		}
 		game_config::current_level ++;
@@ -706,10 +699,12 @@ void trecruit::switch_type_internal(twindow& window)
 
 		tgrid* grid_ptr = list->get_row_grid(unit_types_.size());
 		tcontrol* widget = dynamic_cast<tcontrol*>(grid_ptr->find("utype_icon", false));
-		if (type->leader()) {
-			widget->set_label("utype/commander.png");
-		} else if (type->especial() != NO_ESPECIAL) {
+		if (type->especial() != NO_ESPECIAL) {
 			widget->set_label(unit_types.especial(type->especial()).image_);
+		} else if (type->require() == unit_type::REQUIRE_LEADER) {
+			widget->set_label("utype/commander.png");
+		} else if (type->require() == unit_type::REQUIRE_FEMALE) {
+			widget->set_label("misc/female.png");
 		}
 
 		unit_types_.push_back(type);
@@ -723,7 +718,7 @@ void trecruit::switch_type_internal(twindow& window)
 	tbutton* prev = find_widget<tbutton>(&window, "prev", false, true);
 	prev->set_active(game_config::current_level != game_config::min_level);
 	tbutton* next = find_widget<tbutton>(&window, "next", false, true);
-	next->set_active(game_config::current_level != game_config::max_level);
+	next->set_active(game_config::current_level != max_level_);
 
 	str.str("");
 	str << "misc/digit-big.png~CROP(" << 30 * game_config::current_level << ", 0, 30, 45)";

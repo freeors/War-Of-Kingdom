@@ -1,3 +1,17 @@
+/*
+   Copyright (C) 2009 - 2013
+   Part of the Battle for Wesnoth Project http://www.wesnoth.org
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License 2
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY.
+
+   See the COPYING file for more details.
+*/
+
 #ifndef SERVER_HPP_INCLUDED
 #define SERVER_HPP_INCLUDED
 
@@ -10,8 +24,9 @@
 #include "player.hpp"
 #include "room_manager.hpp"
 #include "simple_wml.hpp"
-#include <boost/scoped_ptr.hpp>
 
+#include <boost/function.hpp>
+#include <boost/scoped_ptr.hpp>
 
 class server
 {
@@ -20,12 +35,22 @@ public:
 	void run();
 private:
 	void send_error(network::connection sock, const char* msg, const char* error_code ="") const;
+	void send_error(network::connection sock, const std::string &msg, const char* error_code = "") const
+	{
+		send_error(sock, msg.c_str(), error_code);
+	}
+
+	void send_warning(network::connection sock, const char* msg, const char* warning_code ="") const;
+	void send_warning(network::connection sock, const std::string &msg, const char* warning_code = "") const
+	{
+		send_warning(sock, msg.c_str(), warning_code);
+	}
 
 	// The same as send_error(), we just add an extra child to the response
 	// telling the client the chosen username requires a password.
-	void send_password_request(network::connection sock, const char* msg,
+	void send_password_request(network::connection sock, const std::string& msg,
 			const std::string& user, const char* error_code ="",
-			bool force_confirmation =false);
+			bool force_confirmation = false);
 
 	const network::manager net_manager_;
 	network::server_manager server_;
@@ -45,6 +70,22 @@ private:
 	};
 
 	std::deque<connection_log> ip_log_;
+
+	struct login_log {
+		login_log(std::string _ip, int _attempts, time_t _first_attempt) :
+		ip(_ip), attempts(_attempts), first_attempt(_first_attempt) {}
+		std::string ip;
+		int attempts;
+		time_t first_attempt;
+
+		bool operator==(const login_log& l) const
+		{
+			// only the IP matters
+			return l.ip == ip;
+		}
+	};
+
+	std::deque<login_log> failed_logins_;
 
 	boost::scoped_ptr<user_handler> user_handler_;
 	std::map<network::connection,std::string> seeds_;
@@ -89,6 +130,9 @@ private:
 	std::string replay_save_path_;
 	bool allow_remote_shutdown_;
 	std::vector<std::string> tor_ip_list_;
+	int failed_login_limit_;
+	time_t failed_login_ban_;
+	std::deque<login_log>::size_type failed_login_buffer_size_;
 
 	/** Parse the server config into local variables. */
 	void load_config();
@@ -137,8 +181,38 @@ private:
 	void update_game_in_lobby(const wesnothd::game* g, network::connection exclude=0);
 
 	void start_new_server();
+
+	void setup_handlers();
+
+	typedef boost::function5<void, server*, const std::string&, const std::string&, std::string&, std::ostringstream *> cmd_handler;
+	std::map<std::string, cmd_handler> cmd_handlers_;
+
+	void shut_down_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void restart_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void sample_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void help_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void stats_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void metrics_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void requests_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void games_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void wml_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void netstats_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void adminmsg_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void pm_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void msg_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void lobbymsg_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void status_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void clones_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void bans_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void ban_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void unban_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void ungban_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void kick_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void kickban_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void gban_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void motd_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void searchlog_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
+	void dul_handler(const std::string &, const std::string &, std::string &, std::ostringstream *);
 };
-
-
 
 #endif

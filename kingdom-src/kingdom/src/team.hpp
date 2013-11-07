@@ -36,14 +36,12 @@ struct team_fields_t
 	int32_t shroud_;
 	int32_t gold_;
 	int32_t gold_add_;
-	int32_t hidden_;
 	int32_t start_gold_;
 	int32_t income_;
 	int32_t leader_;
 	int32_t navigation_;
 	int32_t tactic_point_;
 	int32_t objectives_changed_;
-	int32_t persistent_;
 	int32_t recall_cost_;
 	int32_t scroll_to_leader_;
 	int32_t share_maps_;
@@ -56,6 +54,8 @@ struct team_fields_t
 	int32_t cause_damage_;
 	int32_t been_damage_;
 	int32_t defeat_units_;
+	int32_t perfect_turns_;
+	int32_t defeat_units_one_turn_;
 
 	unit_segment id_;
 	unit_segment save_id_;
@@ -140,6 +140,8 @@ class team_
 public:
 	team_();
 
+	void increase_defeat_units_one_turn(int inc);
+
 	int leadership_speed_;
 	int force_speed_;
 	int intellect_speed_;
@@ -163,6 +165,8 @@ public:
 	int cause_damage_;
 	int been_damage_;
 	int defeat_units_;
+	int perfect_turns_;
+	int defeat_units_one_turn_;
 
 protected:
 	std::set<const unit_type*> can_build_;
@@ -208,7 +212,6 @@ public:
 		int income_per_village;
 		int recall_cost;
 		std::string team_name;
-		t_string user_team_name;
 		std::string save_id;
 		// 'id' of the current player (not necessarily unique)
 		std::string current_player;
@@ -236,14 +239,12 @@ public:
 		bool share_maps, share_view;
 		bool disallow_observers;
 		bool allow_player;
-		bool hidden;
 
 		std::string music;
 
 		std::string color;
 
 		int side;
-		bool persistent;
 	};
 
 
@@ -253,7 +254,7 @@ public:
 	static int empty_side_;
 
 	team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg, const gamemap& map, int gold, size_t team_size);
-	team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem, const gamemap& map, int gold = default_team_gold);
+	team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem, const gamemap& map, int gold, size_t team_size);
 	team(const team& that);
 
 	~team();
@@ -265,15 +266,9 @@ public:
 	void write(config& cfg) const;
 
 	void write(uint8_t* mem) const;
-	void read(const uint8_t* mem, const gamemap& map);
+	void read(const uint8_t* mem, const gamemap& map, size_t team_size);
 
-	bool get_village(const map_location&);
-	void get_villages(const std::set<map_location>&);
-	void lose_village(const map_location&);
-	void clear_villages() { villages_.clear(); }
-	const std::set<map_location>& villages() const { return villages_; }
-	bool owns_village(const map_location& loc) const
-		{ return villages_.count(loc) > 0; }
+	bool owns_village(const map_location& loc) const;
 
 	int side() const { return info_.side; }
 	int gold() const { return gold_; }
@@ -317,7 +312,7 @@ public:
 
 	void add_modification_internal(int apply_to, const config& effect);
 	void apply_holded_technologies_finish();
-	void apply_holded_technologies_modify();
+	void readjust_all_unit();
 
 	bool get_scroll_to_leader() const {return info_.scroll_to_leader;}
 
@@ -339,7 +334,7 @@ public:
 
 	bool is_enemy(int n) const;
 	bool ally_forbided(int n) const;
-	void set_ally(int n, bool alignment = true);
+	void set_ally(int n, bool alignment = true, bool dialog = false, bool adjust = false);
 	void set_forbid_turns(int n, int turns);
 	std::map<int, diplomatism_data>& diplomatisms() { return diplomatisms_; }
 	const std::map<int, diplomatism_data>& diplomatisms() const { return diplomatisms_; }
@@ -387,9 +382,7 @@ public:
 	bool is_network() const { return is_network_human() || is_network_ai(); }
 
 	void make_human() { info_.controller = team_info::HUMAN; }
-	void make_human_ai() { info_.controller = team_info::HUMAN_AI; }
 	void make_network() { info_.controller = team_info::NETWORK; }
-	void make_network_ai() { info_.controller = team_info::NETWORK_AI; }
 	void make_ai() { info_.controller = team_info::AI; }
 	// Should make the above make_*() functions obsolete, as it accepts controller
 	// by lexical or numerical id
@@ -397,8 +390,6 @@ public:
 	void change_controller(const std::string& controller);
 
 	std::string team_name() const;
-	const t_string &user_team_name() const { return info_.user_team_name; }
-	void change_team(const std::string &name, const t_string &user_name = "");
 
 	const std::string& flag() const { return info_.flag; }
 	const std::string& flag_icon() const { return info_.flag_icon; }
@@ -408,11 +399,11 @@ public:
 	int cost_exponent() const;
 	void add_city(artifical* city);
 	void erase_city(const artifical* city);
-	std::vector<artifical*>& holded_cities() { return holded_cities_; }
-	const std::vector<artifical*>& holded_cities() const { return holded_cities_; }
+	std::vector<artifical*>& holded_cities() { return holden_cities_; }
+	const std::vector<artifical*>& holded_cities() const { return holden_cities_; }
 
 	int character() const;
-	int technology_max_experience(const technology& t) const;
+	int technology_max_experience(const ttechnology& t) const;
 
 	bool add_card(size_t number, bool replay = false, bool dialog = false);
 	bool erase_card(int index, bool replay = false, bool dialog = false);
@@ -433,24 +424,30 @@ public:
 	void erase_treasure2(int index);
 	void find_treasure(hero_map& heros, play_controller& controller, int pos);
 
-	std::vector<const technology*>& holded_technologies() { return holded_technologies_; }
-	const std::vector<const technology*>& holded_technologies() const { return holded_technologies_; }
-	std::map<const technology*, int>& half_technologies() { return half_technologies_; }
-	const std::map<const technology*, int>& half_technologies() const { return half_technologies_; }
-	void select_ing_technology(const technology* set = NULL);
-	const technology* ing_technology() { return ing_technology_; }
-	const technology* ing_technology() const { return ing_technology_; }
+	std::vector<const ttechnology*>& holded_technologies() { return holded_technologies_; }
+	const std::vector<const ttechnology*>& holded_technologies() const { return holded_technologies_; }
+	std::map<const ttechnology*, int>& half_technologies() { return half_technologies_; }
+	const std::map<const ttechnology*, int>& half_technologies() const { return half_technologies_; }
+	void select_ing_technology(const ttechnology* set = NULL);
+	const ttechnology* ing_technology() { return ing_technology_; }
+	const ttechnology* ing_technology() const { return ing_technology_; }
+	void reselect_ing_technology();
+
+	void select_leader_noble(bool show_message);
+	void fill_normal_noble(bool init, bool show_message);
+	const std::map<int, hero*>& appointed_nobles(bool clear = false);
+	const std::set<int>& unappoint_nobles();
+	void appoint_noble(hero& h, int noble, bool show_message);
 
 	int max_tactic_point() const { return max_tactic_point_; }
 
-	SDL_Rect& city_rect() { return city_rect_; }
 	const SDL_Rect& city_rect() const { return city_rect_; }
 
 	void add_troop(unit* troop);
 	void erase_troop(const unit* troop);
 	void clear_troop();
-	std::pair<unit**, size_t> field_troop() { return std::make_pair<unit**, size_t>(field_troops_, field_troops_vsize_); }
-	const std::pair<unit**, size_t> field_troop() const { return std::make_pair<unit**, size_t>(field_troops_, field_troops_vsize_); }
+	std::pair<unit**, size_t> field_troop() { return std::make_pair(field_troops_, field_troops_vsize_); }
+	const std::pair<unit**, size_t> field_troop() const { return std::make_pair(field_troops_, field_troops_vsize_); }
 
 	//Returns true if the hex is shrouded/fogged for this side, or
 	//any other ally with shared vision.
@@ -477,9 +474,6 @@ public:
 	void set_auto_shroud_updates(bool value) { auto_shroud_updates_ = value; }
 	bool get_disallow_observers() const {return info_.disallow_observers; };
 	std::string map_color_to() const { return info_.color; };
-	bool hidden() const { return info_.hidden; }
-	void set_hidden(bool value) { info_.hidden=value; }
-	bool persistent() const {return info_.persistent;}
 
 	static int nteams();
 
@@ -534,18 +528,20 @@ private:
 	std::vector<size_t> holded_cards_;
 	std::vector<size_t> holded_treasures_;
 
-	std::vector<const technology*> holded_technologies_;
-	std::map<const technology*, int> half_technologies_;
-	const technology* ing_technology_;
+	std::vector<const ttechnology*> holded_technologies_;
+	std::map<const ttechnology*, int> half_technologies_;
+	const ttechnology* ing_technology_;
+
+	std::map<int, hero*> appointed_nobles_;
+	std::set<int> unappoint_nobles_;
 
 	int max_tactic_point_;
 	
 	int leader_;
-	std::vector<artifical*> holded_cities_;
+	std::vector<artifical*> holden_cities_;
 	std::map<int, int> character_;
 
 	int gold_;
-	std::set<map_location> villages_;
 	int navigation_;
 	int tactic_point_;
 	int bomb_turns_;

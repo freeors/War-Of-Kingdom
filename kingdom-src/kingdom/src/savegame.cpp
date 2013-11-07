@@ -16,7 +16,6 @@
 #include "savegame.hpp"
 
 #include "dialogs.hpp" //FIXME: get rid of this as soon as the two remaining dialogs are moved to gui2
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "game_end_exceptions.hpp"
 #include "game_preferences.hpp"
@@ -38,6 +37,7 @@
 #include "version.hpp"
 #include "formula_string_utils.hpp"
 
+#include <boost/foreach.hpp>
 #include <iomanip>
 #include "posix.h"
 
@@ -84,11 +84,51 @@ static lg::log_domain log_engine("engine");
 	}
 #endif /* _WIN32 */
 
-extern size_t hero_size_from_dat;
+std::string format_time_date(time_t t)
+{
+	time_t curtime = time(NULL);
+	const struct tm* timeptr = localtime(&curtime);
+	if(timeptr == NULL) {
+		return "";
+	}
 
-namespace savegame {
+	const struct tm current_time = *timeptr;
 
-config dummy_snapshot;
+	timeptr = localtime(&t);
+	if(timeptr == NULL) {
+		return "";
+	}
+
+	const struct tm save_time = *timeptr;
+
+	const char* format_string = _("%b %d %y");
+
+	if (current_time.tm_year == save_time.tm_year) {
+		const int days_apart = current_time.tm_yday - save_time.tm_yday;
+
+		if(days_apart == 0) {
+			// save is from today
+			format_string = _("%H:%M");
+		} else if(days_apart > 0 && days_apart <= current_time.tm_wday) {
+			// save is from this week. On chinese, %A cannot display. use %m%d instead.
+			format_string = _("%A, %H:%M");
+		} else {
+			// save is from current year
+			format_string = _("%b %d");
+		}
+	} else {
+		// save is from a different year
+		format_string = _("%b %d %y");
+	}
+
+	char buf[64];
+	const size_t res = strftime(buf,sizeof(buf),format_string,&save_time);
+	if(res == 0) {
+		buf[0] = 0;
+	}
+	
+	return buf;
+}
 
 std::string format_time_local(time_t t)
 {
@@ -125,67 +165,31 @@ std::string format_time_elapse(time_t elapse)
 	return strstr.str();
 }
 
+namespace savegame {
+
+config dummy_snapshot;
+
 const std::string save_info::format_time_local() const
 {
-	char time_buf[256] = {0};
-	tm* tm_l = localtime(&time_modified);
-	if (tm_l) {
-		const size_t res = strftime(time_buf,sizeof(time_buf),_("%a %b %d %H:%M %Y"),tm_l);
-		if(res == 0) {
-			time_buf[0] = 0;
-		}
-	} else {
-		LOG_SAVE << "localtime() returned null for time " << time_modified << ", save " << name;
-	}
-
-	return time_buf;
+	return ::format_time_local(time_modified);
 }
 
 const std::string save_info::format_time_summary() const
 {
-	time_t t = time_modified;
-	time_t curtime = time(NULL);
-	const struct tm* timeptr = localtime(&curtime);
-	if(timeptr == NULL) {
-		return "";
-	}
+	return format_time_date(time_modified);
+}
 
-	const struct tm current_time = *timeptr;
+www_save_info::www_save_info(int _sid, const std::string& n, const std::string& user, time_t t, int ver) 
+	: sid(_sid)
+	, name(n)
+	, username(user)
+	, time_upload(t)
+	, version(ver)
+{}
 
-	timeptr = localtime(&t);
-	if(timeptr == NULL) {
-		return "";
-	}
-
-	const struct tm save_time = *timeptr;
-
-	const char* format_string = _("%b %d %y");
-
-	if(current_time.tm_year == save_time.tm_year) {
-		const int days_apart = current_time.tm_yday - save_time.tm_yday;
-
-		if(days_apart == 0) {
-			// save is from today
-			format_string = _("%H:%M");
-		} else if(days_apart > 0 && days_apart <= current_time.tm_wday) {
-			// save is from this week. On chinese, %A cannot display. use %m%d instead.
-			format_string = _("%A, %H:%M");
-		} else {
-			// save is from current year
-			format_string = _("%b %d");
-		}
-	} else {
-		// save is from a different year
-		format_string = _("%b %d %y");
-	}
-
-	char buf[64];
-	const size_t res = strftime(buf,sizeof(buf),format_string,&save_time);
-	if(res == 0) {
-		buf[0] = 0;
-	}
-	
-	return buf;
+const std::string www_save_info::format_time_upload() const
+{
+	return format_time_date(time_upload);
 }
 
 /**
@@ -317,9 +321,9 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 
 			// read side data
 			if (side_size) {
-				posix_fread(fp, unit::savegame_cache_, side_size, bytertd);
+				posix_fread(fp, game_config::savegame_cache, side_size, bytertd);
 			} else {
-				memset(unit::savegame_cache_, 0, sizeof(unit_segment2));
+				memset(game_config::savegame_cache, 0, sizeof(unit_segment2));
 			}
 
 			// read start scenario data
@@ -372,11 +376,11 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		}
 		posix_fclose(fp);
 
-		if (start_heros && rpg_number >= (int)hero_size_from_dat) {
+		if (start_heros && rpg_number >= (int)hero_map::map_size_from_dat) {
 			(*start_heros)[rpg_number].set_name(rpg_name);
 			(*start_heros)[rpg_number].set_surname(rpg_surname);
 		}
-		if (heros && rpg_number >= (int)hero_size_from_dat) {
+		if (heros && rpg_number >= (int)hero_map::map_size_from_dat) {
 			(*heros)[rpg_number].set_name(rpg_name);
 			(*heros)[rpg_number].set_surname(rpg_surname);
 		}
@@ -482,7 +486,7 @@ void manager::delete_game(const std::string& name)
 	// remove((get_saves_dir() + "/" + modified_name).c_str());
 }
 
-loadgame::loadgame(display& gui, const config& game_config, game_state& gamestate)
+loadgame::loadgame(game_display& gui, const config& game_config, game_state& gamestate)
 	: game_config_(game_config)
 	, gui_(gui)
 	, gamestate_(gamestate)
@@ -496,7 +500,7 @@ void loadgame::show_dialog(bool show_replay, bool cancel_orders)
 {
 	//FIXME: Integrate the load_game dialog into this class
 	//something to watch for the curious, but not yet ready to go
-	gui2::tgame_load load_dialog(game_config_);
+	gui2::tgame_load load_dialog(gui_, game_config_);
 	load_dialog.show(gui_.video());
 
 	if (load_dialog.get_retval() == gui2::twindow::OK){
@@ -546,12 +550,13 @@ void loadgame::load_game(std::string& filename, bool show_replay, bool cancel_or
 	}
 
 	gamestate_.classification().create = load_config_["create"].to_long();
+	gamestate_.classification().duration = load_config_["duration"].to_int();
+	gamestate_.classification().hash = load_config_["hash"].to_int();
 	gamestate_.classification().campaign_define = load_config_["campaign_define"].str();
 
 	gamestate_.classification().campaign = load_config_["campaign"].str();
 	gamestate_.classification().campaign_type = load_config_["campaign_type"].str();
 
-	gamestate_.classification().campaign_xtra_defines = utils::split(load_config_["campaign_extra_defines"]);
 	gamestate_.classification().version = load_config_["version"].str();
 
 	check_version_compatibility();
@@ -602,10 +607,10 @@ const std::pair<int, unsigned> loadgame::recorder_generator() const
 {
 	const int seed = lexical_cast_default<int>(load_config_["recorder_random_seed"], 42);
 	const unsigned calls = show_replay_? 0 : lexical_cast_default<unsigned>(load_config_["recorder_random_calls"]);
-	return std::make_pair<int, unsigned>(seed, calls);
+	return std::make_pair(seed, calls);
 }
 
-void loadgame::load_multiplayer_game()
+void loadgame::load_multiplayer_game(hero_map& heros, hero_map& heros_start)
 {
 	show_dialog(false, false);
 
@@ -617,7 +622,7 @@ void loadgame::load_multiplayer_game()
 		cursor::setter cur(cursor::WAIT);
 		log_scope("load_game");
 
-		manager::read_save_file(filename_, NULL, &load_config_, NULL, &replay_data_, NULL, &error_log);
+		manager::read_save_file(filename_, NULL, &load_config_, &heros_start, &replay_data_, &heros, &error_log);
 		copy_era(load_config_);
 
 		gamestate_ = game_state(load_config_, replay_data_);
@@ -638,9 +643,8 @@ void loadgame::load_multiplayer_game()
 	check_version_compatibility();
 }
 
-void loadgame::fill_mplevel_config(config& level){
-	gamestate_.mp_settings().saved_game = true;
-
+void loadgame::fill_mplevel_config(config& level)
+{
 	// If we have a start of scenario MP campaign scenario the snapshot
 	// is empty the starting position contains the wanted info.
 	const config& start_data = !gamestate_.snapshot.empty() ? gamestate_.snapshot : gamestate_.starting_pos;
@@ -691,8 +695,9 @@ void loadgame::copy_era(config &cfg)
 	snapshot.add_child("era", era);
 }
 
-savegame::savegame(hero_map& heros, game_state& gamestate, config& snapshot, const std::string& title)
+savegame::savegame(hero_map& heros, hero_map& heros_start, game_state& gamestate, config& snapshot, const std::string& title)
 	: heros_(heros)
+	, heros_start_(heros_start)
 	, gamestate_(gamestate)
 	, snapshot_(snapshot)
 	, filename_()
@@ -822,7 +827,11 @@ void savegame::before_save()
 
 	// debug
 	gamestate_.replay_data_dbg.clear();
-	// recorder.pool_2_config(gamestate_.replay_data_dbg);
+
+	{
+		int ii = 0;
+		// recorder.pool_2_config(gamestate_.replay_data_dbg);
+	}
 }
 
 bool savegame::save_game(CVideo* video, const std::string& filename)
@@ -890,8 +899,8 @@ void savegame::write_game_to_disk(const std::string& filename)
 		::write(gamestate_.start_scenario_ss, gamestate_.starting_pos);
 	}
 	if (!gamestate_.start_hero_data_) {
-		gamestate_.start_hero_data_ = (uint8_t*)malloc(resources::heros_start->file_size());
-		resources::heros_start->map_to_mem(gamestate_.start_hero_data_);
+		gamestate_.start_hero_data_ = (uint8_t*)malloc(heros_start_.file_size());
+		heros_start_.map_to_mem(gamestate_.start_hero_data_);
 	}
 
 	config cfg_summary;
@@ -929,12 +938,12 @@ void savegame::write_game_to_disk(const std::string& filename)
 	// length of scenario data
 	scenario_size = ss.str().length();
 	// length of side data
-	side_size = ((unit_segment2*)unit::savegame_cache_)->size_;
+	side_size = ((unit_segment2*)game_config::savegame_cache)->size_;
 	// length of start scenario data
 	start_scenario_size = gamestate_.start_scenario_ss.str().length();
 	// length of start hero data
 	// start_hero_size = gamestate_.start_hero_ss.str().length();
-	start_hero_size = resources::heros_start->file_size();
+	start_hero_size = heros_start_.file_size();
 	// length of player data(name,surname,biorigh)
 	player_data_size = 16 + rpg::h->name().size() + rpg::h->surname().size();
 	// length of replay data
@@ -965,31 +974,31 @@ void savegame::write_game_to_disk(const std::string& filename)
 	posix_fwrite(fp, ss.str().c_str(), ss.str().length(), bytertd);
 	// side data
 	if (side_size) {
-		posix_fwrite(fp, unit::savegame_cache_, side_size, bytertd);
+		posix_fwrite(fp, game_config::savegame_cache, side_size, bytertd);
 	}
 	// start scenario data
 	posix_fwrite(fp, gamestate_.start_scenario_ss.str().c_str(), gamestate_.start_scenario_ss.str().length(), bytertd);
 	// start hero data
 	posix_fwrite(fp, gamestate_.start_hero_data_, start_hero_size, bytertd);
 
-	// player data(use unit::savegame_cache_ tempereray)
+	// player data(use game_config::savegame_cache tempereray)
 	bytertd = rpg::h->number_;
-	memcpy(unit::savegame_cache_, &bytertd, 4);
+	memcpy(game_config::savegame_cache, &bytertd, 4);
 	size = 4;
 	bytertd = rpg::h->name().size();
-	memcpy(unit::savegame_cache_ + size, &bytertd, 4);
+	memcpy(game_config::savegame_cache + size, &bytertd, 4);
 	size += 4;
-	memcpy(unit::savegame_cache_ + size, rpg::h->name().c_str(), rpg::h->name().size());
+	memcpy(game_config::savegame_cache + size, rpg::h->name().c_str(), rpg::h->name().size());
 	size += rpg::h->name().size();
 	bytertd = rpg::h->surname().size();
-	memcpy(unit::savegame_cache_ + size, &bytertd, 4);
+	memcpy(game_config::savegame_cache + size, &bytertd, 4);
 	size += 4;
-	memcpy(unit::savegame_cache_ + size, rpg::h->surname().c_str(), rpg::h->surname().size());
+	memcpy(game_config::savegame_cache + size, rpg::h->surname().c_str(), rpg::h->surname().size());
 	size += rpg::h->surname().size();
 	bytertd = 0;
-	memcpy(unit::savegame_cache_ + size, &bytertd, 4);
+	memcpy(game_config::savegame_cache + size, &bytertd, 4);
 	size += 4;
-	posix_fwrite(fp, unit::savegame_cache_, size, bytertd);
+	posix_fwrite(fp, game_config::savegame_cache, size, bytertd);
 
 	// replay data
 	if (replay_size) {
@@ -1027,8 +1036,10 @@ void savegame::write_game(config_writer &out) const
 	out.write_key_val("campaign", gamestate_.classification().campaign);
 	out.write_key_val("campaign_type", gamestate_.classification().campaign_type);
 	out.write_key_val("create", lexical_cast<std::string>(gamestate_.classification().create));
+	int duration = gamestate_.duration(time(NULL));
+	out.write_key_val("duration", lexical_cast<std::string>(duration));
+	out.write_key_val("hash", lexical_cast<std::string>(gamestate_.classification().hash));
 	out.write_key_val("campaign_define", gamestate_.classification().campaign_define);
-	out.write_key_val("campaign_extra_defines", utils::join(gamestate_.classification().campaign_xtra_defines));
 	out.write_key_val("random_seed", lexical_cast<std::string>(gamestate_.rng().get_random_seed()));
 	out.write_key_val("random_calls", lexical_cast<std::string>(gamestate_.rng().get_random_calls()));
 	// out.write_key_val("recorder_random_seed", lexical_cast<std::string>(recorder.generator().get_random_seed()));
@@ -1072,7 +1083,7 @@ void savegame::write_game(config_writer &out) const
 void savegame::extract_summary_data_from_save(config& out)
 {
 	const bool has_replay = gamestate_.replay_data.pool_pos_vsize()? true: false;
-	const bool has_snapshot = snapshot_.child("side") || ((unit_segment2*)unit::savegame_cache_)->size_;
+	const bool has_snapshot = snapshot_.child("side") || ((unit_segment2*)game_config::savegame_cache)->size_;
 
 	out["replay"] = has_replay ? "yes" : "no";
 	out["snapshot"] = has_snapshot ? "yes" : "no";
@@ -1083,6 +1094,9 @@ void savegame::extract_summary_data_from_save(config& out)
 	out["campaign_type"] = gamestate_.classification().campaign_type;
 	out["scenario"] = gamestate_.classification().scenario;
 	out["create"] = gamestate_.classification().create;
+	int duration = gamestate_.duration(time(NULL));
+	out["duration"] = duration;
+	out["hash"] = gamestate_.classification().hash;
 	out["version"] = gamestate_.classification().version;
 	out["corrupt"] = "";
 
@@ -1101,7 +1115,7 @@ void savegame::extract_summary_data_from_save(config& out)
 	bool shrouded = false;
 
 	const config& snapshot = has_snapshot ? snapshot_: gamestate_.starting_pos;
-	foreach (const config &side, snapshot.child_range("side"))
+	BOOST_FOREACH (const config &side, snapshot.child_range("side"))
 	{
 		if (side["controller"] != "human") {
 			continue;
@@ -1127,10 +1141,10 @@ void savegame::extract_summary_data_from_save(config& out)
 	}
 }
 
-scenariostart_savegame::scenariostart_savegame(hero_map& heros, game_state &gamestate)
-	: savegame(heros, gamestate, dummy_snapshot)
+scenariostart_savegame::scenariostart_savegame(hero_map& heros, hero_map& heros_start, game_state &gamestate)
+	: savegame(heros, heros_start, gamestate, dummy_snapshot)
 {
-	memset(unit::savegame_cache_, 0, sizeof(unit_segment2));
+	memset(game_config::savegame_cache, 0, sizeof(unit_segment2));
 	set_filename(gamestate.classification().label);
 }
 
@@ -1141,17 +1155,17 @@ void scenariostart_savegame::before_save()
 	// if there is no scenario information in the starting pos, add the (persistent) sides from the snapshot
 	// else do nothing, as persistence information was already added at the end of the previous scenario
 	if (gamestate().starting_pos["id"].empty()) {
-		foreach(const config& snapshot_side, gamestate().snapshot.child_range("side")) {
+		BOOST_FOREACH (const config& snapshot_side, gamestate().snapshot.child_range("side")) {
 			//add all side tags (assuming they only contain carryover information)
 			gamestate().starting_pos.add_child("side", snapshot_side);
 		}
 	}
 }
 
-replay_savegame::replay_savegame(hero_map& heros, game_state &gamestate)
-	: savegame(heros, gamestate, dummy_snapshot, _("Save Replay"))
+replay_savegame::replay_savegame(hero_map& heros, hero_map& heros_start, game_state &gamestate)
+	: savegame(heros, heros_start, gamestate, dummy_snapshot, _("Save Replay"))
 {
-	memset(unit::savegame_cache_, 0, sizeof(unit_segment2));
+	memset(game_config::savegame_cache, 0, sizeof(unit_segment2));
 }
 
 void replay_savegame::create_filename()
@@ -1169,8 +1183,8 @@ void replay_savegame::create_filename()
 	set_filename(stream.str());
 }
 
-autosave_savegame::autosave_savegame(hero_map& heros, game_state &gamestate, game_display& gui, config& snapshot_cfg)
-	: game_savegame(heros, gamestate, gui, snapshot_cfg)
+autosave_savegame::autosave_savegame(hero_map& heros, hero_map& heros_start, game_state &gamestate, game_display& gui, config& snapshot_cfg)
+	: game_savegame(heros, heros_start, gamestate, gui, snapshot_cfg)
 {
 	set_error_message(_("Could not auto save the game. Please save the game manually."));
 }
@@ -1187,26 +1201,25 @@ void autosave_savegame::autosave(const bool disable_autosave, const int autosave
 
 void autosave_savegame::create_filename()
 {
-	std::string filename;
-	if (gamestate().classification().original_label.empty()) {
+	std::stringstream filename;
+	if (!gamestate().classification().original_label.empty()) {
 		if (!preferences::eng_file_name()) {
-			filename = _("Auto-Save");
+			filename << gamestate().classification().label << "-";
 		} else {
-			filename = "Auto-Save";
-		}
-	} else {
-		if (!preferences::eng_file_name()) {
-			filename = gamestate().classification().label + "-" + _("Auto-Save") + snapshot()["turn_at"];
-		} else {
-			filename = gamestate().classification().original_label + "-" + "Auto-Save" + snapshot()["turn_at"];
+			filename << gamestate().classification().original_label << "-";
 		}
 	}
+	if (!preferences::eng_file_name()) {
+		filename << _("Auto-Save") << snapshot()["turn_at"];
+	} else {
+		filename << "Auto-Save" << snapshot()["turn_at"];
+	}
 
-	set_filename(filename);
+	set_filename(filename.str());
 }
 
-oos_savegame::oos_savegame(hero_map& heros, config& snapshot_cfg)
-	: game_savegame(heros, *resources::state_of_game, *resources::screen, snapshot_cfg)
+oos_savegame::oos_savegame(hero_map& heros, hero_map& heros_start, config& snapshot_cfg)
+	: game_savegame(heros, heros_start, *resources::state_of_game, *resources::screen, snapshot_cfg)
 {}
 
 int oos_savegame::show_save_dialog(CVideo& video, const std::string& message, const gui::DIALOG_TYPE /*dialog_type*/)
@@ -1228,9 +1241,8 @@ int oos_savegame::show_save_dialog(CVideo& video, const std::string& message, co
 	return res;
 }
 
-game_savegame::game_savegame(hero_map& heros, game_state &gamestate,
-					game_display& gui, config& snapshot_cfg)
-	: savegame(heros, gamestate, snapshot_cfg, _("Save Game")),
+game_savegame::game_savegame(hero_map& heros, hero_map& heros_start, game_state &gamestate, game_display& gui, config& snapshot_cfg)
+	: savegame(heros, heros_start, gamestate, snapshot_cfg, _("Save Game")),
 	gui_(gui)
 {
 }

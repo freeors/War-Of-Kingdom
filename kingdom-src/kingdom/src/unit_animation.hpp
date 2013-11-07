@@ -64,10 +64,15 @@ class unit_animation
                 void restart_animation();
 		int get_current_frame_begin_time() const{ return unit_anim_.get_current_frame_begin_time() ; };
 		void redraw(frame_parameters& value);
+		void redraw();
 		void clear_haloes();
-		bool invalidate(frame_parameters& value );
+		bool invalidate(frame_parameters& value);
+		bool invalidate();
 		void replace_image_name(const std::string& src, const std::string& dst);
+		void replace_image_mod(const std::string& src, const std::string& dst);
+		void replace_x(const std::string& src, const std::string& dst);
 		void replace_static_text(const std::string& src, const std::string& dst);
+		const std::string event0() const;
 
 	friend class unit;
 	friend class artifical;
@@ -114,6 +119,8 @@ class unit_animation
 			const frame_parameters parameters(const frame_parameters & default_val) const { return get_current_frame().merge_parameters(get_current_frame_time(),parameters_.parameters(get_animation_time()-get_begin_time()),default_val); };
 			void clear_halo();
 			void replace_image_name(const std::string& src, const std::string& dst);
+			void replace_image_mod(const std::string& src, const std::string& dst);
+			void replace_x(const std::string& src, const std::string& dst);
 			void replace_static_text(const std::string& src, const std::string& dst);
 
 			bool accelerate;
@@ -145,6 +152,7 @@ class unit_animation
 		// optimization
 		bool invalidated_;
 		bool play_offscreen_;
+		bool screen_mode_;
 		std::set<map_location> overlaped_hex_;
 };
 
@@ -206,8 +214,8 @@ class unit_animator
 		int get_end_time() const;
 		void wait_for_end() const;
 		void wait_until( int animation_time) const;
-	private:
-		 struct anim_elem {
+
+		struct anim_elem {
 
 			anim_elem() :
 				my_unit(0),
@@ -228,7 +236,10 @@ class unit_animator
 			bool with_bars;
 			bool cycles;
 		};
+		std::vector<anim_elem>& animated_units() { return animated_units_; }
+		const std::vector<anim_elem>& animated_units() const { return animated_units_; }
 
+	private:
 		std::vector<anim_elem> animated_units_;
 		int start_time_;
 };

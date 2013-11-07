@@ -280,10 +280,10 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		str = gdmgr._menu_text;
 		strstr << str.substr(0, str.rfind("\\xwml"));
 		strstr << "\\data\\campaigns\\" << offextname(basename(gdmgr._menu_text));
-		strcpy(text, strstr.str().c_str());
+		str = strstr.str();
 
 		symbols["file"] = gdmgr._menu_text;
-		symbols["directory"] = text;
+		symbols["directory"] = str;
 		strstr.str("");
 		strstr << utf8_2_ansi(vgettext2("Do you want to delete file: \"$file\" and directory: \"$directory\"?", symbols).c_str());
 
@@ -297,7 +297,8 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			} else {
 				posix_print_mb("Failed delete %s !", gdmgr._menu_text); 
 			}
-			if (!delfile1(text)) {
+
+			if (!delfile1(str.c_str())) {
                 posix_print_mb("Failed delete %s !", text); 
 			}
 			sync_refresh_sync();
@@ -481,10 +482,7 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			strcpy(gdmgr._menu_text, TreeView_FormPath(lpNMHdr->hwndFrom, htvi, dirname(game_config::path.c_str())));
 			if (wml_checksum_from_file(std::string(gdmgr._menu_text))) {
 				gdmgr._menu_lparam = (uint32_t)tvi.lParam;
-				if (strstr(gdmgr._menu_text, "\\campaigns\\") && 
-					!strstr(gdmgr._menu_text, "duel") &&
-					!strstr(gdmgr._menu_text, "legend_of_bei_liu") &&
-					!strstr(gdmgr._menu_text, "tutorial")) {
+				if (strstr(gdmgr._menu_text, "\\campaigns\\")) {
 					if (gdmgr._da != da_campaign) {
 						title_select(da_campaign);
 					} else {

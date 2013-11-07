@@ -21,7 +21,6 @@
 #include "game_display.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
-#include "foreach.hpp"
 #include "gui/auxiliary/timer.hpp"
 #include "gui/widgets/listbox.hpp"
 #include "gui/dialogs/helper.hpp"
@@ -37,8 +36,12 @@
 #include "unit_id.hpp"
 #include "replay.hpp"
 #include "wml_separators.hpp"
+#include "serialization/parser.hpp"
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 namespace gui2 {
 
@@ -80,6 +83,49 @@ const char* controller_names[] = {
  * @end{table}
  */
 
+std::vector<std::set<int> > generate_team_names_from_side(const config& cfg)
+{
+	std::vector<std::set<int> > ret;
+
+	BOOST_FOREACH (const config &s, cfg.child_range("side")) {
+		const std::string& team_name = s["team_name"].str();
+		std::vector<std::string> vstr = utils::split(team_name);
+		std::set<int> mess;
+		for (std::vector<std::string>::iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+			int to = lexical_cast_default<int>(*it);
+			mess.insert(to);
+		}
+		ret.push_back(mess);
+	}
+	return ret;
+}
+
+std::vector<int> generate_allies_from_team_names(const std::vector<std::set<int> >& team_names)
+{
+	std::vector<int> ret;
+
+	int current_ally_number = 1;
+	size_t side_count = team_names.size();
+	ret.resize(side_count, 0);
+	for (size_t s = 0; s < side_count; s ++) {
+		bool allied = false;
+		for (std::vector<std::set<int> >::const_iterator it = team_names.begin(); it != team_names.end(); ++ it) {
+			size_t s1 = std::distance(team_names.begin(), it);
+			if (s1 == s || ret[s1]) {
+				continue;
+			}
+			if (it->find(s + 1) != it->end()) {
+				ret[s1] = current_ally_number;
+				allied = true;
+			}
+		}
+		if (allied) {
+			ret[s] = current_ally_number ++;
+		}		
+	}
+	return ret;
+}
+
 void check_response(network::connection res, const config& data)
 {
 	if (!res) {
@@ -117,11 +163,12 @@ void tplayer_list_side_creator::init(twindow & w)
 			, true);
 }
 
-tmp_side_creator::tmp_side_creator(hero_map& heros, game_display& gui, gamemap& gmap, const config& game_config,
+tmp_side_creator::tmp_side_creator(hero_map& heros, hero_map& heros_start, game_display& gui, gamemap& gmap, const config& game_config,
 			config& gamelist, const mp_game_settings& params, const int num_turns,
 			mp::controller default_controller, bool local_players_only)
 	: legacy_result_(QUIT)
 	, heros_(heros)
+	, heros_start_(heros_start)
 	, gui_(gui)
 	, gmap_(gmap)
 	, game_config_(game_config)
@@ -136,11 +183,7 @@ tmp_side_creator::tmp_side_creator(hero_map& heros, game_display& gui, gamemap& 
 	, player_types_()
 	, player_factions_()
 	, side_features_()
-	, player_teams_()
-	, player_colors_()
-	, team_names_()
-	, user_team_names_()
-	, team_prefix_(std::string(_("Team")) + " ")
+	, allies_()
 	, sides_()
 	, users_()
 	, default_controller_((controller)default_controller)
@@ -241,6 +284,33 @@ const game_state& tmp_side_creator::get_state()
 	return state_;
 }
 
+std::string tmp_side_creator::form_binary_header(int type) const
+{
+	std::stringstream header;
+
+	config cfg;
+	config& binary = cfg.add_child("change_faction");
+	binary["type"] = type;
+	::write(header, cfg);
+
+	return header.str();
+}
+
+void tmp_side_creator::send_binary_data(char* buf, int data_len, int buf_len) const
+{
+	std::stringstream strstr;
+
+	std::iostream ifile(strstr.rdbuf());
+	ifile.write(buf, data_len);
+
+	boost::iostreams::filtering_stream<boost::iostreams::input> in;
+	in.push(boost::iostreams::gzip_compressor());
+	in.push(ifile);
+
+	int len = in.read(buf, buf_len).gcount();
+	network::send_raw_data(buf, len, 0);
+}
+
 void tmp_side_creator::start_game()
 {
 	// Resolves the "random faction", "random gender" and "random message"
@@ -255,8 +325,119 @@ void tmp_side_creator::start_game()
 	network::send_data(lock, 0);
 	update_and_send_diff(true);
 
-	// Build the gamestate object after updating the level
+	// Send replay_data_
+	std::string binary_header;
+	const int min_buf_len = 1024;
+	size_t pos;
+	int buf_len = 0;
+	char* buf = NULL;
 
+	if (params_.saved_game) {
+		binary_header = form_binary_header(BINARY_HEROS);
+
+		int hero_data_len = binary_header.size() + 1 + heros_.file_size();
+		hero_data_len = std::max(hero_data_len, min_buf_len);
+		if (buf_len < hero_data_len) {
+			if (buf) {
+				free(buf);
+			}
+			buf_len = hero_data_len;
+			buf = (char*)malloc(buf_len);
+		}
+
+		memcpy(buf, binary_header.c_str(), binary_header.size());
+		buf[binary_header.size()] = '\0';
+
+		pos = binary_header.size() + 1;
+		heros_.map_to_mem((uint8_t*)buf + pos);
+		pos += heros_.file_size();
+
+		send_binary_data(buf, pos, buf_len);
+
+		// start heros
+		binary_header = form_binary_header(BINARY_HEROS_START);
+
+		memcpy(buf, binary_header.c_str(), binary_header.size());
+		buf[binary_header.size()] = '\0';
+
+		pos = binary_header.size() + 1;
+		heros_start_.map_to_mem((uint8_t*)buf + pos);
+		pos += heros_.file_size();
+
+		send_binary_data(buf, pos, buf_len);
+
+	} else {
+		// lobby may modify hero's side_feature
+		heros_start_ = heros_;
+	}
+
+	if (replay_data_.pool_pos_vsize()) {
+		binary_header = form_binary_header(BINARY_REPLAY);
+
+		int replay_len = binary_header.size() + 1 + 4 * sizeof(int) + replay_data_.pool_data_gzip_size() + replay_data_.pool_pos_vsize() * sizeof(unsigned int);
+		replay_len = std::max(replay_len, min_buf_len);
+		if (buf_len < replay_len) {
+			if (buf) {
+				free(buf);
+			}
+			buf_len = replay_len;
+			buf = (char*)malloc(buf_len);
+		}
+
+		memcpy(buf, binary_header.c_str(), binary_header.size());
+		buf[binary_header.size()] = '\0';
+
+		pos = binary_header.size() + 1;
+		int size = replay_data_.pool_data_size();
+		memcpy(buf + pos, &size, sizeof(int));
+		pos += sizeof(int);
+		size = replay_data_.pool_data_gzip_size();
+		memcpy(buf + pos, &size, sizeof(int));
+		pos += sizeof(int);
+		size = replay_data_.pool_pos_size();
+		memcpy(buf + pos, &size, sizeof(int));
+		pos += sizeof(int);
+		size = replay_data_.pool_pos_vsize();
+		memcpy(buf + pos, &size, sizeof(int));
+		pos += sizeof(int);
+
+		// pool data
+		memcpy(buf + pos, replay_data_.pool_data(), replay_data_.pool_data_gzip_size());
+		pos += replay_data_.pool_data_gzip_size();
+		// pool pos
+		memcpy(buf + pos, replay_data_.pool_pos(), replay_data_.pool_pos_vsize() * sizeof(unsigned int));
+		pos += replay_data_.pool_pos_vsize() * sizeof(unsigned int);
+
+		send_binary_data(buf, pos, buf_len);
+	}
+
+	unit_segment2* sides = (unit_segment2*)game_config::savegame_cache;
+	if (sides->size_) {
+		binary_header = form_binary_header(BINARY_SIDE);
+
+		int side_len = binary_header.size() + 1 + sides->size_;
+		side_len = std::max(side_len, min_buf_len);
+		if (buf_len < side_len) {
+			if (buf) {
+				free(buf);
+			}
+			buf_len = side_len;
+			buf = (char*)malloc(buf_len);
+		}
+		memcpy(buf, binary_header.c_str(), binary_header.size());
+		buf[binary_header.size()] = '\0';
+
+		pos = binary_header.size() + 1;
+		memcpy(buf + pos, game_config::savegame_cache, sides->size_);
+		pos += sides->size_;
+
+		send_binary_data(buf, pos, buf_len);
+	}
+	if (buf) {
+		free(buf);
+	}
+
+	// Build the gamestate object after updating the level
 	level_to_gamestate(level_, replay_data_, state_);
 
 	network::send_data(config("start_game"), 0);
@@ -296,14 +477,27 @@ void tmp_side_creator::feature(twindow& window, int side)
 	sides_[side].feature(window);
 }
 
+void tmp_side_creator::ally(twindow& window, int side)
+{
+	sides_[side].ally(window);
+}
+
+void tmp_side_creator::income(twindow& window, int side)
+{
+	sides_[side].income(window);
+}
+
 void tmp_side_creator::load_game(twindow& window)
 {
+	std::vector<std::set<int> > team_names;
 	if (params_.saved_game) {
 		try {
 			savegame::loadgame load(gui_, game_config_, state_);
-			load.load_multiplayer_game();
+			load.load_multiplayer_game(heros_, heros_start_);
 			load.fill_mplevel_config(level_);
 			replay_data_ = state_.replay_data;
+
+			team_names = generate_team_names_from_side_mem(game_config::savegame_cache);
 		}
 		catch (load_game_cancelled_exception){
 			legacy_result_ = CREATE;
@@ -312,7 +506,6 @@ void tmp_side_creator::load_game(twindow& window)
 		}
 	} else {
 		level_.clear();
-		params_.saved_game = false;
 		params_.mp_scenario = params_.scenario_data["id"].str();
 		level_.merge_with(params_.scenario_data);
 		level_["turns"] = num_turns_;
@@ -322,25 +515,47 @@ void tmp_side_creator::load_game(twindow& window)
 		level_["next_underlying_unit_id"] = 0;
 		n_unit::id_manager::instance().clear();
 
-		if (params_.random_start_time)
-		{
-			if (!tod_manager::is_start_ToD(level_["random_start_time"]))
-			{
-				level_["random_start_time"] = true;
-			}
-		}
-		else
-		{
-			level_["random_start_time"] = false;
-		}
-
 		level_["experience_modifier"] = params_.xp_modifier;
 		level_["random_seed"] = state_.rng().get_random_seed();
+		level_["fog"] = params_.fog_game;
+		level_["shroud"] = params_.shroud_game;
+/*
+		BOOST_FOREACH (const config &s, level_.child_range("side")) {
+			const std::string& team_name = s["team_name"].str();
+			std::vector<std::string> vstr = utils::split(team_name);
+			std::set<int> mess;
+			for (std::vector<std::string>::iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+				int to = lexical_cast_default<int>(*it);
+				mess.insert(to);
+			}
+			team_names.push_back(mess);
+		}
+*/
+		team_names = generate_team_names_from_side(level_);
 	}
 
-	// Add the map name to the title.
-	// append_to_title(" - " + level_["name"].t_str());
-
+	allies_ = generate_allies_from_team_names(team_names);
+/*
+	int current_ally_number = 1;
+	size_t side_count = team_names.size();
+	allies_.resize(side_count, 0);
+	for (size_t s = 0; s < side_count; s ++) {
+		bool allied = false;
+		for (std::vector<std::set<int> >::iterator it = team_names.begin(); it != team_names.end(); ++ it) {
+			size_t s1 = std::distance(team_names.begin(), it);
+			if (s1 == s || allies_[s1]) {
+				continue;
+			}
+			if (it->find(s + 1) != it->end()) {
+				allies_[s1] = current_ally_number;
+				allied = true;
+			}
+		}
+		if (allied) {
+			allies_[s] = current_ally_number ++;
+		}		
+	}
+*/
 
 	std::string era = params_.mp_era;
 	if (params_.saved_game) {
@@ -351,8 +566,8 @@ void tmp_side_creator::load_game(twindow& window)
 	// Initialize the list of forces.
 	const config& topest_cfg = game_config_;
 	factions_.clear();
-	foreach (const config &e, topest_cfg.child_range("faction")) {
-		factions_.push_back(std::make_pair<const config*, int>(&e, -1));
+	BOOST_FOREACH (const config &e, topest_cfg.child_range("faction")) {
+		factions_.push_back(std::make_pair(&e, -1));
 	}
 
 	// Initialize the list of sides available for the current era.
@@ -368,7 +583,7 @@ void tmp_side_creator::load_game(twindow& window)
 		// WRN_CF << "Missing era in MP load game " << era << "\n";
 	} else {
 		era_sides_.clear();
-		foreach (const config &e, era_cfg.child_range("multiplayer_side")) {
+		BOOST_FOREACH (const config &e, era_cfg.child_range("multiplayer_side")) {
 			era_sides_.push_back(&e);
 		}
 		level_.add_child("era", era_cfg);
@@ -413,14 +628,14 @@ void tmp_side_creator::lists_init()
 {
 	// Options
 	if (!local_only_) {
-		player_types_.push_back(std::make_pair<std::string, int>(_("Network Player"), CNTR_NETWORK));
+		player_types_.push_back(std::make_pair(_("Network Player"), CNTR_NETWORK));
 	} else {
-		player_types_.push_back(std::make_pair<std::string, int>(_("Local Player"), CNTR_LOCAL));
+		player_types_.push_back(std::make_pair(_("Local Player"), CNTR_LOCAL));
 	}
-	player_types_.push_back(std::make_pair<std::string, int>(_("Computer Player"), CNTR_COMPUTER));
-	player_types_.push_back(std::make_pair<std::string, int>(_("Empty"), CNTR_EMPTY));
+	player_types_.push_back(std::make_pair(_("Computer Player"), CNTR_COMPUTER));
+	player_types_.push_back(std::make_pair(_("Empty"), CNTR_EMPTY));
 
-	foreach (const config *faction, era_sides_) {
+	BOOST_FOREACH (const config *faction, era_sides_) {
 		player_factions_.push_back((*faction)["name"]);
 	}
 
@@ -442,70 +657,9 @@ void tmp_side_creator::lists_init()
 		side_features_.push_back(hero::feature_str(*itor));
 	}
 
-	// Teams
-	if(params_.use_map_settings) {
-		int side_num = 1;
-		foreach (config &side, sides)
-		{
-			config::attribute_value &team_name = side["team_name"];
-			config::attribute_value &user_team_name = side["user_team_name"];
-
-			if(team_name.empty())
-				team_name = side_num;
-
-			if(user_team_name.empty())
-			{
-				user_team_name = team_name;
-			}
-
-			std::vector<std::string>::const_iterator itor = std::find(team_names_.begin(),
-															team_names_.end(), team_name.str());
-			if(itor == team_names_.end()) {
-				team_names_.push_back(team_name);
-				user_team_names_.push_back(user_team_name.t_str().to_serialized());
-				// if (side["allow_player"].to_bool(true)) {
-					player_teams_.push_back(user_team_name.str());
-				// }
-			}
-			++side_num;
-		}
-	} else {
-		std::vector<std::string> map_team_names;
-		int _side_num = 1;
-		foreach (config &side, sides)
-		{
-			const std::string side_num = lexical_cast<std::string>(_side_num);
-			config::attribute_value &team_name = side["team_name"];
-
-			if(team_name.empty())
-				team_name = side_num;
-
-			std::vector<std::string>::const_iterator itor = std::find(map_team_names.begin(),
-															map_team_names.end(), team_name.str());
-			if(itor == map_team_names.end()) {
-				map_team_names.push_back(team_name);
-				team_name = lexical_cast<std::string>(map_team_names.size());
-			} else {
-				team_name = lexical_cast<std::string>(itor - map_team_names.begin() + 1);
-			}
-
-			team_names_.push_back(side_num);
-			user_team_names_.push_back(team_prefix_ + side_num);
-			if (side["allow_player"].to_bool(true)) {
-				player_teams_.push_back(team_prefix_ + side_num);
-			}
-			++_side_num;
-		}
-	}
-
-	// Colors
-	for(int i = 0; i < gamemap::MAX_PLAYERS; ++i) {
-		player_colors_.push_back(get_color_string(i));
-	}
-
 	// Populates "sides_" from the level configuration
 	int index = 0;
-	foreach (const config &s, sides) {
+	BOOST_FOREACH (const config &s, sides) {
 		sides_.push_back(side(sides_table_, *this, s, index++));
 	}
 	int offset=0;
@@ -552,7 +706,7 @@ void tmp_side_creator::update_and_send_diff(bool update_time_of_day)
 
 bool tmp_side_creator::sides_ready() const
 {
-	for(side_list::const_iterator itor = sides_.begin(); itor != sides_.end(); ++itor) {
+	for (side_list::const_iterator itor = sides_.begin(); itor != sides_.end(); ++itor) {
 		if (!itor->ready_for_start()) {
 			return false;
 		}
@@ -571,7 +725,7 @@ bool tmp_side_creator::sides_available() const
 
 bool tmp_side_creator::can_start_game() const
 {
-	if(!sides_ready()) {
+	if (!sides_ready()) {
 		return false;
 	}
 
@@ -581,22 +735,28 @@ bool tmp_side_creator::can_start_game() const
 	 * creative in what is used in multiplayer [1] so use a simpler test now.
 	 * [1] http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=568029
 	 */
-/*
-	foreach(const side& s, sides_) {
-		if(s.get_controller() != CNTR_EMPTY) {
-			if(s.allow_player()) {
-				return true;
+	size_t local_players = 0;
+	size_t empty_players = 0;
+	std::set<int> ally_count;
+	std::set<std::string> network_players;
+	BOOST_FOREACH (const side& s, sides_) {
+		if (s.get_controller() == CNTR_LOCAL) {
+			local_players ++;
+			ally_count.insert(s.ally_);
+		} else if (s.get_controller() == CNTR_EMPTY) {
+			empty_players ++;
+		} else {
+			ally_count.insert(s.ally_);
+			if (s.get_controller() == CNTR_NETWORK) {
+				if (network_players.find(s.get_player_id()) == network_players.end()) {
+					network_players.insert(s.get_player_id());
+				} else {
+					return false;
+				}
 			}
 		}
 	}
-*/
-	foreach (const side& s, sides_) {
-		if (s.get_controller() == CNTR_LOCAL) {
-			return true;
-		}
-	}
-	
-	return false;
+	return local_players == 1 && (local_players + empty_players) < sides_.size() && (ally_count.size() > 1 || !*ally_count.begin());
 }
 
 void tmp_side_creator::update_playerlist_state(bool silent)
@@ -649,18 +809,10 @@ int tmp_side_creator::find_player_side(const std::string& id) const
 
 void tmp_side_creator::update_user_combos()
 {
-	std::stringstream str;
-
 	player_xtypes_ = player_types_;
 	connected_user_list::const_iterator itor;
 	for (itor = users_.begin(); itor != users_.end(); ++itor) {
-		str << "<format>";
-		if (itor->controller_ == CNTR_LOCAL) {
-			str << "color='green' ";
-		}
-		str << "text='" << itor->name << "'</format>\n";
-
-		player_xtypes_.push_back(std::make_pair<std::string, int>(itor->name, itor->controller_ + CNTR_LAST));
+		player_xtypes_.push_back(std::make_pair(itor->name, itor->controller_ + CNTR_LAST));
 	}
 	for (side_list::iterator itor = sides_.begin(); itor != sides_.end(); ++itor) {
 		itor->update_player_id();
@@ -820,7 +972,6 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 		int side_taken = find_player_side(change_faction["name"]);
 		if(side_taken != -1) {
 			sides_[side_taken].import_network_user(change_faction);
-			sides_[side_taken].set_ready_for_start(true);
 			update_playerlist_state();
 			update_and_send_diff();
 		}
@@ -965,27 +1116,23 @@ tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, co
 	: parent_(&parent)
 	, cfg_(cfg)
 	, index_(index)
-	, id_(cfg["id"])
 	, player_id_(cfg["current_player"])
-	, save_id_(cfg["save_id"])
 	, controller_(CNTR_NETWORK)
-	, team_(0)
+	, ally_(0)
 	, color_(index)
 	, gold_(cfg["gold"].to_int(100))
 	, income_(cfg["income"])
 	, faction_(cfg["faction"])
-	, ai_algorithm_()
-	, ready_for_start_(false)
 	, allow_player_(cfg["allow_player"].to_bool(true))
 	, allow_changes_(cfg["allow_changes"].to_bool(true))
-	, enabled_(!parent_->params_.saved_game && cfg["leader"].empty())
+	, faction_changeable_(!parent_->params_.saved_game && cfg["leader"].empty())
 	, changed_(false)
 {
 	// convert ai controllers
-	if (cfg_["controller"] == "human_ai"
-			|| cfg_["controller"] == "network_ai")
+	if (cfg_["controller"] == "human_ai" || cfg_["controller"] == "network_ai") {
 		cfg_["controller"] = "ai";
-	if (allow_player_ && enabled_) {
+	}
+	if (allow_player_ && faction_changeable_) {
 		controller_ = parent_->default_controller_;
 	} else {
 		size_t i = CNTR_NETWORK;
@@ -1012,12 +1159,13 @@ tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, co
 		controller_ = CNTR_LOCAL;
 	}
 
+	std::stringstream strstr;
 	twindow& window = *sides_table->get_window();
-	std::stringstream str;
 	std::map<std::string, string_map> data;
 	
-	str << index_ + 1;
-	data["number"]["label"] = str.str();
+	strstr.str("");
+	strstr << index_ + 1;
+	data["number"]["label"] = strstr.str();
 	data["label"]["use_markup"] = "true";
 
 	sides_table->add_row(data);
@@ -1025,109 +1173,82 @@ tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, co
 	player_button_ = find_widget<tbutton>(grid_ptr, "player", false, true);
 	connect_signal_mouse_left_click(
 		*player_button_, boost::bind(&tmp_side_creator::player, parent_, boost::ref(window), index_));
+
 	faction_button_ = find_widget<tbutton>(grid_ptr, "faction", false, true);
-	// connect_signal_mouse_left_click(
-		// *faction_button_, boost::bind(&tmp_side_creator::side::faction, this, boost::ref(window)));
 	connect_signal_mouse_left_click(
 		*faction_button_, boost::bind(&tmp_side_creator::faction, parent_, boost::ref(window), index_));
+
 	feature_button_ = find_widget<tbutton>(grid_ptr, "feature", false, true);
 	connect_signal_mouse_left_click(
 		*feature_button_, boost::bind(&tmp_side_creator::feature, parent_, boost::ref(window), index_));
-	team_button_ = find_widget<tbutton>(grid_ptr, "team", false, true);
-	color_button_ = find_widget<tbutton>(grid_ptr, "color", false, true);
-	color_button_->set_active(false);
-	color_button_->set_use_markup(true);
-	
-	std::vector<std::string>::const_iterator itor =
-			std::find(parent_->team_names_.begin(), parent_->team_names_.end(),
-			cfg.get("team_name")->str());
-	if (itor == parent_->team_names_.end()) {
-		assert(!parent_->team_names_.empty());
-		team_ = 0;
-	} else {
-		team_ = itor - parent_->team_names_.begin();
-	}
 
-	// llm_.set_color(color_);
+	ally_button_ = find_widget<tbutton>(grid_ptr, "ally", false, true);
+	connect_signal_mouse_left_click(
+		*ally_button_, boost::bind(&tmp_side_creator::ally, parent_, boost::ref(window), index_));
 
-	if (const config &ai = cfg.child("ai"))
-		ai_algorithm_ = ai["ai_algorithm"].str();
-	else
-		ai_algorithm_ = "default";
+	income_button_ = find_widget<tbutton>(grid_ptr, "base_gold", false, true);
+	connect_signal_mouse_left_click(
+		*income_button_, boost::bind(&tmp_side_creator::income, parent_, boost::ref(window), index_));
 
-	// "Faction name" hack
-	if (!enabled_) {
-		faction_ = 0;
-
+	if (!allow_player_) {
+		player_button_->set_active(false);
 		faction_button_->set_active(false);
 		feature_button_->set_active(false);
+		ally_button_->set_active(false);
+		income_button_->set_active(false);
+	}
+	
+	ally_ = parent_->allies_[index_];
+
+	// "Faction name" hack
+	if (!faction_changeable_) {
+		faction_ = 0;
 
 		hero& leader = parent_->heros_[cfg["leader"].to_int()];
-		faction_button_->set_label(leader.name());
 
 		if (leader.side_feature_ != HEROS_NO_FEATURE) {
 			std::vector<int>& features = hero::valid_features();
 			std::vector<int>::iterator itor = std::find(features.begin(), features.end(), leader.side_feature_);
-			feature_button_->set_label(hero::feature_str(*itor));
-			selected_feature_ = COMBO_FEATURES_MIN_VALID + itor - features.begin();
+			selected_feature_ = COMBO_FEATURES_MIN_VALID + std::distance(features.begin(), itor);
 		} else {
-			feature_button_->set_label("");
 			selected_feature_ = COMBO_FEATURES_NONE;
 		}
-		
+
+		faction_button_->set_active(false);
+		feature_button_->set_active(false);
+
+		faction_button_->set_label(leader.name());
+		feature_button_->set_label(hero::feature_str(leader.side_feature_));
+	
 	} else {
+		selected_feature_ = COMBO_FEATURES_NONE;
 		faction_button_->set_label(_("Random"));
 		feature_button_->set_label(parent_->side_features_[0]);
-		selected_feature_ = COMBO_FEATURES_NONE;
 	}
+
+	ally_button_->set_active(allow_player_ && !parent_->params_.saved_game);
+	income_button_->set_active(allow_player_ && !parent_->params_.saved_game);
 
 	if (cfg["not_recruit"].empty() && parent_->era_cfg_->has_attribute("not_recruit")) {
 		cfg_["not_recruit"] = parent_->era_cfg_->get("not_recruit")->str();
 	}
 	if (cfg["build"].empty()) {
-		str.str("");
-		str << unit_types.find_wall()->id();
-		str << ", " << unit_types.find_market()->id();
-		str << ", " << unit_types.find_tower()->id();
-		cfg_["build"] = str.str();
+		strstr.str("");
+		strstr << unit_types.find_wall()->id();
+		strstr << ", " << unit_types.find_market()->id();
+		strstr << ", " << unit_types.find_tower()->id();
+		cfg_["build"] = strstr.str();
 	}
 
 	update_ui();
 }
 
-tmp_side_creator::side::side(const side& a) 
-	: parent_(a.parent_)
-	, cfg_(a.cfg_)
-	, index_(a.index_)
-	, id_(a.id_)
-	, player_id_(a.player_id_)
-	, save_id_(a.save_id_)
-	, controller_(a.controller_)
-	, team_(a.team_)
-	, color_(a.color_)
-	, gold_(a.gold_)
-	, income_(a.income_)
-	, faction_(a.faction_)
-	, ai_algorithm_(a.ai_algorithm_)
-	, ready_for_start_(a.ready_for_start_)
-	, allow_player_(a.allow_player_)
-	, allow_changes_(a.allow_changes_)
-	, enabled_(a.enabled_)
-	, changed_(a.changed_)
-	, selected_feature_(a.selected_feature_)
-	, player_button_(a.player_button_)
-	, faction_button_(a.faction_button_)
-	, feature_button_(a.feature_button_)
-	, team_button_(a.team_button_)
-	, color_button_(a.color_button_)
-{
-}
-
 bool tmp_side_creator::side::ready_for_start() const
 {
-	//sides without players are always ready
-	if (!allow_player_)
+	// sides without players are always ready
+	if (!allow_player_) {
 		return true;
+	}
 
 	//the host and the AI are always ready
 	if ((controller_ == CNTR_COMPUTER) ||
@@ -1135,7 +1256,8 @@ bool tmp_side_creator::side::ready_for_start() const
 		(controller_ == CNTR_LOCAL))
 		return true;
 
-	return ready_for_start_;
+	// CNTR_NETWORK, decide by player_id
+	return !player_id_.empty();
 }
 
 bool tmp_side_creator::side::available(const std::string& name) const
@@ -1158,32 +1280,32 @@ void tmp_side_creator::side::update_controller_ui()
 		// combo_controller_->set_selected(controller_ - (parent_->local_only_ ? 1 : 0));
 	} else {
 		connected_user_list::iterator player = parent_->find_player(player_id_);
-
-		if (player != parent_->users_.end()) {
-			const int no_reserve = save_id_.empty()?-1:0;
-			// combo_controller_->set_selected(CNTR_LAST + no_reserve + 1 + (player - parent_->users_.begin()) - (parent_->local_only_ ? 1 : 0));
-		} else {
-			assert(parent_->local_only_ != true);
-			// combo_controller_->set_selected(CNTR_NETWORK);
-		}
 	}
-
-    // update_ai_algorithm_combo();
 }
 
 void tmp_side_creator::side::update_ui()
 {
-	team_button_->set_label(parent_->player_teams_[index_]);
-	color_button_->set_label(parent_->player_colors_[index_]);
+	std::stringstream strstr;
+	if (ally_) {
+		strstr << ally_;
+	} else {
+		strstr << "-";
+	}
+	ally_button_->set_label(strstr.str());
+
+	strstr.str("");
+	strstr << income_;
+	income_button_->set_label(strstr.str());
 }
 
 config tmp_side_creator::side::get_config() const
 {
+	std::stringstream strstr;
 	config res;
 
 	// If the user is allowed to change type, faction, leader etc,
 	// then import their new values in the config.
-	if(enabled_ && !parent_->era_sides_.empty()) {
+	if (faction_changeable_ && !parent_->era_sides_.empty()) {
 		// Merge the faction data to res
 		res.append(*(parent_->era_sides_[faction_]));
 		res["faction_name"] = res["name"];
@@ -1193,73 +1315,25 @@ config tmp_side_creator::side::get_config() const
 		res["side"] = index_ + 1;
 	}
 	res["controller"] = controller_names[controller_];
-	res["current_player"] = player_id_;
-	res["id"] = id_;
-
-	if (player_id_.empty()) {
-		std::string description;
-		switch(controller_) {
-		case CNTR_NETWORK:
-			description = N_("(Vacant slot)");
-			break;
-		case CNTR_LOCAL:
-			if (enabled_ && !cfg_.has_attribute("save_id")) {
-				res["save_id"] = preferences::login() + res["side"].str();
-			}
-			res["current_player"] = preferences::login();
-			description = N_("Anonymous local player");
-			break;
-		case CNTR_COMPUTER:
-			if (enabled_ && !cfg_.has_attribute("save_id")) {
-				res["save_id"] = "ai" + res["side"].str();
-			}
-			{
-				utils::string_map symbols;
-				if (allow_player_) {
-					symbols["playername"] = "";
-				} else { // do not import default ai cfg here - all is set by scenario config
-					symbols["playername"] = _("Computer Player");
-				}
-				symbols["side"] = res["side"].str();
-				description = vgettext("$playername $side",symbols);
-			}
-			break;
-		case CNTR_EMPTY:
-			description = N_("(Empty slot)");
-			break;
-		case CNTR_LAST:
-		default:
-			description = N_("(empty)");
-			assert(false);
-			break;
-		}
-		res["user_description"] = t_string(description, "wesnoth");
+	if (controller_ != CNTR_LOCAL || !player_id_.empty()) {
+		res["current_player"] = player_id_;
 	} else {
-		if (enabled_ && !cfg_.has_attribute("save_id")) {
-			res["save_id"] = player_id_ + res["side"];
-		}
-
-		res["user_description"] = player_id_;
+		res["current_player"] = preferences::login();
 	}
 
-	if (controller_ != CNTR_COMPUTER) {
-		res["name"] = res["user_description"];
-	} else {
-		res["name"] = "";
-	}
-	res["allow_changes"] = enabled_ && allow_changes_;
+	res["name"] = player_id_;
 
-	if (enabled_) {
+	res["allow_changes"] = faction_changeable_ && allow_changes_;
+
+	if (faction_changeable_) {
 		if (parent_->get_faction(index_) != RANDOM_FACTION) {
 			// add content in [faction][/faction] to this side
 			const config& faction_cfg = *parent_->factions_[parent_->get_faction(index_)].first;
 			res["leader"] = faction_cfg["leader"];
 			if (config& art_cfg = res.child("artifical")) {
 				if (!art_cfg.has_attribute("service_heros")) {
-					if (const config& sub = faction_cfg.child("artifical")) {
-						art_cfg["service_heros"] = sub["service_heros"];
-						art_cfg["wander_heros"] = sub["wander_heros"];
-					}
+					art_cfg["service_heros"] = faction_cfg["service_heros"];
+					art_cfg["wander_heros"] = faction_cfg["wander_heros"];
 				}
 				art_cfg["economy_area"] = res["economy_area"].str();
 			} else {
@@ -1267,64 +1341,42 @@ config tmp_side_creator::side::get_config() const
 			
 				new_art_cfg["side"] = index_ + 1;
 				new_art_cfg["cityno"] = index_ + 1;
-	/*
-				const map_location& pos = parent_->gmap_.starting_position(index_ + 1);
-				new_art_cfg["x"] = pos.x + 1;
-				new_art_cfg["y"] = pos.y + 1;
-	*/
-				new_art_cfg["x"] = -1;
-				new_art_cfg["y"] = -1;
+
+				new_art_cfg["x"] = map_location().x;
+				new_art_cfg["y"] = map_location().y;
+
+				new_art_cfg["service_heros"] = faction_cfg["service_heros"];
+				new_art_cfg["wander_heros"] = faction_cfg["wander_heros"];
 				new_art_cfg["economy_area"] = res["economy_area"].str();
 			}
 			res.remove_attribute("economy_area");
 		}
+	}
 
-		// res["team"] = lexical_cast<std::string>(team_);
-		res["team_name"] = index_ + 1;
-		// res["team_name"] = parent_->team_names_[team_];
-		res["user_team_name"] = parent_->user_team_names_[team_];
-		res["allow_player"] = allow_player_;
-		// don't write color, use default color
-		// res["color"] = color_ + 1;
-		res["gold"] = gold_;
-		if (controller_ == CNTR_COMPUTER && !income_) {
-			res["income"] = 100;
-		} else {
-			res["income"] = income_;
+	strstr.str("");
+	for (std::vector<side>::const_iterator it = parent_->sides_.begin(); it != parent_->sides_.end(); ++ it) {
+		const side& s = *it;
+		if (s.index_ != index_ && ally_ && s.ally_ == ally_) {
+			if (!strstr.str().empty()) {
+				strstr << ", ";
+			}
+			strstr << s.index_ + 1;
 		}
+	}
+	res["team_name"] = strstr.str();
 
-		if(!parent_->params_.use_map_settings || res["fog"].empty() || (res["fog"] != "yes" && res["fog"] != "no")) {
-			res["fog"] = parent_->params_.fog_game;
-		}
+	res["allow_player"] = allow_player_;
+	res["gold"] = gold_;
+	res["income"] = income_;
 
-		if(!parent_->params_.use_map_settings || res["shroud"].empty() || (res["shroud"] != "yes" && res["shroud"] != "no")) {
-			res["shroud"] = parent_->params_.shroud_game;
-		}
-
-		res["share_maps"] = parent_->params_.share_maps;
-		res["share_view"] =  parent_->params_.share_view;
-		if (!parent_->params_.use_map_settings || res["village_gold"].empty())
-			res["village_gold"] = parent_->params_.village_gold;
-
-	} 
+	res["share_maps"] = parent_->params_.share_maps;
+	res["share_view"] =  parent_->params_.share_view;
+	if (!parent_->params_.saved_game || res["village_gold"].empty()) {
+		res["village_gold"] = parent_->params_.village_gold;
+	}
 	
 	res["selected_feature"] = selected_feature_;
 
-	if(parent_->params_.use_map_settings && enabled_) {
-		config trimmed = cfg_;
-		static char const *attrs[] = { "side", "controller", "id",
-			"team_name", "user_team_name", "color", "colour", "gold",
-			"income", "allow_changes" };
-		foreach (const char *attr, attrs) {
-			trimmed.remove_attribute(attr);
-		}
-
-		if(controller_ != CNTR_COMPUTER) {
-			// Only override names for computer controlled players
-			trimmed.remove_attribute("user_description");
-		}
-		res.merge_with(trimmed);
-	}
 	return res;
 }
 
@@ -1383,17 +1435,8 @@ void tmp_side_creator::side::set_player_id(const std::string& player_id)
 	update_ui();
 }
 
-void tmp_side_creator::side::set_ready_for_start(bool ready_for_start)
-{
-	ready_for_start_ = ready_for_start;
-}
-
 void tmp_side_creator::side::import_network_user(const config& data)
 {
-	if (!enabled_) {
-		set_ready_for_start(true);
-	}
-
 	player_id_ = data["name"].str();
 	controller_ = CNTR_NETWORK;
 
@@ -1405,35 +1448,23 @@ void tmp_side_creator::side::reset(controller controller_)
 	player_id_ = "";
 	controller_ = controller_;
 
-	if (controller_ == CNTR_NETWORK) {
-		ready_for_start_ = false;
-	}
-
 	update_ui();
 }
 
 void tmp_side_creator::side::resolve_random()
 {
-	if (!enabled_) {
+	if (!faction_changeable_) {
 		return;
 	}
-	int lchoice;
-
+	
 	if (parent_->get_faction(index_) == RANDOM_FACTION) {
 		// Choose a random faction
-		const config& era_cfg = *parent_->era_cfg_;
-		std::vector<std::string> types = utils::split(era_cfg["factions"]);
-		if (!types.empty()) {
-			std::vector<int> candidate = parent_->get_candidate_factions(index_);
-			// BUG!! candidate.size() may be zero
-			parent_->set_faction(index_, candidate[rand() % candidate.size()]);
-		} else {
-			utils::string_map i18n_symbols;
-			i18n_symbols["faction"] = era_cfg["name"];
-			throw config::error(vgettext("Unable to find a leader type for faction $faction", i18n_symbols));
-		}
+		std::vector<int> candidate = parent_->get_candidate_factions(index_);
+		// BUG!! candidate.size() may be zero
+		parent_->set_faction(index_, candidate[rand() % candidate.size()]);
 	}
 
+	int lchoice;
 	// resolve side features combo
 	if (selected_feature_ == COMBO_FEATURES_RANDOM) {
 		do {
@@ -1452,9 +1483,21 @@ void tmp_side_creator::side::resolve_random()
 
 void tmp_side_creator::side::player(twindow& window)
 {
+	std::stringstream strstr;
+
 	std::vector<std::string> items;
 	std::vector<std::pair<std::string, int> >::const_iterator itor;
 	for (itor = parent_->player_xtypes_.begin(); itor != parent_->player_xtypes_.end(); ++ itor) {
+		strstr.str("");
+		strstr << "<format>";
+		if (itor->second % CNTR_LAST == CNTR_LOCAL) {
+			strstr << "color='green' ";
+		} else if (itor->second % CNTR_LAST == CNTR_NETWORK) {
+			strstr << "color='blue' ";
+		}
+		strstr << "text='" << itor->first << "'</format>\n";
+
+		// items.push_back(strstr.str());
 		items.push_back(itor->first);
 	}
 	
@@ -1510,6 +1553,57 @@ void tmp_side_creator::side::feature(twindow& window)
 	dlg.show(parent_->gui_.video());
 	selected_feature_ = dlg.selected_index();
 	feature_button_->set_label(parent_->side_features_[selected_feature_]);
+
+	// changed, send!
+	parent_->update_playerlist_state();
+	parent_->update_and_send_diff();
+}
+
+void tmp_side_creator::side::ally(twindow& window)
+{
+	ally_ ++;
+	ally_ %= parent_->sides_.size() + 1;
+
+	std::stringstream strstr;
+	if (ally_) {
+		strstr << ally_;
+	} else {
+		strstr << "-";
+	}
+	ally_button_->set_label(strstr.str());
+
+	// changed, send!
+	parent_->update_playerlist_state();
+	parent_->update_and_send_diff();
+}
+
+void tmp_side_creator::side::income(twindow& window)
+{
+	std::vector<std::string> items;
+	std::vector<tval_str> income_map;
+	int actived_index = 0;
+	
+	income_map.push_back(tval_str(0, "0"));
+	income_map.push_back(tval_str(20, "20"));
+	income_map.push_back(tval_str(50, "50"));
+	income_map.push_back(tval_str(100, "100"));
+	income_map.push_back(tval_str(150, "150"));
+	income_map.push_back(tval_str(200, "200"));
+
+	for (std::vector<tval_str>::iterator it = income_map.begin(); it != income_map.end(); ++ it) {
+		items.push_back(it->str);
+		if (income_ == it->val) {
+			actived_index = std::distance(income_map.begin(), it);
+		}
+	}
+	
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(parent_->gui_.video());
+
+	int selected = dlg.selected_index();
+	income_ = income_map[selected].val;
+
+	income_button_->set_label(income_map[selected].str);
 
 	// changed, send!
 	parent_->update_playerlist_state();

@@ -21,7 +21,6 @@
 #include "game_display.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
-#include "foreach.hpp"
 #include "gui/auxiliary/timer.hpp"
 #include "gui/widgets/listbox.hpp"
 #include "gui/dialogs/helper.hpp"
@@ -40,6 +39,7 @@
 #include "wml_separators.hpp"
 #include "statistics.hpp"
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 namespace gui2 {
@@ -75,6 +75,8 @@ namespace gui2 {
  * @end{table}
  */
 
+extern std::vector<std::set<int> > generate_team_names_from_side(const config& cfg);
+extern std::vector<int> generate_allies_from_team_names(const std::vector<std::set<int> >& team_names);
 extern void check_response(network::connection res, const config& data);
 extern std::string get_color_string(int id);
 
@@ -90,10 +92,11 @@ void tplayer_list_side_wait::init(twindow & w)
 			, true);
 }
 
-tmp_side_wait::tmp_side_wait(hero_map& heros, game_display& gui, gamemap& gmap, const config& game_config,
+tmp_side_wait::tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& gui, gamemap& gmap, const config& game_config,
 			config& gamelist, bool observe)
 	: legacy_result_(QUIT)
 	, heros_(heros)
+	, heros_start_(heros_start)
 	, gui_(gui)
 	, gmap_(gmap)
 	, game_config_(game_config)
@@ -170,7 +173,7 @@ void tmp_side_wait::join_game(twindow& window, bool observe)
 		//available side.
 		const config *side_choice = NULL;
 		int side_num = -1, nb_sides = 0;
-		foreach (const config &sd, level_.child_range("side")) {
+		BOOST_FOREACH (const config &sd, level_.child_range("side")) {
 			if (sd["controller"] == "network" && sd["current_player"].empty()) {
 				if (!side_choice) { // found the first empty side
 					side_choice = &sd;
@@ -213,7 +216,7 @@ void tmp_side_wait::join_game(twindow& window, bool observe)
 			}
 */
 			int color = side_num;
-			const std::string color_str = (*side_choice).get_old_attribute("color","colour");
+			const std::string color_str = (*side_choice)["color"].str();
 			if (!color_str.empty())
 				color = game_config::color_info(color_str).index() - 1;
 
@@ -253,23 +256,7 @@ void tmp_side_wait::start_game()
 	 * and new way. (Of course it would be nice to unify the data
 	 * stored.)
 	 */
-	if (!level_.child("player")) {
-		level_to_gamestate(level_, replay_data_, state_);
-	} else {
-
-		state_ = game_state(level_, replay_data_);
-
-		// When we observe and don't have the addon installed we still need
-		// the old way, no clue why however. Code is a copy paste of
-		// playcampaign.cpp:576 which shows an 'Unknown scenario: '$scenario|'
-		// error. This seems to work and have no side effects....
-		if(!state_.classification().scenario.empty() && state_.classification().scenario != "null") {
-			// DBG_NW << "Falling back to loading the old way.\n";
-			level_to_gamestate(level_, replay_data_, state_);
-		}
-	}
-
-	// LOG_NW << "starting game\n";
+	level_to_gamestate(level_, replay_data_, state_);
 }
 
 
@@ -282,7 +269,6 @@ void tmp_side_wait::cancel(twindow& window)
 void tmp_side_wait::process_network_data(const config& data, const network::connection sock)
 {
 	twindow& window = *sides_table_->get_window();
-	// ui::process_network_data(data, sock);
 	
 	if (data["message"] != "") {
 		gui2::show_transient_message(gui_.video()
@@ -293,8 +279,21 @@ void tmp_side_wait::process_network_data(const config& data, const network::conn
 		legacy_result_ = QUIT;
 		window.close();
 		return;
-	} else if(data.child("stop_updates")) {
+	} else if (data.child("stop_updates")) {
 		stop_updates_ = true;
+
+	} else if (const config& cfg = data.child("change_faction")) {
+		int type = cfg["type"].to_int(-1);
+		if (type == BINARY_HEROS) {
+			heros_.map_from_mem(game_config::savegame_cache, heros_.file_size());
+
+		} else if (type == BINARY_HEROS_START) {
+			heros_start_.map_from_mem(game_config::savegame_cache, heros_start_.file_size());
+
+		} else if (type == BINARY_REPLAY) {
+			replay_data_.read(game_config::savegame_cache);
+		}
+
 	} else if(data.child("start_game")) {
 		// LOG_NW << "received start_game message\n";
 		legacy_result_ = PLAY;
@@ -311,11 +310,6 @@ void tmp_side_wait::process_network_data(const config& data, const network::conn
 		generate_menu(window);
 	} else if(data.child("side")) {
 		level_ = data;
-/*
-		LOG_NW << "got some sides. Current number of sides = "
-			<< level_.child_count("side") << ','
-			<< data.child_count("side") << '\n';
-*/
 		generate_menu(window);
 	}
 }
@@ -356,8 +350,9 @@ void tmp_side_wait::update_playerlist()
 void tmp_side_wait::generate_menu(twindow& window)
 {
 	if (stop_updates_) {
-		foreach (const config &sd, level_.child_range("side")) {
-			hero& leader = heros_[sd["leader"].to_int()];
+		BOOST_FOREACH (const config &sd, level_.child_range("side")) {
+			int number = sd["leader"].to_int();
+			hero& leader = heros_[number];
 			int selected_feature = sd["selected_feature"].to_int();
 			if (selected_feature >= COMBO_FEATURES_MIN_VALID) {
 				leader.side_feature_ = hero::valid_features()[selected_feature - COMBO_FEATURES_MIN_VALID];
@@ -365,6 +360,8 @@ void tmp_side_wait::generate_menu(twindow& window)
 			} else if (selected_feature == COMBO_FEATURES_NONE) {
 				leader.side_feature_ = HEROS_NO_FEATURE;
 			}
+			// effect to ...
+			heros_start_[number] = leader;
 		}
 		return;
 	}
@@ -373,12 +370,15 @@ void tmp_side_wait::generate_menu(twindow& window)
 		return;
 	}
 */
-	std::vector<std::string> details;
+	std::stringstream strstr;
 
 	users_.clear();
 	sides_table_->clear();
+	
+	std::vector<std::set<int> > team_names = generate_team_names_from_side(level_);
+	std::vector<int> allies = generate_allies_from_team_names(team_names);
 	int side = 0;
-	foreach (const config &sd, level_.child_range("side")) {
+	BOOST_FOREACH (const config &sd, level_.child_range("side")) {
 		if (!sd["allow_player"].to_bool(true)) {
 			side ++;
 			continue;
@@ -402,7 +402,20 @@ void tmp_side_wait::generate_menu(twindow& window)
 
 		data["number"]["label"] = sd["side"].str();
 
-		data["player"]["label"] = sd["user_description"];
+		strstr.str("");
+		if (!sd["current_player"].empty()) {
+			strstr << sd["current_player"].str();
+		} else {
+			std::string controller = sd["controller"].str();
+			if (controller == "network") {
+				strstr << _("Network Player");
+			} else if (controller == "ai") {
+				strstr << _("Computer Player");
+			} else if (controller == "null") {
+				strstr << _("Empty");
+			}
+		}
+		data["player"]["label"] = strstr.str();
 
 		if (!sd["leader"].empty()) {
 			hero& leader = heros_[sd["leader"].to_int()];
@@ -422,17 +435,15 @@ void tmp_side_wait::generate_menu(twindow& window)
 			data["feature"]["label"] = hero::feature_str(hero::valid_features()[selected_feature - COMBO_FEATURES_MIN_VALID]);
 		}
 
+		strstr.str("");
+		strstr << allies[side];
+		data["ally"]["label"] = strstr.str();
 		data["income"]["label"] = sd["income"].str();
-
-		data["color"]["label"] = get_color_string(side);
-		// data["label"]["use_markup"] = "true";
 
 		sides_table_->add_row(data);
 
 		tgrid* grid_ptr = sides_table_->get_row_grid(side);
-		tlabel* label = find_widget<tlabel>(grid_ptr, "color", false, true);
-		label->set_use_markup(true);
-
+		
 		side ++;
 	}
 

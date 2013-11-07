@@ -1,5 +1,5 @@
 /*-----------------------------------------------------------------------------+
-Copyright (c) 2007-2009: Joachim Faulhaber
+Copyright (c) 2007-2012: Joachim Faulhaber
 Copyright (c) 1999-2006: Cortex Software GmbH, Kantstrasse 57, Berlin
 +------------------------------------------------------------------------------+
    Distributed under the Boost Software License, Version 1.0.
@@ -24,7 +24,7 @@ template
     typename DomainT,
     typename CodomainT,
     class Traits = icl::partial_absorber,
-    ICL_COMPARE Compare  = ICL_COMPARE_INSTANCE(std::less, DomainT),
+    ICL_COMPARE Compare  = ICL_COMPARE_INSTANCE(ICL_COMPARE_DEFAULT, DomainT),
     ICL_COMBINE Combine  = ICL_COMBINE_INSTANCE(icl::inplace_plus, CodomainT),
     ICL_SECTION Section  = ICL_SECTION_INSTANCE(icl::inter_section, CodomainT), 
     ICL_INTERVAL(ICL_COMPARE) Interval = ICL_INTERVAL_INSTANCE(ICL_INTERVAL_DEFAULT, DomainT, Compare),
@@ -68,16 +68,24 @@ public:
     //==========================================================================
     /// Default constructor for the empty object
     split_interval_map(): base_type() {}
+
     /// Copy constructor
     split_interval_map(const split_interval_map& src): base_type(src) {}
 
-    explicit split_interval_map(domain_mapping_type& base_pair): base_type()
+    explicit split_interval_map(const domain_mapping_type& base_pair): base_type()
     { this->add(base_pair); }
 
     explicit split_interval_map(const value_type& value_pair): base_type()
     { this->add(value_pair); }
 
     /// Assignment operator
+    split_interval_map& operator = (const split_interval_map& src)
+    { 
+        base_type::operator=(src);
+        return *this;
+    }
+
+    /// Assignment operator for base type
     template<class SubType>
     split_interval_map& operator =
         (const interval_base_map<SubType,DomainT,CodomainT,
@@ -93,6 +101,26 @@ public:
         this->_map.insert(src.begin(), src.end());
     }
 
+#   ifndef BOOST_ICL_NO_CXX11_RVALUE_REFERENCES
+    //==========================================================================
+    //= Move semantics
+    //==========================================================================
+
+    /// Move constructor
+    split_interval_map(split_interval_map&& src)
+        : base_type(boost::move(src))
+    {}
+
+    /// Move assignment operator
+    split_interval_map& operator = (split_interval_map&& src)
+    { 
+        base_type::operator=(boost::move(src));
+        return *this;
+    }
+
+    //==========================================================================
+#   endif // BOOST_ICL_NO_CXX11_RVALUE_REFERENCES
+
 private:
     // Private functions that shall be accessible by the baseclass:
     friend class
@@ -105,21 +133,21 @@ private:
     template<class Combiner>
     void handle_left_combined(iterator it_)
     {
-        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable(it_->second))
+        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable((*it_).second))
             this->_map.erase(it_);
     }
 
     template<class Combiner>
     void handle_combined(iterator it_)
     {
-        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable(it_->second))
+        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable((*it_).second))
             this->_map.erase(it_);
     }
 
     template<class Combiner>
     void handle_preceeded_combined(iterator prior_, iterator& it_)
     {
-        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable(it_->second))
+        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable((*it_).second))
         {
             this->_map.erase(it_);
             it_ = prior_;
@@ -129,7 +157,7 @@ private:
     template<class Combiner>
     void handle_succeeded_combined(iterator it_, iterator)
     {
-        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable(it_->second))
+        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable((*it_).second))
             this->_map.erase(it_);
     }
 
@@ -139,7 +167,7 @@ private:
     void gap_insert_at(iterator& it_, iterator prior_, 
                        const interval_type& end_gap, const codomain_type& co_val)
     {
-        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable(it_->second))
+        if(on_absorbtion<type,Combiner,Traits::absorbs_identities>::is_absorbable((*it_).second))
         {
             this->_map.erase(it_);
             it_ = this->template gap_insert<Combiner>(prior_, end_gap, co_val);

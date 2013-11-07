@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/troop_list.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "team.hpp"
@@ -426,7 +425,7 @@ bool ttroop_list::compare_row(tgrid& row1, tgrid& row2)
 			result = utils::utf8str_compare(u1.name(), u2.name());
 		} else if (sorting_widget_ == widgets[1]) {
 			// type
-			result = utils::utf8str_compare(u1.type_name(), u2.type_name());
+			result = utils::utf8str_compare(u1.packee_type()->id(), u2.packee_type()->id());
 		} else if (sorting_widget_ == widgets[2]) {
 			// side
 			result = utils::utf8str_compare(teams_[u1.side() - 1].name(), teams_[u2.side() - 1].name());
@@ -450,7 +449,7 @@ bool ttroop_list::compare_row(tgrid& row1, tgrid& row2)
 			result = utils::utf8str_compare(u1.name(), u2.name());
 		} else if (sorting_widget_ == widgets[1]) {
 			// type
-			result = utils::utf8str_compare(u1.type_name(), u2.type_name());
+			result = utils::utf8str_compare(u1.packee_type()->id(), u2.packee_type()->id());
 		} else if (sorting_widget_ == widgets[2]) {
 			// level
 			if (u1.level() > u2.level()) {
@@ -482,7 +481,7 @@ bool ttroop_list::compare_row(tgrid& row1, tgrid& row2)
 			result = utils::utf8str_compare(u1.name(), u2.name());
 		} else if (sorting_widget_ == widgets[1]) {
 			// type
-			result = utils::utf8str_compare(u1.type_name(), u2.type_name());
+			result = utils::utf8str_compare(u1.packee_type()->id(), u2.packee_type()->id());
 		} else if (sorting_widget_ == widgets[2]) {
 			// cause_damage
 			if (u1.cause_damage_ > u2.cause_damage_) {

@@ -18,6 +18,8 @@
 #ifndef RANDOM_HPP_INCLUDED
 #define RANDOM_HPP_INCLUDED
 
+class config;
+
 #define POOL_ALLOC_DATA_SIZE	1048576	// 1M
 #define POOL_ALLOC_POS_SIZE		131072 // 128K, One allocate may save 1024x128 packet pos.
 #define POOL_ALLOC_CACHE_SIZE	262144 // 256K
@@ -29,7 +31,7 @@ public:
 		BOMB, DISBAND, BUILD, CAST_TACTIC, COUNTDOWN_UPDATE, MOVEMENT, ATTACK, RANDOM_NUMBER, CHOOSE, LABLE,
 		RENAME, SPEAK, MOVE_HEROS, BELONG_TO, EVENT, CHECKSUM_CHECK, INCHING_BLOCK, CLEAR_LABELS, DIPLOMATISM,
 		FINAL_BATTLE, INPUT, REFORM_CAPTAIN, ACTIVE_TACTIC, ADD_CARD, ERASE_CARD, ARMORY, INTERIOR, ASSEMBLE_TREASURE, 
-		RPG_EXCHANGE, ING_TECHNOLOGY, SCENARIO_ENV};
+		RPG_EXCHANGE, ING_TECHNOLOGY, SCENARIO_ENV, FORMATION_ATTACK, PURCHASE, APPOINT_NOBLE};
 	struct command {
 		TYPE type;
 		unsigned int flags;
@@ -67,6 +69,7 @@ public:
 	void set_use_gzip(bool val);
 
 	void load_for_queue(int pool_pos_index, gzip_segment_t& seg, int& pool_data_gzip_size, unsigned char* dest);
+
 protected:
 	bool use_gzip_;
 	
@@ -82,8 +85,6 @@ protected:
 
 	unsigned char* cache_;
 };
-
-class config;
 
 int get_random();
 int get_random_nocheck();

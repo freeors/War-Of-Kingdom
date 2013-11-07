@@ -1,6 +1,5 @@
-/* $Id: room.hpp 47608 2010-11-21 01:56:29Z shadowmaster $ */
 /*
-   Copyright (C) 2009 - 2010 by Tomasz Sniatowski <kailoran@gmail.com>
+   Copyright (C) 2009 - 2013 by Tomasz Sniatowski <kailoran@gmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -143,6 +142,10 @@ public:
 	 * @param exclude if nonzero, do not send to this player
 	 */
 	void send_server_message_to_all(const char* message, network::connection exclude=0) const;
+	void send_server_message_to_all(const std::string& message, network::connection exclude=0) const
+	{
+		send_server_message_to_all(message.c_str(), exclude);
+	}
 
 	/**
 	 * Prepare a text message and/or send it to a player. If a nonzero sock
@@ -155,6 +158,12 @@ public:
 	 */
 	void send_server_message(const char* message, network::connection sock,
 		simple_wml::document* docptr = NULL) const;
+
+	void send_server_message(const std::string& message, network::connection sock,
+		simple_wml::document* docptr = NULL) const
+	{
+		send_server_message(message.c_str(), sock, docptr);
+	}
 
 
 private:

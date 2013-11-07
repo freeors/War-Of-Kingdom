@@ -64,7 +64,7 @@
         <SPAN CLASS="keyword">typedef</SPAN> io::output_filter_tag  category;
 
         <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-        <SPAN CLASS="keyword">bool</SPAN> put(Sink& snk, <SPAN CLASS="keyword">char</SPAN> c) 
+        <SPAN CLASS="keyword">bool</SPAN> put(Sink&amp; snk, <SPAN CLASS="keyword">char</SPAN> c)
         { 
             <SPAN CLASS="keyword">return</SPAN> io::put(snk, toupper((<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>) c)); 
         }
@@ -96,7 +96,7 @@
         <SPAN CLASS="keyword">typedef</SPAN> io::multichar_output_filter_tag  category;
 
         <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-        <SPAN CLASS="keyword">std::streamsize</SPAN> write(Sink& snk, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>* s, streamsize n) 
+        <SPAN CLASS="keyword">std::streamsize</SPAN> write(Sink&amp; snk, <SPAN CLASS="keyword">const</SPAN> <SPAN CLASS="keyword">char</SPAN>* s, streamsize n)
         { 
             std::streamsize rest = n;
             <SPAN CLASS="keyword">while</SPAN> (rest != 0 &amp;&amp; io::put(snk, toupper((<SPAN CLASS="keyword">unsigned</SPAN> <SPAN CLASS="keyword">char</SPAN>) *s++))
@@ -221,7 +221,6 @@
 <!-- Begin Footer -->
 
 <HR>
-<P CLASS="copyright">Revised 02 Feb 2008</P>
 
 <P CLASS="copyright">&copy; Copyright 2008 <a href="http://www.coderage.com/" target="_top">CodeRage, LLC</a><br/>&copy; Copyright 2004-2007 <a href="http://www.coderage.com/turkanis/" target="_top">Jonathan Turkanis</a></P>
 <P CLASS="copyright"> 

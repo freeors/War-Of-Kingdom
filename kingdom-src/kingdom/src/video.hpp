@@ -41,12 +41,7 @@ void update_whole_screen();
 
 class CVideo : private boost::noncopyable {
      public:
-		 enum FAKE_TYPES {
-			 NO_FAKE,
-			 FAKE,
-			 FAKE_TEST
-		 };
-	CVideo(FAKE_TYPES type = NO_FAKE);
+	CVideo();
 	~CVideo();
 
 
@@ -92,18 +87,6 @@ class CVideo : private boost::noncopyable {
 	void setBpp( int bpp );
 	int getBpp();
 
-	void make_fake();
-	/**
-	 * Creates a fake frame buffer for the unit tests.
-	 *
-	 * @param width               The width of the buffer.
-	 * @param height              The height of the buffer.
-	 * @param bpp                 The bpp of the buffer.
-	 */
-	void make_test_fake(const unsigned width = 1024,
-			const unsigned height = 768, const unsigned bpp = 32);
-	bool faked() const { return fake_screen_; }
-
 	//functions to set and clear 'help strings'. A 'help string' is like a tooltip, but it appears
 	//at the bottom of the screen, so as to not be intrusive. Setting a help string sets what
 	//is currently displayed there.
@@ -126,9 +109,6 @@ private:
 	bool mode_changed_;
 
 	int bpp_;	// Store real bits per pixel
-
-	//if there is no display at all, but we 'fake' it for clients
-	bool fake_screen_;
 
 	//variables for help strings
 	int help_string_;

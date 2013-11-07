@@ -23,7 +23,6 @@
 
 #include "actions.hpp"
 #include "font.hpp"
-#include "foreach.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
 #include "language.hpp"
@@ -318,10 +317,9 @@ report generate_report(TYPE type,
 	}
 	 case TECH_INCOME: {
 		team_data data = calculate_team_data(viewing_team, current_side);
-		if (current_side != playing_side)
+		if (current_side != playing_side) {
 			str << font::GRAY_TEXT;
-		else if (data.net_income < 0)
-			str << font::BAD_TEXT;
+		}
 
 		str << data.technology_net_income;
 		break;
@@ -469,16 +467,15 @@ report generate_report(TYPE type,
 		break;
 	}
 	case STRATUM: {
-		const hero* rpg_hero = rpg::h;
 		std::string stratum_icon;
 		if (rpg::stratum == hero_stratum_wander) {
-			stratum_icon = "/misc/stratum-wander.png";
+			stratum_icon = "misc/stratum-wander.png";
 		} else if (rpg::stratum == hero_stratum_citizen) {
-			stratum_icon = "/misc/stratum-citizen.png";
+			stratum_icon = "misc/stratum-citizen.png";
 		} else if (rpg::stratum == hero_stratum_mayor) {
-			stratum_icon = "/misc/stratum-mayor.png";
+			stratum_icon = "misc/stratum-mayor.png";
 		} else if (rpg::stratum == hero_stratum_leader) {
-			stratum_icon = "/misc/stratum-leader.png";
+			stratum_icon = "misc/stratum-leader.png";
 		}
 		image::locator stratum_icon_img(stratum_icon);
 		return report("", stratum_icon_img, "");

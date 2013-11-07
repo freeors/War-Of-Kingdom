@@ -2,7 +2,7 @@
 // detail/impl/service_registry.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2011 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,20 +16,15 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include <boost/asio/detail/config.hpp>
-#include <boost/throw_exception.hpp>
+#include <vector>
 #include <boost/asio/detail/service_registry.hpp>
+#include <boost/asio/detail/throw_exception.hpp>
 
 #include <boost/asio/detail/push_options.hpp>
 
 namespace boost {
 namespace asio {
 namespace detail {
-
-service_registry::service_registry(boost::asio::io_service& o)
-  : owner_(o),
-    first_service_(0)
-{
-}
 
 service_registry::~service_registry()
 {
@@ -50,6 +45,35 @@ service_registry::~service_registry()
     destroy(first_service_);
     first_service_ = next_service;
   }
+}
+
+void service_registry::notify_fork(boost::asio::io_service::fork_event fork_ev)
+{
+  // Make a copy of all of the services while holding the lock. We don't want
+  // to hold the lock while calling into each service, as it may try to call
+  // back into this class.
+  std::vector<boost::asio::io_service::service*> services;
+  {
+    boost::asio::detail::mutex::scoped_lock lock(mutex_);
+    boost::asio::io_service::service* service = first_service_;
+    while (service)
+    {
+      services.push_back(service);
+      service = service->next_;
+    }
+  }
+
+  // If processing the fork_prepare event, we want to go in reverse order of
+  // service registration, which happens to be the existing order of the
+  // services in the vector. For the other events we want to go in the other
+  // direction.
+  std::size_t num_services = services.size();
+  if (fork_ev == boost::asio::io_service::fork_prepare)
+    for (std::size_t i = 0; i < num_services; ++i)
+      services[i]->fork_service(fork_ev);
+  else
+    for (std::size_t i = num_services; i > 0; --i)
+      services[i - 1]->fork_service(fork_ev);
 }
 
 void service_registry::init_key(boost::asio::io_service::service::key& key,
@@ -121,8 +145,8 @@ void service_registry::do_add_service(
     const boost::asio::io_service::service::key& key,
     boost::asio::io_service::service* new_service)
 {
-  if (&owner_ != &new_service->io_service())
-    boost::throw_exception(invalid_service_owner());
+  if (&owner_ != &new_service->get_io_service())
+    boost::asio::detail::throw_exception(invalid_service_owner());
 
   boost::asio::detail::mutex::scoped_lock lock(mutex_);
 
@@ -131,7 +155,7 @@ void service_registry::do_add_service(
   while (service)
   {
     if (keys_match(service->key_, key))
-      boost::throw_exception(service_already_exists());
+      boost::asio::detail::throw_exception(service_already_exists());
     service = service->next_;
   }
 

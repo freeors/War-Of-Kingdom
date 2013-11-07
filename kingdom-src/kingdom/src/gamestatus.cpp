@@ -24,7 +24,6 @@
 #include "gamestatus.hpp"
 
 #include "actions.hpp"
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "log.hpp"
 #include "game_preferences.hpp"
@@ -42,6 +41,7 @@
 #include "artifical.hpp"
 #include "resources.hpp"
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 #ifndef _MSC_VER
@@ -61,66 +61,69 @@ static lg::log_domain log_engine_tc("engine/team_construction");
 #define DBG_NG_TC LOG_STREAM(debug, log_engine_tc)
 
 game_classification::game_classification():
-	savegame_config(),
-	label(),
-	original_label(),
-	parent(),
-	version(),
-	campaign_type(),
-	campaign_define(),
-	campaign_xtra_defines(),
-	campaign(),
-	history(),
-	abbrev(),
-	mode(),
-	scenario(),
-	next_scenario(),
-	completion(),
-	end_text(),
-	end_text_duration(),
-	create(0)
+	savegame_config()
+	, label()
+	, original_label()
+	, parent()
+	, version()
+	, campaign_type()
+	, campaign_define()
+	, campaign()
+	, history()
+	, abbrev()
+	, mode()
+	, scenario()
+	, next_scenario()
+	, completion()
+	, end_text()
+	, end_text_duration()
+	, create(0)
+	, duration(0)
+	, hash(0)
 	{}
 
 game_classification::game_classification(const config& cfg):
-	savegame_config(),
-	label(cfg["label"]),
-	original_label(cfg["original_label"]),
-	parent(cfg["parent"]),
-	version(cfg["version"]),
-	campaign_type(cfg["campaign_type"].empty() ? "scenario" : cfg["campaign_type"].str()),
-	campaign_define(cfg["campaign_define"]),
-	campaign_xtra_defines(utils::split(cfg["campaign_extra_defines"])),
-	campaign(cfg["campaign"]),
-	history(cfg["history"]),
-	abbrev(cfg["abbrev"]),
-	mode(cfg["mode"]),
-	scenario(cfg["scenario"]),
-	next_scenario(cfg["next_scenario"]),
-	completion(cfg["completion"]),
-	end_text(cfg["end_text"]),
-	end_text_duration(cfg["end_text_duration"]),
-	create(cfg["create"].to_long())
+	savegame_config()
+	, label(cfg["label"])
+	, original_label(cfg["original_label"])
+	, parent(cfg["parent"])
+	, version(cfg["version"])
+	, campaign_type(cfg["campaign_type"].empty() ? "scenario" : cfg["campaign_type"].str())
+	, campaign_define(cfg["campaign_define"])
+	, campaign(cfg["campaign"])
+	, history(cfg["history"])
+	, abbrev(cfg["abbrev"])
+	, mode(cfg["mode"])
+	, scenario(cfg["scenario"])
+	, next_scenario(cfg["next_scenario"])
+	, completion(cfg["completion"])
+	, end_text(cfg["end_text"])
+	, end_text_duration(cfg["end_text_duration"])
+	, create(cfg["create"].to_long())
+	, duration(cfg["duration"].to_int())
+	, hash(cfg["hash"].to_int())
 	{}
 
 game_classification::game_classification(const game_classification& gc):
-	savegame_config(),
-	label(gc.label),
-	original_label(gc.original_label),
-	parent(gc.parent),
-	version(gc.version),
-	campaign_type(gc.campaign_type),
-	campaign_define(gc.campaign_define),
-	campaign_xtra_defines(gc.campaign_xtra_defines),
-	campaign(gc.campaign),
-	history(gc.history),
-	abbrev(gc.abbrev),
-	mode(gc.mode),
-	scenario(gc.scenario),
-	next_scenario(gc.next_scenario),
-	completion(gc.completion),
-	end_text(gc.end_text),
-	end_text_duration(gc.end_text_duration),
-	create(gc.create)
+	savegame_config()
+	, label(gc.label)
+	, original_label(gc.original_label)
+	, parent(gc.parent)
+	, version(gc.version)
+	, campaign_type(gc.campaign_type)
+	, campaign_define(gc.campaign_define)
+	, campaign(gc.campaign)
+	, history(gc.history)
+	, abbrev(gc.abbrev)
+	, mode(gc.mode)
+	, scenario(gc.scenario)
+	, next_scenario(gc.next_scenario)
+	, completion(gc.completion)
+	, end_text(gc.end_text)
+	, end_text_duration(gc.end_text_duration)
+	, create(gc.create)
+	, duration(gc.duration)
+	, hash(gc.hash)
 {
 }
 
@@ -133,7 +136,6 @@ config game_classification::to_config() const
 	cfg["version"] = game_config::version;
 	cfg["campaign_type"] = campaign_type;
 	cfg["campaign_define"] = campaign_define;
-	cfg["campaign_extra_defines"] = utils::join(campaign_xtra_defines);
 	cfg["campaign"] = campaign;
 	cfg["history"] = history;
 	cfg["abbrev"] = abbrev;
@@ -144,6 +146,8 @@ config game_classification::to_config() const
 	cfg["end_text"] = end_text;
 	cfg["end_text_duration"] = str_cast<unsigned int>(end_text_duration);
 	cfg["create"] = create;
+	cfg["duration"] = duration;
+	cfg["hash"] = hash;
 
 	return cfg;
 }
@@ -167,6 +171,7 @@ game_state::game_state()  :
 		replay_data(),
 		starting_pos(),
 		start_hero_data_(NULL),
+		session_start_(0),
 		snapshot(),
 		last_selected(map_location::null_location),
 		rng_(),
@@ -178,22 +183,22 @@ game_state::game_state()  :
 		phase_(INITIAL)
 		{}
 
-void level_to_gamestate(config& level, command_pool& replay_data, game_state& state)
+void level_to_gamestate(config& level, command_pool& replay_data, game_state& state, const std::string& campaign_type)
 {
-	//any replay data is only temporary and should be removed from
-	//the level data in case we want to save the game later
+	// any replay data is only temporary and should be removed from
+	// the level data in case we want to save the game later
 	if (replay_data.pool_pos_vsize()) {
 		state.replay_data = replay_data;
 		recorder = replay(state.replay_data);
-		if(!recorder.empty()) {
+		if (!recorder.empty()) {
 			recorder.set_skip(false);
 			recorder.set_to_end();
 		}
 	}
 
-	//set random
+	// set random
 	const std::string seed = level["random_seed"];
-	if(! seed.empty()) {
+	if (!seed.empty()) {
 		const unsigned calls = lexical_cast_default<unsigned>(level["random_calls"]);
 		state.rng().seed_random(lexical_cast<int>(seed), calls);
 	} else {
@@ -211,8 +216,8 @@ void level_to_gamestate(config& level, command_pool& replay_data, game_state& st
 	//all needed information here already)
 	state.starting_pos = level.child("replay_start");
 
-	level["campaign_type"] = "multiplayer";
-	state.classification().campaign_type = "multiplayer";
+	level["campaign_type"] = campaign_type;
+	state.classification().campaign_type = campaign_type;
 	state.classification().completion = level["completion"].str();
 	state.classification().version = level["version"].str();
 
@@ -224,12 +229,7 @@ void level_to_gamestate(config& level, command_pool& replay_data, game_state& st
 
 	//Check whether it is a save-game by looking for snapshot data
 	const config &snapshot = level.child("snapshot");
-	const bool saved_game = snapshot && snapshot.child("side");
-
-	//It might be a MP campaign start-of-scenario save
-	//In this case, it's not entirely a new game, but not a save, either
-	//Check whether it is no savegame and the starting_pos contains [player] information
-	bool start_of_scenario = !saved_game && state.starting_pos.child("player");
+	const bool saved_game = snapshot;
 
 	//If we start a fresh game, there won't be any snapshot information. If however this
 	//is a savegame, we got a valid snapshot here.
@@ -241,122 +241,17 @@ void level_to_gamestate(config& level, command_pool& replay_data, game_state& st
 		state.set_menu_items(snapshot.child_range("menu_item"));
 	}
 
-	//In any type of reload(normal save or start-of-scenario) the players could have
-	//changed and need to be replaced
-	if(saved_game || start_of_scenario){
-		config::child_itors saved_sides = saved_game ?
-			state.snapshot.child_range("side") :
-			state.starting_pos.child_range("side");
-		config::const_child_itors level_sides = level.child_range("side");
+	// why "+ 1". play_controller may be append one "empty" side.
+	// create one dummy param according to this "empty" side;
+	tent::lobby_side_params.resize(level.child_count("side") + 1);
+	tent::lobby_side_params.back().current_player = "";
+	tent::lobby_side_params.back().ally = "";
+	config::const_child_itors level_sides = level.child_range("side");
+	BOOST_FOREACH (const config &lside, level_sides) {
+		tent::tlobby_side_param& param = tent::lobby_side_params[lside["side"].to_int() - 1];
 
-		foreach (config &side, saved_sides)
-		{
-			foreach (const config &lside, level_sides)
-			{
-				if (side["side"] == lside["side"] &&
-						(side["current_player"] != lside["current_player"] ||
-						 side["controller"] != lside["controller"]))
-				{
-					side["current_player"] = lside["current_player"];
-					side["id"] = lside["id"];
-					side["save_id"] = lside["save_id"];
-					side["controller"] = lside["controller"];
-					break;
-				}
-			}
-		}
-	}
-	if(state.get_variables().empty()) {
-		// LOG_NG << "No variables were found for the game_state." << std::endl;
-	} else {
-		// LOG_NG << "Variables found and loaded into game_state:" << std::endl;
-		// LOG_NG << state.get_variables();
-	}
-}
-
-void write_players(game_state& gamestate, config& cfg, const bool use_snapshot, const bool merge_side)
-{
-	// If there is already a player config available it means we are loading
-	// from a savegame. Don't do anything then, the information is already there
-	config::child_itors player_cfg = cfg.child_range("player");
-	if (player_cfg.first != player_cfg.second)
-		return;
-
-	config *source = NULL;
-	if (use_snapshot) {
-		source = &gamestate.snapshot;
-	} else {
-		source = &gamestate.starting_pos;
-	}
-
-	if (merge_side) {
-		//merge sides/players from starting pos with the scenario cfg
-		std::vector<std::string> tags;
-		tags.push_back("side");
-		tags.push_back("player"); //merge [player] tags for backwards compatibility of saves
-
-		foreach (const std::string& side_tag, tags)
-		{
-			foreach (config &carryover_side, source->child_range(side_tag))
-			{
-				config *scenario_side = NULL;
-
-				//TODO: use the player_id instead of the save_id for that
-				if (config& c = cfg.find_child("side", "save_id", carryover_side["save_id"])) {
-					scenario_side = &c;
-				} else if (config& c = cfg.find_child("side", "id", carryover_side["save_id"])) {
-					scenario_side = &c;
-				}
-
-				if (scenario_side == NULL) {
-					//no matching side in the current scenario, we add the persistent information in a [player] tag
-					cfg.add_child("player", carryover_side);
-					continue;
-				}
-
-				//we have a matching side in the current scenario
-
-				//sort carryover gold
-				int ngold = (*scenario_side)["gold"].to_int(100);
-				int player_gold = carryover_side["gold"];
-				if (carryover_side["gold_add"].to_bool()) {
-					ngold += player_gold;
-				} else if (player_gold >= ngold) {
-					ngold = player_gold;
-				}
-				carryover_side["gold"] = str_cast(ngold);
-				if (const config::attribute_value *v = scenario_side->get("gold_add")) {
-					carryover_side["gold_add"] = *v;
-				}
-				//merge player information into the scenario cfg
-				(*scenario_side)["save_id"] = carryover_side["save_id"];
-				(*scenario_side)["gold"] = ngold;
-				(*scenario_side)["gold_add"] = carryover_side["gold_add"];
-				if (const config::attribute_value *v = carryover_side.get("previous_recruits")) {
-					(*scenario_side)["previous_recruits"] = *v;
-				} else {
-					(*scenario_side)["previous_recruits"] = carryover_side["can_recruit"];
-				}
-				(*scenario_side)["name"] = carryover_side["name"];
-				(*scenario_side)["current_player"] = carryover_side["current_player"];
-
-				///@deprecated 1.9.2 'colour' in [side]
-				const std::string colour_error = "Usage of 'colour' in [side] is deprecated, support will be removed in 1.9.2.\n";
-				(*scenario_side)["color"] = carryover_side.get_old_attribute("color","colour",colour_error);
-				///@deprecated 1.9.2 'colour' also written in [side]
-				(*scenario_side)["colour"] = (*scenario_side)["color"];
-
-				//add recallable units
-				foreach (const config &u, carryover_side.child_range("unit")) {
-					scenario_side->add_child("unit", u);
-				}
-			}
-		}
-	} else {
-		foreach(const config &snapshot_side, source->child_range("side")) {
-			//take all side tags and add them as players (assuming they only contain carryover information)
-			cfg.add_child("player", snapshot_side);
-		}
+		param.current_player = lside["current_player"].str();
+		param.ally = lside["team_name"].str();
 	}
 }
 
@@ -366,6 +261,7 @@ game_state::game_state(const config& cfg, const command_pool& replay_data, bool 
 		replay_data(replay_data),
 		starting_pos(),
 		start_hero_data_(NULL),
+		session_start_(0),
 		snapshot(),
 		last_selected(map_location::null_location),
 		rng_(cfg),
@@ -419,7 +315,7 @@ game_state::game_state(const config& cfg, const command_pool& replay_data, bool 
 		//See also playcampaign::play_game, where after finishing the scenario the replay
 		//will be saved.
 		if(!starting_pos.empty()) {
-			foreach (const config &p, cfg.child_range("player")) {
+			BOOST_FOREACH (const config &p, cfg.child_range("player")) {
 				config& cfg_player = starting_pos.add_child("player");
 				cfg_player.merge_with(p);
 			}
@@ -449,9 +345,10 @@ void game_state::write_snapshot(config& cfg) const
 	cfg["campaign"] = classification_.campaign;
 	cfg["campaign_type"] = classification_.campaign_type;
 	cfg["create"] = classification_.create;
+	cfg["duration"] = classification_.duration;
+	cfg["hash"] = classification_.hash;
 
 	cfg["campaign_define"] = classification_.campaign_define;
-	cfg["campaign_extra_defines"] = utils::join(classification_.campaign_xtra_defines);
 	cfg["next_underlying_unit_id"] = str_cast(n_unit::id_manager::instance().get_save_id());
 
 	cfg["random_seed"] = rng_.get_random_seed();
@@ -526,22 +423,39 @@ void game_state::clear_variable_cfg(const std::string& varname)
 	}
 }
 
+void untouch_unit(unit& u)
+{
+	u.new_turn();
+	u.set_state(unit::STATE_SLOWED, false);
+	u.set_state(unit::STATE_BROKEN, false);
+	u.set_state(unit::STATE_POISONED, false);
+	u.set_state(unit::STATE_PETRIFIED, false);
+	if (u.packed()) {
+		u.pack_to(NULL);
+	}
+}
+
 void game_state::write_armory_2_variable(const team& t)
 {
 	config& player_cfg = variables_.child("player");
 	config& side = player_cfg.add_child("armory");
 	std::stringstream armory_heros;
 
+	dont_wander_lock lock;
+
 	// current visible units
 	const std::pair<unit**, size_t> p = t.field_troop();
 	unit** troops = p.first;
 	size_t troops_vsize = p.second;
 	for (size_t i = 0; i < troops_vsize; i ++) {
-		if (!troops[i]->is_artifical()) {
+		unit& u = *troops[i];
+		if (!u.is_artifical()) {
 			// field troops
-			config& u = side.add_child("unit");
-			troops[i]->get_location().write(u);
-			troops[i]->write(u);
+			config& ucfg = side.add_child("unit");
+			
+			untouch_unit(u);
+			u.get_location().write(ucfg);
+			u.write(ucfg);
 		}
 	}
 	const std::vector<artifical*>& holded_cities = t.holded_cities();
@@ -551,8 +465,10 @@ void game_state::write_armory_2_variable(const team& t)
 		std::vector<unit*>& reside_troops = city->reside_troops();
 		for (std::vector<unit*>::const_iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
 			// reside troops
-			const unit& u = **itor;
+			unit& u = **itor;
 			config& ucfg = side.add_child("unit");
+
+			untouch_unit(u);
 			u.get_location().write(ucfg);
 			u.write(ucfg);
 		}
@@ -672,7 +588,8 @@ game_state& game_state::operator=(const game_state& state)
 	return *this;
 }
 
-game_state::~game_state() {
+game_state::~game_state() 
+{
 	clear_wmi(wml_menu_items);
 	if (start_hero_data_) {
 		free(start_hero_data_);
@@ -735,6 +652,8 @@ void game_state::build_team(const config& side_cfg,
 	}
 
 	team temp_team(units, heros, cards, side_cfg, map, ngold, team_size);
+	temp_team.set_fog(level["fog"].to_bool());
+	temp_team.set_shroud(level["shroud"].to_bool());
 	temp_team.set_gold_add(gold_add);
 	teams.push_back(temp_team);
 
@@ -760,14 +679,14 @@ void game_state::build_team(const config& side_cfg,
 
 	// If there are additional starting artificals on this side
 	//add the units with a specified position to the unit map
-	foreach (const config& cfg, side_cfg.child_range("artifical")) {
+	BOOST_FOREACH (const config& cfg, side_cfg.child_range("artifical")) {
 		config temp_cfg(cfg);
 
 		if (has_armory && teams.back().is_human()) {
 			config& armory_cfg = player_cfg1.child("armory");
 
 			// add [player].[armory] to this team
-			foreach (config &i, armory_cfg.child_range("unit")) {
+			BOOST_FOREACH (config &i, armory_cfg.child_range("unit")) {
 				i["cityno"] = cfg["cityno"];
 				i["side"] = cfg["side"];
 				temp_cfg.add_child("unit", i);
@@ -827,7 +746,7 @@ void game_state::build_team(const config& side_cfg,
 	// as minimal as possible for 1.2.
 
 	//add the units with a specified position to the unit map
-	foreach (const config& cfg, side_cfg.child_range("unit")) {
+	BOOST_FOREACH (const config& cfg, side_cfg.child_range("unit")) {
 		config temp_cfg(cfg);
 		temp_cfg["side"] = side; //set the side before unit creation to avoid invalid side errors
 		unit new_unit(units, heros, teams, temp_cfg, true);
@@ -846,7 +765,12 @@ void game_state::build_team(const config& side_cfg,
 				") for a unit on side " +
 				lexical_cast<std::string>(side) + ".");
 		} else {
-			if (units.find(loc, !new_unit.base()) != units.end()) {
+			if (map.is_village(loc)) {
+				std::stringstream str;
+				str << new_unit.name() << " trying to stand on village at (";
+				str << loc.x + 1 << "," << loc.y + 1 << ")";
+				throw game::load_game_failed(str.str());
+			} else if (units.find(loc, !new_unit.base()) != units.end()) {
 				unit_map::iterator it = units.find(loc, !new_unit.base());
 				std::stringstream str;
 				str << new_unit.name() << " trying to overwrite existing unit " << it->name() << " at (";
@@ -857,15 +781,13 @@ void game_state::build_team(const config& side_cfg,
 			}
 		}
 	}
-
-	teams.back().set_current_player(teams.back().name());
 }
 
 void game_state::build_team(const uint8_t* mem,
 					 std::vector<team>& teams,
 					 const config& level, gamemap& map, unit_map& units, hero_map& heros,
 					 card_map& cards,
-					 bool snapshot)
+					 bool snapshot, size_t team_size)
 {
 	if (map.empty()) {
 		throw game::load_game_failed("Map not found");
@@ -876,10 +798,11 @@ void game_state::build_team(const uint8_t* mem,
 
 	int ngold = ((team_fields_t*)(mem + offset))->gold_;
 
-	team temp_team(units, heros, cards, mem + offset, map, ngold);
+	team temp_team(units, heros, cards, mem + offset, map, ngold, team_size);
 	offset += ((team_fields_t*)(mem + offset))->size_;
 
 	temp_team.set_gold_add(0);
+
 	teams.push_back(temp_team);
 
 	team& current_team = teams.back();
@@ -952,7 +875,7 @@ void game_state::build_team(const uint8_t* mem,
 
 			// reside troops
 			std::vector<unit*>& reside_troops = current->reside_troops();
-			foreach (config &i, armory_cfg.child_range("unit")) {
+			BOOST_FOREACH (config &i, armory_cfg.child_range("unit")) {
 				i["cityno"] = current->cityno();
 				i["side"] = current->side();
 				reside_troops.push_back(new unit(units, heros, teams, i));
@@ -973,14 +896,22 @@ void game_state::build_team(const uint8_t* mem,
 			has_armory = false;
 		}
 	}
+}
 
-	current_team.set_current_player(current_team.name());
+void game_state::set_session_start(time_t t)
+{
+	session_start_ = t;
+}
+
+int game_state::duration(time_t stop) const
+{
+	return classification_.duration + stop - session_start_;
 }
 
 void game_state::set_menu_items(const config::const_child_itors &menu_items)
 {
 	clear_wmi(wml_menu_items);
-	foreach (const config &item, menu_items)
+	BOOST_FOREACH (const config &item, menu_items)
 	{
 		std::string id = item["id"];
 		wml_menu_item*& mref = wml_menu_items[id];
@@ -1046,4 +977,30 @@ wml_menu_item::wml_menu_item(const std::string& id, const config* cfg) :
 		if (const config &c = cfg->child("filter_location")) filter_location = c;
 		if (const config &c = cfg->child("command")) command = c;
 	}
+}
+
+std::vector<std::set<int> > generate_team_names_from_side_mem(uint8_t* mem)
+{
+	unit_segment2* sides = (unit_segment2*)mem;
+	int offset = sizeof(unit_segment2);
+
+	std::vector<std::set<int> > ret;
+	for (uint32_t i = 0; i < sides->count_; i ++) {
+		int side_offset = sizeof(unit_segment2);
+		uint8_t* side_mem = mem + offset + side_offset;
+
+		team_fields_t* fields = (team_fields_t*)side_mem;
+		std::set<int> mess;
+		for (int s = 0; s < fields->diplomatisms_.size_; s ++) {
+			diplomatism_data_fields_t* data = (diplomatism_data_fields_t*)(side_mem + fields->diplomatisms_.offset_ + s * sizeof(diplomatism_data_fields_t));
+			if (s != i && data->ally_) {
+				mess.insert(s + 1);
+			}
+		}
+		ret.push_back(mess);
+
+		offset += ((unit_segment2*)(mem + offset))->size_;
+	}
+
+	return ret;
 }

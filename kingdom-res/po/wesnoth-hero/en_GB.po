@@ -115,6 +115,9 @@ msgstr "Unstage"
 msgid "status-7"
 msgstr "Die"
 
+msgid "status-8"
+msgstr ""
+
 msgid "official"
 msgstr "Official"
 
@@ -127,23 +130,17 @@ msgstr "Mayor"
 msgid "official-2"
 msgstr "Leader"
 
-msgid "ambition"
-msgstr "Ambition"
+msgid "flag"
+msgstr ""
 
-msgid "ambition-0"
-msgstr "Troubled times"
+msgid "flag-0"
+msgstr ""
 
-msgid "ambition-1"
-msgstr "Quiet"
+msgid "flag-1"
+msgstr ""
 
-msgid "ambition-2"
-msgstr "Wander"
-
-msgid "ambition-3"
-msgstr "Entertainer"
-
-msgid "ambition-4"
-msgstr "Drift along"
+msgid "flag-2"
+msgstr ""
 
 msgid "heart"
 msgstr "Heart"
@@ -254,154 +251,154 @@ msgid "name"
 msgstr "Name"
 
 msgid "name-0"
-msgstr "Ye Liuying"
+msgstr "System"
 
 msgid "name-1"
-msgstr "Hu Ruoling"
+msgstr "Civilian"
 
 msgid "name-2"
-msgstr "Li Lunqing"
+msgstr "Void"
 
 msgid "name-3"
-msgstr "Cao Cao"
+msgstr "Scout"
 
 msgid "name-4"
-msgstr "Liu Bei"
+msgstr "(Reserve)"
 
 msgid "name-5"
-msgstr "Zhuge Ling"
+msgstr "(Reserve)"
 
 msgid "name-6"
-msgstr "Zhou Yu"
+msgstr "(Reserve)"
 
 msgid "name-7"
-msgstr "Sima Yi"
+msgstr "(Reserve)"
 
 msgid "name-8"
-msgstr "Deng Ai"
+msgstr "(Reserve)"
 
 msgid "name-9"
-msgstr "Zhang Liao"
+msgstr "(Reserve)"
 
 msgid "name-10"
-msgstr "Zhao Yun"
+msgstr "Footman"
 
 msgid "name-11"
-msgstr "Jiang Wei"
+msgstr "Bowman"
 
 msgid "name-12"
-msgstr "Ma Chao"
+msgstr "Pikeman"
 
 msgid "name-13"
-msgstr "Xu Huang"
+msgstr "Horseman"
 
 msgid "name-14"
-msgstr "Gan Ning"
+msgstr "Catapult"
 
 msgid "name-15"
-msgstr "Man Chong"
+msgstr "White Mage"
 
 msgid "name-16"
-msgstr "Yue Jin"
+msgstr "Red Mage"
 
 msgid "name-17"
-msgstr "Niu Jin"
+msgstr "Pirate"
 
 msgid "name-18"
-msgstr "Chen Jiao"
+msgstr "Crossbowman"
 
 msgid "name-19"
-msgstr "Cao Dun"
+msgstr "Engine"
 
 msgid "name-20"
-msgstr "Chen Wu"
+msgstr "Market"
 
 msgid "name-21"
-msgstr "Lv Meng"
+msgstr "Wall"
 
 msgid "name-22"
-msgstr "Ling Tong"
+msgstr "Keep"
 
 msgid "name-23"
-msgstr "Cheng Pu"
+msgstr "Tower"
 
 msgid "name-24"
-msgstr "Xu Sheng"
+msgstr "Technology"
 
 msgid "name-25"
-msgstr "Huang Gai"
+msgstr "Tactic"
 
 msgid "name-26"
-msgstr "Pan Zhang"
+msgstr "Fort"
 
 msgid "name-27"
-msgstr "Ding Feng"
+msgstr "(Reserve)"
 
 msgid "name-28"
-msgstr "Zhou Tai"
+msgstr "(Reserve)"
 
 msgid "name-29"
-msgstr "Lu Su"
+msgstr "(Reserve)"
 
 msgid "name-30"
-msgstr "Lu Xun"
+msgstr "(Reserve)"
 
 msgid "name-31"
-msgstr "Guang Yu"
+msgstr "(Reserve)"
 
 msgid "name-32"
-msgstr "Zhang Fei"
+msgstr "(Reserve)"
 
 msgid "name-33"
-msgstr "Wen Pin"
+msgstr "(Reserve)"
 
 msgid "name-34"
-msgstr "Li Tong"
+msgstr "(Reserve)"
 
 msgid "name-35"
-msgstr "Cao Hong"
+msgstr "Businessman"
 
 msgid "name-36"
-msgstr "Li Dian"
+msgstr "Scholar"
 
 msgid "name-37"
-msgstr "Xianhou Dun"
+msgstr "Transport"
 
 msgid "name-38"
-msgstr "Liu Xiang"
+msgstr "(Reserve)"
 
 msgid "name-39"
-msgstr "Cao Ren"
+msgstr "(Reserve)"
 
 msgid "name-40"
-msgstr "Liu Qi"
+msgstr "(Reserve)"
 
 msgid "name-41"
-msgstr "Han Dan"
+msgstr "(Reserve)"
 
 msgid "name-42"
-msgstr "Sun Qian"
+msgstr "(Reserve)"
 
 msgid "name-43"
-msgstr "Liu Cong"
+msgstr "(Reserve)"
 
 msgid "name-44"
-msgstr "Zhang He"
+msgstr "(Reserve)"
 
 msgid "name-45"
-msgstr "Xiahou Yuan"
+msgstr "(Reserve)"
 
 msgid "name-46"
-msgstr "Xu Chu"
+msgstr "(Reserve)"
 
 msgid "name-47"
-msgstr "Cao Zhang"
+msgstr "(Reserve)"
 
 msgid "name-48"
-msgstr "Pang De"
+msgstr "(Reserve)"
 
 msgid "name-49"
-msgstr "Wuling"
+msgstr "(Reserve)"
 
 msgid "name-50"
 msgstr "Xiangyang"
@@ -410,7 +407,7 @@ msgid "name-51"
 msgstr "Jiangling"
 
 msgid "name-52"
-msgstr "Wulingang"
+msgstr "Lujiang"
 
 msgid "name-53"
 msgstr "Jiangxia"
@@ -428,160 +425,160 @@ msgid "name-57"
 msgstr "Shangyong"
 
 msgid "name-58"
-msgstr "Liu Feng"
+msgstr "Wuling"
 
 msgid "name-59"
-msgstr "Guang Ping"
+msgstr "Nanpi"
 
 msgid "name-60"
-msgstr "Zhou Cang"
+msgstr "Xuchang"
 
 msgid "name-61"
-msgstr "Yi Ji"
+msgstr "Puyang"
 
 msgid "name-62"
-msgstr "Sima Yan"
+msgstr "Shouchun"
 
 msgid "name-63"
-msgstr "Sima Shi"
+msgstr "Jianye"
 
 msgid "name-64"
-msgstr "Sima Zhao"
+msgstr "Jianning"
 
 msgid "name-65"
-msgstr "Zhang Chunhua"
+msgstr "Chendu"
 
 msgid "name-66"
-msgstr "Sima Fu"
+msgstr "Luoyang"
 
 msgid "name-67"
-msgstr "Wang Yuanji"
+msgstr "Hanzhong"
 
 msgid "name-68"
-msgstr "Guo Shi"
+msgstr "Changsha"
 
 msgid "name-69"
-msgstr "Sima Rang"
+msgstr "Chaisang"
 
 msgid "name-70"
-msgstr "Xiahou Wei"
+msgstr "Chenliu"
 
 msgid "name-71"
-msgstr "Xiahou En"
+msgstr "Wuwei"
 
 msgid "name-72"
-msgstr "Xiahou He"
+msgstr "Chang'an"
 
 msgid "name-73"
-msgstr "Xiahou Hui"
+msgstr "Anding"
 
 msgid "name-74"
-msgstr "Xiahou Xuan"
+msgstr "Jiangzhou"
 
 msgid "name-75"
-msgstr "Xihou Shang"
+msgstr "Ye"
 
 msgid "name-76"
-msgstr "Xiahou De"
+msgstr "Beiping"
 
 msgid "name-77"
-msgstr "Xiahou Ba"
+msgstr "Tiansui"
 
 msgid "name-78"
-msgstr "Tian Feng"
+msgstr "Xuzhou"
 
 msgid "name-79"
-msgstr "Xiahou Lingnv"
+msgstr "Xiaopei"
 
 msgid "name-80"
-msgstr "Guang Xing"
+msgstr "Xiangping"
 
 msgid "name-81"
-msgstr "Guang Suo"
+msgstr "Jinyang"
 
 msgid "name-82"
-msgstr "Huang Yueying"
+msgstr "Xiapi"
 
 msgid "name-83"
-msgstr "Yu Jin"
+msgstr "Lunan"
 
 msgid "name-84"
-msgstr "Wei Guan"
+msgstr "Shangyong"
 
 msgid "name-85"
-msgstr "Wang Can"
+msgstr "Zhitong"
 
 msgid "name-86"
-msgstr "Cao Jie"
+msgstr "Guiyang"
 
 msgid "name-87"
-msgstr "Zheng Shi"
+msgstr "Yong'an"
 
 msgid "name-88"
-msgstr "Du Yu"
+msgstr "Linling"
 
 msgid "name-89"
-msgstr "Guan Yinping"
+msgstr "Yunnan"
 
 msgid "name-90"
-msgstr "Zhang Shi"
+msgstr "Beihai"
 
 msgid "name-91"
-msgstr "Cao Rui"
+msgstr "Alternate1"
 
 msgid "name-92"
-msgstr "Cao Xiu"
+msgstr "Alternate2"
 
 msgid "name-93"
-msgstr "Cao Zhi"
+msgstr "Alternate3"
 
 msgid "name-94"
-msgstr "Cao Zhen"
+msgstr "Alternate4"
 
 msgid "name-95"
-msgstr "Cao Pei"
+msgstr "Alternate5"
 
 msgid "name-96"
-msgstr "Cao Ang"
+msgstr "(Reserve)"
 
 msgid "name-97"
-msgstr "He Zhao"
+msgstr "(Reserve)"
 
 msgid "name-98"
-msgstr "Jia Xu"
+msgstr "(Reserve)"
 
 msgid "name-99"
-msgstr "Guo Kuai"
+msgstr "(Reserve)"
 
 msgid "name-100"
-msgstr "Lu Kang"
+msgstr "Ye Liuying"
 
 msgid "name-101"
-msgstr "Chen Tai"
+msgstr "Hu Ruoling"
 
 msgid "name-102"
-msgstr "Yang Hu"
+msgstr "Li Lunqing"
 
 msgid "name-103"
-msgstr "Huangpu Song"
+msgstr "Cao Cao"
 
 msgid "name-104"
-msgstr "Lv Bu"
+msgstr "Liu Bei"
 
 msgid "name-105"
-msgstr "Gao Shun"
+msgstr "Zhuge Ling"
 
 msgid "name-106"
-msgstr "Xu Shu"
+msgstr "Zhou Yu"
 
 msgid "name-107"
-msgstr "Zhong Kuai"
+msgstr "Sima Yi"
 
 msgid "name-108"
-msgstr "Wang Jun"
+msgstr "Deng Ai"
 
 msgid "name-109"
-msgstr "Jia Kui"
+msgstr "Zhang Liao"
 
 msgid "name-110"
 msgstr "Cai Mao"
@@ -629,34 +626,34 @@ msgid "name-124"
 msgstr "Zhu Shujing"
 
 msgid "name-125"
-msgstr "Tiansui"
+msgstr "Xiahou Ba"
 
 msgid "name-126"
-msgstr "Nanpi"
+msgstr "Guang Ping"
 
 msgid "name-127"
-msgstr "Xuchan"
+msgstr "Zhou Cang"
 
 msgid "name-128"
-msgstr "Puyang"
+msgstr "Yi Ji"
 
 msgid "name-129"
-msgstr "Shouchun"
+msgstr "Sima Yan"
 
 msgid "name-130"
-msgstr "Jianye"
+msgstr "Sima Shi"
 
 msgid "name-131"
-msgstr "Jianning"
+msgstr "Sima Zhao"
 
 msgid "name-132"
-msgstr "Chendu"
+msgstr "Zhang Chunhua"
 
 msgid "name-133"
-msgstr "Luoyang"
+msgstr "Sima Fu"
 
 msgid "name-134"
-msgstr "Hanzhong"
+msgstr "Wang Yuanji"
 
 msgid "name-135"
 msgstr "Dong Zhuo"
@@ -668,7 +665,7 @@ msgid "name-137"
 msgstr "Meng Huo"
 
 msgid "name-138"
-msgstr "Liu Biao"
+msgstr "Liu Xiang"
 
 msgid "name-139"
 msgstr "Sun Jian"
@@ -746,7 +743,7 @@ msgid "name-163"
 msgstr "Ju Yi"
 
 msgid "name-164"
-msgstr "Xei Xu"
+msgstr "Wei Xu"
 
 msgid "name-165"
 msgstr "Niu Fu"
@@ -896,55 +893,55 @@ msgid "name-213"
 msgstr "Mi Zhu"
 
 msgid "name-214"
-msgstr "Soldier"
+msgstr "Guo Shi"
 
 msgid "name-215"
-msgstr "Chaisang"
+msgstr "Sima Rang"
 
 msgid "name-216"
-msgstr "Camp"
+msgstr "Xiahou Wei"
 
 msgid "name-217"
-msgstr "Wuwei"
+msgstr "Xiahou En"
 
 msgid "name-218"
-msgstr "Chang'an"
+msgstr "Xiahou He"
 
 msgid "name-219"
-msgstr "Anding"
+msgstr "Xiahou Hui"
 
 msgid "name-220"
-msgstr "Jiangzhou"
+msgstr "Xiahou Xuan"
 
 msgid "name-221"
-msgstr "Ye"
+msgstr "Xihou Shang"
 
 msgid "name-222"
-msgstr "Beiping"
+msgstr "Xiahou De"
 
 msgid "name-223"
-msgstr "Xuzhou"
+msgstr "Tian Feng"
 
 msgid "name-224"
-msgstr "Xiaopei"
+msgstr "Xiahou Lingnv"
 
 msgid "name-225"
-msgstr "Xiangping"
+msgstr "Guang Xing"
 
 msgid "name-226"
-msgstr "Jinyang"
+msgstr "Guang Suo"
 
 msgid "name-227"
-msgstr "Changsha"
+msgstr "Jiang Wei"
 
 msgid "name-228"
-msgstr "Autonomy"
+msgstr "Zhao Yun"
 
 msgid "name-229"
-msgstr "Civilian"
+msgstr "Guo Kuai"
 
 msgid "name-230"
-msgstr "System"
+msgstr "Ma Chao"
 
 msgid "name-231"
 msgstr "Gongsun Yue"
@@ -1070,25 +1067,25 @@ msgid "name-271"
 msgstr "Goddess"
 
 msgid "name-272"
-msgstr "Market"
+msgstr "Chen Wu"
 
 msgid "name-273"
-msgstr "Wall"
+msgstr "Lv Meng"
 
 msgid "name-274"
-msgstr "Keep"
+msgstr "Ling Tong"
 
 msgid "name-275"
-msgstr "Tower"
+msgstr "Cheng Pu"
 
 msgid "name-276"
-msgstr "Technology"
+msgstr "Xu Sheng"
 
 msgid "name-277"
-msgstr "(Reserve)"
+msgstr "Huang Gai"
 
 msgid "name-278"
-msgstr "Pang Tong"
+msgstr "Pan Zhang"
 
 msgid "name-279"
 msgstr "Fang Shi"
@@ -1321,392 +1318,530 @@ msgstr "Ju Shou"
 msgid "name-355"
 msgstr "Shen Pei"
 
-#, fuzzy
 msgid "name-356"
-msgstr "Cao Hong"
+msgstr "(Reserve)"
 
-#, fuzzy
 msgid "name-357"
-msgstr "Cao Hong"
+msgstr "(Reserve)"
 
-#, fuzzy
 msgid "name-358"
-msgstr "Cao Hong"
+msgstr "Yue Jin"
 
-#, fuzzy
 msgid "name-359"
-msgstr "Cao Hong"
+msgstr "Ding Feng"
 
 msgid "name-360"
-msgstr "Businessman"
+msgstr "Cao Hong"
 
 msgid "name-361"
-msgstr "Scholar"
+msgstr "Li Dian"
 
-#, fuzzy
 msgid "name-362"
-msgstr "Li Dian"
+msgstr "Xianhou Dun"
 
-#, fuzzy
 msgid "name-363"
-msgstr "Li Dian"
+msgstr "Xiahou Yuan"
 
-#, fuzzy
 msgid "name-364"
-msgstr "Li Dian"
+msgstr "Xu Chu"
 
-#, fuzzy
 msgid "name-365"
-msgstr "Li Dian"
+msgstr "Cao Zhang"
 
-#, fuzzy
 msgid "name-366"
-msgstr "Li Dian"
+msgstr "Pang De"
 
-#, fuzzy
 msgid "name-367"
-msgstr "Li Dian"
+msgstr "Liu Feng"
 
-#, fuzzy
 msgid "name-368"
-msgstr "Li Dian"
+msgstr "Jia Xu"
 
-#, fuzzy
 msgid "name-369"
-msgstr "Li Dian"
+msgstr "He Zhao"
+
+msgid "name-370"
+msgstr "Lu Kang"
+
+msgid "name-371"
+msgstr "Chen Tai"
+
+msgid "name-372"
+msgstr "Yang Hu"
+
+msgid "name-373"
+msgstr "Huangpu Song"
+
+msgid "name-374"
+msgstr "Lv Bu"
+
+msgid "name-375"
+msgstr "Gao Shun"
+
+msgid "name-376"
+msgstr "Xu Shu"
+
+msgid "name-377"
+msgstr "Zhong Kuai"
+
+msgid "name-378"
+msgstr "Wang Jun"
+
+msgid "name-379"
+msgstr "Jia Kui"
+
+msgid "name-380"
+msgstr "Xu Huang"
+
+msgid "name-381"
+msgstr "Gan Ning"
+
+msgid "name-382"
+msgstr "Man Chong"
+
+msgid "name-383"
+msgstr "Niu Jin"
+
+msgid "name-384"
+msgstr "Chen Jiao"
+
+msgid "name-385"
+msgstr "Cao Dun"
+
+msgid "name-386"
+msgstr "Zhou Tai"
+
+msgid "name-387"
+msgstr "Lu Su"
+
+msgid "name-388"
+msgstr "Lu Xun"
+
+msgid "name-389"
+msgstr "Guang Yu"
+
+msgid "name-390"
+msgstr "Zhang Fei"
+
+msgid "name-391"
+msgstr "Wen Pin"
+
+msgid "name-392"
+msgstr "Li Tong"
+
+msgid "name-393"
+msgstr "Liu Biao"
+
+msgid "name-394"
+msgstr "Cao Ren"
+
+msgid "name-395"
+msgstr "Liu Qi"
+
+msgid "name-396"
+msgstr "Han Dan"
+
+msgid "name-397"
+msgstr "Sun Qian"
+
+msgid "name-398"
+msgstr "Liu Cong"
+
+msgid "name-399"
+msgstr "Zhang He"
+
+msgid "name-400"
+msgstr "Huang Yueying"
+
+msgid "name-401"
+msgstr "Yu Jin"
+
+msgid "name-402"
+msgstr "Wei Guan"
+
+msgid "name-403"
+msgstr "Wang Can"
+
+msgid "name-404"
+msgstr "Cao Jie"
+
+msgid "name-405"
+msgstr "Zheng Shi"
+
+msgid "name-406"
+msgstr "Du Yu"
+
+msgid "name-407"
+msgstr "Guan Yinping"
+
+msgid "name-408"
+msgstr "Zhang Shi"
+
+msgid "name-409"
+msgstr "Cao Rui"
+
+msgid "name-410"
+msgstr "Cao Xiu"
+
+msgid "name-411"
+msgstr "Cao Zhi"
+
+msgid "name-412"
+msgstr "Cao Zhen"
+
+msgid "name-413"
+msgstr "Cao Pei"
+
+msgid "name-414"
+msgstr "Cao Ang"
+
+msgid "name-415"
+msgstr "Zhang Miao"
+
+msgid "name-416"
+msgstr "Hua Tuo"
+
+msgid "name-417"
+msgstr "Yu Ji"
+
+msgid "name-418"
+msgstr "Guan Lu"
+
+msgid "name-419"
+msgstr "Zuo Ci"
 
 msgid "surname"
 msgstr "Surname"
 
 msgid "surname-0"
-msgstr "Ye"
+msgstr "System"
 
 msgid "surname-1"
-msgstr "Hu"
+msgstr "Civilian"
 
 msgid "surname-2"
-msgstr "Li"
+msgstr "Void"
 
 msgid "surname-3"
-msgstr "Cao"
+msgstr "Scout"
 
 msgid "surname-4"
-msgstr "Liu"
+msgstr "-"
 
 msgid "surname-5"
-msgstr "Zhuge"
+msgstr "-"
 
 msgid "surname-6"
-msgstr "Zhou"
+msgstr "-"
 
 msgid "surname-7"
-msgstr "Sima"
+msgstr "-"
 
 msgid "surname-8"
-msgstr "Deng"
+msgstr "-"
 
 msgid "surname-9"
-msgstr "Zhang"
+msgstr "-"
 
 msgid "surname-10"
-msgstr "Zhao"
+msgstr "-"
 
 msgid "surname-11"
-msgstr "Jiang"
+msgstr "-"
 
 msgid "surname-12"
-msgstr "Ma"
+msgstr "-"
 
 msgid "surname-13"
-msgstr "Xu"
+msgstr "-"
 
 msgid "surname-14"
-msgstr "Gan"
+msgstr "-"
 
 msgid "surname-15"
-msgstr "Man"
+msgstr "-"
 
 msgid "surname-16"
-msgstr "Yue"
+msgstr "-"
 
 msgid "surname-17"
-msgstr "Niu"
+msgstr "-"
 
 msgid "surname-18"
-msgstr "Chen"
+msgstr "-"
 
 msgid "surname-19"
-msgstr "Cao"
+msgstr "-"
 
 msgid "surname-20"
-msgstr "Chen"
+msgstr "-"
 
 msgid "surname-21"
-msgstr "Lv"
+msgstr "-"
 
 msgid "surname-22"
-msgstr "Ling"
+msgstr "-"
 
 msgid "surname-23"
-msgstr "Cheng"
+msgstr "-"
 
 msgid "surname-24"
-msgstr "Xu"
+msgstr "-"
 
 msgid "surname-25"
-msgstr "Huang"
+msgstr "-"
 
 msgid "surname-26"
-msgstr "Pan"
+msgstr "-"
 
 msgid "surname-27"
-msgstr "Ding"
+msgstr "(Reserve)"
 
 msgid "surname-28"
-msgstr "Zhuo"
+msgstr "(Reserve)"
 
 msgid "surname-29"
-msgstr "Lu"
+msgstr "(Reserve)"
 
 msgid "surname-30"
-msgstr "Lu"
+msgstr "(Reserve)"
 
 msgid "surname-31"
-msgstr "Guang"
+msgstr "(Reserve)"
 
 msgid "surname-32"
-msgstr "Zhang"
+msgstr "(Reserve)"
 
 msgid "surname-33"
-msgstr "Wen"
+msgstr "(Reserve)"
 
 msgid "surname-34"
-msgstr "Li"
+msgstr "(Reserve)"
 
 msgid "surname-35"
-msgstr "Cao"
+msgstr "Businessman"
 
 msgid "surname-36"
-msgstr "Li"
+msgstr "Scholar"
 
 msgid "surname-37"
-msgstr "Xianhou"
+msgstr "Transport"
 
 msgid "surname-38"
-msgstr "Liu"
+msgstr "(Reserve)"
 
 msgid "surname-39"
-msgstr "Cao"
+msgstr "(Reserve)"
 
 msgid "surname-40"
-msgstr "Liu"
+msgstr "(Reserve)"
 
 msgid "surname-41"
-msgstr "Han"
+msgstr "(Reserve)"
 
 msgid "surname-42"
-msgstr "Sun"
+msgstr "(Reserve)"
 
 msgid "surname-43"
-msgstr "Liu"
+msgstr "(Reserve)"
 
 msgid "surname-44"
-msgstr "zhang"
+msgstr "(Reserve)"
 
 msgid "surname-45"
-msgstr "Xiahou"
+msgstr "(Reserve)"
 
 msgid "surname-46"
-msgstr "Xu"
+msgstr "(Reserve)"
 
 msgid "surname-47"
-msgstr "Cao"
+msgstr "(Reserve)"
 
 msgid "surname-48"
-msgstr "Pang"
+msgstr "(Reserve)"
 
 msgid "surname-49"
-msgstr "Wei"
+msgstr "(Reserve)"
 
 msgid "surname-50"
-msgstr "Xiangyang"
+msgstr "-"
 
 msgid "surname-51"
-msgstr "Jiangling"
+msgstr "-"
 
 msgid "surname-52"
-msgstr "Wulin"
+msgstr "-"
 
 msgid "surname-53"
-msgstr "Jiangxia"
+msgstr "-"
 
 msgid "surname-54"
-msgstr "Xinye"
+msgstr "-"
 
 msgid "surname-55"
-msgstr "Wan"
+msgstr "-"
 
 msgid "surname-56"
-msgstr "Yiling"
+msgstr "-"
 
 msgid "surname-57"
-msgstr "Shangyong"
+msgstr "-"
 
 msgid "surname-58"
-msgstr "Liu"
+msgstr "-"
 
 msgid "surname-59"
-msgstr "Guang"
+msgstr "-"
 
 msgid "surname-60"
-msgstr "Zhou"
+msgstr "-"
 
 msgid "surname-61"
-msgstr "Yi"
+msgstr "-"
 
 msgid "surname-62"
-msgstr "Sima"
+msgstr "-"
 
 msgid "surname-63"
-msgstr "Sima"
+msgstr "-"
 
 msgid "surname-64"
-msgstr "Sima"
+msgstr "-"
 
 msgid "surname-65"
-msgstr "Zhang"
+msgstr "-"
 
 msgid "surname-66"
-msgstr "Sima"
+msgstr "-"
 
 msgid "surname-67"
-msgstr "Wang"
+msgstr "-"
 
 msgid "surname-68"
-msgstr "Guo"
+msgstr "-"
 
 msgid "surname-69"
-msgstr "Sima"
+msgstr "-"
 
 msgid "surname-70"
-msgstr "Xiahou"
+msgstr "-"
 
 msgid "surname-71"
-msgstr "Xiahou"
+msgstr "-"
 
 msgid "surname-72"
-msgstr "Xiahou"
+msgstr "-"
 
 msgid "surname-73"
-msgstr "Xiahou"
+msgstr "-"
 
 msgid "surname-74"
-msgstr "Xiahou"
+msgstr "-"
 
 msgid "surname-75"
-msgstr "Xihou"
+msgstr "-"
 
 msgid "surname-76"
-msgstr "Xiahou"
+msgstr "-"
 
 msgid "surname-77"
-msgstr "Xiahou"
+msgstr "-"
 
 msgid "surname-78"
-msgstr "Tian"
+msgstr "-"
 
 msgid "surname-79"
-msgstr "Xiahou"
+msgstr "-"
 
 msgid "surname-80"
-msgstr "Guang"
+msgstr "-"
 
 msgid "surname-81"
-msgstr "Guang"
+msgstr "-"
 
 msgid "surname-82"
-msgstr " Huang"
+msgstr "-"
 
 msgid "surname-83"
-msgstr "Yu"
+msgstr "-"
 
 msgid "surname-84"
-msgstr "Wei"
+msgstr "-"
 
 msgid "surname-85"
-msgstr "Wang"
+msgstr "-"
 
 msgid "surname-86"
-msgstr "Cao"
+msgstr "-"
 
 msgid "surname-87"
-msgstr "Zheng"
+msgstr "-"
 
 msgid "surname-88"
-msgstr "Du"
+msgstr "-"
 
 msgid "surname-89"
-msgstr "Guang"
+msgstr "-"
 
 msgid "surname-90"
-msgstr "Zhang"
+msgstr "-"
 
 msgid "surname-91"
-msgstr "Cao"
+msgstr "-"
 
 msgid "surname-92"
-msgstr "Cao"
+msgstr "-"
 
 msgid "surname-93"
-msgstr "Cao"
+msgstr "-"
 
 msgid "surname-94"
-msgstr "Cao"
+msgstr "-"
 
 msgid "surname-95"
-msgstr "Cao"
+msgstr "-"
 
 msgid "surname-96"
-msgstr "Cao"
+msgstr "-"
 
 msgid "surname-97"
-msgstr "He"
+msgstr "-"
 
 msgid "surname-98"
-msgstr "Jia"
+msgstr "-"
 
 msgid "surname-99"
-msgstr "Guo"
+msgstr "-"
 
 msgid "surname-100"
-msgstr "Lu"
+msgstr "Ye"
 
 msgid "surname-101"
-msgstr "chen"
+msgstr "Hu"
 
 msgid "surname-102"
-msgstr "Yang"
+msgstr "Li"
 
 msgid "surname-103"
-msgstr "Huangpu"
+msgstr "Cao"
 
 msgid "surname-104"
-msgstr "Lv"
+msgstr "Liu"
 
 msgid "surname-105"
-msgstr "Gao"
+msgstr "Zhuge"
 
 msgid "surname-106"
-msgstr "Xu"
+msgstr "Zhou"
 
 msgid "surname-107"
-msgstr "Zhong"
+msgstr "Sima"
 
 msgid "surname-108"
-msgstr "Wang"
+msgstr "Deng"
 
 msgid "surname-109"
-msgstr "Jia"
+msgstr "Zhang"
 
 msgid "surname-110"
 msgstr "Cai"
@@ -1754,34 +1889,34 @@ msgid "surname-124"
 msgstr "Zhu"
 
 msgid "surname-125"
-msgstr "Tiansui"
+msgstr "Xiahou"
 
 msgid "surname-126"
-msgstr "Nanpi"
+msgstr "Guang"
 
 msgid "surname-127"
-msgstr "Xuchan"
+msgstr "Zhou"
 
 msgid "surname-128"
-msgstr "Puyang"
+msgstr "Yi"
 
 msgid "surname-129"
-msgstr "Shouchun"
+msgstr "Sima"
 
 msgid "surname-130"
-msgstr "Jianye"
+msgstr "Sima"
 
 msgid "surname-131"
-msgstr "Jianning"
+msgstr "Sima"
 
 msgid "surname-132"
-msgstr "Chendu"
+msgstr "Zhang"
 
 msgid "surname-133"
-msgstr "Luoyang"
+msgstr "Sima"
 
 msgid "surname-134"
-msgstr "Hanzhong"
+msgstr "Wang"
 
 msgid "surname-135"
 msgstr "Dong"
@@ -2021,55 +2156,55 @@ msgid "surname-213"
 msgstr "Mi"
 
 msgid "surname-214"
-msgstr "Soldier"
+msgstr "Guo"
 
 msgid "surname-215"
-msgstr "Chaisang"
+msgstr "Sima"
 
 msgid "surname-216"
-msgstr "Camp"
+msgstr "Xiahou"
 
 msgid "surname-217"
-msgstr "Wuwei"
+msgstr "Xiahou"
 
 msgid "surname-218"
-msgstr "Chang'an"
+msgstr "Xiahou"
 
 msgid "surname-219"
-msgstr "Anding"
+msgstr "Xiahou"
 
 msgid "surname-220"
-msgstr "Jiangzhou"
+msgstr "Xiahou"
 
 msgid "surname-221"
-msgstr "Ye"
+msgstr "Xihou"
 
 msgid "surname-222"
-msgstr "Beiping"
+msgstr "Xiahou"
 
 msgid "surname-223"
-msgstr "Xuzhou"
+msgstr "Tian"
 
 msgid "surname-224"
-msgstr "Xiaopei"
+msgstr "Xiahou"
 
 msgid "surname-225"
-msgstr "City"
+msgstr "Guang"
 
 msgid "surname-226"
-msgstr "City"
+msgstr "Guang"
 
 msgid "surname-227"
-msgstr "City"
+msgstr "Jiang"
 
 msgid "surname-228"
-msgstr "Autonomy"
+msgstr "Zhao"
 
 msgid "surname-229"
-msgstr "Civilian"
+msgstr "Guo"
 
 msgid "surname-230"
-msgstr "System"
+msgstr "Ma"
 
 msgid "surname-231"
 msgstr "Gongsun"
@@ -2195,25 +2330,25 @@ msgid "surname-271"
 msgstr "Yin"
 
 msgid "surname-272"
-msgstr "-"
+msgstr "Chen"
 
 msgid "surname-273"
-msgstr "-"
+msgstr "Lv"
 
 msgid "surname-274"
-msgstr "-"
+msgstr "Ling"
 
 msgid "surname-275"
-msgstr "-"
+msgstr "Cheng"
 
 msgid "surname-276"
-msgstr "-"
+msgstr "Xu"
 
 msgid "surname-277"
-msgstr "-"
+msgstr "Huang"
 
 msgid "surname-278"
-msgstr "Pang"
+msgstr "Pan"
 
 msgid "surname-279"
 msgstr "Fang"
@@ -2357,10 +2492,10 @@ msgid "surname-325"
 msgstr "Chen"
 
 msgid "surname-326"
-msgstr "Tao"
+msgstr "Chen"
 
 msgid "surname-327"
-msgstr "Zhu"
+msgstr "Tao"
 
 msgid "surname-328"
 msgstr "Zhu"
@@ -2446,119 +2581,257 @@ msgstr "Ju"
 msgid "surname-355"
 msgstr "Shen"
 
-#, fuzzy
 msgid "surname-356"
-msgstr "Cao"
+msgstr "(Reserve)"
 
-#, fuzzy
 msgid "surname-357"
-msgstr "Cao"
+msgstr "(Reserve)"
 
-#, fuzzy
 msgid "surname-358"
-msgstr "Cao"
+msgstr "Yue"
 
-#, fuzzy
 msgid "surname-359"
-msgstr "Cao"
+msgstr "Ding"
 
 msgid "surname-360"
-msgstr "Businessman"
+msgstr "Cao"
 
 msgid "surname-361"
-msgstr "Scholar"
+msgstr "Li"
 
-#, fuzzy
 msgid "surname-362"
-msgstr "Li"
+msgstr "Xianhou"
 
-#, fuzzy
 msgid "surname-363"
-msgstr "Li"
+msgstr "Xiahou"
 
-#, fuzzy
 msgid "surname-364"
-msgstr "Li"
+msgstr "Xu"
 
-#, fuzzy
 msgid "surname-365"
-msgstr "Li"
+msgstr "Cao"
 
-#, fuzzy
 msgid "surname-366"
-msgstr "Li"
+msgstr "Pang"
 
-#, fuzzy
 msgid "surname-367"
-msgstr "Li"
+msgstr "Liu"
 
-#, fuzzy
 msgid "surname-368"
+msgstr "Jia"
+
+msgid "surname-369"
+msgstr "He"
+
+msgid "surname-370"
+msgstr "Lu"
+
+msgid "surname-371"
+msgstr "chen"
+
+msgid "surname-372"
+msgstr "Yang"
+
+msgid "surname-373"
+msgstr "Huangpu"
+
+msgid "surname-374"
+msgstr "Lv"
+
+msgid "surname-375"
+msgstr "Gao"
+
+msgid "surname-376"
+msgstr "Xu"
+
+msgid "surname-377"
+msgstr "Zhong"
+
+msgid "surname-378"
+msgstr "Wang"
+
+msgid "surname-379"
+msgstr "Jia"
+
+msgid "surname-380"
+msgstr "Xu"
+
+msgid "surname-381"
+msgstr "Gan"
+
+msgid "surname-382"
+msgstr "Man"
+
+msgid "surname-383"
+msgstr "Niu"
+
+msgid "surname-384"
+msgstr "Chen"
+
+msgid "surname-385"
+msgstr "Cao"
+
+msgid "surname-386"
+msgstr "Zhuo"
+
+msgid "surname-387"
+msgstr "Lu"
+
+msgid "surname-388"
+msgstr "Lu"
+
+msgid "surname-389"
+msgstr "Guang"
+
+msgid "surname-390"
+msgstr "Zhang"
+
+msgid "surname-391"
+msgstr "Wen"
+
+msgid "surname-392"
 msgstr "Li"
 
-#, fuzzy
-msgid "surname-369"
-msgstr "Li"
+msgid "surname-393"
+msgstr "Liu"
+
+msgid "surname-394"
+msgstr "Cao"
+
+msgid "surname-395"
+msgstr "Liu"
+
+msgid "surname-396"
+msgstr "Han"
+
+msgid "surname-397"
+msgstr "Sun"
+
+msgid "surname-398"
+msgstr "Liu"
+
+msgid "surname-399"
+msgstr "zhang"
+
+msgid "surname-400"
+msgstr " Huang"
+
+msgid "surname-401"
+msgstr "Yu"
+
+msgid "surname-402"
+msgstr "Wei"
+
+msgid "surname-403"
+msgstr "Wang"
+
+msgid "surname-404"
+msgstr "Cao"
+
+msgid "surname-405"
+msgstr "Zheng"
+
+msgid "surname-406"
+msgstr "Du"
+
+msgid "surname-407"
+msgstr "Guang"
+
+msgid "surname-408"
+msgstr "Zhang"
+
+msgid "surname-409"
+msgstr "Cao"
+
+msgid "surname-410"
+msgstr "Cao"
+
+msgid "surname-411"
+msgstr "Cao"
+
+msgid "surname-412"
+msgstr "Cao"
+
+msgid "surname-413"
+msgstr "Cao"
+
+msgid "surname-414"
+msgstr "Cao"
+
+msgid "surname-415"
+msgstr "Zhang"
+
+msgid "surname-416"
+msgstr "Hua"
+
+msgid "surname-417"
+msgstr "Yu"
+
+msgid "surname-418"
+msgstr "Guan"
+
+msgid "surname-419"
+msgstr "Zuo"
 
 msgid "desc0"
-msgstr " "
+msgstr "System "
 
 msgid "desc1"
-msgstr " "
+msgstr "Civilian"
 
 msgid "desc2"
-msgstr " "
+msgstr "Void"
 
 msgid "desc3"
-msgstr " "
+msgstr "Scout"
 
 msgid "desc4"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc5"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc6"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc7"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc8"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc9"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc10"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc11"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc12"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc13"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc14"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc15"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc16"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc17"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc18"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc19"
-msgstr " "
+msgstr "One hero in Soldier troop"
 
 msgid "desc20"
 msgstr " "
@@ -2582,73 +2855,73 @@ msgid "desc26"
 msgstr " "
 
 msgid "desc27"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc28"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc29"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc30"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc31"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc32"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc33"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc34"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc35"
-msgstr " "
+msgstr "Businessman"
 
 msgid "desc36"
-msgstr " "
+msgstr "Scholar"
 
 msgid "desc37"
-msgstr " "
+msgstr "Transport"
 
 msgid "desc38"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc39"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc40"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc41"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc42"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc43"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc44"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc45"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc46"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc47"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc48"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc49"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc50"
 msgstr " "
@@ -2705,100 +2978,100 @@ msgid "desc67"
 msgstr " "
 
 msgid "desc68"
-msgstr " "
+msgstr "Changsha"
 
 msgid "desc69"
-msgstr " "
+msgstr "Chaisang"
 
 msgid "desc70"
-msgstr " "
+msgstr "Chenliu"
 
 msgid "desc71"
-msgstr " "
+msgstr "Wuwei"
 
 msgid "desc72"
-msgstr " "
+msgstr "Chang'an"
 
 msgid "desc73"
-msgstr " "
+msgstr "Anding"
 
 msgid "desc74"
-msgstr " "
+msgstr "Jiangzhou"
 
 msgid "desc75"
-msgstr " "
+msgstr "Ye"
 
 msgid "desc76"
-msgstr " "
+msgstr "Beiping"
 
 msgid "desc77"
-msgstr " "
+msgstr "Tianshui"
 
 msgid "desc78"
-msgstr " "
+msgstr "Xuzhou"
 
 msgid "desc79"
-msgstr " "
+msgstr "Xiaopei"
 
 msgid "desc80"
-msgstr " "
+msgstr "Xiangping"
 
 msgid "desc81"
-msgstr " "
+msgstr "Jinyang"
 
 msgid "desc82"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc83"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc84"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc85"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc86"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc87"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc88"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc89"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc90"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc91"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc92"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc93"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc94"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc95"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc96"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc97"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc98"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc99"
-msgstr " "
+msgstr "(Reserve)"
 
 msgid "desc100"
 msgstr " "
@@ -3143,55 +3416,55 @@ msgid "desc213"
 msgstr " "
 
 msgid "desc214"
-msgstr "Soldier"
+msgstr " "
 
 msgid "desc215"
-msgstr "Chaisang"
+msgstr " "
 
 msgid "desc216"
-msgstr "Camp"
+msgstr " "
 
 msgid "desc217"
-msgstr "Wuwei"
+msgstr " "
 
 msgid "desc218"
-msgstr "Chang'an"
+msgstr " "
 
 msgid "desc219"
-msgstr "Anding"
+msgstr " "
 
 msgid "desc220"
-msgstr "Jiangzhou"
+msgstr " "
 
 msgid "desc221"
-msgstr "Ye"
+msgstr " "
 
 msgid "desc222"
-msgstr "Beiping"
+msgstr " "
 
 msgid "desc223"
-msgstr "Xuzhou"
+msgstr " "
 
 msgid "desc224"
-msgstr "Xiaopei"
+msgstr " "
 
 msgid "desc225"
-msgstr "Xiangping"
+msgstr " "
 
 msgid "desc226"
-msgstr "Jinyang"
+msgstr " "
 
 msgid "desc227"
-msgstr "Changsha"
+msgstr " "
 
 msgid "desc228"
-msgstr "Autonomy"
+msgstr " "
 
 msgid "desc229"
-msgstr "Civilian"
+msgstr " "
 
 msgid "desc230"
-msgstr "System"
+msgstr " "
 
 msgid "desc231"
 msgstr " "
@@ -3571,55 +3844,212 @@ msgstr " "
 msgid "desc356"
 msgstr " "
 
-#, fuzzy
 msgid "desc357"
 msgstr " "
 
-#, fuzzy
 msgid "desc358"
 msgstr " "
 
-#, fuzzy
 msgid "desc359"
 msgstr " "
 
 msgid "desc360"
-msgstr "Businessman"
+msgstr " "
 
 msgid "desc361"
-msgstr "Scholar"
+msgstr " "
 
-#, fuzzy
 msgid "desc362"
 msgstr " "
 
-#, fuzzy
 msgid "desc363"
 msgstr " "
 
-#, fuzzy
 msgid "desc364"
 msgstr " "
 
-#, fuzzy
 msgid "desc365"
 msgstr " "
 
-#, fuzzy
 msgid "desc366"
 msgstr " "
 
-#, fuzzy
 msgid "desc367"
 msgstr " "
 
-#, fuzzy
 msgid "desc368"
 msgstr " "
 
-#, fuzzy
 msgid "desc369"
 msgstr " "
+
+msgid "desc370"
+msgstr " "
+
+msgid "desc371"
+msgstr " "
+
+msgid "desc372"
+msgstr " "
+
+msgid "desc373"
+msgstr " "
+
+msgid "desc374"
+msgstr " "
+
+msgid "desc375"
+msgstr " "
+
+msgid "desc376"
+msgstr " "
+
+msgid "desc377"
+msgstr " "
+
+msgid "desc378"
+msgstr " "
+
+msgid "desc379"
+msgstr " "
+
+msgid "desc380"
+msgstr " "
+
+msgid "desc381"
+msgstr " "
+
+msgid "desc382"
+msgstr " "
+
+msgid "desc383"
+msgstr " "
+
+msgid "desc384"
+msgstr " "
+
+msgid "desc385"
+msgstr " "
+
+msgid "desc386"
+msgstr " "
+
+msgid "desc387"
+msgstr " "
+
+msgid "desc388"
+msgstr " "
+
+msgid "desc389"
+msgstr " "
+
+msgid "desc390"
+msgstr " "
+
+msgid "desc391"
+msgstr " "
+
+msgid "desc392"
+msgstr " "
+
+msgid "desc393"
+msgstr " "
+
+msgid "desc394"
+msgstr " "
+
+msgid "desc395"
+msgstr " "
+
+msgid "desc396"
+msgstr " "
+
+msgid "desc397"
+msgstr " "
+
+msgid "desc398"
+msgstr " "
+
+msgid "desc399"
+msgstr " "
+
+msgid "desc400"
+msgstr " "
+
+msgid "desc401"
+msgstr " "
+
+msgid "desc402"
+msgstr " "
+
+msgid "desc403"
+msgstr " "
+
+msgid "desc404"
+msgstr " "
+
+msgid "desc405"
+msgstr " "
+
+msgid "desc406"
+msgstr " "
+
+msgid "desc407"
+msgstr " "
+
+msgid "desc408"
+msgstr " "
+
+msgid "desc409"
+msgstr " "
+
+msgid "desc410"
+msgstr " "
+
+msgid "desc411"
+msgstr " "
+
+msgid "desc412"
+msgstr " "
+
+msgid "desc413"
+msgstr " "
+
+msgid "desc414"
+msgstr " "
+
+msgid "desc415"
+msgstr " "
+
+msgid "desc416"
+msgstr " "
+
+msgid "desc417"
+msgstr " "
+
+msgid "desc418"
+msgstr " "
+
+msgid "desc419"
+msgstr " "
+
+#~ msgid "ambition"
+#~ msgstr "Ambition"
+
+#~ msgid "ambition-0"
+#~ msgstr "Troubled times"
+
+#~ msgid "ambition-1"
+#~ msgstr "Quiet"
+
+#~ msgid "ambition-2"
+#~ msgstr "Wander"
+
+#~ msgid "ambition-3"
+#~ msgstr "Entertainer"
+
+#~ msgid "ambition-4"
+#~ msgstr "Drift along"
 
 #~ msgid "character-0"
 #~ msgstr "Desert"

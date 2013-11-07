@@ -116,6 +116,7 @@ enum controller { CNTR_NETWORK = 0, CNTR_LOCAL, CNTR_COMPUTER, CNTR_EMPTY, CNTR_
 #define RANDOM_FACTION	-1
 
 std::string decide_player_iocn(int controller);
+enum {BINARY_HEROS, BINARY_HEROS_START, BINARY_REPLAY, BINARY_SIDE};
 
 struct tsub_player_list
 {

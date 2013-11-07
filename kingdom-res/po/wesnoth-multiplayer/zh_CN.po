@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
-"POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-04-16 21:26+0800\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2013-07-23 14:16+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -86,7 +86,7 @@ msgstr "亡灵军团"
 
 #. [multiplayer]: id=multiplayer_Basilisk
 #: data/multiplayer/scenarios/2p_Caves_of_the_Basilisk.cfg:33
-msgid "2p — Caves of the Basilisk"
+msgid "2p_caves_of_the_basilisk"
 msgstr "2p — 蛇怪之穴"
 
 #. [multiplayer]: id=multiplayer_Basilisk
@@ -98,6 +98,9 @@ msgid ""
 msgstr ""
 "这些洞穴曾经是具有传奇色彩的古老蛇怪“查克索·内伊克斯”的藏身之处。那些被他所石"
 "化的受害者们，至今仍然是他那狂暴力量的纪念碑。"
+
+msgid "8p_hanzhong"
+msgstr "8p — 汉中之战"
 
 #. [side]
 #: data/multiplayer/scenarios/2p_Caves_of_the_Basilisk.cfg:49

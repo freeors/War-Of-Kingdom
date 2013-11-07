@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/unit_detail.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -102,7 +101,7 @@ void tunit_detail::refresh_tooltip(twindow& window)
 	const unit& temp = *interviewee_;
 
 	tscroll_label* tip = find_widget<tscroll_label>(&window, "tip", false, true);
-	tip->set_label(temp.form_gui2_tip());
+	tip->set_label(temp.form_tip(true));
 }
 
 void tunit_detail::pre_show(CVideo& /*video*/, twindow& window)

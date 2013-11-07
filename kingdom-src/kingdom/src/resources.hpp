@@ -39,7 +39,6 @@ namespace resources
 	extern gamemap *game_map;
 	extern unit_map *units;
 	extern hero_map* heros;
-	extern hero_map* heros_start;
 	extern std::vector<team> *teams;
 	extern game_state *state_of_game;
 	extern LuaKernel *lua_kernel;

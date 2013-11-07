@@ -69,17 +69,6 @@ void file_menu::display_current_files() {
 		const std::string display_string = COLUMN_SEPARATOR + *it;
 		to_show.push_back(display_string);
 	}
-	const int menu_font_size = font::SIZE_NORMAL; // Known from menu.cpp.
-	for (it = to_show.begin(); it != to_show.end(); ++it) {
-		// Make sure that all lines fit.
-		// Guess the width of the scrollbar to be 30 since it is not accessible from here.
-		// -25 to compensate for the picture column.
-		while(static_cast<unsigned int>(
-				font::line_width(*it, menu_font_size)) > width() - 30 - 25) {
-
-			(*it).resize((*it).size() - 1);
-		}
-	}
 	set_items(to_show);
 }
 

@@ -20,14 +20,17 @@
 
 #include "config.hpp"
 
+enum {NONE_CATALOG = 0, TUTORIAL_CATALOG};
+
 namespace gui2 {
 
 class tcampaign_selection
 	: public tdialog
 {
 public:
-	explicit tcampaign_selection(const std::vector<config>& campaigns)
+	explicit tcampaign_selection(const std::vector<config>& campaigns, int catalog)
 		: campaigns_(campaigns)
+		, catalog_(catalog)
 		, choice_(-1)
 
 	{
@@ -53,6 +56,8 @@ private:
 
 	/** Contains the config objects for all campaigns. */
 	const std::vector<config> &campaigns_;
+
+	int catalog_;
 
 	/** The chosen campaign. */
 	int choice_;

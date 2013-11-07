@@ -21,11 +21,13 @@ struct artifical_fields_t
 	int32_t mayor_;
 	int32_t fronts_;
 	int32_t police_;
+	int32_t soldiers_;
 	int32_t gold_bonus_;
 	int32_t technology_bonus_;
 	int32_t max_commoners_;
 	int32_t decree_;
 	int32_t research_turns_;
+	int32_t max_level_;
 	unit_segment fresh_heros_;
 	unit_segment wander_heros_;
 	unit_segment finish_heros_;
@@ -41,7 +43,7 @@ class tartifical_
 public:
 	tartifical_();
 
-	void reset_commoner_speed();
+	void reset_decree_effect();
 
 	int police_speed_;
 	int generate_speed_;
@@ -51,7 +53,7 @@ public:
 	int technology_speed_;
 	int technology_income_ratio_;
 	int revenue_income_;
-	int demolish_hp_;
+	int destruct_hp_;
 	int heal_hp_;
 };
 
@@ -104,15 +106,14 @@ public:
 
 	const t_translation::t_terrain& terrain() const { return terrain_; }
 
-	// 一支部队进城
-	// @disband: 是否要自动解散该部队
-	bool troop_come_into(unit* troop, int pos = -1, bool create = true);
+	bool troop_come_into(unit* troop, int pos = -1);
+	bool troop_come_into2(unit* troop, int pos = -1);
+
 	// 一支野外部队/建筑物将归属本城市
 	void unit_belong_to(unit* troop, bool loyalty = true, bool to_recorder = false);
 	// 一支城内部队出城
 	void troop_go_out(const int index_of_army, bool del = true);
 
-	void commoner_come_into(unit* that, int pos = -1, bool create = true);
 	void commoner_go_out(int index, bool del = true);
 
 	// add unit to field
@@ -131,10 +132,13 @@ public:
 	void hero_go_out(const hero& h);
 	// 解散城内一支部队
 	void disband(const int index_of_army);
+	void decrease_level();
 	void fallen(int a_side, unit* attacker = NULL);
 
+	void fort_fallen(int a_side);
+
 	void independence(bool independenced, team& to_team, artifical* rpg_city, team& from_team, artifical* aggressing, hero* from_leader, unit* from_leader_unit);
-	void change_to_special_unit(int attacker_side, int random, bool replaying);
+	void change_to_special_unit(game_display& gui, int attacker_side, int random);
 	// whether surrounded or not
 	bool is_surrounded() const;
 	bool is_front(bool must_enemy = false) const;
@@ -169,17 +173,17 @@ public:
 
 	void calculate_ea_tiles(std::vector<const map_location*>& ea_vacants, int& markets, int& technologies, int& tactics) const;
 	void calculate_ea_tiles(int& markets, int& technologies, int& tactics) const;
-	const unit_type* next_ea_utype(std::vector<const map_location*>& ea_vacants) const;
+	const unit_type* next_ea_utype(std::vector<const map_location*>& ea_vacants, const std::set<const unit_type*>& can_build_ea) const;
 	artifical* tactic_on_ea() const;
-	void demolish_ea();
+	void demolish_ea(const std::set<const unit_type*>& can_build_ea);
 
 	//
 	// override
 	//
 	/** draw a unit.  */
 	void redraw_unit();
-	// 告知下一回轮到它了
 	bool new_turn();
+	void advance_to(const unit_type *t, bool use_traits = false, game_state *state = 0);
 
 	void fill_ai_hero(std::set<int>& candidate, int count, int& random);
 	hero* select_leader(int random) const;
@@ -190,6 +194,7 @@ public:
 	void set_location(const map_location &loc);
 	void issue_decree(const config& effect);
 	void apply_issur_decree(const tdecree& d, bool anim);
+	void clear_decree();
 
 	void set_resting(bool rest);
 	int upkeep() const;
@@ -208,7 +213,12 @@ public:
 	void increase_police(int increase);
 	void set_police(int val);
 
+	int soldiers() const { return soldiers_; }
+	void set_soldiers(int val);
+	int current_soldiers() const;
+
 	const tdecree* decree() const { return decree_; }
+	int max_level() const { return max_level_; }
 	
 	void write(uint8_t* mem) const;
 	void read(const uint8_t* mem);
@@ -221,6 +231,7 @@ public:
 	int total_technology_income(int technology_increase) const;
 
 	void demolish_to(artifical& to, int damage, int random);
+	void ally_terminate_adjust(team& adjusting_team);
 
 	// recruit
 	int max_recruit_cost();
@@ -255,8 +266,10 @@ private:
 	hero* mayor_;
 	int fronts_;
 	int police_;
+	int soldiers_;
 	const tdecree* decree_;
 	int research_turns_;
+	int max_level_;
 
 	int commercial_exploiture_;
 	int technology_exploiture_;

@@ -29,7 +29,7 @@
 #include "map.hpp"
 #include "resources.hpp"
 #include "util.hpp"
-
+#include "wml_exception.hpp"
 
 #define ERR_CF LOG_STREAM(err, config)
 #define LOG_G LOG_STREAM(info, general)
@@ -227,7 +227,7 @@ map_location map_location::get_direction(
 		case NORTH_EAST: return map_location(x + n, y - (n+is_even(x))/2 );
 		case NORTH_WEST: return map_location(x - n, y - (n+is_even(x))/2 );
 		default:
-			assert(false);
+			VALIDATE(false, "map_location::get_direction, unknown dir!");
 			return map_location();
 	}
 }
@@ -313,7 +313,7 @@ map_location::DIRECTION map_location::get_relative_dir(map_location loc) const {
 	}
 
 	// Impossible
-	assert(false);
+	VALIDATE(false, "map_loation, get_relative_dir, NDIRECTIONS!");
 	return NDIRECTIONS;
 
 
@@ -481,12 +481,19 @@ size_t distance_between(const map_location& a, const map_location& b)
 std::vector<map_location> parse_location_range(gamemap* map, const std::string &x, const std::string &y,
 	bool with_border)
 {
+	static int max_map_with = 8192;
+	static int max_map_height = 8192;
+
 	std::vector<map_location> res;
 	const std::vector<std::string> xvals = utils::split(x);
 	const std::vector<std::string> yvals = utils::split(y);
 	// gamemap *map = resources::game_map;
-	assert(map);
-	int xmin = 1, xmax = map->w(), ymin = 1, ymax = map->h();
+	VALIDATE(!with_border || map, "parse_location_range, !with_border || map!");
+	int xmin = 1, xmax = max_map_with, ymin = 1, ymax = max_map_height;
+	if (map) {
+		xmax = map->w();
+		ymax = map->h();
+	}
 	if (with_border) {
 		int bs = map->border_size();
 		xmin -= bs;
@@ -535,7 +542,7 @@ void write_location_range(const std::set<map_location>& locs, config& cfg)
 	}
 
 	// need that operator< uses x first
-	assert(map_location(0,1) < map_location(1,0));
+	VALIDATE(map_location(0,1) < map_location(1,0), "write_location_range, map_location(0,1) < map_location(1,0)!");
 
 	std::stringstream x, y;
 	std::set<map_location>::const_iterator

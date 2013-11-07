@@ -20,7 +20,7 @@
 
 #include "wesconfig.h"
 #include "serialization/tokenizer.hpp"
-
+#include "game_config.hpp"
 
 tokenizer::tokenizer(std::istream& in) :
 	current_(EOF),
@@ -80,6 +80,7 @@ const token &tokenizer::next_token()
 
 	switch(current_) {
 	case EOF:
+	case '\0':
 		token_.type = token::END;
 		break;
 
@@ -158,8 +159,13 @@ const token &tokenizer::next_token()
 		return token_;
 	}
 
-	if (current_ != EOF)
+	if (current_ == '\0') {
+		if (game_config::savegame_cache) {
+			in_.read((char*)game_config::savegame_cache, game_config::savegame_cache_size).gcount();
+		}
+	} else if (current_ != EOF) {
 		next_char();
+	}
 
 	return token_;
 }

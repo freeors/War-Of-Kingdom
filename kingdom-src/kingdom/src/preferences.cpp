@@ -29,7 +29,7 @@
 #include "log.hpp"
 #include "preferences.hpp"
 #include "sound.hpp"
-#include "video.hpp" // non_interactive()
+#include "video.hpp"
 #include "serialization/parser.hpp"
 #include "display.hpp"
 #include "gettext.hpp"
@@ -58,6 +58,15 @@ base_manager::base_manager()
 {
 	scoped_istream stream = istream_file(get_prefs_file(), true);
 	read(prefs, *stream);
+/*
+#ifdef _WIN32
+	if (!prefs.has_attribute("inapp_getcard") || prefs["inapp_getcard"].str() != "fl_9d22f05d3fdfd028fa8f2382297efd776c2c2fdc") {
+		int ii = 0;
+		posix_print_mb("base_manager, read, invalid inapp_getcard");
+
+	}
+#endif
+*/
 }
 
 base_manager::~base_manager()
@@ -72,12 +81,17 @@ base_manager::~base_manager()
 
 void write_preferences()
 {
-    #ifndef _WIN32
-
+#ifndef _WIN32
     bool prefs_file_existed = access(get_prefs_file().c_str(), F_OK) == 0;
-
-    #endif
-
+#endif
+/*
+#ifdef _WIN32
+	if (!prefs.has_attribute("inapp_getcard") || prefs["inapp_getcard"].str() != "fl_9d22f05d3fdfd028fa8f2382297efd776c2c2fdc") {
+		int ii = 0;
+		posix_print_mb("write_preferences, invalid inapp_getcard");
+	}
+#endif
+*/
 	try {
 		scoped_ostream prefs_file = ostream_file(get_prefs_file(), true);
 		write(*prefs_file, prefs);
@@ -337,12 +351,28 @@ std::pair<int,int> resolution()
 	}
 }
 
+void set_coin(int value)
+{
+	prefs["coin"] = value;
+}
+
+int coin()
+{
+	return prefs["coin"].to_int();
+}
+
+void set_score(int value)
+{
+	prefs["score"] = value;
+}
+
+int score()
+{
+	return prefs["score"].to_int();
+}
+
 bool turbo()
 {
-	if(non_interactive()) {
-		return true;
-	}
-
 	return get("turbo", false);
 }
 
@@ -369,16 +399,6 @@ bool default_move()
 void _set_default_move(const bool ison)
 {
 	prefs["default_move"] = ison;
-}
-
-int idle_anim_rate()
-{
-	return prefs["idle_anim_rate"];
-}
-
-void _set_idle_anim_rate(const int rate)
-{
-	prefs["idle_anim_rate"] = rate;
 }
 
 std::string language()

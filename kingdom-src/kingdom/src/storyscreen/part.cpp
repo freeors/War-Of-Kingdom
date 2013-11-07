@@ -20,7 +20,6 @@
 
 #include "global.hpp"
 #include "asserts.hpp"
-#include "foreach.hpp"
 #include "log.hpp"
 #include "resources.hpp"
 #include "storyscreen/part.hpp"
@@ -33,6 +32,8 @@
 #include "util.hpp"
 #include "variable.hpp"
 #include "video.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace storyscreen {
 

@@ -92,7 +92,7 @@ void trandom_map::pre_show(twindow& window)
 
 	// Standard maps
 	int index = 0;
-	foreach (const config &map, cfg_.child_range("multiplayer"))
+	BOOST_FOREACH (const config &map, cfg_.child_range("multiplayer"))
 	{
 		index ++;
 		const std::string& theme = map["theme"].str();
@@ -111,9 +111,6 @@ void trandom_map::pre_show(twindow& window)
 		}
 		candidate_.push_back(index - 1);
 	}
-
-	// if (size_t(preferences::map()) < list.get_item_count())
-	//	list.select_row(preferences::map());
 
 	connect_signal_mouse_left_click(
 		*regenerate_map_
@@ -259,7 +256,7 @@ void trandom_map::generate_map(twindow& window)
 	}
 
 	int nsides = 0;
-	foreach (const config &k, parameters_.scenario_data.child_range("side")) {
+	BOOST_FOREACH (const config &k, parameters_.scenario_data.child_range("side")) {
 		if (k["allow_player"].to_bool(true)) ++nsides;
 	}
 

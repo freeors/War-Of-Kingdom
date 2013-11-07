@@ -19,7 +19,6 @@
 
 #include "construct_dialog.hpp"
 #include "display.hpp"
-#include "foreach.hpp"
 #include "hotkeys.hpp"
 #include "game_end_exceptions.hpp"
 #include "game_preferences.hpp"
@@ -32,6 +31,8 @@
 #include "preferences_display.hpp"
 #include "wesconfig.h"
 #include "wml_separators.hpp"
+
+#include <boost/foreach.hpp>
 
 static lg::log_domain log_config("config");
 #define ERR_G LOG_STREAM(err, lg::general)
@@ -59,7 +60,8 @@ const struct {
 	{ hotkey::HOTKEY_MAP_SCREENSHOT, "mapscreenshot", N_("Map Screenshot"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_ACCELERATED, "accelerated", N_("Accelerated"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_INTERIOR, "interior", N_("Interior"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TECHNOLOGY_TREE, "technologytree", N_("Technology tree"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_TECHNOLOGY_TREE, "technologytree", N_("Adjust"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_UPLOAD, "upload", N_("Upload"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_FINAL_BATTLE, "finalbattle", N_("Final Battle"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_EMPLOY, "employ", N_("Employ"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_LIST, "list", N_("List"), false, hotkey::SCOPE_GAME },
@@ -465,7 +467,7 @@ void set_hotkey_tag_name(const std::string& name)
 
 void load_hotkeys(const config& cfg)
 {
-	foreach (const config &hk, cfg.child_range(hotkey_tag_name))
+	BOOST_FOREACH (const config &hk, cfg.child_range(hotkey_tag_name))
 	{
 		hotkey_item& h = get_hotkey(hk["command"]);
 		if(h.get_id() != HOTKEY_NULL) {
@@ -711,6 +713,9 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 		case HOTKEY_TECHNOLOGY_TREE:
 			technology_tree();
 			break;
+		case HOTKEY_UPLOAD:
+			upload();
+			break;
 		case HOTKEY_FINAL_BATTLE:
 			final_battle();
 			break;
@@ -938,7 +943,7 @@ void execute_command(display& disp, HOTKEY_COMMAND command, command_executor* ex
 		case HOTKEY_QUIT_GAME: {
 			if(disp.in_game()) {
 				DBG_G << "is in game -- showing quit message\n";
-				const int res = gui2::show_message(disp.video(), _("Quit"), _("Do you really want to quit?"), gui2::tmessage::yes_no_buttons, "hero-256/230.png");
+				const int res = gui2::show_message(disp.video(), _("Quit"), _("Do you really want to quit?"), gui2::tmessage::yes_no_buttons, "hero-256/0.png");
 				if(res != gui2::twindow::CANCEL) {
 					throw end_level_exception(QUIT);
 				}

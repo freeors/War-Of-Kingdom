@@ -2,7 +2,6 @@
 
 #include "global.hpp"
 #include "game_config.hpp"
-#include "foreach.hpp"
 #include "loadscreen.hpp"
 #include "DlgCoreProc.hpp"
 #include "gettext.hpp"
@@ -18,6 +17,7 @@
 #include "struct.h"
 
 #include "map.hpp"
+#include <boost/foreach.hpp>
 
 namespace ns {
 	int clicked_faction;
@@ -37,7 +37,7 @@ void tfaction::from_config(const config& cfg, std::set<int>& used_heros, std::se
 		used_cities.insert(city_);
 	}
 
-	std::vector<std::string> vstr = utils::split(art_cfg["service_heros"].str());
+	std::vector<std::string> vstr = utils::split(cfg["service_heros"].str());
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		number = lexical_cast_default<int>(*it);
 		if (used_heros.find(number) == used_heros.end()) {
@@ -46,12 +46,21 @@ void tfaction::from_config(const config& cfg, std::set<int>& used_heros, std::se
 		}
 	}
 
-	vstr = utils::split(art_cfg["wander_heros"].str());
+	vstr = utils::split(cfg["wander_heros"].str());
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		number = lexical_cast_default<int>(*it);
 		if (used_heros.find(number) == used_heros.end()) {
 			wanderes_.insert(number);
 			used_heros.insert(number);
+		}
+	}
+
+	// tower_heros must be from service_heros or wander_heros.
+	vstr = utils::split(cfg["tower_heros"].str());
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		number = lexical_cast_default<int>(*it);
+		if (freshes_.find(number) != freshes_.end() || wanderes_.find(number) != wanderes_.end()) {
+			towers_.insert(number);
 		}
 	}
 
@@ -104,7 +113,16 @@ void tfaction::update_to_ui_faction_edit(HWND hdlgP) const
 	}
 	for (hero_map::const_iterator it = gdmgr.heros_.begin(); it != gdmgr.heros_.end(); ++ it) {
 		const hero& h = *it;
+		if (hero::is_system(h.number_)) {
+			continue;
+		}
+		if (hero::is_soldier(h.number_)) {
+			continue;
+		}
 		if (hero::is_artifical(h.number_)) {
+			continue;
+		}
+		if (hero::is_commoner(h.number_)) {
 			continue;
 		}
 		if (h.gender_ != hero_gender_neutral) {
@@ -130,6 +148,65 @@ void tfaction::update_to_ui_faction_edit(HWND hdlgP) const
 	if (selected != -1) {
 		ComboBox_SetCurSel(hctl, selected);
 	}
+
+	// tower hero
+	LVITEM lvi;
+	std::stringstream strstr;
+	char text[_MAX_PATH];
+	hctl = GetDlgItem(hdlgP, IDC_LV_FACTIONEDIT_TOWERHERO);
+	ListView_DeleteAllItems(hctl);
+	int row = 0;
+	for (std::set<int>::const_iterator it = towers_.begin(); it != towers_.end(); ++ it) {
+		hero& h = gdmgr.heros_[*it];
+
+		lvi.mask = LVIF_TEXT | LVIF_PARAM;
+		// 姓名
+		lvi.iItem = row ++;
+		lvi.iSubItem = 0;
+		strcpy(text, utf8_2_ansi(h.name().c_str()));
+		lvi.pszText = text;
+		lvi.lParam = (LPARAM)h.number_;
+		ListView_InsertItem(hctl, &lvi);
+
+		// types
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 1;
+		strstr.str("");
+		if (h.utype_ != HEROS_NO_UTYPE) {
+			const unit_type* ut = unit_types.keytype(h.utype_);
+			strstr << ut->type_name();
+		} else {
+			strstr << "--";
+		}
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// 特技
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 2;
+		strcpy(text, utf8_2_ansi(hero::feature_str(h.feature_).c_str()));
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// 战法
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 3;
+		strstr.str("");
+		if (h.tactic_ != HEROS_NO_TACTIC) {
+			strstr << unit_types.tactic(h.tactic_).name();
+		}
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// 统帅
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 4;
+		sprintf(text, "%u.%u", fxptoi9(h.leadership_), fxpmod9(h.leadership_));
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+	}
 }
 
 std::string tfaction::generate() const
@@ -137,14 +214,9 @@ std::string tfaction::generate() const
 	std::stringstream strstr;
 
 	strstr << "[faction]\n";
-	strstr << "\tid=" << "\"" << leader_ << "\"\n";
 	strstr << "\tleader=" << leader_ << "\n";
 
-	strstr << "\t{ANONYMITY_LOYAL_MERITORIOUS_CITY_LOW 0 0 city1 1 1 ";
-	strstr << "(" << city_ << ")}\n";
-
-	strstr << "\t[+artifical]\n";
-	strstr << "\t\tservice_heros = ";
+	strstr << "\tservice_heros = ";
 	for (std::set<int>::const_iterator it = freshes_.begin(); it != freshes_.end(); ++ it) {
 		if (it == freshes_.begin()) {
 			strstr << *it;
@@ -153,7 +225,7 @@ std::string tfaction::generate() const
 		}
 	}
 	strstr << "\n";
-	strstr << "\t\twander_heros = ";
+	strstr << "\twander_heros = ";
 	for (std::set<int>::const_iterator it = wanderes_.begin(); it != wanderes_.end(); ++ it) {
 		if (it == wanderes_.begin()) {
 			strstr << *it;
@@ -162,7 +234,18 @@ std::string tfaction::generate() const
 		}
 	}
 	strstr << "\n";
-	strstr << "\t[/artifical]\n";
+	strstr << "\ttower_heros = ";
+	for (std::set<int>::const_iterator it = towers_.begin(); it != towers_.end(); ++ it) {
+		if (it == towers_.begin()) {
+			strstr << *it;
+		} else {
+			strstr << ", " << *it;
+		}
+	}
+	strstr << "\n";
+	
+	strstr << "\t{ANONYMITY_LOYAL_MERITORIOUS_CITY_LOW 0 0 city1 1 1 ";
+	strstr << "(" << city_ << ")}\n";
 
 	strstr << "[/faction]\n";
 	strstr << "\n";
@@ -234,6 +317,20 @@ void tcore::update_to_ui_faction(HWND hdlgP, int clicked_faction)
 		strcpy(text, strstr.str().c_str());
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
+
+		// tower heros
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = column ++;
+		strstr.str("");
+		for (std::set<int>::const_iterator it2 = f.towers_.begin(); it2 != f.towers_.end(); ++ it2) {
+			if (it2 != f.towers_.begin()) {
+				strstr << ", ";
+			}
+			strstr << gdmgr.heros_[*it2].name();
+		}
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
 	}
 	
 	// candidate hero
@@ -243,7 +340,7 @@ void tcore::update_to_ui_faction(HWND hdlgP, int clicked_faction)
 	for (hero_map::iterator it = gdmgr.heros_.begin(); it != gdmgr.heros_.end(); ++ it) {
 		hero& h = *it;
 
-		if (hero::is_commoner(h.number_) || hero::is_system(h.number_)) {
+		if (hero::is_system(h.number_) || hero::is_soldier(h.number_) || hero::is_commoner(h.number_)) {
 			continue;
 		}
 		if (h.gender_ == hero_gender_neutral) {
@@ -491,6 +588,14 @@ BOOL On_DlgFactionInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.pszText = text;
 	ListView_InsertColumn(hctl, column ++, &lvc);
 
+	lvc.cx = 300;
+	lvc.iSubItem = column;
+	strstr.str("");
+	strstr << _("Tower hero");
+	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, column ++, &lvc);
+
 	ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
@@ -635,80 +740,67 @@ BOOL On_DlgFactionEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LEADER), utf8_2_ansi(_("Leader")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITY), utf8_2_ansi(_("City")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TOWERHERO), utf8_2_ansi(_("Tower hero")));
 	
+	LVCOLUMN lvc;
+	char text[_MAX_PATH];
+	HWND hctl = GetDlgItem(hdlgP, IDC_LV_FACTIONEDIT_TOWERHERO);
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 60;
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "name"));
+	lvc.pszText = text;
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = 0;
+	ListView_InsertColumn(hctl, 0, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 90;
+	lvc.iSubItem = 1;
+	strcpy(text, utf8_2_ansi(_("arms^Type")));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, 1, &lvc);
+
+	lvc.cx = 60;
+	lvc.iSubItem = 2;
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "feature"));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, 2, &lvc);
+
+	lvc.cx = 65;
+	lvc.iSubItem = 3;
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "tactic"));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, 3, &lvc);
+
+	lvc.cx = 40;
+	lvc.iSubItem = 4;
+	strcpy(text, dgettext_2_ansi("wesnoth-hero", "leadership"));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, 4, &lvc);
+
+	// ListView_SetImageList(hctl, gdmgr._himl, LVSIL_SMALL);
+	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
 	tfaction& f = ns::core.factions_updating_[ns::clicked_faction];
 	f.update_to_ui_faction_edit(hdlgP);
 
 	return FALSE;
 }
 
-void OnFactionEditEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
-{
-/*
-	char text[_MAX_PATH];
-	HWND boddy;
-	std::stringstream strstr;
-	int bit = tterrain::EDITBIT_NONE;
-	bool bit_invalid = false;
-
-	if (codeNotify != EN_CHANGE) {
-		return;
-	}
-
-	tterrain& terrain = ns::core.terrains_updating_[ns::clicked_terrain];
-
-	Edit_GetText(hwndCtrl, text, sizeof(text) / sizeof(text[0]));
-	strstr.str("");
-	if (id == IDC_ET_TERRAINEDIT_STRING) {
-		bit_invalid = !is_valid_terrain_str(text);
-		if (bit_invalid) {
-			strstr << _("Invalid string");
-		} else {
-			bit_invalid = !is_unique_string(ns::core.terrains_updating_, text, ns::clicked_terrain);
-			if (bit_invalid) {
-				strstr << _("Other has holden it");
-			}
-		}
-		boddy = GetDlgItem(hdlgP, IDC_ET_TERRAINEDIT_STRINGSTATUS);
-		bit = tterrain::EDITBIT_STRING;
-	} else if (id == IDC_ET_TERRAINEDIT_NAME_MSGID) {
-		if (text[0]) {
-			strstr << dsgettext("wesnoth-lib", text);
-		}
-		boddy = GetDlgItem(hdlgP, IDC_ET_TERRAINEDIT_NAME);
-	} else if (id == IDC_ET_TERRAINEDIT_ALIAS || id == IDC_ET_TERRAINEDIT_MVTALIAS || id == IDC_ET_TERRAINEDIT_DEFALIAS) {
-		bit_invalid = !is_valid_alias_str(text);
-		if (bit_invalid) {
-			strstr << _("Invalid string");
-		}
-		if (id == IDC_ET_TERRAINEDIT_ALIAS) {
-			boddy = GetDlgItem(hdlgP, IDC_ET_TERRAINEDIT_ALIASSTATUS);
-		} else if (id == IDC_ET_TERRAINEDIT_MVTALIAS) {
-			boddy = GetDlgItem(hdlgP, IDC_ET_TERRAINEDIT_MVTALIASSTATUS);
-		} else {
-			boddy = GetDlgItem(hdlgP, IDC_ET_TERRAINEDIT_DEFALIASSTATUS);
-		}
-		bit = tterrain::EDITBIT_ALIAS;
-	}
-	
-	if (!strstr.str().empty()) {
-		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
-	} else {
-		text[0] = '\0';
-	}
-	Edit_SetText(boddy, text);
-	if (bit != tterrain::EDITBIT_NONE) {
-		terrain.set_edit_invalid(bit, bit_invalid, GetDlgItem(hdlgP, IDOK));
-	}
-*/
-	return;
-}
-
 void On_DlgFactionEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	BOOL changed = FALSE;
+	tfaction& f = ns::core.factions_updating_[ns::clicked_faction];
 
 	switch (id) {
+	case IDM_DELETE_ITEM0:
+		f.towers_.erase(ns::clicked_hero);
+		f.update_to_ui_faction_edit(hdlgP);
+		ns::core.set_dirty(tcore::BIT_FACTION, ns::core.factions_dirty());
+		break;
+
 	case IDOK:
 		changed = TRUE;
 		ns::core.factions_updating_[ns::clicked_faction].from_ui_faction_edit(hdlgP);
@@ -718,6 +810,62 @@ void On_DlgFactionEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify
 	}
 }
 
+void factionedit_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	LVITEM					lvi;
+	LPNMITEMACTIVATE		lpnmitem;
+
+	if (lpNMHdr->idFrom != IDC_LV_FACTIONEDIT_TOWERHERO) {
+		return;
+	}
+
+	// NM_表示对通用控件都通用,范围丛(0, 99)
+	// TVN_表示只能TreeView通用,范围丛(400, 499)
+	lpnmitem = (LPNMITEMACTIVATE)lpNMHdr;
+	// 如果单击到的是复选框位置,把复选框状态置反
+	// 当前定义的图标大小是16x16. ptAction反回的(x,y)是整个列表视图内的坐标,因而y值不大好判断
+	// 认为如果x是小于16的就认为是击中复选框
+	
+	POINT point = {lpnmitem->ptAction.x, lpnmitem->ptAction.y};
+	MapWindowPoints(lpNMHdr->hwndFrom, NULL, &point, 1);
+
+	lvi.iItem = lpnmitem->iItem;
+	lvi.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
+	lvi.iSubItem = 0;
+	lvi.pszText = gdmgr._menu_text;
+	lvi.cchTextMax = _MAX_PATH;
+	ListView_GetItem(lpNMHdr->hwndFrom, &lvi);
+
+	// menu item: delete2
+	HMENU hpopup_delete2 = CreatePopupMenu();
+	AppendMenu(hpopup_delete2, MF_STRING, IDM_DELETE_ITEM0, utf8_2_ansi(_("Delete")));
+	
+	if (lpnmitem->iItem < 0) {
+		EnableMenuItem(hpopup_delete2, IDM_DELETE_ITEM0, MF_BYCOMMAND | MF_GRAYED);
+	}
+
+	TrackPopupMenuEx(hpopup_delete2, 0, 
+		point.x, 
+		point.y, 
+		hdlgP, 
+		NULL);
+
+	DestroyMenu(hpopup_delete2);
+	
+	ns::type = DlgItem;
+	ns::clicked_hero = lvi.lParam;
+
+    return;
+}
+
+BOOL On_DlgFactionEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	if (lpNMHdr->code == NM_RCLICK) {
+		factionedit_notify_handler_rclick(hdlgP, DlgItem, lpNMHdr);
+	}
+	return FALSE;
+}
+
 BOOL CALLBACK DlgFactionEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message) {
@@ -725,6 +873,7 @@ BOOL CALLBACK DlgFactionEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 		return On_DlgFactionEditInitDialog(hDlg, (HWND)(wParam), lParam);
 	HANDLE_MSG(hDlg, WM_COMMAND, On_DlgFactionEditCommand);
 	HANDLE_MSG(hDlg, WM_DRAWITEM, editor_config::On_DlgDrawItem);
+	HANDLE_MSG(hDlg, WM_NOTIFY, On_DlgFactionEditNotify);
 	}
 	
 	return FALSE;
@@ -795,6 +944,14 @@ void On_DlgFactionCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		ns::core.update_to_ui_faction(hdlgP, ns::clicked_faction);
 		ns::core.set_dirty(tcore::BIT_FACTION, ns::core.factions_dirty());
 		break;
+
+	case IDM_TOTOWER:
+		f.towers_.insert(ns::clicked_hero);
+
+		ns::core.update_to_ui_faction(hdlgP, ns::clicked_faction);
+		ns::core.set_dirty(tcore::BIT_FACTION, ns::core.factions_dirty());
+		break;
+
 	case IDM_DELETE_ITEM0:
 		if (ns::type == IDC_LV_FACTION_SERVICE) {
 			if (f.leader_ == ns::clicked_hero) {
@@ -803,6 +960,9 @@ void On_DlgFactionCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			f.freshes_.erase(ns::clicked_hero);
 		} else if (ns::type == IDC_LV_FACTION_WANDER) {
 			f.wanderes_.erase(ns::clicked_hero);
+		}
+		if (f.towers_.find(ns::clicked_hero) != f.towers_.end()) {
+			f.towers_.erase(ns::clicked_hero);
 		}
 		ns::core.update_to_ui_faction(hdlgP, ns::clicked_faction);
 		ns::core.set_dirty(tcore::BIT_FACTION, ns::core.factions_dirty());
@@ -813,6 +973,9 @@ void On_DlgFactionCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			f.freshes_.clear();
 		} else if (ns::type == IDC_LV_FACTION_WANDER) {
 			f.wanderes_.clear();
+		}
+		if (f.towers_.find(ns::clicked_hero) != f.towers_.end()) {
+			f.towers_.erase(ns::clicked_hero);
 		}
 		ns::core.update_to_ui_faction(hdlgP, ns::clicked_faction);
 		ns::core.set_dirty(tcore::BIT_FACTION, ns::core.factions_dirty());
@@ -914,20 +1077,34 @@ void faction_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		EnableMenuItem(gdmgr._hpopup_candidate, IDM_TOSERVICE, MF_BYCOMMAND | MF_ENABLED);
 		EnableMenuItem(gdmgr._hpopup_candidate, IDM_TOWANDER, MF_BYCOMMAND | MF_ENABLED);
 	} else {
+		// menu item: delete2
+		HMENU hpopup_delete2 = CreatePopupMenu();
+		AppendMenu(hpopup_delete2, MF_STRING, IDM_TOTOWER, utf8_2_ansi(_("To tower hero")));
+		AppendMenu(hpopup_delete2, MF_SEPARATOR, 0, NULL);
+
+		AppendMenu(hpopup_delete2, MF_STRING, IDM_DELETE_ITEM0, utf8_2_ansi(_("Delete")));
+		AppendMenu(hpopup_delete2, MF_SEPARATOR, 0, NULL);
+		AppendMenu(hpopup_delete2, MF_STRING, IDM_DELETE_ITEM1, utf8_2_ansi(_("Delete all")));
+		AppendMenu(hpopup_delete2, MF_SEPARATOR, 0, NULL);
+	
+		const std::set<int>& towers = ns::core.factions_updating_[ns::clicked_faction].towers_;
+
 		if (lpnmitem->iItem < 0) {
-			EnableMenuItem(gdmgr._hpopup_delete2, IDM_DELETE_ITEM0, MF_BYCOMMAND | MF_GRAYED);
-			EnableMenuItem(gdmgr._hpopup_delete2, IDM_DELETE_ITEM1, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_delete2, IDM_TOTOWER, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_delete2, IDM_DELETE_ITEM0, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(hpopup_delete2, IDM_DELETE_ITEM1, MF_BYCOMMAND | MF_GRAYED);
+
+		} else if (towers.size() >= 4 || towers.find(lvi.lParam) != towers.end()) {
+			EnableMenuItem(hpopup_delete2, IDM_TOTOWER, MF_BYCOMMAND | MF_GRAYED);
 		}
 
-		TrackPopupMenuEx(gdmgr._hpopup_delete2, 0, 
+		TrackPopupMenuEx(hpopup_delete2, 0, 
 			point.x, 
 			point.y, 
 			hdlgP, 
 			NULL);
 
-		// 恢复回去
-		EnableMenuItem(gdmgr._hpopup_delete2, IDM_DELETE_ITEM0, MF_BYCOMMAND | MF_ENABLED);
-		EnableMenuItem(gdmgr._hpopup_delete2, IDM_DELETE_ITEM1, MF_BYCOMMAND | MF_ENABLED);
+		DestroyMenu(hpopup_delete2);
 	}
 	ns::type = DlgItem;
 	ns::clicked_hero = lvi.lParam;

@@ -172,20 +172,19 @@ public:
 	card& operator[](size_t num);
 	const card& operator[](size_t num) const;
 
-	enum ANIM_TYPE {ANIM_START = 0, ANIM_MIN = ANIM_START, ANIM_END, ANIM_MAX = ANIM_START};
-	unit_animation* animation(int type);
-
 	card& bomb() const;
+	card& wander() const;
+	card& office() const;
 
 private:
-	std::map<int, unit_animation> animations_;
-
 	size_t map_size_;
 
 	card** map_;
 	size_t map_vsize_;
 
 	int bomb_;
+	int wander_;
+	int office_;
 };
 
 // define allowed conversions.

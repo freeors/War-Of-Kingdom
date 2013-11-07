@@ -2,7 +2,7 @@
 // ip/impl/address_v4.ipp
 // ~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2011 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -18,10 +18,10 @@
 #include <boost/asio/detail/config.hpp>
 #include <climits>
 #include <stdexcept>
-#include <boost/throw_exception.hpp>
 #include <boost/asio/error.hpp>
 #include <boost/asio/detail/socket_ops.hpp>
 #include <boost/asio/detail/throw_error.hpp>
+#include <boost/asio/detail/throw_exception.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 
 #include <boost/asio/detail/push_options.hpp>
@@ -37,12 +37,12 @@ address_v4::address_v4(const address_v4::bytes_type& bytes)
       || bytes[2] > 0xFF || bytes[3] > 0xFF)
   {
     std::out_of_range ex("address_v4 from bytes_type");
-    boost::throw_exception(ex);
+    boost::asio::detail::throw_exception(ex);
   }
 #endif // UCHAR_MAX > 0xFF
 
   using namespace std; // For memcpy.
-  memcpy(&addr_.s_addr, bytes.elems, 4);
+  memcpy(&addr_.s_addr, bytes.data(), 4);
 }
 
 address_v4::address_v4(unsigned long addr)
@@ -51,18 +51,23 @@ address_v4::address_v4(unsigned long addr)
   if (addr > 0xFFFFFFFF)
   {
     std::out_of_range ex("address_v4 from unsigned long");
-    boost::throw_exception(ex);
+    boost::asio::detail::throw_exception(ex);
   }
 #endif // ULONG_MAX > 0xFFFFFFFF
 
-  addr_.s_addr = boost::asio::detail::socket_ops::host_to_network_long(addr);
+  addr_.s_addr = boost::asio::detail::socket_ops::host_to_network_long(
+      static_cast<boost::asio::detail::u_long_type>(addr));
 }
 
 address_v4::bytes_type address_v4::to_bytes() const
 {
   using namespace std; // For memcpy.
   bytes_type bytes;
+#if defined(BOOST_ASIO_HAS_STD_ARRAY)
+  memcpy(bytes.data(), &addr_.s_addr, 4);
+#else // defined(BOOST_ASIO_HAS_STD_ARRAY)
   memcpy(bytes.elems, &addr_.s_addr, 4);
+#endif // defined(BOOST_ASIO_HAS_STD_ARRAY)
   return bytes;
 }
 
@@ -119,24 +124,34 @@ address_v4 address_v4::from_string(
   return from_string(str.c_str(), ec);
 }
 
+bool address_v4::is_loopback() const
+{
+  return (to_ulong() & 0xFF000000) == 0x7F000000;
+}
+
+bool address_v4::is_unspecified() const
+{
+  return to_ulong() == 0;
+}
+
 bool address_v4::is_class_a() const
 {
-  return IN_CLASSA(to_ulong());
+  return (to_ulong() & 0x80000000) == 0;
 }
 
 bool address_v4::is_class_b() const
 {
-  return IN_CLASSB(to_ulong());
+  return (to_ulong() & 0xC0000000) == 0x80000000;
 }
 
 bool address_v4::is_class_c() const
 {
-  return IN_CLASSC(to_ulong());
+  return (to_ulong() & 0xE0000000) == 0xC0000000;
 }
 
 bool address_v4::is_multicast() const
 {
-  return IN_MULTICAST(to_ulong());
+  return (to_ulong() & 0xF0000000) == 0xE0000000;
 }
 
 address_v4 address_v4::broadcast(const address_v4& addr, const address_v4& mask)

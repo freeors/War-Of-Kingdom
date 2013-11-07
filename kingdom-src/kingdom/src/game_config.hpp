@@ -25,6 +25,7 @@ class color_range;
 
 #include <vector>
 #include <map>
+#include <set>
 
 //basic game configuration information is here.
 namespace game_config
@@ -40,22 +41,25 @@ namespace game_config
 	extern unsigned lobby_refresh;
 	extern const std::string version;
 	extern const std::string revision;
-	extern const std::string checksum;
+	extern std::string checksum;
 	extern int reside_troop_increase_loyalty;
 	extern int field_troop_increase_loyalty;
 	extern int wander_loyalty_threshold;
 	extern int move_loyalty_threshold;
 	extern int ai_keep_loyalty_threshold;
 	extern int ai_keep_hp_threshold;
-	extern int max_keep_turns;
+	extern int max_troop_food;
 	extern int increase_feeling;
 	extern int max_police;
 	extern int min_tradable_police;
 	extern int max_commoners;
+	extern int fixed_tactic_slots;
 	extern int active_tactic_slots;
 
 	extern int minimal_activity;
 	extern int maximal_defeated_activity;
+	extern int tower_fix_heros;
+	extern bool score_dirty;
 
 	extern int default_human_level;
 	extern int default_ai_level;
@@ -63,10 +67,14 @@ namespace game_config
 	extern int min_level;
 	extern int max_level;
 
+	extern int max_noble_level;
 	extern int max_tactic_point;
 	extern int increase_tactic_point;
+	extern int formation_least_adjacent;
 
 	extern int max_bomb_turns;
+	extern bool no_messagebox;
+	extern bool hide_tactic_slot;
 
 	int kill_xp(int level);
 	int attack_xp(int level);
@@ -76,7 +84,7 @@ namespace game_config
 	/** Default percentage gold carried over to the next scenario. */
 	extern const int gold_carryover_percentage;
 
-	extern bool debug, editor, ignore_replay_errors, mp_debug, exit_at_end, no_delay, disable_autosave;
+	extern bool debug, editor, no_delay, disable_autosave;
 
 	extern bool use_bin;
 	extern int cache_compression_level;
@@ -85,9 +93,15 @@ namespace game_config
 	extern int cards_per_turn;
 	extern int max_cards;
 
+	enum {INAPP_VIP};
+	extern std::map<int, std::string> inapp_items;
+	extern std::string sn;
+
 	extern std::string path;
 	extern std::string preferences_dir;
 	extern std::string preferences_dir_utf8;
+
+	extern std::set<std::string> reserve_players;
 
 	struct server_info {
 		server_info() : name(""), address("") { }
@@ -95,6 +109,15 @@ namespace game_config
 		std::string address; /**< may include ':' followed by port number */
 	};
 	extern std::vector<server_info> server_list;
+
+	struct bbs_server_info {
+		bbs_server_info() : name(""), host(""), port(80), url("") { }
+		std::string name;
+		std::string host;
+		int port;
+		std::string url;
+	};
+	extern bbs_server_info bbs_server;
 
 	extern std::string title_music,
 			lobby_music,
@@ -179,6 +202,8 @@ namespace game_config
 
 	void load_config(const config* cfg);
 
+	bool is_reserve_player(const std::string& player);
+
 	void add_color_info(const config& v);
 	const std::vector<Uint32>& tc_info(const std::string& name);
 	const color_range& color_info(const std::string& name);
@@ -195,6 +220,11 @@ namespace game_config
 	extern const version_info wesnoth_version;
 	// ai part
 	extern int navigation_per_level;
+
+	// if allocate static, iOS may be not align 4! 
+	// use dynamic alloc by alloc.
+	extern unsigned char* savegame_cache;
+	extern int savegame_cache_size;
 }
 
 #endif

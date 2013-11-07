@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/rpg_detail.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -107,7 +106,7 @@ void trpg_detail::rpg_2_ui(twindow& window)
 	int value;
 	std::stringstream str;
 	const team& current_team = teams_[rpg::h->side_];
-	bool in_troop = !find_unit(units_, *rpg::h)->is_artifical();
+	bool in_troop = !units_.find_unit(*rpg::h)->is_artifical();
 
 	// refresh to gui
 	tlabel* label = find_widget<tlabel>(&window, "tip_name", false, true);

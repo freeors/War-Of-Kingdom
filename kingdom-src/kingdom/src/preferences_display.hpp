@@ -68,7 +68,6 @@ namespace preferences {
 
 	// Control unit idle animations
 	void set_default_move(bool ison);
-	void set_idle_anim_rate(int rate);
 
 	std::string show_wesnothd_server_search(display&);
 	bool show_video_mode_dialog(display& disp);

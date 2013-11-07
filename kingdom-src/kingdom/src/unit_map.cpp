@@ -162,6 +162,10 @@ surface unit_map::unmoved_orb_ = surface();
 surface unit_map::partmoved_orb_ = surface();
 surface unit_map::automatic_orb_ = surface();
 surface unit_map::self_orb_ = surface();
+
+surface unit_map::normal_food = surface();
+surface unit_map::lack_food = surface();
+
 unit* unit_map::scout_unit_ = NULL;
 std::map<std::pair<int, int>, size_t> unit_map::inter_city_move_cost_ = std::map<std::pair<int, int>, size_t>();
 
@@ -172,7 +176,7 @@ void unit_map::set_zoom()
 	std::stringstream str;
 	for (int i = 0; i < 10; i ++) {
 		str.str("");
-		str << "/misc/unit-desc-" << i << ".png";
+		str << "misc/unit-desc-" << i << ".png";
 		desc_bg_[i] = image::get_image(str.str(), image::SCALED_TO_ZOOM);
 		desc_bg_[i].assign(adjust_surface_alpha(desc_bg_[i], ftofxp(0.7), false));
 		SDL_SetSurfaceRLE(desc_bg_[i].get(), 0);
@@ -185,6 +189,9 @@ void unit_map::set_zoom()
 	partmoved_orb_ = image::get_image("misc/orb-partmoved.png", image::SCALED_TO_ZOOM);
 	automatic_orb_ = image::get_image("misc/orb-auto.png", image::SCALED_TO_ZOOM);
 	self_orb_ = image::get_image("misc/orb-self.png", image::SCALED_TO_ZOOM);
+
+	normal_food = image::get_image("misc/food-status.png~CROP(0, 0, 16, 16)", image::SCALED_TO_ZOOM);
+	lack_food = image::get_image("misc/food-status.png~CROP(16, 0, 16, 16)", image::SCALED_TO_ZOOM);
 }
 
 #define index(x, y)  (w_ * (y) + (x))
@@ -236,7 +243,7 @@ unit_map::~unit_map()
 	economy_areas_.clear();
 
 	unit::draw_desc_ = true;
-	unit::ignore_pack_ = false;
+	unit::ignore_pack = false;
 }
 
 void unit_map::extract_heros_number()
@@ -251,6 +258,89 @@ void unit_map::recalculate_heros_pointer()
 	for (size_t i = 0; i < map_vsize_; i ++) {
 		map_[i]->second->recalculate_heros_pointer();
 	}	
+}
+
+unit* unit_map::find_unit(const hero& h) const
+{
+	if (h.number_ < hero::number_city_min) {
+		// many unit use same master-hero shared. if it, nul.
+		return NULL;
+	}
+
+	const artifical* city = city_from_cityno(h.city_);
+	if (!city) {
+		if (h.status_ != hero_status_military) {
+			// unstage hero
+			return NULL;
+		} else {
+			std::vector<team>& teams = *resources::teams;
+			team& t = teams[h.side_];
+			const std::pair<unit**, size_t> p = t.field_troop();
+			unit** troops = p.first;
+			size_t troops_vsize = p.second;
+			for (size_t i = 0; i < troops_vsize; i ++) {
+				unit& u = *troops[i];
+				if (u.master().number_ == h.number_) {
+					return &u;
+				}
+				if (u.second().valid() && u.second().number_ == h.number_) {
+					return &u;
+				} 
+				if (u.third().valid() && u.third().number_ == h.number_) {
+					return &u;
+				}
+			}
+		}
+		return NULL;
+	}
+	if (city->master().number_ == h.number_) {
+		return (unit*)city;
+	}
+
+	if (h.status_ == hero_status_military) {
+		// in troop
+		const std::vector<unit*>& reside_troops = city->reside_troops();
+		for (std::vector<unit*>::const_iterator itor = reside_troops.begin(); itor != reside_troops.end(); ++ itor) {
+			unit& u = **itor;
+			if (u.master().number_ == h.number_) {
+				return &u;
+			}
+			if (u.second().valid() && u.second().number_ == h.number_) {
+				return &u;
+			} 
+			if (u.third().valid() && u.third().number_ == h.number_) {
+				return &u;
+			}
+		}
+		const std::vector<unit*>& field_troops = city->field_troops();
+		for (std::vector<unit*>::const_iterator itor = field_troops.begin(); itor != field_troops.end(); ++ itor) {
+			unit& u = **itor;
+			if (u.master().number_ == h.number_) {
+				return &u;
+			}
+			if (u.second().valid() && u.second().number_ == h.number_) {
+				return &u;
+			} 
+			if (u.third().valid() && u.third().number_ == h.number_) {
+				return &u;
+			}
+		}
+	}
+	return (unit*)city;
+}
+
+unit* unit_map::find_unit(const map_location& loc) const
+{
+	if (!resources::game_map->on_board(loc)) return NULL;
+	unit_map::node* node = coor_map_[index(loc.x, loc.y)].overlay;
+	if (node) {
+		return node->second;
+	}
+	node = coor_map_[index(loc.x, loc.y)].base;
+	if (node) {
+		return node->second;
+	}
+	return NULL;
 }
 
 void unit_map::create_coor_map(int w, int h)
@@ -442,16 +532,6 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 		// 目的地: 都市. 都市回到都市, 认为是AI情况
 		place(p);
 	} else {
-		// 目的地: 都市
-		// 1. 单位进城
-		if (troop) {
-			can_undo = cobj->troop_come_into(p->second);
-		} else {
-			cobj->commoner_come_into(p->second);
-			can_undo = false;
-		}
-		// cobj->reside_troops().push_back(p->second);
-		// cobj->reside_troops().back().set_side(cobj->side());
 		// 2. 从unit_map清除该单位
 		// 可能是原来的,也可能是此次新申请的(从一个郡出征到另一个城郡)
 		for (i = 0; i < map_vsize_; i ++) {
@@ -479,9 +559,12 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 			// 刷新该阵营所属城外部队列表
 			teams[p->second->side() - 1].erase_troop(p->second);
 		}
-		
-		delete p->second;
-		delete p;		
+
+		// below statement will change cityno, place here
+		can_undo = cobj->troop_come_into(p->second);
+
+		// troop_come_into reuse memory of unit, so don't call delete p->second
+		delete p;
 	}
 	// 出征状态时,如果发生移动的也只能是要出征的武将,不比较src了(如要比较src须趁见,见以上的p->first = dst
 	if (expediting_) {
@@ -504,7 +587,7 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 			// 刷新该阵营所属城外部队列表
 			teams[p->second->side() - 1].add_troop(p->second);
 			if (troop) {
-				p->second->set_keep_turns(game_config::max_keep_turns);
+				p->second->set_food(p->second->max_food());
 			}
 		}
 	}
@@ -691,7 +774,7 @@ bool unit_map::erase(const map_location& loc, bool overlay)
 	return erase(n->second);
 }
 
-bool unit_map::erase(unit* u)
+bool unit_map::erase(unit* u, bool delete_unit)
 {
 	size_t i;
 	bool base = u->base();
@@ -703,10 +786,8 @@ bool unit_map::erase(unit* u)
 			break;
 		}
 	}
-	if (i == map_vsize_) {
-		assert(false);
-		return false;
-	}
+
+	VALIDATE(i != map_vsize_, "unitmap::erase, i == map_vsize, check code!");
 
 	if (i < map_vsize_ - 1) {
 		memcpy(&(map_[i]), &(map_[i + 1]), (map_vsize_ - i - 1) * sizeof(node*));
@@ -760,8 +841,9 @@ bool unit_map::erase(unit* u)
 	}
 	gui.invalidate(invalid_locs);
 
-	// 参数loc极可能是ptr->first. 以下delete ptr将使ptr->first变无效,因此把这个delte ptr函数尾
-	delete ptr->second;
+	if (delete_unit) {
+		delete ptr->second;
+	}
 	delete ptr;
 
 	return true;
@@ -899,6 +981,26 @@ size_t unit_map::units_from_rect(unit** draw_area_unit, const rect_of_hexes& dra
 	}
 
 	return draw_area_unit_size;
+}
+
+void unit_map::ally_terminate_adjust(team& adjusting_team, const SDL_Rect& rect)
+{
+	int adjusting_side = adjusting_team.side();
+
+	for (int y = rect.y; y < rect.y + rect.h; y ++) {
+		for (int x = rect.x; x < rect.x + rect.w; x ++) {
+			node* node = coor_map_[index(x, y)].overlay;
+			if (!node || node->first != map_location(x, y) || node->second->side() != adjusting_side) {
+				continue;
+			}
+			unit& u = *node->second;
+			if (u.is_artifical()) {
+				continue;
+			}
+			u.set_state(unit::STATE_SLOWED, true);
+			u.set_state(unit::STATE_BROKEN, true);
+		}
+	}
 }
 
 const map_location& unit_map::center_loc(const map_location& loc) const
@@ -1172,6 +1274,13 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 	if (can_build.find(unit_types.find_wall()) == can_build.end()) {
 		min_field_arts = 0;
 	}
+	std::set<const unit_type*> can_build_ea;
+	for (std::set<const unit_type*>::const_iterator it = can_build.begin(); it != can_build.end(); ++ it) {
+		const unit_type* ut = *it;
+		if (ut == unit_types.find_market() || ut == unit_types.find_technology() || ut == unit_types.find_tactic()) {
+			can_build_ea.insert(ut);
+		}
+	}
 
 	for (std::vector<mr_data>::iterator mr_itor = mrs.begin(); mr_itor != mrs.end(); ++ mr_itor) {
 		mr_data& mr = *mr_itor;
@@ -1203,8 +1312,11 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			if (rpg::stratum == hero_stratum_mayor && city.mayor() == rpg::h) {
 				continue;
 			}
-			city.demolish_ea();
+			city.demolish_ea(can_build_ea);
 
+			if (tent::mode != RPG_MODE) {
+				continue;
+			}
 			std::vector<std::pair<unit*, std::vector<hero*> > > new_low_loyalty_troops;
 			std::vector<hero*> original_captains;
 			std::vector<hero*> new_captains;
@@ -1213,7 +1325,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			std::vector<hero*>& freshes = city.fresh_heros();
 			for (std::vector<unit*>::iterator it = resides.begin(); it != resides.end(); ++ it) {
 				unit& u = **it;
-				if (u.human()) {
+				if (u.human() || !u.consider_loyalty()) {
 					continue;
 				}
 				original_captains.clear();
@@ -1251,9 +1363,9 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 							city.fresh_into(**h_it);
 						}
 					}
-					new_low_loyalty_troops.push_back(std::make_pair<unit*, std::vector<hero*> >(&u, new_captains));
+					new_low_loyalty_troops.push_back(std::make_pair(&u, new_captains));
 				} else {
-					new_low_loyalty_troops.push_back(std::make_pair<unit*, std::vector<hero*> >(&u, original_captains));
+					new_low_loyalty_troops.push_back(std::make_pair(&u, original_captains));
 				}
 			}
 
@@ -1416,26 +1528,38 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			mr.target = mr_data::TARGET_INTERIOR;
 		} else if ((field_arts >= mr.own_cities.size() * min_field_arts) && !mr.enemy_cities.empty() && mr.own_heros > mr_data::min_interior_requirement * mr.own_back_cities.size() + mr_data::min_front_requirement * mr.own_front_cities.size()) {
 			mr.target = mr_data::TARGET_AGGRESS;
-			if (mr.own_cities.size() == 1) {
+
+			if (tent::mode != TOWER_MODE && mr.own_cities.size() == 1) {
 				// Alert! Be back to guard!
 				std::map<int, mr_data::enemy_data>::iterator it_p = mr.own_cities.begin();
 				artifical* only = city_from_cityno(it_p->first);
+				const map_location& loc = only->get_location();
 				artifical* aggressed = mr.enemy_cities[0];
 				int my_ratio = only->hitpoints() * 100 / only->max_hitpoints();
 				int aggressed_ratio = aggressed->hitpoints() * 100 / aggressed->max_hitpoints();
 
-				const map_location& loc = only->get_location();
-				SDL_Rect consider_rect = extend_rectangle(game_map, loc.x, loc.y, 7);
-				const std::vector<unit*>& enemy_troops = it_p->second.troops;
-				size_t troops = 0;
-				for (std::vector<unit*>::const_iterator t = enemy_troops.begin(); t != enemy_troops.end(); ++ t) {
-					const map_location& loc2 = (*t)->get_location();
-					if (point_in_rect(loc2.x, loc2.y, consider_rect)) {
-						troops ++;
+				if (aggressed_ratio >= 10) {
+					size_t guard_troops = 0;
+					for (std::vector<unit*>::const_iterator it = only->field_troops().begin(); it != only->field_troops().end(); ++ it) {
+						unit& u = **it;
+						if ((int)distance_between(loc, u.get_location()) < u.total_movement() * 2 / 3) {
+							guard_troops ++;
+						}
 					}
-				}
-				if (troops >= 8 || (my_ratio < aggressed_ratio && troops >= 5)) {
-					mr.target = mr_data::TARGET_GUARD;
+					size_t troops = it_p->second.troops.size();
+					if (troops >= 2 && troops >= only->fresh_heros().size() + only->reside_troops().size() + guard_troops) {
+						if (troops >= 4 && action && !current_team.is_human()) {
+							// don't set human troop.
+							for (std::vector<unit*>::const_iterator it = only->field_troops().begin(); it != only->field_troops().end(); ++ it) {
+								unit& u = **it;
+								if (!u.provoked_turns() && (int)distance_between(loc, u.get_location()) > u.total_movement() * 2) {
+									// please be back to guard. must back!
+									u.set_attacks(0);
+								}
+							}
+						}
+						mr.target = mr_data::TARGET_GUARD;
+					}
 				}
 			}
 		} else {

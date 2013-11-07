@@ -47,8 +47,6 @@ struct mp_game_settings : public savegame::savegame_config
 	int mp_countdown_turn_bonus;
 	int mp_countdown_action_bonus;
 	bool mp_countdown;
-	bool use_map_settings;
-	bool random_start_time;
 	bool fog_game;
 	bool shroud_game;
 	bool allow_observers;

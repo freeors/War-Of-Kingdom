@@ -128,6 +128,7 @@ namespace t_translation {
 	extern const t_terrain HUMAN_KEEP;
 	extern const t_terrain SHALLOW_WATER;
 	extern const t_terrain DEEP_WATER;
+	extern const t_terrain DEEP_WATER_MATCH;
 	extern const t_terrain GRASS_LAND;
 	extern const t_terrain FOREST;
 	extern const t_terrain MOUNTAIN;

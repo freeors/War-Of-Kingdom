@@ -214,10 +214,10 @@ void TreeView_FormVector(HWND hctl, HTREEITEM htvi, std::vector<std::pair<LPARAM
 	TVITEMEX tvi;
 
 	TreeView_GetItem1(hctl, htvi, &tvi, TVIF_TEXT | TVIF_PARAM, text);
-	vec.push_back(std::make_pair<LPARAM, std::string>(tvi.lParam, text));
+	vec.push_back(std::make_pair(tvi.lParam, text));
 	while ((htvip = TreeView_GetParent(hctl, htvi)) && (htvip != TVI_ROOT)) {
 		TreeView_GetItem1(hctl, htvip, &tvi, TVIF_TEXT | TVIF_PARAM, text);
-		vec.push_back(std::make_pair<LPARAM, std::string>(tvi.lParam, text));
+		vec.push_back(std::make_pair(tvi.lParam, text));
 		htvi = htvip;
 	}
 }

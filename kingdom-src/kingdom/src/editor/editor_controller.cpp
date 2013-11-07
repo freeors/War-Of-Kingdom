@@ -33,7 +33,6 @@
 #include "../clipboard.hpp"
 #include "../filechooser.hpp"
 #include "../filesystem.hpp"
-#include "../foreach.hpp"
 #include "../game_preferences.hpp"
 #include "../gettext.hpp"
 #include "../map_create.hpp"
@@ -44,6 +43,7 @@
 
 #include "formula_string_utils.hpp"
 
+#include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
 namespace {
@@ -128,7 +128,7 @@ editor_controller::editor_controller(const config &game_config, CVideo& video)
 	image::set_color_adjustment(preferences::editor::tod_r(), preferences::editor::tod_g(), preferences::editor::tod_b());
 	theme& theme = gui().get_theme();
 	const theme::menu* default_tool_menu = NULL;
-	foreach (const theme::menu& m, theme.menus()) {
+	BOOST_FOREACH (const theme::menu& m, theme.menus()) {
 		std::string s = m.get_id();
 		if (m.get_id() == "draw_button_editor") {
 			default_tool_menu = &m;
@@ -167,7 +167,7 @@ void editor_controller::init_sidebar(const config& game_config)
 
 void editor_controller::init_brushes(const config& game_config)
 {
-	foreach (const config &i, game_config.child_range("brush")) {
+	BOOST_FOREACH (const config &i, game_config.child_range("brush")) {
 		brushes_.push_back(brush(i));
 	}
 	if (brushes_.size() == 0) {
@@ -190,7 +190,7 @@ void editor_controller::init_mouse_actions(const config& game_config)
 		new mouse_action_starting_position(key_)));
 	mouse_actions_.insert(std::make_pair(hotkey::HOTKEY_EDITOR_PASTE,
 		new mouse_action_paste(clipboard_, key_)));
-	foreach (const theme::menu& menu, gui().get_theme().menus()) {
+	BOOST_FOREACH (const theme::menu& menu, gui().get_theme().menus()) {
 		if (menu.items().size() == 1) {
 			hotkey::HOTKEY_COMMAND hk = hotkey::get_hotkey(menu.items().front()).get_id();
 			mouse_action_map::iterator i = mouse_actions_.find(hk);
@@ -199,7 +199,7 @@ void editor_controller::init_mouse_actions(const config& game_config)
 			}
 		}
 	}
-	foreach (const config &c, game_config.child_range("editor_tool_hint")) {
+	BOOST_FOREACH (const config &c, game_config.child_range("editor_tool_hint")) {
 		mouse_action_map::iterator i =
 			mouse_actions_.find(hotkey::get_hotkey(c["id"]).get_id());
 		if (i != mouse_actions_.end()) {
@@ -210,7 +210,7 @@ void editor_controller::init_mouse_actions(const config& game_config)
 
 void editor_controller::init_map_generators(const config& game_config)
 {
-	foreach (const config &i, game_config.child_range("multiplayer"))
+	BOOST_FOREACH (const config &i, game_config.child_range("multiplayer"))
 	{
 		if (i["map_generation"] == "default") {
 			const config &generator_cfg = i.child("generator");
@@ -232,7 +232,7 @@ void editor_controller::init_tods(const config& game_config)
 		ERR_ED << "No editor time-of-day defined\n";
 		return;
 	}
-	foreach (const config &i, cfg.child_range("time")) {
+	BOOST_FOREACH (const config &i, cfg.child_range("time")) {
 		tods_.push_back(time_of_day(i));
 	}
 }
@@ -244,7 +244,7 @@ void editor_controller::init_music(const config& game_config)
 		ERR_ED << "No editor music defined\n";
 		return;
 	}
-	foreach (const config &i, cfg.child_range("music")) {
+	BOOST_FOREACH (const config &i, cfg.child_range("music")) {
 		sound::play_music_config(i);
 	}
 	sound::commit_music_changes();
@@ -259,13 +259,13 @@ void editor_controller::load_tooltips()
 
 editor_controller::~editor_controller()
 {
-	foreach (const mouse_action_map::value_type a, mouse_actions_) {
+	BOOST_FOREACH (const mouse_action_map::value_type a, mouse_actions_) {
 		delete a.second;
 	}
-	foreach (map_generator* m, map_generators_) {
+	BOOST_FOREACH (map_generator* m, map_generators_) {
 		delete m;
 	}
-	foreach (map_context* mc, map_contexts_) {
+	BOOST_FOREACH (map_context* mc, map_contexts_) {
 		delete mc;
 	}
 }
@@ -297,7 +297,7 @@ void editor_controller::do_screenshot(const std::string& screenshot_filename /* 
 void editor_controller::quit_confirm(EXIT_STATUS mode)
 {
 	std::vector<std::string> modified;
-	foreach (map_context* mc, map_contexts_) {
+	BOOST_FOREACH (map_context* mc, map_contexts_) {
 		if (mc->modified()) {
 			if (!mc->get_filename().empty()) {
 				modified.push_back(mc->get_filename());
@@ -313,7 +313,7 @@ void editor_controller::quit_confirm(EXIT_STATUS mode)
 		message = _("Do you really want to quit? Changes in the map since the last save will be lost.");
 	} else {
 		message = _("Do you really want to quit? The following maps were modified and all changes since the last save will be lost:");
-		foreach (std::string& str, modified) {
+		BOOST_FOREACH (std::string& str, modified) {
 			message += "\n" + str;
 		}
 	}
@@ -336,7 +336,7 @@ void editor_controller::create_default_context()
 		map_context* mc = new map_context(editor_map(game_config_, 44, 33, t_translation::GRASS_LAND));
 		add_map_context(mc);
 	} else {
-		foreach(const std::string& filename, saved_windows_) {
+		BOOST_FOREACH (const std::string& filename, saved_windows_) {
 			map_context* mc = new map_context(game_config_, filename);
 			add_map_context(mc);
 		}
@@ -783,7 +783,7 @@ void editor_controller::refresh_after_action(bool drag_part)
 				get_map_context().set_needs_terrain_rebuild(false);
 				gui().invalidate_all();
 			} else {
-				foreach (const map_location& loc, get_map_context().changed_locations()) {
+				BOOST_FOREACH (const map_location& loc, get_map_context().changed_locations()) {
 					gui().rebuild_terrain(loc);
 				}
 				gui().invalidate(get_map_context().changed_locations());
@@ -1282,7 +1282,7 @@ void editor_controller::perform_refresh(const editor_action& action, bool drag_p
 
 void editor_controller::redraw_toolbar()
 {
-	foreach (mouse_action_map::value_type a, mouse_actions_) {
+	BOOST_FOREACH (mouse_action_map::value_type a, mouse_actions_) {
 		if (a.second->toolbar_button() != NULL) {
 			SDL_Rect r = a.second->toolbar_button()->location(gui().screen_area());
 			SDL_Rect outline = create_rect(r.x - 2, r.y - 2, r.h + 4, r.w + 4);

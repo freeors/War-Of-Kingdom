@@ -30,7 +30,7 @@ msgstr ""
 #: data/campaigns/tutorial/scenarios/1_Tutorial.cfg:40
 msgid ""
 "\n"
-"@*Click a mouse button or press the spacebar to continue..."
+"<format>text='Click a mouse button or press the spacebar to continue...' color=green</format>"
 msgstr ""
 
 #. [tutorial]: id=tutorial
@@ -38,7 +38,7 @@ msgstr ""
 #. welcoming new players. Please keep the friendly fun feeling!
 #. Any questions email rusty@rustcorp.com.au!"
 #: data/campaigns/tutorial/scenarios/1_Tutorial.cfg:49
-msgid "Kingdom Tutorial Part I"
+msgid "tutorial1"
 msgstr ""
 
 #. [objectives]
@@ -72,8 +72,7 @@ msgstr ""
 
 #. [message]: speaker=narrator
 #: data/campaigns/tutorial/scenarios/1_Tutorial.cfg:214
-msgid ""
-"For this tutorial, you are playing $scenario_hero.4. Your mentor $scenario_hero.271 is on the east side of the river."
+msgid "For this tutorial, you are playing $scenario_hero.4. Your mentor $scenario_hero.271 is on the east side of the river.\n<format>text='Click a mouse button or press the spacebar to continue...' color=green</format>"
 msgstr ""
 
 #. [event]
@@ -112,10 +111,13 @@ msgstr ""
 msgid "Click on tile labeled $here"
 msgstr ""
 
+msgid "Click on the tile again to end move"
+msgstr ""
+
 msgid "Move troop need tow step, one is move to destination tile, the other is click destination to comform. You have moved to destination, click on the tile again to end move."
 msgstr ""
 
-msgid "Click on the tile again to end move"
+msgid "Move on!"
 msgstr ""
 
 #. [message]: speaker=narrator
@@ -172,7 +174,7 @@ msgstr ""
 
 #. [message]: id=Delfador
 #: data/campaigns/tutorial/scenarios/1_Tutorial.cfg:375
-msgid "You have 120 hitpoints and a sword, boy. I’m fairly sure you’ll win."
+msgid "You have $unit.hitpoints hitpoints and a sword, boy. I'm fairly sure you'll win."
 msgstr ""
 
 #. [message]: speaker=narrator
@@ -233,10 +235,8 @@ msgstr ""
 #. [message]: id=Delfador
 #: data/campaigns/tutorial/scenarios/1_Tutorial.cfg:493
 msgid ""
-"Yes. It’s a magical $scenario_hero.270.\n"
-"Now, $scenario_hero.270 gets 4 chances to hit you for 16 damage each. If it hits "
-"every time, you’ll drop from $student_hp to $future_hp hit points. Brace "
-"yourself!"
+"Yes. It's a magical $scenario_hero.270.\n"
+"Now, $scenario_hero.270 gets 4 chances to hit you. Brace yourself!"
 msgstr ""
 
 #. [event]
@@ -256,11 +256,7 @@ msgstr ""
 msgid "Village"
 msgstr ""
 
-#. [message]: id=Delfador
-#: data/campaigns/tutorial/scenarios/1_Tutorial.cfg:524
-msgid ""
-"There is a village on the other side of the river. Visiting villages is a "
-"good idea, and ending your turn in one will heal you. To the village!"
+msgid "To avoid attacking, you can move to the other side of the river. Move to the grid that marked village."
 msgstr ""
 
 #. [event]
@@ -366,7 +362,7 @@ msgstr ""
 msgid "Press Reform on Panel, In reform window, click $scenario_hero.10, let $scenario_hero.10 into $scenario_hero.4 troop"
 msgstr ""
 
-msgid "Um, well...don't let $scenario_hero.10 go out city, It will be healed by 12 hitpoints next turn."
+msgid "Um, well...don't let $scenario_hero.name go out city, It will be healed by 24 hitpoints next turn."
 msgstr ""
 
 msgid "Next it is up to yourself to show your talent to deafeat enemy."
@@ -540,7 +536,7 @@ msgstr ""
 #: data/campaigns/tutorial/scenarios/1_Tutorial.cfg:1080
 msgid ""
 "Yes, you gain experience through battle, especially by killing an opponent. "
-"Gain enough experience and you’ll become more powerful.\n"
+"Gain enough experience and you'll become more powerful.\n"
 "Now, I will leave you with more dummies to practice on! After that, "
 "we have real work to do..."
 msgstr ""
@@ -591,8 +587,8 @@ msgstr ""
 msgid ""
 "After your victory notice, the map will be grayed out to indicate that the "
 "scenario is over, but you will still be able to examine the final positions "
-"and state of your troops and any surviving enemies. This is called “linger "
-"mode”. When you’re finished, click the “End Scenario” button to go "
+"and state of your troops and any surviving enemies. This is called linger "
+"mode. When you're finished, click the End Scenario button to go "
 "on the next scenario in the campaign."
 msgstr ""
 
@@ -702,7 +698,7 @@ msgstr ""
 
 #. [tutorial]: id=2_Tutorial
 #: data/campaigns/tutorial/scenarios/2_Tutorial.cfg:347
-msgid "Kingdom Tutorial Part II"
+msgid "tutorial2"
 msgstr ""
 
 #. [side]: type=Orcish Warrior, id=Thrag

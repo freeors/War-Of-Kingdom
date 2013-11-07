@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/network_transmission.hpp"
 
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/progress_bar.hpp"
@@ -25,22 +24,74 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "log.hpp"
+#include "network.hpp"
+#include "dialogs.hpp"
 
 namespace gui2 {
 
 REGISTER_DIALOG(network_transmission)
 
+void tnetwork_transmission::pump_monitor::process(events::pump_info&)
+{
+	connection_.poll();
+	if (!window_) return;
+	if (connection_.done()) {
+		window_.get().set_retval(twindow::OK);
+	} else {
+		size_t completed, total;
+		if (track_upload_) {
+			completed = connection_.bytes_written();
+			total = connection_.bytes_to_write();
+		} else {
+			completed = connection_.bytes_read();
+			total = connection_.bytes_to_read();
+		}
+		if (total) {
+
+			find_widget<tprogress_bar>(&(window_.get()), "progress", false)
+				.set_percentage((completed*100.)/total);
+
+			std::stringstream ss;
+			ss << utils::si_string(completed, true, _("unit_byte^B"))
+			   << "/"
+			   << utils::si_string(total, true, _("unit_byte^B"));
+
+			find_widget<tlabel>(&(window_.get()), "numeric_progress", false)
+					.set_label(ss.str());
+			window_->invalidate_layout();
+
+		}
+	}
+}
+
+tnetwork_transmission::tnetwork_transmission(network_asio::connection& connection, 
+					const std::string& title, const std::string& subtitle)
+	: connection_(connection)
+	, track_upload_(false)
+	, pump_monitor_(connection, track_upload_)
+	, title_(title)
+	, subtitle_(subtitle)
+{
+}
+
 void tnetwork_transmission::pre_show(CVideo& /*video*/, twindow& window)
 {
 	// ***** ***** ***** ***** Set up the widgets ***** ***** ***** *****
-	if(!title_.empty()) {
+	if (!title_.empty()) {
 		find_widget<tlabel>(&window, "title", false).set_label(title_);
 	}
+	if (!subtitle_.empty()) {
+		tlabel& subtitle_label = find_widget<tlabel>(&window, "subtitle", false);
+		subtitle_label.set_label(subtitle_);
+	}
 
+	pump_monitor_.window_ = window;
 }
 
 void tnetwork_transmission::post_show(twindow& /*window*/)
 {
+	pump_monitor_.window_.reset();
+	connection_.cancel();
 }
 
 } // namespace gui2

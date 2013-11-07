@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/troop_detail.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -36,6 +35,7 @@
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include "gui/dialogs/hero_list.hpp"
 #include "gui/dialogs/unit_merit.hpp"
 #include "help.hpp"
 
@@ -109,17 +109,20 @@ void ttroop_detail::type_selected(twindow& window)
 
 void ttroop_detail::refresh_tooltip(twindow& window)
 {
-	tbutton* button = find_widget<tbutton>(&window, "merit", false, true);
-	button->set_active(partial_troops_.empty()? false: true);
-
 	tscroll_label* tip = find_widget<tscroll_label>(&window, "tip", false, true);
 	if (partial_troops_.empty()) {
+		tbutton* button = find_widget<tbutton>(&window, "hero_list", false, true);
+		button->set_active(false);
+
+		button = find_widget<tbutton>(&window, "merit", false, true);
+		button->set_active(false);
+
 		// It is necessary set all relative tips to empty.
 		tip->set_label("");
 		return;
 	}
 	const unit& temp = *(partial_troops_[troop_index_]);
-	tip->set_label(temp.form_gui2_tip());
+	tip->set_label(temp.form_tip(true));
 }
 
 void ttroop_detail::pre_show(CVideo& /*video*/, twindow& window)
@@ -189,6 +192,12 @@ void ttroop_detail::pre_show(CVideo& /*video*/, twindow& window)
 	list->set_callback_value_change(dialog_callback<ttroop_detail, &ttroop_detail::type_selected>);
 
 	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "hero_list", false)
+		, boost::bind(
+			&ttroop_detail::hero_list
+			, this
+			, boost::ref(window)));
+	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "merit", false)
 		, boost::bind(
 		&ttroop_detail::merit
@@ -196,6 +205,31 @@ void ttroop_detail::pre_show(CVideo& /*video*/, twindow& window)
 		, boost::ref(window)));
 
 	refresh_tooltip(window);
+}
+
+void hero_list2(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<hero*>& v)
+{
+	gui2::thero_list dlg(&teams, &units, heros, v);
+	try {
+		dlg.show(gui.video());
+	} catch(twml_exception& e) {
+		e.show(gui);
+	}
+}
+
+void ttroop_detail::hero_list(twindow& window)
+{
+	const unit& temp = *(partial_troops_[troop_index_]);
+
+	std::vector<hero*> v;
+	v.push_back(&temp.master());
+	if (temp.second().valid()) {
+		v.push_back(&temp.second());
+	}
+	if (temp.third().valid()) {
+		v.push_back(&temp.third());
+	}
+	hero_list2(gui_, teams_, units_, heros_, v);
 }
 
 void ttroop_detail::merit(twindow& window)

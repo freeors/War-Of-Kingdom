@@ -1280,6 +1280,9 @@ std::string default_generate_map(size_t width, size_t height, size_t island_size
 		}//for (x)
 	}//if (misc_labels)
 
+	// don't process, remark villages
+	nvillages = 0;
+
 	if (nvillages > 0)
 	{
 		config naming_cfg = cfg.child_or_empty("village_naming");

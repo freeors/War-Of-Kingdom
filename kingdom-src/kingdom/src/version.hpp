@@ -136,6 +136,8 @@ public:
 	/** Syntactic shortcut for str(). */
 	operator std::string() const { return this->str(); }
 
+	std::pair<int, std::string> transfer_format() const;
+
 protected:
 	/** Assign from other version_info object. */
 	void assign(const version_info&);

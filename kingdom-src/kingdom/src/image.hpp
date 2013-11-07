@@ -134,7 +134,7 @@ namespace image {
 	extern mini_terrain_cache_map mini_terrain_cache;
 	extern mini_terrain_cache_map mini_fogged_terrain_cache;
 
-	void flush_cache();
+	void flush_cache(bool force = false);
 
 	///the image manager is responsible for setting up images, and destroying
 	///all images when the program exits. It should probably

@@ -75,7 +75,8 @@ class frame_parameters{
 	Uint32 blend_with;
 	double blend_ratio;
 	double highlight_ratio;
-	double offset;
+	double offset_x;
+	double offset_y;
 	double submerge;
 	int x;
 	int y;
@@ -108,6 +109,7 @@ class frame_builder {
 		frame_builder & blend(const std::string& blend_ratio,const Uint32 blend_color);
 		frame_builder & highlight(const std::string& highlight);
 		frame_builder & offset(const std::string& offset);
+		frame_builder & offset(const std::string& offset_x, const std::string& offset_y);
 		frame_builder & submerge(const std::string& submerge);
 		frame_builder & x(const std::string& x);
 		frame_builder & y(const std::string& y);
@@ -136,7 +138,8 @@ class frame_builder {
 		Uint32 blend_with_;
 		std::string blend_ratio_;
 		std::string highlight_ratio_;
-		std::string offset_;
+		std::string offset_x_;
+		std::string offset_y_;
 		std::string submerge_;
 		std::string x_;
 		std::string y_;
@@ -146,7 +149,6 @@ class frame_builder {
 		tristate auto_hflip_;
 		tristate primary_frame_;
 		std::string drawing_layer_;
-		bool screen_mode_;
 };
 /**
  * keep most parameters in a separate class to simplify handling of large
@@ -171,6 +173,7 @@ class frame_parsed_parameters {
 		bool need_update() const;
 	private:
 		friend class unit_frame;
+		friend class tparticular;
 		int duration_;
 		std::string image_;
 		image::locator image_diagonal_;
@@ -187,7 +190,8 @@ class frame_parsed_parameters {
 		Uint32 blend_with_;
 		progressive_double blend_ratio_;
 		progressive_double highlight_ratio_;
-		progressive_double offset_;
+		progressive_double offset_x_;
+		progressive_double offset_y_;
 		progressive_double submerge_;
 		progressive_int x_;
 		progressive_int y_;
@@ -197,13 +201,16 @@ class frame_parsed_parameters {
 		tristate auto_hflip_;
 		tristate primary_frame_;
 		progressive_int drawing_layer_;
-		bool screen_mode_;
 };
 /** Describe a unit's animation sequence. */
 class unit_frame {
 	public:
 		// Constructors
-		unit_frame(const frame_builder builder=frame_builder()):builder_(builder){};
+		unit_frame(const frame_builder builder=frame_builder())
+			: builder_(builder)
+			, zero_x_(-1)
+			, zero_y_(-1)
+		{};
 		void redraw(const int frame_time,bool first_time,const map_location & src,const map_location & dst,int*halo_id,const frame_parameters & animation_val,const frame_parameters & engine_val)const;
 		const frame_parameters merge_parameters(int current_time,const frame_parameters & animation_val,const frame_parameters & engine_val=frame_parameters()) const;
 		const frame_parameters parameters(int current_time) const {return builder_.parameters(current_time);};
@@ -213,12 +220,18 @@ class unit_frame {
 		bool need_update() const{ return builder_.need_update();};
 		std::set<map_location> get_overlaped_hex(const int frame_time,const map_location & src,const map_location & dst,const frame_parameters & animation_val,const frame_parameters & engine_val) const;
 		void replace_image_name(const std::string& src, const std::string& dst);
+		void replace_image_mod(const std::string& src, const std::string& dst);
+		void replace_x(const std::string& src, const std::string& dst);
 		void replace_static_text(const std::string& src, const std::string& dst);
+
+		const frame_parsed_parameters& get_builder() const { return builder_; }
 	private:
 		void redraw_screen_mode(const int frame_time,bool first_time, const frame_parameters & current_data) const;
 		std::set<map_location> get_overlaped_hex_screen_mode(const int frame_time, const frame_parameters& current_data) const;
 
 		frame_parsed_parameters builder_;
+		mutable int zero_x_;
+		mutable int zero_y_;
 
 };
 

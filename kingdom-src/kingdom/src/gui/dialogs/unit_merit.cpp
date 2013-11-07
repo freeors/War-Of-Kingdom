@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/unit_merit.hpp"
 
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/settings.hpp"

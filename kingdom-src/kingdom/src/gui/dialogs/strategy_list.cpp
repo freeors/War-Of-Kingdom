@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/strategy_list.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -373,7 +372,7 @@ void tstrategy_list::pre_show(CVideo& /*video*/, twindow& window)
 			list_item_item.insert(std::make_pair("list_ally", list_item));
 
 			list->add_row(list_item_item);
-			strategy_list_.push_back(std::make_pair<int, int>(i, strategy_index));
+			strategy_list_.push_back(std::make_pair(i, strategy_index));
 		}
 
 	}

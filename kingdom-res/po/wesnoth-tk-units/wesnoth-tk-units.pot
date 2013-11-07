@@ -379,6 +379,21 @@ msgid "keep2 description"
 msgstr ""
 
 #
+# fort
+#
+msgid "fort1"
+msgstr ""
+
+msgid "fort1 description"
+msgstr ""
+
+msgid "fort2"
+msgstr ""
+
+msgid "fort2 description"
+msgstr ""
+
+#
 # character unit type: desert horseman
 #
 msgid "desert horseman2"
@@ -726,4 +741,21 @@ msgstr ""
 msgid "scholar3 description"
 msgstr ""
 
+msgid "transport1"
+msgstr ""
+
+msgid "transport1 description"
+msgstr ""
+
+msgid "transport2"
+msgstr ""
+
+msgid "transport2 description"
+msgstr ""
+
+msgid "transport3"
+msgstr ""
+
+msgid "transport3 description"
+msgstr ""
 

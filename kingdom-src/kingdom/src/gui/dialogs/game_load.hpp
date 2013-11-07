@@ -22,12 +22,17 @@
 #include "savegame.hpp"
 #include "tstring.hpp"
 
+class game_display;
+
 namespace gui2 {
+
+class ttoggle_button;
+class tscrollbar_panel;
 
 class tgame_load : public tdialog
 {
 public:
-	explicit tgame_load(const config& cache_config);
+	explicit tgame_load(game_display& disp, const config& cache_config);
 
 	const std::string& filename() const { return filename_; }
 
@@ -38,27 +43,36 @@ protected:
 	/** Inherited from tdialog. */
 	void post_show(twindow& window);
 
+	enum {NONE_PAGE, MIN_PAGE, LOCAL_PAGE = MIN_PAGE, MAX_PAGE, NETWORK_PAGE = MAX_PAGE};
+	void sheet_toggled(twidget* widget);
+	void swap_page(twindow& window, int page, bool swap);
+
+	void fill_local(twindow& window);
+	void fill_network(twindow& window);
 private:
 
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
-	bool filter_text_changed(ttext_* textbox, const std::string& text);
 	void list_item_clicked(twindow& window);
 	void delete_button_callback(twindow& window);
+	void xmit_button_callback(twindow& window);
 
 	void display_savegame(twindow& window);
 	void evaluate_summary_string(std::stringstream& str, const config& cfg_summary);
 	void fill_game_list(twindow& window, std::vector<savegame::save_info>& games);
 
-	tfield_text* txtFilter_;
-
+private:
+	game_display& disp_;
 	std::string filename_;
 
 	std::vector<savegame::save_info> games_;
+	std::vector<savegame::www_save_info> www_saves_;
 	const config& cache_config_;
 
-	std::vector<std::string> last_words_;
+	int current_page_;
+	std::map<int, ttoggle_button*> sheet_;
+	tlistbox* savegame_list_;
 };
 
 }

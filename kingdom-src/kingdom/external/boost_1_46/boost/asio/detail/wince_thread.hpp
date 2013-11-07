@@ -2,7 +2,7 @@
 // detail/wince_thread.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2011 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -17,7 +17,7 @@
 
 #include <boost/asio/detail/config.hpp>
 
-#if defined(BOOST_WINDOWS) && defined(UNDER_CE)
+#if defined(BOOST_ASIO_WINDOWS) && defined(UNDER_CE)
 
 #include <memory>
 #include <boost/asio/detail/noncopyable.hpp>
@@ -39,7 +39,7 @@ class wince_thread
 public:
   // Constructor.
   template <typename Function>
-  wince_thread(Function f)
+  wince_thread(Function f, unsigned int = 0)
   {
     std::auto_ptr<func_base> arg(new func<Function>(f));
     DWORD thread_id = 0;
@@ -113,6 +113,6 @@ inline DWORD WINAPI wince_thread_function(LPVOID arg)
 
 #include <boost/asio/detail/pop_options.hpp>
 
-#endif // defined(BOOST_WINDOWS) && defined(UNDER_CE)
+#endif // defined(BOOST_ASIO_WINDOWS) && defined(UNDER_CE)
 
 #endif // BOOST_ASIO_DETAIL_WINCE_THREAD_HPP

@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/employ.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -125,7 +124,7 @@ void temploy::refresh_tooltip(twindow& window)
 		return;
 	}
 	const unit& temp = *(partial_troops_[troop_index_]);
-	tip->set_label(temp.form_gui2_tip());
+	tip->set_label(temp.form_tip(true));
 */
 }
 

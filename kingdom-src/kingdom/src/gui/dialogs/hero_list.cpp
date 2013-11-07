@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/hero_list.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "team.hpp"
@@ -85,12 +84,15 @@ namespace gui2 {
 
 REGISTER_DIALOG(hero_list)
 
+int full_number_min;
+
 thero_list::thero_list(std::vector<team>* teams, unit_map* units, hero_map& heros, std::vector<hero*>& partial_heros, int side)
 	: teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, partial_heros_(partial_heros)
 	, side_(side)
+	, row_2_hero_()
 	, sorting_widgets_()
 	, sorting_widget_(NULL)
 	, hero_table_(NULL)
@@ -187,19 +189,24 @@ void thero_list::hero_changed(twindow& window)
 	tcontrol* portrait = find_widget<tcontrol>(&window, "portrait", false, true);
 	tscroll_label* biography = find_widget<tscroll_label>(&window, "biography", false, true);
 
-	if (partial_heros_.empty()) {
-		portrait->set_label(heros_[selected_row].image(true));
-		biography->set_label(heros_[selected_row].biography());
-	} else {
-		portrait->set_label(partial_heros_[selected_row]->image(true));
-		biography->set_label(partial_heros_[selected_row]->biography());
-	}
+	portrait->set_label(heros_[row_2_hero_.find(selected_row)->second].image(true));
+	biography->set_label(heros_[row_2_hero_.find(selected_row)->second].biography());
 }
 
 void thero_list::fill_table(int catalog)
 {
+	row_2_hero_.clear();
 	if (partial_heros_.empty()) {
 		for (hero_map::iterator h = heros_.begin(); h != heros_.end(); ++ h) {
+			if (side_ != -1 && h->side_ != side_ - 1) {
+				continue;
+			}
+			if (h->number_ < hero::number_normal_min) {
+				// continue;
+			}
+			if (h->status_ == hero_status_unstage) {
+				continue;
+			}
 			fill_table_row(*h, catalog);
 		}
 	} else {
@@ -398,6 +405,13 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("skill5", table_item));
 
+		str.str("");
+		str << hero::adaptability_str2(h.skill_[hero_skill_formation]);
+		val = fxpmod12(h.skill_[hero_skill_formation]);
+		str << "." << val;
+		table_item["label"] = str.str();
+		table_item_item.insert(std::make_pair("skill6", table_item));
+
 	} else if (catalog == COMMAND_PAGE) {
 		table_item["label"] = h.name();
 		table_item_item.insert(std::make_pair("name", table_item));
@@ -442,6 +456,14 @@ void thero_list::fill_table_row(hero& h, int catalog)
 
 		table_item["label"] = hero::official_str(h.official_);
 		table_item_item.insert(std::make_pair("official", table_item));
+
+		str.str("");
+		if (h.noble_ != HEROS_NO_NOBLE) {
+			const tnoble& t = unit_types.noble(h.noble_);
+			str << t.name();
+		}
+		table_item["label"] = str.str();
+		table_item_item.insert(std::make_pair("noble", table_item));
 
 	} else if (catalog == RELATION_PAGE) {
 		table_item["label"] = h.name();
@@ -528,10 +550,11 @@ void thero_list::fill_table_row(hero& h, int catalog)
 	}
 	hero_table_->add_row(table_item_item);
 
-	unsigned hero_index = hero_table_->get_item_count() - 1;
-	tgrid* grid_ptr = hero_table_->get_row_grid(hero_index);
+	unsigned row_index = hero_table_->get_item_count() - 1;
+	tgrid* grid_ptr = hero_table_->get_row_grid(row_index);
 	ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true));
-	toggle->set_data(hero_index);
+	toggle->set_data(row_index);
+	row_2_hero_.insert(std::make_pair(row_index, h.number_));
 }
 
 void thero_list::catalog_page(twindow& window, int catalog, bool swap)
@@ -614,6 +637,7 @@ void thero_list::catalog_page(twindow& window, int catalog, bool swap)
 		widgets.push_back(&find_widget<tbutton>(&window, "button_treasure", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_action", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_official", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_noble", false));
 	} else if (catalog == RELATION_PAGE) {
 		widgets.push_back(&find_widget<tbutton>(&window, "button_name", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_father", false));
@@ -647,15 +671,9 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 	unsigned int i1 = dynamic_cast<ttoggle_panel*>(row1.find("_toggle", true))->get_data();
 	unsigned int i2 = dynamic_cast<ttoggle_panel*>(row2.find("_toggle", true))->get_data();
 
-	hero* h1;
-	hero* h2;
-	if (partial_heros_.empty()) {
-		h1 = &heros_[i1];
-		h2 = &heros_[i2];
-	} else {
-		h1 = partial_heros_[i1];
-		h2 = partial_heros_[i2];
-	}
+	hero* h1 = &heros_[row_2_hero_.find(i1)->second];
+	hero* h2 = &heros_[row_2_hero_.find(i2)->second];
+
 
 	bool result = true;
 	std::vector<tbutton*>& widgets = sorting_widgets_[current_page_];
@@ -857,6 +875,16 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 		} else if (sorting_widget_ == widgets[4]) {
 			// official
 			result = utils::utf8str_compare(hero::official_str(h1->official_), hero::official_str(h2->official_));
+		} else if (sorting_widget_ == widgets[5]) {
+			// noble
+			std::string str1, str2;
+			if (h1->noble_ != HEROS_NO_NOBLE) {
+				str1 = unit_types.noble(h1->noble_).name();
+			}
+			if (h2->noble_ != HEROS_NO_NOBLE) {
+				str2 = unit_types.noble(h2->noble_).name();
+			}
+			result = utils::utf8str_compare(str1, str2);
 		}
 
 	} else if (current_page_ == RELATION_PAGE) {

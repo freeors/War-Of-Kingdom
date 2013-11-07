@@ -23,7 +23,6 @@
 #include "../manager.hpp"
 
 #include "../../attack_prediction.hpp"
-#include "foreach.hpp"
 #include "../../map.hpp"
 #include "../../log.hpp"
 #include "artifical.hpp"
@@ -125,7 +124,6 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 	unit_map::node* base = units.get_cookie(m.second, false);
 	bool on_wall = base && base->second->wall();
 
-	int att_weapon = -1, def_weapon = -1;
 	bool from_cache = false;
 	battle_context *bc;
 	const unit* src_ptr = up->second;
@@ -236,12 +234,15 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 double attack_analysis::rating(double aggression) const
 {
 	double adjusted_target_value = target_value;
-	if (target->is_city()) {
+	if (target->is_city() || target->fort()) {
 		adjusted_target_value += 2 * target_value;
 	} else if (target->type()->master() == hero::number_keep) {
-		adjusted_target_value += target_value;;
+		adjusted_target_value += target_value;
 	} else if (target->type()->master() == hero::number_tactic) {
-		adjusted_target_value += target_value;;
+		adjusted_target_value += target_value;
+	} else if (target->master().get_flag(hero_flag_robber)) {
+		// highest priority
+		adjusted_target_value += 30 * target_value;
 	}
 
 	//FIXME: One of suokko's reverted changes removed this.  Should it be gone?

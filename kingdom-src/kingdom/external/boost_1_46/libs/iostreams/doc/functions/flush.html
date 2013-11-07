@@ -27,7 +27,7 @@
     The function template <CODE>flush</CODE> attemps to flush all buffered characters downstream. It is provided to facilite modifiying a filter chain in the middle of a sequence of output operations; specifically, it is used to implement the function <CODE>strict_sync</CODE> (<I>see</I>, <I>e.g.</I>, <A HREF='../classes/filtering_stream.html#strict_sync'><CODE>filtering_stream::strict_sync</CODE></A>). If <CODE>strict_sync</CODE> succeeds, the auto-close feature of a filter chain can be safely disabled using <CODE>set_auto_close(false)</CODE> (<I>see</I>, <I>e.g.</I>, <A HREF='../classes/filtering_stream.html#set_auto_close'><CODE>filtering_stream::set_auto_close</CODE></A>). Filters can then be added to or removed from the chain with the knowledge that no characters remain buffered.
 </P>
 <P>
-    For non-<A HREF='../concepts/flushable.html'>Flushable</A> devices, <CODE>flush</CODE> returns <CODE>true</CODE>, indicating that no error has occured.<A CLASS='footnote_ref' NAME='note_1_ref' HREF="#note_1"><SUP>[1]</SUP></A> For non-<A HREF='../concepts/flushable.html'>Flushable</A> filters, however, <CODE>flush</CODE> returns <CODE>false</CODE>, indicating that some characters may remain buffered.
+    For non-<A HREF='../concepts/flushable.html'>Flushable</A> devices, <CODE>flush</CODE> returns <CODE>true</CODE>, indicating that no error has occurred.<A CLASS='footnote_ref' NAME='note_1_ref' HREF="#note_1"><SUP>[1]</SUP></A> For non-<A HREF='../concepts/flushable.html'>Flushable</A> filters, however, <CODE>flush</CODE> returns <CODE>false</CODE>, indicating that some characters may remain buffered.
 </P>
 <P>
     When working with Devices, <CODE>flush</CODE> may be used as a generic version of <CODE>std::basic_ostream::flush()</CODE>.
@@ -55,10 +55,10 @@
 <PRE CLASS="broken_ie"><SPAN CLASS="keyword">namespace</SPAN> boost { <SPAN CLASS="keyword">namespace</SPAN> iostreams {
               
 <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> <A CLASS="documented" HREF="#template_params">T</A>&gt;
-<SPAN CLASS='keyword'>bool</SPAN> <A CLASS="documented" HREF="#flush_device">flush</A>(T& t);
+<SPAN CLASS='keyword'>bool</SPAN> <A CLASS="documented" HREF="#flush_device">flush</A>(T&amp; t);
 
 <SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> <A CLASS="documented" HREF="#template_params">T</A>, <SPAN CLASS="keyword">typename</SPAN> <A CLASS="documented" HREF="#template_params">Sink</A>&gt;
-<SPAN CLASS='keyword'>bool</SPAN> <A CLASS="documented" HREF="#flush_filter">flush</A>(T& t, Sink& snk);
+<SPAN CLASS='keyword'>bool</SPAN> <A CLASS="documented" HREF="#flush_filter">flush</A>(T&amp; t, Sink&amp; snk);
 
 } } <SPAN CLASS="comment">// End namespace boost::io</SPAN></PRE>
 
@@ -81,7 +81,7 @@
 <H4>Semantics &#8212; Device Types</H4>
 
 <PRE CLASS="broken_ie"><SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> T&gt;
-<SPAN CLASS='keyword'>bool</SPAN> flush(T& t);</PRE>
+<SPAN CLASS='keyword'>bool</SPAN> flush(T&amp; t);</PRE>
 
 <P>The semantics of <CODE>flush</CODE> depends on the <A HREF="../guide/traits.html#category">category</A> of <CODE>T</CODE> as follows:</P>
 
@@ -109,7 +109,7 @@
 <H4>Semantics &#8212; Filter Types</H4>
 
 <PRE CLASS="broken_ie"><SPAN CLASS="keyword">template</SPAN>&lt;<SPAN CLASS="keyword">typename</SPAN> T, <SPAN CLASS="keyword">typename</SPAN> Sink&gt;
-<SPAN CLASS='keyword'>bool</SPAN> flush(T& t, Sink& snk);</PRE>
+<SPAN CLASS='keyword'>bool</SPAN> flush(T&amp; t, Sink&amp; snk);</PRE>
 
 <P>The semantics of <CODE>flush</CODE> depends on the <A HREF="../guide/traits.html#category">category</A> of <CODE>T</CODE> as follows:</P>
 
@@ -136,7 +136,6 @@
 <!-- Begin Footer -->
 
 <HR>
-<P CLASS="copyright">Revised 02 Feb 2008</P>
 
 <P CLASS="copyright">&copy; Copyright 2008 <a href="http://www.coderage.com/" target="_top">CodeRage, LLC</a><br/>&copy; Copyright 2004-2007 <a href="http://www.coderage.com/turkanis/" target="_top">Jonathan Turkanis</a></P>
 <P CLASS="copyright"> 

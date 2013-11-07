@@ -17,11 +17,11 @@
 
 #include "gui/dialogs/system.hpp"
 
-#include "foreach.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/button.hpp"
+#include "gui/widgets/listbox.hpp"
 #include <boost/bind.hpp>
 #include "game_display.hpp"
 #include "team.hpp"
@@ -29,6 +29,7 @@
 #include "gamestatus.hpp"
 #include "play_controller.hpp"
 #include "resources.hpp"
+#include "gettext.hpp"
 
 namespace gui2 {
 
@@ -65,85 +66,41 @@ namespace gui2 {
 
 REGISTER_DIALOG(system)
 
-tsystem::tsystem(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate)
+const int max_items = 6;
+tsystem::tsystem(game_display& gui, const std::vector<titem>& items)
 	: gui_(gui)
-	, teams_(teams)
-	, units_(units)
-	, heros_(heros)
-	, gamestate_(gamestate)
-	, retval_(NONE)
+	, items_(items)
+	, retval_(twindow::OK)
 {
-	
 }
 
 void tsystem::pre_show(CVideo& /*video*/, twindow& window)
 {
-	play_controller* controller = resources::controller;
+	std::stringstream strstr;
 
-	if (controller->is_replaying()) {
-		find_widget<tbutton>(&window, "save", false).set_active(false);
-		find_widget<tbutton>(&window, "savereplay", false).set_active(false);
-	} else {
-		connect_signal_mouse_left_click(
-			find_widget<tbutton>(&window, "save", false)
-			, boost::bind(
-				&tsystem::set_retval
-				, this
-				, boost::ref(window)
-				, (int)SAVE));
-		connect_signal_mouse_left_click(
-			find_widget<tbutton>(&window, "savereplay", false)
-			, boost::bind(
-				&tsystem::set_retval
-				, this
-				, boost::ref(window)
-				, (int)SAVEREPLAY));
-	}
-/*
-	connect_signal_mouse_left_click(
-		find_widget<tbutton>(&window, "savemap", false)
-		, boost::bind(
-			&tsystem::set_retval
-			, this
-			, boost::ref(window)
-			, (int)SAVEMAP));
-*/
-	connect_signal_mouse_left_click(
-		find_widget<tbutton>(&window, "load", false)
-		, boost::bind(
-			&tsystem::set_retval
-			, this
-			, boost::ref(window)
-			, (int)LOAD));
-	connect_signal_mouse_left_click(
-		find_widget<tbutton>(&window, "preferences", false)
-		, boost::bind(
-			&tsystem::set_retval
-			, this
-			, boost::ref(window)
-			, (int)PREFERENCES));
-	if (game_config::tiny_gui) {
-		find_widget<tbutton>(&window, "help", false).set_visible(twidget::INVISIBLE);
-	} else {
-		connect_signal_mouse_left_click(
-			find_widget<tbutton>(&window, "help", false)
-			, boost::bind(
-				&tsystem::set_retval
-				, this
-				, boost::ref(window)
-				, (int)HELP));
-	}
-	connect_signal_mouse_left_click(
-		find_widget<tbutton>(&window, "quit", false)
-		, boost::bind(
-			&tsystem::set_retval
-			, this
-			, boost::ref(window)
-			, (int)QUIT));
-}
+	for (int n = 0; n < max_items; n ++) {
+		strstr.str("");
+		strstr << "item" << n;
 
-void tsystem::post_show(twindow& window)
-{
+		tbutton& button = find_widget<tbutton>(&window, strstr.str(), false);
+
+		if (n < (int)items_.size()) {
+			button.set_label(items_[n].name);
+			if (!items_[n].enable) {
+				button.set_active(items_[n].enable);
+			}
+
+			connect_signal_mouse_left_click(
+				button
+				, boost::bind(
+					&tsystem::set_retval
+					, this
+					, boost::ref(window)
+					, n));
+		} else {
+			button.set_visible(twidget::INVISIBLE);
+		}
+	}
 }
 
 void tsystem::set_retval(twindow& window, int val)

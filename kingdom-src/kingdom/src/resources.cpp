@@ -22,7 +22,6 @@ namespace resources
 	gamemap *game_map;
 	unit_map *units;
 	hero_map* heros;
-	hero_map* heros_start;
 	std::vector<team> *teams;
 	game_state *state_of_game;
 	LuaKernel *lua_kernel;

@@ -27,7 +27,6 @@
 #include "../replay.hpp"
 #include "../serialization/string_utils.hpp"
 #include "../statistics.hpp"
-#include "../foreach.hpp"
 
 #include <map>
 #include <stack>

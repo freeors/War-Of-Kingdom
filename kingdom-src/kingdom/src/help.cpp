@@ -25,7 +25,6 @@
 #include "about.hpp"
 #include "display.hpp"
 #include "exceptions.hpp"
-#include "foreach.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
 #include "gui/dialogs/transient_message.hpp"
@@ -37,12 +36,15 @@
 #include "wml_separators.hpp"
 #include "serialization/parser.hpp"
 
+#include <boost/foreach.hpp>
 #include <queue>
 
 static lg::log_domain log_display("display");
 #define WRN_DP LOG_STREAM(warn, log_display)
 
 namespace help {
+
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 
 help_button::help_button(display& disp, const std::string &help_topic)
 	: dialog_button(disp.video(), _("Help")), disp_(disp), topic_(help_topic), help_hand_(NULL)
@@ -326,11 +328,12 @@ private:
 	visible_item selected_item_;
 };
 
+#endif
+
 /// Thrown when the help system fails to parse something.
-struct parse_error : public game::error
-{
-	parse_error(const std::string& msg) : game::error(msg) {}
-};
+parse_error::parse_error(const std::string& msg) : game::error(msg) {}
+
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 
 /// The area where the content is shown in the help browser.
 class help_text_area : public gui::scrollarea
@@ -560,6 +563,8 @@ static const topic *find_topic(const section &sec, const std::string &id);
 /// be found.
 static const section *find_section(const section &sec, const std::string &id);
 
+#endif
+
 /// Parse a text string. Return a vector with the different parts of the
 /// text. Each markup item is a separate part while the text between
 /// markups are separate parts.
@@ -593,10 +598,14 @@ std::string get_first_word(const std::string &s);
 namespace {
 	const config *game_cfg = NULL;
 	gamemap *map = NULL;
+
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	// The default toplevel.
 	help::section toplevel;
+
 	// All sections and topics not referenced from the default toplevel.
 	help::section hidden_sections;
+#endif
 
 	int last_num_encountered_units = -1;
 	int last_num_encountered_terrains = -1;
@@ -765,6 +774,8 @@ static void push_tab_pair(std::vector<std::pair<std::string, unsigned int> > &v,
 
 namespace help {
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+
 help_manager::help_manager(const config *cfg, gamemap *_map)
 {
 	game_cfg = cfg == NULL ? &dummy_cfg : cfg;
@@ -790,7 +801,7 @@ void generate_contents()
 			// opening the help browser in the default manner.
 			config hidden_toplevel;
 			std::stringstream ss;
-			foreach (const config &section, help_config->child_range("section"))
+			BOOST_FOREACH (const config &section, help_config->child_range("section"))
 			{
 				const std::string id = section["id"];
 				if (find_section(toplevel, id) == NULL) {
@@ -807,7 +818,7 @@ void generate_contents()
 			}
 			hidden_toplevel["sections"] = ss.str();
 			ss.str("");
-			foreach (const config &topic, help_config->child_range("topic"))
+			BOOST_FOREACH (const config &topic, help_config->child_range("topic"))
 			{
 				const std::string id = topic["id"];
 				if (find_topic(toplevel, id) == NULL) {
@@ -858,7 +869,7 @@ bool section_is_referenced(const std::string &section_id, const config &cfg)
 		}
 	}
 
-	foreach (const config &section, cfg.child_range("section"))
+	BOOST_FOREACH (const config &section, cfg.child_range("section"))
 	{
 		const std::vector<std::string> sections_refd
 			= utils::quoted_split(section["sections"]);
@@ -882,7 +893,7 @@ bool topic_is_referenced(const std::string &topic_id, const config &cfg)
 		}
 	}
 
-	foreach (const config &section, cfg.child_range("section"))
+	BOOST_FOREACH (const config &section, cfg.child_range("section"))
 	{
 		const std::vector<std::string> topics_refd
 			= utils::quoted_split(section["topics"]);
@@ -1100,7 +1111,7 @@ std::vector<topic> generate_weapon_special_topics(const bool sort_generated)
 	std::map<t_string, std::string> special_description;
 	std::map<t_string, std::set<std::string, string_less> > special_units;
 
-	foreach (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
 	{
 		const unit_type &type = i.second;
 		// Only show the weapon special if we find it on a unit that
@@ -1168,7 +1179,7 @@ std::vector<topic> generate_ability_topics(const bool sort_generated)
 	// should have a full description, if so, add this units abilities
 	// for display. We do not want to show abilities that the user has
 	// not encountered yet.
-	foreach (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
 	{
 		const unit_type &type = i.second;
 		if (description_type(type) == FULL_DESCRIPTION) {
@@ -1239,7 +1250,7 @@ std::vector<topic> generate_faction_topics(const bool sort_generated)
 	const config& era = game_cfg->child("era");
 	if (era) {
 		std::vector<std::string> faction_links;
-		foreach (const config &f, era.child_range("multiplayer_side")) {
+		BOOST_FOREACH (const config &f, era.child_range("multiplayer_side")) {
 			const std::string& id = f["id"];
 			if (id == "Random")
 				continue;
@@ -1255,7 +1266,7 @@ std::vector<topic> generate_faction_topics(const bool sort_generated)
 			text << "<header>text='" << _("Leaders:") << "'</header>" << "\n";
 			const std::vector<std::string> leaders =
 					make_unit_links_list( utils::split(f["leader"]), true );
-			foreach (const std::string &link, leaders) {
+			BOOST_FOREACH (const std::string &link, leaders) {
 				text << link << "\n";
 			}
 
@@ -1264,7 +1275,7 @@ std::vector<topic> generate_faction_topics(const bool sort_generated)
 			text << "<header>text='" << _("Recruits:") << "'</header>" << "\n";
 			const std::vector<std::string> recruits =
 					make_unit_links_list( utils::split(f["recruit"]), true );
-			foreach (const std::string &link, recruits) {
+			BOOST_FOREACH (const std::string &link, recruits) {
 				text << link << "\n";
 			}
 
@@ -1286,7 +1297,7 @@ std::vector<topic> generate_faction_topics(const bool sort_generated)
 		text << "<header>text='" << _("Factions:") << "'</header>" << "\n";
 
 		std::sort(faction_links.begin(), faction_links.end());
-		foreach (const std::string &link, faction_links) {
+		BOOST_FOREACH (const std::string &link, faction_links) {
 			text << link << "\n";
 		}
 
@@ -1361,7 +1372,7 @@ public:
 				reverse ? type_.advances_from() : type_.advances_to();
 			bool first = true;
 
-			foreach (const std::string &adv, adv_units)
+			BOOST_FOREACH (const std::string &adv, adv_units)
 			{
 				const unit_type *type = unit_types.find(adv);
 				if (!type || type->hide_help()) continue;
@@ -1651,7 +1662,7 @@ std::string make_unit_link(const std::string& type_id)
 std::vector<std::string> make_unit_links_list(const std::vector<std::string>& type_id_list, bool ordered)
 {
 	std::vector<std::string> links_list;
-	foreach (const std::string &type_id, type_id_list) {
+	BOOST_FOREACH (const std::string &type_id, type_id_list) {
 		std::string unit_link = make_unit_link(type_id);
 		if (!unit_link.empty())
 			links_list.push_back(unit_link);
@@ -1668,7 +1679,7 @@ void generate_races_sections(const config *help_cfg, section &sec, int level)
 	std::set<std::string, string_less> races;
 	std::set<std::string, string_less> visible_races;
 
-	foreach (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
 	{
 		const unit_type &type = i.second;
 		UNIT_DESCRIPTION_TYPE desc_type = description_type(type);
@@ -1710,7 +1721,7 @@ std::vector<topic> generate_unit_topics(const bool sort_generated, const std::st
 	std::vector<topic> topics;
 	std::set<std::string, string_less> race_units;
 
-	foreach (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
 	{
 		const unit_type &type = i.second;
 
@@ -2756,7 +2767,6 @@ void help_browser::move_in_history(std::deque<const topic *> &from,
 	}
 }
 
-
 void help_browser::handle_event(const SDL_Event &event)
 {
 	SDL_MouseButtonEvent mouse_event = event.button;
@@ -2785,6 +2795,7 @@ void help_browser::handle_event(const SDL_Event &event)
 		update_cursor();
 	}
 }
+
 
 void help_browser::update_cursor()
 {
@@ -2868,6 +2879,8 @@ void help_browser::show_topic(const topic &t, bool save_in_history)
 	menu_.select_topic(t);
 	update_cursor();
 }
+
+#endif
 
 std::vector<std::string> parse_text(const std::string &text)
 {
@@ -3102,6 +3115,8 @@ std::string get_first_word(const std::string &s)
 	return re;
 }
 
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+
 /**
  * Open the help browser, show topic with id show_topic.
  *
@@ -3212,5 +3227,7 @@ void show_help(display &disp, const section &toplevel_sec,
 		gui2::show_transient_message(disp.video(), "", msg.str());
 	}
 }
+
+#endif
 
 } // End namespace help.

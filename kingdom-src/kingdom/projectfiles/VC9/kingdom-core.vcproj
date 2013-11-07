@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\external\boost_1_46;..\..\external\zlib123;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
+				AdditionalIncludeDirectories="..\..\external\boost_1_46;&quot;..\..\external\bzip2-1.0.6&quot;;..\..\external\zlib123;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;NOMINMAX;NDEBUG;BOOST_ALL_NO_LIB;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -106,7 +106,7 @@
 				Optimization="4"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="..\..\external\boost_1_46;..\..\external\zlib123;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
+				AdditionalIncludeDirectories="..\..\external\boost_1_46;&quot;..\..\external\bzip2-1.0.6&quot;;..\..\external\zlib123;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;NOMINMAX;_CRT_SECURE_NO_WARNINGS;BOOST_ALL_NO_LIB"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -350,6 +350,10 @@
 			<Filter
 				Name="iostreams"
 				>
+				<File
+					RelativePath="..\..\external\boost_1_46\libs\iostreams\src\bzip2.cpp"
+					>
+				</File>
 				<File
 					RelativePath="..\..\external\boost_1_46\libs\iostreams\src\file_descriptor.cpp"
 					>
@@ -668,8 +672,80 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\external\zlib123\gzio.c"
+				RelativePath="..\..\external\zlib123\gzclose.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\zlib\"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\zlib\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\zlib123\gzguts.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\external\zlib123\gzlib.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\zlib\"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\zlib\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\zlib123\gzread.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\zlib\"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\zlib\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\zlib123\gzwrite.c"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\zlib\"
+					/>
+				</FileConfiguration>
 				<FileConfiguration
 					Name="Release|Win32"
 					>
@@ -794,6 +870,102 @@
 			<File
 				RelativePath="..\..\external\zlib123\zutil.h"
 				>
+			</File>
+		</Filter>
+		<Filter
+			Name="bzip2-1.0.6"
+			>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\blocksort.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\bzip2\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\bzlib.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\bzip2\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\bzlib.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\bzlib_private.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\compress.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\bzip2\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\crctable.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\bzip2\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\decompress.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\bzip2\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\huffman.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\bzip2\"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\external\bzip2-1.0.6\randtable.c"
+				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						ObjectFile="$(IntDir)\bzip2\"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 	</Files>

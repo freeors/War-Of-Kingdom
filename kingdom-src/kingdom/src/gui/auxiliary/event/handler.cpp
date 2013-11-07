@@ -26,7 +26,6 @@
 #include "gui/widgets/window.hpp"
 #include "hotkeys.hpp"
 #include "video.hpp"
-#include "posix.h"
 
 #include <boost/foreach.hpp>
 
@@ -52,8 +51,6 @@
 
 /* Since this code is still very experimental it's not enabled yet. */
 //#define ENABLE
-
-extern int dbg_output;
 
 namespace gui2 {
 
@@ -338,8 +335,8 @@ void thandler::handle_event(const SDL_Event& event)
 
 	switch(event.type) {
 		case SDL_FINGERMOTION:
-			abs_dx = posix_abs(event.tfinger.dx);
-			abs_dy = posix_abs(event.tfinger.dy);
+			abs_dx = abs(event.tfinger.dx);
+			abs_dy = abs(event.tfinger.dy);
 			if (abs_dx <= FINGER_HIT_THRESHOLD && abs_dy <= FINGER_HIT_THRESHOLD) {
 				break;
 			}
@@ -569,11 +566,6 @@ void thandler::draw(const bool force)
 		dispatcher->fire(DRAW, dynamic_cast<twidget&>(*dispatcher));
 	}
 
-	uint32_t end_draw = SDL_GetTicks();
-	if (dbg_output) {
-		posix_print("thandler::draw, used time: %u ms\n", end_draw - start);
-	}
-
 	if(!dispatchers_.empty()) {
 		CVideo& video = dynamic_cast<twindow&>(*dispatchers_.back()).video();
 
@@ -582,12 +574,6 @@ void thandler::draw(const bool force)
 		cursor::draw(frame_buffer);
 		video.flip();
 		cursor::undraw(frame_buffer);
-	}
-
-	uint32_t end_flip = SDL_GetTicks();
-	if (dbg_output) {
-		posix_print("thandler::flip, used time: %u ms\n", end_flip - end_draw);
-		dbg_output = 0;
 	}
 }
 

@@ -28,6 +28,7 @@ class hero_map;
 class hero;
 class unit;
 
+
 namespace gui2 {
 
 class tlistbox;
@@ -53,6 +54,7 @@ private:
 	void type_selected(twindow& window);
 	void refresh_tooltip(twindow& window);
 
+	void hero_list(twindow& window);
 	void merit(twindow& window);
 private:
 	game_display& gui_;

@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/expedite.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "game_display.hpp"
@@ -40,6 +39,7 @@
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/unit_merit.hpp"
 #include "help.hpp"
+#include "menu_events.hpp"
 
 #include <boost/bind.hpp>
 
@@ -89,8 +89,9 @@ namespace gui2 {
 
 REGISTER_DIALOG(expedite)
 
-texpedite::texpedite(game_display& gui, const gamemap& map, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, button_action* disband)
-	: gui_(gui)
+texpedite::texpedite(events::menu_handler& menu_handler, game_display& gui, const gamemap& map, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, button_action* disband)
+	: menu_handler_(menu_handler)
+	, gui_(gui)
 	, map_(map)
 	, teams_(teams)
 	, units_(units)
@@ -138,18 +139,20 @@ void texpedite::refresh_tooltip(twindow& window)
 {
 	std::vector<unit*>& reside_troops = city_.reside_troops();
 
-	tbutton* button = find_widget<tbutton>(&window, "merit", false, true);
-	button->set_dirty();
-	button->set_active(reside_troops.empty()? false: true);
-
 	tscroll_label* tip = find_widget<tscroll_label>(&window, "tip", false, true);
 	if (reside_troops.empty()) {
+		tbutton* button = find_widget<tbutton>(&window, "hero_list", false, true);
+		button->set_active(false);
+
+		button = find_widget<tbutton>(&window, "merit", false, true);
+		button->set_active(false);
+
 		// It is necessary set all relative tips to empty.
 		tip->set_label("");
 		return;
 	}
 	unit& temp = *reside_troops[troop_index_];
-	tip->set_label(temp.form_gui2_tip());
+	tip->set_label(temp.form_tip(true));
 }
 
 void texpedite::pre_show(CVideo& /*video*/, twindow& window)
@@ -239,6 +242,12 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 	list->set_callback_value_change(dialog_callback<texpedite, &texpedite::type_selected>);
 
 	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "hero_list", false)
+		, boost::bind(
+			&texpedite::hero_list
+			, this
+			, boost::ref(window)));
+	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "merit", false)
 		, boost::bind(
 			&texpedite::merit
@@ -250,6 +259,22 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 	const unit& u = *reside_troops[troop_index_];
 	ok->set_active(can_move(u) && u.human());
+}
+
+void texpedite::hero_list(twindow& window)
+{
+	std::vector<unit*>& reside_troops = city_.reside_troops();
+	unit& temp = *reside_troops[troop_index_];
+
+	std::vector<hero*> v;
+	v.push_back(&temp.master());
+	if (temp.second().valid()) {
+		v.push_back(&temp.second());
+	}
+	if (temp.third().valid()) {
+		v.push_back(&temp.third());
+	}
+	menu_handler_.hero_list(v);
 }
 
 void texpedite::merit(twindow& window)

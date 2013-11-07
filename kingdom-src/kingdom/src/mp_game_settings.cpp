@@ -35,8 +35,6 @@ mp_game_settings::mp_game_settings() :
 	mp_countdown_turn_bonus(0),
 	mp_countdown_action_bonus(0),
 	mp_countdown(false),
-	use_map_settings(false),
-	random_start_time(false),
 	fog_game(false),
 	shroud_game(false),
 	allow_observers(false),
@@ -61,8 +59,6 @@ mp_game_settings::mp_game_settings(const config& cfg) :
 	mp_countdown_turn_bonus(0),
 	mp_countdown_action_bonus(0),
 	mp_countdown(false),
-	use_map_settings(false),
-	random_start_time(false),
 	fog_game(false),
 	shroud_game(false),
 	allow_observers(false),
@@ -88,8 +84,6 @@ mp_game_settings::mp_game_settings(const mp_game_settings& settings)
 	, mp_countdown_turn_bonus(settings.mp_countdown_turn_bonus)
 	, mp_countdown_action_bonus(settings.mp_countdown_action_bonus)
 	, mp_countdown(settings.mp_countdown)
-	, use_map_settings(settings.use_map_settings)
-	, random_start_time(settings.random_start_time)
 	, fog_game(settings.fog_game)
 	, shroud_game(settings.shroud_game)
 	, allow_observers(settings.allow_observers)
@@ -111,7 +105,6 @@ void mp_game_settings::set_from_config(const config& game_cfg)
 	mp_era = cfg["mp_era"].str();
 	mp_scenario = cfg["mp_scenario"].str();
 	xp_modifier = cfg["experience_modifier"];
-	use_map_settings = cfg["mp_use_map_settings"].to_bool();
 	fog_game = cfg["mp_fog"].to_bool();
 	shroud_game = cfg["mp_shroud"].to_bool();
 	mp_countdown = cfg["mp_countdown"].to_bool();
@@ -138,7 +131,7 @@ void mp_game_settings::reset()
 	mp_countdown_turn_bonus=0;
 	mp_countdown_action_bonus=0;
 	mp_countdown=false;
-	use_map_settings = random_start_time = fog_game = shroud_game = allow_observers = share_view = share_maps = false;
+	fog_game = shroud_game = allow_observers = share_view = share_maps = false;
 
 	scenario_data.clear();
 }
@@ -160,7 +153,6 @@ config mp_game_settings::to_config() const
 	cfg["mp_village_gold"] = village_gold;
 	cfg["mp_fog"] = fog_game;
 	cfg["mp_shroud"] = shroud_game;
-	cfg["mp_use_map_settings"] = use_map_settings;
 	cfg["observer"] = allow_observers;
 	cfg["savegame"] = saved_game;
 

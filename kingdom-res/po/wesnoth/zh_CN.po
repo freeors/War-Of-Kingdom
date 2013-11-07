@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-05-23 21:21+0800\n"
+"PO-Revision-Date: 2013-10-29 12:06+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -2837,7 +2837,7 @@ msgstr ""
 "害。"
 
 msgid "encourages"
-msgstr "激励"
+msgstr "鼓舞"
 
 msgid "encourages desc"
 msgstr "增加周围部队的暴击机率"
@@ -2897,6 +2897,18 @@ msgstr "底力"
 #: data/core/macros/abilities.cfg:381
 msgid "indomitable desc"
 msgstr "部队低HP时有一定概率减少伤害"
+
+msgid "bewitch"
+msgstr "迷惑"
+
+msgid "bewitch desc"
+msgstr "攻击没有女性部队时产生双倍伤害"
+
+msgid "guard"
+msgstr "禁卫"
+
+msgid "guard desc"
+msgstr "两格以内有城市、据点、君主兵种时增加攻击"
 
 #. [hides]: id=ambush
 #: data/core/macros/abilities.cfg:390 data/core/macros/abilities.cfg:392
@@ -5814,12 +5826,15 @@ msgstr "树人"
 #. [server]
 #: data/game_config.cfg:4
 msgid "Official Wesnoth Server"
+msgstr "官方韦诺服务器"
+
+msgid "Official Kingdom Server"
 msgstr "官方王国服务器"
 
 #. [server]
 #: data/game_config.cfg:8 data/game_config.cfg:12
 msgid "Alternate Wesnoth Server"
-msgstr "替代用王国服务器"
+msgstr "替代用韦诺服务器"
 
 #. [language]
 #: data/hardwired/english.cfg:3
@@ -7537,10 +7552,6 @@ msgstr ""
 msgid "Date"
 msgstr "日期"
 
-#: src/dialogs.cpp:614 src/multiplayer_create.cpp:109
-msgid "Load Game"
-msgstr "读取游戏"
-
 #: src/dialogs.cpp:615
 msgid "Choose the game to load"
 msgstr "选择要读取的游戏"
@@ -7578,7 +7589,7 @@ msgid "Moves: "
 msgstr "移动："
 
 #: src/game.cpp:673 src/game.cpp:1469
-msgid "The Battle for Wesnoth"
+msgid "The War of Kingdom"
 msgstr "王国战争"
 
 #: src/game.cpp:992 src/game.cpp:1010
@@ -8737,10 +8748,6 @@ msgstr ""
 msgid "Show fps."
 msgstr "显示FPS。"
 
-#: src/menu_events.cpp:2516
-msgid "Save game."
-msgstr "保存游戏。"
-
 #: src/menu_events.cpp:2518
 msgid "Quit game."
 msgstr "退出游戏。"
@@ -9097,12 +9104,15 @@ msgid "Choose weapon:"
 msgstr "选择武器："
 
 #: src/multiplayer.cpp:142 src/multiplayer.cpp:179
-msgid "Connecting to Server..."
-msgstr "正在连接到服务器……"
+msgid "Connecting to $server..."
+msgstr "正在连接到$server……"
 
 #: src/multiplayer.cpp:152
-msgid "Reading from Server..."
-msgstr "正在从服务器读取数据……"
+msgid "Reading from $server..."
+msgstr "正在从$server读取数据……"
+
+msgid "Sending to $server..."
+msgstr "正在向$server发送数据……"
 
 #: src/multiplayer.cpp:162
 msgid ""
@@ -9499,10 +9509,6 @@ msgstr "加入游戏"
 #: src/multiplayer_lobby.cpp:732
 msgid "Quick Replays"
 msgstr "快速读取游戏录像"
-
-#: src/multiplayer_lobby.cpp:734
-msgid "Preferences"
-msgstr "首选项"
 
 #: src/multiplayer_lobby.cpp:736
 msgid "Quit"
@@ -9904,17 +9910,9 @@ msgstr "游戏已保存"
 msgid "Could not write to file"
 msgstr "无法写入文件"
 
-#: src/savegame.cpp:943
-msgid "Save Replay"
-msgstr "保存游戏录像"
-
 #: src/savegame.cpp:961
 msgid "Could not auto save the game. Please save the game manually."
 msgstr "不能自动保存当前游戏，请手动存档。"
-
-#: src/savegame.cpp:1012
-msgid "Save Game"
-msgstr "保存游戏"
 
 #: src/serialization/parser.cpp:124
 msgid "Unexpected characters at line start"
@@ -10266,6 +10264,12 @@ msgstr "结束侵占$city，$first和$second终止了同盟条约。"
 msgid "End defending $city, $first and $second terminate treaty of alliance."
 msgstr "结束保卫$city，$first和$second终止了同盟条约。"
 
+msgid "$first and $second concluded treaty of alliance."
+msgstr "$first和$second缔结了同盟条约。"
+
+msgid "$first and $second terminate treaty of alliance."
+msgstr "$first和$second终止了同盟条约。"
+
 msgid "$first occupy $second."
 msgstr "$first军攻陷$second。"
 
@@ -10391,10 +10395,10 @@ msgid "collapse"
 msgstr "塌陷"
 
 msgid "female^broken"
-msgstr "破阵"
+msgstr "破防"
 
 msgid "broken"
-msgstr "破阵"
+msgstr "破防"
 
 msgid "female^injured"
 msgstr "受伤"
@@ -10504,6 +10508,12 @@ msgstr "你的$city太守官职被解除了。"
 msgid "$hero official of $city's mayor is terminated."
 msgstr "$hero的$city太守官职被解除了。"
 
+msgid "Congratulate! You are appointed $noble."
+msgstr "祝贺你！你被赐予$noble。"
+
+msgid "Congratulate! $hero is appointed $noble."
+msgstr "祝贺！$hero被赐予$noble。"
+
 msgid "You exchanged $ai using $human."
 msgstr "你用$human换来了$ai。"
 
@@ -10533,6 +10543,101 @@ msgstr "选择要作用到单位"
 
 msgid "Select a grid to build on"
 msgstr "选择建筑物要造在的格子"
+
+msgid "Do you want to spend $cost gold to purchase move?"
+msgstr "您想花$cost金购买移动增涨一回合吗？"
+
+msgid "If have $cost gold, you can purchase move."
+msgstr "如果有$cost金，您可以购买移动增涨一回合。"
+
+msgid ""
+"$username is reserved! Please modify to your username. To modify: Enter your "
+"username in \"Player profile\" Setting."
+msgstr ""
+"$username是保留账号！请改为自已的账号。解决步骤：在游戏的“玩家武将”窗口输入你"
+"的账号。"
+
+msgid "Upload successfully!"
+msgstr "上传成功！"
+
+#
+# http server
+#
+msgid ""
+"Invalid access! Please check your $server login information. To set up: "
+"Press $account in \"Player profile\" Setting."
+msgstr ""
+"拒绝访问！请检查在游戏中是否正确设置了$server上的账号/密码。解决步骤：在游戏"
+"的“玩家武将”窗口按下“$account”。"
+
+msgid "Invalid access! pre_kingdom_version table on $server isn't ready."
+msgstr "拒绝访问！$server上的pre_kingdom_version表未就绪。"
+
+msgid "$file maybe deleted by server. Download fail!"
+msgstr "$file可能已被服务器删除。下载失败！"
+
+msgid "Had uploaded pass that create at $create, cannot upload again!"
+msgstr "创建时间是$create的关卡已被上传过，不能再次上传！"
+
+msgid ""
+"$response\n"
+"\n"
+"Please check setting of BBS Server!"
+msgstr ""
+"$response\n"
+"\n"
+"请检查BBS服务器设置！"
+
+msgid "You can upload one only, it will delete existed, continue?"
+msgstr "你只能在服务器存放一个存档，此次上传将删除之前存在的，要继续吗？"
+
+msgid ""
+"No avater on $server. You can upload $middle and $small to custom "
+"visualization."
+msgstr "$server上找不到图像。你可以上传$middle和$small来自定义武将。"
+
+msgid ""
+"Download $name fail! $name format (size: $size, type: png), please check "
+"uploaded file on $server."
+msgstr ""
+"下载$name失败！$name格式（尺寸：$size，类型：png），请检查上传到$server的图像"
+"文件。"
+
+msgid ""
+"Receive unkonwn data!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+"收到未知数据！\n"
+"\n"
+"请检查在玩的是否是最新版本。"
+
+msgid "Register success!"
+msgstr "注册成功！"
+
+msgid "Username is duplicated!"
+msgstr "该用户名已被注册！"
+
+msgid "Username is protected!"
+msgstr "该用户名被保留，不能注册！"
+
+msgid "Unknown error!"
+msgstr "未知错误！"
+
+msgid "middle avatar"
+msgstr "半身像"
+
+msgid "small avatar"
+msgstr "小头像"
+
+msgid "localhost"
+msgstr "本地主机论坛（localhost）"
+
+msgid "www.freeors.com"
+msgstr "青草地论坛（www.freeors.com）"
+
+msgid "www.sanguohero.com"
+msgstr "三国英雄论坛（www.sanguohero.com）"
 
 msgid "short sword"
 msgstr "短剑"
@@ -10591,6 +10696,18 @@ msgstr "冷冻波"
 msgid "lightning"
 msgstr "闪电"
 
+msgid "Scenario"
+msgstr "关卡"
+
+msgid "RPG"
+msgstr "RPG"
+
+msgid "Tower"
+msgstr "塔防"
+
+msgid "Unknown"
+msgstr "未知"
+
 msgid "Defeat all sides"
 msgstr "击败所有势力"
 
@@ -10600,131 +10717,23 @@ msgstr "没了能控制城市"
 msgid "Miss"
 msgstr "闪避"
 
-#~ msgid "Recruiting and Recalling"
-#~ msgstr "征募与召回"
+#~ msgid "Load Game"
+#~ msgstr "读取游戏"
 
-#, fuzzy
-#~ msgid ""
-#~ "Each side begins with one leader in their keep. At the start of any "
-#~ "battle, and at times during it, you will need to recruit <ref>dst='.."
-#~ "units' text='units'</ref> into your army. To recruit, you must have your "
-#~ "leader (for instance, Konrad in the Heir to the Throne campaign) on the "
-#~ "Keep square of a <ref>dst='terrain_castle' text='Castle'</ref>. Then you "
-#~ "may recruit by either choosing Recruit from the menu or right-clicking on "
-#~ "a hex and selecting <bold>text=Recruit</bold>. This brings up the recruit "
-#~ "menu, which lists units available for recruitment, along with their gold "
-#~ "cost. Click on a unit to see its statistics, then press the recruit "
-#~ "button to recruit it."
-#~ msgstr ""
-#~ "游戏开始时，每一方都有一位领袖在城堡主楼里。在战斗开始时，以及战斗过程中，"
-#~ "您可能需要为您的部队征募<ref>dst='..units' text='单位'</ref>。要想征募单"
-#~ "位，您的首领（例如“王座继承者”战役中的科纳德）必须位于"
-#~ "<ref>dst='terrain_castle' text='城堡'</ref>的主楼上。而后您将可以在菜单中"
-#~ "选择“征募”或右键点击城堡内的一个格子并选择<italic>text=征募</italic>。此时"
-#~ "会弹出征募菜单，其中列出了所有可以征募的单位类别和所需金币数。点击一个单位"
-#~ "可以查看其数据，然后点击征募按钮就可将其征募。"
+#~ msgid "Save game."
+#~ msgstr "保存游戏。"
 
-#~ msgid ""
-#~ "\n"
-#~ "\n"
-#~ "If you right-clicked on a castle hex and selected recruit, the new unit "
-#~ "will appear in that square. Otherwise, it will appear in a free square "
-#~ "near the keep. You may only recruit as many units as you have free hexes "
-#~ "in your castle, and you cannot spend more gold than you actually have on "
-#~ "recruiting."
-#~ msgstr ""
-#~ "\n"
-#~ "\n"
-#~ "如果您是右击城堡里的格子后选择征募的，那么新的单位将出现在该格内。否则，新"
-#~ "兵将出现在主楼旁的某一个空地块里。您最多只能征募与城堡内空格数相同个数的单"
-#~ "位，并且在招募时，您的总花费却不能超出您所拥有的金币数量。"
+#~ msgid "Preferences"
+#~ msgstr "首选项"
 
-#~ msgid ""
-#~ "\n"
-#~ "\n"
-#~ "Recruited units come with two random <ref>dst='..traits_section' "
-#~ "text='Traits'</ref> which modify their statistics."
-#~ msgstr ""
-#~ "\n"
-#~ "\n"
-#~ "新兵具有两项随机的<ref>dst='..traits_section' text='特质'</ref>，对其数据"
-#~ "稍有影响。"
+#~ msgid "Save Replay"
+#~ msgstr "保存游戏录像"
 
-#~ msgid ""
-#~ "\n"
-#~ "\n"
-#~ "In later scenarios, you may also Recall survivors from earlier battles. "
-#~ "Recalling costs a standard 20 gold and presents you with a list of all "
-#~ "surviving units from previous scenarios."
-#~ msgstr ""
-#~ "\n"
-#~ "\n"
-#~ "在以后的战役中，您也可以召回早先战斗中的生还者。召回一律花费20金币。在召回"
-#~ "时您将看到一张先前场景中全部生还单位的清单。"
+#~ msgid "Save Game"
+#~ msgstr "保存游戏"
 
-#~ msgid ""
-#~ "\n"
-#~ "\n"
-#~ "Units not only cost gold to Recruit or Recall, they also require money to "
-#~ "support. See <ref>dst='income_and_upkeep' text='Income and Upkeep'</ref> "
-#~ "for more information."
-#~ msgstr ""
-#~ "\n"
-#~ "\n"
-#~ "单位不仅仅需要花费金币去征募或召回，还需要金钱来进行维护。参见"
-#~ "<ref>dst='income_and_upkeep' text='收入与维护费用'</ref>以获取更多信息。"
+#~ msgid "$id is reserved, please change to user-defined ID."
+#~ msgstr "$id是保留ID，请改为自定义ID。"
 
-#~ msgid "Orbs"
-#~ msgstr "行动状态球"
-
-#~ msgid ""
-#~ "On top of the energy bar shown next to each unit of yours is an orb. For "
-#~ "units you control, this orb is:"
-#~ msgstr ""
-#~ "在您的每一个单位的能量条上方是一个行动状态球。对于您所控制的单位，行动状态"
-#~ "球有以下状态："
-
-#~ msgid "green if it hasn’t moved this turn,"
-#~ msgstr "绿色，表明本单位本回合没有移动过，"
-
-#~ msgid "yellow if it has moved, but could still move further or attack, or"
-#~ msgstr "黄色，表明本单位移动过，但还可以继续移动或攻击，"
-
-#~ msgid "The orb is blue if the unit is an ally you do not control."
-#~ msgstr "行动状态球为蓝色，表明这是一个您不能控制的友军单位。"
-
-#~ msgid "Enemy units have no orb on top of their energy bar."
-#~ msgstr "敌方单位的能量条上方没有行动状态球。"
-
-#~ msgid "Dim"
-#~ msgstr "愚笨"
-
-#~ msgid ""
-#~ "Units with trait Dim suffer a 20% increase in experience required to "
-#~ "advance."
-#~ msgstr "有愚笨特质的单位升级所需的经验值比一般单位多20%。"
-
-#~ msgid ""
-#~ "\n"
-#~ "\n"
-#~ "Dim is a trait all too common in goblins and other lesser species. There "
-#~ "are reasons these species are lesser, and this is one of them."
-#~ msgstr ""
-#~ "\n"
-#~ "\n"
-#~ "愚笨在地精等数量较少的种族中是常见得过头的特质。这些种族之所以数量较少是有"
-#~ "原因的，而愚笨便是其中之一。"
-
-#, fuzzy
-#~ msgid "feral"
-#~ msgstr "总计"
-
-#, fuzzy
-#~ msgid "female^feral"
-#~ msgstr "中立"
-
-#~ msgid "weak"
-#~ msgstr "虚弱"
-
-#~ msgid "female^weak"
-#~ msgstr "虚弱"
+#~ msgid "The Battle for Wesnoth"
+#~ msgstr "王国战争"

@@ -22,9 +22,10 @@
 
 #include "construct_dialog.hpp"
 #include "display.hpp"
-#include "foreach.hpp"
 #include "gettext.hpp"
 #include "marked-up_text.hpp"
+
+#include <boost/foreach.hpp>
 
 /**
  * @namespace about
@@ -52,7 +53,7 @@ static void add_lines(std::vector<std::string> &res, config const &c) {
 	}
 
 	std::vector<std::string> lines = utils::split(c["text"], '\n');
-	foreach (std::string &line, lines)
+	BOOST_FOREACH (std::string &line, lines)
 	{
 		if (line.size() > 1 && line[0] == '+')
 			line = "+  " + line.substr(1);
@@ -67,7 +68,7 @@ static void add_lines(std::vector<std::string> &res, config const &c) {
 		}
 	}
 
-	foreach (const config &entry, c.child_range("entry")) {
+	BOOST_FOREACH (const config &entry, c.child_range("entry")) {
 		res.push_back("-  "+ entry["name"].str());
 	}
 }
@@ -80,7 +81,7 @@ std::vector<std::string> get_text(const std::string &campaign)
 	config::child_itors about_entries = about_list.child_range("about");
 
 	if (!campaign.empty()) {
-		foreach (const config &about, about_entries) {
+		BOOST_FOREACH (const config &about, about_entries) {
 			// just finished a particular campaign
 			if (campaign == about["id"]) {
 				add_lines(res, about);
@@ -88,7 +89,7 @@ std::vector<std::string> get_text(const std::string &campaign)
 		}
 	}
 
-	foreach (const config &about, about_entries) {
+	BOOST_FOREACH (const config &about, about_entries) {
 		add_lines(res, about);
 	}
 
@@ -97,7 +98,7 @@ std::vector<std::string> get_text(const std::string &campaign)
 
 void set_about(const config &cfg)
 {
-	foreach (const config &about, cfg.child_range("about"))
+	BOOST_FOREACH (const config &about, cfg.child_range("about"))
 	{
 		about_list.add_child("about", about);
 		const std::string &im = about["images"];
@@ -110,7 +111,7 @@ void set_about(const config &cfg)
 		}
 	}
 
-	foreach (const config &campaign, cfg.child_range("campaign"))
+	BOOST_FOREACH (const config &campaign, cfg.child_range("campaign"))
 	{
 		config::const_child_itors abouts = campaign.child_range("about");
 		if (abouts.first == abouts.second) continue;
@@ -122,7 +123,7 @@ void set_about(const config &cfg)
 		temp["id"] = id;
 		std::string campaign_images;
 
-		foreach (const config &about, abouts)
+		BOOST_FOREACH (const config &about, abouts)
 		{
 			const std::string &subtitle = about["title"];
 			if (!subtitle.empty())
@@ -135,12 +136,12 @@ void set_about(const config &cfg)
 				text << '\n';
 			}
 
-			foreach (const std::string &line, utils::split(about["text"], '\n'))
+			BOOST_FOREACH (const std::string &line, utils::split(about["text"], '\n'))
 			{
 				text << "    " << line << '\n';
 			}
 
-			foreach (const config &entry, about.child_range("entry"))
+			BOOST_FOREACH (const config &entry, about.child_range("entry"))
 			{
 				text << "    " << entry["name"] << '\n';
 			}

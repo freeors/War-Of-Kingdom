@@ -102,7 +102,8 @@ namespace boost { namespace property_tree { namespace json_parser
             void operator()(It b, It e) const
             {
                 BOOST_ASSERT(c.stack.size() >= 1);
-                c.stack.back()->push_back(std::make_pair(c.name, Str(b, e)));
+                c.stack.back()->push_back(std::make_pair(c.name,
+                    Ptree(Str(b, e))));
                 c.name.clear();
                 c.string.clear();
             }
@@ -184,7 +185,7 @@ namespace boost { namespace property_tree { namespace json_parser
                 using boost::spirit::classic::assertion;
 
                 // Assertions
-                assertion<std::string> expect_object("expected object");
+                assertion<std::string> expect_root("expected object or array");
                 assertion<std::string> expect_eoi("expected end of input");
                 assertion<std::string> expect_objclose("expected ',' or '}'");
                 assertion<std::string> expect_arrclose("expected ',' or ']'");
@@ -195,7 +196,7 @@ namespace boost { namespace property_tree { namespace json_parser
 
                 // JSON grammar rules
                 root 
-                    =   expect_object(object) 
+                    =   expect_root(object | array) 
                         >> expect_eoi(end_p)
                         ;
                 

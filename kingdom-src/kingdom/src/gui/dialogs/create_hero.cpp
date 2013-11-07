@@ -17,7 +17,7 @@
 
 #include "gui/dialogs/create_hero.hpp"
 
-#include "display.hpp"
+#include "game_display.hpp"
 #include "game_config.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
@@ -25,11 +25,16 @@
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/text_box.hpp"
+#include "gui/widgets/password_box.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/combo_box.hpp"
+#include "gui/dialogs/mp_login.hpp"
 #include "preferences_display.hpp"
 #include "formula_string_utils.hpp"
+#include "multiplayer.hpp"
+#include "help.hpp"
+#include <time.h>
 
 #include <boost/bind.hpp>
 
@@ -103,7 +108,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(create_hero)
 
-tcreate_hero::tcreate_hero(display& gui, hero_map& heros, hero& player_hero)
+tcreate_hero::tcreate_hero(game_display& gui, hero_map& heros, hero& player_hero)
 	: gui_(gui)
 	, heros_(heros)
 	, h_(player_hero)
@@ -137,13 +142,13 @@ void tcreate_hero::set_text_box_int(twindow& window, const std::string& id, int 
 static int nb_catalogs = 8;
 static const int catalog_items[] = {
 	135,
-	3,
-	138,
+	103,
+	393,
 	239,
-	4,
+	104,
 	136,
 	187,
-	104
+	374
 };
 
 void tcreate_hero::pre_show(CVideo& video, twindow& window)
@@ -153,6 +158,13 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 	window.set_enter_disabled(true);
 	window.set_escape_disabled(true);
 
+	tcontrol* control = find_widget<tcontrol>(&window, "username_png", false, true);
+	if (!preferences::inapp_purchased(game_config::INAPP_VIP)) {
+		control->set_label("misc/username.png");
+	} else {
+		control->set_label("misc/username-vip.png");
+	}
+
 	tcontrol* portrait = find_widget<tcontrol>(&window, "portrait", false, true);
 	portrait->set_label(h_.image(true));
 	tcontrol* gender_button = find_widget<tcontrol>(&window, "gender", false, true);
@@ -161,10 +173,12 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 	/**** Set the version number ****/
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "name", false, true);
 	user_widget->set_value(h_.name());
-	user_widget->set_maximum_length(max_login_size);
+	user_widget->set_active(false);
+
 	user_widget = find_widget<ttext_box>(&window, "surname", false, true);
 	user_widget->set_value(h_.surname());
-	user_widget->set_maximum_length(max_login_size);
+	const int max_surname_size = 5;
+	user_widget->set_maximum_length(5);
 
 	set_text_box_int(window, "leadership", fxptoi9(h_.leadership_), 3);
 	set_text_box_int(window, "force", fxptoi9(h_.force_), 3);
@@ -172,7 +186,6 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 	set_text_box_int(window, "politics", fxptoi9(h_.politics_), 3);
 	set_text_box_int(window, "charm", fxptoi9(h_.charm_), 3);
 
-	tcontrol* control;
 	for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
 		str.str("");
 		str << "arms" << i;
@@ -293,18 +306,42 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		, this
 		, boost::ref(window)));
 	find_widget<tbutton>(&window, "regenerate", false).set_label(_("Stronger"));
+
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "gender", false)
 		, boost::bind(
-		&tcreate_hero::gender
+		&tcreate_hero::change_avatar
+		, this
+		, boost::ref(window)
+		, true));
+
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "account", false)
+		, boost::bind(
+		&tcreate_hero::account
 		, this
 		, boost::ref(window)));
+	str.str("");
+	str << help::tintegrate::generate_img("misc/config.png~SCALE(24, 24)");
+	find_widget<tbutton>(&window, "account", false).set_label(str.str());
+
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "synchronize", false)
+		, boost::bind(
+		&tcreate_hero::synchronize
+		, this
+		, boost::ref(window)));
+	str.str("");
+	str << help::tintegrate::generate_format(_("Synchronize"), "blue");
+	find_widget<tbutton>(&window, "synchronize", false).set_label(str.str());
+
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "create", false)
 		, boost::bind(
 		&tcreate_hero::create
 		, this
-		, boost::ref(window)));
+		, boost::ref(window)
+		, true));
 }
 
 void tcreate_hero::post_show(twindow& window)
@@ -351,26 +388,83 @@ void tcreate_hero::regenerate(twindow& window)
 			temp->set_label(hero::adaptability_str2(h_.skill_[i]));
 		}
 	}
+
+	if (h_.feature_ == HEROS_NO_FEATURE) {
+		h_.feature_ = 82;
+		tcontrol* label = find_widget<tcontrol>(&window, "feature", false, true);
+		label->set_label(hero::feature_str(h_.feature_));
+	}
+	if (h_.side_feature_ == HEROS_NO_FEATURE) {
+		h_.side_feature_ = hero_feature_spirit;
+		tcontrol* label = find_widget<tcontrol>(&window, "side_feature", false, true);
+		label->set_label(hero::feature_str(h_.side_feature_));
+	}
+	if (h_.tactic_ == HEROS_NO_TACTIC) {
+		h_.tactic_ = ttactic::min_complex_index + 2;
+		tcontrol* label = find_widget<tcontrol>(&window, "tactic", false, true);
+		label->set_label(unit_types.tactic(h_.tactic_).name());
+
+	}
+	if (h_.character_ == HEROS_NO_CHARACTER) {
+		h_.character_ = 9;
+		tcontrol* label = find_widget<tcontrol>(&window, "character", false, true);
+		label->set_label(unit_types.character(h_.character_).name());
+
+	}
 }
 
-void tcreate_hero::gender(twindow& window)
+void tcreate_hero::account(twindow& window)
+{
+	gui2::tmp_login dlg(gui_, "");
+	dlg.show(gui_.video());
+
+	if (dlg.get_retval() == gui2::twindow::OK) {
+		h_.set_name(group.leader().name());
+		ttext_box* user_widget = find_widget<ttext_box>(&window, "name", false, true);
+		user_widget->set_value(h_.name());
+
+		tcontrol* control = find_widget<tcontrol>(&window, "username_png", false, true);
+		if (!preferences::inapp_purchased(game_config::INAPP_VIP)) {
+			control->set_label("misc/username.png");
+		} else {
+			control->set_label("misc/username-vip.png");
+		}
+	}
+}
+
+void tcreate_hero::synchronize(twindow& window)
+{
+	if (create(window, false)) {
+		if (http::avatar_hero(gui_, h_)) {
+			change_avatar(window, false);
+		}
+	}
+}
+
+void tcreate_hero::change_avatar(twindow& window, bool gender)
 {
 	tcontrol* regenerate_button = find_widget<tcontrol>(&window, "regenerate", false, true);
 	tcontrol* gender_button = find_widget<tcontrol>(&window, "gender", false, true);
 	tcontrol* portrait = find_widget<tcontrol>(&window, "portrait", false, true);
 	
-	if (h_.gender_ == hero_gender_male) {
-		// male --> female
-		h_.set_image(female_number_);
-		h_.gender_ = hero_gender_female;
+	if (gender) {
+		if (h_.gender_ == hero_gender_male) {
+			// male --> female
+			h_.set_image(female_number_);
+			h_.gender_ = hero_gender_female;
+		} else {
+			// female --> male
+			h_.set_image(male_number_);
+			h_.gender_ = hero_gender_male;
+		}
 	} else {
-		// female --> male
-		h_.set_image(male_number_);
-		h_.gender_ = hero_gender_male;
+		h_.set_image(h_.image_);
+		image::flush_cache(true);
+		portrait->set_label("");
 	}
 	gender_button->set_label(hero::gender_str(h_.gender_));
 	portrait->set_label(h_.image(true));
-
+	
 	regenerate_button->set_dirty();
 }
 
@@ -548,16 +642,30 @@ void tcreate_hero::catalog(twindow& window)
 
 std::string tcreate_hero::text_box_str(twindow& window, const std::string& id, const std::string& name, bool allow_empty)
 {
+	std::stringstream err;
+	utils::string_map symbols;
+
 	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
 	std::string str = widget->get_value();
 	if (!allow_empty && str.empty()) {
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["key"] = name;
+		symbols["key"] = help::tintegrate::generate_format(name, "red");
 		
-		err << vgettext("wesnoth-lib", "Don't accept empty, invalid '$key' value", symbols);
+		err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
 		gui2::show_message(gui_.video(), "", err.str());
 		return str;
+	} else if (id == "name" || id == "surname") {
+		if (str.find("<") != std::string::npos) {
+			symbols["str"] = name;
+			symbols["char"] = "<";
+			err << vgettext("wesnoth-lib", "Include unsupportable character: $char, invalid '$str' value", symbols);
+			gui2::show_message(gui_.video(), "", err.str());
+			return null_str;
+		} else if (id == "name" && game_config::is_reserve_player(str)) {
+			symbols["username"] = help::tintegrate::generate_format(preferences::login(), "red");
+			err << vgettext("wesnoth", "$username is reserved! Please modify to your username. To modify: Enter your username in \"Player profile\" Setting.", symbols);
+			gui2::show_message(gui_.video(), "", err.str());
+			return null_str;
+		}
 	}
 	return str;
 }
@@ -585,33 +693,36 @@ bool tcreate_hero::text_box_int(twindow& window, const std::string& id, const st
 	return true;
 }
 
-void tcreate_hero::create(twindow& window)
+bool tcreate_hero::create(twindow& window, bool close)
 {
 	std::string str;
 	int value;
 
 	str = text_box_str(window, "name", _("Name"));
-	if (str.empty()) return;
-	h_.set_name(str);
+	if (str.empty()) return false;
+
 	str = text_box_str(window, "surname", _("Surname"));
-	if (str.empty()) return;
+	if (str.empty()) return false;
 	h_.set_surname(str);
 
-	if (!text_box_int(window, "leadership", _("Leadership"), value)) return;
+	if (!text_box_int(window, "leadership", _("Leadership"), value)) return false;
 	h_.leadership_ = ftofxp9(value);
-	if (!text_box_int(window, "force", _("Force"), value)) return;
+	if (!text_box_int(window, "force", _("Force"), value)) return false;
 	h_.force_ = ftofxp9(value);
-	if (!text_box_int(window, "intellect", _("Intellect"), value)) return;
+	if (!text_box_int(window, "intellect", _("Intellect"), value)) return false;
 	h_.intellect_ = ftofxp9(value);
-	if (!text_box_int(window, "politics", _("Politics"), value)) return;
+	if (!text_box_int(window, "politics", _("Politics"), value)) return false;
 	h_.politics_ = ftofxp9(value);
-	if (!text_box_int(window, "charm", _("Charm"), value)) return;
+	if (!text_box_int(window, "charm", _("Charm"), value)) return false;
 	h_.charm_ = ftofxp9(value);
 
 	player_hero_ = h_;
 	preferences::set_hero(player_hero_);
 
-	window.set_retval(twindow::OK);
+	if (close) {
+		window.set_retval(twindow::OK);
+	}
+	return true;
 }
 
 } // namespace gui2

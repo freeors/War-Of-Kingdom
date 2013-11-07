@@ -11,6 +11,7 @@
 #include "language.hpp"
 #include "unit_types.hpp"
 #include "builder.hpp"
+#include "rectangle.hpp"
 
 #include "stdafx.h"
 #include <windowsx.h>
@@ -42,8 +43,6 @@ extern BOOL CALLBACK DlgCampaignProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARA
 static char			gtext[_MAX_PATH];
 dvrmgr_t			gdmgr;
 
-int exe_type = exe_editor;
-
 editor editor_;
 
 // oem.ini相关
@@ -60,6 +59,106 @@ namespace editor_config
 	config data_cfg;
 	int type = BIN_WML;
 	std::string campaign_id;
+
+	std::vector<std::pair<std::string, std::string> > arms;
+	std::vector<std::pair<std::string, const unit_type*> > artifical_utype;
+	std::vector<std::pair<std::string, const unit_type*> > city_utypes;
+	std::vector<std::pair<std::string, const unit_type*> > troop_utypes;
+	std::vector<std::string> navigation;
+	std::vector<std::pair<std::string, const config*> > city_traits;
+	std::vector<std::pair<std::string, const config*> > troop_traits;
+
+	std::set<int> unallocatable_heros;
+
+void generate_unallocatable_heros()
+{
+	for (int number = hero::number_system_min; number <= hero::number_system_max; number ++) {
+		unallocatable_heros.insert(number);
+	}
+	for (int number = hero::number_soldier_min; number <= hero::number_soldier_max; number ++) {
+		unallocatable_heros.insert(number);
+	}
+	for (int number = hero::number_artifical_min; number <= hero::number_artifical_max; number ++) {
+		unallocatable_heros.insert(number);
+	}
+	for (int number = hero::number_commoner_min; number <= hero::number_commoner_max; number ++) {
+		unallocatable_heros.insert(number);
+	}
+}
+
+void reload_data_bin()
+{
+	const config& game_cfg = data_cfg.child("game_config");
+	game_config::load_config(game_cfg? &game_cfg : NULL);
+	unit_types.set_config(data_cfg.child("units"));
+
+	const unit_type_data::unit_type_map& types = unit_types.types();
+
+	arms.clear();
+	const std::vector<std::string>& ids = unit_types.arms_ids();
+	int index = 0;
+	for (std::vector<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++ it) {
+		arms.push_back(std::make_pair(*it, utf8_2_ansi(hero::arms_str(index ++).c_str())));
+	}
+
+	artifical_utype.clear();
+	for (int number = hero::number_artifical_min; number <= hero::number_artifical_max; number ++) {
+		if (number != hero::number_keep) {
+			const unit_type* ut = unit_types.master_type(number);
+			if (ut) {
+				artifical_utype.push_back(std::make_pair(ut->id(), ut));
+			}
+		}
+	}
+
+	city_utypes.clear();
+	for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
+		const unit_type& ut = it->second;
+		if (ut.packer()) {
+			continue;
+		}
+		if (ut.master() != HEROS_INVALID_NUMBER) {
+			continue;
+		}
+		if (!ut.can_recruit()) {
+			continue;
+		}
+		city_utypes.push_back(std::make_pair(it->first, &ut));
+	}
+
+	troop_utypes.clear();
+	for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
+		const unit_type& ut = it->second;
+		if (ut.packer()) {
+			continue;
+		}
+		if (ut.master() != HEROS_INVALID_NUMBER) {
+			continue;
+		}
+
+		if (ut.can_recruit() || ut.can_reside()) {
+			continue;
+		}
+		troop_utypes.push_back(std::make_pair(it->first, &ut));
+	}
+
+	if (navigation.empty()) {
+		const navigation_types& navigation_types = unit_types.navigation_threshold();
+		for (navigation_types::const_iterator it = navigation_types.begin(); it != navigation_types.end(); ++ it) {
+			navigation.push_back(*it);
+		}
+	}
+
+	city_traits.clear();
+	const traits_map& traits = unit_types.traits();
+	for (traits_map::const_iterator it = traits.begin(); it != traits.end(); ++ it) {
+		city_traits.push_back(std::make_pair(it->first, &it->second));
+	}
+	troop_traits.clear();
+	for (traits_map::const_iterator it = traits.begin(); it != traits.end(); ++ it) {
+		troop_traits.push_back(std::make_pair(it->first, &it->second));
+	}
+}
 
 void move_subcfg_right_position(HWND hdlgP, LPARAM lParam)
 {
@@ -475,7 +574,7 @@ const char* dgettext_2_ansi(const char* domain, const char* msgid)
 	if (!msgid || msgid[0] == '\0') {
 		return null_str.c_str();
 	}
-	return utf8_2_ansi(dgettext(domain, msgid));
+	return utf8_2_ansi(dsgettext(domain, msgid));
 }
 
 const char* ansi_2_utf8(const char* str)
@@ -505,15 +604,38 @@ static bool is_id_char(char c)
 	return ((c == '_') || (c == '-') || (c == ' '));
 }
 
+static bool is_variable_char(char c) 
+{
+	return ((c == '_') || (c == '-') || (c == '.'));
+}
+
+typedef bool (*is_xxx_char)(char c);
+
+bool isvalid_id_base(const std::string& id, is_xxx_char fn)
+{
+	std::string str = id;
+	const size_t alnum = std::count_if(str.begin(), str.end(), isalnum);
+	const size_t valid_char = std::count_if(str.begin(), str.end(), fn);
+	if ((alnum + valid_char != str.size()) || valid_char == str.size() || str.empty() || !isalpha(str.at(0))) {
+		return false;
+	}
+	return str != "null";
+}
+
 bool isvalid_id(const std::string& id)
 {
 	std::string str = id;
 	const size_t alnum = std::count_if(str.begin(), str.end(), isalnum);
 	const size_t valid_char = std::count_if(str.begin(), str.end(), is_id_char);
-	if ((alnum + valid_char != str.size()) || valid_char == str.size() || str.empty() || !isalpha(str.at(0))) {
+	if ((alnum + valid_char != str.size()) || valid_char == str.size() || str.empty() || is_id_char(str.at(0))) {
 		return false;
 	}
 	return str != "null";
+}
+
+bool isvalid_variable(const std::string& id)
+{
+	return isvalid_id_base(id, is_variable_char);
 }
 
 void init_dvrmgr_struct(void) 
@@ -548,8 +670,8 @@ void init_dvrmgr_struct(void)
 	//
 	// system
 	//
-	std::string str = preferences::get("wwwroot");
-	if (str.empty()) {
+	std::string str = utf8_2_ansi(preferences::get("wwwroot").c_str());
+	if (str.empty() || !check_wok_root_folder(str)) {
 		SHGetFolderPath(NULL, CSIDL_PERSONAL, NULL, 0, text);
 		game_config::path = text;
 	} else {
@@ -558,6 +680,8 @@ void init_dvrmgr_struct(void)
 	gdmgr.heros_.set_path(game_config::path);
 	std::string hero_filename = get_wml_location("^xwml/hero.dat");
 	gdmgr.heros_.map_from_file(hero_filename);
+
+	editor_config::generate_unallocatable_heros();
 
 	// 列表视图中的图标
 	HICON                           hicon;
@@ -934,6 +1058,9 @@ void uninit_dvrmgr_struct(void)
 		gdmgr._hthdSync = NULL;
 	}
 
+	for (std::map<int, tzoom_rect*>::const_iterator it = zoom_rects.begin(); it != zoom_rects.end(); ++ it) {
+		delete it->second;
+	}
 	return;
 }
 
@@ -955,29 +1082,6 @@ void StatusBar_Idle(void)
 	ShowWindow(gdmgr._hpb_task, SW_HIDE);
 	return;
 }
-
-typedef enum {
-	rcidx_hwnd_status,
-	rcidx_dlg_ddesc,
-	rcidx_explorer,
-	rcidx_subarea,
-
-	rcidx_dlg_wgen,
-	rcidx_editor,
-
-	rcidx_dlg_sync,
-	rcidx_sync_sync,
-	rcidx_sync_subarea,
-
-	rcidx_dlg_tb,
-	rcidx_tb_explorer,
-
-	rcidx_dlg_cfg,
-	rcidx_cfg_explorer,
-	rcidx_max = rcidx_cfg_explorer,
-};
-RECT max_rc[rcidx_max + 1];
-RECT normal_rc[rcidx_max + 1];
 
 BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 {
@@ -1051,172 +1155,15 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	title_select(da_sync);
 	title_enable_ui(FALSE);
 
-	// 收集全屏和非全屏状态时须要改变尺寸的控件位置(看来还较复杂，_hdlg_ddesc这些窗口也得缩放，而不仅仅是控件而已，暂时还是不实现吧）
-	RECT rc;
-
-	//
-	// status window
-	//
-	GetWindowRect(gdmgr._hwnd_status, &rc);
-	MapWindowPoints(NULL, GetParent(gdmgr._hwnd_status), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_hwnd_status] = rc;
-
-	//
-	// IDD_DDESC
-	//
-	GetWindowRect(gdmgr._hdlg_ddesc, &rc);
-	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_ddesc), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_dlg_ddesc] = rc;
-	// IDC_TV_DDESC_EXPLORER
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_ddesc, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_explorer] = rc;
-	// IDC_ET_DDESC_SUBAREA
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_ddesc, IDC_ET_DDESC_SUBAREA), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_ddesc, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_subarea] = rc;
-
-	//
-	// IDD_WGEN
-	//
-	GetWindowRect(gdmgr._hdlg_wgen, &rc);
-	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_wgen), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_dlg_wgen] = rc;
-	// IDC_LV_WGEN_EDITOR
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_wgen, IDC_LV_WGEN_EDITOR), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_wgen, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_editor] = rc;
-
-	//
-	// IDD_SYNC
-	//
-	GetWindowRect(gdmgr._hdlg_sync, &rc);
-	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_sync), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_dlg_sync] = rc;
-	// IDC_LV_SYNC_SYNC
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_sync, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_sync_sync] = rc;
-	// IDC_ET_SYNC_SUBAREA
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_sync, IDC_ET_SYNC_SUBAREA), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_sync, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_sync_subarea] = rc;
-
-	//
-	// IDD_CORE
-	//
-	GetWindowRect(gdmgr._hdlg_core, &rc);
-	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_core), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_dlg_tb] = rc;
-	// IDC_TAB_CORE_SECTION
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_core, IDC_TAB_CORE_SECTION), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_core, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_tb_explorer] = rc;
-
-	//
-	// IDD_VISUAL
-	//
-	GetWindowRect(gdmgr._hdlg_visual, &rc);
-	MapWindowPoints(NULL, GetParent(gdmgr._hdlg_visual), (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_dlg_cfg] = rc;
-	// IDC_TV_CFG_EXPLORER
-	GetWindowRect(GetDlgItem(gdmgr._hdlg_visual, IDC_TV_CFG_EXPLORER), &rc);
-	MapWindowPoints(NULL, gdmgr._hdlg_visual, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
-	normal_rc[rcidx_cfg_explorer] = rc;
+	zoom_rects.insert(std::make_pair(tzoom_rect::status, new tstatus_rect(gdmgr._hwnd_status)));
+	zoom_rects.insert(std::make_pair(tzoom_rect::ddesc, new tddesc_rect(gdmgr._hdlg_ddesc)));
+	zoom_rects.insert(std::make_pair(tzoom_rect::hero, new thero_rect(gdmgr._hdlg_wgen)));
+	zoom_rects.insert(std::make_pair(tzoom_rect::sync, new tsync_rect(gdmgr._hdlg_sync)));
+	zoom_rects.insert(std::make_pair(tzoom_rect::core, new tcore_rect(gdmgr._hdlg_core)));
+	zoom_rects.insert(std::make_pair(tzoom_rect::visual, new tvisual_rect(gdmgr._hdlg_visual)));
+	zoom_rects.insert(std::make_pair(tzoom_rect::campaign, new tcampaign_rect(gdmgr._hdlg_campaign)));
 
 	return TRUE;
-}
-
-// 处理窗口缩放
-// 1. 缩放时须要被处理窗口的尺寸都放置在normal_rc和max_rc这两个矩形数组中。normal_rc对应窗口状态，max_rc对应全屏状态；
-// 2. normal_rc/max_rc存储的矩形坐标都相对于它们的直接父窗口，注：MoveWindow要求这种坐标；
-// 3. normal_rc在DVR_OnCreate被全部赋值。也就是在DVR_OnCreate时程序主窗口须是窗口状态；
-// 4. max_rc在calculate_max_rects被全部赋值。它在WM_SIZE中将是全屏时被调用。calculate_max_rects就是计算几个坐标，就让每次WM_SIZE都调用
-// 5. WM_SIZE时对每个窗口使用MoveWindow
-void calculate_max_rects(HWND hwndP)
-{
-	RECT rcMain;
-	uint32_t vertical_diff, horizontal_diff;
-	
-	GetClientRect(hwndP, &rcMain);
-
-	vertical_diff = rcMain.bottom - normal_rc[rcidx_dlg_ddesc].bottom;
-	//
-	// status window
-	//
-	max_rc[rcidx_hwnd_status] = normal_rc[rcidx_hwnd_status];
-	max_rc[rcidx_hwnd_status].top = normal_rc[rcidx_hwnd_status].top + vertical_diff;
-	max_rc[rcidx_hwnd_status].bottom = normal_rc[rcidx_hwnd_status].bottom + vertical_diff;
-
-	//
-	// IDD_DDESC
-	//
-	max_rc[rcidx_dlg_ddesc] = normal_rc[rcidx_dlg_ddesc];
-	max_rc[rcidx_dlg_ddesc].bottom = rcMain.bottom;
-
-	max_rc[rcidx_explorer] = normal_rc[rcidx_explorer];
-	max_rc[rcidx_explorer].bottom = normal_rc[rcidx_explorer].bottom + vertical_diff;
-
-	max_rc[rcidx_subarea] = normal_rc[rcidx_subarea];
-	max_rc[rcidx_subarea].top = normal_rc[rcidx_subarea].top + vertical_diff;
-	max_rc[rcidx_subarea].bottom = normal_rc[rcidx_subarea].bottom + vertical_diff;
-
-	horizontal_diff = rcMain.right - normal_rc[rcidx_dlg_wgen].right;
-	vertical_diff = rcMain.bottom - normal_rc[rcidx_dlg_wgen].bottom;
-	//
-	// IDD_WGEN
-	//
-	max_rc[rcidx_dlg_wgen] = normal_rc[rcidx_dlg_wgen];
-	max_rc[rcidx_dlg_wgen].right = rcMain.right;
-	max_rc[rcidx_dlg_wgen].bottom = rcMain.bottom;
-
-	max_rc[rcidx_editor] = normal_rc[rcidx_editor];
-	max_rc[rcidx_editor].right = normal_rc[rcidx_editor].right + horizontal_diff;
-	max_rc[rcidx_editor].bottom = normal_rc[rcidx_editor].bottom + vertical_diff;
-
-	horizontal_diff = rcMain.right - normal_rc[rcidx_dlg_sync].right;
-	vertical_diff = rcMain.bottom - normal_rc[rcidx_dlg_sync].bottom;
-	//
-	// IDD_SYNC
-	//
-	max_rc[rcidx_dlg_sync] = normal_rc[rcidx_dlg_sync];
-	max_rc[rcidx_dlg_sync].right = rcMain.right;
-	max_rc[rcidx_dlg_sync].bottom = rcMain.bottom;
-
-	max_rc[rcidx_sync_sync] = normal_rc[rcidx_sync_sync];
-	max_rc[rcidx_sync_sync].right = normal_rc[rcidx_sync_sync].right + horizontal_diff;
-	max_rc[rcidx_sync_sync].bottom = normal_rc[rcidx_sync_sync].bottom + vertical_diff;
-
-	max_rc[rcidx_sync_subarea] = normal_rc[rcidx_sync_subarea];
-	max_rc[rcidx_sync_subarea].top = normal_rc[rcidx_sync_subarea].top + vertical_diff;
-	max_rc[rcidx_sync_subarea].bottom = normal_rc[rcidx_sync_subarea].bottom + vertical_diff;
-
-	horizontal_diff = rcMain.right - normal_rc[rcidx_dlg_tb].right;
-	vertical_diff = rcMain.bottom - normal_rc[rcidx_dlg_tb].bottom;
-	//
-	// IDD_CORE
-	//
-	max_rc[rcidx_dlg_tb] = normal_rc[rcidx_dlg_tb];
-	max_rc[rcidx_dlg_tb].right = rcMain.right;
-	max_rc[rcidx_dlg_tb].bottom = rcMain.bottom;
-
-	max_rc[rcidx_tb_explorer] = normal_rc[rcidx_tb_explorer];
-	max_rc[rcidx_tb_explorer].right = normal_rc[rcidx_tb_explorer].right + horizontal_diff;
-	max_rc[rcidx_tb_explorer].bottom = normal_rc[rcidx_tb_explorer].bottom + vertical_diff;
-
-
-	horizontal_diff = rcMain.right - normal_rc[rcidx_dlg_cfg].right;
-	vertical_diff = rcMain.bottom - normal_rc[rcidx_dlg_cfg].bottom;
-	//
-	// IDD_VISUAL
-	//
-	max_rc[rcidx_dlg_cfg] = normal_rc[rcidx_dlg_cfg];
-	max_rc[rcidx_dlg_cfg].right = rcMain.right;
-	max_rc[rcidx_dlg_cfg].bottom = rcMain.bottom;
-
-	max_rc[rcidx_cfg_explorer] = normal_rc[rcidx_cfg_explorer];
-	max_rc[rcidx_cfg_explorer].right = normal_rc[rcidx_cfg_explorer].right + horizontal_diff;
-	max_rc[rcidx_cfg_explorer].bottom = normal_rc[rcidx_cfg_explorer].bottom + vertical_diff;
 }
 
 void DVR_OnPaint(HWND hdlgP) 
@@ -1325,47 +1272,15 @@ void DVR_OnCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 void DVR_OnSize(HWND hdlgP, UINT wParam, int cx, int cy)
 {
 	if (IsZoomed(hdlgP)) {
-		calculate_max_rects(hdlgP);
-		MoveWindow(gdmgr._hwnd_status, max_rc[rcidx_hwnd_status].left, max_rc[rcidx_hwnd_status].top, max_rc[rcidx_hwnd_status].right - max_rc[rcidx_hwnd_status].left, max_rc[rcidx_hwnd_status].bottom - max_rc[rcidx_hwnd_status].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_ddesc, max_rc[rcidx_dlg_ddesc].left, max_rc[rcidx_dlg_ddesc].top, max_rc[rcidx_dlg_ddesc].right - max_rc[rcidx_dlg_ddesc].left, max_rc[rcidx_dlg_ddesc].bottom - max_rc[rcidx_dlg_ddesc].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), max_rc[rcidx_explorer].left, max_rc[rcidx_explorer].top, max_rc[rcidx_explorer].right - max_rc[rcidx_explorer].left, max_rc[rcidx_explorer].bottom - max_rc[rcidx_explorer].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_ET_DDESC_SUBAREA), max_rc[rcidx_subarea].left, max_rc[rcidx_subarea].top, max_rc[rcidx_subarea].right - max_rc[rcidx_subarea].left, max_rc[rcidx_subarea].bottom - max_rc[rcidx_subarea].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_wgen, max_rc[rcidx_dlg_wgen].left, max_rc[rcidx_dlg_wgen].top, max_rc[rcidx_dlg_wgen].right - max_rc[rcidx_dlg_wgen].left, max_rc[rcidx_dlg_wgen].bottom - max_rc[rcidx_dlg_wgen].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_wgen, IDC_LV_WGEN_EDITOR), max_rc[rcidx_editor].left, max_rc[rcidx_editor].top, max_rc[rcidx_editor].right - max_rc[rcidx_editor].left, max_rc[rcidx_editor].bottom - max_rc[rcidx_editor].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_sync, max_rc[rcidx_dlg_sync].left, max_rc[rcidx_dlg_sync].top, max_rc[rcidx_dlg_sync].right - max_rc[rcidx_dlg_sync].left, max_rc[rcidx_dlg_sync].bottom - max_rc[rcidx_dlg_sync].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC), max_rc[rcidx_sync_sync].left, max_rc[rcidx_sync_sync].top, max_rc[rcidx_sync_sync].right - max_rc[rcidx_sync_sync].left, max_rc[rcidx_sync_sync].bottom - max_rc[rcidx_sync_sync].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_ET_SYNC_SUBAREA), max_rc[rcidx_sync_subarea].left, max_rc[rcidx_sync_subarea].top, max_rc[rcidx_sync_subarea].right - max_rc[rcidx_sync_subarea].left, max_rc[rcidx_sync_subarea].bottom - max_rc[rcidx_sync_subarea].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_core, max_rc[rcidx_dlg_tb].left, max_rc[rcidx_dlg_tb].top, max_rc[rcidx_dlg_tb].right - max_rc[rcidx_dlg_tb].left, max_rc[rcidx_dlg_tb].bottom - max_rc[rcidx_dlg_tb].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_core, IDC_TAB_CORE_SECTION), max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].top, max_rc[rcidx_tb_explorer].right - max_rc[rcidx_tb_explorer].left, max_rc[rcidx_tb_explorer].bottom - max_rc[rcidx_tb_explorer].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_visual, max_rc[rcidx_dlg_cfg].left, max_rc[rcidx_dlg_cfg].top, max_rc[rcidx_dlg_cfg].right - max_rc[rcidx_dlg_cfg].left, max_rc[rcidx_dlg_cfg].bottom - max_rc[rcidx_dlg_cfg].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_visual, IDC_TV_CFG_EXPLORER), max_rc[rcidx_cfg_explorer].left, max_rc[rcidx_cfg_explorer].top, max_rc[rcidx_cfg_explorer].right - max_rc[rcidx_cfg_explorer].left, max_rc[rcidx_cfg_explorer].bottom - max_rc[rcidx_cfg_explorer].top, TRUE);
-	} else {
-		MoveWindow(gdmgr._hwnd_status, normal_rc[rcidx_hwnd_status].left, normal_rc[rcidx_hwnd_status].top, normal_rc[rcidx_hwnd_status].right - normal_rc[rcidx_hwnd_status].left, normal_rc[rcidx_hwnd_status].bottom - normal_rc[rcidx_hwnd_status].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_ddesc, normal_rc[rcidx_dlg_ddesc].left, normal_rc[rcidx_dlg_ddesc].top, normal_rc[rcidx_dlg_ddesc].right - normal_rc[rcidx_dlg_ddesc].left, normal_rc[rcidx_dlg_ddesc].bottom - normal_rc[rcidx_dlg_ddesc].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_TV_DDESC_EXPLORER), normal_rc[rcidx_explorer].left, normal_rc[rcidx_explorer].top, normal_rc[rcidx_explorer].right - normal_rc[rcidx_explorer].left, normal_rc[rcidx_explorer].bottom - normal_rc[rcidx_explorer].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_ddesc, IDC_ET_DDESC_SUBAREA), normal_rc[rcidx_subarea].left, normal_rc[rcidx_subarea].top, normal_rc[rcidx_subarea].right - normal_rc[rcidx_subarea].left, normal_rc[rcidx_subarea].bottom - normal_rc[rcidx_subarea].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_wgen, normal_rc[rcidx_dlg_wgen].left, normal_rc[rcidx_dlg_wgen].top, normal_rc[rcidx_dlg_wgen].right - normal_rc[rcidx_dlg_wgen].left, normal_rc[rcidx_dlg_wgen].bottom - normal_rc[rcidx_dlg_wgen].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_wgen, IDC_LV_WGEN_EDITOR), normal_rc[rcidx_editor].left, normal_rc[rcidx_editor].top, normal_rc[rcidx_editor].right - normal_rc[rcidx_editor].left, normal_rc[rcidx_editor].bottom - normal_rc[rcidx_editor].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_sync, normal_rc[rcidx_dlg_sync].left, normal_rc[rcidx_dlg_sync].top, normal_rc[rcidx_dlg_sync].right - normal_rc[rcidx_dlg_sync].left, normal_rc[rcidx_dlg_sync].bottom - normal_rc[rcidx_dlg_sync].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_LV_SYNC_SYNC), normal_rc[rcidx_sync_sync].left, normal_rc[rcidx_sync_sync].top, normal_rc[rcidx_sync_sync].right - normal_rc[rcidx_sync_sync].left, normal_rc[rcidx_sync_sync].bottom - normal_rc[rcidx_sync_sync].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_sync, IDC_ET_SYNC_SUBAREA), normal_rc[rcidx_sync_subarea].left, normal_rc[rcidx_sync_subarea].top, normal_rc[rcidx_sync_subarea].right - normal_rc[rcidx_sync_subarea].left, normal_rc[rcidx_sync_subarea].bottom - normal_rc[rcidx_sync_subarea].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_core, normal_rc[rcidx_dlg_tb].left, normal_rc[rcidx_dlg_tb].top, normal_rc[rcidx_dlg_tb].right - normal_rc[rcidx_dlg_tb].left, normal_rc[rcidx_dlg_tb].bottom - normal_rc[rcidx_dlg_tb].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_core, IDC_TAB_CORE_SECTION), normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].top, normal_rc[rcidx_tb_explorer].right - normal_rc[rcidx_tb_explorer].left, normal_rc[rcidx_tb_explorer].bottom - normal_rc[rcidx_tb_explorer].top, TRUE);
-
-		MoveWindow(gdmgr._hdlg_visual, normal_rc[rcidx_dlg_cfg].left, normal_rc[rcidx_dlg_cfg].top, normal_rc[rcidx_dlg_cfg].right - normal_rc[rcidx_dlg_cfg].left, normal_rc[rcidx_dlg_cfg].bottom - normal_rc[rcidx_dlg_cfg].top, TRUE);
-		MoveWindow(GetDlgItem(gdmgr._hdlg_visual, IDC_TV_CFG_EXPLORER), normal_rc[rcidx_cfg_explorer].left, normal_rc[rcidx_cfg_explorer].top, normal_rc[rcidx_cfg_explorer].right - normal_rc[rcidx_cfg_explorer].left, normal_rc[rcidx_cfg_explorer].bottom - normal_rc[rcidx_cfg_explorer].top, TRUE);
+		tzoom_rect::calculate_maxs(hdlgP);
 	}
-
-	// GetClientRect(GetDlgItem(gdmgr._htb_wgen, IDC_BT_WGEN_REBOOT), &rect);
+	zoom_rects[tzoom_rect::status]->placement(gdmgr._hwnd_status, IsZoomed(hdlgP));
+	zoom_rects[tzoom_rect::ddesc]->placement(gdmgr._hdlg_ddesc, IsZoomed(hdlgP));
+	zoom_rects[tzoom_rect::sync]->placement(gdmgr._hdlg_sync, IsZoomed(hdlgP));
+	zoom_rects[tzoom_rect::hero]->placement(gdmgr._hdlg_wgen, IsZoomed(hdlgP));
+	zoom_rects[tzoom_rect::core]->placement(gdmgr._hdlg_core, IsZoomed(hdlgP));
+	zoom_rects[tzoom_rect::visual]->placement(gdmgr._hdlg_visual, IsZoomed(hdlgP));
+	zoom_rects[tzoom_rect::campaign]->placement(gdmgr._hdlg_campaign, IsZoomed(hdlgP));
 }
 
 
@@ -1496,7 +1411,7 @@ void update_locale_dir()
 	wml_config_from_file(game_config::path + "/xwml/data.bin", editor_config::data_cfg);
 	if (!editor_config::data_cfg.empty()) {
 		try {
-			unit_types.set_config(editor_config::data_cfg.child("units"));
+			editor_config::reload_data_bin();
 			// reload languages
 			init_language();
 		} catch (game::error& e) {
@@ -1523,8 +1438,8 @@ void main_ui_sysmenu(BOOL fEnable)
 	return;
 }
 
-#define MAIN_WIDTH					800
-#define MAIN_HEIGHT					600
+#define MAIN_WIDTH					960
+#define MAIN_HEIGHT					720
 
 void left_top(POINT *p)
 {
@@ -1572,7 +1487,6 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 	_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	char* ptr = (char*)malloc(41);
 
-
 	if (make_run_once()) {
 		// 程序已在运行，直接退出
 		return 0;
@@ -1595,7 +1509,7 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 			wml_config_from_file(game_config::path + "/xwml/data.bin", editor_config::data_cfg);
 			if (!editor_config::data_cfg.empty()) {
 				try {
-					unit_types.set_config(editor_config::data_cfg.child("units"));
+					editor_config::reload_data_bin();
 				} catch (game::error& e) {
 					MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
 					unit_types.clear();

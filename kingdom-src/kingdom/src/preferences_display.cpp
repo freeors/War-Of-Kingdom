@@ -33,7 +33,8 @@
 #include "log.hpp"
 #include "marked-up_text.hpp"
 #include "wml_separators.hpp"
-#include "foreach.hpp"
+
+#include <boost/foreach.hpp>
 
 namespace preferences {
 
@@ -82,7 +83,7 @@ bool detect_video_settings(CVideo& video, std::pair<int,int>& resolution, int& b
 	bpp = video.modePossible(resolution.first, resolution.second,
 		DefaultBPP, video_flags, true);
 
-	foreach (const res_t &res, res_list)
+	BOOST_FOREACH (const res_t &res, res_list)
 	{
 		if (bpp != 0) break;
 		std::cerr << "Video mode " << resolution.first << 'x'
@@ -245,14 +246,6 @@ void set_default_move(bool ison)
 	_set_default_move(ison);
 }
 
-void set_idle_anim_rate(int rate)
-{
-	_set_idle_anim_rate(rate);
-	if (disp != NULL) {
-		disp->set_idle_anim_rate(rate);
-	}
-}
-
 namespace {
 class escape_handler : public events::handler {
 public:
@@ -359,10 +352,11 @@ bool show_video_mode_dialog(display& disp)
 	const std::pair<int,int> current_res(video.getSurface()->w,video.getSurface()->h);
 	resolutions.push_back(current_res);
 	if (!fullScreen) {
-		resolutions.push_back(std::make_pair<int, int>(480, 320));
-		resolutions.push_back(std::make_pair<int, int>(568, 320));
-		resolutions.push_back(std::make_pair<int, int>(800, 480));
-		resolutions.push_back(std::make_pair<int, int>(854, 480));
+		resolutions.push_back(std::make_pair(480, 320));
+		resolutions.push_back(std::make_pair(568, 320));
+		resolutions.push_back(std::make_pair(800, 480));
+		resolutions.push_back(std::make_pair(854, 480));
+		resolutions.push_back(std::make_pair(1280, 720));
 	}
 
 	std::sort(resolutions.begin(),resolutions.end(),compare_resolutions);

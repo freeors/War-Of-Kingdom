@@ -48,6 +48,7 @@ public:
 	bool shroud() const { return shroud_; }
 	bool fog() const { return fog_; }
 
+	std::string mode_str() const;
 protected:
 	/** Inherited from tdialog. */
 	virtual void pre_show(CVideo& video, twindow& window);
@@ -85,7 +86,7 @@ protected:
 	tfield_bool* chk_fog_;
 
 	hero* player_hero_;
-	std::map<int, int> city_map_;;
+	std::map<int, int> city_map_;
 	std::map<int, int> city_leader_map_;
 
 	tlistbox* faction_list_;

@@ -17,7 +17,6 @@
 
 #include "gui/dialogs/treasure.hpp"
 
-#include "foreach.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "team.hpp"
@@ -85,7 +84,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(treasure)
 
-ttreasure::ttreasure(std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<std::pair<size_t, unit*> >& human_pairs, bool replaying)
+ttreasure::ttreasure(std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<std::pair<int, unit*> >& human_pairs, bool replaying)
 	: teams_(teams)
 	, units_(units)
 	, heros_(heros)
@@ -118,12 +117,14 @@ void ttreasure::pre_show(CVideo& /*video*/, twindow& window)
 			&ttreasure::down
 			, this
 			, boost::ref(window)));
+	find_widget<tbutton>(&window, "down", false).set_active(false);
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "up", false)
 		, boost::bind(
 			&ttreasure::up
 			, this
 			, boost::ref(window)));
+	find_widget<tbutton>(&window, "up", false).set_active(false);
 
 	fill_2list(window);
 
@@ -131,7 +132,9 @@ void ttreasure::pre_show(CVideo& /*video*/, twindow& window)
 	if (treasure_index_ >= 0) {
 		treasure_list_->select_row(treasure_index_);
 	}
-	human_selected(window);
+	if (human_list_->get_item_count()) {
+		human_selected(window);
+	}
 }
 
 void ttreasure::post_show(twindow& window)
@@ -168,7 +171,7 @@ void ttreasure::fill_2list(twindow& window)
 		treasure_list_->add_row(table_item_item);
 	}
 
-	for (std::vector<std::pair<size_t, unit*> >::iterator itor = human_pairs_.begin(); itor != human_pairs_.end(); ++ itor) {
+	for (std::vector<std::pair<int, unit*> >::iterator itor = human_pairs_.begin(); itor != human_pairs_.end(); ++ itor) {
 		/*** Add list item ***/
 		string_map table_item;
 		std::map<std::string, string_map> table_item_item;

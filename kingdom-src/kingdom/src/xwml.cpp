@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "config.hpp"
-#include "foreach.hpp"
 #include "filesystem.hpp"
 #include "tstring.hpp"
 
@@ -15,6 +14,7 @@
 
 #include "map.hpp"
 
+#include <boost/foreach.hpp>
 #include "posix.h"
 
 #define WMLBIN_MARK_CONFIG		"[cfg]"
@@ -42,7 +42,7 @@ void wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len,
 	// string_map::const_iterator			istrmap;
 
 	// recursively resolve children
-	foreach (const config::any_child &value, cfg.all_children_range()) {
+	BOOST_FOREACH (const config::any_child &value, cfg.all_children_range()) {
 		// save {[cfg]}{len}{name}
 		posix_fwrite(fp, WMLBIN_MARK_CONFIG, WMLBIN_MARK_CONFIG_LEN, bytertd);
 		u32n = posix_mku32(value.key.size(), deep);
@@ -55,7 +55,7 @@ void wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len,
 		// string_map	&values = value.cfg.gvalues();
 		// for (istrmap = values.begin(); istrmap != values.end(); istrmap ++) {
 		first = 1;
-		foreach (const config::attribute &istrmap, value.cfg.attribute_range()) {
+		BOOST_FOREACH (const config::attribute &istrmap, value.cfg.attribute_range()) {
 			if (first) {
 				posix_fwrite(fp, WMLBIN_MARK_VALUE, WMLBIN_MARK_VALUE_LEN, bytertd);
 				first = 0;
@@ -129,7 +129,7 @@ void wml_config_to_file(const std::string &fname, config &cfg, uint32_t nfiles, 
 	posix_fseek(fp, 16 + sizeof(max_str_len) + sizeof(u32n), 0);
 
 	// write [textdomain]
-	foreach (const config &d, cfg.child_range("textdomain")) {
+	BOOST_FOREACH (const config &d, cfg.child_range("textdomain")) {
 		if (std::find(tdomain.begin(), tdomain.end(), d.get("name")->str()) != tdomain.end()) {
 			continue;
 		}
@@ -412,6 +412,40 @@ void string_to_file(std::string str, char* fname)
 	posix_fwrite(fp, str.c_str(), str.length(), bytertd);
 	posix_fclose(fp);
 	return;
+}
+
+unsigned char calcuate_xor_from_file(const std::string &fname)
+{
+	posix_file_t fp = INVALID_FILE;
+	uint32_t fsizelow, fsizehigh, bytertd, pos;
+	unsigned char ret = 0;
+	unsigned char* data = NULL;
+
+	posix_fopen(fname.c_str(), GENERIC_READ, OPEN_EXISTING, fp);
+	if (fp == INVALID_FILE) {
+		goto exit;
+	}
+	posix_fsize(fp, fsizelow, fsizehigh);
+	if (!fsizelow && !fsizehigh) {
+		goto exit;
+	}
+	posix_fseek(fp, 0, 0);
+	data = (unsigned char*)malloc(fsizelow);
+	
+	posix_fread(fp, data, fsizelow, bytertd);
+	pos = 0;
+	while (pos < fsizelow) {
+		ret ^= data[pos ++];
+	}
+
+exit:
+	if (fp != INVALID_FILE) {
+		posix_fclose(fp);
+	}
+	if (data) {
+		free(data);
+	}
+	return ret;
 }
 
 /*

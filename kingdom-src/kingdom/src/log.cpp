@@ -1,7 +1,6 @@
-/* $Id: log.cpp 46186 2010-09-01 21:12:38Z silene $ */
 /*
    Copyright (C) 2003 by David White <dave@whitevine.net>
-                 2004 - 2010 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
+                 2004 - 2013 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -25,7 +24,8 @@
 #include "SDL.h"
 
 #include "log.hpp"
-#include "foreach.hpp"
+
+#include <boost/foreach.hpp>
 
 #include <map>
 #include <sstream>
@@ -46,7 +46,28 @@ static std::ostream null_ostream(new null_streambuf);
 static int indent = 0;
 static bool timestamp = true;
 
+static std::ostream *output_stream = NULL;
+
+static std::ostream& output()
+{
+	if(output_stream) {
+		return *output_stream;
+	}
+	return std::cerr;
+}
+
 namespace lg {
+
+tredirect_output_setter::tredirect_output_setter(std::ostream& stream)
+	: old_stream_(output_stream)
+{
+	output_stream = &stream;
+}
+
+tredirect_output_setter::~tredirect_output_setter()
+{
+	output_stream = old_stream_;
+}
 
 typedef std::map<std::string, int> domain_map;
 static domain_map *domains;
@@ -67,11 +88,11 @@ bool set_log_domain_severity(std::string const &name, int severity)
 {
 	std::string::size_type s = name.size();
 	if (name == "all") {
-		foreach (logd &l, *domains) {
+		BOOST_FOREACH(logd &l, *domains) {
 			l.second = severity;
 		}
 	} else if (s > 2 && name.compare(s - 2, 2, "/*") == 0) {
-		foreach (logd &l, *domains) {
+		BOOST_FOREACH(logd &l, *domains) {
 			if (l.first.compare(0, s - 1, name, 0, s - 1) == 0)
 				l.second = severity;
 		}
@@ -87,7 +108,7 @@ bool set_log_domain_severity(std::string const &name, int severity)
 std::string list_logdomains(const std::string& filter)
 {
 	std::ostringstream res;
-	foreach (logd &l, *domains) {
+	BOOST_FOREACH(logd &l, *domains) {
 		if(l.first.find(filter) != std::string::npos)
 			res << l.first << "\n";
 	}
@@ -102,23 +123,40 @@ std::string get_timestamp(const time_t& t, const std::string& format) {
 	}
 	return buf;
 }
+std::string get_timespan(const time_t& t) {
+	char buf[100];
+	// There doesn't seem to be any library function for this
+	const time_t minutes = t / 60;
+	const time_t days = minutes / 60 / 24;
+	if(t <= 0) {
+		strncpy(buf, "expired", 100);
+	} else if(minutes == 0) {
+		snprintf(buf, 100, "00:00:%02ld", t);
+	} else if(days == 0) {
+		snprintf(buf, 100, "%02ld:%02ld", minutes / 60, minutes % 60);
+	} else {
+		snprintf(buf, 100, "%ld %02ld:%02ld", days, (minutes / 60) % 24, minutes % 60);
+	}
+	return buf;
+}
 
 std::ostream &logger::operator()(log_domain const &domain, bool show_names, bool do_indent) const
 {
 	if (severity_ > domain.domain_->second)
 		return null_ostream;
 	else {
+		std::ostream& stream = output();
 		if(do_indent) {
 			for(int i = 0; i != indent; ++i)
-				std::cerr << "  ";
+				stream << "  ";
 			}
 		if (timestamp) {
-			std::cerr << get_timestamp(time(NULL));
+			stream << get_timestamp(time(NULL));
 		}
 		if (show_names) {
-			std::cerr << name_ << ' ' << domain.domain_->first << ": ";
+			stream << name_ << ' ' << domain.domain_->first << ": ";
 		}
-		return std::cerr;
+		return stream;
 	}
 }
 

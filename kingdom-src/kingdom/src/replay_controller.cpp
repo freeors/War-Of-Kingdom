@@ -16,7 +16,6 @@
 
 #include "global.hpp"
 
-#include "foreach.hpp"
 #include "game_end_exceptions.hpp"
 #include "game_events.hpp"
 #include "gettext.hpp"
@@ -28,6 +27,8 @@
 #include "unit_display.hpp"
 #include "artifical.hpp"
 #include "replay.hpp"
+
+#include <boost/foreach.hpp>
 
 static lg::log_domain log_engine("engine");
 #define DBG_NG LOG_STREAM(debug, log_engine)
@@ -119,8 +120,8 @@ void replay_controller::init(){
 
 	init_gui();
 	statistics::fresh_stats();
-	set_victory_when_enemies_defeated(
-		utils::string_bool(level_["victory_when_enemies_defeated"], true));
+	set_victory_when_enemy_no_city(
+		utils::string_bool(level_["victory_when_enemy_no_city"], true));
 
 	DBG_REPLAY << "first_time..." << (recorder.is_skipping() ? "skipping" : "no skip") << "\n";
 
@@ -156,7 +157,7 @@ void replay_controller::rebuild_replay_theme()
 {
 	const config &theme_cfg = get_theme(game_config_, level_["theme"]);
 	// if (const config &res = theme_cfg.child("resolution"))
-	foreach (const config &res, theme_cfg.child_range("resolution")) {
+	BOOST_FOREACH (const config &res, theme_cfg.child_range("resolution")) {
 		int width = res["width"];
 		int height = res["height"];
 		if (game_config::tiny_gui && (width != 640 || height != 480)) {
@@ -201,7 +202,7 @@ void replay_controller::reset_replay(){
 	gui_->labels().read(level_);
 
 	statistics::fresh_stats();
-	set_victory_when_enemies_defeated(level_["victory_when_enemies_defeated"].to_bool(true));
+	set_victory_when_enemy_no_city(level_["victory_when_enemy_no_city"].to_bool(true));
 
 	// Add era events for MP game.
 	if (const config &era_cfg = level_.child("era")) {
@@ -271,15 +272,13 @@ void replay_controller::replay_next_side(){
 
 void replay_controller::process_oos(const std::string& msg) const
 {
-	if (game_config::ignore_replay_errors) return;
-
 	std::stringstream message;
 	message << _("The replay is corrupt/out of sync. It might not make much sense to continue. Do you want to save the game?");
 	message << "\n\n" << _("Error details:") << "\n\n" << msg;
 
 	config snapshot;
 	to_config(snapshot);
-	savegame::oos_savegame save(heros_, snapshot);
+	savegame::oos_savegame save(heros_, heros_start_, snapshot);
 	save.save_game_interactive(resources::screen->video(), message.str(), gui::YES_NO); // can throw end_level_exception
 }
 
@@ -352,7 +351,8 @@ void replay_controller::play_turn(){
 	}
 }
 
-void replay_controller::play_side(const unsigned int /*team_index*/, bool){
+void replay_controller::play_side(const unsigned int /*team_index*/, bool)
+{
 	if (recorder.at_end()){
 		return;
 	}
@@ -374,7 +374,7 @@ void replay_controller::play_side(const unsigned int /*team_index*/, bool){
 			finish_side_turn();
 /*
 			// This is necessary for replays in order to show possible movements.
-			foreach (unit &u, units_) {
+			BOOST_FOREACH (unit &u, units_) {
 				if (u.side() != player_number_) {
 					u.new_turn();
 				}
@@ -394,11 +394,29 @@ void replay_controller::play_side(const unsigned int /*team_index*/, bool){
 		update_teams();
 		update_gui();
 	}
-	catch(end_level_exception& e){
+	catch (end_level_exception& e){
 		//VICTORY/DEFEAT end_level_exception shall not return to title screen
-		if (e.result == VICTORY || e.result == DEFEAT) return;
+		get_end_level_data().result = e.result;
+		linger();
+		if (e.result == VICTORY || e.result == DEFEAT) {
+			return;
+		}
 		throw;
 	}
+}
+
+void replay_controller::linger()
+{
+	browse_ = true;
+	linger_ = true;
+	// If we need to set the status depending on the completion state
+	// we're needed here.
+	gui_->set_game_mode(game_display::LINGER_MP);
+
+	gui_->invalidate_theme();
+	gui_->redraw_everything();
+
+	start_pass_scenario_anim(get_end_level_data().result);
 }
 
 void replay_controller::update_teams(){

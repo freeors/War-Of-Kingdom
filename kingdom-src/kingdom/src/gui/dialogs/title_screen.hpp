@@ -17,8 +17,9 @@
 #define GUI_DIALOGS_TITLE_SCREEN_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
+#include "multiplayer.hpp"
 
-class display;
+class game_display;
 class hero_map;
 class hero;
 
@@ -35,7 +36,7 @@ namespace gui2 {
 class ttitle_screen : public tdialog
 {
 public:
-	ttitle_screen(display& gui, hero_map& heros, hero& player_hero);
+	ttitle_screen(game_display& gui, hero_map& heros, hero& player_hero);
 
 	~ttitle_screen();
 
@@ -56,14 +57,10 @@ public:
 			, START_MAP_EDITOR
 			, CHANGE_LANGUAGE
 			, EDIT_PREFERENCES
+			, INAPP_PURCHASE
 			, SHOW_ABOUT          /**< Show credits */
 			, QUIT_GAME
 			, SHOW_HELP
-			, REDRAW_BACKGROUND   /**<
-			                       * Used after an action needing a redraw (ex:
-			                       * fullscreen)
-			                       */
-			, RELOAD_GAME_DATA    /**< Used to reload all game data */
 			, NOTHING             /**<
 			                       * Default, nothing done, no redraw needed
 			                       */
@@ -82,11 +79,15 @@ private:
 
 	void post_show(twindow& window);
 
+	void report(twindow& window);
 	void player(twindow& window);
+
+	void version_2_plug(twindow& window) const;
 private:
-	display& gui_;
+	game_display& gui_;
 	hero_map& heros_;
 	hero& player_hero_;
+	static http::membership member;
 };
 
 } // namespace gui2

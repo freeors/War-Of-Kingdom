@@ -2,7 +2,7 @@
 // deadline_timer_service.hpp
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~
 //
-// Copyright (c) 2003-2011 Christopher M. Kohlhoff (chris at kohlhoff dot com)
+// Copyright (c) 2003-2013 Christopher M. Kohlhoff (chris at kohlhoff dot com)
 //
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
@@ -16,10 +16,16 @@
 #endif // defined(_MSC_VER) && (_MSC_VER >= 1200)
 
 #include <boost/asio/detail/config.hpp>
+
+#if defined(BOOST_ASIO_HAS_BOOST_DATE_TIME) \
+  || defined(GENERATING_DOCUMENTATION)
+
 #include <cstddef>
+#include <boost/asio/async_result.hpp>
 #include <boost/asio/detail/deadline_timer_service.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/time_traits.hpp>
+#include <boost/asio/detail/timer_queue_ptime.hpp>
 
 #include <boost/asio/detail/push_options.hpp>
 
@@ -72,12 +78,6 @@ public:
   {
   }
 
-  /// Destroy all user-defined handler objects owned by the service.
-  void shutdown_service()
-  {
-    service_impl_.shutdown_service();
-  }
-
   /// Construct a new timer implementation.
   void construct(implementation_type& impl)
   {
@@ -94,6 +94,13 @@ public:
   std::size_t cancel(implementation_type& impl, boost::system::error_code& ec)
   {
     return service_impl_.cancel(impl, ec);
+  }
+
+  /// Cancels one asynchronous wait operation associated with the timer.
+  std::size_t cancel_one(implementation_type& impl,
+      boost::system::error_code& ec)
+  {
+    return service_impl_.cancel_one(impl, ec);
   }
 
   /// Get the expiry time for the timer as an absolute time.
@@ -130,12 +137,27 @@ public:
 
   // Start an asynchronous wait on the timer.
   template <typename WaitHandler>
-  void async_wait(implementation_type& impl, WaitHandler handler)
+  BOOST_ASIO_INITFN_RESULT_TYPE(WaitHandler,
+      void (boost::system::error_code))
+  async_wait(implementation_type& impl,
+      BOOST_ASIO_MOVE_ARG(WaitHandler) handler)
   {
-    service_impl_.async_wait(impl, handler);
+    detail::async_result_init<
+      WaitHandler, void (boost::system::error_code)> init(
+        BOOST_ASIO_MOVE_CAST(WaitHandler)(handler));
+
+    service_impl_.async_wait(impl, init.handler);
+
+    return init.result.get();
   }
 
 private:
+  // Destroy all user-defined handler objects owned by the service.
+  void shutdown_service()
+  {
+    service_impl_.shutdown_service();
+  }
+
   // The platform-specific implementation.
   service_impl_type service_impl_;
 };
@@ -144,5 +166,8 @@ private:
 } // namespace boost
 
 #include <boost/asio/detail/pop_options.hpp>
+
+#endif // defined(BOOST_ASIO_HAS_BOOST_DATE_TIME)
+       // || defined(GENERATING_DOCUMENTATION)
 
 #endif // BOOST_ASIO_DEADLINE_TIMER_SERVICE_HPP

@@ -19,7 +19,7 @@
 #include "log.hpp"
 #include "map.hpp"
 #include "pathfind/pathfind.hpp"
-#include "foreach.hpp"
+#include "wml_exception.hpp"
 
 #include <queue>
 #include <map>
@@ -172,10 +172,9 @@ pathfind::plain_route pathfind::a_star_search(const map_location& src, const map
 		  	    double stop_at, const pathfind::cost_calculator *calc, const size_t width,
                             const size_t height, const std::set<map_location>* teleports) {
 	//----------------- PRE_CONDITIONS ------------------
-	assert(src.valid(width, height));
-	assert(dst.valid(width, height));
-	assert(calc != NULL);
-	assert(stop_at <= calc->getNoPathValue());
+	VALIDATE(src.valid(width, height), "a_star_search, src.valid(width, height)!");
+	VALIDATE(dst.valid(width, height), "a_star_search, dst.valid(width, height)!");
+	VALIDATE(calc != NULL, "a_star_search, calc != NULL!");
 	//---------------------------------------------------
 
 	DBG_PF << "A* search: " << src << " -> " << dst << '\n';

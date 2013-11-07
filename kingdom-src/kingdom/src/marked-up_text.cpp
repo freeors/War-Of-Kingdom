@@ -245,7 +245,11 @@ SDL_Rect draw_text(CVideo* gui, const SDL_Rect& area, int size,
                    const SDL_Color& color, const std::string& txt,
                    int x, int y, bool use_tooltips, int style)
 {
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	return draw_text(gui != NULL ? gui->getSurface() : NULL, area, size, color, txt, x, y, use_tooltips, style);
+#else
+	return create_rect(0, 0, 800, 600);
+#endif
 }
 
 bool is_format_char(char c)

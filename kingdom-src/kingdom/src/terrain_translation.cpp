@@ -126,6 +126,7 @@ const t_terrain HUMAN_CASTLE = string_to_number_("Ch");
 const t_terrain HUMAN_KEEP = string_to_number_("Kh");
 const t_terrain SHALLOW_WATER = string_to_number_("Ww");
 const t_terrain DEEP_WATER = string_to_number_("Wo");
+const t_terrain DEEP_WATER_MATCH = string_to_number_("Wo*");
 const t_terrain GRASS_LAND = string_to_number_("Gg");
 const t_terrain FOREST = string_to_number_("Gg^Ff");
 const t_terrain MOUNTAIN = string_to_number_("Mm");

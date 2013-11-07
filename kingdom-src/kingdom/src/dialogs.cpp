@@ -20,7 +20,6 @@
 #include "global.hpp"
 
 #include "dialogs.hpp"
-#include "foreach.hpp"
 #include "game_events.hpp"
 #include "game_display.hpp"
 #include "game_preferences.hpp"
@@ -47,7 +46,10 @@
 #include "gui/dialogs/select_unit.hpp"
 #include "artifical.hpp"
 #include "unit_display.hpp"
+#include "gui/dialogs/network_transmission.hpp"
+#include "gui/widgets/window.hpp"
 
+#include <boost/foreach.hpp>
 #include <clocale>
 
 static lg::log_domain log_engine("engine");
@@ -89,7 +91,7 @@ bool advance_unit(unit& u, bool random_choice, bool choose_from_random)
 	}
 
 	bool always_display = false;
-	foreach (const config &mod, u.get_modification_advances())
+	BOOST_FOREACH (const config &mod, u.get_modification_advances())
 	{
 		if (utils::string_bool(mod["always_display"])) always_display = true;
 		std::string to;
@@ -270,102 +272,141 @@ void show_unit_description(const unit_type &t)
 	help::show_unit_help(*resources::screen, t.id(), t.hide_help());
 }
 
-static network::connection network_data_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num, network::statistics (*get_stats)(network::connection handle))
+} // end namespace dialogs
+
+namespace network_asio {
+
+connection::connection(network::connection connection_num)
+	: connection_num_(connection_num)
+	, done_(false)
+{}
+
+size_t connection::bytes_written()
 {
-	const size_t width = 300;
-	const size_t height = 80;
-	const size_t border = 20;
-
-	const int left = disp.w()/2 - width/2;
-	const int top  = disp.h()/2 - height/2;
-
-	const events::event_context dialog_events_context;
-
-	gui::button cancel_button(disp.video(),_("Cancel"));
-	std::vector<gui::button*> buttons_ptr(1,&cancel_button);
-
-	gui::dialog_frame frame(disp.video(), msg, gui::dialog_frame::default_style, true, &buttons_ptr);
-	SDL_Rect centered_layout = frame.layout(left,top,width,height).interior;
-	centered_layout.x = disp.w() / 2 - centered_layout.w / 2;
-	centered_layout.y = disp.h() / 2 - centered_layout.h / 2;
-	// HACK: otherwise we get an empty useless space in the dialog below the progressbar
-	centered_layout.h = height;
-	frame.layout(centered_layout);
-	frame.draw();
-
-	const SDL_Rect progress_rect = {centered_layout.x+border,centered_layout.y+border,centered_layout.w-border*2,centered_layout.h-border*2};
-	gui::progress_bar progress(disp.video());
-	progress.set_location(progress_rect);
-
-	events::raise_draw_event();
-	disp.flip();
-
-	network::statistics old_stats = get_stats(connection_num);
-
-	cfg.clear();
-	for(;;) {
-		const network::connection res = network::receive_data(cfg,connection_num,100);
-		const network::statistics stats = get_stats(connection_num);
-		if(stats.current_max != 0 && stats != old_stats) {
-			old_stats = stats;
-			progress.set_progress_percent((stats.current*100)/stats.current_max);
-			std::ostringstream stream;
-			stream << stats.current/1024 << "/" << stats.current_max/1024 << _("KB");
-			progress.set_text(stream.str());
-		}
-
-		events::raise_draw_event();
-		disp.flip();
-		events::pump();
-
-		if(res != 0) {
-			return res;
-		}
-
-
-		if(cancel_button.pressed()) {
-			return res;
-		}
+	if (connection_num_ != network::null_connection) {
+		network::statistics stat = network::get_send_stats(connection_num_);
+		return stat.current;
+	} else {
+		return 5;
 	}
 }
 
-network::connection network_send_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num)
+size_t connection::bytes_to_write()
 {
-	return network_data_dialog(disp, msg, cfg, connection_num,
-							   network::get_send_stats);
+	if (connection_num_ != network::null_connection) {
+		network::statistics stat = network::get_send_stats(connection_num_);
+		return stat.current_max;
+	} else {
+		return 100;
+	}
 }
 
-network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num)
+size_t connection::bytes_read()
 {
-	return network_data_dialog(disp, msg, cfg, connection_num,
-							   network::get_receive_stats);
+	if (connection_num_ != network::null_connection) {
+		network::statistics stat = network::get_receive_stats(connection_num_);
+		return stat.current;
+	} else {
+		return 5;
+	}
 }
 
-} // end namespace dialogs
+size_t connection::bytes_to_read()
+{
+	if (connection_num_ != network::null_connection) {
+		network::statistics stat = network::get_receive_stats(connection_num_);
+		return stat.current_max;
+	} else {
+		return 100;
+	}
+}
 
-namespace {
-
-class connect_waiter : public threading::waiter
+class connection_recv_buf : public connection
 {
 public:
-	connect_waiter(display& disp, gui::button& button) : disp_(disp), button_(button)
+	connection_recv_buf(network::connection connection_num, std::vector<char>& buf)
+		: connection(connection_num)
+		, buf_(buf)
 	{}
-	ACTION process();
 
+	void poll();
 private:
-	display& disp_;
-	gui::button& button_;
+	std::vector<char>& buf_;
 };
 
-connect_waiter::ACTION connect_waiter::process()
+void connection_recv_buf::poll()
 {
-	events::raise_draw_event();
-	disp_.flip();
-	events::pump();
-	if(button_.pressed()) {
-		return ABORT;
-	} else {
-		return WAIT;
+	network::connection sock = network::receive_data(buf_);
+	if (sock != network::null_connection) {
+		cancel();
+	}
+}
+
+class connection_recv_cfg : public connection
+{
+public:
+	connection_recv_cfg(network::connection connection_num, config& data)
+		: connection(connection_num)
+		, data_(data)
+		, res_(network::null_connection)
+	{}
+
+	void poll();
+	network::connection res() const { return res_; }
+private:
+	config& data_;
+	network::connection res_;
+};
+
+void connection_recv_cfg::poll()
+{
+	network::connection sock = network::receive_data(data_);
+	if (sock != network::null_connection) {
+		res_ = sock;
+		cancel();
+	}
+}
+
+class connection_send_buf : public connection
+{
+public:
+	connection_send_buf(network::connection connection_num, int len)
+		: connection(connection_num)
+		, len_(len)
+	{}
+
+	void poll();
+
+private:
+	int len_;
+};
+
+void connection_send_buf::poll()
+{
+	network::statistics stat = network::get_send_stats(connection_num_);
+	if (stat.current == len_) {
+		cancel();
+	}
+}
+
+class connection_open : public connection
+{
+public:
+	connection_open(threading::async_operation_ptr op)
+		: connection(network::null_connection)
+		, op_(op)
+	{}
+
+	void poll();
+private:
+	threading::async_operation_ptr op_;
+};
+
+void connection_open::poll()
+{
+	const threading::condition::WAIT_TIMEOUT_RESULT res = op_->finished_.wait_timeout(op_->get_mutex(), 20);
+	if (res == threading::condition::WAIT_OK || op_->finishedVar_) {
+		cancel();
 	}
 }
 
@@ -374,27 +415,140 @@ connect_waiter::ACTION connect_waiter::process()
 namespace dialogs
 {
 
-network::connection network_connect_dialog(display& disp, const std::string& msg, const std::string& hostname, int port)
+class connect_waiter : public threading::waiter
 {
-	const size_t width = 250;
-	const size_t height = 20;
-	const int left = disp.w()/2 - width/2;
-	const int top  = disp.h()/2 - height/2;
+public:
+	connect_waiter(display& disp, const std::string& msg) : disp_(disp), msg_(msg)
+	{}
+	ACTION process(threading::async_operation_ptr op);
 
-	const events::event_context dialog_events_context;
+private:
+	display& disp_;
+	std::string msg_;
+};
 
-	gui::button cancel_button(disp.video(),_("Cancel"));
-	std::vector<gui::button*> buttons_ptr(1,&cancel_button);
+connect_waiter::ACTION connect_waiter::process(threading::async_operation_ptr op)
+{
+	try {
+		network_asio::connection_open conn(op);
+		gui2::tnetwork_transmission dlg(conn, msg_, "");
+		dlg.show(disp_.video());
+		if (dlg.get_retval() == gui2::twindow::OK) {
+			return WAIT;
+		}
 
-	gui::dialog_frame frame(disp.video(), msg, gui::dialog_frame::default_style, true, &buttons_ptr);
-	frame.layout(left,top,width,height);
-	frame.draw();
+	} catch (network::error& e) {
+		std::string err = e.message;
+		if (e.message.empty()) {
+			err = "Unspecial error";
+		}
+		gui2::show_transient_message(disp_.video(), "", gettext(err.c_str()));
+	}
+	return ABORT;
+}
 
-	events::raise_draw_event();
-	disp.flip();
+std::string form_connect_to_title()
+{
+	std::stringstream strstr;
+	utils::string_map i18n_symbols;
+	strstr << help::tintegrate::generate_format(game_config::bbs_server.name, "green");
+	i18n_symbols["server"] = strstr.str();
 
-	connect_waiter waiter(disp,cancel_button);
-	return network::connect(hostname,port,waiter);
+	return vgettext("Connecting to $server...", i18n_symbols);
+}
+
+std::string form_send_to_title()
+{
+	std::stringstream strstr;
+	utils::string_map i18n_symbols;
+	strstr << help::tintegrate::generate_format(game_config::bbs_server.name, "green");
+	i18n_symbols["server"] = strstr.str();
+
+	return vgettext("Sending to $server...", i18n_symbols);
+}
+
+std::string form_receive_from_title()
+{
+	std::stringstream strstr;
+	utils::string_map i18n_symbols;
+	strstr << help::tintegrate::generate_format(game_config::bbs_server.name, "green");
+	i18n_symbols["server"] = strstr.str();
+
+	return vgettext("Reading from $server...", i18n_symbols);
+}
+
+network::connection network_connect_dialog(display& disp, const std::string&, const std::string& hostname, int port, bool quiet)
+{
+	network::connection conn = network::null_connection;
+
+	connect_waiter waiter(disp, form_connect_to_title());
+	try {
+		conn = network::connect(hostname, port, waiter);
+	} catch (network::error& e) {
+		std::string err = e.message;
+		if (e.message.empty()) {
+			err = "Unspecial error";
+		}
+		if (!quiet) {
+			gui2::show_transient_message(disp.video(), "", gettext(err.c_str()));
+		}
+	}
+	return conn;
+}
+
+void network_receive_dialog(display& disp, const std::string& msg, std::vector<char>& buf, network::connection connection_num)
+{
+	try {
+		network_asio::connection_recv_buf conn(connection_num, buf);
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_receive_from_title(): msg, "");
+		dlg.show(disp.video());
+
+	} catch(network::error& e) {
+		std::string err = e.message;
+		if (e.message.empty()) {
+			err = "Unspecial error";
+		}
+		gui2::show_transient_message(disp.video(), "", gettext(err.c_str()));
+	}
+}
+
+network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num)
+{
+	try {
+		network_asio::connection_recv_cfg conn(connection_num, cfg);
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_receive_from_title(): msg, "");
+		dlg.show(disp.video());
+
+		return conn.res();
+
+	} catch(network::error& e) {
+		std::string err = e.message;
+		if (e.message.empty()) {
+			err = "Unspecial error";
+		}
+		gui2::show_transient_message(disp.video(), "", gettext(err.c_str()));
+	}
+
+	return network::null_connection;
+}
+
+void network_send_dialog(display& disp, const std::string& msg, const char* buf, int len, network::connection connection_num)
+{
+	try {
+		network::send_raw_data(buf, len, connection_num);
+
+		network_asio::connection_send_buf conn(connection_num, len);
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_send_to_title(): msg, "");
+		dlg.set_track_upload(true);
+		dlg.show(disp.video());
+
+	} catch(network::error& e) {
+		std::string err = e.message;
+		if (e.message.empty()) {
+			err = "Unspecial error";
+		}
+		gui2::show_transient_message(disp.video(), "", gettext(err.c_str()));
+	}
 }
 
 } // end namespace dialogs

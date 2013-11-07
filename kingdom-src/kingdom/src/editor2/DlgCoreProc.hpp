@@ -10,11 +10,16 @@
 #include "unit_types.hpp"
 #include "terrain.hpp"
 #include "dlgbuilderproc.hpp"
+#include "animation.hpp"
+#include "multiplayer.hpp"
 
 class terrain_builder;
 
 #define core_enable_save_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_core, IDM_SAVE, fEnable)
 #define core_get_save_btn()				(ToolBar_GetState(gdmgr._htb_core, IDM_SAVE) & TBSTATE_ENABLED)
+
+#define core_enable_new_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_core, IDM_NEW, fEnable)
+#define core_enable_delete_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_core, IDM_DELETE, fEnable)
 
 extern editor editor_;
 extern const std::string null_str;
@@ -43,7 +48,7 @@ public:
 		, resistance_()
 		, zoc_(true)
 		, land_wall_(true)
-		, leader_(false)
+		, require_(unit_type::REQUIRE_NONE)
 		, advances_to_()
 		, abilities_()
 		, can_recruit_(false)
@@ -82,7 +87,7 @@ public:
 		if (max_movement_ != that.max_movement_) return false;
 		if (character_ != that.character_) return false;
 		if (land_wall_ != that.land_wall_) return false;
-		if (leader_ != that.leader_) return false;
+		if (require_ != that.require_) return false;
 		if (turn_experience_ != that.turn_experience_) return false;
 		if (heal_ != that.heal_) return false;
 		if (multi_grid_ != that.multi_grid_) return false;
@@ -119,7 +124,7 @@ public:
 	int max_movement_;
 	int character_;
 	bool land_wall_;
-	bool leader_;
+	int require_;
 	// valid on city/artifical
 	int turn_experience_;
 	int heal_;
@@ -147,6 +152,7 @@ public:
 			, specials_()
 			, damage_(1)
 			, number_(1)
+			, attack_weight_(true)
 		{}
 
 		void from_config(const attack_type& attack);
@@ -164,6 +170,7 @@ public:
 			if (specials_ != that.specials_) return false;
 			if (damage_ != that.damage_) return false;
 			if (number_ != that.number_) return false;
+			if (attack_weight_ != that.attack_weight_) return false;
 			return true;
 		}
 		bool operator!=(const tattack& that) const { return !operator==(that); }
@@ -178,6 +185,7 @@ public:
 		std::set<std::string> specials_;
 		int damage_;
 		int number_;
+		bool attack_weight_;
 	};
 
 	tunit_type(const std::string& id = null_str);
@@ -191,7 +199,7 @@ public:
 	void update_to_ui_utype_edit_type(HWND hdlgP) const;
 	void update_to_ui_mtype_edit(HWND hdlgP) const;
 	void update_to_ui_utype_type(HWND hdlgP) const;
-	void generate() const;
+	void generate(bool with_anim) const;
 
 	bool has_halo() const;
 
@@ -351,6 +359,7 @@ public:
 		, city_(HEROS_INVALID_NUMBER)
 		, freshes_()
 		, wanderes_()
+		, towers_()
 	{}
 
 	bool operator==(const tfaction_& that) const
@@ -359,6 +368,7 @@ public:
 		if (city_ != that.city_) return false;
 		if (freshes_ != that.freshes_) return false;
 		if (wanderes_ != that.wanderes_) return false;
+		if (towers_ != that.towers_) return false;
 		return true;
 	}
 	bool operator!=(const tfaction_& that) const { return !operator==(that); }
@@ -368,6 +378,7 @@ public:
 	int city_;
 	std::set<int> freshes_;
 	std::set<int> wanderes_;
+	std::set<int> towers_;
 };
 
 class tfaction: public tfaction_
@@ -391,10 +402,216 @@ public:
 	tfaction_ faction_from_cfg_;
 };
 
+class tformation_
+{
+public:
+	tformation_() 
+		: leader_(HEROS_INVALID_NUMBER)
+		, city_(HEROS_INVALID_NUMBER)
+		, freshes_()
+		, wanderes_()
+	{}
+
+	bool operator==(const tformation_& that) const
+	{
+		if (leader_ != that.leader_) return false;
+		if (city_ != that.city_) return false;
+		if (freshes_ != that.freshes_) return false;
+		if (wanderes_ != that.wanderes_) return false;
+		return true;
+	}
+	bool operator!=(const tformation_& that) const { return !operator==(that); }
+
+public:
+	int leader_;
+	int city_;
+	std::set<int> freshes_;
+	std::set<int> wanderes_;
+};
+
+class tformation: public tformation_
+{
+public:
+	tformation()
+		: tformation_()
+		, formation_from_cfg_()
+	{}
+
+	void from_config(const config& cfg);
+	void from_ui(HWND hdlgP);
+	void from_ui_formation_edit(HWND hdlgP);
+	void update_to_ui_formation_edit(HWND hdlgP) const;
+	void update_to_ui_row(HWND hdlgP) const;
+	std::string generate() const;
+
+	bool dirty() const;
+
+public:
+	tformation_ formation_from_cfg_;
+};
+
+class tfeature_
+{
+public:
+	tfeature_()
+		: index_(-1)
+		, items_()
+	{}
+
+	bool operator==(const tfeature_& that) const
+	{
+		if (index_ != that.index_) return false;
+		if (items_ != that.items_) return false;
+		return true;
+	}
+	bool operator!=(const tfeature_& that) const { return !operator==(that); }
+
+public:
+	int index_;
+	std::set<int> items_;
+};
+
+class tfeature: public tfeature_
+{
+public:
+	tfeature()
+		: tfeature_()
+		, feature_from_cfg_()
+	{}
+
+	void from_config(int index, const std::vector<int>& items);
+	void from_ui(HWND hdlgP);
+	void from_ui_feature_edit(HWND hdlgP);
+	void update_to_ui_feature_edit(HWND hdlgP) const;
+	void update_to_ui_row(HWND hdlgP) const;
+	std::string generate(const std::string& prefix) const;
+
+	bool dirty() const;
+
+public:
+	tfeature_ feature_from_cfg_;
+};
+
+class tnoble_
+{
+public:
+	tnoble_()
+		: id_()
+		, level_(0)
+		, leader_(false)
+		, formation_(false)
+	{
+		memset(&condition_, 0, sizeof(tnoble::tcondition));
+		memset(&effect_, 0, sizeof(hblock));
+	}
+
+	bool operator==(const tnoble_& that) const
+	{
+		if (id_ != that.id_) return false;
+		if (leader_ != that.leader_) return false;
+		if (formation_ != that.formation_) return false;
+		if (condition_.city != that.condition_.city) return false;
+		if (condition_.meritorious != that.condition_.meritorious) return false;
+		if (effect_.leadership != that.effect_.leadership) return false;
+		if (effect_.force != that.effect_.force) return false;
+		if (effect_.intellect != that.effect_.intellect) return false;
+		if (effect_.politics != that.effect_.politics) return false;
+		if (effect_.charm != that.effect_.charm) return false;
+		return true;
+	}
+	bool operator!=(const tnoble_& that) const { return !operator==(that); }
+
+public:
+	std::string id_;
+	int level_;
+	bool leader_;
+	bool formation_;
+	tnoble::tcondition condition_;
+	hblock effect_;
+};
+
+class tnoble2: public tnoble_
+{
+public:
+	tnoble2()
+		: tnoble_()
+		, noble_from_cfg_()
+	{}
+
+	void from_config(const tnoble& nbl);
+	void from_ui(HWND hdlgP);
+	void from_ui_noble_edit(HWND hdlgP);
+	void update_to_ui_noble_edit(HWND hdlgP) const;
+	std::string generate(const std::string& prefix) const;
+
+	bool dirty() const;
+
+public:
+	tnoble_ noble_from_cfg_;
+};
+
+class tconfig_
+{
+public:
+	tconfig_() 
+		: textdomain_("wesnoth")
+		, bbs_server_()
+	{}
+
+	bool operator==(const tconfig_& that) const
+	{
+		if (bbs_server_ != that.bbs_server_) return false;
+		return true;
+	}
+	bool operator!=(const tconfig_& that) const { return !operator==(that); }
+
+	void clear()
+	{
+		bbs_server_.clear();
+	}
+
+public:
+	std::string textdomain_;
+	config bbs_server_;
+};
+
+class tconfig: public tconfig_
+{
+public:
+	tconfig()
+		: tconfig_()
+		, config_from_cfg_()
+	{}
+
+	void from_config(const config& cfg);
+	void update_to_ui_config(HWND hdlgP);
+	void from_ui(HWND hdlgP);
+	void from_ui_config_edit(HWND hdlgP);
+	void update_to_ui_config_edit(HWND hdlgP) const;
+	void update_to_ui_row(HWND hdlgP) const;
+	std::string generate() const;
+
+	void clear()
+	{
+		config_from_cfg_.clear();
+	}
+
+	bool dirty() const;
+
+	enum {BIT_BBSSERVER, BIT_FIRSTSCENARIO, BIT_ICON, 
+		BIT_IMAGE, BIT_MODE};
+	void set_dirty(int bit, bool set);
+public:
+
+	uint32_t dirty_;
+	tconfig_ config_from_cfg_;
+};
+
 class tcore
 {
 public:
-	enum {UNIT_TYPE = 0, TACTIC, CHARACTER, DECREE, TECH, TREASURE, TERRAIN, BUILDER, FACTION, SECTIONS};
+	enum {CONFIG = 0, UNIT_TYPE, FEATURE, TACTIC, CHARACTER, DECREE, TECH, FORMATION, NOBLE, TREASURE, 
+		TERRAIN, BUILDER, FACTION, ANIM, MULTIPLAYER, SECTIONS};
 
 	static std::map<int, std::string> name_map;
 	static std::map<int, int> idd_map;
@@ -405,14 +622,20 @@ public:
 
 	HWND init_toolbar(HINSTANCE hinst, HWND hdlgP);
 	void refresh_utype(HWND hdlgP);
+	void refresh_feature(HWND hdlgP);
 	void refresh_tactic(HWND hdlgP);
 	void refresh_character(HWND hdlgP);
 	void refresh_decree(HWND hdlgP);
 	void refresh_technology(HWND hdlgP);
+	void refresh_formation(HWND hdlgP);
+	void refresh_noble(HWND hdlgP);
 	void refresh_treasure(HWND hdlgP);
 	void refresh_terrain(HWND hdlgP);
 	void refresh_builder(HWND hdlgP);
 	void refresh_faction(HWND hdlgP);
+	void refresh_anim(HWND hdlgP);
+	void refresh_multiplayer(HWND hdlgP);
+	void refresh_config(HWND hdlgP);
 
 	void init_cache();
 	void switch_section(HWND hdlgP, int to, bool init);
@@ -428,13 +651,13 @@ public:
 
 	bool types_dirty() const;
 
-	enum {BIT_UTYPE = 0, BIT_CHARACTER, BIT_TREASURE, BIT_TERRAIN, BIT_BUILDER, BIT_FACTION};
+	enum {BIT_CONFIG = 0, BIT_UTYPE, BIT_FEATURE, BIT_CHARACTER, BIT_FORMATION, BIT_NOBLE, BIT_TREASURE, BIT_TERRAIN, BIT_BUILDER, BIT_FACTION, BIT_ANIM, BIT_MULTIPLAYER};
 	void set_dirty(int bit, bool set);
 	bool bit_dirty(int bit) const;
 
 	bool save_if_dirty();
 	void save(HWND hdlgP);
-	void generate_utypes() const;
+	void generate_utypes(bool with_anim) const;
 
 	// section: treasure
 	void update_to_ui_treasure(HWND hdlgP);
@@ -456,16 +679,48 @@ public:
 	std::string terrain_graphics_tpl(bool absolute = false) const;
 	std::string terrain_graphics_cfg(bool absolute = false) const;
 	void generate_terrain_graphics_cfg() const;
-		
+	
+	// section: feature
+	void update_to_ui_feature(HWND hdlgP);
+	bool features_dirty() const;
+
+	// section: formation
+	void update_to_ui_formation(HWND hdlgP);
+	bool formations_dirty() const;
+
+	// section: noble
+	void update_to_ui_noble(HWND hdlgP);
+	bool nobles_dirty() const;
+
 	// section: faction
 	void update_to_ui_faction(HWND hdlgP, int clicked_faction);
 	bool factions_dirty() const;
 	std::string factions_cfg(bool absolute = false) const;
 	void generate_factions_cfg() const;
+
+	// section: anim
+	void update_to_ui_anim(HWND hdlgP);
+	bool anims_dirty() const;
+	std::string anims_cfg(bool absolute = false) const;
+	void generate_anims_cfg() const;
+
+	// game config
+	void update_to_ui_config(HWND hdlgP);
+	bool config_dirty() const;
+	std::string config_cfg(bool absolute = false) const;
+	void generate_config_cfg() const;
+
+	// section: multiplayer
+	void update_to_ui_multiplayer(HWND hdlgP);
+	bool multiplayer_dirty() const;
 	
 private:
 	std::string units_internal(bool absolute = false) const;
-	void generate_units_internal() const;
+	void generate_units_internal();
+
+	std::string noble_cfg(bool absolute = false) const;
+	void generate_noble_cfg() const;
+
 	std::string terrain_cfg(bool absolute = false) const;
 	void generate_terrain_cfg() const;
 
@@ -496,6 +751,23 @@ public:
 	std::vector<tfaction> factions_from_cfg_;
 	std::vector<tfaction> factions_updating_;
 
+	std::vector<tfeature> features_from_cfg_;
+	std::vector<tfeature> features_updating_;
+
+	std::vector<tformation> formations_from_cfg_;
+	std::vector<tformation> formations_updating_;
+
+	std::vector<tnoble2> nobles_from_cfg_;
+	std::vector<tnoble2> nobles_updating_;
+
+	std::vector<tanim> anims_from_cfg_;
+	std::vector<tanim> anims_updating_;
+
+	tmultiplayer multiplayer_;
+
+	tconfig config_from_cfg_;
+	tconfig config_updating_;
+
 	HTREEITEM htvroot_utype_;
 	HTREEITEM htvroot_technology_;
 
@@ -511,6 +783,8 @@ public:
 	HTREEITEM htvroot_technology_atom_;
 	HTREEITEM htvroot_technology_complex_;
 
+	HTREEITEM htvroot_formation_;
+
 	uint32_t dirty_;
 };
 
@@ -519,6 +793,9 @@ namespace ns {
 	extern const std::string default_utype_id;
 	extern const std::string default_attack_id;
 	extern const std::string default_attack_icon;
+
+	extern LPARAM clicked_param;
+	extern HTREEITEM clicked_htvi;
 
 	extern tcore core;
 	extern tunit_type utype;
@@ -536,14 +813,37 @@ namespace ns {
 	extern int clicked_hero;
 }
 
+BOOL CALLBACK DlgConfigProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgUTypeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgFeatureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgTacticProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgCharacterProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgDecreeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgTechnologyProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgFormationProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgNobleProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgTreasureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgTerrainProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgBuilderProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgFactionProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgAnimProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgMultiplayerProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+class ttechnology_lock
+{
+public:
+	ttechnology_lock(int explorer)
+		: explorer_technology_(explorer_technology::explorer)
+	{
+		explorer_technology::explorer = explorer;
+	}
+	~ttechnology_lock()
+	{
+		explorer_technology::explorer = explorer_technology_;
+	}
+
+private:
+	bool explorer_technology_;
+};
 
 #endif // __DLGCOREPROC_HPP_

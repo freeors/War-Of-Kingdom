@@ -15,7 +15,6 @@
 #include "playturn.hpp"
 
 #include "construct_dialog.hpp"
-#include "foreach.hpp"
 #include "game_display.hpp"
 #include "game_end_exceptions.hpp"
 #include "game_preferences.hpp"
@@ -28,6 +27,7 @@
 #include "rng.hpp"
 #include "formula_string_utils.hpp"
 
+#include <boost/foreach.hpp>
 #include <ctime>
 
 static lg::log_domain log_network("network");
@@ -100,11 +100,11 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 				preferences::message_bell());
 	}
 
-	foreach (const config &ob, cfg.child_range("observer")) {
+	BOOST_FOREACH (const config &ob, cfg.child_range("observer")) {
 		resources::screen->add_observer(ob["name"]);
 	}
 
-	foreach (const config &ob, cfg.child_range("observer_quit")) {
+	BOOST_FOREACH (const config &ob, cfg.child_range("observer_quit")) {
 		resources::screen->remove_observer(ob["name"]);
 	}
 
@@ -120,7 +120,7 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 		network::send_data_all_except(cfg, from);
 	}
 
-	foreach (const config &t, turns)
+	BOOST_FOREACH (const config &t, turns)
 	{
 		if(turn_end == false) {
 			/** @todo FIXME: Check what commands we execute when it's our turn! */
@@ -161,11 +161,11 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 				}
 				tm.make_human();
 			} else if (controller == "human_ai" && !tm.is_human_ai()) {
-				tm.make_human_ai();
+				tm.make_human();
 			} else if (controller == "network" && !tm.is_network_human()) {
 				tm.make_network();
 			} else if (controller == "network_ai" && !tm.is_network_ai()) {
-				tm.make_network_ai();
+				tm.make_network();
 			} else if (controller == "ai" && !tm.is_ai()) {
 				tm.make_ai();
 			}
@@ -212,11 +212,10 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 		{
 			utils::string_map t_vars;
 			options.push_back(_("Replace with AI"));
-			options.push_back(_("Replace with local player"));
 			options.push_back(_("Abort game"));
 
 			//get all observers in as options to transfer control
-			foreach (const std::string &ob, resources::screen->observers())
+			BOOST_FOREACH (const std::string &ob, resources::screen->observers())
 			{
 				t_vars["player"] = ob;
 				options.push_back(vgettext("Replace with $player", t_vars));
@@ -224,7 +223,7 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 			}
 
 			//get all allies in as options to transfer control
-			foreach (team &t, *resources::teams)
+			BOOST_FOREACH (team &t, *resources::teams)
 			{
 				if (!t.is_enemy(side) && !t.is_human() && !t.is_ai() && !t.is_empty()
 					&& t.current_player() != tm.current_player())
@@ -251,21 +250,16 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 		//an AI.
 		switch(action) {
 			case 0:
-				tm.make_human_ai();
-				tm.set_current_player("ai" + side_str);
-				change_controller(side_str, "human_ai");
-				return restart?PROCESS_RESTART_TURN:PROCESS_CONTINUE;
+				tm.change_controller(team::team_info::AI);
+				tm.set_current_player("");
+				return restart? PROCESS_RESTART_TURN:PROCESS_CONTINUE;
 
 			case 1:
-				tm.make_human();
-				tm.set_current_player("human" + side_str);
-				return restart?PROCESS_RESTART_TURN:PROCESS_CONTINUE;
-			case 2:
 				//The user pressed "end game". Don't throw a network error here or he will get
 				//thrown back to the title screen.
 				throw end_level_exception(QUIT);
 			default:
-				if (action > 2) {
+				if (action > 1) {
 
 					{
 						// Server thinks this side is ours now so in case of error transferring side we have to make local state to same as what server thinks it is.
@@ -273,15 +267,15 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 						tm.set_current_player("human"+side_str);
 					}
 
-					const size_t index = static_cast<size_t>(action - 3);
+					const size_t index = static_cast<size_t>(action - 2);
 					if (index < observers.size()) {
 						change_side_controller(side_str, observers[index], false /*not our own side*/);
 					} else if (index < options.size() - 1) {
 						size_t i = index - observers.size();
 						change_side_controller(side_str, allies[i]->current_player(), false /*not our own side*/);
 					} else {
-						tm.make_human_ai();
-						tm.set_current_player("ai"+side_str);
+						tm.make_ai();
+						tm.set_current_player("");
 						change_controller(side_str, "human_ai");
 					}
 					return restart?PROCESS_RESTART_TURN:PROCESS_CONTINUE;

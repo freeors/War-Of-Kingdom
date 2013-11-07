@@ -37,10 +37,14 @@ namespace boost { namespace spirit
 ///////////////////////////////////////////////////////////////////////////////
 namespace boost { namespace spirit { namespace qi
 {
+#ifndef BOOST_SPIRIT_NO_PREDEFINED_TERMINALS
     using spirit::stream;
     using spirit::wstream;
+#endif
+    using spirit::stream_type;
+    using spirit::wstream_type;
 
-    template <typename Char = char, typename T = spirit::hold_any>
+    template <typename Char = char, typename T = spirit::basic_hold_any<char> >
     struct stream_parser
       : primitive_parser<stream_parser<Char, T> >
     {
@@ -54,15 +58,24 @@ namespace boost { namespace spirit { namespace qi
           , typename Skipper, typename Attribute>
         bool parse(Iterator& first, Iterator const& last
           , Context& /*context*/, Skipper const& skipper
-          , Attribute& attr) const
+          , Attribute& attr_) const
         {
             typedef qi::detail::iterator_source<Iterator> source_device;
             typedef boost::iostreams::stream<source_device> instream;
 
             qi::skip_over(first, last, skipper);
-            instream in(first, last);
-            in >> attr;                       // use existing operator>>()
-            return in.good() || in.eof();
+
+            instream in(first, last);           // copies 'first'
+            in >> attr_;                        // use existing operator>>()
+
+            // advance the iterator if everything is ok
+            if (in) {
+                std::streamsize pos = in.tellg();
+                std::advance(first, pos);
+                return true;
+            }
+
+            return false;
         }
 
         template <typename Context>
