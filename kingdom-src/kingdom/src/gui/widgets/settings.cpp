@@ -597,7 +597,7 @@ tresolution_definition_ptr get_control(
 			itor != end;
 			++itor) {
 
-		if(settings::screen_width <= (**itor).window_width &&
+		if(settings::screen_width <= (**itor).window_width ||
 				settings::screen_height <= (**itor).window_height) {
 
 			return *itor;

@@ -61,9 +61,9 @@ class artifical : public unit, public tartifical_
 {
 public:
 	artifical(const artifical& cobj);
-	artifical(const config &cfg);
+	artifical(game_state& state, const config &cfg);
 	artifical(const uint8_t* mem);
-	artifical(unit_map& units, hero_map& heros, std::vector<team>& teams, type_heros_pair& t, int cityno, bool use_traits);
+	artifical(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, type_heros_pair& t, int cityno, bool use_traits);
 	~artifical();
 
 	const SDL_Rect& alert_rect() const { return alert_rect_; }
@@ -112,9 +112,9 @@ public:
 	// 一支野外部队/建筑物将归属本城市
 	void unit_belong_to(unit* troop, bool loyalty = true, bool to_recorder = false);
 	// 一支城内部队出城
-	void troop_go_out(const int index_of_army, bool del = true);
+	void troop_go_out(const unit& u, bool del = true);
 
-	void commoner_go_out(int index, bool del = true);
+	void commoner_go_out(const unit& u, bool del);
 
 	// add unit to field
 	void field_troops_add(unit* troop);
@@ -182,13 +182,14 @@ public:
 	//
 	/** draw a unit.  */
 	void redraw_unit();
-	bool new_turn();
+	bool new_turn(play_controller& controller, int random);
 	void advance_to(const unit_type *t, bool use_traits = false, game_state *state = 0);
 
 	void fill_ai_hero(std::set<int>& candidate, int count, int& random);
+	void fill_human_hero(const hero& leader, std::set<int>& candidate, int fill_freshes, int fill_wanders, int& random);
 	hero* select_leader(int random) const;
 
-	void read(const config& cfg, bool use_traits=true, game_state* state = 0);
+	void read(game_state& state, const config& cfg, bool use_traits=true);
 	void write(config& cfg) const;
 
 	void set_location(const map_location &loc);

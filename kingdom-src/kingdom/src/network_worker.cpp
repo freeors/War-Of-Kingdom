@@ -134,7 +134,7 @@ struct buffer {
 };
 
 
-bool managed = false, raw_data_only = false, xmit_http_data = false;
+bool managed = false, raw_data_only = false;
 typedef std::vector< buffer* > buffer_set;
 buffer_set outgoing_bufs[NUM_SHARDS];
 
@@ -199,6 +199,8 @@ bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 		bool update_stats=false, int idle_timeout_ms=30000,
 		int total_timeout_ms=300000, int* ret_size = NULL)
 {
+	bool xmit_http_data = network::get_connection_xmit_http_data(s);
+
 #if !defined(USE_POLL) && !defined(USE_SELECT)
 	int startTicks = SDL_GetTicks();
 	int time_used = 0;
@@ -368,6 +370,8 @@ static SOCKET_STATE send_buffer(TCPsocket sock, std::vector<char>& buf, int in_s
 	if (in_size != -1)
 		size = in_size;
 	int send_len = 0;
+
+	bool xmit_http_data = network::get_connection_xmit_http_data(sock);
 
 	if (!raw_data_only || xmit_http_data)
 	{
@@ -617,7 +621,6 @@ static SOCKET_STATE receive_buf(TCPsocket sock, std::vector<char>& buf)
 		return SOCKET_ERRORED;
 	}
 
-	#undef SDLNet_Read32
 	const int len = SDLNet_Read32(reinterpret_cast<void*>(num_buf));
 
 	if(len < 1 || len > 100000000) {
@@ -801,6 +804,7 @@ static int process_queue(void* shard_num)
 		}
 
 		assert(sock);
+		bool xmit_http_data = network::get_connection_xmit_http_data(sock);
 
 		DBG_NW << "thread found a buffer...\n";
 
@@ -829,7 +833,6 @@ static int process_queue(void* shard_num)
 				result = receive_http_buf(sock,buf);
 			}
 		}
-
 
 		if(result != SOCKET_READY || buf.empty())
 		{
@@ -960,11 +963,6 @@ void set_raw_data_only()
 	raw_data_only = true;
 }
 
-void set_http_data(bool set)
-{
-	xmit_http_data = set;
-}
-
 void set_use_system_sendfile(bool use)
 {
 	network_use_system_sendfile = use;
@@ -989,11 +987,14 @@ TCPsocket get_received_data(TCPsocket sock, config& cfg, network::bandwidth_in_p
 	assert(!raw_data_only);
 	const threading::lock lock_received(*received_mutex);
 	received_queue::iterator itor = received_data_queue.begin();
-	if(sock != NULL) {
-		for(; itor != received_data_queue.end(); ++itor) {
-			if((*itor)->sock == sock) {
+	for(; itor != received_data_queue.end(); ++itor) {
+		const TCPsocket res = (*itor)->sock;
+		if (sock != NULL) {
+			if (res == sock) {
 				break;
 			}
+		} else if (!network::get_connection_xmit_http_data(res)) {
+			break;
 		}
 	}
 
@@ -1019,14 +1020,25 @@ TCPsocket get_received_data(TCPsocket sock, config& cfg, network::bandwidth_in_p
 
 TCPsocket get_received_data(std::vector<char>& out)
 {
-	assert(raw_data_only || xmit_http_data);
 	const threading::lock lock_received(*received_mutex);
 	if(received_data_queue.empty()) {
 		return NULL;
 	}
+	received_queue::iterator itor = received_data_queue.begin();
+	if (!raw_data_only) {
+		for(; itor != received_data_queue.end(); ++itor) {
+			const TCPsocket res = (*itor)->sock;
+			if (network::get_connection_xmit_http_data(res)) {
+				break;
+			}
+		}
+	}
+	if (itor == received_data_queue.end()) {
+		return NULL;
+	}
 
-	buffer* buf = received_data_queue.front();
-	received_data_queue.pop_front();
+	buffer* buf = *itor;
+	received_data_queue.erase(itor);
 	out.swap(buf->raw_buffer);
 	const TCPsocket res = buf->sock;
 	delete buf;

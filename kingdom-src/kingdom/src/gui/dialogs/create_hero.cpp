@@ -108,11 +108,10 @@ namespace gui2 {
 
 REGISTER_DIALOG(create_hero)
 
-tcreate_hero::tcreate_hero(game_display& gui, hero_map& heros, hero& player_hero)
-	: gui_(gui)
+tcreate_hero::tcreate_hero(game_display& disp, hero_map& heros)
+	: disp_(disp)
 	, heros_(heros)
-	, h_(player_hero)
-	, player_hero_(player_hero)
+	, h_(group.leader())
 	, male_number_(-1)
 	, female_number_(-1)
 {
@@ -128,15 +127,10 @@ void tcreate_hero::post_build(CVideo& video, twindow& window)
 {
 }
 
-const size_t max_login_size = 20;
-
-void tcreate_hero::set_text_box_int(twindow& window, const std::string& id, int value, int maximum_length)
+void tcreate_hero::set_button_int(twindow& window, const std::string& id, int value)
 {
-	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
-	widget->set_value(lexical_cast<std::string>(value));
-	if (maximum_length != -1) {
-		widget->set_maximum_length(maximum_length);
-	}
+	tbutton* widget = find_widget<tbutton>(&window, id, false, true);
+	widget->set_label(str_cast(value));
 }
 
 static int nb_catalogs = 8;
@@ -151,24 +145,42 @@ static const int catalog_items[] = {
 	374
 };
 
+const char* field_ids[] = {
+	"leadership",
+	"force",
+	"intellect",
+	"spirit",
+	"charm"
+};
+
+void refresh_username(twindow& window)
+{
+	std::stringstream strstr;
+
+	tcontrol* control = find_widget<tcontrol>(&window, "username_png", false, true);
+	if (!preferences::vip2()) {
+		control->set_label(help::tintegrate::generate_img("misc/username.png"));
+	} else {
+		int day = 30;
+		if (preferences::vip_expire() >= time(NULL)) {
+			day = (preferences::vip_expire() - time(NULL)) / (24 * 3600);
+		}
+		strstr.str("");
+		strstr << help::tintegrate::generate_img("misc/username-vip.png") << "(" << help::tintegrate::generate_format(day, "green") << ")";
+		control->set_label(strstr.str());
+	}
+}
+
 void tcreate_hero::pre_show(CVideo& video, twindow& window)
 {
-	std::stringstream str;
+	std::stringstream strstr;
 
 	window.set_enter_disabled(true);
 	window.set_escape_disabled(true);
 
-	tcontrol* control = find_widget<tcontrol>(&window, "username_png", false, true);
-	if (!preferences::inapp_purchased(game_config::INAPP_VIP)) {
-		control->set_label("misc/username.png");
-	} else {
-		control->set_label("misc/username-vip.png");
-	}
+	refresh_username(window);
 
-	tcontrol* portrait = find_widget<tcontrol>(&window, "portrait", false, true);
-	portrait->set_label(h_.image(true));
-	tcontrol* gender_button = find_widget<tcontrol>(&window, "gender", false, true);
-	gender_button->set_label(hero::gender_str(h_.gender_));
+	refresh_resi_point(window);
 	
 	/**** Set the version number ****/
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "name", false, true);
@@ -176,20 +188,27 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 	user_widget->set_active(false);
 
 	user_widget = find_widget<ttext_box>(&window, "surname", false, true);
-	user_widget->set_value(h_.surname());
 	const int max_surname_size = 5;
 	user_widget->set_maximum_length(5);
 
-	set_text_box_int(window, "leadership", fxptoi9(h_.leadership_), 3);
-	set_text_box_int(window, "force", fxptoi9(h_.force_), 3);
-	set_text_box_int(window, "intellect", fxptoi9(h_.intellect_), 3);
-	set_text_box_int(window, "politics", fxptoi9(h_.politics_), 3);
-	set_text_box_int(window, "charm", fxptoi9(h_.charm_), 3);
+	tcontrol* control;
+	for (int i = 0; i < sizeof(field_ids) / sizeof(field_ids[0]); i ++) {
+		control = find_widget<tbutton>(&window, field_ids[i], false, false);
+		if (control) {
+			connect_signal_mouse_left_click(
+				*control
+				, boost::bind(
+				&tcreate_hero::field
+				, this
+				, boost::ref(window)
+				, i));
+		}
+	}
 
 	for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
-		str.str("");
-		str << "arms" << i;
-		control = find_widget<tbutton>(&window, str.str(), false, false);
+		strstr.str("");
+		strstr << "arms" << i;
+		control = find_widget<tbutton>(&window, strstr.str(), false, false);
 		if (control) {
 			connect_signal_mouse_left_click(
 				*control
@@ -200,34 +219,20 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 				, (int)hero::ARMS
 				, i));
 		}
-
-		str.str("");
-		str << "text_arms" << i;
-		control = find_widget<tcontrol>(&window, str.str(), false, false);
-		if (control) {
-			control->set_label(hero::adaptability_str2(h_.arms_[i]));
-		}
 	}
 	for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
-		str.str("");
-		str << "skill" << i;
-		control = find_widget<tbutton>(&window, str.str(), false, false);
+		strstr.str("");
+		strstr << "skill" << i;
+		control = find_widget<tbutton>(&window, strstr.str(), false, false);
 		if (control) {
 			connect_signal_mouse_left_click(
-				find_widget<tbutton>(&window, str.str(), false)
+				find_widget<tbutton>(&window, strstr.str(), false)
 				, boost::bind(
 				&tcreate_hero::adaptability
 				, this
 				, boost::ref(window)
 				, (int)hero::SKILL
 				, i));
-		}
-
-		str.str("");
-		str << "text_skill" << i;
-		control = find_widget<tcontrol>(&window, str.str(), false, false);
-		if (control) {
-			control->set_label(hero::adaptability_str2(h_.skill_[i]));
 		}
 	}
 
@@ -239,7 +244,6 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		, this
 		, boost::ref(window)
 		, false));
-	button->set_label(hero::feature_str(h_.feature_));
 
 	button = find_widget<tbutton>(&window, "side_feature", false, true);
 	connect_signal_mouse_left_click(
@@ -249,7 +253,6 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		, this
 		, boost::ref(window)
 		, true));
-	button->set_label(hero::feature_str(h_.side_feature_));
 
 	button = find_widget<tbutton>(&window, "tactic", false, true);
 	connect_signal_mouse_left_click(
@@ -258,11 +261,14 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		&tcreate_hero::tactic
 		, this
 		, boost::ref(window)));
-	if (h_.tactic_ != HEROS_NO_TACTIC) {
-		button->set_label(unit_types.tactic(h_.tactic_).name());
-	} else {
-		button->set_label("");
-	}
+
+	button = find_widget<tbutton>(&window, "utype", false, true);
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "utype", false)
+		, boost::bind(
+		&tcreate_hero::utype
+		, this
+		, boost::ref(window)));
 
 	button = find_widget<tbutton>(&window, "character", false, true);
 	connect_signal_mouse_left_click(
@@ -271,11 +277,6 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		&tcreate_hero::character
 		, this
 		, boost::ref(window)));
-	if (h_.character_ != HEROS_NO_CHARACTER) {
-		button->set_label(unit_types.character(h_.character_).name());
-	} else {
-		button->set_label("");
-	}
 
 	button = find_widget<tbutton>(&window, "catalog", false, true);
 	connect_signal_mouse_left_click(
@@ -284,20 +285,6 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		&tcreate_hero::catalog
 		, this
 		, boost::ref(window)));
-	str.str("");
-	for (int i = 0; i < nb_catalogs; i ++) {
-		hero& h = heros_[catalog_items[i]];
-		if (h_.base_catalog_ == h.base_catalog_) {
-			str << h.name();
-			break;
-		}
-	}
-	if (str.str().empty()) {
-		hero& h = heros_[catalog_items[0]];
-		h_.base_catalog_ = h.base_catalog_;
-		str << h.name();
-	}
-	button->set_label(str.str());
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "regenerate", false)
@@ -321,55 +308,131 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		&tcreate_hero::account
 		, this
 		, boost::ref(window)));
-	str.str("");
-	str << help::tintegrate::generate_img("misc/config.png~SCALE(24, 24)");
-	find_widget<tbutton>(&window, "account", false).set_label(str.str());
+	strstr.str("");
+	strstr << help::tintegrate::generate_img("misc/config.png~SCALE(24, 24)");
+	find_widget<tbutton>(&window, "account", false).set_label(strstr.str());
 
 	connect_signal_mouse_left_click(
-		find_widget<tbutton>(&window, "synchronize", false)
+		find_widget<tbutton>(&window, "avatar", false)
 		, boost::bind(
 		&tcreate_hero::synchronize
 		, this
 		, boost::ref(window)));
-	str.str("");
-	str << help::tintegrate::generate_format(_("Synchronize"), "blue");
-	find_widget<tbutton>(&window, "synchronize", false).set_label(str.str());
+	strstr.str("");
+	strstr << help::tintegrate::generate_format(_("Avatar"), "blue");
+	find_widget<tbutton>(&window, "avatar", false).set_label(strstr.str());
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "create", false)
 		, boost::bind(
 		&tcreate_hero::create
 		, this
-		, boost::ref(window)
-		, true));
+		, boost::ref(window)));
+	strstr.str("");
+	strstr << help::tintegrate::generate_format(_("OK"), "blue");
+	find_widget<tbutton>(&window, "create", false).set_label(strstr.str());
+
+	refresh_field_ui(window);
 }
 
 void tcreate_hero::post_show(twindow& window)
 {
 }
 
+void tcreate_hero::refresh_resi_point(twindow& window) const
+{
+	int used_point = h_.calculate_used_point();
+	int resi_point = group.calculate_total_point() - used_point;
+
+	std::string color;
+	if (resi_point > 0) {
+		color = "green";
+	} else if (resi_point == 0) {
+		color = "yellow";
+	} else {
+		color = "red";
+	}
+
+	const int noble = preferences::noble();
+	std::stringstream strstr;
+	strstr.str("");
+	strstr << help::tintegrate::generate_format(unit_types.leader_noble(noble).name());
+	strstr << help::tintegrate::generate_format(resi_point, color);
+
+	tcontrol* control = find_widget<tcontrol>(&window, "point", false, true);
+	control->set_label(strstr.str());
+
+	control = find_widget<tcontrol>(&window, "create", false, true);
+	control->set_active(resi_point >= 0);
+}
+
 void tcreate_hero::regenerate(twindow& window)
 {
 	// stronger
-	h_.leadership_ = ftofxp9(100);
-	h_.force_ = ftofxp9(100);
-	h_.intellect_ = ftofxp9(100);
-	h_.politics_ = ftofxp9(100);
-	h_.charm_ = ftofxp9(100);
+	h_.leadership_ = ftofxp9(90);
+	h_.force_ = ftofxp9(60);
+	h_.intellect_ = ftofxp9(60);
+	h_.spirit_ = ftofxp9(50);
+	h_.charm_ = ftofxp9(95);
 
 	for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
-		h_.arms_[i] = ftofxp12(3);
+		if (i == hero_arms_t1) {
+			h_.arms_[i] = ftofxp12(3);
+		} else if (i == hero_arms_t4) {
+			h_.arms_[i] = ftofxp12(2);
+		} else {
+			h_.arms_[i] = ftofxp12(0);
+		}
 	}
 	for (int i = 0; i < HEROS_MAX_SKILL; i ++) {
-		h_.skill_[i] = ftofxp12(3);
+		if (i == hero_skill_encourage) {
+			h_.skill_[i] = ftofxp12(3);
+		} else if (i == hero_skill_formation) {
+			h_.skill_[i] = ftofxp12(2);
+		} else {
+			h_.skill_[i] = ftofxp12(0);
+		}
 	}
 
-	// refresh to ui
-	set_text_box_int(window, "leadership", fxptoi9(h_.leadership_));
-	set_text_box_int(window, "force", fxptoi9(h_.force_), 3);
-	set_text_box_int(window, "intellect", fxptoi9(h_.intellect_));
-	set_text_box_int(window, "politics", fxptoi9(h_.politics_));
-	set_text_box_int(window, "charm", fxptoi9(h_.charm_));
+	if (h_.feature_ == HEROS_NO_FEATURE) {
+		h_.feature_ = 82;
+	}
+	if (h_.side_feature_ == HEROS_NO_FEATURE) {
+		h_.side_feature_ = hero_feature_arms;
+	}
+	if (h_.tactic_ == HEROS_NO_TACTIC) {
+		h_.tactic_ = ttactic::min_complex_index + 2;
+	}
+	if (h_.utype_ == HEROS_NO_UTYPE) {
+		h_.utype_ = 0;
+	}
+	if (h_.character_ == HEROS_NO_CHARACTER) {
+		h_.character_ = 9;
+	}
+
+	refresh_resi_point(window);
+	refresh_field_ui(window);
+
+	// portrait dirty
+	window.invalidate_layout();
+}
+
+void tcreate_hero::refresh_field_ui(twindow& window)
+{
+	tcontrol* portrait = find_widget<tcontrol>(&window, "portrait", false, true);
+	portrait->set_label(h_.image(true));
+
+	tcontrol* control = find_widget<tcontrol>(&window, "gender", false, true);
+	control->set_label(hero::gender_str(h_.gender_));
+	
+	ttext_box* user_widget = find_widget<ttext_box>(&window, "surname", false, true);
+	user_widget->set_value(h_.surname());
+
+	set_button_int(window, "leadership", fxptoi9(h_.leadership_));
+	set_button_int(window, "force", fxptoi9(h_.force_));
+	set_button_int(window, "intellect", fxptoi9(h_.intellect_));
+	set_button_int(window, "spirit", fxptoi9(h_.spirit_));
+	set_button_int(window, "charm", fxptoi9(h_.charm_));
 
 	std::stringstream strstr;
 	for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
@@ -389,55 +452,83 @@ void tcreate_hero::regenerate(twindow& window)
 		}
 	}
 
-	if (h_.feature_ == HEROS_NO_FEATURE) {
-		h_.feature_ = 82;
-		tcontrol* label = find_widget<tcontrol>(&window, "feature", false, true);
-		label->set_label(hero::feature_str(h_.feature_));
+	control = find_widget<tcontrol>(&window, "feature", false, true);
+	control->set_label(hero::feature_str(h_.feature_));
+	
+	control = find_widget<tcontrol>(&window, "side_feature", false, true);
+	control->set_label(hero::feature_str(h_.side_feature_));
+	
+	control = find_widget<tcontrol>(&window, "tactic", false, true);
+	if (h_.tactic_ != HEROS_NO_TACTIC) {
+		control->set_label(unit_types.tactic(h_.tactic_).name());
+	} else {
+		control->set_label("");
 	}
-	if (h_.side_feature_ == HEROS_NO_FEATURE) {
-		h_.side_feature_ = hero_feature_spirit;
-		tcontrol* label = find_widget<tcontrol>(&window, "side_feature", false, true);
-		label->set_label(hero::feature_str(h_.side_feature_));
+	
+	control = find_widget<tcontrol>(&window, "utype", false, true);
+	if (h_.utype_ != HEROS_NO_UTYPE) {
+		control->set_label(unit_types.keytype(h_.utype_)->type_name());
+	} else {
+		control->set_label("");
 	}
-	if (h_.tactic_ == HEROS_NO_TACTIC) {
-		h_.tactic_ = ttactic::min_complex_index + 2;
-		tcontrol* label = find_widget<tcontrol>(&window, "tactic", false, true);
-		label->set_label(unit_types.tactic(h_.tactic_).name());
 
+	control = find_widget<tcontrol>(&window, "character", false, true);
+	if (h_.character_ != HEROS_NO_CHARACTER) {
+		control->set_label(unit_types.character(h_.character_).name());
+	} else {
+		control->set_label("");
 	}
-	if (h_.character_ == HEROS_NO_CHARACTER) {
-		h_.character_ = 9;
-		tcontrol* label = find_widget<tcontrol>(&window, "character", false, true);
-		label->set_label(unit_types.character(h_.character_).name());
 
+	control = find_widget<tcontrol>(&window, "catalog", false, true);
+	strstr.str("");
+	for (int i = 0; i < nb_catalogs; i ++) {
+		hero& h = heros_[catalog_items[i]];
+		if (h_.base_catalog_ == h.base_catalog_) {
+			strstr << h.name();
+			break;
+		}
 	}
+	if (strstr.str().empty()) {
+		hero& h = heros_[catalog_items[0]];
+		h_.base_catalog_ = h.base_catalog_;
+		strstr << h.name();
+	}
+	control->set_label(strstr.str());
 }
 
 void tcreate_hero::account(twindow& window)
 {
-	gui2::tmp_login dlg(gui_, "");
-	dlg.show(gui_.video());
+	gui2::tmp_login dlg(disp_, heros_, "");
+	dlg.show(disp_.video());
 
-	if (dlg.get_retval() == gui2::twindow::OK) {
+	if (dlg.dirty()) {
+		// so far maybe not check version. for example, error password result reinput, and this is right.
+		// force "seesion" to check version.
+		http::membership m = http::session(disp_, heros_);
+		if (m.uid >= 0) {
+			group.from_local_membership(disp_, heros_, m, true);
+		}
+		game_config::local_only = m.uid < 0;
+		
+
+		h_ = group.leader();
 		h_.set_name(group.leader().name());
 		ttext_box* user_widget = find_widget<ttext_box>(&window, "name", false, true);
 		user_widget->set_value(h_.name());
 
-		tcontrol* control = find_widget<tcontrol>(&window, "username_png", false, true);
-		if (!preferences::inapp_purchased(game_config::INAPP_VIP)) {
-			control->set_label("misc/username.png");
-		} else {
-			control->set_label("misc/username-vip.png");
-		}
+		refresh_username(window);
+		refresh_resi_point(window);
+		refresh_field_ui(window);
+
+		// portrait dirty
+		window.invalidate_layout();
 	}
 }
 
 void tcreate_hero::synchronize(twindow& window)
 {
-	if (create(window, false)) {
-		if (http::avatar_hero(gui_, h_)) {
-			change_avatar(window, false);
-		}
+	if (http::avatar_hero(disp_, heros_, h_.uid(), false)) {
+		change_avatar(window, false);
 	}
 }
 
@@ -464,8 +555,64 @@ void tcreate_hero::change_avatar(twindow& window, bool gender)
 	}
 	gender_button->set_label(hero::gender_str(h_.gender_));
 	portrait->set_label(h_.image(true));
+
+	// regenerate_button->set_dirty();
+	// find_widget<tbutton>(&window, "avatar", false).set_dirty();
+	// portrait dirty
+	window.invalidate_layout();
+}
+
+void tcreate_hero::field(twindow& window, int index)
+{
+	std::vector<std::string> items;
+	std::vector<tval_str> increase_map;
+	int actived_index = 0;
+
+	increase_map.push_back(tval_str(50, "+50"));
+	increase_map.push_back(tval_str(20, "+20"));
+	increase_map.push_back(tval_str(10, "+10"));
+	increase_map.push_back(tval_str(5, "+5"));
+	increase_map.push_back(tval_str(-5, "-5"));
+	increase_map.push_back(tval_str(-10, "-10"));
+	increase_map.push_back(tval_str(-20, "-20"));
+	increase_map.push_back(tval_str(-50, "-50"));
+
+	for (std::vector<tval_str>::iterator it = increase_map.begin(); it != increase_map.end(); ++ it) {
+		items.push_back(it->str);
+	}
 	
-	regenerate_button->set_dirty();
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(disp_.video());
+
+	int increase = increase_map[dlg.selected_index()].val;
+	int value;
+	uint16_t* ptr;
+
+	if (!strcmp(field_ids[index], "leadership")) {
+		ptr = &h_.leadership_;
+	} else if (!strcmp(field_ids[index], "force")) {
+		ptr = &h_.force_;
+	} else if (!strcmp(field_ids[index], "intellect")) {
+		ptr = &h_.intellect_;
+	} else if (!strcmp(field_ids[index], "spirit")) {
+		ptr = &h_.spirit_;
+	} else {
+		ptr = &h_.charm_;
+	}
+	value = fxptoi9(*ptr);
+	value += increase;
+
+	if (value < 1) {
+		value = 1;
+	} else if (value > fxptoi9(65535)) {
+		value = fxptoi9(65535);
+	}
+	*ptr = ftofxp9(value);
+
+	tcontrol* label = find_widget<tcontrol>(&window, field_ids[index], false, true);
+	label->set_label(str_cast(value));
+
+	refresh_resi_point(window);
 }
 
 void tcreate_hero::adaptability(twindow& window, int type, int index)
@@ -489,7 +636,7 @@ void tcreate_hero::adaptability(twindow& window, int type, int index)
 	}
 
 	gui2::tcombo_box dlg(items, activity_index);
-	dlg.show(gui_.video());
+	dlg.show(disp_.video());
 
 	tcontrol* label = find_widget<tcontrol>(&window, str.str(), false, true);
 	activity_index = dlg.selected_index();
@@ -500,66 +647,72 @@ void tcreate_hero::adaptability(twindow& window, int type, int index)
 		h_.skill_[index] = ftofxp12(activity_index);
 		label->set_label(hero::adaptability_str2(h_.skill_[index]));
 	}
+
+	refresh_resi_point(window);
+}
+
+int max_side_feature_level()
+{
+	int noble = preferences::noble();
+	if (noble <= 2) {
+		return 0;
+	}
+	return 1;
 }
 
 void tcreate_hero::feature(twindow& window, bool side)
 {
 	std::vector<std::string> items;
-	int activity_index;
-	std::string str;
+	std::vector<tval_str> features_map;
+	int activity_index = 0;
+	std::stringstream strstr;
+	const int max_feature_level = side? max_side_feature_level(): 4;
 
-	items.push_back(" ");
+	features_map.push_back(tval_str(HEROS_NO_FEATURE, " "));
 	std::vector<int> features = hero::valid_features();
 	for (std::vector<int>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
-		items.push_back(hero::feature_str(*itor));
+		int level = unit_types.feature_level(*itor);
+		if (level > max_feature_level) {
+			continue;
+		}
+		strstr.str("");
+		strstr << hero::feature_str(*itor) << "(" << level << ")";
+		features_map.push_back(tval_str(*itor, strstr.str()));
 	}
 
-	if (side) {
-		if (h_.side_feature_ == HEROS_NO_FEATURE) {
-			activity_index = 0;
-		} else {
-			// activity_index = h_.side_feature_ + 1;
-			activity_index = 0;
+	for (std::vector<tval_str>::iterator it = features_map.begin(); it != features_map.end(); ++ it) {
+		items.push_back(it->str);
+		if (side) {
+			if (h_.side_feature_ == it->val) {
+				activity_index = std::distance(features_map.begin(), it);
+			}
+		} else if (h_.feature_ == it->val) {
+			activity_index = std::distance(features_map.begin(), it);
 		}
-		str = "side_feature";
-	} else {
-		if (h_.feature_ == HEROS_NO_FEATURE) {
-			activity_index = 0;
-		} else {
-			// activity_index ++;
-			activity_index = 0;
-		}
-		str = "feature";
 	}
 
+	std::string str = side? "side_feature": "feature";
+	
 	gui2::tcombo_box dlg(items, activity_index);
-	dlg.show(gui_.video());
+	dlg.show(disp_.video());
 
 	tcontrol* label = find_widget<tcontrol>(&window, str, false, true);
 	activity_index = dlg.selected_index();
 	if (side) {
-		if (activity_index) {
-			h_.side_feature_ = features[activity_index - 1];
-			str = hero::feature_str(h_.side_feature_);
-		} else {
-			h_.side_feature_ = HEROS_NO_FEATURE;
-			str = "";
-		}
-		label->set_label(str);
+		h_.side_feature_ = features_map[activity_index].val;
+		str = hero::feature_str(h_.side_feature_);
 	} else {
-		if (activity_index) {
-			h_.feature_ = features[activity_index - 1];
-			str = hero::feature_str(h_.feature_);
-		} else {
-			h_.feature_ = HEROS_NO_FEATURE;
-			str = "";
-		}
-		label->set_label(str);
+		h_.feature_ = features_map[activity_index].val;
+		str = hero::feature_str(h_.feature_);
 	}
+	label->set_label(str);
+
+	refresh_resi_point(window);
 }
 
 void tcreate_hero::tactic(twindow& window)
 {
+	std::stringstream strstr;
 	std::vector<std::string> items;
 	int activity_index = -1;
 	std::vector<int> tactics_index;
@@ -569,17 +722,58 @@ void tcreate_hero::tactic(twindow& window)
 	const std::map<int, ttactic>& tactics = unit_types.tactics();
 	for (std::map<int, ttactic>::const_iterator it = tactics.begin(); it != tactics.end(); ++ it) {
 		const ttactic& t = it->second;
-		items.push_back(t.name());
+
+		if (h_.tactic_ == it->first) {
+			activity_index = items.size();
+		}
+		strstr.str("");
+		strstr << t.name() << "(" << t.level() << ")";
+		items.push_back(strstr.str());
 		tactics_index.push_back(t.index());
 	}
 
 	gui2::tcombo_box dlg(items, activity_index);
-	dlg.show(gui_.video());
+	dlg.show(disp_.video());
 
 	activity_index = dlg.selected_index();
 	h_.tactic_ = tactics_index[activity_index];
 
 	tcontrol* label = find_widget<tcontrol>(&window, "tactic", false, true);
+	if (h_.tactic_ != HEROS_NO_TACTIC) {
+		label->set_label(unit_types.tactic(h_.tactic_).name());
+	} else {
+		label->set_label("");
+	}
+
+	refresh_resi_point(window);
+}
+
+void tcreate_hero::utype(twindow& window)
+{
+	std::vector<std::string> items;
+	int activity_index = -1;
+	std::vector<int> utypes_index;
+
+	items.push_back(" ");
+	utypes_index.push_back(HEROS_NO_UTYPE);
+	const std::map<int, const unit_type*>& keytypes = unit_types.keytypes();
+	for (std::map<int, const unit_type*>::const_iterator it = keytypes.begin(); it != keytypes.end(); ++ it) {
+		const unit_type& ut = *(it->second);
+		
+		if (h_.utype_ == it->first) {
+			activity_index = items.size();
+		}
+		items.push_back(ut.type_name());
+		utypes_index.push_back(it->first);
+	}
+
+	gui2::tcombo_box dlg(items, activity_index);
+	dlg.show(disp_.video());
+
+	activity_index = dlg.selected_index();
+	h_.utype_ = utypes_index[activity_index];
+
+	tcontrol* label = find_widget<tcontrol>(&window, "utype", false, true);
 	label->set_label(items[activity_index]);
 }
 
@@ -599,13 +793,15 @@ void tcreate_hero::character(twindow& window)
 	}
 
 	gui2::tcombo_box dlg(items, activity_index);
-	dlg.show(gui_.video());
+	dlg.show(disp_.video());
 
 	activity_index = dlg.selected_index();
 	h_.character_ = characters_index[activity_index];
 
 	tcontrol* label = find_widget<tcontrol>(&window, "character", false, true);
 	label->set_label(items[activity_index]);
+
+	refresh_resi_point(window);
 }
 
 void tcreate_hero::catalog(twindow& window)
@@ -630,7 +826,7 @@ void tcreate_hero::catalog(twindow& window)
 	}
 
 	gui2::tcombo_box dlg(items, activity_index);
-	dlg.show(gui_.video());
+	dlg.show(disp_.video());
 
 	tcontrol* label = find_widget<tcontrol>(&window, "catalog", false, true);
 	activity_index = dlg.selected_index();
@@ -651,19 +847,14 @@ std::string tcreate_hero::text_box_str(twindow& window, const std::string& id, c
 		symbols["key"] = help::tintegrate::generate_format(name, "red");
 		
 		err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
-		gui2::show_message(gui_.video(), "", err.str());
+		gui2::show_message(disp_.video(), "", err.str());
 		return str;
 	} else if (id == "name" || id == "surname") {
 		if (str.find("<") != std::string::npos) {
 			symbols["str"] = name;
 			symbols["char"] = "<";
 			err << vgettext("wesnoth-lib", "Include unsupportable character: $char, invalid '$str' value", symbols);
-			gui2::show_message(gui_.video(), "", err.str());
-			return null_str;
-		} else if (id == "name" && game_config::is_reserve_player(str)) {
-			symbols["username"] = help::tintegrate::generate_format(preferences::login(), "red");
-			err << vgettext("wesnoth", "$username is reserved! Please modify to your username. To modify: Enter your username in \"Player profile\" Setting.", symbols);
-			gui2::show_message(gui_.video(), "", err.str());
+			gui2::show_message(disp_.video(), "", err.str());
 			return null_str;
 		}
 	}
@@ -687,41 +878,36 @@ bool tcreate_hero::text_box_int(twindow& window, const std::string& id, const st
 
 		err.str("");
 		err << vgettext("wesnoth-lib", "Range is [$min, $max], invalid '$key' value:", symbols) << " " << str;
-		gui2::show_message(gui_.video(), "", err.str());
+		gui2::show_message(disp_.video(), "", err.str());
 		return false;
 	}
 	return true;
 }
 
-bool tcreate_hero::create(twindow& window, bool close)
+bool tcreate_hero::create(twindow& window)
 {
-	std::string str;
-	int value;
-
-	str = text_box_str(window, "name", _("Name"));
+	std::string str = text_box_str(window, "name", _("Name"));
 	if (str.empty()) return false;
 
 	str = text_box_str(window, "surname", _("Surname"));
 	if (str.empty()) return false;
 	h_.set_surname(str);
 
-	if (!text_box_int(window, "leadership", _("Leadership"), value)) return false;
-	h_.leadership_ = ftofxp9(value);
-	if (!text_box_int(window, "force", _("Force"), value)) return false;
-	h_.force_ = ftofxp9(value);
-	if (!text_box_int(window, "intellect", _("Intellect"), value)) return false;
-	h_.intellect_ = ftofxp9(value);
-	if (!text_box_int(window, "politics", _("Politics"), value)) return false;
-	h_.politics_ = ftofxp9(value);
-	if (!text_box_int(window, "charm", _("Charm"), value)) return false;
-	h_.charm_ = ftofxp9(value);
+	std::string field_str = h_.field_to_str();
+	std::string translatable_str = h_.translatable_to_str();
+	hero& player = group.leader();
+	if (player.field_to_str() != field_str || player.translatable_to_str() != translatable_str) {
+		std::map<int, std::string> block;
+		block.insert(std::make_pair((int)http::block_tag_field, field_str));
+		block.insert(std::make_pair((int)http::block_tag_translatable, translatable_str));
+		http::upload_data(disp_, heros_, block, true);
+		player = h_;
+		preferences::set_hero(heros_, player);
 
-	player_hero_ = h_;
-	preferences::set_hero(player_hero_);
-
-	if (close) {
-		window.set_retval(twindow::OK);
+		group.adjust_members_according_to_leader(heros_);
 	}
+	window.set_retval(twindow::OK);
+
 	return true;
 }
 

@@ -33,6 +33,7 @@
 #include "help.hpp"
 #include "gui/widgets/helper.hpp"
 #include "wml_exception.hpp"
+#include "image.hpp"
 
 #include <boost/foreach.hpp>
 #include <list>
@@ -48,6 +49,116 @@ static lg::log_domain log_font("font");
 #ifdef	HAVE_FRIBIDI
 #include <fribidi.h>
 #endif
+
+// sdl-2.0
+int SDL_SetAlpha(SDL_Surface * surface, Uint32 flag, Uint8 value)
+{
+    if (flag & SDL_SRCALPHA) {
+        /* According to the docs, value is ignored for alpha surfaces */
+        if (surface->format->Amask) {
+            value = 0xFF;
+        }
+        SDL_SetSurfaceAlphaMod(surface, value);
+        SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
+    } else {
+        SDL_SetSurfaceAlphaMod(surface, 0xFF);
+        SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
+    }
+    SDL_SetSurfaceRLE(surface, (flag & SDL_RLEACCEL));
+
+    return 0;
+}
+
+Uint8 SDL_GetAppState(SDL_Window* window)
+{
+    Uint8 state = 0;
+    Uint32 flags = 0;
+
+    flags = SDL_GetWindowFlags(window);
+    if ((flags & SDL_WINDOW_SHOWN) && !(flags & SDL_WINDOW_MINIMIZED)) {
+        state |= SDL_APPACTIVE;
+    }
+    if (flags & SDL_WINDOW_INPUT_FOCUS) {
+        state |= SDL_APPINPUTFOCUS;
+    }
+    if (flags & SDL_WINDOW_MOUSE_FOCUS) {
+        state |= SDL_APPMOUSEFOCUS;
+    }
+    return state;
+}
+
+static int SDL_enabled_UNICODE = 0;
+
+int SDL_EnableUNICODE(int enable)
+{
+	return 0;
+
+    int previous = SDL_enabled_UNICODE;
+
+    switch (enable) {
+    case 1:
+        SDL_enabled_UNICODE = 1;
+        SDL_StartTextInput();
+        break;
+    case 0:
+        SDL_enabled_UNICODE = 0;
+        SDL_StopTextInput();
+        break;
+    }
+    return previous;
+}
+
+SDL_Surface* SDL_DisplayFormatAlpha(SDL_Surface* screen_surf, SDL_Surface * surface)
+{
+    SDL_PixelFormat *vf;
+    SDL_PixelFormat *format;
+    SDL_Surface *converted;
+    /* default to ARGB8888 */
+    Uint32 amask = 0xff000000;
+    Uint32 rmask = 0x00ff0000;
+    Uint32 gmask = 0x0000ff00;
+    Uint32 bmask = 0x000000ff;
+
+    vf = screen_surf->format;
+
+    switch (vf->BytesPerPixel) {
+    case 2:
+        /* For XGY5[56]5, use, AXGY8888, where {X, Y} = {R, B}.
+           For anything else (like ARGB4444) it doesn't matter
+           since we have no special code for it anyway */
+        if ((vf->Rmask == 0x1f) &&
+            (vf->Bmask == 0xf800 || vf->Bmask == 0x7c00)) {
+            rmask = 0xff;
+            bmask = 0xff0000;
+        }
+        break;
+
+    case 3:
+    case 4:
+        /* Keep the video format, as long as the high 8 bits are
+           unused or alpha */
+        if ((vf->Rmask == 0xff) && (vf->Bmask == 0xff0000)) {
+            rmask = 0xff;
+            bmask = 0xff0000;
+        }
+        break;
+
+    default:
+        /* We have no other optimised formats right now. When/if a new
+           optimised alpha format is written, add the converter here */
+        break;
+    }
+    format = SDL_AllocFormat(SDL_MasksToPixelFormatEnum(32, rmask,
+                                                            gmask,
+                                                            bmask,
+                                                            amask));
+    if (!format) {
+        return NULL;
+    }
+    converted = SDL_ConvertSurface(surface, format, SDL_RLEACCEL);
+    SDL_FreeFormat(format);
+    return converted;
+}
 
 // Signed int. Negative values mean "no subset".
 typedef int subset_id;
@@ -185,7 +296,7 @@ static std::vector<text_chunk> split_text(std::string const & utf8_text) {
 			chunks.push_back(current_chunk);
 		}
 	}
-	catch(utils::invalid_utf8_exception e) {
+	catch(utils::invalid_utf8_exception&) {
 		WRN_FT << "Invalid UTF-8 string: \"" << utf8_text << "\"\n";
 	}
 	return chunks;
@@ -688,31 +799,56 @@ text_surface &text_cache::find(text_surface const &t)
 
 static surface render_text(const std::string& text, int fontsize, const SDL_Color& color, int style, bool use_markup)
 {
-	ttext text_;
-	text_.set_foreground_color((color.r << 24) | (color.g << 16) | (color.b << 8) | 255);
-	text_.set_font_size(fontsize);
-	text_.set_font_style(style);
-	// text_.set_maximum_width(width_ < 0 ? clip_rect_.w : width_);
-	// text_.set_maximum_height(clip_rect_.h);
-
-	text_.set_text(text, use_markup);
-
-	return text_.render();
+	if (text.empty()) {
+		return surface();
+	}
+	try {
+		ttext text_;
+		text_.set_foreground_color((color.r << 24) | (color.g << 16) | (color.b << 8) | 255);
+		text_.set_font_size(fontsize);
+		text_.set_font_style(style);
+		// text_.set_maximum_width(width_ < 0 ? clip_rect_.w : width_);
+		// text_.set_maximum_height(clip_rect_.h);
+		text_.set_text(text, use_markup);
+		return text_.render();
+	}
+	catch (utils::invalid_utf8_exception&) {
+		// Invalid UTF-8 string
+		return surface();
+	}
 }
 
 surface get_rendered_text2(const std::string& text, int maximum_width, int font_size, const SDL_Color& color)
 {
-	if (maximum_width <= 0) maximum_width = 480;
-	help::tintegrate integrate(text, maximum_width, -1, font_size, color);
-	return integrate.get_surface();
+	if (text.empty()) {
+		return surface();
+	}
+	try {
+		if (maximum_width <= 0) maximum_width = 480;
+		help::tintegrate integrate(text, maximum_width, -1, font_size, color);
+		return integrate.get_surface();
+	}
+	catch(utils::invalid_utf8_exception&) {
+		// Invalid UTF-8 string
+		return surface();
+	}
 }
 
 gui2::tpoint get_rendered_text_size(const std::string& text, int maximum_width, int font_size, const SDL_Color& color)
 {
-	if (maximum_width <= 0) maximum_width = 480;
-	help::tintegrate integrate(text, maximum_width, -1, font_size, color);
-	SDL_Rect rc = integrate.get_size();
-	return gui2::tpoint(rc.w, rc.h);
+	if (text.empty()) {
+		return gui2::tpoint(0, 0);
+	}
+	try {
+		if (maximum_width <= 0) maximum_width = 480;
+		help::tintegrate integrate(text, maximum_width, -1, font_size, color);
+		SDL_Rect rc = integrate.get_size();
+		return gui2::tpoint(rc.w, rc.h);
+	}
+	catch (utils::invalid_utf8_exception&) {
+		// Invalid UTF-8 string
+		return gui2::tpoint(0, 0);
+	}
 }
 
 // it is called by tintegrate
@@ -847,6 +983,36 @@ std::string make_text_ellipsis(const std::string &text, int font_size,
 		}
 
 		current_substring.append(itor.substr().first, itor.substr().second);
+	}
+
+	return text; // Should not happen
+}
+
+std::string make_text_ellipsis(const std::string& text, size_t max_count)
+{
+	static const std::string ellipsis = "...";
+
+	if (text.size() <= max_count) {
+		return text;
+	}
+	if (ellipsis.size() > max_count) {
+		return "";
+	}
+
+	std::string current_substring;
+
+	utils::utf8_iterator itor(text);
+
+	size_t count = 0;
+	for (; itor != utils::utf8_iterator::end(text); ++ itor) {
+		std::string tmp = current_substring;
+		tmp.append(itor.substr().first, itor.substr().second);
+
+		current_substring.append(itor.substr().first, itor.substr().second);
+
+		if ( ++ count >= max_count) {
+			return current_substring + ellipsis;
+		}
 	}
 
 	return text; // Should not happen
@@ -1043,6 +1209,7 @@ tintegrate::item::item(surface surface, int x, int y, bool _floating,
 std::string tintegrate::hero_color = "green";
 std::string tintegrate::object_color = "yellow";
 std::string tintegrate::tactic_color = "blue";
+double tintegrate::screen_ratio = 1;
 
 tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_height, int default_font_size, const SDL_Color& default_font_color)
 	: items_()
@@ -1063,7 +1230,7 @@ tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_he
 	try {
 		parsed_items = parse_text(src);
 	} 
-	catch (help::parse_error& ) {
+	catch (help::parse_error& e) {
 		// [see remark#30] process character: '<' 
 		add_text_item(src, default_font_color_);
 	}
@@ -1093,7 +1260,7 @@ tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_he
 #undef TRY
 
 			}
-			catch (config::error& e) {
+			catch (config::error&) {
 				// [see remark#30] process character: '<' 
 				add_text_item(*it, default_font_color_);
 			}
@@ -1118,10 +1285,9 @@ void tintegrate::handle_ref_cfg(const config &cfg)
 		throw parse_error(msg.str());
 	}
 
-	// if (find_topic(toplevel_, dst) == NULL && !force) {
-	if (!force) {
+	if (!find_topic2(dst) && !force) {
 		// detect the broken link but quietly silence the hyperlink for normal user
-		add_text_item(text, default_font_color_, game_config::debug ? dst : "", true);
+		add_text_item(text, default_font_color_, "", true);
 
 		// FIXME: workaround: if different campaigns define different
 		// terrains, some terrains available in one campaign will
@@ -1315,12 +1481,41 @@ void tintegrate::add_text_item(const std::string& text, const SDL_Color& text_co
 	}
 }
 
+surface adaptive_scale_image(surface& surf, double max_ratio)
+{
+	if (max_ratio <= 1) {
+		return surf;
+	}
+
+	// 1 or 2
+	if (max_ratio > 2) {
+		max_ratio = 2;
+	}
+	int width = surf->w;
+	int height = surf->h;
+	int min = max_ratio <= 1.5? 64: 48;
+
+	if (width <= min || height <= min) {
+		return surf;
+	}
+
+	double min_ratio = std::min<double>(1.0 * width / min, 1.0 * height / min);
+	min_ratio = std::min<double>(min_ratio, max_ratio);
+
+	return scale_surface(surf, surf->w / min_ratio, surf->h / min_ratio);
+}
+
 void tintegrate::add_img_item(const std::string& path, const std::string& alignment,
 								  const bool floating, const bool box)
 {
 	surface surf(image::get_image(path));
 	if (surf.null())
 		return;
+
+	if (screen_ratio > 1) {
+		surf = adaptive_scale_image(surf, screen_ratio);
+	}
+
 	ALIGNMENT align = str_to_align(alignment);
 	if (align == BACK && items_.empty()) {
 		align = HERE;
@@ -1523,58 +1718,31 @@ surface tintegrate::get_surface() const
 				++dst.y;
 			}
 		}
-		sdl_blit(it->surf, NULL, screen, &dst);
+		if (dst.w != 8 || dst.h != 12) {
+			sdl_blit(it->surf, NULL, screen, &dst);
+		} else {
+			blit_surface(it->surf, NULL, screen, &dst);
+		}
 	}
 	return screen;
 }
 
-void tintegrate::draw_contents()
+bool tintegrate::item_at::operator()(const item& item) const 
 {
-/*
-	SDL_Rect const &loc = inner_location();
-	bg_restore();
-	surface screen = video().getSurface();
-	clip_rect_setter clip_rect_set(screen, &loc);
-	for(std::list<item>::const_iterator it = items_.begin(), end = items_.end(); it != end; ++it) {
-		SDL_Rect dst = it->rect;
-		dst.y -= get_position();
-		if (dst.y < static_cast<int>(loc.h) && dst.y + it->rect.h > 0) {
-			dst.x += loc.x;
-			dst.y += loc.y;
-			if (it->box) {
-				for (int i = 0; i < box_width; ++i) {
-					draw_rectangle(dst.x, dst.y, it->rect.w - i * 2, it->rect.h - i * 2,
-					                    0, screen);
-					++dst.x;
-					++dst.y;
-				}
-			}
-			sdl_blit(it->surf, NULL, screen, &dst);
-		}
-	}
-	update_rect(loc);
-*/
-}
-
-bool tintegrate::item_at::operator()(const item& item) const {
 	return point_in_rect(x_, y_, item.rect);
 }
 
 std::string tintegrate::ref_at(const int x, const int y)
 {
-/*	const int local_x = x - location().x;
-	const int local_y = y - location().y;
-	if (local_y < static_cast<int>(height()) && local_y > 0) {
-		const int cmp_y = local_y + get_position();
+	if (x >0 && y > 0) {
 		const std::list<item>::const_iterator it =
-			std::find_if(items_.begin(), items_.end(), item_at(local_x, cmp_y));
+			std::find_if(items_.begin(), items_.end(), item_at(x, y));
 		if (it != items_.end()) {
 			if ((*it).ref_to != "") {
 				return ((*it).ref_to);
 			}
 		}
 	}
-*/
 	return "";
 }
 
@@ -1607,6 +1775,12 @@ floating_label::floating_label(const std::string& text)
 		alpha_change_(0), visible_(true), align_(CENTER_ALIGN),
 		border_(0), scroll_(ANCHOR_LABEL_SCREEN), use_markup_(true)
 {}
+
+void floating_label::set_lifetime(int lifetime) 
+{
+	lifetime_ = lifetime;
+	alpha_change_ = -255 / lifetime_;
+}
 
 void floating_label::move(double xmove, double ymove)
 {
@@ -1824,10 +1998,10 @@ SDL_Rect get_floating_label_rect(int handle)
 	return empty_rect;
 }
 
-floating_label_context::floating_label_context()
+floating_label_context::floating_label_context(const surface& screen)
+	: screen(screen) 
 {
-	surface const screen = SDL_GetVideoSurface();
-	if(screen != NULL) {
+	if (screen != NULL) {
 		draw_floating_labels(screen);
 	}
 
@@ -1843,8 +2017,7 @@ floating_label_context::~floating_label_context()
 
 	label_contexts.pop();
 
-	surface const screen = SDL_GetVideoSurface();
-	if(screen != NULL) {
+	if (screen != NULL) {
 		undraw_floating_labels(screen);
 	}
 }
@@ -2373,7 +2546,7 @@ surface ttext::render()
 			for (std::vector<surface>::const_iterator j = i->begin(), j_end = i->end(); j != j_end; ++j) {
 				SDL_SetAlpha(*j, 0, 0); // direct blit without alpha blending
 				SDL_Rect dstrect = create_rect(xpos, ypos, 0, 0);
-				sdl_blit(*j, NULL, res, &dstrect);
+				blit_surface(*j, NULL, res, &dstrect);
 				xpos += (*j)->w;
 				height = std::max<size_t>((*j)->h, height);
 			}

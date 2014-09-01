@@ -34,7 +34,6 @@ namespace ai {
 class ai_default : public ai_interface, public events::observer 
 {
 public:
-	static std::map<std::pair<const unit*, const unit*>, battle_context*>& unit_stats_cache();
 	static void clear_stats_cache();
 
 	typedef map_location location;//will get rid of this later
@@ -43,8 +42,6 @@ public:
 	~ai_default();
 
 	void play_turn();
-	void new_turn();
-	std::string describe_self();
 	config to_config() const;
 
 
@@ -58,7 +55,7 @@ public:
 private:
 	void do_move();
 
-	bool do_combat();
+	bool do_combat(unit* actor);
 
 	bool do_recruitment(artifical& city);
 
@@ -69,12 +66,12 @@ private:
 	// map_location move_unit(const std::pair<unit*, int>& pair, location to, bool dst_must_reachable = true);
 
 	// attacks
-	void analyze_targets(std::vector<attack_analysis>& res);
+	void analyze_targets(unit* actor, std::vector<attack_analysis>& res);
 
 	void do_attack_analysis(
 	                unit* target_ptr,
 					const std::vector<std::pair<unit*, int> >& units2,
-	                const std::multimap<int, map_location>& srcdst2, const std::multimap<map_location, int>& dstsrc2,
+	                const size_t consider_size, const std::multimap<map_location, int>& dstsrc2,
 					std::vector<std::pair<unit*, int> >& units,
 	                std::vector<attack_analysis>& result,
 					attack_analysis& cur_analysis
@@ -90,19 +87,17 @@ private:
 
 	bool can_allied(const team& to, int target_side, artifical* aggressed);
 	void do_diplomatism(int index);
-	bool do_tactic(int index, bool first);
-	// void calculate_mr_rects_from_city_rect();
+	void do_tactic(unit* actor);
 	void satisfy_hero_requirement(int index);
 	void calculate_mr_target(int index);
 	
 	void move_fresh_hero(artifical& from, artifical& to, int index);
 	void move_hero(artifical& from, artifical& to, int& lack, int& more);
-	int build(artifical& owner, std::vector<std::pair<unit*, int> >& builder_troops, const unit_type* art, const map_location& at);
 
 	const terrain_filter* get_avoid() const;
 
 private:
-	static std::map<std::pair<const unit*, const unit*>, battle_context*> unit_stats_cache_;
+	static std::map<std::pair<const unit*, const unit*>, battle_context*> unit_stats_cache;
 
 	game_display& disp_;
 	gamemap& map_;
@@ -116,6 +111,7 @@ private:
 	bool consider_combat_;
 	int side_;
 	team& current_team_;
+	int previous_turn_;
 
 	friend class attack_analysis;
 
@@ -133,6 +129,7 @@ private:
 	size_t side_cache_size_;
 
 	std::set<map_location> capturing_villages_;
+	map_location guard_loc_;
 };
 
 } //end of namespace ai

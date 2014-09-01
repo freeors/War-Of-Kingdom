@@ -43,8 +43,8 @@ public:
 	/** Inherited from tcontrol. */
 	void load_config_extra();
 
-	void set_active(const bool active)
-		{ if(get_active() != active) set_state(active ? ENABLED : DISABLED); };
+	void set_active(const bool active);
+		
 
 	/** Inherited from tcontrol. */
 	bool get_active() const { return state_ != DISABLED; }

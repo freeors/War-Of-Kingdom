@@ -27,7 +27,11 @@
 #include "video.hpp"
 #include "wml_separators.hpp"
 #include "hero.hpp"
+#include "unit.hpp"
 #include "unit_types.hpp"
+#include "wml_exception.hpp"
+#include <preferences.hpp>
+#include "display.hpp"
 
 namespace gui {
 
@@ -43,10 +47,16 @@ button::button(CVideo& video, const std::string& label, button::TYPE type,
 	  image_(NULL), pressedImage_(NULL), activeImage_(NULL), pressedActiveImage_(NULL),
 	  button_(true), state_(NORMAL), pressed_(false),
 	  font_size_(font_size? font_size: default_font_size),
-	  spacing_(spacing), base_height_(base_height), base_width_(base_width),
-	  hook_(hook), menu_(menu), btnidx_(btnidx), cookie_(NULL)
-	  , color_(font::BUTTON_COLOR)
-	  , tactic_hero_(NULL)
+	  spacing_(spacing), 
+	  base_height_(base_height), 
+	  base_width_(base_width),
+	  hook_(hook), 
+	  menu_(menu), 
+	  btnidx_(btnidx), 
+	  cookie_(NULL), 
+	  cookie_type(COOKIE_NONE), 
+	  color_(font::BUTTON_COLOR), 
+	  tactic_hero_(NULL)
 {
 	if (button_image_name.empty() && type == TYPE_PRESS) {
 		button_image_name = "button";
@@ -67,9 +77,10 @@ button::button(CVideo& video, const std::string& label, button::TYPE type,
 	} else {
 		button_image = image::get_image(button_image_file);
 	}
-	if (button_image.null()) {
-		throw error();
-	}
+
+	std::stringstream err;
+	err << "button::button, Could not construct button object: " << button_image_file << ", mybe no corresponding images";
+	VALIDATE(button_image, err.str());
 
 	surface pressed_active_image;
 	// Get active/pressed_image from button_image
@@ -84,7 +95,7 @@ button::button(CVideo& video, const std::string& label, button::TYPE type,
 			SDL_Rect src_clip = ::create_rect(0, 0, active_image->w - 2, active_image->h - 2);
 			SDL_Rect dst_clip = ::create_rect(2, 2, 0, 0);
 			pressed_image.assign(create_neutral_surface(active_image->w, active_image->h));
-			SDL_BlitSurface(active_image, &src_clip, pressed_image, &dst_clip);
+			blit_surface(active_image, &src_clip, pressed_image, &dst_clip);
 		}
 	} else {
 		pressed_image = image::get_image("buttons/" + button_image_name + "-pressed.png");
@@ -126,6 +137,8 @@ button::button(CVideo& video, const std::string& label, button::TYPE type,
 
 void button::set_rpg_image(hero* h, bool greyscale)
 {
+	surface genus_surf = image::get_image(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
+
 	surface hero_sur = image::get_image(h->image());
 	surface masked_sur = mask_surface(hero_sur, image::get_image("buttons/photo-mask.png"));
 
@@ -135,10 +148,12 @@ void button::set_rpg_image(hero* h, bool greyscale)
 	masked_sur = scale_surface(masked_sur, location().w, location().h);
 	image_.assign(masked_sur);
 
+	blit_surface(genus_surf, NULL, image_, NULL);
+
 	generate_other_image();
 }
 
-void button::set_tactic_image(hero& h)
+void button::set_tactic_image(hero& h, const std::string& label)
 {
 	int width = location().w;
 	int height = location().h;
@@ -148,18 +163,17 @@ void button::set_tactic_image(hero& h)
 
 	if (h.valid()) {
 		tactic_hero_ = &h;
-		const ttactic& t = unit_types.tactic(h.tactic_);
-
+		
 		std::stringstream strstr;
 		strstr << h.image() << "~SCALE(36, 45)";
 
 		surface hero_sur = image::get_image(strstr.str());
 
 		SDL_Rect clip = ::create_rect(1, 1, 0, 0);
-		sdl_blit(hero_sur, NULL, image_, &clip);
+		blit_surface(hero_sur, NULL, image_, &clip);
 
 		image_ = scale_surface(image_, location().w, location().h);
-		label_ = t.name();
+		label_ = label;
 	} else {
 		tactic_hero_ = NULL;
 		label_ = "";
@@ -186,28 +200,30 @@ void button::set_bomb_image(int bomb_turns)
 	// if (bomb_turns < game_config::max_bomb_turns) {
 		strstr.str("");
 		strstr << "misc/digit.png~CROP(" << 8 * bomb_turns << ", 0, 8, 12)";
-		sdl_blit(image::get_image(strstr.str()), NULL, image_, &dst_clip);
+		blit_surface(image::get_image(strstr.str()), NULL, image_, &dst_clip);
 
 		strstr.str("");
 		strstr << "misc/digit.png~CROP(" << 8 * 10 << ", 0, 8, 12)";
 		dst_clip.x += 8;
-		sdl_blit(image::get_image(strstr.str()), NULL, image_, &dst_clip);
+		blit_surface(image::get_image(strstr.str()), NULL, image_, &dst_clip);
 
 		strstr.str("");
 		strstr << "misc/digit.png~CROP(" << 8 * game_config::max_bomb_turns << ", 0, 8, 12)";
 		dst_clip.x += 8;
-		sdl_blit(image::get_image(strstr.str()), NULL, image_, &dst_clip);
+		blit_surface(image::get_image(strstr.str()), NULL, image_, &dst_clip);
 	// }
 	image_ = scale_surface(image_, width, height);
 	
 	generate_other_image();
 }
 
-void button::set_image(const std::string& stem, int integer, bool greyscale, bool special, const std::string& icon, const std::string& lb_icon)
+void button::set_image(const std::string& stem, int integer, bool greyscale, bool special, const std::string& icon, const std::string& lb_icon, int)
 {
+	const unit* u = reinterpret_cast<const unit*>(cookie_);
+
 	int width = location().w;
 	int height = location().h;
-
+	
 	// const std::string button_image_file = "buttons/" + stem + ".png";
 	const std::string button_image_file = stem;
 	surface stem_image;
@@ -216,60 +232,158 @@ void button::set_image(const std::string& stem, int integer, bool greyscale, boo
 	if (greyscale) {
 		stem_image = greyscale_image(stem_image);
 	}
+	if (cookie_type == COOKIE_UNIT && u->get_state(ustate_tag::REVIVALED)) {
+		stem_image = adjust_surface_color(stem_image, 255, 0, 0);
+	}
 	stem_image = scale_surface(stem_image, width, height);
 
 	image_.assign(stem_image);
 
+	const int bar_vtl_ticks_width = 6;
 	std::stringstream text;
 
-	// overlay digit
 	SDL_Rect dst_clip = create_rect(0, 0, 0, 0);
+
+	if (cookie_type == COOKIE_UNIT) {
+		int degree = u->percent_ticks();
+		SDL_Color color = font::GOOD_COLOR;
+		if (degree < 50) {
+			color = font::BAD_COLOR;
+		} else if (degree < 100) {
+			color = font::YELLOW_COLOR;
+		}
+
+		std::string img_name = "misc/bar-vtl-ticks.png";
+		if (current_can_action(*u)) {
+			img_name = "misc/bar-vtl-ticks-hot.png";
+		}
+		if (!tent::turn_based || preferences::developer()) {
+			draw_bar_to_surf(img_name, image_, 0, 12, height - 4 - (12 + 1), 1.0 * degree / 100, color, ftofxp(0.8), true);
+		}
+
+		if (u->is_city()) {
+			// city name
+			int font_size = 12;
+			surface text_surf = font::get_rendered_text2(u->name(), -1, font_size, font::BIGMAP_COLOR);
+			surface back_surf = font::get_rendered_text2(u->name(), -1, font_size, font::BLACK_COLOR);
+
+			dst_clip.x = bar_vtl_ticks_width;
+			dst_clip.y = height - 16;
+			SDL_Rect dst;
+			for (int dy=-1; dy <= 1; ++dy) {
+				for (int dx=-1; dx <= 1; ++dx) {
+					if (dx!=0 || dy!=0) {
+						dst.x = dst_clip.x + dx;
+						dst.y = dst_clip.y + dy;
+						sdl_blit(back_surf, NULL, image_, &dst);
+					}
+				}
+			}
+			sdl_blit(text_surf, NULL, image_, &dst_clip);
+		}
+
+		integer = preferences::developer()? u->ticks(): u->level();
+	}
+
+	// overlay digit
 	if (integer >= 0) {
-		integer = integer % 10000;
+		dst_clip.x = 0;
+		dst_clip.y = 0;
+		integer = integer % 100000;
+		if (integer >= 10000) {
+			text.str("");
+			text << "misc/digit.png~CROP(" << 8 * (integer / 10000) << ", 0, 8, 12)";
+			blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
+			dst_clip.x += 8;
+		}
 		if (integer >= 1000) {
 			text.str("");
-			text << "misc/digit.png~CROP(" << 8 * (integer / 1000) << ", 0, 8, 12)";
-			SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
+			text << "misc/digit.png~CROP(" << 8 * ((integer % 10000) / 1000) << ", 0, 8, 12)";
+			blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
 			dst_clip.x += 8;
 		}
 		if (integer >= 100) {
 			text.str("");
 			text << "misc/digit.png~CROP(" << 8 * ((integer % 1000) / 100) << ", 0, 8, 12)";
-			SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
+			blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
 			dst_clip.x += 8;
 		}
 		if (integer >= 10) {
 			text.str("");
 			text << "misc/digit.png~CROP(" << 8 * ((integer % 100) / 10) << ", 0, 8, 12)";
-			SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
+			blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
 			dst_clip.x += 8;
 		}
 		text.str("");
 		text << "misc/digit.png~CROP(" << 8 * (integer % 10) << ", 0, 8, 12)";
-		SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
+		blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
 	}
+
 	if (!icon.empty()) {
 		text.str("");
 		text << icon << "~SCALE(16, 16)";
 		dst_clip.x = 0;
 		dst_clip.y = 12;
-		SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
+		blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
 	}
+
 	if (!lb_icon.empty()) {
 		text.str("");
 		text << lb_icon << "~SCALE(16, 16)";
-		dst_clip.x = 0;
+		dst_clip.x = COOKIE_UNIT? bar_vtl_ticks_width: 0;
 		dst_clip.y = image_->h - 16;
-		SDL_BlitSurface(image::get_image(text.str()), NULL, image_, &dst_clip);
+		blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
 	}
 
-	if (special) {
+	if (cookie_type == COOKIE_UNIT) {
 		dst_clip.x = 8;
 		dst_clip.y = 0;
-		SDL_BlitSurface(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
+		if (u->get_state(ustate_tag::DEPUTE)) {
+			blit_surface(image::get_image("misc/depute.png"), NULL, image_, &dst_clip);
+		}
+		if (u->has_mayor()) {
+			blit_surface(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
+		}
 	}
 
 	generate_other_image();
+	set_dirty();
+}
+
+void button::set_pip_image(const std::string& bg, const std::string& fg)
+{
+	std::stringstream strstr;
+	int width = location().w;
+	int height = location().h;
+
+	std::string bg2 = bg;
+	if (bg.rfind(".") != bg.size() - 4) {
+		bg2 = bg2 + ".png";
+	}
+	std::string fg2 = fg;
+	if (fg.rfind(".") != fg.size() - 4) {
+		fg2 = fg2 + ".png";
+	}
+
+	image_.assign(NULL);
+	image_ = make_neutral_surface(image::get_image(bg2));
+	
+	surface fg_surf = image::get_image(fg2);
+	if (fg_surf) {
+		SDL_Rect dst_clip = create_rect(0, 0, 0, 0);
+		if (image_->w > fg_surf->w) {
+			dst_clip.x = (image_->w - fg_surf->w) / 2;
+		}
+		if (image_->h > fg_surf->h) {
+			dst_clip.y = (image_->h - fg_surf->h) / 2;
+		}
+		blit_surface(fg_surf, NULL, image_, &dst_clip);
+	}
+
+	image_ = scale_surface(image_, width, height);
+	
+	generate_other_image();
+	set_dirty();
 }
 
 void button::generate_other_image()
@@ -280,7 +394,7 @@ void button::generate_other_image()
 	SDL_Rect src_clip = ::create_rect(0, 0, activeImage_->w - 2, activeImage_->h - 2);
 	SDL_Rect dst_clip = ::create_rect(2, 2, 0, 0);
 	pressedImage_.assign(create_neutral_surface(activeImage_->w, activeImage_->h));
-	SDL_BlitSurface(activeImage_, &src_clip, pressedImage_, &dst_clip);
+	blit_surface(activeImage_, &src_clip, pressedImage_, &dst_clip);
 }
 
 void button::calculate_size()

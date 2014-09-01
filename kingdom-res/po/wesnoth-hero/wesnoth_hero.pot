@@ -18,7 +18,7 @@ msgstr ""
 msgid "intellect"
 msgstr ""
 
-msgid "politics"
+msgid "spirit"
 msgstr ""
 
 msgid "charm"
@@ -139,6 +139,9 @@ msgid "flag-1"
 msgstr ""
 
 msgid "flag-2"
+msgstr ""
+
+msgid "flag-3"
 msgstr ""
 
 msgid "heart"
@@ -1512,6 +1515,156 @@ msgstr ""
 msgid "name-419"
 msgstr ""
 
+msgid "name-420"
+msgstr ""
+
+msgid "name-421"
+msgstr ""
+
+msgid "name-422"
+msgstr ""
+
+msgid "name-423"
+msgstr ""
+
+msgid "name-424"
+msgstr ""
+
+msgid "name-425"
+msgstr ""
+
+msgid "name-426"
+msgstr ""
+
+msgid "name-427"
+msgstr ""
+
+msgid "name-428"
+msgstr ""
+
+msgid "name-429"
+msgstr ""
+
+msgid "name-430"
+msgstr ""
+
+msgid "name-431"
+msgstr ""
+
+msgid "name-432"
+msgstr ""
+
+msgid "name-433"
+msgstr ""
+
+msgid "name-434"
+msgstr ""
+
+msgid "name-435"
+msgstr ""
+
+msgid "name-436"
+msgstr ""
+
+msgid "name-437"
+msgstr ""
+
+msgid "name-438"
+msgstr ""
+
+msgid "name-439"
+msgstr ""
+
+msgid "name-440"
+msgstr ""
+
+msgid "name-441"
+msgstr ""
+
+msgid "name-442"
+msgstr ""
+
+msgid "name-443"
+msgstr ""
+
+msgid "name-444"
+msgstr ""
+
+msgid "name-445"
+msgstr ""
+
+msgid "name-446"
+msgstr ""
+
+msgid "name-447"
+msgstr ""
+
+msgid "name-448"
+msgstr ""
+
+msgid "name-449"
+msgstr ""
+
+msgid "name-450"
+msgstr ""
+
+msgid "name-451"
+msgstr ""
+
+msgid "name-452"
+msgstr ""
+
+msgid "name-453"
+msgstr ""
+
+msgid "name-454"
+msgstr ""
+
+msgid "name-455"
+msgstr ""
+
+msgid "name-456"
+msgstr ""
+
+msgid "name-457"
+msgstr ""
+
+msgid "name-458"
+msgstr ""
+
+msgid "name-459"
+msgstr ""
+
+msgid "name-460"
+msgstr ""
+
+msgid "name-461"
+msgstr ""
+
+msgid "name-462"
+msgstr ""
+
+msgid "name-463"
+msgstr ""
+
+msgid "name-464"
+msgstr ""
+
+msgid "name-465"
+msgstr ""
+
+msgid "name-466"
+msgstr ""
+
+msgid "name-467"
+msgstr ""
+
+msgid "name-468"
+msgstr ""
+
+msgid "name-469"
+msgstr ""
+
 msgid "surname"
 msgstr ""
 
@@ -2775,6 +2928,156 @@ msgstr ""
 msgid "surname-419"
 msgstr ""
 
+msgid "surname-420"
+msgstr ""
+
+msgid "surname-421"
+msgstr ""
+
+msgid "surname-422"
+msgstr ""
+
+msgid "surname-423"
+msgstr ""
+
+msgid "surname-424"
+msgstr ""
+
+msgid "surname-425"
+msgstr ""
+
+msgid "surname-426"
+msgstr ""
+
+msgid "surname-427"
+msgstr ""
+
+msgid "surname-428"
+msgstr ""
+
+msgid "surname-429"
+msgstr ""
+
+msgid "surname-430"
+msgstr ""
+
+msgid "surname-431"
+msgstr ""
+
+msgid "surname-432"
+msgstr ""
+
+msgid "surname-433"
+msgstr ""
+
+msgid "surname-434"
+msgstr ""
+
+msgid "surname-435"
+msgstr ""
+
+msgid "surname-436"
+msgstr ""
+
+msgid "surname-437"
+msgstr ""
+
+msgid "surname-438"
+msgstr ""
+
+msgid "surname-439"
+msgstr ""
+
+msgid "surname-440"
+msgstr ""
+
+msgid "surname-441"
+msgstr ""
+
+msgid "surname-442"
+msgstr ""
+
+msgid "surname-443"
+msgstr ""
+
+msgid "surname-444"
+msgstr ""
+
+msgid "surname-445"
+msgstr ""
+
+msgid "surname-446"
+msgstr ""
+
+msgid "surname-447"
+msgstr ""
+
+msgid "surname-448"
+msgstr ""
+
+msgid "surname-449"
+msgstr ""
+
+msgid "surname-450"
+msgstr ""
+
+msgid "surname-451"
+msgstr ""
+
+msgid "surname-452"
+msgstr ""
+
+msgid "surname-453"
+msgstr ""
+
+msgid "surname-454"
+msgstr ""
+
+msgid "surname-455"
+msgstr ""
+
+msgid "surname-456"
+msgstr ""
+
+msgid "surname-457"
+msgstr ""
+
+msgid "surname-458"
+msgstr ""
+
+msgid "surname-459"
+msgstr ""
+
+msgid "surname-460"
+msgstr ""
+
+msgid "surname-461"
+msgstr ""
+
+msgid "surname-462"
+msgstr ""
+
+msgid "surname-463"
+msgstr ""
+
+msgid "surname-464"
+msgstr ""
+
+msgid "surname-465"
+msgstr ""
+
+msgid "surname-466"
+msgstr ""
+
+msgid "surname-467"
+msgstr ""
+
+msgid "surname-468"
+msgstr ""
+
+msgid "surname-469"
+msgstr ""
+
 msgid "desc0"
 msgstr ""
 
@@ -4033,4 +4336,154 @@ msgid "desc418"
 msgstr ""
 
 msgid "desc419"
+msgstr ""
+
+msgid "desc420"
+msgstr ""
+
+msgid "desc421"
+msgstr ""
+
+msgid "desc422"
+msgstr ""
+
+msgid "desc423"
+msgstr ""
+
+msgid "desc424"
+msgstr ""
+
+msgid "desc425"
+msgstr ""
+
+msgid "desc426"
+msgstr ""
+
+msgid "desc427"
+msgstr ""
+
+msgid "desc428"
+msgstr ""
+
+msgid "desc429"
+msgstr ""
+
+msgid "desc430"
+msgstr ""
+
+msgid "desc431"
+msgstr ""
+
+msgid "desc432"
+msgstr ""
+
+msgid "desc433"
+msgstr ""
+
+msgid "desc434"
+msgstr ""
+
+msgid "desc435"
+msgstr ""
+
+msgid "desc436"
+msgstr ""
+
+msgid "desc437"
+msgstr ""
+
+msgid "desc438"
+msgstr ""
+
+msgid "desc439"
+msgstr ""
+
+msgid "desc440"
+msgstr ""
+
+msgid "desc441"
+msgstr ""
+
+msgid "desc442"
+msgstr ""
+
+msgid "desc443"
+msgstr ""
+
+msgid "desc444"
+msgstr ""
+
+msgid "desc445"
+msgstr ""
+
+msgid "desc446"
+msgstr ""
+
+msgid "desc447"
+msgstr ""
+
+msgid "desc448"
+msgstr ""
+
+msgid "desc449"
+msgstr ""
+
+msgid "desc450"
+msgstr ""
+
+msgid "desc451"
+msgstr ""
+
+msgid "desc452"
+msgstr ""
+
+msgid "desc453"
+msgstr ""
+
+msgid "desc454"
+msgstr ""
+
+msgid "desc455"
+msgstr ""
+
+msgid "desc456"
+msgstr ""
+
+msgid "desc457"
+msgstr ""
+
+msgid "desc458"
+msgstr ""
+
+msgid "desc459"
+msgstr ""
+
+msgid "desc460"
+msgstr ""
+
+msgid "desc461"
+msgstr ""
+
+msgid "desc462"
+msgstr ""
+
+msgid "desc463"
+msgstr ""
+
+msgid "desc464"
+msgstr ""
+
+msgid "desc465"
+msgstr ""
+
+msgid "desc466"
+msgstr ""
+
+msgid "desc467"
+msgstr ""
+
+msgid "desc468"
+msgstr ""
+
+msgid "desc469"
 msgstr ""

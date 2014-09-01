@@ -51,7 +51,7 @@ void tnoble2::from_ui_noble_edit(HWND hdlgP)
 	effect_.leadership = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_LEADERSHIP));
 	effect_.force = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_FORCE));
 	effect_.intellect = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_INTELLECT));
-	effect_.politics = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_POLITICS));
+	effect_.spirit = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_POLITICS));
 	effect_.charm = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_CHARM));
 }
 
@@ -83,7 +83,7 @@ void tnoble2::update_to_ui_noble_edit(HWND hdlgP) const
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_LEADERSHIP), effect_.leadership);
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_FORCE), effect_.force);
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_INTELLECT), effect_.intellect);
-	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_POLITICS), effect_.politics);
+	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_POLITICS), effect_.spirit);
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_CHARM), effect_.charm);
 }
 
@@ -118,8 +118,8 @@ std::string tnoble2::generate(const std::string& prefix) const
 	if (effect_.intellect) {
 		strstr << prefix << "\t\tintellect = " << effect_.intellect << "\n";
 	}
-	if (effect_.politics) {
-		strstr << prefix << "\t\tpolitics = " << effect_.politics << "\n";
+	if (effect_.spirit) {
+		strstr << prefix << "\t\tspirit = " << effect_.spirit << "\n";
 	}
 	if (effect_.charm) {
 		strstr << prefix << "\t\tcharm = " << effect_.charm << "\n";
@@ -229,11 +229,11 @@ void tcore::update_to_ui_noble(HWND hdlgP)
 			}
 			strstr << dsgettext("wesnoth-hero", "intellect") << " + " << noble.effect_.intellect;
 		}
-		if (noble.effect_.politics) {
+		if (noble.effect_.spirit) {
 			if (!strstr.str().empty()) {
 				strstr << " && ";
 			}
-			strstr << dsgettext("wesnoth-hero", "politics") << " + " << noble.effect_.politics;
+			strstr << dsgettext("wesnoth-hero", "spirit") << " + " << noble.effect_.spirit;
 		}
 		if (noble.effect_.charm) {
 			if (!strstr.str().empty()) {
@@ -360,7 +360,7 @@ BOOL On_DlgNobleEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LEADERSHIP), dgettext_2_ansi("wesnoth-hero", "leadership"));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FORCE), dgettext_2_ansi("wesnoth-hero", "force"));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INTELLECT), dgettext_2_ansi("wesnoth-hero", "intellect"));
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_POLITICS), dgettext_2_ansi("wesnoth-hero", "politics"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_POLITICS), dgettext_2_ansi("wesnoth-hero", "spirit"));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CHARM), dgettext_2_ansi("wesnoth-hero", "charm"));
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_UD_NOBLEEDIT_CITY);

@@ -19,6 +19,7 @@
 #include "../construct_dialog.hpp"
 #include "../gettext.hpp"
 #include "../filesystem.hpp"
+#include "../hero.hpp"
 
 #include <boost/algorithm/string/replace.hpp>
 
@@ -26,7 +27,7 @@ lg::log_domain log_editor("editor");
 
 namespace editor {
 
-EXIT_STATUS start(const config& game_conf, CVideo& video, const std::string& filename /* = "" */,
+EXIT_STATUS start(const config& game_conf, CVideo& video, hero_map& heros, int mode, const std::string& filename /* = "" */,
 	bool take_screenshot /* = false */, const std::string& screenshot_filename /* = "map_screenshot.bmp" */)
 {
 	EXIT_STATUS e = EXIT_ERROR;
@@ -35,7 +36,7 @@ EXIT_STATUS start(const config& game_conf, CVideo& video, const std::string& fil
 		hotkey::deactivate_all_scopes();
 		hotkey::set_scope_active(hotkey::SCOPE_GENERAL);
 		hotkey::set_scope_active(hotkey::SCOPE_EDITOR);
-		editor_controller editor(game_conf, video);
+		editor_controller editor(game_conf, video, heros, mode);
 		if (!filename.empty()) {
 			if (is_directory(filename)) {
 				editor.set_default_dir(filename);

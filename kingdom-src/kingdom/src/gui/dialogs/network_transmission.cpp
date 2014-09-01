@@ -27,17 +27,49 @@
 #include "network.hpp"
 #include "dialogs.hpp"
 
+#include <boost/bind.hpp>
+
 namespace gui2 {
 
 REGISTER_DIALOG(network_transmission)
 
-void tnetwork_transmission::pump_monitor::process(events::pump_info&)
+ttransfer::ttransfer(network_asio::connection& connection, int hidden_ms)
+	: connection_(connection)
+	, hidden_ticks_(hidden_ms * 1000)
+	, track_upload_(false)
+	, window_()
+	, cancel_(NULL)
+{
+	start_ticks_ = SDL_GetTicks();
+}
+
+void ttransfer::pre_show(twindow& window)
+{
+	cancel_ = find_widget<tbutton>(&window, "_cancel", false, false);
+	for (int i = 0; i < 4; i ++) {
+		cancel_->canvas()[i].set_variable("image", variant("misc/delete.png"));
+	}
+	connect_signal_mouse_left_click(
+		*cancel_
+		, boost::bind(
+		&ttransfer::cancel
+		, this
+		, boost::ref(window)));
+
+	window_ = window;
+}
+
+void ttransfer::process(events::pump_info&)
 {
 	connection_.poll();
 	if (!window_) return;
 	if (connection_.done()) {
 		window_.get().set_retval(twindow::OK);
+
 	} else {
+		if (SDL_GetTicks() - start_ticks_ >= hidden_ticks_) {
+			window_.get().set_visible(twidget::VISIBLE);
+		}
 		size_t completed, total;
 		if (track_upload_) {
 			completed = connection_.bytes_written();
@@ -46,9 +78,9 @@ void tnetwork_transmission::pump_monitor::process(events::pump_info&)
 			completed = connection_.bytes_read();
 			total = connection_.bytes_to_read();
 		}
-		if (total) {
 
-			find_widget<tprogress_bar>(&(window_.get()), "progress", false)
+		if (total) {
+			find_widget<tprogress_bar>(&(window_.get()), "_progress", false)
 				.set_percentage((completed*100.)/total);
 
 			std::stringstream ss;
@@ -56,19 +88,25 @@ void tnetwork_transmission::pump_monitor::process(events::pump_info&)
 			   << "/"
 			   << utils::si_string(total, true, _("unit_byte^B"));
 
-			find_widget<tlabel>(&(window_.get()), "numeric_progress", false)
+			find_widget<tlabel>(&(window_.get()), "_numeric_progress", false)
 					.set_label(ss.str());
-			window_->invalidate_layout();
+			window_.get().invalidate_layout();
 
 		}
 	}
 }
 
+void ttransfer::cancel(gui2::twindow& window)
+{
+	window_.reset();
+	connection_.cancel();
+
+	window.set_retval(twindow::CANCEL);
+}
+
 tnetwork_transmission::tnetwork_transmission(network_asio::connection& connection, 
-					const std::string& title, const std::string& subtitle)
-	: connection_(connection)
-	, track_upload_(false)
-	, pump_monitor_(connection, track_upload_)
+					const std::string& title, const std::string& subtitle, int hidden_ms)
+	: ttransfer(connection, hidden_ms)
 	, title_(title)
 	, subtitle_(subtitle)
 {
@@ -85,13 +123,13 @@ void tnetwork_transmission::pre_show(CVideo& /*video*/, twindow& window)
 		subtitle_label.set_label(subtitle_);
 	}
 
-	pump_monitor_.window_ = window;
+	ttransfer::pre_show(window);
+
+	window.set_visible(twidget::INVISIBLE);
 }
 
 void tnetwork_transmission::post_show(twindow& /*window*/)
 {
-	pump_monitor_.window_.reset();
-	connection_.cancel();
 }
 
 } // namespace gui2

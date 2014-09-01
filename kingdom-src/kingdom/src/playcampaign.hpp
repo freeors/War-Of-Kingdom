@@ -21,7 +21,7 @@
 
 #include "game_end_exceptions.hpp"
 
-class display;
+class game_display;
 class game_state;
 class config;
 class hero_map;
@@ -34,13 +34,13 @@ enum io_type_t {
 	IO_CLIENT
 };
 
-LEVEL_RESULT play_game(display& disp, game_state& state,
+LEVEL_RESULT play_game(game_display& disp, game_state& state,
 		const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards,
 		io_type_t io_type=IO_NONE,
 		bool skip_replay = false);
 
-void play_replay(display& disp, game_state& state,
+void play_replay(game_display& disp, game_state& state,
 		const config& game_config, hero_map& heros, hero_map& heros_start, 
 		card_map& cards, CVideo& video);
 

@@ -21,6 +21,7 @@
 #include "gui/auxiliary/window_builder/stacked_widget.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/generator.hpp"
+#include "gui/widgets/window.hpp"
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -34,6 +35,27 @@ tstacked_widget::tstacked_widget()
 	, generator_(
 			tgenerator_::build(false, false, tgenerator_::independent, false))
 {
+}
+
+void tstacked_widget::child_populate_dirty_list(twindow& caller,
+		const std::vector<twidget*>& call_stack)
+{
+	std::vector<std::vector<twidget*> >& dirty_list = caller.dirty_list();
+	size_t dirty_size = dirty_list.size();
+
+	for(size_t i = 0; i < generator_->get_item_count(); ++i) {
+		std::vector<twidget*> child_call_stack = call_stack;
+		generator_->item(i).populate_dirty_list(caller, child_call_stack);
+		
+		if (dirty_list.size() != dirty_size) {
+			std::vector<std::vector<twidget*> >::iterator it = dirty_list.begin();
+			for (std::advance(it, dirty_size); it != dirty_list.end(); ) {
+				it = dirty_list.erase(it);
+			}
+			caller.add_to_dirty_list(call_stack);
+			return;
+		}
+	}
 }
 
 void tstacked_widget::layout_children()

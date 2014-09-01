@@ -34,10 +34,9 @@
 #include "formula_string_utils.hpp"
 #include "map.hpp"
 #include "savegame.hpp"
-#include "unit_id.hpp"
 #include "replay.hpp"
 #include "wml_separators.hpp"
-#include "statistics.hpp"
+#include "help.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
@@ -77,8 +76,6 @@ namespace gui2 {
 
 extern std::vector<std::set<int> > generate_team_names_from_side(const config& cfg);
 extern std::vector<int> generate_allies_from_team_names(const std::vector<std::set<int> >& team_names);
-extern void check_response(network::connection res, const config& data);
-extern std::string get_color_string(int id);
 
 REGISTER_DIALOG(mp_side_wait)
 
@@ -92,17 +89,18 @@ void tplayer_list_side_wait::init(twindow & w)
 			, true);
 }
 
-tmp_side_wait::tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& gui, gamemap& gmap, const config& game_config,
+tmp_side_wait::tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
 			config& gamelist, bool observe)
 	: legacy_result_(QUIT)
 	, heros_(heros)
 	, heros_start_(heros_start)
-	, gui_(gui)
+	, disp_(disp)
 	, gmap_(gmap)
 	, game_config_(game_config)
 	, level_()
 	, state_()
 	, users_()
+	, member_users_()
 	, gamelist_(gamelist)
 	, observe_(observe)
 	, stop_updates_(false)
@@ -116,6 +114,11 @@ tmp_side_wait::~tmp_side_wait()
 
 void tmp_side_wait::pre_show(CVideo& /*video*/, twindow& window)
 {
+	std::stringstream strstr;
+
+	runtime_groups::gs.clear();
+	member_users_.insert(std::make_pair(group.leader().name(), group.to_membership()));
+
 	player_list_.init(window);
 
 	waiting_ = find_widget<tlabel>(&window, "waiting", false, true);
@@ -133,8 +136,11 @@ void tmp_side_wait::pre_show(CVideo& /*video*/, twindow& window)
 	join_game(window, observe_);
 
 	// Add the map name to the title.
+	strstr.str("");
+	strstr << help::tintegrate::generate_img(unit_types.genus(level_["turn_based"].to_bool()? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
+	strstr << _("Set Side") << ": " << level_["name"].t_str();
 	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
-	label->set_label(std::string(_("Set Side")) + ": " + level_["name"].t_str());
+	label->set_label(strstr.str());
 
 	waiting_->set_label(_("Waiting for game to start..."));
 
@@ -151,14 +157,14 @@ void tmp_side_wait::join_game(twindow& window, bool observe)
 	//the first condition is to make sure that we don't have another
 	//WML message with a side-tag in it
 	while (!level_.has_attribute("version") || !level_.child("side")) {
-		network::connection data_res = dialogs::network_receive_dialog(gui_,
+		network::connection data_res = dialogs::network_receive_dialog(disp_,
 				_("Getting game data..."), level_);
 		if (!data_res) {
 			legacy_result_ = QUIT;
 			window.close();
 			return;
 		}
-		check_response(data_res, level_);
+		mp::check_response(data_res, level_);
 		if (level_.child("leave_game")) {
 			legacy_result_ = QUIT;
 			window.close();
@@ -257,6 +263,12 @@ void tmp_side_wait::start_game()
 	 * stored.)
 	 */
 	level_to_gamestate(level_, replay_data_, state_);
+
+	if (runtime_groups::gs.empty()) {
+		// heros_ is generated automaticly, it is necessary to keep same at start.
+		heros_start_ = heros_;
+		users_2_groups(users_, member_users_);
+	}
 }
 
 
@@ -271,7 +283,7 @@ void tmp_side_wait::process_network_data(const config& data, const network::conn
 	twindow& window = *sides_table_->get_window();
 	
 	if (data["message"] != "") {
-		gui2::show_transient_message(gui_.video()
+		gui2::show_transient_message(disp_.video()
 				, _("Response")
 				, data["message"]);
 	}
@@ -284,6 +296,7 @@ void tmp_side_wait::process_network_data(const config& data, const network::conn
 
 	} else if (const config& cfg = data.child("change_faction")) {
 		int type = cfg["type"].to_int(-1);
+		int len = cfg["len"].to_int(-1);
 		if (type == BINARY_HEROS) {
 			heros_.map_from_mem(game_config::savegame_cache, heros_.file_size());
 
@@ -292,6 +305,9 @@ void tmp_side_wait::process_network_data(const config& data, const network::conn
 
 		} else if (type == BINARY_REPLAY) {
 			replay_data_.read(game_config::savegame_cache);
+
+		} else if (type == BINARY_GROUP) {
+			runtime_groups::from_mem(heros_, game_config::savegame_cache, len);
 		}
 
 	} else if(data.child("start_game")) {
@@ -333,7 +349,7 @@ void tmp_side_wait::update_playerlist()
 		std::map<std::string, string_map> tree_group_item;
 
 		/*** Add tree item ***/
-		tree_group_field["label"] = decide_player_iocn(it->controller_);
+		tree_group_field["label"] = decide_player_iocn(it->controller);
 		tree_group_item["icon"] = tree_group_field;
 
 		tree_group_field["label"] = name;
@@ -350,26 +366,9 @@ void tmp_side_wait::update_playerlist()
 void tmp_side_wait::generate_menu(twindow& window)
 {
 	if (stop_updates_) {
-		BOOST_FOREACH (const config &sd, level_.child_range("side")) {
-			int number = sd["leader"].to_int();
-			hero& leader = heros_[number];
-			int selected_feature = sd["selected_feature"].to_int();
-			if (selected_feature >= COMBO_FEATURES_MIN_VALID) {
-				leader.side_feature_ = hero::valid_features()[selected_feature - COMBO_FEATURES_MIN_VALID];
+		return;
+	}
 
-			} else if (selected_feature == COMBO_FEATURES_NONE) {
-				leader.side_feature_ = HEROS_NO_FEATURE;
-			}
-			// effect to ...
-			heros_start_[number] = leader;
-		}
-		return;
-	}
-/*
-	if (sides_table_->get_item_count()) {
-		return;
-	}
-*/
 	std::stringstream strstr;
 
 	users_.clear();
@@ -379,11 +378,6 @@ void tmp_side_wait::generate_menu(twindow& window)
 	std::vector<int> allies = generate_allies_from_team_names(team_names);
 	int side = 0;
 	BOOST_FOREACH (const config &sd, level_.child_range("side")) {
-		if (!sd["allow_player"].to_bool(true)) {
-			side ++;
-			continue;
-		}
-
 		if (!sd["current_player"].empty()) {
 			const std::string player_id = sd["current_player"].str();
 			connected_user_list::const_iterator it = users_.begin();
@@ -395,6 +389,14 @@ void tmp_side_wait::generate_menu(twindow& window)
 			if (it == users_.end()) {
 				users_.push_back(connected_user(player_id, (player_id == preferences::login())? CNTR_LOCAL: CNTR_NETWORK, 0));
 			}
+		}
+	}
+	regenerate_hero_map_from_users(disp_, heros_, users_, member_users_);
+
+	BOOST_FOREACH (const config &sd, level_.child_range("side")) {
+		if (!sd["allow_player"].to_bool(true)) {
+			side ++;
+			continue;
 		}
 
 		// std::stringstream str;
@@ -421,24 +423,20 @@ void tmp_side_wait::generate_menu(twindow& window)
 			hero& leader = heros_[sd["leader"].to_int()];
 			data["faction"]["label"] = leader.name();
 			data["portrait"]["label"] = leader.image();
+			data["feature"]["label"] = hero::feature_str(leader.side_feature_);
 		} else {
 			data["faction"]["label"] = _("Random");
 			data["portrait"]["label"] = "hero-64/random.png";
-		}
-
-		std::string feature_str;
-		int selected_feature = sd["selected_feature"].to_int();
-		if (selected_feature == COMBO_FEATURES_RANDOM) {
-			data["feature"]["label"] = _("Random");
-
-		} else if (selected_feature >= COMBO_FEATURES_MIN_VALID) {
-			data["feature"]["label"] = hero::feature_str(hero::valid_features()[selected_feature - COMBO_FEATURES_MIN_VALID]);
+			data["feature"]["label"] = hero::feature_str(HEROS_NO_FEATURE);
 		}
 
 		strstr.str("");
 		strstr << allies[side];
 		data["ally"]["label"] = strstr.str();
-		data["income"]["label"] = sd["income"].str();
+
+		strstr.str("");
+		strstr << sd["gold"].to_int() << "/" << sd["income"].to_int();
+		data["income"]["label"] = strstr.str();
 
 		sides_table_->add_row(data);
 

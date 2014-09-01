@@ -130,7 +130,7 @@ bool mouse_action::has_shift_modifier() const
 bool mouse_action::has_ctrl_modifier() const
 {
 #ifdef __APPLE__
-	return key_[SDLK_RMETA] || key_[SDLK_LMETA];
+	return key_[SDLK_RGUI] || key_[SDLK_LGUI];
 #else
 	return key_[SDLK_RCTRL] || key_[SDLK_LCTRL];
 #endif
@@ -235,7 +235,8 @@ editor_action* brush_drag_mouse_action::drag_generic(editor_display& disp, int x
 		std::set<map_location> current_step_locs = affected_hexes(disp, hex);
 		editor_action_extendable* last_undo_x = dynamic_cast<editor_action_extendable*>(last_undo);
 		LOG_ED << "Last undo is " << last_undo << " and as x " << last_undo_x << "\n";
-		partial = true;
+		// partial = true;
+		partial = previous_drag_hex_.valid();
 		editor_action* a = (this->*perform_func)(disp, affected_hexes(disp, hex));
 		previous_drag_hex_ = hex;
 		return a;

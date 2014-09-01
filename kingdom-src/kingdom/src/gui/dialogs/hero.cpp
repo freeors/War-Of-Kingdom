@@ -34,6 +34,7 @@
 #include "preferences_display.hpp"
 #include "hero.hpp"
 #include "formula_string_utils.hpp"
+#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -107,9 +108,10 @@ namespace gui2 {
 
 REGISTER_DIALOG(hero)
 
-thero::thero(hero_map& heros, hero& h)
+thero::thero(hero_map& heros, hero& h, hero* base)
 	: heros_(heros)
 	, h_(h)
+	, base_(base)
 	, current_page_(NONE_PAGE)
 	, page_panel_(NULL)
 {
@@ -175,6 +177,8 @@ void thero::pre_show(CVideo& video, twindow& window)
 	label = find_widget<tlabel>(&window, "character", false, true);
 	if (h_.character_ != HEROS_NO_CHARACTER) {
 		label->set_label(unit_types.character(h_.character_).name());
+	} else if (base_ && base_->character_ != HEROS_NO_CHARACTER) {
+		label->set_label(help::tintegrate::generate_format(unit_types.character(base_->character_).name(), "red"));
 	} else {
 		label->set_label("      ");
 	}
@@ -203,7 +207,7 @@ void thero::fill_base(twindow& window)
 	set_label_int(window, "leadership", fxptoi9(h_.leadership_));
 	set_label_int(window, "force", fxptoi9(h_.force_));
 	set_label_int(window, "intellect", fxptoi9(h_.intellect_));
-	set_label_int(window, "politics", fxptoi9(h_.politics_));
+	set_label_int(window, "spirit", fxptoi9(h_.spirit_));
 	set_label_int(window, "charm", fxptoi9(h_.charm_));
 
 	for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
@@ -232,12 +236,16 @@ void thero::fill_base(twindow& window)
 	label = find_widget<tlabel>(&window, "tactic", false, true);
 	if (h_.tactic_ != HEROS_NO_TACTIC) {
 		label->set_label(unit_types.tactic(h_.tactic_).name());
+	} else if (base_ && base_->tactic_ != HEROS_NO_TACTIC) {
+		label->set_label(help::tintegrate::generate_format(unit_types.tactic(base_->tactic_).name(), "red"));
 	} else {
 		label->set_label(" ");
 	}
 	label = find_widget<tlabel>(&window, "tactic_description", false, true);
 	if (h_.tactic_ != HEROS_NO_TACTIC) {
 		label->set_label(unit_types.tactic(h_.tactic_).description());
+	} else if (base_ && base_->tactic_ != HEROS_NO_TACTIC) {
+		label->set_label(unit_types.tactic(base_->tactic_).description());
 	} else {
 		label->set_label("");
 	}
@@ -260,7 +268,7 @@ void thero::fill_biography(twindow& window)
 	text_box->set_active(false);
 
 	tscroll_label* biography = find_widget<tscroll_label>(&window, "biography_text", false, true);
-	biography->set_label(h_.biography());
+	biography->set_label(h_.biography2(heros_));
 }
 
 void thero::swap_page(twindow& window, int page, bool swap)

@@ -68,6 +68,8 @@ private:
 	bool card_valid(const std::string& mode) const;
 
 	void player_faction(twindow& window);
+	void genus(twindow& window);
+
 protected:
 	hero_map& heros_;
 	card_map& cards_;
@@ -87,10 +89,12 @@ protected:
 
 	hero* player_hero_;
 	std::map<int, int> city_map_;
+	std::map<int, int> empty_city_map_;
 	std::map<int, int> city_leader_map_;
 
 	tlistbox* faction_list_;
 	tbutton* player_faction_;
+	tbutton* genus_;
 
 	bool shroud_;
 	bool fog_;

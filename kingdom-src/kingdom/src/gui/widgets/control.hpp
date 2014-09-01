@@ -253,10 +253,10 @@ public:
 		return text_alignment_;
 	}
 
-protected:
 	tresolution_definition_ptr config() { return config_; }
 	tresolution_definition_const_ptr config() const { return config_; }
 
+protected:
 	void set_config(tresolution_definition_ptr config) { config_ = config; }
 
 	/***** ***** ***** ***** miscellaneous ***** ***** ***** *****/

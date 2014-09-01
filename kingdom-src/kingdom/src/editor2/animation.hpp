@@ -19,7 +19,7 @@ public:
 public:
 	std::string id_;
 	std::string description_;
-	std::vector<std::string> variables_;
+	std::map<std::string, std::string> variables_;
 };
 
 //
@@ -36,6 +36,9 @@ public:
 	explicit tparticular(int start_time=0, const frame_builder &builder = frame_builder())
 		: animated<unit_frame>(start_time)
 		, parameters_(builder)
+		, layer_(0)
+		, zoom_x_(0)
+		, zoom_y_(0)
 		{};
 	explicit tparticular(const config& cfg, const std::string& frame_string = "frame");
 
@@ -49,6 +52,9 @@ public:
 public:
 	// animation params that can be locally overridden by frames
 	frame_parsed_parameters parameters_;
+	int layer_;
+	int zoom_x_;
+	int zoom_y_;
 };
 
 class tanim_
@@ -140,6 +146,7 @@ public:
 	// filter
 	std::set<map_location::DIRECTION> directions_;
 	std::set<hit_type> hits_;
+	int align_;
 	std::vector<config> primary_attack_filter_;
 	std::vector<config> secondary_attack_filter_;
 

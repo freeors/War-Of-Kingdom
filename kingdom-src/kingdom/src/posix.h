@@ -61,12 +61,16 @@
 	// application: I think using zero-sized is useful, so disable this warning 
 	#pragma warning( disable: 4200 )
 #elif defined(_LINUX)
-	#include <linux/version.h>	// 易于判断使用哪个linux内核版本
+	#include <linux/version.h>
 	#ifdef __KERNEL__
-		#include <linux/types.h>	// 包含uint32_t等类型定义
+		#include <linux/types.h>	// include uint32_t etc.
 	#else
 		#include <stdio.h>
 	#endif
+#elif defined(ANDROID)
+	#include <android/log.h>
+	#include <stdio.h>
+
 #else
 	#include <stdio.h>
 #endif
@@ -508,8 +512,12 @@ typedef FILE*			posix_file_t;
 	#define posix_print_mb(format, arg...)  printk(KERN_ALERT format, ##arg)
 
 #elif defined(__APPLE__) // mac os x/ios
-	#define posix_print(format, arg...) fprintf(stderr, format, ## arg)
-	#define posix_print_mb(format, arg...) fprintf(stderr, format, ## arg)
+	#define posix_print(format, ...) fprintf(stderr, format, ##__VA_ARGS__)
+	#define posix_print_mb(format, ...) fprintf(stderr, format, ##__VA_ARGS__)
+
+#elif defined(ANDROID) // android
+	#define posix_print(format, ...) __android_log_print(ANDROID_LOG_INFO, "kingdom", format, ##__VA_ARGS__)
+	#define posix_print_mb(format, ...) __android_log_print(ANDROID_LOG_INFO, "kingdom", format, ##__VA_ARGS__)
 
 #else
 	#define posix_print(format, arg...) printf(format, ## arg)

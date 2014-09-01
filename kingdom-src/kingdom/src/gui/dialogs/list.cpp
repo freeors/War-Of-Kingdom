@@ -73,12 +73,13 @@ namespace gui2 {
 
 REGISTER_DIALOG(list)
 
-tlist::tlist(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side)
+tlist::tlist(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, const config& game_config, int side)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, gamestate_(gamestate)
+	, game_config_(game_config)
 	, current_team_(teams[side - 1])
 {
 	
@@ -201,7 +202,7 @@ void tlist::side(twindow& window, bool global)
 	if (global) {
 		side_num = -1;
 	}
-	gui2::tside_list dlg(gui_, teams_, units_, heros_, gamestate_);
+	gui2::tside_list dlg(gui_, teams_, units_, heros_, gamestate_, game_config_);
 	try {
 		dlg.show(gui_.video());
 	} catch(twml_exception& e) {

@@ -23,6 +23,7 @@
 #include "serialization/parser.hpp"
 #include "serialization/preprocessor.hpp"
 #include "loadscreen.hpp"
+#include "posix.h"
 
 #include <stdexcept>
 #include <clocale>
@@ -38,10 +39,6 @@ extern "C" int _putenv(const char*);
 
 #ifdef __APPLE__
 #include <cerrno>
-#endif
-
-#ifdef ANDROID
-#include <android/log.h>
 #endif
 
 #define DBG_G LOG_STREAM(debug, lg::general)
@@ -136,21 +133,13 @@ static void wesnoth_setlocale(int category, std::string const &slocale,
 	// instead of en_US the first time round
 	// LANGUAGE overrides other settings, so for now just get rid of it
 	// FIXME: add configure check for unsetenv
-#ifndef _WIN32
-#ifndef __AMIGAOS4__
-	unsetenv ("LANGUAGE"); // void so no return value to check
-#endif
+#if defined(__APPLE__) || defined(ANDROID)
+	if (category == LC_MESSAGES && setenv("LANG", locale.c_str(), 1) == -1) {
+		posix_print("wesnoth_setlocal, setenv LANG failed");
+	}
 #endif
 
-#if defined(__BEOS__) || defined(__APPLE__) || defined(ANDROID)
-	if (category == LC_MESSAGES && setenv("LANG", locale.c_str(), 1) == -1) {
-#if defined(ANDROID)
-		__android_log_print(ANDROID_LOG_INFO, "SDL", "wesnoth_setlocal, setenv LANG failed");
-#else
-		ERR_G << "setenv LANG failed: " << strerror(errno);
-#endif
-	}
-#elif defined _WIN32
+#if defined _WIN32
 	std::string win_locale(locale, 0, 2);
 	#include "language_win32.ii"
 	if (category == LC_MESSAGES) {

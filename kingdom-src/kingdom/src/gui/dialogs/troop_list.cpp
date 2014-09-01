@@ -284,14 +284,12 @@ void ttroop_list::fill_table(int catalog)
 			table_item_item.insert(std::make_pair("movement", table_item));
 
 			str.str("");
-			if (i->get_state(unit::STATE_PETRIFIED))
+			if (i->get_state(ustate_tag::PETRIFIED))
 				str << _("Petrified ");
-			if (i->get_state(unit::STATE_SLOWED))
+			if (i->get_state(ustate_tag::SLOWED))
 				str << _("Slowed ");
-			if (i->get_state(unit::STATE_POISONED))
+			if (i->get_state(ustate_tag::POISONED))
 				str << _("Poisoned ");
-			if (i->get_state("invisible"))
-				str << _("Invisible");
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("status_status", table_item));
 

@@ -2,14 +2,10 @@
 #define __HERO_HPP_
 
 #include "posix.h"
-#include <string>
-#include <vector>
+#include "config.hpp"
 #include <set>
-#include <map>
 
-// 以下函数用于
-// 1. 在实际值和显示值之间进行转换。存储在内存中的是fixed_t，显示值是float或int
-// 2. 得到取整值。fxptoi8(x)
+// change between actual value and display value. actual value is fixed_t, display value is float or int.
 typedef uint16_t fixed16_t;
 #define fxp8_shift 8
 #define fxp8_base 256	// (1 << fxp8_shift)
@@ -89,15 +85,21 @@ bool u16_get_experience_i9(uint16_t* field, uint16_t inc_xp);
 bool u16_get_experience_i12(uint16_t* field, uint16_t inc_xp);
 
 class hero_map;
-class config;
 class unit;
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
 class unit_map;
 class team;
 class vconfig;
+class display;
+class game_display;
+class game_state;
+class ttechnology;
+namespace http {
+	struct membership;
+	struct temployee;
+}
 #endif
 
-// 最大8192个武将
 // 256 + 64 + 704 = 1024
 #define HEROS_MAX_HEROS			8192
 #define HEROS_BYTES_PER_HERO	240
@@ -119,6 +121,16 @@ class vconfig;
 
 #define HERO_PREFIX_STR_NAME	"name-"
 #define HERO_PREFIX_STR_SURNAME	"surname-"
+
+enum {
+	hero_field_min,
+	hero_field_leadership = hero_field_min,
+	hero_field_force,
+	hero_field_intellect,
+	hero_field_spirit,
+	hero_field_charm,
+	hero_field_max = hero_field_charm,
+};
 
 #define HEROS_MAX_GENDER	3
 #define HERO_PREFIX_STR_GENDER	"gender-"
@@ -182,7 +194,9 @@ enum {
 	hero_flag_min = 0,
 	hero_flag_robber = hero_flag_min,
 	hero_flag_roam,
-	hero_flag_max = hero_flag_roam,
+	hero_flag_employee,
+	hero_flag_npc,
+	hero_flag_max = hero_flag_npc,
 };
 
 #define HEROS_MAX_ARMS	6
@@ -227,7 +241,7 @@ enum {
 	hero_skill_max = hero_skill_t7,
 };
 
-#define HEROS_MAX_RANGE		4 // melee, ranged, cast, reserve
+#define HEROS_MAX_RANGE		3 // melee, ranged, cast
 #define HEROS_MAX_FEATURE	128
 #define HEROS_FEATURE_BYTES	16 // HEROS_MAX_FEATURE / 8
 #define HEROS_FEATURE_M2BYTES	32 // HEROS_FEATURE_BYTES * 2
@@ -244,7 +258,7 @@ enum {
 
 	hero_feature_pure = hero_feature_range_max + 1, // ---> 30
 	hero_feature_guide,
-	hero_feature_spirit,
+	hero_feature_arms,
 	hero_feature_poison,
 	hero_feature_diamond,
 	hero_feature_shuttle,
@@ -276,6 +290,10 @@ enum {
 	hero_feature_inspirit,
 	hero_feature_granary,
 	hero_feature_ground,
+	hero_feature_tactic,
+	hero_feature_carom,
+	hero_feature_disturb,
+	hero_feature_spirit,
 
 	hero_feature_complex_min = HEROS_BASE_FEATURE_COUNT,
 
@@ -346,7 +364,7 @@ struct hero_5fields_t {
 	uint16_t leadership_;
 	uint16_t force_;
 	uint16_t intellect_;
-	uint16_t politics_;
+	uint16_t spirit_;
 	uint16_t charm_;
 };
 
@@ -376,7 +394,7 @@ struct hero_feeling {
 	uint16_t leadership_;	\
 	uint16_t force_;	\
 	uint16_t intellect_;	\
-	uint16_t politics_;	\
+	uint16_t spirit_;	\
 	uint16_t charm_;	\
 	uint16_t meritorious_;	\
 	uint16_t city_;	\
@@ -385,7 +403,11 @@ struct hero_feeling {
 	uint16_t arms_[6];	\
 	uint16_t skill_[8];	\
 	uint16_t number_;	\
-	uint8_t reserve2_[96];	\
+	uint16_t player_;	\
+	uint16_t name_;	\
+	uint16_t surname_;	\
+	uint16_t desc_;	\
+	uint8_t reserve2_[88];	\
 	hero_feeling parent_[HEROS_MAX_PARENT];	\
 	hero_feeling consort_[HEROS_MAX_CONSORT];	\
 	hero_feeling oath_[HEROS_MAX_OATH];	\
@@ -402,7 +424,7 @@ struct hblock {
 	int leadership;
 	int force;
 	int intellect;
-	int politics;
+	int spirit;
 	int charm;
 	int meritorious;
 	int arms[HEROS_MAX_ARMS];
@@ -429,8 +451,8 @@ struct ublock {
 	int force_speed;
 	bool intellect;
 	int intellect_speed;
-	bool politics;
-	int politics_speed;
+	bool spirit;
+	int spirit_speed;
 	bool charm;
 	int charm_speed;
 	bool meritorious;
@@ -497,6 +519,7 @@ public:
 	static int number_fort;
 	static int number_tower;
 	static int number_tactic;
+	static int number_school;
 	static int number_artifical_min;
 	static int number_artifical_max;
 	static bool is_artifical(int h);
@@ -509,10 +532,17 @@ public:
 	static int number_commoner_max;
 	static bool is_commoner(int h);
 
+	static bool data_variable(int h);
+
+	static int number_local_player_city;
+	static int number_network_player_city_min;
+	static int number_network_player_city_max;
+
 	static int number_city_min;
 	static int number_normal_min;
+	static int number_employee_min;
 
-	hero(uint16_t number, uint16_t leadership = 0, uint16_t force = 0, uint16_t intellect = 0, uint16_t politics = 0, uint16_t charm = 0);
+	hero(uint16_t number, uint16_t leadership = 0, uint16_t force = 0, uint16_t intellect = 0, uint16_t spirit = 0, uint16_t charm = 0);
 	hero(const hero& that);
 	hero(const uint8_t* mem);
 
@@ -520,6 +550,7 @@ public:
 	void read(const uint8_t* mem);
 
 	const bool valid() const;
+	void clear_relation();
 
 	enum FEELING {FEELING_PARENT, FEELING_CONSORT, FEELING_OATH, FEELING_INTIMATE, FEELING_HATE, FEELING_NONE};
 	bool is_parent(const hero& h, uint32_t* index = NULL) const;
@@ -528,34 +559,44 @@ public:
 	bool is_intimate(const hero& h, uint32_t* index = NULL) const;
 	bool is_hate(const hero& h, uint32_t* index = NULL) const;
 
-	int increase_catalog(int inc, hero& leader);
+	int increase_catalog(int inc, const hero& leader);
 
 	int loyalty(const hero& leader) const;
 	int base_loyalty(const hero& leader) const;
 	int increase_loyalty(int inc, hero& leader);
-	void set_loyalty(hero& leader, int level, bool fixed = false);
+	void set_loyalty(const hero& leader, int level, bool fixed = false);
 	void set_loyalty2(hero& leader, int level, bool fixed = false);
+	void set_loyalty3(const hero& leader, int level);
 
 	void set_flag(int flag);
 	void clear_flag(int flag);
 	bool get_flag(int flag) const;
 
+	bool can_goto_hate(const hero& h) const;
+	void do_hate_relation(hero& to, bool set);
 	int increase_feeling(hero& to, int inc, int& descent_number);
 	bool has_nomal_noble() const;
 
-	void to_unstage();
+	enum {UNSTAGE_NONE, UNSTAGE_GROUP};
+	void to_unstage(int reason = UNSTAGE_NONE);
 	void change_language();
 
+	static std::string image_from_uid(int uid, int gender, bool big);
 	const char* image(bool big = false);
 	void set_image(int image);
-
+	
 	std::string& name();
 	void set_name(const std::string& name);
+
+	int uid() const { return uid_ ; }
+	void set_uid(int _uid);
 
 	std::string& surname();
 	void set_surname(const std::string& surname);
 
 	const char* biography();
+	std::string biography2(const hero_map& heros);
+	void set_biography(const std::string& biography);
 
 	std::string heart_str();
 
@@ -564,10 +605,20 @@ public:
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
 	void add_modification(unit_map& units, hero_map& heros, std::vector<team>& teams, const config& mod, unit* u, hero* leader);
 	bool internal_matches_filter(const vconfig& cfg);
+	void goto_hate_if(const team& new_team, const hero& original_leader, int random);
 	void increase_feeling_each(unit_map& units, hero_map& heros, hero& to, int inc);
 #endif
 	bool get_xp(const hblock& hb);
 
+	int calculate_used_point() const;
+	void adjust_according_to_level(const hero& base, int level, const hero& leader);
+	bool is_roam_member() const;
+	void field_set_minmum();
+	std::string field_to_str();
+	void field_from_str(const std::string& str);
+	std::string translatable_to_str();
+	void translatable_from_str(const std::string& str);
+	static int gender_from_filed_str(const std::string& str);
 // attribute
 public:
 	// HERO_FIELDS;
@@ -589,11 +640,13 @@ private:
 	std::string imgfile2_;
 	std::string name_str_;
 	std::string surname_str_;
+	int uid_;
+	std::string biography_str_;
 };
 
 
 bool compare_leadership(const hero* lhs, const hero* rhs);
-bool compare_politics(const hero* lhs, const hero* rhs);
+bool compare_spirit(const hero* lhs, const hero* rhs);
 bool compare_recruit(const hero* lhs, const hero* rhs);
 
 extern hero hero_invalid;
@@ -681,7 +734,6 @@ public:
 	void set_path(const std::string& path);
 
 	// load from/save to file
-	// 如果同名，碰到c++把本该调用(fname)去调用fp了，为显示只好不同名
 	bool map_to_file(const std::string& fname);
 	bool map_to_file_fp(posix_file_t fp);
 	bool map_from_file(const std::string& fname);
@@ -714,8 +766,7 @@ public:
 
 	void realloc_hero_map(const size_t size);
 
-	hero& operator[](const uint16_t num);
-	const hero& operator[](const uint16_t num) const;
+	hero& operator[](const uint16_t num) const;
 
 	void reset_to_unstage();
 	void change_language();
@@ -727,20 +778,283 @@ private:
 	uint16_t map_vsize_;
 };
 
+namespace upgrade {
+struct trequire {
+	trequire(int _coin = 0, int _score = 0)
+		: coin(_coin)
+		, score(_score)
+	{}
+
+	int coin;
+	int score;
+};
+extern std::vector<trequire> require_member, require_noble;
+
+void fill_require();
+const trequire& member_require(int level);
+trequire member_upgrade_cost(int from, int to);
+const trequire& noble_require(int noble);
+trequire noble_upgrade_cost(int from, int to);
+}
+
+struct tlocation_anim
+{
+	tlocation_anim(int _xoffset, int _yoffset, std::string _text, Uint32 _color)
+		: xoffset(_xoffset)
+		, yoffset(_yoffset)
+		, text(_text)
+		, color(_color)
+	{}
+
+	int xoffset;
+	int yoffset;
+	std::string text;
+	Uint32 color;
+};
+
 class tgroup
 {
 public:
-	tgroup()
-		: leader_(hero(HEROS_INVALID_NUMBER))
-	{}
+	struct tmember {
+		tmember()
+			: base(NULL)
+			, level(0)
+			, h(NULL)
+		{}
 
-	hero& leader() { return leader_; }
-	const hero& leader() const { return leader_; }
+		bool operator<(const tmember& that) const
+		{
+			return base->number_ < that.base->number_;
+		}
+		bool operator==(const tmember& that) const
+		{
+			return base->number_ == that.base->number_;
+		}
+		
+		hero* base;
+		int level;
+		hero* h;
+	};
+	static tmember null_member;
+
+	struct tassociate {
+		enum {none, requestally, ally, requestterminate, all};
+		tassociate(const std::string& _username, int _uid, int _agreement, time_t _t)
+			: username(_username)
+			, uid(_uid)
+			, agreement(_agreement)
+			, t(_t)
+		{}
+
+		std::string username;
+		int uid;
+		int agreement;
+		time_t t;
+	};
+
+	struct tsignin {
+		tsignin(bool _today = false, int _continue = 0, int _break = 0)
+			: today(_today)
+			, continue_days(_continue)
+			, break_days(_break)
+		{}
+
+		bool today;
+		int continue_days;
+		int break_days;
+	};
+
+	tgroup()
+		: leader_(NULL)
+		, members_()
+		, exiles_()
+		, city_(NULL)
+		, vip_(0)
+		, expire_(0)
+		, noble_(0)
+		, signin_(tsignin())
+		, coin_(0)
+		, score_(0)
+		, tax_(0)
+		, layout_()
+		, map_()
+		, browsed_(0)
+		, faction_cfg_()
+	{
+		memset(interiors_, 0, sizeof(interiors_));
+		memset(messages_, 0, sizeof(messages_));
+	}
+	void reset();
+	bool valid() const;
+	
+	void set_leader(hero& h) { leader_ = &h; }
+	hero& leader() const { return *leader_; }
+
+	void set_city(hero& h) { city_ = &h; }
+	hero& city() const { return *city_; }
+
+	tmember& member(const hero& h);
+	const tmember& member(const hero& h) const;
+
+	const tmember& exile(const hero& h) const;
+
+	tmember& member_from_base(const hero& h);
+	const tmember& member_from_base(const hero& h) const;
+
+	hero* exist_member(int number) const;
+	const std::vector<tmember>& members() const { return members_; }
+	void insert_member(hero_map& heros, int number, int level);
+	void unstage_member(hero_map& heros, int number);
+	void adjust_members_according_to_leader(hero_map& heros);
+	std::vector<tmember*> part_members(hero_map& heros, bool roam);
+
+	hero* exist_exile(int number) const;
+	void insert_exile(hero_map& heros, int number, int level);
+	void unstage_exile(hero_map& heros, int number);
+	const std::vector<tmember>& exiles() const { return exiles_; }
+
+	const std::vector<tassociate>& associates() const { return associates_; }
+	std::vector<tassociate>& associates() { return associates_; }
+	std::vector<tassociate> associates_from_agreement(int agreement) const;
+	std::vector<tassociate> associates_from_agreement(std::set<int>& agreement) const;
+	const tassociate& associate(int uid) const;
+
+	void set_vip(int val) { vip_ = val; }
+	int vip() const { return vip_; }
+	
+	void set_expire(time_t val) { expire_ = val; }
+	time_t expire() const { return expire_; }
+
+	void set_noble(int val) { noble_ = val; }
+	int noble() const { return noble_; }
+
+	void set_coin(int val) { coin_ = val; }
+	int coin() const { return coin_; }
+
+	void set_score(int val) { score_ = val; }
+	int score() const { return score_; }
+
+	void set_tax(int val) { tax_ = val; }
+	int tax() const { return tax_; }
+
+	enum {interior_military, interior_culture, interior_economy, interior_science, interior_count};
+	int interior(int type) const { return interiors_[type]; }
+	static void interior_from_str_internal(const std::string& str, int* interiors);
+	void interior_from_str(const std::string& str);
+	std::string interior_to_str() const;
+
+	void set_map(const std::string& str);
+	const std::string& map() const { return map_; }
+
+	enum {msg_message, msg_siege, msg_count};
+	int message(int type) const { return messages_[type]; }
+	int message_count() const;
+	void message_from_str(const std::string& str);
+	time_t browsed_time() const { return browsed_; }
+
+	const tsignin& signin() const { return signin_; }
+	void signin_from_str(const std::string& str);
+	std::string signin_to_str() const;
+
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+	bool upgrade_leader(game_display& disp, hero_map& heros);
+	bool upgrade_member(game_display& disp, hero_map& heros, hero& h);
+	bool upgrade_internal(game_display& disp, hero_map& heros, tmember* m, std::map<int, http::temployee>* employees);
+	int calculate_total_point() const;
+	void from_membership(hero_map& heros, const http::membership& m, int city = HEROS_INVALID_NUMBER);
+	void from_local_membership(display& disp, hero_map& heros, const http::membership& m, bool enhance);
+	http::membership to_membership() const;
+
+	void set_layout(const std::string& str);
+	const std::string& layout() const { return layout_; }
+
+	void layout_from_team(game_display& disp, team& t);
+	bool layout_to_team(game_display& disp, unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, team& t, bool mirror, bool conside_stratagem, bool wall);
+
+	static std::string layout_from_team_internal(team& t, const tgroup& g);
+	static bool layout_to_team_internal(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, const std::string& from, team& t, bool mirror, bool conside_stratagem, bool wall, const tgroup& g);
+
+	static const ttechnology& stratagem_from_layout_str_internal(const std::string& layout);
+	const ttechnology& stratagem_from_layout_str() const;
+	static std::vector<int> interior_increase_from_layout_str_internal(const std::string& layout);
+	std::vector<int> interior_increase_from_layout_str() const;
+
+	std::vector<const ttechnology*> calculate_allocatable_technology(int mode, std::vector<const ttechnology*>& exclude, int random) const;
+	std::string increase_allocatable_technology(int mode, const std::string& exclude_str, int random) const;
+	std::map<int, int> adjust_hero_field(int field);
+	std::vector<size_t> increase_card(team& t, int mode);
+#endif
+	
+	const config& to_faction_cfg(bool exile, bool multigrid);
+	void reload_heros_from_string(hero_map& heros, const std::string& member_str, const std::string& exile_str);
+	void member_from_str(hero_map& heros, const std::string& str, bool erase = true);
+	void member_from_str2(hero_map& heros, const std::string& str);
+	void exile_from_str(hero_map& heros, const std::string& str);
+	void exile_from_str2(hero_map& heros, const std::string& str);
+	static std::string member_to_str_internal(const std::vector<tmember>& v);
+	static std::string member_to_str2_internal(const std::vector<tmember>& v);
+	std::string member_to_str() const;
+	std::string member_to_str2() const;
+	std::string exile_to_str() const;
+	std::string exile_to_str2() const;
+
+	static std::vector<tassociate> associate_from_str2(const std::string& str);
+	void associate_from_str(const std::string& str);
+	std::string associate_to_str() const;
+
+	void to_side_cfg(config& side, int random, int max_service_member = 0xffff) const;
+
+	size_t fp_size() const;
+	int to_fp(uint8_t* mem) const;
+	int from_fp(hero_map& heros, uint8_t* mem);
+
+	void redirect_hero_map(hero_map& heros);
+	void remove_unstage_member();
+private:
+	int layout_number_from_hero(const hero& h) const;
+	hero& hero_from_layout_number(hero_map& heros, int number, int layout_leader_number) const;
 
 private:
-	hero leader_;
+	hero* leader_;
+	std::vector<tmember> members_;
+	std::vector<tmember> exiles_;
+	std::vector<tassociate> associates_;
+	hero* city_;
+
+	int vip_;
+	time_t expire_;
+	int interiors_[interior_count];
+	int noble_;
+	int coin_;
+	int score_;
+	int tax_;
+	std::string layout_;
+	std::string map_;
+	time_t browsed_;
+	int messages_[msg_count];
+	tsignin signin_;
+	config faction_cfg_;
 };
-extern tgroup group;
+extern tgroup group, null_group;
+extern std::map<int, tgroup> other_group;
+
+namespace runtime_groups {
+extern std::map<int, tgroup> gs;
+
+void insert(tgroup& g);
+tgroup& get(int leader);
+void redirect_hero_map(hero_map& heros);
+void remove_unstage_member();
+
+void from_fp(hero_map& heros, posix_file_t fp, int len);
+size_t size();
+void to_fp(posix_file_t fp);
+
+void from_mem(hero_map& heros, uint8_t* mem, int len);
+void to_mem(uint8_t* mem);
+
+bool exist_member(const hero& h, const hero& leader);
+}
 
 // define allowed conversions.
 template <>

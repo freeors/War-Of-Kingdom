@@ -33,7 +33,6 @@
 #include "serialization/binary_or_text.hpp"
 #include "serialization/parser.hpp"
 #include "statistics.hpp"
-#include "unit_id.hpp"
 #include "version.hpp"
 #include "formula_string_utils.hpp"
 
@@ -84,86 +83,6 @@ static lg::log_domain log_engine("engine");
 	}
 #endif /* _WIN32 */
 
-std::string format_time_date(time_t t)
-{
-	time_t curtime = time(NULL);
-	const struct tm* timeptr = localtime(&curtime);
-	if(timeptr == NULL) {
-		return "";
-	}
-
-	const struct tm current_time = *timeptr;
-
-	timeptr = localtime(&t);
-	if(timeptr == NULL) {
-		return "";
-	}
-
-	const struct tm save_time = *timeptr;
-
-	const char* format_string = _("%b %d %y");
-
-	if (current_time.tm_year == save_time.tm_year) {
-		const int days_apart = current_time.tm_yday - save_time.tm_yday;
-
-		if(days_apart == 0) {
-			// save is from today
-			format_string = _("%H:%M");
-		} else if(days_apart > 0 && days_apart <= current_time.tm_wday) {
-			// save is from this week. On chinese, %A cannot display. use %m%d instead.
-			format_string = _("%A, %H:%M");
-		} else {
-			// save is from current year
-			format_string = _("%b %d");
-		}
-	} else {
-		// save is from a different year
-		format_string = _("%b %d %y");
-	}
-
-	char buf[64];
-	const size_t res = strftime(buf,sizeof(buf),format_string,&save_time);
-	if(res == 0) {
-		buf[0] = 0;
-	}
-	
-	return buf;
-}
-
-std::string format_time_local(time_t t)
-{
-	char time_buf[256] = {0};
-	tm* tm_l = localtime(&t);
-	if (tm_l) {
-		const size_t res = strftime(time_buf,sizeof(time_buf),_("%a %b %d %H:%M %Y"),tm_l);
-		if(res == 0) {
-			time_buf[0] = 0;
-		}
-	}
-
-	return time_buf;
-}
-
-std::string format_time_elapse(time_t elapse)
-{
-	char time_buf[256] = {0};
-	int sec = elapse % 60;
-	int min = (elapse / 60) % 60;
-	int hour = (elapse / 3600) % 24;
-	int day = elapse / (3600 * 24);
-
-	std::stringstream strstr;
-	if (day) {
-		utils::string_map symbols;
-		symbols["d"] = str_cast(day);
-		strstr << vgettext("$d days", symbols) << " ";
-	}
-	strstr << std::setfill('0') << std::setw(2) << hour << ":";
-	strstr << std::setfill('0') << std::setw(2) << min << ":";
-	strstr << std::setfill('0') << std::setw(2) << sec;
-	
-	return strstr.str();
-}
 
 namespace savegame {
 
@@ -245,10 +164,9 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		if (fp == INVALID_FILE) {
 			throw game::load_game_failed();
 		}
-		uint32_t summary_size, scenario_size, start_scenario_size, start_hero_size, player_data_size, replay_size, side_size, bytertd, fsizelow, fsizehigh, should_least_size;
+		uint32_t summary_size, scenario_size, start_scenario_size, start_hero_size, replay_size, side_size, hero_size, member_data_size, bytertd, fsizelow, fsizehigh, should_least_size;
 		uint8_t *data;
 
-		bool has_side_data = true;
 		//
 		// read size
 		//
@@ -262,44 +180,39 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		should_least_size += sizeof(side_size);
 		should_least_size += sizeof(start_scenario_size);
 		should_least_size += sizeof(start_hero_size);
-		should_least_size += sizeof(player_data_size);
 		should_least_size += sizeof(replay_size);
+		should_least_size += sizeof(hero_size);
+		should_least_size += sizeof(member_data_size);
 		if (fsizelow < should_least_size) {
 			posix_fclose(fp);
 			throw game::load_game_failed();
 		}
 		posix_fread(fp, &summary_size, sizeof(summary_size), bytertd);
 		posix_fread(fp, &scenario_size, sizeof(scenario_size), bytertd);
-		if (has_side_data) {
-			posix_fread(fp, &side_size, sizeof(side_size), bytertd);
-		} else {
-			side_size = 0;
-		}
+		posix_fread(fp, &side_size, sizeof(side_size), bytertd);
 		posix_fread(fp, &start_scenario_size, sizeof(start_scenario_size), bytertd);
 		posix_fread(fp, &start_hero_size, sizeof(start_hero_size), bytertd);
-		posix_fread(fp, &player_data_size, sizeof(player_data_size), bytertd);
 		posix_fread(fp, &replay_size, sizeof(replay_size), bytertd);
+		posix_fread(fp, &hero_size, sizeof(hero_size), bytertd);
+		posix_fread(fp, &member_data_size, sizeof(member_data_size), bytertd);
 		// check should least size 
-		should_least_size += summary_size + scenario_size + side_size + start_scenario_size + start_hero_size + player_data_size + replay_size;
+		should_least_size += summary_size + scenario_size + side_size + start_scenario_size + start_hero_size + replay_size + hero_size + member_data_size;
 		if (fsizelow < should_least_size) {
 			posix_fclose(fp);
 			throw game::load_game_failed();
 		}
 
 		// reset should_least_size
-		if (has_side_data) {
-			should_least_size = sizeof(summary_size) + sizeof(scenario_size) + sizeof(side_size) + sizeof(start_scenario_size) + sizeof(start_hero_size) + sizeof(player_data_size) + sizeof(replay_size);
-		} else {
-			should_least_size = sizeof(summary_size) + sizeof(scenario_size) + sizeof(start_scenario_size) + sizeof(start_hero_size) + sizeof(player_data_size) + sizeof(replay_size);
-		}
+		should_least_size = sizeof(summary_size) + sizeof(scenario_size) + sizeof(side_size) + sizeof(start_scenario_size) + sizeof(start_hero_size) + sizeof(replay_size) + sizeof(hero_size) + sizeof(member_data_size);
 		//
 		// read data
 		//
 		size_t max_size = std::max<size_t>(summary_size + 1, scenario_size + 1);
 		max_size = std::max<size_t>(max_size, start_scenario_size + 1);
 		max_size = std::max<size_t>(max_size, start_hero_size);
-		max_size = std::max<size_t>(max_size, player_data_size);
 		max_size = std::max<size_t>(max_size, replay_size);
+		max_size = std::max<size_t>(max_size, hero_size);
+		max_size = std::max<size_t>(max_size, member_data_size);
 		data = (uint8_t*)malloc(max_size);
 		// read summary data
 		should_least_size += summary_size;
@@ -341,23 +254,6 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		should_least_size += start_hero_size;
 		posix_fseek(fp, should_least_size, 0);
 
-		// read player data
-		posix_fread(fp, data, player_data_size, bytertd);
-		should_least_size += player_data_size;
-		int rpg_number;
-		size_t tmp;
-		std::string rpg_name, rpg_surname;
-		memcpy(&rpg_number, data, 4);
-		tmp = 4;
-		memcpy(&bytertd, data + tmp, 4);
-		tmp += 4;
-		rpg_name.assign((const char*)data + tmp, bytertd);
-		tmp += bytertd;
-		memcpy(&bytertd, data + tmp, 4);
-		tmp += 4;
-		rpg_surname.assign((const char*)data + tmp, bytertd);
-		tmp += bytertd;
-
 		// read replay data
 		should_least_size += replay_size;
 		if (replay_data) {
@@ -372,18 +268,31 @@ void manager::read_save_file(const std::string& name, config* summary_cfg, confi
 		// read hero data
 		if (heros) {
 			// need read hero data
-			heros->map_from_file_fp(fp, should_least_size);
+			heros->map_from_file_fp(fp, should_least_size, hero_size);
 		}
+		should_least_size += hero_size;
+		posix_fseek(fp, should_least_size, 0);
+
+		// read member data
+		if (heros) {
+			runtime_groups::from_fp(*heros, fp, member_data_size);
+			for (std::map<int, tgroup>::const_iterator it = runtime_groups::gs.begin(); it != runtime_groups::gs.end(); ++ it) {
+				const tgroup& g = it->second;
+				hero& leader = (*start_heros)[it->first];
+				hero& city = (*start_heros)[g.city().number_];
+
+				leader.set_name(g.leader().name());
+				leader.set_surname(g.leader().surname());
+				leader.set_uid(g.leader().uid());
+
+				city.set_name(g.city().name());
+			}
+		}
+		should_least_size += member_data_size;
+		posix_fseek(fp, should_least_size, 0);
+
 		posix_fclose(fp);
 
-		if (start_heros && rpg_number >= (int)hero_map::map_size_from_dat) {
-			(*start_heros)[rpg_number].set_name(rpg_name);
-			(*start_heros)[rpg_number].set_surname(rpg_surname);
-		}
-		if (heros && rpg_number >= (int)hero_map::map_size_from_dat) {
-			(*heros)[rpg_number].set_name(rpg_name);
-			(*heros)[rpg_number].set_surname(rpg_surname);
-		}
 		// detect_format_and_read(cfg, *file_stream, error_log);
 	} catch (config::error &err) {
 		LOG_SAVE << err.message;
@@ -486,28 +395,27 @@ void manager::delete_game(const std::string& name)
 	// remove((get_saves_dir() + "/" + modified_name).c_str());
 }
 
-loadgame::loadgame(game_display& gui, const config& game_config, game_state& gamestate)
+loadgame::loadgame(game_display& gui, hero_map& heros, const config& game_config, game_state& gamestate)
 	: game_config_(game_config)
 	, gui_(gui)
+	, heros_(heros)
 	, gamestate_(gamestate)
 	, filename_()
 	, load_config_()
 	, show_replay_(false)
-	, cancel_orders_(false)
+	, allow_network_(true)
 {}
 
-void loadgame::show_dialog(bool show_replay, bool cancel_orders)
+void loadgame::show_dialog(bool show_replay, bool allow_network)
 {
 	//FIXME: Integrate the load_game dialog into this class
 	//something to watch for the curious, but not yet ready to go
-	gui2::tgame_load load_dialog(gui_, game_config_);
+	gui2::tgame_load load_dialog(gui_, heros_, game_config_, allow_network);
 	load_dialog.show(gui_.video());
 
 	if (load_dialog.get_retval() == gui2::twindow::OK){
 		filename_ = load_dialog.filename();
-		show_replay_ = cancel_orders_ = false;
-		// show_replay_ = load_dialog.show_replay();
-		// cancel_orders_ = load_dialog.cancel_orders();
+		show_replay_ = false;
 	}
 }
 
@@ -516,19 +424,17 @@ void loadgame::load_game()
 	show_dialog(false, false);
 
 	if(filename_ != "")
-		throw game::load_game_exception(filename_, show_replay_, cancel_orders_);
+		throw game::load_game_exception(filename_, show_replay_, false);
 }
 
-void loadgame::load_game(std::string& filename, bool show_replay, bool cancel_orders, hero_map& heros, hero_map* heros_start)
+void loadgame::load_game(std::string& filename, bool show_replay, bool allow_network, hero_map& heros, hero_map* heros_start)
 {
 	filename_ = filename;
 
 	if (filename_.empty()){
-		show_dialog(show_replay, cancel_orders);
-	}
-	else{
+		show_dialog(show_replay, allow_network);
+	} else {
 		show_replay_ = show_replay;
-		cancel_orders_ = cancel_orders;
 	}
 
 	if (filename_.empty())
@@ -652,7 +558,6 @@ void loadgame::fill_mplevel_config(config& level)
 	level["id"] = start_data["id"];
 	level["name"] = start_data["name"];
 	level["completion"] = start_data["completion"];
-	level["next_underlying_unit_id"] = start_data["next_underlying_unit_id"];
 	// Probably not needed.
 	level["turn"] = start_data["turn_at"];
 	level["turn_at"] = start_data["turn_at"];
@@ -910,7 +815,7 @@ void savegame::write_game_to_disk(const std::string& filename)
 
 	// if enable compress, ss.str() is compressed format data.
 	posix_file_t fp;
-	uint32_t summary_size, scenario_size, side_size, start_scenario_size, start_hero_size, player_data_size, replay_size, bytertd;
+	uint32_t summary_size, scenario_size, side_size, start_scenario_size, start_hero_size, replay_size, hero_size, member_data_size, bytertd;
 	int size;
 
 	// replace_space2underbar(filename_);
@@ -942,17 +847,18 @@ void savegame::write_game_to_disk(const std::string& filename)
 	// length of start scenario data
 	start_scenario_size = gamestate_.start_scenario_ss.str().length();
 	// length of start hero data
-	// start_hero_size = gamestate_.start_hero_ss.str().length();
 	start_hero_size = heros_start_.file_size();
-	// length of player data(name,surname,biorigh)
-	player_data_size = 16 + rpg::h->name().size() + rpg::h->surname().size();
 	// length of replay data
 	if (gamestate_.replay_data.pool_pos_vsize()) {
 		replay_size = 16 + gamestate_.replay_data.pool_data_gzip_size() + gamestate_.replay_data.pool_pos_vsize() * sizeof(unsigned int);
 	} else {
 		replay_size = 0;
 	}
-	
+	// length of runtime hero data
+	hero_size = heros_.file_size();
+	// length of runtime-member data
+	member_data_size = runtime_groups::size();
+
 	// [write] length of summary data
 	posix_fwrite(fp, &summary_size, sizeof(summary_size), bytertd);
 	// [write] length of scenario data
@@ -963,11 +869,13 @@ void savegame::write_game_to_disk(const std::string& filename)
 	posix_fwrite(fp, &start_scenario_size, sizeof(start_scenario_size), bytertd);
 	// [write] length of start hero data
 	posix_fwrite(fp, &start_hero_size, sizeof(start_hero_size), bytertd);
-	// [write] length of player data
-	posix_fwrite(fp, &player_data_size, sizeof(player_data_size), bytertd);
 	// [write] length of replay data
 	posix_fwrite(fp, &replay_size, sizeof(replay_size), bytertd);
-	
+	// [write] length of runtime hero data
+	posix_fwrite(fp, &hero_size, sizeof(hero_size), bytertd);
+	// [write] length of member data
+	posix_fwrite(fp, &member_data_size, sizeof(member_data_size), bytertd);
+
 	// summary data
 	posix_fwrite(fp, summary_ss.str().c_str(), summary_ss.str().length(), bytertd);
 	// scenario data
@@ -980,26 +888,7 @@ void savegame::write_game_to_disk(const std::string& filename)
 	posix_fwrite(fp, gamestate_.start_scenario_ss.str().c_str(), gamestate_.start_scenario_ss.str().length(), bytertd);
 	// start hero data
 	posix_fwrite(fp, gamestate_.start_hero_data_, start_hero_size, bytertd);
-
-	// player data(use game_config::savegame_cache tempereray)
-	bytertd = rpg::h->number_;
-	memcpy(game_config::savegame_cache, &bytertd, 4);
-	size = 4;
-	bytertd = rpg::h->name().size();
-	memcpy(game_config::savegame_cache + size, &bytertd, 4);
-	size += 4;
-	memcpy(game_config::savegame_cache + size, rpg::h->name().c_str(), rpg::h->name().size());
-	size += rpg::h->name().size();
-	bytertd = rpg::h->surname().size();
-	memcpy(game_config::savegame_cache + size, &bytertd, 4);
-	size += 4;
-	memcpy(game_config::savegame_cache + size, rpg::h->surname().c_str(), rpg::h->surname().size());
-	size += rpg::h->surname().size();
-	bytertd = 0;
-	memcpy(game_config::savegame_cache + size, &bytertd, 4);
-	size += 4;
-	posix_fwrite(fp, game_config::savegame_cache, size, bytertd);
-
+	
 	// replay data
 	if (replay_size) {
 		size = gamestate_.replay_data.pool_data_size();
@@ -1018,38 +907,25 @@ void savegame::write_game_to_disk(const std::string& filename)
 
 	// hero data
 	heros_.map_to_file_fp(fp);
+	// member data
+	runtime_groups::to_fp(fp); 
+
 	posix_fclose(fp);
 }
 
 void savegame::write_game(config_writer &out) const
 {
-	out.write_key_val("label", gamestate_.classification().label);
-	out.write_key_val("original_label", gamestate_.classification().original_label);
-	out.write_key_val("parent", gamestate_.classification().parent);
-	out.write_key_val("history", gamestate_.classification().history);
-	out.write_key_val("abbrev", gamestate_.classification().abbrev);
-	out.write_key_val("mode", gamestate_.classification().mode);
-	out.write_key_val("version", game_config::version);
-	out.write_key_val("scenario", gamestate_.classification().scenario);
-	out.write_key_val("next_scenario", gamestate_.classification().next_scenario);
-	out.write_key_val("completion", gamestate_.classification().completion);
-	out.write_key_val("campaign", gamestate_.classification().campaign);
-	out.write_key_val("campaign_type", gamestate_.classification().campaign_type);
-	out.write_key_val("create", lexical_cast<std::string>(gamestate_.classification().create));
+	config cfg = gamestate_.classification().to_config();
+	BOOST_FOREACH (const config::attribute& i, cfg.attribute_range()) {
+		out.write_key_val(i.first, i.second);
+	}
 	int duration = gamestate_.duration(time(NULL));
 	out.write_key_val("duration", lexical_cast<std::string>(duration));
-	out.write_key_val("hash", lexical_cast<std::string>(gamestate_.classification().hash));
-	out.write_key_val("campaign_define", gamestate_.classification().campaign_define);
+
 	out.write_key_val("random_seed", lexical_cast<std::string>(gamestate_.rng().get_random_seed()));
 	out.write_key_val("random_calls", lexical_cast<std::string>(gamestate_.rng().get_random_calls()));
-	// out.write_key_val("recorder_random_seed", lexical_cast<std::string>(recorder.generator().get_random_seed()));
-	// out.write_key_val("recorder_random_calls", lexical_cast<std::string>(recorder.generator().get_random_calls()));
-	out.write_key_val("next_underlying_unit_id", lexical_cast<std::string>(n_unit::id_manager::instance().get_save_id()));
-	out.write_key_val("end_text", gamestate_.classification().end_text);
-	out.write_key_val("end_text_duration", str_cast<unsigned int>(gamestate_.classification().end_text_duration));
+
 	// update newest rpg to variables
-	// gamestate_.set_variable("player.stratum", lexical_cast<std::string>(rpg::stratum));
-	// gamestate_.set_variable("player.forbids", lexical_cast<std::string>(rpg::forbids));
 	gamestate_.rpg_2_variable();
 	out.write_child("variables", gamestate_.get_variables());
 
@@ -1088,18 +964,12 @@ void savegame::extract_summary_data_from_save(config& out)
 	out["replay"] = has_replay ? "yes" : "no";
 	out["snapshot"] = has_snapshot ? "yes" : "no";
 
-	out["label"] = gamestate_.classification().label;
-	out["parent"] = gamestate_.classification().parent;
-	out["campaign"] = gamestate_.classification().campaign;
-	out["campaign_type"] = gamestate_.classification().campaign_type;
-	out["scenario"] = gamestate_.classification().scenario;
-	out["create"] = gamestate_.classification().create;
-	int duration = gamestate_.duration(time(NULL));
-	out["duration"] = duration;
-	out["hash"] = gamestate_.classification().hash;
-	out["version"] = gamestate_.classification().version;
-	out["corrupt"] = "";
-
+	config cfg = gamestate_.classification().to_config();
+	BOOST_FOREACH (const config::attribute& i, cfg.attribute_range()) {
+		out[i.first] = i.second;
+	}
+	out["duration"] = gamestate_.duration(time(NULL));
+	
 	if (has_snapshot) {
 		out["turn"] = snapshot_["turn_at"];
 		if (snapshot_["turns"] != "-1") {
@@ -1128,8 +998,8 @@ void savegame::extract_summary_data_from_save(config& out)
 	out["leader"] = leader;
 	out["map_data"] = "";
 
-	if(!shrouded) {
-		if(has_snapshot) {
+	if (!shrouded) {
+		if (has_snapshot) {
 			if (!snapshot_.find_child("side", "shroud", "yes")) {
 				out["map_data"] = snapshot_["map_data"];
 			}
@@ -1163,7 +1033,7 @@ void scenariostart_savegame::before_save()
 }
 
 replay_savegame::replay_savegame(hero_map& heros, hero_map& heros_start, game_state &gamestate)
-	: savegame(heros, heros_start, gamestate, dummy_snapshot, _("Save Replay"))
+	: savegame(heros, heros_start, gamestate, dummy_snapshot, dsgettext("wesnoth-lib", "Save Replay"))
 {
 	memset(game_config::savegame_cache, 0, sizeof(unit_segment2));
 }
@@ -1222,6 +1092,20 @@ oos_savegame::oos_savegame(hero_map& heros, hero_map& heros_start, config& snaps
 	: game_savegame(heros, heros_start, *resources::state_of_game, *resources::screen, snapshot_cfg)
 {}
 
+void oos_savegame::create_filename()
+{
+	std::stringstream stream;
+
+	if (!preferences::eng_file_name()) {
+		const std::string ellipsed_name = font::make_text_ellipsis(gamestate().classification().label, font::SIZE_NORMAL, 200);
+		stream << ellipsed_name << "_" << _("Turn") << "_" << snapshot()["turn_at"] << "-OOS";
+	} else {
+		const std::string ellipsed_name = font::make_text_ellipsis(gamestate().classification().original_label, font::SIZE_NORMAL, 200);
+		stream << ellipsed_name << "_" << "Turn" << "_" << snapshot()["turn_at"] << "-OOS";
+	}
+	set_filename(stream.str());
+}
+
 int oos_savegame::show_save_dialog(CVideo& video, const std::string& message, const gui::DIALOG_TYPE /*dialog_type*/)
 {
 	static bool ignore_all = false;
@@ -1241,8 +1125,15 @@ int oos_savegame::show_save_dialog(CVideo& video, const std::string& message, co
 	return res;
 }
 
+bool oos_savegame::save_game_automatic(CVideo& video)
+{
+	create_filename();
+	save_game(&video);
+	return true;
+}
+
 game_savegame::game_savegame(hero_map& heros, hero_map& heros_start, game_state &gamestate, game_display& gui, config& snapshot_cfg)
-	: savegame(heros, heros_start, gamestate, snapshot_cfg, _("Save Game")),
+	: savegame(heros, heros_start, gamestate, snapshot_cfg, dsgettext("wesnoth-lib", "Save Game")),
 	gui_(gui)
 {
 }

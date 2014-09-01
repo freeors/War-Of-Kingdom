@@ -96,12 +96,14 @@ namespace gui2 {
 
 REGISTER_DIALOG(game_load)
 
-tgame_load::tgame_load(game_display& disp, const config& cache_config)
+tgame_load::tgame_load(game_display& disp, hero_map& heros, const config& cache_config, bool allow_network)
 	: disp_(disp)
+	, heros_(heros)
 	, filename_()
 	, games_()
 	, www_saves_()
 	, cache_config_(cache_config)
+	, allow_network_(allow_network)
 	, current_page_(NONE_PAGE)
 	, savegame_list_(NULL)
 {
@@ -166,7 +168,7 @@ void tgame_load::pre_show(CVideo& /*video*/, twindow& window)
 #endif
 
 
-	if (disp_.in_game()) {
+	if (!allow_network_) {
 		find_widget<tbutton>(&window, "xmit", false).set_visible(twidget::INVISIBLE);
 		find_widget<ttoggle_button>(&window, "local", false).set_visible(twidget::INVISIBLE);
 		find_widget<ttoggle_button>(&window, "network", false).set_visible(twidget::INVISIBLE);
@@ -247,14 +249,13 @@ void tgame_load::evaluate_summary_string(std::stringstream& str
 	} else if (!campaign_type.empty()) {
 		str << "\n";
 
-		if(campaign_type == "scenario") {
+		if (campaign_type == "scenario") {
 			const std::string campaign_id = cfg_summary["campaign"];
 			const config *campaign = NULL;
 			if (!campaign_id.empty()) {
-				if (const config &c = cache_config_.find_child(
-						"campaign", "id", campaign_id))
-
+				if (const config &c = cache_config_.find_child("campaign", "id", campaign_id)) {
 					campaign = &c;
+				}
 			}
 			utils::string_map symbols;
 			if (campaign != NULL) {
@@ -331,12 +332,23 @@ void tgame_load::xmit_button_callback(twindow& window)
 			if (res == gui2::twindow::CANCEL) {
 				return;
 			}
-			http::upload_save(disp_, get_saves_dir() + "/" + games_[index].name);
+
+			config cfg_summary;
+			std::string dummy;
+			try {
+				savegame::manager::load_summary(games_[index].name, cfg_summary, &dummy);
+			} catch(game::load_game_failed&) {
+				message = dsgettext("wesnoth", "This file is corrupted, can not upload!");
+				gui2::show_message(disp_.video(), dsgettext("wesnoth", "Confirm"), message);
+				return;
+			}
+
+			http::upload_save(disp_, heros_, get_saves_dir() + "/" + games_[index].name);
 		}
 	} else if (current_page_ == NETWORK_PAGE) {
 		if (index < www_saves_.size()) {
 
-			std::string fname = http::download_save(disp_, www_saves_[index].sid);
+			std::string fname = http::download_save(disp_, heros_, www_saves_[index].sid);
 			if (!fname.empty()) {
 				sheet_.find(LOCAL_PAGE)->second->set_value(true);
 				sheet_toggled(sheet_.find(LOCAL_PAGE)->second);
@@ -381,7 +393,7 @@ void tgame_load::fill_network(twindow& window)
 
 	{
 		cursor::setter cur(cursor::WAIT);
-		www_saves_ = http::list_save(disp_);
+		www_saves_ = http::list_save(disp_, heros_);
 	}
 	savegame_list_->clear();
 	BOOST_FOREACH (const savegame::www_save_info save, www_saves_) {

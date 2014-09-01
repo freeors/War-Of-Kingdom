@@ -42,12 +42,28 @@
 
 #include <boost/foreach.hpp>
 
-void play_replay(display& disp, game_state& gamestate, const config& game_config, 
+class game_display_lock
+{
+public:
+	game_display_lock(game_display& disp)
+		: disp_(disp)
+	{}
+	~game_display_lock()
+	{
+		game_display::set_singleton(&disp_);
+	}
+
+private:
+	game_display& disp_;
+};
+
+void play_replay(game_display& disp, game_state& gamestate, const config& game_config, 
 	hero_map& heros, hero_map& heros_start, card_map& cards, CVideo& video)
 {
 	std::string type = gamestate.classification().campaign_type;
-	if(type.empty())
+	if (type.empty()) {
 		type = "scenario";
+	}
 
 	// 'starting_pos' will contain the position we start the game from.
 	config starting_pos;
@@ -72,7 +88,10 @@ void play_replay(display& disp, game_state& gamestate, const config& game_config
 		//if (gamestate.abbrev.empty())
 		//	gamestate.abbrev = (*scenario)["abbrev"];
 
-		play_replay_level(game_config, &starting_pos, video, gamestate, heros, heros_start, cards);
+		{
+			game_display_lock loc(disp);
+			play_replay_level(game_config, &starting_pos, video, gamestate, heros, heros_start, cards);
+		}
 
 		gamestate.snapshot = config();
 		recorder.clear();
@@ -181,21 +200,7 @@ static LEVEL_RESULT playmp_scenario(const config& game_config,
 	return res;
 }
 
-const config& load_campagin_scenario(const std::string& campaign_id, const std::string& scenario_id, const std::string& type)
-{
-	config campaign_cfg;
-	static config scenario_cfg;
-
-	if (!scenario_id.empty() && scenario_id != "null") {
-		wml_config_from_file(game_config::path + "/xwml/campaigns/" + campaign_id + ".bin", campaign_cfg);
-		scenario_cfg = campaign_cfg.find_child(type, "id", scenario_id);
-	} else {
-		scenario_cfg.clear();
-	}
-	return scenario_cfg;
-}
-
-LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_config, hero_map& heros, hero_map& heros_start,
+LEVEL_RESULT play_game(game_display& disp, game_state& gamestate, const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards,
 		io_type_t io_type, bool skip_replay)
 {
@@ -224,10 +229,10 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 			scenario = &starting_pos;
 		} else {
 			// reload of the scenario, as starting_pos contains carryover information only
-			scenario = &load_campagin_scenario(gamestate.classification().campaign, gamestate.classification().scenario, type);
-			VALIDATE(!scenario->empty(), std::string("play_game, cannot load scenario id = ") + gamestate.classification().scenario + " in game_config!");
-			gamestate.starting_pos = *scenario;
-			starting_pos = gamestate.starting_pos;
+			starting_pos = load_campagin_scenario(gamestate.classification().campaign, gamestate.classification().scenario, type);
+			VALIDATE(!starting_pos.empty(), std::string("play_game, cannot load scenario id = ") + gamestate.classification().scenario + " in game_config!");
+			starting_pos["turn_based"] = gamestate.starting_pos["turn_based"];
+			gamestate.starting_pos = starting_pos;
 			scenario = &starting_pos;
 		}
 	} else {
@@ -260,8 +265,6 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 
 		config::const_child_itors story = scenario->child_range("story");
 		gamestate.classification().next_scenario = (*scenario)["next_scenario"].str();
-
-		bool save_game_after_scenario = true;
 
 		LEVEL_RESULT res = VICTORY;
 		end_level_data end_level;
@@ -326,15 +329,19 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 				gamestate.starting_pos.add_child("variables", gamestate.get_variables());
 			}
 
-			switch (io_type){
-			case IO_NONE:
-				res = playsingle_scenario(game_config, scenario, disp, gamestate, heros, heros_start, cards, story, skip_replay, end_level);
-				break;
-			case IO_SERVER:
-			case IO_CLIENT:
-				res = playmp_scenario(game_config, scenario, disp, gamestate, heros, heros_start, cards, story, skip_replay, io_type, end_level);
-				break;
+			{
+				game_display_lock loc(disp);
+				switch (io_type){
+				case IO_NONE:
+					res = playsingle_scenario(game_config, scenario, disp, gamestate, heros, heros_start, cards, story, skip_replay, end_level);
+					break;
+				case IO_SERVER:
+				case IO_CLIENT:
+					res = playmp_scenario(game_config, scenario, disp, gamestate, heros, heros_start, cards, story, skip_replay, io_type, end_level);
+					break;
+				}
 			}
+
 		} catch(game::load_game_failed& e) {
 			gui2::show_error_message(disp.video(), _("The game could not be loaded: ") + e.message);
 			return QUIT;
@@ -388,12 +395,6 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 			}
 		}
 
-		// Continue without saving is like a victory,
-		// but the save game dialog isn't displayed
-		if (!end_level.prescenario_save) {
-			save_game_after_scenario = false;
-		}
-
 		// Switch to the next scenario.
 		gamestate.classification().scenario = gamestate.classification().next_scenario;
 		gamestate.rng().rotate_random();
@@ -401,13 +402,13 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 
 		scenario = NULL;
 		if (io_type == IO_NONE) {
-			scenario = &load_campagin_scenario(gamestate.classification().campaign, gamestate.classification().scenario, type);
-			if (scenario->empty()) {
+			starting_pos = load_campagin_scenario(gamestate.classification().campaign, gamestate.classification().scenario, type);
+			if (starting_pos.empty()) {
 				scenario = NULL;
 			} else{
-				starting_pos = *scenario;
 				starting_pos["fog"] = fog;
 				starting_pos["shroud"] = shroud;
+				starting_pos["turn_based"] = tent::turn_based;
 				scenario = &starting_pos;
 			}
 		}
@@ -417,6 +418,9 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 			// set this result to next start hero data
 			heros.reset_to_unstage();
 			heros_start = heros;
+			if (!runtime_groups::gs.empty()) {
+				group = runtime_groups::gs.begin()->second;
+			}
 
 			loadscreen::global_loadscreen_manager* loadscreen_manager = loadscreen::global_loadscreen_manager::get();
 			if (loadscreen_manager) {
@@ -434,27 +438,6 @@ LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_
 				gamestate.classification().original_label = gamestate.classification().label;
 				gamestate.classification().label.append(scenario_name);
 				gamestate.classification().original_label.append(scenario_name.base_str());
-			}
-
-			// If this isn't the last scenario, then save the game
-			if (save_game_after_scenario) {
-
-				// For multiplayer, we want the save
-				// to contain the starting position.
-				// For campaigns however, this is the
-				// start-of-scenario save and the
-				// starting position needs to be empty,
-				// to force a reload of the scenario config.
-				if (gamestate.classification().campaign_type != "multiplayer"){
-					gamestate.starting_pos = config();
-				}
-
-				//add the variables to the starting position
-				gamestate.starting_pos.add_child("variables", gamestate.get_variables());
-
-				savegame::scenariostart_savegame save(heros, heros_start, gamestate);
-
-				save.save_game_automatic(disp.video());
 			}
 
 			if (gamestate.classification().campaign_type != "multiplayer"){

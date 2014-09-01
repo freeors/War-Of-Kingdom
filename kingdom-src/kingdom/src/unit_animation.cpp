@@ -37,6 +37,8 @@ struct tag_name_manager {
 		names.push_back("extra_anim");
 		names.push_back("healed_anim");
 		names.push_back("healing_anim");
+		names.push_back("build_anim");
+		names.push_back("repair_anim");
 		names.push_back("idle_anim");
 		names.push_back("leading_anim");
 		names.push_back("resistance_anim");
@@ -166,6 +168,7 @@ unit_animation::unit_animation(int start_time,
 		unit_filter_(),
 		secondary_unit_filter_(),
 		directions_(),
+		align_(ALIGN_NONE),
 		frequency_(0),
 		base_score_(variation),
 		event_(utils::split(event)),
@@ -181,6 +184,9 @@ unit_animation::unit_animation(int start_time,
 		invalidated_(false),
 		play_offscreen_(true),
 		screen_mode_(false),
+		layer_(0),
+		cycles_(false),
+		started_(false),
 		overlaped_hex_()
 {
 	add_frame(frame.duration(),frame,!frame.does_not_change());
@@ -191,6 +197,7 @@ unit_animation::unit_animation(const config& cfg,const std::string& frame_string
 	unit_filter_(),
 	secondary_unit_filter_(),
 	directions_(),
+	align_(cfg["align"].to_int(ALIGN_NONE)),
 	frequency_(cfg["frequency"]),
 	base_score_(cfg["base_score"]),
 	event_(),
@@ -206,6 +213,9 @@ unit_animation::unit_animation(const config& cfg,const std::string& frame_string
 	invalidated_(false),
 	play_offscreen_(true),
 	screen_mode_(false),
+	layer_(0),
+	cycles_(false),
+	started_(false),
 	overlaped_hex_()
 {
 //	if(!cfg["debug"].empty()) printf("DEBUG WML: FINAL\n%s\n\n",cfg.debug().c_str());
@@ -264,6 +274,7 @@ unit_animation::unit_animation(const config& cfg,const std::string& frame_string
 	play_offscreen_ = cfg["offscreen"].to_bool(true);
 
 	screen_mode_ = cfg["screen_mode"].to_bool();
+	layer_ = cfg["layer"].to_int(); // use to outer anination
 }
 
 int unit_animation::matches(const game_display &disp,const map_location& loc,const map_location& second_loc, const unit* my_unit,const std::string & event,const int value,hit_type hit,const attack_type* attack,const attack_type* second_attack, int value2) const
@@ -299,6 +310,19 @@ int unit_animation::matches(const game_display &disp,const map_location& loc,con
 				result ++;
 			}
 		}
+
+		if (align_ != ALIGN_NONE) {
+			if (align_ == ALIGN_X || align_ == ALIGN_NON_X) {
+				bool ok = my_unit->loc_is_align_with(second_loc, true);
+				if ((align_ == ALIGN_X && !ok) || (align_ != ALIGN_X && ok)) {
+					return MATCH_FAIL;
+				}
+			} else {
+				return MATCH_FAIL;
+			}
+			result ++;
+		}
+
 		std::vector<config>::const_iterator myitor;
 		for(myitor = unit_filter_.begin(); myitor != unit_filter_.end(); ++myitor) {
 			if (!my_unit->matches_filter(vconfig(*myitor), loc)) return MATCH_FAIL;
@@ -421,7 +445,7 @@ void unit_animation::fill_initial_animations(const std::string& default_image, s
 		animations.push_back(*itor);
 		animations.back().unit_anim_.override(0,1);
 		animations.back().event_ = utils::split("post_movement");
-
+/*
 		animations.push_back(*itor);
 		animations.back().unit_anim_.override(0,6800,"","",0,"0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,",lexical_cast<std::string>(display::LAYER_UNIT_MOVE_DEFAULT-display::LAYER_UNIT_FIRST));
 		animations.back().event_ = utils::split("movement");
@@ -431,7 +455,7 @@ void unit_animation::fill_initial_animations(const std::string& default_image, s
 		animations.back().hits_.push_back(HIT);
 		animations.back().hits_.push_back(KILL);
 		animations.back().event_ = utils::split("defend");
-
+*/
 		animations.push_back(*itor);
 		animations.back().unit_anim_.override(0,1);
 		animations.back().event_ = utils::split("defend");
@@ -447,14 +471,14 @@ void unit_animation::fill_initial_animations(const std::string& default_image, s
 		animations.back().event_ = utils::split("attack");
 		animations.back().primary_attack_filter_.push_back(config());
 		animations.back().primary_attack_filter_.back()["range"] = "ranged";
-
+/*
 		animations.push_back(*itor);
 		animations.back().unit_anim_.override(0,600,"1~0:600");
 		animations.back().event_ = utils::split("death");
 		animations.back().sub_anims_["_death_sound"] = particular();
 		animations.back().sub_anims_["_death_sound"].add_frame(1,frame_builder());
 		animations.back().sub_anims_["_death_sound"].add_frame(1,frame_builder().sound(cfg["die_sound"]),true);
-
+*/
 		animations.push_back(*itor);
 		animations.back().unit_anim_.override(0,1);
 		animations.back().event_ = utils::split("victory");
@@ -545,6 +569,22 @@ void unit_animation::add_anims( std::vector<unit_animation> & animations, const 
 		animations.back().sub_anims_["_healed_sound"].add_frame(1,frame_builder().sound("heal.wav"),true);
 	}
 
+	BOOST_FOREACH (const animation_branch &ab, prepare_animation(cfg, "build_anim"))
+	{
+		config anim = ab.merge();
+		anim["apply_to"] = "build";
+		if (anim["layer"].empty()) anim["layer"] = default_layer;
+		animations.push_back(unit_animation(anim));
+	}
+
+	BOOST_FOREACH (const animation_branch &ab, prepare_animation(cfg, "repair_anim"))
+	{
+		config anim = ab.merge();
+		anim["apply_to"] = "repair";
+		if (anim["layer"].empty()) anim["layer"] = default_layer;
+		animations.push_back(unit_animation(anim));
+	}
+
 	BOOST_FOREACH (const animation_branch &ab, prepare_animation(cfg, "poison_anim"))
 	{
 		config anim = ab.merge();
@@ -562,12 +602,14 @@ void unit_animation::add_anims( std::vector<unit_animation> & animations, const 
 	BOOST_FOREACH (const animation_branch &ab, prepare_animation(cfg, "movement_anim"))
 	{
 		config anim = ab.merge();
+/*
 		if (anim["offset_x"].empty()) {
 			anim["offset_x"] = "0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,";
 		}
 		if (anim["offset_y"].empty()) {
 			anim["offset_y"] = "0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,0~1:200,";
 		}
+*/
 		anim["apply_to"] = "movement";
 		if (anim["layer"].empty()) anim["layer"] = move_layer;
 		animations.push_back(unit_animation(anim));
@@ -646,14 +688,15 @@ void unit_animation::add_anims( std::vector<unit_animation> & animations, const 
 		anim["apply_to"] = "death";
 		if (anim["layer"].empty()) anim["layer"] = default_layer;
 		animations.push_back(unit_animation(anim));
-		// image::locator image_loc = animations.back().get_last_frame().parameters(0).image;
+/*
 		const std::string image_loc = animations.back().get_last_frame().parameters(0).image;
 		animations.back().add_frame(600,frame_builder().image(image_loc).duration(600).highlight("1~0:600"));
-		if(!cfg["die_sound"].empty()) {
+		if (!cfg["die_sound"].empty()) {
 			animations.back().sub_anims_["_death_sound"] = particular();
 			animations.back().sub_anims_["_death_sound"].add_frame(1,frame_builder());
 			animations.back().sub_anims_["_death_sound"].add_frame(1,frame_builder().sound(cfg["die_sound"]),true);
 		}
+*/
 	}
 
 	add_simple_anim(animations, cfg, "victory_anim", "victory");
@@ -720,6 +763,7 @@ unit_animation::particular::particular(
 	const config& cfg, const std::string& frame_string ) :
 		animated<unit_frame>(),
 		accelerate(true),
+		cycles(false),
 		parameters_(),
 		halo_id_(0),
 		last_frame_begin_time_(0)
@@ -733,6 +777,8 @@ unit_animation::particular::particular(
 	} else {
 		starting_frame_time_ = cfg[frame_string+"start_time"];
 	}
+
+	cycles = cfg[frame_string + "cycles"].to_bool();
 
 	BOOST_FOREACH (const config &frame, range)
 	{
@@ -826,10 +872,12 @@ void unit_animation::start_animation(int start_time
 		, const Uint32 text_color
 		, const bool accelerate)
 {
+	started_ = true;
 	unit_anim_.accelerate = accelerate;
 	src_ = src;
 	dst_ = dst;
-	unit_anim_.start_animation(start_time, cycles);
+	unit_anim_.start_animation(start_time, cycles || unit_anim_.cycles);
+	cycles_ = cycles || unit_anim_.cycles;
 	if(!text.empty()) {
 		particular crude_build;
 		crude_build.add_frame(1,frame_builder());
@@ -839,7 +887,8 @@ void unit_animation::start_animation(int start_time
 	std::map<std::string,particular>::iterator anim_itor =sub_anims_.begin();
 	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
 		anim_itor->second.accelerate = accelerate;
-		anim_itor->second.start_animation(start_time,cycles);
+		anim_itor->second.start_animation(start_time, cycles || anim_itor->second.cycles);
+		cycles_ = cycles_ || anim_itor->second.cycles;
 	}
 }
 
@@ -905,12 +954,12 @@ void unit_animation::replace_image_mod(const std::string& src, const std::string
 	}
 }
 
-void unit_animation::replace_x(const std::string& src, const std::string& dst)
+void unit_animation::replace_progressive(const std::string& name, const std::string& src, const std::string& dst)
 {
 	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_x(src, dst);
+	unit_anim_.replace_progressive(name, src, dst);
 	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_x(src, dst);
+		anim_itor->second.replace_progressive(name, src, dst);
 	}
 }
 
@@ -920,6 +969,15 @@ void unit_animation::replace_static_text(const std::string& src, const std::stri
 	unit_anim_.replace_static_text(src, dst);
 	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
 		anim_itor->second.replace_static_text(src, dst);
+	}
+}
+
+void unit_animation::replace_int(const std::string& name, int src, int dst)
+{
+	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
+	unit_anim_.replace_int(name, src, dst);
+	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
+		anim_itor->second.replace_int(name, src, dst);
 	}
 }
 
@@ -1017,11 +1075,15 @@ void unit_animation::particular::replace_image_mod(const std::string& src, const
 	}
 }
 
-void unit_animation::particular::replace_x(const std::string& src, const std::string& dst)
+void unit_animation::particular::replace_progressive(const std::string& name, const std::string& src, const std::string& dst)
 {
+	does_not_change_ = true;
 	for (std::vector<frame>::iterator fr = frames_.begin(); fr != frames_.end(); ++ fr) {
 		unit_frame& T = fr->value_;
-		T.replace_x(src, dst);
+		T.replace_progressive(name, src, dst);
+		if (does_not_change_) {
+			does_not_change_ = T.does_not_change();
+		}
 	}
 }
 
@@ -1030,6 +1092,14 @@ void unit_animation::particular::replace_static_text(const std::string& src, con
 	for (std::vector<frame>::iterator fr = frames_.begin(); fr != frames_.end(); ++ fr) {
 		unit_frame& T = fr->value_;
 		T.replace_static_text(src, dst);
+	}
+}
+
+void unit_animation::particular::replace_int(const std::string& name, int src, int dst)
+{
+	for (std::vector<frame>::iterator fr = frames_.begin(); fr != frames_.end(); ++ fr) {
+		unit_frame& T = fr->value_;
+		T.replace_int(name, src, dst);
 	}
 }
 

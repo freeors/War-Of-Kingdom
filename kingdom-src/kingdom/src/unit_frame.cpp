@@ -22,7 +22,6 @@
 #include "sound.hpp"
 #include "unit_frame.hpp"
 
-
 progressive_string::progressive_string(const std::string & data,int duration) :
 	data_(),
 	input_(data)
@@ -173,6 +172,8 @@ frame_parameters::frame_parameters() :
 	sound_filter()
 {}
 
+const int frame_builder::default_text_color = 0xDDDDDD; // equal font::NORMAL_COLOR
+
 frame_builder::frame_builder() :
 	duration_(1),
 	image_(),
@@ -200,8 +201,6 @@ frame_builder::frame_builder() :
 	primary_frame_(t_unset),
 	drawing_layer_(str_cast(display::LAYER_UNIT_DEFAULT - display::LAYER_UNIT_FIRST))
 {}
-
-const int default_text_color = 0xDDDDDD; // equal font::NORMAL_COLOR
 
 frame_builder::frame_builder(const config& cfg,const std::string& frame_string) :
 	duration_(1),
@@ -539,7 +538,7 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 {
 	const frame_parameters current_data = merge_parameters(frame_time,animation_val,engine_val);
 	if (current_data.screen_mode) {
-		redraw_screen_mode(frame_time, first_time, current_data);
+		redraw_screen_mode(frame_time, first_time, src, current_data);
 		return;
 	}
 
@@ -560,10 +559,10 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 	int d2 = game_display::get_singleton()->hex_size() / 2;
 	if(first_time ) {
 		// stuff sthat should be done only once per frame
-		if(!current_data.sound.empty()  ) {
+		if (!current_data.sound.empty()  ) {
 			sound::play_sound(sound_filter_tag::filter(current_data.sound, current_data.sound_filter));
 		}
-		if(!current_data.text.empty()  ) {
+		if (!current_data.text.empty()  ) {
 			game_display::get_singleton()->float_label(src,current_data.text,
 			(current_data.text_color & 0x00FF0000) >> 16,
 			(current_data.text_color & 0x0000FF00) >> 8,
@@ -630,20 +629,32 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 				}
 				break;
 			case map_location::SOUTH_WEST:
-				if(!current_data.auto_hflip) {
+				if (!current_data.auto_hflip && !current_data.auto_vflip ) {
+					orientation = halo::NORMAL;
+
+				} else if (!current_data.auto_hflip) {
+					orientation = halo::VREVERSE;
+
+				} else if (!current_data.auto_vflip) {
 					orientation = halo::HREVERSE;
+
 				} else {
 					orientation = halo::HVREVERSE;
 				}
 				break;
 			case map_location::NORTH_WEST:
-				orientation = halo::HREVERSE;
+				if (!current_data.auto_hflip) {
+					orientation = halo::NORMAL;
+				} else {
+					orientation = halo::HREVERSE;
+				}
 				break;
 			case map_location::NDIRECTIONS:
 			default:
 				orientation = halo::NORMAL;
 				break;
 		}
+
 		if(direction != map_location::SOUTH_WEST && direction != map_location::NORTH_WEST) {
 			*halo_id = halo::add(static_cast<int>(x+current_data.halo_x* game_display::get_singleton()->get_zoom_factor()),
 					static_cast<int>(y+current_data.halo_y* game_display::get_singleton()->get_zoom_factor()),
@@ -660,58 +671,72 @@ void unit_frame::redraw(const int frame_time,bool first_time,const map_location 
 	}
 }
 
-void unit_frame::redraw_screen_mode(const int frame_time,bool first_time, const frame_parameters& current_data) const
+void unit_frame::redraw_screen_mode(const int frame_time, bool first_time, const map_location& src, const frame_parameters& current_data) const
 {
 	// const frame_parameters current_data = merge_parameters(frame_time,animation_val,engine_val);
 	double tmp_offset_x = current_data.offset_x;
 	double tmp_offset_y = current_data.offset_y;
 
-	// int d2 = game_display::get_singleton()->hex_size() / 2;
+	game_display& disp = *game_display::get_singleton();
+	bool outer = !disp.in_game();
+	image::locator image_loc = image::locator(current_data.image, current_data.image_mod);
+
 	if (first_time ) {
 		// stuff sthat should be done only once per frame
-		if(!current_data.sound.empty()  ) {
+		if (!current_data.sound.empty()) {
 			sound::play_sound(current_data.sound);
 		}
+		if (!current_data.text.empty()) {
+			disp.float_label(src, current_data.text,
+				(current_data.text_color & 0x00FF0000) >> 16,
+				(current_data.text_color & 0x0000FF00) >> 8,
+				(current_data.text_color & 0x000000FF) >> 0, 
+				true);
+		}
 	}
-	image::locator image_loc = image::locator(current_data.image, current_data.image_mod);
 
 	surface image;
 	if (!image_loc.is_void() && image_loc.get_filename() != "") { // invalid diag image, or not diagonal
-		image = image::get_image(image_loc, image::SCALED_TO_ZOOM);
+		if (!outer) {
+			image = image::get_image(image_loc, image::SCALED_TO_ZOOM);
+		} else {
+			image = image::get_image(image_loc);
+			if (!image.null()) {
+				image = scale_surface(image, image.get()->w * outer_anim::zoom.first, image.get()->h * outer_anim::zoom.second);
+			}
+		}
 	}
 
-	game_display* disp = game_display::get_singleton();
-	SDL_Rect map_area = disp->map_outside_area();
-	// int screen_width = disp->video().getx();
-	// int screen_height = disp->video().gety();
+	SDL_Rect map_area = outer? outer_anim::rect: disp.map_outside_area();
 
-	const int x = static_cast<int>(tmp_offset_x * map_area.w);
-	const int y = static_cast<int>(tmp_offset_y * map_area.h);
+	double zoom_factor_x = outer? outer_anim::zoom.first: disp.get_zoom_factor();
+	double zoom_factor_y = outer? outer_anim::zoom.second: zoom_factor_x;
+
+	const int x = static_cast<int>(tmp_offset_x * map_area.w) + (outer? map_area.x: 0);
+	const int y = static_cast<int>(tmp_offset_y * map_area.h) + (outer? map_area.y: 0);
 
 	bool facing_west = false;
 	bool facing_north = true;
 
-	double zoom_factor = game_display::get_singleton()->get_zoom_factor();
-
 	const map_location zero_loc(0,0);
-	zero_x_ = disp->get_location_x(zero_loc);
-	zero_y_ = disp->get_location_y(zero_loc);
+	zero_x_ = disp.get_location_x(zero_loc);
+	zero_y_ = disp.get_location_y(zero_loc);
 
 	if (image != NULL) {
-		int my_x = x + int(current_data.x * zoom_factor - image->w/2);
-		int my_y = y + int(current_data.y * zoom_factor - image->h/2);
+		int my_x = x + int(current_data.x * zoom_factor_x - image->w/2);
+		int my_y = y + int(current_data.y * zoom_factor_y - image->h/2);
 
-		disp->render_image(my_x, my_y,
+		disp.render_image(my_x, my_y,
 			       	static_cast<display::tdrawing_layer>(display::LAYER_UNIT_FIRST+current_data.drawing_layer),
 			       	map_location(), image, facing_west, false,
 					ftofxp(current_data.highlight_ratio), current_data.blend_with,
 			       	current_data.blend_ratio, current_data.submerge, !facing_north);
 
 	} else if (!current_data.stext.empty()) {
-		int my_x = x + int(current_data.x * zoom_factor);
-		int my_y = y + int(current_data.y * zoom_factor);
+		int my_x = x + int(current_data.x * zoom_factor_x);
+		int my_y = y + int(current_data.y * zoom_factor_y);
 
-		disp->draw_text_in_hex2(map_location(), static_cast<display::tdrawing_layer>(display::LAYER_UNIT_FIRST+current_data.drawing_layer),
+		disp.draw_text_in_hex2(map_location(), static_cast<display::tdrawing_layer>(display::LAYER_UNIT_FIRST+current_data.drawing_layer),
 			current_data.stext, current_data.font_size, int_to_color(current_data.text_color), my_x, my_y,
 			       	ftofxp(current_data.highlight_ratio), true);
 	}
@@ -896,11 +921,43 @@ void unit_frame::replace_image_mod(const std::string& src, const std::string& ds
 	}
 }
 
-void unit_frame::replace_x(const std::string& src, const std::string& dst)
+void unit_frame::replace_progressive(const std::string& name, const std::string& src, const std::string& dst)
 {
-	if (builder_.x_.get_original() == src) {
-		int duration = builder_.x_.duration();
-		builder_.x_ = progressive_int(dst, duration);
+	if (name == "x") {
+		if (builder_.x_.get_original() == src) {
+			int duration = builder_.x_.duration();
+			builder_.x_ = progressive_int(dst, duration);
+		}
+	} else if (name == "y") {
+		if (builder_.y_.get_original() == src) {
+			int duration = builder_.y_.duration();
+			builder_.y_ = progressive_int(dst, duration);
+		}
+	} else if (name == "offset_x") {
+		if (builder_.offset_x_.get_original() == src) {
+			int duration = builder_.offset_x_.duration();
+			builder_.offset_x_ = progressive_double(dst, duration);
+		}
+	} else if (name == "offset_y") {
+		if (builder_.offset_y_.get_original() == src) {
+			int duration = builder_.offset_y_.duration();
+			builder_.offset_y_ = progressive_double(dst, duration);
+		}
+	} else if (name == "halo_x") {
+		if (builder_.halo_x_.get_original() == src) {
+			int duration = builder_.halo_x_.duration();
+			builder_.halo_x_ = progressive_int(dst, duration);
+		}
+	} else if (name == "halo_y") {
+		if (builder_.halo_y_.get_original() == src) {
+			int duration = builder_.halo_y_.duration();
+			builder_.halo_y_ = progressive_int(dst, duration);
+		}
+	} else if (name == "alpha") {
+		if (builder_.highlight_ratio_.get_original() == src) {
+			int duration = builder_.highlight_ratio_.duration();
+			builder_.highlight_ratio_ = progressive_double(dst, duration);
+		}
 	}
 }
 
@@ -910,6 +967,14 @@ void unit_frame::replace_static_text(const std::string& src, const std::string& 
 		builder_.stext_ = dst;
 	}
 }
+
+void unit_frame::replace_int(const std::string& name, int src, int dst)
+{
+	if (builder_.text_color_ == (src & 0xffffff)) {
+		builder_.text_color_ = dst & 0xffffff;
+	}
+}
+
 
 const frame_parameters unit_frame::merge_parameters(int current_time,const frame_parameters & animation_val,const frame_parameters & engine_val) const
 {
@@ -970,7 +1035,7 @@ const frame_parameters unit_frame::merge_parameters(int current_time,const frame
 	result.halo_y = current_val.halo_y?current_val.halo_y:animation_val.halo_y;
 	result.halo_y += engine_val.halo_y;
 
-        result.halo_mod = current_val.halo_mod +animation_val.halo_mod;
+	result.halo_mod = current_val.halo_mod +animation_val.halo_mod;
 	result.halo_mod += engine_val.halo_mod;
 
 	assert(engine_val.duration == 0);

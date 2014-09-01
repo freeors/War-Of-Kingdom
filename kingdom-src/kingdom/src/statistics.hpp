@@ -75,35 +75,6 @@ namespace statistics
 		~scenario_context();
 	};
 
-	struct attack_context
-	{
-		attack_context(const unit& a, const unit& d, int a_cth, int d_cth);
-		~attack_context();
-
-		enum hit_result { MISSES, HITS, KILLS };
-
-		void attack_expected_damage(double attacker_inflict, double defender_inflict);
-		void attack_result(hit_result res, int damage, int drain);
-		void defend_result(hit_result res, int damage, int drain);
-
-	private:
-
-		std::string attacker_type, defender_type;
-		std::string attacker_side, defender_side;
-		int chance_to_hit_defender, chance_to_hit_attacker;
-		std::string attacker_res, defender_res;
-
-		stats& attacker_stats();
-		stats& defender_stats();
-	};
-
-	void recruit_unit(const unit& u);
-	void recall_unit(const unit& u);
-	void un_recall_unit(const unit& u);
-	void un_recruit_unit(const unit& u);
-
-	void advance_unit(const unit& u);
-
 	config write_stats();
 	void write_stats(config_writer &out);
 	void read_stats(const config& cfg);

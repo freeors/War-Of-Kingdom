@@ -18,11 +18,11 @@
 
 #include "gui/dialogs/dialog.hpp"
 #include "gamestatus.hpp"
-#include "multiplayer_ui.hpp"
+#include "multiplayer.hpp"
 #include "network.hpp"
 #include "gui/dialogs/lobby/lobby_info.hpp"
+#include <hero.hpp>
 
-class hero_map;
 class config;
 class game_display;
 class gamemap;
@@ -49,22 +49,6 @@ public:
 class tmp_side_creator : public tdialog, public lobby_base
 {
 public:
-	struct connected_user {
-		connected_user(const std::string& name, controller controller__,
-				network::connection connection) :
-			name(name), controller_(controller__), connection(connection)
-		{};
-		std::string name;
-		controller controller_;
-		network::connection connection;
-		operator std::string() const
-		{
-			return name;
-		}
-	};
-
-	typedef std::vector<connected_user> connected_user_list;
-
 	class side 
 	{
 	public:
@@ -76,8 +60,8 @@ public:
 
 		void player(twindow& window);
 		void faction(twindow& window);
-		void feature(twindow& window);
 		void ally(twindow& window);
+		void gold(twindow& window);
 		void income(twindow& window);
 
 		/**
@@ -101,16 +85,13 @@ public:
 		bool allow_player() const;
 
 		/** Sets the controller of a side. */
-		void set_controller(controller controller);
-		controller get_controller() const;
+		void set_controller(tcontroller controller);
+		tcontroller get_controller() const;
 
 		/** Adds an user to the user list combo. */
 		void update_player_id();
 
 		const std::string& get_player_id() const;
-
-		/** Sets the username of this side. */
-		void set_player_id(const std::string& player_id);
 
 		/**
 		 * Imports data from the network into this side, and updates the UI
@@ -119,7 +100,7 @@ public:
 		void import_network_user(const config& data);
 
 		/** Resets this side to its default state, and updates the UI accordingly. */
-		void reset(controller controller_);
+		void reset(tcontroller controller_);
 
 		/** Resolves the random leader / factions. */
 		void resolve_random();
@@ -146,7 +127,7 @@ public:
 		// Configurable variables
 		int index_;
 		std::string player_id_;
-		controller controller_;
+		tcontroller controller_;
 		int ally_;
 		int color_;
 		int gold_;
@@ -157,12 +138,11 @@ public:
 		bool faction_changeable_;
 		bool changed_;
 
-		int selected_feature_;
-
 		tbutton* player_button_;
 		tbutton* faction_button_;
 		tbutton* feature_button_;
 		tbutton* ally_button_;
+		tbutton* gold_button_;
 		tbutton* income_button_;
 	};
 
@@ -170,18 +150,24 @@ public:
 
 	typedef std::vector<side> side_list;
 
-	game_display& gui_;
+	game_display& disp_;
 	hero_map& heros_;
 	gamemap& gmap_;
 	const config& game_config_;
 
+	std::map<int, std::string> get_used_user_players() const;
+
 	int get_faction(int side) const;
+	const config& get_faction_cfg(int side);
 	std::vector<int> get_candidate_factions(int side) const;
+	std::vector<int> get_candidate_factions_user(int side) const;
+	int get_user_faction(int side, std::string& username) const;
 	void set_faction(int side, int faction);
 
-	explicit tmp_side_creator(hero_map& heros, hero_map& heros_start, game_display& gui, gamemap& gmap, const config& game_config,
+
+	explicit tmp_side_creator(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
 			config& gamelist, const mp_game_settings& params, const int num_turns,
-			mp::controller default_controller, bool local_players_only = false);
+			tcontroller default_controller, bool local_players_only = false);
 
 	~tmp_side_creator();
 
@@ -217,13 +203,13 @@ private:
 
 	void player(twindow& window, int side);
 	void faction(twindow& window, int side);
-	void feature(twindow& window, int side);
 	void ally(twindow& window, int side);
+	void gold(twindow& window, int side);
 	void income(twindow& window, int side);
 
 	void update_playerlist();
 
-	std::string form_binary_header(int type) const;
+	std::string form_binary_header(int type, int len) const;
 	void send_binary_data(char* buf, int data_len, int buf_len) const;
 private:
 	// Those 2 functions are actually the steps of the (complex)
@@ -262,7 +248,7 @@ private:
 	 * Updates the state of the player list, the launch button and of the start
 	 * game label, to reflect the actual state.
 	 */
-	void update_playerlist_state(bool silent=true);
+	void refresh_launch();
 
 	/** Returns the index of a player, from its id, or -1 if the player was not found. */
 	connected_user_list::iterator find_player(const std::string& id);
@@ -279,6 +265,7 @@ private:
 	void process_network_data(const config& data, const network::connection sock);
 	void process_network_error(network::error& error);
 
+	const tgroup& saved_allow_username(const std::string& username);
 private:
 	hero_map& heros_start_;
 
@@ -300,26 +287,24 @@ private:
 	std::vector<std::pair<const config *, int> > factions_;
 
 	// Lists used for combos
-	std::vector<std::pair<std::string, int> >player_types_;
-	std::vector<std::pair<std::string, int> >player_xtypes_;
+	std::vector<std::pair<std::string, int> > player_types_;
+	std::vector<std::pair<std::string, int> > player_xtypes_;
 	std::vector<std::string> player_factions_;
-	std::vector<std::string> side_features_;
 
 	// team_name list and "Team" prefix
 	std::vector<int> allies_;
 
 	side_list sides_;
 	connected_user_list users_;
+	std::map<std::string, http::membership> member_users_;
 
 	tlistbox* sides_table_;
 	tlabel* waiting_;
 	tbutton* launch_;
 	
-	controller default_controller_;
+	tcontroller default_controller_;
 
 	/** Sets the user list */
-	virtual void gamelist_updated(bool silent=true) {};
-	// multiplayer_ui.hpp
 	config& gamelist_;
 
 	/**

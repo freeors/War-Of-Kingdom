@@ -281,6 +281,8 @@ void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 		label->set_label(strstr.str());
 	}
 
+	depute_ = city_.get_state(ustate_tag::DEPUTE);
+
 	const unit_type_data::unit_type_map& types = unit_types.types();
 	for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
 		if (it->second.master() == hero::number_market) {
@@ -347,7 +349,7 @@ void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 		}
 	}
 
-	std::sort(fresh_heros_.begin(), fresh_heros_.end(), compare_politics);
+	std::sort(fresh_heros_.begin(), fresh_heros_.end(), compare_spirit);
 
 	// mayor
 	tcontrol* control = find_widget<tcontrol>(&window, "mayor", false, true);
@@ -520,9 +522,9 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 			table_item_item.insert(std::make_pair("loyalty", table_item));
 
 			str.str("");
-			str << fxptoi9(h->politics_);
+			str << fxptoi9(h->spirit_);
 			table_item["label"] = str.str();
-			table_item_item.insert(std::make_pair("politics", table_item));
+			table_item_item.insert(std::make_pair("spirit", table_item));
 
 			str.str("");
 			str << hero::adaptability_str2(h->skill_[hero_skill_commercial]);

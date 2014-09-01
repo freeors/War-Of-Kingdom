@@ -29,10 +29,12 @@ class hero;
 
 namespace gui2 {
 
-class ttactic : public tdialog
+class ttactic2 : public tdialog
 {
 public:
-	explicit ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, unit& tactician, bool cast);
+	enum {CAST, ACTIVE, BROWSE};
+
+	explicit ttactic2(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, unit& tactician, int operate);
 
 	hero* get_selected_hero() const;
 private:
@@ -55,7 +57,7 @@ private:
 	hero_map& heros_;
 
 	unit& tactician_;
-	bool cast_;
+	int operate_;
 	std::vector<hero*> candidate_;
 	std::vector<bool> valid_;
 	bool cannot_valid_;

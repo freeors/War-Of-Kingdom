@@ -38,7 +38,7 @@ HTREEITEM TreeView_AddLeaf(HWND hwndTV, HTREEITEM hTreeParent)
 // @lImage：mask有TVIF_IMAGE标志时有效。
 // @lSelectedImage：mask有TVIF_SELECTEDIMAGE标志时有效。
 // @lpszText：mask有TVIF_TEXT标志时有效。
-void TreeView_SetItem1(HWND hwndTV, HTREEITEM hTreeItem, UINT mask, LPARAM lParam, int iImage, int iSelectedImage, int cChildren, LPSTR lpszText, ...)
+void TreeView_SetItem1(HWND hwndTV, HTREEITEM hTreeItem, UINT mask, LPARAM lParam, int iImage, int iSelectedImage, int cChildren, LPCSTR lpszText, ...)
 {
 	TCHAR           szBuffer[1024];
     va_list         list;
@@ -55,7 +55,7 @@ void TreeView_SetItem1(HWND hwndTV, HTREEITEM hTreeItem, UINT mask, LPARAM lPara
 	TreeView_SetItem2(hwndTV, hTreeItem, mask, lParam, iImage, iSelectedImage, cChildren, szBuffer);
 }
 
-void TreeView_SetItem2(HWND hwndTV, HTREEITEM hTreeItem, UINT mask, LPARAM lParam, int iImage, int iSelectedImage, int cChildren, LPTSTR pszText)
+void TreeView_SetItem2(HWND hwndTV, HTREEITEM hTreeItem, UINT mask, LPARAM lParam, int iImage, int iSelectedImage, int cChildren, LPSTR pszText)
 {
 	TVITEMEX        tvi;
 

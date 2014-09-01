@@ -39,6 +39,8 @@ public:
 	int exploiture_;
 };
 
+std::string form_title_str(int title);
+
 class tespecial 
 {
 public:
@@ -50,14 +52,59 @@ public:
 	std::string image_;
 };
 
+class tgenus
+{
+public:
+	enum genus_t { NONE, TURN_BASED = 0x1, HALF_REALTIME = 0x2 };
+	static std::map<const std::string, genus_t> tags;
+	static std::string name_prefix_str;
+
+	static void fill_tags();
+	static genus_t find(const std::string& tag);
+
+	tgenus(const config& cfg);
+
+	genus_t index() const { return index_; }
+	const std::string& id() const { return id_; }
+	const std::string& name() const { return name_; }
+	const std::string& icon() const { return icon_; }
+
+private:
+	genus_t index_;
+	std::string id_;
+	std::string name_;
+	std::string icon_;
+};
+
+namespace mode_tag {
+	enum tmode {NONE, SCENARIO = 0x1, RPG = 0x2, TOWER = 0x4, SIEGE = 0x8, LAYOUT = 0x10};
+	extern std::map<const std::string, tmode> tags;
+	tmode find(const std::string& tag);
+	const std::string& rfind(tmode tag);
+}
+
+namespace controller_tag {
+	enum CONTROLLER {NONE, HUMAN = 0x1, HUMAN_AI = 0x2, AI = 0x4, NETWORK = 0x8, EMPTY = 0x10};
+
+	extern std::map<const std::string, CONTROLLER> tags;
+	extern std::set<CONTROLLER> profile_side_tags;
+	extern std::set<CONTROLLER> game_running_tags;
+
+	CONTROLLER find(const std::string& tag);
+	const std::string& rfind(CONTROLLER tag);
+	bool valid(const std::string& str);
+	bool filter(int controller, const std::string& filters_str);
+	bool filter(int controller, const int filters);
+}
+
 namespace apply_to_tag {
 	enum {NONE, ATTACK, HITPOINTS, MOVEMENT, MUNITION, MAX_EXPERIENCE,
 		LOYAL, STATUS, MOVEMENT_COSTS, DEFENSE, RESISTANCE, ENCOURAGE,
-		DEMOLISH, ZOC, IMAGE_MOD, ADVANCE, TRAIN, MOVE,
-		DAMAGE, ONEOFF_MIN = DAMAGE, HIDE, ALERT, PROVOKE, CLEAR, HEAL, FOOD, ONEOFF_MAX = FOOD,
+		DEMOLISH, ZOC, IMAGE_MOD, ADVANCE, TRAIN, MOVE, ACTION,
+		DAMAGE, ONEOFF_MIN = DAMAGE, HIDE, ALERT, PROVOKE, CLEAR, HEAL, REVIVAL, ONEOFF_MAX = REVIVAL,
 		DECREE, UNIT_END = DECREE,
 		// side <=
-		CIVILIZATION, POLITICS, STRATEGIC,
+		CIVILIZATION, SPIRIT, STRATEGIC, STRATAGEM,
 		// character <=
 		AGGRESSIVE, CHARACTER_MIN = AGGRESSIVE, UNITED, CHARISMATIC, CREATIVE, 
 		EXPANSIVE, FINANCIAL, INDUSTRIOUS, ORGANIZED, PROTECTIVE,
@@ -71,16 +118,54 @@ namespace apply_to_tag {
 }
 
 namespace sound_filter_tag {
-	enum {NONE, MALE, FEMALE};
+	enum {NONE, MALE, FEMALE, NEUTRAL};
 
 	extern std::map<const std::string, int> tags;
 	int find(const std::string& tag);
 	const std::string& rfind(int tag);
 	std::string filter(const std::string& src, const std::string& f);
+
+	int from_hero_gender(int gender);
 }
 
-namespace filter {
-enum {TROOP = 1, ARTIFICAL = 2, CITY = 4};
+namespace family_tag {
+	enum {NONE, TROOP = 1, ARTIFICAL = 2, CITY = 4};
+
+	extern std::map<const std::string, int> tags;
+
+	int find(const std::string& tag);
+	const std::string& rfind(int tag);
+	bool valid(const std::string& str);
+	bool filter(const unit& u, const std::string& filters_str);
+	bool filter(const unit& u, int filters);
+}
+
+namespace ustate_tag {
+	enum state_t { NONE, SLOWED = 0x1, BROKEN = 0x2, POISONED = 0x4, PETRIFIED = 0x8,
+		UNCOVERED = 0x10, FORMATION_ATTACKED = 0x20, LEGERITIED = 0x40, EXPEDITED = 0x80, 
+		BLOCKED = 0x100, ROBBER = 0x200, DEPUTE = 0x400, BUILDING = 0x800,
+		REVIVALED = 0x1000
+	};
+
+	extern std::map<const std::string, state_t> tags;
+	extern std::set<ustate_tag::state_t> profilable_tags;
+
+	state_t find(const std::string& tag);
+	const std::string& rfind(state_t tag);
+	bool valid(const std::string& str);
+}
+
+namespace global_anim_tag {
+	enum ttype {NONE, CARD, REINFORCE, INDIVIDUALITY, TACTIC, 
+		BLADE, PIERCE, IMPACT, ARCHERY, COLLAPSE, ARCANE, FIRE, 
+		COLD, STRIKE, MAGIC, HEAL, DESTRUCT, 
+		FORMATION_ATTACK, FORMATION_DEFEND, PASS_SCENARIO, PERFECT, INCOME,
+		STRATAGEM_UP, STRATAGEM_DOWN, LOCATION, HSCROLL_TEXT,
+		TITLE_SCREEN, LOAD_SCENARIO, FLAGS, TEXT, PLACE};
+
+	extern std::map<const std::string, ttype> tags;
+	ttype find(const std::string& tag);
+	const std::string& rfind(ttype tag);
 }
 
 class ttactic 
@@ -95,12 +180,14 @@ public:
 	static std::map<std::string, int> range_id_map;
 
 	static int calculate_turn(int force, int intellect);
+	static bool select_one(int apply_to);
 
 	ttactic()
 		: index_(-1)
 		, id_()
 		, range_(0)
 		, point_(0)
+		, level_(0)
 		, name_()
 		, description_()
 		, bg_image_()
@@ -116,6 +203,7 @@ public:
 		, friend_hide_profit_(0)
 		, friend_clear_profit_(0)
 		, friend_heal_profit_(0)
+		, friend_select_one_profit_(0)
 		, enemy_profit_(0)
 		, enemy_provoke_profit_(0)
 		, complex_(false)
@@ -136,6 +224,8 @@ public:
 
 	int range() const { return range_; }
 	int point() const { return point_; }
+	int level() const { return level_; }
+	int cost() const;
 
 	int self_profit() const { return self_profit_; }
 	int self_hide_profit() const { return self_hide_profit_; }
@@ -146,11 +236,13 @@ public:
 	int friend_hide_profit() const { return friend_hide_profit_; }
 	int friend_clear_profit() const { return friend_clear_profit_; }
 	int friend_heal_profit() const { return friend_heal_profit_; }
+	int friend_select_one_profit() const { return friend_select_one_profit_; }
 	int enemy_profit() const { return enemy_profit_; }
 	int enemy_provoke_profit() const { return enemy_provoke_profit_; }
 	bool complex() const { return complex_; }
 	bool oneoff() const;
 	bool select_one() const;
+	int select_one_internal() const;
 
 	void set_atom_part() { parts_.push_back(this); }
 
@@ -163,6 +255,7 @@ private:
 	std::string description_;
 	std::string bg_image_;
 	int point_;
+	int level_;
 	std::vector<const ttactic*> parts_;
 	int range_;
 	config effect_cfg_;
@@ -178,6 +271,7 @@ private:
 	int friend_hide_profit_;
 	int friend_clear_profit_;
 	int friend_heal_profit_;
+	int friend_select_one_profit_;
 	int enemy_profit_;
 	int enemy_provoke_profit_;
 
@@ -191,7 +285,7 @@ public:
 		leadership_(0)
 		, force_(0)
 		, intellect_(0)
-		, politics_(0)
+		, spirit_(0)
 		, charm_(0)
 	{}
 	std::string expression() const;
@@ -200,7 +294,7 @@ public:
 	int leadership_;
 	int force_;
 	int intellect_;
-	int politics_;
+	int spirit_;
 	int charm_;
 };
 
@@ -405,9 +499,11 @@ public:
 		, apply_to_(apply_to_tag::NONE)
 		, relative_(HEROS_NO_CHARACTER)
 		, parts_()
+		, stratagem_(false)
 		, complex_(false)
 		, type_filter_(0)
 		, arms_filter_(0)
+		, mode_filter_(0)
 	{}
 
 	ttechnology(const config& cfg);
@@ -425,13 +521,16 @@ public:
 	const config& effect_cfg() const { return effect_cfg_; }
 	int apply_to() const { return apply_to_; }
 
+	bool stratagem() const { return stratagem_; }
 	bool complex() const { return complex_; }
 
 	void set_atom_part() { parts_.push_back(this); }
 
 	int type_filter() const { return type_filter_; }
 	int arms_filter() const { return arms_filter_; }
+	int mode_filter() const { return mode_filter_; }
 	bool filter(int type, int arms) const;
+	bool filter_mode(int mode) const;
 private:
 	std::string id_;
 	std::vector<std::string> advances_to_;
@@ -445,9 +544,12 @@ private:
 	int apply_to_;
 	int type_filter_;
 	int arms_filter_;
-		
+	int mode_filter_;
+	
+	bool stratagem_;
 	bool complex_;
 };
+extern ttechnology null_technology;
 
 class tformation_profile
 {
@@ -663,6 +765,10 @@ public:
 	static std::string miss(const std::string& race, const std::string& id, bool terrain);
 	static std::string leading(const std::string& race, const std::string& id, bool terrain);
 	static std::string idle(const std::string& race, const std::string& id, bool terrain, int number);
+	static std::string move(const std::string& race, const std::string& id, bool terrain, int number);
+	static std::string build(const std::string& race, const std::string& id, bool terrain, int number);
+	static std::string repair(const std::string& race, const std::string& id, bool terrain, int number);
+	static std::string die(const std::string& race, const std::string& id, bool terrain, int number);
 	static std::string attack_image(const std::string& race, const std::string& id, bool terrain, int range, int number);
 
 	static bool has_resistance_anim(const std::set<std::string>& abilities);
@@ -673,10 +779,16 @@ public:
 	static void resistance_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void leading_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void healing_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
-	static void idle_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void idle_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& idle_sound, config& cfg, bool multigrid);
 	static void healed_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void movement_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& movement_sound, config& cfg);
+	static void build_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void repair_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void die_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& die_sound, config& cfg, bool multigrid);
 	static void attack_anim_melee(const std::string& tag, const std::string& aid, const std::string& aicon, bool troop, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_multi_melee(const std::string& tag, const std::string& aid, const std::string& aicon, bool troop, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_ranged(const std::string& tag, const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_multi_ranged(const std::string& tag, const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_ranged_magic_missile(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_ranged_lightbeam(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_ranged_fireball(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
@@ -689,7 +801,7 @@ public:
 	 * @note @a cfg is not copied, so it has to point to some permanent
 	 *       storage, that is, a child of unit_type_data::unit_cfg.
 	 */
-	unit_type(config &cfg);
+	unit_type(const config &cfg);
 	unit_type(const unit_type& o);
 
 	~unit_type();
@@ -741,6 +853,7 @@ public:
 	int heal() const { return heal_; }
 	int turn_experience() const { return turn_experience_; }
 	const std::string& image() const { return image_; }
+	const std::string& weak_image() const { return weak_image_; }
 	const std::string& halo() const { return halo_; }
 
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
@@ -790,6 +903,10 @@ public:
 	bool terrain_matches(t_translation::t_terrain tcode) const;
 	const std::string& raw_icon() const { return raw_icon_; }
 	std::string icon() const;
+	const std::string& raw_movement_sound() const { return raw_movement_sound_; }
+	std::string movement_sound() const;
+	const std::string& raw_idle_sound() const { return raw_idle_sound_; }
+	std::string idle_sound() const;
 	int arms() const { return arms_; }
 	int especial() const { return especial_; }
 	int master() const { return master_; }
@@ -802,6 +919,7 @@ public:
 
 	enum {REQUIRE_NONE = 0, REQUIRE_LEADER, REQUIRE_FEMALE};
 	int require() const { return require_; }
+	bool can_range(int range) const;
 
 	// bool has_ability_by_id(const std::string& ability) const;
 
@@ -846,6 +964,7 @@ private:
     std::string undead_variation_;
 
     std::string image_;
+	std::string weak_image_;
 	std::string flag_rgb_;
 	std::string die_sound_;
 
@@ -866,6 +985,7 @@ private:
 	bool zoc_, hide_help_;
 	bool cancel_zoc_;
 	int require_;
+	int can_ranges_;
 
 	std::vector<std::string> advances_to_;
 	std::string advancement_;
@@ -892,6 +1012,8 @@ private:
 
 	std::string match_;
 	std::string raw_icon_;
+	std::string raw_movement_sound_;
+	std::string raw_idle_sound_;
 	t_translation::t_terrain terrain_;
 	bool can_recruit_;
 	bool can_reside_;
@@ -922,11 +1044,6 @@ private:
 	const unit_type* ut_;
 };
 
-enum {GLB_ANIM_CARD = apply_to_tag::NONE + 1, GLB_ANIM_REINFORCE, GLB_ANIM_INDIVIDUALITY, GLB_ANIM_TACTIC, 
-	GLB_ANIM_BLADE, GLB_ANIM_PIERCE, GLB_ANIM_IMPACT, GLB_ANIM_ARCHERY, GLB_ANIM_COLLAPSE, GLB_ANIM_ARCANE, GLB_ANIM_FIRE, 
-	GLB_ANIM_COLD, GLB_ANIM_STRIKE, GLB_ANIM_MAGIC, GLB_ANIM_HEAL, GLB_ANIM_DESTRUCT, 
-	GLB_ANIM_FORMATION_ATTACK, GLB_ANIM_FORMATION_DEFEND, GLB_ANIM_PASS_SCENARIO, GLB_ANIM_PERFECT};
-
 class unit_type_data
 {
 public:
@@ -947,6 +1064,8 @@ public:
 	const traits_map& traits() const { return traits_; }
 	const modifications_map& modifications() const { return modifications_; }
 	const complex_feature_map& complex_feature() const { return complex_feature_; }
+	const std::vector<int>& features_level() const { return features_level_; }
+	int feature_level(int f) const { return features_level_[f]; }
 	const std::vector<ttreasure>& treasures() const { return treasures_; }
 	const ttreasure& treasure(int index) const { return treasures_[index]; }
 	const abilities_map& abilities() const { return abilities_; }
@@ -967,6 +1086,9 @@ public:
 	const std::map<std::string, int>& decrees_id() const { return decrees_id_; }
 	const tdecree& decree(const std::string& id) const { return decrees_.find(decrees_id_.find(id)->second)->second; }
 
+	const std::map<tgenus::genus_t, tgenus>& genera() const { return genera_; }
+	const tgenus& genus(tgenus::genus_t g) const { return genera_.find(g)->second; }
+
 	const std::map<std::string, ttechnology>& technologies() const { return technologies_; }
 	const ttechnology& technology(const std::string& id) const;
 
@@ -975,6 +1097,9 @@ public:
 	int noble_count() const { return sort_nobles_.size(); }
 	int level_noble_count(int level) const;
 	const tnoble& noble(int index) const;
+	const std::vector<const tnoble*>& leader_nobles() const { return leader_nobles_; }
+	const tnoble& leader_noble(int level) const { return *leader_nobles_[level]; }
+	int max_noble_level() const { return leader_nobles_.back()->level(); }
 
 	const std::map<int, tformation_profile>& formations() const { return formations_; }
 	const tformation_profile& formation(int index) const { return formations_.find(index)->second; }
@@ -984,6 +1109,7 @@ public:
 	const std::vector<std::string>& arms_ids() const { return arms_ids_; }
 	int arms_from_id(const std::string& id) const;
 	const std::vector<std::string>& range_ids() const { return range_ids_; }
+	int range_from_id(const std::string& id) const;
 	const std::vector<std::string>& atype_ids() const { return atype_ids_; }
 	const std::vector<tespecial>& especials() const { return especials_; }
 	const tespecial& especial(int index) const { return especials_[index]; }
@@ -1003,20 +1129,23 @@ public:
 	const std::vector<advance_tree::node*>& utype_tree() const { return utype_tree_; }
 	void generate_technology_tree();
 	const std::vector<advance_tree::node*>& technology_tree() const { return technology_tree_; }
+	const std::set<const ttechnology*>& selectable_technologies() const { return selectable_technologies_; }
 
-	void set_config(config &cfg);
+	void set_config(const config &cfg);
 
-	const unit_type *find(const std::string &key, unit_type::BUILD_STATUS status = unit_type::FULL) const;
-	const unit_race *find_race(const std::string &) const;
-	const unit_type *find_wall() const { return wall_type_; }
-	const unit_type *find_keep() const { return keep_type_; }
-	const unit_type *find_market() const { return market_type_; }
-	const unit_type *find_technology() const { return technology_type_; }
-	const unit_type *find_tactic() const { return tactic_type_; }
-	const unit_type *find_tower() const { return tower_type_; }
-	const unit_type *find_fort() const { return fort_type_; }
+	const unit_type* find(const std::string &key, unit_type::BUILD_STATUS status = unit_type::FULL) const;
+	const unit_race* find_race(const std::string &) const;
+	const unit_type* find_wall() const { return wall_type_; }
+	const unit_type* find_keep() const { return keep_type_; }
+	const unit_type* find_market() const { return market_type_; }
+	const unit_type* find_technology() const { return technology_type_; }
+	const unit_type* find_tactic() const { return tactic_type_; }
+	const unit_type* find_tower() const { return tower_type_; }
+	const unit_type* find_fort() const { return fort_type_; }
+	const unit_type* find_school() const { return school_type_; }
+	const unit_type* find_city(int level) const { return city_type_.find(level)->second; }
 
-	const unit_type *find_scout() const { return scout_type_; }
+	const unit_type* find_scout() const { return scout_type_; }
 
 	/** Checks if the [hide_help] tag contains these IDs. */
 	bool hide_help(const std::string &type_id, const std::string &race_id) const;
@@ -1043,6 +1172,7 @@ private:
 	modifications_map modifications_;
 	traits_map traits_;
 	complex_feature_map complex_feature_;
+	std::vector<int> features_level_;
 	std::vector<ttreasure> treasures_;
 	abilities_map abilities_;
 	specials_map specials_;
@@ -1052,10 +1182,12 @@ private:
 	std::map<std::string, int> characters_id_;
 	std::map<int, tdecree> decrees_;
 	std::map<std::string, int> decrees_id_;
+	std::map<tgenus::genus_t, tgenus> genera_;
 	std::map<std::string, ttechnology> technologies_;
 
 	std::map<int, std::set<tnoble> > nobles_;
 	std::vector<const tnoble*> sort_nobles_;
+	std::vector<const tnoble*> leader_nobles_;
 
 	std::map<int, tformation_profile> formations_;
 	std::map<std::string, int> formations_id_;
@@ -1073,6 +1205,7 @@ private:
 
 	std::vector<advance_tree::node*> utype_tree_;
 	std::vector<advance_tree::node*> technology_tree_;
+	std::set<const ttechnology*> selectable_technologies_;
 
 	unit_type* wall_type_;
 	unit_type* keep_type_;
@@ -1081,6 +1214,8 @@ private:
 	unit_type* tactic_type_;
 	unit_type* tower_type_;
 	unit_type* fort_type_;
+	unit_type* school_type_;
+	std::map<int, const unit_type*> city_type_;
 
 	unit_type* businessman_type_;
 	unit_type* scholar_type_;
@@ -1096,6 +1231,17 @@ private:
 
 	unit_type::BUILD_STATUS build_status_;
 };
+
+namespace stratagem_tag {
+	enum {none, xue_zhong_song_tan, min = xue_zhong_song_tan, miao_shou_hui_chun, 
+		xiao_li_cang_dao, sheng_dong_ji_xi, jiang_lang_cai_jin, max = jiang_lang_cai_jin,
+	};
+
+	extern std::map<const std::string, int> tags;
+	extern std::map<int, const ttechnology*> technologies;
+	int find(const std::string& tag);
+	const ttechnology& technology(int tag);
+}
 
 extern unit_type_data unit_types;
 

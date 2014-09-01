@@ -300,4 +300,9 @@ private:
 	tusage usage_;
 };
 
+void form_map_str_rectangle(const std::string& data, std::vector<std::vector<std::string> >& result);
+std::string combine_map(const std::vector<std::vector<std::string> >& left_res, const std::vector<std::vector<std::string> >& right_res, bool rflip);
+std::string combine_map(const std::string& left, const std::vector<std::vector<std::string> >& right_res, bool rflip);
+std::string combine_map(const std::string& left, const std::string& right, bool rflip);
+
 #endif

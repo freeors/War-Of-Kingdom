@@ -31,11 +31,10 @@
 #include "game_preferences.hpp"
 #include "gettext.hpp"
 #include "gui/dialogs/transient_message.hpp"
-#include "gui/dialogs/story_screen.hpp"
+#include "gui/dialogs/side_report.hpp"
 #include "log.hpp"
 #include "map_label.hpp"
 #include "marked-up_text.hpp"
-#include "playturn.hpp"
 #include "resources.hpp"
 #include "savegame.hpp"
 #include "sound.hpp"
@@ -43,10 +42,10 @@
 #include "events.hpp"
 #include "save_blocker.hpp"
 #include "soundsource.hpp"
-#include "storyscreen/interface.hpp"
 #include "util.hpp"
 #include "unit_display.hpp"
 #include "artifical.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -68,9 +67,7 @@ playsingle_controller::playsingle_controller(const config& level,
 	data_backlog_(),
 	textbox_info_(),
 	replay_sender_(recorder),
-	end_turn_(false),
 	player_type_changed_(false),
-	turn_over_(false),
 	skip_next_turn_(false),
 	level_result_(NONE)
 {
@@ -91,6 +88,8 @@ playsingle_controller::playsingle_controller(const config& level,
 
 playsingle_controller::~playsingle_controller()
 {
+	posix_print("playsingle_controller::~playsingle_controller()\n");
+
 	ai::manager::remove_observer(this) ;
 	ai::manager::clear_ais() ;
 }
@@ -108,24 +107,41 @@ void playsingle_controller::init_gui()
 		gui_->scroll_to_tile(map_.starting_position(human_team_ + 1), game_display::WARP);
 	}
 	gui_->scroll_to_tile(map_.starting_position(1), game_display::WARP);
-	if (tent::mode != TOWER_MODE) {
-		gui_->set_current_list_type(game_display::taccess_list::TROOP); 
-	} else {
+	if (tent::mode == mode_tag::TOWER || tent::mode == mode_tag::LAYOUT) {
 		gui_->set_current_list_type(game_display::taccess_list::HERO);
+	} else {
+		gui_->set_current_list_type(game_display::taccess_list::TROOP);
 	}
-		
+
+	{
+		int ii = 0;
+		// gui_->set_current_list_type(game_display::taccess_list::TROOP);
+	}
+
 	uint32_t end_scroll_to_tile = SDL_GetTicks();
 	posix_print("playsingle_controller::init_gui, scroll_to_tile, used time: %u ms\n", end_scroll_to_tile - end_parent_init_gui);
 
 	update_locker lock_display(gui_->video(),recorder.is_skipping());
 	events::raise_draw_event();
+
 	gui_->draw();
+
 	for(std::vector<team>::iterator t = teams_.begin(); t != teams_.end(); ++t) {
 		::clear_shroud(t - teams_.begin() + 1);
 	}
 
+	gui_->refresh_access_troops(human_team_, game_display::REFRESH_RELOAD);
+
 	uint32_t end_draw = SDL_GetTicks();
 	posix_print("playsingle_controller::init_gui, gui_->draw, used time: %u ms\n", end_draw - end_scroll_to_tile);
+
+	if (tent::mode == mode_tag::SIEGE) {
+		gui::button* endturn = gui_->find_button("endturn");
+		endturn->set_image("buttons/ctrl-pause2.png", -1);
+		endturn->enable(true);
+
+		teams_[human_team_].set_objectives_changed(false);
+	}
 }
 
 void playsingle_controller::recruit()
@@ -163,11 +179,35 @@ void playsingle_controller::build(const std::string& type)
 	}
 }
 
+void playsingle_controller::guard()
+{
+	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor.valid()) {
+		menu_handler_.guard(mouse_handler_, *u_itor);
+	}
+}
+
+void playsingle_controller::abolish()
+{
+	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor.valid()) {
+		menu_handler_.abolish(mouse_handler_, *u_itor);
+	}
+}
+
 void playsingle_controller::extract()
 {
 	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
 	if (!browse_ && u_itor.valid()) {
 		menu_handler_.extract(mouse_handler_, *u_itor);
+	}
+}
+
+void playsingle_controller::advance()
+{
+	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor.valid()) {
+		menu_handler_.advance(mouse_handler_, &*u_itor);
 	}
 }
 
@@ -199,10 +239,26 @@ void playsingle_controller::update_shroud_now(){
 	menu_handler_.update_shroud_now(gui_->viewing_team()+1);
 }
 
-void playsingle_controller::end_turn(){
+void playsingle_controller::end_turn()
+{
 	if (linger_) {
 		end_turn_ = true;
-	} else if (!browse_){
+	} else if (tent::mode == mode_tag::SIEGE) {
+		gui::button* endturn = gui_->find_button("endturn");
+		if (!browse_) {
+			browse_ = true;
+			end_turn_ = menu_handler_.end_turn(player_number_);
+			browse_ = end_turn_;
+			endturn->set_image("buttons/ctrl-pause.png", -1);
+			pause_when_human_ = false;
+		} else if (pause_when_human_) {
+			endturn->set_image("buttons/ctrl-pause.png", -1);
+			pause_when_human_ = false;
+		} else {
+			endturn->set_image("buttons/ctrl-pause2.png", -1);
+			pause_when_human_ = true;
+		}
+	} else if (!browse_) {
 		browse_ = true;
 		end_turn_ = menu_handler_.end_turn(player_number_);
 		browse_ = end_turn_;
@@ -219,7 +275,7 @@ void playsingle_controller::check_end_level()
 	if (level_result_ == NONE || linger_)
 	{
 		team &t = teams_[gui_->viewing_team()];
-		if (!browse_ && t.objectives_changed()) {
+		if (tent::mode != mode_tag::LAYOUT && !browse_ && t.objectives_changed()) {
 			dialogs::show_objectives(level_, t);
 			t.reset_objectives_changed();
 		}
@@ -367,7 +423,7 @@ LEVEL_RESULT playsingle_controller::play_scenario(
 		// Initialize countdown clock.
 		std::vector<team>::iterator t;
 		for(t = teams_.begin(); t != teams_.end(); ++t) {
-			if (gamestate_.mp_settings().mp_countdown && !loading_game_ ){
+			if (gamestate_.mp_settings().mp_countdown && !loading_game_) {
 				t->set_countdown_time(1000 * gamestate_.mp_settings().mp_countdown_init_time);
 			}
 		}
@@ -520,39 +576,10 @@ void playsingle_controller::play_turn(bool save)
 	gui_->invalidate_game_status();
 	events::raise_draw_event();
 
-	for (player_number_ = first_player_; player_number_ <= int(teams_.size()); ++player_number_) {
-		unit_display::player_number_ = player_number_;
-		// If a side is empty skip over it.
-		if (current_team().is_empty()) continue;
-		try {
-			save_blocker blocker;
-			init_side(player_number_ - 1, false, save || (player_number_ != first_player_));
-		} catch (end_turn_exception) {
-			if (current_team().is_network() == false) {
-				turn_info turn_data(player_number_, replay_sender_, undo_stack_);
-				recorder.end_turn();
-				turn_data.sync_network();
-			}
-			continue;
-		}
 
-		// If a side is dead end the turn.
-		if (current_team().is_human() && side_units(player_number_) == 0) {
-			turn_info turn_data(player_number_, replay_sender_, undo_stack_);
-			recorder.end_turn();
-			turn_data.sync_network();
-			continue;
-		}
+	play_side();
 
-		play_side(player_number_, save);
-
-		finish_side_turn();
-
-		check_victory();
-
-		//if loading a savegame, network turns might not have reset this yet
-		loading_game_ = false;
-	}
+	check_victory();
 
 	// Time has run out
 	check_time_over();
@@ -560,56 +587,89 @@ void playsingle_controller::play_turn(bool save)
 	finish_turn();
 }
 
-void playsingle_controller::play_side(const unsigned int team_index, bool save)
+bool human_team_can_ai(const unit& u)
+{
+	return !u.human() || tent::tower_mode() || u.provoked_turns() || u.task() == unit::TASK_GUARD;
+}
+
+void playsingle_controller::play_side()
 {
 	//check for team-specific items in the scenario
 	gui_->parse_team_overlays();
 
-	//flag used when we fallback from ai and give temporarily control to human
-	do {
-		// Although this flag is used only in this method,
-		// it has to be a class member since derived classes
-		// rely on it
-		player_type_changed_ = false;
-		if (!skip_next_turn_)
-			end_turn_ = false;
+	int end_ticks = calculate_end_ticks();
+	while (unit_map::main_ticks < end_ticks && !player_type_changed_) {
+		VALIDATE(!unit::actor, "playsingle_controller::play_side, unit::actor isn't NULL!");
 
+		unit* u = &units_.current_unit();
+		if (!tent::turn_based) {
+			int past_ticks = u->backward_ticks(u->ticks());
+			if (unit_map::main_ticks + past_ticks >= end_ticks) {
+				units_.do_escape_ticks_uh(teams_, *gui_, end_ticks - unit_map::main_ticks, false);
+				autosave_ticks_ = -1;
+				continue;
+			}
+			u = NULL;
+			units_.do_escape_ticks_uh(teams_, *gui_, past_ticks, true);
+		} else {
+			if (u->side() < player_number_) {
+				unit_map::main_ticks = end_ticks;
+				player_number_ = 1;
+				continue;
+			}
+		}
+		bool new_side = do_prefix_unit(end_ticks, loading_game_, true);
 
-		statistics::reset_turn_stats(teams_[team_index - 1].save_id());
+		if (actor_can_continue_action(units_, player_number_)) {
+			team& t = teams_[player_number_ - 1];
+			// Although this flag is used only in this method,
+			// it has to be a class member since derived classes
+			// rely on it
+			player_type_changed_ = false;
+			if (!skip_next_turn_) {
+				end_turn_ = false;
+			}
 
-		if (current_team().is_human()) {
-			try {
-				if (save) {
-					play_ai_turn();
-					if (tent::mode == TOWER_MODE) {
-						do_fresh_heros(current_team(), false);
+			if (t.is_human()) {
+				try {
+					if (!loading_game_ && unit::actor->human_team_can_ai()) {
+						play_ai_turn(NULL);
 					}
-				}
-				before_human_turn(save);
+					before_human_turn(new_side);
+					play_human_turn();
+					after_human_turn();
 
-				play_human_turn();
-				after_human_turn();
-			} catch(end_turn_exception& end_turn) {
-				if (end_turn.redo == team_index) {
-					player_type_changed_ = true;
-					// If new controller is not human,
-					// reset gui to prev human one
-					if (!teams_[team_index-1].is_human()) {
-						browse_ = true;
-						int t = find_human_team_before(team_index);
-						if (t > 0) {
-							gui_->set_team(t-1);
-							gui_->recalculate_minimap();
-							gui_->invalidate_all();
-							gui_->draw(true,true);
+				} catch(end_turn_exception& end_turn) {
+					if (end_turn.redo == player_number_ - 1) {
+						player_type_changed_ = true;
+						// If new controller is not human,
+						// reset gui to prev human one
+						if (!teams_[player_number_ - 2].is_human()) {
+							browse_ = true;
+							int t = find_human_team_before(player_number_ - 1);
+							if (t > 0) {
+								gui_->set_team(t-1);
+								gui_->recalculate_minimap();
+								gui_->invalidate_all();
+								gui_->draw(true,true);
+							}
 						}
 					}
 				}
+			} else if (t.is_ai()) {
+				play_ai_turn(NULL);
+
 			}
-		} else if(current_team().is_ai()) {
-			play_ai_turn();
 		}
-	} while (player_type_changed_);
+
+		do_post_unit(false);
+
+		if (!gui_->access_is_null(game_display::taccess_list::TROOP)) {
+			gui_->verify_access_troops();
+		}
+		
+		loading_game_ = false;
+	}
 	// Keep looping if the type of a team (human/ai/networked)
 	// has changed mid-turn
 	skip_next_turn_ = false;
@@ -617,32 +677,59 @@ void playsingle_controller::play_side(const unsigned int team_index, bool save)
 
 void playsingle_controller::before_human_turn(bool save)
 {
-	browse_ = false;
+	team& t = current_team();
+
+	if (pause_when_human_) {
+		browse_ = false;
+	}
 	linger_ = false;
 
-	gui_->refresh_access_troops(player_number_ - 1);
-	gui_->refresh_access_heros(player_number_ - 1);
+	if (gui_->access_is_null(game_display::taccess_list::TROOP)) {
+		// change resolution will result to enter it.
+		gui_->refresh_access_troops(player_number_ - 1, game_display::REFRESH_RELOAD);
+	}
+	if (!tent::tower_mode() && !preferences::developer()) {
+		gui_->refresh_access_troops(player_number_ - 1, game_display::REFRESH_HIDE, NULL);
+	}
+	gui_->refresh_access_heros(player_number_ - 1, game_display::REFRESH_RELOAD);
 	ai::manager::raise_turn_started();
 
-	if (save) {
-		// uint32_t start = SDL_GetTicks();
+	if (tent::mode != mode_tag::LAYOUT && save) {
+		autosave_ticks_ = unit_map::main_ticks;
+
 		config snapshot;
 		to_config(snapshot);
-		// uint32_t mid1 = SDL_GetTicks();
-		// posix_print("(mid1)used time: %u ms\n", mid1 - start);
 		savegame::autosave_savegame save(heros_, heros_start_, gamestate_, *gui_, snapshot);
-		// uint32_t mid2 = SDL_GetTicks();
-		// posix_print("(mid2)used time: %u ms\n", mid2 - mid1);
 		save.autosave(game_config::disable_autosave, preferences::autosavemax(), preferences::INFINITE_AUTO_SAVES);
-		// uint32_t mid3 = SDL_GetTicks();
-		// posix_print("(mid3)used time: %u ms\n", mid3 - mid2);
+
+		if (tent::turn_based) {
+			const std::vector<hero*>& last_active_tactic = t.last_active_tactic();
+			for (std::vector<hero*>::const_iterator it = last_active_tactic.begin(); it != last_active_tactic.end(); ++ it) {
+				hero& selected_hero = **it;
+				unit* tactician = units_.find_unit(selected_hero);
+				if (tactician && !tactician->is_resided()) {
+					do_add_active_tactic(*tactician, selected_hero, true);
+				}
+			}
+		}
+
+		// autosave ticks changed, refresh top panel.
+		gui_->invalidate_game_status();
+
 	} else {
 		teams_[player_number_ - 1].refresh_tactic_slots(*gui_);
 	}
 
-	if (preferences::turn_bell()) {
-		sound::play_bell(game_config::sounds::turn_bell);
+	if (unit::actor && unit::actor->is_city()) {
+		if (preferences::turn_bell()) {
+			sound::play_bell(game_config::sounds::turn_bell);
+		}
+		if (game_config::show_side_report) {
+			gui2::tside_report dlg(*gui_, teams_, units_, heros_, unit::actor->side());
+			dlg.show(gui_->video());
+		}
 	}
+
 	// button: undo
 	undo_stack_.clear();
 	if (teams_[player_number_-1].uses_shroud() || teams_[player_number_-1].uses_fog()) {
@@ -652,18 +739,23 @@ void playsingle_controller::before_human_turn(bool save)
 		gui_->enable_menu("undo", false);
 	}
 	// button: endturn
-	gui_->enable_menu("play_card", true);
-	gui_->enable_menu("endturn", true);
-/*
-	if (rpg::stratum == hero_stratum_leader) {
-		if (card_mode_) {
-			execute_card_uh(turn(), player_number_);
+	if (tent::mode == mode_tag::SIEGE) {
+		if (pause_when_human_) {
+			gui::button* endturn = gui_->find_button("endturn");
+			endturn->set_image("buttons/ctrl-play.png", -1);
+			endturn->enable(true);
 		}
-		execute_guard_attack(player_number_);
+		
+	} else if (tent::mode != mode_tag::LAYOUT) {
+		gui_->enable_menu("play_card", true);
+		gui_->enable_menu("endturn", true);
+	} else {
+		gui_->hide_menu("play_card", true);
+		gui_->hide_menu("endturn", true);
 	}
-*/	
+	
 	// card
-	refresh_card_button(current_team(), *gui_);
+	refresh_card_button(t, *gui_);
 	// if (!network::nconnections()) {
 	//	show_context_menu(NULL, *gui_);
 	// } else {
@@ -723,8 +815,8 @@ void playsingle_controller::execute_guard_attack(int team_index)
 	static map_location tiles[24];
 	team& current_team = teams_[team_index - 1];
 	battle_context* bc = NULL;
-	const std::vector<artifical*> holded_cities = current_team.holded_cities();
-	for (std::vector<artifical*>::const_iterator itor = holded_cities.begin(); itor != holded_cities.end(); ++ itor) {
+	const std::vector<artifical*> holden_cities = current_team.holden_cities();
+	for (std::vector<artifical*>::const_iterator itor = holden_cities.begin(); itor != holden_cities.end(); ++ itor) {
 		artifical& city = **itor;
 
 		std::vector<artifical*> arts = city.field_arts();
@@ -782,16 +874,93 @@ void playsingle_controller::execute_guard_attack(int team_index)
 	}
 }
 
-void playsingle_controller::play_human_turn() {
+bool revivaled_can_auto_end_turn(const team& t)
+{
+	if (tent::mode == mode_tag::TOWER || tent::mode == mode_tag::LAYOUT) {
+		return true;
+	}
+
+	const std::pair<unit**, size_t> p = t.field_troop();
+	for (size_t i = 0; i < p.second; i ++) {
+		unit& u = *p.first[i];
+		if (u.get_state(ustate_tag::REVIVALED) && u.attacks_left()) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool playsingle_controller::can_auto_end_turn(bool first) const
+{
+	if (tent::turn_based || linger_) {
+		return false;
+	}
+	if (!revivaled_can_auto_end_turn(current_team())) {
+		return false;
+	}
+	if (!actor_can_continue_action(units_, player_number_)) {
+		return true;
+	}
+	if (unit::actor->is_city()) {
+		const artifical* city = unit_2_artifical(unit::actor);
+		if (rpg::stratum == hero_stratum_citizen) {
+			if (first) {
+				if (rpg::h->side_ + 1 != city->side()) {
+					return true;
+				}
+			}
+
+		}
+		return false;
+
+	} else if (tent::mode == mode_tag::TOWER || tent::mode == mode_tag::LAYOUT) {
+		// in these mode, there is one city only, pause at city.
+		return true;
+
+	} else if (!unit::actor->human()) {
+		// it is human team, but human unit.
+		return true;
+	}
+
+	if (!unit::actor->attacks_left()) {
+		return true;
+	}
+	if (first) {
+		if (map_.on_board(unit::actor->get_goto())) {
+			if (!has_enemy_in_3range(units_, map_, current_team(), unit::actor->get_location())) {
+				return true;
+			}
+		}
+		if (unit::actor->task() == unit::TASK_GUARD) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void playsingle_controller::play_human_turn() 
+{
 	show_turn_dialog();
 	execute_gotos();
 
-	while(!end_turn_) {
+	bool auto_end_turn = can_auto_end_turn(true);
+	if (!auto_end_turn) {
+		if (!unit::actor->is_city() && unit::actor->task() == unit::TASK_NONE) {
+			gui_->scroll_to_tile(unit::actor->get_location(), game_display::ONSCREEN, true, true);
+		}
+	} else {
+		return;
+	}
+
+	while (!end_turn_ && pause_when_human_ && !auto_end_turn) {
 		play_slice();
 		check_end_level();
 		gui_->draw();
+
+		auto_end_turn = can_auto_end_turn(false);
 	}
 }
+
 struct set_completion
 {
 	set_completion(game_state& state, const std::string& completion) :
@@ -809,7 +978,8 @@ struct set_completion
 
 void playsingle_controller::linger()
 {
-	LOG_NG << "beginning end-of-scenario linger\n";
+	mouse_handler_.do_right_click(false);
+
 	browse_ = true;
 	linger_ = true;
 
@@ -823,14 +993,9 @@ void playsingle_controller::linger()
 	set_completion setter(gamestate_,"running");
 
 	// change the end-turn button text to its alternate label
-	gui_->get_theme().refresh_title2("button-endturn", "title2");
+	gui_->get_theme().refresh_title2("endturn", "title2");
 	gui_->invalidate_theme();
 	gui_->redraw_everything();
-
-	// End all unit moves
-	for (unit_map::iterator u = units_.begin(); u != units_.end(); ++u) {
-		u->set_user_end_turn(true);
-	}
 
 	start_pass_scenario_anim(get_end_level_data().result);
 
@@ -857,27 +1022,13 @@ void playsingle_controller::linger()
 	}
 
 	// revert the end-turn button text to its normal label
-	gui_->get_theme().refresh_title2("button-endturn", "title");
+	gui_->get_theme().refresh_title2("endturn", "title");
 	gui_->invalidate_theme();
 	gui_->redraw_everything();
 	gui_->set_game_mode(game_display::RUNNING);
 
 	LOG_NG << "ending end-of-scenario linger\n";
 }
-
-void playsingle_controller::end_turn_record()
-{
-	if (!turn_over_)
-	{
-		turn_over_ = true;
-		recorder.end_turn();
-	}
-}
-void playsingle_controller::end_turn_record_unlock()
-{
-	turn_over_ = false;
-}
-
 
 
 void playsingle_controller::after_human_turn()
@@ -888,18 +1039,21 @@ void playsingle_controller::after_human_turn()
 	if (card_mode_) {
 		execute_card_bh(turn(), player_number_);
 	}
-	do_commoner(current_team);
+	if (actor_can_action(units_)) {
+		if (unit::actor->is_city()) {
+			do_commoner(current_team);
+		}
+	}
 
-	// clear access troops
-	gui_->refresh_access_troops(player_number_ - 1, game_display::REFRESH_CLEAR);
+	if (!tent::tower_mode() && !preferences::developer()) {
+		gui_->refresh_access_troops(player_number_ - 1, game_display::REFRESH_HIDE, reinterpret_cast<void*>(this));
+	}
 	gui_->refresh_access_heros(player_number_ - 1, game_display::REFRESH_CLEAR);
 	// hide context-menu
 	gui_->hide_context_menu(NULL, true);
 
 	// Mark the turn as done.
 	browse_ = true;
-	end_turn_record();
-	end_turn_record_unlock();
 	menu_handler_.clear_undo_stack(player_number_);
 
 	if (current_team.uses_fog()) {
@@ -912,7 +1066,7 @@ void playsingle_controller::after_human_turn()
 	gui_->unhighlight_reach();
 }
 
-void playsingle_controller::play_ai_turn()
+void playsingle_controller::play_ai_turn(turn_info* turn_data)
 {
 	uint32_t start = SDL_GetTicks();
 	total_draw = 0;
@@ -937,39 +1091,43 @@ void playsingle_controller::play_ai_turn()
 
 	gui_->enable_menu("play_card", false);
 	gui_->enable_menu("undo", false);
-	gui_->enable_menu("endturn", false);
+	if (tent::mode == mode_tag::SIEGE) {
+		
+	} else {
+		gui_->enable_menu("endturn", false);
+	}
 	browse_ = true;
 	gui_->recalculate_minimap();
 
 	const cursor::setter cursor_setter(cursor::WAIT);
 
-	turn_info turn_data(player_number_, replay_sender_, undo_stack_);
-
 	uint32_t before = SDL_GetTicks();
 	try {
-		ai::manager::play_turn(player_number_);
+		ai::manager::play_turn();
 	} catch (end_turn_exception&) {
 	}
 	uint32_t after = SDL_GetTicks();
 
-	if (!teams_[player_number_ - 1].is_human()) {
-		recorder.end_turn();
+	if (turn_data) {
+		turn_data->sync_network();
 	}
-	turn_data.sync_network();
 
-	if (!current_team.is_human()) {
+	if (unit::actor && !teams_[unit::actor->side() - 1].is_human()) {
+/*
 		gui_->recalculate_minimap();
-		::clear_shroud(player_number_);
+		::clear_shroud(unit::actor->side());
 		gui_->invalidate_unit();
 		gui_->invalidate_game_status();
 		gui_->invalidate_all();
 		
 		gui_->draw();
-
+*/
 		if (card_mode_) {
 			execute_card_bh(turn(), player_number_);
 		}
 	}
+
+	// do_delay_call(true);
 
 	uint32_t stop = SDL_GetTicks();
 	posix_print("#%i, play_ai_turn %u ms, (draw: %u(%i), analyzing: %u), [%u](%u+[%u]+%u)(recruit: %u, combat: %u, build: %u, move: %u, diplomatism: %u)\n", 
@@ -1003,7 +1161,7 @@ void playsingle_controller::check_time_over()
 		}
 
 		check_end_level();
-		if (tent::mode == TOWER_MODE) {
+		if (tent::mode == mode_tag::TOWER) {
 			throw end_level_exception(VICTORY);
 		} else {
 			throw end_level_exception(DEFEAT);
@@ -1086,6 +1244,9 @@ bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, 
 		case hotkey::HOTKEY_PLAY_CARD:
 			return !browse_ && !linger_ && !events::commands_disabled && !mouse_handler_.in_multistep_state();
 		case hotkey::HOTKEY_ENDTURN:
+			if (tent::mode == mode_tag::SIEGE) {
+				return true;
+			}
 			return (!browse_ || linger_) && !events::commands_disabled;
 
 		case hotkey::HOTKEY_SWITCH_LIST:
@@ -1124,7 +1285,14 @@ bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, 
 		case hotkey::HOTKEY_TACTIC0:
 		case hotkey::HOTKEY_TACTIC1:
 		case hotkey::HOTKEY_TACTIC2:
-			return !rpging_ && !replaying_ && !events::commands_disabled && !browse_ && current_team().is_human() && !mouse_handler_.in_multistep_state();
+			if (rpging_ || replaying_) {
+				res = false;
+			} else if (!allow_intervene_) {
+				res = !events::commands_disabled && !browse_ && current_team().is_human() && !mouse_handler_.in_multistep_state();
+			} else {
+				res = true;
+			}
+			break;
 
 		default: 
 			return play_controller::can_execute_command(command, index);

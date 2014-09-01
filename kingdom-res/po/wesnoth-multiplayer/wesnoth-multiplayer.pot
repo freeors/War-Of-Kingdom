@@ -1502,3 +1502,27 @@ msgstr ""
 
 msgid "Tower(16x6)"
 msgstr ""
+
+msgid "Siege-I"
+msgstr ""
+
+msgid "Siege-II"
+msgstr ""
+
+msgid "Siege-III"
+msgstr ""
+
+msgid "random_map"
+msgstr ""
+
+msgid "random_map description"
+msgstr ""
+
+msgid "siege"
+msgstr ""
+
+msgid "siege description"
+msgstr ""
+
+msgid "2p_siege_map"
+msgstr ""

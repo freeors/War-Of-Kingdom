@@ -608,6 +608,7 @@ void sync_refresh_sync()
 		// forbid refresh
 		sync_enter_ui();
 	}
+
 	do_sync();
 }
 

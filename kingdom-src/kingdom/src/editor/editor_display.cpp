@@ -71,11 +71,8 @@ image::TYPE editor_display::get_image_type(const map_location& loc)
 	if (brush_locations_.find(loc) != brush_locations_.end()) {
 		return image::BRIGHTENED;
 	} else if (map().in_selection(loc)) {
-#if !defined(__APPLE__) || !TARGET_OS_IPHONE
-		return image::SEMI_BRIGHTENED;
-#else
 		return image::BRIGHTENED;
-#endif
+		// return image::SEMI_BRIGHTENED;
 	}
 	return image::TOD_COLORED;
 }
@@ -108,7 +105,6 @@ void editor_display::draw_sidebar()
 {
 	// Fill in the terrain report
 	if(get_map().on_board_with_border(mouseoverHex_)) {
-		refresh_report(reports::TERRAIN, reports::report(get_map().get_terrain_editor_string(mouseoverHex_)));
 		refresh_report(reports::POSITION, reports::report(lexical_cast<std::string>(mouseoverHex_)));
 	}
 	refresh_report(reports::VILLAGES, reports::report(lexical_cast<std::string>(get_map().villages().size())));

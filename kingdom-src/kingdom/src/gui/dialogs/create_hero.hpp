@@ -37,7 +37,7 @@ namespace gui2 {
 class tcreate_hero : public tdialog
 {
 public:
-	explicit tcreate_hero(game_display& gui, hero_map& heros, hero& player_hero);
+	explicit tcreate_hero(game_display& disp, hero_map& heros);
 
 	~tcreate_hero();
 
@@ -56,25 +56,30 @@ private:
 
 	void regenerate(twindow& window);
 	void change_avatar(twindow& window, bool gender);
+
+	void field(twindow& window, int index);
 	void adaptability(twindow& window, int type, int index);
 	void feature(twindow& window, bool side);
 	void tactic(twindow& window);
+	void utype(twindow& window);
 	void character(twindow& window);
 	void catalog(twindow& window);
 
 	void account(twindow& window);
 	void synchronize(twindow& window);
-	bool create(twindow& window, bool close);
+	bool create(twindow& window);
 
 	std::string text_box_str(twindow& window, const std::string& id, const std::string& name, bool allow_empty = false);
 
-	void set_text_box_int(twindow& window, const std::string& id, int value, int maximum_length = -1);
+	void set_button_int(twindow& window, const std::string& id, int value);
 	bool text_box_int(twindow& window, const std::string& id, const std::string& name, int& value, int min = 1, int max = 127);
+
+	void refresh_resi_point(twindow& window) const;
+	void refresh_field_ui(twindow& window);
 private:
-	game_display& gui_;
+	game_display& disp_;
 	hero_map& heros_;
 	hero h_;
-	hero& player_hero_;
 
 	int male_number_;
 	int female_number_;

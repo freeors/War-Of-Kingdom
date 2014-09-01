@@ -101,8 +101,8 @@ SDL_Rect line_size(const std::string& line, int font_size, int style=TTF_STYLE_N
 /**
  * If the text excedes the specified max width, end it with an ellipsis (...)
  */
-std::string make_text_ellipsis(const std::string& text, int font_size, int max_width,
-	int style = TTF_STYLE_NORMAL);
+std::string make_text_ellipsis(const std::string& text, int font_size, int max_width, int style = TTF_STYLE_NORMAL);
+std::string make_text_ellipsis(const std::string& text, size_t max_count);
 
 std::string make_text_hide(const std::string& text, bool always, size_t front_should_hide_width, size_t hiden_width, int font_size, int max_showable_width, bool with_tags, bool parse_for_style);
 
@@ -110,8 +110,10 @@ std::string make_text_hide(const std::string& text, bool always, size_t front_sh
 /// instantiated after it is created to be displayed
 struct floating_label_context
 {
-	floating_label_context();
+	floating_label_context(const surface& screen);
 	~floating_label_context();
+
+	const surface& screen;
 };
 
 enum ALIGN { LEFT_ALIGN, CENTER_ALIGN, RIGHT_ALIGN };
@@ -136,14 +138,11 @@ public:
 		ymove_ = ymove;
 	}
 	// set the number of frames to display the text for, or -1 to display until removed
-	void set_lifetime(int lifetime) {
-		lifetime_ = lifetime;
-		alpha_change_ = -255 / lifetime_;
-	}
+	void set_lifetime(int lifetime);
 	void set_color(const SDL_Color& color) {color_ = color;}
 	void set_bg_color(const SDL_Color& bg_color) {
 		bgcolor_ = bg_color;
-		bgalpha_ = bg_color.unused;
+		bgalpha_ = bg_color.a;
 	}
 	void set_border_size(int border) {border_ = border;}
 	// set width for word wrapping (use -1 to disable it)

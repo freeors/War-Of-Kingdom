@@ -37,6 +37,9 @@ public:
 	tstacked_widget();
 
 	/***** ***** ***** inherited ***** ****** *****/
+	/** Inherited from tcontainer_ */
+	void child_populate_dirty_list(twindow& caller,
+		const std::vector<twidget*>& call_stack);
 
 	/** Inherited from tcontrol. */
 	bool get_active() const { return true; }

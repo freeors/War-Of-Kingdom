@@ -101,7 +101,7 @@ private:
 	std::vector<bool> games_visibility_;
 };
 
-#include "network.hpp"
+#include "multiplayer.hpp"
 #include "gui/widgets/tree_view.hpp"
 
 namespace gui2 {
@@ -112,11 +112,10 @@ class tlabel;
 #define COMBO_FEATURES_RANDOM		1
 #define COMBO_FEATURES_MIN_VALID	2
 
-enum controller { CNTR_NETWORK = 0, CNTR_LOCAL, CNTR_COMPUTER, CNTR_EMPTY, CNTR_LAST };
 #define RANDOM_FACTION	-1
 
 std::string decide_player_iocn(int controller);
-enum {BINARY_HEROS, BINARY_HEROS_START, BINARY_REPLAY, BINARY_SIDE};
+enum {BINARY_HEROS, BINARY_HEROS_START, BINARY_REPLAY, BINARY_GROUP, BINARY_SIDE};
 
 struct tsub_player_list
 {
@@ -136,6 +135,25 @@ protected:
 	ttree_view* tree;
 };
 
+struct connected_user {
+	connected_user(const std::string& name, tcontroller controller, network::connection connection) 
+		: name(name)
+		, controller(controller)
+		, connection(connection)
+		, side(HEROS_INVALID_SIDE)
+	{};
+	std::string name;
+	tcontroller controller;
+	network::connection connection;
+	tgroup group;
+	int side;
+	operator std::string() const
+	{
+		return name;
+	}
+};
+typedef std::vector<connected_user> connected_user_list;
+
 class lobby_base
 {
 public:
@@ -144,6 +162,9 @@ public:
 	 */
 	lobby_base();
 	~lobby_base();
+
+	void regenerate_hero_map_from_users(game_display& disp, hero_map& heros, connected_user_list& users, std::map<std::string, http::membership>& member_users);
+	void users_2_groups(const connected_user_list& users, const std::map<std::string, http::membership>& member_users);
 
 	virtual void network_handler();
 

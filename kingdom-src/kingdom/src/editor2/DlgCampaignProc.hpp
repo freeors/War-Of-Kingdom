@@ -9,6 +9,7 @@
 #include "hero.hpp"
 #include "unit_types.hpp"
 #include "event.hpp"
+#include "wml_exception.hpp"
 
 namespace scenario_selector {
 	extern bool multiplayer;
@@ -30,7 +31,6 @@ void campaign_enable_save_btn(bool enable);
 extern editor editor_;
 extern const std::string null_str;
 
-enum {NONE_MODE, RPG_MODE, TOWER_MODE};
 enum {NONE_CATALOG = 0, TUTORIAL_CATALOG};
 enum {NO_DUEL, RANDOM_DUEL, ALWAYS_DUEL};
 
@@ -64,9 +64,15 @@ public:
 		, abbrev_()
 		, first_scenario_(firstscenario_id)
 		, hero_data_("^xwml/hero.dat")
-		, mode_(NONE_MODE)
+		, subcontinent_(false)
+		, mode_(mode_tag::NONE)
 		, catalog_(NONE_CATALOG)
 	{}
+
+	bool must_exist_map() const
+	{
+		return mode_ == mode_tag::RPG || (mode_ == mode_tag::SCENARIO && !subcontinent_);
+	}
 
 public:
 	std::string textdomain_;
@@ -74,7 +80,8 @@ public:
 	std::string abbrev_;
 	std::string first_scenario_;
 	std::string hero_data_;
-	int mode_;
+	bool subcontinent_;
+	mode_tag::tmode mode_;
 	int catalog_;
 };
 
@@ -96,7 +103,7 @@ public:
 
 	enum {BIT_ID = 0, BIT_TEXTDOMAIN, 
 		BIT_ABBREV, BIT_FIRSTSCENARIO, BIT_ICON, 
-		BIT_IMAGE, BIT_MODE, BIT_CATALOG};
+		BIT_IMAGE, BIT_MODE, BIT_SUBCONTINENT, BIT_CATALOG};
 	void set_dirty(int bit, bool set);
 public:
 
@@ -238,15 +245,13 @@ public:
 	bool operator==(const tside& that) const;
 	bool operator!=(const tside& that) const { return !operator==(that); }
 
-	enum CONTROLLER {HUMAN, HUMAN_AI, AI, NETWORK, NETWORK_AI, EMPTY};
-
-	std::string generate_features(CONTROLLER cntl = AI) const;
+	std::string generate_features(controller_tag::CONTROLLER cntl = controller_tag::AI) const;
 public:
 	tscenario* scenario_;
 	int side_;
 	std::string name_;
 	int leader_;
-	CONTROLLER controller_;
+	controller_tag::CONTROLLER controller_;
 	std::string candidate_cards_;
 	std::vector<size_t> holded_cards_;
 	std::vector<arms_feature> features_;
@@ -277,6 +282,7 @@ public:
 		, map_data_()
 		, turns_(-1)
 		, duel_(RANDOM_DUEL)
+		, prelude_()
 		, objectives_()
 		, enemy_no_city_(true)
 		, fallen_to_unstage_(false)
@@ -293,6 +299,7 @@ public:
 	std::string map_data_;
 	int turns_;
 	int duel_;
+	config prelude_;
 	tevent::tobjectives objectives_;
 	bool enemy_no_city_;
 	bool fallen_to_unstage_;
@@ -343,7 +350,7 @@ public:
 	bool rpg_mode() const;
 
 	enum {BIT_ID = 0, BIT_NEXTSCENARIO, BIT_MAP, 
-		BIT_TURNS, BIT_MDACTIVITY, BIT_DUEL, BIT_TREASURES, BIT_ROADS, BIT_OBJECTIVES,  BIT_ENEMYNOCITY, BIT_FALLENTOUNSTAGE, BIT_TENT,
+		BIT_TURNS, BIT_MDACTIVITY, BIT_DUEL, BIT_TREASURES, BIT_ROADS, BIT_PRELUDE, BIT_OBJECTIVES, BIT_ENEMYNOCITY, BIT_FALLENTOUNSTAGE, BIT_TENT,
 		BIT_SIDE, BIT_EVENT};
 	void set_dirty(int bit, bool set);
 	
@@ -353,17 +360,85 @@ public:
 	class hero_state 
 	{
 	public:
-		hero_state(bool allocated = false, int city = -1, int state = STATE_UNKNOWN)
-			: allocated_(allocated)
-			, city_(city)
-			, state_(state)
+		struct tstate {
+			tstate(int state = STATE_UNKNOWN, int city = -1) :
+				state(state),
+				city(city)
+			{}
+			bool valid() const { return state != STATE_UNKNOWN; }
+
+			int state;
+			int city; // hero of city.
+		};
+		tstate null_state;
+
+		hero_state()
+			: states_()
 		{}
-		bool allocated_;
-		int city_; // hero of city.
-		int state_;
+
+		void insert(int side, int s, int city)
+		{
+			states_.insert(std::make_pair(side, tstate(s, city)));
+		}
+
+		void erase(int side)
+		{
+			std::map<int, tstate>::iterator it = states_.find(side);
+
+			std::stringstream err;
+			err << "hero_state::erase, this hero hasn't been allocated to #" << (side + 1) << "!";
+			VALIDATE(it != states_.end(), err.str());
+			states_.erase(it);
+		}
+
+		bool allocated(int side, bool exclude_reserve = false) const 
+		{ 
+			if (side != HEROS_INVALID_SIDE) {
+				const std::map<int, tstate>::const_iterator it = states_.find(side);
+				if (it == states_.end()) {
+					return false;
+				}
+				if (exclude_reserve && it->second.state == STATE_RESERVE) {
+					return false;
+				}
+				return true;
+
+			} else if (exclude_reserve) {
+				for (std::map<int, tstate>::const_iterator it = states_.begin(); it != states_.end(); ++ it) {
+					if (it->second.state != STATE_RESERVE) {
+						return true;
+					}
+				}
+				return false;
+
+			} else {
+				return !states_.empty();
+			}
+		}
+
+		const tstate& state(int side) const
+		{
+			std::map<int, tstate>::const_iterator it = states_.find(side);
+			if (it != states_.end()) {
+				return it->second; 
+			}
+			return null_state;
+		}
+
+		tstate& state(int side)
+		{
+			std::map<int, tstate>::iterator it = states_.find(side);
+			if (it != states_.end()) {
+				return it->second; 
+			}
+			return null_state;
+		}
+
+	private:
+		std::map<int, tstate> states_;
 	};
 	void init_hero_state(hero_map& heros);
-	void do_state(int h, bool allocate, int city = -1, int state = STATE_UNKNOWN);
+	void do_state(int h, int side, int state = STATE_UNKNOWN, int city = -1);
 
 public:
 	static const int max_event_count = 50;

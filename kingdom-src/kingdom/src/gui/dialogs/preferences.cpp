@@ -297,18 +297,6 @@ void tpreferences::flip_time_toggled(twidget* widget)
 	preferences::set_flip_time(toggle->get_value());
 }
 
-void tpreferences::show_floating_labels_toggled(twidget* widget)
-{
-	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set_show_floating_labels(toggle->get_value());
-}
-
-void tpreferences::show_team_colors_toggled(twidget* widget)
-{
-	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set_show_side_colors(toggle->get_value());
-}
-
 void tpreferences::default_move_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
@@ -435,10 +423,10 @@ void tpreferences::chat_timestamp_toggled(twidget* widget)
 	preferences::set_chat_timestamping(toggle->get_value());
 }
 
-void tpreferences::scroll_when_mouse_outside_toggled(twidget* widget)
+void tpreferences::developer_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set("scroll_when_mouse_outside", toggle->get_value());
+	preferences::set_developer(toggle->get_value());
 }
 
 void tpreferences::interrupt_when_ally_sighted_toggled(twidget* widget)
@@ -592,14 +580,6 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		toggle->set_value(preferences::flip_time());
 		toggle->set_callback_state_change(boost::bind(&tpreferences::flip_time_toggled, this, _1));
 
-		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("show_floating_labels_button", false));
-		toggle->set_value(preferences::show_floating_labels());
-		toggle->set_callback_state_change(boost::bind(&tpreferences::show_floating_labels_toggled, this, _1));
-		
-		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("show_team_colors_button", false));
-		toggle->set_value(preferences::show_side_colors());
-		toggle->set_callback_state_change(boost::bind(&tpreferences::show_team_colors_toggled, this, _1));
-		
 		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("default_move_button", false));
 		toggle->set_value(preferences::default_move());
 		toggle->set_callback_state_change(boost::bind(&tpreferences::default_move_toggled, this, _1));
@@ -659,9 +639,9 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		toggle->set_callback_state_change(boost::bind(&tpreferences::chat_timestamp_toggled, this, _1));
 		toggle->set_value(preferences::chat_timestamping());
 
-		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("scroll_when_mouse_outside", true));
-		toggle->set_callback_state_change(boost::bind(&tpreferences::scroll_when_mouse_outside_toggled, this, _1));
-		toggle->set_value(preferences::get("scroll_when_mouse_outside", true));
+		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("developer", true));
+		toggle->set_callback_state_change(boost::bind(&tpreferences::developer_toggled, this, _1));
+		toggle->set_value(preferences::developer());
 
 		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("interrupt_when_ally_sighted_button", false));
 		toggle->set_callback_state_change(boost::bind(&tpreferences::interrupt_when_ally_sighted_toggled, this, _1));
@@ -710,7 +690,7 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		std::stringstream strstr;
 		strstr << env_.maximal_defeated_activity;
 		maximal_defeated_activity_->set_label(strstr.str());
-		if (tent::mode == TOWER_MODE || resources::controller->is_replaying() || network::nconnections()) {
+		if (tent::tower_mode() || resources::controller->is_replaying() || network::nconnections()) {
 			maximal_defeated_activity_->set_active(false);
 		}
 
@@ -730,21 +710,21 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 			strstr << _("Random");
 		}
 		duel_->set_label(strstr.str());
-		if (tent::mode == TOWER_MODE || resources::controller->is_replaying() || network::nconnections()) {
+		if (tent::tower_mode() || resources::controller->is_replaying() || network::nconnections()) {
 			duel_->set_active(false);
 		}
 
 		ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("card_button", false));
 		toggle->set_value(env_.vip);
 		toggle->set_active(false);
-		if (tent::mode == TOWER_MODE) {
+		if (tent::tower_mode()) {
 			toggle->set_visible(twidget::INVISIBLE);
 		}
 		
 		toggle = dynamic_cast<ttoggle_button*>(options_grid_->find("tactic_slot_button", false));
 		toggle->set_value(env_.vip);
 		toggle->set_active(false);
-		if (tent::mode != TOWER_MODE) {
+		if (!tent::tower_mode()) {
 			toggle->set_visible(twidget::INVISIBLE);
 		}
 

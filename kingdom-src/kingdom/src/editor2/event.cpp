@@ -614,53 +614,23 @@ void tevent::update_to_ui(HWND hdlgP, int index) const
 	ListView_SetItem(hctl, &lvi);
 }
 
-namespace scroll {
-
-tevent::tcommand* first_visible_command = NULL;
-HTREEITEM first_visible_htvi;
-
-void treeview_update_scroll(HWND htv, tevent& evt)
+void cb_treeview_update_scroll_event(HWND htv, HTREEITEM htvi, TVITEMEX& tvi, void* ctx)
 {
-	TVITEMEX tvi, tvi1;
-	HTREEITEM htvi = TreeView_GetFirstVisible(htv);
-	TreeView_GetItem1(htv, htvi, &tvi, TVIF_PARAM | TVIF_CHILDREN, NULL);
-	if (htvi) {
-		if (!tvi.cChildren) {
-			htvi = TreeView_GetParent(htv, htvi);
-			TreeView_GetItem1(htv, htvi, &tvi, TVIF_PARAM | TVIF_CHILDREN, NULL);
-		}
-		if (tvi.lParam == tevent::PARAM_THEN || tvi.lParam == tevent::PARAM_ELSE) {
-			TreeView_GetItem1(htv, TreeView_GetParent(htv, htvi), &tvi1, TVIF_PARAM, NULL);
-			first_visible_command = reinterpret_cast<tevent::tcommand*>(tvi1.lParam);
-		} else if (tvi.lParam != tevent::PARAM_NONE) {
-			first_visible_command = reinterpret_cast<tevent::tcommand*>(tvi.lParam);
-		}
+	tevent& evt = *reinterpret_cast<tevent*>(ctx);
+	TVITEMEX tvi1;
+	if (!tvi.cChildren) {
+		htvi = TreeView_GetParent(htv, htvi);
+		TreeView_GetItem1(htv, htvi, &tvi, TVIF_PARAM | TVIF_CHILDREN, NULL);
+	}
+	if (tvi.lParam == tevent::PARAM_THEN || tvi.lParam == tevent::PARAM_ELSE) {
+		TreeView_GetItem1(htv, TreeView_GetParent(htv, htvi), &tvi1, TVIF_PARAM, NULL);
+		scroll::first_visible_lparam = tvi1.lParam;
+	} else if (tvi.lParam != tevent::PARAM_NONE) {
+		scroll::first_visible_lparam = tvi.lParam;
 	}
 
 	TreeView_DeleteAllItems(htv);
 	evt.update_to_ui_event_edit(htv, TVI_ROOT);
-
-	first_visible_command = NULL;
-}
-
-
-void cb_treeview_walk_find_lparam(HWND hctl, HTREEITEM htvi, uint32_t* ctx)
-{
-	TVITEMEX	tvi;
-	TreeView_GetItem1(hctl, htvi, &tvi, TVIF_PARAM, NULL);
-	if (tvi.lParam == (LPARAM)first_visible_command) {
-		first_visible_htvi = htvi;
-	}
-}
-
-void treeview_scroll_to(HWND htv)
-{
-	if (first_visible_command) {
-		TreeView_Walk(htv, TVI_ROOT, TRUE, cb_treeview_walk_find_lparam, NULL, FALSE);
-		TreeView_SelectSetFirstVisible(htv, first_visible_htvi);
-	}
-}
-
 }
 
 void tevent::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
@@ -894,7 +864,7 @@ void tevent::new_command(tcommand* new_cmd, HWND hdlgP)
 	}
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
-	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), scenario.event_[ns::clicked_event]);
+	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &scenario.event_[ns::clicked_event]);
 }
 
 void tevent::erase_command(const tcommand* cmd, HWND hdlgP)
@@ -908,7 +878,7 @@ void tevent::erase_command(const tcommand* cmd, HWND hdlgP)
 	destination->erase(destination->begin() + pos);
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
-	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), scenario.event_[ns::clicked_event]);
+	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &scenario.event_[ns::clicked_event]);
 }
 
 bool tevent::do_edit(HWND hwndtv)
@@ -959,7 +929,7 @@ bool tevent::do_edit(HWND hwndtv)
 		} else if (ns::clicked_command->type_ == tcommand::EVENT) {
 			tevent* derive = dynamic_cast<tevent*>(ns::clicked_command);
 			derive->first_time_only_ = !derive->first_time_only_;
-			scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), scenario.event_[ns::clicked_event]);
+			scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &scenario.event_[ns::clicked_event]);
 
 		} else if (ns::clicked_command->type_ == tcommand::CONDITION) {
 			OnConditionEditBt(hdlgP);
@@ -988,8 +958,6 @@ void tevent::tfilter_::from_config(const config& cfg)
 	}
 	must_heros_ = cfg["must_heros"].str();
 
-	type_ = cfg["type"].str();
-
 	int cityno = cfg["cityno"].to_int(-1);
 	if (cityno >= 0) {
 		int city_hero = HEROS_INVALID_NUMBER;
@@ -1008,6 +976,12 @@ void tevent::tfilter_::from_config(const config& cfg)
 	if (side_ != HEROS_INVALID_SIDE && side_ >= 1) {
 		side_ --;
 	}
+
+	controller_ = controller_tag::find(cfg["controller"].str());
+
+	type_ = cfg["type"].str();
+
+	family_ = cfg["family"].str();
 
 	x_ = cfg["x"].str();
 	y_ = cfg["y"].str();
@@ -1054,8 +1028,14 @@ void tevent::tfilter_::from_ui_special(HWND hdlgP)
 	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTFILTER_SIDE);
 	side_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
+	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTFILTER_CONTROLLER);
+	controller_ = (controller_tag::CONTROLLER)ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTFILTER_TYPE), text, sizeof(text) / sizeof(text[0]));
 	type_ = text;
+
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTFILTER_FAMILY), text, sizeof(text) / sizeof(text[0]));
+	family_ = text;
 
 	// X/Y
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTFILTER_X), text, _MAX_PATH);
@@ -1099,27 +1079,40 @@ void tevent::tfilter_::from_ui_special(HWND hdlgP)
 
 void tevent::tfilter_::update_to_ui_event_edit(HWND hwndtv, HTREEITEM branch) const
 {
+	description(hwndtv, branch, false);
+}
+
+std::string tevent::tfilter_::description(HWND hwndtv, HTREEITEM branch, bool newline) const
+{
 	char text[_MAX_PATH];
 	std::stringstream strstr;
 
 	HTREEITEM htvi;
-	
+
 	if (hp_.first != digit_op::NONE && !hp_.second.empty()) {
-		htvi = TreeView_AddLeaf(hwndtv, branch);
-		strstr.str("");
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
 		strstr << "hp: " << digit_op::find(hp_.first) << " " << hp_.second;
 		if (strstr.str()[strstr.str().size() - 1] == '%') {
 			// fix below display bug.
 			strstr << "%";
 		}
-		strcpy(text, strstr.str().c_str());
-		TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		if (hwndtv != NULL) {
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
 	}
 
 	if (!must_heros_.empty()) {
-		htvi = TreeView_AddLeaf(hwndtv, branch);
-		strstr.str("");
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
 		strstr << "must_heros: ";
 		if (valuex::is_variable(must_heros_)) {
 			strstr << must_heros_;
@@ -1128,82 +1121,167 @@ void tevent::tfilter_::update_to_ui_event_edit(HWND hwndtv, HTREEITEM branch) co
 			for (std::vector<int>::const_iterator it = sstr.begin(); it != sstr.end(); ++ it) {
 				hero& h = gdmgr.heros_[*it];
 				if (it == sstr.begin()) {
-					strstr << utf8_2_ansi(h.name().c_str());
+					strstr << h.name();
 				} else {
-					strstr << ", " << utf8_2_ansi(h.name().c_str());
+					strstr << ", " << h.name();
 				}
 			}
 		}
-		strcpy(text, strstr.str().c_str());
-		TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
-	}
-
-	if (!type_.empty()) {
-		htvi = TreeView_AddLeaf(hwndtv, branch);
-		strstr.str("");
-		strstr << "type = " << type_;
-		strcpy(text, strstr.str().c_str());
-		TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		if (hwndtv != NULL) {
+			strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
 	}
 
 	if (city_ >= 0) {
-		htvi = TreeView_AddLeaf(hwndtv, branch);
-		strstr.str("");
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
 		strstr << "city = ";
 		
 		if (city_ != HEROS_INVALID_NUMBER) {
-			strstr << utf8_2_ansi(gdmgr.heros_[city_].name().c_str());
+			strstr << gdmgr.heros_[city_].name();
 		} else {
-			strstr << "(" << utf8_2_ansi(_("Roam")) << ")";
+			strstr << "(" << _("Roam") << ")";
 		}
-		strcpy(text, strstr.str().c_str());
-		TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		if (hwndtv != NULL) {
+			strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
 	}
 
 	if (side_ != HEROS_INVALID_SIDE) {
-		htvi = TreeView_AddLeaf(hwndtv, branch);
-		strstr.str("");
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
 		strstr << "side = ";
 		int leader = ns::_scenario[ns::current_scenario].side_[side_].leader_;
-		strstr << utf8_2_ansi(gdmgr.heros_[leader].name().c_str());
-		strcpy(text, strstr.str().c_str());
-		TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		strstr << gdmgr.heros_[leader].name();
+		if (hwndtv != NULL) {
+			strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
+	}
+
+	if (controller_ != controller_tag::NONE) {
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
+		strstr << "controller = ";
+		strstr << controller_tag::rfind(controller_);
+		if (hwndtv != NULL) {
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
+	}
+
+	if (!type_.empty()) {
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
+		strstr << "type = " << type_;
+		if (hwndtv != NULL) {
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
+	}
+
+	if (family_tag::valid(family_)) {
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
+		strstr << "family = " << family_;
+		if (hwndtv != NULL) {
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
 	}
 
 	if (!x_.empty()) {
-		htvi = TreeView_AddLeaf(hwndtv, branch);
-		strstr.str("");
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
 		strstr << "x = " << x_;
-		strcpy(text, strstr.str().c_str());
-		TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		if (hwndtv != NULL) {
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
 	}
 
 	if (!y_.empty()) {
-		htvi = TreeView_AddLeaf(hwndtv, branch);
-		strstr.str("");
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
 		strstr << "y = " << y_;
-		strcpy(text, strstr.str().c_str());
-		TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+
+		if (hwndtv != NULL) {
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
 	}
 
 	if (!filter_location_.empty()) {
-		htvi = TreeView_AddLeaf(hwndtv, branch);
-		strstr.str("");
+		if (hwndtv != NULL) {
+			htvi = TreeView_AddLeaf(hwndtv, branch);
+			strstr.str("");
+		}
 		strstr << "[filter_location]: Existed";
 		strcpy(text, strstr.str().c_str());
-		TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		if (hwndtv != NULL) {
+			strcpy(text, strstr.str().c_str());
+			TreeView_SetItem1(hwndtv, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+				0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+		} else {
+			strstr << (newline? "\r\n": "; ");
+		}
 	}
+
+	return strstr.str();
 }
 
 void tevent::tfilter_::update_to_ui_special(HWND hdlgP) const
 {
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HP), utf8_2_ansi(_("HP")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MUSTHEROS), utf8_2_ansi(_("Must heros")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITY), utf8_2_ansi(_("City")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_SIDE), dgettext_2_ansi("wesnoth-lib", "Side"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CONTROLLER), dgettext_2_ansi("wesnoth-lib", "Controller"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), dgettext_2_ansi("wesnoth-lib", "troop^Type"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FAMILY), dgettext_2_ansi("wesnoth-lib", "Family"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_COOR), utf8_2_ansi(_("Coordinate")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DEFINEDVARIABLES), utf8_2_ansi(_("Defined variables(Right click to popup menu)")));
+
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	std::stringstream strstr;
 	char text[_MAX_PATH];
@@ -1251,8 +1329,6 @@ void tevent::tfilter_::update_to_ui_special(HWND hdlgP) const
 		ListView_SetItem(hctl, &lvi);
 	}
 
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTFILTER_TYPE), type_.c_str());
-
 	// city
 	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTFILTER_CITY);
 	ComboBox_ResetContent(hctl);
@@ -1293,6 +1369,26 @@ void tevent::tfilter_::update_to_ui_special(HWND hdlgP) const
 		}
 	}
 	ComboBox_SetCurSel(hctl, selected_row);
+
+	// controller
+	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTFILTER_CONTROLLER);
+	ComboBox_ResetContent(hctl);
+	ComboBox_AddString(hctl, "");
+	ComboBox_SetItemData(hctl, 0, controller_tag::NONE);
+	selected_row = 0;
+	for (std::set<controller_tag::CONTROLLER>::const_iterator it = controller_tag::game_running_tags.begin(); it != controller_tag::game_running_tags.end(); ++ it) {
+		controller_tag::CONTROLLER controller = *it;
+		ComboBox_AddString(hctl, controller_tag::rfind(controller).c_str());
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, controller);
+		if (controller_ == controller) {
+			selected_row = ComboBox_GetCount(hctl) - 1;
+		}
+	}
+	ComboBox_SetCurSel(hctl, selected_row);
+
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTFILTER_TYPE), type_.c_str());
+
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTFILTER_FAMILY), family_.c_str());
 
 	// X/Y
 	bool is_variable = valuex::is_variable(x_);
@@ -1339,9 +1435,6 @@ void tevent::tfilter_::generate(std::stringstream& strstr, const std::string& pr
 	if (!must_heros_.empty()) {
 		strstr << prefix << "must_heros = " << must_heros_ << "\n";
 	}
-	if (!type_.empty()) {
-		strstr << prefix << "type = " << type_ << "\n";
-	}
 	if (city_ > 0) {
 		strstr << prefix << "cityno = ";
 		if (city_ != HEROS_INVALID_NUMBER) {
@@ -1358,6 +1451,15 @@ void tevent::tfilter_::generate(std::stringstream& strstr, const std::string& pr
 	}
 	if (side_ != HEROS_INVALID_SIDE) {
 		strstr << prefix << "side = " << side_ + 1 << "\n";
+	}
+	if (controller_ != controller_tag::NONE) {
+		strstr << prefix << "controller = " << controller_tag::rfind(controller_) << "\n";
+	}
+	if (!type_.empty()) {
+		strstr << prefix << "type = " << type_ << "\n";
+	}
+	if (family_tag::valid(family_)) {
+		strstr << prefix << "family = " << family_ << "\n";
 	}
 	if (!x_.empty() && !y_.empty()) {
 		strstr << prefix << "x = " << x_ << "\n";
@@ -1652,6 +1754,7 @@ void tevent::tkill::from_config(const config& cfg)
 {
 	master_hero_ = cfg["hero"].str();
 	side_ = cfg["a_side"].str();
+	direct_hero_ = cfg["direct_hero"].to_bool();
 }
 
 void tevent::tkill::from_ui_special(HWND hdlgP)
@@ -1659,22 +1762,34 @@ void tevent::tkill::from_ui_special(HWND hdlgP)
 	char text[_MAX_PATH];
 	std::stringstream strstr;
 
-	HWND hctl;
-
 	// hero
-	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTKILL_MASTERHERO), text, _MAX_PATH);
-	if (text[0] == '\0') {
-		hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTKILL_MASTERHERO);
-		strstr.str("");
-		strstr << ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
-		master_hero_ = strstr.str();
-	} else {
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTKILL_HERO), text, _MAX_PATH);
+	if (valuex::is_variable(text)) {
 		master_hero_ = text;
+	} else {
+		strstr.str("");
+		std::set<int> armied;
+		const std::vector<std::string>& vsize = utils::split(text);
+		for (std::vector<std::string>::const_iterator it = vsize.begin(); it != vsize.end(); ++ it) {
+			int number = lexical_cast<int>(*it);
+			if (armied.find(number) != armied.end()) {
+				continue;
+			}
+			armied.insert(number);
+			if (!strstr.str().empty()) {
+				strstr << ",";
+			}
+			strstr << number;
+		}
+		master_hero_ = strstr.str();
 	}
 
 	// a_side
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTKILL_SIDE), text, _MAX_PATH);
 	side_ = text;
+
+	// direct hero
+	direct_hero_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_EVENTKILL_DIRECTHERO));
 }
 
 void tevent::tkill::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
@@ -1696,11 +1811,17 @@ void tevent::tkill::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
 	if (valuex::is_variable(master_hero_)) {
 		strstr << master_hero_;
 	} else {
-		int number = valuex::to_int(master_hero_, HEROS_INVALID_NUMBER);
-		if ((int)gdmgr.heros_.size() > number) {
-			strstr << utf8_2_ansi(gdmgr.heros_[number].name().c_str());
+		std::set<int> sstr = valuex::to_set_int(master_hero_);
+		for (std::set<int>::const_iterator it = sstr.begin(); it != sstr.end(); ++ it) {
+			hero& h = gdmgr.heros_[*it];
+			if (it == sstr.begin()) {
+				strstr << utf8_2_ansi(h.name().c_str());
+			} else {
+				strstr << "," << utf8_2_ansi(h.name().c_str());
+			}
 		}
 	}
+
 	strcpy(text, strstr.str().c_str());
 	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
@@ -1723,6 +1844,16 @@ void tevent::tkill::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
 		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 	}
+
+	// direct hero
+	if (direct_hero_) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "direct_hero = yes";
+		strcpy(text, strstr.str().c_str());
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+	}
 }
 
 void tevent::tkill::update_to_ui_special(HWND hdlgP) const
@@ -1731,39 +1862,26 @@ void tevent::tkill::update_to_ui_special(HWND hdlgP) const
 	std::stringstream strstr;
 	
 	bool is_variable = valuex::is_variable(master_hero_);
-	HWND hctl = GetDlgItem(hdlgP, IDC_ET_EVENTKILL_MASTERHERO);
-	if (is_variable) {
-		Edit_SetText(hctl, master_hero_.c_str());
-	} else {
-		Edit_SetText(hctl, "");
-	}
+	HWND hctl = GetDlgItem(hdlgP, IDC_ET_EVENTKILL_HERO);
+	Edit_SetText(hctl, master_hero_.c_str());
 
-	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTKILL_MASTERHERO);
-	ComboBox_ResetContent(hctl);
-	int selected_row = 0;
-	int master_hero = HEROS_INVALID_NUMBER;
-	if (!is_variable) {
-		master_hero = valuex::to_int(master_hero_, HEROS_INVALID_NUMBER);
-	}
-	ComboBox_AddString(hctl, "");
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	int index = 1;
-	for (hero_map::iterator it = gdmgr.heros_.begin(); it != gdmgr.heros_.end(); ++ it, index ++) {
-		hero& h = *it;
-		ComboBox_AddString(hctl, utf8_2_ansi(h.name().c_str()));
-		ComboBox_SetItemData(hctl, index, h.number_);
-		if (!is_variable && h.number_ == master_hero) {
-			selected_row = index;
+	// candidate hero
+	hctl = GetDlgItem(hdlgP, IDC_LV_CANDIDATEHERO);
+	ListView_DeleteAllItems(hctl);
+	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
+		if (!it->second.allocated(HEROS_INVALID_SIDE, false)) {
+			continue;
 		}
+		hero& h = gdmgr.heros_[it->first];
+		candidate_hero::fill_row(hctl, h);
 	}
-	ComboBox_SetCurSel(hctl, selected_row);
 
 	// side
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTKILL_SIDE), side_.c_str());
 
 	LVITEM lvi;
 	char text[_MAX_PATH];
-	index = 0;
+	int index = 0;
 	const std::vector<tside>& side = ns::_scenario[ns::current_scenario].side_;
 	hctl = GetDlgItem(hdlgP, IDC_LV_EVENTKILL_SIDE);
 	for (std::vector<tside>::const_iterator it = side.begin(); it != side.end(); ++ it, index ++) {
@@ -1787,6 +1905,9 @@ void tevent::tkill::update_to_ui_special(HWND hdlgP) const
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
 	}
+
+	// direct hero
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_EVENTKILL_DIRECTHERO), direct_hero_);
 }
 
 void tevent::tkill::generate(std::stringstream& strstr, const std::string& prefix) const
@@ -1795,6 +1916,9 @@ void tevent::tkill::generate(std::stringstream& strstr, const std::string& prefi
 	strstr << prefix << "\thero = " << master_hero_ << "\n";
 	if (!side_.empty()) {
 		strstr << prefix << "\ta_side = " << side_ << "\n";
+	}
+	if (direct_hero_) {
+		strstr << prefix << "\tdirect_hero = yes\n";
 	}
 	strstr << prefix << "[/kill]\n";
 }
@@ -2000,6 +2124,7 @@ tevent::tunit::tunit()
 	, city_(lexical_cast_default<std::string>(HEROS_INVALID_NUMBER))
 	, x_("1")
 	, y_("1")
+	, state_()
 {}
 
 void tevent::tunit::from_config(const config& cfg)
@@ -2041,6 +2166,12 @@ void tevent::tunit::from_config(const config& cfg)
 	for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 		traits_.insert(*i);
 	}
+
+	// state
+	vstr = utils::split(cfg["states"].str());
+	for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
+		state_.insert(*i);
+	}
 }
 
 void tevent::tunit::from_ui_special(HWND hdlgP)
@@ -2074,7 +2205,7 @@ void tevent::tunit::from_ui_special(HWND hdlgP)
 			}
 			armied.insert(number);
 			if (!strstr.str().empty()) {
-				strstr << ", ";
+				strstr << ",";
 			}
 			strstr << number;
 		}
@@ -2143,6 +2274,7 @@ void tevent::tunit::from_ui_special(HWND hdlgP)
 	} else {
 		y_ = text;
 	}
+
 	// traits
 	traits_.clear();
 	hctl = GetDlgItem(hdlgP, IDC_LV_EVENTUNIT_TRAIT);
@@ -2150,6 +2282,19 @@ void tevent::tunit::from_ui_special(HWND hdlgP)
 		if (ListView_GetCheckState(hctl, idx)) {
 			traits_.insert(editor_config::troop_traits[idx].first);
 		}
+	}
+	// state
+	state_.clear();
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTUNIT_STATE), text, _MAX_PATH);
+	if (!valuex::is_variable(text)) {
+		std::vector<std::string> vstr = utils::split(text);
+		for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+			if (ustate_tag::find(*it) != ustate_tag::NONE) {
+				state_.insert(*it);
+			}
+		}
+	} else {
+		state_.insert(text);
 	}
 }
 
@@ -2190,7 +2335,7 @@ void tevent::tunit::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
 			if (it == sstr.begin()) {
 				strstr << utf8_2_ansi(h.name().c_str());
 			} else {
-				strstr << ", " << utf8_2_ansi(h.name().c_str());
+				strstr << "," << utf8_2_ansi(h.name().c_str());
 			}
 		}
 	}
@@ -2245,18 +2390,43 @@ void tevent::tunit::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
 	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 
-	htvi = TreeView_AddLeaf(hctl, htvi1);
-	strstr.str("");
-	strstr << "traits = ";
-	for (std::set<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
-		if (it != traits_.begin()) {
-			strstr << ",";
+	if (!traits_.empty()) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "traits = ";
+		for (std::set<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
+			if (it != traits_.begin()) {
+				strstr << ",";
+			}
+			strstr << *it;
 		}
-		strstr << *it;
+		strcpy(text, strstr.str().c_str());
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 	}
-	strcpy(text, strstr.str().c_str());
-	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+
+	if (!state_.empty()) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "states = ";
+		if (!valuex::is_variable(*state_.begin())) {
+			int n = 0;
+			for (std::set<std::string>::const_iterator it = state_.begin(); it != state_.end(); ++ it) {
+				if (ustate_tag::find(*it) == ustate_tag::NONE) {
+					continue;
+				}
+				if (n ++) {
+					strstr << ",";
+				}
+				strstr << *it;
+			}
+		} else {
+			strstr << (*state_.begin());
+		}
+		strcpy(text, strstr.str().c_str());
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+	}
 	
 }
 
@@ -2457,6 +2627,26 @@ void tevent::tunit::update_to_ui_special(HWND hdlgP) const
 	}
 	hctl = GetDlgItem(hdlgP, IDC_UD_EVENTUNIT_Y);
 	UpDown_SetPos(hctl, loc.y);
+
+	// state
+	strstr.str("");
+	if (!state_.empty()) {
+		if (!valuex::is_variable(*state_.begin())) {
+			for (std::set<std::string>::const_iterator it = state_.begin(); it != state_.end(); ++ it) {
+				if (ustate_tag::find(*it) == ustate_tag::NONE) {
+					continue;
+				}
+				if (!strstr.str().empty()) {
+					strstr << ",";
+				}
+				strstr << *it;
+			}
+		} else {
+			strstr << *state_.begin();
+		}
+	}
+	hctl = GetDlgItem(hdlgP, IDC_ET_EVENTUNIT_STATE);
+	Edit_SetText(hctl, strstr.str().c_str());
 }
 
 void tevent::tunit::generate(std::stringstream& strstr, const std::string& prefix) const
@@ -2497,14 +2687,31 @@ void tevent::tunit::generate(std::stringstream& strstr, const std::string& prefi
 	strstr << prefix << "\tx,y = ";
 	strstr << x_ << ", " << y_ << "\n";
 
-	strstr << prefix << "\ttraits = ";
-	for (std::set<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
-		if (it != traits_.begin()) {
-			strstr << ",";
+	if (!traits_.empty()) {
+		strstr << prefix << "\ttraits = ";
+		for (std::set<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
+			if (it != traits_.begin()) {
+				strstr << ",";
+			}
+			strstr << *it;
 		}
-		strstr << *it;
+		strstr << "\n";
 	}
-	strstr << "\n";
+
+	if (!state_.empty()) {
+		strstr << prefix << "\tstates = ";
+		if (!valuex::is_variable(*state_.begin())) {
+			for (std::set<std::string>::const_iterator it = state_.begin(); it != state_.end(); ++ it) {
+				if (it != state_.begin()) {
+					strstr << ",";
+				}
+				strstr << *it;
+			}
+		} else {
+			strstr << *state_.begin();
+		}
+		strstr << "\n";
+	}
 
 	strstr << prefix << "[/unit]\n";
 }
@@ -2516,6 +2723,18 @@ void tevent::tmodify_unit::from_config(const config& cfg)
 	BOOST_FOREACH (const config &c, cfg.child_range("effect")) {
 		effect_.add_child("effect", c);
 	}
+}
+
+config edit_ctrl_2_cfg(const std::string& str)
+{
+	config cfg;
+	try {
+		::read(cfg, str);
+	} catch(config::error& e) {
+		posix_print_mb(e.message.c_str());
+		cfg = config();
+	}
+	return cfg;
 }
 
 void tevent::tmodify_unit::from_ui_special(HWND hdlgP)
@@ -2537,12 +2756,7 @@ void tevent::tmodify_unit::from_ui_special(HWND hdlgP)
 	}
 	// effect
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYUNIT_EFFECT), text, _MAX_PATH);
-	try {
-		::read(effect_, text);
-	} catch(config::error& e) {
-		posix_print_mb(e.message.c_str());
-		effect_ = config();
-	}
+	effect_ = edit_ctrl_2_cfg(text);
 	int index = 0;
 	BOOST_FOREACH (const config &c, effect_.child_range("effect")) {
 		index ++;
@@ -2598,6 +2812,25 @@ void tevent::tmodify_unit::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) 
 		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 }
 
+std::string cfg_2_edit_ctrl(const config& cfg)
+{
+	std::stringstream strstr;
+	::write(strstr, cfg);
+
+	const std::vector<std::string> vstr = utils::split(strstr.str(), '\n', 0);
+	strstr.str("");
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		if (it != vstr.begin()) {
+			if (it->empty() || it->at(it->size() - 1) != '\r') {
+				strstr << '\r';
+			}
+			strstr << '\n';
+		}
+		strstr << *it;
+	}
+	return strstr.str();
+}
+
 void tevent::tmodify_unit::update_to_ui_special(HWND hdlgP) const
 {
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
@@ -2634,21 +2867,7 @@ void tevent::tmodify_unit::update_to_ui_special(HWND hdlgP) const
 	ComboBox_SetCurSel(hctl, selected_row);
 
 	// [effect]
-	strstr.str("");
-	::write(strstr, effect_);
-
-	const std::vector<std::string> vstr = utils::split(strstr.str(), '\n', 0);
-	strstr.str("");
-	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
-		if (it != vstr.begin()) {
-			if (it->empty() || it->at(it->size() - 1) != '\r') {
-				strstr << '\r';
-			}
-			strstr << '\n';
-		}
-		strstr << *it;
-	}
-	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYUNIT_EFFECT), strstr.str().c_str());
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYUNIT_EFFECT), cfg_2_edit_ctrl(effect_).c_str());
 }
 
 void tevent::tmodify_unit::generate(std::stringstream& strstr, const std::string& prefix) const
@@ -2663,6 +2882,7 @@ void tevent::tmodify_side::from_config(const config& cfg)
 {
 	side_ = cfg["side"].to_int(1) - 1;
 	leader_ = cfg["leader"].to_int(HEROS_INVALID_NUMBER);
+	controller_ = controller_tag::find(cfg["controller"].str());
 	gold_ = cfg["gold"].to_int(-1);
 	income_ = cfg["income"].to_int(-1);
 
@@ -2687,6 +2907,8 @@ void tevent::tmodify_side::from_config(const config& cfg)
 		terminate_.insert(side - 1);
 	}
 
+	exclude_human_ = cfg["exclude_human"].to_bool();
+
 	technology_.clear();
 	vstr = utils::split(cfg["technology"].str());
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
@@ -2702,6 +2924,9 @@ void tevent::tmodify_side::from_ui_special(HWND hdlgP)
 
 	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYSIDE_LEADER);
 	leader_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYSIDE_CONTROLLER);
+	controller_ = (controller_tag::CONTROLLER)ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
 	// gold
 	gold_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_EVENTMODIFYSIDE_GOLD));
@@ -2730,6 +2955,8 @@ void tevent::tmodify_side::from_ui_special(HWND hdlgP)
 		ListView_GetItem(hctl, &lvi);
 		terminate_.insert(lvi.lParam);
 	}
+
+	exclude_human_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_EVENTMODIFYSIDE_EXCLUDEHUMAN))? true: false;
 }
 
 void tevent::tmodify_side::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
@@ -2767,6 +2994,16 @@ void tevent::tmodify_side::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) 
 			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 	}
 
+	if (controller_ != controller_tag::NONE) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "controller = ";
+		strstr << controller_tag::rfind(controller_);
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+	}
+
 	// gold
 	if (gold_ != -1) {
 		htvi = TreeView_AddLeaf(hctl, htvi1);
@@ -2788,46 +3025,61 @@ void tevent::tmodify_side::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) 
 	}
 
 	// agree
-	htvi = TreeView_AddLeaf(hctl, htvi1);
-	strstr.str("");
-	strstr << "agree = ";
-	for (std::set<int>::const_iterator it = agree_.begin(); it != agree_.end(); ++ it) {
-		if (it != agree_.begin()) {
-			strstr << ", ";
+	if (!agree_.empty()) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "agree = ";
+		for (std::set<int>::const_iterator it = agree_.begin(); it != agree_.end(); ++ it) {
+			if (it != agree_.begin()) {
+				strstr << ", ";
+			}
+			strstr << gdmgr.heros_[sides[*it].leader_].name();
 		}
-		strstr << gdmgr.heros_[sides[*it].leader_].name();
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 	}
-	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
-	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 
 	// terminate
-	htvi = TreeView_AddLeaf(hctl, htvi1);
-	strstr.str("");
-	strstr << "terminate = ";
-	for (std::set<int>::const_iterator it = terminate_.begin(); it != terminate_.end(); ++ it) {
-		if (it != terminate_.begin()) {
-			strstr << ", ";
+	if (!terminate_.empty()) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "terminate = ";
+		for (std::set<int>::const_iterator it = terminate_.begin(); it != terminate_.end(); ++ it) {
+			if (it != terminate_.begin()) {
+				strstr << ", ";
+			}
+			strstr << gdmgr.heros_[sides[*it].leader_].name();
 		}
-		strstr << gdmgr.heros_[sides[*it].leader_].name();
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 	}
-	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
-	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+
+	if (!agree_.empty() || !terminate_.empty()) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "exclude_human = " << (exclude_human_? "yes": "no");
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
+	}
 
 	// technology
-	htvi = TreeView_AddLeaf(hctl, htvi1);
-	strstr.str("");
-	strstr << "technology = ";
-	for (std::set<std::string>::const_iterator it = technology_.begin(); it != technology_.end(); ++ it) {
-		if (it != technology_.begin()) {
-			strstr << ", ";
+	if (!technology_.empty()) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "technology = ";
+		for (std::set<std::string>::const_iterator it = technology_.begin(); it != technology_.end(); ++ it) {
+			if (it != technology_.begin()) {
+				strstr << ", ";
+			}
+			strstr << unit_types.technology(*it).name();
 		}
-		strstr << unit_types.technology(*it).name();
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 	}
-	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
-	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 }
 
 void tevent::tmodify_side::update_to_ui_special(HWND hdlgP) const
@@ -2856,7 +3108,7 @@ void tevent::tmodify_side::update_to_ui_special(HWND hdlgP) const
 	// leader
 	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYSIDE_LEADER);
 	cursel = -1;
-	ComboBox_AddString(hctl, utf8_2_ansi(_("None")));
+	ComboBox_AddString(hctl, "");
 	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
 	for (hero_map::iterator it = gdmgr.heros_.begin(); it != gdmgr.heros_.end(); ++ it) {
 		hero& h = *it;
@@ -2877,6 +3129,22 @@ void tevent::tmodify_side::update_to_ui_special(HWND hdlgP) const
 	}
 	ComboBox_SetCurSel(hctl, cursel);
 
+	// controller
+	hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYSIDE_CONTROLLER);
+	ComboBox_ResetContent(hctl);
+	ComboBox_AddString(hctl, "");
+	ComboBox_SetItemData(hctl, 0, controller_tag::NONE);
+	cursel = 0;
+	for (std::set<controller_tag::CONTROLLER>::const_iterator it = controller_tag::game_running_tags.begin(); it != controller_tag::game_running_tags.end(); ++ it) {
+		controller_tag::CONTROLLER controller = *it;
+		ComboBox_AddString(hctl, controller_tag::rfind(controller).c_str());
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, controller);
+		if (controller_ == controller) {
+			cursel = ComboBox_GetCount(hctl) - 1;
+		}
+	}
+	ComboBox_SetCurSel(hctl, cursel);
+
 	// gold
 	hctl = GetDlgItem(hdlgP, IDC_UD_EVENTMODIFYSIDE_GOLD);
 	UpDown_SetPos(hctl, gold_);
@@ -2886,6 +3154,10 @@ void tevent::tmodify_side::update_to_ui_special(HWND hdlgP) const
 	UpDown_SetPos(hctl, income_);
 
 	update_to_ui_ally(hdlgP);
+
+	// exclude human
+	hctl = GetDlgItem(hdlgP, IDC_CHK_EVENTMODIFYSIDE_EXCLUDEHUMAN);
+	Button_SetCheck(hctl, exclude_human_);
 
 	// technology
 	explorer_technology::update_to_ui_special(hdlgP, explorer_technology::MODIFY_SIDE);
@@ -3010,6 +3282,9 @@ void tevent::tmodify_side::generate(std::stringstream& strstr, const std::string
 	if (leader_ != HEROS_INVALID_NUMBER) {
 		strstr << prefix << "\tleader = " << leader_ << "\n";
 	}
+	if (controller_ != controller_tag::NONE) {
+		strstr << prefix << "\tcontroller = " << controller_tag::rfind(controller_) << "\n";
+	}
 	if (gold_ != -1) {
 		strstr << prefix << "\tgold = " << gold_ << "\n";
 	}
@@ -3033,6 +3308,10 @@ void tevent::tmodify_side::generate(std::stringstream& strstr, const std::string
 	}
 	strstr << "\n";
 
+	if ((!agree_.empty() || !terminate_.empty()) && exclude_human_) {
+		strstr << prefix << "\texclude_human = yes\n";
+	}
+
 	if (!technology_.empty()) {
 		strstr << prefix << "\ttechnology = ";
 		for (std::set<std::string>::const_iterator it = technology_.begin(); it != technology_.end(); ++ it) {
@@ -3049,12 +3328,19 @@ void tevent::tmodify_side::generate(std::stringstream& strstr, const std::string
 
 void tevent::tmodify_city::from_config(const config& cfg)
 {
-	city_ = cfg["city"].to_int();
-	soldiers_ = cfg["soldiers"].to_int(-1);
-	std::map<int, int>::const_iterator it = ns::cityno_map.find(city_);
-	if (it == ns::cityno_map.end()) {
-		city_ =	HEROS_INVALID_NUMBER;	
+	std::string str = cfg["city"].str();
+	if (valuex::is_variable(str)) {
+		city_ = std::make_pair(str, HEROS_INVALID_NUMBER);
+	} else {
+		int number = valuex::to_int(str, 0);
+		std::map<int, int>::const_iterator it = ns::cityno_map.find(number);
+		if (it == ns::cityno_map.end()) {
+			number = HEROS_INVALID_NUMBER;	
+		}
+		city_ = std::make_pair(null_str, number);
 	}
+	
+	soldiers_ = cfg["soldiers"].to_int(-1);
 
 	std::vector<std::string> vstr = utils::split(cfg["service"].str());
 	for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
@@ -3065,9 +3351,19 @@ void tevent::tmodify_city::from_config(const config& cfg)
 
 void tevent::tmodify_city::from_ui_special(HWND hdlgP)
 {
+	char text[_MAX_PATH];
+
+	HWND hctl;
+
 	// city
-	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYCITY_CITY);
-	city_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYCITY_CITY), text, _MAX_PATH);
+	if (valuex::is_variable(text)) {
+		city_ = std::make_pair(text, HEROS_INVALID_NUMBER);
+	} else {
+		hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYCITY_CITY);
+		city_ = std::make_pair(null_str, ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl)));
+	}
+	
 
 	// soldiers
 	soldiers_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_EVENTMODIFYCITY_SOLDIERS));
@@ -3101,8 +3397,10 @@ void tevent::tmodify_city::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) 
 	HTREEITEM htvi = TreeView_AddLeaf(hctl, htvi1);
 	strstr.str("");
 	strstr << "city = ";
-	if (city_ != HEROS_INVALID_NUMBER) {
-		strstr << gdmgr.heros_[city_].name();
+	if (!city_.first.empty()) {
+		strstr << city_.first;
+	} else {
+		strstr << gdmgr.heros_[city_.second].name();
 	}
 	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
@@ -3119,18 +3417,20 @@ void tevent::tmodify_city::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) 
 	}
 
 	// service
-	htvi = TreeView_AddLeaf(hctl, htvi1);
-	strstr.str("");
-	strstr << "service = ";
-	for (std::set<int>::const_iterator it = service_.begin(); it != service_.end(); ++ it) {
-		if (it != service_.begin()) {
-			strstr << ", ";
+	if (!service_.empty()) {
+		htvi = TreeView_AddLeaf(hctl, htvi1);
+		strstr.str("");
+		strstr << "service = ";
+		for (std::set<int>::const_iterator it = service_.begin(); it != service_.end(); ++ it) {
+			if (it != service_.begin()) {
+				strstr << ", ";
+			}
+			strstr << gdmgr.heros_[*it].name();
 		}
-		strstr << gdmgr.heros_[*it].name();
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 	}
-	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
-	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
-		0, ns::iico_evt_attribute, ns::iico_evt_attribute, 0, text);
 }
 
 void tevent::tmodify_city::update_to_ui_special(HWND hdlgP) const
@@ -3140,6 +3440,9 @@ void tevent::tmodify_city::update_to_ui_special(HWND hdlgP) const
 	std::stringstream strstr;
 	char text[_MAX_PATH];
 	
+	if (!city_.first.empty()) {
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTMODIFYCITY_CITY), city_.first.c_str());
+	}
 	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_EVENTMODIFYCITY_CITY);
 	int cursel = -1;
 	ComboBox_ResetContent(hctl);
@@ -3148,7 +3451,7 @@ void tevent::tmodify_city::update_to_ui_special(HWND hdlgP) const
 		strstr << gdmgr.heros_[it->first].name();
 		ComboBox_AddString(hctl, utf8_2_ansi(strstr.str().c_str()));
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
-		if (cursel == -1 && city_ == it->first) {
+		if (cursel == -1 && city_.first.empty() && city_.second == it->first) {
 			cursel = ComboBox_GetCount(hctl) - 1;
 		}
 	}
@@ -3164,7 +3467,7 @@ void tevent::tmodify_city::update_to_ui_special(HWND hdlgP) const
 	hctl = GetDlgItem(hdlgP, IDC_LV_CANDIDATEHERO);
 	ListView_DeleteAllItems(hctl);
 	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-		if (!it->second.allocated_) {
+		if (!it->second.allocated(HEROS_INVALID_SIDE, false)) {
 			continue;
 		}
 		if (service_.find(it->first) != service_.end()) {
@@ -3213,7 +3516,13 @@ void tevent::tmodify_city::update_to_ui_special(HWND hdlgP) const
 void tevent::tmodify_city::generate(std::stringstream& strstr, const std::string& prefix) const
 {
 	strstr << prefix << "[modify_city]\n";
-	strstr << prefix << "\tcity = " << city_ << "\n";
+	strstr << prefix << "\tcity = ";
+	if (!city_.first.empty()) {
+		strstr << city_.first;
+	} else {
+		strstr << city_.second;
+	}
+	strstr << "\n";
 	if (soldiers_ != -1) {
 		strstr << prefix << "\tsoldiers = " << soldiers_ << "\n";
 	}
@@ -4438,34 +4747,8 @@ std::string tevent::tcondition::tjudge::description(bool to_tree) const
 		strstr.str("");
 		strstr << vgettext2("\"$left\" $op \"$right\"", symbols);
 	} else if (type_ == HAVE_UNIT && !to_tree) {
-		if (hp_.first != digit_op::NONE && !hp_.second.empty()) {
-			strstr << "hp: " << digit_op::find(hp_.first) << " " << hp_.second << "\n";
-		}
-
-		if (!must_heros_.empty()) {
-			strstr << "must_heros: " << must_heros_;
-			strstr << "  ";
-		}
-		if (city_ >= 0) {
-			strstr << "city = ";
-			if (city_ != HEROS_INVALID_NUMBER) {
-				strstr << gdmgr.heros_[city_].name();
-			} else {
-				strstr << "(" << _("Roam") << ")";
-			}
-			strstr << "  ";
-		}
-		if (side_ != HEROS_INVALID_SIDE) {
-			strstr << "side = ";
-			int leader = ns::_scenario[ns::current_scenario].side_[side_].leader_;
-			strstr << gdmgr.heros_[leader].name();
-			strstr << "  ";
-		}
-		if (!x_.empty() && !y_.empty()) {
-			strstr << "x = " << x_;
-			strstr << "y = " << y_;
-			strstr << "  ";
-		}
+		strstr << tfilter_::description(NULL, NULL, false);
+		
 		if (!filter_location_.empty()) {
 			strstr << "[filter_location]: Existed";
 		}
@@ -4557,27 +4840,16 @@ void tevent::tcondition::tjudge::update_to_ui_special(HWND hdlgP) const
 
 	} else if (type_ == HAVE_UNIT) {
 		strstr.str("");
-		if (hp_.first != digit_op::NONE && !hp_.second.empty()) {
-			strstr << "hp: " << digit_op::find(hp_.first) << " " << hp_.second;
-		}
-		strstr << "\r\n";
-
-		strstr << "must heros: ";
-		if (valuex::is_variable(must_heros_)) {
-			strstr << must_heros_;
-		} else {
-			std::vector<int> sstr = valuex::to_vector_int(must_heros_);
-			for (std::vector<int>::const_iterator it = sstr.begin(); it != sstr.end(); ++ it) {
-				hero& h = gdmgr.heros_[*it];
-				if (it != sstr.begin()) {
-					strstr << ", ";
-				}
-				strstr << h.name();
-			}
-		}
+		strstr << tfilter_::description(NULL, NULL, true);
 		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_HAVEUNIT_FILTER), utf8_2_ansi(strstr.str().c_str()));
 
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_HAVEUNIT_COUNT), count_.c_str());
+		strstr.str("");
+		if (count_.empty()) {
+			strstr << "1-99999";
+		} else {
+			strstr << count_;
+		}
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_HAVEUNIT_COUNT), strstr.str().c_str());
 
 	}
 }
@@ -4955,12 +5227,21 @@ BOOL On_DlgHaveUnitInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
+
 	if (ns::action_judge == ma_edit) {
-		SetWindowText(hdlgP, "编辑判断条件: have_unit");
+		strstr << utf8_2_ansi(_("Edit judge condition"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加判断条件: have_unit");
+		strstr << utf8_2_ansi(_("Append judge condition"));
 	}
+	strstr << " ---- " << utf8_2_ansi(_("have_unit"));
+	SetWindowText(hdlgP, strstr.str().c_str());
+
+	strstr.str("");
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LOGIC), utf8_2_ansi(_("Logic")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_COUNT), utf8_2_ansi(_("Count")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_HAVEUNIT_FILTER), utf8_2_ansi(_("Set filter condition")));
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	tevent& evt = scenario.event_[ns::clicked_event];
@@ -5316,7 +5597,7 @@ void OnConditionEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_CONDITION), hdlgP, DlgConditionProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -5326,21 +5607,35 @@ BOOL On_DlgEventKillInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
+	std::stringstream strstr;
 	if (ns::action_event_item == ma_edit) {
-		SetWindowText(hdlgP, "编辑操作：杀死单位");
+		strstr << utf8_2_ansi(_("Edit operation"));
 		ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 	} else {
-		SetWindowText(hdlgP, "添加操作：杀死部队");
+		strstr << utf8_2_ansi(_("Append operation"));
 	}
+	strstr << " ---- " << utf8_2_ansi(_("Kill troop/hero"));
+	SetWindowText(hdlgP, strstr.str().c_str());
+
+	strstr.str("");
+	strstr << dgettext_2_ansi("wesnoth-lib", "Hero");
+	strstr << "(" << utf8_2_ansi(_("Support variable")) << ")";
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HERO), strstr.str().c_str());
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CANDIDATE), utf8_2_ansi(_("Candidate")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_EVENTKILL_DIRECTHERO), utf8_2_ansi(_("Direct hero")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_SIDE), utf8_2_ansi(_("Belong to side(If be killed is city, must set it)")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DEFINEDVARIABLES), utf8_2_ansi(_("Defined variables(Right click to popup menu)")));
 
 	ns::hpopup_variable = CreatePopupMenu();
-	AppendMenu(ns::hpopup_variable, MF_STRING, IDM_VARIABLE_ITEM0, "到主将");
+	AppendMenu(ns::hpopup_variable, MF_STRING, IDM_VARIABLE_ITEM0, utf8_2_ansi(_("To hero")));
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	tevent& evt = scenario.event_[ns::clicked_event];
 
+	// candidate
+	candidate_hero::fill_header(hdlgP);
+
 	char text[_MAX_PATH];
-	std::stringstream strstr;
 	HWND hctl = GetDlgItem(hdlgP, IDC_LV_EVENTKILL_SIDE);
 	LVCOLUMN lvc;
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
@@ -5373,33 +5668,34 @@ BOOL On_DlgEventKillInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	return FALSE;
 }
 
-void OnEventKillEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+void strcat_heros_str(HWND hdlgP, int id)
 {
+	std::stringstream strstr;
 	char text[_MAX_PATH];
-	HWND hctl1;
-	HWND hctl2 = NULL;
 
-	if (codeNotify != EN_CHANGE) {
-		return;
+	Edit_GetText(GetDlgItem(hdlgP, id), text, sizeof(text) / sizeof(text[0]));
+	if (valuex::is_variable(text)) {
+		text[0] = '\0';
 	}
-
-	Edit_GetText(hwndCtrl, text, sizeof(text) / sizeof(text[0]));
-	if (id == IDC_ET_EVENTKILL_MASTERHERO) {
-		hctl1 = GetDlgItem(hdlgP, IDC_CMB_EVENTKILL_MASTERHERO);
-
-	} else {
-		return;
+	strstr.str("");
+	strstr << text;
+	if (!strstr.str().empty()) {
+		std::set<int> sstr = valuex::to_set_int(strstr.str());
+		if (sstr.find(ns::clicked_hero) != sstr.end()) {
+			return;
+		}
+		strstr << ", ";
 	}
-	ShowWindow(hctl1, (text[0] == '\0')? SW_RESTORE: SW_HIDE);
-	if (hctl2) {
-		ShowWindow(hctl2, (text[0] == '\0')? SW_RESTORE: SW_HIDE);
-	}
-
-	return;
+	strstr << ns::clicked_hero;
+	Edit_SetText(GetDlgItem(hdlgP, id), strstr.str().c_str());
 }
 
 void On_DlgEventKillCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
+	if (candidate_hero::on_command(hdlgP, id, codeNotify)) {
+		return;
+	}
+
 	BOOL changed = FALSE;
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	tevent& evt = scenario.event_[ns::clicked_event];
@@ -5407,16 +5703,17 @@ void On_DlgEventKillCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 
 	switch (id) {
 	case IDM_VARIABLE_ITEM0: // type
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTKILL_MASTERHERO), ns::clicked_variable.c_str());
+		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTKILL_HERO), ns::clicked_variable.c_str());
 		break;
 	case IDM_TOSERVICE:
 		strstr.str("");
-		strstr << ns::clicked_side;
-		Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTKILL_SIDE), strstr.str().c_str());
-		break;
+		if (ns::type == IDC_LV_CANDIDATEHERO) {
+			strcat_heros_str(hdlgP, IDC_ET_EVENTKILL_HERO);
 
-	case IDC_ET_EVENTKILL_MASTERHERO:
-		OnEventKillEt(hdlgP, id, hwndCtrl, codeNotify);
+		} else if (ns::type == IDC_LV_EVENTKILL_SIDE) {
+			strstr << ns::clicked_side;
+			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_EVENTKILL_SIDE), strstr.str().c_str());
+		}
 		break;
 
 	case IDOK:
@@ -5470,9 +5767,18 @@ void eventkill_notify_handler_rclick(HWND hdlgP, int id, LPNMHDR lpNMHdr)
 BOOL On_DlgEventKillNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 {
 	if (lpNMHdr->code == NM_RCLICK) {
-		if (lpNMHdr->idFrom == IDC_LV_EVENT_VARIABLE) {
+		std::map<int, std::string> candidate_menu;
+		candidate_menu.insert(std::make_pair(IDM_TOSERVICE, _("To hero")));
+
+		if (candidate_hero::notify_handler_rclick(candidate_menu, hdlgP, DlgItem, lpNMHdr)) {
+			ns::type = DlgItem;
+			ns::clicked_hero = candidate_hero::lParam;
+
+		} else if (lpNMHdr->idFrom == IDC_LV_EVENT_VARIABLE) {
 			valuex::cumulate_variables_notify_handler_rclick(hdlgP, lpNMHdr);
+
 		} else {
+			ns::type = DlgItem;
 			eventkill_notify_handler_rclick(hdlgP, DlgItem, lpNMHdr);
 		}
 	}
@@ -5511,7 +5817,7 @@ void OnEventKillEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTKILL), hdlgP, DlgEventKillProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -5576,7 +5882,7 @@ void OnEventEndlevelEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTENDLEVEL), hdlgP, DlgEventEndlevelProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -5703,7 +6009,7 @@ void OnEventJoinEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTJOIN), hdlgP, DlgEventJoinProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -5822,7 +6128,7 @@ void OnEventModifyUnitEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTMODIFYUNIT), hdlgP, DlgEventModifyUnitProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -5943,6 +6249,13 @@ BOOL On_DlgEventModifySideInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 
 	ns::clicked_command->update_to_ui_special(hdlgP);
+
+	tevent::tmodify_side* modify_side = dynamic_cast<tevent::tmodify_side*>(ns::clicked_command);
+	if (modify_side->side_ == HEROS_INVALID_SIDE) {
+		hctl = GetDlgItem(hdlgP, IDC_LV_EVENTMODIFYSIDE_SIDE);
+		modify_side->side_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+	}
+
 	return FALSE;
 }
 
@@ -6125,7 +6438,7 @@ void OnEventModifySideEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTMODIFYSIDE), hdlgP, DlgEventModifySideProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -6321,7 +6634,7 @@ void OnEventModifyCityEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTMODIFYCITY), hdlgP, DlgEventModifyCityProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -6507,7 +6820,7 @@ void OnEventMessageEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTMESSAGE), hdlgP, DlgEventMessageProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -6624,7 +6937,7 @@ void OnEventPrintEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTPRINT), hdlgP, DlgEventPrintProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -6749,7 +7062,7 @@ void OnEventLabelEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTLABEL), hdlgP, DlgEventLabelProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -6903,7 +7216,7 @@ void OnSetVariableEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_SETVARIABLE), hdlgP, DlgSetVariableProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -7037,22 +7350,6 @@ void OnEventUnitEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	return;
 }
 
-void strcat_herosarmy(HWND hdlgP, int id)
-{
-	std::stringstream strstr;
-	char text[_MAX_PATH];
-
-	Edit_GetText(GetDlgItem(hdlgP, id), text, sizeof(text) / sizeof(text[0]));
-	strstr.str("");
-	strstr << text;
-	if (!strstr.str().empty()) {
-		strstr << ", ";
-	}
-	strstr << ns::clicked_hero;
-	Edit_SetText(GetDlgItem(hdlgP, id), strstr.str().c_str());
-}
-
-
 void On_DlgEventUnitCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	BOOL changed = FALSE;
@@ -7089,7 +7386,7 @@ void On_DlgEventUnitCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 
 	case IDM_TOSERVICE:
-		strcat_herosarmy(hdlgP, IDC_ET_EVENTUNIT_HEROSARMY);
+		strcat_heros_str(hdlgP, IDC_ET_EVENTUNIT_HEROSARMY);
 		break;
 
 	case IDOK:
@@ -7208,7 +7505,7 @@ void OnEventUnitEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTUNIT), hdlgP, DlgEventUnitProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -7481,7 +7778,7 @@ void OnSideHerosEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_SIDEHEROS), hdlgP, DlgSideHerosProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -7552,7 +7849,7 @@ void OnStoreUnitEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_STOREUNIT), hdlgP, DlgStoreUnitProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -7624,7 +7921,7 @@ void OnEventRenameEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTRENAME), hdlgP, DlgEventRenameProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -8074,7 +8371,7 @@ void OnEventObjectivesEditBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_OBJECTIVES), hdlgP, DlgObjectivesProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -8149,7 +8446,7 @@ void On_DlgEventFilterCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify
 		break;
 
 	case IDM_TOSERVICE:
-		strcat_herosarmy(hdlgP, IDC_ET_EVENTFILTER_MUSTHEROS);
+		strcat_heros_str(hdlgP, IDC_ET_EVENTFILTER_MUSTHEROS);
 		break;
 
 	case IDOK:
@@ -8253,7 +8550,7 @@ void OnEventFilterBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_EVENTFILTER), hdlgP, DlgEventFilterProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -8373,7 +8670,7 @@ void OnFilterHeroBt(HWND hdlgP)
 
 	ns::action_event_item = ma_edit;
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_FILTERHERO), hdlgP, DlgFilterHeroProc, lParam)) {
-		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), evt);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_EVENTEDIT_EXPLORER), cb_treeview_update_scroll_event, &evt);
 	}
 
 	return;
@@ -8412,7 +8709,7 @@ BOOL On_DlgEventEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM2, utf8_2_ansi(_("Set variable")));
 	AppendMenu(ns::hpopup_new, MF_SEPARATOR, 0, NULL);
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM3, utf8_2_ansi(_("Generate troop")));
-	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM4, utf8_2_ansi(_("Kill troop")));
+	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM4, utf8_2_ansi(_("Kill troop/hero")));
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM5, utf8_2_ansi(_("End level")));
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM6, utf8_2_ansi(_("Join in troop")));
 	AppendMenu(ns::hpopup_new, MF_STRING, IDM_NEW_ITEM7, utf8_2_ansi(_("Modify unit(troop, city, artifical)")));

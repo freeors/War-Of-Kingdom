@@ -167,7 +167,7 @@ void tnoble_list::fill_2list(twindow& window)
 			table_item_item.insert(std::make_pair("name", table_item));
 
 			strstr.str("");
-			symbols["level"] = lexical_cast_default<std::string>(t.level() + 1);
+			symbols["level"] = lexical_cast_default<std::string>(unit_types.max_noble_level() - t.level() + 1);
 			strstr << vgettext("wesnoth-lib", "noble^Lv$level", symbols);
 			table_item["label"] = strstr.str();
 			table_item_item.insert(std::make_pair("level", table_item));

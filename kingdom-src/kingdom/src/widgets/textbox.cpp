@@ -341,7 +341,7 @@ void textbox::erase_selection()
 namespace {
 	const unsigned int copypaste_modifier =
 #ifdef __APPLE__
-		KMOD_LMETA | KMOD_RMETA
+		SDLK_LGUI | SDLK_RGUI
 #else
 		KMOD_CTRL
 #endif
@@ -513,7 +513,7 @@ void textbox::handle_event(const SDL_Event& event)
 		}
 	}
 
-	wchar_t character = key.unicode;
+	wchar_t character = key.unused;
 
 	//movement characters may have a "Unicode" field on some platforms, so ignore it.
 	if(!(c == SDLK_UP || c == SDLK_DOWN || c == SDLK_LEFT || c == SDLK_RIGHT ||

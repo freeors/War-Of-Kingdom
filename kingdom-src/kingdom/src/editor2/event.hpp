@@ -94,9 +94,11 @@ public:
 			: tcommand(FILTER)
 			, hp_()
 			, must_heros_()
-			, type_()
 			, city_(-1)
 			, side_(HEROS_INVALID_SIDE)
+			, controller_(controller_tag::NONE)
+			, type_()
+			, family_()
 			, x_()
 			, y_()
 			, filter_location_()
@@ -107,6 +109,8 @@ public:
 		virtual void update_to_ui_event_edit(HWND hwndtv, HTREEITEM branch) const;
 		virtual void update_to_ui_special(HWND hdlgP) const;
 
+		std::string description(HWND hwndtv, HTREEITEM branch, bool newline) const;
+
 		virtual void generate(std::stringstream& strstr, const std::string& prefix) const;
 
 		virtual bool is_null() const
@@ -115,6 +119,9 @@ public:
 			if (!must_heros_.empty()) return false;
 			if (city_ >= 0) return false;
 			if (side_ != HEROS_INVALID_SIDE) return false;
+			if (controller_ != controller_tag::NONE) return false;
+			if (!type_.empty()) return false;
+			if (!family_.empty()) return false;
 			if (!x_.empty() && !y_.empty()) return false;
 			if (!filter_location_.empty()) return false;
 			return true;
@@ -123,9 +130,11 @@ public:
 		{
 			if (hp_ != that.hp_) return false;
 			if (must_heros_ != that.must_heros_) return false;
-			if (type_ != that.type_) return false;
 			if (city_ != that.city_) return false;
 			if (side_ != that.side_) return false;
+			if (controller_ != that.controller_) return false;
+			if (type_ != that.type_) return false;
+			if (family_ != that.family_) return false;
 			if (x_ != that.x_) return false;
 			if (y_ != that.y_) return false;
 			if (filter_location_ != that.filter_location_) return false;
@@ -136,9 +145,11 @@ public:
 	public:
 		std::pair<int, std::string> hp_;
 		std::string must_heros_;
-		std::string type_;
 		int city_;
 		int side_;
+		controller_tag::CONTROLLER controller_;
+		std::string type_;
+		std::string family_;
 		std::string x_;
 		std::string y_;
 		config filter_location_;
@@ -219,6 +230,7 @@ public:
 			: tcommand(KILL)
 			, master_hero_(lexical_cast_default<std::string>(HEROS_INVALID_NUMBER))
 			, side_()
+			, direct_hero_(false)
 		{}
 		void from_config(const config& cfg);
 		void from_ui_special(HWND hdlgP);
@@ -236,12 +248,14 @@ public:
 		{
 			if (master_hero_ != that.master_hero_) return false;
 			if (side_ != that.side_) return false;
+			if (direct_hero_ != that.direct_hero_) return false;
 			return true;
 		}
 		bool operator!=(const tkill& that) const { return !operator==(that); }
 	public:
 		std::string master_hero_;
 		std::string side_; // same as cfg, side number/variable
+		bool direct_hero_;
 	};
 
 	// [endlevel]
@@ -347,6 +361,7 @@ public:
 			if (x_ != that.x_) return false;
 			if (y_ != that.y_) return false;
 			if (traits_ != that.traits_) return false;
+			if (state_ != that.state_) return false;
 			return true;
 		}
 		bool operator!=(const tunit& that) const { return !operator==(that); }
@@ -358,6 +373,7 @@ public:
 		std::string x_;
 		std::string y_;
 		std::set<std::string> traits_;
+		std::set<std::string> state_;
 	};
 
 	// [modify_unit]
@@ -403,10 +419,12 @@ public:
 			: tcommand(MODIFY_SIDE)
 			, side_(HEROS_INVALID_SIDE)
 			, leader_(HEROS_INVALID_NUMBER)
+			, controller_(controller_tag::NONE)
 			, gold_(-1)
 			, income_(-1)
 			, agree_()
 			, terminate_()
+			, exclude_human_(false)
 			, technology_()
 		{}
 
@@ -419,17 +437,26 @@ public:
 
 		bool is_null() const
 		{
-			if (side_ == HEROS_INVALID_SIDE) return true;
-			return false;
+			if (side_ != HEROS_INVALID_SIDE) return false;
+			if (leader_ != HEROS_INVALID_SIDE) return false;
+			if (controller_ != controller_tag::NONE) return false;
+			if (gold_ != -1) return false;
+			if (income_ != -1) return false;
+			if (!agree_.empty()) return false;
+			if (!terminate_.empty()) return false;
+			if (!technology_.empty()) return false;
+			return true;
 		}
 		bool operator==(const tmodify_side& that) const
 		{
 			if (side_ != that.side_) return false;
 			if (leader_ != that.leader_) return false;
+			if (controller_ != that.controller_) return false;
 			if (gold_ != that.gold_) return false;
 			if (income_ != that.income_) return false;
 			if (agree_ != that.agree_) return false;
 			if (terminate_ != that.terminate_) return false;
+			if ((!agree_.empty() || !terminate_.empty()) && exclude_human_ != that.exclude_human_) return false;
 			if (technology_ != that.technology_) return false;
 			return true;
 		}
@@ -440,10 +467,12 @@ public:
 	public:
 		int side_;
 		int leader_;
+		controller_tag::CONTROLLER controller_;
 		int gold_;
 		int income_;
 		std::set<int> agree_;
 		std::set<int> terminate_;
+		bool exclude_human_;
 		std::set<std::string> technology_;
 	};
 
@@ -453,7 +482,7 @@ public:
 	public:
 		tmodify_city()
 			: tcommand(MODIFY_CITY)
-			, city_(HEROS_INVALID_NUMBER)
+			, city_(std::make_pair(null_str, HEROS_INVALID_NUMBER))
 			, soldiers_(-1)
 			, service_()
 		{}
@@ -467,12 +496,13 @@ public:
 
 		bool is_null() const
 		{
-			if (city_ == HEROS_INVALID_NUMBER) return true;
+			if (city_.first.empty() && city_.second == HEROS_INVALID_NUMBER) return true;
 			return false;
 		}
 		bool operator==(const tmodify_city& that) const
 		{
-			if (city_ != that.city_) return false;
+			if (city_.first != that.city_.first) return false;
+			if (city_.first.empty() && city_.second != that.city_.second) return false;
 			if (soldiers_ != that.soldiers_) return false;
 			if (service_ != that.service_) return false;
 			return true;
@@ -480,7 +510,7 @@ public:
 		bool operator!=(const tmodify_city& that) const { return !operator==(that); }
 
 	public:
-		int city_;
+		std::pair<std::string, int> city_;
 		int soldiers_;
 		std::set<int> service_;
 	};

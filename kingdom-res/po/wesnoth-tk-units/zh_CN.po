@@ -288,7 +288,7 @@ msgid "market1"
 msgstr "集市"
 
 msgid "market1 description"
-msgstr "集市"
+msgstr "每回合增加金。"
 
 #
 # market
@@ -297,7 +297,7 @@ msgid "market2"
 msgstr "市场"
 
 msgid "market2 description"
-msgstr "市场"
+msgstr "每回合增加金。"
 
 #
 # market
@@ -306,7 +306,7 @@ msgid "market3"
 msgstr "大市场"
 
 msgid "market3 description"
-msgstr "大市场"
+msgstr "每回合增加金。"
 
 #
 # technology
@@ -315,19 +315,19 @@ msgid "technology1"
 msgstr "一级技法所"
 
 msgid "technology1 description"
-msgstr "一级技法所"
+msgstr "每回合增加技法。"
 
 msgid "technology2"
 msgstr "二级技法所"
 
 msgid "technology2 description"
-msgstr "二级技法所"
+msgstr "每回合增加技法。"
 
 msgid "technology3"
 msgstr "三级技法所"
 
 msgid "technology3 description"
-msgstr "三级技法所"
+msgstr "每回合增加技法。"
 
 #
 # tactic
@@ -336,19 +336,37 @@ msgid "tactic1"
 msgstr "一级计略府"
 
 msgid "tactic1 description"
-msgstr "一级计略府"
+msgstr "增加城市2格内的部队攻击，以及一定机率Miss掉破坏城防。"
 
 msgid "tactic2"
 msgstr "二级计略府"
 
 msgid "tactic2 description"
-msgstr "二级计略府"
+msgstr "增加城市2格内的部队攻击，以及一定机率Miss掉破坏城防。"
 
 msgid "tactic3"
 msgstr "三级计略府"
 
 msgid "tactic3 description"
-msgstr "三级计略府"
+msgstr "增加城市2格内的部队攻击，以及一定机率Miss掉破坏城防。"
+
+msgid "school1"
+msgstr "一级学校"
+
+msgid "school1 description"
+msgstr "---"
+
+msgid "school2"
+msgstr "二级学校"
+
+msgid "school2 description"
+msgstr "---"
+
+msgid "school3"
+msgstr "三级学校"
+
+msgid "school3 description"
+msgstr "---"
 
 # actor
 msgid "tower1"

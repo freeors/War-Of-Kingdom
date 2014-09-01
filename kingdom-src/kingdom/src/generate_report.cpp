@@ -40,11 +40,9 @@
 #include <iostream>
 #include <ctime>
 
-#ifndef DISABLE_EDITOR
 namespace editor {
 extern std::string selected_terrain, left_button_function;
 }
-#endif
 
 namespace reports {
 
@@ -74,6 +72,8 @@ report generate_report(TYPE type,
 	unit_map& units = *resources::units;
 	gamemap& map = *resources::game_map;
 	std::vector<team>& teams = *resources::teams;
+	play_controller& controller = *resources::controller;
+	team& playing_team = teams[playing_side - 1];
 
 	const unit *u = NULL;
 
@@ -111,16 +111,12 @@ report generate_report(TYPE type,
 		tooltip << _("Type: ")
 			<< u->type_name();
 
-		const std::string help_page = "unit_" + u->type_id();
-
-		return report(str.str(), "", tooltip.str(), help_page);
+		return report(str.str(), "", tooltip.str());
 	}
 	case UNIT_RACE: {
 		str << "<166,146,117>" << u->race()->name(u->gender());
 
-		const std::string help_page = "..race_" + u->race()->id();
-
-		return report(str.str(), "", tooltip.str(), help_page);
+		return report(str.str(), "", tooltip.str());
 	}
 	case UNIT_SIDE: {
 		std::string flag_icon = teams[u->side() - 1].flag_icon();
@@ -254,34 +250,33 @@ report generate_report(TYPE type,
 		if (game_config::tiny_gui) {
 			return report("", tod_image, "");
 		} else {
-			return report("", tod_image, tooltip.str(), "time_of_day");
+			return report("", tod_image, tooltip.str());
 		}
 	}
 	case TURN: {
-		str << 	teams[playing_side-1].name() << "[" << resources::tod_manager->turn() << "]";
-		int nb = resources::tod_manager->number_of_turns();
-		if (nb != -1) str << '/' << nb;
+		str << unit_map::main_ticks << "," << controller.autosave_ticks() << ",";
+		str << controller.turn() << "," << resources::tod_manager->number_of_turns();
 		break;
 	}
 	// For the following status reports, show them in gray text
 	// when it is not the active player's turn.
 	case GOLD: {
 		//Supposes the full/"pathfind" unit map is applied
-		int fake_gold = viewing_team.gold();
+		int fake_gold = playing_team.gold();
 		if (current_side != playing_side) {
 			str << font::GRAY_TEXT;
 		} else if (fake_gold < 0) {
 			str << font::RED_TEXT;
 		}
 
-		int cost_exponent = viewing_team.cost_exponent();
+		int cost_exponent = playing_team.cost_exponent();
 		int hundred = cost_exponent / 100;
 
-		str << viewing_team.gold() << "(" << hundred << "." << (cost_exponent - hundred * 100) / 10 << ")";
+		str << playing_team.gold() << "(" << hundred << "." << (cost_exponent - hundred * 100) / 10 << ")";
 		break;
 	}
 	case VILLAGES: {
-		const team_data data = calculate_team_data(viewing_team,current_side);
+		const team_data data = calculate_team_data(playing_team, playing_side);
 		if (current_side != playing_side)
 			str << font::GRAY_TEXT;
 		str << data.villages << '/';
@@ -299,14 +294,14 @@ report generate_report(TYPE type,
 		break;
 	}
 	case UPKEEP: {
-		const team_data data = calculate_team_data(viewing_team,current_side);
+		const team_data data = calculate_team_data(playing_team, playing_side);
 		if (current_side != playing_side)
 			str << font::GRAY_TEXT;
 		str << data.upkeep;
 		break;
 	}
 	case INCOME: {
-		team_data data = calculate_team_data(viewing_team, current_side);
+		team_data data = calculate_team_data(playing_team, playing_side);
 		if (current_side != playing_side)
 			str << font::GRAY_TEXT;
 		else if (data.net_income < 0)
@@ -316,7 +311,7 @@ report generate_report(TYPE type,
 		break;
 	}
 	 case TECH_INCOME: {
-		team_data data = calculate_team_data(viewing_team, current_side);
+		team_data data = calculate_team_data(playing_team, playing_side);
 		if (current_side != playing_side) {
 			str << font::GRAY_TEXT;
 		}
@@ -325,59 +320,11 @@ report generate_report(TYPE type,
 		break;
 	}
 	case TACTIC: {
-		int tactic_point = viewing_team.tactic_point();
-		if (current_side != playing_side) {
-			str << font::GRAY_TEXT;
-		} else if (tactic_point >= viewing_team.max_tactic_point()) {
-			str << font::RED_TEXT;
-		} else if (tactic_point > viewing_team.max_tactic_point() * 2 / 3) {
-			str << "<255,255,0>";
-		} else {
-			str << font::GOOD_TEXT;
-		}
-
-		str << viewing_team.tactic_point();
+		int tactic_point = 0;
+		str << tactic_point;
 		break;
 	}
-	case TERRAIN: {
-		if (!map.on_board(mouseover) || viewing_team.shrouded(mouseover))
-			break;
 
-		const t_translation::t_terrain terrain = map.get_terrain(mouseover);
-		if (terrain == t_translation::OFF_MAP_USER) {
-			break;
-		}
-
-		const t_translation::t_list& underlying = map.underlying_union_terrain(terrain);
-
-		if (map.is_village(mouseover)) {
-			int owner = village_owner(mouseover, teams) + 1;
-			if(owner == 0 || viewing_team.fogged(mouseover)) {
-				str << map.get_terrain_info(terrain).income_description();
-			} else if(owner == current_side) {
-				str << map.get_terrain_info(terrain).income_description_own();
-			} else if(viewing_team.is_enemy(owner)) {
-				str << map.get_terrain_info(terrain).income_description_enemy();
-			} else {
-				str << map.get_terrain_info(terrain).income_description_ally();
-			}
-			str << " ";
-		} else {
-			str << map.get_terrain_info(terrain).description();
-		}
-
-		if (underlying.size() != 1 || underlying.front() != terrain) {
-			str << " (";
-			for (t_translation::t_list::const_iterator i = underlying.begin(); i != underlying.end(); ++i) {
-				str << map.get_terrain_info(*i).name();
-				if (i+1 != underlying.end()) {
-					str << ",";
-				}
-			}
-			str << ")";
-		}
-		break;
-	}
 	case POSITION: {
 		// coordinate  [terrain] resitance
 		if (!map.on_board(mouseover)) {
@@ -390,9 +337,7 @@ report generate_report(TYPE type,
 			break;
 
 		str << mouseover;
-		if (game_config::tiny_gui) {
-			str << "\n";
-		}
+		str << "\n";
 
 		if (!viewing_team.shrouded(mouseover)) {
 			const t_translation::t_list& underlying = map.underlying_union_terrain(terrain);
@@ -440,9 +385,7 @@ report generate_report(TYPE type,
 			}
 
 			str << "    ";
-			if (game_config::tiny_gui) {
-				str << "\n";
-			}
+			str << "\n";
 		}
 
 		if (!u)
@@ -490,12 +433,18 @@ report generate_report(TYPE type,
 		std::string new_rgb = team::get_side_color_index(playing_side);
 		std::string mods = "~RC(" + old_rgb + ">" + new_rgb + ")";
 
-		if(flag_icon.empty()) {
+		if (flag_icon.empty()) {
 			flag_icon = game_config::images::flag_icon;
 		}
 
 		image::locator flag_icon_img(flag_icon, mods);
-		return report("", flag_icon_img, teams[playing_side-1].name());
+		std::stringstream strstr;
+		if (unit::actor) {
+			strstr << unit::actor->name() << "(" << teams[unit::actor->side() - 1].name() << ")";
+		} else {
+			strstr << "-----";
+		}
+		return report("", flag_icon_img, strstr.str());
 	}
 
 	case OBSERVERS: {
@@ -511,11 +460,7 @@ report generate_report(TYPE type,
 
 		return report("",game_config::images::observer,str.str());
 	}
-#ifdef DISABLE_EDITOR
-	case EDITOR_SELECTED_TERRAIN:
-	case EDITOR_LEFT_BUTTON_FUNCTION:
-		return report();
-#else
+
 	case EDITOR_SELECTED_TERRAIN: {
 		if (editor::selected_terrain.empty())
 			return report();
@@ -528,7 +473,7 @@ report generate_report(TYPE type,
 		else
 			return report(editor::left_button_function);
 	}
-#endif
+
 	case REPORT_COUNTDOWN: {
 		int min;
 		int sec;

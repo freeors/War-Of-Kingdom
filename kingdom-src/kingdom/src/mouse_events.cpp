@@ -47,6 +47,7 @@
 #include "gui/dialogs/technology_tree.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "gui/dialogs/hero.hpp"
+#include "gui/dialogs/build_ea.hpp"
 #include "gui/widgets/window.hpp"
 #include "formula_string_utils.hpp"
 #include "game_preferences.hpp"
@@ -54,19 +55,35 @@
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
+
+bool can_execute_command(const std::vector<team>& teams, const unit& u, bool browse)
+{
+	if (!browse && !events::commands_disabled) {
+		return true;
+	}
+	return slot_cache::cache.size() < game_config::max_slots && teams[u.side() - 1].allow_intervene;
+}
+
+bool normal_can_execute_command(bool browse)
+{
+	return !browse && !events::commands_disabled;
+}
+
 namespace events{
 
 
-mouse_handler::mouse_handler(game_display* gui, std::vector<team>& teams,
+mouse_handler::mouse_handler(play_controller& controller, game_display* gui, std::vector<team>& teams,
 		unit_map& units, hero_map& heros, gamemap& map, tod_manager& tod_mng,
-		undo_list& undo_stack) :
+		game_state& gamestate, undo_list& undo_stack) :
 	mouse_handler_base()
+	, controller_(controller)
 	, map_(map)
 	, gui_(gui)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, tod_manager_(tod_mng)
+	, gamestate_(gamestate)
 	, undo_stack_(undo_stack)
 	, previous_hex_()
 	, previous_free_hex_()
@@ -86,6 +103,7 @@ mouse_handler::mouse_handler(game_display* gui, std::vector<team>& teams,
 	, playing_card_(NULL)
 	, placing_hero_(NULL)
 	, placing_unit_(NULL)
+	, tasking_unit_(NULL)
 {
 	singleton_ = this;
 }
@@ -108,12 +126,12 @@ int mouse_handler::drag_threshold() const
 
 bool mouse_handler::in_tip_state() const
 {
-	return placing_hero_ || placing_unit_ || building_bldg_ || playing_card_;
+	return placing_hero_ || placing_unit_ || tasking_unit_ || building_bldg_ || playing_card_;
 }
 
 bool mouse_handler::in_multistep_state() const
 {
-	return is_moving() || expediting_ || building_bldg_ || playing_card_;
+	return is_moving() || expediting_ || building_bldg_ || playing_card_ || selecting_;
 }
 
 void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
@@ -155,7 +173,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 		last_hex_ = new_hex;
 	}
 
-	if (building_bldg_ || playing_card_ || selecting_ || placing_hero_ || placing_unit_) {
+	if (building_bldg_ || playing_card_ || selecting_ || placing_hero_ || placing_unit_ || tasking_unit_) {
 		if (commands_disabled || !update) {
 			return;
 		}
@@ -224,6 +242,13 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 		map_location select_from;
 		// we search if there is placable to possibility and where
 		map_location placable_from;
+		// we search if there is taskable to possibility and where
+		map_location taskable_from;
+		// we search if there is clear_formationed to possibility and where
+		map_location clear_formationed_from;
+		// we search if there is intervene_move to possibility and where
+		map_location intervene_move_from;
+
 
 		if (building_bldg_) {
 			build_from = current_unit_build_from(new_hex);
@@ -241,12 +266,18 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 			}
 		} else if (placing_unit_) {
 			placable_from = current_unit_placable_from(new_hex);
+
+		} else if (tasking_unit_) {
+			taskable_from = current_unit_taskable_from(new_hex, unit::TASK_GUARD);
+
 		} else {
 			attack_from = current_unit_attacks_from(new_hex);
 			tactic_from = current_unit_tactic_from(new_hex);
 			formation_from = current_unit_formation_from(new_hex);
 			interior_from = current_unit_interior_from(new_hex);
 			select_from = current_unit_select_from(new_hex);
+			clear_formationed_from = current_unit_clear_formationed_from(new_hex);
+			intervene_move_from = current_unit_intervene_move_from(new_hex);
 		}
 
 		//see if we should show the normal cursor, the movement cursor, or
@@ -257,7 +288,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 			if (playing_card_) {
 				if (card_play_to.valid()) {
 					// cursor: playing!
-					cursor::set(dragging_started_ ? cursor::BUILD_DRAG : cursor::BUILD);
+					cursor::set(dragging_started_ ? cursor::PLACE_DRAG : cursor::PLACE);
 				} else {
 					// cursor: invalid
 					cursor::set(dragging_started_ ? cursor::ILLEGAL_DRAG : cursor::ILLEGAL);
@@ -266,6 +297,14 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 				if (placable_from.valid()) {
 					// cursor: move!
 					cursor::set(dragging_started_ ? cursor::MOVE_DRAG : cursor::MOVE);
+				} else {
+					// cursor: invalid
+					cursor::set(dragging_started_ ? cursor::ILLEGAL_DRAG : cursor::ILLEGAL);
+				}
+			} else if (tasking_unit_) {
+				if (taskable_from.valid()) {
+					// cursor: placable!
+					cursor::set(dragging_started_ ? cursor::PLACE_DRAG : cursor::PLACE);
 				} else {
 					// cursor: invalid
 					cursor::set(dragging_started_ ? cursor::ILLEGAL_DRAG : cursor::ILLEGAL);
@@ -281,7 +320,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 				} else if (attack_from.valid() && !gui_->formation_indicator().second.valid()) {
 					// cursor: attack!
 					cursor::set(dragging_started_ ? cursor::ATTACK_DRAG : cursor::ATTACK);
-				} else if (tactic_from.valid()) {
+				} else if (tactic_from.valid() || clear_formationed_from.valid() || intervene_move_from.valid()) {
 					// cursor: tactic!
 					cursor::set(dragging_started_ ? cursor::TACTIC_DRAG : cursor::TACTIC);
 				} else if (formation_from.valid()) {
@@ -293,15 +332,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 				} else if (build_from.valid()) {
 					// cursor: build!
 					cursor::set(dragging_started_ ? cursor::BUILD_DRAG : cursor::BUILD);
-				} else if (moving_ && new_hex.valid()) {
-					if (new_hex == selected_hex_ || new_hex == selected_unit->get_goto() || (!spectator.get_interrupted_waypoints().empty() && new_hex == spectator.get_interrupted_waypoints().back())) {
-						// cursor: standby
-						cursor::set(dragging_started_ ? cursor::STANDBY_DRAG : cursor::STANDBY);
-					} else {
-						// cursor: invalid
-						cursor::set(dragging_started_ ? cursor::ILLEGAL_DRAG : cursor::ILLEGAL);
-					}
-				} else if (!moving_ && !building_bldg_ && !playing_card_ && !selected_unit->is_artifical() && (mouseover_unit == units_.end() || mouseover_unit->base() || over_is_selfcity) && current_paths_.destinations.contains(new_hex)) {
+				} else if (!building_bldg_ && !playing_card_ && !selected_unit->is_artifical() && (mouseover_unit == units_.end() || mouseover_unit->can_stand(*selected_unit) || over_is_selfcity) && current_paths_.destinations.contains(new_hex)) {
 					// cursor: footprint
 					if (over_is_selfcity) {
 						cursor::set(dragging_started_ ? cursor::ENTER_DRAG : cursor::ENTER);
@@ -312,6 +343,9 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 					// selecte unit can't attack or move there
 					cursor::set(cursor::NORMAL);
 				}
+			} else if (gui_->set_ea_build_indicator(new_hex, false)) {
+				cursor::set(cursor::BUILD);
+
 			} else {
 				// no selected unit or we can't move it
 				cursor::set(cursor::NORMAL);
@@ -339,7 +373,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 			current_route_.steps.clear();
 			gui().set_route(NULL);
 		} else if (!commands_disabled && map_.on_board(selected_hex_) && map_.on_board(new_hex)) {
-			if (selected_unit && !selected_unit->incapacitated() && (tent::mode != TOWER_MODE || !teams_[selected_unit->side() - 1].is_human())) {
+			if (selected_unit && !selected_unit->incapacitated() && (!tent::tower_mode() || !teams_[selected_unit->side() - 1].is_human())) {
 				// the movement_reset is active only if it's not the unit's turn
 				unit_movement_resetter move_reset(*selected_unit, selected_unit->side() != side_num_);
 				current_route_ = get_route(&*selected_itor, dest, viewing_team());
@@ -414,9 +448,9 @@ map_location mouse_handler::current_unit_attacks_from(const map_location& loc)
 
 map_location mouse_handler::current_unit_tactic_from(const map_location& loc)
 {
-	const map_location& tactic_indicator = gui_->tactic_indicator();
-	if (!moving_ && tactic_indicator.valid() && tactic_indicator == loc) {
-		const unit& tactician = *units_.find(tactic_indicator);
+	const std::pair<map_location, int>& indicator = gui_->tactic_indicator();
+	if (indicator.second >= 0 && indicator.first.valid() && indicator.first == loc) {
+		const unit& tactician = *units_.find(indicator.first);
 		if (tactician.master().tactic_ != HEROS_NO_TACTIC) {
 			return selected_hex_;
 		}
@@ -426,6 +460,24 @@ map_location mouse_handler::current_unit_tactic_from(const map_location& loc)
 		if (tactician.third().valid() && tactician.third().tactic_ != HEROS_NO_TACTIC) {
 			return selected_hex_;
 		}
+	}
+	return map_location();
+}
+
+map_location mouse_handler::current_unit_clear_formationed_from(const map_location& loc)
+{
+	const std::pair<map_location, int>& indicator = gui_->clear_formationed_indicator();
+	if (indicator.second > 0 && indicator.first.valid() && indicator.first == loc) {
+		return selected_hex_;
+	}
+	return map_location();
+}
+
+map_location mouse_handler::current_unit_intervene_move_from(const map_location& loc)
+{
+	const std::pair<map_location, int>& indicator = gui_->intervene_move_indicator();
+	if (indicator.second >= 0 && indicator.first.valid() && indicator.first == loc) {
+		return selected_hex_;
 	}
 	return map_location();
 }
@@ -464,7 +516,7 @@ map_location mouse_handler::current_unit_select_from(const map_location& loc)
 {
 	const std::set<map_location>& selectable_indicator = gui_->selectable_indicator();
 	if (selectable_indicator.find(loc) != selectable_indicator.end()) {
-		return selected_hex_;
+		return slot_cache::selected_u? slot_cache::selected_u->get_location(): selected_hex_;
 	}
 	return map_location();
 }
@@ -499,6 +551,23 @@ const map_location& mouse_handler::current_unit_joinable_from(const map_location
 	} else {
 		return map_location::null_location;
 	}
+}
+
+map_location mouse_handler::current_unit_taskable_from(const map_location& loc, int task) const
+{
+	if (!tasking_unit_) {
+		return map_location::null_location;
+	}
+
+	if (task == unit::TASK_GUARD) {
+		const unit* u = units_.find_unit(loc);
+		if (u && u->side() != side_num_) {
+			return map_location::null_location;
+		}
+		int cost = tasking_unit_->movement_cost(map_[loc]);
+		return cost != unit_movement_type::UNREACHABLE? loc: map_location::null_location;
+	}
+	return map_location::null_location;
 }
 
 pathfind::marked_route mouse_handler::get_route(unit* un, map_location go_to, team &team)
@@ -548,14 +617,9 @@ bool mouse_handler::right_click(int x, int y, const bool browse)
 
 void mouse_handler::do_right_click(const bool browse)
 {
-	// 到现在我还不知道commands_disabled是什么作用,但可以肯定的,以下这个判断需要加
-	// 出征状态下, 移动要一点时间, 如果在这时间按下鼠标右键, 会打断unit_display::move_unit!!(在哪里打断还没不知道),然后调用这个left_click
-	// 可以肯定的,在那种状态下调用left_click会产生致命错误,left_click发现是出征状态,于是移除临时单位,结果使得unit_display::move_unit执行非法
-	// 
-	// 对这种问题解决办法是在移动过程中不处理鼠标右键,这时就要需有个标志知道现在正处于move_unit状态,commands_disabled似乎就是干这个用的
 	bool is_replaying = resources::controller->is_replaying();
 
-	if (!is_replaying && commands_disabled) {
+	if (!is_replaying && commands_disabled && !slot_cache::selected_u) {
 		// when move result to commands_disable not-zero, moving_ is true.
 		return;
 	}
@@ -582,17 +646,10 @@ void mouse_handler::do_right_click(const bool browse)
 
 		return;
 	}
-	if (playing_card_) {
-		exit_playing_card(false);
-	}
 	if (selecting_) {
-		gui_->set_selectable_indicator(std::set<map_location>());
-		selecting_ = false;
+		exit_selecting(false);
 	}
-	if (placing_hero_) {
-		exit_placing_hero();
-	}
-	if (placing_unit_) {
+	if (playing_card_ || placing_hero_ || placing_unit_ || tasking_unit_) {
 		exit_placing_unit(false);
 	}
 	// 后面须加条件last_hex_ != selected_hex_。在出征时按下要能弹出武将菜单
@@ -618,24 +675,19 @@ void mouse_handler::do_right_click(const bool browse)
 	if (units_.count(selected_hex_)) {
 		gui_->invalidate_unit();
 	}
+
 	select_hex(map_location(), browse);
 	
-	if (moving_) {
-		end_moving(map_location());
-		undo_ = true;
-	} else {
-		// press right key, goto main context menu.
-		gui_->goto_main_context_menu();
-	}
+	// press right key, goto main context menu.
+	gui_->goto_main_context_menu();
 	
 	return;
 }
 
 void mouse_handler::begin_moving(const map_location& src, const map_location& dst)
 {
-	if (moving_) {
-		posix_print_mb("program error, begin_moving, reenter moving");
-	}
+	VALIDATE(!moving_, "program error, begin_moving, reenter moving");
+
 	gui_->enable_menu("play_card", false);
 	gui_->enable_menu("undo", false);
 	gui_->enable_menu("endturn", false);
@@ -646,7 +698,7 @@ void mouse_handler::begin_moving(const map_location& src, const map_location& ds
 	moving_ = true;
 }
 
-void mouse_handler::end_moving(const map_location& stop_loc)
+void mouse_handler::end_moving()
 {
 	if (moving_) {
 		gui_->enable_menu("play_card", true);
@@ -669,34 +721,33 @@ void mouse_handler::end_moving(const map_location& stop_loc)
 bool mouse_handler::post_move_unit(unit& mover, const map_location& stop_loc)
 {
 	bool stop_on_city = units_.city_from_loc(stop_loc)? true: false;
+	if (!stop_on_city) {
+		if (tent::turn_based) {
+			gui_->resort_access_troops(mover);
+		}
 
-	// once come into city(clicked_selfcity), selected_itor become invalid.
-	if (!stop_on_city && !unit_can_move(mover)) {
-		gui_->refresh_access_troops(mover.side() - 1, game_display::REFRESH_DISABLE, &mover);
-	}
-	if (stop_on_city) {
-		// come into city
-		select_hex(map_location(), false);
-		end_moving(stop_loc);
-	} else {
-		select_hex(stop_loc, false);
-		// 1.show context menu
-		show_menu_ = true;
-		// 2.set attack indicator
-		gui_->set_attack_indicator(&mover);
 		if (undo_stack_.empty() || mover.get_move_spectator().get_ambusher().valid()) {
 			// ambusher when move!
-			// select_hex(hex, browse);
 			clear_undo_stack();
-			end_moving(stop_loc);
+		}
+
+		// if has attackable, display indicate automatic. else cancel.
+		select_hex(stop_loc, false);
+		gui_->set_attack_indicator(&mover, !current_can_action(mover));
+		if (!gui_->attack_indicator().empty()) {
+			// 2.show context menu
+			show_menu_ = true;
+		} else {
+			select_hex(map_location(), false);
 		}
 	}
+
 	return stop_on_city;
 }
 
 bool mouse_handler::left_click(int x, int y, const bool browse)
 {
-	bool is_replaying = resources::controller->is_replaying();
+	bool is_replaying = controller_.is_replaying();
 	int mode = tent::mode;
 	undo_ = false;
 	
@@ -709,10 +760,6 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 	}
 
 	gui_->unhighlight_disctrict();
-
-	if (commands_disabled && (unit_display::player_number_ > 0)) {
-		return false;
-	}
 
 	// bool check_shroud = current_team().auto_shroud_updates();
 
@@ -730,15 +777,12 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		if (build_from.valid()) {
 			unit& builder = *units_.find(build_from);
 			const unit_type* ut = unit_types.find(building_bldg_->type_id());
-			resources::controller->do_build(builder, ut, last_hex_);
+			controller_.do_build(current_team(), &builder, ut, last_hex_);
 
 			// temporary artifical is no use, delete it.
 			exit_building(true);
 
-			gui().refresh_access_troops(builder.side() - 1, game_display::REFRESH_DISABLE, &builder);
-
 			// next build, don't trigger sitdowm.
-			end_moving(map_location());
 			gui_->clear_build_indicator();
 			
 			game_events::fire("post_build", last_hex_, build_from);
@@ -811,12 +855,12 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 					curr_team.consume_card(c, hex, maps, card_index_, true);
 				}
 			
-				exit_playing_card(true);
+				exit_placing_unit(true);
 				refresh_card_button(curr_team, *gui_);
 
 				gui_->goto_main_context_menu();
 			} else {
-				exit_playing_card(true);
+				exit_placing_unit(true);
 
 				unit& mover = *units_.find(hex);
 				set_unit_placing(mover);
@@ -827,14 +871,13 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		return false;
 	}
 
-	unit_map::iterator selected_itor = find_unit(selected_hex_);
+	unit* selected_u = get_visible_unit(selected_hex_, viewing_team());
 
 	if (selecting_) {
 		const map_location selecte_from = current_unit_select_from(hex);
 		if (selecte_from.valid()) {
-			cast_tactic_special(*selected_itor, *units_.find(hex));
-			gui_->set_selectable_indicator(std::set<map_location>());
-			selecting_ = false;
+			cast_tactic_special(slot_cache::selected_u? *slot_cache::selected_u: *selected_u, units_.find_unit(hex), browse);
+			exit_selecting(true);
 		} else {
 			do_right_click(browse);
 		}
@@ -844,6 +887,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 	// placable_from/joinable_from will erase in clear(), before used.
 	const map_location placable_from = current_unit_placable_from(hex);
 	const map_location joinable_from = current_unit_joinable_from(hex);
+	const map_location taskable_from = current_unit_taskable_from(hex, unit::TASK_GUARD);
 
 	if (placing_hero_) {
 		if (placable_from.valid()) {
@@ -866,6 +910,15 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		}
 
 		return false;
+	} else if (tasking_unit_) {
+		if (taskable_from.valid()) {
+			do_task(*tasking_unit_, taskable_from);
+
+		} else {
+			do_right_click(browse);
+		}
+
+		return false;
 	}
 
 	bool check_shroud = current_team().auto_shroud_updates();
@@ -874,9 +927,9 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 	bool cancel_recall = false;
 
 	if (expediting_ && (selected_hex_ != hex)) {
-		if (clicked_u.valid() && !clicked_u->base() && ((clicked_u->side() != selected_itor->side()) || !unit_is_city(&*clicked_u) || (clicked_u->get_location() == expediting_city_->get_location()))) {
+		if (clicked_u.valid() && !clicked_u->can_stand(*selected_u) && ((clicked_u->side() != selected_u->side()) || !unit_is_city(&*clicked_u) || (clicked_u->get_location() == expediting_city_->get_location()))) {
 			cancel_recall = true;
-		} else if (selected_itor->movement_cost(map_[hex])	== unit_movement_type::UNREACHABLE) {
+		} else if (selected_u->movement_cost(map_[hex])	== unit_movement_type::UNREACHABLE) {
 			cancel_recall = true;
 		} else if (current_team().shrouded(hex)) {
 			cancel_recall = true;
@@ -909,8 +962,10 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 	// if the unit is selected and then itself clicked on,
 	// any goto command is cancelled
-	if (selected_itor != units_.end() && !browse && selected_hex_ == hex && selected_itor->human() && !selected_itor->provoked_turns() && selected_itor->side() == side_num_) {
-		selected_itor->set_goto(map_location());
+	if (selected_u && !browse && selected_hex_ == hex && !selected_u->provoked_turns() && selected_u->side() == side_num_) {
+		if (teams_[selected_u->side() - 1].double_reset_goto) {
+			selected_u->set_goto(map_location());
+		}
 	}
 
 	const map_location src = selected_hex_;
@@ -919,7 +974,10 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 	const map_location tactic_from = current_unit_tactic_from(hex);
 	const map_location formation_from = current_unit_formation_from(hex);
 	const map_location interior_from = current_unit_interior_from(hex);
+	bool build_from = !selected_u && gui_->set_ea_build_indicator(hex, false);
 	const map_location alternate_from = current_unit_alternate_from(hex);
+	const map_location clear_formationed_from = current_unit_clear_formationed_from(hex);
+	const map_location intervene_move_from = current_unit_intervene_move_from(hex);
 
 	artifical* cobj = units_.city_from_loc(hex);
 	bool clicked_selfcity = (cobj && (cobj->side() == side_num_))? true: false;
@@ -947,61 +1005,34 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 	}
 
 	// see if we're trying to do a attack
-	if (!browse && !commands_disabled && attack_from.valid() && !gui_->formation_indicator().second.valid()) {
-		if (attack_enemy(selected_itor, clicked_u, hex)) {
+	// if (!browse && !commands_disabled && attack_from.valid() && !gui_->formation_indicator().second.valid()) {
+	if (!browse && !commands_disabled && attack_from.valid()) {
+		if (attack_enemy(*selected_u, *clicked_u, hex)) {
 			return false;
 		}
 	} else if (!browse && !commands_disabled && formation_from.valid()) {
-		if (do_formation_attack(*selected_itor)) {
+		if (do_formation_attack(*selected_u)) {
 			return false;
 		}
-	} else if (moving_) {
-		// in moving state, selected_hex_ must valid and moving unit must on it.
-		move_unit_spectator& spectator = selected_itor->get_move_spectator();
-		if (hex == selected_hex_ || hex == selected_itor->get_goto()) {
-			// user want stop at loc that unit on.
-			select_hex(map_location(), false);
-			end_moving(hex);
-			gui_->goto_main_context_menu();
-			game_events::fire("sitdown", hex, map_location());
-
-		} else if (!spectator.get_interrupted_waypoints().empty() && hex == spectator.get_interrupted_waypoints().back()) {
-			// user want stop at loc that plan to. so stop this move and start next move.
-			end_moving(hex);
-			gui().unhighlight_reach();
-			map_location stop_at_loc = move_unit_along_current_route(spectator.get_interrupted_waypoints(), check_shroud, true);
-			if (stop_at_loc.valid()) {
-				bool stop_on_city = post_move_unit(*selected_itor, stop_at_loc);
-				if (stop_on_city || stop_at_loc == hex || spectator.get_ambusher().valid() || !spectator.get_seen_enemies().empty() || !spectator.get_seen_friends().empty()) {
-					return false;
-				}
-			} else {
-				// select_hex(map_location(), false);
-				end_moving(map_location());
-				return false;
-			}
-
-			// set goto
-			selected_itor->set_goto(hex);
-
-			// goto will end move automatically
-			select_hex(map_location(), false);
-			gui_->goto_main_context_menu();
-			show_menu_ = false;
-			end_moving(map_location());
-		} else {
-			do_right_click(browse);
-		}
-	} else if (!browse && !commands_disabled && tactic_from.valid()) {
-		if (cast_tactic(*selected_itor, hex)) {
+	} else if (tactic_from.valid() && can_execute_command(teams_, *selected_u, browse)) {
+		if (cast_tactic(*selected_u, hex, browse)) {
 			return false;
 		}
+	} else if (clear_formationed_from.valid() && can_execute_command(teams_, *selected_u, browse)) {
+		clear_formationed(*selected_u, browse);
+
+	} else if (intervene_move_from.valid() && can_execute_command(teams_, *selected_u, browse)) {
+		intervene_move(*selected_u, hex, browse);
+
 	} else if ((is_replaying || !commands_disabled) && interior_from.valid()) {
-		if (interior(browse || selected_itor->side() != side_num_ || rpg::stratum != hero_stratum_leader, *selected_itor)) {
+		if (interior(browse || selected_u->side() != side_num_ || rpg::stratum != hero_stratum_leader, *selected_u)) {
 			return false;
 		}
+	} else if (!browse && !commands_disabled && build_from) {
+		build_ea(hex);
+
 	} else if (!commands_disabled && !browse && selected_hex_.valid() && selected_hex_ != hex &&
-		selected_itor != units_.end() && selected_itor->human() && selected_itor->side() == side_num_ && (clicked_u == units_.end() || clicked_u->base() || clicked_selfcity) &&
+		selected_u && current_can_action(*selected_u) && (clicked_u == units_.end() || clicked_u->base() || clicked_selfcity) &&
 		!current_team().shrouded(hex) && !current_route_.steps.empty() && current_route_.steps.front() == selected_hex_) {
 		
 		const pathfind::paths& path = pathfind::paths(map_, units_,
@@ -1009,7 +1040,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		if (!path.destinations.contains(hex)) {
 			utils::string_map symbols;
 			std::string message;
-			symbols["troop"] = selected_itor->name();
+			symbols["troop"] = selected_u->name();
 			if (clicked_selfcity) {
 				symbols["city"] = cobj->name();
 				message = vgettext("Do you really command $troop to enter $city?", symbols);
@@ -1027,26 +1058,24 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			}
 		}
 		gui().unhighlight_reach();
-		const move_unit_spectator& spectator = selected_itor->get_move_spectator();
+		const move_unit_spectator& spectator = selected_u->get_move_spectator();
 		map_location stop_at_loc = move_unit_along_current_route(current_route_.steps, check_shroud, true);
 		if (expediting_ && !stop_at_loc.valid()) {
 			do_right_click(browse);
 			return false;
 		} else if (stop_at_loc.valid()) {
-			bool stop_on_city = post_move_unit(*selected_itor, stop_at_loc);
+			bool stop_on_city = post_move_unit(*selected_u, stop_at_loc);
 			if (stop_on_city || stop_at_loc == hex || spectator.get_ambusher().valid() || !spectator.get_seen_enemies().empty() || !spectator.get_seen_friends().empty()) {
 				return false;
 			}
 		}
 		// set goto
-		selected_itor->set_goto(hex);
+		selected_u->set_goto(hex);
 
 		// goto will end move automatically
 		select_hex(map_location(), false);
 		gui_->goto_main_context_menu();
 		show_menu_ = false;
-
-		end_moving(map_location());
 
 	} else {
 		if (units_.count(selected_hex_)) {
@@ -1059,34 +1088,78 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		// we block selection during attack+move (because motion is blocked)
 		select_hex(hex, browse);
 
+		// gui_->set_ea_build_indicator(hex);
+
 		// if this select a non-empty hex, display context menu
-		selected_itor = find_unit(selected_hex_);
-		if ((is_replaying || !commands_disabled) && !expediting_ && selected_itor.valid()) {
-			if (selected_itor->side() == side_num_ && selected_itor->human() || selected_itor->is_artifical()) {
-				gui_->set_attack_indicator(&*selected_itor, browse || commands_disabled);
+		selected_u = get_visible_unit(selected_hex_, viewing_team());
+		if (selected_u && (is_replaying || can_execute_command(teams_, *selected_u, browse)) && !expediting_ && !controller_.is_linger_mode()) {
+			bool show_indicator = true;
+			bool browse_indicator = false;
+			if (is_replaying || !teams_[selected_u->side() - 1].allow_intervene) {
+				bool can_action = current_can_action(*selected_u);
+				if (!can_action && tent::tower_mode() && selected_u->side() == side_num_ && selected_u->human()) {
+					can_action = true;
+				}
+				if (can_action || selected_u->is_artifical()) {
+					browse_indicator = browse || commands_disabled;
+				} else {
+					show_indicator = false;
+				}
+			} else {
+				slot_cache::selected_u = selected_u;
 			}
-/*
-			if (cobj && (hex == cobj->get_location().get_direction(map_location::NORTH))) {
-				gui_->highlight_disctrict(*cobj);
+			if (show_indicator) {
+				gui_->set_attack_indicator(selected_u, browse_indicator);
 			}
-*/
 		}
+
 		gui_->goto_main_context_menu();
 	}
 	return false;
 }
 
+bool protect_slot_cache_selected_u = false;
+class tprotect_slot_cache
+{
+public:
+	tprotect_slot_cache()
+	{
+		protect_slot_cache_selected_u = true;
+	}
+
+	~tprotect_slot_cache()
+	{
+		protect_slot_cache_selected_u = false;
+	}
+};
+
 void mouse_handler::select_hex(const map_location& hex, const bool browse) 
 {
+	if (hex == selected_hex_) {
+		return;
+	}
+
 #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
-	if (!find_unit(hex).valid()) {
+	if (!in_tip_state() && !units_.find_unit(hex)) {
 		gui_->hide_tip();
 	}
 #endif
+
+	if (slot_cache::selected_u && !hex.valid() && !in_multistep_state() && !protect_slot_cache_selected_u) {
+		slot_cache::selected_u = NULL;
+	}
+	const unit* selected_unit = units_.find_unit(selected_hex_);
+	if (selected_unit && selected_unit->task() == unit::TASK_GUARD) {
+		gui().invalidate_all();
+	}
 	selected_hex_ = hex;
 	gui().select_hex(hex);
-	gui().clear_attack_indicator();
-	gui().clear_build_indicator();
+	{
+		gui_->clear_attack_indicator();
+		gui_->clear_build_indicator();
+		gui_->set_selectable_indicator(std::set<map_location>());
+		gui_->clear_hero_indicator();
+	}
 	gui().set_route(NULL);
 	show_partial_move_ = false;
 
@@ -1133,12 +1206,29 @@ void mouse_handler::clear_undo_stack()
 	gui_->enable_menu("undo", false);
 }
 
+class end_moving_lock
+{
+public:
+	end_moving_lock(mouse_handler& handler)
+		: handler_(handler)
+	{}
+	~end_moving_lock()
+	{
+		handler_.end_moving();
+	}
+
+private:
+	mouse_handler& handler_;
+};
+
 map_location mouse_handler::move_unit_along_current_route(const std::vector<map_location>& caller_steps, bool check_shroud, bool attackmove)
 {
 	const std::vector<map_location> steps = caller_steps;
 	if (steps.empty()) {
 		return map_location();
 	}
+
+	end_moving_lock lock(*this);
 
 	begin_moving(steps.front(), steps.back());
 	const unit_map::iterator src_itor = units_.find(steps.front());
@@ -1173,7 +1263,6 @@ map_location mouse_handler::move_unit_along_current_route(const std::vector<map_
 
 	// must verify moves before if (expediting_)!!
 	if (moves == 0) {
-		end_moving(map_location());
 		if (expediting_) {
 			select_hex(steps.front(), false);
 			// gui().select_hex(steps.front());
@@ -1183,18 +1272,6 @@ map_location mouse_handler::move_unit_along_current_route(const std::vector<map_
 
 	// 移动结束,设置出征第二步
 	if (expediting_) {
-		// 1.移除临时单位
-		gui().remove_expedite_city();
-
-		// 2.告知unit_map层,可以正常访问出征城郡所在格子
-		// !!!units_.set_expediting必须是在正要处理单位有效情况下(它需要这单位有效以得到underlying_id)
-		//    当然units_.umap_recalling_因为只有一项,是可以不必按undrlying_id去得到迭代器,但或许将来有原因
-		//    使得不得不是unit有效情况下
-		units_.set_expediting();
-
-		// 2.将单位从城郡单位列表中移除
-		expediting_city_->troop_go_out(expediting_unit_);
-		
 		// 3.置标志
 		expediting_ = false;
 	}
@@ -1217,7 +1294,7 @@ map_location mouse_handler::move_unit_along_current_route(const std::vector<map_
 	return units_.find(dst).valid()? dst: map_location();
 }
 
-bool mouse_handler::attack_enemy(unit_map::iterator attacker, unit_map::iterator defender, const map_location& target_loc)
+bool mouse_handler::attack_enemy(unit& attacker, unit& defender, const map_location& target_loc)
 {
 	try {
 		return attack_enemy_(attacker, defender, target_loc);
@@ -1227,28 +1304,28 @@ bool mouse_handler::attack_enemy(unit_map::iterator attacker, unit_map::iterator
 	}
 }
 
-bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterator defender, const map_location& target_loc)
+bool mouse_handler::attack_enemy_(unit& attacker, unit& defender, const map_location& target_loc)
 {
 	//we must get locations by value instead of by references, because the iterators
 	//may become invalidated later
-	const map_location attacker_loc = attacker->get_location();
-	const map_location defender_loc = defender->get_location();
+	const map_location attacker_loc = attacker.get_location();
+	const map_location defender_loc = defender.get_location();
 
 	// std::vector<std::string> items;
 	std::vector<range_locs_pair>& attack_indicator_each = gui_->attack_indicator_each();
 
 	std::vector<battle_context> bc_vector;
 	unsigned int i, best = 0;
-	for (i = 0; i < attacker->attacks().size(); i++) {
-		const attack_type& attack = attacker->attacks()[i];
+	for (i = 0; i < attacker.attacks().size(); i++) {
+		const attack_type& attack = attacker.attacks()[i];
 		// skip weapons with cann't reach this range
-		// use target_loc instead of defender->second.get_location().
+		// use target_loc instead of defender.get_location().
 		if (std::find(attack_indicator_each[i].second.begin(), attack_indicator_each[i].second.end(), target_loc) == attack_indicator_each[i].second.end()) {
 			continue;
 		}
 		
 		if (attack.attack_weight() > 0) {
-			battle_context bc(units_, *attacker, *defender, i, -1, 0.5);
+			battle_context bc(units_, attacker, defender, i, -1, 0.5);
 			bc_vector.push_back(bc);
 			if (bc.better_attack(bc_vector[best], 0.5)) {
 				// there is maybe below weapons.
@@ -1273,7 +1350,7 @@ bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterato
 	int res = 0;
 
 	{
-		gui2::tunit_attack dlg(*gui_, units_, *attacker, *defender, bc_vector, best);
+		gui2::tunit_attack dlg(*gui_, units_, attacker, defender, bc_vector, best);
 
 		dlg.show(resources::screen->video());
 		if (dlg.get_retval() != gui2::twindow::OK) {
@@ -1285,14 +1362,11 @@ bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterato
 
 	cursor::set(cursor::NORMAL);
 	if(size_t(res) < bc_vector.size()) {
-		// decide to battle!!
-		end_moving(map_location());
-
 		commands_disabled ++;
 		const battle_context::unit_stats &att = bc_vector[res].get_attacker_stats();
 		const battle_context::unit_stats &def = bc_vector[res].get_defender_stats();
 
-		attacker->set_goto(map_location());
+		attacker.set_goto(map_location());
 		clear_undo_stack();
 
 		current_paths_ = pathfind::paths();
@@ -1302,8 +1376,8 @@ bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterato
 		select_hex(map_location(), false);
 
 		//@TODO: change ToD to be location specific for the defender
-		recorder.add_attack(*attacker, *defender, att.attack_num, def.attack_num, 
-			attacker->type_id(), defender->type_id(), att.level, 
+		recorder.add_attack(attacker, defender, att.attack_num, def.attack_num, 
+			attacker.type_id(), defender.type_id(), att.level, 
 			def.level, resources::tod_manager->turn(), resources::tod_manager->get_time_of_day());
 		rand_rng::invalidate_seed();
 
@@ -1312,7 +1386,7 @@ bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterato
 		gui_->hide_context_menu(NULL, true);
 		gui().draw();
 
-		perform_attack(*attacker, *defender, att.attack_num, def.attack_num, rand_rng::get_last_seed());
+		perform_attack(attacker, defender, att.attack_num, def.attack_num, rand_rng::get_last_seed());
 
 		gui_->goto_main_context_menu();
 		return true;
@@ -1321,7 +1395,7 @@ bool mouse_handler::attack_enemy_(unit_map::iterator attacker, unit_map::iterato
 	}
 }
 
-bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc)
+bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc, bool browse)
 {
 	//make it so that when we attack an enemy, the attacking unit
 	//is again shown in the status bar, so that we can easily
@@ -1329,15 +1403,23 @@ bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc)
 	gui().highlight_hex(map_location());
 	gui().draw(true, true);
 
-	hero* selected_hero = NULL;
+	team& current_team = teams_[tactician.side() - 1];
+	selected_hero_ = NULL;
 	{
-		gui2::ttactic dlg(*gui_, teams_, units_, heros_, tactician, tent::mode != TOWER_MODE);
+		int operate = gui2::ttactic2::BROWSE;
+		if (tent::mode == mode_tag::SCENARIO || tent::mode == mode_tag::RPG || current_team.allow_intervene) {
+			operate = gui2::ttactic2::CAST;
+		} else if (current_team.allow_active) {
+			operate = gui2::ttactic2::ACTIVE;
+		}
+
+		gui2::ttactic2 dlg(*gui_, teams_, units_, heros_, tactician, operate);
 		try {
 			dlg.show(gui_->video());
 			if (dlg.get_retval() == gui2::twindow::OK) {
-				selected_hero = dlg.get_selected_hero();
+				selected_hero_ = dlg.get_selected_hero();
 			}
-		} catch(twml_exception& e) {
+		} catch (twml_exception& e) {
 			e.show(*gui_);
 			return false;
 		}
@@ -1345,35 +1427,23 @@ bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc)
 	
 	cursor::set(cursor::NORMAL);
 
-	if (tent::mode == TOWER_MODE) {
+	if (tent::mode == mode_tag::TOWER) {
+		// in tower mode, must be enable allow_active, it cannot exist with allow_intervene
 		gui_->hide_context_menu(NULL, true);
-		if (selected_hero) {
-			do_add_active_tactic(tactician, *selected_hero, true);
+		if (selected_hero_) {
+			do_add_active_tactic(tactician, *selected_hero_, true);
 		}
 		clear();
 		gui_->goto_main_context_menu();
 		return false;
-	} else if (!selected_hero) {
+	} else if (!selected_hero_) {
 		return false;
 	}
 
-	const ttactic& t = unit_types.tactic(selected_hero->tactic_);
+	const ttactic& t = unit_types.tactic(selected_hero_->tactic_);
 	if (!t.select_one()) {
-		tactician.set_goto(map_location());
-		clear_undo_stack();
+		cast_tactic_special(tactician, NULL, browse);
 
-		current_paths_ = pathfind::paths();
-		gui().clear_attack_indicator();
-		gui().clear_build_indicator();
-		gui().unhighlight_reach();
-		select_hex(map_location(), false);
-		gui_->hide_context_menu(NULL, true);
-
-		{
-			const events::command_disabler disable_commands;
-			::cast_tactic(teams_, units_, tactician, *selected_hero, NULL);
-		}
-		gui_->goto_main_context_menu();
 	} else {
 		const std::map<int, std::vector<map_location> > touched = t.touch_units(units_, tactician);
 		// find key atomic tactic, use its touched
@@ -1381,23 +1451,43 @@ bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc)
 		for (std::map<int, std::vector<map_location> >::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
 			const std::vector<const ttactic*>& parts = t.parts();
 			const ttactic& part_tactic = *(t.parts()[it->first]);
-			if (part_tactic.apply_to() == apply_to_tag::PROVOKE || part_tactic.apply_to() == apply_to_tag::FOOD) {
+			if (ttactic::select_one(part_tactic.apply_to())) {
 				for (std::vector<map_location>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
 					selectable.insert(*it2);
 				}
 				break;
 			}
 		}
-		selected_hero_ = selected_hero;
+
 		if (selectable.size() != 1) {
 			gui_->set_selectable_indicator(selectable);
 			selecting_ = true;
 		} else {
 			unit* special = &*find_visible_unit(*selectable.begin(), teams_[tactician.side() - 1]);
-			cast_tactic_special(tactician, *special);
+			cast_tactic_special(tactician, special, browse);
 		}
 	}
 	return true;
+}
+
+void mouse_handler::clear_formationed(unit& u, bool browse)
+{
+	{
+		clear_undo_stack();
+		clear();
+
+		if (!teams_[u.side() - 1].allow_intervene) {
+			do_clear_formationed(*gui_, teams_, units_, u, 0, true);
+		} else {
+			u.insert_clear_formationed(*gui_);
+		}
+	}
+	gui_->goto_main_context_menu();
+}
+
+void mouse_handler::intervene_move(unit& u, const map_location& to, bool browse)
+{
+	set_unit_placing(u);
 }
 
 bool mouse_handler::do_formation_attack(unit& master)
@@ -1422,9 +1512,6 @@ bool mouse_handler::do_formation_attack(unit& master)
 	}
 
 	// decide to attack.
-	// format attack can execute when moving.
-	end_moving(map_location());
-	
 	cursor::set(cursor::NORMAL);
 	clear_undo_stack();
 
@@ -1444,33 +1531,23 @@ void mouse_handler::clear()
 	select_hex(map_location(), false);
 	gui_->highlight_hex(map_location());
 	gui_->hide_context_menu(NULL, true);
-
-	gui_->clear_attack_indicator();
-	gui_->clear_build_indicator();
 }
 
-void mouse_handler::cast_tactic_special(unit& tactician, unit& special)
+void mouse_handler::cast_tactic_special(unit& tactician, unit* special, bool browse)
 {
 	{
-		const events::command_disabler disable_commands;
-
 		tactician.set_goto(map_location());
 		clear_undo_stack();
 
 		clear();
 
-		::cast_tactic(teams_, units_, tactician, *selected_hero_, &special);
+		if (!teams_[tactician.side() - 1].allow_intervene) {
+			::cast_tactic(teams_, units_, tactician, *selected_hero_, special);
+		} else {
+			tactician.insert_cast_tactic(*gui_, *selected_hero_, special);
+		}
 	}
 	gui_->goto_main_context_menu();
-}
-
-void mouse_handler::exit_placing_hero()
-{
-	gui_->enable_menu("play_card", true);
-	gui_->enable_menu("endturn", true);
-
-	gui_->clear_hero_indicator();
-	placing_hero_ = NULL;
 }
 
 void mouse_handler::exit_placing_unit(bool ok)
@@ -1479,10 +1556,19 @@ void mouse_handler::exit_placing_unit(bool ok)
 	gui_->enable_menu("endturn", true);
 
 	gui_->clear_hero_indicator();
+	playing_card_ = NULL;
+	placing_hero_ = NULL;
 	placing_unit_ = NULL;
+	tasking_unit_ = NULL;
+
+	slot_cache::selected_u = NULL;
 	if (ok) {
 		clear_undo_stack();
 	}
+
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+	gui_->hide_tip();
+#endif
 }
 
 void mouse_handler::exit_building(bool ok)
@@ -1500,15 +1586,12 @@ void mouse_handler::exit_building(bool ok)
 	}
 }
 
-void mouse_handler::exit_playing_card(bool ok)
+void mouse_handler::exit_selecting(bool ok)
 {
-	gui_->enable_menu("play_card", true);
-	if (!undo_stack_.empty()) {
-		gui_->enable_menu("undo", true);
-	}
-	gui_->enable_menu("endturn", true);
+	gui_->set_selectable_indicator(std::set<map_location>());
+	selecting_ = false;
 
-	playing_card_ = NULL;
+	slot_cache::selected_u = NULL;
 	if (ok) {
 		clear_undo_stack();
 	}
@@ -1517,7 +1600,7 @@ void mouse_handler::exit_playing_card(bool ok)
 void mouse_handler::place_at(const map_location& at, hero& h)
 {
 	clear();
-	exit_placing_hero();
+	exit_placing_unit(true);
 
 	artifical* city = units_.city_from_cityno(h.city_);
 	team& current_team = teams_[h.side_];
@@ -1529,9 +1612,13 @@ void mouse_handler::place_at(const map_location& at, hero& h)
 	std::vector<const hero*> v;
 	v.push_back(&h);
 	
-	::do_recruit(units_, heros_, teams_, current_team, ut, v, *city, ut->cost() * cost_exponent / 100, true, true);
+	int cost = ut->cost();
+	if (tent::mode == mode_tag::LAYOUT) {
+		cost = 0;
+	}
+	::do_recruit(units_, heros_, teams_, current_team, ut, v, *city, cost * cost_exponent / 100, true, true, gamestate_);
 
-	do_direct_expedite(teams_, units_, map_, *city, city->reside_troops().size() - 1, at, true);
+	do_direct_expedite(teams_, units_, *city, city->reside_troops().size() - 1, at, true);
 
 	gui_->goto_main_context_menu();
 }
@@ -1539,7 +1626,7 @@ void mouse_handler::place_at(const map_location& at, hero& h)
 void mouse_handler::join_in(const map_location& at, hero& h)
 {
 	clear();
-	exit_placing_hero();
+	exit_placing_unit(true);
 
 	artifical* city = units_.city_from_cityno(h.city_);
 	unit* u = units_.find_unit(at);
@@ -1551,13 +1638,27 @@ void mouse_handler::join_in(const map_location& at, hero& h)
 void mouse_handler::direct_move_unit(unit& u, const map_location& from, const map_location& to)
 {
 	clear();
-	team& current_team = teams_[u.side() - 1];
-	do_bomb(*gui_, current_team, true);	
 
-	do_direct_move(teams_, units_, map_, u, from, to, true);
+	team& current_team = teams_[u.side() - 1];
+	if (!current_team.allow_intervene) {
+		do_bomb(*gui_, current_team, true);	
+		do_direct_move(teams_, units_, map_, u, to, 0, true);
+	} else {
+		u.insert_intervene_move(*gui_, to);
+	}
 
 	exit_placing_unit(true);
+	gui_->invalidate_all();
+	gui_->goto_main_context_menu();
+}
 
+void mouse_handler::do_task(unit& u, const map_location& at)
+{
+	clear();
+
+	do_set_task(units_, u, unit::TASK_GUARD, at, true);
+
+	exit_placing_unit(true);
 	gui_->invalidate_all();
 	gui_->goto_main_context_menu();
 }
@@ -1596,14 +1697,52 @@ bool mouse_handler::interior(bool browse, unit& u)
 			return false;
 		}
 
-		if (!browse && city->mayor() != mayor) {
-			recorder.add_interior(*city);
+		if (!browse) {
+			if (city->mayor() != mayor) {
+				recorder.add_interior(*city);
+			}
+			if (city->get_state(ustate_tag::DEPUTE) != dlg.get_depute()) {
+				bool value = dlg.get_depute();
+				city->set_state(ustate_tag::DEPUTE, value);
+
+				std::map<ustate_tag::state_t, bool> states;
+				states.insert(std::make_pair(ustate_tag::DEPUTE, value));
+				recorder.add_set_states(*city, states);
+
+				gui_->refresh_access_troops(city->side() - 1, game_display::REFRESH_DRAW, (unit*)city);
+			}
 		}
+		
 	}
 
 	cursor::set(cursor::NORMAL);
 	gui_->goto_main_context_menu();
 	return true;
+}
+
+void mouse_handler::build_ea(const map_location& loc)
+{
+	clear();
+
+	team& t = current_team();
+	int cost_exponent = t.cost_exponent();
+	const unit_type* ut = NULL;
+	{
+		gui2::tbuild_ea dlg(*gui_, teams_, units_, heros_, map_, t, cost_exponent, loc);
+		try {
+			dlg.show(gui_->video());
+			if (dlg.get_retval() == gui2::twindow::OK) {
+				ut = dlg.get_selected_ut();
+			}
+		} catch(twml_exception& e) {
+			e.show(*gui_);
+			return;
+		}
+		if (ut) {
+			resources::controller->do_build(t, NULL, ut, loc);
+		}
+	}
+	gui_->goto_main_context_menu();
 }
 
 void mouse_handler::perform_attack(unit& attacker, unit& defender,
@@ -1637,19 +1776,20 @@ void mouse_handler::perform_attack(unit& attacker, unit& defender,
 		throw;
 	}
 
-	unit_map::iterator acku = units_.find(to_locs.first);
-	if (acku != units_.end()) {
+	unit* acku = units_.find_unit(to_locs.first);
+	if (acku) {
 		dialogs::advance_unit(*acku);
 	}
-	unit_map::iterator defu = units_.find(to_locs.second);
-	if (defu != units_.end()) {
-		bool defender_human = teams_[defu->side()-1].is_human();
+	unit* defu = units_.find_unit(to_locs.second);
+	if (defu) {
+		bool defender_human = teams_[defu->side() - 1].is_human();
 		dialogs::advance_unit(*defu, !defender_human);
 	}
-	// 在此处判断是否要灰掉
-	unit_map::iterator itor = units_.find(to_locs.first);
-	if (itor.valid()) {
-		gui().refresh_access_troops(itor->side() - 1, game_display::REFRESH_DISABLE, &*itor);
+
+	if (tent::turn_based) {
+		if (acku && teams_[acku->side() - 1].is_human()) {
+			gui_->resort_access_troops(*acku);
+		}
 	}
 
 	resources::controller->check_victory();
@@ -1674,11 +1814,11 @@ std::set<map_location> mouse_handler::get_adj_enemies(const map_location& loc, i
 
 // @expedite_city: city on expedite
 // @u: index on reside troop of expediting city
-void mouse_handler::set_expedite(artifical* expedite_city, int u)
+void mouse_handler::set_expedite(artifical* expedite_city, unit& u)
 {
 	expediting_ = true;
 	expediting_city_ = expedite_city;
-	expediting_unit_ = u;
+	expediting_unit_ = &u;
 
 	// 先关闭掉先前的上下文菜单
 	gui_->hide_context_menu(NULL, true);
@@ -1686,10 +1826,9 @@ void mouse_handler::set_expedite(artifical* expedite_city, int u)
 	// 具体执行
 	selected_hex_ = expedite_city->get_location();
 
-	unit& un = *expedite_city->reside_troops()[u];
-	const map_location	&hex = expedite_city->get_location();
+	const map_location& hex = expedite_city->get_location();
 
-	bool teleport = un.get_ability_bool("teleport");
+	bool teleport = u.get_ability_bool("teleport");
 
 	// 放置一个临时单位
 	gui().place_expedite_city(*expedite_city);
@@ -1697,7 +1836,7 @@ void mouse_handler::set_expedite(artifical* expedite_city, int u)
 	unit_map::iterator iter = find_unit(hex);
 
 	// current_paths_ = paths(map_, units_, hex, teams_, false, teleport, viewing_team(), path_turns_);
-	current_paths_ = pathfind::paths(map_, units_, un, hex, teams_, false, teleport, viewing_team(), path_turns_);
+	current_paths_ = pathfind::paths(map_, units_, u, hex, teams_, false, teleport, viewing_team(), path_turns_);
 	gui().highlight_reach(current_paths_);
 	// the highlight now comes from selection
 	// and not from the mouseover on an enemy
@@ -1812,17 +1951,34 @@ void mouse_handler::set_hero_placing(hero* h)
 
 void mouse_handler::set_unit_placing(unit& u)
 {
-	gui_->set_placable_indicator(u);
-
-	clear();
+	{
+		tprotect_slot_cache lock;
+		clear();
+	}
 	gui_->hide_tip();
 
+	gui_->set_placable_indicator(u);
 	placing_unit_ = &u;
 	if (placing_unit_) {
 		std::stringstream strstr, img;
 		img << u.master().image() << "~SCALE(32, 40)";
 		strstr << help::tintegrate::generate_img(img.str());
 		strstr << "  " << _("Select a grid to move at");
+		gui_->show_tip(strstr.str(), map_location::null_location, true);
+	}
+}
+
+void mouse_handler::set_unit_tasking(unit& u)
+{
+	clear();
+	gui_->hide_tip();
+
+	tasking_unit_ = &u;
+	if (tasking_unit_) {
+		std::stringstream strstr, img;
+		img << u.master().image() << "~SCALE(32, 40)";
+		strstr << help::tintegrate::generate_img(img.str());
+		strstr << "  " << dgettext("wesnoth-lib", "Select a grid to guard at");
 		gui_->show_tip(strstr.str(), map_location::null_location, true);
 	}
 }

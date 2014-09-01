@@ -504,61 +504,6 @@ msgstr ""
 msgid "Bots"
 msgstr ""
 
-#. [section]: id=introduction
-#. [topic]: id=..introduction
-#: data/core/help.cfg:21 data/core/help.cfg:87
-msgid "Introduction"
-msgstr ""
-
-#. [section]: id=gameplay
-#. [topic]: id=..gameplay
-#: data/core/help.cfg:27 data/core/help.cfg:135
-msgid "Gameplay"
-msgstr ""
-
-#. #-#-#-#-#  wesnoth.wml.pot (PACKAGE VERSION)  #-#-#-#-#
-#. [section]: id=traits_section
-#. [topic]: id=..traits_section
-#: data/core/help.cfg:33 data/core/help.cfg:356 src/menu_events.cpp:860
-msgid "Traits"
-msgstr ""
-
-#. [section]: id=units
-#. [topic]: id=..units
-#: data/core/help.cfg:42 data/core/help.cfg:93
-msgid "Units"
-msgstr ""
-
-#. [section]: id=abilities_section
-#. [topic]: id=..abilities_section
-#: data/core/help.cfg:51 data/core/help.cfg:99
-msgid "Abilities"
-msgstr ""
-
-#. [section]: id=weapon_specials
-#. [topic]: id=..weapon_specials
-#: data/core/help.cfg:59 data/core/help.cfg:108
-msgid "Weapon Specials"
-msgstr ""
-
-#. #-#-#-#-#  wesnoth.wml.pot (PACKAGE VERSION)  #-#-#-#-#
-#. [section]: id=factions_section
-#: data/core/help.cfg:67 src/help.cpp:1295 src/help.cpp:1297
-msgid "Factions"
-msgstr ""
-
-#. [section]: id=terrains
-#. [topic]: id=..terrains
-#: data/core/help.cfg:74 data/core/help.cfg:476
-msgid "Terrains"
-msgstr ""
-
-#. [section]: id=commands
-#. [topic]: id=..commands
-#: data/core/help.cfg:81 data/core/help.cfg:778
-msgid "Commands"
-msgstr ""
-
 #. [topic]: id=..abilities_section
 #: data/core/help.cfg:102
 msgid ""
@@ -574,38 +519,6 @@ msgid ""
 "Some weapons have special features that increase the effectiveness of "
 "attacking with them.\n"
 "\n"
-msgstr ""
-
-#. [topic]: id=.unknown_unit
-#: data/core/help.cfg:118
-msgid "Unknown Unit"
-msgstr ""
-
-#. [topic]: id=.unknown_unit
-#: data/core/help.cfg:121
-msgid ""
-"\n"
-"\n"
-"This unit is unknown for the moment. You must discover it in the game to be "
-"allowed to see its description."
-msgstr ""
-
-#. [topic]: id=introduction_topic
-#: data/core/help.cfg:126
-msgid "Overview"
-msgstr ""
-
-#. [topic]: id=introduction_topic
-#: data/core/help.cfg:129
-msgid ""
-"\n"
-"\n"
-"<italic>text='Battle for Wesnoth'</italic> is a turn-based fantasy strategy "
-"game somewhat unusual among modern strategy games. While other games strive "
-"for complexity, Battle for Wesnoth strives for simplicity of both rules and "
-"gameplay. This does not make the game simple, however — from these simple "
-"rules arise a wealth of strategy, making the game easy to learn but a "
-"challenge to master."
 msgstr ""
 
 #. [topic]: id=fundamentals
@@ -645,34 +558,6 @@ msgid ""
 "will be shown explaining each item. This is especially useful when you "
 "encounter new <ref>dst='..abilities_section' text='abilities'</ref> for the "
 "first time."
-msgstr ""
-
-#. [topic]: id=about_game
-#: data/core/help.cfg:152
-msgid "About the Game"
-msgstr ""
-
-#. [topic]: id=about_game
-#: data/core/help.cfg:153
-msgid ""
-"The game takes place over a series of battles, called scenarios. Each "
-"scenario pits your troops against the troops of one or more adversaries. You "
-"can play against the computer, or with friends who each take turns sitting "
-"at the computer (hotseat play). If your computer is connected to a computer "
-"network, you can also play against other people connected to that network. "
-"If your computer has a connection to the Internet, you can play against "
-"other people across the Internet."
-msgstr ""
-
-#. [topic]: id=about_game
-#: data/core/help.cfg:155
-msgid ""
-"\n"
-"\n"
-"Campaigns consist of multiple scenarios that follow on from each other, "
-"telling a story. In a campaign, you often need to play more carefully, "
-"preserving your best troops so that they can be used again in later "
-"scenarios in the campaign."
 msgstr ""
 
 #. [topic]: id=victory_and_defeat
@@ -4598,15 +4483,15 @@ msgstr ""
 
 #. [server]
 #: data/game_config.cfg:4
-msgid "Official Wesnoth Server"
-msgstr ""
-
 msgid "Official Kingdom Server"
 msgstr ""
 
 #. [server]
 #: data/game_config.cfg:8 data/game_config.cfg:12
-msgid "Alternate Wesnoth Server"
+msgid "Alternate Kingdom Server"
+msgstr ""
+
+msgid "Common LAN Server"
 msgstr ""
 
 #. [language]
@@ -5643,13 +5528,6 @@ msgstr ""
 
 #: src/actions.cpp:1285
 msgid "petrified"
-msgstr ""
-
-#: src/actions.cpp:2494
-msgid "Ambushed!"
-msgstr ""
-
-msgid "Alerted!"
 msgstr ""
 
 #: src/actions.cpp:2501
@@ -6693,10 +6571,6 @@ msgstr ""
 
 #: src/help.cpp:3050
 msgid "corrupted original file"
-msgstr ""
-
-#: src/help.cpp:3144
-msgid "The Battle for Wesnoth Help"
 msgstr ""
 
 #: src/help.cpp:3200
@@ -8677,9 +8551,6 @@ msgstr ""
 msgid "name^Troop"
 msgstr ""
 
-msgid "troop^Type"
-msgstr ""
-
 msgid "destination city"
 msgstr ""
 
@@ -9006,9 +8877,6 @@ msgstr ""
 msgid "There hasn't valid grid to build that artifical."
 msgstr ""
 
-msgid "Must exist tow keep at least before building wall."
-msgstr ""
-
 msgid "There are no hero available to recruit"
 msgstr ""
 
@@ -9090,23 +8958,10 @@ msgstr ""
 msgid "$username is reserved! Please modify to your username. To modify: Enter your username in \"Player profile\" Setting."
 msgstr ""
 
-msgid "Upload successfully!"
-msgstr ""
-
 #
 # http server
 #
-msgid "Invalid access! Please check your $server login information. "
-"To set up: Press $account in \"Player profile\" Setting."
-msgstr ""
-
-msgid "Invalid access! pre_kingdom_version table on $server isn't ready."
-msgstr ""
-
 msgid "$file maybe deleted by server. Download fail!"
-msgstr ""
-
-msgid "Had uploaded pass that create at $create, cannot upload again!"
 msgstr ""
 
 msgid "$response\n\nPlease check setting of BBS Server!"
@@ -9119,9 +8974,6 @@ msgid "No avater on $server. You can upload $middle and $small to custom visuali
 msgstr ""
 
 msgid "Download $name fail! $name format (size: $size, type: png), please check uploaded file on $server."
-msgstr ""
-
-msgid "Receive unkonwn data!\n\nPlease check if your version is the newest."
 msgstr ""
 
 msgid "Register success!"
@@ -9211,18 +9063,6 @@ msgstr ""
 msgid "lightning"
 msgstr ""
 
-msgid "Scenario"
-msgstr ""
-
-msgid "RPG"
-msgstr ""
-
-msgid "Tower"
-msgstr ""
-
-msgid "Unknown"
-msgstr ""
-
 #
 # new campaign
 #
@@ -9233,4 +9073,7 @@ msgid "No city you holded"
 msgstr ""
 
 msgid "Miss"
+msgstr ""
+
+msgid "Legend of Mythology"
 msgstr ""

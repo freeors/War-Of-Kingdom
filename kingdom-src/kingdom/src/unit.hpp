@@ -27,7 +27,13 @@ class game_display;
 class game_state;
 class vconfig;
 class team;
+class play_controller;
 
+#define HIDDEN_TICKS		-3
+#define NONE_TICKS			-2
+#define RESIDE_TICKS		-1
+#define EXPEDITE_TICKS		1
+#define NONACTOR_TICKS		200000000 // non-actor ticks. they place to bh together. 
 #define BIT_2_MASK(bit)		(1 << (bit))
 
 class tscenario_env 
@@ -192,13 +198,15 @@ struct tactic_fields {
 	int32_t hide_turns_;	\
 	int32_t alert_turns_;	\
 	int32_t provoked_turns_;	\
+	int32_t hot_turns_;	\
 	int32_t tactic_hero_;	\
 	int32_t task_;	\
 	int32_t especial_; \
-	int32_t human_;	\
-	int32_t random_traits_;	\
-	int32_t resting_;	\
-	int32_t modified_;	\
+	int32_t bools_;	\
+	int32_t ticks_;	\
+	int32_t reserve_;	\
+	int32_t tactic_degree_;	\
+	int32_t signature_;	\
 	unit_segment tactics_;	\
 	unit_segment heros_army_;	\
 	unit_segment type_;	\
@@ -226,10 +234,17 @@ extern uint8_t mask0_2bit[4];
 #define unit_feature_set(i, v)	(feature_[(i) >> 2] = (feature_[(i) >> 2] & mask0_2bit[(i) % 4]) | (((v) & 0x3) << (((i) % 4) << 1)))
 #define unit_feature_set2(u, i, v)	((u).feature_[(i) >> 2] = ((u).feature_[(i) >> 2] & mask0_2bit[(i) % 4]) | (((v) & 0x3) << (((i) % 4) << 1)))
 
+bool actor_valid();
+bool actor_can_action(const unit_map& units);
+bool actor_can_continue_action(const unit_map& units, int actor_side);
+bool current_can_action(const unit& u);
+int calculate_end_ticks();
+
 class unit: public unit_merit
 {
 public:
 	static std::vector<std::pair<int, unit*> > null_int_unitp_pair;
+	static map_location pack_base_loc;
 	/**
 	 * Clear the unit status cache for all units. Currently only the hidden
 	 * status of units is cached this way.
@@ -238,15 +253,18 @@ public:
 	static bool draw_desc_;
 	static bool ignore_pack;
 	static bool dont_wander;
+	static unit* actor;
+	static size_t global_signature;
+
 
 	friend struct unit_movement_resetter;
 	// Copy constructor
 	unit(const unit& u);
 	/** Initilizes a unit from a config */
-	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const config& cfg, bool use_traits=false, game_state* state = 0, bool artifical = false);
-	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uint8_t* mem, bool use_traits=false, game_state* state = 0, bool artifical = false);
+	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, const config& cfg, bool use_traits=false, bool artifical = false);
+	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uint8_t* mem, bool use_traits=false, bool artifical = false);
 	/** Initializes a unit from a unit type */
-	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_heros_pair& t, int cityno, bool real_unit, bool artifical = false);
+	unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, type_heros_pair& t, int cityno, bool real_unit, bool artifical);
 	virtual ~unit();
 	unit& operator=(const unit&);
 
@@ -254,6 +272,7 @@ public:
 	virtual void advance_to(const unit_type *t, bool use_traits = false, game_state *state = 0);
 	const std::vector<std::string>& advances_to() const;
 
+	void do_pack(const gamemap& map);
 	void pack_to(const unit_type* t);
 	void change_to(game_display& gui, const unit_type* t);
 
@@ -288,10 +307,14 @@ public:
 	bool can_formation_attack() const;
 	bool formation_attack_enable() const;
 
+	bool human_team_can_ai() const;
+
 	int hitpoints() const { return hit_points_; }
 	int max_hitpoints() const { return max_hit_points_; }
 	int experience() const { return experience_; }
 	int max_experience() const { return max_experience_; }
+	int ticks() const { return ticks_; }
+	int max_ticks() const { return max_ticks_; }
 	int level() const { return level_; }
 	void remove_movement_ai();
 	void remove_attacks_ai();
@@ -308,7 +331,6 @@ public:
 	SDL_Color xp_color() const;
 	/** Set to true for some scenario-specific units which should not be renamed */
 	int side() const { return side_; }
-	std::string side_id() const;
 	const std::string& team_color() const { return flag_rgb_; }
 	unit_race::GENDER gender() const { return gender_; }
 	void set_side(unsigned int new_side);
@@ -319,6 +341,7 @@ public:
 	bool is_artifical() const { return artifical_; } 
 	bool is_city() const { return artifical_ && can_reside_; } 
 	bool is_soldier() const { return hero::is_soldier(master_->number_); }
+	bool hdata_variable() const;
 	int cityno() const { return cityno_; } 
 	void set_cityno(int new_cityno);
 	void calculate_5fields();
@@ -332,6 +355,7 @@ public:
 	bool can_reside() const { return can_reside_; }
 	bool base() const { return base_; }
 	bool wall() const { return wall_; }
+	bool wall2() const;
 	bool fort() const { return fort_; }
 	bool transport() const { return transport_; }
 	bool can_stand(const unit& mover) const;
@@ -351,17 +375,29 @@ public:
 
 	bool uncleared() const;
 	bool healable() const;
-	bool incapacitated() const { return get_state(STATE_PETRIFIED); }
+	bool incapacitated() const { return get_state(ustate_tag::PETRIFIED); }
 	int total_movement() const { return max_movement_; }
 	int movement_left() const { return (movement_ == 0 || incapacitated()) ? 0 : movement_; }
 	void set_movement(int moves);
-	void set_user_end_turn(bool value=true) { end_turn_ = value; }
-	bool user_end_turn() const { return end_turn_; }
+	bool can_move() const;
+
+	bool consider_ticks() const;
+	void set_ticks(int val) { ticks_ = val; }
+	int increase_ticks(int inc, int min, bool refresh_gui);
+	int drawn_ticks() const { return drawn_ticks_; }
+	void set_drawn_ticks(int val) { drawn_ticks_ = val; }
+	int ticks_increase() const { return ticks_increase_; }
+	int percent_ticks() const;
+	bool is_resided() const;
+	int forward_ticks(int val) const;
+	int backward_ticks(int val) const;
+
 	int attacks_left() const { return (attacks_left_ == 0 || incapacitated()) ? 0 : attacks_left_; }
 	int attacks_total() const { return max_attacks_; }
 	void set_attacks(int left);
-	virtual bool new_turn();
-	virtual void end_turn();
+	void new_turn_core();
+	virtual bool new_turn(play_controller& controller, int random);
+	virtual void end_turn(bool normal);
 	virtual void new_scenario();
 	/** Called on every draw */
 	void refresh();
@@ -369,31 +405,48 @@ public:
 	void new_turn_tactics();
 	void terminate_noble(bool show_message) const;
 
+	int tactic_degree() const { return tactic_degree_; }
+	void set_tactic_degree(int degree) { tactic_degree_ = degree; }
+	bool tactic_existed() const;
+	bool can_cast_tactic() const;
+	int max_tactic_point() const;
+	hero* max_tactic_hero() const;
+	int percent_tactic_degree() const;
+	int increase_tactic_degree(int inc);
+	std::pair<hero*, int> calculate_tactic_score() const;
+	bool judge_and_cast_tactic(int threshold);
+	int hot_level() const;
+	int tactic_degree_increment_per_turn() const;
+
 	void set_hitpoints(int hitpoints) { hit_points_ = hitpoints; }
 	bool take_hit(int damage) { hit_points_ -= damage; return hit_points_ <= 0; }
 	void heal(int amount);
 	void heal_all() { hit_points_ = max_hitpoints(); }
 	bool resting() const { return resting_; }
 	virtual void set_resting(bool rest) { resting_ = rest; }
+	bool no_enter_resting() const;
 	void increase_loyalty(int inc);
 	void set_loyalty(int level, bool fixed = false);
 	bool has_less_loyalty(int loyalty, const hero& leader);
 	bool consider_loyalty() const;
 
 	void increase_feeling(int inc);
+	void goto_hate_if(const team& new_team, const hero& original_leader, int random);
+	std::pair<hero*, hero*> exist_hate(const unit& target) const;
 
+	int calculate_clear_formated_cost() const;
 	bool increase_activity(int inc, bool adjusting = true);
 
 	const std::map<std::string,std::string> get_states() const;
-	bool get_state(const std::string& state) const;
-	void set_state(const std::string &state, bool value);
-	enum state_t { STATE_MIN = 0, STATE_SLOWED = STATE_MIN, STATE_BROKEN, STATE_POISONED, STATE_PETRIFIED,
-		STATE_UNCOVERED, STATE_FORMATION_ATTACKED, STATE_LEGERITIED, STATE_BLOCKED, STATE_COUNT, STATE_UNKNOWN = -1 };
-	void set_state(state_t state, bool value);
-	bool get_state(state_t state) const;
-	static state_t get_known_boolean_state_id(const std::string &state);
-	static std::map<std::string, state_t> get_known_boolean_state_names();
+	void set_state(ustate_tag::state_t state, bool value);
+	bool get_state(ustate_tag::state_t state) const;
+	static ustate_tag::state_t find_state(const std::string& id);
 
+	bool is_robber() const;
+
+	// used to unit_field_t's bools field.
+	enum {FIELD_HUMAN = 0x1, FIELD_RESTING = 0x2};
+	
 	bool has_moved() const { return movement_left() != total_movement(); }
 	bool has_goto() const { return get_goto().valid(); }
 	bool emits_zoc() const { return emit_zoc_ && !incapacitated();}
@@ -450,8 +503,9 @@ public:
 	bool lack_of_food() const;
 	int max_food() const;
 	int value_consider_food(int value, bool decrease = true) const;
-	void input_food(unit& tactician);
+	void do_revival(unit& tactician);
 	bool consider_food() const;
+	bool alert_food() const;
 
 	int block_turns() const { return block_turns_; }
 	void set_block_turns(int turns) { block_turns_ = turns; }
@@ -463,27 +517,32 @@ public:
 	void do_provoked(unit& tactician, int turns);
 	int provoked_turns() const { return provoked_turns_; }
 	void set_provoked_turns(unit& tactician, int turns);
+	int max_hot_turns() const;
+	int hot_turns() const { return hot_turns_; }
+	void set_hot_turns(int turns);
 	// it is search tactician using provoked from golbal provoke_cache.
 	void set_provoked_turns_next(const unit& provoked, int turns);
 	void remove_from_provoke_cache();
 	hero* tactic_hero() const { return tactic_hero_; }
 	void set_tactic_hero(hero& h);
-	void remove_from_tactic_cache();
+	void insert_cast_tactic(game_display& disp, hero& h, unit* special);
+	void insert_clear_formationed(game_display& disp);
+	void insert_intervene_move(game_display& disp, const map_location& to);
+	void remove_from_slot_cache(int pos = -1);
 	bool human() const { return human_; }
 	void set_human(bool val);
 
-	enum {TASK_NONE, TASK_BACK, TASK_TRADE, TASK_TRANSFER, TASK_TRANSPORT};
+	enum {TASK_NONE, TASK_BACK, TASK_TRADE, TASK_TRANSFER, TASK_TRANSPORT, TASK_STATION, TASK_GUARD};
 	int task() const { return task_; }
-	void set_task(int t) { task_ = t; }
-
-	bool verifying() const { return verifying_; }
-	void set_verifying(bool verifying = true) { verifying_ = verifying; }
+	void set_task(int t);
+	void set_guard(const map_location& loc);
+	void set_guard2(const map_location& loc);
+	void remove_from_guard_cache();
 
 	bool packed() const;
 
 	const map_location &get_location() const { return loc_; }
 	const std::set<map_location>& get_touch_locations() const { return touch_locs_; }
-	const std::set<map_location>& get_overlapped_locations() const { return overlapped_locs_; }
 	const std::set<map_location::DIRECTION>& get_touch_dirs() const;
 	/** To be called by unit_map or for temporary units only. */
 	virtual void set_location(const map_location &loc);
@@ -502,6 +561,7 @@ public:
 	bool has_guard_center() const;
 	int tactic_effect(int type, const std::string& field) const;
 
+	size_t redraw_counter() const { return redraw_counter_; }
 	void set_hidden(bool state);
 	bool get_hidden() const { return hidden_; }
 	bool is_flying() const { return flying_; }
@@ -533,6 +593,7 @@ public:
 	virtual void issue_decree(const config& effect) {}
 
 	void apply_tactic(const ttactic* contain, const ttactic& effect, int part = 0, int turn = -1);
+	bool select_tactic_can_effect(const unit& tactician, const ttactic& t);
 
 	/** States for animation. */
 	enum STATE {
@@ -568,9 +629,10 @@ public:
 	bool has_ability_type(const std::string& ability) const;
 
 	void apply_modifications();
-	void generate_traits(bool musthaveonly=false, game_state* state = 0);
+	void generate_traits(bool musthaveonly, game_state* state);
 
 	void to_unstage();
+	bool unstage_if_member(const hero& leader);
 
 	// Only see_all=true use caching
 	bool invisible(const map_location& loc, bool see_all=true) const;
@@ -615,10 +677,16 @@ public:
 	 */
 	void clear_visibility_cache() const { invisibility_cache_.clear(); }
 
+	bool loc_is_align_with(const map_location& relative, bool x) const;
+	bool compare_action_order(const unit& that) const;
+
+	bool is_capital(const std::vector<team>& teams) const;
+
+public:
 	uint16_t leadership_;
 	uint16_t force_;
 	uint16_t intellect_;
-	uint16_t politics_;
+	uint16_t spirit_;
 	uint16_t charm_;
 	uint8_t feature_[HEROS_FEATURE_M2BYTES];
 	uint16_t adaptability_[HEROS_MAX_ARMS];
@@ -647,6 +715,9 @@ public:
 	size_t adjacent_size_3_;
 
 	mutable std::vector<unit*> resist_helper_;
+	size_t signature;
+	bool ticks_adjusting;
+
 protected:
 	bool internal_matches_filter(const vconfig& cfg,const map_location& loc,
 		bool use_flat_tod) const;
@@ -666,7 +737,6 @@ protected:
 	config cfg_;
 	map_location loc_;
 	std::set<map_location> touch_locs_;
-	std::set<map_location> overlapped_locs_;
 
 	std::vector<std::string> advances_to_;
 	std::string type_;
@@ -684,9 +754,12 @@ protected:
 	int max_hit_points_;
 	int experience_;
 	int max_experience_;
+	int ticks_;
+	int max_ticks_;
+	int drawn_ticks_;
+	int ticks_increase_; // tactic result to increase
 	int level_;
 	int upkeep_;
-	bool random_traits_;
 	unit_type::ALIGNMENT alignment_;
 	std::string flag_rgb_;
 	std::string image_mods_;
@@ -718,8 +791,8 @@ protected:
 	int max_movement_;
 	mutable std::map<t_translation::t_terrain, int> movement_costs_; // movement cost cache
 	mutable defense_cache defense_mods_; // defense modifiers cache
-	bool end_turn_;
 	bool resting_;
+	int tactic_degree_;
 	int attacks_left_;
 	int max_attacks_;
 
@@ -728,15 +801,13 @@ protected:
 	int hide_turns_;
 	int alert_turns_;
 	int provoked_turns_;
+	int hot_turns_;
 	hero* tactic_hero_;
 	bool human_;
-	bool verifying_;
 
 	int task_;
 
-	std::set<std::string> states_;
-	std::vector<bool> known_boolean_states_;
-	static std::map<std::string, state_t> known_boolean_state_names_;
+	int32_t states_;
 	bool emit_zoc_;
 	bool cancel_zoc_;
 	STATE state_;
@@ -822,7 +893,6 @@ protected:
 	SDL_Rect attackable_rect_;
 };
 
-enum {NONE_MODE, RPG_MODE, TOWER_MODE};
 enum {NO_DUEL, RANDOM_DUEL, ALWAYS_DUEL};
 namespace tent {
 struct tlobby_side_param {
@@ -837,10 +907,16 @@ extern int human_leader_number;
 extern int human_count;
 extern int ai_count;
 extern int employ_count;
-extern int mode;
+extern mode_tag::tmode mode;
+extern std::pair<std::string, int> subcontinent;
 extern int turns;
 extern int duel;
-extern void reset();
+extern bool turn_based;
+
+void reset();
+bool tower_mode();
+std::string subcontient_to_str();
+void subcontient_from_str(const std::string& str);
 }
 
 /** Object which temporarily resets a unit's movement */
@@ -906,18 +982,83 @@ private:
 
 bool extract_hero(unit_map& units, const hero& h);
 
-unit* loc_in_alert_area(unit& u, const map_location& from, const map_location& to);
+unit* loc_in_alert_area(const std::vector<team>& teams, unit& u, const map_location& from, const map_location& to);
 extern bool provoke_cache_ready;
 std::string provoke_cache_2_str();
 void str_2_provoke_cache(unit_map& units, hero_map& heros, const std::string& str);
 unit* find_provoke(const unit* provoked);
 
-namespace tactic_cache {
+namespace slot_cache {
 
-extern std::vector<unit*> cache;
+struct tslot
+{
+	enum {NONE, ACTIVE_TACTIC, CAST_TACTIC, CLEAR_FORMATIONED, MOVE};
+	tslot(int type, unit* u)
+		: type(type)
+		, u(u)
+		, tactic(NULL, NULL)
+		, move(map_location::null_location)
+	{}
+
+	int cost() const;
+	std::string label() const;
+
+	int type;
+	unit* u;
+	
+	struct tcast_tactic {
+		tcast_tactic(hero* h, unit* special)
+			: h(h)
+			, special(special)
+		{}
+
+		hero* h;
+		unit* special;
+	};
+	tcast_tactic tactic;
+
+	struct tmove {
+		tmove(const map_location& to)
+			: to(to)
+		{}
+
+		map_location to;
+	};
+	tmove move;
+};
+
+extern std::vector<tslot> cache;
 extern bool ready;
+extern unit* selected_u;
+
 std::string cache_2_str();
 void str_2_cache(unit_map& units, hero_map& heros, const std::string& str);
+bool find(const unit& u);
+void insert_active_tactic(unit& u);
+void insert_cast_tactic(unit& tactician, hero& h, unit* special);
+void insert_clear_formationed(unit& u);
+void insert_intervene_move(unit& u, const map_location& to);
+int slot_cost(const slot_cache::tslot& slot);
+
+}
+
+namespace guard_cache {
+
+struct tguard {
+	tguard(const map_location& loc = map_location::null_location, int radius = -1)
+		: loc(loc),
+		radius(radius)
+	{}
+	map_location loc;
+	int radius;
+};
+extern tguard null_guard;
+extern std::map<unit*, tguard> cache;
+extern bool ready;
+
+std::string cache_2_str();
+void str_2_cache(unit_map& units, hero_map& heros, const std::string& str);
+tguard& find(const unit& u);
 
 }
 

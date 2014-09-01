@@ -99,11 +99,12 @@ namespace gui2 {
 
 REGISTER_DIALOG(recruit)
 
-trecruit::trecruit(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, int cost_exponent, bool rpg_mode)
+trecruit::trecruit(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, artifical& city, int cost_exponent, bool rpg_mode)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
+	, gamestate_(gamestate)
 	, current_team_(teams_[city.side() - 1])
 	, max_level_(city.level())
 	, city_(city)
@@ -192,8 +193,8 @@ void trecruit::refresh_tooltip(twindow& window)
 		label = find_widget<tlabel>(&window, "tip_intellect", false, true);
 		label->set_label("");
 
-		// politics
-		label = find_widget<tlabel>(&window, "tip_politics", false, true);
+		// spirit
+		label = find_widget<tlabel>(&window, "tip_spirit", false, true);
 		label->set_label("");
 
 		// charm
@@ -219,7 +220,7 @@ void trecruit::refresh_tooltip(twindow& window)
 	}
 	std::sort(v.begin(), v.end(), sort_recruit(t));
 	type_heros_pair pair(t, v);
-	unit temp(units_, heros_, teams_, pair, city_.cityno(), false);
+	unit temp(units_, heros_, teams_, gamestate_, pair, city_.cityno(), false, false);
 
 	// refresh to gui
 	tcontrol* control = find_widget<tcontrol>(&window, "master_png", false, true);
@@ -259,9 +260,9 @@ void trecruit::refresh_tooltip(twindow& window)
 	label = find_widget<tlabel>(&window, "tip_intellect", false, true);
 	label->set_label(lexical_cast<std::string>(temp.intellect_));
 
-	// politics
-	label = find_widget<tlabel>(&window, "tip_politics", false, true);
-	label->set_label(lexical_cast<std::string>(temp.politics_));
+	// spirit
+	label = find_widget<tlabel>(&window, "tip_spirit", false, true);
+	label->set_label(lexical_cast<std::string>(temp.spirit_));
 
 	// charm
 	label = find_widget<tlabel>(&window, "tip_charm", false, true);
@@ -457,12 +458,12 @@ void trecruit::catalog_page(twindow& window, int catalog, bool swap)
 
 			str.str("");
 			if (h->activity_ < HEROS_FULL_ACTIVITY) {
-				activity_ajdusted = 1 * h->politics_ * h->activity_ / HEROS_FULL_ACTIVITY;
+				activity_ajdusted = 1 * h->spirit_ * h->activity_ / HEROS_FULL_ACTIVITY;
 				str << fxptoi9(activity_ajdusted) << "/";
 			}
-			str << fxptoi9(h->politics_);
+			str << fxptoi9(h->spirit_);
 			table_item["label"] = str.str();
-			table_item_item.insert(std::make_pair("politics", table_item));
+			table_item_item.insert(std::make_pair("spirit", table_item));
 
 			str.str("");
 			if (h->activity_ < HEROS_FULL_ACTIVITY) {

@@ -739,7 +739,7 @@ void game::process_message(simple_wml::document& data, const player_map::iterato
 
 bool game::is_legal_command(const simple_wml::node& command, bool is_player) {
 	// Only single commands allowed.
-	if (!command.one_child()) return false;
+	// if (!command.one_child()) return false;
 	// Chatting is never an illegal command.
 	if (command.child("speak")) return true;
 	if (is_player && command.child("global_variable")) {
@@ -756,6 +756,7 @@ bool game::is_legal_command(const simple_wml::node& command, bool is_player) {
 		|| command.child("rename")
 		|| command.child("countdown_update")
 		|| command.child("global_variable")
+		|| command.child("prefix_unit")
 		))
 	{
 		return true;
@@ -820,8 +821,17 @@ bool game::process_turn(simple_wml::document& data, const player_map::const_iter
 					}
 				}
 			}
-		} else if (is_current_player(user->first) && (**command).child("end_turn")) {
-			turn_ended = end_turn();
+		} else if ((**command).child("prefix_unit")) {
+			simple_wml::node& prefix_unit = *(**command).child("prefix_unit");
+			if (prefix_unit["new_turn"].to_int()) {
+				turn_ended = true;
+				end_turn_ = current_turn() * nsides_; // +1 turn
+				if (description_) {
+					description_->set_attr_dup("turn", describe_turns(current_turn(), level_["turns"]).c_str());
+				}
+			}
+			end_turn_ = (nsides_? end_turn_ / nsides_ : 0) * nsides_ + prefix_unit["side"].to_int() - 1;
+
 		}
 		++index;
 	}
@@ -926,7 +936,7 @@ bool game::end_turn() {
 	}
 	// Skip over empty sides.
 	for (int i = 0; i < nsides_ && nsides_ <= gamemap::MAX_PLAYERS && side_controllers_[current_side()] == "null"; ++i) {
-		++end_turn_;
+		// ++end_turn_;
 		if (current_side() == 0) {
 			turn_ended = true;
 		}

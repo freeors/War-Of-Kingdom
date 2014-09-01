@@ -45,8 +45,6 @@
 extern uint32_t total_draw;
 extern int total_draws;
 
-extern double tower_cost_ratio;
-
 #ifdef __SUNPRO_CC
 // GCC doesn't have hypot in cmath so include it for Sun Studio
 #include <math.h>
@@ -613,8 +611,8 @@ gui::button* display::find_button(const theme::menu* m, int btnidx)
 	}
 	size = theme_.context_menus().size();
 	for (i = 0; i < size; i ++) {
-		if (buttons_ctx_[i].menu_ == m) {
-			return buttons_ctx_[i].buttons_[btnidx];
+		if (buttons_ctx_[i].menu == m) {
+			return buttons_ctx_[i].buttons[btnidx];
 		}
 	}
 	return NULL;
@@ -634,9 +632,9 @@ gui::button* display::find_button(const std::string& id)
 	}
 	size = theme_.context_menus().size();
 	for (i = 0; i < size; i ++) {
-		for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
-			if (buttons_ctx_[i].buttons_[i2]->id() == id) {
-				return buttons_ctx_[i].buttons_[i2];
+		for (i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
+			if (buttons_ctx_[i].buttons[i2]->id() == id) {
+				return buttons_ctx_[i].buttons[i2];
 			}
 		}
 	}
@@ -672,7 +670,7 @@ void display::create_buttons()
 		if (b.id() == "rpg") {
 			b.set_rpg_image(rpg::h);
 		} else if (b.id() == "skip-animation") {
-			b.set_check((unit_display::player_number_ >= 0)? true: false);
+			b.set_check(false);
 		} else if (b.id() == "undo") {
 			if (controller.is_linger_mode()) {
 				b.hide();
@@ -716,17 +714,17 @@ void display::create_buttons()
 	idx = 0;
 	for (std::vector<theme::menu>::iterator i = menus.begin(); i != menus.end(); ++i, idx ++) {
 		if (!i->button_style()) {
-			buttons_ctx_[idx].menu_ = &*i;
+			buttons_ctx_[idx].menu = &*i;
 			continue;
 		}
 		if (i->get_id() == "access-unit") {
-			buttons_ctx_[idx].menu_ = &*i;
-			buttons_ctx_[idx].button_count_ = 0;
+			buttons_ctx_[idx].menu = &*i;
+			buttons_ctx_[idx].button_count = 0;
 			set_index_in_map(idx, true);
 			continue;
 		} else if (i->get_id() == "access-hero") {
-			buttons_ctx_[idx].menu_ = &*i;
-			buttons_ctx_[idx].button_count_ = 0;
+			buttons_ctx_[idx].menu = &*i;
+			buttons_ctx_[idx].button_count = 0;
 			set_index_in_map(idx, false);
 			continue;
 		} else if (i->get_id() == "main") {
@@ -735,10 +733,10 @@ void display::create_buttons()
 		const std::vector<std::string>& items = i->items();
 
 		size2 = items.size();
-		buttons_ctx_[idx].menu_ = &*i;
-		buttons_ctx_[idx].buttons_ = (gui::button**)malloc(sizeof(gui::button*) * size2);
-		memset(buttons_ctx_[idx].buttons_, 0, sizeof(gui::button*) * size2);
-		buttons_ctx_[idx].button_count_ = size2;
+		buttons_ctx_[idx].menu = &*i;
+		buttons_ctx_[idx].buttons = (gui::button**)malloc(sizeof(gui::button*) * size2);
+		memset(buttons_ctx_[idx].buttons, 0, sizeof(gui::button*) * size2);
+		buttons_ctx_[idx].button_count = size2;
 
 		std::vector<std::string>::const_iterator item = items.begin();
 		idx2 = 0;
@@ -751,7 +749,7 @@ void display::create_buttons()
 			const SDL_Rect& loc = i->location(screen_area());
 			try {
 				// auto_join = false;
-				btn = buttons_ctx_[idx].buttons_[idx2] = new gui::button(screen_, "", string_to_button_type(""), item1, gui::button::DEFAULT_SPACE, false, this, &*i, idx2, NULL, loc.w, loc.h);
+				btn = buttons_ctx_[idx].buttons[idx2] = new gui::button(screen_, "", string_to_button_type(""), item1, gui::button::DEFAULT_SPACE, false, this, &*i, idx2, NULL, loc.w, loc.h);
 			} catch (...) {
 				throw game::game_error("Could not construct button object: " + item1 + ", mybe no corresponding images");
 			}
@@ -782,23 +780,41 @@ void display::clear_context_menu_buttons()
 	}
 	size = theme_.context_menus().size();
 	for (i = 0; i < size; i ++) {
-		for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
+		for (i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
 			// 1.button::button非正常退出(像没有对应该按钮的图片)
 			// 2.display::~display被调用
 			// 3.~display调用clear_context_menu_buttons
-			if (buttons_ctx_[i].buttons_[i2]) {
-				buttons_ctx_[i].buttons_[i2]->hide(true);
-				delete buttons_ctx_[i].buttons_[i2];
+			if (buttons_ctx_[i].buttons[i2]) {
+				buttons_ctx_[i].buttons[i2]->hide(true);
+				delete buttons_ctx_[i].buttons[i2];
 			}
 		}
 		if (!index_in_map(i)) {
 			// 部队快捷访问菜单按钮内存由display析构函数负责释放
-			free(buttons_ctx_[i].buttons_);
+			free(buttons_ctx_[i].buttons);
 		}
-		buttons_ctx_[i].button_count_ = 0;
+		buttons_ctx_[i].button_count = 0;
+		buttons_ctx_[i].require_count = 0;
 	}
 	free(buttons_ctx_);
 	buttons_ctx_ = NULL;
+}
+
+void display::menu_set_pip_image(const std::string& id, const std::string& fg)
+{
+	gui::button* btn = find_button(id);
+	if (btn) {
+		theme::menu* theme_b = get_theme().get_menu_item(id);
+		btn->set_pip_image(theme_b->image(), fg);
+	}
+}
+
+void display::menu_set_image(const std::string& id, const std::string& image)
+{
+	gui::button* btn = find_button(id);
+	if (btn) {
+		btn->set_image(image, -1);
+	}
 }
 
 gui::button::TYPE display::string_to_button_type(std::string type)
@@ -1113,7 +1129,10 @@ void display::drawing_buffer_commit()
 	// std::list::sort() is a stable sort
 	drawing_buffer_.sort();
 
-	SDL_Rect clip_rect = map_area();
+	game_display& disp = *game_display::get_singleton();
+	bool outer = !disp.in_game();
+
+	SDL_Rect clip_rect = outer? outer_anim::rect: map_area();
 	surface screen = get_screen_surface();
 	clip_rect_setter set_clip_rect(screen, &clip_rect);
 
@@ -1217,11 +1236,6 @@ void display::update_display()
 			}
 			std::ostringstream stream;
 			stream << "fps: " << fps;
-			if (game_config::debug) {
-				stream << "\nhex: " << drawn_hexes_*1.0/sample_freq;
-				if (drawn_hexes_ != invalidated_hexes_)
-					stream << " (" << (invalidated_hexes_-drawn_hexes_)*1.0/sample_freq << ")";
-			}
 			drawn_hexes_ = 0;
 			invalidated_hexes_ = 0;
 
@@ -1426,6 +1440,10 @@ void display::render_image(int x, int y, const display::tdrawing_layer drawing_l
 
 	SDL_Rect image_rect = create_rect(x, y, image->w, image->h);
 	SDL_Rect clip_rect = map_area();
+	if (!clip_rect.w || !clip_rect.h) {
+		clip_rect.w = w();
+		clip_rect.h = h();
+	}
 	if (!rects_overlap(image_rect, clip_rect))
 		return;
 
@@ -1664,7 +1682,7 @@ void display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags,
 	SDL_Rect loc = m_adjusted->location(screen_area());
 	size = theme_.context_menus().size();
 	for (i = 0; i < size; i ++) {
-		if (buttons_ctx_[i].menu_ == m_adjusted) {
+		if (buttons_ctx_[i].menu == m_adjusted) {
 			break;
 		}
 	}
@@ -1679,49 +1697,58 @@ void display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags,
 
 			const std::set<const unit_type*>& can_build = current_team.builds();
 
-			for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
-				gui::button* b = buttons_ctx_[i].buttons_[i2];
+			for (i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
+				gui::button* b = buttons_ctx_[i].buttons[i2];
 				const unit_type* ut = unit_types.id_type(b->id());
 
 				if (!ut) {
 					if (b->id() == "interior_m") {
 						if (can_build.find(unit_types.find_market()) == can_build.end() && 
 							can_build.find(unit_types.find_technology()) == can_build.end() &&
-							can_build.find(unit_types.find_tactic()) == can_build.end()) {
+							can_build.find(unit_types.find_tactic()) == can_build.end() &&
+							can_build.find(unit_types.find_school()) == can_build.end()) {
 							flags &= ~ (1 << i2);
 						}
 					}
 					continue;
-				}
+				} 
 				if (can_build.find(ut) == can_build.end()) {
+					flags &= ~ (1 << i2);
+				} else if (ut->master() == hero::number_wall && !current_team.may_build_count()) {
 					flags &= ~ (1 << i2);
 				}
 				strstr.str("");
 				strstr << "buttons/" << b->id() << ".png";
 				int cost = ut->cost() * cost_exponent / 100;
-				if (tent::mode == TOWER_MODE) {
+				if (tent::tower_mode()) {
 					// increase wall's cost.
-					cost *= tower_cost_ratio;
+					cost *= game_config::tower_cost_ratio;
 				}
 				b->set_image(strstr.str(), cost);
 			}
-		} else if (tent::mode == TOWER_MODE && m_adjusted->get_id() == "main") {
-			for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
+		} else if (m_adjusted->get_id() == "main") {
+			for (i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
 				if (!(flags & (1 << i2))) {
 					continue;
 				}
-				gui::button* b = buttons_ctx_[i].buttons_[i2];
+				gui::button* b = buttons_ctx_[i].buttons[i2];
 				if (b->id() == "build_m") {
+					if (tent::tower_mode()) {
+						strstr.str("");
+						strstr << "buttons/" << b->id() << ".png";
+						b->set_image(strstr.str(), current_team.may_build_count());
+					}
+				} else if (b->id() == "abolish") {
 					strstr.str("");
 					strstr << "buttons/" << b->id() << ".png";
-					b->set_image(strstr.str(), current_team.may_build_count());
+					b->set_pip_image(strstr.str(), "buttons/icon-guard.png");
 				}
 			}
 		}
 	}
 
-	for (i2 = 0; i2 < buttons_ctx_[i].button_count_; i2 ++) {
-		gui::button* b = buttons_ctx_[i].buttons_[i2];
+	for (i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
+		gui::button* b = buttons_ctx_[i].buttons[i2];
 		if (flags & (1 << i2)) {
 			if (!hide) {
 				b->set_location(loc.x, loc.y);
@@ -2319,6 +2346,9 @@ bool display::redraw_everything()
 
 	tooltips::clear_tooltips();
 
+	// theme_.set_resolution may change context menu, it necessary to release buttons_ctx_ before it.
+	// when relase buttons_ctx_, it need right number of context menu. 
+	clear_context_menu_buttons();
 	theme_.set_resolution(screen_area());
 
 	if(buttons_.empty() == false) {
@@ -2570,7 +2600,7 @@ void display::draw_hex(const map_location& loc)
 			drawing_buffer_add(LAYER_FOG_SHROUD, loc, off_x, off_y, bg);
 			drawing_buffer_add(LAYER_FOG_SHROUD, loc, off_x, off_y, text);
 		}
-		if (draw_terrain_codes_ && (game_config::debug || !shrouded(loc))) {
+		if (draw_terrain_codes_ && !shrouded(loc)) {
 			int off_x = xpos + hex_size()/2;
 			int off_y = ypos + hex_size()/2;
 			surface text = font::get_rendered_text2(lexical_cast<std::string>(get_map().get_terrain(loc)), -1, font::SIZE_SMALL, font::NORMAL_COLOR);
@@ -2717,8 +2747,55 @@ void display::refresh_report(reports::TYPE report_num, reports::report report)
 			
 		if (area.h <= 0) break;
 
-		if (!e->text.empty())
-		{
+		if (report_num == reports::TURN) {
+			std::vector<std::string> vstr = utils::split(e->text);
+			if (vstr.size() != 4) {
+				goto skip_element;
+			}
+
+			const int bar_turn_png_valid_width = 76;
+			const int left_gap_with = 2;
+			int main_ticks = lexical_cast_default<int>(vstr[0]);
+			int autosave_ticks = lexical_cast_default<int>(vstr[1]);
+
+			double filled = 1.0 * (main_ticks % game_config::ticks_per_turn) / game_config::ticks_per_turn;
+			draw_bar_to_surf("misc/bar-turn.png", screen_.getSurface(), area.x, area.y + 1, area.w - 4, filled, font::GOOD_COLOR, ftofxp(0.8), false);
+
+			SDL_Rect dst_clip;
+			if (autosave_ticks >= 0) {
+				// auto save point
+				int pos = (autosave_ticks % game_config::ticks_per_turn) * bar_turn_png_valid_width / game_config::ticks_per_turn;
+				dst_clip.x = area.x + left_gap_with + pos;
+				dst_clip.y = area.y;
+
+				surface filled_surf = create_compatible_surface(screen_.getSurface(), 2, area.h);
+				SDL_FillRect(filled_surf, NULL, SDL_MapRGBA(filled_surf->format, 255, 0, 0, 1.0));
+				sdl_blit(filled_surf, NULL, screen_.getSurface(), &dst_clip);
+			}
+
+			std::string turn_str = vstr[2];
+			if (lexical_cast_default<int>(vstr[3]) > 0) {
+				turn_str.append("/");
+				turn_str.append(vstr[3]);
+			}
+			dst_clip.x = area.x + (area.w - (turn_str.size() * 8)) / 2;
+			dst_clip.y = area.y + 2;
+			std::stringstream img;
+			for (std::string::const_iterator it = turn_str.begin(); it != turn_str.end(); ++ it) {
+				char ch = *it;
+				img.str("");
+				if (isdigit(ch)) {
+					img << "misc/digit.png~CROP(" << 8 * (ch - 0x30) << ", 0, 8, 12)";
+				} else if (ch == '/') {
+					img << "misc/digit.png~CROP(" << 8 * 10 << ", 0, 8, 12)";
+				}
+				if (!img.str().empty()) {
+					sdl_blit(image::get_image(img.str()), NULL, screen_.getSurface(), &dst_clip);
+					dst_clip.x += 8;
+				}
+			}
+		
+		} else if (!e->text.empty()) {
 			if (used_ellipsis) goto skip_element;
 
 			// Draw a text element.
@@ -2771,9 +2848,8 @@ void display::refresh_report(reports::TYPE report_num, reports::report report)
 			} else {
 				x += area.w;
 			}
-		}
-		else if (!e->image.get_filename().empty())
-		{
+
+		} else if (!e->image.get_filename().empty()) {
 			if (used_ellipsis) goto skip_element;
 
 			// Draw an image element.
@@ -2805,9 +2881,8 @@ void display::refresh_report(reports::TYPE report_num, reports::report report)
 			} else {
 				ellipsis_area = area;
 			}
-		}
-		else
-		{
+
+		} else {
 			// No text nor image, skip this element
 			continue;
 		}
@@ -2815,7 +2890,7 @@ void display::refresh_report(reports::TYPE report_num, reports::report report)
 		skip_element:
 		if (!e->tooltip.empty()) {
 			if (!used_ellipsis) {
-				tooltips::add_tooltip(area, e->tooltip, e->action);
+				tooltips::add_tooltip(area, e->tooltip);
 			} else {
 				// Collect all tooltips for the ellipsis.
 				// TODO: need a better separator
@@ -2921,6 +2996,7 @@ void display::invalidate_animations()
 
 	BOOST_FOREACH (const map_location &loc, draw_area_rect_) {
 		if (shrouded(loc)) continue;
+
 		if (builder_->update_animation(loc)) {
 			invalidate(loc);
 		} else {

@@ -22,6 +22,7 @@
 #include "util.hpp"
 
 #include "SDL.h"
+#include "sdl_compat.h"
 
 #include <cstdlib>
 #include <iosfwd>
@@ -43,24 +44,11 @@ typedef enum {
   PANGO_ELLIPSIZE_END
 } PangoEllipsizeMode;
 
-//older versions of SDL don't define the
-//mouse wheel macros, so define them ourselves
-//if necessary.
-#ifndef SDL_BUTTON_WHEELUP
-#define SDL_BUTTON_WHEELUP 4
-#endif
+#define FINGER_HIT_THRESHOLD		4
+#define FINGER_MOTION_THRESHOLD		10
 
-#ifndef SDL_BUTTON_WHEELDOWN
-#define SDL_BUTTON_WHEELDOWN 5
-#endif
-
-#ifndef SDL_BUTTON_WHEELLEFT
-#define SDL_BUTTON_WHEELLEFT 6
-#endif
-
-#ifndef SDL_BUTTON_WHEELRIGHT
-#define SDL_BUTTON_WHEELRIGHT 7
-#endif
+#define MOUSE_HIT_THRESHOLD			0
+#define MOUSE_MOTION_THRESHOLD		1
 
 namespace {
 const SDL_Rect empty_rect = { 0, 0, 0, 0 };

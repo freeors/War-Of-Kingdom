@@ -25,6 +25,7 @@
 #include "theme.hpp"
 #include "wml_exception.hpp"
 #include "game_config.hpp"
+#include "unit.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -159,34 +160,62 @@ namespace {
 
 #endif
 
+static const config& modify_top_cfg_according_to_mode(const config& top_cfg, config& tmp)
+{
+	if (tent::tower_mode() && top_cfg.child_count("tower")) {
+		tmp = top_cfg;
+		const config& sub = top_cfg.child("tower");
+		BOOST_FOREACH (const config::any_child& child, sub.all_children_range()) {
+			bool is_resolution = true;
+			config* find = &tmp.find_child("resolution", "id", child.key);
+			if (!(*find)) {
+				is_resolution = false;
+				find = &tmp.find_child("partialresolution", "id", child.key);
+			}
+			if (*find) {
+				BOOST_FOREACH (const config &rm, child.cfg.child_range("remove")) {
+					if (is_resolution) {
+						find_ref(rm["id"], *find, true);
+					} else {
+						config& find2 = find->find_child("remove", "id", rm["id"]);
+						if (!find2) {
+							find->add_child("remove", rm);
+						}
+					}
+				}
+
+				BOOST_FOREACH (const config &chg, child.cfg.child_range("change")) {
+					if (is_resolution) {
+						config& target = find_ref(chg["id"], *find);
+						target.merge_attributes(chg);
+					} else {
+						config& find2 = find->find_child("change", "id", chg["id"]);
+						if (find2) {
+							find2.merge_attributes(chg);
+						} else {
+							find->add_child("change", chg);
+						}
+					}
+				}
+			}
+		}
+		return tmp;
+	}
+	return top_cfg;
+}
+
 // I make sure there is a 480x320 [resolution] in [theme]. so:
 // 1. Don't resolve partialresolution when it is 480x320.
 // 2. Don't save other resolution except 480x320, when current is tiny_gui mode.
-static void expand_partialresolution(config& dst_cfg, const config& top_cfg, const SDL_Rect& screen)
+static void expand_partialresolution(config& dst_cfg, const config& _top_cfg, const SDL_Rect& screen)
 {
+	config tmp;
+	const config& top_cfg = modify_top_cfg_according_to_mode(_top_cfg, tmp);
+
 	std::vector<config> res_cfgs_;
+	std::string theme_name = top_cfg["name"].str();
 	// resolve all the partialresolutions
 	BOOST_FOREACH (const config &part, top_cfg.child_range("partialresolution")) {
-		int width = part["width"].to_int();
-		int height = part["height"].to_int();
-
-		// Only resolve partialresolution when it is necessary. It is depend to [theme] cfg.
-		if (game_config::tiny_gui) {
-			if (screen.w >= 640 && screen.h >= 480) {
-				// it will use 640x480 standard resolution.
-				continue;
-			} else if (width != 480 || height != 320) {
-				// there is only 480x320 partialresolution when screen is less than 800x600.
-				continue;
-			}
-		} else if (screen.w >= 1024 && screen.h >= 768) {
-			// it will use 1024x768 standard resolution.
-			continue;
-		} else if (width != 800 && height != 600) {
-			// there is only 800x600 partialresolution when screen is large-equal than 800x600.
-			continue;
-		}
-
 		// follow the inheritance hierarchy and push all the nodes on the stack
 		std::vector<const config*> parent_stack(1, &part);
 		const config *parent;
@@ -208,10 +237,6 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 
 		// Add the parent resolution and apply all the modifications of its children
 		res_cfgs_.push_back(*parent);
-
-		res_cfgs_.back()["xdim"] = parent->get("width")->to_int();
-		res_cfgs_.back()["ydim"] = parent->get("height")->to_int();
-
 		while (!parent_stack.empty()) {
 			//override attributes
 			res_cfgs_.back().merge_attributes(*parent_stack.back());
@@ -237,32 +262,8 @@ static void expand_partialresolution(config& dst_cfg, const config& top_cfg, con
 		}
 	}
 	// Add all the resolutions
-	std::string theme_name = top_cfg["name"].str();
 	BOOST_FOREACH (const config &res, top_cfg.child_range("resolution")) {
-		int width = res["width"].to_int();
-		int height = res["height"].to_int();
-
-		// Only resolve resolution when it is necessary. It is depend to [theme] cfg.
-		if (game_config::tiny_gui) {
-			if (screen.w < 640 || screen.h < 480) {
-				// it will use 480x320 partialresolution.
-				continue;
-			} else if (width != 640 || height != 480) {
-				// there is only 640x480 standard resolution when screen is less than 800x600.
-				continue;
-			}
-		} else if ((theme_name != "editor") && (screen.w < 1024 || screen.h < 768)) {
-			// editor hasn't 800x600 partialresolution.
-			// it will use 800x600 partialresolution.
-			continue;
-		} else if (width != 1024 && height != 768) {
-			// there is only 1024x768 standard resolution when screen is large-equal than 800x600.
-			continue;
-		}
-
-		config& cfg = dst_cfg.add_child("resolution", res);
-		cfg["xdim"] = width;
-		cfg["ydim"] = height;
+		dst_cfg.add_child("resolution", res);
 	}
 	// Add all the resolved resolutions
 	for(std::vector<config>::const_iterator k = res_cfgs_.begin(); k != res_cfgs_.end(); ++k) {
@@ -609,7 +610,8 @@ theme::theme(const config& cfg, const SDL_Rect& screen) :
 	border_(),
 	main_context_(NULL),
 	current_context_(NULL),
-	mid_panel_()
+	mid_panel_(),
+	terrain_panel_()
 {
 	config tmp;
 	expand_partialresolution(tmp, cfg, screen);
@@ -622,7 +624,7 @@ theme::theme(const config& cfg, const SDL_Rect& screen) :
 
 bool theme::set_resolution(const SDL_Rect& screen)
 {
-	VALIDATE(cfg_.child_count("resolution") <= 1, "theme::set_resolution, blocks of resolution mistaken.");
+	// VALIDATE(cfg_.child_count("resolution") <= 1, "theme::set_resolution, blocks of resolution mistaken.");
 	bool result = false;
 
 	int current_rating = 1000000;
@@ -664,9 +666,6 @@ bool theme::set_resolution(const SDL_Rect& screen)
 	menus_.clear();
 	context_.clear();
 
-	XDim = current->get("xdim")->to_int();
-	YDim = current->get("ydim")->to_int();
-
 	add_object(*current);
 
 	for (m = menus_.begin(); m != menus_.end(); ++m) {
@@ -705,14 +704,13 @@ void theme::add_object(const config& cfg)
 		panel new_panel(p);
 		set_object_location(new_panel, p["rect"], p["ref"]);
 		panels_.push_back(new_panel);
-		if (game_config::tiny_gui) {
-			if (p["id"] == "left-bottom-panel") {
-				mid_panel_ = object(p);
-			}
-		} else {
-			if (p["id"] == "middle-bottom-panel") {
-				mid_panel_ = object(p);
-			}
+
+		const std::string& id = p["id"].str();
+		if (id == "terrain-panel") {
+			terrain_panel_ = object(p);
+
+		} else if (id == "left-bottom-panel") {
+			mid_panel_ = object(p);
 		}
 	}
 

@@ -192,7 +192,7 @@ editor_action_paste* editor_action_paint_area::perform(map_context& mc) const
 void editor_action_paint_area::perform_without_undo(map_context& mc) const
 {
 	mc.draw_terrain(t_, area_, one_layer_);
-	mc.set_needs_terrain_rebuild();
+	mc.set_needs_terrain_rebuild(map_type.err_str().empty());
 }
 
 editor_action_fill* editor_action_fill::clone() const

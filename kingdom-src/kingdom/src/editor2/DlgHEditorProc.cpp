@@ -9,12 +9,14 @@
 #include "xfunc.h"
 #include "win32x.h"
 #include "struct.h"
+#include "rectangle.hpp"
 
 #include "wesconfig.h"
 #include "gettext.hpp"
 #include "filesystem.hpp"
 #include "editor.hpp"
 #include "unit_types.hpp"
+#include "font.hpp"
 #include "help.hpp"
 
 #include <sstream>
@@ -248,7 +250,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	// 政治
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = column ++;
-	sprintf(text, "%u.%u", fxptoi9(general.politics_), fxpmod9(general.politics_));
+	sprintf(text, "%u.%u", fxptoi9(general.spirit_), fxpmod9(general.spirit_));
 	lvi.pszText = text;
 	ListView_SetItem(hctl, &lvi);
 
@@ -671,7 +673,7 @@ BOOL On_DlgWGenInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.cx = 54;
 	lvc.iSubItem = column;
 	strstr.str("");
-	strstr << "politics";
+	strstr << "spirit";
 	strcpy(text, utf8_2_ansi(dgettext("wesnoth-hero", strstr.str().c_str())));
 	lvc.pszText = text;
 	ListView_InsertColumn(hctl, column ++, &lvc);
@@ -1097,9 +1099,44 @@ static void OnHeroDelBt(HWND hdlgP)
 	return;
 }
 
+bool verify_hero_map(hero_map& heros)
+{
+	utils::string_map symbols;
+	std::stringstream err;
+
+	for (hero_map::iterator it = heros.begin(); it != heros.end(); ++ it) {
+		hero& h = *it;
+		for (int i = 0; i < HEROS_MAX_HATE; i ++) {
+			if (h.hate_[i].hero_ != HEROS_INVALID_NUMBER) {
+				hero& h2 = heros[h.hate_[i].hero_];
+				int i2;
+				for (i2 = 0; i2 < HEROS_MAX_HATE; i2 ++) {
+					if (h2.hate_[i2].hero_ == HEROS_INVALID_NUMBER) {
+						// make sure valid number at begin.
+						i2 = HEROS_MAX_HATE - 1;
+					} else if (h2.hate_[i2].hero_ == h.number_) {
+						break;
+					}
+				}
+				if (i2 == HEROS_MAX_HATE) {
+					symbols["h1"] = h.name();
+					symbols["h2"] = h2.name();
+					err << utf8_2_ansi(vgettext2("$h1 hate $h2, but $h2 doesn't hate $h1!", symbols).c_str());
+					MessageBox(gdmgr._hwnd_main, err.str().c_str(), "Error", MB_OK);
+					return false;
+				}
+			}
+		}
+	}
+	return true;
+}
+
 // 将当前hero_map存成文件
 void OnSaveBt(HWND hdlgP)
 {
+	if (!verify_hero_map(gdmgr.heros_)) {
+		return;
+	}
 	if (gdmgr.heros_.map_to_file(gdmgr.heros_fname_)) {
 		wgen_enable_save_btn(FALSE);
 	}
@@ -1668,73 +1705,44 @@ void On_DlgPopupDrawItem(HWND hdlgP, const DRAWITEMSTRUCT *lpdis)
 	return;
 }
 
-BOOL On_DlgPopupNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+std::vector<int> to_vector_int2(const std::string& value)
 {
-	LVITEM					lvi;
-	LPNMITEMACTIVATE		lpnmitem;
-	int						icount;
-
-	// NM_表示对通用控件都通用,范围丛(0, 99)
-	// TVN_表示只能TreeView通用,范围丛(400, 499)
-	if (lpNMHdr->code == TTN_GETDISPINFO) { 
-            
-        LPTOOLTIPTEXT lpttt; 
-
-        lpttt = (LPTOOLTIPTEXT) lpNMHdr; 
-        lpttt->hinst = gdmgr._hinst; 
-
-        // Specify the resource identifier of the descriptive 
-        // text for the given button. 
-		if (lpttt->hdr.idFrom == IDM_RESET) {
-            strcpy(lpttt->lpszText, "Reset");
-            
-		} else if (lpttt->hdr.idFrom == IDM_OK) {
-            strcpy(lpttt->lpszText, "Save and exit");
-            
-		} else if (lpttt->hdr.idFrom == IDM_CANCEL) {
-            strcpy(lpttt->lpszText, "Discard and exit"); 
-        } 
-    } else if (lpNMHdr->code == NM_RCLICK) {
-		lpnmitem = (LPNMITEMACTIVATE)lpNMHdr;
-		// 如果单击到的是复选框位置,把复选框状态置反
-		// 当前定义的图标大小是16x16. ptAction反回的(x,y)是整个列表视图内的坐标,因而y值不大好判断
-		// 认为如果x是小于16的就认为是击中复选框
-		if ((lpnmitem->iItem >= 0) && (lpnmitem->iSubItem == 0)) {
-			// ListView_SetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem, !ListView_GetCheckState(lpNMHdr->hwndFrom, lpnmitem->iItem));
-			POINT		point = {lpnmitem->ptAction.x, lpnmitem->ptAction.y};
-			MapWindowPoints(lpNMHdr->hwndFrom, NULL, &point, 1);
-
-			lvi.iItem = lpnmitem->iItem;
-			lvi.mask = LVIF_TEXT | LVIF_PARAM | LVIF_IMAGE;
-			lvi.iSubItem = 0;
-			lvi.pszText = gdmgr._menu_text;
-			lvi.cchTextMax = _MAX_PATH;
-			ListView_GetItem(lpNMHdr->hwndFrom, &lvi);
-
-			icount = ListView_GetItemCount(lpNMHdr->hwndFrom);
-			EnableMenuItem(gdmgr._hpopup_editor, IDM_ADD, MF_BYCOMMAND | MF_GRAYED);
-			EnableMenuItem(gdmgr._hpopup_editor, IDM_EDIT, MF_BYCOMMAND | MF_GRAYED);
-			EnableMenuItem(gdmgr._hpopup_editor, IDM_DELETE, MF_BYCOMMAND | MF_GRAYED);
-
-			TrackPopupMenuEx(gdmgr._hpopup_editor, 0, 
-				point.x, 
-				point.y, 
-				hdlgP, 
-				NULL);
-
-			// 恢复回去
-			EnableMenuItem(gdmgr._hpopup_editor, IDM_ADD, MF_BYCOMMAND | MF_ENABLED);
-			EnableMenuItem(gdmgr._hpopup_editor, IDM_EDIT, MF_BYCOMMAND | MF_ENABLED);
-			EnableMenuItem(gdmgr._hpopup_editor, IDM_DELETE, MF_BYCOMMAND | MF_ENABLED);
-
-			gdmgr._menu_lparam = lpnmitem->iItem;
-		}
-	
+	std::vector<std::string> vstr = utils::split(value);
+	std::vector<int> ret;
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		const std::string& str = *it;
+		ret.push_back(lexical_cast_default<int>(str.substr(0, str.find("("))));
 	}
-
-    return FALSE;
+	return ret;
 }
 
+void strcat_heros_str2(HWND hdlgP, int id, int append, int max, bool display_name)
+{
+	std::stringstream strstr;
+	char text[_MAX_PATH];
+
+	Edit_GetText(GetDlgItem(hdlgP, id), text, sizeof(text) / sizeof(text[0]));
+	
+	std::vector<int> vstr = to_vector_int2(text);
+	if (std::find(vstr.begin(), vstr.end(), append) != vstr.end()) {
+		return;
+	}
+	if (max > 0 && (int)vstr.size() >= max) {
+		return;
+	}
+	vstr.push_back(append);
+	for (std::vector<int>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		int number = *it;
+		if (it != vstr.begin()) {
+			strstr << ", ";
+		}
+		strstr << number;
+		if (display_name) {
+			strstr << "(" << utf8_2_ansi(gdmgr.heros_[number].name().c_str()) << ")";
+		}
+	}
+	Edit_SetText(GetDlgItem(hdlgP, id), strstr.str().c_str());
+}
 
 //
 // 4 Channel DVR Confinguration Popup Dialog
@@ -1780,9 +1788,9 @@ void update_hero_edit(HWND hdlgP, hero& h)
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_INTELLECT), fxptoi9(h.intellect_));
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_INTELLECTXP), fxpmod9(h.intellect_));
 
-	// politics
-	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICS), fxptoi9(h.politics_));
-	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICSXP), fxpmod9(h.politics_));
+	// spirit
+	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICS), fxptoi9(h.spirit_));
+	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICSXP), fxpmod9(h.spirit_));
 
 	// charm
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_CHARM), fxptoi9(h.charm_));
@@ -1802,7 +1810,9 @@ void update_hero_edit(HWND hdlgP, hero& h)
 
 	// flags
 	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROBBER), h.get_flag(hero_flag_robber)); 
-	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROAM), h.get_flag(hero_flag_roam)); 
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROAM), h.get_flag(hero_flag_roam));
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_EMPLOYEE), h.get_flag(hero_flag_employee)); 
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_NPC), h.get_flag(hero_flag_npc)); 
 
 	// treasure
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_TREASURE0);
@@ -1906,8 +1916,10 @@ void update_hero_edit(HWND hdlgP, hero& h)
 
 BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 {
-	uint32_t	u32n, u32n1, u32n2;
+	uint32_t u32n, u32n1, u32n2;
 	int idx;
+	char text[_MAX_PATH];
+
 	// 列传可能大于_MAX_PATH
 	// char		text[1024];
 
@@ -1952,13 +1964,13 @@ BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 		*changed = TRUE;
 		gdmgr.heros_[gdmgr._menu_lparam].intellect_ = u32n;
 	}
-	// politics
+	// spirit
 	u32n1 = (uint32_t)UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICS));
 	u32n2 = (uint32_t)UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICSXP));
 	u32n = ftofxp9(u32n1) + u32n2;
-	if (gdmgr.heros_[gdmgr._menu_lparam].politics_ != u32n) {
+	if (gdmgr.heros_[gdmgr._menu_lparam].spirit_ != u32n) {
 		*changed = TRUE;
-		gdmgr.heros_[gdmgr._menu_lparam].politics_ = u32n;
+		gdmgr.heros_[gdmgr._menu_lparam].spirit_ = u32n;
 	}
 	// charm
 	u32n1 = (uint32_t)UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_HEROEDIT_CHARM));
@@ -1998,6 +2010,12 @@ BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 	}
 	if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROAM))) {
 		u32n |= 1 << hero_flag_roam;
+	}
+	if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_EMPLOYEE))) {
+		u32n |= 1 << hero_flag_employee;
+	}
+	if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_NPC))) {
+		u32n |= 1 << hero_flag_npc;
 	}
 	if (gdmgr.heros_[gdmgr._menu_lparam].flags_ != u32n) {
 		*changed = TRUE;
@@ -2151,477 +2169,108 @@ BOOL save_hero_edit(HWND hdlgP, BOOL *changed)
 		gdmgr.heros_[gdmgr._menu_lparam].skill_[hero_skill_formation] = u32n;
 	}
 
-	// consort[0]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_CONSORT));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_CONSORT), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].consort_[0].hero_ != u32n) {
-			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].consort_[0].hero_ = u32n;
-		}
-	}
-
 	// parent[0]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_PARENT0));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_PARENT0), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].parent_[0].hero_ != u32n) {
-			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].parent_[0].hero_ = u32n;
-		}
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_HEROEDIT_FATHER), text, sizeof(text));
+	std::vector<int> vrelation = to_vector_int2(text);
+	u32n = vrelation.empty()? HEROS_INVALID_NUMBER: vrelation.front();
+	if (gdmgr.heros_[gdmgr._menu_lparam].parent_[0].hero_ != u32n) {
+		*changed = TRUE;
+		gdmgr.heros_[gdmgr._menu_lparam].parent_[0].hero_ = u32n;
 	}
 
 	// parent[1]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_PARENT1));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_PARENT1), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].parent_[1].hero_ != u32n) {
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_HEROEDIT_MOTHER), text, sizeof(text));
+	vrelation = to_vector_int2(text);
+	u32n = vrelation.empty()? HEROS_INVALID_NUMBER: vrelation.front();
+	if (gdmgr.heros_[gdmgr._menu_lparam].parent_[1].hero_ != u32n) {
+		*changed = TRUE;
+		gdmgr.heros_[gdmgr._menu_lparam].parent_[1].hero_ = u32n;
+	}
+
+	// consort
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_HEROEDIT_CONSORT), text, sizeof(text));
+	vrelation = to_vector_int2(text);
+	for (int i = 0; i < HEROS_MAX_CONSORT; i ++) {
+		u32n = (int)vrelation.size() > i? vrelation[i]: HEROS_INVALID_NUMBER;
+		if (gdmgr.heros_[gdmgr._menu_lparam].consort_[i].hero_ != u32n) {
 			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].parent_[1].hero_ = u32n;
+			gdmgr.heros_[gdmgr._menu_lparam].consort_[i].hero_ = u32n;
 		}
 	}
 
-	// oath[0]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_OATH0));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_OATH0), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].oath_[0].hero_ != u32n) {
+	// oath
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_HEROEDIT_OATH), text, sizeof(text));
+	vrelation = to_vector_int2(text);
+	for (int i = 0; i < HEROS_MAX_OATH; i ++) {
+		u32n = (int)vrelation.size() > i? vrelation[i]: HEROS_INVALID_NUMBER;
+		if (gdmgr.heros_[gdmgr._menu_lparam].oath_[i].hero_ != u32n) {
 			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].oath_[0].hero_ = u32n;
+			gdmgr.heros_[gdmgr._menu_lparam].oath_[i].hero_ = u32n;
 		}
 	}
 
-	// oath[1]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_OATH1));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_OATH1), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].oath_[1].hero_ != u32n) {
+	// intimate
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_HEROEDIT_INTIMATE), text, sizeof(text));
+	vrelation = to_vector_int2(text);
+	for (int i = 0; i < HEROS_MAX_INTIMATE; i ++) {
+		u32n = (int)vrelation.size() > i? vrelation[i]: HEROS_INVALID_NUMBER;
+		if (gdmgr.heros_[gdmgr._menu_lparam].intimate_[i].hero_ != u32n) {
 			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].oath_[1].hero_ = u32n;
+			gdmgr.heros_[gdmgr._menu_lparam].intimate_[i].hero_ = u32n;
 		}
 	}
 
-	// intimate[0]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE0));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE0), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].intimate_[0].hero_ != u32n) {
+	// hate
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_HEROEDIT_HATE), text, sizeof(text));
+	vrelation = to_vector_int2(text);
+	for (int i = 0; i < HEROS_MAX_HATE; i ++) {
+		u32n = (int)vrelation.size() > i? vrelation[i]: HEROS_INVALID_NUMBER;
+		if (gdmgr.heros_[gdmgr._menu_lparam].hate_[i].hero_ != u32n) {
 			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].intimate_[0].hero_ = u32n;
-		}
-	}
-
-	// intimate[1]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE1));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE1), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].intimate_[1].hero_ != u32n) {
-			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].intimate_[1].hero_ = u32n;
-		}
-	}
-
-	// intimate[2]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE2));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE2), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].intimate_[2].hero_ != u32n) {
-			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].intimate_[2].hero_ = u32n;
-		}
-	}
-
-	// hate[0]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE0));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE0), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].hate_[0].hero_ != u32n) {
-			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].hate_[0].hero_ = u32n;
-		}
-	}
-
-	// hate[1]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE1));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE1), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].hate_[1].hero_ != u32n) {
-			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].hate_[1].hero_ = u32n;
-		}
-	}
-
-	// hate[2]
-	idx = ComboBox_GetCurSel(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE2));
-	if (idx >= 0) {
-		u32n = ComboBox_GetItemData(GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE2), idx);
-		if (gdmgr.heros_[gdmgr._menu_lparam].hate_[2].hero_ != u32n) {
-			*changed = TRUE;
-			gdmgr.heros_[gdmgr._menu_lparam].hate_[2].hero_ = u32n;
+			gdmgr.heros_[gdmgr._menu_lparam].hate_[i].hero_ = u32n;
 		}
 	}
 
 	return TRUE;
 }
 
-void OnOathCmb(HWND hdlgP, HWND hwndCtrl, UINT codeNotify, hero& h)
-{
-	if (codeNotify != CBN_SELCHANGE) {
-		return;
-	}
-
-	HWND hctlOath0 = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_OATH0);
-	HWND hctlOath1 = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_OATH1);
-	uint16_t selected_hero0, selected_hero1;
-	hero_map::iterator itor;
-	char text[_MAX_PATH];
-	int idx;
-
-	idx = ComboBox_GetCurSel(hctlOath0);
-	if (idx >= 0) {
-		selected_hero0 = (uint16_t)ComboBox_GetItemData(hctlOath0, idx);
-	} else {
-		selected_hero0 = HEROS_INVALID_NUMBER;
-	}
-	idx = ComboBox_GetCurSel(hctlOath1);
-	if (idx >= 0) {
-		selected_hero1 = (uint16_t)ComboBox_GetItemData(hctlOath1, idx);
-	} else {
-		selected_hero1 = HEROS_INVALID_NUMBER;
-	}
-
-	// oath[0]
-	ComboBox_ResetContent(hctlOath0);
-	ComboBox_AddString(hctlOath0, "");
-	ComboBox_SetItemData(hctlOath0, 0, HEROS_INVALID_NUMBER);
-	ComboBox_SetCurSel(hctlOath0, 0);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.gender_ == itor->gender_) && (h.number_ != itor->number_) && (selected_hero1 != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctlOath0, text); 
-			ComboBox_SetItemData(hctlOath0, idx, itor->number_);
-
-			// don't use h.oath_[0].hero_
-			if (selected_hero0 == itor->number_) {
-				ComboBox_SetCurSel(hctlOath0, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	// oath[1]
-	ComboBox_ResetContent(hctlOath1);
-	ComboBox_AddString(hctlOath1, ""); 
-	ComboBox_SetItemData(hctlOath1, 0, HEROS_INVALID_NUMBER);
-	ComboBox_SetCurSel(hctlOath1, 0);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.gender_ == itor->gender_) && (h.number_ != itor->number_) && (selected_hero0 != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctlOath1, text); 
-			ComboBox_SetItemData(hctlOath1, idx, itor->number_);
-
-			if (selected_hero1 == itor->number_) {
-				ComboBox_SetCurSel(hctlOath1, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	return;
-}
-
-void On3HeroCmb(HWND hdlgP, UINT codeNotify, hero& h, bool intimate)
-{
-	if (codeNotify != CBN_SELCHANGE) {
-		return;
-	}
-
-	HWND hctl0, hctl1, hctl2;
-
-	if (intimate) {
-		hctl0 = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE0);
-		hctl1 = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE1);
-		hctl2 = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE2);
-	} else {
-		hctl0 = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE0);
-		hctl1 = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE1);
-		hctl2 = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE2);
-	}
-	uint16_t selected_hero0, selected_hero1, selected_hero2;
-	hero_map::iterator itor;
-	char text[_MAX_PATH];
-	int idx;
-
-	idx = ComboBox_GetCurSel(hctl0);
-	if (idx >= 0) {
-		selected_hero0 = (uint16_t)ComboBox_GetItemData(hctl0, idx);
-	} else {
-		selected_hero0 = HEROS_INVALID_NUMBER;
-	}
-	idx = ComboBox_GetCurSel(hctl1);
-	if (idx >= 0) {
-		selected_hero1 = (uint16_t)ComboBox_GetItemData(hctl1, idx);
-	} else {
-		selected_hero1 = HEROS_INVALID_NUMBER;
-	}
-	idx = ComboBox_GetCurSel(hctl2);
-	if (idx >= 0) {
-		selected_hero2 = (uint16_t)ComboBox_GetItemData(hctl2, idx);
-	} else {
-		selected_hero2 = HEROS_INVALID_NUMBER;
-	}
-
-	// hate[0]
-	ComboBox_ResetContent(hctl0);
-	ComboBox_AddString(hctl0, "");
-	ComboBox_SetItemData(hctl0, 0, HEROS_INVALID_NUMBER);
-	ComboBox_SetCurSel(hctl0, 0);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (selected_hero1 != itor->number_) && (selected_hero2 != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl0, text); 
-			ComboBox_SetItemData(hctl0, idx, itor->number_);
-
-			// don't use h.hate_[0].hero_
-			if (selected_hero0 == itor->number_) {
-				ComboBox_SetCurSel(hctl0, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	// hate[1]
-	ComboBox_ResetContent(hctl1);
-	ComboBox_AddString(hctl1, "");
-	ComboBox_SetItemData(hctl1, 0, HEROS_INVALID_NUMBER);
-	ComboBox_SetCurSel(hctl1, 0);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (selected_hero0 != itor->number_) && (selected_hero2 != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl1, text); 
-			ComboBox_SetItemData(hctl1, idx, itor->number_);
-
-			// don't use h.hate_[1].hero_
-			if (selected_hero1 == itor->number_) {
-				ComboBox_SetCurSel(hctl1, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	// hate[2]
-	ComboBox_ResetContent(hctl2);
-	ComboBox_AddString(hctl2, "");
-	ComboBox_SetItemData(hctl2, 0, HEROS_INVALID_NUMBER);
-	ComboBox_SetCurSel(hctl2, 0);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (selected_hero0 != itor->number_) && (selected_hero1 != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl2, text);
-			ComboBox_SetItemData(hctl2, idx, itor->number_);
-
-			// don't use h.Intimate_[2].hero_
-			if (selected_hero2 == itor->number_) {
-				ComboBox_SetCurSel(hctl2, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	return;
-}
-
 void refresh_hero_name_list(HWND hdlgP, hero& h)
 {
-	HWND hctl;
-	hero_map::iterator itor;
-	char text[_MAX_PATH];
-	int idx;
-
-	// consort
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_CONSORT);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if (h.gender_ != itor->gender_) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.consort_[0].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
-		}
-	}
-
 	// parent0
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_PARENT0);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((itor->gender_ == hero_gender_male) && (h.number_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.parent_[0].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
-		}
+	if (h.parent_[0].hero_ != HEROS_INVALID_NUMBER) {
+		strcat_heros_str2(hdlgP, IDC_ET_HEROEDIT_FATHER, h.parent_[0].hero_, 1, true);
 	}
 
 	// parent1
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_PARENT1);
-	ComboBox_AddString(hctl, "");
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((itor->gender_ == hero_gender_female) && (h.number_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
+	if (h.parent_[1].hero_ != HEROS_INVALID_NUMBER) {
+		strcat_heros_str2(hdlgP, IDC_ET_HEROEDIT_MOTHER, h.parent_[1].hero_, 1, true);
+	}
 
-			if (h.parent_[1].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
+	// consort
+	for (int i = 0; i < HEROS_MAX_CONSORT; i ++) {
+		if (h.consort_[i].hero_ != HEROS_INVALID_NUMBER) {
+			strcat_heros_str2(hdlgP, IDC_ET_HEROEDIT_CONSORT, h.consort_[i].hero_, HEROS_MAX_CONSORT, true);
 		}
 	}
 
-	// oath0
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_OATH0);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.gender_ == itor->gender_) && (h.number_ != itor->number_) && (h.oath_[1].hero_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.oath_[0].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
+	// oath
+	for (int i = 0; i < HEROS_MAX_OATH; i ++) {
+		if (h.oath_[i].hero_ != HEROS_INVALID_NUMBER) {
+			strcat_heros_str2(hdlgP, IDC_ET_HEROEDIT_OATH, h.oath_[i].hero_, HEROS_MAX_OATH, true);
 		}
 	}
 
-	// oath1
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_OATH1);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.gender_ == itor->gender_) && (h.number_ != itor->number_) && (h.oath_[0].hero_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.oath_[1].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
+	// intimate
+	for (int i = 0; i < HEROS_MAX_INTIMATE; i ++) {
+		if (h.intimate_[i].hero_ != HEROS_INVALID_NUMBER) {
+			strcat_heros_str2(hdlgP, IDC_ET_HEROEDIT_INTIMATE, h.intimate_[i].hero_, HEROS_MAX_INTIMATE, true);
 		}
 	}
 
-	// intimate0
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE0);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (h.intimate_[1].hero_ != itor->number_) && (h.intimate_[2].hero_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.intimate_[0].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	// intimate1
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE1);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (h.intimate_[0].hero_ != itor->number_) && (h.intimate_[2].hero_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.intimate_[1].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	// intimate2
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_INTIMATE2);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (h.intimate_[0].hero_ != itor->number_) && (h.intimate_[1].hero_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.intimate_[2].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	// hate0
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE0);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (h.hate_[1].hero_ != itor->number_) && (h.hate_[2].hero_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.hate_[0].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	// hate1
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE1);
-	ComboBox_AddString(hctl, "");
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (h.hate_[0].hero_ != itor->number_) && (h.hate_[2].hero_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.hate_[1].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
-		}
-	}
-
-	// hate2
-	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_HATE2);
-	ComboBox_AddString(hctl, ""); 
-	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
-	for (idx = 1, itor = gdmgr.heros_.begin(); itor != gdmgr.heros_.end(); ++ itor) {
-		if ((h.number_ != itor->number_) && (h.hate_[0].hero_ != itor->number_) && (h.hate_[1].hero_ != itor->number_)) {
-			sprintf(text, "%04u: %s", itor->number_, utf8_2_ansi(itor->name().c_str()));
-			ComboBox_AddString(hctl, text); 
-			ComboBox_SetItemData(hctl, idx, itor->number_);
-
-			if (h.hate_[2].hero_ == itor->number_) {
-				ComboBox_SetCurSel(hctl, idx); 
-			}
-			idx ++;
+	// hate
+	for (int i = 0; i < HEROS_MAX_HATE; i ++) {
+		if (h.hate_[i].hero_ != HEROS_INVALID_NUMBER) {
+			strcat_heros_str2(hdlgP, IDC_ET_HEROEDIT_HATE, h.hate_[i].hero_, HEROS_MAX_HATE, true);
 		}
 	}
 }
@@ -2655,7 +2304,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	set_language_text(hdlgP, IDC_STATIC_LEADERSHIP, "wesnoth-hero", "leadership");
 	set_language_text(hdlgP, IDC_STATIC_FORCE, "wesnoth-hero", "force");
 	set_language_text(hdlgP, IDC_STATIC_INTELLECT, "wesnoth-hero", "intellect");
-	set_language_text(hdlgP, IDC_STATIC_POLITICS, "wesnoth-hero", "politics");
+	set_language_text(hdlgP, IDC_STATIC_POLITICS, "wesnoth-hero", "spirit");
 	set_language_text(hdlgP, IDC_STATIC_CHARM, "wesnoth-hero", "charm");
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_EXPERIENCE), utf8_2_ansi(_("Experience")));
 	set_language_text(hdlgP, IDC_STATIC_ARMS, "wesnoth-lib", "Arms");
@@ -2673,10 +2322,18 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	set_language_text(hdlgP, IDC_STATIC_SKILL6, "wesnoth-hero", "skill-6");
 	set_language_text(hdlgP, IDC_STATIC_RELATION, "wesnoth-lib", "Relation");
 	set_language_text(hdlgP, IDC_STATIC_PARENT, "wesnoth-hero", "parent");
-	set_language_text(hdlgP, IDC_STATIC_CONSORT, "wesnoth-hero", "consort");
-	set_language_text(hdlgP, IDC_STATIC_OATH, "wesnoth-hero", "oath");
-	set_language_text(hdlgP, IDC_STATIC_INTIMATE, "wesnoth-hero", "intimate");
-	set_language_text(hdlgP, IDC_STATIC_HATE, "wesnoth-hero", "hate");
+	strstr.str("");
+	strstr << dgettext("wesnoth-hero", "consort") << "(" << HEROS_MAX_CONSORT;
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CONSORT), utf8_2_ansi(strstr.str().c_str()));
+	strstr.str("");
+	strstr << dgettext("wesnoth-hero", "oath") << "(" << HEROS_MAX_OATH;
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_OATH), utf8_2_ansi(strstr.str().c_str()));
+	strstr.str("");
+	strstr << dgettext("wesnoth-hero", "intimate") << "(" << HEROS_MAX_INTIMATE;
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_INTIMATE), utf8_2_ansi(strstr.str().c_str()));
+	strstr.str("");
+	strstr << dgettext("wesnoth-hero", "hate") << "(" << HEROS_MAX_HATE;
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HATE), utf8_2_ansi(strstr.str().c_str()));
 	set_language_text(hdlgP, IDC_STATIC_FEATURE, "wesnoth-hero", "feature");
 	set_language_text(hdlgP, IDC_STATIC_SIDEFEATURE, "wesnoth-hero", "side feature");
 	set_language_text(hdlgP, IDC_STATIC_TACTIC, "wesnoth-hero", "tactic");
@@ -2695,6 +2352,8 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// flags
 	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROBBER), utf8_2_ansi(hero::flag_str(hero_flag_robber).c_str()));
 	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_ROAM), utf8_2_ansi(hero::flag_str(hero_flag_roam).c_str()));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_EMPLOYEE), utf8_2_ansi(hero::flag_str(hero_flag_employee).c_str()));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_HEROEDIT_NPC), utf8_2_ansi(hero::flag_str(hero_flag_npc).c_str()));
 
 	// treasure
 	hctl = GetDlgItem(hdlgP, IDC_CMB_HEROEDIT_TREASURE0);
@@ -2762,6 +2421,15 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->second.index());
 	}
 
+	// candidate hero
+	candidate_hero::fill_header(hdlgP);
+	hctl = GetDlgItem(hdlgP, IDC_LV_CANDIDATEHERO);
+	for (int number = hero::number_normal_min; number < (int)gdmgr.heros_.size(); number ++) {
+		if (number != gdmgr._menu_lparam) {
+			hero& h = gdmgr.heros_[number];
+			candidate_hero::fill_row(hctl, h);
+		}
+	}
 	refresh_hero_name_list(hdlgP, gdmgr.heros_[gdmgr._menu_lparam]);
 
 	// image number
@@ -2802,7 +2470,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	UpDown_SetRange(hctl, 0, 511);	// [0, 511]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_INTELLECTXP));
 
-	// politics
+	// spirit
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICS);
 	UpDown_SetRange(hctl, 1, 100);	// [1, 100]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_POLITICS));
@@ -2947,24 +2615,45 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 void On_DlgHeroEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
-	BOOL		changed = FALSE;
+	if (candidate_hero::on_command(hdlgP, id, codeNotify)) {
+		return;
+	}
+	BOOL changed = FALSE;
+	int relation_id = -1;
+	int relation_max = -1;
 
 	switch (id) {
-	case IDC_CMB_HEROEDIT_OATH0:
-	case IDC_CMB_HEROEDIT_OATH1:
-		OnOathCmb(hdlgP, hwndCtrl, codeNotify, gdmgr.heros_[gdmgr._menu_lparam]);
+	case IDM_VARIABLE_ITEM0:
+		relation_id = IDC_ET_HEROEDIT_FATHER;
+		relation_max = 1;
+	case IDM_VARIABLE_ITEM1:
+		if (relation_id == -1) {
+			relation_id = IDC_ET_HEROEDIT_MOTHER;
+			relation_max = 1;
+		}
+	case IDM_VARIABLE_ITEM2:
+		if (relation_id == -1) {
+			relation_id = IDC_ET_HEROEDIT_CONSORT;
+			relation_max = HEROS_MAX_CONSORT;
+		}
+	case IDM_VARIABLE_ITEM3:
+		if (relation_id == -1) {
+			relation_id = IDC_ET_HEROEDIT_OATH;
+			relation_max = HEROS_MAX_OATH;
+		}
+	case IDM_VARIABLE_ITEM4:
+		if (relation_id == -1) {
+			relation_id = IDC_ET_HEROEDIT_INTIMATE;
+			relation_max = HEROS_MAX_INTIMATE;
+		}
+	case IDM_VARIABLE_ITEM5:
+		if (relation_id == -1) {
+			relation_id = IDC_ET_HEROEDIT_HATE;
+			relation_max = HEROS_MAX_HATE;
+		}
+		strcat_heros_str2(hdlgP, relation_id, candidate_hero::lParam, relation_max, true);
 		break;
-	case IDC_CMB_HEROEDIT_INTIMATE0:
-	case IDC_CMB_HEROEDIT_INTIMATE1:
-	case IDC_CMB_HEROEDIT_INTIMATE2:
-		On3HeroCmb(hdlgP, codeNotify, gdmgr.heros_[gdmgr._menu_lparam], true);
-		break;
-	case IDC_CMB_HEROEDIT_HATE0:
-	case IDC_CMB_HEROEDIT_HATE1:
-	case IDC_CMB_HEROEDIT_HATE2:
-		On3HeroCmb(hdlgP, codeNotify, gdmgr.heros_[gdmgr._menu_lparam], false);
-		break;
-			
+
 	case IDM_RESET:
 		update_hero_edit(hdlgP, gdmgr.heros_[gdmgr._menu_lparam]);
 		break;
@@ -3024,6 +2713,98 @@ void On_DlgHeroEditHScroll(HWND hdlgP, HWND hwndCtrl, UINT code, int pos)
 	return ;
 }
 
+bool is_relation_enable(HWND hdlgP, int id, LPARAM lparam)
+{
+	char text[_MAX_PATH];
+	std::vector<int> v;
+	std::map<int, int> assembled;
+	std::set<int> ids;
+	const hero& curr = gdmgr.heros_[gdmgr._menu_lparam];
+	const hero& h = gdmgr.heros_[lparam];
+
+	ids.insert(IDC_ET_HEROEDIT_FATHER);
+	ids.insert(IDC_ET_HEROEDIT_MOTHER);
+	ids.insert(IDC_ET_HEROEDIT_CONSORT);
+	ids.insert(IDC_ET_HEROEDIT_OATH);
+	ids.insert(IDC_ET_HEROEDIT_INTIMATE);
+	ids.insert(IDC_ET_HEROEDIT_HATE);
+
+	for (std::set<int>::const_iterator it = ids.begin(); it != ids.end(); ++ it) {
+		Edit_GetText(GetDlgItem(hdlgP, *it), text, _MAX_PATH);
+		v = to_vector_int2(text);
+		if (std::find(v.begin(), v.end(), h.number_) != v.end()) {
+			return false;
+		}
+		assembled.insert(std::make_pair(*it, v.size()));
+	}
+	
+	if (h.gender_ != hero_gender_male && h.gender_ != hero_gender_female) {
+		return false;
+	}
+
+	int relation_max = -1;
+	int hit_et_id;
+	if (id == IDM_VARIABLE_ITEM0) {
+		relation_max = 1;
+		hit_et_id = IDC_ET_HEROEDIT_FATHER;
+		if (h.gender_ != hero_gender_male) {
+			return false;
+		}
+
+	} else if (id == IDM_VARIABLE_ITEM1) {
+		relation_max = 1;
+		hit_et_id = IDC_ET_HEROEDIT_MOTHER;
+		if (h.gender_ != hero_gender_female) {
+			return false;
+		}
+
+	} else if (id == IDM_VARIABLE_ITEM2) {
+		relation_max = HEROS_MAX_CONSORT;
+		hit_et_id = IDC_ET_HEROEDIT_CONSORT;
+		if (h.gender_ == curr.gender_) {
+			return false;
+		}
+
+	} else if (id == IDM_VARIABLE_ITEM3) {
+		relation_max = HEROS_MAX_OATH;
+		hit_et_id = IDC_ET_HEROEDIT_OATH;
+		if (h.gender_ != curr.gender_) {
+			return false;
+		}
+
+	} else if (id == IDM_VARIABLE_ITEM4) {
+		relation_max = HEROS_MAX_INTIMATE;
+		hit_et_id = IDC_ET_HEROEDIT_INTIMATE;
+
+	} else if (id == IDM_VARIABLE_ITEM5) {
+		relation_max = HEROS_MAX_HATE;
+		hit_et_id = IDC_ET_HEROEDIT_HATE;
+	}
+
+	if (relation_max != -1 && assembled.find(hit_et_id)->second >= relation_max) {
+		return false;
+	}
+
+	return true;
+}
+
+BOOL On_DlgHeroEditNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
+{
+	if (lpNMHdr->code == NM_RCLICK) {
+		std::map<int, std::string> candidate_menu;
+		candidate_menu.insert(std::make_pair(IDM_VARIABLE_ITEM0, _("To Father")));
+		candidate_menu.insert(std::make_pair(IDM_VARIABLE_ITEM1, _("To Mother")));
+		candidate_menu.insert(std::make_pair(IDM_VARIABLE_ITEM2, _("To Consort")));
+		candidate_menu.insert(std::make_pair(IDM_VARIABLE_ITEM3, _("To Oath")));
+		candidate_menu.insert(std::make_pair(IDM_VARIABLE_ITEM4, _("To Intimate")));
+		candidate_menu.insert(std::make_pair(IDM_VARIABLE_ITEM5, _("To Hate")));
+
+		if (candidate_hero::notify_handler_rclick(candidate_menu, hdlgP, DlgItem, lpNMHdr, is_relation_enable)) {
+		}
+	}
+	return FALSE;
+}
+
 BOOL CALLBACK DlgHeroEditProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch(uMsg) {
@@ -3032,7 +2813,7 @@ BOOL CALLBACK DlgHeroEditProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lPara
 	HANDLE_MSG(hdlgP, WM_COMMAND, On_DlgHeroEditCommand);
 	HANDLE_MSG(hdlgP, WM_HSCROLL, On_DlgHeroEditHScroll);
 	HANDLE_MSG(hdlgP, WM_DRAWITEM, editor_config::On_DlgDrawItem);
-	HANDLE_MSG(hdlgP, WM_NOTIFY, On_DlgPopupNotify);
+	HANDLE_MSG(hdlgP, WM_NOTIFY, On_DlgHeroEditNotify);
 	}
 	
 	return FALSE;

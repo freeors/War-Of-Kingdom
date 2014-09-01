@@ -66,9 +66,6 @@ namespace preferences {
 	std::string campaign_server();
 	void set_campaign_server(const std::string& host);
 
-	std::string login();
-	void set_login(const std::string& username);
-
 	// If password remembering is turned off use
 	// prv::password instead. This way we will not
 	// have to worry about whether to remember the
@@ -142,9 +139,6 @@ namespace preferences {
 	bool eng_file_name();
 	void set_eng_file_name(bool value);
 
-	void set_show_side_colors(bool value);
-	bool show_side_colors();
-
 	bool save_replays();
 	void set_save_replays(bool value);
 
@@ -166,10 +160,8 @@ namespace preferences {
 	void set_inapp_purchased(int id, bool value);
 	bool inapp_purchased(int id);
 
-	int vip2();
+	bool vip2();
 
-	bool show_floating_labels();
-	void set_show_floating_labels(bool value);
 
 	bool message_private();
 	void set_message_private(bool value);

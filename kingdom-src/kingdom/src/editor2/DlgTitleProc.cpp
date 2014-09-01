@@ -188,7 +188,6 @@ HWND init_toolbar_sys(HINSTANCE hinst, HWND hdlgP)
 void title_select(do_action_t da)
 {
 	if (gdmgr._da == da) {
-		// 当前已正在运行选择的操作,不执行任何动作
 		return;
 	}
 
@@ -206,6 +205,10 @@ void title_select(do_action_t da)
 		if (!campaign_hide_ui()) {
 			return;
 		}
+	} else if (gdmgr._da == da_integrate) {
+		if (!integrate_hide_ui()) {
+			return;
+		}
 	}
 	
 	ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_SYNC, 0);
@@ -220,6 +223,7 @@ void title_select(do_action_t da)
 	ShowWindow(gdmgr._hdlg_core, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_visual, SW_HIDE);
 	ShowWindow(gdmgr._hdlg_campaign, SW_HIDE);
+	ShowWindow(gdmgr._hdlg_integrate, SW_HIDE);
 
 	// 记住当前正在执行的会话
 	gdmgr._da = da;
@@ -249,6 +253,9 @@ void title_select(do_action_t da)
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_TBOX, 1);
 		campaign_enter_ui();
 
+	} else if (da == da_integrate) {
+		ShowWindow(gdmgr._hdlg_integrate, SW_RESTORE);
+		integrate_enter_ui();
 	}
 	return;
 }

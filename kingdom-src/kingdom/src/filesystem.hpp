@@ -38,7 +38,7 @@ struct io_exception : public game::error {
 struct file_tree_checksum;
 
 enum file_name_option { ENTIRE_FILE_PATH, FILE_NAME_ONLY };
-enum file_filter_option { NO_FILTER = 0, SKIP_MEDIA_DIR = 0x1, SKIP_SCENARIO_DIR = 0x2, SKIP_GUI_DIR = 0x4, SKIP_INTERNAL_DIR = 0x8};
+enum file_filter_option { NO_FILTER = 0, SKIP_MEDIA_DIR = 0x1, SKIP_SCENARIO_DIR = 0x2, SKIP_GUI_DIR = 0x4, SKIP_INTERNAL_DIR = 0x8, SKIP_TERRAIN = 0x10, SKIP_BOOK = 0x20};
 enum file_reorder_option { DONT_REORDER, DO_REORDER };
 
 /**
@@ -97,7 +97,7 @@ std::istream *istream_file(const std::string &fname, bool to_utf16 = false);
 std::ostream *ostream_file(std::string const &fname, bool to_utf16 = false);
 /** Throws io_exception if an error occurs. */
 void write_file(const std::string& fname, const std::string& data);
-void write_file(const std::string& fname, char* data, int len, bool to_utf16);
+void write_file(const std::string& fname, const char* data, int len, bool to_utf16);
 
 std::string read_map(const std::string& name);
 
@@ -266,6 +266,44 @@ public:
 void conv_ansi_utf8(std::string &name, bool a2u);
 std::string conv_ansi_utf8_2(const std::string &name, bool a2u);
 #endif
-const char* utf8_2_ansi(const char* str);
+const char* utf8_2_ansi(const std::string& str);
+const char* ansi_2_utf8(const std::string& str);
+
+std::string format_time_ymd(time_t t);
+std::string format_time_date(time_t t);
+std::string format_time_local(time_t t);
+std::string format_time_elapse(time_t elapse);
+
+char* saes_encrypt_heap(const char* ptext, int size, unsigned char* key);
+char* saes_decrypt_heap(const char* ctext, int size, unsigned char* key);
+class tsaes_encrypt
+{
+public:
+	tsaes_encrypt(const char* ctext, int s, unsigned char* key);
+	~tsaes_encrypt()
+	{
+		if (buf) {
+			free(buf);
+		}
+	}
+
+	char* buf;
+	int size;
+};
+
+class tsaes_decrypt
+{
+public:
+	tsaes_decrypt(const char* ptext, int s, unsigned char* key);
+	~tsaes_decrypt()
+	{
+		if (buf) {
+			free(buf);
+		}
+	}
+
+	char* buf;
+	int size;
+};
 
 #endif

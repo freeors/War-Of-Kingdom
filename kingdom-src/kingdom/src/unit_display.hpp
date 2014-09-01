@@ -23,6 +23,8 @@
 
 #include "unit_map.hpp"
 #include "gamestatus.hpp"
+#include "unit_types.hpp"
+#include "font.hpp"
 
 class attack_type;
 class team;
@@ -42,7 +44,7 @@ namespace unit_display
 /**
  * global animations
  */
-void global_anim_2(int type, const std::string& id1, const std::string& id2);
+void global_anim_2(int type, const std::string& id1, const std::string& id2, const std::string& text, const SDL_Color& color = font::GOOD_COLOR);
 
 
 extern int player_number_;
@@ -120,6 +122,10 @@ void unit_recruited(const map_location& loc,
 void unit_healing(unit &healed, const map_location &healed_loc,
 	const std::vector<unit *> &healers, int healing);
 
+void unit_build(artifical& art);
+
+void unit_repair(artifical& art, int healing);
+
 /**
  *  Set taxer_loc to an invalid location if there are no taxers.
  *
@@ -145,9 +151,16 @@ void formation_attack_start(const tformation& formation);
 
 void perfect_anim();
 
+void stratagem_anim(const ttechnology& stratagem, const std::string& image, bool up);
+
 void unit_touching(unit& u, std::vector<unit *>& touchers, int touching, const std::string& prefix);
 
 void unit_text(unit& u, bool poisoned, const std::string& text);
+
+void unit_income(unit& u, int income);
+
+void location_text(const std::vector<tlocation_anim>& locs);
+void location_text(int xoffset, int yoffset, const std::string& text, Uint32 color);
 
 class tactic_anim_lock
 {
@@ -164,7 +177,7 @@ private:
 class formation_anim_lock
 {
 public:
-	formation_anim_lock(game_display& disp, tformation& formation);
+	formation_anim_lock(game_display& disp, tformation& formation, formation_anim_lock** relative);
 	~formation_anim_lock();
 
 	void push_defender(const unit* def);
@@ -173,6 +186,7 @@ public:
 	tformation& formation_;
 private:
 	game_display& disp_;
+	formation_anim_lock** relative_;
 	std::vector<const unit*> defender_;
 	bool started_;
 };

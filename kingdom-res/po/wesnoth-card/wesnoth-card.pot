@@ -228,10 +228,16 @@ msgstr ""
 msgid "technology_desc-drill"
 msgstr ""
 
-msgid "technology-discipline"
+msgid "technology-tactic degree"
 msgstr ""
 
-msgid "technology_desc-discipline"
+msgid "technology_desc-tactic degree"
+msgstr ""
+
+msgid "technology-ticks"
+msgstr ""
+
+msgid "technology_desc-ticks"
 msgstr ""
 
 msgid "technology-balefire"
@@ -342,6 +348,36 @@ msgstr ""
 msgid "technology_desc-strategic"
 msgstr ""
 
+
+msgid "technology-xue zhong song tan"
+msgstr ""
+
+msgid "technology_desc-xue zhong song tan"
+msgstr ""
+
+msgid "technology-miao shou hui chun"
+msgstr ""
+
+msgid "technology_desc-miao shou hui chun"
+msgstr ""
+
+msgid "technology-xiao li cang dao"
+msgstr ""
+
+msgid "technology_desc-xiao li cang dao"
+msgstr ""
+
+msgid "technology-sheng dong ji xi"
+msgstr ""
+
+msgid "technology_desc-sheng dong ji xi"
+msgstr ""
+
+msgid "technology-jiang lang cai jin"
+msgstr ""
+
+msgid "technology_desc-jiang lang cai jin"
+msgstr ""
 
 #
 # character section
@@ -1510,10 +1546,46 @@ msgstr ""
 msgid "tactic_desc-heals"
 msgstr ""
 
-msgid "tactic-food"
+msgid "tactic-action"
 msgstr ""
 
-msgid "tactic_desc-food"
+msgid "tactic_desc-action"
+msgstr ""
+
+msgid "tactic-more action"
+msgstr ""
+
+msgid "tactic_desc-more action"
+msgstr ""
+
+msgid "tactic-actions"
+msgstr ""
+
+msgid "tactic_desc-actions"
+msgstr ""
+
+msgid "tactic-more actions"
+msgstr ""
+
+msgid "tactic_desc-more actions"
+msgstr ""
+
+msgid "tactic-weaken actions"
+msgstr ""
+
+msgid "tactic_desc-weaken actions"
+msgstr ""
+
+msgid "tactic-weaken more actions"
+msgstr ""
+
+msgid "tactic_desc-weaken more actions"
+msgstr ""
+
+msgid "tactic-revival"
+msgstr ""
+
+msgid "tactic_desc-revival"
 msgstr ""
 
 msgid "tactic-divine wei wu"
@@ -1672,6 +1744,24 @@ msgstr ""
 msgid "tactic_desc-divine heal"
 msgstr ""
 
+msgid "tactic-centralize mind"
+msgstr ""
+
+msgid "tactic_desc-centralize mind"
+msgstr ""
+
+msgid "tactic-divine advance"
+msgstr ""
+
+msgid "tactic_desc-divine advance"
+msgstr ""
+
+msgid "tactic-chain ring"
+msgstr ""
+
+msgid "tactic_desc-chain ring"
+msgstr ""
+
 #
 # formation
 #
@@ -1756,20 +1846,59 @@ msgstr ""
 #
 # inapp-purchase
 #
-msgid "inapp-noncard"
+msgid "inapp-vip2"
 msgstr ""
 
-msgid "inapp_desc-noncard"
+msgid "inapp_desc-vip2"
 msgstr ""
 
-msgid "inapp-nontacticslot"
+msgid "inapp-score"
 msgstr ""
 
-msgid "inapp_desc-nontacticslot"
+msgid "inapp_desc-score"
 msgstr ""
 
-msgid "inapp-vip"
+msgid "inapp-8coin"
 msgstr ""
 
-msgid "inapp_desc-vip"
+msgid "inapp_desc-8coin"
+msgstr ""
+
+msgid "inapp-45coin"
+msgstr ""
+
+msgid "inapp_desc-45coin"
+msgstr ""
+
+msgid "inapp-100coin"
+msgstr ""
+
+msgid "inapp_desc-100coin"
+msgstr ""
+
+#
+# title
+#
+msgid "title-0"
+msgstr ""
+
+msgid "title-1"
+msgstr ""
+
+msgid "title-2"
+msgstr ""
+
+msgid "title-3"
+msgstr ""
+
+msgid "title-4"
+msgstr ""
+
+#
+# genus
+#
+msgid "genus-turn_based"
+msgstr ""
+
+msgid "genus-half_realtime"
 msgstr ""

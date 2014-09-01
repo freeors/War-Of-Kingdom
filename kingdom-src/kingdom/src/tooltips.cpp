@@ -34,12 +34,11 @@ static const int text_width = 400;
 
 struct tooltip
 {
-	tooltip(const SDL_Rect& r, const std::string& msg, const std::string& act = "")
-	: rect(r), message(msg), action(act)
+	tooltip(const SDL_Rect& r, const std::string& msg)
+	: rect(r), message(msg)
 	{}
 	SDL_Rect rect;
 	std::string message;
-	std::string action;
 };
 
 std::vector<tooltip> tips;
@@ -141,16 +140,16 @@ void clear_tooltips(const SDL_Rect& rect)
 	}
 }
 
-void add_tooltip(const SDL_Rect& rect, const std::string& message, const std::string& action)
+void add_tooltip(const SDL_Rect& rect, const std::string& message)
 {
 	for(std::vector<tooltip>::iterator i = tips.begin(); i != tips.end(); ++i) {
 		if(rects_overlap(i->rect,rect)) {
-			*i = tooltip(rect, message, action);
+			*i = tooltip(rect, message);
 			return;
 		}
 	}
 
-	tips.push_back(tooltip(rect, message, action));
+	tips.push_back(tooltip(rect, message));
 	current_tooltip = tips.end();
 }
 
@@ -170,20 +169,6 @@ void process(int mousex, int mousey)
 
 	clear_tooltip();
 	current_tooltip = tips.end();
-}
-
-bool click(int mousex, int mousey)
-{
-	BOOST_FOREACH (tooltip tip, tips) {
-		if(!tip.action.empty() && point_in_rect(mousex, mousey, tip.rect)) {
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
-			display* disp = resources::screen;
-			help::show_help(*disp, tip.action);
-#endif
-			return true;
-		}
-	}
-	return false;
 }
 
 }

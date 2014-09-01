@@ -62,9 +62,21 @@ void tbutton::load_config_extra()
 	}
 }
 
+void tbutton::set_active(const bool active)
+{ 
+	if (get_active() != active) {
+		set_state(active ? ENABLED : DISABLED); 
+	}
+};
+
 void tbutton::set_state(const tstate state)
 {
-	if(state != state_) {
+	if (state_ == DISABLED && state != ENABLED) {
+		// reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21966&extra=page%3D1
+		return;
+	}
+
+	if (state != state_) {
 		state_ = state;
 		set_dirty(true);
 	}

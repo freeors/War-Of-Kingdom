@@ -59,8 +59,9 @@ thread::~thread()
 
 void thread::kill()
 {
-	if(thread_ != NULL) {
-		SDL_KillThread(thread_);
+	if (thread_ != NULL) {
+		// sdl-2.0
+		// SDL_KillThread(thread_);
 		thread_ = NULL;
 	}
 }

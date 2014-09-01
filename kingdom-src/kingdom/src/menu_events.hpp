@@ -37,7 +37,7 @@ namespace events {
 
 class menu_handler : private chat_handler {
 public:
-	menu_handler(game_display* gui, unit_map& units, hero_map& heros, card_map& cards, std::vector<team>& teams,
+	menu_handler(play_controller& controller, game_display* gui, unit_map& units, hero_map& heros, card_map& cards, std::vector<team>& teams,
 		const config& level, const gamemap& map,
 		const config& game_config, const tod_manager& tod_mng, game_state& gamestate,
 		undo_list& undo_stack);
@@ -62,14 +62,16 @@ public:
 	void save_map();
 	void preferences();
 	void show_chat_log();
-	void show_help();
 	void speak();
 	void whisper();
 	void shout();
 	// void recruit(bool browse, int side_num, const map_location &last_hex);
 	void move(bool browse, int side_num, const map_location &last_hex);
 	void build(const std::string& type, mouse_handler& mousehandler, unit& builder);
+	void guard(mouse_handler& mousehandler, unit& u);
+	void abolish(mouse_handler& mousehandler, unit& u);
 	void extract(mouse_handler& mousehandler, unit& u);
+	void advance(mouse_handler& mousehandler, unit* u);
 	void demolish(mouse_handler& mousehandler, unit* u);
 	void armory(mouse_handler& mousehandler, int side_num, artifical& art);
 	void expedite(int side_num, const map_location& last_hex);
@@ -107,6 +109,7 @@ private:
 	static void change_controller(const std::string& side, const std::string& controller);
 	static void change_side_controller(const std::string& side, const std::string& player, bool own_side=false);
 
+	play_controller& controller_;
 	game_display* gui_;
 	unit_map& units_;
 	hero_map& heros_;

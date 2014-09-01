@@ -139,7 +139,56 @@ surface getMinimap(int w, int h, const gamemap &map, const team *vw)
 			}
 		}
 	}
+/*
+	std::vector<map_location> v;
+	v.push_back(map_location(18, 3));
+	v.push_back(map_location(19, 3));
+	v.push_back(map_location(19, 4));
+	v.push_back(map_location(20, 5));
+	v.push_back(map_location(21, 5));
+	v.push_back(map_location(22, 6));
+	v.push_back(map_location(23, 6));
+	v.push_back(map_location(24, 7));
+	v.push_back(map_location(25, 6));
+	for (std::vector<map_location>::const_iterator it = v.begin(); it != v.end(); ++ it) {
+		const map_location& loc = *it;
 
+		// We draw 2 half-hex (with possibly different directions),
+		// but skip the first for the first step.
+		const int first_half = (it == v.begin()) ? 1 : 0;
+		// and the second for the last step
+		const int second_half = (it + 1 == v.end()) ? 0 : 1;
+
+		for (int h = first_half; h <= second_half; ++h) {
+			const std::string sense(h==0 ? "-in" : "-out");
+
+			// In function of the half, use the incoming or outgoing direction
+			map_location::DIRECTION dir = (it + (h - 1))->get_relative_dir(*(it + h));
+
+			std::string rotate;
+			if (dir > map_location::SOUTH_EAST) {
+				// No image, take the opposite direction and do a 180 rotation
+				dir = it->get_opposite_dir(dir);
+				rotate = "~FL(horiz)~FL(vert)";
+			}
+
+			const std::string image = "footsteps/foot-prelude"
+				+ sense + "-" + map_location::write_direction(dir)
+				+ ".png" + rotate;
+			surface surf = image::get_image(image);
+
+			SDL_Rect maprect = create_rect(
+						  loc.x * scale * 3 / 4 - 1
+						, loc.y * scale + scale / 4 * (is_odd(loc.x) ? 1 : -1) - 1
+						, 0
+						, 0);
+
+			if (surf != NULL) {
+				sdl_blit(surf, NULL, minimap, &maprect);
+			}
+		}
+	}
+*/
 	double wratio = w*1.0 / minimap->w;
 	double hratio = h*1.0 / minimap->h;
 	double ratio = std::min<double>(wratio, hratio);

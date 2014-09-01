@@ -23,12 +23,6 @@
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/listbox.hpp"
 #include <boost/bind.hpp>
-#include "game_display.hpp"
-#include "team.hpp"
-#include "unit_map.hpp"
-#include "gamestatus.hpp"
-#include "play_controller.hpp"
-#include "resources.hpp"
 #include "gettext.hpp"
 
 namespace gui2 {
@@ -67,9 +61,8 @@ namespace gui2 {
 REGISTER_DIALOG(system)
 
 const int max_items = 6;
-tsystem::tsystem(game_display& gui, const std::vector<titem>& items)
-	: gui_(gui)
-	, items_(items)
+tsystem::tsystem(const std::vector<titem>& items)
+	: items_(items)
 	, retval_(twindow::OK)
 {
 }

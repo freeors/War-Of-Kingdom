@@ -196,7 +196,7 @@ bool animate_unit_advancement(unit& u, size_t choice)
 
 	game_display* disp = resources::screen;
 	rect_of_hexes& draw_area = disp->draw_area();
-	bool force_scroll = (!unit_display::player_number_ || (unit_display::player_number_ > 0 && preferences::scroll_to_action()))? true: false;
+	bool force_scroll = preferences::scroll_to_action();
 	bool animate = force_scroll || point_in_rect_of_hexes(u.get_location().x, u.get_location().y, draw_area);
 	if (!resources::screen->video().update_locked() && animate) {
 		unit_animator animator;
@@ -255,21 +255,6 @@ void show_objectives(const config &level, const team& t)
 
 	gui2::show_transient_message(resources::screen->video(), level["name"],	
 		t.form_results_of_battle_tip(objectives.empty() ? no_objectives : objectives), "", true);
-}
-
-void show_unit_description(const unit &u)
-{
-	const unit_type* t = u.type();
-	if (t != NULL)
-		show_unit_description(*t);
-	else
-		// can't find type, try open the id page to have feedback and unit error page
-	  help::show_unit_help(*resources::screen, u.type_id());
-}
-
-void show_unit_description(const unit_type &t)
-{
-	help::show_unit_help(*resources::screen, t.id(), t.hide_help());
 }
 
 } // end namespace dialogs
@@ -477,13 +462,13 @@ std::string form_receive_from_title()
 	return vgettext("Reading from $server...", i18n_symbols);
 }
 
-network::connection network_connect_dialog(display& disp, const std::string&, const std::string& hostname, int port, bool quiet)
+network::connection network_connect_dialog(display& disp, const std::string&, const std::string& hostname, int port, bool xmit_http_data, bool quiet)
 {
 	network::connection conn = network::null_connection;
 
 	connect_waiter waiter(disp, form_connect_to_title());
 	try {
-		conn = network::connect(hostname, port, waiter);
+		conn = network::connect(hostname, port, xmit_http_data, waiter);
 	} catch (network::error& e) {
 		std::string err = e.message;
 		if (e.message.empty()) {
@@ -496,11 +481,11 @@ network::connection network_connect_dialog(display& disp, const std::string&, co
 	return conn;
 }
 
-void network_receive_dialog(display& disp, const std::string& msg, std::vector<char>& buf, network::connection connection_num)
+void network_receive_dialog(display& disp, const std::string& msg, std::vector<char>& buf, network::connection connection_num, int hidden_ms)
 {
 	try {
 		network_asio::connection_recv_buf conn(connection_num, buf);
-		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_receive_from_title(): msg, "");
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_receive_from_title(): msg, "", hidden_ms);
 		dlg.show(disp.video());
 
 	} catch(network::error& e) {
@@ -512,11 +497,11 @@ void network_receive_dialog(display& disp, const std::string& msg, std::vector<c
 	}
 }
 
-network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num)
+network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num, int hidden_ms)
 {
 	try {
 		network_asio::connection_recv_cfg conn(connection_num, cfg);
-		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_receive_from_title(): msg, "");
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_receive_from_title(): msg, "", hidden_ms);
 		dlg.show(disp.video());
 
 		return conn.res();
@@ -532,13 +517,13 @@ network::connection network_receive_dialog(display& disp, const std::string& msg
 	return network::null_connection;
 }
 
-void network_send_dialog(display& disp, const std::string& msg, const char* buf, int len, network::connection connection_num)
+void network_send_dialog(display& disp, const std::string& msg, const char* buf, int len, network::connection connection_num, int hidden_ms)
 {
 	try {
 		network::send_raw_data(buf, len, connection_num);
 
 		network_asio::connection_send_buf conn(connection_num, len);
-		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_send_to_title(): msg, "");
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_send_to_title(): msg, "", hidden_ms);
 		dlg.set_track_upload(true);
 		dlg.show(disp.video());
 

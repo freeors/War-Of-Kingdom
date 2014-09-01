@@ -6,15 +6,15 @@ msgstr ""
 "Project-Id-Version: en_GB\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-10-26 15:32+0800\n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"PO-Revision-Date: 2014-07-05 11:41+0800\n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
 "Language-Team: English (British) <en@li.org>\n"
 "Language: en_GB\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.6.5\n"
 
 msgid "None"
 msgstr "None"
@@ -26,54 +26,52 @@ msgid "Multi"
 msgstr "Multi"
 
 msgid "Loyaltys +10"
-msgstr ""
+msgstr "Loyaltys + 10"
 
 msgid "loyaltys +10 description"
-msgstr "loyaltys +10"
+msgstr "Increase 10 loyaltys of our side's hero"
 
 msgid "Multi-munitions +10"
-msgstr ""
+msgstr "Multi-munitions + 10"
 
 msgid "multi-munitions +10 description"
-msgstr "multi-munitions +10"
+msgstr "Multi-munitions +10"
 
 msgid "Office"
-msgstr ""
+msgstr "Office"
 
 msgid "office description"
-msgstr "office"
+msgstr "Take a wander hero on our side's city join in"
 
 msgid "Wander"
-msgstr ""
+msgstr "Wander"
 
-#, fuzzy
 msgid "wander description"
-msgstr "wande"
+msgstr "Forced a hero of enemy's side out of office"
 
 msgid "Advance"
-msgstr ""
+msgstr "Advance"
 
 msgid "advance description"
-msgstr "advance"
+msgstr "Increase a level of one our side's troop"
 
 msgid "Train"
 msgstr "Train"
 
 msgid "train description"
-msgstr "train"
+msgstr "Increase a adaptability level of heros in our side's troop"
 
 msgid "Communicate"
-msgstr ""
+msgstr "Communicate"
 
 msgid "communicate description"
 msgstr "communicate"
 
 msgid "Move"
-msgstr ""
+msgstr "Move"
 
-#, fuzzy
 msgid "move description"
-msgstr "office"
+msgstr "Move one troop of our side"
 
 #
 # technology section
@@ -228,11 +226,17 @@ msgstr "drill"
 msgid "technology_desc-drill"
 msgstr "drill"
 
-msgid "technology-discipline"
-msgstr "discipline"
+msgid "technology-tactic degree"
+msgstr "Tactic degree"
 
-msgid "technology_desc-discipline"
-msgstr "discipline"
+msgid "technology_desc-tactic degree"
+msgstr "Increase tactic degree's speed"
+
+msgid "technology-ticks"
+msgstr "Spirit"
+
+msgid "technology_desc-ticks"
+msgstr "Speed recove action"
 
 msgid "technology-balefire"
 msgstr "balefire"
@@ -342,6 +346,36 @@ msgstr "strategic"
 msgid "technology_desc-strategic"
 msgstr "strategic"
 
+msgid "technology-xue zhong song tan"
+msgstr "Send charcoal in snowy weather"
+
+msgid "technology_desc-xue zhong song tan"
+msgstr "When defeated, reinforcement join into the side that he aid"
+
+msgid "technology-miao shou hui chun"
+msgstr "Bring the dying back to life"
+
+msgid "technology_desc-miao shou hui chun"
+msgstr "Heal a troop of our side 4/5 HP per turn"
+
+msgid "technology-xiao li cang dao"
+msgstr "Hide a dagger behind a smile"
+
+msgid "technology_desc-xiao li cang dao"
+msgstr "Damage a troop of enemy side 4/5 HP per turn"
+
+msgid "technology-sheng dong ji xi"
+msgstr "Make a feint attack"
+
+msgid "technology_desc-sheng dong ji xi"
+msgstr "No fight back when initiative attack"
+
+msgid "technology-jiang lang cai jin"
+msgstr "A writer written out"
+
+msgid "technology_desc-jiang lang cai jin"
+msgstr "Make enemy cast tactic failure by 2/3 probability"
+
 #
 # character section
 #
@@ -427,40 +461,34 @@ msgstr "Ambitious"
 # decree section
 #
 msgid "decree-business"
-msgstr ""
+msgstr "Develop business"
 
 msgid "decree_desc-business"
-msgstr ""
+msgstr "Develop business"
 
-#, fuzzy
 msgid "decree-technology"
 msgstr "Develop technology"
 
-#, fuzzy
 msgid "decree_desc-technology"
-msgstr "technology"
+msgstr "Develop technology"
 
-#, fuzzy
 msgid "decree-demolish"
-msgstr "Enhance local troop demolish"
+msgstr "Demolish defence"
 
-#, fuzzy
 msgid "decree_desc-demolish"
-msgstr "Enhance local troop demolish"
+msgstr "Demolish city defence"
 
 msgid "decree-heal"
-msgstr ""
+msgstr "Heal HP"
 
-#, fuzzy
 msgid "decree_desc-heal"
-msgstr "Recover local troop HP"
+msgstr "Heal troop"
 
 msgid "decree-interior"
-msgstr ""
+msgstr "Develop interior"
 
-#, fuzzy
 msgid "decree_desc-interior"
-msgstr "Industrious"
+msgstr "Develop interior"
 
 msgid "especial-0"
 msgstr "Desert"
@@ -1049,28 +1077,28 @@ msgid "feature_desc-63"
 msgstr "Hide in land, remain undetected by enemies"
 
 msgid "feature-64"
-msgstr ""
+msgstr "Tactic degree"
 
 msgid "feature_desc-64"
-msgstr ""
+msgstr "Speed up the degree of tactic"
 
 msgid "feature-65"
-msgstr ""
+msgstr "Carom"
 
 msgid "feature_desc-65"
-msgstr ""
+msgstr "Increase attack number when attacking"
 
 msgid "feature-66"
-msgstr ""
+msgstr "Disturb"
 
 msgid "feature_desc-66"
-msgstr ""
+msgstr "Decrease attack number when defending"
 
 msgid "feature-67"
-msgstr ""
+msgstr "Spirit"
 
 msgid "feature_desc-67"
-msgstr ""
+msgstr "Speed recove action"
 
 msgid "feature-68"
 msgstr ""
@@ -1181,22 +1209,22 @@ msgid "feature_desc-85"
 msgstr "Hide in forest, village and deep water"
 
 msgid "feature-86"
-msgstr ""
+msgstr "Unconstrained"
 
 msgid "feature_desc-86"
-msgstr ""
+msgstr "Tactic degree, Diamond, Fleetness"
 
 msgid "feature-87"
-msgstr ""
+msgstr "Raid"
 
 msgid "feature_desc-87"
-msgstr ""
+msgstr "Carom, Disburb"
 
 msgid "feature-88"
-msgstr ""
+msgstr "Divine speed"
 
 msgid "feature_desc-88"
-msgstr ""
+msgstr "Tactic, Spirit"
 
 msgid "feature-89"
 msgstr ""
@@ -1516,11 +1544,47 @@ msgstr "Heal.S"
 msgid "tactic_desc-heals"
 msgstr "Recover friend troops HP"
 
-msgid "tactic-food"
-msgstr "Food"
+msgid "tactic-action"
+msgstr "Action"
 
-msgid "tactic_desc-food"
-msgstr "Feeding other troop 2/3 food"
+msgid "tactic_desc-action"
+msgstr "Speed recover local action"
+
+msgid "tactic-more action"
+msgstr "More action"
+
+msgid "tactic_desc-more action"
+msgstr "Speed recover local more action"
+
+msgid "tactic-actions"
+msgstr "Action.S"
+
+msgid "tactic_desc-actions"
+msgstr "Speed recover friend troops action"
+
+msgid "tactic-more actions"
+msgstr "More action.S"
+
+msgid "tactic_desc-more actions"
+msgstr "Speed recover friend troops more action"
+
+msgid "tactic-weaken actions"
+msgstr "Weaken Action.S"
+
+msgid "tactic_desc-weaken actions"
+msgstr "Weaken enemy troops action"
+
+msgid "tactic-weaken more actions"
+msgstr "Weaken more action.S"
+
+msgid "tactic_desc-weaken more actions"
+msgstr "Weaken enemy troops more action"
+
+msgid "tactic-revival"
+msgstr "Revival"
+
+msgid "tactic_desc-revival"
+msgstr "Revive a our side troop"
 
 msgid "tactic-divine wei wu"
 msgstr "Divine wei wu"
@@ -1678,46 +1742,59 @@ msgstr "Divine heal"
 msgid "tactic_desc-divine heal"
 msgstr "Divine heal"
 
+msgid "tactic-centralize mind"
+msgstr "Centralize mind"
+
+msgid "tactic_desc-centralize mind"
+msgstr "Enhance local attack, defense, encourage. Clear and heal HP"
+
+msgid "tactic-divine advance"
+msgstr "Divine advance"
+
+msgid "tactic_desc-divine advance"
+msgstr "Divine advance"
+
+msgid "tactic-chain ring"
+msgstr "Chain ring"
+
+msgid "tactic_desc-chain ring"
+msgstr "Chain ring"
+
 #
 # formation
 #
 msgid "formation-mage"
-msgstr ""
+msgstr "A host of demons dancing wildly"
 
-#, fuzzy
 msgid "formation_desc-mage"
-msgstr "mage"
+msgstr "Multitudinous mage launch ranged attack"
 
 msgid "formation-horse"
-msgstr ""
+msgstr "Horseman formation"
 
-#, fuzzy
 msgid "formation_desc-horse"
-msgstr "Make local troop invisiable"
+msgstr "Multitudinous horseman launch melee attack"
 
 msgid "formation-pike"
-msgstr ""
+msgstr "Pikeman formation"
 
-#, fuzzy
 msgid "formation_desc-pike"
-msgstr "Damage enemy troops by pierce attack"
+msgstr "Multitudinous pikeman launch melee attack"
 
 msgid "formation-catapult"
-msgstr ""
+msgstr "Catapult formation"
 
-#, fuzzy
 msgid "formation_desc-catapult"
-msgstr "Alert"
+msgstr "Multitudinous catapult launch cast attack"
 
 msgid "formation-bow"
-msgstr ""
+msgstr "Ten thousand arrows have pierced the heart"
 
 msgid "formation_desc-bow"
-msgstr ""
+msgstr "Multitudinous bowman launch ranged attack"
 
-#, fuzzy
 msgid "noble-emperor"
-msgstr "Mayor"
+msgstr "Emperor"
 
 msgid "noble-grand commandant"
 msgstr "Grand Commandant"
@@ -1767,42 +1844,87 @@ msgstr "Deputy General"
 #
 # inapp-purchase
 #
-msgid "inapp-noncard"
-msgstr "One card every 25 turns"
+msgid "inapp-vip2"
+msgstr "Join VIP(30 days)"
 
-msgid "inapp_desc-noncard"
-msgstr ""
-"In RPG scenario, get a \"Wander\" or \"Office\" card every 25 turns. If "
-"\"Wander\" count is not more than \"Office\" in holden cards, will get "
-"\"Wander\", or \"Office\"."
-
-msgid "inapp-nontacticslot"
-msgstr "More tactic slot"
-
-msgid "inapp_desc-nontacticslot"
-msgstr ""
-"In Tower Mode scenario, get more one tactic slot. Default is 2 slot, if hold "
-"it, there is to 3."
-
-msgid "inapp-vip"
-msgstr "Join VIP"
-
-msgid "inapp_desc-vip"
+msgid "inapp_desc-vip2"
 msgstr ""
 "VIP hold some privilege. In RPG scenario, get a \"Wander\" or \"Office\" "
 "card every 25 turns. In Tower Mode scenario, get more one tactic slot."
 
-#~ msgid "noble-prince"
-#~ msgstr "Prince"
+msgid "inapp-score"
+msgstr "2 Coin"
 
-#~ msgid "develop business description"
-#~ msgstr "develop business"
+msgid "inapp_desc-score"
+msgstr "Increase 2 Coin"
 
-#~ msgid "develop technology description"
-#~ msgstr "develop technology"
+msgid "inapp-8coin"
+msgstr "8 Coin"
 
-#~ msgid "balance revenue description"
-#~ msgstr "balance revenue"
+msgid "inapp_desc-8coin"
+msgstr "Increase 8 Coin"
 
-#~ msgid "tactic"
-#~ msgstr "Tactic"
+msgid "inapp-45coin"
+msgstr "45 Coin"
+
+msgid "inapp_desc-45coin"
+msgstr "Increase 45 Coin"
+
+msgid "inapp-100coin"
+msgstr "100 Coin"
+
+msgid "inapp_desc-100coin"
+msgstr "Increase 100 Coin"
+
+#
+# title
+#
+msgid "title-0"
+msgstr "Moneybags"
+
+msgid "title-1"
+msgstr "Attacker"
+
+msgid "title-2"
+msgstr "Defender"
+
+msgid "title-3"
+msgstr "RPG player"
+
+msgid "title-4"
+msgstr "Tower player"
+
+#
+# genus
+#
+msgid "genus-turn_based"
+msgstr "Turn based"
+
+msgid "genus-half_realtime"
+msgstr "Half realtime"
+
+#~ msgid "inapp-nontacticslot"
+#~ msgstr "More tactic slot"
+
+#~ msgid "inapp_desc-nontacticslot"
+#~ msgstr ""
+#~ "In Tower Mode scenario, get more one tactic slot. Default is 2 slot, if "
+#~ "hold it, there is to 3."
+
+#~ msgid "technology-sa dou cheng bing"
+#~ msgstr "Spread bean to be soldier"
+
+#~ msgid "technology_desc-sa dou cheng bing"
+#~ msgstr "Decrease recruitment cost to 2/3"
+
+#~ msgid "tactic-food"
+#~ msgstr "Food"
+
+#~ msgid "tactic_desc-food"
+#~ msgstr "Feeding other troop 2/3 food"
+
+#~ msgid "technology-discipline"
+#~ msgstr "discipline"
+
+#~ msgid "technology_desc-discipline"
+#~ msgstr "discipline"

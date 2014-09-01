@@ -63,6 +63,8 @@ public:
 	void pause_animation(){ started_ =false;};
 	void restart_animation(){if(start_tick_) started_ = true;};
 
+	void reset_start_tick();
+
 	int get_begin_time() const;
 	int get_end_time() const;
         void set_begin_time(int new_begin_time);
@@ -73,7 +75,7 @@ public:
 	void update_last_draw_time(double acceleration = 0);
 	bool need_update() const;
 
-	bool cycles() const {return cycles_;};
+	bool cycles() const {return cycles_;}
 
 	/** Returns true if the current animation was finished. */
 	bool animation_finished() const;

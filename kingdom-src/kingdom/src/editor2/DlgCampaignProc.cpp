@@ -275,12 +275,8 @@ void tmain::from_config(const config& campaign_cfg)
 	first_scenario_ = campaign_cfg["first_scenario"].str();
 	hero_data_ = campaign_cfg["hero_data"].str();
 
-	const std::string& mode = campaign_cfg["mode"];
-	if (mode == "tower") {
-		mode_ = TOWER_MODE;
-	} else {
-		mode_ = NONE_MODE;
-	}
+	subcontinent_ = campaign_cfg["subcontinent"].to_bool();
+	mode_ = mode_tag::find(campaign_cfg["mode"].str());
 	catalog_ = find_catalog(campaign_cfg["catalog"].str());
 	
 	file_ = game_config::path + "\\data\\campaigns\\" + id_ + "\\_main.cfg";
@@ -304,8 +300,11 @@ void tmain::from_ui(HWND hdlgP)
 	ComboBox_GetText(hctl, text, sizeof(text) / sizeof(text[0]));
 	first_scenario_ = text;
 
+	subcontinent_ = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_CAMPMAIN_SUBCONTINENT));
 	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_MODE);
-	mode_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+	if (ComboBox_GetCurSel(hctl) >= 0) {
+		mode_ =	(mode_tag::tmode)ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+	}
 
 	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_CATALOG);
 	catalog_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
@@ -330,6 +329,8 @@ void tmain::update_to_ui(HWND hdlgP)
 		}
 	}
 	ComboBox_SetCurSel(hctl, selected_row);
+
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_CAMPMAIN_SUBCONTINENT), subcontinent_);
 }
 
 void tmain::generate()
@@ -363,15 +364,16 @@ void tmain::generate()
 	strstr << "\timage = \"" << image() << "\"\n";
 	strstr << "\tdescription = _ \"" << id_ << " description\"\n";
 	strstr << "\thero_data = \"" << hero_data_ << "\"\n";
-	if (mode_ == TOWER_MODE) {
-		strstr << "\tmode = tower\n";
+	if (subcontinent_) {
+		strstr << "\tsubcontinent = yes\n";
+	}
+	strstr << "\tmode = \"" << mode_tag::rfind(mode_) << "\"\n";
+	if (mode_ == mode_tag::TOWER || mode_ == mode_tag::SIEGE) {
 		strstr << "\trank = 0\n";
+	} else if (mode_ == mode_tag::RPG) {
+		strstr << "\trank = 100\n";
 	} else {
-		if (ns::_scenario.size() == 1 && ns::_scenario[0].rpg_mode()) {
-			strstr << "\trank = 100\n";
-		} else {
-			strstr << "\trank = 200\n";
-		}
+		strstr << "\trank = 200\n";
 	}
 	if (catalog_ == TUTORIAL_CATALOG) {
 		strstr << "\tcatalog = tutorial\n";
@@ -411,7 +413,7 @@ tside::tside(tscenario* scenario)
 	, side_(-1)
 	, name_()
 	, leader_(HEROS_INVALID_NUMBER)
-	, controller_(HUMAN_AI)
+	, controller_(controller_tag::HUMAN_AI)
 	, candidate_cards_()
 	, holded_cards_()
 	, navigation_(0)
@@ -436,11 +438,11 @@ void tside::from_config(const config& direct_side_cfg)
 	// expand [if] block
 	config side_cfg = direct_side_cfg;
 	// if --> human, else --> ai
-	controller_ = EMPTY;
+	controller_ = controller_tag::EMPTY;
 	BOOST_FOREACH (const config &cfg, direct_side_cfg.child_range("if")) {
 		const config& else_cfg = cfg.child("else");
 		side_cfg.merge_attributes(else_cfg);
-		controller_ = HUMAN_AI;
+		controller_ = controller_tag::HUMAN_AI;
 	}
 
 	side_ = side_cfg["side"].to_int() - 1;
@@ -453,15 +455,15 @@ void tside::from_config(const config& direct_side_cfg)
 		}
 	}
 	leader_ = side_cfg["leader"].to_int(HEROS_INVALID_NUMBER);
-	if (controller_ != HUMAN_AI) {
+	if (controller_ != controller_tag::HUMAN_AI) {
 		const std::string& controller = side_cfg["controller"].str();
 		if (controller == "human") {
-			controller_ = HUMAN;
+			controller_ = controller_tag::HUMAN;
 		} else if (controller == "ai") {
-			controller_ = AI;
+			controller_ = controller_tag::AI;
 		} else {
 			// null
-			controller_ = EMPTY;
+			controller_ = controller_tag::EMPTY;
 		}
 	}
 
@@ -557,7 +559,7 @@ void tside::from_config(const config& direct_side_cfg)
 	for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 		int number = lexical_cast_default<int>(*i);
 		reserve_heros_.insert(number);
-		scenario_->do_state(number, true, -1, tscenario::STATE_RESERVE);
+		scenario_->do_state(number, side_, tscenario::STATE_RESERVE);
 	}
 
 	// multiplayer dependent
@@ -574,7 +576,7 @@ void tside::from_config(const config& direct_side_cfg)
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			int number = lexical_cast_default<int>(*i);
 			c.heros_army_.push_back(number);
-			scenario_->do_state(number, true, number, tscenario::STATE_ARMY);
+			scenario_->do_state(number, side_, tscenario::STATE_ARMY, number);
 		}
 		c.mayor_ = cfg["mayor"].to_int(HEROS_INVALID_NUMBER);
 		c.soldiers_ = cfg["soldiers"].to_int();
@@ -597,14 +599,14 @@ void tside::from_config(const config& direct_side_cfg)
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			int number = lexical_cast_default<int>(*i);
 			c.service_heros_.insert(number);
-			scenario_->do_state(number, true, c.heros_army_[0], tscenario::STATE_SERVICE);
+			scenario_->do_state(number, side_, tscenario::STATE_SERVICE, c.heros_army_[0]);
 		}
 		// wander_heros
 		vstr = utils::split(cfg["wander_heros"].str());
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			int number = lexical_cast_default<int>(*i);
 			c.wander_heros_.insert(number);
-			scenario_->do_state(number, true, c.heros_army_[0], tscenario::STATE_WANDER);
+			scenario_->do_state(number, side_, tscenario::STATE_WANDER, c.heros_army_[0]);
 		}
 		// economy_area
 		const std::vector<std::string> economy_area = utils::parenthetical_split(cfg["economy_area"]);
@@ -645,7 +647,7 @@ void tside::from_config(const config& direct_side_cfg)
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			int number = lexical_cast_default<int>(*i);
 			u.heros_army_.push_back(number);
-			scenario_->do_state(number, true, u.city_, tscenario::STATE_ARMY);
+			scenario_->do_state(number, side_, tscenario::STATE_ARMY, u.city_);
 		}
 		u.loc_.x = cfg["x"].to_int();
 		u.loc_.y = cfg["y"].to_int();
@@ -682,11 +684,11 @@ void tside::from_ui(HWND hdlgP)
 	} else {
 		leader_ = HEROS_INVALID_NUMBER;
 	}
-	if (leader_ == hero::number_empty_leader && ns::_main.mode_ != TOWER_MODE) {
-		controller_ = EMPTY;
+	if (leader_ == hero::number_empty_leader && ns::_main.mode_ == mode_tag::RPG) {
+		controller_ = controller_tag::EMPTY;
 	} else {
 		hctl = GetDlgItem(hdlgP, IDC_CMB_SIDEEDIT_CONTROLLER);
-		controller_ = (tside::CONTROLLER)ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+		controller_ = (controller_tag::CONTROLLER)ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 	}
 
 	gold_ = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_SIDEEDIT_GOLD));
@@ -793,11 +795,11 @@ void tside::update_to_ui(HWND hdlgP) const
 	// controller
 	lvi.mask = LVIF_TEXT;
 	lvi.iSubItem = 3;
-	if (controller_ == HUMAN_AI) {
+	if (controller_ == controller_tag::HUMAN_AI) {
 		strcpy(text, utf8_2_ansi(_("Human_AI")));
-	} else if (controller_ == HUMAN) {
+	} else if (controller_ == controller_tag::HUMAN) {
 		strcpy(text, utf8_2_ansi(_("Human only")));
-	} else if (controller_ == AI) {
+	} else if (controller_ == controller_tag::AI) {
 		if (!scenario_selector::multiplayer) {
 			strcpy(text, utf8_2_ansi(_("AI only")));
 		} else {
@@ -936,7 +938,7 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 	std::map<int, int> mayor_map;
 	hctl = GetDlgItem(hdlgP, IDC_CMB_SIDEEDIT_LEADER);
 	ComboBox_ResetContent(hctl);
-	if (controller_ == EMPTY || ns::_scenario[ns::current_scenario].null_side() == -1) {
+	if (controller_ == controller_tag::EMPTY || ns::_scenario[ns::current_scenario].null_side() == -1) {
 		int number = hero::number_empty_leader;
 		strstr.str("");
 		strstr << "(" << utf8_2_ansi(gdmgr.heros_[number].name().c_str()) << ")";
@@ -946,6 +948,7 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 			selected_row = 0;
 		}
 	}
+
 	for (std::set<int>::const_iterator it = reserve_heros_.begin(); it != reserve_heros_.end(); ++ it) {
 		int number = *it;
 		ComboBox_AddString(hctl, utf8_2_ansi(gdmgr.heros_[number].name().c_str()));
@@ -1001,13 +1004,13 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 	ComboBox_ResetContent(hctl);
 	std::map<int, std::string> controller_map;
 	if (!scenario_selector::multiplayer) {
-		controller_map.insert(std::make_pair(HUMAN, _("Human only"))); 
-		controller_map.insert(std::make_pair(HUMAN_AI, _("Human_AI")));
-		controller_map.insert(std::make_pair(AI, _("AI only")));
+		controller_map.insert(std::make_pair(controller_tag::HUMAN, _("Human only"))); 
+		controller_map.insert(std::make_pair(controller_tag::HUMAN_AI, _("Human_AI")));
+		controller_map.insert(std::make_pair(controller_tag::AI, _("AI only")));
 	} else {
-		controller_map.insert(std::make_pair(AI, _("Set in lobby")));
+		controller_map.insert(std::make_pair(controller_tag::AI, _("Set in lobby")));
 	}
-	controller_map.insert(std::make_pair(EMPTY, _("Void")));
+	controller_map.insert(std::make_pair(controller_tag::EMPTY, _("Void")));
 	int cursel = 0;
 	for (std::map<int, std::string>::const_iterator it = controller_map.begin(); it != controller_map.end(); ++ it) {
 		ComboBox_AddString(hctl, utf8_2_ansi(it->second.c_str()));
@@ -1089,7 +1092,7 @@ void tside::update_to_ui_side_edit(HWND hdlgP, bool partial)
 		hctl = GetDlgItem(hdlgP, IDC_LV_CANDIDATEHERO);
 		ListView_DeleteAllItems(hctl);
 		for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-			if (it->second.allocated_) {
+			if (it->second.allocated(side_)) {
 				continue;
 			}
 			hero& h = gdmgr.heros_[it->first];
@@ -1201,10 +1204,10 @@ std::string tside::generate(const std::string& prefix) const
 		}
 	}
 
-	if (controller_ == tside::HUMAN || controller_ == tside::AI) { 
+	if (controller_ == controller_tag::HUMAN || controller_ == controller_tag::AI) { 
 		// 
 		strstr << "\n";
-		if (controller_ == tside::HUMAN) {
+		if (controller_ == controller_tag::HUMAN) {
 			strstr << prefix << "\tcontroller = human\n";
 			strstr << prefix << "\tshroud = $player.shroud\n";
 			strstr << prefix << "\tfog = $player.fog\n";
@@ -1240,7 +1243,7 @@ std::string tside::generate(const std::string& prefix) const
 			}
 		}
 		strstr << "\n";
-	} else if (controller_ != tside::EMPTY) { 
+	} else if (controller_ != controller_tag::EMPTY) { 
 		// PLAYER_IF
 		strstr << "\n";
 		strstr << prefix << "\t{PLAYER_IF " << leader_ << "}\n";
@@ -1266,7 +1269,7 @@ std::string tside::generate(const std::string& prefix) const
 		strstr << prefix << "\t\tcontroller = human\n";
 		strstr << prefix << "\t\tgold = 100\n";
 		strstr << prefix << "\t\tincome = 0\n";
-		strstr << prefix << "\t\tfeature = " << generate_features(tside::HUMAN) << "\n";
+		strstr << prefix << "\t\tfeature = " << generate_features(controller_tag::HUMAN) << "\n";
 		strstr << prefix << "\t{PLAYER_ELSE}\n";
 		strstr << prefix << "\t\tcontroller = ai\n";
 		strstr << prefix << "\t\tgold = " << gold_ << "\n";
@@ -1423,7 +1426,7 @@ bool tside::new_city()
 	tside::tcity& city = cities_.back();
 
 	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.artificals_.begin(); it != scenario.artificals_.end(); ++ it) {
-		if (it->second.allocated_) continue;
+		if (it->second.allocated(HEROS_INVALID_SIDE)) continue;
 		city.heros_army_.push_back(it->first);
 		break;
 	}
@@ -1433,7 +1436,7 @@ bool tside::new_city()
 	city.type_ = editor_config::city_utypes[0].first;
 	city.loc_ = map_location(1, 1);
 
-	scenario.do_state(city.heros_army_[0], true, city.heros_army_[0], tscenario::STATE_ARMY);
+	scenario.do_state(city.heros_army_[0], side_, tscenario::STATE_ARMY, city.heros_army_[0]);
 
 	// if it is first city, change all troop to it.
 	if (cities_.size() == 1) {
@@ -1450,12 +1453,12 @@ void tside::erase_city(int index, HWND hdlgP)
 	tcity& city = cities_[index];
 	int city_hero = city.heros_army_[0];
 
-	scenario.do_state(city_hero, false);
+	scenario.do_state(city_hero, side_);
 	for (std::set<int>::const_iterator it = city.service_heros_.begin(); it != city.service_heros_.end(); ++ it) {
-		scenario.do_state(*it, false);
+		scenario.do_state(*it, side_);
 	}
 	for (std::set<int>::const_iterator it = city.wander_heros_.begin(); it != city.wander_heros_.end(); ++ it) {
-		scenario.do_state(*it, false);
+		scenario.do_state(*it, side_);
 	}
 	cities_.erase(cities_.begin() + index);
 
@@ -1483,7 +1486,7 @@ bool tside::new_troop()
 	tside::tunit& troop = troops_.back();
 
 	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-		if (it->second.allocated_) continue;
+		if (it->second.allocated(HEROS_INVALID_SIDE)) continue;
 		troop.heros_army_.push_back(it->first);
 		break;
 	}
@@ -1498,7 +1501,7 @@ bool tside::new_troop()
 	troop.type_ = editor_config::troop_utypes[0].first;
 	troop.loc_ = map_location(1, 1);
 
-	scenario.do_state(troop.heros_army_[0], true, troop.heros_army_[0], tscenario::STATE_ARMY);
+	scenario.do_state(troop.heros_army_[0], side_, tscenario::STATE_ARMY, troop.heros_army_[0]);
 	return true;
 }
 
@@ -1508,7 +1511,7 @@ void tside::erase_troop(int index, HWND hdlgP)
 
 	tunit& troop = troops_[index];
 	for (std::vector<int>::const_iterator it = troop.heros_army_.begin(); it != troop.heros_army_.end(); ++ it) {
-		scenario.do_state(*it, false);
+		scenario.do_state(*it, side_);
 	}
 	troops_.erase(troops_.begin() + index);
 
@@ -1549,7 +1552,7 @@ bool tside::operator==(const tside& that) const
 	return true;
 }
 
-std::string tside::generate_features(tside::CONTROLLER cntl) const
+std::string tside::generate_features(controller_tag::CONTROLLER cntl) const
 {
 	std::stringstream strstr;
 	int level;
@@ -1561,7 +1564,7 @@ std::string tside::generate_features(tside::CONTROLLER cntl) const
 			strstr << ", (";
 		}
 		strstr << editor_config::arms[it->arms_].first << ", ";
-		if (cntl == tside::HUMAN) {
+		if (cntl == controller_tag::HUMAN) {
 			level = std::min<int>(it->level_ + 1, 3);
 		} else {
 			level = it->level_;
@@ -1582,12 +1585,14 @@ void tside::tcity::from_ui(HWND hdlgP, tside& side)
 		int original = heros_army_[0];
 		heros_army_.clear();
 		heros_army_.push_back(select_hero);
-		scenario.do_state(original, false);
-		scenario.do_state(heros_army_[0], true, heros_army_[0], tscenario::STATE_ARMY);
+		scenario.do_state(original, side.side_);
+		scenario.do_state(heros_army_[0], side.side_, tscenario::STATE_ARMY, heros_army_[0]);
 
 		for (std::map<int, tscenario::hero_state>::iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-			if (it->second.city_ == original) {
-				it->second.city_ = heros_army_[0];
+			tscenario::hero_state::tstate& state = it->second.state(side.side_);
+
+			if (state.valid() && state.city == original) {
+				state.city = heros_army_[0];
 			}
 		}
 		for (std::vector<tunit>::iterator it = side.troops_.begin(); it != side.troops_.end(); ++ it) {
@@ -1808,7 +1813,7 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		hctl = GetDlgItem(hdlgP, IDC_CMB_CITYEDIT_HERO);
 		ComboBox_ResetContent(hctl);
 		for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.artificals_.begin(); it != scenario.artificals_.end(); ++ it) {
-			if (it->second.allocated_ && it->first != heros_army_[0]) continue;
+			if (it->second.allocated(side.side_) && it->first != heros_army_[0]) continue;
 			ComboBox_AddString(hctl, utf8_2_ansi(gdmgr.heros_[it->first].name().c_str()));
 			ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
 			if (it->first == heros_army_[0]) {
@@ -1833,8 +1838,10 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 	ComboBox_SetItemData(hctl, 0, HEROS_INVALID_NUMBER);
 	selected_row = 0;
 	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-		if (it->second.city_ != heros_army_[0]) continue;
-		if (it->second.state_ != tscenario::STATE_SERVICE && it->second.state_ != tscenario::STATE_ARMY) continue;
+		const tscenario::hero_state::tstate& state = it->second.state(side.side_);
+		if (!state.valid() || state.city != heros_army_[0]) continue;
+		if (state.state != tscenario::STATE_SERVICE && state.state != tscenario::STATE_ARMY) continue;
+
 		if (it->first == heros_army_[0] || it->first == side.leader_) continue;
 		ComboBox_AddString(hctl, utf8_2_ansi(gdmgr.heros_[it->first].name().c_str()));
 		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
@@ -1945,7 +1952,7 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 	hctl = GetDlgItem(hdlgP, IDC_LV_CANDIDATEHERO);
 	ListView_DeleteAllItems(hctl);
 	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-		if (it->second.allocated_) {
+		if (it->second.allocated(side.side_)) {
 			continue;
 		}
 		hero& h = gdmgr.heros_[it->first];
@@ -2316,7 +2323,7 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 	hctl = GetDlgItem(hdlgP, IDC_LV_CANDIDATEHERO);
 	ListView_DeleteAllItems(hctl);
 	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-		if (it->second.allocated_) {
+		if (it->second.allocated(side.side_)) {
 			continue;
 		}
 		hero& h = gdmgr.heros_[it->first];
@@ -2512,7 +2519,7 @@ std::string tscenario::map_file(bool multiplayer, const std::string& campaign_id
 {
 	std::stringstream strstr;
 	if (!multiplayer) {
-		if (ns::_main.mode_ != TOWER_MODE) {
+		// if (ns::_main.must_exist_map()) {
 			if (absolute) {
 				strstr << game_config::path << "\\data\\campaigns\\";
 				strstr << campaign_id << "\\maps\\";
@@ -2522,9 +2529,9 @@ std::string tscenario::map_file(bool multiplayer, const std::string& campaign_id
 				strstr << campaign_id << "/maps/";
 				strstr << scenario_id << ".map";
 			}
-		} else {
-			strstr.str("");
-		}
+		// } else {
+		//	strstr.str("");
+		// }
 	} else {
 		if (absolute) {
 			strstr << game_config::path << "\\data\\multiplayer\\mmaps\\";
@@ -2585,7 +2592,7 @@ int tscenario::null_side() const
 {
 	int index = 0;
 	for (std::vector<tside>::const_iterator it = side_.begin(); it != side_.end(); ++ it, index ++) {
-		if (it->controller_ == tside::EMPTY) {
+		if (it->controller_ == controller_tag::EMPTY) {
 			return index;
 		}
 	}
@@ -2624,11 +2631,11 @@ void tscenario::from_config(int index, const config& scenario_cfg)
 
 	id_ = scenario_cfg["id"].str();
 
-	if (ns::_main.mode_ != TOWER_MODE) {
+	// if (ns::_main.must_exist_map()) {
 		map_data_ = map_data_from_file(map_file(true));
-	} else {
-		map_data_ = "";
-	}
+	// } else {
+	//	map_data_ = "";
+	// }
 	
 	next_scenario_ = scenario_cfg["next_scenario"].str();
 	turns_ = scenario_cfg["turns"].to_int(-1);
@@ -2657,6 +2664,12 @@ void tscenario::from_config(int index, const config& scenario_cfg)
 		} else {
 			find->second ++;
 		}
+	}
+
+	if (scenario_cfg.child("prelude")) {
+		prelude_ = scenario_cfg.child("prelude");
+	} else {
+		prelude_ = config();
 	}
 
 	BOOST_FOREACH (const config &cfg, scenario_cfg.child_range("event")) {
@@ -2947,7 +2960,7 @@ void tscenario::generate()
 	if (fp == INVALID_FILE) {
 		return;
 	}
-	if (ns::_main.mode_ != TOWER_MODE) {
+	if (ns::_main.must_exist_map()) {
 		posix_fopen(map_file(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp_map);
 		if (fp_map == INVALID_FILE) {
 			posix_fclose(fp);
@@ -2972,7 +2985,7 @@ void tscenario::generate()
 	strstr << "\tid = " << id_ << "\n";
 	strstr << "\tnext_scenario = " << next_scenario_ << "\n";
 	strstr << "\tname = _ \"" << id_ << "\"\n";
-	if (ns::_main.mode_ != TOWER_MODE) {
+	if (ns::_main.must_exist_map()) {
 		strstr << "\tmap_data = \"{" << map_file() << "}\"\n";
 	}
 	strstr << "\tturns = " << turns_ << "\n";
@@ -2980,9 +2993,6 @@ void tscenario::generate()
 		strstr << "\tduel = no\n";
 	} else if (duel_ == ALWAYS_DUEL) {
 		strstr << "\tduel = always\n";
-	}
-	if (ns::_main.mode_ == TOWER_MODE) {
-		strstr << "\ttheme = tower\n";
 	}
 	if (!treasures_.empty()) {
 		strstr << "\ttreasures = ";
@@ -3051,6 +3061,14 @@ void tscenario::generate()
 	strstr << "\t{APPEND_MUSIC underground.ogg}\n";
 	strstr << "\t{APPEND_MUSIC elvish-theme.ogg}\n";
 	strstr << "\t{APPEND_MUSIC revelation.ogg}\n";
+
+	strstr << "\n";
+
+	if (!prelude_.empty()) {
+		strstr << "\t[prelude]\n";
+		::write(strstr, prelude_, 2);
+		strstr << "\t[/prelude]\n";
+	}
 
 	strstr << "\n";
 	// win/lose
@@ -3163,7 +3181,7 @@ bool tscenario::rpg_mode() const
 {
 	for (std::vector<tside>::const_iterator it = side_.begin(); it != side_.end(); ++ it) {
 		const tside& side = *it;
-		if (side.controller_ == tside::HUMAN_AI) {
+		if (side.controller_ == controller_tag::HUMAN_AI) {
 			return true;
 		}
 	}
@@ -3186,7 +3204,7 @@ void tscenario::init_hero_state(hero_map& heros)
 	}
 }
 
-void tscenario::do_state(int h, bool allocated, int city, int state)
+void tscenario::do_state(int h, int side, int s, int city)
 {
 	std::map<int, hero_state>::iterator it;
 	if (gdmgr.heros_[h].gender_ != hero_gender_neutral) {
@@ -3195,13 +3213,17 @@ void tscenario::do_state(int h, bool allocated, int city, int state)
 		it = artificals_.find(h);
 	}
 	
-	it->second.allocated_ = allocated;
-	if (allocated) {
-		it->second.city_ = city;
-		it->second.state_ = state;
+	hero_state::tstate& state = it->second.state(side);
+
+	if (s != STATE_UNKNOWN) {
+		if (state.valid()) {
+			state.state = s;
+			state.city = city;
+		} else {
+			it->second.insert(side, s, city);
+		}
 	} else {
-		it->second.city_ = -1;
-		it->second.state_ = STATE_UNKNOWN;
+		it->second.erase(side);
 	}
 }
 
@@ -3278,10 +3300,15 @@ bool campaign_can_save(HWND hdlgP, bool save)
 			posix_print_mb(utf8_2_ansi(strstr.str().c_str()));
 			return false;
 		}
+		if (ns::_main.mode_ == mode_tag::NONE) {
+			strstr << _("mode is null, must set it!");
+			posix_print_mb(utf8_2_ansi(strstr.str().c_str()));
+			return false;
+		}
 	}
 	int next_scenario_nulls = 0;
 	for (std::vector<tscenario>::const_iterator it = ns::_scenario.begin(); it != ns::_scenario.end(); ++ it) {
-		if ((ns::_main.mode_ != TOWER_MODE) && it->map_data_.empty()) {
+		if (ns::_main.must_exist_map() && it->map_data_.empty()) {
 			if (it->scenario_from_cfg_.id_ == it->id_ || !is_file(tscenario::map_file(it->multiplayer_, it->campaign_id_, it->scenario_from_cfg_.id_, it->index_, true).c_str())) {
 				strstr << utf8_2_ansi(dgettext(textdomain.c_str(), it->id_.c_str())) << "，关卡没设置有效地图";
 				posix_print_mb(strstr.str().c_str());
@@ -3299,18 +3326,18 @@ bool campaign_can_save(HWND hdlgP, bool save)
 			}
 			for (std::vector<tside::tcity>::const_iterator it3 = side.cities_.begin(); it3 != side.cities_.end(); ++ it3) {
 				const tside::tcity& city = *it3;
-				if (city.soldiers_ && side.controller_ != tside::AI) {
+				if (city.soldiers_ && side.controller_ != controller_tag::AI) {
 					strstr << dgettext(textdomain.c_str(), it->id_.c_str()) << "scenario, ";
 					strstr << "city(" << gdmgr.heros_[city.heros_army_[0]].name() << "), Can set soldiers only in AI controller.";
 					posix_print_mb(utf8_2_ansi(strstr.str().c_str()));
 					return false;
 				}
 			}
-			if (it2->controller_ == tside::HUMAN) {
+			if (it2->controller_ == controller_tag::HUMAN) {
 				human.insert(it2->side_);
-			} else if (it2->controller_ == tside::AI) {
+			} else if (it2->controller_ == controller_tag::AI) {
 				ai.insert(it2->side_);
-			} else if (it2->controller_ == tside::HUMAN_AI) {
+			} else if (it2->controller_ == controller_tag::HUMAN_AI) {
 				human_ai.insert(it2->side_);
 			}
 		}
@@ -3536,6 +3563,8 @@ void On_DlgCampaignDestroy(HWND hdlgP)
 	return;
 }
 
+extern std::string mode_desc(mode_tag::tmode tag);
+
 BOOL CALLBACK DlgCampaignProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LPPSHNOTIFY			lppsn = (LPPSHNOTIFY)lParam;
@@ -3589,6 +3618,7 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_IMAGE), utf8_2_ansi(_("Image")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DESCRIPTION), utf8_2_ansi(_("Description")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MODE), utf8_2_ansi(_("Mode")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_CAMPMAIN_SUBCONTINENT), dgettext_2_ansi("wesnoth-lib", "Subcontinent"));
 
 	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPMAIN_BROWSEICON), utf8_2_ansi(_("Browse...")));
 	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPMAIN_BROWSEIMAGE), utf8_2_ansi(_("Browse...")));
@@ -3623,15 +3653,17 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC_MSGID), ns::_main.description().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPMAIN_DESC), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), ns::_main.description().c_str())));
 
-	std::map<int, std::string> mode_map;
-	mode_map.insert(std::make_pair(NONE_MODE, _("None")));
-	mode_map.insert(std::make_pair(TOWER_MODE, _("Tower")));
+	std::set<mode_tag::tmode> mode_map;
+	mode_map.insert(mode_tag::SCENARIO);
+	mode_map.insert(mode_tag::RPG);
+	mode_map.insert(mode_tag::TOWER);
+	mode_map.insert(mode_tag::SIEGE);
 	hctl = GetDlgItem(hdlgP, IDC_CMB_CAMPMAIN_MODE);
 	ComboBox_SetCurSel(hctl, 0);
-	for (std::map<int, std::string>::const_iterator it = mode_map.begin(); it != mode_map.end(); ++ it) {
-		ComboBox_AddString(hctl, utf8_2_ansi(it->second.c_str()));
-		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, it->first);
-		if (ns::_main.mode_ == it->first) {
+	for (std::set<mode_tag::tmode>::const_iterator it = mode_map.begin(); it != mode_map.end(); ++ it) {
+		ComboBox_AddString(hctl, utf8_2_ansi(mode_desc(*it).c_str()));
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *it);
+		if (ns::_main.mode_ == *it) {
 			ComboBox_SetCurSel(hctl, ComboBox_GetCount(hctl) - 1);
 		}
 	}
@@ -3801,6 +3833,23 @@ void OnCampaignMainBt(HWND hdlgP, int id, UINT codeNotify)
 	Edit_SetText(hctl, fok? utf8_2_ansi(_("Exist")): utf8_2_ansi(_("Not exist")));
 }
 
+void OnCampaignMainBt2(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	bool that;
+	int bit;
+
+	if (id == IDC_CHK_CAMPMAIN_SUBCONTINENT) {
+		bit = tmain::BIT_SUBCONTINENT;
+		that = ns::_main.main_from_cfg_.subcontinent_;
+	} else {
+		return;
+	}
+
+	ns::_main.set_dirty(bit, (bool)Button_GetCheck(hwndCtrl) != that);
+
+	return;
+}
+
 void On_DlgCampaignMainCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	switch (id) {
@@ -3821,6 +3870,10 @@ void On_DlgCampaignMainCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotif
 	case IDC_BT_CAMPMAIN_BROWSEICON:
 	case IDC_BT_CAMPMAIN_BROWSEIMAGE:
 		OnCampaignMainBt(hdlgP, id, codeNotify);
+		break;
+
+	case IDC_CHK_CAMPMAIN_SUBCONTINENT:
+		OnCampaignMainBt2(hdlgP, id, hwndCtrl, codeNotify);
 		break;
 	}
 }
@@ -3889,12 +3942,12 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// controller
 	HWND hctl = GetDlgItem(hdlgP, IDC_CHK_SIDEEDIT_CONTROLLER);
-	if (side.controller_ != tside::EMPTY && scenario.null_side() != -1) {
+	if (side.controller_ != controller_tag::EMPTY && scenario.null_side() != -1) {
 		Button_Enable(hctl, FALSE);
 	}
 
 	hctl = GetDlgItem(hdlgP, IDC_UD_SIDEEDIT_GOLD);
-	UpDown_SetRange(hctl, 0, 1000);	// [0, 1000]
+	UpDown_SetRange(hctl, 0, 3000);	// [0, 3000]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_SIDEEDIT_GOLD));
 
 	hctl = GetDlgItem(hdlgP, IDC_UD_SIDEEDIT_INCOME);
@@ -4524,20 +4577,20 @@ void On_DlgCityEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	case IDM_TOWANDER:
 		if (id == IDM_TOSERVICE) {
 			city.service_heros_.insert(ns::clicked_hero);
-			scenario.do_state(ns::clicked_hero, true, city.heros_army_[0], tscenario::STATE_SERVICE);
+			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_SERVICE, city.heros_army_[0]);
 		} else {
 			city.wander_heros_.insert(ns::clicked_hero);
-			scenario.do_state(ns::clicked_hero, true, city.heros_army_[0], tscenario::STATE_WANDER);
+			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_WANDER, city.heros_army_[0]);
 		}
 		city.update_to_ui_city_edit(hdlgP, side);
 		break;
 	case IDM_DELETE_ITEM0:
 		if (ns::type == IDC_LV_CITYEDIT_SERVICE) {
 			city.service_heros_.erase(ns::clicked_hero);
-			scenario.do_state(ns::clicked_hero, false);
+			scenario.do_state(ns::clicked_hero, side.side_);
 		} else if (ns::type == IDC_LV_CITYEDIT_WANDER) {
 			city.wander_heros_.erase(ns::clicked_hero);
-			scenario.do_state(ns::clicked_hero, false);
+			scenario.do_state(ns::clicked_hero, side.side_);
 		} else if (ns::type == IDC_LV_CITYEDIT_EA) {
 			city.economy_area_.erase(map_location(LOWORD(ns::clicked_hero), HIWORD(ns::clicked_hero)));
 		}
@@ -4546,12 +4599,12 @@ void On_DlgCityEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	case IDM_DELETE_ITEM1:
 		if (ns::type == IDC_LV_CITYEDIT_SERVICE) {
 			for (std::set<int>::const_iterator it = city.service_heros_.begin(); it != city.service_heros_.end(); ++ it) {
-				scenario.do_state(*it, false);
+				scenario.do_state(*it, side.side_);
 			}
 			city.service_heros_.clear();
 		} else if (ns::type == IDC_LV_CITYEDIT_WANDER) {
 			for (std::set<int>::const_iterator it = city.wander_heros_.begin(); it != city.wander_heros_.end(); ++ it) {
-				scenario.do_state(*it, false);
+				scenario.do_state(*it, side.side_);
 			}
 			city.wander_heros_.clear();
 		} else if (ns::type == IDC_LV_CITYEDIT_EA) {
@@ -4681,7 +4734,7 @@ void cityedit_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 	} else if (lpNMHdr->hwndFrom == GetDlgItem(hdlgP, IDC_LV_CITYEDIT_WANDER)) {
 		city.wander_heros_.erase(number);
 	}
-	scenario.do_state(number, false);
+	scenario.do_state(number, side.side_);
 
 	city.update_to_ui_city_edit(hdlgP, side);
     return;
@@ -4933,25 +4986,25 @@ void On_DlgTroopEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	case IDM_TOSECOND:
 	case IDM_TOTHIRD:
 		if (id == IDM_TOMASTER) {
-			scenario.do_state(troop.heros_army_[0], false);
+			scenario.do_state(troop.heros_army_[0], side.side_);
 			troop.heros_army_[0] = ns::clicked_hero;
-			scenario.do_state(ns::clicked_hero, true, troop.city_, tscenario::STATE_SERVICE);
+			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_SERVICE, troop.city_);
 		} else if (id == IDM_TOSECOND) {
 			if (troop.heros_army_.size() == 1) {
 				troop.heros_army_.push_back(ns::clicked_hero);
 			} else {
-				scenario.do_state(troop.heros_army_[1], false);
+				scenario.do_state(troop.heros_army_[1], side.side_);
 				troop.heros_army_[1] = ns::clicked_hero;
 			}
-			scenario.do_state(ns::clicked_hero, true, troop.city_, tscenario::STATE_WANDER);
+			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_WANDER, troop.city_);
 		} else if (id == IDM_TOTHIRD) {
 			if (troop.heros_army_.size() == 3) {
-				scenario.do_state(troop.heros_army_[2], false);
+				scenario.do_state(troop.heros_army_[2], side.side_);
 				troop.heros_army_[2] = ns::clicked_hero;
 			} else {
 				troop.heros_army_.push_back(ns::clicked_hero);
 			}
-			scenario.do_state(ns::clicked_hero, true, troop.city_, tscenario::STATE_WANDER);
+			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_WANDER, troop.city_);
 		}
 		troop.update_to_ui_troop_edit(hdlgP, side);
 		break;
@@ -4959,7 +5012,7 @@ void On_DlgTroopEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		if (ns::type == IDC_LV_TROOPEDIT_HERO) {
 			std::vector<int>::iterator it = std::find(troop.heros_army_.begin(), troop.heros_army_.end(), ns::clicked_hero);
 			troop.heros_army_.erase(it);
-			scenario.do_state(ns::clicked_hero, false);
+			scenario.do_state(ns::clicked_hero, side.side_);
 		}
 		troop.update_to_ui_troop_edit(hdlgP, side);
 		break;
@@ -5030,7 +5083,7 @@ void troopedit_notify_handler_rclick(HWND hdlgP, int id, LPNMHDR lpNMHdr)
     return;
 }
 
-bool is_hero_enable(int id)
+bool is_hero_enable(HWND, int id, LPARAM)
 {
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	tside& side = scenario.side_[ns::clicked_side];
@@ -5248,7 +5301,7 @@ void sideedit_notify_handler_dblclk(HWND hdlgP, LPNMHDR lpNMHdr)
 		if (lpnmitem->iItem >= 0) {
 			std::set<int>::iterator it = side.reserve_heros_.find(lvi.lParam);
 			side.reserve_heros_.erase(it);
-			scenario.do_state(lvi.lParam, false);
+			scenario.do_state(lvi.lParam, side.side_);
 			side.update_to_ui_side_edit(hdlgP, false);
 		}
 
@@ -5374,7 +5427,7 @@ void On_DlgSideEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 
 	case IDM_TORESERVE:
 		side.reserve_heros_.insert(ns::clicked_hero);
-		scenario.do_state(ns::clicked_hero, true, -1, tscenario::STATE_RESERVE);
+		scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_RESERVE);
 		side.update_to_ui_side_edit(hdlgP, false);
 		break;
 
@@ -5483,6 +5536,9 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_CAMPSCENARIO_TENT), utf8_2_ansi(_("Inherit hero and troop from last scenario")));
 	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPSCENARIO_BROWSEMAP), utf8_2_ansi(_("Browse...")));
 	strstr.str("");
+	strstr << _("Prelude") << "...";
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPSCENARIO_PRELUDE), utf8_2_ansi(strstr.str().c_str()));
+	strstr.str("");
 	strstr << dsgettext("wesnoth-lib", "Objectives") << "...";
 	Button_SetText(GetDlgItem(hdlgP, IDC_BT_CAMPSCENARIO_OBJECTIVES), utf8_2_ansi(strstr.str().c_str()));
 
@@ -5506,7 +5562,7 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_NAME), utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), scenario.id_.c_str())));
 
 	strstr.str("");
-	if (ns::_main.mode_ != TOWER_MODE) {
+	if (ns::_main.must_exist_map()) {
 		strstr << "(" << scenario.map_file() << ")";
 		if (scenario.map_data_size(scenario.map_data_).valid()) {
 			strstr << utf8_2_ansi(_("Exist"));
@@ -5952,6 +6008,80 @@ void OnCampaignScenarioBt(HWND hdlgP, int id, UINT codeNotify)
 	
 	scenario.map_data_ = map_data;
 	scenario.set_dirty(tscenario::BIT_MAP, scenario.scenario_from_cfg_.map_data_ != map_data);
+}
+
+extern config edit_ctrl_2_cfg(const std::string& str);
+extern std::string cfg_2_edit_ctrl(const config& cfg);
+
+BOOL On_DlgPreludeInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	editor_config::move_subcfg_right_position(hdlgP, lParam);
+
+	std::stringstream strstr;
+	strstr << utf8_2_ansi(_("Edit prelude"));
+	SetWindowText(hdlgP, strstr.str().c_str());
+	ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_SUMMARY), utf8_2_ansi(_("Summary")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_WIN), utf8_2_ansi(_("Win condition")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LOSE), utf8_2_ansi(_("Lose condition")));
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_PRELUDE_CFG), cfg_2_edit_ctrl(scenario.prelude_).c_str());
+
+	return FALSE;
+}
+
+void On_DlgPreludeCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	BOOL changed = FALSE;
+
+	switch (id) {
+	case IDOK:
+		changed = TRUE;
+		{
+			HWND hctl = GetDlgItem(hdlgP, IDC_ET_PRELUDE_CFG);
+			int len = Edit_GetTextLength(hctl);
+			char* text = (char*)malloc(len + 2);
+			Edit_GetText(GetDlgItem(hdlgP, IDC_ET_PRELUDE_CFG), text, len + 1);
+			scenario.prelude_ = edit_ctrl_2_cfg(text);
+			free(text);
+		}
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL CALLBACK DlgPreludeProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch(message) {
+	case WM_INITDIALOG:
+		return On_DlgPreludeInitDialog(hDlg, (HWND)(wParam), lParam);
+	HANDLE_MSG(hDlg, WM_COMMAND, On_DlgPreludeCommand);
+	HANDLE_MSG(hDlg, WM_DRAWITEM, editor_config::On_DlgDrawItem);
+	}
+	
+	return FALSE;
+}
+
+void OnPreludeBt(HWND hdlgP)
+{
+	RECT		rcBtn;
+	LPARAM		lParam;
+	
+	GetWindowRect(GetDlgItem(hdlgP, IDC_BT_CAMPSCENARIO_PRELUDE), &rcBtn);
+	lParam = posix_mku32((rcBtn.left > 0)? rcBtn.left: rcBtn.right, rcBtn.top);
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+
+	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_PRELUDE), hdlgP, DlgPreludeProc, lParam)) {
+		scenario.set_dirty(tscenario::BIT_PRELUDE, scenario.prelude_ != scenario.scenario_from_cfg_.prelude_);
+	}
+
+	return;
 }
 
 extern BOOL CALLBACK DlgObjectivesProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
@@ -6404,6 +6534,9 @@ void On_DlgCampaignScenarioCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeN
 	case IDC_BT_CAMPSCENARIO_BROWSEMAP:
 		OnCampaignScenarioBt(hdlgP, id, codeNotify);
 		break;
+	case IDC_BT_CAMPSCENARIO_PRELUDE:
+		OnPreludeBt(hdlgP);
+		break;
 	case IDC_BT_CAMPSCENARIO_OBJECTIVES:
 		OnObjectivesBt(hdlgP);
 		break;
@@ -6657,7 +6790,7 @@ void campaign_refresh(HWND hdlgP)
 	std::string hero_filename = get_wml_location(ns::_main.hero_data_);
 	gdmgr.heros_.map_from_file(hero_filename);
 
-	campaign_enable_new_btn(ns::_main.mode_ != TOWER_MODE);
+	campaign_enable_new_btn(ns::_main.mode_ == mode_tag::SCENARIO);
 
 	ns::_scenario.clear();
 	ns::current_scenario = 0;
@@ -6974,7 +7107,7 @@ void new_campaign(const std::string& id, const std::string& firstscenario_id)
 	gdmgr.heros_.map_from_file(hero_filename);
 
 	_main = tmain(id, firstscenario_id);
-	_main.mode_ = NONE_MODE;
+	_main.mode_ = mode_tag::SCENARIO;
 	_scenario.clear();
 	_scenario.push_back(tscenario(id, firstscenario_id));
 	tscenario& scenario = _scenario.back();
@@ -7040,10 +7173,10 @@ bool new_scenario()
 		tside& side = scenario.side_.back();
 		side.new_city();
 		if (i == 0) {
-			side.controller_ = scenario_selector::multiplayer? tside::AI: tside::HUMAN;
+			side.controller_ = scenario_selector::multiplayer? controller_tag::AI: controller_tag::HUMAN;
 			side.cities_[0].loc_ = map_location(2, 2);
 		} else {
-			side.controller_ = tside::AI;
+			side.controller_ = controller_tag::AI;
 			side.cities_[0].loc_ = map_location(4, 4);
 		}
 		side.new_troop();

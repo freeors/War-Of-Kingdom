@@ -70,14 +70,15 @@ namespace {
 // This allows a connection to be disconnected and then recovered,
 // but the handle remains the same, so it's all seamless to the user.
 struct connection_details {
-	connection_details(TCPsocket sock, const std::string& host, int port)
-		: sock(sock), host(host), port(port), remote_handle(0),
+	connection_details(TCPsocket sock, const std::string& host, int port, bool xmit_http_data)
+		: sock(sock), host(host), port(port), xmit_http_data(xmit_http_data), remote_handle(0),
 	      connected_at(SDL_GetTicks())
 	{}
 
 	TCPsocket sock;
 	std::string host;
 	int port;
+	bool xmit_http_data;
 
 	// The remote handle is the handle assigned to this connection by the remote host.
 	// Is 0 before a handle has been assigned.
@@ -88,7 +89,6 @@ struct connection_details {
 
 typedef std::map<network::connection,connection_details> connection_map;
 connection_map connections;
-bool xmit_http_data = false;
 
 network::connection connection_id = 1;
 
@@ -97,14 +97,9 @@ time_t last_ping, last_ping_check = 0;
 
 } // end anon namespace
 
-namespace network_worker_pool {
-	extern void queue_http_data(TCPsocket sock, const char* buf, int len);
-	extern void set_http_data(bool set);
-}
-
-static int create_connection(TCPsocket sock, const std::string& host, int port)
+static int create_connection(TCPsocket sock, const std::string& host, int port, bool xmit_http_data)
 {
-	connections.insert(std::pair<network::connection,connection_details>(connection_id,connection_details(sock,host,port)));
+	connections.insert(std::pair<network::connection,connection_details>(connection_id,connection_details(sock, host, port, xmit_http_data)));
 	return connection_id++;
 }
 
@@ -131,7 +126,7 @@ static void remove_connection(network::connection handle)
 static bool is_pending_remote_handle(network::connection handle)
 {
 	const connection_details& details = get_connection_details(handle);
-	return details.host != "" && details.remote_handle == 0;
+	return details.host != "" && details.remote_handle == 0 && !details.xmit_http_data;
 }
 
 static void set_remote_handle(network::connection handle, int remote_handle)
@@ -293,14 +288,10 @@ public:
 
 http_data_lock::http_data_lock()
 {
-	network_worker_pool::set_http_data(true);
-	xmit_http_data = true;
 }
 
 http_data_lock::~http_data_lock()
 {
-	xmit_http_data = false;
-	network_worker_pool::set_http_data(false);
 }
 
 // --- Proxy methods
@@ -383,7 +374,7 @@ namespace {
 class connect_operation : public threading::async_operation
 {
 public:
-	connect_operation(const std::string& host, int port) : host_(host), port_(port), error_(NULL), connect_(0)
+	connect_operation(const std::string& host, int port, bool xmit_http_data) : host_(host), port_(port), xmit_http_data_(xmit_http_data), error_(NULL), connect_(0)
 	{}
 
 	void check_error();
@@ -394,6 +385,7 @@ public:
 private:
 	std::string host_;
 	int port_;
+	bool xmit_http_data_;
 	const char* error_;
 	network::connection connect_;
 };
@@ -478,11 +470,11 @@ void connect_operation::run()
 	// If this is a server socket
 	if(hostname == NULL) {
 		const threading::lock l(get_mutex());
-		connect_ = create_connection(sock,"",port_);
+		connect_ = create_connection(sock, "", port_, xmit_http_data_);
 		return;
 	}
 
-	if (!xmit_http_data) {
+	if (!xmit_http_data_) {
 		// Send data telling the remote host that this is a new connection
 		char buf[4] ALIGN_4;
 		SDLNet_Write32(0, reinterpret_cast<void*>(buf));
@@ -505,7 +497,7 @@ void connect_operation::run()
 	}
 
 	// Allocate this connection a connection handle
-	connect_ = create_connection(sock,host_,port_);
+	connect_ = create_connection(sock, host_, port_, xmit_http_data_);
 
 	const int res = SDLNet_TCP_AddSocket(socket_set,sock);
 	if(res == -1) {
@@ -527,15 +519,15 @@ void connect_operation::run()
 
 connection connect(const std::string& host, int port)
 {
-	connect_operation op(host,port);
+	connect_operation op(host,port,false);
 	op.run();
 	op.check_error();
 	return op.result();
 }
 
-connection connect(const std::string& host, int port, threading::waiter& waiter)
+connection connect(const std::string& host, int port, bool xmit_http_data, threading::waiter& waiter)
 {
-	const threading::async_operation_ptr op(new connect_operation(host,port));
+	const threading::async_operation_ptr op(new connect_operation(host,port,xmit_http_data));
 	const connect_operation::RESULT res = op->execute(op, waiter);
 	if(res == connect_operation::ABORTED) {
 		return 0;
@@ -586,7 +578,7 @@ connection accept_connection_pending(std::vector<TCPsocket>& pending_sockets,
 		throw network::error(_("Could not add socket to socket set"));
 	}
 
-	const connection connect = create_connection(psock,"",0);
+	const connection connect = create_connection(psock, "", 0, false);
 
 	// Send back their connection number
 	SDLNet_Write32(connect, reinterpret_cast<void*>(buf));
@@ -712,6 +704,18 @@ bool disconnect(connection s)
 void queue_disconnect(network::connection sock)
 {
 	disconnection_queue.push_back(sock);
+}
+
+bool get_connection_xmit_http_data(TCPsocket s)
+{
+	std::map<network::connection,connection_details>::const_iterator it = connections.begin();
+	for (; it != connections.end(); ++ it) {
+		if (it->second.sock == s) {
+			return it->second.xmit_http_data;
+		}
+	}
+	throw network::error(_("invalid network TCPsocket"));
+	return it->second.xmit_http_data;
 }
 
 connection receive_data(config& cfg, connection connection_num, unsigned int timeout, bandwidth_in_ptr* bandwidth_in)
@@ -875,21 +879,19 @@ connection receive_data(std::vector<char>& buf, bandwidth_in_ptr* bandwidth_in)
 		const TCPsocket sock = details.sock;
 		if(SDLNet_SocketReady(sock)) {
 
-			if (!xmit_http_data) {
-				// See if this socket is still waiting for it to be assigned its remote handle.
-				// If it is, then the first 4 bytes must be the remote handle.
-				if(is_pending_remote_handle(*i)) {
-					char buf[4] ALIGN_4;
-					int len = SDLNet_TCP_Recv(sock,buf,4);
-					if(len != 4) {
-						throw error("Remote host disconnected",*i);
-					}
-
-					const int remote_handle = SDLNet_Read32(reinterpret_cast<void*>(buf));
-					set_remote_handle(*i,remote_handle);
-
-					continue;
+			// See if this socket is still waiting for it to be assigned its remote handle.
+			// If it is, then the first 4 bytes must be the remote handle.
+			if(is_pending_remote_handle(*i)) {
+				char buf[4] ALIGN_4;
+				int len = SDLNet_TCP_Recv(sock,buf,4);
+				if(len != 4) {
+					throw error("Remote host disconnected",*i);
 				}
+
+				const int remote_handle = SDLNet_Read32(reinterpret_cast<void*>(buf));
+				set_remote_handle(*i,remote_handle);
+
+				continue;
 			}
 
 			waiting_sockets.erase(i++);
@@ -1145,8 +1147,8 @@ void send_raw_data(const char* buf, int len, connection connection_num, const st
 		return;
 	}
 
-	add_bandwidth_out(packet_type, len + xmit_http_data? 0: 4);
-	if (!xmit_http_data) {
+	add_bandwidth_out(packet_type, len + info->second.xmit_http_data? 0: 4);
+	if (!info->second.xmit_http_data) {
 		network_worker_pool::queue_raw_data(info->second.sock, buf, len);
 	} else {
 		network_worker_pool::queue_http_data(info->second.sock, buf, len);

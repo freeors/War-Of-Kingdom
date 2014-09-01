@@ -25,6 +25,7 @@
 #include "game_end_exceptions.hpp"
 #include "resources.hpp"
 #include "game_display.hpp"
+#include "preferences.hpp"
 
 #include "SDL.h"
 
@@ -34,20 +35,35 @@
 #include <utility>
 #include <vector>
 
-#ifdef ANDROID
-#include <android/log.h>
-#endif
-
 #define ERR_GEN LOG_STREAM(err, lg::general)
 
-bool exit_app = false;
+extern void handle_app_event(Uint32 type);
+
+int cached_draw_events = 0;
+
+int revise_screen_width(int width)
+{
+	if (width < preferences::min_allowed_width()) {
+		return preferences::min_allowed_width();
+	}
+	return width;
+}
+
+int revise_screen_height(int height)
+{
+	if (height < preferences::min_allowed_height()) {
+		return preferences::min_allowed_height();
+	}
+	return height;
+}
 
 namespace events
 {
 
 void raise_help_string_event(int mousex, int mousey);
+bool ignore_finger_event;
 
-namespace {
+// namespace tag {
 
 struct context
 {
@@ -150,7 +166,7 @@ std::deque<context> event_contexts;
 
 std::vector<pump_monitor*> pump_monitors;
 
-} //end anon namespace
+// } //end anon namespace
 
 pump_monitor::pump_monitor() {
 	pump_monitors.push_back(this);
@@ -175,7 +191,6 @@ event_context::~event_context()
 
 handler::handler(const bool auto_join) : unicode_(SDL_EnableUNICODE(1)), has_joined_(false)
 {
-	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
 	if(auto_join) {
 		assert(!event_contexts.empty());
 		event_contexts.back().add_handler(this);
@@ -275,76 +290,105 @@ bool has_focus(const handler* hand, const SDL_Event* event)
 	return false;
 }
 
+void dump_events(const std::vector<SDL_Event>& events)
+{
+	std::map<int, int> dump;
+	for (std::vector<SDL_Event>::const_iterator it = events.begin(); it != events.end(); ++ it) {
+		int type = it->type;
+		std::map<int, int>::iterator find = dump.find(type);
+		if (dump.find(type) != dump.end()) {
+			find->second ++;
+		} else {
+			dump.insert(std::make_pair(type, 1));
+		}
+	}
+	std::stringstream strstr;
+	for (std::map<int, int>::const_iterator it = dump.begin(); it != dump.end(); ++ it) {
+		if (it != dump.begin()) {
+			strstr << "; ";
+		}
+		strstr << "(" << it->first << ", " << it->second << ")";
+	}
+	posix_print("%s", strstr.str().c_str());
+	posix_print("\n");
+}
+
 void pump()
 {
 	SDL_PumpEvents();
 
 	pump_info info;
 
-	//used to keep track of double click events
-	static int last_mouse_down = -1;
-	static int last_click_x = -1, last_click_y = -1;
-
 	SDL_Event temp_event;
 	int poll_count = 0;
 	int begin_ignoring = 0;
-	std::vector< SDL_Event > events;
-	while(SDL_PollEvent(&temp_event)) {
-		++poll_count;
-		if(!begin_ignoring && temp_event.type == SDL_ACTIVEEVENT) {
+	ignore_finger_event = false;
+
+	std::vector<SDL_Event> events;
+	// ignore user input events when receive SDL_WINDOWEVENT. include before and after.
+	while (SDL_PollEvent(&temp_event)) {
+/*
+		traditional gui::widget use SDL_MOUSExxx, cannot discard them.
+		if (temp_event.type == SDL_MOUSEMOTION || temp_event.type == SDL_MOUSEBUTTONDOWN || temp_event.type == SDL_MOUSEBUTTONUP) {
+			if (temp_event.button.which == SDL_TOUCH_MOUSEID) {
+				continue;
+			}
+		}
+*/
+		++ poll_count;
+		if (!begin_ignoring && temp_event.type == SDL_WINDOWEVENT) {
 			begin_ignoring = poll_count;
-		} else if(begin_ignoring > 0 && temp_event.type >= INPUT_MASK_MIN && temp_event.type <= INPUT_MASK_MAX) {
+		} else if (begin_ignoring > 0 && temp_event.type >= INPUT_MASK_MIN && temp_event.type <= INPUT_MASK_MAX) {
 			//ignore user input events that occurred after the window was activated
 			continue;
 		}
 		events.push_back(temp_event);
 	}
+	if (events.size() > 10) {
+		posix_print("------waring!! events.size(): %u\n", events.size());
+		dump_events(events);
+	}
+
 	std::vector<SDL_Event>::iterator ev_it = events.begin();
-	for(int i=1; i < begin_ignoring; ++i){
-		if(ev_it->type >= INPUT_MASK_MIN, ev_it->type <= INPUT_MASK_MAX) {
+	for (int i = 1; i < begin_ignoring; ++i) {
+		if (ev_it->type >= INPUT_MASK_MIN && ev_it->type <= INPUT_MASK_MAX) {
 			//ignore user input events that occurred before the window was activated
 			ev_it = events.erase(ev_it);
 		} else {
 			++ev_it;
 		}
 	}
+
 	std::vector<SDL_Event>::iterator ev_end = events.end();
 	for (ev_it = events.begin(); ev_it != ev_end; ++ev_it){
-		SDL_Event &event = *ev_it;
-		switch(event.type) {
+		SDL_Event& event = *ev_it;
+		switch (event.type) {
+			case SDL_APP_TERMINATING:
+			case SDL_APP_WILLENTERBACKGROUND:
+			case SDL_APP_DIDENTERBACKGROUND:
+			case SDL_APP_WILLENTERFOREGROUND:
+			case SDL_APP_DIDENTERFOREGROUND:
+				handle_app_event(event.type);
+				break;
 
-			case SDL_ACTIVEEVENT: {
-				SDL_ActiveEvent& ae = reinterpret_cast<SDL_ActiveEvent&>(event);
-#ifdef ANDROID
-				if (ae.gain == 0 && ae.state == SDL_APPACTIVE) {
-					exit_app = true;
-					__android_log_print(ANDROID_LOG_INFO, "SDL", "minimize window.");
-					// throw CVideo::quit();
-				}
-				if (resources::screen && resources::screen->in_game()) {
-					__android_log_print(ANDROID_LOG_INFO, "SDL", "in game, throw end_level_exception");
-					exit_app = true;
-					throw end_level_exception(QUIT);
-				}
-#endif
-				if((ae.state & SDL_APPMOUSEFOCUS) != 0 || (ae.state & SDL_APPINPUTFOCUS) != 0) {
-					cursor::set_focus(ae.gain != 0);
+			case SDL_WINDOWEVENT:
+				if (event.window.event == SDL_WINDOWEVENT_MINIMIZED) {
+
+				} else if (event.window.event == SDL_WINDOWEVENT_ENTER || event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED) {
+					cursor::set_focus(true);
+
+				} else if (event.window.event == SDL_WINDOWEVENT_LEAVE || event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+					cursor::set_focus(false);
+
+				} else if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
+					// if the window must be redrawn, update the entire screen
+					// update_whole_screen();
+
+				} else if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+					info.resize_dimensions.first = revise_screen_width(event.window.data1);
+					info.resize_dimensions.second = revise_screen_height(event.window.data2);
 				}
 				break;
-			}
-
-			//if the window must be redrawn, update the entire screen
-			case SDL_VIDEOEXPOSE: {
-				update_whole_screen();
-				break;
-			}
-
-			case SDL_VIDEORESIZE: {
-				const SDL_ResizeEvent* const resize = reinterpret_cast<SDL_ResizeEvent*>(&event);
-				info.resize_dimensions.first = resize->w;
-				info.resize_dimensions.second = resize->h;
-				break;
-			}
 
 			case SDL_MOUSEMOTION: {
 				//always make sure a cursor is displayed if the
@@ -358,25 +402,20 @@ void pump()
 				//always make sure a cursor is displayed if the
 				//mouse moves or if the user clicks
 				cursor::set_focus(true);
-				if(event.button.button == SDL_BUTTON_LEFT) {
-					static const int DoubleClickTime = 500;
-					static const int DoubleClickMaxMove = 3;
-					if(last_mouse_down >= 0 && info.ticks() - last_mouse_down < DoubleClickTime &&
-					   abs(event.button.x - last_click_x) < DoubleClickMaxMove &&
-					   abs(event.button.y - last_click_y) < DoubleClickMaxMove) {
-						SDL_UserEvent user_event;
-						user_event.type = DOUBLE_CLICK_EVENT;
-						user_event.code = 0;
-						user_event.data1 = reinterpret_cast<void*>(event.button.x);
-						user_event.data2 = reinterpret_cast<void*>(event.button.y);
-						::SDL_PushEvent(reinterpret_cast<SDL_Event*>(&user_event));
-					}
-					last_mouse_down = info.ticks();
-					last_click_x = event.button.x;
-					last_click_y = event.button.y;
+				if (event.button.button == SDL_BUTTON_LEFT && event.button.clicks == 2) {
+					SDL_UserEvent user_event;
+					user_event.type = DOUBLE_CLICK_EVENT;
+					user_event.code = 0;
+					user_event.data1 = reinterpret_cast<void*>(event.button.x);
+					user_event.data2 = reinterpret_cast<void*>(event.button.y);
+					::SDL_PushEvent(reinterpret_cast<SDL_Event*>(&user_event));
 				}
 				break;
 			}
+
+			case DRAW_EVENT:
+				cached_draw_events --;
+				break;
 
 #if defined(_X11) && !defined(__APPLE__)
 			case SDL_SYSWMEVENT: {
@@ -387,7 +426,6 @@ void pump()
 #endif
 
 			case SDL_QUIT: {
-				// posix_print("SDL_QUIT, will call throw CVideo::quit()\n");
 				throw CVideo::quit();
 			}
 		}
@@ -478,24 +516,23 @@ void raise_help_string_event(int mousex, int mousey)
 	}
 }
 
-int discard(int event_mask_min, int event_mask_max)
+int discard(Uint32 event_mask_min, Uint32 event_mask_max)
 {
 	int discard_count = 0;
 	SDL_Event temp_event;
 	std::vector< SDL_Event > keepers;
 	SDL_Delay(10);
-	while(SDL_PollEvent(&temp_event) > 0) {
+	while (SDL_PollEvent(&temp_event) > 0) {
 		if (temp_event.type >= event_mask_min && temp_event.type <= event_mask_max) {
 			keepers.push_back( temp_event );
 		} else {
-			++discard_count;
+			++ discard_count;
 		}
 	}
 
 	//FIXME: there is a chance new events are added before kept events are replaced
-	for (unsigned int i=0; i < keepers.size(); ++i)
-	{
-		if(SDL_PushEvent(&keepers[i]) != 0) {
+	for (unsigned int i = 0; i < keepers.size(); ++i) {
+		if (SDL_PushEvent(&keepers[i]) <= 0) {
 			ERR_GEN << "failed to return an event to the queue.";
 		}
 	}
@@ -503,7 +540,8 @@ int discard(int event_mask_min, int event_mask_max)
 	return discard_count;
 }
 
-int pump_info::ticks(unsigned *refresh_counter, unsigned refresh_rate) {
+int pump_info::ticks(unsigned *refresh_counter, unsigned refresh_rate) 
+{
 	if(!ticks_ && !(refresh_counter && ++*refresh_counter % refresh_rate)) {
 		ticks_ = ::SDL_GetTicks();
 	}

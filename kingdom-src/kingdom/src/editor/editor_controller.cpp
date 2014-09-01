@@ -27,6 +27,8 @@
 #include "gui/dialogs/editor_settings.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/transient_message.hpp"
+#include "gui/dialogs/combo_box.hpp"
+#include "gui/dialogs/system.hpp"
 #include "gui/dialogs/preferences.hpp"
 #include "gui/widgets/window.hpp"
 
@@ -40,6 +42,8 @@
 #include "../preferences_display.hpp"
 #include "../rng.hpp"
 #include "../sound.hpp"
+#include "../help.hpp"
+#include "../multiplayer.hpp"
 
 #include "formula_string_utils.hpp"
 
@@ -51,6 +55,53 @@ static std::vector<std::string> saved_windows_;
 }
 
 namespace editor {
+
+bool tmap_type::can_modify(const gamemap& map, const map_location& loc, const t_translation::t_terrain& t, const t_translation::t_terrain& old)
+{
+	utils::string_map symbols;
+
+	err_str_.clear();
+	for (std::vector<titem>::const_iterator it = items_.begin(); it != items_.end(); ++ it) {
+		const titem& item = *it;
+		if (t_translation::terrain_matches(t, item.list)) {
+			if (!item.avoid.empty() && !allow_if_modify(map, loc, item.avoid)) {
+				symbols["count"] = help::tintegrate::generate_format(item.unite, "yellow");
+				err_str_ = vgettext("wesnoth-editor", "This terrain can not place at this area!", symbols);
+			} else /* if (!t_translation::terrain_matches(old, item.list)) */ {
+				if (item.total >= 0 && calculate_total_if_modify(item.list, old) > item.total) {
+					if (item.total) {
+						symbols["count"] = help::tintegrate::generate_format(item.total, "yellow");
+						err_str_ = vgettext("wesnoth-editor", "This terrain may draw on $count grid at most!", symbols);
+					} else {
+						err_str_ = gettext("When drawing map, can not use this terrain!");
+					}
+				}
+				if (err_str_.empty() && item.unite >= 0 && calculate_unite_if_modify(map, loc, item.list) > item.unite) {
+					symbols["count"] = help::tintegrate::generate_format(item.unite, "yellow");
+					err_str_ = vgettext("wesnoth-editor", "Combining this terrain can not exceed $count grid!", symbols);
+				}
+			}
+			if (!err_str_.empty()) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+void tmap_type::handle_err()
+{
+	if (!err_str_.empty()) {
+		std::stringstream err;
+		err << err_str_;
+		if (!summary_.empty()) {
+			err << "\n\n" << summary_; 
+		}
+		gui2::show_message(disp_->video(), "", err.str());
+		err_str_.clear();
+	}
+}
 
 /**
  * Utility class to properly refresh the display when the map context object is replaced
@@ -76,8 +127,10 @@ private:
 	bool refreshed_;
 };
 
-editor_controller::editor_controller(const config &game_config, CVideo& video)
+editor_controller::editor_controller(const config &game_config, CVideo& video, hero_map& heros, int mode)
 	: controller_base(SDL_GetTicks(), game_config, video)
+	, heros_(heros)
+	, mode_(mode)
 	, mouse_handler_base()
 	, rng_(NULL)
 	, rng_setter_(NULL)
@@ -88,7 +141,6 @@ editor_controller::editor_controller(const config &game_config, CVideo& video)
 	, tods_()
 	, size_specs_()
 	, palette_()
-	, brush_bar_()
 	, prefs_disp_manager_(NULL)
 	, tooltip_manager_(video)
 	, floating_label_manager_(NULL)
@@ -140,7 +192,16 @@ editor_controller::editor_controller(const config &game_config, CVideo& video)
 	if (default_tool_menu != NULL) {
 		const SDL_Rect& menu_loc = default_tool_menu->location(get_display().screen_area());
 		show_menu(default_tool_menu->items(),menu_loc.x+1,menu_loc.y + menu_loc.h + 1,false);
-		return;
+	}
+
+	map_type = tmap_type();
+	if (mode_ != NONE) {
+		BOOST_FOREACH (const config& type, game_config.child_range("map_type")) {
+			const std::string& id = type["id"];
+			if (mode == SIEGE && id == "siege") {
+				map_type = tmap_type(*gui_, type);
+			}
+		}
 	}
 }
 
@@ -151,7 +212,7 @@ void editor_controller::init_gui(CVideo& video)
 	gui_->set_grid(preferences::grid());
 	prefs_disp_manager_.reset(new preferences::display_manager(&gui()));
 	gui_->add_redraw_observer(boost::bind(&editor_controller::display_redraw_callback, this, _1));
-	floating_label_manager_.reset(new font::floating_label_context());
+	floating_label_manager_.reset(new font::floating_label_context(video.getSurface()));
 	gui().set_draw_coordinates(preferences::editor::draw_hex_coordinates());
 	gui().set_draw_terrain_codes(preferences::editor::draw_terrain_codes());
 }
@@ -162,7 +223,6 @@ void editor_controller::init_sidebar(const config& game_config)
 	adjust_sizes(gui(), *size_specs_);
 	palette_.reset(new terrain_palette(gui(), *size_specs_, game_config,
 		foreground_terrain_, background_terrain_));
-	brush_bar_.reset(new brush_bar(gui(), *size_specs_, brushes_, &brush_));
 }
 
 void editor_controller::init_brushes(const config& game_config)
@@ -294,7 +354,7 @@ void editor_controller::do_screenshot(const std::string& screenshot_filename /* 
 	}
 }
 
-void editor_controller::quit_confirm(EXIT_STATUS mode)
+std::vector<std::string> editor_controller::map_modified() const
 {
 	std::vector<std::string> modified;
 	BOOST_FOREACH (map_context* mc, map_contexts_) {
@@ -306,6 +366,12 @@ void editor_controller::quit_confirm(EXIT_STATUS mode)
 			}
 		}
 	}
+	return modified;
+}
+
+void editor_controller::quit_confirm(EXIT_STATUS mode)
+{
+	std::vector<std::string> modified = map_modified();
 	std::string message;
 	if (modified.empty()) {
 		message = _("Do you really want to quit?");
@@ -318,7 +384,7 @@ void editor_controller::quit_confirm(EXIT_STATUS mode)
 		}
 	}
 	const int res = gui2::show_message(gui().video(), _("Quit"), message, gui2::tmessage::yes_no_buttons);
-	if(res != gui2::twindow::CANCEL) {
+	if (res != gui2::twindow::CANCEL) {
 		do_quit_ = true;
 		quit_mode_ = mode;
 	}
@@ -890,9 +956,15 @@ bool editor_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int 
 			return true;
 		case HOTKEY_EDITOR_MAP_ROTATE:
 			return false; //not implemented
-		case HOTKEY_EDITOR_DRAW_COORDINATES:
-		case HOTKEY_EDITOR_DRAW_TERRAIN_CODES:
+
+		case HOTKEY_SYSTEM:
+		case HOTKEY_EDITOR_MAP:
+		case HOTKEY_UP:
+		case HOTKEY_DOWN:
+		case HOTKEY_EDITOR_TERRAIN_GROUP:
+		case HOTKEY_EDITOR_BRUSH:
 			return true;
+
 		default:
 			return false;
 	}
@@ -906,10 +978,6 @@ hotkey::ACTION_STATE editor_controller::get_action_state(hotkey::HOTKEY_COMMAND 
 		case HOTKEY_EDITOR_TOOL_SELECT:
 		case HOTKEY_EDITOR_TOOL_STARTING_POSITION:
 			return is_mouse_action_set(command) ? ACTION_ON : ACTION_OFF;
-		case HOTKEY_EDITOR_DRAW_COORDINATES:
-			return gui_->get_draw_coordinates() ? ACTION_ON : ACTION_OFF;
-		case HOTKEY_EDITOR_DRAW_TERRAIN_CODES:
-			return gui_->get_draw_terrain_codes() ? ACTION_ON : ACTION_OFF;
 		case HOTKEY_NULL:
 			return index == current_context_index_ ? ACTION_ON : ACTION_OFF;
 		default:
@@ -1059,20 +1127,200 @@ bool editor_controller::execute_command(hotkey::HOTKEY_COMMAND command, int inde
 		case HOTKEY_EDITOR_REFRESH_IMAGE_CACHE:
 			refresh_image_cache();
 			return true;
-		case HOTKEY_EDITOR_DRAW_COORDINATES:
-			gui().set_draw_coordinates(!gui().get_draw_coordinates());
-			preferences::editor::set_draw_hex_coordinates(gui().get_draw_coordinates());
-			gui().invalidate_all();
+
+		case HOTKEY_EDITOR_MAP:
+			do_map();
 			return true;
-		case HOTKEY_EDITOR_DRAW_TERRAIN_CODES:
-			gui().set_draw_terrain_codes(!gui().get_draw_terrain_codes());
-			preferences::editor::set_draw_terrain_codes(gui().get_draw_terrain_codes());
-			gui().invalidate_all();
+		case HOTKEY_UP:
+			palette_->scroll_up();
 			return true;
+		case HOTKEY_DOWN:
+			palette_->scroll_down();
+			return true;
+
+		case HOTKEY_EDITOR_TERRAIN_GROUP:
+			change_terrain_group(palette_->current_group_id());
+			return true;
+
+		case HOTKEY_EDITOR_BRUSH:
+			change_brush();
+			return true;
+
+		case HOTKEY_SYSTEM:
+			system();
+			return true;
+
 		default:
 			return controller_base::execute_command(command, index);
 	}
 	return false;
+}
+
+void editor_controller::change_terrain_group(const std::string& id) const
+{
+	std::vector<std::string> items;
+	std::vector<gui2::tval_str> group_map;
+	int actived_index = 0;
+	
+	const std::vector<terrain_group>& groups = palette_->terrain_groups();
+	for (std::vector<terrain_group>::const_iterator it = groups.begin(); it != groups.end(); ++ it) {
+		group_map.push_back(gui2::tval_str(std::distance(groups.begin(), it), it->name));
+
+		items.push_back(group_map.back().str);
+		if (id == it->id) {
+			actived_index = std::distance(groups.begin(), it);
+		}
+	}
+	
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(gui_->video());
+
+	int selected = dlg.selected_index();
+	palette_->set_group(groups[selected].id);
+
+	gui_->menu_set_pip_image(game_config::theme_object_id_terrain_group, groups[selected].icon);
+}
+
+void editor_controller::change_brush()
+{
+	std::vector<std::string> items;
+	std::vector<gui2::tval_str> brush_map;
+	int actived_index = 0;
+	
+	for (std::vector<brush>::iterator it = brushes_.begin(); it != brushes_.end(); ++ it) {
+		brush_map.push_back(gui2::tval_str(std::distance(brushes_.begin(), it), it->name()));
+
+		items.push_back(brush_map.back().str);
+		if (brush_ == &*it) {
+			actived_index = std::distance(brushes_.begin(), it);
+		}
+	}
+	
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(gui_->video());
+
+	int selected = dlg.selected_index();
+	brush_ = &brushes_[selected];
+
+	gui_->menu_set_pip_image(game_config::theme_object_id_brush, brush_->image());
+}
+
+void editor_controller::system()
+{
+	enum {_LOAD, _SAVE, _PREFERENCES, _SETTINGS, _QUIT};
+
+	int retval;
+	std::vector<gui2::tsystem::titem> items;
+	std::vector<int> rets;
+	bool map_is_temporary = false, map_is_dirty = false;
+	{
+		if (mode_ != SIEGE) {
+			items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Load Map")));
+			rets.push_back(_LOAD);
+		}
+
+		std::string str = dgettext("wesnoth-lib", "Save Map");
+		if (mode_ == SIEGE) {
+			str = help::tintegrate::generate_format(str, "blue");
+		}
+
+		const std::string& name = get_map_context().get_filename();
+		map_is_temporary = name.empty() || is_directory(name);
+		map_is_dirty = !map_modified().empty();
+		items.push_back(gui2::tsystem::titem(str, map_is_temporary || map_is_dirty));
+		rets.push_back(_SAVE);
+
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Preferences")));
+		rets.push_back(_PREFERENCES);
+
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Editor Settings")));
+		rets.push_back(_SETTINGS);
+		
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Quit")));
+		rets.push_back(_QUIT);
+
+		gui2::tsystem dlg(items);
+		try {
+			dlg.show(gui_->video());
+			retval = dlg.get_retval();
+		} catch(twml_exception& e) {
+			e.show(*gui_);
+			return;
+		}
+		if (retval == gui2::twindow::OK) {
+			return;
+		}
+	}
+	if (rets[retval] == _LOAD) {
+		load_map_dialog();
+
+	} else if (rets[retval] == _SAVE) {
+		if (mode_ == SIEGE) {
+			std::map<int, std::string> block;
+			std::string map_data;
+			block.insert(std::make_pair((int)http::block_tag_map, get_map_context().get_map().write()));
+			http::membership m = http::upload_data(*gui_, heros_, block, false);
+			if (m.uid >= 0) {
+				group.from_local_membership(*gui_, heros_, m, true);
+				// for siege mode, it pass memory block to map-editor subsystem, filename is invalid.
+				// don't call save_map(), it will write data to filename, of course will reault fail.
+				// but requrie call clear_modified, so tell other clean.
+				// save_map();
+				get_map_context().clear_modified();
+			}
+		} else {
+			save_map();
+		}
+
+	} else if (rets[retval] == _PREFERENCES) {
+		preferences();
+
+	} else if (rets[retval] == _SETTINGS) {
+		editor_settings_dialog();
+
+	} else if (rets[retval] == _QUIT) {
+		quit_confirm(EXIT_NORMAL);
+	}
+}
+
+void editor_controller::do_map()
+{
+	enum {_RESIZE, _ROTATE, _GENERATE};
+
+	int retval;
+	std::vector<gui2::tsystem::titem> items;
+	std::vector<int> rets;
+	bool map_is_temporary = false, map_is_dirty = false;
+	{
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Resize Map")));
+		rets.push_back(_RESIZE);
+
+		// items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Rotate Map")));
+		// rets.push_back(_ROTATE);
+
+		items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Generate Map")));
+		rets.push_back(_GENERATE);
+
+		gui2::tsystem dlg(items);
+		try {
+			dlg.show(gui_->video());
+			retval = dlg.get_retval();
+		} catch(twml_exception& e) {
+			e.show(*gui_);
+			return;
+		}
+		if (retval == gui2::twindow::OK) {
+			return;
+		}
+	}
+	if (rets[retval] == _RESIZE) {
+		resize_map_dialog();
+
+	} else if (rets[retval] == _ROTATE) {
+		
+	} else if (rets[retval] == _GENERATE) {
+		generate_map_dialog();
+	}
 }
 
 void editor_controller::expand_open_maps_menu(std::vector<std::string>& items)
@@ -1136,8 +1384,7 @@ void editor_controller::show_menu(const std::vector<std::string>& items_arg, int
 				default:
 					hotkey::get_hotkey(*i).set_description(_("Auto-update Terrain Transitions: No"));
 			}
-		} else if(!can_execute_command(command)
-		|| (context_menu && !in_context_menu(command))) {
+		} else if (!can_execute_command(command) || (context_menu && !in_context_menu(command))) {
 			i = items.erase(i);
 			continue;
 		}
@@ -1311,12 +1558,20 @@ void editor_controller::display_redraw_callback(display&)
 {
 	adjust_sizes(gui(), *size_specs_);
 	palette_->adjust_size();
-	brush_bar_->adjust_size();
 	palette_->draw(true);
-	brush_bar_->draw(true);
 	//display::redraw_everything removes our custom tooltips so reload them
 	load_tooltips();
 	gui().invalidate_all();
+	if (!palette_->terrain_groups().empty()) {
+		gui_->menu_set_pip_image(game_config::theme_object_id_terrain_group, palette_->terrain_groups().front().icon);
+	}
+	if (!brushes_.empty()) {
+		gui_->menu_set_pip_image(game_config::theme_object_id_brush, brush_->image());
+	}
+	if (mode_ == SIEGE) {
+		gui_->enable_menu("editor-map", false);
+		gui_->enable_menu("editor-brush", false);
+	}
 }
 
 void editor_controller::undo()
@@ -1403,6 +1658,7 @@ void editor_controller::left_mouse_up(int x, int y, const bool /*browse*/)
 	perform_delete(a);
 	refresh_after_action();
 	set_mouseover_overlay();
+	map_type.handle_err();
 }
 
 bool editor_controller::right_click(int x, int y, const bool browse)

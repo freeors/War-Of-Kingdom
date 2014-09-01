@@ -278,6 +278,8 @@ public:
 	gui::button::TYPE string_to_button_type(std::string type);
 	void create_buttons();
 	void invalidate_theme() { panelsDrawn_ = false; }
+	void menu_set_pip_image(const std::string& id, const std::string& fg);
+	void menu_set_image(const std::string& id, const std::string& image);
 
 	void refresh_report(reports::TYPE report_num, reports::report report);
 
@@ -652,9 +654,10 @@ protected:
 	bool local_tod_light_;
 
 	struct menu_button_map {
-		theme::menu *menu_;
-		gui::button **buttons_;
-		size_t button_count_;
+		theme::menu *menu;
+		gui::button **buttons;
+		size_t button_count;
+		size_t require_count;
 	};
 	menu_button_map *buttons_ctx_;
 
@@ -927,6 +930,8 @@ private:
 
 	button_loc button_loc_;
 };
+
+void draw_bar_to_surf(const std::string& image, surface& dst_surf, int x, int y, int size, double filled, const SDL_Color& col, fixed_t alpha, bool vtl);
 
 #endif
 

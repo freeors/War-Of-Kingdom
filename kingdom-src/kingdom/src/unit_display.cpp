@@ -26,6 +26,7 @@
 #include "artifical.hpp"
 #include "play_controller.hpp"
 #include "gettext.hpp"
+#include "formula_string_utils.hpp"
 
 #include "sound.hpp"
 #include <boost/foreach.hpp>
@@ -64,14 +65,33 @@ static void teleport_unit_between( const map_location& a, const map_location& b,
 	events::pump();
 }
 
+class pack_base_lock
+{
+public:
+	pack_base_lock(const map_location& loc)
+	{
+		unit::pack_base_loc = loc;
+	}
+
+	~pack_base_lock()
+	{
+		unit::pack_base_loc = map_location();
+	}
+};
+
 static void move_unit_between(const map_location& a, const map_location& b, unit& temp_unit,unsigned int step_num,unsigned int step_left, bool force_scroll)
 {
 	game_display* disp = game_display::get_singleton();
-	if(!disp || disp->video().update_locked() || (disp->fogged(a) && disp->fogged(b))) {
+	if (!disp || disp->video().update_locked() || (disp->fogged(a) && disp->fogged(b))) {
 		return;
 	}
 
-	temp_unit.set_location(a);
+	{
+		// reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21959&extra=page%3D1
+		pack_base_lock lock(b);
+		temp_unit.set_location(a);
+	}
+
 	disp->invalidate(temp_unit.get_location());
 	temp_unit.set_facing(a.get_relative_dir(b));
 	unit_animator animator;
@@ -101,7 +121,10 @@ static void move_unit_between(const map_location& a, const map_location& b, unit
 	// which will not match with the following -1.0
 	// if(  target_time - animator.get_animation_time_potential() < 100 ) target_time +=200;
 
-	animator.wait_until(target_time);
+	// change wait_until to wait_for_end!
+	// animator.wait_until(target_time);
+	animator.wait_for_end();
+
 		// debug code, see unit_frame::redraw()
 		// std::cout << "   end\n";
 	map_location arr[6];
@@ -172,13 +195,17 @@ tactic_anim_lock::~tactic_anim_lock()
 	tactic_animator.clear();
 }
 
-formation_anim_lock::formation_anim_lock(game_display& disp, tformation& formation)
+formation_anim_lock::formation_anim_lock(game_display& disp, tformation& formation, formation_anim_lock** relative)
 	: disp_(disp)
 	, formation_(formation)
+	, relative_(relative)
 	, defender_()
 	, started_(false)
 {
 	cast_tactic_state = true;
+	if (relative_) {
+		*relative_ = this;
+	}
 }
 
 formation_anim_lock::~formation_anim_lock()
@@ -187,10 +214,10 @@ formation_anim_lock::~formation_anim_lock()
 	cast_tactic_state = false;
 
 	if (formation_.gold_) {
-		std::stringstream strstr;
-		strstr << help::tintegrate::generate_img("misc/gold.png");
-		strstr << formation_.gold_;
-		unit_display::unit_text(*formation_.u_, false, strstr.str());
+		unit_display::unit_income(*formation_.u_, formation_.gold_);
+	}
+	if (relative_) {
+		*relative_ = NULL;
 	}
 }
 
@@ -214,11 +241,21 @@ void formation_anim_lock::flush()
 		// This is all the pretty stuff.
 		disp_.scroll_to_tile(formation_.u_->get_location(), game_display::ONSCREEN, true, true);
 	
-		// 1. combine defender
+		std::vector<unit_animator::anim_elem>& animated_units = tactic_animator.animated_units();
+		// 1. erase that anim.animation is NULL.
+		for (std::vector<unit_animator::anim_elem>::iterator it = animated_units.begin(); it != animated_units.end();) {
+			unit_animator::anim_elem& anim = *it;
+			if (!anim.animation) {
+				it = animated_units.erase(it);
+			} else {
+				++ it;
+			}
+		}
+
+		// 2. combine defender
 		std::vector<bool> desire_erase;
 		std::vector<unit*> attacker;
 		std::map<const unit*, unit_animator::anim_elem*> defender_pos;
-		std::vector<unit_animator::anim_elem>& animated_units = tactic_animator.animated_units();
 		desire_erase.resize(animated_units.size(), false);
 		size_t index = 0;
 		for (std::vector<unit_animator::anim_elem>::iterator it = animated_units.begin(); it != animated_units.end(); ++ it, index ++) {
@@ -241,7 +278,7 @@ void formation_anim_lock::flush()
 				attacker.push_back(anim.my_unit);
 			}
 		}
-		// 2. erase conflicted anim
+		// 3. erase conflicted anim
 		index = 0;
 		for (std::vector<unit_animator::anim_elem>::iterator it = animated_units.begin(); it != animated_units.end(); index ++) {
 			unit_animator::anim_elem& anim = *it;
@@ -278,7 +315,7 @@ void move_unit(const std::vector<map_location>& path, unit& u,
 		const std::vector<team>& teams, bool animate,
 		map_location::DIRECTION dir)
 {
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((u.human() && animate) || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = (!resources::controller->is_replaying() && u.human() && animate) || preferences::scroll_to_action()? true: false;
 	game_display* disp = game_display::get_singleton();
 	assert(!path.empty());
 	assert(disp);
@@ -309,6 +346,7 @@ void move_unit(const std::vector<map_location>& path, unit& u,
 		// Original unit is usually hidden (but still on map, so count is correct)
 		unit temp_unit = u;
 		u.set_hidden(true);
+		temp_unit.set_formation_flag(unit::FORMATION_NONE);
 		temp_unit.set_standing(false);
 		temp_unit.set_hidden(false);
 		disp->place_temporary_unit(&temp_unit);
@@ -407,7 +445,7 @@ void reset_helpers(const unit *attacker, const unit *defender, bool stronger = f
 void unit_draw_weapon(const map_location& loc, unit& attacker,
 		const attack_type* attack,const attack_type* secondary_attack, const map_location& defender_loc,unit* defender)
 {
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((*resources::teams)[player_number_ - 1].is_human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = preferences::scroll_to_action()? true: false;
 	game_display* disp = game_display::get_singleton();
 	if(!disp ||disp->video().update_locked() || disp->fogged(loc) || preferences::show_combat() == false) {
 		return;
@@ -426,7 +464,7 @@ void unit_draw_weapon(const map_location& loc, unit& attacker,
 void unit_sheath_weapon(const map_location& primary_loc, unit* primary_unit,
 		const attack_type* primary_attack,const attack_type* secondary_attack, const map_location& secondary_loc,unit* secondary_unit)
 {
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((*resources::teams)[player_number_ - 1].is_human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = preferences::scroll_to_action()? true: false;
 	game_display* disp = game_display::get_singleton();
 	if (!disp ||disp->video().update_locked() || disp->fogged(primary_loc) || preferences::show_combat() == false) {
 		return;
@@ -455,13 +493,41 @@ void unit_sheath_weapon(const map_location& primary_loc, unit* primary_unit,
 	}
 }
 
+void city_die_mh(game_display& disp, unit& loser, unit_animator& animator)
+{
+	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::HSCROLL_TEXT)) {
+		int id = disp.insert_screen_anim(*start_tpl);
+		unit_animation& screen_anim = disp.screen_anim(id);
+
+		// std::stringstream strstr;
+		utils::string_map symbols;
+
+		// symbols["city"] = help::tintegrate::generate_format(loser.name(), "green");
+		symbols["city"] = loser.name();
+		screen_anim.replace_static_text("__text", vgettext("wesnoth-lib", "Capture $city", symbols));
+
+		new_animation_frame();
+		screen_anim.start_animation(0);
+
+		animator.start_animations();
+		// wait_until
+		bool finished = false;
+		while (!finished) {
+			resources::controller->play_slice(false);
+			disp.delay(10);
+			finished = screen_anim.animation_finished_potential();
+			finished &= animator.would_end();
+		}
+		disp.erase_screen_anim(id);
+	}
+}
 
 void unit_die(const map_location& loc, unit& loser,
 		const attack_type* attack,const attack_type* secondary_attack, const map_location& winner_loc,unit* winner)
 {
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((*resources::teams)[player_number_ - 1].is_human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = (!resources::controller->is_replaying() && loser.human()) || preferences::scroll_to_action()? true: false;
 	game_display* disp = game_display::get_singleton();
-	if(!disp ||disp->video().update_locked() || disp->fogged(loc) || preferences::show_combat() == false) {
+	if (!disp ||disp->video().update_locked() || disp->fogged(loc) || preferences::show_combat() == false) {
 		return;
 	}
 	rect_of_hexes& draw_area = disp->draw_area();
@@ -471,11 +537,16 @@ void unit_die(const map_location& loc, unit& loser,
 		unit_animator animator;
 		// hide the hp/xp bars of the loser (useless and prevent bars around an erased unit)
 		animator.add_animation(&loser,"death",loc,winner_loc,0,false,false,"",0,unit_animation::KILL,attack,secondary_attack,0);
-		// but show the bars of the winner (avoid blinking and show its xp gain)
-		animator.add_animation(winner,"victory",winner_loc,loc,0,true,false,"",0,
-				unit_animation::KILL,secondary_attack,attack,0);
-		animator.start_animations();
-		animator.wait_for_end();
+
+		if (!loser.is_city()) {
+			// but show the bars of the winner (avoid blinking and show its xp gain)
+			animator.add_animation(winner,"victory",winner_loc,loc,0,true,false,"",0,
+					unit_animation::KILL,secondary_attack,attack,0);
+			animator.start_animations();
+			animator.wait_for_end();
+		} else {
+			city_die_mh(*disp, loser, animator);
+		}
 
 		reset_helpers(winner,&loser);
 		events::mouse_handler* mousehandler = events::mouse_handler::get_singleton();
@@ -518,12 +589,16 @@ private:
 class defend_temporary_state_lock
 {
 public:
-	defend_temporary_state_lock(const std::vector<unit*>& uvec)
+	defend_temporary_state_lock(const std::vector<unit*>& uvec, bool formationed)
 		: uvec_(uvec)
+		, formationed_(formationed)
 	{
 		for (std::vector<unit*>::const_iterator it = uvec_.begin(); it != uvec_.end(); it ++) {
 			unit& u = **it;
 			u.set_temporary_state(unit::BIT_DEFENDING, true);
+			if (formationed_ && it == uvec_.begin()) {
+				u.set_temporary_state(unit::BIT_STRONGER, true);
+			}
 		}
 	}
 
@@ -532,10 +607,14 @@ public:
 		for (std::vector<unit*>::const_iterator it = uvec_.begin(); it != uvec_.end(); it ++) {
 			unit& u = **it;
 			u.set_temporary_state(unit::BIT_DEFENDING, false);
+			if (formationed_ && it == uvec_.begin()) {
+				u.set_temporary_state(unit::BIT_STRONGER, false);
+			}
 		}
 	}
 private:
 	const std::vector<unit*>& uvec_;
+	bool formationed_;
 };
 
 class bit_temporary_state_lock
@@ -570,10 +649,10 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 	for (std::vector<unit*>::const_iterator b = def_ptr_vec.begin(); b != def_ptr_vec.end(); ++ b) {
 		b_vec.push_back((*b)->get_location());
 	}
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && (attacker.human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = (!resources::controller->is_replaying() && attacker.human() && attacker.task() == unit::TASK_NONE) || preferences::scroll_to_action()? true: false;
 	game_display* disp = game_display::get_singleton();
 	std::vector<team>& teams = *resources::teams;
-	if(!disp ||disp->video().update_locked() ||
+	if (!disp ||disp->video().update_locked() ||
 			(disp->fogged(a) && disp->fogged(b_vec[0])) || preferences::show_combat() == false) {
 		return;
 	}
@@ -608,14 +687,14 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 		}
 	}
 
-	if (player_number_ > 0 && has_human_in_defs) {
+	if (!resources::controller->is_replaying() && has_human_in_defs) {
 		force_scroll = true;
 	}
 	if (force_scroll || point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || has_eyeshot_in_defs) {
 		// clear global draw_desc flag
 		unit::draw_desc_ = false;
 		const attack_temporary_state_lock lock1(&attacker, stronger);
-		const defend_temporary_state_lock lock2(def_ptr_vec);
+		const defend_temporary_state_lock lock2(def_ptr_vec, defender_formation.valid(false));
 		const attack_temporary_state_lock lock3(effecting_tactic, true);
 
 		if (stronger) {
@@ -728,7 +807,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 			if (find != def_ptr_vec.end()) {
 				text = text_vec[std::distance(def_ptr_vec.begin(), find)];
 			}
-			const unit_animation* heal_anim = unit_types.global_anim(GLB_ANIM_FORMATION_DEFEND);
+			const unit_animation* heal_anim = unit_types.global_anim(global_anim_tag::FORMATION_DEFEND);
 			animator->add_animation(defender_formation.u_, heal_anim, defender_formation.u_->get_location(), 
 				!text.empty(), false, text, display::rgb(255, 0, 0));
 			animated_units.insert(defender_formation.u_);
@@ -827,7 +906,7 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 	for (std::vector<unit*>::const_iterator b = def_ptr_vec.begin(); b != def_ptr_vec.end(); ++ b) {
 		b_vec.push_back((*b)->get_location());
 	}
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((attacker && attacker->human()) || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = (!resources::controller->is_replaying() && attacker && attacker->human() && attacker->task() == unit::TASK_NONE) || preferences::scroll_to_action()? true: false;
 	game_display* disp = game_display::get_singleton();
 	std::vector<team>& teams = *resources::teams;
 	if (!disp ||disp->video().update_locked() ||
@@ -841,6 +920,7 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 	const size_t def_size = b_vec.size();
 	bool has_human_in_defs = false;
 	bool has_eyeshot_in_defs = false;
+	map_location scroll_to_loc = b_vec[0];
 
 	for (size_t i = 0; i < def_size; i ++) {
 		unit* def = def_ptr_vec[i];
@@ -848,24 +928,28 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 		if (!has_human_in_defs) {
 			if (def->human()) {
 				has_human_in_defs = true;
+				scroll_to_loc = b;
 			} else if (def->is_artifical()) {
 				if (rpg::stratum == hero_stratum_leader) {
 					if (def->side() == rpg::h->side_ + 1) {
 						has_human_in_defs = true;
+						scroll_to_loc = b;
 					}
 				} else if (rpg::stratum == hero_stratum_mayor) {
 					if (def->cityno() == rpg::h->city_) {
 						has_human_in_defs = true;
+						scroll_to_loc = b;
 					}
 				}
 			}
 		}
 		if (!has_eyeshot_in_defs && point_in_rect_of_hexes(b.x, b.y, draw_area)) {
 			has_eyeshot_in_defs = true;
+			scroll_to_loc = b;
 		}
 	}
 
-	if (player_number_ > 0 && has_human_in_defs) {
+	if (!resources::controller->is_replaying() && has_human_in_defs) {
 		force_scroll = true;
 	}
 	bool attacker_in_eyeshot = false;
@@ -876,15 +960,15 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 		// clear global draw_desc flag
 		unit::draw_desc_ = false;
 		const attack_temporary_state_lock lock1(attacker, false);
-		const defend_temporary_state_lock lock2(def_ptr_vec);
+		const defend_temporary_state_lock lock2(def_ptr_vec, false);
 
 		disp->select_hex(map_location::null_location);
 
 		// scroll such that there is at least half a hex spacing around fighters
 		if (attacker) {
-			disp->scroll_to_tiles(a, b_vec[0], game_display::ONSCREEN, true, 0.5, force_scroll);
+			disp->scroll_to_tiles(a, scroll_to_loc, game_display::ONSCREEN, true, 0.5, force_scroll);
 		} else {
-			disp->scroll_to_tile(b_vec[0], game_display::ONSCREEN, true, force_scroll);
+			disp->scroll_to_tile(scroll_to_loc, game_display::ONSCREEN, true, force_scroll);
 		}
 
 		// do a copy so we can change the caracteristics
@@ -950,7 +1034,7 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 		if (attacker) {
 			const unit_animation* attacker_anim;
 
-			attacker_anim = unit_types.global_anim(GLB_ANIM_MAGIC);
+			attacker_anim = unit_types.global_anim(global_anim_tag::MAGIC);
 			if (attacker_anim) {
 				animator.add_animation(attacker, attacker_anim);
 				animated_units.insert(attacker);
@@ -959,9 +1043,9 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 
 		const unit_animation* defender_anim;
 		if (type == "blade" || type == "pierce" || type == "impact") {
-			defender_anim = unit_types.global_anim(GLB_ANIM_BLADE);
+			defender_anim = unit_types.global_anim(global_anim_tag::BLADE);
 		} else {
-			defender_anim = unit_types.global_anim(GLB_ANIM_FIRE);
+			defender_anim = unit_types.global_anim(global_anim_tag::FIRE);
 		}
 
 		// note that we take an anim from the real unit, we'll use it later
@@ -1042,7 +1126,7 @@ void unit_heal2(std::vector<team>& teams, unit_map& units, unit* doctor, unit& p
 	const map_location& doctor_loc = doctor? doctor->get_location(): map_location::null_location;
 	const map_location& patient_loc = patient.get_location();
 	
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && preferences::scroll_to_action()))? true: false;
+	bool force_scroll = preferences::scroll_to_action();
 	game_display* disp = game_display::get_singleton();
 	if (!disp || disp->video().update_locked()) {
 		return;
@@ -1065,7 +1149,7 @@ void unit_heal2(std::vector<team>& teams, unit_map& units, unit* doctor, unit& p
 		std::set<unit*> animated_units;
 		unit_animator animator;
 
-		const unit_animation* heal_anim = unit_types.global_anim(GLB_ANIM_HEAL);
+		const unit_animation* heal_anim = unit_types.global_anim(global_anim_tag::HEAL);
 		animator.add_animation(&patient, heal_anim, patient_loc, false, false, lexical_cast<std::string>(healing), display::rgb(0, 255, 0));
 		animated_units.insert(&patient);
 
@@ -1092,7 +1176,7 @@ void unit_destruct(std::vector<team>& teams, unit_map& units, unit* attacker, ar
 	const map_location& attacker_loc = attacker? attacker->get_location(): map_location::null_location;
 	const map_location& defender_loc = defender.get_location();
 	
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && (defender.human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = preferences::scroll_to_action();
 	game_display* disp = game_display::get_singleton();
 	if (!disp || disp->video().update_locked()) {
 		return;
@@ -1115,7 +1199,7 @@ void unit_destruct(std::vector<team>& teams, unit_map& units, unit* attacker, ar
 		std::set<unit*> animated_units;
 		unit_animator animator;
 
-		const unit_animation* destruct_anim = unit_types.global_anim(GLB_ANIM_DESTRUCT);
+		const unit_animation* destruct_anim = unit_types.global_anim(global_anim_tag::DESTRUCT);
 		animator.add_animation(&defender, destruct_anim, defender.get_location(), false, false, text, display::rgb(255, 0, 0));
 		animated_units.insert(&defender);
 
@@ -1168,7 +1252,9 @@ void reset_helpers(const unit *attacker,const unit *defender, bool stronger)
 
 void unit_recruited(const map_location& loc,const map_location& leader_loc)
 {
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((*resources::teams)[player_number_ - 1].is_human() || preferences::scroll_to_action())))? true: false;
+	const events::command_disabler disable_commands;
+
+	bool force_scroll = preferences::scroll_to_action()? true: false;
 	game_display* disp = game_display::get_singleton();
 	if(!disp || disp->video().update_locked() || disp->fogged(loc)) return;
 	unit_map::iterator u = disp->get_units().find(loc);
@@ -1199,13 +1285,15 @@ void unit_recruited(const map_location& loc,const map_location& leader_loc)
 	}
 }
 
-void unit_healing(unit &healed, const map_location &healed_loc,
-	const std::vector<unit *> &healers, int healing)
+void unit_healing(unit& healed, const map_location& healed_loc, const std::vector<unit *> &healers, int healing)
 {
-	if (healing==0) return;
+	const events::command_disabler disable_commands;
+
+	if (healing == 0) {
+		return;
+	}
 	// To human player, I think it isn't necessary to display all heal animation.
-	// bool force_scroll = (!player_number_ || ((player_number_ > 0) && ((*resources::teams)[player_number_ - 1].is_human() || preferences::scroll_to_action())))? true: false;
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && preferences::scroll_to_action()))? true: false;
+	bool force_scroll = preferences::scroll_to_action()? true: false;
 	game_display* disp = game_display::get_singleton();
 	if(!disp || disp->video().update_locked() || disp->fogged(healed_loc)) return;
 	rect_of_hexes& draw_area = disp->draw_area();
@@ -1226,6 +1314,54 @@ void unit_healing(unit &healed, const map_location &healed_loc,
 		} else {
 			animator.add_animation(&healed,"healed",healed_loc,map_location::null_location,healing,false,false,lexical_cast<std::string>(healing), display::rgb(0,255,0));
 		}
+		animator.start_animations();
+		animator.wait_for_end();
+		animator.set_all_standing();
+	}
+}
+
+void unit_build(artifical& art)
+{
+	const map_location& art_loc = art.get_location();
+
+	bool force_scroll = preferences::scroll_to_action()? true: false;
+	game_display* disp = game_display::get_singleton();
+	if (!disp || disp->video().update_locked() || disp->fogged(art_loc)) return;
+	rect_of_hexes& draw_area = disp->draw_area();
+
+	if (force_scroll || point_in_rect_of_hexes(art_loc.x, art_loc.y, draw_area)) {
+		// This is all the pretty stuff.
+		disp->scroll_to_tile(art_loc, game_display::ONSCREEN, true, true);
+		disp->display_unit_hex(art_loc);
+		unit_animator animator;
+
+		animator.add_animation(&art, "build", art_loc, map_location::null_location, 0, false, false, null_str, display::rgb(0, 255, 0));
+
+		animator.start_animations();
+		animator.wait_for_end();
+		animator.set_all_standing();
+	}
+}
+
+void unit_repair(artifical& art, int healing)
+{
+	if (healing <= 0) return;
+	// To human player, I think it isn't necessary to display all heal animation.
+	const map_location& art_loc = art.get_location();
+
+	bool force_scroll = preferences::scroll_to_action()? true: false;
+	game_display* disp = game_display::get_singleton();
+	if (!disp || disp->video().update_locked() || disp->fogged(art_loc)) return;
+	rect_of_hexes& draw_area = disp->draw_area();
+
+	if (force_scroll || point_in_rect_of_hexes(art_loc.x, art_loc.y, draw_area)) {
+		// This is all the pretty stuff.
+		disp->scroll_to_tile(art_loc, game_display::ONSCREEN, true, true);
+		disp->display_unit_hex(art_loc);
+		unit_animator animator;
+
+		animator.add_animation(&art, "repair", art_loc, map_location::null_location, healing, false, false, lexical_cast<std::string>(healing), display::rgb(0,255,0));
+
 		animator.start_animations();
 		animator.wait_for_end();
 		animator.set_all_standing();
@@ -1332,7 +1468,7 @@ void wml_animation_internal(unit_animator &animator, const vconfig &cfg, const m
 void card_start(card_map& cards, const card& c)
 {
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(GLB_ANIM_CARD)) {
+	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::CARD)) {
 		int id = disp->insert_screen_anim(*start_tpl);
 		unit_animation& screen_anim = disp->screen_anim(id);
 
@@ -1356,7 +1492,7 @@ void tactic_start(hero& h)
 	const ttactic& t = unit_types.tactic(h.tactic_);
 
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(GLB_ANIM_TACTIC)) {
+	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::TACTIC)) {
 		int id = disp->insert_screen_anim(*start_tpl);
 		unit_animation& screen_anim = disp->screen_anim(id);
 
@@ -1383,7 +1519,7 @@ void tactic_start(hero& h)
 void formation_attack_start(const tformation& formation)
 {
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(GLB_ANIM_FORMATION_ATTACK)) {
+	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::FORMATION_ATTACK)) {
 		int id = disp->insert_screen_anim(*start_tpl);
 		unit_animation& screen_anim = disp->screen_anim(id);
 		std::stringstream strstr;
@@ -1408,7 +1544,7 @@ void formation_attack_start(const tformation& formation)
 	}
 }
 
-void global_anim_2(int type, const std::string& id1, const std::string& id2)
+void global_anim_2(int type, const std::string& id1, const std::string& id2, const std::string& text, const SDL_Color& color)
 {
 	game_display* disp = game_display::get_singleton();
 	if (const unit_animation* start_tpl = unit_types.global_anim(type)) {
@@ -1417,6 +1553,10 @@ void global_anim_2(int type, const std::string& id1, const std::string& id2)
 
 		screen_anim.replace_image_name("__id1.png", id1);
 		screen_anim.replace_image_name("__id2.png", id2);
+		screen_anim.replace_static_text("__text", text);
+		if (color != font::GOOD_COLOR) {
+			screen_anim.replace_int("text_color", display::rgb(0, 255, 0), display::rgb(color.r, color.g, color.b));
+		}
 		new_animation_frame();
 		screen_anim.start_animation(0);
 
@@ -1434,7 +1574,7 @@ void global_anim_2(int type, const std::string& id1, const std::string& id2)
 void perfect_anim()
 {
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(GLB_ANIM_PERFECT)) {
+	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::PERFECT)) {
 		int id = disp->insert_screen_anim(*start_tpl);
 		unit_animation& screen_anim = disp->screen_anim(id);
 		std::stringstream strstr;
@@ -1455,10 +1595,54 @@ void perfect_anim()
 	}
 }
 
+int start_title_screen_anim()
+{
+	game_display* disp = game_display::get_singleton();
+	int id = -1;
+	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::TITLE_SCREEN)) {
+		id = disp->insert_screen_anim(*start_tpl);
+		unit_animation& screen_anim = disp->screen_anim(id);
+		std::stringstream strstr;
+
+		// screen_anim.replace_static_text("__perfect", dsgettext("wesnoth-lib", "perfect^Perfect"));
+
+		new_animation_frame();
+		screen_anim.start_animation(0);
+	}
+	return id;
+}
+
+void stratagem_anim(const ttechnology& stratagem, const std::string& image, bool up)
+{
+	const events::command_disabler disable_commands;
+
+	game_display* disp = game_display::get_singleton();
+	if (const unit_animation* start_tpl = unit_types.global_anim(up? global_anim_tag::STRATAGEM_UP: global_anim_tag::STRATAGEM_DOWN)) {
+		int id = disp->insert_screen_anim(*start_tpl);
+		unit_animation& screen_anim = disp->screen_anim(id);
+		std::stringstream strstr;
+
+		screen_anim.replace_static_text("__name", stratagem.name());
+		screen_anim.replace_image_name("__image", image);
+
+		new_animation_frame();
+		screen_anim.start_animation(0);
+
+		// wait_until
+		bool finished = false;
+		while (!finished) {
+			resources::controller->play_slice(false);
+			disp->delay(10);
+			finished = screen_anim.animation_finished_potential();
+		}
+		disp->erase_screen_anim(id);
+	}
+}
+
 void unit_touching(unit& u, std::vector<unit *>& touchers, int touching, const std::string& prefix)
 {
 	if (touching == 0) return;
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && (u.human() || preferences::scroll_to_action())))? true: false;
+	bool force_scroll = preferences::scroll_to_action();
 	const map_location& loc = u.get_location();
 	game_display* disp = game_display::get_singleton();
 	if (!disp || disp->video().update_locked() || disp->fogged(loc)) return;
@@ -1489,8 +1673,9 @@ void unit_touching(unit& u, std::vector<unit *>& touchers, int touching, const s
 
 void unit_text(unit& u, bool poisoned, const std::string& text)
 {
-	// if (text.empty()) return;
-	bool force_scroll = (!player_number_ || ((player_number_ > 0) && (u.human() || preferences::scroll_to_action())))? true: false;
+	const events::command_disabler disable_commands;
+
+	bool force_scroll = preferences::scroll_to_action();
 	const map_location& loc = u.get_location();
 	game_display* disp = game_display::get_singleton();
 	if (!disp || disp->video().update_locked() || disp->fogged(loc)) return;
@@ -1520,6 +1705,131 @@ void unit_text(unit& u, bool poisoned, const std::string& text)
 			}
 		}
 	}
+}
+
+void unit_income(unit& u, int income)
+{
+	const events::command_disabler disable_commands;
+
+	const unit_animation* income_anim_tpl = unit_types.global_anim(global_anim_tag::INCOME);
+	if (!income_anim_tpl) {
+		return;
+	}
+	unit_animation income_anim = *income_anim_tpl;
+	bool force_scroll = u.human() || preferences::scroll_to_action()? true: false;
+	const map_location& loc = u.get_location();
+	game_display* disp = game_display::get_singleton();
+	if (!disp || disp->video().update_locked() || disp->fogged(loc)) return;
+	rect_of_hexes& draw_area = disp->draw_area();
+
+	const theme::status_item* const item = disp->get_theme().get_status_item(reports::report_name(reports::GOLD));
+	const SDL_Rect& rect = item->location(disp->screen_area());
+
+	int xoffset = rect.x - disp->get_location_x(loc);
+	int yoffset = rect.y - disp->get_location_y(loc);
+	std::stringstream strstr;
+	strstr.str("");
+	strstr << "0~" << xoffset;
+	income_anim.replace_progressive("x", "5555", strstr.str());
+	income_anim.replace_progressive("x", "6666", str_cast(xoffset));
+	strstr.str("");
+	strstr << "-60~" << yoffset;
+	income_anim.replace_progressive("y", "5555", strstr.str());
+	income_anim.replace_progressive("y", "6666", str_cast(yoffset));
+
+	if (force_scroll || point_in_rect_of_hexes(loc.x, loc.y, draw_area)) {
+		// This is all the pretty stuff.
+		std::string text = str_cast(income);
+		Uint32 color = income >= 0? display::rgb(0, 255, 0): display::rgb(255, 0, 0);
+		
+		disp->scroll_to_tile(loc, game_display::ONSCREEN, true, true);
+		disp->display_unit_hex(loc);
+		unit_animator animator;
+
+		animator.add_animation(&u, &income_anim, loc, !text.empty(), false, text, color);
+
+		animator.start_animations();
+		animator.wait_for_end();
+		animator.set_all_standing();
+
+		disp->invalidate_game_status();
+	}
+}
+
+void location_text(const std::vector<tlocation_anim>& locs)
+{
+	const unit_animation* location_anim_tpl = unit_types.global_anim(global_anim_tag::LOCATION);
+	if (!location_anim_tpl || locs.empty()) {
+		return;
+	}
+
+	game_display* disp = game_display::get_singleton();
+	if (!disp || disp->video().update_locked()) {
+		return;
+	}
+	
+	std::map<int, const unit_animation*> wait;
+	for (std::vector<tlocation_anim>::const_iterator it = locs.begin(); it != locs.end(); ++ it) {
+		unit_animation location_anim = *location_anim_tpl;
+		location_anim.replace_progressive("offset_x", "5555", str_cast(1.0 * it->xoffset / 100));
+		location_anim.replace_progressive("offset_y", "5555", str_cast(1.0 * it->yoffset / 100));
+
+		int id = disp->insert_screen_anim(location_anim);
+		unit_animation& screen_anim = disp->screen_anim(id);
+		
+		map_location src = map_location::null_location;
+		if (!it->text.empty()) {
+			int xoffset1 = it->xoffset;
+			int yoffset1 = it->yoffset;
+			if (it->xoffset < 0) {
+				xoffset1 = 0;
+			} else if (it->xoffset >= 100) {
+				xoffset1 = 99;
+			}
+			if (it->yoffset < 0) {
+				yoffset1 = 0;
+			} else if (it->yoffset >= 100) {
+				yoffset1 = 99;
+			}
+			const SDL_Rect& map_area = disp->map_area();
+			int x = map_area.x + xoffset1 * map_area.w / 100;
+			int y = map_area.y + yoffset1 * map_area.h / 100;
+			src = disp->hex_clicked_on(x, y);
+		}
+		if (it == locs.begin()) {
+			new_animation_frame();
+		}
+		screen_anim.start_animation(0, src, map_location::null_location, false, it->text, it->color);
+		wait.insert(std::make_pair(id, &screen_anim));
+	}
+
+	// wait_until
+	bool finished = false;
+
+	while (!finished) {
+		finished = true;
+
+		resources::controller->play_slice(false);
+		disp->delay(10);
+		for (std::map<int, const unit_animation*>::const_iterator it = wait.begin(); it != wait.end(); ++ it) {
+			const unit_animation& anim = *it->second;
+			if (!anim.animation_finished_potential()) {
+				finished = false;
+			}
+		}
+	}
+
+	for (std::map<int, const unit_animation*>::const_iterator it = wait.begin(); it != wait.end(); ++ it) {
+		disp->erase_screen_anim(it->first);
+	}
+}
+
+void location_text(int xoffset, int yoffset, const std::string& text, Uint32 color)
+{
+	std::vector<tlocation_anim> locs;
+	locs.push_back(tlocation_anim(xoffset, yoffset, text, color));
+
+	location_text(locs);
 }
 
 } // end unit_display namespace

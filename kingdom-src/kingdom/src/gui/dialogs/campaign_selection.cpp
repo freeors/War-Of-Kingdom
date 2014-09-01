@@ -32,6 +32,8 @@
 #include "gui/widgets/window.hpp"
 #include "serialization/string_utils.hpp"
 #include "gettext.hpp"
+#include "unit_types.hpp"
+#include <preferences.hpp>
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
@@ -112,13 +114,20 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 #endif
 	window.keyboard_capture(&list);
 
-	/***** Setup campaign details. *****/
+	std::vector<config> campaigns = campaigns_;
+	campaigns.push_back(config());
+	config& sub = campaigns.back();
+	sub["id"] = "random_map";
+	sub["name"] = dsgettext("wesnoth-multiplayer", "random_map");
+	sub["description"] = dsgettext("wesnoth-multiplayer", "random_map description");
+	sub["icon"] = "data/campaigns/random_map/images/icon.png";
+	sub["image"] = "data/campaigns/random_map/images/image.png";
 
-	tmulti_page& multi_page = find_widget<tmulti_page>(
-			&window, "campaign_details", false);
+	/***** Setup campaign details. *****/
+	tmulti_page& multi_page = find_widget<tmulti_page>(&window, "campaign_details", false);
 
 	size_t n = 0;
-	BOOST_FOREACH (const config &c, campaigns_) {
+	BOOST_FOREACH (const config &c, campaigns) {
 		const std::string catalog = c["catalog"].str();
 		if (catalog_ == NONE_CATALOG) {
 			if (!catalog.empty()) {
@@ -130,6 +139,11 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 				n ++;
 				continue;
 			}
+		}
+		const std::string mode = c["mode"].str();
+		if ((!preferences::developer() && c["subcontinent"].to_bool()) || mode_tag::find(mode) == mode_tag::SIEGE) {
+			n ++;
+			continue;
 		}
 
 		/*** Add list item ***/
@@ -149,7 +163,6 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 
 		tcontrol* widget = dynamic_cast<tcontrol*>(grid->find("mode", false));
 		if (widget) {
-			const std::string& mode = c["mode"].str();
 			if (mode == "tower") {
 				widget->set_label("misc/mode-tower.png");
 			} else if (c["rank"].to_int() == 100) {
@@ -173,7 +186,7 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 
 		multi_page.add_page(detail_page);
 	}
-
+	
 	campaign_selected(window);
 }
 

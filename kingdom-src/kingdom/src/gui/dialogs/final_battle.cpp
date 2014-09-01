@@ -109,12 +109,12 @@ void tfinal_battle::pre_show(CVideo& /*video*/, twindow& window)
 
 	size_t cities = 0;
 	for (size_t side = 0; side != teams_.size(); side ++) {
-		std::vector<artifical*>& side_cities = teams_[side].holded_cities();
+		std::vector<artifical*>& side_cities = teams_[side].holden_cities();
 		cities += side_cities.size();
 	}
 	size_t again = cities / 3 + ((cities % 3)? 1: 0);
-	if (again > current_team_.holded_cities().size()) {
-		again -= current_team_.holded_cities().size();
+	if (again > current_team_.holden_cities().size()) {
+		again -= current_team_.holden_cities().size();
 	} else {
 		again = 0;
 	}

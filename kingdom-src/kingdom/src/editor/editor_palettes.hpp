@@ -36,8 +36,8 @@ struct terrain_group
 	terrain_group(const config& cfg, display& gui);
 
 	std::string id;
+	std::string icon;
 	t_string name;
-	gui::button button;
     bool core;
 };
 
@@ -106,6 +106,9 @@ public:
 	/** Sets the tooltips used in the palette */
 	void load_tooltips();
 
+	const std::vector<terrain_group>& terrain_groups() const { return terrain_groups_; }
+	const std::string& current_group_id() const { return current_group_id_; }
+
 private:
 	void draw_old(bool);
 
@@ -143,6 +146,8 @@ private:
 	/** A copy from the terrain_map_->second for the current active group. */
 	t_translation::t_list terrains_;
 
+	std::string current_group_id_;
+
 	/**
 	 * The editor_groups as defined in editor-groups.cfg.
 	 *
@@ -159,59 +164,12 @@ private:
 	 * This one points to the selected button, this value should not be 0
 	 * otherwise things will fail. Thus should be set in constructor.
 	 */
-	gui::button *checked_group_btn_;
 
-	gui::button top_button_, bot_button_;
-	size_t button_x_, top_button_y_, bot_button_y_;
 	size_t nterrains_, terrain_start_;
 	t_translation::t_terrain& selected_fg_terrain_;
 	t_translation::t_terrain& selected_bg_terrain_;
 
 };
-
-/** A bar where the brush is drawn */
-class brush_bar : public gui::widget {
-public:
-	brush_bar(display &gui, const size_specs &sizes, std::vector<brush>& brushes, brush** the_brush);
-
-	/** Return the size of currently selected brush. */
-	unsigned int selected_brush_size();
-
-	/**
-	 * Draw the palette. If force is true, everything
-	 * will be redrawn, even though it is not dirty.
-	 */
-	void draw(bool force=false);
-	virtual void draw();
-	virtual void handle_event(const SDL_Event& event);
-
-	/**
-	 * Update the size of this widget.
-	 *
-	 * Use if the size_specs have changed.
-	 */
-	void adjust_size();
-
-private:
-	/**
-	 * To be called when a mouse click occurs.
-	 *
-	 * Check if the coordinates is a terrain that may be chosen, and select the
-	 * terrain if that is the case.
-	 */
-	void left_mouse_click(const int mousex, const int mousey);
-
-	/** Return the index of the brush that is at coordinates (x, y) in the panel. */
-	int selected_index(const int x, const int y) const;
-
-	const size_specs &size_specs_;
-	display &gui_;
-	unsigned int selected_;
-	std::vector<brush>& brushes_;
-	brush** the_brush_;
-	const size_t size_;
-};
-
 
 } //end namespace editor
 #endif // EDITOR_PALETTES_H_INCLUDED

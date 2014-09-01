@@ -427,11 +427,7 @@ void scrollbar::handle_event(const SDL_Event& event)
 		SDL_MouseButtonEvent const &e = event.button;
 		bool on_grip = point_in_rect(e.x, e.y, grip);
 		bool on_groove = point_in_rect(e.x, e.y, groove);
-		if (on_groove && e.button == SDL_BUTTON_WHEELDOWN) {
-			move_position(scroll_rate_);
-		} else if (on_groove && e.button == SDL_BUTTON_WHEELUP) {
-			move_position(-scroll_rate_);
-		} else if (on_grip && e.button == SDL_BUTTON_LEFT) {
+		if (on_grip && e.button == SDL_BUTTON_LEFT) {
 			if (vertical_) {
 				mousey_on_grip_ = e.y - grip.y;
 			} else {

@@ -24,6 +24,7 @@
 #include <boost/scoped_ptr.hpp>
 
 class display;
+class hero_map;
 
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 #include "gui/widgets/list.hpp"
@@ -70,7 +71,7 @@ public:
 class tlobby_main : public tdialog, public lobby_base, private events::chat_handler
 {
 public:
-	tlobby_main(const config& game_config, lobby_info& info, display& disp);
+	tlobby_main(const config& game_config, lobby_info& info, display& disp, hero_map& heros, hero_map& heros_start);
 
 	~tlobby_main();
 
@@ -356,6 +357,10 @@ private:
 	bool gamelist_diff_update_;
 
 	display& disp_;
+
+	hero_map& heros_;
+
+	hero_map& heros_start_;
 
 	std::vector<int> gamelist_id_at_row_;
 

@@ -144,8 +144,8 @@ void tplay_card::refresh_tooltip(twindow& window)
 		label = find_widget<tlabel>(&window, "tip_intellect", false, true);
 		label->set_label("");
 
-		// politics
-		label = find_widget<tlabel>(&window, "tip_politics", false, true);
+		// spirit
+		label = find_widget<tlabel>(&window, "tip_spirit", false, true);
 		label->set_label("");
 
 		// charm
@@ -201,9 +201,9 @@ void tplay_card::refresh_tooltip(twindow& window)
 	label = find_widget<tlabel>(&window, "tip_intellect", false, true);
 	label->set_label(lexical_cast<std::string>(temp.intellect_));
 
-	// politics
-	label = find_widget<tlabel>(&window, "tip_politics", false, true);
-	label->set_label(lexical_cast<std::string>(temp.politics_));
+	// spirit
+	label = find_widget<tlabel>(&window, "tip_spirit", false, true);
+	label->set_label(lexical_cast<std::string>(temp.spirit_));
 
 	// charm
 	label = find_widget<tlabel>(&window, "tip_charm", false, true);

@@ -44,6 +44,10 @@ public:
 
 	enum SPACE_CONSUMPTION { DEFAULT_SPACE, MINIMUM_SPACE };
 
+	enum {NO_DEGREE = -1};
+
+	enum {COOKIE_NONE, COOKIE_UNIT, COOKIE_HERO};
+
 	button(CVideo& video, const std::string& label, TYPE type = TYPE_PRESS,
 	       std::string button_image = "", SPACE_CONSUMPTION spacing = DEFAULT_SPACE,
 		   const bool auto_join = true, button_hook* hook = NULL, const void* menu = NULL, size_t btnidx = 0, SDL_Rect* clip = NULL, int base_width = 0, int base_height = 0, int font_size = 0);
@@ -63,11 +67,13 @@ public:
 	virtual void enable(bool new_val=true);
 	void release();
 
-	void set_tactic_image(hero& h);
+	void set_tactic_image(hero& h, const std::string& label);
 	void set_rpg_image(hero* h, bool greyscale = false);
 	void set_bomb_image(int bomb_turns);
-	void set_image(const std::string& stem, int digit, bool greyscale = false, bool special = false, const std::string& icon = null_str, const std::string& lb_icon = null_str);
+	void set_image(const std::string& stem, int digit, bool greyscale = false, bool special = false, const std::string& icon = null_str, const std::string& lb_icon = null_str, int degree = NO_DEGREE);
+	void set_pip_image(const std::string& bg, const std::string& fg);
 
+	int cookie_type;
 	void* cookie_;
 	size_t btnidx_;
 protected:

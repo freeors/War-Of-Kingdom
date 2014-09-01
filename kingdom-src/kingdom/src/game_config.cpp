@@ -47,8 +47,8 @@ namespace game_config
 	int base_income = 2;
 	int village_income = 2;
 	int hero_income = 2;
-	int poison_amount= 8;
-	int rest_heal_amount= 2;
+	int poison_amount= 24;
+	int rest_heal_amount= 4;
 	int recall_cost = 20;
 	int kill_experience = 8;
 	unsigned lobby_network_timer = 100;
@@ -59,30 +59,53 @@ namespace game_config
 	int field_troop_increase_loyalty = 10;
 	int wander_loyalty_threshold = 112; // HERO_MAX_LOYALTY / 4 * 3
 	int move_loyalty_threshold = 130; // HERO_MAX_LOYALTY - 20
-	int ai_keep_loyalty_threshold = wander_loyalty_threshold + 13;
+	int ai_keep_loyalty_threshold = wander_loyalty_threshold + 5;
 	int ai_keep_hp_threshold = 50;
 	int max_troop_food = 15;
 	int increase_feeling = 1024; // HERO_MAX_FEELING / 64. 64 turns will carry.
 	int minimal_activity = 175;
 	int maximal_defeated_activity = 0;
 	int tower_fix_heros = 6;
+	int rpg_fix_members = 12;
 	bool score_dirty = true;
+	bool local_only = true;
 	int max_police = 100;
 	int min_tradable_police = max_police / 2;
 	int max_commoners = 5;
 	int fixed_tactic_slots = 2;
 	int active_tactic_slots = fixed_tactic_slots;
+	float tower_cost_ratio = 9.0;
 
 	int default_human_level = 1;
 	int default_ai_level = 2;
 	int current_level = 1;
 	int min_level = 1;
 	int max_level = 3;
+	int siege_map_w = 8;
+	int siege_map_h = 8;
 
 	int max_noble_level = 4;
-	int max_tactic_point = 15;
-	int increase_tactic_point = 4;
+	int tactic_degree_per_turn = 50;
+	int tactic_degree_per_point = 40;
+	int threshold_score_ai = 60;
+	int hot_level_per_point = 5;
 	int formation_least_adjacent = 3;
+
+	int least_fix_members = 4;
+	int least_roam_members = 4;
+	int max_exile = 12;
+	int levels_per_rank = 5;
+	int max_member_level = 14;
+	int min_employee_level = levels_per_rank + 2;
+	int min_exile_level = levels_per_rank;
+	int employee_base_score = 0;
+	int max_employees = 1;
+	int coin_score_rate = 200;
+	int score_used_draw = 500;
+	int ticks_per_turn = 20000;
+	int feature_increase_spirit = 30; // 30%
+	bool show_side_report = false;
+
 
 	int max_bomb_turns = 2;
 	bool no_messagebox = false;
@@ -98,9 +121,19 @@ namespace game_config
 		level += 3;
 		return level;
 	}
+	void recycle_score_income(int& coin, int& score)
+	{
+		score = (coin * game_config::coin_score_rate + score) / 5;
+		
+		coin = score / game_config::coin_score_rate;
+		score = score - coin * game_config::coin_score_rate;
+	}
 
 	const std::string revision = VERSION;
 	std::string checksum;
+	bool server_matched = true;
+	const std::string service_email = "service@leagor.com";
+	const std::string sales_email = "sales@leagor.com";
 	std::string wesnoth_program_dir;
 	bool debug = false, editor = false, no_delay = false, disable_autosave = false;
 
@@ -110,6 +143,33 @@ namespace game_config
 	int start_cards = 6;
 	int cards_per_turn = 2;
 	int max_cards = 20;
+	const std::string campaign_id_siege = "siege";
+	map_location inforce_defender_loc(1, 0);
+	map_location inforce_attacker_loc(14, 5);
+	int max_siege_troops = 11;
+	int max_reinforcements = 6;
+	int max_sieges = 15;
+	int default_siege_turn = 10;
+	int max_breaks = 5;
+	int salary_score = 20;
+	int develop_score = 10;
+	size_t max_slots = 3;
+	std::string broadcast_username = "--";
+	std::string data_server_magic_word = "5a7c";
+	size_t timestamp;
+	unsigned char secret_key[6];
+	int min_valid_damage = 5;
+	int build_hp_per_turn = 50;
+	int start_percent_hp = 60;
+
+	int cost_per_level = 10;
+	int cost_clear_formationed = 20;
+	int cost_intervene_move = 80;
+	
+	std::string theme_object_id_endturn = "endturn";
+	std::string theme_object_id_terrain_group = "terrain_group";
+	std::string theme_object_id_brush = "brush";
+
 
 	std::string sn;
 	std::map<int, std::string> inapp_items;
@@ -160,7 +220,7 @@ namespace game_config
 			ellipsis,
 			missing;
 	} //images
-
+	std::string tactic_png = "misc/tactic.png";
 	std::string shroud_prefix, fog_prefix;
 
 	std::string flag_rgb;
@@ -245,8 +305,8 @@ namespace game_config
 		base_income = v["base_income"].to_int(2);
 		village_income = v["village_income"].to_int(2);
 		hero_income = v["hero_income"].to_int(2);
-		poison_amount = v["poison_amount"].to_int(8);
-		rest_heal_amount = v["rest_heal_amount"].to_int(2);
+		poison_amount = v["poison_amount"].to_int(24);
+		rest_heal_amount = v["rest_heal_amount"].to_int(4);
 		recall_cost = v["recall_cost"].to_int(20);
 		kill_experience = v["kill_experience"].to_int(8);
 		lobby_refresh = v["lobby_refresh"].to_int(2000);
@@ -277,7 +337,11 @@ namespace game_config
 			get_serialnumber(_sn);
 			sn = _sn;
 		}
-		inapp_items[INAPP_VIP] = "vip";
+		inapp_items[transaction_type_vip] = "vip2";
+		inapp_items[transaction_type_2coin] = "score";
+		inapp_items[transaction_type_8coin] = "8coin";
+		inapp_items[transaction_type_45coin] = "45coin";
+		inapp_items[transaction_type_100coin] = "100coin";
 
 		title_music = v["title_music"].str();
 		lobby_music = v["lobby_music"].str();

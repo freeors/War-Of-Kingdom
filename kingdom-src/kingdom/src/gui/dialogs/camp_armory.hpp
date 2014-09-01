@@ -77,6 +77,8 @@ private:
 	std::vector<unit*>& candidate_troops_;
 	std::vector<hero*>& candidate_heros_;
 	std::vector<int> hit_points_;
+	std::vector<int> tactic_degree_;
+	std::vector<int> hot_turns_;
 
 	int first_human_troop_;
 	size_t reserve_heros_;

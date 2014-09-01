@@ -22,7 +22,6 @@
 #include "game_display.hpp"
 #include "log.hpp"
 #include "marked-up_text.hpp"
-#include "show_dialog.hpp"
 #include "sha1.hpp"
 #include "serialization/binary_or_text.hpp"
 #include "serialization/parser.hpp"

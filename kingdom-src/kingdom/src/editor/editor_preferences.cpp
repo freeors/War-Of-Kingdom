@@ -31,7 +31,8 @@ namespace editor {
 	}
 
 	bool use_mdi() {
-		return preferences::get("editor_use_mdi", true);
+		return false;
+		// return preferences::get("editor_use_mdi", false);
 	}
 
 	void set_use_mdi(bool value) {

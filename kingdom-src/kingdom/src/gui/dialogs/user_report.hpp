@@ -41,7 +41,7 @@ class tscrollbar_panel;
 class tuser_report : public tdialog
 {
 public:
-	explicit tuser_report(game_display& gui, hero_map& heros);
+	explicit tuser_report(game_display& disp, hero_map& heros, const config& game_config);
 
 	~tuser_report();
 
@@ -60,19 +60,25 @@ private:
 
 	void set_label_int(twindow& window, const std::string& id, int value);
 
-	enum {NONE_PAGE, MIN_PAGE, PLAYER_PASS_PAGE = MIN_PAGE, RANK_PASS_PAGE, RANK_SCORE_PAGE, MAX_PAGE = RANK_SCORE_PAGE};
+	enum {NONE_PAGE, MIN_PAGE, PLAYER_PASS_PAGE = MIN_PAGE, RANK_PASS_PAGE, EMPLOYEE_PAGE, RANK_SCORE_PAGE, TITLE_BOARD_PAGE, MAX_PAGE = TITLE_BOARD_PAGE};
 	void sheet_toggled(twidget* widget);
 	void swap_page(twindow& window, int page, bool swap);
 
 	void fill_base(twindow& window);
-	void fill_biography(twindow& window);
+	void fill_rank_pass(twindow& window);
+	void fill_employee(twindow& window);
 	void fill_score_board(twindow& window);
+	void fill_title_board(twindow& window);
 
 	void fill_pass_table(twindow& window, const std::vector<http::pass_statistic>& passes, bool board);
 
+	void detail_group(twindow& window);
+	void detail_employee(twindow& window);
+
 private:
-	game_display& gui_;
+	game_display& disp_;
 	hero_map& heros_;
+	const config& game_config_;
 
 	int current_page_;
 	std::map<int, ttoggle_button*> sheet_;

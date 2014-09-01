@@ -6,15 +6,15 @@ msgstr ""
 "Project-Id-Version: en_GB\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-10-25 22:57+0800\n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"PO-Revision-Date: 2014-07-28 18:57+0800\n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
 "Language-Team: English (British) <en@li.org>\n"
 "Language: en_GB\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.6.5\n"
 
 #. [terrain_type]: id=deep_water
 #. [terrain_type]: id=deep_water_gray
@@ -1371,7 +1371,6 @@ msgstr "Remove Add-ons"
 msgid "Connect"
 msgstr "Connect"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=cancel
 #: data/gui/default/window/addon_connect.cfg:220
 #: data/gui/default/window/campaign_dialog.cfg:433
@@ -1405,7 +1404,6 @@ msgstr "Cancel"
 msgid "Play a campaign"
 msgstr "Play a campaign"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=ok
 #: data/gui/default/window/campaign_dialog.cfg:419
 #: data/gui/default/window/campaign_difficulty.cfg:169
@@ -1524,19 +1522,16 @@ msgstr "Settings"
 msgid "Generate"
 msgstr "Generate"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_new_map.cfg:27 src/hotkeys.cpp:123
 msgid "New Map"
 msgstr "New Map"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_new_map.cfg:46 src/mapgen_dialog.cpp:121
 msgid "Width:"
 msgstr "Width:"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_new_map.cfg:73 src/mapgen_dialog.cpp:122
 msgid "Height:"
@@ -1548,7 +1543,6 @@ msgstr "Height:"
 msgid "Create new map"
 msgstr "Create new map"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_resize_map.cfg:27 src/hotkeys.cpp:169
 msgid "Resize Map"
@@ -1590,7 +1584,6 @@ msgstr "Copy edge terrain"
 msgid "Resize map"
 msgstr "Resize map"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_settings.cfg:38 src/hotkeys.cpp:121
 msgid "Editor Settings"
@@ -1639,7 +1632,6 @@ msgstr "Blue:"
 msgid "Allow more than one map to be open at the same time (MDI)"
 msgstr "Allow more than one map to be open at the same time (MDI)"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=apply
 #: data/gui/default/window/editor_settings.cfg:250
 #: src/game_preferences_display.cpp:203
@@ -1697,7 +1689,6 @@ msgstr "Continue"
 msgid "Execution trace"
 msgstr "Execution trace"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=cancel
 #. [button]: id=quit
 #. [grid]
@@ -1723,7 +1714,6 @@ msgstr "Do you really want to delete this game?"
 msgid "Don’t ask me again!"
 msgstr "Don’t ask me again!"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=ok
 #: data/gui/default/window/game_delete.cfg:128
 #: data/gui/default/window/game_delete.cfg:129
@@ -1737,7 +1727,6 @@ msgstr "Don’t ask me again!"
 msgid "Yes"
 msgstr "Yes"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=cancel
 #: data/gui/default/window/game_delete.cfg:143
 #: data/gui/default/window/game_save_message.cfg:154
@@ -1747,12 +1736,15 @@ msgstr "Yes"
 msgid "No"
 msgstr "No"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]: id=lblTitle
 #: data/gui/default/window/game_load.cfg:42
 #: src/gui/dialogs/mp_create_game.cpp:88 src/hotkeys.cpp:72
 msgid "Load Game"
 msgstr "Load Game"
+
+#, fuzzy
+msgid "Save Layout"
+msgstr "Save Replay"
 
 #, fuzzy
 msgid "Local"
@@ -1786,7 +1778,6 @@ msgstr "Show replay"
 msgid "Cancel orders"
 msgstr "Cancel orders"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]: id=lblTitle
 #: data/gui/default/window/game_save.cfg:32
 #: data/gui/default/window/game_save_message.cfg:32
@@ -1816,7 +1807,6 @@ msgstr "OOS error"
 msgid "Ignore All"
 msgstr "Ignore All"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=quit_game
 #: data/gui/default/window/game_save_oos.cfg:159 src/hotkeys.cpp:91
 msgid "Quit Game"
@@ -1864,7 +1854,6 @@ msgstr "Type"
 msgid "Variable"
 msgstr "Variable"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=ok
 #. [button]: id=cancel
 #. [button]: id=close_window
@@ -2017,7 +2006,6 @@ msgstr "Invert filter"
 msgid "Send"
 msgstr "Send"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=show_preferences
 #. [grid]
 #: data/gui/default/window/lobby_main.cfg:666
@@ -2134,21 +2122,18 @@ msgstr "Send a private message"
 msgid "Friends/Ignored List"
 msgstr "Friends/Ignored List"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=add_friend
 #: data/gui/default/window/mp_cmd_wrapper.cfg:162
 #: src/game_preferences_display.cpp:179
 msgid "Add As Friend"
 msgstr "Add As Friend"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=add_ignore
 #: data/gui/default/window/mp_cmd_wrapper.cfg:177
 #: src/game_preferences_display.cpp:180
 msgid "Add As Ignore"
 msgstr "Add As Ignore"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=remove
 #: data/gui/default/window/mp_cmd_wrapper.cfg:192
 #: src/game_preferences_display.cpp:181
@@ -2290,7 +2275,6 @@ msgstr "Login"
 msgid "Login:"
 msgstr "Login:"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [toggle_button]: id=remember_password
 #: data/gui/default/window/mp_login.cfg:190
 #: src/game_preferences_display.cpp:175
@@ -2302,7 +2286,6 @@ msgstr "Save password to preferences (clear text)"
 msgid "Password Reminder"
 msgstr "Password Reminder"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #. [grid]
 #: data/gui/default/window/mp_method_selection.cfg:31
@@ -2325,19 +2308,15 @@ msgstr ""
 "supply a password only if you wish to use a registered username."
 
 #. [column]
-#: data/gui/default/window/mp_method_selection.cfg:138
-msgid "Join Official Server"
-msgstr "Join Official Server"
-
-#. [column]
-#: data/gui/default/window/mp_method_selection.cfg:139
-msgid "Log on to the official Wesnoth multiplayer server"
-msgstr "Log on to the official Wesnoth multiplayer server"
-
-#. [column]
 #: data/gui/default/window/mp_method_selection.cfg:149
-msgid "Join a different server"
-msgstr "Join a different server"
+msgid "Crusage for subcontinent"
+msgstr ""
+
+#. [column]
+#: data/gui/default/window/mp_method_selection.cfg:138
+#, fuzzy
+msgid "Enter multiplayer lobby"
+msgstr "Multiplayer Lobby"
 
 #. [column]
 #: data/gui/default/window/mp_method_selection.cfg:158
@@ -2345,19 +2324,16 @@ msgid "Host Networked Game"
 msgstr "Host Networked Game"
 
 #. [column]
-#: data/gui/default/window/mp_method_selection.cfg:159
-msgid "Host a game using dedicated server ‘wesnothd’"
-msgstr "Host a game using dedicated server ‘wesnothd’"
-
-#. [column]
 #: data/gui/default/window/mp_method_selection.cfg:168
-msgid "Local Game"
-msgstr "Local Game"
+#, fuzzy
+msgid "Attack Player"
+msgstr "Host Networked Game"
 
 #. [column]
 #: data/gui/default/window/mp_method_selection.cfg:169
-msgid "Play a multiplayer game with the AI or humans sharing the same machine"
-msgstr "Play a multiplayer game with the AI or humans sharing the same machine"
+#, fuzzy
+msgid "Attack a network payer"
+msgstr "Host Networked Game"
 
 #. [label]: id=address
 #: data/gui/default/window/mp_server_list.cfg:113
@@ -2369,7 +2345,6 @@ msgstr "Address"
 msgid "Select"
 msgstr "Select"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=help
 #: data/gui/default/window/title_screen.cfg:146 src/hotkeys.cpp:200
 msgid "Help"
@@ -2400,7 +2375,6 @@ msgstr ""
 msgid "Start a tutorial to familiarize yourself with the game"
 msgstr ""
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [grid]
 #: data/gui/default/window/title_screen.cfg:223
 #: src/gui/dialogs/game_load.cpp:303
@@ -2456,7 +2430,6 @@ msgstr "Editor"
 msgid "Start the map editor"
 msgstr ""
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [grid]
 #: data/gui/default/window/title_screen.cfg:229 src/hotkeys.cpp:202
 msgid "Change the language"
@@ -2464,7 +2437,7 @@ msgstr "Change the language"
 
 #. [grid]
 #: data/gui/default/window/title_screen.cfg:230
-msgid "Configure the game’s settings"
+msgid "Configure the game's settings"
 msgstr ""
 
 #. [grid]
@@ -2486,6 +2459,21 @@ msgstr ""
 msgid "Quit the game"
 msgstr "Quit Game"
 
+msgid "Guide"
+msgstr ""
+
+msgid "Operational guidelines for game"
+msgstr ""
+
+msgid "History"
+msgstr ""
+
+msgid "Background material about game's role"
+msgstr ""
+
+msgid "Return to title screen"
+msgstr ""
+
 #. [button]: id=ok
 #: data/gui/default/window/unit_attack.cfg:195
 msgid "Attack"
@@ -2496,7 +2484,6 @@ msgstr ""
 msgid "Attack enemy"
 msgstr ""
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/unit_create.cfg:37 src/hotkeys.cpp:83
 msgid "Create Unit (Debug!)"
@@ -2581,6 +2568,13 @@ msgstr ""
 #: src/game_preferences_display.cpp:166
 msgid "Show Grid"
 msgstr "Show Grid"
+
+msgid "Get one card every 25 turns"
+msgstr ""
+
+#, fuzzy
+msgid "More tactic slot"
+msgstr "Choose the game to load"
 
 #: src/game_preferences_display.cpp:166
 msgid "Don't display message when replay"
@@ -3706,6 +3700,21 @@ msgstr ""
 msgid "Do you really want to quit?"
 msgstr "Do you really want to quit?"
 
+msgid "$name is dirty, but not save."
+msgstr ""
+
+#, fuzzy
+msgid "Map"
+msgstr "New Map"
+
+#, fuzzy
+msgid "Switch terrain group"
+msgstr "Switch Map"
+
+#, fuzzy
+msgid "Switch brush"
+msgstr "View List"
+
 #: src/hotkeys.cpp:976
 msgid "Map-Screenshot"
 msgstr "Map-Screenshot"
@@ -3926,6 +3935,9 @@ msgstr "Reloaded game"
 msgid "Use local language to name save file"
 msgstr ""
 
+msgid "EA"
+msgstr ""
+
 msgid "economy area"
 msgstr ""
 
@@ -3937,18 +3949,17 @@ msgid "Battle"
 msgstr "Castle"
 
 #, fuzzy
-msgid "Random map"
-msgstr "Generate Random Map"
-
-#, fuzzy
 msgid "Select player"
 msgstr "Select All"
 
-#, fuzzy
-msgid "Start a random map campaign"
-msgstr "Play a campaign"
-
 msgid "Profile player hero"
+msgstr ""
+
+#, fuzzy
+msgid "Player side"
+msgstr "Players:"
+
+msgid "Profile player's side"
 msgstr ""
 
 #, fuzzy
@@ -4147,6 +4158,9 @@ msgstr "Play"
 msgid "Controller"
 msgstr ""
 
+msgid "Capital"
+msgstr ""
+
 #, fuzzy
 msgid "Villages"
 msgstr "Villages:"
@@ -4296,6 +4310,10 @@ msgid "Faction/Side feature"
 msgstr ""
 
 #, fuzzy
+msgid "Gold/Income"
+msgstr "Welcome"
+
+#, fuzzy
 msgid "Team/Gender"
 msgstr "Gender:"
 
@@ -4437,6 +4455,11 @@ msgstr "View List"
 msgid "Title Screen"
 msgstr "Full Screen"
 
+msgid ""
+"Detectd capability of player hero is more than allocatable point, system has "
+"reset it. To modify, set capability in \"Player profile\"."
+msgstr ""
+
 #
 # Player selection
 #
@@ -4554,7 +4577,7 @@ msgstr "Female"
 msgid "Register"
 msgstr ""
 
-msgid "Synchronize"
+msgid "Avatar"
 msgstr ""
 
 #, fuzzy
@@ -4564,7 +4587,7 @@ msgstr "Create Game"
 msgid "Stronger"
 msgstr ""
 
-msgid "Don't accept empty, invalid '$key' value"
+msgid "Invalid '$key' value, not accept empty"
 msgstr ""
 
 msgid "Include unsupportable character: $char, invalid '$str' value"
@@ -4581,6 +4604,11 @@ msgstr "Select All"
 # Assemble Treasure
 #
 msgid "Assemble Treasure"
+msgstr ""
+
+msgid ""
+"Duration this time, if remove $treasure from $hero, cannot assemble treasure "
+"to $hero again. Do you want to remove?"
 msgstr ""
 
 #
@@ -4738,10 +4766,10 @@ msgstr ""
 msgid "Effect mode"
 msgstr ""
 
-msgid "Uninstall \"War of Kingdom\" will clear purchase recorder"
+msgid "You is VIP currently, hold $day day still"
 msgstr ""
 
-msgid "Update \"War of Kingdom\" will clear purchase recorder"
+msgid "You isn't VIP currently"
 msgstr ""
 
 msgid "Purchasing '$name'"
@@ -4769,17 +4797,38 @@ msgstr "Check status"
 msgid "You or creator has modified resource file, cannot join!"
 msgstr ""
 
+msgid ""
+"Update database fail when execute In-App Purchase! In order to compensate "
+"data you should get, please send In-App Purchase information to $mail. In-"
+"App Purchase information include: date($date), item($item), "
+"username($username)."
+msgstr ""
+
+msgid ""
+"$account that you are logining is public account, In-App Purchases on it are "
+"shared with other player. In order to benefit to youself only, advise login "
+"again with private account."
+msgstr ""
+
+msgid ""
+"System is processing inapp-purchase request, and force to quit maybe result "
+"data not integrated. Do you want to Quit?"
+msgstr ""
+
 #
 # noble
 #
 msgid "Appoint Noble"
 msgstr ""
 
-msgid "noble^Level"
+msgid "Noble"
 msgstr ""
 
+msgid "noble^Level"
+msgstr "Level"
+
 msgid "noble^Lv$level"
-msgstr ""
+msgstr "Lv$level"
 
 #, fuzzy
 msgid "Adjust"
@@ -4802,10 +4851,45 @@ msgstr "Players:"
 msgid "Rank pass"
 msgstr ""
 
+msgid "Siege record"
+msgstr ""
+
+msgid "Employ hero"
+msgstr ""
+
+msgid "Rank score"
+msgstr ""
+
+msgid "contest^Title"
+msgstr ""
+
 msgid "kingdom^Score"
 msgstr ""
 
 msgid "kingdom^Coin"
+msgstr ""
+
+#, fuzzy
+msgid "Credit"
+msgstr "Credits"
+
+msgid "Attacker's reinforce"
+msgstr ""
+
+msgid "Defender's reinforce"
+msgstr ""
+
+msgid "Result"
+msgstr ""
+
+msgid "Victory"
+msgstr ""
+
+#, fuzzy
+msgid "Defeat"
+msgstr "Repeat Recruit"
+
+msgid "City fallen"
 msgstr ""
 
 #, fuzzy
@@ -4824,11 +4908,22 @@ msgstr ""
 msgid "perfect^Perfect"
 msgstr ""
 
+msgid "Not support upload in multiplayer state!"
+msgstr ""
+
 #
 # register, config account
 #
 msgid "Register, config account"
 msgstr ""
+
+#, fuzzy
+msgid "Validate password"
+msgstr "Set Password"
+
+#, fuzzy
+msgid "Password"
+msgstr "Password:"
 
 msgid "account^remark($server, $host, $register, $ok)"
 msgstr ""
@@ -4837,7 +4932,7 @@ msgstr ""
 "then press $register; 2)Open $host on Internet Explorer, register a "
 "username.\n"
 "3. If want to set in future or play local only, you can input non-empty "
-"username/pass, then press $ok."
+"username, then press $ok."
 
 msgid "account^detect invalid($account, $ps)"
 msgstr ""
@@ -4846,6 +4941,663 @@ msgstr ""
 
 msgid "PS"
 msgstr ""
+
+msgid "$validate_password isn't same as $password"
+msgstr ""
+
+msgid ""
+"When register, password must be greater than or equal to $min characters"
+msgstr ""
+
+msgid "'$key' value must combine $min to $max characters"
+msgstr ""
+
+msgid "Invalid '$key' value, $username is reserved!"
+msgstr ""
+
+msgid "$key cannot include $invalids!"
+msgstr ""
+
+msgid ""
+"$username may only use below special character: $special, and must not be "
+"all special!"
+msgstr ""
+
+msgid "VIP exclusive"
+msgstr ""
+
+msgid "Hero that belong to $leader."
+msgstr ""
+
+msgid "troop^Type"
+msgstr ""
+
+msgid "Family"
+msgstr ""
+
+#
+# group
+#
+msgid "Group"
+msgstr ""
+
+#, fuzzy
+msgid "$leader's side"
+msgstr "Players:"
+
+msgid "member^Fix"
+msgstr ""
+
+msgid "member^Roam"
+msgstr ""
+
+msgid "Associate"
+msgstr ""
+
+msgid "group^Draw"
+msgstr ""
+
+msgid "Upgrade"
+msgstr ""
+
+#, fuzzy
+msgid "Advance"
+msgstr "Advanced Mode"
+
+msgid "group^Layout"
+msgstr ""
+
+#, fuzzy
+msgid "Personnel"
+msgstr "Version"
+
+msgid ""
+"First $tower heros is fixed in tower mode. First $rpg heros can be on stage "
+"in RPG mode."
+msgstr ""
+
+msgid "May get $coin coin and $score score, do you want to discard $name?"
+msgstr ""
+
+msgid "May get $coin coin and $score score, do you want to redraw $count hero?"
+msgstr ""
+
+msgid "rank^Gold"
+msgstr ""
+
+msgid "rank^Silver"
+msgstr ""
+
+msgid "rank^Copper"
+msgstr ""
+
+#, fuzzy
+msgid "Exchange rate"
+msgstr "Change Hotkey"
+
+#, fuzzy
+msgid "score^Exchange"
+msgstr "Race"
+
+msgid "Fire"
+msgstr ""
+
+msgid "Do you want to exchange $from to $to?"
+msgstr ""
+
+msgid ""
+"Repertory is not enough to pay $coin coin and $score score. If lack one "
+"only, can exchange between coin and score."
+msgstr ""
+
+msgid "Repertory is less than $score score, cannot $do."
+msgstr ""
+
+#, fuzzy
+msgid "Do you want to spend $score score to $do?"
+msgstr "Do you really want to quit?"
+
+msgid "Repertory is less than $cost score!"
+msgstr ""
+
+msgid "Do you want to spend $cost score to employ $name?"
+msgstr ""
+
+msgid "$do successfully!"
+msgstr ""
+
+msgid "Append"
+msgstr ""
+
+msgid "Agreement"
+msgstr ""
+
+msgid "Give"
+msgstr ""
+
+msgid "Request ally"
+msgstr ""
+
+msgid "Request terminate"
+msgstr ""
+
+msgid "Be requested ally"
+msgstr ""
+
+msgid "Be requested terminate"
+msgstr ""
+
+msgid "process^going"
+msgstr "..."
+
+msgid "$username wants to ally, do you agree?"
+msgstr ""
+
+msgid "Notice, $username declares to terminate with you!"
+msgstr ""
+
+msgid "Username doesn't allow empty!"
+msgstr ""
+
+msgid "$username doesn't exist!"
+msgstr ""
+
+msgid "Username cannot be myself!"
+msgstr ""
+
+msgid "Username has existd in associate list, cannot append!"
+msgstr ""
+
+msgid "Initiation time: $time"
+msgstr ""
+
+msgid "Termiante automatically after $space"
+msgstr ""
+
+#, fuzzy
+msgid "Using map"
+msgstr "Resize map"
+
+msgid "How to set map"
+msgstr ""
+
+msgid ""
+"1: Select the map want to set.\n"
+"2: Play $layout, execute $save."
+msgstr ""
+
+msgid "If defend city fail, you will lose a employee."
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "$name will put into $location."
+msgstr ""
+
+msgid "$location is full, $name will lose."
+msgstr ""
+
+#
+# Siege tent
+#
+msgid "Siege tent"
+msgstr ""
+
+#, fuzzy
+msgid "side^Attacker"
+msgstr "Host Networked Game"
+
+msgid "side^Defender"
+msgstr ""
+
+#, fuzzy
+msgid "side^Reinforce"
+msgstr "Female"
+
+msgid ""
+"Require seting '$associate' in '$side'. Player that no agreement can be "
+"defender, ally agreement can be reinforce."
+msgstr ""
+
+msgid ""
+"No attackable player! Require seting '$associate' in '$side', and set at "
+"least one no agreement."
+msgstr ""
+
+msgid "Do you want to save $username|'s map to your city map?"
+msgstr ""
+
+msgid "Stratagem"
+msgstr ""
+
+#
+# 3th payment
+#
+msgid "3th payment"
+msgstr ""
+
+msgid "Transaction number"
+msgstr ""
+
+msgid "Transaction buyer"
+msgstr ""
+
+msgid "transaction^Insert"
+msgstr ""
+
+#, fuzzy
+msgid "Pay"
+msgstr "Play"
+
+msgid "Cannot find transaction!"
+msgstr ""
+
+msgid "This transaction had been used!"
+msgstr ""
+
+msgid "payment^course($alipay, $mail, $money, $pay)"
+msgstr ""
+
+msgid "payment^pay remark($ps, $alipay, $mail, $pay)"
+msgstr ""
+
+msgid "Alipay"
+msgstr ""
+
+msgid "When input, may use $hotkey"
+msgstr ""
+
+msgid "coin^Unit"
+msgstr ""
+
+#
+# give
+#
+msgid "You"
+msgstr ""
+
+msgid "$name cannot be negative!"
+msgstr ""
+
+msgid "Repertory is not enough to pay $payment!"
+msgstr ""
+
+msgid "Both $name1 and $name2 can not be zero all!"
+msgstr ""
+
+msgid "$username has $coin and $score"
+msgstr ""
+
+msgid "$username has $coin coin and $score score"
+msgstr ""
+
+#, fuzzy
+msgid "Do you want to give $sth to $sb?"
+msgstr "Do you really want to quit?"
+
+msgid "$first and $second"
+msgstr ""
+
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage."
+msgstr ""
+
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage. It is $treasure, and give it to you."
+msgstr ""
+
+msgid "No coin and score, cannot upload!"
+msgstr ""
+
+msgid "There is in test mode, cannot upload!"
+msgstr ""
+
+msgid "Save is more than $threshold hour, cannot upload!"
+msgstr ""
+
+msgid "$username lose $name!"
+msgstr ""
+
+msgid "Upload successfully!"
+msgstr ""
+
+msgid "Had uploaded pass that create at $create, cannot upload again!"
+msgstr ""
+
+msgid "Had uploaded at least $max sieges today. cannot upload more!"
+msgstr ""
+
+msgid "This save's score($score) is invalid, cannot upload!"
+msgstr ""
+
+msgid "Haven't connected to server, and unable to enter into game lobby."
+msgstr ""
+
+#
+# config city
+#
+msgid "Config city"
+msgstr ""
+
+msgid "City name"
+msgstr ""
+
+msgid ""
+"Because of product commercialization, $function does not open source code."
+msgstr ""
+
+msgid ""
+"Please do not use self-compile project to commerce, for example upload data "
+"to Data Server."
+msgstr ""
+
+#
+# Exile
+#
+msgid "Exile"
+msgstr ""
+
+msgid ""
+"There are at most $count exiled hero. Half heros will be on stage in Siege "
+"mode."
+msgstr ""
+
+#
+# http server
+#
+msgid ""
+"Invalid access! Please check your $server login information. To set up: "
+"Press $account in \"Player profile\" Setting."
+msgstr ""
+
+msgid "Invalid access! pre_kingdom_version table on $server isn't ready."
+msgstr ""
+
+msgid ""
+"Invalid access! You modified resources files, or check if your version is "
+"the newest."
+msgstr ""
+
+msgid ""
+"Invalid access! Timestamp error. Check whether login a username on more "
+"device at same time, or restart game."
+msgstr ""
+
+msgid ""
+"Send a command that server doesn't support!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+
+msgid ""
+"Receive unkonwn data!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+
+msgid "Ambushed!"
+msgstr ""
+
+msgid "Alerted!"
+msgstr ""
+
+msgid "Discover ambusher!"
+msgstr ""
+
+#, fuzzy
+msgid "Message"
+msgstr "Message:"
+
+#, fuzzy
+msgid "Sender"
+msgstr "Send"
+
+msgid "Receiver"
+msgstr ""
+
+#, fuzzy
+msgid "Time"
+msgstr "Time:"
+
+msgid "Announcement content"
+msgstr ""
+
+#
+# Sign in
+#
+msgid "Sign in"
+msgstr ""
+
+msgid "signin^Fill up"
+msgstr ""
+
+msgid ""
+"You have been sign in $continue days, broken $break days. Today $have sign "
+"in."
+msgstr ""
+
+msgid "fill up sign in($ps, $break, $max_break, $fillup)"
+msgstr ""
+"$ps You has been broken $break days. Exceeding $max_break will result to "
+"clear Sign in data. Can execute $fillup to make up."
+
+msgid "sign in remark($fillup)"
+msgstr ""
+"1: Regard uploading a non-zero score scenario as Sign in. Scenario include "
+"RPG, Tower and Siege.\n"
+"2: Continue to sign in 10 days, get 1 coin; Continue to sign in 30 days, get "
+"2 coin again.\n"
+"3: You get coin when continue to signin days divided 10 with no remainder. "
+"Can not get by $fillup to add exactly, and must be zero break days."
+
+msgid "been^have"
+msgstr ""
+
+msgid "been^haven't"
+msgstr ""
+
+#
+# standard message
+#
+msgid ""
+"You continue to sign in $continue days, reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"You have broken $break days, exceeded $max_break, and result to clear Sign "
+"in data."
+msgstr ""
+
+msgid ""
+"You hold $coin2 coin and $score2 score, most score, so win $title as an "
+"honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"In the last $days days, you attack other city to $count times, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"In the last $days days, your city was attacked to $count times, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"In the last $days days, you pass $count times RPG scenario, most times, so "
+"win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"In the last $days days, you pass $count times Tower scenario, most times, so "
+"win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid "Inapp-purchase successfully! Increase $day days VIP membership."
+msgstr ""
+
+msgid "Inapp-purchase successfully! Increase $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"System modified your data: $coin coin, $score score. If you have any "
+"questions, please contact $contact."
+msgstr ""
+
+#
+# build ea
+#
+msgid ""
+"Technology income of side equals all cities income divided by number of city."
+msgstr ""
+
+msgid "More tactic's effect that belong to same city can not be added."
+msgstr ""
+
+msgid "Must exist tow keep at least before building wall."
+msgstr ""
+
+msgid "Increase $item every day."
+msgstr ""
+
+msgid "Economy increase holden card at scenario start."
+msgstr ""
+
+msgid "Military increase hero's leadership at scenario start."
+msgstr ""
+
+msgid "Culture increase hero's charm at scenario start."
+msgstr ""
+
+msgid "Science increase holden technology at scenario start."
+msgstr ""
+
+msgid "Economy"
+msgstr ""
+
+msgid "Culture"
+msgstr ""
+
+msgid "Science"
+msgstr ""
+
+msgid ""
+"Don't pause at taking action when no hero and built artifical on all EA."
+msgstr ""
+
+msgid "Troop has come into $city as planned!"
+msgstr ""
+
+msgid ""
+"As planned, troop require to arrive at $loc, but come into $city in the "
+"middle. If want to continue arriving at $loc, please command again."
+msgstr ""
+
+msgid "Developer"
+msgstr ""
+
+msgid "Capture $city"
+msgstr ""
+
+msgid "Guard"
+msgstr ""
+
+msgid "Abolish"
+msgstr ""
+
+msgid "Abolish guard"
+msgstr ""
+
+msgid "Select a grid to guard at"
+msgstr ""
+
+#
+# side report
+#
+msgid "Researching technology"
+msgstr ""
+
+msgid "Unallocated treasure"
+msgstr ""
+
+msgid "Unallocated noble"
+msgstr ""
+
+msgid "Show side report when city takes turn."
+msgstr ""
+
+#, fuzzy
+msgid "Game genus"
+msgstr "Games"
+
+msgid "mode^Scenario"
+msgstr ""
+
+msgid "mode^RPG"
+msgstr ""
+
+msgid "mode^Tower"
+msgstr ""
+
+msgid "mode^Siege"
+msgstr ""
+
+#, fuzzy
+msgid "Unknown"
+msgstr "Unknown era"
+
+#
+# subcontinent
+#
+msgid "subcontinent remark"
+msgstr ""
+"Capture at most one city on a subcontinent.\n"
+"One city provides 30 score every day.\n"
+"Max endurance: 100. Increase 10 every day.\n"
+"If defend city fail, endurance will drop 20.\n"
+"There are at most 4 fallen every day. "
+
+msgid "Repair"
+msgstr ""
+
+#, fuzzy
+msgid "Endurance"
+msgstr "Advanced Mode"
+
+#, fuzzy
+msgid "Subcontinent"
+msgstr "Continue"
+
+#~ msgid "Join Official Server"
+#~ msgstr "Join Official Server"
+
+#~ msgid "Log on to the official Wesnoth multiplayer server"
+#~ msgstr "Log on to the official Wesnoth multiplayer server"
+
+#~ msgid "Join a different server"
+#~ msgstr "Join a different server"
+
+#~ msgid "Host a game using dedicated server ‘wesnothd’"
+#~ msgstr "Host a game using dedicated server ‘wesnothd’"
+
+#~ msgid "Local Game"
+#~ msgstr "Local Game"
+
+#~ msgid ""
+#~ "Play a multiplayer game with the AI or humans sharing the same machine"
+#~ msgstr ""
+#~ "Play a multiplayer game with the AI or humans sharing the same machine"
+
+#, fuzzy
+#~ msgid "Random map"
+#~ msgstr "Generate Random Map"
+
+#, fuzzy
+#~ msgid "Start a random map campaign"
+#~ msgstr "Play a campaign"
 
 #, fuzzy
 #~ msgid "Aquatic Village"

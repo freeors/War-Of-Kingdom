@@ -18,8 +18,6 @@
 
 #include "gui/dialogs/dialog.hpp"
 #include "gamestatus.hpp"
-#include "multiplayer_ui.hpp"
-#include "network.hpp"
 #include "gui/dialogs/lobby/lobby_info.hpp"
 
 class hero_map;
@@ -45,28 +43,12 @@ public:
 class tmp_side_wait : public tdialog, public lobby_base
 {
 public:
-	struct connected_user {
-		connected_user(const std::string& name, controller controller__,
-				network::connection connection = 0) :
-			name(name), controller_(controller__), connection(connection)
-		{};
-		std::string name;
-		controller controller_;
-		network::connection connection;
-		operator std::string() const
-		{
-			return name;
-		}
-	};
-
-	typedef std::vector<connected_user> connected_user_list;
-
-	game_display& gui_;
+	game_display& disp_;
 	hero_map& heros_;
 	gamemap& gmap_;
 	const config& game_config_;
 
-	explicit tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& gui, gamemap& gmap, const config& game_config,
+	explicit tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
 			config& gamelist, bool observe);
 
 	~tmp_side_wait();
@@ -122,11 +104,11 @@ private:
 	game_state state_;
 
 	connected_user_list users_;
+	std::map<std::string, http::membership> member_users_;
 
 	tlistbox* sides_table_;
 	tlabel* waiting_;
 	
-	// multiplayer_ui.hpp
 	config& gamelist_;
 
 	/**

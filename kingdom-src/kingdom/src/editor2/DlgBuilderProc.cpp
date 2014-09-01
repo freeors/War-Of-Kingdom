@@ -244,9 +244,10 @@ std::string get_rid_of_return(const std::string& str)
 
 std::string insert_return(const std::string& str)
 {
+	size_t n = 0;
 	std::stringstream strstr;
 	const std::vector<std::string> vstr = utils::split(str, '\n', 0);
-	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it, n ++) {
 		if (it != vstr.begin()) {
 			if (it->empty() || it->at(it->size() - 1) != '\r') {
 				strstr << '\r';
@@ -1600,7 +1601,7 @@ BOOL On_DlgBuilderInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ListView_InsertColumn(hctl, column ++, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-	lvc.cx = 300;
+	lvc.cx = 450;
 	lvc.iSubItem = column;
 	strstr.str("");
 	strcpy(text, utf8_2_ansi(_("Description")));

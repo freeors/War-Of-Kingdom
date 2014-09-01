@@ -27,6 +27,7 @@
 #include "serialization/string_utils.hpp"
 
 class scoped_wml_variable;
+class game_display;
 class team;
 class gamemap;
 class hero_map;

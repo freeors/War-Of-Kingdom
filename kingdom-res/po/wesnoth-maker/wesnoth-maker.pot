@@ -1,1223 +1,1127 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2013-10-23 14:33+0800\n"
-"PO-Revision-Date: 2013-10-23 14:33+0800\n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"POT-Creation-Date: 2014-08-26 17:43+0800\n"
+"PO-Revision-Date: 2014-08-26 17:43+0800\n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.6.5\n"
 "X-Poedit-KeywordsList: _;gettext;gettext_noop;vgettext2\n"
 "X-Poedit-Basepath: C:\\ddksample\\kingdom-src\\kingdom\\src\\editor2\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: animation.cpp:85
-msgid "frame^Count"
-msgstr "frame^Count"
-
-#: animation.cpp:87 animation.cpp:959 DlgCampaignProc.cpp:3627
-#: DlgCoreProc.cpp:915 event.cpp:2859 utype.cpp:2502
-msgid "None"
-msgstr "None"
-
-#: animation.cpp:108
-msgid "Start time"
-msgstr ""
-
-#: animation.cpp:344 animation.cpp:992 animation.cpp:1048
-msgid "Master particular"
-msgstr ""
-
-#: animation.cpp:892 animation.cpp:1322
-msgid "Filter"
-msgstr ""
-
-#: animation.cpp:986 animation.cpp:1314
-msgid "Screen mode"
-msgstr ""
-
-#: animation.cpp:986 animation.cpp:1219 event.cpp:611 event.cpp:681
-#: noble.cpp:182 noble.cpp:191 terrain.cpp:318
-msgid "Yes"
-msgstr ""
-
-#: animation.cpp:986 animation.cpp:1219 event.cpp:611 event.cpp:681
-#: noble.cpp:182 noble.cpp:191 terrain.cpp:318
-msgid "No"
-msgstr ""
-
-#: animation.cpp:1001 animation.cpp:1068
-msgid "Second particular"
-msgstr ""
-
-#: animation.cpp:1200 DlgCampaignProc.cpp:4024 DlgCampaignProc.cpp:4122
-#: DlgCampaignProc.cpp:4309 DlgCampaignProc.cpp:4821 DlgCoreProc.cpp:598
-#: DlgCoreProc.cpp:1429 DlgHEditorProc.cpp:767 DlgHEditorProc.cpp:2685
-#: faction.cpp:760 utype.cpp:3429
-msgid "arms^Type"
-msgstr ""
-
-#: animation.cpp:1288 animation.cpp:1359 DlgBuilderProc.cpp:1404
-#: DlgBuilderProc.cpp:1494 DlgBuilderProc.cpp:1589 DlgBuilderProc.cpp:1637
-#: DlgBuilderProc.cpp:1729 DlgCampaignProc.cpp:3853 DlgCampaignProc.cpp:4485
-#: DlgCampaignProc.cpp:5546 DlgCampaignProc.cpp:5584 DlgCampaignProc.cpp:5614
-#: DlgCampaignProc.cpp:5704 DlgCoreProc.cpp:2701 DlgHEditorProc.cpp:624
-#: faction.cpp:556 faction.cpp:738 feature.cpp:289 feature.cpp:321
-#: feature.cpp:384 feature.cpp:416 noble.cpp:279 terrain.cpp:409
-#: terrain.cpp:560
-msgid "Number"
-msgstr ""
-
-#: animation.cpp:1298 animation.cpp:1388 DlgCampaignProc.cpp:3582
-#: DlgCampaignProc.cpp:5468 utype.cpp:1473 utype.cpp:1748 utype.cpp:3207
-msgid "ID"
-msgstr ""
-
-#: animation.cpp:1306
-msgid "Particular"
-msgstr ""
-
-#: animation.cpp:1330
-msgid "Animation time"
-msgstr ""
-
-#: animation.cpp:1338 core_section.cpp:86 DlgBuilderProc.cpp:1606
-#: DlgBuilderProc.cpp:1733 DlgCampaignProc.cpp:3590 DlgCampaignProc.cpp:4359
-#: DlgCampaignProc.cpp:4862 DlgCoreProc.cpp:669 DlgCoreProc.cpp:793
-#: DlgCoreProc.cpp:878 event.cpp:5137 event.cpp:6974 feature.cpp:307
-#: feature.cpp:348 feature.cpp:402 feature.cpp:434 formation.cpp:86
-#: utype.cpp:1474 utype.cpp:1627 utype.cpp:1825 utype.cpp:3208
-msgid "Description"
-msgstr ""
-
-#: animation.cpp:1355
-msgid "Edit animation"
-msgstr ""
-
-#: animation.cpp:1357
-msgid "Add animation"
-msgstr ""
-
-#: animation.cpp:1402
-msgid "anim^Edit filter"
-msgstr ""
-
-#: animation.cpp:1501
-msgid "anim^Edit frame"
-msgstr ""
-
-#: animation.cpp:1504
-msgid "frame^Duration"
-msgstr ""
-
-#: animation.cpp:1505
-msgid "frame^Image"
-msgstr ""
-
-#: animation.cpp:1506 animation.cpp:1511
-msgid "frame^Halo"
-msgstr ""
-
-#: animation.cpp:1507
-msgid "frame^Image mod"
-msgstr ""
-
-#: animation.cpp:1508
-msgid "frame^Image diagonal"
-msgstr ""
-
-#: animation.cpp:1509
-msgid "frame^X"
-msgstr ""
-
-#: animation.cpp:1510
-msgid "frame^Y"
-msgstr ""
-
-#: animation.cpp:1512
-msgid "frame^Halo x"
-msgstr ""
-
-#: animation.cpp:1513
-msgid "frame^Halo y"
-msgstr ""
-
-#: animation.cpp:1514
-msgid "frame^Offset"
-msgstr ""
-
-#: animation.cpp:1515
-msgid "frame^Sound"
-msgstr ""
-
-#: animation.cpp:1516
-msgid "frame^Stext"
-msgstr ""
-
-#: animation.cpp:1517
-msgid "frame^Font size"
-msgstr ""
-
-#: animation.cpp:1518
-msgid "frame^Alpha"
-msgstr ""
-
-#: animation.cpp:1655
-msgid "Do you want to delete frame on $particular?"
-msgstr ""
-
-#: animation.cpp:1657 animation.cpp:1824 DlgCampaignProc.cpp:7078
-#: DlgDDescProc.cpp:290 DlgDDescProc.cpp:314 DlgHEditorProc.cpp:1087
-#: event.cpp:8800 utype.cpp:3413
-msgid "Confirm delete"
-msgstr ""
-
-#: animation.cpp:1687
-msgid "anim^Edit particular"
-msgstr ""
-
-#: animation.cpp:1690
-msgid "particular^Prefix"
-msgstr ""
-
-#: animation.cpp:1691
-msgid "particular^Start time"
-msgstr ""
-
-#: animation.cpp:1692
-msgid "particular^X"
-msgstr ""
-
-#: animation.cpp:1693
-msgid "particular^Y"
-msgstr ""
-
-#: animation.cpp:1694
-msgid "particular^Offset"
-msgstr ""
-
-#: animation.cpp:1733 DlgCampaignProc.cpp:3666 DlgCampaignProc.cpp:5779
-#: DlgCampaignProc.cpp:6814 DlgCampaignProc.cpp:6913 event.cpp:6822
-#: noble.cpp:415 terrain.cpp:674 terrain.cpp:691 utype.cpp:1893 utype.cpp:2892
-#: utype.cpp:2920
-msgid "Invalid string"
-msgstr ""
-
-#: animation.cpp:1737
-msgid "Reserved string"
-msgstr ""
-
-#: animation.cpp:1749 terrain.cpp:678
-msgid "Other has holden it"
-msgstr ""
-
-#: animation.cpp:1822
-msgid "Do you want to delete this particular?"
-msgstr ""
-
-#: animation.cpp:1931
-msgid "In front of"
-msgstr ""
-
-#: animation.cpp:1932
-msgid "Behind"
-msgstr ""
-
-#: animation.cpp:1936
-msgid "Add particular"
-msgstr ""
-
-#: animation.cpp:1941
-msgid "Add frame"
-msgstr ""
-
-#: animation.cpp:1944 DlgCampaignProc.cpp:6485 DlgCampaignProc.cpp:6512
-#: DlgCoreProc.cpp:2870 DlgHEditorProc.cpp:1343 event.cpp:5214 event.cpp:8432
-#: feature.cpp:643 main.cpp:946 noble.cpp:559 utype.cpp:4010
-msgid "Edit..."
-msgstr ""
-
-#: animation.cpp:1947 DlgCampaignProc.cpp:6486 DlgCampaignProc.cpp:6513
-#: DlgCampaignProc.cpp:6535 DlgCoreProc.cpp:2871 DlgHEditorProc.cpp:1349
-#: event.cpp:5215 event.cpp:8433 feature.cpp:644 main.cpp:947 noble.cpp:560
-#: utype.cpp:4011
-msgid "Delete..."
-msgstr ""
-
-#: config.cpp:108 DlgCampaignProc.cpp:3583 event.cpp:1462 event.cpp:1463
-#: utype.cpp:1471 utype.cpp:1747 utype.cpp:3205
-msgid "Domain"
-msgstr ""
-
-#: config.cpp:110
-msgid "BBS Server"
-msgstr ""
-
-#: config.cpp:112
-msgid "Host"
-msgstr ""
-
-#: core_section.cpp:94 formation.cpp:94
-msgid "Arms require"
-msgstr ""
-
-#: core_section.cpp:102 DlgBuilderProc.cpp:1598 event.cpp:5130
-#: formation.cpp:102 utype.cpp:471 utype.cpp:500 utype.cpp:1479 utype.cpp:1641
-#: utype.cpp:1675 utype.cpp:1751 utype.cpp:2088 utype.cpp:2567 utype.cpp:2736
-#: utype.cpp:3290 utype.cpp:3564
-msgid "Type"
-msgstr ""
-
-#: core_section.cpp:111 formation.cpp:111 utype.cpp:1690 utype.cpp:1752
-#: utype.cpp:3578
-msgid "attack^Range"
-msgstr ""
-
-#: core_section.cpp:115 DlgCampaignProc.cpp:5562 formation.cpp:115
-msgid "Quantity"
-msgstr ""
-
-#: core_section.cpp:125 DlgCoreProc.cpp:713 DlgCoreProc.cpp:2441
-#: formation.cpp:125 utype.cpp:1486
-msgid "Attack"
-msgstr ""
-
-#: core_section.cpp:156 formation.cpp:156 utype.cpp:1477 utype.cpp:1682
-#: utype.cpp:1750 utype.cpp:3529 utype.cpp:3571
-msgid "Icon"
-msgstr ""
-
-#: core_section.cpp:156 DlgCampaignProc.cpp:3589 DlgCoreProc.cpp:2726
-#: formation.cpp:156
-msgid "Image"
-msgstr ""
-
-#: core_section.cpp:186 DlgCampaignProc.cpp:3866 DlgCampaignProc.cpp:4316
-#: DlgCampaignProc.cpp:4827 faction.cpp:540 feature.cpp:373 formation.cpp:186
-msgid "Candidate"
-msgstr ""
-
-#: core_section.cpp:187 DlgCampaignProc.cpp:4068 DlgCampaignProc.cpp:4317
-#: faction.cpp:541 formation.cpp:187
-msgid "Office"
-msgstr ""
-
-#: core_section.cpp:188 DlgCampaignProc.cpp:4074 DlgCampaignProc.cpp:4318
-#: faction.cpp:542 formation.cpp:188
-msgid "Wander"
-msgstr ""
-
-#: core_section.cpp:199 DlgCampaignProc.cpp:4167
-msgid "Edit feature"
-msgstr ""
-
-#: core_section.cpp:201 DlgCampaignProc.cpp:4170
-msgid "Add feature"
-msgstr ""
-
-#: core_section.cpp:205 DlgCampaignProc.cpp:3855 DlgCampaignProc.cpp:5629
-#: faction.cpp:566 faction.cpp:741 formation.cpp:205 noble.cpp:306
-#: noble.cpp:352 utype.cpp:463 utype.cpp:2505 utype.cpp:3632
-msgid "Leader"
-msgstr ""
-
-#: core_section.cpp:206 DlgCampaignProc.cpp:3868 DlgCampaignProc.cpp:4146
-#: DlgCampaignProc.cpp:4308 DlgCampaignProc.cpp:4822 DlgCampaignProc.cpp:5683
-#: DlgCoreProc.cpp:570 DlgCoreProc.cpp:2409 event.cpp:5928 event.cpp:7572
-#: faction.cpp:574 faction.cpp:742 formation.cpp:206 noble.cpp:356
-msgid "City"
-msgstr ""
-
-#: DlgBuilderProc.cpp:465 DlgBuilderProc.cpp:476 DlgBuilderProc.cpp:487
+#: DlgBuilderProc.cpp:466 DlgBuilderProc.cpp:477 DlgBuilderProc.cpp:488
 #, fuzzy
 msgid "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:496
+#: DlgBuilderProc.cpp:497
 msgid "EDITOR_OVERLAY($type, $image)"
 msgstr ""
 
-#: DlgBuilderProc.cpp:510
+#: DlgBuilderProc.cpp:511
 msgid ""
 "BRIDGE:STRAIGHTS($nw_se_overlay, $n_s_overlay, $ne_sw_overlay, $bn_terrain, "
 "$bs_terrain, $s_terrain, $image_group)"
 msgstr ""
 
-#: DlgBuilderProc.cpp:524
+#: DlgBuilderProc.cpp:525
 msgid ""
 "BRIDGE:STRAIGHTS($nw_se_overlay, $n_s_overlay, $ne_sw_overlay, $b_terrain, "
 "$e_terrain, $s_terrain, $image_group)"
 msgstr ""
 
-#: DlgBuilderProc.cpp:537
+#: DlgBuilderProc.cpp:538
 msgid ""
 "BRIDGE:JOINTS($nw_se_overlay, $n_s_overlay, $ne_sw_overlay, $b_terrain, "
 "$s_terrain, $image_group)"
 msgstr ""
 
-#: DlgBuilderProc.cpp:550
+#: DlgBuilderProc.cpp:551
 msgid ""
 "BRIDGE:CORNERS($nw_se_overlay, $n_s_overlay, $ne_sw_overlay, $b_terrain, "
 "$s_terrain, $image_group)"
 msgstr ""
 
-#: DlgBuilderProc.cpp:561
+#: DlgBuilderProc.cpp:562
 msgid "LAYOUT_TRACKS_F($se_nw_value, $n_s_value, $ne_sw_value, $flag)"
 msgstr ""
 
-#: DlgBuilderProc.cpp:573
+#: DlgBuilderProc.cpp:574
 msgid ""
 "TRACK_COMPLETE($se_nw_value, $n_s_value, $ne_sw_value, $flag, $imagestem)"
 msgstr ""
 
-#: DlgBuilderProc.cpp:584
+#: DlgBuilderProc.cpp:585
 msgid "TRACK_BORDER_RESTRICTED_PLF($terrainlist, $adjacent, $flag, $imagestem)"
 msgstr ""
 
-#: DlgBuilderProc.cpp:594
+#: DlgBuilderProc.cpp:595
 #, fuzzy
 msgid "NEW:FOREST($terrainlist, $adjacent, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:605 DlgBuilderProc.cpp:616 DlgBuilderProc.cpp:627
-#: DlgBuilderProc.cpp:638 DlgBuilderProc.cpp:649 DlgBuilderProc.cpp:660
-#: DlgBuilderProc.cpp:671 DlgBuilderProc.cpp:682 DlgBuilderProc.cpp:693
-#: DlgBuilderProc.cpp:704 DlgBuilderProc.cpp:715 DlgBuilderProc.cpp:726
-#: DlgBuilderProc.cpp:737 DlgBuilderProc.cpp:748
+#: DlgBuilderProc.cpp:606 DlgBuilderProc.cpp:617 DlgBuilderProc.cpp:628
+#: DlgBuilderProc.cpp:639 DlgBuilderProc.cpp:650 DlgBuilderProc.cpp:661
+#: DlgBuilderProc.cpp:672 DlgBuilderProc.cpp:683 DlgBuilderProc.cpp:694
+#: DlgBuilderProc.cpp:705 DlgBuilderProc.cpp:716 DlgBuilderProc.cpp:727
+#: DlgBuilderProc.cpp:738 DlgBuilderProc.cpp:749
 #, fuzzy
 msgid "GENERIC_SINGLE_PLFB($terrainlist, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:759 DlgBuilderProc.cpp:770
+#: DlgBuilderProc.cpp:760 DlgBuilderProc.cpp:771
 #, fuzzy
 msgid "GENERIC_SINGLEHEX_PLFB($terrainlist, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:782 DlgBuilderProc.cpp:794 DlgBuilderProc.cpp:806
-#: DlgBuilderProc.cpp:818
+#: DlgBuilderProc.cpp:783 DlgBuilderProc.cpp:795 DlgBuilderProc.cpp:807
+#: DlgBuilderProc.cpp:819
 #, fuzzy
 msgid "GENERIC_COMPLETE_LFB($terrainlist, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:830
+#: DlgBuilderProc.cpp:831
 #, fuzzy
 msgid "VOLCANO_2x2($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:842
+#: DlgBuilderProc.cpp:843
 #, fuzzy
 msgid "GENERIC_RESTRICTED3_PLFB($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:854 DlgBuilderProc.cpp:890
+#: DlgBuilderProc.cpp:855 DlgBuilderProc.cpp:891
 #, fuzzy
 msgid "GENERIC_RESTRICTED2_PLFB($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:866 DlgBuilderProc.cpp:878 DlgBuilderProc.cpp:902
+#: DlgBuilderProc.cpp:867 DlgBuilderProc.cpp:879 DlgBuilderProc.cpp:903
 #, fuzzy
 msgid "GENERIC_RESTRICTED_PLFB($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:913
+#: DlgBuilderProc.cpp:914
 #, fuzzy
 msgid "MOUNTAINS_2x4_NW_SE($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:924
+#: DlgBuilderProc.cpp:925
 #, fuzzy
 msgid "MOUNTAINS_2x4_SW_NE($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:935
+#: DlgBuilderProc.cpp:936
 #, fuzzy
 msgid "MOUNTAINS_1x3_NW_SE($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:946
+#: DlgBuilderProc.cpp:947
 #, fuzzy
 msgid "MOUNTAINS_1x3_SW_NE($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:957
+#: DlgBuilderProc.cpp:958
 #, fuzzy
 msgid "MOUNTAINS_2x2($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:968
+#: DlgBuilderProc.cpp:969
 #, fuzzy
 msgid "MOUNTAIN_SINGLE($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:979
+#: DlgBuilderProc.cpp:980
 #, fuzzy
 msgid "PEAKS_1x2_SW_NE($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:990
+#: DlgBuilderProc.cpp:991
 #, fuzzy
 msgid "PEAKS_LARGE($terrain, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:999
+#: DlgBuilderProc.cpp:1000
 #, fuzzy
 msgid "VILLAGE($terrainlist, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1009
+#: DlgBuilderProc.cpp:1010
 #, fuzzy
 msgid "VILLAGE_A3($terrainlist, $time, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1019
+#: DlgBuilderProc.cpp:1020
 #, fuzzy
 msgid "VILLAGE_A4($terrainlist, $time, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1028
+#: DlgBuilderProc.cpp:1029
 #, fuzzy
 msgid "NEW_FENCE($terrainlist, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1039 DlgBuilderProc.cpp:1050
+#: DlgBuilderProc.cpp:1040 DlgBuilderProc.cpp:1051
 #, fuzzy
 msgid "NEW_WALL($terrainlist, $adjacent, $prob, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1062 DlgBuilderProc.cpp:1074
+#: DlgBuilderProc.cpp:1063 DlgBuilderProc.cpp:1075
 #, fuzzy
 msgid "NEW_WALL2($terrainlist, $adjacent1, $adjacent2, $prob, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1084
+#: DlgBuilderProc.cpp:1085
 #, fuzzy
 msgid "NEW_WAVES($terrainlist, $adjacent, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1094
+#: DlgBuilderProc.cpp:1095
 #, fuzzy
 msgid "NEW_BEACH($terrainlist, $adjacent, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1107
+#: DlgBuilderProc.cpp:1108
 #, fuzzy
 msgid ""
 "WALL_TRANSITION3_PLFB($terrainlist1, $terrainlist2, $terrainlist3, $prob, "
 "$flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1120
+#: DlgBuilderProc.cpp:1121
 #, fuzzy
 msgid ""
 "WALL_TRANSITION2_PLFB($terrainlist1, $terrainlist2, $terrainlist3, $prob, "
 "$flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1132
+#: DlgBuilderProc.cpp:1133
 #, fuzzy
 msgid "WALL_TRANSITION_PLFB($terrainlist, $adjacent, $prob, $flag, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1143
+#: DlgBuilderProc.cpp:1144
 #, fuzzy
 msgid "WALL_ADJACENT_TRANSITION($terrainlist, $adjacent, $builder, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1154
+#: DlgBuilderProc.cpp:1155
 #, fuzzy
 msgid "ANIMATED_WATER_15($terrainlist, $ipf, $time, $imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1166
+#: DlgBuilderProc.cpp:1167
 #, fuzzy
 msgid ""
 "ANIMATED_WATER_15_TRANSITION($terrainlist, $adjacent, $ipf, $time, "
 "$imagestem)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1175
+#: DlgBuilderProc.cpp:1176
 #, fuzzy
 msgid "DISABLE_BASE_TRANSITIONS_F($terrainlist, $flag)"
 msgstr "TRANSITION_COMPLETE_LFB($terrainlist, $adjacent)"
 
-#: DlgBuilderProc.cpp:1400 DlgBuilderProc.cpp:1490 DlgBuilderProc.cpp:1633
-#: DlgBuilderProc.cpp:1725
+#: DlgBuilderProc.cpp:1401 DlgBuilderProc.cpp:1491 DlgBuilderProc.cpp:1634
+#: DlgBuilderProc.cpp:1726
 msgid "Edit building rule"
 msgstr ""
 
-#: DlgBuilderProc.cpp:1402 DlgBuilderProc.cpp:1492 DlgBuilderProc.cpp:1635
-#: DlgBuilderProc.cpp:1727
+#: DlgBuilderProc.cpp:1403 DlgBuilderProc.cpp:1493 DlgBuilderProc.cpp:1636
+#: DlgBuilderProc.cpp:1728
 msgid "Add building rule"
 msgstr ""
 
-#: DlgBuilderProc.cpp:1407 DlgBuilderProc.cpp:1640
-msgid "brule^Map string"
+#: DlgBuilderProc.cpp:1405 DlgBuilderProc.cpp:1495 DlgBuilderProc.cpp:1590
+#: DlgBuilderProc.cpp:1638 DlgBuilderProc.cpp:1730 DlgCampaignProc.cpp:3906
+#: DlgCampaignProc.cpp:4538 DlgCampaignProc.cpp:5602 DlgCampaignProc.cpp:5640
+#: DlgCampaignProc.cpp:5670 DlgCampaignProc.cpp:5760 DlgCoreProc.cpp:2878
+#: DlgHEditorProc.cpp:626 animation.cpp:1443 animation.cpp:1514
+#: faction.cpp:556 faction.cpp:738 feature.cpp:323 feature.cpp:364
+#: feature.cpp:446 feature.cpp:478 noble.cpp:279 terrain.cpp:412
+#: terrain.cpp:563
+msgid "Number"
 msgstr ""
 
 #: DlgBuilderProc.cpp:1408 DlgBuilderProc.cpp:1641
-msgid "brule^Tile"
+msgid "brule^Map string"
 msgstr ""
 
 #: DlgBuilderProc.cpp:1409 DlgBuilderProc.cpp:1642
+msgid "brule^Tile"
+msgstr ""
+
+#: DlgBuilderProc.cpp:1410 DlgBuilderProc.cpp:1643
 msgid "brule^Image"
 msgstr ""
 
-#: DlgCampaignProc.cpp:797 DlgCampaignProc.cpp:1005
+#: DlgBuilderProc.cpp:1599 core_section.cpp:102 event.cpp:5411
+#: formation.cpp:102 utype.cpp:479 utype.cpp:508 utype.cpp:1516 utype.cpp:1686
+#: utype.cpp:1720 utype.cpp:1796 utype.cpp:2133 utype.cpp:2612 utype.cpp:2781
+#: utype.cpp:3391 utype.cpp:3680
+msgid "Type"
+msgstr ""
+
+#: DlgBuilderProc.cpp:1607 DlgBuilderProc.cpp:1734 DlgCampaignProc.cpp:3619
+#: DlgCampaignProc.cpp:4412 DlgCampaignProc.cpp:4915 DlgCoreProc.cpp:678
+#: DlgCoreProc.cpp:805 DlgCoreProc.cpp:890 DlgCoreProc.cpp:2475
+#: animation.cpp:1493 core_section.cpp:86 event.cpp:5418 event.cpp:7287
+#: feature.cpp:350 feature.cpp:400 feature.cpp:464 feature.cpp:496
+#: formation.cpp:86 utype.cpp:1507 utype.cpp:1672 utype.cpp:1870
+#: utype.cpp:3297
+msgid "Description"
+msgstr ""
+
+#: DlgCampaignProc.cpp:799 DlgCampaignProc.cpp:1008
 msgid "Human_AI"
 msgstr ""
 
-#: DlgCampaignProc.cpp:799 DlgCampaignProc.cpp:1004
+#: DlgCampaignProc.cpp:801 DlgCampaignProc.cpp:1007
 msgid "Human only"
 msgstr ""
 
-#: DlgCampaignProc.cpp:802 DlgCampaignProc.cpp:1006
+#: DlgCampaignProc.cpp:804 DlgCampaignProc.cpp:1009
 msgid "AI only"
 msgstr ""
 
-#: DlgCampaignProc.cpp:804 DlgCampaignProc.cpp:1008
+#: DlgCampaignProc.cpp:806 DlgCampaignProc.cpp:1011
 msgid "Set in lobby"
 msgstr ""
 
-#: DlgCampaignProc.cpp:807 DlgCampaignProc.cpp:1010 DlgCampaignProc.cpp:3856
+#: DlgCampaignProc.cpp:809 DlgCampaignProc.cpp:1013 DlgCampaignProc.cpp:3909
 msgid "Void"
 msgstr ""
 
-#: DlgCampaignProc.cpp:1047 DlgCampaignProc.cpp:3860 DlgCampaignProc.cpp:5414
+#: DlgCampaignProc.cpp:1050 DlgCampaignProc.cpp:3913 DlgCampaignProc.cpp:5467
 msgid "Buildable"
 msgstr ""
 
-#: DlgCampaignProc.cpp:1940 DlgCampaignProc.cpp:4056 DlgCampaignProc.cpp:4709
+#: DlgCampaignProc.cpp:1947 DlgCampaignProc.cpp:4109 DlgCampaignProc.cpp:4762
 msgid "Cannot recruit"
 msgstr ""
 
-#: DlgCampaignProc.cpp:2191 DlgCampaignProc.cpp:2244 event.cpp:1159
-#: event.cpp:1262 event.cpp:2227 event.cpp:2395 event.cpp:4454
+#: DlgCampaignProc.cpp:2198 DlgCampaignProc.cpp:2251 event.cpp:1149
+#: event.cpp:1338 event.cpp:2372 event.cpp:2565
 msgid "Roam"
 msgstr ""
 
-#: DlgCampaignProc.cpp:2216 DlgCoreProc.cpp:209 DlgCoreProc.cpp:244
-#: DlgCoreProc.cpp:279 DlgCoreProc.cpp:315
+#: DlgCampaignProc.cpp:2223 DlgCoreProc.cpp:211 DlgCoreProc.cpp:246
+#: DlgCoreProc.cpp:281 DlgCoreProc.cpp:317
 msgid "Lv$level"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3277
+#: DlgCampaignProc.cpp:3299
 msgid "first_scenario in main is null, must set it!"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3343
+#: DlgCampaignProc.cpp:3304
+msgid "mode is null, must set it!"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3370
 msgid "Count of null next_scenario must be 1!"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3403
+#: DlgCampaignProc.cpp:3430
 msgid "Save campaign-$campaign"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3404
+#: DlgCampaignProc.cpp:3431
 msgid "$campaign is dirty, do you want to save modify?"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3581 DlgCampaignProc.cpp:5467 utype.cpp:1470
-#: utype.cpp:3204
+#: DlgCampaignProc.cpp:3610 DlgCampaignProc.cpp:5520 utype.cpp:1503
+#: utype.cpp:3293
 msgid "Corresponding cfg"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3584 DlgCampaignProc.cpp:3854 DlgCampaignProc.cpp:3919
-#: DlgCampaignProc.cpp:3970 DlgCampaignProc.cpp:4015 DlgCampaignProc.cpp:4350
-#: DlgCampaignProc.cpp:4447 DlgCampaignProc.cpp:4853 DlgCampaignProc.cpp:5469
-#: DlgCampaignProc.cpp:5555 DlgCampaignProc.cpp:5623 DlgCoreProc.cpp:2261
-#: DlgCoreProc.cpp:2711 event.cpp:5878 event.cpp:5892 event.cpp:5906
-#: event.cpp:6965 feature.cpp:299 feature.cpp:331 feature.cpp:394
-#: feature.cpp:426 noble.cpp:298 noble.cpp:350 utype.cpp:1472 utype.cpp:1666
-#: utype.cpp:1749 utype.cpp:1816 utype.cpp:3206 utype.cpp:3452 utype.cpp:3557
+#: DlgCampaignProc.cpp:3611 DlgCampaignProc.cpp:5521 animation.cpp:1453
+#: animation.cpp:1543 animation.cpp:1631 utype.cpp:1506 utype.cpp:1793
+#: utype.cpp:3296
+msgid "ID"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3612 book.cpp:480 book.cpp:506 book.cpp:507
+#: book.cpp:682 book.cpp:683 config.cpp:108 event.cpp:1564 event.cpp:1565
+#: utype.cpp:1504 utype.cpp:1792 utype.cpp:3294
+msgid "Domain"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3613 DlgCampaignProc.cpp:3907 DlgCampaignProc.cpp:3972
+#: DlgCampaignProc.cpp:4023 DlgCampaignProc.cpp:4068 DlgCampaignProc.cpp:4403
+#: DlgCampaignProc.cpp:4500 DlgCampaignProc.cpp:4906 DlgCampaignProc.cpp:5522
+#: DlgCampaignProc.cpp:5611 DlgCampaignProc.cpp:5679 DlgCoreProc.cpp:2412
+#: DlgCoreProc.cpp:2888 event.cpp:6184 event.cpp:6198 event.cpp:6212
+#: event.cpp:7278 feature.cpp:333 feature.cpp:374 feature.cpp:456
+#: feature.cpp:488 noble.cpp:298 noble.cpp:350 utype.cpp:1505 utype.cpp:1711
+#: utype.cpp:1794 utype.cpp:1861 utype.cpp:3295 utype.cpp:3561 utype.cpp:3673
 msgid "Name"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3585
+#: DlgCampaignProc.cpp:3614
 msgid "Abbreviation"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3586
+#: DlgCampaignProc.cpp:3615
 msgid "Rank"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3587
+#: DlgCampaignProc.cpp:3616
 msgid "scenario^Catalog"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3588
+#: DlgCampaignProc.cpp:3617
 msgid "First scenario"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3591
+#: DlgCampaignProc.cpp:3618 DlgCoreProc.cpp:2903 core_section.cpp:156
+#: formation.cpp:156
+msgid "Image"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3620
 msgid "Mode"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3593 DlgCampaignProc.cpp:3594 DlgCampaignProc.cpp:5484
-#: utype.cpp:1756
+#: DlgCampaignProc.cpp:3623 DlgCampaignProc.cpp:3624 DlgCampaignProc.cpp:5537
+#: utype.cpp:1513 utype.cpp:1515 utype.cpp:1801 utype.cpp:3300 utype.cpp:3302
 msgid "Browse..."
 msgstr ""
 
-#: DlgCampaignProc.cpp:3612 DlgCampaignProc.cpp:3617 DlgCampaignProc.cpp:3801
-#: DlgCampaignProc.cpp:5512 DlgCampaignProc.cpp:5817 DlgCampaignProc.cpp:5950
+#: DlgCampaignProc.cpp:3642 DlgCampaignProc.cpp:3647 DlgCampaignProc.cpp:3833
+#: DlgCampaignProc.cpp:5568 DlgCampaignProc.cpp:5873 DlgCampaignProc.cpp:6006
 msgid "Exist"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3614 DlgCampaignProc.cpp:3619 DlgCampaignProc.cpp:3801
-#: DlgCampaignProc.cpp:5514 DlgCampaignProc.cpp:5819 DlgCoreProc.cpp:1644
+#: DlgCampaignProc.cpp:3644 DlgCampaignProc.cpp:3649 DlgCampaignProc.cpp:3833
+#: DlgCampaignProc.cpp:5570 DlgCampaignProc.cpp:5875 DlgCoreProc.cpp:1748
 msgid "Not exist"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3628
-msgid "Tower"
+#: DlgCampaignProc.cpp:3698 DlgCampaignProc.cpp:5835 DlgCampaignProc.cpp:6947
+#: DlgCampaignProc.cpp:7046 animation.cpp:1925 book.cpp:539 book.cpp:713
+#: book.cpp:854 event.cpp:7135 noble.cpp:415 terrain.cpp:677 terrain.cpp:695
+#: utype.cpp:1938 utype.cpp:2937 utype.cpp:2965
+msgid "Invalid string"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3785 DlgCampaignProc.cpp:5925
+#: DlgCampaignProc.cpp:3817 DlgCampaignProc.cpp:5981
 msgid "Selected is using file, do nothing."
 msgstr ""
 
-#: DlgCampaignProc.cpp:3791 DlgCampaignProc.cpp:5941 DlgHEditorProc.cpp:3098
+#: DlgCampaignProc.cpp:3823 DlgCampaignProc.cpp:5997 DlgHEditorProc.cpp:2876
 msgid "Copy \"$src\" to \"$dst\" $result!"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3846
+#: DlgCampaignProc.cpp:3899
 msgid "Edit side"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3849
+#: DlgCampaignProc.cpp:3902
 msgid "Add side"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3857 DlgCampaignProc.cpp:5653 event.cpp:5844
+#: DlgCampaignProc.cpp:3908 DlgCampaignProc.cpp:5685 core_section.cpp:205
+#: faction.cpp:566 faction.cpp:741 formation.cpp:205 noble.cpp:306
+#: noble.cpp:352 utype.cpp:471 utype.cpp:2550 utype.cpp:3748
+msgid "Leader"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3910 DlgCampaignProc.cpp:5709 event.cpp:6150
 msgid "Base gold"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3858 DlgCampaignProc.cpp:5659 event.cpp:5847
+#: DlgCampaignProc.cpp:3911 DlgCampaignProc.cpp:5715 event.cpp:6153
 msgid "Base income"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3863 event.cpp:5850 utype.cpp:1481
+#: DlgCampaignProc.cpp:3916 event.cpp:6156 utype.cpp:1518
 msgid "Set"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3867
+#: DlgCampaignProc.cpp:3919 DlgCampaignProc.cpp:4369 DlgCampaignProc.cpp:4880
+#: core_section.cpp:186 event.cpp:5624 faction.cpp:540 feature.cpp:428
+#: formation.cpp:186
+msgid "Candidate"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3920
 msgid "Reserve"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3869 DlgCampaignProc.cpp:5689 DlgCoreProc.cpp:568
-#: DlgCoreProc.cpp:2392
+#: DlgCampaignProc.cpp:3921 DlgCampaignProc.cpp:4199 DlgCampaignProc.cpp:4361
+#: DlgCampaignProc.cpp:4875 DlgCampaignProc.cpp:5739 DlgCoreProc.cpp:579
+#: DlgCoreProc.cpp:2573 core_section.cpp:206 event.cpp:1277 event.cpp:6234
+#: event.cpp:7869 faction.cpp:574 faction.cpp:742 formation.cpp:206
+#: noble.cpp:356
+msgid "City"
+msgstr ""
+
+#: DlgCampaignProc.cpp:3922 DlgCampaignProc.cpp:5745 DlgCoreProc.cpp:577
+#: DlgCoreProc.cpp:2556
 msgid "Troop"
 msgstr ""
 
-#: DlgCampaignProc.cpp:3874
+#: DlgCampaignProc.cpp:3927
 msgid "Allow player to set it in lobby"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4037 DlgCampaignProc.cpp:4128 DlgCampaignProc.cpp:4313
-#: DlgCampaignProc.cpp:4320 DlgCampaignProc.cpp:4824
+#: DlgCampaignProc.cpp:4077 DlgCampaignProc.cpp:4175 DlgCampaignProc.cpp:4362
+#: DlgCampaignProc.cpp:4874 DlgCoreProc.cpp:607 DlgCoreProc.cpp:1528
+#: DlgHEditorProc.cpp:769 DlgHEditorProc.cpp:2339 animation.cpp:1355
+#: faction.cpp:760 utype.cpp:3538
+msgid "arms^Type"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4090 DlgCampaignProc.cpp:4181 DlgCampaignProc.cpp:4366
+#: DlgCampaignProc.cpp:4373 DlgCampaignProc.cpp:4877 event.cpp:1282
 msgid "Coordinate"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4095
+#: DlgCampaignProc.cpp:4121 DlgCampaignProc.cpp:4370 core_section.cpp:187
+#: faction.cpp:541 formation.cpp:187
+msgid "Office"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4127 DlgCampaignProc.cpp:4371 core_section.cpp:188
+#: faction.cpp:542 formation.cpp:188
+msgid "Wander"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4148
 msgid "troop^Master"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4105 DlgCampaignProc.cpp:4114
+#: DlgCampaignProc.cpp:4158 DlgCampaignProc.cpp:4167
 msgid "troop^Second"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4301
+#: DlgCampaignProc.cpp:4220 core_section.cpp:199
+msgid "Edit feature"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4223 core_section.cpp:201
+msgid "Add feature"
+msgstr ""
+
+#: DlgCampaignProc.cpp:4354
 msgid "Edit city"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4304
+#: DlgCampaignProc.cpp:4357
 msgid "Add city"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4315 DlgCampaignProc.cpp:4826 DlgCampaignProc.cpp:4828
-#: event.cpp:5935 faction.cpp:430
+#: DlgCampaignProc.cpp:4368 DlgCampaignProc.cpp:4879 DlgCampaignProc.cpp:4881
+#: event.cpp:6241 faction.cpp:430
 msgid "Hero"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4322 DlgCampaignProc.cpp:6484 DlgHEditorProc.cpp:1753
-#: event.cpp:5213 event.cpp:6055 event.cpp:7639 event.cpp:7970 feature.cpp:500
+#: DlgCampaignProc.cpp:4375 DlgCampaignProc.cpp:6617 DlgHEditorProc.cpp:1758
+#: book.cpp:949 event.cpp:5494 event.cpp:6368 event.cpp:7936 event.cpp:8267
+#: feature.cpp:563
 msgid "Add"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4714 event.cpp:6277 event.cpp:7417
+#: DlgCampaignProc.cpp:4767 event.cpp:6590 event.cpp:7714
 msgid "To service"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4715
+#: DlgCampaignProc.cpp:4768
 msgid "To wander"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4814
+#: DlgCampaignProc.cpp:4867
 msgid "Edit troop"
 msgstr ""
 
-#: DlgCampaignProc.cpp:4817
+#: DlgCampaignProc.cpp:4870
 msgid "Add troop"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5060
+#: DlgCampaignProc.cpp:5113
 msgid "To master"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5061
+#: DlgCampaignProc.cpp:5114
 msgid "To second"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5062
+#: DlgCampaignProc.cpp:5115
 msgid "To third"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5424
+#: DlgCampaignProc.cpp:5477
 msgid "To reserve"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5470
+#: DlgCampaignProc.cpp:5523
 msgid "Map"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5471
+#: DlgCampaignProc.cpp:5524
 msgid "Next scenario"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5473
+#: DlgCampaignProc.cpp:5526
 msgid "Turns"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5474 utype.cpp:450 utype.cpp:479 utype.cpp:2463
-#: utype.cpp:2572
+#: DlgCampaignProc.cpp:5527 utype.cpp:458 utype.cpp:487 utype.cpp:2508
+#: utype.cpp:2617
 msgid "Unrestricted"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5476
+#: DlgCampaignProc.cpp:5529
 msgid "Duel"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5477 event.cpp:7645 event.cpp:7655 event.cpp:7817
+#: DlgCampaignProc.cpp:5530 DlgCampaignProc.cpp:6026 event.cpp:7942
+#: event.cpp:7952 event.cpp:8114
 msgid "Win condition"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5478 event.cpp:7647 event.cpp:7656 event.cpp:7818
+#: DlgCampaignProc.cpp:5531 DlgCampaignProc.cpp:6027 event.cpp:7944
+#: event.cpp:7953 event.cpp:8115
 msgid "Lose condition"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5479
+#: DlgCampaignProc.cpp:5532
 msgid "Hidden treasure"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5480
+#: DlgCampaignProc.cpp:5533
 msgid "Road"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5481
+#: DlgCampaignProc.cpp:5534
 msgid "Victory when enemy no city"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5482
+#: DlgCampaignProc.cpp:5535
 msgid "Unstage when side fallen"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5483
+#: DlgCampaignProc.cpp:5536
 msgid "Inherit hero and troop from last scenario"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5517
+#: DlgCampaignProc.cpp:5539
+msgid "Prelude"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5573
 msgid "Random map"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5530 utype.cpp:3726
+#: DlgCampaignProc.cpp:5586 utype.cpp:3842
 msgid "Hasn't"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5531
+#: DlgCampaignProc.cpp:5587
 msgid "Random"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5532
+#: DlgCampaignProc.cpp:5588
 msgid "Always"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5677 DlgCoreProc.cpp:571 DlgCoreProc.cpp:2401
+#: DlgCampaignProc.cpp:5618 core_section.cpp:115 formation.cpp:115
+msgid "Quantity"
+msgstr ""
+
+#: DlgCampaignProc.cpp:5733 DlgCoreProc.cpp:580 DlgCoreProc.cpp:2565
 msgid "Artifical"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5713 DlgCoreProc.cpp:2285
+#: DlgCampaignProc.cpp:5769 DlgCoreProc.cpp:2436
 msgid "Occasion"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5720 event.cpp:680
+#: DlgCampaignProc.cpp:5776 event.cpp:650
 msgid "Only one time"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5785
+#: DlgCampaignProc.cpp:5841
 msgid "Other scenario has holded ID"
 msgstr ""
 
-#: DlgCampaignProc.cpp:5919
+#: DlgCampaignProc.cpp:5975
 msgid "$file isn't valid map file!"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6047
+#: DlgCampaignProc.cpp:6021
+msgid "Edit prelude"
+msgstr ""
+
+#: DlgCampaignProc.cpp:6025 event.cpp:7951 event.cpp:8113
+msgid "Summary"
+msgstr ""
+
+#: DlgCampaignProc.cpp:6177
 msgid "Edit hidden treasure"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6050
+#: DlgCampaignProc.cpp:6180
 msgid "Add hidden treasure"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6176
+#: DlgCampaignProc.cpp:6306
 msgid "Edit road"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6179
+#: DlgCampaignProc.cpp:6309
 msgid "Add road"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6511 DlgCampaignProc.cpp:6533 DlgCoreProc.cpp:2869
-#: DlgHEditorProc.cpp:1342 main.cpp:945 utype.cpp:4009
+#: DlgCampaignProc.cpp:6618 DlgCampaignProc.cpp:6645 DlgCoreProc.cpp:3047
+#: DlgHEditorProc.cpp:1377 animation.cpp:2136 book.cpp:950 event.cpp:5495
+#: event.cpp:8729 feature.cpp:696 main.cpp:930 noble.cpp:559 utype.cpp:4135
+msgid "Edit..."
+msgstr ""
+
+#: DlgCampaignProc.cpp:6619 DlgCampaignProc.cpp:6646 DlgCampaignProc.cpp:6668
+#: DlgCoreProc.cpp:3048 DlgHEditorProc.cpp:1383 animation.cpp:2139
+#: book.cpp:951 event.cpp:5496 event.cpp:8730 feature.cpp:697 main.cpp:931
+#: noble.cpp:560 utype.cpp:4136
+msgid "Delete..."
+msgstr ""
+
+#: DlgCampaignProc.cpp:6644 DlgCampaignProc.cpp:6666 DlgCoreProc.cpp:3046
+#: DlgHEditorProc.cpp:1376 main.cpp:929 utype.cpp:4134
 msgid "Add..."
 msgstr ""
 
-#: DlgCampaignProc.cpp:6639
+#: DlgCampaignProc.cpp:6772
 msgid "Internal campaign"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6767
+#: DlgCampaignProc.cpp:6900
 msgid "New campaign"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6769
+#: DlgCampaignProc.cpp:6902
 msgid "Campaign ID(Once set, cannot modify in future)"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6770
+#: DlgCampaignProc.cpp:6903
 msgid "First scenario ID(May modify in future)"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6772 DlgCampaignProc.cpp:6884 main.cpp:937
+#: DlgCampaignProc.cpp:6905 DlgCampaignProc.cpp:7017 main.cpp:919
 msgid "New"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6773 DlgCampaignProc.cpp:6885
+#: DlgCampaignProc.cpp:6906 DlgCampaignProc.cpp:7018
 msgid "Cancel"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6786 DlgCampaignProc.cpp:6918
+#: DlgCampaignProc.cpp:6919 DlgCampaignProc.cpp:7051
 msgid "scenario file:"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6789 DlgCampaignProc.cpp:6921
+#: DlgCampaignProc.cpp:6922 DlgCampaignProc.cpp:7054
 msgid "map file:"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6828
+#: DlgCampaignProc.cpp:6961
 msgid "cfg directory:"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6830
+#: DlgCampaignProc.cpp:6963
 msgid "bin file:"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6835
+#: DlgCampaignProc.cpp:6968
 msgid "Other campaign has holded ID"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6880
+#: DlgCampaignProc.cpp:7013
 msgid "New scenario"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6882
+#: DlgCampaignProc.cpp:7015
 msgid "Scenario ID(May modify in future)"
 msgstr ""
 
-#: DlgCampaignProc.cpp:7076
+#: DlgCampaignProc.cpp:7209
 msgid ""
 "Do you want to delete scenario: \"$scenario\" of campaign: \"$campaign\"?"
 msgstr ""
 
-#: DlgCoreProc.cpp:246
+#: DlgCampaignProc.cpp:7211 DlgDDescProc.cpp:301 DlgDDescProc.cpp:325
+#: DlgHEditorProc.cpp:1089 animation.cpp:1832 animation.cpp:2016 book.cpp:655
+#: event.cpp:9097 utype.cpp:3522
+msgid "Confirm delete"
+msgstr ""
+
+#: DlgCoreProc.cpp:248
 msgid "Packer"
 msgstr ""
 
-#: DlgCoreProc.cpp:415 DlgHEditorProc.cpp:95
+#: DlgCoreProc.cpp:417 DlgHEditorProc.cpp:97
 msgid "Save modify"
 msgstr ""
 
-#: DlgCoreProc.cpp:416
+#: DlgCoreProc.cpp:418
 msgid "Core data is dirty, do you want to save modify?"
 msgstr ""
 
-#: DlgCoreProc.cpp:569
+#: DlgCoreProc.cpp:578
 msgid "Commoner"
 msgstr ""
 
-#: DlgCoreProc.cpp:628
+#: DlgCoreProc.cpp:637
 msgid "Atomic tactic"
 msgstr ""
 
-#: DlgCoreProc.cpp:636
+#: DlgCoreProc.cpp:645
 msgid "Complex tactic"
 msgstr ""
 
-#: DlgCoreProc.cpp:676
+#: DlgCoreProc.cpp:685
 msgid "Point"
 msgstr ""
 
-#: DlgCoreProc.cpp:685
+#: DlgCoreProc.cpp:686 feature.cpp:342 feature.cpp:383 feature.cpp:427
+#: noble.cpp:289 noble.cpp:351 utype.cpp:1519 utype.cpp:1649
+msgid "Level"
+msgstr ""
+
+#: DlgCoreProc.cpp:695
 msgid "Range"
 msgstr ""
 
-#: DlgCoreProc.cpp:687
+#: DlgCoreProc.cpp:697
 msgid "Myself"
 msgstr ""
 
-#: DlgCoreProc.cpp:694
+#: DlgCoreProc.cpp:704
 msgid "troop^Friend"
 msgstr ""
 
-#: DlgCoreProc.cpp:701
+#: DlgCoreProc.cpp:711
 msgid "troop^Enemy"
 msgstr ""
 
-#: DlgCoreProc.cpp:711 DlgCoreProc.cpp:2439
+#: DlgCoreProc.cpp:721 DlgCoreProc.cpp:2603
 msgid "Defend"
 msgstr ""
 
-#: DlgCoreProc.cpp:715 DlgCoreProc.cpp:2443
+#: DlgCoreProc.cpp:723 DlgCoreProc.cpp:2605 core_section.cpp:125
+#: formation.cpp:125 utype.cpp:1523
+msgid "Attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:725 DlgCoreProc.cpp:2607
 msgid "Will"
 msgstr ""
 
-#: DlgCoreProc.cpp:717 DlgCoreProc.cpp:2445
+#: DlgCoreProc.cpp:727 DlgCoreProc.cpp:2609
 msgid "Demolish"
 msgstr ""
 
-#: DlgCoreProc.cpp:723
-msgid "tactic^Child"
-msgstr ""
-
-#: DlgCoreProc.cpp:759
-msgid "Atomic character"
-msgstr ""
-
-#: DlgCoreProc.cpp:767
-msgid "Complex character"
-msgstr ""
-
-#: DlgCoreProc.cpp:807
-msgid "character^Child"
-msgstr ""
-
-#: DlgCoreProc.cpp:843
-msgid "Atomic decree"
-msgstr ""
-
-#: DlgCoreProc.cpp:851
-msgid "Complex decree"
-msgstr ""
-
-#: DlgCoreProc.cpp:896
-msgid "At least Lv$level"
-msgstr ""
-
-#: DlgCoreProc.cpp:912
-msgid "Require $artifical"
-msgstr ""
-
-#: DlgCoreProc.cpp:919 noble.cpp:320 noble.cpp:355
-msgid "Condition"
-msgstr ""
-
-#: DlgCoreProc.cpp:931
-msgid "decree^Child"
-msgstr ""
-
-#: DlgCoreProc.cpp:1263
-msgid "anim^defend"
-msgstr ""
-
-#: DlgCoreProc.cpp:1268
-msgid "anim^resistance"
-msgstr ""
-
-#: DlgCoreProc.cpp:1271
-msgid "anim^leading"
-msgstr ""
-
-#: DlgCoreProc.cpp:1274
-msgid "anim^healing"
-msgstr ""
-
-#: DlgCoreProc.cpp:1280
-msgid "anim^idle"
-msgstr ""
-
-#: DlgCoreProc.cpp:1286
-msgid "anim^healed"
-msgstr ""
-
-#: DlgCoreProc.cpp:1292
-msgid "anim^melee_attack"
-msgstr ""
-
-#: DlgCoreProc.cpp:1302
-msgid "anim^ranged_attack"
-msgstr ""
-
-#: DlgCoreProc.cpp:1314
-msgid "anim^magic_missile_attack"
-msgstr ""
-
-#: DlgCoreProc.cpp:1322
-msgid "anim^lightbeam_attack"
-msgstr ""
-
-#: DlgCoreProc.cpp:1330
-msgid "anim^fireball_attack"
-msgstr ""
-
-#: DlgCoreProc.cpp:1338
-msgid "anim^iceball_attack"
-msgstr ""
-
-#: DlgCoreProc.cpp:1346
-msgid "anim^lightning_attack"
-msgstr ""
-
-#: DlgCoreProc.cpp:1354
-msgid "anim^card"
-msgstr ""
-
-#: DlgCoreProc.cpp:1355
-msgid "anim^reinforce"
-msgstr ""
-
-#: DlgCoreProc.cpp:1356
-msgid "anim^individuality"
-msgstr ""
-
-#: DlgCoreProc.cpp:1357
-msgid "anim^tactic"
-msgstr ""
-
-#: DlgCoreProc.cpp:1358
-msgid "anim^blade"
-msgstr ""
-
-#: DlgCoreProc.cpp:1359
-msgid "anim^fire"
-msgstr ""
-
-#: DlgCoreProc.cpp:1360
-msgid "anim^magic"
-msgstr ""
-
-#: DlgCoreProc.cpp:1361
-msgid "anim^heal"
-msgstr ""
-
-#: DlgCoreProc.cpp:1362
-msgid "anim^destruct"
-msgstr ""
-
-#: DlgCoreProc.cpp:1363
-msgid "anim^formation attack"
-msgstr ""
-
-#: DlgCoreProc.cpp:1364
-msgid "anim^formation defend"
-msgstr ""
-
-#: DlgCoreProc.cpp:1365
-msgid "anim^pass scenario"
-msgstr ""
-
-#: DlgCoreProc.cpp:1366
-msgid "anim^perfect"
-msgstr ""
-
-#: DlgCoreProc.cpp:1428
-msgid "game^Config"
-msgstr ""
-
-#: DlgCoreProc.cpp:1432 DlgCoreProc.cpp:1436 DlgCoreProc.cpp:1440
-#: DlgCoreProc.cpp:1444 DlgCoreProc.cpp:1448
-msgid "Read only"
-msgstr ""
-
-#: DlgCoreProc.cpp:1453
-msgid "Building rule"
-msgstr ""
-
-#: DlgCoreProc.cpp:1455
-msgid "Animation"
-msgstr ""
-
-#: DlgCoreProc.cpp:1456
-msgid "Multiplayer"
-msgstr ""
-
-#: DlgCoreProc.cpp:2209
-msgid "Edit technology"
-msgstr ""
-
-#: DlgCoreProc.cpp:2246 DlgCoreProc.cpp:2560
-msgid "Atomic technology"
-msgstr ""
-
-#: DlgCoreProc.cpp:2248 DlgCoreProc.cpp:2563
-msgid "Complex technology"
-msgstr ""
-
-#: DlgCoreProc.cpp:2251 utype.cpp:3442
-msgid "Close"
-msgstr ""
-
-#: DlgCoreProc.cpp:2270 DlgHEditorProc.cpp:2660
-msgid "Experience"
-msgstr ""
-
-#: DlgCoreProc.cpp:2277
-msgid "Relative"
-msgstr ""
-
-#: DlgCoreProc.cpp:2292
-msgid "Type filter"
-msgstr ""
-
-#: DlgCoreProc.cpp:2299
-msgid "Arms filter"
-msgstr ""
-
-#: DlgCoreProc.cpp:2306 event.cpp:5921
+#: DlgCoreProc.cpp:729 DlgCoreProc.cpp:2457 event.cpp:6227
 msgid "Action"
 msgstr ""
 
-#: DlgCoreProc.cpp:2315
+#: DlgCoreProc.cpp:735
+msgid "tactic^Child"
+msgstr ""
+
+#: DlgCoreProc.cpp:771
+msgid "Atomic character"
+msgstr ""
+
+#: DlgCoreProc.cpp:779
+msgid "Complex character"
+msgstr ""
+
+#: DlgCoreProc.cpp:819
+msgid "character^Child"
+msgstr ""
+
+#: DlgCoreProc.cpp:855
+msgid "Atomic decree"
+msgstr ""
+
+#: DlgCoreProc.cpp:863
+msgid "Complex decree"
+msgstr ""
+
+#: DlgCoreProc.cpp:908
+msgid "At least Lv$level"
+msgstr ""
+
+#: DlgCoreProc.cpp:924
+msgid "Require $artifical"
+msgstr ""
+
+#: DlgCoreProc.cpp:927 animation.cpp:101 animation.cpp:1106 utype.cpp:2547
+msgid "None"
+msgstr "None"
+
+#: DlgCoreProc.cpp:931 noble.cpp:320 noble.cpp:355
+msgid "Condition"
+msgstr ""
+
+#: DlgCoreProc.cpp:943
+msgid "decree^Child"
+msgstr ""
+
+#: DlgCoreProc.cpp:1304
+msgid "anim^defend"
+msgstr ""
+
+#: DlgCoreProc.cpp:1309
+msgid "anim^resistance"
+msgstr ""
+
+#: DlgCoreProc.cpp:1312
+msgid "anim^leading"
+msgstr ""
+
+#: DlgCoreProc.cpp:1315
+msgid "anim^healing"
+msgstr ""
+
+#: DlgCoreProc.cpp:1321
+msgid "anim^idle"
+msgstr ""
+
+#: DlgCoreProc.cpp:1328
+msgid "anim^multi_idle"
+msgstr ""
+
+#: DlgCoreProc.cpp:1335
+msgid "anim^healed"
+msgstr ""
+
+#: DlgCoreProc.cpp:1341
+msgid "anim^movement"
+msgstr ""
+
+#: DlgCoreProc.cpp:1346
+msgid "anim^build"
+msgstr ""
+
+#: DlgCoreProc.cpp:1352
+msgid "anim^repair"
+msgstr ""
+
+#: DlgCoreProc.cpp:1358
+msgid "anim^die"
+msgstr ""
+
+#: DlgCoreProc.cpp:1363
+msgid "anim^multi_die"
+msgstr ""
+
+#: DlgCoreProc.cpp:1368
+msgid "anim^melee_attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:1378
+msgid "anim^ranged_attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:1390
+msgid "anim^magic_missile_attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:1398
+msgid "anim^lightbeam_attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:1406
+msgid "anim^fireball_attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:1414
+msgid "anim^iceball_attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:1422
+msgid "anim^lightning_attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:1430
+msgid "anim^card"
+msgstr ""
+
+#: DlgCoreProc.cpp:1431
+msgid "anim^reinforce"
+msgstr ""
+
+#: DlgCoreProc.cpp:1432
+msgid "anim^individuality"
+msgstr ""
+
+#: DlgCoreProc.cpp:1433
+msgid "anim^tactic"
+msgstr ""
+
+#: DlgCoreProc.cpp:1434
+msgid "anim^blade"
+msgstr ""
+
+#: DlgCoreProc.cpp:1435
+msgid "anim^fire"
+msgstr ""
+
+#: DlgCoreProc.cpp:1436
+msgid "anim^magic"
+msgstr ""
+
+#: DlgCoreProc.cpp:1437
+msgid "anim^heal"
+msgstr ""
+
+#: DlgCoreProc.cpp:1438
+msgid "anim^destruct"
+msgstr ""
+
+#: DlgCoreProc.cpp:1439
+msgid "anim^formation attack"
+msgstr ""
+
+#: DlgCoreProc.cpp:1440
+msgid "anim^formation defend"
+msgstr ""
+
+#: DlgCoreProc.cpp:1441
+msgid "anim^pass scenario"
+msgstr ""
+
+#: DlgCoreProc.cpp:1442
+msgid "anim^perfect"
+msgstr ""
+
+#: DlgCoreProc.cpp:1443
+msgid "anim^income"
+msgstr ""
+
+#: DlgCoreProc.cpp:1444
+msgid "anim^stratagem_up"
+msgstr ""
+
+#: DlgCoreProc.cpp:1445
+msgid "anim^stratagem_down"
+msgstr ""
+
+#: DlgCoreProc.cpp:1446
+msgid "anim^location"
+msgstr ""
+
+#: DlgCoreProc.cpp:1447
+msgid "anim^hscroll text"
+msgstr ""
+
+#: DlgCoreProc.cpp:1448
+msgid "anim^title_screen"
+msgstr ""
+
+#: DlgCoreProc.cpp:1449
+msgid "anim^load_scenario"
+msgstr ""
+
+#: DlgCoreProc.cpp:1451
+msgid "anim^flags"
+msgstr ""
+
+#: DlgCoreProc.cpp:1454
+msgid "anim^text"
+msgstr ""
+
+#: DlgCoreProc.cpp:1457
+msgid "anim^place"
+msgstr ""
+
+#: DlgCoreProc.cpp:1527
+msgid "game^Config"
+msgstr ""
+
+#: DlgCoreProc.cpp:1531 DlgCoreProc.cpp:1535 DlgCoreProc.cpp:1539
+#: DlgCoreProc.cpp:1543 DlgCoreProc.cpp:1547
+msgid "Read only"
+msgstr ""
+
+#: DlgCoreProc.cpp:1552
+msgid "Building rule"
+msgstr ""
+
+#: DlgCoreProc.cpp:1554
+msgid "Animation"
+msgstr ""
+
+#: DlgCoreProc.cpp:1555
+msgid "Multiplayer"
+msgstr ""
+
+#: DlgCoreProc.cpp:1556
+msgid "Book"
+msgstr ""
+
+#: DlgCoreProc.cpp:2358
+msgid "Edit technology"
+msgstr ""
+
+#: DlgCoreProc.cpp:2395 DlgCoreProc.cpp:2734
+msgid "Atomic technology"
+msgstr ""
+
+#: DlgCoreProc.cpp:2397 DlgCoreProc.cpp:2737
+msgid "Complex technology"
+msgstr ""
+
+#: DlgCoreProc.cpp:2399 DlgCoreProc.cpp:2740
+msgid "Stratagem"
+msgstr ""
+
+#: DlgCoreProc.cpp:2402 utype.cpp:3551
+msgid "Close"
+msgstr ""
+
+#: DlgCoreProc.cpp:2421 DlgHEditorProc.cpp:2306
+msgid "Experience"
+msgstr ""
+
+#: DlgCoreProc.cpp:2428
+msgid "Relative"
+msgstr ""
+
+#: DlgCoreProc.cpp:2443
+msgid "Type filter"
+msgstr ""
+
+#: DlgCoreProc.cpp:2450
+msgid "Arms filter"
+msgstr ""
+
+#: DlgCoreProc.cpp:2466
 msgid "technology^Child"
 msgstr ""
 
-#: DlgCoreProc.cpp:2379
+#: DlgCoreProc.cpp:2543
 msgid "Adjust unit"
 msgstr ""
 
-#: DlgCoreProc.cpp:2381
+#: DlgCoreProc.cpp:2545
 msgid "Finish research"
 msgstr ""
 
-#: DlgCoreProc.cpp:2567 utype.cpp:4015
+#: DlgCoreProc.cpp:2744 utype.cpp:4140
 msgid "Report format"
 msgstr ""
 
-#: DlgCoreProc.cpp:2689
+#: DlgCoreProc.cpp:2866
 msgid "Treasure remark"
 msgstr ""
 
-#: DlgCoreProc.cpp:2795
+#: DlgCoreProc.cpp:2972
 msgid "Edit treasure"
 msgstr ""
 
@@ -1229,7 +1133,7 @@ msgstr ""
 msgid "Do you want to extract release package to \"C:\\kingdom-ins\"?"
 msgstr ""
 
-#: DlgDDescProc.cpp:204 DlgDDescProc.cpp:224 DlgDDescProc.cpp:239
+#: DlgDDescProc.cpp:204 DlgDDescProc.cpp:225 DlgDDescProc.cpp:242
 msgid "Confirm generate"
 msgstr ""
 
@@ -1237,109 +1141,143 @@ msgstr ""
 msgid "Extract release package from \"$src\" to \"C:\\kingdom-ins\", $result!"
 msgstr ""
 
-#: DlgDDescProc.cpp:222
-msgid "Do you want to generate star resource package to \"C:\\kingdom-star\"?"
+#: DlgDDescProc.cpp:223
+msgid "Do you want to generate star resource package to $mod_res_path?"
 msgstr ""
 
-#: DlgDDescProc.cpp:231
+#: DlgDDescProc.cpp:233
 msgid ""
-"Generate star resource package from \"$src1\" and \"$src2\" to \"C:\\kingdom-"
-"star\", $result!"
+"Generate star resource package from \"$src1\" and \"$src2\" to \"$dst\", "
+"$result!"
 msgstr ""
 
-#: DlgDDescProc.cpp:237
-msgid ""
-"Do you want to extract star different files to \"C:\\wesnoth\\kingdom-star-"
-"patch\"?"
+#: DlgDDescProc.cpp:240
+msgid "Do you want to extract star different files to $mod_patch_path?"
 msgstr ""
 
-#: DlgDDescProc.cpp:246
+#: DlgDDescProc.cpp:249
 msgid "Extract star different files from \"$src\" to \"$dst\", $result!"
 msgstr ""
 
-#: DlgDDescProc.cpp:288
+#: DlgDDescProc.cpp:299
 msgid "Do you want to delete file: \"$file\" and directory: \"$directory\"?"
 msgstr ""
 
-#: DlgDDescProc.cpp:312
+#: DlgDDescProc.cpp:323
 msgid "Will generate non-sync, do you want to only delete file: \"$file\"?"
 msgstr ""
 
-#: DlgDDescProc.cpp:1039
-msgid "Cannot find <kingdom-star-patch> directory on $kingdom_star_patch!"
-msgstr ""
-
-#: DlgDDescProc.cpp:1243
-msgid "Cannot find <kingdom-star> directory on $kingdom_star!"
-msgstr ""
-
-#: DlgHEditorProc.cpp:94
+#: DlgHEditorProc.cpp:96
 msgid "Do you want to save modify?"
 msgstr ""
 
-#: DlgHEditorProc.cpp:365
+#: DlgHEditorProc.cpp:367
 msgid "Invalid"
 msgstr ""
 
-#: DlgHEditorProc.cpp:698
+#: DlgHEditorProc.cpp:700
 msgid "Picture number"
 msgstr ""
 
-#: DlgHEditorProc.cpp:704
+#: DlgHEditorProc.cpp:706
 msgid "Base/Float catalog"
 msgstr ""
 
-#: DlgHEditorProc.cpp:909
+#: DlgHEditorProc.cpp:911
 msgid "Status/Activity"
 msgstr ""
 
-#: DlgHEditorProc.cpp:1085
+#: DlgHEditorProc.cpp:1087
 msgid "Do you want to delete hero($name) that number is $number?"
 msgstr ""
 
-#: DlgHEditorProc.cpp:1335 DlgHEditorProc.cpp:3373 DlgHEditorProc.cpp:3377
+#: DlgHEditorProc.cpp:1121
+msgid "$h1 hate $h2, but $h2 doesn't hate $h1!"
+msgstr ""
+
+#: DlgHEditorProc.cpp:1369 DlgHEditorProc.cpp:3151 DlgHEditorProc.cpp:3155
 msgid "Exchange"
 msgstr ""
 
-#: DlgHEditorProc.cpp:1338
+#: DlgHEditorProc.cpp:1372
 msgid "Extract and append"
 msgstr ""
 
-#: DlgHEditorProc.cpp:1346
+#: DlgHEditorProc.cpp:1380
 msgid "Adjust number"
 msgstr ""
 
-#: DlgHEditorProc.cpp:1755 event.cpp:6058 event.cpp:7641 event.cpp:7973
+#: DlgHEditorProc.cpp:1760 event.cpp:6371 event.cpp:7938 event.cpp:8270
 msgid "Edit"
 msgstr ""
 
-#: DlgHEditorProc.cpp:1757
+#: DlgHEditorProc.cpp:1762
 msgid "Unknown action"
 msgstr ""
 
-#: DlgHEditorProc.cpp:2648 event.cpp:5350 event.cpp:7242
+#: DlgHEditorProc.cpp:2294 event.cpp:5645 event.cpp:7539
 msgid "NO."
 msgstr ""
 
-#: DlgHEditorProc.cpp:2649
+#: DlgHEditorProc.cpp:2295
 msgid "Picture NO."
 msgstr ""
 
-#: DlgHEditorProc.cpp:3325
+#: DlgHEditorProc.cpp:2323
+msgid "consort"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2326
+msgid "oath"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2329
+msgid "intimate"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2332
+msgid "hate"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2792
+msgid "To Father"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2793
+msgid "To Mother"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2794
+msgid "To Consort"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2795
+msgid "To Oath"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2796
+msgid "To Intimate"
+msgstr ""
+
+#: DlgHEditorProc.cpp:2797
+msgid "To Hate"
+msgstr ""
+
+#: DlgHEditorProc.cpp:3103
 msgid ""
 "Exchange $a and $b success! To complete, you need edit wesnoth-hero.po "
 "manually."
 msgstr ""
 
-#: DlgHEditorProc.cpp:3338
+#: DlgHEditorProc.cpp:3116
 msgid "Do you want to extract $hero and append?"
 msgstr ""
 
-#: DlgHEditorProc.cpp:3340
+#: DlgHEditorProc.cpp:3118
 msgid "Confirm"
 msgstr ""
 
-#: DlgHEditorProc.cpp:3363
+#: DlgHEditorProc.cpp:3141
 msgid ""
 "Extract $hero and append success! To complete, you need edit wesnoth-hero.po "
 "manually."
@@ -1363,6 +1301,302 @@ msgstr ""
 
 #: DlgSyncProc.cpp:196
 msgid "SHA1"
+msgstr ""
+
+#: animation.cpp:99
+msgid "frame^Count"
+msgstr "frame^Count"
+
+#: animation.cpp:122
+msgid "Start time"
+msgstr ""
+
+#: animation.cpp:413 animation.cpp:1139 animation.cpp:1195
+msgid "Master particular"
+msgstr ""
+
+#: animation.cpp:1030 animation.cpp:1477
+msgid "Filter"
+msgstr ""
+
+#: animation.cpp:1133 animation.cpp:1469
+msgid "Screen mode"
+msgstr ""
+
+#: animation.cpp:1133 animation.cpp:1374 event.cpp:611 event.cpp:651
+#: noble.cpp:182 noble.cpp:191 terrain.cpp:321
+msgid "Yes"
+msgstr ""
+
+#: animation.cpp:1133 animation.cpp:1374 event.cpp:611 event.cpp:651
+#: noble.cpp:182 noble.cpp:191 terrain.cpp:321
+msgid "No"
+msgstr ""
+
+#: animation.cpp:1148 animation.cpp:1215
+msgid "Second particular"
+msgstr ""
+
+#: animation.cpp:1461
+msgid "Particular"
+msgstr ""
+
+#: animation.cpp:1485
+msgid "Animation time"
+msgstr ""
+
+#: animation.cpp:1510
+msgid "Edit animation"
+msgstr ""
+
+#: animation.cpp:1512
+msgid "Add animation"
+msgstr ""
+
+#: animation.cpp:1557
+msgid "anim^Edit filter"
+msgstr ""
+
+#: animation.cpp:1677
+msgid "anim^Edit frame"
+msgstr ""
+
+#: animation.cpp:1680
+msgid "frame^Duration"
+msgstr ""
+
+#: animation.cpp:1681
+msgid "frame^Image"
+msgstr ""
+
+#: animation.cpp:1682 animation.cpp:1687
+msgid "frame^Halo"
+msgstr ""
+
+#: animation.cpp:1683
+msgid "frame^Image mod"
+msgstr ""
+
+#: animation.cpp:1684
+msgid "frame^Image diagonal"
+msgstr ""
+
+#: animation.cpp:1685
+msgid "frame^X"
+msgstr ""
+
+#: animation.cpp:1686
+msgid "frame^Y"
+msgstr ""
+
+#: animation.cpp:1688
+msgid "frame^Halo x"
+msgstr ""
+
+#: animation.cpp:1689
+msgid "frame^Halo y"
+msgstr ""
+
+#: animation.cpp:1690
+msgid "frame^Offset x"
+msgstr ""
+
+#: animation.cpp:1691
+msgid "frame^Offset y"
+msgstr ""
+
+#: animation.cpp:1692
+msgid "Enable auto-h-flip (Both image and halo)"
+msgstr ""
+
+#: animation.cpp:1693
+msgid "Enable auto-v-flip (Both image and halo)"
+msgstr ""
+
+#: animation.cpp:1694
+msgid "frame^Sound"
+msgstr ""
+
+#: animation.cpp:1695
+msgid "frame^Stext"
+msgstr ""
+
+#: animation.cpp:1696
+msgid "frame^Font size"
+msgstr ""
+
+#: animation.cpp:1697
+msgid "frame^Alpha"
+msgstr ""
+
+#: animation.cpp:1830
+msgid "Do you want to delete frame on $particular?"
+msgstr ""
+
+#: animation.cpp:1862
+msgid "anim^Edit particular"
+msgstr ""
+
+#: animation.cpp:1865
+msgid "particular^Prefix"
+msgstr ""
+
+#: animation.cpp:1866
+msgid "particular^Start time"
+msgstr ""
+
+#: animation.cpp:1867
+msgid "particular^X"
+msgstr ""
+
+#: animation.cpp:1868
+msgid "particular^Y"
+msgstr ""
+
+#: animation.cpp:1869
+msgid "particular^Offset x"
+msgstr ""
+
+#: animation.cpp:1870
+msgid "particular^Offset y"
+msgstr ""
+
+#: animation.cpp:1871
+msgid "particular^Cycles"
+msgstr ""
+
+#: animation.cpp:1872
+msgid "particular^Layer"
+msgstr ""
+
+#: animation.cpp:1873
+msgid "particular^Zoom_x"
+msgstr ""
+
+#: animation.cpp:1874
+msgid "particular^Zoom_y"
+msgstr ""
+
+#: animation.cpp:1929
+msgid "Reserved string"
+msgstr ""
+
+#: animation.cpp:1941 terrain.cpp:681
+msgid "Other has holden it"
+msgstr ""
+
+#: animation.cpp:2014
+msgid "Do you want to delete this particular?"
+msgstr ""
+
+#: animation.cpp:2123
+msgid "In front of"
+msgstr ""
+
+#: animation.cpp:2124
+msgid "Behind"
+msgstr ""
+
+#: animation.cpp:2128
+msgid "Add particular"
+msgstr ""
+
+#: animation.cpp:2133
+msgid "Add frame"
+msgstr ""
+
+#: book.cpp:503
+msgid "Edit topic"
+msgstr ""
+
+#: book.cpp:510 book.cpp:686
+msgid "If title isn't from $textdomain, set \"$key\""
+msgstr ""
+
+#: book.cpp:649
+msgid "Do you want to delete section: $name?"
+msgstr ""
+
+#: book.cpp:652
+msgid "Do you want to delete topic: $name?"
+msgstr ""
+
+#: book.cpp:679 book.cpp:954
+msgid "Rename ID"
+msgstr ""
+
+#: book.cpp:715
+msgid "Reserve id"
+msgstr ""
+
+#: book.cpp:717
+msgid "Duplicate id"
+msgstr ""
+
+#: book.cpp:941
+msgid "book^Section"
+msgstr ""
+
+#: book.cpp:942
+msgid "book^Topic"
+msgstr ""
+
+#: book.cpp:945
+msgid "Up"
+msgstr ""
+
+#: book.cpp:946
+msgid "Down"
+msgstr ""
+
+#: book.cpp:957
+msgid "Move"
+msgstr ""
+
+#: book.cpp:962
+msgid "Gegenerate $textdomain"
+msgstr ""
+
+#: config.cpp:110
+msgid "BBS Server"
+msgstr ""
+
+#: config.cpp:112
+msgid "Host"
+msgstr ""
+
+#: core_section.cpp:94 formation.cpp:94
+msgid "Arms require"
+msgstr ""
+
+#: core_section.cpp:111 formation.cpp:111 utype.cpp:1735 utype.cpp:1797
+#: utype.cpp:3694
+msgid "attack^Range"
+msgstr ""
+
+#: core_section.cpp:156 formation.cpp:156 utype.cpp:1510 utype.cpp:1727
+#: utype.cpp:1795 utype.cpp:3638 utype.cpp:3687
+msgid "Icon"
+msgstr ""
+
+#: editor.cpp:563
+msgid "Delete: $name fail!"
+msgstr ""
+
+#: editor.cpp:585 editor.cpp:616
+msgid "File"
+msgstr ""
+
+#: editor.cpp:585 editor.cpp:616
+msgid "Directory"
+msgstr ""
+
+#: editor.cpp:587
+msgid "Delete $type, from $dst fail!"
+msgstr ""
+
+#: editor.cpp:619
+msgid "Copy $type, from $src to $dst fail!"
 msgstr ""
 
 #: event.cpp:441
@@ -1457,297 +1691,346 @@ msgstr ""
 msgid "Dead"
 msgstr ""
 
-#: event.cpp:696
+#: event.cpp:666
 msgid "Cond.I: Filter first unit"
 msgstr ""
 
-#: event.cpp:702
+#: event.cpp:672
 msgid "Cond.II: Filter second unit"
 msgstr ""
 
-#: event.cpp:708
+#: event.cpp:678
 msgid "Cond.III: Filter hero"
 msgstr ""
 
-#: event.cpp:1466
+#: event.cpp:1275
+msgid "HP"
+msgstr ""
+
+#: event.cpp:1276
+msgid "Must heros"
+msgstr ""
+
+#: event.cpp:1283 event.cpp:5627
+msgid "Defined variables(Right click to popup menu)"
+msgstr ""
+
+#: event.cpp:1568
 msgid "If value is translatable, set \"$key\", as if it is \"$textdomain\""
 msgstr ""
 
-#: event.cpp:1522
+#: event.cpp:1624
 msgid "equal value"
 msgstr ""
 
-#: event.cpp:1523
+#: event.cpp:1625
 msgid "add value"
 msgstr ""
 
-#: event.cpp:1524
+#: event.cpp:1626
 msgid "subtract value"
 msgstr ""
 
-#: event.cpp:1525
+#: event.cpp:1627
 msgid "multiply value"
 msgstr ""
 
-#: event.cpp:1526
+#: event.cpp:1628
 msgid "divide value"
 msgstr ""
 
-#: event.cpp:1527
+#: event.cpp:1629
 msgid "modulo value"
 msgstr ""
 
-#: event.cpp:1528
+#: event.cpp:1630
 msgid "evaluats one amone range"
 msgstr ""
 
-#: event.cpp:1611
+#: event.cpp:1713
 msgid "Variable \"$name\" $op \"$value\""
 msgstr ""
 
-#: event.cpp:3943
+#: event.cpp:4252
 msgid "Service"
 msgstr ""
 
-#: event.cpp:3972
+#: event.cpp:4281
 msgid "Always clear"
 msgstr ""
 
-#: event.cpp:3973
+#: event.cpp:4282
 msgid "Replace"
 msgstr ""
 
-#: event.cpp:3974
+#: event.cpp:4283
 msgid "Append"
 msgstr ""
 
-#: event.cpp:4362
+#: event.cpp:4671
 msgid "equals string"
 msgstr ""
 
-#: event.cpp:4363
+#: event.cpp:4672
 msgid "not equals string"
 msgstr ""
 
-#: event.cpp:4364
+#: event.cpp:4673
 msgid "contains string"
 msgstr ""
 
-#: event.cpp:4365
+#: event.cpp:4674
 msgid "equals numerical"
 msgstr ""
 
-#: event.cpp:4366
+#: event.cpp:4675
 msgid "not equals numerical"
 msgstr ""
 
-#: event.cpp:4367
+#: event.cpp:4676
 msgid "greater than numerical"
 msgstr ""
 
-#: event.cpp:4368
+#: event.cpp:4677
 msgid "less than numerical"
 msgstr ""
 
-#: event.cpp:4369
+#: event.cpp:4678
 msgid "greater than equal to numerical"
 msgstr ""
 
-#: event.cpp:4370
+#: event.cpp:4679
 msgid "less_than_equal_to numerical"
 msgstr ""
 
-#: event.cpp:4371
+#: event.cpp:4680
 msgid "equals boolean"
 msgstr ""
 
-#: event.cpp:4372
+#: event.cpp:4681
 msgid "not equals boolean"
 msgstr ""
 
-#: event.cpp:4439
+#: event.cpp:4748
 msgid "\"$left\" $op \"$right\""
 msgstr ""
 
-#: event.cpp:4602
+#: event.cpp:4874
 msgid "&&(and)"
 msgstr ""
 
-#: event.cpp:4603
+#: event.cpp:4875
 msgid "||(or)"
 msgstr ""
 
-#: event.cpp:4604
+#: event.cpp:4876
 msgid "&& !(not)"
 msgstr ""
 
-#: event.cpp:5120
-msgid "Logic"
+#: event.cpp:5233
+msgid "Edit judge condition"
 msgstr ""
 
-#: event.cpp:5209
-msgid "variable"
+#: event.cpp:5236
+msgid "Append judge condition"
 msgstr ""
 
-#: event.cpp:5210
+#: event.cpp:5238 event.cpp:5491
 msgid "have_unit"
 msgstr ""
 
-#: event.cpp:5454 event.cpp:7229 event.cpp:7413
+#: event.cpp:5242 event.cpp:5401
+msgid "Logic"
+msgstr ""
+
+#: event.cpp:5243
+#, fuzzy
+msgid "Count"
+msgstr "frame^Count"
+
+#: event.cpp:5244
+msgid "Set filter condition"
+msgstr ""
+
+#: event.cpp:5490
+msgid "variable"
+msgstr ""
+
+#: event.cpp:5612
+msgid "Edit operation"
+msgstr ""
+
+#: event.cpp:5615
+msgid "Append operation"
+msgstr ""
+
+#: event.cpp:5617 event.cpp:8712
+msgid "Kill troop/hero"
+msgstr ""
+
+#: event.cpp:5622
+msgid "Support variable"
+msgstr ""
+
+#: event.cpp:5625
+msgid "Direct hero"
+msgstr ""
+
+#: event.cpp:5626
+msgid "Belong to side(If be killed is city, must set it)"
+msgstr ""
+
+#: event.cpp:5630 event.cpp:5771
+msgid "To hero"
+msgstr ""
+
+#: event.cpp:5751 event.cpp:7526 event.cpp:7710
 msgid "To side"
 msgstr ""
 
-#: event.cpp:5838 event.cpp:6141
+#: event.cpp:6144 event.cpp:6454
 msgid "Editing"
 msgstr ""
 
-#: event.cpp:5839 event.cpp:8419
+#: event.cpp:6145 event.cpp:8716
 msgid "Modify side"
 msgstr ""
 
-#: event.cpp:6032 event.cpp:6038 event.cpp:6061 event.cpp:6253 event.cpp:7421
-#: event.cpp:7976 faction.cpp:841 faction.cpp:1085 feature.cpp:505
-#: main.cpp:925 main.cpp:930 main.cpp:941
+#: event.cpp:6345 event.cpp:6351 event.cpp:6374 event.cpp:6566 event.cpp:7718
+#: event.cpp:8273 faction.cpp:841 faction.cpp:1085 feature.cpp:568
+#: main.cpp:907 main.cpp:912 main.cpp:925
 msgid "Delete"
 msgstr ""
 
-#: event.cpp:6046
+#: event.cpp:6359
 msgid "To agree"
 msgstr ""
 
-#: event.cpp:6047
+#: event.cpp:6360
 msgid "To terminate"
 msgstr ""
 
-#: event.cpp:6142 event.cpp:8420
+#: event.cpp:6455 event.cpp:8717
 msgid "Modify city"
 msgstr ""
 
-#: event.cpp:6342
+#: event.cpp:6655
 msgid "Incident(-1 indicate no incident)"
 msgstr ""
 
-#: event.cpp:6343
+#: event.cpp:6656
 msgid "Yes/No style"
 msgstr ""
 
-#: event.cpp:6344
+#: event.cpp:6657
 msgid "Title"
 msgstr ""
 
-#: event.cpp:6345
+#: event.cpp:6658
 msgid "Message"
 msgstr ""
 
-#: event.cpp:6346
+#: event.cpp:6659
 msgid "Defined variable(Right click popup menu)"
 msgstr ""
 
-#: event.cpp:7423 faction.cpp:1087 main.cpp:932
+#: event.cpp:7720 faction.cpp:1087 main.cpp:914
 msgid "Delete all"
 msgstr ""
 
-#: event.cpp:7573
+#: event.cpp:7870
 msgid "Renamed to"
 msgstr ""
 
-#: event.cpp:7654 event.cpp:7816
-msgid "Summary"
-msgstr ""
-
-#: event.cpp:7812
+#: event.cpp:8109
 msgid "Edit objectives"
 msgstr ""
 
-#: event.cpp:7830 event.cpp:7855
+#: event.cpp:8127 event.cpp:8152
 msgid "msgid"
 msgstr ""
 
-#: event.cpp:7840 event.cpp:7865
+#: event.cpp:8137 event.cpp:8162
 msgid "translated"
 msgstr ""
 
-#: event.cpp:8094
+#: event.cpp:8391
 msgid "HP > 0(if not check, HP is free)"
 msgstr ""
 
-#: event.cpp:8392
+#: event.cpp:8689
 msgid "Edit $number|th event"
 msgstr ""
 
-#: event.cpp:8395
+#: event.cpp:8692
 msgid "Add event"
 msgstr ""
 
-#: event.cpp:8408
+#: event.cpp:8705
 msgid "Event branch"
 msgstr ""
 
-#: event.cpp:8410
+#: event.cpp:8707
 msgid "Judge branch"
 msgstr ""
 
-#: event.cpp:8412
+#: event.cpp:8709
 msgid "Set variable"
 msgstr ""
 
-#: event.cpp:8414
+#: event.cpp:8711
 msgid "Generate troop"
 msgstr ""
 
-#: event.cpp:8415
-msgid "Kill troop"
-msgstr ""
-
-#: event.cpp:8416
+#: event.cpp:8713
 msgid "End level"
 msgstr ""
 
-#: event.cpp:8417
+#: event.cpp:8714
 msgid "Join in troop"
 msgstr ""
 
-#: event.cpp:8418
+#: event.cpp:8715
 msgid "Modify unit(troop, city, artifical)"
 msgstr ""
 
-#: event.cpp:8421
+#: event.cpp:8718
 msgid "Pop message"
 msgstr ""
 
-#: event.cpp:8422
+#: event.cpp:8719
 msgid "Print/Clear on-screen"
 msgstr ""
 
-#: event.cpp:8423
+#: event.cpp:8720
 msgid "Set/Clear label"
 msgstr ""
 
-#: event.cpp:8424
+#: event.cpp:8721
 msgid "Allow undo"
 msgstr ""
 
-#: event.cpp:8425
+#: event.cpp:8722
 msgid "Adjust heros in side"
 msgstr ""
 
-#: event.cpp:8426
+#: event.cpp:8723
 msgid "Store unit"
 msgstr ""
 
-#: event.cpp:8427
+#: event.cpp:8724
 msgid "Rename"
 msgstr ""
 
-#: event.cpp:8428
+#: event.cpp:8725
 msgid "Change scenario objectives"
 msgstr ""
 
-#: event.cpp:8431 feature.cpp:642 noble.cpp:558
+#: event.cpp:8728 feature.cpp:695 noble.cpp:558
 msgid "Append after it"
 msgstr ""
 
-#: event.cpp:8798
+#: event.cpp:9095
 msgid "Do you want to delete $number|th event?"
 msgstr ""
 
@@ -1767,20 +2050,20 @@ msgstr ""
 msgid "To tower hero"
 msgstr ""
 
-#: feature.cpp:277
+#: feature.cpp:311
 msgid "Atomic feature remark"
 msgstr ""
 
-#: feature.cpp:340 feature.cpp:374
+#: feature.cpp:392 feature.cpp:429
 msgid "Item"
 msgstr ""
 
-#: feature.cpp:364
-msgid "Edit complex feature"
+#: feature.cpp:416
+msgid "Edit atomic feature"
 msgstr ""
 
-#: feature.cpp:366
-msgid "Add complex feature"
+#: feature.cpp:418
+msgid "Edit complex feature"
 msgstr ""
 
 #: formation.cpp:199
@@ -1791,40 +2074,80 @@ msgstr ""
 msgid "Add formaton"
 msgstr ""
 
-#: main.cpp:904
+#: integrate.cpp:29
+msgid "Interate text, image..."
+msgstr ""
+
+#: integrate.cpp:45
+msgid "Save"
+msgstr ""
+
+#: integrate.cpp:46
+msgid "Integrate is dirty, do you want to save modify?"
+msgstr ""
+
+#: integrate.cpp:119
+msgid "Convert to"
+msgstr ""
+
+#: integrate.cpp:149
+msgid "fomrat"
+msgstr ""
+
+#: integrate.cpp:150
+msgid "bold"
+msgstr ""
+
+#: integrate.cpp:151
+msgid "image"
+msgstr ""
+
+#: integrate.cpp:169
+msgid "Normal"
+msgstr ""
+
+#: integrate.cpp:170
+msgid "Poedit"
+msgstr ""
+
+#: integrate.cpp:224
+msgid "Encounter unknown format character!"
+msgstr ""
+
+#: integrate.cpp:228
+msgid "Exist grammar error, don't execute converting!"
+msgstr ""
+
+#: main.cpp:879
 msgid "Extract release package to C:\\kingdom-ins"
 msgstr ""
 
-#: main.cpp:910
-msgid "Generate resource package to C:\\kingdom-star"
+#: main.cpp:889
+msgid "Generate resource package to $mod_res_path"
 msgstr ""
 
-#: main.cpp:911
-msgid "Extract different files to C:\\wesnoth\\kingdom-star-patch"
+#: main.cpp:890
+msgid "Extract different files to $mod_patch_path"
 msgstr ""
 
-#: main.cpp:914
-msgid "Star"
-msgstr ""
-
-#: main.cpp:918
+#: main.cpp:900
 msgid "WML format"
 msgstr ""
 
-#: main.cpp:923
+#: main.cpp:905
 msgid "Delete relative *.cfg at the same time"
 msgstr ""
 
-#: main.cpp:939
+#: main.cpp:921
+msgid "Integrate"
+msgstr ""
+
+#: main.cpp:923
 msgid "Explorer"
 msgstr ""
 
-#: main.cpp:951
+#: main.cpp:935
 msgid "Reset all to default"
-msgstr ""
-
-#: noble.cpp:289 noble.cpp:351 utype.cpp:1482 utype.cpp:1604
-msgid "Level"
 msgstr ""
 
 #: noble.cpp:327 noble.cpp:359
@@ -1843,314 +2166,322 @@ msgstr ""
 msgid "Other noble has holded ID"
 msgstr ""
 
-#: rectangle.cpp:334
+#: rectangle.cpp:373
 msgid "Find"
 msgstr ""
 
-#: terrain.cpp:221
+#: terrain.cpp:224
 msgid "Hidden"
 msgstr ""
 
-#: terrain.cpp:419 terrain.cpp:563
+#: terrain.cpp:422 terrain.cpp:566
 msgid "terrain^String"
 msgstr ""
 
-#: terrain.cpp:427 terrain.cpp:564
+#: terrain.cpp:430 terrain.cpp:567
 msgid "terrain^ID"
 msgstr ""
 
-#: terrain.cpp:443 terrain.cpp:566
+#: terrain.cpp:446 terrain.cpp:569
 msgid "Alias"
 msgstr ""
 
-#: terrain.cpp:451 terrain.cpp:567
+#: terrain.cpp:454 terrain.cpp:570
 msgid "Alias(mvt)"
 msgstr ""
 
-#: terrain.cpp:459 terrain.cpp:568
+#: terrain.cpp:462 terrain.cpp:571
 msgid "Alias(def)"
 msgstr ""
 
-#: terrain.cpp:467 terrain.cpp:569
+#: terrain.cpp:470 terrain.cpp:572
 msgid "Height"
 msgstr ""
 
-#: terrain.cpp:475 terrain.cpp:570
+#: terrain.cpp:478 terrain.cpp:573
 msgid "Submerge"
 msgstr ""
 
-#: terrain.cpp:483 terrain.cpp:571
+#: terrain.cpp:486 terrain.cpp:574
 msgid "terrain^Light"
 msgstr ""
 
-#: terrain.cpp:491 terrain.cpp:572
+#: terrain.cpp:494 terrain.cpp:575
 msgid "Heals"
 msgstr ""
 
-#: terrain.cpp:507 terrain.cpp:573
+#: terrain.cpp:510 terrain.cpp:576
 msgid "Group"
 msgstr ""
 
-#: terrain.cpp:515
+#: terrain.cpp:518
 msgid "Editor name"
 msgstr ""
 
-#: terrain.cpp:523 terrain.cpp:574
+#: terrain.cpp:526 terrain.cpp:577
 msgid "Default base"
 msgstr ""
 
-#: terrain.cpp:531 terrain.cpp:575
+#: terrain.cpp:534 terrain.cpp:578
 msgid "Symbol image"
 msgstr ""
 
-#: terrain.cpp:539 terrain.cpp:576
+#: terrain.cpp:542 terrain.cpp:579
 msgid "Editor image"
 msgstr ""
 
-#: terrain.cpp:556
+#: terrain.cpp:559
 msgid "Edit terrain"
 msgstr ""
 
-#: terrain.cpp:558
+#: terrain.cpp:561
 msgid "Add terrain"
 msgstr ""
 
-#: utype.cpp:353 utype.cpp:3158
+#: utype.cpp:361 utype.cpp:3247
 msgid "Advances to"
 msgstr ""
 
-#: utype.cpp:396 utype.cpp:3162 utype.cpp:3522
+#: utype.cpp:404 utype.cpp:3251 utype.cpp:3631
 msgid "Abilities"
 msgstr ""
 
-#: utype.cpp:458 utype.cpp:2466 utype.cpp:3509
+#: utype.cpp:466 utype.cpp:2511 utype.cpp:3618
 msgid "Can land on wall"
 msgstr ""
 
-#: utype.cpp:459 utype.cpp:3718
+#: utype.cpp:467 utype.cpp:3834
 msgid "Can"
 msgstr ""
 
-#: utype.cpp:459 utype.cpp:3718
+#: utype.cpp:467 utype.cpp:3834
 msgid "Cannot"
 msgstr ""
 
-#: utype.cpp:461
+#: utype.cpp:469
 msgid "Require"
 msgstr ""
 
-#: utype.cpp:465 utype.cpp:2508 utype.cpp:3634
+#: utype.cpp:473 utype.cpp:2553 utype.cpp:3750
 msgid "Female"
 msgstr ""
 
-#: utype.cpp:484 utype.cpp:510 utype.cpp:2579 utype.cpp:2744
+#: utype.cpp:492 utype.cpp:518 utype.cpp:2624 utype.cpp:2789
 msgid "Base income gold"
 msgstr ""
 
-#: utype.cpp:486 utype.cpp:512 utype.cpp:2575 utype.cpp:2740
+#: utype.cpp:494 utype.cpp:520 utype.cpp:2620 utype.cpp:2785
 msgid "Base income technology"
 msgstr ""
 
-#: utype.cpp:488 utype.cpp:2577
+#: utype.cpp:496 utype.cpp:2622
 msgid "Base income food"
 msgstr ""
 
-#: utype.cpp:493 utype.cpp:2665
+#: utype.cpp:501 utype.cpp:2710
 msgid "Increase XP per turn"
 msgstr ""
 
-#: utype.cpp:494 utype.cpp:502 utype.cpp:2666 utype.cpp:2737
+#: utype.cpp:502 utype.cpp:510 utype.cpp:2711 utype.cpp:2782
 msgid "Recover HP per turn"
 msgstr ""
 
-#: utype.cpp:495
+#: utype.cpp:503
 msgid "Overlapped grid"
 msgstr ""
 
-#: utype.cpp:496 utype.cpp:2667
+#: utype.cpp:504 utype.cpp:2712
 msgid "Multi grid"
 msgstr ""
 
-#: utype.cpp:496
+#: utype.cpp:504
 msgid "Single grid"
 msgstr ""
 
-#: utype.cpp:503 utype.cpp:2738
+#: utype.cpp:511 utype.cpp:2783
 msgid "Guard attack"
 msgstr ""
 
-#: utype.cpp:514 utype.cpp:2742
+#: utype.cpp:522 utype.cpp:2787
 msgid "Miss ratio"
 msgstr ""
 
-#: utype.cpp:1408 utype.cpp:1755 utype.cpp:3881
+#: utype.cpp:1441 utype.cpp:1800 utype.cpp:4006
 msgid "Disable on attack"
 msgstr ""
 
-#: utype.cpp:1462
+#: utype.cpp:1495
 msgid "arms^Edit type"
 msgstr ""
 
-#: utype.cpp:1465
+#: utype.cpp:1498
 msgid "arms^Add type"
 msgstr ""
 
-#: utype.cpp:1478 utype.cpp:3209
+#: utype.cpp:1511 utype.cpp:3298
 msgid "Has ZOC"
 msgstr ""
 
-#: utype.cpp:1480 utype.cpp:2060 utype.cpp:3212
+#: utype.cpp:1512 utype.cpp:3299 utype.cpp:3645
+msgid "Movement sound"
+msgstr ""
+
+#: utype.cpp:1514 utype.cpp:3301
+msgid "Idle sound"
+msgstr ""
+
+#: utype.cpp:1517 utype.cpp:2105 utype.cpp:3305
 msgid "Resistance/Defend/Cost"
 msgstr ""
 
-#: utype.cpp:1485
+#: utype.cpp:1522
 msgid "Alignment"
 msgstr ""
 
-#: utype.cpp:1595 utype.cpp:1618
+#: utype.cpp:1640 utype.cpp:1663
 msgid "Name(ID)"
 msgstr ""
 
-#: utype.cpp:1704 utype.cpp:1753 utype.cpp:3592
+#: utype.cpp:1749 utype.cpp:1798 utype.cpp:3708
 msgid "Damage"
 msgstr ""
 
-#: utype.cpp:1710 utype.cpp:1754 utype.cpp:3599
+#: utype.cpp:1755 utype.cpp:1799 utype.cpp:3715
 msgid "damage^Number"
 msgstr ""
 
-#: utype.cpp:1716 utype.cpp:3606
+#: utype.cpp:1761 utype.cpp:3722
 msgid "Phase"
 msgstr ""
 
-#: utype.cpp:1737
+#: utype.cpp:1782
 msgid "Edit attack"
 msgstr ""
 
-#: utype.cpp:1740
+#: utype.cpp:1785
 msgid "Add attack"
 msgstr ""
 
-#: utype.cpp:1872 utype.cpp:1971 utype.cpp:3585
+#: utype.cpp:1917 utype.cpp:2016 utype.cpp:3701
 msgid "Specials"
 msgstr ""
 
-#: utype.cpp:1899
+#: utype.cpp:1944
 msgid "Other attack has holded ID"
 msgstr ""
 
-#: utype.cpp:2064 utype.cpp:3538
+#: utype.cpp:2109 utype.cpp:3654
 msgid "Template"
 msgstr ""
 
-#: utype.cpp:2066
+#: utype.cpp:2111
 msgid "mtype^Defend"
 msgstr ""
 
-#: utype.cpp:2067
+#: utype.cpp:2112
 msgid "Movement cost"
 msgstr ""
 
-#: utype.cpp:2068
+#: utype.cpp:2113
 msgid "Double click one item to modify"
 msgstr ""
 
-#: utype.cpp:2097 utype.cpp:2126 utype.cpp:2148
+#: utype.cpp:2142 utype.cpp:2171 utype.cpp:2193
 msgid "Default value"
 msgstr ""
 
-#: utype.cpp:2104
+#: utype.cpp:2149
 msgid "Using value"
 msgstr ""
 
-#: utype.cpp:2455
+#: utype.cpp:2500
 msgid "Special attributes of troop type"
 msgstr ""
 
-#: utype.cpp:2460 utype.cpp:2569
+#: utype.cpp:2505 utype.cpp:2614
 msgid "Maximum"
 msgstr ""
 
-#: utype.cpp:2467
+#: utype.cpp:2512
 msgid "Only used to leader"
 msgstr ""
 
-#: utype.cpp:2563
+#: utype.cpp:2608
 msgid "Special attributes of commoner type"
 msgstr ""
 
-#: utype.cpp:2661
+#: utype.cpp:2706
 msgid "Special attributes of city type"
 msgstr ""
 
-#: utype.cpp:2732
+#: utype.cpp:2777
 msgid "Special attributes of artifical type"
 msgstr ""
 
-#: utype.cpp:2926
+#: utype.cpp:2971
 msgid "Other type has holded ID"
 msgstr ""
 
-#: utype.cpp:2931
+#: utype.cpp:2976
 msgid "Set adding type's ID"
 msgstr ""
 
-#: utype.cpp:2934
+#: utype.cpp:2979
 msgid "Modify ID results to rebuild"
 msgstr ""
 
-#: utype.cpp:3197
+#: utype.cpp:3286
 msgid "Edit packer type"
 msgstr ""
 
-#: utype.cpp:3200
+#: utype.cpp:3289
 msgid "Add packer type"
 msgstr ""
 
-#: utype.cpp:3214
+#: utype.cpp:3307
 msgid "Increase in melee"
 msgstr ""
 
-#: utype.cpp:3215
+#: utype.cpp:3308
 msgid "Increase in ranged"
 msgstr ""
 
-#: utype.cpp:3216
+#: utype.cpp:3309
 msgid "Increase in cast"
 msgstr ""
 
-#: utype.cpp:3411
+#: utype.cpp:3520
 msgid "Do you want to delete type: \"$type\"?"
 msgstr ""
 
-#: utype.cpp:3431 utype.cpp:3993
+#: utype.cpp:3540 utype.cpp:4118
 msgid "Base information"
 msgstr ""
 
-#: utype.cpp:3435 utype.cpp:3999
+#: utype.cpp:3544 utype.cpp:4124
 msgid "Attack I"
 msgstr ""
 
-#: utype.cpp:3437 utype.cpp:4002
+#: utype.cpp:3546 utype.cpp:4127
 msgid "Attack II"
 msgstr ""
 
-#: utype.cpp:3439 utype.cpp:4005
+#: utype.cpp:3548 utype.cpp:4130
 msgid "Attack III"
 msgstr ""
 
-#: utype.cpp:3726
+#: utype.cpp:3842
 msgid "Has"
 msgstr ""
 
-#: utype.cpp:3943
+#: utype.cpp:4068
 msgid "Regenerate all type's cfg and relative image success."
 msgstr ""
 
-#: utype.cpp:4013
+#: utype.cpp:4138
 msgid "Regenerate all type's cfg and relatve image"
 msgstr ""
 
-#: utype.cpp:4018
+#: utype.cpp:4143
 msgid "Regenerate all type's cfg and relatve image(with animation)"
 msgstr ""

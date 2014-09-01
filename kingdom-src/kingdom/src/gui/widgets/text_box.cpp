@@ -371,8 +371,8 @@ void ttext_box::signal_handler_left_button_down(
 
 	handled = true;
 
-#if defined(__APPLE__) && TARGET_OS_IPHONE
-	SDL_SetTimer(0xbbbbbbb1, NULL);
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+	SDL_StartTextInput();
 #endif
 }
 

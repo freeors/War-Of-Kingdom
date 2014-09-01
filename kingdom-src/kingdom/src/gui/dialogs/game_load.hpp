@@ -23,6 +23,7 @@
 #include "tstring.hpp"
 
 class game_display;
+class hero_map;
 
 namespace gui2 {
 
@@ -32,7 +33,7 @@ class tscrollbar_panel;
 class tgame_load : public tdialog
 {
 public:
-	explicit tgame_load(game_display& disp, const config& cache_config);
+	explicit tgame_load(game_display& disp, hero_map& heros, const config& cache_config, bool allow_network);
 
 	const std::string& filename() const { return filename_; }
 
@@ -64,11 +65,13 @@ private:
 
 private:
 	game_display& disp_;
+	hero_map& heros_;
 	std::string filename_;
 
 	std::vector<savegame::save_info> games_;
 	std::vector<savegame::www_save_info> www_saves_;
 	const config& cache_config_;
+	bool allow_network_;
 
 	int current_page_;
 	std::map<int, ttoggle_button*> sheet_;

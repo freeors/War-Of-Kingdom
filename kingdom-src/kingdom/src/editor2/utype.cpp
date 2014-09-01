@@ -56,6 +56,8 @@ void tunit_type::from_config(const unit_type* ut)
 	level_ = ut->level();
 	cost_ = ut->cost();
 	raw_icon_ = ut->raw_icon();
+	movement_sound_ = ut->raw_movement_sound();
+	idle_sound_ = ut->raw_idle_sound();
 	alignment_ = ut->alignment();
 	character_ = ut->especial();
 	movement_type_ = ut->movementType_id();
@@ -184,6 +186,12 @@ void tunit_type::from_ui(HWND hdlgP)
 
 		Edit_GetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_ICON), text, _MAX_PATH);
 		raw_icon_ = text;
+
+		Edit_GetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_MOVEMENTSOUND), text, _MAX_PATH);
+		movement_sound_ = text;
+
+		Edit_GetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDLESOUND), text, _MAX_PATH);
+		idle_sound_ = text;
 
 		hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPEEDIT_LEVEL);
 		level_ = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
@@ -664,7 +672,6 @@ void tunit_type::vertify_core_images() const
 	if (!is_file(leading(true).c_str())) {
 		CopyFile(image(true).c_str(), leading(true).c_str(), TRUE);
 	}
-	vertify_attack_anim_melee_images();
 	vertify_attack_anim_ranged_images();
 }
 
@@ -682,6 +689,7 @@ void tunit_type::generate(bool with_anim) const
 	}
 
 	vertify_core_images();
+	int t = type();
 
 	strstr << "#textdomain " << textdomain_ << "\n";
 	strstr << "\n";
@@ -717,7 +725,7 @@ void tunit_type::generate(bool with_anim) const
 		strstr << "\t[/resistance]\n";
 	}
 	strstr << "\tzoc = " << (zoc_? "yes": "no") << "\n";
-
+	
 	if (!packer_) {
 		strstr << "\thitpoints = " << hitpoints_ << "\n";
 		strstr << "\texperience = " << experience_needed_ << "\n";
@@ -727,7 +735,6 @@ void tunit_type::generate(bool with_anim) const
 		}
 		strstr << "\tlevel = " << level_ << "\n";
 				
-		int t = type();
 		if (t == TYPE_TROOP || t == TYPE_COMMONER) {
 			strstr << "\tmovement = " << movement_ << "\n";
 			if (max_movement_ != -1) {
@@ -761,13 +768,13 @@ void tunit_type::generate(bool with_anim) const
 				strstr << "\tguard = " << guard_ << "\n";
 			}
 			if (master_ == hero::number_wall) {
-				strstr << "\tmatch = G*^*,R*^*,S*^*,H*^*,D*^*" << "\n";
+				strstr << "\tmatch = G*^*,R*^*,S*^*,H*^*,D*^*,A*^*,Ur*^*" << "\n";
 				strstr << "\tterrain = Ch" << "\n";
 				strstr << "\tbase = yes" << "\n";
 				strstr << "\twall = yes" << "\n";
 				strstr << "\twalk_wall = yes" << "\n";
 			} else if (master_ == hero::number_keep) {
-				strstr << "\tmatch = G*^*,R*^*,S*^*,H*^*,D*^*" << "\n";
+				strstr << "\tmatch = G*^*,R*^*,S*^*,H*^*,D*^*,A*^*,Ur*^*" << "\n";
 				strstr << "\tterrain = Kud" << "\n";
 				strstr << "\twalk_wall = yes" << "\n";
 				strstr << "\tcancel_zoc = yes" << "\n";
@@ -846,6 +853,12 @@ void tunit_type::generate(bool with_anim) const
 		strstr << "\t[/pack]\n";
 	}
 
+	if (!movement_sound_.empty()) {
+		strstr << "\tmovement_sound = " << movement_sound_ << "\n";
+	}
+	if (!idle_sound_.empty()) {
+		strstr << "\tidle_sound = " << idle_sound_ << "\n";
+	}
 	strstr << "\tdescription = _\"" << description() << "\"\n";
 	strstr << "\tdie_sound = {SOUND_LIST:HUMAN_DIE}\n";
 
@@ -886,14 +899,34 @@ void tunit_type::generate(bool with_anim) const
 		}
 	}
 
-	// vertify_idle_anim_images();
 	if (with_anim) {
 		cfg.clear();
-		unit_type::idle_anim("idle_anim", race_, id_, use_terrain_image(), cfg);
+		unit_type::idle_anim("idle_anim", race_, id_, use_terrain_image(), idle_sound(false), cfg, can_recruit_);
 		out.write(cfg);
 
 		cfg.clear();
 		unit_type::healed_anim("healed_anim", race_, id_, use_terrain_image(), cfg);
+		out.write(cfg);
+
+		if (packer_ || t == TYPE_TROOP || t == TYPE_COMMONER) {
+			cfg.clear();
+			unit_type::movement_anim("movement_anim", race_, id_, use_terrain_image(), movement_sound(false), cfg);
+			out.write(cfg);
+		}
+
+		if (t == TYPE_ARTIFICAL) {
+			cfg.clear();
+			unit_type::build_anim("build_anim", race_, id_, use_terrain_image(), cfg);
+			out.write(cfg);
+
+			cfg.clear();
+			unit_type::repair_anim("repair_anim", race_, id_, use_terrain_image(), cfg);
+			out.write(cfg);
+		}
+
+		cfg.clear();
+		const std::string fake_die_sound = "SOUND_LIST:HUMAN_DIE";
+		unit_type::die_anim("death", race_, id_, use_terrain_image(), fake_die_sound, cfg, can_recruit_);
 		out.write(cfg);
 	}
 	
@@ -906,7 +939,14 @@ void tunit_type::generate(bool with_anim) const
 			}
 			cfg.clear();
 			if (it->range_ == 0) {
-				unit_type::attack_anim_melee("attack_anim", it->id_, it->icon_, type() == TYPE_TROOP || type() == TYPE_COMMONER, race_, id_, use_terrain_image(), cfg);
+				if (!can_recruit_) {
+					unit_type::attack_anim_melee("attack_anim", it->id_, it->icon_, type() == TYPE_TROOP || type() == TYPE_COMMONER, race_, id_, use_terrain_image(), cfg);
+				} else {
+					unit_type::attack_anim_multi_melee("attack_anim", it->id_, it->icon_, type() == TYPE_TROOP || type() == TYPE_COMMONER, race_, id_, use_terrain_image(), cfg);
+				}
+
+			} else if (can_recruit_) {
+				unit_type::attack_anim_multi_ranged("attack_anim", it->id_, it->icon_, race_, id_, use_terrain_image(), cfg);
 
 			} else if (it->icon_.find("magic-missile") != std::string::npos) {
 				unit_type::attack_anim_ranged_magic_missile("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
@@ -987,30 +1027,6 @@ void tunit_type::vertify_leading_anim_images() const
 
 	if (!is_file(leading(true).c_str())) {
 		CopyFile(image(true).c_str(), leading(true).c_str(), TRUE);
-	}
-}
-
-void tunit_type::vertify_idle_anim_images() const
-{
-	if (use_terrain_image()) return;
-
-	int idle_count = 4;
-	for (int index = 1; index <= idle_count; index ++) {
-		if (!is_file(idle(true, index).c_str())) {
-			CopyFile(image(true).c_str(), idle(true, index).c_str(), TRUE);
-		}
-	}
-}
-
-void tunit_type::vertify_attack_anim_melee_images() const
-{
-	if (use_terrain_image()) return;
-
-	int attack_melee_count = 4;
-	for (int index = 1; index <= attack_melee_count; index ++) {
-		if (!is_file(attack_image(true, 0, index).c_str())) {
-			CopyFile(image(true).c_str(), attack_image(true, 0, index).c_str(), TRUE);
-		}
 	}
 }
 
@@ -1206,6 +1222,28 @@ std::string tunit_type::description() const
 	return id_ + " description";
 }
 
+std::string tunit_type::movement_sound(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\core\\sounds\\movement\\" << movement_sound_;
+	} else {
+		strstr << "movement/" << movement_sound_;
+	}
+	return strstr.str();
+}
+
+std::string tunit_type::idle_sound(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\core\\sounds\\idle\\" << idle_sound_;
+	} else {
+		strstr << "idle/" << idle_sound_;
+	}
+	return strstr.str();
+}
+
 int tunit_type::type() const
 {
 	if (master_ != HEROS_INVALID_NUMBER) {
@@ -1267,11 +1305,6 @@ void tunit_type::tattack::from_config(const attack_type& attack)
 	damage_ = attack.damage();
 	number_ = attack.num_attacks();
 	attack_weight_ = attack.attack_weight() > 0;
-
-	if (damage_ == 1) {
-		number_ = 1;
-		attack_weight_ = false;
-	}
 }
 
 void tunit_type::tattack::from_ui(HWND hdlgP)
@@ -1476,6 +1509,10 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	set_language_text(hdlgP, IDC_STATIC_GOLD, "wesnoth-lib", "Gold");
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ICON), utf8_2_ansi(_("Icon")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_CHK_UTYPEEDIT_ZOC), utf8_2_ansi(_("Has ZOC")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MOVEMENTSOUND), utf8_2_ansi(_("Movement sound")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_UTYPEEDIT_BROWSEMOVEMENTSOUND), utf8_2_ansi(_("Browse...")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_IDLESOUND), utf8_2_ansi(_("Idle sound")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_UTYPEEDIT_BROWSEIDLESOUND), utf8_2_ansi(_("Browse...")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TYPE), utf8_2_ansi(_("Type")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MTYPE), utf8_2_ansi(_("Resistance/Defend/Cost")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_BT_UTYPEEDIT_SPECIAL), utf8_2_ansi(_("Set")));
@@ -1548,6 +1585,14 @@ BOOL On_DlgUTypeEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	// raw icon
 	hctl = GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_ICON);
 	Edit_SetText(hctl, ns::utype.raw_icon_.c_str());
+
+	// movement sound
+	hctl = GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_MOVEMENTSOUND);
+	Edit_SetText(hctl, ns::utype.movement_sound_.c_str());
+
+	// idle sound
+	hctl = GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDLESOUND);
+	Edit_SetText(hctl, ns::utype.idle_sound_.c_str());
 
 	// level
 	hctl = GetDlgItem(hdlgP, IDC_CMB_UTYPEEDIT_LEVEL);
@@ -2950,6 +2995,42 @@ void OnUTypeEditEt2(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	return;
 }
 
+void OnBrowseMovementSoundBt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	std::string sound = ns::utype.movement_sound(true);
+
+	char* ptr = GetBrowseFileName(dirname(sound.c_str()), "*.ogg;*.wav\0*.ogg;*.wav\0\0", TRUE);
+	if (!ptr) return;
+
+	std::string new_sound = ptr;
+	std::transform(sound.begin(), sound.end(), sound.begin(), std::tolower);
+	std::transform(new_sound.begin(), new_sound.end(), new_sound.begin(), std::tolower);
+	if (sound == new_sound) return;
+
+	ns::utype.movement_sound_ = new_sound.substr(new_sound.rfind("\\") + 1);
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_MOVEMENTSOUND), ns::utype.movement_sound_.c_str());
+	
+	return;
+}
+
+void OnBrowseIdleSoundBt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	std::string sound = ns::utype.idle_sound(true);
+
+	char* ptr = GetBrowseFileName(dirname(sound.c_str()), "*.ogg;*.wav\0*.ogg;*.wav\0\0", TRUE);
+	if (!ptr) return;
+
+	std::string new_sound = ptr;
+	std::transform(sound.begin(), sound.end(), sound.begin(), std::tolower);
+	std::transform(new_sound.begin(), new_sound.end(), new_sound.begin(), std::tolower);
+	if (sound == new_sound) return;
+
+	ns::utype.idle_sound_ = new_sound.substr(new_sound.rfind("\\") + 1);
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDLESOUND), ns::utype.idle_sound_.c_str());
+	
+	return;
+}
+
 void OnUTypeEditCmb(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	if (codeNotify != CBN_SELCHANGE) {
@@ -3018,6 +3099,14 @@ void On_DlgUTypeEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 	case IDC_ET_UTYPEEDIT_ID:
 		OnUTypeEditEt2(hdlgP, id, hwndCtrl, codeNotify);
+		break;
+
+	case IDC_BT_UTYPEEDIT_BROWSEMOVEMENTSOUND:
+		OnBrowseMovementSoundBt(hdlgP, id, hwndCtrl, codeNotify);
+		break;
+
+	case IDC_BT_UTYPEEDIT_BROWSEIDLESOUND:
+		OnBrowseIdleSoundBt(hdlgP, id, hwndCtrl, codeNotify);
 		break;
 
 	case IDM_ADD:
@@ -3207,6 +3296,10 @@ BOOL On_DlgUType2EditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ID), utf8_2_ansi(_("ID")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_DESCRIPTION), utf8_2_ansi(_("Description")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_CHK_UTYPEEDIT_ZOC), utf8_2_ansi(_("Has ZOC")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MOVEMENTSOUND), utf8_2_ansi(_("Movement sound")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_UTYPEEDIT_BROWSEMOVEMENTSOUND), utf8_2_ansi(_("Browse...")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_IDLESOUND), utf8_2_ansi(_("Idle sound")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_BT_UTYPEEDIT_BROWSEIDLESOUND), utf8_2_ansi(_("Browse...")));
 	set_language_text(hdlgP, IDC_STATIC_ARMS, "wesnoth-lib", "Arms");
 	set_language_text(hdlgP, IDC_STATIC_RACE, "wesnoth-lib", "Race");
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MTYPE), utf8_2_ansi(_("Resistance/Defend/Cost")));
@@ -3262,6 +3355,14 @@ BOOL On_DlgUType2EditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// zoc
 	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_UTYPEEDIT_ZOC), ns::utype.zoc_);
+
+	// movement sound
+	hctl = GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_MOVEMENTSOUND);
+	Edit_SetText(hctl, ns::utype.movement_sound_.c_str());
+
+	// movement sound
+	hctl = GetDlgItem(hdlgP, IDC_ET_UTYPEEDIT_IDLESOUND);
+	Edit_SetText(hctl, ns::utype.idle_sound_.c_str());
 
 	// melee increase
 	hctl = GetDlgItem(hdlgP, IDC_UD_UTYPEEDIT_MELEEINCREASE);
@@ -3319,6 +3420,14 @@ void On_DlgUType2EditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 	case IDC_ET_UTYPEEDIT_ID:
 		OnUTypeEditEt2(hdlgP, id, hwndCtrl, codeNotify);
+		break;
+
+	case IDC_BT_UTYPEEDIT_BROWSEMOVEMENTSOUND:
+		OnBrowseMovementSoundBt(hdlgP, id, hwndCtrl, codeNotify);
+		break;
+
+	case IDC_BT_UTYPEEDIT_BROWSEIDLESOUND:
+		OnBrowseIdleSoundBt(hdlgP, id, hwndCtrl, codeNotify);
 		break;
 
 	case IDOK:
@@ -3524,9 +3633,16 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
 		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
-		lvc.cx = 100;
+		lvc.cx = 90;
 		lvc.iSubItem = index;
 		strcpy(text, utf8_2_ansi(_("Icon")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 80;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("Movement sound")));
 		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 		
@@ -3741,6 +3857,7 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 					} else {
 						strstr << ", " << utf8_2_ansi(ab_cfg["name"].str().c_str());
 					}
+					strstr << "(" << id << ")";
 				}
 			}
 			strcpy(text, strstr.str().c_str());
@@ -3751,6 +3868,14 @@ BOOL On_DlgVisual2InitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.iSubItem = index ++;
 			strstr.str("");
 			strstr << ut->icon();
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
+
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			strstr << ut->raw_movement_sound();
 			strcpy(text, strstr.str().c_str());
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);

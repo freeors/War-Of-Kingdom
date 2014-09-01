@@ -1415,6 +1415,7 @@ void ttext::draw(surface& canvas
 
 	SDL_Rect dst = ::create_rect(x, y, canvas->w, canvas->h);
 	blit_surface(surf, 0, canvas, &dst);
+	// sdl_blit(surf, 0, canvas, &dst);
 }
 
 } // namespace

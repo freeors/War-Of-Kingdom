@@ -160,11 +160,7 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 					resources::screen->set_team(index);
 				}
 				tm.make_human();
-			} else if (controller == "human_ai" && !tm.is_human_ai()) {
-				tm.make_human();
 			} else if (controller == "network" && !tm.is_network_human()) {
-				tm.make_network();
-			} else if (controller == "network_ai" && !tm.is_network_ai()) {
 				tm.make_network();
 			} else if (controller == "ai" && !tm.is_ai()) {
 				tm.make_ai();
@@ -250,7 +246,7 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 		//an AI.
 		switch(action) {
 			case 0:
-				tm.change_controller(team::team_info::AI);
+				tm.change_controller(controller_tag::AI);
 				tm.set_current_player("");
 				return restart? PROCESS_RESTART_TURN:PROCESS_CONTINUE;
 
@@ -288,7 +284,7 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 	// The host has ended linger mode in a campaign -> enable the "End scenario" button
 	// and tell we did get the notification.
 	if (cfg.child("notify_next_scenario")) {
-		gui::button* btn_end = resources::screen->find_button("button-endturn");
+		gui::button* btn_end = resources::screen->find_button("endturn");
 		if(btn_end) {
 			btn_end->enable(true);
 		}

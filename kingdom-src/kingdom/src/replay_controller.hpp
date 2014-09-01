@@ -39,7 +39,6 @@ public:
 	virtual void preferences();
 	virtual void show_statistics();
 	void play_replay();
-	void reset_replay();
 	void stop_replay();
 	void replay_next_turn();
 	void replay_next_side();
@@ -62,7 +61,7 @@ protected:
 private:
 	void init();
 	virtual void play_turn();
-	virtual void play_side(const unsigned int team_index, bool save);
+	virtual void play_side();
 	void update_teams();
 	void update_gui();
 	void init_replay_display();

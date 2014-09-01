@@ -20,6 +20,8 @@
 #include "gui/widgets/control.hpp"
 #include <boost/optional.hpp>
 
+class game_display;
+
 namespace network_asio {
 
 class connection;
@@ -27,6 +29,32 @@ class connection;
 }
 
 namespace gui2 {
+
+class tbutton;
+
+class ttransfer : public events::pump_monitor
+{
+public:
+	virtual void process(events::pump_info&);
+	
+	explicit ttransfer(network_asio::connection& connection, int hidden_ms);
+
+	void set_track_upload(bool track_upload) { track_upload_ = track_upload; }
+
+protected:
+	void pre_show(twindow& window);
+
+	void cancel(twindow& window);
+
+private:
+	network_asio::connection& connection_;
+	boost::optional<twindow&> window_;
+	bool track_upload_;
+	tbutton* cancel_;
+
+	Uint32 start_ticks_;
+	Uint32 hidden_ticks_;
+};
 
 class tnetwork_transmission;
 
@@ -36,32 +64,12 @@ class tnetwork_transmission;
  * It shows upload/download progress and allows the user
  * to cancel the transmission.
  */
-class tnetwork_transmission : public tdialog
+class tnetwork_transmission : public tdialog, public ttransfer
 {
-	network_asio::connection& connection_;
-
-	bool track_upload_;
-
-	class pump_monitor : public events::pump_monitor
-	{
-		network_asio::connection& connection_;
-		bool& track_upload_;
-		virtual void process(events::pump_info&);
-		public:
-		pump_monitor(network_asio::connection& connection, bool& track_upload)
-			: connection_(connection)
-			, track_upload_(track_upload)
-			, window_()
-		{
-		}
-
-		boost::optional<twindow&> window_;
-	} pump_monitor_;
 public:
-	tnetwork_transmission(network_asio::connection& connection, const std::string& title, const std::string& subtitle);
+	tnetwork_transmission(network_asio::connection& connection, const std::string& title, const std::string& subtitle, int hidden_ms = 4);
 
 	void set_subtitle(const std::string&);
-	void set_track_upload(bool track_upload) { track_upload_ = track_upload; }
 
 protected:
 	/** Inherited from tdialog. */

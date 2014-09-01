@@ -32,7 +32,6 @@
 #include "statistics.hpp"
 #include "team.hpp"
 #include "unit.hpp"
-#include "unit_id.hpp"
 #include "wesconfig.h"
 #include "wml_exception.hpp"
 #include "formula_string_utils.hpp"
@@ -132,22 +131,21 @@ config game_classification::to_config() const
 	config cfg;
 
 	cfg["label"] = label;
-	cfg["parent"] = parent;
-	cfg["version"] = game_config::version;
-	cfg["campaign_type"] = campaign_type;
-	cfg["campaign_define"] = campaign_define;
-	cfg["campaign"] = campaign;
-	cfg["history"] = history;
+	cfg["original_label"] = original_label;
 	cfg["abbrev"] = abbrev;
 	cfg["mode"] = mode;
+	cfg["version"] = version;
 	cfg["scenario"] = scenario;
 	cfg["next_scenario"] = next_scenario;
 	cfg["completion"] = completion;
+	cfg["campaign"] = campaign;
+	cfg["campaign_type"] = campaign_type;
+	cfg["create"] = create;
+	// cfg["duration"] = _duration;
+	cfg["hash"] = hash;
+	cfg["campaign_define"] = campaign_define;
 	cfg["end_text"] = end_text;
 	cfg["end_text_duration"] = str_cast<unsigned int>(end_text_duration);
-	cfg["create"] = create;
-	cfg["duration"] = duration;
-	cfg["hash"] = hash;
 
 	return cfg;
 }
@@ -198,15 +196,15 @@ void level_to_gamestate(config& level, command_pool& replay_data, game_state& st
 
 	// set random
 	const std::string seed = level["random_seed"];
-	if (!seed.empty()) {
-		const unsigned calls = lexical_cast_default<unsigned>(level["random_calls"]);
-		state.rng().seed_random(lexical_cast<int>(seed), calls);
-	} else {
-		// ERR_NG << "No random seed found, random "
-		//	"events will probably be out of sync.\n";
-	}
+	VALIDATE(!seed.empty(), "No random seed found, random events will probably be out of sync.");
 
+	const unsigned calls = lexical_cast_default<unsigned>(level["random_calls"]);
+	state.rng().seed_random(lexical_cast<int>(seed), calls);
+	
 	//adds the starting pos to the level
+	if (!level.has_attribute("turn_based")) {
+		level["turn_based"] = tent::turn_based;
+	}
 	if (!level.child("replay_start")) {
 		level.add_child("replay_start", level);
 		level.child("replay_start").remove_child("multiplayer", 0);
@@ -272,7 +270,6 @@ game_state::game_state(const config& cfg, const command_pool& replay_data, bool 
 		mp_settings_(cfg),
 		phase_(INITIAL)
 {
-	n_unit::id_manager::instance().set_save_id(cfg["next_underlying_unit_id"]);
 	log_scope("read_game");
 
 	const config &snapshot = cfg.child("snapshot");
@@ -349,7 +346,6 @@ void game_state::write_snapshot(config& cfg) const
 	cfg["hash"] = classification_.hash;
 
 	cfg["campaign_define"] = classification_.campaign_define;
-	cfg["next_underlying_unit_id"] = str_cast(n_unit::id_manager::instance().get_save_id());
 
 	cfg["random_seed"] = rng_.get_random_seed();
 	cfg["random_calls"] = rng_.get_random_calls();
@@ -425,11 +421,11 @@ void game_state::clear_variable_cfg(const std::string& varname)
 
 void untouch_unit(unit& u)
 {
-	u.new_turn();
-	u.set_state(unit::STATE_SLOWED, false);
-	u.set_state(unit::STATE_BROKEN, false);
-	u.set_state(unit::STATE_POISONED, false);
-	u.set_state(unit::STATE_PETRIFIED, false);
+	u.new_turn(*resources::controller, 0);
+	u.set_state(ustate_tag::SLOWED, false);
+	u.set_state(ustate_tag::BROKEN, false);
+	u.set_state(ustate_tag::POISONED, false);
+	u.set_state(ustate_tag::PETRIFIED, false);
 	if (u.packed()) {
 		u.pack_to(NULL);
 	}
@@ -458,8 +454,8 @@ void game_state::write_armory_2_variable(const team& t)
 			u.write(ucfg);
 		}
 	}
-	const std::vector<artifical*>& holded_cities = t.holded_cities();
-	for (std::vector<artifical*>::const_iterator i = holded_cities.begin(); i != holded_cities.end(); ++ i) {
+	const std::vector<artifical*>& holden_cities = t.holden_cities();
+	for (std::vector<artifical*>::const_iterator i = holden_cities.begin(); i != holden_cities.end(); ++ i) {
 		artifical* city = *i;
 
 		std::vector<unit*>& reside_troops = city->reside_troops();
@@ -507,7 +503,6 @@ void game_state::rpg_2_variable()
 		player_cfg = &variables_.add_child("player");
 	}
 	(*player_cfg)["stratum"] = rpg::stratum;
-	(*player_cfg)["forbids"] = rpg::forbids;
 }
 
 void game_state::clear_start_hero_data()
@@ -600,6 +595,23 @@ void game_state::set_variables(const config& vars) {
 	variables_ = vars;
 }
 
+class bh_eval_lock
+{
+public:
+	bh_eval_lock(team& t)
+		: t_(t)
+	{
+		t_.bh_eval.valid = true;
+	}
+	~bh_eval_lock()
+	{
+		t_.bh_eval.valid = false;
+	}
+
+private:
+	team& t_;
+};
+
 void game_state::build_team(const config& side_cfg,
 					 std::vector<team>& teams,
 					 const config& level, gamemap& map, unit_map& units, hero_map& heros,
@@ -652,10 +664,17 @@ void game_state::build_team(const config& side_cfg,
 	}
 
 	team temp_team(units, heros, cards, side_cfg, map, ngold, team_size);
+	if (temp_team.side() != teams.size() + 1) {
+		std::stringstream err;
+		err << "side#" << (teams.size() + 1) << "'s side value is mistaken. error value: " << temp_team.side();
+		throw game::load_game_failed(err.str());
+	}
 	temp_team.set_fog(level["fog"].to_bool());
 	temp_team.set_shroud(level["shroud"].to_bool());
 	temp_team.set_gold_add(gold_add);
 	teams.push_back(temp_team);
+	team& t = teams.back();
+	bh_eval_lock lock(t);
 
 	// Update/fix the recall list for this side,
 	// by setting the "side" of each unit in it
@@ -664,8 +683,8 @@ void game_state::build_team(const config& side_cfg,
 
 	// If this team has no objectives, set its objectives
 	// to the level-global "objectives"
-	if (teams.back().objectives().empty()) {
-		teams.back().set_objectives(level["objectives"]);
+	if (t.objectives().empty()) {
+		t.set_objectives(level["objectives"]);
 	}
 
 
@@ -702,7 +721,9 @@ void game_state::build_team(const config& side_cfg,
 		}
 
 		temp_cfg["side"] = side; //set the side before unit creation to avoid invalid side errors
-		artifical new_unit(temp_cfg);
+		// why use state
+		// in multiplayer, it is necessary to sync players.
+		artifical new_unit(*this, temp_cfg);
 
 		const std::string x = cfg["x"].str();
 		const std::string y = cfg["y"].str();
@@ -749,7 +770,7 @@ void game_state::build_team(const config& side_cfg,
 	BOOST_FOREACH (const config& cfg, side_cfg.child_range("unit")) {
 		config temp_cfg(cfg);
 		temp_cfg["side"] = side; //set the side before unit creation to avoid invalid side errors
-		unit new_unit(units, heros, teams, temp_cfg, true);
+		unit new_unit(units, heros, teams, *this, temp_cfg, true);
 
 		const std::string x = cfg["x"].str();
 		const std::string y = cfg["y"].str();
@@ -781,6 +802,10 @@ void game_state::build_team(const config& side_cfg,
 			}
 		}
 	}
+
+	if (t.bh_eval.capital != HEROS_INVALID_NUMBER) {
+		t.set_capital(unit_2_artifical(units.find_unit(heros[t.bh_eval.capital])));
+	}
 }
 
 void game_state::build_team(const uint8_t* mem,
@@ -805,14 +830,15 @@ void game_state::build_team(const uint8_t* mem,
 
 	teams.push_back(temp_team);
 
-	team& current_team = teams.back();
+	team& t = teams.back();
+	bh_eval_lock lock(t);
 
-	int side = current_team.side();
+	int side = t.side();
 
 	// If this team has no objectives, set its objectives
 	// to the level-global "objectives"
-	if (current_team.objectives().empty()) {
-		current_team.set_objectives(level["objectives"]);
+	if (t.objectives().empty()) {
+		t.set_objectives(level["objectives"]);
 	}
 
 	//
@@ -878,7 +904,7 @@ void game_state::build_team(const uint8_t* mem,
 			BOOST_FOREACH (config &i, armory_cfg.child_range("unit")) {
 				i["cityno"] = current->cityno();
 				i["side"] = current->side();
-				reside_troops.push_back(new unit(units, heros, teams, i));
+				reside_troops.push_back(new unit(units, heros, teams, *this, i));
 			}
 			// fresh heros
 			std::vector<hero*>& freshes = current->fresh_heros();
@@ -895,6 +921,10 @@ void game_state::build_team(const uint8_t* mem,
 			player_cfg1.clear_children("armory");
 			has_armory = false;
 		}
+	}
+
+	if (t.bh_eval.capital != HEROS_INVALID_NUMBER) {
+		t.set_capital(unit_2_artifical(units.find_unit(heros[t.bh_eval.capital])));
 	}
 }
 

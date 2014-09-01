@@ -115,6 +115,9 @@ void tterrain::from_ui_terrain_edit(HWND hdlgP)
 	char text[_MAX_PATH];
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_TERRAINEDIT_STRING), text, sizeof(text) / sizeof(text[0]));
 	string_ = text;
+
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_TERRAINEDIT_NAME), text, sizeof(text) / sizeof(text[0]));
+	name_ = text;
 }
 
 void tterrain::update_to_ui_terrain_edit(HWND hdlgP) const
@@ -685,6 +688,7 @@ void OnTerrainEditEt(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			strstr << dsgettext("wesnoth-lib", text);
 		}
 		boddy = GetDlgItem(hdlgP, IDC_ET_TERRAINEDIT_NAME);
+		bit = tterrain::EDITBIT_NAME;
 	} else if (id == IDC_ET_TERRAINEDIT_ALIAS || id == IDC_ET_TERRAINEDIT_MVTALIAS || id == IDC_ET_TERRAINEDIT_DEFALIAS) {
 		bit_invalid = !is_valid_alias_str(text);
 		if (bit_invalid) {

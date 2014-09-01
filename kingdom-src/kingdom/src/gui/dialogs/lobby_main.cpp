@@ -48,6 +48,7 @@
 #include "playmp_controller.hpp"
 #include "preferences_display.hpp"
 #include "sound.hpp"
+#include "multiplayer.hpp"
 
 #include <time.h>
 #include <boost/foreach.hpp>
@@ -71,6 +72,7 @@ static lg::log_domain log_lobby("lobby");
 #define ERR_LB LOG_STREAM(err, log_lobby)
 #define SCOPE_LB log_scope2(log_lobby, __func__)
 
+extern void regenerate_heros(hero_map& heros);
 
 namespace gui2 {
 
@@ -279,9 +281,7 @@ void tlobby_main::do_notify(t_notify_mode mode)
 	}
 }
 
-tlobby_main::tlobby_main(const config& game_config
-		, lobby_info& info
-		, display& disp)
+tlobby_main::tlobby_main(const config& game_config, lobby_info& info, display& disp, hero_map& heros, hero_map& heros_start)
 	: legacy_result_(QUIT)
 	, game_config_(game_config)
 	, gamelistbox_(NULL)
@@ -301,6 +301,8 @@ tlobby_main::tlobby_main(const config& game_config
 	, last_gamelist_update_(0)
 	, gamelist_diff_update_(true)
 	, disp_(disp)
+	, heros_(heros)
+	, heros_start_(heros_start)
 	, gamelist_id_at_row_()
 	, delay_playerlist_update_(false)
 	, delay_gamelist_update_(false)
@@ -655,6 +657,7 @@ void tlobby_main::adjust_game_row_contents(const game_info& game, int idx, tgrid
 				, this
 				, boost::ref(*window_)));
 		observe_button->set_active(game.can_observe());
+		observe_button->set_active(false);
 	}
 	tminimap* minimap = dynamic_cast<tminimap*>(grid->find("minimap", false));
 	if (minimap) {
@@ -763,7 +766,7 @@ void tlobby_main::update_playerlist()
 		std::map<std::string, string_map> tree_group_item;
 
 		/*** Add tree item ***/
-		tree_group_field["label"] = decide_player_iocn((user.relation == user_info::ME)? gui2::CNTR_LOCAL: gui2::CNTR_NETWORK); // icon_ss.str()
+		tree_group_field["label"] = decide_player_iocn((user.relation == user_info::ME)? CNTR_LOCAL: CNTR_NETWORK); // icon_ss.str()
 		tree_group_item["icon"] = tree_group_field;
 
 		tree_group_field["label"] = name;
@@ -802,9 +805,16 @@ void tlobby_main::update_selected_game()
 
 void tlobby_main::pre_show(CVideo& /*video*/, twindow& window)
 {
+	// further window(cancel mp_create_side etc) will back to it.
+	// it is necessary to validate group.
+	regenerate_heros(heros_);
+	heros_start_ = heros_;
+
 	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
 	std::stringstream str;
 	str << label->label() << "-" << preferences::login();
+	std::string host = preferences::network_host();
+	str << "(" << help::tintegrate::generate_format(host.substr(0, host.find_first_of(":")), "green") << ")";
 	label->set_label(str.str());
 
 	SCOPE_LB;

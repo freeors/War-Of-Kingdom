@@ -641,3 +641,192 @@ t_translation::t_terrain gamemap::merge_terrains(const t_translation::t_terrain 
 	}
 	return result;
 }
+
+void form_map_str_rectangle(const std::string& data, std::vector<std::vector<std::string> >& result)
+{
+	//
+	// refrence gamemap::read
+	//
+	result.clear();
+
+	// Test whether there is a header section
+	size_t header_offset = data.find("\n\n");
+	if(header_offset == std::string::npos) {
+		// For some reason Windows will fail to load a file with \r\n
+		// lineending properly no problems on Linux with those files.
+		// This workaround fixes the problem the copy later will copy
+		// the second \r\n to the map, but that's no problem.
+		header_offset = data.find("\r\n\r\n");
+	}
+	const size_t comma_offset = data.find(",");
+	// The header shouldn't contain commas, so if the comma is found
+	// before the header, we hit a \n\n inside or after a map.
+	// This is no header, so don't parse it as it would be.
+	VALIDATE(
+		!(header_offset == std::string::npos || comma_offset < header_offset),
+		_("A map without a header is not supported"));
+
+	std::string header_str(std::string(data, 0, header_offset + 1));
+	config header;
+	::read(header, header_str);
+
+	int border_size = header["border_size"];
+	const std::string usage = header["usage"];
+
+	if (usage != "map" || border_size != 1) {
+		return;
+	}
+	const std::string& map = std::string(data, header_offset + 2);
+	const std::string& str = map;
+
+	size_t offset = 0;
+	size_t x = 0, y = 0, width = 0;
+
+	// Skip the leading newlines
+	while (offset < str.length() && utils::isnewline(str[offset])) {
+		++offset;
+	}
+
+	// Did we get an empty map?
+	if ((offset + 1) >= str.length()) {
+		return;
+	}
+
+	while (offset < str.length()) {
+
+		// Get a terrain chunk
+		const std::string separators = ",\n\r";
+		const size_t pos_separator = str.find_first_of(separators, offset);
+		std::string terrain = str.substr(offset, pos_separator - offset);
+        utils::strip(terrain);
+
+		// Make space for the new item
+		// NOTE we increase the vector every loop for every x and y.
+		// Profiling with an increase of y with 256 items didn't show
+		// an significant speed increase.
+		// So didn't rework the system to allocate larger vectors at once.
+		if (result.size() <= x) {
+			result.resize(x + 1);
+		}
+		if(result[x].size() <= y) {
+			result[x].resize(y + 1);
+		}
+
+		// Add the resulting terrain number
+		result[x][y] = terrain;
+
+		// Evaluate the separator
+		if(pos_separator == std::string::npos || utils::isnewline(str[pos_separator])) {
+			// the first line we set the with the other lines we check the width
+			if(y == 0) {
+				// x contains the offset in the map
+				width = x + 1;
+			} else {
+				if ((x + 1) != width ) {
+					// ERR_G << "Map not a rectangle error occurred at line offset " << y << " position offset " << x << "\n";
+					// throw error("Map not a rectangle.");
+					return;
+				}
+			}
+
+			// Prepare next iteration
+			++y;
+			x = 0;
+
+			// Avoid in infinite loop if the last line ends without an EOL
+			if(pos_separator == std::string::npos) {
+				offset = str.length();
+
+			} else {
+
+				offset = pos_separator + 1;
+				// Skip the following newlines
+				while(offset < str.length() && utils::isnewline(str[offset])) {
+					++offset;
+				}
+			}
+
+		} else {
+			++x;
+			offset = pos_separator + 1;
+		}
+	}
+}
+
+std::string combine_map(const std::vector<std::vector<std::string> >& left_res, const std::vector<std::vector<std::string> >& right_res, bool rflip)
+{
+	size_t boarder_size = 1;
+
+	// Let the low level convertor do the conversion
+	std::ostringstream s;
+	s << "border_size=" << boarder_size << "\nusage=map\n\n";
+
+	size_t min_size = 12;
+	for (size_t y = 0; y < left_res[0].size(); ++ y) {
+		std::string result;
+		for (size_t x = 0; x < left_res.size() - boarder_size; ++ x) {
+			// Add the separator
+			if (x != 0) {
+				s << ", ";
+			}
+
+			result = left_res[x][y];
+			if (result.size() < min_size) {
+				result.resize(min_size, ' ');
+			}
+			s << result;
+		}
+
+		// transition column
+		s << ", ";
+		result = "Gg";
+		if (result.size() < min_size) {
+			result.resize(min_size, ' ');
+		}
+		s << result;
+
+		int x = rflip? (int)(right_res.size() - boarder_size) - 1: 0;
+		do { 
+			// Add the separator
+			s << ", ";
+
+			result = right_res[x][y];
+			if (rflip) {
+				std::string::size_type pos;
+				if ((pos = result.find("\\")) != std::string::npos) {
+					result.replace(pos, 1, "/");
+				} else if ((pos = result.find("/")) != std::string::npos) {
+					result.replace(pos, 1, "\\");
+				}
+			}
+			if (result.size() < min_size) {
+				result.resize(min_size, ' ');
+			}
+			s << result;
+
+		} while ((rflip && -- x >= 0) || (!rflip && ++ x < (int)(right_res.size() - boarder_size)));
+
+		s << "\n";
+	}
+
+	return s.str();
+
+}
+
+std::string combine_map(const std::string& left, const std::vector<std::vector<std::string> >& right_res, bool rflip)
+{
+	std::vector<std::vector<std::string> > left_res;
+	form_map_str_rectangle(left, left_res);
+
+	return combine_map(left_res, right_res, rflip);
+}
+
+std::string combine_map(const std::string& left, const std::string& right, bool rflip)
+{
+	std::vector<std::vector<std::string> > left_res, right_res;
+
+	form_map_str_rectangle(left, left_res);
+	form_map_str_rectangle(right, right_res);
+
+	return combine_map(left_res, right_res, rflip);
+}

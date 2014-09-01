@@ -17,6 +17,7 @@
 
 #include "gui/dialogs/treasure.hpp"
 
+#include "game_display.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "team.hpp"
@@ -35,6 +36,8 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include "gui/dialogs/message.hpp"
+#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -84,8 +87,9 @@ namespace gui2 {
 
 REGISTER_DIALOG(treasure)
 
-ttreasure::ttreasure(std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<std::pair<int, unit*> >& human_pairs, bool replaying)
-	: teams_(teams)
+ttreasure::ttreasure(game_display& disp, std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<std::pair<int, unit*> >& human_pairs, bool replaying)
+	: disp_(disp)
+	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, current_team_(teams[rpg::h->side_])
@@ -141,9 +145,25 @@ void ttreasure::post_show(twindow& window)
 {
 }
 
+bool can_up_treasure(unit_map& units, const hero& h)
+{
+	if (tent::tower_mode()) {
+		return true;
+	}
+	unit* u = units.find_unit(h);
+	if (u->is_city()) {
+		return true;
+	}
+	artifical* city = units.city_from_loc(u->get_location());
+	if (city) {
+		return true;
+	}
+	return false;
+}
+
 void ttreasure::fill_2list(twindow& window)
 {
-	std::stringstream str;
+	std::stringstream strstr;
 	// const std::vector<ttreasure>& treasures = unit_types.treasures();
 	const std::vector<size_t>& holded_treasures = current_team_.holded_treasures();
 	hero& leader = *current_team_.leader();
@@ -155,17 +175,17 @@ void ttreasure::fill_2list(twindow& window)
 
 		const ::ttreasure& t = unit_types.treasure(*it);
 
-		str.str("");
-		str << t.image();
-		table_item["label"] = str.str();
+		strstr.str("");
+		strstr << t.image();
+		table_item["label"] = strstr.str();
 		table_item_item.insert(std::make_pair("icon", table_item));
 
 		table_item["label"] = t.name();
 		table_item_item.insert(std::make_pair("name", table_item));
 
-		str.str("");
-		str << hero::feature_str(t.feature());
-		table_item["label"] = str.str();
+		strstr.str("");
+		strstr << hero::feature_str(t.feature());
+		table_item["label"] = strstr.str();
 		table_item_item.insert(std::make_pair("feature", table_item));
 
 		treasure_list_->add_row(table_item_item);
@@ -179,34 +199,40 @@ void ttreasure::fill_2list(twindow& window)
 		hero& h = heros_[itor->first];
 		unit& u = *itor->second;
 
-		table_item["label"] = h.name();
+		strstr.str("");
+		if (!can_up_treasure(units_, h)) {
+			strstr << help::tintegrate::generate_format(h.name(), "yellow");
+		} else {
+			strstr << h.name();
+		}
+		table_item["label"] = strstr.str();
 		table_item_item.insert(std::make_pair("name", table_item));
 
-		str.str("");
-		str << h.loyalty(leader);
-		table_item["label"] = str.str();
+		strstr.str("");
+		strstr << h.loyalty(leader);
+		table_item["label"] = strstr.str();
 		table_item_item.insert(std::make_pair("loyalty", table_item));
 
-		str.str("");
+		strstr.str("");
 		if (!u.is_artifical()) {
-			str << u.name() << dgettext("wesnoth", "name^Troop");
+			strstr << u.name() << dgettext("wesnoth", "name^Troop");
 		} else if (u.is_city()) {
-			str << u.name();
+			strstr << u.name();
 		} else {
-			str << u.name() << u.type_name();
+			strstr << u.name() << u.type_name();
 		}
-		table_item["label"] = str.str();
+		table_item["label"] = strstr.str();
 		table_item_item.insert(std::make_pair("position", table_item));
 
-		str.str("");
+		strstr.str("");
 		if (h.treasure_ != HEROS_NO_TREASURE) {
 			const ::ttreasure t = unit_types.treasure(h.treasure_);
-			str << t.name();
-			str << "(";
-			str << hero::feature_str(t.feature());
-			str << ")";
+			strstr << t.name();
+			strstr << "(";
+			strstr << hero::feature_str(t.feature());
+			strstr << ")";
 		}
-		table_item["label"] = str.str();
+		table_item["label"] = strstr.str();
 		table_item_item.insert(std::make_pair("treasure", table_item));
 
 		human_list_->add_row(table_item_item);
@@ -217,6 +243,17 @@ void ttreasure::down(twindow& window)
 {
 	std::vector<size_t>& holded_treasures = current_team_.holded_treasures();
 	hero& h = heros_[human_pairs_[human_index_].first];
+
+	if (!can_up_treasure(units_, h)) {
+		utils::string_map symbols;
+		symbols["treasure"] = help::tintegrate::generate_format(unit_types.treasure(h.treasure_).name(), "green");
+		symbols["hero"] = help::tintegrate::generate_format(h.name(), "yellow");
+		std::string message = vgettext("wesnoth-lib", "Duration this time, if remove $treasure from $hero, cannot assemble treasure to $hero again. Do you want to remove?", symbols);
+		int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
+		if (res == gui2::twindow::CANCEL) {
+			return;
+		}
+	}
 
 	holded_treasures.push_back(h.treasure_);
 	h.treasure_ = HEROS_NO_TREASURE;
@@ -277,7 +314,7 @@ void ttreasure::refresh_3button(twindow& window, const hero& h)
 	tbutton* up = find_widget<tbutton>(&window, "up", false, true);
 
 	down->set_active(!replaying_ && h.treasure_ != HEROS_NO_TREASURE);
-	if (replaying_ || h.treasure_ != HEROS_NO_TREASURE || holded_treasures.empty()) {
+	if (replaying_ || h.treasure_ != HEROS_NO_TREASURE || holded_treasures.empty() || !can_up_treasure(units_, h)) {
 		up->set_active(false);
 	} else {
 		up->set_active(true);

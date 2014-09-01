@@ -140,10 +140,9 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 		}
 		if (unit_feature_val(hero_feature_concealment)) {
 			if (loc == loc_) {
-				unit_map::const_iterator it;
 				for (size_t i = 0; i < adjacent_size_; i ++) {
-					it = units_.find(adjacent_[i], false);
-					if (it.valid() && it->fort() && it->side() == side_) {
+					unit* u = units_.find_unit(adjacent_[i]);
+					if (u && (u->fort() || u->is_city()) && u->side() == side_) {
 						return true;
 					}
 				}
@@ -155,21 +154,21 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 			if (unit_feature_val(hero_feature_ground)) {
 				if (ground_cfg.empty()) {
 					config& filter_location = ground_cfg.add_child("filter_location");
-					filter_location["terrain"] = "G*,R*,A*,D*";
+					filter_location["terrain"] = "G*^*,R*^*,A*^*,D*^*";
 				}
 				cfgs.push_back(&ground_cfg);
 			}
 			if (unit_feature_val(hero_feature_ambush)) {
 				if (ambush_cfg.empty()) {
 					config& filter_location = ambush_cfg.add_child("filter_location");
-					filter_location["terrain"] = "*^Fp,*^Fet*,*^Ft,*^Fpa,*^Fd*,*^Fm*";
+					filter_location["terrain"] = "*^F*,H*^*,M*^*";
 				}
 				cfgs.push_back(&ambush_cfg);
 			}
 			if (unit_feature_val(hero_feature_submerge)) {
 				if (submerge_cfg.empty()) {
 					config& filter_location = submerge_cfg.add_child("filter_location");
-					filter_location["terrain"] = "Wo*";
+					filter_location["terrain"] = "W*";
 				}
 				cfgs.push_back(&submerge_cfg);
 			}
@@ -182,6 +181,11 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 		}
 	} else if (ability == "indomitable") {
 		if (unit_feature_val(hero_featrue_indomitable)) {
+			return true;
+		}
+
+	} else if (ability == "surveillance") {
+		if (unit_feature_val(hero_feature_surveillance)) {
 			return true;
 		}
 	}
@@ -235,11 +239,11 @@ unit_ability_list unit::get_abilities(const std::string& ability, const map_loca
 {
 	unit_ability_list res;
 
-	while (unit_feature_val(hero_feature_healer) || unit_feature_val(hero_feature_surveillance)) {
+	while (unit_feature_val(hero_feature_healer)) {
 		if (ability != "heals") {
 			break;
 		}
-		static config heal_cfg, cure_cfg, surveillance_cfg;
+		static config heal_cfg;
 		std::vector<config*> cfgs;
 		if (unit_feature_val(hero_feature_healer)) {
 			if (heal_cfg.empty()) {
@@ -248,14 +252,6 @@ unit_ability_list unit::get_abilities(const std::string& ability, const map_loca
 				heal_cfg["value"] = 32;
 			}
 			cfgs.push_back(&heal_cfg);
-		}
-		if (unit_feature_val(hero_feature_surveillance)) {
-			if (surveillance_cfg.empty()) {
-				surveillance_cfg["id"] = "surveillancing";
-				surveillance_cfg["affect_self"] = "yes";
-				surveillance_cfg["surveillanced"] = "yes";
-			}
-			cfgs.push_back(&surveillance_cfg);
 		}
 		for (std::vector<config*>::iterator i = cfgs.begin(); i != cfgs.end(); ++ i) {
 			if (ability_affects_self(ability, **i, loc)) {

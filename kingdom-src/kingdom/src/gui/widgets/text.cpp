@@ -261,11 +261,17 @@ void ttext_::handle_key_delete(SDLMod /*modifier*/, bool& handled)
 	fire(event::NOTIFY_MODIFIED, *this, NULL);
 }
 
-Uint16 shift_unicode(SDLMod modifier, Uint16 c)
+Uint16 shift_character(SDLMod modifier, Uint16 c)
 {
-	if (!(modifier & (KMOD_LSHIFT | KMOD_RSHIFT))) return c;
+	int shifted = !!(modifier & KMOD_SHIFT);
+	int capslock = !!(modifier & KMOD_CAPS);
+	if (!(shifted ^ capslock)) {
+		return c;
+	}
 
-	if (c >= 0x30 && c <= 0x39) {
+	if (c >= 'a' && c <= 'z') {
+		return 'A' + (c - 'a');
+	} else if (c >= 0x30 && c <= 0x39) {
 		if (c == 0x30) {
 			return 0x29;
 		} else if (c == 0x31) {
@@ -314,14 +320,14 @@ Uint16 shift_unicode(SDLMod modifier, Uint16 c)
 }
 
 void ttext_::handle_key_default(
-		bool& handled, SDLKey /*key*/, SDLMod modifier, Uint16 unicode)
+		bool& handled, SDLKey key, SDLMod modifier, Uint16)
 {
-	if(unicode >= 32 && unicode != 127) {
+	if (key >= 32 && key < 127) {
 		handled = true;
 
 		// sdl.dll can shift 'a' to 'z', other don't.
-		unicode = shift_unicode(modifier, unicode);
-		insert_char(unicode);
+		int modified = shift_character(modifier, key);
+		insert_char(modified);
 		fire(event::NOTIFY_MODIFIED, *this, NULL);
 	}
 }
@@ -349,7 +355,7 @@ void ttext_::signal_handler_sdl_key_down(const event::tevent event
 // be modifed seems not to be required when I read the comment in
 // widgets/textbox.cpp:516. Would be nice if somebody on a MAC would test it.
 #ifdef __APPLE__
-	const unsigned copypaste_modifier = KMOD_LMETA | KMOD_RMETA;
+	const unsigned copypaste_modifier = SDLK_LGUI |SDLK_RGUI;
 #else
 	const unsigned copypaste_modifier = KMOD_CTRL;
 #endif
@@ -428,9 +434,9 @@ void ttext_::signal_handler_sdl_key_down(const event::tevent event
 #endif
 			break;
 
-#if defined(__APPLE__) && TARGET_OS_IPHONE
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
         case SDLK_RETURN:
-            SDL_SetTimer(0xbbbbbbb0, NULL);
+            SDL_StopTextInput();
             break;
 #endif
             
@@ -491,8 +497,12 @@ void ttext_::signal_handler_sdl_text_input(const event::tevent event
 	utils::utf8_iterator ch(str);
 	for (utils::utf8_iterator end = utils::utf8_iterator::end(str); ch != end; ++ch) {
 		if (*ch <= 0x7f) {
-			// ASCII char, don't insert.
+#if defined(ANDROID)
+			// on Android, some ASCII is receive by textinput insteal keydown.
+			// but some controller char is by keydown, rt, del, etc.
+#else
 			continue;
+#endif
 		}
 		insert_char(*ch);
 		fire(event::NOTIFY_MODIFIED, *this, NULL);

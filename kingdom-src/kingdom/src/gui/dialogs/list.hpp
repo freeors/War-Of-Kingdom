@@ -25,13 +25,14 @@ class team;
 class unit_map;
 class hero_map;
 class game_state;
+class config;
 
 namespace gui2 {
 
 class tlist : public tdialog
 {
 public:
-	explicit tlist(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side);
+	explicit tlist(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, const config& game_config, int side);
 
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
@@ -58,6 +59,7 @@ private:
 	hero_map& heros_;
 	team& current_team_;
 	game_state& gamestate_;
+	const config& game_config_;
 };
 
 

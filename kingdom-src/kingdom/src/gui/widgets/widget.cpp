@@ -103,7 +103,7 @@ void twidget::set_id(const std::string& id)
 
 void twidget::layout_init(const bool /*full_initialization*/)
 {
-	assert(visible_ != INVISIBLE);
+	// assert(visible_ != INVISIBLE);
 	assert(get_window());
 
 	layout_size_ = tpoint(0,0);
@@ -114,7 +114,7 @@ void twidget::layout_init(const bool /*full_initialization*/)
 
 tpoint twidget::get_best_size() const
 {
-	assert(visible_ != INVISIBLE);
+	// assert(visible_ != INVISIBLE);
 
 	tpoint result = layout_size_;
 	if(result == tpoint(0, 0)) {

@@ -54,8 +54,6 @@ public:
 
 	ai_interface& get_ai_ref();
 
-	const std::string describe_ai();
-
 	void modify_ai_config_old( const config::const_child_itors &ai_parameters );
 
 	config to_config() const;
@@ -361,7 +359,7 @@ public:
 	 * Plays a turn for the specified side using its active AI.
 	 * @param side side number (1-based, as in game_info).
 	 */
-	static void play_turn(side_number side);
+	static void play_turn();
 
 
 private:

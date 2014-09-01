@@ -1,14 +1,15 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: kingdom\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.6.5\n"
+"Language: zh_CN\n"
 
 msgid "legend_of_cao_cao"
 msgstr "曹操传"
@@ -165,6 +166,55 @@ msgstr "撤退，全军从南郡撤退！"
 
 msgid "liubei stop: 1"
 msgstr "兴复汉室，无望矣！"
+
+msgid "01huajingtaofai"
+msgstr "黄巾讨伐战"
+
+msgid "xiaquxiang"
+msgstr "下曲阳"
+
+msgid "guangzhong"
+msgstr "广宗"
+
+msgid "changshe"
+msgstr "长社"
+
+msgid "kangchangsuoming"
+msgstr ""
+"胜利：消失张角势力\n"
+"失败：濮阳沦陷"
+
+msgid "02hulaoguan"
+msgstr "虎牢关之战"
+
+msgid "hulaoguan"
+msgstr "虎牢关"
+
+msgid "hulaoguan caocaokanchangbai"
+msgstr ""
+"西凉贼首卓，进京肆虐，所到之处，仅为瓦砾。\n"
+"遂我关东义兵十八路，今乃替天行道、重振勤王、剿除叛贼\n"
+"我等盼圣上安自而为，切勿焦躁，天兵不日便可攻破洛阳！"
+
+msgid "hulaoguan dongzhuoduibai"
+msgstr "华东叛党一路锐不可当，时下已兵临虎牢关下，尔等谁愿出战抗击乱党？"
+
+msgid "hulaoguan lubuduibai"
+msgstr "义父莫惊，奉先愿效犬马之劳。"
+
+msgid "hulaoguan dongzhuoduibai 02"
+msgstr ""
+"前方告急，吾爱将华雄被叛党无名下将所斩，叛党联军已朝虎牢关杀来，尔等谁愿出战"
+"抗敌！"
+
+msgid "05Defeat all sides"
+msgstr "消灭吕布势力"
+
+msgid "05No city you holded"
+msgstr "许昌沦陷"
+
+msgid "05shaopinglubu"
+msgstr "扫平吕布"
 
 #~ msgid "battle_chibi"
 #~ msgstr "赤壁之战"

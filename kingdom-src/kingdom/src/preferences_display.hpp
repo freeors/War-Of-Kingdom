@@ -61,7 +61,6 @@ namespace preferences {
 	bool set_resolution(CVideo& video
 			, const unsigned width, const unsigned height);
 	void set_turbo(bool ison);
-	void set_ellipses(bool ison);
 	void set_grid(bool ison);
 	void set_turbo_speed(double speed);
 	void set_color_cursors(bool value);

@@ -27,6 +27,7 @@
 #include "gui/widgets/text_box.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/toggle_button.hpp"
+#include "gui/widgets/toggle_panel.hpp"
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/scrollbar_panel.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
@@ -36,15 +37,19 @@
 #endif
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/combo_box.hpp"
+#include "gui/dialogs/group.hpp"
+#include "gui/dialogs/hero.hpp"
 #include "preferences_display.hpp"
-#include "hero.hpp"
 #include "formula_string_utils.hpp"
-#include "savegame.hpp"
+#include "filesystem.hpp"
+#include "help.hpp"
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
 
 #include <algorithm>
+
+extern std::string mode_desc(mode_tag::tmode tag);
 
 namespace gui2 {
 
@@ -114,9 +119,10 @@ namespace gui2 {
 
 REGISTER_DIALOG(user_report)
 
-tuser_report::tuser_report(game_display& gui, hero_map& heros)
-	: gui_(gui)
+tuser_report::tuser_report(game_display& disp, hero_map& heros, const config& game_config)
+	: disp_(disp)
 	, heros_(heros)
+	, game_config_(game_config)
 	, current_page_(NONE_PAGE)
 	, page_panel_(NULL)
 {
@@ -160,9 +166,11 @@ void tuser_report::pre_show(CVideo& video, twindow& window)
 	window.set_enter_disabled(true);
 	window.set_escape_disabled(true);
 
-	sheet_.insert(std::make_pair(PLAYER_PASS_PAGE, find_widget<ttoggle_button>(&window, "player_pass", false, true)));
-	sheet_.insert(std::make_pair(RANK_PASS_PAGE, find_widget<ttoggle_button>(&window, "rank_pass", false, true)));
-	sheet_.insert(std::make_pair(RANK_SCORE_PAGE, find_widget<ttoggle_button>(&window, "rank_score", false, true)));
+	sheet_.insert(std::make_pair((int)PLAYER_PASS_PAGE, find_widget<ttoggle_button>(&window, "player_pass", false, true)));
+	sheet_.insert(std::make_pair((int)RANK_PASS_PAGE, find_widget<ttoggle_button>(&window, "rank_pass", false, true)));
+	sheet_.insert(std::make_pair((int)EMPLOYEE_PAGE, find_widget<ttoggle_button>(&window, "employ_hero", false, true)));
+	sheet_.insert(std::make_pair((int)RANK_SCORE_PAGE, find_widget<ttoggle_button>(&window, "rank_score", false, true)));
+	sheet_.insert(std::make_pair((int)TITLE_BOARD_PAGE, find_widget<ttoggle_button>(&window, "title_board", false, true)));
 	for (std::map<int, ttoggle_button*>::iterator it = sheet_.begin(); it != sheet_.end(); ++ it) {
 		it->second->set_callback_state_change(boost::bind(&tuser_report::sheet_toggled, this, _1));
 		it->second->set_data(it->first);
@@ -193,7 +201,7 @@ void tuser_report::fill_pass_table(twindow& window, const std::vector<http::pass
 	std::stringstream strstr;
 	tlistbox* list = find_widget<tlistbox>(&window, "pass_table", false, true);
 	list->clear();
-	BOOST_FOREACH (const http::pass_statistic pass, passes) {
+	BOOST_FOREACH (const http::pass_statistic& pass, passes) {
 		std::map<std::string, string_map> data;
 		string_map item;
 
@@ -220,15 +228,7 @@ void tuser_report::fill_pass_table(twindow& window, const std::vector<http::pass
 		data.insert(std::make_pair("version", item));
 
 		strstr.str("");
-		if (pass.type == NONE_MODE) {
-			strstr << dsgettext("wesnoth", "Scenario");
-		} else if (pass.type == RPG_MODE) {
-			strstr << dsgettext("wesnoth", "RPG");
-		} else if (pass.type == TOWER_MODE) {
-			strstr << dsgettext("wesnoth", "Tower");
-		} else {
-			strstr << "Unknown";
-		}
+		strstr << mode_desc((mode_tag::tmode)pass.type);
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("type", item));
 
@@ -237,58 +237,350 @@ void tuser_report::fill_pass_table(twindow& window, const std::vector<http::pass
 	window.invalidate_layout();
 }
 
+void tuser_report::detail_employee(twindow& window)
+{
+	tlistbox& list = find_widget<tlistbox>(&window, "default", false);
+	tgrid* grid_ptr = list.get_row_grid(list.get_selected_row());
+	int number = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true))->get_data();
+
+	hero& base = heros_[number];
+	hero* h_ptr = &base;
+	if (group.exist_member(number)) {
+		h_ptr = group.member_from_base(base).h;
+	}
+	
+	hero& h = *h_ptr;
+	gui2::thero dlg(heros_, h, &base);
+	try {
+		dlg.show(disp_.video());
+	} catch (twml_exception& e) {
+		e.show(disp_);
+	}
+}
+
+void tuser_report::detail_group(twindow& window)
+{
+	tlistbox& list = find_widget<tlistbox>(&window, "default", false);
+	tgrid* grid_ptr = list.get_row_grid(list.get_selected_row());
+	int uid = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true))->get_data();
+
+	http::membership m = http::membership_from_uid(disp_, heros_, false, uid);
+	if (m.uid < 0) {
+		return;
+	}
+
+	tgroup g;
+	g.from_membership(heros_, m);
+	gui2::tgroup2 dlg(disp_, heros_, game_config_, g, true);
+	try {
+		dlg.show(disp_.video());
+	} catch (twml_exception& e) {
+		e.show(disp_);
+	}
+}
+
 void tuser_report::fill_base(twindow& window)
 {
-	std::vector<http::pass_statistic> passes = http::list_pass(gui_);
+	std::vector<http::pass_statistic> passes = http::list_pass(disp_, heros_);
 	fill_pass_table(window, passes, false);
 }
 
-void tuser_report::fill_biography(twindow& window)
+void tuser_report::fill_rank_pass(twindow& window)
 {
-	std::vector<http::board_statistic> boards = http::list_board(gui_, http::BOARD_PASS);
-	std::vector<http::pass_statistic> passes;
-	for (std::vector<http::board_statistic>::const_iterator it = boards.begin(); it != boards.end(); ++ it) {
-		http::pass_statistic pass;
-		pass.username = it->username;
-		pass.create_time = it->pass.create_time;
-		pass.duration = it->pass.duration;
-		pass.coin = it->pass.coin;
-		pass.score = it->pass.score;
-		pass.version = it->pass.version;
-		pass.type = it->pass.type;
-		passes.push_back(pass);
-	}
+	std::vector<http::pass_statistic> passes = http::list_board_pass(disp_, heros_);
 	fill_pass_table(window, passes, true);
+}
+
+void tuser_report::fill_employee(twindow& window)
+{
+	std::stringstream strstr;
+	
+	std::map<int, http::temployee> employees = http::list_employee(disp_, heros_);
+
+	tlistbox* list = find_widget<tlistbox>(&window, "default", false, true);
+	list->clear();
+
+	std::vector<int> numbers;
+	for (hero_map::iterator it = heros_.begin(); it != heros_.end(); ++ it) {
+		hero& h = *it;
+		if (h.number_ >= hero_map::map_size_from_dat) {
+			break;
+		}
+		if (!h.get_flag(hero_flag_employee)) {
+			continue;
+		}
+		const http::temployee* employee_ptr = NULL;
+		if (!employees.empty()) {
+			std::map<int, http::temployee>::iterator find = employees.find(h.number_);
+			if (find != employees.end()) {
+				employee_ptr = &find->second;
+			}
+		}
+		const tgroup::tmember* member_ptr = NULL;
+		if (group.exist_member(h.number_)) {
+			member_ptr = &group.member_from_base(h);
+		}
+
+		/*** Add list item ***/
+		string_map list_item;
+		std::map<std::string, string_map> list_item_item;
+
+		strstr.str("");
+		strstr << h.image();
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("icon", list_item));
+
+		// name
+		strstr.str("");
+		if (h.utype_ != HEROS_NO_UTYPE) {
+			const unit_type* ut = unit_types.keytype(h.utype_);
+			strstr << help::tintegrate::generate_img(ut->icon()) << "\n";
+		}
+		strstr << h.name();
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("name", list_item));
+
+		// level
+		strstr.str("");
+		int level = -1;
+		if (employee_ptr) {
+			level = employee_ptr->level;
+		} else if (member_ptr) {
+			level = member_ptr->level;
+		}
+		if (level == -1) {
+			strstr << "--";
+		} else if (level / game_config::levels_per_rank >= 2) {
+			strstr << _("rank^Gold");
+		} else if (level / game_config::levels_per_rank >= 1) {
+			strstr << _("rank^Silver");
+		} else {
+			strstr << _("rank^Copper");
+		}
+		if (level != -1) {
+			strstr << "(" << (level % game_config::levels_per_rank + 1) << ")";
+		}
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("level", list_item));
+
+		// cost
+		strstr.str("");
+		if (employee_ptr) {
+			strstr << employee_ptr->score;
+			strstr << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
+		} else {
+			strstr << "--";
+		}
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("cost", list_item));
+
+		// leadership
+		strstr.str("");
+		strstr << fxptoi9(h.leadership_);
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("leadership", list_item));
+
+		// charm
+		strstr.str("");
+		strstr << fxptoi9(h.charm_);
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("charm", list_item));
+
+		// feature
+		strstr.str("");
+		strstr << hero::feature_str(h.feature_);
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("feature", list_item));
+
+		// tactic
+		strstr.str("");
+		if (h.tactic_ != HEROS_NO_TACTIC) {
+			strstr << unit_types.tactic(h.tactic_).name();
+		}
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("tactic", list_item));
+
+		// ownership
+		strstr.str("");
+		if (employee_ptr) {
+			if (employee_ptr->username == group.leader().name()) {
+				strstr << help::tintegrate::generate_format(employee_ptr->username, "green");
+			} else {
+				strstr << employee_ptr->username;
+			}
+			if (employee_ptr->lock) {
+				strstr << help::tintegrate::generate_img("misc/lock.png");;
+			}
+		} else {
+			strstr << help::tintegrate::generate_img("misc/unknown.png");
+		}
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("ownership", list_item));
+
+		strstr.str("");
+		strstr << help::tintegrate::generate_img("misc/browse.png");;
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("browse", list_item));
+
+		list->add_row(list_item_item);
+
+		tgrid* grid_ptr = list->get_row_grid(list->get_item_count() - 1);
+		twidget* widget = grid_ptr->find("human", false);
+		widget->set_visible(twidget::INVISIBLE);
+
+		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true));
+		toggle->set_data(h.number_);
+
+		connect_signal_mouse_left_click(
+				find_widget<tbutton>(grid_ptr, "browse", true)
+				, boost::bind(
+					&tuser_report::detail_employee
+					, this
+					, boost::ref(window)));
+	}
+
+	window.invalidate_layout();
 }
 
 void tuser_report::fill_score_board(twindow& window)
 {
-	std::vector<http::board_statistic> scores = http::list_board(gui_, http::BOARD_SCORE);
+	std::vector<http::membership> members = http::list_board_score(disp_, heros_);
 	std::stringstream strstr;
-	tlistbox* list = find_widget<tlistbox>(&window, "score_table", false, true);
+	utils::string_map symbols;
+	tlistbox* list = find_widget<tlistbox>(&window, "default", false, true);
 	list->clear();
-	BOOST_FOREACH (const http::board_statistic score, scores) {
+	for (std::vector<http::membership>::const_iterator it = members.begin(); it != members.end(); ++ it) {
+		const http::membership& m = *it;
+
 		std::map<std::string, string_map> data;
 		string_map item;
 
-		item["label"] = score.username;
+		strstr.str("");
+		strstr << m.name;
+		if (m.vip > 0) {
+			strstr << help::tintegrate::generate_img("misc/vip.png~SCALE(32, 32)");
+		}
+		item["label"] = strstr.str();
 		data.insert(std::make_pair("username", item));
 
-		item["label"] = score.score.vip? _("yes") : _("no");
-		data.insert(std::make_pair("vip", item));
+		strstr.str("");
+		if (m.noble >= 0 && m.noble <= unit_types.max_noble_level()) {
+			strstr << unit_types.leader_noble(m.noble).name();
+			symbols["level"] = lexical_cast_default<std::string>(unit_types.max_noble_level() - m.noble + 1);
+			strstr << "(" << vgettext("wesnoth-lib", "noble^Lv$level", symbols) << ")";
+		}
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("noble", item));
 
 		strstr.str("");
-		strstr << score.score.score;
+		std::vector<std::string> vstr = utils::split(m.member);
+		strstr << vstr.size();
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("hero", item));
+
+		strstr.str("");
+		strstr << m.score;
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("score", item));
 
 		strstr.str("");
-		strstr << score.score.coin;
+		strstr << m.coin;
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("coin", item));
 
+		strstr.str("");
+		strstr << m.credit;
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("credit", item));
+
+		strstr.str("");
+		strstr << help::tintegrate::generate_img("misc/browse.png");;
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("browse", item));
+
 		list->add_row(data);
+
+		tgrid* grid_ptr = list->get_row_grid(list->get_item_count() - 1);
+		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true));
+		toggle->set_data(m.uid);
+		
+		connect_signal_mouse_left_click(
+				find_widget<tbutton>(grid_ptr, "browse", true)
+				, boost::bind(
+					&tuser_report::detail_group
+					, this
+					, boost::ref(window)));
 	}
+
+	window.invalidate_layout();
+}
+
+void tuser_report::fill_title_board(twindow& window)
+{
+	std::vector<http::ttitle_record> titles = http::list_title(disp_, heros_);
+	std::stringstream strstr;
+	utils::string_map symbols;
+	tlistbox* list = find_widget<tlistbox>(&window, "default", false, true);
+	list->clear();
+	for (std::vector<http::ttitle_record>::const_iterator it = titles.begin(); it != titles.end(); ++ it) {
+		const http::ttitle_record& l = *it;
+
+		std::map<std::string, string_map> data;
+		string_map item;
+
+		strstr.str("");
+		strstr << form_title_str(l.title);
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("title", item));
+
+		strstr.str("");
+		strstr << l.username;
+		if (l.vip > 0) {
+			strstr << help::tintegrate::generate_img("misc/vip.png~SCALE(32, 32)");
+		}
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("username", item));
+
+		strstr.str("");
+		std::vector<std::string> vstr = utils::split(l.member);
+		strstr << vstr.size();
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("hero", item));
+
+		strstr.str("");
+		strstr << l.score;
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("score", item));
+
+		strstr.str("");
+		strstr << l.coin;
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("coin", item));
+
+		strstr.str("");
+		strstr << l.credit;
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("credit", item));
+
+		strstr.str("");
+		strstr << help::tintegrate::generate_img("misc/browse.png");;
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("browse", item));
+
+		list->add_row(data);
+
+		tgrid* grid_ptr = list->get_row_grid(list->get_item_count() - 1);
+		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true));
+		toggle->set_data(l.uid);
+		
+		connect_signal_mouse_left_click(
+				find_widget<tbutton>(grid_ptr, "browse", true)
+				, boost::bind(
+					&tuser_report::detail_group
+					, this
+					, boost::ref(window)));
+	}
+
 	window.invalidate_layout();
 }
 
@@ -310,10 +602,16 @@ void tuser_report::swap_page(twindow& window, int page, bool swap)
 		fill_base(window);
 
 	} else if (page == RANK_PASS_PAGE) {
-		fill_biography(window);
+		fill_rank_pass(window);
+
+	} else if (page == EMPLOYEE_PAGE) {
+		fill_employee(window);
 
 	} else if (page == RANK_SCORE_PAGE) {
 		fill_score_board(window);
+
+	} else if (page == TITLE_BOARD_PAGE) {
+		fill_title_board(window);
 
 	}
 

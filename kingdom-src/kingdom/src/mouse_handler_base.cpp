@@ -41,11 +41,7 @@ int commands_disabled= 0;
 
 static bool command_active()
 {
-#ifdef __APPLE__
-	return (SDL_GetModState()&KMOD_META) != 0;
-#else
 	return false;
-#endif
 }
 
 mouse_handler_base::mouse_handler_base() 
@@ -160,8 +156,6 @@ void mouse_handler_base::mouse_press(const SDL_MouseButtonEvent& event, const bo
 	}
 	show_menu_ = false;
 	mouse_update(browse);
-	int scrollx = 0;
-	int scrolly = 0;
 
 	if (is_left_click(event)) {
 		if (event.state == SDL_PRESSED) {
@@ -204,26 +198,8 @@ void mouse_handler_base::mouse_press(const SDL_MouseButtonEvent& event, const bo
 			minimap_scrolling_ = false;
 			simple_warp_ = false;
 		}
-	} else if (allow_mouse_wheel_scroll(event.x, event.y)) {
-		if (event.button == SDL_BUTTON_WHEELUP) {
-			scrolly = - preferences::scroll_speed();
-		} else if (event.button == SDL_BUTTON_WHEELDOWN) {
-			scrolly = preferences::scroll_speed();
-		} else if (event.button == SDL_BUTTON_WHEELLEFT) {
-			scrollx = - preferences::scroll_speed();
-		} else if (event.button == SDL_BUTTON_WHEELRIGHT) {
-			scrollx = preferences::scroll_speed();
-		}
 	}
 
-	if (scrollx != 0 || scrolly != 0) {
-		CKey pressed;
-		// Alt + mousewheel do an 90° rotation on the scroll direction
-		if (pressed[SDLK_LALT] || pressed[SDLK_RALT])
-			gui().scroll(scrolly,scrollx);
-		else
-			gui().scroll(scrollx,scrolly);
-	}
 	if (!dragging_left_ && !dragging_right_ && dragging_started_) {
 		dragging_started_ = false;
 		cursor::set_dragging(false);
@@ -257,9 +233,6 @@ bool mouse_handler_base::allow_mouse_wheel_scroll(int /*x*/, int /*y*/)
 
 bool mouse_handler_base::left_click(int x, int y, const bool /*browse*/)
 {
-	if(tooltips::click(x,y))
-		return true;
-
 	// clicked on a hex on the minimap? then initiate minimap scrolling
 	const map_location& loc = gui().minimap_location_on(x, y);
 	minimap_scrolling_ = false;

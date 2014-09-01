@@ -26,6 +26,7 @@ class unit;
 class unit_map;
 class hero;
 class hero_map;
+class tgroup;
 
 namespace gui2 {
 

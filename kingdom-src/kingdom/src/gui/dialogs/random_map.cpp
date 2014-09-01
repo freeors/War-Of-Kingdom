@@ -33,6 +33,7 @@
 #endif
 #include "gui/widgets/minimap.hpp"
 #include "gui/widgets/settings.hpp"
+#include "gui/widgets/toggle_button.hpp"
 #include "../../settings.hpp"
 #include "filesystem.hpp"
 #include "map.hpp"
@@ -43,16 +44,18 @@
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "formula_string_utils.hpp"
+#include "help.hpp"
 #include <boost/bind.hpp>
 
 namespace gui2 {
 
-trandom_map::trandom_map(const config& cfg, int mode) :
+trandom_map::trandom_map(const config& cfg, int mode, bool local_only) :
 	cfg_(cfg)
 	, mode_(mode)
+	, local_only_(local_only)
 	, load_game_index_(-1)
+	, siege_mode_index_(-1)
 	, generator_(NULL)
-	, candidate_()
 	, parameters_()
 	, generator_settings_(NULL)
 	, regenerate_map_(NULL)
@@ -82,12 +85,25 @@ void trandom_map::pre_show(twindow& window)
 
 	// Load option (might turn it into a button later).
 	string_map item;
-	if (mode_ != TOWER_MODE) {
-		item.insert(std::make_pair("label", _("Load Game")));
+	if (mode_ != mode_tag::TOWER) {
+		item.insert(std::make_pair("label", help::tintegrate::generate_format(_("Load Game"), "yellow")));
 		item.insert(std::make_pair("tooltip", _("Load Game...")));
 		list.add_row(item);
 
-		load_game_index_ = 0;
+		tgrid* grid = list.get_row_grid(list.get_item_count() - 1);
+		ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(grid->find("_toggle", true));
+		toggle->set_data(LOAD_GAME);
+
+		if (!local_only_) {
+			item.clear();
+			item.insert(std::make_pair("label", help::tintegrate::generate_format(dsgettext("wesnoth-multiplayer", "2p_siege_map"), "green")));
+			item.insert(std::make_pair("tooltip", _("Siege map")));
+			list.add_row(item);
+
+			grid = list.get_row_grid(list.get_item_count() - 1);
+			toggle = dynamic_cast<ttoggle_button*>(grid->find("_toggle", true));
+			toggle->set_data(SIEGE_MODE);
+		}
 	}
 
 	// Standard maps
@@ -95,12 +111,13 @@ void trandom_map::pre_show(twindow& window)
 	BOOST_FOREACH (const config &map, cfg_.child_range("multiplayer"))
 	{
 		index ++;
-		const std::string& theme = map["theme"].str();
-		if (mode_ == TOWER_MODE) {
-			if (theme != "tower" && !map.child_count("generator")) {
+		const std::string& mode = map["mode"].str();
+		if (mode_ == mode_tag::TOWER) {
+			// avoid scrub score, don't diplay fix map
+			if (!map.child_count("generator")) {
 				continue;
 			}
-		} else if (mode_ != TOWER_MODE && theme == "tower") {
+		} else if (!mode.empty()) {
 			continue;
 		}
 		if (map["allow_new_game"].to_bool(true)) {
@@ -108,8 +125,11 @@ void trandom_map::pre_show(twindow& window)
 			item.insert(std::make_pair("label", map["name"].str()));
 			item.insert(std::make_pair("tooltip", map["name"].str()));
 			list.add_row(item);
+
+			tgrid* grid = list.get_row_grid(list.get_item_count() - 1);
+			ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(grid->find("_toggle", true));
+			toggle->set_data(BASE + index - 1);
 		}
-		candidate_.push_back(index - 1);
 	}
 
 	connect_signal_mouse_left_click(
@@ -131,25 +151,28 @@ void trandom_map::pre_show(twindow& window)
 
 void trandom_map::update_map(twindow& window)
 {
-	const int select = find_widget<tlistbox>(
-			&window, "map_list", false).get_selected_row();
+	tlistbox& list = find_widget<tlistbox>(&window, "map_list", false);
+	tgrid* grid_ptr = list.get_row_grid(list.get_selected_row());
+	int select = dynamic_cast<ttoggle_button*>(grid_ptr->find("_toggle", true))->get_data();
 
 	generator_.assign(NULL);
 
-	if (select == load_game_index_) {
+	parameters_.saved_game = false;
+	parameters_.siege_mode = false;
+	if (select == LOAD_GAME) {
 		parameters_.scenario_data.clear();
 		parameters_.saved_game = true;
 
+	} else if (select == SIEGE_MODE) {
+		parameters_.scenario_data.clear();
+		parameters_.siege_mode = true;
+
 	} else {
 		// multiplayer scenario
-		parameters_.saved_game = false;
-		int index = select;
-		if (!load_game_index_) {
-			index --;
-		}
+		int index = select - BASE;
 
 		config::const_child_itors levels = cfg_.child_range("multiplayer");
-		std::advance(levels.first, candidate_[index]);
+		std::advance(levels.first, index);
 
 		if (levels.first != levels.second) {
 			const config &level = *levels.first;
@@ -163,7 +186,7 @@ void trandom_map::update_map(twindow& window)
 			// If the map should be randomly generated.
 			if (!level["map_generation"].empty()) {
 				config generator_cfg = level.child("generator");
-				if (mode_ == TOWER_MODE) {
+				if (mode_ == mode_tag::TOWER) {
 					generator_cfg["map_width"] = 16;
 					generator_cfg["map_height"] = 6;
 					generator_cfg["hill_size"] = 2;
@@ -283,7 +306,7 @@ void trandom_map::regenerate_map(twindow& window)
 void trandom_map::generator_settings(twindow& window)
 {
 	int max_players = -1, min_w = -1, max_w = -1, min_h = -1, max_h = -1;
-	if (mode_ == TOWER_MODE) {
+	if (mode_ == mode_tag::TOWER) {
 		max_players = 2;
 		min_w = 16;
 		max_w = 20;

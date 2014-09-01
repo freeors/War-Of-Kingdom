@@ -54,19 +54,34 @@ config prefs;
 
 namespace preferences {
 
+std::string public_account = "kingdom";
+std::string public_password = "kingdom";
+
 base_manager::base_manager()
 {
 	scoped_istream stream = istream_file(get_prefs_file(), true);
 	read(prefs, *stream);
-/*
-#ifdef _WIN32
-	if (!prefs.has_attribute("inapp_getcard") || prefs["inapp_getcard"].str() != "fl_9d22f05d3fdfd028fa8f2382297efd776c2c2fdc") {
-		int ii = 0;
-		posix_print_mb("base_manager, read, invalid inapp_getcard");
 
+	if (member().empty()) {
+		std::stringstream strstr;
+		std::map<int, int> member;
+		member.insert(std::make_pair(172, 5));
+		member.insert(std::make_pair(176, 6));
+		member.insert(std::make_pair(244, 7));
+		member.insert(std::make_pair(279, 8));
+
+		member.insert(std::make_pair(103, 8));
+		member.insert(std::make_pair(106, 9));
+		member.insert(std::make_pair(120, 9));
+		member.insert(std::make_pair(381, 9));
+		for (std::map<int ,int>::const_iterator it = member.begin(); it != member.end(); ++ it) {
+			if (it != member.begin()) {
+				strstr << ", ";
+			}
+			strstr << ((it->second << 16) | it->first);
+		}
+		set_member(strstr.str());
 	}
-#endif
-*/
 }
 
 base_manager::~base_manager()
@@ -84,14 +99,6 @@ void write_preferences()
 #ifndef _WIN32
     bool prefs_file_existed = access(get_prefs_file().c_str(), F_OK) == 0;
 #endif
-/*
-#ifdef _WIN32
-	if (!prefs.has_attribute("inapp_getcard") || prefs["inapp_getcard"].str() != "fl_9d22f05d3fdfd028fa8f2382297efd776c2c2fdc") {
-		int ii = 0;
-		posix_print_mb("write_preferences, invalid inapp_getcard");
-	}
-#endif
-*/
 	try {
 		scoped_ostream prefs_file = ostream_file(get_prefs_file(), true);
 		write(*prefs_file, prefs);
@@ -180,6 +187,7 @@ bool get_hero(hero& h, int default_image)
 	if (cfg) {
 		h.set_name(cfg["name"].str());
 		h.set_surname(cfg["surname"].str());
+		h.set_biography(cfg["biography"].str());
 
 		h.gender_ = cfg["gender"].to_int(hero_gender_male);
 		h.image_ = cfg["image"].to_int(default_image);
@@ -187,7 +195,7 @@ bool get_hero(hero& h, int default_image)
 		h.leadership_ = ftofxp9(cfg["leadership"].to_int(1));
 		h.force_ = ftofxp9(cfg["force"].to_int(1));
 		h.intellect_ = ftofxp9(cfg["intellect"].to_int(1));
-		h.politics_ = ftofxp9(cfg["politics"].to_int(1));
+		h.spirit_ = ftofxp9(cfg["spirit"].to_int(1));
 		h.charm_ = ftofxp9(cfg["charm"].to_int(1));
 
 		std::stringstream str;
@@ -204,13 +212,14 @@ bool get_hero(hero& h, int default_image)
 
 		h.side_feature_ = cfg["side_feature"].to_int(HEROS_NO_FEATURE);
 		if (h.side_feature_ < 0 || h.side_feature_ > HEROS_MAX_FEATURE) {
-			h.side_feature_ = 0xff;
+			h.side_feature_ = HEROS_NO_FEATURE;
 		}
 		h.feature_ = cfg["feature"].to_int(HEROS_NO_FEATURE);
 		if (h.feature_ < 0 || h.feature_ > HEROS_MAX_FEATURE) {
-			h.feature_ = 0xff;
+			h.feature_ = HEROS_NO_FEATURE;
 		}
 		h.tactic_ = cfg["tactic"].to_int(HEROS_NO_TACTIC);
+		h.utype_ = cfg["utype"].to_int(HEROS_NO_UTYPE);
 		h.character_ = cfg["character"].to_int(HEROS_NO_CHARACTER);
 
 		h.base_catalog_ = cfg["base_catalog"].to_int();
@@ -219,7 +228,7 @@ bool get_hero(hero& h, int default_image)
 		return true;
 	} else {
 		// h.set_name(_("Press left button to create hero"));
-		h.set_name(_("Player"));
+		h.set_name(public_account);
 		h.set_surname("Mr.");
 
 		h.gender_ = hero_gender_male;
@@ -228,7 +237,7 @@ bool get_hero(hero& h, int default_image)
 		h.leadership_ = ftofxp9(1);
 		h.force_ = ftofxp9(1);
 		h.intellect_ = ftofxp9(1);
-		h.politics_ = ftofxp9(1);
+		h.spirit_ = ftofxp9(1);
 		h.charm_ = ftofxp9(1);
 
 		for (int i = 0; i < HEROS_MAX_ARMS; i ++) {
@@ -242,7 +251,7 @@ bool get_hero(hero& h, int default_image)
 	}
 }
 
-void set_hero(hero& h)
+void set_hero(const hero_map& heros, hero& h)
 {
 	config* ptr = NULL;
 	if (config& cfg = prefs.child("hero")) {
@@ -255,11 +264,12 @@ void set_hero(hero& h)
 
 	cfg["name"] = h.name();
 	cfg["surname"] = h.surname();
+	cfg["biography"] = h.biography2(heros);
 
 	cfg["leadership"] = fxptoi9(h.leadership_);
 	cfg["force"] = fxptoi9(h.force_);
 	cfg["intellect"] = fxptoi9(h.intellect_);
-	cfg["politics"] = fxptoi9(h.politics_);
+	cfg["spirit"] = fxptoi9(h.spirit_);
 	cfg["charm"] = fxptoi9(h.charm_);
 
 	cfg["gender"] = h.gender_;
@@ -282,6 +292,7 @@ void set_hero(hero& h)
 	cfg["side_feature"] = h.side_feature_;
 
 	cfg["tactic"] = h.tactic_;
+	cfg["utype"] = h.utype_;
 	cfg["character"] = h.character_;
 
 	write_preferences();
@@ -309,24 +320,12 @@ void _set_scroll_to_action(bool ison)
 
 int min_allowed_width()
 {
-#if defined(__APPLE__) && TARGET_OS_IPHONE
 	return 480;
-#else
-	// return 1024;
-	return 480;
-	return 800;
-#endif
 }
 
 int min_allowed_height()
 {
-#if defined(__APPLE__) && TARGET_OS_IPHONE
 	return 320;
-#else
-	// return 768;
-	return 320;
-	return 600;
-#endif
 }
 
 std::pair<int,int> resolution()
@@ -351,6 +350,113 @@ std::pair<int,int> resolution()
 	}
 }
 
+int noble()
+{
+	int noble =  prefs["noble"].to_int();
+	// if (noble < 0 || noble > unit_types.max_noble_level()) {
+	// 	noble = 0;
+	// }
+	return noble;
+}
+
+void set_noble(int value)
+{
+	// if (value < 0 || value > unit_types.max_noble_level()) {
+	// 	value = 0;
+	// }
+	prefs["noble"] = value;
+}
+
+int uid()
+{
+	return prefs["uid"].to_int();
+}
+
+void set_uid(int value)
+{
+	prefs["uid"] = value;
+}
+
+std::string city()
+{
+	return prefs["city"].str();
+}
+
+void set_city(const std::string& str)
+{
+	prefs["city"] = str;
+}
+
+std::string interior()
+{
+	return prefs["interior"].str();
+}
+
+void set_interior(const std::string& str)
+{
+	prefs["interior"] = str;
+}
+
+std::string signin()
+{
+	return prefs["signin"].str();
+}
+
+void set_signin(const std::string& str)
+{
+	prefs["signin"] = str;
+}
+
+std::string member()
+{
+	return prefs["member"].str();
+}
+
+void set_member(const std::string& str)
+{
+	prefs["member"] = str;
+}
+
+std::string exile()
+{
+	return prefs["exile"].str();
+}
+
+void set_exile(const std::string& str)
+{
+	prefs["exile"] = str;
+}
+
+std::string associate()
+{
+	return prefs["associate"].str();
+}
+
+void set_associate(const std::string& str)
+{
+	prefs["associate"] = str;
+}
+
+std::string layout()
+{
+	return prefs["layout"].str();
+}
+
+void set_layout(const std::string& str)
+{
+	prefs["layout"] = str;
+}
+
+std::string map()
+{
+	return prefs["map"].str();
+}
+
+void set_map(const std::string& str)
+{
+	prefs["map"] = str;
+}
+
 void set_coin(int value)
 {
 	prefs["coin"] = value;
@@ -369,6 +475,45 @@ void set_score(int value)
 int score()
 {
 	return prefs["score"].to_int();
+}
+
+std::string login()
+{
+	const config& cfg = get_child("hero");
+
+	if (cfg && !cfg["name"].empty()) {
+		return cfg["name"].str();
+	}
+	return public_account;
+}
+
+void set_vip_expire(time_t value)
+{
+	std::stringstream strstr;
+	strstr << login() << ", " << (long)value;
+	prefs["vip_expire"] = strstr.str();
+}
+
+time_t vip_expire()
+{
+	std::vector<std::string> vstr = utils::split(prefs["vip_expire"].str());
+	if (vstr.size() != 2) {
+		return 0;
+	}
+	if (vstr[0] != login()) {
+		return 0;
+	}
+	return lexical_cast_default<long>(vstr[1]);
+}
+
+void set_developer(bool ison)
+{
+	prefs["developer"] = ison;
+}
+
+bool developer()
+{
+	return prefs["developer"].to_bool();
 }
 
 bool turbo()
@@ -409,16 +554,6 @@ std::string language()
 void set_language(const std::string& s)
 {
 	preferences::set("locale", s);
-}
-
-bool ellipses()
-{
-	return get("show_side_colors", false);
-}
-
-void _set_ellipses(bool ison)
-{
-	preferences::set("show_side_colors",  ison);
 }
 
 bool grid()

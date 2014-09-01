@@ -49,11 +49,6 @@ public:
 	virtual void play_turn() = 0;
 
 	/**
-	 * Function called when a a new turn is played
-	 */
-	virtual void new_turn() = 0;
-
-	/**
 	 * Function called after the new ai is created
 	 *
 	 */
@@ -63,9 +58,6 @@ public:
     /** Evaluate */
     virtual std::string evaluate(const std::string& /*str*/)
 			{ return "evaluate command not implemented by this AI"; }
-
-	/** Describe self*/
-	virtual std::string describe_self() const;
 
 	virtual ai_plan& plan(bool action) = 0;
 

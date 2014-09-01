@@ -43,7 +43,9 @@
 #include "dialogs.hpp"
 #include "play_controller.hpp"
 #include "gui/dialogs/duel.hpp"
+#include "gui/dialogs/combo_box.hpp"
 #include "sound.hpp"
+#include "loadscreen.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
@@ -554,6 +556,7 @@ public:
 		map_location loc_;
 		int weapon_;
 		bool base_;
+		size_t signature_;
 		std::string weap_id_;
 		int orig_attacks_;
 		int n_attacks_; /**< Number of attacks left. */
@@ -561,6 +564,7 @@ public:
 		int damage_;
 		int xp_;
 		bool reinforced_;
+		bool hated_;
 
 		unit_info(unit& u, int weapon, unit_map &units);
 		unit &get_unit();
@@ -577,7 +581,7 @@ public:
 
 	attack(unit& attacker, unit& defender, int attack_with, int defend_with, bool update_display = true, const config& = config::invalid, bool move = true, bool formation = false);
 	std::pair<map_location, map_location> perform();
-	bool perform_hit(bool, statistics::attack_context &);
+	bool perform_hit(bool attacker_turn);
 	bool weapon_move(unit& u, const map_location& from, const map_location& to, std::set<map_location>& invalid_locs);
 	~attack();
 
@@ -631,9 +635,9 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 	weapon(0),
 	attack_num(u_attack_num),
 	is_attacker(attacking),
-	is_poisoned(u.get_state(unit::STATE_POISONED)),
-	is_slowed(u.get_state(unit::STATE_SLOWED)),
-	is_broken(u.get_state(unit::STATE_BROKEN)),
+	is_poisoned(u.get_state(ustate_tag::POISONED)),
+	is_slowed(u.get_state(ustate_tag::SLOWED)),
+	is_broken(u.get_state(ustate_tag::BROKEN)),
 	slows(false),
 	breaks(false),
 	drains(false),
@@ -686,7 +690,6 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		if (opp_weapon) {
 			opp_weapon->set_specials_context(aloc, dloc, units, !attacking, weapon);
 		}
-		bool not_living = opp.get_state("not_living");
 		if (unit_feature_val2(u, hero_feature_pure) && !unit_feature_val2(opp, hero_feature_penetrate)) {
 			slows = true;
 		} else {
@@ -704,7 +707,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		if (unit_feature_val2(u, hero_feature_drain)) {
 			drains = true;
 		} else {
-			drains = !not_living && weapon->get_special_bool("drains");
+			drains = weapon->get_special_bool("drains");
 		}
 		petrifies = weapon->get_special_bool("petrifies");
 		if (attacking && !opp.is_artifical() && !unit_feature_val2(opp, hero_feature_poison)) {
@@ -713,7 +716,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 			} else if (unit_feature_val2(u, hero_feature_poison)) {
 				poisons = true;
 			} else {
-				poisons = !not_living && weapon->get_special_bool("poison") && !opp.get_state(unit::STATE_POISONED);
+				poisons = weapon->get_special_bool("poison") && !opp.get_state(ustate_tag::POISONED);
 			}
 		}
 		backstab_pos = is_attacker && backstab_check(u, opp, units, *resources::teams);
@@ -763,7 +766,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		}
 
 		if (opp.is_artifical()) {
-			damage_multiplier += u.skill_[hero_skill_demolish] * 5;
+			damage_multiplier += u.skill_[hero_skill_demolish] * 8;
 		}
 
 		base_damage = u.value_consider_food(base_damage);
@@ -779,9 +782,16 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		damage_multiplier *= opp.damage_from(*weapon, !attacking, opp_loc) * chance_to_hit;
 		if (attacking && !formation_defend_disable && !opp.is_artifical() && !opp.resist_helper_.empty()) {
 			std::set<const unit*> origin;
-			for (std::vector<unit*>::const_iterator it = opp.resist_helper_.begin(); it != opp.resist_helper_.end(); ++ it) {
-				origin.insert(*it);
+			// select max unit when they are same effect. it will result to lose helper.
+			// for exmplae, tow footman resistance opp, one footmant is can formation, ther other cannot, may be select the latter.
+			// generate all candidate resistance help.
+			unit_ability_list helpers = opp.get_abilities("resistance");
+			for (std::vector<std::pair<const config *, unit *> >::const_iterator it = helpers.cfgs.begin(); it != helpers.cfgs.end(); ++ it) {
+				if (it->second != &opp) {
+					origin.insert(it->second);
+				}
 			}
+
 			std::vector<tformation> formations;
 			calculate_defender_formations(*resources::teams, *resources::units, u.side(), opp, origin, formations);
 			if (!formations.empty()) {
@@ -793,7 +803,7 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		// Compute both the normal and slowed damage. For the record,
 		damage = round_damage(base_damage, damage_multiplier, 1000000);
 		
-		if (opp.get_state(unit::STATE_BROKEN)) {
+		if (opp.get_state(ustate_tag::BROKEN)) {
 			damage = damage * 3 / 2;
 		}
 
@@ -819,22 +829,28 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		}
 
 		// tactic on ea effect
-		std::vector<artifical*>& holded = u_team.holded_cities();
-		for (std::vector<artifical*>::const_iterator it = holded.begin(); it != holded.end(); ++ it) {
-			artifical& city = **it;
-			artifical* t = city.tactic_on_ea();
-			if (!t || t->get_location() == u_loc) {
-				continue;
+		if (tent::mode != mode_tag::SIEGE) {
+			std::vector<artifical*>& holden = u_team.holden_cities();
+			for (std::vector<artifical*>::const_iterator it = holden.begin(); it != holden.end(); ++ it) {
+				artifical& city = **it;
+				artifical* t = city.tactic_on_ea();
+				if (!t || t->get_location() == u_loc) {
+					continue;
+				}
+				int distance = 2 + t->level();
+				if ((int)distance_between(u_loc, city.get_location()) <= distance) {
+					damage += damage / 5;
+					effecting_tactic = t->get_location();
+					break;
+				}
 			}
-			int distance = 2 + t->level();
-			if ((int)distance_between(u_loc, city.get_location()) <= distance) {
-				damage += damage / 5;
-				effecting_tactic = t->get_location();
-				break;
-			}
-		}			
+		}
 
 		if (is_slowed) {
+			damage = damage / 2;
+		}
+
+		if (attacking && u.get_state(ustate_tag::REVIVALED)) {
 			damage = damage / 2;
 		}
 		
@@ -846,7 +862,19 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 			damage = formationed_value(damage, (attack::anim_lock->formation_.u_->skill_[hero_skill_formation] + u.skill_[hero_skill_formation]) / 2, true);
 		}
 
+		if (tent::mode == mode_tag::SIEGE) {
+			damage *= 2;
+		}
+
 		num_blows = weapon->num_attacks();
+		if (attacking) {
+			if (unit_feature_val2(u, hero_feature_carom)) {
+				num_blows ++;
+			}
+			if (unit_feature_val2(opp, hero_feature_disturb) && num_blows > 1) {
+				num_blows --;
+			}
+		}
 	}
 }
 
@@ -998,6 +1026,7 @@ attack::unit_info::unit_info(unit& u, int weapon, unit_map& units)
 	, loc_(u.get_location())
 	, weapon_(weapon)
 	, base_(u.base())
+	, signature_(u.signature)
 	, weap_id_()
 	, orig_attacks_(0)
 	, n_attacks_(0)
@@ -1005,6 +1034,7 @@ attack::unit_info::unit_info(unit& u, int weapon, unit_map& units)
 	, damage_(0)
 	, xp_(0)
 	, reinforced_(false)
+	, hated_(false)
 	, cause_damage_(0)
 	, been_damage_(0)
 	, defeat_units_(0)
@@ -1020,7 +1050,7 @@ unit& attack::unit_info::get_unit()
 bool attack::unit_info::valid()
 {
 	unit_map::const_iterator u_itor = units_.find(loc_, !base_);
-	return u_itor.valid() && u_itor->verifying();
+	return u_itor.valid() && u_itor->signature == signature_;
 }
 
 std::string attack::unit_info::dump()
@@ -1037,9 +1067,8 @@ public:
 		: units_(units)
 		, loc_(defender.get_location())
 		, base_(defender.base())
-		, verify_(defender.verifying())
+		, signature_(defender.signature)
 	{
-		defender.set_verifying();
 	}
 
 	bool valid()
@@ -1048,34 +1077,28 @@ public:
 		if (itor == units_.end()) {
 			return false; 
 		}
-		return itor->verifying();
+		return itor->signature == signature_;
 	}
 
 	~event_lock() 
 	{
-		unit_map::iterator itor = units_.find(loc_, !base_);
-		if (!itor.valid()) {
-			return; 
-		}
-		if (itor->verifying()) {
-			itor->set_verifying(verify_);
-		}
 	}
 
 private:
 	unit_map& units_;
 	const map_location& loc_;
 	bool base_;
-	bool verify_;
+	size_t signature_;
 };
 
-// @a: attack. 这个attack并不总是attack::attack中的a_, 有可能是d_, 它是胜利一方
-// @die: unit of die. 它是被击败一方
+// @a: attack.
+// @die: unit of die.
 void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int a_side)
 {
 	std::vector<team>& teams = *resources::teams;
 	attack::unit_info* a_info = NULL;
 	unit* attacker = NULL;
+	team& die_team = teams[die.side() - 1];
 	artifical* cobj = units.city_from_cityno(die.cityno());
 
 	if (a_info_p) {
@@ -1083,8 +1106,9 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 		attacker = &a_info->get_unit();
 
 		team& t = teams[attacker->side() - 1];
-		if (tent::mode == TOWER_MODE && t.is_human()) {
+		if (t.kill_income && !die.is_artifical() && !die.is_commoner()) {
 			t.spend_gold(-1 * die.cost());
+			unit_display::unit_income(*attacker, die.cost());
 		}
 	}
 
@@ -1101,14 +1125,30 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 			die.increase_activity(activity, false);
 		}
 
-		std::vector<hero*> back, roam;
+		if (!cobj && !die.master().get_flag(hero_flag_robber) && die_team.leader() != &die.master()) {
+			for (int n = 0; n < (int)teams.size(); n ++) {
+				team& t = teams[n];
+				if (die_team.is_enemy(n + 1) || !t.stratagem_ally_join) {
+					continue;
+				}
+				std::vector<artifical*>& holden = t.holden_cities();
+				if (!holden.empty()) {
+					cobj = holden.front();
+					unit_display::stratagem_anim(stratagem_tag::technology(stratagem_tag::xue_zhong_song_tan), die.master().image(true), true);
+					break;
+				}
+			}
+		}
+
+		std::vector<hero*> back, roam, unstage;
 		if (die.master().number_ >= hero::number_normal_min) {
 			hero* h = &die.master();
 			if (h != rpg::h && h->get_flag(hero_flag_roam)) {
-				// <闲云野鹤>，所属部队被击溃后随机去一个城市
 				roam.push_back(h);
 			} else if (cobj) {
 				back.push_back(h);
+			} else {
+				unstage.push_back(h);
 			}
 
 			if (die.second().valid()) {
@@ -1117,6 +1157,8 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 					roam.push_back(h);
 				} else if (cobj) {
 					back.push_back(h);
+				} else {
+					unstage.push_back(h);
 				}
 			}
 			if (die.third().valid()) {
@@ -1125,41 +1167,57 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 					roam.push_back(h);
 				} else if (cobj) {
 					back.push_back(h);
+				} else {
+					unstage.push_back(h);
 				}
 			}
 		}
 
 		if (back.size()) {
-			// 武将回到所在城市
+			// be back to "ownership" city
 			for (std::vector<hero*>::const_iterator itor = back.begin(); itor != back.end(); ++ itor) {
 				cobj->finish_into(**itor, hero_status_backing);
 			}
 			resources::screen->invalidate(cobj->get_location());
 		}
 		if (roam.size()) {
-			// 武将随机流浪到一个城市
+			// roam to a radmon city
 			std::vector<artifical*> citys;
 			for (size_t i = 0; i < (*resources::teams).size(); i ++) {
-				std::vector<artifical*>& side_citys = (*resources::teams)[i].holded_cities();
+				std::vector<artifical*>& side_citys = (*resources::teams)[i].holden_cities();
 				citys.insert(citys.end(), side_citys.begin(), side_citys.end());
 			}
 			cobj = citys[get_random() % citys.size()];
+
+			hero& leader = *teams[cobj->side() - 1].leader();
+			bool city_team_is_rpg = &leader == rpg::h;
+
 			for (std::vector<hero*>::iterator itor = roam.begin(); itor != roam.end(); ++ itor) {
 				hero* h = *itor;
-				if (cobj->side() == team::empty_side_) {
+				if (cobj->side() == team::empty_side) {
 					cobj->wander_into(*h, false);
-				} else {
+				} else if (!city_team_is_rpg || !runtime_groups::exist_member(*h, leader)) {
 					// recommand! let float_catalog to base catalog.
 					h->float_catalog_ = ftofxp8(h->base_catalog_);
 					cobj->move_into(*h);
+					join_anim(h, cobj, _("Let me join in. I will do my best to maintenance our honor."));
+				} else {
+					h->to_unstage(hero::UNSTAGE_GROUP);
 				}
-
-				join_anim(h, cobj, _("Let me join in. I will do my best to maintenance our honor."));
 			}
 			resources::screen->invalidate(cobj->get_location());
 		}
 
 		units.erase(&die);
+
+		// there is why not process unstage.
+		// if has leader, it will wrong. I assume desiger should consider these hero more.
+/*
+		for (std::vector<hero*>::iterator it = unstage.begin(); it != unstage.end(); ++ it) {
+			hero* h = *it;
+			h->to_unstage();
+		}
+*/
 
 	} else if (die.can_reside()) { 
 		// defend type: city
@@ -1167,11 +1225,11 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 		VALIDATE(a_info_p || (a_side > 0 && a_side <= (int)teams.size()), "unit_die, die is city, both a_info_p and a_ side must valid one!");
 
 		if (a_side == HEROS_INVALID_SIDE) {
-			a_info->xp_ += 16; // 攻下城的部队xp=原得xp+16
+			a_info->xp_ += 16; // 
 			cobj = dynamic_cast<artifical*>(&die);
-			if (attacker->is_artifical() || attacker->master().get_flag(hero_flag_robber)) {
-				// artifical/<流寇>，攻下城后不进城
-				cobj->fallen(team::empty_side_);
+			if (attacker->is_artifical() || attacker->is_robber()) {
+				// artifical/robber, don't enter into
+				cobj->fallen(team::empty_side);
 			} else {
 				attacker->cause_damage_ += a_info->cause_damage_;
 				attacker->been_damage_ += a_info->been_damage_;
@@ -1205,8 +1263,8 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 			cobj = dynamic_cast<artifical*>(&die);
 			if (a_side != HEROS_INVALID_SIDE) {
 				cobj->fort_fallen(a_side);
-			} else if (attacker->is_artifical() || attacker->master().get_flag(hero_flag_robber)) {
-				cobj->fort_fallen(team::empty_side_);
+			} else if (attacker->is_artifical() || attacker->is_robber()) {
+				cobj->fort_fallen(team::empty_side);
 			} else {
 				cobj->fort_fallen(attacker->side());
 			}
@@ -1236,7 +1294,7 @@ void attack::unit_die(unit_info& attacker, unit_info& center, unit& defender_u, 
 		center.xp_ = 0;
 		resources::screen->invalidate(attacker.loc_);
 	}
-	if (anim_lock && tent::mode == TOWER_MODE) {
+	if (anim_lock && teams_[attacker_u.side() - 1].kill_income) {
 		anim_lock->formation_.gold_ += 20;
 	}
 
@@ -1246,7 +1304,7 @@ void attack::unit_die(unit_info& attacker, unit_info& center, unit& defender_u, 
 		fire_event("attack_end");
 		refresh_bc();
 	}
-				
+
 	// get weapon info for last_breath and die events
 	config dat;
 	{
@@ -1313,22 +1371,14 @@ attack::attack(unit& attacker, unit& defender, int attack_with, int defend_with,
 	constant_attacks_(constant_attacks),
 	OOS_error_(false)
 {
-	attacker.set_verifying();
-	defender.set_verifying();
 }
 
 attack::~attack()
 {
 	delete bc_;
-	if (a_.valid()) {
-		a_.get_unit().set_verifying(false);
-	}
-	if (d_.valid()) {
-		d_.get_unit().set_verifying(false);
-	}
 }
 
-bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
+bool attack::perform_hit(bool attacker_turn)
 {
 	unit_info &attacker = *(attacker_turn ? &a_ : &d_), &defender = *(attacker_turn ? &d_ : &a_);
 	unit& attacker_u = attacker.get_unit();
@@ -1349,7 +1399,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 		hits = (ran_num % 100) < 70;
 	}
 	bool injured = false;
-	if (attacker_turn && unit_feature_val2(attacker.get_unit(), hero_feature_fearless) && !center_defender_ptr->is_artifical() && !center_defender_ptr->is_commoner()) {
+	if (attacker_turn && unit_feature_val2(attacker.get_unit(), hero_feature_fearless) && !center_defender_ptr->is_artifical() && center_defender_ptr->hdata_variable()) {
 		// 20% miss/ 80% hit
 		if ((ran_num % 100) < 20) {
 			defender.activity_ -= 30;
@@ -1402,6 +1452,9 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 			} 
 			if (defender.reinforced_) {
 				damage = damage * 2 / 3;
+			}
+			if (attacker.hated_) {
+				damage = damage * 3 / 2;
 			}
 		}
 		if (stronger) {
@@ -1465,17 +1518,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 		// don't drain more than the defenders remaining hitpoints
 		drains_damage = std::min<int>(drains_damage, defender.get_unit().hitpoints() / 2);
 	}
-	int damage_done = std::min<int>(defender.get_unit().hitpoints(), attacker.damage_);
 	bool defender_dies = defender.get_unit().hitpoints() <= attacker.damage_;
-	if (attacker_turn) {
-		stats.attack_result(hits
-			? (defender_dies ? statistics::attack_context::KILLS : statistics::attack_context::HITS)
-			: statistics::attack_context::MISSES, damage_done, drains_damage);
-	} else {
-		stats.defend_result(hits
-			? (defender_dies ? statistics::attack_context::KILLS : statistics::attack_context::HITS)
-			: statistics::attack_context::MISSES, damage_done, drains_damage);
-	}
 
 	if (!ran_results) {
 		log_scope2(log_engine, "setting random results");
@@ -1552,25 +1595,29 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 			}
 			value = value + bonus;
 
-			unit_map::iterator itor = units_.find(loc);
-			if (!itor.valid()) {
-				itor = units_.find(loc, false);
+			unit* involved = units_.find_unit(loc);
+			if (!involved) {
+				continue;
+			}
+			if (teams_[involved->side() - 1].ea_artifical_neutral && hero::is_ea_artifical(involved->packee_type()->master())) {
+				continue;
+			}
+			if (!attack_team.is_enemy(involved->side()) || involved->invisible(loc)) {
+				continue;
+			}
+
+			// must make involved is exclusive. 
+			// if isn't exclusive it may result in second or later same u_ptr to become invalid and program exit exceptional  
+			if (assist_find.find(involved) != assist_find.end()) {
+				continue;
 			}
 
 			formation_defend_disable_lock lock;
 
-			if (itor.valid() && attack_team.is_enemy(itor->side()) && !itor->invisible(loc)) {
-				unit* u_ptr = &*itor;
-				// must make u_ptr is exclusive. 
-				// if isn't exclusive it may result in second or later same u_ptr to become invalid and program exit exceptional  
-				if (assist_find.find(u_ptr) != assist_find.end()) {
-					continue;
-				}
-				battle_context bc(*resources::units, attacker.get_unit(), *itor, attacker.weapon_, -1);
-				const battle_context::unit_stats* a_stats = &bc.get_attacker_stats();
-				damage_locs.push_back(std::make_pair(u_ptr, a_stats->damage * value * attack_team.interlink_increase_ / 10000));
-				assist_find.insert(u_ptr);
-			}
+			battle_context bc(units_, attacker.get_unit(), *involved, attacker.weapon_, -1);
+			const battle_context::unit_stats* a_stats = &bc.get_attacker_stats();
+			damage_locs.push_back(std::make_pair(involved, a_stats->damage * value * attack_team.interlink_increase_ / 10000));
+			assist_find.insert(involved);
 		}
 	}
 	// unit_attack parameters
@@ -1580,26 +1627,27 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 	for (std::vector<std::pair<unit*, int> >::const_iterator loc = damage_locs.begin(); loc != damage_locs.end(); ++ loc) {
 		unit* defender_ptr = loc->first;
 		std::ostringstream float_text;
-		if (hits) {
+
+		// special only effect center(primary) defender.
+		// for example, second defender has city, poisoned cannot effect it.
+		if (defender_ptr == center_defender_ptr) {
 			const unit &defender_unit = *defender_ptr;
-			// special only effect center(primary) defender.
-			// for example, second defender has city, poisoned cannot effect it.
-			if (defender_ptr == center_defender_ptr) {
-				if (attacker_stats->poisons && !defender_unit.get_state(unit::STATE_POISONED)) {
+			if (hits) {
+				if (attacker_stats->poisons && !defender_unit.get_state(ustate_tag::POISONED)) {
 					// help::tintegrate::generate_img(float_text, "misc/poisoned.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^poisoned") : _("poisoned")) << '\n';
 				}
 
-				if (attacker_stats->slows && !defender_unit.get_state(unit::STATE_SLOWED)) {
+				if (attacker_stats->slows && !defender_unit.get_state(ustate_tag::SLOWED)) {
 					// help::tintegrate::generate_img(float_text, "misc/slowed.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^slowed") : _("slowed")) << '\n';
 				}
 
-				if (attacker_stats->breaks && !defender_unit.get_state(unit::STATE_BROKEN)) {
+				if (attacker_stats->breaks && !defender_unit.get_state(ustate_tag::BROKEN)) {
 					// help::tintegrate::generate_img(float_text, "misc/broken.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
@@ -1621,6 +1669,9 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 				if (indomitable) {
 					float_text << _("indomitable") << '\n';
 				}
+			} else {
+				float_text << _("Miss") << '\n';
+
 			}
 		}
 		def_ptr_vec.push_back(defender_ptr);
@@ -1646,8 +1697,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 		}
 		unit* defender_ptr = loc->first;
 
-		// defender_loc must use instance instead of reference. last breath/die may earse defender_ptr. 
-		const map_location defender_loc = defender_ptr->get_location();
+		// defender_loc must use instance instead of reference. last breath/die may earse defender_ptr.
 		const attack_type* defender_weapon = defender_ptr == center_defender_ptr? defender_stats->weapon: NULL;
 		
 		bool dies = loc->first->take_hit(loc->second);
@@ -1675,12 +1725,12 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 
 			unit& defender_unit = *defender_ptr;
 			if (defender_ptr == center_defender_ptr) {
-				if (attacker_stats->poisons && !defender_unit.get_state(unit::STATE_POISONED)) {
-					defender_unit.set_state(unit::STATE_POISONED, true);
+				if (attacker_stats->poisons && !defender_unit.get_state(ustate_tag::POISONED)) {
+					defender_unit.set_state(ustate_tag::POISONED, true);
 				}
 
-				if (attacker_stats->slows && !defender_unit.get_state(unit::STATE_SLOWED)) {
-					defender_unit.set_state(unit::STATE_SLOWED, true);
+				if (attacker_stats->slows && !defender_unit.get_state(ustate_tag::SLOWED)) {
+					defender_unit.set_state(ustate_tag::SLOWED, true);
 					update_fog = true;
 					if (defender_ptr == center_defender_ptr) {
 						// defneder may be broken, need recalculate all.
@@ -1688,8 +1738,8 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 					}
 				}
 
-				if (attacker_stats->breaks && !defender_unit.get_state(unit::STATE_BROKEN)) {
-					defender_unit.set_state(unit::STATE_BROKEN, true);
+				if (attacker_stats->breaks && !defender_unit.get_state(ustate_tag::BROKEN)) {
+					defender_unit.set_state(ustate_tag::BROKEN, true);
 					update_fog = true;
 					if (defender_ptr == center_defender_ptr) {
 						// attacker may be slowed, need recalculate all.
@@ -1699,7 +1749,7 @@ bool attack::perform_hit(bool attacker_turn, statistics::attack_context &stats)
 
 				// If the defender is petrified, the fight stops immediately
 				if (attacker_stats->petrifies) {
-					defender_unit.set_state(unit::STATE_PETRIFIED, true);
+					defender_unit.set_state(ustate_tag::PETRIFIED, true);
 					update_fog = true;
 					if (defender_ptr == center_defender_ptr) {
 						attacker.n_attacks_ = 0;
@@ -1731,8 +1781,8 @@ bool attack::weapon_move(unit& u, const map_location& from, const map_location& 
 		invalid_locs.insert(to);
 		if (map.is_village(to)) {
 			int orig_village_owner = village_owner(to, *resources::teams);
-			size_t team_num = u.side() -1;
-			if (size_t(orig_village_owner) != team_num) {
+			int team_num = u.side() -1;
+			if (orig_village_owner != team_num) {
 				get_village(to, team_num + 1);
 			}
 		}
@@ -1751,9 +1801,14 @@ std::pair<map_location, map_location> attack::perform()
 
 	unit& attacker = a_.get_unit();
 	unit& defender = d_.get_unit();
+	const int attacker_side = a_.get_unit().side();
+	const int defender_side = d_.get_unit().side();
+	team& attacker_team = teams_[attacker_side - 1];
+	team& defender_team = teams_[defender_side - 1];
+
 	bool attacker_is_artifical = attacker.is_artifical();
 	bool attacker_is_soldier = attacker.is_soldier();
-	bool attacker_is_tower = (tent::mode == TOWER_MODE) && teams_[attacker.side() - 1].is_human();
+	bool attacker_is_tower = attacker.task() == unit::TASK_STATION || ((tent::mode == mode_tag::TOWER) && attacker_team.is_human());
 	bool defender_is_artifical = defender.is_artifical();
 	bool defender_is_commoner = defender.is_commoner();
 	bool defender_is_soldier = defender.is_soldier();
@@ -1883,7 +1938,7 @@ std::pair<map_location, map_location> attack::perform()
 	d_.get_unit().set_resting(false);
 
 	// If the attacker was invisible, she isn't anymore!
-	a_.get_unit().set_state(unit::STATE_UNCOVERED, true);
+	a_.get_unit().set_state(ustate_tag::UNCOVERED, true);
 
 	bc_ = new battle_context(units_, a_.get_unit(), d_.get_unit(), a_.weapon_, d_.weapon_);
 	a_stats_ = &bc_->get_attacker_stats();
@@ -1899,6 +1954,7 @@ std::pair<map_location, map_location> attack::perform()
 	//
 	// check reinforce attack
 	//
+	std::string text;
 	for (size_t i = 0; i < attacker.adjacent_size_; i ++) {
 		unit_map::const_iterator itor = units_.find(attacker.adjacent_[i]);
 		if (!itor.valid() || attacker.side() != itor->side()) {
@@ -1912,17 +1968,28 @@ std::pair<map_location, map_location> attack::perform()
 			int reinforce_percent = 10 - (5 * united_level) / 100;
 			if (!((random + that.hitpoints()) % reinforce_percent)) {
 				h2 = that.character_hero(apply_to_tag::UNITED);
+				text = unit_types.character(h2->character_).name();
+			}
+		} else if (that.hot_turns()) {
+			united_level = that.hot_level();
+			if (random % 100 <= united_level) {
+				h2 = that.max_tactic_hero();
+				text = dgettext("wesnoth-hero", "tactic");
 			}
 		}
 		if (!h2 && !((random + that.hitpoints()) % 5)) {
 			h2 = &that.master();
-			if (!h1.is_consort(*h2) && !h1.is_oath(*h2)) {
+			if (h1.is_consort(*h2)) {
+				text = dgettext("wesnoth-hero", "consort");
+			} else if (h1.is_oath(*h2)) {
+				text = dgettext("wesnoth-hero", "oath");
+			} else {
 				h2 = NULL;
 			}
 		}
 		if (h2) {
 			if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(itor->get_location().x, itor->get_location().y, draw_area)) {
-				unit_display::global_anim_2(GLB_ANIM_REINFORCE, h1.image(true), h2->image(true));
+				unit_display::global_anim_2(global_anim_tag::REINFORCE, h1.image(true), h2->image(true), text);
 			}
 			a_.reinforced_ = true;
 			break;
@@ -1931,40 +1998,79 @@ std::pair<map_location, map_location> attack::perform()
 	// check aggressive can trigger or not.
 	// if little damage, it no effect. instead generate time-consuming.
 	bool attacker_more_num_blows = false;
-	if (!anim_lock && a_stats_->damage > 5) {
+	hero* h2 = NULL;
+	if (!anim_lock && a_stats_->damage >= game_config::min_valid_damage) {
 		int aggressive_level = attacker.character_level(apply_to_tag::AGGRESSIVE);
 		if (aggressive_level) {
 			int denominator = 14 - aggressive_level / 10;
 			if (!((random + attacker.hitpoints()) % denominator)) {
-				attacker_more_num_blows = true;
+				h2 = attacker.character_hero(apply_to_tag::AGGRESSIVE);
+				text = unit_types.character(h2->character_).name();
+			}
+		} else if (attacker.hot_turns()) {
+			aggressive_level = attacker.hot_level();
+			if (random % 100 <= aggressive_level) {
+				h2 = attacker.max_tactic_hero();
+				text = dgettext("wesnoth-hero", "tactic");
+			}
+		}
+		if (h2) {
+			if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(defender.get_location().x, defender.get_location().y, draw_area)) {
+				unit_display::global_anim_2(global_anim_tag::INDIVIDUALITY, h2->image(true), "projectiles/strike-n-3.png", text);
+			}
+			attacker_more_num_blows = true;
+		}
 
+		//
+		// check hate
+		//
+		if (!((random + attacker.master().number_) % 2)) {
+			std::pair<hero*, hero*> ret = attacker.exist_hate(defender);
+			if (ret.first) {
 				if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(defender.get_location().x, defender.get_location().y, draw_area)) {
-					hero* h2 = attacker.character_hero(apply_to_tag::AGGRESSIVE);
-					unit_display::global_anim_2(GLB_ANIM_INDIVIDUALITY, h2->image(true), "projectiles/strike-n-3.png");
+					unit_display::global_anim_2(global_anim_tag::REINFORCE, ret.second->image(true), ret.first->image(true), dgettext("wesnoth-hero", "hate"));
 				}
+				a_.hated_ = true;
 			}
 		}
 	}
 	
 	// defender reinforced
-	hero* h2 = NULL;
+	h2 = NULL;
 	int protective_level = defender.character_level(apply_to_tag::PROTECTIVE);
 	if (protective_level) {
 		int reinforce_percent = 10 - (5 * protective_level) / 100;
 		if (!((random + defender.hitpoints()) % reinforce_percent)) {
 			h2 = defender.character_hero(apply_to_tag::PROTECTIVE);
+			text = unit_types.character(h2->character_).name();
+			// if (!h2) {
+			//	h2 = defender.max_tactic_hero();
+			// }
+		}
+	} else if (defender.hot_turns()) {
+		protective_level = defender.hot_level();
+		if (random % 100 <= protective_level) {
+			h2 = defender.max_tactic_hero();
+			text = dgettext("wesnoth-hero", "tactic");
 		}
 	}
 	if (!h2 && !((random + defender.hitpoints()) % 8)) {
 		h2 = defender.can_encourage();
+		if (h2) {
+			if (defender.master().is_consort(*h2)) {
+				text = dgettext("wesnoth-hero", "consort");
+			} else if (defender.master().is_oath(*h2)) {
+				text = dgettext("wesnoth-hero", "oath");
+			}
+		}
 	}
 	if (h2) {
 		hero* h1 = &defender.master();
 		if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(defender.get_location().x, defender.get_location().y, draw_area)) {
 			if (h1 != h2) {
-				unit_display::global_anim_2(GLB_ANIM_REINFORCE, h1->image(true), h2->image(true));
+				unit_display::global_anim_2(global_anim_tag::REINFORCE, h1->image(true), h2->image(true), text, font::BAD_COLOR);
 			} else {
-				unit_display::global_anim_2(GLB_ANIM_INDIVIDUALITY, h1->image(true), "projectiles/strike-n-3.png");
+				unit_display::global_anim_2(global_anim_tag::INDIVIDUALITY, h1->image(true), "projectiles/strike-n-3.png", text, font::BAD_COLOR);
 			}
 		}
 		d_.reinforced_ = true;
@@ -1977,23 +2083,10 @@ std::pair<map_location, map_location> attack::perform()
 	}
 	refresh_bc();
 
-	statistics::attack_context attack_stats(a_.get_unit(), d_.get_unit(), a_stats_->chance_to_hit, d_stats_->chance_to_hit);
-
-	{
-		// Calculate stats for battle
-		combatant attacker(bc_->get_attacker_stats());
-		combatant defender(bc_->get_defender_stats());
-		attacker.fight(defender,false);
-		const double attacker_inflict = static_cast<double>(d_.get_unit().hitpoints()) - defender.average_hp();
-		const double defender_inflict = static_cast<double>(a_.get_unit().hitpoints()) - attacker.average_hp();
-
-		attack_stats.attack_expected_damage(attacker_inflict,defender_inflict);
-	}
-
 	a_.orig_attacks_ = a_stats_->num_blows + (attacker_more_num_blows? 1: 0);
 	if (anim_lock && a_.orig_attacks_) {
 		a_.orig_attacks_ = 1;
-	} else if (unit_feature_val2(attacker, hero_featrue_frighten)) {
+	} else if (attacker_team.stratagem_baffle_fightback || unit_feature_val2(attacker, hero_featrue_frighten)) {
 		d_.orig_attacks_ = 0;
 	} else {
 		d_.orig_attacks_ = d_stats_->num_blows;
@@ -2005,10 +2098,6 @@ std::pair<map_location, map_location> attack::perform()
 
 	bool defender_strikes_first = (d_stats_->firststrike && !a_stats_->firststrike);
 	unsigned int rounds = std::max<unsigned int>(a_stats_->rounds, d_stats_->rounds) - 1;
-	const int attacker_side = a_.get_unit().side();
-	const int defender_side = d_.get_unit().side();
-	team& attacker_team = teams_[attacker_side - 1];
-	team& defender_team = teams_[defender_side - 1];
 	bool defender_contain_entertainer = unit_feature_val2(d_.get_unit(), hero_feature_entertainer)? true: false;
 	bool has_unit_in_eyeshot = point_in_rect_of_hexes(a_.loc_.x, a_.loc_.y, draw_area) || point_in_rect_of_hexes(d_.loc_.x, d_.loc_.y, draw_area);
 
@@ -2026,7 +2115,7 @@ std::pair<map_location, map_location> attack::perform()
 		++ abs_n_attack_;
 
 		if (a_.n_attacks_ > 0 && !defender_strikes_first) {
-			if (!perform_hit(true, attack_stats)) break;
+			if (!perform_hit(true)) break;
 		}
 
 		// If the defender got to strike first, they use it up here.
@@ -2034,7 +2123,7 @@ std::pair<map_location, map_location> attack::perform()
 		++abs_n_defend_;
 
 		if (d_.n_attacks_ > 0) {
-			if (!perform_hit(false, attack_stats)) break;
+			if (!perform_hit(false)) break;
 		}
 
 		// Continue the fight to death; if one of the units got petrified,
@@ -2131,6 +2220,16 @@ std::pair<map_location, map_location> attack::perform()
 					} 
 				}
 			}
+
+			std::vector<unit*> v;
+			if (new_locs.first.valid() && a_.loc_ != new_locs.first) {
+				v.push_back(&attacker);
+			}
+			if (new_locs.second.valid() && d_.loc_ != new_locs.second) {
+				v.push_back(&defender);
+			}
+			units_.multi_resort_map(&gui_, v, true);
+
 			// update both attacker and defender's loc_, in order to follow-up a_/d_.valid().
 			a_.loc_ = new_locs.first;
 			d_.loc_ = new_locs.second;
@@ -2217,7 +2316,7 @@ std::pair<map_location, map_location> attack::perform()
 
 int village_owner(const map_location& loc, const std::vector<team>& teams)
 {
-	for(size_t i = 0; i != teams.size(); ++i) {
+	for(int i = 0; i != (int)teams.size(); ++i) {
 		if(teams[i].owns_village(loc))
 			return i;
 	}
@@ -2228,6 +2327,58 @@ int village_owner(const map_location& loc, const std::vector<team>& teams)
 bool get_village(const map_location& loc, int side, int *action_timebonus)
 {
 	return false;
+}
+
+void calculate_supplying(std::vector<team>& teams, unit_map& units, unit& actor)
+{
+	if (actor.is_artifical() || actor.is_commoner() || actor.food() >= actor.max_food()) {
+		return;
+	}
+
+	int side = actor.side();
+	team& current_team = teams[side - 1];
+	int can_supply, addend;
+	std::stringstream strstr;
+
+	const map_location* tiles = actor.adjacent_;
+	size_t adjance_size = actor.adjacent_size_;
+	for (int step = 0; step < 2; step ++) {
+		if (step == 1) {
+			tiles = actor.adjacent_2_;
+			adjance_size = actor.adjacent_size_2_;
+		}
+		for (size_t adj = 0; adj < adjance_size; adj ++) {
+			const map_location& loc = tiles[adj];
+			unit* that = units.find_unit(loc);
+			if (!that || current_team.is_enemy(that->side())) {
+				continue;
+			}
+			can_supply = 0;
+			if (that->is_city()) {
+				can_supply = that->max_food();
+			} else if (that->fort()) {
+				can_supply = that->food();
+			}
+			if (!can_supply) {
+				continue;
+			}
+
+			addend = std::min(can_supply, actor.max_food() - actor.food());
+			actor.increase_food(addend);
+			if (that->fort()) {
+				that->increase_food(-1 * addend);
+			}
+
+			strstr.str("");
+			strstr << help::tintegrate::generate_img("misc/food.png");
+			strstr << addend;
+			unit_display::unit_text(actor, false, strstr.str());
+
+			if (actor.food() >= actor.max_food()) {
+				return;
+			}
+		}
+	}
 }
 
 void carry_supplying(const team& current_team, unit_map& units, unit& provider)
@@ -2294,12 +2445,12 @@ void carry_supplying(const team& current_team, unit_map& units, unit& provider)
 	}
 }
 
-void calculate_supplying(std::vector<team>& teams, unit_map& units, int side)
+void calculate_supplying2(std::vector<team>& teams, unit_map& units, int side)
 {
 	const int max_city_food = 100;
 	team& current_team = teams[side - 1];
 
-	const std::vector<artifical*>& holden = current_team.holded_cities();
+	const std::vector<artifical*>& holden = current_team.holden_cities();
 	for (std::vector<artifical*>::const_iterator it = holden.begin(); it != holden.end(); ++ it) {
 		artifical& city = **it;
 		city.set_food(max_city_food);
@@ -2319,30 +2470,45 @@ void calculate_supplying(std::vector<team>& teams, unit_map& units, int side)
 }
 
 // Simple algorithm: no maximum number of patients per healer.
-void reset_resting(unit_map& units, int side)
+void reset_resting(std::vector<team>& teams, unit* actor)
 {
-	for (unit_map::iterator i = units.begin(); i != units.end(); ++i) {
-		i->set_state(unit::STATE_FORMATION_ATTACKED, false);
-		if (i->side() == side) {
-			i->set_resting(true);
+	if (actor) {
+		actor->set_resting(true);
+
+	} else {
+		VALIDATE(tent::turn_based, "must be in turn_based!");
+		int side = unit_map::top_side;
+		team& current_team = teams[side - 1];
+
+		std::vector<artifical*> holden_cities = current_team.holden_cities();
+		for (std::vector<artifical*>::iterator it = holden_cities.begin(); it != holden_cities.end(); ++ it) {
+			artifical& city = **it;
+			city.set_resting(true);
+		}
+
+		const std::pair<unit**, size_t> p = current_team.field_troop();
+		for (size_t i = 0; i < p.second; i ++) {
+			unit* u = p.first[i];
+			u->set_resting(true);
 		}
 	}
+
 }
 
 void calculate_end_turn(std::vector<team>& teams, int side)
 {
 	team& current_team = teams[side - 1];
 
-	std::vector<artifical*> holded_cities = current_team.holded_cities();
-	for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+	std::vector<artifical*> holden_cities = current_team.holden_cities();
+	for (std::vector<artifical*>::iterator it = holden_cities.begin(); it != holden_cities.end(); ++ it) {
 		artifical& city = **it;
-		city.end_turn();
+		city.end_turn(true);
 	}
 
 	const std::pair<unit**, size_t> p = current_team.field_troop();
 	for (size_t i = 0; i < p.second; i ++) {
 		unit* u = p.first[i];
-		u->end_turn();
+		u->end_turn(true);
 	}
 }
 
@@ -2353,11 +2519,214 @@ struct unit_healing_struct {
 	int healing;
 };
 
-void calculate_healing(int side, bool update_display)
+void calculate_healing(std::vector<team>& teams, game_display& disp, unit* actor)
 {
-	game_display& gui = *resources::screen;
-	std::vector<team>& teams = *resources::teams;
+	// field troop, decrease loyalty
+	if (!actor->is_artifical() && !actor->is_robber()) {
+		if (actor->consider_loyalty() && actor->alert_food() && !actor->get_ability_bool("surveillance")) {
+			actor->increase_loyalty(game_config::field_troop_increase_loyalty);
+		}
+	}
 
+
+	gamemap& gmap = *resources::game_map;
+	int terrain_healing = gmap.gives_healing(actor->get_location());
+
+	// heal self or others.
+	bool only_resting = false;
+	if (!actor->has_ability_type("heals") && !unit_feature_val2(*actor, hero_feature_healer)) {
+		if (!actor->resting() && !terrain_healing) {
+			return;
+		}
+		only_resting = true;
+	}
+
+	int side = actor->side();
+	std::list<unit_healing_struct> l;
+
+	// We look for all allied units, then we see if our healer is near them.
+
+	for (size_t n = 0; n < teams.size(); n ++) {
+		team& t = teams[n];
+		if (n != side - 1 && t.is_enemy(side)) {
+			continue;
+		}
+
+		const std::pair<unit**, size_t> p = t.field_troop();
+		unit** troops = p.first;
+		size_t troops_vsize = p.second;
+		for (size_t i = 0; i < troops_vsize; i ++) {
+			unit& u = *(troops[i]);
+			if (only_resting && actor != &u) {
+				continue;
+			}
+			const map_location& loc = u.get_location();
+			if (u.is_artifical()) {
+				continue;
+			}
+
+			if (u.incapacitated()) {
+				continue;
+			}
+
+			// patient must be self or adjacent with actor.
+			if (actor != &u) {
+				size_t adj;
+				for (adj = 0; adj < actor->adjacent_size_; adj ++) {
+					if (loc == actor->adjacent_[adj]) {
+						break;
+					}
+				}
+				if (adj == actor->adjacent_size_) {
+					continue;
+				}
+			}
+
+			int healing = 0;
+			bool curing = false;
+			std::vector<unit *> healers;
+			const bool is_poisoned = u.get_state(ustate_tag::POISONED);
+
+			if (!only_resting) {
+				unit_ability_list heal = u.get_abilities("heals");
+
+				// For heal amounts, only consider healers on side which is starting now.
+				// Remove all healers not on this side.
+				bool found = false;
+				for (std::vector<std::pair<const config *, unit *> >::iterator h_it = heal.cfgs.begin(); h_it != heal.cfgs.end(); ) {
+					unit* potential_healer = h_it->second;
+					if (potential_healer->side() != side) {
+						h_it = heal.cfgs.erase(h_it);
+					} else {
+						++ h_it;
+						if (potential_healer == actor) {
+							found = true;
+						}
+					}
+				}
+
+				// actor must be in potential healer.
+				if (!found) {
+					continue;
+				}
+
+				unit_abilities::effect heal_effect(heal, 0, false);
+				healing = heal_effect.get_composite_value() * t.cooperate_increase_ / 100;
+				if (is_poisoned && healing > 0) {
+					curing = true;
+					healing = 0;
+				} else if (heal.cfgs.size() > 1) {
+					healing /= heal.cfgs.size() - 1;
+				}
+
+				for (std::vector<unit_abilities::individual_effect>::const_iterator heal_loc = heal_effect.begin(); heal_loc != heal_effect.end(); ++heal_loc) {
+					if (std::find(healers.begin(), healers.end(), heal_loc->u) == healers.end()) {
+						healers.push_back(heal_loc->u);
+					}
+				}
+			}
+			
+			if (actor == &u) {
+				if (terrain_healing) {
+					if (is_poisoned) {
+						curing = true;
+					} else {
+						if (terrain_healing > healing) {
+							healing = terrain_healing;
+							healers.clear();
+						}
+					}
+				}
+
+				if (!curing && u.resting()) {
+					healing += game_config::rest_heal_amount;
+				}
+			}
+			if (is_poisoned && curing) {
+				u.set_state(ustate_tag::POISONED, false);
+				unit_display::unit_text(u, false, "");
+			} else if (is_poisoned) {
+				if (u.side() == side) {
+					healing -= game_config::poison_amount;
+				}
+			}
+
+			if (!curing && healing == 0) {
+				continue;
+			}
+
+			int pos_max = u.max_hitpoints() - u.hitpoints();
+			int neg_max = -(u.hitpoints() - 1);
+			if (healing > 0 && pos_max <= 0) {
+				// Do not try to "heal" if HP >= max HP
+				continue;
+			}
+
+			healing += (healing * u.character_level(apply_to_tag::CHARISMATIC)) / 300;
+			if (healing > pos_max) {
+				healing = pos_max;
+			} else if(healing < neg_max) {
+				healing = neg_max;
+			}
+
+			if (!recorder.is_skipping() && !(u.invisible(u.get_location()) && teams[disp.viewing_team()].is_enemy(side))) {
+				unit_healing_struct uhs = { &u, healers, healing };
+				l.push_front(uhs);
+			}
+			if (healing > 0) {
+				u.heal(healing);
+			} else if (healing < 0) {
+				u.take_hit(-healing);
+			}
+			disp.invalidate_unit();
+
+
+			for (std::vector<unit*>::iterator it = healers.begin(); it != healers.end(); ++ it) {
+				unit& healer = **it;
+				healer.get_experience(increase_xp::attack_ublock(healer), 2);
+				dialogs::advance_unit(healer, !teams[healer.side() - 1].is_human(), true);
+			}
+		}
+	}
+
+	// Display healing with nearest first algorithm.
+	if (!l.empty()) {
+
+		// The first unit to be healed is chosen arbitrarily.
+		unit_healing_struct uhs = l.front();
+		l.pop_front();
+
+		unit_display::unit_healing(*uhs.healed, uhs.healed->get_location(),
+			uhs.healers, uhs.healing);
+
+		// next unit to be healed is nearest from uhs left in list l 
+		while (!l.empty()) {
+
+			std::list<unit_healing_struct>::iterator nearest;
+			int min_d = INT_MAX;
+
+			// for each unit in l, remember nearest 
+			for (std::list<unit_healing_struct>::iterator i =
+			     l.begin(), i_end = l.end(); i != i_end; ++i)
+			{
+				int d = (int)distance_between(uhs.healed->get_location(), i->healed->get_location());
+				if (d < min_d) {
+					min_d = d;
+					nearest = i;
+				}
+			}
+
+			uhs = *nearest;
+			l.erase(nearest);
+
+			unit_display::unit_healing(*uhs.healed, uhs.healed->get_location(),
+				uhs.healers, uhs.healing);
+		}
+	}
+}
+
+void calculate_healing2(std::vector<team>& teams, game_display& disp, int side)
+{
 	std::list<unit_healing_struct> l;
 
 	// We look for all allied units, then we see if our healer is near them.
@@ -2377,20 +2746,19 @@ void calculate_healing(int side, bool update_display)
 				continue;
 			}
 
-			if (u.get_state("unhealable") || u.incapacitated())
+			if (u.incapacitated()) {
 				continue;
+			}
 
-			unit* surveillanced = NULL;
 			std::vector<unit *> healers;
 
 			int healing = 0;
 
 			bool curing = false;
-			bool surveillancing = false;
 
 			unit_ability_list heal = u.get_abilities("heals");
 
-			const bool is_poisoned = u.get_state(unit::STATE_POISONED);
+			const bool is_poisoned = u.get_state(ustate_tag::POISONED);
 
 			// For heal amounts and surveillance, only consider healers on side which is starting now.
 			// Remove all healers not on this side.
@@ -2402,16 +2770,6 @@ void calculate_healing(int side, bool update_display)
 					h_it = heal.cfgs.erase(h_it);
 				} else {
 					++h_it;
-				}
-			}
-			for (std::vector<std::pair<const config *, unit *> >::const_iterator
-					heal_it = heal.cfgs.begin(); heal_it != heal.cfgs.end(); ++heal_it) {
-
-				if ((*heal_it->first)["surveillanced"].to_bool()) {
-					surveillanced = heal_it->second;
-					// Full curing either occurs on the healer turn
-					surveillancing = true;
-					break;
 				}
 			}
 
@@ -2445,16 +2803,12 @@ void calculate_healing(int side, bool update_display)
 				}
 
 				// field troop, decrease loyalty
-				if (u.food() > 0) {
-					if (u.consider_food()) {
-						u.increase_food(-1);
-					}
-				} else if (!surveillancing && u.consider_loyalty()) {
+				if (!u.is_robber() && u.consider_loyalty() && u.alert_food() && !u.get_ability_bool("surveillance")) {
 					u.increase_loyalty(game_config::field_troop_increase_loyalty);
 				}
 			}
 			if (is_poisoned && curing) {
-				u.set_state(unit::STATE_POISONED, false);
+				u.set_state(ustate_tag::POISONED, false);
 				unit_display::unit_text(u, false, "");
 			} else if (is_poisoned) {
 				if (u.side() == side) {
@@ -2480,15 +2834,7 @@ void calculate_healing(int side, bool update_display)
 				healing = neg_max;
 			}
 
-			if (!healers.empty()) {
-				DBG_NG << "Just before healing animations, unit has " << healers.size() << " potential healers\n";
-			}
-
-
-			if (!recorder.is_skipping() && update_display &&
-				!(u.invisible(u.get_location()) &&
-				  teams[gui.viewing_team()].is_enemy(side)))
-			{
+			if (!recorder.is_skipping() && !(u.invisible(u.get_location()) && teams[disp.viewing_team()].is_enemy(side))) {
 				unit_healing_struct uhs = { &u, healers, healing };
 				l.push_front(uhs);
 			}
@@ -2497,7 +2843,7 @@ void calculate_healing(int side, bool update_display)
 			} else if (healing < 0) {
 				u.take_hit(-healing);
 			}
-			gui.invalidate_unit();
+			disp.invalidate_unit();
 
 
 			for (std::vector<unit*>::iterator it = healers.begin(); it != healers.end(); ++ it) {
@@ -2528,7 +2874,7 @@ void calculate_healing(int side, bool update_display)
 			for (std::list<unit_healing_struct>::iterator i =
 			     l.begin(), i_end = l.end(); i != i_end; ++i)
 			{
-				int d = distance_between(uhs.healed->get_location(), i->healed->get_location());
+				int d = (int)distance_between(uhs.healed->get_location(), i->healed->get_location());
 				if (d < min_d) {
 					min_d = d;
 					nearest = i;
@@ -2545,8 +2891,22 @@ void calculate_healing(int side, bool update_display)
 }
 
 int maximun_road_damage = 50;
-void road_guarding(unit_map& units, std::vector<team>& teams, const std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >& road_locs, int side)
+void road_guarding(unit_map& units, std::vector<team>& teams, const std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >& road_locs, unit* actor)
 {
+	const artifical* actor_city = NULL;
+	int side;
+	
+	if (actor) {
+		actor_city = actor->is_city()? unit_2_artifical(actor): NULL;
+		if (!actor_city) {
+			return;
+		}
+		side = actor->side();
+	} else {
+		VALIDATE(tent::turn_based, "must be in turn_based!");
+		side = unit_map::top_side;
+	}
+
 	team& current_team = teams[side - 1];
 	std::map<unit*, int> touched;
 	unit_map::iterator u_it;
@@ -2556,6 +2916,9 @@ void road_guarding(unit_map& units, std::vector<team>& teams, const std::map<map
 		const std::vector<std::pair<artifical*, artifical*> >& v = it->second;
 
 		for (std::vector<std::pair<artifical*, artifical*> >::const_iterator it2 = v.begin(); it2 != v.end(); ++ it2) {
+			if (actor_city && it2->first != actor_city && it2->second != actor_city) {
+				continue;
+			}
 			int a_side = it2->first->side();
 			int b_side = it2->second->side();
 			if (a_side == b_side && a_side == side) {
@@ -2751,7 +3114,7 @@ namespace {
 		}
 
 		if (un.is_artifical() || unit_feature_val2(un, hero_feature_scout)) {
-			un.set_state(unit::STATE_LEGERITIED, true);
+			un.set_state(ustate_tag::LEGERITIED, true);
 			if (un.is_artifical()) {
 				un.set_movement(2);
 			}
@@ -2763,7 +3126,7 @@ namespace {
 		}
 
 		if (un.is_artifical() || unit_feature_val2(un, hero_feature_scout)) {
-			un.set_state(unit::STATE_LEGERITIED, false);
+			un.set_state(ustate_tag::LEGERITIED, false);
 			if (un.is_artifical()) {
 				un.set_movement(0);
 			}
@@ -2782,7 +3145,7 @@ namespace {
 				//just in case we managed to move on a fogged hex (teleport)
 				if(seen_units != NULL && known_units != NULL
 						&& known_units->count(*it) == 0 && *it != loc && *it == sighted->get_location()) {
-					if (!(sighted->get_state(unit::STATE_PETRIFIED)))
+					if (!(sighted->get_state(ustate_tag::PETRIFIED)))
 					{
 						seen_units->insert(*it);
 					}
@@ -2855,6 +3218,27 @@ bool clear_shroud(int side)
 	return result;
 }
 
+class expedite_release
+{
+public:
+	expedite_release(game_display& disp, unit_map& units)
+		: disp_(disp)
+		, units_(units)
+	{}
+
+	~expedite_release()
+	{
+		if (units_.expediting()) {
+			units_.set_expediting();
+			disp_.remove_expedite_city();
+		}
+	}
+
+private:
+	game_display& disp_;
+	unit_map& units_;
+};
+
 size_t move_unit(move_unit_spectator* move_spectator,
 		 const std::vector<map_location>& route,
 		 replay* move_recorder, undo_list* undo_stack,
@@ -2866,14 +3250,17 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	// Stop the user from issuing any commands while the unit is moving
 	const events::command_disabler disable_commands;
-
+	
 	gamemap& map = *resources::game_map;
 	unit_map& units = *resources::units;
 	hero_map& heros = *resources::heros;
 	std::vector<team>& teams = *resources::teams;
 	game_display& disp = *resources::screen;
 
+	const expedite_release release_expedite(disp, units);
+
 	unit_map::iterator ui = units.find(route.front());
+	unit& mover = *ui;
 	bool mover_is_commoner = ui->is_commoner();
 	bool mover_is_trader = ui->is_path_along_road();
 	bool mover_is_transport = ui->transport();
@@ -2890,11 +3277,6 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		expediting_city_cookie = units.expediting_city_node();
 	}
 
-	// don't modify goto if we're have a spectator
-	// if it is present, then the caller code is responsible for modifying gotos
-	if (move_spectator==NULL) {
-		// ui->set_goto(map_location());
-	}
 
 	size_t team_num = ui->side()-1;
 	team* tm = &teams[team_num];
@@ -2920,6 +3302,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	std::set<map_location> seen_units;
 	std::set<map_location> petrified_units;
 	bool discovered_unit = false;
+	bool discover_by_scout = false;
 	unit* alerted_unit = NULL;
 	bool should_clear_stack = false;
 	std::vector<map_location>::const_iterator step;
@@ -2927,15 +3310,16 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	pathfind::last_location = *route.begin();
 	for (step = route.begin()+1; step != route.end(); ++step) {
-		if (expediting_city_cookie && units.get_cookie(*step) == expediting_city_cookie) {
-			pathfind::last_location = *step;
+		const map_location& cur_loc = *step;
+		if (expediting_city_cookie && units.get_cookie(cur_loc) == expediting_city_cookie) {
+			pathfind::last_location = cur_loc;
 			continue;
 		}
-		const bool skirmisher = ui->get_ability_bool("skirmisher", *step);
+		const bool skirmisher = ui->get_ability_bool("skirmisher", cur_loc);
 
 		int cost;
 		unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units.get_cookie(*step, false));
-		if (curr_node && curr_node->second->wall()) {
+		if (curr_node && curr_node->second->wall2()) {
 			const unit* w = curr_node->second;
 			cost = pathfind::location_cost(units, *tm, *ui, tm->is_enemy(w->side()), false);
 		} else {
@@ -3028,7 +3412,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		if (!enemy_unit.valid()) {
 			unit_map::const_iterator base = units.find(*step, false);
 			if (!base.valid() || base->can_stand(*ui)) {
-				alerted_unit = loc_in_alert_area(*ui, pathfind::last_location, *step);
+				alerted_unit = loc_in_alert_area(teams, *ui, pathfind::last_location, *step);
 				if (alerted_unit) {
 					should_clear_stack = true;
 					moves_left = 0;
@@ -3036,41 +3420,67 @@ size_t move_unit(move_unit_spectator* move_spectator,
 					if (move_spectator != NULL) {
 						move_spectator->set_ambusher(units.find(alerted_unit->get_location()));
 					}
-					ambushed_string = _("Alerted!");
+					ambushed_string = dgettext("wesnoth-lib", "Alerted!");
 				}
 			}
 		}
 
-		// Check if we have discovered an invisible enemy unit
-		map_location adjacent[6];
-		get_adjacent_tiles(*step,adjacent);
+		map_offset* adjacent_ptr;
+		size_t adjacent_size;
+		map_location adjacent_loc;
+		
+		adjacent_size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
+		adjacent_ptr = adjacent_1[cur_loc.x & 0x1];
+		int steps = unit_feature_val2(mover, hero_feature_scout)? 3: 1;
+		for (int s = 0; s < steps && !discovered_unit; s ++) {
+			if (s == 1) {
+				adjacent_size = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
+				adjacent_ptr = adjacent_2[cur_loc.x & 0x1];
+			} else if (s == 2) {
+				adjacent_size = (sizeof(adjacent_3) / sizeof(map_offset)) >> 1;
+				adjacent_ptr = adjacent_3[cur_loc.x & 0x1];
+			}
+			for (size_t i = 0; i < adjacent_size; i ++) {
+				adjacent_loc.x = cur_loc.x + adjacent_ptr[i].x;
+				adjacent_loc.y = cur_loc.y + adjacent_ptr[i].y;
 
-		for (int i = 0; i != 6; ++i) {
-			// Check if we are checking ourselves
-			if (adjacent[i] == ui->get_location())
-				continue;
-
-			const unit_map::const_iterator it = units.find(adjacent[i]);
-			if (it != units.end() && tm->is_enemy(it->side()) && it->invisible(it->get_location())) {
-				discovered_unit = true;
-				should_clear_stack = true;
-				moves_left = 0;
-				if (it->hide_turns()) {
-					it->set_hide_turns(0);
+				// Check if we are checking ourselves
+				if (adjacent_loc == mover.get_location()) {
+					continue;
 				}
-				if (move_spectator!=NULL) {
-					move_spectator->set_ambusher(it);
-				}
 
-				unit_ability_list hides = it->get_abilities("hides");
+				unit* u = units.find_unit(adjacent_loc);
+				if (u && tm->is_enemy(u->side()) && u->invisible(u->get_location())) {
+					discovered_unit = true;
+					should_clear_stack = true;
+					if (s == 0) {
+						moves_left = 0;
+						if (u->hide_turns()) {
+							u->set_hide_turns(0);
+						}
+					} else {
+						discover_by_scout = true;
+					}
+					if (move_spectator!=NULL) {
+						move_spectator->set_ambusher(units.find(adjacent_loc));
+					}
 
-				std::vector<std::pair<const config *, unit *> >::const_iterator hide_it = hides.cfgs.begin();
-				// we only use the first valid alert message
-				for(;hide_it != hides.cfgs.end() && !ambushed_string.empty(); ++hide_it) {
-					ambushed_string = (*hide_it->first)["alert"].str();
+					unit_ability_list hides = u->get_abilities("hides");
+					if (!hides.cfgs.empty()) {
+						std::vector<std::pair<const config *, unit *> >::const_iterator hide_it = hides.cfgs.begin();
+						// we only use the first valid alert message
+						for (; hide_it != hides.cfgs.end() && !ambushed_string.empty(); ++ hide_it) {
+							ambushed_string = (*hide_it->first)["alert"].str();
+						}
+					} else if (s == 0) {
+						ambushed_string = dgettext("wesnoth-lib", "Ambushed!");
+					} else {
+						ambushed_string = dgettext("wesnoth-lib", "Discover ambusher!");
+					}
 				}
 			}
 		}
+
 		pathfind::last_location = *step;
 	}
 
@@ -3100,21 +3510,33 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	// size of steps: above for loop, step initializes route.begin() + 1, it will result to sizeo must >= 1.
 	// don't be rid of first loc. below std::copy(route.begin() + steps.size() - 1, ...) commands steps not null.
+	// city maybe multi-grid, it should stand at first city-loc.
+	std::pair<map_location, int> last_city_loc;
 	while (steps.size() >= 2) {
-		map_location const &loc = steps.back();
-		unit_map::iterator it = units.find(loc);
-		if (it.valid()) {
-			if (unit_is_city(&*it) && it->side() == ui->side() && (!expediting_city_cookie || units.get_cookie(loc) != expediting_city_cookie)) {
-				break;
-			}
-		} else {
-			it = units.find(loc, false);
-			if (!it.valid() || it->can_stand(*ui)) {
-				break;
-			}
+		const map_location& loc = steps.back();
+		const unit* u = units.find_unit(loc);
+		// tow city must be not adjacent.
+		if (!u || (last_city_loc.first.valid() && !u->is_city())) {
+			break;
 		}
-		moves_left += ui->movement_cost(map[loc]);
+		if (!u->base()) {
+			if (unit_is_city(u) && u->side() == ui->side() && (!expediting_city_cookie || units.get_cookie(loc) != expediting_city_cookie)) {
+				last_city_loc.first = loc;
+			}
+		} else if (u->can_stand(*ui)) {
+			break;
+		}
+		int cost = ui->movement_cost(map[loc]);
+		moves_left += cost;
 		steps.pop_back();
+
+		if (last_city_loc.first.valid()) {
+			last_city_loc.second = cost;
+		}
+	}
+	if (last_city_loc.first.valid()) {
+		moves_left -= last_city_loc.second;
+		steps.push_back(last_city_loc.first);
 	}
 
 	// If we can't get all the way there and have to set a go-to.
@@ -3193,13 +3615,15 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	if (discovered_unit || alerted_unit) {
 		if (discovered_unit) {
-			if (!ui->get_state(unit::STATE_SLOWED)) {
-				ui->set_state(unit::STATE_SLOWED, true);
+			if (!mover.get_state(ustate_tag::SLOWED) && !discover_by_scout) {
+				mover.set_state(ustate_tag::SLOWED, true);
 			}
 		} else {
-			ui->set_state(unit::STATE_UNCOVERED, true);
+			mover.set_state(ustate_tag::UNCOVERED, true);
 		}
-		ui->set_hide_turns(0);
+		if (!discover_by_scout) {
+			ui->set_hide_turns(0);
+		}
 	}
 
 	disp.invalidate_unit_after_move(steps.front(), steps.back());
@@ -3416,22 +3840,22 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	} else if (!controller->is_recovering(team_num + 1) && !to_city && maybe_ui.valid()) {
 		int random = rand();
-		unit& mover = *maybe_ui;
+		unit& mover2 = *maybe_ui;
 		// 1/16---1/8
-		int encourage_percent = 16 - (8 * mover.character_level(apply_to_tag::UNITED)) / 100;
+		int encourage_percent = 16 - (8 * mover2.character_level(apply_to_tag::UNITED)) / 100;
 		if (!(random & 0x1ff)) {
 			get_random_card(*tm, disp, units, heros);
 			event_mutated = true;
 			
 		} else if (random % encourage_percent == 1) {
 			// suport to encourage
-			if (mover.hitpoints() < mover.max_hitpoints() * 2 / 3) {
-				hero* h2 = mover.can_encourage();
+			if (mover2.hitpoints() < mover2.max_hitpoints() * 2 / 3) {
+				hero* h2 = mover2.can_encourage();
 				if (h2) {
-					// must call add_event(replay::EVENT_ENCOURAGE, ...) before mover.do_encourage.
+					// must call add_event(replay::EVENT_ENCOURAGE, ...) before mover2.do_encourage.
 					// when replaying, increase_feeling in add_event may enquire choice, it is said [input] must after add_event. 
-					move_recorder->add_event(replay::EVENT_ENCOURAGE, mover.get_location());
-					mover.do_encourage(mover.master(), *h2);
+					move_recorder->add_event(replay::EVENT_ENCOURAGE, mover2.get_location());
+					mover2.do_encourage(mover2.master(), *h2);
 					event_mutated = true;
 				}
 			}
@@ -3768,6 +4192,56 @@ artifical* find_city_for_wall(unit_map& units, const map_location& loc)
 	return NULL;
 }
 
+// 1. wall include wall and keep.
+// 2. terrain match.
+// 3. location accord condiation. 1th no city and 2th has city(it's side == side).
+artifical* loc_can_build_wall(unit_map& units, const gamemap& gmap, const map_location& loc, const team& t)
+{
+	int side = t.side();
+	const std::set<const unit_type*>& can_build = t.builds();
+
+	std::set<const unit_type*> candidate;
+	candidate.insert(unit_types.find_keep());
+	candidate.insert(unit_types.find_wall());
+
+	bool terrain_matched = false;
+	for (std::set<const unit_type*>::const_iterator it = candidate.begin(); it != candidate.end(); ++ it) {
+		const unit_type* ut = *it;
+		if (can_build.find(ut) == can_build.end()) {
+			continue;
+		}
+		if (ut->terrain_matches(gmap.get_terrain(loc))) {
+			terrain_matched = true;
+		}
+	}
+	if (!terrain_matched) {
+		return NULL;
+	}
+
+	artifical* ret = NULL;
+	map_offset* adjacent2_ptr = adjacent_1[loc.x & 0x1];
+	size_t i2, size2 = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
+	for (i2 = 0; i2 < size2; i2 ++) {
+		artifical* city = units.city_from_loc(map_location(loc.x + adjacent2_ptr[i2].x, loc.y + adjacent2_ptr[i2].y));
+		if (city) {
+			break;
+		}
+	}
+	if (i2 != size2) {
+		return NULL;
+	}
+	adjacent2_ptr = adjacent_2[loc.x & 0x1];
+	size2 = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
+	for (i2 = 0; i2 < size2; i2 ++) {
+		artifical* city = units.city_from_loc(map_location(loc.x + adjacent2_ptr[i2].x, loc.y + adjacent2_ptr[i2].y));
+		if (city && city->side() == side) {
+			ret = city;
+			break;
+		}
+	}
+	return ret;
+}
+
 void expand_rect_loc(SDL_Rect& rect, const map_location& loc)
 {
 	if (rect.x != -1) {
@@ -3831,20 +4305,20 @@ void post_duel(unit& left_u, hero& left, unit& right_u, hero& right, int percent
 	int left_skill = 15, right_skill = 15;
 
 	if (percentage > 50) {
-		left_u.set_state(unit::STATE_BROKEN, false);
-		left_u.set_state(unit::STATE_SLOWED, false);
+		left_u.set_state(ustate_tag::BROKEN, false);
+		left_u.set_state(ustate_tag::SLOWED, false);
 
-		if (!right_u.get_state(unit::STATE_BROKEN)) {
+		if (!right_u.get_state(ustate_tag::BROKEN)) {
 			float_text << _("broken");
-			right_u.set_state(unit::STATE_BROKEN, true);
+			right_u.set_state(ustate_tag::BROKEN, true);
 		}
 		if (percentage > 70) {
-			if (!right_u.get_state(unit::STATE_SLOWED)) {
+			if (!right_u.get_state(ustate_tag::SLOWED)) {
 				if (!float_text.str().empty()) {
 					float_text << '\n';
 				}
 				float_text << _("slowed");
-				right_u.set_state(unit::STATE_SLOWED, true);
+				right_u.set_state(ustate_tag::SLOWED, true);
 			}
 		}
 
@@ -3868,20 +4342,20 @@ void post_duel(unit& left_u, hero& left, unit& right_u, hero& right, int percent
 		}
 
 	} else if (percentage < 50) {
-		right_u.set_state(unit::STATE_BROKEN, false);
-		right_u.set_state(unit::STATE_SLOWED, false);
+		right_u.set_state(ustate_tag::BROKEN, false);
+		right_u.set_state(ustate_tag::SLOWED, false);
 
-		if (!left_u.get_state(unit::STATE_BROKEN)) {
+		if (!left_u.get_state(ustate_tag::BROKEN)) {
 			float_text << _("broken");
-			left_u.set_state(unit::STATE_BROKEN, true);
+			left_u.set_state(ustate_tag::BROKEN, true);
 		}
 		if (percentage < 30) {
-			if (!left_u.get_state(unit::STATE_SLOWED)) {
+			if (!left_u.get_state(ustate_tag::SLOWED)) {
 				if (!float_text.str().empty()) {
 					float_text << '\n';
 				}
 				float_text << _("slowed");
-				left_u.set_state(unit::STATE_SLOWED, true);
+				left_u.set_state(ustate_tag::SLOWED, true);
 			}
 		}
 		if (percentage == 0) {
@@ -3923,7 +4397,7 @@ int calculate_exploiture(const hero& h1, const hero& h2, int type)
 
 	if (h2.valid()) {
 		if (type == department::commercial) {
-			assistant_ability = fxptoi9(h2.politics_) * 100 / 250; // oath relative
+			assistant_ability = fxptoi9(h2.spirit_) * 100 / 250; // oath relative
 			skill = fxptoi12(h2.skill_[hero_skill_commercial]);
 		} else if (type == department::technology) {
 			assistant_ability = fxptoi9(h2.intellect_) * 100 / 250;
@@ -3934,7 +4408,7 @@ int calculate_exploiture(const hero& h1, const hero& h2, int type)
 		skill = 0;
 	}
 	if (type == department::commercial) {
-		exploiture = fxptoi9(h1.politics_) + assistant_ability;
+		exploiture = fxptoi9(h1.spirit_) + assistant_ability;
 		skill += fxptoi12(h1.skill_[hero_skill_commercial]);
 	} else if (type == department::technology) {
 		exploiture = fxptoi9(h1.intellect_) + assistant_ability;
@@ -3961,7 +4435,7 @@ int calculate_disband_income(const unit& u, int cost_exponent, bool hp)
 	return income;
 }
 
-void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost, bool human, bool to_recorder)
+void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost, bool human, bool to_recorder, game_state& state)
 {
 	type_heros_pair pair(ut, v);
 
@@ -3969,7 +4443,7 @@ void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team
 		recorder.add_recruit(ut->id(), city.get_location(), v, cost, human);
 	}
 
-	unit* new_unit = new unit(units, heros, teams, pair, city.cityno(), true);
+	unit* new_unit = new unit(units, heros, teams, state, pair, city.cityno(), true, false);
 	new_unit->set_movement(new_unit->total_movement());
 	new_unit->set_attacks(new_unit->attacks_total());
 
@@ -3997,7 +4471,7 @@ unit* select_provoke_target(unit_map& units, const team& current_team, unit& tac
 	const std::vector<const ttactic*>& parts = t.parts();
 	for (std::map<int, std::vector<map_location> >::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
 		const ttactic& part_tactic = *(parts[it->first]);
-		if (part_tactic.apply_to() == apply_to_tag::PROVOKE || part_tactic.apply_to() == apply_to_tag::FOOD) {
+		if (ttactic::select_one(part_tactic.apply_to())) {
 			std::vector<map_location> locs = it->second;
 			for (std::vector<map_location>::iterator it2 = locs.begin(); it2 != locs.end();) {
 				unit* u = &*find_visible_unit(*it2, current_team);
@@ -4020,8 +4494,10 @@ unit* select_provoke_target(unit_map& units, const team& current_team, unit& tac
 	return special;
 }
 
-void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, hero& h, unit* special, bool to_recorder, bool consume)
+void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, hero& h, unit* special, bool to_recorder, bool consume, int cost)
 {
+	const events::command_disabler disable_commands;
+
 	team& current_team = teams[h.side_];
 	const ttactic& t = unit_types.tactic(h.tactic_);
 	const std::map<int, std::vector<map_location> > touched = t.touch_units(units, tactician);
@@ -4032,15 +4508,35 @@ void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, her
 	}
 
 	if (to_recorder) {
-		recorder.add_cast_tactic(tactician, h, special, consume);
+		recorder.add_cast_tactic(tactician, h, special, consume, cost);
 		// must called before tactician.get_experience(2).
 		// tactician.get_experience(2) may generate [input](select human troop),
 		// replay should known [input] is generate by cast_tactic.
 	}
 
+	if (consume) {
+		for (size_t n = 0; n < teams.size(); n ++) {
+			team& tm = teams[n];
+			if (!tm.stratagem_baffle_tactic || !current_team.is_enemy(n + 1)) {
+				continue;
+			}
+			int random = get_random();
+			if (random % 3 < 2) {
+				unit_display::stratagem_anim(stratagem_tag::technology(stratagem_tag::jiang_lang_cai_jin), h.image(true), false);
+				
+				tactician.increase_tactic_degree(-1 * t.point() * game_config::tactic_degree_per_point);
+				return;
+			}
+		}
+	}
+
+	if (cost) {
+		current_team.spend_gold(cost);
+	}
+
 	game_display& disp = *resources::screen;
 	const rect_of_hexes& draw_area = disp.draw_area();
-	if (tactician.human() && point_in_rect_of_hexes(tactician.get_location().x, tactician.get_location().y, draw_area)) {
+	if ((to_recorder && tactician.human()) || point_in_rect_of_hexes(tactician.get_location().x, tactician.get_location().y, draw_area)) {
 		disp.scroll_to_tile(tactician.get_location(), game_display::ONSCREEN, true, true);
 		unit_display::tactic_start(h);
 	}
@@ -4056,9 +4552,9 @@ void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, her
 			if (special) {
 				special->do_provoked(tactician, turn);
 			}
-		} else if (part_tactic.apply_to() == apply_to_tag::FOOD) {
+		} else if (part_tactic.apply_to() == apply_to_tag::REVIVAL) {
 			if (special) {
-				special->input_food(tactician);
+				special->do_revival(tactician);
 			}
 		} else {
 			unit_display::tactic_anim_lock lock(*resources::screen, tactician);
@@ -4074,7 +4570,10 @@ void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, her
 	}
 
 	if (consume) {
-		current_team.add_tactic_point(-1 * t.point());
+		if (tactician.hot_turns()) {
+			tactician.set_hot_turns(0);
+		}
+		tactician.increase_tactic_degree(-1 * t.point() * game_config::tactic_degree_per_point);
 	}
 
 	tactician.get_experience(increase_xp::attack_ublock(tactician), 2);
@@ -4084,8 +4583,43 @@ void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, her
 			dialogs::advance_unit(tactician, !current_team.is_human());
 		}
 	}
+
 	// some tactic maybe "add/erase" unit on map, for example "damage".
 	unit::clear_status_caches();
+}
+
+void do_clear_formationed(game_display& disp, std::vector<team>& teams, unit_map& units, unit& u, int cost, bool to_recorder)
+{
+	team& current_team = teams[u.side() - 1];
+
+	if (to_recorder) {
+		recorder.add_clear_formationed(u, cost);
+	}
+
+	if (cost) {
+		current_team.spend_gold(cost);
+	}
+
+	std::vector<unit*> touched;
+	if (u.get_state(ustate_tag::FORMATION_ATTACKED)) {
+		u.set_state(ustate_tag::FORMATION_ATTACKED, false);
+		touched.push_back(&u);
+	}
+	for (size_t adj = 0; adj < u.adjacent_size_; adj ++) {
+		unit* u2 = units.find_unit(u.adjacent_[adj]);
+		if (u2 && u2->get_state(ustate_tag::FORMATION_ATTACKED) && !current_team.is_enemy(u2->side())) {
+			u2->set_state(ustate_tag::FORMATION_ATTACKED, false);
+			touched.push_back(u2);
+		}
+	}
+
+	std::stringstream strstr;
+	unit_display::tactic_anim_lock lock(disp, u, false);
+	for (std::vector<unit*>::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
+		strstr.str("");
+		strstr << help::tintegrate::generate_img("misc/formation.png");
+		unit_display::unit_text(**it, false, strstr.str());
+	}
 }
 
 void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std::string& type, const std::string& relative, int ratio)
@@ -4127,8 +4661,8 @@ void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std:
 				damage = u.force_ - opp.force_;
 			} else if (relative == "intellect") {
 				damage = u.intellect_ - opp.intellect_;
-			} else if (relative == "politics") {
-				damage = u.politics_ - opp.politics_;
+			} else if (relative == "spirit") {
+				damage = u.spirit_ - opp.spirit_;
 			} else {
 				damage = u.charm_ - opp.charm_;
 			}
@@ -4142,7 +4676,6 @@ void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std:
 			int defense = opp.defense_modifier(resources::game_map->get_terrain(opp_loc));
 			int multiplier = defense * opp.resistance_against(type, false, opp.get_location());
 			damage = round_damage(damage, multiplier, 10000);
-			
 			touched.insert(std::make_pair(&opp, damage));
 		}
 	}
@@ -4186,8 +4719,21 @@ void multi_attack(unit_map& units, unit* attacker, const std::string& type, cons
 				}
 			}
 			unit_display::unit_die(opp.get_location(), opp, NULL, NULL, u_loc, attacker);
-			unit_die(units, opp, NULL, 0, a_side);
+			if (attacker) {
+				attack::unit_info info(*attacker, -1, units);
+				unit_die(units, opp, &info, 0, a_side);
+			} else {
+				unit_die(units, opp, NULL, 0, a_side);
+			}
 		}
+	}
+
+	try {
+		ai::manager::raise_gamestate_changed();
+		resources::controller->check_victory();
+		resources::controller->check_end_level();
+	} catch (...) {
+		throw;
 	}
 }
 
@@ -4442,6 +4988,12 @@ void calculate_formations_bh(std::vector<tformation>& formations, int current_si
 			formation.disable_ = disable;
 			++ it;
 		} else {
+			// release included unit
+			formationed_unit.erase(formation.u_);
+			for (std::map<int, unit*>::const_iterator it2 = formation.adjacent_.begin(); it2 != formation.adjacent_.end(); ++ it2) {
+				formationed_unit.erase(it2->second);
+			}
+
 			it = formations.erase(it);
 		}
 	}
@@ -4597,8 +5149,6 @@ std::vector<unit*> calculate_attackable(unit_map& units, team& current_team, con
 		return attackable;
 	}
 
-	const map_location& attacker_loc = attacker.get_location();
-
 	const map_location* tiles = attacker.adjacent_;
 	size_t adjance_size = attacker.adjacent_size_;
 	if (range == 1) {
@@ -4668,8 +5218,7 @@ bool formation_attack_internal(unit_map& units, team& current_team, tformation& 
 
 	bool attacked = false;
 	{
-		unit_display::formation_anim_lock lock(*resources::screen, formation);
-		attack::anim_lock = &lock;
+		unit_display::formation_anim_lock lock(*resources::screen, formation, &attack::anim_lock);
 		
 		std::map<int, std::vector<unit*> > attackable;
 		std::set<map_location> attacker_locs, defender_locs;
@@ -4711,13 +5260,13 @@ bool formation_attack_internal(unit_map& units, team& current_team, tformation& 
 
 			if (!attackable[start].empty()) {
 				if (!attacked) {
-					formation.u_->set_state(unit::STATE_FORMATION_ATTACKED, true);
+					formation.u_->set_state(ustate_tag::FORMATION_ATTACKED, true);
 					for (std::map<int, unit*>::const_iterator it2 = formation.adjacent_.begin(); it2 != formation.adjacent_.end(); ++ it2) {
-						it2->second->set_state(unit::STATE_FORMATION_ATTACKED, true);
+						it2->second->set_state(ustate_tag::FORMATION_ATTACKED, true);
 					}
 					attacked = true;
 				}
-				if (tent::mode == TOWER_MODE) {
+				if (current_team.kill_income) {
 					formation.gold_ += 10;
 				}
 				unit* target = attackable[start][it->first->hitpoints() % attackable[start].size()];
@@ -4733,7 +5282,6 @@ bool formation_attack_internal(unit_map& units, team& current_team, tformation& 
 			current_team.spend_gold(-1 * formation.gold_);
 		}
 
-		attack::anim_lock = NULL;
 		lock.flush();
 
 		if (attacked) {
@@ -4775,6 +5323,8 @@ bool formation_attack_internal(unit_map& units, team& current_team, tformation& 
 
 bool do_formation_attack(std::vector<team>& teams, unit_map& units, game_display& gui, team& current_team, unit& attacker, bool verify, bool replay)
 {
+	const events::command_disabler disable_commands;
+
 	tformation formation = calculate_attack_formation(teams, units, attacker, true);
 	if (!verify && (!formation.valid() || formation.disable_)) {
 		return false;
@@ -4784,8 +5334,6 @@ bool do_formation_attack(std::vector<team>& teams, unit_map& units, game_display
 		recorder.add_formation_attack(attacker.get_location());
 	}
 	VALIDATE(formation.valid() && !formation.disable_, "do_formation_attack, cannot find valid formation!");
-
-	const events::command_disabler disable_commands;
 
 	return formation_attack_internal(units, current_team, formation, replay);
 }
@@ -4843,14 +5391,14 @@ void do_demolish(game_display& gui, unit_map& units, team& current_team, unit* u
 		}
 	}
 
-	units.erase(u);
-	current_team.spend_gold(-1 * income);
-
 	if (!u->is_artifical()) {
 		for (std::vector<hero*>::iterator it = vh.begin(); it != vh.end(); ++ it) {
 			city->fresh_into(**it);
 		}
 	}
+
+	units.erase(u);
+	current_team.spend_gold(-1 * income);
 
 	// invalidate adjacent locs
 	gui.invalidate(loc);
@@ -4889,7 +5437,7 @@ void do_fresh_heros(team& current_team, bool replay)
 	if (!replay) {
 		recorder.add_fresh_heros();
 	}
-	std::vector<artifical*>& holden_cities = current_team.holded_cities();
+	std::vector<artifical*>& holden_cities = current_team.holden_cities();
 	for (std::vector<artifical*>::iterator it = holden_cities.begin(); it != holden_cities.end(); ++ it) {
 		artifical& city = **it;
 		city.finish_2_fresh();		
@@ -4928,10 +5476,10 @@ void do_remove_active_tactic(unit& u, bool to_recorder)
 	if (to_recorder) {
 		recorder.active_tactic(false, u, hero_invalid);
 	}
-	u.remove_from_tactic_cache();
+	u.remove_from_slot_cache();
 }
 
-void do_direct_expedite(std::vector<team>& teams, unit_map& units, gamemap& map, artifical& city, int index, const map_location to, bool to_recorder)
+void do_direct_expedite(std::vector<team>& teams, unit_map& units, artifical& city, int index, const map_location to, bool to_recorder)
 {
 	if (to_recorder) {
 		std::vector<map_location> steps;
@@ -4942,26 +5490,22 @@ void do_direct_expedite(std::vector<team>& teams, unit_map& units, gamemap& map,
 
 	units.set_expediting(&city, true, index);
 	units.move(city.get_location(), to);
-	city.troop_go_out(units.last_expedite_index());
-	units.find(to)->set_movement(0);
-
-	if (map.is_village(to)) {
-		int orig_village_owner = village_owner(to, teams);
-		if (size_t(orig_village_owner) != city.side() - 1) {
-			get_village(to, city.side());
-		}
-	}
+	unit& u = *units.find_unit(to);
+	u.set_movement(0);
 }
 
-void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, unit&u, const map_location from, const map_location to, bool to_recorder) 
+void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, unit& u, const map_location to, int cost, bool to_recorder) 
 {
+	const map_location& from = u.get_location();
+	team& current_team = teams[u.side() - 1];
+
 	if (to_recorder) {
 		std::vector<map_location> steps;
 		steps.push_back(from);
 		steps.push_back(to);
-		recorder.add_movement(steps, true);
+		recorder.add_movement(steps, true, cost);
 	}
-
+	
 	units.move(from, to);
 	VALIDATE(&u == &*units.find(to), "mouse_handler::direct_move_unit, move modify u incorrectly!");
 	if (map.is_village(to)) {
@@ -4971,8 +5515,39 @@ void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, uni
 		}
 	}
 
+	if (cost) {
+		current_team.spend_gold(cost);
+	}
 	u.set_movement(0);
 	u.set_standing();
+
+	// location changed, 
+	game_display* disp = resources::screen;
+	if (disp) {
+		disp->resort_access_troops(u);
+	} else {
+		units.resort_map(u);
+	}
+	unit_display::unit_recruited(u.get_location());
+}
+
+void do_set_task(unit_map& units, unit& u, int task, const map_location& at, bool to_recorder)
+{
+	if (to_recorder) {
+		recorder.add_set_task(u, task, at);
+	}
+
+	if (task == unit::TASK_GUARD) {
+		map_location adjusted_at = at;
+		const artifical* city = units.city_from_loc(at);
+		if (city) {
+			adjusted_at = city->get_location();
+		}
+		u.set_guard(adjusted_at);
+
+	} else {
+		u.set_task(task);
+	}
 }
 
 void do_bomb(game_display& gui, team& t, bool to_recorder)
@@ -4995,29 +5570,61 @@ void join_anim(hero* h, artifical* city, const std::string& message)
 	}
 }
 
-bool field_can_appoint_noble()
+bool troop_can_appoint_noble(const unit& u, play_controller* controller, bool field)
 {
-	return tent::mode == TOWER_MODE;
+	if (tent::tower_mode()) {
+		return true;
+	}
+	if (!field) {
+		return true;
+	}
+	if (controller && controller->has_network_player()) {
+		return false;
+	} 
+	return u.can_formation_attack() && u.formation_attack_enable();
 }
 
-bool field_can_assamble_treasure()
+bool troop_can_assamble_treasure(const unit& u, play_controller* controller, bool field)
 {
-	return tent::mode == TOWER_MODE;
+	if (tent::tower_mode()) {
+		return true;
+	}
+	if (!field) {
+		return true;
+	}
+	if (controller && controller->has_network_player()) {
+		return false;
+	} 
+	if (u.can_formation_attack() && u.formation_attack_enable()) {
+		if (u.master().treasure_ != HEROS_NO_TREASURE) {
+			return true;
+		}
+		if (u.second().valid() && u.second().treasure_ != HEROS_NO_TREASURE) {
+			return true;
+		}
+		if (u.third().valid() && u.third().treasure_ != HEROS_NO_TREASURE) {
+			return true;
+		}
+	}
+	return false;
 }
 
-std::vector<std::pair<int, unit*> > form_human_pairs(const std::vector<team>& teams, bool include_field)
+std::vector<std::pair<int, unit*> > form_human_pairs(const std::vector<team>& teams, troop_can_xxx fn, play_controller* controller)
 {
 	const team& rpg_team = teams[rpg::h->side_];
 	std::vector<std::pair<int, unit*> > human_pairs;
 
-	const std::vector<artifical*>& holded_cities = rpg_team.holded_cities();
-	for (std::vector<artifical*>::const_iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+	const std::vector<artifical*>& holden_cities = rpg_team.holden_cities();
+	for (std::vector<artifical*>::const_iterator it = holden_cities.begin(); it != holden_cities.end(); ++ it) {
 		artifical* city = *it;
 
 		const std::vector<unit*>& resides = city->reside_troops();
 		for (std::vector<unit*>::const_iterator it2 = resides.begin(); it2 != resides.end(); ++ it2) {
 			unit* u = *it2;
 			if (!u->human()) {
+				continue;
+			}
+			if (fn && !fn(*u, controller, false)) {
 				continue;
 			}
 			human_pairs.push_back(std::make_pair(u->master().number_, u));
@@ -5029,20 +5636,21 @@ std::vector<std::pair<int, unit*> > form_human_pairs(const std::vector<team>& te
 			}
 		}
 
-		if (include_field) {
-			const std::vector<unit*>& fields = city->field_troops();
-			for (std::vector<unit*>::const_iterator it2 = fields.begin(); it2 != fields.end(); ++ it2) {
-				unit* u = *it2;
-				if (!u->human()) {
-					continue;
-				}
-				human_pairs.push_back(std::make_pair(u->master().number_, u));
-				if (u->second().valid()) {
-					human_pairs.push_back(std::make_pair(u->second().number_, u));
-				}
-				if (u->third().valid()) {
-					human_pairs.push_back(std::make_pair(u->third().number_, u));
-				}
+		const std::vector<unit*>& fields = city->field_troops();
+		for (std::vector<unit*>::const_iterator it2 = fields.begin(); it2 != fields.end(); ++ it2) {
+			unit* u = *it2;
+			if (!u->human()) {
+				continue;
+			}
+			if (fn && !fn(*u, controller, true)) {
+				continue;
+			}
+			human_pairs.push_back(std::make_pair(u->master().number_, u));
+			if (u->second().valid()) {
+				human_pairs.push_back(std::make_pair(u->second().number_, u));
+			}
+			if (u->third().valid()) {
+				human_pairs.push_back(std::make_pair(u->third().number_, u));
 			}
 		}
 
@@ -5068,4 +5676,543 @@ std::vector<std::pair<int, unit*> > form_human_pairs(const std::vector<team>& te
 		}
 	}
 	return human_pairs;
+}
+
+bool feature_contained(int f1, int f2)
+{
+	if (f1 >= hero_feature_arms_min && f1 < hero_feature_arms_min + 2 * HEROS_MAX_ARMS) {
+		if (f2 >= hero_feature_arms_min && f2 < hero_feature_arms_min + 2 * HEROS_MAX_ARMS) {
+			return (f1 - hero_feature_arms_min) % HEROS_MAX_ARMS == (f2 - hero_feature_arms_min) % HEROS_MAX_ARMS;
+		}
+	} else if (f1 >= hero_feature_range_min && f1 < hero_feature_range_min + 2 * HEROS_MAX_RANGE) {
+		if (f2 >= hero_feature_range_min && f2 < hero_feature_range_min + 2 * HEROS_MAX_RANGE) {
+			return (f1 - hero_feature_range_min) % HEROS_MAX_RANGE == (f2 - hero_feature_range_min) % HEROS_MAX_RANGE;
+		}
+	} 
+	return false;
+}
+
+bool is_packee_feature(int f)
+{
+	return f == hero_feature_arms_min + 4 || f == hero_feature_arms_min + HEROS_MAX_ARMS + 4;
+}
+
+std::pair<int, int> feature_match_ut(const std::vector<int>& v, const unit_type& ut)
+{
+	int match = 0, nomatch = 0;
+	for (std::vector<int>::const_iterator it = v.begin(); it != v.end(); ++ it) {
+		int f = *it;
+		if (is_packee_feature(f)) {
+			continue;
+		}
+		if (f >= hero_feature_arms_min && f < hero_feature_arms_min + 2 * HEROS_MAX_ARMS) {
+			int level = (f - hero_feature_arms_min) / HEROS_MAX_ARMS + 1;
+			if ((f - hero_feature_arms_min) % HEROS_MAX_ARMS != ut.arms()) {
+				nomatch += level;
+			} else {
+				match += level;
+			}
+		} else if (f >= hero_feature_range_min && f < hero_feature_range_min + 2 * HEROS_MAX_RANGE) {
+			int level = (f - hero_feature_range_min) / HEROS_MAX_RANGE + 1;
+			if (!ut.can_range((f - hero_feature_range_min) % HEROS_MAX_RANGE)) {
+				nomatch += level;
+			} else {
+				match += level;
+			}
+		}
+	}
+	return std::make_pair(match, nomatch);
+}
+
+int calculate_candidate_second_score(const std::vector<const hero*>& existed, const hero& h2, const unit_type& ut)
+{
+	const int feature_duplicate = -30;
+	const int feature_contain = -20;
+	const int feature_ut_nomatch = -30;
+
+	int score = 0;
+	const complex_feature_map& complex_feature = unit_types.complex_feature();
+	std::vector<int> v2;
+	if (h2.feature_ != HEROS_NO_FEATURE) {
+		if (h2.feature_ < HEROS_BASE_FEATURE_COUNT) {
+			v2.push_back(h2.feature_);
+		} else {
+			v2 = complex_feature.find(h2.feature_)->second;
+		}
+		std::pair<int, int> match = feature_match_ut(v2, ut);
+		if (!match.first && match.second) {
+			score += feature_ut_nomatch;
+		}
+	}
+
+	std::vector<int> v1;
+	for (std::vector<const hero*>::const_iterator it = existed.begin(); it != existed.end(); ++ it) {
+		const hero& h1 = **it;
+		if (h1.feature_ == HEROS_NO_FEATURE) {
+			v1.clear();
+		} else if (h1.feature_ < HEROS_BASE_FEATURE_COUNT) {
+			v1.push_back(h1.feature_);
+		} else {
+			v1 = complex_feature.find(h1.feature_)->second;
+		}
+		if (h2.feature_ != HEROS_NO_FEATURE) {
+			for (std::vector<int>::const_iterator it2 = v2.begin(); it2 != v2.end(); ++ it2) {
+				int f2 = *it2;
+				for (std::vector<int>::const_iterator it1 = v1.begin(); it1 != v1.end(); ++ it1) {
+					int f1 = *it1;
+					if (f1 == f2) {
+						score += feature_duplicate;
+					} else if (feature_contained(f1, f2)) {
+						score += feature_contain;
+					}
+				}
+			}
+		}
+	}
+	return score;
+}
+
+void select_expedite_heros(hero_map& heros, size_t max_army_heros, std::vector<hero*>& fresh_heros, std::vector<const hero*>& expedite_heros, const unit_type& ut)
+{
+	int index;
+	const hero& master = *expedite_heros[0];
+	while (expedite_heros.size() < max_army_heros && !fresh_heros.empty()) {
+		// select one relation hero if have
+		do {
+			hero* candidate_second = NULL;
+
+			// master is candidate's consort.
+			for (index = 0; index < HEROS_MAX_CONSORT; index ++) {
+				if (master.consort_[index].hero_ != HEROS_INVALID_NUMBER) {
+					candidate_second = &heros[master.consort_[index].hero_];
+					if (candidate_second->activity_ >= game_config::minimal_activity && candidate_second->city_ == master.city_ && candidate_second->status_ == hero_status_idle && candidate_second->number_ != master.number_) {
+						std::vector<hero*>::iterator itor = std::find(fresh_heros.begin(), fresh_heros.end(), candidate_second);
+						// candidate_second may be push into expedite_heros in this while, need verify.
+						if (itor != fresh_heros.end()) {
+							index = itor - fresh_heros.begin();
+							break;
+						}
+					}
+					candidate_second = NULL;
+				}
+			}
+			if (candidate_second) {
+				break;
+			}
+			// master is candidate's oath.
+			for (index = 0; index < HEROS_MAX_OATH; index ++) {
+				if (master.oath_[index].hero_ != HEROS_INVALID_NUMBER) {
+					candidate_second = &heros[master.oath_[index].hero_];
+					if (candidate_second->activity_ >= game_config::minimal_activity && candidate_second->city_ == master.city_ && candidate_second->status_ == hero_status_idle && candidate_second->number_ != master.number_) {
+						std::vector<hero*>::iterator itor = std::find(fresh_heros.begin(), fresh_heros.end(), candidate_second);
+						if (itor != fresh_heros.end()) {
+							index = itor - fresh_heros.begin();
+							break;
+						}
+					}
+					candidate_second = NULL;
+				}
+			}
+			if (candidate_second) {
+				break;
+			}
+			// candidate is master's parent.
+			for (index = 0; index < HEROS_MAX_PARENT; index ++) {
+				if (master.parent_[index].hero_ != HEROS_INVALID_NUMBER) {
+					candidate_second = &heros[master.parent_[index].hero_];
+					if (candidate_second->activity_ >= game_config::minimal_activity && candidate_second->city_ == master.city_ && candidate_second->status_ == hero_status_idle && candidate_second->number_ != master.number_) {
+						std::vector<hero*>::iterator itor = std::find(fresh_heros.begin(), fresh_heros.end(), candidate_second);
+						if (itor != fresh_heros.end()) {
+							index = itor - fresh_heros.begin();
+							break;
+						}
+					}
+					candidate_second = NULL;
+				}
+			}
+			if (candidate_second) {
+				break;
+			}
+			// master is candidate's parent.
+			for (std::vector<hero*>::const_iterator itor = fresh_heros.begin(); itor != fresh_heros.end(); ++ itor) {
+				candidate_second = *itor;
+				for (index = 0; index < HEROS_MAX_PARENT; index ++) {
+					if (candidate_second->parent_[index].hero_ == master.number_) {
+						index = itor - fresh_heros.begin();
+						break;
+					}
+				}
+				if (index != HEROS_MAX_PARENT) {
+					break;
+				}
+				candidate_second = NULL;
+			}
+			if (candidate_second) {
+				break;
+			}
+			// master is candidate's intimate.
+			for (index = 0; index < HEROS_MAX_INTIMATE; index ++) {
+				if (master.intimate_[index].hero_ != HEROS_INVALID_NUMBER) {
+					candidate_second = &heros[master.intimate_[index].hero_];
+					if (candidate_second->activity_ >= game_config::minimal_activity && candidate_second->city_ == master.city_ && candidate_second->status_ == hero_status_idle && candidate_second->number_ != master.number_) {
+						std::vector<hero*>::iterator itor = std::find(fresh_heros.begin(), fresh_heros.end(), candidate_second);
+						if (itor != fresh_heros.end()) {
+							index = itor - fresh_heros.begin();
+							break;
+						}
+					}
+					candidate_second = NULL;
+				}
+			}
+			if (candidate_second) {
+				break;
+			}
+			if (fresh_heros.size() != 1) {
+				int best_score = -10000;
+				int random = rand();
+				int times = fresh_heros.size() < 5? (int)fresh_heros.size(): 5;
+				for (int n = 0; n < times; n ++, random ++) {
+					int i = random % fresh_heros.size();
+					int score = calculate_candidate_second_score(expedite_heros, *(fresh_heros[i]), ut);
+
+					if (score > best_score) {
+						best_score = score;
+						index = i;
+					}
+				}
+			} else {
+				index = 0;
+			}
+		} while (false);
+		expedite_heros.push_back(fresh_heros[index]);
+		fresh_heros.erase(fresh_heros.begin() + index);
+	}
+}
+
+const unit_type* select_unit_type(const team& current_team, const hero& master, artifical& city, int cost_exponent)
+{
+	// which unit_type
+	const unit_type* ut;
+	int gold = current_team.gold();
+	int max_recruit_cost = city.max_recruit_cost() * cost_exponent / 100;
+	if (!tent::tower_mode() || master.utype_ == HEROS_NO_UTYPE) {
+		int max_level = std::min(game_config::max_level, city.max_level() + 1);
+		bool leader = (master.official_ == hero_official_leader);
+		bool has_female = master.gender_ == hero_gender_female;
+
+		std::vector<std::string> options;
+		int adaptability = 0;
+		// Find an available unit that can be recruited,
+		// matches the desired usage type, and comes in under budget.
+		int bonus = 0;
+		if (gold > 4 * max_recruit_cost) {
+			bonus = rand() % 3;
+		} else if (gold > 3 * max_recruit_cost) {
+			bonus = rand() % 2;
+		}
+		if (game_config::default_ai_level + bonus > max_level) {
+			bonus = max_level - game_config::default_ai_level;
+		}
+		std::vector<int> v2;
+		if (master.feature_ != HEROS_NO_FEATURE) {
+			if (master.feature_ < HEROS_BASE_FEATURE_COUNT) {
+				v2.push_back(master.feature_);
+			} else {
+				const complex_feature_map& complex_feature = unit_types.complex_feature();
+				v2 = complex_feature.find(master.feature_)->second;
+			}
+		}
+
+		const std::vector<const unit_type*>& recruits = city.recruits(game_config::default_ai_level + bonus);
+		const std::vector<arms_feature>& features = current_team.features();
+		for (std::vector<const unit_type*>::const_iterator itor = recruits.begin(); itor != recruits.end(); ++ itor) {
+			const unit_type* ut = *itor;
+			const std::string& name = ut->id();
+
+			bonus = 0;
+			for (std::vector<arms_feature>::const_iterator it2 = features.begin(); it2 != features.end(); ++ it2) {
+				const arms_feature& f = *it2;
+				if (ut->arms() == f.arms_) {
+					bonus += ftofxp12(1) / 2;
+				}
+			}
+			if (ut->especial() != NO_ESPECIAL) {
+				bonus += ftofxp12(1);
+			}
+			if (int require = ut->require()) {
+				if (require == unit_type::REQUIRE_LEADER) {
+					if (leader) {
+						// don't use ftofxp12(16), it will result to 0.
+						bonus += ftofxp12(15);
+					} else {
+						continue;
+					}
+				} else if (require == unit_type::REQUIRE_FEMALE) {
+					if (has_female) {
+						bonus += ftofxp12(3);
+					} else {
+						continue;
+					}
+				}
+			}
+			if (master.feature_ != HEROS_NO_FEATURE) {
+				std::pair<int, int> match = feature_match_ut(v2, *ut);
+				if (match.first > match.second) {
+					bonus += ftofxp12(2);
+				}
+			}
+			
+			if (master.arms_[ut->arms()] + bonus > adaptability) {
+				options.clear();
+				adaptability = master.arms_[ut->arms()] + bonus;
+				options.push_back(name);
+			} else if (master.arms_[ut->arms()] + bonus == adaptability) {
+				options.push_back(name);
+			}
+		}
+		if (options.empty()) {
+			return NULL;
+		}
+
+		int index = rand() % options.size();
+		ut = unit_types.find(options[index]);
+	} else {
+		ut = unit_types.keytype(master.utype_);
+	}
+
+	return ut;
+}
+
+config load_campagin_scenario(const std::string& campaign_id, const std::string& scenario_id, const std::string& type)
+{
+	config campaign_cfg;
+	config scenario_cfg;
+
+	if (!scenario_id.empty() && scenario_id != "null") {
+		wml_config_from_file(game_config::path + "/xwml/campaigns/" + campaign_id + ".bin", campaign_cfg);
+		scenario_cfg = campaign_cfg.find_child(type, "id", scenario_id);
+	} else {
+		scenario_cfg.clear();
+	}
+	return scenario_cfg;
+}
+
+bool verify_siege_map_data(const config& game_config, const std::string& map_data)
+{
+	std::vector<map_location> ea_locs;
+	ea_locs.push_back(map_location(0, 0));
+	ea_locs.push_back(map_location(0, 7));
+	ea_locs.push_back(map_location(1, 7));
+	ea_locs.push_back(map_location(2, 7));
+
+	gamemap gmap(game_config, map_data);
+	if (gmap.w() != game_config::siege_map_w || gmap.h() != game_config::siege_map_h) {
+		return false;
+	}
+	for (std::vector<map_location>::const_iterator it = ea_locs.begin(); it != ea_locs.end(); ++ it) {
+		if (!gmap.is_ea(*it)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+const ttechnology& browse_stratagem(game_display& disp, int stratagem_tag)
+{
+	std::vector<std::string> items;
+	std::vector<gui2::tval_str> stratagem_map;
+	std::stringstream strstr;
+	int actived_index = 0;
+
+	for (int n = stratagem_tag::min; n <= stratagem_tag::max; n ++) {
+		const ttechnology& s = stratagem_tag::technology(n);
+		strstr.str("");
+		strstr << s.name();
+		stratagem_map.push_back(gui2::tval_str(n, strstr.str()));
+
+		if (stratagem_tag == n) {
+			actived_index = n - stratagem_tag::min;
+		}
+	}
+
+	for (std::vector<gui2::tval_str>::iterator it = stratagem_map.begin(); it != stratagem_map.end(); ++ it) {
+		items.push_back(it->str);
+	}
+	
+	gui2::tcombo_box dlg(items, actived_index);
+	dlg.show(disp.video());
+
+	return stratagem_tag::technology(stratagem_map[dlg.selected_index()].val);
+}
+
+bool has_enemy_in_3range(const unit_map& units, const gamemap& gmap, const team& current_team, const map_location& loc)
+{
+	// whether turn1's "end" exist enemy or not. 
+	map_offset* adjacent_ptr;
+	size_t i, size;
+	map_location adjacent_loc;
+	unit* u;
+
+	// range=1
+	size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
+	adjacent_ptr = adjacent_1[loc.x & 0x1];
+	for (i = 0; i < size; i ++) {
+		adjacent_loc.x = loc.x + adjacent_ptr[i].x;
+		adjacent_loc.y = loc.y + adjacent_ptr[i].y;
+		if (gmap.on_board(adjacent_loc)) {
+			u = units.find_unit(adjacent_loc);
+			if (u && current_team.is_enemy(u->side())) {
+				return true;
+			}
+		}
+	}
+	// range=2
+	size = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
+	adjacent_ptr = adjacent_2[loc.x & 0x1];
+	for (i = 0; i < size; i ++) {
+		adjacent_loc.x = loc.x + adjacent_ptr[i].x;
+		adjacent_loc.y = loc.y + adjacent_ptr[i].y;
+		if (gmap.on_board(adjacent_loc)) {
+			u = units.find_unit(adjacent_loc);
+			if (u && current_team.is_enemy(u->side())) {
+				return true;
+			} 
+		}
+	}
+	// range=3
+	size = (sizeof(adjacent_3) / sizeof(map_offset)) >> 1;
+	adjacent_ptr = adjacent_3[loc.x & 0x1];
+	for (i = 0; i < size; i ++) {
+		adjacent_loc.x = loc.x + adjacent_ptr[i].x;
+		adjacent_loc.y = loc.y + adjacent_ptr[i].y;
+		if (gmap.on_board(adjacent_loc)) {
+			u = units.find_unit(adjacent_loc);
+			if (u && current_team.is_enemy(u->side())) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+void do_unstage_hero(unit_map& units, hero& h)
+{
+	if (h.status_ == hero_status_unstage) {
+		return;
+	}
+	if (h.number_ < hero::number_normal_min) {
+		return;
+	}
+	int found = 0;
+	unit* u = units.find_unit(h);
+
+	std::vector<hero*> leave_heros;
+	std::vector<hero*> captains;
+
+	if (!u->is_city()) {
+		if (u->master().number_ == h.number_) {
+			leave_heros.push_back(&u->master());
+			found ++;
+		} else {
+			captains.push_back(&u->master());
+		}
+		if (u->second().valid()) {
+			if (u->second().number_ == h.number_) {
+				leave_heros.push_back(&u->second());
+				found ++;
+			} else {
+				captains.push_back(&u->second());
+			}
+		}
+		if (u->third().valid()) {
+			if (u->third().number_ == h.number_) {
+				leave_heros.push_back(&u->third());
+				found ++;
+			} else {
+				captains.push_back(&u->third());
+			}
+		}
+
+		if (captains.empty()) {
+			if (!u->is_resided()) {
+				units.erase(u);
+			} else {
+				artifical& city = *units.city_from_loc(u->get_location());
+				city.troop_go_out(*u);
+			}
+		} else {
+			if (leave_heros.size()) {
+				u->replace_captains(captains);
+			}
+		}
+	} else {
+		artifical& city = *unit_2_artifical(u);
+		for (int type = 0; type < 3; type ++) { 
+			std::vector<hero*>* list;
+			if (type == 0) {
+				list = &city.fresh_heros();
+			} else if (type == 1) {
+				list = &city.finish_heros();
+			} else {
+				list = &city.wander_heros();
+			}
+			for (std::vector<hero*>::iterator it = list->begin(); it != list->end();) {
+				hero& h2 = **it;
+				if (h2.number_ == h.number_) {
+					it = list->erase(it);
+					found ++;
+				} else {
+					++ it;
+				}
+			}
+		}
+	}
+	VALIDATE(found == 1, "found error count!");
+	h.to_unstage();
+}
+
+std::string format_loc(const unit_map& units, const map_location& loc, int side)
+{
+	std::stringstream strstr;
+
+	const artifical* to_city = units.city_from_loc(loc);
+	if (to_city) {
+		strstr << to_city->name();
+	} else {
+		unit_map::const_iterator base = units.find(loc, false);
+		if (base.valid() && base->fort()) {
+			if (side == HEROS_INVALID_SIDE || side == base->side()) {
+				strstr << base->name();
+			} else {
+				strstr << help::tintegrate::generate_format(base->name(), "red");
+			}
+		}
+		strstr << "(" << loc.x + 1 << ", " << loc.y + 1 << ")";
+	}
+	return strstr.str();
+}
+
+void do_hate_relation(hero& h1, hero& h2, bool set)
+{
+	h1.do_hate_relation(h2, set);
+	h2.do_hate_relation(h1, set);
+
+	std::string message;
+	int incident;
+	utils::string_map symbols;
+	symbols["first"] = help::tintegrate::generate_format(h1.name(), help::tintegrate::hero_color);
+	symbols["second"] = help::tintegrate::generate_format(h2.name(), help::tintegrate::hero_color);
+	if (set) {
+		incident = game_events::INCIDENT_INVALID;
+		message = vgettext("wesnoth-lib", "Hate of national perdition! I will be mutually exclusive with $second.", symbols);
+		sound::play_sound("spear.ogg");
+
+	} else {
+		incident = game_events::INCIDENT_ALLY;
+		message = vgettext("I'm happy! I got rid of hate with $second.", symbols);
+	}
+	if (!message.empty()) {
+		game_events::show_hero_message(&h1, NULL, message, incident);
+	}
 }

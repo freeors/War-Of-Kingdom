@@ -1,0 +1,782 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+
+#
+# bowman
+#
+msgid "bowman1"
+msgstr ""
+
+msgid "bowman1 description"
+msgstr ""
+
+msgid "bowman2"
+msgstr ""
+
+msgid "bowman2 description"
+msgstr ""
+
+msgid "bowman3"
+msgstr ""
+
+msgid "bowman3 description"
+msgstr ""
+
+#
+# catapult
+#
+msgid "catapult1"
+msgstr ""
+
+msgid "catapult1 description"
+msgstr ""
+
+msgid "catapult2"
+msgstr ""
+
+msgid "catapult2 description"
+msgstr ""
+
+msgid "catapult3"
+msgstr ""
+
+msgid "catapult3 description"
+msgstr ""
+
+#
+# footman
+#
+msgid "footman1"
+msgstr ""
+
+msgid "footman1 description"
+msgstr ""
+
+msgid "footman2"
+msgstr ""
+
+msgid "footman2 description"
+msgstr ""
+
+msgid "footman3"
+msgstr ""
+
+msgid "footman3 description"
+msgstr ""
+
+#
+# horseman
+#
+msgid "horseman1"
+msgstr ""
+
+msgid "horseman1 description"
+msgstr ""
+
+msgid "horseman2"
+msgstr ""
+
+msgid "horseman2 description"
+msgstr ""
+
+msgid "horseman3"
+msgstr ""
+
+msgid "horseman3 description"
+msgstr ""
+
+#
+# commander
+#
+msgid "commander1"
+msgstr ""
+
+msgid "commander1 description"
+msgstr ""
+
+msgid "commander2"
+msgstr ""
+
+msgid "commander2 description"
+msgstr ""
+
+msgid "commander3"
+msgstr ""
+
+msgid "commander3 description"
+msgstr ""
+
+#
+# pikeman
+#
+msgid "pikeman1"
+msgstr ""
+
+msgid "pikeman1 description"
+msgstr ""
+
+msgid "pikeman2"
+msgstr ""
+
+msgid "pikeman2 description"
+msgstr ""
+
+msgid "pikeman3"
+msgstr ""
+
+msgid "pikeman3 description"
+msgstr ""
+
+#
+# mage
+#
+msgid "whitemage1"
+msgstr ""
+
+msgid "whitemage1 description"
+msgstr ""
+
+msgid "whitemage2"
+msgstr ""
+
+msgid "whitemage2 description"
+msgstr ""
+
+msgid "whitemage3"
+msgstr ""
+
+msgid "whitemage3 description"
+msgstr ""
+
+msgid "redmage1"
+msgstr ""
+
+msgid "redmage1 description"
+msgstr ""
+
+msgid "redmage2"
+msgstr ""
+
+msgid "redmage2 description"
+msgstr ""
+
+msgid "redmage3"
+msgstr ""
+
+msgid "redmage3 description"
+msgstr ""
+
+#
+# ballet
+#
+msgid "ballet1"
+msgstr ""
+
+msgid "ballet1 description"
+msgstr ""
+
+msgid "ballet2"
+msgstr ""
+
+msgid "ballet2 description"
+msgstr ""
+
+msgid "ballet3"
+msgstr ""
+
+msgid "ballet3 description"
+msgstr ""
+
+#
+# boat
+#
+msgid "boat0"
+msgstr ""
+
+msgid "boat0 description"
+msgstr ""
+
+msgid "boat1"
+msgstr ""
+
+msgid "boat1 description"
+msgstr ""
+
+msgid "boat2"
+msgstr ""
+
+msgid "boat2 description"
+msgstr ""
+
+msgid "boat3"
+msgstr ""
+
+msgid "boat3 description"
+msgstr ""
+
+msgid "boat4"
+msgstr ""
+
+msgid "boat4 description"
+msgstr ""
+
+msgid "boat5"
+msgstr ""
+
+msgid "boat5 description"
+msgstr ""
+
+msgid "boat6"
+msgstr ""
+
+msgid "boat6 description"
+msgstr ""
+
+#
+# actor
+#
+msgid "stage player"
+msgstr ""
+
+msgid "stage player description"
+msgstr ""
+
+msgid "famous director"
+msgstr ""
+
+msgid "famous director description"
+msgstr ""
+
+msgid "white mage"
+msgstr ""
+
+msgid "white mage description"
+msgstr ""
+
+#
+# city
+#
+msgid "city1"
+msgstr ""
+
+msgid "city1 description"
+msgstr ""
+
+msgid "city2"
+msgstr ""
+
+msgid "city2 description"
+msgstr ""
+
+msgid "city3"
+msgstr ""
+
+msgid "city3 description"
+msgstr ""
+
+msgid "forest1"
+msgstr ""
+
+msgid "forest1 description"
+msgstr ""
+
+#
+# market
+#
+msgid "market1"
+msgstr ""
+
+msgid "market1 description"
+msgstr "Increase gold every turn."
+
+msgid "market2"
+msgstr ""
+
+msgid "market2 description"
+msgstr "Increase gold every turn."
+
+msgid "market3"
+msgstr ""
+
+msgid "market3 description"
+msgstr "Increase gold every turn."
+
+#
+# technology
+#
+msgid "technology1"
+msgstr ""
+
+msgid "technology1 description"
+msgstr "Increase technology every turn."
+
+msgid "technology2"
+msgstr ""
+
+msgid "technology2 description"
+msgstr "Increase technology every turn."
+
+msgid "technology3"
+msgstr ""
+
+msgid "technology3 description"
+msgstr "Increase technology every turn."
+
+#
+# tactic
+#
+msgid "tactic1"
+msgstr ""
+
+msgid "tactic1 description"
+msgstr ""
+"1)Enhance attack within 2 grid round city.\n"
+"2)random miss \"Demolish\"."
+
+msgid "tactic2"
+msgstr ""
+
+msgid "tactic2 description"
+msgstr ""
+"1)Enhance attack within 2 grid round city.\n"
+"2)random miss \"Demolish\"."
+
+msgid "tactic3"
+msgstr ""
+
+msgid "tactic3 description"
+msgstr ""
+"1)Enhance attack within 2 grid round city.\n"
+"2)random miss \"Demolish\"."
+
+#
+# school
+#
+msgid "school1"
+msgstr ""
+
+msgid "school1 description"
+msgstr "School1"
+
+msgid "school2"
+msgstr ""
+
+msgid "school2 description"
+msgstr "School2"
+
+msgid "school3"
+msgstr ""
+
+msgid "school3 description"
+msgstr "School3"
+
+#
+# tower
+#
+msgid "tower1"
+msgstr ""
+
+msgid "tower1 description"
+msgstr ""
+
+#
+# wall
+#
+msgid "wall2"
+msgstr ""
+
+msgid "wall2 description"
+msgstr ""
+
+#
+# keep
+#
+msgid "keep2"
+msgstr ""
+
+msgid "keep2 description"
+msgstr ""
+
+#
+# fort
+#
+msgid "fort1"
+msgstr ""
+
+msgid "fort1 description"
+msgstr ""
+
+msgid "fort2"
+msgstr ""
+
+msgid "fort2 description"
+msgstr ""
+
+#
+# character unit type: desert horseman
+#
+msgid "desert horseman2"
+msgstr ""
+
+msgid "desert horseman2 description"
+msgstr ""
+
+msgid "desert horseman3"
+msgstr ""
+
+msgid "desert horseman3 description"
+msgstr ""
+
+#
+# character unit type: horse crossbowman
+#
+msgid "horse crossbowman2"
+msgstr ""
+
+msgid "horse crossbowman2 description"
+msgstr ""
+
+msgid "horse crossbowman3"
+msgstr ""
+
+msgid "horse crossbowman3 description"
+msgstr ""
+
+#
+# character unit type: martial artist
+#
+msgid "martial artist2"
+msgstr ""
+
+msgid "martial artist2 description"
+msgstr ""
+
+msgid "martial artist3"
+msgstr ""
+
+msgid "martial artist3 description"
+msgstr ""
+
+msgid "martial artist4"
+msgstr ""
+
+msgid "martial artist4 description"
+msgstr ""
+
+msgid "martial artist5"
+msgstr ""
+
+msgid "martial artist5 description"
+msgstr ""
+
+msgid "martial artist6"
+msgstr ""
+
+msgid "martial artist6 description"
+msgstr ""
+
+#
+# character unit type: ZhuGe bowman
+#
+msgid "zhuge bowman2"
+msgstr ""
+
+msgid "zhuge bowman2 description"
+msgstr ""
+
+msgid "zhuge bowman3"
+msgstr ""
+
+msgid "zhuge bowman3 description"
+msgstr ""
+
+#
+# character unit type: Vanguard bowman
+#
+msgid "vanguard bowman2"
+msgstr ""
+
+msgid "vanguard bowman2 description"
+msgstr ""
+
+msgid "vanguard bowman3"
+msgstr ""
+
+msgid "vanguard bowman3 description"
+msgstr ""
+
+#
+# character unit type: Powerdashers
+#
+msgid "powerdashers2"
+msgstr ""
+
+msgid "powerdashers2 description"
+msgstr ""
+
+msgid "powerdashers3"
+msgstr ""
+
+msgid "powerdashers3 description"
+msgstr ""
+
+#
+# character unit type: QingZhou pikeman
+#
+msgid "qingzhou pikeman2"
+msgstr ""
+
+msgid "qingzhou pikeman2 description"
+msgstr ""
+
+msgid "qingzhou pikeman3"
+msgstr ""
+
+msgid "qingzhou pikeman3 description"
+msgstr ""
+
+#
+# character unit type: wizard
+#
+msgid "wizard2"
+msgstr ""
+
+msgid "wizard2 description"
+msgstr ""
+
+msgid "wizard3"
+msgstr ""
+
+msgid "wizard3 description"
+msgstr ""
+
+#
+# character unit type: adviser
+#
+msgid "adviser6"
+msgstr ""
+
+msgid "adviser6 description"
+msgstr ""
+
+#
+# character unit type: tiger horseman
+#
+msgid "tiger horseman2"
+msgstr ""
+
+msgid "tiger horseman2 description"
+msgstr ""
+
+msgid "tiger horseman3"
+msgstr ""
+
+msgid "tiger horseman3 description"
+msgstr ""
+
+#
+# character unit type: heroine
+#
+msgid "heroine2"
+msgstr ""
+
+msgid "heroine2 description"
+msgstr ""
+
+msgid "heroine3"
+msgstr ""
+
+msgid "heroine3 description"
+msgstr ""
+
+#
+# character unit type: Danyang assassin
+#
+msgid "danyang assassin2"
+msgstr ""
+
+msgid "danyang assassin2 description"
+msgstr ""
+
+msgid "danyang assassin3"
+msgstr ""
+
+msgid "danyang assassin3 description"
+msgstr ""
+
+#
+# character unit type: Bingzhou horseman
+#
+msgid "bingzhou horseman3"
+msgstr ""
+
+msgid "bingzhou horseman3 description"
+msgstr ""
+
+msgid "bingzhou horseman4"
+msgstr ""
+
+msgid "bingzhou horseman4 description"
+msgstr ""
+
+msgid "bingzhou horseman5"
+msgstr ""
+
+msgid "bingzhou horseman5 description"
+msgstr ""
+
+msgid "bingzhou horseman6"
+msgstr ""
+
+msgid "bingzhou horseman6 description"
+msgstr ""
+
+#
+# character unit type: pelisse footman
+#
+msgid "pelisse footman2"
+msgstr ""
+
+msgid "pelisse footman2 description"
+msgstr ""
+
+msgid "pelisse footman3"
+msgstr ""
+
+msgid "pelisse footman3 description"
+msgstr ""
+
+#
+# character unit type: powder catapult
+#
+msgid "powder catapult2"
+msgstr ""
+
+msgid "powder catapult2 description"
+msgstr ""
+
+msgid "powder catapult3"
+msgstr ""
+
+msgid "powder catapult3 description"
+msgstr ""
+
+#
+# character unit type: taoism
+#
+msgid "taoism2"
+msgstr ""
+
+msgid "taoism2 description"
+msgstr ""
+
+msgid "taoism3"
+msgstr ""
+
+msgid "taoism3 description"
+msgstr ""
+
+#
+# character unit type: elephant
+#
+msgid "elephant2"
+msgstr ""
+
+msgid "elephant2 description"
+msgstr ""
+
+msgid "elephant3"
+msgstr ""
+
+msgid "elephant3 description"
+msgstr ""
+
+#
+# character unit type: bine
+#
+msgid "bine2"
+msgstr ""
+
+msgid "bine2 description"
+msgstr ""
+
+msgid "bine3"
+msgstr ""
+
+msgid "bine3 description"
+msgstr ""
+
+#
+# system required
+#
+msgid "scoutman"
+msgstr ""
+
+msgid "scoutman description"
+msgstr ""
+
+#
+# commoner unit type: businessman
+#
+msgid "businessman1"
+msgstr ""
+
+msgid "businessman1 description"
+msgstr ""
+
+msgid "businessman2"
+msgstr ""
+
+msgid "businessman2 description"
+msgstr ""
+
+msgid "businessman3"
+msgstr ""
+
+msgid "businessman3 description"
+msgstr ""
+
+msgid "scholar1"
+msgstr ""
+
+msgid "scholar1 description"
+msgstr ""
+
+msgid "scholar2"
+msgstr ""
+
+msgid "scholar2 description"
+msgstr ""
+
+msgid "scholar3"
+msgstr ""
+
+msgid "scholar3 description"
+msgstr ""
+
+msgid "transport1"
+msgstr ""
+
+msgid "transport1 description"
+msgstr ""
+
+msgid "transport2"
+msgstr ""
+
+msgid "transport2 description"
+msgstr ""
+
+msgid "transport3"
+msgstr ""
+
+msgid "transport3 description"
+msgstr ""

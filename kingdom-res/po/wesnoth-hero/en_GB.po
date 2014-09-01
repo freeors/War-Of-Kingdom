@@ -113,10 +113,10 @@ msgid "status-6"
 msgstr "Unstage"
 
 msgid "status-7"
-msgstr "Die"
+msgstr "Employable"
 
 msgid "status-8"
-msgstr ""
+msgstr "Die"
 
 msgid "official"
 msgstr "Official"
@@ -131,16 +131,16 @@ msgid "official-2"
 msgstr "Leader"
 
 msgid "flag"
-msgstr ""
+msgstr "Flag"
 
 msgid "flag-0"
-msgstr ""
+msgstr "Robber"
 
 msgid "flag-1"
-msgstr ""
+msgstr "Roam"
 
 msgid "flag-2"
-msgstr ""
+msgstr "Employee"
 
 msgid "heart"
 msgstr "Heart"
@@ -156,6 +156,9 @@ msgstr "Side feature"
 
 msgid "tactic"
 msgstr "Tactic"
+
+msgid "noble"
+msgstr "Noble"
 
 msgid "arms-0"
 msgstr "Foootman"
@@ -194,7 +197,7 @@ msgid "skill-5"
 msgstr "Demolish"
 
 msgid "skill-6"
-msgstr ""
+msgstr "Formation"
 
 msgid "skill-7"
 msgstr ""
@@ -536,19 +539,19 @@ msgid "name-94"
 msgstr "Alternate4"
 
 msgid "name-95"
-msgstr "Alternate5"
+msgstr "Local player city"
 
 msgid "name-96"
-msgstr "(Reserve)"
+msgstr "Network player city1"
 
 msgid "name-97"
-msgstr "(Reserve)"
+msgstr "Network player city2"
 
 msgid "name-98"
-msgstr "(Reserve)"
+msgstr "Network player city3"
 
 msgid "name-99"
-msgstr "(Reserve)"
+msgstr "Network player city4"
 
 msgid "name-100"
 msgstr "Ye Liuying"
@@ -566,7 +569,7 @@ msgid "name-104"
 msgstr "Liu Bei"
 
 msgid "name-105"
-msgstr "Zhuge Ling"
+msgstr "Zhuge Liang"
 
 msgid "name-106"
 msgstr "Zhou Yu"
@@ -1319,10 +1322,10 @@ msgid "name-355"
 msgstr "Shen Pei"
 
 msgid "name-356"
-msgstr "(Reserve)"
+msgstr "Wang Ji"
 
 msgid "name-357"
-msgstr "(Reserve)"
+msgstr "Pang Tong"
 
 msgid "name-358"
 msgstr "Yue Jin"
@@ -1509,6 +1512,27 @@ msgstr "Guan Lu"
 
 msgid "name-419"
 msgstr "Zuo Ci"
+
+msgid "name-420"
+msgstr "Fu Qian"
+
+msgid "name-421"
+msgstr "Wang Yuyan"
+
+msgid "name-422"
+msgstr "Chang'e"
+
+msgid "name-423"
+msgstr "Zhao Ling'er"
+
+msgid "name-424"
+msgstr "Li Yiwa"
+
+msgid "name-425"
+msgstr "Xiang Yu"
+
+msgid "name-426"
+msgstr "Li Xiaoyao"
 
 msgid "surname"
 msgstr "Surname"
@@ -2773,6 +2797,27 @@ msgstr "Guan"
 msgid "surname-419"
 msgstr "Zuo"
 
+msgid "surname-420"
+msgstr "Fu"
+
+msgid "surname-421"
+msgstr "Wang"
+
+msgid "surname-422"
+msgstr "Chang"
+
+msgid "surname-423"
+msgstr "Zhao"
+
+msgid "surname-424"
+msgstr "Li"
+
+msgid "surname-425"
+msgstr "Xiang"
+
+msgid "surname-426"
+msgstr "Li"
+
 msgid "desc0"
 msgstr "System "
 
@@ -4031,6 +4076,27 @@ msgid "desc418"
 msgstr " "
 
 msgid "desc419"
+msgstr " "
+
+msgid "desc420"
+msgstr " "
+
+msgid "desc421"
+msgstr " "
+
+msgid "desc422"
+msgstr " "
+
+msgid "desc423"
+msgstr " "
+
+msgid "desc424"
+msgstr " "
+
+msgid "desc425"
+msgstr " "
+
+msgid "desc426"
 msgstr " "
 
 #~ msgid "ambition"

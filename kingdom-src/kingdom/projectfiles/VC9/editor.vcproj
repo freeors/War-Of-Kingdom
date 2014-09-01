@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src;..\..\external\boost_1_46;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;"
+				AdditionalIncludeDirectories="..\..\src;..\..\external\boost_1_46;&quot;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL_ttf.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -88,7 +88,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL.dll $(TargetDir)\SDL.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)\intl.dll&#x0D;&#x0A;"
+				CommandLine="copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2.dll $(TargetDir)\SDL2.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_image.dll $(TargetDir)\SDL2_image.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_net.dll $(TargetDir)\SDL2_net.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_ttf.dll $(TargetDir)\SDL2_ttf.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)\intl.dll&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -119,7 +119,7 @@
 				Optimization="4"
 				EnableIntrinsicFunctions="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="..\..\src;..\..\external\boost_1_46;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;"
+				AdditionalIncludeDirectories="..\..\src;..\..\external\boost_1_46;&quot;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;..\..\external\lpng"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -138,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL_ttf.lib"
+				AdditionalDependencies="comctl32.lib ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -248,68 +248,6 @@
 			</File>
 		</Filter>
 		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
-			<File
-				RelativePath="..\..\src\editor2\animation.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\config_cache.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\DlgBuilderProc.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\DlgCampaignProc.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\DlgCoreProc.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\editor.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\event.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\hero.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\multiplayer.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\rectangle.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\resource.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\sha1.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\struct.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\unit_types.hpp"
-				>
-			</File>
-		</Filter>
-		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
@@ -351,10 +289,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\clock.ico"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\editor2\del.ico"
 				>
 			</File>
@@ -383,14 +317,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\evt_attribute.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\evt_command.ico"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\editor2\evt_command.ico"
 				>
 			</File>
@@ -399,19 +325,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\evt_condition.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\evt_event.ico"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\editor2\evt_event.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\evt_filter.ico"
 				>
 			</File>
 			<File
@@ -423,19 +337,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\evt_if.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\evt_then.ico"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\editor2\evt_then.ico"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\editor2\icon11.ico"
 				>
 			</File>
 			<File
@@ -476,10 +378,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\openpcdir_dis.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\particular.ico"
 				>
 			</File>
 			<File
@@ -643,6 +541,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\editor2\book.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\editor2\config.cpp"
 				>
 			</File>
@@ -699,6 +601,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\editor2\integrate.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\editor2\main.cpp"
 				>
 			</File>
@@ -709,13 +615,6 @@
 			<File
 				RelativePath="..\..\src\editor2\noble.cpp"
 				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\rectangle.cpp"
@@ -739,6 +638,72 @@
 			</File>
 			<File
 				RelativePath="..\..\src\editor2\xfunc.cpp"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl;inc;xsd"
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			>
+			<File
+				RelativePath="..\..\src\editor2\animation.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\config_cache.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\DlgBuilderProc.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\DlgCampaignProc.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\DlgCoreProc.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\editor.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\event.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\hero.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\integrate.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\multiplayer.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\rectangle.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\resource.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\sha1.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\editor2\struct.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\unit_types.hpp"
 				>
 			</File>
 		</Filter>

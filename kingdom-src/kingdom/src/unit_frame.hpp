@@ -97,6 +97,8 @@ class frame_parameters{
 class frame_parsed_parameters;
 class frame_builder {
 	public:
+		static const int default_text_color;
+
 		frame_builder();
 		frame_builder(const config& cfg,const std::string &frame_string = "");
 		/** allow easy chained modifications will raised assert if used after initialization */
@@ -221,12 +223,13 @@ class unit_frame {
 		std::set<map_location> get_overlaped_hex(const int frame_time,const map_location & src,const map_location & dst,const frame_parameters & animation_val,const frame_parameters & engine_val) const;
 		void replace_image_name(const std::string& src, const std::string& dst);
 		void replace_image_mod(const std::string& src, const std::string& dst);
-		void replace_x(const std::string& src, const std::string& dst);
+		void replace_progressive(const std::string& name, const std::string& src, const std::string& dst);
 		void replace_static_text(const std::string& src, const std::string& dst);
+		void replace_int(const std::string& name, int src, int dst);
 
 		const frame_parsed_parameters& get_builder() const { return builder_; }
 	private:
-		void redraw_screen_mode(const int frame_time,bool first_time, const frame_parameters & current_data) const;
+		void redraw_screen_mode(const int frame_time, bool first_time, const map_location & src, const frame_parameters & current_data) const;
 		std::set<map_location> get_overlaped_hex_screen_mode(const int frame_time, const frame_parameters& current_data) const;
 
 		frame_parsed_parameters builder_;
@@ -234,5 +237,7 @@ class unit_frame {
 		mutable int zero_y_;
 
 };
+
+enum { ALIGN_NONE, ALIGN_X, ALIGN_NON_X, ALIGN_Y, ALIGN_NON_Y, ALIGN_COUNT};
 
 #endif

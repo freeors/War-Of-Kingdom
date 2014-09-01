@@ -84,13 +84,13 @@ private:
 class loadgame
 {
 public:
-	loadgame(game_display& gui, const config& game_config, game_state& gamestate);
+	loadgame(game_display& gui, hero_map& heros, const config& game_config, game_state& gamestate);
 	virtual ~loadgame() {}
 
 	/** Load a game without providing any information. */
 	void load_game();
 	/** Load a game with pre-setting information for the load-game dialog. */
-	void load_game(std::string& filename, bool show_replay, bool cancel_orders, hero_map& heros, hero_map* heros_start = NULL);
+	void load_game(std::string& filename, bool show_replay, bool allow_network, hero_map& heros, hero_map* heros_start = NULL);
 	/** Loading a game from within the multiplayer-create dialog. */
 	void load_multiplayer_game(hero_map& heros, hero_map& heros_start);
 	/** Populates the level-config for multiplayer from the loaded savegame information. */
@@ -100,13 +100,12 @@ public:
 
 	// Getter-methods
 	bool show_replay() const { return show_replay_; }
-	bool cancel_orders() const { return cancel_orders_; }
 	const std::string filename() const { return filename_; }
 
 	const std::pair<int, unsigned> recorder_generator() const;
 private:
 	/** Display the load-game dialog. */
-	void show_dialog(bool show_replay, bool cancel_orders);
+	void show_dialog(bool show_replay, bool allow_network);
 	/** Check if the version of the savefile is compatible with the current version. */
 	void check_version_compatibility();
 	/** Copy era information into the snapshot. */
@@ -114,13 +113,14 @@ private:
 
 	const config& game_config_;
 	game_display& gui_;
+	hero_map& heros_;
 
 	game_state& gamestate_; /** Primary output information. */
 	std::string filename_; /** Name of the savefile to be loaded. */
 	command_pool replay_data_;
 	config load_config_; /** Config information of the savefile to be loaded. */
 	bool show_replay_; /** State of the "show_replay" checkbox in the load-game dialog. */
-	bool cancel_orders_; /** State of the "cancel_orders" checkbox in the load-game dialog. */
+	bool allow_network_; /** State of the "cancel_orders" checkbox in the load-game dialog. */
 };
 
 /** The base class for all savegame stuff */
@@ -146,13 +146,13 @@ public:
 
 	const std::string& filename() const { return filename_; }
 
-protected:
 	/**
 		Save a game without any further user interaction. If you want notifying messages
 		or error messages to appear, you have to provide the gui parameter.
 		The return value denotes, if the save was successful or not.
 	*/
 	bool save_game(CVideo* video = NULL, const std::string& filename = "");
+protected:
 
 	/** Sets the filename and removes invalid characters. Don't set the filename directly but
 		use this method instead. */
@@ -259,7 +259,10 @@ class oos_savegame : public game_savegame
 public:
 	oos_savegame(hero_map& heros, hero_map& heros_start, config& snapshot_cfg);
 
+	bool save_game_automatic(CVideo& video);
 private:
+	/** Create a filename for automatic saves */
+	virtual void create_filename();
 	/** Display the save game dialog. */
 	virtual int show_save_dialog(CVideo& video, const std::string& message, const gui::DIALOG_TYPE dialog_type);
 };
@@ -279,9 +282,5 @@ private:
 
 void replace_underbar2space(std::string &name);
 void replace_space2underbar(std::string &name);
-
-std::string format_time_date(time_t t);
-std::string format_time_local(time_t t);
-std::string format_time_elapse(time_t elapse);
 
 #endif

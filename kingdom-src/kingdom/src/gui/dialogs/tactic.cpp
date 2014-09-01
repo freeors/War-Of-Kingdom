@@ -66,15 +66,15 @@ namespace gui2 {
  * @end{table}
  */
 
-REGISTER_DIALOG(tactic)
+REGISTER_DIALOG(tactic2)
 
-ttactic::ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, unit& tactician, bool cast)
+ttactic2::ttactic2(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, unit& tactician, int operate)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, tactician_(tactician)
-	, cast_(cast)
+	, operate_(operate)
 	, candidate_()
 	, valid_()
 	, cannot_valid_(false)
@@ -89,7 +89,7 @@ ttactic::ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, h
 	if (tactician_.third().valid() && tactician_.third().tactic_ != HEROS_NO_TACTIC) {
 		candidate_.push_back(&tactician_.third());
 	}
-	if (!cast) {
+	if (operate_ == ACTIVE) {
 		std::vector<unit*> actives = teams_[tactician.side() - 1].active_tactics();
 		if ((int)actives.size() >= game_config::active_tactic_slots || 
 			std::find(actives.begin(), actives.end(), &tactician) != actives.end()) {
@@ -98,7 +98,7 @@ ttactic::ttactic(game_display& gui, std::vector<team>& teams, unit_map& units, h
 	}
 }
 
-void ttactic::tactic_selected(twindow& window)
+void ttactic2::tactic_selected(twindow& window)
 {
 	tlistbox& list = find_widget<tlistbox>(&window, "tactic_list", false);
 	selected_ = list.get_selected_row();
@@ -107,32 +107,115 @@ void ttactic::tactic_selected(twindow& window)
 	ok->set_active(valid_[selected_]);
 }
 
-void ttactic::pre_show(CVideo& /*video*/, twindow& window)
+std::string generate_image_desc(const std::map<int, int>& effect)
+{
+	std::stringstream strstr;
+
+	for (std::map<int, int>::const_iterator it = effect.begin(); it != effect.end(); ++ it) {
+		int apply_to = it->first;
+		int level = it->second;
+		std::stringstream img;
+
+		if (apply_to == apply_to_tag::ATTACK) {
+			strstr << help::tintegrate::generate_img("misc/attack.png");
+			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
+			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
+			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+
+		} else if (apply_to == apply_to_tag::RESISTANCE) {
+			strstr << help::tintegrate::generate_img("misc/resistance.png");
+			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
+			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
+			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+
+		} else if (apply_to == apply_to_tag::MOVEMENT) {
+			strstr << help::tintegrate::generate_img("misc/movement.png");
+			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+
+		} else if (apply_to == apply_to_tag::ENCOURAGE) {
+			strstr << help::tintegrate::generate_img("misc/encourage.png");
+			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
+			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
+			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+
+		} else if (apply_to == apply_to_tag::DEMOLISH) {
+			strstr << help::tintegrate::generate_img("misc/demolish.png");
+			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
+			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
+			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+
+		} else if (apply_to == apply_to_tag::DAMAGE) {
+			img << "misc/resistance-" << unit_types.atype_ids()[level] << ".png";
+			strstr << help::tintegrate::generate_img(img.str());
+			strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+
+		} else if (apply_to == apply_to_tag::ALERT) {
+			strstr << help::tintegrate::generate_img("misc/alert.png");
+
+		} else if (apply_to == apply_to_tag::HIDE) {
+			strstr << help::tintegrate::generate_img("misc/hide.png");
+
+		} else if (apply_to == apply_to_tag::PROVOKE) {
+			strstr << help::tintegrate::generate_img("misc/provoked.png");
+
+		} else if (apply_to == apply_to_tag::CLEAR) {
+			strstr << help::tintegrate::generate_img("misc/clear.png");
+
+		} else if (apply_to == apply_to_tag::HEAL) {
+			strstr << help::tintegrate::generate_img("misc/heal.png");
+
+		} else if (apply_to == apply_to_tag::ACTION) {
+			strstr << help::tintegrate::generate_img("misc/action.png");
+			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
+			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
+			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+
+		} else if (apply_to == apply_to_tag::REVIVAL) {
+			strstr << help::tintegrate::generate_img("misc/revival.png");
+
+		}
+	}
+	return strstr.str();
+}
+
+void ttactic2::pre_show(CVideo& /*video*/, twindow& window)
 {
 	std::vector<hero*> captain;
 	std::stringstream strstr;
 	std::string color;
+	const team& current_team = teams_[tactician_.side() - 1];
 
 	tlabel* title = find_widget<tlabel>(&window, "title", false, true);
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
-	if (cast_) {
-		title->set_label(_("Cast tactic"));
+	if (operate_ == CAST) {
+		strstr.str("");
+		strstr << _("Cast tactic");
+		if (current_team.allow_intervene) {
+			strstr << " (" << current_team.gold() << ")";
+		}
+		title->set_label(strstr.str());
+
 		ok->set_label(_("tactic^Cast"));
-	} else {
+	} else if (operate_ == ACTIVE) {
 		title->set_label(_("Active tactic"));
 		ok->set_label(_("tactic^Active"));
+	} else {
+		ok->set_visible(twidget::INVISIBLE);
 	}
 
-	tlistbox& tactic_list =
-			find_widget<tlistbox>(&window, "tactic_list", false);
-	const team& current_team = teams_[tactician_.side() - 1];
-	int side_point = current_team.tactic_point();
+	tlistbox& tactic_list = find_widget<tlistbox>(&window, "tactic_list", false);
 	std::map<int, std::vector<map_location> > touched;
 	bool has_effect_unit;
 
 	for (std::vector<hero*>::iterator it = candidate_.begin(); it != candidate_.end(); ++ it) {
 		hero& h = **it;
-		const ::ttactic& t = unit_types.tactic(h.tactic_);
+		const ttactic& t = unit_types.tactic(h.tactic_);
+		bool can_cast = tactician_.tactic_degree() >= t.point() * game_config::tactic_degree_per_point;
+		if (!can_cast) {
+			if (current_team.allow_intervene && (tactician_.hot_turns() || current_team.gold() >= t.cost())) {
+				can_cast = true;
+			}
+		}
 
 		std::map<std::string, string_map> data;
 		string_map item;
@@ -148,22 +231,27 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 
 		strstr.str("");
 		strstr << h.image();
-		if (cast_ && (tactician_.provoked_turns() || !has_effect_unit)) {
+		if (operate_ == CAST && (tactician_.provoked_turns() || !has_effect_unit)) {
 			strstr << "~GS()";
 		}
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("icon", item));
 
 		strstr.str("");
-		if (side_point < t.point()) {
+		if (!can_cast) {
 			color = "red";
 		} else {
 			color = "";
 		}
-		if (!cast_) {
+		if (operate_ != CAST) {
 			strstr << "--/";
 		}
 		strstr << help::tintegrate::generate_format(t.point(), color, 16, true);
+		if (current_team.allow_intervene && tactician_.tactic_degree() < t.point() * game_config::tactic_degree_per_point && !tactician_.hot_turns()) {
+			strstr << "\n";
+			strstr << help::tintegrate::generate_img("misc/gold.png");
+			strstr << help::tintegrate::generate_format(t.cost(), "", 16, true);
+		}
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("point", item));
 
@@ -171,33 +259,121 @@ void ttactic::pre_show(CVideo& /*video*/, twindow& window)
 		data.insert(std::make_pair("name", item));
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_format(::ttactic::calculate_turn(fxptoi9(h.force_), fxptoi9(h.intellect_)), "blue", 16);
+		strstr << help::tintegrate::generate_format(ttactic::calculate_turn(fxptoi9(h.force_), fxptoi9(h.intellect_)), "blue", 16);
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("turn", item));
 
+		std::map<int, int> self_effect, friend_effect, enemy_effect;
+		const std::vector<std::string>& atype_ids = unit_types.atype_ids();
+		const std::vector<const ttactic*>& parts = t.parts();
+		for (std::vector<const ttactic*>::const_iterator it2 = parts.begin(); it2 != parts.end(); ++ it2) {
+			const ttactic& part = **it2;
+			int range = part.range();
+			const config& effect_cfg = part.effect_cfg();
+			
+			int apply_to = part.apply_to();
+			int level = 0;
+			if (part.apply_to() == apply_to_tag::ATTACK) {
+				level = effect_cfg["increase_damage"].to_int();
+
+			} else if (part.apply_to() == apply_to_tag::RESISTANCE) {
+				const config& resistance_cfg = effect_cfg.child("resistance");
+				BOOST_FOREACH (const config::attribute &i, resistance_cfg.attribute_range()) {
+					int resistance = i.second.to_int();
+					if (resistance == 35) {
+						level = 3;
+					} else if (resistance == 25) {
+						level = 2;
+					} else if (resistance == 15) {
+						level = 1;
+					} else if (resistance == -15) {
+						level = -1;
+					} else if (resistance == -25) {
+						level = -2;
+					} else {
+						level = -3;
+					}
+					break;
+				}
+
+			} else if (part.apply_to() == apply_to_tag::MOVEMENT) {
+				level = effect_cfg["increase"].to_int();
+
+			} else if (part.apply_to() == apply_to_tag::ENCOURAGE) {
+				level = effect_cfg["increase"].to_int() / 2;
+
+			} else if (part.apply_to() == apply_to_tag::DEMOLISH) {
+				level = effect_cfg["increase"].to_int() / 2;
+				
+			} else if (part.apply_to() == apply_to_tag::DAMAGE) {
+				std::vector<std::string>::const_iterator find = std::find(atype_ids.begin(), atype_ids.end(), effect_cfg["type"].str());
+				level = std::distance(atype_ids.begin(), find);
+				
+			} else if (part.apply_to() == apply_to_tag::ACTION) {
+				level = effect_cfg["increase"].to_int();
+				if (level == -40) {
+					level = -2;
+				} else if (level == -20) {
+					level = -1;
+				} else if (level == 20) {
+					level = 1;
+				} else if (level == 40) {
+					level = 2;
+				}
+				
+			}
+			if (range == ttactic::SELF) {
+				self_effect.insert(std::make_pair(apply_to, level));
+			} else if (range == ttactic::FRIEND) {
+				friend_effect.insert(std::make_pair(apply_to, level));
+			} else {
+				enemy_effect.insert(std::make_pair(apply_to, level));
+			}
+		}
+		strstr.str("");
+		if (!self_effect.empty()) {
+			strstr << help::tintegrate::generate_img("misc/range-self.png") << "  " << generate_image_desc(self_effect);
+		}
+		if (!friend_effect.empty()) {
+			if (!strstr.str().empty()) {
+				strstr << "\n";
+			}
+			strstr << help::tintegrate::generate_img("misc/range-friend.png") << "  " << generate_image_desc(friend_effect);
+		}
+		if (!enemy_effect.empty()) {
+			if (!strstr.str().empty()) {
+				strstr << "\n";
+			}
+			strstr << help::tintegrate::generate_img("misc/range-enemy.png") << "  " << generate_image_desc(enemy_effect);
+		}
+		item["label"] = strstr.str();
+		data.insert(std::make_pair("effect", item));
+
 		if (cannot_valid_) {
 			valid_.push_back(false);
-		} else if (cast_) {
-			valid_.push_back(!tactician_.provoked_turns() && has_effect_unit && side_point >= t.point());
-		} else {
+		} else if (operate_ == CAST) {
+			valid_.push_back(!tactician_.provoked_turns() && has_effect_unit && can_cast);
+		} else if (operate_ != ACTIVE) {
 			valid_.push_back(!tactician_.provoked_turns());
+		} else {
+			valid_.push_back(true);
 		}
 		tactic_list.add_row(data);
 	}
 
-	tactic_list.set_callback_value_change(dialog_callback<ttactic, &ttactic::tactic_selected>);
+	tactic_list.set_callback_value_change(dialog_callback<ttactic2, &ttactic2::tactic_selected>);
 
 	tactic_selected(window);
 }
 
-void ttactic::post_show(twindow& window)
+void ttactic2::post_show(twindow& window)
 {
 	if (get_retval() == twindow::OK) {
 		selected_ = find_widget<tlistbox>(&window, "tactic_list", false).get_selected_row();
 	}
 }
 
-hero* ttactic::get_selected_hero() const
+hero* ttactic2::get_selected_hero() const
 {
 	if (selected_ < 0) {
 		return &hero_invalid;

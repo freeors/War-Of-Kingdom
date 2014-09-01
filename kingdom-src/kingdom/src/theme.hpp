@@ -239,7 +239,9 @@ public:
 		{ return unit_image_.location(screen); }
 	const SDL_Rect& mid_panel_location(const SDL_Rect& screen) const
 		{ return mid_panel_.location(screen); }
-
+	const SDL_Rect& terrain_panel_location(const SDL_Rect& screen) const
+		{ return terrain_panel_.location(screen); }
+	
     static void set_known_themes(const config* cfg);
     static std::vector<std::string> get_known_themes();
 
@@ -270,7 +272,7 @@ private:
 
 	std::map<std::string,status_item> status_;
 
-	object main_map_, mini_map_, unit_image_, mid_panel_;
+	object main_map_, mini_map_, unit_image_, mid_panel_, terrain_panel_;
 
 	tborder border_;
 };

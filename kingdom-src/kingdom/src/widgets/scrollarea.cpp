@@ -217,11 +217,6 @@ void scrollarea::handle_event(const SDL_Event& event)
 
 	SDL_MouseButtonEvent const &e = event.button;
 	if (point_in_rect(e.x, e.y, inner_location())) {
-		if (e.button == SDL_BUTTON_WHEELDOWN) {
-			vscrollbar_.scroll_down();
-		} else if (e.button == SDL_BUTTON_WHEELUP) {
-			vscrollbar_.scroll_up();
-		}
 	}
 }
 

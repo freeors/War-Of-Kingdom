@@ -32,7 +32,7 @@ class tmp_create_game : public tdialog, public lobby_base, public trandom_map
 {
 public:
 
-	explicit tmp_create_game(game_display& gui, const config& cfg);
+	explicit tmp_create_game(game_display& gui, const config& cfg, bool local_only);
 
 	int num_turns() const { return num_turns_; }
 
@@ -70,11 +70,10 @@ private:
 
 	tfield_integer
 		*turns_,
-		*gold_,
 		*experience_;
 
 public:
-
+	void genus(twindow& window);
 	void era(twindow& window);
 	void password(twindow& window);
 	void maximal_defeated_activity(twindow& window);
@@ -86,6 +85,7 @@ private:
 
 	ttext_box* name_entry_;
 
+	tbutton* genus_;
 	tbutton* era_;
 	tbutton* launch_game_;
 

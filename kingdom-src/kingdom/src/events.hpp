@@ -103,13 +103,15 @@ public:
 	virtual void process(pump_info& info) = 0;
 };
 
-int discard(int event_mask_min, int event_mask_max);
+int discard(Uint32 event_mask_min, Uint32 event_mask_max);
 
 void raise_process_event();
 void raise_draw_event();
 void raise_volatile_draw_event();
 void raise_volatile_undraw_event();
 void raise_help_string_event(int mousex, int mousey);
+
+extern bool ignore_finger_event;
 }
 
 typedef std::vector<events::handler*> handler_vector;

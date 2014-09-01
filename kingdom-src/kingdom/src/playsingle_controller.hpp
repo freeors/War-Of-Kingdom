@@ -19,6 +19,7 @@
 
 #include "play_controller.hpp"
 #include "replay.hpp"
+#include "playturn.hpp"
 
 class playsingle_controller : public play_controller
 {
@@ -35,7 +36,10 @@ public:
 
 	virtual void recruit();
 	virtual void build(const std::string& type);
+	virtual void guard();
+	virtual void abolish();
 	virtual void extract();
+	virtual void advance();
 	virtual void demolish();
 	virtual void armory();
 	virtual void play_card();
@@ -58,8 +62,10 @@ public:
 	virtual void check_end_level();
 
 protected:
+	bool can_auto_end_turn(bool original_goto) const;
+
 	virtual void play_turn(bool no_save);
-	virtual void play_side(const unsigned int team_index, bool save);
+	virtual void play_side();
 	virtual void before_human_turn(bool save);
 	void show_turn_dialog();
 	void execute_gotos();
@@ -68,9 +74,7 @@ protected:
 	void execute_guard_attack(int team_index);
 	virtual void play_human_turn();
 	virtual void after_human_turn();
-	void end_turn_record();
-	void end_turn_record_unlock();
-	void play_ai_turn();
+	void play_ai_turn(turn_info* turn_data);
 	virtual void init_gui();
 	void check_time_over();
 	void store_gold(bool obs = false);
@@ -80,7 +84,6 @@ protected:
 	gui::floating_textbox textbox_info_;
 	replay_network_sender replay_sender_;
 
-	bool end_turn_;
 	bool player_type_changed_;
 	bool turn_over_;
 	bool skip_next_turn_;

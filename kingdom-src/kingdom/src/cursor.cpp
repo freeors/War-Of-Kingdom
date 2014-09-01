@@ -84,8 +84,8 @@ SDL_Cursor* cache[cursor::NUM_CURSORS] = { NULL, NULL, NULL, NULL, NULL, NULL, N
 
 // This array must have members corresponding to cursor::CURSOR_TYPE enum members
 // Apple need 16x16 b&w cursors
-const std::string color_images[cursor::NUM_CURSORS] = { "normal.png", "wait.png", "move.png", "attack.png", "tactic.png", "build.png", "enter.png", "illegal.png", "standby.png", "interior.png", "technology.png", "select.png", 
-	"move_drag.png", "attack_drag.png", "tactic_drag.png", "build_drag.png", "enter_drag.png", "illegal_drag.png", "standby_drag.png", "interior_drag.png", "technology_drag.png", ""};
+const std::string color_images[cursor::NUM_CURSORS] = { "normal.png", "wait.png", "move.png", "attack.png", "tactic.png", "build.png", "enter.png", "illegal.png", "place.png", "interior.png", "technology.png", "select.png", 
+	"move_drag.png", "attack_drag.png", "tactic_drag.png", "build_drag.png", "enter_drag.png", "illegal_drag.png", "place_drag.png", "interior_drag.png", "technology_drag.png", ""};
 
 // Position of the hotspot of the cursor, from the normal topleft
 const int shift_x[cursor::NUM_CURSORS] = {0, 0, 0, 0, 0, 0, 0, 2, 3, 0, 0, 0};
@@ -183,8 +183,8 @@ void set_dragging(bool drag)
 		case ILLEGAL:
 			if (drag) cursor::set(ILLEGAL_DRAG);
 			break;
-		case STANDBY:
-			if (drag) cursor::set(STANDBY_DRAG);
+		case PLACE:
+			if (drag) cursor::set(PLACE_DRAG);
 			break;
 		case MOVE_DRAG:
 			if (!drag) cursor::set(MOVE);

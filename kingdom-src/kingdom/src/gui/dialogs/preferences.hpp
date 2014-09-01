@@ -68,8 +68,6 @@ private:
 	// display
 	void fullscreen_toggled(twidget* widget);
 	void flip_time_toggled(twidget* widget);
-	void show_floating_labels_toggled(twidget* widget);
-	void show_team_colors_toggled(twidget* widget);
 	void default_move_toggled(twidget* widget);
 	void video_mode_button(twindow& window);
 	// music
@@ -83,7 +81,7 @@ private:
 	void UI_sound_changed(tslider* widget, int value);
 	// advanced
 	void chat_timestamp_toggled(twidget* widget);
-	void scroll_when_mouse_outside_toggled(twidget* widget);
+	void developer_toggled(twidget* widget);
 	void interrupt_when_ally_sighted_toggled(twidget* widget);
 	void scroll_to_action_toggled(twidget* widget);
 	void show_color_cursors_toggled(twidget* widget);

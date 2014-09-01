@@ -29,7 +29,6 @@
 #include "halo.hpp"
 #include "log.hpp"
 #include "resources.hpp"
-#include "unit_id.hpp"
 #include "unit_abilities.hpp"
 #include "terrain_filter.hpp"
 #include "formula_string_utils.hpp"
@@ -54,20 +53,14 @@ namespace {
 	static std::multimap<unit*, unit*> provoke_cache;
 }
 
-unit* loc_in_alert_area(unit& interloper, const map_location& from, const map_location& to)
+unit* loc_in_alert_area(const std::vector<team>& teams, unit& interloper, const map_location& from, const map_location& to)
 {
-	std::vector<team>& teams = *resources::teams;
 	unit* alert = NULL;
 	for (std::map<unit*, int>::const_iterator it = alert_cache.begin(); it != alert_cache.end(); ++ it) {
 		unit& u = *it->first;
 		if (&interloper == &u || !teams[interloper.side() - 1].is_enemy(u.side())) {
 			continue;
 		}
-/*
-		if (from.in_area(u.get_location(), it->second)) {
-			continue;
-		}
-*/
 		if (to.in_area(u.get_location(), it->second)) {
 			alert = &u;
 			break;
@@ -112,19 +105,71 @@ unit* find_provoke(const unit* provoked)
 	return NULL;
 }
 
-namespace tactic_cache {
+namespace slot_cache {
 
-std::vector<unit*> cache;
+std::vector<tslot> cache;
 bool ready;
+unit* selected_u = NULL;
+
+int tslot::cost() const
+{
+	if (type == CAST_TACTIC) {
+		const ttactic& t = unit_types.tactic(tactic.h->tactic_);
+		return t.cost();
+
+	} else if (type == CLEAR_FORMATIONED) {
+		return u->calculate_clear_formated_cost();
+
+	} else if (type == MOVE) {
+		return game_config::cost_intervene_move;
+
+	}
+	return 0;
+}
+
+std::string tslot::label() const
+{
+	std::stringstream strstr;
+	bool spend = false;
+	if (type == ACTIVE_TACTIC) {
+		const ttactic& t = unit_types.tactic(u->tactic_hero()->tactic_);
+		strstr << t.name();
+
+	} else if (type == CAST_TACTIC) {
+		const ttactic& t = unit_types.tactic(tactic.h->tactic_);
+		strstr << t.name();
+		if (u->tactic_degree() < t.point() * game_config::tactic_degree_per_point && !u->hot_turns()) {
+			spend = true;;
+		}
+
+	} else if (type == CLEAR_FORMATIONED) {
+		spend = true;
+		strstr << dgettext("wesnoth-lib", "Formation");
+
+	} else if (type == MOVE) {
+		spend = true;
+		strstr << dgettext("wesnoth-lib", "Move");
+
+	}
+
+	if (spend) {
+		strstr << " (" << cost() << ")";
+	}
+	return strstr.str();
+}
 
 std::string cache_2_str()
 {
 	std::stringstream strstr;
-	for (std::vector<unit*>::const_iterator it = cache.begin(); it != cache.end(); ++ it) {
+	for (std::vector<tslot>::const_iterator it = cache.begin(); it != cache.end(); ++ it) {
+		const tslot& slot = *it;
+		if (slot.type != tslot::ACTIVE_TACTIC) {
+			continue;
+		}
 		if (it != cache.begin()) {
 			strstr << ", ";
 		}
-		int h = (*it)->tactic_hero()->number_;
+		int h = slot.u->tactic_hero()->number_;
 		strstr << h;
 	}
 	return strstr.str();
@@ -133,14 +178,92 @@ std::string cache_2_str()
 void str_2_cache(unit_map& units, hero_map& heros, const std::string& str)
 {
 	const std::vector<std::string> vstr = utils::split(str);
-	VALIDATE(vstr.size() == cache.size(), "tactic_cache::str_2_cache, generate and wml size don't match!");
-	// see remark#30
+	// see remakr
+	VALIDATE(vstr.size() == cache.size(), "slot_cache::str_2_cache, generate and wml size don't match!");
 	cache.clear();
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		int h = lexical_cast_default<int>(*it);
-		cache.push_back(units.find_unit(heros[h]));
+		insert_active_tactic(*units.find_unit(heros[h]));
 	}
 	ready = true;
+}
+
+bool find(const unit& u)
+{
+	for (std::vector<tslot>::const_iterator it = cache.begin(); it != cache.end(); ++ it) {
+		const tslot& slot = *it;
+		if (slot.u == &u) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void insert_active_tactic(unit& u)
+{
+	cache.push_back(tslot(tslot::ACTIVE_TACTIC, &u));
+}
+
+void insert_cast_tactic(unit& tactician, hero& h, unit* special)
+{
+	cache.push_back(tslot(tslot::CAST_TACTIC, &tactician));
+	tslot& slot = cache.back();
+	slot.tactic = tslot::tcast_tactic(&h, special);
+}
+
+void insert_clear_formationed(unit& u)
+{
+	cache.push_back(tslot(tslot::CLEAR_FORMATIONED, &u));
+}
+
+void insert_intervene_move(unit& u, const map_location& to)
+{
+	cache.push_back(tslot(tslot::MOVE, &u));
+	tslot& slot = cache.back();
+	slot.move = tslot::tmove(to);
+}
+
+}
+
+namespace guard_cache {
+tguard null_guard = tguard(map_location(-1000, -1000)); // map_location::null_location is static variable, maybe not initialize so far.
+std::map<unit*, tguard> cache;
+bool ready;
+
+std::string cache_2_str()
+{
+	std::stringstream strstr;
+	for (std::map<unit*, tguard>::const_iterator it = cache.begin(); it != cache.end(); ++ it) {
+		const unit& u = *(it->first);
+		const tguard& guard = it->second;
+		if (it != cache.begin()) {
+			strstr << "; ";
+		}
+		int h = u.master().number_;
+		strstr << h << ", " << guard.loc.x << ", " << guard.loc.y << ", " << guard.radius;
+	}
+	return strstr.str();
+}
+
+void str_2_cache(unit_map& units, hero_map& heros, const std::string& str)
+{
+	cache.clear();
+	const std::vector<std::string> vstr = utils::split(str, ';');
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		const std::vector<std::string> vstr2 = utils::split(*it);
+		VALIDATE(vstr2.size() == 4, "guard_cache::str_2_cache, items must be 4!");
+
+		int h = lexical_cast_default<int>(vstr2[0]);
+		map_location loc(lexical_cast_default<int>(vstr2[1]), lexical_cast_default<int>(vstr2[2]));
+		int radius = lexical_cast_default<int>(vstr2[3]);
+		cache.insert(std::make_pair(units.find_unit(heros[h]), tguard(loc, radius)));
+	}
+	ready = true;
+}
+
+tguard& find(const unit& u)
+{
+	return cache.find(const_cast<unit*>(&u))->second;
 }
 
 }
@@ -148,6 +271,76 @@ void str_2_cache(unit_map& units, hero_map& heros, const std::string& str)
 uint8_t mask0_2bit[4] = {0xfc, 0xf3, 0xcf, 0x3f};
 
 std::vector<std::pair<int, unit*> > unit::null_int_unitp_pair;
+map_location unit::pack_base_loc;
+
+bool actor_valid()
+{
+	return !!unit::actor;
+}
+
+bool actor_can_action(const unit_map& units)
+{
+	if (!unit::actor) {
+		return false;
+	}
+	if (unit::actor->is_city()) {
+		return true;
+	}
+	return !units.city_from_loc(unit::actor->get_location());
+}
+
+bool actor_can_continue_action(const unit_map& units, int actor_side)
+{
+	if (tent::turn_based) {
+		return true;
+	}
+	if (!unit::actor) {
+		return false;
+	}
+	if (unit::actor->side() != actor_side) {
+		return false;
+	}
+	if (unit::actor->is_city()) {
+		return true;
+	}
+	return !units.city_from_loc(unit::actor->get_location());
+}
+
+bool current_can_action(const unit& u)
+{
+	if (!tent::turn_based) {
+		if (u.get_state(ustate_tag::REVIVALED)) {
+			return true;
+		}
+
+		if (!unit::actor) {
+			return false;
+		}
+
+		if (&u == unit::actor) {
+			return true;
+		}
+
+		if (unit::actor->is_city() && unit::actor->side() == u.side()) {
+			if (u.is_resided()) {
+				// reside troop
+				return true;
+			} else if (u.get_state(ustate_tag::EXPEDITED)) {
+				return true;
+			}
+		}
+
+		return false;
+
+	} else {
+		return u.side() == unit_map::top_side;
+	}
+}
+
+int calculate_end_ticks()
+{
+	return (unit_map::main_ticks / game_config::ticks_per_turn + 1) * game_config::ticks_per_turn;
+}
 
 static const unit_type &get_unit_type(const std::string &type_id)
 {
@@ -177,6 +370,8 @@ unit_merit::unit_merit(const unit_merit& o):
 bool unit::draw_desc_ = true;
 bool unit::ignore_pack = false;
 bool unit::dont_wander = false;
+unit* unit::actor = NULL;
+size_t unit::global_signature = 0;
 
 dont_wander_lock::dont_wander_lock()
 {
@@ -213,9 +408,12 @@ unit::unit(const unit& o):
 	max_hit_points_(o.max_hit_points_),
 	experience_(o.experience_),
 	max_experience_(o.max_experience_),
+	ticks_(o.ticks_),
+	max_ticks_(o.max_ticks_),
+	drawn_ticks_(o.drawn_ticks_),
+	ticks_increase_(o.ticks_increase_),
 	level_(o.level_),
 	upkeep_(o.upkeep_),
-	random_traits_(o.random_traits_),
 	alignment_(o.alignment_),
 	flag_rgb_(o.flag_rgb_),
 	image_mods_(o.image_mods_),
@@ -231,13 +429,14 @@ unit::unit(const unit& o):
 	max_movement_(o.max_movement_),
 	movement_costs_(o.movement_costs_),
 	defense_mods_(o.defense_mods_),
-	end_turn_(o.end_turn_),
 	resting_(o.resting_),
+	tactic_degree_(o.tactic_degree_),
+	signature(o.signature),
+	ticks_adjusting(o.ticks_adjusting),
 	attacks_left_(o.attacks_left_),
 	max_attacks_(o.max_attacks_),
 
 	states_(o.states_),
-	known_boolean_states_(o.known_boolean_states_),
 	emit_zoc_(o.emit_zoc_),
 	cancel_zoc_(o.cancel_zoc_),
 	state_(o.state_),
@@ -274,10 +473,10 @@ unit::unit(const unit& o):
 	hide_turns_(o.hide_turns_),
 	alert_turns_(0), // set this later
 	provoked_turns_(0), // set this later
+	hot_turns_(o.hot_turns_),
 	tactic_hero_(NULL), // set this later
-	task_(o.task_),
+	task_(TASK_NONE), // set this later
 	human_(o.human_),
-	verifying_(o.verifying_),
 	commoner_(o.commoner_),
 	path_along_road_(o.path_along_road_),
 	artifical_(o.artifical_),
@@ -300,7 +499,7 @@ unit::unit(const unit& o):
 	leadership_(o.leadership_),
 	force_(o.force_),
 	intellect_(o.intellect_),
-	politics_(o.politics_),
+	spirit_(o.spirit_),
 	charm_(o.charm_),
 	characters_(o.characters_),
 	touch_locs_(o.touch_locs_),
@@ -330,6 +529,15 @@ unit::unit(const unit& o):
 	if (o.tactic_hero_) {
 		set_tactic_hero(*o.tactic_hero_);
 	}
+	if (o.task_ == TASK_GUARD) {
+		if (guard_cache::ready) {
+			set_guard(guard_cache::find(o).loc);
+		} else {
+			task_ = o.task_;
+		}
+	} else {
+		task_ = o.task_;
+	}
 	std::copy(o.adaptability_, o.adaptability_ + HEROS_MAX_ARMS, adaptability_);
 	std::copy(o.skill_, o.skill_ + HEROS_MAX_SKILL, skill_);
 	std::copy(o.feature_, o.feature_ + HEROS_FEATURE_M2BYTES, feature_);
@@ -342,7 +550,7 @@ unit::unit(const unit& o):
 	}
 }
            
-unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const config& cfg, bool use_traits, game_state* state, bool is_artifical) :
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, const config& cfg, bool use_traits, bool is_artifical) :
 	unit_merit(),
 	units_(units),
 	heros_(heros),
@@ -364,9 +572,12 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 	max_hit_points_(0),
 	experience_(0),
 	max_experience_(0),
+	ticks_(NONE_TICKS),
+	max_ticks_(0),
+	drawn_ticks_(NONE_TICKS),
+	ticks_increase_(0),
 	level_(0),
 	upkeep_(-1),
-	random_traits_(true),
 	alignment_(),
 	flag_rgb_(),
 	image_mods_(),
@@ -380,12 +591,13 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 	max_movement_(0),
 	movement_costs_(),
 	defense_mods_(),
-	end_turn_(false),
 	resting_(false),
+	tactic_degree_(0),
+	signature(global_signature ++),
+	ticks_adjusting(false),
 	attacks_left_(0),
 	max_attacks_(0),
-	states_(),
-	known_boolean_states_(known_boolean_state_names_.size(),false),
+	states_(0),
 	emit_zoc_(0),
 	cancel_zoc_(false),
 	state_(STATE_STANDING),
@@ -417,10 +629,10 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 	hide_turns_(0),
 	alert_turns_(0),
 	provoked_turns_(0),
+	hot_turns_(0),
 	tactic_hero_(NULL),
 	task_(TASK_NONE),
 	human_(false),
-	verifying_(false),
 	commoner_(false),
 	path_along_road_(false),
 	artifical_(is_artifical),
@@ -516,7 +728,7 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 		especial_ = unit_type_->especial();
 	}
 	
-	advance_to(unit_type_, use_traits, state);
+	advance_to(unit_type_, use_traits, &state);
 
 	// set city_ and side_. only when is troop or city. don't set when artifical.
 	if (!artifical_ || this_is_city()) {
@@ -544,10 +756,20 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 		alpha_ = lexical_cast_default<fixed_t>(*v);
 	}
 
+	if (!cfg["states"].empty()) {
+		std::vector<std::string> vstr = utils::split(cfg["states"].str());
+		for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+			ustate_tag::state_t val = ustate_tag::find(*it);
+			if (val != ustate_tag::NONE) {
+				set_state(val, true);
+			}
+		}
+	}
+
 	if (const config &status_flags = cfg.child("status")) {
 		BOOST_FOREACH (const config::attribute &st, status_flags.attribute_range()) {
 			if (st.second.to_bool()) {
-				set_state(st.first, true);
+				set_state(find_state(st.first), true);
 			}
 		}
 	}
@@ -577,9 +799,7 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 	}
 	experience_ = cfg["experience"];
 	resting_ = cfg["resting"].to_bool();
-
-	// variable before modify accord heros
-	bool modified = cfg["modified"].to_bool();
+	tactic_degree_ = cfg["tactic_degree"].to_int();
 
 	// unit_merit
 	field_turns_ = cfg["field_turns"].to_int();
@@ -603,13 +823,12 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 	}
 
 	/** @todo Are these modified by read? if not they can be removed. */
-	end_turn_ = false;
 	refreshing_  = false;
 	hidden_ = false;
 	game_config::add_color_info(cfg);
 
 	static char const *internalized_attrs[] = { "type", "name",
-		"gender", "random_gender", "variation",
+		"gender", "states",
 		"side", "facing", "race",
 		"level", "undead_variation", "max_attacks",
 		"attacks_left", "alpha", "flying", "cost",
@@ -628,7 +847,7 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const con
 	path_along_road_ = commoner_ && !transport_;
 }
 
-unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uint8_t* mem, bool use_traits, game_state* state, bool artifical) :
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uint8_t* mem, bool use_traits, bool artifical) :
 	unit_merit(),
 	units_(units),
 	heros_(heros),
@@ -652,7 +871,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	max_experience_(0),
 	level_(0),
 	upkeep_(-1),
-	random_traits_(true),
 	alignment_(),
 	flag_rgb_(),
 	image_mods_(),
@@ -664,14 +882,19 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	alpha_(),
 	movement_(0),
 	max_movement_(0),
+	ticks_(NONE_TICKS),
+	max_ticks_(0),
+	drawn_ticks_(NONE_TICKS),
+	ticks_increase_(0),
 	movement_costs_(),
 	defense_mods_(),
-	end_turn_(false),
 	resting_(false),
+	tactic_degree_(0),
+	signature(0), // signature is from to mem.
+	ticks_adjusting(false),
 	attacks_left_(0),
 	max_attacks_(0),
-	states_(),
-	known_boolean_states_(known_boolean_state_names_.size(),false),
+	states_(0),
 	emit_zoc_(0),
 	cancel_zoc_(false),
 	state_(STATE_STANDING),
@@ -703,10 +926,10 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	hide_turns_(0),
 	alert_turns_(0),
 	provoked_turns_(0),
+	hot_turns_(0),
 	tactic_hero_(NULL),
 	task_(TASK_NONE),
 	human_(false),
-	verifying_(false),
 	commoner_(false),
 	path_along_road_(false),
 	artifical_(artifical),
@@ -771,7 +994,7 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	}
 
 	unit_type_ = &get_unit_type(type_).get_gender_unit_type(gender_).get_variation(variation_);
-	advance_to(unit_type_, use_traits, state);
+	advance_to(unit_type_, use_traits, NULL);
 
 	calculate_5fields();
 	modify_according_to_hero(true, true);
@@ -799,7 +1022,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	}
 
 	/** @todo Are these modified by read? if not they can be removed. */
-	end_turn_ = false;
 	refreshing_  = false;
 	hidden_ = false;
 	// game_config::add_color_info(cfg);
@@ -821,7 +1043,7 @@ void unit::clear_status_caches()
 	units_with_cache.clear();
 }
 
-unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_heros_pair& t, int cityno, bool real_unit, bool is_artifical) :
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, type_heros_pair& t, int cityno, bool real_unit, bool is_artifical) :
 	unit_merit(),
 	units_(units),
 	heros_(heros),
@@ -843,9 +1065,12 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_hero
 	max_hit_points_(0),
 	experience_(0),
 	max_experience_(0),
+	ticks_(NONE_TICKS),
+	max_ticks_(0),
+	drawn_ticks_(NONE_TICKS),
+	ticks_increase_(0),
 	level_(0),
 	upkeep_(-1),
-	random_traits_(true),
 	alignment_(),
 	flag_rgb_(),
 	image_mods_(),
@@ -858,12 +1083,13 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_hero
 	max_movement_(0),
 	movement_costs_(),
 	defense_mods_(),
-	end_turn_(false),
 	resting_(false),
+	tactic_degree_(0),
+	signature(global_signature ++),
+	ticks_adjusting(false),
 	attacks_left_(0),
 	max_attacks_(0),
-	states_(),
-	known_boolean_states_(known_boolean_state_names_.size(),false),
+	states_(0),
 	emit_zoc_(0),
 	cancel_zoc_(false),
 	state_(STATE_STANDING),
@@ -895,10 +1121,10 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_hero
 	hide_turns_(0),
 	alert_turns_(0),
 	provoked_turns_(0),
+	hot_turns_(0),
 	tactic_hero_(NULL),
 	task_(TASK_NONE),
 	human_(false),
-	verifying_(false),
 	commoner_(false),
 	path_along_road_(false),
 	artifical_(is_artifical),
@@ -928,7 +1154,7 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_hero
 	if (cityno != HEROS_ROAM_CITY) {
 		side_ = units.city_from_cityno(cityno)->side();
 	} else {
-		side_ = team::empty_side_;
+		side_ = team::empty_side;
 	}
 
 	master_ = const_cast<hero*>(t.second[0]);
@@ -960,7 +1186,7 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_hero
 		especial_ = city.especial();
 	}
 
-	advance_to(unit_type_, real_unit);
+	advance_to(unit_type_, real_unit, &state);
 
 	// fill those after traits and modifs to have correct max
 	movement_ = max_movement_;
@@ -972,7 +1198,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, type_hero
 	 * removed, since already set in the initialization list.
 	 */
 	anim_ = NULL;
-	end_turn_ = false;
 	next_idling_ = 0;
 	frame_begin_time_ = 0;
 	unit_halo_ = halo::NO_HALO;
@@ -1011,11 +1236,18 @@ unit::~unit()
 		alert_cache.erase(it);
 	}
 
-	// Remove us from this provoke cache
+	// Remove us from provoke cache
 	remove_from_provoke_cache();
 
-	// Remove us from this tactic cache
-	remove_from_tactic_cache();
+	// Remove us from slot cache
+	remove_from_slot_cache();
+
+	// Remove us from guard cache
+	remove_from_guard_cache();
+
+	if (this == actor) {
+		actor = NULL;
+	}
 }
 
 unit& unit::operator=(const unit& u)
@@ -1028,14 +1260,22 @@ unit& unit::operator=(const unit& u)
 	return *this ;
 }
 
+#define has_state_flag(s)		(states_ & s)
+#define set_state_flag(s)		(states_ |= s)
+#define clear_state_flag(s)		(states_ &= ~s)
+
+#define has_field_bool_flag(field, s)		((field) & s)
+#define set_field_bool_flag(field, s)		((field) |= s)
+#define clear_field_bool_flag(field, s)		((field) &= ~s)
+
+#define set_field_bool(field, flag, value)	(value)? (field) |= flag: (field) &= ~(flag)
+#define get_field_bool						has_field_bool_flag
+
 void unit::write(uint8_t* mem) const
 {
 	unit_fields_t* fields = (unit_fields_t*)mem;
 
-	fields->states_ = 0;
-	for (int t = STATE_MIN; t < STATE_COUNT; t ++) {
-		fields->states_ |= get_state((state_t)t)? (1 << (t - STATE_MIN)): 0;
-	}
+	fields->states_ = states_;
 	if (this_is_city()) {
 		fields->artifical_ = 2;
 	} else if (artifical_) {
@@ -1065,13 +1305,16 @@ void unit::write(uint8_t* mem) const
 	fields->hide_turns_ = hide_turns_;
 	fields->alert_turns_ = alert_turns_;
 	fields->provoked_turns_ = provoked_turns_;
+	fields->hot_turns_ = hot_turns_;
 	fields->tactic_hero_ = tactic_hero_? tactic_hero_->number_: HEROS_INVALID_NUMBER;
 	fields->task_ = task_;
 	fields->especial_ = especial_;
-	fields->human_ = human_? 1: 0;
-	fields->random_traits_ = random_traits_? 1: 0;
-	fields->resting_ = resting_? 1: 0;
-	fields->modified_ = 1;
+	fields->ticks_ = ticks_;
+	fields->bools_ = 0; // memory block doesn't been zero!
+	set_field_bool(fields->bools_, FIELD_HUMAN, human_);
+	set_field_bool(fields->bools_, FIELD_RESTING, resting_);
+	fields->tactic_degree_ = tactic_degree_;
+	fields->signature_ = signature;
 
 	int offset;
 	if (artifical_) {
@@ -1250,7 +1493,7 @@ void unit::read(const uint8_t* mem, bool lower)
 		// fllowing advances_to(...) used it!
 		especial_ = fields->especial_;
 
-		random_traits_ = fields->random_traits_? true: false;
+		ticks_ = fields->ticks_;
 
 		facing_ = (map_location::DIRECTION)fields->facing_;
 
@@ -1271,9 +1514,7 @@ void unit::read(const uint8_t* mem, bool lower)
 		return;
 	}
 
-	for (int t = STATE_MIN; t < STATE_COUNT; t ++) {
-		set_state((state_t)t, (fields->states_ & (1 << (t - STATE_MIN)))? true: false);
-	}
+	states_ = fields->states_;
 	been_damage_ = fields->been_damage_;
 	cause_damage_ = fields->cause_damage_;
 	defeat_units_ = fields->defeat_units_;
@@ -1295,10 +1536,13 @@ void unit::read(const uint8_t* mem, bool lower)
 	hide_turns_ = fields->hide_turns_;
 	set_alert_turns(fields->alert_turns_);
 	provoked_turns_ = fields->provoked_turns_;
+	hot_turns_ = fields->hot_turns_;
 	tactic_hero_ = (fields->tactic_hero_ != HEROS_INVALID_NUMBER)? &heros_[fields->tactic_hero_]: NULL;
 	task_ = fields->task_;
-	human_ = fields->human_? true: false;
-	resting_ = fields->resting_? true: false;
+	human_ = get_field_bool(fields->bools_, FIELD_HUMAN);
+	resting_ = get_field_bool(fields->bools_, FIELD_RESTING);
+	tactic_degree_ = fields->tactic_degree_;
+	signature = fields->signature_;
 }
 
 void unit::delete_anim()
@@ -1346,25 +1590,26 @@ void unit::generate_traits(bool musthaveonly, game_state* state)
 		}
 
 		// Add the trait if it is mandatory.
-		const std::string &avl = t["availability"];
+		const std::string& avl = t["availability"];
 		if (avl == "musthave") {
 			traits_.push_back(tid);
 			continue;
 		}
-		if (!max_movement_) {
-			// this is artifical, don't accept trait that effect movement
-			bool effect_movement = false;
-			BOOST_FOREACH (const config& effect, t.child_range("effect")) {
-				if (effect["apply_to"] == "movement") {
-					effect_movement = true;
-					break;
+		
+		const std::string& filter = t["filter"];
+		if (!filter.empty()) {
+			if (filter == "moveable") {
+				if (!max_movement_) {
+					continue;
+				}
+			} else if (filter == "melee" || filter == "ranged" || filter == "cast") {
+				int w = weapon(null_str, filter);
+				if (w < 0 || attacks_[w].damage() < game_config::min_valid_damage) {
+					continue;
 				}
 			}
-			if (effect_movement) {
-				continue;
-			}
 		}
-
+		
 		// The trait is still available, mark it as a candidate for randomizing.
 		if (!musthaveonly) {
 			candidate_traits.push_back(tid);
@@ -1377,17 +1622,11 @@ void unit::generate_traits(bool musthaveonly, game_state* state)
 	// there aren't any more traits.
 	int nb_traits = traits_.size();
 	int max_traits = type->num_traits();
-	for (; nb_traits < max_traits && !candidate_traits.empty(); ++nb_traits)
-	{
-		int num = (state ? state->rng().get_next_random() : get_random_nocheck())
-		          % candidate_traits.size();
+	for (; nb_traits < max_traits && !candidate_traits.empty(); ++nb_traits) {
+		int num = state->rng().get_next_random() % candidate_traits.size();
 		traits_.push_back(candidate_traits[num]);
 		candidate_traits.erase(candidate_traits.begin() + num);
 	}
-
-	// Once random traits are added, don't do it again.
-	// Such as when restoring a saved character.
-	random_traits_ = false;
 }
 
 std::vector<std::string> unit::get_traits_list() const
@@ -1401,7 +1640,7 @@ const std::vector<std::string>& unit::advances_to() const
 }
 
 // t must be packer=no unit type
-void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
+void unit::advance_to(const unit_type *t, bool use_random_traits, game_state *state)
 {
 	VALIDATE(!t->packer(), "unit::advance_to, packer unit_type: " + t->id());
 
@@ -1478,17 +1717,7 @@ void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
 	type_ = t->id();
 	unit_type_ = t;
 
-	random_traits_ = cfg_["random_traits"].to_bool(true);
-
-	if (random_traits_) {
-		generate_traits(!use_traits, state);
-	} else {
-		// This will add any "musthave" traits to the new unit that it doesn't already have.
-		// This covers the Dark Sorcerer advancing to Lich and gaining the "undead" trait,
-		// but random and/or optional traits are not added,
-		// and neither are inappropiate traits removed.
-		generate_traits(true);
-	}
+	generate_traits(!use_random_traits, state);
 
 	// anim
 	static char const* anim_attrs[] = { "die_sound" };
@@ -1496,11 +1725,10 @@ void unit::advance_to(const unit_type *t, bool use_traits, game_state *state)
 		cfg_.remove_attribute(attr);
 	}
 
-	set_state(STATE_POISONED, false);
-	set_state(STATE_SLOWED, false);
-	set_state(STATE_BROKEN, false);
-	set_state(STATE_PETRIFIED, false);
-	end_turn_ = false;
+	set_state(ustate_tag::POISONED, false);
+	set_state(ustate_tag::SLOWED, false);
+	set_state(ustate_tag::BROKEN, false);
+	set_state(ustate_tag::PETRIFIED, false);
 	refreshing_  = false;
 	hidden_ = false;
 
@@ -1623,7 +1851,7 @@ void unit::change_to(game_display& gui, const unit_type* t)
 	}
 
 	rect_of_hexes& draw_area = gui.draw_area();
-	bool force_scroll = (!unit_display::player_number_ || (unit_display::player_number_ > 0 && human()))? true: false;
+	bool force_scroll = preferences::scroll_to_action();
 	bool animate = force_scroll || point_in_rect_of_hexes(get_location().x, get_location().y, draw_area);
 	if (!gui.video().update_locked() && animate) {
 		unit_animator animator;
@@ -1677,9 +1905,9 @@ void unit::inching_block_turns(bool increase)
 	VALIDATE(is_commoner(), "inching_block_turns, block unit must be commoner!");
 
 	if (increase) {
-		if (!get_state(unit::STATE_BLOCKED) && total_movement() == movement_left()) {
+		if (!get_state(ustate_tag::BLOCKED) && total_movement() == movement_left()) {
 			block_turns_ ++;
-			set_state(unit::STATE_BLOCKED, true);
+			set_state(ustate_tag::BLOCKED, true);
 		}
 	} else if (block_turns_) {
 		block_turns_ = 0;
@@ -1805,13 +2033,35 @@ void unit::remove_from_provoke_cache()
 	}
 }
 
+int unit::max_hot_turns() const
+{
+	int max = max_tactic_point();
+	if (!max) {
+		return 0;
+	}
+	int turns = 100 * max * game_config::tactic_degree_per_point / tactic_degree_increment_per_turn();
+	turns = turns % 100? (turns / 100 + 1): (turns / 100);
+	return turns - 1;
+}
+
+void unit::set_hot_turns(int turns)
+{
+	const int max_unit_hot_turns = 9;
+
+	hot_turns_ = turns;
+	if (hot_turns_ < 0) {
+		hot_turns_ = 0;
+	} else if (hot_turns_ > max_unit_hot_turns) {
+		hot_turns_ = max_unit_hot_turns;
+	}
+}
+
 void unit::set_tactic_hero(hero& h)
 {
-	std::vector<unit*>::iterator find = std::find(tactic_cache::cache.begin(), tactic_cache::cache.end(), this);
-	VALIDATE(find == tactic_cache::cache.end(), "unit::set_tactic_hero, insert, but find this in provoke cache!");
-	VALIDATE(h.tactic_ != HEROS_NO_TACTIC, "unit::set_tactic_hero, insert, hero hasn't tactic!");
+	VALIDATE(!slot_cache::find(*this), "insert, but find this in slot cache!");
+	VALIDATE(h.tactic_ != HEROS_NO_TACTIC, "insert, hero hasn't tactic!");
 
-	tactic_cache::cache.push_back(this);
+	slot_cache::insert_active_tactic(*this);
 	tactic_hero_ = &h;
 
 	if (resources::screen && resources::teams && resources::controller) {
@@ -1822,23 +2072,105 @@ void unit::set_tactic_hero(hero& h)
 	}
 }
 
-void unit::remove_from_tactic_cache()
+void unit::insert_cast_tactic(game_display& disp, hero& h, unit* special)
 {
-	if (tactic_hero_) {
-		for (std::vector<unit*>::iterator it = tactic_cache::cache.begin(); it != tactic_cache::cache.end(); ++ it) {
-			if (*it == this) {
-				tactic_cache::cache.erase(it);
+	slot_cache::insert_cast_tactic(*this, h, special);
+	teams_[side_ - 1].refresh_tactic_slots(disp);
+}
+
+void unit::insert_clear_formationed(game_display& disp)
+{
+	slot_cache::insert_clear_formationed(*this);
+	teams_[side_ - 1].refresh_tactic_slots(disp);
+}
+
+void unit::insert_intervene_move(game_display& disp, const map_location& to)
+{
+	slot_cache::insert_intervene_move(*this, to);
+	teams_[side_ - 1].refresh_tactic_slots(disp);
+}
+
+void unit::remove_from_slot_cache(int pos)
+{
+	bool slot_dirty = false;
+
+	std::vector<slot_cache::tslot>::iterator it = slot_cache::cache.begin();
+	if (pos >= 0) {
+		VALIDATE(pos < (int)slot_cache::cache.size(), "desire pos is larger than cache size!");
+		if (pos) {
+			std::advance(it, pos);
+		}
+		slot_cache::cache.erase(it);
+		slot_dirty = true;
+	} else {
+		for (; it != slot_cache::cache.end(); ) {
+			const slot_cache::tslot& slot = *it;
+			if (slot.u == this || (slot.type == slot_cache::tslot::CAST_TACTIC && slot.tactic.special == this)) {
+				it = slot_cache::cache.erase(it);
+				slot_dirty = true;
+			} else {
+				++ it;
+			}
+		}
+		if (slot_cache::selected_u == this && resources::screen && resources::teams && resources::controller) {
+			resources::controller->clear_slot_cache_selected();
+		}
+	}
+	tactic_hero_ = NULL;
+
+	if (slot_dirty && resources::screen && resources::teams && resources::controller) {
+		if (resources::controller->current_side() == side_) {
+			game_display& disp = *resources::screen;
+			teams_[side_ - 1].refresh_tactic_slots(disp);
+		}
+	}
+}
+
+void unit::set_task(int t)
+{
+	if (t == task_) {
+		return;
+	}
+
+	if (task_ == TASK_GUARD) {
+		remove_from_guard_cache();
+	} else {
+		task_ = t; 
+	}
+}
+
+void unit::set_guard(const map_location& loc)
+{
+	const int guard_radius = 5;
+
+	std::map<unit*, guard_cache::tguard>::iterator find = guard_cache::cache.find(this);
+	if (task_ != TASK_GUARD) {
+		task_ = TASK_GUARD;
+		VALIDATE(find == guard_cache::cache.end(), "want to guard, but find this in guard cache!");
+		guard_cache::cache.insert(std::make_pair(this, guard_cache::tguard(loc, guard_radius)));
+
+	} else {
+		VALIDATE(find != guard_cache::cache.end(), "want to modify parameter, but cannot find this in guard cache!");
+		find->second.loc = loc;
+	}
+}
+
+void unit::set_guard2(const map_location& loc)
+{
+	task_ = TASK_NONE;
+	set_guard(loc);
+}
+
+void unit::remove_from_guard_cache()
+{
+	if (task_ == TASK_GUARD) {
+		for (std::map<unit*, guard_cache::tguard>::iterator it = guard_cache::cache.begin(); it != guard_cache::cache.end(); ++ it) {
+			if (it->first == this) {
+				guard_cache::cache.erase(it);
 				break;
 			}
 		}
-		tactic_hero_ = NULL;
-
-		if (resources::screen && resources::teams && resources::controller) {
-			if (resources::controller->current_side() == side_) {
-				game_display& disp = *resources::screen;
-				teams_[side_ - 1].refresh_tactic_slots(disp);
-			}
-		}
+		task_ = TASK_NONE;
 	}
 }
 
@@ -1858,30 +2190,38 @@ void unit::set_human(bool val)
 	} 
 }
 
-void unit::input_food(unit& tactician)
+void unit::do_revival(unit& tactician)
 {
-	if (food_ >= max_food()) {
-		return;
+	VALIDATE(tactician.side() == side_, "tactician must be same side as revivaled!");
+
+	if (tent::turn_based) {
+		end_turn(false);
 	}
-	int input = tactician.food() * 2 / 3;
-	input = std::min(input, max_food() - food_);
-	food_ += input;
-	tactician.increase_food(-1 * input);
+	new_turn_core();
+	set_state(ustate_tag::REVIVALED, true);
+
+	game_display& disp = *resources::screen;
+	disp.refresh_access_troops(side_ - 1, game_display::REFRESH_DRAW, this);
+
 
 	std::stringstream strstr;
-	strstr << help::tintegrate::generate_img("misc/food.png");
-	strstr << input;
+	strstr << help::tintegrate::generate_img("misc/revival.png");
 	unit_display::unit_text(*this, false, strstr.str());
 }
 
 bool unit::consider_food() const
 {
-	return tent::mode != TOWER_MODE;
+	return !tent::tower_mode();
+}
+
+bool unit::alert_food() const
+{
+	return food_ < max_food() / 3;
 }
 
 int unit::gold_income() const 
 {
-	if (!gold_income_) {
+	if (!gold_income_ || get_state(ustate_tag::BUILDING)) {
 		return 0;
 	} else if (commoner_) {
 		return gold_income_;
@@ -1893,7 +2233,7 @@ int unit::gold_income() const
 
 int unit::technology_income() const
 {
-	if (!technology_income_) {
+	if (!technology_income_ || get_state(ustate_tag::BUILDING)) {
 		return 0;
 	} else if (commoner_) {
 		return technology_income_;
@@ -1986,7 +2326,12 @@ bool unit::can_formation_attack() const
 
 bool unit::formation_attack_enable() const
 {
-	return attacks_left() && !get_state(unit::STATE_FORMATION_ATTACKED);
+	return (!tent::turn_based || attacks_left()) && !get_state(ustate_tag::FORMATION_ATTACKED);
+}
+
+bool unit::human_team_can_ai() const
+{
+	return !human_ || tent::tower_mode() || provoked_turns_ || task_ == unit::TASK_GUARD;
 }
 
 bool unit::can_increase_experience() const
@@ -2002,7 +2347,7 @@ void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bo
 	bool has_rpg = false;
 	team& this_team = teams_[side_ - 1];
 
-	if (!can_increase_experience()) {
+	if (!hdata_variable()) {
 		experience_ += xp;
 		if (xp > 0 && unit_feature_val(hero_feature_xp)) {
 			// when advance, xp is less than 0. 
@@ -2039,8 +2384,8 @@ void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bo
 		if (ub.intellect) {
 			hb.intellect = inc_ability_xp * (this_team.intellect_speed_ + ub.intellect_speed) / 100;
 		}
-		if (ub.politics) {
-			hb.politics = inc_ability_xp * (this_team.politics_speed_ + ub.politics_speed) / 100;
+		if (ub.spirit) {
+			hb.spirit = inc_ability_xp * (this_team.spirit_speed_ + ub.spirit_speed) / 100;
 		}
 		if (ub.charm) {
 			hb.charm = inc_ability_xp * (this_team.charm_speed_ + ub.charm_speed) / 100;
@@ -2134,7 +2479,7 @@ void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bo
 		}
 	}
 
-	if (has_rpg && xp > 0 && rpg::stratum != hero_stratum_leader && !rpg::forbids) {
+	if (has_rpg && xp > 0 && rpg::stratum != hero_stratum_leader) {
 		resources::controller->rpg_update();
 	}
 	return;
@@ -2214,11 +2559,9 @@ SDL_Color unit::xp_color() const
 	return(color);
 }
 
-std::string unit::side_id() const {return teams_manager::get_teams()[side()-1].save_id(); }
-
 bool unit::uncleared() const
 {
-	return known_boolean_states_[unit::STATE_SLOWED] || known_boolean_states_[unit::STATE_BROKEN] || known_boolean_states_[unit::STATE_POISONED] || provoked_turns_;
+	return has_state_flag(ustate_tag::SLOWED) || has_state_flag(ustate_tag::BROKEN) || has_state_flag(ustate_tag::POISONED) || provoked_turns_;
 }
 
 bool unit::healable() const
@@ -2228,9 +2571,127 @@ bool unit::healable() const
 
 void unit::set_movement(int moves)
 {
-	//FIXME: we shouldn't set those here, other code use this a simple setter.
-	end_turn_ = false;
 	movement_ = std::max<int>(0, moves);
+}
+
+bool unit::can_move() const
+{
+	const team& current_team = teams_[side_ - 1];
+	const gamemap& map = *resources::game_map;
+
+	if (artifical_) {
+		return true;
+	}
+
+	if (!attacks_left() && movement_left() == 0) {
+		return false;
+	}
+
+	// Units with goto commands that have already done their gotos this turn
+	// (i.e. don't have full movement left) should have red globes.
+	if (has_moved() && has_goto()) {
+		return false;
+	}
+
+	for (size_t n = 0; n != adjacent_size_; ++ n) {
+		const map_location& loc = adjacent_[n];
+		const unit* that = units_.find_unit(loc);
+		if (that) {
+			if (!that->incapacitated() && current_team.is_enemy(that->side_)) {
+				return true;
+			}
+		}
+
+		if (movement_cost(map[loc]) <= movement_left()) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool unit::consider_ticks() const
+{	
+	if (artifical_ && !can_reside_) {
+		return false;
+	}
+	return !commoner_;
+}
+
+int unit::increase_ticks(int inc, int min, bool refresh_gui)
+{
+	if (!consider_ticks()) {
+		return ticks_;
+	}
+	if (ticks_ < min) {
+		return ticks_;
+	}
+
+	int orignal = ticks_;
+	ticks_ += inc;
+	if (ticks_ > game_config::ticks_per_turn) {
+		ticks_ = game_config::ticks_per_turn;
+
+	} else if (ticks_ < min) {
+		ticks_ = min;
+
+	}
+
+	if (refresh_gui && orignal != ticks_) {
+		game_display& disp = *game_display::get_singleton();
+		disp.resort_access_troops(*this);
+	}
+
+	return ticks_;
+}
+
+int unit::percent_ticks() const
+{
+	return 100 * (game_config::ticks_per_turn - ticks_) / game_config::ticks_per_turn;
+}
+
+bool unit::is_resided() const
+{
+	return ticks_ == RESIDE_TICKS;
+}
+
+const int min_decreased_ticks = 50;	// normal is 100, indicate not adjust.
+
+int unit::forward_ticks(int val) const
+{
+	int adjust = val;
+	if (!is_artifical()) {
+		int bonus = teams_[side_ - 1].ticks_increase + ticks_increase_;
+		if (unit_feature_val(hero_feature_spirit)) {
+			bonus += game_config::feature_increase_spirit;
+		}
+		if (bonus < min_decreased_ticks) {
+			// reference to http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=22045&extra=page%3D1
+			bonus = min_decreased_ticks;
+		}
+		adjust = 1.0 * val * bonus / 100;
+	}
+
+	return adjust;
+}
+
+int unit::backward_ticks(int val) const
+{
+	int adjust = val;
+	if (!is_artifical()) {
+		int bonus = teams_[side_ - 1].ticks_increase + ticks_increase_;
+		if (unit_feature_val(hero_feature_spirit)) {
+			bonus += game_config::feature_increase_spirit;
+		}
+		if (bonus < min_decreased_ticks) {
+			// reference to http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=22045&extra=page%3D1
+			bonus = min_decreased_ticks;
+		}
+		// make sure this value >= forward_ticks calcualted.
+		adjust = std::ceil(1.0 * val * 100 / bonus);
+	}
+
+	return adjust;
 }
 
 void unit::set_attacks(int left) 
@@ -2268,6 +2729,317 @@ void unit::terminate_noble(bool show_message) const
 	}
 }
 
+bool unit::tactic_existed() const
+{
+	if (master_->tactic_ != HEROS_NO_TACTIC) {
+		return true;
+	}
+	if (second_->valid() && second_->tactic_ != HEROS_NO_TACTIC) {
+		return true;
+	}
+	if (third_->valid() && third_->tactic_ != HEROS_NO_TACTIC) {
+		return true;
+	}
+	return false;
+}
+
+bool unit::can_cast_tactic() const
+{
+	int point = tactic_degree_ / game_config::tactic_degree_per_point;
+	if (!point) {
+		return false;
+	}
+	if (master_->tactic_ != HEROS_NO_TACTIC) {
+		if (unit_types.tactic(master_->tactic_).point() <= point) {
+			return true;
+		}
+	}
+	if (second_->valid() && second_->tactic_ != HEROS_NO_TACTIC) {
+		if (unit_types.tactic(second_->tactic_).point() <= point) {
+			return true;
+		}
+	}
+	if (third_->valid() && third_->tactic_ != HEROS_NO_TACTIC) {
+		if (unit_types.tactic(third_->tactic_).point() <= point) {
+			return true;
+		}
+	}
+	return false;
+}
+
+int unit::max_tactic_point() const
+{
+	int point, max_point = 0;
+	if (master_->tactic_ != HEROS_NO_TACTIC) {
+		max_point = unit_types.tactic(master_->tactic_).point();
+	}
+	if (second_->valid() && second_->tactic_ != HEROS_NO_TACTIC) {
+		point = unit_types.tactic(second_->tactic_).point();
+		if (point > max_point) {
+			max_point = point;
+		}
+	}
+	if (third_->valid() && third_->tactic_ != HEROS_NO_TACTIC) {
+		point = unit_types.tactic(third_->tactic_).point();
+		if (point > max_point) {
+			max_point = point;
+		}
+	}
+	return max_point;
+}
+
+hero* unit::max_tactic_hero() const
+{
+	int point, max_point = 0;
+	hero* max_hero = NULL;
+	if (master_->tactic_ != HEROS_NO_TACTIC) {
+		max_point = unit_types.tactic(master_->tactic_).point();
+		max_hero = master_;
+	}
+	if (second_->valid() && second_->tactic_ != HEROS_NO_TACTIC) {
+		point = unit_types.tactic(second_->tactic_).point();
+		if (point > max_point) {
+			max_point = point;
+			max_hero = second_;
+		}
+	}
+	if (third_->valid() && third_->tactic_ != HEROS_NO_TACTIC) {
+		point = unit_types.tactic(third_->tactic_).point();
+		if (point > max_point) {
+			max_point = point;
+			max_hero = third_;
+		}
+	}
+	return max_hero;
+}
+
+int unit::percent_tactic_degree() const
+{
+	int max_point = max_tactic_point();
+
+	if (max_point > 0) {
+		if (tactic_degree_ >= max_point * game_config::tactic_degree_per_point) {
+			return 100;
+		} 
+		return 100 * tactic_degree_/ (max_point * game_config::tactic_degree_per_point);
+	}
+	return max_point;
+}
+
+int unit::increase_tactic_degree(int inc)
+{
+	int max = max_tactic_point() * game_config::tactic_degree_per_point;
+	if (max <= 0) {
+		return tactic_degree_;
+	}
+
+	tactic_degree_ += inc;
+	if (tactic_degree_ < 0) {
+		tactic_degree_ = 0;
+
+	} else if (tactic_degree_ > max) {
+		tactic_degree_ = max;
+	}
+
+	return tactic_degree_;
+}
+
+std::pair<hero*, int> unit::calculate_tactic_score() const
+{
+	size_t friends = 0;
+	size_t unhides = 0;
+	size_t unnormals = 0;
+	size_t healables = 0;
+	size_t unprovoks = 0;
+	size_t our_side_selectable = 0;
+	size_t enemies = 0;
+	std::set<const unit*> calculated;
+	const team& current_team = teams_[side_ - 1];
+
+	const map_location* tiles = adjacent_;
+	size_t adjance_size = adjacent_size_;
+	for (int step = 0; step < 2; step ++) {
+		if (step == 1) {
+			tiles = adjacent_2_;
+			adjance_size = adjacent_size_2_;
+		}
+
+		for (size_t adj = 0; adj < adjance_size; adj ++) {
+			const map_location& loc = tiles[adj];
+			// overlay
+			unit_map::node* curr_node;
+			
+			for (int layer = 0; layer < 2; layer ++) {
+				if (layer == 0) {
+					curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc));
+				} else {
+					curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
+				}
+
+				if (curr_node) {
+					const unit* u = curr_node->second;
+					if (calculated.find(u) != calculated.end()) {
+						continue;
+					}
+
+					if (u->side() != side_) {
+						if (current_team.is_enemy(u->side())) {
+							if (!u->is_artifical() && !u->is_commoner() && !u->invisible(u->get_location())) {
+								enemies ++;
+								if (!u->provoked_turns()) {
+									unprovoks ++;
+								}
+							}
+						} else {
+							if (!u->is_artifical() && !u->is_commoner()) {
+								friends ++;
+								if (!u->hide_turns()) {
+									unhides ++;
+								}
+								if (u->uncleared()) {
+									unnormals ++;
+								}
+								if (u->healable()) {
+									healables ++;
+								}
+							}
+						}
+					} else if (!u->is_artifical() && !u->is_commoner()) {
+						friends ++;
+						if (!tent::turn_based || !u->attacks_left()) {
+							our_side_selectable ++;
+						}
+						if (!u->hide_turns()) {
+							unhides ++;
+						}
+						if (u->uncleared()) {
+							unnormals ++;
+						}
+						if (u->healable()) {
+							healables ++;
+						}
+					}
+					calculated.insert(u);
+				} 
+			}
+		}
+	}
+
+	int best_score = -1;
+	hero* best_hero = NULL;
+
+	for (int step = 0; step < 3; step ++) {
+		hero* h;
+		if (step == 0) {
+			h = master_;
+		} else if (step == 1) {
+			if (!second_->valid()) {
+				continue;
+			}
+			h = second_;
+		} else if (step == 2) {
+			if (!third_->valid()) {
+				continue;
+			}
+			h = third_;
+		}
+		if (h->tactic_ == HEROS_NO_TACTIC) {
+			continue;
+		}
+
+		const ttactic& t = unit_types.tactic(h->tactic_);
+
+		int tag = t.select_one_internal();
+		if (tag == apply_to_tag::PROVOKE) {
+			if (!unprovoks) {
+				continue;
+			}
+		} else if (tag == apply_to_tag::REVIVAL) {
+			if (!our_side_selectable) {
+				continue;
+			}
+		}
+
+		// self. if no enemies, this profit divided by 2. 
+		int score = t.self_profit();
+		if (!hide_turns_) {
+			score += t.self_hide_profit();
+		}
+		if (!alert_turns_) {
+			score += t.self_alert_profit();
+		}
+		if (uncleared()) {
+			score += t.self_clear_profit();
+		}
+		if (healable()) {
+			score += t.self_heal_profit();
+		}
+
+		// friend. if no enemies, this profit divided by 2.
+		score += t.friend_profit() * friends;
+		score += t.friend_hide_profit() * unhides;
+		score += t.friend_clear_profit() * unnormals;
+		score += t.friend_heal_profit() * healables;
+		score += our_side_selectable? t.friend_select_one_profit(): 0;
+		if (!enemies) {
+			score /= 2;
+		}
+
+		// enemy
+		score += t.enemy_profit() * enemies;
+		if (unprovoks) {
+			score += t.enemy_provoke_profit();
+		}
+		
+		// don't conside tactic's point
+
+		if (score > best_score) {
+			best_hero = h;
+			best_score = score;
+		}
+	}
+
+	return std::make_pair(best_hero, best_score);
+}
+
+bool unit::judge_and_cast_tactic(int threshold)
+{
+	if (is_artifical() || is_commoner() || percent_tactic_degree() < 100) {
+		return false;
+	}
+
+	std::pair<hero*, int> score = calculate_tactic_score();
+	if (!score.first || score.second < threshold) {
+		return false;
+	}
+	cast_tactic(teams_, units_, *this, *(score.first), NULL);
+
+	return true;
+}
+
+int unit::hot_level() const
+{
+	int level = max_tactic_point() * game_config::hot_level_per_point;
+	if (level < 10) {
+		return 10;
+	} else if (level > 50) {
+		return 50;
+	}
+	return level;
+}
+
+int unit::tactic_degree_increment_per_turn() const
+{
+	int incrememt = game_config::tactic_degree_per_turn;
+	if (unit_feature_val(hero_feature_tactic)) {
+		incrememt += game_config::tactic_degree_per_turn / 2;
+	}
+	const team& t = teams_[side_ - 1];
+	incrememt += t.tactic_degree_increase - 100;
+
+	return incrememt;
+}
+
 bool captain_can_form(std::vector<hero*>& captain, const unit_type* ut)
 {
 	if (captain.empty()) {
@@ -2280,14 +3052,23 @@ bool captain_can_form(std::vector<hero*>& captain, const unit_type* ut)
 	return true;
 }
 
-bool unit::new_turn()
+void unit::new_turn_core()
+{
+	team& t = teams_[side_ - 1];
+	if (!t.restrict_movement && task_ != unit::TASK_STATION) {
+		movement_ = total_movement();
+	}
+	// attacks_left_ = max_attacks_;
+	set_state(ustate_tag::UNCOVERED, false);
+	set_state(ustate_tag::FORMATION_ATTACKED, false);
+}
+
+bool unit::new_turn(play_controller& controller, int)
 {
 	bool erase = false;
+	team& this_team = teams_[side_ - 1];
 
-	end_turn_ = false;
-	movement_ = total_movement();
-	// attacks_left_ = max_attacks_;
-	set_state(STATE_UNCOVERED, false);
+	new_turn_core();
 
 	// when in camp system, teams_ is empty. of course artifical_ is false.
 	if (artifical_) {
@@ -2296,8 +3077,7 @@ bool unit::new_turn()
 	}
 	VALIDATE(!teams_.empty(), "unit::new_turn, teams must not empty!");
 
-	team& this_team = teams_[side_ - 1];
-	if (consider_loyalty()) {
+	if (consider_loyalty() && controller.turn() > 1) {
 		hero& leader = *(this_team.leader());
 		// wander
 		std::vector<hero*> captains, wanders;
@@ -2378,22 +3158,46 @@ bool unit::new_turn()
 		}
 	}
 
+	// tactic degree
+	if (is_artifical() || is_commoner() || percent_tactic_degree() < 100) {
+		if (hot_turns_) {
+			hot_turns_ --;
+		}
+	} else {
+		set_hot_turns(max_hot_turns());
+		tactic_degree_ = 0;
+	}
+	if (tactic_existed()) {
+		increase_tactic_degree(tactic_degree_increment_per_turn());
+	}
+
 	new_turn_tactics();
+
 
 	return erase;
 }
 
-void unit::end_turn()
+
+bool unit::no_enter_resting() const
+{
+	return provoked_turns_;
+}
+
+void unit::end_turn(bool normal)
 {
 	// for formation attack. place set attacks here.
 	attacks_left_ = max_attacks_;
 
-	set_state(STATE_SLOWED, false);
-	set_state(STATE_BROKEN, false);
-	if (movement_ != total_movement()) {
-		resting_ = false;
+	set_state(ustate_tag::SLOWED, false);
+	set_state(ustate_tag::BROKEN, false);
+	set_state(ustate_tag::REVIVALED, false);
+	if (normal) {
+		if (no_enter_resting() || movement_ != total_movement()) {
+			resting_ = false;
+		}
 	}
-	set_state(STATE_BLOCKED, false);
+	set_state(ustate_tag::BLOCKED, false);
+
 }
 
 void unit::new_scenario()
@@ -2403,10 +3207,10 @@ void unit::new_scenario()
 	from_ = map_location();
 
 	heal_all();
-	set_state(STATE_SLOWED, false);
-	set_state(STATE_BROKEN, false);
-	set_state(STATE_POISONED, false);
-	set_state(STATE_PETRIFIED, false);
+	set_state(ustate_tag::SLOWED, false);
+	set_state(ustate_tag::BROKEN, false);
+	set_state(ustate_tag::POISONED, false);
+	set_state(ustate_tag::PETRIFIED, false);
 }
 
 void unit::heal(int amount)
@@ -2426,76 +3230,45 @@ void unit::heal(int amount)
 const std::map<std::string,std::string> unit::get_states() const
 {
 	std::map<std::string, std::string> all_states;
-	BOOST_FOREACH (std::string const &s, states_) {
-		all_states[s] = "yes";
-	}
-	for (std::map<std::string, state_t>::const_iterator i = known_boolean_state_names_.begin(),
-	     i_end = known_boolean_state_names_.end(); i != i_end; ++i)
-	{
-		if (get_state(i->second)) {
-			all_states.insert(make_pair(i->first, "yes"));
+	for (std::map<const std::string, ustate_tag::state_t>::const_iterator it = ustate_tag::tags.begin(); it != ustate_tag::tags.end(); ++ it) {
+		if (has_state_flag(it->second)) {
+			all_states.insert(make_pair(it->first, "yes"));
 		}
-
 	}
 	return all_states;
 }
 
-bool unit::get_state(const std::string &state) const
+void unit::set_state(ustate_tag::state_t state, bool value)
 {
-	state_t known_boolean_state_id = get_known_boolean_state_id(state);
-	if (known_boolean_state_id!=STATE_UNKNOWN){
-		return get_state(known_boolean_state_id);
+	if (value) {
+		set_state_flag(state);
+	} else {
+		clear_state_flag(state);
 	}
-	return states_.find(state) != states_.end();
 }
 
-void unit::set_state(state_t state, bool value)
+bool unit::get_state(ustate_tag::state_t state) const
 {
-	known_boolean_states_[state] = value;
+	return has_state_flag(state);
 }
 
-bool unit::get_state(state_t state) const
+ustate_tag::state_t unit::find_state(const std::string& id)
 {
-	return known_boolean_states_[state];
-}
+	ustate_tag::state_t s = ustate_tag::find(id);
 
-unit::state_t unit::get_known_boolean_state_id(const std::string &state) {
-	std::map<std::string, state_t>::const_iterator i = known_boolean_state_names_.find(state);
-	if (i != known_boolean_state_names_.end()) {
-		return i->second;
+	if (s == ustate_tag::NONE) {
+		std::stringstream err;
+		err << "find_state, invalid state id: " << id;
+		VALIDATE(false, err.str());
 	}
-	return STATE_UNKNOWN;
+
+	return s;
 }
 
-std::map<std::string, unit::state_t> unit::known_boolean_state_names_ = get_known_boolean_state_names();
-
-std::map<std::string, unit::state_t> unit::get_known_boolean_state_names()
+bool unit::is_robber() const
 {
-	std::map<std::string, state_t> known_boolean_state_names_map;
-	known_boolean_state_names_map.insert(std::make_pair("slowed", STATE_SLOWED));
-	known_boolean_state_names_map.insert(std::make_pair("broken", STATE_BROKEN));
-	known_boolean_state_names_map.insert(std::make_pair("poisoned", STATE_POISONED));
-	known_boolean_state_names_map.insert(std::make_pair("petrified", STATE_PETRIFIED));
-	known_boolean_state_names_map.insert(std::make_pair("uncovered", STATE_UNCOVERED));
-	known_boolean_state_names_map.insert(std::make_pair("formationed", STATE_FORMATION_ATTACKED));
-	known_boolean_state_names_map.insert(std::make_pair("legeritied", STATE_LEGERITIED));
-	known_boolean_state_names_map.insert(std::make_pair("blocked", STATE_BLOCKED));
-	return known_boolean_state_names_map;
+	return master_->get_flag(hero_flag_robber) || get_state(ustate_tag::ROBBER);
 }
-
-void unit::set_state(const std::string &state, bool value)
-{
-	state_t known_boolean_state_id = get_known_boolean_state_id(state);
-	if (known_boolean_state_id != STATE_UNKNOWN) {
-		set_state(known_boolean_state_id, value);
-		return;
-	}
-	if (value)
-		states_.insert(state);
-	else
-		states_.erase(state);
-}
-
 
 bool unit::has_ability_by_id(const std::string& ability) const
 {
@@ -2608,12 +3381,6 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 		}
 	}
 
-	if (!cfg["master_hero"].blank()) {
-		if (cfg["master_hero"].to_int() != master_->number_) {
-			return false;
-		}
-	}
-
 	if (!cfg["cityno"].blank()) {
 		if (cfg["cityno"].to_int(0) != cityno_) {
 			return false;
@@ -2627,7 +3394,7 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 		if (!unit_is_city(this)) {
 			return false;
 		}
-		std::vector<artifical*>& citys = teams_[side_ - 1].holded_cities();
+		std::vector<artifical*>& citys = teams_[side_ - 1].holden_cities();
 		if (citys.size() > 1) {
 			if (cfg["last_city"].to_bool()) {
 				return false;
@@ -2686,25 +3453,30 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 
 	// The type could be a comma separated list of types
 	config::attribute_value cfg_type = cfg["type"];
-	if (!cfg_type.blank())
-	{
+	if (!cfg_type.blank()) {
 		std::string type = cfg_type;
 		const std::string& this_type = type_id();
 
 		// We only do the full CSV search if we find a comma in there,
 		// and if the subsequence is found within the main sequence.
 		// This is because doing the full CSV split is expensive.
-		if(type == this_type) {
+		if (type == this_type) {
 			// pass
-		} else if(std::find(type.begin(),type.end(),',') != type.end() &&
-		   std::search(type.begin(),type.end(),this_type.begin(),
-					   this_type.end()) != type.end()) {
+		} else if (std::find(type.begin(),type.end(), ',') != type.end() &&
+			std::search(type.begin(), type.end(), this_type.begin(), this_type.end()) != type.end()) {
+
 			const std::vector<std::string>& vals = utils::split(type);
 
-			if(std::find(vals.begin(),vals.end(),this_type) == vals.end()) {
+			if (std::find(vals.begin(),vals.end(),this_type) == vals.end()) {
 				return false;
 			}
 		} else {
+			return false;
+		}
+	}
+
+	if (!cfg["family"].blank()) {
+		if (!family_tag::filter(*this, cfg["family"].str())) {
 			return false;
 		}
 	}
@@ -2750,6 +3522,12 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 		}
 		std::vector<std::string> vals = utils::split(side);
 		if (std::find(vals.begin(), vals.end(), str_cast(side_)) == vals.end()) {
+			return false;
+		}
+	}
+
+	if (!cfg["controller"].blank()) {
+		if (!controller_tag::filter(teams_[side_ - 1].controller(), cfg["controller"].str())) {
 			return false;
 		}
 	}
@@ -2977,33 +3755,36 @@ void unit::write(config& cfg) const
 	cfg["cityno"] = cityno_;
 
 	// heros_army
-	std::stringstream str;
-	str << master_->number_;
+	std::stringstream strstr;
+	strstr.str("");
+	strstr << master_->number_;
 	if (second_->valid()) {
-		str << "," << second_->number_;
+		strstr << "," << second_->number_;
 	}
 	if (third_->valid()) {
-		str << "," << third_->number_;
+		strstr << "," << third_->number_;
 	}
-	cfg["heros_army"] = str.str();
+	cfg["heros_army"] = strstr.str();
 	cfg["master_hero"] = master_->number_;
-	cfg["name"] = name();
 
-	config status_flags;
-	std::map<std::string,std::string> all_states = get_states();
-	for(std::map<std::string,std::string>::const_iterator st = all_states.begin(); st != all_states.end(); ++st) {
-		status_flags[st->first] = st->second;
+	strstr.str("");
+	int n = 0;
+	for (std::set<ustate_tag::state_t>::const_iterator it = ustate_tag::profilable_tags.begin(); it != ustate_tag::profilable_tags.end(); ++ it) {
+		if (!has_state_flag(*it)) {
+			continue;
+		}
+		if (n ++) {
+			strstr << ",";
+		}
+		strstr << ustate_tag::rfind(*it);
 	}
-
-	cfg.clear_children("status");
-	cfg.add_child("status",status_flags);
+	cfg["states"] = strstr.str();
 
 	cfg["facing"] = map_location::write_direction(facing_);
 
 	cfg["goto_x"] = goto_.x + 1;
 	cfg["goto_y"] = goto_.y + 1;
 
-	cfg["random_traits"] = random_traits_;
 	cfg["resting"] = resting_;
 
 	cfg["attacks_left"] = attacks_left_;
@@ -3022,7 +3803,6 @@ void unit::write(config& cfg) const
 	cfg["modifications"] = utils::join(modifications_);
 
 	cfg["food"] = food_;
-	cfg["block_turns"] = block_turns_;
 	cfg["hide_turns"] = hide_turns_;
 	cfg["alert_turns"] = alert_turns_;
 	cfg["task"] = task_;
@@ -3033,9 +3813,6 @@ void unit::write(config& cfg) const
 	cfg["cause_damage"] = cause_damage_;
 	cfg["been_damage"] = been_damage_;
 	cfg["defeat_units"] = defeat_units_;
-
-	// variables before modify according heros
-	cfg["modified"] = true;
 }
 
 void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
@@ -3068,6 +3845,15 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 		max_experience_ = max_experience_ * std::max<int>(40, (100 - bonus)) / 100;
 	} else {
 		max_experience_ = max_experience_;
+	}
+
+	// max ticks
+	if (is_city()) {
+		max_ticks_ = game_config::ticks_per_turn * 2 / 3;
+	} else if (consider_ticks()) {
+		max_ticks_ = game_config::ticks_per_turn - 1.0 * spirit_ / 180 * (game_config::ticks_per_turn / 2);
+	} else {
+		max_ticks_ = NONACTOR_TICKS;
 	}
 
 	double arms_feature_bonus = unit_feature_val(arms_)? 0.075: 0;
@@ -3159,11 +3945,11 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 
 	// redo technology
 	if (!teams_.empty()) {
-		int type = filter::ARTIFICAL;
+		int type = family_tag::ARTIFICAL;
 		if (!is_artifical()) {
-			type = filter::TROOP;
+			type = family_tag::TROOP;
 		} else if (is_city()) {
-			type = filter::CITY;
+			type = family_tag::CITY;
 		}
 		int packee_arms = packee_type()->arms();
 		const team& this_team = teams_[side_ - 1];
@@ -3196,6 +3982,7 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 	tactic_compare_movement_ = max_movement_;
 
 	// redo tactic
+	ticks_increase_ = 0;
 	for (std::vector<tunit_tactic>::const_iterator it = tactics_.begin(); it != tactics_.end(); ++ it) {
 		const tunit_tactic& unit_t = *it;
 		const ttactic* t;
@@ -3230,10 +4017,22 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 		add_modification(can_redo_amla, true);
 	}
 
+	int max = max_tactic_point() * game_config::tactic_degree_per_point;
+	if (tactic_degree_ > max) {
+		tactic_degree_ = max;
+	}
+
+	max = max_hot_turns();
+	if (hot_turns_ > max) {
+		hot_turns_ = max;
+	}
+
 	if (fill_up_hp) {
 		hit_points_ = max_hit_points_;
-	} else if (hit_points_ > max_hit_points_) {
-		hit_points_ = max_hit_points_;
+	} else {
+		if (hit_points_ > max_hit_points_) {
+			hit_points_ = max_hit_points_;
+		}
 	}
 	if (fill_up_movement) {
 		movement_ = max_movement_;
@@ -3275,8 +4074,8 @@ void unit::calculate_5fields()
 		max_assistant.force_ = fxptoi9(activity_ajdusted) * 100 / second_relation;
 		activity_ajdusted = 1 * second_->intellect_ * second_->activity_ / HEROS_FULL_ACTIVITY;
 		max_assistant.intellect_ = fxptoi9(activity_ajdusted) * 100 / second_relation;
-		activity_ajdusted = 1 * second_->politics_ * second_->activity_ / HEROS_FULL_ACTIVITY;
-		max_assistant.politics_ = fxptoi9(activity_ajdusted) * 100 / second_relation;
+		activity_ajdusted = 1 * second_->spirit_ * second_->activity_ / HEROS_FULL_ACTIVITY;
+		max_assistant.spirit_ = fxptoi9(activity_ajdusted) * 100 / second_relation;
 		activity_ajdusted = 1 * second_->charm_ * second_->activity_ / HEROS_FULL_ACTIVITY;
 		max_assistant.charm_ = fxptoi9(activity_ajdusted) * 100 / second_relation;
 	} else {
@@ -3299,9 +4098,9 @@ void unit::calculate_5fields()
 		activity_ajdusted = 1 * third_->intellect_ * third_->activity_ / HEROS_FULL_ACTIVITY;
 		tmp = fxptoi9(activity_ajdusted) * 100 / third_relation;
 		max_assistant.intellect_ = std::max<uint16_t>(max_assistant.intellect_, tmp);
-		activity_ajdusted = 1 * third_->politics_ * third_->activity_ / HEROS_FULL_ACTIVITY;
+		activity_ajdusted = 1 * third_->spirit_ * third_->activity_ / HEROS_FULL_ACTIVITY;
 		tmp = fxptoi9(activity_ajdusted) * 100 / third_relation;
-		max_assistant.politics_ = std::max<uint16_t>(max_assistant.politics_, tmp);
+		max_assistant.spirit_ = std::max<uint16_t>(max_assistant.spirit_, tmp);
 		activity_ajdusted = 1 * third_->charm_ * third_->activity_ / HEROS_FULL_ACTIVITY;
 		tmp = fxptoi9(activity_ajdusted) * 100 / third_relation;
 		max_assistant.charm_ = std::max<uint16_t>(max_assistant.charm_, tmp);
@@ -3314,8 +4113,8 @@ void unit::calculate_5fields()
 	force_ = fxptoi9(activity_ajdusted) + max_assistant.force_;
 	activity_ajdusted = 1 * master_->intellect_ * master_->activity_ / HEROS_FULL_ACTIVITY;
 	intellect_ = fxptoi9(activity_ajdusted) + max_assistant.intellect_;
-	activity_ajdusted = 1 * master_->politics_ * master_->activity_ / HEROS_FULL_ACTIVITY;
-	politics_ = fxptoi9(activity_ajdusted) + max_assistant.politics_;
+	activity_ajdusted = 1 * master_->spirit_ * master_->activity_ / HEROS_FULL_ACTIVITY;
+	spirit_ = fxptoi9(activity_ajdusted) + max_assistant.spirit_;
 	activity_ajdusted = 1 * master_->charm_ * master_->activity_ / HEROS_FULL_ACTIVITY;
 	charm_ = fxptoi9(activity_ajdusted) + max_assistant.charm_;
 
@@ -3373,6 +4172,7 @@ void unit::calculate_5fields()
 			holded_features.insert(t.feature());
 		}
 	}
+
 	if (leader->side_feature_ != HEROS_NO_FEATURE) {
 		holded_features.insert(leader->side_feature_);
 	}
@@ -3721,9 +4521,9 @@ std::string unit::form_tip(bool gui2) const
 	strstr << "\n";
 
 	if (gui2) {
-		strstr << help::tintegrate::generate_format(dsgettext("wesnoth", "troop^Type"), "green");
+		strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "troop^Type"), "green");
 	} else {
-		strstr << _("troop^Type");
+		strstr << dsgettext("wesnoth-lib", "troop^Type");
 	}
 	if (!packed()) {
 		strstr << ": " << type_name() << "(Lv" << level() << ")";
@@ -3751,8 +4551,8 @@ std::string unit::form_tip(bool gui2) const
 		strstr << intellect_;
 		strstr << (gui2? " ": "\n");
 
-		strstr << help::tintegrate::generate_img("misc/politics.png~SCALE(20, 20)");
-		strstr << politics_;
+		strstr << help::tintegrate::generate_img("misc/spirit.png~SCALE(20, 20)");
+		strstr << spirit_;
 		strstr << (gui2? " ": "  ");
 
 		strstr << help::tintegrate::generate_img("misc/charm.png~SCALE(20, 20)");
@@ -3805,6 +4605,8 @@ std::string unit::form_tip(bool gui2) const
 	task_str.insert(std::make_pair((int)TASK_BACK, dsgettext("wesnoth-lib", "task^Back")));
 	task_str.insert(std::make_pair((int)TASK_TRADE, dsgettext("wesnoth-lib", "task^Trade")));
 	task_str.insert(std::make_pair((int)TASK_TRANSFER, dsgettext("wesnoth-lib", "task^Transfer")));
+	task_str.insert(std::make_pair((int)TASK_STATION, dsgettext("wesnoth-lib", "task^Station")));
+	task_str.insert(std::make_pair((int)TASK_GUARD, dsgettext("wesnoth-lib", "Guard")));
 	if (!artifical_ && (commoner_ || gui2)) {
 		if (commoner_) {
 			if (gui2) {
@@ -3819,26 +4621,16 @@ std::string unit::form_tip(bool gui2) const
 				}
 			}
 		} else {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Plan"), "green");
-			strstr << ": ";
+			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Task"), "green");
+			strstr << ": " << task_str.find(task_)->second;
+		}
+		if (task_ == TASK_GUARD) {
+			strstr << format_loc(units_, guard_cache::find(*this).loc, side_);
 		}
 
 		strstr << help::tintegrate::generate_img("misc/to.png");
 		if (goto_.valid()) {
-			artifical* to_city = units_.city_from_loc(goto_);
-			if (to_city) {
-				strstr << to_city->name();
-			} else {
-				unit_map::const_iterator base = units_.find(goto_, false);
-				if (base.valid() && base->fort()) {
-					if (side_ == base->side()) {
-						strstr << base->name();
-					} else {
-						strstr << help::tintegrate::generate_format(base->name(), "red");
-					}
-				}
-				strstr << "(" << goto_.x + 1 << ", " << goto_.y + 1 << ")";
-			}
+			strstr << format_loc(units_, goto_, side_);
 		} else {
 			strstr << "(-)";
 		}
@@ -3928,6 +4720,23 @@ std::string unit::form_tip(bool gui2) const
 			strstr << dgettext("wesnoth-lib", "Technology income");
 		} 
 		strstr << ": " << city->total_technology_income(current_team.technology_increase_) << "\n";
+	} else if (artifical_) {
+		if (unit_type_->gold_income()) {
+			if (gui2) {
+				strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Gold income"), "green");
+			} else {
+				strstr << dgettext("wesnoth-lib", "Gold income");
+			}
+			strstr << ": " << gold_income() << "\n";
+		}
+		if (unit_type_->technology_income()) {
+			if (gui2) {
+				strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Technology income"), "green");
+			} else { 
+				strstr << dgettext("wesnoth-lib", "Technology income");
+			} 
+			strstr << ": " << technology_income() << "\n";
+		}
 	}
 
 
@@ -3992,6 +4801,16 @@ std::string unit::form_tip(bool gui2) const
 		} else {
 			strstr << dgettext("wesnoth-hero", "tactic");
 		}
+
+		if (tactic_existed()) {
+			int turns = 100 * (max_tactic_point() * game_config::tactic_degree_per_point - tactic_degree_) / tactic_degree_increment_per_turn();
+			turns = turns % 100? (turns / 100 + 1): (turns / 100);
+			if (turns) {
+				strstr << "(" << help::tintegrate::generate_img("misc/tactic.png") << help::tintegrate::generate_img(single_digit_image(turns)) << ")";
+				// strstr << "(" << tactic_degree_ << "/" << max_tactic_point() * game_config::tactic_degree_per_point << ")";
+			}
+		}
+
 		strstr << ": ";
 		std::set<const ttactic*> holded;
 		if (master_->tactic_ != HEROS_NO_TACTIC) {
@@ -4162,11 +4981,21 @@ std::string unit::form_tip(bool gui2) const
 		} else if (effect < 0) {
 			strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
 		}
+
 		if (!artifical_) {
 			strstr << help::tintegrate::generate_img("misc/movement.png");
 			if (max_movement_ > tactic_compare_movement_) {
 				strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
 			} else if (max_movement_ < tactic_compare_movement_) {
+				strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+			}
+		}
+
+		if (consider_ticks()) {
+			strstr << help::tintegrate::generate_img("misc/action.png");
+			if (ticks_increase_ > 0) {
+				strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+			} else if (ticks_increase_ < 0) {
 				strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
 			}
 		}
@@ -4184,16 +5013,16 @@ std::string unit::form_tip(bool gui2) const
 		if (invisible(loc_)) {
 			strstr << help::tintegrate::generate_img("misc/invisible.png");
 		}
-		if (get_state(unit::STATE_SLOWED)) {
+		if (get_state(ustate_tag::SLOWED)) {
 			strstr << help::tintegrate::generate_img("misc/slowed.png");
 		}
-		if (get_state(unit::STATE_BROKEN)) {
+		if (get_state(ustate_tag::BROKEN)) {
 			strstr << help::tintegrate::generate_img("misc/broken.png");
 		}
-		if (get_state(unit::STATE_POISONED)) {
+		if (get_state(ustate_tag::POISONED)) {
 			strstr << help::tintegrate::generate_img("misc/poisoned.png");
 		}
-		if (get_state(unit::STATE_PETRIFIED)) {
+		if (get_state(ustate_tag::PETRIFIED)) {
 			strstr << help::tintegrate::generate_img("petrified.png");
 		}
 	}
@@ -4250,6 +5079,24 @@ std::string unit::form_tiny_tip() const
 		}
 	}
 
+	if (consider_ticks()) {
+		strstr << help::tintegrate::generate_img("misc/action.png");
+		if (ticks_increase_ > 0) {
+			strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+		} else if (ticks_increase_ < 0) {
+			strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+		}
+	}
+
+	if (tactic_existed()) {
+		int turns = 100 * (max_tactic_point() * game_config::tactic_degree_per_point - tactic_degree_) / tactic_degree_increment_per_turn();
+		turns = turns % 100? (turns / 100 + 1): (turns / 100);
+		if (turns) {
+			strstr << " ";
+			strstr << help::tintegrate::generate_img("misc/tactic.png") << help::tintegrate::generate_img(single_digit_image(turns));
+		}
+	}
+
 	bool first_state_icon = true;
 	
 	if (hide_turns_) {
@@ -4280,28 +5127,28 @@ std::string unit::form_tiny_tip() const
 		}
 		strstr << help::tintegrate::generate_img("misc/invisible.png");
 	}
-	if (get_state(unit::STATE_SLOWED)) {
+	if (get_state(ustate_tag::SLOWED)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
 		strstr << help::tintegrate::generate_img("misc/slowed.png");
 	}
-	if (get_state(unit::STATE_BROKEN)) {
+	if (get_state(ustate_tag::BROKEN)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
 		strstr << help::tintegrate::generate_img("misc/broken.png");
 	}
-	if (get_state(unit::STATE_POISONED)) {
+	if (get_state(ustate_tag::POISONED)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
 		strstr << help::tintegrate::generate_img("misc/poisoned.png");
 	}
-	if (get_state(unit::STATE_PETRIFIED)) {
+	if (get_state(ustate_tag::PETRIFIED)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
@@ -4309,6 +5156,11 @@ std::string unit::form_tiny_tip() const
 		strstr << help::tintegrate::generate_img("petrified.png");
 	}
 	return strstr.str();
+}
+
+bool unit::wall2() const 
+{ 
+	return wall_ && !get_state(ustate_tag::BUILDING);
 }
 
 // mover can stand on this or not. (stop at)
@@ -4319,7 +5171,7 @@ bool unit::can_stand(const unit& mover) const
 		if (mover.transport() && side_ == mover.side()) {
 			return true;
 		}
-	} else if (wall_) {
+	} else if (wall2()) {
 		if (mover.land_wall() && (!mover_team.is_enemy(side_) || mover_team.land_enemy_wall_)) {
 			return true;
 		}
@@ -4337,7 +5189,7 @@ std::string unit::form_recruit_tip() const
 	strstr << total_movement() << "\n";
 
 	// arm adaptability
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth", "troop^Type"), "green");
+	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "troop^Type"), "green");
 	strstr << ": ";
 	if (!game_config::tiny_gui) {
 		strstr << type_name();
@@ -4565,7 +5417,7 @@ void unit::set_idling()
 void unit::set_selecting()
 {
 	const game_display *disp =  game_display::get_singleton();
-	if (preferences::show_standing_animations() && !get_state(STATE_PETRIFIED)) {
+	if (preferences::show_standing_animations() && !get_state(ustate_tag::PETRIFIED)) {
 		start_animation(INT_MAX, choose_animation(*disp, loc_, "selected"),
 			true, false, "", 0, STATE_FORGET);
 	} else {
@@ -4606,11 +5458,12 @@ void unit::set_facing(map_location::DIRECTION dir) {
 	// Else look at yourself (not available so continue to face the same direction)
 }
 
+
 void unit::redraw_unit()
 {
-	game_display &disp = *game_display::get_singleton();
-	const gamemap &map = disp.get_map();
-
+	game_display& disp = *game_display::get_singleton();
+	const gamemap& map = disp.get_map();
+	
 	if (!loc_.valid() || hidden_ || disp.fogged(loc_) ||
 	    (invisible(loc_)
 	&& disp.get_teams()[disp.viewing_team()].is_enemy(side())))
@@ -4652,11 +5505,15 @@ void unit::redraw_unit()
 	}
 	params.y -= height_adjust;
 	params.halo_y -= height_adjust;
-	if (get_state(STATE_POISONED)) {
+	if (get_state(ustate_tag::POISONED)) {
 		params.blend_with = disp.rgb(0, 255, 0);
 		params.blend_ratio = 0.25;
 	} else if (temporary_state_ & BIT_2_MASK(BIT_STRONGER)) {
-		params.blend_with = disp.rgb(255, 32, 32);
+		if (temporary_state_ & BIT_2_MASK(BIT_DEFENDING)) {
+			params.blend_with = disp.rgb(32, 32, 255);
+		} else {
+			params.blend_with = disp.rgb(255, 32, 32);
+		}
 		params.blend_ratio = 0.40;
 	} else if (provoked_turns_) {
 		params.blend_with = disp.rgb(255, 0, 0);
@@ -4668,10 +5525,10 @@ void unit::redraw_unit()
 	params.image_mod = image_mods();
 	params.halo_mod = TC_image_mods();
 	params.image= absolute_image();
-	params.sound_filter = sound_filter_tag::rfind(master_->gender_ == hero_gender_female? sound_filter_tag::FEMALE: sound_filter_tag::MALE);
+	params.sound_filter = sound_filter_tag::rfind(sound_filter_tag::from_hero_gender(master_->gender_));
 
 
-	if (get_state(STATE_PETRIFIED)) {
+	if (get_state(ustate_tag::PETRIFIED)) {
 		params.image_mod +="~GS()";
 	}
 	params.primary_frame = t_true;
@@ -4717,7 +5574,7 @@ void unit::redraw_unit()
 	surface ellipse_front(NULL);
 	surface ellipse_back(NULL);
 	int ellipse_floating = 0;
-	if(draw_bars && preferences::show_side_colors()) {
+	if(draw_bars) {
 		if(adjusted_params.submerge > 0.0) {
 			// The division by 2 seems to have no real meaning,
 			// It just works fine with the current center of ellipse
@@ -4799,7 +5656,9 @@ void unit::redraw_unit()
 	if ((draw_desc_ || (temporary_state_ & BIT_2_MASK(BIT_ATTACKING)) || (temporary_state_ & BIT_2_MASK(BIT_DEFENDING))) && draw_bars) {
 		if (!commoner_) {
 			const surface* food_img = NULL;
-			if (food_ >= max_food() / 3) {
+			if (is_robber()) {
+				food_img = &unit_map::robber;
+			} else if (!alert_food()) {
 				// food_img = &unit_map::normal_food;
 			} else if (food_) {
 				if (redraw_counter_ % 20 < 10) {
@@ -4834,21 +5693,24 @@ void unit::redraw_unit()
 			}
 		} else {
 			orb_img = &unit_map::moved_orb_;
-			if (disp.playing_team() == disp.viewing_team() && !user_end_turn()) {
+			if (disp.playing_team() == disp.viewing_team()) {
 				if (!human()) {
 					if (!commoner_) {
 						orb_img = &unit_map::self_orb_;
 					} else {
 						orb_img = &unit_map::automatic_orb_;
 					}
-				} else if (movement_left() == total_movement()) {
-					if (max_movement_ || attacks_left_) { 
-						orb_img = &unit_map::unmoved_orb_;
+				} else if (current_can_action(*this)) {
+					if (movement_left() == total_movement()) {
+						if (max_movement_ || attacks_left_) { 
+							orb_img = &unit_map::unmoved_orb_;
+						}
+					} else if (unit_can_action(*this)) {
+						orb_img = &unit_map::partmoved_orb_;
+
+					} else if (goto_.valid()) {
+						orb_img = &unit_map::automatic_orb_;
 					}
-				} else if (unit_can_action(*this)) {
-					orb_img = &unit_map::partmoved_orb_;
-				} else if (goto_.valid()) {
-					orb_img = &unit_map::automatic_orb_;
 				}
 			}
 		}
@@ -4881,24 +5743,39 @@ void unit::redraw_unit()
 
 		double unit_energy = 0.0;
 		if (max_hitpoints() > 0) {
-			unit_energy = double(hitpoints())/double(max_hitpoints());
+			unit_energy = double(hitpoints()) / double(max_hitpoints());
 		}
 		// const int bar_shift = static_cast<int>(-5*disp.get_zoom_factor());
 		const int hp_bar_height = static_cast<int>(max_hitpoints()*game_config::hp_bar_scaling);
 
 		const fixed_t bar_alpha = (loc_ == disp.mouseover_hex() || loc_ == disp.selected_hex()) ? ftofxp(1.0): ftofxp(0.8);
 
+		int xsrc_zoom, ysrc_zoom;
 		if (display::default_zoom_ == display::ZOOM_48) {
-			disp.draw_bar(*energy_file, xsrc + 36, ysrc - 26,
+			xsrc_zoom = xsrc + 24;
+			ysrc_zoom = ysrc - 10;
+		} else if (display::default_zoom_ == display::ZOOM_56) {
+			xsrc_zoom = xsrc + 28;
+			ysrc_zoom = ysrc - 12;
+		} else if (display::default_zoom_ == display::ZOOM_64) {
+			xsrc_zoom = xsrc + 32;
+			ysrc_zoom = ysrc - 14;
+		} else {
+			xsrc_zoom = xsrc + 36;
+			ysrc_zoom = ysrc - 16;
+		}
+
+		if (display::default_zoom_ == display::ZOOM_48) {
+			disp.draw_bar(*energy_file, xsrc_zoom + 19, ysrc_zoom + 11,
 				loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 		} else if (display::default_zoom_ == display::ZOOM_56) {
-			disp.draw_bar(*energy_file, xsrc + 42, ysrc - 30,
+			disp.draw_bar(*energy_file, xsrc_zoom + 22, ysrc_zoom + 14,
 				loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 		} else if (display::default_zoom_ == display::ZOOM_64) {
-			disp.draw_bar(*energy_file, xsrc + 48, ysrc - 34,
+			disp.draw_bar(*energy_file, xsrc_zoom + 25, ysrc_zoom + 16,
 				loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 		} else {
-			disp.draw_bar(*energy_file, xsrc + 55, ysrc - 39,
+			disp.draw_bar(*energy_file, xsrc_zoom + 28, ysrc_zoom + 20,
 				loc_, hp_bar_height, unit_energy, hp_color(), bar_alpha, false);
 		}
 
@@ -4909,16 +5786,16 @@ void unit::redraw_unit()
 
 			SDL_Color color = xp_color();
 			if (display::default_zoom_ == display::ZOOM_48) {
-				disp.draw_bar(*energy_file, xsrc + 36, ysrc - 21, 
+				disp.draw_bar(*energy_file, xsrc_zoom + 19, ysrc_zoom + 16, 
 					loc_, xp_bar_height, filled, color, bar_alpha, false);
 			} else if (display::default_zoom_ == display::ZOOM_56) {
-				disp.draw_bar(*energy_file, xsrc + 42, ysrc - 24, 
+				disp.draw_bar(*energy_file, xsrc_zoom + 22, ysrc_zoom + 20, 
 					loc_, xp_bar_height, filled, color, bar_alpha, false);
 			} else if (display::default_zoom_ == display::ZOOM_64) {
-				disp.draw_bar(*energy_file, xsrc + 48, ysrc - 27, 
+				disp.draw_bar(*energy_file, xsrc_zoom + 25, ysrc_zoom + 23, 
 					loc_, xp_bar_height, filled, color, bar_alpha, false);
 			} else {
-				disp.draw_bar(*energy_file, xsrc + 55, ysrc - 32, 
+				disp.draw_bar(*energy_file, xsrc_zoom + 28, ysrc_zoom + 26, 
 					loc_, xp_bar_height, filled, color, bar_alpha, false);
 			}
 		}
@@ -4960,27 +5837,37 @@ void unit::redraw_unit()
 			sdl_blit(small_portrait_, NULL, desc_rect_, &dst);
 		}
 
-		int xsrc_zoom, ysrc_zoom;
-		if (display::default_zoom_ == display::ZOOM_48) {
-			disp.drawing_buffer_add(display::LAYER_UNIT_LAST, loc_, xsrc + 24, ysrc - 10, desc_rect_);
-			xsrc_zoom = xsrc + 24;
-			ysrc_zoom = ysrc - 10;
-		} else if (display::default_zoom_ == display::ZOOM_56) {
-			disp.drawing_buffer_add(display::LAYER_UNIT_LAST, loc_, xsrc + 28, ysrc - 12, desc_rect_);
-			xsrc_zoom = xsrc + 28;
-			ysrc_zoom = ysrc - 12;
-		} else if (display::default_zoom_ == display::ZOOM_64) {
-			disp.drawing_buffer_add(display::LAYER_UNIT_LAST, loc_, xsrc + 32, ysrc - 14, desc_rect_);
-			xsrc_zoom = xsrc + 32;
-			ysrc_zoom = ysrc - 14;
-		} else {
-			disp.drawing_buffer_add(display::LAYER_UNIT_LAST, loc_, xsrc + 36, ysrc - 16, desc_rect_);
-			xsrc_zoom = xsrc + 36;
-			ysrc_zoom = ysrc - 16;
+		int vtl_bar_x_offset = 0;
+		int vtl_bar_y_offset = 0;
+		int vtl_outline_height = 4;
+
+		disp.drawing_buffer_add(display::LAYER_UNIT_LAST, loc_, xsrc_zoom, ysrc_zoom, desc_rect_);
+
+		if (!tent::turn_based && current_can_action(*this)) {
+			if (redraw_counter_ % 40 < 20) {
+				disp.drawing_buffer_add(display::LAYER_UNIT_LAST, loc_, xsrc_zoom, ysrc_zoom, unit_map::desc_hot);
+			}
+		}
+
+		if (tactic_existed()) {
+			int percent = percent_tactic_degree();
+			double unit_energy = 1.0 * percent / 100;
+			const int hp_bar_height = desc_rect_->h - vtl_outline_height;
+			SDL_Color color = can_cast_tactic()? font::GOOD_COLOR: font::BAD_COLOR;
+			std::string tactic_file = unit_map::bar_vtl_png;
+			if (percent == 100 && redraw_counter_ % 20 < 10) {
+				tactic_file = unit_map::bar_vtl_hot_png;
+			}
+			disp.draw_bar(tactic_file, xsrc_zoom - vtl_bar_x_offset, ysrc_zoom - vtl_bar_y_offset,
+				loc_, hp_bar_height, unit_energy, color, bar_alpha, true);
+		}
+		if (hot_turns_) {
+			int y_offset = desc_rect_->h - 12;
+			disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc_zoom + 2, ysrc_zoom + y_offset, image::get_image(single_digit_image(hot_turns_)));
 		}
 
 		formation_img.clear();
-		if (get_state(STATE_FORMATION_ATTACKED)) {
+		if (get_state(ustate_tag::FORMATION_ATTACKED)) {
 			if (can_formation_master()) {
 				formation_img = "misc/formation-can-master-attacked.png";
 			} else {
@@ -4991,6 +5878,14 @@ void unit::redraw_unit()
 		}
 		if (!formation_img.empty()) {
 			disp.drawing_buffer_add(display::LAYER_UNIT_LAST, loc_, xsrc_zoom, ysrc_zoom, image::get_image(formation_img, image::SCALED_TO_ZOOM));
+		}
+		if (task_ == TASK_STATION) {
+			// task iocn place left-top coner, overlap with tactic-bar
+			disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc_zoom + 5, ysrc_zoom, image::get_image("misc/station.png", image::SCALED_TO_ZOOM));
+
+		} else if (task_ == TASK_GUARD) {
+			// task iocn place left-top coner, overlap with tactic-bar
+			disp.drawing_buffer_add(display::LAYER_UNIT_BAR, loc_, xsrc_zoom + 5, ysrc_zoom, image::get_image("misc/guard.png", image::SCALED_TO_ZOOM));
 		}
 	}
 
@@ -5042,7 +5937,7 @@ bool unit::invalidate(const map_location &loc)
 
 int unit::upkeep() const
 {
-	if (commoner_ || unit_feature_val(hero_feature_magnate)) {
+	if (tent::tower_mode() || commoner_ || unit_feature_val(hero_feature_magnate)) {
 		return 0;
 	}
 	// Leaders do not incur upkeep.
@@ -5059,7 +5954,7 @@ bool unit::loyal() const
 
 int unit::movement_cost(const t_translation::t_terrain terrain, const map_location* loc) const
 {
-	if (known_boolean_states_[STATE_LEGERITIED]) {
+	if (has_state_flag(ustate_tag::LEGERITIED)) {
 		return 1;
 	}
 
@@ -5068,18 +5963,14 @@ int unit::movement_cost(const t_translation::t_terrain terrain, const map_locati
 		VALIDATE(resources::game_map != NULL, "unit::movement_cost, game_map is null!");
 		gamemap& map = *resources::game_map;
 		
-		// if (transport_ || !map.is_village(terrain)) {
-			const int res = movement_cost_internal(movement_costs_, cfg_, NULL, map, terrain);
+		const int res = movement_cost_internal(movement_costs_, cfg_, NULL, map, terrain);
 
-			if (res == unit_movement_type::UNREACHABLE) {
-				return res;
-			} else if (get_state(STATE_SLOWED)) {
-				return res*2;
-			}
+		if (res == unit_movement_type::UNREACHABLE) {
 			return res;
-		// } else {
-		//	return unit_movement_type::UNREACHABLE;
-		// }
+		} else if (get_state(ustate_tag::SLOWED)) {
+			return res*2;
+		}
+		return res;
 	} else {
 		return unit_movement_type::UNREACHABLE;
 	}	
@@ -5457,7 +6348,7 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 			hit_points_ = 1;
 		}
 	} else if (apply_to == apply_to_tag::MOVEMENT) {
-		if (tent::mode == TOWER_MODE && current_team.is_human()) {
+		if (current_team.restrict_movement || task_ == TASK_STATION) {
 			return;
 		}
 
@@ -5533,12 +6424,12 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 		const std::string &add = effect["add"];
 		const std::string &remove = effect["remove"];
 
-		if(add.empty() == false) {
-			set_state(add, true);
+		if (add.empty() == false) {
+			set_state(find_state(add), true);
 		}
 
-		if(remove.empty() == false) {
-			set_state(remove, false);
+		if (remove.empty() == false) {
+			set_state(find_state(remove), false);
 		}
 	} else if (apply_to == apply_to_tag::MOVEMENT_COSTS) {
 		config &mv = cfg_.child_or_add("movement_costs");
@@ -5721,16 +6612,16 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 	} else if (apply_to == apply_to_tag::CLEAR) {
 		int increase = effect["increase_activity"].to_int();
 		increased = false;
-		if (get_state(STATE_SLOWED)) {
-			set_state(STATE_SLOWED, false);
+		if (get_state(ustate_tag::SLOWED)) {
+			set_state(ustate_tag::SLOWED, false);
 			increased = true;
 		}
-		if (get_state(STATE_BROKEN)) {
-			set_state(STATE_BROKEN, false);
+		if (get_state(ustate_tag::BROKEN)) {
+			set_state(ustate_tag::BROKEN, false);
 			increased = true;
 		}
-		if (get_state(STATE_POISONED)) {
-			set_state(STATE_POISONED, false);
+		if (get_state(ustate_tag::POISONED)) {
+			set_state(ustate_tag::POISONED, false);
 			increased = true;
 		}
 		if (provoked_turns_) {
@@ -5758,11 +6649,31 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 			unit_display::unit_text(*this, false, strstr.str());
 		}
 
+	} else if (apply_to == apply_to_tag::ACTION) {
+		if (consider_ticks()) {
+			int increase = effect["increase"].to_int();
+			if (increase) {
+				ticks_increase_ += increase;
+			}
+			if (anim && increase) {
+				strstr.str("");
+				strstr << help::tintegrate::generate_img("misc/action.png");
+				if (increase > 0) {
+					decreased = false;
+					strstr << help::tintegrate::generate_img("misc/increase.png");
+				} else {
+					decreased = true;
+					strstr << help::tintegrate::generate_img("misc/decrease.png");
+				}
+				unit_display::unit_text(*this, decreased, strstr.str());
+			}
+		}
+
 	} else if (apply_to == apply_to_tag::PROVOKE) {
 		VALIDATE(false, "apply_to_tag::PROVOKE don't process by add_modification_internal!");
 
-	} else if (apply_to == apply_to_tag::FOOD) {
-		VALIDATE(false, "apply_to_tag::FOOD don't process by add_modification_internal!");
+	} else if (apply_to == apply_to_tag::REVIVAL) {
+		VALIDATE(false, "apply_to_tag::REVIVAL don't process by add_modification_internal!");
 
 	}
 }
@@ -5774,6 +6685,21 @@ void unit::apply_tactic(const ttactic* contain, const ttactic& effect, int part,
 	if (!redo && !contain->parts()[part]->oneoff()) {
 		tactics_.push_back(tunit_tactic(contain, turn, part));
 	}
+}
+
+bool unit::select_tactic_can_effect(const unit& tactician, const ttactic& t)
+{
+	int apply_to = t.apply_to();
+	if (apply_to == apply_to_tag::PROVOKE) {
+		if (provoked_turns()) {
+			return false;
+		}
+	} else if (apply_to == apply_to_tag::REVIVAL) {
+		if (get_state(ustate_tag::REVIVALED)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 void unit::add_trait_description(const config& trait)
@@ -5816,6 +6742,7 @@ void unit::apply_modifications()
 {
 	for (std::vector<std::string>::const_iterator it = traits_.begin(); it != traits_.end(); ++ it) {
 		const config& mod = unit_types.traits().find(*it)->second;
+
 		add_modification(mod, true);
 		add_trait_description(mod);
 	}
@@ -5839,69 +6766,53 @@ bool unit::invisible(const map_location& loc, bool see_all) const
 		}
 	}
 
-	unit_map::node* expediting_city_node = NULL;
-	if (units_.expediting()) {
-		expediting_city_node = dynamic_cast<unit_map::node*>(units_.expediting_city_node());
-	}
-
 	// Test hidden status
-	bool is_inv = !get_state(STATE_UNCOVERED) && !artifical_;
+	bool is_inv = !get_state(ustate_tag::UNCOVERED) && !artifical_;
 	if (is_inv) {
 		unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
 		is_inv = !curr_node && get_ability_bool("hides", loc);
 	}
 	if (is_inv) {
-		map_offset* adjacent_ptr;
-		size_t i, size;
-		map_location u_loc;
-
 		// range=1
-		size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
-		adjacent_ptr = adjacent_1[loc.x & 0x1];
-		for (i = 0; i < size; i ++) {
-			u_loc.x = loc.x + adjacent_ptr[i].x;
-			u_loc.y = loc.y + adjacent_ptr[i].y;
-			
-			// when expedite, center of city using unit_map::find is expediting troop, other is city.
-			// because city is 7 grids, so range = 1 don't touch center grid.
-			unit* u = units_.find_unit(u_loc);
-			if (!u) {
-				continue;
+		const map_location* tiles = adjacent_;
+		size_t adjance_size = adjacent_size_;
+
+		for (int step = 0; step < 3 && is_inv; step ++) {
+			if (step == 1) {
+				tiles = adjacent_2_;
+				adjance_size = adjacent_size_2_;
+			} else if (step == 2) {
+				tiles = adjacent_3_;
+				adjance_size = adjacent_size_3_;
 			}
-			if (u->wall()) {
-				continue;
-			}
-/*
-			// don't palce adjacent = false outer of for loop!
-			bool adjacent = false;
-			if (!u->is_artifical() && (!expediting_city_node || expediting_city_node->first != u_loc)) {
-				adjacent = tiles_adjacent(loc, u_loc);
-			} else {
-				const artifical* art;
-				if (expediting_city_node && expediting_city_node->first == u_loc) {
-					// when expediting, unit in units is expediting troop, it is necessary to city.
-					art = const_unit_2_artifical(expediting_city_node->second);
-				} else {
-					art = const_unit_2_artifical(&*u);
+
+			for (size_t i = 0; i < adjance_size; i ++) {
+				const map_location& u_loc = tiles[i];
+				
+				// when expedite, center of city using unit_map::find is expediting troop, other is city.
+				// because city is 7 grids, so range = 1 don't touch center grid.
+				unit* u = units_.find_unit(u_loc);
+				if (!u) {
+					continue;
 				}
-				for (size_t i = 0; i < art->adjacent_size_; i ++) {
-					if (art->adjacent_[i] == loc) {
-						adjacent = true;
+				if (u->wall()) {
+					continue;
+				}
+
+				if (step && !unit_feature_val2(*u, hero_feature_scout)) {
+					continue;
+				}
+				
+				if (teams_[side_-1].is_enemy(u->side())) {
+					// Enemy spotted in adjacent tiles, check if we can see him.
+					// Watch out to call invisible with see_all=true to avoid infinite recursive calls!
+					if (see_all) {
+						is_inv = false;
+						break;
+					} else if (!teams_[side_-1].fogged(u_loc) && !u->invisible(u_loc, true)) {
+						is_inv = false;
 						break;
 					}
-				}
-			}
-*/			
-			bool adjacent = true;
-			if (teams_[side_-1].is_enemy(u->side()) && adjacent) {
-				// Enemy spotted in adjacent tiles, check if we can see him.
-				// Watch out to call invisible with see_all=true to avoid infinite recursive calls!
-				if (see_all) {
-					is_inv = false;
-					break;
-				} else if (!teams_[side_-1].fogged(u_loc) && !u->invisible(u_loc, true)) {
-					is_inv = false;
-					break;
 				}
 			}
 		}
@@ -5913,6 +6824,7 @@ bool unit::invisible(const map_location& loc, bool see_all) const
 			units_with_cache.push_back(this);
 		}
 		invisibility_cache_[loc] = is_inv;
+
 	}
 
 	return is_inv;
@@ -5974,7 +6886,7 @@ bool unit::has_less_loyalty(int loyalty, const hero& leader)
 
 bool unit::consider_loyalty() const
 {
-	return master_->number_ >= hero::number_normal_min && tent::mode == RPG_MODE && !dont_wander;
+	return master_->number_ >= hero::number_normal_min && tent::mode == mode_tag::RPG && !dont_wander;
 }
 
 void unit::increase_feeling(int inc)
@@ -6056,6 +6968,72 @@ void unit::increase_feeling(int inc)
 			adjusted.push_back(u);
 		}
 	}
+}
+
+void unit::goto_hate_if(const team& new_team, const hero& original_leader, int random)
+{
+	master_->goto_hate_if(new_team, original_leader, random);
+	if (second_->valid()) {
+		second_->goto_hate_if(new_team, original_leader, random);
+	}
+	if (third_->valid()) {
+		third_->goto_hate_if(new_team, original_leader, random);
+	}
+}
+
+std::pair<hero*, hero*> unit::exist_hate(const unit& target) const
+{
+	hero* h1;
+	hero* h2;
+
+	h1 = master_;
+	std::vector<hero*> vh2;
+	vh2.push_back(&target.master());
+	if (target.second().valid()) {
+		vh2.push_back(&target.second());
+		if (target.third().valid()) {
+			vh2.push_back(&target.third());
+		}
+	}
+	for (int i = 0; i < 3; i ++) {
+		if (i == 1) {
+			if (second_->valid()) {
+				h1 = second_;
+			} else {
+				break;
+			}
+		} else if (i == 2) {
+			if (third_->valid()) {
+				h1 = third_;
+			} else {
+				break;
+			}
+		}
+		for (std::vector<hero*>::const_iterator it = vh2.begin(); it != vh2.end(); ++ it) {
+			h2 = *it;
+			if (h1->is_hate(*h2)) {
+				return std::make_pair(h1, h2);
+			}
+		}
+	}
+	return std::make_pair(reinterpret_cast<hero*>(NULL), reinterpret_cast<hero*>(NULL));
+}
+
+int unit::calculate_clear_formated_cost() const
+{
+	if (master_->number_ < hero::number_normal_min) {
+		return 0;
+	}
+	const team& current_team = teams_[side_ - 1];
+
+	int desired = get_state(ustate_tag::FORMATION_ATTACKED)? 1: 0;
+	for (size_t adj = 0; adj < adjacent_size_; adj ++) {
+		const unit* u = units_.find_unit(adjacent_[adj]);
+		if (u && u->get_state(ustate_tag::FORMATION_ATTACKED) && !current_team.is_enemy(u->side())) {
+			desired ++;
+		}
+	}
+	return desired * game_config::cost_clear_formationed;
 }
 
 bool unit::increase_activity(int inc, bool adjusting)
@@ -6149,17 +7127,6 @@ int side_units_cost(int side)
 	return res;
 }
 
-/*
-int side_upkeep(int side)
-{
-	int res = 0;
-	for (unit_map::const_iterator u = resources::units->begin(); u != resources::units->end(); ++ u) {
-		if (u->side() == side) res += u->upkeep();
-	}
-	return res;
-}
-*/
-
 unit_map::iterator find_visible_unit(const map_location &loc,
 	const team& current_team, bool see_all)
 {
@@ -6206,10 +7173,10 @@ void unit::refresh()
 	}
 }
 
-team_data calculate_team_data(const team& tm, int side)
+team_data calculate_team_data(const team& tm, int)
 {
 	team_data res;
-	res.units = side_units(side);
+	res.units = side_units(tm.side());
 	res.upkeep = tm.side_upkeep();
 	res.villages = 0;
 	res.net_income = tm.total_income() - res.upkeep;
@@ -6304,10 +7271,41 @@ void unit::set_location(const map_location &loc)
 	const gamemap& map = *resources::game_map;
 
 	if (loc_ == loc) {
+		if (pack_base_loc.valid()) {
+			do_pack(map);
+		}
 		return;
 	}
 	// This is centor location
 	loc_ = loc;
+
+	if (!ignore_pack) {
+		if (consider_ticks()) {
+			// calculate ticks
+			if (!this_is_city()) {
+				if (!units_.city_from_loc(loc_)) {
+					// field
+					if (ticks_ == NONE_TICKS) {
+						ticks_ = max_ticks_;
+					} else if (ticks_ == RESIDE_TICKS) {
+						ticks_ = 0;
+						if (!tent::turn_based) {
+							set_state(ustate_tag::EXPEDITED, true);
+						}
+					}
+				} else {
+					ticks_ = RESIDE_TICKS;
+					drawn_ticks_ = NONE_TICKS;
+				}
+			} else if (ticks_ == NONE_TICKS) {
+				if (ticks_ == NONE_TICKS) {
+					ticks_ = max_ticks_;
+				}
+			}
+		} else {
+			ticks_ = max_ticks_;
+		}
+	}
 
 	touch_locs_.clear();
 	adjacent_size_ = 0;
@@ -6323,68 +7321,74 @@ void unit::set_location(const map_location &loc)
 
 		// range=1
 		size = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
-		adjacent_ptr = adjacent_1[loc.x & 0x1];
+		adjacent_ptr = adjacent_1[loc_.x & 0x1];
 		for (i = 0; i < size; i ++) {
-			adjacent_[adjacent_size_].x = loc.x + adjacent_ptr[i].x;
-			adjacent_[adjacent_size_].y = loc.y + adjacent_ptr[i].y;
+			adjacent_[adjacent_size_].x = loc_.x + adjacent_ptr[i].x;
+			adjacent_[adjacent_size_].y = loc_.y + adjacent_ptr[i].y;
 			if (map.on_board(adjacent_[adjacent_size_])) {
 				adjacent_size_ ++;
 			}
 		}
 		// range=2
 		size = (sizeof(adjacent_2) / sizeof(map_offset)) >> 1;
-		adjacent_ptr = adjacent_2[loc.x & 0x1];
+		adjacent_ptr = adjacent_2[loc_.x & 0x1];
 		for (i = 0; i < size; i ++) {
-			adjacent_2_[adjacent_size_2_].x = loc.x + adjacent_ptr[i].x;
-			adjacent_2_[adjacent_size_2_].y = loc.y + adjacent_ptr[i].y;
+			adjacent_2_[adjacent_size_2_].x = loc_.x + adjacent_ptr[i].x;
+			adjacent_2_[adjacent_size_2_].y = loc_.y + adjacent_ptr[i].y;
 			if (map.on_board(adjacent_2_[adjacent_size_2_])) {
 				adjacent_size_2_ ++;
 			}
 		}
 		// range=3
 		size = (sizeof(adjacent_3) / sizeof(map_offset)) >> 1;
-		adjacent_ptr = adjacent_3[loc.x & 0x1];
+		adjacent_ptr = adjacent_3[loc_.x & 0x1];
 		for (i = 0; i < size; i ++) {
-			adjacent_3_[adjacent_size_3_].x = loc.x + adjacent_ptr[i].x;
-			adjacent_3_[adjacent_size_3_].y = loc.y + adjacent_ptr[i].y;
+			adjacent_3_[adjacent_size_3_].x = loc_.x + adjacent_ptr[i].x;
+			adjacent_3_[adjacent_size_3_].y = loc_.y + adjacent_ptr[i].y;
 			if (map.on_board(adjacent_3_[adjacent_size_3_])) {
 				adjacent_size_3_ ++;
 			}
 		}
 
-		if (!ignore_pack) {
-			// pack/unpack current unit if necessary
-			t_translation::t_terrain terrain = map.get_terrain(loc_);
-			bool match = t_translation::terrain_matches(terrain, t_translation::DEEP_WATER_MATCH);
-			if (match) {
-				if (!packed()) {
-					// pack!
-					// std::string packer;
-					int navigation = teams_[side_ - 1].navigation();
-					pack_to(unit_types.find(unit_types.id_from_navigation(navigation)));
+		do_pack(map);
+	}
+}
 
-					// since appearance of unit has changed, current animation should became invalid.
-					if (anim_) {
-						delete anim_;
-						anim_ = NULL;
-					}
-				}
-			} else if (packed()) {
-				// unpack!
-				pack_to(NULL);
+void unit::do_pack(const gamemap& map)
+{
+	if (ignore_pack) {
+		return;
+	}
+	// pack/unpack current unit if necessary
+	t_translation::t_terrain terrain = map.get_terrain(pack_base_loc.valid()? pack_base_loc: loc_);
+	bool match = t_translation::terrain_matches(terrain, t_translation::DEEP_WATER_MATCH);
+	if (match) {
+		if (!packed()) {
+			// pack!
+			// std::string packer;
+			int navigation = teams_[side_ - 1].navigation();
+			pack_to(unit_types.find(unit_types.id_from_navigation(navigation)));
 
-				// since appearance of unit has changed, current animation should became invalid.
-				if (anim_) {
-					delete anim_;
-					anim_ = NULL;
-				}
+			// since appearance of unit has changed, current animation should became invalid.
+			if (anim_) {
+				delete anim_;
+				anim_ = NULL;
 			}
+		}
+	} else if (packed()) {
+		// unpack!
+		pack_to(NULL);
+
+		// since appearance of unit has changed, current animation should became invalid.
+		if (anim_) {
+			delete anim_;
+			anim_ = NULL;
 		}
 	}
 }
 
 void unit::set_goto(const map_location& new_goto) 
-{ 
+{
 	goto_ = new_goto;
 }
 
@@ -6403,7 +7407,7 @@ void unit::replace_captains(const std::vector<hero*>& captains)
 
 	if (tactic_hero_) {
 		if (std::find(captains.begin(), captains.end(), tactic_hero_) == captains.end()) {
-			remove_from_tactic_cache();
+			remove_from_slot_cache();
 		}
 	}
 
@@ -6483,6 +7487,11 @@ void unit::recalculate_heros_pointer()
 	}
 }
 
+bool unit::hdata_variable() const
+{
+	return master_->number_ >= hero::number_city_min;
+}
+
 void unit::set_cityno(int new_cityno)
 { 
 	cityno_ = new_cityno;
@@ -6515,8 +7524,6 @@ void unit::set_side(unsigned int new_side)
 
 void unit::to_unstage()
 {
-	artifical* from = units_.city_from_cityno(cityno_);
-
 	master_->to_unstage();
 	if (second_->valid()) {
 		second_->to_unstage();
@@ -6524,6 +7531,40 @@ void unit::to_unstage()
 	if (third_->valid()) {
 		third_->to_unstage();
 	}
+}
+
+// true: all hero are unstage
+// false: at least one hero is exist
+bool unit::unstage_if_member(const hero& leader)
+{
+	std::vector<hero*> captains, unstages;
+	if (!runtime_groups::exist_member(*master_, leader)) {
+		captains.push_back(master_);
+	} else {
+		unstages.push_back(master_);
+	}
+	if (second_->valid()) {
+		if (!runtime_groups::exist_member(*second_, leader)) {
+			captains.push_back(second_);
+		} else {
+			unstages.push_back(second_);
+		}
+	}
+	if (third_->valid()) {
+		if (!runtime_groups::exist_member(*third_, leader)) {
+			captains.push_back(third_);
+		} else {
+			unstages.push_back(third_);
+		}
+	}
+	for (std::vector<hero*>::const_iterator it = unstages.begin(); it != unstages.end(); ++ it) {
+		hero& h = **it;
+		h.to_unstage(hero::UNSTAGE_GROUP);
+	}
+	if (!captains.empty() && !unstages.empty()) {
+		replace_captains(captains);
+	}
+	return captains.empty();
 }
 
 move_unit_spectator& unit::get_move_spectator()
@@ -6748,7 +7789,7 @@ hero* unit::character_hero(int apply_to) const
 
 bool unit::has_mayor() const
 {
-	if (is_artifical() || is_commoner()) return false;
+	if (master_->number_ < hero::number_normal_min) return false;
 	if (master_->official_ == hero_official_mayor) return true;
 	if (second_->valid() && second_->official_ == hero_official_mayor) return true;
 	if (third_->valid() && third_->official_ == hero_official_mayor) return true;
@@ -6789,4 +7830,94 @@ void unit::manage_attackable_rect(bool start)
 void unit::fill_movable_loc(const map_location& loc)
 {
 	expand_rect_loc(attackable_rect_, loc);
+}
+
+bool unit::loc_is_align_with(const map_location& relative, bool x) const
+{
+	for (std::set<map_location>::const_iterator it = touch_locs_.begin(); it != touch_locs_.end(); ++ it) {
+		if (it->x == relative.x) {
+			return true;
+		}
+	}
+	return false;
+}
+
+// true: this is priority than that.
+bool unit::compare_action_order(const unit& that) const
+{
+	if (ticks_adjusting) {
+		return true;
+	} else if (that.ticks_adjusting) {
+		return false;
+	}
+
+	if (!tent::turn_based) {
+		if (ticks_ < that.ticks_) {
+			return true;
+		} else if (ticks_ > that.ticks_) {
+			return false;
+		}
+
+		// 1)city, 2)troop
+		if (!is_city()) {
+			if (that.is_city()) {
+				return false;
+			}
+			// in multiplayer, signature will not synchronization.
+			if (loc_ != that.loc_) {
+				return loc_ < that.loc_;
+			}
+			return !base_;
+
+		} else if (!that.is_city()) {
+			return true;
+		}
+
+		// city. 1)side, 2)cityno
+		if (side_ != that.side_) {
+			return side_ < that.side_;
+		}
+
+	} else {
+		if (side_ != that.side_) {
+			int a_side = side_ >= unit_map::top_side? side_: teams_.size() + side_;
+			int b_side = that.side_ >= unit_map::top_side? that.side_: teams_.size() + that.side_;
+			return a_side < b_side;
+		}
+
+		// 1)city, 2)troop
+		if (!is_city()) {
+			if (that.is_city()) {
+				return false;
+			}
+			const team& t = teams_[side_ - 1];
+			if (t.is_human()) {
+				bool a_can_move = can_move();
+				bool b_can_move = that.can_move();
+				if (a_can_move && !b_can_move) {
+					return true;
+				} else if (!a_can_move && b_can_move) {
+					return false;
+				}
+			}
+			// in multiplayer, signature will not synchronization.
+			if (loc_ != that.loc_) {
+				return loc_ < that.loc_;
+			}
+			return !base_;
+
+		} else if (!that.is_city()) {
+			return true;
+		}
+	}
+
+	if (is_capital(*resources::teams)) return true;
+	if (that.is_capital(*resources::teams)) return false;
+	return cityno_ < that.cityno_;
+}
+
+bool unit::is_capital(const std::vector<team>& teams) const
+{
+	const team& t = teams[side_ - 1];
+	return master_->number_ == t.capital_number();
 }

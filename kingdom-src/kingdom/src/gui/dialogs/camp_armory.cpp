@@ -98,6 +98,8 @@ tcamp_armory::tcamp_armory(std::vector<unit*>& candidate_troops, std::vector<her
 	for (std::vector<unit*>::const_iterator itor = candidate_troops.begin(); itor != candidate_troops.end(); ++ itor, index ++) {
 		const unit& u = **itor;
 		hit_points_.push_back(u.hitpoints());
+		tactic_degree_.push_back(u.tactic_degree());
+		hot_turns_.push_back(u.hot_turns());
 		if (first_human_troop_ == -1 && u.human()) {
 			first_human_troop_ = index;
 		}
@@ -163,11 +165,27 @@ void tcamp_armory::post_show(twindow& window)
 {
 	size_t size = candidate_troops_.size();
 	for (size_t i = 0; i < size; i ++) {
+		unit& u = *candidate_troops_[i];
+
 		int hit_points = hit_points_[i];
-		if (hit_points > candidate_troops_[i]->max_hitpoints()) {
-			candidate_troops_[i]->heal_all();
+		if (hit_points > u.max_hitpoints()) {
+			u.heal_all();
 		} else {
-			candidate_troops_[i]->set_hitpoints(hit_points);
+			u.set_hitpoints(hit_points);
+		}
+
+		int tactic_degree = tactic_degree_[i];
+		if (tactic_degree > u.max_tactic_point() * game_config::tactic_degree_per_point) {
+			u.set_tactic_degree(u.max_tactic_point() * game_config::tactic_degree_per_point);
+		} else {
+			u.set_tactic_degree(tactic_degree);
+		}
+
+		int hot_turns = hot_turns_[i];
+		if (hot_turns > u.max_hot_turns()) {
+			u.set_hot_turns(u.max_hot_turns());
+		} else {
+			u.set_hot_turns(hot_turns);
 		}
 	}
 }
@@ -275,9 +293,9 @@ void tcamp_armory::refresh_according_to_troop(twindow& window, const int curr)
 	label = find_widget<tlabel>(&window, "tip_intellect", false, true);
 	label->set_label(lexical_cast<std::string>(u.intellect_));
 
-	// politics
-	label = find_widget<tlabel>(&window, "tip_politics", false, true);
-	label->set_label(lexical_cast<std::string>(u.politics_));
+	// spirit
+	label = find_widget<tlabel>(&window, "tip_spirit", false, true);
+	label->set_label(lexical_cast<std::string>(u.spirit_));
 
 	// charm
 	label = find_widget<tlabel>(&window, "tip_charm", false, true);

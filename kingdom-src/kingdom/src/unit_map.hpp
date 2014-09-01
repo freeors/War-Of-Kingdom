@@ -29,6 +29,8 @@ class team;
 class artifical;
 class unit_map;
 class gamemap;
+class game_state;
+class game_display;
 struct rect_of_hexes;
 class strategy;
 
@@ -250,7 +252,7 @@ public:
 	mr_data(gamemap& map, SDL_Rect& city_rect);
 
 	artifical* calculate_center_city(const map_location& center);
-	void calculate_mass(unit_map& units, const team& current_team);
+	void calculate_mass(const unit_map& units, const team& current_team);
 
 	enum {TARGET_AGGRESS, TARGET_GUARD, TARGET_INTERIOR, TARGET_CHAOTIC};
 
@@ -304,11 +306,16 @@ public:
 	enum {BASE = 1, OVERLAY};
 
 	static surface desc_bg_[10];
+	static surface desc_hot;
 	static surface enemy_orb_, ally_orb_, moved_orb_, unmoved_orb_, partmoved_orb_, automatic_orb_, self_orb_;
-	static surface normal_food, lack_food;
+	static surface normal_food, lack_food, robber;
+	static std::string bar_vtl_png, bar_vtl_hot_png;
 
 	static unit* scout_unit_;
 	static std::map<std::pair<int, int>, size_t> inter_city_move_cost_;
+
+	static int main_ticks;
+	static int top_side;
 
 	static void set_zoom();
 
@@ -462,6 +469,10 @@ public:
 	
 	void clear();
 
+	void resort_map(size_t pos);
+	void resort_map(const unit& u);
+	void multi_resort_map(game_display* disp, const std::vector<unit*>& v, bool full);
+
 	/**
 	 * Adds a copy of unit @a u at location @a l of the map.
 	 */
@@ -505,10 +516,8 @@ public:
 	node* get_cookie(const map_location& loc, bool overlay = true) const;
 	void* get_cookie2(const map_location& loc, bool overlay = true) const;
 
-	artifical* city_from_cityno(int cityno);
-	const artifical* city_from_cityno(int cityno) const;
-	artifical* city_from_loc(const map_location& loc);
-	const artifical* city_from_loc(const map_location& loc) const;
+	artifical* city_from_cityno(int cityno) const;
+	artifical* city_from_loc(const map_location& loc) const;
 	artifical* city_from_seed(size_t seed);
 	const artifical* city_from_seed(size_t seed) const;
 
@@ -517,7 +526,7 @@ public:
 	size_t units_from_rect(unit** draw_area_unit, const rect_of_hexes& draw_area_rect);
 	void ally_terminate_adjust(team& adjusting_team, const SDL_Rect& rect);
 
-	void calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool action = true);
+	void calculate_mrs_data(game_state& state, std::vector<mr_data>& mrs, int side, bool action = true);
 	void calculate_mr_rects_from_city_rect(std::vector<team>& teams, gamemap& map, std::vector<mr_data>& mrs, int side);
 	void ai_capture_aggressed(artifical& aggressed, int side, bool to_recorder);
 
@@ -528,6 +537,10 @@ public:
 
 	unit* find_unit(const hero& h) const;
 	unit* find_unit(const map_location& loc) const;
+
+	unit& current_unit();
+	void do_escape_ticks_uh(const std::vector<team>& teams, game_display& disp, int escape, bool first_zero);
+	void do_escape_ticks_bh(const std::vector<team>& teams, game_display& disp, int player_number);
 
 	// bool compare_front_cities(const mr_data& mr, artifical& a, artifical& b);
 	bool compare_enemy_cities(const mr_data& mr, artifical& a, artifical& b);
@@ -560,7 +573,6 @@ private:
 	bool expediting_;
 	node* expediting_node_;
 	artifical* expediting_city_;
-	int expediting_city_node_index_in_map_;
 	bool expediting_troop_;
 	int expediting_index_;
 };

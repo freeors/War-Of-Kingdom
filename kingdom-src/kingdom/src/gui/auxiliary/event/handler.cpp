@@ -26,6 +26,8 @@
 #include "gui/widgets/window.hpp"
 #include "hotkeys.hpp"
 #include "video.hpp"
+#include "game_display.hpp"
+#include "gui/widgets/settings.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -51,6 +53,9 @@
 
 /* Since this code is still very experimental it's not enabled yet. */
 //#define ENABLE
+
+extern int revise_screen_width(int width);
+extern int revise_screen_height(int height);
 
 namespace gui2 {
 
@@ -309,8 +314,6 @@ thandler::~thandler()
 #endif
 }
 
-#define FINGER_MOTION_THRESHOLD		10
-#define FINGER_HIT_THRESHOLD     4
 void thandler::handle_event(const SDL_Event& event)
 {
 	/** No dispatchers drop the event. */
@@ -318,75 +321,107 @@ void thandler::handle_event(const SDL_Event& event)
 		return;
 	}
 
-#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
-	if ((event.type == SDL_MOUSEBUTTONDOWN) || (event.type == SDL_FINGERDOWN)) {
-		wait_bh_event_ = true;
-		return;
-	}
-	if (event.type == SDL_MOUSEMOTION) {
-		return;
-	}
-	if (event.type == SDL_MOUSEBUTTONUP) {
-		return;
-	}
-#endif
-	int abs_dx, abs_dy;
+	int abs_dx, abs_dy, x, y, dx, dy;
 	SDL_Event dump_event;
 
 	switch(event.type) {
+		case SDL_FINGERDOWN:
+			wait_bh_event_ = true;
+			break;
+
 		case SDL_FINGERMOTION:
-			abs_dx = abs(event.tfinger.dx);
-			abs_dy = abs(event.tfinger.dy);
+			x = event.tfinger.x * settings::screen_width;
+			y = event.tfinger.y * settings::screen_height;
+			dx = event.tfinger.dx * settings::screen_width;
+			dy = event.tfinger.dy * settings::screen_height;
+
+			abs_dx = abs(dx);
+			abs_dy = abs(dy);
 			if (abs_dx <= FINGER_HIT_THRESHOLD && abs_dy <= FINGER_HIT_THRESHOLD) {
 				break;
 			}
-			mouse(SDL_MOUSE_MOTION, tpoint(event.tfinger.x, event.tfinger.y));
+			mouse(SDL_MOUSE_MOTION, tpoint(x, y));
 			if (abs_dx >= abs_dy && abs_dx >= FINGER_MOTION_THRESHOLD) {
 				// x axis
-				if (event.tfinger.dx > 0) {
-					mouse(SDL_WHEEL_LEFT, tpoint(event.tfinger.x, event.tfinger.y));
+				if (dx > 0) {
+					mouse(SDL_WHEEL_LEFT, tpoint(x, y));
 				} else {
-					mouse(SDL_WHEEL_RIGHT, tpoint(event.tfinger.x, event.tfinger.y));
+					mouse(SDL_WHEEL_RIGHT, tpoint(x, y));
 				}
 			} else if (abs_dx < abs_dy && abs_dy >= FINGER_MOTION_THRESHOLD) {
 				// y axis
-				if (event.tfinger.dy > 0) {
-					mouse(SDL_WHEEL_UP, tpoint(event.tfinger.x, event.tfinger.y));
+				if (dy > 0) {
+					mouse(SDL_WHEEL_UP, tpoint(x, y));
 				} else {
-					mouse(SDL_WHEEL_DOWN, tpoint(event.tfinger.x, event.tfinger.y));
+					mouse(SDL_WHEEL_DOWN, tpoint(x, y));
 				}
 			}
 
 			SDL_PumpEvents();
-			while (SDL_PeepEvents(&dump_event, 1, SDL_GETEVENT, SDL_FINGERMOTION, SDL_FINGERMOTION) > 0) {};
+			while (SDL_PeepEvents(&dump_event, 1, SDL_GETEVENT, INPUT_MASK_MIN, INPUT_MASK_MAX) > 0) {};
 
 			wait_bh_event_ = false;
 			break;
 
+		case SDL_MOUSEWHEEL:
+			if (event.wheel.which == SDL_TOUCH_MOUSEID) {
+				break;
+			}
+			abs_dx = abs(event.wheel.x);
+			abs_dy = abs(event.wheel.y);
+			if (abs_dx <= MOUSE_HIT_THRESHOLD && abs_dy <= MOUSE_HIT_THRESHOLD) {
+				break;
+			}
+			SDL_GetMouseState(&x, &y);
+			mouse(SDL_MOUSE_MOTION, tpoint(x, y));
+			if (abs_dx >= abs_dy && abs_dx >= MOUSE_MOTION_THRESHOLD) {
+				// x axis
+				if (event.wheel.x > 0) {
+					mouse(SDL_WHEEL_LEFT, tpoint(x, y));
+				} else {
+					mouse(SDL_WHEEL_RIGHT, tpoint(x, y));
+				}
+			} else if (abs_dx < abs_dy && abs_dy >= MOUSE_MOTION_THRESHOLD) {
+				// y axis
+				if (event.wheel.y > 0) {
+					mouse(SDL_WHEEL_UP, tpoint(x, y));
+				} else {
+					mouse(SDL_WHEEL_DOWN, tpoint(x, y));
+				}
+			}
+			break;
+
 		case SDL_MOUSEMOTION:
+			if (event.button.which == SDL_TOUCH_MOUSEID) {
+				break;
+			}
 			mouse(SDL_MOUSE_MOTION, tpoint(event.motion.x, event.motion.y));
 			break;
 
 		case SDL_MOUSEBUTTONDOWN:
-			if (event.type == SDL_FINGERUP) {
-				mouse_button_down(tpoint(event.tfinger.x, event.tfinger.y), SDL_BUTTON_LEFT);
-			} else {
-				mouse_button_down(tpoint(event.button.x, event.button.y), event.button.button);
+			if (event.button.which == SDL_TOUCH_MOUSEID) {
+				break;
 			}
+			mouse_button_down(tpoint(event.button.x, event.button.y), event.button.button);
 			break;
 
 		case SDL_FINGERUP:
 			if (!wait_bh_event_) {
 				break;
 			}
-			mouse(SDL_MOUSE_MOTION, tpoint(event.tfinger.x, event.tfinger.y));
+			x = event.tfinger.x * settings::screen_width;
+			y = event.tfinger.y * settings::screen_height;
+			mouse(SDL_MOUSE_MOTION, tpoint(x, y));
 			// simulate SDL_MOUSEBUTTONDOWN
-			mouse_button_down(tpoint(event.tfinger.x, event.tfinger.y), SDL_BUTTON_LEFT);
+			mouse_button_down(tpoint(x, y), SDL_BUTTON_LEFT);
 
 		case SDL_MOUSEBUTTONUP:
 			if (event.type == SDL_FINGERUP) {
-				mouse_button_up(tpoint(event.tfinger.x, event.tfinger.y), SDL_BUTTON_LEFT);
+				mouse_button_up(tpoint(x, y), SDL_BUTTON_LEFT);
 			} else {
+				if (event.button.which == SDL_TOUCH_MOUSEID) {
+					break;
+				}
 				mouse_button_up(tpoint(event.button.x, event.button.y), event.button.button);
 			}
 			wait_bh_event_ = false;
@@ -442,12 +477,16 @@ void thandler::handle_event(const SDL_Event& event)
             text_input(event.text);
 			break;
 
-		case SDL_VIDEOEXPOSE:
-			draw(true);
-			break;
+		case SDL_WINDOWEVENT:
+			if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
+				// draw(true);
 
-		case SDL_VIDEORESIZE:
-			video_resize(tpoint(event.resize.w, event.resize.h));
+			} else if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+				video_resize(tpoint(revise_screen_width(event.window.data1), revise_screen_height(event.window.data2)));
+
+			} else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED || event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+				activate();
+			}
 			break;
 
 #if defined(_X11) && !defined(__APPLE__)
@@ -458,10 +497,6 @@ void thandler::handle_event(const SDL_Event& event)
 			break;
 		}
 #endif
-
-		case SDL_ACTIVEEVENT:
-			activate();
-			break;
 
 		// Silently ignored events.
 		case SDL_KEYUP:
@@ -567,6 +602,11 @@ void thandler::draw(const bool force)
 	}
 
 	if(!dispatchers_.empty()) {
+		bool animated = false;
+		if (game_display* disp = game_display::get_singleton()) {
+			animated = disp->draw_outer_anim(true);
+		}
+
 		CVideo& video = dynamic_cast<twindow&>(*dispatchers_.back()).video();
 
 		surface frame_buffer = video.getSurface();
@@ -574,6 +614,13 @@ void thandler::draw(const bool force)
 		cursor::draw(frame_buffer);
 		video.flip();
 		cursor::undraw(frame_buffer);
+
+		if (animated) {
+			for (std::vector<tdispatcher*>::iterator it = dispatchers_.begin(); it != dispatchers_.end(); ++ it) {
+				twindow& w = dynamic_cast<twindow&>(**it);
+				w.set_dirty();
+			}
+		}
 	}
 }
 
@@ -633,19 +680,6 @@ void thandler::mouse_button_up(const tpoint& position, const Uint8 button)
 			mouse(SDL_RIGHT_BUTTON_UP, position);
 			break;
 
-		case SDL_BUTTON_WHEELLEFT :
-			mouse(SDL_WHEEL_LEFT, get_mouse_position());
-			break;
-		case SDL_BUTTON_WHEELRIGHT :
-			mouse(SDL_WHEEL_RIGHT, get_mouse_position());
-			break;
-		case SDL_BUTTON_WHEELUP :
-			mouse(SDL_WHEEL_UP, get_mouse_position());
-			break;
-		case SDL_BUTTON_WHEELDOWN :
-			mouse(SDL_WHEEL_DOWN, get_mouse_position());
-			break;
-
 		default:
 			WRN_GUI_E << "Unhandled 'mouse button up' event for button "
 					<< static_cast<Uint32>(button) << ".\n";
@@ -655,17 +689,6 @@ void thandler::mouse_button_up(const tpoint& position, const Uint8 button)
 
 void thandler::mouse_button_down(const tpoint& position, const Uint8 button)
 {
-	// The wheel buttons generate and up and down event we handle the
-	// up event so ignore the mouse if it's a down event. Handle it
-	// here to avoid a warning.
-	if(button == SDL_BUTTON_WHEELUP
-			|| button == SDL_BUTTON_WHEELDOWN
-			|| button == SDL_BUTTON_WHEELLEFT
-			|| button == SDL_BUTTON_WHEELRIGHT) {
-
-		return;
-	}
-
 	switch(button) {
 		case SDL_BUTTON_LEFT :
 			mouse(SDL_LEFT_BUTTON_DOWN, position);
@@ -728,12 +751,13 @@ void thandler::key_down(const SDL_KeyboardEvent& event)
 {
 	const hotkey::hotkey_item& hk = hotkey::get_hotkey(event);
 	bool done = false;
-	if(!hk.null()) {
+	// let return go through on android
+	if (event.keysym.sym != SDLK_RETURN && !hk.null()) {
 		done = hotkey_pressed(hk);
 	}
 	if(!done) {
 		SDLMod mod = (SDLMod)event.keysym.mod;
-		key_down(event.keysym.sym, mod, event.keysym.unicode);
+		key_down(event.keysym.sym, mod, event.keysym.unused);
 	}
 }
 

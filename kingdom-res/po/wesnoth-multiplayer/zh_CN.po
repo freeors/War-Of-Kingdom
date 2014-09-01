@@ -13,7 +13,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2013-07-23 14:16+0800\n"
+"PO-Revision-Date: 2014-04-21 11:51+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -1755,6 +1755,35 @@ msgstr ""
 
 msgid "Tower(16x6)"
 msgstr "塔防（16x6）"
+
+msgid "Siege-I"
+msgstr "攻城-I"
+
+msgid "Siege-II"
+msgstr "攻城-II"
+
+msgid "Siege-III"
+msgstr "攻城-III"
+
+msgid "random_map"
+msgstr "随机地图"
+
+msgid "random_map description"
+msgstr ""
+"在这里，可以自选地图，自由设置各势力参数，像集团、势力特技、初始金、每回基本"
+"金，联盟情况。"
+
+msgid "siege"
+msgstr "攻城"
+
+msgid "siege description"
+msgstr "专门用于攻城模式的战役"
+
+msgid "2p_siege_map"
+msgstr "2p — 攻城地图"
+
+#~ msgid "Player(16x6)"
+#~ msgstr "玩家间战争（16x6）"
 
 #~ msgid "Survive for 32 turns."
 #~ msgstr "撑过32回合。"

@@ -307,6 +307,45 @@ void tcampaign_rect::placement(const HWND hwnd, bool max)
 	}
 }
 
+tintegrate_rect::tintegrate_rect(const HWND hwnd)
+	: tzoom_rect(integrate, hwnd)
+{
+	RECT rc;
+
+	// IDC_ET_INTEGRATE_TEXT
+	GetWindowRect(GetDlgItem(hwnd, IDC_ET_INTEGRATE_TEXT), &rc);
+	MapWindowPoints(NULL, hwnd, (LPPOINT)(&rc), (sizeof(RECT)/sizeof(POINT)));
+	explorer_[NORMAL] = rc;
+}
+
+void tintegrate_rect::calculate_max(const HWND hwnd)
+{
+	RECT rcMain;
+	int horizontal_diff, vertical_diff;
+	
+	GetClientRect(hwnd, &rcMain);
+	horizontal_diff = rcMain.right - normal_.right;
+	vertical_diff = rcMain.bottom - normal_.bottom;
+
+	max_ = normal_;
+	max_.right = rcMain.right;
+	max_.bottom = rcMain.bottom;
+
+	explorer_[MAX] = explorer_[NORMAL];
+	explorer_[MAX].right = explorer_[NORMAL].right + horizontal_diff;
+	explorer_[MAX].bottom = explorer_[NORMAL].bottom + vertical_diff;
+}
+
+void tintegrate_rect::placement(const HWND hwnd, bool max)
+{
+	tzoom_rect::placement(hwnd, max);
+	if (max) {
+		place_rect(GetDlgItem(hwnd, IDC_ET_INTEGRATE_TEXT), explorer_[MAX]);
+	} else {
+		place_rect(GetDlgItem(hwnd, IDC_ET_INTEGRATE_TEXT), explorer_[NORMAL]);
+	}
+}
+
 std::map<int, tzoom_rect*> zoom_rects; 
 
 void tzoom_rect::calculate_maxs(HWND hwnd)
@@ -463,7 +502,7 @@ bool notify_handler_rclick(const std::map<int, std::string>& menu, HWND hwnd, in
 	HMENU hpopup_candidate = CreatePopupMenu();
 	for (std::map<int, std::string>::const_iterator it = menu.begin(); it != menu.end(); ++ it) {
 		AppendMenu(hpopup_candidate, MF_STRING, it->first, utf8_2_ansi(it->second.c_str()));
-		if (lpnmitem->iItem < 0 || (fn && !fn(it->first))) {
+		if (lpnmitem->iItem < 0 || (fn && !fn(hwnd, it->first, lvi.lParam))) {
 			EnableMenuItem(hpopup_candidate, it->first, MF_BYCOMMAND | MF_GRAYED);
 		}
 	}
@@ -478,6 +517,44 @@ bool notify_handler_rclick(const std::map<int, std::string>& menu, HWND hwnd, in
 
 	lParam = lvi.lParam;
 	return true;
+}
+
+}
+
+namespace scroll {
+
+LPARAM first_visible_lparam = 0;
+HTREEITEM first_visible_htvi;
+
+void treeview_update_scroll(HWND htv, fn_treeview_update_scroll fn, void* ctx)
+{
+	TVITEMEX tvi;
+	HTREEITEM htvi = TreeView_GetFirstVisible(htv);
+	TreeView_GetItem1(htv, htvi, &tvi, TVIF_PARAM | TVIF_CHILDREN, NULL);
+	if (htvi && fn) {
+		scroll::first_visible_lparam = tvi.lParam;
+		fn(htv, htvi, tvi, ctx);
+	}
+
+	first_visible_lparam = 0;
+}
+
+
+void cb_treeview_walk_find_lparam(HWND hctl, HTREEITEM htvi, uint32_t* ctx)
+{
+	TVITEMEX	tvi;
+	TreeView_GetItem1(hctl, htvi, &tvi, TVIF_PARAM, NULL);
+	if (tvi.lParam == first_visible_lparam) {
+		first_visible_htvi = htvi;
+	}
+}
+
+void treeview_scroll_to(HWND htv)
+{
+	if (first_visible_lparam) {
+		TreeView_Walk(htv, TVI_ROOT, TRUE, cb_treeview_walk_find_lparam, NULL, FALSE);
+		TreeView_SelectSetFirstVisible(htv, first_visible_htvi);
+	}
 }
 
 }

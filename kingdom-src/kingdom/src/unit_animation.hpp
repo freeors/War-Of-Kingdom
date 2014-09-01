@@ -31,7 +31,7 @@ class unit_animation
 	public:
 		typedef enum { MATCH_FAIL=-10 , DEFAULT_ANIM=-9} variation_type;
 		typedef enum { HIT, MISS, KILL, INVALID} hit_type;
-
+		
 		static const std::vector<std::string>& all_tag_names();
 		static void fill_initial_animations(const std::string& default_image, std::vector<unit_animation> & animations, const config & cfg);
 		static void add_anims( std::vector<unit_animation> & animations, const config & cfg);
@@ -70,9 +70,13 @@ class unit_animation
 		bool invalidate();
 		void replace_image_name(const std::string& src, const std::string& dst);
 		void replace_image_mod(const std::string& src, const std::string& dst);
-		void replace_x(const std::string& src, const std::string& dst);
+		void replace_progressive(const std::string& name, const std::string& src, const std::string& dst);
 		void replace_static_text(const std::string& src, const std::string& dst);
+		void replace_int(const std::string& name, int src, int dst);
 		const std::string event0() const;
+		int layer() const { return layer_; }
+		bool cycles() const { return cycles_; }
+		bool started() const { return started_; }
 
 	friend class unit;
 	friend class artifical;
@@ -95,6 +99,7 @@ class unit_animation
 			explicit particular(int start_time=0,const frame_builder &builder = frame_builder()) :
 				animated<unit_frame>(start_time),
 				accelerate(true),
+				cycles(false),
 				parameters_(builder),
 				halo_id_(0),
 				last_frame_begin_time_(0)
@@ -120,10 +125,12 @@ class unit_animation
 			void clear_halo();
 			void replace_image_name(const std::string& src, const std::string& dst);
 			void replace_image_mod(const std::string& src, const std::string& dst);
-			void replace_x(const std::string& src, const std::string& dst);
+			void replace_progressive(const std::string& name, const std::string& src, const std::string& dst);
 			void replace_static_text(const std::string& src, const std::string& dst);
+			void replace_int(const std::string& name, int src, int dst);
 
 			bool accelerate;
+			bool cycles;
 		private:
 
 			//animation params that can be locally overridden by frames
@@ -136,7 +143,9 @@ class unit_animation
 		std::vector<config> unit_filter_;
 		std::vector<config> secondary_unit_filter_;
 		std::vector<map_location::DIRECTION> directions_;
+		int align_;
 		int frequency_;
+
 		int base_score_;
 		std::vector<std::string> event_;
 		std::vector<int> value_;
@@ -153,6 +162,9 @@ class unit_animation
 		bool invalidated_;
 		bool play_offscreen_;
 		bool screen_mode_;
+		int layer_;
+		bool cycles_;
+		bool started_;
 		std::set<map_location> overlaped_hex_;
 };
 

@@ -27,7 +27,7 @@
  */
 class CKey
 {
-	Uint8 *key_list;
+	const Uint8 *key_list;
 
 public:
 	CKey();

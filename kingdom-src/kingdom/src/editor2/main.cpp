@@ -29,7 +29,6 @@
 #include <sstream>
 #include <iosfwd>
 
-
 extern BOOL CALLBACK DlgTitleProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgDDescProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgSyncProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -37,6 +36,7 @@ extern BOOL CALLBACK DlgWGenProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lP
 extern BOOL CALLBACK DlgCoreProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgCfgProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgCampaignProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+extern BOOL CALLBACK DlgIntegrateProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 #define CLASSNAME			"slgmaker"
 
@@ -44,15 +44,9 @@ static char			gtext[_MAX_PATH];
 dvrmgr_t			gdmgr;
 
 editor editor_;
+tmod_config mod_config;
 
-// oem.ini相关
-#define MARK_BMP					"mark.bmp"
-#define PC_BMP						"pc.bmp"
-#define DVR_BMP						"dvr.bmp"
 #define EDITOR_ICO					"editor.ico"
-#define WELCOME_BMP					"welcome.bmp"
-#define CF_BMP						"cf.bmp"
-#define NETWORK_BMP					"network.bmp"
 
 namespace editor_config
 {
@@ -577,23 +571,6 @@ const char* dgettext_2_ansi(const char* domain, const char* msgid)
 	return utf8_2_ansi(dsgettext(domain, msgid));
 }
 
-const char* ansi_2_utf8(const char* str)
-{
-	static const int wlen = 8192;
-	static WCHAR wc[wlen];
-	static char ac[wlen * 2];
-
-	ac[0] = '\0';
-	if (!str || str[0] == '\0') {
-		return ac;
-	}
-	if (MultiByteToWideChar(CP_ACP, 0, str, -1, wc, wlen) == 0) {
-		return ac;
-	}
-	WideCharToMultiByte(CP_UTF8, 0, wc, -1, ac, wlen * 2, NULL, NULL);
-	return ac;
-}
-
 std::string vgettext2(const char *msgid, const utils::string_map& symbols)
 {
 	return vgettext("wesnoth-maker", msgid, symbols);
@@ -649,13 +626,9 @@ void init_dvrmgr_struct(void)
 	MakeDirectory(std::string(gdmgr._userdir));
 	
 	SHGetFolderPath(NULL, CSIDL_PROGRAM_FILES, NULL, 0, gdmgr._programfilesdir);
-	sprintf(gdmgr._markbmp, "%s\\%s", gdmgr._curexedir, MARK_BMP);
-	sprintf(gdmgr._pcbmp, "%s\\%s", gdmgr._curexedir, PC_BMP);
-	sprintf(gdmgr._dvrbmp, "%s\\%s", gdmgr._curexedir, DVR_BMP);
 	sprintf(gtext, "%s\\%s", gdmgr._curexedir, EDITOR_ICO);
 	// gdmgr._markico = (HICON)LoadImage(gdmgr._hinst, gtext, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
 	gdmgr._markico = (HICON)LoadImage(gdmgr._hinst, MAKEINTRESOURCE(IDI_EDITOR), IMAGE_ICON, 0, 0, LR_CREATEDIBSECTION);
-	// gdmgr._welcomebmp = (HBITMAP)LoadImage(gdmgr._hinst, formatstr("%s\\%s", gdmgr._curexedir, WELCOME_BMP), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION | LR_LOADTRANSPARENT);
 	gdmgr._welcomebmp = (HBITMAP)LoadImage(gdmgr._hinst, MAKEINTRESOURCE(IDB_WELCOME), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
 
 	InitializeCriticalSection(&gdmgr._cshbeat);
@@ -898,6 +871,8 @@ void init_dvrmgr_struct(void)
 
 void prepare_popup_menu()
 {
+	utils::string_map symbols;
+
 	// 菜单
 	// menu item: generate
 	gdmgr._hpopup_new = CreatePopupMenu();
@@ -906,12 +881,19 @@ void prepare_popup_menu()
 	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_CAMPAIGN, dgettext_2_ansi("wesnoth-lib", "Campaign"));
 
 	// star
-	gdmgr._hpopup_star = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_RESOURCE, utf8_2_ansi(_("Generate resource package to C:\\kingdom-star")));
-	AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_PATCH, utf8_2_ansi(_("Extract different files to C:\\wesnoth\\kingdom-star-patch")));
+	if (mod_config.valid()) {
+		gdmgr._hpopup_star = CreatePopupMenu();
 
-	AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
-	AppendMenu(gdmgr._hpopup_new, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_star), utf8_2_ansi(_("Star")));
+		symbols["mod_res_path"] = mod_config.res_path;
+		symbols["mod_patch_path"] = mod_config.patch_path;
+		AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_RESOURCE, utf8_2_ansi(vgettext2("Generate resource package to $mod_res_path", symbols).c_str()));
+		AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_PATCH, utf8_2_ansi(vgettext2("Extract different files to $mod_patch_path", symbols).c_str()));
+
+		AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
+		AppendMenu(gdmgr._hpopup_new, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_star), utf8_2_ansi(mod_config.name.c_str()));
+	} else {
+		gdmgr._hpopup_star = NULL;
+	}
 
 	// menu item: coherence
 	gdmgr._hpopup_explorer = CreatePopupMenu();
@@ -935,6 +917,8 @@ void prepare_popup_menu()
 	// 主菜单要放在子菜单后面, 要确保子菜章句柄已有效
 	gdmgr._hpopup_ddesc = CreatePopupMenu();
 	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_new), utf8_2_ansi(_("New")));
+	AppendMenu(gdmgr._hpopup_ddesc, MF_SEPARATOR, 0, NULL);
+	AppendMenu(gdmgr._hpopup_ddesc, MF_STRING, IDM_INTEGRATE, utf8_2_ansi(_("Integrate")));
 	AppendMenu(gdmgr._hpopup_ddesc, MF_SEPARATOR, 0, NULL);
 	AppendMenu(gdmgr._hpopup_ddesc, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_explorer), utf8_2_ansi(_("Explorer")));
 	AppendMenu(gdmgr._hpopup_ddesc, MF_SEPARATOR, 0, NULL);
@@ -1134,6 +1118,11 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	MoveWindow(gdmgr._hdlg_campaign, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
 	ShowWindow(gdmgr._hdlg_campaign, SW_HIDE);
 
+	// section dialog: IDD_INTEGRATE
+	gdmgr._hdlg_integrate = CreateDialogParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_INTEGRATE), hwndP, DlgIntegrateProc, NULL);
+	MoveWindow(gdmgr._hdlg_integrate, rcDDesc.right, rcTitle.bottom, rcMain.right - rcDDesc.right, rcMain.bottom - rcTitle.bottom, FALSE);
+	ShowWindow(gdmgr._hdlg_integrate, SW_HIDE);
+
 	gdmgr._video_area.left = rcDDesc.right;
 	gdmgr._video_area.top = rcTitle.bottom;
 	gdmgr._video_area.right = rcMain.right;
@@ -1162,6 +1151,7 @@ BOOL DVR_OnCreate(HWND hwndP, LPCREATESTRUCT lpCreateStruct)
 	zoom_rects.insert(std::make_pair(tzoom_rect::core, new tcore_rect(gdmgr._hdlg_core)));
 	zoom_rects.insert(std::make_pair(tzoom_rect::visual, new tvisual_rect(gdmgr._hdlg_visual)));
 	zoom_rects.insert(std::make_pair(tzoom_rect::campaign, new tcampaign_rect(gdmgr._hdlg_campaign)));
+	zoom_rects.insert(std::make_pair(tzoom_rect::integrate, new tintegrate_rect(gdmgr._hdlg_integrate)));
 
 	return TRUE;
 }
@@ -1281,6 +1271,7 @@ void DVR_OnSize(HWND hdlgP, UINT wParam, int cx, int cy)
 	zoom_rects[tzoom_rect::core]->placement(gdmgr._hdlg_core, IsZoomed(hdlgP));
 	zoom_rects[tzoom_rect::visual]->placement(gdmgr._hdlg_visual, IsZoomed(hdlgP));
 	zoom_rects[tzoom_rect::campaign]->placement(gdmgr._hdlg_campaign, IsZoomed(hdlgP));
+	zoom_rects[tzoom_rect::integrate]->placement(gdmgr._hdlg_integrate, IsZoomed(hdlgP));
 }
 
 
@@ -1343,12 +1334,10 @@ LRESULT CALLBACK WndMainProc(HWND hwndP, UINT msg, WPARAM wParam, LPARAM lParam)
 			posix_print_mb("Now is synchronizing, don't exit");
 			return 0;
 		}
-        posix_print("<WinMain.cpp>::WndMainProc, WM_CLOSE------, 0\n");
 		// 需要主窗口句柄还是有效时调用title_select(da_unknown)
 		title_select(da_unknown);
 
 		KillTimer(hwndP, ID_STATUS_TIMER);
-		posix_print("<WinMain.cpp>::WndMainProc, WM_CLOSE------, 1\n");
 		break;		
 
     case WM_DESTROY:
@@ -1486,9 +1475,25 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 
 	_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 	char* ptr = (char*)malloc(41);
+/*
+	game_config::secret_key[0] = 0x25;
+	game_config::secret_key[1] = 0x7a;
+	game_config::secret_key[2] = 0x4b;
+	game_config::secret_key[3] = 0xa1;
+	game_config::secret_key[4] = 0x98;
+	game_config::secret_key[5] = 0xe2;
+	// 1101 0111 0010 1000 plaintext
+    // 0100 1010 1111 0101 key
+	std::string plaintext = read_file("C:\\inetpub\\wwwroot\\bbs\\data\\plugindata\\kingdom\\save\\plain.bin");
+	tsaes_encrypt encrypt(plaintext.c_str(), plaintext.size(), game_config::secret_key);
+	write_file("C:\\inetpub\\wwwroot\\bbs\\data\\plugindata\\kingdom\\save\\cipher1.bin", encrypt.buf, encrypt.size, false);
+
+	tsaes_decrypt decrypt(encrypt.buf, encrypt.size, game_config::secret_key);
+	write_file("C:\\inetpub\\wwwroot\\bbs\\data\\plugindata\\kingdom\\save\\restore1.bin", decrypt.buf, decrypt.size, false);
+*/
 
 	if (make_run_once()) {
-		// 程序已在运行，直接退出
+		// progream has run, exit.
 		return 0;
 	}
 
@@ -1514,6 +1519,15 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 					MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
 					unit_types.clear();
 				}
+			}
+		}
+
+		if (true) {
+			scoped_istream stream = istream_file(game_config::path + "/data/mod_config.cfg", true);
+			config mod_cfg;
+			read(mod_cfg, *stream);
+			if (mod_cfg && mod_cfg.child("mod")) {
+				mod_config = tmod_config(mod_cfg.child("mod"));
 			}
 		}
 

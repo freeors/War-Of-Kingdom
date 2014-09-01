@@ -141,3 +141,45 @@ msgid "liubei stop: 1"
 msgstr ""
 
 
+msgid "01huajingtaofai"
+msgstr ""
+
+msgid "xiaquxiang"
+msgstr ""
+
+msgid "guangzhong"
+msgstr ""
+
+msgid "changshe"
+msgstr ""
+
+msgid "kangchangsuoming"
+msgstr ""
+
+msgid "02hulaoguan"
+msgstr ""
+
+msgid "hulaoguan"
+msgstr ""
+
+msgid "hulaoguan caocaokanchangbai"
+ msgstr ""
+
+msgid "hulaoguan dongzhuoduibai"
+ msgstr ""
+ 
+ msgid "hulaoguan lubuduibai"
+ msgstr ""
+ 
+ msgid "hulaoguan dongzhuoduibai 02"
+ msgstr ""
+ 
+ msgid "05Defeat all sides"
+ msgstr ""
+ 
+ msgid "05No city you holded"
+ msgstr ""
+ 
+ msgid "05shaopinglubu"
+ msgstr ""
+ 

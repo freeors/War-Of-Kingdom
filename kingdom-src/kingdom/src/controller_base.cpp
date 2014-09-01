@@ -23,6 +23,7 @@
 #include "mouse_handler_base.hpp"
 #include "mouse_events.hpp"
 #include "sound.hpp"
+#include "gui/dialogs/side_report.hpp"
 #include "resources.hpp"
 
 #include <boost/foreach.hpp>
@@ -30,16 +31,15 @@
 static lg::log_domain log_display("display");
 #define ERR_DP LOG_STREAM(err, log_display)
 
-controller_base::controller_base(
-		int ticks, const config& game_config, CVideo& /*video*/) :
-	game_config_(game_config),
-	ticks_(ticks),
-	key_(),
-	browse_(false),
-	scrolling_(false),
-	finger_motion_scroll_(false),
-	finger_motion_direction_(UP),
-	wait_bh_event_(false)
+controller_base::controller_base(int ticks, const config& game_config, CVideo& /*video*/)
+	: game_config_(game_config)
+	, ticks_(ticks)
+	, key_()
+	, browse_(false)
+	, scrolling_(false)
+	, finger_motion_scroll_(false)
+	, finger_motion_direction_(UP)
+	, wait_bh_event_(false)
 {
 }
 
@@ -51,31 +51,66 @@ int controller_base::get_ticks() {
 	return ticks_;
 }
 
-#define FINGER_MOTION_THRESHOLD		10
-#define FINGER_HIT_THRESHOLD     4
+bool controller_base::handle_scroll_wheel(int dx, int dy, int hit_threshold, int motion_threshold)
+{
+	int abs_dx = posix_abs(dx);
+	int abs_dy = posix_abs(dy);
+	if (abs_dx <= hit_threshold && abs_dy <= hit_threshold) {
+		return false;
+	}
+	if (abs_dx >= motion_threshold && abs_dy >= motion_threshold) {
+		if (dx > 0) {
+			if (dy > 0) {
+				finger_motion_direction_ = SOUTH_EAST;
+			} else {
+				finger_motion_direction_ = NORTH_EAST;
+			}
+		} else if (dy >= 0) {
+			finger_motion_direction_ = SOUTH_WEST;
+		} else {
+			finger_motion_direction_ = NORTH_WEST;
+		}
+		finger_motion_scroll_ = true;
+	} else if (abs_dx >= abs_dy && abs_dx >= motion_threshold) {
+		// x axis
+		if (dx > 0) {
+			finger_motion_direction_ = RIGHT;
+		} else {
+			finger_motion_direction_ = LEFT;
+		}
+		finger_motion_scroll_ = true;
+	} else if (abs_dx < abs_dy && abs_dy >= motion_threshold) {
+		// y axis
+		if (dy > 0) {
+			finger_motion_direction_ = DOWN;
+		} else {
+			finger_motion_direction_ = UP;
+		}
+		finger_motion_scroll_ = true;
+	}
+	return true;
+}
+
 void controller_base::handle_event(const SDL_Event& event)
 {
 	if (gui::in_dialog()) {
 		return;
 	}
+	display& disp = get_display();
+	CVideo& video = disp.video();
 
-#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
-	if ((event.type == SDL_MOUSEBUTTONDOWN) || (event.type == SDL_FINGERDOWN)) {
-		wait_bh_event_ = true;
-		return;
-	}
-	if (event.type == SDL_MOUSEMOTION) {
-		return;
-	}
-	if (event.type == SDL_MOUSEBUTTONUP) {
-		return;
-	}
-#endif
 	SDL_Event new_event;
-	int abs_dx, abs_dy;
 	// events::mouse_handler& mouse_handler = get_mouse_handler_base();
+	int x, y, dx, dy;
 
 	switch(event.type) {
+	case SDL_FINGERDOWN:
+		if (events::ignore_finger_event) {
+			break;
+		}
+		wait_bh_event_ = true;
+		break;
+
 	case SDL_KEYDOWN:
 		// Detect key press events, unless there something that has keyboard focus
 		// in which case the key press events should go only to it.
@@ -92,45 +127,25 @@ void controller_base::handle_event(const SDL_Event& event)
 		break;
 
 	case SDL_FINGERMOTION:
-		abs_dx = posix_abs(event.tfinger.dx);
-		abs_dy = posix_abs(event.tfinger.dy);
-		if (abs_dx <= FINGER_HIT_THRESHOLD && abs_dy <= FINGER_HIT_THRESHOLD) {
+		if (events::ignore_finger_event) {
 			break;
 		}
-		if (abs_dx >= FINGER_MOTION_THRESHOLD && abs_dy >= FINGER_MOTION_THRESHOLD) {
-			if (event.tfinger.dx > 0) {
-				if (event.tfinger.dy > 0) {
-					finger_motion_direction_ = SOUTH_EAST;
-				} else {
-					finger_motion_direction_ = NORTH_EAST;
-				}
-			} else if (event.tfinger.dy >= 0) {
-				finger_motion_direction_ = SOUTH_WEST;
-			} else {
-				finger_motion_direction_ = NORTH_WEST;
-			}
-			finger_motion_scroll_ = true;
-		} else if (abs_dx >= abs_dy && abs_dx >= FINGER_MOTION_THRESHOLD) {
-			// x axis
-			if (event.tfinger.dx > 0) {
-				finger_motion_direction_ = RIGHT;
-			} else {
-				finger_motion_direction_ = LEFT;
-			}
-			finger_motion_scroll_ = true;
-		} else if (abs_dx < abs_dy && abs_dy >= FINGER_MOTION_THRESHOLD) {
-			// y axis
-			if (event.tfinger.dy > 0) {
-				finger_motion_direction_ = DOWN;
-			} else {
-				finger_motion_direction_ = UP;
-			}
-			finger_motion_scroll_ = true;
+		x = event.tfinger.x * video.getx();
+		y = event.tfinger.y * video.gety();
+		dx = event.tfinger.dx * video.getx();
+		dy = event.tfinger.dy * video.gety();
+
+		if (!handle_scroll_wheel(dx, dy, FINGER_HIT_THRESHOLD, FINGER_MOTION_THRESHOLD)) {
+			break;
 		}
 		wait_bh_event_ = false;
+		events::ignore_finger_event = true;
 		break;
 
 	case SDL_MOUSEMOTION:
+		if (event.button.which == SDL_TOUCH_MOUSEID) {
+			break;
+		}
 		// Ignore old mouse motion events in the event queue
 		if (SDL_PeepEvents(&new_event,1,SDL_GETEVENT, SDL_MOUSEMOTIONMASK) > 0) {
 			while(SDL_PeepEvents(&new_event,1,SDL_GETEVENT, SDL_MOUSEMOTIONMASK) > 0) {};
@@ -140,16 +155,20 @@ void controller_base::handle_event(const SDL_Event& event)
 		}
 		break;
 	case SDL_FINGERUP:
+		if (events::ignore_finger_event) {
+			break;
+		}
 		if (!wait_bh_event_) {
 			break;
 		}
+		x = event.tfinger.x * video.getx();
+		y = event.tfinger.y * video.gety();
 		// simulate SDL_MOUSEBUTTONDOWN
 		new_event = event;
 		new_event.button.button = SDL_BUTTON_LEFT;
 		new_event.button.state = SDL_PRESSED;
-		new_event.button.x = event.tfinger.x;
-		new_event.button.y = event.tfinger.y;
-		// SDL_SendMouseMotion(NULL, 0, event.tfinger.x, event.tfinger.y);
+		new_event.button.x = x;
+		new_event.button.y = y;
 		do {
 			get_mouse_handler_base().mouse_press(new_event.button, browse_);
 			post_mouse_press(new_event);
@@ -164,16 +183,27 @@ void controller_base::handle_event(const SDL_Event& event)
 		wait_bh_event_ = false;
 		break;
 
+	case SDL_MOUSEWHEEL:
+		if (event.wheel.which == SDL_TOUCH_MOUSEID) {
+			break;
+		}
+		handle_scroll_wheel(event.wheel.x, event.wheel.y, MOUSE_HIT_THRESHOLD, MOUSE_MOTION_THRESHOLD);
+		break;
+
 	case SDL_MOUSEBUTTONDOWN:
 	case SDL_MOUSEBUTTONUP:
+		if (event.button.which == SDL_TOUCH_MOUSEID) {
+			break;
+		}
 		get_mouse_handler_base().mouse_press(event.button, browse_);
 		post_mouse_press(event);
 		if (get_mouse_handler_base().get_show_menu()){
 			get_display().goto_main_context_menu();
 		}
 		break;
-	case SDL_ACTIVEEVENT:
-		if (event.active.type == SDL_APPMOUSEFOCUS && event.active.gain == 0) {
+
+	case SDL_WINDOWEVENT:
+		if (event.window.event == SDL_WINDOWEVENT_LEAVE) {
 			if (get_mouse_handler_base().is_dragging()) {
 				//simulate mouse button up when the app has lost mouse focus
 				//this should be a general fix for the issue when the mouse
@@ -193,6 +223,7 @@ void controller_base::handle_event(const SDL_Event& event)
 			}
 		}
 		break;
+
 	default:
 		break;
 	}
@@ -226,8 +257,7 @@ bool controller_base::handle_scroll(CKey& key, int mousex, int mousey, int mouse
 	bool mouse_in_window = false;
 #else
 	// for mouse device.
-	bool mouse_in_window = (SDL_GetAppState() & SDL_APPMOUSEFOCUS) != 0
-		|| preferences::get("scroll_when_mouse_outside", true);
+	bool mouse_in_window = (SDL_GetAppState(get_display().video().getWindow()) & SDL_APPMOUSEFOCUS) != 0;
 #endif
 	
 	bool keyboard_focus = have_keyboard_focus();
@@ -323,14 +353,26 @@ void controller_base::play_slice(bool is_delay_enabled)
 			m_handler.set_hero_placing(&h);
 			
 		} else if (pressed_loc.valid() && !m_handler.in_multistep_state()) {
-			gui.scroll_to_tile(pressed_loc, display::WARP);
-			m_handler.select_hex(map_location(), false);
-			// gui.select_hex(pressed_loc);
+			std::vector<team>& teams = *resources::teams;
+			unit_map& units = *resources::units;
+			hero_map& heros = *resources::heros;
+
 			// sound::play_UI_sound("select-unit.wav");
-			resources::units->find(pressed_loc)->set_selecting();
-			resources::screen->invalidate_unit();
-			// now, selectedHex_ is invalid, hide context menu.
-			gui.goto_main_context_menu();			
+			unit* u = resources::units->find_unit(pressed_loc);
+			if (!u->is_city() || !teams[u->side() - 1].is_human()) {
+				gui.scroll_to_tile(pressed_loc, display::WARP);
+				m_handler.select_hex(map_location(), false);
+
+				u->set_selecting();
+				resources::screen->invalidate_unit();
+				// now, selectedHex_ is invalid, hide context menu.
+				gui.goto_main_context_menu();			
+			} else {
+				m_handler.select_hex(map_location(), false);
+
+				gui2::tside_report dlg(*resources::screen, teams, units, heros, u->side());
+				dlg.show(gui.video());
+			}
 		}
 	} else if (m != NULL){
 		const SDL_Rect& menu_loc = m->location(get_display().screen_area());
@@ -386,18 +428,13 @@ void controller_base::play_slice(bool is_delay_enabled)
 
 	// be nice when window is not visible
 	// NOTE should be handled by display instead, to only disable drawing
-	if (is_delay_enabled && (SDL_GetAppState() & SDL_APPACTIVE) == 0) {
+	if (is_delay_enabled && (SDL_GetAppState(gui.video().getWindow()) & SDL_APPACTIVE) == 0) {
 		get_display().delay(200);
 	}
 
 	if (!scrolling_ && was_scrolling) {
 #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
-		// swip result to scroll, don't update mouse hex.
-		SDL_Event new_event;
-		while(SDL_PeepEvents(&new_event, 1, SDL_GETEVENT, SDL_FINGERMOTION, SDL_FINGERMOTION) > 0) {
-			posix_print("SDL_FINGERMOTION(discard), (x, y): (%u, %u), (dx, dy): (%i, %i)\n", 
-				new_event.tfinger.x, new_event.tfinger.y, new_event.tfinger.dx, new_event.tfinger.dy);
-		};
+	
 #else
 		// scrolling ended, update the cursor and the brightened hex
 		get_mouse_handler_base().mouse_update(browse_);

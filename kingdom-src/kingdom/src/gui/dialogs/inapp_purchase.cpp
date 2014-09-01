@@ -20,6 +20,7 @@
 #include "gui/dialogs/helper.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
+#include "game_display.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 #include "gui/widgets/list.hpp"
 #else
@@ -30,10 +31,14 @@
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include "gui/dialogs/alipay.hpp"
+#include "gui/dialogs/message.hpp"
 #include "language.hpp"
 #include "game_preferences.hpp"
 #include "help.hpp"
 #include "gui/auxiliary/timer.hpp"
+#include "filesystem.hpp"
+#include "multiplayer.hpp"
 
 #include <boost/bind.hpp>
 
@@ -52,11 +57,47 @@ void restoreAppPayment() {}
 
 #endif
 
+std::string format_time_local2(time_t t)
+{
+	char time_buf[256] = {0};
+	tm* tm_l = localtime(&t);
+	if (tm_l) {
+		strftime(time_buf, sizeof(time_buf), dsgettext("wesnoth", "%b %d %y"), tm_l);
+	}
+
+	return time_buf;
+}
+
+void show_fail_tip(game_display& disp, const std::string& item)
+{
+	std::stringstream err;
+	utils::string_map symbols;
+
+	symbols["mail"] = help::tintegrate::generate_format(game_config::service_email, "green");
+	symbols["date"] = help::tintegrate::generate_format(format_time_local2(time(NULL)), "yellow");
+	symbols["item"] = help::tintegrate::generate_format(item, "yellow");
+	symbols["username"] = help::tintegrate::generate_format(preferences::login(), "yellow");
+	err << vgettext("wesnoth-lib", "Update database fail when execute In-App Purchase! In order to compensate data you should get, please send In-App Purchase information to $mail. In-App Purchase information include: date($date), item($item), username($username).", symbols);
+	gui2::show_message(disp.video(), "", err.str());
+}
+
+void upload_inapp_2_data_server(int inapp, game_display& disp, hero_map& heros, const std::string& name)
+{
+	const std::string number = "ios_magic_number_123";
+	const std::string buyer = "ios_magic_buyer_1234";
+	http::membership m = http::insert_transaction(disp, heros, number, buyer, group.leader().uid(), inapp); 
+	if (m.uid >= 0) {
+		group.from_local_membership(disp, heros, m, false);
+	} else {
+		show_fail_tip(disp, name);
+	}
+}
+
 extern "C" void inapp_purchase_cb(const char* identifier, int complete)
 {
 	const std::string id = identifier;
 	std::string short_id;
-	bool restoring = (identifier == "@restore");
+	bool restoring = std::string(identifier) == "@restore";
 	int cursel = -1;
 
 	if (!restoring) {
@@ -77,8 +118,11 @@ extern "C" void inapp_purchase_cb(const char* identifier, int complete)
 		}
 
 		if (complete) {
-			preferences::set_inapp_purchased(cursel, true);
-			preferences::write_preferences();
+			gui2::tinapp_purchase* dlg = gui2::tinapp_purchase::get_singleton();
+			if (dlg) {
+				gui2::tinapp_item& item = dlg->get_item(cursel);
+				upload_inapp_2_data_server(cursel, dlg->disp(), dlg->heros(), item.name);
+			}
 		}
 	}
 
@@ -99,9 +143,12 @@ extern "C" void inapp_purchase_cb(const char* identifier, int complete)
 			gui2::tinapp_item& item = dlg.get_item(cursel);
 
 			if (complete) {
-				item.purchased = true;
-				dlg.refresh_list(true);
+				if (!item.consumable) {
+					item.purchased = true;
+				}
+				dlg.refresh_list(false, true);
 			}
+
 			symbols["name"] = help::tintegrate::generate_format(item.name, "blue");
 			strstr << vgettext("wesnoth-lib", "Purchas '$name' $result|!", symbols);
 		} else {
@@ -148,6 +195,7 @@ tinapp_item::tinapp_item(int _index, const std::string& _short_id)
 	: index(_index)
 	, short_id(_short_id)
 	, purchased(false)
+	, consumable(true)
 {
 	if (!short_id.empty()) {
 		id = std::string("com.ancientcc.testwin.") + short_id;
@@ -155,12 +203,28 @@ tinapp_item::tinapp_item(int _index, const std::string& _short_id)
 		std::stringstream strstr;
 		strstr << NOUN_PREFIX_STR_INAPP << short_id;
 		name = dgettext("wesnoth-card", strstr.str().c_str());
-
+		
 		strstr.str("");
 		strstr << NOUN_PREFIX_STR_INAPP_DESC << short_id;
 		description = dgettext("wesnoth-card", strstr.str().c_str());
+		
+		strstr.str("");
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
+#else
+		if (index == game_config::transaction_type_vip) {
+			int start;
+			int increase = 30 * 24 * 3600;
+			if (preferences::vip_expire() < time(NULL)) {
+				start = time(NULL);
+			} else {
+				start = preferences::vip_expire();
+			}
+			strstr << format_time_ymd(start) << "--" << format_time_ymd(start + increase);
+		}
+#endif
+		remark = strstr.str();
 
-		purchased = preferences::inapp_purchased(index);
+		purchased = !consumable && preferences::inapp_purchased(index);
 
 		icon = std::string("inapp-purchase/") + short_id + ".png";
 		price = 98 + index;
@@ -168,14 +232,17 @@ tinapp_item::tinapp_item(int _index, const std::string& _short_id)
 		id = "";
 		name = "";
 		icon = "";
+		remark = "";
 		price = 0;
 	}
 }
 
 tinapp_purchase* tinapp_purchase::singleton_ = NULL;
 
-tinapp_purchase::tinapp_purchase(bool browse)
-	: browse_(browse)
+tinapp_purchase::tinapp_purchase(game_display& disp, hero_map& heros, bool browse)
+	: disp_(disp)
+	, heros_(heros)
+	, browse_(browse)
 	, items_()
 	, purchase_(NULL)
 	, status_(NULL)
@@ -202,7 +269,7 @@ void tinapp_purchase::item_selected(twindow& window)
 
 	int cursel = list.get_selected_row();
 
-	purchase_->set_active(!browse_ && !items_[cursel].purchased && !ing_timer_);
+	purchase_->set_active(!browse_ && !ing_timer_);
 
 	refresh_tip(window, items_[cursel]);
 }
@@ -210,25 +277,52 @@ void tinapp_purchase::item_selected(twindow& window)
 void tinapp_purchase::refresh_tip(twindow& window, const tinapp_item& item)
 {
 	std::stringstream strstr;
+	utils::string_map symbols;
 
 	strstr.str("");
 	strstr << help::tintegrate::generate_format(_("Description"), "green") << "\n";
 	strstr << item.description;
+	strstr << "\n\n";
+	strstr << help::tintegrate::generate_format(_("Notice"), "red") << "\n";
+	if (item.index == game_config::transaction_type_vip) {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
+#else
+		if (preferences::vip2()) {
+			int day = 30;
+			if (preferences::vip_expire() >= time(NULL)) {
+				day = (preferences::vip_expire() - time(NULL)) / (24 * 3600);
+			}
+			symbols["day"] = help::tintegrate::generate_format(day, "green");
+			strstr << vgettext("wesnoth-lib", "You is VIP currently, hold $day day still", symbols) << "\n";
+		} else {
+			strstr << _("You isn't VIP currently") << "\n";
+		}
+#endif
+	} else {
+		symbols["username"] = help::tintegrate::generate_format(_("You"));
+		symbols["coin"] = help::tintegrate::generate_format(preferences::coin(), "yellow");
+		symbols["score"] = help::tintegrate::generate_format(preferences::score(), "yellow");
+		strstr << vgettext("wesnoth-lib", "$username has $coin coin and $score score", symbols) << "\n";
+	}
 	tscroll_label* tip = find_widget<tscroll_label>(&window, "tip", false, true);
 	tip->set_label(strstr.str());
-
-	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Notice"), "red") << "\n";
-	strstr << _("Uninstall \"War of Kingdom\" will clear purchase recorder") << "\n";
-	strstr << _("Update \"War of Kingdom\" will clear purchase recorder");
-	tscroll_label* notice = find_widget<tscroll_label>(&window, "notice", false, true);
-	notice->set_label(strstr.str());
 }
 
-void tinapp_purchase::refresh_list(bool set_purchase) const
+void tinapp_purchase::refresh_list(bool clear_items, bool set_purchase)
 {
+	if (clear_items) {
+		items_.clear();
+		for (std::map<int, std::string>::const_iterator it = game_config::inapp_items.begin(); it != game_config::inapp_items.end(); ++ it) {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
+			if (it->first >= game_config::transaction_type_8coin) {
+				break;
+			}
+#endif
+			items_.push_back(tinapp_item(it->first, it->second));
+		}
+	}
+	
 	list_->clear();
-
 	std::stringstream strstr;
 	for (std::vector<tinapp_item>::const_iterator it = items_.begin(); it != items_.end(); ++ it) {
 		string_map list_item;
@@ -245,7 +339,35 @@ void tinapp_purchase::refresh_list(bool set_purchase) const
 		list_item_item.insert(std::make_pair("name", list_item));
 
 		strstr.str("");
-		strstr << "USD $1.99";
+		strstr << help::tintegrate::generate_format(it->remark, "green");
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("remark", list_item));
+
+		strstr.str("");
+		if (it->index == game_config::transaction_type_vip) {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
+			strstr << "USD $2.99";
+#else
+			strstr << "RMB 15";
+#endif
+		} else if (it->index == game_config::transaction_type_2coin) {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
+			strstr << "USD $4.99";
+#else
+			strstr << "RMB 25";
+#endif
+		} else if (it->index == game_config::transaction_type_8coin) {
+			strstr << "RMB 100";
+
+		} else if (it->index == game_config::transaction_type_45coin) {
+			strstr << "RMB 500";
+
+		} else if (it->index == game_config::transaction_type_100coin) {
+			strstr << "RMB 1000";
+
+		}
+		strstr << _("coin^Unit");
+
 		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("cost", list_item));
 
@@ -255,9 +377,14 @@ void tinapp_purchase::refresh_list(bool set_purchase) const
 		widget->set_visible(it->purchased? twidget::VISIBLE: twidget::INVISIBLE);
 	}
 
-	if (set_purchase) {
-		purchase_->set_active(!browse_ && !items_[0].purchased);
+	if (ing_item_ != -1) {
+		list_->select_row(ing_item_);
 	}
+
+	if (set_purchase) {
+		purchase_->set_active(!browse_ && !items_[list_->get_selected_row()].purchased);
+	}
+	refresh_tip(*list_->get_window(), items_[list_->get_selected_row()]);
 }
 
 void tinapp_purchase::pre_show(CVideo& /*video*/, twindow& window)
@@ -280,16 +407,21 @@ void tinapp_purchase::pre_show(CVideo& /*video*/, twindow& window)
 	status_ = find_widget<tlabel>(&window, "status", false, true);
 	list_ = find_widget<tlistbox>(&window, "item_list", false, true);
 
-	// restore_->set_visible(twidget::INVISIBLE);
-
-	for (std::map<int, std::string>::const_iterator it = game_config::inapp_items.begin(); it != game_config::inapp_items.end(); ++ it) {
-		items_.push_back(tinapp_item(it->first, it->second));
-	}
-
-	refresh_list();
-
+	refresh_list(true);
 	list_->set_callback_value_change(dialog_callback<tinapp_purchase, &tinapp_purchase::item_selected>);
-	item_selected(window);
+
+	// current no non-consumable in-purchase, don't use restore
+	purchase_->set_active(!browse_);
+	bool no_nonconsumable = true;
+	for (std::vector<tinapp_item>::const_iterator it = items_.begin(); it != items_.end(); ++ it) {
+		if (!it->consumable) {
+			no_nonconsumable = false;
+			break;
+		}
+	}
+	if (no_nonconsumable) {
+		restore_->set_visible(twidget::INVISIBLE);
+	}
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "restore", false)
@@ -301,6 +433,13 @@ void tinapp_purchase::pre_show(CVideo& /*video*/, twindow& window)
 		find_widget<tbutton>(&window, "purchase", false)
 		, boost::bind(
 			&tinapp_purchase::purchase
+			, this
+			, boost::ref(window)));
+
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "quit", false)
+		, boost::bind(
+			&tinapp_purchase::quit
 			, this
 			, boost::ref(window)));
 
@@ -322,6 +461,7 @@ void tinapp_purchase::restore(twindow& window)
 
 void tinapp_purchase::purchase(twindow& window)
 {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
 	int res = find_widget<tlistbox>(&window, "item_list", false).get_selected_row();
 	tinapp_item& item = items_[res];
 
@@ -329,6 +469,32 @@ void tinapp_purchase::purchase(twindow& window)
 
 	ing_item_ = res;
 	purchase_status(false);
+#else
+	tlistbox& list = find_widget<tlistbox>(&window, "item_list", false);
+	int cursel = list.get_selected_row();
+
+	gui2::talipay dlg(disp_, heros_, "", cursel);
+	dlg.show(disp_.video());
+	if (dlg.get_retval() != gui2::twindow::OK) {
+		return;
+	}
+	refresh_list(true, true);
+#endif
+}
+
+void tinapp_purchase::quit(twindow& window)
+{
+	if (!ing_timer_) {
+		window.set_retval(twindow::OK);
+		return;
+	}
+	
+	std::string message = _("System is processing inapp-purchase request, and force to quit maybe result data not integrated. Do you want to Quit?");
+	int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
+	if (res != gui2::twindow::OK) {
+		return;
+	}
+	window.set_retval(twindow::OK);
 }
 
 void tinapp_purchase::timer_handler()
@@ -365,16 +531,19 @@ tinapp_item& tinapp_purchase::get_item(int index)
 
 void tinapp_purchase::purchase_status(bool exit)
 {
-	restore_->set_active(exit);
-
 	if (!exit) {
+        restore_->set_active(false);
 		purchase_->set_active(false);
 
 		ing_ticks_ = 0;
 		ing_timer_ = add_timer(50, boost::bind(&tinapp_purchase::timer_handler, this), true);
 	} else {
 		gui2::remove_timer(ing_timer_);
+
+        restore_->set_active(true);
+		purchase_->set_active(!items_[list_->get_selected_row()].purchased);
 		ing_timer_ = 0;
+
 		ing_item_ = -1;
 	}
 }

@@ -62,13 +62,12 @@ BPath be_path;
 #include "log.hpp"
 #include "loadscreen.hpp"
 #include "scoped_resource.hpp"
+#include "gettext.hpp"
+#include "formula_string_utils.hpp"
 #include "posix.h"
+#include "saes.hpp"
 
 #include <boost/foreach.hpp>
-
-#ifdef ANDROID
-#include <android/log.h>
-#endif
 
 static lg::log_domain log_filesystem("filesystem");
 #define DBG_FS LOG_STREAM(debug, log_filesystem)
@@ -187,6 +186,12 @@ void get_files_in_dir(const std::string &directory,
 
 		if (::stat(fullname.c_str(), &st) != -1) {
 			if (S_ISREG(st.st_mode)) {
+				if (basename == "mod_config.cfg") {
+					continue;
+				}
+				if ((filter & SKIP_TERRAIN) && basename == "terrain-graphics.cfg") {
+					continue;
+				}
 				if (files != NULL) {
 					if (mode == ENTIRE_FILE_PATH)
 						files->push_back(fullname);
@@ -201,14 +206,24 @@ void get_files_in_dir(const std::string &directory,
 					checksum->nfiles++;
 				}
 			} else if (S_ISDIR(st.st_mode)) {
-				if ((filter & SKIP_MEDIA_DIR) && (basename == "images"|| basename == "sounds" || basename == "music"))
+				if ((filter & SKIP_MEDIA_DIR) && (basename == "images"|| basename == "sounds" || basename == "music")) {
 					continue;
-				if ((filter & SKIP_SCENARIO_DIR) && (basename == "scenarios"|| basename == "maps" || basename == "music"))
+				}
+				if ((filter & SKIP_SCENARIO_DIR) && (basename == "scenarios"|| basename == "maps" || basename == "music")) {
 					continue;
-				if ((filter & SKIP_GUI_DIR) && basename == "gui")
+				}
+				if ((filter & SKIP_GUI_DIR) && basename == "gui") {
 					continue;
-				if ((filter & SKIP_INTERNAL_DIR) && basename == "units-internal")
+				}
+				if ((filter & SKIP_INTERNAL_DIR) && basename == "units-internal") {
 					continue;
+				}
+				if ((filter & SKIP_TERRAIN) && basename == "terrain-graphics") {
+					continue;
+				}
+				if ((filter & SKIP_BOOK) && basename == "book") {
+					continue;
+				}
 
 				if (reorder == DO_REORDER &&
 						::stat((fullname+"/"+maincfg_filename).c_str(), &st)!=-1 &&
@@ -584,9 +599,8 @@ void set_preferences_dir(std::string path)
 	game_config::preferences_dir_utf8 = game_config::preferences_dir;
 #endif /*_WIN32*/
 	user_data_dir = game_config::preferences_dir;
-#ifdef ANDROID
-	__android_log_print(ANDROID_LOG_INFO, "SDL", "set_preferences, user_data_dir: %s", user_data_dir.c_str());
-#endif
+	posix_print("set_preferences, user_data_dir: %s", user_data_dir.c_str());
+
 	user_data_dir_utf8 = game_config::preferences_dir_utf8;
 	setup_user_data_dir();
 }
@@ -815,7 +829,7 @@ void write_file(const std::string& fname, const std::string& data)
 	}
 }
 
-void write_file(const std::string& fname, char* data, int len, bool to_utf16)
+void write_file(const std::string& fname, const char* data, int len, bool to_utf16)
 {
 	posix_file_t fp;
 	uint32_t bytertd;
@@ -1462,35 +1476,173 @@ std::string conv_ansi_utf8_2(const std::string &name, bool a2u)
 	return result;
 }
 
-const char* utf8_2_ansi(const char* str)
+const char* utf8_2_ansi(const std::string& str)
 {
-	static const int wlen = 8192;
-	static WCHAR wc[wlen];
-	static char ac[wlen * 2];
+	static std::string ret;
+	ret = conv_ansi_utf8_2(str, false);
+	return ret.c_str();
+}
 
-	ac[0] = '\0';
-	if (!str || str[0] == '\0') {
-		return ac;
-	}
-	if (MultiByteToWideChar(CP_UTF8, 0, str, -1, wc, wlen) == 0) {
-		return ac;
-	}
-	WideCharToMultiByte(CP_ACP, 0, wc, -1, ac, wlen * 2, NULL, NULL);
-	return ac;
+const char* ansi_2_utf8(const std::string& str)
+{
+	static std::string ret;
+	ret = conv_ansi_utf8_2(str, true);
+	return ret.c_str();
 }
 
 #else
 
-const char* utf8_2_ansi(const char* str)
+const char* utf8_2_ansi(const std::string& str)
 {
-	static const int wlen = 8192;
-	static char ac[wlen * 2];
+	static std::string ret = str;
+	return ret.c_str();
+}
 
-	ac[0] = '\0';
-	if (str) {
-		strcpy(ac, str);
-	}
-	return ac;
+const char* ansi_2_utf8(const std::string& str)
+{
+	static const std::string ret = str;
+	return ret.c_str();
 }
 
 #endif
+
+std::string format_time_ymd(time_t t)
+{
+	char time_buf[256] = {0};
+	tm* tm_l = localtime(&t);
+	if (tm_l) {
+		const size_t res = strftime(time_buf, sizeof(time_buf), _("%b %d %y"), tm_l);
+		if (res == 0) {
+			time_buf[0] = 0;
+		}
+	}
+
+	return time_buf;
+}
+
+std::string format_time_date(time_t t)
+{
+	time_t curtime = time(NULL);
+	const struct tm* timeptr = localtime(&curtime);
+	if(timeptr == NULL) {
+		return "";
+	}
+
+	const struct tm current_time = *timeptr;
+
+	timeptr = localtime(&t);
+	if(timeptr == NULL) {
+		return "";
+	}
+
+	const struct tm save_time = *timeptr;
+
+	const char* format_string = _("%b %d %y");
+
+	if (current_time.tm_year == save_time.tm_year) {
+		const int days_apart = current_time.tm_yday - save_time.tm_yday;
+
+		if(days_apart == 0) {
+			// save is from today
+			format_string = _("%H:%M");
+		} else if(days_apart > 0 && days_apart <= current_time.tm_wday) {
+			// save is from this week. On chinese, %A cannot display. use %m%d instead.
+			format_string = _("%A, %H:%M");
+		} else {
+			// save is from current year
+			format_string = _("%b %d");
+		}
+	} else {
+		// save is from a different year
+		format_string = _("%b %d %y");
+	}
+
+	char buf[64];
+	const size_t res = strftime(buf,sizeof(buf),format_string,&save_time);
+	if(res == 0) {
+		buf[0] = 0;
+	}
+	
+	return buf;
+}
+
+std::string format_time_local(time_t t)
+{
+	char time_buf[256] = {0};
+	tm* tm_l = localtime(&t);
+	if (tm_l) {
+		const size_t res = strftime(time_buf,sizeof(time_buf),_("%a %b %d %H:%M %Y"),tm_l);
+		if(res == 0) {
+			time_buf[0] = 0;
+		}
+	}
+
+	return time_buf;
+}
+
+std::string format_time_elapse(time_t elapse)
+{
+	if (elapse < 0) {
+		elapse = 0;
+	}
+	int sec = elapse % 60;
+	int min = (elapse / 60) % 60;
+	int hour = (elapse / 3600) % 24;
+	int day = elapse / (3600 * 24);
+
+	std::stringstream strstr;
+	if (day) {
+		utils::string_map symbols;
+		symbols["d"] = str_cast(day);
+		strstr << vgettext("$d days", symbols) << " ";
+	}
+	strstr << std::setfill('0') << std::setw(2) << hour << ":";
+	strstr << std::setfill('0') << std::setw(2) << min << ":";
+	strstr << std::setfill('0') << std::setw(2) << sec;
+	
+	return strstr.str();
+}
+
+//
+// encrypt/decrypt
+//
+// if return isn't NULL, caller need free heap.
+char* saes_encrypt_heap(const char* ptext, int size, unsigned char* key)
+{
+	if (size == 0) {
+		return NULL;
+	}
+	char* ctext = (char*)malloc((size & 1)? size + 1: size);
+	saes_encrypt_stream((const unsigned char*)ptext, size, key, ctext);
+	return ctext;
+}
+
+// if return isn't NULL, caller need free heap.
+char* saes_decrypt_heap(const char* ctext, int size, unsigned char* key)
+{
+	if (size == 0 || (size & 1)) {
+		return NULL;
+	}
+	char* ptext = (char*)malloc(size);
+	saes_decrypt_stream((const unsigned char*)ctext, size, key, ptext);
+	return ptext;
+}
+
+tsaes_encrypt::tsaes_encrypt(const char* ctext, int s, unsigned char* key)
+	: size(0)
+{
+	buf = saes_encrypt_heap(ctext, s, key);
+	if (buf) {
+		size = s & 1? s + 1: s;
+	}
+}
+
+tsaes_decrypt::tsaes_decrypt(const char* ptext, int s, unsigned char* key)
+	: size(s)
+{
+	buf = saes_decrypt_heap(ptext, size, key);
+	if (buf && !buf[size - 1]) {
+		size --;
+	}
+}
+

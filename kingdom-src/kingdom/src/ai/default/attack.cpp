@@ -84,9 +84,7 @@ attack_analysis& attack_analysis::operator=(const attack_analysis& that)
 }
 
 void attack_analysis::analyze(const gamemap& map, unit_map& units,
-				std::map<std::pair<const unit*, const unit*>, battle_context*>& unit_stats_cache,
-				const std::vector<std::pair<unit*, int> >& units2,
-				const std::multimap<map_location, int>& srcdst2, const std::multimap<int, map_location>& dstsrc2)
+				std::map<std::pair<const unit*, const unit*>, battle_context*>& unit_stats_cache)
 {
 	const int target_cost = target->cost();
 	target_value = target_cost;
@@ -147,20 +145,20 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 	target_dead = def.dead_ >= 1;
 
 	// Note we didn't fight at all if defender is already dead.
-	double cost = up->second->cost();
+	double cost = src_ptr->cost();
 	const bool on_village = map.is_village(m.second);
 	// Up to double the value of a unit based on experience
-	cost += 0.5 * (double(up->second->experience())/double(up->second->max_experience())) * cost;
+	cost += 0.5 * (double(src_ptr->experience())/double(src_ptr->max_experience())) * cost;
 	
 	// We should encourage multi-phase attack.
 	resources_used += cost / movements.size();
 	avg_losses += cost * att.dead_;
 
 	// add factor of slow/break
-	if (bc->get_attacker_stats().slows && !target->get_state(unit::STATE_SLOWED)) {
+	if (bc->get_attacker_stats().slows && !target->get_state(ustate_tag::SLOWED)) {
 		chance_to_kill += 0.06 / movements.size();
 	}
-	if (bc->get_attacker_stats().breaks && !target->get_state(unit::STATE_BROKEN)) {
+	if (bc->get_attacker_stats().breaks && !target->get_state(ustate_tag::BROKEN)) {
 		chance_to_kill += 0.04 / movements.size();
 	}
 
@@ -179,8 +177,8 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 	// For each level of attacker def gets 1 xp or
 	// kill_experience.
 	//
-	int fight_xp = game_config::attack_xp(up->second->level());
-	int kill_xp = game_config::kill_xp(up->second->level());
+	int fight_xp = game_config::attack_xp(src_ptr->level());
+	int kill_xp = game_config::kill_xp(src_ptr->level());
 	def_avg_experience += att.dead_ >= 1? kill_xp: fight_xp;
 	
 	if (!target_dead && target->can_advance() && def_avg_experience >= target->max_experience() - target->experience()) {
@@ -189,12 +187,12 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 		target_value -= 0.3 * target_cost;
 	} else {
 		double dmage = 1.0 * bc->get_attacker_stats().num_blows * bc->get_attacker_stats().damage / movements.size();
-		chance_to_kill += dmage / target->max_hitpoints();
+		chance_to_kill += dmage / target->hitpoints();
 	}
 
 	// The reward for advancing a unit is to get a 'negative' loss of that unit
-	if (up->second->can_advance()) {
-		int xp_for_advance = up->second->max_experience() - up->second->experience();
+	if (src_ptr->can_advance()) {
+		int xp_for_advance = src_ptr->max_experience() - src_ptr->experience();
 		int kill_xp, fight_xp;
 
 		// See bug #6272... in some cases, unit already has got enough xp to advance,
@@ -212,10 +210,10 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 			if (kill_xp >= xp_for_advance) {
 				avg_losses -= cost * 0.3;
 			} else {
-				avg_losses -= 0.5 * (kill_xp / double(up->second->max_experience())) * cost;
+				avg_losses -= 0.5 * (kill_xp / double(src_ptr->max_experience())) * cost;
 			}
 		} else {
-			avg_losses -= 0.5 * (fight_xp / double(up->second->max_experience())) * cost;
+			avg_losses -= 0.5 * (fight_xp / double(src_ptr->max_experience())) * cost;
 		}
 	}
 
@@ -231,7 +229,7 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 	}
 }
 
-double attack_analysis::rating(double aggression) const
+double attack_analysis::rating(double aggression, const map_location& guard_loc) const
 {
 	double adjusted_target_value = target_value;
 	if (target->is_city() || target->fort()) {
@@ -240,15 +238,22 @@ double attack_analysis::rating(double aggression) const
 		adjusted_target_value += target_value;
 	} else if (target->type()->master() == hero::number_tactic) {
 		adjusted_target_value += target_value;
-	} else if (target->master().get_flag(hero_flag_robber)) {
+	} else if (target->is_robber()) {
 		// highest priority
 		adjusted_target_value += 30 * target_value;
 	}
+	if (guard_loc.valid() && distance_between(target->get_location(), guard_loc) <= 3) {
+		adjusted_target_value += 2 * target_value;
+	}
+	if (chance_to_kill >= 1) {
+		adjusted_target_value += target_value;
+	}
 
+	double adjusted_chance_to_kill = chance_to_kill <= 1.5? chance_to_kill: 1.5;
 	//FIXME: One of suokko's reverted changes removed this.  Should it be gone?
 	// Only use the leader if we do a serious amount of damage,
 	// compared to how much they do to us.
-	double value = chance_to_kill * adjusted_target_value - avg_losses * (1.0 - aggression);
+	double value = adjusted_chance_to_kill * adjusted_target_value - avg_losses * (1.0 - aggression);
 	value /= (resources_used + 2 * terrain_quality) / 3;
 
 	// ensure provoked must attack provoke.

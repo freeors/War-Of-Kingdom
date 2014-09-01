@@ -28,6 +28,7 @@
 #include "../tooltips.hpp"
 
 class map_generator;
+class hero_map;
 
 namespace tooltips {
 struct manager;
@@ -48,7 +49,6 @@ namespace preferences {
 
 namespace editor {
 
-class brush_bar;
 struct size_specs;
 class terrain_palette;
 class editor_map;
@@ -69,7 +69,7 @@ class editor_controller : public controller_base,
 		 * to the map can be retrieved between the main loop's end and the controller's
 		 * destruction.
 		 */
-		editor_controller(const config &game_config, CVideo& video);
+		editor_controller(const config &game_config, CVideo& video, hero_map& heros, int mode);
 
 		~editor_controller();
 
@@ -281,6 +281,11 @@ class editor_controller : public controller_base,
 		void set_mouseover_overlay();
 		void clear_mouseover_overlay();
 
+		void change_terrain_group(const std::string& id) const;
+		void change_brush();
+		void system();
+		void do_map();
+
 	protected:
 		/* controller_base overrides */
 		void process_keyup_event(const SDL_Event& event);
@@ -313,6 +318,7 @@ class editor_controller : public controller_base,
 		 */
 		void editor_settings_dialog_redraw_callback(int r, int g, int b);
 
+		std::vector<std::string> map_modified() const;
 	private:
 		/** init the display object and general set-up */
 		void init_gui(CVideo& video);
@@ -370,6 +376,10 @@ class editor_controller : public controller_base,
 		 */
 		void redo();
 
+		hero_map& heros_;
+
+		int mode_;
+
 		boost::scoped_ptr<rand_rng::rng> rng_;
 
 		boost::scoped_ptr<rand_rng::set_random_generator> rng_setter_;
@@ -394,9 +404,6 @@ class editor_controller : public controller_base,
 
 		/** The terrain palette */
 		boost::scoped_ptr<terrain_palette> palette_;
-
-		/** The brush selector */
-		boost::scoped_ptr<brush_bar> brush_bar_;
 
 		/* managers */
 		boost::scoped_ptr<preferences::display_manager> prefs_disp_manager_;

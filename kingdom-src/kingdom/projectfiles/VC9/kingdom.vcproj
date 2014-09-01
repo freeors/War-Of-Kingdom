@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\external\boost_1_46;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
+				AdditionalIncludeDirectories="..\..\external\boost_1_46;..\..\external\lpng;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NOMINMAX;LOCALEDIR=\&quot;translations\&quot;;FIFODIR=\&quot;/var/run/wesnothd\&quot;;HAVE_CONFIG_H;DISABLE_POOL_ALLOC;HAS_RELATIVE_LOCALEDIR=1;_KINGDOM_EXE;BOOST_ALL_NO_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="kingdom-core.lib lualib.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ws2_32.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL_mixer.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL_ttf.lib"
+				AdditionalDependencies="kingdom-core.lib lualib.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ws2_32.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL2_mixer.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(OutDir)"
 				GenerateDebugInformation="true"
@@ -88,13 +88,13 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL.dll $(TargetDir)\SDL.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL_ttf.dll $(TargetDir)\SDL_ttf.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL_mixer.dll $(TargetDir)\SDL_mixer.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL_net.dll $(TargetDir)\SDL_net.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL_image.dll $(TargetDir)\SDL_image.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)\intl.dll&#x0D;&#x0A;"
+				CommandLine="copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2.dll $(TargetDir)\SDL2.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_ttf.dll $(TargetDir)\SDL2_ttf.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_mixer.dll $(TargetDir)\SDL2_mixer.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_net.dll $(TargetDir)\SDL2_net.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_image.dll $(TargetDir)\SDL2_image.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)\intl.dll&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)\kingdom"
 			ConfigurationType="1"
 			CharacterSet="2"
 			WholeProgramOptimization="0"
@@ -119,7 +119,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="4"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\external\boost_1_46;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src;..\..\src\lua"
+				AdditionalIncludeDirectories="..\..\external\boost_1_46;..\..\external\lpng;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src;..\..\src\lua"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NOMINMAX;NDEBUG;_KINGDOM_EXE;BOOST_ALL_NO_LIB"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -138,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="kingdom-core.lib lualib.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ws2_32.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL_mixer.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL_ttf.lib"
+				AdditionalDependencies="kingdom-core.lib lualib.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ws2_32.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib ..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib ..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL2_mixer.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib ..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -167,7 +167,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL.dll $(TargetDir)\SDL.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL_ttf.dll $(TargetDir)\SDL_ttf.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL_mixer.dll $(TargetDir)\SDL_mixer.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL_net.dll $(TargetDir)\SDL_net.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL_image.dll $(TargetDir)\SDL_image.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)\intl.dll&#x0D;&#x0A;&#x0D;&#x0A;"
+				CommandLine="copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2.dll $(TargetDir)\SDL2.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_ttf.dll $(TargetDir)\SDL2_ttf.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_mixer.dll $(TargetDir)\SDL2_mixer.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_net.dll $(TargetDir)\SDL2_net.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_image.dll $(TargetDir)\SDL2_image.dll&#x0D;&#x0A;copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)\intl.dll&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -225,10 +225,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\clipboard.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\config_cache.cpp"
 				>
 			</File>
 			<File
@@ -457,6 +453,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\playturn.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\png.cpp"
 				>
 			</File>
 			<File
@@ -958,6 +958,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\src\sdl_compat.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\sdl_utils.hpp"
 				>
 			</File>
@@ -1100,11 +1104,11 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath="..\..\packaging\windows\kingdom.ico"
+				RelativePath=".\kingdom.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\kingdom.ico"
+				RelativePath="..\..\packaging\windows\kingdom.ico"
 				>
 			</File>
 			<File
@@ -1162,26 +1166,6 @@
 			<File
 				RelativePath="..\..\src\ai\game_info.hpp"
 				>
-			</File>
-			<File
-				RelativePath="..\..\src\ai\interface.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\ai\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\ai\"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\ai\interface.hpp"
@@ -1571,6 +1555,30 @@
 				Name="dialogs"
 				>
 				<File
+					RelativePath="..\..\src\gui\dialogs\alipay.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\alipay.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\artifical_list.cpp"
 					>
 					<FileConfiguration
@@ -1592,6 +1600,54 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\artifical_list.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\book.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\book.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\build_ea.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\build_ea.hpp"
 					>
 				</File>
 				<File
@@ -1715,7 +1771,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\gui\dialogs\data_manage.cpp"
+					RelativePath="..\..\src\gui\dialogs\design.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1735,31 +1791,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\src\gui\dialogs\data_manage.hpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\src\gui\dialogs\debug_clock.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\gui\dialogs\"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\gui\dialogs\"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\src\gui\dialogs\debug_clock.hpp"
+					RelativePath="..\..\src\gui\dialogs\design.hpp"
 					>
 				</File>
 				<File
@@ -1811,7 +1843,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\gui\dialogs\edit_label.cpp"
+					RelativePath="..\..\src\gui\dialogs\edit_box.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -1831,7 +1863,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\src\gui\dialogs\edit_label.hpp"
+					RelativePath="..\..\src\gui\dialogs\edit_box.hpp"
 					>
 				</File>
 				<File
@@ -1976,6 +2008,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\exchange.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\exile.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\exile.hpp"
 					>
 				</File>
 				<File
@@ -2155,7 +2211,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\gui\dialogs\gamestate_inspector.cpp"
+					RelativePath="..\..\src\gui\dialogs\give.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -2175,7 +2231,55 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\src\gui\dialogs\gamestate_inspector.hpp"
+					RelativePath="..\..\src\gui\dialogs\give.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\group.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\group.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\help_screen.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\help_screen.hpp"
 					>
 				</File>
 				<File
@@ -2759,6 +2863,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\personnel.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\personnel.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\play_card.cpp"
 					>
 					<FileConfiguration
@@ -2780,6 +2908,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\play_card.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\player_city.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\player_city.hpp"
 					>
 				</File>
 				<File
@@ -2852,6 +3004,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\preferences.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\prelude.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\prelude.hpp"
 					>
 				</File>
 				<File
@@ -2959,6 +3135,78 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\side_report.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\side_report.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\siege_tent.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\siege_tent.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\signin.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\signin.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\simple_item_selector.cpp"
 					>
 					<FileConfiguration
@@ -2983,7 +3231,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\src\gui\dialogs\story_screen.cpp"
+					RelativePath="..\..\src\gui\dialogs\square.cpp"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3003,7 +3251,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\src\gui\dialogs\story_screen.hpp"
+					RelativePath="..\..\src\gui\dialogs\square.hpp"
 					>
 				</File>
 				<File
@@ -3028,6 +3276,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\strategy_list.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\subcontinent.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\subcontinent.hpp"
 					>
 				</File>
 				<File
@@ -3439,6 +3711,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\user_message.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\user_message.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\user_report.cpp"
 					>
 					<FileConfiguration
@@ -3724,6 +4020,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\widgets\helper.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\widgets\hexmap.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\widgets\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\widgets\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\widgets\hexmap.hpp"
 					>
 				</File>
 				<File
@@ -4866,6 +5186,30 @@
 						>
 					</File>
 					<File
+						RelativePath="..\..\src\gui\auxiliary\widget_definition\hexmap.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)\gui\auxiliary\widget_definition\"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)\gui\auxiliary\widget_definition\"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="..\..\src\gui\auxiliary\widget_definition\hexmap.hpp"
+						>
+					</File>
+					<File
 						RelativePath="..\..\src\gui\auxiliary\widget_definition\horizontal_scrollbar.cpp"
 						>
 						<FileConfiguration
@@ -5467,6 +5811,30 @@
 					</File>
 					<File
 						RelativePath="..\..\src\gui\auxiliary\window_builder\helper.hpp"
+						>
+					</File>
+					<File
+						RelativePath="..\..\src\gui\auxiliary\window_builder\hexmap.cpp"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)\gui\auxiliary\window_builder\"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								ObjectFile="$(IntDir)\gui\auxiliary\window_builder\"
+							/>
+						</FileConfiguration>
+					</File>
+					<File
+						RelativePath="..\..\src\gui\auxiliary\window_builder\hexmap.hpp"
 						>
 					</File>
 					<File

@@ -21,6 +21,7 @@
 #include "config.hpp"
 #include <set>
 
+class game_display;
 class team;
 class unit;
 class unit_map;
@@ -34,7 +35,7 @@ class tlistbox;
 class ttreasure : public tdialog
 {
 public:
-	explicit ttreasure(std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<std::pair<int, unit*> >& human_pairs, bool replaying);
+	explicit ttreasure(game_display& disp, std::vector<team>& teams, unit_map& units, hero_map& heros, std::vector<std::pair<int, unit*> >& human_pairs, bool replaying);
 
 protected:
 	/** Inherited from tdialog. */
@@ -57,6 +58,7 @@ private:
 	void refresh_3button(twindow& window, const hero& h);
 	void set_internal(twindow& window);
 private:
+	game_display& disp_;
 	std::vector<team>& teams_;
 	unit_map& units_;
 	hero_map& heros_;

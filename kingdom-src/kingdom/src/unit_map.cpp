@@ -15,7 +15,6 @@
 /** @file unit_map.cpp */
 
 #include "unit.hpp"
-#include "unit_id.hpp"
 #include "log.hpp"
 #include "map.hpp"
 #include "resources.hpp"
@@ -30,7 +29,6 @@
 #include <functional>
 
 #include "actions.hpp"
-
 
 //
 // city_map section
@@ -62,7 +60,6 @@ city_map::~city_map()
 	clear_map();
 }
 
-// @size: 最多可能的城市数, 它必须是一个可信赖值, 推荐值就是地图格子数
 void city_map::realloc_map(const size_t size)
 {
 	if (map_) {
@@ -118,7 +115,6 @@ city_map::const_iterator city_map::end() const
 	return city_map_const_iter_invalid; 
 }
 
-// @city: 函数不判断该参数合法性, 调用程序必须保证该值是指向城市
 void city_map::add(artifical* city)
 {
 	if (map_[city->cityno()]) {
@@ -133,7 +129,7 @@ void city_map::add(artifical* city)
 	}
 }
 
-// @city: 该参数需是一个有效指针
+// @city: must be valid
 void city_map::erase(const artifical* city)
 {
 	if (!map_[city->cityno()]) {
@@ -155,6 +151,7 @@ artifical* city_map::city_from_cityno(int cityno)
 // unit_map section
 //
 surface unit_map::desc_bg_[10] = {};
+surface unit_map::desc_hot = surface();
 surface unit_map::enemy_orb_ = surface();
 surface unit_map::ally_orb_ = surface();
 surface unit_map::moved_orb_ = surface();
@@ -165,9 +162,16 @@ surface unit_map::self_orb_ = surface();
 
 surface unit_map::normal_food = surface();
 surface unit_map::lack_food = surface();
+surface unit_map::robber = surface();
+
+std::string unit_map::bar_vtl_png;
+std::string unit_map::bar_vtl_hot_png;
 
 unit* unit_map::scout_unit_ = NULL;
 std::map<std::pair<int, int>, size_t> unit_map::inter_city_move_cost_ = std::map<std::pair<int, int>, size_t>();
+
+int unit_map::main_ticks = 0;
+int unit_map::top_side = 0;
 
 std::map<const map_location, int> unit_map::economy_areas_;
 
@@ -181,7 +185,7 @@ void unit_map::set_zoom()
 		desc_bg_[i].assign(adjust_surface_alpha(desc_bg_[i], ftofxp(0.7), false));
 		SDL_SetSurfaceRLE(desc_bg_[i].get(), 0);
 	}
-
+	desc_hot = image::get_image("misc/unit-desc-hot.png", image::SCALED_TO_ZOOM);
 	enemy_orb_ = image::get_image("misc/orb-enemy.png", image::SCALED_TO_ZOOM);
 	ally_orb_ = image::get_image("misc/orb-ally.png", image::SCALED_TO_ZOOM);
 	moved_orb_ = image::get_image("misc/orb-moved.png", image::SCALED_TO_ZOOM);
@@ -190,8 +194,23 @@ void unit_map::set_zoom()
 	automatic_orb_ = image::get_image("misc/orb-auto.png", image::SCALED_TO_ZOOM);
 	self_orb_ = image::get_image("misc/orb-self.png", image::SCALED_TO_ZOOM);
 
-	normal_food = image::get_image("misc/food-status.png~CROP(0, 0, 16, 16)", image::SCALED_TO_ZOOM);
-	lack_food = image::get_image("misc/food-status.png~CROP(16, 0, 16, 16)", image::SCALED_TO_ZOOM);
+	normal_food = image::get_image("misc/food-status-normal.png", image::SCALED_TO_ZOOM);
+	lack_food = image::get_image("misc/food-status-lack.png", image::SCALED_TO_ZOOM);
+	robber = image::get_image("misc/robber.png", image::SCALED_TO_ZOOM);
+
+	if (display::default_zoom_ == display::ZOOM_48) {
+		bar_vtl_png = "misc/bar-vtl-72.png~CROP(0, 0, 48, 48)";
+		bar_vtl_hot_png = "misc/bar-vtl-72-hot.png~CROP(0, 0, 48, 48)";
+	} else if (display::default_zoom_ == display::ZOOM_56) {
+		bar_vtl_png = "misc/bar-vtl-72.png~CROP(0, 0, 56, 56)";
+		bar_vtl_hot_png = "misc/bar-vtl-72-hot.png~CROP(0, 0, 56, 56)";
+	} else if (display::default_zoom_ == display::ZOOM_64) {
+		bar_vtl_png = "misc/bar-vtl-72.png~CROP(0, 0, 64, 64)";
+		bar_vtl_hot_png = "misc/bar-vtl-72-hot.png~CROP(0, 0, 64, 64)";
+	} else {
+		bar_vtl_png = "misc/bar-vtl-72.png";
+		bar_vtl_hot_png = "misc/bar-vtl-72-hot.png";
+	}
 }
 
 #define index(x, y)  (w_ * (y) + (x))
@@ -262,7 +281,7 @@ void unit_map::recalculate_heros_pointer()
 
 unit* unit_map::find_unit(const hero& h) const
 {
-	if (h.number_ < hero::number_city_min) {
+	if (!hero::data_variable(h.number_)) {
 		// many unit use same master-hero shared. if it, nul.
 		return NULL;
 	}
@@ -357,7 +376,6 @@ void unit_map::create_coor_map(int w, int h)
 	map_ = (node**)malloc(w * h * sizeof(node*));
 	map_vsize_ = 0;
 
-	// 为city_map分配存储区
 	citys_.realloc_map(w * h);
 
 	// remember this size
@@ -365,50 +383,42 @@ void unit_map::create_coor_map(int w, int h)
 	h_ = h;
 }
 
-// 功能：进入/退出出征状态
-
-// @cobj: 要被出征的城郡。NULL: 进入正常状态
-// @troop_index: 出征单位出征城内unit_list内索引。只在city非NULL时才生效
 void unit_map::set_expediting(artifical* city, bool troop, int index)
 {
 	size_t i;
 	node *ptr;
 	
 	if (!city) {
-		// 取消出征状态
 		if (expediting_city_) {
-			// 如果原先有值, 则清除
+			// if necessary, do clean
 			if (expediting_node_) {
 				ptr = coor_map_[index(expediting_node_->first.x, expediting_node_->first.y)].overlay;
 				// swap back
 				coor_map_[index(expediting_node_->first.x, expediting_node_->first.y)].overlay = expediting_node_;
-				map_[expediting_city_node_index_in_map_] = expediting_node_;
 				
-				delete ptr->second;
 				delete ptr;
 				expediting_node_ = NULL;
 			}
 		}
-		// 正常状态
+		// normal state
 		expediting_city_ = NULL;
 		expediting_ = false;
 		return;
 	} else if (expediting_) {
-		// 重复设置出征状态, 不允许
 		posix_print_mb("unit_map::set_expediting, reenter set recalling to true");
 		return;
 	}
 
 	const map_location& loc = city->get_location();
 
-	// 1.形成一个新的pair
+	// 1.construct pair
 	if (troop) {
-		expediting_node_ = new std::pair<map_location, unit*>(loc, new unit(*city->reside_troops()[index]));
+		expediting_node_ = new std::pair<map_location, unit*>(loc, city->reside_troops()[index]);
 	} else {
-		expediting_node_ = new std::pair<map_location, unit*>(loc, new unit(*city->reside_commoners()[index]));
+		expediting_node_ = new std::pair<map_location, unit*>(loc, city->reside_commoners()[index]);
 	}
 
-	// 2.以这个pair个修改地图上cookie和容器中值(不删除该项,只是替换值), 要记住原先cookie
+	// 2.
 	ptr = coor_map_[index(loc.x, loc.y)].overlay;
 	for (i = 0; i < map_vsize_; i ++) {
 		if (map_[i] == ptr) {
@@ -416,18 +426,15 @@ void unit_map::set_expediting(artifical* city, bool troop, int index)
 		}
 	}
 	if (i == map_vsize_) {
-		// 程序不应该进入这里, 进入这里就是编程错误
 		return;
 	}
-	map_[i] = expediting_node_;
 	coor_map_[index(loc.x, loc.y)].overlay = expediting_node_;
 	// swap
 	expediting_node_ = ptr;
 
-	// 进入出征状态
+	// enter into expedit state.
 	expediting_ = true;
 	expediting_city_ = city;
-	expediting_city_node_index_in_map_ = i;
 	expediting_troop_ = troop;
 	expediting_index_ = index;
 
@@ -458,7 +465,6 @@ unit_map::node* unit_map::get_cookie(const map_location& loc, bool overlay) cons
 {
 	gamemap *game_map = resources::game_map;
 
-	// 调用程序是可能传个无效地址下来的
 	if (!game_map->on_board(loc)) {
 		return NULL;
 	}
@@ -469,7 +475,6 @@ unit_map::iterator unit_map::find(const map_location &loc, bool overlay)
 {
 	gamemap *game_map = resources::game_map;
 
-	// 调用程序是可能传个无效地址下来的
 	if (!game_map->on_board(loc)) {
 		return iterator(map_vsize_, this);
 	}
@@ -501,11 +506,6 @@ void unit_map::add(const map_location&l, const unit* u)
 	}
 }
 
-// 被调用时候: 单位移动动画结束后
-// @src: 移动起始格子
-// @dst: 移动目的格子
-// 注:
-//   当时从一个城郡出征到另一个城郡时, 函数还是会产生一次new/delete,(但这样写逻辑上简单)
 bool unit_map::move(const map_location &src, const map_location &dst) 
 {
 	bool can_undo = true;
@@ -517,23 +517,47 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 	p = extract(src);
 	bool troop = !p->second->is_commoner();
 
-	// !!!src是个引用,调用程序极可能用的原值是iter->first
-	// 以下这个p->frist=dst就可能使src被篡改, 须要src的须趁早
+	// !!!src is reference. it value may be from p->first
 	p->first = dst;
 
-	// attack_analysis::analyze时会有一个模拟的move过程. 如果攻击方是都市, 移回原位时那么那个座标一定是都市
-	// 1. 新攻占了一个城市,想移入城里. (非出征状态), 要求if (!cobj)
-	// 2. attack_analysis::analyze, 移回原位
-	// if (!expediting_ || !cobj) {
 	if (!cobj) {
-		// 目的地: 非都市
-		place(p);
-	} else if (p->second->is_artifical()) {
-		// 目的地: 都市. 都市回到都市, 认为是AI情况
-		place(p);
+		// destination: non-city
+		if (expediting_) {
+			// system must confirm: destination isn't city when expediting.
+			insert(p);
+
+			unit& u = *(p->second);
+			artifical& city = *city_from_cityno(u.cityno());
+
+			// modify troop/commoner reside/field list
+			if (troop) {
+				city.troop_go_out(u, false);
+				u.set_food(u.max_food());
+			} else {
+				city.commoner_go_out(u, false);
+			}
+
+			place(expediting_node_); // expediting_node_ indicate expediting city.
+			expediting_node_ = NULL;
+
+			expediting_city_ = NULL;
+			expediting_ = false;
+
+			if (resources::screen) {
+				game_display& disp = *resources::screen;
+				disp.remove_expedite_city();
+			}
+		} else {
+			place(p);
+		}
+
+		if (resources::controller->allow_intervene()) {
+			// if who moved, remove from it from slot-u or slot-special.
+			p->second->remove_from_slot_cache();
+		}
+		
 	} else {
-		// 2. 从unit_map清除该单位
-		// 可能是原来的,也可能是此次新申请的(从一个郡出征到另一个城郡)
+		// destination: city
 		for (i = 0; i < map_vsize_; i ++) {
 			if (map_[i] == p) {
 				break;
@@ -547,51 +571,206 @@ bool unit_map::move(const map_location &src, const map_location &dst)
 		map_vsize_ --;
 
 		if (!expediting_) {
-			// 出发地: 城外
+			// troop come into city.
 			if (citys_.map_[p->second->cityno()]) {
-				// 部队进城, 刷新部队所在城市的城外部队列表
 				if (troop) {
 					citys_.map_[p->second->cityno()]->field_troops_erase(p->second);
 				} else {
 					citys_.map_[p->second->cityno()]->field_commoners_erase(p->second);
 				}
 			}
-			// 刷新该阵营所属城外部队列表
 			teams[p->second->side() - 1].erase_troop(p->second);
 		}
 
 		// below statement will change cityno, place here
-		can_undo = cobj->troop_come_into(p->second);
+		cobj->troop_come_into(p->second);
+
+		// once enter into city, don't allow undo!
+		can_undo = false;
 
 		// troop_come_into reuse memory of unit, so don't call delete p->second
 		delete p;
 	}
-	// 出征状态时,如果发生移动的也只能是要出征的武将,不比较src了(如要比较src须趁见,见以上的p->first = dst
-	if (expediting_) {
-		insert(expediting_node_); // 这个expediting_node_是出征都市
-		expediting_node_ = NULL;
+	return can_undo;
+}
 
-		expediting_city_ = NULL;
-		expediting_ = false;
+// pos: this unit result to should resort, it is valid.
+void unit_map::resort_map(size_t pos)
+{
+	std::pair<map_location, unit*>* p = map_[pos];
+	const unit* u = p->second;
+	if (pos < map_vsize_ - 1) {
+		memcpy(&(map_[pos]), &(map_[pos + 1]), (map_vsize_ - pos - 1) * sizeof(node*));
+	}
+	VALIDATE(u->consider_ticks(), "desired resort_map must be ticks's unit!");
 
-		if (!cobj) {
-			// 目的地: 非城市
-			if (citys_.map_[p->second->cityno()]) {
-				// 部队出征, 刷新部队所在城市的城外部队列表
-				if (troop) {
-					citys_.map_[p->second->cityno()]->field_troops_add(p->second);
-				} else {
-					citys_.map_[p->second->cityno()]->field_commoners_add(p->second);
-				}
-			}
-			// 刷新该阵营所属城外部队列表
-			teams[p->second->side() - 1].add_troop(p->second);
-			if (troop) {
-				p->second->set_food(p->second->max_food());
-			}
+	size_t i;
+	for (i = 0; i < map_vsize_ - 1; i ++) {
+		const unit* that = map_[i]->second;
+		// must include non-ticks unit.
+		if (!that->consider_ticks() || u->compare_action_order(*that)) {
+			break;
 		}
 	}
-	return can_undo;
+	if (i < map_vsize_ - 1) {
+		memmove(&(map_[i + 1]), &(map_[i]), (map_vsize_ - i - 1) * sizeof(node*));
+		map_[i] = p;
+
+	} else {
+		map_[map_vsize_ - 1] = p;
+	}
+}
+
+void unit_map::resort_map(const unit& u)
+{
+	size_t i;
+	for (i = 0; i < map_vsize_; i ++) {
+		if (map_[i]->second == &u) {
+			resort_map(i);
+			return;
+		}
+	}
+	VALIDATE(i < map_vsize_, "resort_map, cann't find u that result to resort!");
+}
+
+void unit_map::multi_resort_map(game_display* disp, const std::vector<unit*>& v, bool full)
+{
+	if (full) {
+		for (std::vector<unit*>::const_iterator it = v.begin(); it != v.end(); ++ it) {
+			unit& u = **it;
+			u.ticks_adjusting = true;
+		}
+	}
+
+	for (std::vector<unit*>::const_iterator it = v.begin(); it != v.end(); ++ it) {
+		unit& u = **it;
+		u.ticks_adjusting = false;
+		if (disp) {
+			disp->resort_access_troops(u);
+		} else {
+			resort_map(u);
+		}
+	}
+}
+
+unit& unit_map::current_unit()
+{
+	size_t i;
+	for (i = 0; i < map_vsize_; i ++) {
+		unit& u = *(map_[i]->second);
+		if (!u.consider_ticks()) {
+			continue;
+		}
+		break;
+	}
+	return *(map_[i]->second);
+}
+
+void unit_map::do_escape_ticks_uh(const std::vector<team>& teams, game_display& disp, int escape, bool first_zero)
+{
+	if (escape == 0) {
+		return;
+	}
+
+	unit_map::main_ticks += escape;
+
+	int adjusted, side;
+	std::vector<unit*> decreases;
+	// 1th sort: normal or increase unit. these cannot goto behind i.
+	const unit* last = NULL;
+	for (size_t i = 0; i < map_vsize_; i ++) {
+		unit& u = *(map_[i]->second);
+
+		if (!u.consider_ticks()) {
+			break;
+		}
+		if (&u == last) {
+			// reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=22045&extra=page%3D1
+			continue;
+		}
+		last = &u;
+		side = u.side();
+		adjusted = u.forward_ticks(escape);
+		u.increase_ticks(-1 * adjusted, 0, false);
+		// below refresh_access_troops will update "all" drawn_ticks, will update main_ticks early. 
+		if (u.drawn_ticks() != HIDDEN_TICKS) {
+			u.set_drawn_ticks(NONE_TICKS);
+		}
+
+		if (adjusted < escape || (!u.ticks() && !u.is_city())) {
+			// why require !u.ticks(),  reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=22045&extra=page%3D1, 2
+			decreases.push_back(&u);
+			u.ticks_adjusting = true;
+
+		} else if (adjusted > escape) {
+			disp.resort_access_troops(u, i);
+
+		}
+	}
+
+	// 2th sort: decreased unit
+	multi_resort_map(&disp, decreases, false);
+
+	disp.refresh_access_troops(-1, game_display::REFRESH_DRAW);
+}
+
+void unit_map::do_escape_ticks_bh(const std::vector<team>& teams, game_display& disp, int player_number)
+{
+	size_t i = 0;
+	std::vector<unit*> v;
+
+	if (!tent::turn_based) {
+		if (actor_can_action(*this)) {
+			VALIDATE(!unit::actor->ticks(), "unit::actor's ticks must be 0!");
+
+			if (unit::actor->get_state(ustate_tag::EXPEDITED)) {
+				// in siege mode, there is pre-layout troop.
+				unit::actor->set_state(ustate_tag::EXPEDITED, false);
+			}
+			unit::actor->set_ticks(unit::actor->max_ticks());
+			disp.resort_access_troops(*unit::actor);
+
+			// skip all non-capital city
+			if (unit::actor->is_city()) {
+				for (i = 0; i < map_vsize_; i ++) {
+					unit& u = *(map_[i]->second);
+					if (u.is_city() && (!u.is_capital(teams) || u.side() == player_number)) {
+						VALIDATE(!u.ticks(), "non-capital's ticks must be 0!");
+						v.push_back(&u);
+						u.set_ticks(u.max_ticks());
+						continue;
+					}
+					break;
+				}
+			}
+		}
+
+		for (; i < map_vsize_; i ++) {
+			unit& u = *(map_[i]->second);
+			if (u.get_state(ustate_tag::EXPEDITED)) {
+				VALIDATE(!u.ticks(), "expedited unit's ticks must be 0!");
+				v.push_back(&u);
+				u.set_state(ustate_tag::EXPEDITED, false);
+				u.set_ticks(u.max_ticks());
+				continue;
+			}
+			if (u.ticks()) {
+				break;
+			}
+		}
+
+	} else {
+		for (i = 0; i < map_vsize_; i ++) {
+			unit& u = *(map_[i]->second);
+			if (u.side() != top_side) {
+				break;
+			}
+			v.push_back(&u);
+		}
+		top_side = (top_side % teams.size()) + 1;
+	}
+
+	multi_resort_map(&disp, v, true);
 }
 
 bool unit_map::insert(std::pair<map_location, unit*>* p)
@@ -604,14 +783,20 @@ bool unit_map::insert(std::pair<map_location, unit*>* p)
 	}
 	unit* u = p->second;
 	bool base = u->base();
-	
+
 	if ((base && coor_map_[index(p->first.x, p->first.y)].base) ||
 		(!base && coor_map_[index(p->first.x, p->first.y)].overlay)) {
-		// 程序出去时这里不该进入
 		posix_print_mb("unit_map::insert, trying to overwrite existing unit at (%i, %i)", p->first.x, p->first.y);
 		delete u;
 		delete p;
 		return false;
+	}
+
+	if (unit_is_city(u)) {
+		// to city, in order to city_from_loc valid, first set cookie valid!
+		// if city has reside troop, set_location of reside troop need valid city cookie infromation.
+		// of course this equal is duplicate and below touch_locs equals.
+		coor_map_[index(p->first.x, p->first.y)].overlay = p;
 	}
 
 	u->set_location(p->first);
@@ -626,18 +811,29 @@ bool unit_map::insert(std::pair<map_location, unit*>* p)
 		}
 	}
 
-	// map_.push_back(p);
+	// insert p into time-axis.*
 	map_[map_vsize_ ++] = p;
+	if (u->consider_ticks()) {
+		resort_map(map_vsize_ - 1);
+	}
 
-	// 检查要加入的是否是城市, 是城市的刷新city_map
+	game_display* disp = resources::screen;
+
 	if (unit_is_city(u)) {
 		citys_.add(unit_2_artifical(u));
-	} else if (!u->is_artifical() && citys_.map_[u->cityno()]) {
-		if (!u->is_commoner()) {
-			citys_.map_[u->cityno()]->field_troops_add(u);
+	} else if (!u->is_artifical()) {
+		if (citys_.map_[u->cityno()]) {
+			if (!u->is_commoner()) {
+				citys_.map_[u->cityno()]->field_troops_add(u);
+			} else {
+				citys_.map_[u->cityno()]->field_commoners_add(u);
+			}
 		} else {
-			citys_.map_[u->cityno()]->field_commoners_add(u);
+			if (disp) {
+				disp->refresh_access_troops(u->side() - 1, game_display::REFRESH_INSERT, u);
+			}
 		}
+
 	} else if (u->is_artifical() && citys_.map_[u->cityno()]) {
 		citys_.map_[u->cityno()]->field_arts_add(unit_2_artifical(u));
 	}
@@ -645,7 +841,7 @@ bool unit_map::insert(std::pair<map_location, unit*>* p)
 		(*resources::teams)[u->side() - 1].add_troop(u);
 	}
 
-	if (resources::screen && u->terrain() != t_translation::NONE_TERRAIN) {
+	if (disp && u->terrain() != t_translation::NONE_TERRAIN) {
 		game_display& gui = *resources::screen;
 		gui.set_terrain_dirty();
 
@@ -662,7 +858,6 @@ bool unit_map::insert(std::pair<map_location, unit*>* p)
 	return true;
 }
 
-// @check_loc: 在检查是否存在前是否要判断坐标有效性, true: 要判断坐标; false: 不判断坐标
 bool unit_map::valid(const map_location& loc, bool check_loc, bool overlay) const
 {
 	if (check_loc) {
@@ -794,16 +989,20 @@ bool unit_map::erase(unit* u, bool delete_unit)
 	}
 	map_vsize_ --;
 
-	//
-	// 检查要删除的是否是城市, 是的话须刷新city_map
-	//
+	game_display* disp = resources::screen;
 	if (unit_is_city(u)) {
 		citys_.erase(unit_2_artifical(u));
-	} else if (!u->is_artifical() && citys_.map_[u->cityno()]) {
-		if (!u->is_commoner()) {
-			citys_.map_[u->cityno()]->field_troops_erase(u);
-		} else {
-			citys_.map_[u->cityno()]->field_commoners_erase(u);
+	} else if (!u->is_artifical()) {
+		if (citys_.map_[u->cityno()]) {
+			// field troop of city.
+			if (!u->is_commoner()) {
+				citys_.map_[u->cityno()]->field_troops_erase(u);
+			} else {
+				citys_.map_[u->cityno()]->field_commoners_erase(u);
+			}
+		} else if (disp) {
+			// roam troop
+			disp->refresh_access_troops(u->side() - 1, game_display::REFRESH_ERASE, const_cast<unit*>(u));
 		}
 	} else if (u->is_artifical() && citys_.map_[u->cityno()]) {
 		citys_.map_[u->cityno()]->field_arts_erase(unit_2_artifical(u));
@@ -814,7 +1013,6 @@ bool unit_map::erase(unit* u, bool delete_unit)
 
 	std::set<map_location> invalid_locs;
 	invalid_locs.insert(loc);
-	// 要删除单位可能占用多个格子，涉及到格子要一并删除
 	if (base) {
 		coor_map_[index(loc.x, loc.y)].base = NULL;
 	} else {
@@ -835,11 +1033,12 @@ bool unit_map::erase(unit* u, bool delete_unit)
 		invalid_locs.insert(u->adjacent_[i]);
 	}
 
-	game_display& gui = *resources::screen;
-	if (u->terrain() != t_translation::NONE_TERRAIN) {
-		gui.set_terrain_dirty();
+	if (disp) {
+		if (u->terrain() != t_translation::NONE_TERRAIN) {
+			disp->set_terrain_dirty();
+		}
+		disp->invalidate(invalid_locs);
 	}
-	gui.invalidate(invalid_locs);
 
 	if (delete_unit) {
 		delete ptr->second;
@@ -860,38 +1059,15 @@ unit_map::iterator unit_map::find_leader(int side)
 	return i_end;
 }
 
-const artifical* unit_map::city_from_cityno(int cityno) const
+artifical* unit_map::city_from_cityno(int cityno) const
 {
 	return citys_.map_[cityno];
 }
 
-artifical* unit_map::city_from_cityno(int cityno)
-{
-	return citys_.map_[cityno];
-}
-
-artifical* unit_map::city_from_loc(const map_location& loc)
+artifical* unit_map::city_from_loc(const map_location& loc) const
 {
 	gamemap *game_map = resources::game_map;
 
-	// 调用程序是可能传个无效地址下来的
-	if (!game_map->on_board(loc)) {
-		return NULL;
-	}
-	if (!coor_map_[index(loc.x, loc.y)].overlay) {
-		return NULL;
-	}
-	if (unit_is_city(coor_map_[index(loc.x, loc.y)].overlay->second)) {
-		return unit_2_artifical(coor_map_[index(loc.x, loc.y)].overlay->second);
-	}
-	return NULL;
-}
-
-const artifical* unit_map::city_from_loc(const map_location& loc) const
-{
-	gamemap *game_map = resources::game_map;
-
-	// 调用程序是可能传个无效地址下来的
 	if (!game_map->on_board(loc)) {
 		return NULL;
 	}
@@ -909,7 +1085,7 @@ artifical* unit_map::city_from_seed(size_t seed)
 {
 	std::vector<artifical*> citys;
 	for (size_t i = 0; i < (*resources::teams).size(); i ++) {
-		std::vector<artifical*>& side_citys = (*resources::teams)[i].holded_cities();
+		std::vector<artifical*>& side_citys = (*resources::teams)[i].holden_cities();
 		citys.insert(citys.end(), side_citys.begin(), side_citys.end());
 	}
 	return citys[seed % citys.size()];
@@ -919,16 +1095,12 @@ const artifical* unit_map::city_from_seed(size_t seed) const
 {
 	std::vector<artifical*> citys;
 	for (size_t i = 0; i < (*resources::teams).size(); i ++) {
-		std::vector<artifical*>& side_citys = (*resources::teams)[i].holded_cities();
+		std::vector<artifical*>& side_citys = (*resources::teams)[i].holden_cities();
 		citys.insert(citys.end(), side_citys.begin(), side_citys.end());
 	}
 	return citys[seed % citys.size()];
 }
 
-// unit中已提供了类似函数side_units，这里再次使用只是考虑到要提高这个操作效果，毕竟这里是要用C数组
-// @side: 阵营号，基于1始
-// @residuals[OUT]: 该阵营剩作单位数。如果为NULL，函数查到一个就退出。调用程序只是想知道这阵营有没有战败而不必知道剩余单位数时，置NULL可以提高效率
-// 返回值true表示该阵营还活着，residuals指示活着的单位数；false表示该阵营被击败了
 bool unit_map::side_survived(int side, int* residuals) const
 {
 	int residuals_internal = 0;
@@ -997,8 +1169,8 @@ void unit_map::ally_terminate_adjust(team& adjusting_team, const SDL_Rect& rect)
 			if (u.is_artifical()) {
 				continue;
 			}
-			u.set_state(unit::STATE_SLOWED, true);
-			u.set_state(unit::STATE_BROKEN, true);
+			u.set_state(ustate_tag::SLOWED, true);
+			u.set_state(ustate_tag::BROKEN, true);
 		}
 	}
 }
@@ -1155,13 +1327,13 @@ bool unit_map::compare_enemy_cities(const mr_data& mr, artifical& a, artifical& 
 
 	// condition: a_side != b_side, compare power, location.
 	size_t a_power, b_power;
-	std::vector<artifical*>& a_cities = a_team.holded_cities();
+	std::vector<artifical*>& a_cities = a_team.holden_cities();
 	a_power = 0;
 	for (std::vector<artifical*>::const_iterator i = a_cities.begin(); i != a_cities.end(); ++ i) {
 		artifical& city = **i;
 		a_power += city.fresh_heros().size() + city.finish_heros().size() + (city.reside_troops().size() + city.field_troops().size()) * 2;
 	}
-	std::vector<artifical*>& b_cities = b_team.holded_cities();
+	std::vector<artifical*>& b_cities = b_team.holden_cities();
 	b_power = 0;
 	for (std::vector<artifical*>::const_iterator i = b_cities.begin(); i != b_cities.end(); ++ i) {
 		artifical& city = **i;
@@ -1256,7 +1428,7 @@ void unit_map::calculate_mr_rects_from_city_rect(std::vector<team>& teams, gamem
 
 // 1. To each mr, calculate kinds of data
 // 2. Form mr's target.
-void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool action)
+void unit_map::calculate_mrs_data(game_state& state, std::vector<mr_data>& mrs, int side, bool action)
 {
 	std::vector<team>& teams = *resources::teams;
 	team& current_team = teams[side - 1];
@@ -1271,7 +1443,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 	int min_field_arts = 3;
 	
 	const std::set<const unit_type*>& can_build = current_team.builds();
-	if (can_build.find(unit_types.find_wall()) == can_build.end()) {
+	if (tent::mode == mode_tag::SIEGE || can_build.find(unit_types.find_wall()) == can_build.end()) {
 		min_field_arts = 0;
 	}
 	std::set<const unit_type*> can_build_ea;
@@ -1293,8 +1465,8 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 		mr.own_cities.clear();
 		mr.encountered_sides.clear();
 
-		std::vector<artifical*>& holded_cities = current_team.holded_cities();
-		for (std::vector<artifical*>::iterator city_itor = holded_cities.begin(); city_itor != holded_cities.end(); ++ city_itor) {
+		std::vector<artifical*>& holden_cities = current_team.holden_cities();
+		for (std::vector<artifical*>::iterator city_itor = holden_cities.begin(); city_itor != holden_cities.end(); ++ city_itor) {
 			artifical& city = **city_itor;
 			const map_location& loc = city.get_location();
 			if (point_in_rect(loc.x, loc.y, mr.consider_rect)) {
@@ -1305,7 +1477,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 
 		// process low loyalty hero.
 		for (std::map<int, mr_data::enemy_data>::iterator city_itor = mr.own_cities.begin(); action && city_itor != mr.own_cities.end(); ++ city_itor) {
-			if (tent::mode == TOWER_MODE) {
+			if (tent::tower_mode()) {
 				continue;
 			}
 			artifical& city = *city_from_cityno(city_itor->first);
@@ -1314,7 +1486,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 			}
 			city.demolish_ea(can_build_ea);
 
-			if (tent::mode != RPG_MODE) {
+			if (tent::mode != mode_tag::RPG) {
 				continue;
 			}
 			std::vector<std::pair<unit*, std::vector<hero*> > > new_low_loyalty_troops;
@@ -1407,7 +1579,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 					v.push_back(h);
 					low_loyalty_heros.erase(low_loyalty_heros.begin());
 				} while (v.size() < 3 && !low_loyalty_heros.empty());
-				do_recruit(*this, heros, teams, current_team, ut, v, city, ut->cost() * current_team.cost_exponent() / 100, false, false);
+				do_recruit(*this, heros, teams, current_team, ut, v, city, ut->cost() * current_team.cost_exponent() / 100, false, false, state);
 			}
 		}
 		
@@ -1529,7 +1701,7 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 		} else if ((field_arts >= mr.own_cities.size() * min_field_arts) && !mr.enemy_cities.empty() && mr.own_heros > mr_data::min_interior_requirement * mr.own_back_cities.size() + mr_data::min_front_requirement * mr.own_front_cities.size()) {
 			mr.target = mr_data::TARGET_AGGRESS;
 
-			if (tent::mode != TOWER_MODE && mr.own_cities.size() == 1) {
+			if (!tent::tower_mode() && mr.own_cities.size() == 1) {
 				// Alert! Be back to guard!
 				std::map<int, mr_data::enemy_data>::iterator it_p = mr.own_cities.begin();
 				artifical* only = city_from_cityno(it_p->first);
@@ -1565,8 +1737,6 @@ void unit_map::calculate_mrs_data(std::vector<mr_data>& mrs, int side, bool acti
 		} else {
 			mr.target = mr_data::TARGET_GUARD;
 		}
-
-		// mr.calculate_mass(*this, current_team);
 	}
 }
 
@@ -1664,7 +1834,7 @@ artifical* mr_data::calculate_center_city(const map_location& center)
 }
 
 int mess_estimate_radius = 7;
-void mr_data::calculate_mass(unit_map& units, const team& current_team)
+void mr_data::calculate_mass(const unit_map& units, const team& current_team)
 {
 	messes.clear();
 

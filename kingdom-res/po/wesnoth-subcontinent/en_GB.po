@@ -1,0 +1,21 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: kingdom\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
+"Language-Team: \n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.6.5\n"
+
+msgid "subcontinent_of_nv_wa"
+msgstr "Lei Ze"
+
+msgid "subcontinent_of_nv_wa description"
+msgstr "Subcontinent of Nvwa"
+
+msgid "LOCC"
+msgstr "LOCC"

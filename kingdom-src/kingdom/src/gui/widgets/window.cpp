@@ -31,7 +31,6 @@
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/layout_exception.hpp"
 #include "gui/auxiliary/window_builder/control.hpp"
-#include "gui/dialogs/title_screen.hpp"
 #include "gui/dialogs/tip.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/settings.hpp"
@@ -57,7 +56,7 @@
 		+ " [" + window.id() + "] " + __func__
 #define LOG_IMPL_HEADER LOG_IMPL_SCOPE_HEADER + ':'
 
-extern bool exit_app;
+extern int cached_draw_events;
 
 namespace gui2{
 
@@ -111,20 +110,22 @@ static int draw_interval = 0;
  */
 static Uint32 draw_timer(Uint32, void*)
 {
-//	DBG_GUI_E << "Pushing draw event in queue.\n";
+	if (cached_draw_events <= 0) {
+		SDL_Event event;
+		SDL_UserEvent data;
 
-	SDL_Event event;
-	SDL_UserEvent data;
+		data.type = DRAW_EVENT;
+		data.code = 0;
+		data.data1 = NULL;
+		data.data2 = NULL;
 
-	data.type = DRAW_EVENT;
-	data.code = 0;
-	data.data1 = NULL;
-	data.data2 = NULL;
+		event.type = DRAW_EVENT;
+		event.user = data;
 
-	event.type = DRAW_EVENT;
-	event.user = data;
+		SDL_PushEvent(&event);
 
-	SDL_PushEvent(&event);
+		cached_draw_events ++;
+	}
 	return draw_interval;
 }
 
@@ -467,46 +468,6 @@ twindow::tretval twindow::get_retval_by_id(const std::string& id)
 	} else if(id == "cancel") {
 		return CANCEL;
 
-	/**
-	 * The ones for the title screen.
-	 *
-	 * This is a kind of hack, but the values are hardcoded in the titlescreen
-	 * and don't want to change them at the moment. It would be a good idea to
-	 * add some namespaces to avoid names clashing.
-	 */
-	} else if(id == "tutorial") {
-		return static_cast<tretval>(ttitle_screen::TUTORIAL);
-	} else if(id == "editor") {
-		return static_cast<tretval>(ttitle_screen::START_MAP_EDITOR);
-	} else if(id == "credits") {
-		return static_cast<tretval>(ttitle_screen::SHOW_ABOUT);
-	} else if(id == "quit") {
-		return static_cast<tretval>(ttitle_screen::QUIT_GAME);
-
-	/**
-	 * The hacks which are here so the old engine can handle the event. The new
-	 * engine can't handle all dialogs yet, so it needs to fall back to the old
-	 * engine to make certain things happen.
-	 */
-	} else if(id == "help") {
-		return static_cast<tretval>(ttitle_screen::SHOW_HELP);
-	} else if(id == "campaign") {
-		return static_cast<tretval>(ttitle_screen::NEW_CAMPAIGN);
-	} else if(id == "randommap") {
-		return static_cast<tretval>(ttitle_screen::RANDOM_MAP);
-	} else if(id == "multiplayer") {
-		return static_cast<tretval>(ttitle_screen::MULTIPLAYER);
-	} else if(id == "load") {
-		return static_cast<tretval>(ttitle_screen::LOAD_GAME);
-	} else if(id == "addons") {
-		return static_cast<tretval>(ttitle_screen::GET_ADDONS);
-	} else if(id == "language") {
-		return static_cast<tretval>(ttitle_screen::CHANGE_LANGUAGE);
-	} else if(id == "preferences") {
-		return static_cast<tretval>(ttitle_screen::EDIT_PREFERENCES);
-	} else if(id == "shop") {
-		return static_cast<tretval>(ttitle_screen::INAPP_PURCHASE);
-
 	// default if nothing matched
 	} else {
 		return NONE;
@@ -578,7 +539,8 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 		tdraw_interval_setter()
 			: interval_(draw_interval)
 		{
-			if(interval_ == 0) {
+			if (interval_ == 0) {
+				cached_draw_events = 0;
 				draw_interval = 30;
 				SDL_AddTimer(draw_interval, draw_timer, NULL);
 
@@ -640,10 +602,6 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 			events::pump();
 			// Add a delay so we don't keep spinning if there's no event.
 			SDL_Delay(10);
-
-			if (exit_app) {
-				status_ = REQUEST_CLOSE;
-			}
 		}
 	} catch(...) {
 		/**
@@ -829,6 +787,10 @@ void twindow::draw()
 					itor != item.end(); ++itor) {
 
 				(**itor).draw_background(frame_buffer, 0, 0);
+			}
+
+			if (game_display* disp = game_display::get_singleton()) {
+				disp->draw_outer_anim(false);
 			}
 
 			// Children.
@@ -1511,7 +1473,7 @@ void twindow::signal_handler_sdl_key_down(
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
 
-#if !TARGET_OS_IPHONE
+#if !TARGET_OS_IPHONE && !defined(ANDROID)
 	if(!enter_disabled_ && (key == SDLK_KP_ENTER || key == SDLK_RETURN)) {
 		set_retval(OK);
 		handled = true;

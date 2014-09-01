@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-10-29 11:03+0800\n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"PO-Revision-Date: 2014-08-28 11:17+0800\n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -19,7 +19,7 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8\n"
 "Plural-Forms: nplurals=2; plural=(n>1);\n"
 "X-Poedit-Bookmarks: -1,-1,-1,3,-1,-1,-1,-1,-1,-1\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.6.5\n"
 
 #. [terrain_type]: id=deep_water
 #. [terrain_type]: id=deep_water_gray
@@ -1292,7 +1292,6 @@ msgstr "移除附加组件"
 msgid "Connect"
 msgstr "连接"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=cancel
 #: data/gui/default/window/addon_connect.cfg:220
 #: data/gui/default/window/campaign_dialog.cfg:433
@@ -1326,7 +1325,6 @@ msgstr "取消"
 msgid "Play a campaign"
 msgstr "开始战役"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=ok
 #: data/gui/default/window/campaign_dialog.cfg:419
 #: data/gui/default/window/campaign_difficulty.cfg:169
@@ -1445,19 +1443,16 @@ msgstr "设置"
 msgid "Generate"
 msgstr "生成"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_new_map.cfg:27 src/hotkeys.cpp:123
 msgid "New Map"
 msgstr "新地图"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_new_map.cfg:46 src/mapgen_dialog.cpp:121
 msgid "Width:"
 msgstr "宽度："
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_new_map.cfg:73 src/mapgen_dialog.cpp:122
 msgid "Height:"
@@ -1469,7 +1464,6 @@ msgstr "高度："
 msgid "Create new map"
 msgstr "创建新地图"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_resize_map.cfg:27 src/hotkeys.cpp:169
 msgid "Resize Map"
@@ -1511,7 +1505,6 @@ msgstr "复制边界地形"
 msgid "Resize map"
 msgstr "改变地图大小"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/editor_settings.cfg:38 src/hotkeys.cpp:121
 msgid "Editor Settings"
@@ -1560,7 +1553,6 @@ msgstr "蓝:"
 msgid "Allow more than one map to be open at the same time (MDI)"
 msgstr "允许同时打开多张地图（MDI）"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=apply
 #: data/gui/default/window/editor_settings.cfg:250
 #: src/game_preferences_display.cpp:203
@@ -1618,7 +1610,6 @@ msgstr "继续"
 msgid "Execution trace"
 msgstr "执行轨迹"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=cancel
 #. [button]: id=quit
 #. [grid]
@@ -1644,7 +1635,6 @@ msgstr "您真的想删除这个游戏吗？"
 msgid "Don’t ask me again!"
 msgstr "不要再次询问我！"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=ok
 #: data/gui/default/window/game_delete.cfg:128
 #: data/gui/default/window/game_delete.cfg:129
@@ -1658,7 +1648,6 @@ msgstr "不要再次询问我！"
 msgid "Yes"
 msgstr "是"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=cancel
 #: data/gui/default/window/game_delete.cfg:143
 #: data/gui/default/window/game_save_message.cfg:154
@@ -1668,12 +1657,14 @@ msgstr "是"
 msgid "No"
 msgstr "否"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]: id=lblTitle
 #: data/gui/default/window/game_load.cfg:42
 #: src/gui/dialogs/mp_create_game.cpp:88 src/hotkeys.cpp:72
 msgid "Load Game"
 msgstr "读取游戏"
+
+msgid "Save Layout"
+msgstr "保存布防"
 
 msgid "Local"
 msgstr "本地"
@@ -1706,7 +1697,6 @@ msgstr "显示录像"
 msgid "Cancel orders"
 msgstr "取消命令"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]: id=lblTitle
 #: data/gui/default/window/game_save.cfg:32
 #: data/gui/default/window/game_save_message.cfg:32
@@ -1736,7 +1726,6 @@ msgstr "OOS错误"
 msgid "Ignore All"
 msgstr "忽略全部"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=quit_game
 #: data/gui/default/window/game_save_oos.cfg:159 src/hotkeys.cpp:91
 msgid "Quit Game"
@@ -1784,7 +1773,6 @@ msgstr "类型"
 msgid "Variable"
 msgstr "变量"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=ok
 #. [button]: id=cancel
 #. [button]: id=close_window
@@ -1937,7 +1925,6 @@ msgstr "反转过滤条件"
 msgid "Send"
 msgstr "发送"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=show_preferences
 #. [grid]
 #: data/gui/default/window/lobby_main.cfg:666
@@ -2054,21 +2041,18 @@ msgstr "发送个人消息"
 msgid "Friends/Ignored List"
 msgstr "好友/忽略列表"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=add_friend
 #: data/gui/default/window/mp_cmd_wrapper.cfg:162
 #: src/game_preferences_display.cpp:179
 msgid "Add As Friend"
 msgstr "加入好友列表"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=add_ignore
 #: data/gui/default/window/mp_cmd_wrapper.cfg:177
 #: src/game_preferences_display.cpp:180
 msgid "Add As Ignore"
 msgstr "加入忽略列表"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=remove
 #: data/gui/default/window/mp_cmd_wrapper.cfg:192
 #: src/game_preferences_display.cpp:181
@@ -2208,7 +2192,6 @@ msgstr "登录"
 msgid "Login:"
 msgstr "账号："
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [toggle_button]: id=remember_password
 #: data/gui/default/window/mp_login.cfg:190
 #: src/game_preferences_display.cpp:175
@@ -2220,7 +2203,6 @@ msgstr "保存密码（明文）"
 msgid "Password Reminder"
 msgstr "密码提示"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #. [grid]
 #: data/gui/default/window/mp_method_selection.cfg:31
@@ -2243,19 +2225,14 @@ msgstr ""
 "码。"
 
 #. [column]
-#: data/gui/default/window/mp_method_selection.cfg:138
-msgid "Join Official Server"
-msgstr "加入官方服务器"
-
-#. [column]
-#: data/gui/default/window/mp_method_selection.cfg:139
-msgid "Log on to the official Wesnoth multiplayer server"
-msgstr "登录到官方多人游戏服务器"
-
-#. [column]
 #: data/gui/default/window/mp_method_selection.cfg:149
-msgid "Join a different server"
-msgstr "加入另一个服务器"
+msgid "Crusage for subcontinent"
+msgstr "征战次大陆"
+
+#. [column]
+#: data/gui/default/window/mp_method_selection.cfg:138
+msgid "Enter multiplayer lobby"
+msgstr "进入对战大厅"
 
 #. [column]
 #: data/gui/default/window/mp_method_selection.cfg:158
@@ -2263,19 +2240,14 @@ msgid "Host Networked Game"
 msgstr "建立联网游戏"
 
 #. [column]
-#: data/gui/default/window/mp_method_selection.cfg:159
-msgid "Host a game using dedicated server ‘wesnothd’"
-msgstr "使用专用服务器“wesnothd”建立游戏"
-
-#. [column]
 #: data/gui/default/window/mp_method_selection.cfg:168
-msgid "Local Game"
-msgstr "本地游戏"
+msgid "Attack Player"
+msgstr "攻击玩家"
 
 #. [column]
 #: data/gui/default/window/mp_method_selection.cfg:169
-msgid "Play a multiplayer game with the AI or humans sharing the same machine"
-msgstr "在同一台机器上和AI或者别的玩家一起玩多人游戏"
+msgid "Attack a network payer"
+msgstr "攻击网络上玩家"
 
 #. [label]: id=address
 #: data/gui/default/window/mp_server_list.cfg:113
@@ -2287,7 +2259,6 @@ msgstr "地址"
 msgid "Select"
 msgstr "选择"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [button]: id=help
 #: data/gui/default/window/title_screen.cfg:146 src/hotkeys.cpp:200
 msgid "Help"
@@ -2318,7 +2289,6 @@ msgstr ""
 msgid "Start a tutorial to familiarize yourself with the game"
 msgstr "开始游戏教程以熟悉游戏"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [grid]
 #: data/gui/default/window/title_screen.cfg:223
 #: src/gui/dialogs/game_load.cpp:303
@@ -2372,7 +2342,6 @@ msgstr "地图编辑器"
 msgid "Start the map editor"
 msgstr "启动地图编辑器"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [grid]
 #: data/gui/default/window/title_screen.cfg:229 src/hotkeys.cpp:202
 msgid "Change the language"
@@ -2380,7 +2349,7 @@ msgstr "切换语言"
 
 #. [grid]
 #: data/gui/default/window/title_screen.cfg:230
-msgid "Configure the game’s settings"
+msgid "Configure the game's settings"
 msgstr "配置游戏的各项设置"
 
 #. [grid]
@@ -2401,6 +2370,21 @@ msgstr "购买项目"
 msgid "Quit the game"
 msgstr "退出游戏"
 
+msgid "Guide"
+msgstr "指南"
+
+msgid "Operational guidelines for game"
+msgstr "游戏操作指南"
+
+msgid "History"
+msgstr "历史"
+
+msgid "Background material about game's role"
+msgstr "游戏中角色背景资料"
+
+msgid "Return to title screen"
+msgstr "返回到开始界面"
+
 #. [button]: id=ok
 #: data/gui/default/window/unit_attack.cfg:195
 msgid "Attack"
@@ -2411,7 +2395,6 @@ msgstr "攻击"
 msgid "Attack enemy"
 msgstr "攻击敌人"
 
-#. #-#-#-#-#  wesnoth-lib.wml.pot (PACKAGE VERSION)  #-#-#-#-#
 #. [label]
 #: data/gui/default/window/unit_create.cfg:37 src/hotkeys.cpp:83
 msgid "Create Unit (Debug!)"
@@ -3618,6 +3601,18 @@ msgstr ""
 msgid "Do you really want to quit?"
 msgstr "您真的想退出吗？"
 
+msgid "$name is dirty, but not save."
+msgstr "$name被修改，但没被保存。"
+
+msgid "Map"
+msgstr "地图"
+
+msgid "Switch terrain group"
+msgstr "切换地形组"
+
+msgid "Switch brush"
+msgstr "切换画刷"
+
 #: src/hotkeys.cpp:976
 msgid "Map-Screenshot"
 msgstr "地图-屏幕截图"
@@ -3829,6 +3824,9 @@ msgstr "本地化存档文件名"
 msgid "Use local language to name save file"
 msgstr "使用本地语言命名存档文件"
 
+msgid "EA"
+msgstr "经济区"
+
 msgid "economy area"
 msgstr "经济区"
 
@@ -3838,17 +3836,17 @@ msgstr "经济区"
 msgid "Battle"
 msgstr "战斗"
 
-msgid "Random map"
-msgstr "随机地图"
-
 msgid "Select player"
 msgstr "玩择玩家"
 
-msgid "Start a random map campaign"
-msgstr "战役（随机地图）"
-
 msgid "Profile player hero"
 msgstr "配置玩家武将"
+
+msgid "Player side"
+msgstr "玩家势力"
+
+msgid "Profile player's side"
+msgstr "配置玩家势力"
 
 msgid "List"
 msgstr "情报"
@@ -4035,6 +4033,9 @@ msgstr "计划"
 msgid "Controller"
 msgstr "控制模式"
 
+msgid "Capital"
+msgstr "都城"
+
 msgid "Villages"
 msgstr "村庄"
 
@@ -4158,6 +4159,9 @@ msgstr "派系"
 
 msgid "Faction/Side feature"
 msgstr "集团/势力特技"
+
+msgid "Gold/Income"
+msgstr "起始/回合金币"
 
 msgid "Team/Gender"
 msgstr "队伍/性别"
@@ -4288,6 +4292,13 @@ msgstr "武将"
 msgid "Title Screen"
 msgstr "标题屏幕"
 
+msgid ""
+"Detectd capability of player hero is more than allocatable point, system has "
+"reset it. To modify, set capability in \"Player profile\"."
+msgstr ""
+"检测到玩家武将能力超出可分配点数，系统已复位玩家武将。要修改，请在游戏的“玩家"
+"武将”窗口重新设置能力。"
+
 msgid "Stratum"
 msgstr "身份"
 
@@ -4399,8 +4410,8 @@ msgstr "势力特技"
 msgid "Register"
 msgstr "注册"
 
-msgid "Synchronize"
-msgstr "同步"
+msgid "Avatar"
+msgstr "王国秀"
 
 msgid "Create"
 msgstr "创建"
@@ -4422,6 +4433,12 @@ msgstr "选择玩家武将所在城市"
 
 msgid "Assemble Treasure"
 msgstr "装配宝物"
+
+msgid ""
+"Duration this time, if remove $treasure from $hero, cannot assemble treasure "
+"to $hero again. Do you want to remove?"
+msgstr ""
+"如果从$hero移除$treasure，此次是不能再向$hero装配宝物。您真的想移除宝物吗？"
 
 #
 # Cast tactic
@@ -4573,11 +4590,11 @@ msgstr "注意"
 msgid "Effect mode"
 msgstr "影响模式"
 
-msgid "Uninstall \"War of Kingdom\" will clear purchase recorder"
-msgstr "卸载“王国战争”会清除购买记录"
+msgid "You is VIP currently, hold $day day still"
+msgstr "您当前已经是会员，还可拥有$day天"
 
-msgid "Update \"War of Kingdom\" will clear purchase recorder"
-msgstr "更新“王国战争”会清除购买记录"
+msgid "You isn't VIP currently"
+msgstr "您当前不是会员"
 
 msgid "Purchasing '$name'"
 msgstr "正在购买“$name”"
@@ -4603,8 +4620,33 @@ msgstr "较验和不匹配"
 msgid "You or creator has modified resource file, cannot join!"
 msgstr "你或创建者修改了资源文件，不能加入！"
 
+msgid ""
+"Update database fail when execute In-App Purchase! In order to compensate "
+"data you should get, please send In-App Purchase information to $mail. In-"
+"App Purchase information include: date($date), item($item), "
+"username($username)."
+msgstr ""
+"执行内购时更新数据库失败！为补偿你失去的内购数据，请发送内购资料到$mail。内购"
+"资料包括：内购日期（$date）、内购项（$item），用户名（$username）。"
+
+msgid ""
+"$account that you are logining is public account, In-App Purchases on it are "
+"shared with other player. In order to benefit to youself only, advise login "
+"again with private account."
+msgstr ""
+"您正在使用的$account是公共帐号，发生在该帐号上的内购是和他人共享的。为让内购"
+"只属于自已，建议换私人帐号重新登录。"
+
+msgid ""
+"System is processing inapp-purchase request, and force to quit maybe result "
+"data not integrated. Do you want to Quit?"
+msgstr "系统正在处理内购请求，强制退出可能倒致数据不完整。您真的想退出吗？"
+
 msgid "Appoint Noble"
 msgstr "赐与爵位"
+
+msgid "Noble"
+msgstr "爵位"
 
 #
 # City List Dialog
@@ -4636,14 +4678,50 @@ msgstr "通关记录"
 msgid "Rank pass"
 msgstr "通关排名"
 
+#
+# Siege tent
+#
+msgid "Siege record"
+msgstr "攻城记录"
+
+#
+# Employ
+#
+msgid "Employ hero"
+msgstr "雇佣武将"
+
 msgid "Rank score"
 msgstr "积分排名"
+
+msgid "contest^Title"
+msgstr "称号"
 
 msgid "kingdom^Score"
 msgstr "积分"
 
 msgid "kingdom^Coin"
 msgstr "王国币"
+
+msgid "Credit"
+msgstr "贡献"
+
+msgid "Attacker's reinforce"
+msgstr "攻击方援军"
+
+msgid "Defender's reinforce"
+msgstr "守备方援军"
+
+msgid "Result"
+msgstr "结果"
+
+msgid "Victory"
+msgstr "胜利"
+
+msgid "Defeat"
+msgstr "失败"
+
+msgid "City fallen"
+msgstr "城市沦陷"
 
 msgid "scenario^Difficulty"
 msgstr "难度"
@@ -4659,6 +4737,9 @@ msgstr "完美回合数"
 
 msgid "perfect^Perfect"
 msgstr "完美"
+
+msgid "Not support upload in multiplayer state!"
+msgstr "多人对战模式暂不支持上传积分！"
 
 #
 # register, config account
@@ -4677,7 +4758,7 @@ msgstr ""
 "一、请正确输入$server上的账号/密码\n"
 "二、若没有账号请按以下两种方法之一注册。1）在这里输入账号/密码，然后"
 "按“$register”；2）运行浏览器打开$host，注册个论坛账号\n"
-"三、若希望将来设置或只玩单机，那只要输入非空账号/密码，然后按“$ok”即可"
+"三、若希望将来设置或只玩单机，那只要输入非空账号，然后按“$ok”即可"
 
 msgid "account^detect invalid($account, $ps)"
 msgstr ""
@@ -4690,14 +4771,697 @@ msgstr "注"
 msgid "$validate_password isn't same as $password"
 msgstr "$validate_password和$password不一致"
 
+msgid ""
+"When register, password must be greater than or equal to $min characters"
+msgstr "注册时，密码必须大于等于$min个字符"
+
 msgid "'$key' value must combine $min to $max characters"
 msgstr "“$key”必须由$min到$max个字符组成"
 
 msgid "Invalid '$key' value, $username is reserved!"
 msgstr "无效“$key”值，$username是保留字符串！"
 
+msgid "$key cannot include $invalids!"
+msgstr "$key不能包含$invalids!"
+
+msgid ""
+"$username may only use below special character: $special, and must not be "
+"all special!"
+msgstr "$username只可使用以下特殊字符：$special，而且不能全是特殊字符。"
+
 msgid "VIP exclusive"
 msgstr "会员专有"
 
-#~ msgid "Don't accept empty, invalid '$key' value"
-#~ msgstr "不允许是空，无效“$key”值"
+msgid "Hero that belong to $leader."
+msgstr "$leader麾下武将。"
+
+msgid "troop^Type"
+msgstr "兵种"
+
+msgid "Family"
+msgstr "类别"
+
+#
+# group
+#
+msgid "Group"
+msgstr "团队"
+
+msgid "$leader's side"
+msgstr "$leader的势力"
+
+msgid "member^Fix"
+msgstr "在职"
+
+msgid "member^Roam"
+msgstr "流浪"
+
+msgid "Associate"
+msgstr "交往"
+
+msgid "group^Draw"
+msgstr "抽卡"
+
+msgid "Upgrade"
+msgstr "升级"
+
+msgid "Advance"
+msgstr "升级"
+
+msgid "group^Layout"
+msgstr "布防"
+
+msgid "Personnel"
+msgstr "人事"
+
+msgid ""
+"First $tower heros is fixed in tower mode. First $rpg heros can be on stage "
+"in RPG mode."
+msgstr "前$tower个是塔防中的固定武将。前$rpg个是RPG中能出场的武将。"
+
+msgid "May get $coin coin and $score score, do you want to discard $name?"
+msgstr "可以得到$coin王国币和$score积分，您真的想放弃$name吗？"
+
+msgid "May get $coin coin and $score score, do you want to redraw $count hero?"
+msgstr "可以得到$coin王国币和$score积分，您真的想重抽$count武将吗？"
+
+#
+# Recruit Dialog
+#
+msgid "rank^Gold"
+msgstr "金"
+
+msgid "rank^Silver"
+msgstr "银"
+
+msgid "rank^Copper"
+msgstr "铜"
+
+msgid "Exchange rate"
+msgstr "汇率"
+
+#
+# RPG Exchange
+#
+msgid "score^Exchange"
+msgstr "兑换"
+
+msgid "Fire"
+msgstr "解雇"
+
+msgid "Do you want to exchange $from to $to?"
+msgstr "您真的想把$from兑换成$to吗？"
+
+msgid ""
+"Repertory is not enough to pay $coin coin and $score score. If lack one "
+"only, can exchange between coin and score."
+msgstr ""
+"库存不够$coin王国币和$score积分。如果只是当中一种，你可以在王国币和积分间兑"
+"换。"
+
+msgid "Repertory is less than $score score, cannot $do."
+msgstr "库存不足$score积分，不能$do。"
+
+msgid "Do you want to spend $score score to $do?"
+msgstr "您真的想花费$score积分去$do吗？"
+
+msgid "Repertory is less than $cost score!"
+msgstr "库存不足$cost积分！"
+
+msgid "Do you want to spend $cost score to employ $name?"
+msgstr "您真的想花费$cost积分去雇拥$name吗？"
+
+msgid "$do successfully!"
+msgstr "$do成功！"
+
+msgid "Append"
+msgstr "添加"
+
+msgid "Agreement"
+msgstr "协议"
+
+msgid "Give"
+msgstr "给予"
+
+msgid "Request ally"
+msgstr "请求同盟"
+
+msgid "Request terminate"
+msgstr "请求解除"
+
+msgid "Be requested ally"
+msgstr "被请求同盟"
+
+msgid "Be requested terminate"
+msgstr "被请求解除"
+
+msgid "process^going"
+msgstr "中"
+
+msgid "$username wants to ally, do you agree?"
+msgstr "$username想和你缔结同盟，你同意吗？"
+
+msgid "Notice, $username declares to terminate with you!"
+msgstr "注意，$username宣布和你解除同盟！"
+
+msgid "Username doesn't allow empty!"
+msgstr "用户名不能是空！"
+
+msgid "$username doesn't exist!"
+msgstr "不存在$username这个用户！"
+
+msgid "Username cannot be myself!"
+msgstr "用户名不是能自已！"
+
+msgid "Username has existd in associate list, cannot append!"
+msgstr "该用户已在交往列表，不能添加！"
+
+msgid "Initiation time: $time"
+msgstr "发起时间：$time"
+
+msgid "Termiante automatically after $space"
+msgstr "$space后自动解除"
+
+msgid "Using map"
+msgstr "正使用地图"
+
+msgid "How to set map"
+msgstr "如何设置地图"
+
+msgid ""
+"1: Select the map want to set.\n"
+"2: Play $layout, execute $save."
+msgstr ""
+"1：选择你想设置到的地图。\n"
+"2：进入$layout，执行$save命令。"
+
+msgid "If defend city fail, you will lose a employee."
+msgstr "如果防守城市失败，您将失去一个雇佣武将。"
+
+msgid "Edit"
+msgstr "编辑"
+
+msgid "$name will put into $location."
+msgstr "$name将被放入$location。"
+
+msgid "$location is full, $name will lose."
+msgstr "$location已满，$name将丢失。"
+
+#
+# Siege tent
+#
+msgid "Siege tent"
+msgstr "攻城营帐"
+
+msgid "side^Attacker"
+msgstr "攻击方"
+
+msgid "side^Defender"
+msgstr "守备方"
+
+msgid "side^Reinforce"
+msgstr "援军"
+
+msgid ""
+"Require seting '$associate' in '$side'. Player that no agreement can be "
+"defender, ally agreement can be reinforce."
+msgstr ""
+"需要设置“$side”的“$associate”。没有协议的玩家能成为可攻击目标，有同盟协议的玩"
+"家能支援你。"
+
+msgid ""
+"No attackable player! Require seting '$associate' in '$side', and set at "
+"least one no agreement."
+msgstr ""
+"没有可攻击玩家！需要设置“$side”的“$associate”，并让至少存在一个没有协议的玩"
+"家。"
+
+msgid "Do you want to save $username|'s map to your city map?"
+msgstr "真的想把$username的地图作为您的城市地图吗？"
+
+msgid "Stratagem"
+msgstr "密策"
+
+#
+# 3th payment
+#
+msgid "3th payment"
+msgstr "第三方支付"
+
+msgid "Transaction number"
+msgstr "交易号"
+
+msgid "Transaction buyer"
+msgstr "商户订单号"
+
+msgid "transaction^Insert"
+msgstr "插入交易记录"
+
+msgid "Pay"
+msgstr "支付"
+
+msgid "Cannot find transaction!"
+msgstr "没有找到该条交易记录！"
+
+msgid "This transaction had been used!"
+msgstr "该条交易记录已经被使用过！"
+
+msgid "payment^course($alipay, $mail, $money, $pay)"
+msgstr ""
+"一、登录$alipay官方网站（www.alipay.com），执行“转账“。\n"
+"二、“收款人”输入$mail（一旦正确会变为“**飞(sales@leagor.com)”），“付款金额”输"
+"入内购项对应的值，“付款说明”中写上游戏中的账号名和内购项名称。\n"
+"三、一旦后台处理完内购，玩家除了在游戏中看到变换，像王国币增加了，还会收到一"
+"条内购成功的消息。"
+
+msgid "payment^pay remark($ps, $alipay, $mail, $pay)"
+msgstr ""
+"$ps：后台在收到订单后须人工处理下记录，这当中可能有一、两天时差。因而$alipay"
+"官网转账成功后可能不会立即收到内购成功消息，但如果两天后$pay还没收到，请"
+"向“$mail”发邮件询问。"
+
+msgid "Alipay"
+msgstr "支付宝"
+
+msgid "When input, may use $hotkey"
+msgstr "输入时可使用$hotkey"
+
+msgid "coin^Unit"
+msgstr "￥"
+
+#
+# give
+#
+msgid "You"
+msgstr "您"
+
+msgid "$name cannot be negative!"
+msgstr "$name不能是负值！"
+
+msgid "Repertory is not enough to pay $payment!"
+msgstr "库存不足支付$payment！"
+
+msgid "Both $name1 and $name2 can not be zero all!"
+msgstr "$name1和$name2不能同时是零！ "
+
+msgid "$username has $coin and $score"
+msgstr "$username有$coin和$score"
+
+msgid "$username has $coin coin and $score score"
+msgstr "$username有$coin王国币和$score积分"
+
+msgid "Do you want to give $sth to $sb?"
+msgstr "您真的想把$sth交给$sb吗？"
+
+msgid "$first and $second"
+msgstr "$first和$second"
+
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage."
+msgstr "你已经有一个和我一样武将，而我看淡了官场，就此退出历史。"
+
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage. It is $treasure, and give it to you."
+msgstr ""
+"你已经有一个和我一样武将，而我看淡了官场，就此退出历史。这是$treasure，你拿走"
+"吧。"
+
+msgid "No coin and score, cannot upload!"
+msgstr "不能上传王国币、积分都是零的存档！"
+
+msgid "There is in test mode, cannot upload!"
+msgstr "不能上传测试模式时的存档！"
+
+msgid "Save is more than $threshold hour, cannot upload!"
+msgstr "存档时间超过$threshold小时，不能上传！"
+
+msgid "$username lose $name!"
+msgstr "$username失去$name！"
+
+msgid "Upload successfully!"
+msgstr "上传成功！"
+
+msgid "Had uploaded pass that create at $create, cannot upload again!"
+msgstr "创建时间是$create的关卡已被上传过，不能再次上传！"
+
+msgid "Had uploaded at least $max sieges today. cannot upload more!"
+msgstr "您今天至少上传了$max次攻城，不能上传更多了！"
+
+msgid "This save's score($score) is invalid, cannot upload!"
+msgstr "此存档的积分($score)是非法值，不能上传！"
+
+msgid "Haven't connected to server, and unable to enter into game lobby."
+msgstr "没有连接到服务器，不能进入游戏大厅。"
+
+#
+# config city
+#
+msgid "Config city"
+msgstr "设置城市"
+
+msgid "City name"
+msgstr "城市名称"
+
+msgid ""
+"Because of product commercialization, $function does not open source code."
+msgstr "因为游戏商业化，$function函数不开放源码。"
+
+msgid ""
+"Please do not use self-compile project to commerce, for example upload data "
+"to Data Server."
+msgstr "请不要把自编译工程用于商业目的，例如用它上传数据到数据服务器。"
+
+#
+# Exile
+#
+msgid "Exile"
+msgstr "流放"
+
+msgid ""
+"There are at most $count exiled hero. Half heros will be on stage in Siege "
+"mode."
+msgstr "最多可拥有$count个流放武将。攻城时一半会出场。"
+
+#
+# http server
+#
+msgid ""
+"Invalid access! Please check your $server login information. To set up: "
+"Press $account in \"Player profile\" Setting."
+msgstr ""
+"拒绝访问！请检查在游戏中是否正确设置了$server上的账号/密码。解决步骤：在游戏"
+"的“玩家武将”窗口按下“$account”。"
+
+msgid "Invalid access! pre_kingdom_version table on $server isn't ready."
+msgstr "拒绝访问！$server上的pre_kingdom_version表未就绪。"
+
+msgid ""
+"Invalid access! You modified resources files, or check if your version is "
+"the newest."
+msgstr "拒绝访问！你修改了资源文件，或检查在玩的是否是最新版本。"
+
+msgid ""
+"Invalid access! Timestamp error. Check whether login a username on more "
+"device at same time, or restart game."
+msgstr ""
+"拒绝访问！Timestamp错误。检查是否在多台设备上同时登录了同一账号，或重启游戏。"
+
+#
+# http server
+#
+msgid ""
+"Send a command that server doesn't support!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+"发送了服务器不支持命令！\n"
+"\n"
+"请检查在玩的是否是最新版本。"
+
+#
+# http server
+#
+msgid ""
+"Receive unkonwn data!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+"收到未知数据！\n"
+"\n"
+"请检查在玩的是否是最新版本。"
+
+msgid "Ambushed!"
+msgstr "遭到伏击！"
+
+msgid "Alerted!"
+msgstr "遭到预警！"
+
+msgid "Discover ambusher!"
+msgstr "发现埋伏！"
+
+msgid "Message"
+msgstr "消息"
+
+msgid "Sender"
+msgstr "发送"
+
+msgid "Receiver"
+msgstr "接收"
+
+msgid "Time"
+msgstr "时间"
+
+msgid "Announcement content"
+msgstr ""
+"发布v1.0.21(2014.2.28)\n"
+"更新日志\n"
+"游戏部分\n"
+"支持玩家自画城市地图。\n"
+"引入城市内政。城市内政细节参考“城市内政”。\n"
+"引入武将工资。武将工资细节参考“武将工资”。\n"
+"源码部分"
+
+#
+# Sign in
+#
+msgid "Sign in"
+msgstr "签到"
+
+msgid "signin^Fill up"
+msgstr "补签"
+
+msgid ""
+"You have been sign in $continue days, broken $break days. Today $have sign "
+"in."
+msgstr "你连续签到$continue天，断签$break天。今天$have签到。"
+
+msgid "fill up sign in($ps, $break, $max_break, $fillup)"
+msgstr ""
+"$ps 你已经断签$break天，超过$max_break天的要被清空签到信息。你可通过$fillup来"
+"弥补断签。"
+
+msgid "sign in remark($fillup)"
+msgstr ""
+"一、上传一次积分不为0的过关记录视为签到。过关包括RPG、塔防、攻城。\n"
+"二、连续签到10天，给1王国币；连续签到30天，再给2王国币。\n"
+"三、得到王国币是在签到天数能被10整除时，不能靠$fillup恰好增加到，而且那时不能"
+"存在断签天数。"
+
+msgid "been^have"
+msgstr "已经"
+
+msgid "been^haven't"
+msgstr "未曾"
+
+msgid ""
+"You continue to sign in $continue days, reward $coin coin and $score score."
+msgstr "你连续签到$continue天，奖励$coin王国币、$score积分。"
+
+msgid ""
+"You have broken $break days, exceeded $max_break, and result to clear Sign "
+"in data."
+msgstr "你断签$break天，超过$max_break，被清空签到信息。"
+
+msgid ""
+"You hold $coin2 coin and $score2 score, most score, so win $title as an "
+"honour. Reward $coin coin and $score score."
+msgstr ""
+"你累计拥有$coin2王国币和$score2积分，积分最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+msgid ""
+"In the last $days days, you attack other city to $count times, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+"最近$days天，你攻击他人城市$count次，次数最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+msgid ""
+"In the last $days days, your city was attacked to $count times, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+"最近$days天，你的城市被攻击$count次，次数最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+msgid ""
+"In the last $days days, you pass $count times RPG scenario, most times, so "
+"win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+"最近$days天，你玩通$count次RPG剧本，次数最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+msgid ""
+"In the last $days days, you pass $count times Tower scenario, most times, so "
+"win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+"最近$days天，你玩通$count次塔防剧本，次数最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+msgid "Inapp-purchase successfully! Increase $day days VIP membership."
+msgstr "内购成功！增加$day天VIP资格。"
+
+msgid "Inapp-purchase successfully! Increase $coin coin and $score score."
+msgstr "内购成功！增加$coin王国币和$score积分。"
+
+msgid ""
+"System modified your data: $coin coin, $score score. If you have any "
+"questions, please contact $contact."
+msgstr ""
+"系统修改了您的数据：修改为$coin王国币，$score积分。如果您有疑问，请联系"
+"$contact。"
+
+#
+# build ea
+#
+msgid ""
+"Technology income of side equals all cities income divided by number of city."
+msgstr "势力技法收入等于所有城市技法收入除以城市数。"
+
+msgid "More tactic's effect that belong to same city can not be added."
+msgstr "属于同一城市的多个计略府，它们效果不能叠加。"
+
+msgid "Must exist tow keep at least before building wall."
+msgstr "在造城墙前必须至少存在两座城楼。"
+
+msgid "Increase $item every day."
+msgstr "每天增加$item。"
+
+msgid "Economy increase holden card at scenario start."
+msgstr "经济会增加开局时拥有卡牌数。"
+
+msgid "Military increase hero's leadership at scenario start."
+msgstr "军事会增加开局时武将统帅。"
+
+msgid "Culture increase hero's charm at scenario start."
+msgstr "文化会增加开局时武将魅力。"
+
+msgid "Science increase holden technology at scenario start."
+msgstr "科学会增加开局时拥有科技数。"
+
+msgid "Economy"
+msgstr "经济"
+
+msgid "Culture"
+msgstr "文化"
+
+msgid "Science"
+msgstr "科学"
+
+msgid ""
+"Don't pause at taking action when no hero and built artifical on all EA."
+msgstr "没武将且经济区上都已建有建筑物时，不暂停。"
+
+msgid "Troop has come into $city as planned!"
+msgstr "部队已按计划进入$city！"
+
+msgid ""
+"As planned, troop require to arrive at $loc, but come into $city in the "
+"middle. If want to continue arriving at $loc, please command again."
+msgstr ""
+"依计划部队得到达$loc，但中途进入了$city。如要继续到达$loc，请重新向部队发命"
+"令。"
+
+msgid "Developer"
+msgstr "开发者"
+
+msgid "Capture $city"
+msgstr "攻陷$city"
+
+msgid "Guard"
+msgstr "警戒"
+
+msgid "Abolish"
+msgstr "撤除"
+
+msgid "Abolish guard"
+msgstr "撤除警戒"
+
+msgid "Select a grid to guard at"
+msgstr "选择想要警戒的位置"
+
+msgid "Researching technology"
+msgstr "正在研究科技"
+
+msgid "Unallocated treasure"
+msgstr "未分配宝物"
+
+msgid "Unallocated noble"
+msgstr "未分配爵位"
+
+msgid "Show side report when city takes turn."
+msgstr "轮到城市时自动显示。"
+
+msgid "Game genus"
+msgstr "游戏方式"
+
+msgid "mode^Scenario"
+msgstr "关卡"
+
+msgid "mode^RPG"
+msgstr "RPG"
+
+msgid "mode^Tower"
+msgstr "塔防"
+
+msgid "mode^Siege"
+msgstr "攻城"
+
+msgid "Unknown"
+msgstr "未知"
+
+msgid "subcontinent remark"
+msgstr ""
+"在每个次大陆最多能占据一个城市。\n"
+"一个城市每天能贡献30积分。\n"
+"最大耐久是100。如果不足，每天自动涨10。\n"
+"如果防守城市失败，耐久降20。\n"
+"对玩家占据的城市，一天最多沦陷4次。"
+
+msgid "Repair"
+msgstr "修补"
+
+msgid "Endurance"
+msgstr "耐久"
+
+msgid "Subcontinent"
+msgstr "次大陆"
+
+msgid ""
+"Spend $score score may increase 10 endurance.\n"
+"Do you want to spend $score score to $do?"
+msgstr ""
+"花费$score积分可提升10耐久。\n"
+"您真的想花费$score积分去$do吗？"
+
+msgid "Do you want to discard $city?"
+msgstr "您真的想放弃$city吗？"
+
+msgid ""
+"Sorry, run into program BUG. Program has save scene to $save. Hope you to "
+"upload it to sever, so that developer can solve it."
+msgstr ""
+"遇到BUG，程序已经把现场保存在$save。希望你把它上传到服务器，以便开发人员能解"
+"决该BUG。"
+
+msgid "Hate of national perdition! I will be mutually exclusive with $second."
+msgstr "亡国之恨！我和$second誓不两立。"
+
+msgid "Forum"
+msgstr "论坛"
+
+#~ msgid "Join Official Server"
+#~ msgstr "加入官方服务器"
+
+#~ msgid "Log on to the official Wesnoth multiplayer server"
+#~ msgstr "登录到官方多人游戏服务器"
+
+#~ msgid "Join a different server"
+#~ msgstr "加入另一个服务器"
+
+#~ msgid "Host a game using dedicated server ‘wesnothd’"
+#~ msgstr "使用专用服务器“wesnothd”建立游戏"
+
+#~ msgid "Do you want to spend $cost score to sign in?"
+#~ msgstr "您真的想花费$cost积分去补签吗？"

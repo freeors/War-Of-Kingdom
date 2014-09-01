@@ -20,8 +20,6 @@
 
 #include <vector>
 
-class game_display;
-
 namespace gui2 {
 
 class tsystem : public tdialog
@@ -37,7 +35,7 @@ public:
 		bool enable;
 	};
 
-	explicit tsystem(game_display& gui, const std::vector<titem>& items);
+	explicit tsystem(const std::vector<titem>& items);
 
 	int get_retval() const { return retval_; }
 private:
@@ -49,7 +47,6 @@ private:
 
 	void set_retval(twindow& window, int val);
 private:
-	game_display& gui_;
 	const std::vector<titem>& items_;
 
 	int retval_;

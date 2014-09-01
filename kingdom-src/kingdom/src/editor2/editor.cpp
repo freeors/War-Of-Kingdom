@@ -5,9 +5,13 @@
 #include "language.hpp"
 #include "loadscreen.hpp"
 #include "editor.hpp"
-#include "posix.h"
 #include <set>
 #include <sys/stat.h>
+#include "wml_exception.hpp"
+#include "gettext.hpp"
+
+#include "win32x.h"
+#include "struct.h"
 
 #include "unit_types.hpp"
 #include "builder.hpp"
@@ -50,7 +54,6 @@ editor::wml2bin_desc::wml2bin_desc() :
 
 #define BASENAME_DATA		"data.bin"
 #define BASENAME_DATA2		"data2.bin"
-#define BASENAME_EDITOR		"editor.bin"
 #define BASENAME_GUI		"gui.bin"
 #define BASENAME_LANGUAGE	"language.bin"
 #define BASENAME_CAMPAIGNS	"campaigns.bin"
@@ -291,22 +294,6 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 				wml_config_to_file(game_config::path + "/xwml/campaigns/" + name, refcfg, nfiles, sum_size, modified);
 			}
 
-		} else if (type == editor::EDITOR) {
-			cache_.add_define("EDITOR");
-			cache_.add_define("CORE");
-			cache_.get_config(game_config::path + "/data", game_config_);
-			// ::init_textdomains(game_config_);
-
-			// extract [editor] block
-			config& refcfg = game_config_.child("editor");
-			BOOST_FOREACH (const config &i, game_config_.child_range("textdomain")) {
-				refcfg.add_child("textdomain", i);
-			}
-
-			if (write_file) {
-				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_EDITOR, refcfg, nfiles, sum_size, modified);
-			}
-
 		} else if (type == editor::GUI) {
 			// no pre-defined
 			cache_.get_config(game_config::path + "/data/gui", game_config_);
@@ -409,7 +396,7 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 		if (type == editor::SCENARIO_DATA) {
 			short_paths.push_back("data/core");
 			short_paths.push_back(std::string("data/campaigns/") + campaigns[campaign_index]);
-			filter |= SKIP_GUI_DIR | SKIP_INTERNAL_DIR;
+			filter |= SKIP_GUI_DIR | SKIP_INTERNAL_DIR | SKIP_TERRAIN | SKIP_BOOK;
 
 			desc.bin_name = campaigns[campaign_index] + ".bin";
 			
@@ -420,16 +407,6 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 			bin_to_path = game_config::path + "/xwml/campaigns";
 
 			campaign_index ++;
-
-		} else if (type == editor::EDITOR) {
-			short_paths.push_back("data/core");
-			short_paths.push_back("data/themes");
-			filter |= SKIP_SCENARIO_DIR | SKIP_GUI_DIR | SKIP_INTERNAL_DIR;
-			
-			desc.bin_name = BASENAME_EDITOR;
-
-			defines_string << path;
-			defines_string << "EDITOR";
 
 		} else if (type == editor::GUI) {
 			short_paths.push_back("data/gui");
@@ -513,4 +490,142 @@ void editor::write_tb_dat_if() const
 
 		terrain_builder("off-map/alpha.png", desc.wml_nfiles, desc.wml_sum_size, desc.wml_modified);
 	}
+}
+
+tmod_config::tmod_config(const config& cfg)
+	: name(cfg["name"])
+	, res_path(cfg["res_path"])
+	, res_short_path()
+	, patch_path(cfg["patch_path"])
+	, copy_res()
+	, remove_res()
+{
+	if (!res_path.empty()) {
+		std::replace(res_path.begin(), res_path.end(), '/', '\\');
+		if (res_path.at(res_path.size() - 1) == '\\') {
+			res_path.erase(res_path.size() - 1);
+		}
+		size_t pos = res_path.rfind('\\');
+		if (pos != std::string::npos) {
+			res_short_path = res_path.substr(pos + 1);
+		}
+	}
+	if (!patch_path.empty()) {
+		std::replace(patch_path.begin(), patch_path.end(), '/', '\\');
+		if (patch_path.at(patch_path.size() - 1) == '\\') {
+			patch_path.erase(patch_path.size() - 1);
+		}
+	}
+
+	const config& res_cfg = cfg.child("resource");
+	if (!res_cfg) {
+		return;
+	}
+	std::map<std::string, std::vector<tres>* > v;
+	v.insert(std::make_pair("copy", &copy_res));
+	v.insert(std::make_pair("remove", &remove_res));
+
+	for (std::map<std::string, std::vector<tres>* >::const_iterator it = v.begin(); it != v.end(); ++ it) {
+		const config& op_cfg = res_cfg.child(it->first);
+		if (op_cfg) {
+			BOOST_FOREACH (const config::attribute &istrmap, op_cfg.attribute_range()) {
+				std::vector<std::string> vstr = utils::split(istrmap.second);
+				VALIDATE(vstr.size() == 2, "resource item must be 2!");
+				res_type type = res_none;
+				if (vstr[0] == "file") {
+					type = res_file;
+				} else if (vstr[0] == "dir") {
+					type = res_dir;
+				}
+				VALIDATE(type != res_none, "error resource type, must be file or dir!");
+				std::string name = vstr[1];
+				std::replace(name.begin(), name.end(), '/', '\\');
+				it->second->push_back(tres(type, name));
+			}
+		}
+	}
+}
+
+bool tmod_config::valid() const
+{
+	return res_path.size() > 2 && res_path.at(1) == ':' && patch_path.size() > 2 && patch_path.at(1) == ':';
+}
+
+bool tmod_config::opeate_file(bool patch_2_res) const
+{
+	utils::string_map symbols;
+	const std::string src_path = patch_2_res? patch_path: res_path;
+	const std::string dst_path = patch_2_res? res_path: patch_path;
+
+	if (!patch_2_res) {
+		if (is_directory(dst_path) && !delfile1(dst_path.c_str())) {
+			symbols["name"] = dst_path;
+			posix_print_mb(utf8_2_ansi(vgettext2("Delete: $name fail!", symbols).c_str()));
+			return false;
+		}
+	}
+
+	bool fok = true;
+	std::string src, dst;
+
+	// remove
+	for (std::vector<tres>::const_iterator it = remove_res.begin(); patch_2_res && it != remove_res.end(); ++ it) {
+		const tres r = *it;
+		dst = dst_path + "\\" + r.name;
+		if (r.type == res_file) {
+			if (!is_file(dst.c_str())) {
+				continue;
+			}
+		} else {
+			if (!is_directory(dst.c_str())) {
+				continue;
+			}
+		}
+		if (!delfile1(dst.c_str())) {
+			symbols["type"] = r.type == res_file? _("File"): _("Directory");
+			symbols["dst"] = dst;
+			posix_print_mb(utf8_2_ansi(vgettext2("Delete $type, from $dst fail!", symbols).c_str()));
+			fok = false;
+			break;
+		}
+	}
+
+	if (!fok) {
+		return fok;
+	}
+
+	// copy
+	if (is_directory(src_path)) {
+		for (std::vector<tres>::const_iterator it = copy_res.begin(); it != copy_res.end(); ++ it) {
+			const tres r = *it;
+			src = src_path + "\\" + r.name;
+			dst = dst_path + "\\" + r.name;
+			if (r.type == res_file) {
+				if (!is_file(src.c_str())) {
+					continue;
+				}
+				MakeDirectory(dst.substr(0, dst.rfind('\\')));
+			} else {
+				if (!is_directory(src.c_str())) {
+					continue;
+				}
+				dst.erase(dst.rfind('\\'));
+				MakeDirectory(dst);
+			}
+			if (!copyfile(src.c_str(), dst.c_str())) {
+				symbols["type"] = r.type == res_file? _("File"): _("Directory");
+				symbols["src"] = src;
+				symbols["dst"] = dst;
+				posix_print_mb(utf8_2_ansi(vgettext2("Copy $type, from $src to $dst fail!", symbols).c_str()));
+				fok = false;
+				break;
+			}
+		}
+	
+		if (!patch_2_res && !fok) {
+			delfile1(dst.c_str());
+		}
+	}
+	
+	return fok;
 }

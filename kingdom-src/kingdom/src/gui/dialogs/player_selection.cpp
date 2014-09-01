@@ -122,7 +122,8 @@ void tplayer_selection::player_selected(twindow& window)
 {
 	ttent::player_selected(window);
 	tbutton* button = find_widget<tbutton>(&window, "player_city", false, true);
-	button->set_active(rows_mem_[player_].hero_ == player_hero_->number_);
+	std::map<int, int>& city_map = (player_ == 0)? city_map_: empty_city_map_;
+	button->set_active(rows_mem_[player_].hero_ == player_hero_->number_ && !city_map.empty());
 }
 
 void tplayer_selection::player_city(twindow& window)
@@ -133,17 +134,21 @@ void tplayer_selection::player_city(twindow& window)
 	int activity_index = -1;
 
 	tlistbox* list = find_widget<tlistbox>(&window, "player_list", false, true);
+	std::map<int, int>& city_map = (player_ == 0)? city_map_: empty_city_map_;
 
 	int index = 0;
-	for (std::map<int, int>::const_iterator it = city_map_.begin(); it != city_map_.end(); ++ it, index ++) {
+	for (std::map<int, int>::const_iterator it = city_map.begin(); it != city_map.end(); ++ it, index ++) {
 		hero& h = heros_[it->second];
 		citynos.push_back(it->first);
 		str.str("");
-		str << h.name() << "(";
-		hero& leader = heros_[city_leader_map_.find(it->first)->second];
-		str << leader.name() << ")";
+		str << h.name();
+		if (player_ == 0) {
+			str << "(";
+			hero& leader = heros_[city_leader_map_.find(it->first)->second];
+			str << leader.name() << ")";
+		}
 		items.push_back(str.str());
-		if (rows_mem_[0].city_ == it->second) {
+		if (rows_mem_[player_].city_ == it->second) {
 			activity_index = index;
 		}
 	}
@@ -156,15 +161,17 @@ void tplayer_selection::player_city(twindow& window)
 
 	activity_index = dlg.selected_index();
 
-	rows_mem_[0].leader_ = city_leader_map_.find(citynos[activity_index])->second;
-	rows_mem_[0].city_ = city_map_.find(citynos[activity_index])->second;
+	if (rows_mem_[player_].leader_ != player_hero_->number_) {
+		rows_mem_[player_].leader_ = city_leader_map_.find(citynos[activity_index])->second;
+	}
+	rows_mem_[player_].city_ = city_map.find(citynos[activity_index])->second;
 
-	tgrid* grid_ptr = list->get_row_grid(0);
+	tgrid* grid_ptr = list->get_row_grid(player_);
 	tcontrol* control = dynamic_cast<tcontrol*>(grid_ptr->find("side", true));
-	control->set_label(heros_[rows_mem_[0].leader_].name());
+	control->set_label(heros_[rows_mem_[player_].leader_].name());
 
 	control = dynamic_cast<tcontrol*>(grid_ptr->find("city", true));
-	control->set_label(heros_[rows_mem_[0].city_].name());
+	control->set_label(heros_[rows_mem_[player_].city_].name());
 
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 	ok->set_active(rows_mem_[player_].city_ != -1);

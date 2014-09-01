@@ -8,8 +8,8 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2013-10-26 15:17+0800\n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"PO-Revision-Date: 2014-07-05 11:42+0800\n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -18,7 +18,7 @@ msgstr ""
 "X-Poedit-SourceCharset: utf-8\n"
 "Plural-Forms: nplurals=2; plural=(n>1);\n"
 "X-Poedit-Bookmarks: -1,-1,-1,3,-1,-1,-1,-1,-1,-1\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.6.5\n"
 
 msgid "None"
 msgstr "无"
@@ -230,11 +230,17 @@ msgstr "操练"
 msgid "technology_desc-drill"
 msgstr "增加战法总点数"
 
-msgid "technology-discipline"
-msgstr "法纪"
+msgid "technology-tactic degree"
+msgstr "战意"
 
-msgid "technology_desc-discipline"
-msgstr "增加战法回复点数"
+msgid "technology_desc-tactic degree"
+msgstr "加速恢复战意"
+
+msgid "technology-ticks"
+msgstr "敏捷"
+
+msgid "technology_desc-ticks"
+msgstr "加速恢复行动力"
 
 msgid "technology-balefire"
 msgstr "烽火"
@@ -343,6 +349,36 @@ msgstr "战术"
 
 msgid "technology_desc-strategic"
 msgstr "加速学习统率、魅力"
+
+msgid "technology-xue zhong song tan"
+msgstr "雪中送炭"
+
+msgid "technology_desc-xue zhong song tan"
+msgstr "援军被灭后归入被支援方"
+
+msgid "technology-miao shou hui chun"
+msgstr "妙手回春"
+
+msgid "technology_desc-miao shou hui chun"
+msgstr "每回合恢复我方一只部队的4/5HP"
+
+msgid "technology-xiao li cang dao"
+msgstr "笑里藏刀"
+
+msgid "technology_desc-xiao li cang dao"
+msgstr "每回合降掉敌方一只部队的4/5HP"
+
+msgid "technology-sheng dong ji xi"
+msgstr "声东击西"
+
+msgid "technology_desc-sheng dong ji xi"
+msgstr "主动攻击时无反击"
+
+msgid "technology-jiang lang cai jin"
+msgstr "江郎才尽"
+
+msgid "technology_desc-jiang lang cai jin"
+msgstr "2/3机率使敌方施放战法失败"
 
 msgid "character-aggressive"
 msgstr "好斗"
@@ -886,7 +922,7 @@ msgid "feature-38"
 msgstr "侦察"
 
 msgid "feature_desc-38"
-msgstr "每格子消耗1去揭开迷雾/黑幕"
+msgstr "发现三格内敌方隐身部队"
 
 msgid "feature-39"
 msgstr "技巧"
@@ -904,13 +940,13 @@ msgid "feature-41"
 msgstr "伏击"
 
 msgid "feature_desc-41"
-msgstr "可以隐藏在森林里，不会被敌人发觉"
+msgstr "可以隐藏在山林里，不会被敌人发觉"
 
 msgid "feature-42"
 msgstr "隐蔽"
 
 msgid "feature_desc-42"
-msgstr "可以隐藏在据点周围，不会被敌人发觉"
+msgstr "可以隐藏在城市、据点周围，不会被敌人发觉"
 
 msgid "feature-43"
 msgstr "戏子"
@@ -988,7 +1024,7 @@ msgid "feature-55"
 msgstr "水遁"
 
 msgid "feature_desc-55"
-msgstr "可以隐藏在深水里，不会被敌人发觉"
+msgstr "可以隐藏在水里，不会被敌人发觉"
 
 msgid "feature-56"
 msgstr "昼战"
@@ -1039,28 +1075,28 @@ msgid "feature_desc-63"
 msgstr "可以隐藏在平地，不会被敌人发觉"
 
 msgid "feature-64"
-msgstr ""
+msgstr "战意"
 
 msgid "feature_desc-64"
-msgstr ""
+msgstr "加速恢复战意"
 
 msgid "feature-65"
-msgstr ""
+msgstr "连击"
 
 msgid "feature_desc-65"
-msgstr ""
+msgstr "主动攻击时多攻击一次"
 
 msgid "feature-66"
-msgstr ""
+msgstr "扰敌"
 
 msgid "feature_desc-66"
-msgstr ""
+msgstr "被攻击时减少一次攻击"
 
 msgid "feature-67"
-msgstr ""
+msgstr "敏捷"
 
 msgid "feature_desc-67"
-msgstr ""
+msgstr "加速恢复行动力"
 
 msgid "feature-68"
 msgstr ""
@@ -1078,13 +1114,13 @@ msgid "feature-70"
 msgstr "霸王"
 
 msgid "feature_desc-70"
-msgstr "增强所有部队的攻击力和抗性（大）"
+msgstr "加速恢复战意，较大强化所有部队能力"
 
 msgid "feature-71"
 msgstr "妖道"
 
 msgid "feature_desc-71"
-msgstr "增强学术部队的攻击力和抗性，攻击时吸收HP"
+msgstr "加速恢复战意，强化学术部队能力，攻击时吸收HP"
 
 msgid "feature-72"
 msgstr "勇将"
@@ -1102,7 +1138,7 @@ msgid "feature-74"
 msgstr "飞将"
 
 msgid "feature_desc-74"
-msgstr "破防，无视ZOC，增强步兵、骑兵的攻击力和抗性（大）"
+msgstr "加速恢复战意，破防，无视ZOC，较大强化步兵、骑兵能力"
 
 msgid "feature-75"
 msgstr "精妙"
@@ -1120,7 +1156,7 @@ msgid "feature-77"
 msgstr "倾国"
 
 msgid "feature_desc-77"
-msgstr "攻击拥有减速效果，攻击时吸收HP，获得XP加倍"
+msgstr "加速恢复战意，攻击拥有减速效果，同时吸收HP"
 
 msgid "feature-78"
 msgstr "枭雄"
@@ -1144,13 +1180,13 @@ msgid "feature-81"
 msgstr "劫营"
 
 msgid "feature_desc-81"
-msgstr "降低被攻击部队防御，战斗后获得五维、兵科经验加倍"
+msgstr "加速恢复战意，破防，战斗后获得五维、兵科经验加倍"
 
 msgid "feature-82"
 msgstr "医疗"
 
 msgid "feature_desc-82"
-msgstr "攻击拥有减速效果，每回合恢复32HP"
+msgstr "加速恢复战意，攻击拥有减速效果，每回合恢复32HP"
 
 msgid "feature-83"
 msgstr "兵法"
@@ -1162,31 +1198,31 @@ msgid "feature-84"
 msgstr "地遁"
 
 msgid "feature_desc-84"
-msgstr "可以隐藏在平地、森林，不会被敌人发觉"
+msgstr "可以隐藏在平地、山林，不会被敌人发觉"
 
 msgid "feature-85"
 msgstr "循形"
 
 msgid "feature_desc-85"
-msgstr "可以隐藏在平地、森林和深水，不会被敌人发觉"
+msgstr "可以隐藏在平地、山林和水，不会被敌人发觉"
 
 msgid "feature-86"
-msgstr ""
+msgstr "逍遥"
 
 msgid "feature_desc-86"
-msgstr ""
+msgstr "战意，金刚，遁走"
 
 msgid "feature-87"
-msgstr ""
+msgstr "袭扰"
 
 msgid "feature_desc-87"
-msgstr ""
+msgstr "连击，扰敌"
 
 msgid "feature-88"
-msgstr ""
+msgstr "神速"
 
 msgid "feature_desc-88"
-msgstr ""
+msgstr "战意、敏捷"
 
 msgid "feature-89"
 msgstr ""
@@ -1441,13 +1477,13 @@ msgid "tactic_desc-fire"
 msgstr "对范围内敌方造成火焰伤害"
 
 msgid "tactic-hide"
-msgstr "隐藏"
+msgstr "伏队"
 
 msgid "tactic_desc-hide"
 msgstr "隐藏自身"
 
 msgid "tactic-hides"
-msgstr "隐阵"
+msgstr "伏阵"
 
 msgid "tactic_desc-hides"
 msgstr "隐藏范围内友军"
@@ -1506,17 +1542,53 @@ msgstr "大治疗"
 msgid "tactic_desc-heals"
 msgstr "恢复范围内友军HP"
 
-msgid "tactic-food"
-msgstr "输粮"
+msgid "tactic-action"
+msgstr "增加自身行动"
 
-msgid "tactic_desc-food"
-msgstr "向我方一部队输送2/3粮草"
+msgid "tactic_desc-action"
+msgstr "增加自身行动力"
+
+msgid "tactic-more action"
+msgstr "较大增加自身行动"
+
+msgid "tactic_desc-more action"
+msgstr "较大增加自身行动力"
+
+msgid "tactic-actions"
+msgstr "增加范围内友军行动力"
+
+msgid "tactic_desc-actions"
+msgstr "增加范围内友方行动力"
+
+msgid "tactic-more actions"
+msgstr "较大增加全行动"
+
+msgid "tactic_desc-more actions"
+msgstr "较大增加范围内友方的行动力"
+
+msgid "tactic-weaken actions"
+msgstr "降低全行动"
+
+msgid "tactic_desc-weaken actions"
+msgstr "降低范围内敌军行动力"
+
+msgid "tactic-weaken more actions"
+msgstr "较大降低全行动"
+
+msgid "tactic_desc-weaken more actions"
+msgstr "较大降低范围内敌军行动力"
+
+msgid "tactic-revival"
+msgstr "回归"
+
+msgid "tactic_desc-revival"
+msgstr "让我方一只部队再次行动"
 
 msgid "tactic-divine wei wu"
 msgstr "魏武之强"
 
 msgid "tactic_desc-divine wei wu"
-msgstr "较大提升范围内友军攻击、防御"
+msgstr "较大提升全军攻击、防御"
 
 msgid "tactic-dragon in people"
 msgstr "人中吕布"
@@ -1528,7 +1600,7 @@ msgid "tactic-integrate attack and defend"
 msgstr "攻防一体"
 
 msgid "tactic_desc-integrate attack and defend"
-msgstr "较大提升范围自身攻击、防御"
+msgstr "较大提升自身攻击、防御"
 
 msgid "tactic-speedy solo"
 msgstr "单骑驱"
@@ -1576,19 +1648,19 @@ msgid "tactic-military defense"
 msgstr "全军防御"
 
 msgid "tactic_desc-military defense"
-msgstr "提升范围内友军的防御、士气"
+msgstr "提升全军的防御、士气"
 
 msgid "tactic-military encourage"
 msgstr "全军兵击"
 
 msgid "tactic_desc-military encourage"
-msgstr "提升友军士气"
+msgstr "提升全军士气"
 
 msgid "tactic-military attack"
 msgstr "全军猛攻"
 
 msgid "tactic_desc-military attack"
-msgstr "较大提升友军攻击力"
+msgstr "较大提升全军攻击力"
 
 msgid "tactic-spy infiltrate"
 msgstr "埋伏之毒"
@@ -1600,19 +1672,19 @@ msgid "tactic-fire stratagem"
 msgstr "火计"
 
 msgid "tactic_desc-fire stratagem"
-msgstr "对范围内敌军造成火焰伤害"
+msgstr "对敌军造成火焰伤害"
 
 msgid "tactic-divine fire"
 msgstr "神火计"
 
 msgid "tactic_desc-divine fire"
-msgstr "对范围内敌军造成火焰伤害"
+msgstr "对敌军造成火焰伤害"
 
 msgid "tactic-big strike"
 msgstr "大打击"
 
 msgid "tactic_desc-big strike"
-msgstr "对范围内敌军造成冲击伤害"
+msgstr "对敌军造成冲击伤害"
 
 msgid "tactic-ambush"
 msgstr "伏兵"
@@ -1624,7 +1696,7 @@ msgid "tactic-divine ambushes"
 msgstr "伏兵八阵"
 
 msgid "tactic_desc-divine ambushes"
-msgstr "范围内友军发动伏兵效果"
+msgstr "全军发动伏兵效果"
 
 msgid "tactic-ambush accelerate"
 msgstr "伏兵神速"
@@ -1636,13 +1708,13 @@ msgid "tactic-accelerate firms"
 msgstr "速战固守"
 
 msgid "tactic_desc-accelerate firms"
-msgstr "提升范围内友军的防御、移动"
+msgstr "提升全军的防御、移动"
 
 msgid "tactic-beautiful interlink"
 msgstr "美女连环"
 
 msgid "tactic_desc-beautiful interlink"
-msgstr "弱化范围内敌军防御、移动"
+msgstr "弱化敌军防御、移动"
 
 msgid "tactic-alert attack"
 msgstr "预警攻击"
@@ -1654,19 +1726,37 @@ msgid "tactic-divine provoke"
 msgstr "虚诱掩杀"
 
 msgid "tactic_desc-divine provoke"
-msgstr "范围内敌方部队向我方移动"
+msgstr "诱使敌方一只部队向自身移动"
 
 msgid "tactic-divine clear"
 msgstr "镇静"
 
 msgid "tactic_desc-divine clear"
-msgstr "解除范围内全军异常状态"
+msgstr "解除全军异常状态"
 
 msgid "tactic-divine heal"
 msgstr "义勇军"
 
 msgid "tactic_desc-divine heal"
-msgstr "恢复范围内全军HP"
+msgstr "恢复全军HP，提升士气"
+
+msgid "tactic-centralize mind"
+msgstr "归心术"
+
+msgid "tactic_desc-centralize mind"
+msgstr "提升自身攻击、防御、士气，解除异常，恢复HP"
+
+msgid "tactic-divine advance"
+msgstr "洞察先机"
+
+msgid "tactic_desc-divine advance"
+msgstr "大幅增加范围内全军行动力"
+
+msgid "tactic-chain ring"
+msgstr "铁索连环"
+
+msgid "tactic_desc-chain ring"
+msgstr "大幅降低范围内敌军行动力"
 
 #
 # formation
@@ -1764,28 +1854,86 @@ msgstr "裨将军"
 #
 # inapp-purchase
 #
-msgid "inapp-noncard"
-msgstr "自动得到卡"
+msgid "inapp-vip2"
+msgstr "成为会员（30天）"
 
-msgid "inapp_desc-noncard"
-msgstr ""
-"在RPG剧本，每隔25回合自动得到一张下野或仕官卡。当库存卡牌中下野卡数不大于仕官"
-"卡数时得到下野卡，否则得到的是仕官卡。"
-
-msgid "inapp-nontacticslot"
-msgstr "更多预激活战法"
-
-msgid "inapp_desc-nontacticslot"
-msgstr ""
-"在塔防剧本，多一个预激活战法。默认是两个预激活战法，有了它后增加到三个。"
-
-msgid "inapp-vip"
-msgstr "成为会员"
-
-msgid "inapp_desc-vip"
+msgid "inapp_desc-vip2"
 msgstr ""
 "成为会员后可享受一些特权。像在RPG剧本，每隔25回合自动得到一张下野或仕官卡；在"
-"塔防剧本，多一个预激活战法。"
+"塔防剧本，多一个预激活战法；设置玩家武将有更多可分配点数。"
 
-#~ msgid "noble-prince"
-#~ msgstr "公"
+msgid "inapp-score"
+msgstr "2王国币"
+
+msgid "inapp_desc-score"
+msgstr "增加2王国币。"
+
+msgid "inapp-8coin"
+msgstr "8王国币"
+
+msgid "inapp_desc-8coin"
+msgstr "增加8王国币。"
+
+msgid "inapp-45coin"
+msgstr "45王国币"
+
+msgid "inapp_desc-45coin"
+msgstr "增加45王国币。"
+
+msgid "inapp-100coin"
+msgstr "100王国币"
+
+msgid "inapp_desc-100coin"
+msgstr "增加100王国币。"
+
+#
+# title
+#
+msgid "title-0"
+msgstr "富甲天下"
+
+msgid "title-1"
+msgstr "攻城狂徒"
+
+msgid "title-2"
+msgstr "防御要地"
+
+msgid "title-3"
+msgstr "来玩RPG"
+
+msgid "title-4"
+msgstr "来玩塔防"
+
+#
+# genus
+#
+msgid "genus-turn_based"
+msgstr "回合制"
+
+msgid "genus-half_realtime"
+msgstr "半即时制"
+
+#~ msgid "inapp-nontacticslot"
+#~ msgstr "更多预激活战法"
+
+#~ msgid "inapp_desc-nontacticslot"
+#~ msgstr ""
+#~ "在塔防剧本，多一个预激活战法。默认是两个预激活战法，有了它后增加到三个。"
+
+#~ msgid "technology-sa dou cheng bing"
+#~ msgstr "撒豆成兵"
+
+#~ msgid "technology_desc-sa dou cheng bing"
+#~ msgstr "征兵成本降到原来2/3"
+
+#~ msgid "tactic-food"
+#~ msgstr "输粮"
+
+#~ msgid "tactic_desc-food"
+#~ msgstr "向我方一部队输送2/3粮草"
+
+#~ msgid "technology-discipline"
+#~ msgstr "法纪"
+
+#~ msgid "technology_desc-discipline"
+#~ msgstr "增加战法回复点数"

@@ -1,0 +1,469 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: kingdom-help\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+
+msgid "<img>src=help/hpxp.png align=right float=yes</img>"
+msgstr ""
+
+msgid "<img>src=help/moving1.png align=left float=yes</img><img>src=help/moving2.png align=left float=yes</img>"
+msgstr ""
+
+msgid "<img>src=help/recruit.png align=left float=yes</img>12"
+msgstr ""
+
+msgid "<img>src=terrain/bridge/wood-ne-sw.png align=left box=no</img><img>src=terrain/bridge/stonebridge-nesw.png align=middle box=no</img><img>src=terrain/cave/chasm-stone-bridge-sw-ne.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/castle/castle-tile.png align=left box=no</img> <img>src=terrain/castle/encampment/regular-tile.png align=middle box=no</img> <img>src=terrain/castle/dwarven-castle-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/cave/beam.png align=left box=no</img> <img>src=terrain/cave/beam2.png align=middle box=no</img> <img>src=terrain/cave/beam3.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/cave/floor3.png align=left box=no</img> <img>src=terrain/cave/earthy-floor6.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/cave/hills-variation.png align=middle box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/cave/wall-rough-tile.png align=left box=no</img> <img>src=terrain/walls/wall-stone-tile.png align=middle box=no</img> <img>src=terrain/mountains/cloud-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/chasm/regular-tile.png align=left box=no</img> <img>src=terrain/chasm/abyss-tile.png align=middle box=no</img> <img>src=terrain/chasm/earthy-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/flat/road.png align=left box=no</img> <img>src=terrain/flat/dirt.png align=middle box=no</img> <img>src=terrain/flat/stone-path.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/forest/mushrooms-tile.png align=middle box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/forest/pine.png align=left box=no</img> <img>src=terrain/forest/snow-forest.png align=middle box=no</img> <img>src=terrain/forest/tropical.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/frozen/snow.png align=left box=no</img> <img>src=terrain/frozen/ice.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/grass/green.png align=left box=no</img> <img>src=terrain/grass/semi-dry.png align=middle box=no</img><img>src=terrain/grass/dry.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/hills/regular.png align=left box=no</img> <img>src=terrain/hills/desert.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/mountains/basic-tile.png align=left box=no</img> <img>src=terrain/mountains/snow-tile.png align=middle box=no</img> <img>src=terrain/mountains/dry-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/sand/beach.png align=middle box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/sand/desert.png align=middle box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/swamp/water-tile.png align=left box=no</img> <img>src=terrain/swamp/mud-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/unwalkable/lava.png align=left box=no</img> <img>src=terrain/mountains/volcano-tile.png align=middle box=no</img> <img>src=terrain/unwalkable/lava-chasm-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/village/coast-tile.png align=left box=no</img> <img>src=terrain/village/swamp-merfolk-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/village/human-tile.png align=left box=no</img> <img>src=terrain/village/elven-tile.png align=middle box=no</img><img>src=terrain/village/swampwater-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/water/coast-grey-tile.png align=left box=no</img> <img>src=terrain/water/coast-tile.png align=middle box=no</img> <img>src=terrain/water/coast-tropical-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/water/ford-tile.png align=middle box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/water/ocean-grey-tile.png align=left box=no</img> <img>src=terrain/water/ocean-tile.png align=middle box=no</img> <img>src=terrain/water/ocean-tropical-tile.png align=right box=no</img>
+
+"
+msgstr ""
+
+msgid "<img>src=terrain/water/reef-tile.png align=middle box=no</img>
+
+"
+msgstr ""
+
+msgid "Abilities"
+msgstr ""
+
+msgid "About the Game"
+msgstr ""
+
+msgid "Account, Player hero"
+msgstr ""
+
+msgid "Aversion to light and dark holds no sway over these brave individuals."
+msgstr ""
+
+msgid "Bridge"
+msgstr ""
+
+msgid "Castle"
+msgstr ""
+
+msgid "Cave"
+msgstr ""
+
+msgid "Coastal Reef"
+msgstr ""
+
+msgid "Coin, Score"
+msgstr ""
+
+msgid "Combat"
+msgstr ""
+
+msgid "Combat in <italic>text='Battle for Wesnoth'</italic> always takes place between units in adjacent hexes. Click on your unit, and click on the enemy you want to attack: your unit will move towards the enemy unit, and when they are next to each other, combat will begin. The attacker and defender alternate strikes until each has used their allotted number of strikes. The attacker chooses one of its weapons to attack with, and the defender retaliates with one of its attacks of the same type. There are two types of attacks: melee, which usually involves weapons such as swords, axes or fangs; and ranged, which usually involves weapons such as bows, spears and fireballs."
+msgstr ""
+
+msgid "Damage Types and Resistance"
+msgstr ""
+
+msgid "Deep Water"
+msgstr ""
+
+msgid "Desert"
+msgstr ""
+
+msgid "Dextrous"
+msgstr ""
+
+msgid "Dextrous units do 1 more damage for every successful strike in ranged combat."
+msgstr ""
+
+msgid "Dim"
+msgstr ""
+
+msgid "Dwellings of sentient beings are not easily used for cover by feral creatures of low intelligence. As a result, feral units receive a maximum of 40% defense in any land-based village regardless of base terrain."
+msgstr ""
+
+msgid "Experience and Advancement"
+msgstr ""
+
+msgid "Factions"
+msgstr ""
+
+msgid "Fearless"
+msgstr ""
+
+msgid "Feral"
+msgstr ""
+
+msgid "Flat"
+msgstr ""
+
+msgid "Forest"
+msgstr ""
+
+msgid "Frozen"
+msgstr ""
+
+msgid "Fundamentals of Gameplay"
+msgstr ""
+
+msgid "Game maps feature a variety of terrains that affect both unit movement and a unit’s defensive capability in combat.
+
+"
+msgstr ""
+
+msgid "Gameplay"
+msgstr ""
+
+msgid "Healing"
+msgstr ""
+
+msgid "Healthy"
+msgstr ""
+
+msgid "Hills"
+msgstr ""
+
+msgid "Hitpoints and Experience"
+msgstr ""
+
+msgid "If both units survive a combat, they gain a number of experience points equal to the level of the unit they’re fighting. If a unit kills another in combat, however, it gains much more experience — 4 for a level 0 unit, 8 for level 1, 16 for level 2, 24 for level 3, and so forth."
+msgstr ""
+
+msgid "Illuminated Cave"
+msgstr ""
+
+msgid "Impassable"
+msgstr ""
+
+msgid "In App Purchase, VIP Member"
+msgstr ""
+
+msgid "In Wesnoth, it is not enough simply to recruit units and fight. You must watch your gold as well, especially in campaigns, where you can carry extra gold over from one scenario to the next. There are two aspects to this; Income and Upkeep."
+msgstr ""
+
+msgid "In Wesnoth, there are three types of damage usually associated with physical attacks: Blade, Pierce and Impact damage. Additionally, there are three further types of damage usually associated with magical attacks: Fire, Cold and Arcane attacks. Different units may have resistances which alter the damage which they take from certain damage types."
+msgstr ""
+
+msgid "In combat, your units will inevitably take damage. When a unit <ref>dst='experience_and_advancement' text='advances'</ref>, it will heal fully. This can happen as you finish fighting an enemy, whether it is your turn or not. Wesnoth offers several other ways for your units to heal, all of which take place at the beginning of your turn, before you take action."
+msgstr ""
+
+msgid "In some scenarios, parts of the map will be hidden from you. There are two mechanisms that can be used separately or together. The Shroud hides both the terrain and any units at a location. However, once it is cleared, you can always see that location. The Fog of War only hides units and ownership of villages (other than by you or your allies). The Fog of War is cleared temporarily when you have units nearby, but returns when they leave. Both the Shroud and the Fog of War are cleared by units. Each unit clears locations adjacent to those within one turn’s move (ignoring zones of control and enemy units).
+
+Normally you can undo a unit’s movement, as long as an event with a randomized result has not occurred, such as combat or recruitment (as most units receive random traits when recruited). Exploring hidden terrain by clearing Shroud or Fog will also prevent undos to a previous state. You may wish to activate ‘delay shroud updates’ in the actions menu. This will prevent units from clearing Shroud or Fog until the next randomized event or a manual update via ‘update shroud now’ (or the end of your turn) and thereby perserve your ability to undo movement."
+msgstr ""
+
+msgid "Income and Upkeep"
+msgstr ""
+
+msgid "Intelligent"
+msgstr ""
+
+msgid "Intelligent units require 20% less experience than usual to advance."
+msgstr ""
+
+msgid "Introduction"
+msgstr ""
+
+msgid "Lava"
+msgstr ""
+
+msgid "Load, Network save"
+msgstr ""
+
+msgid "Loyal"
+msgstr ""
+
+msgid "Loyal units don’t incur upkeep. Most units incur an upkeep cost at the end of every turn, which is equal to their level. Loyal units do not incur this cost."
+msgstr ""
+
+msgid "Mechanical units are immune to poison, also drain and plague doesn’t work on them."
+msgstr ""
+
+msgid "Most units have two traits. However, Undead units are assigned the single trait <italic>text='Undead'</italic>, and Woses do not receive any traits. Traits are modifications that change a unit’s attributes slightly. They are usually randomly assigned to a unit when it is recruited."
+msgstr ""
+
+msgid "Mountains"
+msgstr ""
+
+msgid "Movement"
+msgstr ""
+
+msgid "Mushroom Grove"
+msgstr ""
+
+msgid "On top of the energy bar shown next to each unit of yours is an orb. For units you control, this orb is:"
+msgstr ""
+
+msgid "Orbs"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "Pay careful attention to the Objectives pop-up box at the beginning of each scenario. Usually you will achieve victory by killing all enemy leaders, and only be defeated by having your leader killed. But scenarios may have other victory objectives — getting your leader to a designated point, say, or rescuing someone, or solving a puzzle, or holding out against a siege until a certain number of turns have elapsed."
+msgstr ""
+
+msgid "Quick"
+msgstr ""
+
+msgid "Quick units have 1 extra movement point, but 5% less HP than usual."
+msgstr ""
+
+msgid "Recruiting and Recalling"
+msgstr ""
+
+msgid "Renowned for their vitality, some dwarves are sturdier than others and can rest even when travelling."
+msgstr ""
+
+msgid "Resilient"
+msgstr ""
+
+msgid "Resilient units have 4 HP plus 1 HP per level more than usual."
+msgstr ""
+
+msgid "River Ford"
+msgstr ""
+
+msgid "Road"
+msgstr ""
+
+msgid "Rockbound Cave"
+msgstr ""
+
+msgid "Sand"
+msgstr ""
+
+msgid "Shallow Water"
+msgstr ""
+
+msgid "Shroud and Fog of War"
+msgstr ""
+
+msgid "Slow"
+msgstr ""
+
+msgid "Slow units have −1 movement but 5% more hitpoints."
+msgstr ""
+
+msgid "Some weapons have special features that increase the effectiveness of attacking with them."
+msgstr ""
+
+msgid "Strong"
+msgstr ""
+
+msgid "Strong units do 1 more damage for every successful strike in melee combat, and have 1 more HP."
+msgstr ""
+
+msgid "Submerged Village"
+msgstr ""
+
+msgid "Swamp"
+msgstr ""
+
+msgid "Terrains"
+msgstr ""
+
+msgid "The War of Kingdom Help"
+msgstr ""
+
+msgid "The time of day affects the damage of certain units as follows:
+ Lawful units get +25% damage in daytime, and −25% damage at night.
+ Chaotic units get +25% damage at night, and −25% in daytime.
+ Liminal units get +25% damage during twilight.
+ Neutral units are unaffected by the time of day."
+msgstr ""
+
+msgid "These pages outline all you need to know to play <italic>text='Battle for Wesnoth'</italic>. They cover how to play and the basic mechanics behind the game. As you play the game, new information is added to these pages as you come across new aspects of the game. For more detailed information on special situations and exceptions, please follow the links included."
+msgstr ""
+
+msgid "This concludes the fundamentals of Wesnoth. You might want to read up on Basic Strategy, or familiarize yourself with <ref>dst='..traits_section' text='Traits'</ref> and <ref>dst='..abilities_section' text='Abilities'</ref>, but you now know everything you need to know to play the Heir to the Throne campaign. Have fun, and good luck!"
+msgstr ""
+
+msgid "Time of Day"
+msgstr ""
+
+msgid "Title screen"
+msgstr ""
+
+msgid "Traits"
+msgstr ""
+
+msgid "Undead units are immune to poison, also drain and plague doesn’t work on them."
+msgstr ""
+
+msgid "Units"
+msgstr ""
+
+msgid "Units with trait Dim suffer a 20% increase in experience required to advance."
+msgstr ""
+
+msgid "Units with trait Weak get a −1 increment in hitpoints and melee damage."
+msgstr ""
+
+msgid "Unwalkable"
+msgstr ""
+
+msgid "Victory and Defeat"
+msgstr ""
+
+msgid "Village"
+msgstr ""
+
+msgid "Weak"
+msgstr ""
+
+msgid "Weapon Specials"
+msgstr ""
+
+msgid "Wrap Up"
+msgstr ""
+
+msgid "abilities text"
+msgstr ""
+
+msgid "about_game text"
+msgstr ""
+
+msgid "ingame_help_item^Contributors"
+msgstr ""
+
+msgid "overview text"
+msgstr ""
+
+msgid "title_screen text"
+msgstr ""
+
+msgid "trait^Mechanical"
+msgstr ""
+
+msgid "trait^Undead"
+msgstr ""
+
+msgid "ts-load text"
+msgstr ""
+
+msgid "ts-player text"
+msgstr ""
+
+msgid "ts-purchase text"
+msgstr ""
+
+msgid "ts-scroe text"
+msgstr ""
+
+msgid "ts-side text"
+msgstr ""
+
+msgid "ts-signin text"
+msgstr ""

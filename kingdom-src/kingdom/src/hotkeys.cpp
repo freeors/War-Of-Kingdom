@@ -52,6 +52,8 @@ const struct {
 	{ hotkey::HOTKEY_ANIMATE_MAP, "animatemap", N_("Animate Map"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_UNDO, "undo", N_("Undo"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_REDO, "redo", N_("Redo"), false, hotkey::SCOPE_GENERAL },
+	{ hotkey::HOTKEY_UP, "up", N_("Up"), false, hotkey::SCOPE_GENERAL },
+	{ hotkey::HOTKEY_DOWN, "down", N_("Down"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_ZOOM_IN, "zoomin", N_("Zoom In"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_ZOOM_OUT, "zoomout", N_("Zoom Out"), false, hotkey::SCOPE_GENERAL },
 	{ hotkey::HOTKEY_ZOOM_DEFAULT, "zoomdefault", N_("Default Zoom"), false, hotkey::SCOPE_GENERAL },
@@ -77,7 +79,10 @@ const struct {
 	{ hotkey::HOTKEY_RPG_INDEPENDENCE, "rpg-independence", N_("RPG Independence"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BUILD_M, "build_m", N_("Build"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BUILD, "build", N_("Build"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_GUARD, "guard", N_("Guard"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_ABOLISH, "abolish", N_("Abolish"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_EXTRACT, "extract", N_("Extract"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_ADVANCE, "advance", N_("Advance"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_DEMOLISH, "demolish", N_("Demolish"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_ARMORY, "armory", N_("Reform"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_UNIT_DETAIL, "unit_detail", N_("Unit Detail"), false, hotkey::SCOPE_GAME },
@@ -103,7 +108,6 @@ const struct {
 	{ hotkey::HOTKEY_LABEL_TERRAIN, "labelterrain", N_("Set Label"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_CLEAR_LABELS, "clearlabels", N_("Clear Labels"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_PLAY_REPLAY, "playreplay", N_("Play"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_RESET_REPLAY, "resetreplay", N_("Reset"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_STOP_REPLAY, "stopreplay", N_("Stop"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_REPLAY_NEXT_TURN, "replaynextturn", N_("Next Turn"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_REPLAY_NEXT_SIDE, "replaynextside", N_("Next Side"), false, hotkey::SCOPE_GAME },
@@ -122,7 +126,6 @@ const struct {
 	{ hotkey::HOTKEY_BUILD_TECHNOLOGY, "build_c:technology", N_("Technology"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BUILD_TACTIC, "build_c:tactic", N_("Tactic"), false, hotkey::SCOPE_GAME },
 
-#ifndef DISABLE_EDITOR
 	{ hotkey::HOTKEY_EDITOR_QUIT_TO_DESKTOP, "editor-quit-to-desktop", N_("Quit to Desktop"), false, hotkey::SCOPE_EDITOR },
 	{ hotkey::HOTKEY_EDITOR_CLOSE_MAP, "editor-close-map", N_("Close Map"), false, hotkey::SCOPE_EDITOR },
 	{ hotkey::HOTKEY_EDITOR_SWITCH_MAP, "editor-switch-map", N_("Switch Map"), false, hotkey::SCOPE_EDITOR },
@@ -191,13 +194,13 @@ const struct {
 		N_("Auto-update Terrain Transitions"), false, hotkey::SCOPE_EDITOR },
 	{ hotkey::HOTKEY_EDITOR_REFRESH_IMAGE_CACHE, "editor-refresh-image-cache",
 		N_("Refresh Image Cache"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_DRAW_COORDINATES, "editor-draw-coordinates",
-		N_("Draw Hex Coordinates"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_DRAW_TERRAIN_CODES, "editor-draw-terrain-codes",
-		N_("Draw Terrain Codes"), false, hotkey::SCOPE_EDITOR },
+	{ hotkey::HOTKEY_EDITOR_MAP, "editor-map",
+		N_("Map"), false, hotkey::SCOPE_EDITOR },
+	{ hotkey::HOTKEY_EDITOR_TERRAIN_GROUP, "editor-terrain-group",
+		N_("Switch terrain group"), false, hotkey::SCOPE_EDITOR },
+	{ hotkey::HOTKEY_EDITOR_BRUSH, "editor-brush",
+		N_("Switch brush"), false, hotkey::SCOPE_EDITOR },
 
-
-#endif
 
 	{ hotkey::HOTKEY_DELAY_SHROUD, "delayshroud", N_("Delay Shroud Updates"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_UPDATE_SHROUD, "updateshroud", N_("Update Shroud Now"), false, hotkey::SCOPE_GAME },
@@ -534,18 +537,9 @@ hotkey_item& get_hotkey(const std::string& command)
 	return *itor;
 }
 
-hotkey_item& get_hotkey(int character, int keycode, bool shift, bool ctrl,
-	bool alt, bool cmd)
+hotkey_item& get_hotkey(int character, int keycode, bool shift, bool ctrl, bool alt, bool cmd)
 {
 	std::vector<hotkey_item>::iterator itor;
-
-	DBG_G << "getting hotkey: char=" << lexical_cast<std::string>(character)
-		   << " keycode="  << lexical_cast<std::string>(keycode) << " "
-		   << (shift ? "shift," : "")
-		   << (ctrl ? "ctrl," : "")
-		   << (alt ? "alt," : "")
-		   << (cmd ? "cmd," : "")
-		   << "\n";
 
 	// Sometimes control modifies by -64, ie ^A == 1.
 	if (0 < character && character < 64 && ctrl) {
@@ -588,7 +582,7 @@ hotkey_item& get_hotkey(int character, int keycode, bool shift, bool ctrl,
 						DBG_G << "Could match by keycode..." << "yes, but scope is inactive\n";
 					}
 				}
-				DBG_G << "Could match by keycode..." << "but modifiers different\n";
+				// Could match by keycode... but modifiers different;
 			}
 		}
 	}
@@ -601,15 +595,11 @@ hotkey_item& get_hotkey(int character, int keycode, bool shift, bool ctrl,
 
 hotkey_item& get_hotkey(const SDL_KeyboardEvent& event)
 {
-	return get_hotkey(event.keysym.unicode, event.keysym.sym,
+	return get_hotkey(event.keysym.sym, event.keysym.sym,
 			(event.keysym.mod & KMOD_SHIFT) != 0,
 			(event.keysym.mod & KMOD_CTRL) != 0,
 			(event.keysym.mod & KMOD_ALT) != 0,
-			(event.keysym.mod & KMOD_LMETA) != 0
-#ifdef __APPLE__
-			|| (event.keysym.mod & KMOD_RMETA) != 0
-#endif
-			);
+			(event.keysym.mod & KMOD_LGUI) != 0);
 }
 
 static void _get_visible_hotkey_itor(int index, std::vector<hotkey_item>::iterator& itor)
@@ -760,8 +750,17 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 		case HOTKEY_BUILD:
 			build(str);
 			break;
+		case HOTKEY_GUARD:
+			guard();
+			break;
+		case HOTKEY_ABOLISH:
+			abolish();
+			break;
 		case HOTKEY_EXTRACT:
 			extract();
+			break;
+		case HOTKEY_ADVANCE:
+			advance();
 			break;
 		case HOTKEY_DEMOLISH:
 			demolish();
@@ -837,9 +836,6 @@ bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, st
 			break;
 		 case HOTKEY_PLAY_REPLAY:
 			play_replay();
-			 break;
-		 case HOTKEY_RESET_REPLAY:
-			reset_replay();
 			 break;
 		 case HOTKEY_STOP_REPLAY:
 			 stop_replay();
@@ -1012,7 +1008,7 @@ std::vector<std::string> command_executor::get_menu_images(display &disp, const 
 		} else {
 			std::string desc = hk.get_description();
 			if (hk.get_id() == HOTKEY_ENDTURN) {
-				const theme::menu *b = disp.get_theme().get_menu_item("button-endturn");
+				const theme::menu *b = disp.get_theme().get_menu_item("endturn");
 				assert(b);
 				desc = b->title();
 			}

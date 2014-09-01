@@ -20,6 +20,7 @@
 
 class config;
 class CVideo;
+class hero_map;
 
 namespace editor {
 
@@ -30,13 +31,15 @@ enum EXIT_STATUS {
 	EXIT_ERROR
 };
 
+enum {NONE, SIEGE};
+
 /**
  * Main interface for launching the editor from the title screen.
  * @returns How the editor was exited (whether the intent was to
  *          go back to the titlescreen or quit to desktop altogeter)
  */
 
-EXIT_STATUS start(const config& game_config, CVideo& video, const std::string& filename = "", bool take_screenshot = false, const std::string& screenshot_filename = "map_screenshot.bmp");
+EXIT_STATUS start(const config& game_config, CVideo& video, hero_map& heros, int mode, const std::string& filename = "", bool take_screenshot = false, const std::string& screenshot_filename = "map_screenshot.bmp");
 
 } //end namespace editor
 

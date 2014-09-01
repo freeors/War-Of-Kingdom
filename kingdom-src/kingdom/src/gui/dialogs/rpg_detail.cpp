@@ -172,7 +172,7 @@ void trpg_detail::rpg_2_ui(twindow& window)
 			str << vgettext("wesnoth-lib", "To $meritorious, will be appointed mayor", symbols);
 		}
 	} else if (rpg::stratum == hero_stratum_mayor) {
-		if (current_team.holded_cities().size() < 2) {
+		if (current_team.holden_cities().size() < 2) {
 			str << _("Capture more city, can be independent");
 		} else {
 			str << _("Be independent will be to leader");
@@ -196,9 +196,9 @@ void trpg_detail::rpg_2_ui(twindow& window)
 	label = find_widget<tlabel>(&window, "tip_intellect", false, true);
 	label->set_label(lexical_cast<std::string>(fxptoi9(rpg::h->intellect_)));
 
-	// politics
-	label = find_widget<tlabel>(&window, "tip_politics", false, true);
-	label->set_label(lexical_cast<std::string>(fxptoi9(rpg::h->politics_)));
+	// spirit
+	label = find_widget<tlabel>(&window, "tip_spirit", false, true);
+	label->set_label(lexical_cast<std::string>(fxptoi9(rpg::h->spirit_)));
 
 	// charm
 	label = find_widget<tlabel>(&window, "tip_charm", false, true);

@@ -5,6 +5,7 @@
 
 #Version
 
+- Kingdom 1.0.27 Release - August 30 2014
 - Kingdom 1.0.17 Release - October 30 2013
 - Kingdom 1.0.12 Release - May 27 2013
 - Kingdom 1.0.10 Release - April 2 2013

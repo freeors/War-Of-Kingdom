@@ -28,7 +28,6 @@ namespace ns {
 */
 void tfeature::from_config(int index, const std::vector<int>& items)
 {
-	index_ = index;
 	for (std::vector<int>::const_iterator it = items.begin(); it != items.end(); ++ it) {
 		items_.insert(*it);
 	}
@@ -38,11 +37,16 @@ void tfeature::from_config(int index, const std::vector<int>& items)
 
 void tfeature::from_ui_feature_edit(HWND hdlgP)
 {
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_FEATUREEDIT_LEVEL);
+	level_ = ComboBox_GetCurSel(hctl);
 }
 
 void tfeature::update_to_ui_feature_edit(HWND hdlgP) const
 {
-	HWND hctl = GetDlgItem(hdlgP, IDC_LV_FEATUREEDIT_CANDIDATE);
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_FEATUREEDIT_LEVEL);
+	ComboBox_SetCurSel(hctl, level_);
+
+	hctl = GetDlgItem(hdlgP, IDC_LV_FEATUREEDIT_CANDIDATE);
 	std::stringstream strstr;
 	std::string str;
 	char text[_MAX_PATH];
@@ -53,6 +57,9 @@ void tfeature::update_to_ui_feature_edit(HWND hdlgP) const
 	int iItem = 0;
 	const std::vector<int>& features = hero::valid_features();
 	for (std::vector<int>::const_iterator it = features.begin(); it != features.end(); ++ it) {
+		if (ns::type == IDC_LV_FEATURE_ATOM) {
+			break;
+		}
 		if (*it >= HEROS_BASE_FEATURE_COUNT) {
 			break;
 		}
@@ -130,18 +137,20 @@ void tfeature::update_to_ui_feature_edit(HWND hdlgP) const
 		ListView_SetItem(hctl, &lvi);
 	}
 
-	Button_Enable(GetDlgItem(hdlgP, IDOK), !items_.empty());
+	if (ns::type != IDC_LV_FEATURE_ATOM) {
+		Button_Enable(GetDlgItem(hdlgP, IDOK), !items_.empty());
+	}
 }
 
 void tfeature::update_to_ui_row(HWND hdlgP) const
 {
 }
 
-std::string tfeature::generate(const std::string& prefix) const
+std::string tfeature::generate(const std::string& prefix, int index) const
 {
 	std::stringstream strstr;
 
-	strstr << prefix << index_ << " = ";
+	strstr << prefix << index << " = ";
 	for (std::set<int>::const_iterator it = items_.begin(); it != items_.end(); ++ it) {
 		if (it != items_.begin()) {
 			strstr << ", ";
@@ -164,29 +173,39 @@ void tcore::update_to_ui_feature(HWND hdlgP)
 	// fill data
 	LVITEM lvi;
 	int iItem = 0;
-	const std::vector<int>& features = hero::valid_features();
-	for (std::vector<int>::const_iterator it = features.begin(); it != features.end(); ++ it, iItem ++) {
-		if (*it >= HEROS_BASE_FEATURE_COUNT) {
+	for (std::vector<tfeature>::iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
+		int feature = std::distance(features_updating_.begin(), it);
+		if (feature >= HEROS_BASE_FEATURE_COUNT) {
 			break;
 		}
+		const tfeature& f = *it;
 		int index = 0;
 		
 		lvi.mask = LVIF_TEXT | LVIF_PARAM;
 		// number
-		lvi.iItem = iItem;
+		lvi.iItem = iItem ++;
 		lvi.iSubItem = index ++;
 		strstr.str("");
-		strstr << *it;
+		strstr << feature;
 		strcpy(text, strstr.str().c_str());
 		lvi.pszText = text;
-		lvi.lParam = (LPARAM)*it;
+		lvi.lParam = (LPARAM)feature;
 		ListView_InsertItem(hctl, &lvi);
 
 		// name
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = index ++;
 		strstr.str("");
-		strstr << hero::feature_str(*it);
+		strstr << hero::feature_str(feature);
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// level
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = index ++;
+		strstr.str("");
+		strstr << f.level_;
 		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
@@ -195,7 +214,7 @@ void tcore::update_to_ui_feature(HWND hdlgP)
 		lvi.mask = LVIF_TEXT;
 		lvi.iSubItem = index ++;
 		strstr.str("");
-		strstr << hero::feature_desc_str(*it);
+		strstr << hero::feature_desc_str(feature);
 		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
@@ -206,8 +225,12 @@ void tcore::update_to_ui_feature(HWND hdlgP)
 	ListView_DeleteAllItems(hctl);
 	// fill data
 	iItem = 0;
-	for (std::vector<tfeature>::const_iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it, iItem ++) {
-		int feature = it->index_;
+	for (std::vector<tfeature>::iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
+		int feature = std::distance(features_updating_.begin(), it);
+		if (feature < HEROS_BASE_FEATURE_COUNT) {
+			continue;
+		}
+		const tfeature& f = *it;
 		int index = 0;
 		
 		lvi.mask = LVIF_TEXT | LVIF_PARAM;
@@ -226,6 +249,15 @@ void tcore::update_to_ui_feature(HWND hdlgP)
 		lvi.iSubItem = index ++;
 		strstr.str("");
 		strstr << hero::feature_str(feature);
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
+
+		// level
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = index ++;
+		strstr.str("");
+		strstr << f.level_;
 		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
@@ -252,6 +284,8 @@ void tcore::update_to_ui_feature(HWND hdlgP)
 		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		lvi.pszText = text;
 		ListView_SetItem(hctl, &lvi);
+
+		iItem ++;
 	}
 }
 
@@ -302,6 +336,15 @@ BOOL On_DlgFeatureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ListView_InsertColumn(hctl, index ++, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 40;
+	lvc.iSubItem = index;
+	strstr.str("");
+	strstr << _("Level");
+	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 400;
 	lvc.iSubItem = index;
 	strcpy(text, utf8_2_ansi(_("Description")));
@@ -334,6 +377,15 @@ BOOL On_DlgFeatureInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	ListView_InsertColumn(hctl, index ++, &lvc);
 
 	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 40;
+	lvc.iSubItem = index;
+	strstr.str("");
+	strstr << _("Level");
+	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.cx = 180;
 	lvc.iSubItem = index;
 	strstr.str("");
@@ -360,20 +412,30 @@ BOOL On_DlgFeatureEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	editor_config::move_subcfg_right_position(hdlgP, lParam);
 
 	std::stringstream strstr;
-	if (ns::action_feature == ma_edit) {
-		strstr << _("Edit complex feature");
+	if (ns::type == IDC_LV_FEATURE_ATOM) {
+		strstr << _("Edit atomic feature");
 	} else {
-		strstr << _("Add complex feature");
+		strstr << _("Edit complex feature");
 	}
-	tfeature& f = ns::core.features_updating_[ns::clicked_feature];
-	strstr << std::setfill('0') << std::setw(3) << f.index_ << ": " << hero::feature_str(f.index_);
+	
+	int feature = ns::type == IDC_LV_FEATURE_ATOM? ns::clicked_feature: HEROS_BASE_FEATURE_COUNT + ns::clicked_feature;
+	tfeature& f = ns::core.features_updating_[feature];
+	strstr << std::setfill('0') << std::setw(3) << feature << ": " << hero::feature_str(feature);
 	SetWindowText(hdlgP, utf8_2_ansi(strstr.str().c_str()));
 	ShowWindow(GetDlgItem(hdlgP, IDCANCEL), SW_HIDE);
 
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LEVEL), utf8_2_ansi(_("Level")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CANDIDATE), utf8_2_ansi(_("Candidate")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ITEM), utf8_2_ansi(_("Item")));
 
-	HWND hctl = GetDlgItem(hdlgP, IDC_LV_FEATUREEDIT_CANDIDATE);
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_FEATUREEDIT_LEVEL);
+	ComboBox_AddString(hctl, "Lv0");
+	ComboBox_AddString(hctl, "Lv1");
+	ComboBox_AddString(hctl, "Lv2");
+	ComboBox_AddString(hctl, "Lv3");
+	ComboBox_AddString(hctl, "Lv4");
+
+	hctl = GetDlgItem(hdlgP, IDC_LV_FEATUREEDIT_CANDIDATE);
 	LVCOLUMN lvc;
 	int index = 0;
 	char text[_MAX_PATH];
@@ -446,7 +508,8 @@ BOOL On_DlgFeatureEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 void On_DlgFeatureEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	BOOL changed = FALSE;
-	tfeature& f = ns::core.features_updating_[ns::clicked_feature];
+	int feature = ns::type == IDC_LV_FEATURE_ATOM? ns::clicked_feature: HEROS_BASE_FEATURE_COUNT + ns::clicked_feature;
+	tfeature& f = ns::core.features_updating_[feature];
 
 	switch (id) {
 	case IDM_ADD:
@@ -460,7 +523,7 @@ void On_DlgFeatureEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify
 
 	case IDOK:
 		changed = TRUE;
-		ns::core.features_updating_[ns::clicked_feature].from_ui_feature_edit(hdlgP);
+		ns::core.features_updating_[feature].from_ui_feature_edit(hdlgP);
 	case IDCANCEL:
 		EndDialog(hdlgP, changed? 1: 0);
 		break;
@@ -516,7 +579,6 @@ void featureedit_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 
 	DestroyMenu(hpopup);
 
-	ns::type = DlgItem;
 	ns::clicked_item = lvi.lParam;
 
     return;
@@ -546,16 +608,11 @@ BOOL CALLBACK DlgFeatureEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM 
 void OnFeatureAddBt(HWND hdlgP, int after_it)
 {
 	std::vector<tfeature>::iterator it = ns::core.features_updating_.begin();
-	std::advance(it, after_it + 1);
+	std::advance(it, HEROS_BASE_FEATURE_COUNT + after_it + 1);
 	
 	tfeature f;
-	f.index_ = HEROS_BASE_FEATURE_COUNT + after_it + 1;
 	it = ns::core.features_updating_.insert(it, f);
-	ns::clicked_feature = f.index_;
-
-	for (++ it; it != ns::core.features_updating_.end(); ++ it) {
-		it->index_ ++;
-	}
+	ns::clicked_feature = after_it + 1;
 
 	ns::core.update_to_ui_feature(hdlgP);
 	ns::core.set_dirty(tcore::BIT_FEATURE, ns::core.features_dirty()); 
@@ -564,12 +621,8 @@ void OnFeatureAddBt(HWND hdlgP, int after_it)
 void OnFeatureDelBt(HWND hdlgP)
 {
 	std::vector<tfeature>::iterator it = ns::core.features_updating_.begin();
-	std::advance(it, ns::clicked_feature);
+	std::advance(it, HEROS_BASE_FEATURE_COUNT + ns::clicked_feature);
 	it = ns::core.features_updating_.erase(it);
-
-	for (; it != ns::core.features_updating_.end(); ++ it) {
-		it->index_ --;
-	}
 
 	ns::core.update_to_ui_feature(hdlgP);
 	ns::core.set_dirty(tcore::BIT_FEATURE, ns::core.features_dirty());
@@ -684,8 +737,9 @@ void feature_notify_handler_dblclk(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 	ListView_GetItem(lpNMHdr->hwndFrom, &lvi);
 
 	if (lpnmitem->iItem >= 0) {
-		if (lpNMHdr->idFrom == IDC_LV_FEATURE_COMPLEX) {
+		if ((IDC_LV_FEATURE_ATOM && ns::core.features_updating_[lpnmitem->iItem].level_ >= 0) || lpNMHdr->idFrom == IDC_LV_FEATURE_COMPLEX) {
 			ns::clicked_feature = lpnmitem->iItem;
+			ns::type = DlgItem;
 			OnFeatureEditBt(hdlgP);
 		}
 	}

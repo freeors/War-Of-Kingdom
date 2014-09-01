@@ -5,3 +5,4 @@ APP_PLATFORM := android-9
 
 APP_STL := gnustl_shared
 APP_GNUSTL_FORCE_CPP_FEATURES := exceptions rtti
+APP_CFLAGS += -Wno-error=format-security

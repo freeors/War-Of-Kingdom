@@ -34,7 +34,7 @@ class trandom_map
 {
 public:
 
-	explicit trandom_map(const config& cfg, int mode = RPG_MODE);
+	explicit trandom_map(const config& cfg, int mode = mode_tag::RPG, bool local_only = false);
 
 	mp_game_settings& get_parameters();
 	const config& scenario_data() const;
@@ -53,12 +53,14 @@ protected:
 	virtual void post_update_map(twindow& window, int select) {};
 	void generate_map(twindow& window);
 
+	enum {LOAD_GAME, SIEGE_MODE, BASE};
 protected:
 	const config& cfg_;
 	int mode_;
+	bool local_only_;
 	int load_game_index_;
+	int siege_mode_index_;
 	util::scoped_ptr<map_generator> generator_;
-	std::vector<int> candidate_;
 
 	mp_game_settings parameters_;
 

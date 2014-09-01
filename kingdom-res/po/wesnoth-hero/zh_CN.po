@@ -1,14 +1,15 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: kingdom\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
 "Language-Team: \n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.6.5\n"
 
 msgid "leadership"
 msgstr "统率"
@@ -19,8 +20,8 @@ msgstr "武力"
 msgid "intellect"
 msgstr "智力"
 
-msgid "politics"
-msgstr "政治"
+msgid "spirit"
+msgstr "敏捷"
 
 msgid "charm"
 msgstr "魅力"
@@ -59,7 +60,7 @@ msgid "intimate"
 msgstr "亲密"
 
 msgid "hate"
-msgstr "憎恶"
+msgstr "仇恨"
 
 msgid "meritorious"
 msgstr "功勋"
@@ -140,7 +141,10 @@ msgid "flag-1"
 msgstr "流浪"
 
 msgid "flag-2"
-msgstr ""
+msgstr "雇佣"
+
+msgid "flag-3"
+msgstr "NPC"
 
 msgid "heart"
 msgstr "义理"
@@ -335,7 +339,7 @@ msgid "name-26"
 msgstr "据点"
 
 msgid "name-27"
-msgstr "保留"
+msgstr "学校"
 
 msgid "name-28"
 msgstr "保留"
@@ -539,19 +543,19 @@ msgid "name-94"
 msgstr "替换4"
 
 msgid "name-95"
-msgstr "替换5"
+msgstr "本地玩家城市"
 
 msgid "name-96"
-msgstr "保留"
+msgstr "网络玩家城市1"
 
 msgid "name-97"
-msgstr "保留"
+msgstr "网络玩家城市2"
 
 msgid "name-98"
-msgstr "保留"
+msgstr "网络玩家城市3"
 
 msgid "name-99"
-msgstr "保留"
+msgstr "网络玩家城市4"
 
 msgid "name-100"
 msgstr "叶柳莺"
@@ -1513,6 +1517,176 @@ msgstr "管辂"
 msgid "name-419"
 msgstr "左慈"
 
+msgid "name-420"
+msgstr "傅佥"
+
+msgid "name-421"
+msgstr "王语嫣"
+
+msgid "name-422"
+msgstr "嫦娥"
+
+msgid "name-423"
+msgstr "赵灵儿"
+
+msgid "name-424"
+msgstr "李依娃"
+
+msgid "name-425"
+msgstr "项羽"
+
+msgid "name-426"
+msgstr "李逍遥"
+
+msgid "name-427"
+msgstr "女娲氏"
+
+msgid "name-428"
+msgstr "伏羲氏"
+
+msgid "name-429"
+msgstr "雷泽氏"
+
+msgid "name-430"
+msgstr "华胥氏"
+
+msgid "name-431"
+msgstr "柏皇氏"
+
+msgid "name-432"
+msgstr "有洛氏"
+
+msgid "name-433"
+msgstr "梏桎"
+
+msgid "name-434"
+msgstr "傲彻"
+
+msgid "name-435"
+msgstr "强良"
+
+msgid "name-436"
+msgstr "灵珠子"
+
+msgid "name-437"
+msgstr "钱塘君"
+
+msgid "name-438"
+msgstr "中央氏"
+
+msgid "name-439"
+msgstr "孟翼"
+
+msgid "name-440"
+msgstr "驮维"
+
+msgid "name-441"
+msgstr "无支祁"
+
+msgid "name-442"
+msgstr "九凤"
+
+msgid "name-443"
+msgstr "视默"
+
+msgid "name-444"
+msgstr "朱朝"
+
+msgid "name-445"
+msgstr "夔龙"
+
+msgid "name-446"
+msgstr "海若"
+
+msgid "name-447"
+msgstr "敖玄"
+
+msgid "name-448"
+msgstr "敖听心"
+
+msgid "name-449"
+msgstr "金提"
+
+#, fuzzy
+msgid "name-450"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-451"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-452"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-453"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-454"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-455"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-456"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-457"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-458"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-459"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-460"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-461"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-462"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-463"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-464"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-465"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-466"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-467"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-468"
+msgstr "保留"
+
+#, fuzzy
+msgid "name-469"
+msgstr "保留"
+
 msgid "surname"
 msgstr "姓"
 
@@ -1598,7 +1772,7 @@ msgid "surname-26"
 msgstr "-"
 
 msgid "surname-27"
-msgstr "保留"
+msgstr "-"
 
 msgid "surname-28"
 msgstr "保留"
@@ -2776,6 +2950,176 @@ msgstr "管"
 msgid "surname-419"
 msgstr "左"
 
+msgid "surname-420"
+msgstr "傅"
+
+msgid "surname-421"
+msgstr "王"
+
+msgid "surname-422"
+msgstr "嫦"
+
+msgid "surname-423"
+msgstr "赵"
+
+msgid "surname-424"
+msgstr "李"
+
+msgid "surname-425"
+msgstr "项"
+
+msgid "surname-426"
+msgstr "李"
+
+msgid "surname-427"
+msgstr "女娲"
+
+msgid "surname-428"
+msgstr "伏羲"
+
+msgid "surname-429"
+msgstr "雷泽"
+
+msgid "surname-430"
+msgstr "华胥"
+
+msgid "surname-431"
+msgstr "柏皇"
+
+msgid "surname-432"
+msgstr "有洛"
+
+msgid "surname-433"
+msgstr "鼠"
+
+msgid "surname-434"
+msgstr "牛"
+
+msgid "surname-435"
+msgstr "虎"
+
+msgid "surname-436"
+msgstr "兔"
+
+msgid "surname-437"
+msgstr "龙"
+
+msgid "surname-438"
+msgstr "蛇"
+
+msgid "surname-439"
+msgstr "马"
+
+msgid "surname-440"
+msgstr "羊"
+
+msgid "surname-441"
+msgstr "猴"
+
+msgid "surname-442"
+msgstr "鸡"
+
+msgid "surname-443"
+msgstr "狗"
+
+msgid "surname-444"
+msgstr "猪"
+
+msgid "surname-445"
+msgstr "夔"
+
+msgid "surname-446"
+msgstr "海"
+
+msgid "surname-447"
+msgstr "敖"
+
+msgid "surname-448"
+msgstr "敖"
+
+msgid "surname-449"
+msgstr "昆吾"
+
+#, fuzzy
+msgid "surname-450"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-451"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-452"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-453"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-454"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-455"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-456"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-457"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-458"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-459"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-460"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-461"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-462"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-463"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-464"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-465"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-466"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-467"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-468"
+msgstr "保留"
+
+#, fuzzy
+msgid "surname-469"
+msgstr "保留"
+
 msgid "desc0"
 msgstr "系统"
 
@@ -2858,7 +3202,7 @@ msgid "desc26"
 msgstr "据点"
 
 msgid "desc27"
-msgstr "保留"
+msgstr "学校"
 
 msgid "desc28"
 msgstr "保留"
@@ -3062,19 +3406,19 @@ msgid "desc94"
 msgstr "替换4。一般用于特定关卡设定自有城市。"
 
 msgid "desc95"
-msgstr "替换5。一般用于特定关卡设定自有城市。"
+msgstr "本地玩家城市。"
 
 msgid "desc96"
-msgstr "-"
+msgstr "网络玩家城市#1。"
 
 msgid "desc97"
-msgstr "-"
+msgstr "网络玩家城市#2。"
 
 msgid "desc98"
-msgstr "-"
+msgstr "网络玩家城市#3。"
 
 msgid "desc99"
-msgstr "-"
+msgstr "网络玩家城市#4。"
 
 msgid "desc100"
 msgstr ""
@@ -5747,23 +6091,303 @@ msgstr ""
 "操身受病痛之苦。[*演]与华佗、甘始、郤俭等人同受喜好养生法之曹操招揽。於演义中"
 "戏弄曹操之情节，以晋朝葛洪所著之「神仙传」为基準而造出之角色。"
 
-#~ msgid "ambition"
-#~ msgstr "野心"
+msgid "desc420"
+msgstr ""
+"蜀之武将。傅彤之子。使用四角铁简（铁扇）。[*演]与蒋舒同受姜维赏识，参加姜维之"
+"北伐。於长城之战讨伐李鹏、王真。尔後守卫阳平关。２６３年，迎击钟会率领之蜀讨"
+"伐军但败北。虽返回阳平关，同僚之蒋舒却早已投降。於乱战中大喊「死後亦为蜀"
+"鬼」，自杀。[*史]傅彤之继承者，成为关中之都督。於钟会攻至之时，於阳平关进行笼"
+"城。但因同僚之蒋舒投降故使军队混乱，战败而死。"
 
-#~ msgid "ambition-0"
-#~ msgstr "闲云野鹤"
+msgid "desc421"
+msgstr ""
+"金庸武侠小说《天龙八部》中的女主角之一，段正淳与情妇李青萝之女。外貌和段誉朝"
+"思暮想的石洞仙子相似。自小与母亲生长在曼陀山庄内寸步未离。与表哥慕容复为青梅"
+"竹马，因为表哥热爱武功，为他熟读各派武学秘笈，能看出各家武功招式，是一位武学"
+"理论家，却不谙武功。后来慕容复为了兴复大燕，欲争取西夏驸马，王语嫣便跳崖自杀"
+"但被段誉所救。后王语嫣得知表哥对于自己寻死之事漠不关心，在心灰意冷之际又投"
+"井，后在井中与段誉定情。结局时，段誉与王语嫣成了一对，并且同回大理，段誉曾形"
+"容其为“语笑嫣然，和蔼可亲”。"
 
-#~ msgid "ambition-1"
-#~ msgstr "甘守田园"
+msgid "desc422"
+msgstr ""
+"本称姮娥，是中国神话人物、羿之妻。因西汉时为避汉文帝刘恒的忌讳而改称嫦娥，又"
+"作常娥，江苏人。神话中因偷食羿自西王母处所盗得的不死药而奔月。民间多有其传说"
+"以及诗词歌赋流传。在道教中，嫦娥为月神，又称太阴星君，道教以月为阴之精，尊称"
+"为月宫黄华素曜元精圣后太阴元君，或称月宫太阴皇君孝道明王，作女神像。"
 
-#~ msgid "ambition-2"
-#~ msgstr "得过且过"
+msgid "desc423"
+msgstr ""
+"《仙剑奇侠传》中人物。受天命眷顾，女娲族裔与人类共生之女。外表柔弱，内在坚毅"
+"的她，原本只是个与世隔绝，宛若池中白莲般的脱俗少女，自幼跟随姥姥隐居仙灵岛修"
+"炼，躲避仇人的追杀。直到遇到闯入仙灵岛求药的李逍遥，便再也躲不过卷入黑白两苗"
+"族的冲突纠葛中。难以告人的神秘身世，让她逃不过命运的捉弄，注定在滚滚红尘中历"
+"尽千灾万劫。"
 
-#~ msgid "ambition-3"
-#~ msgstr "乱世枭雄"
+msgid "desc424"
+msgstr ""
+"2011年度季军。原名李烁，广东珠海人，从小喜欢画画，初中时爱上唱歌，解放军艺术"
+"学院音乐系毕业。舞台上不乏模仿邓丽君高手，但她让模仿邓丽君达到了一个新的高"
+"度，出神入化。同时才艺与唱功也非常出色，对其他风格的歌曲亦有很强的驾驭能力，"
+"曲风多变能力全面。\n"
+"<format>color='green' text='参赛歌曲'</format>\n"
+"《光阴的故事》、《铁血丹心》、《剪爱》、《月亮代表我的心》、《记忆》、《Beat "
+"it》、《万水千山总是情》、《但愿人长久》、《我只在乎你》、《嫂子颂》、《新不"
+"了情》"
 
-#~ msgid "ambition-4"
-#~ msgstr "戏子流寇"
+msgid "desc425"
+msgstr ""
+"项羽（前232年－前202年），名籍，字羽。古代中国军事统帅，秦朝灭亡后的天下共"
+"主、西楚统治者，楚国下相（今江苏省宿迁市宿城区）人，战国末期楚名将项燕孙儿，"
+"七岁后随叔父项梁迁吴中（非今江苏苏州市，实为乌程，在今浙江湖州吴兴）。秦末时"
+"被楚怀王封为“鲁公”，在前207年秦朝覆亡的决定性战役钜鹿之战中统率楚军大破秦军，"
+"秦亡后自封“西楚霸王”，统治黄河及长江下游的梁楚九郡，楚汉战争时于垓下之战为刘"
+"邦所败，最后突围至长江北岸乌江江边自刎而死。"
 
-#~ msgid "character"
-#~ msgstr "性格"
+msgid "desc426"
+msgstr ""
+"《仙剑奇侠传》中人物。原本只是小渔村中的客栈店小二，悟性高超，聪明绝顶，富有"
+"强烈正义感，由婶婶含辛茹苦抚养长大，在客栈中英雄好汉见多了，一心想做除暴安良"
+"的正义游侠，但是这番凌云壮志，在小渔村邻里的眼中，只被当做白日梦。岂知在遇赵"
+"灵儿，卷入她迷般的身世后，就注定进入侠界江湖，斩尽妖魔邪道。逍遥天生命带桃"
+"花，初闯江湖即与三名女主角产生一段难分难解的四角爱情"
+
+msgid "desc427"
+msgstr ""
+"蛇身人首，年十六嫁伏羲。因帝俊侵伐，托庇燧皇，得其器重，与夫共掌部族，主外，"
+"启氏族联盟时代。任用贤能，和平安居。因共工氏自立兵败，袭不周山，至天倾洪水成"
+"灾，乃炼五色石补缺，又斩玄武四肢擎天。因人族几近殆亡，遂取青藤息壤以土造人，"
+"是为后天人族。为护人族周全，兴兵伐兽，一统妖界。"
+
+msgid "desc428"
+msgstr ""
+"龙身人首，年三十一娶女娲。因帝俊侵伐，托庇燧皇，得其器重，与妻共掌部族，主"
+"内，启氏族联盟时代。求学燧皇，承《河图》、《洛书》，悟八卦，作《太极图》，一"
+"画开天，乃道教始祖。聪慧有德，开华夏天文、历法、礼乐、气象之先。又创结网捕"
+"鱼、缫丝织布、武器狩猎、豢养家畜之法，促农事生产。后推演天机，召神农氏、轩辕"
+"氏合力封印不死秘药，隐于西方火云洞。"
+
+msgid "desc429"
+msgstr ""
+"华胥氏之夫，伏羲氏之父，东方苍龙国主。人首龙身，威武狂野，骁勇善战，吼声如"
+"雷，又名“雷神”。与华胥氏一见钟情，结为夫妇。因帝俊兴兵侵犯，率部抵抗，相持不"
+"下。后遭其弟万圣氏叛投帝俊，内忧外患，其父苍龙王呕血而亡，其受族人拥戴继位，"
+"后雷泽城破，率部突围，一路斩将，托庇燧人氏。后因重伤身亡。"
+
+msgid "desc430"
+msgstr ""
+"雷泽氏之妻，伏羲氏之母。少女时期游于雷泽沿岸，偶遇履迹，识雷泽氏，一见倾心，"
+"结为夫妇。后因帝俊兵犯，雷泽城破，随夫托庇燧人氏。"
+
+msgid "desc431"
+msgstr ""
+"柏皇部族酋长，伏羲女娲氏政权下相。智勇兼备，善良朗爽，见多识广，受部族推举任"
+"酋长，故号“柏皇氏”。时灾害频繁，遂领部族抗灾自救，与民共苦，重建家园，受各部"
+"酋长举荐出任下相，制衡时任上相之共工氏。虽与共工氏政见不合，却渐生情愫，后因"
+"共工氏造反，遂作罢。喜作书画，于九重天之沈天关与负屃比拼书法，胜之。后天之巅"
+"决战，遭常羲以月御之阵围杀。"
+
+msgid "desc432"
+msgstr ""
+"伏羲氏之女。貌美优雅，善奏乐曲。得父教导，晓捕鱼、狩猎、养畜、放牧之法，并授"
+"之于民。因恋洛河美景，常游于洛水之畔，故称“洛神”、“洛宓”。遭冯夷觊觎，被其化"
+"身白龙卷入洛河，锁于深宫。邂逅误入洛水之大羿，彼此钟情，互立婚约，得以逃脱。"
+"后欲助姒禹治水，向父借取《洛书》，被伏羲以大羿贪色为由，禁足不出。"
+
+msgid "desc433"
+msgstr ""
+"十二生肖之鼠。本为流寇，为女娲氏镇压，归顺，戴罪立功。创隐猎部队，亲率潜行分"
+"部，主执侦查与刺杀之职。奉女娲氏之命，往北狄寻五色神石之土灵石，于北狄之野遭"
+"畎戎驱狼群伏击。经血战，制服畎戎，得土灵石。伐天时期，于九重天单斩睚眦，又与"
+"他人联手，斩杀螭吻、鼓龙。后于天之巅决战，阵亡。"
+
+msgid "desc434"
+msgstr ""
+"十二生肖之牛。西戎牦牛羌首领，与青龙部族互通商路，结识应龙，义结金兰。经应龙"
+"引荐，归伏羲女娲氏，致力组建重装骑兵。北征白招拒，任先锋，一路凯歌，杀败蔽日"
+"遗民，兵临白水宫。后白帝亲率卫队出战，以自杀性手段攻击，血战阵亡。"
+
+msgid "desc435"
+msgstr ""
+"北极天柜山神，十二生肖之虎。虎首人身，四蹄长肘，擅于操蛇，与九凤同修。归伏羲"
+"女娲氏，常使炎帝氏族，互通往来。总领山地部队，善于极端天候与危险地形作战。涿"
+"鹿之战，助夔龙擒杀夔牛，歼灭雷兽卫队。伐天时期，东进征伐灵威抑，凭准确判断及"
+"犀利分析，平青帝之地利。更以“猛虎掏心”之势，大破山地要塞。后与九凤合战青帝，"
+"亡于刀剑合招。"
+
+msgid "desc436"
+msgstr ""
+"十二生肖之兔，哪吒前世。本是天生地养玉石，于三十三外天浸染仙元之气、吸收日月"
+"精华而启灵智，经女娲氏点化现形，随侍左右。擅使长枪，运如灵蛇。于无名山开坛讲"
+"道，教化山中灵兽，为女娲氏一统妖界奠定基石。伐天时期，随军南征赤飙怒。后于赤"
+"炎城群战赤帝时，遭赤帝引爆地脉重创，仅余一灵得脱，寄于玉虚宫，转世为哪吒。"
+
+msgid "desc437"
+msgstr ""
+"远古龙族赤龙分支，十二生肖之龙。自幼习武，争强好胜，年十五任赤龙首领，号“赫胥"
+"氏”。伐天时期，于九重天力斩囚牛，联手梏桎、畎戎合杀螭吻。后于帝国神殿，对战鼓"
+"龙，不敌而亡。"
+
+msgid "desc438"
+msgstr ""
+"女娲氏之妹，十二生肖之蛇。因部族居于黄河与洛水之间，故称中央氏部落。后继任上"
+"相之职，受部族拥戴，皆以“中央氏”称之。奉女娲氏之令，钻研结绳记事，创量词之"
+"法，启计数之先。融计数于军事，设八阵，训皇室卫队。涿鹿之战，助夔龙斩杀夔牛，"
+"歼灭雷兽卫队。后随女娲氏征伐帝俊，于苍之东土遭有巢氏伏击，阵亡。"
+
+msgid "desc439"
+msgstr ""
+"十二生肖之马，唯一幸存的十二生肖。之后一直和龙王、洛龟隐居东海水晶宫，传授人"
+"族圣贤河图洛书的知识奥义。后西游年间，化身为龙马、羽鞍，跟随大颠禅师。"
+
+msgid "desc440"
+msgstr ""
+"十二生肖之羊，延维鬼巫，虎爪山羊神，辅助伏羲破解古龙族秘密的学术家。后随女娲"
+"伏羲在天之巅封印烛龙，为加固定封印舍身而亡。"
+
+msgid "desc441"
+msgstr ""
+"十二生肖之猴。形若猿猴，青躯白首，力逾九象，嗜血狂暴，任共工氏副手，助其治"
+"水，斩杀河神、蛟精无数。随共工氏叛乱，兵败退守黄河下游，镇淮水，号“水猿大"
+"圣”，受封“淮水王”。结交夔牛，助蚩尤氏策“黑龙之乱”。于共工氏隐退后，与相柳主"
+"战，排挤后土专权，并于颛顼时期引二次洪水。姬喾时期，抗南北二正，杀耕父。虞舜"
+"末期，阻姒禹治水，遭灵姑胥设计，欲杀夔龙复仇，被庚辰伏启封印，压于淮水龟山，"
+"以虐夔龙残魂度日。于汉武年间走脱，与鲲鹏等组建北方妖盟。后于西游时期，被国师"
+"王菩萨再度封印。"
+
+msgid "desc442"
+msgstr ""
+"十二生肖之鸡，凤凰义女，北极天柜山神。天地灵气集于凤凰万火烈焰，经焚烧而生，"
+"人面鸟身，可显九首，具凤凰之躯，遂拜其为母。自往北极天柜修行，结识强良，同修"
+"共进。帝俊国攻陷雷泽城后，与强良协助女娲逃亡，帝俊最终战时，与强良合战灵威"
+"抑，亡于刀剑合招。"
+
+msgid "desc443"
+msgstr ""
+"十二生肖之狗。北狄之野视默氏狼族之长，持五色神石之土灵石。骁勇彪悍，以战为"
+"乐，可驱群狼厮杀追猎。因梏桎北寻土灵石，率狼群伏击，却败北受擒。族人以土灵石"
+"换其自由，并归附伏羲女娲氏，任隐猎部队之追猎队长。伐天时期，于九重天联手战"
+"友，斩杀鼓龙、螭吻。后于天之巅决战阵亡。"
+
+msgid "desc444"
+msgstr ""
+"十二生肖之猪，远古大猪神·豨韦氏之混血嫡长子，继承父政，推行神、人通婚的策略对"
+"抗混沌凶兽对人族的袭击。因人族难以承受初期的弊端而不被理解，觉得受到欺骗和辜"
+"负的朱朝愤然归隐。后于中州东南，创立混血国度“僬侥国”，国人矮壮善战，惯用撞"
+"锤。帝俊末期应女娲氏之请出山，持亥令，位列十二生肖之亥猪位，常为先登。于伐天"
+"之战，为赤飙怒自焚爆城之战殒身。"
+
+msgid "desc445"
+msgstr ""
+"延维弃族，夔牛义弟，流波七义之末。为延维龙族与东海龙族交合之后，自幼被父母所"
+"弃，得夔牛收养。流波山血誓后，持“魑”令牌，领雷兽守卫。战时，持青铜小钟，奏战"
+"曲助阵。后得伏羲指点，开启铜钟收容异能，却无能力驾驭。认伏羲女娲为双亲，得其"
+"激发阴阳元力，以铜钟暗杀姜吼。执连环计，助女娲分化流波七义。又得中央氏、玄"
+"女、撞锤、强良之助，亲手弑兄。五帝时期，数次奉命下届，献乐人间帝王。助姒禹治"
+"水，与无支祁被一同封印，遭其凌迟，仅存一缕残魂。西游时期，无支祁脱走，其魂被"
+"灭."
+
+msgid "desc446"
+msgstr ""
+"太古神灵，敖玄之妻，敖光之母。护东海龙族，与伏羲女娲氏交好，常抗共工氏水军，"
+"尤以败天吴为著。垂青敖玄，与之结合，诞敖氏龙族。后因敖玄身中“灭世之招”，不治"
+"而亡，遂领族民建鲸驮宫，立于四海之下，后世更名“水晶宫“。"
+
+msgid "desc447"
+msgstr ""
+"远古龙族黄龙分支，海若之夫，敖光之父。黄龙部族首领，号“阴康氏”。仪表不凡，丰"
+"姿英俊，得海若垂青，与之结合，诞敖氏龙族。后因蚩尤氏领兵侵犯，率部族抵抗，身"
+"中“灭世之招”，不治而亡。"
+
+msgid "desc448"
+msgstr ""
+"东海四公主。恩怨分明，直爽明朗，热于助人。与敖寸心、杨婵、嫦娥等交好，曾助杨"
+"戬兄妹治理弱水。因多次暗助刘沉香，被杨戬所杀。其魂魄被杨戬寄于小盒，肉身冰封"
+"于雪山，于杨婵获救后，得以重见天日。"
+
+msgid "desc449"
+msgstr ""
+"远古龙族白龙分支。才貌双全，精于工艺，善制陶炼金，任白龙首领，号“昆吾氏”，建"
+"百工天都悬浮于天。因前三任族长皆为男性，致部族混乱，民心不稳，故任职后主选女"
+"官。后蚩尤氏领兵侵犯，白龙部族因不擅征战，于风雨中强行升高天都，遭雷火重击，"
+"金提亦随天都坠亡。"
+
+#, fuzzy
+msgid "desc450"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc451"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc452"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc453"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc454"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc455"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc456"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc457"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc458"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc459"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc460"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc461"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc462"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc463"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc464"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc465"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc466"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc467"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc468"
+msgstr "保留"
+
+#, fuzzy
+msgid "desc469"
+msgstr "保留"

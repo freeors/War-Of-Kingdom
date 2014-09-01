@@ -346,7 +346,7 @@ void tcore::update_to_ui_faction(HWND hdlgP, int clicked_faction)
 		if (h.gender_ == hero_gender_neutral) {
 			continue;
 		}
-		if (h.get_flag(hero_flag_roam) || h.get_flag(hero_flag_robber)) {
+		if (h.get_flag(hero_flag_roam) || h.get_flag(hero_flag_robber) || h.get_flag(hero_flag_employee)) {
 			continue;;
 		}
 		if (allocated.find(h.number_) != allocated.end()) {

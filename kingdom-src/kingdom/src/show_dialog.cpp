@@ -20,6 +20,8 @@
 #include "display.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/event/handler.hpp"
+#include "show_dialog.hpp"
+#include "construct_dialog.hpp"
 #include "help.hpp"
 #include "log.hpp"
 #include "marked-up_text.hpp"
@@ -55,7 +57,10 @@ bool in_dialog()
 	return is_in_dialog || gui2::is_in_dialog();
 }
 
-dialog_manager::dialog_manager() : cursor::setter(cursor::NORMAL), reset_to(is_in_dialog)
+dialog_manager::dialog_manager(const surface& screen_surf) 
+	: cursor::setter(cursor::NORMAL)
+	, font::floating_label_context(screen_surf)
+	, reset_to(is_in_dialog)
 {
 	is_in_dialog = true;
 }
@@ -77,12 +82,11 @@ dialog_manager::~dialog_manager()
 
 dialog_frame::dialog_frame(CVideo &video, const std::string& title,
 		const style& style, bool auto_restore,
-		std::vector<button*>* buttons, button* help_button) :
+		std::vector<button*>* buttons) :
 	title_(title),
 	video_(video),
 	dialog_style_(style),
 	buttons_(buttons),
-	help_button_(help_button),
 	restorer_(NULL),
 	auto_restore_(auto_restore),
 	dim_(),
@@ -155,11 +159,6 @@ dialog_frame::dimension_measurements dialog_frame::layout(int x, int y, int w, i
 	}
 
 	size_t buttons_width = dim_.button_row.w;
-
-	if(help_button_ != NULL) {
-		buttons_width += help_button_->width() + ButtonHPadding*2;
-		dim_.button_row.y = y + h;
-	}
 
 	y -= dim_.title.h;
 	w = std::max<int>(w,std::max<int>(int(dim_.title.w),int(buttons_width)));
@@ -318,39 +317,9 @@ void dialog_frame::draw()
 			buttons_area.x += (**b).width() + ButtonHPadding;
 		}
 	}
-
-	if(help_button_ != NULL) {
-		help_button_->set_location(dim_.interior.x+ButtonHPadding, buttons_area.y);
-	}
 }
 
 } //end namespace gui
-
-namespace {
-
-struct help_handler : public hotkey::command_executor
-{
-	help_handler(display& disp, const std::string& topic) : disp_(disp), topic_(topic)
-	{}
-
-private:
-	void show_help()
-	{
-		if(topic_.empty() == false) {
-			help::show_help(disp_,topic_);
-		}
-	}
-
-	bool can_execute_command(hotkey::HOTKEY_COMMAND cmd, int /*index*/) const
-	{
-		return (topic_.empty() == false && cmd == hotkey::HOTKEY_HELP) || cmd == hotkey::HOTKEY_SCREENSHOT;
-	}
-
-	display& disp_;
-	std::string topic_;
-};
-
-}
 
 namespace gui
 {

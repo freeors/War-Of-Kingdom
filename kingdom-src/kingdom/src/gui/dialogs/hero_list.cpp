@@ -35,6 +35,7 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include <preferences.hpp>
 
 #include <boost/bind.hpp>
 
@@ -190,7 +191,7 @@ void thero_list::hero_changed(twindow& window)
 	tscroll_label* biography = find_widget<tscroll_label>(&window, "biography", false, true);
 
 	portrait->set_label(heros_[row_2_hero_.find(selected_row)->second].image(true));
-	biography->set_label(heros_[row_2_hero_.find(selected_row)->second].biography());
+	biography->set_label(heros_[row_2_hero_.find(selected_row)->second].biography2(heros_));
 }
 
 void thero_list::fill_table(int catalog)
@@ -204,7 +205,7 @@ void thero_list::fill_table(int catalog)
 			if (h->number_ < hero::number_normal_min) {
 				// continue;
 			}
-			if (h->status_ == hero_status_unstage) {
+			if (h->status_ == hero_status_unstage && !preferences::developer()) {
 				continue;
 			}
 			fill_table_row(*h, catalog);
@@ -301,11 +302,11 @@ void thero_list::fill_table_row(hero& h, int catalog)
 		table_item_item.insert(std::make_pair("intellect", table_item));
 
 		str.str("");
-		str << fxptoi9(h.politics_);
-		val = fxpmod9(h.politics_);
+		str << fxptoi9(h.spirit_);
+		val = fxpmod9(h.spirit_);
 		str << "." << val;
 		table_item["label"] = str.str();
-		table_item_item.insert(std::make_pair("politics", table_item));
+		table_item_item.insert(std::make_pair("spirit", table_item));
 
 		str.str("");
 		str << fxptoi9(h.charm_);
@@ -604,7 +605,7 @@ void thero_list::catalog_page(twindow& window, int catalog, bool swap)
 		widgets.push_back(&find_widget<tbutton>(&window, "button_leadership", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_force", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_intellect", false));
-		widgets.push_back(&find_widget<tbutton>(&window, "button_politics", false));
+		widgets.push_back(&find_widget<tbutton>(&window, "button_spirit", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_charm", false));
 		widgets.push_back(&find_widget<tbutton>(&window, "button_activity", false));
 	} else if (catalog == FEATURE_PAGE) {
@@ -749,8 +750,8 @@ bool thero_list::compare_row(tgrid& row1, tgrid& row2)
 				result = false;
 			}
 		} else if (sorting_widget_ == widgets[4]) {
-			// politics
-			if (h1->politics_ > h2->politics_) {
+			// spirit
+			if (h1->spirit_ > h2->spirit_) {
 				result = false;
 			}
 		} else if (sorting_widget_ == widgets[5]) {

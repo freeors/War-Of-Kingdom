@@ -92,20 +92,20 @@ SDL_Color int_to_color(const Uint32 rgb)
 	result.r = (0x00FF0000 & rgb )>> 16;
 	result.g = (0x0000FF00 & rgb) >> 8;
 	result.b = (0x000000FF & rgb);
-	result.unused = 0;
+	result.a = 0;
 	return result;
 }
 
 SDL_Color create_color(const unsigned char red
 		, unsigned char green
 		, unsigned char blue
-		, unsigned char unused)
+		, unsigned char alpha)
 {
 	SDL_Color result;
 	result.r = red;
 	result.g = green;
 	result.b = blue;
-	result.unused = unused;
+	result.a = alpha;
 
 	return result;
 }
@@ -949,7 +949,7 @@ bool in_mask_surface(const surface &surf, const surface &mask)
 		return true;
 	}
 
-	if (surf->w != surf->w || surf->h != mask->h ) {
+	if (surf->w != mask->w || surf->h != mask->h ) {
 		// not same size, consider it doesn't fit
 		return false;
 	}
@@ -1543,7 +1543,7 @@ surface create_compatible_surface(const surface &surf, int width, int height)
 	surface s = SDL_CreateRGBSurface(SDL_SWSURFACE, width, height, surf->format->BitsPerPixel,
 		surf->format->Rmask, surf->format->Gmask, surf->format->Bmask, surf->format->Amask);
 	if (surf->format->palette) {
-		SDL_SetPalette(s, SDL_LOGPAL, surf->format->palette->colors, 0, surf->format->palette->ncolors);
+		SDL_SetPaletteColors(s->format->palette, surf->format->palette->colors, 0, surf->format->palette->ncolors);
 	}
 	return s;
 }
@@ -1859,7 +1859,7 @@ SDL_Color inverse(const SDL_Color& color) {
 	inverse.r = 255 - color.r;
 	inverse.g = 255 - color.g;
 	inverse.b = 255 - color.b;
-	inverse.unused = 0;
+	inverse.a = 0;
 	return inverse;
 }
 
@@ -1947,7 +1947,7 @@ void draw_centered_on_background(surface surf, const SDL_Rect& rect, const SDL_C
 {
 	clip_rect_setter clip_setter(target, &rect);
 
-	Uint32 col = SDL_MapRGBA(target->format, color.r, color.g, color.b, color.unused);
+	Uint32 col = SDL_MapRGBA(target->format, color.r, color.g, color.b, color.a);
 	//TODO: only draw background outside the image
 	SDL_Rect r = rect;
 	sdl_fill_rect(target, &r, col);

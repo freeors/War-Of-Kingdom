@@ -180,6 +180,20 @@ void teditor_settings::update_selected_tod_info(twindow& window)
 	}
 }
 
+void teditor_settings::draw_coordinates_toggled(twidget* widget)
+{
+	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
+	display_->set_draw_coordinates(toggle->get_value());
+	preferences::editor::set_draw_hex_coordinates(toggle->get_value());
+}
+
+void teditor_settings::draw_terrain_codes_toggled(twidget* widget)
+{
+	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
+	display_->set_draw_terrain_codes(toggle->get_value());
+	preferences::editor::set_draw_terrain_codes(toggle->get_value());
+}
+
 void teditor_settings::pre_show(CVideo& /*video*/, twindow& window)
 {
 	assert(!tods_.empty());
@@ -191,6 +205,7 @@ void teditor_settings::pre_show(CVideo& /*video*/, twindow& window)
 			&window, "custom_tod_toggle", false, true);
 	custom_tod_auto_refresh_ = find_widget<ttoggle_button>(
 			&window, "custom_tod_auto_refresh", false, true);
+	custom_tod_auto_refresh_->set_visible(twidget::INVISIBLE);
 
 	tbutton& next_tod_button = find_widget<tbutton>(
 			&window, "next_tod", false);
@@ -199,9 +214,20 @@ void teditor_settings::pre_show(CVideo& /*video*/, twindow& window)
 			, this
 			, boost::ref(window)));
 
+	ttoggle_button& draw_coordinates = find_widget<ttoggle_button>(&window, "draw_coordinates", false);
+	draw_coordinates.set_value(preferences::editor::draw_hex_coordinates());
+	draw_coordinates.set_callback_state_change(boost::bind(&teditor_settings::draw_coordinates_toggled, this, _1));
+
+	ttoggle_button& draw_terrain_codes = find_widget<ttoggle_button>(&window, "draw_terrain_codes", false);
+	draw_terrain_codes.set_value(preferences::editor::draw_terrain_codes());
+	draw_terrain_codes.set_callback_state_change(boost::bind(&teditor_settings::draw_terrain_codes_toggled, this, _1));
+
+	ttoggle_button& use_mid = find_widget<ttoggle_button>(&window, "use_mdi", false);
+	use_mid.set_visible(twidget::INVISIBLE);
 
 	tbutton& apply_button = find_widget<tbutton>(
 			&window, "apply", false);
+	apply_button.set_visible(twidget::INVISIBLE);
 	connect_signal_mouse_left_click(apply_button, boost::bind(
 			  &teditor_settings::update_tod_display
 			, this

@@ -22,7 +22,7 @@ extern editor editor_;
 
 static void OnDeleteBt(HWND hdlgP, char *fname);
 BOOL extra_kingdom_ins_disk(char* kingdom_src, char* kingdom_ins, char* kingdon_ins_android);
-BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& kingdom_star, const std::string& kingdom_star_patch);
+BOOL generate_kingdom_mod_res(const std::string& kingdom_res, const std::string& kingdom_star_patch, const std::string& kingdom_star);
 BOOL extract_kingdom_star_patch(const std::string& kingdom_star, const std::string& kingdom_star_patch);
 
 void create_ddesc_toolinfo(HWND hwndP)
@@ -219,29 +219,32 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 
 	case IDM_STAR_RESOURCE:
-		strcpy(text, utf8_2_ansi(_("Do you want to generate star resource package to \"C:\\kingdom-star\"?"))); 
+		symbols["mod_res_path"] = mod_config.res_path;
+		strcpy(text, utf8_2_ansi(vgettext2("Do you want to generate star resource package to $mod_res_path?", symbols).c_str()));
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Confirm generate"));
 		retval = MessageBox(hdlgP, text, strstr.str().c_str(), MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
-			fok = generate_kingdom_star(gdmgr._menu_text, "c:\\kingdom-star", "c:\\wesnoth\\kingdom-star-patch");
+			fok = generate_kingdom_mod_res(gdmgr._menu_text, mod_config.patch_path, mod_config.res_path);
 			symbols["src1"] = gdmgr._menu_text;
-			symbols["src2"] = "c:\\wesnoth\\kingdom-star";
+			symbols["src2"] = mod_config.patch_path;
+			symbols["dst"] = mod_config.res_path;
 			symbols["result"] = fok? "Success": "Fail";
-			strcpy(text, utf8_2_ansi(vgettext2("Generate star resource package from \"$src1\" and \"$src2\" to \"C:\\kingdom-star\", $result!", symbols).c_str())); 
+			strcpy(text, utf8_2_ansi(vgettext2("Generate star resource package from \"$src1\" and \"$src2\" to \"$dst\", $result!", symbols).c_str())); 
 			posix_print_mb(text);
 		}
 		break;
 
 	case IDM_STAR_PATCH:
-		strcpy(text, utf8_2_ansi(_("Do you want to extract star different files to \"C:\\wesnoth\\kingdom-star-patch\"?"))); 
+		symbols["mod_patch_path"] = mod_config.patch_path;
+		strcpy(text, utf8_2_ansi(vgettext2("Do you want to extract star different files to $mod_patch_path?", symbols).c_str()));
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Confirm generate"));
 		retval = MessageBox(hdlgP, text, strstr.str().c_str(), MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
-			fok = extract_kingdom_star_patch(gdmgr._menu_text, "c:\\wesnoth\\kingdom-star-patch");
+			fok = extract_kingdom_star_patch(gdmgr._menu_text, mod_config.patch_path);
 			symbols["src"] = gdmgr._menu_text;
-			symbols["dst"] = "c:\\wesnoth\\kingdom-star-patch";
+			symbols["dst"] = mod_config.patch_path;
 			symbols["result"] = fok? "Success": "Fail";
 			strcpy(text, utf8_2_ansi(vgettext2("Extract star different files from \"$src\" to \"$dst\", $result!", symbols).c_str())); 
 			posix_print_mb(text);
@@ -271,6 +274,14 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 					visual_enter_ui();
 				}
 			}
+		}
+		break;
+
+	case IDM_INTEGRATE:
+		if (gdmgr._da != da_integrate) {
+			title_select(da_integrate);
+		} else {
+			integrate_enter_ui();
 		}
 		break;
 
@@ -408,7 +419,7 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			} else {
 				EnableMenuItem(gdmgr._hpopup_star, IDM_STAR_RESOURCE, MF_BYCOMMAND | MF_ENABLED);
 			}
-			if (game_config::path.find("kingdom-star") == std::string::npos) {
+			if (game_config::path.find(mod_config.res_short_path) == std::string::npos) {
 				EnableMenuItem(gdmgr._hpopup_star, IDM_STAR_PATCH, MF_BYCOMMAND | MF_GRAYED);
 			} else {
 				EnableMenuItem(gdmgr._hpopup_star, IDM_STAR_PATCH, MF_BYCOMMAND | MF_ENABLED);
@@ -1017,7 +1028,7 @@ exit:
 	return fok;
 }
 
-BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& kingdom_star, const std::string& kingdom_star_patch)
+BOOL generate_kingdom_mod_res(const std::string& kingdom_res, const std::string& kingdom_star_patch, const std::string& kingdom_star)
 {
 	char text1[_MAX_PATH], text2[_MAX_PATH];
 	BOOL fok;
@@ -1031,13 +1042,6 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 	fok = delfile1(kingdom_star.c_str());
 	if (!fok) {
 		posix_print_mb("删除目录: %s，失败", kingdom_star.c_str());
-		return fok;
-	}
-	fok = is_directory(kingdom_star_patch.c_str());
-	if (!fok) {
-		symbols["kingdom_star_patch"] = kingdom_star_patch;
-		err << utf8_2_ansi(vgettext2("Cannot find <kingdom-star-patch> directory on $kingdom_star_patch!", symbols).c_str()); 
-		posix_print_mb(err.str().c_str());
 		return fok;
 	}
 
@@ -1056,16 +1060,6 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
 		goto exit;
 	}
-	// kingdom-star-patch
-	sprintf(text1, "%s\\data", kingdom_star_patch.c_str());
-	if (is_directory(text1)) {
-		posix_print("<data>, copy %s to %s ......\n", text1, text2);
-		fok = copyfile(text1, text2);
-		if (!fok) {
-			posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-			goto exit;
-		}
-	}
 
 	//
 	// <kingdom-src>\fonts
@@ -1077,16 +1071,6 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 	if (!fok) {
 		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
 		goto exit;
-	}
-	// kingdom-star-patch
-	sprintf(text1, "%s\\fonts", kingdom_star_patch.c_str());
-	if (is_directory(text1)) {
-		posix_print("<data>, copy %s to %s ......\n", text1, text2);
-		fok = copyfile(text1, text2);
-		if (!fok) {
-			posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-			goto exit;
-		}
 	}
 
 	//
@@ -1100,15 +1084,6 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
 		goto exit;
 	}
-	// kingdom-star-patch
-	sprintf(text1, "%s\\images", kingdom_star_patch.c_str());
-	if (is_directory(text1)) {
-		fok = copyfile(text1, text2);
-		if (!fok) {
-			posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-			goto exit;
-		}
-	}
 
 	//
 	// <kingdom-src>\manual
@@ -1120,15 +1095,6 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 	if (!fok) {
 		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
 		goto exit;
-	}
-	// kingdom-star-patch
-	sprintf(text1, "%s\\manual", kingdom_star_patch.c_str());
-	if (is_directory(text1)) {
-		fok = copyfile(text1, text2);
-		if (!fok) {
-			posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-			goto exit;
-		}
 	}
 
 	//
@@ -1142,15 +1108,6 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
 		goto exit;
 	}
-	// kingdom-star-patch
-	sprintf(text1, "%s\\po", kingdom_star_patch.c_str());
-	if (is_directory(text1)) {
-		fok = copyfile(text1, text2);
-		if (!fok) {
-			posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-			goto exit;
-		}
-	}
 
 	//
 	// <kingdom-src>\sounds
@@ -1162,15 +1119,6 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 	if (!fok) {
 		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
 		goto exit;
-	}
-	// kingdom-star-patch
-	sprintf(text1, "%s\\sounds", kingdom_star_patch.c_str());
-	if (is_directory(text1)) {
-		fok = copyfile(text1, text2);
-		if (!fok) {
-			posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-			goto exit;
-		}
 	}
 
 	//
@@ -1184,15 +1132,6 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
 		goto exit;
 	}
-	// kingdom-star-patch
-	sprintf(text1, "%s\\translations", kingdom_star_patch.c_str());
-	if (is_directory(text1)) {
-		fok = copyfile(text1, text2);
-		if (!fok) {
-			posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-			goto exit;
-		}
-	}
 
 	//
 	// <kingdom-src>\xwml
@@ -1205,21 +1144,14 @@ BOOL generate_kingdom_star(const std::string& kingdom_res, const std::string& ki
 		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
 		goto exit;
 	}
-	// kingdom-star-patch
-	sprintf(text1, "%s\\xwml", kingdom_star_patch.c_str());
-	if (is_directory(text1)) {
-		fok = copyfile(text1, text2);
-		if (!fok) {
-			posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-			goto exit;
-		}
-	}
 
 	fok = copy_root_files(kingdom_res.c_str(), kingdom_star.c_str());
 	if (!fok) {
 		posix_print_mb("复制根目录下文件，从%s到%s，失败", text1, text2);
 		goto exit;
 	}
+
+	mod_config.opeate_file(true);
 
 exit:
 	if (!fok) {
@@ -1231,120 +1163,5 @@ exit:
 
 BOOL extract_kingdom_star_patch(const std::string& kingdom_star, const std::string& kingdom_star_patch)
 {
-	char text1[_MAX_PATH], text2[_MAX_PATH];
-	BOOL fok;
-	std::stringstream err;
-	utils::string_map symbols;
-	walk_campaign_param_t wcp;
-
-	fok = file_exists(kingdom_star + "/data/core/_main.cfg")? TRUE: FALSE;
-	if (!fok) {
-		symbols["kingdom_star"] = kingdom_star;
-		err << utf8_2_ansi(vgettext2("Cannot find <kingdom-star> directory on $kingdom_star!", symbols).c_str()); 
-		posix_print_mb(err.str().c_str());
-		return fok;
-	}
-	MakeDirectory(kingdom_star_patch);
-
-	// 清空目录
-	fok = delfile1(kingdom_star_patch.c_str());
-	if (!fok) {
-		posix_print_mb("删除目录: %s，失败", kingdom_star_patch.c_str());
-		return fok;
-	}
-	
-	//
-	// <kingdom-src>\data
-	//
-	// hero-64
-	sprintf(text1, "%s\\data\\core\\images\\hero-64", kingdom_star.c_str());
-	sprintf(text2, "%s\\data\\core\\images", kingdom_star_patch.c_str());
-	MakeDirectory(text2);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// hero-256
-	sprintf(text1, "%s\\data\\core\\images\\hero-256", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\fonts
-	//
-	sprintf(text1, "%s\\fonts\\wqy-zenhei.ttc", kingdom_star.c_str());
-	MakeDirectory(kingdom_star_patch + "\\fonts");
-	sprintf(text2, "%s\\fonts\\wqy-zenhei.ttc", kingdom_star_patch.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制文件，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\po
-	//
-	sprintf(text1, "%s\\po\\wesnoth-card\\zh_CN.po", kingdom_star.c_str());
-	MakeDirectory(kingdom_star_patch + "\\po\\wesnoth-card");
-	sprintf(text2, "%s\\po\\wesnoth-card\\zh_CN.po", kingdom_star_patch.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	sprintf(text1, "%s\\po\\wesnoth-hero\\zh_CN.po", kingdom_star.c_str());
-	MakeDirectory(kingdom_star_patch + "\\po\\wesnoth-hero");
-	sprintf(text2, "%s\\po\\wesnoth-hero\\zh_CN.po", kingdom_star_patch.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制文件，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	
-	//
-	// <kingdom-src>\translations
-	//
-	sprintf(text1, "%s\\translations\\zh_CN\\LC_MESSAGES\\wesnoth-card.mo", kingdom_star.c_str());
-	MakeDirectory(kingdom_star_patch + "\\translations\\zh_CN\\LC_MESSAGES");
-	sprintf(text2, "%s\\translations\\zh_CN\\LC_MESSAGES\\wesnoth-card.mo", kingdom_star_patch.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	sprintf(text1, "%s\\translations\\zh_CN\\LC_MESSAGES\\wesnoth-hero.mo", kingdom_star.c_str());
-	MakeDirectory(kingdom_star_patch + "\\translations\\zh_CN\\LC_MESSAGES");
-	sprintf(text2, "%s\\translations\\zh_CN\\LC_MESSAGES\\wesnoth-hero.mo", kingdom_star_patch.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\xwml
-	//
-	sprintf(text1, "%s\\xwml\\hero.dat", kingdom_star.c_str());
-	MakeDirectory(kingdom_star_patch + "\\xwml");
-	sprintf(text2, "%s\\xwml\\hero.dat", kingdom_star_patch.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制文件，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-exit:
-	if (!fok) {
-		delfile1(kingdom_star_patch.c_str());
-	}
-
-	return fok;
+	return mod_config.opeate_file(false);
 }

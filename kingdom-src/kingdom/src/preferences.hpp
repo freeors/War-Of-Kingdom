@@ -21,6 +21,7 @@
 class config;
 class display;
 class hero;
+class hero_map;
 
 #include "game_config.hpp"
 #include "terrain_translation.hpp"
@@ -28,6 +29,9 @@ class hero;
 #include <utility>
 
 namespace preferences {
+
+	extern std::string public_account;
+	extern std::string public_password;
 
 	struct base_manager
 	{
@@ -53,7 +57,7 @@ namespace preferences {
 	config* get_prefs();
 
 	bool get_hero(hero& h, int default_image);
-	void set_hero(hero& h);
+	void set_hero(const hero_map& heros, hero& h);
 
 	bool fullscreen();
 	void _set_fullscreen(bool ison);
@@ -67,11 +71,49 @@ namespace preferences {
 	std::pair<int,int> resolution();
 	void _set_resolution(const std::pair<int,int>& res);
 
+	void set_noble(int value);
+	int noble();
+
+	int uid();
+	void set_uid(int value);
+
+	std::string city();
+	void set_city(const std::string& str);
+
+	std::string interior();
+	void set_interior(const std::string& str);
+
+	std::string signin();
+	void set_signin(const std::string& str);
+
+	std::string member();
+	void set_member(const std::string& str);
+
+	std::string exile();
+	void set_exile(const std::string& str);
+
+	std::string associate();
+	void set_associate(const std::string& str);
+
+	std::string layout();
+	void set_layout(const std::string& str);
+
+	std::string map();
+	void set_map(const std::string& str);
+
 	void set_coin(int value);
 	int coin();
 
 	void set_score(int value);
 	int score();
+
+	std::string login();
+
+	void set_vip_expire(time_t value);
+	time_t vip_expire();
+
+	void set_developer(bool ison);
+	bool developer();
 
 	bool turbo();
 	void _set_turbo(bool ison);
@@ -154,9 +196,6 @@ namespace preferences {
 
 	bool show_fps();
 	void set_show_fps(bool value);
-
-	bool ellipses();
-	void _set_ellipses(bool ison);
 
 	bool grid();
 	void _set_grid(bool ison);

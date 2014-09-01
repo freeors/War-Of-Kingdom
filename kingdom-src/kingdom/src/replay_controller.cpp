@@ -27,6 +27,7 @@
 #include "unit_display.hpp"
 #include "artifical.hpp"
 #include "replay.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -44,11 +45,14 @@ LEVEL_RESULT play_replay_level(const config& game_config,
 	try {
 		const int ticks = SDL_GetTicks();
 		int num_turns = (*level)["turns"].to_int();
-		DBG_NG << "creating objects... " << (SDL_GetTicks() - ticks) << "\n";
+
 		// !!equal 
-		heros = heros_start; 
+		VALIDATE(heros_start.size() == heros.size(), "play_replay_level, heros_start and heros must be same size!");
+		runtime_groups::redirect_hero_map(heros_start);
+		heros = heros_start;
+		runtime_groups::redirect_hero_map(heros);
+
 		replay_controller replaycontroller(*level, state_of_game, heros, heros_start, cards, ticks, num_turns, game_config, video);
-		DBG_NG << "created objects... " << (SDL_GetTicks() - replaycontroller.get_ticks()) << "\n";
 		const events::command_disabler disable_commands;
 
 		//replay event-loop
@@ -85,7 +89,6 @@ replay_controller::replay_controller(const config& level,
 	init();
 
 	show_context_menu(NULL, *gui_);
-	// reset_replay();
 }
 
 replay_controller::~replay_controller()
@@ -105,8 +108,8 @@ void replay_controller::init(){
 
 	teams_start_ = teams_;
 	for (std::vector<team>::iterator itor = teams_start_.begin(); itor != teams_start_.end(); ++ itor) {
-		std::vector<artifical*>& holded_cities = itor->holded_cities();
-		holded_cities.clear();
+		std::vector<artifical*>& holden_cities = itor->holden_cities();
+		holden_cities.clear();
 		itor->clear_troop();
 	}
 
@@ -125,8 +128,8 @@ void replay_controller::init(){
 
 	DBG_REPLAY << "first_time..." << (recorder.is_skipping() ? "skipping" : "no skip") << "\n";
 
-	fire_start(!loading_game_);
 	update_gui();
+	fire_start(!loading_game_);
 }
 
 void replay_controller::init_gui(){
@@ -138,14 +141,14 @@ void replay_controller::init_gui(){
 	else
 		gui_->set_team(0, show_everything_);
 
-	gui_->scroll_to_leader(units_, player_number_, display::WARP);
 	update_locker lock_display((*gui_).video(),false);
 	for(std::vector<team>::iterator t = teams_.begin(); t != teams_.end(); ++t) {
 		t->reset_objectives_changed();
 	}
 }
 
-void replay_controller::init_replay_display(){
+void replay_controller::init_replay_display()
+{
 	DBG_REPLAY << "initializing replay-display... " << (SDL_GetTicks() - ticks_) << "\n";
 
 	rebuild_replay_theme();
@@ -156,113 +159,42 @@ void replay_controller::init_replay_display(){
 void replay_controller::rebuild_replay_theme()
 {
 	const config &theme_cfg = get_theme(game_config_, level_["theme"]);
-	// if (const config &res = theme_cfg.child("resolution"))
-	BOOST_FOREACH (const config &res, theme_cfg.child_range("resolution")) {
-		int width = res["width"];
-		int height = res["height"];
-		if (game_config::tiny_gui && (width != 640 || height != 480)) {
-			continue;
-		}
-		if (!game_config::tiny_gui && (width != 1024 || height != 768)) {
-			continue;
-		}
-	
-		if (const config &replay_theme_cfg = res.child("replay"))
+	if (const config &res = theme_cfg.child("resolution")) {
+		if (const config &replay_theme_cfg = res.child("replay")) {
 			gui_->get_theme().modify(replay_theme_cfg);
+		}
 		gui_->get_theme().modify_label("time-icon", _ ("current local time"));
 		//Make sure we get notified if the theme is redrawn completely. That way we have
 		//a chance to restore the replay controls of the theme as well.
 		gui_->invalidate_theme();
-		break;
 	}
 }
 
-void replay_controller::reset_replay(){
-	gui::button* b = gui_->find_button("button-playreplay");
-	if (b != NULL) { b->release(); }
-	b = gui_->find_button("button-stopreplay");
-	if (b != NULL) { b->release(); }
-	gui_->clear_chat_messages();
-	is_playing_ = false;
-	player_number_ = 1;
-	current_turn_ = 1;
-	previous_turn_ = 0;
-	tod_manager_= tod_manager_start_;
-	recorder.start_replay();
-	gamestate_ = gamestate_start_;
-	if (events_manager_ ){
-		// NOTE: this double reset is required so that the new
-		// instance of game_events::manager isn't created before the
-		// old manager is actually destroyed (triggering an assertion
-		// failure)
-		events_manager_.reset();
-		events_manager_.reset(new game_events::manager(level_));
-	}
-
-	gui_->labels().read(level_);
-
-	statistics::fresh_stats();
-	set_victory_when_enemy_no_city(level_["victory_when_enemy_no_city"].to_bool(true));
-
-	// Add era events for MP game.
-	if (const config &era_cfg = level_.child("era")) {
-		game_events::add_events(era_cfg.child_range("event"), "era_events");
-	}
-
-	teams_ = teams_start_;
-	//!! units_ = units_start_; rpg::humans duplicated
-
-	// hero_map A要被B替换, 原先指向A的hero指针要无效, 需根据number_重新定位到B
-	// 需要被替换hero指针
-	//  1. unit中的master_, second_, third_
-	//  2. artifical中的fresh_heros_, finish_heors_
-	//  3. team中的leader_
-	// units_start_也要被重新定位, 否则下一次reset时, hero要出错
-	units_start_.extract_heros_number();
-	units_.extract_heros_number();
-	// 以下将执行替换
-	heros_ = heros_start_;
-	units_start_.recalculate_heros_pointer();
-	units_.recalculate_heros_pointer();
-
-	fire_prestart(true);
-	init_gui();
-	fire_start(true);
-	update_gui();
-
-	b = gui_->find_button("button-resetreplay");
-	if (b != NULL) { b->release(); }
-}
-
-void replay_controller::stop_replay(){
+void replay_controller::stop_replay()
+{
 	is_playing_ = false;
 	gui::button* b = gui_->find_button("button-playreplay");
 	if (b != NULL) { b->release(); }
 }
 
-void replay_controller::replay_next_turn(){
+void replay_controller::replay_next_turn()
+{
 	is_playing_ = true;
 	play_turn();
 
- 	if (!skip_replay_){
-		gui_->scroll_to_leader(units_, player_number_,game_display::ONSCREEN,false);
-	}
 	is_playing_ = false;
 	gui::button* b = gui_->find_button("button-nextturn");
 	if (b != NULL) { b->release(); }
 }
 
-void replay_controller::replay_next_side(){
+void replay_controller::replay_next_side()
+{
 	is_playing_ = true;
-	play_side(player_number_ - 1, false);
+	play_side();
 
 	if (static_cast<size_t>(player_number_) > teams_.size()) {
 		player_number_ = 1;
 		current_turn_++;
-	}
-
-	if (!skip_replay_) {
-		gui_->scroll_to_leader(units_, player_number_,game_display::ONSCREEN,false);
 	}
 
 	is_playing_ = false;
@@ -304,7 +236,7 @@ void replay_controller::replay_show_team1(){
 }
 
 void replay_controller::replay_skip_animation(){
-	unit_display::player_number_ = (unit_display::player_number_ >= 0)? -1: 0;
+	
 }
 
 void replay_controller::play_replay(){
@@ -318,10 +250,7 @@ void replay_controller::play_replay(){
 		is_playing_ = true;
 
 		DBG_REPLAY << "starting main loop\n" << (SDL_GetTicks() - ticks_) << "\n";
-		if (unit_display::player_number_ > 0) {
-			unit_display::player_number_ = 0;
-		}
-		for(; !recorder.at_end() && is_playing_; first_player_ = 1) {
+		for(; !recorder.at_end() && is_playing_ && !recorder.unexpected; first_player_ = 1) {
 			play_turn();
 		} //end for loop
 		is_playing_ = false;
@@ -331,7 +260,8 @@ void replay_controller::play_replay(){
 	}
 }
 
-void replay_controller::play_turn(){
+void replay_controller::play_turn()
+{
 	if (recorder.at_end()){
 		return;
 	}
@@ -342,16 +272,13 @@ void replay_controller::play_turn(){
 	gui_->invalidate_game_status();
 	events::raise_draw_event();
 
-	bool last_team = false;
-
-	while ( (!last_team) && (!recorder.at_end()) && is_playing_ ){
-		last_team = static_cast<size_t>(player_number_) == teams_.size();
-		play_side(player_number_ - 1, false);
+	while (!recorder.at_end() && is_playing_ && !recorder.unexpected){
+		play_side();
 		play_slice();
 	}
 }
 
-void replay_controller::play_side(const unsigned int /*team_index*/, bool)
+void replay_controller::play_side()
 {
 	if (recorder.at_end()){
 		return;
@@ -361,34 +288,15 @@ void replay_controller::play_side(const unsigned int /*team_index*/, bool)
 	DBG_REPLAY << "Replay_Controller turn number: " << current_turn_ << "\n";
 	DBG_REPLAY << "Player number: " << player_number_ << "\n";
 
-	try{
-		// If a side is empty skip over it.
-		if (!current_team().is_empty()) {
-			statistics::reset_turn_stats(current_team().save_id());
+	try {
 
-			play_controller::init_side(player_number_ - 1, true);
-
-			DBG_REPLAY << "doing replay " << player_number_ << "\n";
+		int end_ticks = calculate_end_ticks();
+		while (!recorder.at_end() && unit_map::main_ticks < end_ticks && !recorder.unexpected) {
 			do_replay(player_number_);
-
-			finish_side_turn();
-/*
-			// This is necessary for replays in order to show possible movements.
-			BOOST_FOREACH (unit &u, units_) {
-				if (u.side() != player_number_) {
-					u.new_turn();
-				}
-			}
-*/
 		}
 
-		player_number_++;
-
-		if (static_cast<size_t>(player_number_) > teams_.size()) {
+		if (unit_map::main_ticks == end_ticks) {
 			tod_manager_.next_turn();
-			finish_turn();
-			player_number_ = 1;
-			current_turn_++;
 		}
 
 		update_teams();
@@ -397,8 +305,8 @@ void replay_controller::play_side(const unsigned int /*team_index*/, bool)
 	catch (end_level_exception& e){
 		//VICTORY/DEFEAT end_level_exception shall not return to title screen
 		get_end_level_data().result = e.result;
-		linger();
 		if (e.result == VICTORY || e.result == DEFEAT) {
+			linger();
 			return;
 		}
 		throw;
@@ -462,7 +370,6 @@ bool replay_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int 
 
 	//commands we can always do
 	case hotkey::HOTKEY_PLAY_REPLAY:
-	case hotkey::HOTKEY_RESET_REPLAY:
 	case hotkey::HOTKEY_STOP_REPLAY:
 	case hotkey::HOTKEY_REPLAY_NEXT_TURN:
 	case hotkey::HOTKEY_REPLAY_NEXT_SIDE:

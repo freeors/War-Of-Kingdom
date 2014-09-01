@@ -23,6 +23,7 @@
 #include "../map_exception.hpp"
 #include "../map_label.hpp"
 #include "../wml_exception.hpp"
+#include "../builder.hpp"
 
 #include "formula_string_utils.hpp"
 
@@ -31,6 +32,89 @@
 
 
 namespace editor {
+
+tmap_type::titem::titem(const config& cfg)
+	: list(t_translation::read_list(cfg["string"].str()))
+	, total(cfg["total"].to_int(-1))
+	, unite(cfg["unite"].to_int(-1))
+	, avoid()
+{
+	std::vector<std::string> vstr = utils::split(cfg["avoid"].str());
+	if (vstr.size() == 2) {
+		avoid = parse_location_range(NULL, vstr[0], vstr[1]);
+	}
+}
+
+tmap_type::tmap_type(display& disp, const config& cfg)
+	: disp_(&disp),
+	items_(),
+	summary_(cfg["summary"].str()),
+	err_str_()
+{
+	BOOST_FOREACH (const config& terrain, cfg.child_range("terrain")) {
+		items_.push_back(tmap_type::titem(terrain));
+	}
+}
+
+int tmap_type::calculate_total_if_modify(const t_translation::t_list& list, const t_translation::t_terrain& old) const
+{
+	const terrain_builder::terrain_by_type_map& terrains = disp_->get_builder().terrain_by_type_;
+	int ret = t_translation::terrain_matches(old, list)? 0: 1;
+
+	for (terrain_builder::terrain_by_type_map::const_iterator it = terrains.begin(); it != terrains.end(); ++ it) {
+		if (t_translation::terrain_matches(it->first, list)) {
+			ret += (int)it->second.size();
+		}
+	}
+
+	return ret;
+}
+
+int tmap_type::calculate_unite_if_modify(const gamemap& map, const map_location& src, const t_translation::t_list& list) const
+{
+	if (!map.on_board(src)) {
+		return 0;
+	}
+
+	int ret = 1; // source grid is hit terrain.
+
+	std::set<map_location> pending_tiles_to_check, tiles_checked;
+	pending_tiles_to_check.insert(src);
+	// Iterate out 50 hexes from loc
+	for (int distance = 0; distance < 50; ++distance) {
+		//Copy over the hexes to check and clear the old set
+		std::set<map_location> tiles_checking;
+		tiles_checking.swap(pending_tiles_to_check);
+		//Iterate over all the hexes we need to check
+		BOOST_FOREACH (const map_location &loc, tiles_checking)
+		{
+			tiles_checked.insert(loc);
+
+			map_location adjs[6];
+			get_adjacent_tiles(loc, adjs);
+			BOOST_FOREACH (const map_location &loc, adjs)
+			{
+				if (!map.on_board(loc)) continue;
+				if (!t_translation::terrain_matches(map.get_terrain(loc), list)) continue;
+				// Add the tile to be checked if it hasn't already been and
+				// isn't being checked.
+				if (tiles_checked.find(loc) == tiles_checked.end()) {
+					ret ++;
+					pending_tiles_to_check.insert(loc);
+				}
+			}			
+		}
+	}
+
+	return ret;
+}
+
+bool tmap_type::allow_if_modify(const gamemap& map, const map_location& loc, const std::vector<map_location>& avoid) const
+{
+	return std::find(avoid.begin(), avoid.end(), loc) == avoid.end();
+}
+
+tmap_type map_type;
 
 const size_t map_context::max_action_stack_size_ = 100;
 
@@ -66,17 +150,21 @@ map_context::map_context(const config& game_config, const std::string& filename)
 	, changed_locations_()
 	, everything_changed_(false)
 {
-	log_scope2(log_editor, "Loading map " + filename);
-	if (!file_exists(filename) || is_directory(filename)) {
-		throw editor_map_load_exception(filename, _("File not found"));
-	}
-	// filename is ansi string, need convert to utf8
-	std::string filename_utf8 = filename;
+	std::string map_string;
+	if (filename.size() <= 256) {
+		log_scope2(log_editor, "Loading map " + filename);
+		if (!file_exists(filename) || is_directory(filename)) {
+			throw editor_map_load_exception(filename, _("File not found"));
+		}
+		// filename is ansi string(upper file_exists/is_directory require it), need convert to utf8
+		std::string filename_utf8 = filename;
 #ifdef _WIN32
-	conv_ansi_utf8(filename_utf8, true);
+		conv_ansi_utf8(filename_utf8, true);
 #endif
-	std::string map_string = read_file(filename_utf8, true);
-	// std::string map_string = read_file(filename, true);
+		map_string = read_file(filename_utf8, true);
+	} else {
+		map_string = filename;
+	}
 	boost::regex re("map_data\\s*=\\s*\"(.+?)\"");
 	boost::smatch m;
 	if (boost::regex_search(map_string, m, re, boost::regex_constants::match_not_dot_null)) {
@@ -95,13 +183,11 @@ map_context::map_context(const config& game_config, const std::string& filename)
 			}
 			LOG_ED << "New filename is: " << new_filename << "\n";
 			filename_ = new_filename;
-			// filename_ is ansi string, need convert to utf8
-			filename_utf8 = filename_;
 #ifdef _WIN32
-			conv_ansi_utf8(filename_utf8, true);
+			// filename_ is ansi string, need convert to utf8
+			conv_ansi_utf8(filename_, true);
 #endif
 			map_string = read_file(filename_, true);
-			// map_string = read_file(filename_, true);
 		} else {
 			LOG_ED << "Loading embedded map file\n";
 			embedded_ = true;
@@ -141,6 +227,9 @@ void map_context::draw_terrain_actual(t_translation::t_terrain terrain,
 	}
 	t_translation::t_terrain old_terrain = map_.get_terrain(loc);
 	if (terrain != old_terrain) {
+		if (!map_type.can_modify(map_, loc, terrain, old_terrain)) {
+			return;
+		}
 		if (terrain.base == t_translation::NO_LAYER) {
 			map_.set_terrain(loc, terrain, gamemap::OVERLAY);
 		} else if (one_layer_only) {

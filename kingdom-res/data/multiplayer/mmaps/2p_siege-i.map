@@ -1,0 +1,13 @@
+border_size=1
+usage=map
+
+Mm          , Mm          , Mm          , Hh^Fp       , Hh^Fp       , Hh^Fp       , Dd^Do       , Gg          , Hh^Fp       , Gg          
+Mm          , Ea          , Gg          , Gg          , Gll^Fp      , Dd^Do       , Dd^Do       , Uu^Uf       , Hh^Fp       , Hh^Fp       
+Cha         , Ms          , Uu^Uf       , Gg          , Gg          , Ds          , Uu^Uf       , Uu^Uf       , Gll^Fp      , Gg          
+Cha         , Aa          , Gg          , Uu^Uf       , Wo          , Ss          , Ss          , Uu^Uf       , Gll^Fp      , Gg          
+Gg^Ecf      , Dd^Do       , Gg^Fet      , Uu^Uf       , Gg          , Ds          , Ds          , Gll^Fp      , Gll^Fp      , Gg          
+Cha         , Ds          , Uu^Uf       , Gg          , Wo          , Ds          , Gll^Fp      , Gg          , Gg          , Gg          
+Cha         , Ds          , Ds          , Gg          , Ds          , Ss          , Uu^Uf       , Gll^Fp      , Gll^Fp      , Gg          
+Mm          , Uu^Uf       , Uu^Uf       , Ds          , Uu^Uf       , Uu^Uf       , Hh^Fp       , Gll^Fp      , Hh^Fp       , Gg          
+Mm          , Ea          , Ea          , Ea          , Hh^Fp       , Hh^Fp       , Hh^Fp       , Hh^Fp       , Hh^Fp       , Hh^Fp       
+Gg          , Gg          , Gg          , Gg          , Gg          , Gg          , Gg          , Gg          , Gg          , Gg          

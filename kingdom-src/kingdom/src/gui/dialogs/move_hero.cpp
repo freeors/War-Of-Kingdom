@@ -275,8 +275,8 @@ void tmove_hero::catalog_page(twindow& window, int catalog, bool swap)
 			table_item["label"] = lexical_cast<std::string>(fxptoi9(h->intellect_));
 			table_item_item.insert(std::make_pair("intellect", table_item));
 
-			table_item["label"] = lexical_cast<std::string>(fxptoi9(h->politics_));
-			table_item_item.insert(std::make_pair("politics", table_item));
+			table_item["label"] = lexical_cast<std::string>(fxptoi9(h->spirit_));
+			table_item_item.insert(std::make_pair("spirit", table_item));
 
 			table_item["label"] = lexical_cast<std::string>(fxptoi9(h->charm_));
 			table_item_item.insert(std::make_pair("charm", table_item));

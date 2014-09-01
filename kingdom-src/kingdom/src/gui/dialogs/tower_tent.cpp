@@ -41,6 +41,8 @@
 
 #include <boost/bind.hpp>
 
+const int tower_employ_heros = 6;
+
 namespace gui2 {
 
 /*WIKI
@@ -89,7 +91,7 @@ REGISTER_DIALOG(tower_tent)
 
 ttower_tent::ttower_tent(game_display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero)
 	: ttent(heros, cards, cfg, campaign_config, player_hero, "tower")
-	, trandom_map(cfg, TOWER_MODE)
+	, trandom_map(cfg, mode_tag::TOWER)
 	, gui_(gui)
 {
 }
@@ -103,7 +105,8 @@ void ttower_tent::pre_show(CVideo& video, twindow& window)
 	ttent::pre_show(video, window);
 	trandom_map::pre_show(window);
 
-	employ_count_ = find_widget<tbutton>(&window, "employ_count", false, true);
+	tent::employ_count = tower_employ_heros;
+
 	ai_count_ = find_widget<tbutton>(&window, "ai_count", false, true);
 	turns_ = find_widget<tbutton>(&window, "turns", false, true);
 
@@ -111,12 +114,6 @@ void ttower_tent::pre_show(CVideo& video, twindow& window)
 		*ai_count_
 		, boost::bind(
 			&ttower_tent::ai_count
-			, this
-			, boost::ref(window)));
-	connect_signal_mouse_left_click(
-		*employ_count_
-		, boost::bind(
-			&ttower_tent::employ_count
 			, this
 			, boost::ref(window)));
 	connect_signal_mouse_left_click(
@@ -131,11 +128,6 @@ void ttower_tent::pre_show(CVideo& video, twindow& window)
 	tent::ai_count = 30;
 	strstr << tent::ai_count;
 	ai_count_->set_label(strstr.str());
-
-	strstr.str("");
-	tent::employ_count = 6;
-	strstr << tent::employ_count;
-	employ_count_->set_label(strstr.str());
 
 	tent::turns = 50;
 	strstr.str("");
@@ -173,35 +165,6 @@ void ttower_tent::ai_count(twindow& window)
 	std::stringstream strstr;
 	strstr << tent::ai_count;
 	ai_count_->set_label(strstr.str());
-}
-
-void ttower_tent::employ_count(twindow& window)
-{
-	std::vector<std::string> items;
-	std::vector<tval_str> employ_count_map;
-	int actived_index = 0;
-	
-	employ_count_map.push_back(tval_str(0, "0"));
-	employ_count_map.push_back(tval_str(3, "3"));
-	employ_count_map.push_back(tval_str(6, "6"));
-	employ_count_map.push_back(tval_str(9, "9"));
-
-	for (std::vector<tval_str>::iterator it = employ_count_map.begin(); it != employ_count_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (tent::employ_count == it->val) {
-			actived_index = std::distance(employ_count_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
-	dlg.show(gui_.video());
-
-	int selected = dlg.selected_index();
-	tent::employ_count = employ_count_map[selected].val;
-
-	std::stringstream strstr;
-	strstr << tent::employ_count;
-	employ_count_->set_label(strstr.str());
 }
 
 void ttower_tent::turns(twindow& window)

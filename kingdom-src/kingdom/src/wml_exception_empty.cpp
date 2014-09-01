@@ -26,6 +26,8 @@
 
 #include "gettext.hpp"
 #include "serialization/string_utils.hpp"
+#include "filesystem.hpp"
+#include "posix.h"
 
 void wml_exception(
 		  const char* cond
@@ -48,9 +50,12 @@ void wml_exception(
 		sstr << " Extra development information: " << dev_message;
 	}
 
-	throw game::error(message);
-	// throw twml_exception(message, sstr.str());
-
+	std::ostringstream err;
+	err << _("An error due to possibly invalid WML occurred\nThe error message is :")
+		<< "\n" << sstr.str() << "\n \n"
+		<< _("When reporting the bug please include the following error message :")
+		<< "\n" << dev_message;
+	return posix_print_mb(utf8_2_ansi(err.str().c_str()));
 }
 
 #endif

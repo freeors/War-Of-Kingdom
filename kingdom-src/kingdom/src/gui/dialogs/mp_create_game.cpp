@@ -46,10 +46,12 @@
 
 namespace gui2 {
 
+extern void common_genus(tbutton& genus);
+
 REGISTER_DIALOG(mp_create_game)
 
-tmp_create_game::tmp_create_game(game_display& gui, const config& cfg) :
-	trandom_map(cfg)
+tmp_create_game::tmp_create_game(game_display& gui, const config& cfg, bool local_only) :
+	trandom_map(cfg, mode_tag::RPG, local_only)
 	, gui_(gui)
 	, num_turns_(0)
 	, era_index_(0)
@@ -73,10 +75,6 @@ tmp_create_game::tmp_create_game(game_display& gui, const config& cfg) :
 		true,
 		preferences::turns ,
 		preferences::set_turns))
-	, gold_(register_integer("village_gold",
-		true,
-		preferences::village_gold ,
-		preferences::set_village_gold))
 	, experience_(register_integer("experience_modifier",
 		true,
 		preferences::xp_modifier ,
@@ -86,7 +84,22 @@ tmp_create_game::tmp_create_game(game_display& gui, const config& cfg) :
 
 void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 {
+	std::stringstream strstr;
+
 	name_entry_ = find_widget<ttext_box>(&window, "game_name", false, true);
+
+	genus_ = find_widget<tbutton>(&window, "genus", false, true);
+	tent::turn_based = false;
+	strstr.str("");
+	strstr << unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).name();
+	genus_->set_label(strstr.str());
+
+	connect_signal_mouse_left_click(
+		*genus_
+		, boost::bind(
+			&tmp_create_game::genus
+			, this
+			, boost::ref(window)));
 
 	era_ = find_widget<tbutton>(&window, "era", false, true);
 	launch_game_ = find_widget<tbutton>(&window, "ok", false, true);
@@ -127,9 +140,9 @@ void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 	i18n_symbols["login"] = preferences::login();
 	name_entry_->set_value(vgettext("$login|'s game", i18n_symbols));
 
-	std::stringstream str;
-	str << game_config::maximal_defeated_activity;
-	maximal_defeated_activity_->set_label(str.str());
+	strstr.str("");
+	strstr << game_config::maximal_defeated_activity;
+	maximal_defeated_activity_->set_label(strstr.str());
 
 	observers_->set_widget_value(window, preferences::allow_observers());
 
@@ -154,7 +167,6 @@ void tmp_create_game::update_map_settings(twindow& window)
 	shroud_->widget_set_enabled(window, !use_scenario_settings, false);
 	
 	turns_->widget_set_enabled(window, !use_scenario_settings, false);
-	gold_->widget_set_enabled(window, !use_scenario_settings, false);
 	experience_->widget_set_enabled(window, !use_scenario_settings, false);
 
 	if (use_scenario_settings) {
@@ -171,9 +183,13 @@ void tmp_create_game::update_map_settings(twindow& window)
 		shroud_->set_widget_value(window, preferences::shroud());
 		
 		turns_->set_widget_value(window, preferences::turns());
-		gold_->set_widget_value(window, preferences::village_gold());
 		experience_->set_widget_value(window, preferences::xp_modifier());
 	}
+}
+
+void tmp_create_game::genus(twindow& window)
+{
+	common_genus(*genus_);
 }
 
 void tmp_create_game::era(twindow& window)
@@ -268,7 +284,7 @@ void tmp_create_game::post_show(twindow& window)
 	parameters_.mp_countdown_reservoir_time = mp_countdown_reservoir_time_val;
 	parameters_.mp_countdown_action_bonus = mp_countdown_action_bonus_val;
 	parameters_.mp_countdown = false;
-	parameters_.village_gold = gold_->get_widget_value(window);
+	parameters_.village_gold = 2;
 	parameters_.xp_modifier = experience_->get_widget_value(window);
 	parameters_.fog_game = fog_->get_widget_value(window);
 	parameters_.shroud_game = shroud_->get_widget_value(window);

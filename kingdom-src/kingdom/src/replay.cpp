@@ -427,6 +427,11 @@ static void verify(const unit_map& units, const config& cfg) {
 	LOG_REPLAY << "verification passed\n";
 }
 
+// if want to unexpected end replay, for example debug, append below tow statement.
+// 2: must return false.
+// get_replay_source().unexpected = true;
+// return false;
+
 // FIXME: this one now has to be assigned with set_random_generator
 // from play_level or similar.  We should surely hunt direct
 // references to it from this very file and move it out of here.
@@ -440,6 +445,7 @@ replay::replay()
 	, skip_(false)
 	, message_locations()
 	, expected_advancements_()
+	, unexpected(false)
 {}
 
 replay::replay(const command_pool& pool) 
@@ -451,6 +457,7 @@ replay::replay(const command_pool& pool)
 	, skip_(false)
 	, message_locations()
 	, expected_advancements_()
+	, unexpected(false)
 {
 }
 
@@ -611,6 +618,71 @@ void replay::add_belong_to(const unit* u, const artifical* to, bool loyalty)
 	cmd->add_child("belong_to", val);
 }
 
+void replay::add_set_states(const unit& u, const std::map<ustate_tag::state_t, bool>& states)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::SET_STATES;
+
+	std::stringstream strstr;
+	config val;
+
+	val["layer"] = u.base()? unit_map::BASE: unit_map::OVERLAY;
+	strstr.str("");
+	strstr << u.get_location();
+	val["loc"] = strstr.str();
+
+	strstr.str("");
+	for (std::map<ustate_tag::state_t, bool>::const_iterator it = states.begin(); it != states.end(); ++ it) {
+		if (it != states.begin()) {
+			strstr << ", ";
+		}
+		int key = it->first;
+		strstr << key << ", " << (it->second? 1: 0);
+	}
+	val["states"] = strstr.str();
+
+	cmd->add_child("set_states", val);
+}
+
+void replay::add_clear_formationed(const unit& u, int cost)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::CLEAR_FORMATIONED;
+
+	config val;
+	std::stringstream strstr;
+
+	val["layer"] = u.base()? unit_map::BASE: unit_map::OVERLAY;
+	strstr.str("");
+	strstr << u.get_location();
+	val["loc"] = strstr.str();
+
+	val["cost"] = cost;
+
+	cmd->add_child("clear_formationed", val);
+}
+
+void replay::add_set_task(const unit& u, int task, const map_location& at)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::SET_TASK;
+
+	std::stringstream strstr;
+	config val;
+
+	val["hero"] = u.master().number_;
+	strstr.str("");
+	strstr << u.get_location();
+	val["loc"] = strstr.str();
+
+	val["task"] = task;
+	strstr.str("");
+	strstr << at;
+	val["at"] = strstr.str();
+
+	cmd->add_child("set_task", val);
+}
+
 /*
 content of build packet
 --------------------------
@@ -670,7 +742,7 @@ void replay::add_build(const unit_type* type, const map_location& city_loc, cons
 	cmd->add_child("build", build);
 }
 
-void replay::add_cast_tactic(const unit& tactician, const hero& h, const unit* special, bool consume)
+void replay::add_cast_tactic(const unit& tactician, const hero& h, const unit* special, bool consume, int cost)
 {
 	config* const cmd = add_command();
 	(*cmd)["type"] = str_cast(command_pool::CAST_TACTIC);
@@ -691,6 +763,7 @@ void replay::add_cast_tactic(const unit& tactician, const hero& h, const unit* s
 
 	val["hero"] = h.number_;
 	val["consume"] = consume? 1: 0;
+	val["cost"] = cost;
 
 	cmd->add_child("cast_tactic", val);
 }
@@ -873,7 +946,7 @@ void replay::add_countdown_update(int value, int team)
 }
 
 
-void replay::add_movement(const std::vector<map_location>& steps, bool direct)
+void replay::add_movement(const std::vector<map_location>& steps, bool direct, int cost)
 {
 	if (steps.empty()) { // no move, nothing to record
 		return;
@@ -885,6 +958,7 @@ void replay::add_movement(const std::vector<map_location>& steps, bool direct)
 
 	config move;
 	move["direct"] = direct? 1: 0;
+	move["cost"] = cost;
 	write_locations(steps, move);
 
 	cmd->add_child("move",move);
@@ -1018,15 +1092,6 @@ void replay::text_input(std::string input)
 	cmd->add_child("input",val);
 }
 
-void replay::set_random_value(const std::string& choice)
-{
-	config* const cmd = add_command();
-	(*cmd)["type"] = str_cast(command_pool::RANDOM_NUMBER);
-	config val;
-	val["value"] = choice;
-	cmd->add_child("random_number",val);
-}
-
 void replay::add_label(const terrain_label* label)
 {
 	assert(label);
@@ -1103,6 +1168,30 @@ void replay::init_ai()
 	cmd->add_child("init_ai");
 }
 
+void replay::add_prefix_unit(int side, bool new_turn, int end)
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::PREFIX_UNIT;
+
+	config val;
+	val["side"] = side;
+	val["new_turn"] = new_turn? 1: 0;
+	val["end"] = end;
+
+	cmd->add_child("prefix_unit", val);
+}
+
+void replay::add_post_unit()
+{
+	config* const cmd = add_command();
+	(*cmd)["type"] = command_pool::POST_UNIT;
+
+	config val;
+	val["past"] = 0; // current, it is not used.
+
+	cmd->add_child("post_unit", val);
+}
+
 void replay::add_fresh_heros()
 {
 	config* const cmd = add_command();
@@ -1111,10 +1200,11 @@ void replay::add_fresh_heros()
 	cmd->add_child("fresh_heros");
 }
 
-void replay::do_commoner()
+void replay::add_do_commoner()
 {
 	config* const cmd = add_command();
 	(*cmd)["type"] = command_pool::DO_COMMONER;
+	
 	cmd->add_child("do_commoner");
 }
 
@@ -1530,6 +1620,64 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
+	} else if (type == command_pool::PREFIX_UNIT) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			const config& random = cfg.child("random", i);
+			*ptr = random["value"].to_int();
+			ptr = ptr + 1;
+
+			const config& results = random.child("results", 0);
+			if (!results) {
+				*ptr = INT_MAX;
+				ptr = ptr + 1;
+				continue;
+			}
+			// [results].choose
+			*ptr = lexical_cast_default<int>(results["choose"], 0);
+			ptr = ptr + 1;
+		}
+		const config& child = cfg.child("prefix_unit");
+		*ptr = child["side"].to_int();
+		ptr = ptr + 1;
+		*ptr = child["new_turn"].to_int();
+		ptr = ptr + 1;
+		*ptr = child["end"].to_int();
+		ptr = ptr + 1; 
+
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
+	} else if (type == command_pool::POST_UNIT) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			const config& random = cfg.child("random", i);
+			*ptr = random["value"].to_int();
+			ptr = ptr + 1;
+
+			const config& results = random.child("results", 0);
+			if (!results) {
+				*ptr = INT_MAX;
+				ptr = ptr + 1;
+				continue;
+			}
+			// [results].choose
+			*ptr = lexical_cast_default<int>(results["choose"], 0);
+			ptr = ptr + 1;
+		}
+		const config& child = cfg.child("post_unit");
+		*ptr = child["past"].to_int();
+		ptr = ptr + 1; 
+
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
 	} else if (type == command_pool::FRESH_HEROS) {
 		cmd->type = (command_pool::TYPE)type;
 		int* ptr = (int*)(cmd + 1);
@@ -1564,6 +1712,7 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 			ptr = ptr + 1;
 		}
 		const config& child = cfg.child("do_commoner");
+
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
@@ -1673,6 +1822,9 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		const config& child = cfg.child("move");
 		// direct
 		*ptr = child["direct"].to_int();
+		ptr = ptr + 1;
+		// cost
+		*ptr = child["cost"].to_int();
 		ptr = ptr + 1;
 		// x=/y=
 		const std::string x = child.get("x")->str();
@@ -2073,6 +2225,8 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		ptr = ptr + 1;
 		*ptr = child["consume"].to_int();
 		ptr = ptr + 1;
+		*ptr = child["cost"].to_int();
+		ptr = ptr + 1;
 
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
@@ -2176,10 +2330,10 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 			ptr = ptr + 1;
 		}
 		// layer="0"
-		*ptr = lexical_cast_default<int>(child["layer"]);
+		*ptr = child["layer"].to_int();
 		ptr = ptr + 1;
 		// loyalty="1"
-		*ptr = lexical_cast_default<int>(child["loyalty"]);
+		*ptr = child["loyalty"].to_int();
 		ptr = ptr + 1;
 		// src="58,16"
 		coor = utils::split(child["src"]);
@@ -2190,7 +2344,7 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
-	} else if (type == command_pool::RANDOM_NUMBER) {
+	} else if (type == command_pool::SET_STATES) {
 		cmd->type = (command_pool::TYPE)type;
 		int* ptr = (int*)(cmd + 1);
 		size = *ptr = cfg.child_count("random");
@@ -2199,13 +2353,91 @@ void replay::config_2_command(const config& cfg, command_pool::command* cmd)
 			*ptr = cfg.child("random", i)["value"].to_int();
 			ptr = ptr + 1; 
 		}
-		const config& child = cfg.child("random_number");
-		// value="gxx word: 3"
-		size = *ptr = child["value"].str().size();
+
+		const config& child = cfg.child("set_states");
+		// loc="47,2"
+		std::vector<std::string> coor = utils::split(child["loc"]);
+		for (i = 0; i < 2; i ++) {
+			*ptr = lexical_cast_default<int>(coor[i]);
+			ptr = ptr + 1;
+		}
+		// layer="0"
+		*ptr = child["layer"].to_int();
 		ptr = ptr + 1;
-		memcpy(ptr, child["value"].str().c_str(), size);
-		*((char*)ptr + size) = '\0';
-		ptr = ptr + (size + 1 + 3) / 4; // align 4, 1 is '\0'
+
+		// states="0,1,2,0,4,1"
+		const std::vector<std::string> states = utils::split(child["states"]);
+		size = *ptr = states.size();
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			*ptr = lexical_cast_default<int>(states[i]);
+			ptr = ptr + 1;
+		}
+
+		// other field-vars
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
+	} else if (type == command_pool::CLEAR_FORMATIONED) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = cfg.child("random", i)["value"].to_int();
+			ptr = ptr + 1; 
+		}
+
+		const config& child = cfg.child("clear_formationed");
+		// loc="47,2"
+		std::vector<std::string> coor = utils::split(child["loc"]);
+		for (i = 0; i < 2; i ++) {
+			*ptr = lexical_cast_default<int>(coor[i]);
+			ptr = ptr + 1;
+		}
+		// layer="0"
+		*ptr = child["layer"].to_int();
+		ptr = ptr + 1;
+
+		// cost
+		*ptr = child["cost"].to_int();
+		ptr = ptr + 1;
+
+		// other field-vars
+		cmd->flags = 0;
+		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
+
+	} else if (type == command_pool::SET_TASK) {
+		cmd->type = (command_pool::TYPE)type;
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr = cfg.child_count("random");
+		ptr = ptr + 1; 
+		for (i = 0; i < size; i ++) {
+			*ptr = cfg.child("random", i)["value"].to_int();
+			ptr = ptr + 1; 
+		}
+
+		const config& child = cfg.child("set_task");
+		// loc="47,2"
+		std::vector<std::string> coor = utils::split(child["loc"]);
+		for (i = 0; i < 2; i ++) {
+			*ptr = lexical_cast_default<int>(coor[i]);
+			ptr = ptr + 1;
+		}
+		// hero="0"
+		*ptr = child["hero"].to_int();
+		ptr = ptr + 1;
+		// task
+		*ptr = child["task"].to_int();
+		ptr = ptr + 1;
+		// at="47,2"
+		coor = utils::split(child["at"]);
+		for (i = 0; i < 2; i ++) {
+			*ptr = lexical_cast_default<int>(coor[i]);
+			ptr = ptr + 1;
+		}
+
+		// other field-vars
 		cmd->flags = 0;
 		pool_data_vsize_ += sizeof(command_pool::command) + (int)((uint8_t*)ptr - (uint8_t*)(cmd + 1));
 
@@ -2571,6 +2803,52 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			ptr = ptr + 1;
 		}
 
+	} else if (cmd->type == command_pool::PREFIX_UNIT) {
+		config& child = cfg.add_child("prefix_unit");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+			if (*ptr == INT_MAX) {
+				ptr = ptr + 1;
+				continue;
+			}
+			config& result_cfg = random_cfg.add_child("results");
+			result_cfg["choose"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+
+		child["side"] = *ptr;
+		ptr = ptr + 1;
+		child["new_turn"] = *ptr;
+		ptr = ptr + 1;
+		child["end"] = *ptr;
+		ptr = ptr + 1;
+
+	} else if (cmd->type == command_pool::POST_UNIT) {
+		config& child = cfg.add_child("post_unit");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+			if (*ptr == INT_MAX) {
+				ptr = ptr + 1;
+				continue;
+			}
+			config& result_cfg = random_cfg.add_child("results");
+			result_cfg["choose"] = lexical_cast<std::string>(*ptr);
+			ptr = ptr + 1;
+		}
+
+		child["past"] = *ptr;
+		ptr = ptr + 1;
+
 	} else if (cmd->type == command_pool::FRESH_HEROS) {
 		config& child = cfg.add_child("fresh_heros");
 		int* ptr = (int*)(cmd + 1);
@@ -2620,9 +2898,9 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			ptr = ptr + 1;
 		}
 		child["heros"] = str.str();
-		child["human"] = lexical_cast<std::string>(*ptr);;
+		child["human"] = *ptr;
 		ptr = ptr + 1;
-		child["cost"] = lexical_cast<std::string>(*ptr);
+		child["cost"] = *ptr;
 		ptr = ptr + 1;
 		loc.x = *ptr;
 		ptr = ptr + 1;
@@ -2698,6 +2976,9 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		}
 		// direct
 		child["direct"] = *ptr;
+		ptr = ptr + 1;
+		// cost
+		child["cost"] = *ptr;
 		ptr = ptr + 1;
 		// x=/y=
 		size = *ptr;
@@ -3053,8 +3334,11 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		// hero
 		child["hero"] = *ptr;
 		ptr = ptr + 1;
-		// hero
-		child["consmue"] = *ptr;
+		// consume
+		child["consume"] = *ptr;
+		ptr = ptr + 1;
+		// cost
+		child["cost"] = *ptr;
 		ptr = ptr + 1;
 
 	} else if (cmd->type == command_pool::ARMORY) {
@@ -3172,8 +3456,8 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 		ptr = ptr + 1;
 		child["src"] = str.str();
 
-	} else if (cmd->type == command_pool::RANDOM_NUMBER) {
-		config& child = cfg.add_child("random_number");
+	} else if (cmd->type == command_pool::SET_STATES) {
+		config& child = cfg.add_child("set_states");
 		int* ptr = (int*)(cmd + 1);
 		size = *ptr;
 		ptr = ptr + 1;
@@ -3182,10 +3466,85 @@ void replay::command_2_config(command_pool::command* cmd, config& cfg)
 			random_cfg["value"] = *ptr;
 			ptr = ptr + 1;
 		}
-		// value
+		// dst
+		str << *ptr;
+		ptr = ptr + 1;
+		str << "," << *ptr;
+		ptr = ptr + 1;
+		child["loc"] = str.str();
+		// layer
+		str.str("");
+		child["layer"] = *ptr;
+		ptr = ptr + 1;
+
+		// states
+		str.str("");
 		size = *ptr;
 		ptr = ptr + 1;
-		child["value"] = (char*)ptr;
+		for (i = 0; i < size; i ++) {
+			if (i == 0) {
+				str << *ptr;
+			} else {
+				str << "," << *ptr;
+			}
+			ptr = ptr + 1;
+		}
+		child["states"] = str.str();
+
+	} else if (cmd->type == command_pool::CLEAR_FORMATIONED) {
+		config& child = cfg.add_child("clear_formationed");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = *ptr;
+			ptr = ptr + 1;
+		}
+		// dst
+		str << *ptr;
+		ptr = ptr + 1;
+		str << "," << *ptr;
+		ptr = ptr + 1;
+		child["loc"] = str.str();
+		// layer
+		str.str("");
+		child["layer"] = *ptr;
+		ptr = ptr + 1;
+
+		// cost
+		child["cost"] = *ptr;
+		ptr = ptr + 1;
+
+	} else if (cmd->type == command_pool::SET_TASK) {
+		config& child = cfg.add_child("set_task");
+		int* ptr = (int*)(cmd + 1);
+		size = *ptr;
+		ptr = ptr + 1;
+		for (i = 0; i < size; i ++) {
+			config& random_cfg = cfg.add_child("random");
+			random_cfg["value"] = *ptr;
+			ptr = ptr + 1;
+		}
+		// loc
+		str << *ptr;
+		ptr = ptr + 1;
+		str << "," << *ptr;
+		ptr = ptr + 1;
+		child["loc"] = str.str();
+		// hero
+		child["hero"] = *ptr;
+		ptr = ptr + 1;
+		// task
+		child["task"] = *ptr;
+		ptr = ptr + 1;
+		// at
+		str.str("");
+		str << *ptr;
+		ptr = ptr + 1;
+		str << "," << *ptr;
+		ptr = ptr + 1;
+		child["at"] = str.str();
 
 	} else if (cmd->type == command_pool::CHOOSE) {
 		config& child = cfg.add_child("choose");
@@ -3663,7 +4022,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 		}
 
 		//if there is nothing more in the records
-		if(cfg == NULL) {
+		if (cfg == NULL) {
 			//replayer.set_skip(false);
 			return false;
 		}
@@ -3689,9 +4048,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 		}
 
 		// We return if caller wants it for this tag
-		if (!do_untill.empty()
-			&& cfg->child(do_untill) != NULL)
-		{
+		if (!do_untill.empty() && cfg->child(do_untill) != NULL) {
 			get_replay_source().revert_action();
 			return false;
 		}
@@ -3733,7 +4090,6 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 		{
 			
 		}
-
 		else if (const config& child = cfg->child("init_side"))
 		{
 			// if strategy mistaken, it will result complex fault, check out as soon as early.
@@ -3761,23 +4117,63 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 		//if there is an end turn directive
 		else if (cfg->child("end_turn"))
 		{
-			calculate_end_turn(teams, side_num);
-			if (const config &child = cfg->child("verify")) {
-				verify(*resources::units, child);
-			}
-
-			return true;
+			// return false;
 		}
 		else if (cfg->child("init_ai"))
 		{
 			std::vector<mr_data> mrs;
-			units.calculate_mrs_data(mrs, side_num);
+			units.calculate_mrs_data(*resources::state_of_game, mrs, side_num);
 		}
-		else if (cfg->child("fresh_heros"))
+		else if (const config& child = cfg->child("prefix_unit"))
+		{
+			VALIDATE(!unit::actor, "do_replay_handle, unit::actor isn't NULL!");
+
+			if (controller.is_replaying() && child["new_turn"].to_int()) {
+				// first is with new_turn = 1, after process, is push back to replay pool. of course it is with new_turn = 1.
+				// second should ignore this. so use "main_ticks !=" condition.
+				int end_ticks = calculate_end_ticks();
+				if (!tent::turn_based) {
+					if (unit_map::main_ticks != (controller.turn() - 1) * game_config::ticks_per_turn) {
+						if (unit_map::main_ticks < end_ticks) {
+							units.do_escape_ticks_uh(teams, gui, end_ticks - unit_map::main_ticks, false);
+							get_replay_source().revert_action();
+							return true;
+						}
+					}
+				} else {
+					if (child["end"].to_int() != end_ticks) {
+						VALIDATE(end_ticks - unit_map::main_ticks == game_config::ticks_per_turn, "ticks of turn_based must be gap one!");
+						unit_map::main_ticks = end_ticks;
+						get_replay_source().revert_action();
+						return true;
+					}
+				}
+			}
+			
+			int end_ticks = child["end"].to_int();
+
+			const unit& u = units.current_unit();
+			if (!tent::turn_based) {
+				int past_ticks = u.backward_ticks(u.ticks());
+				VALIDATE(unit_map::main_ticks + past_ticks < end_ticks, "do_replay_handle, unit_map::main_ticks + past_ticks >= end_ticks!");
+				units.do_escape_ticks_uh(teams, gui, past_ticks, true);
+			}
+
+			controller.do_prefix_unit(end_ticks, true, true);
+
+			return false;
+		}
+		else if (const config& child = cfg->child("post_unit"))
+		{
+			controller.do_post_unit(true);
+
+			return true;
+		}
+		else if (const config& child = cfg->child("fresh_heros"))
 		{
 			do_fresh_heros(current_team, true);
 		}
-		else if (cfg->child("do_commoner"))
+		else if (const config& child = cfg->child("do_commoner"))
 		{
 			std::vector<std::pair<unit*, int> > gotos;
 			controller.calculate_commoner_gotos(current_team, gotos);
@@ -3811,7 +4207,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				}
 				bool human = child["human"].to_int()? true: false;
 
-				do_recruit(units, heros, teams, current_team, ut, v, *city, cost, human, false);
+				do_recruit(units, heros, teams, current_team, ut, v, *city, cost, human, false, *resources::state_of_game);
 				resources::screen->invalidate(loc);
 
 			} else {
@@ -3920,11 +4316,46 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			to->unit_belong_to(u, loyalty);
 			resources::screen->invalidate(to->get_location());
 
+		} else if (const config &child = cfg->child("set_states")) {
+			int layer = child["layer"].to_int();
+
+			std::vector<std::string> vstr = utils::split(child["loc"]);
+			map_location loc(lexical_cast_default<int>(vstr[0]) - 1, lexical_cast_default<int>(vstr[1]) - 1);
+			unit& u = *units.find(loc, (layer == unit_map::OVERLAY)? true: false);
+
+			vstr = utils::split(child["states"]);
+			for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+				ustate_tag::state_t state = (ustate_tag::state_t)lexical_cast_default<int>(*it);
+				++ it;
+				bool value = lexical_cast_default<int>(*it)? true: false;
+				u.set_state(state, value);
+			}
+
+		} else if (const config &child = cfg->child("clear_formationed")) {
+			int layer = child["layer"].to_int();
+			int cost = child["cost"].to_int();
+
+			std::vector<std::string> vstr = utils::split(child["loc"]);
+			map_location loc(lexical_cast_default<int>(vstr[0]) - 1, lexical_cast_default<int>(vstr[1]) - 1);
+			unit& u = *units.find(loc, (layer == unit_map::OVERLAY)? true: false);
+
+			do_clear_formationed(gui, teams, units, u, cost, false);
+
+		} else if (const config &child = cfg->child("set_task")) {
+			int number = child["hero"].to_int();
+			unit& u = *units.find_unit(heros[number]);
+
+			std::vector<std::string> vstr = utils::split(child["loc"]);
+			map_location loc(lexical_cast_default<int>(vstr[0]) - 1, lexical_cast_default<int>(vstr[1]) - 1);
+			int task = child["task"].to_int();
+			vstr = utils::split(child["at"]);
+			map_location at(lexical_cast_default<int>(vstr[0]) - 1, lexical_cast_default<int>(vstr[1]) - 1);
+			do_set_task(units, u, task, at, false);
+			
 		} else if (const config &child = cfg->child("build")) {
-			hero_map& heros = *resources::heros;
 			std::vector<std::string> vector_str = utils::split(child["builder"]);
 			map_location builder_loc(lexical_cast_default<int>(vector_str[0]) - 1, lexical_cast_default<int>(vector_str[1]) - 1);
-			unit& builder = *resources::units->find(builder_loc);
+			unit* builder = resources::units->find_unit(builder_loc);
 
 			int cost = child["cost"].to_int();
 
@@ -3933,7 +4364,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			const unit_type* ut = unit_types.find(child["type"]);
 
-			resources::controller->do_build(builder, ut, art_loc, cost);
+			resources::controller->do_build(current_team, builder, ut, art_loc, cost);
 
 			fix_shroud = !get_replay_source().is_skipping();
 			game_events::fire("post_build", art_loc, builder_loc);
@@ -3953,8 +4384,9 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			hero& h = heros[child["hero"].to_int()];
 			bool consume = child["consume"].to_int()? true: false;
+			int cost = child["cost"].to_int();
 
-			cast_tactic(teams, units, tactician, h, special, false, consume);
+			cast_tactic(teams, units, tactician, h, special, false, consume, cost);
 
 			if (tactician.advances()) {
 				get_replay_source().add_expected_advancement(&tactician);
@@ -4004,7 +4436,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 					disband_city->fresh_heros().push_back(&u.third());
 				}
 				// erase this unit from reside troop
-				disband_city->troop_go_out(index);
+				disband_city->troop_go_out(u);
 				gui.invalidate(loc);
 			} else {
 				unit& u = *units.find(loc, (index == -1 * unit_map::OVERLAY)? true: false);
@@ -4157,6 +4589,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			const std::string x = *child->get("x");
 			const std::string y = *child->get("y");
 			std::vector<map_location> steps = parse_location_range(resources::game_map, x, y);
+			int cost = *child->get("cost");
 
 			if (steps.empty()) {
 				replay::process_error("do_replay_handle, Warning: Missing path data found in [move]!");
@@ -4219,9 +4652,9 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				::move_unit(NULL, steps, NULL, NULL, true, NULL, true, true, true);
 			} else {
 				if (cfg->child("expedite")) {
-					do_direct_expedite(teams, units, *resources::game_map, *expedite_city, expedite_index, dst, false);
+					do_direct_expedite(teams, units, *expedite_city, expedite_index, dst, false);
 				} else {
-					do_direct_move(teams, units, *resources::game_map, *u, src, dst, false);
+					do_direct_move(teams, units, *resources::game_map, *u, dst, cost, false);
 				}
 				continue;
 			}
@@ -4229,13 +4662,6 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			// notic: mover maybe died! (when alert attack)
 
 			if (cfg->child("expedite")) {
-				resources::screen->remove_expedite_city();
-				units.set_expediting();
-				if (expedite_troop) {
-					expedite_city->troop_go_out(expedite_index);
-				} else {
-					expedite_city->commoner_go_out(expedite_index);
-				}
 				bool zero_movement = child->get("zero")->to_int()? true: false;
 				if (zero_movement) {
 					units.find(steps.back())->set_movement(0);
@@ -4248,7 +4674,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			// (supposed to be the human player in SP)
 			// That's ugly but let's try to make the replay works like that too
 			if (side_num != 1 && teams.front().fog_or_shroud() && !teams.front().fogged(dst)
-					 && (current_team.is_ai() || current_team.is_network_ai()))
+					 && (current_team.is_ai()))
 			{
 				// the second parameter is impossible to know
 				// and the AI doesn't use it too in the local version
@@ -4297,10 +4723,12 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			unit_map::iterator u = resources::units->find(src, (layer == unit_map::OVERLAY)? true: false);
 			if (!u.valid()) {
-				replay::process_error("unfound location for source of attack\n");
+				std::stringstream errbuf;
+				errbuf << "unfound location(" << src << ") for source of attack\n";
+				replay::process_error(errbuf.str());
 			}
 
-			if(size_t(weapon_num) >= u->attacks().size()) {
+			if (size_t(weapon_num) >= u->attacks().size()) {
 				replay::process_error("illegal weapon type in attack\n");
 			}
 

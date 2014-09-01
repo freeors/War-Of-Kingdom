@@ -24,6 +24,7 @@
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "multiplayer.hpp"
+#include "gettext.hpp"
 
 namespace gui2 {
 
@@ -49,16 +50,52 @@ namespace gui2 {
 
 REGISTER_DIALOG(mp_method_selection)
 
+struct titem 
+{
+	titem(const std::string& icon, const std::string& text)
+		: icon(icon)
+		, text(text)
+	{}
+
+	std::string icon;
+	std::string text;
+};
+
 void tmp_method_selection::pre_show(CVideo& /*video*/, twindow& window)
 {
+	std::stringstream strstr;
 	user_name_ = preferences::login();
 	tcontrol* user_widget = find_widget<tcontrol>(
 			&window, "user_name", false, true);
 	user_widget->set_label(user_name_);
 
-	tlistbox* list = find_widget<tlistbox>(&window, "method_list", false, true);
+	tlistbox& list = find_widget<tlistbox>(&window, "method_list", false);
+	window.keyboard_capture(&list);
 
-	window.add_to_keyboard_chain(list);
+	std::vector<titem> items;
+	items.push_back(titem("icons/icon-player.png", _("Attack Player")));
+	items.push_back(titem("icons/icon-subcontinent.png", _("Crusage for subcontinent")));
+	items.push_back(titem("icons/icon-server.png", _("Enter multiplayer lobby")));
+#ifdef _WIN32
+	items.push_back(titem("icons/icon-hostgame.png", _("Host Networked Game")));
+#endif
+
+	for (std::vector<titem>::const_iterator it = items.begin(); it != items.end(); ++ it) {
+		const titem& item = *it;
+
+		string_map list_item;
+		std::map<std::string, string_map> list_item_item;
+
+		strstr.str("");
+		strstr << item.icon;
+		list_item["label"] = strstr.str();
+		list_item_item.insert(std::make_pair("icon", list_item));
+
+		list_item["label"] = item.text;
+		list_item_item.insert(std::make_pair("text", list_item));
+
+		list.add_row(list_item_item);
+	}
 }
 
 void tmp_method_selection::post_show(twindow& window)

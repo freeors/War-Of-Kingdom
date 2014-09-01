@@ -114,8 +114,10 @@ void loadscreen::draw_screen(const std::string &text)
 	// Pump events and make sure to redraw the logo if there's a chance that it's been obscured
 	SDL_Event ev;
 	while(SDL_PollEvent(&ev)) {
-		if(ev.type == SDL_VIDEORESIZE || ev.type == SDL_VIDEOEXPOSE) {
-			logo_drawn_ = false;
+		if (ev.type == SDL_WINDOWEVENT) {
+			if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
+				logo_drawn_ = false;
+			}
 		}
 	}
 

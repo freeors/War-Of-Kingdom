@@ -152,7 +152,7 @@ bool is_server();
  */
 connection connect(const std::string& host, int port=15000);
 
-connection connect(const std::string& host, int port, threading::waiter& waiter);
+connection connect(const std::string& host, int port, bool xmit_http_data, threading::waiter& waiter);
 
 /**
  * Function to accept a connection from a remote host.
@@ -205,6 +205,7 @@ struct bandwidth_in {
 
 typedef boost::shared_ptr<bandwidth_in> bandwidth_in_ptr;
 
+bool get_connection_xmit_http_data(TCPsocket s);
 
 /**
  * Function to receive data from either a certain connection,

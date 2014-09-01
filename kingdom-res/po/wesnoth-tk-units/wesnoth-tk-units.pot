@@ -352,6 +352,27 @@ msgid "tactic3 description"
 msgstr ""
 
 #
+# school
+#
+msgid "school1"
+msgstr ""
+
+msgid "school1 description"
+msgstr ""
+
+msgid "school2"
+msgstr ""
+
+msgid "school2 description"
+msgstr ""
+
+msgid "school3"
+msgstr ""
+
+msgid "school3 description"
+msgstr ""
+
+#
 # tower
 #
 msgid "tower1"

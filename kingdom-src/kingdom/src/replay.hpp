@@ -55,10 +55,10 @@ public:
 	void add_belong_to(const unit* u, const artifical* to, bool loyalty);
 	void add_build_begin(const std::string& type);
 	void add_build(const unit_type* type, const map_location& city_loc, const map_location& builder_loc, const map_location& art_loc, int cost);
-	void add_cast_tactic(const unit& tactician, const hero& h, const unit* special, bool consume);
+	void add_cast_tactic(const unit& tactician, const hero& h, const unit* special, bool consume, int cost);
 	void add_build_cancel();
 	void add_countdown_update(int value,int team);
-	void add_movement(const std::vector<map_location>& steps, bool direct = false);
+	void add_movement(const std::vector<map_location>& steps, bool direct = false, int cost = 0);
 	void add_expedite(bool troop, int index, const std::vector<map_location>& steps, bool zero = false, bool direct = false);
 	void add_bomb(const team& t);
 	void add_attack(const unit& a, const unit& b,
@@ -71,7 +71,9 @@ public:
 	void user_input(const std::string &, const config &);
 	void choose_option(int index);
 	void text_input(std::string input);
-	void set_random_value(const std::string& choice);
+	void add_set_states(const unit& u, const std::map<ustate_tag::state_t, bool>& states);
+	void add_clear_formationed(const unit& u, int cost);
+	void add_set_task(const unit& u, int t, const map_location& at);
 	void add_label(const terrain_label*);
 	void clear_labels(const std::string&);
 	void add_rename(const std::string& name, const map_location& loc);
@@ -85,7 +87,9 @@ public:
 	void init_side(const team& current_team);
 	void end_turn();
 	void init_ai();
-	void do_commoner();
+	void add_prefix_unit(int side, bool new_turn, int end);
+	void add_post_unit();
+	void add_do_commoner();
 	void add_fresh_heros();
 	void add_inching_block(const unit& u, bool increase);
 	enum EVENT_TYPE {EVENT_ENCOURAGE, EVENT_RPG_INDEPENDENCE, EVENT_FIND_TREASURE};
@@ -171,6 +175,8 @@ public:
 	static std::string last_replay_error;
 
 	static void process_error(const std::string& msg);
+
+	bool unexpected;
 private:
 	//generic for add_movement and add_attack
 	void add_pos(const std::string& type,

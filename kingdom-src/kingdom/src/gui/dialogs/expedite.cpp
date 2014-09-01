@@ -104,9 +104,23 @@ texpedite::texpedite(events::menu_handler& menu_handler, game_display& gui, cons
 {
 }
 
+void set_task_str(twindow& window, const unit& u)
+{
+	tbutton* task = find_widget<tbutton>(&window, "task", false, true);
+
+	if (u.task() == unit::TASK_NONE) {
+		task->set_label(_("Guard"));
+	} else if (u.task() == unit::TASK_GUARD) {
+		task->set_label(_("Abolish guard"));
+	} else {
+		task->set_label(_("Abolish"));
+	}
+}
+
 void texpedite::type_selected(twindow& window)
 {
 	tlistbox& list = find_widget<tlistbox>(&window, "type_list", false);
+	tbutton* task = find_widget<tbutton>(&window, "task", false, true);
 
 	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(window);
 	list.invalidate_layout();
@@ -130,8 +144,13 @@ void texpedite::type_selected(twindow& window)
 			}
 		}
 
+		set_task_str(window, u);
+
 		tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 		ok->set_active(u.human() && can_move(u));
+
+	} else {
+		task->set_visible(twidget::INVISIBLE);
 	}
 }
 
@@ -253,12 +272,14 @@ void texpedite::pre_show(CVideo& /*video*/, twindow& window)
 			&texpedite::merit
 			, this
 			, boost::ref(window)));
+	connect_signal_mouse_left_click(
+		find_widget<tbutton>(&window, "task", false)
+		, boost::bind(
+			&texpedite::set_task
+			, this
+			, boost::ref(window)));
 
-	refresh_tooltip(window);
-
-	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
-	const unit& u = *reside_troops[troop_index_];
-	ok->set_active(can_move(u) && u.human());
+	type_selected(window);
 }
 
 void texpedite::hero_list(twindow& window)
@@ -284,6 +305,21 @@ void texpedite::merit(twindow& window)
 
 	tunit_merit merit(gui_, temp);
 	merit.show(gui_.video());
+}
+
+void texpedite::set_task(twindow& window)
+{
+	std::vector<unit*>& reside_troops = city_.reside_troops();
+	unit& temp = *reside_troops[troop_index_];
+
+	if (temp.task() == unit::TASK_NONE) {
+		temp.set_guard(city_.get_location());
+
+	} else {
+		temp.set_task(unit::TASK_NONE);
+	}
+	set_task_str(window, temp);
+	refresh_tooltip(window);
 }
 
 void texpedite::post_show(twindow& window)

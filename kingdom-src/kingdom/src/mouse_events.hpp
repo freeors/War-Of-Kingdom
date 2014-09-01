@@ -37,8 +37,8 @@ namespace events{
 
 class mouse_handler : public mouse_handler_base {
 public:
-	mouse_handler(game_display* gui, std::vector<team>& teams, unit_map& units, hero_map& heros, gamemap& map,
-		tod_manager& tod_mng, undo_list& undo_stack);
+	mouse_handler(play_controller& controller, game_display* gui, std::vector<team>& teams, unit_map& units, hero_map& heros, gamemap& map,
+		tod_manager& tod_mng, game_state& gamestate, undo_list& undo_stack);
 	~mouse_handler();
 	static mouse_handler* get_singleton() { return singleton_ ;}
 	void set_side(int side_number);
@@ -60,12 +60,13 @@ public:
 	void set_gui(game_display* gui) { gui_ = gui; }
 	void set_undo(const bool undo) { undo_ = undo; }
 
-	void set_expedite(artifical *c, int u);
+	void set_expedite(artifical *c, unit& u);
 	void set_building(artifical* bldg);
 	void set_card_playing(team& t, int index);
 	void set_hero_placing(hero* h);
 
 	void set_unit_placing(unit& u);
+	void set_unit_tasking(unit& u);
 
 	unit_map::iterator selected_unit();
 
@@ -84,7 +85,7 @@ public:
 	// moving
 	//
 	void begin_moving(const map_location& src, const map_location& dst);
-	void end_moving(const map_location& stop_loc);
+	void end_moving();
 	bool post_move_unit(unit& mover, const map_location& stop_loc);
 
 	map_location move_unit_along_current_route(const std::vector<map_location>& caller_steps, bool check_shroud, bool attackmove = false);
@@ -93,9 +94,10 @@ public:
 	bool in_multistep_state() const;
 
 	void exit_building(bool ok);
-	void exit_playing_card(bool ok);
-	void exit_placing_hero();
 	void exit_placing_unit(bool ok);
+	void exit_selecting(bool ok);
+
+	void do_right_click(const bool browse);
 
 protected:
 	/**
@@ -119,18 +121,20 @@ protected:
 	bool left_click(int x, int y, const bool browse);
 	bool right_click(int x, int y, const bool browse);
 	void clear_undo_stack();
-	void do_right_click(const bool browse);
-	
+		
 	// fill weapon choices into bc_vector
 	// return the best weapon choice
 	int fill_weapon_choices(std::vector<battle_context>& bc_vector, unit_map::iterator attacker, unit_map::iterator defender);
 	// wrapper to catch bad_alloc so this should be called
-	bool attack_enemy(unit_map::iterator attacker, unit_map::iterator defender, const map_location& target_loc);
+	bool attack_enemy(unit& attacker, unit& defender, const map_location& target_loc);
 	// the real function but can throw bad_alloc
-	bool attack_enemy_(unit_map::iterator attacker, unit_map::iterator defender, const map_location& target_loc);
+	bool attack_enemy_(unit& attacker, unit& defender, const map_location& target_loc);
 
-	bool cast_tactic(unit& tactician, const map_location& target_loc);
-	void cast_tactic_special(unit& tactician, unit& special);
+	bool cast_tactic(unit& tactician, const map_location& target_loc, bool browse);
+	void cast_tactic_special(unit& tactician, unit* special, bool browse);
+
+	void clear_formationed(unit& u, bool browse);
+	void intervene_move(unit& u, const map_location& target_loc, bool browse);
 
 	bool do_formation_attack(unit& attacker);
 
@@ -140,7 +144,10 @@ protected:
 	// move a field troop from a to b.
 	void direct_move_unit(unit& u, const map_location& from, const map_location& to);
 
+	void do_task(unit& u, const map_location& at);
+
 	bool interior(bool browse, unit& u);
+	void build_ea(const map_location& loc);
 
 	// the perform attack function called after a random seed is obtained
 	void perform_attack(unit& attacker, unit& defender, int attacker_weapon, int defender_weapon, rand_rng::seed_t seed);
@@ -154,17 +161,22 @@ protected:
 	map_location current_unit_build_from(const map_location& loc);
 	const map_location& current_unit_placable_from(const map_location& loc) const ;
 	const map_location& current_unit_joinable_from(const map_location& loc) const;
+	map_location current_unit_taskable_from(const map_location& loc, int task) const ;
+	map_location current_unit_clear_formationed_from(const map_location& loc);
+	map_location current_unit_intervene_move_from(const map_location& loc);
 
 	unit_map::const_iterator find_unit(const map_location& hex) const;
 	unit_map::iterator find_unit(const map_location& hex);
 
 private:
+	play_controller& controller_;
 	gamemap& map_;
 	game_display* gui_;
 	std::vector<team>& teams_;
 	unit_map& units_;
 	hero_map& heros_;
 	tod_manager& tod_manager_;
+	game_state& gamestate_;
 	undo_list& undo_stack_;
 
 	// previous highlighted hexes
@@ -189,7 +201,7 @@ private:
 	// recalling
 	//
 	artifical *expediting_city_;
-	int expediting_unit_;
+	unit* expediting_unit_;
 
 	//
 	// building
@@ -211,6 +223,11 @@ private:
 	// placing unit
 	//
 	unit* placing_unit_;
+
+	//
+	// tasking unit
+	//
+	unit* tasking_unit_;
 
 	//
 	// cast tactic

@@ -8,8 +8,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gettext", "gettext.vcproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iconv", "iconv.vcproj", "{CCBFB374-97BC-4E52-8550-664523A6988A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test.vcproj", "{02BEAA1C-975A-43FA-A51F-642B8056A58E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -24,9 +22,6 @@ Global
 		{CCBFB374-97BC-4E52-8550-664523A6988A}.Debug|Win32.Build.0 = Debug|Win32
 		{CCBFB374-97BC-4E52-8550-664523A6988A}.Release|Win32.ActiveCfg = Release|Win32
 		{CCBFB374-97BC-4E52-8550-664523A6988A}.Release|Win32.Build.0 = Release|Win32
-		{02BEAA1C-975A-43FA-A51F-642B8056A58E}.Debug|Win32.ActiveCfg = Debug|Win32
-		{02BEAA1C-975A-43FA-A51F-642B8056A58E}.Debug|Win32.Build.0 = Debug|Win32
-		{02BEAA1C-975A-43FA-A51F-642B8056A58E}.Release|Win32.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

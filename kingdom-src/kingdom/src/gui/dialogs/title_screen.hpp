@@ -17,7 +17,6 @@
 #define GUI_DIALOGS_TITLE_SCREEN_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
-#include "multiplayer.hpp"
 
 class game_display;
 class hero_map;
@@ -36,7 +35,7 @@ namespace gui2 {
 class ttitle_screen : public tdialog
 {
 public:
-	ttitle_screen(game_display& gui, hero_map& heros, hero& player_hero);
+	ttitle_screen(game_display& disp, hero_map& heros, hero& player_hero);
 
 	~ttitle_screen();
 
@@ -46,21 +45,23 @@ public:
 	 * @todo Evaluate the best place for these items.
 	 */
 	enum tresult {
-			  TUTORIAL = 1        /**< Start special campaign 'tutorial' */
-			, NEW_CAMPAIGN        /**< Let user select a campaign to play */
-			, RANDOM_MAP
+			NEW_CAMPAIGN = 1     /**< Let user select a campaign to play */
+			, PLAYER
+			, PLAYER_SIDE
 			, MULTIPLAYER         /**<
 			                       * Play single scenario against humans or AI
 			                       */
 			, LOAD_GAME
-			, GET_ADDONS
+			, REPORT
 			, START_MAP_EDITOR
 			, CHANGE_LANGUAGE
+			, MESSAGE
 			, EDIT_PREFERENCES
+			, SIGNIN
+			, DESIGN
 			, INAPP_PURCHASE
-			, SHOW_ABOUT          /**< Show credits */
 			, QUIT_GAME
-			, SHOW_HELP
+			, HELP
 			, NOTHING             /**<
 			                       * Default, nothing done, no redraw needed
 			                       */
@@ -79,15 +80,16 @@ private:
 
 	void post_show(twindow& window);
 
-	void report(twindow& window);
-	void player(twindow& window);
+	void set_retval(twindow& window, int retval);
 
-	void version_2_plug(twindow& window) const;
+	void employee_erase() const;
+	void employee_lock(bool lock) const;
+	void adjust_field() const;
 private:
-	game_display& gui_;
+	game_display& disp_;
 	hero_map& heros_;
 	hero& player_hero_;
-	static http::membership member;
+	int title_screen_anim_id_;
 };
 
 } // namespace gui2

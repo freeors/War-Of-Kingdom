@@ -22,6 +22,42 @@
 
 namespace editor {
 
+class tmap_type
+{
+public:
+	struct titem {
+		t_translation::t_list list;
+		int total;
+		int unite;
+		std::vector<map_location> avoid;
+
+		titem(const config& cfg);
+	};
+	tmap_type()
+		: disp_(NULL),
+		items_(),
+		summary_(),
+		err_str_()
+	{}
+	tmap_type(display& disp, const config& cfg);
+
+	bool can_modify(const gamemap& map, const map_location& loc, const t_translation::t_terrain& t, const t_translation::t_terrain& old);
+	const std::string& err_str() const { return err_str_; }
+	void handle_err();
+private:
+	int calculate_total_if_modify(const t_translation::t_list& list, const t_translation::t_terrain& old) const;
+	int calculate_unite_if_modify(const gamemap& map, const map_location& loc, const t_translation::t_list& list) const;
+	bool allow_if_modify(const gamemap& map, const map_location& loc, const std::vector<map_location>& avoid) const;
+
+private:
+	display* disp_;
+	std::vector<titem> items_;
+	std::string summary_;
+	std::string err_str_;
+};
+
+extern tmap_type map_type;
+
 /**
  * This class wraps around a map to provide a conscise interface for the editor to work with.
  * The actual map object can change rapidly (be assigned to), the map context persists

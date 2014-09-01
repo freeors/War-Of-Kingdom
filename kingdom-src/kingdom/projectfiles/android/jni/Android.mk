@@ -4,13 +4,14 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE := kingdom
 
-SDL_PATH := ../SDL/SDL-1.3.0-6217
+SDL_PATH := ../SDL/SDL2-2.0.3
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/external/boost_1_46 \
 	$(LOCAL_PATH)/external/bzip2-1.0.6 \
+	$(LOCAL_PATH)/external/lpng \
 	$(LOCAL_PATH)/external/zlib123 \
 	$(LOCAL_PATH)/../gettext/gettext-framework/include \
-	$(LOCAL_PATH)/../SDL/SDL-dev-framework/SDL-1.3.x/include \
+	$(LOCAL_PATH)/../SDL/SDL-dev-framework/SDL-2.0.x/include \
 	$(LOCAL_PATH)/../SDL/SDL-dev-framework/SDL_image/include \
 	$(LOCAL_PATH)/../SDL/SDL-dev-framework/SDL_mixer/include \
 	$(LOCAL_PATH)/../SDL/SDL-dev-framework/SDL_net/include \
@@ -19,7 +20,7 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/external/boost_1_46 \
 	
 LOCAL_CFLAGS :=	-D_KINGDOM_EXE
 
-LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.cpp \
+LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.c \
 	$(subst $(LOCAL_PATH)/,, \
 	$(wildcard $(LOCAL_PATH)/src/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/*.cpp) \
@@ -67,14 +68,16 @@ LOCAL_SRC_FILES := $(SDL_PATH)/src/main/android/SDL_android_main.cpp \
 	$(wildcard $(LOCAL_PATH)/external/boost_1_46/libs/regex/src/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/external/bzip2-1.0.6/*.c) \
 	$(wildcard $(LOCAL_PATH)/external/bzip2-1.0.6/*.cpp) \
+	$(wildcard $(LOCAL_PATH)/external/lpng/*.c) \
+	$(wildcard $(LOCAL_PATH)/external/lpng/*.cpp) \
 	$(wildcard $(LOCAL_PATH)/external/zlib123/*.c) \
 	$(wildcard $(LOCAL_PATH)/external/zlib123/*.cpp)) 
 	
-#LOCAL_SHARED_LIBRARIES := intl SDL SDL_image SDL_mixer SDL_net SDL_ttf
+#LOCAL_SHARED_LIBRARIES := intl SDL2 SDL2_image SDL2_mixer SDL2_net SDL2_ttf
 
 LOCAL_STATIC_LIBRARIES := libgnustl_shared.so
 
 #LOCAL_LDLIBS := -llog
-LOCAL_LDLIBS := -llog -lintl -lSDL -lSDL_image -lSDL_mixer -lSDL_net -lSDL_ttf
+LOCAL_LDLIBS := -llog -lintl -lSDL2 -lSDL2_image -lSDL2_mixer -lSDL2_net -lSDL2_ttf
 
 include $(BUILD_SHARED_LIBRARY)

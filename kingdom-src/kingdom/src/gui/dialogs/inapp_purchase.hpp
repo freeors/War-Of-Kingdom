@@ -17,7 +17,9 @@
 #define GUI_DIALOGS_INAPP_PURCHASE_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
-#include "sdl_utils.hpp"
+#include "multiplayer.hpp"
+
+class game_display;
 
 namespace gui2 {
 
@@ -35,8 +37,10 @@ struct tinapp_item
 	std::string name;
 	std::string description;
 	std::string icon;
+	std::string remark;
 	int price;
 	bool purchased;
+	bool consumable;
 };
 
 class tinapp_purchase : public tdialog
@@ -44,18 +48,21 @@ class tinapp_purchase : public tdialog
 public:
 	static tinapp_purchase* get_singleton() { return singleton_ ;}
 
-	tinapp_purchase(bool browse);
+	tinapp_purchase(game_display& disp, hero_map& heros, bool browse);
 	~tinapp_purchase();
 
-	void refresh_list(bool set_purchase = false) const;
+	void refresh_list(bool clear_items, bool set_purchase = false);
 
 	tlabel& status() { return *status_; }
 	tinapp_item& get_item(int index);
 
 	void purchase_status(bool exit);
+	game_display& disp() { return disp_; }
+	hero_map& heros() { return heros_; }
 private:
 	void restore(twindow& window);
 	void purchase(twindow& window);
+	void quit(twindow& window);
 	void timer_handler();
 
 	void item_selected(twindow& window);
@@ -71,6 +78,8 @@ private:
 	void post_show(twindow& window);
 
 private:
+	game_display& disp_;
+	hero_map& heros_;
 	std::vector<tinapp_item> items_;
 	tbutton* restore_;
 	tbutton* purchase_;

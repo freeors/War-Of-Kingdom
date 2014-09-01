@@ -1,6 +1,5 @@
-/* $Id: builder.cpp 56166 2013-02-02 13:02:37Z boucman $ */
 /*
-   Copyright (C) 2004 - 2013 by Philippe Plantier <ayin@anathas.org>
+   Copyright (C) 2004 - 2014 by Philippe Plantier <ayin@anathas.org>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org
 
    This program is free software; you can redistribute it and/or modify
@@ -93,10 +92,12 @@ void terrain_builder::tile::rebuild_cache(const std::string& tod, logs* log)
 				}
 			}
 
-			if(is_empty)
+			if (is_empty) {
 				continue;
+			}
 
 			img_list.push_back(anim);
+			img_list.back().reset_start_tick();
 
 			if(variant.random_start)
 				img_list.back().set_animation_time(ri.rand % img_list.back().get_animation_duration());
@@ -109,12 +110,8 @@ void terrain_builder::tile::rebuild_cache(const std::string& tod, logs* log)
 		}
 	}
 
-	// if (!sorted_images) {
-	//	sorted_images = true;
-
-		// in order to both unit and reduce memroy, clear flags
-		flags.clear();
-	// }
+	// in order to both unit and reduce memroy, clear flags
+	flags.clear();
 }
 
 void terrain_builder::tile::clear(bool full)
@@ -342,16 +339,16 @@ void terrain_builder::rebuild_terrain(const map_location &loc)
 		btile.images_foreground.clear();
 		btile.images_background.clear();
 		const std::string filename =
-			map().get_terrain_info(map().get_terrain(loc)).minimap_image();
+			map().get_terrain_info(loc).minimap_image();
 		animated<image::locator> img_loc;
 		img_loc.add_frame(100,image::locator("terrain/" + filename + ".png"));
 		img_loc.start_animation(0, true);
 		btile.images_background.push_back(img_loc);
 
 		//Combine base and overlay image if necessary
-		if(map().get_terrain_info(map().get_terrain(loc)).is_combined()) {
+		if(map().get_terrain_info(loc).is_combined()) {
 			const std::string filename_ovl =
-				map().get_terrain_info(map().get_terrain(loc)).minimap_image_overlay();
+				map().get_terrain_info(loc).minimap_image_overlay();
 			animated<image::locator> img_loc_ovl;
 			img_loc_ovl.add_frame(100,image::locator("terrain/" + filename_ovl + ".png"));
 			img_loc_ovl.start_animation(0, true);
@@ -363,6 +360,7 @@ void terrain_builder::rebuild_terrain(const map_location &loc)
 void terrain_builder::rebuild_terrain()
 {
 	tile_map_.reset(false);
+	terrain_by_type_.clear();
 	// in order to reduce memory, reduce terrain_by_type_
 	selector_ = SELECTOR_UNIT;
 	build_terrains();
@@ -447,8 +445,7 @@ bool terrain_builder::load_images(building_rule &rule)
 						bool has_tilde = tilde != std::string::npos;
 						const std::string filename = "terrain/" + (has_tilde ? str.substr(0,tilde) : str);
 
-
-						if(!image_exists(filename)){
+						if (!image_exists(filename)){
 							continue; // ignore missing frames
 						}
 
@@ -1221,7 +1218,11 @@ void terrain_builder::build_terrains()
 	}
 
 	// in order to reduce memory, release terrain_by_type_
-	terrain_by_type_.clear();
+	// but in map_type of siege, require this variable.
+	// retain it when total grid less than 400.
+	if (map_->w() * map_->h() > 400) {
+		terrain_by_type_.clear();
+	}
 }
 
 terrain_builder::tile* terrain_builder::get_tile(const map_location &loc)

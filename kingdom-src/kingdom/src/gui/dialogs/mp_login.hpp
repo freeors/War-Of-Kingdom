@@ -19,14 +19,17 @@
 #include "gui/dialogs/dialog.hpp"
 
 class game_display;
+class hero_map;
 
 namespace gui2 {
 
 class tmp_login : public tdialog
 {
 public:
-	tmp_login(game_display& disp, const std::string& label);
+	enum {REGISTER, LOGIN};
+	tmp_login(game_display& disp, hero_map& heros, const std::string& label);
 
+	bool dirty() const;
 private:
 
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
@@ -40,11 +43,16 @@ private:
 
 	void register1(twindow& window);
 
-	std::string text_box_str(twindow& window, const std::string& id, const std::string& name, int min, int max);
-	bool create(twindow& window, bool close);
+	std::string text_box_str(twindow& window, const std::string& id, const std::string& name, int min, int max, bool allow_empty);
+	bool create(twindow& window, int operate);
 
 private:
 	game_display& disp_;
+	hero_map& heros_;
+	std::string orignal_username_;
+	std::string orignal_password_;
+
+	bool registed_;
 };
 
 } // namespace gui2

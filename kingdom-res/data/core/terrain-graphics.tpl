@@ -4357,7 +4357,7 @@
 		0_terrainlist="Ch,Chr,Cha"
 		1_layer=0
 		2_builder="IMAGE_SINGLE"
-		3_imagestem="flat/road"
+		3_imagestem="flat/wall"
 	[/cfg]
 [/macro]
 

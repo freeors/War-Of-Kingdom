@@ -68,7 +68,7 @@ namespace preferences
 class editor
 {
 public:
-	enum BIN_TYPE {BIN_MIN = 0, MAIN_DATA = BIN_MIN, EDITOR, GUI, LANGUAGE, BIN_SYSTEM_MAX = LANGUAGE, SCENARIO_DATA, CAMPAIGNS, BIN_MAX = CAMPAIGNS};
+	enum BIN_TYPE {BIN_MIN = 0, MAIN_DATA = BIN_MIN, GUI, LANGUAGE, BIN_SYSTEM_MAX = LANGUAGE, SCENARIO_DATA, CAMPAIGNS, BIN_MAX = CAMPAIGNS};
 	struct wml2bin_desc {
 		wml2bin_desc();
 		std::string bin_name;
@@ -103,6 +103,38 @@ private:
 	std::vector<std::pair<BIN_TYPE, wml2bin_desc> > wml2bin_descs_;
 };
 
+class tmod_config
+{
+public:
+	enum res_type {res_none, res_file, res_dir};
+	struct tres {
+		tres(res_type type, const std::string& name)
+			: type(type)
+			, name(name)
+		{}
 
+		res_type type;
+		std::string name;
+	};
+	tmod_config()
+		: name()
+		, res_path()
+		, res_short_path()
+		, patch_path()
+		, copy_res()
+		, remove_res()
+	{}
+	tmod_config(const config& cfg);
+	bool valid() const;
+	bool opeate_file(bool patch_2_res) const;
+
+	std::string name;
+	std::string res_path;
+	std::string res_short_path;
+	std::string patch_path;
+	std::vector<tres> copy_res;
+	std::vector<tres> remove_res;
+};
+extern tmod_config mod_config;
 
 #endif // __EDITOR_HPP_

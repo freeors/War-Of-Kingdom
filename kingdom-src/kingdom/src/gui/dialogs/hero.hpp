@@ -39,7 +39,7 @@ class tscrollbar_panel;
 class thero : public tdialog
 {
 public:
-	explicit thero(hero_map& heros, hero& h);
+	explicit thero(hero_map& heros, hero& h, hero* base = NULL);
 
 	~thero();
 
@@ -67,6 +67,7 @@ private:
 private:
 	hero_map& heros_;
 	hero& h_;
+	hero* base_;
 
 	int current_page_;
 	std::map<int, ttoggle_button*> sheet_;

@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\external\boost_1_46;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
+				AdditionalIncludeDirectories="..\..\external\boost_1_46;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NOMINMAX;LOCALEDIR=\&quot;translations\&quot;;FIFODIR=\&quot;/var/run/wesnothd\&quot;;HAVE_CONFIG_H;DISABLE_POOL_ALLOC;HAS_RELATIVE_LOCALEDIR=1;CMAKE_INTDIR=\&quot;Release\&quot;;BOOST_ALL_NO_LIB"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib"
+				AdditionalDependencies="ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="$(OutDir)"
 				GenerateDebugInformation="true"
@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="4"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="..\..\external\boost_1_46;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
+				AdditionalIncludeDirectories="..\..\external\boost_1_46;&quot;..\..\..\gettext\gettext-framework\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_image\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_net\include&quot;;&quot;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include&quot;;..\..\src"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NOMINMAX;NDEBUG;BOOST_ALL_NO_LIB"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDL.lib ..\..\..\SDL\SDL-dev-framework\SDL-1.3.x\lib\SDLmain.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL_net.lib"
+				AdditionalDependencies="ws2_32.lib kingdom-core.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib ..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib ..\..\..\gettext\gettext-framework\lib\intl.lib ..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="&quot;$(OutDir)&quot;"
 				GenerateDebugInformation="true"
@@ -176,6 +176,10 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath="..\..\src\formula_string_utils.cpp"
+				>
+			</File>
 			<File
 				RelativePath="..\..\src\loadscreen_empty.cpp"
 				>

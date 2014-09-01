@@ -34,7 +34,7 @@ class tlistbox;
 class tside_list : public tdialog
 {
 public:
-	explicit tside_list(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate);
+	explicit tside_list(game_display& disp, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, const config& game_config);
 
 protected:
 	/** Inherited from tdialog. */
@@ -55,13 +55,15 @@ private:
 	void fill_table_row(team& t, int catalog);
 
 	void noble_list(int n);
+	void browse_group(int n);
 	void technology_tree(int n);
 private:
-	game_display& gui_;
+	game_display& disp_;
 	std::vector<team>& teams_;
 	unit_map& units_;
 	hero_map& heros_;
 	game_state& gamestate_;
+	const config& game_config_;
 
 	int side_;
 

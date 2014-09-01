@@ -65,7 +65,9 @@ private:
 
 	void hero_list(twindow& window);
 	void merit(twindow& window);
+	void set_task(twindow& window);
 	bool can_move(const unit& u);
+
 private:
 	events::menu_handler& menu_handler_;
 	game_display& gui_;

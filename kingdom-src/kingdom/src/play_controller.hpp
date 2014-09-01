@@ -104,8 +104,11 @@ public:
 	virtual void unit_detail();
 	virtual void switch_list();
 
+	virtual void do_init_turn();
 	virtual void do_init_side(const unsigned int team_index);
-	virtual void play_side(const unsigned int team_num, bool save) = 0;
+	virtual void play_side() = 0;
+	virtual bool do_prefix_unit(int end_ticks, bool replay, bool record_at_end);
+	virtual void do_post_unit(bool replay);
 
 	virtual void force_end_turn() = 0;
 	virtual void force_end_level(LEVEL_RESULT res) = 0;
@@ -115,6 +118,7 @@ public:
 	 * @throw end_level_exception If the user wants to abort.
 	 */
 	virtual void process_oos(const std::string& msg) const;
+	void process_oos2(const std::string& msg) const;
 
 	virtual void sync_undo();
 
@@ -153,6 +157,7 @@ public:
 	bool card_mode() const { return card_mode_; }
 
 	int difficulty_level() const { return difficulty_level_; }
+	bool has_network_player() const { return has_network_player_; }
 
 	int duel() const { return duel_; }
 	void set_duel(int duel) { duel_ = duel; }
@@ -176,6 +181,7 @@ public:
 	const team& current_team() const;
 
 	bool is_linger_mode() const { return linger_; }
+	bool is_end_turn() const { return end_turn_; }
 	const undo_list& undo_stack() const { return undo_stack_; }
 
 	events::mouse_handler& get_mouse_handler_base();
@@ -187,7 +193,7 @@ public:
 	void refresh_city_buttons(const artifical& city) const;
 
 	artifical* decide_ai_capital() const;
-	void recommend();
+	void recommend(int random);
 	bool do_ally(bool alignment, int my_side, int to_ally_side, int emissary_number, int target_side, int strategy_index);
 
 	void construct_road();
@@ -199,13 +205,20 @@ public:
 	const std::map<int, std::string>& renames() const { return renames_; }
 	void insert_rename(int number, const std::string& name); 
 
-	void do_build(unit& builder, const unit_type* ut, const map_location& art_loc, int cost = -1);
+	void do_build(team& builder_team, unit* builder, const unit_type* ut, const map_location& art_loc, int cost = -1);
 	void start_pass_scenario_anim(LEVEL_RESULT result) const;
 
 	int human_team() const { return human_team_; }
 	const config& level() const { return level_; }
 
 	card_map& cards() { return cards_; }
+	bool pause_when_human() const { return pause_when_human_; }
+
+	const int autosave_ticks() const { return autosave_ticks_; }
+	void do_delay_call(bool clear);
+	bool allow_intervene() const { return allow_intervene_; }
+	bool allow_active() const { return allow_active_; }
+	void clear_slot_cache_selected();
 
 protected:
 	void slice_before_scroll();
@@ -235,12 +248,13 @@ protected:
 	void fire_prestart(bool execute);
 	void fire_start(bool execute);
 	virtual void init_gui();
-	virtual void init_side(const unsigned int team_index, bool is_replay = false, bool need_record = true);
+	virtual void init_side(const unsigned int team_index, bool new_side);
 	void place_sides_in_preferred_locations();
 	virtual void finish_side_turn();
 	void finish_turn();
 	bool clear_shroud();
 	bool enemies_visible() const;
+	void adjust_according_to_group_interior();
 
 	void enter_textbox();
 	void tab();
@@ -248,7 +262,7 @@ protected:
 	/** Find a human team (ie one we own) starting backwards from 'team_num'. */
 	int find_human_team_before(const size_t team) const;
 
-	void fill_employ_hero(std::set<int>& candidate, int count, int& random);
+	void fill_employ_hero(const hero& leader, std::set<int>& candidate, int count, int& random);
 	void calculate_difficulty_level();
 	std::pair<int, int> calculate_score(LEVEL_RESULT result) const;
 	bool calculate_capture() const;
@@ -258,8 +272,6 @@ protected:
 	boost::scoped_ptr<tooltips::manager> tooltips_manager_;
 	boost::scoped_ptr<game_events::manager> events_manager_;
 	boost::scoped_ptr<halo::manager> halo_manager_;
-	font::floating_label_context labels_manager_;
-	help::help_manager help_manager_;
 	events::mouse_handler mouse_handler_;
 	events::menu_handler menu_handler_;
 	boost::scoped_ptr<soundsource::manager> soundsources_manager_;
@@ -287,11 +299,13 @@ protected:
 	int human_team_;
 	int player_number_;
 	int first_player_;
+	bool has_network_player_;
 	unsigned int start_turn_;
 	bool is_host_;
 	bool skip_replay_;
 	bool replaying_;
 	bool linger_;
+	bool end_turn_;
 	unsigned int previous_turn_;
 	bool all_ai_allied_;
 	std::pair<artifical*, artifical*> final_capital_;
@@ -300,7 +314,10 @@ protected:
 	int duel_;
 	std::vector<int> treasures_;
 	std::vector<hero*> emploies_;
+	int autosave_ticks_;
 	bool rpging_;
+	bool allow_intervene_;
+	bool allow_active_;
 
 	// dependent on inapp-purchase
 	bool vip_;
@@ -308,6 +325,7 @@ protected:
 	bool tactic_slot_;
 	
 	int difficulty_level_;
+	bool pause_when_human_;
 
 	const std::string& select_victory_music() const;
 	const std::string& select_defeat_music()  const;
@@ -318,6 +336,7 @@ protected:
 private:
 	void init(CVideo &video);
 	void more_card(team& current_team, int turn);
+	void recover_layout(int random);
 
 	// Expand AUTOSAVES in the menu items, setting the real savenames.
 	void expand_autosaves(std::vector<std::string>& items);

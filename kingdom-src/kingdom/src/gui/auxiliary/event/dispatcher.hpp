@@ -23,7 +23,7 @@
 #include <boost/mpl/int.hpp>
 #include <boost/utility/enable_if.hpp>
 
-// #include <SDL.h>
+#include "sdl_compat.h"
 
 // #include <vector>
 #include <map>

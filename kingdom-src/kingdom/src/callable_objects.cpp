@@ -166,8 +166,6 @@ variant unit_callable::get_value(const std::string& key) const
 		return variant(u_.type_id());
 	} else if(key == "name") {
 		return variant(u_.name());
-	} else if(key == "undead") {
-		return variant(u_.get_state("not_living") ? 1 : 0);
 	} else if(key == "attacks") {
 		const std::vector<attack_type>& att = u_.attacks();
 		std::vector<variant> res;

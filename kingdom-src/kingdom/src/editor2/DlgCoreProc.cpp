@@ -102,6 +102,8 @@ tcore::tcore()
 	, factions_updating_()
 	, anims_from_cfg_()
 	, anims_updating_()
+	, books()
+	, current_book_()
 	, config_from_cfg_()
 	, config_updating_()
 	, dirty_(0)
@@ -443,8 +445,9 @@ void tcore::save(HWND hdlgP)
 	//
 	for (std::vector<tfeature>::iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
 		const tfeature& f = *it;
-		if (f.items_.empty()) {
-			strstr << "#" << f.index_ << "没设置原子特技";
+		int feature = std::distance(features_updating_.begin(), it);
+		if (feature >= HEROS_BASE_FEATURE_COUNT && f.items_.empty()) {
+			strstr << "#" << feature << "没设置原子特技";
 			posix_print_mb(strstr.str().c_str());
 			return;
 		}
@@ -539,6 +542,12 @@ void tcore::save(HWND hdlgP)
 	}
 	config_from_cfg_.clear();
 	config_updating_.clear();
+
+	// book
+	if (bit_dirty(BIT_BOOK)) {
+		generate_books_cfg();
+	}
+	books.clear();
 
 	core_enable_save_btn(FALSE);
 	// clear updating flag
@@ -674,6 +683,7 @@ void tcore::refresh_tactic(HWND hdlgP)
 		htvi = TreeView_AddLeaf(hctl, htvroot);
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Point")) << ": " << t.point();
+		strstr << "    " << utf8_2_ansi(_("Level")) << ": " << t.level();
 		strcpy(text, strstr.str().c_str());
 		TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 0, ns::iico_tactic_txt, ns::iico_tactic_txt, 0, text);
 
@@ -715,6 +725,8 @@ void tcore::refresh_tactic(HWND hdlgP)
 					strstr << utf8_2_ansi(_("Will"));
 				} else if (apply_to == apply_to_tag::DEMOLISH) {
 					strstr << utf8_2_ansi(_("Demolish"));
+				} else if (apply_to == apply_to_tag::ACTION) {
+					strstr << utf8_2_ansi(_("Action"));
 				}
 				strcpy(text, strstr.str().c_str());
 				TreeView_SetItem2(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_CHILDREN, 0, ns::iico_tactic_action, ns::iico_tactic_action, 1, text);
@@ -1013,9 +1025,25 @@ void tcore::refresh_multiplayer(HWND hdlgP)
 	update_to_ui_multiplayer(hdlgP);
 }
 
+void tcore::refresh_book(HWND hdlgP)
+{
+	update_to_ui_book(hdlgP);
+}
+
 void tcore::refresh_config(HWND hdlgP)
 {
 	update_to_ui_config(hdlgP);
+}
+
+void fill_param_global_anim(tanim_type& anim)
+{
+	anim.variables_.insert(std::make_pair("8800", "x"));
+	anim.variables_.insert(std::make_pair("8801", "y"));
+	anim.variables_.insert(std::make_pair("8802", "offset_x"));
+	anim.variables_.insert(std::make_pair("8803", "offset_y"));
+	anim.variables_.insert(std::make_pair("8810", "alpha"));
+	anim.variables_.insert(std::make_pair("__image", "image"));
+	anim.variables_.insert(std::make_pair("__text", "text"));
 }
 
 void tcore::init_cache()
@@ -1052,11 +1080,24 @@ void tcore::init_cache()
 	features_from_cfg_.clear();
 	features_updating_.clear();
 
-	const complex_feature_map& features = unit_types.complex_feature();
-	for (std::map<int, std::vector<int> >::const_iterator it = features.begin(); it != features.end(); ++ it) {
-		tfeature f;
-		f.from_config(it->first, it->second);
-		features_from_cfg_.push_back(f);
+	const std::vector<int>& features = hero::valid_features();
+	const std::vector<int>& features_level = unit_types.features_level();
+	for (std::vector<int>::const_iterator it = features_level.begin(); it != features_level.end(); ++ it) {
+		int feature = std::distance(features_level.begin(), it);
+		int level = *it;
+		if (std::find(features.begin(), features.end(), feature) == features.end()) {
+			if (feature >= HEROS_BASE_FEATURE_COUNT) {
+				break;
+			} else {
+				level = -1;
+			}
+		}
+		features_from_cfg_.push_back(tfeature(level));
+		features_from_cfg_.back().feature_from_cfg_ = features_from_cfg_.back();
+	}
+	const complex_feature_map& complex_feature = unit_types.complex_feature();
+	for (std::map<int, std::vector<int> >::const_iterator it = complex_feature.begin(); it != complex_feature.end(); ++ it) {
+		features_from_cfg_[it->first].from_config(it->first, it->second);
 	}
 	features_updating_ = features_from_cfg_;
 
@@ -1261,95 +1302,130 @@ void tcore::init_cache()
 	anims_updating_.clear();
 	if (tanim::anim_types.empty()) {
 		tanim::anim_types.push_back(tanim_type("defend", _("anim^defend")));
-		tanim::anim_types.back().variables_.push_back("$base_png");
-		tanim::anim_types.back().variables_.push_back("$hit_png");
-		tanim::anim_types.back().variables_.push_back("$miss_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$base_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$hit_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$miss_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("resistance", _("anim^resistance")));
-		tanim::anim_types.back().variables_.push_back("$leading_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$leading_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("leading", _("anim^leading")));
-		tanim::anim_types.back().variables_.push_back("$leading_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$leading_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("healing", _("anim^healing")));
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("idle", _("anim^idle")));
-		tanim::anim_types.back().variables_.push_back("$idle_1_png");
-		tanim::anim_types.back().variables_.push_back("$idle_2_png");
-		tanim::anim_types.back().variables_.push_back("$idle_3_png");
-		tanim::anim_types.back().variables_.push_back("$idle_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_4_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
+
+		tanim::anim_types.push_back(tanim_type("multi_idle", _("anim^multi_idle")));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_4_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
 
 		tanim::anim_types.push_back(tanim_type("healed", _("anim^healed")));
-		tanim::anim_types.back().variables_.push_back("$idle_1_png");
-		tanim::anim_types.back().variables_.push_back("$idle_2_png");
-		tanim::anim_types.back().variables_.push_back("$idle_3_png");
-		tanim::anim_types.back().variables_.push_back("$idle_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_4_png", null_str));
+
+		tanim::anim_types.push_back(tanim_type("movement", _("anim^movement")));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$move_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$move_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
+
+		tanim::anim_types.push_back(tanim_type("build", _("anim^build")));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$build_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$build_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$build_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$build_4_png", null_str));
+
+		tanim::anim_types.push_back(tanim_type("repair", _("anim^repair")));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$repair_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$repair_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$repair_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$repair_4_png", null_str));
+
+		tanim::anim_types.push_back(tanim_type("die", _("anim^die")));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$die_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$die_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
+
+		tanim::anim_types.push_back(tanim_type("multi_die", _("anim^multi_die")));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$die_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$die_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
 
 		tanim::anim_types.push_back(tanim_type("melee_attack", _("anim^melee_attack")));
-		tanim::anim_types.back().variables_.push_back("$attack_id");
-		tanim::anim_types.back().variables_.push_back("$range");
-		tanim::anim_types.back().variables_.push_back("$hit_sound");
-		tanim::anim_types.back().variables_.push_back("$miss_sound");
-		tanim::anim_types.back().variables_.push_back("$melee_attack_1_png");
-		tanim::anim_types.back().variables_.push_back("$melee_attack_2_png");
-		tanim::anim_types.back().variables_.push_back("$melee_attack_3_png");
-		tanim::anim_types.back().variables_.push_back("$melee_attack_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$hit_sound", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$miss_sound", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$melee_attack_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$melee_attack_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$melee_attack_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$melee_attack_4_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("ranged_attack", _("anim^ranged_attack")));
-		tanim::anim_types.back().variables_.push_back("$attack_id");
-		tanim::anim_types.back().variables_.push_back("$range");
-		tanim::anim_types.back().variables_.push_back("$image_png");
-		tanim::anim_types.back().variables_.push_back("$image_diagonal_png");
-		tanim::anim_types.back().variables_.push_back("$hit_sound");
-		tanim::anim_types.back().variables_.push_back("$miss_sound");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$image_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$image_diagonal_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$hit_sound", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$miss_sound", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("magic_missile_attack", _("anim^magic_missile_attack")));
-		tanim::anim_types.back().variables_.push_back("$attack_id");
-		tanim::anim_types.back().variables_.push_back("$range");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("lightbeam_attack", _("anim^lightbeam_attack")));
-		tanim::anim_types.back().variables_.push_back("$attack_id");
-		tanim::anim_types.back().variables_.push_back("$range");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("fireball_attack", _("anim^fireball_attack")));
-		tanim::anim_types.back().variables_.push_back("$attack_id");
-		tanim::anim_types.back().variables_.push_back("$range");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("iceball_attack", _("anim^iceball_attack")));
-		tanim::anim_types.back().variables_.push_back("$attack_id");
-		tanim::anim_types.back().variables_.push_back("$range");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("lightning_attack", _("anim^lightning_attack")));
-		tanim::anim_types.back().variables_.push_back("$attack_id");
-		tanim::anim_types.back().variables_.push_back("$range");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_1_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_2_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_3_png");
-		tanim::anim_types.back().variables_.push_back("$ranged_attack_4_png");
+		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_2_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
 		tanim::anim_types.push_back(tanim_type("card", _("anim^card")));
 		tanim::anim_types.push_back(tanim_type("reinforce", _("anim^reinforce")));
@@ -1364,15 +1440,24 @@ void tcore::init_cache()
 		tanim::anim_types.push_back(tanim_type("formation_defend", _("anim^formation defend")));
 		tanim::anim_types.push_back(tanim_type("pass_scenario", _("anim^pass scenario")));
 		tanim::anim_types.push_back(tanim_type("perfect", _("anim^perfect")));
+		tanim::anim_types.push_back(tanim_type("income", _("anim^income")));
+		tanim::anim_types.push_back(tanim_type("stratagem_up", _("anim^stratagem_up")));
+		tanim::anim_types.push_back(tanim_type("stratagem_down", _("anim^stratagem_down")));
+		tanim::anim_types.push_back(tanim_type("location", _("anim^location")));
+		tanim::anim_types.push_back(tanim_type("hscroll_text", _("anim^hscroll text")));
+		tanim::anim_types.push_back(tanim_type("title_screen", _("anim^title_screen")));
+		tanim::anim_types.push_back(tanim_type("load_scenario", _("anim^load_scenario")));
+
+		tanim::anim_types.push_back(tanim_type("flags", _("anim^flags")));
+		fill_param_global_anim(tanim::anim_types.back());
+
+		tanim::anim_types.push_back(tanim_type("text", _("anim^text")));
+		fill_param_global_anim(tanim::anim_types.back());
+
+		tanim::anim_types.push_back(tanim_type("place", _("anim^place")));
+		fill_param_global_anim(tanim::anim_types.back());
 	}
-/*
-	const std::map<std::string, const config>& utype_anims = unit_types.utype_anims();
-	for (std::map<std::string, const config>::const_iterator it = utype_anims.begin(); it != utype_anims.end(); ++ it) {
-		tanim anim;
-		anim.from_config(it->first, it->second, false);
-		anims_from_cfg_.push_back(anim);
-	}
-*/
+
 	const config::const_child_itors& utype_anims = editor_config::data_cfg.child("units").child_range("utype_anim");
 	BOOST_FOREACH (const config &cfg, utype_anims) {
 		tanim anim;
@@ -1396,7 +1481,11 @@ void tcore::init_cache()
 		if (cfg["map_generation"].str() == "default") {
 			continue;
 		}
-		if (cfg["id"].str() == "td") {
+		const std::string mode = cfg["mode"].str();
+		if (mode == "tower") {
+			continue;
+		}
+		if (mode == "siege") {
 			continue;
 		}
 		ns::_scenario.push_back(tscenario("multiplayer"));
@@ -1408,6 +1497,16 @@ void tcore::init_cache()
 		ns::current_scenario ++;
 	}
 	ns::current_scenario = 0;
+
+	// book
+	books.clear();
+	BOOST_FOREACH (const config &cfg, editor_config::data_cfg.child_range("book")) {
+		tbook book;
+		book.from_config(cfg);
+		if (book.valid()) {
+			books.insert(std::make_pair(book.id_, book));
+		}
+	}
 
 	// game config
 	config_from_cfg_.clear();
@@ -1454,6 +1553,7 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		name_map[FACTION] = dgettext_2_ansi("wesnoth-lib", "Faction");
 		name_map[ANIM] = utf8_2_ansi(_("Animation"));
 		name_map[MULTIPLAYER] = utf8_2_ansi(_("Multiplayer"));
+		name_map[BOOK] = utf8_2_ansi(_("Book"));
 	}
 	if (idd_map.empty()) {
 		idd_map[CONFIG] = IDD_CONFIG;
@@ -1471,6 +1571,7 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		idd_map[FACTION] = IDD_FACTION;
 		idd_map[ANIM] = IDD_ANIM;
 		idd_map[MULTIPLAYER] = IDD_MULTIPLAYER;
+		idd_map[BOOK] = IDD_BOOK;
 	}
 	if (dlgproc_map.empty()) {
 		dlgproc_map[CONFIG] = DlgConfigProc;
@@ -1488,6 +1589,7 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		dlgproc_map[FACTION] = DlgFactionProc;
 		dlgproc_map[ANIM] = DlgAnimProc;
 		dlgproc_map[MULTIPLAYER] = DlgMultiplayerProc;
+		dlgproc_map[BOOK] = DlgBookProc;
 	}
 	
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLong(hdlgP, GWL_USERDATA);
@@ -1582,6 +1684,8 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		refresh_anim(pHdr->hwndDisplay);
 	} else if (section_ == MULTIPLAYER) {
 		refresh_multiplayer(pHdr->hwndDisplay);
+	} else if (section_ == BOOK) {
+		refresh_book(pHdr->hwndDisplay);
 	}
 }
 
@@ -1675,9 +1779,9 @@ std::string tcore::units_internal(bool absolute) const
 {
 	std::stringstream strstr;
 	if (absolute) {
-		strstr << game_config::path << "\\data\\core\\units-internal.cfg";
+		strstr << game_config::path << "\\data\\core\\units-internal\\units-internal.cfg";
 	} else {
-		strstr << "data/core/units-internal.cfg";
+		strstr << "data/core/units-internal/units-internal.cfg";
 	}
 	return strstr.str();
 }
@@ -1694,11 +1798,24 @@ void tcore::generate_units_internal()
 	}
 
 	// feature
-	strstr << "[complexfeature]\n";
+	strstr << "[feature]\n";
+	strstr << "\tlevel = ";
 	for (std::vector<tfeature>::const_iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
-		strstr << it->generate("\t");
+		if (it != features_updating_.begin()) {
+			strstr << ",";
+		}
+		strstr << (it->level_ != -1? it->level_: 0);
 	}
-	strstr << "[/complexfeature]\n";
+	strstr << "\n";
+
+	for (std::vector<tfeature>::iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
+		int feature = std::distance(features_updating_.begin(), it);
+		if (feature < HEROS_BASE_FEATURE_COUNT) {
+			continue;
+		}
+		strstr << it->generate("\t", feature);
+	}
+	strstr << "[/feature]\n";
 
 	features_from_cfg_.clear();
 	features_updating_.clear();
@@ -1981,6 +2098,38 @@ void tcore::generate_config_cfg() const
 	posix_fclose(fp);
 }
 
+std::string tcore::book_cfg(const std::string& id, bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\core\\book\\" << id << ".cfg";
+	} else {
+		strstr << "data/core/book/" << id << ".cfg";
+	}
+	return strstr.str();
+}
+
+void tcore::generate_books_cfg()
+{
+	uint32_t bytertd;
+	posix_file_t fp;
+
+	for (std::map<std::string, tbook>::iterator it = books.begin(); it != books.end(); ++ it) {
+		tbook& book = it->second;
+		if (book.toplevel_.is_null()) {
+			continue;
+		}
+		posix_fopen(book_cfg(book.id_, true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+		if (fp == INVALID_FILE) {
+			continue;
+		}
+		const std::string& str = book.generate();
+
+		posix_fwrite(fp, str.c_str(), str.length(), bytertd);
+		posix_fclose(fp);
+	}
+}
+
 void core_enter_ui(void)
 {
 	scenario_selector::switch_to(true);
@@ -2246,6 +2395,8 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		strstr << utf8_2_ansi(_("Atomic technology"));
 	} else if (ns::type == IDM_TECHNOLOGY_COMPLEX) {
 		strstr << utf8_2_ansi(_("Complex technology"));
+	} else if (ns::type == IDM_TECHNOLOGY_STRATAGEM) {
+		strstr << utf8_2_ansi(_("Stratagem"));
 	}
 	SetWindowText(hdlgP, strstr.str().c_str());
 	Button_SetText(GetDlgItem(hdlgP, IDOK), utf8_2_ansi(_("Close")));
@@ -2316,6 +2467,15 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 		lvc.pszText = text;
 		ListView_InsertColumn(hctl, index ++, &lvc);
 
+	} else if (ns::type == IDM_TECHNOLOGY_STRATAGEM) {
+
+		lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+		lvc.cx = 500;
+		lvc.iSubItem = index;
+		strcpy(text, utf8_2_ansi(_("Description")));
+		lvc.pszText = text;
+		ListView_InsertColumn(hctl, index ++, &lvc);
+
 	}
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
@@ -2334,6 +2494,10 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			}
 		} else if (ns::type == IDM_TECHNOLOGY_COMPLEX) {
 			if (!t.complex()) {
+				continue;
+			}
+		} else if (ns::type == IDM_TECHNOLOGY_STRATAGEM) {
+			if (!t.stratagem()) {
 				continue;
 			}
 		}
@@ -2388,11 +2552,11 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			lvi.iSubItem = index ++;
 			strstr.str("");
 			first = true;
-			if (t.type_filter() & filter::TROOP) {
+			if (t.type_filter() & family_tag::TROOP) {
 				strstr << utf8_2_ansi(_("Troop"));
 				first = false;
 			}
-			if (t.type_filter() & filter::ARTIFICAL) {
+			if (t.type_filter() & family_tag::ARTIFICAL) {
 				if (!first) {
 					strstr << ", ";
 				} else {
@@ -2400,7 +2564,7 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 				}
 				strstr << utf8_2_ansi(_("Artifical"));
 			}
-			if (t.type_filter() & filter::CITY) {
+			if (t.type_filter() & family_tag::CITY) {
 				if (!first) {
 					strstr << ", ";
 				} else {
@@ -2463,6 +2627,15 @@ BOOL On_DlgReportTechnologyInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 			strcpy(text, strstr.str().c_str());
 			lvi.pszText = text;
 			ListView_SetItem(hctl, &lvi);
+
+		} else if (ns::type == IDM_TECHNOLOGY_STRATAGEM) {
+			lvi.mask = LVIF_TEXT;
+			lvi.iSubItem = index ++;
+			strstr.str("");
+			strstr << utf8_2_ansi(t.description().c_str());
+			strcpy(text, strstr.str().c_str());
+			lvi.pszText = text;
+			ListView_SetItem(hctl, &lvi);
 		}
 		iItem ++;
 	}
@@ -2502,6 +2675,7 @@ void On_DlgTechnologyCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	switch (id) {
 	case IDM_TECHNOLOGY_ATOMIC:
 	case IDM_TECHNOLOGY_COMPLEX:
+	case IDM_TECHNOLOGY_STRATAGEM:
 		ns::type = id;
 		DialogBox(gdmgr._hinst, MAKEINTRESOURCE(IDD_VISUAL2), NULL, DlgReportTechnologyProc);
 		break;
@@ -2562,6 +2736,9 @@ void technology_notify_handler_rclick(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Complex technology")) << "...";
 		AppendMenu(hpopup_explorer, MF_STRING, IDM_TECHNOLOGY_COMPLEX, strstr.str().c_str());
+		strstr.str("");
+		strstr << utf8_2_ansi(_("Stratagem")) << "...";
+		AppendMenu(hpopup_explorer, MF_STRING, IDM_TECHNOLOGY_STRATAGEM, strstr.str().c_str());
 
 		HMENU hpopup_technology = CreatePopupMenu();
 		AppendMenu(hpopup_technology, MF_POPUP, (UINT_PTR)(hpopup_explorer), utf8_2_ansi(_("Report format")));

@@ -38,12 +38,10 @@ private:
 	virtual const std::string& window_id() const;
 
 	void ai_count(twindow& window);
-	void employ_count(twindow& window);
 	void turns(twindow& window);
 
 private:
 	game_display& gui_;
-	tbutton* employ_count_;
 	tbutton* ai_count_;
 	tbutton* turns_;
 };

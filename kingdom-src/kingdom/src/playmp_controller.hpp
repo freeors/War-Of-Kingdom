@@ -56,13 +56,14 @@ protected:
 	virtual void stop_network();
 	virtual bool can_execute_command(hotkey::HOTKEY_COMMAND command, int index=-1) const;
 
-	virtual void play_side(const unsigned int team_index, bool save);
+	virtual void play_side();
 	virtual void before_human_turn(bool save);
 	virtual void play_human_turn();
 	virtual void after_human_turn();
 	virtual void finish_side_turn();
 	void play_network_turn();
 	void init_turn_data();
+	void release_turn_data();
 
 	turn_info* turn_data_;
 

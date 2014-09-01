@@ -71,8 +71,12 @@ namespace gui2 {
 
 REGISTER_DIALOG(mp_login)
 
-tmp_login::tmp_login(game_display& disp, const std::string& label)
+tmp_login::tmp_login(game_display& disp, hero_map& heros, const std::string& label)
 	: disp_(disp)
+	, heros_(heros)
+	, orignal_username_(preferences::login())
+	, orignal_password_(preferences::password())
+	, registed_(false)
 {
 	register_label("login_label", false, label);
 }
@@ -82,6 +86,12 @@ const size_t max_login_size = 20;
 void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 {
 	std::stringstream strstr;
+
+	tlabel* label = find_widget<tlabel>(&window, "forum", false, true);
+	strstr.str("");
+	strstr << help::tintegrate::generate_format(_("Forum"), "green") << "  http://";
+	strstr << game_config::bbs_server.host << game_config::bbs_server.url;
+	label->set_label(strstr.str());
 
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "username", false, true);
 	user_widget->set_value(preferences::login());
@@ -95,7 +105,7 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 	control->set_visible(twidget::INVISIBLE);	
 
 	utils::string_map symbols;
-	tlabel* label = find_widget<tlabel>(&window, "remark", false, true);
+	label = find_widget<tlabel>(&window, "remark", false, true);
 	symbols["server"] = help::tintegrate::generate_format(game_config::bbs_server.name, "green");
 	symbols["host"] = help::tintegrate::generate_format(game_config::bbs_server.host, "green");
 	symbols["register"] = help::tintegrate::generate_format(_("Register"), "blue");
@@ -118,7 +128,7 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 		&tmp_login::create
 		, this
 		, boost::ref(window)
-		, true));
+		, (int)LOGIN));
 
 	find_widget<tbutton>(&window, "cancel", false).set_visible(twidget::INVISIBLE);
 }
@@ -127,7 +137,9 @@ void tmp_login::post_show(twindow& window)
 {
 }
 
-std::string tmp_login::text_box_str(twindow& window, const std::string& id, const std::string& name, int min, int max)
+extern bool is_valid_username(const std::string& key, const std::string& str, game_display* disp);
+
+std::string tmp_login::text_box_str(twindow& window, const std::string& id, const std::string& name, int min, int max, bool allow_empty)
 {
 	std::stringstream err;
 	utils::string_map symbols;
@@ -141,7 +153,7 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 		str = pd->get_real_value();
 	}
 
-	if (str.empty()) {
+	if (!allow_empty && str.empty()) {
 		symbols["key"] = help::tintegrate::generate_format(name, "red");
 		
 		err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
@@ -157,15 +169,11 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 		return null_str;
 
 	} else if (id == "username") {
-		if (str.find("<") != std::string::npos) {
-			symbols["str"] = name;
-			symbols["char"] = "<";
-			err << vgettext("wesnoth-lib", "Include unsupportable character: $char, invalid '$str' value", symbols);
-			gui2::show_message(disp_.video(), "", err.str());
+		if (!is_valid_username(name, str, &disp_)) {
 			return null_str;
-		} else if (id == "username" && game_config::is_reserve_player(str)) {
+		} else if (game_config::is_reserve_player(str)) {
 			symbols["key"] = help::tintegrate::generate_format(name, "red");
-			symbols["username"] = help::tintegrate::generate_format(preferences::login(), "red");
+			symbols["username"] = help::tintegrate::generate_format(str, "red");
 			err << vgettext("wesnoth-lib", "Invalid '$key' value, $username is reserved!", symbols);
 			gui2::show_message(disp_.video(), "", err.str());
 			return null_str;
@@ -174,16 +182,21 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 	return str;
 }
 
-bool tmp_login::create(twindow& window, bool close)
+bool tmp_login::create(twindow& window, int operate)
 {
-	std::string username = text_box_str(window, "username", _("Name"), 3, 15);
+	int min_username_char = (operate == REGISTER)? 6: 3;
+	std::string username = text_box_str(window, "username", _("Name"), min_username_char, 15, false);
 	if (username.empty()) {
 		return false;
 	}
 
-	std::string password = text_box_str(window, "password", _("Password"), 6, 15);
-	if (password.empty()) {
-		return false;
+	tpassword_box* pd = find_widget<tpassword_box>(&window, "password", false, true);
+	std::string password = pd->get_real_value();
+	if (!password.empty()) {
+		std::string password = text_box_str(window, "password", _("Password"), 0, 15, true);
+		if (password.empty()) {
+			return false;
+		}
 	}
 
 	preferences::set_remember_password(true);
@@ -191,8 +204,9 @@ bool tmp_login::create(twindow& window, bool close)
 
 	hero& h = group.leader();
 	h.set_name(username);
-	preferences::set_hero(h);
-	if (close) {
+	preferences::set_hero(heros_, h);
+
+	if (operate == LOGIN) {
 		window.set_retval(twindow::OK);
 	}
 	return true;
@@ -202,8 +216,9 @@ void tmp_login::register1(twindow& window)
 {
 	std::stringstream err;
 	utils::string_map symbols;
+	const int min_password_chars = 6;
 
-	if (create(window, false)) {
+	if (create(window, REGISTER)) {
 		ttext_box* widget = find_widget<ttext_box>(&window, "validate_password", false, true);
 		std::string validate_password = widget->get_value();
 		if (validate_password != preferences::password()) {
@@ -213,8 +228,22 @@ void tmp_login::register1(twindow& window)
 			gui2::show_message(disp_.video(), "", err.str());
 			return;
 		}
-		http::register_user(disp_, false);
+		if ((int)validate_password.size() < min_password_chars) {
+			symbols["min"] = help::tintegrate::generate_format(min_password_chars, "yellow");
+		
+			err << vgettext("wesnoth-lib", "When register, password must be greater than or equal to $min characters", symbols);
+			gui2::show_message(disp_.video(), "", err.str());
+			return;
+		}
+		if (http::register_user(disp_, heros_, false)) {
+			registed_ = true;
+		}
 	}
+}
+
+bool tmp_login::dirty() const
+{
+	return registed_ || preferences::login() != orignal_username_ || preferences::password() != orignal_password_;
 }
 
 } // namespace gui2

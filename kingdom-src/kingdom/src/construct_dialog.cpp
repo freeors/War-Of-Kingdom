@@ -108,7 +108,6 @@ dialog::dialog(display &disp, const std::string& title, const std::string& messa
 	extra_buttons_(),
 	frame_buttons_(),
 	topic_(),
-	help_button_(NULL),
 	text_widget_(NULL),
 	frame_(NULL),
 	dim_(),
@@ -194,10 +193,6 @@ void dialog::add_button(dialog_button *const btn, BUTTON_LOCATION loc)
 	button_pool_.push_back(new_pair);
 	switch(loc)
 	{
-	case BUTTON_HELP:
-		delete help_button_;
-		help_button_ = btn;
-		break;
 	case BUTTON_EXTRA:
 	case BUTTON_EXTRA_LEFT:
 	case BUTTON_CHECKBOX:
@@ -309,7 +304,7 @@ int dialog::show()
 
 	//create the event context, remember to instruct any passed-in widgets to join it
 	const events::event_context dialog_events_context;
-	const dialog_manager manager;
+	const dialog_manager manager(disp_.video().getSurface());
 	const resize_lock prevent_resizing;
 
 	//draw
@@ -361,7 +356,7 @@ dialog_frame& dialog::get_frame()
 		{
 			frame_buttons_.push_back(*b);
 		}
-		frame_ = new dialog_frame(screen, title_, style_,  true, &frame_buttons_, help_button_);
+		frame_ = new dialog_frame(screen, title_, style_,  true, &frame_buttons_);
 	}
 	return *frame_;
 }
@@ -419,9 +414,6 @@ void dialog::update_widget_positions()
 	for(b = standard_buttons_.begin(); b != standard_buttons_.end(); ++b) {
 		dialog_button *btn = *b;
 		btn->join();
-	}
-	if(help_button_) {
-		help_button_->join();
 	}
 	message_->set_location(dim_.message);
 	message_->join();

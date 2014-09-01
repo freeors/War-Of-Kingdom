@@ -61,9 +61,12 @@ display_manager::~display_manager()
 
 bool detect_video_settings(CVideo& video, std::pair<int,int>& resolution, int& bpp, int& video_flags)
 {
-	video_flags = fullscreen() ? FULL_SCREEN : 0;
+	video_flags = fullscreen() ? SDL_WINDOW_FULLSCREEN: 0;
 	resolution = preferences::resolution();
 
+	bpp = 32;
+	return true;
+/*
 	int DefaultBPP = 24;
 	const SDL_VideoInfo* const video_info = SDL_GetVideoInfo();
 	if(video_info != NULL && video_info->vfmt != NULL) {
@@ -96,6 +99,7 @@ bool detect_video_settings(CVideo& video, std::pair<int,int>& resolution, int& b
 	}
 
 	return bpp != 0;
+*/
 }
 
 void set_fullscreen(CVideo& video, const bool ison)
@@ -104,7 +108,7 @@ void set_fullscreen(CVideo& video, const bool ison)
 
 	const std::pair<int,int>& res = resolution();
 	if(video.isFullScreen() != ison) {
-		const int flags = ison ? FULL_SCREEN : 0;
+		const int flags = ison ? SDL_WINDOW_FULLSCREEN: 0;
 		int bpp = video.modePossible(res.first,res.second,32,flags);
 		if (bpp <= 0) {
 			bpp = video.modePossible(res.first,res.second,16,flags);
@@ -175,7 +179,7 @@ bool set_resolution(CVideo& video
 		return true;
 	}
 
-	const int flags = fullscreen() ? FULL_SCREEN : 0;
+	const int flags = fullscreen() ? SDL_WINDOW_FULLSCREEN : 0;
 	int bpp = video.modePossible(width, height, 32, flags);
 	if (bpp == 0) {
 		bpp = video.modePossible(width, height, 16, flags);
@@ -192,7 +196,7 @@ bool set_resolution(CVideo& video
 		return false;
 	}
 
-	if (width < 480 || height < 320 || (width >= 800 && height < 600)) {
+	if (width < 480 || height < 320) {
 		return false;
 	}
 	const std::string postfix = fullscreen() ? "resolution" : "windowsize";
@@ -218,11 +222,6 @@ void set_turbo_speed(double speed)
 	if(disp != NULL) {
 		disp->set_turbo_speed(speed);
 	}
-}
-
-void set_ellipses(bool ison)
-{
-	_set_ellipses(ison);
 }
 
 void set_grid(bool ison)
@@ -273,83 +272,34 @@ bool show_video_mode_dialog(display& disp)
 	SDL_PixelFormat format = *video.getSurface()->format;
 	format.BitsPerPixel = video.getBpp();
 
-	// const SDL_Rect* const * modes = SDL_ListModes(&format,FULL_SCREEN);
-	SDL_Rect** modes = SDL_ListModes(&format,FULL_SCREEN);
-/*
-	// The SDL documentation says that a return value of -1
-	// means that all dimensions are supported/possible.
-	if(modes == reinterpret_cast<SDL_Rect**>(-1)) {
-		std::cerr << "Can support any video mode\n";
-		// SDL says that all modes are possible, so it's OK to use a
-		// hardcoded list here. Include tiny and small gui since they
-		// will be filter out later if not needed.
-		static const SDL_Rect scr_modes[] = {
-			{ 0, 0,  320, 240  },
-			{ 0, 0,  640, 480  },
-			{ 0, 0,  800, 480  },	// small-gui (EeePC resolution)
-			{ 0, 0,  800, 600  },
-			{ 0, 0, 1024, 600  },	// used on many netbooks
-			{ 0, 0, 1024, 768  },
-			{ 0, 0, 1280, 960  },
-			{ 0, 0, 1280, 1024 },
-			{ 0, 0, 1366, 768  },	// 16:9 notebooks
-			{ 0, 0, 1440, 900  },
-			{ 0, 0, 1440, 1200 },
-			{ 0, 0, 1600, 1200 },
-			{ 0, 0, 1680, 1050 },
-			{ 0, 0, 1920, 1080 },
-			{ 0, 0, 1920, 1200 },
-			{ 0, 0, 2560, 1600 }
-		};
-		static const SDL_Rect * const scr_modes_list[] = {
-			&scr_modes[0],
-			&scr_modes[1],
-			&scr_modes[2],
-			&scr_modes[3],
-			&scr_modes[4],
-			&scr_modes[5],
-			&scr_modes[6],
-			&scr_modes[7],
-			&scr_modes[8],
-			&scr_modes[9],
-			&scr_modes[10],
-			&scr_modes[11],
-			&scr_modes[12],
-			&scr_modes[13],
-			&scr_modes[14],
-			&scr_modes[15],
-			NULL
-		};
-
-		modes = scr_modes_list;
-	} else  if(modes == NULL) { */
-	if (modes == reinterpret_cast<SDL_Rect**>(-1)) {
-		std::cerr << "No modes supported\n";
-		gui2::show_transient_message(disp.video(),"",_("There are no alternative video modes available"));
-		return false;
-	}
-
-	std::vector<std::pair<int,int> > resolutions;
-
-	const SDL_VideoInfo* const video_info = SDL_GetVideoInfo();
 	bool fullScreen = fullscreen();
 
-	for (int i = 0; modes[i] != NULL; ++i) {
+	std::vector<std::pair<int,int> > resolutions;
+	int display = SDL_GetWindowDisplayIndex(disp.video().getWindow());
+	int modes = SDL_GetNumDisplayModes(display);
+	SDL_DisplayMode mode = {SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
+	SDL_Rect screen_rect = disp.video().bound();
+	for (int n = 0; n < modes; n ++) {
+		SDL_GetDisplayMode(display, n, &mode);
+		if (SDL_BYTESPERPIXEL(mode.format) != SDL_BYTESPERPIXEL(video.getformat())) {
+			continue;
+		}
 #if defined(_WIN32)
-		if (!fullScreen && (modes[i]->w >= video_info->current_w || modes[i]->h >= video_info->current_h)) {
+		if (!fullScreen && (mode.w >= screen_rect.w || mode.h >= screen_rect.h)) {
 			continue;
 		}
 #endif
-		if(modes[i]->w >= min_allowed_width() && modes[i]->h >= min_allowed_height()) {
-			resolutions.push_back(std::pair<int,int>(modes[i]->w,modes[i]->h));
+		if (mode.w >= min_allowed_width() && mode.h >= min_allowed_height()) {
+			resolutions.push_back(std::pair<int, int>(mode.w, mode.h));
 		}
-		// reference SDL_ListModes
-		SDL_free(modes[i]);
 	}
-	// reference SDL_ListModes
-	SDL_free(modes);
 
-	const std::pair<int,int> current_res(video.getSurface()->w,video.getSurface()->h);
+	if (resolutions.empty()) {
+		gui2::show_transient_message(disp.video(), "", _("There are no alternative video modes available"));
+		return false;
+	}
+
+	const std::pair<int,int> current_res(video.getSurface()->w, video.getSurface()->h);
 	resolutions.push_back(current_res);
 	if (!fullScreen) {
 		resolutions.push_back(std::make_pair(480, 320));
@@ -373,7 +323,7 @@ bool show_video_mode_dialog(display& disp)
 			current_choice = static_cast<unsigned>(k);		
 
 		option << res.first << "x" << res.second;
-		/*widescreen threshold is 16:10*/
+		// widescreen threshold is 16:10
 		if ((double)res.first/res.second >= 16.0/10.0)
 		  option << _(" (widescreen)");
 		options.push_back(option.str());
@@ -385,7 +335,7 @@ bool show_video_mode_dialog(display& disp)
 
 	int choice = dlg.selected_index();
 
-	if(choice == -1 || resolutions[static_cast<size_t>(choice)] == current_res) {
+	if (choice == -1 || resolutions[static_cast<size_t>(choice)] == current_res) {
 		return false;
 	}
 

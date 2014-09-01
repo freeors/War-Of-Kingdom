@@ -35,6 +35,7 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -210,6 +211,7 @@ void thero_selection::fill_table(int catalog)
 {
 	std::vector<int> features;
 	std::stringstream str;
+	std::string color;
 
 	hero& leader = *(*teams_)[side_ - 1].leader();
 	int hero_index = 0;
@@ -256,7 +258,14 @@ void thero_selection::fill_table(int catalog)
 
 			str.str("");
 			str << (int)h.base_catalog_;
-			str << "(" << catalog_diff << ")";
+			if (HERO_MAX_LOYALTY - catalog_diff >= game_config::move_loyalty_threshold) {
+				color = "green";
+			} else if (HERO_MAX_LOYALTY - catalog_diff >= game_config::wander_loyalty_threshold) {
+				color = "yellow";
+			} else {
+				color = "red";
+			}
+			str << "(" << help::tintegrate::generate_format(catalog_diff, color) << ")";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("hero_catalog", table_item));
 
@@ -287,8 +296,8 @@ void thero_selection::fill_table(int catalog)
 			table_item["label"] = lexical_cast<std::string>(fxptoi9(h.intellect_));
 			table_item_item.insert(std::make_pair("intellect", table_item));
 
-			table_item["label"] = lexical_cast<std::string>(fxptoi9(h.politics_));
-			table_item_item.insert(std::make_pair("politics", table_item));
+			table_item["label"] = lexical_cast<std::string>(fxptoi9(h.spirit_));
+			table_item_item.insert(std::make_pair("spirit", table_item));
 
 			table_item["label"] = lexical_cast<std::string>(fxptoi9(h.charm_));
 			table_item_item.insert(std::make_pair("charm", table_item));
@@ -420,14 +429,31 @@ void thero_selection::fill_table(int catalog)
 			toggle->set_value(true);
 		}
 
-		if (h.side_ != HEROS_INVALID_SIDE) {
-			hero& ownership_leader = *(*teams_)[h.side_].leader();
-			if (ownership_leader.base_catalog_ == h.base_catalog_ && std::find(disables_.begin(), disables_.end(), "loyalty") != disables_.end()) {
-				// grid_ptr->set_active(false);
+		bool enable = true;
+		for (std::vector<std::string>::const_iterator it2 = disables_.begin(); it2 != disables_.end() && enable; ++ it2) {
+			const std::string& tag = *it2;
+			if (tag == "loyalty") {
+				if (h.side_ != HEROS_INVALID_SIDE) {
+					hero& ownership_leader = *(*teams_)[h.side_].leader();
+					if (ownership_leader.base_catalog_ == h.base_catalog_) {
+						enable = false;
+					}
+				}
+			} else if (tag == "hate") {
+				if (leader.is_hate(h)) {
+					enable = false;
+				}
+			}
+		}
+		if (enable && h.player_ == HEROS_INVALID_NUMBER && std::find(disables_.begin(), disables_.end(), "member") != disables_.end()) {
+			if (runtime_groups::exist_member(h, leader)) {
 				toggle->set_active(false);
 			}
 		}
-
+		if (!enable) {
+			// grid_ptr->set_active(false);
+			toggle->set_active(false);
+		}
 	}
 }
 

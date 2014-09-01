@@ -41,6 +41,7 @@ mp_game_settings::mp_game_settings() :
 	share_view(false),
 	share_maps(false),
 	saved_game(false),
+	siege_mode(false),
 	scenario_data()
 
 { reset(); }
@@ -65,6 +66,7 @@ mp_game_settings::mp_game_settings(const config& cfg) :
 	share_view(false),
 	share_maps(false),
 	saved_game(false),
+	siege_mode(false),
 	scenario_data()
 {
 	set_from_config(cfg);
@@ -90,6 +92,7 @@ mp_game_settings::mp_game_settings(const mp_game_settings& settings)
 	, share_view(settings.share_view)
 	, share_maps(settings.share_maps)
 	, saved_game(settings.saved_game)
+	, siege_mode(settings.siege_mode)
 	, scenario_data(settings.scenario_data)
 {
 }
@@ -115,6 +118,7 @@ void mp_game_settings::set_from_config(const config& game_cfg)
 	village_gold = cfg["mp_village_gold"];
 	allow_observers = cfg["observer"].to_bool();
 	saved_game = cfg["savegame"].to_bool();
+	siege_mode = cfg["siegemode"].to_bool();
 }
 
 void mp_game_settings::reset()
@@ -155,6 +159,7 @@ config mp_game_settings::to_config() const
 	cfg["mp_shroud"] = shroud_game;
 	cfg["observer"] = allow_observers;
 	cfg["savegame"] = saved_game;
+	cfg["siegemode"] = siege_mode;
 
 	return cfg;
 }

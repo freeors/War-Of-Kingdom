@@ -107,6 +107,11 @@ void animated<T,T_void_value>::start_animation(int start_time, bool cycles)
 	force_next_update_ = !frames_.empty();
 }
 
+template<typename T,  typename T_void_value>
+void animated<T,T_void_value>::reset_start_tick()
+{
+	start_tick_ = last_update_tick_ = current_ticks;
+}
 
 template<typename T,  typename T_void_value>
 void animated<T,T_void_value>::update_last_draw_time(double acceleration)
@@ -126,6 +131,8 @@ void animated<T,T_void_value>::update_last_draw_time(double acceleration)
 		force_next_update_ = false;
 		return;
 	}
+	// if(does_not_change_ && !cycles_)
+	int ii = 0;
 	if(does_not_change_)
 		return;
 

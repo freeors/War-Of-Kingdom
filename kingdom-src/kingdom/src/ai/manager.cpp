@@ -46,7 +46,6 @@ static lg::log_domain log_ai_manager("ai/manager");
 holder::holder( side_number side, const config &cfg )
 	: ai_(), side_(side), cfg_(cfg)
 {
-	DBG_AI_MANAGER << describe_ai() << "Preparing new AI holder" << std::endl;
 }
 
 
@@ -57,7 +56,6 @@ void holder::init( side_number side )
 		ai_->on_create();
 	}
 	if (!this->ai_) {
-		ERR_AI_MANAGER << describe_ai()<<"AI lazy initialization error!" << std::endl;
 	}
 
 }
@@ -65,7 +63,6 @@ void holder::init( side_number side )
 holder::~holder()
 {
 	if (this->ai_) {
-		LOG_AI_MANAGER << describe_ai() << "Managed AI will be deleted" << std::endl;
 	}
 }
 
@@ -94,19 +91,6 @@ config holder::to_config() const
 	} else {
 		config cfg = ai_->to_config();
 		return cfg;
-	}
-}
-
-
-
-const std::string holder::describe_ai()
-{
-	std::string sidestr = lexical_cast<std::string>(this->side_);
-
-	if (this->ai_!=NULL) {
-		return this->ai_->describe_self()+std::string(" for side ")+sidestr+std::string(" : ");
-	} else {
-		return std::string("not initialized ai with id=[")+cfg_["id"]+std::string("] for side ")+sidestr+std::string(" : ");
 	}
 }
 
@@ -396,18 +380,14 @@ game_info& manager::get_ai_info()
 // PROXY
 // =======================================================================
 
-void manager::play_turn(side_number side)
+void manager::play_turn()
 {
 	last_interact_ = 0;
 	num_interact_ = 0;
-	const int turn_start_time = SDL_GetTicks();
-	ai_interface& ai_obj = get_active_ai_for_side(side);
+
+	ai_interface& ai_obj = get_active_ai_for_side(unit::actor->side());
 	raise_turn_started();
-	ai_obj.new_turn();
 	ai_obj.play_turn();
-	const int turn_end_time= SDL_GetTicks();
-	DBG_AI_MANAGER << "side " << side << ": number of user interactions: "<<num_interact_<<std::endl;
-	DBG_AI_MANAGER << "side " << side << ": total turn time: "<<turn_end_time - turn_start_time << " ms "<< std::endl;
 }
 
 

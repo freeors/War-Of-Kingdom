@@ -40,6 +40,7 @@ class tinterior : public tdialog
 public:
 	explicit tinterior(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, bool browse);
 
+	bool get_depute() const { return depute_; }
 protected:
 	/** Inherited from tdialog. */
 	void pre_show(CVideo& video, twindow& window);
@@ -78,6 +79,8 @@ private:
 
 	tbutton* appoint_;
 	tlistbox* hero_table_;
+
+	bool depute_;
 
 	std::vector<department> departments_;
 	std::map<const unit_type*, int> market_map_;

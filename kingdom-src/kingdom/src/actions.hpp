@@ -178,7 +178,7 @@ bool get_village(const map_location& loc, int side, int *time_bonus = NULL);
  * Resets resting for all units on this side: should be called after calculate_healing().
  * @todo FIXME: Try moving this to unit::new_turn, then move it above calculate_healing().
  */
-void reset_resting(unit_map& units, int side);
+void reset_resting(std::vector<team>& teams, unit* actor);
 
 void calculate_end_turn(std::vector<team>& teams, int side);
 
@@ -186,9 +186,11 @@ void calculate_end_turn(std::vector<team>& teams, int side);
  * Calculates healing for all units for the given side.
  * Should be called at the beginning of a side's turn.
  */
-void calculate_healing(int side, bool update_display);
+void calculate_healing(std::vector<team>& teams, game_display& disp, unit* actor);
+void calculate_healing2(std::vector<team>& teams, game_display& disp, int side);
 
-void calculate_supplying(std::vector<team>& teams, unit_map& units, int side);
+void calculate_supplying(std::vector<team>& teams, unit_map& units, unit& actor);
+void calculate_supplying2(std::vector<team>& teams, unit_map& units, int side);
 
 /**
  * Returns the advanced version of unit (with traits and items retained).
@@ -313,6 +315,8 @@ size_t calculate_keeps(unit_map& units, const artifical& owner);
 
 artifical* find_city_for_wall(unit_map& units, const map_location& loc);
 
+artifical* loc_can_build_wall(unit_map& units, const gamemap& gmap, const map_location& loc, const team& t);
+
 void expand_rect_loc(SDL_Rect& rect, const map_location& loc);
 
 SDL_Rect extend_rectangle(const gamemap& map, const SDL_Rect& src, int radius);
@@ -325,15 +329,19 @@ int calculate_exploiture(const hero& h1, const hero& h2, int type);
 
 int calculate_disband_income(const unit& u, int cost_exponent, bool hp = false);
 
-void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost, bool human, bool to_recorder);
+void do_recruit(unit_map& units, hero_map& heros, std::vector<team>& teams, team& current_team, const unit_type* ut, std::vector<const hero*>& v, artifical& city, int cost, bool human, bool to_recorder, game_state& state);
 
-void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, hero& h, unit* special, bool to_recorder = true, bool consume = true);
+void cast_tactic(std::vector<team>& teams, unit_map& units, unit& tactician, hero& h, unit* special, bool to_recorder = true, bool consume = true, int cost = 0);
+
+void do_clear_formationed(game_display& disp, std::vector<team>& teams, unit_map& units, unit& u, int cost, bool to_recorder);
+
+void do_intervene_move(std::vector<team>& teams, unit_map& units, unit& u, const map_location& to, int cost, bool to_recorder);
 
 void multi_attack(unit_map& units, unit* attacker, const std::string& type, const std::map<unit*, int>& touched, int a_side);
 
 void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std::string& type, const std::string& relative, int ratio);
 
-void road_guarding(unit_map& units, std::vector<team>& teams, const std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >& road_locs, int side);
+void road_guarding(unit_map& units, std::vector<team>& teams, const std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >& road_locs, unit* actor);
 
 void do_trade(team& current_team, unit& commoner, artifical& owner, artifical& target, bool forward);
 
@@ -371,17 +379,36 @@ void do_add_active_tactic(unit& u, hero& h, bool to_recorder);
 
 void do_remove_active_tactic(unit& u, bool to_recorder);
 
-void do_direct_expedite(std::vector<team>& teams, unit_map& units, gamemap& map, artifical& city, int index, const map_location to, bool to_recorder);
+void do_direct_expedite(std::vector<team>& teams, unit_map& units, artifical& city, int index, const map_location to, bool to_recorder);
 
-void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, unit&u, const map_location from, const map_location to, bool to_recorder);
+void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, unit& u, const map_location to, int cost, bool to_recorder);
+
+void do_set_task(unit_map& units, unit& u, int task, const map_location& at, bool to_recorder);
 
 void do_bomb(game_display& gui, team& t, bool to_recorder);
 
 void join_anim(hero* h, artifical* city, const std::string& message);
 
-bool field_can_appoint_noble();
-bool field_can_assamble_treasure();
+typedef bool (*troop_can_xxx)(const unit& u, play_controller* cotroller, bool field);
+bool troop_can_assamble_treasure(const unit& u, play_controller* cotroller, bool field);
+bool troop_can_appoint_noble(const unit& u, play_controller* cotroller, bool field);
 
-std::vector<std::pair<int, unit*> > form_human_pairs(const std::vector<team>& teams, bool include_field);
+std::vector<std::pair<int, unit*> > form_human_pairs(const std::vector<team>& teams, troop_can_xxx fn, play_controller* cotroller);
+
+config load_campagin_scenario(const std::string& campaign_id, const std::string& scenario_id, const std::string& type);
+void select_expedite_heros(hero_map& heros, size_t max_army_heros, std::vector<hero*>& fresh_heros, std::vector<const hero*>& expedite_heros, const unit_type& ut);
+const unit_type* select_unit_type(const team& current_team, const hero& master, artifical& city, int cost_exponent);
+
+bool verify_siege_map_data(const config& game_config, const std::string& map_data);
+
+const ttechnology& browse_stratagem(game_display& disp, int stratagem_tag);
+
+bool has_enemy_in_3range(const unit_map& units, const gamemap& gmap, const team& current_team, const map_location& loc);
+
+void do_unstage_hero(unit_map& units, hero& h);
+
+std::string format_loc(const unit_map& units, const map_location& loc, int side);
+
+void do_hate_relation(hero& h1, hero& h2, bool set);
 
 #endif

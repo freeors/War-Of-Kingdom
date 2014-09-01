@@ -45,7 +45,7 @@ enum DIALOG_RESULT {
 bool in_dialog();
 
 struct dialog_manager : private cursor::setter, private font::floating_label_context {
-	dialog_manager();
+	dialog_manager(const surface& screen_surf);
 	~dialog_manager();
 
 private:
@@ -74,8 +74,7 @@ public:
 
 	dialog_frame(CVideo &video, const std::string& title="",
 		const style& dialog_style=default_style,
-		bool auto_restore=true, std::vector<button*>* buttons=NULL,
-		button* help_button=NULL);
+		bool auto_restore=true, std::vector<button*>* buttons=NULL);
 	~dialog_frame();
 
 	dimension_measurements layout(int x, int y, int w, int h);
@@ -102,7 +101,6 @@ private:
 	CVideo &video_;
 	const style& dialog_style_;
 	std::vector<button*>* buttons_;
-	button* help_button_;
 	surface_restorer* restorer_;
 	bool auto_restore_;
 	dimension_measurements dim_;
@@ -127,12 +125,6 @@ private:
 //below the client area.
 //if 'restorer' is present, it will be set to a restorer that will reset the screen area
 //to its original state after the dialog is drawn.
-//void draw_dialog(int x, int y, int w, int h, CVideo &video, const std::string& title,
- //                const std::string* dialog_style=NULL, std::vector<button*>* buttons=NULL,
- //                surface_restorer* restorer=NULL, button* help_button=NULL, label** label_widget);
-//void draw_dialog(frame_measurements &fm, CVideo &video, const std::string& title,
- //                const std::string* dialog_style=NULL, std::vector<button*>* buttons=NULL,
- //                surface_restorer* restorer=NULL, button* help_button=NULL, label** label_widget);
 
 class dialog_button_action
 {

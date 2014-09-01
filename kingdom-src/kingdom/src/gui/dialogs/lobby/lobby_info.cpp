@@ -26,6 +26,7 @@
 #include "map_exception.hpp"
 #include "wml_exception.hpp"
 #include "gui/auxiliary/timer.hpp"
+#include "multiplayer.hpp"
 
 #include <boost/foreach.hpp>
 #include <iterator>
@@ -401,7 +402,7 @@ std::string decide_player_iocn(int controller)
 // #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
 //	mobile = true;
 // #endif
-	if (controller == gui2::CNTR_LOCAL) {
+	if (controller == CNTR_LOCAL) {
 		if (mobile) {
 			return "lobby/status-local-mobile.png~SCALE(16, 16)";
 		} else {
@@ -486,6 +487,53 @@ void lobby_base::network_handler()
 		process_network_error(e);
 		// LOG_LB << "caught network::error in network_handler: " << e.message << "\n";
 		throw;
+	}
+}
+
+void lobby_base::regenerate_hero_map_from_users(game_display& disp, hero_map& heros, connected_user_list& users, std::map<std::string, http::membership>& member_users)
+{
+	std::map<int, int> uid_user_map;
+	int n = 0;
+	for (connected_user_list::iterator it = users.begin(); it != users.end(); ++ it, n ++) {
+		const connected_user& user = *it;
+		std::map<std::string, http::membership>::const_iterator find = member_users.find(user.name);
+		if (find == member_users.end()) {
+			member_users.insert(std::make_pair(user.name, http::membership_hero(disp, heros, false, user.name)));
+			find = member_users.find(user.name);
+		}
+		uid_user_map.insert(std::make_pair(find->second.uid, n));
+	}
+
+	for (size_t i = heros.size() - 1; i >= hero_map::map_size_from_dat; i --) {
+		heros.erase(i);
+	}
+	n = 0;
+	for (std::map<int, int>::const_iterator it = uid_user_map.begin(); it != uid_user_map.end(); ++ it, n ++) {
+		users[it->second].group.from_membership(heros, member_users.find(users[it->second].name)->second, hero::number_local_player_city + n);
+	}
+}
+
+void lobby_base::users_2_groups(const connected_user_list& users, const std::map<std::string, http::membership>& member_users)
+{
+	if (users.empty()) {
+		return;
+	}
+
+	std::map<int, int> uid_user_map;
+	for (connected_user_list::const_iterator it = users.begin(); it != users.end(); ++ it) {
+		const connected_user& user = *it;
+		std::map<std::string, http::membership>::const_iterator find = member_users.find(user.name);
+		uid_user_map.insert(std::make_pair(find->second.uid, std::distance(users.begin(), it)));
+	}
+
+	other_group.clear();
+	for (std::map<int, int>::const_iterator it = uid_user_map.begin(); it != uid_user_map.end(); ++ it) {
+		const tgroup& g = users[it->second].group;
+		if (it == uid_user_map.begin()) {
+			group = g;
+		} else {
+			other_group.insert(std::make_pair(g.leader().number_, g));
+		}
 	}
 }
 

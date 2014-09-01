@@ -25,6 +25,7 @@ class game_display;
 class team;
 class unit_map;
 class hero_map;
+class game_state;
 class hero;
 class artifical;
 class unit_type;
@@ -36,7 +37,7 @@ class tlistbox;
 class trecruit : public tdialog
 {
 public:
-	explicit trecruit(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, artifical& city, int cost_exponent, bool rpg_mode);
+	explicit trecruit(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, artifical& city, int cost_exponent, bool rpg_mode);
 
 	hero* master() const;
 	hero* second() const;
@@ -71,6 +72,7 @@ private:
 	std::vector<team>& teams_;
 	unit_map& units_;
 	hero_map& heros_;
+	game_state& gamestate_;
 
 	int max_level_;
 	team& current_team_;

@@ -20,12 +20,12 @@
 #include "game_end_exceptions.hpp"
 #include "gettext.hpp"
 #include "log.hpp"
-#include "playturn.hpp"
 #include "preferences.hpp"
 #include "resources.hpp"
 #include "savegame.hpp"
 #include "sound.hpp"
 #include "formula_string_utils.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -86,7 +86,7 @@ void playmp_controller::stop_network(){
 	LOG_NG << "network processing stopped";
 }
 
-void playmp_controller::play_side(const unsigned int team_index, bool save)
+void playmp_controller::play_side()
 {
 	utils::string_map player;
 	player["name"] = current_team().current_player();
@@ -94,55 +94,96 @@ void playmp_controller::play_side(const unsigned int team_index, bool save)
 	turn_notification_msg = utils::interpolate_variables_into_string(turn_notification_msg, &player);
 	gui_->send_notification(_("Turn changed"), turn_notification_msg);
 
-	do {
-		player_type_changed_ = false;
-		if (!skip_next_turn_)
+	int end_ticks = calculate_end_ticks();
+
+	player_type_changed_ = false;
+	while (unit_map::main_ticks < end_ticks && !player_type_changed_) {
+		VALIDATE(!unit::actor, "playmp_controller::play_side, unit::actor isn't NULL!");
+
+		if (!skip_next_turn_) {
 			end_turn_ = false;
-
-		statistics::reset_turn_stats(teams_[team_index-1].save_id());
-
-		// we can't call playsingle_controller::play_side because
-		// we need to catch exception here
-		if(current_team().is_human()) {
-			LOG_NG << "is human...\n";
-
-
-			try{
-				play_ai_turn();
-				if (tent::mode == TOWER_MODE) {
-					do_fresh_heros(current_team(), false);
-				}
-				before_human_turn(save);
-				play_human_turn();
-				after_human_turn();
-			} catch(end_turn_exception& end_turn) {
-				if (end_turn.redo == team_index) {
-					player_type_changed_ = true;
-					// if new controller is not human,
-					// reset gui to prev human one
-					if (!teams_[team_index-1].is_human()) {
-						browse_ = true;
-						int t = find_human_team_before(team_index);
-
-						if (t <= 0)
-							t = gui_->get_playing_team() + 1;
-
-						gui_->set_team(t-1);
-						gui_->recalculate_minimap();
-						gui_->invalidate_all();
-						gui_->draw(true,true);
-					}
-				} else {
-					after_human_turn();
-				}
-			}
-			LOG_NG << "human finished turn...\n";
-		} else if(current_team().is_ai()) {
-			play_ai_turn();
-		} else if(current_team().is_network()) {
-			play_network_turn();
 		}
-	} while (player_type_changed_);
+
+		unit* u = &units_.current_unit();
+		if (!tent::turn_based) {
+			int past_ticks = u->backward_ticks(u->ticks());
+			if (unit_map::main_ticks + past_ticks >= end_ticks) {
+				units_.do_escape_ticks_uh(teams_, *gui_, end_ticks - unit_map::main_ticks, false);
+				autosave_ticks_ = -1;
+				continue;
+			}
+			units_.do_escape_ticks_uh(teams_, *gui_, past_ticks, true);
+		} else {
+			if (u->side() < player_number_) {
+				unit_map::main_ticks = end_ticks;
+				player_number_ = 1;
+				continue;
+			}
+		}
+		// if exist spirit feature/technology, second maybe goto first. need reget
+		u = &units_.current_unit();
+
+		player_number_ = u->side(); // init_turn_data need player_number_ be valid.
+		team& t = teams_[player_number_ - 1];
+
+		bool local = t.is_local();
+		bool new_side = false;
+		if (local || loading_game_) {
+			if (local) {
+				init_turn_data();
+			}
+			new_side = do_prefix_unit(end_ticks, loading_game_, false);
+		}
+
+		if (t.is_network()) {
+			play_network_turn();
+
+		} else if (actor_can_continue_action(units_, player_number_)) {
+			// we can't call playsingle_controller::play_side because
+			// we need to catch exception here
+			if (t.is_human()) {
+				try {
+					if (!loading_game_ && unit::actor->human_team_can_ai()) {
+						play_ai_turn(turn_data_);
+					}
+					before_human_turn(new_side);
+					play_human_turn();
+					after_human_turn();
+				} catch (end_turn_exception& end_turn) {
+					if (end_turn.redo == player_number_ - 1) {
+						player_type_changed_ = true;
+						// if new controller is not human,
+						// reset gui to prev human one
+						if (!teams_[player_number_ - 2].is_human()) {
+							browse_ = true;
+							int t = find_human_team_before(player_number_ - 1);
+
+							if (t <= 0)
+								t = gui_->get_playing_team() + 1;
+
+							gui_->set_team(t-1);
+							gui_->recalculate_minimap();
+							gui_->invalidate_all();
+							gui_->draw(true,true);
+						}
+					} else {
+						after_human_turn();
+					}
+				}
+
+			} else if (t.is_ai()) {
+				play_ai_turn(turn_data_);
+
+			}
+		}
+
+		if (local) {
+			do_post_unit(false);
+			release_turn_data();
+		}
+
+		loading_game_ = false;
+	}
 	//keep looping if the type of a team (human/ai/networked) has changed mid-turn
 
 	skip_next_turn_ = false;
@@ -151,8 +192,6 @@ void playmp_controller::play_side(const unsigned int team_index, bool save)
 void playmp_controller::before_human_turn(bool save)
 {
 	playsingle_controller::before_human_turn(save);
-
-	init_turn_data();
 }
 
 bool playmp_controller::counting_down() {
@@ -212,9 +251,20 @@ void playmp_controller::play_human_turn(){
 	show_turn_dialog();
 	execute_gotos();
 
-	if ((!linger_) || (is_host_))
+	bool auto_end_turn = can_auto_end_turn(true);
+	if (!auto_end_turn) {
+		if (!unit::actor->is_city() && unit::actor->task() == unit::TASK_NONE) {
+			gui_->scroll_to_tile(unit::actor->get_location(), game_display::ONSCREEN, true, true);
+		}
+	} else {
+		return;
+	}
+
+	if ((!linger_) || (is_host_)) {
 		gui_->enable_menu("endturn", true);
-	while(!end_turn_) {
+	}
+
+	while (!end_turn_ && !auto_end_turn) {
 
 		try {
 			config cfg;
@@ -292,6 +342,8 @@ void playmp_controller::play_human_turn(){
 		gui_->draw();
 
 		turn_data_->send_data();
+
+		auto_end_turn = can_auto_end_turn(false);
 	}
 	menu_handler_.clear_undo_stack(player_number_);
 }
@@ -299,11 +351,11 @@ void playmp_controller::play_human_turn(){
 void playmp_controller::set_end_scenario_button()
 {
 	// Modify the end-turn button
-	if (! is_host_) {
-		gui::button* btn_end = gui_->find_button("button-endturn");
+	if (!is_host_) {
+		gui::button* btn_end = gui_->find_button("endturn");
 		btn_end->enable(false);
 	}
-	gui_->get_theme().refresh_title2("button-endturn", "title2");
+	gui_->get_theme().refresh_title2("endturn", "title2");
 	gui_->invalidate_theme();
 	gui_->redraw_everything();
 }
@@ -311,7 +363,7 @@ void playmp_controller::set_end_scenario_button()
 void playmp_controller::reset_end_scenario_button()
 {
 	// revert the end-turn button text to its normal label
-	gui_->get_theme().refresh_title2("button-endturn", "title");
+	gui_->get_theme().refresh_title2("endturn", "title");
 	gui_->invalidate_theme();
 	gui_->redraw_everything();
 	gui_->set_game_mode(game_display::RUNNING);
@@ -319,7 +371,8 @@ void playmp_controller::reset_end_scenario_button()
 
 void playmp_controller::linger()
 {
-	LOG_NG << "beginning end-of-scenario linger\n";
+	mouse_handler_.do_right_click(false);
+
 	browse_ = true;
 	linger_ = true;
 	// If we need to set the status depending on the completion state
@@ -329,10 +382,6 @@ void playmp_controller::linger()
 	// this is actually for after linger mode is over -- we don't want to
 	// stay stuck in linger state when the *next* scenario is over.
 	gamestate_.classification().completion = "running";
-	// End all unit moves
-	for (unit_map::iterator u = units_.begin(); u != units_.end(); ++ u) {
-		u->set_user_end_turn(true);
-	}
 	//current_team().set_countdown_time(0);
 	//halt and cancel the countdown timer
 	reset_countdown();
@@ -356,8 +405,8 @@ void playmp_controller::linger()
 			init_turn_data();
 
 			play_human_turn();
-			turn_over_ = true;  // We don't want to linger mode to add end_turn to replay
 			after_human_turn();
+			release_turn_data();
 			LOG_NG << "finished human turn" << std::endl;
 		} catch (game::load_game_exception&) {
 			LOG_NG << "caught load-game-exception" << std::endl;
@@ -421,8 +470,7 @@ void playmp_controller::wait_for_upload()
 	}
 
 	if(set_turn_data) {
-		delete turn_data_;
-		turn_data_ = 0;
+		release_turn_data();
 	}
 }
 
@@ -439,27 +487,13 @@ void playmp_controller::after_human_turn(){
 	}
 	LOG_NG << "playmp::after_human_turn...\n";
 
-	//ensure that turn_data_ is constructed before it is used.
-	if (turn_data_ == NULL) init_turn_data();
-
 	// Normal post-processing for human turns (clear undos, end the turn, etc.)
 	playsingle_controller::after_human_turn();
-	//send one more time to make sure network is up-to-date.
-	turn_data_->send_data();
-	if (turn_data_ != NULL){
-		turn_data_->host_transfer().detach_handler(this);
-		delete turn_data_;
-		turn_data_ = NULL;
-	}
-
 }
 
-void playmp_controller::finish_side_turn(){
+void playmp_controller::finish_side_turn()
+{
 	play_controller::finish_side_turn();
-
-	//just in case due to an exception turn_data_ has not been deleted in after_human_turn
-	delete turn_data_;
-	turn_data_ = NULL;
 
 	//halt and cancel the countdown timer
 	reset_countdown();
@@ -525,6 +559,15 @@ void playmp_controller::init_turn_data()
 	turn_data_->host_transfer().attach_handler(this);
 }
 
+void playmp_controller::release_turn_data()
+{
+	//send one more time to make sure network is up-to-date.
+	turn_data_->send_data();
+	turn_data_->host_transfer().detach_handler(this);
+	delete turn_data_;
+	turn_data_ = NULL;
+}
+
 void playmp_controller::process_oos(const std::string& err_msg) const {
 	// Notify the server of the oos error.
 	config cfg;
@@ -564,7 +607,7 @@ void playmp_controller::handle_generic_event(const std::string& name){
 	else if (name == "host_transfer"){
 		is_host_ = true;
 		if (linger_){
-			gui::button* btn_end = gui_->find_button("button-endturn");
+			gui::button* btn_end = gui_->find_button("endturn");
 			btn_end->enable(true);
 			gui_->invalidate_theme();
 		}

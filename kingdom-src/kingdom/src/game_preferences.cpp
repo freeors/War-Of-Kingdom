@@ -333,17 +333,6 @@ void set_campaign_server(const std::string& host)
 	preferences::set("campaign_server", host);
 }
 
-std::string login()
-{
-	const config& cfg = preferences::get_child("hero");
-	std::string res = _("player");
-
-	if (cfg && !cfg["name"].empty()) {
-		return cfg["name"].str();
-	}
-	return res;
-}
-
 std::string encode_pw(const std::string& str)
 {
 	return std::string("pw_") + str;
@@ -361,7 +350,9 @@ std::string decode_pw(const std::string& str)
 
 std::string password()
 {
-	if (remember_password()) {
+	if (login() == public_account) {
+		return public_password;
+	} else if (remember_password()) {
 		return decode_pw(preferences::get("password"));
 	}
 	return "";
@@ -590,16 +581,6 @@ void set_eng_file_name(bool value)
 	preferences::set("eng_file_name", value ? "yes" : "no");
 }
 
-void set_show_side_colors(bool value)
-{
-	preferences::set("show_side_colors", value);
-}
-
-bool show_side_colors()
-{
-	return preferences::get("show_side_colors", true);
-}
-
 void set_save_replays(bool value)
 {
 	preferences::set("save_replays", value);
@@ -659,7 +640,7 @@ std::pair<std::string, std::string> inapp_item_equation(int id)
 	key << "inapp_" << short_id;
 
 	std::stringstream strstr;
-	strstr << game_config::sn << game_config::revision << short_id << group.leader().name();
+	strstr << game_config::sn << game_config::revision << short_id << login();
 	sha1_hash sha(strstr.str());
 
 	return std::make_pair(key.str(), sha.display());
@@ -679,6 +660,14 @@ bool inapp_purchased(int id)
 	return preferences::get(equation.first) == to;
 }
 
+bool vip2()
+{
+	if (vip_expire() >= time(NULL)) {
+		return true;
+	}
+	return false;
+}
+
 std::string client_type()
 {
 	return preferences::get("client_type") == "ai" ? "ai" : "human";
@@ -695,13 +684,8 @@ std::string clock_format()
 
 std::string theme()
 {
-	if(non_interactive()) {
-		static const std::string null_theme = "null";
-		return null_theme;
-	}
-
 	std::string res = preferences::get("theme");
-	if(res.empty()) {
+	if (res.empty()) {
 		return "Default";
 	}
 
@@ -713,16 +697,6 @@ void set_theme(const std::string& theme)
 	if(theme != "null") {
 		preferences::set("theme", theme);
 	}
-}
-
-bool show_floating_labels()
-{
-	return preferences::get("floating_labels", true);
-}
-
-void set_show_floating_labels(bool value)
-{
-	preferences::set("floating_labels", value);
 }
 
 bool message_private()

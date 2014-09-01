@@ -27,7 +27,6 @@
 #include "game_events.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
-#include "gui/dialogs/gamestate_inspector.hpp"
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/widgets/window.hpp"
@@ -755,10 +754,6 @@ WML_HANDLER_FUNCTION(store_time_of_day, /*event_info*/, cfg)
 
 WML_HANDLER_FUNCTION(inspect, /*event_info*/, cfg)
 {
-	if (game_config::debug) {
-		gui2::tgamestate_inspector inspect_dialog(cfg);
-		inspect_dialog.show(resources::screen->video());
-	}
 }
 
 WML_HANDLER_FUNCTION(modify_unit2, event_info, cfg)
@@ -794,6 +789,7 @@ WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 {
 	std::vector<team>& teams = *resources::teams;
 	hero_map& heros = *resources::heros;
+	game_display& disp = *resources::screen;
 
 	int side_num = cfg["side"].to_int();
 	const size_t team_index = side_num - 1;
@@ -807,6 +803,7 @@ WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 	std::string controller = cfg["controller"];
 	std::string recruit_str = cfg["not_recruit"];
 	std::string shroud_data = cfg["shroud_data"];
+	bool exclude_human = cfg["exclude_human"].to_bool();
 	const config& parsed = cfg.get_parsed_config();
 	const config::const_child_itors &ai = parsed.child_range("ai");
 
@@ -820,24 +817,37 @@ WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 		vstr = utils::split(agree);
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			int side = lexical_cast_default<int>(*i);
+			team& that = teams[side - 1];
+			if (that.is_empty()) {
+				continue;
+			}
+			if (exclude_human && that.is_human()) {
+				continue;
+			}
 			current_team.set_ally(side, true, true);
-			teams[side - 1].set_ally(side_num, true, true);
+			that.set_ally(side_num, true, true);
 		}
 	}
 	if (!terminate.empty()) {
 		vstr = utils::split(terminate);
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			int side = lexical_cast_default<int>(*i);
+			team& that = teams[side - 1];
+			if (that.is_empty()) {
+				continue;
+			}
+			if (exclude_human && that.is_human()) {
+				continue;
+			}
 			current_team.set_ally(side, false, true, true);
-			teams[side - 1].set_ally(side_num, false, true, true);
+			that.set_ally(side_num, false, true, true);
 		}
 	}
 
 	// leader
 	int leader = cfg["leader"].to_int(HEROS_INVALID_NUMBER);
 	if (leader != HEROS_INVALID_NUMBER && leader != current_team.leader()->number_) {
-		current_team.set_leader(&heros[leader]);
-		current_team.readjust_all_unit();
+		current_team.set_leader(heros[leader]);
 	}
 
 	// income
@@ -847,7 +857,7 @@ WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 	}
 	// Modify total gold
 	int gold = cfg["gold"].to_int(-1);
-	if (gold) {
+	if (gold >= 0) {
 		current_team.set_gold(gold);
 	}
 	// technology
@@ -883,8 +893,9 @@ WML_HANDLER_FUNCTION(modify_side, /*event_info*/, cfg)
 
 	// Set controller
 	if (!controller.empty()) {
-		teams[team_index].change_controller(controller);
+		current_team.change_controller(controller);
 	}
+
 	// Set shroud
 	config::attribute_value shroud = cfg["shroud"];
 	if (!shroud.empty()) {
@@ -949,6 +960,7 @@ WML_HANDLER_FUNCTION(modify_city, /*event_info*/, cfg)
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			int number = lexical_cast_default<int>(*i);
 			hero& h = heros[number];
+			do_unstage_hero(units, h);
 			unit* u = units.find_unit(h);
 			if (u) {
 				err << "wml_func_modify_city, " << h.name() << " has been serviced, must not service again!";
@@ -1438,7 +1450,7 @@ WML_HANDLER_FUNCTION(unit, /*event_info*/, cfg)
 	
 	config parsed_cfg = cfg.get_parsed_config();
 
-	unit new_unit(units, *resources::heros, *resources::teams, parsed_cfg, true, resources::state_of_game);
+	unit new_unit(units, *resources::heros, *resources::teams, *resources::state_of_game, parsed_cfg, true);
 
 	// set human/menual
 	if (new_unit.side() == rpg::h->side_ + 1) {
@@ -1556,8 +1568,8 @@ WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 			dealing_heros.insert(h);
 		}
 	}
-	const std::vector<artifical*>& holded_cities = selected_team.holded_cities();
-	for (std::vector<artifical*>::const_iterator itor = holded_cities.begin(); itor != holded_cities.end(); ++ itor) {
+	const std::vector<artifical*>& holden_cities = selected_team.holden_cities();
+	for (std::vector<artifical*>::const_iterator itor = holden_cities.begin(); itor != holden_cities.end(); ++ itor) {
 		artifical& city = **itor;
 		std::vector<hero*> leave_heros;
 		std::vector<hero*> captains;
@@ -1685,7 +1697,7 @@ WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 	for (dealing_heros_itor = dealing_heros.begin(); dealing_heros_itor != dealing_heros.end(); ++ dealing_heros_itor) {
 		hero& h = heros[*dealing_heros_itor];
 
-		std::vector<artifical*>& side_cities = selected_team.holded_cities();
+		std::vector<artifical*>& side_cities = selected_team.holden_cities();
 		selected_city = side_cities[0];
 
 		extract_hero(units, h);
@@ -1895,16 +1907,20 @@ WML_HANDLER_FUNCTION(kill, event_info, cfg)
 	hero_map& heros = *resources::heros;
 
 	int a_side = cfg["a_side"].to_int(HEROS_INVALID_SIDE);
+	bool unstage = cfg["direct_hero"].to_bool();
 	const std::vector<std::string> master_heros = utils::split(cfg["hero"]);
 
 	for (std::vector<std::string>::const_iterator tmp = master_heros.begin(); tmp != master_heros.end(); ++ tmp) {
-		unit* holder = NULL;
 		hero& h = heros[lexical_cast_default<int>(*tmp)];
+		if (unstage) {
+			do_unstage_hero(units, h);
+			continue;
+		}
 		if (h.status_ != hero_status_military) {
 			continue;
 		}
 
-		holder = units.find_unit(h);
+		unit* holder = units.find_unit(h);
 		if (!holder) {
 			continue;
 		}
@@ -1918,7 +1934,7 @@ WML_HANDLER_FUNCTION(kill, event_info, cfg)
 			for (std::vector<unit*>::iterator i = reside_troops.begin(); i != reside_troops.end(); ++ i, index ++) {
 				if (*i == holder) {
 					city->fresh_into(holder);
-					city->troop_go_out(index);
+					city->troop_go_out(*holder);
 					break;
 				}
 			}
@@ -2180,7 +2196,7 @@ WML_HANDLER_FUNCTION(artifical, /*event_info*/, cfg)
 	if (ut->master() != HEROS_INVALID_NUMBER) {
 		parsed_cfg["heros_army"] = ut->master();
 	}
-	artifical new_unit(parsed_cfg);
+	artifical new_unit(*resources::state_of_game, parsed_cfg);
 	map_location loc = cfg_to_loc(cfg);
 	resources::units->add(loc, &new_unit);
 }
@@ -2273,9 +2289,7 @@ WML_HANDLER_FUNCTION(while, event_info, cfg)
 
 WML_HANDLER_FUNCTION(open_help,  /*event_info*/, cfg)
 {
-	game_display &screen = *resources::screen;
-	t_string topic_id = cfg["topic"];
-	help::show_help(screen, topic_id.to_serialized());
+	
 }
 // Helper namespace to do some subparts for message function
 namespace {
@@ -2303,7 +2317,7 @@ hero& handle_speaker(
 	hero& h = heros[cfg["hero"].to_int()];
 	const unit* speaker = units.find_unit(h);
 	if (!speaker) {
-		return hero_invalid;
+		return h;
 	}
 
 	if (!pop_in_fog) {
@@ -2328,7 +2342,7 @@ hero& handle_speaker(
 			screen.scroll_to_tile(map_location(spl.x, offset_from_center));
 		}
 	} else {
-		return hero_invalid;
+		return h;
 	}
 
 	screen.draw(false);

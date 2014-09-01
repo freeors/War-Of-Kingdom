@@ -121,8 +121,8 @@ void tindependence::pre_show(CVideo& /*video*/, twindow& window)
 	tlistbox* list = find_widget<tlistbox>(&window, "city_list", false, true);
 
 	int human_resides, ai_resides, human_fields, ai_fields;
-	std::vector<artifical*>& holded_cities = current_team_.holded_cities();
-	for (std::vector<artifical*>::iterator it = holded_cities.begin(); it != holded_cities.end(); ++ it) {
+	std::vector<artifical*>& holden_cities = current_team_.holden_cities();
+	for (std::vector<artifical*>::iterator it = holden_cities.begin(); it != holden_cities.end(); ++ it) {
 		artifical& city = *unit_2_artifical(*it);
 		/*** Add list item ***/
 		string_map list_item;

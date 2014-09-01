@@ -86,6 +86,15 @@ namespace gui2 {
  * @end{table}
  */
 
+void common_genus(tbutton& genus)
+{
+	tent::turn_based = !tent::turn_based;
+	
+	std::stringstream strstr;
+	strstr << unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).name();
+	genus.set_label(strstr.str());
+}
+
 ttent::ttent(hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero, const std::string& mode_id)
 	: chk_shroud_(register_bool("shroud", false))
 	, chk_fog_(register_bool("fog", false))
@@ -104,6 +113,7 @@ ttent::ttent(hero_map& heros, card_map& cards, const config& cfg, const config& 
 	, mem_vsize_(0)
 	, player_hero_(&player_hero)
 	, city_map_()
+	, empty_city_map_()
 	, city_leader_map_()
 	, faction_list_()
 	, player_faction_(NULL)
@@ -163,8 +173,9 @@ void ttent::init_player_list(tlistbox& list, twindow& window)
 	}
 
 	if (player_hero_->valid() && rpg_mode_) {
-		rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * (heros_.size() + 1));
+		rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * (heros_.size() + 2));
 		add_row_to_heros(list, player_hero_->number_, -1, -1, hero_stratum_citizen);
+		add_row_to_heros(list, player_hero_->number_, player_hero_->number_, -1, hero_stratum_leader);
 	} else {
 		rows_mem_ = (hero_row*)malloc(sizeof(hero_row) * heros_.size());
 	}
@@ -175,14 +186,14 @@ void ttent::init_player_list(tlistbox& list, twindow& window)
 	std::vector<std::string> v;
 	int leader, city, stratum;
 	BOOST_FOREACH (const config& side, scenario.child_range("side")) {
-		// city_map_.clear();
+		bool selectable_side = true;
 		leader = side["leader"].to_int();
-		if (side.has_attribute("controller")) {
-			text = side["controller"].str();
-			if (text != "human") {
-				continue;
-			}
+
+		const std::string controller_str = side["controller"].str();
+		if (controller_str == controller_tag::rfind(controller_tag::AI)) {
+			continue;
 		}
+
 		BOOST_FOREACH (const config& c, side.child_range("artifical")) {
 			int mayor = -1;
 			if (c.has_attribute("mayor")) {
@@ -190,6 +201,14 @@ void ttent::init_player_list(tlistbox& list, twindow& window)
 			}
 			city = c["heros_army"].to_int();
 			int cityno = c["cityno"].to_int();
+
+			if (!controller_str.empty()) {
+				if (controller_str == controller_tag::rfind(controller_tag::EMPTY)) {
+					empty_city_map_[cityno] = city;
+					selectable_side = false;
+					continue;
+				}
+			}
 			city_map_[cityno] = city;
 			city_leader_map_[cityno] = leader;
 			mayor_map[cityno] = mayor;
@@ -219,6 +238,11 @@ void ttent::init_player_list(tlistbox& list, twindow& window)
 				}
 			}
 		}
+
+		if (!selectable_side) {
+			continue;
+		}
+
 		// unit. they maybe leader
 		BOOST_FOREACH (const config& u, side.child_range("unit")) {
 			v = utils::split(u["heros_army"].str());
@@ -274,12 +298,11 @@ void ttent::init_faction_list(tlistbox& list, twindow& window)
 			, boost::ref(window)));
 
 
-	const config& cfg = cfg_.child("faction");
-	if (cfg) {
-		add_row_to_factions(*faction_list_, cfg);
-		tent::human_leader_number = cfg["leader"].to_int();
-		player_faction_->set_label(heros_[tent::human_leader_number].name());
-	}
+	// player faction is default faction.
+	const config& default_faction = group.to_faction_cfg(true, true);
+	add_row_to_factions(*faction_list_, default_faction);
+	tent::human_leader_number = default_faction["leader"].to_int();
+	player_faction_->set_label(heros_[tent::human_leader_number].name());
 
 	// disable all sort button
 	tbutton* button = find_widget<tbutton>(&window, "hero_fresh", false, true);
@@ -292,6 +315,22 @@ void ttent::init_faction_list(tlistbox& list, twindow& window)
 
 void ttent::pre_show(CVideo& /*video*/, twindow& window)
 {
+	std::stringstream strstr;
+
+	genus_ = find_widget<tbutton>(&window, "genus", false, true);
+
+	tent::turn_based = (mode_id_ != "tower")? true: false;
+	strstr.str("");
+	strstr << unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).name();
+	genus_->set_label(strstr.str());
+
+	connect_signal_mouse_left_click(
+		*genus_
+		, boost::bind(
+			&ttent::genus
+			, this
+			, boost::ref(window)));
+
 	tlistbox* list = find_widget<tlistbox>(&window, "player_list", false, false);
 	if (list) {
 		init_player_list(*list, window);
@@ -309,7 +348,6 @@ void ttent::pre_show(CVideo& /*video*/, twindow& window)
 		return;
 	}
 
-	std::stringstream strstr;
 	card_table_ = find_widget<tlistbox>(&window, "card_table", false, true);
 
 	int card_index = 0;
@@ -343,6 +381,7 @@ void ttent::pre_show(CVideo& /*video*/, twindow& window)
 		toggle->set_value(true);
 		checked_card_.insert(std::make_pair(card_index, true));
 	}
+	card_table_->set_active(false);
 }
 
 void ttent::post_show(twindow& window)
@@ -356,9 +395,9 @@ bool ttent::card_valid(const std::string& mode) const
 	if (mode.empty()) {
 		return true;
 	}
-
+	
 	const std::vector<std::string> vstr = utils::split(mode);
-	return std::find(vstr.begin(), vstr.end(), mode_id_) != vstr.end();
+	return std::find(vstr.begin(), vstr.end(), mode_str()) != vstr.end();
 }
 
 config ttent::player() const
@@ -384,13 +423,7 @@ config ttent::player() const
 
 std::string ttent::mode_str() const
 {
-	if (campaign_config_["mode"].str() == "tower") {
-		return "tower";
-	} else if (rpg_mode_) {
-		return "rpg";
-	} else {
-		return null_str;
-	}
+	return campaign_config_["mode"].str();
 }
 
 std::vector<bool> ttent::checked_card() const
@@ -500,19 +533,21 @@ void ttent::player_faction(twindow& window)
 {
 	// The possible eras to play
 	std::vector<std::string> items;
-	std::map<int, tval_str> factions_map;
+	std::vector<tval_str> factions_map;
 	int actived_index = 0;
 
+	int number = player_hero_->number_;
+	factions_map.push_back(tval_str(number, heros_[number].name()));
+
 	const config::const_child_itors& factions = cfg_.child_range("faction");
-	int index = 0;
 	BOOST_FOREACH (const config &cfg, factions) {
 		int number = cfg["leader"].to_int();
-		factions_map.insert(std::make_pair(index ++, tval_str(number, heros_[number].name())));
+		factions_map.push_back(tval_str(number, heros_[number].name()));
 	}
 
-	for (std::map<int, tval_str>::iterator it = factions_map.begin(); it != factions_map.end(); ++ it) {
-		items.push_back(it->second.str);
-		if (tent::human_leader_number == it->second.val) {
+	for (std::vector<tval_str>::iterator it = factions_map.begin(); it != factions_map.end(); ++ it) {
+		items.push_back(it->str);
+		if (tent::human_leader_number == it->val) {
 			actived_index = std::distance(factions_map.begin(), it);
 		}
 	}
@@ -524,11 +559,20 @@ void ttent::player_faction(twindow& window)
 	if (selected == actived_index) {
 		return;
 	}
-	tent::human_leader_number = factions_map.find(selected)->second.val;
+	tent::human_leader_number = factions_map[selected].val;
 
 	player_faction_->set_label(heros_[tent::human_leader_number].name());
 	faction_list_->remove_row(0);
-	add_row_to_factions(*faction_list_, cfg_.child("faction", selected));
+	if (selected == 0) {
+		add_row_to_factions(*faction_list_, group.to_faction_cfg(true, true));
+	} else {
+		add_row_to_factions(*faction_list_, cfg_.child("faction", selected - 1));
+	}
+}
+
+void ttent::genus(twindow& window)
+{
+	common_genus(*genus_);
 }
 
 } // namespace gui2

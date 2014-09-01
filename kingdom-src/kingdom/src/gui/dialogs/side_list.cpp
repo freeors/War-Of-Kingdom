@@ -25,6 +25,7 @@
 #include "gamestatus.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/dialogs/noble_list.hpp"
+#include "gui/dialogs/group.hpp"
 #include "gui/dialogs/technology_tree.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/image.hpp"
@@ -43,6 +44,7 @@
 #include "ai/manager.hpp"
 #include "resources.hpp"
 #include "play_controller.hpp"
+#include <preferences.hpp>
 
 #include <boost/bind.hpp>
 
@@ -92,12 +94,13 @@ namespace gui2 {
 
 REGISTER_DIALOG(side_list)
 
-tside_list::tside_list(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate)
-	: gui_(gui)
+tside_list::tside_list(game_display& disp, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, const config& game_config)
+	: disp_(disp)
 	, teams_(teams)
 	, units_(units)
 	, heros_(heros)
 	, gamestate_(gamestate)
+	, game_config_(game_config)
 	, side_(-1)
 	, hero_table_(NULL)
 {
@@ -204,38 +207,51 @@ void tside_list::noble_list(int n)
 	std::vector<std::pair<int, unit*> > human_pairs;
 	
 	if (n == rpg::h->side_) {
-		human_pairs = form_human_pairs(teams_, tent::mode != TOWER_MODE);
+		human_pairs = form_human_pairs(teams_, troop_can_appoint_noble, resources::controller);
 	}
 	gui2::tnoble_list dlg(teams_, units_, heros_, human_pairs, n + 1);
 	try {
-		dlg.show(gui_.video());
+		dlg.show(disp_.video());
 	} catch(twml_exception& e) {
-		e.show(gui_);
+		e.show(disp_);
+		return;
+	}
+}
+
+void tside_list::browse_group(int n)
+{
+	team& t = teams_[n];
+	tgroup& g = runtime_groups::get(t.leader()->number_);
+	gui2::tgroup2 dlg(disp_, heros_, game_config_, g, true);
+	try {
+		dlg.show(disp_.video());
+	} catch (twml_exception& e) {
+		e.show(disp_);
 		return;
 	}
 }
 
 void tside_list::technology_tree(int n)
 {
-	gui2::ttechnology_tree dlg(gui_, teams_, units_, heros_, n + 1, true);
+	gui2::ttechnology_tree dlg(disp_, teams_, units_, heros_, n + 1, true);
 	try {
-		dlg.show(gui_.video());
+		dlg.show(disp_.video());
 	} catch(twml_exception& e) {
-		e.show(gui_);
+		e.show(disp_);
 		return;
 	}
 }
 
 void tside_list::fill_table(int catalog)
 {
-	const team& viewing_team = teams_[gui_.viewing_team()];
+	const team& viewing_team = teams_[disp_.viewing_team()];
 
 	std::map<int, size_t> art_map;
 	art_map[hero::number_market] = 0;
 	art_map[hero::number_tower] = 0;
 	
 	for (size_t n = 0; n != teams_.size(); ++n) {
-		if (teams_[n].is_empty()) {
+		if (teams_[n].is_empty() && !preferences::developer()) {
 			continue;
 		}
 		
@@ -244,6 +260,7 @@ void tside_list::fill_table(int catalog)
 		std::stringstream str;
 
 		const team_data data = calculate_team_data(teams_[n], n + 1);
+		const team& t = teams_[n];
 
 		/*** Add list item ***/
 		string_map table_item;
@@ -254,7 +271,7 @@ void tside_list::fill_table(int catalog)
 		table_item_item.insert(std::make_pair("side", table_item));
 
 		if (catalog == STATUS_PAGE) {
-			hero* leader = teams_[n].leader();
+			hero* leader = t.leader();
 			std::string leader_name;
 			leader_name = leader->name();
 			table_item["label"] = leader->name();
@@ -290,6 +307,14 @@ void tside_list::fill_table(int catalog)
 			table_item_item.insert(std::make_pair("shroud", table_item));
 
 		} else if (catalog == MILITARY_PAGE) {
+			const artifical* capital = t.capital();
+			str.str("");
+			if (capital) {
+				str << capital->name();
+			}
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("capital", table_item));
+
 			str.str("");
 			str << data.villages;
 			table_item["label"] = str.str();
@@ -309,6 +334,7 @@ void tside_list::fill_table(int catalog)
 
 			str.str("");
 			str << teams_[n].holded_cards().size();
+			str << "(" << help::tintegrate::generate_format(teams_[n].candidate_cards().size(), "green") << ")";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("card", table_item));
 
@@ -399,7 +425,7 @@ void tside_list::fill_table(int catalog)
 
 		} else if (catalog == TECHNOLOGY_PAGE) {
 			hero* leader = teams_[n].leader();
-
+			const std::vector<const ttechnology*>& holden = teams_[n].holded_technologies();
 			
 			str.str("");
 			str << teams_[n].total_technology_income();
@@ -416,17 +442,31 @@ void tside_list::fill_table(int catalog)
 			table_item_item.insert(std::make_pair("researching", table_item));
 
 			str.str("");
-			str << teams_[n].holded_technologies().size();
+			str << holden.size();
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("holden", table_item));
 
+			str.str("");
+			for (std::vector<const ttechnology*>::const_iterator it = holden.begin(); it != holden.end(); ++ it) {
+				const ttechnology& t = **it;
+				if (!t.stratagem()) {
+					continue;
+				}
+				if (!str.str().empty()) {
+					str << ", ";
+				}
+				str << t.name();
+			}
+			table_item["label"] = str.str();
+			table_item_item.insert(std::make_pair("stratagem", table_item));
+
 		} else if (catalog == ARTIFICAL_PAGE) {
 
-			const std::vector<artifical*>& holded_cities = teams_[n].holded_cities();
+			const std::vector<artifical*>& holden_cities = teams_[n].holden_cities();
 			for (std::map<int, size_t>::iterator itor = art_map.begin(); itor != art_map.end(); ++ itor) {
 				itor->second = 0;
 			}
-			for (std::vector<artifical*>::const_iterator itor = holded_cities.begin(); itor != holded_cities.end(); ++ itor) {
+			for (std::vector<artifical*>::const_iterator itor = holden_cities.begin(); itor != holden_cities.end(); ++ itor) {
 				artifical* city = *itor;
 				std::vector<artifical*>& arts = city->field_arts();
 				for (std::vector<artifical*>::const_iterator itor2 = arts.begin(); itor2 != arts.end(); ++ itor2) {
@@ -452,7 +492,7 @@ void tside_list::fill_table(int catalog)
 		} else if (catalog == PLAN_PAGE) {
 			const bool survived = units_.side_survived(n + 1);
 			ai_plan& plan = ai::manager::get_active_ai_plan_for_side(n + 1);
-
+			
 			str.str("");
 			if (survived) {
 				if (teams_[n].is_ai() || rpg::stratum != hero_stratum_leader) {
@@ -509,6 +549,7 @@ void tside_list::fill_table(int catalog)
 			}
 
 /*
+			plan.mrs_[0].calculate_mass(units_, teams_[n]);
 			str.str("");
 			for (std::vector<tmess_data>::const_iterator it = plan.mrs_[0].messes.begin(); it != plan.mrs_[0].messes.end(); ++ it) {
 				if (it != plan.mrs_[0].messes.begin()) {
@@ -542,6 +583,15 @@ void tside_list::fill_table(int catalog)
 			if (teams_[n].leader()->noble_ == HEROS_NO_NOBLE) {
 				find_widget<tbutton>(grid_ptr, "noble", true).set_active(false);
 			}
+
+			connect_signal_mouse_left_click(
+				find_widget<tbutton>(grid_ptr, "group", true)
+				, boost::bind(
+					&tside_list::browse_group
+					, this
+					, (int)n));
+			find_widget<tbutton>(grid_ptr, "group", true).set_active(runtime_groups::get(teams_[n].leader()->number_).valid());
+
 		} else if (catalog == TECHNOLOGY_PAGE) {
 			connect_signal_mouse_left_click(
 				find_widget<tbutton>(grid_ptr, "technology_tree", true)

@@ -48,11 +48,9 @@ public:
 	attack_analysis& operator=(const attack_analysis& that);
 
 	void analyze(const gamemap& map, unit_map& units,
-				std::map<std::pair<const unit*, const unit*>, battle_context*>& unit_stats_cache,
-				const std::vector<std::pair<unit*, int> >& units2,
-				const std::multimap<map_location, int>& srcdst2, const std::multimap<int, map_location>& dstsrc2);
+				std::map<std::pair<const unit*, const unit*>, battle_context*>& unit_stats_cache);
 
-	double rating(double aggression) const;
+	double rating(double aggression, const map_location& guard_loc) const;
 
 	unit* target;
 	std::vector<std::pair<std::pair<unit*, int>, map_location> > movements;

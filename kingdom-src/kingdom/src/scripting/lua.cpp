@@ -1070,7 +1070,7 @@ static int impl_unit_status_get(lua_State *L)
 	unit const *u = luaW_tounit(L, -1);
 	if (!u) return luaL_argerror(L, 1, "unknown unit");
 	char const *m = luaL_checkstring(L, 2);
-	lua_pushboolean(L, u->get_state(m));
+	lua_pushboolean(L, u->get_state(unit::find_state(m)));
 	return 1;
 }
 
@@ -1088,7 +1088,7 @@ static int impl_unit_status_set(lua_State *L)
 	unit *u = luaW_tounit(L, -1);
 	if (!u) return luaL_argerror(L, 1, "unknown unit");
 	char const *m = luaL_checkstring(L, 2);
-	u->set_state(m, lua_toboolean(L, 3));
+	u->set_state(unit::find_state(m), lua_toboolean(L, 3));
 	return 0;
 }
 
@@ -1479,7 +1479,6 @@ static int impl_side_get(lua_State *L)
 	return_int_attrib("gold", t.gold());
 	return_tstring_attrib("objectives", t.objectives());
 	return_int_attrib("village_gold", t.village_gold());
-	return_int_attrib("recall_cost", t.recall_cost());
 	return_int_attrib("base_income", t.base_income());
 	return_int_attrib("total_income", t.total_income());
 	return_bool_attrib("objectives_changed", t.objectives_changed());
@@ -1510,10 +1509,8 @@ static int impl_side_set(lua_State *L)
 	modify_int_attrib("gold", t.set_gold(value));
 	modify_tstring_attrib("objectives", t.set_objectives(value, true));
 	modify_int_attrib("village_gold", t.set_village_gold(value));
-	modify_int_attrib("recall_cost", t.set_recall_cost(value));
 	modify_int_attrib("base_income", t.set_base_income(value));
 	modify_bool_attrib("objectives_changed", t.set_objectives_changed(value));
-	modify_string_attrib("controller", t.change_controller(value));
 
 	return luaL_argerror(L, 2, "unknown modifiable property");
 }
@@ -2305,7 +2302,7 @@ static int intf_find_vacant_tile(lua_State *L)
 			u = static_cast<lua_unit *>(lua_touserdata(L, 3))->get();
 		} else {
 			config cfg = luaW_checkconfig(L, 3);
-			u = new unit(*resources::units, *resources::heros, *resources::teams, cfg, false, resources::state_of_game);
+			u = new unit(*resources::units, *resources::heros, *resources::teams, *resources::state_of_game, cfg, false);
 			fake_unit = true;
 		}
 	}
@@ -2764,6 +2761,8 @@ static gui2::twidget *find_widget(lua_State *L, int i, bool readonly)
  */
 static int intf_show_dialog(lua_State *L)
 {
+	return 1;
+/*
 	config def_cfg = luaW_checkconfig(L, 1);
 
 	gui2::twindow_builder::tresolution def(def_cfg);
@@ -2783,6 +2782,7 @@ static int intf_show_dialog(lua_State *L)
 
 	lua_pushinteger(L, v);
 	return 1;
+*/
 }
 
 /**
@@ -3702,7 +3702,7 @@ void LuaKernel::initialize()
 
 static char const *handled_file_tags[] = {
 	"color_palette", "color_range", "era", "event", "generator",
-	"label", "lua", "menu_item", "music", "side", "sound_source", "story",
+	"label", "lua", "menu_item", "music", "side", "sound_source", "prelude",
 	"terrain_graphics", "time", "time_area", "tunnel", "variables", "endlevel",
 	"display", "camp", "player", // "play" is BUG#, but I don't understand all.
 	//TODO: These are only needed for MP campaigns and only for subsequent scenarios, see bug #18883

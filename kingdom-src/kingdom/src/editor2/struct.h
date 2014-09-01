@@ -25,6 +25,7 @@ typedef enum {
 	da_core,
 	da_visual,
 	da_campaign,
+	da_integrate
 } do_action_t;
 
 typedef struct tag_dlghdr {
@@ -44,9 +45,6 @@ typedef struct {
 	char			_curexedir[_MAX_PATH];
 	char			_userdir[_MAX_PATH];
 	char			_programfilesdir[_MAX_PATH];
-	char			_markbmp[_MAX_PATH];
-	char			_pcbmp[_MAX_PATH];
-	char			_dvrbmp[_MAX_PATH];
 	HICON			_markico;
 	HBITMAP			_welcomebmp;;
 
@@ -61,6 +59,7 @@ typedef struct {
 	HWND			_hdlg_core;
 	HWND			_hdlg_visual;
 	HWND			_hdlg_campaign;
+	HWND			_hdlg_integrate;
 	HWND			_hwnd_status;
 	HWND			_hpb_task;		// 任务进度条
 
@@ -209,6 +208,12 @@ void update_locale_dir();
 //
 void visual_enter_ui(void);
 BOOL visual_hide_ui(void);
+
+//
+// integrate.cpp
+//
+void integrate_enter_ui(void);
+BOOL integrate_hide_ui(void);
 
 //
 // DlgCoreProc.cpp

@@ -59,6 +59,8 @@ private:
 
 	void update_selected_tod_info(twindow& window);
 
+	void draw_coordinates_toggled(twidget* widget);
+	void draw_terrain_codes_toggled(twidget* widget);
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;

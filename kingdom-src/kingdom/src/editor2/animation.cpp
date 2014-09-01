@@ -22,6 +22,14 @@
 const std::string default_particular_frame_tag = "__new_frame";
 std::set<std::string> reserved_particular_frame_tag;
 
+const char* align_filter_names[] = {
+	"none",
+	"x",
+	"non-x",
+	"y",
+	"non-y"
+};
+
 namespace ns {
 	int clicked_anim;
 	
@@ -55,15 +63,17 @@ const tanim_type& tanim::anim_type(const std::string& id)
 tparticular::tparticular(const config& cfg, const std::string& frame_string)
 	: animated<unit_frame>()
 {
-	config::const_child_itors range = cfg.child_range(frame_string+"frame");
-	starting_frame_time_=INT_MAX;
-	if (cfg[frame_string+"start_time"].empty() &&range.first != range.second) {
+	config::const_child_itors range = cfg.child_range(frame_string + "frame");
+	starting_frame_time_ = INT_MAX;
+	if (cfg[frame_string + "start_time"].empty() &&range.first != range.second) {
 		BOOST_FOREACH (const config &frame, range) {
 			starting_frame_time_ = std::min(starting_frame_time_, frame["begin"].to_int());
 		}
 	} else {
-		starting_frame_time_ = cfg[frame_string+"start_time"];
+		starting_frame_time_ = cfg[frame_string + "start_time"];
 	}
+
+	cycles_ = cfg[frame_string + "cycles"].to_bool();
 
 	BOOST_FOREACH (const config &frame, range)
 	{
@@ -74,6 +84,10 @@ tparticular::tparticular(const config& cfg, const std::string& frame_string)
 	if(!parameters_.does_not_change()  ) {
 			force_change();
 	}
+
+	layer_ = cfg[frame_string + "layer"].to_int();
+	zoom_x_ = cfg[frame_string + "zoom_x"].to_int();
+	zoom_y_ = cfg[frame_string + "zoom_y"].to_int();
 }
 
 std::string tparticular::description() const
@@ -107,6 +121,14 @@ void tparticular::paramsters_update_to_ui_anim_edit(HWND hctl, HTREEITEM branch,
 	strstr.str("");
 	strstr << _("Start time") << ": ";
 	strstr << starting_frame_time_;
+	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+		0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+
+	htvi = TreeView_AddLeaf(hctl, htvi_particular);
+	strstr.str("");
+	strstr << "cycles" << ": ";
+	strstr << (cycles_? "yes": "no");
 	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 	TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 		0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
@@ -146,6 +168,36 @@ void tparticular::paramsters_update_to_ui_anim_edit(HWND hctl, HTREEITEM branch,
 		strstr.str("");
 		strstr << "offset_y" << ": ";
 		strstr << parameters_.offset_y_.get_original();
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+
+	if (layer_) {
+		htvi = TreeView_AddLeaf(hctl, htvi_particular);
+		strstr.str("");
+		strstr << "layer" << ": ";
+		strstr << layer_;
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+
+	if (zoom_x_) {
+		htvi = TreeView_AddLeaf(hctl, htvi_particular);
+		strstr.str("");
+		strstr << "zoom_x" << ": ";
+		strstr << zoom_x_;
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+
+	if (zoom_y_) {
+		htvi = TreeView_AddLeaf(hctl, htvi_particular);
+		strstr.str("");
+		strstr << "zoom_y" << ": ";
+		strstr << zoom_y_;
 		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
@@ -277,6 +329,24 @@ void tparticular::frame_update_to_ui_anim_edit(HWND hctl, HTREEITEM branch, cons
 			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
 	}
 
+	if (!builder.auto_hflip_) {
+		htvi = TreeView_AddLeaf(hctl, htvi_frame);
+		strstr.str("");
+		strstr << "auto_hflip" << ": no";
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+
+	if (!builder.auto_vflip_) {
+		htvi = TreeView_AddLeaf(hctl, htvi_frame);
+		strstr.str("");
+		strstr << "auto_vflip" << ": no";
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+
 	if (!builder.sound_.empty()) {
 		htvi = TreeView_AddLeaf(hctl, htvi_frame);
 		strstr.str("");
@@ -307,8 +377,7 @@ void tparticular::frame_update_to_ui_anim_edit(HWND hctl, HTREEITEM branch, cons
 			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
 	}
 
-	const int default_text_color = 0xDDDDDD;
-	if (builder.text_color_ != default_text_color) {
+	if (builder.text_color_ != frame_builder::default_text_color) {
 		htvi = TreeView_AddLeaf(hctl, htvi_frame);
 		strstr.str("");
 		strstr << "text_color" << ": ";
@@ -350,11 +419,16 @@ void tparticular::update_to_ui_particular_edit(HWND hdlgP, const std::string& fr
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_TAG), frame_tag.c_str());
 
 	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_STARTTIME), starting_frame_time_);
-
+	
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_X), parameters_.x_.get_original().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_Y), parameters_.y_.get_original().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_OFFSET_X), parameters_.offset_x_.get_original().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_OFFSET_Y), parameters_.offset_y_.get_original().c_str());
+
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMPARTICULAR_CYCLES), cycles_);
+	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_LAYER), layer_);
+	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_ZOOM_X), zoom_x_);
+	UpDown_SetPos(GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_ZOOM_Y), zoom_y_);
 }
 
 void tparticular::update_to_ui_frame_edit(HWND hdlgP, int n) const
@@ -375,6 +449,8 @@ void tparticular::update_to_ui_frame_edit(HWND hdlgP, int n) const
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_HALOY), builder.halo_y_.get_original().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_OFFSET_X), builder.offset_x_.get_original().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_OFFSET_Y), builder.offset_y_.get_original().c_str());
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFRAME_HFLIP), builder.auto_hflip_);
+	Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFRAME_VFLIP), builder.auto_vflip_);
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_SOUND), builder.sound_.c_str());
 
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_STEXT), builder.stext_.c_str());
@@ -423,6 +499,9 @@ void tanim::parse(const config& cfg)
 		const map_location::DIRECTION d = map_location::parse_direction(*i);
 		directions_.insert(d);
 	}
+
+	align_ = cfg["align"].to_int(ALIGN_NONE);
+
 
 	std::vector<std::string> hits_str = utils::split(cfg["hits"]);
 	std::vector<std::string>::iterator hit;
@@ -537,6 +616,38 @@ bool tanim::from_ui_particular_edit(HWND hdlgP, int n)
 	}
 	attribute.insert(strstr.str());
 
+	bool cycles = Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMPARTICULAR_CYCLES));
+	strstr.str("");
+	strstr << frame_tag_prefix << "cycles";
+	if (cycles) {
+		particular_cfg[strstr.str()] = "yes";
+	}
+	attribute.insert(strstr.str());
+
+	int layer = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_LAYER));
+	strstr.str("");
+	strstr << frame_tag_prefix << "layer";
+	if (layer) {
+		particular_cfg[strstr.str()] = layer;
+	}
+	attribute.insert(strstr.str());
+
+	int zoom = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_ZOOM_X));
+	strstr.str("");
+	strstr << frame_tag_prefix << "zoom_x";
+	if (zoom) {
+		particular_cfg[strstr.str()] = zoom;
+	}
+	attribute.insert(strstr.str());
+
+	zoom = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_ZOOM_Y));
+	strstr.str("");
+	strstr << frame_tag_prefix << "zoom_y";
+	if (zoom) {
+		particular_cfg[strstr.str()] = zoom;
+	}
+	attribute.insert(strstr.str());
+
 	bool changed = false;
 	for (std::set<std::string>::const_iterator it = attribute.begin(); it != attribute.end(); ++ it) {
 		const std::string& attri = *it;
@@ -604,6 +715,9 @@ bool tanim::from_ui_filter_edit(HWND hdlgP)
 		directions.insert(map_location::SOUTH_WEST);
 	}
 
+	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ALIGN);
+	int align = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
+
 	// primary_attack_filter
 	config primary_attack_filter;
 	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ID);
@@ -657,6 +771,15 @@ bool tanim::from_ui_filter_edit(HWND hdlgP)
 			cfg_["direction"] = strstr.str();
 		} else {
 			cfg_.remove_attribute("direction");
+		}
+	}
+	if (align != align_) {
+		changed = true;
+		strstr.str("");
+		if (align != ALIGN_NONE) {
+			cfg_["align"] = align;
+		} else {
+			cfg_.remove_attribute("align");
 		}
 	}
 	// simplely, support one only.
@@ -790,12 +913,19 @@ bool tanim::from_ui_frame_edit(HWND hdlgP, tparticular& l, int n)
 	if (text[0] != '\0') {
 		cfg["offset_y"] = text;
 	}
+	if (!Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFRAME_HFLIP))) {
+		cfg["auto_hflip"] = "no";
+	}
+	if (!Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFRAME_VFLIP))) {
+		cfg["auto_vflip"] = "no";
+	}
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_SOUND), text, sizeof(text) / sizeof(text[0]));
 	if (text[0] != '\0') {
 		cfg["sound"] = text;
 	}
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_STEXT), text, sizeof(text) / sizeof(text[0]));
-	if (text[0] != '\0') {
+	const std::string stext = text;
+	if (!stext.empty()) {
 		cfg["stext"] = text;
 	}
 	int font_size = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMFRAME_FONTSIZE));
@@ -803,13 +933,15 @@ bool tanim::from_ui_frame_edit(HWND hdlgP, tparticular& l, int n)
 		cfg["font_size"] = font_size;
 	}
 
-	int color = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMFRAME_RED));
-	color = (color << 8) + UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMFRAME_GREEN));
-	color = (color << 8) + UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMFRAME_BLUE));
-	if (color) {
-		std::stringstream strstr;
-		strstr << ((color & 0x00FF0000) >> 16) << "," << ((color & 0x0000FF00) >> 8) << "," << (color & 0x000000FF);
-		cfg["text_color"] = strstr.str();
+	if (!stext.empty()) {
+		int color = UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMFRAME_RED));
+		color = (color << 8) + UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMFRAME_GREEN));
+		color = (color << 8) + UpDown_GetPos(GetDlgItem(hdlgP, IDC_UD_ANIMFRAME_BLUE));
+		if (color != frame_builder::default_text_color) {
+			std::stringstream strstr;
+			strstr << ((color & 0x00FF0000) >> 16) << "," << ((color & 0x0000FF00) >> 8) << "," << (color & 0x000000FF);
+			cfg["text_color"] = strstr.str();
+		}
 	}
 
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_ALPHA), text, sizeof(text) / sizeof(text[0]));
@@ -837,6 +969,12 @@ std::string tanim::filter_description() const
 			strstr << "  ";
 		}
 		strstr << "direction[" << cfg_["direction"] << "]";
+	}
+	if (align_ != ALIGN_NONE) {
+		if (!strstr.str().empty()) {
+			strstr << "  ";
+		}
+		strstr << "align[" << align_filter_names[align_] << "]";
 	}
 	if (!primary_attack_filter_.empty()) {
 		if (!strstr.str().empty()) {
@@ -907,6 +1045,15 @@ void tanim::filter_update_to_ui_anim_edit(HWND hctl, HTREEITEM branch) const
 		htvi = TreeView_AddLeaf(hctl, htvi_filter);
 		strstr.str("");
 		strstr << "direction" << ": " << cfg_["direction"];
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+	if (align_ != ALIGN_NONE) {
+		none_filter = false;
+		htvi = TreeView_AddLeaf(hctl, htvi_filter);
+		strstr.str("");
+		strstr << "align" << ": " << align_filter_names[align_];
 		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
@@ -1126,6 +1273,14 @@ void tanim::update_to_ui_filter_edit(HWND hdlgP) const
 		Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFILTER_SW), TRUE);
 	}
 
+	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ALIGN);
+	// ComboBox_SetCurSel(hctl, ComboBox_FindItemData(hctl, -1, align_));
+	for (int n = 0; n < ComboBox_GetCount(hctl); n ++) {
+		if (ComboBox_GetItemData(hctl, n) == align_) {
+			ComboBox_SetCurSel(hctl, n);
+		}
+	}
+	
 	if (!primary_attack_filter_.empty()) {
 		const config& filter = primary_attack_filter_[0];
 
@@ -1404,7 +1559,13 @@ BOOL On_DlgAnimFilterEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 /*
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ALIAS), utf8_2_ansi(_("Alias")));
 */
-	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ID);
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ALIGN);
+	for (int i = ALIGN_NONE; i < ALIGN_COUNT; i ++) {
+		ComboBox_AddString(hctl, align_filter_names[i]);
+		ComboBox_SetItemData(hctl, i, i);
+	}
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ID);
 	ComboBox_AddString(hctl, "");
 	ComboBox_AddString(hctl, "$attack_id");
 
@@ -1461,35 +1622,50 @@ void OnAnimFilterEditBt(HWND hdlgP)
 
 void variables_to_lv(HWND hctl, const std::string& id)
 {
+	char text[_MAX_PATH];
 	LVCOLUMN lvc;
 	// variable
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = 150;
-	lvc.pszText = "标识";
+	strcpy(text, utf8_2_ansi(_("ID")));
+	lvc.pszText = text;
 	lvc.cchTextMax = 0;
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(hctl, 0, &lvc);
 
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 100;
+	lvc.iSubItem = 1;
+	strcpy(text, "");
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, 1, &lvc);
+
 	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
 	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
 
-	char text[_MAX_PATH];
 	LVITEM lvi;
 	int count = ListView_GetItemCount(hctl);
 	ListView_DeleteAllItems(hctl);
 	int index = 0;
 	const tanim_type& type = tanim::anim_type(id);
 
-	for (std::vector<std::string>::const_iterator it = type.variables_.begin(); it != type.variables_.end(); ++ it) {
+	for (std::map<std::string, std::string>::const_iterator it = type.variables_.begin(); it != type.variables_.end(); ++ it) {
 		lvi.mask = LVIF_TEXT | LVIF_PARAM;
-		// 标识
+		// id
 		lvi.iItem = index;
 		lvi.iSubItem = 0;
-		strcpy(text, it->c_str());
+		strcpy(text, it->first.c_str());
 		lvi.pszText = text;
 		lvi.lParam = index ++;
 		ListView_InsertItem(hctl, &lvi);
+
+		// remark
+		lvi.mask = LVIF_TEXT;
+		lvi.iSubItem = 1;
+		strcpy(text, it->second.c_str());
+		lvi.pszText = text;
+		ListView_SetItem(hctl, &lvi);
 	}
 }
 
@@ -1511,7 +1687,10 @@ BOOL On_DlgAnimFrameEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HALO), utf8_2_ansi(_("frame^Halo")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HALOX), utf8_2_ansi(_("frame^Halo x")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HALOY), utf8_2_ansi(_("frame^Halo y")));
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_OFFSET), utf8_2_ansi(_("frame^Offset")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_OFFSET_X), utf8_2_ansi(_("frame^Offset x")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_OFFSET_Y), utf8_2_ansi(_("frame^Offset y")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_ANIMFRAME_HFLIP), utf8_2_ansi(_("Enable auto-h-flip (Both image and halo)")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_ANIMFRAME_VFLIP), utf8_2_ansi(_("Enable auto-v-flip (Both image and halo)")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_SOUND), utf8_2_ansi(_("frame^Sound")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_STEXT), utf8_2_ansi(_("frame^Stext")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FONTSIZE), utf8_2_ansi(_("frame^Font size")));
@@ -1520,11 +1699,7 @@ BOOL On_DlgAnimFrameEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	tanim& anim = ns::core.anims_updating_[ns::clicked_anim];
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_LV_ANIMFRAME_VARIABLE);
-	if (!anim.global_) {
-		variables_to_lv(hctl, anim.id_);
-	} else {
-		ShowWindow(hctl, SW_HIDE);
-	}
+	variables_to_lv(hctl, anim.id_);
 
 	hctl = GetDlgItem(hdlgP, IDC_UD_ANIMFRAME_DURATION);
 	UpDown_SetRange(hctl, 1, 10000);	// [1, 10000]
@@ -1691,11 +1866,28 @@ BOOL On_DlgAnimParticularEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lPara
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_STARTTIME), utf8_2_ansi(_("particular^Start time")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_X), utf8_2_ansi(_("particular^X")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_Y), utf8_2_ansi(_("particular^Y")));
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_OFFSET), utf8_2_ansi(_("particular^Offset")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_OFFSET_X), utf8_2_ansi(_("particular^Offset x")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_OFFSET_Y), utf8_2_ansi(_("particular^Offset y")));
+	Button_SetText(GetDlgItem(hdlgP, IDC_CHK_ANIMPARTICULAR_CYCLES), utf8_2_ansi(_("particular^Cycles")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_LAYER), utf8_2_ansi(_("particular^Layer")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ZOOM_X), utf8_2_ansi(_("particular^Zoom_x")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ZOOM_Y), utf8_2_ansi(_("particular^Zoom_y")));
 
 	HWND hctl = GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_STARTTIME);
 	UpDown_SetRange(hctl, -10000, 10000);
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_STARTTIME));
+
+	hctl = GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_LAYER);
+	UpDown_SetRange(hctl, -100, 100);
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_LAYER));
+
+	hctl = GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_ZOOM_X);
+	UpDown_SetRange(hctl, 0, 500);
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_ZOOM_X));
+
+	hctl = GetDlgItem(hdlgP, IDC_UD_ANIMPARTICULAR_ZOOM_Y);
+	UpDown_SetRange(hctl, 0, 500);
+	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_ANIMPARTICULAR_ZOOM_Y));
 
 	tanim& anim = ns::core.anims_updating_[ns::clicked_anim];
 	int n = ns::clicked_param - tanim::PARAM_PARTICULAR;

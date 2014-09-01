@@ -12,6 +12,7 @@
 #include "dlgbuilderproc.hpp"
 #include "animation.hpp"
 #include "multiplayer.hpp"
+#include "help.hpp"
 
 class terrain_builder;
 
@@ -42,6 +43,8 @@ public:
 		, level_(1)
 		, cost_(1)
 		, raw_icon_()
+		, movement_sound_()
+		, idle_sound_()
 		, alignment_(unit_type::LAWFUL)
 		, character_(NO_ESPECIAL)
 		, movement_type_()
@@ -75,6 +78,8 @@ public:
 		if (level_ != that.level_) return false;
 		if (cost_ != that.cost_) return false;
 		if (raw_icon_ != that.raw_icon_) return false;
+		if (movement_sound_ != that.movement_sound_) return false;
+		if (idle_sound_ != that.idle_sound_) return false;
 		if (alignment_ != that.alignment_) return false;
 		if (movement_type_ != that.movement_type_) return false;
 		if (resistance_ != that.resistance_) return false;
@@ -111,6 +116,8 @@ public:
 	int level_;
 	int cost_;
 	std::string raw_icon_;
+	std::string movement_sound_;
+	std::string idle_sound_;
 	int alignment_;
 	std::string movement_type_;
 	std::map<std::string, int> resistance_;
@@ -207,8 +214,6 @@ public:
 	void vertify_healing_anim_images() const;
 	void vertify_resistance_anim_images() const;
 	void vertify_leading_anim_images() const;
-	void vertify_idle_anim_images() const;
-	void vertify_attack_anim_melee_images() const;
 	void vertify_attack_anim_ranged_images() const;
 	
 	bool new_attack();
@@ -225,6 +230,9 @@ public:
 	std::string attack_image(bool absolute, int range, int number) const;
 	std::string cfg_file(bool absolute) const;
 	std::string description() const;
+
+	std::string movement_sound(bool absolute) const;
+	std::string idle_sound(bool absolute) const;
 
 	enum {TYPE_TROOP = 0, TYPE_COMMONER, TYPE_CITY, TYPE_ARTIFICAL};
 	int type() const;
@@ -450,32 +458,88 @@ public:
 	tformation_ formation_from_cfg_;
 };
 
+class tbook_
+{
+public:
+	tbook_() 
+		: id_()
+		, textdomain_()
+		, title_()
+		, toplevel_()
+	{}
+
+	bool valid() const
+	{
+		return !id_.empty() && !textdomain_.empty();
+	}
+
+	bool operator==(const tbook_& that) const
+	{
+		if (id_ != that.id_) return false;
+		if (textdomain_ != that.textdomain_) return false;
+		if (title_ != that.title_) return false;
+		if (toplevel_ != that.toplevel_) return false;
+		return true;
+	}
+	bool operator!=(const tbook_& that) const { return !operator==(that); }
+
+public:
+	std::string id_;
+	std::string textdomain_;
+	std::string title_;
+	help::section toplevel_;
+};
+
+class tbook: public tbook_
+{
+public:
+	tbook()
+		: tbook_()
+		, book_from_cfg_()
+	{}
+
+	void from_config(const config& cfg);
+	void from_ui(HWND hdlgP);
+	void from_ui_topic_edit(HWND hdlgP);
+	void from_ui_rename(HWND hdlgP);
+	void update_to_ui_topic_edit(HWND hdlgP) const;
+	std::string generate();
+	void generate_pot() const;
+
+	bool dirty() const;
+	void switch_to(HWND hdlgP);
+
+public:
+	tbook_ book_from_cfg_;
+};
+
 class tfeature_
 {
 public:
-	tfeature_()
-		: index_(-1)
+	tfeature_(int level = 0)
+		: level_(level)
 		, items_()
-	{}
+	{
+	}
 
 	bool operator==(const tfeature_& that) const
 	{
-		if (index_ != that.index_) return false;
+		if (level_ != that.level_) return false;
 		if (items_ != that.items_) return false;
 		return true;
 	}
 	bool operator!=(const tfeature_& that) const { return !operator==(that); }
 
 public:
-	int index_;
+	int level_;
 	std::set<int> items_;
 };
 
 class tfeature: public tfeature_
 {
 public:
-	tfeature()
-		: tfeature_()
+	tfeature(int level = 0)
+		: tfeature_(level)
 		, feature_from_cfg_()
 	{}
 
@@ -484,7 +548,7 @@ public:
 	void from_ui_feature_edit(HWND hdlgP);
 	void update_to_ui_feature_edit(HWND hdlgP) const;
 	void update_to_ui_row(HWND hdlgP) const;
-	std::string generate(const std::string& prefix) const;
+	std::string generate(const std::string& prefix, int index) const;
 
 	bool dirty() const;
 
@@ -515,7 +579,7 @@ public:
 		if (effect_.leadership != that.effect_.leadership) return false;
 		if (effect_.force != that.effect_.force) return false;
 		if (effect_.intellect != that.effect_.intellect) return false;
-		if (effect_.politics != that.effect_.politics) return false;
+		if (effect_.spirit != that.effect_.spirit) return false;
 		if (effect_.charm != that.effect_.charm) return false;
 		return true;
 	}
@@ -610,7 +674,7 @@ public:
 class tcore
 {
 public:
-	enum {CONFIG = 0, UNIT_TYPE, FEATURE, TACTIC, CHARACTER, DECREE, TECH, FORMATION, NOBLE, TREASURE, 
+	enum {CONFIG = 0, BOOK, UNIT_TYPE, FEATURE, TACTIC, CHARACTER, DECREE, TECH, FORMATION, NOBLE, TREASURE, 
 		TERRAIN, BUILDER, FACTION, ANIM, MULTIPLAYER, SECTIONS};
 
 	static std::map<int, std::string> name_map;
@@ -635,6 +699,7 @@ public:
 	void refresh_faction(HWND hdlgP);
 	void refresh_anim(HWND hdlgP);
 	void refresh_multiplayer(HWND hdlgP);
+	void refresh_book(HWND hdlgP);
 	void refresh_config(HWND hdlgP);
 
 	void init_cache();
@@ -651,7 +716,7 @@ public:
 
 	bool types_dirty() const;
 
-	enum {BIT_CONFIG = 0, BIT_UTYPE, BIT_FEATURE, BIT_CHARACTER, BIT_FORMATION, BIT_NOBLE, BIT_TREASURE, BIT_TERRAIN, BIT_BUILDER, BIT_FACTION, BIT_ANIM, BIT_MULTIPLAYER};
+	enum {BIT_CONFIG = 0, BIT_UTYPE, BIT_FEATURE, BIT_CHARACTER, BIT_FORMATION, BIT_NOBLE, BIT_TREASURE, BIT_TERRAIN, BIT_BUILDER, BIT_FACTION, BIT_ANIM, BIT_MULTIPLAYER, BIT_BOOK};
 	void set_dirty(int bit, bool set);
 	bool bit_dirty(int bit) const;
 
@@ -713,6 +778,13 @@ public:
 	// section: multiplayer
 	void update_to_ui_multiplayer(HWND hdlgP);
 	bool multiplayer_dirty() const;
+
+	// section: book
+	tbook& current_book();
+	void update_to_ui_book(HWND hdlgP);
+	bool book_dirty() const;
+	std::string book_cfg(const std::string& id, bool absolute) const;
+	void generate_books_cfg();
 	
 private:
 	std::string units_internal(bool absolute = false) const;
@@ -762,6 +834,9 @@ public:
 
 	std::vector<tanim> anims_from_cfg_;
 	std::vector<tanim> anims_updating_;
+
+	std::map<std::string, tbook> books;
+	std::string current_book_;
 
 	tmultiplayer multiplayer_;
 
@@ -828,6 +903,7 @@ BOOL CALLBACK DlgBuilderProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam
 BOOL CALLBACK DlgFactionProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgAnimProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgMultiplayerProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgBookProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 class ttechnology_lock
 {

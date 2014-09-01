@@ -45,7 +45,7 @@ public:
 	public:
 		enum {TROOP = 0, HERO, TYPE_COUNT};
 
-		taccess_list(int type);
+		taccess_list(unit_map& units, int type);
 		~taccess_list();
 	
 		void reload(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side);
@@ -53,26 +53,32 @@ public:
 		void erase(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
 		void disable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
 		void enable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
+		void redraw(game_display& gui, menu_button_map* access_map, int side, void* cookie);
 		void free_heap();
 
+		void calculate_require_count(menu_button_map* access_map, int side);
+
 		// for access_troops
+		unit_map& units_;
 		int type_;
 		gui::button** buttons_;
-		size_t  count_;
+		size_t count_;
 		int index_in_map_;
 		size_t start_group_;
 		size_t actable_count_;
+		bool hide_;
 	};
 
-	game_display(unit_map& units, play_controller* controller, CVideo& video,
+	game_display(unit_map& units, hero_map& heros, play_controller* controller, CVideo& video,
 			const gamemap& map, const tod_manager& tod_manager,
 			const std::vector<team>& t, const config& theme_cfg,
 			const config& level);
 
-	static game_display* create_dummy_display(CVideo& video);
+	static game_display* create_dummy_display(hero_map& heros, CVideo& video);
 
 	~game_display();
 	static game_display* get_singleton() { return singleton_ ;}
+	static void set_singleton(game_display* s) { singleton_ = s; }
 
 
 	void add_flag(int side_index, std::vector<std::string>& side_colors);
@@ -90,13 +96,6 @@ public:
 	 * Used for special effects like flashes.
 	 */
 	void adjust_colors(int r, int g, int b);
-
-	/**
-	 * Scrolls to the leader of a certain side.
-	 *
-	 * This will normally be the playing team.
-	 */
-	void scroll_to_leader(unit_map& units, int side, SCROLL_TYPE scroll_type = ONSCREEN,bool force = true);
 
 	/**
 	 * Function to display a location as selected.
@@ -147,7 +146,7 @@ public:
 
 	/** Function to float a label above a tile */
 	void float_label(const map_location& loc, const std::string& text,
-	                 int red, int green, int blue);
+	                 int red, int green, int blue, bool slow = false);
 
 	/**
 	 * Function to return 2 half-hex footsteps images for the given location.
@@ -183,10 +182,13 @@ public:
 	void highlight_disctrict(const artifical& art);
 	void unhighlight_disctrict();
 	/** refresh field troop buttons */
-	enum refresh_reason {REFRESH_RELOAD, REFRESH_DISABLE, REFRESH_ENABLE, REFRESH_INSERT, REFRESH_ERASE, REFRESH_CLEAR};
+	enum refresh_reason {REFRESH_RELOAD, REFRESH_SORT, REFRESH_ENABLE, REFRESH_INSERT, REFRESH_ERASE, REFRESH_DRAW, REFRESH_HIDE, REFRESH_CLEAR};
 
-	void refresh_access_troops(int side, refresh_reason reason = REFRESH_RELOAD, void* cookie = NULL);
-	void refresh_access_heros(int side, refresh_reason reason = REFRESH_RELOAD, void* cookie = NULL);
+	void refresh_access_troops(int side, refresh_reason reason, void* cookie = NULL);
+	void refresh_access_heros(int side, refresh_reason reason, void* cookie = NULL);
+	bool access_is_null(int type) const;
+	void resort_access_troops(unit& u, size_t pos = -1);
+	void verify_access_troops() const;
 
 	void redraw_access_unit(taccess_list* list);
 	void hide_access_unit(taccess_list* list);
@@ -200,6 +202,8 @@ public:
 	void show_unit_tip(const unit& troop, const map_location& loc);
 	void show_tip(const std::string& message, const map_location& loc = map_location::null_location, bool clear = true);
 	void hide_tip();
+
+	bool draw_outer_anim(bool foreground);
 protected:
 	/**
 	 * game_display pre_draw does specific things related e.g. to unit rendering
@@ -291,28 +295,26 @@ public:
 
 	void set_hero_indicator(const hero& h);
 	void clear_hero_indicator();
-	void set_placable_indicator(const unit& u);
+	void set_placable_indicator(unit& u);
 	const std::set<map_location>& joinable_indicator() const { return joinable_indicator_; }
 	const std::set<map_location>& placable_indicator() const { return placable_indicator_; }
 
-	map_location& tactic_indicator() { return tactic_indicator_; }
-	const map_location& tactic_indicator() const { return tactic_indicator_; }
-
+	const std::pair<map_location, int>& tactic_indicator() const { return tactic_indicator_; }
 	const std::pair<map_location, map_location>& formation_indicator() const { return formation_indicator_; }
-
-	map_location& interior_indicator() { return interior_indicator_; }
 	const map_location& interior_indicator() const { return interior_indicator_; }
-
-	std::set<map_location>& alternatable_indicator() { return alternatable_indicator_; }
 	const std::set<map_location>& alternatable_indicator() const { return alternatable_indicator_; }
+	const std::pair<map_location, int>& clear_formationed_indicator() const { return clear_formationed_indicator_; }
+	const std::pair<map_location, int>& intervene_move_indicator() const { return intervene_move_indicator_; }
 
 	const artifical* expedite_city() const { return expedite_city_; }
 
 	/** Set the build direction indicator. */
+	bool set_ea_build_indicator(const map_location& loc, bool set = true);
 	void set_build_indicator(const unit* builder = NULL, const artifical* new_art = NULL);
 	std::set<map_location>& build_indicator() { return build_indicator_dst_; }
 	void clear_build_indicator();
 
+	std::map<int, unit_animation>& screen_anims() { return screen_anims_; }
 	unit_animation& insert_screen_anim_pass_scenario(const unit_animation& anim);
 	int pass_scenario_anim_id() const { return pass_scenario_anim_id_; }
 	unit_animation& screen_anim(int id);
@@ -434,6 +436,7 @@ private:
 	surface get_big_flag(const map_location& loc);
 
 	unit_map& units_;
+	hero_map& heros_;
 
 	play_controller* controller_;
 
@@ -457,24 +460,21 @@ private:
 	std::vector<range_locs_pair> attack_indicator_each_dst_;
 
 	std::set<map_location> selectable_indicator_;
-	map_location tactic_indicator_;
+	std::pair<map_location, int> tactic_indicator_;
+
+	std::set<map_location> marker_indicator_dst_;
 	std::pair<map_location, map_location> formation_indicator_;
+
 	map_location interior_indicator_;
 	std::set<map_location> alternatable_indicator_;
+	std::pair<map_location, int> clear_formationed_indicator_;
+	std::pair<map_location, int> intervene_move_indicator_;
 
 	std::set<map_location> joinable_indicator_;
 	std::set<map_location> placable_indicator_;
 
 	// Locations of the build direction indicator's parts
 	std::set<map_location> build_indicator_dst_;
-
-	/**
-	 * Finds the start and end rows on the energy bar image.
-	 *
-	 * White pixels are substituted for the color of the energy.
-	 */
-	const SDL_Rect& calculate_energy_bar(surface surf);
-	std::map<surface,SDL_Rect> energy_bar_rects_;
 
 	pathfind::marked_route route_;
 
@@ -569,5 +569,12 @@ private:
 	 */
 	static game_display * singleton_;
 };
+
+namespace outer_anim {
+extern std::pair<double, double> zoom;
+extern SDL_Rect rect;
+
+void reset(game_display& disp);
+}
 
 #endif

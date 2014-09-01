@@ -40,10 +40,9 @@ struct team_fields_t
 	int32_t income_;
 	int32_t leader_;
 	int32_t navigation_;
-	int32_t tactic_point_;
 	int32_t objectives_changed_;
-	int32_t recall_cost_;
-	int32_t scroll_to_leader_;
+	int32_t previous_turn_;
+	int32_t capital_;
 	int32_t share_maps_;
 	int32_t share_view_;
 	int32_t village_gold_;
@@ -131,6 +130,13 @@ struct arms_feature {
 	int feature_;
 };
 
+struct bh_evaluate
+{
+	bool valid; // it is indicate struct wheather valid or not, not team's field.
+
+	int capital;
+};
+
 /**
  * This class stores all the data for a single 'side' (in game nomenclature).
  * E.g., there is only one leader unit per team.
@@ -141,17 +147,18 @@ public:
 	team_();
 
 	void increase_defeat_units_one_turn(int inc);
-
+	
 	int leadership_speed_;
 	int force_speed_;
 	int intellect_speed_;
-	int politics_speed_;
+	int spirit_speed_;
 	int charm_speed_;
 	int arms_speed_[HEROS_MAX_ARMS];
 
 	bool ignore_zoc_on_wall_;
 	bool land_enemy_wall_;
-	int recover_tactic_increase_;
+	int tactic_degree_increase;
+	int ticks_increase;
 	int interlink_increase_;
 	int cooperate_increase_;
 
@@ -161,6 +168,8 @@ public:
 	int market_increase_;
 	int technology_increase_;
 
+	int previous_turn;
+
 	// statistic
 	int cause_damage_;
 	int been_damage_;
@@ -168,8 +177,31 @@ public:
 	int perfect_turns_;
 	int defeat_units_one_turn_;
 
+	// strategy parameter according to tent mode
+	bool restrict_movement;
+	bool auto_recruit;
+	bool auto_move_human;
+	bool support_bomb;
+	bool kill_income;
+	int max_troops;
+	bool ea_artifical_neutral;
+	bool double_reset_goto;
+	bool allow_intervene;
+	bool allow_active;
+
+	// stratagem
+	bool stratagem_ally_join;
+	bool stratagem_decrease_cost;
+	bool stratagem_half_kill;
+	bool stratagem_half_heal;
+	bool stratagem_baffle_fightback;
+	bool stratagem_baffle_tactic;
+
+	bh_evaluate bh_eval;
+
 protected:
 	std::set<const unit_type*> can_build_;
+	std::vector<hero*> last_active_tactic_;
 };
 
 class team: public team_
@@ -210,7 +242,6 @@ public:
 		bool gold_add;
 		int income;
 		int income_per_village;
-		int recall_cost;
 		std::string team_name;
 		std::string save_id;
 		// 'id' of the current player (not necessarily unique)
@@ -223,8 +254,6 @@ public:
 
 		std::string description;
 
-		bool scroll_to_leader;
-
 		t_string objectives; /** < Team's objectives for the current level. */
 
 		/** Set to true when the objectives for this time changes.
@@ -232,8 +261,7 @@ public:
 		 * displayed to the user. */
 		bool objectives_changed;
 
-		enum CONTROLLER { HUMAN, HUMAN_AI, AI, NETWORK, NETWORK_AI, EMPTY };
-		CONTROLLER controller;
+		controller_tag::CONTROLLER controller;
 		char const *controller_string() const;
 
 		bool share_maps, share_view;
@@ -251,7 +279,7 @@ public:
 	static std::map<int, color_range> team_color_range_;
 	static const int default_team_gold;
 
-	static int empty_side_;
+	static int empty_side;
 
 	team(unit_map& units, hero_map& heros, card_map& cards, const config& cfg, const gamemap& map, int gold, size_t team_size);
 	team(unit_map& units, hero_map& heros, card_map& cards, const uint8_t* mem, const gamemap& map, int gold, size_t team_size);
@@ -276,14 +304,12 @@ public:
 	bool gold_add() const { return info_.gold_add; }
 	int base_income() const;
 	int village_gold() const { return info_.income_per_village; }
-	int recall_cost() const { return info_.recall_cost; }
 	void set_village_gold(int income) { info_.income_per_village = income; }
-	void set_recall_cost(int cost) { info_.recall_cost = cost; }
 	bool gold_can_build_ea() const;
 	int total_income() const;
 	int side_upkeep() const;
 	int total_technology_income() const;
-	void new_turn();
+	void new_turn(int random);
 	void get_shared_maps();
 	void set_gold(int amount) { gold_ = amount; }
 	void spend_gold(const int amount) { gold_ -= amount; }
@@ -301,10 +327,6 @@ public:
 	void set_navigation(int navigation) { navigation_ = navigation; }
 	int add_navigation(int increment);
 
-	int tactic_point() const { return tactic_point_; }
-	void set_tactic_point(int tactic_point) { tactic_point_ = tactic_point; }
-	int add_tactic_point(int increment);
-
 	int bomb_turns() const { return bomb_turns_; }
 	void set_bomb_turns(int turns) { bomb_turns_ = turns; }
 	void increase_bomb_turns();
@@ -313,8 +335,6 @@ public:
 	void add_modification_internal(int apply_to, const config& effect);
 	void apply_holded_technologies_finish();
 	void readjust_all_unit();
-
-	bool get_scroll_to_leader() const {return info_.scroll_to_leader;}
 
 	void set_builds(const std::set<std::string>& builds);
 
@@ -368,25 +388,23 @@ public:
 		seen_[index] = true;
 	}
 
-	team_info::CONTROLLER controller() const { return info_.controller; }
+	controller_tag::CONTROLLER controller() const { return info_.controller; }
 	char const *controller_string() const { return info_.controller_string(); }
 	const std::string& color() const { return info_.color; }
-	bool is_human() const { return info_.controller == team_info::HUMAN; }
-	bool is_human_ai() const { return info_.controller == team_info::HUMAN_AI; }
-	bool is_network_human() const { return info_.controller == team_info::NETWORK; }
-	bool is_network_ai() const { return info_.controller == team_info::NETWORK_AI; }
-	bool is_ai() const { return info_.controller == team_info::AI || is_human_ai(); }
-	bool is_empty() const { return info_.controller == team_info::EMPTY; }
+	bool is_human() const { return info_.controller == controller_tag::HUMAN; }
+	bool is_network_human() const { return info_.controller == controller_tag::NETWORK; }
+	bool is_ai() const { return info_.controller == controller_tag::AI; }
+	bool is_empty() const { return info_.controller == controller_tag::EMPTY; }
 
 	bool is_local() const { return is_human() || is_ai(); }
-	bool is_network() const { return is_network_human() || is_network_ai(); }
+	bool is_network() const { return is_network_human(); }
 
-	void make_human() { info_.controller = team_info::HUMAN; }
-	void make_network() { info_.controller = team_info::NETWORK; }
-	void make_ai() { info_.controller = team_info::AI; }
+	void make_human() { info_.controller = controller_tag::HUMAN; }
+	void make_network() { info_.controller = controller_tag::NETWORK; }
+	void make_ai() { info_.controller = controller_tag::AI; }
 	// Should make the above make_*() functions obsolete, as it accepts controller
 	// by lexical or numerical id
-	void change_controller(team_info::CONTROLLER controller);
+	void change_controller(controller_tag::CONTROLLER controller);
 	void change_controller(const std::string& controller);
 
 	std::string team_name() const;
@@ -395,12 +413,16 @@ public:
 	const std::string& flag_icon() const { return info_.flag_icon; }
 
 	hero* leader() const { return &heros_[leader_]; }
-	void set_leader(hero* leader);
+	void set_leader(hero& h);
+	const artifical* capital() const { return capital_; }
+	int capital_number() const;
+	bool set_capital(artifical* city);
+
 	int cost_exponent() const;
 	void add_city(artifical* city);
 	void erase_city(const artifical* city);
-	std::vector<artifical*>& holded_cities() { return holden_cities_; }
-	const std::vector<artifical*>& holded_cities() const { return holden_cities_; }
+	std::vector<artifical*>& holden_cities() { return holden_cities_; }
+	const std::vector<artifical*>& holden_cities() const { return holden_cities_; }
 
 	int character() const;
 	int technology_max_experience(const ttechnology& t) const;
@@ -432,14 +454,19 @@ public:
 	const ttechnology* ing_technology() { return ing_technology_; }
 	const ttechnology* ing_technology() const { return ing_technology_; }
 	void reselect_ing_technology();
+	void insert_technology(const ttechnology& t);
+	void do_technology_income(int income);
+	int calculate_technology_income(int income) const;
+
+	int current_stratagem() const;
+	void insert_stratagem(const ttechnology& s, bool erase);
+	void erase_stratagem();
 
 	void select_leader_noble(bool show_message);
 	void fill_normal_noble(bool init, bool show_message);
 	const std::map<int, hero*>& appointed_nobles(bool clear = false);
 	const std::set<int>& unappoint_nobles();
 	void appoint_noble(hero& h, int noble, bool show_message);
-
-	int max_tactic_point() const { return max_tactic_point_; }
 
 	const SDL_Rect& city_rect() const { return city_rect_; }
 
@@ -448,6 +475,7 @@ public:
 	void clear_troop();
 	std::pair<unit**, size_t> field_troop() { return std::make_pair(field_troops_, field_troops_vsize_); }
 	const std::pair<unit**, size_t> field_troop() const { return std::make_pair(field_troops_, field_troops_vsize_); }
+	int holden_troops() const;
 
 	//Returns true if the hex is shrouded/fogged for this side, or
 	//any other ally with shared vision.
@@ -508,7 +536,15 @@ public:
 	std::string form_results_of_battle_tip(const std::string& prefix = null_str) const;
 
 	std::vector<unit*> active_tactics() const;
+	void save_last_active_tactic(const std::vector<unit*>& active);
+	const std::vector<hero*>& last_active_tactic() const { return last_active_tactic_; }
 	void refresh_tactic_slots(game_display& disp) const;
+
+	void calculate_strategy_according_to_mode();
+	void fresh_to_field_troop(int random);
+
+	bool all_city_deputed(const artifical* exclude) const;
+	void set_all_city_deputed(game_display& disp, bool set) const;
 
 private:
 	//Make these public if you need them, but look at knows_about_team(...) first.
@@ -535,15 +571,13 @@ private:
 	std::map<int, hero*> appointed_nobles_;
 	std::set<int> unappoint_nobles_;
 
-	int max_tactic_point_;
-	
 	int leader_;
+	artifical* capital_;
 	std::vector<artifical*> holden_cities_;
 	std::map<int, int> character_;
 
 	int gold_;
 	int navigation_;
-	int tactic_point_;
 	int bomb_turns_;
 
 	shroud_map shroud_, fog_;

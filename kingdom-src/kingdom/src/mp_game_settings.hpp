@@ -54,6 +54,7 @@ struct mp_game_settings : public savegame::savegame_config
 	bool share_maps;
 
 	bool saved_game;
+	bool siege_mode;
 
 	/**
 	 * If the game is to be randomly generated, the map generator

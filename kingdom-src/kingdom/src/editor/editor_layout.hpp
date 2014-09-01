@@ -42,13 +42,10 @@ struct size_specs {
 	size_t palette_y;
 	size_t palette_h;
 	size_t palette_w;
-	size_t brush_x;
-	size_t brush_y;
-	size_t brush_padding;
 };
 
 /** Adjust the internal size specifications to fit the display. */
-void adjust_sizes(const display &disp, size_specs &sizes);
+void adjust_sizes(display &disp, size_specs &sizes);
 
 }
 

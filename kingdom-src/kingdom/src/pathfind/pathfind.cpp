@@ -290,7 +290,7 @@ static void find_routes(const gamemap& map, const unit_map& units,
 			} else if (road && std::find(road->begin(), road->end(), locs[i]) == road->end()) {
 				move_cost = unit_movement_type::UNREACHABLE;
 			} else {
-				if (curr_node && curr_node->second->wall()) {
+				if (curr_node && curr_node->second->wall2()) {
 					const unit* w = curr_node->second;
 					move_cost = pathfind::location_cost(units, current_team, u, current_team.is_enemy(w->side()), false);
 				} else {
@@ -488,7 +488,7 @@ pathfind::marked_route pathfind::mark_route(const plain_route &rt,
 
 		} else {
 			unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units.get_cookie(*(i + 1), false));
-			if (curr_node && curr_node->second->wall()) {
+			if (curr_node && curr_node->second->wall2()) {
 				const unit* w = curr_node->second;
 				move_cost = location_cost(units, unit_team, u, unit_team.is_enemy(w->side()), false);
 
@@ -586,6 +586,7 @@ bool is_expedit_at;
 
 int pathfind::location_cost(const unit_map& units, const team& current_team, const unit& u, bool enemy, bool ignore_wall)
 {
+
 	unit_map::node* last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location, false));
 	if (!last_node) {
 		last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location));
@@ -594,10 +595,9 @@ int pathfind::location_cost(const unit_map& units, const team& current_team, con
 	if (u.packed()) {
 		ut = u.packee_type();
 	}
-	/* if (ignore_wall) {
-		return 1;
-	} else */ if (!ut->land_wall() || (enemy && !current_team.land_enemy_wall_)) {
+	if (!ut->land_wall() || (enemy && !current_team.land_enemy_wall_)) {
 		return 2 * u.total_movement();
+
 	} else if (u.is_commoner() || (last_node && last_node->second->walk_wall())) {
 		// keep/wall ---> wall, cost: 1
 		return 1;
@@ -651,7 +651,7 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 	unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
 	// remark varible, so that caller can use it.
 	if (curr_node) {
-		if (curr_node->second->wall()) {
+		if (curr_node->second->wall2()) {
 			pathfind::is_wall = true;
 		} else if (curr_node->second->fort() && current_team.is_enemy(curr_node->second->side())) {
 			is_enemy_fort = true;

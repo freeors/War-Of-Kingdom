@@ -41,6 +41,7 @@ public:
 
 	int get_ticks();
 
+	bool in_browse() const { return browse_; }
 	/**
 	 * Get a reference to a mouse handler member a derived class uses
 	 */
@@ -113,6 +114,7 @@ protected:
 
 	virtual bool in_context_menu(hotkey::HOTKEY_COMMAND command) const;
 
+	bool handle_scroll_wheel(int dx, int dy, int hit_threshold, int motion_threshold);
 	const config &get_theme(const config& game_config, std::string theme_name);
 
 	const config& game_config_;
@@ -120,6 +122,7 @@ protected:
 	CKey key_;
 	bool browse_;
 	bool scrolling_;
+
 	// finger motion result to scroll
 	bool finger_motion_scroll_;
 	int finger_motion_direction_;

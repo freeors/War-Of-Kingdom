@@ -29,7 +29,7 @@ namespace reports {
 		    UNIT_SECOND,
 		    UNIT_IMAGE, TIME_OF_DAY,
 		    TURN, GOLD, VILLAGES, UPKEEP,
-		    INCOME, TECH_INCOME, TACTIC, TERRAIN, POSITION, STRATUM, MERITORIOUS, SIDE_PLAYING, OBSERVERS,
+		    INCOME, TECH_INCOME, TACTIC, POSITION, STRATUM, MERITORIOUS, SIDE_PLAYING, OBSERVERS,
 			REPORT_COUNTDOWN, REPORT_CLOCK, EDITOR_SELECTED_TERRAIN, 
 			EDITOR_LEFT_BUTTON_FUNCTION, EDITOR_TOOL_HINT, NUM_REPORTS
 	};
@@ -44,7 +44,6 @@ namespace reports {
 				image(),
 				text(text),
 				tooltip(),
-				action(),
 				rect(empty_rect)
 				{}
 
@@ -57,41 +56,40 @@ namespace reports {
 		SDL_Rect rect;
 
 		std::string tooltip;
-		std::string action;
 		element(const std::string& text, const std::string& image,
-				const std::string& tooltip, const std::string& action="") :
-			image(image), text(text), tooltip(tooltip), action(action), rect(empty_rect) {}
+				const std::string& tooltip) :
+			image(image), text(text), tooltip(tooltip), rect(empty_rect) {}
 
 		element(const std::string& text, const image::locator& image,
-				const std::string& tooltip,	const std::string& action="") :
-			image(image), text(text), tooltip(tooltip), action(action), rect(empty_rect) {}
+				const std::string& tooltip) :
+			image(image), text(text), tooltip(tooltip), rect(empty_rect) {}
 		element(const std::string& text, const char* image,
-				const std::string& tooltip, const std::string& action="") :
-			image(image), text(text), tooltip(tooltip), action(action), rect(empty_rect) {}
+				const std::string& tooltip) :
+			image(image), text(text), tooltip(tooltip), rect(empty_rect) {}
 
 		bool operator==(const element& o) const {
-			return o.text == text && o.image == image && o.tooltip == tooltip && o.action == action;
+			return o.text == text && o.image == image && o.tooltip == tooltip;
 		}
 		bool operator!=(const element& o) const { return !(o == *this); }
 	};
 	struct report : public std::vector<element> {
 		report() {}
 		explicit report(const std::string& text) { this->push_back(element(text)); }
-		report(const std::string& text, const std::string& image, const std::string& tooltip, const std::string& action="") {
-			this->push_back(element(text, image, tooltip, action));
+		report(const std::string& text, const std::string& image, const std::string& tooltip) {
+			this->push_back(element(text, image, tooltip));
 		}
-		report(const std::string& text, const char* image, const std::string& tooltip, const std::string& action="") {
-			this->push_back(element(text, image, tooltip, action));
+		report(const std::string& text, const char* image, const std::string& tooltip) {
+			this->push_back(element(text, image, tooltip));
 		}
-		report(const std::string& text, const image::locator& image, const std::string& tooltip, const std::string& action="") {
-			this->push_back(element(text, image, tooltip, action));
+		report(const std::string& text, const image::locator& image, const std::string& tooltip) {
+			this->push_back(element(text, image, tooltip));
 		}
 
 		// Convenience functions
 		void add_text(const std::string& text,
-				const std::string& tooltip, const std::string& action="");
+				const std::string& tooltip);
 		void add_image(const std::string& image,
-				const std::string& tooltip, const std::string& action="");
+				const std::string& tooltip);
 	};
 
 	report generate_report(TYPE type,

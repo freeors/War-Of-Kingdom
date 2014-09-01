@@ -26,6 +26,7 @@ class color_range;
 #include <vector>
 #include <map>
 #include <set>
+#include "map_location.hpp"
 
 //basic game configuration information is here.
 namespace game_config
@@ -42,6 +43,9 @@ namespace game_config
 	extern const std::string version;
 	extern const std::string revision;
 	extern std::string checksum;
+	extern bool server_matched;
+	extern const std::string service_email;
+	extern const std::string sales_email;
 	extern int reside_troop_increase_loyalty;
 	extern int field_troop_increase_loyalty;
 	extern int wander_loyalty_threshold;
@@ -55,22 +59,44 @@ namespace game_config
 	extern int max_commoners;
 	extern int fixed_tactic_slots;
 	extern int active_tactic_slots;
+	extern float tower_cost_ratio;
 
 	extern int minimal_activity;
 	extern int maximal_defeated_activity;
 	extern int tower_fix_heros;
+	extern int rpg_fix_members;
 	extern bool score_dirty;
+	extern bool local_only;
 
 	extern int default_human_level;
 	extern int default_ai_level;
 	extern int current_level;
 	extern int min_level;
 	extern int max_level;
+	extern int siege_map_w;
+	extern int siege_map_h;
 
 	extern int max_noble_level;
-	extern int max_tactic_point;
-	extern int increase_tactic_point;
+	extern int tactic_degree_per_turn;
+	extern int tactic_degree_per_point;
+	extern int threshold_score_ai;
+	extern int hot_level_per_point;
 	extern int formation_least_adjacent;
+	extern int least_fix_members;
+	extern int least_roam_members;
+	extern int max_exile;
+	extern int levels_per_rank;
+	extern int max_member_level;
+	extern int min_employee_level;
+	extern int min_exile_level;
+	extern int employee_base_score;
+	extern int max_employees;
+	extern int coin_score_rate;
+	extern int score_used_draw;
+	extern int ticks_per_turn;
+	extern int feature_increase_spirit;
+	extern bool show_side_report;
+
 
 	extern int max_bomb_turns;
 	extern bool no_messagebox;
@@ -78,6 +104,7 @@ namespace game_config
 
 	int kill_xp(int level);
 	int attack_xp(int level);
+	void recycle_score_income(int& coin, int& score);
 
 	extern std::string wesnoth_program_dir;
 
@@ -92,8 +119,45 @@ namespace game_config
 	extern int start_cards;
 	extern int cards_per_turn;
 	extern int max_cards;
+	extern const std::string campaign_id_siege;
+	extern map_location inforce_defender_loc;
+	extern map_location inforce_attacker_loc;
+	extern int max_siege_troops;
+	extern int max_reinforcements;
+	extern int max_sieges;
+	extern int default_siege_turn;
+	extern int max_breaks;
+	extern int salary_score;
+	extern int develop_score;
+	extern size_t max_slots;
+	extern std::string broadcast_username;
+	extern std::string data_server_magic_word;
+	extern size_t timestamp;
+	extern unsigned char secret_key[6];
+	extern int min_valid_damage;
+	extern int build_hp_per_turn;
+	extern int start_percent_hp;
+	extern int cost_per_level;
+	extern int cost_clear_formationed;
+	extern int cost_intervene_move;
+	
 
-	enum {INAPP_VIP};
+	extern std::string theme_object_id_endturn;
+	extern std::string theme_object_id_terrain_group;
+	extern std::string theme_object_id_brush;
+
+
+	enum {
+		transaction_inapp_start,
+		transaction_type_vip = transaction_inapp_start, 
+		transaction_type_2coin,
+		transaction_type_8coin,
+		transaction_type_45coin,
+		transaction_type_100coin,
+		transaction_inapp_end = transaction_type_100coin,
+		transaction_type_modify,
+		transaction_type_count
+	};
 	extern std::map<int, std::string> inapp_items;
 	extern std::string sn;
 
@@ -161,7 +225,7 @@ namespace game_config
 			ellipsis,
 			missing;
 	} //images
-
+	extern std::string tactic_png;
 
 	extern std::string shroud_prefix, fog_prefix;
 
@@ -172,7 +236,7 @@ namespace game_config
 	extern std::string flag_rgb;
 	extern std::vector<Uint32> red_green_scale;
 	extern std::vector<Uint32> red_green_scale_text;
-
+	
 	extern std::vector<std::string> foot_speed_prefix;
 	extern std::string foot_teleport_enter, foot_teleport_exit;
 
@@ -226,5 +290,7 @@ namespace game_config
 	extern unsigned char* savegame_cache;
 	extern int savegame_cache_size;
 }
+
+#define sum_score(coin, score)	((coin) * game_config::coin_score_rate + (score))
 
 #endif

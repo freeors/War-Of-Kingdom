@@ -1,0 +1,73 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Background material about game's role"
+msgstr ""
+
+msgid "Factions"
+msgstr ""
+
+msgid "Events"
+msgstr ""
+
+msgid "biography-kuiwei"
+msgstr ""
+
+msgid "biography-zhurong"
+msgstr ""
+
+msgid "biography-zhuliang"
+msgstr ""
+
+msgid "biography-taizhichangqin"
+msgstr ""
+
+msgid "biography-jiufeng"
+msgstr ""
+
+msgid "biography-wuhui"
+msgstr ""
+
+msgid "biography-gengfu"
+msgstr ""
+
+msgid "biography-caocao"
+msgstr ""
+
+msgid "biography-gonggong"
+msgstr ""
+
+msgid "biography-haoying"
+msgstr ""
+
+msgid "name-water_fire"
+msgstr ""
+
+msgid "event-water_fire"
+msgstr ""
+
+msgid "name-snake"
+msgstr ""
+
+msgid "event-snake"
+msgstr ""
+
+msgid "name-bird_of_Juno"
+msgstr ""
+
+msgid "event-bird_of_Juno"
+msgstr ""
+
+msgid "name-buddha_land"
+msgstr ""
+
+msgid "event-buddha_land"
+msgstr ""

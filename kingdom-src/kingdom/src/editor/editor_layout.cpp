@@ -33,28 +33,26 @@ namespace editor {
 
 size_specs::size_specs()
 	: terrain_size(default_terrain_size)
-	, terrain_padding(2)
+	, terrain_padding(9)
 	, terrain_space(terrain_size + terrain_padding)
 	, terrain_width(default_palette_width)
 	, palette_x(0)
 	, palette_y(0)
 	, palette_h(20)
 	, palette_w(10)
-	, brush_x(0)
-	, brush_y(0)
-	, brush_padding(1)
 {
 }
 
-void adjust_sizes(const display &disp, size_specs &sizes) {
-	/** @todo Hardcoded coordinates for brush selection, make it themeable. */
-	sizes.brush_x = disp.map_outside_area().w + 10;
-	sizes.brush_y = 212;
+void adjust_sizes(display &disp, size_specs &sizes) {
 	/** @todo Hardcoded coordinates for terrain palette, make it themeable. */
-	sizes.palette_x = disp.map_outside_area().w + 16;
-	sizes.palette_y = sizes.brush_y + 72;
-	sizes.palette_w = sizes.terrain_space * default_palette_width;
-	sizes.palette_h = disp.h() - sizes.palette_y;
+	const SDL_Rect& rect = disp.get_theme().terrain_panel_location(disp.screen_area());
+
+	int left_space = (rect.w - sizes.terrain_space * sizes.terrain_width + sizes.terrain_padding) / 2;
+
+	sizes.palette_x = rect.x + left_space;
+	sizes.palette_y = rect.y;
+	sizes.palette_w = rect.w - left_space;
+	sizes.palette_h = rect.h;
 }
 
 } // end namespace editor

@@ -32,8 +32,6 @@ surface display_format_alpha(surface surf);
 surface get_video_surface();
 SDL_Rect screen_area();
 
-bool non_interactive();
-
 //which areas of the screen will be updated when the buffer is flipped?
 void update_rect(size_t x, size_t y, size_t w, size_t h);
 void update_rect(const SDL_Rect& rect);
@@ -54,12 +52,15 @@ class CVideo : private boost::noncopyable {
 	//functions to get the dimensions of the current video-mode
 	int getx() const;
 	int gety() const;
+	SDL_Rect bound() const;
 
 	//blits a surface with black as alpha
 	void blit_surface(int x, int y, surface surf, SDL_Rect* srcrect=NULL, SDL_Rect* clip_rect=NULL);
 	void flip();
 
 	surface& getSurface();
+	SDL_Window* getWindow();
+	Uint32 getformat() const;
 
 	bool isFullScreen() const;
 
