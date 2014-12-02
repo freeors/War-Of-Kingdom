@@ -18,12 +18,12 @@
 #include "editor_map.hpp"
 #include "formula_string_utils.hpp"
 
-#include "../display.hpp"
-#include "../filesystem.hpp"
-#include "../gettext.hpp"
-#include "../map_exception.hpp"
-#include "../map_label.hpp"
-#include "../wml_exception.hpp"
+#include "display.hpp"
+#include "filesystem.hpp"
+#include "gettext.hpp"
+#include "map_exception.hpp"
+#include "map_label.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/foreach.hpp>
 

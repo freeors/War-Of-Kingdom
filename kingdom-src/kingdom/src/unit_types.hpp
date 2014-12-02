@@ -18,6 +18,8 @@
 #include "unit_animation.hpp"
 #include "race.hpp"
 #include "hero.hpp"
+#include "filter_tag.hpp"
+#include "area_anim.hpp"
 
 class gamemap;
 class unit;
@@ -25,6 +27,13 @@ class artifical;
 class unit_ability_list;
 class unit_map;
 class unit_type_data;
+
+namespace area_anim {
+enum tapp_type {CARD = MAX_ROSE_ANIM + 1, PASS_SCENARIO, 
+	BLADE, MIN_UNIT_ANIM = BLADE, PIERCE, IMPACT, ARCHERY, 
+	COLLAPSE, ARCANE, FIRE, COLD, STRIKE, MAGIC, HEAL, DESTRUCT, 
+	FORMATION_DEFEND, INCOME, MAX_UNIT_ANIM = INCOME};
+}
 
 class department
 {
@@ -117,17 +126,6 @@ namespace apply_to_tag {
 	int find(const std::string& tag);
 }
 
-namespace sound_filter_tag {
-	enum {NONE, MALE, FEMALE, NEUTRAL};
-
-	extern std::map<const std::string, int> tags;
-	int find(const std::string& tag);
-	const std::string& rfind(int tag);
-	std::string filter(const std::string& src, const std::string& f);
-
-	int from_hero_gender(int gender);
-}
-
 namespace family_tag {
 	enum {NONE, TROOP = 1, ARTIFICAL = 2, CITY = 4};
 
@@ -153,19 +151,6 @@ namespace ustate_tag {
 	state_t find(const std::string& tag);
 	const std::string& rfind(state_t tag);
 	bool valid(const std::string& str);
-}
-
-namespace global_anim_tag {
-	enum ttype {NONE, CARD, REINFORCE, INDIVIDUALITY, TACTIC, 
-		BLADE, PIERCE, IMPACT, ARCHERY, COLLAPSE, ARCANE, FIRE, 
-		COLD, STRIKE, MAGIC, HEAL, DESTRUCT, 
-		FORMATION_ATTACK, FORMATION_DEFEND, PASS_SCENARIO, PERFECT, INCOME,
-		STRATAGEM_UP, STRATAGEM_DOWN, LOCATION, HSCROLL_TEXT,
-		TITLE_SCREEN, LOAD_SCENARIO, FLAGS, TEXT, PLACE};
-
-	extern std::map<const std::string, ttype> tags;
-	ttype find(const std::string& tag);
-	const std::string& rfind(ttype tag);
 }
 
 class ttactic 
@@ -781,12 +766,14 @@ public:
 	static void healing_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void idle_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& idle_sound, config& cfg, bool multigrid);
 	static void healed_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
-	static void movement_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& movement_sound, config& cfg);
+	static void movement_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& movement_sound, const std::string& src, config& cfg);
 	static void build_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void repair_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void die_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& die_sound, config& cfg, bool multigrid);
 	static void attack_anim_melee(const std::string& tag, const std::string& aid, const std::string& aicon, bool troop, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_multi_melee(const std::string& tag, const std::string& aid, const std::string& aicon, bool troop, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_cyclone(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	static void attack_anim_penetrate(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_ranged(const std::string& tag, const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_multi_ranged(const std::string& tag, const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_ranged_magic_missile(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
@@ -794,7 +781,8 @@ public:
 	static void attack_anim_ranged_fireball(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_ranged_iceball(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
 	static void attack_anim_ranged_lightning(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
-
+	static void attack_anim_ranged_archery(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg);
+	
 	/**
 	 * Creates a unit type for the given config, but delays its build
 	 * till later.
@@ -1116,10 +1104,6 @@ public:
 	const std::string& especial_id(int character) const;
 	int especial_from_id(const std::string& id) const;
 	const std::multimap<std::string, const config>& utype_anims() const { return utype_anims_; }
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
-	const std::map<int, unit_animation>& global_anims() const { return global_anims_; }
-	const unit_animation* global_anim(int type) const;
-#endif
 	const std::vector<const unit_type*>& can_recruit() const { return can_recruit_; }
 	const navigation_types& navigation_threshold() const { return navigation_types_; }
 	const std::string& id_from_navigation(int navigation) const;
@@ -1193,9 +1177,6 @@ private:
 	std::map<std::string, int> formations_id_;
 
 	std::multimap<std::string, const config> utype_anims_;
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
-	std::map<int, unit_animation> global_anims_;
-#endif
 	std::vector<std::string> arms_ids_;
 	std::vector<std::string> atype_ids_;
 	std::vector<std::string> range_ids_;

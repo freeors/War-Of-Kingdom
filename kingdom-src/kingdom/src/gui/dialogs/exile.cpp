@@ -39,7 +39,6 @@
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/grid.hpp"
 #include "gui/widgets/toggle_panel.hpp"
-#include "help.hpp"
 #include "multiplayer.hpp"
 #include "game_preferences.hpp"
 
@@ -141,7 +140,7 @@ void texile::fill_exile_table(twindow& window, int cursel)
 		strstr.str("");
 		if (h.utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h.utype_);
-			strstr << help::tintegrate::generate_img(ut->icon()) << "\n";
+			strstr << tintegrate::generate_img(ut->icon()) << "\n";
 		}
 		strstr << h.name();
 		list_item["label"] = strstr.str();
@@ -190,7 +189,7 @@ void texile::fill_exile_table(twindow& window, int cursel)
 		if (h.tactic_ != HEROS_NO_TACTIC) {
 			strstr << unit_types.tactic(h.tactic_).name();
 		} else if (m.base->tactic_ != HEROS_NO_TACTIC) {
-			strstr << help::tintegrate::generate_format(unit_types.tactic(m.base->tactic_).name(), "red");
+			strstr << tintegrate::generate_format(unit_types.tactic(m.base->tactic_).name(), "red");
 		}
 		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("tactic", list_item));
@@ -227,8 +226,8 @@ void texile::refresh_title_flag(twindow& window) const
 
 	label = find_widget<tlabel>(&window, "flag", false, true);
 	strstr.str("");
-	strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << group_.coin();
-	strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << group_.score();
+	strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << group_.coin();
+	strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << group_.score();
 	// end
 	strstr << ")";
 	label->set_label(strstr.str());
@@ -240,9 +239,9 @@ void texile::pre_show(CVideo& /*video*/, twindow& window)
 
 	utils::string_map symbols;
 	tlabel* label = find_widget<tlabel>(&window, "remark", false, true);
-	symbols["count"] = help::tintegrate::generate_format(game_config::max_exile, "yellow");
+	symbols["count"] = tintegrate::generate_format(game_config::max_exile, "yellow");
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "green") << " ";
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "green") << " ";
 	strstr << vgettext("wesnoth-lib", "There are at most $count exiled hero. Half heros will be on stage in Siege mode.", symbols);
 	label->set_label(strstr.str());
 
@@ -253,7 +252,7 @@ void texile::pre_show(CVideo& /*video*/, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Join"), "blue");
+	strstr << tintegrate::generate_format(_("Join"), "blue");
 	find_widget<tbutton>(&window, "join", false).set_label(strstr.str());
 	
 	connect_signal_mouse_left_click(
@@ -263,7 +262,7 @@ void texile::pre_show(CVideo& /*video*/, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Discard"), "blue");
+	strstr << tintegrate::generate_format(_("Discard"), "blue");
 	find_widget<tbutton>(&window, "discard", false).set_label(strstr.str());
 
 	connect_signal_mouse_left_click(
@@ -304,18 +303,18 @@ void texile::join(twindow& window)
 	utils::string_map symbols;
 
 	if (sum_score(group_.coin(), group_.score()) < game_config::score_used_draw) {
-		symbols["score"] = help::tintegrate::generate_format(game_config::score_used_draw, "red");
-		symbols["do"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Join"), "yellow");
+		symbols["score"] = tintegrate::generate_format(game_config::score_used_draw, "red");
+		symbols["do"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "Join"), "yellow");
 		std::string message = vgettext("wesnoth-lib", "Repertory is less than $score score, cannot $do.", symbols);
 		gui2::show_message(disp_.video(), "", message);
 		return;
 	}
-	symbols["score"] = help::tintegrate::generate_format(-1 * score_income, "red");
-	symbols["do"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Join"), "yellow");
+	symbols["score"] = tintegrate::generate_format(-1 * score_income, "red");
+	symbols["do"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "Join"), "yellow");
 	strstr.str("");
 	strstr << vgettext("wesnoth-lib", "Do you want to spend $score score to $do?", symbols) << "\n\n";
-	symbols["name"] = help::tintegrate::generate_format(h.name(), "green");
-	symbols["location"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "member^Fix"), "yellow");
+	symbols["name"] = tintegrate::generate_format(h.name(), "green");
+	symbols["location"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "member^Fix"), "yellow");
 	strstr << vgettext("wesnoth-lib", "$name will put into $location.", symbols);
 	int res = gui2::show_message(disp_.video(), "", strstr.str(), gui2::tmessage::yes_no_buttons);
 	if (res == gui2::twindow::CANCEL) {
@@ -345,9 +344,9 @@ void texile::discard(twindow& window)
 
 	utils::string_map symbols;
 	std::string message;
-	symbols["name"] = help::tintegrate::generate_format(h.name(), "red");
-	symbols["coin"] = help::tintegrate::generate_format(coin_income, "green");
-	symbols["score"] = help::tintegrate::generate_format(score_income, "green");
+	symbols["name"] = tintegrate::generate_format(h.name(), "red");
+	symbols["coin"] = tintegrate::generate_format(coin_income, "green");
+	symbols["score"] = tintegrate::generate_format(score_income, "green");
 	message = vgettext("wesnoth-lib", "May get $coin coin and $score score, do you want to discard $name?", symbols);
 	int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
 	if (res == gui2::twindow::CANCEL) {

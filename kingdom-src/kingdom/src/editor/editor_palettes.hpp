@@ -21,7 +21,7 @@
 #ifndef EDITOR_PALETTES_H_INCLUDED
 #define EDITOR_PALETTES_H_INCLUDED
 
-#include "../display.hpp"
+#include "display.hpp"
 #include "brush.hpp"
 #include "editor_layout.hpp"
 

@@ -3,10 +3,14 @@
 
 #include "config_cache.hpp"
 #include "config.hpp"
+#ifndef _ROSE_EDITOR
 #include "unit_types.hpp"
+#endif
 #include <windows.h>
 #include <set>
 
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 typedef enum {
 	ma_new				= 1,
@@ -22,9 +26,11 @@ namespace editor_config
 	extern int type;
 
 	extern std::vector<std::pair<std::string, std::string> > arms;
+#ifndef _ROSE_EDITOR
 	extern std::vector<std::pair<std::string, const unit_type*> > artifical_utype;
 	extern std::vector<std::pair<std::string, const unit_type*> > city_utypes;
 	extern std::vector<std::pair<std::string, const unit_type*> > troop_utypes;
+#endif
 	extern std::vector<std::string> navigation;
 	extern std::vector<std::pair<std::string, const config*> > city_traits;
 	extern std::vector<std::pair<std::string, const config*> > troop_traits;
@@ -103,37 +109,81 @@ private:
 	std::vector<std::pair<BIN_TYPE, wml2bin_desc> > wml2bin_descs_;
 };
 
-class tmod_config
+const config& generate_cfg(const config& data_cfg, const std::string& type);
+
+class tcallback_lock
 {
 public:
-	enum res_type {res_none, res_file, res_dir};
+	tcallback_lock(bool result, boost::function<void (bool)> callback)
+		: result_(result)
+		, callback_(callback)
+	{}
+
+	~tcallback_lock()
+	{
+		if (callback_) {
+			callback_(result_);
+		}
+	}
+	void set_result(bool val) { result_ = val; }
+
+private:
+	bool result_;
+	boost::function<void (bool)> callback_;
+};
+
+class tcopier
+{
+public:
+	static const std::string current_path_marker;
+	enum res_type {res_none, res_file, res_dir, res_files};
 	struct tres {
-		tres(res_type type, const std::string& name)
-			: type(type)
-			, name(name)
-		{}
+		tres(res_type type, const std::string& name, const std::string& allow_str);
 
 		res_type type;
 		std::string name;
+		std::set<std::string> allow;
 	};
+	tcopier()
+		: name_()
+		, paths_()
+		, copy_res_()
+		, remove_res_()
+	{}
+	tcopier(const config& cfg);
+
+	const std::string& name() const { return name_; }
+	bool valid() const;
+	bool make_path(const std::string& tag) const;
+	bool do_copy(const std::string& src_tag, const std::string& dst_tag) const;
+	bool do_remove(const std::string& tag) const;
+	const std::string& get_path(const std::string& tag) const;
+
+	void set_delete_paths(const std::string& paths);
+	void do_delete_path(bool result);
+
+private:
+	std::string name_;
+	std::map<std::string, std::string> paths_;
+	std::vector<tres> copy_res_;
+	std::vector<tres> remove_res_;
+	std::vector<std::string> delete_paths_;
+};
+
+class tmod_config: public tcopier
+{
+public:
+	static const std::string res_tag;
+	static const std::string patch_tag;
 	tmod_config()
-		: name()
-		, res_path()
+		: tcopier()
 		, res_short_path()
-		, patch_path()
-		, copy_res()
-		, remove_res()
 	{}
 	tmod_config(const config& cfg);
-	bool valid() const;
-	bool opeate_file(bool patch_2_res) const;
+	bool opeate_file(bool patch_2_res);
 
-	std::string name;
-	std::string res_path;
+public:
 	std::string res_short_path;
-	std::string patch_path;
-	std::vector<tres> copy_res;
-	std::vector<tres> remove_res;
 };
 extern tmod_config mod_config;
 

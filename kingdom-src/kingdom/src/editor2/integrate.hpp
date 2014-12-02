@@ -6,7 +6,6 @@
 #include <windowsx.h>
 #include "config.hpp"
 #include "editor.hpp"
-#include "unit_types.hpp"
 #include "help.hpp"
 
 class tformater
@@ -22,10 +21,10 @@ public:
 	std::string example;
 };
 
-class tintegrate
+class tintegrate2
 {
 public:
-	tintegrate();
+	tintegrate2();
 	
 	HWND init_toolbar(HINSTANCE hinst, HWND hdlgP);
 	void refresh(HWND hdlgP);

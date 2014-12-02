@@ -32,7 +32,7 @@
 #include "marked-up_text.hpp"
 #include "gettext.hpp"
 #include "formula_string_utils.hpp"
-#include "help.hpp"
+#include "integrate.hpp"
 #include "actions.hpp"
 
 namespace gui2 {
@@ -131,7 +131,7 @@ void refresh_notice(twindow& window, const unit_type* ut)
 	tlabel& label = find_widget<tlabel>(&window, "notice", false);
 	int master = ut? ut->master(): HEROS_INVALID_NUMBER;
 	if (master != HEROS_INVALID_NUMBER) {
-		strstr << help::tintegrate::generate_img("misc/notice.png") << " ";
+		strstr << tintegrate::generate_img("misc/notice.png") << " ";
 	}
 	if (tent::mode != mode_tag::LAYOUT) {
 		if (master == hero::number_technology) {
@@ -223,7 +223,7 @@ void tbuild_ea::pre_show(CVideo& /*video*/, twindow& window)
 		if (gold >= cost) {
 			strstr << cost;
 		} else {
-			strstr << help::tintegrate::generate_format(cost, "red");
+			strstr << tintegrate::generate_format(cost, "red");
 		}
 		strstr << " " << sngettext("unit^Gold", "Gold", cost);
 		list_item["label"] = strstr.str();
@@ -245,7 +245,7 @@ void tbuild_ea::pre_show(CVideo& /*video*/, twindow& window)
 			} else if (master == hero::number_technology) {
 				item = _("Science");
 			}
-			symbols["item"] = help::tintegrate::generate_format(item, "yellow");
+			symbols["item"] = tintegrate::generate_format(item, "yellow");
 			strstr << vgettext("wesnoth-lib", "Increase $item every day.", symbols);
 		}
 		list_item["label"] = strstr.str();

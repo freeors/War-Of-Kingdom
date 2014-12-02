@@ -117,61 +117,61 @@ std::string generate_image_desc(const std::map<int, int>& effect)
 		std::stringstream img;
 
 		if (apply_to == apply_to_tag::ATTACK) {
-			strstr << help::tintegrate::generate_img("misc/attack.png");
+			strstr << tintegrate::generate_img("misc/attack.png");
 			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
-			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
-			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img(img.str(), tintegrate::BACK);
+			strstr << tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", tintegrate::BACK);
 
 		} else if (apply_to == apply_to_tag::RESISTANCE) {
-			strstr << help::tintegrate::generate_img("misc/resistance.png");
+			strstr << tintegrate::generate_img("misc/resistance.png");
 			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
-			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
-			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img(img.str(), tintegrate::BACK);
+			strstr << tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", tintegrate::BACK);
 
 		} else if (apply_to == apply_to_tag::MOVEMENT) {
-			strstr << help::tintegrate::generate_img("misc/movement.png");
-			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img("misc/movement.png");
+			strstr << tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", tintegrate::BACK);
 
 		} else if (apply_to == apply_to_tag::ENCOURAGE) {
-			strstr << help::tintegrate::generate_img("misc/encourage.png");
+			strstr << tintegrate::generate_img("misc/encourage.png");
 			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
-			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
-			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img(img.str(), tintegrate::BACK);
+			strstr << tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", tintegrate::BACK);
 
 		} else if (apply_to == apply_to_tag::DEMOLISH) {
-			strstr << help::tintegrate::generate_img("misc/demolish.png");
+			strstr << tintegrate::generate_img("misc/demolish.png");
 			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
-			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
-			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img(img.str(), tintegrate::BACK);
+			strstr << tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", tintegrate::BACK);
 
 		} else if (apply_to == apply_to_tag::DAMAGE) {
 			img << "misc/resistance-" << unit_types.atype_ids()[level] << ".png";
-			strstr << help::tintegrate::generate_img(img.str());
-			strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img(img.str());
+			strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 
 		} else if (apply_to == apply_to_tag::ALERT) {
-			strstr << help::tintegrate::generate_img("misc/alert.png");
+			strstr << tintegrate::generate_img("misc/alert.png");
 
 		} else if (apply_to == apply_to_tag::HIDE) {
-			strstr << help::tintegrate::generate_img("misc/hide.png");
+			strstr << tintegrate::generate_img("misc/hide.png");
 
 		} else if (apply_to == apply_to_tag::PROVOKE) {
-			strstr << help::tintegrate::generate_img("misc/provoked.png");
+			strstr << tintegrate::generate_img("misc/provoked.png");
 
 		} else if (apply_to == apply_to_tag::CLEAR) {
-			strstr << help::tintegrate::generate_img("misc/clear.png");
+			strstr << tintegrate::generate_img("misc/clear.png");
 
 		} else if (apply_to == apply_to_tag::HEAL) {
-			strstr << help::tintegrate::generate_img("misc/heal.png");
+			strstr << tintegrate::generate_img("misc/heal.png");
 
 		} else if (apply_to == apply_to_tag::ACTION) {
-			strstr << help::tintegrate::generate_img("misc/action.png");
+			strstr << tintegrate::generate_img("misc/action.png");
 			img << "misc/digit.png~CROP(" << ((level > 0? level: -1 * level) * 8) << ", 0, 8, 12)";
-			strstr << help::tintegrate::generate_img(img.str(), help::tintegrate::BACK);
-			strstr << help::tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img(img.str(), tintegrate::BACK);
+			strstr << tintegrate::generate_img(level > 0? "misc/mini-increase.png": "misc/mini-decrease.png", tintegrate::BACK);
 
 		} else if (apply_to == apply_to_tag::REVIVAL) {
-			strstr << help::tintegrate::generate_img("misc/revival.png");
+			strstr << tintegrate::generate_img("misc/revival.png");
 
 		}
 	}
@@ -246,11 +246,11 @@ void ttactic2::pre_show(CVideo& /*video*/, twindow& window)
 		if (operate_ != CAST) {
 			strstr << "--/";
 		}
-		strstr << help::tintegrate::generate_format(t.point(), color, 16, true);
+		strstr << tintegrate::generate_format(t.point(), color, 16, true);
 		if (current_team.allow_intervene && tactician_.tactic_degree() < t.point() * game_config::tactic_degree_per_point && !tactician_.hot_turns()) {
 			strstr << "\n";
-			strstr << help::tintegrate::generate_img("misc/gold.png");
-			strstr << help::tintegrate::generate_format(t.cost(), "", 16, true);
+			strstr << tintegrate::generate_img("misc/gold.png");
+			strstr << tintegrate::generate_format(t.cost(), "", 16, true);
 		}
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("point", item));
@@ -259,7 +259,7 @@ void ttactic2::pre_show(CVideo& /*video*/, twindow& window)
 		data.insert(std::make_pair("name", item));
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_format(ttactic::calculate_turn(fxptoi9(h.force_), fxptoi9(h.intellect_)), "blue", 16);
+		strstr << tintegrate::generate_format(ttactic::calculate_turn(fxptoi9(h.force_), fxptoi9(h.intellect_)), "blue", 16);
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("turn", item));
 
@@ -332,19 +332,19 @@ void ttactic2::pre_show(CVideo& /*video*/, twindow& window)
 		}
 		strstr.str("");
 		if (!self_effect.empty()) {
-			strstr << help::tintegrate::generate_img("misc/range-self.png") << "  " << generate_image_desc(self_effect);
+			strstr << tintegrate::generate_img("misc/range-self.png") << "  " << generate_image_desc(self_effect);
 		}
 		if (!friend_effect.empty()) {
 			if (!strstr.str().empty()) {
 				strstr << "\n";
 			}
-			strstr << help::tintegrate::generate_img("misc/range-friend.png") << "  " << generate_image_desc(friend_effect);
+			strstr << tintegrate::generate_img("misc/range-friend.png") << "  " << generate_image_desc(friend_effect);
 		}
 		if (!enemy_effect.empty()) {
 			if (!strstr.str().empty()) {
 				strstr << "\n";
 			}
-			strstr << help::tintegrate::generate_img("misc/range-enemy.png") << "  " << generate_image_desc(enemy_effect);
+			strstr << tintegrate::generate_img("misc/range-enemy.png") << "  " << generate_image_desc(enemy_effect);
 		}
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("effect", item));

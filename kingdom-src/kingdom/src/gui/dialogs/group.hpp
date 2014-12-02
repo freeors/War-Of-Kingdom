@@ -22,6 +22,7 @@
 #include <set>
 #include <hero.hpp>
 #include "multiplayer.hpp"
+#include "animation.hpp"
 
 class game_display;
 class unit_type;
@@ -102,6 +103,12 @@ private:
 	bool text_box_int(twindow& window, const std::string& id, const std::string& name, int& value, int min, int max);
 	void refresh_leader_noble(twindow& window);
 	void fill_other(twindow& window);
+
+private:
+	void start_upgrade_anim(hero& h, const std::string& description);
+	void upgrade_anim_finish(animation* anim);
+	void enable_window_ui(twindow& window, bool enable);
+
 private:
 	game_display& disp_;
 	hero_map& heros_;

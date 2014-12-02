@@ -20,7 +20,7 @@
 #ifndef AI_DEFAULT_ATTACK_HPP_INCLUDED
 #define AI_DEFAULT_ATTACK_HPP_INCLUDED
 
-#include "../../global.hpp"
+#include "global.hpp"
 
 #include "../game_info.hpp"
 #include <vector>

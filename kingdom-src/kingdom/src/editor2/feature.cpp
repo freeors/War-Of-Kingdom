@@ -1,3 +1,5 @@
+#ifndef _ROSE_EDITOR
+
 #define GETTEXT_DOMAIN "wesnoth-maker"
 
 #include "global.hpp"
@@ -767,3 +769,5 @@ BOOL CALLBACK DlgFeatureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam
 	
 	return FALSE;
 }
+
+#endif

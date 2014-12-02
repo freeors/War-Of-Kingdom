@@ -130,7 +130,7 @@ void tformation_attack::pre_show(CVideo& /*video*/, twindow& window)
 
 		strstr.str("");
 		color = "red";
-		strstr << help::tintegrate::generate_format(32, color, 16, true);
+		strstr << tintegrate::generate_format(32, color, 16, true);
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("point", item));
 
@@ -138,7 +138,7 @@ void tformation_attack::pre_show(CVideo& /*video*/, twindow& window)
 		data.insert(std::make_pair("name", item));
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_format(u.skill_[hero_skill_formation], "blue", 16);
+		strstr << tintegrate::generate_format(u.skill_[hero_skill_formation], "blue", 16);
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("turn", item));
 

@@ -50,6 +50,7 @@ Growl_Delegate growl_obj;
 #include "builder.hpp"
 #include "play_controller.hpp"
 #include "formula_string_utils.hpp"
+#include <minimap.hpp>
 
 #include <boost/foreach.hpp>
 
@@ -61,8 +62,6 @@ static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
 
 std::map<map_location,fixed_t> game_display::debugHighlights_;
-
-const std::string tactic_png = "misc/tactic.png";
 
 game_display::taccess_list::taccess_list(unit_map& units, int type)
 	: units_(units)
@@ -537,6 +536,8 @@ game_display::game_display(unit_map& units, hero_map& heros, play_controller* co
 		heros_(heros),
 		controller_(controller),
 		temp_units_(),
+		viewpoint_(NULL),
+		road_locs_(),
 		exclusive_unit_draw_requests_(),
 		attack_indicator_dst_(),
 		selectable_indicator_(),
@@ -569,7 +570,6 @@ game_display::game_display(unit_map& units, hero_map& heros, play_controller* co
 		big_flags_cache_(),
 		temp_unit_(NULL),
 		expedite_city_(NULL),
-		screen_anims_(),
 		pass_scenario_anim_id_(-1),
 		terrain_dirty_(true),
 		disctrict_(),
@@ -798,6 +798,24 @@ int game_display::road_owner(std::map<map_location, std::vector<std::pair<artifi
 		}
 	}
 	return ret;
+}
+
+bool game_display::overlay_road_image(const map_location& loc, std::string& color_mod) const
+{
+	bool roaded = false;
+	std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >::const_iterator find = road_locs_.find(loc);
+	if (find != road_locs_.end()) {
+		roaded = true;
+		int owner = road_owner(find);
+		if (owner == OWNER_SELF) {
+			color_mod = "~L(misc/road-self.png)";
+		} else if (owner == OWNER_ENEMY) {
+			color_mod = "~L(misc/road-enemy.png)";
+		} else {
+			color_mod = "~L(misc/road.png)";
+		} 
+	}
+	return roaded;
 }
 
 void game_display::add_flag(int side_index, std::vector<std::string>& side_colors)
@@ -1354,15 +1372,89 @@ void game_display::set_current_list_type(int type)
 
 void game_display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags, uint32_t disable)
 {
-	const theme::menu* m_adjusted = m;
+	const theme::menu* adjusted = m;
 
 	if (!m) {
-		m_adjusted = theme_.context_menu("");
+		adjusted = theme_.context_menu("");
 	}
-	if (!m_adjusted) {
+	if (!adjusted) {
 		return;
 	}
-	display::hide_context_menu(m_adjusted, hide, flags, disable);
+
+	size_t i;
+	size_t size = theme_.context_menus().size();
+	for (i = 0; i < size; i ++) {
+		if (buttons_ctx_[i].menu == adjusted) {
+			break;
+		}
+	}
+	if (!hide) {
+		const team& current_team = teams_[controller_->current_side() - 1];
+		std::stringstream strstr;
+
+		if (adjusted->get_id() == "build" || adjusted->get_id() == "interior") {
+			int cost_exponent = current_team.cost_exponent();
+
+			const std::set<const unit_type*>& can_build = current_team.builds();
+
+			for (size_t i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
+				gui::button* b = buttons_ctx_[i].buttons[i2];
+				const unit_type* ut = unit_types.id_type(b->id());
+
+				if (!ut) {
+					if (b->id() == "interior_m") {
+						if (can_build.find(unit_types.find_market()) == can_build.end() && 
+							can_build.find(unit_types.find_technology()) == can_build.end() &&
+							can_build.find(unit_types.find_tactic()) == can_build.end() &&
+							can_build.find(unit_types.find_school()) == can_build.end()) {
+							flags &= ~ (1 << i2);
+						}
+					}
+					continue;
+				} 
+				if (can_build.find(ut) == can_build.end()) {
+					flags &= ~ (1 << i2);
+				} else if (ut->master() == hero::number_wall && !current_team.may_build_count()) {
+					flags &= ~ (1 << i2);
+				}
+				strstr.str("");
+				strstr << "buttons/" << b->id() << ".png";
+				int cost = ut->cost() * cost_exponent / 100;
+				if (tent::tower_mode()) {
+					// increase wall's cost.
+					cost *= game_config::tower_cost_ratio;
+				}
+				b->set_image(strstr.str(), cost);
+			}
+		} else if (adjusted->get_id() == "main") {
+			for (size_t i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
+				if (!(flags & (1 << i2))) {
+					continue;
+				}
+				gui::button* b = buttons_ctx_[i].buttons[i2];
+				if (b->id() == "build_m") {
+					if (tent::tower_mode()) {
+						strstr.str("");
+						strstr << "buttons/" << b->id() << ".png";
+						b->set_image(strstr.str(), current_team.may_build_count());
+					}
+				} else if (b->id() == "abolish") {
+					strstr.str("");
+					strstr << "buttons/" << b->id() << ".png";
+					b->set_pip_image(strstr.str(), "buttons/icon-guard.png");
+				}
+			}
+		}
+	}
+
+	display::hide_context_menu(adjusted, hide, flags, disable);
+}
+
+void game_display::goto_main_context_menu()
+{
+	display::hide_context_menu(NULL, true);
+	theme_.set_current_context_menu(NULL);
+	controller_->show_context_menu(NULL, *this);
 }
 
 void game_display::pre_draw(rect_of_hexes& hexes) 
@@ -1426,53 +1518,6 @@ image::TYPE game_display::get_image_type(const map_location& loc) {
 		}
 	}
 	return image::TOD_COLORED;
-}
-
-bool game_display::draw_outer_anim(bool foreground)
-{
-	if (screen_anims_.empty() || in_game()) {
-		return false;
-	}
-
-	// invalidate_animations();
-	new_animation_frame();
-	
-/*
-		for (std::map<int, unit_animation>::iterator it = screen_anims_.begin(); it != screen_anims_.end(); ++ it) {
-			it->second.invalidate();
-		}
-*/
-		// invalidate all that needs to be invalidated
-		// draw_invalidated();
-/*
-		halo::unrender();
-*/
-	for (std::map<int, unit_animation>::iterator it = screen_anims_.begin(); it != screen_anims_.end(); ++ it) {
-		unit_animation& anim = it->second;
-		if ((foreground && anim.layer() < 0) || (!foreground && anim.layer() >= 0)) {
-			continue;
-		}
-		if (!anim.started()) {
-			continue;
-		}
-
-		anim.update_last_draw_time();
-		anim.redraw();
-	}
-
-	drawing_buffer_commit();
-	
-	// debug, it is cycle
-	for (std::map<int, unit_animation>::iterator it = screen_anims_.begin(); it != screen_anims_.end();) {
-		unit_animation& anim = it->second;
-		if (anim.started() && !anim.cycles() && anim.animation_finished_potential()) {
-			screen_anims_.erase(it ++);
-		} else {
-			++ it;
-		}
-	}
-
-	return true;
 }
 
 void game_display::draw_invalidated()
@@ -1796,9 +1841,12 @@ void game_display::redraw_units(const std::vector<map_location>& invalidated_uni
 			temp_unit_->redraw_unit();
 		}
 	}
-	for (std::map<int, unit_animation>::iterator it = screen_anims_.begin(); it != screen_anims_.end(); ++ it) {
-		it->second.update_last_draw_time();
-		it->second.redraw();
+	for (std::map<int, animation*>::iterator it = area_anims_.begin(); it != area_anims_.end(); ++ it) {
+		VALIDATE(it->second->type() == anim_map, "draw() logic can only map animation!");
+
+		it->second->update_last_draw_time();
+		area_anim::rt.type = it->second->type();
+		it->second->redraw(screen_.getSurface(), empty_rect);
 	}
 }
 
@@ -1964,6 +2012,9 @@ void game_display::show_tip(const std::string& message, const map_location& loc,
 
 void game_display::hide_tip()
 {
+	if (!in_game()) {
+		return;
+	}
 	if (main_tip_handle_) {
 		for (std::map<map_location, std::string>::const_iterator it = tip_locs_.begin(); it != tip_locs_.end(); ++ it) {
 			invalidate(it->first);
@@ -2017,6 +2068,11 @@ void game_display::draw_sidebar()
 	}
 }
 
+surface game_display::minimap_surface(int w, int h)
+{
+	return image::getMinimap(w, h, get_map(), viewpoint_);
+}
+
 void game_display::draw_minimap_units()
 {
 	double xscaling = 1.0 * minimap_location_.w / get_map().w();
@@ -2058,60 +2114,6 @@ void game_display::draw_minimap_units()
 			minimap_location_.y + std::min(minimap_location_.h - indicator_dst->h, std::max(0, round_double(moving_dst_loc_.y * yscaling) - indicator_dst->h / 2)), 0, 0);
 		blit_surface(indicator_dst, NULL, video().getSurface(), &dstrect);
 	}
-}
-
-std::map<surface,SDL_Rect> energy_bar_rects;
-
-struct is_energy_color {
-	bool operator()(Uint32 color) const { return (color&0xFF000000) > 0x10000000 &&
-	                                              (color&0x00FF0000) < 0x00100000 &&
-												  (color&0x0000FF00) < 0x00001000 &&
-												  (color&0x000000FF) < 0x00000010; }
-};
-
-/**
- * Finds the start and end rows on the energy bar image.
- *
- * White pixels are substituted for the color of the energy.
- */
-
-const SDL_Rect& calculate_energy_bar(surface surf)
-{
-	const std::map<surface,SDL_Rect>::const_iterator i = energy_bar_rects.find(surf);
-	if(i != energy_bar_rects.end()) {
-		return i->second;
-	}
-
-	int first_row = -1, last_row = -1, first_col = -1, last_col = -1;
-
-	surface image(make_neutral_surface(surf));
-
-	const_surface_lock image_lock(image);
-	const Uint32* const begin = image_lock.pixels();
-
-	for(int y = 0; y != image->h; ++y) {
-		const Uint32* const i1 = begin + image->w*y;
-		const Uint32* const i2 = i1 + image->w;
-		const Uint32* const itor = std::find_if(i1,i2,is_energy_color());
-		const int count = std::count_if(itor,i2,is_energy_color());
-
-		if(itor != i2) {
-			if(first_row == -1) {
-				first_row = y;
-			}
-
-			first_col = itor - i1;
-			last_col = first_col + count;
-			last_row = y;
-		}
-	}
-
-	const SDL_Rect res = create_rect(first_col
-			, first_row
-			, last_col-first_col
-			, last_row+1-first_row);
-	energy_bar_rects.insert(std::pair<surface,SDL_Rect>(surf,res));
-	return calculate_energy_bar(surf);
 }
 
 void game_display::draw_bar(const std::string& image, int xpos, int ypos, const map_location& loc, int size, double filled, const SDL_Color& col, fixed_t alpha, bool vtl)
@@ -2211,113 +2213,17 @@ void game_display::draw_bar(const std::string& image, int xpos, int ypos, const 
 	}
 }
 
-// @size: valid size, don't include outline.
-void draw_bar_to_surf(const std::string& image, surface& dst_surf, int x, int y, int size, double filled, const SDL_Color& col, fixed_t alpha, bool vtl)
-{
-	filled = std::min<double>(std::max<double>(filled, 0.0), 1.0);
-
-	surface surf(image::get_image(image));
-
-	// We use UNSCALED because scaling (and bilinear interpolaion)
-	// is bad for calculate_energy_bar.
-	// But we will do a geometric scaling later.
-	surface bar_surf(image::get_image(image));
-	if (surf == NULL || bar_surf == NULL) {
-		return;
-	}
-
-	// calculate_energy_bar returns incorrect results if the surface colors
-	// have changed (for example, due to bilinear interpolaion)
-	const SDL_Rect& bar_loc = calculate_energy_bar(bar_surf);
-
-	if (vtl) {
-		if (size > bar_loc.h) {
-			size = bar_loc.h;
-		}
-	} else {
-		if (size > bar_loc.w) {
-			size = bar_loc.w;
-		}
-	}
-
-	size_t skip_rows;
-	
-	if (vtl) {
-		skip_rows = bar_loc.h - size;
-	} else  {
-		skip_rows = bar_loc.w - size;
-	}
-
-	SDL_Rect top = {0, 0, surf->w, bar_loc.y};
-	SDL_Rect bot = {0, bar_loc.y + skip_rows, surf->w, 0};
-	
-	SDL_Rect dst_clip = create_rect(x, y, 0, 0);
-	if (vtl) {
-		bot.h = surf->h - bot.y;
-
-		blit_surface(surf, &top, dst_surf, &dst_clip);
-		dst_clip.y += top.h;
-		blit_surface(surf, &bot, dst_surf, &dst_clip);
-
-		// drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos, ypos, surf, top);
-		// drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos, ypos + top.h, surf, bot);
-	} else {
-		top.w = bar_loc.x;
-		top.h = surf->h;
-		bot.x = bar_loc.x + skip_rows;
-		bot.y = 0;
-		bot.w = surf->w - bot.x;
-		bot.h = surf->h;
-
-		// ???I don't know why below tow blit_surface not work?? must use sdl_blit.
-		// reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21963
-		// blit_surface(surf, &top, dst_surf, &dst_clip);
-		sdl_blit(surf, &top, dst_surf, &dst_clip);
-		dst_clip.x += top.w;
-		// blit_surface(surf, &bot, dst_surf, &dst_clip);
-		sdl_blit(surf, &bot, dst_surf, &dst_clip);
-
-		// drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos, ypos, surf, top);
-		// drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos + top.w, ypos, surf, bot);
-	}
-
-	const int unfilled = static_cast<const int>(size * (1.0 - filled));
-
-	if (unfilled < size && alpha >= ftofxp(0.3)) {
-		const Uint8 r_alpha = std::min<unsigned>(unsigned(fxpmult(alpha,255)),255);
-		surface filled_surf;
-		SDL_Rect filled_area = {0, 0, bar_loc.w, size - unfilled};
-		if (vtl) {
-			filled_surf = create_compatible_surface(bar_surf, bar_loc.w, size - unfilled);
-		} else {
-			filled_surf = create_compatible_surface(bar_surf, size - unfilled, bar_loc.h);
-			filled_area.w = size - unfilled;
-			filled_area.h = bar_loc.h;
-		}
-
-		SDL_FillRect(filled_surf, &filled_area, SDL_MapRGBA(bar_surf->format, col.r, col.g, col.b, r_alpha));
-		if (vtl) {
-			dst_clip.x = x + bar_loc.x;
-			dst_clip.y = y + bar_loc.y + unfilled;
-			// use sdl_blit insteal of blit_surface
-			sdl_blit(filled_surf, NULL, dst_surf, &dst_clip);
-		} else {
-			dst_clip.x = x + bar_loc.x;
-			dst_clip.y = y + bar_loc.y;
-			// use sdl_blit insteal of blit_surface
-			// 1. right color
-			// 2. this source surface is safe. it will release once used.
-			sdl_blit(filled_surf, NULL, dst_surf, &dst_clip);
-		}
-	}
-}
-
 void game_display::set_game_mode(const tgame_mode game_mode)
 {
 	if(game_mode != game_mode_) {
 		game_mode_ = game_mode;
 		invalidate_all();
 	}
+}
+
+SDL_Rect game_display::clip_rect_commit() const
+{
+	return in_game_? map_area(): area_anim::rt.rect;
 }
 
 void game_display::draw_movement_info(const map_location& loc)
@@ -2524,16 +2430,6 @@ bool game_display::redraw_everything()
 	return redrawn;
 }
 
-size_t utf8str_len(std::string& utf8str)
-{
-	size_t size = 0;
-	utils::utf8_iterator itor(utf8str);
-	for (; itor != utils::utf8_iterator::end(utf8str); ++ itor) {
-		size ++;
-	}
-	return size;
-}
-
 surface game_display::get_big_flag(const map_location& loc)
 {
 	if (artifical* city = units_.city_from_loc(loc)) {
@@ -2560,7 +2456,7 @@ surface game_display::get_big_flag(const map_location& loc)
 					if (teams_[i].side() != team::empty_side) {
 						surname = teams_[i].leader()->surname();
 					}
-					size_t chars = utf8str_len(surname);
+					size_t chars = utils::utf8str_len(surname);
 
 					surface text_surf;
 					surface back_surf;
@@ -2769,22 +2665,6 @@ void game_display::set_route(const pathfind::marked_route *route)
 	invalidate_route();
 }
 
-void game_display::float_label(const map_location& loc, const std::string& text,
-						  int red, int green, int blue, bool slow)
-{
-	font::floating_label flabel(text);
-	flabel.set_font_size(font::SIZE_XLARGE);
-	const SDL_Color color = create_color(red, green, blue);
-	flabel.set_color(color);
-	flabel.set_position(get_location_x(loc)+zoom_/2, get_location_y(loc));
-	flabel.set_move(0, -2 * turbo_speed());
-	int lifetime = 60 / turbo_speed();
-	flabel.set_lifetime(slow? (lifetime * 3): lifetime);
-	flabel.set_scroll_mode(font::ANCHOR_LABEL_MAP);
-
-	font::add_floating_label(flabel);
-}
-
 void game_display::invalidate_animations_location(const map_location& loc) 
 {
 	if (get_map().is_village(loc)) {
@@ -2820,8 +2700,8 @@ void game_display::invalidate_animations()
 		get_builder().rebuild_terrain();
 		terrain_dirty_ = false;
 	}
-	for (std::map<int, unit_animation>::iterator it = screen_anims_.begin(); it != screen_anims_.end(); ++ it) {
-		it->second.invalidate();
+	for (std::map<int, animation*>::iterator it = area_anims_.begin(); it != area_anims_.end(); ++ it) {
+		it->second->invalidate(screen_.getSurface());
 	}
 	if (expedite_city_) {
 		expedite_city_->refresh();
@@ -3416,45 +3296,18 @@ void game_display::clear_build_indicator()
 	set_build_indicator(NULL);
 }
 
-unit_animation& game_display::insert_screen_anim_pass_scenario(const unit_animation& anim)
+animation& game_display::insert_pass_scenario_anim(const animation& tpl)
 {
-	pass_scenario_anim_id_ = insert_screen_anim(anim);
-	return screen_anims_.find(pass_scenario_anim_id_)->second;
+	pass_scenario_anim_id_ = insert_area_anim(tpl);
+	return area_anim(pass_scenario_anim_id_);
 }
 
-unit_animation& game_display::screen_anim(int id)
+void game_display::erase_area_anim(int id)
 {
-	return screen_anims_.find(id)->second;
-}
-
-int game_display::insert_screen_anim(const unit_animation& anim)
-{
-	int id = -1;
-	for (std::map<int, unit_animation>::reverse_iterator it = screen_anims_.rbegin(); it != screen_anims_.rend(); ++ it) {
-		id = it->first;
-		break;
-	}
-	id ++;
-	screen_anims_.insert(std::make_pair(id, anim));
-	return id;
-}
-
-void game_display::erase_screen_anim(int id)
-{
-	std::map<int, unit_animation>::iterator find = screen_anims_.find(id);
-	VALIDATE(find != screen_anims_.end(), "game_display::erase_screen_anim, cannot find 'id' screen anim!");
-
-	if (id != pass_scenario_anim_id_) {
-		find->second.invalidate();
-	} else {
+	if (id == pass_scenario_anim_id_) {
 		invalidate_all();
 	}
-
-	screen_anims_.erase(find);
-	if (id == pass_scenario_anim_id_) {
-		pass_scenario_anim_id_ = -1;
-	}
-	draw();
+	display::erase_area_anim(id);
 }
 
 void game_display::set_terrain_dirty()
@@ -3752,6 +3605,40 @@ void game_display::begin_game()
 	invalidate_all();
 }
 
+void game_display::create_buttons()
+{
+	display::create_buttons();
+
+	for (size_t n = 0; n < buttons_.size(); ++ n) {
+		gui::button& b = buttons_[n];
+		const std::string& id = b.id();
+		if (id == "rpg") {
+			b.set_rpg_image(rpg::h);
+		} else if (id == "skip-animation") {
+			b.set_check(false);
+		} else if (id == "undo") {
+			if (controller_->is_linger_mode()) {
+				b.hide();
+			} else {
+				// In linger mode, player_number_ in play_controller is out of range, 
+				// it will result to access exception if call current_team(). 
+				team& current_team = controller_->current_team();
+				if (current_team.uses_shroud() || current_team.uses_fog()) {
+					b.hide();
+				}
+			}
+		} else if (b.id() == "tactic0") {
+			b.hide();
+		} else if (b.id() == "tactic1") {
+			b.hide();
+		} else if (b.id() == "tactic2") {
+			b.hide();
+		} else if (b.id() == "bomb") {
+			b.hide();
+		}
+	}
+}
+
 namespace {
 	const int chat_message_border = 5;
 	const int chat_message_x = 10;
@@ -3907,14 +3794,9 @@ void game_display::prune_chat_messages(bool remove_all)
 
 game_display *game_display::singleton_ = NULL;
 
-namespace outer_anim {
-std::pair<double, double> zoom;
-SDL_Rect rect;
-
-void reset(game_display& disp)
+void set_zoom_to_default(int zoom)
 {
-	zoom = std::make_pair(1, 1);
-	rect = disp.screen_area();
-}
-
+	display::default_zoom_ = zoom;
+	image::set_zoom(display::default_zoom_);
+	unit_map::set_zoom();	
 }

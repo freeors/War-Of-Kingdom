@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: kingdom\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: \n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -19,3 +19,117 @@ msgstr "伏羲女娲氏之次大陆"
 
 msgid "LOCC"
 msgstr "LOCC"
+
+msgid "tianzhidian"
+msgstr "天之巅"
+
+msgid "leizhe"
+msgstr "雷泽"
+
+msgid "suicheng"
+msgstr "燧城"
+
+msgid "donghuang"
+msgstr "敦煌"
+
+msgid "wushizhang"
+msgstr "乌斯藏"
+
+msgid "lingshan"
+msgstr "灵山"
+
+msgid "yifang"
+msgstr "翼方"
+
+msgid "yanhuoguo"
+msgstr "厌火国"
+
+msgid "liushaguo"
+msgstr "流沙国"
+
+msgid "guifang"
+msgstr "鬼方"
+
+msgid "quanrong"
+msgstr "犬戎"
+
+msgid "youxiong"
+msgstr "有熊"
+
+msgid "quanshengjie"
+msgstr "犬神界"
+
+msgid "penglai"
+msgstr "蓬莱"
+
+msgid "xiqiangnvguo"
+msgstr "西羌女国"
+
+msgid "kunlun"
+msgstr "昆仑"
+
+msgid "xiheguo"
+msgstr "羲和国"
+
+msgid "fengdu"
+msgstr "酆都"
+
+msgid "guixu"
+msgstr "归墟"
+
+msgid "youdu"
+msgstr "幽都"
+
+msgid "biyougong"
+msgstr "碧游宫"
+
+msgid "banquancheng"
+msgstr "阪泉城"
+
+msgid "kongshang"
+msgstr "空桑"
+
+msgid "chiyoucheng"
+msgstr "蚩尤国"
+
+msgid "pimuzhiqiu"
+msgstr "皮母之丘"
+
+msgid "wushan"
+msgstr "巫山"
+
+msgid "nanhai"
+msgstr "南海"
+
+msgid "changwu"
+msgstr "苍梧"
+
+msgid "hushang"
+msgstr "扶桑"
+
+msgid "taozhishan"
+msgstr "桃止山"
+
+msgid "lishan"
+msgstr "灵山"
+
+msgid "xiqi"
+msgstr "西岐"
+
+msgid "donghaishengdian"
+msgstr "东海神殿"
+
+msgid "chaoge"
+msgstr "朝歌"
+
+msgid "xuanyuanqiu"
+msgstr "轩辕丘"
+
+msgid "bushizhiguo"
+msgstr "不死之国"
+
+#~ msgid "xuanyuanguo"
+#~ msgstr "轩辕国"
+
+#~ msgid "bishizhiguo"
+#~ msgstr "不死之国"

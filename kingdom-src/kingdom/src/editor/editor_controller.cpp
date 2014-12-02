@@ -32,17 +32,17 @@
 #include "gui/dialogs/preferences.hpp"
 #include "gui/widgets/window.hpp"
 
-#include "../clipboard.hpp"
+#include "clipboard.hpp"
 #include "../filechooser.hpp"
-#include "../filesystem.hpp"
+#include "filesystem.hpp"
 #include "../game_preferences.hpp"
-#include "../gettext.hpp"
+#include "gettext.hpp"
 #include "../map_create.hpp"
 #include "../mapgen.hpp"
-#include "../preferences_display.hpp"
-#include "../rng.hpp"
-#include "../sound.hpp"
-#include "../help.hpp"
+#include "preferences_display.hpp"
+#include "rng.hpp"
+#include "sound.hpp"
+#include "integrate.hpp"
 #include "../multiplayer.hpp"
 
 #include "formula_string_utils.hpp"
@@ -65,19 +65,19 @@ bool tmap_type::can_modify(const gamemap& map, const map_location& loc, const t_
 		const titem& item = *it;
 		if (t_translation::terrain_matches(t, item.list)) {
 			if (!item.avoid.empty() && !allow_if_modify(map, loc, item.avoid)) {
-				symbols["count"] = help::tintegrate::generate_format(item.unite, "yellow");
+				symbols["count"] = tintegrate::generate_format(item.unite, "yellow");
 				err_str_ = vgettext("wesnoth-editor", "This terrain can not place at this area!", symbols);
 			} else /* if (!t_translation::terrain_matches(old, item.list)) */ {
 				if (item.total >= 0 && calculate_total_if_modify(item.list, old) > item.total) {
 					if (item.total) {
-						symbols["count"] = help::tintegrate::generate_format(item.total, "yellow");
+						symbols["count"] = tintegrate::generate_format(item.total, "yellow");
 						err_str_ = vgettext("wesnoth-editor", "This terrain may draw on $count grid at most!", symbols);
 					} else {
 						err_str_ = gettext("When drawing map, can not use this terrain!");
 					}
 				}
 				if (err_str_.empty() && item.unite >= 0 && calculate_unite_if_modify(map, loc, item.list) > item.unite) {
-					symbols["count"] = help::tintegrate::generate_format(item.unite, "yellow");
+					symbols["count"] = tintegrate::generate_format(item.unite, "yellow");
 					err_str_ = vgettext("wesnoth-editor", "Combining this terrain can not exceed $count grid!", symbols);
 				}
 			}
@@ -885,7 +885,6 @@ bool editor_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int 
 		case HOTKEY_ZOOM_IN:
 		case HOTKEY_ZOOM_OUT:
 		case HOTKEY_ZOOM_DEFAULT:
-		case HOTKEY_FULLSCREEN:
 		case HOTKEY_SCREENSHOT:
 		case HOTKEY_MAP_SCREENSHOT:
 		case HOTKEY_TOGGLE_GRID:
@@ -1221,7 +1220,7 @@ void editor_controller::system()
 
 		std::string str = dgettext("wesnoth-lib", "Save Map");
 		if (mode_ == SIEGE) {
-			str = help::tintegrate::generate_format(str, "blue");
+			str = tintegrate::generate_format(str, "blue");
 		}
 
 		const std::string& name = get_map_context().get_filename();
@@ -1542,7 +1541,6 @@ void editor_controller::redraw_toolbar()
 				color = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
 			}
 			draw_rectangle(outline.x, outline.y, outline.w, outline.h, color, screen);
-			update_rect(outline);
 		}
 	}
 	toolbar_dirty_ = false;

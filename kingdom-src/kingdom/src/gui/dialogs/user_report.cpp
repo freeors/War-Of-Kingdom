@@ -42,7 +42,6 @@
 #include "preferences_display.hpp"
 #include "formula_string_utils.hpp"
 #include "filesystem.hpp"
-#include "help.hpp"
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -163,9 +162,6 @@ void tuser_report::set_label_int(twindow& window, const std::string& id, int val
 
 void tuser_report::pre_show(CVideo& video, twindow& window)
 {
-	window.set_enter_disabled(true);
-	window.set_escape_disabled(true);
-
 	sheet_.insert(std::make_pair((int)PLAYER_PASS_PAGE, find_widget<ttoggle_button>(&window, "player_pass", false, true)));
 	sheet_.insert(std::make_pair((int)RANK_PASS_PAGE, find_widget<ttoggle_button>(&window, "rank_pass", false, true)));
 	sheet_.insert(std::make_pair((int)EMPLOYEE_PAGE, find_widget<ttoggle_button>(&window, "employ_hero", false, true)));
@@ -334,7 +330,7 @@ void tuser_report::fill_employee(twindow& window)
 		strstr.str("");
 		if (h.utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h.utype_);
-			strstr << help::tintegrate::generate_img(ut->icon()) << "\n";
+			strstr << tintegrate::generate_img(ut->icon()) << "\n";
 		}
 		strstr << h.name();
 		list_item["label"] = strstr.str();
@@ -367,7 +363,7 @@ void tuser_report::fill_employee(twindow& window)
 		strstr.str("");
 		if (employee_ptr) {
 			strstr << employee_ptr->score;
-			strstr << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
+			strstr << tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
 		} else {
 			strstr << "--";
 		}
@@ -404,21 +400,21 @@ void tuser_report::fill_employee(twindow& window)
 		strstr.str("");
 		if (employee_ptr) {
 			if (employee_ptr->username == group.leader().name()) {
-				strstr << help::tintegrate::generate_format(employee_ptr->username, "green");
+				strstr << tintegrate::generate_format(employee_ptr->username, "green");
 			} else {
 				strstr << employee_ptr->username;
 			}
 			if (employee_ptr->lock) {
-				strstr << help::tintegrate::generate_img("misc/lock.png");;
+				strstr << tintegrate::generate_img("misc/lock.png");;
 			}
 		} else {
-			strstr << help::tintegrate::generate_img("misc/unknown.png");
+			strstr << tintegrate::generate_img("misc/unknown.png");
 		}
 		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("ownership", list_item));
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/browse.png");;
+		strstr << tintegrate::generate_img("misc/browse.png");;
 		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("browse", list_item));
 
@@ -458,7 +454,7 @@ void tuser_report::fill_score_board(twindow& window)
 		strstr.str("");
 		strstr << m.name;
 		if (m.vip > 0) {
-			strstr << help::tintegrate::generate_img("misc/vip.png~SCALE(32, 32)");
+			strstr << tintegrate::generate_img("misc/vip.png~SCALE(32, 32)");
 		}
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("username", item));
@@ -494,7 +490,7 @@ void tuser_report::fill_score_board(twindow& window)
 		data.insert(std::make_pair("credit", item));
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/browse.png");;
+		strstr << tintegrate::generate_img("misc/browse.png");;
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("browse", item));
 
@@ -536,7 +532,7 @@ void tuser_report::fill_title_board(twindow& window)
 		strstr.str("");
 		strstr << l.username;
 		if (l.vip > 0) {
-			strstr << help::tintegrate::generate_img("misc/vip.png~SCALE(32, 32)");
+			strstr << tintegrate::generate_img("misc/vip.png~SCALE(32, 32)");
 		}
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("username", item));
@@ -563,7 +559,7 @@ void tuser_report::fill_title_board(twindow& window)
 		data.insert(std::make_pair("credit", item));
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/browse.png");;
+		strstr << tintegrate::generate_img("misc/browse.png");;
 		item["label"] = strstr.str();
 		data.insert(std::make_pair("browse", item));
 

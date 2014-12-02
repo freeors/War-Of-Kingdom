@@ -33,6 +33,7 @@
 #include "formula_string_utils.hpp"
 #include "play_controller.hpp"
 #include "gettext.hpp"
+#include "integrate.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -1606,12 +1607,12 @@ void show_noble_message(unit_map& units, hero_map& heros, hero& h, const tnoble&
 	std::string message;
 
 	int incident = game_events::INCIDENT_APPOINT;
-	symbols["noble"] = help::tintegrate::generate_format(noble.name(), help::tintegrate::object_color);
+	symbols["noble"] = tintegrate::generate_format(noble.name(), tintegrate::object_color);
 	if (terminate) {
 		if (&h == rpg::h) {
 			message = vgettext("Your noble of $noble is terminated.", symbols);
 		} else {
-			symbols["hero"] = help::tintegrate::generate_format(h.name(), help::tintegrate::hero_color);
+			symbols["hero"] = tintegrate::generate_format(h.name(), tintegrate::hero_color);
 			message = vgettext("$hero noble of $noble is terminated.", symbols);
 		}
 		incident = game_events::INCIDENT_INVALID;
@@ -1619,7 +1620,7 @@ void show_noble_message(unit_map& units, hero_map& heros, hero& h, const tnoble&
 		if (&h == rpg::h) {
 			message = vgettext("Congratulate! You are appointed $noble.", symbols);
 		} else {
-			symbols["hero"] = help::tintegrate::generate_format(h.name(), help::tintegrate::hero_color);
+			symbols["hero"] = tintegrate::generate_format(h.name(), tintegrate::hero_color);
 			message = vgettext("Congratulate! $hero is appointed $noble.", symbols);
 		}
 		incident = game_events::INCIDENT_APPOINT;
@@ -2003,8 +2004,8 @@ void team::do_technology_income(int income)
 			utils::string_map symbols;
 			std::string message;
 
-			symbols["end"] = help::tintegrate::generate_format(ing_technology_->name(), help::tintegrate::tactic_color);
-			symbols["side"] = help::tintegrate::generate_format(name(), help::tintegrate::hero_color);
+			symbols["end"] = tintegrate::generate_format(ing_technology_->name(), tintegrate::tactic_color);
+			symbols["side"] = tintegrate::generate_format(name(), tintegrate::hero_color);
 
 			holded_technologies_.push_back(ing_technology_);
 			// apply this technology
@@ -2025,7 +2026,7 @@ void team::do_technology_income(int income)
 			reselect_ing_technology();
 
 			if (ing_technology_) {
-				symbols["begin"] = help::tintegrate::generate_format(ing_technology_->name(), help::tintegrate::tactic_color);
+				symbols["begin"] = tintegrate::generate_format(ing_technology_->name(), tintegrate::tactic_color);
 				message = vgettext("$side finished researching $end, will begin to research $begin!", symbols);
 			} else {
 				message = vgettext("$side finished researching $end, and have gotten all technology!", symbols);
@@ -2155,8 +2156,8 @@ void team::set_ally(int n, bool alignment, bool dialog, bool adjust)
 		utils::string_map symbols;
 		std::string message;
 
-		symbols["first"] = help::tintegrate::generate_format(name(), help::tintegrate::hero_color);
-		symbols["second"] = help::tintegrate::generate_format((*teams)[n - 1].name(), help::tintegrate::hero_color);
+		symbols["first"] = tintegrate::generate_format(name(), tintegrate::hero_color);
+		symbols["second"] = tintegrate::generate_format((*teams)[n - 1].name(), tintegrate::hero_color);
 		if (alignment) {
 			message = vgettext("$first and $second concluded treaty of alliance.", symbols);
 		} else {
@@ -2221,7 +2222,7 @@ void team::erase_strategy(int target, bool dialog)
 		if (it->target_ == target) {
 			// terminate relative treaty.
 			artifical* target_city = units_.city_from_cityno(it->target_);
-			symbols["city"] = help::tintegrate::generate_format(target_city->name(), help::tintegrate::object_color);
+			symbols["city"] = tintegrate::generate_format(target_city->name(), tintegrate::object_color);
 
 			for (std::set<int>::const_iterator it_ally = it->allies_.begin(); it_ally != it->allies_.end(); ++ it_ally) {
 				team& allied_team = (*teams)[*it_ally - 1];
@@ -2230,8 +2231,8 @@ void team::erase_strategy(int target, bool dialog)
 				allied_team.set_ally(info_.side, false);
 
 				if (dialog) {
-					symbols["first"] = help::tintegrate::generate_format(name(), help::tintegrate::hero_color);
-					symbols["second"] = help::tintegrate::generate_format(allied_team.name(), help::tintegrate::hero_color);
+					symbols["first"] = tintegrate::generate_format(name(), tintegrate::hero_color);
+					symbols["second"] = tintegrate::generate_format(allied_team.name(), tintegrate::hero_color);
 					if (it->type_ == strategy::AGGRESS) {
 						message = vgettext("End aggressing upon $city, $first and $second terminate treaty of alliance.", symbols);
 					} else if (it->type_ == strategy::DEFEND) {
@@ -2840,19 +2841,19 @@ std::string team::form_results_of_battle_tip(const std::string& prefix) const
 	if (!prefix.empty()) {
 		strstr << prefix;
 		strstr << "\n\n";
-		strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Results of battle"), "", 0, true, true);
-		strstr << help::tintegrate::generate_img("misc/tintegrate-split-line.png") << "\n";
+		strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Results of battle"), "", 0, true, true);
+		strstr << tintegrate::generate_img("misc/tintegrate-split-line.png") << "\n";
 	}
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Cause damage"), "green") << ": ";
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Cause damage"), "green") << ": ";
 	strstr << cause_damage_ << "\n";
 
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Been damage"), "green") << ": ";
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Been damage"), "green") << ": ";
 	strstr << been_damage_ << "\n";
 
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Defeat units"), "green") << ": ";
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Defeat units"), "green") << ": ";
 	strstr << defeat_units_ << "\n";
 
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "scenario^Perfect turns"), "green") << ": ";
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "scenario^Perfect turns"), "green") << ": ";
 	strstr << perfect_turns_;
 
 	return strstr.str();
@@ -3372,8 +3373,8 @@ void team::find_treasure(hero_map& heros, play_controller& controller, int pos)
 	// card
 	utils::string_map symbols;
 	const ttreasure& t = unit_types.treasure(holded_treasures_.back());
-	symbols["first"] = help::tintegrate::generate_format(t.name(), help::tintegrate::object_color);
-	symbols["second"] = help::tintegrate::generate_format(hero::feature_str(t.feature()), help::tintegrate::tactic_color);
+	symbols["first"] = tintegrate::generate_format(t.name(), tintegrate::object_color);
+	symbols["second"] = tintegrate::generate_format(hero::feature_str(t.feature()), tintegrate::tactic_color);
 	game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("Find treasure: $first($second)!", symbols), game_events::INCIDENT_CARD);
 }
 
@@ -3838,6 +3839,14 @@ void team::set_all_city_deputed(game_display& disp, bool set) const
 			disp.refresh_access_troops(city->side() - 1, game_display::REFRESH_DRAW, (unit*)city);
 		}
 	}
+}
+
+void shrouded_and_fogged(const map_location& loc, const void* t, bool& shrouded, bool& fogged)
+{
+	const team* tm = reinterpret_cast<const team*>(t);
+	shrouded = tm->shrouded(loc);
+	// shrouded hex are not considered fogged (no need to fog a black image)
+	fogged = !shrouded && tm->fogged(loc);
 }
 
 namespace player_teams {

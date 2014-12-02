@@ -23,7 +23,7 @@
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/settings.hpp"
-#include "gui/widgets/hexmap.hpp"
+#include "gui/widgets/minimap.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/auxiliary/timer.hpp"
 
@@ -138,54 +138,46 @@ tprelude::~tprelude()
 	if (ing_timer_) {
 		gui2::remove_timer(ing_timer_);
 	}
-	std::map<int, unit_animation>& screen_anims = disp_.screen_anims();
-	screen_anims.clear();
+	disp_.clear_area_anims();
 }
 
 void tprelude::post_build(CVideo& video, twindow& window)
 {
 }
 
-int ready_outer_anim(game_display& disp, int type, const config& cfg, bool start, bool cycles)
+int ready_outer_anim(game_display& disp, tcontrol& widget, const config& cfg, bool cycles)
 {
-	const unit_animation* tpl = unit_types.global_anim(type);
-	int id = disp.insert_screen_anim(*tpl);
+	std::stringstream key;
+	config anim_cfg;
 
-	unit_animation& anim = disp.screen_anim(id);
-	std::string src, dst;
+	anim_cfg["id"] = cfg["id"].str();
+	anim_cfg["width"] = 640;
+	anim_cfg["height"] = 360;
 
 	BOOST_FOREACH (const config::attribute& attr, cfg.attribute_range()) {
 		const std::string& name = attr.first;
-		src.clear();
+		key.str("");
+		key << name;
 		if (name == "x") {
-			src = "8800";
+			key << "-8800";
 		} else if (name == "y") {
-			src = "8801";
+			key << "-8801";
 		} else if (name == "offset_x") {
-			src = "8802";
+			key << "-8802";
 		} else if (name == "offset_y") {
-			src = "8803";
+			key << "-8803";
 		} else if (name == "alpha") {
-			src = "8810";
+			key << "-8810";
 		} else if (name == "image") {
-			anim.replace_image_name("__image", attr.second);
-
+			key << "-__image";
 		} else if (name == "text") {
-			anim.replace_static_text("__text", attr.second);
+			key << "-__text";
 		} else {
 			continue;
 		}
-		if (!src.empty()) {
-			anim.replace_progressive(name, src, attr.second);
-		}
+		anim_cfg[key.str()] = attr.second;
 	}
-
-	if (start) {
-		new_animation_frame();
-		anim.start_animation(0, map_location::null_location, map_location::null_location, cycles);
-	}
-
-	return id;
+	return widget.insert_animation(anim_cfg, false);
 }
 
 void tprelude::pre_show(CVideo& video, twindow& window)
@@ -195,10 +187,9 @@ void tprelude::pre_show(CVideo& video, twindow& window)
 	tlabel& title = find_widget<tlabel>(&window, "title", false);
 	title.set_label(cfg_["name"]);
 
-	thexmap& hexmap = find_widget<thexmap>(&window, "hexmap", false);
+	tminimap& hexmap = find_widget<tminimap>(&window, "map", false);
 	hexmap.set_config(&game_config_);
-	hexmap.set_map_data(thexmap::IMG, prelude_cfg["map_data"].str());
-	hexmap.set_callback_size_change(boost::bind(&tprelude::size_change, this, _1));
+	hexmap.set_map_data(tminimap::IMG, prelude_cfg["map_data"].str());
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "previous", false)
@@ -226,31 +217,10 @@ void tprelude::pre_show(CVideo& video, twindow& window)
 
 	if (const config& start_cfg = prelude_cfg.child("start")) {
 		BOOST_FOREACH (const config& anim, start_cfg.child_range("animation")) {
-			global_anim_tag::ttype id = global_anim_tag::find(anim["id"].str());
-			VALIDATE(id != global_anim_tag::NONE, "[prelude], invalidad id: " + anim["id"].str());
-			anims_.insert(std::make_pair(ready_outer_anim(disp_, id, anim, true, true), &anim));
+			VALIDATE(area_anim::find(anim["id"].str()) != area_anim::NONE, "[prelude], invalidad id: " + anim["id"].str());
+			anims_.insert(std::make_pair(ready_outer_anim(disp_, hexmap, anim, true), &anim));
 		}
 	}
-}
-
-void tprelude::size_change(thexmap* widget)
-{
-	tpoint standard(640, 360);
-	tpoint size = widget->get_size();
-
-	outer_anim::zoom = std::make_pair(1.0 * size.x / standard.x, 1.0 * size.y / standard.y);
-	outer_anim::rect = widget->get_rect();
-/*
-	std::string src;
-	for (std::map<int, const config*>::iterator it = anims_.begin(); it != anims_.end(); ++ it) {
-		unit_animation& anim = disp_.screen_anim(it->first);
-
-		if (!anim.started()) {
-			new_animation_frame();
-			anim.start_animation(0, map_location::null_location, map_location::null_location, true);
-		}
-	}
-*/
 }
 
 void tprelude::form_commands(const config& cfg)
@@ -269,11 +239,11 @@ void tprelude::timer_handler()
 	if (active_anim_ < 0) {
 		return;
 	}
-	std::map<int, unit_animation>& screen_anims = disp_.screen_anims();
-	std::map<int, unit_animation>::iterator it = screen_anims.find(active_anim_);
-	if (it == screen_anims.end() || it->second.animation_finished_potential()) {
-		if (it != screen_anims.end()) {
-			disp_.erase_screen_anim(active_anim_);
+	std::map<int, animation*>& area_anims = disp_.area_anims();
+	std::map<int, animation*>::iterator it = area_anims.find(active_anim_);
+	if (it == area_anims.end() || it->second->animation_finished_potential()) {
+		if (it != area_anims.end()) {
+			disp_.erase_area_anim(active_anim_);
 		}
 		active_anim_ = -1;
 		next_->set_active(true);
@@ -284,6 +254,7 @@ void tprelude::execute(twindow& window)
 {
 	tcontrol& portrait = find_widget<tcontrol>(&window, "portrait", false);
 	tcontrol& msg = find_widget<tcontrol>(&window, "msg", false);
+	tminimap& hexmap = find_widget<tminimap>(&window, "map", false);
 
 	VALIDATE(active_anim_ < 0, "active_anim must be < 0!");
 	if (ing_timer_) {
@@ -303,10 +274,10 @@ void tprelude::execute(twindow& window)
 		}
 		msg.set_label(cfg["message"]);
 	} else if (c.type == ANIM) {
-		global_anim_tag::ttype id = global_anim_tag::find(cfg["id"].str());
-		if (id != global_anim_tag::NONE) {
+		int id = area_anim::find(cfg["id"].str());
+		if (id != area_anim::NONE) {
 			bool persist = cfg["persist"].to_bool();
-			active_anim_ = ready_outer_anim(disp_, id, cfg, true, persist);
+			active_anim_ = ready_outer_anim(disp_, hexmap, cfg, persist);
 			if (persist) {
 				active_anim_ = -1;
 			} else {

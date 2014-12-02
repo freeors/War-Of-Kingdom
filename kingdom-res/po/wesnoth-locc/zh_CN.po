@@ -3,19 +3,22 @@ msgstr ""
 "Project-Id-Version: kingdom\n"
 "POT-Creation-Date: \n"
 "PO-Revision-Date: \n"
-"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: \n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 1.6.5\n"
-"Language: zh_CN\n"
 
 msgid "legend_of_cao_cao"
 msgstr "曹操传"
 
 msgid "legend_of_cao_cao description"
-msgstr "战役包括2个关卡（将来会增加）。1）兖州危机、2）征讨张绣、袁术。"
+msgstr ""
+"战役包括15个关卡:1.黄巾讨伐战、2.虎牢关战役、3.兖州危机、4.征讨张绣、袁术、5."
+"扫平吕布、6.官渡之战、7.平定河北、8.长坂坡之战、9.赤壁硝烟、10.华容道、11.潼"
+"关之战、12.威震逍遥津、13.定军山之战、14.汉中攻防战、15.襄阳之战。"
 
 msgid "LOCC"
 msgstr "LOCC"
@@ -216,38 +219,665 @@ msgstr "许昌沦陷"
 msgid "05shaopinglubu"
 msgstr "扫平吕布"
 
-#~ msgid "battle_chibi"
-#~ msgstr "赤壁之战"
+msgid "06guandu"
+msgstr "06.官渡之战"
 
-# lost condition
-#~ msgid "jiangxia is fallen"
-#~ msgstr "江夏沦陷"
+msgid "guandu"
+msgstr "官渡"
 
-#~ msgid "My ability can not compare with Cao Cao, I surrender."
-#~ msgstr "我的才能不及曹操，愿献城投降。"
+msgid "liyang"
+msgstr "黎阳"
 
-# lost condition
-#~ msgid "Bei Liu troop enters camp"
-#~ msgstr "刘备队进入砦"
+msgid "baima"
+msgstr "白马"
 
-# lost condition
-#~ msgid "Bei Liu troop is be defeated"
-#~ msgstr "刘备队被击败"
+msgid "yanjing"
+msgstr "延津"
 
-#~ msgid "LOBL"
-#~ msgstr "LOBL"
+msgid "wucao"
+msgstr "乌巢"
 
-#~ msgid "battle_changbanpo"
-#~ msgstr "长坂坡之战"
+msgid "weijun"
+msgstr "魏郡"
 
-#, fuzzy
-#~ msgid "LOBL12"
-#~ msgstr "LOBL"
+msgid "ccz06mubiao01"
+msgstr "攻陷白马、延津"
 
-#~ msgid "War of Kingdom"
-#~ msgstr "王国战争"
+msgid "ccz06mubiao02"
+msgstr "官渡失守"
 
-#~ msgid "War of Kingdom description"
-#~ msgstr ""
-#~ "黯淡了刀光剑影，远去了鼓角争鸣，湮没了荒城古道，荒芜了烽火边城。长江有意化"
-#~ "做泪，长江有情起歌声，历史的天空闪烁几颗星，人间一股英雄气，在驰骋纵横。 "
+msgid "ccz06mubiao03"
+msgstr "攻陷乌巢"
+
+msgid "ccz06mubiao04"
+msgstr "官渡失守"
+
+msgid "ccz06duibai01"
+msgstr "丞相，颜良首级在此！"
+
+msgid "ccz06duibai02"
+msgstr "将军真神人也！"
+
+msgid "ccz06duibai03"
+msgstr "某何足道哉！吾弟张翼德于百万军中取上将之头，如探囊取物耳。"
+
+msgid "ccz06duibai04"
+msgstr "今后如遇张翼德，不可轻敌。"
+
+msgid "ccz06duibai05"
+msgstr "丞相，文丑已被我诛于马下！"
+
+msgid "ccz06duibai06"
+msgstr "我是曹丞相故友，快与我通报，说南阳许攸来见。"
+
+msgid "ccz06duibai07"
+msgstr "子远肯来，吾事济矣！愿即教我以破绍之计。"
+
+msgid "ccz06duibai08"
+msgstr ""
+"袁绍军粮辎重，尽积乌巢，今拨淳于琼守把，琼嗜酒无备。公可选精兵诈称袁将蒋奇领"
+"兵到彼护粮，乘间烧其粮草辎重，则绍军不三日将自乱矣。"
+
+msgid "07pingdinghebei"
+msgstr "07.平定河北"
+
+msgid "ccz07mubiao01"
+msgstr "攻陷黎阳"
+
+msgid "ccz07mubiao02"
+msgstr "许昌失守"
+
+msgid "ccz07mubiao03"
+msgstr "消灭敌对势力"
+
+msgid "ccz07mubiao04"
+msgstr "许昌失守"
+
+msgid "08changbanpo"
+msgstr "08.长坂坡之战"
+
+msgid "liubeidaying"
+msgstr "刘备大营"
+
+msgid "changgban"
+msgstr "长坂坡"
+
+msgid "ccz08duibai01"
+msgstr "尔自恃勇力，背着曹操，只顾引人抢夺掳掠，亡于本将枪下，乃是咎由自取！"
+
+msgid "ccz08duibai02"
+msgstr "军中战将可留姓名！"
+
+msgid "ccz08duibai03"
+msgstr "吾乃常山赵子龙也！"
+
+msgid "ccz08duibai04"
+msgstr ""
+"真虎将也！吾当生致之。令飞马传报各处，如赵云到，不许放冷箭，只要捉活的。"
+
+msgid "ccz08duibai05"
+msgstr ""
+"亮自至江夏，特请刘崎公子先来接应，夏口城险，颇有钱粮，可以久守。请主公且到夏"
+"口屯住。公子自回江夏，整顿战船，收拾军器，为掎角之势，可以抵当曹操。若共归江"
+"夏，则势反孤矣。"
+
+msgid "ccz08duibai06"
+msgstr "此计甚好，云长你引五千军守夏口，其它人随贤侄速往江夏。"
+
+msgid "ccz08duibai07"
+msgstr "曹操大军势如破竹，无以为抗，不如早日归降，免军民之苦。"
+
+msgid "ccz08duibai08"
+msgstr "今日诸位据守荆州，守父亲的基业，观望天下转变，不可行？"
+
+msgid "ccz08duibai09"
+msgstr "将军觉得自己与刘备相比如何？"
+
+msgid "ccz08duibai10"
+msgstr "不如。"
+
+msgid "ccz08duibai11"
+msgstr ""
+"若刘备不能抵抗曹操，那么荆州就不能自存。若刘备能抵抗曹操，那么刘备就不再是将"
+"军的臣下了，希望将军不要再疑惑。"
+
+msgid "ccz08duibai12"
+msgstr "唉，看来只有投降一路了。"
+
+msgid "ccz08mubiao01"
+msgstr "攻陷襄阳"
+
+msgid "ccz08mubiao02"
+msgstr "曹操部队被击溃"
+
+msgid "09chibi"
+msgstr "09.赤壁硝烟"
+
+msgid "chibi"
+msgstr "赤壁"
+
+msgid "wuling"
+msgstr "乌林"
+
+msgid "ccz8.9mubiao01"
+msgstr "曹操安然到达乌林边上塔楼（9，29）或（4，33）"
+
+msgid "ccz8.9mubiao02"
+msgstr "曹操部队被击溃、赤壁或乌林失守"
+
+msgid "10huarongdao"
+msgstr "10.华容道"
+
+msgid "huarongxi"
+msgstr "华容道西"
+
+msgid "huarongdong"
+msgstr "华容道东"
+
+msgid "huarongnan"
+msgstr "华容道北"
+
+msgid "ccz09mubiao01"
+msgstr "曹操安然到达江陵边上塔楼（9，44）"
+
+msgid "ccz09mubiao02"
+msgstr "曹操部队被击溃"
+
+msgid "ccz09duibai01"
+msgstr "此是何处？"
+
+msgid "ccz09duibai02"
+msgstr "此是乌林之西，宜都之北。"
+
+msgid "ccz09duibai03"
+msgstr ""
+"哈哈哈哈哈！！吾不笑别人，单笑周瑜无谋，诸葛亮少智。若是吾用兵之时，预先在这"
+"里伏下一军，如之奈何？"
+
+msgid "ccz09duibai04"
+msgstr "我赵子龙奉军师将令，在此等候多时了！"
+
+msgid "ccz09duibai05"
+msgstr "既到此处，只得决一死战！"
+
+msgid "ccz09duibai06"
+msgstr ""
+"某素知云长傲上而不忍下，欺强而不凌弱；恩怨分明，信义素著。丞相旧日有恩于彼，"
+"今只亲自告之，可脱此难。"
+
+msgid "ccz09duibai07"
+msgstr "将军别来无恙！"
+
+msgid "ccz09duibai08"
+msgstr "关某奉军师将令，等候丞相多时。"
+
+msgid "ccz09duibai09"
+msgstr "吾兵败势危，到此无路，望将军以昔日之情为重。"
+
+msgid "ccz09duibai10"
+msgstr ""
+"昔日关某虽蒙丞相厚恩，然已斩颜良，诛文丑，解白马之围，以奉报矣。今日之事，岂"
+"敢以私废公？"
+
+msgid "ccz09duibai11"
+msgstr ""
+"五关斩将之时，还能记否？大丈夫以信义为重。将军深明《春秋》，岂不知庾公之斯追"
+"子濯孺子之事乎？"
+
+msgid "ccz09duibai12"
+msgstr ""
+"••••••••当日曹公许多恩义，与后来五关斩将之事，实在于心不忍，马队散开，放曹丞"
+"相过去！"
+
+msgid "cczkc01"
+msgstr ""
+"东汉末年政局不稳，外戚专政，宦官专权，张角创立太平道，以宗教的方式笼络人心，"
+"意图推翻汉朝建立以张角为君的新天下。至此，黄巾起义爆发，曹操被拜为骑都尉，受"
+"命与皇甫嵩等人合军进攻颍川的黄巾军。"
+
+msgid "cczkc02"
+msgstr ""
+"董卓入京，执掌朝政，曹操散家财，合义兵，且首倡义兵号召天下英雄讨伐董卓。公元"
+"190年（初平元年）正月，袁术等人共推渤海太守袁绍为盟主，曹操任代理奋武将军，参"
+"加讨董军。董卓命吕布率领先头部队3万，在虎牢关前驻防扎营，战事一触即发。"
+
+msgid "cczkc03"
+msgstr ""
+"公元193年（初平四年）秋，曹操的父亲曹嵩来曹操处路上，在陶谦领地被杀害   ，曹"
+"操遂进兵徐州。"
+
+msgid "cczkc04"
+msgstr ""
+"公元196年（建安元年）八月，曹操迎汉献帝。辛亥， 迁都许昌。冬十一月丙戌，汉献"
+"帝封曹操为司空，行车骑将军事，曹操觉时机成熟，公元197年春正月，曹操讨伐张绣，"
+"军队驻扎在淯水。"
+
+msgid "cczkc05"
+msgstr ""
+"公元198年（建安三年）夏四月，曹操讨李傕，夷三族。九月，曹操东征徐州，进攻久与"
+"他为敌的吕布。"
+
+msgid "cczkc06"
+msgstr ""
+"袁氏一门，自袁绍曾祖袁安以下，“四世居三公位”，“门生故吏遍于天下”，他挑选精兵"
+"十万、战马万匹，志在一举消灭曹操。公元200年（建安五年），袁绍命大将颜良等人进"
+"兵白马，自率大军进屯黎阳，向曹操发动进攻。"
+
+msgid "cczkc07"
+msgstr "公元202年（建安七年），袁绍病死,曹操决意统河北。"
+
+msgid "cczkc08"
+msgstr ""
+"公元208年（建安十三年），开辟玄武池训练水军，兵锋转而南向。江陵为荆州重镇，存"
+"有大量军用物资。曹操怕江陵落于刘备之手，遂亲率五千骑兵从襄阳疾驰三百里，在当"
+"阳长坂截杀刘备。"
+
+msgid "cczkc09"
+msgstr ""
+"曹操在击溃刘备后，乘势想一举鲸吞江东，孙权、刘备两家在鲁肃和诸葛亮等人的努力"
+"下，组成联盟，曹操自江陵东下，至赤壁，与对方隔江对峙。周瑜用诈降之计，命黄盖"
+"率小船十艘，上装柴草，灌以膏油，至离曹营二里之处时，各船一齐点火，然后借助风"
+"势，直向曹军冲去，曹军大败，舟船被烧。"
+
+msgid "cczkc10"
+msgstr ""
+"曹操战船被烧，率军从华容道步行而归。华容道上一片泥泞，加之那天又刮大风，行走"
+"更加艰难,兵败的曹操是否能安然撤回江陵呢。"
+
+msgid "subcontinent_chibi description"
+msgstr "赤壁之战（次大陆）"
+
+msgid "subcontinent_chibi"
+msgstr "赤壁（次大陆）"
+
+msgid "chibizhizhan"
+msgstr "赤壁之战"
+
+msgid "huyang"
+msgstr "湖阳"
+
+msgid "wulingxi"
+msgstr "乌林西"
+
+msgid "lukou"
+msgstr "陆口"
+
+msgid "xiakou"
+msgstr "夏口"
+
+msgid "hanjing"
+msgstr "汉津"
+
+msgid "jiangjing"
+msgstr "江津"
+
+msgid "fancheng"
+msgstr "樊城"
+
+msgid "11tongguan"
+msgstr "10.潼关之战"
+
+msgid "tongguan"
+msgstr "潼关"
+
+msgid "hangu"
+msgstr "函谷"
+
+msgid "ccz11mubiao01"
+msgstr "消灭所有敌对势力"
+
+msgid "ccz11mubiao02"
+msgstr "曹操部队被击破"
+
+msgid "ccz11duibai01"
+msgstr "长髯者是曹操！"
+
+msgid "ccz11duibai02"
+msgstr "哥哥，曹贼极其狡猾，竟用佩刀断髯。"
+
+msgid "ccz11duibai03"
+msgstr "短髯者是曹操！"
+
+msgid "ccz11duibai04"
+msgstr "勿伤吾主！曹洪在此！"
+
+msgid "ccz11duibai05"
+msgstr "马超不减吕布之勇！"
+
+msgid "ccz11duibai06"
+msgstr "马超小儿，虎痴誓与死战。"
+
+msgid "ccz11duibai07"
+msgstr ""
+"马超倚仗武勇，常有欺之心，便胜得我主公，怎肯相让？以某愚见，不如投靠曹公，他"
+"日不失封侯之位。"
+
+msgid "ccz11duibai08"
+msgstr "吾与马腾结为兄弟，安忍背之？"
+
+msgid "ccz11duibai09"
+msgstr "事已至此，不得不然。"
+
+msgid "ccz11duibai10"
+msgstr "马超止剩得三十余骑，与庞德、马岱望陇西临洮而去。"
+
+msgid "ccz11duibai11"
+msgstr ""
+"马超有吕布之勇，深得羌人之心。今丞相若不乘势剿绝，他日养成气力，陇上诸郡，非"
+"复国家之有也。望丞相且休回兵。"
+
+msgid "ccz11duibai12"
+msgstr "吾本欲留兵征之，奈中原多事，南方未定，不可久留。君当为孤保之。"
+
+msgid "12xiaoyaojing"
+msgstr "12逍遥津"
+
+msgid "xiaoyaojing"
+msgstr "逍遥津"
+
+msgid "xiaoyaojingbei"
+msgstr "逍遥津北"
+
+msgid "hefei"
+msgstr "合肥"
+
+msgid "ccz12mubiao01"
+msgstr "消灭孙权势力"
+
+msgid "ccz12mubiao02"
+msgstr "逍遥津北或合肥失陷"
+
+msgid "13dingjunshan"
+msgstr "13.定军山之战"
+
+msgid "dingjunshan"
+msgstr "定军山"
+
+msgid "jiange"
+msgstr "剑阁"
+
+msgid "yangpingguan"
+msgstr "阳平关"
+
+msgid "ccz13mubiao01"
+msgstr "消灭刘备势力"
+
+msgid "ccz13mubiao02"
+msgstr "没有据点"
+
+msgid "ccz13mubiao03"
+msgstr "击破张飞的部队"
+
+msgid "ccz13mubiao04"
+msgstr "阳平关失守"
+
+msgid "ccz13duibai01"
+msgstr "贼军势大，只能暂时撤军，紧上关门，待曹丞相援军到来，方为上策。"
+
+msgid "14hanzhonggongfang"
+msgstr "14.汉中攻防战"
+
+msgid "ccz14mubiao01"
+msgstr "击破诸葛亮的部队"
+
+msgid "ccz14mubiao02"
+msgstr "没有占据的城市"
+
+msgid "ccz14mubiao03"
+msgstr "击破刘备的部队"
+
+msgid "ccz14mubiao04"
+msgstr "没有占据的城市"
+
+msgid "ccz14duibai01"
+msgstr "刘备忘恩失义，反叛朝廷之贼！"
+
+msgid "ccz14duibai02"
+msgstr "吾乃大汉宗亲，奉诏讨贼。汝上弑母后，自立为王，僭用天子銮舆，非反而何？"
+
+msgid "ccz14duibai03"
+msgstr "捉得刘备，便为西川之主。"
+
+msgid "ccz14duibai04"
+msgstr "黄须儿曹彰在此，特来助父破杀刘备！"
+
+msgid "ccz14duibai05"
+msgstr "鸡肋！鸡肋！"
+
+msgid "ccz14duibai06"
+msgstr "公何收拾行装？"
+
+msgid "ccz14duibai07"
+msgstr ""
+"以今夜号令，便知魏王不日将退兵归也：鸡肋者，食之无肉，弃之有味。今进不能胜，"
+"退恐人笑，在此无益，不如早归：来日魏王必班师矣。故先收拾行装，免得临行慌乱。"
+
+msgid "ccz14duibai08"
+msgstr "汝怎敢造言乱我军心！把杨修拉下去斩了！"
+
+msgid "ccz14duibai09"
+msgstr "中埋伏了！织席小儿，安敢如此！吾誓灭之！全军撤出汉中地界！"
+
+msgid "15xiangyangzhizhan"
+msgstr "15襄阳之战"
+
+msgid "ccz15mubiao01"
+msgstr "消灭关羽势力"
+
+msgid "ccz15mubiao02"
+msgstr "襄阳失陷"
+
+msgid "ccz15duibai01"
+msgstr "上命差遣，身不由己。望君侯怜悯，誓以死报。"
+
+msgid "ccz15duibai02"
+msgstr ""
+"吾杀汝，犹杀狗彘耳，空污刀斧！令人缚送荆州大牢内监候，待吾回，别作区处。"
+
+msgid "ccz15duibai03"
+msgstr "汝兄现在汉中；汝故主马超，亦在蜀中为大将。汝如何不早降？"
+
+msgid "ccz15duibai04"
+msgstr "吾宁死于刀下，岂降汝耶！"
+
+msgid "ccz15duibai05"
+msgstr ""
+"某素知云长智勇盖世，今据荆襄，如虎生翼。庞德被斩，魏兵挫锐；倘彼率兵直至许"
+"都，如之奈何？孤欲迁都以避之。"
+
+msgid "ccz15duibai06"
+msgstr ""
+"不可。庞德等被水所淹，非战之故；于国家大计，本无所损。今孙、刘失好，云长得"
+"志，孙权必不喜；大王可遣使去东吴陈说利害，令孙权暗暗起兵蹑云长之后，许事平之"
+"日，割江南之地以封孙权，则襄樊之危自解矣。"
+
+msgid "ccz15duibai07"
+msgstr "今日之危，非力可救；可趁敌军未至，乘舟夜走，虽然失城，尚可全身。"
+
+msgid "ccz15duibai08"
+msgstr ""
+"不可。山水骤至，岂能长存？不旬日即当自退。关公虽未攻城，已遣别将在郏下。其所"
+"以不敢轻进者，虑吾军袭其后也。今若弃城而去，黄河以南，非国家之有矣。愿将军固"
+"守此城，以为保障。"
+
+msgid "ccz15duibai09"
+msgstr "非伯宁之教，几误大事。吾受魏王命，保守此城；但有言弃城而去者斩！"
+
+msgid "ccz15duibai10"
+msgstr ""
+"自别君侯，倏忽数载，不想君侯须发已苍白矣！忆昔壮年相从，多蒙教诲，感谢不忘。"
+"今君侯英风震于华夏，使故人闻之，不胜叹羡！兹幸得一见，深慰渴怀。”但今日乃国家"
+"之事，某不敢以私废公，若取得云长首级者，重赏千金！"
+
+msgid "ccz15duibai11"
+msgstr "已擒获关羽！"
+
+msgid "cczkc11"
+msgstr ""
+"公元211年（建安十六年），曹操开始对关中用兵。三月，曹操遣司隶校尉钟繇率大将夏"
+"侯渊以讨伐汉中（张鲁为名进兵关中。关中马超、韩遂等心生疑惧，一时俱反。曹操立"
+"即派大将曹仁进攻关中，马超等人屯据潼关。"
+
+msgid "cczkc12"
+msgstr ""
+"公元213年（建安十八年），曹操起兵号称四十万，亲自南征孙权。二军相持月余，各无"
+"所获。曹操见孙权军容严整，自己难以取胜，遂撤军北还。并任命张辽与乐进、李典等"
+"部领七千馀人马屯守于合肥。"
+
+msgid "cczkc13"
+msgstr ""
+"公元218年（建安二十三年），刘备亲率大军进至定军山，汉中大将夏侯渊等人与刘备夹"
+"关对峙。"
+
+msgid "cczkc14"
+msgstr ""
+"定军山之役，夏侯渊陨命，曹操亲率大军赶往关中，坐镇长安，以便随时指挥汉中战"
+"局。"
+
+msgid "cczkc15"
+msgstr ""
+"公元219年（建安二十四年）七月，曹操刚刚从汉中撤出，刘备大将关羽就从荆州向他的"
+"东南防线襄、樊一带发动了进攻。曹操闻知，立刻派大将于禁率兵往救樊城。八月，关"
+"羽乘洪水泛滥之机,将襄樊围住。"
+
+msgid "subcontinent_guandu description"
+msgstr "官渡之战（次大陆）"
+
+msgid "subcontinent_guandu"
+msgstr "官渡（次大陆）"
+
+msgid "guandudalu"
+msgstr "官渡大陆"
+
+msgid "pushui"
+msgstr "濮水"
+
+msgid "jixian"
+msgstr "汲县"
+
+msgid "jishui"
+msgstr "济水"
+
+msgid "yuanwu"
+msgstr "原武"
+
+msgid "yangwu"
+msgstr "阳武"
+
+msgid "fengqiu"
+msgstr "封丘"
+
+msgid "junyi"
+msgstr "浚仪"
+
+msgid "zhongmu"
+msgstr "中牟"
+
+msgid "zhengzhou"
+msgstr "郑州"
+
+msgid "jiluoshan"
+msgstr "鸡洛山"
+
+msgid "legend_of_liu_bei"
+msgstr "刘备传"
+
+msgid "legend_of_liu_bei description"
+msgstr "以刘备势力为视角展开的三国题材战役"
+
+msgid "01lb"
+msgstr "01.历史的道标"
+
+msgid "01lbmubiao01"
+msgstr "消灭张角势力"
+
+msgid "01lbmubiao02"
+msgstr "已方无据点"
+
+msgid "02lb"
+msgstr "02.三英战吕布"
+
+msgid "lbz02mubiao01"
+msgstr "对洛阳造成一定的损坏"
+
+msgid "lbz02mubiao02"
+msgstr "已方无据点"
+
+msgid "caocaodaying"
+msgstr "曹操大营"
+
+msgid "shishuiguan"
+msgstr "汜水关"
+
+msgid "mengzhuying"
+msgstr "盟主营"
+
+msgid "yuanshudaying"
+msgstr "袁术大营"
+
+msgid "shuijiandaying"
+msgstr "孙坚大营"
+
+msgid "lbz02duibai01"
+msgstr "关外诸侯，布视之如草芥；愿提虎狼之师，尽斩其首，悬于都门。"
+
+msgid "lbz02duibai02"
+msgstr "吾有奉先，高枕无忧矣！"
+
+msgid "lbz02duibai03"
+msgstr "割鸡焉用牛刀？不劳温侯亲往。吾斩众诸侯首级，如探囊取物耳！"
+
+msgid "lbz02duibai04"
+msgstr ""
+"华雄引铁骑下关，连斩我军数位大将，今下用长竿挑着韩太守上将潘凤之颅，来寨前大"
+"骂搦战。"
+
+msgid "lbz02duibai05"
+msgstr "可惜吾上将颜良、文丑未至！得一人在此，何惧华雄！"
+
+msgid "lbz02duibai06"
+msgstr "小将愿往斩华雄头，献于帐下！"
+
+msgid "lbz02duibai07"
+msgstr "此刘玄德之弟关羽也。如今跟随刘玄德充马弓手。"
+
+msgid "lbz02duibai08"
+msgstr "汝欺吾众诸侯无大将耶？量一弓手，安敢乱言！与我打出！"
+
+msgid "lbz02duibai09"
+msgstr ""
+"公路息怒。此人既出大言，必有勇略；试教出马，如其不胜，责之未迟。且此人仪表不"
+"俗，华雄安知他是弓手？"
+
+msgid "lbz02duibai10"
+msgstr "如不胜，请斩某头。"
+
+msgid "lbz02duibai11"
+msgstr "速酾热酒一杯，与壮士饮了上马。"
+
+msgid "lbz02duibai12"
+msgstr "酒且斟下，某去便来。"
+
+msgid "lbz02duibai13"
+msgstr "俺哥哥斩了华雄，不就这里杀入关去，活拿董卓，更待何时！"
+
+msgid "lbz02duibai14"
+msgstr "三姓家奴休走！燕人张飞在此！"
+
+msgid "lbz02duibai15"
+msgstr "温侯新败，兵无战心。不若引兵回洛阳，迁帝于长安，方可无虞。"
+
+msgid "lbz02duibai16"
+msgstr "非汝言，吾实不悟。"
+
+msgid "03lb"
+msgstr "03.徐州救援战"
+
+msgid "lbz03mubiao01"
+msgstr "消灭曹操势力"
+
+msgid "lbz03mubiao02"
+msgstr "徐州沦陷"
+
+#~ msgid "01liubei"
+#~ msgstr "01.颖川之战"

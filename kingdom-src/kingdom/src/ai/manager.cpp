@@ -19,13 +19,12 @@
 
 #include "default/ai.hpp"
 #include "configuration.hpp"
-// #include "contexts.hpp"
 #include "manager.hpp"
 #include "../game_events.hpp"
 #include "../game_preferences.hpp"
-#include "../log.hpp"
+#include "log.hpp"
 #include "../replay.hpp"
-#include "../serialization/string_utils.hpp"
+#include "serialization/string_utils.hpp"
 #include "../statistics.hpp"
 
 #include <map>

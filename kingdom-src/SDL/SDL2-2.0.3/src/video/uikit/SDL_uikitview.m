@@ -36,6 +36,7 @@
 #include "SDL_uikitwindow.h"
 
 void _uikit_keyboard_init() ;
+int keyboardHeight = 0;
 
 @implementation SDL_uikitview
 
@@ -397,7 +398,9 @@ void _uikit_keyboard_update() {
         offsetx /= scale;
         offsety /= scale;
     }
-    view.frame = CGRectMake(offsetx,offsety,view.frame.size.width,view.frame.size.height);
+
+    // don't scroll application window
+    // view.frame = CGRectMake(offsetx,offsety,view.frame.size.width,view.frame.size.height);
 }
 
 void _uikit_keyboard_set_height(int height) {
@@ -428,6 +431,13 @@ void _uikit_keyboard_init() {
                             height *= [UIScreen mainScreen].scale;
                         }
                         _uikit_keyboard_set_height(height);
+                        {
+                            // special kingdom
+                            CGSize keyboardEndSize = [[[notification userInfo] objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue].size;
+                            height = keyboardEndSize.width;
+                            keyboardHeight = height;
+                            SDL_SendKeyboardKey(SDL_PRESSED, SDL_SCANCODE_PRINTSCREEN);
+                        }
                     }
      ];
     [center addObserverForName:UIKeyboardDidHideNotification
@@ -450,6 +460,10 @@ UIKit_SetTextInputRect(_THIS, SDL_Rect *rect)
     SDL_uikitview *view = getWindowView(SDL_GetFocusWindow());
     if (view == nil) {
         return ;
+    }
+    {
+        rect->h = keyboardHeight;
+        return;
     }
 
     view.textInputRect = *rect;

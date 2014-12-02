@@ -1,3 +1,5 @@
+#ifndef _ROSE_EDITOR
+
 #define GETTEXT_DOMAIN "wesnoth-maker"
 
 #include "global.hpp"
@@ -7,6 +9,7 @@
 #include <string.h>
 #include "formula_string_utils.hpp"
 #include "rectangle.hpp"
+#include "DlgCoreProc.hpp"
 
 #include "resource.h"
 
@@ -48,8 +51,6 @@ namespace ns {
 	tevent::tfilter_* filter;
 	tevent::tcommand* clicked_command;
 	std::string clicked_variable;
-	LPARAM clicked_param;
-	HTREEITEM clicked_htvi;
 	int clicked_judge;
 	int action_judge;
 	int clicked_item;
@@ -137,26 +138,6 @@ bool is_variable(const std::string& value)
 int to_int(const std::string& value, int def)
 {
 	return lexical_cast_default<int>(value, def);
-}
-
-std::set<int> to_set_int(const std::string& value)
-{
-	std::vector<std::string> vstr = utils::split(value);
-	std::set<int> ret;
-	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
-		ret.insert(lexical_cast_default<int>(*it));
-	}
-	return ret;
-}
-
-std::vector<int> to_vector_int(const std::string& value)
-{
-	std::vector<std::string> vstr = utils::split(value);
-	std::vector<int> ret;
-	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
-		ret.push_back(lexical_cast_default<int>(*it));
-	}
-	return ret;
 }
 
 void cumulate_variables_to_lv(HWND hdlgP)
@@ -1117,7 +1098,7 @@ std::string tevent::tfilter_::description(HWND hwndtv, HTREEITEM branch, bool ne
 		if (valuex::is_variable(must_heros_)) {
 			strstr << must_heros_;
 		} else {
-			std::vector<int> sstr = valuex::to_vector_int(must_heros_);
+			std::vector<int> sstr = utils::to_vector_int(must_heros_);
 			for (std::vector<int>::const_iterator it = sstr.begin(); it != sstr.end(); ++ it) {
 				hero& h = gdmgr.heros_[*it];
 				if (it == sstr.begin()) {
@@ -1811,7 +1792,7 @@ void tevent::tkill::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
 	if (valuex::is_variable(master_hero_)) {
 		strstr << master_hero_;
 	} else {
-		std::set<int> sstr = valuex::to_set_int(master_hero_);
+		std::set<int> sstr = utils::to_set_int(master_hero_);
 		for (std::set<int>::const_iterator it = sstr.begin(); it != sstr.end(); ++ it) {
 			hero& h = gdmgr.heros_[*it];
 			if (it == sstr.begin()) {
@@ -2329,7 +2310,7 @@ void tevent::tunit::update_to_ui_event_edit(HWND hctl, HTREEITEM branch) const
 	if (valuex::is_variable(heros_army_)) {
 		strstr << heros_army_;
 	} else {
-		std::vector<int> sstr = valuex::to_vector_int(heros_army_);
+		std::vector<int> sstr = utils::to_vector_int(heros_army_);
 		for (std::vector<int>::const_iterator it = sstr.begin(); it != sstr.end(); ++ it) {
 			hero& h = gdmgr.heros_[*it];
 			if (it == sstr.begin()) {
@@ -5680,7 +5661,7 @@ void strcat_heros_str(HWND hdlgP, int id)
 	strstr.str("");
 	strstr << text;
 	if (!strstr.str().empty()) {
-		std::set<int> sstr = valuex::to_set_int(strstr.str());
+		std::set<int> sstr = utils::to_set_int(strstr.str());
 		if (sstr.find(ns::clicked_hero) != sstr.end()) {
 			return;
 		}
@@ -7425,7 +7406,7 @@ void eventunit_notify_handler_rclick(HWND hdlgP, int id, LPNMHDR lpNMHdr)
 		AppendMenu(hpopup, MF_STRING, IDM_TOSERVICE, "到在职");
 		
 		Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTUNIT_HEROSARMY), text, sizeof(text) / sizeof(text[0]));
-		if (valuex::to_vector_int(text).size() >= 3) {
+		if (utils::to_vector_int(text).size() >= 3) {
 			EnableMenuItem(hpopup, IDM_TOSERVICE, MF_BYCOMMAND | MF_GRAYED);
 		}
 
@@ -8485,7 +8466,7 @@ void eventfilter_notify_handler_rclick(HWND hdlgP, int id, LPNMHDR lpNMHdr)
 		AppendMenu(hpopup, MF_STRING, IDM_TOSERVICE, "到必须");
 		
 		Edit_GetText(GetDlgItem(hdlgP, IDC_ET_EVENTFILTER_MUSTHEROS), text, sizeof(text) / sizeof(text[0]));
-		if (valuex::to_vector_int(text).size() >= 3) {
+		if (utils::to_vector_int(text).size() >= 3) {
 			EnableMenuItem(hpopup, IDM_TOSERVICE, MF_BYCOMMAND | MF_GRAYED);
 		}
 
@@ -9105,3 +9086,5 @@ void OnEventDelBt(HWND hdlgP)
 	scenario.set_dirty(tscenario::BIT_EVENT, !scenario.event_equal()); 
 	return;
 }
+
+#endif

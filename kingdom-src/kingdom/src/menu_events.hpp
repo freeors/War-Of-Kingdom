@@ -87,7 +87,6 @@ public:
 	void label_terrain(mouse_handler& mousehandler, bool team_only);
 	void clear_labels();
 	void execute_gotos(mouse_handler &mousehandler, int side_num);
-	void toggle_ellipses();
 	void toggle_grid();
 	void clear_messages();
 

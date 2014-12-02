@@ -827,7 +827,7 @@ IME_HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM *lParam, SDL_VideoD
         *lParam = 0;
         break;
     case WM_IME_STARTCOMPOSITION:
-        trap = SDL_TRUE;
+        // trap = SDL_TRUE;
         break;
     case WM_IME_COMPOSITION:
         trap = SDL_TRUE;
@@ -837,6 +837,7 @@ IME_HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM *lParam, SDL_VideoD
             IME_SendInputEvent(videodata);
         }
         if (*lParam & GCS_COMPSTR) {
+			trap = SDL_FALSE;
             if (!videodata->ime_uiless)
                 videodata->ime_readingstring[0] = 0;
 
@@ -844,7 +845,7 @@ IME_HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM *lParam, SDL_VideoD
             IME_SendEditingEvent(videodata);
         }
         ImmReleaseContext(hwnd, himc);
-        break;
+		break;
     case WM_IME_ENDCOMPOSITION:
         videodata->ime_composition[0] = 0;
         videodata->ime_readingstring[0] = 0;
@@ -862,8 +863,8 @@ IME_HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM *lParam, SDL_VideoD
             if (videodata->ime_uiless)
                 break;
 
-            trap = SDL_TRUE;
-            IME_ShowCandidateList(videodata);
+            // trap = SDL_TRUE;
+            // IME_ShowCandidateList(videodata);
             himc = ImmGetContext(hwnd);
             if (!himc)
                 break;
@@ -872,8 +873,8 @@ IME_HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM *lParam, SDL_VideoD
             ImmReleaseContext(hwnd, himc);
             break;
         case IMN_CLOSECANDIDATE:
-            trap = SDL_TRUE;
-            IME_HideCandidateList(videodata);
+            // trap = SDL_TRUE;
+            // IME_HideCandidateList(videodata);
             break;
         case IMN_PRIVATE:
             {
@@ -886,8 +887,9 @@ IME_HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM *lParam, SDL_VideoD
                 case IMEID_CHT_VER44:
                 case IMEID_CHS_VER41:
                 case IMEID_CHS_VER42:
-                    if (*lParam == 1 || *lParam == 2)
-                        trap = SDL_TRUE;
+					if (*lParam == 1 || *lParam == 2) {
+                        // trap = SDL_TRUE;
+					}
 
                     break;
                 case IMEID_CHT_VER50:
@@ -899,14 +901,15 @@ IME_HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM *lParam, SDL_VideoD
                         || *lParam == 17
                         || *lParam == 26
                         || *lParam == 27
-                        || *lParam == 28)
-                        trap = SDL_TRUE;
+						|| *lParam == 28) {
+                        // trap = SDL_TRUE;
+					}
                     break;
                 }
             }
             break;
         default:
-            trap = SDL_TRUE;
+            // trap = SDL_TRUE;
             break;
         }
         break;

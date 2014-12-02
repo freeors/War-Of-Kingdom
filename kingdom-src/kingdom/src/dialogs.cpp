@@ -48,6 +48,9 @@
 #include "unit_display.hpp"
 #include "gui/dialogs/network_transmission.hpp"
 #include "gui/widgets/window.hpp"
+#include "multiplayer.hpp"
+#include "lobby.hpp"
+#include "integrate.hpp"
 
 #include <boost/foreach.hpp>
 #include <clocale>
@@ -327,15 +330,18 @@ void connection_recv_buf::poll()
 	}
 }
 
-class connection_recv_cfg : public connection
+class connection_recv_cfg : public connection, public tlobby::thandler
 {
 public:
 	connection_recv_cfg(network::connection connection_num, config& data)
 		: connection(connection_num)
 		, data_(data)
 		, res_(network::null_connection)
-	{}
+	{
+		join();
+	}
 
+	bool handle(tlobby::ttype type, const config& data);
 	void poll();
 	network::connection res() const { return res_; }
 private:
@@ -343,11 +349,20 @@ private:
 	network::connection res_;
 };
 
+bool connection_recv_cfg::handle(tlobby::ttype type, const config& data)
+{
+	if (type == tlobby::t_data) {
+		data_ = data;
+		res_ = lobby.sock;
+		return true;
+	}
+
+	return false;
+}
+
 void connection_recv_cfg::poll()
 {
-	network::connection sock = network::receive_data(data_);
-	if (sock != network::null_connection) {
-		res_ = sock;
+	if (res_ != network::null_connection) {
 		cancel();
 	}
 }
@@ -436,7 +451,7 @@ std::string form_connect_to_title()
 {
 	std::stringstream strstr;
 	utils::string_map i18n_symbols;
-	strstr << help::tintegrate::generate_format(game_config::bbs_server.name, "green");
+	strstr << tintegrate::generate_format(game_config::bbs_server.name, "green");
 	i18n_symbols["server"] = strstr.str();
 
 	return vgettext("Connecting to $server...", i18n_symbols);
@@ -446,7 +461,7 @@ std::string form_send_to_title()
 {
 	std::stringstream strstr;
 	utils::string_map i18n_symbols;
-	strstr << help::tintegrate::generate_format(game_config::bbs_server.name, "green");
+	strstr << tintegrate::generate_format(game_config::bbs_server.name, "green");
 	i18n_symbols["server"] = strstr.str();
 
 	return vgettext("Sending to $server...", i18n_symbols);
@@ -456,7 +471,7 @@ std::string form_receive_from_title()
 {
 	std::stringstream strstr;
 	utils::string_map i18n_symbols;
-	strstr << help::tintegrate::generate_format(game_config::bbs_server.name, "green");
+	strstr << tintegrate::generate_format(game_config::bbs_server.name, "green");
 	i18n_symbols["server"] = strstr.str();
 
 	return vgettext("Reading from $server...", i18n_symbols);
@@ -468,7 +483,7 @@ network::connection network_connect_dialog(display& disp, const std::string&, co
 
 	connect_waiter waiter(disp, form_connect_to_title());
 	try {
-		conn = network::connect(hostname, port, xmit_http_data, waiter);
+		conn = network::connect(hostname, port, xmit_http_data, false, waiter);
 	} catch (network::error& e) {
 		std::string err = e.message;
 		if (e.message.empty()) {

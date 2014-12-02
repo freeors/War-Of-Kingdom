@@ -439,6 +439,7 @@
 #define IDC_ET_NEWCAMP_FIRSTSCENARIODESC 1294
 #define IDC_ET_UTYPEEDIT_ID             1294
 #define IDC_CMB_EVENTFILTER_HP          1294
+#define IDC_CMB_ANIMFILTER_FEATURE      1294
 #define IDC_ET_UTYPEEDIT_IDSTATUS       1295
 #define IDC_CMB_EVENTFILTER_CONTROLLER  1295
 #define IDC_LV_UTYPEEDIT_ADVANCESTO     1296
@@ -719,6 +720,7 @@
 #define IDC_STATIC_COORDINATE           1452
 #define IDC_STATIC_OFFSET_Y             1452
 #define IDC_STATIC_TRAITS               1453
+#define IDC_STATIC_IMAGEHORIZONTAL      1453
 #define IDC_STATIC_HERO                 1454
 #define IDC_STATIC_CANDIDATE            1455
 #define IDC_STATIC_OFFICE               1456
@@ -816,15 +818,23 @@
 #define IDC_CHK_ANIMFILTER_S            1522
 #define IDC_CHK_ANIMFILTER_SE           1523
 #define IDC_CHK_ANIMFILTER_SW           1524
+#define IDC_CHK_ANIMFILTER_BLADE        1525
 #define IDC_ET_ANIMFRAME_IMAGE          1526
+#define IDC_CHK_ANIMFILTER_PIERCE       1526
 #define IDC_ET_ANIMFRAME_HALO           1527
+#define IDC_CHK_ANIMFILTER_IMPACT       1527
 #define IDC_STATIC_DURATION             1528
+#define IDC_CHK_ANIMFILTER_ARCHERY      1528
 #define IDC_ET_ANIMFRAME_DURATION       1529
+#define IDC_CHK_ANIMFILTER_COLLAPSE     1529
 #define IDC_UD_ANIMFRAME_DURATION       1530
+#define IDC_CHK_ANIMFILTER_ARCANE       1530
 #define IDC_ET_ANIMFRAME_HALOX          1531
 #define IDC_STATIC_STARTTIME            1531
+#define IDC_CHK_ANIMFILTER_FIRE         1531
 #define IDC_ET_ANIMFRAME_HALOY          1532
 #define IDC_ET_ANIMPARTICULAR_STARTTIME 1532
+#define IDC_CHK_ANIMFILTER_COLD         1532
 #define IDC_UD_ANIMPARTICULAR_STARTTIME 1533
 #define IDC_ET_ANIMFRAME_OFFSET_X       1533
 #define IDC_ET_ANIMFRAME_SOUND          1534
@@ -881,6 +891,7 @@
 #define IDC_UD_ANIMFRAME_BLUE           1552
 #define IDC_UD_CONFIG_PORT              1553
 #define IDC_STATIC_TEXTCOLOR2           1553
+#define IDC_ET_ANIMFRAME_IMAGEHORIZONTAL 1553
 #define IDC_ET_CONFIG_URL               1554
 #define IDC_ET_CONFIG_TEXTDOMAIN        1555
 #define IDC_ET_CONFIG_DOMAIN            1555
@@ -1031,12 +1042,11 @@
 #define IDC_ET_TOPICEDIT_TITLE_TEXTDOMAIN 1671
 #define IDC_ET_TOPICEDIT_TITLE_TEXTDOMAINSTATUS 1672
 #define IDC_ET_INTEGRATE_TEXT           1673
-#define IDC_BUTTON1                     1674
 #define IDC_BT_INTEGRATE_CONVERT        1674
-#define IDC_BT_INTEGRATE_CONVERT2       1675
-#define IDC_BT_INTEGRATE_VALIDATE       1675
+#define IDC_ET_CITYEDIT_ALIAS_MSGID     1675
+#define IDC_ET_CITYEDIT_ALIAS           1676
 #define IDM_RESET                       40009
-#define IDM_UTYPE                       40010
+#define IDM_HEROSTATE                   40010
 #define IDM_UTYPE_GENERAL               40011
 #define IDM_UTYPE_MTYPE                 40012
 #define IDM_UTYPE_ATTACKI               40013
@@ -1167,14 +1177,15 @@
 #define IDM_CONVERT_POEDIT              40153
 #define IDM_EXCHANGE                    40154
 #define IDM_APPEND                      40155
+#define IDM_NEW_EXTRAROSE               40156
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        302
-#define _APS_NEXT_COMMAND_VALUE         40156
-#define _APS_NEXT_CONTROL_VALUE         1675
+#define _APS_NEXT_COMMAND_VALUE         40157
+#define _APS_NEXT_CONTROL_VALUE         1677
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

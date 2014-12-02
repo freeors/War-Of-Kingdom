@@ -57,15 +57,22 @@ bool can_generate(const gamemap& map, const std::vector<team>& teams, const unit
 
 	map_location locs[6];
 	get_adjacent_tiles(loc, locs);
+	bool exit = false;
 	for (int i = 0; i != 6; ++i) {
 		if (!map.on_board(locs[i])) {
 			continue;
 		}
-		if (u.movement_cost(map[locs[i]]) != unit_movement_type::UNREACHABLE) {
-			return true;
+		if (u.is_robber()) {
+			const unit* that = units.find_unit(locs[i]);
+			if (that && that->is_city()) {
+				return false;
+			}
+		}
+		if (!exit && u.movement_cost(map[locs[i]]) != unit_movement_type::UNREACHABLE) {
+			exit = true;
 		}
 	}
-	return false;
+	return exit;
 }
 
 map_location pathfind::find_vacant_tile(const gamemap& map,

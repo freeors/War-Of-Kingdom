@@ -82,7 +82,6 @@ public:
 	const std::vector<user_info>& users() const { return users_; }
 	const std::vector<user_info*>& users_sorted() const;
 private:
-	void process_userlist();
 
 	const config& game_config_;
 	config gamelist_;
@@ -102,6 +101,7 @@ private:
 };
 
 #include "multiplayer.hpp"
+#include "lobby.hpp"
 #include "gui/widgets/tree_view.hpp"
 
 namespace gui2 {
@@ -157,46 +157,10 @@ typedef std::vector<connected_user> connected_user_list;
 class lobby_base
 {
 public:
-	/**
-	 * Network polling callback
-	 */
-	lobby_base();
-	~lobby_base();
-
-	void regenerate_hero_map_from_users(game_display& disp, hero_map& heros, connected_user_list& users, std::map<std::string, http::membership>& member_users);
+	void regenerate_hero_map_from_users(display& disp, hero_map& heros, connected_user_list& users, std::map<std::string, http::membership>& member_users);
 	void users_2_groups(const connected_user_list& users, const std::map<std::string, http::membership>& member_users);
 
-	virtual void network_handler();
-
-	virtual void process_network_data(const config& data, const network::connection sock) = 0;
-
 	virtual void process_network_error(network::error& error) {};
-
-	// virtual void process_message(const config& data, bool whisper = false);
-
-	// virtual void process_gamelist(const config& data);
-
-	// virtual void process_gamelist_diff(const config& data);
-
-	// virtual void process_room_join(const config& data);
-
-	// virtual void process_room_part(const config& data);
-
-	// virtual void process_room_query_response(const config& data);
-
-	// virtual void join_button_callback(twindow& window);
-
-	// virtual void observe_button_callback(twindow& window);
-
-	// virtual void join_global_button_callback(twindow& window);
-
-	// virtual void observe_global_button_callback(twindow& window);
-
-	// virtual void join_or_observe(int index);
-
-protected:
-	/** Timer for updating the lobby. */
-	unsigned long lobby_update_timer_;
 };
 
 };

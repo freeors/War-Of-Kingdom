@@ -20,10 +20,10 @@
 
 #include "configuration.hpp"
 
-#include "../filesystem.hpp"
-#include "../log.hpp"
-#include "../serialization/parser.hpp"
-#include "../serialization/preprocessor.hpp"
+#include "filesystem.hpp"
+#include "log.hpp"
+#include "serialization/parser.hpp"
+#include "serialization/preprocessor.hpp"
 #include "../team.hpp"
 #include <boost/lexical_cast.hpp>
 #include <vector>

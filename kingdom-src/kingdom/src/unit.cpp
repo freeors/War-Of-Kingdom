@@ -39,6 +39,7 @@
 #include "wml_exception.hpp"
 #include "serialization/parser.hpp"
 #include "dialogs.hpp"
+#include "integrate.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -308,6 +309,10 @@ bool actor_can_continue_action(const unit_map& units, int actor_side)
 
 bool current_can_action(const unit& u)
 {
+	if (u.is_commoner() || u.is_soldier()) {
+		return false;
+	}
+
 	if (!tent::turn_based) {
 		if (u.get_state(ustate_tag::REVIVALED)) {
 			return true;
@@ -2205,7 +2210,7 @@ void unit::do_revival(unit& tactician)
 
 
 	std::stringstream strstr;
-	strstr << help::tintegrate::generate_img("misc/revival.png");
+	strstr << tintegrate::generate_img("misc/revival.png");
 	unit_display::unit_text(*this, false, strstr.str());
 }
 
@@ -3706,11 +3711,7 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 	}
 	config::attribute_value cfg_formula = cfg["formula"];
 	if (!cfg_formula.blank()) {
-		const unit_callable callable(std::pair<map_location, unit>(loc,*this));
-		const game_logic::formula form(cfg_formula);
-		if(!form.evaluate(callable).as_bool()) {///@todo use formula_ai
-			return false;
-		}
+		return false;
 	}
 
 	config::attribute_value cfg_lua_function = cfg["lua_function"];
@@ -3815,11 +3816,14 @@ void unit::write(config& cfg) const
 	cfg["defeat_units"] = defeat_units_;
 }
 
+#define ATTACK_0POINT2		0.2
+#define ATTACK_0POINT1		0.1
+#define ATTACK_0POINT075	0.075
+
 void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 {
 	int current_movement = movement_;
-	double increase_percent, decrease_percent;
-
+	
 	// Reset the scalar values first
 	trait_names_.clear();
 
@@ -3856,35 +3860,38 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 		max_ticks_ = NONACTOR_TICKS;
 	}
 
-	double arms_feature_bonus = unit_feature_val(arms_)? 0.075: 0;
+	double arms_feature_bonus = unit_feature_val(arms_)? ATTACK_0POINT075: 0;
+	double arms_feature_resistance_bonus = unit_feature_val(arms_)? RESISTANCE_DIV3: 0;
 	if (unit_feature_val(HEROS_MAX_ARMS + arms_)) {
-		arms_feature_bonus = 0.15;
+		arms_feature_bonus = ATTACK_0POINT1;
+		arms_feature_resistance_bonus = RESISTANCE_DIV2;
 	}
 	double range_feature_bonus[3];
-	range_feature_bonus[0] = unit_feature_val(hero_feature_range_min)? 0.075: 0;
+	range_feature_bonus[0] = unit_feature_val(hero_feature_range_min)? ATTACK_0POINT1: 0;
 	if (unit_feature_val(3 + hero_feature_range_min)) {
-		range_feature_bonus[0] = 0.15;
+		range_feature_bonus[0] = ATTACK_0POINT2;
 	}
-	range_feature_bonus[1] = unit_feature_val(hero_feature_range_min + 1)? 0.075: 0;
+	range_feature_bonus[1] = unit_feature_val(hero_feature_range_min + 1)? ATTACK_0POINT1: 0;
 	if (unit_feature_val(3 + hero_feature_range_min + 1)) {
-		range_feature_bonus[1] = 0.15;
+		range_feature_bonus[1] = ATTACK_0POINT2;
 	}
-	range_feature_bonus[2] = unit_feature_val(hero_feature_range_min + 2)? 0.075: 0;
+	range_feature_bonus[2] = unit_feature_val(hero_feature_range_min + 2)? ATTACK_0POINT1: 0;
 	if (unit_feature_val(3 + hero_feature_range_min + 2)) {
-		range_feature_bonus[2] = 0.15;
+		range_feature_bonus[2] = ATTACK_0POINT2;
 	}
 
 	// attack
 	double hero_bonus = 0;
 	if ((leadership_ > 80) || (force_ > 80) || (intellect_ > 80)) {
-		hero_bonus = 1.0 * ((std::max<uint16_t>(80, leadership_) - 80) * 60 + (std::max<uint16_t>(80, force_) - 80) * 25 + (std::max<uint16_t>(80, intellect_) - 80) * 25) / 10000;
-		hero_bonus = hero_bonus / 10; // max hero_bonus is about 1.06, this max increase_percent is about 5 level adaptability
+		int field = (std::max<uint16_t>(80, leadership_) - 80) * 60 + (std::max<uint16_t>(80, force_) - 80) * 20 + (std::max<uint16_t>(80, intellect_) - 80) * 20;
+		hero_bonus = 1.0 * field * ATTACK_0POINT1 / (100 * (MAX_UNIT_FIELD - 80));
 	}
+	double adaptability_bonus = 1.0 * adaptability_[arms_] * ATTACK_0POINT1 / MAX_UNIT_ADAPTABILITY;
 	for (std::vector<attack_type>::iterator a = attacks_.begin(); a != attacks_.end(); ++a) {
-		increase_percent = hero_bonus;
+		double increase_percent = hero_bonus;
 
 		// effect of adaptability
-		increase_percent += 0.025 * adaptability_[arms_];
+		increase_percent += adaptability_bonus;
 
 		// effect of arms feature
 		increase_percent += arms_feature_bonus;
@@ -3905,28 +3912,21 @@ void unit::modify_according_to_hero(bool fill_up_hp, bool fill_up_movement)
 	// resistance
 	hero_bonus = 0;
 	if (leadership_ > 100) {
-		hero_bonus = 1.0 * (leadership_ - 100) / 200;
-		hero_bonus = hero_bonus / 5; // max bonus is about 0.385, this max increase_percent is about 5 level adaptability.
+		hero_bonus = 1.0 * (leadership_ - 100) * RESISTANCE_DIV2 / (MAX_UNIT_FIELD - 100);
 	}
+	adaptability_bonus = 1.0 * adaptability_[arms_] * RESISTANCE_DIV2 / MAX_UNIT_ADAPTABILITY;
 	config::child_itors cfg_range = cfg_.child_range("resistance");
 	if (cfg_range.first != cfg_range.second) {
 		config &target = *cfg_range.first;
 		BOOST_FOREACH (const config::attribute &istrmap, base_resistance_.attribute_range()) {
 			int value = lexical_cast<int>(istrmap.second);
-			decrease_percent = hero_bonus;
-
-			// effect of adaptability
-			decrease_percent += 0.02 * adaptability_[arms_];
-
-			// effect of arms feature
-			decrease_percent += arms_feature_bonus / 2;
+			value -= hero_bonus + adaptability_bonus + arms_feature_resistance_bonus;
 
 			// effect of other feature
 			if (unit_feature_val(hero_feature_firm)) {
-				decrease_percent += 0.08;
+				value -= RESISTANCE_FIRM;
 			}
 
-			value = (int)(value * (1.0 - std::min<double>(decrease_percent, 0.6)));
 			target[istrmap.first] = lexical_cast<std::string>(value);
 		}
 	}
@@ -4376,7 +4376,7 @@ std::string unit::form_tip(bool gui2) const
 	if (!artifical_) {
 		owner_city = units_.city_from_cityno(cityno_);
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "City"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "City"), "green");
 		} else {
 			strstr << _("City");
 		}
@@ -4397,7 +4397,7 @@ std::string unit::form_tip(bool gui2) const
 		strstr << "\n";
 
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(_("Hero"), "green");
+			strstr << tintegrate::generate_format(_("Hero"), "green");
 		} else {
 			strstr << _("Hero");
 		}
@@ -4406,13 +4406,13 @@ std::string unit::form_tip(bool gui2) const
 		if (gui2 || master_->activity_ == 255) {
 			strstr << master_->name();
 		} else {
-			strstr << help::tintegrate::generate_format(master_->name(), "red", 0, false, false);
+			strstr << tintegrate::generate_format(master_->name(), "red", 0, false, false);
 		}
 		if (!commoner_) {
 			if (!gui2) {
-				strstr << help::tintegrate::generate_format("(", "blue", 0, false, false);
+				strstr << tintegrate::generate_format("(", "blue", 0, false, false);
 				strstr << master_->loyalty(*teams_[master_->side_].leader());
-				strstr << help::tintegrate::generate_format(")", "blue", 0, false, false);
+				strstr << tintegrate::generate_format(")", "blue", 0, false, false);
 			} else {
 				loyalty_str << master_->loyalty(*teams_[master_->side_].leader());
 				activity_str << (int)master_->activity_;
@@ -4427,13 +4427,13 @@ std::string unit::form_tip(bool gui2) const
 			if (gui2 || second_->activity_ == 255) {
 				strstr << second_->name();
 			} else {
-				strstr << help::tintegrate::generate_format(second_->name(), "red", 0, false, false);
+				strstr << tintegrate::generate_format(second_->name(), "red", 0, false, false);
 			}
 			if (!commoner_) {
 				if (!gui2) {
-					strstr << help::tintegrate::generate_format("(", "blue", 0, false, false);
+					strstr << tintegrate::generate_format("(", "blue", 0, false, false);
 					strstr << second_->loyalty(*teams_[second_->side_].leader());
-					strstr << help::tintegrate::generate_format(")", "blue", 0, false, false);
+					strstr << tintegrate::generate_format(")", "blue", 0, false, false);
 				} else {
 					loyalty_str << ", " << second_->loyalty(*teams_[second_->side_].leader());
 					activity_str << ", " << (int)second_->activity_;
@@ -4445,13 +4445,13 @@ std::string unit::form_tip(bool gui2) const
 			if (gui2 || third_->activity_ == 255) {
 				strstr << third_->name();
 			} else {
-				strstr << help::tintegrate::generate_format(third_->name(), "red", 0, false, false);
+				strstr << tintegrate::generate_format(third_->name(), "red", 0, false, false);
 			}
 			if (!commoner_) {
 				if (!gui2) {
-					strstr << help::tintegrate::generate_format("(", "blue", 0, false, false);
+					strstr << tintegrate::generate_format("(", "blue", 0, false, false);
 					strstr << third_->loyalty(*teams_[third_->side_].leader());
-					strstr << help::tintegrate::generate_format(")", "blue", 0, false, false);
+					strstr << tintegrate::generate_format(")", "blue", 0, false, false);
 				} else {
 					loyalty_str << ", " << third_->loyalty(*teams_[third_->side_].leader());
 					activity_str << ", " << (int)third_->activity_;
@@ -4463,11 +4463,11 @@ std::string unit::form_tip(bool gui2) const
 			strstr << "\n";
 
 			// loyalty
-			strstr << help::tintegrate::generate_format(_("Loyalty"), "green");
+			strstr << tintegrate::generate_format(_("Loyalty"), "green");
 			strstr << ": (" << loyalty_str.str() << ")\n";
 
 			// activity
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Activity"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Activity"), "green");
 			strstr << ": (" << activity_str.str() << ")";
 		}
 
@@ -4476,7 +4476,7 @@ std::string unit::form_tip(bool gui2) const
 
 		owner_city = &city;
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "City"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "City"), "green");
 		} else {
 			strstr << _("City");
 		}
@@ -4489,7 +4489,7 @@ std::string unit::form_tip(bool gui2) const
 		strstr << " (" << teams_[side_ - 1].name() << ")\n";
 
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Mayor"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Mayor"), "green");
 		} else {
 			strstr << dgettext("wesnoth-lib", "Mayor");
 		}
@@ -4505,7 +4505,7 @@ std::string unit::form_tip(bool gui2) const
 
 		owner_city = units_.city_from_cityno(art.cityno());
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "City"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "City"), "green");
 		} else {
 			strstr << _("City");
 		}
@@ -4521,7 +4521,7 @@ std::string unit::form_tip(bool gui2) const
 	strstr << "\n";
 
 	if (gui2) {
-		strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "troop^Type"), "green");
+		strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "troop^Type"), "green");
 	} else {
 		strstr << dsgettext("wesnoth-lib", "troop^Type");
 	}
@@ -4534,34 +4534,34 @@ std::string unit::form_tip(bool gui2) const
 	// adaptability
 	strstr << "(" << hero::adaptability_str2(ftofxp12(adaptability_[arms()])) << ")" << "\n";
 
-	strstr << help::tintegrate::generate_img("misc/tintegrate-split-line.png");
+	strstr << tintegrate::generate_img("misc/tintegrate-split-line.png");
 	strstr << "\n";
 
 	if (gui2 || !artifical_) {
 		// leadership
-		strstr << help::tintegrate::generate_img("misc/leadership.png~SCALE(20, 20)");
+		strstr << tintegrate::generate_img("misc/leadership.png~SCALE(20, 20)");
 		strstr << leadership_;
 		strstr << (gui2? " ": "  ");
 
-		strstr << help::tintegrate::generate_img("misc/force.png~SCALE(20, 20)");
+		strstr << tintegrate::generate_img("misc/force.png~SCALE(20, 20)");
 		strstr << force_;
 		strstr << (gui2? " ": "  ");
 
-		strstr << help::tintegrate::generate_img("misc/intellect.png~SCALE(20, 20)");
+		strstr << tintegrate::generate_img("misc/intellect.png~SCALE(20, 20)");
 		strstr << intellect_;
 		strstr << (gui2? " ": "\n");
 
-		strstr << help::tintegrate::generate_img("misc/spirit.png~SCALE(20, 20)");
+		strstr << tintegrate::generate_img("misc/spirit.png~SCALE(20, 20)");
 		strstr << spirit_;
 		strstr << (gui2? " ": "  ");
 
-		strstr << help::tintegrate::generate_img("misc/charm.png~SCALE(20, 20)");
+		strstr << tintegrate::generate_img("misc/charm.png~SCALE(20, 20)");
 		strstr << charm_ << "\n";
 	}
 
 	if (gui2) {
 		// traits
-		strstr << help::tintegrate::generate_format(dgettext("wesnoth", "Traits"), "green");
+		strstr << tintegrate::generate_format(dgettext("wesnoth-lib", "Traits"), "green");
 		strstr << ": " << utils::join(trait_names(), ", ");
 		strstr << "\n";
 	} else {
@@ -4569,31 +4569,31 @@ std::string unit::form_tip(bool gui2) const
 		text.str("");
 		text << max_hitpoints();
 		// default font_size is font::SIZE_SMALL
-		strstr << help::tintegrate::generate_format(text.str(), "", 0, false, false);
+		strstr << tintegrate::generate_format(text.str(), "", 0, false, false);
 		strstr << "  ";
 
 		strstr << "XP: " << experience() << "/";
 		text.str("");
 		text << max_experience();
-		strstr << help::tintegrate::generate_format(text.str(), "", 0, false, false);
+		strstr << tintegrate::generate_format(text.str(), "", 0, false, false);
 		strstr << "\n";
 	}
 
 	if (!is_artifical()) {
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dgettext("wesnoth", "Moves"), "green");
+			strstr << tintegrate::generate_format(dgettext("wesnoth", "Moves"), "green");
 			strstr << ": " << movement_left() << "/" << total_movement() << "  ";
 		}
 	
 		if (!owner_city || get_location() != owner_city->get_location()) {
-			strstr << help::tintegrate::generate_img("misc/food.png") << food();
+			strstr << tintegrate::generate_img("misc/food.png") << food();
 			strstr << "/" << max_food() << "  ";
 		}
 	}
 
 	// AMLA
 	if (gui2) {
-		strstr << help::tintegrate::generate_format(dgettext("wesnoth", "AMLA"), "green");
+		strstr << tintegrate::generate_format(dgettext("wesnoth", "AMLA"), "green");
 	} else {
 		strstr << dgettext("wesnoth", "AMLA");
 	}
@@ -4610,7 +4610,7 @@ std::string unit::form_tip(bool gui2) const
 	if (!artifical_ && (commoner_ || gui2)) {
 		if (commoner_) {
 			if (gui2) {
-				strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Task"), "green");
+				strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Task"), "green");
 			} else {
 				strstr << dsgettext("wesnoth-lib", "Task");
 			} 
@@ -4621,14 +4621,14 @@ std::string unit::form_tip(bool gui2) const
 				}
 			}
 		} else {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Task"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Task"), "green");
 			strstr << ": " << task_str.find(task_)->second;
 		}
 		if (task_ == TASK_GUARD) {
 			strstr << format_loc(units_, guard_cache::find(*this).loc, side_);
 		}
 
-		strstr << help::tintegrate::generate_img("misc/to.png");
+		strstr << tintegrate::generate_img("misc/to.png");
 		if (goto_.valid()) {
 			strstr << format_loc(units_, goto_, side_);
 		} else {
@@ -4639,7 +4639,7 @@ std::string unit::form_tip(bool gui2) const
 
 	if (commoner_) {
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Income"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Income"), "green");
 		} else {
 			strstr << dgettext("wesnoth-lib", "Income");
 		}
@@ -4653,7 +4653,7 @@ std::string unit::form_tip(bool gui2) const
 		}
 		strstr << ": " << income << "\n";
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth", "Block turns"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth", "Block turns"), "green");
 		} else {
 			strstr << _("Block turns");
 		}
@@ -4661,7 +4661,7 @@ std::string unit::form_tip(bool gui2) const
 	} else if (this_is_city()) {
 		const artifical* city = const_unit_2_artifical(this);
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Decree"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Decree"), "green");
 		} else {
 			strstr << dgettext("wesnoth-lib", "Decree");
 		}
@@ -4673,21 +4673,21 @@ std::string unit::form_tip(bool gui2) const
 		}
 		strstr << "\n";
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Police"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Police"), "green");
 		} else {
 			strstr << dgettext("wesnoth-lib", "Police");
 		}
 		strstr << ": ";
 		if (city->police() < game_config::min_tradable_police) {
-			strstr << help::tintegrate::generate_format(city->police(), "red", 0, false, false);
+			strstr << tintegrate::generate_format(city->police(), "red", 0, false, false);
 		} else {
-			strstr << help::tintegrate::generate_format(city->police(), "white", 0, false, false);
+			strstr << tintegrate::generate_format(city->police(), "white", 0, false, false);
 		}
 		strstr << "\n";
 
 		// soldiers
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Soldiers"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Soldiers"), "green");
 		} else {
 			strstr << dgettext("wesnoth-lib", "Soldiers");
 		}
@@ -4695,7 +4695,7 @@ std::string unit::form_tip(bool gui2) const
 
 		// commoner
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Commoner"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Commoner"), "green");
 		} else {
 			strstr << dgettext("wesnoth-lib", "Commoner");
 		}
@@ -4703,19 +4703,19 @@ std::string unit::form_tip(bool gui2) const
 
 		// front
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Front"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Front"), "green");
 		} else {
 			strstr << dgettext("wesnoth-lib", "Front");
 		}
 		strstr << ": " << city->fronts() << "/" << mr_data::max_fronts << "\n";
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Gold income"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Gold income"), "green");
 		} else {
 			strstr << dgettext("wesnoth-lib", "Gold income");
 		}
 		strstr << ": " << city->total_gold_income(current_team.market_increase_) << "\n";
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Technology income"), "green");
+			strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Technology income"), "green");
 		} else { 
 			strstr << dgettext("wesnoth-lib", "Technology income");
 		} 
@@ -4723,7 +4723,7 @@ std::string unit::form_tip(bool gui2) const
 	} else if (artifical_) {
 		if (unit_type_->gold_income()) {
 			if (gui2) {
-				strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Gold income"), "green");
+				strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Gold income"), "green");
 			} else {
 				strstr << dgettext("wesnoth-lib", "Gold income");
 			}
@@ -4731,7 +4731,7 @@ std::string unit::form_tip(bool gui2) const
 		}
 		if (unit_type_->technology_income()) {
 			if (gui2) {
-				strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Technology income"), "green");
+				strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Technology income"), "green");
 			} else { 
 				strstr << dgettext("wesnoth-lib", "Technology income");
 			} 
@@ -4744,9 +4744,9 @@ std::string unit::form_tip(bool gui2) const
 	std::vector<std::string> abilities_tt = ability_tooltips(true);
 
 	if (gui2) {
-		strstr << help::tintegrate::generate_format(dgettext("wesnoth", "Abilities"), "green");
+		strstr << tintegrate::generate_format(dgettext("wesnoth-lib", "Abilities"), "green");
 	} else {
-		strstr << _("Abilities");
+		strstr << dgettext("wesnoth-lib", "Abilities");
 	}
 	strstr << ": ";
 	if (!abilities_tt.empty()) {
@@ -4770,7 +4770,7 @@ std::string unit::form_tip(bool gui2) const
 
 	// features
 	if (gui2) {
-		strstr << help::tintegrate::generate_format(dgettext("wesnoth-hero", "feature"), "green");
+		strstr << tintegrate::generate_format(dgettext("wesnoth-hero", "feature"), "green");
 	} else {
 		strstr << dgettext("wesnoth-hero", "feature");
 	}
@@ -4797,7 +4797,7 @@ std::string unit::form_tip(bool gui2) const
 	// tactic
 	if (!artifical_) {
 		if (gui2) {
-			strstr << help::tintegrate::generate_format(dgettext("wesnoth-hero", "tactic"), "green");
+			strstr << tintegrate::generate_format(dgettext("wesnoth-hero", "tactic"), "green");
 		} else {
 			strstr << dgettext("wesnoth-hero", "tactic");
 		}
@@ -4806,7 +4806,7 @@ std::string unit::form_tip(bool gui2) const
 			int turns = 100 * (max_tactic_point() * game_config::tactic_degree_per_point - tactic_degree_) / tactic_degree_increment_per_turn();
 			turns = turns % 100? (turns / 100 + 1): (turns / 100);
 			if (turns) {
-				strstr << "(" << help::tintegrate::generate_img("misc/tactic.png") << help::tintegrate::generate_img(single_digit_image(turns)) << ")";
+				strstr << "(" << tintegrate::generate_img("misc/tactic.png") << tintegrate::generate_img(single_digit_image(turns)) << ")";
 				// strstr << "(" << tactic_degree_ << "/" << max_tactic_point() * game_config::tactic_degree_per_point << ")";
 			}
 		}
@@ -4860,46 +4860,46 @@ std::string unit::form_tip(bool gui2) const
 
 	// skill
 	if (gui2) {
-		strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Skill"), "green");
+		strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "Skill"), "green");
 	} else {
 		strstr << dgettext("wesnoth-lib", "Skill");
 	}
 	strstr << ": ";
-	strstr << help::tintegrate::generate_img("misc/encourage.png");
+	strstr << tintegrate::generate_img("misc/encourage.png");
 
 	int effect = tactic_effect(ttactic::ENCOURAGE, "");
 	text.str("");
 	text << hero::adaptability_str2(ftofxp12(value_consider_food(skill_[hero_skill_encourage])));
 	if (effect > 0) {
-		strstr << help::tintegrate::generate_format(text.str(), "green", 0, false, false);
+		strstr << tintegrate::generate_format(text.str(), "green", 0, false, false);
 	} else if (effect < 0) {
-		strstr << help::tintegrate::generate_format(text.str(), "red", 0, false, false);
+		strstr << tintegrate::generate_format(text.str(), "red", 0, false, false);
 	} else {
 		strstr << hero::adaptability_str2(ftofxp12(value_consider_food(skill_[hero_skill_encourage])));
 	}
 
 	if (!artifical_) {
 		strstr << "  ";
-		strstr << help::tintegrate::generate_img("misc/demolish.png");
+		strstr << tintegrate::generate_img("misc/demolish.png");
 		
 		effect = tactic_effect(ttactic::DEMOLISH, "");
 		text.str("");
 		text << hero::adaptability_str2(ftofxp12(skill_[hero_skill_demolish]));
 		if (effect > 0) {
-			strstr << help::tintegrate::generate_format(text.str(), "green", 0, false, false);
+			strstr << tintegrate::generate_format(text.str(), "green", 0, false, false);
 		} else if (effect < 0) {
-			strstr << help::tintegrate::generate_format(text.str(), "red", 0, false, false);
+			strstr << tintegrate::generate_format(text.str(), "red", 0, false, false);
 		} else {
 			strstr << hero::adaptability_str2(ftofxp12(skill_[hero_skill_demolish]));
 		}		
 
 		strstr << "  ";
-		strstr << help::tintegrate::generate_img("misc/formation.png");
+		strstr << tintegrate::generate_img("misc/formation.png");
 		strstr << hero::adaptability_str2(ftofxp12(skill_[hero_skill_formation]));
 	}
 	strstr << "\n";
 
-	strstr << help::tintegrate::generate_img("misc/tintegrate-split-line.png");
+	strstr << tintegrate::generate_img("misc/tintegrate-split-line.png");
 	strstr << "\n";
 	
 	// attack 
@@ -4907,7 +4907,7 @@ std::string unit::form_tip(bool gui2) const
 		// see generate_report() in generate_report.cpp
 		strstr << at_it->name() << " (" << gettext(at_it->type().c_str()) << ")";
 		if (!at_it->attack_weight()) {
-			strstr << help::tintegrate::generate_img("misc/attack.png~GS()");
+			strstr << tintegrate::generate_img("misc/attack.png~GS()");
 		}
 		strstr << "\n";
 
@@ -4921,9 +4921,9 @@ std::string unit::form_tip(bool gui2) const
 		text.str("");
 		text << value_consider_food(at_it->damage());
 		if (effect > 0) {
-			strstr << help::tintegrate::generate_format(text.str(), "green", 0, false, false);
+			strstr << tintegrate::generate_format(text.str(), "green", 0, false, false);
 		} else if (effect < 0) {
-			strstr << help::tintegrate::generate_format(text.str(), "red", 0, false, false);
+			strstr << tintegrate::generate_format(text.str(), "red", 0, false, false);
 		} else {
 			strstr << value_consider_food(at_it->damage());
 		}
@@ -4938,7 +4938,7 @@ std::string unit::form_tip(bool gui2) const
 	}
 
 	if (gui2) {
-		strstr << help::tintegrate::generate_img("misc/tintegrate-split-line.png");
+		strstr << tintegrate::generate_img("misc/tintegrate-split-line.png");
 		strstr << "\n";
 		// resistance
 		int idx_in_resistances;
@@ -4950,7 +4950,7 @@ std::string unit::form_tip(bool gui2) const
 		for (utils::string_map::iterator resist = resistances.begin(); resist != resistances.end(); ++resist, idx_in_resistances ++) {
 			text.str("");
 			text << "misc/resistance-" << resist->first << ".png";
-			strstr << help::tintegrate::generate_img(text.str());
+			strstr << tintegrate::generate_img(text.str());
 
 			const map_location& loc = get_location();
 			if (loc.valid()) {
@@ -4974,56 +4974,56 @@ std::string unit::form_tip(bool gui2) const
 			}
 		}
 	} else {
-		strstr << help::tintegrate::generate_img("misc/resistance.png");
+		strstr << tintegrate::generate_img("misc/resistance.png");
 		effect = tactic_effect(ttactic::RESISTANCE, "");
 		if (effect > 0) {
-			strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 		} else if (effect < 0) {
-			strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 		}
 
 		if (!artifical_) {
-			strstr << help::tintegrate::generate_img("misc/movement.png");
+			strstr << tintegrate::generate_img("misc/movement.png");
 			if (max_movement_ > tactic_compare_movement_) {
-				strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+				strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 			} else if (max_movement_ < tactic_compare_movement_) {
-				strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+				strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 			}
 		}
 
 		if (consider_ticks()) {
-			strstr << help::tintegrate::generate_img("misc/action.png");
+			strstr << tintegrate::generate_img("misc/action.png");
 			if (ticks_increase_ > 0) {
-				strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+				strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 			} else if (ticks_increase_ < 0) {
-				strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+				strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 			}
 		}
 		strstr << "    ";
 
 		if (hide_turns_) {
-			strstr << help::tintegrate::generate_img("misc/hide.png");
+			strstr << tintegrate::generate_img("misc/hide.png");
 		}
 		if (alert_turns_) {
-			strstr << help::tintegrate::generate_img("misc/alert.png");
+			strstr << tintegrate::generate_img("misc/alert.png");
 		}
 		if (provoked_turns_) {
-			strstr << help::tintegrate::generate_img("misc/provoked.png");
+			strstr << tintegrate::generate_img("misc/provoked.png");
 		}
 		if (invisible(loc_)) {
-			strstr << help::tintegrate::generate_img("misc/invisible.png");
+			strstr << tintegrate::generate_img("misc/invisible.png");
 		}
 		if (get_state(ustate_tag::SLOWED)) {
-			strstr << help::tintegrate::generate_img("misc/slowed.png");
+			strstr << tintegrate::generate_img("misc/slowed.png");
 		}
 		if (get_state(ustate_tag::BROKEN)) {
-			strstr << help::tintegrate::generate_img("misc/broken.png");
+			strstr << tintegrate::generate_img("misc/broken.png");
 		}
 		if (get_state(ustate_tag::POISONED)) {
-			strstr << help::tintegrate::generate_img("misc/poisoned.png");
+			strstr << tintegrate::generate_img("misc/poisoned.png");
 		}
 		if (get_state(ustate_tag::PETRIFIED)) {
-			strstr << help::tintegrate::generate_img("petrified.png");
+			strstr << tintegrate::generate_img("petrified.png");
 		}
 	}
 
@@ -5034,57 +5034,57 @@ std::string unit::form_tiny_tip() const
 {
 	std::stringstream strstr;
 
-	strstr << help::tintegrate::generate_img("misc/attack.png");
+	strstr << tintegrate::generate_img("misc/attack.png");
 	int effect = tactic_effect(ttactic::ATTACK, "");
 	if (effect > 0) {
-		strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+		strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 	} else if (effect < 0) {
-		strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+		strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 	}
 	strstr << " ";
 
-	strstr << help::tintegrate::generate_img("misc/resistance.png");
+	strstr << tintegrate::generate_img("misc/resistance.png");
 	effect = tactic_effect(ttactic::RESISTANCE, "");
 	if (effect > 0) {
-		strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+		strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 	} else if (effect < 0) {
-		strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+		strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 	}
 	strstr << " ";
 
-	strstr << help::tintegrate::generate_img("misc/encourage.png");
+	strstr << tintegrate::generate_img("misc/encourage.png");
 	effect = tactic_effect(ttactic::ENCOURAGE, "");
 	if (effect > 0) {
-		strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+		strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 	} else if (effect < 0) {
-		strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+		strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 	}
 	
 	strstr << " ";
-	strstr << help::tintegrate::generate_img("misc/demolish.png");
+	strstr << tintegrate::generate_img("misc/demolish.png");
 	effect = tactic_effect(ttactic::DEMOLISH, "");
 	if (effect > 0) {
-		strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+		strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 	} else if (effect < 0) {
-		strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+		strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 	}
 
 	if (!artifical_) {
 		strstr << " ";
-		strstr << help::tintegrate::generate_img("misc/movement.png");
+		strstr << tintegrate::generate_img("misc/movement.png");
 		if (max_movement_ > tactic_compare_movement_) {
-			strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 		} else if (max_movement_ < tactic_compare_movement_) {
-			strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 		}
 	}
 
 	if (consider_ticks()) {
-		strstr << help::tintegrate::generate_img("misc/action.png");
+		strstr << tintegrate::generate_img("misc/action.png");
 		if (ticks_increase_ > 0) {
-			strstr << help::tintegrate::generate_img("misc/mini-increase.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img("misc/mini-increase.png", tintegrate::BACK);
 		} else if (ticks_increase_ < 0) {
-			strstr << help::tintegrate::generate_img("misc/mini-decrease.png", help::tintegrate::BACK);
+			strstr << tintegrate::generate_img("misc/mini-decrease.png", tintegrate::BACK);
 		}
 	}
 
@@ -5093,7 +5093,7 @@ std::string unit::form_tiny_tip() const
 		turns = turns % 100? (turns / 100 + 1): (turns / 100);
 		if (turns) {
 			strstr << " ";
-			strstr << help::tintegrate::generate_img("misc/tactic.png") << help::tintegrate::generate_img(single_digit_image(turns));
+			strstr << tintegrate::generate_img("misc/tactic.png") << tintegrate::generate_img(single_digit_image(turns));
 		}
 	}
 
@@ -5104,56 +5104,56 @@ std::string unit::form_tiny_tip() const
 			strstr << "    ";
 			first_state_icon = false;
 		}
-		strstr << help::tintegrate::generate_img("misc/hide.png");
+		strstr << tintegrate::generate_img("misc/hide.png");
 	}
 	if (alert_turns_) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
-		strstr << help::tintegrate::generate_img("misc/alert.png");
+		strstr << tintegrate::generate_img("misc/alert.png");
 	}
 	if (provoked_turns_) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
-		strstr << help::tintegrate::generate_img("misc/provoked.png");
+		strstr << tintegrate::generate_img("misc/provoked.png");
 	}
 	if (invisible(loc_)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
-		strstr << help::tintegrate::generate_img("misc/invisible.png");
+		strstr << tintegrate::generate_img("misc/invisible.png");
 	}
 	if (get_state(ustate_tag::SLOWED)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
-		strstr << help::tintegrate::generate_img("misc/slowed.png");
+		strstr << tintegrate::generate_img("misc/slowed.png");
 	}
 	if (get_state(ustate_tag::BROKEN)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
-		strstr << help::tintegrate::generate_img("misc/broken.png");
+		strstr << tintegrate::generate_img("misc/broken.png");
 	}
 	if (get_state(ustate_tag::POISONED)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
-		strstr << help::tintegrate::generate_img("misc/poisoned.png");
+		strstr << tintegrate::generate_img("misc/poisoned.png");
 	}
 	if (get_state(ustate_tag::PETRIFIED)) {
 		if (first_state_icon) {
 			strstr << "    ";
 			first_state_icon = false;
 		}
-		strstr << help::tintegrate::generate_img("petrified.png");
+		strstr << tintegrate::generate_img("petrified.png");
 	}
 	return strstr.str();
 }
@@ -5185,11 +5185,11 @@ std::string unit::form_recruit_tip() const
 	// hp
 	strstr << "HP: " << max_hitpoints() << "\n";
 	strstr << "XP: " << max_experience() << "\n";
-	strstr << help::tintegrate::generate_img("misc/movement.png");
+	strstr << tintegrate::generate_img("misc/movement.png");
 	strstr << total_movement() << "\n";
 
 	// arm adaptability
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "troop^Type"), "green");
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "troop^Type"), "green");
 	strstr << ": ";
 	if (!game_config::tiny_gui) {
 		strstr << type_name();
@@ -5198,9 +5198,9 @@ std::string unit::form_recruit_tip() const
 	strstr << "(" << hero::adaptability_str2(ftofxp12(adaptability_[arms()])) << ")" << "\n";
 
 	// abilities
-	strstr << help::tintegrate::generate_img("misc/tintegrate-split-line.png");
+	strstr << tintegrate::generate_img("misc/tintegrate-split-line.png");
 	strstr << "\n";
-	strstr << help::tintegrate::generate_format(dgettext("wesnoth", "Abilities"), "green");
+	strstr << tintegrate::generate_format(dgettext("wesnoth", "Abilities"), "green");
 	strstr << ": ";
 	std::vector<std::string> abilities_tt;
 	abilities_tt = ability_tooltips(true);
@@ -5222,7 +5222,7 @@ std::string unit::form_recruit_tip() const
 	strstr << "\n";
 	
 	// feature
-	strstr << help::tintegrate::generate_format(dgettext("wesnoth-hero", "feature"), "green");
+	strstr << tintegrate::generate_format(dgettext("wesnoth-hero", "feature"), "green");
 	strstr << ": ";
 
 	int index = 0;
@@ -5245,7 +5245,7 @@ std::string unit::form_recruit_tip() const
 	strstr << "\n";
 
 	// tactic
-	strstr << help::tintegrate::generate_format(dgettext("wesnoth-hero", "tactic"), "green");
+	strstr << tintegrate::generate_format(dgettext("wesnoth-hero", "tactic"), "green");
 	strstr << ": ";
 
 	std::set<const ttactic*> holded;
@@ -5272,7 +5272,7 @@ std::string unit::form_recruit_tip() const
 	strstr << "\n";
 
 	// attack
-	strstr << help::tintegrate::generate_img("misc/tintegrate-split-line.png");
+	strstr << tintegrate::generate_img("misc/tintegrate-split-line.png");
 	strstr << "\n";
 	std::vector<attack_type>* attacks_ptr = const_cast<std::vector<attack_type>*>(&attacks());
 	for (std::vector<attack_type>::const_iterator at_it = attacks_ptr->begin(); at_it != attacks_ptr->end(); ++at_it) {
@@ -5304,7 +5304,7 @@ std::string unit::form_recruit_tip() const
 	for (utils::string_map::iterator resist = resistances.begin(); resist != resistances.end(); ++ resist, idx_in_resistances ++) {
 		text.str("");
 		text << "misc/resistance-" << resist->first << ".png";
-		strstr << help::tintegrate::generate_img(text.str());
+		strstr << tintegrate::generate_img(text.str());
 		if (loc.valid()) {
 			// Some units have different resistances when
 			// attacking or defending.
@@ -5384,7 +5384,8 @@ const surface unit::still_image(bool scaled) const
 void unit::set_standing(bool with_bars)
 {
 	game_display *disp = game_display::get_singleton();
-	if (preferences::show_standing_animations()&& !incapacitated()) {
+
+	if (!incapacitated()) {
 		start_animation(INT_MAX, choose_animation(*disp, loc_, "standing"),
 			with_bars, true, "", 0, STATE_STANDING);
 	} else {
@@ -5417,7 +5418,7 @@ void unit::set_idling()
 void unit::set_selecting()
 {
 	const game_display *disp =  game_display::get_singleton();
-	if (preferences::show_standing_animations() && !get_state(ustate_tag::PETRIFIED)) {
+	if (!get_state(ustate_tag::PETRIFIED)) {
 		start_animation(INT_MAX, choose_animation(*disp, loc_, "selected"),
 			true, false, "", 0, STATE_FORGET);
 	} else {
@@ -5447,7 +5448,7 @@ void unit::start_animation(int start_time, const unit_animation *animation,
 	frame_begin_time_ = anim_->get_begin_time() -1;
 
 	// idle anim
-	next_idling_ = get_current_animation_tick() + static_cast<int>(2000 + rand() % 3000);
+	next_idling_ = get_current_animation_tick() + (artifical_? 0: static_cast<int>(2000 + rand() % 3000));
 }
 
 
@@ -5928,7 +5929,7 @@ bool unit::invalidate(const map_location &loc)
 		params.halo_y -= height_adjust;
 		params.image_mod = image_mods();
 
-		result |= get_animation()->invalidate(params);
+		result |= get_animation()->invalidate(disp->video().getSurface(), params);
 	}
 
 	return result;
@@ -6291,12 +6292,12 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 		}
 		if (anim && (increased || decreased)) {
 			strstr.str("");
-			strstr << help::tintegrate::generate_img("misc/attack.png");
+			strstr << tintegrate::generate_img("misc/attack.png");
 			if (increased) {
-				strstr << help::tintegrate::generate_img("misc/increase.png");
+				strstr << tintegrate::generate_img("misc/increase.png");
 			}
 			if (decreased) {
-				strstr << help::tintegrate::generate_img("misc/decrease.png");
+				strstr << tintegrate::generate_img("misc/decrease.png");
 			}
 			unit_display::unit_text(*this, decreased, strstr.str());
 		}
@@ -6387,12 +6388,12 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 		}
 		if (anim && (increased || decreased)) {
 			strstr.str("");
-			strstr << help::tintegrate::generate_img("misc/movement.png");
+			strstr << tintegrate::generate_img("misc/movement.png");
 			if (increased) {
-				strstr << help::tintegrate::generate_img("misc/increase.png");
+				strstr << tintegrate::generate_img("misc/increase.png");
 			}
 			if (decreased) {
-				strstr << help::tintegrate::generate_img("misc/decrease.png");
+				strstr << tintegrate::generate_img("misc/decrease.png");
 			}
 			unit_display::unit_text(*this, decreased, strstr.str());
 		}
@@ -6469,16 +6470,16 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 					}
 				}
 			}
-			mod_mdr_merge(mv, ap, !effect["replace"].to_bool(), true, 50, 500);
+			mod_mdr_merge(mv, ap, !effect["replace"].to_bool(), true, 60, 500);
 		}
 		if (anim && (increased || decreased)) {
 			strstr.str("");
-			strstr << help::tintegrate::generate_img("misc/resistance.png");
+			strstr << tintegrate::generate_img("misc/resistance.png");
 			if (increased) {
-				strstr << help::tintegrate::generate_img("misc/increase.png");
+				strstr << tintegrate::generate_img("misc/increase.png");
 			}
 			if (decreased) {
-				strstr << help::tintegrate::generate_img("misc/decrease.png");
+				strstr << tintegrate::generate_img("misc/decrease.png");
 			}
 			unit_display::unit_text(*this, decreased, strstr.str());
 		}
@@ -6494,13 +6495,13 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 
 		if (anim && increase) {
 			strstr.str("");
-			strstr << help::tintegrate::generate_img("misc/encourage.png");
+			strstr << tintegrate::generate_img("misc/encourage.png");
 			if (increase > 0) {
 				decreased = false;
-				strstr << help::tintegrate::generate_img("misc/increase.png");
+				strstr << tintegrate::generate_img("misc/increase.png");
 			} else {
 				decreased = true;
-				strstr << help::tintegrate::generate_img("misc/decrease.png");
+				strstr << tintegrate::generate_img("misc/decrease.png");
 			}
 			unit_display::unit_text(*this, decreased, strstr.str());
 		}
@@ -6517,13 +6518,13 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 
 		if (anim && increase) {
 			strstr.str("");
-			strstr << help::tintegrate::generate_img("misc/demolish.png");
+			strstr << tintegrate::generate_img("misc/demolish.png");
 			if (increase > 0) {
 				decreased = false;
-				strstr << help::tintegrate::generate_img("misc/increase.png");
+				strstr << tintegrate::generate_img("misc/increase.png");
 			} else {
 				decreased = true;
-				strstr << help::tintegrate::generate_img("misc/decrease.png");
+				strstr << tintegrate::generate_img("misc/decrease.png");
 			}
 			unit_display::unit_text(*this, decreased, strstr.str());
 		}
@@ -6657,13 +6658,13 @@ void unit::add_modification_internal(int apply_to, const config& effect, bool an
 			}
 			if (anim && increase) {
 				strstr.str("");
-				strstr << help::tintegrate::generate_img("misc/action.png");
+				strstr << tintegrate::generate_img("misc/action.png");
 				if (increase > 0) {
 					decreased = false;
-					strstr << help::tintegrate::generate_img("misc/increase.png");
+					strstr << tintegrate::generate_img("misc/increase.png");
 				} else {
 					decreased = true;
-					strstr << help::tintegrate::generate_img("misc/decrease.png");
+					strstr << tintegrate::generate_img("misc/decrease.png");
 				}
 				unit_display::unit_text(*this, decreased, strstr.str());
 			}
@@ -6713,7 +6714,7 @@ void unit::add_trait_description(const config& trait)
 
 const unit_animation* unit::choose_animation(const game_display& disp, const map_location& loc,const std::string& event,
 		const map_location& second_loc,const int value,const unit_animation::hit_type hit,
-		const attack_type* attack, const attack_type* second_attack, int swing_num) const
+		const attack_type* attack, const std::string& second_attack, int swing_num) const
 {
 	// Select one of the matching animations at random
 	std::vector<const unit_animation*> options;
@@ -7153,8 +7154,7 @@ unit *get_visible_unit(const map_location &loc,
 
 void unit::refresh()
 {
-	if (state_ == STATE_FORGET && anim_ && anim_->animation_finished_potential())
-	{
+	if (state_ == STATE_FORGET && anim_ && anim_->animation_finished_potential()) {
 		set_standing();
 		return;
 	}
@@ -7164,10 +7164,10 @@ void unit::refresh()
 	{
 		return;
 	}
-	if (get_current_animation_tick() > next_idling_ + 1000)
-	{
+
+	if (get_current_animation_tick() > next_idling_ + 1000) {
 		// prevent all units animating at the same time
-		next_idling_ = get_current_animation_tick()	+ static_cast<int>(2000 + rand() % 3000);
+		next_idling_ = get_current_animation_tick()	+ (artifical_? 0: static_cast<int>(2000 + rand() % 3000));
 	} else {
 		set_idling();
 	}
@@ -7743,8 +7743,8 @@ void unit::do_encourage(hero& h1, hero& h2)
 	if (point_in_rect_of_hexes(loc_.x, loc_.y, draw_area)) {
 		utils::string_map symbols;
 		std::stringstream strstr;
-		symbols["first"] = help::tintegrate::generate_format(h1.name(), help::tintegrate::hero_color);
-		symbols["second"] = help::tintegrate::generate_format(h2.name(), help::tintegrate::hero_color);
+		symbols["first"] = tintegrate::generate_format(h1.name(), tintegrate::hero_color);
+		symbols["second"] = tintegrate::generate_format(h2.name(), tintegrate::hero_color);
 		int incident = game_events::INCIDENT_ENCOURAGECONSORT;
 		if (h1.is_oath(h2)) {
 			if (h1.gender_ == hero_gender_male) {
@@ -7894,7 +7894,13 @@ bool unit::compare_action_order(const unit& that) const
 			if (t.is_human()) {
 				bool a_can_move = can_move();
 				bool b_can_move = that.can_move();
-				if (a_can_move && !b_can_move) {
+				if (a_can_move && b_can_move) {
+					if (!goto_.valid() && that.goto_.valid()) {
+						return true;
+					} else if (goto_.valid() && !that.goto_.valid()) {
+						return false;
+					}
+				} else if (a_can_move && !b_can_move) {
 					return true;
 				} else if (!a_can_move && b_can_move) {
 					return false;
@@ -7920,4 +7926,82 @@ bool unit::is_capital(const std::vector<team>& teams) const
 {
 	const team& t = teams[side_ - 1];
 	return master_->number_ == t.capital_number();
+}
+
+void set_unit_image(void* cookie, surface& image_, int& integer)
+{
+	const int bar_vtl_ticks_width = 6;
+	SDL_Rect dst_clip = create_rect(0, 0, 0, 0);
+	int width = image_->w;
+	int height = image_->h;
+	const unit* u = reinterpret_cast<const unit*>(cookie);
+
+	if (u->get_state(ustate_tag::REVIVALED)) {
+		image_ = adjust_surface_color(image_, 255, 0, 0);
+	}
+
+	int degree = u->percent_ticks();
+	SDL_Color color = font::GOOD_COLOR;
+	if (degree < 50) {
+		color = font::BAD_COLOR;
+	} else if (degree < 100) {
+		color = font::YELLOW_COLOR;
+	}
+
+	std::string img_name = "misc/bar-vtl-ticks.png";
+	if (current_can_action(*u)) {
+		img_name = "misc/bar-vtl-ticks-hot.png";
+	}
+	if (!tent::turn_based || preferences::developer()) {
+		draw_bar_to_surf(img_name, image_, 0, 12, height - 4 - (12 + 1), 1.0 * degree / 100, color, ftofxp(0.8), true);
+	}
+
+	if (u->is_city()) {
+		// city name
+		int font_size = 12;
+		surface text_surf = font::get_rendered_text2(u->name(), -1, font_size, font::BIGMAP_COLOR);
+		surface back_surf = font::get_rendered_text2(u->name(), -1, font_size, font::BLACK_COLOR);
+
+		dst_clip.x = bar_vtl_ticks_width;
+		dst_clip.y = height - 16;
+		SDL_Rect dst;
+		for (int dy=-1; dy <= 1; ++dy) {
+			for (int dx=-1; dx <= 1; ++dx) {
+				if (dx!=0 || dy!=0) {
+					dst.x = dst_clip.x + dx;
+					dst.y = dst_clip.y + dy;
+					sdl_blit(back_surf, NULL, image_, &dst);
+				}
+			}
+		}
+		sdl_blit(text_surf, NULL, image_, &dst_clip);
+	}
+
+	// top-middle
+	dst_clip.x = 8;
+	dst_clip.y = 0;
+	if (u->get_state(ustate_tag::DEPUTE)) {
+		blit_surface(image::get_image("misc/depute.png"), NULL, image_, &dst_clip);
+	}
+	if (u->has_mayor()) {
+		blit_surface(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
+	}
+/*
+	// it is difficult that set_goto is too more. correct in the future.
+	// orb-auto.png
+	dst_clip.y = 0;
+	if (u->human() && u->get_goto().valid()) {
+		surface orb_auto = image::get_image("misc/orb-auto.png");
+		if (orb_auto) {
+			dst_clip.x = width - orb_auto->w;
+			blit_surface(orb_auto, NULL, image_, &dst_clip);
+		}
+	}
+*/
+	integer = preferences::developer()? u->ticks(): u->level();
+}
+
+surface get_genus_surface()
+{
+	return image::get_image(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
 }

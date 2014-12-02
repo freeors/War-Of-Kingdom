@@ -475,9 +475,11 @@ bool on_command(HWND hwnd, int id, UINT codeNotify)
 			Edit_GetText(GetDlgItem(hwnd, find_et_id), text, sizeof(text) / sizeof(text[0]));
 			Button_Enable(GetDlgItem(hwnd, find_bt_id), strlen(text));
 		}
+#ifndef _ROSE_EDITOR
 	} else if (id == find_bt_id) {
 		listview_find_hero(GetDlgItem(hwnd, listview_id), GetDlgItem(hwnd, find_et_id));
 	} else {
+#endif
 		return false;
 	}
 	return true;

@@ -170,7 +170,7 @@ namespace game_events
 		INCIDENT_APPOINT, INCIDENT_INDEPENDENCE, INCIDENT_TECHNOLOGY, INCIDENT_INVALID};
 	void show_hero_message(hero* h, artifical* city, const std::string& message, int incident);
 	void show_relation_message(unit_map& units, hero_map& heros, hero& h1, hero& h2, int carry_to);
-	bool ai_relation(hero& h1, hero& h2);
+	bool ai_relation(const hero& h1, const hero& h2);
 	bool confirm_carry_to(hero& h1, hero& h2, int carry_to);
 
 } // end namespace game_events

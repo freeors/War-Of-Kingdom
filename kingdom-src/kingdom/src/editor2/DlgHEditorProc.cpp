@@ -1,3 +1,4 @@
+
 #define GETTEXT_DOMAIN "wesnoth-maker"
 
 #include "global.hpp"
@@ -6,6 +7,7 @@
 #include <windowsx.h>
 
 #include "resource.h"
+#ifndef _ROSE_EDITOR
 #include "xfunc.h"
 #include "win32x.h"
 #include "struct.h"
@@ -18,6 +20,7 @@
 #include "unit_types.hpp"
 #include "font.hpp"
 #include "help.hpp"
+#include <integrate.hpp>
 
 #include <sstream>
 #include <iosfwd>
@@ -589,7 +592,7 @@ void hero_data_2_lv(HWND hdlgP, hero& general)
 	try {
 		// It is deathful fault if there is error in biography. 
 		// Check it first before kingdom.exe!
-		help::tintegrate integrate(general.biography(), 480, -1, 0, font::BIGMAP_COLOR);
+		tintegrate integrate(general.biography(), 480, -1, 0, font::BIGMAP_COLOR);
 	}
 	catch (game::error& e) {
 		std::stringstream msg;
@@ -1434,9 +1437,11 @@ void wgen_notify_handler_dblclk(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 	}
     return;
 }
+#endif
 
 BOOL CALLBACK DlgWGenProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+#ifndef _ROSE_EDITOR
 	LPTOOLTIPTEXT		lpTt;
 
 #define lpnm   ((LPNMHDR)lParam)
@@ -1503,10 +1508,11 @@ BOOL CALLBACK DlgWGenProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			return (FALSE);
 		}
 	}
-	
+#endif	
 	return FALSE;
 }
-  
+
+#ifndef _ROSE_EDITOR  
 // ------------------------------------------------------------------------
 HWND init_toolbar(HINSTANCE hinst, HWND hdlgP)
 {
@@ -2448,7 +2454,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// leadership
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_LEADERSHIP);
-	UpDown_SetRange(hctl, 1, 100);	// [1, 100]
+	UpDown_SetRange(hctl, 1, 127);	// [1, 127]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_LEADERSHIP));
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_LEADERSHIPXP);
 	UpDown_SetRange(hctl, 0, 511);	// [0, 511]
@@ -2456,7 +2462,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// force
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_FORCE);
-	UpDown_SetRange(hctl, 1, 100);	// [1, 100]
+	UpDown_SetRange(hctl, 1, 127);	// [1, 127]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_FORCE));
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_FORCEXP);
 	UpDown_SetRange(hctl, 0, 511);	// [0, 511]
@@ -2464,7 +2470,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// intellect
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_INTELLECT);
-	UpDown_SetRange(hctl, 1, 100);	// [1, 100]
+	UpDown_SetRange(hctl, 1, 127);	// [1, 127]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_INTELLECT));
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_INTELLECTXP);
 	UpDown_SetRange(hctl, 0, 511);	// [0, 511]
@@ -2472,7 +2478,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// spirit
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICS);
-	UpDown_SetRange(hctl, 1, 100);	// [1, 100]
+	UpDown_SetRange(hctl, 1, 127);	// [1, 127]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_POLITICS));
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_POLITICSXP);
 	UpDown_SetRange(hctl, 0, 511);	// [0, 511]
@@ -2480,7 +2486,7 @@ BOOL On_DlgHeroEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	// charm
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_CHARM);
-	UpDown_SetRange(hctl, 1, 100);	// [1, 100]
+	UpDown_SetRange(hctl, 1, 127);	// [1, 127]
 	UpDown_SetBuddy(hctl, GetDlgItem(hdlgP, IDC_ET_HEROEDIT_CHARM));
 	hctl = GetDlgItem(hdlgP, IDC_UD_HEROEDIT_CHARMXP);
 	UpDown_SetRange(hctl, 0, 511);	// [0, 511]
@@ -3205,3 +3211,5 @@ BOOL CALLBACK DlgAdjustProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPara
 	
 	return FALSE;
 }
+
+#endif

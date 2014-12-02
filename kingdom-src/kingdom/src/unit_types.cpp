@@ -20,8 +20,6 @@
 
 #include "global.hpp"
 
-#include "unit_types.hpp"
-
 #include "asserts.hpp"
 #include "game_config.hpp"
 #include "gettext.hpp"
@@ -30,13 +28,51 @@
 #include "hero.hpp"
 #include "wml_exception.hpp"
 #include "filesystem.hpp"
+#include "area_anim.hpp"
+#include "help.hpp"
 
+#ifndef _ROSE_EDITOR
+#include "unit_types.hpp"
 #include "unit_map.hpp"
 #include "unit.hpp"
-#include "help.hpp"
 #include "formula_string_utils.hpp"
+#include "font.hpp"
 
 #include <boost/foreach.hpp>
+
+// anim_area
+int app_fill_anim_tags(std::map<const std::string, int>& tags)
+{
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+	unit_animation::share_anims.clear();
+#endif
+
+	tags.insert(std::make_pair("card", area_anim::CARD));
+	tags.insert(std::make_pair("pass_scenario", area_anim::PASS_SCENARIO));
+	tags.insert(std::make_pair("blade", area_anim::BLADE));
+	tags.insert(std::make_pair("pierce", area_anim::PIERCE));
+	tags.insert(std::make_pair("impact", area_anim::IMPACT));
+	tags.insert(std::make_pair("archery", area_anim::ARCHERY));
+	tags.insert(std::make_pair("collapse", area_anim::COLLAPSE));
+	tags.insert(std::make_pair("arcane", area_anim::ARCANE));
+	tags.insert(std::make_pair("fire", area_anim::FIRE));
+	tags.insert(std::make_pair("cold", area_anim::COLD));
+	tags.insert(std::make_pair("strike", area_anim::STRIKE));
+	tags.insert(std::make_pair("magic", area_anim::MAGIC));
+	tags.insert(std::make_pair("heal", area_anim::HEAL));
+	tags.insert(std::make_pair("destruct", area_anim::DESTRUCT));
+	tags.insert(std::make_pair("formation_defend", area_anim::FORMATION_DEFEND));
+	tags.insert(std::make_pair("income", area_anim::INCOME));
+
+	return area_anim::MIN_UNIT_ANIM - 1;
+}
+
+void app_fill_anim(int type, const config& cfg)
+{
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+	unit_animation::share_anims.insert(std::make_pair(type, unit_animation(cfg)));
+#endif
+}
 
 department::department(int type, const std::string& name, const std::string& image, const std::string& portrait)
 	: type_(type)
@@ -942,10 +978,7 @@ void generate_advance_tree(const std::map<std::string, const base*>& src, std::v
 		}
 	} while (-- max_hang_times && hang_branch);
 
-	if (hang_branch) {
-		// I think, one while is enogh.
-		int ii = 0;
-	}
+	VALIDATE(!hang_branch, "Must one time!");
 
 	// remove branch that is NULL.
 	for (std::vector<node*>::iterator it = dst.begin(); it != dst.end(); ) {
@@ -1999,7 +2032,7 @@ void unit_type::healed_anim(const std::string& tag, const std::string& race, con
 	replace_anim_cfg(tag, "healed", cfg, symbols);
 }
 
-void unit_type::movement_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& movement_sound, config& cfg)
+void unit_type::movement_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, const std::string& movement_sound, const std::string& src, config& cfg)
 {
 	utils::string_map symbols;
 	std::string move1 = get_binary_file_location("images", move(race, id, terrain, 1));
@@ -2012,7 +2045,7 @@ void unit_type::movement_anim(const std::string& tag, const std::string& race, c
 	}
 	symbols["sound_ogg"] = movement_sound;
 
-	replace_anim_cfg(tag, "movement", cfg, symbols);
+	replace_anim_cfg(tag, src, cfg, symbols);
 }
 
 void unit_type::build_anim(const std::string& tag, const std::string& race, const std::string& id, bool terrain, config& cfg)
@@ -2152,10 +2185,76 @@ void unit_type::attack_anim_multi_melee(const std::string& tag, const std::strin
 	replace_anim_cfg(tag, "multi_melee_attack", cfg, symbols);
 }
 
+void unit_type::attack_anim_cyclone(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	std::string hit_sound = "sword-1.ogg"; // {SOUND_LIST:SWORD_SWISH}
+	// if (aicon.find("staff") != std::string::npos) {
+	//	hit_sound = "staff.wav";
+	// }
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["hit_sound"] = hit_sound;
+
+	std::string melee_attack_1 = get_binary_file_location("images", attack_image(race, id, terrain, 0, 1));
+	if (!melee_attack_1.empty()) {
+		symbols["melee_attack_1_png"] = attack_image(race, id, terrain, 0, 1);
+		symbols["melee_attack_2_png"] = attack_image(race, id, terrain, 0, 2);
+		symbols["melee_attack_3_png"] = attack_image(race, id, terrain, 0, 3);
+		symbols["melee_attack_4_png"] = attack_image(race, id, terrain, 0, 4);
+	} else {
+		symbols["melee_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+		symbols["melee_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+		symbols["melee_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+		symbols["melee_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+	}
+
+	replace_anim_cfg(tag, "cyclone_attack", cfg, symbols);
+}
+
+void unit_type::attack_anim_penetrate(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	std::string hit_sound = "sword-1.ogg"; // {SOUND_LIST:SWORD_SWISH}
+
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["hit_sound"] = hit_sound;
+
+	std::string melee_attack_1 = get_binary_file_location("images", attack_image(race, id, terrain, 0, 1));
+	if (!melee_attack_1.empty()) {
+		symbols["melee_attack_1_png"] = attack_image(race, id, terrain, 0, 1);
+		symbols["melee_attack_2_png"] = attack_image(race, id, terrain, 0, 2);
+		symbols["melee_attack_3_png"] = attack_image(race, id, terrain, 0, 3);
+		symbols["melee_attack_4_png"] = attack_image(race, id, terrain, 0, 4);
+	} else {
+		symbols["melee_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+		symbols["melee_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+		symbols["melee_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+		symbols["melee_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+	}
+
+	replace_anim_cfg(tag, "penetrate_attack", cfg, symbols);
+}
+
 void unit_type::attack_anim_ranged(const std::string& tag, const std::string& aid, const std::string& aicon, const std::string& race, const std::string& id, bool terrain, config& cfg)
 {
 	std::string image = "projectiles/missile-n.png";
 	std::string image_diagonal = "projectiles/missile-ne.png";
+	std::string image_horizontal = "projectiles/missile-hrl.png";
 	std::string hit_sound = "bow.ogg";
 	std::string miss_sound = "bow-miss.ogg";
 	if (aicon.find("sling") != std::string::npos) {
@@ -2174,6 +2273,7 @@ void unit_type::attack_anim_ranged(const std::string& tag, const std::string& ai
 	}
 	symbols["image_png"] = image;
 	symbols["image_diagonal_png"] = image_diagonal;
+	symbols["image_horizontal_png"] = image_horizontal;
 	symbols["hit_sound"] = hit_sound;
 	symbols["miss_sound"] = miss_sound;
 	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
@@ -2309,6 +2409,25 @@ void unit_type::attack_anim_ranged_lightning(const std::string& tag, const std::
 	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
 
 	replace_anim_cfg(tag, "lightning_attack", cfg, symbols);
+}
+
+void unit_type::attack_anim_ranged_archery(const std::string& tag, const std::string& aid, const std::string& race, const std::string& id, bool terrain, config& cfg)
+{
+	utils::string_map symbols;
+	const std::vector<std::string>& range_ids = unit_types.range_ids();
+	if (std::find(range_ids.begin(), range_ids.end(), aid) == range_ids.end()) {
+		symbols["attack_id"] = aid;
+		symbols["range"] = "";
+	} else {
+		symbols["attack_id"] = "";
+		symbols["range"] = aid;
+	}
+	symbols["ranged_attack_1_png"] = attack_image(race, id, terrain, 1, 1);
+	symbols["ranged_attack_2_png"] = attack_image(race, id, terrain, 1, 2);
+	symbols["ranged_attack_3_png"] = attack_image(race, id, terrain, 1, 3);
+	symbols["ranged_attack_4_png"] = attack_image(race, id, terrain, 1, 4);
+
+	replace_anim_cfg(tag, "archery_attack", cfg, symbols);
 }
 
 unit_type::unit_type(const unit_type& o) :
@@ -2870,8 +2989,12 @@ const std::vector<unit_animation>& unit_type::animations() const
 	unit_type::idle_anim("idle_anim", race_->id(), id_, use_terrain_image(), idle_sound(), utype_cfg, can_reside_);
 	unit_type::healed_anim("healed_anim", race_->id(), id_, use_terrain_image(), utype_cfg);
 
-	if (packer_ || (master_ == HEROS_INVALID_NUMBER && !can_reside_) || hero::is_commoner(master_)) {
-		unit_type::movement_anim("movement_anim", race_->id(), id_, use_terrain_image(), movement_sound(), utype_cfg);
+	if (!packer_) {
+		if ((master_ == HEROS_INVALID_NUMBER && !can_reside_) || hero::is_commoner(master_)) {
+			unit_type::movement_anim("movement_anim", race_->id(), id_, use_terrain_image(), movement_sound(), "movement", utype_cfg);
+		}
+	} else {
+		unit_type::movement_anim("movement_anim", race_->id(), id_, use_terrain_image(), movement_sound(), "navy_movement", utype_cfg);
 	}
 
 	if (hero::is_artifical(master_)) {
@@ -2885,7 +3008,11 @@ const std::vector<unit_animation>& unit_type::animations() const
 		for (std::vector<attack_type>::const_iterator it = attacks_.begin(); it != attacks_.end(); ++ it) {
 			if (it->range() == "melee") {
 				bool not_artifical_master = (master_ == HEROS_INVALID_NUMBER) || hero::is_commoner(master_);
-				if (!can_reside_) {
+				if (it->specials().find("cyclone") != std::string::npos) {
+					unit_type::attack_anim_cyclone("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
+				} else if (it->specials().find("penetrate") != std::string::npos) {
+					unit_type::attack_anim_penetrate("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
+				} else if (!can_reside_) {
 					unit_type::attack_anim_melee("attack_anim", it->id(), it->icon(), not_artifical_master && !can_recruit_, race_->id(), id_, use_terrain_image(), utype_cfg);
 				} else {
 					unit_type::attack_anim_multi_melee("attack_anim", it->id(), it->icon(), not_artifical_master && !can_recruit_, race_->id(), id_, use_terrain_image(), utype_cfg);
@@ -2908,6 +3035,9 @@ const std::vector<unit_animation>& unit_type::animations() const
 
 			} else if (it->icon().find("lightning") != std::string::npos) {
 				unit_type::attack_anim_ranged_lightning("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
+
+			} else if (it->type() == "archery" && it->specials().find("ringattack") != std::string::npos) {
+				unit_type::attack_anim_ranged_archery("attack_anim", it->id(), race_->id(), id_, use_terrain_image(), utype_cfg);
 
 			} else {
 				unit_type::attack_anim_ranged("attack_anim", it->id(), it->icon(), race_->id(), id_, use_terrain_image(), utype_cfg);
@@ -3070,9 +3200,6 @@ unit_type_data::unit_type_data() :
 	range_ids_(),
 	especials_(),
 	utype_anims_(),
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
-	global_anims_(),
-#endif
 	can_recruit_(),
 	navigation_types_(),
 	utype_tree_(),
@@ -3370,82 +3497,6 @@ const ttechnology& technology(int tag)
 
 }
 
-namespace sound_filter_tag {
-std::map<const std::string, int> tags;
-
-void fill_tags()
-{
-	if (!tags.empty()) return;
-
-	tags.insert(std::make_pair("male", (int)MALE));
-	tags.insert(std::make_pair("female", (int)FEMALE));
-	tags.insert(std::make_pair("neutral", (int)NEUTRAL));
-}
-
-int find(const std::string& tag) 
-{
-	std::map<const std::string, int>::const_iterator it = tags.find(tag);
-	if (it != tags.end()) {
-		return it->second;
-	}
-	return NONE;
-}
-
-const std::string& rfind(int tag)
-{
-	for (std::map<const std::string, int>::const_iterator it = tags.begin(); it != tags.end(); ++ it) {
-		if (it->second == tag) {
-			return it->first;
-		}
-	}
-	return null_str;
-}
-
-int from_hero_gender(int gender)
-{
-	if (gender == hero_gender_male) {
-		return MALE;
-	} else if (gender == hero_gender_female) {
-		return FEMALE;
-	}
-	return NEUTRAL;
-}
-
-std::string filter(const std::string& src, const std::string& f)
-{
-	if (f.empty()) {
-		return src;
-	}
-
-	std::stringstream result;
-	const std::vector<std::string> vstr = utils::split(src);
-	bool first = true;
-	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
-		size_t pos = it->find(":");
-		if (pos == std::string::npos) {
-			if (!first) {
-				result << ",";
-			} else {
-				first = false;
-			}
-			result << *it;
-		} else {
-			if (it->substr(0, pos) == f && it->size() > pos + 1) {
-				if (!first) {
-					result << ",";
-				} else {
-					first = false;
-				}
-				std::string n = it->substr(pos + 1);
-				result << it->substr(pos + 1);
-			}
-		}
-	}
-	return result.str();
-}
-
-}
-
 namespace family_tag {
 std::map<const std::string, int> tags;
 
@@ -3591,65 +3642,6 @@ bool valid(const std::string& str)
 
 }
 
-namespace global_anim_tag {
-std::map<const std::string, ttype> tags;
-
-void fill_tags()
-{
-	if (!tags.empty()) return;
-	tags.insert(std::make_pair("card", CARD));
-	tags.insert(std::make_pair("reinforce", REINFORCE));
-	tags.insert(std::make_pair("individuality", INDIVIDUALITY));
-	tags.insert(std::make_pair("tactic", TACTIC));
-	tags.insert(std::make_pair("blade", BLADE));
-	tags.insert(std::make_pair("pierce", PIERCE));
-	tags.insert(std::make_pair("impact", IMPACT));
-	tags.insert(std::make_pair("archery", ARCHERY));
-	tags.insert(std::make_pair("collapse", COLLAPSE));
-	tags.insert(std::make_pair("arcane", ARCANE));
-	tags.insert(std::make_pair("fire", FIRE));
-	tags.insert(std::make_pair("cold", COLD));
-	tags.insert(std::make_pair("strike", STRIKE));
-	tags.insert(std::make_pair("magic", MAGIC));
-	tags.insert(std::make_pair("heal", HEAL));
-	tags.insert(std::make_pair("destruct", DESTRUCT));
-	tags.insert(std::make_pair("formation_attack", FORMATION_ATTACK));
-	tags.insert(std::make_pair("formation_defend", FORMATION_DEFEND));
-	tags.insert(std::make_pair("pass_scenario", PASS_SCENARIO));
-	tags.insert(std::make_pair("perfect", PERFECT));
-	tags.insert(std::make_pair("income", INCOME));
-	tags.insert(std::make_pair("stratagem_up", STRATAGEM_UP));
-	tags.insert(std::make_pair("stratagem_down", STRATAGEM_DOWN));
-	tags.insert(std::make_pair("location", LOCATION));
-	tags.insert(std::make_pair("hscroll_text", HSCROLL_TEXT));
-	tags.insert(std::make_pair("title_screen", TITLE_SCREEN));
-	tags.insert(std::make_pair("load_scenario", LOAD_SCENARIO));
-	tags.insert(std::make_pair("flags", FLAGS));
-	tags.insert(std::make_pair("text", TEXT));
-	tags.insert(std::make_pair("place", PLACE));
-}
-
-ttype find(const std::string& tag)
-{
-	std::map<const std::string, ttype>::const_iterator it = tags.find(tag);
-	if (it != tags.end()) {
-		return it->second;
-	}
-	return NONE;
-}
-
-const std::string& rfind(ttype tag)
-{
-	for (std::map<const std::string, ttype>::const_iterator it = tags.begin(); it != tags.end(); ++ it) {
-		if (it->second == tag) {
-			return it->first;
-		}
-	}
-	return null_str;
-}
-
-}
-
 void unit_type_data::set_config(const config &cfg)
 {
     clear();
@@ -3661,7 +3653,6 @@ void unit_type_data::set_config(const config &cfg)
 	sound_filter_tag::fill_tags();
 	family_tag::fill_tags();
 	ustate_tag::fill_tags();
-	global_anim_tag::fill_tags();
 	help::fill_reserve_sections();
 
 	std::stringstream err;
@@ -3816,29 +3807,7 @@ void unit_type_data::set_config(const config &cfg)
 		loadscreen::increment_progress();
 	}
 
-	BOOST_FOREACH (const config &anim, cfg.child_range("global_anim"))
-	{
-		const std::string id = anim["id"].str();
-		if (id.empty()) {
-			throw config::error("[global_anim] error, global_anim must has id attribute");
-		}
-		const config& sub = anim.child("anim");
-		if (!sub) {
-			throw config::error("[global_anim] error, global_anim must has [anim] tag");
-		}
-		global_anim_tag::ttype type = global_anim_tag::find(id);
-		if (type == global_anim_tag::NONE) {
-			throw config::error("[global_anim] error, global_anim has invalid id: " + id);
-		}
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
-		if (global_anims_.find(type) != global_anims_.end()) {
-			throw config::error("[global_anim] error, duplicate id: " + id);
-		}
-		global_anims_.insert(std::make_pair(type, unit_animation(sub)));
-#endif
-
-		loadscreen::increment_progress();
-	}
+	area_anim::fill_anims(cfg);
 
 	BOOST_FOREACH (const config &sp, cfg.child_range("specials"))
 	{
@@ -4395,9 +4364,6 @@ void unit_type_data::clear()
 	range_ids_.clear();
 	especials_.clear();
 	utype_anims_.clear();
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
-	global_anims_.clear();
-#endif
 	can_recruit_.clear();
 	navigation_types_.clear();
 
@@ -4674,15 +4640,805 @@ const unit_race *unit_type_data::find_race(const std::string &key) const
 	return i != races_.end() ? &i->second : NULL;
 }
 
-#if defined(_KINGDOM_EXE) || !defined(_WIN32)
-const unit_animation* unit_type_data::global_anim(int type) const
+
+namespace help {
+// Helpers for making generation of topics easier.
+const std::string faction_prefix = "faction_";
+
+std::string bold(const std::string &s)
 {
-	std::map<int, unit_animation>::const_iterator i = global_anims_.find(type);
-	if (i != global_anims_.end()) {
-		return &i->second;
-	}
-	return NULL;
+	std::stringstream ss;
+	ss << "<bold>text='" << escape(s) << "'</bold>";
+	return ss.str();
 }
+
+std::string jump(const unsigned amount)
+{
+	std::stringstream ss;
+	ss << "<jump>amount=" << amount << "</jump>";
+	return ss.str();
+}
+
+std::string jump_to(const unsigned pos)
+{
+	std::stringstream ss;
+	ss << "<jump>to=" << pos << "</jump>";
+	return ss.str();
+}
+
+// Return the width for the image with filename.
+unsigned image_width(const std::string &filename)
+{
+	image::locator loc(filename);
+	surface surf(image::get_image(loc));
+	if (surf != NULL) {
+		return surf->w;
+	}
+	return 0;
+}
+
+void push_tab_pair(std::vector<std::pair<std::string, unsigned int> > &v, const std::string &s)
+{
+	v.push_back(std::make_pair(s, font::line_width(s, normal_font_size)));
+}
+
+typedef std::vector<std::vector<std::pair<std::string, unsigned int > > > table_spec;
+// Create a table using the table specs. Return markup with jumps
+// that create a table. The table spec contains a vector with
+// vectors with pairs. The pairs are the markup string that should
+// be in a cell, and the width of that cell.
+std::string generate_table(const table_spec &tab, const unsigned int spacing=font::relative_size(20))
+{
+	table_spec::const_iterator row_it;
+	std::vector<std::pair<std::string, unsigned> >::const_iterator col_it;
+	unsigned int num_cols = 0;
+	for (row_it = tab.begin(); row_it != tab.end(); ++row_it) {
+		if (row_it->size() > num_cols) {
+			num_cols = row_it->size();
+		}
+	}
+	std::vector<unsigned int> col_widths(num_cols, 0);
+	// Calculate the width of all columns, including spacing.
+	for (row_it = tab.begin(); row_it != tab.end(); ++row_it) {
+		unsigned int col = 0;
+		for (col_it = row_it->begin(); col_it != row_it->end(); ++col_it) {
+			if (col_widths[col] < col_it->second + spacing) {
+				col_widths[col] = col_it->second + spacing;
+			}
+			++col;
+		}
+	}
+	std::vector<unsigned int> col_starts(num_cols);
+	// Calculate the starting positions of all columns
+	for (unsigned int i = 0; i < num_cols; ++i) {
+		unsigned int this_col_start = 0;
+		for (unsigned int j = 0; j < i; ++j) {
+			this_col_start += col_widths[j];
+		}
+		col_starts[i] = this_col_start;
+	}
+	std::stringstream ss;
+	for (row_it = tab.begin(); row_it != tab.end(); ++row_it) {
+		unsigned int col = 0;
+		for (col_it = row_it->begin(); col_it != row_it->end(); ++col_it) {
+			ss << jump_to(col_starts[col]) << col_it->first;
+			++col;
+		}
+		ss << "\n";
+	}
+	return ss.str();
+}
+
+
+std::string make_link(const std::string& text, const std::string& dst)
+{
+	// some sorting done on list of links may rely on the fact that text is first
+	return "<ref>text='" + escape(text) + "' dst='" + escape(dst) + "'</ref>";
+}
+
+std::string make_unit_link(const std::string& type_id)
+{
+	std::string link;
+
+	const unit_type *type = unit_types.find(type_id);
+	if (!type) {
+		std::cerr << "Unknown unit type : " << type_id << "\n";
+		// don't return an hyperlink (no page)
+		// instead show the id (as hint)
+		link = type_id;
+	} else if (!type->hide_help()) {
+		std::string name = type->type_name();
+		std::string ref_id;
+		ref_id = unit_prefix + type->id();
+		link =  make_link(name, ref_id);
+	} // if hide_help then link is an empty string
+
+	return link;
+}
+
+std::vector<std::string> make_unit_links_list(const std::vector<std::string>& type_id_list, bool ordered)
+{
+	std::vector<std::string> links_list;
+	BOOST_FOREACH (const std::string &type_id, type_id_list) {
+		std::string unit_link = make_unit_link(type_id);
+		if (!unit_link.empty())
+			links_list.push_back(unit_link);
+	}
+
+	if (ordered)
+		std::sort(links_list.begin(), links_list.end());
+
+	return links_list;
+}
+
+std::vector<topic> generate_weapon_special_topics(const bool sort_generated)
+{
+	std::vector<topic> topics;
+
+	std::map<t_string, std::string> special_description;
+	std::map<t_string, std::set<std::string, string_less> > special_units;
+
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
+	{
+		const unit_type &type = i.second;
+		// Only show the weapon special if we find it on a unit that
+		// detailed description should be shown about.
+		std::vector<attack_type> attacks = type.attacks();
+		for (std::vector<attack_type>::const_iterator it = attacks.begin();
+					it != attacks.end(); ++it) {
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+			std::vector<t_string> specials = (*it).special_tooltips(true);
+#else
+			std::vector<t_string> specials;
 #endif
+			for (std::vector<t_string>::iterator sp_it = specials.begin();
+					sp_it != specials.end() && sp_it+1 != specials.end(); sp_it+=2)
+			{
+				if (special_description.find(*sp_it) == special_description.end()) {
+					std::string description = *(sp_it+1);
+					const size_t colon_pos = description.find(':');
+					if (colon_pos != std::string::npos) {
+						// Remove the first colon and the following newline.
+						description.erase(0, colon_pos + 2);
+					}
+					special_description[*sp_it] = description;
+				}
+
+				if (!type.hide_help()) {
+					//add a link in the list of units having this special
+					std::string type_name = type.type_name();
+					std::string ref_id = unit_prefix + type.id();
+					//we put the translated name at the beginning of the hyperlink,
+					//so the automatic alphabetic sorting of std::set can use it
+					std::string link =  "<ref>text='" + escape(type_name) + "' dst='" + escape(ref_id) + "'</ref>";
+					special_units[*sp_it].insert(link);
+				}
+			}
+		}
+	}
+
+	for (std::map<t_string, std::string>::iterator s = special_description.begin();
+			s != special_description.end(); ++s) {
+		// use untranslated name to have universal topic id
+		std::string id = "weaponspecial_" + s->first.base_str();
+		std::stringstream text;
+		text << s->second;
+		text << "\n\n" << _("<header>text='Units having this special attack'</header>") << "\n";
+		std::set<std::string, string_less> &units = special_units[s->first];
+		for (std::set<std::string, string_less>::iterator u = units.begin(); u != units.end(); ++u) {
+			text << (*u) << "\n";
+		}
+
+		topics.push_back( topic(s->first, id, text.str()) );
+	}
+
+	if (sort_generated)
+		std::sort(topics.begin(), topics.end(), title_less());
+	return topics;
+}
+
+std::vector<topic> generate_ability_topics(const bool sort_generated)
+{
+	std::vector<topic> topics;
+	std::map<t_string, std::string> ability_description;
+	std::map<t_string, std::set<std::string, string_less> > ability_units;
+	// Look through all the unit types, check if a unit of this type
+	// should have a full description, if so, add this units abilities
+	// for display. We do not want to show abilities that the user has
+	// not encountered yet.
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
+	{
+		const unit_type &type = i.second;
+
+		std::vector<t_string> const* abil_vecs[2];
+		abil_vecs[0] = &type.abilities();
+
+		std::vector<std::string> const* desc_vecs[2];
+		desc_vecs[0] = &type.ability_tooltips();
+
+		for(int i=0; i<1; ++i) {
+			std::vector<t_string> const& abil_vec = *abil_vecs[i];
+			std::vector<std::string> const& desc_vec = *desc_vecs[i];
+			for(size_t j=0; j < abil_vec.size(); ++j) {
+				t_string const& abil_name = abil_vec[j];
+				if (ability_description.find(abil_name) == ability_description.end()) {
+					//new ability, generate a descripion
+					if(j >= desc_vec.size()) {
+						ability_description[abil_name] = "";
+					} else {
+						std::string const& abil_desc = desc_vec[j];
+						const size_t colon_pos = abil_desc.find(':');
+						if(colon_pos != std::string::npos && colon_pos + 1 < abil_desc.length()) {
+							// Remove the first colon and the following newline.
+							ability_description[abil_name] = abil_desc.substr(colon_pos + 2);
+						} else {
+							ability_description[abil_name] = abil_desc;
+						}
+					}
+				}
+
+				if (!type.hide_help()) {
+					//add a link in the list of units having this ability
+					std::string type_name = type.type_name();
+					std::string ref_id = unit_prefix +  type.id();
+					//we put the translated name at the beginning of the hyperlink,
+					//so the automatic alphabetic sorting of std::set can use it
+					std::string link =  "<ref>text='" + escape(type_name) + "' dst='" + escape(ref_id) + "'</ref>";
+					ability_units[abil_name].insert(link);
+				}
+			}
+		}
+	}
+
+	for (std::map<t_string, std::string>::iterator a = ability_description.begin(); a != ability_description.end(); ++a) {
+		// we generate topic's id using the untranslated version of the ability's name
+		std::string id = "ability_" + a->first.base_str();
+		std::stringstream text;
+		text << a->second;  //description
+		text << "\n\n" << _("<header>text='Units having this ability'</header>") << "\n";
+		std::set<std::string, string_less> &units = ability_units[a->first];
+		for (std::set<std::string, string_less>::iterator u = units.begin(); u != units.end(); ++u) {
+			text << (*u) << "\n";
+		}
+
+		topics.push_back( topic(a->first, id, text.str()) );
+	}
+
+	if (sort_generated)
+		std::sort(topics.begin(), topics.end(), title_less());
+	return topics;
+}
+
+std::vector<topic> generate_faction_topics(const bool sort_generated)
+{
+	std::vector<topic> topics;
+	const config& era = game_cfg->child("era");
+	if (era) {
+		std::vector<std::string> faction_links;
+		BOOST_FOREACH (const config &f, era.child_range("multiplayer_side")) {
+			const std::string& id = f["id"];
+			if (id == "Random")
+				continue;
+
+			std::stringstream text;
+
+			const std::string& description = f["description"];
+			if (!description.empty()) {
+				text << description << "\n";
+				text << "\n";
+			}
+
+			text << "<header>text='" << _("Leaders:") << "'</header>" << "\n";
+			const std::vector<std::string> leaders =
+					make_unit_links_list( utils::split(f["leader"]), true );
+			BOOST_FOREACH (const std::string &link, leaders) {
+				text << link << "\n";
+			}
+
+			text << "\n";
+
+			text << "<header>text='" << _("Recruits:") << "'</header>" << "\n";
+			const std::vector<std::string> recruits =
+					make_unit_links_list( utils::split(f["recruit"]), true );
+			BOOST_FOREACH (const std::string &link, recruits) {
+				text << link << "\n";
+			}
+
+			const std::string name = f["name"];
+			const std::string ref_id = faction_prefix + id;
+			topics.push_back( topic(name, ref_id, text.str()) );
+			faction_links.push_back(make_link(name, ref_id));
+		}
+
+		std::stringstream text;
+		text << "<header>text='" << _("Era:") << " " << era["name"] << "'</header>" << "\n";
+		text << "\n";
+		const std::string& description = era["description"];
+		if (!description.empty()) {
+			text << description << "\n";
+			text << "\n";
+		}
+
+		text << "<header>text='" << _("Factions:") << "'</header>" << "\n";
+
+		std::sort(faction_links.begin(), faction_links.end());
+		BOOST_FOREACH (const std::string &link, faction_links) {
+			text << link << "\n";
+		}
+
+		topics.push_back( topic(_("Factions"), "..factions_section", text.str()) );
+	} else {
+		topics.push_back( topic( _("Factions"), "..factions_section",
+			_("Factions are only used in multiplayer")) );
+	}
+
+	if (sort_generated)
+		std::sort(topics.begin(), topics.end(), title_less());
+	return topics;
+}
+
+class unit_topic_generator: public topic_generator
+{
+	const unit_type& type_;
+	typedef std::pair< std::string, unsigned > item;
+	void push_header(std::vector< item > &row, char const *name) const {
+		row.push_back(item(bold(name), font::line_width(name, normal_font_size, TTF_STYLE_BOLD)));
+	}
+public:
+	unit_topic_generator(const unit_type &t): type_(t) {}
+	virtual std::string operator()() const {
+		// this will force the lazy loading to build this unit
+		unit_types.find(type_.id(), unit_type::WITHOUT_ANIMATIONS);
+
+		std::stringstream ss;
+		std::string clear_stringstream;
+		const std::string detailed_description = type_.unit_description();
+		const unit_type& female_type = type_.get_gender_unit_type(unit_race::FEMALE);
+		const unit_type& male_type = type_.get_gender_unit_type(unit_race::MALE);
+
+		// Show the unit's image and its level.
+		ss << "<img>src='" << male_type.image() << "~RC(" << male_type.flag_rgb() << ">1)" << "'</img> ";
+
+		if (&female_type != &male_type) {
+			ss << "<img>src='" << female_type.image() << "~RC(" << female_type.flag_rgb() << ">1)" << "'</img> ";
+		}
+
+		ss << "<format>font_size=" << font::relative_size(11) << " text=' " << escape(_("level"))
+		   << " " << type_.level() << "'</format>";
+
+		const std::string male_portrait = "";
+		const std::string female_portrait = "";
+
+		if (male_portrait.empty() == false && male_portrait != male_type.image()) {
+			ss << "<img>src='" << male_portrait << "' align='right'</img> ";
+		}
+
+		if (female_portrait.empty() == false && female_portrait != male_portrait && female_portrait != female_type.image()) {
+			ss << "<img>src='" << female_portrait << "' align='right'</img> ";
+		}
+
+		ss << "\n";
+
+		// Print cross-references to units that this unit advances from/to.
+		// Cross reference to the topics containing information about those units.
+		const bool first_reverse_value = true;
+		bool reverse = first_reverse_value;
+		do {
+			std::vector<std::string> adv_units =
+				reverse ? type_.advances_from() : type_.advances_to();
+			bool first = true;
+
+			BOOST_FOREACH (const std::string &adv, adv_units)
+			{
+				const unit_type *type = unit_types.find(adv);
+				if (!type || type->hide_help()) continue;
+
+				if (first) {
+					if (reverse)
+						ss << _("Advances from: ");
+					else
+						ss << _("Advances to: ");
+					first = false;
+				} else
+					ss << ", ";
+
+				std::string lang_unit = type->type_name();
+				std::string ref_id;
+				ref_id = unit_prefix + type->id();
+				ss << "<ref>dst='" << escape(ref_id) << "' text='" << escape(lang_unit) << "'</ref>";
+			}
+			ss << "\n"; //added even if empty, to avoid shifting
+
+			reverse = !reverse; //switch direction
+		} while(reverse != first_reverse_value); // don't restart
+
+		// Print the race of the unit, cross-reference it to the
+		// respective topic.
+		const std::string race_id = type_.race();
+		std::string race_name;
+		if (const unit_race *r = unit_types.find_race(race_id)) {
+			race_name = r->plural_name();
+		} else {
+			race_name = _ ("race^Miscellaneous");
+		}
+		ss << _("Race: ");
+		ss << "<ref>dst='" << escape("..race_"+race_id) << "' text='" << escape(race_name) << "'</ref>";
+		ss << "\n";
+
+		// Print the abilities the units has, cross-reference them
+		// to their respective topics.
+		if (!type_.abilities().empty()) {
+			ss << _("Abilities: ");
+			for(std::vector<t_string>::const_iterator ability_it = type_.abilities().begin(),
+				 ability_end = type_.abilities().end();
+				 ability_it != ability_end; ++ability_it) {
+				const std::string ref_id = "ability_" + ability_it->base_str();
+				std::string lang_ability = gettext(ability_it->c_str());
+				ss << "<ref>dst='" << escape(ref_id) << "' text='" << escape(lang_ability)
+				   << "'</ref>";
+				if (ability_it + 1 != ability_end)
+					ss << ", ";
+			}
+			ss << "\n";
+		}
+
+		ss << "\n";
+
+		// Print some basic information such as HP and movement points.
+		ss << _("HP: ") << type_.hitpoints() << jump(30)
+		   << _("Moves: ") << type_.movement() << jump(30)
+		   << _("Cost: ") << type_.cost() << jump(30)
+		   << _("Alignment: ")
+		   << "<ref>dst='time_of_day' text='"
+		   << type_.alignment_description(type_.alignment(), type_.genders().front())
+		   << "'</ref>"
+		   << jump(30);
+		if (type_.can_advance())
+			ss << _("Required XP: ") << type_.experience_needed();
+
+		// Print the detailed description about the unit.
+		ss << "\n\n" << detailed_description;
+
+		// Print the different attacks a unit has, if it has any.
+		std::vector<attack_type> attacks = type_.attacks();
+		if (!attacks.empty()) {
+			// Print headers for the table.
+			ss << "\n\n<header>text='" << escape(_("unit help^Attacks"))
+			   << "'</header>\n\n";
+			table_spec table;
+
+			std::vector<item> first_row;
+			// Dummy element, icons are below.
+			first_row.push_back(item("", 0));
+			push_header(first_row, _("unit help^Name"));
+			push_header(first_row, _("Type"));
+			push_header(first_row, _("Strikes"));
+			push_header(first_row, _("Range"));
+			push_header(first_row, _("Special"));
+			table.push_back(first_row);
+			// Print information about every attack.
+			for(std::vector<attack_type>::const_iterator attack_it = attacks.begin(),
+				 attack_end = attacks.end();
+				 attack_it != attack_end; ++attack_it) {
+				std::string lang_weapon = attack_it->name();
+				std::string lang_type = gettext(attack_it->type().c_str());
+				std::vector<item> row;
+				std::stringstream attack_ss;
+				attack_ss << "<img>src='" << (*attack_it).icon() << "'</img>";
+				row.push_back(std::make_pair(attack_ss.str(),
+							     image_width(attack_it->icon())));
+				push_tab_pair(row, lang_weapon);
+				push_tab_pair(row, lang_type);
+				attack_ss.str(clear_stringstream);
+				attack_ss << attack_it->damage() << '-' << attack_it->num_attacks() << " " << attack_it->accuracy_parry_description();
+				push_tab_pair(row, attack_ss.str());
+				attack_ss.str(clear_stringstream);
+				push_tab_pair(row, _((*attack_it).range().c_str()));
+				// Show this attack's special, if it has any. Cross
+				// reference it to the section describing the
+				// special.
+#if defined(_KINGDOM_EXE) || !defined(_WIN32)
+				std::vector<t_string> specials = attack_it->special_tooltips(true);
+#else
+				std::vector<t_string> specials;
+#endif
+				if(!specials.empty())
+				{
+					std::string lang_special = "";
+					std::vector<t_string>::iterator sp_it;
+					for (sp_it = specials.begin(); sp_it != specials.end(); ++sp_it) {
+						const std::string ref_id = std::string("weaponspecial_")
+							+ sp_it->base_str();
+						lang_special = (*sp_it);
+						attack_ss << "<ref>dst='" << escape(ref_id)
+								  << "' text='" << escape(lang_special) << "'</ref>";
+						if((sp_it + 1) != specials.end() && (sp_it + 2) != specials.end())
+						{
+							attack_ss << ", "; //comma placed before next special
+						}
+						++sp_it; //skip description
+					}
+					row.push_back(std::make_pair(attack_ss.str(),
+						font::line_width(lang_special, normal_font_size)));
+
+				}
+				table.push_back(row);
+			}
+			ss << generate_table(table);
+		}
+
+		// Print the resistance table of the unit.
+		ss << "\n\n<header>text='" << escape(_("Resistances"))
+		   << "'</header>\n\n";
+		table_spec resistance_table;
+		std::vector<item> first_res_row;
+		push_header(first_res_row, _("Attack Type"));
+		push_header(first_res_row, _("Resistance"));
+		resistance_table.push_back(first_res_row);
+		const unit_movement_type &movement_type = type_.movement_type();
+		utils::string_map dam_tab = movement_type.damage_table();
+		for(utils::string_map::const_iterator dam_it = dam_tab.begin(), dam_end = dam_tab.end();
+			 dam_it != dam_end; ++dam_it) {
+			std::vector<item> row;
+			int resistance = 100 - atoi((*dam_it).second.c_str());
+			char resi[16];
+			snprintf(resi,sizeof(resi),"% 4d%%",resistance);	// range: -100% .. +70%
+			std::string color;
+			if (resistance < 0)
+				color = "red";
+			else if (resistance <= 20)
+				color = "yellow";
+			else if (resistance <= 40)
+				color = "white";
+			else
+				color = "green";
+
+			std::string lang_weapon = gettext(dam_it->first.c_str());
+			push_tab_pair(row, lang_weapon);
+			std::stringstream str;
+			str << "<format>color=" << color << " text='"<< resi << "'</format>";
+			const std::string markup = str.str();
+			str.str(clear_stringstream);
+			str << resi;
+			row.push_back(std::make_pair(markup,
+						     font::line_width(str.str(), normal_font_size)));
+			resistance_table.push_back(row);
+		}
+		ss << generate_table(resistance_table);
+
+		if (map != NULL) {
+			// Print the terrain modifier table of the unit.
+			ss << "\n\n<header>text='" << escape(_("Terrain Modifiers"))
+			   << "'</header>\n\n";
+			std::vector<item> first_row;
+			table_spec table;
+			push_header(first_row, _("Terrain"));
+			push_header(first_row, _("Defense"));
+			push_header(first_row, _("Movement Cost"));
+
+			table.push_back(first_row);
+
+			const t_translation::t_list& terrain_list = map->get_terrain_list();
+			for (t_translation::t_list::const_iterator terrain_it = terrain_list.begin(); terrain_it != terrain_list.end(); ++ terrain_it) {
+				const t_translation::t_terrain terrain = *terrain_it;
+				if (terrain == t_translation::FOGGED || terrain == t_translation::VOID_TERRAIN || terrain == t_translation::OFF_MAP_USER)
+					continue;
+				const terrain_type& info = map->get_terrain_info(terrain);
+
+				if (info.union_type().size() == 1 && info.union_type()[0] == info.number() && info.is_nonnull()) {
+					std::vector<item> row;
+					const std::string& name = info.name();
+					const std::string id = info.id();
+					const int moves = movement_type.movement_cost(*map,terrain);
+					std::stringstream str;
+					str << "<ref>text='" << escape(name) << "' dst='"
+						<< escape(std::string("terrain_") + id) << "'</ref>";
+					row.push_back(std::make_pair(str.str(),
+						font::line_width(name, normal_font_size)));
+
+					//defense  -  range: +10 % .. +70 %
+					str.str(clear_stringstream);
+					const int defense =
+						100 - movement_type.defense_modifier(*map,terrain);
+					std::string color;
+					if (defense < 0)
+						color = "red";
+					else if (defense < 20)
+						color = "yellow";
+					else if (defense < 40)
+						color = "white";
+					else
+						color = "green";
+
+					str << "<format>color=" << color << " text='"<< defense << "%'</format>";
+					const std::string markup = str.str();
+					str.str(clear_stringstream);
+					str << defense << "%";
+					row.push_back(std::make_pair(markup,
+						     font::line_width(str.str(), normal_font_size)));
+
+					//movement  -  range: 1 .. 5, unit_movement_type::UNREACHABLE=impassable
+					str.str(clear_stringstream);
+					const bool cannot_move = moves > type_.movement();
+					if (cannot_move)		// cannot move in this terrain
+						color = "red";
+					else if (moves > 1)
+						color = "yellow";
+					else
+						color = "white";
+
+					str << "<format>color=" << color << " text='";
+					// A 5 MP margin; if the movement costs go above
+					// the unit's max moves + 5, we replace it with dashes.
+					if(cannot_move && (moves > type_.movement() + 5)) {
+						str << "'-'";
+					} else {
+						str << moves;
+					}
+					str << "'</format>";
+					push_tab_pair(row, str.str());
+
+					table.push_back(row);
+				}
+			}
+			ss << generate_table(table);
+		}
+		return ss.str();
+	}
+};
+
+void generate_races_sections(const config *help_cfg, section &sec, int level)
+{
+	std::set<std::string, string_less> races;
+	std::set<std::string, string_less> visible_races;
+
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
+	{
+		const unit_type &type = i.second;
+		races.insert(type.race());
+		if (!type.hide_help())
+			visible_races.insert(type.race());
+	}
+
+	std::stringstream text;
+
+	for(std::set<std::string, string_less>::iterator it = races.begin(); it != races.end(); ++it) {
+		section race_section;
+		config section_cfg;
+
+		bool hidden = (visible_races.count(*it) == 0);
+
+		section_cfg["id"] = hidden_symbol(hidden) + race_prefix + *it;
+
+		std::string title;
+		if (const unit_race *r = unit_types.find_race(*it)) {
+			title = r->plural_name();
+		} else {
+			title = _ ("race^Miscellaneous");
+		}
+		section_cfg["title"] = title;
+
+		section_cfg["generator"] = "units:" + *it;
+
+		parse_config_internal(help_cfg, &section_cfg, race_section, level+1);
+		sec.add_section(race_section);
+	}
+}
+
+
+std::vector<topic> generate_unit_topics(const bool sort_generated, const std::string& race)
+{
+	std::vector<topic> topics;
+	std::set<std::string, string_less> race_units;
+
+	BOOST_FOREACH (const unit_type_data::unit_type_map::value_type &i, unit_types.types())
+	{
+		const unit_type &type = i.second;
+
+		if (type.race() != race)
+			continue;
+
+		const std::string type_name = type.type_name();
+		const std::string ref_id = hidden_symbol(type.hide_help()) + unit_prefix +  type.id();
+		topic unit_topic(type_name, ref_id, "");
+		unit_topic.text = new unit_topic_generator(type);
+		topics.push_back(unit_topic);
+
+		if (!type.hide_help()) {
+			// we also record an hyperlink of this unit
+			// in the list used for the race topic
+			std::string link =  "<ref>text='" + escape(type_name) + "' dst='" + escape(ref_id) + "'</ref>";
+			race_units.insert(link);
+		}
+	}
+
+	//generate the hidden race description topic
+	std::string race_id = "..race_"+race;
+	std::string race_name;
+	std::string race_description;
+	if (const unit_race *r = unit_types.find_race(race)) {
+		race_name = r->plural_name();
+		race_description = r->description();
+		// if (description.empty()) description =  _("No description Available");
+	} else {
+		race_name = _ ("race^Miscellaneous");
+		// description =  _("Here put the description of the Miscellaneous race");
+	}
+
+	std::stringstream text;
+	text << race_description;
+	text << "\n\n" << _("<header>text='Units of this race'</header>") << "\n";
+	for (std::set<std::string, string_less>::iterator u = race_units.begin(); u != race_units.end(); ++u) {
+		text << (*u) << "\n";
+	}
+	topics.push_back(topic(race_name, race_id, text.str()) );
+
+	if (sort_generated)
+		std::sort(topics.begin(), topics.end(), title_less());
+	return topics;
+}
+
+std::vector<topic> generate_topics(const bool sort_generated, const std::string &generator)
+{
+	std::vector<topic> res;
+	if (editor || generator.empty()) {
+		return res;
+	}
+
+	if (generator == "abilities") {
+		res = generate_ability_topics(sort_generated);
+	} else if (generator == "weapon_specials") {
+		res = generate_weapon_special_topics(sort_generated);
+	} else if (generator == "factions") {
+		res = generate_faction_topics(sort_generated);
+	} else {
+		std::vector<std::string> parts = utils::split(generator, ':', utils::STRIP_SPACES);
+		if (parts[0] == "units" && parts.size()>1) {
+			res = generate_unit_topics(sort_generated, parts[1]);
+		}
+	}
+
+	return res;
+}
+
+void generate_sections(const config *help_cfg, const std::string &generator, section &sec, int level)
+{
+	if (editor) {
+		return;
+	}
+
+	if (generator == "races") {
+		generate_races_sections(help_cfg, sec, level);
+	}
+}
+
+}
 
 unit_type_data unit_types;
+
+#else
+
+// anim_area
+int app_fill_anim_tags(std::map<const std::string, int>& tags)
+{
+	return area_anim::MAX_ROSE_ANIM;
+}
+
+void app_fill_anim(int type, const config& cfg)
+{
+}
+
+namespace help {
+std::vector<topic> generate_topics(const bool sort_generated, const std::string &generator)
+{
+	std::vector<topic> res;
+	return res;
+}
+
+void generate_sections(const config *help_cfg, const std::string &generator, section &sec, int level)
+{
+	return;
+}
+}
+
+#endif

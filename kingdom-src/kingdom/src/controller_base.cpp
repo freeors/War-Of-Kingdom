@@ -359,7 +359,7 @@ void controller_base::play_slice(bool is_delay_enabled)
 
 			// sound::play_UI_sound("select-unit.wav");
 			unit* u = resources::units->find_unit(pressed_loc);
-			if (!u->is_city() || !teams[u->side() - 1].is_human()) {
+			if (!u->is_city() || u->side() - 1 != resources::screen->playing_team()) {
 				gui.scroll_to_tile(pressed_loc, display::WARP);
 				m_handler.select_hex(map_location(), false);
 

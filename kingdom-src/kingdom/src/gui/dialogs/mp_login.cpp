@@ -81,7 +81,7 @@ tmp_login::tmp_login(game_display& disp, hero_map& heros, const std::string& lab
 	register_label("login_label", false, label);
 }
 
-const size_t max_login_size = 20;
+const size_t max_login_size = 15;
 
 void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 {
@@ -89,7 +89,7 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 
 	tlabel* label = find_widget<tlabel>(&window, "forum", false, true);
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Forum"), "green") << "  http://";
+	strstr << tintegrate::generate_format(_("Forum"), "green") << "  http://";
 	strstr << game_config::bbs_server.host << game_config::bbs_server.url;
 	label->set_label(strstr.str());
 
@@ -97,19 +97,19 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 	user_widget->set_value(preferences::login());
 	user_widget->set_maximum_length(max_login_size);
 
-	user_widget = find_widget<ttext_box>(&window, "password", false, true);
-	user_widget->set_value(preferences::password());
-	user_widget->set_maximum_length(max_login_size);
+	tpassword_box* pw = find_widget<tpassword_box>(&window, "password", false, true);
+	pw->set_value(preferences::password());
+	pw->set_maximum_length(max_login_size);
 
 	tcontrol* control = find_widget<tcontrol>(&window, "remember_password", false, true);
 	control->set_visible(twidget::INVISIBLE);	
 
 	utils::string_map symbols;
 	label = find_widget<tlabel>(&window, "remark", false, true);
-	symbols["server"] = help::tintegrate::generate_format(game_config::bbs_server.name, "green");
-	symbols["host"] = help::tintegrate::generate_format(game_config::bbs_server.host, "green");
-	symbols["register"] = help::tintegrate::generate_format(_("Register"), "blue");
-	symbols["ok"] = help::tintegrate::generate_format(_("OK"), "yellow");
+	symbols["server"] = tintegrate::generate_format(game_config::bbs_server.name, "green");
+	symbols["host"] = tintegrate::generate_format(game_config::bbs_server.host, "green");
+	symbols["register"] = tintegrate::generate_format(_("Register"), "blue");
+	symbols["ok"] = tintegrate::generate_format(_("OK"), "yellow");
 	label->set_label(vgettext("wesnoth-lib", "account^remark($server, $host, $register, $ok)", symbols));
 
 	connect_signal_mouse_left_click(
@@ -119,7 +119,7 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Register"), "blue");
+	strstr << tintegrate::generate_format(_("Register"), "blue");
 	find_widget<tbutton>(&window, "register", false).set_label(strstr.str());
 
 	connect_signal_mouse_left_click(
@@ -154,15 +154,15 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 	}
 
 	if (!allow_empty && str.empty()) {
-		symbols["key"] = help::tintegrate::generate_format(name, "red");
+		symbols["key"] = tintegrate::generate_format(name, "red");
 		
 		err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
 		gui2::show_message(disp_.video(), "", err.str());
 		return str;
 	} else if ((int)str.size() < min || (int)str.size() > max) {
-		symbols["min"] = help::tintegrate::generate_format(min, "yellow");
-		symbols["max"] = help::tintegrate::generate_format(max, "yellow");
-		symbols["key"] = help::tintegrate::generate_format(name, "red");
+		symbols["min"] = tintegrate::generate_format(min, "yellow");
+		symbols["max"] = tintegrate::generate_format(max, "yellow");
+		symbols["key"] = tintegrate::generate_format(name, "red");
 		
 		err << vgettext("wesnoth-lib", "'$key' value must combine $min to $max characters", symbols);
 		gui2::show_message(disp_.video(), "", err.str());
@@ -172,8 +172,8 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 		if (!is_valid_username(name, str, &disp_)) {
 			return null_str;
 		} else if (game_config::is_reserve_player(str)) {
-			symbols["key"] = help::tintegrate::generate_format(name, "red");
-			symbols["username"] = help::tintegrate::generate_format(str, "red");
+			symbols["key"] = tintegrate::generate_format(name, "red");
+			symbols["username"] = tintegrate::generate_format(str, "red");
 			err << vgettext("wesnoth-lib", "Invalid '$key' value, $username is reserved!", symbols);
 			gui2::show_message(disp_.video(), "", err.str());
 			return null_str;
@@ -185,15 +185,15 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 bool tmp_login::create(twindow& window, int operate)
 {
 	int min_username_char = (operate == REGISTER)? 6: 3;
-	std::string username = text_box_str(window, "username", _("Name"), min_username_char, 15, false);
+	std::string username = text_box_str(window, "username", _("Name"), min_username_char, max_login_size * 4, false);
 	if (username.empty()) {
 		return false;
 	}
 
-	tpassword_box* pd = find_widget<tpassword_box>(&window, "password", false, true);
-	std::string password = pd->get_real_value();
+	tpassword_box* pw = find_widget<tpassword_box>(&window, "password", false, true);
+	std::string password = pw->get_real_value();
 	if (!password.empty()) {
-		std::string password = text_box_str(window, "password", _("Password"), 0, 15, true);
+		std::string password = text_box_str(window, "password", _("Password"), 0, max_login_size * 4, true);
 		if (password.empty()) {
 			return false;
 		}
@@ -222,14 +222,14 @@ void tmp_login::register1(twindow& window)
 		ttext_box* widget = find_widget<ttext_box>(&window, "validate_password", false, true);
 		std::string validate_password = widget->get_value();
 		if (validate_password != preferences::password()) {
-			symbols["validate_password"] = help::tintegrate::generate_format(_("Validate password"), "red");
-			symbols["password"] = help::tintegrate::generate_format(_("Password"), "red");
+			symbols["validate_password"] = tintegrate::generate_format(_("Validate password"), "red");
+			symbols["password"] = tintegrate::generate_format(_("Password"), "red");
 			err << vgettext("wesnoth-lib", "$validate_password isn't same as $password", symbols);
 			gui2::show_message(disp_.video(), "", err.str());
 			return;
 		}
 		if ((int)validate_password.size() < min_password_chars) {
-			symbols["min"] = help::tintegrate::generate_format(min_password_chars, "yellow");
+			symbols["min"] = tintegrate::generate_format(min_password_chars, "yellow");
 		
 			err << vgettext("wesnoth-lib", "When register, password must be greater than or equal to $min characters", symbols);
 			gui2::show_message(disp_.video(), "", err.str());

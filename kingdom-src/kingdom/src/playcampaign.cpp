@@ -42,21 +42,6 @@
 
 #include <boost/foreach.hpp>
 
-class game_display_lock
-{
-public:
-	game_display_lock(game_display& disp)
-		: disp_(disp)
-	{}
-	~game_display_lock()
-	{
-		game_display::set_singleton(&disp_);
-	}
-
-private:
-	game_display& disp_;
-};
-
 void play_replay(game_display& disp, game_state& gamestate, const config& game_config, 
 	hero_map& heros, hero_map& heros_start, card_map& cards, CVideo& video)
 {

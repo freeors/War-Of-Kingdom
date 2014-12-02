@@ -28,7 +28,7 @@ class tbutton;
 class tlabel;
 class ttext_box;
 
-class tmp_create_game : public tdialog, public lobby_base, public trandom_map
+class tmp_create_game : public tdialog, public lobby_base, public trandom_map, public tlobby::thandler
 {
 public:
 
@@ -55,7 +55,7 @@ private:
 	/**
 	 * Network polling callback
 	 */
-	void process_network_data(const config& data, const network::connection sock);
+	bool handle(tlobby::ttype type, const config& data);
 
 	/**
 	 * All fields are also in the normal field vector, but they need to be
@@ -82,6 +82,7 @@ private:
 	game_display& gui_;
 	int num_turns_;
 	int era_index_;
+	bool local_only_;
 
 	ttext_box* name_entry_;
 

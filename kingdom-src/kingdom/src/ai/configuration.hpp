@@ -20,9 +20,9 @@
 #ifndef AI_CONFIGURATION_HPP_INCLUDED
 #define AI_CONFIGURATION_HPP_INCLUDED
 
-#include "../global.hpp"
+#include "global.hpp"
 
-#include "../config.hpp"
+#include "config.hpp"
 
 
 #include <map>

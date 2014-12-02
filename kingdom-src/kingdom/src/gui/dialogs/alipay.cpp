@@ -21,14 +21,14 @@
 #include "game_preferences.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
-#include "gui/widgets/password_box.hpp"
+#include "gui/widgets/text_box.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/message.hpp"
 #include <hero.hpp>
-#include "help.hpp"
+#include "integrate.hpp"
 #include "gettext.hpp"
 #include "formula_string_utils.hpp"
 #include "multiplayer.hpp"
@@ -98,23 +98,23 @@ void talipay::pre_show(CVideo& /*video*/, twindow& window)
 	strstr.str("");
 	utils::string_map symbols;
 	tlabel* label = find_widget<tlabel>(&window, "remark", false, true);
-	symbols["alipay"] = help::tintegrate::generate_format(_("Alipay"), "green");
-	symbols["mail"] = help::tintegrate::generate_format(game_config::sales_email, "green");
-	symbols["money"] = help::tintegrate::generate_format(15, "green");
-	symbols["pay"] = help::tintegrate::generate_format(_("Pay"), "blue");
+	symbols["alipay"] = tintegrate::generate_format(_("Alipay"), "green");
+	symbols["mail"] = tintegrate::generate_format(game_config::sales_email, "green");
+	symbols["money"] = tintegrate::generate_format(15, "green");
+	symbols["pay"] = tintegrate::generate_format(_("Pay"), "blue");
 	strstr << vgettext("wesnoth-lib", "payment^course($alipay, $mail, $money, $pay)", symbols);
 
 	symbols.clear();
-	symbols["ps"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "green");
-	symbols["alipay"] = help::tintegrate::generate_format(_("Alipay"), "green");
-	symbols["mail"] = help::tintegrate::generate_format(game_config::sales_email, "green");
-	symbols["pay"] = help::tintegrate::generate_format(_("Pay"), "blue");
+	symbols["ps"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "green");
+	symbols["alipay"] = tintegrate::generate_format(_("Alipay"), "green");
+	symbols["mail"] = tintegrate::generate_format(game_config::sales_email, "green");
+	symbols["pay"] = tintegrate::generate_format(_("Pay"), "blue");
 
 	strstr << "\n\n" << vgettext("wesnoth-lib", "payment^pay remark($ps, $alipay, $mail, $pay)", symbols);
 	label->set_label(strstr.str());
 
 	symbols.clear();
-	symbols["hotkey"] = help::tintegrate::generate_format("CTRL+V", "yellow");
+	symbols["hotkey"] = tintegrate::generate_format("CTRL+V", "yellow");
 	label = find_widget<tlabel>(&window, "number_tag", false, true);
 	strstr.str("");
 	strstr << _("Transaction number");
@@ -136,7 +136,7 @@ void talipay::pre_show(CVideo& /*video*/, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Pay"), "blue");
+	strstr << tintegrate::generate_format(_("Pay"), "blue");
 	find_widget<tbutton>(&window, "pay", false).set_label(strstr.str());
 	find_widget<tbutton>(&window, "pay", false).set_visible(twidget::INVISIBLE);
 }
@@ -154,15 +154,15 @@ std::string talipay::text_box_str(twindow& window, const std::string& id, const 
 	std::string str = widget->get_value();
 
 	if (!allow_empty && str.empty()) {
-		symbols["key"] = help::tintegrate::generate_format(name, "red");
+		symbols["key"] = tintegrate::generate_format(name, "red");
 		
 		err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
 		gui2::show_message(disp_.video(), "", err.str());
 		return str;
 	} else if ((int)str.size() < min || (int)str.size() > max) {
-		symbols["min"] = help::tintegrate::generate_format(min, "yellow");
-		symbols["max"] = help::tintegrate::generate_format(max, "yellow");
-		symbols["key"] = help::tintegrate::generate_format(name, "red");
+		symbols["min"] = tintegrate::generate_format(min, "yellow");
+		symbols["max"] = tintegrate::generate_format(max, "yellow");
+		symbols["key"] = tintegrate::generate_format(name, "red");
 		
 		if (min != max) {
 			err << vgettext("wesnoth-lib", "'$key' value must combine $min to $max characters", symbols);
@@ -196,7 +196,7 @@ void talipay::pay(twindow& window)
 
 	utils::string_map symbols;
 	std::stringstream strstr;
-	symbols["do"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "transaction^Insert"), "yellow");
+	symbols["do"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "transaction^Insert"), "yellow");
 	strstr << vgettext("wesnoth-lib", "$do successfully!", symbols);
 	gui2::show_message(disp_.video(), "", strstr.str());
 

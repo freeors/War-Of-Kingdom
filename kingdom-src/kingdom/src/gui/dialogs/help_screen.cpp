@@ -118,18 +118,12 @@ thelp_screen::thelp_screen(game_display& disp, hero_map& heros, hero& player_her
 	, player_hero_(player_hero)
 	, title_screen_anim_id_(-1)
 {
-/*
-	if (!game_display::get_singleton()) {
-		game_display::set_singleton(&disp);
-	}
-*/
-	outer_anim::reset(disp);
 }
 
 thelp_screen::~thelp_screen()
 {
 	if (title_screen_anim_id_ >= 0) {
-		disp_.erase_screen_anim(title_screen_anim_id_);
+		disp_.erase_area_anim(title_screen_anim_id_);
 	}
 }
 

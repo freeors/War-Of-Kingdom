@@ -14,10 +14,11 @@
 #include "xfunc.h"
 #include "win32x.h"
 #include "struct.h"
+#include "video.hpp"
 
 #include <boost/foreach.hpp>
 
-tintegrate integrate;
+tintegrate2 integrate;
 
 #define integrate_enable_save_btn(enable)	ToolBar_EnableButton(integrate.htb_integrate, IDM_SAVE, enable)
 #define integrate_get_save_btn()			(ToolBar_GetState(integrate.htb_integrate, IDM_SAVE) & TBSTATE_ENABLED)
@@ -64,12 +65,12 @@ BOOL integrate_hide_ui(void)
 	return TRUE;
 }
 
-tintegrate::tintegrate()
+tintegrate2::tintegrate2()
 	: formaters()
 {
 }
 
-HWND tintegrate::init_toolbar(HINSTANCE hinst, HWND hdlgP)
+HWND tintegrate2::init_toolbar(HINSTANCE hinst, HWND hdlgP)
 {
 	// Create a toolbar
 	htb_integrate = CreateWindowEx(0, TOOLBARCLASSNAME, (LPSTR)NULL, 
@@ -112,7 +113,7 @@ HWND tintegrate::init_toolbar(HINSTANCE hinst, HWND hdlgP)
 	return htb_integrate;
 }
 
-void tintegrate::refresh(HWND hdlgP)
+void tintegrate2::refresh(HWND hdlgP)
 {
 	fill_formaters();
 
@@ -131,17 +132,17 @@ void tintegrate::refresh(HWND hdlgP)
 	ComboBox_SetCurSel(hctl, 0);
 }
 
-bool tintegrate::save(HWND hdlgP)
+bool tintegrate2::save(HWND hdlgP)
 {
 	return true;
 }
 
-void tintegrate::insert_formater(const std::string& name, const std::string& example)
+void tintegrate2::insert_formater(const std::string& name, const std::string& example)
 {
 	formaters.push_back(tformater(name, example));
 }
 
-void tintegrate::fill_formaters()
+void tintegrate2::fill_formaters()
 {
 	if (!formaters.empty()) {
 		return;
@@ -217,7 +218,6 @@ void text_convert_to(HWND hdlgP, int id)
 	std::stringstream err;
 	try {
 		help::parse_text(str);
-		// help::tintegrate integrate(str, 480, -1, 0, font::BIGMAP_COLOR);
 
 	} catch (game::error& e) {
 		err << e.message;

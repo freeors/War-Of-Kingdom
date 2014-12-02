@@ -483,7 +483,11 @@ BOOL delfile1(const char *fname)
 	BOOL							fok = TRUE;
 	char							text[_MAX_PATH];
 
-	GetFileAttributesEx(fname, GetFileExInfoStandard, &fattrdata);
+	fok = GetFileAttributesEx(fname, GetFileExInfoStandard, &fattrdata);
+	if (!fok) {
+		DWORD err = GetLastError();
+		return err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND;
+	}
 	if (fattrdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 		// 要删除是目录
 		// 1.清空目录
@@ -571,17 +575,94 @@ void GetCurrentExePath(char *szCurExeDir)
 	}
 }
 
+struct tcompare_dir_param
+{
+	tcompare_dir_param(const std::string& dir1, const std::string& dir2, int& recursion_count)
+		: current_path1(dir1)
+		, current_path2(dir2)
+		, recursion_count(recursion_count)
+	{
+		std::replace(current_path1.begin(), current_path1.end(), '/', '\\');
+		if (current_path1.at(current_path1.size() - 1) == '\\') {
+			current_path1.erase(current_path1.size() - 1);
+		}
+
+		if (!dir2.empty()) {
+			std::replace(current_path2.begin(), current_path2.end(), '/', '\\');
+			if (current_path2.at(current_path2.size() - 1) == '\\') {
+				current_path2.erase(current_path2.size() - 1);
+			}
+		}
+	}
+
+	std::string current_path1;
+	std::string current_path2;
+	int& recursion_count;
+};
+
+BOOL cb_compare_dir_explorer(char *name, uint32_t flags, uint64_t len, int64_t lastWriteTime, uint32_t* ctx)
+{
+	tcompare_dir_param& cdp = *(tcompare_dir_param*)ctx;
+	bool compair = !cdp.current_path2.empty();
+	cdp.recursion_count ++;
+	std::string path2 = cdp.current_path2;
+	if (compair) {
+		path2.append("\\");
+		path2.append(name);
+	}
+	
+	// compair
+	if (flags & FILE_ATTRIBUTE_DIRECTORY) {
+		if (compair) {
+			if (!is_directory(path2.c_str())) {
+				return FALSE;
+			}
+		}
+
+		tcompare_dir_param cdp2(cdp.current_path1 + "\\" + name, path2, cdp.recursion_count);
+		if (!walk_dir_win32_deepen(cdp2.current_path1.c_str(), 0, cb_compare_dir_explorer, (uint32_t *)&cdp2)) {
+			return FALSE;
+		}
+
+	} else if (compair) {
+		if (!is_file(path2.c_str())) {
+			return FALSE;
+		}
+
+	}
+	return TRUE;
+}
+
+BOOL compare_dir(const std::string& dir1, const std::string& dir2)
+{
+	int recursion1_count = 0;
+	tcompare_dir_param cdp1(dir1, dir2, recursion1_count);
+	BOOL fok = walk_dir_win32_deepen(dir1.c_str(), 0, cb_compare_dir_explorer, (uint32_t *)&cdp1);
+	if (!fok) {
+		return FALSE;
+	}
+
+	int recursion2_count = 0;
+	tcompare_dir_param cdp2(dir2, "", recursion2_count);
+	walk_dir_win32_deepen(dir2.c_str(), 0, cb_compare_dir_explorer, (uint32_t *)&cdp2);
+
+	if (cdp1.recursion_count != cdp2.recursion_count) {
+		return FALSE;
+	}
+	return TRUE;
+}
+
 // @src: 可能是文件也可能是目录
 // @dst: 可能是文件也可能是目录
-// src时目录时，dst的base(dst)如果scr(base)，那么在dst下创建base(src)目录
-BOOL copyfile(const char *src, const char *dst)
+// if copy directory, dst must be not exist.
+bool copyfile(const char *src, const char *dst)
 {
 	WIN32_FILE_ATTRIBUTE_DATA		fattrdata;
 	BOOL							fok = TRUE;
 	char							text1[_MAX_PATH], text2[_MAX_PATH];
 
 	fok = GetFileAttributesEx(src, GetFileExInfoStandard, &fattrdata);
-	if (!fok) return FALSE;
+	if (!fok) return false;
 	if (fattrdata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
 		// 要复制的是目录
 		SHFILEOPSTRUCT		fopstruct;
@@ -600,12 +681,54 @@ BOOL copyfile(const char *src, const char *dst)
 
 		fopstruct.fFlags = FOF_NOERRORUI | FOF_NOCONFIRMATION; // 不要显示不能删除, 不要显示确认要不要删除对话框
 		fok = SHFileOperation(&fopstruct)? FALSE: TRUE;
+		if (fok) {
+			fok = compare_dir(src, dst);
+		}
 	} else {
 		// 要复制的是文件
 		fok = CopyFile(src, dst, FALSE);
 	}
 
-	return fok;
+	return fok? true: false;
+}
+
+bool copy_root_files(const char* src, const char* dst)
+{
+	char				szCurrDir[_MAX_PATH], text1[_MAX_PATH], text2[_MAX_PATH];
+	HANDLE				hFind;
+	WIN32_FIND_DATA		finddata;
+	BOOL				fok, fret = TRUE;
+	
+	if (!src || !src[0] || !dst || !dst[0]) {
+		return false;
+	}
+		
+	GetCurrentDirectory(_MAX_PATH, szCurrDir);
+	SetCurrentDirectory(appendbackslash(src));
+	hFind = FindFirstFile("*.*", &finddata);
+	fok = (hFind != INVALID_HANDLE_VALUE);
+
+	while (fok) {
+		if (finddata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+			// 目录
+		} else {
+			// 文件
+			sprintf(text1, "%s\\%s", src, finddata.cFileName);
+			sprintf(text2, "%s\\%s", dst, finddata.cFileName);
+			fret = CopyFile(text1, text2, FALSE);
+			if (!fret) {
+				posix_print_mb("copy file from %s to %s fail", text1, text2);
+				break;
+			}
+		}
+		fok = FindNextFile(hFind, &finddata);
+	}
+	if (hFind != INVALID_HANDLE_VALUE) {
+		FindClose(hFind);
+	}
+
+	SetCurrentDirectory(szCurrDir);
+	return fret? true: false;
 }
 
 char* GetBrowseFilePath(HWND hdlgP)

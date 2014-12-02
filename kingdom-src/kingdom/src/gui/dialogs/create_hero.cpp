@@ -25,7 +25,6 @@
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/text_box.hpp"
-#include "gui/widgets/password_box.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/combo_box.hpp"
@@ -33,7 +32,8 @@
 #include "preferences_display.hpp"
 #include "formula_string_utils.hpp"
 #include "multiplayer.hpp"
-#include "help.hpp"
+#include "lobby.hpp"
+#include "integrate.hpp"
 #include <time.h>
 
 #include <boost/bind.hpp>
@@ -159,14 +159,14 @@ void refresh_username(twindow& window)
 
 	tcontrol* control = find_widget<tcontrol>(&window, "username_png", false, true);
 	if (!preferences::vip2()) {
-		control->set_label(help::tintegrate::generate_img("misc/username.png"));
+		control->set_label(tintegrate::generate_img("misc/username.png"));
 	} else {
 		int day = 30;
 		if (preferences::vip_expire() >= time(NULL)) {
 			day = (preferences::vip_expire() - time(NULL)) / (24 * 3600);
 		}
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/username-vip.png") << "(" << help::tintegrate::generate_format(day, "green") << ")";
+		strstr << tintegrate::generate_img("misc/username-vip.png") << "(" << tintegrate::generate_format(day, "green") << ")";
 		control->set_label(strstr.str());
 	}
 }
@@ -175,11 +175,7 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 {
 	std::stringstream strstr;
 
-	window.set_enter_disabled(true);
-	window.set_escape_disabled(true);
-
 	refresh_username(window);
-
 	refresh_resi_point(window);
 	
 	/**** Set the version number ****/
@@ -309,7 +305,7 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_img("misc/config.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_img("misc/config.png~SCALE(24, 24)");
 	find_widget<tbutton>(&window, "account", false).set_label(strstr.str());
 
 	connect_signal_mouse_left_click(
@@ -319,7 +315,7 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Avatar"), "blue");
+	strstr << tintegrate::generate_format(_("Avatar"), "blue");
 	find_widget<tbutton>(&window, "avatar", false).set_label(strstr.str());
 
 	connect_signal_mouse_left_click(
@@ -329,7 +325,7 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("OK"), "blue");
+	strstr << tintegrate::generate_format(_("OK"), "blue");
 	find_widget<tbutton>(&window, "create", false).set_label(strstr.str());
 
 	refresh_field_ui(window);
@@ -356,8 +352,8 @@ void tcreate_hero::refresh_resi_point(twindow& window) const
 	const int noble = preferences::noble();
 	std::stringstream strstr;
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(unit_types.leader_noble(noble).name());
-	strstr << help::tintegrate::generate_format(resi_point, color);
+	strstr << tintegrate::generate_format(unit_types.leader_noble(noble).name());
+	strstr << tintegrate::generate_format(resi_point, color);
 
 	tcontrol* control = find_widget<tcontrol>(&window, "point", false, true);
 	control->set_label(strstr.str());
@@ -522,6 +518,8 @@ void tcreate_hero::account(twindow& window)
 
 		// portrait dirty
 		window.invalidate_layout();
+
+		lobby.process_error("Login changed!");
 	}
 }
 
@@ -844,7 +842,7 @@ std::string tcreate_hero::text_box_str(twindow& window, const std::string& id, c
 	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
 	std::string str = widget->get_value();
 	if (!allow_empty && str.empty()) {
-		symbols["key"] = help::tintegrate::generate_format(name, "red");
+		symbols["key"] = tintegrate::generate_format(name, "red");
 		
 		err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
 		gui2::show_message(disp_.video(), "", err.str());

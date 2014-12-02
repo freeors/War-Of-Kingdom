@@ -25,7 +25,7 @@
 
 #include "../controller_base.hpp"
 #include "../mouse_handler_base.hpp"
-#include "../tooltips.hpp"
+#include "tooltips.hpp"
 
 class map_generator;
 class hero_map;

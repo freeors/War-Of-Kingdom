@@ -86,8 +86,11 @@ void sync_update_task_desc(HWND hctl)
 	if (!file_exists(game_config::path + "/data/core/_main.cfg") || !is_directory(game_config::path + "/xwml")) {
 		return;
 	}
+
+#ifndef _ROSE_EDITOR
 	editor_.reload_campaigns_cfg();
-	
+#endif
+
 	char text[_MAX_PATH];
 	editor_.get_wml2bin_desc_from_wml(game_config::path + "/data");
 	const std::vector<std::pair<editor::BIN_TYPE, editor::wml2bin_desc> >& descs = editor_.wml2bin_descs();

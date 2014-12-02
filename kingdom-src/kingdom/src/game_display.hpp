@@ -20,15 +20,13 @@
 
 class config;
 class tod_manager;
-class team;
-class unit;
-class unit_map;
 class play_controller;
 
 #include "animated.hpp"
 #include "chat_events.hpp"
 #include "display.hpp"
 #include "pathfind/pathfind.hpp"
+#include "team.hpp"
 
 #include <deque>
 
@@ -78,9 +76,12 @@ public:
 
 	~game_display();
 	static game_display* get_singleton() { return singleton_ ;}
-	static void set_singleton(game_display* s) { singleton_ = s; }
-
-
+	static void set_singleton(game_display* s) 
+	{ 
+		singleton_ = s;
+		display::set_singleton(s);
+	}
+	
 	void add_flag(int side_index, std::vector<std::string>& side_colors);
 
 	/**
@@ -144,10 +145,6 @@ public:
 	 */
 	void set_route(const pathfind::marked_route *route);
 
-	/** Function to float a label above a tile */
-	void float_label(const map_location& loc, const std::string& text,
-	                 int red, int green, int blue, bool slow = false);
-
 	/**
 	 * Function to return 2 half-hex footsteps images for the given location.
 	 * Only loc is on the current route set by set_route.
@@ -179,6 +176,7 @@ public:
 	bool has_time_area() const;
 
 	void hide_context_menu(const theme::menu* m, bool hide, uint32_t flags = 0xffffffff, uint32_t disable = 0xffffffff);
+	void goto_main_context_menu();
 	void highlight_disctrict(const artifical& art);
 	void unhighlight_disctrict();
 	/** refresh field troop buttons */
@@ -203,7 +201,15 @@ public:
 	void show_tip(const std::string& message, const map_location& loc = map_location::null_location, bool clear = true);
 	void hide_tip();
 
-	bool draw_outer_anim(bool foreground);
+	/** Returns true if location (x,y) is covered in shroud. */
+	bool shrouded(const map_location& loc) const {
+		return viewpoint_ && viewpoint_->shrouded(loc);
+	}
+
+	/** Returns true if location (x,y) is covered in fog. */
+	bool fogged(const map_location& loc) const {
+		return viewpoint_ && viewpoint_->fogged(loc);
+	}
 protected:
 	/**
 	 * game_display pre_draw does specific things related e.g. to unit rendering
@@ -233,6 +239,7 @@ protected:
 	 */
 	void invalidate_animations_location(const map_location& loc);
 
+	virtual surface minimap_surface(int w, int h);
 	virtual void draw_minimap_units();
 
 private:
@@ -314,13 +321,10 @@ public:
 	std::set<map_location>& build_indicator() { return build_indicator_dst_; }
 	void clear_build_indicator();
 
-	std::map<int, unit_animation>& screen_anims() { return screen_anims_; }
-	unit_animation& insert_screen_anim_pass_scenario(const unit_animation& anim);
+	animation& insert_pass_scenario_anim(const animation& tpl);
 	int pass_scenario_anim_id() const { return pass_scenario_anim_id_; }
-	unit_animation& screen_anim(int id);
 
-	int insert_screen_anim(const unit_animation& anim);
-	void erase_screen_anim(int id);
+	void erase_area_anim(int id);
 	
 	void set_terrain_dirty();
 
@@ -398,15 +402,19 @@ public:
 	void clear_chat_messages() { prune_chat_messages(true); }
 
 	void begin_game();
+	void create_buttons();
 
 	virtual bool in_game() const { return in_game_; }
 	void draw_bar(const std::string& image, int xpos, int ypos,
 		const map_location& loc, int size, double filled,
 		const SDL_Color& col, fixed_t alpha, bool vtl = true);
 
+
 	void construct_road_locs(const std::map<std::pair<int, int>, std::vector<map_location> >& roads);
 	const std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >& road_locs() const { return road_locs_; };
+	enum {OWNER_NONE, OWNER_SELF, OWNER_ENEMY};
 	int road_owner(std::map<map_location, std::vector<std::pair<artifical*, artifical*> > >::const_iterator& loc) const;
+	virtual bool overlay_road_image(const map_location& loc, std::string& color_mod) const;
 
 	/**
 	 * Sets the linger mode for the display.
@@ -423,6 +431,7 @@ public:
 		LINGER_MP };     /**< linger overlay, show fog and shroud. */
 
 	void set_game_mode(const tgame_mode game_mode);
+	SDL_Rect clip_rect_commit() const;
 
 private:
 	game_display(const game_display&);
@@ -450,10 +459,11 @@ private:
 	unit* temp_unit_;
 	artifical* expedite_city_;
 
-	std::map<int, unit_animation> screen_anims_;
 	int pass_scenario_anim_id_;
 
 	bool terrain_dirty_;
+
+	std::map<map_location, std::vector<std::pair<artifical*, artifical*> > > road_locs_;
 
 	// Locations of the attack direction indicator's parts
 	std::set<map_location> attack_indicator_dst_;
@@ -563,18 +573,12 @@ private:
 	std::vector<animated<image::locator> > big_flags_;
 	std::vector<std::map<std::string, surface> > big_flags_cache_;
 
+	const team* viewpoint_;
 	/**
 	 * the tiles invalidated at last redraw,
 	 * to simplify the cleaning up of tiles left by units
 	 */
 	static game_display * singleton_;
 };
-
-namespace outer_anim {
-extern std::pair<double, double> zoom;
-extern SDL_Rect rect;
-
-void reset(game_display& disp);
-}
 
 #endif

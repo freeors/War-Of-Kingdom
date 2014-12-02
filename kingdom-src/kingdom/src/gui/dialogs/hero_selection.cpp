@@ -35,7 +35,6 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
-#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -265,7 +264,7 @@ void thero_selection::fill_table(int catalog)
 			} else {
 				color = "red";
 			}
-			str << "(" << help::tintegrate::generate_format(catalog_diff, color) << ")";
+			str << "(" << tintegrate::generate_format(catalog_diff, color) << ")";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("hero_catalog", table_item));
 

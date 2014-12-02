@@ -19,19 +19,19 @@
 
 #include "server.hpp"
 
-#include "../global.hpp"
+#include "global.hpp"
 
-#include "../config.hpp"
-#include "../game_config.hpp"
-#include "../log.hpp"
-#include "../map.hpp" // gamemap::MAX_PLAYERS
-#include "../network.hpp"
-#include "../filesystem.hpp"
-#include "../multiplayer_error_codes.hpp"
-#include "../serialization/parser.hpp"
-#include "../serialization/preprocessor.hpp"
-#include "../serialization/string_utils.hpp"
-#include "../util.hpp"
+#include "config.hpp"
+#include "game_config.hpp"
+#include "log.hpp"
+#include "map.hpp" // gamemap::MAX_PLAYERS
+#include "network.hpp"
+#include "filesystem.hpp"
+#include "multiplayer_error_codes.hpp"
+#include "serialization/parser.hpp"
+#include "serialization/preprocessor.hpp"
+#include "serialization/string_utils.hpp"
+#include "util.hpp"
 
 #include "game.hpp"
 #include "input_stream.hpp"
@@ -2758,6 +2758,10 @@ void server::update_game_in_lobby(const wesnothd::game* g, network::connection e
 #ifndef _MSC_VER
        #include <unistd.h>
 #endif
+
+void handle_app_event(Uint32 type)
+{
+}
 
 int main(int argc, char** argv) {
 	int port = 15000;

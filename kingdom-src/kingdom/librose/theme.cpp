@@ -1,0 +1,952 @@
+/* $Id: theme.cpp 47608 2010-11-21 01:56:29Z shadowmaster $ */
+/*
+   Copyright (C) 2003 - 2010 by David White <dave@whitevine.net>
+   Part of the Battle for Wesnoth Project http://www.wesnoth.org/
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2 of the License, or
+   (at your option) any later version.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY.
+
+   See the COPYING file for more details.
+*/
+
+/** @file */
+
+#include "global.hpp"
+
+#include "font.hpp"
+#include "gettext.hpp"
+#include "hotkeys.hpp"
+#include "log.hpp"
+#include "serialization/string_utils.hpp"
+#include "theme.hpp"
+#include "wml_exception.hpp"
+#include "game_config.hpp"
+
+#include <boost/foreach.hpp>
+
+static lg::log_domain log_display("display");
+#define DBG_DP LOG_STREAM(debug, log_display)
+#define LOG_DP LOG_STREAM(info, log_display)
+#define ERR_DP LOG_STREAM(err, log_display)
+
+extern bool in_tower_mode();
+
+namespace {
+	int XDim = 1024;
+	int YDim = 768;
+
+	const size_t DefaultFontSize = font::SIZE_NORMAL;
+        const Uint32 DefaultFontRGB = 0x00C8C8C8;
+
+	_rect ref_rect = { 0, 0, 0, 0 };
+}
+
+static size_t compute(std::string expr, size_t ref1, size_t ref2 = 0 ) 
+{
+	size_t ref = 0;
+	if (expr[0] == '=') {
+		ref = ref1;
+		expr = expr.substr(1);
+	} else if ((expr[0] == '+') || (expr[0] == '-')) {
+		ref = ref2;
+	}
+	return ref + atoi(expr.c_str());
+}
+
+	// If x2 or y2 are not specified, use x1 and y1 values
+static _rect read_rect(const config& cfg) {
+		_rect rect = { 0, 0, 0, 0 };
+		std::vector<std::string> items = utils::split(cfg["rect"].str());
+		if(items.size() >= 1)
+			rect.x1 = atoi(items[0].c_str());
+
+		if(items.size() >= 2)
+			rect.y1 = atoi(items[1].c_str());
+
+		if(items.size() >= 3)
+			rect.x2 = atoi(items[2].c_str());
+		else
+			rect.x2 = rect.x1;
+
+		if(items.size() >= 4)
+			rect.y2 = atoi(items[3].c_str());
+		else
+			rect.y2 = rect.y1;
+
+		return rect;
+	}
+
+static SDL_Rect read_sdl_rect(const config& cfg) {
+		SDL_Rect sdlrect;
+		const _rect rect = read_rect(cfg);
+		sdlrect.x = rect.x1;
+		sdlrect.y = rect.y1;
+		sdlrect.w = (rect.x2 > rect.x1) ? (rect.x2 - rect.x1) : 0;
+		sdlrect.h = (rect.y2 > rect.y1) ? (rect.y2 - rect.y1) : 0;
+
+		return sdlrect;
+	}
+
+static std::string resolve_rect(const std::string& rect_str) {
+		_rect rect = { 0, 0, 0, 0 };
+		std::stringstream resolved;
+		const std::vector<std::string> items = utils::split(rect_str.c_str());
+		if(items.size() >= 1) {
+			rect.x1 = compute(items[0], ref_rect.x1, ref_rect.x2);
+			resolved << rect.x1;
+		}
+		if(items.size() >= 2) {
+			rect.y1 = compute(items[1], ref_rect.y1, ref_rect.y2);
+			resolved << "," << rect.y1;
+		}
+		if(items.size() >= 3) {
+			rect.x2 = compute(items[2], ref_rect.x2, rect.x1);
+			resolved << "," << rect.x2;
+		}
+		if(items.size() >= 4) {
+			rect.y2 = compute(items[3], ref_rect.y2, rect.y1);
+			resolved << "," << rect.y2;
+		}
+
+		// DBG_DP << "Rect " << rect_str << "\t: " << resolved.str() << "\n";
+
+		ref_rect = rect;
+		return resolved.str();
+	}
+
+static config &find_ref(const std::string &id, config &cfg, bool remove = false)
+{
+	static config empty_config;
+
+	config::all_children_itors itors = cfg.all_children_range();
+	for (config::all_children_iterator i = itors.first; i != itors.second; ++i)
+	{
+		config &icfg = const_cast<config &>(i->cfg);
+		if (i->cfg["id"] == id) {
+			if (remove) {
+				cfg.erase(i);
+				return empty_config;
+			} else {
+				return icfg;
+			}
+		}
+
+		// Recursively look in children.
+		config &c = find_ref(id, icfg, remove);
+		if (&c != &empty_config) {
+			return c;
+		}
+	}
+
+	// Not found.
+	return empty_config;
+}
+
+#ifdef DEBUG
+
+// to be called from gdb
+static config& find_ref(const char* id, config& cfg) {
+	return find_ref(std::string(id),cfg);
+}
+
+namespace {
+	// avoid some compiler warnings in stricter mode.
+	static config cfg;
+	static config& result = find_ref("", cfg);
+} // namespace
+
+#endif
+
+static const config& modify_top_cfg_according_to_mode(const config& top_cfg, config& tmp)
+{
+	if (in_tower_mode() && top_cfg.child_count("tower")) {
+		tmp = top_cfg;
+		const config& sub = top_cfg.child("tower");
+		BOOST_FOREACH (const config::any_child& child, sub.all_children_range()) {
+			bool is_resolution = true;
+			config* find = &tmp.find_child("resolution", "id", child.key);
+			if (!(*find)) {
+				is_resolution = false;
+				find = &tmp.find_child("partialresolution", "id", child.key);
+			}
+			if (*find) {
+				BOOST_FOREACH (const config &rm, child.cfg.child_range("remove")) {
+					if (is_resolution) {
+						find_ref(rm["id"], *find, true);
+					} else {
+						config& find2 = find->find_child("remove", "id", rm["id"]);
+						if (!find2) {
+							find->add_child("remove", rm);
+						}
+					}
+				}
+
+				BOOST_FOREACH (const config &chg, child.cfg.child_range("change")) {
+					if (is_resolution) {
+						config& target = find_ref(chg["id"], *find);
+						target.merge_attributes(chg);
+					} else {
+						config& find2 = find->find_child("change", "id", chg["id"]);
+						if (find2) {
+							find2.merge_attributes(chg);
+						} else {
+							find->add_child("change", chg);
+						}
+					}
+				}
+			}
+		}
+		return tmp;
+	}
+	return top_cfg;
+}
+
+// I make sure there is a 480x320 [resolution] in [theme]. so:
+// 1. Don't resolve partialresolution when it is 480x320.
+// 2. Don't save other resolution except 480x320, when current is tiny_gui mode.
+static void expand_partialresolution(config& dst_cfg, const config& _top_cfg, const SDL_Rect& screen)
+{
+	config tmp;
+	const config& top_cfg = modify_top_cfg_according_to_mode(_top_cfg, tmp);
+
+	std::vector<config> res_cfgs_;
+	std::string theme_name = top_cfg["name"].str();
+	// resolve all the partialresolutions
+	BOOST_FOREACH (const config &part, top_cfg.child_range("partialresolution")) {
+		// follow the inheritance hierarchy and push all the nodes on the stack
+		std::vector<const config*> parent_stack(1, &part);
+		const config *parent;
+		std::string parent_id = part["inherits"];
+		while (!*(parent = &top_cfg.find_child("resolution", "id", parent_id)))
+		{
+			parent = &top_cfg.find_child("partialresolution", "id", parent_id);
+			if (!*parent)
+				throw config::error("[partialresolution] refers to non-existent [resolution] " + parent_id);
+			parent_stack.push_back(parent);
+			parent_id = (*parent)["inherits"].str();
+		}
+		// find parent of this part, parent must is full resolution, interval may be not only one era
+		// 1024x768 
+		//   800x600
+		//     800x480
+		// also parent of 800x480 is 800x600, but 800x600 isnpt full resolution, find up until to 1024x768
+
+
+		// Add the parent resolution and apply all the modifications of its children
+		res_cfgs_.push_back(*parent);
+		while (!parent_stack.empty()) {
+			//override attributes
+			res_cfgs_.back().merge_attributes(*parent_stack.back());
+			BOOST_FOREACH (const config &rm, parent_stack.back()->child_range("remove")) {
+				find_ref(rm["id"], res_cfgs_.back(), true);
+			}
+
+			BOOST_FOREACH (const config &chg, parent_stack.back()->child_range("change"))
+			{
+				config &target = find_ref(chg["id"], res_cfgs_.back());
+				target.merge_attributes(chg);
+			}
+
+			// cannot add [status] sub-elements, but who cares
+			if (const config &c = parent_stack.back()->child("add"))
+			{
+				BOOST_FOREACH (const config::any_child &j, c.all_children_range()) {
+					res_cfgs_.back().add_child(j.key, j.cfg);
+				}
+			}
+
+			parent_stack.pop_back();
+		}
+	}
+	// Add all the resolutions
+	BOOST_FOREACH (const config &res, top_cfg.child_range("resolution")) {
+		dst_cfg.add_child("resolution", res);
+	}
+	// Add all the resolved resolutions
+	for(std::vector<config>::const_iterator k = res_cfgs_.begin(); k != res_cfgs_.end(); ++k) {
+		dst_cfg.add_child("resolution", (*k));
+	}
+	return;
+}
+
+static void do_resolve_rects(const config& cfg, config& resolved_config, config* resol_cfg = NULL) 
+{
+	// recursively resolve children
+	BOOST_FOREACH (const config::any_child &value, cfg.all_children_range()) {
+		config &childcfg = resolved_config.add_child(value.key);
+		do_resolve_rects(value.cfg, childcfg,
+			value.key == "resolution" ? &childcfg : resol_cfg);
+	}
+
+	// copy all key/values
+	resolved_config.merge_attributes(cfg);
+
+	// override default reference rect with "ref" parameter if any
+	if (!cfg["ref"].empty()) {
+		if (resol_cfg == NULL) {
+			ERR_DP << "Use of ref= outside a [resolution] block\n";
+		} else {
+			//DBG_DP << ">> Looking for " << cfg["ref"] << "\n";
+			const config ref = find_ref (cfg["ref"], *resol_cfg);
+
+			if (ref["id"].empty()) {
+				ERR_DP << "Reference to non-existent rect id \"" << cfg["ref"] << "\"\n";
+			} else if (ref["rect"].empty()) {
+				ERR_DP << "Reference to id \"" << cfg["ref"] <<
+					"\" which does not have a \"rect\"\n";
+			} else {
+				ref_rect = read_rect(ref);
+			}
+		}
+	}
+	// resolve the rect value to absolute coordinates
+	if (!cfg["rect"].empty()) {
+		resolved_config["rect"] = resolve_rect(cfg["rect"]);
+	}
+}
+
+theme::object::object() :
+	location_modified_(false),
+	id_(),
+	loc_(empty_rect),
+	relative_loc_(empty_rect),
+	last_screen_(empty_rect),
+	xanchor_(object::FIXED),
+	yanchor_(object::FIXED)
+{
+}
+
+theme::object::object(const config& cfg) :
+		location_modified_(false), id_(cfg["id"]), loc_(read_sdl_rect(cfg)),
+		relative_loc_(empty_rect), last_screen_(empty_rect),
+		xanchor_(read_anchor(cfg["xanchor"])), yanchor_(read_anchor(cfg["yanchor"]))
+{
+}
+
+theme::tborder::tborder() :
+	size(0.0),
+	background_image(),
+	tile_image(),
+	corner_image_top_left(),
+	corner_image_bottom_left(),
+	corner_image_top_right_odd(),
+	corner_image_top_right_even(),
+	corner_image_bottom_right_odd(),
+	corner_image_bottom_right_even(),
+	border_image_left(),
+	border_image_right(),
+	border_image_top_odd(),
+	border_image_top_even(),
+	border_image_bottom_odd(),
+	border_image_bottom_even()
+{
+}
+
+theme::tborder::tborder(const config& cfg) :
+	size(cfg["border_size"].to_double()),
+
+	background_image(cfg["background_image"]),
+	tile_image(cfg["tile_image"]),
+
+	corner_image_top_left(cfg["corner_image_top_left"]),
+	corner_image_bottom_left(cfg["corner_image_bottom_left"]),
+
+	corner_image_top_right_odd(cfg["corner_image_top_right_odd"]),
+	corner_image_top_right_even(cfg["corner_image_top_right_even"]),
+
+	corner_image_bottom_right_odd(cfg["corner_image_bottom_right_odd"]),
+	corner_image_bottom_right_even(cfg["corner_image_bottom_right_even"]),
+
+	border_image_left(cfg["border_image_left"]),
+	border_image_right(cfg["border_image_right"]),
+
+	border_image_top_odd(cfg["border_image_top_odd"]),
+	border_image_top_even(cfg["border_image_top_even"]),
+
+	border_image_bottom_odd(cfg["border_image_bottom_odd"]),
+	border_image_bottom_even(cfg["border_image_bottom_even"])
+{
+	VALIDATE(size >= 0.0 && size <= 0.5, _("border_size should be between 0.0 and 0.5."));
+}
+
+SDL_Rect& theme::object::location(const SDL_Rect& screen) const
+{
+	if(last_screen_ == screen && !location_modified_)
+		return relative_loc_;
+
+	last_screen_ = screen;
+
+	switch(xanchor_) {
+	case FIXED:
+		relative_loc_.x = loc_.x;
+		relative_loc_.w = loc_.w;
+		break;
+	case TOP_ANCHORED:
+		relative_loc_.x = loc_.x;
+		relative_loc_.w = screen.w - std::min<size_t>(XDim - loc_.w,screen.w);
+		break;
+	case BOTTOM_ANCHORED:
+		relative_loc_.x = screen.w - std::min<size_t>(XDim - loc_.x,screen.w);
+		relative_loc_.w = loc_.w;
+		break;
+	case PROPORTIONAL:
+		relative_loc_.x = (loc_.x*screen.w)/XDim;
+		relative_loc_.w = (loc_.w*screen.w)/XDim;
+		break;
+	default:
+		assert(false);
+	}
+
+	switch(yanchor_) {
+	case FIXED:
+		relative_loc_.y = loc_.y;
+		relative_loc_.h = loc_.h;
+		break;
+	case TOP_ANCHORED:
+		relative_loc_.y = loc_.y;
+		relative_loc_.h = screen.h - std::min<size_t>(YDim - loc_.h,screen.h);
+		break;
+	case BOTTOM_ANCHORED:
+		relative_loc_.y = screen.h - std::min<size_t>(YDim - loc_.y,screen.h);
+		relative_loc_.h = loc_.h;
+		break;
+	case PROPORTIONAL:
+		relative_loc_.y = (loc_.y*screen.h)/YDim;
+		relative_loc_.h = (loc_.h*screen.h)/YDim;
+		break;
+	default:
+		assert(false);
+	}
+
+	relative_loc_.x = std::min<int>(relative_loc_.x,screen.w);
+	relative_loc_.w = std::min<int>(relative_loc_.w,screen.w - relative_loc_.x);
+	relative_loc_.y = std::min<int>(relative_loc_.y,screen.h);
+	relative_loc_.h = std::min<int>(relative_loc_.h,screen.h - relative_loc_.y);
+
+	// when MOD wirte [theme] mistake, will result to relative_loc_.x/y/w.h less than 0. 
+	// it is invalid, there set to 0 in order to avoid ACCESS Excepetion. MOD should correct them.
+	if (relative_loc_.x < 0) relative_loc_.x = 0;
+	if (relative_loc_.y < 0) relative_loc_.y = 0;
+	if (relative_loc_.w < 0) relative_loc_.w = 2;
+	if (relative_loc_.h < 0) relative_loc_.h = 2;
+
+	return relative_loc_;
+}
+
+theme::object::ANCHORING theme::object::read_anchor(const std::string& str)
+{
+	static const std::string top_anchor = "top", left_anchor = "left",
+	                         bot_anchor = "bottom", right_anchor = "right",
+							 fixed_anchor = "fixed", proportional_anchor = "proportional";
+	if(str == top_anchor || str == left_anchor)
+		return TOP_ANCHORED;
+	else if(str == bot_anchor || str == right_anchor)
+		return BOTTOM_ANCHORED;
+	else if(str == proportional_anchor)
+		return PROPORTIONAL;
+	else
+		return FIXED;
+}
+
+void theme::object::modify_location(const _rect rect){
+	loc_.x = rect.x1;
+	loc_.y = rect.y1;
+	loc_.w = rect.x2 - rect.x1;
+	loc_.h = rect.y2 - rect.y1;
+	location_modified_ = true;
+}
+
+void theme::object::modify_location(std::string rect_str, SDL_Rect ref_rect){
+	_rect rect = { 0, 0, 0, 0 };
+	const std::vector<std::string> items = utils::split(rect_str.c_str());
+	if(items.size() >= 1) {
+		rect.x1 = compute(items[0], ref_rect.x, ref_rect.x + ref_rect.w);
+	}
+	if(items.size() >= 2) {
+		rect.y1 = compute(items[1], ref_rect.y, ref_rect.y + ref_rect.h);
+	}
+	if(items.size() >= 3) {
+		rect.x2 = compute(items[2], ref_rect.x + ref_rect.w, rect.x1);
+	}
+	if(items.size() >= 4) {
+		rect.y2 = compute(items[3], ref_rect.y + ref_rect.h, rect.y1);
+	}
+	modify_location(rect);
+}
+
+theme::label::label() :
+	text_(),
+	icon_(),
+	font_(),
+	font_rgb_set_(false),
+	font_rgb_(DefaultFontRGB)
+{}
+
+theme::label::label(const config& cfg) :
+	object(cfg),
+	text_(cfg["prefix"].str() + cfg["text"].str() + cfg["postfix"].str()),
+	icon_(cfg["icon"]),
+	font_(cfg["font_size"]),
+	font_rgb_set_(false),
+	font_rgb_(DefaultFontRGB)
+{
+	if(font_ == 0)
+		font_ = DefaultFontSize;
+
+	if (cfg.has_attribute("font_rgb"))
+	{
+	std::vector<std::string> rgb_vec = utils::split(cfg["font_rgb"]);
+	  if(3 <= rgb_vec.size()){
+	    std::vector<std::string>::iterator c=rgb_vec.begin();
+	    int r,g,b;
+	    r = (atoi(c->c_str()));
+	    ++c;
+	    if(c != rgb_vec.end()){
+	      g = (atoi(c->c_str()));
+	    }else{
+	      g=0;
+	    }
+	    ++c;
+	    if(c != rgb_vec.end()){
+	      b=(atoi(c->c_str()));
+	    }else{
+	      b=0;
+	    }
+	    font_rgb_ = (((r<<16) & 0x00FF0000) + ((g<<8) & 0x0000FF00) + ((b) & 0x000000FF));
+	    font_rgb_set_=true;
+	  }
+	}
+}
+
+theme::status_item::status_item(const config& cfg) :
+	object(cfg),
+	prefix_(cfg["prefix"].str() + cfg["prefix_literal"].str()),
+	postfix_(cfg["postfix_literal"].str() + cfg["postfix"].str()),
+	label_(),
+	font_(cfg["font_size"]),
+	font_rgb_set_(false),
+	font_rgb_(DefaultFontRGB)
+{
+	if(font_ == 0)
+		font_ = DefaultFontSize;
+
+	if (const config &label_child = cfg.child("label")) {
+		label_ = label(label_child);
+	}
+
+	if (cfg.has_attribute("font_rgb"))
+	{
+	  std::vector<std::string> rgb_vec = utils::split(cfg["font_rgb"]);
+	  if(3 <= rgb_vec.size()){
+	    std::vector<std::string>::iterator c=rgb_vec.begin();
+	    int r,g,b;
+	    r = (atoi(c->c_str()));
+	    ++c;
+	    if(c != rgb_vec.end()){
+	      g = (atoi(c->c_str()));
+	    }else{
+	      g=0;
+	    }
+	    ++c;
+	    if(c != rgb_vec.end()){
+	      b=(atoi(c->c_str()));
+	    }else{
+	      b=0;
+	    }
+	    font_rgb_ = (((r<<16) & 0x00FF0000) + ((g<<8) & 0x0000FF00) + ((b) & 0x000000FF));
+	    font_rgb_set_=true;
+	  }
+	}
+}
+
+theme::panel::panel(const config& cfg) : object(cfg), image_(cfg["image"])
+{}
+
+theme::menu::menu() :
+	object(),
+	context_(false),
+	title_(),
+	tooltip_(),
+	image_(),
+	type_(),
+	items_(),
+	font_size_(0),
+	parent_(NULL)
+{}
+
+theme::menu::menu(const config &cfg):
+	object(cfg), context_(cfg["is_context_menu"].to_bool()),
+	title_(cfg["title"].str() + cfg["title_literal"].str()),
+	tooltip_(cfg["tooltip"]), image_(cfg["image"]), type_(cfg["type"]),
+	font_size_(cfg["font_size"].to_int()),
+	items_(utils::split(cfg["items"])),
+	button_style_(cfg["button_style"].to_bool()),
+	parent_(NULL)
+{
+#ifdef _WIN32
+	if (cfg["auto_tooltip"].to_bool() && tooltip_.empty() && items_.size() == 1) {
+		tooltip_ = hotkey::get_hotkey(items_[0]).get_description();
+	} else if (cfg["tooltip_name_prepend"].to_bool() && items_.size() == 1) {
+		tooltip_ = hotkey::get_hotkey(items_[0]).get_description() + "\n" + tooltip_;
+	}
+#endif
+}
+
+theme::theme(const config& cfg, const SDL_Rect& screen) :
+	theme_reset_("theme_reset"),
+	cur_theme(),
+	cfg_(),
+	panels_(),
+	labels_(),
+	menus_(),
+	context_(),
+	status_(),
+	main_map_(),
+	mini_map_(),
+	unit_image_(),
+	border_(),
+	main_context_(NULL),
+	current_context_(NULL),
+	mid_panel_(),
+	terrain_panel_()
+{
+	config tmp;
+	expand_partialresolution(tmp, cfg, screen);
+	// character of tmp expand_partialresolution generated:
+	// 1. there is no attrubute in root
+	// 2. only one block: [resolution], block count equal to count of [resolution] + count of [partialresolution]
+	do_resolve_rects(tmp, cfg_);
+	set_resolution(screen);
+}
+
+bool theme::set_resolution(const SDL_Rect& screen)
+{
+	// VALIDATE(cfg_.child_count("resolution") <= 1, "theme::set_resolution, blocks of resolution mistaken.");
+	bool result = false;
+
+	int current_rating = 1000000;
+	const config *current = NULL;
+	BOOST_FOREACH (const config &i, cfg_.child_range("resolution"))
+	{
+		int width = i["width"];
+		int height = i["height"];
+		if (screen.w >= width && screen.h >= height) {
+			current = &i;
+			result = true;
+			break;
+		}
+
+		const int rating = width*height;
+		if (rating < current_rating) {
+			current = &i;
+			current_rating = rating;
+		}
+	}
+
+	if (!current) {
+		if (cfg_.child_count("resolution")) {
+			ERR_DP << "No valid resolution found\n";
+		}
+		return false;
+	}
+
+	std::map<std::string,std::string> title_stash;
+	std::vector<theme::menu>::iterator m;
+	for (m = menus_.begin(); m != menus_.end(); ++m) {
+		if (!m->title().empty() && !m->get_id().empty())
+			title_stash[m->get_id()] = m->title();
+	}
+
+	panels_.clear();
+	labels_.clear();
+	status_.clear();
+	menus_.clear();
+	context_.clear();
+
+	add_object(*current);
+
+	for (m = menus_.begin(); m != menus_.end(); ++m) {
+		if (title_stash.find(m->get_id()) != title_stash.end())
+			m->set_title(title_stash[m->get_id()]);
+	}
+
+	theme_reset_.notify_observers();
+
+	return result;
+}
+
+void theme::add_object(const config& cfg)
+{
+	if (const config &c = cfg.child("main_map")) {
+		main_map_ = object(c);
+	}
+
+	if (const config &c = cfg.child("mini_map")) {
+		mini_map_ = object(c);
+	}
+
+	if (const config &status_cfg = cfg.child("status"))
+	{
+		BOOST_FOREACH (const config::any_child &i, status_cfg.all_children_range()) {
+			status_.insert(std::pair<std::string, status_item>(i.key, status_item(i.cfg)));
+		}
+		if (const config &unit_image_cfg = status_cfg.child("unit_image")) {
+			unit_image_ = object(unit_image_cfg);
+		} else {
+			unit_image_ = object();
+		}
+	}
+
+	BOOST_FOREACH (const config &p, cfg.child_range("panel")) {
+		panel new_panel(p);
+		set_object_location(new_panel, p["rect"], p["ref"]);
+		panels_.push_back(new_panel);
+
+		const std::string& id = p["id"].str();
+		if (id == "terrain-panel") {
+			terrain_panel_ = object(p);
+
+		} else if (id == "left-bottom-panel") {
+			mid_panel_ = object(p);
+		}
+	}
+
+	BOOST_FOREACH (const config &lb, cfg.child_range("label")) {
+		label new_label(lb);
+
+		set_object_location(new_label, lb["rect"], lb["ref"]);
+		labels_.push_back(new_label);
+	}
+
+	BOOST_FOREACH (const config &m, cfg.child_range("menu"))
+	{
+		menu new_menu(m);
+		DBG_DP << "adding menu: " << (new_menu.is_context() ? "is context" : "not context") << "\n";
+		if (new_menu.is_context()) {
+			context_.push_back(new_menu);
+		} else{
+			set_object_location(new_menu, m["rect"], m["ref"]);
+			menus_.push_back(new_menu);
+		}
+
+		DBG_DP << "done adding menu...\n";
+	}
+
+	if (const config &c = cfg.child("main_map_border")) {
+		border_ = tborder(c);
+	} else {
+		border_ = tborder();
+	}
+}
+
+void theme::remove_object(std::string id){
+	for(std::vector<theme::panel>::iterator p = panels_.begin(); p != panels_.end(); ++p) {
+		if (p->get_id() == id){
+			panels_.erase(p);
+			return;
+		}
+	}
+	for(std::vector<theme::label>::iterator l = labels_.begin(); l != labels_.end(); ++l) {
+		if (l->get_id() == id){
+			labels_.erase(l);
+			return;
+		}
+	}
+	for(std::vector<theme::menu>::iterator m = menus_.begin(); m != menus_.end(); ++m) {
+		if (m->get_id() == id){
+			menus_.erase(m);
+			return;
+		}
+	}
+	for (std::vector<theme::menu>::iterator m = context_.begin(); m != context_.end(); ++m) {
+		if (m->get_id() == id){
+			context_.erase(m);
+			return;
+		}
+	}
+}
+
+void theme::set_object_location(theme::object& element, std::string rect_str, std::string ref_id){
+	theme::object ref_element = element;
+	if (ref_id.empty()) {
+		ref_id = element.get_id();
+	}
+	else {
+		ref_element = find_element(ref_id);
+	}
+	if (ref_element.get_id() == ref_id){
+		SDL_Rect ref_rect = ref_element.get_location();
+		element.modify_location(rect_str, ref_rect);
+	}
+}
+
+void theme::modify(const config &cfg)
+{
+	std::map<std::string,std::string> title_stash;
+	std::vector<theme::menu>::iterator m;
+	for (m = menus_.begin(); m != menus_.end(); ++m) {
+		if (!m->title().empty() && !m->get_id().empty())
+			title_stash[m->get_id()] = m->title();
+	}
+
+	// Change existing theme objects.
+	BOOST_FOREACH (const config &c, cfg.child_range("change"))
+	{
+		std::string id = c["id"];
+		std::string ref_id = c["ref"];
+		theme::object &element = find_element(id);
+		if (element.get_id() == id)
+			set_object_location(element, c["rect"], ref_id);
+	}
+
+	// Add new theme objects.
+	BOOST_FOREACH (const config &c, cfg.child_range("add")) {
+		add_object(c);
+	}
+
+	// Remove existent theme objects.
+	BOOST_FOREACH (const config &c, cfg.child_range("remove")) {
+		remove_object(c["id"]);
+	}
+
+	for (m = menus_.begin(); m != menus_.end(); ++m) {
+		if (title_stash.find(m->get_id()) != title_stash.end())
+			m->set_title(title_stash[m->get_id()]);
+	}
+}
+
+theme::object& theme::find_element(std::string id){
+	static theme::object empty_object;
+	theme::object* res = &empty_object;
+	for (std::vector<theme::panel>::iterator p = panels_.begin(); p != panels_.end(); ++p){
+		if (p->get_id() == id) { res = &(*p); }
+	}
+	for (std::vector<theme::label>::iterator l = labels_.begin(); l != labels_.end(); ++l){
+		if (l->get_id() == id) { res = &(*l); }
+	}
+	for (std::vector<theme::menu>::iterator m = menus_.begin(); m != menus_.end(); ++m){
+		if (m->get_id() == id) { res = &(*m); }
+	}
+	if (id == "main-map") { res = &main_map_; }
+	if (id == "mini-map") { res = &mini_map_; }
+	if (id == "unit-image") { res = &unit_image_; }
+	return *res;
+}
+
+const theme::status_item* theme::get_status_item(const std::string& key) const
+{
+	const std::map<std::string,status_item>::const_iterator i = status_.find(key);
+	if(i != status_.end())
+		return &i->second;
+	else
+		return NULL;
+}
+
+std::map<std::string, config> theme::known_themes;
+void theme::set_known_themes(const config* cfg)
+{
+	known_themes.clear();
+	if (!cfg)
+		return;
+
+	BOOST_FOREACH (const config &thm, cfg->child_range("theme"))
+	{
+		std::string thm_name = thm["name"];
+		if (thm_name != "null" && thm_name != "editor")
+			known_themes[thm_name] = thm;
+	}
+}
+
+std::vector<std::string> theme::get_known_themes(){
+    std::vector<std::string> names;
+
+
+    for(std::map<std::string, config>::iterator p_thm=known_themes.begin();p_thm!=known_themes.end();++p_thm){
+        names.push_back(p_thm->first);
+    }
+    return(names);
+}
+
+const theme::menu *theme::get_menu_item(const std::string &key) const
+{
+	BOOST_FOREACH (const theme::menu &m, menus_) {
+		if (m.get_id() == key) return &m;
+	}
+	return NULL;
+}
+
+theme::menu *theme::get_menu_item(const std::string &key)
+{
+	BOOST_FOREACH (theme::menu &m, menus_) {
+		if (m.get_id() == key) return &m;
+	}
+	return NULL;
+}
+
+theme::menu* theme::refresh_title(const std::string& id, const std::string& new_title)
+{
+	theme::menu* res = NULL;
+
+	for (std::vector<theme::menu>::iterator m = menus_.begin(); m != menus_.end(); ++m){
+		if (m->get_id() == id) {
+			res = &(*m);
+			res->set_title(new_title);
+		}
+	}
+
+	return res;
+}
+
+theme::menu* theme::refresh_title2(const std::string& id, const std::string& title_tag){
+	std::string new_title;
+
+	const config &cfg = find_ref(id, cfg_, false);
+	if (! cfg[title_tag].empty())
+		new_title = cfg[title_tag].str();
+
+	return refresh_title(id, new_title);
+}
+
+void theme::set_main_context_menu(menu* m)
+{ 
+	main_context_ = m; 
+	if (!current_context_) {
+		current_context_ = m;
+	}
+}
+
+void theme::set_current_context_menu(menu* m)
+{ 
+	current_context_ = m? m: main_context_;
+}
+
+theme::menu* theme::context_menu(const std::string& id)
+{ 
+	theme::menu* res = NULL;
+
+	if (id.empty()) {
+		return current_context_;
+	}
+
+	for (std::vector<theme::menu>::iterator m = context_.begin(); m != context_.end(); ++m){
+		if (m->get_id() == id) {
+			res = &(*m);
+		}
+	}
+
+	return res;
+}
+
+void theme::modify_label(const std::string& id, const std::string& text)
+{
+	theme::label *label = dynamic_cast<theme::label *>(&find_element(id));
+	if (!label) {
+		ERR_DP << "Theme contains no label called '" << id << "'.\n";
+		return;
+	}
+	label->set_text(text);
+}

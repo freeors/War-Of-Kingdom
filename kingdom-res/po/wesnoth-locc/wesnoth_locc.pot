@@ -183,3 +183,585 @@ msgid "hulaoguan dongzhuoduibai"
  msgid "05shaopinglubu"
  msgstr ""
  
+ msgid "06guandu"
+ msgstr ""
+ 
+ msgid "guandu"
+ msgstr ""
+ 
+  msgid "liyang"
+ msgstr ""
+ 
+  msgid "baima"
+ msgstr ""
+
+ msgid "yanjing"
+ msgstr ""
+ 
+ msgid "wucao"
+ msgstr ""
+ 
+ msgid "weijun"
+ msgstr ""
+ 
+  msgid "ccz06mubiao01"
+ msgstr ""
+ 
+   msgid "ccz06mubiao02"
+ msgstr ""
+ 
+   msgid "ccz06mubiao03"
+ msgstr ""
+ 
+   msgid "ccz06mubiao04"
+ msgstr ""
+ 
+   msgid "ccz06duibai01"
+ msgstr ""
+ 
+    msgid "ccz06duibai02"
+ msgstr ""
+ 
+    msgid "ccz06duibai03"
+ msgstr ""
+ 
+    msgid "ccz06duibai04"
+ msgstr ""
+ 
+    msgid "ccz06duibai05"
+ msgstr ""
+ 
+    msgid "ccz06duibai06"
+ msgstr ""
+ 
+    msgid "ccz06duibai07"
+ msgstr ""
+ 
+    msgid "ccz06duibai08"
+ msgstr ""
+ 
+     msgid "07pingdinghebei"
+ msgstr ""
+ 
+      msgid "ccz07mubiao01"
+ msgstr ""
+ 
+       msgid "ccz07mubiao02"
+ msgstr ""
+ 
+       msgid "ccz07mubiao03"
+ msgstr ""
+ 
+       msgid "ccz07mubiao04"
+ msgstr ""
+ 
+      msgid "08changbanpo"
+ msgstr ""
+ 
+   msgid "liubeidaying"
+ msgstr ""
+ 
+    msgid "changgban"
+ msgstr ""
+ 
+    msgid "ccz08duibai01"
+ msgstr ""
+ 
+  msgid "ccz08duibai02"
+ msgstr ""
+ 
+  msgid "ccz08duibai03"
+ msgstr ""
+ 
+  msgid "ccz08duibai04"
+ msgstr ""
+ 
+  msgid "ccz08duibai05"
+ msgstr ""
+ 
+  msgid "ccz08duibai06"
+ msgstr ""
+ 
+  msgid "ccz08duibai07"
+ msgstr ""
+ 
+  msgid "ccz08duibai08"
+ msgstr ""
+ 
+  msgid "ccz08duibai09"
+ msgstr ""
+ 
+  msgid "ccz08duibai10"
+ msgstr ""
+ 
+  msgid "ccz08duibai11"
+ msgstr ""
+ 
+  msgid "ccz08duibai12"
+ msgstr ""
+ 
+  msgid "ccz08mubiao01"
+ msgstr ""
+ 
+   msgid "ccz08mubiao02"
+ msgstr ""
+ 
+    msgid "09chibi"
+ msgstr ""
+ 
+    msgid "chibi"
+ msgstr ""
+ 
+    msgid "wuling"
+ msgstr ""
+ 
+    msgid "ccz8.9mubiao01"
+ msgstr ""
+ 
+     msgid "ccz8.9mubiao02"
+ msgstr ""
+ 
+    msgid "10huarongdao"
+ msgstr ""
+ 
+   msgid "huarongxi"
+ msgstr ""
+ 
+    msgid "huarongdong"
+ msgstr ""
+ 
+    msgid "huarongnan"
+ msgstr ""
+ 
+    msgid "ccz09mubiao01"
+ msgstr ""
+ 
+   msgid "ccz09mubiao02"
+ msgstr ""
+ 
+   msgid "ccz09duibai01"
+ msgstr ""
+ 
+    msgid "ccz09duibai02"
+ msgstr ""
+ 
+    msgid "ccz09duibai03"
+ msgstr ""
+ 
+    msgid "ccz09duibai04"
+ msgstr ""
+ 
+    msgid "ccz09duibai05"
+ msgstr ""
+ 
+    msgid "ccz09duibai06"
+ msgstr ""
+ 
+    msgid "ccz09duibai07"
+ msgstr ""
+ 
+    msgid "ccz09duibai08"
+ msgstr ""
+ 
+    msgid "ccz09duibai09"
+ msgstr ""
+ 
+    msgid "ccz09duibai10"
+ msgstr ""
+ 
+    msgid "ccz09duibai11"
+ msgstr ""
+ 
+    msgid "ccz09duibai12"
+ msgstr ""
+ 
+    msgid "cczkc01"
+ msgstr ""
+ 
+    msgid "cczkc02"
+ msgstr ""
+ 
+    msgid "cczkc03"
+ msgstr ""
+ 
+    msgid "cczkc04"
+ msgstr ""
+ 
+    msgid "cczkc05"
+ msgstr ""
+ 
+    msgid "cczkc06"
+ msgstr ""
+ 
+    msgid "cczkc07"
+ msgstr ""
+ 
+    msgid "cczkc08"
+ msgstr ""
+ 
+    msgid "cczkc09"
+ msgstr ""
+ 
+    msgid "cczkc10"
+ msgstr ""
+ 
+     msgid "subcontinent_chibi description"
+ msgstr ""
+ 
+   msgid "subcontinent_chibi"
+ msgstr ""
+ 
+    msgid "chibizhizhan"
+ msgstr ""
+ 
+    msgid "huyang"
+ msgstr ""
+ 
+    msgid "wulingxi"
+ msgstr ""
+ 
+    msgid "lukou"
+ msgstr ""
+ 
+    msgid "xiakou"
+ msgstr ""
+ 
+    msgid "hanjing"
+ msgstr ""
+ 
+    msgid "jiangjing"
+ msgstr ""
+ 
+    msgid "fancheng"
+ msgstr ""
+ 
+  msgid "11tongguan"
+ msgstr ""
+ 
+  msgid "tongguan"
+ msgstr ""
+ 
+  msgid "hangu"
+ msgstr ""
+ 
+  msgid "ccz11mubiao01"
+ msgstr ""
+ 
+   msgid "ccz11mubiao02"
+ msgstr ""
+ 
+   msgid "ccz11duibai01"
+ msgstr ""
+ 
+    msgid "ccz11duibai02"
+ msgstr ""
+ 
+    msgid "ccz11duibai03"
+ msgstr ""
+ 
+    msgid "ccz11duibai04"
+ msgstr ""
+ 
+    msgid "ccz11duibai05"
+ msgstr ""
+ 
+    msgid "ccz11duibai06"
+ msgstr ""
+ 
+    msgid "ccz11duibai07"
+ msgstr ""
+ 
+    msgid "ccz11duibai08"
+ msgstr ""
+ 
+    msgid "ccz11duibai09"
+ msgstr ""
+ 
+    msgid "ccz11duibai10"
+ msgstr ""
+ 
+    msgid "ccz11duibai11"
+ msgstr ""
+ 
+    msgid "ccz11duibai12"
+ msgstr ""
+ 
+     msgid "12xiaoyaojing"
+ msgstr ""
+ 
+    msgid "xiaoyaojing"
+ msgstr ""
+ 
+    msgid "xiaoyaojingbei"
+ msgstr ""
+ 
+    msgid "hefei"
+ msgstr ""
+ 
+  msgid "ccz12mubiao01"
+ msgstr ""
+ 
+   msgid "ccz12mubiao02"
+ msgstr ""
+ 
+   msgid "13dingjunshan"
+ msgstr ""
+ 
+   msgid "dingjunshan"
+ msgstr ""
+ 
+    msgid "jiange"
+ msgstr ""
+ 
+    msgid "yangpingguan"
+ msgstr ""
+ 
+    msgid "ccz13mubiao01"
+ msgstr ""
+ 
+     msgid "ccz13mubiao02"
+ msgstr ""
+ 
+     msgid "ccz13mubiao03"
+ msgstr ""
+ 
+     msgid "ccz13mubiao04"
+ msgstr ""
+ 
+     msgid "ccz13duibai01"
+ msgstr ""
+ 
+    msgid "14hanzhonggongfang"
+ msgstr ""
+ 
+    msgid "ccz14mubiao01"
+ msgstr ""
+ 
+  msgid "ccz14mubiao02"
+ msgstr ""
+ 
+  msgid "ccz14mubiao03"
+ msgstr ""
+ 
+  msgid "ccz14mubiao04"
+ msgstr ""
+ 
+  msgid "ccz14duibai01"
+ msgstr ""
+ 
+   msgid "ccz14duibai02"
+ msgstr ""
+ 
+   msgid "ccz14duibai03"
+ msgstr ""
+ 
+   msgid "ccz14duibai04"
+ msgstr ""
+ 
+ msgid "ccz14duibai05"
+ msgstr ""
+ 
+ msgid "ccz14duibai06"
+ msgstr ""
+ 
+ msgid "ccz14duibai07"
+ msgstr ""
+ 
+ msgid "ccz14duibai08"
+ msgstr ""
+ 
+ msgid "ccz14duibai09"
+ msgstr ""
+ 
+  msgid "15xiangyangzhizhan"
+ msgstr ""
+ 
+  msgid "ccz15mubiao01"
+ msgstr ""
+ 
+   msgid "ccz15mubiao02"
+ msgstr ""
+ 
+   msgid "ccz15duibai01"
+ msgstr ""
+ 
+    msgid "ccz15duibai02"
+ msgstr ""
+ 
+    msgid "ccz15duibai03"
+ msgstr ""
+ 
+    msgid "ccz15duibai04"
+ msgstr ""
+ 
+    msgid "ccz15duibai05"
+ msgstr ""
+ 
+    msgid "ccz15duibai06"
+ msgstr ""
+ 
+    msgid "ccz15duibai07"
+ msgstr ""
+ 
+    msgid "ccz15duibai08"
+ msgstr ""
+ 
+    msgid "ccz15duibai09"
+ msgstr ""
+ 
+    msgid "ccz15duibai10"
+ msgstr ""
+ 
+    msgid "ccz15duibai11"
+ msgstr ""
+ 
+  msgid "cczkc11"
+ msgstr ""
+ 
+  msgid "cczkc12"
+ msgstr ""
+ 
+  msgid "cczkc13"
+ msgstr ""
+ 
+  msgid "cczkc14"
+ msgstr ""
+ 
+  msgid "cczkc15"
+ msgstr ""
+ 
+   msgid "subcontinent_guandu description"
+ msgstr ""
+ 
+   msgid "subcontinent_guandu"
+ msgstr ""
+ 
+    msgid "guandudalu"
+ msgstr ""
+ 
+  msgid "pushui"
+ msgstr ""
+
+ msgid "jixian"
+ msgstr ""
+ 
+  msgid "jishui"
+ msgstr ""
+ 
+  msgid "yuanwu"
+ msgstr ""
+ 
+  msgid "yangwu"
+ msgstr ""
+ 
+   msgid "fengqiu"
+ msgstr ""
+ 
+   msgid "junyi"
+ msgstr ""
+ 
+   msgid "zhongmu"
+ msgstr ""
+ 
+  msgid "zhengzhou"
+ msgstr ""
+ 
+  msgid "jiluoshan"
+ msgstr ""
+ 
+   msgid "legend_of_liu_bei"
+ msgstr ""
+ 
+    msgid "legend_of_liu_bei description"
+ msgstr ""
+ 
+    msgid "01lb"
+ msgstr ""
+ 
+    msgid "01lbmubiao01"
+ msgstr ""
+ 
+     msgid "01lbmubiao02"
+ msgstr ""
+ 
+    msgid "02lb"
+ msgstr ""
+ 
+   msgid "lbz02mubiao01"
+ msgstr ""
+ 
+    msgid "lbz02mubiao02"
+ msgstr ""
+ 
+    msgid "caocaodaying"
+ msgstr ""
+ 
+    msgid "shishuiguan"
+ msgstr ""
+ 
+    msgid "mengzhuying"
+ msgstr ""
+ 
+    msgid "yuanshudaying"
+ msgstr ""
+ 
+    msgid "shuijiandaying"
+ msgstr ""
+ 
+     msgid "lbz02duibai01"
+ msgstr ""
+ 
+   msgid "lbz02duibai02"
+ msgstr ""
+ 
+   msgid "lbz02duibai03"
+ msgstr ""
+ 
+   msgid "lbz02duibai04"
+ msgstr ""
+ 
+   msgid "lbz02duibai05"
+ msgstr ""
+ 
+   msgid "lbz02duibai06"
+ msgstr ""
+ 
+   msgid "lbz02duibai07"
+ msgstr ""
+ 
+   msgid "lbz02duibai08"
+ msgstr ""
+ 
+   msgid "lbz02duibai09"
+ msgstr ""
+ 
+   msgid "lbz02duibai10"
+ msgstr ""
+ 
+   msgid "lbz02duibai11"
+ msgstr ""
+ 
+   msgid "lbz02duibai12"
+ msgstr ""
+ 
+   msgid "lbz02duibai13"
+ msgstr ""
+ 
+   msgid "lbz02duibai14"
+ msgstr ""
+ 
+   msgid "lbz02duibai15"
+ msgstr ""
+ 
+   msgid "lbz02duibai16"
+ msgstr ""
+ 
+    msgid "03lb"
+ msgstr ""
+ 
+   msgid "lbz03mubiao01"
+ msgstr ""
+ 
+    msgid "lbz03mubiao02"
+ msgstr ""
+ 

@@ -40,7 +40,7 @@ public:
 	tsub_player_list active_game;
 };
 
-class tmp_side_wait : public tdialog, public lobby_base
+class tmp_side_wait : public tdialog, public lobby_base, public tlobby::thandler
 {
 public:
 	game_display& disp_;
@@ -49,7 +49,7 @@ public:
 	const config& game_config_;
 
 	explicit tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
-			config& gamelist, bool observe);
+			config& gamelist, int game_id, bool observe);
 
 	~tmp_side_wait();
 
@@ -89,8 +89,8 @@ private:
 	/**
 	 * Network polling callback
 	 */
-	void process_network_data(const config& data, const network::connection sock);
-
+	bool handle(tlobby::ttype type, const config& data);
+	
 	void update_playerlist();
 
 private:
@@ -116,6 +116,7 @@ private:
 	 */
 	legacy_result legacy_result_;
 
+	int game_id_;
 	bool stop_updates_;
 	bool observe_;
 

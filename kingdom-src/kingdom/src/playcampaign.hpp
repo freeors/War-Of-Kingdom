@@ -20,8 +20,8 @@
 #define PLAYCAMPAIGN_H_INCLUDED
 
 #include "game_end_exceptions.hpp"
+#include "game_display.hpp"
 
-class game_display;
 class game_state;
 class config;
 class hero_map;
@@ -43,6 +43,21 @@ LEVEL_RESULT play_game(game_display& disp, game_state& state,
 void play_replay(game_display& disp, game_state& state,
 		const config& game_config, hero_map& heros, hero_map& heros_start, 
 		card_map& cards, CVideo& video);
+
+class game_display_lock
+{
+public:
+	game_display_lock(game_display& disp)
+		: disp_(disp)
+	{}
+	~game_display_lock()
+	{
+		game_display::set_singleton(&disp_);
+	}
+
+private:
+	game_display& disp_;
+};
 
 #endif // PLAYCAMPAIGN_H_INCLUDED
 

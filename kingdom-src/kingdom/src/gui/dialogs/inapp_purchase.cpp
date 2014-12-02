@@ -35,7 +35,6 @@
 #include "gui/dialogs/message.hpp"
 #include "language.hpp"
 #include "game_preferences.hpp"
-#include "help.hpp"
 #include "gui/auxiliary/timer.hpp"
 #include "filesystem.hpp"
 #include "multiplayer.hpp"
@@ -73,10 +72,10 @@ void show_fail_tip(game_display& disp, const std::string& item)
 	std::stringstream err;
 	utils::string_map symbols;
 
-	symbols["mail"] = help::tintegrate::generate_format(game_config::service_email, "green");
-	symbols["date"] = help::tintegrate::generate_format(format_time_local2(time(NULL)), "yellow");
-	symbols["item"] = help::tintegrate::generate_format(item, "yellow");
-	symbols["username"] = help::tintegrate::generate_format(preferences::login(), "yellow");
+	symbols["mail"] = tintegrate::generate_format(game_config::service_email, "green");
+	symbols["date"] = tintegrate::generate_format(format_time_local2(time(NULL)), "yellow");
+	symbols["item"] = tintegrate::generate_format(item, "yellow");
+	symbols["username"] = tintegrate::generate_format(preferences::login(), "yellow");
 	err << vgettext("wesnoth-lib", "Update database fail when execute In-App Purchase! In order to compensate data you should get, please send In-App Purchase information to $mail. In-App Purchase information include: date($date), item($item), username($username).", symbols);
 	gui2::show_message(disp.video(), "", err.str());
 }
@@ -134,9 +133,9 @@ extern "C" void inapp_purchase_cb(const char* identifier, int complete)
 		std::stringstream strstr;
 		utils::string_map symbols;
 		if (complete) {
-			symbols["result"] = help::tintegrate::generate_format(_("Success"), "green");
+			symbols["result"] = tintegrate::generate_format(_("Success"), "green");
 		} else {
-			symbols["result"] = help::tintegrate::generate_format(_("Failed"), "red");
+			symbols["result"] = tintegrate::generate_format(_("Failed"), "red");
 		}
 
 		if (!restoring) {
@@ -149,7 +148,7 @@ extern "C" void inapp_purchase_cb(const char* identifier, int complete)
 				dlg.refresh_list(false, true);
 			}
 
-			symbols["name"] = help::tintegrate::generate_format(item.name, "blue");
+			symbols["name"] = tintegrate::generate_format(item.name, "blue");
 			strstr << vgettext("wesnoth-lib", "Purchas '$name' $result|!", symbols);
 		} else {
 			strstr << vgettext("wesnoth-lib", "Restore purchased items $result|!", symbols);
@@ -280,10 +279,10 @@ void tinapp_purchase::refresh_tip(twindow& window, const tinapp_item& item)
 	utils::string_map symbols;
 
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Description"), "green") << "\n";
+	strstr << tintegrate::generate_format(_("Description"), "green") << "\n";
 	strstr << item.description;
 	strstr << "\n\n";
-	strstr << help::tintegrate::generate_format(_("Notice"), "red") << "\n";
+	strstr << tintegrate::generate_format(_("Notice"), "red") << "\n";
 	if (item.index == game_config::transaction_type_vip) {
 #if (defined(__APPLE__) && TARGET_OS_IPHONE)
 #else
@@ -292,16 +291,16 @@ void tinapp_purchase::refresh_tip(twindow& window, const tinapp_item& item)
 			if (preferences::vip_expire() >= time(NULL)) {
 				day = (preferences::vip_expire() - time(NULL)) / (24 * 3600);
 			}
-			symbols["day"] = help::tintegrate::generate_format(day, "green");
+			symbols["day"] = tintegrate::generate_format(day, "green");
 			strstr << vgettext("wesnoth-lib", "You is VIP currently, hold $day day still", symbols) << "\n";
 		} else {
 			strstr << _("You isn't VIP currently") << "\n";
 		}
 #endif
 	} else {
-		symbols["username"] = help::tintegrate::generate_format(_("You"));
-		symbols["coin"] = help::tintegrate::generate_format(preferences::coin(), "yellow");
-		symbols["score"] = help::tintegrate::generate_format(preferences::score(), "yellow");
+		symbols["username"] = tintegrate::generate_format(_("You"));
+		symbols["coin"] = tintegrate::generate_format(preferences::coin(), "yellow");
+		symbols["score"] = tintegrate::generate_format(preferences::score(), "yellow");
 		strstr << vgettext("wesnoth-lib", "$username has $coin coin and $score score", symbols) << "\n";
 	}
 	tscroll_label* tip = find_widget<tscroll_label>(&window, "tip", false, true);
@@ -339,7 +338,7 @@ void tinapp_purchase::refresh_list(bool clear_items, bool set_purchase)
 		list_item_item.insert(std::make_pair("name", list_item));
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_format(it->remark, "green");
+		strstr << tintegrate::generate_format(it->remark, "green");
 		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("remark", list_item));
 
@@ -392,7 +391,7 @@ void tinapp_purchase::pre_show(CVideo& /*video*/, twindow& window)
 	std::stringstream strstr;
 	if (browse_) {
 		utils::string_map symbols;
-		symbols["platforms"] = help::tintegrate::generate_format("iOS", "green");
+		symbols["platforms"] = tintegrate::generate_format("iOS", "green");
 
 		tlabel* label = find_widget<tlabel>(&window, "flag", false, true);
 		strstr.str("");
@@ -502,7 +501,7 @@ void tinapp_purchase::timer_handler()
 	std::stringstream strstr;
 	utils::string_map symbols;
 	if (ing_item_ >= 0) {
-		symbols["name"] = help::tintegrate::generate_format(items_[ing_item_].name, "blue");
+		symbols["name"] = tintegrate::generate_format(items_[ing_item_].name, "blue");
 		strstr << vgettext("wesnoth-lib", "Purchasing '$name'", symbols);
 	} else {
 		strstr << vgettext("wesnoth-lib", "Restoring purchased items", symbols);

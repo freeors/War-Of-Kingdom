@@ -247,7 +247,8 @@ void exe_pc_exe(char *cmdline, BOOL fSync);
 void StatusBar_Trans(void);
 void StatusBar_Idle(void);
 
-BOOL check_wok_root_folder(const std::string& folder);
+bool is_app_res(const std::string& folder);
+bool check_wok_root_folder(const std::string& folder);
 std::string vgettext2(const char *msgid, const utils::string_map& symbols);
 const char* dgettext_2_ansi(const char* domain, const char* msgid);
 void set_language_text(HWND hdlgP, int id, const char* domain, const char* msgid);

@@ -20,7 +20,7 @@ class game_state;
 class team;
 class unit_map;
 
-#include "preferences.hpp"
+#include <preferences.hpp>
 
 #include <set>
 

@@ -5268,6 +5268,9 @@ msgstr ""
 msgid "Researching technology"
 msgstr ""
 
+msgid "Have researched out all technology"
+msgstr ""
+
 msgid "Unallocated treasure"
 msgstr ""
 
@@ -5323,4 +5326,101 @@ msgid "Hate of national perdition! I will be mutually exclusive with $second."
 msgstr ""
 
 msgid "Forum"
+msgstr ""
+
+msgid "Chat"
+msgstr ""
+
+msgid "Wait"
+msgstr ""
+
+msgid "Consult"
+msgstr ""
+
+msgid "Ready"
+msgstr ""
+
+msgid "Netowork diagnosis"
+msgstr ""
+
+msgid "Press CR same as Send"
+msgstr ""
+
+msgid "Normal"
+msgstr ""
+
+msgid "Map is for subcontinent. Find improper city location: $name($x, $y)."
+msgstr ""
+
+msgid "Location.x of city must be in [$x1, $x2], y in [$y1, $y2]!"
+msgstr ""
+
+msgid "Map error. Too short road from $from to $to, at least $shortest!"
+msgstr ""
+
+msgid "Upgrade to $to"
+msgstr ""
+
+#: src/loadscreen.cpp:222
+msgid "Initializing user interface"
+msgstr ""
+
+#: src/loadscreen.cpp:223
+msgid "Loading game configuration"
+msgstr ""
+
+#: src/loadscreen.cpp:224 src/loadscreen.cpp:231
+msgid "Verifying cache"
+msgstr ""
+
+#: src/loadscreen.cpp:225 src/loadscreen.cpp:232
+msgid "Reading files and creating cache"
+msgstr ""
+
+#: src/loadscreen.cpp:226 src/loadscreen.cpp:233
+msgid "Reading unit files"
+msgstr ""
+
+#: src/loadscreen.cpp:227
+msgid "Re-initialize fonts for the current language"
+msgstr ""
+
+#: src/loadscreen.cpp:228
+msgid "Searching for installed add-ons"
+msgstr ""
+
+#: src/loadscreen.cpp:229
+msgid "Loading title screen"
+msgstr ""
+
+#: src/loadscreen.cpp:230
+msgid "Loading data files"
+msgstr ""
+
+#: src/loadscreen.cpp:234
+msgid "Loading level"
+msgstr ""
+
+#: src/loadscreen.cpp:235
+msgid "Initializing teams"
+msgstr ""
+
+#: src/loadscreen.cpp:236
+msgid "Loading units"
+msgstr ""
+
+#: src/loadscreen.cpp:237
+msgid "Building terrain rules"
+msgstr ""
+
+#: src/loadscreen.cpp:238
+msgid "Initializing display"
+msgstr ""
+
+#: src/loadscreen.cpp:239
+msgid "Drawing theme"
+msgstr ""
+
+#: src/loadscreen.cpp:240
+msgid "Starting game"
 msgstr ""

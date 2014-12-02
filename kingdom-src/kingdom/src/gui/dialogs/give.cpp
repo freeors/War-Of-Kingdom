@@ -20,7 +20,6 @@
 #include "game_display.hpp"
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "help.hpp"
 #include "gui/dialogs/field.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
@@ -68,12 +67,12 @@ void tgive::refresh_summary(twindow& window) const
 
 	tlabel* label = find_widget<tlabel>(&window, "from_description", false, true);
 	
-	symbols["username"] = help::tintegrate::generate_format(_("You"), "red");
+	symbols["username"] = tintegrate::generate_format(_("You"), "red");
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(preferences::coin(), "yellow") << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_format(preferences::coin(), "yellow") << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)");
 	symbols["coin"] = strstr.str();
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(preferences::score(), "yellow") << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_format(preferences::score(), "yellow") << tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
 	symbols["score"] = strstr.str();
 	strstr.str("");
 	strstr << vgettext("wesnoth-lib", "$username has $coin and $score", symbols);
@@ -81,12 +80,12 @@ void tgive::refresh_summary(twindow& window) const
 
 	label = find_widget<tlabel>(&window, "to_description", false, true);
 	
-	symbols["username"] = help::tintegrate::generate_format(target_.name, "green");
+	symbols["username"] = tintegrate::generate_format(target_.name, "green");
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(target_.coin, "yellow") << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_format(target_.coin, "yellow") << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)");
 	symbols["coin"] = strstr.str();
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(target_.score, "yellow") << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_format(target_.score, "yellow") << tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
 	symbols["score"] = strstr.str();
 	strstr.str("");
 	strstr << vgettext("wesnoth-lib", "$username has $coin and $score", symbols);
@@ -105,10 +104,10 @@ void tgive::pre_show(CVideo& video, twindow& window)
 	refresh_summary(window);
 
 	tlabel* label = find_widget<tlabel>(&window, "coin_unit", false, true);
-	label->set_label(help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)"));
+	label->set_label(tintegrate::generate_img("misc/coin.png~SCALE(24, 24)"));
 
 	label = find_widget<tlabel>(&window, "score_unit", false, true);
-	label->set_label(help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)"));
+	label->set_label(tintegrate::generate_img("misc/score.png~SCALE(24, 24)"));
 
 	tbutton* button = find_widget<tbutton>(&window, "do_give", false, true);
 	connect_signal_mouse_left_click(
@@ -118,7 +117,7 @@ void tgive::pre_show(CVideo& video, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Give"), "blue");
+	strstr << tintegrate::generate_format(_("Give"), "blue");
 	button->set_label(strstr.str());
 }
 

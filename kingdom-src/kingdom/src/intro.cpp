@@ -49,7 +49,6 @@ static void the_end_old(display &disp, std::string text, unsigned int duration)
 	CVideo &video = disp.video();
 	sdl_fill_rect(video.getSurface(),&area,0);
 
-	update_whole_screen();
 	disp.flip();
 
 	const size_t font_size = font::SIZE_XLARGE;
@@ -64,7 +63,6 @@ static void the_end_old(display &disp, std::string text, unsigned int duration)
 
 		const SDL_Color col = create_color(n, n, n, n);
 		font::draw_text(&video,area,font_size,col,text,area.x,area.y);
-		update_rect(area);
 
 		events::pump();
 		events::raise_process_event();

@@ -16,6 +16,7 @@
 #include "xfunc.h"
 #include "win32x.h"
 #include "struct.h"
+#include "rectangle.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -35,6 +36,9 @@ namespace ns {
 	
 	int action_anim;
 
+	HIMAGELIST himl_checkbox;
+	LPARAM clicked_param;
+	HTREEITEM clicked_htvi;
 
 	HIMAGELIST himl_anim;
 	int iico_anim_anim;
@@ -45,14 +49,14 @@ namespace ns {
 	int iico_anim_attribute;
 }
 
-std::vector<tanim_type> tanim::anim_types;
-tanim_type tanim::null_anim_type;
+std::vector<tanim_type2> tanim::anim_types;
+tanim_type2 tanim::null_anim_type;
 
-const tanim_type& tanim::anim_type(const std::string& id)
+const tanim_type2& tanim::anim_type(const std::string& id)
 {
-	std::vector<tanim_type>::const_iterator it = anim_types.begin();
+	std::vector<tanim_type2>::const_iterator it = anim_types.begin();
 	for (; it != anim_types.end(); ++ it) {
-		const tanim_type& type = *it;
+		const tanim_type2& type = *it;
 		if (type.id_ == id) {
 			return type;
 		}
@@ -248,12 +252,21 @@ void tparticular::frame_update_to_ui_anim_edit(HWND hctl, HTREEITEM branch, cons
 			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
 	}
 
-	// if (!builder.image_diagonal_.is_void()) {
 	if (!builder.image_diagonal_.get_filename().empty()) {
 		htvi = TreeView_AddLeaf(hctl, htvi_frame);
 		strstr.str("");
 		strstr << "image_diagonal" << ": ";
 		strstr << builder.image_diagonal_.get_filename();
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+
+	if (!builder.image_horizontal_.get_filename().empty()) {
+		htvi = TreeView_AddLeaf(hctl, htvi_frame);
+		strstr.str("");
+		strstr << "image_horizontal" << ": ";
+		strstr << builder.image_horizontal_.get_filename();
 		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
@@ -442,6 +455,7 @@ void tparticular::update_to_ui_frame_edit(HWND hdlgP, int n) const
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_IMAGE), builder.image_.c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_IMAGEMOD), builder.image_mod_.c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_IMAGEDIAGONAL), builder.image_diagonal_.get_filename().c_str());
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_IMAGEHORIZONTAL), builder.image_horizontal_.get_filename().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_X), builder.x_.get_original().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_Y), builder.y_.get_original().c_str());
 	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_HALO), builder.halo_.get_original().c_str());
@@ -484,6 +498,7 @@ void tanim::parse(const config& cfg)
 	hits_.clear();
 	primary_attack_filter_.clear();
 	secondary_attack_filter_.clear();
+	secondary_weapon_type_.clear();
 
 	unit_anim_ = tparticular(cfg, "");
 	BOOST_FOREACH (const config::any_child &fr, cfg.all_children_range())
@@ -500,6 +515,7 @@ void tanim::parse(const config& cfg)
 		directions_.insert(d);
 	}
 
+	feature_ = cfg["feature"].to_int(HEROS_NO_FEATURE);
 	align_ = cfg["align"].to_int(ALIGN_NONE);
 
 
@@ -523,6 +539,11 @@ void tanim::parse(const config& cfg)
 	BOOST_FOREACH (const config &filter, cfg.child_range("filter_second_attack")) {
 		secondary_attack_filter_.push_back(filter);
 		break;
+	}
+
+	std::vector<std::string> vstr = utils::split(cfg["secondary_weapon_type"]);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		secondary_weapon_type_.insert(*it);
 	}
 	screen_mode_ = cfg["screen_mode"].to_bool();
 }
@@ -684,8 +705,7 @@ bool tanim::from_ui_filter_edit(HWND hdlgP)
 	HWND hctl;
 	char text[_MAX_PATH];
 	std::set<hit_type> hits;
-	std::set<map_location::DIRECTION> directions;
-
+	
 	if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFILTER_HIT))) {
 		hits.insert(HIT);
 	}
@@ -696,6 +716,7 @@ bool tanim::from_ui_filter_edit(HWND hdlgP)
 		hits.insert(KILL);
 	}
 	
+	std::set<map_location::DIRECTION> directions;
 	if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFILTER_N))) {
 		directions.insert(map_location::NORTH);
 	}
@@ -714,6 +735,19 @@ bool tanim::from_ui_filter_edit(HWND hdlgP)
 	if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFILTER_SW))) {
 		directions.insert(map_location::SOUTH_WEST);
 	}
+
+	std::set<std::string> secondary_weapon_type;
+#ifndef _ROSE_EDITOR
+	const std::vector<std::string>& atype_ids = unit_types.atype_ids();
+	for (size_t n = 0; n < atype_ids.size(); n ++) {
+		// IDM of weapon type checkbox must align with atype!
+		if (Button_GetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFILTER_BLADE + n))) {
+			secondary_weapon_type.insert(atype_ids[n]);
+		}
+	}
+#endif	
+	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_FEATURE);
+	int feature = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
 
 	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ALIGN);
 	int align = ComboBox_GetItemData(hctl, ComboBox_GetCurSel(hctl));
@@ -773,9 +807,16 @@ bool tanim::from_ui_filter_edit(HWND hdlgP)
 			cfg_.remove_attribute("direction");
 		}
 	}
+	if (feature != feature_) {
+		changed = true;
+		if (feature != HEROS_NO_FEATURE) {
+			cfg_["feature"] = feature;
+		} else {
+			cfg_.remove_attribute("feature");
+		}
+	}
 	if (align != align_) {
 		changed = true;
-		strstr.str("");
 		if (align != ALIGN_NONE) {
 			cfg_["align"] = align;
 		} else {
@@ -792,6 +833,21 @@ bool tanim::from_ui_filter_edit(HWND hdlgP)
 		cfg_.clear_children("filter_attack");
 		if (!primary_attack_filter.empty()) {
 			cfg_.add_child("filter_attack", primary_attack_filter);
+		}
+	}
+	if (secondary_weapon_type != secondary_weapon_type_) {
+		changed = true;
+		strstr.str("");
+		for (std::set<std::string>::const_iterator it = secondary_weapon_type.begin(); it != secondary_weapon_type.end(); ++ it) {
+			if (it != secondary_weapon_type.begin()) {
+				strstr << ", ";
+			}
+			strstr << *it;
+		}
+		if (!strstr.str().empty()) {
+			cfg_["secondary_weapon_type"] = strstr.str();
+		} else {
+			cfg_.remove_attribute("secondary_weapon_type");
 		}
 	}
 
@@ -885,6 +941,10 @@ bool tanim::from_ui_frame_edit(HWND hdlgP, tparticular& l, int n)
 	if (text[0] != '\0') {
 		cfg["image_diagonal"] = text;
 	}
+	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_IMAGEHORIZONTAL), text, sizeof(text) / sizeof(text[0]));
+	if (text[0] != '\0') {
+		cfg["image_horizontal"] = text;
+	}
 	Edit_GetText(GetDlgItem(hdlgP, IDC_ET_ANIMFRAME_X), text, sizeof(text) / sizeof(text[0]));
 	if (text[0] != '\0') {
 		cfg["x"] = text;
@@ -970,6 +1030,12 @@ std::string tanim::filter_description() const
 		}
 		strstr << "direction[" << cfg_["direction"] << "]";
 	}
+	if (feature_ != HEROS_NO_FEATURE) {
+		if (!strstr.str().empty()) {
+			strstr << "  ";
+		}
+		strstr << "feature[" << hero::feature_str(feature_) << "]";
+	}
 	if (align_ != ALIGN_NONE) {
 		if (!strstr.str().empty()) {
 			strstr << "  ";
@@ -994,6 +1060,12 @@ std::string tanim::filter_description() const
 			}
 			strstr << "]";
 		}
+	}
+	if (!secondary_weapon_type_.empty()) {
+		if (!strstr.str().empty()) {
+			strstr << "  ";
+		}
+		strstr << "secondary_seapon_type[" << cfg_["secondary_weapon_type"] << "]";
 	}
 	return strstr.str();
 }
@@ -1045,6 +1117,15 @@ void tanim::filter_update_to_ui_anim_edit(HWND hctl, HTREEITEM branch) const
 		htvi = TreeView_AddLeaf(hctl, htvi_filter);
 		strstr.str("");
 		strstr << "direction" << ": " << cfg_["direction"];
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+	if (feature_ != HEROS_NO_FEATURE) {
+		none_filter = false;
+		htvi = TreeView_AddLeaf(hctl, htvi_filter);
+		strstr.str("");
+		strstr << "feature" << ": " << hero::feature_str(feature_);
 		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
@@ -1108,6 +1189,29 @@ void tanim::filter_update_to_ui_anim_edit(HWND hctl, HTREEITEM branch) const
 		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
 	}
+	if (!secondary_weapon_type_.empty()) {
+		none_filter = false;
+		htvi = TreeView_AddLeaf(hctl, htvi_filter);
+		strstr.str("");
+		strstr << "secondary_weapon_type" << ": " << cfg_["secondary_weapon_type"];
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+		TreeView_SetItem1(hctl, htvi, TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
+			0, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
+	}
+}
+
+void cb_treeview_update_scroll_anim(HWND htv, HTREEITEM htvi, TVITEMEX& tvi, void* ctx)
+{
+	tanim& anim = *reinterpret_cast<tanim*>(ctx);
+	HTREEITEM htvi1;
+	TVITEMEX tvi1;
+	if (!tvi.cChildren) {
+		htvi1 = TreeView_GetParent(htv, htvi);
+		TreeView_GetItem1(htv, htvi1, &tvi1, TVIF_PARAM | TVIF_CHILDREN, NULL);
+		scroll::first_visible_lparam = tvi1.lParam;
+	}
+	
+	anim.update_to_ui_anim_edit(GetParent(htv));
 }
 
 void tanim::update_to_ui_anim_edit(HWND hdlgP)
@@ -1130,7 +1234,7 @@ void tanim::update_to_ui_anim_edit(HWND hdlgP)
 
 	HTREEITEM htvi_screen_mode = TreeView_AddLeaf(hctl, htvi_root);
 	strstr.str("");
-	strstr << _("Screen mode") << ": " << (screen_mode_? _("Yes"): _("No"));
+	strstr << _("Area mode") << ": " << (screen_mode_? _("Yes"): _("No"));
 	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 	TreeView_SetItem1(hctl, htvi_screen_mode, TVIF_TEXT | TVIF_PARAM | TVIF_IMAGE | TVIF_SELECTEDIMAGE, 
 		PARAM_MODE, ns::iico_anim_attribute, ns::iico_anim_attribute, 0, text);
@@ -1238,6 +1342,7 @@ void tanim::update_to_ui_anim_edit(HWND hdlgP)
 
 
 	TreeView_Walk(hctl, TVI_ROOT, TRUE, cb_treeview_walk_expand, NULL, FALSE);
+	scroll::treeview_scroll_to(hctl);
 }
 
 void tanim::update_to_ui_filter_edit(HWND hdlgP) const
@@ -1272,9 +1377,23 @@ void tanim::update_to_ui_filter_edit(HWND hdlgP) const
 	if (std::find(directions_.begin(), directions_.end(), map_location::SOUTH_WEST) != directions_.end()) {
 		Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFILTER_SW), TRUE);
 	}
+#ifndef _ROSE_EDITOR
+	const std::vector<std::string>& atype_ids = unit_types.atype_ids();
+	for (size_t n = 0; n < atype_ids.size(); n ++) {
+		// IDM of weapon type checkbox must align with atype!
+		if (std::find(secondary_weapon_type_.begin(), secondary_weapon_type_.end(), atype_ids[n]) != secondary_weapon_type_.end()) {
+			Button_SetCheck(GetDlgItem(hdlgP, IDC_CHK_ANIMFILTER_BLADE + n), TRUE);
+		}
+	}
+#endif
+	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_FEATURE);
+	for (int n = 0; n < ComboBox_GetCount(hctl); n ++) {
+		if (ComboBox_GetItemData(hctl, n) == feature_) {
+			ComboBox_SetCurSel(hctl, n);
+		}
+	}
 
 	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ALIGN);
-	// ComboBox_SetCurSel(hctl, ComboBox_FindItemData(hctl, -1, align_));
 	for (int n = 0; n < ComboBox_GetCount(hctl); n ++) {
 		if (ComboBox_GetItemData(hctl, n) == align_) {
 			ComboBox_SetCurSel(hctl, n);
@@ -1303,7 +1422,7 @@ std::string tanim::generate() const
 	if (!global_) {
 		strstr << "[utype_anim]\n";
 	} else {
-		strstr << "[global_anim]\n";
+		strstr << "[area_anim]\n";
 	}
 
 	strstr << "\tid=" << id_ << "\n";
@@ -1314,7 +1433,7 @@ std::string tanim::generate() const
 	if (!global_) {
 		strstr << "[/utype_anim]";
 	} else {
-		strstr << "[/global_anim]";
+		strstr << "[/area_anim]";
 	}
 	strstr << "\n";
 
@@ -1466,7 +1585,7 @@ BOOL On_DlgAnimInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	lvc.cx = 40;
 	lvc.iSubItem = column;
 	strstr.str("");
-	strstr << _("Screen mode");
+	strstr << _("Area mode");
 	strcpy(text, utf8_2_ansi(strstr.str().c_str()));
 	lvc.pszText = text;
 	ListView_InsertColumn(hctl, column ++, &lvc);
@@ -1556,10 +1675,25 @@ BOOL On_DlgAnimFilterEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	std::stringstream strstr;
 	strstr << _("anim^Edit filter");
 	SetWindowText(hdlgP, utf8_2_ansi(strstr.str().c_str()));
-/*
-	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ALIAS), utf8_2_ansi(_("Alias")));
-*/
-	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ALIGN);
+
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FEATURE), dgettext_2_ansi("wesnoth-hero", "feature"));
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_FEATURE);
+	ComboBox_AddString(hctl, "");
+	ComboBox_SetItemData(hctl, 0, HEROS_NO_FEATURE);
+
+	std::vector<int>& features = hero::valid_features();
+	for (std::vector<int>::const_iterator it = features.begin(); it != features.end(); ++ it) {
+		if (*it >= HEROS_BASE_FEATURE_COUNT) {
+			continue;
+		}
+		strstr.str("");
+		strstr << HERO_PREFIX_STR_FEATURE << *it;
+		ComboBox_AddString(hctl, utf8_2_ansi(dgettext("wesnoth-card", strstr.str().c_str()))); 
+		ComboBox_SetItemData(hctl, ComboBox_GetCount(hctl) - 1, *it);
+	}
+
+	hctl = GetDlgItem(hdlgP, IDC_CMB_ANIMFILTER_ALIGN);
 	for (int i = ALIGN_NONE; i < ALIGN_COUNT; i ++) {
 		ComboBox_AddString(hctl, align_filter_names[i]);
 		ComboBox_SetItemData(hctl, i, i);
@@ -1615,7 +1749,7 @@ void OnAnimFilterEditBt(HWND hdlgP)
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_ANIMFILTER), hdlgP, DlgAnimFilterEditProc, lParam)) {
 		tanim& anim = ns::core.anims_updating_[ns::clicked_anim];
 		anim.parse(anim.cfg_);
-		anim.update_to_ui_anim_edit(hdlgP);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_ANIMEDIT_EXPLORER), cb_treeview_update_scroll_anim, &anim);
 	}
 	return;
 }
@@ -1648,7 +1782,7 @@ void variables_to_lv(HWND hctl, const std::string& id)
 	int count = ListView_GetItemCount(hctl);
 	ListView_DeleteAllItems(hctl);
 	int index = 0;
-	const tanim_type& type = tanim::anim_type(id);
+	const tanim_type2& type = tanim::anim_type(id);
 
 	for (std::map<std::string, std::string>::const_iterator it = type.variables_.begin(); it != type.variables_.end(); ++ it) {
 		lvi.mask = LVIF_TEXT | LVIF_PARAM;
@@ -1694,6 +1828,7 @@ BOOL On_DlgAnimFrameEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_SOUND), utf8_2_ansi(_("frame^Sound")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_STEXT), utf8_2_ansi(_("frame^Stext")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FONTSIZE), utf8_2_ansi(_("frame^Font size")));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TEXTCOLOR), utf8_2_ansi(_("frame^Text color")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ALPHA), utf8_2_ansi(_("frame^Alpha")));
 
 	tanim& anim = ns::core.anims_updating_[ns::clicked_anim];
@@ -1801,7 +1936,7 @@ void OnAnimFrameEditBt(HWND hdlgP)
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_ANIMFRAME), hdlgP, DlgAnimFrameEditProc, lParam)) {
 		tanim& anim = ns::core.anims_updating_[ns::clicked_anim];
 		anim.parse(anim.cfg_);
-		anim.update_to_ui_anim_edit(hdlgP);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_ANIMEDIT_EXPLORER), cb_treeview_update_scroll_anim, &anim);
 	}
 	return;
 }
@@ -1814,7 +1949,7 @@ void OnAnimFrameAddBt(HWND hdlgP, bool front)
 	anim.add_frame(*cookie.first, cookie.second, front);
 	
 	anim.parse(anim.cfg_);
-	anim.update_to_ui_anim_edit(hdlgP);
+	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_ANIMEDIT_EXPLORER), cb_treeview_update_scroll_anim, &anim);
 	return;
 }
 
@@ -1838,7 +1973,7 @@ void OnAnimFrameDelBt(HWND hdlgP)
 	anim.delete_frame(*cookie.first, cookie.second);
 	
 	anim.parse(anim.cfg_);
-	anim.update_to_ui_anim_edit(hdlgP);
+	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_ANIMEDIT_EXPLORER), cb_treeview_update_scroll_anim, &anim);
 	return;
 }
 
@@ -1852,7 +1987,7 @@ void OnAnimAnimEditBt(HWND hdlgP)
 		anim.cfg_["screen_mode"] = true;
 	}
 	anim.parse(anim.cfg_);
-	anim.update_to_ui_anim_edit(hdlgP);
+	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_ANIMEDIT_EXPLORER), cb_treeview_update_scroll_anim, &anim);
 }
 
 BOOL On_DlgAnimParticularEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
@@ -1989,7 +2124,7 @@ void OnAnimParticularEditBt(HWND hdlgP)
 	if (DialogBoxParam(gdmgr._hinst, MAKEINTRESOURCE(IDD_ANIMPARTICULAR), hdlgP, DlgAnimParticularEditProc, lParam)) {
 		tanim& anim = ns::core.anims_updating_[ns::clicked_anim];
 		anim.parse(anim.cfg_);
-		anim.update_to_ui_anim_edit(hdlgP);
+		scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_ANIMEDIT_EXPLORER), cb_treeview_update_scroll_anim, &anim);
 	}
 	return;
 }
@@ -2000,7 +2135,7 @@ void OnAnimParticularAddBt(HWND hdlgP)
 	anim.add_particular();
 	
 	anim.parse(anim.cfg_);
-	anim.update_to_ui_anim_edit(hdlgP);
+	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_ANIMEDIT_EXPLORER), cb_treeview_update_scroll_anim, &anim);
 	return;
 }
 
@@ -2022,7 +2157,7 @@ void OnAnimParticularDelBt(HWND hdlgP)
 	anim.delete_particular(ns::clicked_param - tanim::PARAM_PARTICULAR);
 	
 	anim.parse(anim.cfg_);
-	anim.update_to_ui_anim_edit(hdlgP);
+	scroll::treeview_update_scroll(GetDlgItem(hdlgP, IDC_TV_ANIMEDIT_EXPLORER), cb_treeview_update_scroll_anim, &anim);
 	return;
 }
 

@@ -17,11 +17,12 @@
 
 #include "gui/dialogs/design.hpp"
 
+#include "SDL_image.h"
 #include "game_display.hpp"
 #include "game_preferences.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
-#include "gui/widgets/password_box.hpp"
+#include "gui/widgets/text_box.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/toggle_button.hpp"
@@ -29,14 +30,12 @@
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include <hero.hpp>
-#include "help.hpp"
+#include "integrate.hpp"
 #include "gettext.hpp"
 #include "formula_string_utils.hpp"
 #include "wml_separators.hpp"
 
 #include <boost/bind.hpp>
-
-extern int write_png_file(const char* file_name, const surface& surf);
 
 struct tcrop
 {
@@ -133,7 +132,7 @@ void tdesign::pre_show(CVideo& /*video*/, twindow& window)
 		&tdesign::style
 		, this
 		, boost::ref(window)));
-	find_widget<tbutton>(&window, "style", false).set_label(help::tintegrate::generate_img(styles.find(style_)->second));
+	find_widget<tbutton>(&window, "style", false).set_label(tintegrate::generate_img(styles.find(style_)->second));
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "execute", false)
@@ -201,15 +200,15 @@ std::string tdesign::text_box_str(twindow& window, const std::string& id, const 
 	std::string str = widget->get_value();
 
 	if (!allow_empty && str.empty()) {
-		symbols["key"] = help::tintegrate::generate_format(name, "red");
+		symbols["key"] = tintegrate::generate_format(name, "red");
 		
 		err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
 		gui2::show_message(disp_.video(), "", err.str());
 		return str;
 	} else if ((int)str.size() < min || (int)str.size() > max) {
-		symbols["min"] = help::tintegrate::generate_format(min, "yellow");
-		symbols["max"] = help::tintegrate::generate_format(max, "yellow");
-		symbols["key"] = help::tintegrate::generate_format(name, "red");
+		symbols["min"] = tintegrate::generate_format(min, "yellow");
+		symbols["max"] = tintegrate::generate_format(max, "yellow");
+		symbols["key"] = tintegrate::generate_format(name, "red");
 		
 		if (min != max) {
 			err << vgettext("wesnoth-lib", "'$key' value must combine $min to $max characters", symbols);
@@ -243,7 +242,7 @@ void tdesign::style(twindow& window)
 	style_ = (tstyle)style_map[dlg.selected_index()].val;
 
 	tcontrol* label = find_widget<tcontrol>(&window, "style", false, true);
-	label->set_label(help::tintegrate::generate_img(styles.find(style_)->second));
+	label->set_label(tintegrate::generate_img(styles.find(style_)->second));
 
 	refresh_according_to_style(window);
 }
@@ -311,7 +310,7 @@ void tdesign::execute(twindow& window)
 		}
 		surface masksurf = crop.alphamask.empty()? image::get_hexmask(): image::get_image(crop.alphamask);
 		middle = mask_surface(middle, masksurf);
-		write_png_file(crop.name.c_str(), middle);
+		IMG_SavePNG(middle, crop.name.c_str());
 	}
 
 	gui2::show_message(disp_.video(), "", "Execute finished!");

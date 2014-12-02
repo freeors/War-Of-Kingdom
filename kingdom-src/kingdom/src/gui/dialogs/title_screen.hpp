@@ -17,6 +17,7 @@
 #define GUI_DIALOGS_TITLE_SCREEN_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
+#include "lobby.hpp"
 
 class game_display;
 class hero_map;
@@ -32,7 +33,7 @@ namespace gui2 {
  *
  * @todo Evaluate whether we can handle more buttons in this class.
  */
-class ttitle_screen : public tdialog
+class ttitle_screen : public tdialog, public tlobby::thandler
 {
 public:
 	ttitle_screen(game_display& disp, hero_map& heros, hero& player_hero);
@@ -67,6 +68,7 @@ public:
 			                       */
 			};
 
+	bool handle(tlobby::ttype type, const config& data);
 private:
 
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
@@ -85,11 +87,14 @@ private:
 	void employee_erase() const;
 	void employee_lock(bool lock) const;
 	void adjust_field() const;
+
 private:
 	game_display& disp_;
 	hero_map& heros_;
 	hero& player_hero_;
 	int title_screen_anim_id_;
+
+	twindow* window_;
 };
 
 } // namespace gui2

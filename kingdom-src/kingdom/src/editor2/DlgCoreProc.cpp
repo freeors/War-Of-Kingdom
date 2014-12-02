@@ -18,11 +18,14 @@
 #include <boost/foreach.hpp>
 #include "map.hpp"
 #include "builder.hpp"
+#include "area_anim.hpp"
 
 BOOL CALLBACK DlgTreasureEditProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 std::vector<std::string> attack_range_vstr;
 std::vector<std::string> attack_type_vstr;
+
+#ifndef _ROSE_EDITOR
 
 namespace explorer_technology {
 int explorer = NONE;
@@ -59,6 +62,7 @@ void update_to_ui_special(HWND hdlgP, int flag)
 }
 
 };
+#endif
 
 namespace ns {
 	const std::string default_utype_textdomain = "wesnoth-tk-units";
@@ -67,8 +71,9 @@ namespace ns {
 	const std::string default_attack_icon = "sword-human.png";
 
 	tcore core;
+#ifndef _ROSE_EDITOR
 	tunit_type utype;
-
+#endif
 	HIMAGELIST himl_tactic;
 	int iico_tactic_tactic;	
 	int iico_tactic_range;
@@ -89,17 +94,19 @@ std::map<int, DLGPROC> tcore::dlgproc_map;
 tcore::tcore()
 	: section_(CONFIG)
 	, map_(NULL)
+#ifndef _ROSE_EDITOR
 	, types_updating_()
 	, features_from_cfg_()
 	, features_updating_()
 	, treasures_from_cfg_()
 	, treasures_updating_()
+	, factions_from_cfg_()
+	, factions_updating_()
+#endif
 	, terrains_from_cfg_()
 	, terrains_updating_()
 	, brules_from_cfg_()
 	, brules_updating_()
-	, factions_from_cfg_()
-	, factions_updating_()
 	, anims_from_cfg_()
 	, anims_updating_()
 	, books()
@@ -193,6 +200,174 @@ HWND tcore::init_toolbar(HINSTANCE hinst, HWND hdlgP)
 	return gdmgr._htb_core;
 }
 
+void tcore::set_dirty(int bit, bool set)
+{
+	if (set) {
+		dirty_ |= 1 << bit;
+	} else {
+		dirty_ &= ~(1 << bit);
+	}
+	core_enable_save_btn(dirty_? TRUE: FALSE);
+}
+
+bool tcore::bit_dirty(int bit) const
+{
+	return dirty_ & (1 << bit);
+}
+
+bool tcore::save_if_dirty()
+{
+	if (core_get_save_btn()) {
+		std::stringstream title, message;
+		HWND hdlgP = gdmgr._hdlg_core;
+
+		title << utf8_2_ansi(_("Save modify")); 
+		message << utf8_2_ansi(_("Core data is dirty, do you want to save modify?"));
+
+		int retval = MessageBox(gdmgr._htb_core, message.str().c_str(), title.str().c_str(), MB_YESNO);
+		bool ret;
+		if (retval == IDYES) {
+			save(gdmgr._hdlg_core);
+			ret = true;
+		} else {
+			core_enable_save_btn(FALSE);
+			ret = false;
+		}
+#ifndef _ROSE_EDITOR
+		// clear updating flag
+		types_updating_.clear();
+#endif
+		dirty_ = 0;
+		return ret;
+	}
+	return false;
+}
+
+void tcore::save(HWND hdlgP)
+{
+	std::stringstream strstr;
+	DLGHDR* pHdr = (DLGHDR *) GetWindowLong(hdlgP, GWL_USERDATA);
+
+	//
+	// verify core data
+	//
+#ifndef _ROSE_EDITOR
+	for (std::vector<tfeature>::iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
+		const tfeature& f = *it;
+		int feature = std::distance(features_updating_.begin(), it);
+		if (feature >= HEROS_BASE_FEATURE_COUNT && f.items_.empty()) {
+			strstr << "#" << feature << "没设置原子特技";
+			posix_print_mb(strstr.str().c_str());
+			return;
+		}
+	}
+
+	for (std::vector<tfaction>::iterator it = factions_updating_.begin(); it != factions_updating_.end(); ++ it) {
+		const tfaction& f = *it;
+		if (f.leader_ == HEROS_INVALID_NUMBER) {
+			strstr << "#" << std::distance(factions_updating_.begin(), it) << "集团没设置君主";
+			posix_print_mb(strstr.str().c_str());
+			return;
+		}
+		if (f.city_ == HEROS_INVALID_NUMBER) {
+			strstr << "#" << std::distance(factions_updating_.begin(), it) << "集团没设置城市";
+			posix_print_mb(strstr.str().c_str());
+			return;
+		}
+	}
+
+	if (bit_dirty(BIT_MULTIPLAYER)) {
+		if (!campaign_can_save(section_ == MULTIPLAYER? pHdr->hwndDisplay: NULL, false)) {
+			return;
+		}
+	}
+
+	//
+	// write section
+	//
+	// one or more utype.id changed, delete <units>/<race>/<id>.cfg.
+	for (std::map<int, tunit_type>::const_iterator it = types_updating_.begin(); it != types_updating_.end(); ++ it) {
+		const tunit_type& type = it->second;
+		if (type.utype_from_cfg_.id_ != type.id_) {
+			strstr.str("");
+			strstr << type.cfg_file(true);
+
+			delfile1(strstr.str().c_str());
+		}
+		if (!type.id_.empty() && type.dirty()) {
+			type.generate(false);
+		}
+	}
+	types_updating_.clear();
+
+	// noble
+	if (bit_dirty(BIT_NOBLE)) {
+		generate_noble_cfg();
+	}
+	nobles_from_cfg_.clear();
+	nobles_updating_.clear();
+
+	// units_internal.cfg, include feature/treasure
+	if (bit_dirty(BIT_FEATURE) || bit_dirty(BIT_TREASURE)) {
+		generate_units_internal();
+	}
+
+	// faction
+	if (bit_dirty(BIT_FACTION)) {
+		generate_factions_cfg();
+	}
+	factions_from_cfg_.clear();
+	factions_updating_.clear();
+
+	// multiplayer
+	if (bit_dirty(BIT_MULTIPLAYER)) {
+		multiplayer_.generate();
+	}
+	multiplayer_.clear();
+
+#endif
+	// terrain
+	if (bit_dirty(BIT_TERRAIN)) {
+		generate_terrain_cfg();
+	}
+	terrains_from_cfg_.clear();
+	terrains_updating_.clear();
+
+	// builder
+	if (bit_dirty(BIT_BUILDER)) {
+		generate_terrain_graphics_cfg();
+	}
+	release_builder();
+
+	// anim
+	if (bit_dirty(BIT_ANIM)) {
+		generate_anims_cfg();
+	}
+	anims_from_cfg_.clear();
+	anims_updating_.clear();
+
+	// game config
+	if (bit_dirty(BIT_CONFIG)) {
+		generate_config_cfg();
+	}
+	config_from_cfg_.clear();
+	config_updating_.clear();
+
+	// book
+	if (bit_dirty(BIT_BOOK)) {
+		generate_books_cfg();
+	}
+	books.clear();
+
+	core_enable_save_btn(FALSE);
+	// clear updating flag
+	dirty_ = 0;
+
+	editor_config::campaign_id = "multiplayer";
+	sync_refresh_sync();
+}
+
+#ifndef _ROSE_EDITOR
 void tcore::utype_tree_2_tv_internal(HWND hctl, HTREEITEM htvroot, const std::vector<advance_tree::node>& advances_to, const std::vector<std::string>& advances_from2)
 {
 	char text[_MAX_PATH];
@@ -391,170 +566,6 @@ bool tcore::types_dirty() const
 		}
 	}
 	return false;
-}
-
-void tcore::set_dirty(int bit, bool set)
-{
-	if (set) {
-		dirty_ |= 1 << bit;
-	} else {
-		dirty_ &= ~(1 << bit);
-	}
-	core_enable_save_btn(dirty_? TRUE: FALSE);
-}
-
-bool tcore::bit_dirty(int bit) const
-{
-	return dirty_ & (1 << bit);
-}
-
-bool tcore::save_if_dirty()
-{
-	if (core_get_save_btn()) {
-		std::stringstream title, message;
-		HWND hdlgP = gdmgr._hdlg_core;
-
-		title << utf8_2_ansi(_("Save modify")); 
-		message << utf8_2_ansi(_("Core data is dirty, do you want to save modify?"));
-
-		int retval = MessageBox(gdmgr._htb_core, message.str().c_str(), title.str().c_str(), MB_YESNO);
-		bool ret;
-		if (retval == IDYES) {
-			save(gdmgr._hdlg_core);
-			ret = true;
-		} else {
-			core_enable_save_btn(FALSE);
-			ret = false;
-		}
-		// clear updating flag
-		types_updating_.clear();
-
-		dirty_ = 0;
-		return ret;
-	}
-	return false;
-}
-
-void tcore::save(HWND hdlgP)
-{
-	std::stringstream strstr;
-	DLGHDR* pHdr = (DLGHDR *) GetWindowLong(hdlgP, GWL_USERDATA);
-
-	//
-	// verify core data
-	//
-	for (std::vector<tfeature>::iterator it = features_updating_.begin(); it != features_updating_.end(); ++ it) {
-		const tfeature& f = *it;
-		int feature = std::distance(features_updating_.begin(), it);
-		if (feature >= HEROS_BASE_FEATURE_COUNT && f.items_.empty()) {
-			strstr << "#" << feature << "没设置原子特技";
-			posix_print_mb(strstr.str().c_str());
-			return;
-		}
-	}
-
-	for (std::vector<tfaction>::iterator it = factions_updating_.begin(); it != factions_updating_.end(); ++ it) {
-		const tfaction& f = *it;
-		if (f.leader_ == HEROS_INVALID_NUMBER) {
-			strstr << "#" << std::distance(factions_updating_.begin(), it) << "集团没设置君主";
-			posix_print_mb(strstr.str().c_str());
-			return;
-		}
-		if (f.city_ == HEROS_INVALID_NUMBER) {
-			strstr << "#" << std::distance(factions_updating_.begin(), it) << "集团没设置城市";
-			posix_print_mb(strstr.str().c_str());
-			return;
-		}
-	}
-
-	if (bit_dirty(BIT_MULTIPLAYER)) {
-		if (!campaign_can_save(section_ == MULTIPLAYER? pHdr->hwndDisplay: NULL, false)) {
-			return;
-		}
-	}
-
-	//
-	// write section
-	//
-	// one or more utype.id changed, delete <units>/<race>/<id>.cfg.
-	for (std::map<int, tunit_type>::const_iterator it = types_updating_.begin(); it != types_updating_.end(); ++ it) {
-		const tunit_type& type = it->second;
-		if (type.utype_from_cfg_.id_ != type.id_) {
-			strstr.str("");
-			strstr << type.cfg_file(true);
-
-			delfile1(strstr.str().c_str());
-		}
-		if (!type.id_.empty() && type.dirty()) {
-			type.generate(false);
-		}
-	}
-	types_updating_.clear();
-
-	// units_internal.cfg, include feature/treasure
-	if (bit_dirty(BIT_FEATURE) || bit_dirty(BIT_TREASURE)) {
-		generate_units_internal();
-	}
-
-	// noble
-	if (bit_dirty(BIT_NOBLE)) {
-		generate_noble_cfg();
-	}
-	nobles_from_cfg_.clear();
-	nobles_updating_.clear();
-
-	// terrain
-	if (bit_dirty(BIT_TERRAIN)) {
-		generate_terrain_cfg();
-	}
-	terrains_from_cfg_.clear();
-	terrains_updating_.clear();
-
-	// builder
-	if (bit_dirty(BIT_BUILDER)) {
-		generate_terrain_graphics_cfg();
-	}
-	release_builder();
-
-	// faction
-	if (bit_dirty(BIT_FACTION)) {
-		generate_factions_cfg();
-	}
-	factions_from_cfg_.clear();
-	factions_updating_.clear();
-
-	// anim
-	if (bit_dirty(BIT_ANIM)) {
-		generate_anims_cfg();
-	}
-	anims_from_cfg_.clear();
-	anims_updating_.clear();
-
-	// multiplayer
-	if (bit_dirty(BIT_MULTIPLAYER)) {
-		multiplayer_.generate();
-	}
-	multiplayer_.clear();
-
-	// game config
-	if (bit_dirty(BIT_CONFIG)) {
-		generate_config_cfg();
-	}
-	config_from_cfg_.clear();
-	config_updating_.clear();
-
-	// book
-	if (bit_dirty(BIT_BOOK)) {
-		generate_books_cfg();
-	}
-	books.clear();
-
-	core_enable_save_btn(FALSE);
-	// clear updating flag
-	dirty_ = 0;
-
-	editor_config::campaign_id = "multiplayer";
-	sync_refresh_sync();
 }
 
 void tcore::generate_utypes(bool with_anim) const
@@ -1000,6 +1011,18 @@ void tcore::refresh_treasure(HWND hdlgP)
 	update_to_ui_treasure(hdlgP);
 }
 
+void tcore::refresh_faction(HWND hdlgP)
+{
+	update_to_ui_faction(hdlgP, -1);
+}
+
+void tcore::refresh_multiplayer(HWND hdlgP)
+{
+	update_to_ui_multiplayer(hdlgP);
+}
+
+#endif
+
 void tcore::refresh_terrain(HWND hdlgP)
 {
 	update_to_ui_terrain(hdlgP);
@@ -1010,19 +1033,9 @@ void tcore::refresh_builder(HWND hdlgP)
 	update_to_ui_builder(hdlgP);
 }
 
-void tcore::refresh_faction(HWND hdlgP)
-{
-	update_to_ui_faction(hdlgP, -1);
-}
-
 void tcore::refresh_anim(HWND hdlgP)
 {
 	update_to_ui_anim(hdlgP);
-}
-
-void tcore::refresh_multiplayer(HWND hdlgP)
-{
-	update_to_ui_multiplayer(hdlgP);
 }
 
 void tcore::refresh_book(HWND hdlgP)
@@ -1035,7 +1048,7 @@ void tcore::refresh_config(HWND hdlgP)
 	update_to_ui_config(hdlgP);
 }
 
-void fill_param_global_anim(tanim_type& anim)
+void fill_param_area_anim(tanim_type2& anim)
 {
 	anim.variables_.insert(std::make_pair("8800", "x"));
 	anim.variables_.insert(std::make_pair("8801", "y"));
@@ -1075,7 +1088,7 @@ void tcore::init_cache()
 		}
 		terrains_.push_back(terrain);
 	}
-	
+#ifndef _ROSE_EDITOR	
 	// feature
 	features_from_cfg_.clear();
 	features_updating_.clear();
@@ -1123,6 +1136,45 @@ void tcore::init_cache()
 		treasures_from_cfg_.insert(std::make_pair(t.index(), t.feature()));
 	}
 	treasures_updating_ = treasures_from_cfg_;
+
+	// faction
+	factions_from_cfg_.clear();
+	factions_updating_.clear();
+
+	const config::const_child_itors& factions = editor_config::data_cfg.child_range("faction");
+	std::set<int> used_heros, used_cities;
+	BOOST_FOREACH (const config &cfg, factions) {
+		tfaction f;
+		f.from_config(cfg, used_heros, used_cities);
+		factions_from_cfg_.push_back(f);
+	}
+	factions_updating_ = factions_from_cfg_;
+
+	// multiplayer
+	ns::_scenario.clear();
+	ns::current_scenario = 0;
+	const config::const_child_itors& multiplayers = editor_config::data_cfg.child_range("multiplayer");
+	BOOST_FOREACH (const config &cfg, multiplayers) {
+		if (cfg["map_generation"].str() == "default") {
+			continue;
+		}
+		const std::string mode = cfg["mode"].str();
+		if (mode == "tower") {
+			continue;
+		}
+		if (mode == "siege") {
+			continue;
+		}
+		ns::_scenario.push_back(tscenario("multiplayer"));
+		tscenario& s = ns::_scenario.back();
+		s.multiplayer_ = true;
+		s.init_hero_state(gdmgr.heros_);
+		// sub-object's from_config will use ns::current_scenario, set it correctly.
+		s.from_config(ns::current_scenario, cfg);
+		ns::current_scenario ++;
+	}
+	ns::current_scenario = 0;
+#endif
 
 	// terrain
 	terrains_from_cfg_.clear();
@@ -1284,88 +1336,75 @@ void tcore::init_cache()
 	}
 	copy_brules(brules_from_cfg_, brules_updating_);
 
-	// faction
-	factions_from_cfg_.clear();
-	factions_updating_.clear();
-
-	const config::const_child_itors& factions = editor_config::data_cfg.child_range("faction");
-	std::set<int> used_heros, used_cities;
-	BOOST_FOREACH (const config &cfg, factions) {
-		tfaction f;
-		f.from_config(cfg, used_heros, used_cities);
-		factions_from_cfg_.push_back(f);
-	}
-	factions_updating_ = factions_from_cfg_;
-
 	// anim
 	anims_from_cfg_.clear();
 	anims_updating_.clear();
 	if (tanim::anim_types.empty()) {
-		tanim::anim_types.push_back(tanim_type("defend", _("anim^defend")));
+		tanim::anim_types.push_back(tanim_type2("defend", _("anim^defend")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$base_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$hit_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$miss_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("resistance", _("anim^resistance")));
+		tanim::anim_types.push_back(tanim_type2("resistance", _("anim^resistance")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$leading_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("leading", _("anim^leading")));
+		tanim::anim_types.push_back(tanim_type2("leading", _("anim^leading")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$leading_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("healing", _("anim^healing")));
+		tanim::anim_types.push_back(tanim_type2("healing", _("anim^healing")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("idle", _("anim^idle")));
+		tanim::anim_types.push_back(tanim_type2("idle", _("anim^idle")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_4_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
 
-		tanim::anim_types.push_back(tanim_type("multi_idle", _("anim^multi_idle")));
+		tanim::anim_types.push_back(tanim_type2("multi_idle", _("anim^multi_idle")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_4_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
 
-		tanim::anim_types.push_back(tanim_type("healed", _("anim^healed")));
+		tanim::anim_types.push_back(tanim_type2("healed", _("anim^healed")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$idle_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("movement", _("anim^movement")));
+		tanim::anim_types.push_back(tanim_type2("movement", _("anim^movement")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$move_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$move_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
 
-		tanim::anim_types.push_back(tanim_type("build", _("anim^build")));
+		tanim::anim_types.push_back(tanim_type2("build", _("anim^build")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$build_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$build_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$build_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$build_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("repair", _("anim^repair")));
+		tanim::anim_types.push_back(tanim_type2("repair", _("anim^repair")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$repair_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$repair_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$repair_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$repair_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("die", _("anim^die")));
+		tanim::anim_types.push_back(tanim_type2("die", _("anim^die")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$die_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$die_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
 
-		tanim::anim_types.push_back(tanim_type("multi_die", _("anim^multi_die")));
+		tanim::anim_types.push_back(tanim_type2("multi_die", _("anim^multi_die")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$die_1_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$die_2_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$sound_ogg", null_str));
 
-		tanim::anim_types.push_back(tanim_type("melee_attack", _("anim^melee_attack")));
+		tanim::anim_types.push_back(tanim_type2("melee_attack", _("anim^melee_attack")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$hit_sound", null_str));
@@ -1375,11 +1414,12 @@ void tcore::init_cache()
 		tanim::anim_types.back().variables_.insert(std::make_pair("$melee_attack_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$melee_attack_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("ranged_attack", _("anim^ranged_attack")));
+		tanim::anim_types.push_back(tanim_type2("ranged_attack", _("anim^ranged_attack")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$image_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$image_diagonal_png", null_str));
+		tanim::anim_types.back().variables_.insert(std::make_pair("$image_horizontal_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$hit_sound", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$miss_sound", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
@@ -1387,7 +1427,7 @@ void tcore::init_cache()
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("magic_missile_attack", _("anim^magic_missile_attack")));
+		tanim::anim_types.push_back(tanim_type2("magic_missile_attack", _("anim^magic_missile_attack")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
@@ -1395,7 +1435,7 @@ void tcore::init_cache()
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("lightbeam_attack", _("anim^lightbeam_attack")));
+		tanim::anim_types.push_back(tanim_type2("lightbeam_attack", _("anim^lightbeam_attack")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
@@ -1403,7 +1443,7 @@ void tcore::init_cache()
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("fireball_attack", _("anim^fireball_attack")));
+		tanim::anim_types.push_back(tanim_type2("fireball_attack", _("anim^fireball_attack")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
@@ -1411,7 +1451,7 @@ void tcore::init_cache()
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("iceball_attack", _("anim^iceball_attack")));
+		tanim::anim_types.push_back(tanim_type2("iceball_attack", _("anim^iceball_attack")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
@@ -1419,7 +1459,7 @@ void tcore::init_cache()
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("lightning_attack", _("anim^lightning_attack")));
+		tanim::anim_types.push_back(tanim_type2("lightning_attack", _("anim^lightning_attack")));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$attack_id", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$range", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_1_png", null_str));
@@ -1427,35 +1467,35 @@ void tcore::init_cache()
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_3_png", null_str));
 		tanim::anim_types.back().variables_.insert(std::make_pair("$ranged_attack_4_png", null_str));
 
-		tanim::anim_types.push_back(tanim_type("card", _("anim^card")));
-		tanim::anim_types.push_back(tanim_type("reinforce", _("anim^reinforce")));
-		tanim::anim_types.push_back(tanim_type("individuality", _("anim^individuality")));
-		tanim::anim_types.push_back(tanim_type("tactic", _("anim^tactic")));
-		tanim::anim_types.push_back(tanim_type("blade", _("anim^blade")));
-		tanim::anim_types.push_back(tanim_type("fire", _("anim^fire")));
-		tanim::anim_types.push_back(tanim_type("magic", _("anim^magic")));
-		tanim::anim_types.push_back(tanim_type("heal", _("anim^heal")));
-		tanim::anim_types.push_back(tanim_type("destruct", _("anim^destruct")));
-		tanim::anim_types.push_back(tanim_type("formation_attack", _("anim^formation attack")));
-		tanim::anim_types.push_back(tanim_type("formation_defend", _("anim^formation defend")));
-		tanim::anim_types.push_back(tanim_type("pass_scenario", _("anim^pass scenario")));
-		tanim::anim_types.push_back(tanim_type("perfect", _("anim^perfect")));
-		tanim::anim_types.push_back(tanim_type("income", _("anim^income")));
-		tanim::anim_types.push_back(tanim_type("stratagem_up", _("anim^stratagem_up")));
-		tanim::anim_types.push_back(tanim_type("stratagem_down", _("anim^stratagem_down")));
-		tanim::anim_types.push_back(tanim_type("location", _("anim^location")));
-		tanim::anim_types.push_back(tanim_type("hscroll_text", _("anim^hscroll text")));
-		tanim::anim_types.push_back(tanim_type("title_screen", _("anim^title_screen")));
-		tanim::anim_types.push_back(tanim_type("load_scenario", _("anim^load_scenario")));
+		tanim::anim_types.push_back(tanim_type2("card", _("anim^card")));
+		tanim::anim_types.push_back(tanim_type2("reinforce", _("anim^reinforce")));
+		tanim::anim_types.push_back(tanim_type2("individuality", _("anim^individuality")));
+		tanim::anim_types.push_back(tanim_type2("tactic", _("anim^tactic")));
+		tanim::anim_types.push_back(tanim_type2("blade", _("anim^blade")));
+		tanim::anim_types.push_back(tanim_type2("fire", _("anim^fire")));
+		tanim::anim_types.push_back(tanim_type2("magic", _("anim^magic")));
+		tanim::anim_types.push_back(tanim_type2("heal", _("anim^heal")));
+		tanim::anim_types.push_back(tanim_type2("destruct", _("anim^destruct")));
+		tanim::anim_types.push_back(tanim_type2("formation_attack", _("anim^formation attack")));
+		tanim::anim_types.push_back(tanim_type2("formation_defend", _("anim^formation defend")));
+		tanim::anim_types.push_back(tanim_type2("pass_scenario", _("anim^pass scenario")));
+		tanim::anim_types.push_back(tanim_type2("perfect", _("anim^perfect")));
+		tanim::anim_types.push_back(tanim_type2("income", _("anim^income")));
+		tanim::anim_types.push_back(tanim_type2("stratagem_up", _("anim^stratagem_up")));
+		tanim::anim_types.push_back(tanim_type2("stratagem_down", _("anim^stratagem_down")));
+		tanim::anim_types.push_back(tanim_type2("location", _("anim^location")));
+		tanim::anim_types.push_back(tanim_type2("hscroll_text", _("anim^hscroll text")));
+		tanim::anim_types.push_back(tanim_type2("title_screen", _("anim^title_screen")));
+		tanim::anim_types.push_back(tanim_type2("load_scenario", _("anim^load_scenario")));
 
-		tanim::anim_types.push_back(tanim_type("flags", _("anim^flags")));
-		fill_param_global_anim(tanim::anim_types.back());
+		tanim::anim_types.push_back(tanim_type2("flags", _("anim^flags")));
+		fill_param_area_anim(tanim::anim_types.back());
 
-		tanim::anim_types.push_back(tanim_type("text", _("anim^text")));
-		fill_param_global_anim(tanim::anim_types.back());
+		tanim::anim_types.push_back(tanim_type2("text", _("anim^text")));
+		fill_param_area_anim(tanim::anim_types.back());
 
-		tanim::anim_types.push_back(tanim_type("place", _("anim^place")));
-		fill_param_global_anim(tanim::anim_types.back());
+		tanim::anim_types.push_back(tanim_type2("place", _("anim^place")));
+		fill_param_area_anim(tanim::anim_types.back());
 	}
 
 	const config::const_child_itors& utype_anims = editor_config::data_cfg.child("units").child_range("utype_anim");
@@ -1464,39 +1504,14 @@ void tcore::init_cache()
 		anim.from_config(cfg, false);
 		anims_from_cfg_.push_back(anim);
 	}
-	const config::const_child_itors& global_anims = editor_config::data_cfg.child("units").child_range("global_anim");
-	BOOST_FOREACH (const config &cfg, global_anims) {
+	const config::const_child_itors& area_anims = editor_config::data_cfg.child("units").child_range("area_anim");
+	BOOST_FOREACH (const config &cfg, area_anims) {
 		tanim anim;
 		anim.from_config(cfg, true);
 		anims_from_cfg_.push_back(anim);
 	}
 
 	anims_updating_ = anims_from_cfg_;
-
-	// multiplayer
-	ns::_scenario.clear();
-	ns::current_scenario = 0;
-	const config::const_child_itors& multiplayers = editor_config::data_cfg.child_range("multiplayer");
-	BOOST_FOREACH (const config &cfg, multiplayers) {
-		if (cfg["map_generation"].str() == "default") {
-			continue;
-		}
-		const std::string mode = cfg["mode"].str();
-		if (mode == "tower") {
-			continue;
-		}
-		if (mode == "siege") {
-			continue;
-		}
-		ns::_scenario.push_back(tscenario("multiplayer"));
-		tscenario& s = ns::_scenario.back();
-		s.multiplayer_ = true;
-		s.init_hero_state(gdmgr.heros_);
-		// sub-object's from_config will use ns::current_scenario, set it correctly.
-		s.from_config(ns::current_scenario, cfg);
-		ns::current_scenario ++;
-	}
-	ns::current_scenario = 0;
 
 	// book
 	books.clear();
@@ -1525,6 +1540,11 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 
 	if (name_map.empty()) {
 		name_map[CONFIG] = utf8_2_ansi(_("game^Config"));
+		name_map[BOOK] = utf8_2_ansi(_("Book"));
+		name_map[ANIM] = utf8_2_ansi(_("Animation"));
+		name_map[TERRAIN] = dgettext_2_ansi("wesnoth", "Terrain");
+		name_map[BUILDER] = utf8_2_ansi(_("Building rule"));
+#ifndef _ROSE_EDITOR
 		name_map[UNIT_TYPE] = utf8_2_ansi(_("arms^Type"));
 		name_map[FEATURE] = dgettext_2_ansi("wesnoth-hero", "feature");
 		strstr.str("");
@@ -1548,15 +1568,17 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		name_map[FORMATION] = utf8_2_ansi(strstr.str().c_str());
 		name_map[NOBLE] = dgettext_2_ansi("wesnoth-hero", "noble");
 		name_map[TREASURE] = dgettext_2_ansi("wesnoth-hero", "treasure");
-		name_map[TERRAIN] = dgettext_2_ansi("wesnoth", "Terrain");
-		name_map[BUILDER] = utf8_2_ansi(_("Building rule"));
 		name_map[FACTION] = dgettext_2_ansi("wesnoth-lib", "Faction");
-		name_map[ANIM] = utf8_2_ansi(_("Animation"));
 		name_map[MULTIPLAYER] = utf8_2_ansi(_("Multiplayer"));
-		name_map[BOOK] = utf8_2_ansi(_("Book"));
+#endif
 	}
 	if (idd_map.empty()) {
 		idd_map[CONFIG] = IDD_CONFIG;
+		idd_map[BOOK] = IDD_BOOK;
+		idd_map[ANIM] = IDD_ANIM;
+		idd_map[TERRAIN] = IDD_TERRAIN;
+		idd_map[BUILDER] = IDD_BUILDER;
+#ifndef _ROSE_EDITOR
 		idd_map[UNIT_TYPE] = IDD_UTYPE;
 		idd_map[FEATURE] = IDD_FEATURE;
 		idd_map[TACTIC] = IDD_TACTIC;
@@ -1566,15 +1588,17 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		idd_map[FORMATION] = IDD_FORMATION;
 		idd_map[NOBLE] = IDD_NOBLE;
 		idd_map[TREASURE] = IDD_TREASURE;
-		idd_map[TERRAIN] = IDD_TERRAIN;
-		idd_map[BUILDER] = IDD_BUILDER;
 		idd_map[FACTION] = IDD_FACTION;
-		idd_map[ANIM] = IDD_ANIM;
 		idd_map[MULTIPLAYER] = IDD_MULTIPLAYER;
-		idd_map[BOOK] = IDD_BOOK;
+#endif
 	}
 	if (dlgproc_map.empty()) {
 		dlgproc_map[CONFIG] = DlgConfigProc;
+		dlgproc_map[BOOK] = DlgBookProc;
+		dlgproc_map[ANIM] = DlgAnimProc;
+		dlgproc_map[TERRAIN] = DlgTerrainProc;
+		dlgproc_map[BUILDER] = DlgBuilderProc;
+#ifndef _ROSE_EDITOR
 		dlgproc_map[UNIT_TYPE] = DlgUTypeProc;
 		dlgproc_map[FEATURE] = DlgFeatureProc;
 		dlgproc_map[TACTIC] = DlgTacticProc;
@@ -1584,12 +1608,9 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		dlgproc_map[FORMATION] = DlgFormationProc;
 		dlgproc_map[NOBLE] = DlgNobleProc;
 		dlgproc_map[TREASURE] = DlgTreasureProc;
-		dlgproc_map[TERRAIN] = DlgTerrainProc;
-		dlgproc_map[BUILDER] = DlgBuilderProc;
 		dlgproc_map[FACTION] = DlgFactionProc;
-		dlgproc_map[ANIM] = DlgAnimProc;
 		dlgproc_map[MULTIPLAYER] = DlgMultiplayerProc;
-		dlgproc_map[BOOK] = DlgBookProc;
+#endif
 	}
 	
 	DLGHDR* pHdr = (DLGHDR*)GetWindowLong(hdlgP, GWL_USERDATA);
@@ -1650,12 +1671,21 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 	if (init) {
 		init_cache();
 	}
-
+#ifndef _ROSE_EDITOR
 	core_enable_new_btn(section_ == MULTIPLAYER);
 	core_enable_delete_btn(section_ == MULTIPLAYER);
-
+#endif
 	if (section_ == CONFIG) {
 		refresh_config(pHdr->hwndDisplay);
+	} else if (section_ == BOOK) {
+		refresh_book(pHdr->hwndDisplay);
+	} else if (section_ == ANIM) {
+		refresh_anim(pHdr->hwndDisplay);
+	} else if (section_ == TERRAIN) {
+		refresh_terrain(pHdr->hwndDisplay);
+	} else if (section_ == BUILDER) {
+		refresh_builder(pHdr->hwndDisplay);
+#ifndef _ROSE_EDITOR
 	} else if (section_ == UNIT_TYPE) {
 		refresh_utype(pHdr->hwndDisplay);
 	} else if (section_ == FEATURE) {
@@ -1674,21 +1704,15 @@ void tcore::switch_section(HWND hdlgP, int to, bool init)
 		refresh_noble(pHdr->hwndDisplay);
 	} else if (section_ == TREASURE) {
 		refresh_treasure(pHdr->hwndDisplay);
-	} else if (section_ == TERRAIN) {
-		refresh_terrain(pHdr->hwndDisplay);
-	} else if (section_ == BUILDER) {
-		refresh_builder(pHdr->hwndDisplay);
 	} else if (section_ == FACTION) {
 		refresh_faction(pHdr->hwndDisplay);
-	} else if (section_ == ANIM) {
-		refresh_anim(pHdr->hwndDisplay);
 	} else if (section_ == MULTIPLAYER) {
 		refresh_multiplayer(pHdr->hwndDisplay);
-	} else if (section_ == BOOK) {
-		refresh_book(pHdr->hwndDisplay);
+#endif
 	}
 }
 
+#ifndef _ROSE_EDITOR
 void tcore::update_to_ui_treasure(HWND hdlgP)
 {
 	HWND hctl = GetDlgItem(hdlgP, IDC_LV_TREASURE_EXPLORER);
@@ -1875,6 +1899,45 @@ void tcore::generate_noble_cfg() const
 	posix_fclose(fp);
 }
 
+std::string tcore::factions_cfg(bool absolute) const
+{
+	std::stringstream strstr;
+	if (absolute) {
+		strstr << game_config::path << "\\data\\multiplayer\\factions.cfg";
+	} else {
+		strstr << "data/multiplayer/factions.cfg";
+	}
+	return strstr.str();
+}
+
+void tcore::generate_factions_cfg() const
+{
+	std::stringstream strstr;
+	uint32_t bytertd;
+
+	posix_file_t fp = INVALID_FILE;
+	posix_fopen(factions_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
+	if (fp == INVALID_FILE) {
+		return;
+	}
+
+	strstr << "#textdomain wesnoth-multiplayer\n";
+	strstr << "\n";
+
+	for (std::vector<tfaction>::const_iterator it = factions_updating_.begin(); it != factions_updating_.end(); ++ it) {
+		if (it != factions_updating_.begin()) {
+			strstr << "\n";
+		}
+		const tfaction& f = *it;
+		strstr << f.generate();
+	}
+
+	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
+	posix_fclose(fp);
+}
+
+#endif
+
 std::string tcore::terrain_cfg(bool absolute) const
 {
 	std::stringstream strstr;
@@ -1999,75 +2062,52 @@ void tcore::generate_terrain_graphics_cfg() const
 	posix_fclose(tpl);
 }
 
-std::string tcore::factions_cfg(bool absolute) const
+std::pair<std::string, std::string> tcore::anims_cfg(bool absolute) const
 {
-	std::stringstream strstr;
+	std::stringstream rose_ss, app_ss;
 	if (absolute) {
-		strstr << game_config::path << "\\data\\multiplayer\\factions.cfg";
+		rose_ss << game_config::path << "\\data\\core\\units-internal\\animation.cfg";
+		app_ss << game_config::path << "\\data\\core\\units-internal\\app_animation.cfg";
 	} else {
-		strstr << "data/multiplayer/factions.cfg";
+		rose_ss << "data/core/units-internal/animation.cfg";
+		app_ss << "data/core/units-internal/app_animation.cfg";
 	}
-	return strstr.str();
-}
-
-void tcore::generate_factions_cfg() const
-{
-	std::stringstream strstr;
-	uint32_t bytertd;
-
-	posix_file_t fp = INVALID_FILE;
-	posix_fopen(factions_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
-	if (fp == INVALID_FILE) {
-		return;
-	}
-
-	strstr << "#textdomain wesnoth-multiplayer\n";
-	strstr << "\n";
-
-	for (std::vector<tfaction>::const_iterator it = factions_updating_.begin(); it != factions_updating_.end(); ++ it) {
-		if (it != factions_updating_.begin()) {
-			strstr << "\n";
-		}
-		const tfaction& f = *it;
-		strstr << f.generate();
-	}
-
-	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
-	posix_fclose(fp);
-}
-
-std::string tcore::anims_cfg(bool absolute) const
-{
-	std::stringstream strstr;
-	if (absolute) {
-		strstr << game_config::path << "\\data\\core\\units-internal\\animation.cfg";
-	} else {
-		strstr << "data/core/units-internal/animation.cfg";
-	}
-	return strstr.str();
+	return std::make_pair(rose_ss.str(), app_ss.str());
 }
 
 void tcore::generate_anims_cfg() const
 {
-	std::stringstream strstr;
+	std::stringstream rose_ss, app_ss;
 	uint32_t bytertd;
 
-	posix_file_t fp = INVALID_FILE;
-	posix_fopen(anims_cfg(true).c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
-	if (fp == INVALID_FILE) {
+	std::pair<std::string, std::string> file_name = anims_cfg(true);
+	posix_file_t rose_fp = INVALID_FILE;
+	posix_file_t app_fp = INVALID_FILE;
+	posix_fopen(file_name.first.c_str(), GENERIC_WRITE, CREATE_ALWAYS, rose_fp);
+	if (rose_fp == INVALID_FILE) {
+		return;
+	}
+	posix_fopen(file_name.second.c_str(), GENERIC_WRITE, CREATE_ALWAYS, app_fp);
+	if (app_fp == INVALID_FILE) {
+		posix_fclose(rose_fp);
 		return;
 	}
 
 	for (std::vector<tanim>::const_iterator it = anims_updating_.begin(); it != anims_updating_.end(); ++ it) {
-		if (it != anims_updating_.begin()) {
-			strstr << "\n";
-		}
 		const tanim& anim = *it;
-		strstr << anim.generate();
+		int type = area_anim::find(anim.id_);
+		std::stringstream& ss = anim.screen_mode_ && type != area_anim::NONE && type <= area_anim::MAX_ROSE_ANIM? rose_ss: app_ss;
+		if (!ss.str().empty()) {
+			ss << "\n";
+		}
+		ss << anim.generate();
 	}
 
-	posix_fwrite(fp, strstr.str().c_str(), strstr.str().length(), bytertd);
-	posix_fclose(fp);
+	posix_fwrite(rose_fp, rose_ss.str().c_str(), rose_ss.str().length(), bytertd);
+	posix_fwrite(app_fp, app_ss.str().c_str(), app_ss.str().length(), bytertd);
+
+	posix_fclose(rose_fp);
+	posix_fclose(app_fp);
 }
 
 std::string tcore::config_cfg(bool absolute) const
@@ -2132,8 +2172,9 @@ void tcore::generate_books_cfg()
 
 void core_enter_ui(void)
 {
+#ifndef _ROSE_EDITOR
 	scenario_selector::switch_to(true);
-
+#endif
 	StatusBar_Idle();
 
 	strcpy(gdmgr.cfg_fname_, gdmgr._menu_text);
@@ -2151,6 +2192,7 @@ BOOL core_hide_ui(void)
 	return TRUE;
 }
 
+#ifndef _ROSE_EDITOR
 //
 // tactic section
 //
@@ -3114,8 +3156,8 @@ BOOL CALLBACK DlgTreasureProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lPara
 	
 	return FALSE;
 }
+#endif
 
-// 对话框消息处理函数
 BOOL On_DlgCoreInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 {
 	gdmgr._hdlg_core = hdlgP;
@@ -3128,13 +3170,14 @@ BOOL On_DlgCoreInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 void On_DlgCoreCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	switch (id) {
+#ifndef _ROSE_EDITOR
 	case IDM_NEW:
 		ns::new_scenario();
 		break;
 	case IDM_DELETE:
 		ns::delete_scenario(hdlgP);
 		break;
-
+#endif
 	case IDM_SAVE:
 		ns::core.save(hdlgP);
 		break;

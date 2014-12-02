@@ -21,7 +21,8 @@
 extern editor editor_;
 
 static void OnDeleteBt(HWND hdlgP, char *fname);
-BOOL extra_kingdom_ins_disk(char* kingdom_src, char* kingdom_ins, char* kingdon_ins_android);
+bool extra_kingdom_ins_disk(char* kingdom_src, char* kingdom_ins, char* kingdon_ins_android);
+bool extract_rose(tcopier& copier);
 BOOL generate_kingdom_mod_res(const std::string& kingdom_res, const std::string& kingdom_star_patch, const std::string& kingdom_star);
 BOOL extract_kingdom_star_patch(const std::string& kingdom_star, const std::string& kingdom_star_patch);
 
@@ -147,13 +148,28 @@ BOOL On_DlgDDescInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	return TRUE;
 }
 
-BOOL check_wok_root_folder(const std::string& folder)
+bool is_app_res(const std::string& folder)
+{
+	const std::string file = folder + "/data/campaigns.cfg";
+	return file_exists(file);
+}
+
+bool check_wok_root_folder(const std::string& folder)
 {
 	std::stringstream strstr;
 	
 	// <wok>\data\_main.cfg
 	strstr << folder << "\\data\\_main.cfg";
-	return is_file(strstr.str().c_str());
+	if (!is_file(strstr.str().c_str())) {
+		return false;
+	}
+
+	bool app_res = is_app_res(folder);
+#ifndef _ROSE_EDITOR
+	return app_res; 
+#else
+	return !app_res;
+#endif
 }
 
 void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
@@ -206,29 +222,50 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		if (retval == IDYES) {
 			fok = extra_kingdom_ins_disk(gdmgr._menu_text, "c:\\kingdom-ins", "c:\\kingdom-ins-android\\com.freeors.kingdom");
 			symbols["src"] = gdmgr._menu_text;
-			symbols["result"] = fok? "Success": "Fail";
+			symbols["result"] = fok? _("Success"): _("Fail");
 			strcpy(text, utf8_2_ansi(vgettext2("Extract release package from \"$src\" to \"C:\\kingdom-ins\", $result!", symbols).c_str())); 
 			posix_print_mb(text);
 		}
 		break;
 
+	case IDM_NEW_EXTRAROSE:
+		{
+			tcopier copier(generate_cfg(editor_config::data_cfg, "rose"));
+
+			symbols["dst"] = copier.get_path("rose_src");
+			strcpy(text, utf8_2_ansi(vgettext2("Do you want to extract Rose package to $dst?", symbols).c_str())); 
+			strstr.str("");
+			strstr << utf8_2_ansi(_("Confirm generate"));
+			retval = MessageBox(hdlgP, text, strstr.str().c_str(), MB_YESNO | MB_DEFBUTTON2);
+			if (retval == IDYES) {
+				fok = extract_rose(copier);
+				symbols["src"] = copier.get_path("src");
+				symbols["result"] = fok? "Success": "Fail";
+				strcpy(text, utf8_2_ansi(vgettext2("Extract Rose package from \"$src\" to \"$dst\", $result!", symbols).c_str())); 
+				posix_print_mb(text);
+			}
+		}
+		break;
+
+#ifndef _ROSE_EDITOR
 	case IDM_NEW_CAMPAIGN:
 		if (campaign_new()) {
 			// title_select(da_sync);
 		}
 		break;
+#endif
 
 	case IDM_STAR_RESOURCE:
-		symbols["mod_res_path"] = mod_config.res_path;
+		symbols["mod_res_path"] = mod_config.get_path(tmod_config::res_tag);
 		strcpy(text, utf8_2_ansi(vgettext2("Do you want to generate star resource package to $mod_res_path?", symbols).c_str()));
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Confirm generate"));
 		retval = MessageBox(hdlgP, text, strstr.str().c_str(), MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
-			fok = generate_kingdom_mod_res(gdmgr._menu_text, mod_config.patch_path, mod_config.res_path);
+			fok = generate_kingdom_mod_res(gdmgr._menu_text, mod_config.get_path(tmod_config::patch_tag), mod_config.get_path(tmod_config::res_tag));
 			symbols["src1"] = gdmgr._menu_text;
-			symbols["src2"] = mod_config.patch_path;
-			symbols["dst"] = mod_config.res_path;
+			symbols["src2"] = mod_config.get_path(tmod_config::patch_tag);
+			symbols["dst"] = mod_config.get_path(tmod_config::res_tag);
 			symbols["result"] = fok? "Success": "Fail";
 			strcpy(text, utf8_2_ansi(vgettext2("Generate star resource package from \"$src1\" and \"$src2\" to \"$dst\", $result!", symbols).c_str())); 
 			posix_print_mb(text);
@@ -236,15 +273,15 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 
 	case IDM_STAR_PATCH:
-		symbols["mod_patch_path"] = mod_config.patch_path;
+		symbols["mod_patch_path"] = mod_config.get_path(tmod_config::patch_tag);
 		strcpy(text, utf8_2_ansi(vgettext2("Do you want to extract star different files to $mod_patch_path?", symbols).c_str()));
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Confirm generate"));
 		retval = MessageBox(hdlgP, text, strstr.str().c_str(), MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
-			fok = extract_kingdom_star_patch(gdmgr._menu_text, mod_config.patch_path);
+			fok = extract_kingdom_star_patch(gdmgr._menu_text, mod_config.get_path(tmod_config::patch_tag));
 			symbols["src"] = gdmgr._menu_text;
-			symbols["dst"] = mod_config.patch_path;
+			symbols["dst"] = mod_config.get_path(tmod_config::patch_tag);
 			symbols["result"] = fok? "Success": "Fail";
 			strcpy(text, utf8_2_ansi(vgettext2("Extract star different files from \"$src\" to \"$dst\", $result!", symbols).c_str())); 
 			posix_print_mb(text);
@@ -256,7 +293,9 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			if (gdmgr._da != da_wgen) {
 				title_select(da_wgen);
 			} else {
+#ifndef _ROSE_EDITOR
 				wgen_enter_ui();
+#endif
 			}
 		} else if (!_stricmp(basename(gdmgr._menu_text), "tb.dat")) {
 			editor_config::type = BIN_BUILDINGRULE;
@@ -405,6 +444,7 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		// new
 		if (!can_execute_tack(TASK_NEW) || strcasecmp(gdmgr._menu_text, game_config::path.c_str())) {
 			EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_EXTRAINSDIST, MF_BYCOMMAND | MF_GRAYED);
+			EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_EXTRAROSE, MF_BYCOMMAND | MF_GRAYED);
 		}
 		if (!can_execute_tack(TASK_NEW)) {
 			EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_CAMPAIGN, MF_BYCOMMAND | MF_GRAYED);
@@ -444,6 +484,7 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			NULL);
 
 		EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_EXTRAINSDIST, MF_BYCOMMAND | MF_ENABLED);
+		EnableMenuItem(gdmgr._hpopup_new, IDM_NEW_EXTRAROSE, MF_BYCOMMAND | MF_ENABLED);
 		EnableMenuItem(gdmgr._hpopup_explorer, IDM_EXPLORER_WML, MF_BYCOMMAND | MF_ENABLED);
 		EnableMenuItem(gdmgr._hpopup_delete, IDM_DELETE_ITEM0, MF_BYCOMMAND | MF_ENABLED);
 		EnableMenuItem(gdmgr._hpopup_delete, IDM_DELETE_ITEM1, MF_BYCOMMAND | MF_ENABLED);
@@ -478,7 +519,9 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 			if (gdmgr._da != da_wgen) {
 				title_select(da_wgen);
 			} else {
+#ifndef _ROSE_EDITOR
 				wgen_enter_ui();
+#endif
 			}
 		} else if (!_stricmp(text, "tb.dat")) {
 			strcpy(gdmgr._menu_text, TreeView_FormPath(lpNMHdr->hwndFrom, htvi, dirname(game_config::path.c_str())));
@@ -497,7 +540,9 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 					if (gdmgr._da != da_campaign) {
 						title_select(da_campaign);
 					} else {
+#ifndef _ROSE_EDITOR
 						campaign_enter_ui();
+#endif
 					}
 				} else if (strstr(gdmgr._menu_text, "data.bin")) {
 					if (gdmgr._da != da_core) {
@@ -685,480 +730,59 @@ void OnDeleteBt(HWND hdlgP, char *fname)
 	return;
 }
 
-BOOL copy_root_files(const char* src, const char* dst)
+bool extra_kingdom_ins_disk(char* kingdom_src, char* kingdom_ins, char* kingdom_ins_android)
 {
-	char				szCurrDir[_MAX_PATH], text1[_MAX_PATH], text2[_MAX_PATH];
-	HANDLE				hFind;
-	WIN32_FIND_DATA		finddata;
-	BOOL				fok, fret = TRUE;
-	
-	if (!src || !src[0] || !dst || !dst[0]) {
-		return FALSE;
-	}
-		
-	GetCurrentDirectory(_MAX_PATH, szCurrDir);
-	SetCurrentDirectory(appendbackslash(src));
-	hFind = FindFirstFile("*.*", &finddata);
-	fok = (hFind != INVALID_HANDLE_VALUE);
+	tcopier copier(generate_cfg(editor_config::data_cfg, "release"));
+	tcallback_lock lock(false, boost::bind(&tcopier::do_delete_path, &copier, _1));
 
-	while (fok) {
-		if (finddata.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-			// 目录
-		} else {
-			// 文件
-			sprintf(text1, "%s\\%s", src, finddata.cFileName);
-			sprintf(text2, "%s\\%s", dst, finddata.cFileName);
-			fret = CopyFile(text1, text2, FALSE);
-			if (!fret) {
-				posix_print_mb("copy file from %s to %s fail", text1, text2);
-				break;
-			}
-		}
-		fok = FindNextFile(hFind, &finddata);
+	if (!copier.make_path("ins") || !copier.make_path("ins_android")) {
+		return false;
 	}
-	if (hFind != INVALID_HANDLE_VALUE) {
-		FindClose(hFind);
+	if (!copier.do_copy("res", "ins") || !copier.do_copy("res", "ins_android")) {
+		return false;
 	}
 
-	SetCurrentDirectory(szCurrDir);
-	return fret;
+	lock.set_result(true);
+	return true;
 }
 
-typedef struct {
-	std::string src_campaign_dir;
-	std::string ins_campaign_dir;
-} walk_campaign_param_t;
-
-static BOOL cb_walk_campaign(char* name, uint32_t flags, uint64_t len, int64_t lastWriteTime, uint32_t* ctx)
+bool extract_rose(tcopier& copier)
 {
-	char text1[_MAX_PATH], text2[_MAX_PATH];
-	BOOL fok;
-	walk_campaign_param_t* wcp = (walk_campaign_param_t*)ctx;
-
-	if (flags & FILE_ATTRIBUTE_DIRECTORY ) {
-		sprintf(text2, "%s\\%s", wcp->ins_campaign_dir.c_str(), name);
-		MakeDirectory(std::string(text2)); // !!不要在<data>/campaigns/{campaign}下建images目录
-		sprintf(text1, "%s\\%s\\images", wcp->src_campaign_dir.c_str(), name);
-		sprintf(text2, "%s\\%s\\images", wcp->ins_campaign_dir.c_str(), name);
-		if (is_directory(text1)) {
-			posix_print("<data>, copy %s to %s ......\n", text1, text2);
-			fok = copyfile(text1, text2);
-			if (!fok) {
-				posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-				return FALSE;
-			}
-		}
+	tcallback_lock lock(false, boost::bind(&tcopier::do_delete_path, &copier, _1));
+	// if (!copier.make_path("rose_res")) {
+	if (!copier.make_path("rose_src") || !copier.make_path("rose_res")) {
+		return false;
 	}
-	return TRUE;
-}
-
-BOOL extra_kingdom_ins_disk(char* kingdom_src, char* kingdom_ins, char* kingdom_ins_android)
-{
-	char text1[_MAX_PATH], text2[_MAX_PATH];
-	BOOL fok;
-	walk_campaign_param_t wcp;
-
-	MakeDirectory(std::string(kingdom_ins));
-
-	// 清空目录
-	fok = delfile1(kingdom_ins);
-	if (!fok) {
-		posix_print_mb("删除目录: %s，失败", kingdom_ins);
-		return fok;
+	// if (!copier.do_copy("res", "rose_res")) {
+	if (!copier.do_copy("src", "rose_src") || !copier.do_copy("res", "rose_res") || !copier.do_copy("rose_res_patch", "rose_res")) {
+		return false;
 	}
-	fok = delfile1(kingdom_ins_android);
-	if (!fok) {
-		// posix_print_mb("删除目录: %s，失败", kingdom_ins_android);
-		// return fok;
+	if (!copier.do_remove("rose_res")) {
+		return false;
 	}
 
-	//
-	// <kingdom-src>\data
-	//
-
-	// 1. images in all campaigns
-	wcp.src_campaign_dir = std::string(kingdom_src) + "\\data\\campaigns";
-	wcp.ins_campaign_dir = std::string(kingdom_ins) + "\\data\\campaigns";
-	fok = walk_dir_win32_deepen(wcp.src_campaign_dir.c_str(), 0, cb_walk_campaign, (uint32_t *)&wcp);
-	if (!fok) {
-		return fok;
-	}
-	wcp.ins_campaign_dir = std::string(kingdom_ins_android) + "\\data\\campaigns";
-	fok = walk_dir_win32_deepen(wcp.src_campaign_dir.c_str(), 0, cb_walk_campaign, (uint32_t *)&wcp);
-	if (!fok) {
-		return fok;
-	}
-
-	// 2. images in <data>\core root
-	MakeDirectory(std::string("") + kingdom_ins + "\\data\\core");
-	sprintf(text1, "%s\\data\\core\\images", kingdom_src);
-	sprintf(text2, "%s\\data\\core\\images", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	MakeDirectory(std::string("") + kingdom_ins_android + "\\data\\core");
-	sprintf(text2, "%s\\data\\core\\images", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// 3. music in <data>\core root
-	sprintf(text1, "%s\\data\\core\\music", kingdom_src);
-	sprintf(text2, "%s\\data\\core\\music", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\data\\core\\music", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// 4. sounds in <data>\core root
-	sprintf(text1, "%s\\data\\core\\sounds", kingdom_src);
-	sprintf(text2, "%s\\data\\core\\sounds", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\data\\core\\sounds", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	sprintf(text1, "%s\\data\\hardwired", kingdom_src);
-	sprintf(text2, "%s\\data\\hardwired", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\data\\hardwired", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	sprintf(text1, "%s\\data\\lua", kingdom_src);
-	sprintf(text2, "%s\\data\\lua", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\data\\lua", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	sprintf(text1, "%s\\data\\tools", kingdom_src);
-	sprintf(text2, "%s\\data\\tools", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\data\\tools", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// <kingdom-src>\data\_main_cfg
-	sprintf(text1, "%s\\data\\_main.cfg", kingdom_src);
-	sprintf(text2, "%s\\data\\_main.cfg", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制文件，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\data\\_main.cfg", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制文件，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	//
-	// <kingdom-src>\fonts
-	//
-	sprintf(text1, "%s\\fonts", kingdom_src);
-	sprintf(text2, "%s\\fonts", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\fonts", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	//
-	// <kingdom-src>\images
-	//
-	sprintf(text1, "%s\\images", kingdom_src);
-	sprintf(text2, "%s\\images", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\images", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	//
-	// <kingdom-src>\manual
-	//
-	sprintf(text1, "%s\\manual", kingdom_src);
-	sprintf(text2, "%s\\manual", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// andorid don't copy manual
-
-	//
-	// <kingdom-src>\sounds
-	//
-	sprintf(text1, "%s\\sounds", kingdom_src);
-	sprintf(text2, "%s\\sounds", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\sounds", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	//
-	// <kingdom-src>\translations
-	//
-	sprintf(text1, "%s\\translations", kingdom_src);
-	sprintf(text2, "%s\\translations", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\translations", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	//
-	// <kingdom-src>\xwml
-	//
-	sprintf(text1, "%s\\xwml", kingdom_src);
-	sprintf(text2, "%s\\xwml", kingdom_ins);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-	// android
-	sprintf(text2, "%s\\xwml", kingdom_ins_android);
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	fok = copy_root_files(kingdom_src, kingdom_ins);
-exit:
-	if (!fok) {
-		delfile1(kingdom_ins);
-	}
-
-	return fok;
+	lock.set_result(true);
+	return true;
 }
 
 BOOL generate_kingdom_mod_res(const std::string& kingdom_res, const std::string& kingdom_star_patch, const std::string& kingdom_star)
 {
-	char text1[_MAX_PATH], text2[_MAX_PATH];
-	BOOL fok;
-	std::stringstream err;
-	utils::string_map symbols;
-	walk_campaign_param_t wcp;
+	tcopier copier(generate_cfg(editor_config::data_cfg, "copy"));
+	tcallback_lock lock(false, boost::bind(&tcopier::do_delete_path, &copier, _1));
 
-	MakeDirectory(std::string(kingdom_star));
-
-	// 清空目录
-	fok = delfile1(kingdom_star.c_str());
-	if (!fok) {
-		posix_print_mb("删除目录: %s，失败", kingdom_star.c_str());
-		return fok;
+	if (!copier.make_path("res_mod")) {
+		return false;
+	}
+	if (!copier.do_copy("res", "res_mod")) {
+		return false;
+	}
+	
+	if (!mod_config.opeate_file(true)) {
+		return false;
 	}
 
-	//
-	// <kingdom-src>\data
-	//
-
-	// all files from kingdom-res to kingdom-star
-	MakeDirectory(kingdom_star);
-	// 3. data in <data>
-	sprintf(text1, "%s\\data", kingdom_res.c_str());
-	sprintf(text2, "%s", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\fonts
-	//
-	sprintf(text1, "%s\\fonts", kingdom_res.c_str());
-	sprintf(text2, "%s", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\images
-	//
-	sprintf(text1, "%s\\images", kingdom_res.c_str());
-	sprintf(text2, "%s", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\manual
-	//
-	sprintf(text1, "%s\\manual", kingdom_res.c_str());
-	sprintf(text2, "%s", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\po
-	//
-	sprintf(text1, "%s\\po", kingdom_res.c_str());
-	sprintf(text2, "%s", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\sounds
-	//
-	sprintf(text1, "%s\\sounds", kingdom_res.c_str());
-	sprintf(text2, "%s", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\translations
-	//
-	sprintf(text1, "%s\\translations", kingdom_res.c_str());
-	sprintf(text2, "%s", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	//
-	// <kingdom-src>\xwml
-	//
-	sprintf(text1, "%s\\xwml", kingdom_res.c_str());
-	sprintf(text2, "%s", kingdom_star.c_str());
-	posix_print("<data>, copy %s to %s ......\n", text1, text2);
-	fok = copyfile(text1, text2);
-	if (!fok) {
-		posix_print_mb("复制目录，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	fok = copy_root_files(kingdom_res.c_str(), kingdom_star.c_str());
-	if (!fok) {
-		posix_print_mb("复制根目录下文件，从%s到%s，失败", text1, text2);
-		goto exit;
-	}
-
-	mod_config.opeate_file(true);
-
-exit:
-	if (!fok) {
-		delfile1(kingdom_star.c_str());
-	}
-
-	return fok;
+	lock.set_result(true);
+	return true;
 }
 
 BOOL extract_kingdom_star_patch(const std::string& kingdom_star, const std::string& kingdom_star_patch)

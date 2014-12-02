@@ -37,7 +37,6 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/message.hpp"
-#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -201,7 +200,7 @@ void ttreasure::fill_2list(twindow& window)
 
 		strstr.str("");
 		if (!can_up_treasure(units_, h)) {
-			strstr << help::tintegrate::generate_format(h.name(), "yellow");
+			strstr << tintegrate::generate_format(h.name(), "yellow");
 		} else {
 			strstr << h.name();
 		}
@@ -246,8 +245,8 @@ void ttreasure::down(twindow& window)
 
 	if (!can_up_treasure(units_, h)) {
 		utils::string_map symbols;
-		symbols["treasure"] = help::tintegrate::generate_format(unit_types.treasure(h.treasure_).name(), "green");
-		symbols["hero"] = help::tintegrate::generate_format(h.name(), "yellow");
+		symbols["treasure"] = tintegrate::generate_format(unit_types.treasure(h.treasure_).name(), "green");
+		symbols["hero"] = tintegrate::generate_format(h.name(), "yellow");
 		std::string message = vgettext("wesnoth-lib", "Duration this time, if remove $treasure from $hero, cannot assemble treasure to $hero again. Do you want to remove?", symbols);
 		int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
 		if (res == gui2::twindow::CANCEL) {

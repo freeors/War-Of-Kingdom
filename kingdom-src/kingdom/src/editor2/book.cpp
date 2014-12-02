@@ -206,13 +206,6 @@ std::string next_new_topic_id()
 
 }
 
-namespace help {
-bool find_topic2(const std::string& dst)
-{
-	return true;
-}
-}
-
 void tbook::from_config(const config& cfg)
 {
 	id_ = cfg["id"].str();

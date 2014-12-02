@@ -34,6 +34,7 @@ struct artifical_fields_t
 	unit_segment economy_area_;
 	unit_segment district_;
 	unit_segment not_recruit_;
+	unit_segment alias_;
 	unit_segment reside_troops_;
 	unit_segment reside_commoners_;
 };
@@ -109,9 +110,7 @@ public:
 	bool troop_come_into(unit* troop, int pos = -1);
 	bool troop_come_into2(unit* troop, int pos = -1);
 
-	// 一支野外部队/建筑物将归属本城市
 	void unit_belong_to(unit* troop, bool loyalty = true, bool to_recorder = false);
-	// 一支城内部队出城
 	void troop_go_out(const unit& u, bool del = true);
 
 	void commoner_go_out(const unit& u, bool del);
@@ -126,11 +125,9 @@ public:
 	void field_commoners_erase(const unit* commoner);
 	void field_arts_erase(const artifical* art);
 
-	// 数个武将出城
 	void heros_go_out(const std::vector<hero*>& heros);
-	// 一个武将出城
 	void hero_go_out(const hero& h);
-	// 解散城内一支部队
+	// disband one reside troop
 	void disband(const int index_of_army);
 	void decrease_level();
 	void fallen(int a_side, unit* attacker = NULL);
@@ -180,7 +177,7 @@ public:
 	//
 	// override
 	//
-	/** draw a unit.  */
+	// draw a unit.
 	void redraw_unit();
 	bool new_turn(play_controller& controller, int random);
 	void advance_to(const unit_type *t, bool use_traits = false, game_state *state = 0);
@@ -239,6 +236,7 @@ public:
 	void reset_max_recruit_cost();
 	const std::vector<const unit_type*>& recruits(int level);
 	void insert_level_unit_type(int level, const unit_type* from, std::vector<const unit_type*>& to);
+
 private:
 	// notice: loading game, gui_ isn't ready when artifical::artifical.
 	gamemap& map_;
@@ -280,6 +278,7 @@ private:
 
 	// recruit
 	std::set<const unit_type*> not_recruit_;
+	t_string alias_;
 	std::map<int, std::vector<const unit_type*> > can_recruit_map_;
 	int max_recruit_cost_;
 };

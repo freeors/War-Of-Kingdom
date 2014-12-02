@@ -33,6 +33,19 @@
 
 #include <boost/foreach.hpp>
 
+bool is_legal_utf8_str(const std::string& str)
+{
+	try {
+		utils::utf8_iterator ch(str);
+		for (utils::utf8_iterator end = utils::utf8_iterator::end(str); ch != end; ++ ch) {
+		}
+	}
+	catch (utils::invalid_utf8_exception&) {
+		return false;
+	}
+	return true;
+}
+
 namespace {
 
 bool message_private_on = false;
@@ -335,11 +348,20 @@ void set_campaign_server(const std::string& host)
 
 std::string encode_pw(const std::string& str)
 {
-	return std::string("pw_") + str;
+	std::stringstream ss;
+	ss << "pw_";
+	if (is_legal_utf8_str(str)) {
+		ss << str;
+	}
+	return ss.str();
 }
 
 std::string decode_pw(const std::string& str)
 {
+	if (!is_legal_utf8_str(str)) {
+		return null_str;
+	}
+
 	int pos = str.find("pw_");
 	if (pos != std::string::npos) {
 		return str.substr(3);
@@ -640,7 +662,7 @@ std::pair<std::string, std::string> inapp_item_equation(int id)
 	key << "inapp_" << short_id;
 
 	std::stringstream strstr;
-	strstr << game_config::sn << game_config::revision << short_id << login();
+	strstr << game_config::sn << game_config::version << short_id << login();
 	sha1_hash sha(strstr.str());
 
 	return std::make_pair(key.str(), sha.display());

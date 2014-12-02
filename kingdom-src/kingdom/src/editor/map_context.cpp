@@ -17,13 +17,13 @@
 #include "action.hpp"
 #include "map_context.hpp"
 
-#include "../display.hpp"
-#include "../filesystem.hpp"
-#include "../gettext.hpp"
-#include "../map_exception.hpp"
-#include "../map_label.hpp"
-#include "../wml_exception.hpp"
-#include "../builder.hpp"
+#include "display.hpp"
+#include "filesystem.hpp"
+#include "gettext.hpp"
+#include "map_exception.hpp"
+#include "map_label.hpp"
+#include "wml_exception.hpp"
+#include "builder.hpp"
 
 #include "formula_string_utils.hpp"
 

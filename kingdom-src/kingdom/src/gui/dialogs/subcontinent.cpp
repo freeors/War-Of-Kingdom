@@ -25,14 +25,13 @@
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/settings.hpp"
-#include "gui/widgets/hexmap.hpp"
+#include "gui/widgets/minimap.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/listbox.hpp"
 #include "gui/widgets/toggle_panel.hpp"
 #include "gui/dialogs/siege_tent.hpp"
 #include "gui/dialogs/message.hpp"
 #include "actions.hpp"
-#include "help.hpp"
 #include "map.hpp"
 #include "formula_string_utils.hpp"
 
@@ -112,28 +111,27 @@ namespace gui2 {
 
 REGISTER_DIALOG(subcontinent)
 
-extern int ready_outer_anim(game_display& disp, int type, const config& cfg, bool start, bool cycles);
 #define ownership_is_uid(ownership)	((ownership) >= HEROS_MAX_HEROS)
 #define uid_from_ownership(ownership)	((ownership) - HEROS_MAX_HEROS)
 
-tsubcontinent::tcity::tcity(const config& cfg)
+tsubcontinent::tcity::tcity(hero_map& heros, const config& cfg)
 	: number(cfg["heros_army"].to_int())
 	, cityno(cfg["cityno"].to_int())
 	, loc(map_location(cfg["x"].to_int(), cfg["y"].to_int()))
 	, ownership(-1)
 	, endurance(100)
 	, times(0)
+	, alias(cfg["alias"].str())
 {
 }
 
-tsubcontinent::tparam::tparam(const config& main_cfg)
+tsubcontinent::tparam::tparam(hero_map& heros, const config& main_cfg)
 	: id(main_cfg["id"].str())
 	, name(main_cfg["name"].str())
 	, npc(HEROS_INVALID_NUMBER)
 	, scenario()
 	, cities()
 	, http_subcontinent()
-	, valid(false)
 {
 	scenario = load_campagin_scenario(id, main_cfg["first_scenario"], "scenario");
 
@@ -143,7 +141,7 @@ tsubcontinent::tparam::tparam(const config& main_cfg)
 			npc = side_cfg["leader"].to_int();
 		}
 		BOOST_FOREACH (const config& artifical_cfg, side_cfg.child_range("artifical")) {
-			cities.push_back(tcity(artifical_cfg));
+			cities.push_back(tcity(heros, artifical_cfg));
 			tcity& city = cities.back();
 			if (control == controller_tag::HUMAN) {
 				city.ownership = npc;
@@ -182,12 +180,18 @@ tsubcontinent::tsubcontinent(game_display& disp, hero_map& heros, game_state& st
 
 tsubcontinent::~tsubcontinent()
 {
-	std::map<int, unit_animation>& screen_anims = disp_.screen_anims();
-	screen_anims.clear();
+	disp_.clear_area_anims();
 }
 
 void tsubcontinent::post_build(CVideo& video, twindow& window)
 {
+}
+
+void tsubcontinent::subcontinent_selected(twindow& window)
+{
+	tlistbox& list = find_widget<tlistbox>(&window, "subcontinent_table", false);
+	int selected_row = list.get_selected_row();
+	switch_to_subcontinent(window, params_[selected_row]);
 }
 
 void tsubcontinent::city_selected(twindow& window)
@@ -212,11 +216,11 @@ void tsubcontinent::refresh_title_flag(twindow& window) const
 
 	label = find_widget<tlabel>(&window, "flag", false, true);
 	strstr.str("");
-	strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << group.coin();
-	strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << group.score();
+	strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << group.coin();
+	strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << group.score();
 	// tax
-	strstr << "    " << help::tintegrate::generate_img("misc/tax.png~SCALE(24, 24)");
-	strstr << help::tintegrate::generate_format(group.tax(), "green");
+	strstr << "    " << tintegrate::generate_img("misc/tax.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_format(group.tax(), "green");
 
 	strstr << ")";
 	label->set_label(strstr.str());
@@ -257,12 +261,12 @@ void tsubcontinent::refresh_city_table(twindow& window, const tparam& param, int
 				} else {
 					color = "red";
 				}
-				strstr << help::tintegrate::generate_format(m->name, color);
+				strstr << tintegrate::generate_format(m->name, color);
 			} else {
-				strstr << help::tintegrate::generate_format(uid, "red");
+				strstr << tintegrate::generate_format(uid, "red");
 			}
 		} else if (city.ownership >= 0) {
-			strstr << help::tintegrate::generate_format(heros_[cursel_->npc].name(), "yellow");
+			strstr << tintegrate::generate_format(heros_[cursel_->npc].name(), "yellow");
 		} else {
 			strstr << "--";
 		}
@@ -314,7 +318,10 @@ void tsubcontinent::refresh_action_button(twindow& window, tcity* city)
 	bool can_repair = true;
 	bool can_discard = true;
 
-	if (local_only_ || !city) {
+	if (!cursel_->http_subcontinent.valid()) {
+		can_attack = can_repair = can_discard = false;
+
+	} else if (local_only_ || !city) {
 		can_attack = city && city->ownership < 0;
 		can_repair = can_discard = false;
 
@@ -381,9 +388,8 @@ void tsubcontinent::pre_show(CVideo& video, twindow& window)
 		m.map = group.map();
 	}
 
-	thexmap& hexmap = find_widget<thexmap>(&window, "hexmap", false);
+	tminimap& hexmap = find_widget<tminimap>(&window, "map", false);
 	hexmap.set_config(&game_config_);
-	hexmap.set_callback_size_change(boost::bind(&tsubcontinent::size_change, this, _1));
 
 	attack_ = &find_widget<tbutton>(&window, "attack", false);
 	connect_signal_mouse_left_click(
@@ -416,7 +422,7 @@ void tsubcontinent::pre_show(CVideo& video, twindow& window)
 		if (mode_tag::find(c["mode"].str()) != mode_tag::RPG) {
 			continue;
 		}
-		params_.push_back(tparam(c));
+		params_.push_back(tparam(heros_, c));
 		tparam& param = params_.back();
 
 		std::map<std::string, http::tsubcontinent_record>::iterator find = http_subcontinents.find(param.id);
@@ -435,10 +441,6 @@ void tsubcontinent::pre_show(CVideo& video, twindow& window)
 
 	}
 
-	if (!params_.empty()) {
-		switch_to_subcontinent(window, params_.front());
-	}
-
 	tlistbox* list = &find_widget<tlistbox>(&window, "subcontinent_table", false);
 	for (std::vector<tparam>::const_iterator it = params_.begin(); it != params_.end(); ++ it) {
 		const tparam& param = *it;
@@ -448,7 +450,7 @@ void tsubcontinent::pre_show(CVideo& video, twindow& window)
 
 		strstr.str("");
 		if (!param.http_subcontinent.valid()) {
-			strstr << help::tintegrate::generate_format(param.name, "red");
+			strstr << tintegrate::generate_format(param.name, "red");
 		} else {
 			strstr << param.name;
 		}
@@ -472,22 +474,25 @@ void tsubcontinent::pre_show(CVideo& video, twindow& window)
 
 		list->add_row(list_item_item);
 	}
+	list->set_callback_value_change(dialog_callback<tsubcontinent, &tsubcontinent::subcontinent_selected>);
 
-	if (cursel_) {
-		refresh_city_table(window, *cursel_, 0);
-		if (!cursel_->cities.empty()) {
-			switch_to_city(window, cursel_->cities.front());
-		}
-
-		list = &find_widget<tlistbox>(&window, "city_table", false);
-		list->set_callback_value_change(dialog_callback<tsubcontinent, &tsubcontinent::city_selected>);
+	if (!params_.empty()) {
+		switch_to_subcontinent(window, params_.front());
 	}
 }
 
 void tsubcontinent::switch_to_subcontinent(twindow& window, tparam& param)
 {
-	thexmap& hexmap = find_widget<thexmap>(&window, "hexmap", false);
-	hexmap.set_map_data(thexmap::TILE_MAP, param.scenario["map_data"].str());
+	if (cursel_) {
+		// reback hero name (get ride of alias)
+		for (std::vector<tcity>::iterator it = cursel_->cities.begin(); it != cursel_->cities.end(); ++ it) {
+			tcity& city = *it;
+			heros_[city.number].set_name(null_str);
+		}
+	}
+
+	tminimap& hexmap = find_widget<tminimap>(&window, "map", false);
+	hexmap.set_map_data(tminimap::TILE_MAP, param.scenario["map_data"].str());
 
 	BOOST_FOREACH (const config& side_cfg, param.scenario.child_range("side")) {
 		controller_tag::CONTROLLER control = controller_tag::find(side_cfg["controller"].str());
@@ -500,10 +505,20 @@ void tsubcontinent::switch_to_subcontinent(twindow& window, tparam& param)
 	my_city_ = NULL;
 	for (std::vector<tcity>::iterator it = cursel_->cities.begin(); it != cursel_->cities.end(); ++ it) {
 		tcity& city = *it;
+		heros_[city.number].set_name(city.alias);
 		if (ownership_is_uid(city.ownership) && uid_from_ownership(city.ownership) == group.leader().uid()) {
 			my_city_ = &city;
 		}
 	}
+
+	// update city table
+	refresh_city_table(window, *cursel_, 0);
+	if (!cursel_->cities.empty()) {
+		switch_to_city(window, cursel_->cities.front());
+	}
+
+	tlistbox& list = find_widget<tlistbox>(&window, "city_table", false);
+	list.set_callback_value_change(dialog_callback<tsubcontinent, &tsubcontinent::city_selected>);
 }
 
 void tsubcontinent::switch_to_city(twindow& window, tcity& city)
@@ -511,15 +526,6 @@ void tsubcontinent::switch_to_city(twindow& window, tcity& city)
 	refresh_action_button(window, &city);
 
 	curcity_ = &city;
-}
-
-void tsubcontinent::size_change(thexmap* widget)
-{
-	tpoint standard(800, 600);
-	tpoint size = widget->get_size();
-
-	outer_anim::zoom = std::make_pair(1.0 * size.x / standard.x, 1.0 * size.y / standard.y);
-	outer_anim::rect = widget->get_rect();
 }
 
 std::vector<std::vector<std::string> > tsubcontinent::crop_map(std::vector<std::vector<std::string> >& full_map_str, const map_location& from_loc, const map_location& to_loc)
@@ -637,7 +643,7 @@ void tsubcontinent::attack(twindow& window)
 			if (dlg.get_retval() != gui2::twindow::OK) {
 				return;
 			}
-			tent::subcontinent = std::make_pair(cursel_->scenario["id"].str(), curcity_->cityno);
+			tent::subcontinent = std::make_pair(cursel_->id, curcity_->cityno);
 			state_for_siege_bh(state_, campaign, dlg.get_scenario());
 		}
 		window.set_retval(SIEGE);
@@ -696,7 +702,7 @@ void tsubcontinent::attack(twindow& window)
 		scenario["map_data"] = combine_map(defender_map_str, attacker_map_str, rflip_);
 
 		tent::turn_based = true;
-		tent::subcontinent = std::make_pair(cursel_->scenario["id"].str(), curcity_->cityno);
+		tent::subcontinent = std::make_pair(cursel_->id, curcity_->cityno);
 
 		state_for_siege_bh(state_, campaign, scenario);
 		window.set_retval(SCENARIO);
@@ -707,7 +713,7 @@ void tsubcontinent::execute_bh(twindow& window, int tag)
 {
 	refresh_action_button(window, NULL);
 
-	std::pair<http::tsubcontinent_record, http::membership> p = http::subcontinent(disp_, heros_, tag, cursel_->scenario["id"].str(), curcity_->cityno);
+	std::pair<http::tsubcontinent_record, http::membership> p = http::subcontinent(disp_, heros_, tag, cursel_->id, curcity_->cityno);
 	if (p.second.uid >= 0) {
 		group.from_local_membership(disp_, heros_, p.second, true);
 		refresh_title_flag(window);
@@ -742,8 +748,8 @@ void tsubcontinent::repair(twindow& window)
 	int coin = 0;
 	int score = 100;
 
-	symbols["score"] = help::tintegrate::generate_format(score, "red");
-	symbols["do"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Repair"), "yellow");
+	symbols["score"] = tintegrate::generate_format(score, "red");
+	symbols["do"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "Repair"), "yellow");
 	std::string message = vgettext("wesnoth-lib", "Spend $score score may increase 10 endurance.\nDo you want to spend $score score to $do?", symbols);
 	int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
 	if (res == gui2::twindow::CANCEL) {
@@ -752,8 +758,8 @@ void tsubcontinent::repair(twindow& window)
 
 	if (sum_score(group.coin(), group.score()) < score) {
 		symbols.clear();
-		symbols["coin"] = help::tintegrate::generate_format(coin, "red");
-		symbols["score"] = help::tintegrate::generate_format(score, "red");
+		symbols["coin"] = tintegrate::generate_format(coin, "red");
+		symbols["score"] = tintegrate::generate_format(score, "red");
 		err << vgettext("wesnoth-lib", "Repertory is not enough to pay $coin coin and $score score. If lack one only, can exchange between coin and score.", symbols);
 		gui2::show_message(disp_.video(), "", err.str());
 		return;
@@ -767,7 +773,7 @@ void tsubcontinent::discard(twindow& window)
 	utils::string_map symbols;
 	std::stringstream err;
 
-	symbols["city"] = help::tintegrate::generate_format(heros_[curcity_->number].name(), "yellow");
+	symbols["city"] = tintegrate::generate_format(heros_[curcity_->number].name(), "yellow");
 	std::string message = vgettext("wesnoth-lib", "Do you want to discard $city?", symbols);
 	int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
 	if (res == gui2::twindow::CANCEL) {

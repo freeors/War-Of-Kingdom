@@ -1,6 +1,8 @@
 #ifndef __DLGCAMPAIGNPROC_HPP_
 #define __DLGCAMPAIGNPROC_HPP_
 
+#ifndef _ROSE_EDITOR
+
 #include "global.hpp"
 #include "stdafx.h"
 #include <windowsx.h>
@@ -27,9 +29,9 @@ void campaign_enable_save_btn(bool enable);
 
 #define campaign_enable_new_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_campaign, IDM_NEW, fEnable)
 #define campaign_enable_delete_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_campaign, IDM_DELETE, fEnable)
+#define campaign_enable_herostate_btn(fEnable)	ToolBar_EnableButton(gdmgr._htb_campaign, IDM_HEROSTATE, fEnable)
 
 extern editor editor_;
-extern const std::string null_str;
 
 enum {NONE_CATALOG = 0, TUTORIAL_CATALOG};
 enum {NO_DUEL, RANDOM_DUEL, ALWAYS_DUEL};
@@ -142,6 +144,7 @@ public:
 			if (loc_ != that.loc_) return false;
 			if (traits_ != that.traits_) return false;
 			if (not_recruit_ != that.not_recruit_) return false;
+			if (alias_ != that.alias_) return false;
 			if (mayor_ != that.mayor_) return false;
 			if (service_heros_ != that.service_heros_) return false;
 			if (wander_heros_ != that.wander_heros_) return false;
@@ -157,6 +160,7 @@ public:
 		map_location loc_;
 		std::set<std::string> traits_;
 		std::vector<std::string> not_recruit_;
+		std::string alias_;
 
 		int mayor_;
 		std::set<int> service_heros_;
@@ -356,6 +360,7 @@ public:
 	
 	void clear_except_dirty();
 
+	static std::string state_name(int state);
 	enum {STATE_UNKNOWN, STATE_SERVICE, STATE_WANDER, STATE_ARMY, STATE_RESERVE};
 	class hero_state 
 	{
@@ -434,7 +439,7 @@ public:
 			return null_state;
 		}
 
-	private:
+	public:
 		std::map<int, tstate> states_;
 	};
 	void init_hero_state(hero_map& heros);
@@ -499,5 +504,7 @@ extern bool campaign_can_save(HWND hdlgP, bool save);
 extern void OnEventAddBt(HWND hdlgP, const std::string& name);
 extern void OnEventEditBt(HWND hdlgP);
 extern void OnEventDelBt(HWND hdlgP);
+
+#endif // _ROSE_EDITOR
 
 #endif // __DLGCAMPAIGNPROC_HPP_

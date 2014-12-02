@@ -135,7 +135,7 @@ void tpersonnel::fill_member_table(twindow& window, int cursel)
 		strstr.str("");
 		if (h.utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h.utype_);
-			strstr << help::tintegrate::generate_img(ut->icon()) << "\n";
+			strstr << tintegrate::generate_img(ut->icon()) << "\n";
 		}
 		strstr << h.name();
 		list_item["label"] = strstr.str();
@@ -184,7 +184,7 @@ void tpersonnel::fill_member_table(twindow& window, int cursel)
 		if (h.tactic_ != HEROS_NO_TACTIC) {
 			strstr << unit_types.tactic(h.tactic_).name();
 		} else if (m.base->tactic_ != HEROS_NO_TACTIC) {
-			strstr << help::tintegrate::generate_format(unit_types.tactic(m.base->tactic_).name(), "red");
+			strstr << tintegrate::generate_format(unit_types.tactic(m.base->tactic_).name(), "red");
 		}
 		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("tactic", list_item));
@@ -218,10 +218,10 @@ void tpersonnel::pre_show(CVideo& /*video*/, twindow& window)
 
 	utils::string_map symbols;
 	tlabel* label = find_widget<tlabel>(&window, "remark", false, true);
-	symbols["tower"] = help::tintegrate::generate_format(game_config::tower_fix_heros - 1, "yellow");
-	symbols["rpg"] = help::tintegrate::generate_format(game_config::rpg_fix_members, "yellow");
+	symbols["tower"] = tintegrate::generate_format(game_config::tower_fix_heros - 1, "yellow");
+	symbols["rpg"] = tintegrate::generate_format(game_config::rpg_fix_members, "yellow");
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "green") << " ";
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "green") << " ";
 	strstr << vgettext("wesnoth-lib", "First $tower heros is fixed in tower mode. First $rpg heros can be on stage in RPG mode.", symbols);
 	label->set_label(strstr.str());
 
@@ -231,7 +231,7 @@ void tpersonnel::pre_show(CVideo& /*video*/, twindow& window)
 		&tpersonnel::up
 		, this
 		, boost::ref(window)));
-	find_widget<tbutton>(&window, "up", false).set_label(help::tintegrate::generate_img("misc/increase.png"));
+	find_widget<tbutton>(&window, "up", false).set_label(tintegrate::generate_img("misc/increase.png"));
 	
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "down", false)
@@ -239,7 +239,7 @@ void tpersonnel::pre_show(CVideo& /*video*/, twindow& window)
 		&tpersonnel::down
 		, this
 		, boost::ref(window)));
-	find_widget<tbutton>(&window, "down", false).set_label(help::tintegrate::generate_img("misc/decrease.png"));
+	find_widget<tbutton>(&window, "down", false).set_label(tintegrate::generate_img("misc/decrease.png"));
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "save", false)
@@ -248,7 +248,7 @@ void tpersonnel::pre_show(CVideo& /*video*/, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("OK"), "blue");
+	strstr << tintegrate::generate_format(_("OK"), "blue");
 	find_widget<tbutton>(&window, "save", false).set_label(strstr.str());
 
 	set_3button_active(window);

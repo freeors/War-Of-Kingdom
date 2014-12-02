@@ -39,7 +39,7 @@ static lg::log_domain log_engine("engine");
 #define LOG_NG LOG_STREAM(info, log_engine)
 
 // TODO: remove when completed
-#include "stub.hpp"
+// #include "stub.hpp"
 
 namespace {
 
@@ -92,7 +92,6 @@ void show_story(display &disp, const std::string &scenario_name,
 
 void show_endscreen(display& /*disp*/, const t_string& /*text*/, unsigned int /*duration*/)
 {
-	STUB();
 	LOG_NG << "show_endscreen() invoked...\n";
 
 	config story_cfg;

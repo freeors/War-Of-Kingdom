@@ -45,7 +45,6 @@
 #include "gui/dialogs/exile.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/give.hpp"
-#include "help.hpp"
 #include <preferences.hpp>
 #include "multiplayer.hpp"
 #include <time.h>
@@ -59,6 +58,21 @@ const char* interiors_png[] = {
 	"misc/economy.png",
 	"misc/science.png"
 };
+
+std::string hero_level_str(int level)
+{
+	std::stringstream ss;
+
+	if (level / game_config::levels_per_rank >= 2) {
+		ss << _("rank^Gold");
+	} else if (level / game_config::levels_per_rank >= 1) {
+		ss << _("rank^Silver");
+	} else {
+		ss << _("rank^Copper");
+	}
+	ss << "(" << (level % game_config::levels_per_rank + 1) << ")";
+	return ss.str();
+}
 
 namespace gui2 {
 
@@ -121,6 +135,8 @@ tgroup2::tgroup2(game_display& disp, hero_map& heros, const config& game_config,
 {
 }
 
+static const std::string tag_color = "blue";
+
 void tgroup2::sheet_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
@@ -175,7 +191,7 @@ void tgroup2::update_map(twindow& window)
 
 	tminimap& minimap = find_widget<tminimap>(&window, "minimap", false);
 	minimap.set_config(&game_config_);
-	minimap.set_map_data(map_data_);
+	minimap.set_map_data(tminimap::TILE_MAP, map_data_);
 }
 
 void tgroup2::player_city(twindow& window)
@@ -241,34 +257,34 @@ void tgroup2::refresh_title_flag(twindow& window) const
 
 	label = find_widget<tlabel>(&window, "flag", false, true);
 	strstr.str("");
-	strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << group_.coin();
-	strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << group_.score();
+	strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << group_.coin();
+	strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << group_.score();
 
-	strstr << "    " << help::tintegrate::generate_img("misc/salary.png~SCALE(24, 24)");
+	strstr << "    " << tintegrate::generate_img("misc/salary.png~SCALE(24, 24)");
 	int min_heros = 12;
 	int increase_per_level = 2;
 	int salary = 0;
 	if ((int)group_.part_members(heros_, false).size() > min_heros + group_.noble() * increase_per_level) {
 		salary = game_config::salary_score * (group_.part_members(heros_, false).size() - min_heros - group_.noble() * increase_per_level);
 	}
-	strstr << help::tintegrate::generate_format(salary, "red");
+	strstr << tintegrate::generate_format(salary, "red");
 	
 	std::vector<int> increase = group_.interior_increase_from_layout_str();
 	int develop = 0;
 	for (std::vector<int>::const_iterator it = increase.begin(); it != increase.end(); ++ it) {
 		develop += *it * game_config::develop_score;
 	}
-	strstr << "  " << help::tintegrate::generate_img("misc/interior.png~SCALE(24, 24)");
-	strstr << help::tintegrate::generate_format(develop, "red");
+	strstr << "  " << tintegrate::generate_img("misc/interior.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_format(develop, "red");
 
 	// tax
-	strstr << "  " << help::tintegrate::generate_img("misc/tax.png~SCALE(24, 24)");
-	strstr << help::tintegrate::generate_format(group_.tax(), "green");
+	strstr << "  " << tintegrate::generate_img("misc/tax.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_format(group_.tax(), "green");
 
 	// end
 	strstr << ")";
 	if (browse_) {
-		strstr << "  (" << help::tintegrate::generate_format(_("Browse"), "red") << ")";
+		strstr << "  (" << tintegrate::generate_format(_("Browse"), "red") << ")";
 	}
 	label->set_label(strstr.str());
 
@@ -307,19 +323,19 @@ void tgroup2::pre_show(CVideo& /*video*/, twindow& window)
 
 	toggle = find_widget<ttoggle_button>(&window, "fix", false, true);
 	strstr.str("");
-	strstr << _("member^Fix") << "(" << help::tintegrate::generate_format(group_.part_members(heros_, false).size(), "green") << ")";
+	strstr << _("member^Fix") << "(" << tintegrate::generate_format(group_.part_members(heros_, false).size(), tag_color) << ")";
 	toggle->set_label(strstr.str());
 	sheet_.insert(std::make_pair((int)FIX_PAGE, toggle));
 
 	toggle = find_widget<ttoggle_button>(&window, "tag_employ", false, true);
 	strstr.str("");
-	strstr << _("Employ") << "(" << help::tintegrate::generate_format(group_.part_members(heros_, true).size(), "green") << ")";
+	strstr << _("Employ") << "(" << tintegrate::generate_format(group_.part_members(heros_, true).size(), tag_color) << ")";
 	toggle->set_label(strstr.str());
 	sheet_.insert(std::make_pair((int)ROAM_PAGE, toggle));
 
 	toggle = find_widget<ttoggle_button>(&window, "associate", false, true);
 	strstr.str("");
-	strstr << _("Associate") << "(" << help::tintegrate::generate_format(group_.associates().size(), "green") << ")";
+	strstr << _("Associate") << "(" << tintegrate::generate_format(group_.associates().size(), tag_color) << ")";
 	toggle->set_label(strstr.str());
 	sheet_.insert(std::make_pair((int)ASSOCIATE_PAGE, toggle));
 
@@ -341,7 +357,7 @@ bool tgroup2::text_box_int(twindow& window, const std::string& id, const std::st
 	if (value < min || value > max) {
 		std::stringstream err;
 		utils::string_map symbols;
-		symbols["key"] = help::tintegrate::generate_format(name);
+		symbols["key"] = tintegrate::generate_format(name);
 		err << min;
 		symbols["min"] = err.str();
 		err.str("");
@@ -372,11 +388,11 @@ void tgroup2::exchange(twindow& window, bool score_2_coin)
 		inc_coin = inc_score / game_config::coin_score_rate;
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << help::tintegrate::generate_format(inc_score, "yellow");
+		strstr << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << tintegrate::generate_format(inc_score, "yellow");
 		symbols["from"] = strstr.str();
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << help::tintegrate::generate_format(inc_coin, "green");
+		strstr << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << tintegrate::generate_format(inc_coin, "green");
 		symbols["to"] = strstr.str();
 
 	} else {
@@ -386,11 +402,11 @@ void tgroup2::exchange(twindow& window, bool score_2_coin)
 		inc_score = inc_coin * game_config::coin_score_rate;
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << help::tintegrate::generate_format(inc_coin, "yellow");
+		strstr << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << tintegrate::generate_format(inc_coin, "yellow");
 		symbols["from"] = strstr.str();
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << help::tintegrate::generate_format(inc_score, "green");
+		strstr << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << tintegrate::generate_format(inc_score, "green");
 		symbols["to"] = strstr.str();
 	}
 	std::string message = vgettext("wesnoth-lib", "Do you want to exchange $from to $to?", symbols);
@@ -407,7 +423,7 @@ void tgroup2::exchange(twindow& window, bool score_2_coin)
 
 	refresh_title_flag(window);
 
-	symbols["do"] = help::tintegrate::generate_format(_("score^Exchange"));
+	symbols["do"] = tintegrate::generate_format(_("score^Exchange"));
 	message = vgettext("wesnoth-lib", "$do successfully!", symbols);
 	gui2::show_message(disp_.video(), "", message);
 }
@@ -497,9 +513,9 @@ void tgroup2::fill_2_least(twindow& window)
 	if (coin_income || score_income) {
 		utils::string_map symbols;
 		std::string message;
-		symbols["coin"] = help::tintegrate::generate_format(coin_income, "green");
-		symbols["score"] = help::tintegrate::generate_format(score_income, "green");
-		symbols["count"] = help::tintegrate::generate_format(count, "yellow");
+		symbols["coin"] = tintegrate::generate_format(coin_income, "green");
+		symbols["score"] = tintegrate::generate_format(score_income, "green");
+		symbols["count"] = tintegrate::generate_format(count, "yellow");
 		message = vgettext("wesnoth-lib", "May get $coin coin and $score score, do you want to redraw $count hero?", symbols);
 		int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
 		if (res == gui2::twindow::CANCEL) {
@@ -526,8 +542,8 @@ void tgroup2::draw(twindow& window)
 	utils::string_map symbols;
 
 	if (sum_score(group.coin(), group.score()) < game_config::score_used_draw) {
-		symbols["score"] = help::tintegrate::generate_format(game_config::score_used_draw, "green");
-		symbols["do"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "group^Draw"), "yellow");
+		symbols["score"] = tintegrate::generate_format(game_config::score_used_draw, "green");
+		symbols["do"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "group^Draw"), "yellow");
 		std::string message = vgettext("wesnoth-lib", "Repertory is less than $score score, cannot $do.", symbols);
 		gui2::show_message(disp_.video(), "", message);
 		return;
@@ -535,8 +551,8 @@ void tgroup2::draw(twindow& window)
 	if (current_page_ != FIX_PAGE) {
 		return;
 	}
-	symbols["score"] = help::tintegrate::generate_format(game_config::score_used_draw, "red");
-	symbols["do"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "group^Draw"), "yellow");
+	symbols["score"] = tintegrate::generate_format(game_config::score_used_draw, "red");
+	symbols["do"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "group^Draw"), "yellow");
 	std::string message = vgettext("wesnoth-lib", "Do you want to spend $score score to $do?", symbols);
 	int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
 	if (res == gui2::twindow::CANCEL) {
@@ -553,7 +569,7 @@ void tgroup2::draw(twindow& window)
 void tgroup2::employ_employee(twindow& window)
 {
 	http::temployee& e = employees_.find(selected_number_)->second;
-	bool employ = e.uid == http::INVALID_UID;
+	bool employ = e.uid == HTTP_INVALID_UID;
 	hero& h = heros_[selected_number_];
 
 	std::map<int, http::temployee> employees;
@@ -574,34 +590,48 @@ void tgroup2::employ_employee(twindow& window)
 
 void tgroup2::upgrade(twindow& window)
 {
+	hero* upgrade_hero = NULL;
+	std::stringstream upgrade_description;
+	utils::string_map symbols;
+
+
 	if (current_page_ == BASE_PAGE) {
 		if (!group_.upgrade_leader(disp_, heros_)) {
 			return;
 		}
-		refresh_title_flag(window);
-		refresh_leader_noble(window);
+
+		upgrade_hero = &group_.leader();
+		symbols["to"] = unit_types.leader_noble(group_.noble()).name();
+		upgrade_description << vgettext("wesnoth-lib", "Upgrade to $to", symbols);
 
 	} else if (current_page_ == FIX_PAGE) {
-		tlistbox& list = find_widget<tlistbox>(&window, "type_list", false);
-
 		hero& h = heros_[selected_number_];
 		if (!group_.upgrade_member(disp_, heros_, h)) {
 			return;
 		}
-		fill_member_table(window, group_.part_members(heros_, false), list.get_selected_row());
+
+		upgrade_hero = &h;
+		tgroup::tmember& m = group_.member(h);
+		// symbols["to"] = tintegrate::generate_format(hero_level_str(m.level), "yellow");
+		symbols["to"] = hero_level_str(m.level);
+		upgrade_description << vgettext("wesnoth-lib", "Upgrade to $to", symbols);
 
 	} else if (current_page_ == ROAM_PAGE) {
-		tlistbox& list = find_widget<tlistbox>(&window, "type_list", false);
-
 		tgroup::tmember& m = group_.member_from_base(heros_[selected_number_]);
 		std::map<int, http::temployee> employees;
 		if (!group_.upgrade_internal(disp_, heros_, &m, &employees)) {
 			return;
 		}
 		employees_ = employees;
-		fill_employee_table(window, list.get_selected_row());
+
+		upgrade_hero = m.h;
+		symbols["to"] = hero_level_str(m.level);
+		upgrade_description << vgettext("wesnoth-lib", "Upgrade to $to", symbols);
 
 	}
+
+	enable_window_ui(window, false);
+	start_upgrade_anim(*upgrade_hero, upgrade_description.str());
 }
 
 void tgroup2::detail(twindow& window)
@@ -659,11 +689,11 @@ void tgroup2::discard_member(twindow& window)
 
 	utils::string_map symbols;
 	std::stringstream strstr;
-	symbols["name"] = help::tintegrate::generate_format(h.name(), "red");
-	symbols["coin"] = help::tintegrate::generate_format(coin_income, "green");
-	symbols["score"] = help::tintegrate::generate_format(score_income, "green");
+	symbols["name"] = tintegrate::generate_format(h.name(), "red");
+	symbols["coin"] = tintegrate::generate_format(coin_income, "green");
+	symbols["score"] = tintegrate::generate_format(score_income, "green");
 	strstr << vgettext("wesnoth-lib", "May get $coin coin and $score score, do you want to discard $name?", symbols) << "\n\n";
-	symbols["location"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Exile"), "yellow");
+	symbols["location"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "Exile"), "yellow");
 	if ((int)group_.exiles().size() < game_config::max_exile) {
 		strstr << vgettext("wesnoth-lib", "$name will put into $location.", symbols);
 	} else {
@@ -715,7 +745,7 @@ void tgroup2::fill_member_table(twindow& window, const std::vector<tgroup::tmemb
 		strstr.str("");
 		if (h.utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h.utype_);
-			strstr << help::tintegrate::generate_img(ut->icon()) << "\n";
+			strstr << tintegrate::generate_img(ut->icon()) << "\n";
 		}
 		strstr << h.name();
 		list_item["label"] = strstr.str();
@@ -723,22 +753,15 @@ void tgroup2::fill_member_table(twindow& window, const std::vector<tgroup::tmemb
 
 		// level
 		strstr.str("");
-		if (m.level / game_config::levels_per_rank >= 2) {
-			strstr << _("rank^Gold");
-		} else if (m.level / game_config::levels_per_rank >= 1) {
-			strstr << _("rank^Silver");
-		} else {
-			strstr << _("rank^Copper");
-		}
-		strstr << "(" << (m.level % game_config::levels_per_rank + 1) << ")";
+		strstr << hero_level_str(m.level);
 		strstr << "\n";
 		if (m.level < game_config::max_member_level) {
 			const upgrade::trequire& require = upgrade::member_require(m.level);
-			strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << require.coin;
-			strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << require.score << ")";
+			strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << require.coin;
+			strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << require.score << ")";
 		} else {
-			strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << "--";
-			strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << "--" << ")";
+			strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << "--";
+			strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << "--" << ")";
 		}
 
 		list_item["label"] = strstr.str();
@@ -774,7 +797,7 @@ void tgroup2::fill_member_table(twindow& window, const std::vector<tgroup::tmemb
 		if (h.tactic_ != HEROS_NO_TACTIC) {
 			strstr << unit_types.tactic(h.tactic_).name();
 		} else if (m.base->tactic_ != HEROS_NO_TACTIC) {
-			strstr << help::tintegrate::generate_format(unit_types.tactic(m.base->tactic_).name(), "red");
+			strstr << tintegrate::generate_format(unit_types.tactic(m.base->tactic_).name(), "red");
 		}
 		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("tactic", list_item));
@@ -820,10 +843,10 @@ void tgroup2::fill_member_table(twindow& window, const std::vector<tgroup::tmemb
 	button = find_widget<tbutton>(&window, "discard", false, true);
 	strstr.str("");
 	if ((int)list->get_item_count() <= least) {
-		strstr << help::tintegrate::generate_img("misc/refresh.png~SCALE(24, 24)");
-		strstr << help::tintegrate::generate_format(least, "blue");
+		strstr << tintegrate::generate_img("misc/refresh.png~SCALE(24, 24)");
+		strstr << tintegrate::generate_format(least, "blue");
 	} else {
-		strstr << help::tintegrate::generate_format(_("Discard"), "blue");
+		strstr << tintegrate::generate_format(_("Discard"), "blue");
 	}
 	button->set_label(strstr.str());
 	if (browse_) {
@@ -837,7 +860,7 @@ void tgroup2::fill_member_table(twindow& window, const std::vector<tgroup::tmemb
 	strstr.str("");
 	strstr << dsgettext("wesnoth-lib", "Exile");
 	strstr << "(";
-	strstr << help::tintegrate::generate_format(group_.exiles().size(), (int)group_.exiles().size() < game_config::max_exile? "green": "red");
+	strstr << tintegrate::generate_format(group_.exiles().size(), (int)group_.exiles().size() < game_config::max_exile? "green": "red");
 	strstr << ")";
 	button->set_label(strstr.str());
 	button->set_active(!browse_);
@@ -846,7 +869,7 @@ void tgroup2::fill_member_table(twindow& window, const std::vector<tgroup::tmemb
 	strstr.str("");
 	toggle = find_widget<ttoggle_button>(&window, "fix", false, true);
 	strstr << _("member^Fix");
-	strstr << "(" << help::tintegrate::generate_format(list->get_item_count(), "green") << ")";
+	strstr << "(" << tintegrate::generate_format(list->get_item_count(), tag_color) << ")";
 	toggle->set_label(strstr.str());
 }
 
@@ -867,14 +890,14 @@ void tgroup2::refresh_employee_other(twindow& window)
 	bool enable = false;
 	strstr.str("");
 	if (employee_ptr && !employee_ptr->lock) {
-		if (employee_ptr->uid == http::INVALID_UID) {
+		if (employee_ptr->uid == HTTP_INVALID_UID) {
 			if ((int)group_.part_members(heros_, true).size() < game_config::max_employees) {
 				enable = true;
-				strstr << help::tintegrate::generate_format(_("Employ"), "blue");
+				strstr << tintegrate::generate_format(_("Employ"), "blue");
 			}
 		} else if (employee_ptr->uid == group_.leader().uid()) {
 			enable = true;
-			strstr << help::tintegrate::generate_format(_("Fire"), "blue");
+			strstr << tintegrate::generate_format(_("Fire"), "blue");
 		}
 	}
 	button->set_active(enable);
@@ -955,7 +978,7 @@ void tgroup2::fill_employee_table(twindow& window, int cursel)
 		strstr.str("");
 		if (h.utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h.utype_);
-			strstr << help::tintegrate::generate_img(ut->icon()) << "\n";
+			strstr << tintegrate::generate_img(ut->icon()) << "\n";
 		}
 		strstr << h.name();
 		list_item["label"] = strstr.str();
@@ -985,11 +1008,11 @@ void tgroup2::fill_employee_table(twindow& window, int cursel)
 			strstr << "\n";
 			if (level < game_config::max_member_level) {
 				const upgrade::trequire& require = upgrade::member_require(level);
-				strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << require.coin;
-				strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << require.score << ")";
+				strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << require.coin;
+				strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << require.score << ")";
 			} else {
-				strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << "--";
-				strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << "--" << ")";
+				strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << "--";
+				strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << "--" << ")";
 			}
 		}
 
@@ -1000,7 +1023,7 @@ void tgroup2::fill_employee_table(twindow& window, int cursel)
 		strstr.str("");
 		if (employee_ptr) {
 			strstr << employee_ptr->score;
-			strstr << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
+			strstr << tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
 		} else {
 			strstr << "--";
 		}
@@ -1039,7 +1062,7 @@ void tgroup2::fill_employee_table(twindow& window, int cursel)
 			if (member_ptr->h->tactic_ != HEROS_NO_TACTIC) {
 				strstr << unit_types.tactic(member_ptr->h->tactic_).name();
 			} else if (member_ptr->base->tactic_ != HEROS_NO_TACTIC) {
-				strstr << help::tintegrate::generate_format(unit_types.tactic(member_ptr->base->tactic_).name(), "red");
+				strstr << tintegrate::generate_format(unit_types.tactic(member_ptr->base->tactic_).name(), "red");
 			}
 		} else if (h.tactic_ != HEROS_NO_TACTIC) {
 			strstr << unit_types.tactic(h.tactic_).name();
@@ -1051,15 +1074,15 @@ void tgroup2::fill_employee_table(twindow& window, int cursel)
 		strstr.str("");
 		if (employee_ptr) {
 			if (employee_ptr->username == group_.leader().name()) {
-				strstr << help::tintegrate::generate_format(employee_ptr->username, "green");
+				strstr << tintegrate::generate_format(employee_ptr->username, "green");
 			} else {
 				strstr << employee_ptr->username;
 			}
 			if (employee_ptr->lock) {
-				strstr << help::tintegrate::generate_img("misc/lock.png");
+				strstr << tintegrate::generate_img("misc/lock.png");
 			}
 		} else {
-			strstr << help::tintegrate::generate_img("misc/unknown.png");
+			strstr << tintegrate::generate_img("misc/unknown.png");
 		}
 		list_item["label"] = strstr.str();
 		list_item_item.insert(std::make_pair("ownership", list_item));
@@ -1094,7 +1117,7 @@ void tgroup2::fill_employee_table(twindow& window, int cursel)
 	strstr.str("");
 	toggle = find_widget<ttoggle_button>(&window, "tag_employ", false, true);
 	strstr << _("Employ");
-	strstr << "(" << help::tintegrate::generate_format(group_.part_members(heros_, true).size(), "green") << ")";
+	strstr << "(" << tintegrate::generate_format(group_.part_members(heros_, true).size(), tag_color) << ")";
 	toggle->set_label(strstr.str());
 }
 
@@ -1110,7 +1133,7 @@ void tgroup2::fill_other(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("group^Draw"), "blue");
+	strstr << tintegrate::generate_format(_("group^Draw"), "blue");
 	button->set_label(strstr.str());
 	if (current_page_ == ROAM_PAGE) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1124,7 +1147,7 @@ void tgroup2::fill_other(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Upgrade"), "blue");
+	strstr << tintegrate::generate_format(_("Upgrade"), "blue");
 	button->set_label(strstr.str());
 
 	button = find_widget<tbutton>(&window, "discard", false, true);
@@ -1160,15 +1183,15 @@ void tgroup2::refresh_leader_noble(twindow& window)
 	std::stringstream strstr;
 
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Noble"), "green") << _(":") << " ";
+	strstr << tintegrate::generate_format(_("Noble"), "green") << _(":") << " ";
 	strstr << unit_types.leader_noble(noble).name();
 	if (noble < unit_types.max_noble_level()) {
 		const upgrade::trequire& require = upgrade::noble_require(noble);
-		strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << require.coin;
-		strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << require.score << ")";
+		strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << require.coin;
+		strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << require.score << ")";
 	} else {
-		strstr << "(" << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << "--";
-		strstr << "  " << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << "--" << ")";
+		strstr << "(" << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)") << "--";
+		strstr << "  " << tintegrate::generate_img("misc/score.png~SCALE(24, 24)") << "--" << ")";
 	}
 	tcontrol* control = find_widget<tcontrol>(&window, "noble", false, true);
 	control->set_label(strstr.str());
@@ -1209,7 +1232,7 @@ void tgroup2::refresh_button_according_associate(tbutton& button, const tgroup::
 	} else {
 		str = _("Undo");
 	}
-	button.set_label(help::tintegrate::generate_format(str, "blue"));
+	button.set_label(tintegrate::generate_format(str, "blue"));
 	button.set_active(enable);
 }
 
@@ -1279,7 +1302,7 @@ void tgroup2::insert_associate(twindow& window)
 	http::membership m = http::membership_hero(disp_, heros_, false, username);
 	if (m.uid < 0) {
 		utils::string_map symbols;
-		symbols["username"] = help::tintegrate::generate_format(username, "yellow");
+		symbols["username"] = tintegrate::generate_format(username, "yellow");
 		strstr << vgettext("wesnoth-lib", "$username doesn't exist!", symbols);
 		gui2::show_message(disp_.video(), "", strstr.str());
 		return;
@@ -1437,7 +1460,7 @@ void tgroup2::fill_associate_table(twindow& window, int cursel)
 		// name
 		strstr.str("");
 		if (!associate_members_.empty() && associate_members_[index].vip) {
-			strstr << help::tintegrate::generate_img("misc/vip.png~SCALE(32, 32)") << "\n";
+			strstr << tintegrate::generate_img("misc/vip.png~SCALE(32, 32)") << "\n";
 		}
 		strstr << a.username;
 		list_item["label"] = strstr.str();
@@ -1501,12 +1524,12 @@ void tgroup2::fill_associate_table(twindow& window, int cursel)
 		if (a.t) {
 			symbols.clear();
 			if (a.agreement == tgroup::tassociate::requestally) {
-				symbols["time"] = help::tintegrate::generate_format(format_time_date(a.t), "yellow");
+				symbols["time"] = tintegrate::generate_format(format_time_date(a.t), "yellow");
 				strstr << vgettext("wesnoth-lib", "Initiation time: $time", symbols);
 			} else if (a.agreement == tgroup::tassociate::requestterminate) {
 				int terminate_threshold = 2 * 24 * 3600;
 				time_t now = time(NULL);
-				symbols["space"] = help::tintegrate::generate_format(format_time_elapse(a.t + terminate_threshold - now), "yellow");
+				symbols["space"] = tintegrate::generate_format(format_time_elapse(a.t + terminate_threshold - now), "yellow");
 				strstr << vgettext("wesnoth-lib", "Termiante automatically after $space", symbols);
 			} else {
 				strstr << format_time_date(a.t);
@@ -1565,7 +1588,7 @@ void tgroup2::fill_associate_table(twindow& window, int cursel)
 	strstr.str("");
 	ttoggle_button* toggle = find_widget<ttoggle_button>(&window, "associate", false, true);
 	strstr << _("Associate");
-	strstr << "(" << help::tintegrate::generate_format(list->get_item_count(), "green") << ")";
+	strstr << "(" << tintegrate::generate_format(list->get_item_count(), tag_color) << ")";
 	toggle->set_label(strstr.str());
 }
 
@@ -1581,7 +1604,7 @@ void tgroup2::fill_base(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Upgrade"), "blue");
+	strstr << tintegrate::generate_format(_("Upgrade"), "blue");
 	button->set_label(strstr.str());
 	if (browse_) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1602,14 +1625,14 @@ void tgroup2::fill_base(twindow& window)
 
 	tlabel* label = find_widget<tlabel>(&window, "city", false, true);
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("City"), "green") << _(":") << " ";
+	strstr << tintegrate::generate_format(_("City"), "green") << _(":") << " ";
 	strstr << group_.city().name();
 	label->set_label(strstr.str());
 
 	label = find_widget<tlabel>(&window, "exchange", false, true);
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Exchange rate"), "yellow", 18, true) << " ";
-	strstr << help::tintegrate::generate_format(game_config::coin_score_rate, "green", 18, true);
+	strstr << tintegrate::generate_format(_("Exchange rate"), "yellow", 18, true) << " ";
+	strstr << tintegrate::generate_format(game_config::coin_score_rate, "green", 18, true);
 	label->set_label(strstr.str());
 
 	ttext_box* text = find_widget<ttext_box>(&window, "score_from", false, true);
@@ -1617,9 +1640,9 @@ void tgroup2::fill_base(twindow& window)
 
 	label = find_widget<tlabel>(&window, "score_2_coin", false, true);
 	strstr.str("");
-	strstr << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
-	strstr << help::tintegrate::generate_img("misc/to.png");
-	strstr << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_img("misc/to.png");
+	strstr << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)");
 	label->set_label(strstr.str());
 
 	text = find_widget<ttext_box>(&window, "coin_from", false, true);
@@ -1627,9 +1650,9 @@ void tgroup2::fill_base(twindow& window)
 
 	label = find_widget<tlabel>(&window, "coin_2_score", false, true);
 	strstr.str("");
-	strstr << help::tintegrate::generate_img("misc/coin.png~SCALE(24, 24)");
-	strstr << help::tintegrate::generate_img("misc/to.png");
-	strstr << help::tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_img("misc/coin.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_img("misc/to.png");
+	strstr << tintegrate::generate_img("misc/score.png~SCALE(24, 24)");
 	label->set_label(strstr.str());
 
 	button = find_widget<tbutton>(&window, "score_exchange_coin", false, true);
@@ -1641,7 +1664,7 @@ void tgroup2::fill_base(twindow& window)
 		, boost::ref(window)
 		, true));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("score^Exchange"), "blue");
+	strstr << tintegrate::generate_format(_("score^Exchange"), "blue");
 	button->set_label(strstr.str());
 	if (browse_) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1656,7 +1679,7 @@ void tgroup2::fill_base(twindow& window)
 		, boost::ref(window)
 		, false));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("score^Exchange"), "blue");
+	strstr << tintegrate::generate_format(_("score^Exchange"), "blue");
 	button->set_label(strstr.str());
 	if (browse_) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1689,11 +1712,11 @@ void tgroup2::fill_city(twindow& window)
 		if (n) {
 			strstr << "    ";
 		}
-		strstr << help::tintegrate::generate_img(interiors_png[n]);
-		strstr << help::tintegrate::generate_format(group_.interior(n), "green");
+		strstr << tintegrate::generate_img(interiors_png[n]);
+		strstr << tintegrate::generate_format(group_.interior(n), "green");
 		if (increase[n]) {
 			strstr << " +";
-			strstr << help::tintegrate::generate_format(increase[n], increase_color);
+			strstr << tintegrate::generate_format(increase[n], increase_color);
 		}
 	}
 	label->set_label(strstr.str());
@@ -1712,7 +1735,7 @@ void tgroup2::fill_city(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_img("misc/config.png~SCALE(24, 24)");
+	strstr << tintegrate::generate_img("misc/config.png~SCALE(24, 24)");
 	button->set_label(strstr.str());
 	if (browse_) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1739,8 +1762,8 @@ void tgroup2::fill_city(twindow& window)
 
 	label = find_widget<tlabel>(&window, "set_map_tip", false, true);
 	strstr.str("");
-	symbols["layout"] = help::tintegrate::generate_format(_("group^Layout"), "yellow");
-	symbols["save"] = help::tintegrate::generate_format(_("Save Layout"), "yellow");
+	symbols["layout"] = tintegrate::generate_format(_("group^Layout"), "yellow");
+	symbols["save"] = tintegrate::generate_format(_("Save Layout"), "yellow");
 	strstr << vgettext("wesnoth-lib", "1: Select the map want to set.\n2: Play $layout, execute $save.", symbols);
 	label->set_label(strstr.str());	
 
@@ -1761,7 +1784,7 @@ void tgroup2::fill_city(twindow& window)
 	// Standard maps
 	int index = 0;
 	string_map item;
-	item.insert(std::make_pair("label", help::tintegrate::generate_format(_("Using map"), "yellow")));
+	item.insert(std::make_pair("label", tintegrate::generate_format(_("Using map"), "yellow")));
 	list.add_row(item);
 
 	tgrid* grid_ptr = list.get_row_grid(list.get_item_count() - 1);
@@ -1796,8 +1819,8 @@ void tgroup2::fill_employee(twindow& window)
 {
 	std::stringstream strstr;
 	tlabel* label = find_widget<tlabel>(&window, "remark", false, true);
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "red") << " ";
-	strstr << help::tintegrate::generate_format(dsgettext("wesnoth-lib", "If defend city fail, you will lose a employee."), "yellow");
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "red") << " ";
+	strstr << tintegrate::generate_format(dsgettext("wesnoth-lib", "If defend city fail, you will lose a employee."), "yellow");
 	label->set_label(strstr.str());
 
 	fill_employee_table(window, 0);
@@ -1818,7 +1841,7 @@ void tgroup2::fill_employee(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Upgrade"), "blue");
+	strstr << tintegrate::generate_format(_("Upgrade"), "blue");
 	button->set_label(strstr.str());
 
 	button = find_widget<tbutton>(&window, "detail", false, true);
@@ -1845,7 +1868,7 @@ void tgroup2::fill_associate(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Append"), "blue");
+	strstr << tintegrate::generate_format(_("Append"), "blue");
 	button->set_label(strstr.str());
 	if (browse_) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1870,7 +1893,7 @@ void tgroup2::fill_associate(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Refresh"), "blue");
+	strstr << tintegrate::generate_format(_("Refresh"), "blue");
 	button->set_label(strstr.str());
 	if (browse_) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1884,7 +1907,7 @@ void tgroup2::fill_associate(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Remove"), "blue");
+	strstr << tintegrate::generate_format(_("Remove"), "blue");
 	button->set_label(strstr.str());
 	if (browse_) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1909,7 +1932,7 @@ void tgroup2::fill_associate(twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("Detail"), "blue");
+	strstr << tintegrate::generate_format(_("Detail"), "blue");
 	button->set_label(strstr.str());
 	if (browse_) {
 		button->set_visible(twidget::INVISIBLE);
@@ -1952,6 +1975,99 @@ void tgroup2::swap_page(twindow& window, int page, bool swap)
 void tgroup2::set_retval(twindow& window, int retval)
 {
 	window.set_retval(retval);
+}
+
+void tgroup2::enable_window_ui(twindow& window, bool enable)
+{
+	for (std::map<int, ttoggle_button*>::const_iterator it = sheet_.begin(); it != sheet_.end(); ++ it) {
+		ttoggle_button& toggle = *it->second;
+		toggle.set_active(enable);
+	}
+
+	if (current_page_ == BASE_PAGE) {
+		tbutton* button = find_widget<tbutton>(&window, "upgrade", false, true);
+		button->set_active(enable);
+
+		button = find_widget<tbutton>(&window, "personnel", false, true);
+		button->set_active(enable);
+		
+		button = find_widget<tbutton>(&window, "score_exchange_coin", false, true);
+		button->set_active(enable);
+
+		button = find_widget<tbutton>(&window, "coin_exchange_score", false, true);
+		button->set_active(enable);
+
+	} else if (current_page_ == FIX_PAGE) {
+		const std::vector<tgroup::tmember*>& members = group_.part_members(heros_, false);
+		int least = game_config::least_fix_members + game_config::least_roam_members;
+		
+		tlistbox* list = find_widget<tlistbox>(&window, "type_list", false, true);
+		int cursel = list->get_selected_row();
+		tbutton* button = find_widget<tbutton>(&window, "draw", false, true);
+		button->set_active(enable && ((int)list->get_item_count() >= least? true: false));
+
+		button = find_widget<tbutton>(&window, "upgrade", false, true);
+		if (selected_number_ != HEROS_INVALID_NUMBER && members[cursel]->level < game_config::max_member_level) {
+			const upgrade::trequire& require = upgrade::member_require(members.front()->level);
+			button->set_active(enable && sum_score(group_.coin(), group_.score()) >= require.score);
+		} else {
+			button->set_active(false);
+		}
+
+		button = find_widget<tbutton>(&window, "discard", false, true);
+		button->set_active(enable);
+
+		button = find_widget<tbutton>(&window, "detail", false, true);
+		button->set_active(enable && (list->get_item_count()? true: false));
+
+		button = find_widget<tbutton>(&window, "exile", false, true);
+		button->set_active(enable && !browse_);
+
+	} else if (current_page_ == ROAM_PAGE) {
+		tbutton* button = find_widget<tbutton>(&window, "action", false, true);
+		button->set_active(enable);
+
+		button = find_widget<tbutton>(&window, "upgrade", false, true);
+		button->set_active(enable);
+
+		button = find_widget<tbutton>(&window, "detail", false, true);
+		button->set_active(enable);
+	}
+	find_widget<tbutton>(&window, "ok", false, true)->set_active(enable);
+}
+
+void tgroup2::upgrade_anim_finish(animation* anim)
+{
+	twindow& window = *page_panel_->get_window();
+	enable_window_ui(window, true);
+
+	if (current_page_ == BASE_PAGE) {
+		refresh_title_flag(window);
+		refresh_leader_noble(window);
+
+	} else if (current_page_ == FIX_PAGE) {
+		tlistbox& list = find_widget<tlistbox>(&window, "type_list", false);
+		fill_member_table(window, group_.part_members(heros_, false), list.get_selected_row());
+
+	} else if (current_page_ == ROAM_PAGE) {
+		tlistbox& list = find_widget<tlistbox>(&window, "type_list", false);
+		fill_employee_table(window, list.get_selected_row());
+	}
+}
+
+void tgroup2::start_upgrade_anim(hero& h, const std::string& description)
+{
+	float_animation* anim = start_float_anim_th(disp_, area_anim::UPGRADE);
+	anim->set_scale(800, 600, true, false);
+	anim->set_callback_finish(boost::bind(&tgroup2::upgrade_anim_finish, this, _1));
+
+	std::stringstream strstr;
+	anim->replace_image_name("__bg.png", "tactic/bg-single-increase.png");
+	anim->replace_image_name("__id.png", h.image(true));
+	anim->replace_static_text("__formation_name", h.name());
+	anim->replace_static_text("__formation_description", description);
+
+	start_float_anim_bh(*anim);
 }
 
 } // namespace gui2

@@ -929,7 +929,8 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 	if (expediting_ && (selected_hex_ != hex)) {
 		if (clicked_u.valid() && !clicked_u->can_stand(*selected_u) && ((clicked_u->side() != selected_u->side()) || !unit_is_city(&*clicked_u) || (clicked_u->get_location() == expediting_city_->get_location()))) {
 			cancel_recall = true;
-		} else if (selected_u->movement_cost(map_[hex])	== unit_movement_type::UNREACHABLE) {
+		} else if (selected_u && selected_u->movement_cost(map_[hex]) == unit_movement_type::UNREACHABLE) {
+			// during expediting moving left click, selected_u maybe is null.
 			cancel_recall = true;
 		} else if (current_team().shrouded(hex)) {
 			cancel_recall = true;
@@ -1867,7 +1868,7 @@ void mouse_handler::set_building(artifical* bldg)
 
 	std::stringstream strstr, img;
 	img << bldg->type()->image() << "~SCALE(48, 48)";
-	strstr << help::tintegrate::generate_img(img.str());
+	strstr << tintegrate::generate_img(img.str());
 	strstr << "  " << bldg->name() << "\n";
 	strstr << _("Select a grid to build on");
 	gui_->show_tip(strstr.str(), map_location::null_location, true);
@@ -1892,7 +1893,7 @@ void mouse_handler::set_card_playing(team& t, int index)
 
 	std::stringstream strstr, img;
 	img << playing_card_->image() << "~SCALE(32, 32)";
-	strstr << help::tintegrate::generate_img(img.str());
+	strstr << tintegrate::generate_img(img.str());
 	strstr << "  " << playing_card_->name() << "\n";
 	strstr << _("Select a unit to action on");
 	gui_->show_tip(strstr.str(), map_location::null_location, true);
@@ -1943,7 +1944,7 @@ void mouse_handler::set_hero_placing(hero* h)
 	if (placing_hero_) {
 		std::stringstream strstr, img;
 		img << h->image() << "~SCALE(32, 40)";
-		strstr << help::tintegrate::generate_img(img.str());
+		strstr << tintegrate::generate_img(img.str());
 		strstr << "  " << _("Select a grid to place, or a troop to join");
 		gui_->show_tip(strstr.str(), map_location::null_location, true);
 	}
@@ -1962,7 +1963,7 @@ void mouse_handler::set_unit_placing(unit& u)
 	if (placing_unit_) {
 		std::stringstream strstr, img;
 		img << u.master().image() << "~SCALE(32, 40)";
-		strstr << help::tintegrate::generate_img(img.str());
+		strstr << tintegrate::generate_img(img.str());
 		strstr << "  " << _("Select a grid to move at");
 		gui_->show_tip(strstr.str(), map_location::null_location, true);
 	}
@@ -1977,7 +1978,7 @@ void mouse_handler::set_unit_tasking(unit& u)
 	if (tasking_unit_) {
 		std::stringstream strstr, img;
 		img << u.master().image() << "~SCALE(32, 40)";
-		strstr << help::tintegrate::generate_img(img.str());
+		strstr << tintegrate::generate_img(img.str());
 		strstr << "  " << dgettext("wesnoth-lib", "Select a grid to guard at");
 		gui_->show_tip(strstr.str(), map_location::null_location, true);
 	}

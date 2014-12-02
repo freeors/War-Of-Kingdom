@@ -90,7 +90,7 @@ void tplayer_list_side_wait::init(twindow & w)
 }
 
 tmp_side_wait::tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
-			config& gamelist, bool observe)
+			config& gamelist, int game_id, bool observe)
 	: legacy_result_(QUIT)
 	, heros_(heros)
 	, heros_start_(heros_start)
@@ -102,6 +102,7 @@ tmp_side_wait::tmp_side_wait(hero_map& heros, hero_map& heros_start, game_displa
 	, users_()
 	, member_users_()
 	, gamelist_(gamelist)
+	, game_id_(game_id)
 	, observe_(observe)
 	, stop_updates_(false)
 	, player_list_()
@@ -133,37 +134,42 @@ void tmp_side_wait::pre_show(CVideo& /*video*/, twindow& window)
 	tlistbox& list = find_widget<tlistbox>(&window, "sides", false);
 	sides_table_ = &list;
 
+	config response;
+	config& join_cfg = response.add_child("join");
+	join_cfg["id"] = game_id_;
+	join_cfg["observe"] = false;
+	join_cfg["password"] = game_config::checksum;
+	network::send_data(response, 0);
+
 	join_game(window, observe_);
 
 	// Add the map name to the title.
 	strstr.str("");
-	strstr << help::tintegrate::generate_img(unit_types.genus(level_["turn_based"].to_bool()? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
+	strstr << tintegrate::generate_img(unit_types.genus(level_["turn_based"].to_bool()? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
 	strstr << _("Set Side") << ": " << level_["name"].t_str();
 	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
 	label->set_label(strstr.str());
 
 	waiting_->set_label(_("Waiting for game to start..."));
 
-	// Force first update to be directly.
-	lobby_base::network_handler();
-	lobby_update_timer_ = add_timer(game_config::lobby_network_timer
-			, boost::bind(&lobby_base::network_handler, this)
-			, true);
+	join();
 }
 
 void tmp_side_wait::join_game(twindow& window, bool observe)
 {
-	//if we have got valid side data
-	//the first condition is to make sure that we don't have another
-	//WML message with a side-tag in it
+	// if we have got valid side data
+	// the first condition is to make sure that we don't have another
+	// WML message with a side-tag in it
 	while (!level_.has_attribute("version") || !level_.child("side")) {
-		network::connection data_res = dialogs::network_receive_dialog(disp_,
-				_("Getting game data..."), level_);
+		level_.clear();
+
+		network::connection data_res = dialogs::network_receive_dialog(disp_, _("Getting game data..."), level_);
 		if (!data_res) {
 			legacy_result_ = QUIT;
 			window.close();
 			return;
 		}
+
 		mp::check_response(data_res, level_);
 		if (level_.child("leave_game")) {
 			legacy_result_ = QUIT;
@@ -262,6 +268,7 @@ void tmp_side_wait::start_game()
 	 * and new way. (Of course it would be nice to unify the data
 	 * stored.)
 	 */
+	state_.classification().mode = mode_tag::rfind(mode_tag::SCENARIO);
 	level_to_gamestate(level_, replay_data_, state_);
 
 	if (runtime_groups::gs.empty()) {
@@ -278,8 +285,15 @@ void tmp_side_wait::cancel(twindow& window)
 	window.close();
 }
 
-void tmp_side_wait::process_network_data(const config& data, const network::connection sock)
+bool tmp_side_wait::handle(tlobby::ttype type, const config& data)
 {
+	if (type == tlobby::t_disconnected) {
+		legacy_result_ = QUIT;
+		sides_table_->get_window()->set_retval(twindow::CANCEL);
+	}
+	if (type != tlobby::t_data) {
+		return false;
+	}
 	twindow& window = *sides_table_->get_window();
 	
 	if (data["message"] != "") {
@@ -290,7 +304,7 @@ void tmp_side_wait::process_network_data(const config& data, const network::conn
 	if (data["failed"].to_bool()) {
 		legacy_result_ = QUIT;
 		window.close();
-		return;
+		return true;
 	} else if (data.child("stop_updates")) {
 		stop_updates_ = true;
 
@@ -310,24 +324,27 @@ void tmp_side_wait::process_network_data(const config& data, const network::conn
 			runtime_groups::from_mem(heros_, game_config::savegame_cache, len);
 		}
 
-	} else if(data.child("start_game")) {
+	} else if (data.child("start_game")) {
 		// LOG_NW << "received start_game message\n";
 		legacy_result_ = PLAY;
 		window.close();
-		return;
+
 	} else if(data.child("leave_game")) {
 		legacy_result_ = QUIT;
 		window.close();
-		return;
+
 	} else if (const config &c = data.child("scenario_diff")) {
 		// LOG_NW << "received diff for scenario... applying...\n";
 		/** @todo We should catch config::error and then leave the game. */
 		level_.apply_diff(c);
 		generate_menu(window);
-	} else if(data.child("side")) {
+	} else if (data.child("side")) {
 		level_ = data;
 		generate_menu(window);
+	} else {
+		return false;
 	}
+	return true;
 }
 
 void tmp_side_wait::update_playerlist()
@@ -452,8 +469,6 @@ void tmp_side_wait::generate_menu(twindow& window)
 
 void tmp_side_wait::post_show(twindow& window)
 {
-	remove_timer(lobby_update_timer_);
-	lobby_update_timer_ = 0;
 }
 
 }

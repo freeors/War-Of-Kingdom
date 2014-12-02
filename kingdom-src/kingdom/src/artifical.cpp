@@ -18,8 +18,10 @@
 #include "wml_exception.hpp"
 #include "dialogs.hpp"
 #include "gui/dialogs/select_unit.hpp"
+#include "integrate.hpp"
 
 #include <boost/foreach.hpp>
+#include <iomanip>
 
 tartifical_::tartifical_()
 	: police_speed_(100)
@@ -78,6 +80,7 @@ artifical::artifical(game_state& state, const config& cfg) :
 	, police_(game_config::max_police / 2)
 	, soldiers_(0)
 	, not_recruit_()
+	, alias_()
 	, can_recruit_map_()
 	, decree_(NULL)
 	, max_recruit_cost_(-1)
@@ -122,6 +125,7 @@ artifical::artifical(const uint8_t* mem) :
 	, police_(game_config::max_police / 2)
 	, soldiers_(0)
 	, not_recruit_()
+	, alias_()
 	, can_recruit_map_()
 	, decree_(NULL)
 	, max_recruit_cost_(-1)
@@ -168,6 +172,7 @@ artifical::artifical(const artifical& that) :
 	, police_(that.police_)
 	, soldiers_(that.soldiers_)
 	, not_recruit_(that.not_recruit_)
+	, alias_(that.alias_)
 	, can_recruit_map_(that.can_recruit_map_)
 	, decree_(that.decree_)
 	, max_recruit_cost_(that.max_recruit_cost_)
@@ -209,6 +214,7 @@ artifical::artifical(unit_map& units, hero_map& heros, std::vector<team>& teams,
 	, police_(game_config::max_police / 2)
 	, soldiers_(0)
 	, not_recruit_()
+	, alias_()
 	, can_recruit_map_()
 	, decree_(NULL)
 	, max_recruit_cost_(-1)
@@ -228,7 +234,7 @@ artifical::~artifical()
 
 void artifical::read(game_state& state, const config& cfg, bool use_traits)
 {
-	// “未”武将
+	// "service" heros
 	const std::vector<std::string> fresh_heros = utils::split(cfg_["service_heros"]);
 	std::vector<std::string>::const_iterator tmp;
 	for (tmp = fresh_heros.begin(); tmp != fresh_heros.end(); ++ tmp) {
@@ -246,7 +252,7 @@ void artifical::read(game_state& state, const config& cfg, bool use_traits)
 		wander_heros_.back()->city_ = cityno_;
 	}
 
-	// “完”武将(对于完武将,状态(status_)已被设置)
+	// "finish" heros (previouse code has set variable: status_)
 	const std::vector<std::string> finish_heros = utils::split(cfg_["finish_heros"]);
 	for (tmp = finish_heros.begin(); tmp != finish_heros.end(); ++ tmp) {
 		finish_heros_.push_back(&heros_[lexical_cast_default<int>(*tmp)]);
@@ -329,6 +335,11 @@ void artifical::read(game_state& state, const config& cfg, bool use_traits)
 			}
 			not_recruit_.insert(ut);
 		}
+		// alias
+		alias_ = cfg["alias"].t_str();
+		if (!alias_.empty()) {
+			master_->set_name(alias_.str());
+		}
 	}
 
 	// read [unit] to reside troop
@@ -403,6 +414,11 @@ void artifical::write(config& cfg) const
 			str << (*cr)->id();
 		}
 		cfg["not_recruit"] = str.str();
+
+		// alias
+		if (!alias_.empty()) {
+			cfg["alias"] = alias_;
+		}
 	}
 
 	for (std::vector<unit*>::const_iterator it = reside_troops_.begin(); it != reside_troops_.end(); ++ it) {
@@ -499,23 +515,37 @@ void artifical::write(uint8_t* mem) const
 	memcpy(mem + offset, str.str().c_str(), fields->district_.size_);
 	offset += fields->district_.size_;
 
-	str.str("");
 	// recruit
-	for (std::set<const unit_type*>::const_iterator cr = not_recruit_.begin(); cr != not_recruit_.end(); ++cr) {
-		if (cr != not_recruit_.begin()) {
-			str << ",";
+	if (!not_recruit_.empty()) {
+		str.str("");
+		for (std::set<const unit_type*>::const_iterator cr = not_recruit_.begin(); cr != not_recruit_.end(); ++cr) {
+			if (cr != not_recruit_.begin()) {
+				str << ",";
+			}
+			str << (*cr)->id();
 		}
-		str << (*cr)->id();
-	}
-	if (!str.str().empty()) {
-		fields->not_recruit_.offset_ = offset; 
 		fields->not_recruit_.size_ = str.str().length();
 		memcpy(mem + offset, str.str().c_str(), fields->not_recruit_.size_);
 	} else {
-		fields->not_recruit_.offset_ = -1;
 		fields->not_recruit_.size_ = 0;
 	}
+	fields->not_recruit_.offset_ = offset;
 	offset += fields->not_recruit_.size_;
+
+	// alias
+	if (!alias_.empty()) {
+		str.str("");
+		std::string textdomain, msgid;
+		split_t_string(alias_, textdomain, msgid);
+		str << textdomain << ", " << msgid;
+
+		fields->alias_.size_ = str.str().length();
+		memcpy(mem + offset, str.str().c_str(), fields->alias_.size_);
+	} else {
+		fields->alias_.size_ = 0;
+	}
+	fields->alias_.offset_ = offset; 
+	offset += fields->alias_.size_;
 
 	// align 4
 	offset = (offset + 3) & ~3;
@@ -635,14 +665,28 @@ void artifical::read(const uint8_t* mem)
 		}
 	}
 
+	std::vector<std::string> v_str;
 	// recruit
 	not_recruit_.clear();
-	str.assign((const char*)mem + fields->not_recruit_.offset_, fields->not_recruit_.size_);
-	std::vector<std::string> v_str = utils::split(str);
-	for (std::vector<std::string>::const_iterator i = v_str.begin(); i != v_str.end(); ++i) {
-		const unit_type* ut = unit_types.find(*i);
-		VALIDATE(ut, "team::read, unknown not-recruit unit type: " + *i);
-		not_recruit_.insert(ut);
+	if (fields->not_recruit_.size_) {
+		str.assign((const char*)mem + fields->not_recruit_.offset_, fields->not_recruit_.size_);
+		v_str = utils::split(str);
+		for (std::vector<std::string>::const_iterator i = v_str.begin(); i != v_str.end(); ++i) {
+			const unit_type* ut = unit_types.find(*i);
+			VALIDATE(ut, "team::read, unknown not-recruit unit type: " + *i);
+			not_recruit_.insert(ut);
+		}
+	}
+
+	// alias
+	alias_ = null_str;
+	if (fields->alias_.size_) {
+		str.assign((const char*)mem + fields->alias_.offset_, fields->alias_.size_);
+		v_str = utils::split(str);
+		if (v_str.size() == 2) {
+			alias_ = dgettext(v_str[0].c_str(), v_str[1].c_str());
+			master_->set_name(alias_.str());
+		}
 	}
 
 	int offset = fields->reside_troops_.offset_;
@@ -716,7 +760,7 @@ void artifical::set_location(const map_location &loc)
 	
 	const std::set<map_location::DIRECTION>& touch_dirs = unit_type_->touch_dirs();
 	if (!touch_dirs.empty()) {
-		// 补足涉及到格子
+		// fill up and verify touch locations.
 		for (std::set<map_location::DIRECTION>::const_iterator itor = touch_dirs.begin(); itor != touch_dirs.end(); ++ itor) {
 			map_location offset = loc.get_direction(*itor);
 			if (!map_.on_board(offset)) {
@@ -1734,6 +1778,10 @@ void artifical::fresh_into(hero& h)
 	if (h.side_ != side_ - 1 && h.has_nomal_noble()) {
 		teams_[h.side_].appoint_noble(h, HEROS_NO_NOBLE, true);
 	}
+	if (h.city_ != cityno_ && h.official_ == hero_official_mayor) {
+		artifical* from = units_.city_from_cityno(h.city_);
+		from->select_mayor(&hero_invalid);
+	}
 	h.status_ = hero_status_idle;
 	h.city_ = cityno_;
 	h.side_ = side_ - 1;
@@ -2036,6 +2084,16 @@ void place_troop_between_cities(std::vector<team>& teams, unit_map& units, gamem
 	do_direct_expedite(teams, units, to, to.reside_troops().size() - 1, at, false);
 }
 
+bool tow_city_map(const std::vector<team>& teams)
+{
+	size_t cities = 0;
+	for (std::vector<team>::const_iterator it = teams.begin(); it != teams.end(); ++ it) {
+		const team& t = *it;
+		cities += t.holden_cities().size();
+	}
+	return cities <= 2;
+}
+
 float ea_damage_ratio = 0.5;
 
 // fallen
@@ -2127,9 +2185,9 @@ void artifical::fallen(int a_side, unit* attacker)
 		if (join_to_city) {
 			if (current_troop->second().valid()) {
 				strstr.str("");
-				strstr << help::tintegrate::generate_format(current_troop->master().name(), help::tintegrate::hero_color) << ", " << help::tintegrate::generate_format(current_troop->second().name(), help::tintegrate::hero_color);
+				strstr << tintegrate::generate_format(current_troop->master().name(), tintegrate::hero_color) << ", " << tintegrate::generate_format(current_troop->second().name(), tintegrate::hero_color);
 				if (current_troop->third().valid()) {
-					strstr << ", " << help::tintegrate::generate_format(current_troop->third().name(), help::tintegrate::hero_color);
+					strstr << ", " << tintegrate::generate_format(current_troop->third().name(), tintegrate::hero_color);
 				}
 				symbols["first"] = strstr.str();
 				message = vgettext("Find wise leader, $first would like to lead troop join in.", symbols);
@@ -2277,9 +2335,9 @@ void artifical::fallen(int a_side, unit* attacker)
 		if (join_to_city) {
 			if (current_troop->second().valid()) {
 				strstr.str("");
-				strstr << help::tintegrate::generate_format(current_troop->master().name(), help::tintegrate::hero_color) << ", " << help::tintegrate::generate_format(current_troop->second().name(), help::tintegrate::hero_color);
+				strstr << tintegrate::generate_format(current_troop->master().name(), tintegrate::hero_color) << ", " << tintegrate::generate_format(current_troop->second().name(), tintegrate::hero_color);
 				if (current_troop->third().valid()) {
-					strstr << ", " << help::tintegrate::generate_format(current_troop->third().name(), help::tintegrate::hero_color);
+					strstr << ", " << tintegrate::generate_format(current_troop->third().name(), tintegrate::hero_color);
 				}
 				symbols["first"] = strstr.str();
 				message = vgettext("Find wise leader, $first would like to lead troop join in.", symbols);
@@ -2363,8 +2421,8 @@ void artifical::fallen(int a_side, unit* attacker)
 	attacker_team.add_city(this);
 	
 	if (!attacker_team.is_human()) {
-		symbols["first"] = help::tintegrate::generate_format(attacker_team.name(), help::tintegrate::hero_color);
-		symbols["second"] = help::tintegrate::generate_format(name(), help::tintegrate::object_color);
+		symbols["first"] = tintegrate::generate_format(attacker_team.name(), tintegrate::hero_color);
+		symbols["second"] = tintegrate::generate_format(name(), tintegrate::object_color);
 		if (attacker_team.side() != team::empty_side) {
 			game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$first occupy $second.", symbols), game_events::INCIDENT_FALLEN);
 		} else {
@@ -2390,7 +2448,7 @@ void artifical::fallen(int a_side, unit* attacker)
 					defender_team.change_controller(controller_tag::EMPTY);
 				}
 
-				symbols["first"] = help::tintegrate::generate_format(defender_team.name(), help::tintegrate::hero_color);
+				symbols["first"] = tintegrate::generate_format(defender_team.name(), tintegrate::hero_color);
 				game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$first is defeated.", symbols), game_events::INCIDENT_DEFEAT);
 
 			} else if (original_is_capital) {
@@ -2399,7 +2457,8 @@ void artifical::fallen(int a_side, unit* attacker)
 		}
 		
 		change_to_special_unit(disp, a_side, get_random());
-		attacker_team.select_leader_noble(true);
+		bool show_message = !tow_city_map(teams_);
+		attacker_team.select_leader_noble(show_message);
 	}
 
 	// 4. attacker come into city
@@ -2818,12 +2877,12 @@ void show_mayor_message(hero_map& heros, hero& mayor, artifical& city, bool term
 	std::string message;
 
 	int incident = game_events::INCIDENT_APPOINT;
-	symbols["city"] = help::tintegrate::generate_format(city.name(), help::tintegrate::object_color);
+	symbols["city"] = tintegrate::generate_format(city.name(), tintegrate::object_color);
 	if (terminate) {
 		if (&mayor == rpg::h) {
 			message = vgettext("Your official of $city's mayor is terminated.", symbols);
 		} else if (mayor.valid()) {
-			symbols["hero"] = help::tintegrate::generate_format(mayor.name(), help::tintegrate::hero_color);
+			symbols["hero"] = tintegrate::generate_format(mayor.name(), tintegrate::hero_color);
 			message = vgettext("$hero official of $city's mayor is terminated.", symbols);
 		}
 		incident = game_events::INCIDENT_INVALID;
@@ -2831,7 +2890,7 @@ void show_mayor_message(hero_map& heros, hero& mayor, artifical& city, bool term
 		if (&mayor == rpg::h) {
 			message = vgettext("Congratulate! You are appointed $city mayor.", symbols);
 		} else if (mayor.valid()) {
-			symbols["hero"] = help::tintegrate::generate_format(mayor.name(), help::tintegrate::hero_color);
+			symbols["hero"] = tintegrate::generate_format(mayor.name(), tintegrate::hero_color);
 			message = vgettext("Congratulate! $hero is appointed $city mayor.", symbols);
 		}
 		incident = game_events::INCIDENT_APPOINT;

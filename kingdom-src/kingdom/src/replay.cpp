@@ -41,6 +41,7 @@
 #include "filesystem.hpp"
 #include "wml_exception.hpp"
 #include "gui/dialogs/preferences.hpp"
+#include "integrate.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
@@ -4821,7 +4822,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			if (dialog) {
 				utils::string_map symbols;
 				std::stringstream strstr;
-				symbols["first"] = help::tintegrate::generate_format(selected_team.holded_card(selected_team.holded_cards().size() - 1).name(), help::tintegrate::object_color);
+				symbols["first"] = tintegrate::generate_format(selected_team.holded_card(selected_team.holded_cards().size() - 1).name(), tintegrate::object_color);
 				game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("Get card: $first.", symbols), game_events::INCIDENT_CARD);
 			}
 		}
@@ -4922,12 +4923,14 @@ replay_network_sender::replay_network_sender(replay& obj) : obj_(obj), upto_(obj
 
 replay_network_sender::~replay_network_sender()
 {
-	commit_and_sync();
+	if (resources::controller && resources::controller->has_network_player()) {
+		commit_and_sync();
+	}
 }
 
 void replay_network_sender::sync_non_undoable()
 {
-	if (network::nconnections() > 0) {
+	if (network::nconnections() > 0 && resources::controller && resources::controller->has_network_player()) {
 		int cmd_end = obj_.ncommands();
 		if (upto_ >= cmd_end - 1) {
 			return;
@@ -4941,21 +4944,11 @@ void replay_network_sender::sync_non_undoable()
 
 		upto_ = cmd_end - 1;
 	}
-
-/*
-	if (network::nconnections() > 0) {
-		config cfg;
-		const config& data = cfg.add_child("turn",obj_.get_data_range(upto_,obj_.ncommands(), replay::NON_UNDO_DATA));
-		if(data.empty() == false) {
-			network::send_data(cfg, 0, true);
-		}
-	}
-*/
 }
 
 void replay_network_sender::commit_and_sync()
 {
-	if (network::nconnections() > 0) {
+	if (network::nconnections() > 0 && resources::controller && resources::controller->has_network_player()) {
 		config cfg;
 		const config& data = cfg.add_child("turn", obj_.get_data_range(upto_,obj_.ncommands()));
 		if (data.empty() == false) {

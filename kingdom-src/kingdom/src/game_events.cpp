@@ -1474,7 +1474,7 @@ WML_HANDLER_FUNCTION(unit, /*event_info*/, cfg)
 		if (const config::attribute_value *v = parsed_cfg.get("y")) var["y"] = *v;
 		return;
 	}
-	preferences::encountered_units().insert(new_unit.type_id());
+
 	map_location loc = cfg_to_loc(cfg);
 
 	if (loc.x < 0) {
@@ -3306,8 +3306,8 @@ namespace game_events {
 		std::string message;
 		int incident;
 		utils::string_map symbols;
-		symbols["first"] = help::tintegrate::generate_format(h1.name(), help::tintegrate::hero_color);
-		symbols["second"] = help::tintegrate::generate_format(h2.name(), help::tintegrate::hero_color);
+		symbols["first"] = tintegrate::generate_format(h1.name(), tintegrate::hero_color);
+		symbols["second"] = tintegrate::generate_format(h2.name(), tintegrate::hero_color);
 		
 		if (carry_to == hero::FEELING_CONSORT) {
 			if (!h2.is_consort(h1)) {
@@ -3334,7 +3334,7 @@ namespace game_events {
 		}
 	}
 
-	bool ai_relation(hero& h1, hero& h2)
+	bool ai_relation(const hero& h1, const hero& h2)
 	{
 		const std::vector<team>& teams = *resources::teams;
 		unit_map& units = *resources::units;
@@ -3367,8 +3367,8 @@ namespace game_events {
 
 		utils::string_map symbols;
 		std::string str;
-		symbols["first"] = help::tintegrate::generate_format(h1.name(), help::tintegrate::hero_color);
-		symbols["second"] = help::tintegrate::generate_format(h2.name(), help::tintegrate::hero_color);
+		symbols["first"] = tintegrate::generate_format(h1.name(), tintegrate::hero_color);
+		symbols["second"] = tintegrate::generate_format(h2.name(), tintegrate::hero_color);
 		if (carry_to == hero::FEELING_CONSORT) {
 			str = vgettext("$first want to marry with $second, do you agree?", symbols);
 		} else if (carry_to == hero::FEELING_OATH) {

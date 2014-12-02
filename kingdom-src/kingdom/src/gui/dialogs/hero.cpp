@@ -33,8 +33,8 @@
 #include "gui/dialogs/combo_box.hpp"
 #include "preferences_display.hpp"
 #include "hero.hpp"
+#include "unit_types.hpp"
 #include "formula_string_utils.hpp"
-#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -154,9 +154,6 @@ void thero::pre_show(CVideo& video, twindow& window)
 {
 	std::stringstream strstr;
 
-	window.set_enter_disabled(true);
-	window.set_escape_disabled(true);
-
 	tcontrol* control = find_widget<tcontrol>(&window, "portrait", false, true);
 	control->set_label(h_.image(true));
 
@@ -178,7 +175,7 @@ void thero::pre_show(CVideo& video, twindow& window)
 	if (h_.character_ != HEROS_NO_CHARACTER) {
 		label->set_label(unit_types.character(h_.character_).name());
 	} else if (base_ && base_->character_ != HEROS_NO_CHARACTER) {
-		label->set_label(help::tintegrate::generate_format(unit_types.character(base_->character_).name(), "red"));
+		label->set_label(tintegrate::generate_format(unit_types.character(base_->character_).name(), "red"));
 	} else {
 		label->set_label("      ");
 	}
@@ -237,7 +234,7 @@ void thero::fill_base(twindow& window)
 	if (h_.tactic_ != HEROS_NO_TACTIC) {
 		label->set_label(unit_types.tactic(h_.tactic_).name());
 	} else if (base_ && base_->tactic_ != HEROS_NO_TACTIC) {
-		label->set_label(help::tintegrate::generate_format(unit_types.tactic(base_->tactic_).name(), "red"));
+		label->set_label(tintegrate::generate_format(unit_types.tactic(base_->tactic_).name(), "red"));
 	} else {
 		label->set_label(" ");
 	}

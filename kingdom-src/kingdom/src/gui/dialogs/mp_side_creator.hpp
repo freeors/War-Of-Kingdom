@@ -46,7 +46,7 @@ public:
 	tsub_player_list active_game;
 };
 
-class tmp_side_creator : public tdialog, public lobby_base
+class tmp_side_creator : public tdialog, public lobby_base, public tlobby::thandler
 {
 public:
 	class side 
@@ -262,7 +262,7 @@ private:
 	/**
 	 * Network polling callback
 	 */
-	void process_network_data(const config& data, const network::connection sock);
+	bool handle(tlobby::ttype type, const config& data);
 	void process_network_error(network::error& error);
 
 	const tgroup& saved_allow_username(const std::string& username);

@@ -36,7 +36,7 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/hero.hpp"
-#include "help.hpp"
+#include "integrate.hpp"
 
 #include <boost/bind.hpp>
 
@@ -161,7 +161,7 @@ void temploy::pre_show(CVideo& /*video*/, twindow& window)
 		strstr.str("");
 		if (h.utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h.utype_);
-			strstr << help::tintegrate::generate_img(ut->icon()) << "\n";
+			strstr << tintegrate::generate_img(ut->icon()) << "\n";
 		}
 		strstr << h.name();
 		list_item["label"] = strstr.str();

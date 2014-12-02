@@ -17,7 +17,7 @@
 #ifndef AI_DEFAULT_AI_HPP_INCLUDED
 #define AI_DEFAULT_AI_HPP_INCLUDED
 
-#include "../../global.hpp"
+#include "global.hpp"
 
 #include "attack.hpp"
 

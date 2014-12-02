@@ -30,11 +30,11 @@
 #include "gui/widgets/text_box.hpp"
 #include "gui/widgets/window.hpp"
 #include "preferences_display.hpp"
-#include "help.hpp"
 #include "version.hpp"
 #include "multiplayer.hpp"
 #include <time.h>
 #include "unit_display.hpp"
+#include "sound.hpp"
 
 #include <boost/bind.hpp>
 
@@ -117,26 +117,13 @@ ttitle_screen::ttitle_screen(game_display& disp, hero_map& heros, hero& player_h
 	, heros_(heros)
 	, player_hero_(player_hero)
 	, title_screen_anim_id_(-1)
+	, window_(NULL)
 {
-/*
-	if (!game_display::get_singleton()) {
-		game_display::set_singleton(&disp);
-	}
-*/
-	tpoint standard(1600, 900);
-	outer_anim::reset(disp);
-	outer_anim::zoom = std::make_pair(1.0 * disp.w() / standard.x, 1.0 * disp.h() / standard.y);
 }
 
 ttitle_screen::~ttitle_screen()
 {
-/*
-	if (title_screen_anim_id_ >= 0) {
-		disp_.erase_screen_anim(title_screen_anim_id_);
-	}
-*/
-	std::map<int, unit_animation>& screen_anims = disp_.screen_anims();
-	screen_anims.clear();
+	disp_.clear_area_anims();
 }
 
 void ttitle_screen::post_build(CVideo& video, twindow& window)
@@ -164,9 +151,10 @@ static int nb_items = sizeof(menu_items) / sizeof(menu_items[0]);
 
 void ttitle_screen::pre_show(CVideo& video, twindow& window)
 {
+	window_ = &window;
+
 	set_restore(false);
 	window.set_click_dismiss(false);
-	window.set_enter_disabled(true);
 	window.set_escape_disabled(true);
 
 	std::stringstream strstr;
@@ -174,18 +162,18 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 
 	strstr.str("");
 	tlabel* label = find_widget<tlabel>(&window, "coin", true, true);
-	strstr << help::tintegrate::generate_format(group.coin(), color, 17);
+	strstr << tintegrate::generate_format(group.coin(), color, 17);
 	label->set_label(strstr.str());
 
 	strstr.str("");
 	label = find_widget<tlabel>(&window, "score", true, true);
-	strstr << help::tintegrate::generate_format(group.score(), color, 17);
+	strstr << tintegrate::generate_format(group.score(), color, 17);
 	label->set_label(strstr.str());
 
 	strstr.str("");
 	label = find_widget<tlabel>(&window, "signin_data", true, true);
 	if (!game_config::local_only) {
-		strstr << help::tintegrate::generate_format(group.signin().continue_days, "green", 17) << "/";
+		strstr << tintegrate::generate_format(group.signin().continue_days, "green", 17) << "/";
 		if (!group.signin().break_days) {
 			color = "green";
 		} else if (group.signin().break_days < game_config::max_breaks) {
@@ -193,9 +181,9 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 		} else {
 			color = "red";
 		}
-		strstr << help::tintegrate::generate_format(group.signin().break_days, color, 17);
+		strstr << tintegrate::generate_format(group.signin().break_days, color, 17);
 	} else {
-		strstr << help::tintegrate::generate_format("---/-", "white", 17);
+		strstr << tintegrate::generate_format("---/-", "white", 17);
 	}
 	label->set_label(strstr.str());
 
@@ -207,12 +195,12 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	// Set the version number
 	control = find_widget<tcontrol>(&window, "revision_number", false, false);
 	if (control) {
-		control->set_label(_("V") + game_config::revision);
-		// control->set_label(_("v") + game_config::revision + "-alpha");
-		// control->set_label(_("v") + game_config::revision + "-beta");
-		// control->set_label(_("v") + game_config::revision + "-beta3");
+		control->set_label(_("V") + game_config::version);
+		// control->set_label(_("V") + game_config::version + "-alpha");
+		// control->set_label(_("v") + game_config::version + "-beta");
+		// control->set_label(_("v") + game_config::version + "-beta3");
 	}
-	window.canvas()[0].set_variable("revision_number", variant(_("Version") + std::string(" ") + game_config::revision));
+	window.canvas()[0].set_variable("revision_number", variant(_("Version") + std::string(" ") + game_config::version));
 
 	if (!game_config::images::game_title.empty()) {
 		window.canvas()[0].set_variable("background_image",	variant(game_config::images::game_title));
@@ -221,7 +209,7 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	/***** Set the logo *****/
 	tcontrol* logo = find_widget<tcontrol>(&window, "logo", false, false);
 	if (logo) {
-		logo->set_label("misc/logo.png");
+		logo->set_label(game_config::logo_png);
 	}
 
 	label = find_widget<tlabel>(&window, "player_name", false, true);
@@ -244,14 +232,12 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 				str = std::string("icons/") + "signin" + ".png";
 			}
 
-		} else if (!strcmp(menu_items[item], "message")) {
-			if (group.message_count()) {
-				str = std::string("icons/") + "message-new" + ".png";
-			} else {
-				str = std::string("icons/") + "message" + ".png";
-			}
-
 		} else {
+			if (!strcmp(menu_items[item], "message")) {
+				if (group.message_count()) {
+					b->set_label("misc/red-dot12.png");
+				}
+			}
 			str = std::string("icons/") + menu_items[item] + ".png";
 		}
 
@@ -328,11 +314,28 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 				, retval));
 	}
 
+	join();
+
 	title_screen_anim_id_ = unit_display::start_title_screen_anim();
 }
 
 void ttitle_screen::post_show(twindow& window)
 {
+}
+
+bool ttitle_screen::handle(tlobby::ttype type, const config& data)
+{
+	if (type != tlobby::t_data) {
+		return false;
+	}
+	if (const config& c = data.child("whisper")) {
+		tbutton* b = find_widget<tbutton>(window_, "message", false, false);
+		if (b->label().empty()) {
+			b->set_label("misc/red-dot12.png");
+		}
+		sound::play_UI_sound(game_config::sounds::receive_message);
+	}
+	return false;
 }
 
 void ttitle_screen::employee_erase() const

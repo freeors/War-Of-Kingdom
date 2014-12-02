@@ -20,7 +20,7 @@
 #include "mouse_action.hpp"
 
 #include "../construct_dialog.hpp"
-#include "../gettext.hpp"
+#include "gettext.hpp"
 
 
 namespace editor {

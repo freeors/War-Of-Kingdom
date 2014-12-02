@@ -97,7 +97,7 @@ static void move_unit_between(const map_location& a, const map_location& b, unit
 	unit_animator animator;
 
 	animator.replace_anim_if_invalid(&temp_unit,"movement",a,b,step_num,
-			false,false,"",0,unit_animation::INVALID,NULL,NULL,step_left);
+			false, false, "", 0, unit_animation::INVALID, NULL, null_str, step_left);
 
 	// animator.add_animation(&temp_unit, "pre_movement", a, b);
 
@@ -260,6 +260,7 @@ void formation_anim_lock::flush()
 		size_t index = 0;
 		for (std::vector<unit_animator::anim_elem>::iterator it = animated_units.begin(); it != animated_units.end(); ++ it, index ++) {
 			unit_animator::anim_elem& anim = *it;
+
 			if (std::find(defender_.begin(), defender_.end(), anim.my_unit) != defender_.end()) {
 				std::map<const unit*, unit_animator::anim_elem*>::const_iterator find = defender_pos.find(anim.my_unit);
 				if (find != defender_pos.end()) {
@@ -453,8 +454,8 @@ void unit_draw_weapon(const map_location& loc, unit& attacker,
 	rect_of_hexes& draw_area = disp->draw_area();
 	if (force_scroll || point_in_rect_of_hexes(loc.x, loc.y, draw_area) || point_in_rect_of_hexes(defender_loc.x, defender_loc.y, draw_area)) {
 		unit_animator animator;
-		animator.add_animation(&attacker,"draw_weapon",loc,defender_loc,0,false,false,"",0,unit_animation::HIT,attack,secondary_attack,0);
-		animator.add_animation(defender,"draw_weapon",defender_loc,loc,0,false,false,"",0,unit_animation::MISS,secondary_attack,attack,0);
+		animator.add_animation(&attacker,"draw_weapon",loc,defender_loc,0,false,false,"",0,unit_animation::HIT,attack);
+		animator.add_animation(defender,"draw_weapon",defender_loc,loc,0,false,false,"",0,unit_animation::MISS,secondary_attack);
 		animator.start_animations();
 		animator.wait_for_end();
 	}
@@ -473,10 +474,10 @@ void unit_sheath_weapon(const map_location& primary_loc, unit* primary_unit,
 	if (force_scroll || point_in_rect_of_hexes(primary_loc.x, primary_loc.y, draw_area) || point_in_rect_of_hexes(secondary_loc.x, secondary_loc.y, draw_area)) {
 		unit_animator animator;
 		if(primary_unit) {
-			animator.add_animation(primary_unit,"sheath_weapon",primary_loc,secondary_loc,0,false,false,"",0,unit_animation::INVALID,primary_attack,secondary_attack,0);
+			animator.add_animation(primary_unit,"sheath_weapon",primary_loc,secondary_loc,0,false,false,"",0,unit_animation::INVALID,primary_attack);
 		}
 		if(secondary_unit) {
-			animator.add_animation(secondary_unit,"sheath_weapon",secondary_loc,primary_loc,0,false,false,"",0,unit_animation::INVALID,secondary_attack,primary_attack,0);
+			animator.add_animation(secondary_unit,"sheath_weapon",secondary_loc,primary_loc,0,false,false,"",0,unit_animation::INVALID,secondary_attack);
 		}
 
 		if(primary_unit || secondary_unit) {
@@ -495,19 +496,19 @@ void unit_sheath_weapon(const map_location& primary_loc, unit* primary_unit,
 
 void city_die_mh(game_display& disp, unit& loser, unit_animator& animator)
 {
-	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::HSCROLL_TEXT)) {
-		int id = disp.insert_screen_anim(*start_tpl);
-		unit_animation& screen_anim = disp.screen_anim(id);
+	if (const animation* tpl = area_anim::anim(area_anim::HSCROLL_TEXT)) {
+		int id = disp.insert_area_anim(*tpl);
+		animation& anim = disp.area_anim(id);
 
 		// std::stringstream strstr;
 		utils::string_map symbols;
 
-		// symbols["city"] = help::tintegrate::generate_format(loser.name(), "green");
+		// symbols["city"] = tintegrate::generate_format(loser.name(), "green");
 		symbols["city"] = loser.name();
-		screen_anim.replace_static_text("__text", vgettext("wesnoth-lib", "Capture $city", symbols));
+		anim.replace_static_text("__text", vgettext("wesnoth-lib", "Capture $city", symbols));
 
 		new_animation_frame();
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 
 		animator.start_animations();
 		// wait_until
@@ -515,10 +516,10 @@ void city_die_mh(game_display& disp, unit& loser, unit_animator& animator)
 		while (!finished) {
 			resources::controller->play_slice(false);
 			disp.delay(10);
-			finished = screen_anim.animation_finished_potential();
+			finished = anim.animation_finished_potential();
 			finished &= animator.would_end();
 		}
-		disp.erase_screen_anim(id);
+		disp.erase_area_anim(id);
 	}
 }
 
@@ -536,12 +537,12 @@ void unit_die(const map_location& loc, unit& loser,
 	if (force_scroll || point_in_rect_of_hexes(loser.get_location().x, loser.get_location().y, draw_area)) {
 		unit_animator animator;
 		// hide the hp/xp bars of the loser (useless and prevent bars around an erased unit)
-		animator.add_animation(&loser,"death",loc,winner_loc,0,false,false,"",0,unit_animation::KILL,attack,secondary_attack,0);
+		animator.add_animation(&loser,"death",loc,winner_loc,0,false,false,"",0,unit_animation::KILL,attack);
 
 		if (!loser.is_city()) {
 			// but show the bars of the winner (avoid blinking and show its xp gain)
 			animator.add_animation(winner,"victory",winner_loc,loc,0,true,false,"",0,
-					unit_animation::KILL,secondary_attack,attack,0);
+					unit_animation::KILL,secondary_attack);
 			animator.start_animations();
 			animator.wait_for_end();
 		} else {
@@ -635,6 +636,27 @@ public:
 private:
 	unit& u_;
 	int bit_;
+};
+
+class release_unit_animation_lock
+{
+public:
+	release_unit_animation_lock()
+		: anims_()
+	{}
+	~release_unit_animation_lock()
+	{
+		for (std::vector<const unit_animation*>::const_iterator it = anims_.begin(); it != anims_.end(); ++ it) {
+			delete *it;
+		}
+	}
+	void insert(const unit_animation* anim)
+	{
+		anims_.push_back(anim);
+	}
+
+private:
+	std::vector<const unit_animation*> anims_;
 };
 
 // 1. b_vec, damagc_vec and hit_text_vec must be same size.
@@ -784,7 +806,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 		}
 		animator->add_animation(&attacker, "attack", a,
 			def_ptr_vec[0]->get_location(), damage_vec[0], true, false, text_2,
-			display::rgb(0, 255, 0), hit_type_vec[0], attack, secondary_attack,
+			display::rgb(0, 255, 0), hit_type_vec[0], attack, null_str,
 			swing);
 		animated_units.insert(&attacker);
 
@@ -793,7 +815,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 		for (size_t i = 0; i < def_size; i ++) {
 			const unit_animation* defender_anim = def_ptr_vec[i]->choose_animation(*disp,
 				def_ptr_vec[i]->get_location(), "defend", a, damage_vec[0],
-				hit_type_vec[i], i == 0? attack: NULL, i == 0? secondary_attack: NULL, swing);
+				hit_type_vec[i], secondary_attack, attack? attack->type(): null_str, swing);
 			animator->add_animation(def_ptr_vec[i], defender_anim, def_ptr_vec[i]->get_location(),
 				true, false, text_vec[i], display::rgb(255, 0, 0));
 			defender_anim_vec.push_back(defender_anim);
@@ -807,10 +829,12 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 			if (find != def_ptr_vec.end()) {
 				text = text_vec[std::distance(def_ptr_vec.begin(), find)];
 			}
-			const unit_animation* heal_anim = unit_types.global_anim(global_anim_tag::FORMATION_DEFEND);
-			animator->add_animation(defender_formation.u_, heal_anim, defender_formation.u_->get_location(), 
-				!text.empty(), false, text, display::rgb(255, 0, 0));
-			animated_units.insert(defender_formation.u_);
+			const unit_animation* heal_anim = unit_animation::share_anim(area_anim::FORMATION_DEFEND);
+			if (heal_anim) {
+				animator->add_animation(defender_formation.u_, heal_anim, defender_formation.u_->get_location(), 
+					!text.empty(), false, text, display::rgb(255, 0, 0));
+				animated_units.insert(defender_formation.u_);
+			}
 		}
 
 		for (std::vector<std::pair<const config *, unit *> >::iterator itor = leaders.cfgs.begin(); itor != leaders.cfgs.end(); ++itor) {
@@ -823,7 +847,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 			leader->set_facing(leader->get_location().get_relative_dir(a));
 			animator->add_animation(leader, "leading", leader->get_location(),
 				a, damage_vec[0], true, false, "", 0,
-				hit_type_vec[0], attack, secondary_attack, swing);
+				hit_type_vec[0], attack, null_str, swing);
 
 			animated_units.insert(leader);
 		}
@@ -839,7 +863,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 			helper->set_facing(helper->get_location().get_relative_dir(b_vec[mapped_defend_index]));
 			animator->add_animation(helper, "resistance", helper->get_location(),
 				def_ptr_vec[mapped_defend_index]->get_location(), damage_vec[mapped_defend_index], true, false, "", 0,
-				hit_type_vec[mapped_defend_index], attack, secondary_attack, swing);
+				hit_type_vec[mapped_defend_index], attack, null_str, swing);
 			animated_units.insert(helper);
 		}
 		for (std::vector<std::pair<const config *, unit *> >::iterator itor = encouragers.cfgs.begin(); itor != encouragers.cfgs.end(); ++itor) {
@@ -852,7 +876,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 			encourager->set_facing(encourager->get_location().get_relative_dir(a));
 			animator->add_animation(encourager, "leading", encourager->get_location(),
 				a, damage_vec[0], true, false, "", 0,
-				hit_type_vec[0], attack, secondary_attack, swing);
+				hit_type_vec[0], attack, null_str, swing);
 			animated_units.insert(encourager);
 		}
 
@@ -884,6 +908,9 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 				// def_ptr_vec[i]->start_animation(animator.get_end_time(), defender_anim_vec[i], true);
 				reset_helpers(i == 0? &attacker: NULL, def_ptr_vec[i], stronger);
 				def_ptr_vec[i]->set_hitpoints(def_hitpoints_vec[i]);
+				if (i) {
+					def_ptr_vec[i]->set_standing();
+				}
 			}
 
 			if (defender_formation.valid(false)) {
@@ -1032,31 +1059,29 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 		}
 
 		if (attacker) {
-			const unit_animation* attacker_anim;
-
-			attacker_anim = unit_types.global_anim(global_anim_tag::MAGIC);
+			const unit_animation* attacker_anim = unit_animation::share_anim(area_anim::MAGIC);
 			if (attacker_anim) {
 				animator.add_animation(attacker, attacker_anim);
 				animated_units.insert(attacker);
 			}
 		}
 
-		const unit_animation* defender_anim;
-		if (type == "blade" || type == "pierce" || type == "impact") {
-			defender_anim = unit_types.global_anim(global_anim_tag::BLADE);
-		} else {
-			defender_anim = unit_types.global_anim(global_anim_tag::FIRE);
-		}
-
 		// note that we take an anim from the real unit, we'll use it later
 		std::vector<const unit_animation*> defender_anim_vec;
+		const unit_animation* defender_anim = NULL;
+		if (type == "blade" || type == "pierce" || type == "impact") {
+			defender_anim = unit_animation::share_anim(area_anim::BLADE);
+		} else {
+			defender_anim = unit_animation::share_anim(area_anim::FIRE);
+		}
 		for (size_t i = 0; i < def_size; i ++) {
 			unit* defender = def_ptr_vec[i];
 			if (!defender_anim) {
 				defender_anim = defender->choose_animation(*disp,
 					defender->get_location(), "defend", a, damage_vec[0],
-					hit_type_vec[i], NULL, NULL);
+					hit_type_vec[i], NULL, type);
 			}
+
 			animator.add_animation(defender, defender_anim, defender->get_location(),
 				true, false, text_vec[i], display::rgb(255, 0, 0));
 			defender_anim_vec.push_back(defender_anim);
@@ -1074,7 +1099,7 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 			helper->set_facing(helper->get_location().get_relative_dir(b_vec[mapped_defend_index]));
 			animator.add_animation(helper, "resistance", helper->get_location(),
 				def_ptr_vec[mapped_defend_index]->get_location(), damage_vec[mapped_defend_index], true, false, "", 0,
-				hit_type_vec[mapped_defend_index], NULL, NULL);
+				hit_type_vec[mapped_defend_index], NULL);
 			animated_units.insert(helper);
 		}
 
@@ -1149,9 +1174,11 @@ void unit_heal2(std::vector<team>& teams, unit_map& units, unit* doctor, unit& p
 		std::set<unit*> animated_units;
 		unit_animator animator;
 
-		const unit_animation* heal_anim = unit_types.global_anim(global_anim_tag::HEAL);
-		animator.add_animation(&patient, heal_anim, patient_loc, false, false, lexical_cast<std::string>(healing), display::rgb(0, 255, 0));
-		animated_units.insert(&patient);
+		const unit_animation* heal_anim = unit_animation::share_anim(area_anim::HEAL);
+		if (heal_anim) {
+			animator.add_animation(&patient, heal_anim, patient_loc, false, false, lexical_cast<std::string>(healing), display::rgb(0, 255, 0));
+			animated_units.insert(&patient);
+		}
 
 		animator.start_animations();
 		if (heal_anim) {
@@ -1199,9 +1226,11 @@ void unit_destruct(std::vector<team>& teams, unit_map& units, unit* attacker, ar
 		std::set<unit*> animated_units;
 		unit_animator animator;
 
-		const unit_animation* destruct_anim = unit_types.global_anim(global_anim_tag::DESTRUCT);
-		animator.add_animation(&defender, destruct_anim, defender.get_location(), false, false, text, display::rgb(255, 0, 0));
-		animated_units.insert(&defender);
+		const unit_animation* destruct_anim = unit_animation::share_anim(area_anim::DESTRUCT);
+		if (destruct_anim) {
+			animator.add_animation(&defender, destruct_anim, defender.get_location(), false, false, text, display::rgb(255, 0, 0));
+			animated_units.insert(&defender);
+		}
 
 		animator.start_animations();
 		if (destruct_anim) {
@@ -1287,6 +1316,7 @@ void unit_recruited(const map_location& loc,const map_location& leader_loc)
 
 void unit_healing(unit& healed, const map_location& healed_loc, const std::vector<unit *> &healers, int healing)
 {
+
 	const events::command_disabler disable_commands;
 
 	if (healing == 0) {
@@ -1454,7 +1484,7 @@ void wml_animation_internal(unit_animator &animator, const vconfig &cfg, const m
 		}
 		animator.add_animation(&*u, cfg["flag"], u->get_location(),
 			secondary_loc, cfg["value"], cfg["with_bars"].to_bool(), false,
-			cfg["text"], text_color, hits, primary, secondary,
+			cfg["text"], text_color, hits, primary, null_str,
 			cfg["value_second"]);
 	}
 	const vconfig::child_list sub_anims = cfg.get_children("animate");
@@ -1468,130 +1498,135 @@ void wml_animation_internal(unit_animator &animator, const vconfig &cfg, const m
 void card_start(card_map& cards, const card& c)
 {
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::CARD)) {
-		int id = disp->insert_screen_anim(*start_tpl);
-		unit_animation& screen_anim = disp->screen_anim(id);
+	if (const animation* tpl = area_anim::anim(area_anim::CARD)) {
+		int id = disp->insert_area_anim(*tpl);
+		animation& anim = disp->area_anim(id);
 
-		screen_anim.replace_image_name("__id.png", c.image());
+		anim.replace_image_name("__id.png", c.image());
 		new_animation_frame();
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 
 		// wait_until
 		bool finished = false;
 		while (!finished) {
 			resources::controller->play_slice(false);
 			disp->delay(10);
-			finished = screen_anim.animation_finished_potential();
+			finished = anim.animation_finished_potential();
 		}
-		disp->erase_screen_anim(id);
+		disp->erase_area_anim(id);
 	}
 }
 
 void tactic_start(hero& h)
 {
+
 	const ttactic& t = unit_types.tactic(h.tactic_);
 
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::TACTIC)) {
-		int id = disp->insert_screen_anim(*start_tpl);
-		unit_animation& screen_anim = disp->screen_anim(id);
+	if (const animation* tpl = area_anim::anim(area_anim::TACTIC)) {
+		int id = disp->insert_area_anim(*tpl);
+		animation& anim = disp->area_anim(id);
 
-		screen_anim.replace_image_name("__bg.png", t.bg_image());
-		screen_anim.replace_image_name("__id.png", h.image(true));
-		screen_anim.replace_static_text("__hero", h.name());
-		screen_anim.replace_static_text("__tactic", t.name());
-		screen_anim.replace_static_text("__description", t.description());
+		anim.replace_image_name("__bg.png", t.bg_image());
+		anim.replace_image_name("__id.png", h.image(true));
+		anim.replace_static_text("__hero", h.name());
+		anim.replace_static_text("__tactic", t.name());
+		anim.replace_static_text("__description", t.description());
 
 		new_animation_frame();
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 
 		// wait_until
 		bool finished = false;
 		while (!finished) {
 			resources::controller->play_slice(false);
 			disp->delay(10);
-			finished = screen_anim.animation_finished_potential();
+			finished = anim.animation_finished_potential();
 		}
-		disp->erase_screen_anim(id);
+		disp->erase_area_anim(id);
 	}
 }
 
 void formation_attack_start(const tformation& formation)
 {
+
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::FORMATION_ATTACK)) {
-		int id = disp->insert_screen_anim(*start_tpl);
-		unit_animation& screen_anim = disp->screen_anim(id);
+	if (const animation* tpl = area_anim::anim(area_anim::FORMATION_ATTACK)) {
+		int id = disp->insert_area_anim(*tpl);
+		animation& anim = disp->area_anim(id);
 		std::stringstream strstr;
 
 		const tformation_profile& profile = *formation.profile_;
 		
-		screen_anim.replace_image_name("__bg.png", profile.bg_image());
-		screen_anim.replace_image_name("__id.png", formation.u_->master().image(true));
-		screen_anim.replace_static_text("__formation_name", profile.name());
-		screen_anim.replace_static_text("__formation_description", profile.description());
+		anim.replace_image_name("__bg.png", profile.bg_image());
+		anim.replace_image_name("__id.png", formation.u_->master().image(true));
+		anim.replace_static_text("__formation_name", profile.name());
+		anim.replace_static_text("__formation_description", profile.description());
 		new_animation_frame();
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 
 		// wait_until
 		bool finished = false;
 		while (!finished) {
 			resources::controller->play_slice(false);
 			disp->delay(10);
-			finished = screen_anim.animation_finished_potential();
+			finished = anim.animation_finished_potential();
 		}
-		disp->erase_screen_anim(id);
+		disp->erase_area_anim(id);
 	}
 }
 
 void global_anim_2(int type, const std::string& id1, const std::string& id2, const std::string& text, const SDL_Color& color)
 {
-	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(type)) {
-		int id = disp->insert_screen_anim(*start_tpl);
-		unit_animation& screen_anim = disp->screen_anim(id);
 
-		screen_anim.replace_image_name("__id1.png", id1);
-		screen_anim.replace_image_name("__id2.png", id2);
-		screen_anim.replace_static_text("__text", text);
+	game_display* disp = game_display::get_singleton();
+	if (const animation* tpl = area_anim::anim(type)) {
+		int id = disp->insert_area_anim(*tpl);
+		animation& anim = disp->area_anim(id);
+
+		anim.replace_image_name("__id1.png", id1);
+		anim.replace_image_name("__id2.png", id2);
+		anim.replace_static_text("__text", text);
 		if (color != font::GOOD_COLOR) {
-			screen_anim.replace_int("text_color", display::rgb(0, 255, 0), display::rgb(color.r, color.g, color.b));
+			anim.replace_int("text_color", display::rgb(0, 255, 0), display::rgb(color.r, color.g, color.b));
 		}
 		new_animation_frame();
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 
 		// wait_until
 		bool finished = false;
 		while (!finished) {
 			resources::controller->play_slice(false);
 			disp->delay(10);
-			finished = screen_anim.animation_finished_potential();
+			finished = anim.animation_finished_potential();
 		}
-		disp->erase_screen_anim(id);
+		disp->erase_area_anim(id);
 	}
 }
 
 void perfect_anim()
 {
+	const events::command_disabler disable_commands;
+
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::PERFECT)) {
-		int id = disp->insert_screen_anim(*start_tpl);
-		unit_animation& screen_anim = disp->screen_anim(id);
+	if (const animation* tpl = area_anim::anim(area_anim::PERFECT)) {
+		int id = disp->insert_area_anim(*tpl);
+		animation& anim = disp->area_anim(id);
 		std::stringstream strstr;
 
-		screen_anim.replace_static_text("__perfect", dsgettext("wesnoth-lib", "perfect^Perfect"));
+		anim.replace_static_text("__perfect", dsgettext("wesnoth-lib", "perfect^Perfect"));
 
 		new_animation_frame();
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 
 		// wait_until
 		bool finished = false;
 		while (!finished) {
 			resources::controller->play_slice(false);
 			disp->delay(10);
-			finished = screen_anim.animation_finished_potential();
+			finished = anim.animation_finished_potential();
 		}
-		disp->erase_screen_anim(id);
+		disp->erase_area_anim(id);
 	}
 }
 
@@ -1599,15 +1634,15 @@ int start_title_screen_anim()
 {
 	game_display* disp = game_display::get_singleton();
 	int id = -1;
-	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::TITLE_SCREEN)) {
-		id = disp->insert_screen_anim(*start_tpl);
-		unit_animation& screen_anim = disp->screen_anim(id);
+	if (const animation* tpl = area_anim::anim(area_anim::TITLE_SCREEN)) {
+		id = disp->insert_area_anim(*tpl);
+		animation& anim = disp->area_anim(id);
 		std::stringstream strstr;
 
-		// screen_anim.replace_static_text("__perfect", dsgettext("wesnoth-lib", "perfect^Perfect"));
+		// anim.replace_static_text("__perfect", dsgettext("wesnoth-lib", "perfect^Perfect"));
 
 		new_animation_frame();
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 	}
 	return id;
 }
@@ -1617,30 +1652,31 @@ void stratagem_anim(const ttechnology& stratagem, const std::string& image, bool
 	const events::command_disabler disable_commands;
 
 	game_display* disp = game_display::get_singleton();
-	if (const unit_animation* start_tpl = unit_types.global_anim(up? global_anim_tag::STRATAGEM_UP: global_anim_tag::STRATAGEM_DOWN)) {
-		int id = disp->insert_screen_anim(*start_tpl);
-		unit_animation& screen_anim = disp->screen_anim(id);
+	if (const animation* tpl = area_anim::anim(up? area_anim::STRATAGEM_UP: area_anim::STRATAGEM_DOWN)) {
+		int id = disp->insert_area_anim(*tpl);
+		animation& anim = disp->area_anim(id);
 		std::stringstream strstr;
 
-		screen_anim.replace_static_text("__name", stratagem.name());
-		screen_anim.replace_image_name("__image", image);
+		anim.replace_static_text("__name", stratagem.name());
+		anim.replace_image_name("__image", image);
 
 		new_animation_frame();
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 
 		// wait_until
 		bool finished = false;
 		while (!finished) {
 			resources::controller->play_slice(false);
 			disp->delay(10);
-			finished = screen_anim.animation_finished_potential();
+			finished = anim.animation_finished_potential();
 		}
-		disp->erase_screen_anim(id);
+		disp->erase_area_anim(id);
 	}
 }
 
 void unit_touching(unit& u, std::vector<unit *>& touchers, int touching, const std::string& prefix)
 {
+
 	if (touching == 0) return;
 	bool force_scroll = preferences::scroll_to_action();
 	const map_location& loc = u.get_location();
@@ -1673,6 +1709,7 @@ void unit_touching(unit& u, std::vector<unit *>& touchers, int touching, const s
 
 void unit_text(unit& u, bool poisoned, const std::string& text)
 {
+
 	const events::command_disabler disable_commands;
 
 	bool force_scroll = preferences::scroll_to_action();
@@ -1711,11 +1748,13 @@ void unit_income(unit& u, int income)
 {
 	const events::command_disabler disable_commands;
 
-	const unit_animation* income_anim_tpl = unit_types.global_anim(global_anim_tag::INCOME);
+	const unit_animation* income_anim_tpl = unit_animation::share_anim(area_anim::INCOME);
 	if (!income_anim_tpl) {
 		return;
 	}
+
 	unit_animation income_anim = *income_anim_tpl;
+
 	bool force_scroll = u.human() || preferences::scroll_to_action()? true: false;
 	const map_location& loc = u.get_location();
 	game_display* disp = game_display::get_singleton();
@@ -1758,8 +1797,8 @@ void unit_income(unit& u, int income)
 
 void location_text(const std::vector<tlocation_anim>& locs)
 {
-	const unit_animation* location_anim_tpl = unit_types.global_anim(global_anim_tag::LOCATION);
-	if (!location_anim_tpl || locs.empty()) {
+	const animation* tpl = area_anim::anim(area_anim::LOCATION);
+	if (!tpl || locs.empty()) {
 		return;
 	}
 
@@ -1768,15 +1807,14 @@ void location_text(const std::vector<tlocation_anim>& locs)
 		return;
 	}
 	
-	std::map<int, const unit_animation*> wait;
+	std::map<int, const animation*> wait;
 	for (std::vector<tlocation_anim>::const_iterator it = locs.begin(); it != locs.end(); ++ it) {
-		unit_animation location_anim = *location_anim_tpl;
-		location_anim.replace_progressive("offset_x", "5555", str_cast(1.0 * it->xoffset / 100));
-		location_anim.replace_progressive("offset_y", "5555", str_cast(1.0 * it->yoffset / 100));
+		int id = disp->insert_area_anim(*tpl);
+		animation& anim = disp->area_anim(id);
 
-		int id = disp->insert_screen_anim(location_anim);
-		unit_animation& screen_anim = disp->screen_anim(id);
-		
+		anim.replace_progressive("offset_x", "5555", str_cast(1.0 * it->xoffset / 100));
+		anim.replace_progressive("offset_y", "5555", str_cast(1.0 * it->yoffset / 100));
+
 		map_location src = map_location::null_location;
 		if (!it->text.empty()) {
 			int xoffset1 = it->xoffset;
@@ -1799,8 +1837,8 @@ void location_text(const std::vector<tlocation_anim>& locs)
 		if (it == locs.begin()) {
 			new_animation_frame();
 		}
-		screen_anim.start_animation(0, src, map_location::null_location, false, it->text, it->color);
-		wait.insert(std::make_pair(id, &screen_anim));
+		anim.start_animation(0, src, map_location::null_location, false, it->text, it->color);
+		wait.insert(std::make_pair(id, &anim));
 	}
 
 	// wait_until
@@ -1811,16 +1849,16 @@ void location_text(const std::vector<tlocation_anim>& locs)
 
 		resources::controller->play_slice(false);
 		disp->delay(10);
-		for (std::map<int, const unit_animation*>::const_iterator it = wait.begin(); it != wait.end(); ++ it) {
-			const unit_animation& anim = *it->second;
+		for (std::map<int, const animation*>::const_iterator it = wait.begin(); it != wait.end(); ++ it) {
+			const animation& anim = *it->second;
 			if (!anim.animation_finished_potential()) {
 				finished = false;
 			}
 		}
 	}
 
-	for (std::map<int, const unit_animation*>::const_iterator it = wait.begin(); it != wait.end(); ++ it) {
-		disp->erase_screen_anim(it->first);
+	for (std::map<int, const animation*>::const_iterator it = wait.begin(); it != wait.end(); ++ it) {
+		disp->erase_area_anim(it->first);
 	}
 }
 

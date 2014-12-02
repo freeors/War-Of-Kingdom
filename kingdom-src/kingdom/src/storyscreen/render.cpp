@@ -199,7 +199,6 @@ void part_ui::render_background()
 bool part_ui::render_floating_images()
 {
 	events::raise_draw_event();
-	update_whole_screen();
 
 	skip_ = false;
 	last_key_ = true;
@@ -210,7 +209,6 @@ bool part_ui::render_floating_images()
 
 		if(!ri.image.null()) {
 			sdl_blit(ri.image, NULL, video_.getSurface(), &ri.rect);
-			update_rect(ri.rect);
 		}
 
 		if (!skip_)
@@ -290,13 +288,6 @@ void part_ui::render_title_box()
 	);
 
 	video_.blit_surface(base_rect_.x + titlebox_x, base_rect_.y + titlebox_y, txtsurf);
-
-	update_rect(
-		static_cast<size_t>(std::max(0, base_rect_.x + titlebox_x)),
-		static_cast<size_t>(std::max(0, base_rect_.y + titlebox_y)),
-		static_cast<size_t>(std::max(0, titlebox_w)),
-		static_cast<size_t>(std::max(0, titlebox_h))
-	);
 }
 
 #ifdef LOW_MEM
@@ -438,12 +429,6 @@ void part_ui::render_story_box()
 		play_button_.hide(false);
 	}
 
-	if(imgs_.empty()) {
-		update_whole_screen();
-	} else if(update_area.h > 0) {
-		update_rect(update_area);
-	}
-
 	// Time to do some fucking visual effect.
 	const int scan_height = 1, scan_width = txtsurf->w;
 	SDL_Rect scan = create_rect(0, 0, scan_width, scan_height);
@@ -461,7 +446,6 @@ void part_ui::render_story_box()
 			//       uses it nonetheless, no idea why...
 			//       Here we'll use CVideo::blit_surface() instead.
 			video_.blit_surface(dstrect.x, dstrect.y, txtsurf, &scan);
-			update_rect(dstrect);
 			++scan.y;
 		}
 		else skip_ = true;

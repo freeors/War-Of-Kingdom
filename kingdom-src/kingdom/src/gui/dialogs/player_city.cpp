@@ -21,14 +21,13 @@
 #include "game_preferences.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
-#include "gui/widgets/password_box.hpp"
+#include "gui/widgets/text_box.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/message.hpp"
 #include <hero.hpp>
-#include "help.hpp"
 #include "gettext.hpp"
 #include "formula_string_utils.hpp"
 #include "multiplayer.hpp"
@@ -94,7 +93,7 @@ void tplayer_city::pre_show(CVideo& /*video*/, twindow& window)
 		, this
 		, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(_("OK"), "blue");
+	strstr << tintegrate::generate_format(_("OK"), "blue");
 	find_widget<tbutton>(&window, "create", false).set_label(strstr.str());
 }
 
@@ -121,10 +120,10 @@ bool is_valid_username2(const std::string& key, const std::string& str, game_dis
 				strstr << ", ";
 			}
 			c.assign(invalids, p, 1);
-			strstr << help::tintegrate::generate_format(c, "yellow");
+			strstr << tintegrate::generate_format(c, "yellow");
 		}
 
-		symbols["key"] = help::tintegrate::generate_format(key, "red");
+		symbols["key"] = tintegrate::generate_format(key, "red");
 		symbols["invalids"] = strstr.str();
 		
 		err << vgettext("wesnoth-lib", "$key cannot include $invalids!", symbols);
@@ -147,10 +146,10 @@ bool is_valid_username(const std::string& key, const std::string& str, game_disp
 				strstr << ", ";
 			}
 			c.assign(special, p, 1);
-			strstr << help::tintegrate::generate_format(c, "yellow");
+			strstr << tintegrate::generate_format(c, "yellow");
 		}
 
-		symbols["username"] = help::tintegrate::generate_format(key, "red");
+		symbols["username"] = tintegrate::generate_format(key, "red");
 		symbols["special"] = strstr.str();
 		
 		err << vgettext("wesnoth-lib", "$username may only use below special character: $special, and must not be all special!", symbols);
@@ -168,9 +167,9 @@ std::string text_box_str(game_display& disp, twindow& window, const std::string&
 	std::string str = widget->get_value();
 
 	if ((int)str.size() < min || (int)str.size() > max) {
-		symbols["min"] = help::tintegrate::generate_format(min, "yellow");
-		symbols["max"] = help::tintegrate::generate_format(max, "yellow");
-		symbols["key"] = help::tintegrate::generate_format(name, "red");
+		symbols["min"] = tintegrate::generate_format(min, "yellow");
+		symbols["max"] = tintegrate::generate_format(max, "yellow");
+		symbols["key"] = tintegrate::generate_format(name, "red");
 		
 		if (min != max) {
 			err << vgettext("wesnoth-lib", "'$key' value must combine $min to $max characters", symbols);

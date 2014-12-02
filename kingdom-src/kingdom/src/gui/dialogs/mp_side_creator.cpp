@@ -37,7 +37,6 @@
 #include "replay.hpp"
 #include "wml_separators.hpp"
 #include "serialization/parser.hpp"
-#include "help.hpp"
 #include "actions.hpp"
 
 #include <boost/foreach.hpp>
@@ -202,11 +201,12 @@ void tmp_side_creator::pre_show(CVideo& /*video*/, twindow& window)
 
 	load_game(window);
 	if (legacy_result_ == CREATE) {
+		join();
 		return;
 	}
 
 	strstr.str("");
-	strstr << help::tintegrate::generate_img(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
+	strstr << tintegrate::generate_img(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
 	strstr << _("Set Side");
 	strstr << ": " << params_.name << " - " << level_["name"].t_str();
 	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
@@ -250,11 +250,7 @@ void tmp_side_creator::pre_show(CVideo& /*video*/, twindow& window)
 	// If we are connected, send data to the connected host
 	network::send_data(level_, 0);
 
-	// Force first update to be directly.
-	lobby_base::network_handler();
-	lobby_update_timer_ = add_timer(game_config::lobby_network_timer
-			, boost::bind(&lobby_base::network_handler, this)
-			, true);
+	join();
 }
 
 const game_state& tmp_side_creator::get_state()
@@ -442,6 +438,7 @@ void tmp_side_creator::start_game()
 	}
 
 	// Build the gamestate object after updating the level
+	state_.classification().mode = mode_tag::rfind(mode_tag::SCENARIO);
 	level_to_gamestate(level_, replay_data_, state_);
 
 	if (!params_.saved_game) {
@@ -519,8 +516,8 @@ const tgroup& tmp_side_creator::saved_allow_username(const std::string& username
 			allow << *it2;
 		}
 		utils::string_map i18n_symbols;
-		i18n_symbols["allow"] = help::tintegrate::generate_format(allow.str(), "green");
-		i18n_symbols["exclude"] = help::tintegrate::generate_format(username, "red");
+		i18n_symbols["allow"] = tintegrate::generate_format(allow.str(), "green");
+		i18n_symbols["exclude"] = tintegrate::generate_format(username, "red");
 		std::string message = vgettext("The save game reserved for $allow, don't support $exclude.", i18n_symbols);
 		gui2::show_error_message(disp_.video(), message);
 		return null_group;
@@ -949,19 +946,26 @@ void tmp_side_creator::update_playerlist()
 	player_list_.active_game.auto_hide();
 }
 
-void tmp_side_creator::process_network_data(const config& data, const network::connection sock)
+bool tmp_side_creator::handle(tlobby::ttype type, const config& data)
 {
+	if (type == tlobby::t_disconnected && !local_only_) {
+		legacy_result_ = QUIT;
+		sides_table_->get_window()->set_retval(twindow::CANCEL);
+	}
+	if (type != tlobby::t_data) {
+		return false;
+	}
+
 	if (data.child("leave_game")) {
 		twindow& window = *launch_->get_window();
 		legacy_result_ = QUIT;
 		window.close();
-		return;
+		return true;
 	}
 
 	if (!data["side_drop"].empty()) {
 		unsigned side_drop = data["side_drop"].to_int() - 1;
-		if (side_drop < sides_.size())
-		{
+		if (side_drop < sides_.size()) {
 			connected_user_list::iterator player = find_player(sides_[side_drop].get_player_id());
 			sides_[side_drop].reset(sides_[side_drop].get_controller());
 			if (player != users_.end()) {
@@ -970,7 +974,7 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 			}
 			update_and_send_diff();
 			refresh_launch();
-			return;
+			return true;
 		}
 	}
 
@@ -979,12 +983,12 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 
 		// Checks if the connecting user has a valid and unique name.
 		const std::string name = data["name"];
-		if(name.empty()) {
+		if (name.empty()) {
 			config response;
 			response["failed"] = true;
-			network::send_data(response, sock);
+			network::send_data(response, lobby.sock);
 			// ERR_CF << "ERROR: No username provided with the side.\n";
-			return;
+			return true;
 		}
 
 		connected_user_list::iterator player = find_player(name);
@@ -997,8 +1001,8 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 				config response;
 				response["failed"] = true;
 				response["message"] = "The nick '" + name + "' is already in use.";
-				network::send_data(response, sock);
-				return;
+				network::send_data(response, lobby.sock);
+				return true;
 			} else {
 				users_.erase(player);
 				config observer_quit;
@@ -1025,7 +1029,7 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 				if(itor == sides_.end()) {
 					config response;
 					response["failed"] = true;
-					network::send_data(response, sock);
+					network::send_data(response, lobby.sock);
 					config kick;
 					kick["username"] = data["name"];
 					config res;
@@ -1034,21 +1038,21 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 					update_user_combos();
 					update_and_send_diff();
 					// ERR_CF << "ERROR: Couldn't assign a side to '" << name << "'\n";
-					return;
+					return true;
 				}
 			}
 
 			if (params_.saved_game) {
 				const tgroup& g = saved_allow_username(name);
 				if (!g.valid()) {
-					return;
+					return true;
 				}
 				// Adds the name to the list
-				users_.push_back(connected_user(name, CNTR_NETWORK, sock));
+				users_.push_back(connected_user(name, CNTR_NETWORK, lobby.sock));
 				users_.back().group = g;
 			} else {
 				// Adds the name to the list				
-				users_.push_back(connected_user(name, CNTR_NETWORK, sock));
+				users_.push_back(connected_user(name, CNTR_NETWORK, lobby.sock));
 				// it will modify heros_, don't execute when saved_game.
 				regenerate_hero_map_from_users(disp_, heros_, users_, member_users_);
 			}
@@ -1068,8 +1072,9 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 			// ERR_CF << "tried to take illegal side: " << side_taken << '\n';
 			config response;
 			response["failed"] = true;
-			network::send_data(response, sock);
+			network::send_data(response, lobby.sock);
 		}
+		return true;
 	}
 
 	if (const config &change_faction = data.child("change_faction")) {
@@ -1079,23 +1084,23 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 			refresh_launch();
 			update_and_send_diff();
 		}
+		return true;
 	}
 
-	if (const config &c = data.child("observer"))
-	{
+	if (const config &c = data.child("observer")) {
 		const t_string &observer_name = c["name"];
 		if(!observer_name.empty()) {
 			connected_user_list::iterator player = find_player(observer_name);
 			if(player == users_.end()) {
-				users_.push_back(connected_user(observer_name, CNTR_NETWORK, sock));
+				users_.push_back(connected_user(observer_name, CNTR_NETWORK, lobby.sock));
 				update_user_combos();
 				refresh_launch();
 				update_and_send_diff();
 			}
 		}
+		return true;
 	}
-	if (const config &c = data.child("observer_quit"))
-	{
+	if (const config &c = data.child("observer_quit")) {
 		const t_string &observer_name = c["name"];
 		if(!observer_name.empty()) {
 			connected_user_list::iterator player = find_player(observer_name);
@@ -1106,7 +1111,9 @@ void tmp_side_creator::process_network_data(const config& data, const network::c
 				update_and_send_diff();
 			}
 		}
+		return true;
 	}
+	return false;
 }
 
 void tmp_side_creator::take_reserved_side(tmp_side_creator::side& side, const config& data)
@@ -1232,8 +1239,8 @@ int tmp_side_creator::get_user_faction(int side, std::string& username) const
 	}
 	std::stringstream err;
 	err << "tmp_side_creator::get_user_faction, cannot find ";
-	err << help::tintegrate::generate_format(username, "red") << " to side #";
-	err << help::tintegrate::generate_format(side + 1, "yellow");
+	err << tintegrate::generate_format(username, "red") << " to side #";
+	err << tintegrate::generate_format(side + 1, "yellow");
 	VALIDATE(false, err.str());
 	return -1;
 }
@@ -1274,8 +1281,6 @@ void tmp_side_creator::set_faction(int side, int faction)
 
 void tmp_side_creator::post_show(twindow& window)
 {
-	remove_timer(lobby_update_timer_);
-	lobby_update_timer_ = 0;
 }
 
 tmp_side_creator::side::side(tlistbox* sides_table, tmp_side_creator& parent, const config& cfg, int index) 

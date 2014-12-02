@@ -35,6 +35,7 @@
 #include "gui/widgets/window.hpp"
 #include "map.hpp"
 #include "about.hpp"
+#include "integrate.hpp"
 
 #include <boost/bind.hpp>
 
@@ -100,15 +101,15 @@ tbook::tbook(game_display& disp, gamemap* map, hero_map& heros, const config& ga
 	int screen_height = disp.h();
 
 	if (screen_width < 640 || screen_height < 480) {
-		help::tintegrate::screen_ratio = 2;
+		tintegrate::screen_ratio = 2;
 	} else if (screen_width < 800 || screen_height < 600) {
-		help::tintegrate::screen_ratio = 1.5;
+		tintegrate::screen_ratio = 1.5;
 	}
 }
 
 tbook::~tbook()
 {
-	help::tintegrate::screen_ratio = 1;
+	tintegrate::screen_ratio = 1;
 	toplevel.clear();
 	help::clear_book();
 }
@@ -145,6 +146,18 @@ void tbook::pre_show(CVideo& /*video*/, twindow& window)
 	tree_ = &parent_tree;
 
 	section_2_tv_internal(tree_->get_root_node(), toplevel);
+	if (!cookies_.empty()) {
+		const std::string default_topic_id = "title";
+		const help::topic* t = find_topic(toplevel, default_topic_id);
+		if (!t) {
+			t = cookies_.find(0)->second.t;
+		}
+		if (t) {
+			switch_to_topic(*window_, *t);
+			tree_->set_select_item(cookie_rfind_node(t));
+
+		}
+	}
 
 	tscroll_label& content = find_widget<tscroll_label>(&window, "content", false);
 	content.connect_signal<event::LEFT_BUTTON_DOWN>(
@@ -168,7 +181,6 @@ ttree_view_node* tbook::cookie_rfind_node(const help::topic* t) const
 
 void tbook::switch_to_topic(twindow& window, const help::topic& t)
 {
-	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(window);
 	tscroll_label* content = find_widget<tscroll_label>(&window, "content", false, true);
 	content->set_label(t.text.parsed_text());
 
@@ -179,7 +191,7 @@ void tbook::ref_at(twindow& window)
 {
 	tscroll_label& content = find_widget<tscroll_label>(&window, "content", false);
 	tlabel* label = dynamic_cast<tlabel*>(content.find("_label", true));
-	help::tintegrate integrate(current_topic_->text.parsed_text(), label->get_width(), -1, label->config()->text_font_size, font::NORMAL_COLOR);
+	tintegrate integrate(current_topic_->text.parsed_text(), label->get_width(), -1, label->config()->text_font_size, font::NORMAL_COLOR);
 
 	int mousex, mousey;
 	SDL_GetMouseState(&mousex,&mousey);
@@ -241,18 +253,6 @@ void tbook::section_2_tv_internal(ttree_view_node& htvroot, const help::section&
 		toggle->set_callback_state_change(boost::bind(&tbook::technology_toggled, this, _1));
 		toggle->set_data(increase_id_);
 		cookies_.insert(std::make_pair(increase_id_ ++, tcookie(&t, &htvi)));
-	}
-
-	int default_topic = -1;
-	if (cookies_.size() > 1) {
-		default_topic = 0; // !!BUG, should 1
-	} else if (!cookies_.empty()) {
-		default_topic = 0;
-	}
-	if (default_topic >= 0) {
-		const tcookie& cookie = cookies_.find(default_topic)->second;
-		switch_to_topic(*window_, *cookie.t);
-		tree_->set_select_item(cookie.node);
 	}
 }
 

@@ -111,7 +111,6 @@ void lobby_info::process_gamelist(const config &data)
 	}
 	DBG_LB << dump_games_map(games_by_id_);
 	DBG_LB << dump_games_config(gamelist_.child("gamelist"));
-	process_userlist();
 }
 
 
@@ -174,36 +173,7 @@ bool lobby_info::process_gamelist_diff(const config &data)
 		return false;
 	}
 	DBG_LB << "postclean " << dump_games_config(gamelist_.child("gamelist"));
-	process_userlist();
 	return true;
-}
-
-void lobby_info::process_userlist()
-{
-	SCOPE_LB;
-	users_.clear();
-	BOOST_FOREACH (const config& c, gamelist_.child_range("user")) {
-		users_.push_back(user_info(c));
-	}
-	BOOST_FOREACH (user_info& ui, users_) {
-		if (ui.game_id != 0) {
-			game_info* g = get_game_by_id(ui.game_id);
-			if (g == NULL) {
-				WRN_NG << "User " << ui.name << " has unknown game_id: " << ui.game_id << "\n";
-			} else {
-				switch (ui.relation) {
-					case user_info::FRIEND:
-						g->has_friends = true;
-						break;
-					case user_info::IGNORED:
-						g->has_ignored = true;
-						break;
-					default:
-						break;
-				}
-			}
-		}
-	}
 }
 
 void lobby_info::sync_games_display_status()
@@ -463,34 +433,7 @@ void tsub_player_list::auto_hide()
 //
 // lobby_base
 //
-lobby_base::lobby_base()
-	: lobby_update_timer_(0)
-{
-}
-
-lobby_base::~lobby_base()
-{
-	if (lobby_update_timer_) {
-		gui2::remove_timer(lobby_update_timer_);
-	}
-}
-
-void lobby_base::network_handler()
-{
-	try {
-		config data;
-		const network::connection sock = network::receive_data(data);
-		if (sock) {
-			process_network_data(data, sock);
-		}
-	} catch(network::error& e) {
-		process_network_error(e);
-		// LOG_LB << "caught network::error in network_handler: " << e.message << "\n";
-		throw;
-	}
-}
-
-void lobby_base::regenerate_hero_map_from_users(game_display& disp, hero_map& heros, connected_user_list& users, std::map<std::string, http::membership>& member_users)
+void lobby_base::regenerate_hero_map_from_users(display& disp, hero_map& heros, connected_user_list& users, std::map<std::string, http::membership>& member_users)
 {
 	std::map<int, int> uid_user_map;
 	int n = 0;

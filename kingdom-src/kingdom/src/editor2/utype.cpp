@@ -1,3 +1,5 @@
+#ifndef _ROSE_EDITOR
+
 #define GETTEXT_DOMAIN "wesnoth-maker"
 
 #include "global.hpp"
@@ -54,6 +56,7 @@ void tunit_type::from_config(const unit_type* ut)
 	movement_ = ut->movement();
 	max_movement_ = ut->max_movement();
 	level_ = ut->level();
+
 	cost_ = ut->cost();
 	raw_icon_ = ut->raw_icon();
 	movement_sound_ = ut->raw_movement_sound();
@@ -908,9 +911,15 @@ void tunit_type::generate(bool with_anim) const
 		unit_type::healed_anim("healed_anim", race_, id_, use_terrain_image(), cfg);
 		out.write(cfg);
 
-		if (packer_ || t == TYPE_TROOP || t == TYPE_COMMONER) {
+		if (!packer_) {
+			if (t == TYPE_TROOP || t == TYPE_COMMONER) {
+				cfg.clear();
+				unit_type::movement_anim("movement_anim", race_, id_, use_terrain_image(), movement_sound(false), "movement", cfg);
+				out.write(cfg);
+			}
+		} else {
 			cfg.clear();
-			unit_type::movement_anim("movement_anim", race_, id_, use_terrain_image(), movement_sound(false), cfg);
+			unit_type::movement_anim("movement_anim", race_, id_, use_terrain_image(), movement_sound(false), "navy_movement", cfg);
 			out.write(cfg);
 		}
 
@@ -939,7 +948,11 @@ void tunit_type::generate(bool with_anim) const
 			}
 			cfg.clear();
 			if (it->range_ == 0) {
-				if (!can_recruit_) {
+				if (it->specials_.find("cyclone") != it->specials_.end()) {
+					unit_type::attack_anim_cyclone("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
+				} else if (it->specials_.find("penetrateattack") != it->specials_.end()) {
+					unit_type::attack_anim_penetrate("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
+				} else if (!can_recruit_) {
 					unit_type::attack_anim_melee("attack_anim", it->id_, it->icon_, type() == TYPE_TROOP || type() == TYPE_COMMONER, race_, id_, use_terrain_image(), cfg);
 				} else {
 					unit_type::attack_anim_multi_melee("attack_anim", it->id_, it->icon_, type() == TYPE_TROOP || type() == TYPE_COMMONER, race_, id_, use_terrain_image(), cfg);
@@ -962,6 +975,9 @@ void tunit_type::generate(bool with_anim) const
 
 			} else if (it->icon_.find("lightning") != std::string::npos) {
 				unit_type::attack_anim_ranged_lightning("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
+
+			} else if (it->type_ == "archery" && it->specials_.find("ringattack") != it->specials_.end()) {
+				unit_type::attack_anim_ranged_archery("attack_anim", it->id_, race_, id_, use_terrain_image(), cfg);
 
 			} else {
 				unit_type::attack_anim_ranged("attack_anim", it->id_, it->icon_, race_, id_, use_terrain_image(), cfg);
@@ -4199,3 +4215,5 @@ BOOL CALLBACK DlgUTypeProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	
 	return FALSE;
 }
+
+#endif

@@ -214,6 +214,11 @@ private:
 
 }
 
+bool in_tower_mode()
+{
+	return tent::tower_mode();
+}
+
 void regenerate_heros(hero_map& heros);
 
 class game_controller
@@ -556,7 +561,7 @@ bool game_controller::init_video()
 	}
 
 	std::string wm_title_string = _("The War of Kingdom");
-	wm_title_string += " - " + game_config::revision;
+	wm_title_string += " - " + game_config::version;
 	SDL_SetWindowTitle(video_.getWindow(), wm_title_string.c_str());
 
 #ifdef _WIN32
@@ -1230,7 +1235,7 @@ void game_controller::play_multiplayer(bool random_map)
 	if (game_config::is_reserve_player(preferences::login())) {
 		utils::string_map symbols;
 		std::string message;
-		symbols["username"] = help::tintegrate::generate_format(preferences::login(), "red");
+		symbols["username"] = tintegrate::generate_format(preferences::login(), "red");
 		message = vgettext("$username is reserved! Please modify to your username. To modify: Enter your username in \"Player profile\" Setting.", symbols);
 
 		gui2::show_message(disp().video(), "", message);
@@ -1384,7 +1389,7 @@ bool game_controller::change_language()
 	if (dlg.get_retval() != gui2::twindow::OK) return false;
 
 	std::string wm_title_string = _("The War of Kingdom");
-	wm_title_string += " - " + game_config::revision;
+	wm_title_string += " - " + game_config::version;
 	SDL_SetWindowTitle(disp().video().getWindow(), wm_title_string.c_str());
 	return true;
 }
@@ -1400,7 +1405,7 @@ void game_controller::inapp_purchase()
 		std::stringstream err;
 		utils::string_map symbols;
 
-		symbols["account"] = help::tintegrate::generate_format(preferences::login(), "yellow");
+		symbols["account"] = tintegrate::generate_format(preferences::login(), "yellow");
 		err << vgettext("wesnoth-lib", "$account that you are logining is public account, In-App Purchases on it are shared with other player. In order to benefit to youself only, advise login again with private account.", symbols);
 		gui2::show_message(disp().video(), "", err.str());
 	}
@@ -1656,20 +1661,14 @@ void game_controller::play_replay()
 
 editor::EXIT_STATUS game_controller::start_editor(const std::string& map_data)
 {
+	game_display_lock loc(disp());
+
 	int mode = editor::NONE;
 	std::string filename;
 	
 	if (!map_data.empty()) {
 		mode = editor::SIEGE;
 		filename = map_data;
-/*
-		filename = get_user_data_dir_utf8() + "/editor/maps/__temp.map";
-		write_file(filename, map_data.c_str(), map_data.size(), true);
-#ifdef _WIN32
-		// editor require ansi
-		filename = get_user_data_dir() + "/editor/maps/__temp.map";
-#endif
-*/
 	}
 
 	editor::EXIT_STATUS res = editor::start(game_config(), video_, heros_, mode, filename);
@@ -1752,6 +1751,12 @@ static int do_gameloop(int argc, char** argv)
 	//static initialization (befire any srand() call)
 	recorder.set_seed(rand());
 
+	// always connect to lobby server.
+	const network::manager net_manager(1, 1);
+	lobby.set_host("www.leagor.com", 15000);
+	// lobby.set_host("192.168.1.103", 15000);
+	lobby.join();
+
 	game_controller game(argc,argv);
 	const int start_ticks = SDL_GetTicks();
 
@@ -1811,7 +1816,7 @@ static int do_gameloop(int argc, char** argv)
 	loadscreen::start_stage("titlescreen");
 
 	game_config::checksum = calculate_res_checksum(game.disp(), game.game_config());
-
+	
 	try {
 		for (;;) {
 			// reset the TC, since a game can modify it, and it may be used
@@ -1876,7 +1881,6 @@ static int do_gameloop(int argc, char** argv)
 					game.set_session_xmited(true);
 				}
 				
-				const hotkey::basic_handler key_handler(&game.disp());
 				gui2::ttitle_screen dlg(game.disp(), game.heros(), group.leader());
 				dlg.show(game.disp().video());
 				res = static_cast<gui2::ttitle_screen::tresult>(dlg.get_retval());
@@ -2055,7 +2059,7 @@ int main(int argc, char** argv)
 	}
 
 	try {
-		std::cerr << "Battle for Wesnoth v" << game_config::revision << '\n';
+		std::cerr << "Battle for Wesnoth v" << game_config::version << '\n';
 		const time_t t = time(NULL);
 		std::cerr << "Started on " << ctime(&t) << "\n";
 

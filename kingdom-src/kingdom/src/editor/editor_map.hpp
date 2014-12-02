@@ -18,7 +18,7 @@
 
 #include "editor_common.hpp"
 
-#include "../map.hpp"
+#include "map.hpp"
 
 #include <deque>
 

@@ -255,7 +255,7 @@ void tside_list::fill_table(int catalog)
 			continue;
 		}
 		
-		const bool known = viewing_team.knows_about_team(n, network::nconnections() > 0);
+		const bool known = viewing_team.knows_about_team(n, false);
 		const bool enemy = viewing_team.is_enemy(n + 1);
 		std::stringstream str;
 
@@ -334,7 +334,7 @@ void tside_list::fill_table(int catalog)
 
 			str.str("");
 			str << teams_[n].holded_cards().size();
-			str << "(" << help::tintegrate::generate_format(teams_[n].candidate_cards().size(), "green") << ")";
+			str << "(" << tintegrate::generate_format(teams_[n].candidate_cards().size(), "green") << ")";
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("card", table_item));
 

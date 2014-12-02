@@ -237,8 +237,6 @@ void dialog_frame::draw_border()
 		video_.blit_surface(dim_.interior.x + dim_.interior.w, dim_.interior.y, right_image);
 	}
 
-	update_rect(dim_.exterior);
-
 	if(top_left_ == NULL || bot_left_ == NULL || top_right_ == NULL || bot_right_ == NULL) {
 		return;
 	}

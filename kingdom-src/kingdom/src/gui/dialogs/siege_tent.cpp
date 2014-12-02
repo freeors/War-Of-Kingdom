@@ -42,7 +42,6 @@
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/combo_box.hpp"
-#include "help.hpp"
 #include "multiplayer.hpp"
 #include "actions.hpp"
 #include "marked-up_text.hpp"
@@ -135,7 +134,7 @@ void tsiege_tent::refresh_interior_ui(tlabel& label, const std::string& interior
 			strstr << "    ";
 		}
 
-		strstr << help::tintegrate::generate_img(interiors_png[n]);
+		strstr << tintegrate::generate_img(interiors_png[n]);
 		strstr << std::setw(4) << std::setfill(' ') << interior[n];
 	}
 	label.set_label(strstr.str());
@@ -304,7 +303,7 @@ void tsiege_tent::pre_show(CVideo& /*video*/, twindow& window)
 			, this
 			, boost::ref(window)));
 	strstr.str("");
-	strstr << help::tintegrate::generate_format(dgettext("wesnoth-lib", "Save Map"), "blue");
+	strstr << tintegrate::generate_format(dgettext("wesnoth-lib", "Save Map"), "blue");
 	button->set_label(strstr.str());
 	if (local_only_ || param_) {
 		button->set_active(false);
@@ -339,7 +338,7 @@ void tsiege_tent::pre_show(CVideo& /*video*/, twindow& window)
 			, boost::ref(window)));
 
 	std::vector<tgroup::tassociate> associates = reinforce_attacker_list();
-	if (!associates.empty()) {
+	if (!param_ && !associates.empty()) {
 		set_reinforce_attacker(window, associates.front().uid, associates.front().username);
 	} else {
 		button->set_active(false);
@@ -360,8 +359,8 @@ void tsiege_tent::pre_show(CVideo& /*video*/, twindow& window)
 		if (!local_only_ && associates.size() == 1) {
 			strstr.str("");
 			utils::string_map symbols;
-			symbols["associate"] = help::tintegrate::generate_format(_("Associate"), "yellow");
-			symbols["side"] = help::tintegrate::generate_format(_("Player side"), "yellow");
+			symbols["associate"] = tintegrate::generate_format(_("Associate"), "yellow");
+			symbols["side"] = tintegrate::generate_format(_("Player side"), "yellow");
 			if (group.associates().empty()) {
 				strstr << vgettext("wesnoth-lib", "Require seting '$associate' in '$side'. Player that no agreement can be defender, ally agreement can be reinforce.", symbols);
 			} else {
@@ -770,7 +769,7 @@ void tsiege_tent::set_defender(twindow& window, int uid, const std::string& user
 	if (uid != group.leader().uid()) {
 		strstr << username;
 	} else {
-		strstr << help::tintegrate::generate_format(username, "red");
+		strstr << tintegrate::generate_format(username, "red");
 	}
 	strstr << "(" <<  utils::split(associate_members_.find(uid)->second.member).size() << ")";
 	find_widget<tbutton>(&window, "defender_username", false, true)->set_label(strstr.str());
@@ -824,7 +823,7 @@ void tsiege_tent::set_defender(twindow& window, int uid, const std::string& user
 
 	tminimap& minimap = find_widget<tminimap>(&window, "minimap", false);
 	minimap.set_config(&game_config_);
-	minimap.set_map_data(scenario_["map_data"]);
+	minimap.set_map_data(tminimap::TILE_MAP, scenario_["map_data"]);
 }
 
 void tsiege_tent::set_reinforce_attacker(twindow& window, int uid, const std::string& username)
@@ -843,7 +842,7 @@ void tsiege_tent::save_map(twindow& window)
 	std::stringstream strstr;
 	utils::string_map symbols;
 
-	symbols["username"] = help::tintegrate::generate_format(defender_.second, "green");
+	symbols["username"] = tintegrate::generate_format(defender_.second, "green");
 	strstr.str("");
 	strstr << vgettext("wesnoth-lib", "Do you want to save $username|'s map to your city map?", symbols);
 	int res = gui2::show_message(disp_.video(), "", strstr.str(), gui2::tmessage::yes_no_buttons);
@@ -867,7 +866,7 @@ void tsiege_tent::save_map(twindow& window)
 
 		tminimap& minimap = find_widget<tminimap>(&window, "minimap", false);
 		minimap.set_config(&game_config_);
-		minimap.set_map_data(scenario_["map_data"]);
+		minimap.set_map_data(tminimap::TILE_MAP, scenario_["map_data"]);
 
 		set_save_map_status(window);
 	}

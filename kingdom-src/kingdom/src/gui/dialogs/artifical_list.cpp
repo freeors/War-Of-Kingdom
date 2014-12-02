@@ -169,7 +169,7 @@ void tartifical_list::fill_table(int catalog)
 		if (!i->is_artifical() || i->is_city()) {
 			continue;
 		}
-		bool known = viewing_team.knows_about_team(i->side() - 1, network::nconnections() > 0);
+		bool known = viewing_team.knows_about_team(i->side() - 1, false);
 		if (!known) {
 			// continue;
 		}

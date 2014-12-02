@@ -120,8 +120,6 @@ void tcamp_armory::pre_show(CVideo&, twindow& window)
 {
 	// set_restore(false);
 	window.set_click_dismiss(false);
-	window.set_enter_disabled(true);
-	window.set_escape_disabled(true);
 
 	// calculate reserve heros.
 	if (rpg::stratum == hero_stratum_citizen) {

@@ -17,14 +17,14 @@
  * Calculate & analyse attacks of the default ai
  */
 
-#include "../../global.hpp"
+#include "global.hpp"
 
 #include "ai.hpp"
 #include "../manager.hpp"
 
 #include "../../attack_prediction.hpp"
-#include "../../map.hpp"
-#include "../../log.hpp"
+#include "map.hpp"
+#include "log.hpp"
 #include "artifical.hpp"
 #include "wml_exception.hpp"
 #include "gettext.hpp"

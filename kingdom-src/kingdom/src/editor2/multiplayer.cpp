@@ -1,3 +1,5 @@
+#ifndef _ROSE_EDITOR
+
 #define GETTEXT_DOMAIN "wesnoth-maker"
 
 #include "global.hpp"
@@ -473,3 +475,5 @@ BOOL CALLBACK DlgMultiplayerProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lP
 	
 	return FALSE;
 }
+
+#endif

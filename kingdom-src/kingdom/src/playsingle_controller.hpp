@@ -20,8 +20,9 @@
 #include "play_controller.hpp"
 #include "replay.hpp"
 #include "playturn.hpp"
+#include "lobby.hpp"
 
-class playsingle_controller : public play_controller
+class playsingle_controller : public play_controller, public tlobby::thandler
 {
 public:
 	playsingle_controller(const config& level, game_state& state_of_game, hero_map& heros, hero_map& heros_start,
@@ -42,6 +43,7 @@ public:
 	virtual void advance();
 	virtual void demolish();
 	virtual void armory();
+	virtual void chat();
 	virtual void play_card();
 	virtual void expedite();
 	virtual void move();
@@ -54,6 +56,8 @@ public:
 	virtual void label_terrain(bool);
 	virtual void clear_labels();
 	virtual void clear_messages();
+
+	virtual bool handle(tlobby::ttype type, const config& data);
 
 	void linger();
 

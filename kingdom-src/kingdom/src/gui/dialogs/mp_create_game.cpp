@@ -56,6 +56,7 @@ tmp_create_game::tmp_create_game(game_display& gui, const config& cfg, bool loca
 	, num_turns_(0)
 	, era_index_(0)
 	, era_(NULL)
+	, local_only_(local_only)
 	, launch_game_(NULL)
 	, maximal_defeated_activity_(NULL)
 	, fog_(register_bool("fog",
@@ -148,11 +149,7 @@ void tmp_create_game::pre_show(CVideo& /*video*/, twindow& window)
 
 	trandom_map::pre_show(window);
 
-	// Force first update to be directly.
-	lobby_base::network_handler();
-	lobby_update_timer_ = add_timer(game_config::lobby_network_timer
-			, boost::bind(&lobby_base::network_handler, this)
-			, true);
+	join();
 }
 
 void tmp_create_game::post_update_map(twindow& window, int select)
@@ -296,13 +293,14 @@ void tmp_create_game::post_show(twindow& window)
 
 	// treat password as checksum
 	parameters_.password = game_config::checksum;
-
-	remove_timer(lobby_update_timer_);
-	lobby_update_timer_ = 0;
 }
 
-void tmp_create_game::process_network_data(const config& data, const network::connection sock)
+bool tmp_create_game::handle(tlobby::ttype type, const config& data)
 {
+	if (type == tlobby::t_disconnected && !local_only_) {
+		launch_game_->get_window()->set_retval(twindow::CANCEL);
+	}
+	return false;
 }
 
 } // namespace gui2

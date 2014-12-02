@@ -20,6 +20,7 @@
 #include "gui/widgets/tree_view.hpp"
 #include "chat_events.hpp"
 #include "gui/dialogs/lobby/lobby_info.hpp"
+#include "gui/dialogs/chat.hpp"
 
 #include <boost/scoped_ptr.hpp>
 
@@ -29,6 +30,7 @@ class hero_map;
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 #include "gui/widgets/list.hpp"
 #endif
+
 namespace gui2 {
 
 class tgrid;
@@ -38,8 +40,8 @@ class tlistbox;
 #endif
 class ttext_box;
 class twindow;
-class tmulti_page;
 class ttoggle_button;
+class tscrollbar_panel;
 
 struct tlobby_chat_window
 {
@@ -52,33 +54,12 @@ struct tlobby_chat_window
 	int pending_messages;
 };
 
-class tplayer_list_lobby_main: public tplayer_list
-{
-public:
-	void init(twindow& w);
-	void update_sort_icons();
-
-public:
-	tsub_player_list active_game;
-	tsub_player_list active_room;
-	tsub_player_list other_rooms;
-	tsub_player_list other_games;
-
-	ttoggle_button* sort_by_name;
-	ttoggle_button* sort_by_relation;
-};
-
-class tlobby_main : public tdialog, public lobby_base, private events::chat_handler
+class tlobby_main : public tdialog, public lobby_base, public tlobby::thandler, public tchat_
 {
 public:
 	tlobby_main(const config& game_config, lobby_info& info, display& disp, hero_map& heros, hero_map& heros_start);
 
 	~tlobby_main();
-
-	/**
-	 * Set the callback used to show the preferences.
-	 */
-	void set_preferences_callback(boost::function<void ()> f);
 
 	void update_gamelist();
 
@@ -95,11 +76,10 @@ protected:
 
 public:
 
-	void update_playerlist();
-
 	enum legacy_result { QUIT, JOIN, OBSERVE, CREATE, PREFERENCES };
 
 	legacy_result get_legacy_result() const { return legacy_result_; }
+	int joined_game_id() const { return joined_game_id_; }
 
 	enum t_notify_mode {
 		NOTIFY_NONE,
@@ -118,45 +98,19 @@ public:
 	void do_notify(t_notify_mode mode);
 
 protected:
-	/** inherited form chat_handler */
-	virtual void send_chat_message(const std::string& message, bool /*allies_only*/);
+	void keyboard_shown(twindow& window);
+	void keyboard_hidden(twindow& window);
+	void update_network_status(twindow& window, bool connected);
 
-	virtual void user_relation_changed(const std::string& name);
-
-	/** inherited form chat_handler */
-	virtual void add_chat_message(const time_t& time, const std::string& speaker,
-		int side, const std::string& message,
-		events::chat_handler::MESSAGE_TYPE type = events::chat_handler::MESSAGE_PRIVATE);
-
-	/** inherited form chat_handler */
-	virtual void add_whisper_sent(const std::string& receiver, const std::string& message);
-
-	/** inherited form chat_handler */
-	virtual void add_whisper_received(const std::string& sender, const std::string& message);
-
-	/** inherited form chat_handler */
-	virtual void add_chat_room_message_sent(const std::string& room, const std::string& message);
-
-	/** inherited form chat_handler */
-	virtual void add_chat_room_message_received(const std::string& room,
-		const std::string& speaker, const std::string& message);
 private:
 	void update_selected_game();
-
-	/**
-	 * Append some text to the active chat log
-	 */
-	void append_to_chatbox(const std::string& text);
-
-	/**
-	 * Append some text to the chat log for window "id"
-	 */
-	void append_to_chatbox(const std::string& text, size_t id);
 
 	/**
 	 * Result flag for interfacing with other MP dialogs
 	 */
 	legacy_result legacy_result_;
+
+	int joined_game_id_;
 
 	/**
 	 * Get the room* corresponding to the currently active window, or NULL
@@ -184,69 +138,11 @@ private:
 	tlobby_chat_window* search_create_window(const std::string& name, bool whisper, bool open_new);
 
 	/**
-	 * @return true if the whisper window for "name" is the active window
-	 */
-	bool whisper_window_active(const std::string& name);
-
-	/**
-	 * @return true if the room window for "room" is the active window
-	 */
-	bool room_window_active(const std::string& room);
-
-	/**
-	 * Mark the whisper window for "name" as having one more pending message
-	 */
-	void increment_waiting_whsipers(const std::string& name);
-
-	/**
-	 * Mark the room window for "room" as having one more pending message
-	 */
-	void increment_waiting_messages(const std::string& room);
-
-	/**
-	 * Add a whisper message to the whisper window
-	 */
-	void add_whisper_window_whisper(const std::string& sender, const std::string& message);
-
-	/**
-	 * Add a whisper message to the current window which is not the whisper window
-	 * for "name".
-	 */
-	void add_active_window_whisper(const std::string& sender, const std::string& message);
-
-	/**
-	 * Add a message to the window for room "room"
-	 */
-	void add_room_window_message(const std::string& room, const std::string& sender, const std::string& message);
-
-	/**
-	 * Add a message to the window for room "room"
-	 */
-	void add_active_window_message(const std::string& sender, const std::string& message);
-
-	/**
-	 * Switch to the window given by a valid pointer (e.g. received from a call
-	 * to *_window_open)
-	 */
-	void switch_to_window(tlobby_chat_window* t);
-
-	void switch_to_window(size_t id);
-
-	void active_window_changed();
-
-	void close_active_window();
-
-	void close_window(size_t idx);
-
-
-	/**
 	 * Network polling callback
 	 */
-	void network_handler();
+	bool handle(tlobby::ttype type, const config& data);
 
-	void process_network_data(const config& data, const network::connection sock);
-
-	void process_message(const config& data, bool whisper = false);
+	// void process_message(const config& data, bool whisper = false);
 
 	void process_gamelist(const config& data);
 
@@ -276,33 +172,15 @@ private:
 	 */
 	bool do_game_join(int idx, bool observe);
 
-	void send_message_button_callback(twindow& window);
-
-	void send_message_to_active_window(const std::string& input);
-
-	void close_window_button_callback(twindow& window);
-
 	void create_button_callback(twindow& window);
 
 	void refresh_button_callback(twindow& window);
 
 	void quit_button_callback(twindow& window);
 
-	void room_switch_callback(twindow& window);
-
-	void chat_input_keypress_callback(
-			  bool& handled
-			, bool& halt
-			, const SDLKey key
-			, twindow& window);
-
 	void game_filter_reload();
 
 	void gamelist_change_callback(twindow& window);
-
-	void player_filter_callback(twidget* widget);
-
-	void user_dialog_callback(user_info* info);
 
 	void skip_replay_changed_callback(twidget* w);
 
@@ -318,23 +196,24 @@ private:
 	/** Inherited from tdialog. */
 	void post_show(twindow& window);
 
+	void fill_lobby(twindow& window);
+	void close_lobby(twindow& window);
+	void fill_chat(twindow& window);
+	void close_chat(twindow& window);
+
+	enum {NONE_PAGE, MIN_PAGE, LOBBY_PAGE = MIN_PAGE, CHAT_PAGE, CHATING_PAGE, MAX_PAGE = CHATING_PAGE};
+	void sheet_toggled(twidget* widget);
+
+	void desire_swap_page(twindow& window, int page, bool open);
+
+private:
 	const config& game_config_;
 
 	tlistbox* gamelistbox_;
 
-	tlistbox* userlistbox_;
-
-	tlistbox* roomlistbox_;
-
-	tmulti_page* chat_log_container_;
-
-	ttext_box* chat_input_;
-
 	twindow* window_;
 
 	lobby_info& lobby_info_;
-
-	boost::function<void ()> preferences_callback_;
 
 	/**
 	 * This represents the open chat windows (rooms and whispers at the moment)
@@ -345,10 +224,6 @@ private:
 	size_t active_window_;
 
 	int selected_game_id_;
-
-	tplayer_list_lobby_main player_list_;
-
-	bool player_list_dirty_;
 
 	bool gamelist_dirty_;
 
@@ -364,11 +239,11 @@ private:
 
 	std::vector<int> gamelist_id_at_row_;
 
-	bool delay_playerlist_update_;
-
 	bool delay_gamelist_update_;
 
 	friend struct lobby_delay_gamelist_update_guard;
+
+	std::map<int, ttoggle_button*> sheet_;
 };
 
 } // namespace gui2

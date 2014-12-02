@@ -444,7 +444,7 @@ void tpreferences::scroll_to_action_toggled(twidget* widget)
 void tpreferences::show_color_cursors_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set_color_cursors(toggle->get_value());
+	// preferences::set_color_cursors(toggle->get_value());
 }
 
 void tpreferences::zoom_button(twindow& window)
@@ -690,7 +690,7 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 		std::stringstream strstr;
 		strstr << env_.maximal_defeated_activity;
 		maximal_defeated_activity_->set_label(strstr.str());
-		if (tent::tower_mode() || resources::controller->is_replaying() || network::nconnections()) {
+		if (tent::tower_mode() || resources::controller->is_replaying() || resources::controller->has_network_player()) {
 			maximal_defeated_activity_->set_active(false);
 		}
 
@@ -710,7 +710,7 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 			strstr << _("Random");
 		}
 		duel_->set_label(strstr.str());
-		if (tent::tower_mode() || resources::controller->is_replaying() || network::nconnections()) {
+		if (tent::tower_mode() || resources::controller->is_replaying() || resources::controller->has_network_player()) {
 			duel_->set_active(false);
 		}
 

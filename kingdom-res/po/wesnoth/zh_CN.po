@@ -11,8 +11,8 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2014-07-23 15:39+0800\n"
-"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
+"PO-Revision-Date: 2014-11-30 14:59+0800\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -520,59 +520,6 @@ msgstr "RACV 翻译"
 msgid "Bots"
 msgstr "机器人"
 
-#. [section]: id=introduction
-#. [topic]: id=..introduction
-#: data/core/help.cfg:21 data/core/help.cfg:87
-msgid "Introduction"
-msgstr "游戏介绍"
-
-#. [section]: id=gameplay
-#. [topic]: id=..gameplay
-#: data/core/help.cfg:27 data/core/help.cfg:135
-msgid "Gameplay"
-msgstr "游戏玩法"
-
-#. [section]: id=traits_section
-#. [topic]: id=..traits_section
-#: data/core/help.cfg:33 data/core/help.cfg:356 src/menu_events.cpp:860
-msgid "Traits"
-msgstr "特质"
-
-#. [section]: id=units
-#. [topic]: id=..units
-#: data/core/help.cfg:42 data/core/help.cfg:93
-msgid "Units"
-msgstr "单位"
-
-#. [section]: id=abilities_section
-#. [topic]: id=..abilities_section
-#: data/core/help.cfg:51 data/core/help.cfg:99
-msgid "Abilities"
-msgstr "能力"
-
-#. [section]: id=weapon_specials
-#. [topic]: id=..weapon_specials
-#: data/core/help.cfg:59 data/core/help.cfg:108
-msgid "Weapon Specials"
-msgstr "武器特性"
-
-#. [section]: id=factions_section
-#: data/core/help.cfg:67 src/help.cpp:1295 src/help.cpp:1297
-msgid "Factions"
-msgstr "派系"
-
-#. [section]: id=terrains
-#. [topic]: id=..terrains
-#: data/core/help.cfg:74 data/core/help.cfg:476
-msgid "Terrains"
-msgstr "地形"
-
-#. [section]: id=commands
-#. [topic]: id=..commands
-#: data/core/help.cfg:81 data/core/help.cfg:778
-msgid "Commands"
-msgstr "命令"
-
 #. [topic]: id=..abilities_section
 #: data/core/help.cfg:102
 msgid ""
@@ -594,65 +541,10 @@ msgstr ""
 "有些武器拥有提升攻击效率的特别属性。\n"
 "\n"
 
-#. [topic]: id=.unknown_unit
-#: data/core/help.cfg:118
-msgid "Unknown Unit"
-msgstr "未知单位"
-
-#. [topic]: id=.unknown_unit
-#: data/core/help.cfg:121
-msgid ""
-"\n"
-"\n"
-"This unit is unknown for the moment. You must discover it in the game to be "
-"allowed to see its description."
-msgstr ""
-"\n"
-"\n"
-"现在此单位还是未知的。您必须在游戏中遇到这个单位后才能看到对它的描述。"
-
-#. [topic]: id=introduction_topic
-#: data/core/help.cfg:126
-msgid "Overview"
-msgstr "概述"
-
-#. [topic]: id=introduction_topic
-#: data/core/help.cfg:129
-#, fuzzy
-msgid ""
-"\n"
-"\n"
-"<italic>text='Battle for Wesnoth'</italic> is a turn-based fantasy strategy "
-"game somewhat unusual among modern strategy games. While other games strive "
-"for complexity, Battle for Wesnoth strives for simplicity of both rules and "
-"gameplay. This does not make the game simple, however — from these simple "
-"rules arise a wealth of strategy, making the game easy to learn but a "
-"challenge to master."
-msgstr ""
-"\n"
-"\n"
-"韦诺之战是一个回合制策略游戏，与许多现代的策略游戏不尽相同。其他游戏着眼于复"
-"杂性，而韦诺之战却醉心于简单的规则与玩法，不过这并不会使得游戏变得“简陋”——从"
-"简易的规则中可以演化出丰富的策略，使得本游戏易于学习，难于精通。"
-
 #. [topic]: id=fundamentals
 #: data/core/help.cfg:141
 msgid "Fundamentals of Gameplay"
 msgstr "游戏基本玩法"
-
-#. [topic]: id=fundamentals
-#: data/core/help.cfg:142
-#, fuzzy
-msgid ""
-"These pages outline all you need to know to play <italic>text='Battle for "
-"Wesnoth'</italic>. They cover how to play and the basic mechanics behind the "
-"game. As you play the game, new information is added to these pages as you "
-"come across new aspects of the game. For more detailed information on "
-"special situations and exceptions, please follow the links included."
-msgstr ""
-"这些页面概述了玩韦诺之战所必需的知识，包括基本玩法与游戏背后的基本机制。当您"
-"在游戏时遇到新的要素时，相应的新信息也会添加进来。如果需要了解详情或是特殊情"
-"况与例外情形，请跟随文中的链接。"
 
 #. [topic]: id=fundamentals
 #: data/core/help.cfg:144
@@ -687,42 +579,6 @@ msgstr ""
 "在游戏时请牢记，如果您将鼠标悬停在游戏中的物件上，如状态面板中的信息上时，会"
 "显示出一条简短的描述以解释每一个物件。这一功能在您第一次遇到新的<ref>dst='.."
 "abilities_section' text='能力'</ref>时非常有用。"
-
-#. [topic]: id=about_game
-#: data/core/help.cfg:152
-msgid "About the Game"
-msgstr "关于本游戏"
-
-#. [topic]: id=about_game
-#: data/core/help.cfg:153
-msgid ""
-"The game takes place over a series of battles, called scenarios. Each "
-"scenario pits your troops against the troops of one or more adversaries. You "
-"can play against the computer, or with friends who each take turns sitting "
-"at the computer (hotseat play). If your computer is connected to a computer "
-"network, you can also play against other people connected to that network. "
-"If your computer has a connection to the Internet, you can play against "
-"other people across the Internet."
-msgstr ""
-"本游戏由一系列的战斗，也就是“场景”组成。每个剧本会让您的部队和一个或更多的对"
-"手作战。您可以和电脑对战，或朋友在同一台电脑上对战（热座模式）。如果您的电脑"
-"在局域网内，您也可以和其他局域网内的人对战。如果您的电脑能连接因特网，则可以"
-"和因特网上的其他人对战。"
-
-#. [topic]: id=about_game
-#: data/core/help.cfg:155
-msgid ""
-"\n"
-"\n"
-"Campaigns consist of multiple scenarios that follow on from each other, "
-"telling a story. In a campaign, you often need to play more carefully, "
-"preserving your best troops so that they can be used again in later "
-"scenarios in the campaign."
-msgstr ""
-"\n"
-"\n"
-"战役讲述着一个故事，是由一系列环环相扣的场景组成的，您常常得更小心谨慎，确保"
-"最精良的部队存活下来，使他们能够在战役中的下一场景里继续战斗。"
 
 #. [topic]: id=victory_and_defeat
 #: data/core/help.cfg:161
@@ -761,701 +617,6 @@ msgstr ""
 "当您在场景中获胜后，地图将变为灰色，而“结束回合”按钮会变成“结束场景”。在按下"
 "该按钮继续之前，您可以做些别的事，例如改变游戏存档选项，或者（在多人游戏中）"
 "和其他玩家交流。"
-
-#. [topic]: id=hitpoints
-#: data/core/help.cfg:200
-msgid "Hitpoints and Experience"
-msgstr "生命值与经验值"
-
-#. [topic]: id=hitpoints
-#: data/core/help.cfg:201
-msgid ""
-"Each unit has a certain number of hitpoints (HP). If the hitpoints of a unit "
-"drop below 1, the unit dies. Each unit also has a certain number of "
-"experience points (XP). A freshly recruited unit starts with no experience "
-"points, and gains experience by fighting enemies."
-msgstr ""
-"每个单位都有一定数量的生命值（HP）。如果单位的生命值降到1以下，他就会死掉。每"
-"个单位也拥有一定的经验值（XP）。新征募的单位在开始时没有经验值，并通过与敌人"
-"战斗来获得经验值。"
-
-#. [topic]: id=hitpoints
-#: data/core/help.cfg:205
-msgid ""
-"The hitpoints and experience points are both indicated in the status pane "
-"using two numbers (the current value and the maximum value the unit can "
-"have)."
-msgstr ""
-"生命值和经验值都会在状态面板上以两个数来表示（当前值/单位所能拥有的最大值）。"
-
-#. [topic]: id=hitpoints
-#: data/core/help.cfg:206
-msgid ""
-"The hitpoints are also indicated by an energy bar next to each unit, which "
-"is green, yellow or red. A unit with at least 1 experience point has a blue "
-"experience bar, which turns white as the unit is about to "
-"<ref>dst='experience_and_advancement' text='advance'</ref>."
-msgstr ""
-"生命值也显示在单位旁边的能量条上。能量条可能是绿色、黄色或红色。至少有1点经验"
-"值的单位拥有一条蓝色经验条，当单位就快<ref>dst='experience_and_advancement' "
-"text='升级'</ref>时经验条会显示为白色。"
-
-#. [topic]: id=movement
-#: data/core/help.cfg:213
-msgid "Movement"
-msgstr "移动"
-
-#. [topic]: id=movement
-#: data/core/help.cfg:214
-#, fuzzy
-msgid ""
-"Movement in <italic>text='Battle for Wesnoth'</italic> is simple. Click on "
-"the unit you wish to move to select it, then click on the hex you wish to "
-"move it to. When a unit is selected, everywhere it can move this turn will "
-"be highlighted, and all other hexes on the map are made dull. Mousing over a "
-"highlighted hex shows the defense rating the unit would have if you moved it "
-"to that hex. Mousing over a dull hex will also show the number of turns "
-"required to reach it, and clicking will cause the unit to move towards it by "
-"the fastest route over this and subsequent turns. If you don’t use up all of "
-"a unit’s movement when you first move a unit, you may move it again. This is "
-"useful when having two units switch places. Attacking with a unit will use "
-"up its movement. Ending a move in a village you don’t already own will also "
-"use up a unit’s movement, but will still allow it to attack."
-msgstr ""
-"韦诺之战中单位的移动很简单。只需点击选中您想要移动的单位，再点击目的地就行"
-"了。当单位被选中时，该单位在本回合可移动的范围就会以高亮显示，而本回合无法到"
-"达的区域则会暗下去。移动鼠标到高亮显示的格子里，该单位在目的地的防御值（闪避"
-"率）便会显示出来。移动鼠标到暗格子上还会显示要到达那里所需的回合数，点击该格"
-"子会让单位以最佳的路线移动，并在接下来的几回合中到达目的地。如果您没有用完本"
-"回合中某单位所有的移动点数，则还可以继续移动他。当您要交换两个单位的位置时，"
-"这是很有用的。如果命令单位进行攻击，则将耗尽他的移动点数。当单位进入一个您还"
-"没有占领的村庄时也会耗尽所有的移动点数，但他仍然能够攻击。"
-
-#. [topic]: id=movement
-#: data/core/help.cfg:216
-msgid ""
-"\n"
-"\n"
-"Each unit has a certain number of movement points which are used up when "
-"moving into a new hex, depending on the Terrain of that particular hex. For "
-"instance, grassland nearly always costs 1 movement point to enter. Exactly "
-"how many movement points are spent entering a hex depends on the unit type — "
-"in forest, elvish units only spend 1 movement point, most human and orc "
-"units spend 2, while horsemen spend 3. You can learn how many movement "
-"points a unit requires to enter a certain terrain type by right-clicking on "
-"it, selecting Unit Description, and then looking at <italic>text='Terrain "
-"Modifiers'</italic>."
-msgstr ""
-"\n"
-"\n"
-"每个单位都有一定的移动点数，这些点数将在移动到新的格子中时被消耗掉，其消耗量"
-"取决于目标格的地形。例如，进入草地几乎总是耗费1点移动点数。进入特定格子所耗费"
-"的移动点数取决于单位种类——在森林里，精灵族单位只需花费1点移动点数，绝大多数人"
-"类和兽人单位花费2点，而骑兵则要花费3点。如要获悉某个单位进入某个地形所需的移"
-"动点数，只需右击该单位，再选“单位描述”，然后阅读<italic>text='地形影响'</"
-"italic>部分。"
-
-#. [topic]: id=movement
-#: data/core/help.cfg:218
-msgid ""
-"\n"
-"\n"
-"Another thing to keep in mind while moving is Zones of Control. Each unit "
-"generates a zone of control in the hexes immediately surrounding it, and any "
-"enemy unit entering those hexes immediately ends its movement. Learning how "
-"to use zones of control to your advantage is an important part of Wesnoth, "
-"as only <ref>dst='ability_skirmisher' text='Skirmishers'</ref> can ignore "
-"zones of control."
-msgstr ""
-"\n"
-"\n"
-"移动时，您还需要记住控制区域的概念。每个单位都会在紧邻自身的格子中产生控制区"
-"域，敌军若进入那些格子，将立即耗尽移动点数。学习如何利用控制区域，是玩韦诺时"
-"的一个重点。只有<ref>dst='ability_skirmisher' text='游击'</ref>能力可以忽略控"
-"制区域的影响。"
-
-#. [topic]: id=movement
-#: data/core/help.cfg:220
-msgid ""
-"\n"
-"\n"
-"To see where the enemy can move to during their next turn, press Ctrl-v or "
-"Cmd-v. Ctrl-b or Cmd-b shows where the enemy could move, if your units were "
-"not on the map to block their progress."
-msgstr ""
-"\n"
-"\n"
-"按下Ctrl-v或Cmd-v就可以查看敌人下回合能移动到的区域。按下Ctrl-b或Cmd-b可以显"
-"示在您的部队不影响敌人移动的情况下，他们可以移动到的区域。"
-
-#. [topic]: id=shroud_and_fog
-#: data/core/help.cfg:227
-msgid "Shroud and Fog of War"
-msgstr "战场黑幕与战争迷雾"
-
-#. [topic]: id=shroud_and_fog
-#: data/core/help.cfg:230
-msgid ""
-"In some scenarios, parts of the map will be hidden from you. There are two "
-"mechanisms that can be used separately or together. The Shroud hides both "
-"the terrain and any units at a location. However, once it is cleared, you "
-"can always see that location. The Fog of War only hides units and ownership "
-"of villages (other than by you or your allies). The Fog of War is cleared "
-"temporarily when you have units nearby, but returns when they leave. Both "
-"the Shroud and the Fog of War are cleared by units. Each unit clears "
-"locations adjacent to those within one turn’s move (ignoring zones of "
-"control and enemy units).\n"
-"\n"
-"Normally you can undo a unit’s movement, as long as an event with a "
-"randomized result has not occurred, such as combat or recruitment (as most "
-"units receive random traits when recruited). Exploring hidden terrain by "
-"clearing Shroud or Fog will also prevent undos to a previous state. You may "
-"wish to activate ‘delay shroud updates’ in the actions menu. This will "
-"prevent units from clearing Shroud or Fog until the next randomized event or "
-"a manual update via ‘update shroud now’ (or the end of your turn) and "
-"thereby perserve your ability to undo movement."
-msgstr ""
-"某些场景的部分地图是不可见的，这背后有两种机理，可以分开或一同作用。战场黑幕"
-"会隐藏某位置的地形和任何单位。但是，一旦清除黑幕之后，您将总是能看见该位置。"
-"战争迷雾只会隐藏村庄的归属（除了属于您或者您的盟友的村庄之外）以及单位。在迷"
-"雾附近有您的单位时，它会暂时消失，而当他们离去后则会再次笼罩。每个单位都能清"
-"除在一回合中所能移动到的区域以及紧邻于这些区域的地块的战场黑幕和迷雾（忽略控"
-"制区域和敌人部队的影响）。\n"
-"\n"
-"通常您可以撤销单位的移动，只要没有发生会产生随机结果的事件即可，比如战斗和征"
-"募（绝大多数单位被征募时都会获得随机的特质）。清除黑幕或迷雾以探索被隐藏地形"
-"的行动也将阻止您撤销回之前的状态。您也许会希望激活行动菜单中的“暂缓刷新黑"
-"幕”功能以保留您撤销移动的能力。该功能将阻止单位清除黑幕或者迷雾，直到下一个随"
-"机事件发生或者使用“立即刷新黑幕”进行手动更新为止。"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:237
-msgid "Combat"
-msgstr "战斗"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:238
-#, fuzzy
-msgid ""
-"Combat in <italic>text='Battle for Wesnoth'</italic> always takes place "
-"between units in adjacent hexes. Click on your unit, and click on the enemy "
-"you want to attack: your unit will move towards the enemy unit, and when "
-"they are next to each other, combat will begin. The attacker and defender "
-"alternate strikes until each has used their allotted number of strikes. The "
-"attacker chooses one of its weapons to attack with, and the defender "
-"retaliates with one of its attacks of the same type. There are two types of "
-"attacks: melee, which usually involves weapons such as swords, axes or "
-"fangs; and ranged, which usually involves weapons such as bows, spears and "
-"fireballs."
-msgstr ""
-"韦诺之战中的战斗总是发生在相邻的两个单位之间。点击您的单位，然后再点击您想攻"
-"击的敌人：您的单位会向敌人方向移动，当两个单位相邻时，战斗就会开始。进攻者和"
-"防御者交替打击对方，直到都用完被分配的攻击次数为止。进攻者选择一种武器进行攻"
-"击，而防御者会使用相同种类的武器进行防御。攻击种类有两种：近战，使用的武器通"
-"常包括剑，斧，或者利齿；远程，使用的武器通常包括弓，矛以及火球。"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:240
-msgid ""
-"\n"
-"\n"
-"<header>text='Order and number of strikes'</header>"
-msgstr ""
-"\n"
-"\n"
-"<header>text='攻击顺序与次数'</header>"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:242
-msgid ""
-"\n"
-"\n"
-"The attacker gets the first strike, then the defender retaliates. Each "
-"strike either hits, doing a given amount of damage, or misses, doing no "
-"damage at all. Strikes alternate until each unit has used up all of its "
-"strikes. The number of strikes a unit has varies; for instance, an Elvish "
-"fighter with a 5–4 attack may strike 4 times, each successful strike dealing "
-"5 damage, while an Orcish Grunt with a 9–2 attack can only strike twice (but "
-"at 9 damage for each hit)."
-msgstr ""
-"\n"
-"\n"
-"进攻方率先攻击，然后防御者反击。每次攻击要么命中，造成一定的伤害，要么不中，"
-"完全不造成伤害。攻击将反复轮流进行，直到双方都用尽其攻击次数为止。单位拥有的"
-"攻击次数是不同的。例如，攻击值为5-4的精灵战士可以攻击4次，每次击中敌人将造成5"
-"点伤害，而具有9-2攻击值的兽人步兵只能攻击2次（但每次击中敌人会造成9点伤害）。"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:244
-msgid ""
-"\n"
-"\n"
-"<header>text='Chance to hit'</header>"
-msgstr ""
-"\n"
-"\n"
-"<header>text='命中率'</header>"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:246
-msgid ""
-"\n"
-"\n"
-"Every unit has a chance of being hit, based on the Terrain it is in. This is "
-"shown in the status pane, and may also be found by right-clicking a unit, "
-"selecting Unit Description, and then looking at <italic>text='Terrain "
-"Modifiers'</italic>. For instance, many elves have a defense rating of 70% "
-"in forest, so a unit attacking them has only a 30% chance of hitting. "
-"Conversely, the elf’s chance of hitting the attacker in return depends on "
-"what terrain the attacker is in."
-msgstr ""
-"\n"
-"\n"
-"根据其所处的地形，每个单位都有一定的几率被击中。这在状态面板上会有显示。也可"
-"以右击单位，选择单位描述，而后查看<italic>text='地形影响'</italic>的内容。例"
-"如，许多精灵在森林里都有70%的防御值（闪避率），这表示进攻者只有30%的几率命中"
-"目标。同样的，该精灵在反击中击中进攻者的几率取决于进攻者所处的地形。"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:248
-msgid ""
-"\n"
-"\n"
-"There are two exceptions to this rule: <ref>dst='weaponspecial_magical' "
-"text='Magical attacks'</ref> and <ref>dst='weaponspecial_marksman' "
-"text='Marksmen'</ref>. Magical attacks always have a 70% chance to hit, "
-"regardless of terrain, and, when used offensively, Marksmen always have at "
-"least a 60% chance to hit, regardless of terrain."
-msgstr ""
-"\n"
-"\n"
-"以上规则有两个例外：<ref>dst='weaponspecial_magical' text='魔法攻击'</ref>和"
-"<ref>dst='weaponspecial_marksman' text='精准射击'</ref>。魔法攻击可以无视地"
-"形，总是有70%的命中率，而精准射击在进攻时也可以无视地形，而最少有60%的命中"
-"率。"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:250
-msgid ""
-"\n"
-"\n"
-"<header>text=Damage</header>"
-msgstr ""
-"\n"
-"\n"
-"<header>text=伤害</header>"
-
-# sometimes there are quotations in "text='Time of Day'", for example, but sometimes there aren't, as in "text=resistance". what's the difference? and shall i use quotations in a likewise manner in translation?
-#. [topic]: id=combat
-#: data/core/help.cfg:252
-msgid ""
-"\n"
-"\n"
-"Each strike which hits causes a base amount of damage depending on the "
-"attack type. For instance, an Elvish Fighter with a 5–4 attack does 5 base "
-"damage. This is usually modified by two things: "
-"<ref>dst='damage_types_and_resistance' text='Resistance'</ref> and "
-"<ref>dst='time_of_day' text='Time of Day'</ref>. To see how base damage is "
-"modified by the circumstances, select <italic>text='Damage Calculations'</"
-"italic> in the attack selection menu."
-msgstr ""
-"\n"
-"\n"
-"根据攻击类型的不同，每次成功的攻击都会造成一定量的基础伤害。例如，具有5-4攻击"
-"值的精灵战士可以造成5点的基本伤害。通常有两种因素会对此作出修正：即"
-"<ref>dst='damage_types_and_resistance' text='抗性'</ref>和"
-"<ref>dst='time_of_day' text='时段'</ref>。欲查看这些状况是如何修正基础伤害"
-"的，请在攻击选择菜单中选择<italic>text='伤害计算'</italic>。"
-
-#. [topic]: id=combat
-#: data/core/help.cfg:254
-msgid ""
-"\n"
-"\n"
-"A few units have special <ref>dst='..abilities_section' text='abilities'</"
-"ref> which affect damage dealt in combat. The most common of these is "
-"<ref>dst='weaponspecial_charge' text='Charge'</ref>, which doubles the "
-"damage dealt by both attacker and defender when the unit with Charge attacks."
-msgstr ""
-"\n"
-"\n"
-"有些单位拥有特别的<ref>dst='..abilities_section' text='能力'</ref>，会影响在"
-"战斗中的伤害输出。最常见的能力是<ref>dst='weaponspecial_charge' text='冲锋'</"
-"ref>，当具有冲锋能力的单位进攻时，进攻者和防御者都将输出双倍伤害。"
-
-#. [topic]: id=damage_types_and_resistance
-#: data/core/help.cfg:260
-msgid "Damage Types and Resistance"
-msgstr "伤害类型与抗性"
-
-#. [topic]: id=damage_types_and_resistance
-#: data/core/help.cfg:261
-msgid ""
-"In Wesnoth, there are three types of damage usually associated with physical "
-"attacks: Blade, Pierce and Impact damage. Additionally, there are three "
-"further types of damage usually associated with magical attacks: Fire, Cold "
-"and Arcane attacks. Different units may have resistances which alter the "
-"damage which they take from certain damage types."
-msgstr ""
-"在韦诺中，有三种伤害类型通常和物理攻击有关：剑刃，穿刺和冲击伤害。此外，还有"
-"三种伤害类型通常和魔法攻击有关：火焰，寒冰和奥术攻击。不同的单位可能对特定的"
-"伤害类型具有抗性，从而改变被击中时受到的伤害。"
-
-#. [topic]: id=damage_types_and_resistance
-#: data/core/help.cfg:263
-#, fuzzy
-msgid ""
-"\n"
-"\n"
-"Resistances work very simply: if a unit has 40% resistance against a damage "
-"type, then it will suffer 40% less damage when hit with that damage type. It "
-"is also possible for a unit to be vulnerable against some damage types. If a "
-"unit has −100% resistance against a damage type, it will suffer 100% more "
-"damage when hit by that type."
-msgstr ""
-"\n"
-"\n"
-"抗性的原理很简单：如果一个单位对某种伤害类型有40%的抗性，则被该种伤害类型击中"
-"时减少40%的伤害值。一个单位也有可能更易受某种伤害。如果一个单位对某种伤害"
-"有-100%的抗性，则被该种伤害类型击中时增加100%的伤害值。"
-
-#. [topic]: id=damage_types_and_resistance
-#: data/core/help.cfg:265
-msgid ""
-"\n"
-"\n"
-"For example, Skeletons are highly resistant to Blade and Pierce damage, but "
-"are vulnerable to Impact and Fire damage, and extremely vulnerable to Arcane "
-"damage."
-msgstr ""
-"\n"
-"\n"
-"例如，骷髅对剑刃和穿刺伤害具有很高的抗性，但容易受到冲击和火焰伤害，并且非常"
-"害怕奥术伤害。"
-
-#. [topic]: id=damage_types_and_resistance
-#: data/core/help.cfg:267
-msgid ""
-"\n"
-"\n"
-"If a strike is determined to hit, it will always do at least 1 point of "
-"damage. This applies even if the defender has 100% resistance to the damage "
-"type."
-msgstr ""
-"\n"
-"\n"
-"每次成功的攻击都至少会造成1点伤害，即使防御者对这种攻击有100%的抗性时也是如"
-"此。"
-
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:273
-msgid "Time of Day"
-msgstr "时段"
-
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:278
-#, fuzzy
-msgid ""
-"The time of day affects the damage of certain units as follows:\n"
-" Lawful units get +25% damage in daytime, and −25% damage at night.\n"
-" Chaotic units get +25% damage at night, and −25% in daytime.\n"
-" Liminal units get +25% damage during twilight.\n"
-" Neutral units are unaffected by the time of day."
-msgstr ""
-"时段对某些单位的伤害输出有影响，具体如下：\n"
-" 守序单位昼间伤害+25%，夜间伤害−25%。\n"
-" 混乱单位昼间伤害+25%，夜间伤害−25%。\n"
-" 中立单位不受时段的影响。"
-
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:281
-msgid ""
-"\n"
-"\n"
-"The current time of day can be observed under the minimap in the status "
-"pane. For the usual day/night cycle, Morning and Afternoon count as day, "
-"First and Second Watch count as night:\n"
-msgstr ""
-"\n"
-"\n"
-"当前时段可以在小地图下方的状态面板中看到。在通常的昼夜循环里，上午和下午算作"
-"昼间，而前半夜和后半夜算作夜间：\n"
-
-#. [time]: id=dawn
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:281 data/core/macros/schedules.cfg:6
-msgid "Dawn"
-msgstr "黎明"
-
-#. [time]: id=morning
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:282 data/core/macros/schedules.cfg:17
-msgid "Morning"
-msgstr "上午"
-
-#. [time]: id=afternoon
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:283 data/core/macros/schedules.cfg:26
-msgid "Afternoon"
-msgstr "下午"
-
-#. [time]: id=dusk
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:284 data/core/macros/schedules.cfg:35
-msgid "Dusk"
-msgstr "黄昏"
-
-#. [time]: id=first_watch
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:285 data/core/macros/schedules.cfg:46
-msgid "First Watch"
-msgstr "前半夜"
-
-#. [time]: id=second_watch
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:286 data/core/macros/schedules.cfg:58
-msgid "Second Watch"
-msgstr "后半夜"
-
-#. [topic]: id=time_of_day
-#: data/core/help.cfg:288
-msgid ""
-"Keep in mind that some scenarios take place underground, where it is "
-"perpetually night!"
-msgstr "请记住，有些场景是发生在地下的，那里永远都是夜间！"
-
-#. [topic]: id=experience_and_advancement
-#: data/core/help.cfg:295
-msgid "Experience and Advancement"
-msgstr "经验值与升级"
-
-#. [topic]: id=experience_and_advancement
-#: data/core/help.cfg:296
-msgid ""
-"If both units survive a combat, they gain a number of experience points "
-"equal to the level of the unit they’re fighting. If a unit kills another in "
-"combat, however, it gains much more experience — 4 for a level 0 unit, 8 for "
-"level 1, 16 for level 2, 24 for level 3, and so forth."
-msgstr ""
-"如果两个单位在战斗之后都存活下来，他们都能得到相当于对手等级的经验值。但如果"
-"一个单位在战斗中杀死了另一个，则能得到多得多的经验值——0级单位提供4点，1级单位"
-"8点，2级单位16点，3级单位24点，以此类推。"
-
-#. [topic]: id=experience_and_advancement
-#: data/core/help.cfg:298
-msgid ""
-"\n"
-"\n"
-"Units have a certain amount of experience required to advance (this is 20% "
-"less for units with the Intelligent trait). Once they achieve this amount, "
-"they immediately advance to the next level, healing fully in the process. In "
-"some cases, you will be given a choice of advancement options."
-msgstr ""
-"\n"
-"\n"
-"所有单位都需要获得一定的经验值才能升级（具有聪慧特质的单位所需的经验值减少"
-"20%）。 一旦获得足够的经验值，他们就会立刻升级，同时生命值完全回复。在有些情"
-"况下，您将可以选择一个升级选项。"
-
-#. [topic]: id=experience_and_advancement
-#: data/core/help.cfg:300
-msgid ""
-"\n"
-"\n"
-"While most units have three levels, not all do. Occasional units (such as "
-"<ref>dst='unit_Mage' text='Magi'</ref>) may have four. Once a unit has "
-"reached its maximum level, it may have an After Maximum Level Advancement "
-"(AMLA) available to it. The AMLA will modify the unit each time the unit "
-"reaches the experience goal, but the unit will remain the same level. The "
-"typical AMLA effect is for the unit to raise the maximum HP by 3 and full-"
-"heal it. The first AMLA will normally be reached with 150 XP gained (120 XP "
-"for intelligent units). However, gaining an AMLA becomes progressively "
-"harder for each AMLA the unit receives, and so it is usually more useful to "
-"try to advance your lower level units."
-msgstr ""
-"\n"
-"\n"
-"尽管大多数单位有三个等级，但并非都是如此。有些单位（例如<ref>dst='unit_Mage' "
-"text='法师'</ref>）能升到四级。单位升到最高级以后，可以获得满级奖励（AMLA）。"
-"AMLA会在单位获得所需经验值后改变单位属性，但等级不变。典型的AMLA效果是增加3点"
-"最大生命值并补满血。通常情况下，单位会在获得150点经验值（聪慧单位是120点）后"
-"获得第一次AMLA。不过，以后每次获得AMLA的难度逐渐变大，所以尝试让您的低等级单"
-"位升级通常会更有用。"
-
-#. [topic]: id=healing
-#: data/core/help.cfg:307
-msgid "Healing"
-msgstr "治疗"
-
-#. [topic]: id=healing
-#: data/core/help.cfg:308
-msgid ""
-"In combat, your units will inevitably take damage. When a unit "
-"<ref>dst='experience_and_advancement' text='advances'</ref>, it will heal "
-"fully. This can happen as you finish fighting an enemy, whether it is your "
-"turn or not. Wesnoth offers several other ways for your units to heal, all "
-"of which take place at the beginning of your turn, before you take action."
-msgstr ""
-"战斗中，您的单位不可避免地会受到伤害。当一个单位"
-"<ref>dst='experience_and_advancement' text='升级'</ref>时，其生命值会完全回"
-"复。这会在您和敌人单位的战斗结束后发生，而不论当前是否是您的回合。韦诺还为您"
-"的单位提供了几种其他的治疗方式，这些治疗全部在您的回合的开始，而您还没有进行"
-"操作时发生。"
-
-#. [topic]: id=healing
-#: data/core/help.cfg:310
-msgid ""
-"\n"
-"\n"
-"Resting: A unit which neither moves, attacks, nor is attacked will heal 2 HP "
-"in its next turn."
-msgstr ""
-"\n"
-"\n"
-"休息： 单位在本回合不移动、攻击或被攻击，则会在下回合恢复2点生命值。"
-
-#. [topic]: id=healing
-#: data/core/help.cfg:311
-msgid ""
-"\n"
-"Villages: A unit which starts a turn in a village will heal 8HP."
-msgstr ""
-"\n"
-"村庄：每回合开始时在村庄中的单位可以恢复8点生命值。"
-
-#. [topic]: id=healing
-#: data/core/help.cfg:312
-msgid ""
-"\n"
-"<ref>dst='ability_regenerates' text='Regeneration'</ref>: Certain units "
-"(such as trolls) will automatically heal 8HP every turn."
-msgstr ""
-"\n"
-"<ref>dst='ability_regenerates' text='再生'</ref>：某些单位（如巨魔）每回合将"
-"自动回复8点生命值。"
-
-#. [topic]: id=healing
-#: data/core/help.cfg:313
-msgid ""
-"\n"
-"Healing units: Units with the <ref>dst='ability_heals +4' text='Heals'</ref> "
-"ability will heal each allied adjacent unit, usually <ref>dst='ability_heals "
-"+4' text='4HP'</ref> or <ref>dst='ability_heals +8' text='8HP'</ref> per "
-"turn, or prevent Poison from causing that unit damage."
-msgstr ""
-"\n"
-"治疗单位：有<ref>dst='ability_heals +4' text='治疗'</ref>能力的单位每回合能恢"
-"复相邻友军单位<ref>dst='ability_heals +4' text='4点'</ref>或"
-"<ref>dst='ability_heals +8' text='8点'</ref>的生命值，或阻止毒药发作。"
-
-#. [topic]: id=healing
-#: data/core/help.cfg:314
-msgid ""
-"\n"
-"Curing units: Units with the <ref>dst='ability_cures' text='Cures'</ref> "
-"ability will cure Poison in all allied adjacent units (in preference to "
-"healing, if it has that ability as well)."
-msgstr ""
-"\n"
-"治愈单位：有<ref>dst='ability_cures' text='治愈'</ref>能力的单位可以治愈全部"
-"相邻友军单位的中毒状态（如果本单位还有治疗能力，则治愈优先于治疗）。"
-
-#. [topic]: id=healing
-#: data/core/help.cfg:316
-msgid ""
-"\n"
-"\n"
-"Resting can be combined with other forms of healing, but villages, "
-"regeneration, healing and curing cannot combine with each other: the best "
-"option will be used. Finally, units heal fully between scenarios."
-msgstr ""
-"\n"
-"\n"
-"休息可以和其它治疗方式叠加，但是村庄、再生、治疗和治愈效果则不能互相叠加。游"
-"戏会自动选择最优的治疗方式。最后，单位能在过场时完全回复生命值。"
-
-#. [topic]: id=income_and_upkeep
-#: data/core/help.cfg:323
-msgid "Income and Upkeep"
-msgstr "收入和维护费用"
-
-#. [topic]: id=income_and_upkeep
-#: data/core/help.cfg:324
-msgid ""
-"In Wesnoth, it is not enough simply to recruit units and fight. You must "
-"watch your gold as well, especially in campaigns, where you can carry extra "
-"gold over from one scenario to the next. There are two aspects to this; "
-"Income and Upkeep."
-msgstr ""
-"在韦诺中，仅仅征募单位并战斗是不够的。您还得注意您的金币，特别是在战役中，因"
-"为您可以将多余的金币携带到下一场景。影响金币数量的主要是两个方面：收入和维护"
-"费用。"
-
-#. [topic]: id=income_and_upkeep
-#: data/core/help.cfg:326
-msgid ""
-"\n"
-"\n"
-"Income is simple. You have a base income of 2 gold per turn. For every "
-"village you control, you gain one additional gold each turn. Thus, if you "
-"have ten villages, you would normally gain 12 gold each turn. Your Upkeep "
-"costs are subtracted from this income, as detailed below."
-msgstr ""
-"\n"
-"\n"
-"收入这个概念很简单。每回合您都会得到2金币的基本收入。您所占领的每个村庄每回合"
-"也会给您1个金币的额外收入。因此如果您占领了十个村庄，每回合就会有12个金币的收"
-"入。维护费用由您的收入来支付。以下是详细信息。"
-
-#. [topic]: id=income_and_upkeep
-#: data/core/help.cfg:328
-msgid ""
-"\n"
-"\n"
-"Upkeep is also fairly simple. Each unit requires an amount of Upkeep equal "
-"to its level. You can support as many levels <italic>text=worth</italic> of "
-"units as you have villages, without paying any upkeep. However, for each "
-"level of unit beyond the number of villages you have, you must pay one gold "
-"per turn. For example, if you have twelve level one units and ten villages, "
-"you would have to pay two gold each turn in upkeep."
-msgstr ""
-"\n"
-"\n"
-"维护费也相当简单。每个单位都需要支付与其等级相等的维护费用。您所能免费支持的"
-"单位的<italic>text=等级之和</italic>与您所拥有的村庄数量相同。然而，单位等级"
-"之和每超过您所拥有的村庄数1级，您就得每回合支付1金币的维护费用。例如，如果您"
-"有十二个一级的单位和十个村庄，您就得每回合支付2个金币的维护费用。"
-
-#. [topic]: id=income_and_upkeep
-#: data/core/help.cfg:330
-msgid ""
-"\n"
-"\n"
-"Upkeep costs are subtracted from your Income, so in the case of twelve "
-"levels of units and ten villages, your resultant Income would be 10 gold per "
-"turn."
-msgstr ""
-"\n"
-"\n"
-"维护费用以您的收入来支付，所以在有等级总和为十二的单位和十个村庄的情况下，最"
-"终您的收入将会是每回合10个金币。"
-
-#. [topic]: id=income_and_upkeep
-#: data/core/help.cfg:331
-msgid ""
-"\n"
-"There are two important exceptions to Upkeep: units with the Loyal trait and "
-"leaders never incur upkeep. Units you begin the scenario with (such as "
-"Delfador), or units who join you during a scenario (such as the Horseman in "
-"the second scenario of Heir to the Throne) will usually have the Loyal "
-"trait. The unit you are playing (such as Konrad) will almost always be a "
-"leader."
-msgstr ""
-"\n"
-"维护费用的支付规则中有两个重要的例外：即具有忠诚特质的单位以及领袖不需要支付"
-"维护费用。每个场景开始时您所拥有的单位（比如黎伐多），或在场景中加入己方的单"
-"位（如在“王座继承者”第二场景中加入的骑手）通常都具有忠诚特质。而您所扮演的角"
-"色（如科纳德）几乎总是一位领袖。"
 
 #. [topic]: id=wrap_up
 #: data/core/help.cfg:337
@@ -8088,10 +7249,6 @@ msgstr "引用了未知主题："
 msgid "corrupted original file"
 msgstr "原始文件出错"
 
-#: src/help.cpp:3144
-msgid "The War of Kingdom Help"
-msgstr "王国战争帮助"
-
 #: src/help.cpp:3200
 msgid "Parse error when parsing help text: "
 msgstr "分析帮助文本时出现语法错误："
@@ -8126,70 +7283,6 @@ msgstr "随机"
 #: src/leader_list.cpp:236 src/leader_list.cpp:242
 msgid "?"
 msgstr "？"
-
-#: src/loadscreen.cpp:222
-msgid "Initializing user interface"
-msgstr "正在初始化用户界面"
-
-#: src/loadscreen.cpp:223
-msgid "Loading game configuration"
-msgstr "正在读取游戏配置……"
-
-#: src/loadscreen.cpp:224 src/loadscreen.cpp:231
-msgid "Verifying cache"
-msgstr "正在验证缓存……"
-
-#: src/loadscreen.cpp:225 src/loadscreen.cpp:232
-msgid "Reading files and creating cache"
-msgstr "正在读取文件并创建缓存……"
-
-#: src/loadscreen.cpp:226 src/loadscreen.cpp:233
-msgid "Reading unit files"
-msgstr "正在读取单位文件……"
-
-#: src/loadscreen.cpp:227
-msgid "Re-initialize fonts for the current language"
-msgstr "为当前语言重新初始化字体……"
-
-#: src/loadscreen.cpp:228
-msgid "Searching for installed add-ons"
-msgstr "正在搜索已经安装的附加组件……"
-
-#: src/loadscreen.cpp:229
-msgid "Loading title screen"
-msgstr "正在读取主屏幕……"
-
-#: src/loadscreen.cpp:230
-msgid "Loading data files"
-msgstr "正在读取数据文件……"
-
-#: src/loadscreen.cpp:234
-msgid "Loading level"
-msgstr "正在读取关卡文件……"
-
-#: src/loadscreen.cpp:235
-msgid "Initializing teams"
-msgstr "正在初始化队伍……"
-
-#: src/loadscreen.cpp:236
-msgid "Loading units"
-msgstr "正在读取单位定义……"
-
-#: src/loadscreen.cpp:237
-msgid "Building terrain rules"
-msgstr "正在建立地形构造规则集……"
-
-#: src/loadscreen.cpp:238
-msgid "Initializing display"
-msgstr "正在初始化显示……"
-
-#: src/loadscreen.cpp:239
-msgid "Drawing theme"
-msgstr "正在绘制主题……"
-
-#: src/loadscreen.cpp:240
-msgid "Starting game"
-msgstr "正在开始游戏……"
 
 #: src/map.cpp:194
 msgid "A map without a header is not supported"
@@ -10657,29 +9750,301 @@ msgstr "闪避"
 msgid "Legend of Mythology"
 msgstr "太古神谈"
 
-#~ msgid "Scenario"
-#~ msgstr "关卡"
+#~ msgid "Initializing user interface"
+#~ msgstr "正在初始化用户界面......"
 
-#~ msgid "RPG"
-#~ msgstr "RPG"
+#~ msgid "Loading game configuration"
+#~ msgstr "正在读取游戏配置……"
 
-#~ msgid "Tower"
-#~ msgstr "塔防"
+#~ msgid "Verifying cache"
+#~ msgstr "正在验证缓存……"
 
-#~ msgid "Unknown"
-#~ msgstr "未知"
+#~ msgid "Reading files and creating cache"
+#~ msgstr "正在读取文件并创建缓存……"
 
-#~ msgid "The Battle for Wesnoth Help"
-#~ msgstr "王国战争帮助"
+#~ msgid "Reading unit files"
+#~ msgstr "正在读取单位文件……"
 
-#~ msgid "Official Wesnoth Server"
-#~ msgstr "官方韦诺服务器"
+#~ msgid "Re-initialize fonts for the current language"
+#~ msgstr "为当前语言重新初始化字体……"
 
-#~ msgid "Must exist tow keep at least before building wall."
-#~ msgstr "在造城墙前必须至少存在两座城楼。"
+#~ msgid "Searching for installed add-ons"
+#~ msgstr "正在搜索已经安装的附加组件……"
 
-#~ msgid "Ambushed!"
-#~ msgstr "遭到伏击！"
+#~ msgid "Loading title screen"
+#~ msgstr "正在读取主屏幕……"
 
-#~ msgid "Alerted!"
-#~ msgstr "遭到预警！"
+#~ msgid "Loading data files"
+#~ msgstr "正在读取数据文件……"
+
+#~ msgid "Loading level"
+#~ msgstr "正在读取关卡文件……"
+
+#~ msgid "Initializing teams"
+#~ msgstr "正在初始化队伍……"
+
+#~ msgid "Loading units"
+#~ msgstr "正在读取单位定义……"
+
+#~ msgid "Building terrain rules"
+#~ msgstr "正在建立地形构造规则集……"
+
+#~ msgid "Initializing display"
+#~ msgstr "正在初始化显示……"
+
+#~ msgid "Drawing theme"
+#~ msgstr "正在绘制主题……"
+
+#~ msgid "Starting game"
+#~ msgstr "正在开始游戏……"
+
+#~ msgid "Time of Day"
+#~ msgstr "时段"
+
+#, fuzzy
+#~ msgid ""
+#~ "The time of day affects the damage of certain units as follows:\n"
+#~ " Lawful units get +25% damage in daytime, and −25% damage at night.\n"
+#~ " Chaotic units get +25% damage at night, and −25% in daytime.\n"
+#~ " Liminal units get +25% damage during twilight.\n"
+#~ " Neutral units are unaffected by the time of day."
+#~ msgstr ""
+#~ "时段对某些单位的伤害输出有影响，具体如下：\n"
+#~ " 守序单位昼间伤害+25%，夜间伤害−25%。\n"
+#~ " 混乱单位昼间伤害+25%，夜间伤害−25%。\n"
+#~ " 中立单位不受时段的影响。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "The current time of day can be observed under the minimap in the status "
+#~ "pane. For the usual day/night cycle, Morning and Afternoon count as day, "
+#~ "First and Second Watch count as night:\n"
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "当前时段可以在小地图下方的状态面板中看到。在通常的昼夜循环里，上午和下午算"
+#~ "作昼间，而前半夜和后半夜算作夜间：\n"
+
+#~ msgid "Dawn"
+#~ msgstr "黎明"
+
+#~ msgid "Morning"
+#~ msgstr "上午"
+
+#~ msgid "Afternoon"
+#~ msgstr "下午"
+
+#~ msgid "Dusk"
+#~ msgstr "黄昏"
+
+#~ msgid "First Watch"
+#~ msgstr "前半夜"
+
+#~ msgid "Second Watch"
+#~ msgstr "后半夜"
+
+#~ msgid ""
+#~ "Keep in mind that some scenarios take place underground, where it is "
+#~ "perpetually night!"
+#~ msgstr "请记住，有些场景是发生在地下的，那里永远都是夜间！"
+
+#~ msgid "Experience and Advancement"
+#~ msgstr "经验值与升级"
+
+#~ msgid ""
+#~ "If both units survive a combat, they gain a number of experience points "
+#~ "equal to the level of the unit they’re fighting. If a unit kills another "
+#~ "in combat, however, it gains much more experience — 4 for a level 0 unit, "
+#~ "8 for level 1, 16 for level 2, 24 for level 3, and so forth."
+#~ msgstr ""
+#~ "如果两个单位在战斗之后都存活下来，他们都能得到相当于对手等级的经验值。但如"
+#~ "果一个单位在战斗中杀死了另一个，则能得到多得多的经验值——0级单位提供4点，1"
+#~ "级单位8点，2级单位16点，3级单位24点，以此类推。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Units have a certain amount of experience required to advance (this is "
+#~ "20% less for units with the Intelligent trait). Once they achieve this "
+#~ "amount, they immediately advance to the next level, healing fully in the "
+#~ "process. In some cases, you will be given a choice of advancement options."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "所有单位都需要获得一定的经验值才能升级（具有聪慧特质的单位所需的经验值减少"
+#~ "20%）。 一旦获得足够的经验值，他们就会立刻升级，同时生命值完全回复。在有些"
+#~ "情况下，您将可以选择一个升级选项。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "While most units have three levels, not all do. Occasional units (such as "
+#~ "<ref>dst='unit_Mage' text='Magi'</ref>) may have four. Once a unit has "
+#~ "reached its maximum level, it may have an After Maximum Level Advancement "
+#~ "(AMLA) available to it. The AMLA will modify the unit each time the unit "
+#~ "reaches the experience goal, but the unit will remain the same level. The "
+#~ "typical AMLA effect is for the unit to raise the maximum HP by 3 and full-"
+#~ "heal it. The first AMLA will normally be reached with 150 XP gained (120 "
+#~ "XP for intelligent units). However, gaining an AMLA becomes progressively "
+#~ "harder for each AMLA the unit receives, and so it is usually more useful "
+#~ "to try to advance your lower level units."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "尽管大多数单位有三个等级，但并非都是如此。有些单位（例如"
+#~ "<ref>dst='unit_Mage' text='法师'</ref>）能升到四级。单位升到最高级以后，可"
+#~ "以获得满级奖励（AMLA）。AMLA会在单位获得所需经验值后改变单位属性，但等级不"
+#~ "变。典型的AMLA效果是增加3点最大生命值并补满血。通常情况下，单位会在获得150"
+#~ "点经验值（聪慧单位是120点）后获得第一次AMLA。不过，以后每次获得AMLA的难度"
+#~ "逐渐变大，所以尝试让您的低等级单位升级通常会更有用。"
+
+#~ msgid "Healing"
+#~ msgstr "治疗"
+
+#~ msgid ""
+#~ "In combat, your units will inevitably take damage. When a unit "
+#~ "<ref>dst='experience_and_advancement' text='advances'</ref>, it will heal "
+#~ "fully. This can happen as you finish fighting an enemy, whether it is "
+#~ "your turn or not. Wesnoth offers several other ways for your units to "
+#~ "heal, all of which take place at the beginning of your turn, before you "
+#~ "take action."
+#~ msgstr ""
+#~ "战斗中，您的单位不可避免地会受到伤害。当一个单位"
+#~ "<ref>dst='experience_and_advancement' text='升级'</ref>时，其生命值会完全"
+#~ "回复。这会在您和敌人单位的战斗结束后发生，而不论当前是否是您的回合。韦诺还"
+#~ "为您的单位提供了几种其他的治疗方式，这些治疗全部在您的回合的开始，而您还没"
+#~ "有进行操作时发生。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Resting: A unit which neither moves, attacks, nor is attacked will heal 2 "
+#~ "HP in its next turn."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "休息： 单位在本回合不移动、攻击或被攻击，则会在下回合恢复2点生命值。"
+
+#~ msgid ""
+#~ "\n"
+#~ "Villages: A unit which starts a turn in a village will heal 8HP."
+#~ msgstr ""
+#~ "\n"
+#~ "村庄：每回合开始时在村庄中的单位可以恢复8点生命值。"
+
+#~ msgid ""
+#~ "\n"
+#~ "<ref>dst='ability_regenerates' text='Regeneration'</ref>: Certain units "
+#~ "(such as trolls) will automatically heal 8HP every turn."
+#~ msgstr ""
+#~ "\n"
+#~ "<ref>dst='ability_regenerates' text='再生'</ref>：某些单位（如巨魔）每回合"
+#~ "将自动回复8点生命值。"
+
+#~ msgid ""
+#~ "\n"
+#~ "Healing units: Units with the <ref>dst='ability_heals +4' text='Heals'</"
+#~ "ref> ability will heal each allied adjacent unit, usually "
+#~ "<ref>dst='ability_heals +4' text='4HP'</ref> or <ref>dst='ability_heals "
+#~ "+8' text='8HP'</ref> per turn, or prevent Poison from causing that unit "
+#~ "damage."
+#~ msgstr ""
+#~ "\n"
+#~ "治疗单位：有<ref>dst='ability_heals +4' text='治疗'</ref>能力的单位每回合"
+#~ "能恢复相邻友军单位<ref>dst='ability_heals +4' text='4点'</ref>或"
+#~ "<ref>dst='ability_heals +8' text='8点'</ref>的生命值，或阻止毒药发作。"
+
+#~ msgid ""
+#~ "\n"
+#~ "Curing units: Units with the <ref>dst='ability_cures' text='Cures'</ref> "
+#~ "ability will cure Poison in all allied adjacent units (in preference to "
+#~ "healing, if it has that ability as well)."
+#~ msgstr ""
+#~ "\n"
+#~ "治愈单位：有<ref>dst='ability_cures' text='治愈'</ref>能力的单位可以治愈全"
+#~ "部相邻友军单位的中毒状态（如果本单位还有治疗能力，则治愈优先于治疗）。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Resting can be combined with other forms of healing, but villages, "
+#~ "regeneration, healing and curing cannot combine with each other: the best "
+#~ "option will be used. Finally, units heal fully between scenarios."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "休息可以和其它治疗方式叠加，但是村庄、再生、治疗和治愈效果则不能互相叠加。"
+#~ "游戏会自动选择最优的治疗方式。最后，单位能在过场时完全回复生命值。"
+
+#~ msgid "Income and Upkeep"
+#~ msgstr "收入和维护费用"
+
+#~ msgid ""
+#~ "In Wesnoth, it is not enough simply to recruit units and fight. You must "
+#~ "watch your gold as well, especially in campaigns, where you can carry "
+#~ "extra gold over from one scenario to the next. There are two aspects to "
+#~ "this; Income and Upkeep."
+#~ msgstr ""
+#~ "在韦诺中，仅仅征募单位并战斗是不够的。您还得注意您的金币，特别是在战役中，"
+#~ "因为您可以将多余的金币携带到下一场景。影响金币数量的主要是两个方面：收入和"
+#~ "维护费用。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Income is simple. You have a base income of 2 gold per turn. For every "
+#~ "village you control, you gain one additional gold each turn. Thus, if you "
+#~ "have ten villages, you would normally gain 12 gold each turn. Your Upkeep "
+#~ "costs are subtracted from this income, as detailed below."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "收入这个概念很简单。每回合您都会得到2金币的基本收入。您所占领的每个村庄每"
+#~ "回合也会给您1个金币的额外收入。因此如果您占领了十个村庄，每回合就会有12个"
+#~ "金币的收入。维护费用由您的收入来支付。以下是详细信息。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Upkeep is also fairly simple. Each unit requires an amount of Upkeep "
+#~ "equal to its level. You can support as many levels <italic>text=worth</"
+#~ "italic> of units as you have villages, without paying any upkeep. "
+#~ "However, for each level of unit beyond the number of villages you have, "
+#~ "you must pay one gold per turn. For example, if you have twelve level one "
+#~ "units and ten villages, you would have to pay two gold each turn in "
+#~ "upkeep."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "维护费也相当简单。每个单位都需要支付与其等级相等的维护费用。您所能免费支持"
+#~ "的单位的<italic>text=等级之和</italic>与您所拥有的村庄数量相同。然而，单位"
+#~ "等级之和每超过您所拥有的村庄数1级，您就得每回合支付1金币的维护费用。例如，"
+#~ "如果您有十二个一级的单位和十个村庄，您就得每回合支付2个金币的维护费用。"
+
+#~ msgid ""
+#~ "\n"
+#~ "\n"
+#~ "Upkeep costs are subtracted from your Income, so in the case of twelve "
+#~ "levels of units and ten villages, your resultant Income would be 10 gold "
+#~ "per turn."
+#~ msgstr ""
+#~ "\n"
+#~ "\n"
+#~ "维护费用以您的收入来支付，所以在有等级总和为十二的单位和十个村庄的情况下，"
+#~ "最终您的收入将会是每回合10个金币。"
+
+#~ msgid ""
+#~ "\n"
+#~ "There are two important exceptions to Upkeep: units with the Loyal trait "
+#~ "and leaders never incur upkeep. Units you begin the scenario with (such "
+#~ "as Delfador), or units who join you during a scenario (such as the "
+#~ "Horseman in the second scenario of Heir to the Throne) will usually have "
+#~ "the Loyal trait. The unit you are playing (such as Konrad) will almost "
+#~ "always be a leader."
+#~ msgstr ""
+#~ "\n"
+#~ "维护费用的支付规则中有两个重要的例外：即具有忠诚特质的单位以及领袖不需要支"
+#~ "付维护费用。每个场景开始时您所拥有的单位（比如黎伐多），或在场景中加入己方"
+#~ "的单位（如在“王座继承者”第二场景中加入的骑手）通常都具有忠诚特质。而您所扮"
+#~ "演的角色（如科纳德）几乎总是一位领袖。"

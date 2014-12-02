@@ -42,46 +42,53 @@ playmp_controller::playmp_controller(const config& level,
 	playsingle_controller(level, state_of_game, heros, heros_start, cards, 
 		ticks, num_turns, game_config, video, skip_replay),
 	turn_data_(NULL),
+	received_data_cfg_(),
 	beep_warning_time_(0),
 	network_processing_stopped_(false)
 {
 	is_host_ = is_host;
 	// We stop quick replay if play isn't yet past turn 1
-	if ( replay_last_turn_ <= 1)
-	{
+	if (replay_last_turn_ <= 1) {
 		skip_replay_ = false;
 	}
 }
 
-playmp_controller::~playmp_controller() {
+playmp_controller::~playmp_controller()
+{
 	//halt and cancel the countdown timer
 	if(beep_warning_time_ < 0) {
 		sound::stop_bell();
 	}
 }
 
-void playmp_controller::set_replay_last_turn(unsigned int turn){
+void playmp_controller::set_replay_last_turn(unsigned int turn)
+{
 	 replay_last_turn_ = turn;
 }
 
-void playmp_controller::speak(){
+void playmp_controller::speak()
+{
 	menu_handler_.speak();
 }
 
-void playmp_controller::whisper(){
+void playmp_controller::whisper()
+{
 	menu_handler_.whisper();
 }
 
-void playmp_controller::shout(){
+void playmp_controller::shout()
+{
 	menu_handler_.shout();
 }
 
-void playmp_controller::start_network(){
+void playmp_controller::start_network()
+{
 	network_processing_stopped_ = false;
 	LOG_NG << "network processing activated again";
 }
 
-void playmp_controller::stop_network(){
+void playmp_controller::stop_network()
+{
 	network_processing_stopped_ = true;
 	LOG_NG << "network processing stopped";
 }
@@ -205,12 +212,23 @@ namespace {
 }
 
 //make sure we think about countdown even while dialogs are open
-void playmp_controller::process(events::pump_info &info) {
-	if(playmp_controller::counting_down()) {
-		if(info.ticks(&timer_refresh, timer_refresh_rate)) {
-			playmp_controller::think_about_countdown(info.ticks());
-		}
+bool playmp_controller::handle(tlobby::ttype type, const config& data)
+{
+	playsingle_controller::handle(type, data);
+
+	if (type == tlobby::t_disconnected && has_network_player()) {
+		throw network::error("shut down");
 	}
+	if (playmp_controller::counting_down()) {
+		// if (info.ticks(&timer_refresh, timer_refresh_rate)) {
+		//	playmp_controller::think_about_countdown(info.ticks());
+		// }
+	}
+	if (type != tlobby::t_data) {
+		return false;
+	}
+	received_data_cfg_.push_back(data);
+	return true;
 }
 
 void playmp_controller::reset_countdown()
@@ -222,8 +240,9 @@ void playmp_controller::reset_countdown()
 
 
 //check if it is time to start playing the timer warning
-void playmp_controller::think_about_countdown(int ticks) {
-	if(ticks >= beep_warning_time_) {
+void playmp_controller::think_about_countdown(int ticks) 
+{
+	if (ticks >= beep_warning_time_) {
 		const bool bell_on = preferences::turn_bell();
 		if(bell_on || preferences::sound_on() || preferences::UI_sound_on()) {
 			const int loop_ticks = WARNTIME - (ticks - beep_warning_time_);
@@ -244,8 +263,8 @@ namespace {
 	};
 }
 
-void playmp_controller::play_human_turn(){
-	LOG_NG << "playmp::play_human_turn...\n";
+void playmp_controller::play_human_turn()
+{
 	command_disabled_resetter reset_commands;
 	int cur_ticks = SDL_GetTicks();
 	show_turn_dialog();
@@ -265,18 +284,18 @@ void playmp_controller::play_human_turn(){
 	}
 
 	while (!end_turn_ && !auto_end_turn) {
-
 		try {
-			config cfg;
-			const network::connection res = network::receive_data(cfg);
-			std::deque<config> backlog;
+			play_slice();
+			check_end_level();
 
-			if(res != network::null_connection) {
-				if (turn_data_->process_network_data(cfg, res, backlog, skip_replay_) == turn_info::PROCESS_RESTART_TURN)
-				{
+			std::deque<config> backlog;
+			std::vector<config> cfgs = received_data_cfg_;
+			received_data_cfg_.clear();
+			for (std::vector<config>::const_iterator it = cfgs.begin(); it != cfgs.end(); ++ it) {
+				const config& cfg = *it;
+				if (turn_data_->process_network_data(cfg, lobby.sock, backlog, skip_replay_) == turn_info::PROCESS_RESTART_TURN) {
 					// Clean undo stack if turn has to be restarted (losing control)
-					if (!undo_stack_.empty())
-					{
+					if (!undo_stack_.empty()) {
 						font::floating_label flabel(_("Undoing moves not yet transmitted to the server."));
 
 						SDL_Color color = {255,255,255,255};
@@ -289,15 +308,14 @@ void playmp_controller::play_human_turn(){
 						font::add_floating_label(flabel);
 					}
 
-					while(!undo_stack_.empty())
+					while(!undo_stack_.empty()) {
 						menu_handler_.undo(gui_->get_playing_team() + 1);
+					}
 					throw end_turn_exception(gui_->get_playing_team() + 1);
 				}
 			}
 
-			play_slice();
-			check_end_level();
-		} catch(end_level_exception& e) {
+		} catch (end_level_exception& e) {
 			turn_data_->send_data();
 			throw e;
 		}
@@ -431,7 +449,7 @@ void playmp_controller::linger()
 	} while (!quit);
 
 	if (gui_->pass_scenario_anim_id() != -1) {
-		gui_->erase_screen_anim(gui_->pass_scenario_anim_id());
+		gui_->erase_area_anim(gui_->pass_scenario_anim_id());
 	}
 
 	reset_end_scenario_button();
@@ -510,31 +528,36 @@ void playmp_controller::play_network_turn(){
 	for(;;) {
 
 		if (!network_processing_stopped_){
-			bool have_data = false;
+			bool turn_ended = false;
 			config cfg;
 
 			network::connection from = network::null_connection;
 
-			if(data_backlog_.empty() == false) {
-				have_data = true;
+			if (data_backlog_.empty() == false) {
 				cfg = data_backlog_.front();
 				data_backlog_.pop_front();
-			} else {
-				from = network::receive_data(cfg);
-				have_data = from != network::null_connection;
+
+			} else if (!received_data_cfg_.empty()) {
+				cfg = received_data_cfg_.front();
+				received_data_cfg_.erase(received_data_cfg_.begin());
+				from = lobby.sock;
 			}
 
-			if(have_data) {
-				if (skip_replay_ && replay_last_turn_ <= turn()){
-						skip_replay_ = false;
+			if (!cfg.empty()) {
+				if (skip_replay_ && replay_last_turn_ <= turn()) {
+					skip_replay_ = false;
 				}
 				const turn_info::PROCESS_DATA_RESULT result = turn_data.process_network_data(cfg, from, data_backlog_, skip_replay_);
 				if (result == turn_info::PROCESS_RESTART_TURN) {
 					player_type_changed_ = true;
 					return;
 				} else if (result == turn_info::PROCESS_END_TURN) {
+					turn_ended = true;
 					break;
 				}
+			}
+			if (turn_ended) {
+				break;
 			}
 		}
 

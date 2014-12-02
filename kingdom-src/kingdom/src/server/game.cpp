@@ -12,12 +12,12 @@
    See the COPYING file for more details.
 */
 
-#include "../global.hpp"
+#include "global.hpp"
 
-#include "../filesystem.hpp"
-#include "../game_config.hpp" // game_config::observer_team_name
-#include "../log.hpp"
-#include "../map.hpp" // gamemap::MAX_PLAYERS
+#include "filesystem.hpp"
+#include "game_config.hpp" // game_config::observer_team_name
+#include "log.hpp"
+#include "map.hpp" // gamemap::MAX_PLAYERS
 
 #include "game.hpp"
 #include "player_network.hpp"

@@ -34,7 +34,6 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
-#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -124,7 +123,7 @@ void tfinal_battle::pre_show(CVideo& /*video*/, twindow& window)
 	str << again;
 	symbols["count"] = str.str();
 	str.str("");
-	str << help::tintegrate::generate_format(vgettext("wesnoth-lib", "If capture $count cities again, all AI will ally.", symbols), "red");
+	str << tintegrate::generate_format(vgettext("wesnoth-lib", "If capture $count cities again, all AI will ally.", symbols), "red");
 	label->set_label(str.str());
 
 	tlistbox* list = find_widget<tlistbox>(&window, "city_list", false, true);

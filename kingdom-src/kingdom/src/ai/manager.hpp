@@ -22,7 +22,7 @@
 #ifndef AI_MANAGER_HPP_INCLUDED
 #define AI_MANAGER_HPP_INCLUDED
 
-#include "../global.hpp"
+#include "global.hpp"
 
 #include "game_info.hpp"
 

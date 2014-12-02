@@ -3,6 +3,15 @@
 #include "global.hpp"
 #include "game_config.hpp"
 #include "loadscreen.hpp"
+#include "xfunc.h"
+#include "win32x.h"
+#include "gettext.hpp"
+#include "serialization/parser.hpp"
+#include "filesystem.hpp"
+#include "map_location.hpp"
+
+#ifndef _ROSE_EDITOR
+#include "struct.h"
 #include "DlgCampaignProc.hpp"
 #include <string.h>
 #include "sdl_utils.hpp"
@@ -11,20 +20,13 @@
 
 #include "resource.h"
 
-#include "xfunc.h"
-#include "struct.h"
-#include "win32x.h"
-#include "gettext.hpp"
-#include "serialization/parser.hpp"
-#include "filesystem.hpp"
-#include "map_location.hpp"
-
 #include <boost/foreach.hpp>
 
 void campaign_refresh(HWND hdlgP);
 
 BOOL CALLBACK DlgCampaignMainProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 BOOL CALLBACK DlgCampaignScenarioProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
+BOOL CALLBACK DlgReportHeroStateProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam);
 
 namespace scenario_selector {
 bool multiplayer;
@@ -45,7 +47,6 @@ namespace ns {
 	std::map<int, int> cityno_map;
 
 	HIMAGELIST himl_checkbox_side;
-	HIMAGELIST himl_checkbox;
 
 	int clicked_side;
 	int clicked_event;
@@ -141,7 +142,14 @@ HWND tcampaign::init_toolbar(HINSTANCE hinst, HWND hdlgP)
 	gdmgr._tbBtns_campaign[3].dwData = 0L;
 	gdmgr._tbBtns_campaign[3].iString = -1;
 
-	ToolBar_AddButtons(gdmgr._htb_campaign, 4, &gdmgr._tbBtns_campaign);
+	gdmgr._tbBtns_campaign[4].iBitmap = MAKELONG(gdmgr._iico_xchg, 0);
+	gdmgr._tbBtns_campaign[4].idCommand = IDM_HEROSTATE;	
+	gdmgr._tbBtns_campaign[4].fsState = TBSTATE_ENABLED;
+	gdmgr._tbBtns_campaign[4].fsStyle = BTNS_BUTTON;
+	gdmgr._tbBtns_campaign[4].dwData = 0L;
+	gdmgr._tbBtns_campaign[4].iString = -1;
+
+	ToolBar_AddButtons(gdmgr._htb_campaign, 5, &gdmgr._tbBtns_campaign);
 
 	ToolBar_AutoSize(gdmgr._htb_campaign);
 	
@@ -594,6 +602,10 @@ void tside::from_config(const config& direct_side_cfg)
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
 			c.not_recruit_.push_back(*i);
 		}
+		// alias
+		std::string textdomain;
+		split_t_string(cfg["alias"].t_str(), textdomain, c.alias_);
+
 		// service_heros
 		vstr = utils::split(cfg["service_heros"].str());
 		for (std::vector<std::string>::const_iterator i = vstr.begin(); i != vstr.end(); ++ i) {
@@ -1359,6 +1371,9 @@ std::string tside::generate(const std::string& prefix) const
 			}
 		}
 		strstr << "\n";
+		if (!it2->alias_.empty()) {
+			strstr << prefix << "\t\talias = _\"" << it2->alias_ << "\"\n";
+		}
 		strstr << prefix << "\t[/artifical]\n";
 	}
 
@@ -1659,7 +1674,14 @@ void tside::tcity::update_to_ui_side_edit(HWND hdlgP, int index) const
 		lvi.iItem = index;
 	}
 	lvi.iSubItem = column ++;
-	strcpy(text, utf8_2_ansi(gdmgr.heros_[heros_army_[0]].name().c_str()));
+	if (alias_.empty()) {
+		strcpy(text, utf8_2_ansi(gdmgr.heros_[heros_army_[0]].name().c_str()));
+	} else {
+		strstr.str("");
+		strstr << dgettext(ns::_main.textdomain_.c_str(), alias_.c_str());
+		strstr << "(" << gdmgr.heros_[heros_army_[0]].name() << ")";
+		strcpy(text, utf8_2_ansi(strstr.str().c_str()));
+	}
 	lvi.pszText = text;
 	lvi.lParam = (LPARAM)0;
 	if (lvi.iItem != count) {
@@ -1946,13 +1968,19 @@ void tside::tcity::update_to_ui_city_edit(HWND hdlgP, tside& side, bool partial)
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Cannot recruit")) << "(" << editor_config::ListView_GetCheckedCount(hctl) << ")";
 		Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CITYEDIT_NOTRECRUIT), strstr.str().c_str());
+
+		// alias
+		if (!alias_.empty()) {
+			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CITYEDIT_ALIAS_MSGID), alias_.c_str());
+			Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CITYEDIT_ALIAS), dgettext_2_ansi(ns::_main.textdomain_.c_str(), alias_.c_str()));
+		}
 	}
 
 	// candidate hero
 	hctl = GetDlgItem(hdlgP, IDC_LV_CANDIDATEHERO);
 	ListView_DeleteAllItems(hctl);
 	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-		if (it->second.allocated(side.side_)) {
+		if (it->second.allocated(HEROS_INVALID_SIDE)) {
 			continue;
 		}
 		hero& h = gdmgr.heros_[it->first];
@@ -2323,7 +2351,7 @@ void tside::tunit::update_to_ui_troop_edit(HWND hdlgP, tside& side, bool partial
 	hctl = GetDlgItem(hdlgP, IDC_LV_CANDIDATEHERO);
 	ListView_DeleteAllItems(hctl);
 	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
-		if (it->second.allocated(side.side_)) {
+		if (it->second.allocated(HEROS_INVALID_SIDE)) {
 			continue;
 		}
 		hero& h = gdmgr.heros_[it->first];
@@ -3489,6 +3517,11 @@ void On_DlgCampaignCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 	case IDM_DELETE:
 		ns::delete_scenario(hdlgP);
 		break;
+	case IDM_HEROSTATE:
+		if (ns::current_scenario >= 0) {
+			DialogBox(gdmgr._hinst, MAKEINTRESOURCE(IDD_VISUAL2), NULL, DlgReportHeroStateProc);
+		}
+		break;
 
 	case IDM_SAVE:
 		campaign_can_save(hdlgP, true);
@@ -3564,9 +3597,11 @@ void On_DlgCampaignDestroy(HWND hdlgP)
 }
 
 extern std::string mode_desc(mode_tag::tmode tag);
+#endif
 
 BOOL CALLBACK DlgCampaignProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+#ifndef _ROSE_EDITOR
 	LPPSHNOTIFY			lppsn = (LPPSHNOTIFY)lParam;
 
 	switch(uMsg)
@@ -3577,9 +3612,11 @@ BOOL CALLBACK DlgCampaignProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lPara
 	HANDLE_MSG(hdlgP, WM_DESTROY, On_DlgCampaignDestroy);
 	HANDLE_MSG(hdlgP, WM_NOTIFY, On_DlgCampaignNotify);
 	}
-	
+#endif	
 	return FALSE;
-} 
+}
+
+#ifndef _ROSE_EDITOR
 
 void select_rank_cmb(HWND hctl, int rank)
 {
@@ -3606,6 +3643,7 @@ BOOL On_DlgCampaignMainInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	ns::current_scenario = -1;
 	campaign_enable_delete_btn(false);
+	campaign_enable_herostate_btn(false);
 
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_FILE), utf8_2_ansi(_("Corresponding cfg")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ID), utf8_2_ansi(_("ID")));
@@ -4064,7 +4102,7 @@ BOOL On_DlgSideEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	hctl = GetDlgItem(hdlgP, IDC_LV_SIDEEDIT_CITY);
 	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
 	lvc.fmt = LVCFMT_LEFT;
-	lvc.cx = 60;
+	lvc.cx = 100;
 	strcpy(text, utf8_2_ansi(_("Name")));
 	lvc.pszText = text;
 	lvc.cchTextMax = 0;
@@ -4363,6 +4401,7 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_MAYOR), dgettext_2_ansi("wesnoth-lib", "Mayor"));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_CHARACTER), dgettext_2_ansi("wesnoth-lib", "Character"));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_SOLDIERS), dgettext_2_ansi("wesnoth-lib", "Soldiers"));
+	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_ALIAS), utf8_2_ansi(_("Alias")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_COORDINATE), utf8_2_ansi(_("Coordinate")));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_TRAITS), dgettext_2_ansi("wesnoth-lib", "Traits"));
 	Static_SetText(GetDlgItem(hdlgP, IDC_STATIC_HERO), utf8_2_ansi(_("Hero")));
@@ -4376,8 +4415,8 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 
 	char text[_MAX_PATH];
 	gdmgr._hpopup_candidate = CreatePopupMenu();
-	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOSERVICE, "到在职");
-	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOWANDER, "到在野");
+	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOSERVICE, utf8_2_ansi(_("To service")));
+	AppendMenu(gdmgr._hpopup_candidate, MF_STRING, IDM_TOWANDER, utf8_2_ansi(_("To wander")));
 
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 	tside& side = scenario.side_[ns::clicked_side];
@@ -4560,6 +4599,36 @@ BOOL On_DlgCityEditInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	return FALSE;
 }
 
+void OnCityEditEt(HWND hdlgP, int id, UINT codeNotify)
+{
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+
+	if (codeNotify != EN_CHANGE) {
+		return;
+	}
+	if (id != IDC_ET_CITYEDIT_ALIAS_MSGID) {
+		return;
+	}
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	tside& side = scenario.side_[ns::clicked_side];
+	tside::tcity& city = side.cities_[ns::clicked_city];
+
+	HWND hctl = GetDlgItem(hdlgP, id);
+	Edit_GetText(hctl, text, sizeof(text) / sizeof(text[0]));
+	city.alias_ = text;
+	strstr.str("");
+	if (!city.alias_.empty()) {
+		strstr << utf8_2_ansi(dgettext(ns::_main.textdomain_.c_str(), city.alias_.c_str()));
+	} else {
+		strstr << city.alias_;
+	}
+	Edit_SetText(GetDlgItem(hdlgP, IDC_ET_CITYEDIT_ALIAS), strstr.str().c_str());
+
+	return;
+}
+
 void On_DlgCityEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 {
 	if (candidate_hero::on_command(hdlgP, id, codeNotify)) {
@@ -4611,6 +4680,10 @@ void On_DlgCityEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			city.economy_area_.clear();
 		}
 		city.update_to_ui_city_edit(hdlgP, side);
+		break;
+
+	case IDC_ET_CITYEDIT_ALIAS_MSGID:
+		OnCityEditEt(hdlgP, id, codeNotify);
 		break;
 
 	case IDC_BT_CITYEDIT_ADDEA:
@@ -4988,7 +5061,7 @@ void On_DlgTroopEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		if (id == IDM_TOMASTER) {
 			scenario.do_state(troop.heros_army_[0], side.side_);
 			troop.heros_army_[0] = ns::clicked_hero;
-			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_SERVICE, troop.city_);
+			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_ARMY, troop.city_);
 		} else if (id == IDM_TOSECOND) {
 			if (troop.heros_army_.size() == 1) {
 				troop.heros_army_.push_back(ns::clicked_hero);
@@ -4996,7 +5069,7 @@ void On_DlgTroopEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 				scenario.do_state(troop.heros_army_[1], side.side_);
 				troop.heros_army_[1] = ns::clicked_hero;
 			}
-			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_WANDER, troop.city_);
+			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_ARMY, troop.city_);
 		} else if (id == IDM_TOTHIRD) {
 			if (troop.heros_army_.size() == 3) {
 				scenario.do_state(troop.heros_army_[2], side.side_);
@@ -5004,7 +5077,7 @@ void On_DlgTroopEditCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 			} else {
 				troop.heros_army_.push_back(ns::clicked_hero);
 			}
-			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_WANDER, troop.city_);
+			scenario.do_state(ns::clicked_hero, side.side_, tscenario::STATE_ARMY, troop.city_);
 		}
 		troop.update_to_ui_troop_edit(hdlgP, side);
 		break;
@@ -5551,6 +5624,7 @@ BOOL On_DlgCampaignScenarioInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
 	tscenario& scenario = ns::_scenario[ns::current_scenario];
 
 	campaign_enable_delete_btn(!campaign_get_save_btn() && (ns::current_scenario || ns::_scenario.size() >= 2));
+	campaign_enable_herostate_btn(true);
 	
 	HWND hctl = GetDlgItem(hdlgP, IDC_ET_CAMPSCENARIO_FILE);
 	Edit_SetText(hctl, scenario.file(true).c_str());
@@ -6791,7 +6865,7 @@ void campaign_refresh(HWND hdlgP)
 	gdmgr.heros_.map_from_file(hero_filename);
 
 	campaign_enable_new_btn(ns::_main.mode_ == mode_tag::SCENARIO);
-
+	
 	ns::_scenario.clear();
 	ns::current_scenario = 0;
 	BOOST_FOREACH (const config &i, ns::campaign.game_config_.child_range("scenario")) {
@@ -7260,6 +7334,154 @@ bool campaign_new()
 	return true;
 }
 
+std::string tscenario::state_name(int state)
+{
+	if (state == tscenario::STATE_UNKNOWN) {
+		return _("Idle");
+	} else if (state == tscenario::STATE_SERVICE) {
+		return _("Service");
+	} else if (state == tscenario::STATE_WANDER) {
+		return _("Wander");
+	} else if (state == tscenario::STATE_ARMY) {
+		return _("Army");
+	} else if (state == tscenario::STATE_RESERVE) {
+		return _("Reserve");
+	} else {
+		return _("Error value");
+	}
+}
+
+void fill_hero_state_row(const tscenario& scenario, HWND hctl, hero& h, const tscenario::hero_state& state, int iItem)
+{
+	char text[_MAX_PATH];
+	std::stringstream strstr;
+	LVITEM lvi;
+	int index = 0;
+
+	lvi.mask = LVIF_TEXT | LVIF_PARAM;
+	// number
+	lvi.iItem = iItem;
+	lvi.iSubItem = index ++;
+	sprintf(text, "%u", h.number_);
+	lvi.pszText = text;
+	lvi.lParam = (LPARAM)0;
+	ListView_InsertItem(hctl, &lvi);
+
+	// name.
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = index ++;
+	strcpy(text, utf8_2_ansi(h.name().c_str()));
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+
+	// use
+	lvi.mask = LVIF_TEXT;
+	lvi.iSubItem = index ++;
+	strstr.str("");
+	for (std::map<int, tscenario::hero_state::tstate>::const_iterator it = state.states_.begin(); it != state.states_.end(); ++ it) {
+		const tscenario::hero_state::tstate& s = it->second;
+		if (it != state.states_.begin()) {
+			strstr << ";   ";
+		}
+		if (it->first < (int)scenario.side_.size()) {
+			hero& leader = gdmgr.heros_[scenario.side_[it->first].leader_];
+			strstr << dgettext("wesnoth-lib", "Side") << ": " << leader.name() << "  ";
+			strstr << dgettext("wesnoth-lib", "City") << ": ";
+			if (s.city >= 0) {
+				strstr << gdmgr.heros_[s.city].name();
+			} else {
+				strstr << "---";
+			}
+			strstr << "  ";
+			strstr << dgettext("wesnoth-lib", "Status") << ": " << tscenario::state_name(s.state);
+			continue;
+		}
+		std::stringstream err;
+		err << "side number(" << it->first << ") is large than side count(" << scenario.side_.size() << ")"; 
+		VALIDATE(false, err.str());
+	}
+
+	strcpy(text, utf8_2_ansi(strstr.str()));
+	lvi.pszText = text;
+	ListView_SetItem(hctl, &lvi);
+}
+
+BOOL On_DlgReportHeroStateInitDialog(HWND hdlgP, HWND hwndFocus, LPARAM lParam)
+{
+	std::stringstream strstr;
+	
+	strstr << utf8_2_ansi(_("Hero state"));
+	SetWindowText(hdlgP, strstr.str().c_str());
+	Button_SetText(GetDlgItem(hdlgP, IDOK), utf8_2_ansi(_("Close")));
+
+	HWND hctl = GetDlgItem(hdlgP, IDC_LV_VISUAL2_EXPLORER);
+	LVCOLUMN lvc;
+	int index = 0;
+	char text[_MAX_PATH];
+
+	lvc.mask = LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.fmt = LVCFMT_LEFT;
+	lvc.cx = 40;
+	strcpy(text, utf8_2_ansi(_("Number")));
+	lvc.pszText = text;
+	lvc.cchTextMax = 0;
+	lvc.iSubItem = index;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 60;
+	lvc.iSubItem = index;
+	strcpy(text, utf8_2_ansi(_("Name")));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	lvc.mask= LVCF_FMT | LVCF_TEXT | LVCF_WIDTH;
+	lvc.cx = 300;
+	lvc.iSubItem = index;
+	strcpy(text, utf8_2_ansi(_("Use")));
+	lvc.pszText = text;
+	ListView_InsertColumn(hctl, index ++, &lvc);
+
+	ListView_SetImageList(hctl, NULL, LVSIL_SMALL);
+	ListView_SetExtendedListViewStyleEx(hctl, LVS_EX_FULLROWSELECT, LVS_EX_FULLROWSELECT);
+
+	tscenario& scenario = ns::_scenario[ns::current_scenario];
+	int iItem = 0;
+	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.artificals_.begin(); it != scenario.artificals_.end(); ++ it) {
+		hero& h = gdmgr.heros_[it->first];
+		fill_hero_state_row(scenario, hctl, h, it->second, iItem ++);
+	}
+	for (std::map<int, tscenario::hero_state>::const_iterator it = scenario.persons_.begin(); it != scenario.persons_.end(); ++ it) {
+		hero& h = gdmgr.heros_[it->first];
+		fill_hero_state_row(scenario, hctl, h, it->second, iItem ++);
+	}
+
+	return FALSE;
+}
+
+void On_DlgReportHeroStateCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
+{
+	BOOL changed = FALSE;
+	switch (id) {
+	case IDOK:
+		changed = TRUE;
+	case IDCANCEL:
+		EndDialog(hdlgP, changed? 1: 0);
+		break;
+	}
+}
+
+BOOL CALLBACK DlgReportHeroStateProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	switch(message) {
+	case WM_INITDIALOG:
+		return On_DlgReportHeroStateInitDialog(hDlg, (HWND)(wParam), lParam);
+	HANDLE_MSG(hDlg, WM_COMMAND, On_DlgReportHeroStateCommand);
+	}
+	
+	return FALSE;
+}
+
 bool campaign_can_execute_tack(int task)
 {
 	if (task == TASK_NEW || task == TASK_DELETE || task == TASK_EXPLORER) {
@@ -7269,3 +7491,5 @@ bool campaign_can_execute_tack(int task)
 	}
 	return true;
 }
+
+#endif // _ROSE_EDITOR

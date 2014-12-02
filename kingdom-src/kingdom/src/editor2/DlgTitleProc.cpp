@@ -194,7 +194,9 @@ void title_select(do_action_t da)
 	if (gdmgr._da == da_sync) {
 		sync_hide_ui();
 	} else if (gdmgr._da == da_wgen) {
+#ifndef _ROSE_EDITOR
 		wgen_hide_ui();
+#endif
 	} else if (gdmgr._da == da_core) {
 		if (!core_hide_ui()) {
 			return;
@@ -202,9 +204,11 @@ void title_select(do_action_t da)
 	} else if (gdmgr._da == da_visual) {
 		visual_hide_ui();
 	} else if (gdmgr._da == da_campaign) {
+#ifndef _ROSE_EDITOR
 		if (!campaign_hide_ui()) {
 			return;
 		}
+#endif
 	} else if (gdmgr._da == da_integrate) {
 		if (!integrate_hide_ui()) {
 			return;
@@ -236,7 +240,9 @@ void title_select(do_action_t da)
 	} else if (da == da_wgen) {
 		ShowWindow(gdmgr._hdlg_wgen, SW_RESTORE);
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_WGEN, 1);
+#ifndef _ROSE_EDITOR
 		wgen_enter_ui();
+#endif
 
 	} else if (da == da_core) {
 		ShowWindow(gdmgr._hdlg_core, SW_RESTORE);
@@ -251,7 +257,9 @@ void title_select(do_action_t da)
 	} else if (da == da_campaign) {
 		ShowWindow(gdmgr._hdlg_campaign, SW_RESTORE);
 		ToolBar_CheckButton(gdmgr._htb_sys, IDM_SYS_TBOX, 1);
+#ifndef _ROSE_EDITOR
 		campaign_enter_ui();
+#endif
 
 	} else if (da == da_integrate) {
 		ShowWindow(gdmgr._hdlg_integrate, SW_RESTORE);
@@ -267,9 +275,11 @@ bool can_execute_tack(int task)
 			return false;
 		}
 	} else if (gdmgr._da == da_campaign) {
+#ifndef _ROSE_EDITOR
 		if (!campaign_can_execute_tack(task)) {
 			return false;
 		}
+#endif
 	}
 	return true;
 }

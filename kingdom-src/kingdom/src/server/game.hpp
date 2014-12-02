@@ -15,7 +15,7 @@
 #ifndef GAME_HPP_INCLUDED
 #define GAME_HPP_INCLUDED
 
-#include "../network.hpp"
+#include "network.hpp"
 #include "player.hpp"
 
 #include "simple_wml.hpp"

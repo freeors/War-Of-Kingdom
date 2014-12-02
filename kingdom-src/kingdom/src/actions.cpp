@@ -47,6 +47,8 @@
 #include "sound.hpp"
 #include "loadscreen.hpp"
 
+#include "gui/dialogs/title_screen.hpp"
+
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -731,10 +733,22 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		unit_abilities::effect dmg_effect(dmg_specials, base_damage, backstab_pos);
 		base_damage = dmg_effect.get_composite_value();
 
+		if (u.get_ability_bool("guard") && u.has_guard_center()) {
+			base_damage += 2;
+		}
+
+		if (opp.is_artifical()) {
+			base_damage += u.skill_[hero_skill_demolish] * 5 / MAX_UNIT_ADAPTABILITY;
+		}
+
 		if (backstab_pos) {
 			if (unit_feature_val2(u, hero_featrue_backstab) || weapon->get_special_bool("backstab")) {
 				base_damage += base_damage;
 			}
+		}
+
+		if (!opp.is_artifical() && !opp.has_female() && u.get_ability_bool("bewitch")) {
+			base_damage += base_damage;
 		}
 
 		// Get the damage multiplier applied to the base damage of the weapon.
@@ -747,39 +761,21 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 			// const time_of_day &tod = resources::tod_manager->time_of_day_at(u_loc);
 			const time_of_day &tod = resources::tod_manager->get_time_of_day(u_loc);
 			if (tod.lawful_bonus > 0 && unit_feature_val2(u, hero_feature_dayattack)) {
-				damage_multiplier += tod.lawful_bonus;
+				damage_multiplier += tod.lawful_bonus / 2;
 			} else if (tod.lawful_bonus < 0 && unit_feature_val2(u, hero_feature_nightattack)) {
-				damage_multiplier -= tod.lawful_bonus;
+				damage_multiplier -= tod.lawful_bonus / 2;
 			}
 		}
 
-		// Leadership bonus.
-		int leader_bonus = 0;
-		if (under_leadership(units, u_loc, &leader_bonus).valid()) {
-			damage_multiplier += leader_bonus * u_team.cooperate_increase_ / 100;
-		}
-		if (u.get_ability_bool("guard") && u.has_guard_center()) {
-			damage_multiplier = damage_multiplier * 3 / 2;
-		}
-		if (!opp.is_artifical() && !opp.has_female() && u.get_ability_bool("bewitch")) {
-			damage_multiplier += damage_multiplier;
-		}
-
-		if (opp.is_artifical()) {
-			damage_multiplier += u.skill_[hero_skill_demolish] * 8;
-		}
-
-		base_damage = u.value_consider_food(base_damage);
-		chance_to_hit = opp.value_consider_food(chance_to_hit, false);
-
-		if (unit_feature_val2(opp, HEROS_MAX_ARMS + u.arms())) {
-			chance_to_hit = chance_to_hit * 80 / 100;
-		} else if (unit_feature_val2(opp, u.arms())) {
-			chance_to_hit = chance_to_hit * 90 / 100;
-		}
-
 		// Resistance modifier.
-		damage_multiplier *= opp.damage_from(*weapon, !attacking, opp_loc) * chance_to_hit;
+		int resistance_ratio = opp.damage_from(*weapon, !attacking, opp_loc);
+		if (unit_feature_val2(opp, HEROS_MAX_ARMS + u.arms())) {
+			resistance_ratio -= RESISTANCE_DIV2 / 2;
+		} else if (unit_feature_val2(opp, u.arms())) {
+			resistance_ratio -= RESISTANCE_DIV3 / 2;
+		}
+
+		damage_multiplier *= resistance_ratio * chance_to_hit;
 		if (attacking && !formation_defend_disable && !opp.is_artifical() && !opp.resist_helper_.empty()) {
 			std::set<const unit*> origin;
 			// select max unit when they are same effect. it will result to lose helper.
@@ -803,6 +799,14 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 		// Compute both the normal and slowed damage. For the record,
 		damage = round_damage(base_damage, damage_multiplier, 1000000);
 		
+		// Leadership bonus.
+		int leader_bonus = 0;
+		if (under_leadership(units, u_loc, &leader_bonus).valid()) {
+			damage += damage * leader_bonus * u_team.cooperate_increase_ / 10000;
+		}
+		damage = u.value_consider_food(damage);
+		damage = opp.value_consider_food(damage, false);
+
 		if (opp.get_state(ustate_tag::BROKEN)) {
 			damage = damage * 3 / 2;
 		}
@@ -1115,7 +1119,7 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 	if (!die.is_artifical()) {
 		int merit = die.cause_damage_ + std::min<int>(75, die.field_turns_ * 25);
 		int activity;
-		if (merit < 150) {
+		if (merit < 150 && !die.is_soldier() && !die.is_commoner()) {
 			activity = -1 * game_config::maximal_defeated_activity * (150 - merit) / 150;
 		} else {
 			activity = 0;
@@ -1199,7 +1203,11 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 				} else if (!city_team_is_rpg || !runtime_groups::exist_member(*h, leader)) {
 					// recommand! let float_catalog to base catalog.
 					h->float_catalog_ = ftofxp8(h->base_catalog_);
-					cobj->move_into(*h);
+					if (tent::mode != mode_tag::TOWER) {
+						cobj->move_into(*h);
+					} else {
+						cobj->fresh_into(*h);
+					}
 					join_anim(h, cobj, _("Let me join in. I will do my best to maintenance our honor."));
 				} else {
 					h->to_unstage(hero::UNSTAGE_GROUP);
@@ -1289,11 +1297,12 @@ void attack::unit_die(unit_info& attacker, unit_info& center, unit& defender_u, 
 		attacker.defeat_units_ ++;
 	}
 
+	attacker.xp_ += game_config::kill_xp(defender_u.level());
 	if (defender_is_center) {
-		attacker.xp_ = game_config::kill_xp(3 + defender_u.level());
 		center.xp_ = 0;
-		resources::screen->invalidate(attacker.loc_);
+		gui_.invalidate(attacker.loc_);
 	}
+
 	if (anim_lock && teams_[attacker_u.side() - 1].kill_income) {
 		anim_lock->formation_.gold_ += 20;
 	}
@@ -1398,6 +1407,7 @@ bool attack::perform_hit(bool attacker_turn)
 		// 30% miss/ 70% hit
 		hits = (ran_num % 100) < 70;
 	}
+
 	bool injured = false;
 	if (attacker_turn && unit_feature_val2(attacker.get_unit(), hero_feature_fearless) && !center_defender_ptr->is_artifical() && center_defender_ptr->hdata_variable()) {
 		// 20% miss/ 80% hit
@@ -1634,28 +1644,28 @@ bool attack::perform_hit(bool attacker_turn)
 			const unit &defender_unit = *defender_ptr;
 			if (hits) {
 				if (attacker_stats->poisons && !defender_unit.get_state(ustate_tag::POISONED)) {
-					// help::tintegrate::generate_img(float_text, "misc/poisoned.png");
+					// tintegrate::generate_img(float_text, "misc/poisoned.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^poisoned") : _("poisoned")) << '\n';
 				}
 
 				if (attacker_stats->slows && !defender_unit.get_state(ustate_tag::SLOWED)) {
-					// help::tintegrate::generate_img(float_text, "misc/slowed.png");
+					// tintegrate::generate_img(float_text, "misc/slowed.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^slowed") : _("slowed")) << '\n';
 				}
 
 				if (attacker_stats->breaks && !defender_unit.get_state(ustate_tag::BROKEN)) {
-					// help::tintegrate::generate_img(float_text, "misc/broken.png");
+					// tintegrate::generate_img(float_text, "misc/broken.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^broken") : _("broken")) << '\n';
 				}
 
 				if (attacker_stats->petrifies) {
-					// help::tintegrate::generate_img(float_text, "misc/petrified.png");
+					// tintegrate::generate_img(float_text, "misc/petrified.png");
 					// float_text << '\n';
 					float_text << (defender_unit.gender() == unit_race::FEMALE ?
 						_("female^petrified") : _("petrified")) << '\n';
@@ -1689,6 +1699,7 @@ bool attack::perform_hit(bool attacker_turn)
 		attacker_stats->weapon, defender_stats->weapon,
 		abs_n, hit_text_vec, attacker_stats->drains, stronger, "", t, attacker_stats->defender_formation);
 
+	bool first_die = true;
 	bool center_defender_survived = true;
 	size_t index_in_locs = 0;
 	for (std::vector<std::pair<unit*, int> >::const_iterator loc = damage_locs.begin(); loc != damage_locs.end(); ++ loc, index_in_locs ++) {
@@ -1710,6 +1721,10 @@ bool attack::perform_hit(bool attacker_turn)
 		defender.been_damage_ += loc->second;
 
 		if (dies) {
+			if (first_die) {
+				attacker.xp_ = 0;
+				first_die = false;
+			}
 			if (anim_lock) {
 				anim_lock->flush();
 			}
@@ -1854,7 +1869,7 @@ std::pair<map_location, map_location> attack::perform()
 	}
 
 	int duel_mode = controller_.duel();
-	while (!anim_lock && duel_mode != NO_DUEL && !controller_.is_recovering(attacker.side()) && !network::nconnections()) {
+	while (!anim_lock && duel_mode != NO_DUEL && !controller_.is_recovering(attacker.side()) && !resources::controller->has_network_player()) {
 		if (attacker_is_artifical || attacker_is_soldier || defender_is_artifical || defender_is_commoner || defender_is_soldier) {
 			break;
 		}
@@ -1906,6 +1921,7 @@ std::pair<map_location, map_location> attack::perform()
 
 		int hp_percentage;
 		{
+
 			gui2::tduel dlg(left, right);
 			dlg.show(gui_.video());
 
@@ -1989,7 +2005,7 @@ std::pair<map_location, map_location> attack::perform()
 		}
 		if (h2) {
 			if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(itor->get_location().x, itor->get_location().y, draw_area)) {
-				unit_display::global_anim_2(global_anim_tag::REINFORCE, h1.image(true), h2->image(true), text);
+				unit_display::global_anim_2(area_anim::REINFORCE, h1.image(true), h2->image(true), text);
 			}
 			a_.reinforced_ = true;
 			break;
@@ -2016,7 +2032,7 @@ std::pair<map_location, map_location> attack::perform()
 		}
 		if (h2) {
 			if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(defender.get_location().x, defender.get_location().y, draw_area)) {
-				unit_display::global_anim_2(global_anim_tag::INDIVIDUALITY, h2->image(true), "projectiles/strike-n-3.png", text);
+				unit_display::global_anim_2(area_anim::INDIVIDUALITY, h2->image(true), "projectiles/strike-n-3.png", text);
 			}
 			attacker_more_num_blows = true;
 		}
@@ -2028,7 +2044,7 @@ std::pair<map_location, map_location> attack::perform()
 			std::pair<hero*, hero*> ret = attacker.exist_hate(defender);
 			if (ret.first) {
 				if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(defender.get_location().x, defender.get_location().y, draw_area)) {
-					unit_display::global_anim_2(global_anim_tag::REINFORCE, ret.second->image(true), ret.first->image(true), dgettext("wesnoth-hero", "hate"));
+					unit_display::global_anim_2(area_anim::REINFORCE, ret.second->image(true), ret.first->image(true), dgettext("wesnoth-hero", "hate"));
 				}
 				a_.hated_ = true;
 			}
@@ -2068,9 +2084,9 @@ std::pair<map_location, map_location> attack::perform()
 		hero* h1 = &defender.master();
 		if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(defender.get_location().x, defender.get_location().y, draw_area)) {
 			if (h1 != h2) {
-				unit_display::global_anim_2(global_anim_tag::REINFORCE, h1->image(true), h2->image(true), text, font::BAD_COLOR);
+				unit_display::global_anim_2(area_anim::REINFORCE, h1->image(true), h2->image(true), text, font::BAD_COLOR);
 			} else {
-				unit_display::global_anim_2(global_anim_tag::INDIVIDUALITY, h1->image(true), "projectiles/strike-n-3.png", text, font::BAD_COLOR);
+				unit_display::global_anim_2(area_anim::INDIVIDUALITY, h1->image(true), "projectiles/strike-n-3.png", text, font::BAD_COLOR);
 			}
 		}
 		d_.reinforced_ = true;
@@ -2370,7 +2386,7 @@ void calculate_supplying(std::vector<team>& teams, unit_map& units, unit& actor)
 			}
 
 			strstr.str("");
-			strstr << help::tintegrate::generate_img("misc/food.png");
+			strstr << tintegrate::generate_img("misc/food.png");
 			strstr << addend;
 			unit_display::unit_text(actor, false, strstr.str());
 
@@ -2439,7 +2455,7 @@ void carry_supplying(const team& current_team, unit_map& units, unit& provider)
 			continue;
 		}
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/food.png");
+		strstr << tintegrate::generate_img("misc/food.png");
 		strstr << it->second;
 		unit_display::unit_text(*it->first, false, strstr.str());
 	}
@@ -4079,7 +4095,7 @@ void get_random_card(team& t, game_display& disp, unit_map& units, hero_map& her
 		refresh_card_button(t, disp);
 		// card
 		utils::string_map symbols;
-		symbols["first"] = help::tintegrate::generate_format(t.holded_card(t.holded_cards().size() - 1).name(), help::tintegrate::object_color);
+		symbols["first"] = tintegrate::generate_format(t.holded_card(t.holded_cards().size() - 1).name(), tintegrate::object_color);
 		game_events::show_hero_message(&heros[hero::number_scout], NULL, vgettext("Get card: $first.", symbols), game_events::INCIDENT_CARD);
 	}
 }
@@ -4617,7 +4633,7 @@ void do_clear_formationed(game_display& disp, std::vector<team>& teams, unit_map
 	unit_display::tactic_anim_lock lock(disp, u, false);
 	for (std::vector<unit*>::const_iterator it = touched.begin(); it != touched.end(); ++ it) {
 		strstr.str("");
-		strstr << help::tintegrate::generate_img("misc/formation.png");
+		strstr << tintegrate::generate_img("misc/formation.png");
 		unit_display::unit_text(**it, false, strstr.str());
 	}
 }
@@ -4746,8 +4762,8 @@ void do_trade(team& current_team, unit& commoner, artifical& owner, artifical& t
 
 	if (gold_income) {
 		bonus_city.add_gold_bonus(gold_income);
-		strstr << help::tintegrate::generate_img("misc/gold.png");
-		// help::tintegrate::generate_img(strstr, "misc/increase.png");
+		strstr << tintegrate::generate_img("misc/gold.png");
+		// tintegrate::generate_img(strstr, "misc/increase.png");
 		strstr << gold_income;
 	}
 
@@ -4757,8 +4773,8 @@ void do_trade(team& current_team, unit& commoner, artifical& owner, artifical& t
 		if (gold_income) {
 			strstr << "\n";
 		}
-		strstr << help::tintegrate::generate_img("misc/technology.png");
-		// help::tintegrate::generate_img(strstr, "misc/increase.png");
+		strstr << tintegrate::generate_img("misc/technology.png");
+		// tintegrate::generate_img(strstr, "misc/increase.png");
 		strstr << technology_income;
 		
 	}
@@ -4777,8 +4793,8 @@ void do_supply(team& current_team, unit_map& units, unit& transport, artifical& 
 
 	fort.increase_food(transport.food_income());
 
-	strstr << help::tintegrate::generate_img("misc/food.png");
-	// help::tintegrate::generate_img(strstr, "misc/increase.png");
+	strstr << tintegrate::generate_img("misc/food.png");
+	// tintegrate::generate_img(strstr, "misc/increase.png");
 	strstr << transport.food_income();
 
 	if (!strstr.str().empty()) {
@@ -6185,7 +6201,7 @@ std::string format_loc(const unit_map& units, const map_location& loc, int side)
 			if (side == HEROS_INVALID_SIDE || side == base->side()) {
 				strstr << base->name();
 			} else {
-				strstr << help::tintegrate::generate_format(base->name(), "red");
+				strstr << tintegrate::generate_format(base->name(), "red");
 			}
 		}
 		strstr << "(" << loc.x + 1 << ", " << loc.y + 1 << ")";
@@ -6201,8 +6217,8 @@ void do_hate_relation(hero& h1, hero& h2, bool set)
 	std::string message;
 	int incident;
 	utils::string_map symbols;
-	symbols["first"] = help::tintegrate::generate_format(h1.name(), help::tintegrate::hero_color);
-	symbols["second"] = help::tintegrate::generate_format(h2.name(), help::tintegrate::hero_color);
+	symbols["first"] = tintegrate::generate_format(h1.name(), tintegrate::hero_color);
+	symbols["second"] = tintegrate::generate_format(h2.name(), tintegrate::hero_color);
 	if (set) {
 		incident = game_events::INCIDENT_INVALID;
 		message = vgettext("wesnoth-lib", "Hate of national perdition! I will be mutually exclusive with $second.", symbols);

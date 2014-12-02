@@ -21,14 +21,12 @@
 #include "game_preferences.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
-#include "gui/widgets/password_box.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/message.hpp"
 #include <hero.hpp>
-#include "help.hpp"
 #include "gettext.hpp"
 #include "formula_string_utils.hpp"
 #include "multiplayer.hpp"
@@ -83,8 +81,8 @@ void tsignin::refresh_signin_information(twindow& window) const
 	utils::string_map symbols;
 
 	tlabel* label = find_widget<tlabel>(&window, "remark", false, true);
-	symbols["continue"] = help::tintegrate::generate_format(group.signin().continue_days, "green");
-	symbols["break"] = help::tintegrate::generate_format(group.signin().break_days, "red");
+	symbols["continue"] = tintegrate::generate_format(group.signin().continue_days, "green");
+	symbols["break"] = tintegrate::generate_format(group.signin().break_days, "red");
 	symbols["have"] = group.signin().today? dsgettext("wesnoth-lib", "been^have"): dsgettext("wesnoth-lib", "been^haven't");
 	strstr.str("");
 	strstr << vgettext("wesnoth-lib", "You have been sign in $continue days, broken $break days. Today $have sign in.", symbols);
@@ -94,17 +92,17 @@ void tsignin::refresh_signin_information(twindow& window) const
 	tbutton* button = find_widget<tbutton>(&window, "fillup", false, true);
 	if (group.signin().break_days) {
 		symbols.clear();
-		symbols["ps"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "red");
-		symbols["break"] = help::tintegrate::generate_format(group.signin().break_days, "red");
-		symbols["max_break"] = help::tintegrate::generate_format(game_config::max_breaks, "yellow");
-		symbols["fillup"] = help::tintegrate::generate_format(_("signin^Fill up"), "blue");
+		symbols["ps"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "PS"), "red");
+		symbols["break"] = tintegrate::generate_format(group.signin().break_days, "red");
+		symbols["max_break"] = tintegrate::generate_format(game_config::max_breaks, "yellow");
+		symbols["fillup"] = tintegrate::generate_format(_("signin^Fill up"), "blue");
 
 		strstr.str("");
 		strstr << vgettext("wesnoth-lib", "fill up sign in($ps, $break, $max_break, $fillup)", symbols);
 		label->set_label(strstr.str());
 
 		strstr.str("");
-		strstr << help::tintegrate::generate_format(_("signin^Fill up"), "blue");
+		strstr << tintegrate::generate_format(_("signin^Fill up"), "blue");
 		button->set_label(strstr.str());
 	} else {
 		label->set_visible(twidget::INVISIBLE);
@@ -120,7 +118,7 @@ void tsignin::pre_show(CVideo& /*video*/, twindow& window)
 	utils::string_map symbols;
 
 	strstr.str("");
-	symbols["fillup"] = help::tintegrate::generate_format(_("signin^Fill up"), "blue");
+	symbols["fillup"] = tintegrate::generate_format(_("signin^Fill up"), "blue");
 	strstr << vgettext("wesnoth-lib", "sign in remark($fillup)", symbols);
 	tlabel* label = find_widget<tlabel>(&window, "signin_remark", false, true);
 	label->set_label(strstr.str());
@@ -148,8 +146,8 @@ void tsignin::fillup(twindow& window)
 	int coin = 0;
 	int score = 200;
 
-	symbols["score"] = help::tintegrate::generate_format(score, "red");
-	symbols["do"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "signin^Fill up"), "yellow");
+	symbols["score"] = tintegrate::generate_format(score, "red");
+	symbols["do"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "signin^Fill up"), "yellow");
 	std::string message = vgettext("wesnoth-lib", "Do you want to spend $score score to $do?", symbols);
 	int res = gui2::show_message(disp_.video(), "", message, gui2::tmessage::yes_no_buttons);
 	if (res == gui2::twindow::CANCEL) {
@@ -158,8 +156,8 @@ void tsignin::fillup(twindow& window)
 
 	if (sum_score(group.coin(), group.score()) < score) {
 		symbols.clear();
-		symbols["coin"] = help::tintegrate::generate_format(coin, "red");
-		symbols["score"] = help::tintegrate::generate_format(score, "red");
+		symbols["coin"] = tintegrate::generate_format(coin, "red");
+		symbols["score"] = tintegrate::generate_format(score, "red");
 		err << vgettext("wesnoth-lib", "Repertory is not enough to pay $coin coin and $score score. If lack one only, can exchange between coin and score.", symbols);
 		gui2::show_message(disp_.video(), "", err.str());
 		return;

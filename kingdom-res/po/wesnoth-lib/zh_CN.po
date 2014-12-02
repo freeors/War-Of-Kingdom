@@ -9,8 +9,8 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2014-08-28 11:17+0800\n"
-"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
+"PO-Revision-Date: 2014-11-30 14:58+0800\n"
+"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -1395,7 +1395,7 @@ msgstr "日期"
 #: data/gui/default/window/data_manage.cfg:258
 #: data/gui/default/window/data_manage.cfg:259
 msgid "Clear"
-msgstr ""
+msgstr "清空"
 
 #. [button]: id=backup
 #: data/gui/default/window/data_manage.cfg:292
@@ -5384,6 +5384,9 @@ msgstr "选择想要警戒的位置"
 msgid "Researching technology"
 msgstr "正在研究科技"
 
+msgid "Have researched out all technology"
+msgstr "已研究出所有科技"
+
 msgid "Unallocated treasure"
 msgstr "未分配宝物"
 
@@ -5450,6 +5453,103 @@ msgstr "亡国之恨！我和$second誓不两立。"
 
 msgid "Forum"
 msgstr "论坛"
+
+msgid "Chat"
+msgstr "聊天"
+
+msgid "Wait"
+msgstr "等待"
+
+msgid "Consult"
+msgstr "协商"
+
+msgid "Ready"
+msgstr "就绪"
+
+msgid "Netowork diagnosis"
+msgstr "网络诊断"
+
+msgid "Press CR same as Send"
+msgstr "按下回车键视做发送"
+
+msgid "Normal"
+msgstr "普通"
+
+msgid "Map is for subcontinent. Find improper city location: $name($x, $y)."
+msgstr "这是个次大陆地图，发现不正确的城市坐标：$name($x, $y)。"
+
+msgid "Location.x of city must be in [$x1, $x2], y in [$y1, $y2]!"
+msgstr "城市的x坐标必须在范围[$x1, $x2]之内，y坐标在[$y1, $y2]！"
+
+msgid "Map error. Too short road from $from to $to, at least $shortest!"
+msgstr "地图错误。$from和$to之间道路太短了，至少$shortest！"
+
+msgid "Upgrade to $to"
+msgstr "升级到$to"
+
+#: src/loadscreen.cpp:222
+msgid "Initializing user interface"
+msgstr "正在初始化用户界面......"
+
+#: src/loadscreen.cpp:223
+msgid "Loading game configuration"
+msgstr "正在读取游戏配置……"
+
+#: src/loadscreen.cpp:224 src/loadscreen.cpp:231
+msgid "Verifying cache"
+msgstr "正在验证缓存……"
+
+#: src/loadscreen.cpp:225 src/loadscreen.cpp:232
+msgid "Reading files and creating cache"
+msgstr "正在读取文件并创建缓存……"
+
+#: src/loadscreen.cpp:226 src/loadscreen.cpp:233
+msgid "Reading unit files"
+msgstr "正在读取单位文件……"
+
+#: src/loadscreen.cpp:227
+msgid "Re-initialize fonts for the current language"
+msgstr "为当前语言重新初始化字体……"
+
+#: src/loadscreen.cpp:228
+msgid "Searching for installed add-ons"
+msgstr "正在搜索已经安装的附加组件……"
+
+#: src/loadscreen.cpp:229
+msgid "Loading title screen"
+msgstr "正在读取主屏幕……"
+
+#: src/loadscreen.cpp:230
+msgid "Loading data files"
+msgstr "正在读取数据文件……"
+
+#: src/loadscreen.cpp:234
+msgid "Loading level"
+msgstr "正在读取关卡文件……"
+
+#: src/loadscreen.cpp:235
+msgid "Initializing teams"
+msgstr "正在初始化队伍……"
+
+#: src/loadscreen.cpp:236
+msgid "Loading units"
+msgstr "正在读取单位定义……"
+
+#: src/loadscreen.cpp:237
+msgid "Building terrain rules"
+msgstr "正在建立地形构造规则集……"
+
+#: src/loadscreen.cpp:238
+msgid "Initializing display"
+msgstr "正在初始化显示……"
+
+#: src/loadscreen.cpp:239
+msgid "Drawing theme"
+msgstr "正在绘制主题……"
+
+#: src/loadscreen.cpp:240
+msgid "Starting game"
+msgstr "正在开始游戏……"
 
 #~ msgid "Join Official Server"
 #~ msgstr "加入官方服务器"

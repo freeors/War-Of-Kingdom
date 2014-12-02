@@ -35,7 +35,6 @@
 #endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
-#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -176,7 +175,7 @@ void tnoble2::fill_2list(twindow& window)
 			
 			strstr.str("");
 			if (t.level() > leader_noble_level_) {
-				strstr << help::tintegrate::generate_format(t.name(), "red");
+				strstr << tintegrate::generate_format(t.name(), "red");
 			} else {
 				strstr << t.name();
 			}
@@ -198,7 +197,7 @@ void tnoble2::fill_2list(twindow& window)
 			std::map<int, std::pair<int, unit*> >::const_iterator find = holden_.find(t.index());
 			if (find != holden_.end()) {
 				if (!find->second.second) {
-					strstr << help::tintegrate::generate_format(heros_[find->second.first].name(), "red");
+					strstr << tintegrate::generate_format(heros_[find->second.first].name(), "red");
 				} else {
 					strstr << heros_[find->second.first].name();
 				}
@@ -224,9 +223,9 @@ void tnoble2::fill_2list(twindow& window)
 
 		strstr.str("");
 		if (h.number_ == leader.number_) {
-			strstr << help::tintegrate::generate_format(h.name(), "red");
+			strstr << tintegrate::generate_format(h.name(), "red");
 		} else if (h.noble_ != HEROS_NO_NOBLE) {
-			strstr << help::tintegrate::generate_format(h.name(), "green");
+			strstr << tintegrate::generate_format(h.name(), "green");
 		} else {
 			strstr << h.name();
 		}

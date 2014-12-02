@@ -90,7 +90,6 @@ public:
 	virtual void show_help();
 	virtual void undo();
 	virtual void redo();
-	virtual void toggle_ellipses();
 	virtual void toggle_grid();
 	virtual void interior();
 	virtual void technology_tree();
@@ -209,6 +208,7 @@ public:
 	void start_pass_scenario_anim(LEVEL_RESULT result) const;
 
 	int human_team() const { return human_team_; }
+	tgroup& human_team_group();
 	const config& level() const { return level_; }
 
 	card_map& cards() { return cards_; }

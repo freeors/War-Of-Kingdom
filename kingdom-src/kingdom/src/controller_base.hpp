@@ -21,7 +21,7 @@
 
 #include "hotkeys.hpp"
 #include "key.hpp"
-#include "theme.hpp"
+#include <theme.hpp>
 
 class CVideo;
 

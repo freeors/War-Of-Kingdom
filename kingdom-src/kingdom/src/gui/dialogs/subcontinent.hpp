@@ -23,7 +23,6 @@
 
 namespace gui2 {
 
-class thexmap;
 class tbutton;
 
 /**
@@ -39,7 +38,7 @@ class tsubcontinent : public tdialog
 public:
 	struct tcity
 	{
-		tcity(const config& cfg);
+		tcity(hero_map& heros, const config& cfg);
 
 		int cityno;
 		int number;
@@ -47,11 +46,12 @@ public:
 		int ownership;
 		int endurance;
 		int times;
+		std::string alias;
 	};
 
 	struct tparam
 	{
-		tparam(const config& main_cfg);
+		tparam(hero_map& heros, const config& main_cfg);
 
 		tcity& find_city(int cityno);
 
@@ -61,8 +61,6 @@ public:
 		config scenario;
 		std::vector<tcity> cities;
 		http::tsubcontinent_record http_subcontinent;
-
-		bool valid;
 	};
 
 	enum tresult { SIEGE = 1, SCENARIO};
@@ -89,11 +87,11 @@ private:
 	 * @param previous            Show the previous tip, else shows the next
 	 *                            one.
 	 */
-	void size_change(thexmap* widget);
 	void attack(twindow& window);
 	void repair(twindow& window);
 	void discard(twindow& window);
 	
+	void subcontinent_selected(twindow& window);
 	void city_selected(twindow& window);
 
 	void switch_to_subcontinent(twindow& window, tparam& param);

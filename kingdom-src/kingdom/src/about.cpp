@@ -24,6 +24,7 @@
 #include "display.hpp"
 #include "gettext.hpp"
 #include "marked-up_text.hpp"
+#include "game_config.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -280,7 +281,6 @@ void show_about(display &disp, const std::string &campaign)
 		if (redraw_mapimage) {
 			// draw map to screen, thus erasing all text
 			sdl_blit(map_image, NULL, screen, NULL);
-			update_rect(screen_rect);
 
 			// redraw the dialog
 			f.draw_background();
@@ -293,7 +293,6 @@ void show_about(display &disp, const std::string &campaign)
 			// thus erasing all text
 			SDL_Rect modified = create_rect(0, 0, max_text_width, text_rect.h);
 			sdl_blit(text_surf, &modified, screen, &text_rect_blit);
-			update_rect(text_rect);
 		}
 
 		const int line_spacing = 5;

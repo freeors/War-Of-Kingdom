@@ -29,6 +29,14 @@ class vconfig;
 class team;
 class play_controller;
 
+#define MAX_UNIT_FIELD			180  // 127 + 50.8(127 / 2.5)
+#define MAX_UNIT_ADAPTABILITY	15   // ===> S12
+#define RESISTANCE_STANDARD		25
+#define RESISTANCE_DIV2			12
+#define RESISTANCE_DIV3			8
+#define RESISTANCE_DIV4			6
+#define RESISTANCE_FIRM			10
+
 #define HIDDEN_TICKS		-3
 #define NONE_TICKS			-2
 #define RESIDE_TICKS		-1
@@ -616,7 +624,7 @@ public:
 		       	const map_location& second_loc = map_location::null_location,
 			const int damage=0,
 			const unit_animation::hit_type hit_type = unit_animation::INVALID,
-			const attack_type* attack=NULL,const attack_type* second_attack = NULL,
+			const attack_type* attack=NULL,const std::string& second_attack = null_str,
 			int swing_num =0) const;
 
 	bool get_ability_bool(const std::string& ability, const map_location& loc) const;

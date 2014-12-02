@@ -18,7 +18,6 @@
 
 #include "gui/dialogs/dialog.hpp"
 #include "gui/widgets/listbox.hpp"
-#include "gui/widgets/text.hpp"
 #include "savegame.hpp"
 #include "tstring.hpp"
 

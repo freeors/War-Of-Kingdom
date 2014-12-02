@@ -32,6 +32,7 @@
 #include "gettext.hpp"
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/side_report.hpp"
+#include "gui/dialogs/chat.hpp"
 #include "log.hpp"
 #include "map_label.hpp"
 #include "marked-up_text.hpp"
@@ -53,8 +54,7 @@ static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
 #define LOG_NG LOG_STREAM(info, log_engine)
 
-uint32_t total_draw, total_analyzing, total_recruit, total_combat, total_build, total_move, total_diplomatism;
-int total_draws;
+uint32_t total_analyzing, total_recruit, total_combat, total_build, total_move, total_diplomatism;
 
 playsingle_controller::playsingle_controller(const config& level,
 		game_state& state_of_game, hero_map& heros, hero_map& heros_start, 
@@ -83,7 +83,7 @@ playsingle_controller::playsingle_controller(const config& level,
 
 	ai::game_info ai_info(*gui_, map_, units_, heros_, teams_, tod_manager_, gamestate_);
 	ai::manager::set_ai_info(ai_info);
-	ai::manager::add_observer(this) ;
+	ai::manager::add_observer(this);
 }
 
 playsingle_controller::~playsingle_controller()
@@ -142,6 +142,11 @@ void playsingle_controller::init_gui()
 
 		teams_[human_team_].set_objectives_changed(false);
 	}
+
+	if (lobby.sock == network::null_connection) {
+		gui_->menu_set_pip_image("chat", "misc/network-disconnected.png");
+	}
+	tlobby::thandler::join();
 }
 
 void playsingle_controller::recruit()
@@ -216,6 +221,16 @@ void playsingle_controller::demolish()
 	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
 	if (!browse_ && u_itor.valid()) {
 		menu_handler_.demolish(mouse_handler_, &*u_itor);
+	}
+}
+
+void playsingle_controller::chat()
+{
+	gui2::tchat2 dlg(*gui_, human_team_group());
+	dlg.show(gui_->video());
+
+	if (lobby.sock != network::null_connection) {
+		gui_->menu_set_pip_image("chat", null_str);
 	}
 }
 
@@ -618,6 +633,7 @@ void playsingle_controller::play_side()
 				continue;
 			}
 		}
+		
 		bool new_side = do_prefix_unit(end_ticks, loading_game_, true);
 
 		if (actor_can_continue_action(units_, player_number_)) {
@@ -997,6 +1013,11 @@ void playsingle_controller::linger()
 	gui_->invalidate_theme();
 	gui_->redraw_everything();
 
+	// button be reconstruct.
+	if (lobby.sock == network::null_connection) {
+		gui_->menu_set_pip_image("chat", "misc/network-disconnected.png");
+	}
+
 	start_pass_scenario_anim(get_end_level_data().result);
 
 	try {
@@ -1018,7 +1039,7 @@ void playsingle_controller::linger()
 	}
 
 	if (gui_->pass_scenario_anim_id() != -1) {
-		gui_->erase_screen_anim(gui_->pass_scenario_anim_id());
+		gui_->erase_area_anim(gui_->pass_scenario_anim_id());
 	}
 
 	// revert the end-turn button text to its normal label
@@ -1030,6 +1051,22 @@ void playsingle_controller::linger()
 	LOG_NG << "ending end-of-scenario linger\n";
 }
 
+bool playsingle_controller::handle(tlobby::ttype type, const config& data)
+{
+	if (type == tlobby::t_connected || type == tlobby::t_disconnected) {
+		const std::string fg = type == tlobby::t_connected? null_str: "misc/network-disconnected.png";
+		gui_->menu_set_pip_image("chat", fg);
+	}
+
+	if (type != tlobby::t_data) {
+		return false;
+	}
+	if (const config& c = data.child("whisper")) {
+		gui_->menu_set_pip_image("chat", "misc/red-dot12.png");
+		sound::play_UI_sound(game_config::sounds::receive_message);
+	}
+	return false;
+}
 
 void playsingle_controller::after_human_turn()
 {
@@ -1069,8 +1106,6 @@ void playsingle_controller::after_human_turn()
 void playsingle_controller::play_ai_turn(turn_info* turn_data)
 {
 	uint32_t start = SDL_GetTicks();
-	total_draw = 0;
-	total_draws = 0;
 	total_analyzing = 0;
 	total_recruit = 0;
 	total_combat = 0;
@@ -1130,8 +1165,8 @@ void playsingle_controller::play_ai_turn(turn_info* turn_data)
 	// do_delay_call(true);
 
 	uint32_t stop = SDL_GetTicks();
-	posix_print("#%i, play_ai_turn %u ms, (draw: %u(%i), analyzing: %u), [%u](%u+[%u]+%u)(recruit: %u, combat: %u, build: %u, move: %u, diplomatism: %u)\n", 
-		player_number_, stop - start, total_draw, total_draws, total_analyzing, 
+	posix_print("#%i, play_ai_turn %u ms, (analyzing: %u), [%u](%u+[%u]+%u)(recruit: %u, combat: %u, build: %u, move: %u, diplomatism: %u)\n", 
+		player_number_, stop - start, total_analyzing, 
 		before - start + total_recruit + total_combat + total_build + total_move + total_diplomatism + stop - after,
 		before - start, total_recruit + total_combat + total_build + total_move + total_diplomatism, stop - after,
 		total_recruit, total_combat, total_build, total_move, total_diplomatism);
@@ -1182,7 +1217,7 @@ void playsingle_controller::store_gold(bool obs)
 	} else {
 		persist_.end_transaction();
 		title = _("Victory");
-		report << help::tintegrate::generate_format(_("You have emerged victorious!"), "green") << "\n\n";
+		report << tintegrate::generate_format(_("You have emerged victorious!"), "green") << "\n\n";
 	}
 
 	end_level_data &end_level = get_end_level_data();
@@ -1241,6 +1276,9 @@ bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, 
 {
 	bool res = true;
 	switch (command) {
+		case hotkey::HOTKEY_CHAT:
+			return true;
+
 		case hotkey::HOTKEY_PLAY_CARD:
 			return !browse_ && !linger_ && !events::commands_disabled && !mouse_handler_.in_multistep_state();
 		case hotkey::HOTKEY_ENDTURN:

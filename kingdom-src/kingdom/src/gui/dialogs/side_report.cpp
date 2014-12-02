@@ -40,7 +40,6 @@
 #include "gui/widgets/window.hpp"
 #include "network.hpp"
 #include "ai/manager.hpp"
-#include "help.hpp"
 
 #include <boost/bind.hpp>
 
@@ -130,33 +129,39 @@ void tside_report::pre_show(CVideo& /*video*/, twindow& window)
 	tlabel* label = find_widget<tlabel>(&window, "status", false, true);
 	std::stringstream status_str;
 	// ing technology
-	const ttechnology& t = *current_team_.ing_technology();
-	status_str << help::tintegrate::generate_format(_("Researching technology"), "green") << ": ";
-	status_str << current_team_.ing_technology()->name();
-	status_str << "(";
-	std::map<const ttechnology*, int>& halvies = current_team_.half_technologies();
-	std::map<const ttechnology*, int>::const_iterator find = halvies.find(&t);
-	if (find != halvies.end()) {
-		status_str << find->second;
+	const ttechnology* ing_technology = current_team_.ing_technology();
+	if (ing_technology) {
+		const ttechnology& t = *ing_technology;
+		status_str << tintegrate::generate_format(_("Researching technology"), "green") << ": ";
+		status_str << t.name();
+		status_str << "(";
+		std::map<const ttechnology*, int>& halvies = current_team_.half_technologies();
+		std::map<const ttechnology*, int>::const_iterator find = halvies.find(&t);
+		if (find != halvies.end()) {
+			status_str << find->second;
+		} else {
+			status_str << 0;
+		}
+		status_str << "/";
+		int max_experience = current_team_.technology_max_experience(t);
+		if (max_experience != t.max_experience()) {
+			status_str << tintegrate::generate_format(max_experience, "blue");
+		} else {
+			status_str << max_experience;
+		}
+		status_str << ")";
 	} else {
-		status_str << 0;
+		status_str << tintegrate::generate_format(_("Have researched out all technology"), "green");
 	}
-	status_str << "/";
-	int max_experience = current_team_.technology_max_experience(t);
-	if (max_experience != t.max_experience()) {
-		status_str << help::tintegrate::generate_format(max_experience, "blue");
-	} else {
-		status_str << max_experience;
-	}
-	status_str << ")";
 	status_str << "\n";
+
 	// treasure
-	status_str << help::tintegrate::generate_format(_("Unallocated treasure"), "green") << ": ";
+	status_str << tintegrate::generate_format(_("Unallocated treasure"), "green") << ": ";
 	status_str << current_team_.holded_treasures().size();
 	status_str << "    ";
 
 	// noble
-	status_str << help::tintegrate::generate_format(_("Unallocated noble"), "green") << ": ";
+	status_str << tintegrate::generate_format(_("Unallocated noble"), "green") << ": ";
 	status_str << current_team_.unappoint_nobles().size();
 
 	label->set_label(status_str.str());
@@ -197,7 +202,7 @@ void tside_report::fill_table(int catalog)
 		str.str("");
 		str << city.name();
 		str << "(Lv";
-		str << help::tintegrate::generate_format(city.level(), "green");
+		str << tintegrate::generate_format(city.level(), "green");
 		str << ")";
 		table_item["label"] = str.str();
 		table_item_item.insert(std::make_pair("name", table_item));
@@ -205,9 +210,9 @@ void tside_report::fill_table(int catalog)
 		if (catalog == STATUS_PAGE) {
 			str.str("");
 			if (city.hitpoints() < city.max_hitpoints() / 2) {
-				str << help::tintegrate::generate_format(city.hitpoints(), "red");
+				str << tintegrate::generate_format(city.hitpoints(), "red");
 			} else if (city.hitpoints() < city.max_hitpoints()) {
-				str << help::tintegrate::generate_format(city.hitpoints(), "yellow");
+				str << tintegrate::generate_format(city.hitpoints(), "yellow");
 			} else {
 				str << city.hitpoints();
 			}
@@ -226,25 +231,25 @@ void tside_report::fill_table(int catalog)
 			table_item_item.insert(std::make_pair("xp", table_item));
 
 			str.str("");
-			str << help::tintegrate::generate_format(city.fresh_heros().size(), "green");
+			str << tintegrate::generate_format(city.fresh_heros().size(), "green");
 			str << "/";
-			str << help::tintegrate::generate_format(city.finish_heros().size(), "red");
+			str << tintegrate::generate_format(city.finish_heros().size(), "red");
 			str << "/";
-			str << help::tintegrate::generate_format(city.wander_heros().size(), "yellow");
+			str << tintegrate::generate_format(city.wander_heros().size(), "yellow");
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("hero", table_item));
 
 			str.str("");
-			str << help::tintegrate::generate_format(city.reside_troops().size(), "yellow");
+			str << tintegrate::generate_format(city.reside_troops().size(), "yellow");
 			str << "/";
 			str << city.field_troops().size();
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("troop", table_item));
 
 			str.str("");
-			str << help::tintegrate::generate_format(city.total_gold_income(current_team_.market_increase_), "yellow");
+			str << tintegrate::generate_format(city.total_gold_income(current_team_.market_increase_), "yellow");
 			str << "/";
-			str << help::tintegrate::generate_format(city.total_technology_income(current_team_.technology_increase_), "green");
+			str << tintegrate::generate_format(city.total_technology_income(current_team_.technology_increase_), "green");
 			table_item["label"] = str.str();
 			table_item_item.insert(std::make_pair("income", table_item));
 
@@ -263,10 +268,10 @@ void tside_report::fill_table(int catalog)
 				}
 			}
 			str.str("");
-			str << help::tintegrate::generate_format(building + built, building? "yellow": "green");
+			str << tintegrate::generate_format(building + built, building? "yellow": "green");
 			str << "/";
 			if (building + built != ea.size()) {
-				str << help::tintegrate::generate_format(ea.size(), "red");
+				str << tintegrate::generate_format(ea.size(), "red");
 			} else {
 				str << ea.size();
 			}
@@ -329,7 +334,7 @@ void tside_report::catalog_page(twindow& window, int catalog, bool swap)
 		widgets.push_back(&find_widget<tbutton>(&window, "button_troop", false));
 		widgets.back()->set_active(false);
 		widgets.push_back(&find_widget<tbutton>(&window, "button_income", false));
-		widgets.back()->set_label(help::tintegrate::generate_img("misc/gold.png") + " " + help::tintegrate::generate_img("misc/technology.png"));
+		widgets.back()->set_label(tintegrate::generate_img("misc/gold.png") + " " + tintegrate::generate_img("misc/technology.png"));
 		widgets.back()->set_active(false);
 		widgets.push_back(&find_widget<tbutton>(&window, "button_ea", false));
 		widgets.back()->set_active(false);

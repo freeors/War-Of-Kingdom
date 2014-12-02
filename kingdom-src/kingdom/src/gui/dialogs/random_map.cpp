@@ -44,7 +44,6 @@
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "formula_string_utils.hpp"
-#include "help.hpp"
 #include <boost/bind.hpp>
 
 namespace gui2 {
@@ -86,7 +85,7 @@ void trandom_map::pre_show(twindow& window)
 	// Load option (might turn it into a button later).
 	string_map item;
 	if (mode_ != mode_tag::TOWER) {
-		item.insert(std::make_pair("label", help::tintegrate::generate_format(_("Load Game"), "yellow")));
+		item.insert(std::make_pair("label", tintegrate::generate_format(_("Load Game"), "yellow")));
 		item.insert(std::make_pair("tooltip", _("Load Game...")));
 		list.add_row(item);
 
@@ -96,7 +95,7 @@ void trandom_map::pre_show(twindow& window)
 
 		if (!local_only_) {
 			item.clear();
-			item.insert(std::make_pair("label", help::tintegrate::generate_format(dsgettext("wesnoth-multiplayer", "2p_siege_map"), "green")));
+			item.insert(std::make_pair("label", tintegrate::generate_format(dsgettext("wesnoth-multiplayer", "2p_siege_map"), "green")));
 			item.insert(std::make_pair("tooltip", _("Siege map")));
 			list.add_row(item);
 
@@ -242,7 +241,7 @@ void trandom_map::generate_map(twindow& window)
 	generator_settings_->set_visible(generator_? twidget::VISIBLE: twidget::INVISIBLE);
 	regenerate_map_->set_visible(generator_? twidget::VISIBLE: twidget::INVISIBLE);
 
-	minimap.set_map_data(parameters_.scenario_data["map_data"]);
+	minimap.set_map_data(tminimap::TILE_MAP, parameters_.scenario_data["map_data"]);
 
 	const std::string& map_data = parameters_.scenario_data["map_data"];
 

@@ -17,7 +17,8 @@
 
 #include "network.hpp"
 #include "sdl_utils.hpp"
-#include "hero.hpp"
+#include <hero.hpp>
+#include "events.hpp"
 
 class config;
 class display;
@@ -66,8 +67,6 @@ void start_client(game_display& disp, const config& game_config, hero_map& heros
 }
 
 namespace http {
-
-extern int INVALID_UID;
 
 bool register_user(game_display& disp, hero_map& heros, bool check_exist = false);
 struct membership 
@@ -124,7 +123,7 @@ struct membership
 	int version;
 };
 membership session(game_display& disp, hero_map& heros);
-membership membership_hero(game_display& disp, hero_map& heros, bool quiet, const std::string& username = null_str);
+membership membership_hero(display& disp, hero_map& heros, bool quiet, const std::string& username = null_str);
 membership membership_from_uid(game_display& disp, hero_map& heros, bool quiet, int uid);
 membership membership_hero2(game_display& disp, hero_map& heros);
 std::vector<membership> membershiplist_vector(game_display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid);
@@ -320,8 +319,6 @@ enum {
 	employee_tag_lock,
 	employee_tag_unlock,
 };
-membership employee_insert(game_display& disp, hero_map& heros);
-membership employee_common(game_display& disp, hero_map& heros, int tag, const std::set<int>& number, int coin, int score, std::map<int, temployee>* employees);
 struct temployee {
 	temployee():
 	  number(HEROS_INVALID_NUMBER)
@@ -339,6 +336,8 @@ struct temployee {
 	int lock;
 	std::string username;
 };
+membership employee_insert(game_display& disp, hero_map& heros);
+membership employee_common(game_display& disp, hero_map& heros, int tag, const std::set<int>& number, int coin, int score, std::map<int, temployee>* employees);
 std::map<int, temployee> list_employee(game_display& disp, hero_map& heros);
 bool do_employ_bh(game_display& disp, hero_map& heros, bool employ, int number, int coin, int score, std::map<int, temployee>* employees);
 bool employee_employ(game_display& disp, hero_map& heros, hero& h, int score, std::map<int, temployee>* employees);

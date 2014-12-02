@@ -23,11 +23,11 @@
 #include "editor_common.hpp"
 #include "editor_palettes.hpp"
 
-#include "../gettext.hpp"
-#include "../serialization/string_utils.hpp"
-#include "../sound.hpp"
-#include "../tooltips.hpp"
-#include "../marked-up_text.hpp"
+#include "gettext.hpp"
+#include "serialization/string_utils.hpp"
+#include "sound.hpp"
+#include "tooltips.hpp"
+#include "marked-up_text.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -451,7 +451,6 @@ void terrain_palette::draw(bool force) {
 		if (counter_from_zero % size_specs_.terrain_width == size_specs_.terrain_width - 1)
 			y += size_specs_.terrain_space;
 	}
-	update_rect(loc);
 	set_dirty(false);
 }
 

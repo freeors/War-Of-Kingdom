@@ -67,7 +67,6 @@
 #include "wml_separators.hpp"
 #include "formula_string_utils.hpp"
 #include "scripting/lua.hpp"
-#include "widgets/combo.hpp"
 #include "artifical.hpp"
 #include "game_preferences.hpp"
 
@@ -799,11 +798,11 @@ void menu_handler::demolish(mouse_handler& mousehandler, unit* u)
 	std::string message, color;
 	utils::string_map symbols;
 	if (u->is_artifical()) {
-		color = help::tintegrate::object_color;
+		color = tintegrate::object_color;
 	} else {
-		color = help::tintegrate::hero_color;
+		color = tintegrate::hero_color;
 	}
-	symbols["type"] = help::tintegrate::generate_format(u->name(), color);
+	symbols["type"] = tintegrate::generate_format(u->name(), color);
 	message = vgettext("Do you really want to demolish $type?", symbols);
 	int res = gui2::show_message(gui_->video(), "", message, gui2::tmessage::yes_no_buttons);
 	if (res != gui2::twindow::OK) {
@@ -1096,7 +1095,7 @@ bool menu_handler::end_turn(int side_num)
 		if ((int)actives.size() >= game_config::active_tactic_slots) {
 			return true;
 		}
-		symbols["count"] = help::tintegrate::generate_format(game_config::active_tactic_slots - actives.size(), help::tintegrate::hero_color, 0, true, true);
+		symbols["count"] = tintegrate::generate_format(game_config::active_tactic_slots - actives.size(), tintegrate::hero_color, 0, true, true);
 		
 		strstr << vgettext("There is $count vacant tactic. Do you really want to end your turn?", symbols);
 		int res = gui2::show_message(gui_->video(), "", strstr.str(), gui2::tmessage::yes_no_buttons, "hero-256/0.png");
@@ -1141,13 +1140,13 @@ bool menu_handler::end_turn(int side_num)
 
 	if (fresh_imloyalty) {
 		strstr.str("");
-		symbols["city"] = help::tintegrate::generate_format((*fresh_imloyalty_cities.begin())->name(), "red");
+		symbols["city"] = tintegrate::generate_format((*fresh_imloyalty_cities.begin())->name(), "red");
 		strstr.str("");
 		strstr << fresh_imloyalty_cities.size();
-		symbols["cities"] = help::tintegrate::generate_format(strstr.str(), "red");
+		symbols["cities"] = tintegrate::generate_format(strstr.str(), "red");
 		strstr.str("");
 		strstr << fresh_imloyalty;
-		symbols["heros"] = help::tintegrate::generate_format(strstr.str(), "yellow");
+		symbols["heros"] = tintegrate::generate_format(strstr.str(), "yellow");
 
 		strstr.str("");
 		if (fresh_imloyalty_cities.size() > 1) {
@@ -1357,11 +1356,11 @@ void menu_handler::execute_gotos(mouse_handler& mousehandler, int side)
 					std::string message;
 					utils::string_map symbols;
 
-					symbols["city"] = help::tintegrate::generate_format(city->name(), "green");
+					symbols["city"] = tintegrate::generate_format(city->name(), "green");
 					if (city == units_.find_unit(goto_loc)) {
 						message = vgettext("wesnoth-lib", "Troop has come into $city as planned!", symbols);
 					} else {
-						symbols["loc"] = help::tintegrate::generate_format(format_loc(units_, goto_loc, side), "yellow");
+						symbols["loc"] = tintegrate::generate_format(format_loc(units_, goto_loc, side), "yellow");
 						message = vgettext("wesnoth-lib", "As planned, troop require to arrive at $loc, but come into $city in the middle. If want to continue arriving at $loc, please command again.", symbols);
 					}
 					game_events::show_hero_message(&ui.master(), city, message, game_events::INCIDENT_INVALID);
@@ -1388,10 +1387,6 @@ void menu_handler::execute_gotos(mouse_handler& mousehandler, int side)
 	// erase the footsteps after movement
 	gui_->set_route(NULL);
 	gui_->invalidate_game_status();
-}
-
-void menu_handler::toggle_ellipses()
-{
 }
 
 void menu_handler::toggle_grid()
@@ -2069,7 +2064,7 @@ void chat_command_handler::do_display()
 }
 
 void chat_command_handler::do_version() {
-	print(_("version"), game_config::revision);
+	print(_("version"), game_config::version);
 }
 
 void chat_command_handler::do_register() {

@@ -1,6 +1,8 @@
 #ifndef __EVENT_HPP_
 #define __EVENT_HPP_
 
+#ifndef _ROSE_EDITOR
+
 #include "global.hpp"
 #include "stdafx.h"
 #include <windowsx.h>
@@ -1035,5 +1037,7 @@ namespace ns {
 
 	extern int clicked_item;
 }
+
+#endif // _ROSE_EDITOR
 
 #endif // __EVENT_HPP_

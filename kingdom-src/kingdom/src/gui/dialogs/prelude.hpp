@@ -24,7 +24,6 @@ class hero_map;
 
 namespace gui2 {
 
-class thexmap;
 class tbutton;
 
 /**
@@ -75,7 +74,6 @@ private:
 	 * @param previous            Show the previous tip, else shows the next
 	 *                            one.
 	 */
-	void size_change(thexmap* widget);
 	void previous(twindow& window);
 	void next(twindow& window);
 

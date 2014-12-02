@@ -44,7 +44,6 @@
 #include "language.hpp"
 #include "preferences_display.hpp"
 #include "multiplayer.hpp"
-#include "help.hpp"
 
 #include <cctype>
 #include <boost/foreach.hpp>
@@ -212,14 +211,14 @@ void tgame_load::display_savegame(twindow& window)
 				set_label(cfg_summary["leader_image"]);
 
 		find_widget<tminimap>(&window, "minimap", false).
-				set_map_data(cfg_summary["map_data"]);
+				set_map_data(tminimap::TILE_MAP, cfg_summary["map_data"]);
 
 		find_widget<tlabel>(&window, "lblScenario", false).set_label(game.name);
 
 		std::stringstream str;
 		str << format_time_local(cfg_summary["create"].to_long()) << "\n";
 		str << _("Total time") << ": " << format_time_elapse(cfg_summary["duration"].to_int());
-		str << "(" << help::tintegrate::generate_format(cfg_summary["hash"].to_int(), "yellow") << ")";
+		str << "(" << tintegrate::generate_format(cfg_summary["hash"].to_int(), "yellow") << ")";
 		evaluate_summary_string(str, cfg_summary);
 
 		find_widget<tlabel>(&window, "lblSummary", false).set_label(str.str());
@@ -232,7 +231,7 @@ void tgame_load::display_savegame(twindow& window)
 		savegame::www_save_info& game = www_saves_[selected_row];
 		filename_ = game.name;
 
-		find_widget<tminimap>(&window, "minimap", false).set_map_data("");
+		find_widget<tminimap>(&window, "minimap", false).set_map_data(tminimap::TILE_MAP, "");
 
 		find_widget<tlabel>(&window, "lblScenario", false).set_label(game.name);
 
@@ -361,7 +360,7 @@ void tgame_load::fill_local(twindow& window)
 {
 	find_widget<tcontrol>(&window, "delete", false).set_active(true);
 	find_widget<tcontrol>(&window, "ok", false).set_active(true);
-	std::string str = help::tintegrate::generate_format(_("Upload"), "blue");
+	std::string str = tintegrate::generate_format(_("Upload"), "blue");
 	find_widget<tcontrol>(&window, "xmit", false).set_label(str);
 
 	{
@@ -388,7 +387,7 @@ void tgame_load::fill_network(twindow& window)
 {
 	find_widget<tcontrol>(&window, "delete", false).set_active(false);
 	find_widget<tcontrol>(&window, "ok", false).set_active(false);
-	std::string str = help::tintegrate::generate_format(_("Download"), "blue");
+	std::string str = tintegrate::generate_format(_("Download"), "blue");
 	find_widget<tcontrol>(&window, "xmit", false).set_label(str);
 
 	{

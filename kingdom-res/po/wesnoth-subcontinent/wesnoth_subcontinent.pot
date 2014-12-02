@@ -18,3 +18,110 @@ msgstr ""
 msgid "LOCC"
 msgstr ""
  
+msgid "tianzhidian"
+msgstr ""
+ 
+ msgid "leizhe"
+msgstr ""
+
+ msgid "suicheng"
+msgstr ""
+
+ msgid "donghuang"
+msgstr ""
+ 
+  msgid "wushizhang"
+msgstr ""
+
+ msgid "lingshan"
+msgstr ""
+
+ msgid "yifang"
+msgstr ""
+
+ msgid "yanhuoguo"
+msgstr ""
+
+ msgid "liushaguo"
+msgstr ""
+
+ msgid "guifang"
+msgstr ""
+
+ msgid "quanrong"
+msgstr ""
+
+ msgid "youxiong"
+msgstr ""
+
+ msgid "quanshengjie"
+msgstr ""
+
+ msgid "penglai"
+msgstr ""
+
+ msgid "xiqiangnvguo"
+msgstr ""
+
+ msgid "kunlun"
+msgstr ""
+
+ msgid "xiheguo"
+msgstr ""
+
+ msgid "fengdu"
+msgstr ""
+
+ msgid "guixu"
+msgstr ""
+
+ msgid "youdu"
+msgstr ""
+
+ msgid "biyougong"
+msgstr ""
+
+ msgid "banquancheng"
+msgstr ""
+
+ msgid "kongshang"
+msgstr ""
+
+ msgid "chiyoucheng"
+msgstr ""
+
+ msgid "pimuzhiqiu"
+msgstr ""
+
+ msgid "wushan"
+msgstr ""
+
+ msgid "nanhai"
+msgstr ""
+
+ msgid "changwu"
+msgstr ""
+
+ msgid "hushang"
+msgstr ""
+
+ msgid "taozhishan"
+msgstr ""
+
+ msgid "lishan"
+msgstr ""
+
+ msgid "xiqi"
+msgstr ""
+
+ msgid "donghaishengdian"
+msgstr ""
+
+msgid "chaoge"
+msgstr ""
+
+msgid "xuanyuanqiu"
+msgstr ""
+
+msgid "bushizhiguo"
+msgstr ""

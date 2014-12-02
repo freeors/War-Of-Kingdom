@@ -13,9 +13,10 @@
 #include "win32x.h"
 #include "struct.h"
 
-#include "unit_types.hpp"
+#include "animation.hpp"
 #include "builder.hpp"
 #include <boost/foreach.hpp>
+#include <boost/bind.hpp>
 
 // language.cpp有init_textdomains函数体,但要把language.cpp加起来会出现很多unsoluve linke, 在这里实现一个
 // 这里实现和language.cpp中是一样的
@@ -309,16 +310,17 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 			if (write_file) {
 				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_LANGUAGE, game_config_, nfiles, sum_size, modified);
 			}
-
 		} else if (type == editor::CAMPAIGNS)  {
 			// no pre-defined
-			cache_.get_config(game_config::path + "/data/campaigns.cfg", campaigns_config_);
-			if (write_file) {
-				wml_config_to_file(game_config::path + "/xwml/" + name, campaigns_config_, nfiles, sum_size, modified);
+			const std::string file = game_config::path + "/data/campaigns.cfg";
+			if (file_exists(file)) {
+				cache_.get_config(game_config::path + "/data/campaigns.cfg", campaigns_config_);
+				if (write_file) {
+					wml_config_to_file(game_config::path + "/xwml/" + name, campaigns_config_, nfiles, sum_size, modified);
+				}
 			}
-
 		} else {
-			// (type == editor::MAIN_DATA)
+			// type == editor::MAIN_DATA
 			cache_.add_define("CORE");
 			cache_.get_config(game_config::path + "/data", game_config_);
 			// ::init_textdomains(game_config_);
@@ -492,86 +494,221 @@ void editor::write_tb_dat_if() const
 	}
 }
 
-tmod_config::tmod_config(const config& cfg)
-	: name(cfg["name"])
-	, res_path(cfg["res_path"])
-	, res_short_path()
-	, patch_path(cfg["patch_path"])
-	, copy_res()
-	, remove_res()
+const config& generate_cfg(const config& data_cfg, const std::string& type)
 {
-	if (!res_path.empty()) {
-		std::replace(res_path.begin(), res_path.end(), '/', '\\');
-		if (res_path.at(res_path.size() - 1) == '\\') {
-			res_path.erase(res_path.size() - 1);
-		}
-		size_t pos = res_path.rfind('\\');
-		if (pos != std::string::npos) {
-			res_short_path = res_path.substr(pos + 1);
+	BOOST_FOREACH (const config& c, data_cfg.child_range("generate")) {
+		if (type == c["type"].str()) {
+			return c;
 		}
 	}
-	if (!patch_path.empty()) {
-		std::replace(patch_path.begin(), patch_path.end(), '/', '\\');
-		if (patch_path.at(patch_path.size() - 1) == '\\') {
-			patch_path.erase(patch_path.size() - 1);
+	return null_cfg;
+}
+
+const std::string tcopier::current_path_marker = ".";
+
+tcopier::tres::tres(res_type type, const std::string& name, const std::string& allow_str)
+	: type(type)
+	, name(name)
+	, allow()
+{
+	if (!allow_str.empty()) {
+		std::vector<std::string> vstr = utils::split(allow_str, '-');
+		for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+			allow.insert(*it);
 		}
 	}
+}
+
+tcopier::tcopier(const config& cfg)
+	: name_(cfg["name"])
+	, copy_res_()
+	, remove_res_()
+{
+	const std::string path_prefix = "path-";
+	BOOST_FOREACH (const config::attribute& attr, cfg.attribute_range()) {
+		if (attr.first.find(path_prefix) != 0) {
+			continue;
+		}
+		std::string tag = attr.first.substr(path_prefix.size());
+		std::string path = attr.second;
+		std::replace(path.begin(), path.end(), '/', '\\');
+		if (path.at(path.size() - 1) == '\\') {
+			path.erase(path.size() - 1);
+		}
+		paths_.insert(std::make_pair(tag, path));
+	}
+
+	set_delete_paths(cfg["delete_paths"].str());
 
 	const config& res_cfg = cfg.child("resource");
 	if (!res_cfg) {
 		return;
 	}
 	std::map<std::string, std::vector<tres>* > v;
-	v.insert(std::make_pair("copy", &copy_res));
-	v.insert(std::make_pair("remove", &remove_res));
+	v.insert(std::make_pair("copy", &copy_res_));
+	v.insert(std::make_pair("remove", &remove_res_));
 
 	for (std::map<std::string, std::vector<tres>* >::const_iterator it = v.begin(); it != v.end(); ++ it) {
 		const config& op_cfg = res_cfg.child(it->first);
 		if (op_cfg) {
-			BOOST_FOREACH (const config::attribute &istrmap, op_cfg.attribute_range()) {
-				std::vector<std::string> vstr = utils::split(istrmap.second);
+			BOOST_FOREACH (const config::attribute& attr, op_cfg.attribute_range()) {
+				std::vector<std::string> vstr = utils::split(attr.second);
 				VALIDATE(vstr.size() == 2, "resource item must be 2!");
 				res_type type = res_none;
 				if (vstr[0] == "file") {
 					type = res_file;
 				} else if (vstr[0] == "dir") {
 					type = res_dir;
+				} else if (vstr[0] == "files") {
+					type = res_files;
 				}
 				VALIDATE(type != res_none, "error resource type, must be file or dir!");
 				std::string name = vstr[1];
 				std::replace(name.begin(), name.end(), '/', '\\');
-				it->second->push_back(tres(type, name));
+
+				std::string allow_str;
+				size_t pos = attr.first.find('-');
+				if (pos != std::string::npos) {
+					allow_str = attr.first.substr(pos + 1);
+				}
+				it->second->push_back(tres(type, name, allow_str));
 			}
 		}
 	}
 }
 
-bool tmod_config::valid() const
+const std::string& tcopier::get_path(const std::string& tag) const
 {
-	return res_path.size() > 2 && res_path.at(1) == ':' && patch_path.size() > 2 && patch_path.at(1) == ':';
+	std::stringstream err;
+	std::map<std::string, std::string>::const_iterator it = paths_.find(tag);
+	err << "Invalid tag: " << tag;
+	VALIDATE(it != paths_.end(), err.str());
+	return it->second;
 }
 
-bool tmod_config::opeate_file(bool patch_2_res) const
+bool tcopier::valid() const
 {
-	utils::string_map symbols;
-	const std::string src_path = patch_2_res? patch_path: res_path;
-	const std::string dst_path = patch_2_res? res_path: patch_path;
-
-	if (!patch_2_res) {
-		if (is_directory(dst_path) && !delfile1(dst_path.c_str())) {
-			symbols["name"] = dst_path;
-			posix_print_mb(utf8_2_ansi(vgettext2("Delete: $name fail!", symbols).c_str()));
+	if (paths_.empty()) {
+		return false;
+	}
+	for (std::map<std::string, std::string>::const_iterator it = paths_.begin(); it != paths_.end(); ++ it) {
+		const std::string& path = it->second;
+		if (path.size() < 2 || path.at(1) != ':') {
 			return false;
 		}
 	}
+	return true;
+}
 
+static std::string type_name(int tag)
+{
+	if (tag == tcopier::res_file) {
+		return _("File");
+	} else if (tag == tcopier::res_dir) {
+		return _("Directory");
+	} else if (tag == tcopier::res_files) {
+		return _("Files");
+	}
+	return null_str;
+}
+
+bool tcopier::make_path(const std::string& tag) const
+{
+	utils::string_map symbols;
+	const std::string& path = get_path(tag);
+
+	size_t pos = path.rfind("\\");
+	if (pos == std::string::npos) {
+		return true;
+	}
+
+	std::string subpath = path.substr(0, pos);
+	MakeDirectory(subpath);
+
+	if (!delfile1(path.c_str())) {
+		symbols["type"] = _("Directory");
+		symbols["dst"] = path;
+		posix_print_mb(utf8_2_ansi(vgettext2("Delete $type, from $dst fail!", symbols).c_str()));
+		return false;
+	}
+	return true;
+}
+
+bool tcopier::do_copy(const std::string& src_tag, const std::string& dst_tag) const
+{
+	const std::string& src_path = get_path(src_tag);
+	const std::string& dst_path = get_path(dst_tag);
+	utils::string_map symbols;
+	bool fok = true;
+	std::string src, dst;
+
+	// copy
+	if (is_directory(src_path)) {
+		for (std::vector<tres>::const_iterator it = copy_res_.begin(); it != copy_res_.end(); ++ it) {
+			const tres r = *it;
+			if (!r.allow.empty() && r.allow.find(dst_tag) == r.allow.end()) {
+				continue;
+			}
+			src = src_path + "\\" + r.name;
+			dst = dst_path + "\\" + r.name;
+			if (r.type == res_file) {
+				if (!is_file(src.c_str())) {
+					continue;
+				}
+				MakeDirectory(dst.substr(0, dst.rfind('\\')));
+			} else if (r.type == res_dir || r.type == res_files) {
+				if (r.name == current_path_marker) {
+					src = src_path;
+					dst = dst_path;
+				}
+				if (!is_directory(src.c_str())) {
+					continue;
+				}
+				if (r.type == res_dir) {
+					// make sure system don't exsit dst! FO_COPY requrie it.
+					if (!delfile1(dst.c_str())) {
+						symbols["type"] = _("Directory");
+						symbols["dst"] = dst;
+						posix_print_mb(utf8_2_ansi(vgettext2("Delete $type, from $dst fail!", symbols).c_str()));
+						fok = false;
+						break;
+					}
+				} else if (r.type == res_files) {
+					MakeDirectory(dst);
+				}
+			}
+			if (r.type == res_file || r.type == res_dir) {
+				fok = copyfile(src.c_str(), dst.c_str());
+			} else {
+				fok = copy_root_files(src.c_str(), dst.c_str());
+			}
+			if (!fok) {
+				symbols["type"] = type_name(r.type);
+				symbols["src"] = src;
+				symbols["dst"] = dst;
+				posix_print_mb(utf8_2_ansi(vgettext2("Copy $type, from $src to $dst fail!", symbols).c_str()));
+				break;
+			}
+		}
+	}
+	
+	return fok;
+}
+
+bool tcopier::do_remove(const std::string& tag) const
+{
+	const std::string& path = get_path(tag);
+	utils::string_map symbols;
 	bool fok = true;
 	std::string src, dst;
 
 	// remove
-	for (std::vector<tres>::const_iterator it = remove_res.begin(); patch_2_res && it != remove_res.end(); ++ it) {
+	for (std::vector<tres>::const_iterator it = remove_res_.begin(); it != remove_res_.end(); ++ it) {
 		const tres r = *it;
-		dst = dst_path + "\\" + r.name;
+		if (!r.allow.empty() && r.allow.find(tag) == r.allow.end()) {
+			continue;
+		}
+		dst = path + "\\" + r.name;
 		if (r.type == res_file) {
 			if (!is_file(dst.c_str())) {
 				continue;
@@ -590,42 +727,85 @@ bool tmod_config::opeate_file(bool patch_2_res) const
 		}
 	}
 
-	if (!fok) {
-		return fok;
+	return fok;
+}
+
+void tcopier::set_delete_paths(const std::string& paths)
+{
+	delete_paths_.clear();
+	std::vector<std::string> vstr = utils::split(paths);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		const std::string& path = *it;
+		if (paths_.find(path) != paths_.end()) {
+			delete_paths_.push_back(get_path(path));
+		} else {
+			delete_paths_.push_back(path);
+		}
+	}
+}
+
+void tcopier::do_delete_path(bool result)
+{
+	if (!result) {
+		utils::string_map symbols;
+		for (std::vector<std::string>::const_iterator it = delete_paths_.begin(); it != delete_paths_.end(); ++ it) {
+			const std::string& path = *it;
+			if (!is_directory(path)) {
+				continue;
+			}
+			symbols["name"] = path;
+			if (!delfile1(path.c_str())) {
+				posix_print_mb(utf8_2_ansi(vgettext2("Delete: $name fail!", symbols).c_str()));
+				return;
+			}
+		}
+	}
+	delete_paths_.clear();
+}
+
+const std::string tmod_config::res_tag = "res";
+const std::string tmod_config::patch_tag = "patch";
+
+tmod_config::tmod_config(const config& cfg)
+	: tcopier(cfg)
+	, res_short_path()
+{
+	const std::string& res_path = get_path(res_tag);
+
+	if (!res_path.empty()) {
+		size_t pos = res_path.rfind('\\');
+		if (pos != std::string::npos) {
+			res_short_path = res_path.substr(pos + 1);
+		}
+	}
+}
+
+bool tmod_config::opeate_file(bool patch_2_res)
+{
+	const std::string& patch_path = get_path(patch_tag);
+	const std::string& src_tag = patch_2_res? patch_tag: res_tag;
+	const std::string& dst_tag = patch_2_res? res_tag: patch_tag;
+
+	if (!patch_2_res) {
+		set_delete_paths(patch_path);
+	}
+	tcallback_lock lock(false, boost::bind(&tcopier::do_delete_path, this, _1));
+
+	if (!patch_2_res && !make_path(patch_tag)) {
+		return false;
+	}
+
+	// remove
+	if (patch_2_res && !do_remove(res_tag)) {
+		return false;
 	}
 
 	// copy
-	if (is_directory(src_path)) {
-		for (std::vector<tres>::const_iterator it = copy_res.begin(); it != copy_res.end(); ++ it) {
-			const tres r = *it;
-			src = src_path + "\\" + r.name;
-			dst = dst_path + "\\" + r.name;
-			if (r.type == res_file) {
-				if (!is_file(src.c_str())) {
-					continue;
-				}
-				MakeDirectory(dst.substr(0, dst.rfind('\\')));
-			} else {
-				if (!is_directory(src.c_str())) {
-					continue;
-				}
-				dst.erase(dst.rfind('\\'));
-				MakeDirectory(dst);
-			}
-			if (!copyfile(src.c_str(), dst.c_str())) {
-				symbols["type"] = r.type == res_file? _("File"): _("Directory");
-				symbols["src"] = src;
-				symbols["dst"] = dst;
-				posix_print_mb(utf8_2_ansi(vgettext2("Copy $type, from $src to $dst fail!", symbols).c_str()));
-				fok = false;
-				break;
-			}
-		}
-	
-		if (!patch_2_res && !fok) {
-			delfile1(dst.c_str());
-		}
+	if (!do_copy(src_tag, dst_tag)) {
+		return false;
 	}
+
+	lock.set_result(true);
 	
-	return fok;
+	return true;
 }

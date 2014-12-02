@@ -2066,3 +2066,35 @@ void tmess_data::combine(const tmess_data& that)
 	enemies += that.enemies;
 	enemy_arts += that.enemy_arts;
 }
+
+bool cb_terrain_matches(const map_location& loc, const t_translation::t_match& terrain_types_match)
+{
+	unit_map& units = *resources::units;
+	unit_map::const_iterator u_itor = units.find(loc, false);
+	t_translation::t_terrain terrain = t_translation::NONE_TERRAIN;
+
+	if (!u_itor.valid()) {
+		u_itor = units.find(loc);
+	}
+	if (u_itor.valid()) {
+		terrain = u_itor->terrain();
+	}
+	// In despite of terrain is t_translation::NONE_TERRAIN, terrain_matches maybe return false.
+	// when overlay isn't 0xffffffff, for example *^_fme.
+	return terrain_matches(terrain, terrain_types_match);
+}
+
+void cb_build_terrains(std::map<t_translation::t_terrain, std::vector<map_location> >& terrain_by_type)
+{
+	if (!resources::units) {
+		return;
+	}
+
+	unit_map& units = *resources::units;
+	for (unit_map::const_iterator u_itor = units.begin(); u_itor != units.end(); u_itor ++) {
+		const t_translation::t_terrain& t = u_itor->terrain();
+		if (t != t_translation::NONE_TERRAIN) {
+			terrain_by_type[t].push_back(u_itor->get_location());
+		}
+	}
+}

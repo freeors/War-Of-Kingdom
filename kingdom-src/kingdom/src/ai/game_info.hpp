@@ -26,7 +26,7 @@ class gamemap;
 #include "../gamestatus.hpp"
 #include "../tod_manager.hpp"
 #include "../playturn.hpp"
-#include "../hero.hpp"
+#include "hero.hpp"
 
 #include <set>
 

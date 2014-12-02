@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 //
 // IPµØÖ·¿Ø¼þ
@@ -253,7 +254,9 @@ BOOL is_directory(const char* fname);
 BOOL is_file(const char *fname);
 BOOL delfile(char *fname);
 BOOL delfile1(const char *fname);
-BOOL copyfile(const char *src, const char *dst);
+BOOL compare_dir(const std::string& dir1, const std::string& dir2);
+bool copyfile(const char *src, const char *dst);
+bool copy_root_files(const char* src, const char* dst);
 
 //
 // -------------------------------------------------------------------------

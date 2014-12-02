@@ -19,6 +19,7 @@
 #include "gui/dialogs/dialog.hpp"
 #include <map>
 #include "multiplayer.hpp"
+#include "gui/dialogs/chat.hpp"
 
 class game_display;
 class hero;
@@ -38,7 +39,7 @@ class tscrollbar_panel;
  *
  * @todo Evaluate whether we can handle more buttons in this class.
  */
-class tuser_message : public tdialog
+class tuser_message : public tdialog, public tlobby::thandler, public tchat_
 {
 public:
 	explicit tuser_message(game_display& disp, hero_map& heros, const config& game_config);
@@ -60,14 +61,12 @@ private:
 
 	void set_label_int(twindow& window, const std::string& id, int value);
 
-	enum {NONE_PAGE, MIN_PAGE, MESSAGE_PAGE = MIN_PAGE, SIEGE_RECORD_PAGE, EMPLOYEE_PAGE, RANK_SCORE_PAGE, MAX_PAGE = RANK_SCORE_PAGE};
+	enum {NONE_PAGE, MIN_PAGE, CHAT_PAGE = MIN_PAGE, MESSAGE_PAGE, SIEGE_RECORD_PAGE, CHATING_PAGE, MAX_PAGE = CHATING_PAGE};
 	void sheet_toggled(twidget* widget);
-	void swap_page(twindow& window, int page, bool swap);
+	void desire_swap_page(twindow& window, int page, bool open);
 
 	void fill_message(twindow& window);
 	void fill_siege_record(twindow& window);
-	void fill_employee(twindow& window);
-	void fill_score_board(twindow& window);
 
 	void refresh_message_2_label(twindow& window, const std::string& content);
 	void message_selected(twindow& window);
@@ -77,16 +76,19 @@ private:
 	void detail_employee(twindow& window);
 	void send_message(twindow& window);
 
+	void keyboard_shown(twindow& window);
+	void keyboard_hidden(twindow& window);
+	void update_network_status(twindow& window, bool connected);
+
+	bool handle(tlobby::ttype type, const config& data);
+
 private:
 	game_display& disp_;
 	hero_map& heros_;
 	const config& game_config_;
 	
 	std::vector<http::tmessage_record> messages_;
-
-	int current_page_;
 	std::map<int, ttoggle_button*> sheet_;
-	tscrollbar_panel* page_panel_;
 };
 
 } // namespace gui2

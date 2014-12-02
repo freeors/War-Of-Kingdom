@@ -218,7 +218,7 @@ void level_to_gamestate(config& level, command_pool& replay_data, game_state& st
 	state.classification().campaign_type = campaign_type;
 	state.classification().completion = level["completion"].str();
 	state.classification().version = level["version"].str();
-
+	
 	if (const config &vars = level.child("variables")) {
 		state.set_variables(vars);
 	}

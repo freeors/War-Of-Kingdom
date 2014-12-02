@@ -5,12 +5,12 @@
 #include "stdafx.h"
 #include <windowsx.h>
 #include "config.hpp"
-#include "unit_frame.hpp"
+#include <animation.hpp>
 
-class tanim_type
+class tanim_type2
 {
 public:
-	tanim_type(const std::string& id = null_str, const std::string& description = null_str)
+	tanim_type2(const std::string& id = null_str, const std::string& description = null_str)
 		: id_(id)
 		, description_(description)
 		, variables_()
@@ -89,9 +89,9 @@ public:
 class tanim: public tanim_
 {
 public:
-	static std::vector<tanim_type> anim_types;
-	static const tanim_type& anim_type(const std::string& id);
-	static tanim_type null_anim_type;
+	static std::vector<tanim_type2> anim_types;
+	static const tanim_type2& anim_type(const std::string& id);
+	static tanim_type2 null_anim_type;
 
 	typedef enum { HIT, MISS, KILL, INVALID} hit_type;
 
@@ -101,6 +101,7 @@ public:
 		, directions_()
 		, primary_attack_filter_()
 		, secondary_attack_filter_()
+		, secondary_weapon_type_()
 		, hits_()
 		, unit_anim_()
 		, sub_anims_()
@@ -146,9 +147,11 @@ public:
 	// filter
 	std::set<map_location::DIRECTION> directions_;
 	std::set<hit_type> hits_;
+	int feature_;
 	int align_;
 	std::vector<config> primary_attack_filter_;
 	std::vector<config> secondary_attack_filter_;
+	std::set<std::string> secondary_weapon_type_;
 
 	tanim_ anim_from_cfg_;
 };

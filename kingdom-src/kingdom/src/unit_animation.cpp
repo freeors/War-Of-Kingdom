@@ -28,6 +28,27 @@
 #include <boost/foreach.hpp>
 #include <algorithm>
 
+std::map<int, unit_animation> unit_animation::share_anims;
+
+void unit_animation::fill_share_anims()
+{
+	share_anims.clear();
+	for (int t = area_anim::MIN_UNIT_ANIM; t <= area_anim::MAX_UNIT_ANIM; t ++) {
+		if (const animation* anim = area_anim::anim(t)) {
+			share_anims.insert(std::make_pair(t, unit_animation(*anim)));
+		}
+	}
+}
+
+const unit_animation* unit_animation::share_anim(int type)
+{
+	std::map<int, unit_animation>::const_iterator i = share_anims.find(type);
+	if (i != share_anims.end()) {
+		return &i->second;
+	}
+	return NULL;
+}
+
 struct tag_name_manager {
 	tag_name_manager() : names() {
 		names.push_back("animation");
@@ -162,77 +183,77 @@ static animation_branches prepare_animation(const config &cfg, const std::string
 	return expanded_animations;
 }
 
-unit_animation::unit_animation(int start_time,
-	const unit_frame & frame, const std::string& event, const int variation, const frame_builder & builder) :
-		terrain_types_(),
-		unit_filter_(),
-		secondary_unit_filter_(),
-		directions_(),
-		align_(ALIGN_NONE),
-		frequency_(0),
-		base_score_(variation),
-		event_(utils::split(event)),
-		value_(),
-		primary_attack_filter_(),
-		secondary_attack_filter_(),
-		hits_(),
-		value2_(),
-		sub_anims_(),
-		unit_anim_(start_time,builder),
-		src_(),
-		dst_(),
-		invalidated_(false),
-		play_offscreen_(true),
-		screen_mode_(false),
-		layer_(0),
-		cycles_(false),
-		started_(false),
-		overlaped_hex_()
+unit_animation::unit_animation(int start_time, const unit_frame & frame, const std::string& event, const int variation, const frame_builder& builder)
+	: animation(start_time, frame, event, variation, builder)
+	, terrain_types_()
+	, unit_filter_()
+	, secondary_unit_filter_()
+	, directions_()
+	, secondary_weapon_type_()
+	, align_(ALIGN_NONE)
+	, feature_(HEROS_NO_FEATURE)
+	, frequency_(0)
+	, base_score_(variation)
+	, event_(utils::split(event))
+	, value_()
+	, primary_attack_filter_()
+	, secondary_attack_filter_()
+	, hits_()
+	, value2_()
 {
-	add_frame(frame.duration(),frame,!frame.does_not_change());
 }
 
-unit_animation::unit_animation(const config& cfg,const std::string& frame_string ) :
-	terrain_types_(t_translation::read_list(cfg["terrain_type"])),
-	unit_filter_(),
-	secondary_unit_filter_(),
-	directions_(),
-	align_(cfg["align"].to_int(ALIGN_NONE)),
-	frequency_(cfg["frequency"]),
-	base_score_(cfg["base_score"]),
-	event_(),
-	value_(),
-	primary_attack_filter_(),
-	secondary_attack_filter_(),
-	hits_(),
-	value2_(),
-	sub_anims_(),
-	unit_anim_(cfg,frame_string),
-	src_(),
-	dst_(),
-	invalidated_(false),
-	play_offscreen_(true),
-	screen_mode_(false),
-	layer_(0),
-	cycles_(false),
-	started_(false),
-	overlaped_hex_()
+unit_animation::unit_animation(const animation& anim)
+	: animation(anim)
+	, terrain_types_()
+	, unit_filter_()
+	, secondary_unit_filter_()
+	, directions_()
+	, secondary_weapon_type_()
+	, align_(ALIGN_NONE)
+	, feature_(HEROS_NO_FEATURE)
+	, frequency_(0)
+	, base_score_(DEFAULT_ANIM)
+	, event_()
+	, value_()
+	, primary_attack_filter_()
+	, secondary_attack_filter_()
+	, hits_()
+	, value2_()
 {
-//	if(!cfg["debug"].empty()) printf("DEBUG WML: FINAL\n%s\n\n",cfg.debug().c_str());
-	BOOST_FOREACH (const config::any_child &fr, cfg.all_children_range())
-	{
-		if (fr.key == frame_string) continue;
-		if (fr.key.find("_frame", fr.key.size() - 6) == std::string::npos) continue;
-		if (sub_anims_.find(fr.key) != sub_anims_.end()) continue;
-		sub_anims_[fr.key] = particular(cfg, fr.key.substr(0, fr.key.size() - 5));
-	}
-	event_ =utils::split(cfg["apply_to"]);
+}
+
+unit_animation::unit_animation(const config& cfg, const std::string& frame_string)
+	: animation(cfg, frame_string)
+	, terrain_types_(t_translation::read_list(cfg["terrain_type"]))
+	, unit_filter_()
+	, secondary_unit_filter_()
+	, directions_()
+	, secondary_weapon_type_()
+	, feature_(cfg["feature"].to_int(HEROS_NO_FEATURE))
+	, align_(cfg["align"].to_int(ALIGN_NONE))
+	, frequency_(cfg["frequency"])
+	, base_score_(cfg["base_score"])
+	, event_()
+	, value_()
+	, primary_attack_filter_()
+	, secondary_attack_filter_()
+	, hits_()
+	, value2_()
+{
+	event_ = utils::split(cfg["apply_to"]);
 
 	const std::vector<std::string>& my_directions = utils::split(cfg["direction"]);
 	for(std::vector<std::string>::const_iterator i = my_directions.begin(); i != my_directions.end(); ++i) {
 		const map_location::DIRECTION d = map_location::parse_direction(*i);
 		directions_.push_back(d);
 	}
+
+	std::vector<std::string> vstr = utils::split(cfg["secondary_weapon_type"]);
+	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
+		secondary_weapon_type_.insert(*it);
+	}
+
 	BOOST_FOREACH (const config &filter, cfg.child_range("filter")) {
 		unit_filter_.push_back(filter);
 	}
@@ -260,24 +281,21 @@ unit_animation::unit_animation(const config& cfg,const std::string& frame_string
 			hits_.push_back(KILL);
 		}
 	}
-	std::vector<std::string> value2_str = utils::split(cfg["value_second"]);
-	std::vector<std::string>::iterator value2;
-	for(value2=value2_str.begin() ; value2 != value2_str.end() ; ++value2) {
+
+	vstr = utils::split(cfg["value_second"]);
+	for (std::vector<std::string>::const_iterator value2 = vstr.begin() ; value2 != vstr.end() ; ++ value2) {
 		value2_.push_back(atoi(value2->c_str()));
 	}
+
 	BOOST_FOREACH (const config &filter, cfg.child_range("filter_attack")) {
 		primary_attack_filter_.push_back(filter);
 	}
 	BOOST_FOREACH (const config &filter, cfg.child_range("filter_second_attack")) {
 		secondary_attack_filter_.push_back(filter);
 	}
-	play_offscreen_ = cfg["offscreen"].to_bool(true);
-
-	screen_mode_ = cfg["screen_mode"].to_bool();
-	layer_ = cfg["layer"].to_int(); // use to outer anination
 }
 
-int unit_animation::matches(const game_display &disp,const map_location& loc,const map_location& second_loc, const unit* my_unit,const std::string & event,const int value,hit_type hit,const attack_type* attack,const attack_type* second_attack, int value2) const
+int unit_animation::matches(const game_display &disp,const map_location& loc,const map_location& second_loc, const unit* my_unit,const std::string & event,const int value,hit_type hit,const attack_type* attack, const std::string& second_weapon_type, int value2) const
 {
 	int result = base_score_;
 	if(!event.empty()&&!event_.empty()) {
@@ -302,8 +320,8 @@ int unit_animation::matches(const game_display &disp,const map_location& loc,con
 			result ++;
 		}
 	}
-	if(my_unit) {
-		if(directions_.empty()== false) {
+	if (my_unit) {
+		if (directions_.empty()== false) {
 			if (std::find(directions_.begin(),directions_.end(),my_unit->facing())== directions_.end()) {
 				return MATCH_FAIL;
 			} else {
@@ -321,6 +339,14 @@ int unit_animation::matches(const game_display &disp,const map_location& loc,con
 				return MATCH_FAIL;
 			}
 			result ++;
+		}
+
+		if (feature_ != HEROS_NO_FEATURE) {
+			if (!unit_feature_val2(*my_unit, feature_)) {
+				return MATCH_FAIL;
+			} else {
+				result ++;
+			}
 		}
 
 		std::vector<config>::const_iterator myitor;
@@ -355,6 +381,7 @@ int unit_animation::matches(const game_display &disp,const map_location& loc,con
 			result ++;
 		}
 	}
+
 	if(value2_.empty() == false ) {
 		if (std::find(value2_.begin(),value2_.end(),value2)== value2_.end()) {
 			return MATCH_FAIL;
@@ -362,25 +389,26 @@ int unit_animation::matches(const game_display &disp,const map_location& loc,con
 			result ++;
 		}
 	}
+
 	if(!attack) {
 		if(!primary_attack_filter_.empty())
 			return MATCH_FAIL;
 	}
 	std::vector<config>::const_iterator myitor;
-	for(myitor = primary_attack_filter_.begin(); myitor != primary_attack_filter_.end(); ++myitor) {
+	for (myitor = primary_attack_filter_.begin(); myitor != primary_attack_filter_.end(); ++myitor) {
 		if(!attack->matches_filter(*myitor)) return MATCH_FAIL;
 		result++;
 	}
-	if(!second_attack) {
-		if(!secondary_attack_filter_.empty())
-			return MATCH_FAIL;
-	}
-	for(myitor = secondary_attack_filter_.begin(); myitor != secondary_attack_filter_.end(); ++myitor) {
-		if(!second_attack->matches_filter(*myitor)) return MATCH_FAIL;
-		result++;
-	}
-	return result;
 
+	if (!secondary_weapon_type_.empty()) {
+		if (secondary_weapon_type_.find(second_weapon_type) == secondary_weapon_type_.end()) {
+			return MATCH_FAIL;
+		} else {
+			result++;
+		}
+	}
+
+	return result;
 }
 
 
@@ -722,415 +750,12 @@ void unit_animation::add_anims( std::vector<unit_animation> & animations, const 
 	}
 }
 
-void unit_animation::particular::override(int start_time
-		, int duration
-		, const std::string& highlight
-		, const std::string& blend_ratio
-		, Uint32 blend_color
-		, const std::string& offset
-		, const std::string& layer
-		, const std::string& modifiers)
-{
-	set_begin_time(start_time);
-	parameters_.override(duration,highlight,blend_ratio,blend_color,offset,layer,modifiers);
-
-	if(get_animation_duration() < duration) {
-		const unit_frame & last_frame = get_last_frame();
-		add_frame(duration -get_animation_duration(), last_frame);
-	} else if(get_animation_duration() > duration) {
-		set_end_time(duration);
-	}
-
-}
-
-bool unit_animation::particular::need_update() const
-{
-	if(animated<unit_frame>::need_update()) return true;
-	if(get_current_frame().need_update()) return true;
-	if(parameters_.need_update()) return true;
-	return false;
-}
-
-bool unit_animation::particular::need_minimal_update() const
-{
-	if(get_current_frame_begin_time() != last_frame_begin_time_ ) {
-		return true;
-	}
-	return false;
-}
-
-unit_animation::particular::particular(
-	const config& cfg, const std::string& frame_string ) :
-		animated<unit_frame>(),
-		accelerate(true),
-		cycles(false),
-		parameters_(),
-		halo_id_(0),
-		last_frame_begin_time_(0)
-{
-	config::const_child_itors range = cfg.child_range(frame_string+"frame");
-	starting_frame_time_=INT_MAX;
-	if(cfg[frame_string+"start_time"].empty() &&range.first != range.second) {
-		BOOST_FOREACH (const config &frame, range) {
-			starting_frame_time_ = std::min(starting_frame_time_, frame["begin"].to_int());
-		}
-	} else {
-		starting_frame_time_ = cfg[frame_string+"start_time"];
-	}
-
-	cycles = cfg[frame_string + "cycles"].to_bool();
-
-	BOOST_FOREACH (const config &frame, range)
-	{
-		unit_frame tmp_frame(frame);
-		add_frame(tmp_frame.duration(),tmp_frame,!tmp_frame.does_not_change());
-	}
-	parameters_ = frame_parsed_parameters(frame_builder(cfg,frame_string),get_animation_duration());
-	if(!parameters_.does_not_change()  ) {
-			force_change();
-	}
-}
-
-bool unit_animation::need_update() const
-{
-	if(unit_anim_.need_update()) return true;
-	std::map<std::string,particular>::const_iterator anim_itor =sub_anims_.begin();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		if(anim_itor->second.need_update()) return true;
-	}
-	return false;
-}
-
-bool unit_animation::need_minimal_update() const
-{
-	if(!play_offscreen_) {
-		return false;
-	}
-	if(unit_anim_.need_minimal_update()) return true;
-	std::map<std::string,particular>::const_iterator anim_itor =sub_anims_.begin();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		if(anim_itor->second.need_minimal_update()) return true;
-	}
-	return false;
-}
-
-bool unit_animation::animation_finished() const
-{
-	if(!unit_anim_.animation_finished()) return false;
-	std::map<std::string,particular>::const_iterator anim_itor =sub_anims_.begin();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		if(!anim_itor->second.animation_finished()) return false;
-	}
-	return true;
-}
-
-bool unit_animation::animation_finished_potential() const
-{
-	if(!unit_anim_.animation_finished_potential()) return false;
-	std::map<std::string,particular>::const_iterator anim_itor =sub_anims_.begin();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		if(!anim_itor->second.animation_finished_potential()) return false;
-	}
-	return true;
-}
-
-void unit_animation::update_last_draw_time()
-{
-	double acceleration = unit_anim_.accelerate ? game_display::get_singleton()->turbo_speed() : 1.0;
-	unit_anim_.update_last_draw_time(acceleration);
-	std::map<std::string,particular>::iterator anim_itor =sub_anims_.begin();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.update_last_draw_time(acceleration);
-	}
-}
-
-int unit_animation::get_end_time() const
-{
-	int result = unit_anim_.get_end_time();
-	std::map<std::string,particular>::const_iterator anim_itor =sub_anims_.begin();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		result= std::max<int>(result,anim_itor->second.get_end_time());
-	}
-	return result;
-}
-
-int unit_animation::get_begin_time() const
-{
-	int result = unit_anim_.get_begin_time();
-	std::map<std::string,particular>::const_iterator anim_itor =sub_anims_.begin();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		result= std::min<int>(result,anim_itor->second.get_begin_time());
-	}
-	return result;
-}
-
-void unit_animation::start_animation(int start_time
-		, const map_location &src
-		, const map_location &dst
-		, bool cycles
-		, const std::string& text
-		, const Uint32 text_color
-		, const bool accelerate)
-{
-	started_ = true;
-	unit_anim_.accelerate = accelerate;
-	src_ = src;
-	dst_ = dst;
-	unit_anim_.start_animation(start_time, cycles || unit_anim_.cycles);
-	cycles_ = cycles || unit_anim_.cycles;
-	if(!text.empty()) {
-		particular crude_build;
-		crude_build.add_frame(1,frame_builder());
-		crude_build.add_frame(1,frame_builder().text(text,text_color),true);
-		sub_anims_["_add_text"] = crude_build;
-	}
-	std::map<std::string,particular>::iterator anim_itor =sub_anims_.begin();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.accelerate = accelerate;
-		anim_itor->second.start_animation(start_time, cycles || anim_itor->second.cycles);
-		cycles_ = cycles_ || anim_itor->second.cycles;
-	}
-}
-
-void unit_animation::update_parameters(const map_location &src, const map_location &dst)
-{
-	src_ = src;
-	dst_ = dst;
-}
-void unit_animation::pause_animation()
-{
-
-	std::map<std::string,particular>::iterator anim_itor =sub_anims_.begin();
-	unit_anim_.pause_animation();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.pause_animation();
-	}
-}
-void unit_animation::restart_animation()
-{
-
-	std::map<std::string,particular>::iterator anim_itor =sub_anims_.begin();
-	unit_anim_.restart_animation();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.restart_animation();
-	}
-}
-void unit_animation::redraw(frame_parameters& value)
-{
-
-	invalidated_=false;
-	overlaped_hex_.clear();
-	std::map<std::string,particular>::iterator anim_itor =sub_anims_.begin();
-	value.primary_frame = t_true;
-	unit_anim_.redraw(value,src_,dst_);
-	value.primary_frame = t_false;
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.redraw( value,src_,dst_);
-	}
-}
-
-void unit_animation::redraw()
-{
-	frame_parameters params;
-	params.screen_mode = screen_mode_;
-	redraw(params);
-}
-
-void unit_animation::replace_image_name(const std::string& src, const std::string& dst)
-{
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_image_name(src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_image_name(src, dst);
-	}
-}
-
-void unit_animation::replace_image_mod(const std::string& src, const std::string& dst)
-{
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_image_mod(src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_image_mod(src, dst);
-	}
-}
-
-void unit_animation::replace_progressive(const std::string& name, const std::string& src, const std::string& dst)
-{
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_progressive(name, src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_progressive(name, src, dst);
-	}
-}
-
-void unit_animation::replace_static_text(const std::string& src, const std::string& dst)
-{
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_static_text(src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_static_text(src, dst);
-	}
-}
-
-void unit_animation::replace_int(const std::string& name, int src, int dst)
-{
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_int(name, src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_int(name, src, dst);
-	}
-}
-
 const std::string unit_animation::event0() const
 {
 	if (event_.empty()) {
 		return null_str;
 	}
 	return event_.front();
-}
-
-void unit_animation::clear_haloes()
-{
-
-	std::map<std::string,particular>::iterator anim_itor =sub_anims_.begin();
-	unit_anim_.clear_halo();
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.clear_halo();
-	}
-}
-bool unit_animation::invalidate(frame_parameters& value)
-{
-	if(invalidated_) return false;
-	game_display*disp = game_display::get_singleton();
-	bool complete_redraw =disp->tile_nearly_on_screen(src_) || disp->tile_nearly_on_screen(dst_) || !src_.valid();
-	if(overlaped_hex_.empty()) {
-		if(complete_redraw) {
-			std::map<std::string,particular>::iterator anim_itor =sub_anims_.begin();
-			value.primary_frame = t_true;
-			overlaped_hex_ = unit_anim_.get_overlaped_hex(value,src_,dst_);
-			value.primary_frame = t_false;
-			for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-				std::set<map_location> tmp = anim_itor->second.get_overlaped_hex(value,src_,dst_);
-				overlaped_hex_.insert(tmp.begin(),tmp.end());
-			}
-		} else {
-			// off screen animations only invalidate their own hex, no propagation,
-			// but we stil need this to play sounds
-			overlaped_hex_.insert(src_);
-		}
-
-	}
-	if(complete_redraw) {
-		if( need_update()) {
-			disp->invalidate(overlaped_hex_);
-			invalidated_ = true;
-			return true;
-		} else {
-			invalidated_ = disp->propagate_invalidation(overlaped_hex_);
-			return invalidated_;
-		}
-	} else {
-		if(need_minimal_update()) {
-			disp->invalidate(overlaped_hex_);
-			invalidated_ = true;
-			return true;
-		} else {
-			return false;
-		}
-	}
-}
-
-bool unit_animation::invalidate()
-{
-	frame_parameters params;
-	params.screen_mode = screen_mode_;
-	return invalidate(params);
-}
-
-void unit_animation::particular::redraw(const frame_parameters& value,const map_location &src, const map_location &dst)
-{
-	const unit_frame& current_frame= get_current_frame();
-	const frame_parameters default_val = parameters_.parameters(get_animation_time() -get_begin_time());
-	if(get_current_frame_begin_time() != last_frame_begin_time_ ) {
-		last_frame_begin_time_ = get_current_frame_begin_time();
-		current_frame.redraw(get_current_frame_time(),true,src,dst,&halo_id_,default_val,value);
-	} else {
-		current_frame.redraw(get_current_frame_time(),false,src,dst,&halo_id_,default_val,value);
-	}
-}
-
-void unit_animation::particular::replace_image_name(const std::string& src, const std::string& dst)
-{
-	for (std::vector<frame>::iterator fr = frames_.begin(); fr != frames_.end(); ++ fr) {
-		unit_frame& T = fr->value_;
-		T.replace_image_name(src, dst);
-	}
-}
-
-void unit_animation::particular::replace_image_mod(const std::string& src, const std::string& dst)
-{
-	for (std::vector<frame>::iterator fr = frames_.begin(); fr != frames_.end(); ++ fr) {
-		unit_frame& T = fr->value_;
-		T.replace_image_mod(src, dst);
-	}
-}
-
-void unit_animation::particular::replace_progressive(const std::string& name, const std::string& src, const std::string& dst)
-{
-	does_not_change_ = true;
-	for (std::vector<frame>::iterator fr = frames_.begin(); fr != frames_.end(); ++ fr) {
-		unit_frame& T = fr->value_;
-		T.replace_progressive(name, src, dst);
-		if (does_not_change_) {
-			does_not_change_ = T.does_not_change();
-		}
-	}
-}
-
-void unit_animation::particular::replace_static_text(const std::string& src, const std::string& dst)
-{
-	for (std::vector<frame>::iterator fr = frames_.begin(); fr != frames_.end(); ++ fr) {
-		unit_frame& T = fr->value_;
-		T.replace_static_text(src, dst);
-	}
-}
-
-void unit_animation::particular::replace_int(const std::string& name, int src, int dst)
-{
-	for (std::vector<frame>::iterator fr = frames_.begin(); fr != frames_.end(); ++ fr) {
-		unit_frame& T = fr->value_;
-		T.replace_int(name, src, dst);
-	}
-}
-
-void unit_animation::particular::clear_halo()
-{
-	if(halo_id_ != halo::NO_HALO) {
-		halo::remove(halo_id_);
-		halo_id_ = halo::NO_HALO;
-	}
-}
-std::set<map_location> unit_animation::particular::get_overlaped_hex(const frame_parameters& value,const map_location &src, const map_location &dst)
-{
-	const unit_frame& current_frame= get_current_frame();
-	const frame_parameters default_val = parameters_.parameters(get_animation_time() -get_begin_time());
-	return current_frame.get_overlaped_hex(get_current_frame_time(), src, dst, default_val, value);
-
-}
-
-unit_animation::particular::~particular()
-{
-	halo::remove(halo_id_);
-	halo_id_ = halo::NO_HALO;
-}
-
-void unit_animation::particular::start_animation(int start_time, bool cycles)
-{
-	halo::remove(halo_id_);
-	halo_id_ = halo::NO_HALO;
-	parameters_.override(get_animation_duration());
-	animated<unit_frame>::start_animation(start_time,cycles);
-	last_frame_begin_time_ = get_begin_time() -1;
 }
 
 void unit_animator::add_animation(unit* animated_unit
@@ -1144,10 +769,11 @@ void unit_animator::add_animation(unit* animated_unit
 		, const Uint32 text_color
 		, const unit_animation::hit_type hit_type
 		, const attack_type* attack
-		, const attack_type* second_attack
+		, const std::string& second_attack
 		, int value2)
 {
-	if(!animated_unit) return;
+	if (!animated_unit) return;
+
 	anim_elem tmp;
 	game_display*disp = game_display::get_singleton();
 	tmp.my_unit = animated_unit;
@@ -1172,7 +798,8 @@ void unit_animator::add_animation(unit* animated_unit
 		, const std::string& text
 		, const Uint32 text_color)
 {
-	if(!animated_unit) return;
+	if (!animated_unit) return;
+
 	anim_elem tmp;
 	tmp.my_unit = animated_unit;
 	tmp.text = text;
@@ -1199,7 +826,7 @@ void unit_animator::replace_anim_if_invalid(unit* animated_unit
 		, const Uint32 text_color
 		, const unit_animation::hit_type hit_type
 		, const attack_type* attack
-		, const attack_type* second_attack
+		, const std::string& second_weapon
 		, int value2)
 {
 	if(!animated_unit) return;
@@ -1207,7 +834,7 @@ void unit_animator::replace_anim_if_invalid(unit* animated_unit
 
 	if(animated_unit->get_animation() &&
 			!animated_unit->get_animation()->animation_finished_potential() &&
-			animated_unit->get_animation()->matches(*disp,src,dst,animated_unit,event,value,hit_type,attack,second_attack,value2) >unit_animation::MATCH_FAIL) {
+			animated_unit->get_animation()->matches(*disp,src,dst,animated_unit,event,value,hit_type,attack,second_weapon,value2) >unit_animation::MATCH_FAIL) {
 		anim_elem tmp;
 		tmp.my_unit = animated_unit;
 		tmp.text = text;
@@ -1218,15 +845,16 @@ void unit_animator::replace_anim_if_invalid(unit* animated_unit
 		tmp.animation = NULL;
 		animated_units_.push_back(tmp);
 	}else {
-		add_animation(animated_unit,event,src,dst,value,with_bars,cycles,text,text_color,hit_type,attack,second_attack,value2);
+		add_animation(animated_unit,event,src,dst,value,with_bars,cycles,text,text_color,hit_type,attack,second_weapon,value2);
 	}
 }
 void unit_animator::start_animations()
 {
 	int begin_time = INT_MAX;
 	std::vector<anim_elem>::iterator anim;
-	for(anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
-		if(anim->my_unit->get_animation()) {
+	
+	for (anim = animated_units_.begin(); anim != animated_units_.end(); ++ anim) {
+		if (anim->my_unit->get_animation()) {
 			if(anim->animation) {
 				begin_time = std::min<int>(begin_time,anim->animation->get_begin_time());
 			} else  {
@@ -1235,8 +863,8 @@ void unit_animator::start_animations()
 		}
 	}
 
-	for(anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
-		if(anim->animation) {
+	for (anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
+		if (anim->animation) {
 			// TODO: start_tick_ of particular is relative to last_update_tick_(reference to animated<T,T_void_value>::start_animation), 
 			//       and last_update_tick generated by new_animation_frame().
 			//       On the other hand, new_animation_frame() may be delayed, for example display gui2::dialog,

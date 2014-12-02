@@ -9,9 +9,13 @@
 #include "serialization/parser.hpp"
 #include "formula_string_utils.hpp"
 #include "language.hpp"
+#ifndef _ROSE_EDITOR
 #include "unit_types.hpp"
+#endif
+#include "animation.hpp"
 #include "builder.hpp"
 #include "rectangle.hpp"
+#include "wml_exception.hpp"
 
 #include "stdafx.h"
 #include <windowsx.h>
@@ -28,6 +32,7 @@
 #include "gettext.hpp"
 #include <sstream>
 #include <iosfwd>
+#include <boost/foreach.hpp>
 
 extern BOOL CALLBACK DlgTitleProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
 extern BOOL CALLBACK DlgDDescProc(HWND hdlgP, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -55,9 +60,11 @@ namespace editor_config
 	std::string campaign_id;
 
 	std::vector<std::pair<std::string, std::string> > arms;
+#ifndef _ROSE_EDITOR
 	std::vector<std::pair<std::string, const unit_type*> > artifical_utype;
 	std::vector<std::pair<std::string, const unit_type*> > city_utypes;
 	std::vector<std::pair<std::string, const unit_type*> > troop_utypes;
+#endif
 	std::vector<std::string> navigation;
 	std::vector<std::pair<std::string, const config*> > city_traits;
 	std::vector<std::pair<std::string, const config*> > troop_traits;
@@ -84,6 +91,7 @@ void reload_data_bin()
 {
 	const config& game_cfg = data_cfg.child("game_config");
 	game_config::load_config(game_cfg? &game_cfg : NULL);
+#ifndef _ROSE_EDITOR
 	unit_types.set_config(data_cfg.child("units"));
 
 	const unit_type_data::unit_type_map& types = unit_types.types();
@@ -152,6 +160,7 @@ void reload_data_bin()
 	for (traits_map::const_iterator it = traits.begin(); it != traits.end(); ++ it) {
 		troop_traits.push_back(std::make_pair(it->first, &it->second));
 	}
+#endif
 }
 
 void move_subcfg_right_position(HWND hdlgP, LPARAM lParam)
@@ -473,96 +482,6 @@ std::string hex_t_terrain(const t_translation::t_terrain& t)
 	return std::string(text);
 }
 
-namespace {
-	config prefs;
-}
-
-namespace preferences {
-
-base_manager::base_manager()
-{
-	scoped_istream stream = istream_file(get_prefs_file(), true);
-	read(prefs, *stream);
-}
-
-base_manager::~base_manager()
-{
-	write_preferences();
-}
-
-void write_preferences()
-{
-	try {
-		scoped_ostream prefs_file = ostream_file(get_prefs_file(), true);
-		write(*prefs_file, prefs);
-	} catch(io_exception&) {
-		std::stringstream err;
-		err << "error writing to preferences file '" << get_prefs_file();
-		posix_print(err.str().c_str());
-	}
-}
-
-void set(const std::string &key, bool value)
-{
-	prefs[key] = value;
-}
-
-void set(const std::string &key, int value)
-{
-	prefs[key] = value;
-}
-
-void set(const std::string &key, char const *value)
-{
-	prefs[key] = value;
-}
-
-void set(const std::string &key, const std::string &value)
-{
-	prefs[key] = value;
-}
-
-void clear(const std::string& key)
-{
-	prefs.recursive_clear_value(key);
-}
-
-void set_child(const std::string& key, const config& val) 
-{
-	prefs.clear_children(key);
-	prefs.add_child(key, val);
-}
-
-const config &get_child(const std::string& key)
-{
-	return prefs.child(key);
-}
-
-void erase(const std::string& key) {
-	prefs.remove_attribute(key);
-}
-
-std::string get(const std::string& key) {
-	return prefs[key];
-}
-
-bool get(const std::string &key, bool def)
-{
-	return prefs[key].to_bool(def);
-}
-
-std::string language()
-{
-	return prefs["locale"];
-}
-
-void set_language(const std::string& s)
-{
-	preferences::set("locale", s);
-}
-
-}
-
 const char* dgettext_2_ansi(const char* domain, const char* msgid)
 {
 	if (!msgid || msgid[0] == '\0') {
@@ -878,19 +797,21 @@ void prepare_popup_menu()
 	gdmgr._hpopup_new = CreatePopupMenu();
 	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_EXTRAINSDIST, utf8_2_ansi(_("Extract release package to C:\\kingdom-ins")));
 	AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
+	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_EXTRAROSE, utf8_2_ansi(_("Extract Rose package")));
+	AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
 	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_CAMPAIGN, dgettext_2_ansi("wesnoth-lib", "Campaign"));
 
 	// star
 	if (mod_config.valid()) {
 		gdmgr._hpopup_star = CreatePopupMenu();
 
-		symbols["mod_res_path"] = mod_config.res_path;
-		symbols["mod_patch_path"] = mod_config.patch_path;
+		symbols["mod_res_path"] = mod_config.get_path(tmod_config::res_tag);
+		symbols["mod_patch_path"] = mod_config.get_path(tmod_config::patch_tag);
 		AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_RESOURCE, utf8_2_ansi(vgettext2("Generate resource package to $mod_res_path", symbols).c_str()));
 		AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_PATCH, utf8_2_ansi(vgettext2("Extract different files to $mod_patch_path", symbols).c_str()));
 
 		AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
-		AppendMenu(gdmgr._hpopup_new, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_star), utf8_2_ansi(mod_config.name.c_str()));
+		AppendMenu(gdmgr._hpopup_new, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_star), utf8_2_ansi(mod_config.name().c_str()));
 	} else {
 		gdmgr._hpopup_star = NULL;
 	}
@@ -1405,7 +1326,9 @@ void update_locale_dir()
 			init_language();
 		} catch (game::error& e) {
 			MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
+#ifndef _ROSE_EDITOR
 			unit_types.clear();
+#endif
 		}
 	}
 
@@ -1466,6 +1389,10 @@ BOOL make_run_once(void)
 	return FALSE;
 }
 
+void handle_app_event(Uint32 type)
+{
+}
+
 int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 {
 	POINT					lefttop;
@@ -1517,17 +1444,18 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 					editor_config::reload_data_bin();
 				} catch (game::error& e) {
 					MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
+#ifndef _ROSE_EDITOR
 					unit_types.clear();
+#endif
 				}
 			}
 		}
 
-		if (true) {
-			scoped_istream stream = istream_file(game_config::path + "/data/mod_config.cfg", true);
-			config mod_cfg;
-			read(mod_cfg, *stream);
-			if (mod_cfg && mod_cfg.child("mod")) {
-				mod_config = tmod_config(mod_cfg.child("mod"));
+		BOOST_FOREACH (const config& c, editor_config::data_cfg.child_range("generate")) {
+			const std::string& type = c["type"].str();
+			if (type == "mod") {
+				mod_config = tmod_config(c);
+				break;
 			}
 		}
 
@@ -1575,7 +1503,10 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 	} catch (game::error& e) {
 		MessageBox(NULL, e.message.c_str(), "Error", MB_OK | MB_ICONWARNING);
 		return false;
-	} 
+	} catch (twml_exception& e) {
+		e.show();
+		return false;
+	}
 
 	uninit_dvrmgr_struct();
 

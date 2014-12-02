@@ -21,7 +21,7 @@
 
 class turn_info;
 
-class playmp_controller : public playsingle_controller, public events::pump_monitor
+class playmp_controller : public playsingle_controller
 {
 public:
 	playmp_controller(const config& level, game_state& state_of_game, hero_map& heros, hero_map& heros_start,
@@ -38,7 +38,7 @@ public:
 	bool counting_down();
 	void reset_countdown();
 	void think_about_countdown(int ticks);
-	void process(events::pump_info &info);
+	bool handle(tlobby::ttype type, const config& data);
 	void linger();
 	/** Wait for the host to upload the next scenario. */
 	void wait_for_upload();
@@ -66,6 +66,7 @@ protected:
 	void release_turn_data();
 
 	turn_info* turn_data_;
+	std::vector<config> received_data_cfg_;
 
 	int beep_warning_time_;
 	mutable bool network_processing_stopped_;

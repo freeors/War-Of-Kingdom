@@ -370,6 +370,7 @@ void play_controller::recover_layout(int random)
 		size_t troops_vsize = fields.second;
 		for (size_t i = 0; i < troops_vsize; i ++) {
 			unit& u = *troops[i];
+
 			if (!u.is_artifical()) {
 				if (l.spend) {
 					current_team.spend_gold(u.cost());
@@ -636,6 +637,41 @@ void play_controller::init(CVideo& video)
 		}
 		// if select rpg, create 
 		if (tent::mode == mode_tag::RPG) {
+			if (gamestate_.classification().campaign.find("subcontinent_") == 0) {
+				// browse continent mode. verify city location.
+				int total_siege_map_w = game_config::siege_map_w + 2;
+				int total_siege_map_h = game_config::siege_map_h + 2;
+				const city_map& citys = units_.get_city_map();
+				SDL_Point lt, rb;
+				lt.x = 1;
+				lt.y = 3;
+				rb.x = map_.w() - (game_config::siege_map_w - lt.x);
+				rb.y = map_.h() - (game_config::siege_map_h - lt.y);
+				std::stringstream err;
+				utils::string_map symbols;
+				for (city_map::const_iterator it = citys.begin(); it != citys.end(); ++ it) {
+					const artifical& city = *it;
+					const map_location& loc = city.get_location();
+					// 1) x-axis, city place to left.
+					// 2) y-axis, above and bottom.
+					if (loc.x < lt.x || loc.x > rb.x || loc.y < lt.y || loc.y > rb.y) {
+						symbols["name"] = tintegrate::generate_format(city.name(), "yellow");
+						symbols["x"] = tintegrate::generate_format(loc.x + 1, "red");
+						symbols["y"] = tintegrate::generate_format(loc.y + 1, "red");
+						err << vgettext("wesnoth-lib", "Map is for subcontinent. Find improper city location: $name($x, $y).", symbols);
+						break;
+					}
+				}
+				if (!err.str().empty()) {
+					err << "\n";
+					symbols["x1"] = str_cast(lt.x + 1);
+					symbols["y1"] = str_cast(lt.y + 1);
+					symbols["x2"] = str_cast(rb.x + 1);
+					symbols["y2"] = str_cast(rb.y + 1);
+					err << vgettext("wesnoth-lib", "Location.x of city must be in [$x1, $x2], y in [$y1, $y2]!", symbols);
+					throw game::load_game_failed(err.str());
+				}
+			}
 			side_cfg.clear();
 			side_cfg["side"] = (int)teams_.size() + 1;
 			int leader = player_cfg["leader"].to_int();
@@ -1077,9 +1113,9 @@ void play_controller::adjust_according_to_group_interior()
 		std::stringstream text;
 		std::string img;
 		img = std::string(t.leader()->image()) + "~SCALE(32, 40)";
-		text << help::tintegrate::generate_img(img);
-		text << help::tintegrate::generate_format(t.leader()->name(), "yellow") << "\n";
-		text << help::tintegrate::generate_img("misc/tintegrate-split-line.png");
+		text << tintegrate::generate_img(img);
+		text << tintegrate::generate_format(t.leader()->name(), "yellow") << "\n";
+		text << tintegrate::generate_img("misc/tintegrate-split-line.png");
 
 
 		fields = g.adjust_hero_field(hero_field_leadership);
@@ -1091,9 +1127,9 @@ void play_controller::adjust_according_to_group_interior()
 			} else {
 				text << "  ";
 			}
-			text << help::tintegrate::generate_img(img);
-			text << help::tintegrate::generate_img("misc/leadership.png");
-			text << help::tintegrate::generate_format(it->second, "green");
+			text << tintegrate::generate_img(img);
+			text << tintegrate::generate_img("misc/leadership.png");
+			text << tintegrate::generate_format(it->second, "green");
 		}
 		if (!fields.empty()) {
 			text << "\n";
@@ -1108,9 +1144,9 @@ void play_controller::adjust_according_to_group_interior()
 			} else {
 				text << "  ";
 			}
-			text << help::tintegrate::generate_img(img);
-			text << help::tintegrate::generate_img("misc/charm.png");
-			text << help::tintegrate::generate_format(it->second, "green");
+			text << tintegrate::generate_img(img);
+			text << tintegrate::generate_img("misc/charm.png");
+			text << tintegrate::generate_format(it->second, "green");
 		}
 		if (!fields.empty()) {
 			text << "\n";
@@ -1122,14 +1158,14 @@ void play_controller::adjust_according_to_group_interior()
 			const card& c = cards_[*it];
 			if (it == cards.begin()) {
 				text << "\n";
-				text << help::tintegrate::generate_img("misc/card.png");
+				text << tintegrate::generate_img("misc/card.png");
 
 			} else if (std::distance(cards.begin(), it) % items_per_line == 0) {
 				text << "\n";
 			} else {
 				text << ", ";
 			}
-			text << help::tintegrate::generate_format(c.name(), "yellow");
+			text << tintegrate::generate_format(c.name(), "yellow");
 		}
 		if (!cards.empty()) {
 			text << "\n";
@@ -1144,13 +1180,13 @@ void play_controller::adjust_according_to_group_interior()
 			const ttechnology& tech = **it;
 			if (it == techs.begin()) {
 				text << "\n";
-				text << help::tintegrate::generate_img("misc/technology.png");
+				text << tintegrate::generate_img("misc/technology.png");
 			} else if (std::distance(techs.begin(), it) % items_per_line == 0) {
 				text << "\n";
 			} else {
 				text << ", ";
 			}
-			text << help::tintegrate::generate_format(tech.name(), "yellow");
+			text << tintegrate::generate_format(tech.name(), "yellow");
 
 			t.insert_technology(tech);
 		}
@@ -1549,10 +1585,10 @@ void play_controller::rpg_exchange(const std::vector<size_t>& human_p, size_t ai
 		if (it != human_heros.begin()) {
 			str << ", ";
 		}
-		str << help::tintegrate::generate_format(h.name(), help::tintegrate::hero_color);
+		str << tintegrate::generate_format(h.name(), tintegrate::hero_color);
 	}
 	symbols["human"] = str.str();
-	symbols["ai"] = help::tintegrate::generate_format(ai_hero->name(), help::tintegrate::hero_color);
+	symbols["ai"] = tintegrate::generate_format(ai_hero->name(), tintegrate::hero_color);
 	game_events::show_hero_message(rpg::h, NULL, vgettext("You exchanged $ai using $human.", symbols), game_events::INCIDENT_INVALID);
 
 
@@ -1604,14 +1640,14 @@ void play_controller::rpg_independence(bool replaying)
 	std::string message;
 	utils::string_map symbols;
 	
-	symbols["first"] = help::tintegrate::generate_format(rpg::h->name(), help::tintegrate::hero_color);
-	symbols["second"] = help::tintegrate::generate_format(rpg_city->name(), help::tintegrate::hero_color);
+	symbols["first"] = tintegrate::generate_format(rpg::h->name(), tintegrate::hero_color);
+	symbols["second"] = tintegrate::generate_format(rpg_city->name(), tintegrate::hero_color);
 	game_events::show_hero_message(rpg::h, rpg_city, vgettext("$first declared independence.", symbols), game_events::INCIDENT_INDEPENDENCE);
 
 	if (from_team.defeat_vote()) {
 		aggressing = NULL;
 
-		symbols["first"] = help::tintegrate::generate_format(from_team.name(), help::tintegrate::hero_color);
+		symbols["first"] = tintegrate::generate_format(from_team.name(), tintegrate::hero_color);
 		game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("$first is defeated.", symbols), game_events::INCIDENT_DEFEAT);
 	}
 	hero* from_leader = from_team.leader();
@@ -1711,8 +1747,8 @@ void play_controller::rpg_independence(bool replaying)
 		city->independence(independenced, to_team, rpg_city, from_team, aggressing, from_leader, from_leader_unit);
 		gui_->resort_access_troops(*city);
 		if (independenced && city != rpg_city) {
-			symbols["first"] = help::tintegrate::generate_format(city->name(), help::tintegrate::object_color);
-			symbols["second"] = help::tintegrate::generate_format(rpg::h->name(), help::tintegrate::hero_color);
+			symbols["first"] = tintegrate::generate_format(city->name(), tintegrate::object_color);
+			symbols["second"] = tintegrate::generate_format(rpg::h->name(), tintegrate::hero_color);
 			game_events::show_hero_message(&heros_[hero::number_scout], city, vgettext("$first declared belonging to $second.", symbols), game_events::INCIDENT_INVALID);
 		}
 	}
@@ -1890,38 +1926,38 @@ void play_controller::start_pass_scenario_anim(LEVEL_RESULT result) const
 	const team& t = teams_[human_team_];
 
 	if (gui_->pass_scenario_anim_id() != -1) {
-		gui_->erase_screen_anim(gui_->pass_scenario_anim_id());
+		gui_->erase_area_anim(gui_->pass_scenario_anim_id());
 	}
-	if (const unit_animation* start_tpl = unit_types.global_anim(global_anim_tag::PASS_SCENARIO)) {
-		unit_animation& screen_anim = gui_->insert_screen_anim_pass_scenario(*start_tpl);
+	if (const animation* tpl = area_anim::anim(area_anim::PASS_SCENARIO)) {
+		animation& anim = gui_->insert_pass_scenario_anim(*tpl);
 
 		std::stringstream strstr;
 
-		screen_anim.replace_static_text("__difficulty", dsgettext("wesnoth-lib", "scenario^Difficulty"));
+		anim.replace_static_text("__difficulty", dsgettext("wesnoth-lib", "scenario^Difficulty"));
 		strstr.str("");
 		strstr << "~CROP(0, 0, " << (48 * difficulty_level_) << ", 48)";
-		screen_anim.replace_image_mod("__diffmod", strstr.str());
-		screen_anim.replace_progressive("x", "5555", str_cast(48 * difficulty_level_ / 2));
+		anim.replace_image_mod("__diffmod", strstr.str());
+		anim.replace_progressive("x", "5555", str_cast(48 * difficulty_level_ / 2));
 
-		screen_anim.replace_static_text("__turns", dsgettext("wesnoth-lib", "scenario^Turns"));
-		screen_anim.replace_static_text("__turns_count", str_cast(turn()));
+		anim.replace_static_text("__turns", dsgettext("wesnoth-lib", "scenario^Turns"));
+		anim.replace_static_text("__turns_count", str_cast(turn()));
 
 		if (tent::tower_mode()) {
-			screen_anim.replace_static_text("__line3title", dsgettext("wesnoth-lib", "scenario^Capture fort"));
-			screen_anim.replace_image_name("__line3image", capture? "misc/ok.png": "misc/delete.png");
+			anim.replace_static_text("__line3title", dsgettext("wesnoth-lib", "scenario^Capture fort"));
+			anim.replace_image_name("__line3image", capture? "misc/ok.png": "misc/delete.png");
 
 		} else {
-			screen_anim.replace_static_text("__line3title", "");
-			screen_anim.replace_image_name("__line3image", "");
+			anim.replace_static_text("__line3title", "");
+			anim.replace_image_name("__line3image", "");
 		}
-		screen_anim.replace_static_text("__line4title", dsgettext("wesnoth-lib", "scenario^Perfect turns"));
-		screen_anim.replace_static_text("__line4text", str_cast(t.perfect_turns_));
+		anim.replace_static_text("__line4title", dsgettext("wesnoth-lib", "scenario^Perfect turns"));
+		anim.replace_static_text("__line4text", str_cast(t.perfect_turns_));
 
 
-		screen_anim.replace_static_text("__score", str_cast(score));
-		screen_anim.replace_static_text("__coin", str_cast(coin));
+		anim.replace_static_text("__score", str_cast(score));
+		anim.replace_static_text("__coin", str_cast(coin));
 
-		screen_anim.start_animation(0);
+		anim.start_animation(0);
 	}
 }
 
@@ -1937,6 +1973,16 @@ std::vector<int> group_employee(hero_map& heros, const tgroup& g)
 		}
 	}
 	return ret;
+}
+
+tgroup& play_controller::human_team_group()
+{
+	tgroup* g = &runtime_groups::get(teams_[human_team_].leader()->number_);
+	if (!g->valid()) {
+		// leader isn't username, for example multi-scenario. in the case, there is only one group in gs.
+		g = &runtime_groups::gs.begin()->second;
+	}
+	return *g;
 }
 
 void play_controller::upload()
@@ -2004,7 +2050,7 @@ void play_controller::upload()
 
 		const int siege_upload_threshold = 12 * 3600;
 		if (now < gamestate_.classification().create || now - gamestate_.classification().create > siege_upload_threshold) {
-			symbols["threshold"] = help::tintegrate::generate_format(siege_upload_threshold / 3600, "yellow");
+			symbols["threshold"] = tintegrate::generate_format(siege_upload_threshold / 3600, "yellow");
 			strstr << vgettext("wesnoth-lib", "Save is more than $threshold hour, cannot upload!", symbols);
 
 			gui2::show_transient_message(gui_->video(), "", strstr.str());
@@ -2027,19 +2073,15 @@ void play_controller::upload()
 
 	if (m.uid >= 0) {
 		// group is invalid, use it's clone.
-		tgroup* g = &runtime_groups::get(teams_[human_team_].leader()->number_);
-		if (!g->valid()) {
-			// leader isn't username, for example multi-scenario. in the case, there is only one group in gs.
-			g = &runtime_groups::gs.begin()->second;
-		}
-		g->from_local_membership(*gui_, heros_, m, false);
+		tgroup& g = human_team_group();
+		g.from_local_membership(*gui_, heros_, m, false);
 
 		strstr.str("");
 		if (employee.first != HEROS_INVALID_NUMBER) {
 			hero& h = heros_[employee.first];
 
-			symbols["username"] = help::tintegrate::generate_format(employee.second, "yellow");
-			symbols["name"] = help::tintegrate::generate_format(h.name(), "red");
+			symbols["username"] = tintegrate::generate_format(employee.second, "yellow");
+			symbols["name"] = tintegrate::generate_format(h.name(), "red");
 			strstr << vgettext("wesnoth-lib", "$username lose $name!", symbols) << "\n\n";
 		}
 		strstr << dsgettext("wesnoth-lib", "Upload successfully!");
@@ -2148,7 +2190,7 @@ void play_controller::system()
 			items.push_back(gui2::tsystem::titem(dgettext("wesnoth-lib", "Load Game"), !disable_exit));
 			rets.push_back(_LOAD);
 		} else {
-			str = help::tintegrate::generate_format(dgettext("wesnoth-lib", "Save Layout"), "blue");
+			str = tintegrate::generate_format(dgettext("wesnoth-lib", "Save Layout"), "blue");
 			tgroup& g = runtime_groups::get(t.leader()->number_);
 
 			map_str_dirty = g.map() != map_data;
@@ -2220,11 +2262,11 @@ void play_controller::system()
 			utils::string_map symbols;
 			
 			if (map_str_dirty) {
-				symbols["name"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Map"), "red");
+				symbols["name"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "Map"), "red");
 			} else if (stratagem_dirty) {
-				symbols["name"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "Stratagem"), "red");
+				symbols["name"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "Stratagem"), "red");
 			} else if (layout_str_dirty) {
-				symbols["name"] = help::tintegrate::generate_format(dsgettext("wesnoth-lib", "group^Layout"), "red");
+				symbols["name"] = tintegrate::generate_format(dsgettext("wesnoth-lib", "group^Layout"), "red");
 			}
 			if (!symbols.empty()) {
 				strstr << vgettext("wesnoth-lib", "$name is dirty, but not save.", symbols) << " ";
@@ -2258,7 +2300,7 @@ void play_controller::bomb()
 	const int move_cost = 250;
 	utils::string_map symbols;
 	std::string message;
-	symbols["cost"] = help::tintegrate::generate_format(move_cost, "red");
+	symbols["cost"] = tintegrate::generate_format(move_cost, "red");
 
 	if (current_team.bomb_turns() >= game_config::max_bomb_turns) {
 		mouse_handler_.set_card_playing(current_team, -1);
@@ -2364,10 +2406,6 @@ void play_controller::redo(){
 	// deselect unit (only here, not to be done when undoing attack-move)
 	mouse_handler_.deselect_hex();
 	menu_handler_.redo(player_number_);
-}
-
-void play_controller::toggle_ellipses(){
-	menu_handler_.toggle_ellipses();
 }
 
 void play_controller::toggle_grid(){
@@ -2542,8 +2580,8 @@ void play_controller::do_init_side(const unsigned int team_index)
 		t.select_ing_technology();
 		if (t.ing_technology()) {
 			utils::string_map symbols;
-			symbols["begin"] = help::tintegrate::generate_format(t.ing_technology()->name(), "blue");
-			symbols["side"] = help::tintegrate::generate_format(t.name(), "green");
+			symbols["begin"] = tintegrate::generate_format(t.ing_technology()->name(), "blue");
+			symbols["side"] = tintegrate::generate_format(t.name(), "green");
 			artifical* city = units_.city_from_cityno(t.leader()->city_);
 			if (city && !tent::tower_mode()) {
 				game_events::show_hero_message(&heros_[hero::number_civilian], city, 
@@ -2773,7 +2811,7 @@ void play_controller::more_card(team& current_team, int turn)
 	if (!turn || turn % 25 || !current_team.is_human()) {
 		return;
 	}
-	if (network::nconnections()) {
+	if (has_network_player()) {
 		return;
 	}
 	bool can_wander = false;
@@ -2813,7 +2851,7 @@ void play_controller::more_card(team& current_team, int turn)
 		refresh_card_button(current_team, *gui_);
 		// card
 		utils::string_map symbols;
-		symbols["first"] = help::tintegrate::generate_format(current_team.holded_card(current_team.holded_cards().size() - 1).name(), help::tintegrate::object_color);
+		symbols["first"] = tintegrate::generate_format(current_team.holded_card(current_team.holded_cards().size() - 1).name(), tintegrate::object_color);
 		game_events::show_hero_message(&heros_[hero::number_scout], NULL, vgettext("Get card: $first.", symbols), game_events::INCIDENT_CARD);
 	}
 }
@@ -3090,11 +3128,8 @@ bool play_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int in
 	case hotkey::HOTKEY_ZOOM_IN:
 	case hotkey::HOTKEY_ZOOM_OUT:
 	case hotkey::HOTKEY_ZOOM_DEFAULT:
-	case hotkey::HOTKEY_FULLSCREEN:
 	case hotkey::HOTKEY_SCREENSHOT:
 	case hotkey::HOTKEY_MAP_SCREENSHOT:
-	case hotkey::HOTKEY_ACCELERATED:
-	case hotkey::HOTKEY_TOGGLE_ELLIPSES:
 	case hotkey::HOTKEY_TOGGLE_GRID:
 	case hotkey::HOTKEY_MOUSE_SCROLL:
 	case hotkey::HOTKEY_ANIMATE_MAP:
@@ -3395,10 +3430,9 @@ std::pair<int, int> play_controller::calculate_score(LEVEL_RESULT result) const
 		}
 
 	} else if (tent::mode != mode_tag::LAYOUT) {
-		if (turn() >= 10) {
+		if (turn() >= 6) {
 			score = none_score;
 		}
-
 	}
 
 	return std::make_pair(coin, score);
@@ -3853,10 +3887,10 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
-		if (rpging_ || tent::tower_mode()) {
+		if (rpging_ || tent::mode != mode_tag::RPG) {
 			return false;
 		}
-		return !events::commands_disabled && (teams_.size() >= 3) && !itor.valid() && !network::nconnections();
+		return !events::commands_disabled && (teams_.size() >= 3) && !itor.valid();
 
 	case hotkey::HOTKEY_LIST:
 	case hotkey::HOTKEY_SYSTEM:
@@ -3866,11 +3900,11 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 		if (rpging_) {
 			return false;
 		}
-		return replaying_ || (!events::commands_disabled && !itor.valid() && (network::nconnections() || current_team.is_human()));
+		return replaying_ || (!events::commands_disabled && !itor.valid() && (has_network_player() || current_team.is_human()));
 
 	case hotkey::HOTKEY_RPG_EXCHANGE:
 	case hotkey::HOTKEY_RPG_INDEPENDENCE:
-		if (rpg::stratum != hero_stratum_mayor || linger_ || replaying_ || events::commands_disabled || network::nconnections()) {
+		if (rpg::stratum != hero_stratum_mayor || linger_ || replaying_ || events::commands_disabled || has_network_player()) {
 			return false;
 		}
 	case hotkey::HOTKEY_RPG_DETAIL:
@@ -4263,7 +4297,7 @@ void play_controller::process_oos2(const std::string& msg) const
 
 	std::stringstream strstr;
 	utils::string_map symbols;
-	symbols["save"] = help::tintegrate::generate_format(save.filename(), "yellow");
+	symbols["save"] = tintegrate::generate_format(save.filename(), "yellow");
 	strstr << msg;
 	strstr << "\n\n";
 	strstr << vgettext("wesnoth-lib", "Sorry, run into program BUG. Program has save scene to $save. Hope you to upload it to sever, so that developer can solve it.", symbols);
@@ -4970,7 +5004,7 @@ bool play_controller::ally_all_ai(bool force)
 	if (all_ai_allied_) {
 		return false;
 	}
-	if (tent::mode != mode_tag::RPG || network::nconnections() > 0) {
+	if (tent::mode != mode_tag::RPG || has_network_player()) {
 		// in network state, don't ally all ai.
 		return false;
 	}
@@ -5191,9 +5225,9 @@ bool play_controller::do_ally(bool alignment, int my_side, int to_ally_side, int
 
 	// display dialog
 	utils::string_map symbols;
-	symbols["city"] = help::tintegrate::generate_format(target_city->name(), help::tintegrate::object_color);
-	symbols["first"] = help::tintegrate::generate_format(my_team.name(), help::tintegrate::hero_color);
-	symbols["second"] = help::tintegrate::generate_format(to_ally_team.name(), help::tintegrate::hero_color);
+	symbols["city"] = tintegrate::generate_format(target_city->name(), tintegrate::object_color);
+	symbols["first"] = tintegrate::generate_format(my_team.name(), tintegrate::hero_color);
+	symbols["second"] = tintegrate::generate_format(to_ally_team.name(), tintegrate::hero_color);
 	
 	if (s.type_ != strategy::DEFEND || !target_team.is_human() || !to_ally_team.is_enemy(target_side)) {
 		// calculate to_ally_team aggreen with whether or not.
@@ -5315,12 +5349,13 @@ void play_controller::construct_road()
 		for (unit_type_data::unit_type_map::const_iterator it = types.begin(); it != types.end(); ++ it) {
 			const unit_type& ut = it->second;
 			if (hero::is_commoner(ut.master())) {
-				if (ut.movement() + 4 >= (int)shortest_road) {
+				if (ut.movement() + 6 > (int)shortest_road) {
 					std::stringstream err;
 					utils::string_map symbols;
-					symbols["from"] = units_.city_from_cityno(shortest_cities.first)->name();
-					symbols["to"] = units_.city_from_cityno(shortest_cities.second)->name();
-					err << vgettext("map error, too short road from $from to $to!", symbols);
+					symbols["from"] = tintegrate::generate_format(units_.city_from_cityno(shortest_cities.first)->name(), "yellow");
+					symbols["to"] = tintegrate::generate_format(units_.city_from_cityno(shortest_cities.second)->name(), "yellow");
+					symbols["shortest"] = tintegrate::generate_format(ut.movement() + 6, "red");
+					err << vgettext("wesnoth-lib", "Map error. Too short road from $from to $to, at least $shortest!", symbols);
 					VALIDATE(false, err.str());
 				}
 			}

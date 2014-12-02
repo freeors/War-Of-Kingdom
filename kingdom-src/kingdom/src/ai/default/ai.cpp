@@ -21,22 +21,20 @@
 
 #include "../manager.hpp"
 
-#include "../../array.hpp"
-#include "../../game_end_exceptions.hpp"
+#include "game_end_exceptions.hpp"
 #include "../../game_events.hpp"
 #include "../../game_preferences.hpp"
-#include "../../log.hpp"
+#include "log.hpp"
 #include "../../mouse_handler_base.hpp"
 #include "../../replay.hpp"
 #include "../../statistics.hpp"
 #include "../../unit_display.hpp"
-#include "../../wml_exception.hpp"
+#include "wml_exception.hpp"
 #include "resources.hpp"
 #include "play_controller.hpp"
 #include "callable_objects.hpp"
 #include "artifical.hpp"
 #include "terrain_filter.hpp"
-// #include "wml_exception.hpp"
 #include "gettext.hpp"
 #include "filesystem.hpp"
 
@@ -57,8 +55,6 @@ extern uint32_t total_move;
 extern uint32_t total_diplomatism;
 
 namespace ai {
-
-typedef util::array<map_location,6> adjacent_tiles_array;
 
 #ifdef _MSC_VER
 #pragma warning(pop)
