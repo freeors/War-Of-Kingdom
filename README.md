@@ -1,17 +1,9 @@
 #War Of Kingdom
 
-- The War of Kingdom is a open source, turn-based tactical strategy game.  
-- The War of Kingdom originates in Battle for Wesnoth, and makes different from Wesnoth.
+- War of Kingdom is a open source, turn-based tactical strategy game.  
+- War of Kingdom is based [Rose](https://hithub.com/freeors/Rose). Rose is a Cross-Platform SDK.
 
-#Version
-
-- Kingdom 1.0.27 Release - August 30 2014
-- Kingdom 1.0.17 Release - October 30 2013
-- Kingdom 1.0.12 Release - May 27 2013
-- Kingdom 1.0.10 Release - April 2 2013
-- Kingdom 1.0.9 Release - March 3 2013 
-- Kingdom 1.0.8 Release - January 17 2013
-- Kingdom 1.0.7 Release - December 18 2012
-- Kingdom 1.0.6 Release - November 19 2012 
-- Kingdom 1.0.5 Release - October 21 2012 
-- Kingdom 1.0.4 Release - September 21 2012 
+How to Compile<br>
+---
+Chinese: [《Rose: 跨平台C++ SDK》](http://www.freeors.com/download/Cross-Platform C++ SDK.pdf)<br>
+Other Language: [Compile and Run](http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21237&extra=page%3D1)
