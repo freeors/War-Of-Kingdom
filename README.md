@@ -1,7 +1,7 @@
 #War Of Kingdom
 
 - War of Kingdom is a open source, turn-based tactical strategy game.  
-- War of Kingdom is based [Rose](https://hithub.com/freeors/Rose). Rose is a Cross-Platform SDK.
+- War of Kingdom is based [Rose](https://github.com/freeors/Rose). Rose is a Cross-Platform SDK.
 
 How to Compile<br>
 ---
