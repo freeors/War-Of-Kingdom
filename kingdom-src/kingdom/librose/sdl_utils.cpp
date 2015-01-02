@@ -22,6 +22,7 @@
 
 #include "sdl_utils.hpp"
 #include "video.hpp"
+#include "image.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -1968,6 +1969,87 @@ void draw_centered_on_background(surface surf, const SDL_Rect& rect, const SDL_C
 	}
 }
 
+void blit_integer_surface(int integer, surface& to, int x, int y)
+{
+	if (integer < 0) {
+		integer *= -1;
+	}
+
+	std::stringstream ss;
+	SDL_Rect dst_clip = create_rect(x, y, 0, 0);
+
+	int digit, max = 10;
+	while (max <= integer) {
+		max *= 10;
+	}
+
+	do {
+		max /= 10;
+		if (max) {
+			digit = integer / max;
+			integer %= max;
+		} else {
+			digit = integer;
+			integer = 0;
+		}
+
+		ss.str("");
+		ss << "misc/digit.png~CROP(" << (8 * digit) << ", 0, 8, 12)";
+		blit_surface(image::get_image(ss.str()), NULL, to, &dst_clip);
+		dst_clip.x += 8;
+	} while (max > 1);
+}
+
+surface generate_pip_surface(surface& bg, surface& fg)
+{
+	if (!bg) {
+		return surface();
+	}
+	surface result = make_neutral_surface(bg);
+	if (fg) {
+		SDL_Rect dst_clip = create_rect(0, 0, 0, 0);
+		if (result->w > fg->w) {
+			dst_clip.x = (result->w - fg->w) / 2;
+		}
+		if (result->h > fg->h) {
+			dst_clip.y = (result->h - fg->h) / 2;
+		}
+		blit_surface(fg, NULL, result, &dst_clip);
+	}
+
+	return result;
+}
+
+surface generate_pip_surface(int width, int height, const std::string& bg, const std::string& fg)
+{
+	surface bg_surf = image::get_image(bg);
+	surface fg_surf = image::get_image(fg);
+	surface result = generate_pip_surface(bg_surf, fg_surf);
+
+	if (width && height) {
+		result = scale_surface(result, width, height);
+	}
+	return result;
+}
+
+surface generate_surface(int width, int height, const std::string& img, int integer, bool greyscale)
+{
+	surface surf = image::get_image(img);
+	if (!surf) {
+		return surf;
+	}
+
+	if (greyscale) {
+		surf = greyscale_image(surf);
+	}
+	surf = scale_surface(surf, width, height);
+
+	if (integer > 0) {
+		blit_integer_surface(integer, surf, 0, 0);
+	}
+	return surf;
+}
+
 std::ostream& operator<<(std::ostream& s, const SDL_Rect& rect)
 {
 	s << rect.x << ',' << rect.y << " x "  << rect.w << ',' << rect.h;
@@ -1975,4 +2057,4 @@ std::ostream& operator<<(std::ostream& s, const SDL_Rect& rect)
 }
 
 tsurface_is_opaque surface_is_opaque;
-const surface* share_canvas_image = NULL;
+const surface* share_canvas_image;

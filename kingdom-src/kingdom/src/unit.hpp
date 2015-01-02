@@ -689,6 +689,7 @@ public:
 	bool compare_action_order(const unit& that) const;
 
 	bool is_capital(const std::vector<team>& teams) const;
+	surface generate_access_surface(int width, int height, bool greyscale) const;
 
 public:
 	uint16_t leadership_;

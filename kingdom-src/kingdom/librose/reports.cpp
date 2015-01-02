@@ -17,38 +17,7 @@
 
 #include "reports.hpp"
 
-#include <cassert>
-
-namespace {
-	const std::string report_names[] = {
-		"unit_name", "unit_type",
-		"unit_race", "unit_level", "unit_side",
-		"unit_traits", "unit_status", 
-		"unit_hp", "unit_xp", "unit_second", "unit_image", "time_of_day",
-		"turn", "gold", "villages", "upkeep", "income", "tech_income", 
-		"tactic", "position", "stratum", "meritorious", 
-		"side_playing", "observers", "report_countdown", "report_clock",
-		"selected_terrain", "edit_left_button_function", "editor_tool_hint"
-	};
-}
-
 namespace reports {
 
-const std::string& report_name(TYPE type)
-{
-	assert(sizeof(report_names)/sizeof(*report_names) == NUM_REPORTS);
-	assert(type < NUM_REPORTS);
-
-	return report_names[type];
-}
-
-void report::add_text(const std::string& text,
-		const std::string& tooltip) {
-	this->push_back(element(text, "", tooltip));
-}
-
-void report::add_image(const std::string& image, const std::string& tooltip) {
-	this->push_back(element("", image, tooltip));
-}
 
 }

@@ -151,6 +151,32 @@ static void shrink_cache()
 
 }
 
+tminimap::tminimap() 
+	: tcontrol(COUNT)
+	, type_(NONE)
+	, map_data_()
+	, terrain_(NULL)
+	, best_size_(0, 0)
+{
+	surfs_.resize(COUNT);
+}
+
+void tminimap::set_surface(const surface& surf, int w, int h)
+{
+	surfs_.resize(COUNT);
+	if (!surf) {
+		return;
+	}
+
+	// normal
+	surface& normal = surfs_[NORMAL];
+	normal = scale_surface(surf, w, h);
+
+	type_ = SURFACE;
+
+	set_dirty();
+}
+
 const surface tminimap::get_image(const int w, const int h)
 {
 	if (!terrain_) {
@@ -197,59 +223,29 @@ const surface tminimap::get_image(const int w, const int h)
 	return NULL;
 }
 
-class tshare_canvas_image_lock
-{
-public:
-	tshare_canvas_image_lock(const surface& surf)
-	{
-		share_canvas_image = &surf;
-	}
-	~tshare_canvas_image_lock()
-	{
-		share_canvas_image = NULL;
-	}
-};
-
-void tminimap::impl_draw_background(surface& frame_buffer)
-{
-	if (!terrain_) return;
-	assert(terrain_);
-
-	DBG_GUI_D << LOG_HEADER
-			<< " size " << get_rect()
-			<< ".\n";
-
-	if (map_data_.empty()) {
-		return;
-	}
-
-	SDL_Rect rect = get_rect();
-	assert(rect.w > 0 && rect.h > 0);
-
-	tshare_canvas_image_lock lock(get_image(rect.w, rect.h));
-	tcontrol::impl_draw_background(frame_buffer);
-}
-
 void tminimap::impl_draw_background(
 		  surface& frame_buffer
 		, int x_offset
 		, int y_offset)
 {
-	if (!terrain_) return;
-	assert(terrain_);
+	surface surf;
+	if (type_ != SURFACE) {
+		if (!terrain_) return;
+		assert(terrain_);
 
-	DBG_GUI_D << LOG_HEADER
-			<< " size " << calculate_blitting_rectangle(x_offset, y_offset)
-			<< ".\n";
+		if (map_data_.empty()) {
+			return;
+		}
+		SDL_Rect rect = get_rect();
+		assert(rect.w > 0 && rect.h > 0);
+		surf = get_image(rect.w, rect.h);
 
-	if (map_data_.empty()) {
-		return;
+		surfs_[0] = surf;
+	} else {
+		// surf = surfs_[0];
 	}
-
-	SDL_Rect rect = get_rect();
-	assert(rect.w > 0 && rect.h > 0);
-
-	tshare_canvas_image_lock lock(get_image(rect.w, rect.h));
+	
+	// tshare_canvas_image_lock lock(&surf);
 	tcontrol::impl_draw_background(frame_buffer, x_offset, y_offset);
 }
 

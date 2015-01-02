@@ -261,7 +261,6 @@ public:
 	void set_visible_area(const SDL_Rect& area) = 0;
 
 	/** Inherited from twidget. */
-	virtual void impl_draw_children(surface& frame_buffer) = 0;
 	virtual void impl_draw_children(
 			  surface& frame_buffer
 			, int x_offset

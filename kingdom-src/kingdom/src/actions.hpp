@@ -301,7 +301,10 @@ bool unit_can_action(const unit &u);
  */
 bool backstab_check(const unit& attacker, const unit& defender, const unit_map& units, const std::vector<team>& teams);
 
+void refresh_chat_button(game_display& disp, const std::string& fg);
 void refresh_card_button(const team& t, game_display& disp);
+void refresh_endturn_button(game_display& disp, const std::string& bg);
+
 void get_random_card(team& t, game_display& disp, unit_map& units, hero_map& heros);
 void erase_random_card(team& t, game_display& disp, unit_map& units, hero_map& heros);
 

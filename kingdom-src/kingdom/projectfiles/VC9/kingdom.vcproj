@@ -212,10 +212,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\controller_base.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\dialogs.cpp"
 				>
 			</File>
@@ -268,10 +264,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\intro.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\lobby_preferences.cpp"
 				>
 			</File>
@@ -297,10 +289,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mouse_events.cpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\mouse_handler_base.cpp"
 				>
 			</File>
 			<File
@@ -478,10 +466,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\controller_base.hpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\dialogs.hpp"
 				>
 			</File>
@@ -514,10 +498,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\intro.hpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\lobby_preferences.hpp"
 				>
 			</File>
@@ -543,10 +523,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\mouse_events.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\mouse_handler_base.hpp"
 				>
 			</File>
 			<File
@@ -704,11 +680,11 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\kingdom.ico"
+				RelativePath="..\..\packaging\windows\kingdom.ico"
 				>
 			</File>
 			<File
-				RelativePath="..\..\packaging\windows\kingdom.ico"
+				RelativePath=".\kingdom.ico"
 				>
 			</File>
 			<File
@@ -956,30 +932,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\editor\editor_layout.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\editor\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\editor\"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\src\editor\editor_layout.hpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\src\editor\editor_main.cpp"
 				>
 				<FileConfiguration
@@ -1200,6 +1152,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\artifical_list.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\auto_scroll.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\auto_scroll.hpp"
 					>
 				</File>
 				<File
@@ -2819,6 +2795,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\src\gui\dialogs\theme2.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\theme2.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\src\gui\dialogs\title_screen.cpp"
 					>
 					<FileConfiguration
@@ -3273,106 +3273,6 @@
 			</File>
 			<File
 				RelativePath="..\..\src\scripting\lua_api.hpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="storyscreen"
-			>
-			<File
-				RelativePath="..\..\src\storyscreen\controller.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\storyscreen\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\storyscreen\"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\src\storyscreen\controller.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\storyscreen\interface.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\storyscreen\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\storyscreen\"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\src\storyscreen\interface.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\storyscreen\part.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\storyscreen\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\storyscreen\"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\src\storyscreen\part.hpp"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\storyscreen\render.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\storyscreen\"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ObjectFile="$(IntDir)\storyscreen\"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="..\..\src\storyscreen\render.hpp"
 				>
 			</File>
 		</Filter>

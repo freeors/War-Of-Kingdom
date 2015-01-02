@@ -169,8 +169,6 @@ void trecruit::hero_toggled(twidget* widget)
 
 void trecruit::refresh_tooltip(twindow& window)
 {
-	tstacked_widget* stacked = find_widget<tstacked_widget>(&window, "middle_top_part", false, true);
-	stacked->set_dirty(true);
 	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 
 	tscroll_label* tip = find_widget<tscroll_label>(&window, "tip", false, true);

@@ -450,8 +450,6 @@ void menu_handler::save_map()
 void menu_handler::preferences()
 {
 	gui2::show_preferences_dialog(*gui_);
-
-	gui_->redraw_everything();
 }
 
 void menu_handler::show_chat_log()
@@ -608,7 +606,7 @@ void menu_handler::play_card(bool browse, int side_num)
 		events::mouse_handler* mousehandler = events::mouse_handler::get_singleton();
 		mousehandler->set_card_playing(current_team, dlg.card_index());
 
-		gui_->hide_context_menu(NULL, true);
+		gui_->hide_context_menu();
 	}	
 }
 
@@ -949,7 +947,7 @@ void menu_handler::undo(int side_num)
 	VALIDATE(!undo_stack_.empty(), "menu_handler::undo, undo_stack_.empty() is true");
 
 	// will move unit, hide context menu.
-	gui_->hide_context_menu(NULL, true);
+	gui_->hide_context_menu();
 #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
 #else
 	gui_->hide_tip();
@@ -1037,7 +1035,7 @@ void menu_handler::undo(int side_num)
 		}
 
 		if (undo_stack_.empty()) {
-			gui_->enable_menu("undo", false);
+			gui_->set_theme_object_active("undo", false);
 		}
 	}
 
@@ -1061,7 +1059,7 @@ void menu_handler::clear_undo_stack(int side_num)
 	if (!teams_[side_num - 1].auto_shroud_updates())
 		apply_shroud_changes(undo_stack_, side_num);
 	undo_stack_.clear();
-	gui_->enable_menu("undo", false);
+	gui_->set_theme_object_active("undo", false);
 }
 
 void menu_handler::toggle_shroud_updates(int side_num)
@@ -1391,7 +1389,7 @@ void menu_handler::execute_gotos(mouse_handler& mousehandler, int side)
 
 void menu_handler::toggle_grid()
 {
-	preferences::set_grid(!preferences::grid());
+	preferences::set_grid(*gui_, !preferences::grid());
 	gui_->invalidate_all();
 }
 

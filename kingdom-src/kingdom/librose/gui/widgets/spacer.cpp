@@ -25,6 +25,24 @@
 
 namespace gui2 {
 
+tspacer* create_spacer(const std::string& id, int width, int height)
+{
+	config cfg;
+	if (!id.empty()) {
+		cfg["id"] = id;
+	}
+	cfg["definition"] = "default";
+	if (width) {
+		cfg["width"] = width;
+	}
+	if (height) {
+		cfg["height"] = height;
+	}
+
+	implementation::tbuilder_spacer builder(cfg);
+	return dynamic_cast<tspacer*>(builder.build());
+}
+
 REGISTER_WIDGET(spacer)
 
 const std::string& tspacer::get_control_type() const

@@ -170,11 +170,11 @@ public:
 
 	/** Returns the widget in the selected cell. */
 	const twidget* widget(const unsigned row, const unsigned col) const
-		{ return child(row, col).widget(); }
+		{ return child(row, col).widget_; }
 
 	/** Returns the widget in the selected cell. */
 	twidget* widget(const unsigned row, const unsigned col)
-		{ return child(row, col).widget(); }
+		{ return child(row, col).widget_; }
 
 	/***** ***** ***** ***** layout functions ***** ***** ***** *****/
 
@@ -213,7 +213,8 @@ public:
 
 	/** Inherited from twidget. */
 	tpoint calculate_best_size() const;
-public:
+
+	tpoint calculate_best_size_fix() const;
 
 	/** Inherited from twidget. */
 	bool can_wrap() const;
@@ -275,55 +276,20 @@ public:
 	 * @param cols                Parameter to call set_cols with.
 	 */
 	void set_rows_cols(const unsigned rows, const unsigned cols);
-private:
+
+	void place_fix(const tpoint& origin, const tpoint& size);
+
+	void init_report(int unit_w, int unit_y, int gap, bool extendable);
+	void insert_child(int unit_w, int unit_h, twidget& widget, size_t at, bool extendable);
+	void erase_child(size_t at, bool extendable);
+	void replacement_children(int unit_w, int unit_h, int gap, bool extendable);
+	void erase_children(int unit_w, int unit_h, int gap, bool extendable);
+	void hide_children(int unit_w, int unit_h, int gap, bool extendable);
+
+	void resize_children(size_t size);
+
 	/** Child item of the grid. */
-	class tchild
-	{
-		friend struct tgrid_implementation;
-	public:
-		tchild() :
-			flags_(0),
-			border_size_(0),
-			widget_(NULL)
-
-			// Fixme make a class wo we can store some properties in the cache
-			// regarding size etc.
-			{}
-
-		/** Returns the best size for the cell. */
-		tpoint get_best_size() const;
-
-		/**
-		 * Places the widget in the cell.
-		 *
-		 * @param origin          The origin (x, y) for the widget.
-		 * @param size            The size for the widget.
-		 */
-		void place(tpoint origin, tpoint size);
-
-		/** Forwards layout_init() to the cell. */
-		void layout_init(const bool full_initialization);
-
-		/** Returns the can_wrap for the cell. */
-		bool can_wrap() const
-			{ return widget_ ? widget_->can_wrap() : false; }
-
-		/** Returns the id of the widget/ */
-		const std::string& id() const;
-
-		unsigned get_flags() const { return flags_; }
-		void set_flags(const unsigned flags) { flags_ = flags; }
-
-		unsigned get_border_size() const { return border_size_; }
-		void set_border_size(const unsigned border_size)
-			{  border_size_ = border_size; }
-
-		const twidget* widget() const { return widget_; }
-		twidget* widget() { return widget_; }
-
-		void set_widget(twidget* widget) { widget_ = widget; }
-
-	private:
+	struct tchild {
 		/** The flags for the border and cell setup. */
 		unsigned flags_;
 
@@ -341,10 +307,10 @@ private:
 		 */
 		twidget* widget_;
 
-		/** Returns the space needed for the border. */
-		tpoint border_space() const;
-
 	}; // class tchild
+
+	const tchild* children() const { return children_; }
+	size_t children_vsize() const;
 
 public:
 	/** Iterator for the tchild items. */
@@ -352,29 +318,31 @@ public:
 	{
 
 	public:
-
-		iterator(std::vector<tchild>::iterator itor) :
-			itor_(itor)
+		iterator(tchild* children, int n)
+			: children_(children)
+			, n_(n)
 			{}
 
-		iterator operator++() { return iterator(++itor_); }
-		iterator operator--() { return iterator(--itor_); }
-		twidget* operator->() { return itor_->widget(); }
-		twidget* operator*() { return itor_->widget(); }
+		iterator operator++() { return iterator(children_, ++ n_); }
+		iterator operator--() { return iterator(children_, -- n_); }
+		twidget* operator->() { return children_[n_].widget_; }
+		twidget* operator*() { return children_[n_].widget_; }
 
 		bool operator==(const iterator& i) const
-			{ return i.itor_ == this->itor_; }
+			{ return i.children_ == this->children_ && i.n_ == this->n_; }
 
 		bool operator!=(const iterator& i) const
-			{ return i.itor_ != this->itor_; }
+			{ return i.children_ != this->children_ || i.n_ != this->n_; }
 
 	private:
-		std::vector<tchild>::iterator itor_;
-
+		tchild* children_;
+		int n_;
 	};
 
-	iterator begin() { return iterator(children_.begin()); }
-	iterator end() { return iterator(children_.end()); }
+	iterator begin() { return iterator(children_, 0); }
+	iterator end() { return iterator(children_, children_vsize_); }
+
+	void update_last_draw_end();
 
 private:
 	/** The number of grid rows. */
@@ -401,22 +369,49 @@ private:
 	 * The child items.
 	 *
 	 * All children are stored in a 1D vector and the formula to access a cell
-	 * is: rows_ * col + row. All other vectors use the same access formula.
+	 * is: row * cols_ + col. All other vectors use the same access formula.
 	 */
-	std::vector<tchild> children_;
+	tchild* children_;
+	size_t children_size_;
+	size_t children_vsize_;
+
+	std::vector<twidget*> stuff_widget_;
+	size_t stuff_size_;
+	tpoint last_draw_end_;
+
 	const tchild& child(const unsigned row, const unsigned col) const
-		{ return children_[rows_ * col + row]; }
+		{ return children_[row * cols_ + col]; }
 	tchild& child(const unsigned row, const unsigned col)
-		{ return children_[rows_ * col + row]; }
+		{ return children_[row * cols_ + col]; }
 
 	/** Layouts the children in the grid. */
 	void layout(const tpoint& origin);
 
 	/** Inherited from twidget. */
-	void impl_draw_children(surface& frame_buffer);
 	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
 };
+
+/** Returns the best size for the cell. */
+tpoint cell_get_best_size(const tgrid::tchild& cell);
+
+/**
+ * Places the widget in the cell.
+ *
+ * @param origin          The origin (x, y) for the widget.
+ * @param size            The size for the widget.
+ */
+void cell_place(tgrid::tchild& cell, tpoint origin, tpoint size);
+
+/** Forwards layout_init() to the cell. */
+void cell_layout_init(tgrid::tchild& cell, const bool full_initialization);
+
+/** Returns the space needed for the border. */
+tpoint cell_border_space(const tgrid::tchild& cell);
+
+/** Returns the space needed for the border. */
+tpoint cell_border_space(const tgrid::tchild& cell);
+
 
 /**
  * Sets the single child in a grid.

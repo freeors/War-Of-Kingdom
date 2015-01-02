@@ -36,7 +36,10 @@ tlobby::thandler::thandler()
 tlobby::thandler::~thandler()
 {
 	std::vector<tlobby::thandler*>& handlers = lobby.handlers;
-	handlers.erase(std::remove(handlers.begin(), handlers.end(), this));
+	std::vector<tlobby::thandler*>::iterator it = std::find(handlers.begin(), handlers.end(), this);
+	if (it != handlers.end()) {
+		handlers.erase(it);
+	}
 }
 
 void tlobby::thandler::join()

@@ -52,6 +52,9 @@ public:
 	virtual void force_end_level(LEVEL_RESULT) {}
 	virtual void check_end_level() {}
 
+	bool is_playing() const { return is_playing_; }
+	void play_replay2();
+
 	std::vector<team> teams_start_;
 
 protected:
@@ -64,9 +67,6 @@ private:
 	virtual void play_side();
 	void update_teams();
 	void update_gui();
-	void init_replay_display();
-	void rebuild_replay_theme();
-	void handle_generic_event(const std::string& /*name*/);
 
 	game_state gamestate_start_;
 	unit_map units_start_;

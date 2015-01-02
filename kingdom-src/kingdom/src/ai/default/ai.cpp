@@ -25,7 +25,7 @@
 #include "../../game_events.hpp"
 #include "../../game_preferences.hpp"
 #include "log.hpp"
-#include "../../mouse_handler_base.hpp"
+#include "mouse_handler_base.hpp"
 #include "../../replay.hpp"
 #include "../../statistics.hpp"
 #include "../../unit_display.hpp"

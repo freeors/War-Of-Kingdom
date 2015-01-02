@@ -160,6 +160,9 @@ private:
 	std::vector<ttip> tips_;
 };
 
+/** theme frame config. */
+config theme_window_cfg;
+
 const std::string& tgui_definition::read(const config& cfg)
 {
 /*WIKI
@@ -300,7 +303,7 @@ const std::string& tgui_definition::read(const config& cfg)
 		window_types.insert(child);
 	}
 
-	if(id == "default") {
+	if (id == "default") {
 		// The default gui needs to define all window types since we're the
 		// fallback in case another gui doesn't define the window type.
 		for(std::vector<std::string>::const_iterator itor
@@ -315,6 +318,11 @@ const std::string& tgui_definition::read(const config& cfg)
 			VALIDATE(window_types.find(*itor) != window_types.end(), error_msg );
 		}
 	}
+
+	theme_window_cfg = cfg.find_child("window", "id", game_config::theme_window_id);
+	std::stringstream err;
+	err << "must define theme window, id: " << game_config::theme_window_id;
+	VALIDATE(!theme_window_cfg.empty(), err.str());
 
 	/***** settings *****/
 /*WIKI
@@ -456,14 +464,14 @@ void tgui_definition::load_widget_definitions(
 
 }
 
-	/** Map with all known windows, (the builder class builds a window). */
-	std::map<std::string, twindow_builder> windows;
+/** Map with all known windows, (the builder class builds a window). */
+std::map<std::string, twindow_builder> windows;
 
-	/** Map with all known guis. */
-	std::map<std::string, tgui_definition> guis;
+/** Map with all known guis. */
+std::map<std::string, tgui_definition> guis;
 
-	/** Points to the current gui. */
-	std::map<std::string, tgui_definition>::const_iterator current_gui = guis.end();
+/** Points to the current gui. */
+std::map<std::string, tgui_definition>::const_iterator current_gui = guis.end();
 
 void register_window(const std::string& id)
 {
@@ -648,6 +656,28 @@ std::vector<twindow_builder::tresolution>::const_iterator get_window_builder(
 	}
 
 	ERROR_LOG(false);
+}
+
+void reload_window_builder(const std::string& type, const config& cfg, const std::set<std::string>& reserve_wml_tag)
+{
+	std::map<std::string, tgui_definition>::iterator current_gui2 = guis.find("default");
+	std::map<std::string, twindow_builder>::iterator window = current_gui2->second.window_types.find(type);
+	if (window == current_gui->second.window_types.end()) {
+		throw twindow_builder_invalid_id();
+	}
+	config& grid_cfg = theme_window_cfg.child("resolution").child("grid");
+	grid_cfg.clear_children("row");
+	config& row_cfg = grid_cfg.add_child("row");
+	BOOST_FOREACH (const config::any_child &value, cfg.all_children_range()) {
+		if (reserve_wml_tag.find(value.key) != reserve_wml_tag.end()) {
+			continue;
+		}
+		config& childcfg = row_cfg.add_child("column");
+		childcfg.add_child(value.key, value.cfg);
+	}
+
+	twindow::update_screen_size();
+	window->second.read(theme_window_cfg);
 }
 
 /*WIKI

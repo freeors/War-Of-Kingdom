@@ -807,17 +807,16 @@ connection receive_data(config& cfg, connection connection_num, bandwidth_in_ptr
 
 	const int res = SDLNet_CheckSockets(socket_set,0);
 
-	for(std::set<network::connection>::iterator i = waiting_sockets.begin(); res != 0 && i != waiting_sockets.end(); ) {
+	for (std::set<network::connection>::iterator i = waiting_sockets.begin(); res != 0 && i != waiting_sockets.end(); ) {
 		connection_details& details = get_connection_details(*i);
 		const TCPsocket sock = details.sock;
-		if(SDLNet_SocketReady(sock)) {
-
+		if (SDLNet_SocketReady(sock)) {
 			// See if this socket is still waiting for it to be assigned its remote handle.
 			// If it is, then the first 4 bytes must be the remote handle.
-			if(is_pending_remote_handle(*i)) {
+			if (is_pending_remote_handle(*i)) {
 				char buf[4] ALIGN_4;
-				int len = SDLNet_TCP_Recv(sock,buf,4);
-				if(len != 4) {
+				int len = SDLNet_TCP_Recv(sock, buf, 4);
+				if (len != 4) {
 					throw error("Remote host disconnected",*i);
 				}
 

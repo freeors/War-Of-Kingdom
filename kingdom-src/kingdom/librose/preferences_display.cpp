@@ -23,7 +23,6 @@
 #include "global.hpp"
 #include "preferences_display.hpp"
 
-// #include "construct_dialog.hpp"
 #include "display.hpp"
 #include "preferences.hpp"
 #include "gettext.hpp"
@@ -36,26 +35,17 @@
 
 #include <boost/foreach.hpp>
 
-namespace preferences {
+bool require_change_resolution = false;
 
-display* disp = NULL;
+namespace preferences {
 
 display_manager::display_manager(display* d)
 {
-	disp = d;
-
 	load_hotkeys();
-
-	set_grid(grid());
-	set_turbo(turbo());
-	set_turbo_speed(turbo_speed());
-	set_fullscreen(fullscreen());
-	set_scroll_to_action(scroll_to_action());
 }
 
 display_manager::~display_manager()
 {
-	disp = NULL;
 }
 
 bool detect_video_settings(CVideo& video, std::pair<int,int>& resolution, int& bpp, int& video_flags)
@@ -65,80 +55,21 @@ bool detect_video_settings(CVideo& video, std::pair<int,int>& resolution, int& b
 
 	bpp = 32;
 	return true;
-/*
-	int DefaultBPP = 24;
-	const SDL_VideoInfo* const video_info = SDL_GetVideoInfo();
-	if(video_info != NULL && video_info->vfmt != NULL) {
-		DefaultBPP = video_info->vfmt->BitsPerPixel;
-	}
-
-	std::cerr << "Checking video mode: " << resolution.first << 'x'
-		<< resolution.second << 'x' << DefaultBPP << "...\n";
-
-	typedef std::pair<int, int> res_t;
-	std::vector<res_t> res_list;
-	res_list.push_back(res_t(1024, 768));
-	res_list.push_back(res_t(1024, 600));
-	res_list.push_back(res_t(800, 600));
-	res_list.push_back(res_t(480, 320));
-
-	bpp = video.modePossible(resolution.first, resolution.second,
-		DefaultBPP, video_flags, true);
-
-	BOOST_FOREACH (const res_t &res, res_list)
-	{
-		if (bpp != 0) break;
-		std::cerr << "Video mode " << resolution.first << 'x'
-			<< resolution.second << 'x' << DefaultBPP
-			<< " is not supported; attempting " << res.first
-			<< 'x' << res.second << 'x' << DefaultBPP << "...\n";
-		resolution = res;
-		bpp = video.modePossible(resolution.first, resolution.second,
-			DefaultBPP, video_flags);
-	}
-
-	return bpp != 0;
-*/
 }
 
-void set_fullscreen(CVideo& video, const bool ison)
+void set_fullscreen(display& disp, const bool ison)
 {
 	_set_fullscreen(ison);
 
+	CVideo& video = disp.video();
 	const std::pair<int,int>& res = resolution();
-	if(video.isFullScreen() != ison) {
+	if (video.isFullScreen() != ison) {
 		const int flags = ison ? SDL_WINDOW_FULLSCREEN: 0;
-		int bpp = video.modePossible(res.first,res.second,32,flags);
-		if (bpp <= 0) {
-			bpp = video.modePossible(res.first,res.second,16,flags);
-		}
+		int bpp = video.modePossible(res.first, res.second, 32, flags);
+		VALIDATE(bpp > 0, "bpp must be large than 0!");
 
-		if(bpp > 0) {
-			video.setMode(res.first,res.second,bpp,flags);
-			if(disp) {
-				disp->redraw_everything();
-			}
-		} else {
-			int tmp_flags = flags;
-			std::pair<int,int> tmp_res;
-			if(detect_video_settings(video, tmp_res, bpp, tmp_flags)) {
-				set_resolution(video, tmp_res.first, tmp_res.second);
-			// TODO: see if below line is actually needed, possibly for displays that only support 16 bbp
-			} else if(video.modePossible(1024,768,16,flags)) {
-				set_resolution(video, 1024, 768);
-			} else {
-				gui2::show_transient_message(video,"",_("The video mode could not be changed. Your window manager must be set to 16 bits per pixel to run the game in windowed mode. Your display must support 1024x768x16 to run the game full screen."));
-			}
-		}
-	}
-}
-
-void set_fullscreen(bool ison)
-{
-	_set_fullscreen(ison);
-
-	if(disp != NULL) {
-		set_fullscreen(disp->video(), ison);
+		video.setMode(res.first, res.second,bpp, flags);
+		require_change_resolution = true;
 	}
 }
 
@@ -146,20 +77,8 @@ void set_scroll_to_action(bool ison)
 {
 	_set_scroll_to_action(ison);
 }
-void set_resolution(const std::pair<int,int>& resolution)
-{
-	if (disp) {
-		set_resolution(disp->video(), resolution.first, resolution.second);
-	} else {
-		/* This part is needed when wesnoth is started with the -r parameter. */
-		const std::string postfix = fullscreen() ? "resolution" : "windowsize";
-		preferences::set('x' + postfix, lexical_cast<std::string>(resolution.first));
-		preferences::set('y' + postfix, lexical_cast<std::string>(resolution.second));
-	}
-}
 
-bool set_resolution(CVideo& video
-		, const unsigned width, const unsigned height)
+bool set_resolution(display& disp, const unsigned width, const unsigned height)
 {
 	// - Ayin: disabled the following code. Why would one want to enforce that?
 	// Some 16:9, or laptop screens, may have resolutions which do not
@@ -171,31 +90,22 @@ bool set_resolution(CVideo& video
 	//res.second &= ~3;
 
 	SDL_Rect rect;
-	SDL_GetClipRect(video.getSurface(), &rect);
-	if(rect.w == width && rect.h == height) {
+	SDL_GetClipRect(disp.video().getSurface(), &rect);
+	if (rect.w == width && rect.h == height) {
 		return true;
 	}
-
-	const int flags = fullscreen() ? SDL_WINDOW_FULLSCREEN : 0;
-	int bpp = video.modePossible(width, height, 32, flags);
-	if (bpp == 0) {
-		bpp = video.modePossible(width, height, 16, flags);
-	}
-	if (bpp != 0) {
-		video.setMode(width, height, bpp, flags);
-
-		if (disp) {
-			disp->redraw_everything();
-		}
-
-	} else {
-		gui2::show_transient_message(video,"",_("The video mode could not be changed. Your window manager must be set to 16 bits per pixel to run the game in windowed mode. Your display must support 1024x768x16 to run the game full screen."));
-		return false;
-	}
-
 	if (width < 480 || height < 320) {
 		return false;
 	}
+
+	CVideo& video = disp.video();
+	const int flags = fullscreen() ? SDL_WINDOW_FULLSCREEN : 0;
+	int bpp = video.modePossible(width, height, 32, flags);
+	VALIDATE(bpp > 0, "bpp must be large than 0!");
+
+	video.setMode(width, height, bpp, flags);
+	require_change_resolution = true;
+
 	const std::string postfix = fullscreen() ? "resolution" : "windowsize";
 	preferences::set('x' + postfix, lexical_cast<std::string>(width));
 	preferences::set('y' + postfix, lexical_cast<std::string>(height));
@@ -203,49 +113,28 @@ bool set_resolution(CVideo& video
 	return true;
 }
 
-void set_turbo(bool ison)
+void set_turbo(display& disp, bool ison)
 {
 	_set_turbo(ison);
-
-	if(disp != NULL) {
-		disp->set_turbo(ison);
-	}
+	disp.set_turbo(ison);
 }
 
-void set_turbo_speed(double speed)
+void set_turbo_speed(display& disp, double speed)
 {
 	save_turbo_speed(speed);
-
-	if(disp != NULL) {
-		disp->set_turbo_speed(speed);
-	}
+	disp.set_turbo_speed(speed);
 }
 
-void set_grid(bool ison)
+void set_grid(display& disp, bool ison)
 {
 	_set_grid(ison);
-
-	if(disp != NULL) {
-		disp->set_grid(ison);
-	}
+	disp.set_grid(ison);
 }
 
 void set_default_move(bool ison) 
 {
 	_set_default_move(ison);
 }
-
-namespace {
-class escape_handler : public events::handler {
-public:
-	escape_handler() : escape_pressed_(false) {}
-	bool escape_pressed() const { return escape_pressed_; }
-	void handle_event(const SDL_Event &event) { escape_pressed_ |= (event.type == SDL_KEYDOWN)
-		&& (reinterpret_cast<const SDL_KeyboardEvent&>(event).keysym.sym == SDLK_ESCAPE); }
-private:
-	bool escape_pressed_;
-};
-} // end anonymous namespace
 
 bool compare_resolutions(const std::pair<int,int>& lhs, const std::pair<int,int>& rhs)
 {
@@ -254,9 +143,6 @@ bool compare_resolutions(const std::pair<int,int>& lhs, const std::pair<int,int>
 
 bool show_video_mode_dialog(display& disp)
 {
-	const resize_lock prevent_resizing;
-	const events::event_context dialog_events_context;
-
 	CVideo& video = disp.video();
 
 	SDL_PixelFormat format = *video.getSurface()->format;
@@ -309,13 +195,15 @@ bool show_video_mode_dialog(display& disp)
 		std::pair<int, int> const& res = resolutions[k];
 		std::ostringstream option;
 
-		if (res == current_res)
+		if (res == current_res) {
 			current_choice = static_cast<unsigned>(k);		
+		}
 
 		option << res.first << "x" << res.second;
 		// widescreen threshold is 16:10
-		if ((double)res.first/res.second >= 16.0/10.0)
-		  option << _(" (widescreen)");
+		if ((double)res.first/res.second >= 16.0/10.0) {
+			option << _(" (widescreen)");
+		}
 		options.push_back(option.str());
 	}
 
@@ -329,7 +217,8 @@ bool show_video_mode_dialog(display& disp)
 		return false;
 	}
 
-	set_resolution(resolutions[static_cast<size_t>(choice)]);
+	std::pair<int, int>& res = resolutions[static_cast<size_t>(choice)];
+	set_resolution(disp, res.first, res.second);
 	return true;
 }
 

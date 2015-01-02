@@ -31,16 +31,9 @@ namespace gui2 {
 class tminimap : public tcontrol
 {
 public:
-	enum ttype {NONE, IMG, TILE_MAP, HEX_MAP};
+	enum ttype {NONE, IMG, TILE_MAP, SURFACE};
 
-	tminimap() :
-		tcontrol(1)
-		, type_(NONE)
-		, map_data_()
-		, terrain_(NULL)
-		, best_size_(0, 0)
-	{
-	}
+	tminimap();
 
 	/***** ***** ***** ***** layout functions ***** ***** ***** *****/
 
@@ -94,7 +87,10 @@ public:
 
 	void set_best_size(const tpoint& best_size) { best_size_ = best_size; }
 
+	void set_surface(const surface& surf, int w, int h);
+
 private:
+	enum tstate { NORMAL, COUNT };
 
 	/** The type of map_data. */
 	ttype type_;
@@ -120,7 +116,6 @@ private:
 	const surface get_image(const int w, const int h);
 
 	/** Inherited from tcontrol. */
-	void impl_draw_background(surface& frame_buffer);
 	void impl_draw_background(
 			  surface& frame_buffer
 			, int x_offset

@@ -16,20 +16,6 @@ bool find_topic2(const std::string& dst)
 }
 }
 
-bool in_tower_mode() 
-{ 
-	return false; 
-}
-
-void set_unit_image(void* cookie, surface& image, int& integer)
-{
-}
-
-surface get_genus_surface()
-{
-	return NULL;
-}
-
 namespace help {
 std::vector<topic> generate_topics(const bool sort_generated, const std::string &generator)
 {

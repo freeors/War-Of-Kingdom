@@ -22,8 +22,11 @@
 #include <boost/mpl/set.hpp>
 
 #include <iosfwd>
+#include <vector>
 
 namespace gui2 {
+
+class twindow;
 
 namespace event {
 
@@ -317,6 +320,9 @@ void capture_keyboard(tdispatcher* dispatcher);
 std::ostream& operator<<(std::ostream& stream, const tevent event);
 
 } // namespace event
+
+void async_draw();
+std::vector<twindow*> connectd_window();
 
 /**
  * Is a dialog open?

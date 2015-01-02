@@ -77,7 +77,6 @@ private:
 	 *
 	 * Since we're always empty the draw does nothing.
 	 */
-	void impl_draw_background(surface& /*frame_buffer*/) {}
 	void impl_draw_background(
 			  surface& /*frame_buffer*/
 			, int /*x_offset*/
@@ -87,6 +86,7 @@ private:
 	const std::string& get_control_type() const;
 };
 
+tspacer* create_spacer(const std::string& id, int width = 0, int height = 0);
 
 } // namespace gui2
 

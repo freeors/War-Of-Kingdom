@@ -30,9 +30,12 @@ twidget::twidget()
 	, w_(0)
 	, h_(0)
 	, dirty_(true)
+	, volatile_(false)
 	, visible_(VISIBLE)
 	, drawing_action_(DRAWN)
 	, clip_rect_()
+	, fix_rect_(empty_rect)
+	, cookie_(NULL)
 	, layout_size_(tpoint(0,0))
 	, linked_group_()
 	, debug_border_mode_(0)
@@ -52,9 +55,12 @@ twidget::twidget(const tbuilder_widget& builder)
 	, w_(0)
 	, h_(0)
 	, dirty_(true)
+	, volatile_(false)
 	, visible_(VISIBLE)
 	, drawing_action_(DRAWN)
 	, clip_rect_()
+	, fix_rect_(empty_rect)
+	, cookie_(NULL)
 	, layout_size_(tpoint(0,0))
 	, linked_group_(builder.linked_group)
 	, debug_border_mode_(builder.debug_border_mode)
@@ -110,44 +116,39 @@ void twidget::layout_init(const bool /*full_initialization*/)
 
 tpoint twidget::get_best_size() const
 {
-	// assert(visible_ != INVISIBLE);
-
-	tpoint result = layout_size_;
-	if(result == tpoint(0, 0)) {
-		result = calculate_best_size();
-	}
+	if (!fix_rect_.w || !fix_rect_.h) {
+		tpoint result = layout_size_;
+		if(result == tpoint(0, 0)) {
+			result = calculate_best_size();
+		}
 
 #ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
-	last_best_size_ = result;
+		last_best_size_ = result;
 #endif
+		return result;
 
-	return result;
+	} else {
+		return tpoint(fix_rect_.w, fix_rect_.h);
+	}
 }
 
 void twidget::place(const tpoint& origin, const tpoint& size)
 {
-	// release of visutal studio cannot detect assert, use breakpoint.
-	if (size.x < 0 || size.y < 0) {
-		int ii = 0;
+	if (!fix_rect_.w || !fix_rect_.h) {
+		assert(size.x >= 0);
+		assert(size.y >= 0);
+
+		x_ = origin.x;
+		y_ = origin.y;
+		w_ = size.x;
+		h_ = size.y;
+
+	} else {
+		x_ = fix_rect_.x;
+		y_ = fix_rect_.y;
+		w_ = fix_rect_.w;
+		h_ = fix_rect_.h;
 	}
-	assert(size.x >= 0);
-	assert(size.y >= 0);
-
-	x_ = origin.x;
-	y_ = origin.y;
-	w_ = size.x;
-	h_ = size.y;
-
-#if 0
-	std::cerr << "Id " << id()
-		<< " rect " << get_rect()
-		<< " parent "
-			<< (parent ? parent->get_x() : 0)
-			<< ','
-			<< (parent ? parent->get_y() : 0)
-		<< " screen origin " << x_ << ',' << y_
-		<< ".\n";
-#endif
 
 	set_dirty();
 }
@@ -155,9 +156,6 @@ void twidget::place(const tpoint& origin, const tpoint& size)
 void twidget::set_size(const tpoint& size)
 {
 	// release of visutal studio cannot detect assert, use breakpoint.
-	if (size.x < 0 || size.y < 0) {
-		int ii = 0;
-	}
 	assert(size.x >= 0);
 	assert(size.y >= 0);
 
@@ -198,7 +196,7 @@ twindow* twidget::get_window()
 	// parent, we can also be the toplevel so start with
 	// ourselves instead of our parent.
 	twidget* result = this;
-	while(result->parent_) {
+	while (result->parent_) {
 		result = result->parent_;
 	}
 
@@ -212,7 +210,7 @@ const twindow* twidget::get_window() const
 	// parent, we can also be the toplevel so start with
 	// ourselves instead of our parent.
 	const twidget* result = this;
-	while(result->parent_) {
+	while (result->parent_) {
 		result = result->parent_;
 	}
 
@@ -241,7 +239,7 @@ void twidget::populate_dirty_list(twindow& caller,
 
 	call_stack.push_back(this);
 
-	if (dirty_ || exist_anim()) {
+	if (dirty_ || volatile_ || exist_anim()) {
 		caller.add_to_dirty_list(call_stack);
 	} else {
 		// virtual function which only does something for container items.
@@ -256,7 +254,7 @@ void twidget::set_layout_size(const tpoint& size)
 
 void twidget::set_visible(const tvisible visible)
 {
-	if(visible == visible_) {
+	if (visible == visible_) {
 		return;
 	}
 
@@ -264,19 +262,13 @@ void twidget::set_visible(const tvisible visible)
 	const bool need_resize = visible_ == INVISIBLE || visible == INVISIBLE;
 	visible_ = visible;
 
-	if(need_resize) {
-		if(new_widgets) {
-			event::tmessage message;
-			fire(event::REQUEST_PLACEMENT, *this, message);
-		} else {
-			twindow *window = get_window();
-			if(window) {
-				window->invalidate_layout();
-			}
+	if (need_resize) {
+		twindow *window = get_window();
+		if(window) {
+			window->invalidate_layout();
 		}
-	} else {
-		set_dirty();
 	}
+	set_dirty();
 }
 
 twidget::tdrawing_action twidget::get_drawing_action() const
@@ -314,28 +306,18 @@ SDL_Rect twidget::calculate_blitting_rectangle(
 	return result;
 }
 
-SDL_Rect twidget::calculate_clipping_rectangle(
-		  const int x_offset
-		, const int y_offset)
+SDL_Rect twidget::calculate_clipping_rectangle(SDL_Surface* surf, const int x_offset, const int y_offset)
 {
-	SDL_Rect result = clip_rect_;
-	result.x += x_offset;
-	result.y += y_offset;
-	return result;
-}
+	SDL_Rect clip_rect = clip_rect_;
+	clip_rect.x += x_offset;
+	clip_rect.y += y_offset;
 
-void twidget::draw_background(surface& frame_buffer)
-{
-	assert(visible_ == VISIBLE);
-
-	if(drawing_action_ == PARTLY_DRAWN) {
-		clip_rect_setter clip(frame_buffer, &clip_rect_);
-		draw_debug_border(frame_buffer);
-		impl_draw_background(frame_buffer);
-	} else {
-		draw_debug_border(frame_buffer);
-		impl_draw_background(frame_buffer);
+	SDL_Rect surf_clip_rect;
+	SDL_GetClipRect(surf, &surf_clip_rect);
+	if (surf_clip_rect.w != surf->w || surf_clip_rect.h != surf->h) {
+		return intersect_rects(clip_rect, surf_clip_rect);
 	}
+	return clip_rect;
 }
 
 void twidget::draw_background(surface& frame_buffer, int x_offset, int y_offset)
@@ -343,8 +325,10 @@ void twidget::draw_background(surface& frame_buffer, int x_offset, int y_offset)
 	assert(visible_ == VISIBLE);
 
 	if(drawing_action_ == PARTLY_DRAWN) {
-		const SDL_Rect clipping_rectangle =
-				calculate_clipping_rectangle(x_offset, y_offset);
+		const SDL_Rect clipping_rectangle = calculate_clipping_rectangle(frame_buffer, x_offset, y_offset);
+		if (!clipping_rectangle.w || !clipping_rectangle.h) {
+			return;
+		}
 
 		clip_rect_setter clip(frame_buffer, &clipping_rectangle);
 		draw_debug_border(frame_buffer, x_offset, y_offset);
@@ -352,18 +336,6 @@ void twidget::draw_background(surface& frame_buffer, int x_offset, int y_offset)
 	} else {
 		draw_debug_border(frame_buffer, x_offset, y_offset);
 		impl_draw_background(frame_buffer, x_offset, y_offset);
-	}
-}
-
-void twidget::draw_children(surface& frame_buffer)
-{
-	assert(visible_ == VISIBLE);
-
-	if(drawing_action_ == PARTLY_DRAWN) {
-		clip_rect_setter clip(frame_buffer, &clip_rect_);
-		impl_draw_children(frame_buffer);
-	} else {
-		impl_draw_children(frame_buffer);
 	}
 }
 
@@ -371,9 +343,11 @@ void twidget::draw_children(surface& frame_buffer, int x_offset, int y_offset)
 {
 	assert(visible_ == VISIBLE);
 
-	if(drawing_action_ == PARTLY_DRAWN) {
-		const SDL_Rect clipping_rectangle =
-				calculate_clipping_rectangle(x_offset, y_offset);
+	if (drawing_action_ == PARTLY_DRAWN) {
+		const SDL_Rect clipping_rectangle = calculate_clipping_rectangle(frame_buffer, x_offset, y_offset);
+		if (!clipping_rectangle.w || !clipping_rectangle.h) {
+			return;
+		}
 
 		clip_rect_setter clip(frame_buffer, &clipping_rectangle);
 		impl_draw_children(frame_buffer, x_offset, y_offset);
@@ -382,25 +356,15 @@ void twidget::draw_children(surface& frame_buffer, int x_offset, int y_offset)
 	}
 }
 
-void twidget::draw_foreground(surface& frame_buffer)
-{
-	assert(visible_ == VISIBLE);
-
-	if(drawing_action_ == PARTLY_DRAWN) {
-		clip_rect_setter clip(frame_buffer, &clip_rect_);
-		impl_draw_foreground(frame_buffer);
-	} else {
-		impl_draw_foreground(frame_buffer);
-	}
-}
-
 void twidget::draw_foreground(surface& frame_buffer, int x_offset, int y_offset)
 {
 	assert(visible_ == VISIBLE);
 
-	if(drawing_action_ == PARTLY_DRAWN) {
-		const SDL_Rect clipping_rectangle =
-				calculate_clipping_rectangle(x_offset, y_offset);
+	if (drawing_action_ == PARTLY_DRAWN) {
+		const SDL_Rect clipping_rectangle = calculate_clipping_rectangle(frame_buffer, x_offset, y_offset);
+		if (!clipping_rectangle.w || !clipping_rectangle.h) {
+			return;
+		}
 
 		clip_rect_setter clip(frame_buffer, &clipping_rectangle);
 		impl_draw_foreground(frame_buffer, x_offset, y_offset);
@@ -436,7 +400,7 @@ void twidget::draw_debug_border(
 		, int y_offset)
 {
 	SDL_Rect r = drawing_action_ == PARTLY_DRAWN
-		? calculate_clipping_rectangle(x_offset, y_offset)
+		? calculate_clipping_rectangle(frame_buffer, x_offset, y_offset)
 		: calculate_blitting_rectangle(x_offset, y_offset);
 
 	switch(debug_border_mode_) {

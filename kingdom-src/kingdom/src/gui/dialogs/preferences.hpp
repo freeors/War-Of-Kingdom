@@ -35,6 +35,8 @@ class tpreferences
 public:
 	explicit tpreferences(display& disp, int start_page);
 
+	enum tresult {CHANGE_RESOLUTION = 1, MAKE_FULLSCREEN, MAKE_WINDOWED};
+
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
 private:

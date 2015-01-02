@@ -193,6 +193,7 @@ public:
 		bool click_dismiss;
 
 		std::string definition;
+		bool theme;
 
 		struct tlinked_group
 		{

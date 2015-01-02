@@ -36,7 +36,6 @@
 #include "game_errors.hpp"
 #include "gamestatus.hpp"
 #include "gettext.hpp"
-#include "intro.hpp"
 #include "gui/dialogs/group.hpp"
 #include "gui/dialogs/campaign_selection.hpp"
 #include "gui/dialogs/player_selection.hpp"
@@ -59,6 +58,7 @@
 #include "gui/dialogs/help_screen.hpp"
 #include "gui/dialogs/book.hpp"
 #include "gui/dialogs/subcontinent.hpp"
+#include "gui/dialogs/auto_scroll.hpp"
 #ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
 #include "gui/widgets/debug.hpp"
 #endif
@@ -212,11 +212,6 @@ private:
 	bool clear_;
 };
 
-}
-
-bool in_tower_mode()
-{
-	return tent::tower_mode();
 }
 
 void regenerate_heros(hero_map& heros);
@@ -1421,8 +1416,6 @@ void game_controller::show_preferences()
 {
 	const preferences::display_manager disp_manager(&disp());
 	gui2::show_preferences_dialog(disp());
-
-	disp().redraw_everything();
 }
 
 void game_controller::set_unit_data(config& gc)
@@ -1632,7 +1625,7 @@ void game_controller::launch_game(bool is_load_game)
 		// change this if MP campaigns are implemented
 		if (result == VICTORY && (state_.classification().campaign_type.empty() || state_.classification().campaign_type != "multiplayer")) {
 			preferences::add_completed_campaign(state_.classification().campaign);
-			the_end(disp(), state_.classification().end_text, state_.classification().end_text_duration);
+			// the_end(disp(), state_.classification().end_text, state_.classification().end_text_duration);
 			about::show_about(disp(),state_.classification().campaign);
 		}
 
@@ -1727,6 +1720,38 @@ static void init_locale()
 	bindtextdomain (PACKAGE "-hero", intl_dir.c_str());
 	bind_textdomain_codeset (PACKAGE "-hero", "UTF-8");
 	textdomain (PACKAGE);
+}
+
+class about_text_formatter2
+{
+public:
+	std::string operator()(const std::string &s) 
+	{
+		if (s.empty()) return s;
+		// Format + as headers, and the rest as normal text.
+		char s0 = s[0];
+		const std::string ns = tintegrate::stuff_escape(s);
+
+		if (s0 == '+') {
+			return tintegrate::generate_format(ns.substr(1), null_str, font::SIZE_NORMAL);
+		}
+		if (s0 == '-') {
+			return tintegrate::generate_format(ns.substr(1), null_str, font::SIZE_SMALL);
+		}
+		return ns;
+	}
+};
+
+std::string generate_about_text2()
+{
+	std::vector<std::string> about_lines = about::get_text();
+
+	std::vector<std::string> res_lines;
+	std::transform(about_lines.begin(), about_lines.end(), std::back_inserter(res_lines),
+				   about_text_formatter2());
+	res_lines.erase(std::remove(res_lines.begin(), res_lines.end(), ""), res_lines.end());
+	std::string text = utils::join(res_lines, "\n");
+	return text;
 }
 
 /**
@@ -1957,6 +1982,13 @@ static int do_gameloop(int argc, char** argv)
 				dlg.show(game.disp().video());
 
 			} else if (res == gui2::ttitle_screen::MULTIPLAYER) {
+/*
+				{
+					int ii = 0;
+					gui2::tauto_scroll dlg(generate_about_text2());
+					dlg.show(game.disp().video());
+				}
+*/
 				game.play_multiplayer(false);
 
 			} else if (res == gui2::ttitle_screen::CHANGE_LANGUAGE) {

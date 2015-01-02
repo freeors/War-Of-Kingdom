@@ -849,18 +849,6 @@ public:
 	}
 
 	/** Inherited from tgenerator_. */
-	void impl_draw_children(surface& frame_buffer)
-	{
-		assert(this->get_visible() == twidget::VISIBLE);
-
-		BOOST_FOREACH(titem* item, items_) {
-			if(item->grid.get_visible() == twidget::VISIBLE && item->shown) {
-				item->grid.draw_children(frame_buffer);
-			}
-		}
-	}
-
-	/** Inherited from tgenerator_. */
 	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset)
 	{
 		assert(this->get_visible() == twidget::VISIBLE);

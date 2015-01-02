@@ -581,19 +581,6 @@ void ttree_view_node::set_visible_area(const SDL_Rect& area)
 	}
 }
 
-void ttree_view_node::impl_draw_children(surface& frame_buffer)
-{
-	grid_.draw_children(frame_buffer);
-
-	if(is_folded()) {
-		return;
-	}
-
-	BOOST_FOREACH(ttree_view_node& node, children_) {
-		node.impl_draw_children(frame_buffer);
-	}
-}
-
 void ttree_view_node::impl_draw_children(
 		  surface& frame_buffer
 		, int x_offset

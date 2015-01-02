@@ -31,8 +31,6 @@ public:
 	virtual void pressed(const void* menu, const size_t btnidx) = 0;
 };
 
-class hero;
-
 namespace gui {
 
 class button : public widget
@@ -45,8 +43,6 @@ public:
 	enum SPACE_CONSUMPTION { DEFAULT_SPACE, MINIMUM_SPACE };
 
 	enum {NO_DEGREE = -1};
-
-	enum {COOKIE_NONE, COOKIE_UNIT, COOKIE_HERO};
 
 	button(CVideo& video, const std::string& label, TYPE type = TYPE_PRESS,
 	       std::string button_image = "", SPACE_CONSUMPTION spacing = DEFAULT_SPACE,
@@ -67,15 +63,6 @@ public:
 	virtual void enable(bool new_val=true);
 	void release();
 
-	void set_tactic_image(hero& h, const std::string& label);
-	void set_rpg_image(hero* h, bool greyscale = false);
-	void set_bomb_image(int bomb_turns);
-	void set_image(const std::string& stem, int digit, bool greyscale = false, bool special = false, const std::string& icon = null_str, const std::string& lb_icon = null_str, int degree = NO_DEGREE);
-	void set_pip_image(const std::string& bg, const std::string& fg);
-
-	int cookie_type;
-	void* cookie_;
-	size_t btnidx_;
 protected:
 	virtual void handle_event(const SDL_Event& event);
 	virtual void mouse_motion(const SDL_MouseMotionEvent& event);
@@ -88,7 +75,6 @@ protected:
 private:
 
 	void calculate_size();
-	void generate_other_image();
 
 	std::string label_;
 	surface image_, pressedImage_, activeImage_, pressedActiveImage_;
@@ -104,18 +90,9 @@ private:
 	bool pressed_;
 
 	SPACE_CONSUMPTION spacing_;
-
 	int base_height_, base_width_;
-
-	button_hook* hook_;
-	const void* menu_;
-
-	hero* tactic_hero_;
 }; //end class button
 
 }
-
-void set_unit_image(void* cookie, surface& image, int& integer);
-surface get_genus_surface();
 
 #endif

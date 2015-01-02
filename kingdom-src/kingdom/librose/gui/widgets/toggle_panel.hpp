@@ -44,9 +44,6 @@ public:
 	void set_child_members(const std::map<std::string /* widget id */, string_map>& data);
 
 	/***** ***** ***** ***** Inherited ***** ***** ***** *****/
-	/** Inherited from tcontainer_ */
-	void child_populate_dirty_list(twindow& caller,
-		const std::vector<twidget*>& call_stack);
 
 	/** Inherited from tcontainer_ */
 	twidget* find_at(const tpoint& coordinate, const bool must_be_active)
@@ -120,7 +117,7 @@ public:
 	void set_data(unsigned int data) { data_ = data; }
 	unsigned int get_data() const { return data_; }
 
-	bool exist_anim() const;
+	bool exist_anim();
 private:
 
 	/**
@@ -166,29 +163,12 @@ private:
 	boost::function<void (twidget*)> callback_mouse_left_double_click_;
 
 	/** Inherited from tpanel. */
-	void impl_draw_background(surface& frame_buffer)
-	{
-		// We don't have a fore and background and need to draw depending on
-		// our state, like a control. So we use the controls drawing method.
-		tcontrol::impl_draw_background(frame_buffer);
-	}
-
-	/** Inherited from tpanel. */
 	void impl_draw_background(surface& frame_buffer, int x_offset, int y_offset)
 	{
 		// We don't have a fore and background and need to draw depending on
 		// our state, like a control. So we use the controls drawing method.
 		tcontrol::impl_draw_background(frame_buffer, x_offset, y_offset);
 	}
-
-	/** Inherited from tpanel. */
-	void impl_draw_foreground(surface& frame_buffer);
-/*	{
-		// We don't have a fore and background and need to draw depending on
-		// our state, like a control. So we use the controls drawing method.
-		tcontrol::impl_draw_foreground(frame_buffer);
-	}
-*/
 
 	/** Inherited from tpanel. */
 	void impl_draw_foreground(surface& frame_buffer, int x_offset, int y_offset);

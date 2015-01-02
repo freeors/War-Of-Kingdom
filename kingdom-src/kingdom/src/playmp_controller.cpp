@@ -280,7 +280,7 @@ void playmp_controller::play_human_turn()
 	}
 
 	if ((!linger_) || (is_host_)) {
-		gui_->enable_menu("endturn", true);
+		gui_->set_theme_object_active("endturn", true);
 	}
 
 	while (!end_turn_ && !auto_end_turn) {
@@ -370,19 +370,14 @@ void playmp_controller::set_end_scenario_button()
 {
 	// Modify the end-turn button
 	if (!is_host_) {
-		gui::button* btn_end = gui_->find_button("endturn");
-		btn_end->enable(false);
+		gui_->set_theme_object_active("endturn", false);
 	}
-	gui_->get_theme().refresh_title2("endturn", "title2");
-	gui_->invalidate_theme();
 	gui_->redraw_everything();
 }
 
 void playmp_controller::reset_end_scenario_button()
 {
 	// revert the end-turn button text to its normal label
-	gui_->get_theme().refresh_title2("endturn", "title");
-	gui_->invalidate_theme();
 	gui_->redraw_everything();
 	gui_->set_game_mode(game_display::RUNNING);
 }
@@ -520,8 +515,8 @@ void playmp_controller::finish_side_turn()
 void playmp_controller::play_network_turn(){
 	LOG_NG << "is networked...\n";
 
-	gui_->enable_menu("undo", false);
-	gui_->enable_menu("endturn", false);
+	gui_->set_theme_object_active("undo", false);
+	gui_->set_theme_object_active("endturn", false);
 	turn_info turn_data(player_number_, replay_sender_, undo_stack_);
 	turn_data.host_transfer().attach_handler(this);
 
@@ -630,9 +625,7 @@ void playmp_controller::handle_generic_event(const std::string& name){
 	else if (name == "host_transfer"){
 		is_host_ = true;
 		if (linger_){
-			gui::button* btn_end = gui_->find_button("endturn");
-			btn_end->enable(true);
-			gui_->invalidate_theme();
+			gui_->set_theme_object_active("endturn", true);
 		}
 	}
 /*

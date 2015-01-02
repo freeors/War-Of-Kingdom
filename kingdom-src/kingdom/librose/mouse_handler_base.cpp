@@ -18,12 +18,8 @@
 
 #include "cursor.hpp"
 #include "display.hpp"
-#include "log.hpp"
 #include "preferences.hpp"
 #include "tooltips.hpp"
-
-static lg::log_domain log_display("display");
-#define WRN_DP LOG_STREAM(warn, log_display)
 
 namespace events {
 

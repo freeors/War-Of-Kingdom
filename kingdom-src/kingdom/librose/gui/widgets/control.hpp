@@ -154,15 +154,24 @@ public:
 
 	void refresh_locator_anim(std::vector<tintegrate::tlocator>& locator);
 
+	virtual void set_surface(const surface& surf, int w, int h);
+
 protected:
 	/** Inherited from twidget. */
 	tpoint calculate_best_size() const;
 
-	virtual bool exist_anim() const;
+	virtual bool exist_anim();
 	virtual void calculate_integrate();
 
 	tintegrate* integrate_;
 	std::vector<tintegrate::tlocator> locator_;
+
+	/**
+	 * Surface of all in state.
+	 *
+	 * If it is surface style button, surfs_ will not empty.
+	 */
+	std::vector<surface> surfs_;
 
 public:
 
@@ -401,14 +410,12 @@ public:
 
 protected:
 	/** Inherited from twidget. */
-	void impl_draw_background(surface& frame_buffer);
 	void impl_draw_background(
 			  surface& frame_buffer
 			, int x_offset
 			, int y_offset);
 
 	/** Inherited from twidget. */
-	void impl_draw_foreground(surface& /*frame_buffer*/) { /* do nothing */ }
 	void impl_draw_foreground(
 			  surface& /*frame_buffer*/
 			, int /*x_offset*/

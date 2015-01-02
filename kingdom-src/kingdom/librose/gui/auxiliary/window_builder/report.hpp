@@ -1,4 +1,4 @@
-/* $Id: minimap.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: listbox.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
 /*
    Copyright (C) 2008 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -13,27 +13,36 @@
    See the COPYING file for more details.
 */
 
-#ifndef GUI_AUXILIARY_WINDOW_BUILDER_THEME_HPP_INCLUDED
-#define GUI_AUXILIARY_WINDOW_BUILDER_THEME_HPP_INCLUDED
+#ifndef GUI_AUXILIARY_WINDOW_BUILDER_REPORT_HPP_INCLUDED
+#define GUI_AUXILIARY_WINDOW_BUILDER_REPORT_HPP_INCLUDED
 
 #include "gui/auxiliary/window_builder/control.hpp"
+
+#include "gui/widgets/scrollbar_container.hpp"
 
 namespace gui2 {
 
 namespace implementation {
 
-struct tbuilder_theme
+struct tbuilder_report
 	: public tbuilder_control
 {
-	explicit tbuilder_theme(const config& cfg);
+	explicit tbuilder_report(const config& cfg);
 
 	twidget* build () const;
+
+	tscrollbar_container::tscrollbar_mode vertical_scrollbar_mode;
+	tscrollbar_container::tscrollbar_mode horizontal_scrollbar_mode;
 
 	/** The width of the widget. */
 	tformula<unsigned> width;
 
 	/** The height of the widget. */
 	tformula<unsigned> height;
+
+	int unit_width;
+	int unit_height;
+	int gap;
 };
 
 } // namespace implementation
@@ -41,5 +50,4 @@ struct tbuilder_theme
 } // namespace gui2
 
 #endif
-
 

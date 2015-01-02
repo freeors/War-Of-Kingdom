@@ -71,7 +71,10 @@ public:
 	void set_sort(tsort sort);
 	int get_sort() const;
 	void set_sound_button_click(const std::string& sound) { sound_button_click_ = sound; }
+
+	void set_surface(const surface& surf, int w, int h);
 private:
+
 	/**
 	 * Possible states of the widget.
 	 *
@@ -125,7 +128,8 @@ private:
 			const event::tevent event, bool& handled);
 };
 
-
+tbutton* create_button(const config& cfg);
+tbutton* create_surface_button(const std::string& id, void* cookie);
 } // namespace gui2
 
 #endif

@@ -316,6 +316,24 @@ void tcontrol::refresh_locator_anim(std::vector<tintegrate::tlocator>& locator)
 	}
 }
 
+void tcontrol::set_surface(const surface& surf, int w, int h)
+{
+	size_t count = canvas_.size();
+
+	surfs_.clear();
+	surfs_.resize(count);
+	if (!surf || !count) {
+		return;
+	}
+
+	surface normal = scale_surface(surf, w, h);
+	for (size_t n = 0; n < count; n ++) {
+		surfs_[n] = normal;
+	}
+
+	set_dirty();
+}
+
 void tcontrol::place(const tpoint& origin, const tpoint& size)
 {
 	// resize canvasses
@@ -426,7 +444,7 @@ void tcontrol::set_text_maximum_width(int maximum)
 	text_maximum_width_ = maximum;
 }
 
-bool tcontrol::exist_anim() const
+bool tcontrol::exist_anim()
 {
 	if (!pre_anims_.empty() || !post_anims_.empty()) {
 		return true;
@@ -486,28 +504,19 @@ private:
 	tintegrate* integrate_;
 };
 
-void tcontrol::impl_draw_background(surface& frame_buffer)
-{
-	DBG_GUI_D << LOG_HEADER
-			<< " label '" << debug_truncate(label_)
-			<< "' size " << get_rect()
-			<< ".\n";
-
-	tshare_canvas_integrate_lock lock(integrate_);
-	canvas(get_state()).blit(frame_buffer, get_rect(), get_dirty(), pre_anims_, post_anims_);
-}
-
 void tcontrol::impl_draw_background(
 		  surface& frame_buffer
 		, int x_offset
 		, int y_offset)
 {
-	DBG_GUI_D << LOG_HEADER
-			<< " label '" << debug_truncate(label_)
-			<< "' size " << get_rect()
-			<< ".\n";
+	const surface* surf = NULL;
+	if (!surfs_.empty()) {
+		surf = &surfs_[get_state()];
+	}
 
-	tshare_canvas_integrate_lock lock(integrate_);
+	tshare_canvas_image_lock lock1(surf);
+	tshare_canvas_integrate_lock lock2(integrate_);
+
 	canvas(get_state()).blit(frame_buffer, calculate_blitting_rectangle(x_offset, y_offset), get_dirty(), pre_anims_, post_anims_);
 }
 

@@ -823,17 +823,6 @@ void tscrollbar_container::
 	}
 }
 
-void tscrollbar_container::impl_draw_children(surface& frame_buffer)
-{
-	assert(get_visible() == twidget::VISIBLE
-			&& content_grid_->get_visible() == twidget::VISIBLE);
-
-	// Inherited.
-	tcontainer_::impl_draw_children(frame_buffer);
-
-	content_grid_->draw_children(frame_buffer);
-}
-
 void tscrollbar_container::impl_draw_children(
 		  surface& frame_buffer
 		, int x_offset
@@ -868,10 +857,12 @@ void tscrollbar_container::child_populate_dirty_list(twindow& caller,
 	content_grid_->populate_dirty_list(caller, child_call_stack);
 }
 
-void tscrollbar_container::set_content_size(
-		const tpoint& origin, const tpoint& size)
+void tscrollbar_container::set_content_size(const tpoint& origin, const tpoint& size)
 {
-	content_grid_->place(origin, size);
+	const SDL_Rect& rect = content_grid_->fix_rect();
+	if (!rect.w || !rect.h) {
+		content_grid_->place(origin, size);
+	}
 }
 
 void tscrollbar_container::show_content_rect(const SDL_Rect& rect)

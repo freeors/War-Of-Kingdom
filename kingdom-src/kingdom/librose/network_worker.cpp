@@ -87,6 +87,8 @@ typedef int socklen_t;
 #  endif
 #endif
 
+#include "posix.h"
+
 static lg::log_domain log_network("network");
 #define DBG_NW LOG_STREAM(debug, log_network)
 #define LOG_NW LOG_STREAM(info, log_network)
@@ -215,14 +217,14 @@ bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 			return (ret_size && *ret_size)? true: false;
 		} else if (bytes_read < 0) {
 #if defined(EAGAIN) && !defined(__BEOS__) && !defined(_WIN32)
-			if(errno == EAGAIN)
-#elif defined(EWOULDBLOCK)
-			if(errno == EWOULDBLOCK)
+			if (errno == EAGAIN)
 #elif defined(_WIN32) && defined(WSAEWOULDBLOCK)
-			if(WSAGetLastError() == WSAEWOULDBLOCK)
+			if (WSAGetLastError() == WSAEWOULDBLOCK)
+#elif defined(EWOULDBLOCK)
+			if (errno == EWOULDBLOCK)
 #else
 			// assume non-recoverable error.
-			if(false)
+			if (false)
 #endif
 			{
 				if (ret_size) {

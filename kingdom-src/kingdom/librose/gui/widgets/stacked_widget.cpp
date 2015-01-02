@@ -40,21 +40,29 @@ tstacked_widget::tstacked_widget()
 void tstacked_widget::child_populate_dirty_list(twindow& caller,
 		const std::vector<twidget*>& call_stack)
 {
-	std::vector<std::vector<twidget*> >& dirty_list = caller.dirty_list();
-	size_t dirty_size = dirty_list.size();
+	std::vector<twidget*> layers;
+	for (size_t n = 0; n < generator_->get_item_count(); ++ n) {
+		std::vector<tdirty_list>& dirty_list = caller.dirty_list();
+		size_t dirty_size = dirty_list.size();
 
-	for(size_t i = 0; i < generator_->get_item_count(); ++i) {
-		std::vector<twidget*> child_call_stack = call_stack;
-		generator_->item(i).populate_dirty_list(caller, child_call_stack);
-		
-		if (dirty_list.size() != dirty_size) {
-			std::vector<std::vector<twidget*> >::iterator it = dirty_list.begin();
-			for (std::advance(it, dirty_size); it != dirty_list.end(); ) {
-				it = dirty_list.erase(it);
-			}
-			caller.add_to_dirty_list(call_stack);
-			return;
+		// tgrid <==> [layer]
+		tgrid& grid = generator_->item(n);
+		if (grid.get_visible() != twidget::VISIBLE) {
+			continue;
 		}
+		std::vector<twidget*> child_call_stack = call_stack;
+		if (n > 0) {
+			child_call_stack.insert(child_call_stack.end(), layers.begin(), layers.end());
+		}
+		grid.populate_dirty_list(caller, child_call_stack);
+	
+		if (n > 0 && dirty_list.size() != dirty_size) {
+			std::vector<tdirty_list>::iterator it = dirty_list.begin();
+			for (std::advance(it, dirty_size); it != dirty_list.end(); ++ it) {
+				it->children = layers;
+			}
+		}
+		layers.push_back(&grid);
 	}
 }
 
@@ -64,6 +72,32 @@ void tstacked_widget::layout_children()
 	for(unsigned i = 0; i < generator_->get_item_count(); ++i) {
 		generator_->item(i).layout_children();
 	}
+}
+
+
+twidget* tstacked_widget::find_at(const tpoint& coordinate, const bool must_be_active)
+{ 
+	for (int n = generator_->get_item_count() - 1; n >= 0; n --) {
+		tgrid& grid = generator_->item(n);
+		if (grid.get_visible() == twidget::INVISIBLE) {
+			continue;
+		}
+		return grid.find_at(coordinate, must_be_active);
+	}
+	return NULL;
+}
+
+/** Inherited from tcontrol. */
+const twidget* tstacked_widget::find_at(const tpoint& coordinate, const bool must_be_active) const
+{ 
+	for (int n = generator_->get_item_count() - 1; n >= 0; n --) {
+		const tgrid& grid = generator_->item(n);
+		if (grid.get_visible() == twidget::INVISIBLE) {
+			continue;
+		}
+		return grid.find_at(coordinate, must_be_active);
+	}
+	return NULL;
 }
 
 namespace {

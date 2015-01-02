@@ -72,7 +72,7 @@ std::string tintegrate::generate_format(const std::string& text, const std::stri
 	// text maybe have sapce character.
 	strstr << "<format>text='" << text << "'";
 	if (!color.empty()) {
-		strstr << " color=" << color;
+		strstr << " color='" << color << "'";
 	}
 	if (font_size) {
 		strstr << " font_size=" << font_size;
@@ -95,7 +95,7 @@ std::string tintegrate::generate_format(int val, const std::string& color, int f
 	// text maybe have sapce character.
 	strstr << "<format>text='" << val << "'";
 	if (!color.empty()) {
-		strstr << " color=" << color;
+		strstr << " color='" << color << "'";
 	}
 	if (font_size) {
 		strstr << " font_size=" << font_size;

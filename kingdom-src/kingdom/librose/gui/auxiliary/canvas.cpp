@@ -37,7 +37,6 @@
 
 #include <boost/foreach.hpp>
 
-extern int dbg_times;
 namespace gui2 {
 
 namespace {
@@ -1073,7 +1072,7 @@ void timage::draw(surface& canvas
 	 * The locator might return a different surface for every call so we can't
 	 * cache the output, also not if no formula is used.
 	 */
-	if (!share_canvas_image) {
+	if (!share_canvas_image || share_canvas_image->null()) {
 		surface tmp(image::get_image(image::locator(name)));
 		if (!tmp) {
 			ERR_GUI_D << "Image: '" << name << "' not found and won't be drawn.\n";
@@ -1081,7 +1080,8 @@ void timage::draw(surface& canvas
 		}
 		image_.assign(make_neutral_surface(tmp));
 	} else {
-		image_.assign(make_neutral_surface(*share_canvas_image));
+		// to share image, must set width/height to original size. so cannot change share_canvas_image.
+		image_ = *share_canvas_image;
 	}
 	assert(image_);
 	src_clip_ = ::create_rect(0, 0, image_->w, image_->h);
@@ -1402,18 +1402,22 @@ void ttext::draw(surface& canvas
 			, _("Text doesn't start on canvas."));
 
 	// A text might be to long and will be clipped.
-	if(surf->w > static_cast<int>(w)) {
-		WRN_GUI_D << "Text: text is too wide for the "
-				"canvas and will be clipped.\n";
+	SDL_Rect clip = ::create_rect(0, 0, surf->w, surf->h);
+	if (surf->w > canvas->w) {
+		// Text: text is too wide for the canvas and will be clipped.;
+		// clip.x += (surf->w - canvas->w) / 2;
+		// clip.w -= surf->w - canvas->w;
 	}
 
-	if(surf->h > static_cast<int>(h)) {
-		WRN_GUI_D << "Text: text is too high for the "
-				"canvas and will be clipped.\n";
+	if (surf->h > canvas->h) {
+		// Text: text is too high for the canvas and will be clipped.
+		// extract center. when one line text, top/button aybe hollow.
+		clip.y += (surf->h - canvas->h) / 2;
+		clip.h -= surf->h - canvas->h;
 	}
 
 	SDL_Rect dst = ::create_rect(x, y, canvas->w, canvas->h);
-	blit_surface(surf, 0, canvas, &dst);
+	blit_surface(surf, &clip, canvas, &dst);
 	// sdl_blit(surf, 0, canvas, &dst);
 }
 
@@ -1623,7 +1627,6 @@ void tcanvas::draw(surface& frame_buffer, const SDL_Rect& canvas_clip_rect, bool
 		}
 
 	} else {
-
 		// undraw
 		for (std::vector<int>::const_reverse_iterator ritor = post_anims.rbegin(); ritor != post_anims.rend(); ++ ritor) {
 			float_animation& anim = *dynamic_cast<float_animation*>(&disp.area_anim(*ritor));
@@ -1670,9 +1673,16 @@ void tcanvas::draw(surface& frame_buffer, const SDL_Rect& canvas_clip_rect, bool
 
 void tcanvas::blit(surface& surf, SDL_Rect rect, bool force, const std::vector<int>& pre_anims, const std::vector<int>& post_anims)
 {
+	if (shapes_.empty()) {
+		return;
+	}
+
 	{
 		SDL_Rect r = rect;
 		SDL_Rect clip_rect = calculate_screen_clip_rect(w_, h_, surf, &r);
+		if (clip_rect.w <= 0 || clip_rect.h <= 0) {
+			return;
+		}
 		draw(surf, clip_rect, force, pre_anims, post_anims);
 	}
 
@@ -1694,9 +1704,7 @@ void tcanvas::blit(surface& surf, SDL_Rect rect, bool force, const std::vector<i
 		surface_is_opaque.set_retval(is_opaque(canvas_, true));
 	}
 
-	if (!shapes_.empty()) {
-		sdl_blit(canvas_, NULL, surf, &rect);
-	}
+	sdl_blit(canvas_, NULL, surf, &rect);
 }
 
 void tcanvas::parse_cfg(const config& cfg, std::vector<tshape_ptr>& shapes, unsigned* blur_depth)

@@ -58,8 +58,6 @@
 
 extern int cached_draw_events;
 
-int dbg_times = 0;
-
 namespace gui2{
 
 namespace implementation {
@@ -281,6 +279,7 @@ twindow::twindow(CVideo& video,
 		const unsigned maximum_width,
 		const unsigned maximum_height,
 		const std::string& definition,
+		const bool theme,
 		const twindow_builder::tresolution::ttip& tooltip,
 		const twindow_builder::tresolution::ttip& helptip)
 	: tpanel()
@@ -314,6 +313,7 @@ twindow::twindow(CVideo& video,
 	, linked_size_()
 	, dirty_list_()
 	, bg_opaque_(t_unset)
+	, fix_coordinate_(theme)
 #ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
 	, debug_layout_(new tdebug_layout_graph(this))
 #endif
@@ -434,7 +434,7 @@ void twindow::update_screen_size()
 {
 	// Only if we're the toplevel window we need to update the size, otherwise
 	// it's done in the resize event.
-	if(draw_interval == 0) {
+	if (draw_interval == 0) {
 		const SDL_Rect rect = screen_area();
 		settings::screen_width = rect.w;
 		settings::screen_height = rect.h;
@@ -617,7 +617,7 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 		suspend_drawing_ = true;
 
 		// restore area
-		if(restore) {
+		if (restore) {
 			SDL_Rect rect = get_rect();
 			sdl_blit(restorer_, 0, video_.getSurface(), &rect);
 			font::undraw_floating_labels(video_.getSurface());
@@ -628,7 +628,7 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 	suspend_drawing_ = true;
 
 	// restore area
-	if(restore) {
+	if (restore) {
 		SDL_Rect rect = get_rect();
 		sdl_blit(restorer_, 0, video_.getSurface(), &rect);
 		font::undraw_floating_labels(video_.getSurface());
@@ -637,27 +637,33 @@ int twindow::show(const bool restore, const unsigned auto_close_timeout)
 	return retval_;
 }
 
+int twindow::asyn_show()
+{
+	bg_opaque_ = t_true;
+	show_mode_ = modal;
+	suspend_drawing_ = false;
+	return retval_;
+}
+
 void twindow::draw()
 {
-	dbg_times ++;
-
+	display::tcanvas_drawing_buffer_lock lock(*display::get_singleton());
 	/***** ***** ***** ***** Init ***** ***** ***** *****/
 	// Prohibited from drawing?
-	if(suspend_drawing_) {
+	if (suspend_drawing_) {
 		return;
 	}
 
 	surface frame_buffer = video_.getSurface();
 
 	/***** ***** Layout and get dirty list ***** *****/
-	uint32_t start = SDL_GetTicks();
-	bool need_layout_org = need_layout_;
-
 	if (need_layout_) {
+		VALIDATE(!fix_coordinate_, "layout must not be false during draw.");
+
 		// Restore old surface. In the future this phase will not be needed
 		// since all will be redrawn when needed with dirty rects. Since that
 		// doesn't work yet we need to undraw the window.
-		if(restorer_) {
+		if (restorer_) {
 			SDL_Rect rect = get_rect();
 			sdl_blit(restorer_, 0, frame_buffer, &rect);
 			// Since the old area might be bigger as the new one, invalidate
@@ -674,7 +680,7 @@ void twindow::draw()
 		restorer_ = get_surface_portion(frame_buffer, rect);
 
 		// Need full redraw so only set ourselves dirty.
-		dirty_list_.push_back(std::vector<twidget*>(1, this));
+		add_to_dirty_list(std::vector<twidget*>(1, this));
 	} else {
 
 		// Let widgets update themselves, which might dirty some things.
@@ -682,13 +688,7 @@ void twindow::draw()
 
 		// Now find the widgets that are dirty.
 		std::vector<twidget*> call_stack;
-		if (!new_widgets) {
-			populate_dirty_list(*this, call_stack);
-		} else {
-			/* Force to update and redraw the entire screen */
-			dirty_list_.clear();
-			dirty_list_.push_back(std::vector<twidget*>(1, this));
-		}
+		populate_dirty_list(*this, call_stack);
 	}
 
 	if (dirty_list_.empty()) {
@@ -710,24 +710,16 @@ void twindow::draw()
 		return;
 	}
 
+	BOOST_FOREACH(tdirty_list& list, dirty_list_) {
 
-	BOOST_FOREACH(std::vector<twidget*>& item, dirty_list_) {
+		std::vector<twidget*>& item = list.dirty;
+		std::vector<twidget*>& children = list.children;
 
-		assert(!item.empty());
+		twidget* terminal = item.back();
 
-		const SDL_Rect dirty_rect = new_widgets
-				? screen_area()
-				: item.back()->get_dirty_rect();
+		const SDL_Rect dirty_rect = terminal->get_dirty_rect();
 
-// For testing we disable the clipping rect and force the entire screen to
-// update. This way an item rendered at the wrong place is directly visible.
-#if 0
-		dirty_list_.clear();
-		dirty_list_.push_back(std::vector<twidget*>(1, this));
-#else
 		clip_rect_setter clip(frame_buffer, &dirty_rect);
-#endif
-
 		/*
 		 * The actual update routine does the following:
 		 * - Restore the background.
@@ -749,14 +741,12 @@ void twindow::draw()
 		 * on the dirty list.
 		 */
 
-		for(std::vector<twidget*>::iterator itor = item.begin();
-				itor != item.end(); ++itor) {
+		for (std::vector<twidget*>::iterator itor = item.begin(); itor != item.end(); ++itor) {
 
-			if((**itor).get_visible() != twidget::VISIBLE
+			if ((**itor).get_visible() != twidget::VISIBLE
 					|| (**itor).get_drawing_action() == twidget::NOT_DRAWN) {
 
-				for(std::vector<twidget*>::iterator citor = itor;
-						citor != item.end(); ++citor) {
+				for (std::vector<twidget*>::iterator citor = itor; citor != item.end(); ++citor) {
 
 					(**citor).set_dirty(false);
 				}
@@ -779,58 +769,36 @@ void twindow::draw()
 		 * as parameter should also be removed since they will be unused from
 		 * that moment.
 		 */
-#if 0
-		if(new_widgets)
-#else
-		if (true)
-#endif
-		{
-			// Background.
-			for (std::vector<twidget*>::iterator itor = item.begin(); itor != item.end(); ++itor) {
 
-				if (bg_opaque_ != t_unset) {
-					(**itor).draw_background(frame_buffer, 0, 0);
+		// Background.
+		for (std::vector<twidget*>::iterator itor = item.begin(); itor != item.end(); ++ itor) {
+			twidget* widget = *itor;
 
-				} else {
-					surface_is_opaque.set_request();
-					(**itor).draw_background(frame_buffer, 0, 0);
-					bg_opaque_ = surface_is_opaque.retval()? t_true: t_false;
-				}
+			if (bg_opaque_ != t_unset) {
+				widget->draw_background(frame_buffer, 0, 0);
+
+			} else {
+				surface_is_opaque.set_request();
+				widget->draw_background(frame_buffer, 0, 0);
+				bg_opaque_ = surface_is_opaque.retval()? t_true: t_false;
 			}
-
-			// Children.
-			if (!item.empty()) {
-				item.back()->draw_children(frame_buffer, 0, 0);
-			}
-
-			// Foreground.
-			for (std::vector<twidget*>::reverse_iterator ritor = item.rbegin(); ritor != item.rend(); ++ritor) {
-				twidget& widget = **ritor;
-				widget.draw_foreground(frame_buffer, 0, 0);
-				widget.set_dirty(false);
-			}
-		} else {
-			// Background.
-			for(std::vector<twidget*>::iterator itor = item.begin();
-					itor != item.end(); ++itor) {
-
-				(**itor).draw_background(frame_buffer);
-			}
-
-			// Children.
-			if(!item.empty()) {
-				item.back()->draw_children(frame_buffer);
-			}
-
-			// Foreground.
-			for(std::vector<twidget*>::reverse_iterator ritor = item.rbegin();
-					ritor != item.rend(); ++ritor) {
-
-				(**ritor).draw_foreground(frame_buffer);
-				(**ritor).set_dirty(false);
+			if (widget == terminal || (!children.empty() && std::count(children.begin(), children.end(), widget))) {
+				widget->draw_children(frame_buffer, 0, 0);
 			}
 		}
 
+/*		// Children.
+		if (!item.empty()) {
+			item.back()->draw_children(frame_buffer, 0, 0);
+		}
+*/
+
+		// Foreground.
+		for (std::vector<twidget*>::reverse_iterator ritor = item.rbegin(); ritor != item.rend(); ++ritor) {
+			twidget& widget = **ritor;
+			widget.draw_foreground(frame_buffer, 0, 0);
+			widget.set_dirty(false);
+		}
 	}
 
 	dirty_list_.clear();
@@ -841,7 +809,7 @@ void twindow::draw()
 */
 }
 
-std::vector<std::vector<twidget*> >& twindow::dirty_list()
+std::vector<tdirty_list>& twindow::dirty_list()
 {
 	return dirty_list_;
 }
@@ -875,7 +843,7 @@ twindow::tinvalidate_layout_blocker::~tinvalidate_layout_blocker()
 
 void twindow::invalidate_layout()
 {
-	if(!invalidate_layout_blocked_) {
+	if (!fix_coordinate_ && !invalidate_layout_blocked_) {
 		need_layout_ = true;
 	}
 }
@@ -940,8 +908,6 @@ void twindow::layout()
 
 	log_scope2(log_gui_layout, LOG_SCOPE_HEADER);
 
-	uint32_t start = SDL_GetTicks();
-
 	get_screen_size_variables(variables_);
 
 	// for automatic_placement_ = false, variables_ can use (volatile_width)/(volatile_height) 
@@ -971,16 +937,18 @@ void twindow::layout()
 			: h_(variables_);
 	}
 
+	if (fix_coordinate_) {
+		keep_rect_ = ::create_rect(0, 0, maximum_width, maximum_height);
+	}
+
 	/***** Handle click dismiss status. *****/
 	tbutton* click_dismiss_button = NULL;
-	if((click_dismiss_button
-			= find_widget<tbutton>(this, "click_dismiss", false, false))) {
-
+	if ((click_dismiss_button = find_widget<tbutton>(this, "click_dismiss", false, false))) {
 		click_dismiss_button->set_visible(twidget::INVISIBLE);
 	}
-	if(click_dismiss_) {
+	if (click_dismiss_) {
 		tbutton* button = find_widget<tbutton>(this, "ok", false, false);
-		if(button) {
+		if (button) {
 			button->set_visible(twidget::INVISIBLE);
 			click_dismiss_button = button;
 		}
@@ -994,9 +962,11 @@ void twindow::layout()
 
 	layout_linked_widgets();
 
+
 	try {
 		twindow_implementation::layout(*this, maximum_width, maximum_height);
-	} catch(tlayout_exception_resize_failed&) {
+
+	} catch (tlayout_exception_resize_failed&) {
 
 		/** @todo implement the scrollbars on the window. */
 
@@ -1015,7 +985,7 @@ void twindow::layout()
 	}
 
 	/****** Validate click dismiss status. *****/
-	if(click_dismiss_ && disable_click_dismiss()) {
+	if (click_dismiss_ && disable_click_dismiss()) {
 		assert(click_dismiss_button);
 		click_dismiss_button->set_visible(twidget::VISIBLE);
 
@@ -1033,8 +1003,7 @@ void twindow::layout()
 		layout_linked_widgets();
 
 		try {
-			twindow_implementation::layout(
-					*this, maximum_width, maximum_height);
+			twindow_implementation::layout(*this, maximum_width, maximum_height);
 
 		} catch(tlayout_exception_resize_failed&) {
 
@@ -1111,13 +1080,44 @@ void twindow::layout()
 		origin.y = y_(variables_);
 	}
 
-	/***** Set the window size *****/
-	place(origin, size);
+	if (!fix_coordinate_) {
+		/***** Set the window size *****/
+		place(origin, size);
+
+	} else {
+		tcontrol::place(tpoint(0, 0), tpoint(maximum_width, maximum_height));
+		grid().place_fix(tpoint(0, 0), tpoint(maximum_width, maximum_height));
+	}
 
 	generate_dot_file("layout_finished", LAYOUT);
 	need_layout_ = false;
 
 	event::init_mouse_location();
+}
+
+std::vector<twidget*> twindow::set_fix_coordinate(const SDL_Rect& map_area)
+{
+	fix_coordinate_ = true;
+
+	std::vector<twidget*> result;
+	for (tgrid::iterator it = grid().begin(); it != grid().end(); ++ it) {
+		twidget* widget = *it;
+		if (rects_overlap(widget->fix_rect(), map_area)) {
+			result.push_back(widget);
+			widget->set_volatile(true);
+		}
+	}
+	return result;
+}
+
+tpoint twindow::calculate_best_size() const
+{
+	if (!fix_coordinate_) {
+		return tcontainer_::calculate_best_size();
+	} else {
+		grid().calculate_best_size_fix();
+		return tpoint(keep_rect_.w, keep_rect_.h);
+	}
 }
 
 void twindow::layout_linked_widgets()
@@ -1431,14 +1431,14 @@ void twindow::signal_handler_sdl_video_resize(
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
 
-	if(new_size.x < preferences::min_allowed_width()
+	if (new_size.x < preferences::min_allowed_width()
 			|| new_size.y < preferences::min_allowed_height()) {
 
 		DBG_GUI_E << LOG_HEADER << " resize aborted, too small.\n";
 		return;
 	}
 
-	if(new_size.x == static_cast<int>(settings::screen_width)
+	if (new_size.x == static_cast<int>(settings::screen_width)
 			&& new_size.y == static_cast<int>(settings::screen_height)) {
 
 		DBG_GUI_E << LOG_HEADER << " resize not needed.\n";
@@ -1446,7 +1446,8 @@ void twindow::signal_handler_sdl_video_resize(
 		return;
 	}
 
-	if(!preferences::set_resolution(video_ , new_size.x, new_size.y)) {
+	display& disp = *display::get_singleton();
+	if (!preferences::set_resolution(disp, new_size.x, new_size.y)) {
 
 		LOG_GUI_E << LOG_HEADER
 				<< " resize aborted, resize failed.\n";

@@ -307,7 +307,7 @@ display* create_dummy_display(hero_map& heros, CVideo& video)
 	static config dummy_cfg;
 	static gamemap dummy_map(dummy_cfg, "");
 
-	return new display(video, &dummy_map, dummy_cfg, dummy_cfg);
+	return new display(NULL, video, &dummy_map, dummy_cfg, dummy_cfg, 0);
 }
 
 display& game_controller::disp()
@@ -716,7 +716,8 @@ static int do_gameloop(int argc, char** argv)
 
 			} else if (res == gui2::trose::MESSAGE) {
 				gui2::tchat2 dlg(game.disp(), group);
-				dlg.show(game.disp().video());	
+				display& disp = *display::get_singleton();
+				dlg.show(disp.video());	
 			
 			} else if (res == gui2::trose::SIGNIN) {
 

@@ -106,7 +106,6 @@ public:
 	void set_visible_area(const SDL_Rect& area);
 
 	/** Inherited from twidget. */
-	void impl_draw_children(surface& frame_buffer);
 	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
 protected:
@@ -201,11 +200,12 @@ public:
 	const tgrid& grid() const { return grid_; }
 	tgrid& grid() { return grid_; }
 
-private:
 
+protected:
 	/** The grid which holds the child objects. */
 	tgrid grid_;
 
+private:
 	/**
 	 * Returns the grid to initialize while building.
 	 *

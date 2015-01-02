@@ -58,9 +58,12 @@ struct tgrid_implementation
 			const tpoint& coordinate, const bool must_be_active)
 	{
 		typedef typename utils::tconst_clone<tgrid::tchild, W>::type hack;
-		BOOST_FOREACH(hack& child, grid.children_) {
+		
+		// BOOST_FOREACH(hack& child, grid.children_) {
+		for (size_t n = 0; n < grid.children_vsize_; n ++) {
+			hack& child = grid.children_[n];
 
-			W* widget = child.widget();
+			W* widget = child.widget_;
 			if(!widget) {
 				continue;
 			}
@@ -93,9 +96,11 @@ struct tgrid_implementation
 		}
 
 		typedef typename utils::tconst_clone<tgrid::tchild, W>::type hack;
-		BOOST_FOREACH(hack& child, grid.children_) {
+		// BOOST_FOREACH(hack& child, grid.children_) {
+		for (size_t n = 0; n < grid.children_vsize_; n ++) {
+			hack& child = grid.children_[n];
 
-			widget = child.widget();
+			widget = child.widget_;
 			if(!widget) {
 				continue;
 			}

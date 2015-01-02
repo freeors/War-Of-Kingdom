@@ -23,8 +23,8 @@
 #include "map_context.hpp"
 #include "map_fragment.hpp"
 
-#include "../controller_base.hpp"
-#include "../mouse_handler_base.hpp"
+#include "controller_base.hpp"
+#include "mouse_handler_base.hpp"
 #include "tooltips.hpp"
 
 class map_generator;
@@ -221,16 +221,10 @@ class editor_controller : public controller_base,
 		bool can_execute_command(hotkey::HOTKEY_COMMAND, int index = -1) const;
 
 		/** command_executor override */
-		hotkey::ACTION_STATE get_action_state(hotkey::HOTKEY_COMMAND command, int index) const;
-
-		/** command_executor override */
 		bool execute_command(hotkey::HOTKEY_COMMAND command, int index = -1, std::string str = "");
 
 		/** Menu expanding for open maps list */
 		void expand_open_maps_menu(std::vector<std::string>& items);
-
-		/** controller_base override */
-		void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu);
 
 		/** Cycle to the next brush. */
 		void cycle_brush();
@@ -285,6 +279,9 @@ class editor_controller : public controller_base,
 		void change_brush();
 		void system();
 		void do_map();
+
+		void click_terrain(int tselect);
+		void reload_terrain_palette();
 
 	protected:
 		/* controller_base overrides */
@@ -341,9 +338,6 @@ class editor_controller : public controller_base,
 		/** init background music for the editor */
 		void init_music(const config& game_config);
 
-		/** Load editor-specific tooltips */
-		void load_tooltips();
-
 		void redraw_toolbar();
 
 		/** Reload images */
@@ -398,9 +392,6 @@ class editor_controller : public controller_base,
 
 		/** Pre-defined time of day lighting settings for the settings dialog */
 		std::vector<time_of_day> tods_;
-
-		/** Legacy object required by the legacy terrain palette and brush bar */
-		boost::scoped_ptr<size_specs> size_specs_;
 
 		/** The terrain palette */
 		boost::scoped_ptr<terrain_palette> palette_;

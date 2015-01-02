@@ -63,6 +63,7 @@
 #include "gui/dialogs/square.hpp"
 #include "gui/dialogs/prelude.hpp"
 #include "gui/dialogs/book.hpp"
+#include "gui/dialogs/side_report.hpp"
 #include "gui/widgets/window.hpp"
 
 #include <boost/foreach.hpp>
@@ -384,6 +385,15 @@ void play_controller::recover_layout(int random)
 			current_team.set_gold(0);
 		}
 	}
+}
+
+surface generate_rpg_surface(hero& h)
+{
+	surface genus_surf = image::get_image(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
+	surface hero_surf = image::get_image(h.image());
+	surface masked_surf = mask_surface(hero_surf, image::get_image("buttons/photo-mask.png"));
+	blit_surface(genus_surf, NULL, masked_surf, NULL);
+	return masked_surf;
 }
 
 void play_controller::init(CVideo& video)
@@ -952,6 +962,8 @@ void play_controller::init(CVideo& video)
 	loadscreen::start_stage("build terrain");
 	gui_.reset(new game_display(units_, heros_, this, video, map_, tod_manager_, teams_, theme_cfg, level_));
 	
+	gui_->widget_set_surface("rpg", generate_rpg_surface(*rpg::h));
+
 	for (std::vector<team>::iterator it = teams_.begin(); it != teams_.end(); ++ it) {
 		team& t = *it;
 		t.calculate_strategy_according_to_mode();
@@ -1011,12 +1023,6 @@ void play_controller::init(CVideo& video)
 	slot_cache::str_2_cache(units_, heros_, level_["tactic_cache"]);
 	guard_cache::str_2_cache(units_, heros_, level_["guard_cache"]);
 
-	if (gamestate_.mp_settings().mp_countdown) {
-		gui_->get_theme().modify_label("time-icon", _ ("time left for current turn"));
-	} else {
-		gui_->get_theme().modify_label("time-icon", _ ("current local time"));
-	}
-	
 	loadscreen::start_stage("init display");
 	mouse_handler_.set_gui(gui_.get());
 	menu_handler_.set_gui(gui_.get());
@@ -1832,7 +1838,7 @@ void play_controller::rpg_independence(bool replaying)
 	if (!replaying) {
 		recorder.add_event(replay::EVENT_RPG_INDEPENDENCE, map_location());
 
-		gui_->hide_context_menu(NULL, true);
+		gui_->hide_context_menu();
 
 		if (unit::actor->is_city()) {
 			// end_turn();
@@ -1914,7 +1920,7 @@ void play_controller::employ()
 	int cost = h.cost_ * ratio;
 	do_employ(*this, units_, current_team, h, cost, false);
 
-	show_context_menu(NULL, *gui_);
+	gui_->show_context_menu();
 }
 
 void play_controller::start_pass_scenario_anim(LEVEL_RESULT result) const
@@ -3103,14 +3109,6 @@ bool play_controller::enemies_visible() const
 
 bool play_controller::execute_command(hotkey::HOTKEY_COMMAND command, int index, std::string str)
 {
-	if (index >= 0) {
-		unsigned i = static_cast<unsigned>(index);
-		if (i < savenames_.size() && !savenames_[i].empty()) {
-			// Load the game by throwing load_game_exception
-			throw game::load_game_exception(savenames_[i],false,false);
-
-		}
-	}
 	return command_executor::execute_command(command, index, str);
 }
 
@@ -3626,78 +3624,38 @@ void play_controller::expand_wml_commands(std::vector<std::string>& items)
 	}
 }
 
-// @m: memu object taht will be display
-// @gui: global game_display reference
-void play_controller::show_context_menu(theme::menu* m, display& gui)
+bool play_controller::in_build_menu(const std::string& minor) const
 {
-	uint32_t show_flags = 0, idx_in_u32 = 0, disable_flags = 0;
+	const team& t = current_team();
+	const std::set<const unit_type*>& can_build = t.builds();
 
-	const theme::menu* m_adjusted = m;
-	if (!m) {
-		m_adjusted = gui.get_theme().context_menu("");
-	}
-	if (!m_adjusted) {
-		return;
-	}
-
-	const std::vector<std::string>& items = m_adjusted->items();
-	hotkey::HOTKEY_COMMAND command;
-	std::vector<std::string>::const_iterator i = items.begin();
-	while (i != items.end()) {
-		command = hotkey::get_hotkey(*i).get_id();
-		// Remove commands that can't be executed or don't belong in this type of menu
-		if (in_context_menu(command)) {
-			show_flags |= 1 << idx_in_u32;
-			if (!enable_context_menu(command, mouse_handler_.get_selected_hex())) {
-				disable_flags |= 1 << idx_in_u32;
-			}
-		}
-		idx_in_u32 ++;
-		++ i;
-	}
-	if (!show_flags) {
-		return;
-	}
-
-	gui.hide_context_menu(m_adjusted, false, show_flags, disable_flags);
+	const unit_type* ut = unit_types.id_type(minor);
+	if (!ut) {
+		return false;
+	} 
+	return can_build.find(ut) != can_build.end();
 }
 
-void play_controller::show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu)
+bool play_controller::actived_build_menu(const std::string& minor) const
 {
-	std::vector<std::string> items = items_arg;
-	hotkey::HOTKEY_COMMAND command;
-	std::vector<std::string>::iterator i = items.begin();
-	while(i != items.end()) {
-		command = hotkey::get_hotkey(*i).get_id();
-		// Remove WML commands if they would not be allowed here
-		if(*i == "wml") {
-			if(!context_menu || gui_->viewing_team() != gui_->playing_team()
-			|| events::commands_disabled || !teams_[gui_->viewing_team()].is_human()) {
-				i = items.erase(i);
-				continue;
-			}
-		// Remove commands that can't be executed or don't belong in this type of menu
-		} else if(!can_execute_command(command)
-		|| (context_menu && !in_context_menu(command))) {
-			i = items.erase(i);
-			continue;
-		}
-		++i;
+	const team& t = current_team();
+	const std::set<const unit_type*>& can_build = t.builds();
+
+	const unit_type* ut = unit_types.id_type(minor);
+	if (!ut) {
+		return false;
+	} 
+	if (ut->master() == hero::number_wall && !t.may_build_wall_count()) {
+		return false;
 	}
-
-	// Add special non-hotkey items to the menu and remember their indices
-	// don't show autosave files
-	expand_autosaves(items);
-	expand_wml_commands(items);
-
-	if(items.empty())
-		return;
-
-	command_executor::show_menu(items, xloc, yloc, context_menu, *gui_);
+	return true;
 }
 
-bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
+bool play_controller::in_context_menu(const std::string& id) const
 {
+	std::pair<std::string, std::string> item = gui2::tcontext_menu::extract_item(id);
+	hotkey::HOTKEY_COMMAND command = hotkey::get_hotkey(item.first).get_id();
+
 	// current side must human player
 	const team& current_team = teams_[player_number_ - 1];
 
@@ -3760,6 +3718,9 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 			return false;
 		}
 		if (!itor.valid() || itor->is_artifical() || !itor->human()) {
+			return false;
+		}
+		if (command == hotkey::HOTKEY_BUILD && !in_build_menu(item.second)) {
 			return false;
 		}
 		if (tent::tower_mode()) {
@@ -3925,8 +3886,16 @@ bool play_controller::in_context_menu(hotkey::HOTKEY_COMMAND command) const
 	return false;
 }
 
-bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const map_location& loc) const
+bool play_controller::actived_context_menu(const std::string& id) const
 {
+	return actived_context_menu2(id, mouse_handler_.get_selected_hex());
+}
+
+bool play_controller::actived_context_menu2(const std::string& id, const map_location& loc) const
+{
+	std::pair<std::string, std::string> item = gui2::tcontext_menu::extract_item(id);
+	hotkey::HOTKEY_COMMAND command = hotkey::get_hotkey(item.first).get_id();
+
 	const team& current_team = teams_[player_number_ - 1];
 	const std::vector<artifical*>& holden_cities = current_team.holden_cities();
 	unit_map::const_iterator itor;
@@ -3949,9 +3918,15 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 			if (!wall->terrain_matches(map_.get_terrain(loc))) {
 				return false;
 			}
-			if (!current_team.may_build_count()) {
+			if (!current_team.may_build_wall_count()) {
 				return false;
 			}
+		}
+		break;
+
+	case hotkey::HOTKEY_BUILD:
+		if (!actived_build_menu(item.second)) {
+			return false;
 		}
 		break;
 
@@ -4103,30 +4078,54 @@ bool play_controller::enable_context_menu(hotkey::HOTKEY_COMMAND command, const 
 			return false;
 		}
 		break;
-
-	case hotkey::HOTKEY_BUILD_TACTIC:
-		{
-			map_location adjs[6];
-			get_adjacent_tiles(loc, adjs);
-			BOOST_FOREACH (const map_location &adj, adjs) {
-				if (!map_.on_board(adj)) continue;
-				// Add the tile to be checked if it hasn't already been and
-				// isn't being checked.
-				if (map_.is_ea(adj)) {
-					std::map<const map_location, int>::const_iterator it = unit_map::economy_areas_.find(adj);
-					if (it != unit_map::economy_areas_.end()) {
-						const artifical& city = *units_.city_from_cityno(it->second);
-						if (city.tactic_on_ea()) {
-							return false;
-						}
-					}
-				}
-			}
-		}
-		break;
 	}	
 
 	return true;
+}
+
+void play_controller::prepare_show_menu(gui2::tbutton& widget, const std::string& id, int width, int height) const
+{
+	std::pair<std::string, std::string> item = gui2::tcontext_menu::extract_item(id);
+	hotkey::HOTKEY_COMMAND command = hotkey::get_hotkey(item.first).get_id();
+
+	const team& t = current_team();
+	std::stringstream strstr;
+
+	if (command == hotkey::HOTKEY_BUILD) {
+		int cost_exponent = t.cost_exponent();
+
+		const std::set<const unit_type*>& can_build = t.builds();
+
+		const unit_type* ut = unit_types.id_type(item.second);
+		if (!ut) {
+			return;
+		} 
+		
+		strstr.str("");
+		strstr << "buttons/" << item.second << ".png";
+		int cost = ut->cost() * cost_exponent / 100;
+		if (tent::tower_mode()) {
+			// increase wall's cost.
+			cost *= game_config::tower_cost_ratio;
+		}
+		surface surf = generate_surface(width, height, strstr.str(), cost, false);
+		widget.set_surface(surf, width, height);
+
+	} else if (command == hotkey::HOTKEY_BUILD_M) {
+		if (tent::tower_mode()) {
+			strstr.str("");
+			strstr << "buttons/" << item.first << ".png";
+
+			surface surf = generate_surface(width, height, strstr.str(), t.may_build_wall_count(), false);
+			widget.set_surface(surf, width, height);
+		}
+
+	} else if (command == hotkey::HOTKEY_ABOLISH) {
+		strstr.str("");
+		strstr << "buttons/" << item.first << ".png";
+		surface surf = generate_pip_surface(width, height, strstr.str(), "buttons/icon-guard.png");
+		widget.set_surface(surf, width, height);
+	}
 }
 
 void play_controller::refresh_city_buttons(const artifical& city) const
@@ -4139,42 +4138,18 @@ void play_controller::refresh_city_buttons(const artifical& city) const
 	};
 	static int nb = sizeof(city_buttons) / sizeof(hotkey::HOTKEY_COMMAND);
 	for (int i = 0; i < nb; i ++) {
-		gui::button* b = gui_->find_button(hotkey::get_hotkey(city_buttons[i]).get_command());
-		if (b) {
-			b->enable(enable_context_menu(city_buttons[i], city.get_location()));
+		gui2::tbutton* widget = dynamic_cast<gui2::tbutton*>(gui_->get_theme_object(hotkey::get_hotkey(city_buttons[i]).get_command()));
+		if (widget) {
+			widget->set_active(actived_context_menu2(widget->id(), city.get_location()));
 		}
 	}
-}
-
-std::string play_controller::get_action_image(hotkey::HOTKEY_COMMAND command, int index) const
-{
-	if(index >= 0 && index < static_cast<int>(wml_commands_.size())) {
-		wml_menu_item* const& wmi = wml_commands_[index];
-		if(wmi != NULL) {
-			return wmi->image.empty() ? game_config::images::wml_menu : wmi->image;
-		}
-	}
-	return command_executor::get_action_image(command, index);
-}
-
-hotkey::ACTION_STATE play_controller::get_action_state(hotkey::HOTKEY_COMMAND command, int /*index*/) const
-{
-	switch(command) {
-	case hotkey::HOTKEY_DELAY_SHROUD:
-		return teams_[gui_->viewing_team()].auto_shroud_updates() ? hotkey::ACTION_OFF : hotkey::ACTION_ON;
-	default:
-		return hotkey::ACTION_STATELESS;
-	}
-}
-
-namespace {
-	static const std::string empty_str = "";
 }
 
 const std::string& play_controller::select_victory_music() const
 {
-	if(victory_music_.empty())
-		return empty_str;
+	if (victory_music_.empty()) {
+		return null_str;
+	}
 
 	const size_t p = gamestate_.rng().get_next_random() % victory_music_.size();
 	assert(p < victory_music_.size());
@@ -4183,8 +4158,9 @@ const std::string& play_controller::select_victory_music() const
 
 const std::string& play_controller::select_defeat_music() const
 {
-	if(defeat_music_.empty())
-		return empty_str;
+	if (defeat_music_.empty()) {
+		return null_str;
+	}
 
 	const size_t p = gamestate_.rng().get_next_random() % defeat_music_.size();
 	assert(p < defeat_music_.size());
@@ -5485,3 +5461,30 @@ void play_controller::do_build(team& builder_team, unit* builder, const unit_typ
 	unit_display::unit_build(*map_art);
 }
 
+void play_controller::click_access_list(void* cookie, int type)
+{
+	unit* u = reinterpret_cast<unit*>(cookie);
+	hero* h = reinterpret_cast<hero*>(cookie);
+
+	if (type == game_display::taccess_list::HERO) {
+		mouse_handler_.set_hero_placing(h);
+		
+	} else if (!mouse_handler_.in_multistep_state()) {
+		// sound::play_UI_sound("select-unit.wav");
+		const map_location& loc = u->get_location();
+		if (!u->is_city() || u->side() - 1 != gui_->playing_team()) {
+			gui_->scroll_to_tile(loc, display::WARP);
+			mouse_handler_.select_hex(map_location(), false);
+
+			u->set_selecting();
+			gui_->invalidate_unit();
+			// now, selectedHex_ is invalid, hide context menu.
+			gui_->goto_main_context_menu();			
+		} else {
+			mouse_handler_.select_hex(map_location(), false);
+
+			gui2::tside_report dlg(*gui_, teams_, units_, heros_, u->side());
+			dlg.show(gui_->video());
+		}
+	}
+}

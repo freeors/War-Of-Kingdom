@@ -57,6 +57,10 @@ public:
 
 	unsigned get_state() const { return state_; }
 
+	bool exist_anim();
+
+	void set_auto_scroll(bool val) { auto_scroll_ = val; }
+
 private:
 	tpoint pre_request_fix_width(const unsigned maximum_content_grid_width);
 	/**
@@ -77,6 +81,9 @@ private:
 	 */
 	tstate state_;
 
+	bool auto_scroll_;
+	Uint32 last_scroll_ticks_;
+	
 	void finalize_subclass();
 
 	/***** ***** ***** inherited ****** *****/

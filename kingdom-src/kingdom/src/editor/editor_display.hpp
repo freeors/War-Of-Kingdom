@@ -18,15 +18,27 @@
 
 #include "editor_map.hpp"
 #include "display.hpp"
+#include "editor_palettes.hpp"
+
+namespace gui2 {
+
+class treport;
+
+}
 
 namespace editor {
+
+class editor_controller;
 
 class editor_display : public display
 {
 public:
-	editor_display(CVideo& video, const editor_map& map, const config& theme_cfg,
+	editor_display(editor_controller& controller, CVideo& video, const editor_map& map, const config& theme_cfg,
 			const config& level);
 	~editor_display();
+
+	gui2::ttheme* create_theme_dlg(const config& cfg);
+	void post_change_resolution(const std::map<const std::string, bool>& actives);
 
 	bool in_editor() const { return true; }
 
@@ -37,6 +49,20 @@ public:
 	const editor_map& map() const { return static_cast<const editor_map&>(get_map()); }
 	void rebuild_terrain(const map_location &loc);
 	void set_toolbar_hint(const std::string& value) { toolbar_hint_ = value; }
+
+	void reload_terrain_palette(const t_translation::t_list& terrains);
+	
+	/** Scroll the terrain-palette up one step if possible. */
+	void scroll_up();
+
+	/** Scroll the terrain-palette down one step if possible. */
+	void scroll_down();
+
+	/** Scroll the terrain-palette to the top. */
+	void scroll_top();
+
+	/** Scroll the terrain-palette to the bottom. */
+	void scroll_bottom();
 
 protected:
 	void pre_draw();
@@ -50,8 +76,11 @@ protected:
 	const SDL_Rect& get_clip_rect();
 	void draw_sidebar();
 
+	editor_controller& controller_;
 	std::set<map_location> brush_locations_;
 	std::string toolbar_hint_;
+
+	gui2::treport* terrain_palette_;
 };
 
 } //end namespace editor

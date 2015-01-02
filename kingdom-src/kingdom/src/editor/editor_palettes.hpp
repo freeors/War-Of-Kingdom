@@ -23,7 +23,6 @@
 
 #include "display.hpp"
 #include "brush.hpp"
-#include "editor_layout.hpp"
 
 namespace editor {
 /**
@@ -42,26 +41,14 @@ struct terrain_group
 };
 
 /** Palette where the terrain to be drawn can be selected. */
-class terrain_palette : public gui::widget {
+class terrain_palette 
+{
 public:
-	terrain_palette(display &gui, const size_specs &sizes,
-					const config& cfg,
+	terrain_palette(display &gui, const config& cfg,
 					t_translation::t_terrain& fore,
 					t_translation::t_terrain& back);
 
 	const gamemap& map() const { return gui_.get_map(); }
-
-	/** Scroll the terrain-palette up one step if possible. */
-	void scroll_up();
-
-	/** Scroll the terrain-palette down one step if possible. */
-	void scroll_down();
-
-	/** Scroll the terrain-palette to the top. */
-	void scroll_top();
-
-	/** Scroll the terrain-palette to the bottom. */
-	void scroll_bottom();
 
 	/**
 	 * Sets a group active id == terrain_map_->first
@@ -82,48 +69,16 @@ public:
 	void select_fg_terrain(t_translation::t_terrain);
 	void select_bg_terrain(t_translation::t_terrain);
 
-	/**
-	 * Draw the palette.
-	 *
-	 * If force is true everything will be redrawn,
-	 * even though it is not invalidated.
-	 */
-	void draw(bool force=false);
-	virtual void draw();
-	virtual void handle_event(const SDL_Event& event);
-	void set_dirty(bool dirty=true);
-
 	/** Return the number of terrains in the palette. */
 	size_t num_terrains() const;
 
-	/**
-	 * Update the size of this widget.
-	 *
-	 * Use if the size_specs have changed.
-	 */
-	void adjust_size();
-
-	/** Sets the tooltips used in the palette */
-	void load_tooltips();
-
 	const std::vector<terrain_group>& terrain_groups() const { return terrain_groups_; }
 	const std::string& current_group_id() const { return current_group_id_; }
+	const t_translation::t_list& terrains() const { return terrains_; }
 
+	void click_terrain(int tselect);
 private:
 	void draw_old(bool);
-
-	/**
-	 * To be called when a mouse click occurs.
-	 *
-	 * Check if the coordinates is a terrain that may be chosen,
-	 * and select the terrain if that is the case.
-	 */
-	void left_mouse_click(const int mousex, const int mousey);
-	void right_mouse_click(const int mousex, const int mousey);
-
-
-	/** Return the number of the tile that is at coordinates (x, y) in the panel. */
-	int tile_selected(const int x, const int y) const;
 
 	/** Return a string represeting the terrain and the underlying ones. */
 	std::string get_terrain_string(const t_translation::t_terrain);
@@ -131,7 +86,6 @@ private:
 	/** Update the report with the currently selected terrains. */
 	void update_report();
 
-	const size_specs &size_specs_;
 	display &gui_;
 	unsigned int tstart_;
 

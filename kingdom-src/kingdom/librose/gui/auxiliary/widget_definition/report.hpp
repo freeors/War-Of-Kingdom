@@ -1,4 +1,4 @@
-/* $Id: minimap.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
+/* $Id: listbox.hpp 52533 2012-01-07 02:35:17Z shadowmaster $ */
 /*
    Copyright (C) 2007 - 2012 by Mark de Wever <koraq@xs4all.nl>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
@@ -13,22 +13,26 @@
    See the COPYING file for more details.
 */
 
-#ifndef GUI_AUXILIARY_WIDGET_DEFINITION_THEME_HPP_INCLUDED
-#define GUI_AUXILIARY_WIDGET_DEFINITION_THEME_HPP_INCLUDED
+#ifndef GUI_AUXILIARY_WIDGET_DEFINITION_REPORT_HPP_INCLUDED
+#define GUI_AUXILIARY_WIDGET_DEFINITION_REPORT_HPP_INCLUDED
 
 #include "gui/auxiliary/widget_definition.hpp"
+#include "gui/auxiliary/window_builder.hpp"
 
 namespace gui2 {
 
-struct ttheme_definition
+struct treport_definition
 	: public tcontrol_definition
 {
-	explicit ttheme_definition(const config& cfg);
+
+	explicit treport_definition(const config& cfg);
 
 	struct tresolution
 		: public tresolution_definition_
 	{
 		explicit tresolution(const config& cfg);
+
+		tbuilder_grid_ptr grid;
 	};
 };
 

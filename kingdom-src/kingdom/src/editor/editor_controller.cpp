@@ -139,7 +139,6 @@ editor_controller::editor_controller(const config &game_config, CVideo& video, h
 	, gui_(NULL)
 	, map_generators_()
 	, tods_()
-	, size_specs_()
 	, palette_()
 	, prefs_disp_manager_(NULL)
 	, tooltip_manager_(video)
@@ -178,21 +177,8 @@ editor_controller::editor_controller(const config &game_config, CVideo& video, h
 	get_map_context().set_starting_position_labels(gui());
 	cursor::set(cursor::NORMAL);
 	image::set_color_adjustment(preferences::editor::tod_r(), preferences::editor::tod_g(), preferences::editor::tod_b());
-	theme& theme = gui().get_theme();
-	const theme::menu* default_tool_menu = NULL;
-	BOOST_FOREACH (const theme::menu& m, theme.menus()) {
-		std::string s = m.get_id();
-		if (m.get_id() == "draw_button_editor") {
-			default_tool_menu = &m;
-			break;
-		}
-	}
 	refresh_all();
 	events::raise_draw_event();
-	if (default_tool_menu != NULL) {
-		const SDL_Rect& menu_loc = default_tool_menu->location(get_display().screen_area());
-		show_menu(default_tool_menu->items(),menu_loc.x+1,menu_loc.y + menu_loc.h + 1,false);
-	}
 
 	map_type = tmap_type();
 	if (mode_ != NONE) {
@@ -208,7 +194,7 @@ editor_controller::editor_controller(const config &game_config, CVideo& video, h
 void editor_controller::init_gui(CVideo& video)
 {
 	const config &theme_cfg = get_theme(game_config_, "editor");
-	gui_.reset(new editor_display(video, get_map(), theme_cfg, config()));
+	gui_.reset(new editor_display(*this, video, get_map(), theme_cfg, config()));
 	gui_->set_grid(preferences::grid());
 	prefs_disp_manager_.reset(new preferences::display_manager(&gui()));
 	gui_->add_redraw_observer(boost::bind(&editor_controller::display_redraw_callback, this, _1));
@@ -219,10 +205,14 @@ void editor_controller::init_gui(CVideo& video)
 
 void editor_controller::init_sidebar(const config& game_config)
 {
-	size_specs_.reset(new size_specs());
-	adjust_sizes(gui(), *size_specs_);
-	palette_.reset(new terrain_palette(gui(), *size_specs_, game_config,
+	palette_.reset(new terrain_palette(gui(), game_config,
 		foreground_terrain_, background_terrain_));
+	gui_->reload_terrain_palette(palette_->terrains());
+}
+
+void editor_controller::reload_terrain_palette()
+{
+	gui_->reload_terrain_palette(palette_->terrains());
 }
 
 void editor_controller::init_brushes(const config& game_config)
@@ -250,15 +240,6 @@ void editor_controller::init_mouse_actions(const config& game_config)
 		new mouse_action_starting_position(key_)));
 	mouse_actions_.insert(std::make_pair(hotkey::HOTKEY_EDITOR_PASTE,
 		new mouse_action_paste(clipboard_, key_)));
-	BOOST_FOREACH (const theme::menu& menu, gui().get_theme().menus()) {
-		if (menu.items().size() == 1) {
-			hotkey::HOTKEY_COMMAND hk = hotkey::get_hotkey(menu.items().front()).get_id();
-			mouse_action_map::iterator i = mouse_actions_.find(hk);
-			if (i != mouse_actions_.end()) {
-				i->second->set_toolbar_button(&menu);
-			}
-		}
-	}
 	BOOST_FOREACH (const config &c, game_config.child_range("editor_tool_hint")) {
 		mouse_action_map::iterator i =
 			mouse_actions_.find(hotkey::get_hotkey(c["id"]).get_id());
@@ -310,12 +291,6 @@ void editor_controller::init_music(const config& game_config)
 	sound::commit_music_changes();
 }
 
-
-void editor_controller::load_tooltips()
-{
-	// Tooltips for the groups
-	palette_->load_tooltips();
-}
 
 editor_controller::~editor_controller()
 {
@@ -969,25 +944,11 @@ bool editor_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int 
 	}
 }
 
-hotkey::ACTION_STATE editor_controller::get_action_state(hotkey::HOTKEY_COMMAND command, int index) const {
-	using namespace hotkey;
-	switch (command) {
-		case HOTKEY_EDITOR_TOOL_PAINT:
-		case HOTKEY_EDITOR_TOOL_FILL:
-		case HOTKEY_EDITOR_TOOL_SELECT:
-		case HOTKEY_EDITOR_TOOL_STARTING_POSITION:
-			return is_mouse_action_set(command) ? ACTION_ON : ACTION_OFF;
-		case HOTKEY_NULL:
-			return index == current_context_index_ ? ACTION_ON : ACTION_OFF;
-		default:
-			return command_executor::get_action_state(command, index);
-	}
-}
-
 bool editor_controller::execute_command(hotkey::HOTKEY_COMMAND command, int index, std::string str)
 {
 	SCOPE_ED;
 	using namespace hotkey;
+	const int zoom_amount = 4;
 	switch (command) {
 		case HOTKEY_NULL:
 			if (index >= 0) {
@@ -1131,10 +1092,10 @@ bool editor_controller::execute_command(hotkey::HOTKEY_COMMAND command, int inde
 			do_map();
 			return true;
 		case HOTKEY_UP:
-			palette_->scroll_up();
+			gui_->scroll_up();
 			return true;
 		case HOTKEY_DOWN:
-			palette_->scroll_down();
+			gui_->scroll_down();
 			return true;
 
 		case HOTKEY_EDITOR_TERRAIN_GROUP:
@@ -1147,6 +1108,16 @@ bool editor_controller::execute_command(hotkey::HOTKEY_COMMAND command, int inde
 
 		case HOTKEY_SYSTEM:
 			system();
+			return true;
+
+		case HOTKEY_ZOOM_IN:
+			gui_->set_zoom(zoom_amount);
+			return true;
+		case HOTKEY_ZOOM_OUT:
+			gui_->set_zoom(-zoom_amount);
+			return true;
+		case HOTKEY_ZOOM_DEFAULT:
+			gui_->set_default_zoom();
 			return true;
 
 		default:
@@ -1176,8 +1147,9 @@ void editor_controller::change_terrain_group(const std::string& id) const
 
 	int selected = dlg.selected_index();
 	palette_->set_group(groups[selected].id);
+	gui_->reload_terrain_palette(palette_->terrains());
 
-	gui_->menu_set_pip_image(game_config::theme_object_id_terrain_group, groups[selected].icon);
+	gui_->widget_set_pip_image("editor-terrain-group", "buttons/button_selectable_45_border-pressed-both.png", groups[selected].icon);
 }
 
 void editor_controller::change_brush()
@@ -1201,7 +1173,7 @@ void editor_controller::change_brush()
 	int selected = dlg.selected_index();
 	brush_ = &brushes_[selected];
 
-	gui_->menu_set_pip_image(game_config::theme_object_id_brush, brush_->image());
+	gui_->widget_set_pip_image("editor-brush", "buttons/button_selectable_45_border-pressed-both.png", brush_->image());
 }
 
 void editor_controller::system()
@@ -1322,6 +1294,12 @@ void editor_controller::do_map()
 	}
 }
 
+void editor_controller::click_terrain(int tselect)
+{
+	palette_->click_terrain(tselect);
+	set_mouseover_overlay();
+}
+
 void editor_controller::expand_open_maps_menu(std::vector<std::string>& items)
 {
 	for (unsigned int i = 0; i < items.size(); ++i) {
@@ -1346,56 +1324,6 @@ void editor_controller::expand_open_maps_menu(std::vector<std::string>& items)
 	}
 }
 
-void editor_controller::show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu)
-{
-	if (context_menu) {
-		if (!get_map().on_board_with_border(gui().hex_clicked_on(xloc, yloc))) {
-			return;
-		}
-	}
-
-	std::vector<std::string> items = items_arg;
-	hotkey::HOTKEY_COMMAND command;
-	std::vector<std::string>::iterator i = items.begin();
-	while(i != items.end()) {
-		command = hotkey::get_hotkey(*i).get_id();
-		if (command == hotkey::HOTKEY_UNDO) {
-			if (get_map_context().can_undo()) {
-				hotkey::get_hotkey(*i).set_description(_("Undo"));
-			} else {
-				hotkey::get_hotkey(*i).set_description(_("Can't Undo"));
-			}
-		} else if (command == hotkey::HOTKEY_REDO) {
-			if (get_map_context().can_redo()) {
-				hotkey::get_hotkey(*i).set_description(_("Redo"));
-			} else {
-				hotkey::get_hotkey(*i).set_description(_("Can't Undo"));
-			}
-		} else if (command == hotkey::HOTKEY_EDITOR_AUTO_UPDATE_TRANSITIONS) {
-			switch (auto_update_transitions_) {
-				case preferences::editor::TransitionUpdateMode::on:
-					hotkey::get_hotkey(*i).set_description(_("Auto-update Terrain Transitions: Yes"));
-					break;
-				case preferences::editor::TransitionUpdateMode::partial:
-					hotkey::get_hotkey(*i).set_description(_("Auto-update Terrain Transitions: Partial"));
-					break;
-				case preferences::editor::TransitionUpdateMode::off:
-				default:
-					hotkey::get_hotkey(*i).set_description(_("Auto-update Terrain Transitions: No"));
-			}
-		} else if (!can_execute_command(command) || (context_menu && !in_context_menu(command))) {
-			i = items.erase(i);
-			continue;
-		}
-		++i;
-	}
-	if (!items.empty() && items.front() == "editor-switch-map") {
-		expand_open_maps_menu(items);
-		context_menu = true; //FIXME hack to display a one-item menu
-	}
-	command_executor::show_menu(items, xloc, yloc, context_menu, gui());
-}
-
 void editor_controller::cycle_brush()
 {
 	if (brush_ == &brushes_.back()) {
@@ -1415,7 +1343,7 @@ void editor_controller::preferences()
 
 void editor_controller::toggle_grid()
 {
-	preferences::set_grid(!preferences::grid());
+	preferences::set_grid(*gui_, !preferences::grid());
 	gui_->invalidate_all();
 }
 
@@ -1528,21 +1456,6 @@ void editor_controller::perform_refresh(const editor_action& action, bool drag_p
 
 void editor_controller::redraw_toolbar()
 {
-	BOOST_FOREACH (mouse_action_map::value_type a, mouse_actions_) {
-		if (a.second->toolbar_button() != NULL) {
-			SDL_Rect r = a.second->toolbar_button()->location(gui().screen_area());
-			SDL_Rect outline = create_rect(r.x - 2, r.y - 2, r.h + 4, r.w + 4);
-			//outline = intersect_rects(r, gui().screen_area());
-			surface screen = gui().video().getSurface();
-			Uint32 color;
-			if (a.second == mouse_action_) {
-				color = SDL_MapRGB(screen->format, 0xFF, 0x00, 0x00);
-			} else {
-				color = SDL_MapRGB(screen->format, 0x00, 0x00, 0x00);
-			}
-			draw_rectangle(outline.x, outline.y, outline.w, outline.h, color, screen);
-		}
-	}
 	toolbar_dirty_ = false;
 }
 
@@ -1554,21 +1467,18 @@ void editor_controller::refresh_image_cache()
 
 void editor_controller::display_redraw_callback(display&)
 {
-	adjust_sizes(gui(), *size_specs_);
-	palette_->adjust_size();
-	palette_->draw(true);
 	//display::redraw_everything removes our custom tooltips so reload them
-	load_tooltips();
 	gui().invalidate_all();
+
 	if (!palette_->terrain_groups().empty()) {
-		gui_->menu_set_pip_image(game_config::theme_object_id_terrain_group, palette_->terrain_groups().front().icon);
+		gui_->widget_set_pip_image("editor-terrain-group", "buttons/button_selectable_45_border-pressed-both.png", palette_->terrain_groups().front().icon);
 	}
 	if (!brushes_.empty()) {
-		gui_->menu_set_pip_image(game_config::theme_object_id_brush, brush_->image());
+		gui_->widget_set_pip_image("editor-brush", "buttons/button_selectable_45_border-pressed-both.png", brush_->image());
 	}
 	if (mode_ == SIEGE) {
-		gui_->enable_menu("editor-map", false);
-		gui_->enable_menu("editor-brush", false);
+		gui_->set_theme_object_active("editor-map", false);
+		gui_->set_theme_object_active("editor-brush", false);
 	}
 }
 
@@ -1640,7 +1550,6 @@ bool editor_controller::left_click(int x, int y, const bool browse)
 	LOG_ED << "Left click action " << hex_clicked.x << " " << hex_clicked.y << "\n";
 	editor_action* a = get_mouse_action()->click_left(*gui_, x, y);
 	perform_refresh_delete(a, true);
-	palette_->draw(true);
 	return false;
 }
 
@@ -1669,7 +1578,6 @@ bool editor_controller::right_click(int x, int y, const bool browse)
 	LOG_ED << "Right click action " << hex_clicked.x << " " << hex_clicked.y << "\n";
 	editor_action* a = get_mouse_action()->click_right(*gui_, x, y);
 	perform_refresh_delete(a, true);
-	palette_->draw(true);
 	return false;
 }
 

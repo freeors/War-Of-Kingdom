@@ -522,21 +522,21 @@ template<
 		, bool& handled
 		, const tpoint& coordinate)
 {
-	if(signal_handler_sdl_button_up_entered_) {
+	if (signal_handler_sdl_button_up_entered_) {
 		return;
 	}
 	tlock lock(signal_handler_sdl_button_up_entered_);
 
 	DBG_GUI_E << LOG_HEADER << event << ".\n";
 
-	if(!is_down_) {
+	if (!is_down_) {
 		WRN_GUI_E << LOG_HEADER << event
 				<< ". The mouse button is already up, we missed an event.\n";
 		return;
 	}
 	is_down_ = false;
 
-	if(focus_) {
+	if (focus_) {
 		DBG_GUI_E << LOG_HEADER << "Firing: " << sdl_button_up << ".\n";
 		if(!owner_.fire(sdl_button_up, *focus_, coordinate)) {
 			DBG_GUI_E << LOG_HEADER << "Firing: " << button_up << ".\n";
@@ -545,6 +545,7 @@ template<
 	}
 
 	twidget* mouse_over = owner_.find_at(coordinate, true);
+
 	if(mouse_captured_) {
 		const unsigned mask =
 				SDL_BUTTON_LMASK | SDL_BUTTON_MMASK | SDL_BUTTON_RMASK;
@@ -553,9 +554,9 @@ template<
 			mouse_captured_ = false;
 		}
 
-		if(mouse_focus_ == mouse_over) {
+		if (mouse_focus_ == mouse_over) {
 			mouse_button_click(mouse_focus_);
-		} else if(!mouse_captured_) {
+		} else if (!mouse_captured_) {
 			mouse_leave();
 
 			if(mouse_over) {

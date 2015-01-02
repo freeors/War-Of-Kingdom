@@ -181,7 +181,7 @@ std::string convert_to_wml(const std::string &element_name, const std::string &c
 	return ss.str();
 }
 
-SDL_Color string_to_color(const std::string &cmp_str)
+SDL_Color string_to_color(const std::string& cmp_str)
 {
 	if (cmp_str == "green") {
 		return font::GOOD_COLOR;
@@ -200,6 +200,22 @@ SDL_Color string_to_color(const std::string &cmp_str)
 	}
 	if (cmp_str == "blue") {
 		return font::BLUE_COLOR;
+	}
+	if (cmp_str == "gray") {
+		return font::GRAY_COLOR;
+	}
+	if (!cmp_str.empty()) {
+		std::vector<std::string> fields = utils::split(cmp_str);
+		size_t size = fields.size();
+		if (size == 3 || size == 4) {
+			// make sure we have four fields
+			SDL_Color result;
+			result.r = lexical_cast_default<int>(fields[0]);
+			result.g = lexical_cast_default<int>(fields[1]);
+			result.b = lexical_cast_default<int>(fields[2]);
+			result.a = 0;
+			return result;
+		}
 	}
 	return font::NORMAL_COLOR;
 }
@@ -913,7 +929,7 @@ std::pair<section*, int> find_parent(section& sec, const std::string& id)
 	if (tit != sec.topics.end()) {
 		return std::make_pair(&sec, std::distance(sec.topics.begin(), tit));
 	}
-	std::pair<section*, int> ret(NULL, -1);
+	std::pair<section*, int> ret(reinterpret_cast<section*>(NULL), -1);
 	for (sit = sec.sections.begin(); sit != sec.sections.end(); ++sit) {
 		ret = find_parent(*(*sit), id);
 		if (ret.first != NULL) {

@@ -27,8 +27,6 @@
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
 
-extern int dbg_times;
-
 namespace gui2 {
 
 REGISTER_WIDGET(panel)
@@ -48,17 +46,7 @@ SDL_Rect tpanel::get_client_rect() const
 	return result;
 }
 
-void tpanel::impl_draw_background(surface& frame_buffer)
-{
-	DBG_GUI_D << LOG_HEADER
-			<< " size " << get_rect()
-			<< ".\n";
-
-	std::vector<int> anims;
-	canvas(0).blit(frame_buffer, get_rect(), get_dirty(), anims, anims);
-}
-
-bool tpanel::exist_anim() const
+bool tpanel::exist_anim()
 {
 	return canvas(0).exist_anim() || canvas(1).exist_anim();
 }
@@ -76,12 +64,6 @@ void tpanel::impl_draw_background(
 	canvas(0).blit(
 			  frame_buffer
 			, calculate_blitting_rectangle(x_offset, y_offset), get_dirty(), anims, anims);
-}
-
-void tpanel::impl_draw_foreground(surface& frame_buffer)
-{
-	std::vector<int> anims;
-	canvas(1).blit(frame_buffer, get_rect(), get_dirty(), anims, anims);
 }
 
 void tpanel::impl_draw_foreground(

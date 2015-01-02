@@ -39,6 +39,7 @@
 extern void handle_app_event(Uint32 type);
 
 int cached_draw_events = 0;
+extern bool require_change_resolution;
 
 int revise_screen_width(int width)
 {
@@ -61,8 +62,6 @@ namespace events
 
 void raise_help_string_event(int mousex, int mousey);
 bool ignore_finger_event;
-
-// namespace tag {
 
 struct context
 {
@@ -157,15 +156,18 @@ void context::set_focus(const handler* ptr)
 	}
 }
 
-//this object stores all the event handlers. It is a stack of event 'contexts'.
-//a new event context is created when e.g. a modal dialog is opened, and then
-//closed when that dialog is closed. Each context contains a list of the handlers
-//in that context. The current context is the one on the top of the stack
-std::deque<context> event_contexts;
+}
+
+// this object stores all the event handlers. It is a stack of event 'contexts'.
+// a new event context is created when e.g. a modal dialog is opened, and then
+// closed when that dialog is closed. Each context contains a list of the handlers
+// in that context. The current context is the one on the top of the stack.
+// it original place at namespace events, but when vs2008 debug, cannot watch.
+std::deque<events::context> event_contexts;
+
+namespace events {
 
 std::vector<pump_monitor*> pump_monitors;
-
-// } //end anon namespace
 
 pump_monitor::pump_monitor(bool auto_join)
 	: has_joined_(false)
@@ -202,7 +204,7 @@ event_context::~event_context()
 	event_contexts.pop_back();
 }
 
-handler::handler(const bool auto_join) : unicode_(SDL_EnableUNICODE(1)), has_joined_(false)
+handler::handler(const bool auto_join) : has_joined_(false)
 {
 	if(auto_join) {
 		assert(!event_contexts.empty());
@@ -214,7 +216,6 @@ handler::handler(const bool auto_join) : unicode_(SDL_EnableUNICODE(1)), has_joi
 handler::~handler()
 {
 	leave();
-	SDL_EnableUNICODE(unicode_);
 }
 
 void handler::join()
@@ -451,12 +452,17 @@ void pump()
 			//so we must use indexes instead of iterators here.
 			for (size_t i1 = 0, i2 = event_handlers.size(); i1 != i2 && i1 < event_handlers.size(); ++i1) {
 				event_handlers[i1]->handle_event(event);
+				if (require_change_resolution) {
+					require_change_resolution = false;
+					display* disp = display::get_singleton();
+					disp->change_resolution();
+				}
 			}
 		}
 	}
 
 	//inform the pump monitors that an events::pump() has occurred
-	for(size_t i1 = 0, i2 = pump_monitors.size(); i1 != i2 && i1 < pump_monitors.size(); ++i1) {
+	for (size_t i1 = 0, i2 = pump_monitors.size(); i1 != i2 && i1 < pump_monitors.size(); ++i1) {
 		pump_monitors[i1]->process(info);
 	}
 }

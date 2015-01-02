@@ -65,9 +65,9 @@ const struct {
 	{ hotkey::HOTKEY_EMPLOY, "employ", N_("Employ"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_LIST, "list", N_("List"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_SYSTEM, "system", N_("System"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TACTIC0, "delete_tactic0", N_("System"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TACTIC1, "delete_tactic1", N_("System"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TACTIC2, "delete_tactic2", N_("System"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_TACTIC0, "tactic0", N_("System"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_TACTIC1, "tactic1", N_("System"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_TACTIC2, "tactic2", N_("System"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_BOMB, "bomb", N_("Bomb"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG, "rpg", N_("RPG"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RPG_DETAIL, "rpg-detail", N_("RPG Detail"), false, hotkey::SCOPE_GAME },
@@ -84,7 +84,7 @@ const struct {
 	{ hotkey::HOTKEY_ARMORY, "armory", N_("Reform"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_UNIT_DETAIL, "unit_detail", N_("Unit Detail"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_CHAT, "chat", N_("Chat"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_PLAY_CARD, "play_card", N_("Play Card"), false, hotkey::SCOPE_GAME },
+	{ hotkey::HOTKEY_PLAY_CARD, "card", N_("Play Card"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_RECRUIT, "recruit", N_("Recruit"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_EXPEDITE, "expedite", N_("Expedite"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_MOVE, "move", N_("Move Hero"), false, hotkey::SCOPE_GAME },
@@ -115,13 +115,6 @@ const struct {
 	{ hotkey::HOTKEY_REPLAY_SHOW_TEAM1, "replayshowteam1",
 	  N_("Team 1"), false, hotkey::SCOPE_GAME },
 	{ hotkey::HOTKEY_REPLAY_SKIP_ANIMATION, "replayskipanimation", N_("Skip animation"), false, hotkey::SCOPE_GAME },
-
-	{ hotkey::HOTKEY_BUILD_KEEP, "build_c:keep", N_("Keep"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_BUILD_WALL, "build_c:wall", N_("Wall"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_INTERIOR_M, "interior_m", N_("Interior"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_BUILD_MARKET, "build_c:market", N_("Market"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_BUILD_TECHNOLOGY, "build_c:technology", N_("Technology"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_BUILD_TACTIC, "build_c:tactic", N_("Tactic"), false, hotkey::SCOPE_GAME },
 
 	{ hotkey::HOTKEY_EDITOR_QUIT_TO_DESKTOP, "editor-quit-to-desktop", N_("Quit to Desktop"), false, hotkey::SCOPE_EDITOR },
 	{ hotkey::HOTKEY_EDITOR_CLOSE_MAP, "editor-close-map", N_("Close Map"), false, hotkey::SCOPE_EDITOR },
@@ -925,74 +918,6 @@ void execute_command(display& disp, HOTKEY_COMMAND command, command_executor* ex
 			DBG_G << "command_executor: unknown command number " << command << ", ignoring.\n";
 			break;
 	}
-}
-
-void command_executor::show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu, display& gui)
-{
-	std::vector<std::string> items = items_arg;
-	if (can_execute_command(hotkey::get_hotkey(items.front()).get_id(), 0)){
-		//if just one item is passed in, that means we should execute that item
-		if (!context_menu && items.size() == 1 && items_arg.size() == 1) {
-			hotkey::execute_command(gui,hotkey::get_hotkey(items.front()).get_id(),this);
-			return;
-		}
-
-		std::vector<std::string> menu = get_menu_images(gui, items);
-
-		int res = -1;
-		if (res < 0) {
-			return;
-		}
-
-		const hotkey::HOTKEY_COMMAND cmd = hotkey::get_hotkey(items[res]).get_id();
-		hotkey::execute_command(gui,cmd,this,res);
-	}
-}
-
-std::string command_executor::get_menu_image(hotkey::HOTKEY_COMMAND command, int index) const {
-	switch(get_action_state(command, index)) {
-		case ACTION_ON: return game_config::images::checked_menu;
-		case ACTION_OFF: return game_config::images::unchecked_menu;
-		default: return get_action_image(command, index);
-	}
-}
-
-std::vector<std::string> command_executor::get_menu_images(display &disp, const std::vector<std::string>& items){
-	std::vector<std::string> result;
-	bool has_image = false;
-
-	for(size_t i = 0; i < items.size(); ++i) {
-		std::string const& item = items[i];
-		const hotkey::hotkey_item hk = hotkey::get_hotkey(item);
-
-		std::stringstream str;
-		//see if this menu item has an associated image
-		std::string img(get_menu_image(hk.get_id(), i));
-		if(img.empty() == false) {
-			has_image = true;
-			str << IMAGE_PREFIX << img << COLUMN_SEPARATOR;
-		}
-
-		if (hk.get_id() == hotkey::HOTKEY_NULL) {
-			str << item.substr(0, item.find_last_not_of(' ') + 1) << COLUMN_SEPARATOR;
-		} else {
-			std::string desc = hk.get_description();
-			if (hk.get_id() == HOTKEY_ENDTURN) {
-				const theme::menu *b = disp.get_theme().get_menu_item("endturn");
-				assert(b);
-				desc = b->title();
-			}
-			str << desc << COLUMN_SEPARATOR << hk.get_name();
-		}
-
-		result.push_back(str.str());
-	}
-	//If any of the menu items have an image, create an image column
-	if(has_image)
-		for(std::vector<std::string>::iterator i = result.begin(); i != result.end(); ++i)
-			if(*(i->begin()) != IMAGE_PREFIX)
-				i->insert(i->begin(), COLUMN_SEPARATOR);
-	return result;
 }
 
 }

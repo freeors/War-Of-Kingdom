@@ -62,7 +62,6 @@ public:
 	void mouse_update(const bool browse);
 
 	bool get_show_menu() const { return show_menu_; }
-	void set_show_menu(bool show_menu) { show_menu_ = show_menu; }
 
 	bool is_moving() const { return moving_; }
 	bool is_selecting() const { return selecting_; }

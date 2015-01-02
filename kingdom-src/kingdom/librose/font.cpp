@@ -89,27 +89,6 @@ Uint8 SDL_GetAppState(SDL_Window* window)
     return state;
 }
 
-static int SDL_enabled_UNICODE = 0;
-
-int SDL_EnableUNICODE(int enable)
-{
-	return 0;
-
-    int previous = SDL_enabled_UNICODE;
-
-    switch (enable) {
-    case 1:
-        SDL_enabled_UNICODE = 1;
-        SDL_StartTextInput();
-        break;
-    case 0:
-        SDL_enabled_UNICODE = 0;
-        SDL_StopTextInput();
-        break;
-    }
-    return previous;
-}
-
 SDL_Surface* SDL_DisplayFormatAlpha(SDL_Surface* screen_surf, SDL_Surface * surface)
 {
     SDL_PixelFormat *vf;

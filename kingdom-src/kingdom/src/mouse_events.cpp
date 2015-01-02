@@ -555,7 +555,7 @@ const map_location& mouse_handler::current_unit_joinable_from(const map_location
 
 map_location mouse_handler::current_unit_taskable_from(const map_location& loc, int task) const
 {
-	if (!tasking_unit_) {
+	if (!tasking_unit_ || !loc.valid()) {
 		return map_location::null_location;
 	}
 
@@ -629,14 +629,7 @@ void mouse_handler::do_right_click(const bool browse)
 	if (building_bldg_) {
 		gui_->remove_temporary_unit();
 		exit_building(false);
-/*
-		const theme::menu* current_context_menu = gui_->get_theme().context_menu("");
-		if (current_context_menu && current_context_menu->parent()) {
-			gui_->get_theme().set_current_context_menu(const_cast<theme::menu*>(current_context_menu->parent()));
-			resources::controller->show_context_menu(NULL, *gui_);
-			return;
-		}
-*/		
+		
 		// redisplay context menu
 		show_menu_ = true;
 		// player cancel build, regenerate attack indicator.
@@ -666,11 +659,11 @@ void mouse_handler::do_right_click(const bool browse)
 		expediting_ = false;
 
 		// enable undo/endturn buttons
-		gui_->enable_menu("play_card", true);
+		gui_->set_theme_object_active("card", true);
 		if (!undo_stack_.empty()) {
-			gui_->enable_menu("undo", true);
+			gui_->set_theme_object_active("undo", true);
 		}
-		gui_->enable_menu("endturn", true);
+		gui_->set_theme_object_active("endturn", true);
 	}
 	if (units_.count(selected_hex_)) {
 		gui_->invalidate_unit();
@@ -688,9 +681,9 @@ void mouse_handler::begin_moving(const map_location& src, const map_location& ds
 {
 	VALIDATE(!moving_, "program error, begin_moving, reenter moving");
 
-	gui_->enable_menu("play_card", false);
-	gui_->enable_menu("undo", false);
-	gui_->enable_menu("endturn", false);
+	gui_->set_theme_object_active("card", false);
+	gui_->set_theme_object_active("undo", false);
+	gui_->set_theme_object_active("endturn", false);
 	gui_->clear_attack_indicator();
 	gui_->clear_build_indicator();
 	gui_->set_moving_src_loc(src);
@@ -701,11 +694,11 @@ void mouse_handler::begin_moving(const map_location& src, const map_location& ds
 void mouse_handler::end_moving()
 {
 	if (moving_) {
-		gui_->enable_menu("play_card", true);
+		gui_->set_theme_object_active("card", true);
 		if (!undo_stack_.empty()) {
-			gui_->enable_menu("undo", true);
+			gui_->set_theme_object_active("undo", true);
 		}
-		gui_->enable_menu("endturn", true);
+		gui_->set_theme_object_active("endturn", true);
 		gui_->clear_moving_src_loc();
 		gui_->clear_moving_dst_loc();
 		moving_ = false;
@@ -951,12 +944,12 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 			select_hex(map_location(), browse);
 
-			gui_->enable_menu("play_card", true);
+			gui_->set_theme_object_active("card", true);
 			// enable undo/endturn buttons
 			if (!undo_stack_.empty()) {
-				gui_->enable_menu("undo", true);
+				gui_->set_theme_object_active("undo", true);
 			}
-			gui_->enable_menu("endturn", true);
+			gui_->set_theme_object_active("endturn", true);
 			return false;
 		}
 	}
@@ -1204,7 +1197,7 @@ void mouse_handler::clear_undo_stack()
 {
 	apply_shroud_changes(undo_stack_, side_num_);
 	undo_stack_.clear();
-	gui_->enable_menu("undo", false);
+	gui_->set_theme_object_active("undo", false);
 }
 
 class end_moving_lock
@@ -1248,12 +1241,12 @@ map_location mouse_handler::move_unit_along_current_route(const std::vector<map_
 	attackmove_ = attackmove;
 	size_t moves = 0;
 	try {
-		gui_->hide_context_menu(NULL, true);
+		gui_->hide_context_menu();
 
 		src_itor->get_move_spectator().reset(units_);
 		moves = ::move_unit(&src_itor->get_move_spectator(), steps, &recorder, &undo_stack_, true, &next_unit_, false, check_shroud);
 
-		resources::controller->show_context_menu(NULL, *gui_);
+		gui_->show_context_menu();
 	} catch(end_turn_exception&) {
 		attackmove_ = false;
 		cursor::set(cursor::NORMAL);
@@ -1384,7 +1377,7 @@ bool mouse_handler::attack_enemy_(unit& attacker, unit& defender, const map_loca
 
 		// for duel, hide base information, for context-menu. troop portrait.
 		gui_->invalidate_unit();
-		gui_->hide_context_menu(NULL, true);
+		gui_->hide_context_menu();
 		gui().draw();
 
 		perform_attack(attacker, defender, att.attack_num, def.attack_num, rand_rng::get_last_seed());
@@ -1430,7 +1423,7 @@ bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc,
 
 	if (tent::mode == mode_tag::TOWER) {
 		// in tower mode, must be enable allow_active, it cannot exist with allow_intervene
-		gui_->hide_context_menu(NULL, true);
+		gui_->hide_context_menu();
 		if (selected_hero_) {
 			do_add_active_tactic(tactician, *selected_hero_, true);
 		}
@@ -1531,7 +1524,7 @@ void mouse_handler::clear()
 	gui_->invalidate_unit();
 	select_hex(map_location(), false);
 	gui_->highlight_hex(map_location());
-	gui_->hide_context_menu(NULL, true);
+	gui_->hide_context_menu();
 }
 
 void mouse_handler::cast_tactic_special(unit& tactician, unit* special, bool browse)
@@ -1553,8 +1546,8 @@ void mouse_handler::cast_tactic_special(unit& tactician, unit* special, bool bro
 
 void mouse_handler::exit_placing_unit(bool ok)
 {
-	gui_->enable_menu("play_card", true);
-	gui_->enable_menu("endturn", true);
+	gui_->set_theme_object_active("card", true);
+	gui_->set_theme_object_active("endturn", true);
 
 	gui_->clear_hero_indicator();
 	playing_card_ = NULL;
@@ -1574,11 +1567,11 @@ void mouse_handler::exit_placing_unit(bool ok)
 
 void mouse_handler::exit_building(bool ok)
 {
-	gui_->enable_menu("play_card", true);
+	gui_->set_theme_object_active("card", true);
 	if (!undo_stack_.empty()) {
-		gui_->enable_menu("undo", true);
+		gui_->set_theme_object_active("undo", true);
 	}
-	gui_->enable_menu("endturn", true);
+	gui_->set_theme_object_active("endturn", true);
 
 	delete building_bldg_;
 	building_bldg_ = NULL;
@@ -1683,7 +1676,7 @@ bool mouse_handler::interior(bool browse, unit& u)
 		gui().unhighlight_reach();
 		select_hex(map_location(), false);
 		gui().invalidate_unit();
-		gui_->hide_context_menu(NULL, true);
+		gui_->hide_context_menu();
 
 		team& current_team = teams_[side_num_ - 1];
 		std::vector<hero*> before_commercials = current_team.commercials();
@@ -1822,7 +1815,7 @@ void mouse_handler::set_expedite(artifical* expedite_city, unit& u)
 	expediting_unit_ = &u;
 
 	// 先关闭掉先前的上下文菜单
-	gui_->hide_context_menu(NULL, true);
+	gui_->hide_context_menu();
 
 	// 具体执行
 	selected_hex_ = expedite_city->get_location();
@@ -1845,9 +1838,9 @@ void mouse_handler::set_expedite(artifical* expedite_city, unit& u)
 	gui().set_route(NULL);
 
 	// disable undo/endturn button
-	gui_->enable_menu("play_card", false);
-	gui_->enable_menu("undo", false);
-	gui_->enable_menu("endturn", false);
+	gui_->set_theme_object_active("card", false);
+	gui_->set_theme_object_active("undo", false);
+	gui_->set_theme_object_active("endturn", false);
 }
 
 void mouse_handler::set_building(artifical* bldg)
@@ -1857,9 +1850,9 @@ void mouse_handler::set_building(artifical* bldg)
 		VALIDATE(false, "mouse_handler::set_card_playing, current is in building state!");
 	}
 
-	gui_->enable_menu("play_card", false);
-	gui_->enable_menu("undo", false);
-	gui_->enable_menu("endturn", false);
+	gui_->set_theme_object_active("card", false);
+	gui_->set_theme_object_active("undo", false);
+	gui_->set_theme_object_active("endturn", false);
 	gui_->clear_attack_indicator();
 
 	building_bldg_ = bldg;
@@ -1878,9 +1871,9 @@ void mouse_handler::set_card_playing(team& t, int index)
 {
 	VALIDATE(!playing_card_, "mouse_handler::set_card_playing, current is in card_playing state!");
 
-	gui_->enable_menu("play_card", false);
-	gui_->enable_menu("undo", false);
-	gui_->enable_menu("endturn", false);
+	gui_->set_theme_object_active("card", false);
+	gui_->set_theme_object_active("undo", false);
+	gui_->set_theme_object_active("endturn", false);
 	clear();
 
 	card_index_ = index;
@@ -1906,8 +1899,8 @@ void mouse_handler::set_hero_placing(hero* h)
 		clear();
 		if (h->status_ != hero_status_idle) {
 			if (placing_hero_ && placing_hero_->status_ == hero_status_idle) {
-				gui_->enable_menu("play_card", true);
-				gui_->enable_menu("endturn", true);
+				gui_->set_theme_object_active("card", true);
+				gui_->set_theme_object_active("endturn", true);
 
 				gui_->clear_hero_indicator();
 				gui_->hide_tip();
@@ -1917,8 +1910,8 @@ void mouse_handler::set_hero_placing(hero* h)
 			gui_->goto_main_context_menu();
 		} else {
 			if (!placing_hero_) {
-				gui_->enable_menu("play_card", false);
-				gui_->enable_menu("endturn", false);
+				gui_->set_theme_object_active("card", false);
+				gui_->set_theme_object_active("endturn", false);
 			}
 			placing_hero_ = h;
 			gui_->set_hero_indicator(*h);

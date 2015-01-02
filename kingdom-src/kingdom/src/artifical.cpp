@@ -87,7 +87,6 @@ artifical::artifical(game_state& state, const config& cfg) :
 {
 	max_level_ = level_;
 
-	// …Ë÷√[city]º∂◊÷∂Œ
 	read(state, cfg);
 
 	if (decree_) {

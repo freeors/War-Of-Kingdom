@@ -116,14 +116,6 @@ void tcontainer_::set_visible_area(const SDL_Rect& area)
 	grid_.set_visible_area(area);
 }
 
-void tcontainer_::impl_draw_children(surface& frame_buffer)
-{
-	assert(get_visible() == twidget::VISIBLE
-			&& grid_.get_visible() == twidget::VISIBLE);
-
-	grid_.draw_children(frame_buffer);
-}
-
 void tcontainer_::impl_draw_children(
 		  surface& frame_buffer
 		, int x_offset

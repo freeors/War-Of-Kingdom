@@ -4067,25 +4067,47 @@ bool backstab_check(const unit& attacker, const unit& defender, const unit_map& 
 	return false; // Defender and opposite are friends
 }
 
+void refresh_chat_button(game_display& disp, const std::string& fg)
+{
+	gui2::tbutton* widget = dynamic_cast<gui2::tbutton*>(disp.get_theme_object("chat"));
+
+	surface surf = image::get_image("buttons/chat.png");
+	surface fg_surf = image::get_image(fg);
+	if (fg_surf) {
+		surf = generate_pip_surface(surf, fg_surf);
+	}
+
+	widget->set_surface(surf, widget->get_width(), widget->get_height());
+}
+
 void refresh_card_button(const team& t, game_display& disp)
 {
 	std::stringstream strstr;
-	theme::menu *theme_b = disp.get_theme().get_menu_item("card");
-	gui::button* btn = disp.find_button("card");
+	gui2::tbutton* widget = dynamic_cast<gui2::tbutton*>(disp.get_theme_object("card"));	
 
-	std::stringstream title;
-	title << t.holded_cards().size();
-	theme_b->set_title(title.str());
-	btn->set_label(title.str());
+	SDL_Color color;
+	int cards = t.holded_cards().size();
 
-	int size = t.holded_cards().size();
-	if (size < game_config::max_cards * 3 / 4) {
-		btn->set_color(font::BUTTON_COLOR);
-	} else if (size < game_config::max_cards) {
-		btn->set_color(font::YELLOW_COLOR);
+	if (cards < game_config::max_cards * 3 / 4) {
+		color = font::BUTTON_COLOR;
+	} else if (cards < game_config::max_cards) {
+		color = font::YELLOW_COLOR;
 	} else {
-		btn->set_color(font::BAD_COLOR);
+		color = font::BAD_COLOR;
 	}
+	surface fg = font::get_rendered_text2(str_cast(cards), -1, font::SIZE_NORMAL, color);
+	surface surf = scale_surface(image::get_image("buttons/card.png"), widget->get_width(), widget->get_height());
+	surf = generate_pip_surface(surf, fg);
+
+	widget->set_surface(surf, widget->get_width(), widget->get_height());
+}
+
+void refresh_endturn_button(game_display& disp, const std::string& bg)
+{
+	gui2::tbutton* widget = dynamic_cast<gui2::tbutton*>(disp.get_theme_object("endturn"));
+
+	surface surf = image::get_image(bg);
+	widget->set_surface(surf, widget->get_width(), widget->get_height());
 }
 
 void get_random_card(team& t, game_display& disp, unit_map& units, hero_map& heros)

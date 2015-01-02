@@ -531,7 +531,7 @@ public:
 	const std::vector<hero*>& commercials() const { return commercials_; }
 
 	bool defeat_vote() const;
-	int may_build_count() const;
+	int may_build_wall_count() const;
 
 	std::string form_results_of_battle_tip(const std::string& prefix = null_str) const;
 

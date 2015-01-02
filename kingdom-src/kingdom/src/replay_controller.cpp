@@ -56,7 +56,10 @@ LEVEL_RESULT play_replay_level(const config& game_config,
 		const events::command_disabler disable_commands;
 
 		//replay event-loop
-		for (;;){
+		for (; ;) {
+			if (replaycontroller.is_playing()) {
+				replaycontroller.play_replay2();
+			}
 			replaycontroller.play_slice();
 		}
 	}
@@ -88,7 +91,7 @@ replay_controller::replay_controller(const config& level,
 
 	init();
 
-	show_context_menu(NULL, *gui_);
+	gui_->show_context_menu();
 }
 
 replay_controller::~replay_controller()
@@ -96,7 +99,6 @@ replay_controller::~replay_controller()
 	//YogiHH
 	//not absolutely sure if this is needed, but it makes me feel a lot better ;-)
 	//feel free to delete this if it is not necessary
-	gui_->get_theme().theme_reset().detach_handler(this);
 }
 
 void replay_controller::init(){
@@ -104,7 +106,6 @@ void replay_controller::init(){
 
 	//guarantee the cursor goes back to 'normal' at the end of the level
 	const cursor::setter cursor_setter(cursor::NORMAL);
-	init_replay_display();
 
 	teams_start_ = teams_;
 	for (std::vector<team>::iterator itor = teams_start_.begin(); itor != teams_start_.end(); ++ itor) {
@@ -147,34 +148,9 @@ void replay_controller::init_gui(){
 	}
 }
 
-void replay_controller::init_replay_display()
-{
-	DBG_REPLAY << "initializing replay-display... " << (SDL_GetTicks() - ticks_) << "\n";
-
-	rebuild_replay_theme();
-	gui_->get_theme().theme_reset().attach_handler(this);
-	DBG_REPLAY << "done initializing replay-display... " << (SDL_GetTicks() - ticks_) << "\n";
-}
-
-void replay_controller::rebuild_replay_theme()
-{
-	const config &theme_cfg = get_theme(game_config_, level_["theme"]);
-	if (const config &res = theme_cfg.child("resolution")) {
-		if (const config &replay_theme_cfg = res.child("replay")) {
-			gui_->get_theme().modify(replay_theme_cfg);
-		}
-		gui_->get_theme().modify_label("time-icon", _ ("current local time"));
-		//Make sure we get notified if the theme is redrawn completely. That way we have
-		//a chance to restore the replay controls of the theme as well.
-		gui_->invalidate_theme();
-	}
-}
-
 void replay_controller::stop_replay()
 {
 	is_playing_ = false;
-	gui::button* b = gui_->find_button("button-playreplay");
-	if (b != NULL) { b->release(); }
 }
 
 void replay_controller::replay_next_turn()
@@ -183,8 +159,6 @@ void replay_controller::replay_next_turn()
 	play_turn();
 
 	is_playing_ = false;
-	gui::button* b = gui_->find_button("button-nextturn");
-	if (b != NULL) { b->release(); }
 }
 
 void replay_controller::replay_next_side()
@@ -198,8 +172,6 @@ void replay_controller::replay_next_side()
 	}
 
 	is_playing_ = false;
-	gui::button* b = gui_->find_button("button-nextside");
-	if (b != NULL) { b->release(); }
 }
 
 void replay_controller::process_oos(const std::string& msg) const
@@ -239,23 +211,27 @@ void replay_controller::replay_skip_animation(){
 	
 }
 
-void replay_controller::play_replay(){
-	gui::button* b = gui_->find_button("button-stopreplay");
-	if (b != NULL) { b->release(); }
-	if (recorder.at_end()){
+void replay_controller::play_replay()
+{
+	is_playing_ = true;
+}
+
+void replay_controller::play_replay2()
+{
+	VALIDATE(is_playing_, "is_playing_ must be true!");
+
+	if (recorder.at_end()) {
+		is_playing_ = false;
 		return;
 	}
 
-	try{
-		is_playing_ = true;
-
-		DBG_REPLAY << "starting main loop\n" << (SDL_GetTicks() - ticks_) << "\n";
-		for(; !recorder.at_end() && is_playing_ && !recorder.unexpected; first_player_ = 1) {
+	try {
+		for (; !recorder.at_end() && is_playing_ && !recorder.unexpected; first_player_ = 1) {
 			play_turn();
-		} //end for loop
+		} // end for loop
 		is_playing_ = false;
 	}
-	catch(end_level_exception& e){
+	catch (end_level_exception& e) {
 		if (e.result == QUIT) throw;
 	}
 }
@@ -320,8 +296,6 @@ void replay_controller::linger()
 	// If we need to set the status depending on the completion state
 	// we're needed here.
 	gui_->set_game_mode(game_display::LINGER_MP);
-
-	gui_->invalidate_theme();
 	gui_->redraw_everything();
 
 	start_pass_scenario_anim(get_end_level_data().result);
@@ -356,10 +330,6 @@ void replay_controller::preferences(){
 
 void replay_controller::show_statistics(){
 	menu_handler_.show_statistics(gui_->playing_team()+1);
-}
-
-void replay_controller::handle_generic_event(const std::string& /*name*/){
-	rebuild_replay_theme();
 }
 
 bool replay_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int index) const

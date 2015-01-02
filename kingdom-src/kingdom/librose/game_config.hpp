@@ -97,6 +97,7 @@ namespace game_config
 	extern int ticks_per_turn;
 	extern int feature_increase_spirit;
 	extern bool show_side_report;
+	extern const std::string theme_window_id;
 
 
 	extern int max_bomb_turns;

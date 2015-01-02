@@ -5424,3 +5424,12 @@ msgstr ""
 #: src/loadscreen.cpp:240
 msgid "Starting game"
 msgstr ""
+
+msgid "Cannot find report widget: $id."
+msgstr ""
+
+msgid "Report widget($id) must use fix rect."
+msgstr ""
+
+msgid "Defined $id conext menu, but not define same id report widget!"
+msgstr ""

@@ -195,8 +195,8 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	// Set the version number
 	control = find_widget<tcontrol>(&window, "revision_number", false, false);
 	if (control) {
-		control->set_label(_("V") + game_config::version);
-		// control->set_label(_("V") + game_config::version + "-alpha");
+		// control->set_label(_("V") + game_config::version);
+		control->set_label(_("V") + game_config::version + "-alpha");
 		// control->set_label(_("v") + game_config::version + "-beta");
 		// control->set_label(_("v") + game_config::version + "-beta3");
 	}

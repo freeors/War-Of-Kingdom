@@ -27,6 +27,7 @@
 #include "play_controller.hpp"
 #include "gettext.hpp"
 #include "formula_string_utils.hpp"
+#include "gui/dialogs/theme2.hpp"
 
 #include "sound.hpp"
 #include <boost/foreach.hpp>
@@ -1761,8 +1762,8 @@ void unit_income(unit& u, int income)
 	if (!disp || disp->video().update_locked() || disp->fogged(loc)) return;
 	rect_of_hexes& draw_area = disp->draw_area();
 
-	const theme::status_item* const item = disp->get_theme().get_status_item(reports::report_name(reports::GOLD));
-	const SDL_Rect& rect = item->location(disp->screen_area());
+	const gui2::twidget* widget = disp->get_theme_report(gui2::tgame_theme::GOLD);
+	const SDL_Rect& rect = widget->get_rect();
 
 	int xoffset = rect.x - disp->get_location_x(loc);
 	int yoffset = rect.y - disp->get_location_y(loc);

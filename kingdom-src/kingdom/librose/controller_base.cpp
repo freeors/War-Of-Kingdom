@@ -16,23 +16,16 @@
 
 #include "controller_base.hpp"
 
-#include "dialogs.hpp"
+#include "gui/auxiliary/event/handler.hpp"
 #include "display.hpp"
-#include "game_preferences.hpp"
-#include "log.hpp"
+#include "preferences.hpp"
 #include "mouse_handler_base.hpp"
-#include "mouse_events.hpp"
-#include "sound.hpp"
-#include "gui/dialogs/side_report.hpp"
-#include "resources.hpp"
 
 #include <boost/foreach.hpp>
 
-static lg::log_domain log_display("display");
-#define ERR_DP LOG_STREAM(err, log_display)
-
 controller_base::controller_base(int ticks, const config& game_config, CVideo& /*video*/)
-	: game_config_(game_config)
+	: events::handler(false)
+	, game_config_(game_config)
 	, ticks_(ticks)
 	, key_()
 	, browse_(false)
@@ -53,8 +46,8 @@ int controller_base::get_ticks() {
 
 bool controller_base::handle_scroll_wheel(int dx, int dy, int hit_threshold, int motion_threshold)
 {
-	int abs_dx = posix_abs(dx);
-	int abs_dy = posix_abs(dy);
+	int abs_dx = abs(dx);
+	int abs_dy = abs(dy);
 	if (abs_dx <= hit_threshold && abs_dy <= hit_threshold) {
 		return false;
 	}
@@ -93,9 +86,10 @@ bool controller_base::handle_scroll_wheel(int dx, int dy, int hit_threshold, int
 
 void controller_base::handle_event(const SDL_Event& event)
 {
-	if (gui::in_dialog()) {
+	if (gui2::is_in_dialog()) {
 		return;
 	}
+
 	display& disp = get_display();
 	CVideo& video = disp.video();
 
@@ -265,11 +259,6 @@ bool controller_base::handle_scroll(CKey& key, int mousex, int mousey, int mouse
 	int dx = 0, dy = 0;
 	int scroll_threshold = (preferences::mouse_scroll_enabled())
 		? preferences::mouse_scroll_threshold() : 0;
-	BOOST_FOREACH (const theme::menu& m, get_display().get_theme().menus()) {
-		if (point_in_rect(mousex, mousey, m.get_location())) {
-			scroll_threshold = 0;
-		}
-	}
 	if ((key[SDLK_UP] && keyboard_focus) ||
 	    (mousey < scroll_threshold && mouse_in_window))
 	{
@@ -342,82 +331,6 @@ void controller_base::play_slice(bool is_delay_enabled)
 	events::raise_draw_event();
 
 	slice_before_scroll();
-// const theme::menu* const m = get_display().menu_pressed();
-	const button_loc& loc = get_display().menu_pressed();
-	const theme::menu* m = loc.first;
-	if (m && (m == gui.access_troop_menu())) {
-		map_location pressed_loc = gui.access_list_press(loc.second);
-		events::mouse_handler& m_handler = *events::mouse_handler::get_singleton();
-		if (pressed_loc.x == MAGIC_HERO && pressed_loc.y >= 0) {
-			hero& h = (*resources::heros)[pressed_loc.y];
-			m_handler.set_hero_placing(&h);
-			
-		} else if (pressed_loc.valid() && !m_handler.in_multistep_state()) {
-			std::vector<team>& teams = *resources::teams;
-			unit_map& units = *resources::units;
-			hero_map& heros = *resources::heros;
-
-			// sound::play_UI_sound("select-unit.wav");
-			unit* u = resources::units->find_unit(pressed_loc);
-			if (!u->is_city() || u->side() - 1 != resources::screen->playing_team()) {
-				gui.scroll_to_tile(pressed_loc, display::WARP);
-				m_handler.select_hex(map_location(), false);
-
-				u->set_selecting();
-				resources::screen->invalidate_unit();
-				// now, selectedHex_ is invalid, hide context menu.
-				gui.goto_main_context_menu();			
-			} else {
-				m_handler.select_hex(map_location(), false);
-
-				gui2::tside_report dlg(*resources::screen, teams, units, heros, u->side());
-				dlg.show(gui.video());
-			}
-		}
-	} else if (m != NULL){
-		const SDL_Rect& menu_loc = m->location(get_display().screen_area());
-		if (m->is_context()) {
-			// Is pressed menu a father menu of context-menu?
-			std::string item = m->items()[loc.second];
-			bool executed = false;
-			while (!executed) {
-				std::vector<std::string> item2 = utils::split(item, ':');
-				if (item2.size() == 1) {
-					// item2.push_back(item2[0]) is wrong way, resulting item2[1] is null string.
-					item2.push_back("");
-				}
-				size_t pos = item2[0].rfind("_m");
-				if (pos == item2[0].size() - 2) {
-					// cancel current menu, and display sub-menu
-					gui.hide_context_menu(NULL, true);
-					const std::string item1 = item2[0].substr(0, pos);
-					gui.get_theme().set_current_context_menu(get_display().get_theme().context_menu(item1));
-					show_context_menu(NULL, get_display());
-					executed = true;
-				} else {
-					// execute one menu command
-					pos = item2[0].rfind("_c");
-					if (pos == item2[0].size() - 2) {
-						const std::string item1 = item2[0].substr(0, pos);
-						if (item2[1].rfind("_m") != item2[1].size() - 2) {
-							execute_command(hotkey::get_hotkey(item1).get_id(), -1, item2[1]);
-							gui.hide_context_menu(NULL, true);
-							executed = true;
-						} else {
-							item = item2[1];
-							continue;
-						}
-					} else {
-						execute_command(hotkey::get_hotkey(item2[0]).get_id(), -1, item2[1]);
-						executed = true;
-					}
-				}
-			}
-		} else {
-			show_menu(m->items(), menu_loc.x+1, menu_loc.y + menu_loc.h + 1, false);
-		}
-		return;
-	}
 
 	int mousex, mousey;
 	Uint8 mouse_flags = SDL_GetMouseState(&mousex, &mousey);
@@ -453,32 +366,13 @@ void controller_base::slice_end()
 	//no action by default
 }
 
-void controller_base::show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu)
-{
-}
-
-void controller_base::show_context_menu(theme::menu* m, display& gui)
-{
-}
-
-bool controller_base::in_context_menu(hotkey::HOTKEY_COMMAND /*command*/) const
-{
-	return true;
-}
-
 const config& controller_base::get_theme(const config& game_config, std::string theme_name)
 {
-	if (theme_name.empty()) theme_name = preferences::theme();
-
 	if (const config &c = game_config.find_child("theme", "name", theme_name))
 		return c;
 
-	ERR_DP << "Theme '" << theme_name << "' not found. Trying the default theme.\n";
-
 	if (const config &c = game_config.find_child("theme", "name", "Default"))
 		return c;
-
-	ERR_DP << "Default theme not found.\n";
 
 	static config empty;
 	return empty;

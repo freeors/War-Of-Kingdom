@@ -27,6 +27,7 @@ class tspacer;
 namespace implementation {
 	struct tbuilder_scroll_label;
 	struct tbuilder_scroll_text_box;
+	struct tbuilder_report;
 	struct tbuilder_scrollbar_panel;
 }
 
@@ -45,6 +46,7 @@ class tscrollbar_container
 
 	friend struct implementation::tbuilder_scroll_label;
 	friend struct implementation::tbuilder_scroll_text_box;
+	friend struct implementation::tbuilder_report;
 	friend struct implementation::tbuilder_scrollbar_panel;
 #ifndef GUI2_EXPERIMENTAL_LISTBOX
 	friend class tlistbox;
@@ -52,6 +54,7 @@ class tscrollbar_container
 	friend class ttree_view;
 	friend class tscroll_label;
 	friend class tscroll_text_box;
+	friend class treport;
 	friend struct tscrollbar_container_implementation;
 
 public:
@@ -417,6 +420,13 @@ protected:
 	bool listbox_;
 	mutable bool size_calculated_;
 	bool scroll_to_end_;
+
+	/** The grid that holds the content. */
+	tgrid *content_grid_;
+
+	/** Dummy spacer to hold the contents location. */
+	tspacer *content_;
+
 private:
 
 	/**
@@ -454,12 +464,6 @@ private:
 		*vertical_scrollbar_,
 		*horizontal_scrollbar_;
 
-	/** The grid that holds the content. */
-	tgrid *content_grid_;
-
-	/** Dummy spacer to hold the contents location. */
-	tspacer *content_;
-
 	/**
 	 * Cache for the visible area for the content.
 	 *
@@ -481,7 +485,6 @@ private:
 	void layout_children();
 
 	/** Inherited from tcontainer_. */
-	void impl_draw_children(surface& frame_buffer);
 	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
 	/** Inherited from tcontainer_. */

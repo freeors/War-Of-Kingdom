@@ -80,20 +80,6 @@ void ttoggle_panel::set_child_members(const std::map<std::string /* widget id */
 	}
 }
 
-void ttoggle_panel::child_populate_dirty_list(twindow& caller, const std::vector<twidget*>& call_stack)
-{
-	std::vector<std::vector<twidget*> >& dirty_list = caller.dirty_list();
-	size_t dirty_size = dirty_list.size();
-
-	tcontainer_::child_populate_dirty_list(caller, call_stack);
-	if (dirty_list.size() != dirty_size) {
-		for (std::vector<std::vector<twidget*> >::iterator i = dirty_list.begin() + dirty_size; i != dirty_list.end(); ) {
-			i = dirty_list.erase(i);
-		}
-		caller.add_to_dirty_list(call_stack);
-	} 
-}
-
 void ttoggle_panel::set_active(const bool active)
 {
 	if(active) {
@@ -168,17 +154,9 @@ void ttoggle_panel::set_state(const tstate state)
 	assert(conf);
 }
 
-bool ttoggle_panel::exist_anim() const
+bool ttoggle_panel::exist_anim()
 {
 	return tcontrol::exist_anim() || (state_ >= ENABLED_SELECTED && canvas(COUNT).exist_anim());
-}
-
-void ttoggle_panel::impl_draw_foreground(surface& frame_buffer)
-{
-	if (state_ >= ENABLED_SELECTED) {
-		std::vector<int> anims;
-		canvas(COUNT).blit(frame_buffer, get_rect(), get_dirty(), anims, anims);
-	}
 }
 
 void ttoggle_panel::impl_draw_foreground(surface& frame_buffer, int x_offset, int y_offset)

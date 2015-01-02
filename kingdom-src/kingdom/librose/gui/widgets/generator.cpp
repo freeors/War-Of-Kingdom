@@ -523,7 +523,6 @@ tpoint tindependent::calculate_best_size() const
 	for(size_t i = 0; i < get_item_count(); ++i) {
 
 		const tgrid& grid = item(i);
-
 		const tpoint best_size = grid.get_best_size();
 
 		if(best_size.x > result.x) {

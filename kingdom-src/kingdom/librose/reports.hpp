@@ -17,87 +17,45 @@
 #define REPORTS_HPP_INCLUDED
 
 #include "image.hpp"
-
-class team;
+#include "sdl_utils.hpp"
 
 //this module is responsible for outputting textual reports of
 //various game and unit statistics
 namespace reports {
-	enum TYPE { UNIT_NAME, UNIT_TYPE, UNIT_RACE, UNIT_LEVEL,
-		    UNIT_SIDE, UNIT_TRAITS, UNIT_STATUS,
-		    UNIT_HP, UNIT_XP,
-		    UNIT_SECOND,
-		    UNIT_IMAGE, TIME_OF_DAY,
-		    TURN, GOLD, VILLAGES, UPKEEP,
-		    INCOME, TECH_INCOME, TACTIC, POSITION, STRATUM, MERITORIOUS, SIDE_PLAYING, OBSERVERS,
-			REPORT_COUNTDOWN, REPORT_CLOCK, EDITOR_SELECTED_TERRAIN, 
-			EDITOR_LEFT_BUTTON_FUNCTION, EDITOR_TOOL_HINT, NUM_REPORTS
-	};
 
-	enum { UNIT_REPORTS_BEGIN=UNIT_NAME, UNIT_REPORTS_END=UNIT_IMAGE+1 };
-	enum { STATUS_REPORTS_BEGIN=TIME_OF_DAY, STATUS_REPORTS_END=EDITOR_TOOL_HINT };
+struct report {
+	enum ttype {NONE, LABEL, SURFACE};
 
-	const std::string& report_name(TYPE type);
+	report()
+		: type(NONE)
+		, text()
+		, surf()
+		, tooltip()
+		, rect(empty_rect)
+	{}
+	report(ttype type, const std::string& text, const std::string& tooltip)
+		: type(type)
+		, text(text)
+		, surf()
+		, tooltip(tooltip)
+		, rect(empty_rect)
+	{}
+	
+	bool valid() const { return type != NONE; }
+	bool operator==(const report& o) const 
+	{
+	 	return o.type == type && o.text == text && o.surf.get() == surf.get() && o.tooltip == tooltip;
+	}
 
-	struct element {
-		explicit element(const std::string& text) :
-				image(),
-				text(text),
-				tooltip(),
-				rect(empty_rect)
-				{}
+	bool operator!=(const report& o) const { return !(o == *this); }
 
-		// Invariant: either text or image should be empty
-		// It would be okay to create a class for this, but it's a pretty simple
-		// invariant so I left it like the original report class.
-		image::locator image;
-		std::string text;
-		// left top point. if w == 0, invalid.
-		SDL_Rect rect;
+	ttype type;
+	std::string text;
+	surface surf;
+	std::string tooltip;
+	SDL_Rect rect;
+};
 
-		std::string tooltip;
-		element(const std::string& text, const std::string& image,
-				const std::string& tooltip) :
-			image(image), text(text), tooltip(tooltip), rect(empty_rect) {}
-
-		element(const std::string& text, const image::locator& image,
-				const std::string& tooltip) :
-			image(image), text(text), tooltip(tooltip), rect(empty_rect) {}
-		element(const std::string& text, const char* image,
-				const std::string& tooltip) :
-			image(image), text(text), tooltip(tooltip), rect(empty_rect) {}
-
-		bool operator==(const element& o) const {
-			return o.text == text && o.image == image && o.tooltip == tooltip;
-		}
-		bool operator!=(const element& o) const { return !(o == *this); }
-	};
-	struct report : public std::vector<element> {
-		report() {}
-		explicit report(const std::string& text) { this->push_back(element(text)); }
-		report(const std::string& text, const std::string& image, const std::string& tooltip) {
-			this->push_back(element(text, image, tooltip));
-		}
-		report(const std::string& text, const char* image, const std::string& tooltip) {
-			this->push_back(element(text, image, tooltip));
-		}
-		report(const std::string& text, const image::locator& image, const std::string& tooltip) {
-			this->push_back(element(text, image, tooltip));
-		}
-
-		// Convenience functions
-		void add_text(const std::string& text,
-				const std::string& tooltip);
-		void add_image(const std::string& image,
-				const std::string& tooltip);
-	};
-
-	report generate_report(TYPE type,
-		const team &viewing_team,
-			       int current_side, int active_side,
-			       const map_location& loc, const map_location& mouseover,
-		const std::set<std::string> &observers,
-			       const config& level, bool show_everything = false);
 }
 
 #endif

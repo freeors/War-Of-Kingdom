@@ -31,6 +31,7 @@
 
 namespace gui2 {
 
+
 struct tgui_definition;
 class ttip;
 
@@ -159,6 +160,8 @@ void load_widget_definitions(
 	 */
 	std::vector<twindow_builder::tresolution>::const_iterator
 		get_window_builder(const std::string& type);
+
+	void reload_window_builder(const std::string& type, const config& cfg, const std::set<std::string>& reserve_wml_tag);
 
 	/** Loads the setting for the theme. */
 	void load_settings();

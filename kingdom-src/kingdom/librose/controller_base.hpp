@@ -21,8 +21,7 @@
 
 #include "hotkeys.hpp"
 #include "key.hpp"
-#include <theme.hpp>
-
+#include "gui/widgets/button.hpp"
 class CVideo;
 
 namespace events {
@@ -46,6 +45,11 @@ public:
 	 * Get a reference to a mouse handler member a derived class uses
 	 */
 	virtual events::mouse_handler_base& get_mouse_handler_base() = 0;
+
+	virtual bool in_context_menu(const std::string& id) const { return true; }
+	virtual bool actived_context_menu(const std::string& id) const { return true; }
+	virtual void prepare_show_menu(gui2::tbutton& widget, const std::string& id, int width, int height) const {}
+
 protected:
 	/**
 	 * Called by play_slice after events:: calls, but before processing scroll
@@ -108,11 +112,6 @@ protected:
 	 * Overridden in derived classes
 	 */
 	virtual void post_mouse_press(const SDL_Event& event);
-
-	virtual void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu);
-	virtual void show_context_menu(theme::menu* m, display& gui);
-
-	virtual bool in_context_menu(hotkey::HOTKEY_COMMAND command) const;
 
 	bool handle_scroll_wheel(int dx, int dy, int hit_threshold, int motion_threshold);
 	const config &get_theme(const config& game_config, std::string theme_name);

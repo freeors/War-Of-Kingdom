@@ -136,15 +136,14 @@ void playsingle_controller::init_gui()
 	posix_print("playsingle_controller::init_gui, gui_->draw, used time: %u ms\n", end_draw - end_scroll_to_tile);
 
 	if (tent::mode == mode_tag::SIEGE) {
-		gui::button* endturn = gui_->find_button("endturn");
-		endturn->set_image("buttons/ctrl-pause2.png", -1);
-		endturn->enable(true);
+		refresh_endturn_button(*gui_, "buttons/ctrl-pause2.png");
+		gui_->set_theme_object_active("endturn", true);
 
 		teams_[human_team_].set_objectives_changed(false);
 	}
 
 	if (lobby.sock == network::null_connection) {
-		gui_->menu_set_pip_image("chat", "misc/network-disconnected.png");
+		refresh_chat_button(*gui_, "misc/network-disconnected.png");
 	}
 	tlobby::thandler::join();
 }
@@ -230,7 +229,7 @@ void playsingle_controller::chat()
 	dlg.show(gui_->video());
 
 	if (lobby.sock != network::null_connection) {
-		gui_->menu_set_pip_image("chat", null_str);
+		refresh_chat_button(*gui_, null_str);
 	}
 }
 
@@ -259,18 +258,17 @@ void playsingle_controller::end_turn()
 	if (linger_) {
 		end_turn_ = true;
 	} else if (tent::mode == mode_tag::SIEGE) {
-		gui::button* endturn = gui_->find_button("endturn");
 		if (!browse_) {
 			browse_ = true;
 			end_turn_ = menu_handler_.end_turn(player_number_);
 			browse_ = end_turn_;
-			endturn->set_image("buttons/ctrl-pause.png", -1);
+			refresh_endturn_button(*gui_, "buttons/ctrl-pause.png");
 			pause_when_human_ = false;
 		} else if (pause_when_human_) {
-			endturn->set_image("buttons/ctrl-pause.png", -1);
+			refresh_endturn_button(*gui_, "buttons/ctrl-pause.png");
 			pause_when_human_ = false;
 		} else {
-			endturn->set_image("buttons/ctrl-pause2.png", -1);
+			refresh_endturn_button(*gui_, "buttons/ctrl-pause2.png");
 			pause_when_human_ = true;
 		}
 	} else if (!browse_) {
@@ -280,7 +278,8 @@ void playsingle_controller::end_turn()
 	}
 }
 
-void playsingle_controller::force_end_turn(){
+void playsingle_controller::force_end_turn()
+{
 	skip_next_turn_ = true;
 	end_turn_ = true;
 }
@@ -749,31 +748,30 @@ void playsingle_controller::before_human_turn(bool save)
 	// button: undo
 	undo_stack_.clear();
 	if (teams_[player_number_-1].uses_shroud() || teams_[player_number_-1].uses_fog()) {
-		gui_->hide_menu("undo", true);
+		gui_->set_theme_object_visible("undo", gui2::twidget::INVISIBLE);
 	} else {
-		gui_->hide_menu("undo", false);
-		gui_->enable_menu("undo", false);
+		gui_->set_theme_object_visible("undo", gui2::twidget::VISIBLE);
+		gui_->set_theme_object_active("undo", false);
 	}
 	// button: endturn
 	if (tent::mode == mode_tag::SIEGE) {
 		if (pause_when_human_) {
-			gui::button* endturn = gui_->find_button("endturn");
-			endturn->set_image("buttons/ctrl-play.png", -1);
-			endturn->enable(true);
+			refresh_endturn_button(*gui_, "buttons/ctrl-play.png");
+			gui_->set_theme_object_active("endturn", true);
 		}
 		
 	} else if (tent::mode != mode_tag::LAYOUT) {
-		gui_->enable_menu("play_card", true);
-		gui_->enable_menu("endturn", true);
+		gui_->set_theme_object_active("card", true);
+		gui_->set_theme_object_active("endturn", true);
 	} else {
-		gui_->hide_menu("play_card", true);
-		gui_->hide_menu("endturn", true);
+		gui_->set_theme_object_visible("card", gui2::twidget::INVISIBLE);
+		gui_->set_theme_object_visible("endturn", gui2::twidget::INVISIBLE);
 	}
 	
 	// card
 	refresh_card_button(t, *gui_);
 	// if (!network::nconnections()) {
-	//	show_context_menu(NULL, *gui_);
+	//	gui_->show_context_menu();
 	// } else {
 		// Multiplayer mod, there is context-button when network player playing.
 		// In order to display correct, need hide "before" button.
@@ -1009,13 +1007,11 @@ void playsingle_controller::linger()
 	set_completion setter(gamestate_,"running");
 
 	// change the end-turn button text to its alternate label
-	gui_->get_theme().refresh_title2("endturn", "title2");
-	gui_->invalidate_theme();
 	gui_->redraw_everything();
 
 	// button be reconstruct.
 	if (lobby.sock == network::null_connection) {
-		gui_->menu_set_pip_image("chat", "misc/network-disconnected.png");
+		refresh_chat_button(*gui_, "misc/network-disconnected.png");
 	}
 
 	start_pass_scenario_anim(get_end_level_data().result);
@@ -1023,7 +1019,7 @@ void playsingle_controller::linger()
 	try {
 		// Same logic as single-player human turn, but
 		// *not* the same as multiplayer human turn.
-		gui_->enable_menu("endturn", true);
+		gui_->set_theme_object_active("endturn", true);
 		while(!end_turn_) {
 			// Reset the team number to make sure we're the right team.
 			player_number_ = first_player_;
@@ -1043,8 +1039,6 @@ void playsingle_controller::linger()
 	}
 
 	// revert the end-turn button text to its normal label
-	gui_->get_theme().refresh_title2("endturn", "title");
-	gui_->invalidate_theme();
 	gui_->redraw_everything();
 	gui_->set_game_mode(game_display::RUNNING);
 
@@ -1053,16 +1047,18 @@ void playsingle_controller::linger()
 
 bool playsingle_controller::handle(tlobby::ttype type, const config& data)
 {
+/*
+	int ii = 0;
 	if (type == tlobby::t_connected || type == tlobby::t_disconnected) {
 		const std::string fg = type == tlobby::t_connected? null_str: "misc/network-disconnected.png";
-		gui_->menu_set_pip_image("chat", fg);
+		refresh_chat_button(*gui_, fg);
 	}
-
+*/
 	if (type != tlobby::t_data) {
 		return false;
 	}
 	if (const config& c = data.child("whisper")) {
-		gui_->menu_set_pip_image("chat", "misc/red-dot12.png");
+		refresh_chat_button(*gui_, "misc/red-dot12.png");
 		sound::play_UI_sound(game_config::sounds::receive_message);
 	}
 	return false;
@@ -1087,7 +1083,7 @@ void playsingle_controller::after_human_turn()
 	}
 	gui_->refresh_access_heros(player_number_ - 1, game_display::REFRESH_CLEAR);
 	// hide context-menu
-	gui_->hide_context_menu(NULL, true);
+	gui_->hide_context_menu();
 
 	// Mark the turn as done.
 	browse_ = true;
@@ -1124,12 +1120,12 @@ void playsingle_controller::play_ai_turn(turn_info* turn_data)
 		execute_guard_attack(player_number_);
 	}
 
-	gui_->enable_menu("play_card", false);
-	gui_->enable_menu("undo", false);
+	gui_->set_theme_object_active("card", false);
+	gui_->set_theme_object_active("undo", false);
 	if (tent::mode == mode_tag::SIEGE) {
 		
 	} else {
-		gui_->enable_menu("endturn", false);
+		gui_->set_theme_object_active("endturn", false);
 	}
 	browse_ = true;
 	gui_->recalculate_minimap();

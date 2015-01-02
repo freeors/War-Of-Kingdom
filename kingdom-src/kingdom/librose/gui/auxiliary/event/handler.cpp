@@ -28,6 +28,7 @@
 #include "video.hpp"
 #include "display.hpp"
 #include "gui/widgets/settings.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -58,6 +59,16 @@ extern int revise_screen_width(int width);
 extern int revise_screen_height(int height);
 
 namespace gui2 {
+
+struct video_mode_change_exception 
+{
+	enum TYPE { CHANGE_RESOLUTION, MAKE_FULLSCREEN, MAKE_WINDOWED };
+
+	video_mode_change_exception(TYPE type) : type(type)
+	{}
+
+	TYPE type;
+};
 
 namespace event {
 
@@ -127,6 +138,8 @@ class thandler
 	: public events::handler
 {
 	friend bool gui2::is_in_dialog();
+	friend void gui2::async_draw();
+	friend std::vector<twindow*> gui2::connectd_window();
 public:
 	thandler();
 
@@ -515,7 +528,7 @@ void thandler::connect(tdispatcher* dispatcher)
 	assert(std::find(dispatchers_.begin(), dispatchers_.end(), dispatcher)
 			== dispatchers_.end());
 
-	if(dispatchers_.empty()) {
+	if (dispatchers_.empty()) {
 		event_context = new events::event_context();
 		join();
 	}
@@ -551,7 +564,7 @@ void thandler::disconnect(tdispatcher* dispatcher)
 	assert(std::find(dispatchers_.begin(), dispatchers_.end(), dispatcher)
 			== dispatchers_.end());
 
-	if(dispatchers_.empty()) {
+	if (dispatchers_.empty()) {
 		leave();
 		delete event_context;
 		event_context = NULL;
@@ -588,7 +601,11 @@ void thandler::draw(const bool force)
 	std::vector<bool> require_draw;
 	int last_area = 0;
 	for (std::vector<tdispatcher*>::const_reverse_iterator rit = dispatchers_.rbegin(); rit != dispatchers_.rend(); ++ rit) {
-		twidget* widget = dynamic_cast<twidget*>(*rit);
+		twindow* widget = dynamic_cast<twindow*>(*rit);
+		if (widget->is_theme()) {
+			require_draw.insert(require_draw.begin(), false);
+			continue;
+		}
 		int area = widget->get_width() * widget->get_height();
 		require_draw.insert(require_draw.begin(), area >= last_area * 4);
 		last_area = area;
@@ -648,7 +665,7 @@ void thandler::mouse(const tevent event, const tpoint& position)
 {
 	DBG_GUI_E << "Firing: " << event << ".\n";
 
-	if(mouse_focus) {
+	if (mouse_focus) {
 		mouse_focus->fire(event
 				, dynamic_cast<twidget&>(*mouse_focus)
 				, position);
@@ -953,9 +970,55 @@ std::ostream& operator<<(std::ostream& stream, const tevent event)
 
 } // namespace event
 
+void async_draw()
+{
+	
+	/* It is call by display::draw only.
+	 * There is 2 window at max. First is theme, second is tooltip.
+	 */
+	assert(event::handler);
+
+	bool first = true;
+	BOOST_FOREACH(event::tdispatcher* dispatcher, event::handler->dispatchers_) {
+		if (!first) {
+			/*
+			 * This leaves glitches on window borders if the window beneath it
+			 * has changed, on the other hand invalidating twindown::restorer_
+			 * causes black borders around the window. So there's the choice
+			 * between two evils.
+			 */
+			dynamic_cast<twidget&>(*dispatcher).set_dirty();
+		} else {
+			first = false;
+		}
+		twindow* window = dynamic_cast<twindow*>(dispatcher);
+		window->draw();
+		// dispatcher->fire(DRAW, dynamic_cast<twidget&>(*dispatcher));
+	}
+}
+
+std::vector<twindow*> connectd_window()
+{
+	std::vector<twindow*> result;
+	BOOST_FOREACH(event::tdispatcher* dispatcher, event::handler->dispatchers_) {
+		twindow* window = dynamic_cast<twindow*>(dispatcher);
+		result.push_back(window);
+	}
+	return result;
+}
+
 bool is_in_dialog()
 {
-	return event::handler && !event::handler->dispatchers_.empty();
+	if (!event::handler || event::handler->dispatchers_.empty()) {
+		return false;
+	}
+	if (event::handler->dispatchers_.size() == 1) {
+		twindow* window = dynamic_cast<twindow*>(event::handler->dispatchers_.front());
+		if (window->is_theme()) {
+			return false;
+		}
+	}
+	return true;
 }
 
 } // namespace gui2

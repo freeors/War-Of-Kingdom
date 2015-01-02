@@ -43,10 +43,8 @@ namespace preferences {
 	 */
 	bool detect_video_settings(CVideo& video, std::pair<int,int>& resolution, int& bpp, int& video_flags);
 
-	void set_fullscreen(CVideo& video, const bool ison);
-	void set_fullscreen(bool ison);
+	void set_fullscreen(display& disp, const bool ison);
 	void set_scroll_to_action(bool ison);
-	void set_resolution(const std::pair<int,int>& res);
 
 	/**
 	 * Set the resolution.
@@ -58,11 +56,10 @@ namespace preferences {
 	 * @returns                   The status true if width and height are the
 	 *                            size of the framebuffer, false otherwise.
 	 */
-	bool set_resolution(CVideo& video
-			, const unsigned width, const unsigned height);
-	void set_turbo(bool ison);
-	void set_grid(bool ison);
-	void set_turbo_speed(double speed);
+	bool set_resolution(display& disp, const unsigned width, const unsigned height);
+	void set_turbo(display& disp, bool ison);
+	void set_grid(display& disp, bool ison);
+	void set_turbo_speed(display& disp, double speed);
 	void set_color_cursors(bool value);
 
 	// Control unit idle animations

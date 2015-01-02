@@ -32,6 +32,9 @@ tdialog::~tdialog()
 	BOOST_FOREACH (tfield_* field, fields_) {
 		delete field;
 	}
+	if (async_window_) {
+		delete async_window_;
+	}
 }
 
 bool tdialog::show(CVideo& video, const unsigned auto_close_time)
@@ -69,6 +72,29 @@ bool tdialog::show(CVideo& video, const unsigned auto_close_time)
 	events::raise_volatile_undraw_event();
 
 	return retval_ == twindow::OK;
+}
+
+void tdialog::asyn_show(CVideo& video, const SDL_Rect& map_area)
+{
+	twindow* window = build_window(video);
+	// below code mybe exception, destruct can relase, evalue async_window at first.
+	async_window_ = window;
+
+	post_build(video, *window);
+
+	window->set_owner(this);
+	volatiles_ = window->set_fix_coordinate(map_area);
+
+	pre_show(video, *window);
+
+	retval_ = window->asyn_show();
+
+	window->layout();
+}
+
+void tdialog::async_draw()
+{
+	async_window_->draw();
 }
 
 tfield_bool* tdialog::register_bool(

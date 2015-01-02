@@ -21,6 +21,7 @@
 class config;
 class tod_manager;
 class play_controller;
+class controller_base;
 
 #include "animated.hpp"
 #include "chat_events.hpp"
@@ -35,36 +36,36 @@ class play_controller;
 // when building the editor.
 typedef std::pair<int, std::set<map_location> > range_locs_pair;
 
+namespace gui2 {
+class treport;
+}
+
 class game_display : public display
 {
 public:
-	class taccess_list
-	{
-	public:
+	struct taccess_list {
 		enum {TROOP = 0, HERO, TYPE_COUNT};
 
 		taccess_list(unit_map& units, int type);
-		~taccess_list();
+		void reset();
 	
-		void reload(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side);
-		void insert(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
-		void erase(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
-		void disable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
-		void enable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie);
-		void redraw(game_display& gui, menu_button_map* access_map, int side, void* cookie);
-		void free_heap();
+		void reload(game_display& gui, int side);
+		void insert(game_display& gui, int side, void* cookie);
+		void erase(game_display& gui, int side, void* cookie);
+		void enable(game_display& gui, int side, void* cookie);
+		void redraw(game_display& gui, int side, void* cookie);
 
-		void calculate_require_count(menu_button_map* access_map, int side);
+		void calculate_require_count(int side);
 
 		// for access_troops
 		unit_map& units_;
 		int type_;
-		gui::button** buttons_;
-		size_t count_;
-		int index_in_map_;
+		gui2::treport* report;
 		size_t start_group_;
-		size_t actable_count_;
-		bool hide_;
+		bool hide;
+
+		size_t button_count;
+		size_t require_count;
 	};
 
 	game_display(unit_map& units, hero_map& heros, play_controller* controller, CVideo& video,
@@ -81,7 +82,9 @@ public:
 		singleton_ = s;
 		display::set_singleton(s);
 	}
-	
+
+	std::string get_theme_patch() const;
+	gui2::ttheme* create_theme_dlg(const config& cfg);
 	void add_flag(int side_index, std::vector<std::string>& side_colors);
 
 	/**
@@ -154,16 +157,13 @@ public:
 	/** Draws the movement info (turns available) for a given location. */
 	void draw_movement_info(const map_location& loc);
 
-	void draw_report(reports::TYPE report_num);
+	void draw_report(int report_num);
 
-	bool redraw_everything();
+	void pre_change_resolution(std::map<const std::string, bool>& actives);
+	void post_change_resolution(const std::map<const std::string, bool>& actives);
 
 	/** Rebuild all dynamic terrain. */
 	void rebuild_all();
-
-	void set_index_in_map(int index, bool troop);
-	bool index_in_map(int index) const;
-	const theme::menu* access_troop_menu() const;
 
 	/** Function to invalidate that unit status displayed on the sidebar. */
 	void invalidate_unit() { invalidateUnit_ = true; }
@@ -174,13 +174,13 @@ public:
 	const time_of_day& get_time_of_day(const map_location& loc) const;
 
 	bool has_time_area() const;
+	bool unit_image_location_on(int x, int y);
 
-	void hide_context_menu(const theme::menu* m, bool hide, uint32_t flags = 0xffffffff, uint32_t disable = 0xffffffff);
 	void goto_main_context_menu();
 	void highlight_disctrict(const artifical& art);
 	void unhighlight_disctrict();
 	/** refresh field troop buttons */
-	enum refresh_reason {REFRESH_RELOAD, REFRESH_SORT, REFRESH_ENABLE, REFRESH_INSERT, REFRESH_ERASE, REFRESH_DRAW, REFRESH_HIDE, REFRESH_CLEAR};
+	enum refresh_reason {REFRESH_RELOAD, REFRESH_ENABLE, REFRESH_INSERT, REFRESH_ERASE, REFRESH_DRAW, REFRESH_HIDE, REFRESH_CLEAR};
 
 	void refresh_access_troops(int side, refresh_reason reason, void* cookie = NULL);
 	void refresh_access_heros(int side, refresh_reason reason, void* cookie = NULL);
@@ -189,8 +189,7 @@ public:
 	void verify_access_troops() const;
 
 	void redraw_access_unit(taccess_list* list);
-	void hide_access_unit(taccess_list* list);
-	map_location access_list_press(size_t btnidx);
+	void click_access_list(void* cookie, int type);
 	int current_list_type() const { return current_list_type_; }
 	int next_list_type() const;
 	void set_current_list_type(int type);
@@ -210,6 +209,9 @@ public:
 	bool fogged(const map_location& loc) const {
 		return viewpoint_ && viewpoint_->fogged(loc);
 	}
+
+	surface refresh_surface_report(int num, const reports::report& r, gui2::twidget& widget);
+
 protected:
 	/**
 	 * game_display pre_draw does specific things related e.g. to unit rendering
@@ -240,7 +242,7 @@ protected:
 	void invalidate_animations_location(const map_location& loc);
 
 	virtual surface minimap_surface(int w, int h);
-	virtual void draw_minimap_units();
+	virtual void draw_minimap_units(surface& screen);
 
 private:
 	void refresh_access_list(int side, refresh_reason reason, void* cookie, int type);
@@ -402,7 +404,6 @@ public:
 	void clear_chat_messages() { prune_chat_messages(true); }
 
 	void begin_game();
-	void create_buttons();
 
 	virtual bool in_game() const { return in_game_; }
 	void draw_bar(const std::string& image, int xpos, int ypos,
@@ -556,6 +557,8 @@ private:
 	int current_list_type_;
 	int access_list_side_;
 
+	gui2::tcontext_menu* ctrl_bar_;
+
 	// for draw
 	unit** draw_area_unit_;
 	size_t draw_area_unit_size_;
@@ -580,5 +583,14 @@ private:
 	 */
 	static game_display * singleton_;
 };
+
+namespace reports {
+reports::report generate_report(int type,
+	const team &viewing_team,
+		       int current_side, int active_side,
+		       const map_location& loc, const map_location& mouseover,
+	const std::set<std::string> &observers,
+		       const config& level, bool show_everything = false);
+}
 
 #endif

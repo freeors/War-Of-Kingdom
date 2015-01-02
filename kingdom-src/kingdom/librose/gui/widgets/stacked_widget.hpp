@@ -50,6 +50,12 @@ public:
 	/** Inherited from tscrollbar_container. */
 	void layout_children();
 
+	/** Inherited from tcontrol. */
+	twidget* find_at(const tpoint& coordinate, const bool must_be_active);
+
+	/** Inherited from tcontrol. */
+	const twidget* find_at(const tpoint& coordinate, const bool must_be_active) const;
+
 private:
 
 	/**

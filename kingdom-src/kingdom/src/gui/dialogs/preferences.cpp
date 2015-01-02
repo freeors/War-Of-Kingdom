@@ -99,10 +99,12 @@ void show_preferences_dialog(display& disp)
 {
 	int start_page = tpreferences::GENERAL_PAGE;
 
-	for (;;) {
-		try {
-			tpreferences dlg(disp, start_page);
-			dlg.show(disp.video());
+	while (true) {
+		tpreferences dlg(disp, start_page);
+		dlg.show(disp.video());
+		int res = dlg.get_retval();
+		if (res == twindow::OK) {
+			disp.invalidate_all();
 			if (disp.in_game() && !resources::controller->is_replaying()) {
 				play_controller& controller = *resources::controller;
 				if (controller.scenario_env_changed(dlg.get_scenario_env())) {
@@ -110,23 +112,22 @@ void show_preferences_dialog(display& disp)
 				}
 			}
 			return;
-		} catch (video_mode_change_exception& e) {
-			switch(e.type) {
-			case video_mode_change_exception::CHANGE_RESOLUTION:
-				preferences::show_video_mode_dialog(disp);
-				break;
-			case video_mode_change_exception::MAKE_FULLSCREEN:
-				preferences::set_fullscreen(true);
-				break;
-			case video_mode_change_exception::MAKE_WINDOWED:
-				preferences::set_fullscreen(false);
-				break;
+		}
+		 
+		if (res == tpreferences::CHANGE_RESOLUTION) {
+			if (preferences::show_video_mode_dialog(disp)) {
+				return;
 			}
 			start_page = tpreferences::DISPLAY_PAGE;
 
-		} catch (twml_exception& e) {
-			e.show(disp);
+		} else if (res == tpreferences::MAKE_FULLSCREEN) {
+			preferences::set_fullscreen(disp, true);
 			return;
+
+		} else if (res == tpreferences::MAKE_WINDOWED) {
+			preferences::set_fullscreen(disp, false);
+			return;
+
 		}
 	}
 }
@@ -231,7 +232,7 @@ void tpreferences::scroll_changed(tslider* widget, int value)
 void tpreferences::turbo_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set_turbo(toggle->get_value());
+	preferences::set_turbo(disp_, toggle->get_value());
 }
 
 void tpreferences::turbo_changed(tslider* widget, int value)
@@ -248,7 +249,7 @@ void tpreferences::turbo_changed(tslider* widget, int value)
 	turbo_items.push_back(8);
 	turbo_items.push_back(16);
 
-	preferences::set_turbo_speed(turbo_items[value]);
+	preferences::set_turbo_speed(disp_, turbo_items[value]);
 }
 
 void tpreferences::eng_file_name_toggled(twidget* widget)
@@ -286,9 +287,14 @@ void tpreferences::autosavemax_changed(tslider* widget, int value)
 void tpreferences::fullscreen_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
+
+	twindow* window = widget->get_window();
+	window->set_retval(toggle->get_value()? MAKE_FULLSCREEN: MAKE_WINDOWED);
+/*
 	throw video_mode_change_exception(toggle->get_value()
 			? video_mode_change_exception::MAKE_FULLSCREEN
 			: video_mode_change_exception::MAKE_WINDOWED);
+*/
 }
 
 void tpreferences::flip_time_toggled(twidget* widget)
@@ -305,7 +311,8 @@ void tpreferences::default_move_toggled(twidget* widget)
 
 void tpreferences::video_mode_button(twindow& window)
 {
-	throw video_mode_change_exception(video_mode_change_exception::CHANGE_RESOLUTION);
+	window.set_retval(CHANGE_RESOLUTION);
+	// throw video_mode_change_exception(video_mode_change_exception::CHANGE_RESOLUTION);
 }
 
 //
@@ -496,7 +503,7 @@ void tpreferences::zoom_button(twindow& window)
 void tpreferences::show_grid_toggled(twidget* widget)
 {
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	preferences::set_grid(toggle->get_value());
+	preferences::set_grid(disp_, toggle->get_value());
 }
 
 int turbo_slider_get_value()

@@ -72,11 +72,6 @@ enum HOTKEY_COMMAND {
 	HOTKEY_TACTIC0, HOTKEY_TACTIC1, HOTKEY_TACTIC2,
 	HOTKEY_BOMB,
 
-	// build item
-	HOTKEY_BUILD_KEEP, HOTKEY_BUILD_WALL, 
-	HOTKEY_INTERIOR_M, 
-	HOTKEY_BUILD_MARKET, HOTKEY_BUILD_TECHNOLOGY, HOTKEY_BUILD_TACTIC, 
-
 	HOTKEY_EDITOR_QUIT_TO_DESKTOP,
 	HOTKEY_EDITOR_CLOSE_MAP, HOTKEY_EDITOR_SWITCH_MAP,
 	HOTKEY_EDITOR_SETTINGS,
@@ -309,17 +304,6 @@ public:
 
 	virtual void remove_active_tactic(int slot) {}
 	virtual void bomb() {}
-
-	//Gets the action's image (if any). Displayed left of the action text in menus.
-	virtual std::string get_action_image(hotkey::HOTKEY_COMMAND /*command*/, int /*index*/) const { return ""; }
-	//Does the action control a toggle switch? If so, return the state of the action (on or off)
-	virtual ACTION_STATE get_action_state(hotkey::HOTKEY_COMMAND /*command*/, int /*index*/) const { return ACTION_STATELESS; }
-	//Returns the appropriate menu image. Checkable items will get a checked/unchecked image.
-	std::string get_menu_image(hotkey::HOTKEY_COMMAND command, int index=-1) const;
-	//Returns a vector of images for a given menu
-	std::vector<std::string> get_menu_images(display &, const std::vector<std::string>& items_arg);
-
-	void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu, display& gui);
 
 	virtual bool can_execute_command(HOTKEY_COMMAND command, int index=-1) const = 0;
 	virtual bool execute_command(HOTKEY_COMMAND command, int index=-1, std::string str = "");

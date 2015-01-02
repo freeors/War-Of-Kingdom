@@ -5200,7 +5200,7 @@ std::string unit::form_recruit_tip() const
 	// abilities
 	strstr << tintegrate::generate_img("misc/tintegrate-split-line.png");
 	strstr << "\n";
-	strstr << tintegrate::generate_format(dgettext("wesnoth", "Abilities"), "green");
+	strstr << tintegrate::generate_format(dgettext("wesnoth-lib", "Abilities"), "green");
 	strstr << ": ";
 	std::vector<std::string> abilities_tt;
 	abilities_tt = ability_tooltips(true);
@@ -7928,19 +7928,23 @@ bool unit::is_capital(const std::vector<team>& teams) const
 	return master_->number_ == t.capital_number();
 }
 
-void set_unit_image(void* cookie, surface& image_, int& integer)
+surface unit::generate_access_surface(int width, int height, bool greyscale) const
 {
+	surface stem_image = image::get_image(master_->image());
+	if (greyscale) {
+		stem_image = greyscale_image(stem_image);
+	}
+	stem_image = scale_surface(stem_image, width, height);
+	surface image_ = stem_image;
+
 	const int bar_vtl_ticks_width = 6;
 	SDL_Rect dst_clip = create_rect(0, 0, 0, 0);
-	int width = image_->w;
-	int height = image_->h;
-	const unit* u = reinterpret_cast<const unit*>(cookie);
 
-	if (u->get_state(ustate_tag::REVIVALED)) {
+	if (get_state(ustate_tag::REVIVALED)) {
 		image_ = adjust_surface_color(image_, 255, 0, 0);
 	}
 
-	int degree = u->percent_ticks();
+	int degree = percent_ticks();
 	SDL_Color color = font::GOOD_COLOR;
 	if (degree < 50) {
 		color = font::BAD_COLOR;
@@ -7949,18 +7953,18 @@ void set_unit_image(void* cookie, surface& image_, int& integer)
 	}
 
 	std::string img_name = "misc/bar-vtl-ticks.png";
-	if (current_can_action(*u)) {
+	if (current_can_action(*this)) {
 		img_name = "misc/bar-vtl-ticks-hot.png";
 	}
 	if (!tent::turn_based || preferences::developer()) {
 		draw_bar_to_surf(img_name, image_, 0, 12, height - 4 - (12 + 1), 1.0 * degree / 100, color, ftofxp(0.8), true);
 	}
 
-	if (u->is_city()) {
+	if (is_city()) {
 		// city name
 		int font_size = 12;
-		surface text_surf = font::get_rendered_text2(u->name(), -1, font_size, font::BIGMAP_COLOR);
-		surface back_surf = font::get_rendered_text2(u->name(), -1, font_size, font::BLACK_COLOR);
+		surface text_surf = font::get_rendered_text2(name(), -1, font_size, font::BIGMAP_COLOR);
+		surface back_surf = font::get_rendered_text2(name(), -1, font_size, font::BLACK_COLOR);
 
 		dst_clip.x = bar_vtl_ticks_width;
 		dst_clip.y = height - 16;
@@ -7980,28 +7984,26 @@ void set_unit_image(void* cookie, surface& image_, int& integer)
 	// top-middle
 	dst_clip.x = 8;
 	dst_clip.y = 0;
-	if (u->get_state(ustate_tag::DEPUTE)) {
+	if (get_state(ustate_tag::DEPUTE)) {
 		blit_surface(image::get_image("misc/depute.png"), NULL, image_, &dst_clip);
 	}
-	if (u->has_mayor()) {
+	if (has_mayor()) {
 		blit_surface(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
 	}
-/*
-	// it is difficult that set_goto is too more. correct in the future.
-	// orb-auto.png
-	dst_clip.y = 0;
-	if (u->human() && u->get_goto().valid()) {
-		surface orb_auto = image::get_image("misc/orb-auto.png");
-		if (orb_auto) {
-			dst_clip.x = width - orb_auto->w;
-			blit_surface(orb_auto, NULL, image_, &dst_clip);
-		}
-	}
-*/
-	integer = preferences::developer()? u->ticks(): u->level();
-}
 
-surface get_genus_surface()
-{
-	return image::get_image(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
+	int integer = preferences::developer()? ticks(): level();
+	blit_integer_surface(integer, image_, 0, 0);
+
+	std::stringstream text;
+	dst_clip = create_rect(0, 0, 0, 0);
+
+	std::string lb_icon = can_formation_master()? "misc/formation.png": null_str;
+	if (!lb_icon.empty()) {
+		text.str("");
+		text << lb_icon << "~SCALE(16, 16)";
+		dst_clip.x = bar_vtl_ticks_width;
+		dst_clip.y = image_->h - 16;
+		blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
+	}
+	return image_;
 }

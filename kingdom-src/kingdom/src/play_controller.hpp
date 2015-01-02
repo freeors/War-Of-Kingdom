@@ -188,7 +188,6 @@ public:
 
 	std::map< std::string, std::vector<unit_animation> > animation_cache;
 
-	void show_context_menu(theme::menu* m, display& gui);
 	void refresh_city_buttons(const artifical& city) const;
 
 	artifical* decide_ai_capital() const;
@@ -220,6 +219,9 @@ public:
 	bool allow_active() const { return allow_active_; }
 	void clear_slot_cache_selected();
 
+	void click_access_list(void* cookie, int type);
+	virtual bool execute_command(hotkey::HOTKEY_COMMAND command, int index=-1, std::string str = "");
+
 protected:
 	void slice_before_scroll();
 
@@ -230,19 +232,20 @@ protected:
 	void process_keyup_event(const SDL_Event& event);
 	void post_mouse_press(const SDL_Event& event);
 
-	virtual std::string get_action_image(hotkey::HOTKEY_COMMAND, int index) const;
-	virtual hotkey::ACTION_STATE get_action_state(hotkey::HOTKEY_COMMAND command, int index) const;
 	/** Check if a command can be executed. */
 	virtual bool can_execute_command(hotkey::HOTKEY_COMMAND command, int index=-1) const;
-	virtual bool execute_command(hotkey::HOTKEY_COMMAND command, int index=-1, std::string str = "");
-	void show_menu(const std::vector<std::string>& items_arg, int xloc, int yloc, bool context_menu);
 	
 	/**
 	 *  Determines whether the command should be in the context menu or not.
 	 *  Independent of whether or not we can actually execute the command.
 	 */
-	bool in_context_menu(hotkey::HOTKEY_COMMAND command) const;
-	bool enable_context_menu(hotkey::HOTKEY_COMMAND command, const map_location& loc) const;
+	bool in_context_menu(const std::string& id) const;
+	bool actived_context_menu(const std::string& id) const;
+	bool actived_context_menu2(const std::string& id, const map_location& loc) const;
+	void prepare_show_menu(gui2::tbutton& widget, const std::string& id, int width, int height) const;
+
+	bool in_build_menu(const std::string& minor) const;
+	bool actived_build_menu(const std::string& minor) const;
 
 	void init_managers();
 	void fire_prestart(bool execute);

@@ -303,13 +303,13 @@ bool float_animation::invalidate(const surface& screen, frame_parameters& value)
 	value.primary_frame = t_false;
 	for (std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin(); anim_itor != sub_anims_.end() ; ++ anim_itor) {
 		std::vector<SDL_Rect> tmp = anim_itor->second.get_overlaped_rect(value, src_, dst_);
-		// std::copy(tmp.begin(), tmp.end(), std::back_inserter(rects));
 		rects.insert(rects.end(), tmp.begin(), tmp.end());
 	}
 
 	// display* disp = display::get_singleton();
 	const SDL_Surface& fb = *screen;
 	update_rects.clear();
+
 	for (std::vector<SDL_Rect>::const_iterator it = rects.begin(); it != rects.end(); ++ it) {
 		SDL_Rect rect = *it;
 		if (rect.x < 0) {

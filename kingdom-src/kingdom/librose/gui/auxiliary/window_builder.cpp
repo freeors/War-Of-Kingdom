@@ -29,11 +29,11 @@
 #include "gui/auxiliary/window_builder/vertical_scrollbar.hpp"
 #include "gui/auxiliary/window_builder/label.hpp"
 #include "gui/auxiliary/window_builder/matrix.hpp"
+#include "gui/auxiliary/window_builder/report.hpp"
 #include "gui/auxiliary/window_builder/image.hpp"
 #include "gui/auxiliary/window_builder/toggle_button.hpp"
 #include "gui/auxiliary/window_builder/slider.hpp"
 #include "gui/auxiliary/window_builder/scroll_label.hpp"
-#include "gui/auxiliary/window_builder/theme.hpp"
 #include "gui/auxiliary/window_builder/minimap.hpp"
 #include "gui/auxiliary/window_builder/button.hpp"
 #include "gui/auxiliary/window_builder/drawing.hpp"
@@ -89,6 +89,7 @@ twindow *build(CVideo &video, const twindow_builder::tresolution *definition)
 			, definition->maximum_width
 			, definition->maximum_height
 			, definition->definition
+			, definition->theme
 			, definition->tooltip
 			, definition->helptip);
 	assert(window);
@@ -217,12 +218,12 @@ tbuilder_widget_ptr create_builder_widget(const config& cfg)
 	TRY(repeating_button);
 	TRY(vertical_scrollbar);
 	TRY(label);
+	TRY(report);
 	TRY(image);
 	TRY(toggle_button);
 	TRY(slider);
 	TRY(scroll_label);
 	TRY(matrix);
-	TRY(theme);
 	TRY(minimap);
 	TRY(button);
 	TRY(drawing);
@@ -270,6 +271,7 @@ const std::string& twindow_builder::read(const config& cfg)
 
 	config::const_child_itors cfgs = cfg.child_range("resolution");
 	VALIDATE(cfgs.first != cfgs.second, _("No resolution defined."));
+	resolutions.clear();
 	BOOST_FOREACH(const config &i, cfgs) {
 		resolutions.push_back(tresolution(i));
 	}
@@ -293,6 +295,7 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
 	maximum_height(cfg["maximum_height"]),
 	click_dismiss(cfg["click_dismiss"].to_bool()),
 	definition(cfg["definition"]),
+	theme(cfg["theme"].to_bool()),
 	linked_groups(),
 	tooltip(cfg.child_or_empty("tooltip")),
 	helptip(cfg.child_or_empty("helptip")),

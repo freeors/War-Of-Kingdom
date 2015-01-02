@@ -36,12 +36,19 @@
 #include "arrow.hpp"
 #include "minimap.hpp"
 #include "wml_exception.hpp"
-#include "posix.h"
+#include "gui/widgets/minimap.hpp"
+#include "gui/widgets/settings.hpp"
+#include "gui/auxiliary/event/handler.hpp"
+#include "controller_base.hpp"
 
 #include <boost/foreach.hpp>
 #include "SDL_image.h"
 
 #include <cmath>
+
+namespace gui2 {
+extern void async_draw();
+}
 
 static lg::log_domain log_display("display");
 #define ERR_DP LOG_STREAM(err, log_display)
@@ -73,71 +80,80 @@ int display::adjust_zoom(int zoom)
 	return 72;
 }
 
-display::display(CVideo& video, const gamemap* map, const config& theme_cfg, const config& level) :
-	screen_(video),
-	map_(map),
-	xpos_(0),
-	ypos_(0),
-	last_map_w_(0),
-	last_map_h_(0),
-	theme_(theme_cfg, screen_area()),
-	zoom_(default_zoom_),
-	builder_(new terrain_builder(map/*, theme_.border().tile_image*/)),
-	minimap_(NULL),
-	minimap_location_(empty_rect),
-	redrawMinimap_(false),
-	redraw_background_(true),
-	invalidateAll_(true),
-	grid_(false),
-	diagnostic_label_(0),
-	panelsDrawn_(false),
-	turbo_speed_(2),
-	turbo_(false),
-	invalidateGameStatus_(true),
-	map_labels_(new map_labels(*this, 0)),
-	scroll_event_("scrolled"),
-	nextDraw_(0),
-	buttons_(),
-	mouseover_hex_overlay_(NULL),
-	tod_hex_mask1(NULL),
-	tod_hex_mask2(NULL),
-	fog_images_(),
-	shroud_images_(),
-	selectedHex_(),
-	mouseoverHex_(),
-	keys_(),
-	animate_map_(true),
-	local_tod_light_(false),
-	drawing_buffer_(),
-	map_screenshot_(false),
-	fps_handle_(0),
-	invalidated_hexes_(0),
-	drawn_hexes_(0),
-	idle_anim_rate_(1.0),
-	map_screenshot_surf_(NULL),
-	redraw_observers_(),
-	draw_coordinates_(false),
-	draw_terrain_codes_(false),
-	arrows_map_(),
-	buttons_ctx_(NULL),
-	button_loc_(button_loc(reinterpret_cast<const theme::menu*>(NULL), 0)),
-	draw_area_(NULL),
-	draw_area_pitch_(0),
-	draw_area_size_(0),
-	drawing_(false),
-	main_tip_handle_(0),
-	area_anims_()
+display::display(controller_base* controller, CVideo& video, const gamemap* map, const config& theme_cfg, const config& level, size_t num_reports)
+	: controller_(controller)
+	, screen_(video)
+	, map_(map)
+	, xpos_(0)
+	, ypos_(0)
+	, last_map_w_(0)
+	, last_map_h_(0)
+	, zero_(0, 0)
+	, theme_cfg_()
+	, main_map_area_(empty_rect)
+	, border_()
+	, theme_current_cfg_(NULL)
+	, theme_(NULL)
+	, zoom_(default_zoom_)
+	, builder_(new terrain_builder(map/*, border_.tile_image*/))
+	, minimap_(NULL)
+	, minimap_location_(empty_rect)
+	, redrawMinimap_(false)
+	, redraw_background_(true)
+	, invalidateAll_(true)
+	, grid_(false)
+	, diagnostic_label_(0)
+	, turbo_speed_(2)
+	, turbo_(false)
+	, invalidateGameStatus_(true)
+	, map_labels_(new map_labels(*this, 0))
+	, scroll_event_("scrolled")
+	, nextDraw_(0)
+	, mouseover_hex_overlay_(NULL)
+	, tod_hex_mask1(NULL)
+	, tod_hex_mask2(NULL)
+	, fog_images_()
+	, shroud_images_()
+	, selectedHex_()
+	, mouseoverHex_()
+	, keys_()
+	, animate_map_(true)
+	, local_tod_light_(false)
+	, drawing_buffer_()
+	, canvas_drawing_buffer_()
+	, to_canvas_(false)
+	, map_screenshot_(false)
+	, fps_handle_(0)
+	, invalidated_hexes_(0)
+	, drawn_hexes_(0)
+	, idle_anim_rate_(1.0)
+	, map_screenshot_surf_(NULL)
+	, redraw_observers_()
+	, draw_coordinates_(false)
+	, draw_terrain_codes_(false)
+	, arrows_map_()
+	, draw_area_(NULL)
+	, draw_area_pitch_(0)
+	, draw_area_size_(0)
+	, drawing_(false)
+	, main_tip_handle_(0)
+	, area_anims_()
+	, reports_(num_reports)
 {
+	singleton_ = this;
+
 	// show coordinate and terrain
 	// draw_coordinates_ = true;
 	// draw_terrain_codes_ = true;
+
+	set_grid(preferences::grid());
+	set_turbo(preferences::turbo());
+	set_turbo_speed(preferences::turbo_speed());
 
 	last_zoom_ = zoom_;
 
 	fill_images_list(game_config::fog_prefix, fog_images_);
 	fill_images_list(game_config::shroud_prefix, shroud_images_);
-
-	std::fill(reportRects_,reportRects_+reports::NUM_REPORTS,empty_rect);
 
 	// image::set_zoom(zoom_);
 
@@ -155,18 +171,60 @@ display::display(CVideo& video, const gamemap* map, const config& theme_cfg, con
 		last_map_w_ = -1;
 		last_map_h_ = -1;
 	}
-
-	singleton_ = this;
 }
 
 display::~display()
 {
+	// at once release canvas animation.
+	release_theme();
+
 	clear_area_anims();
 
 	if (draw_area_) {
 		free(draw_area_);
 	}
 	singleton_ = NULL;
+}
+
+void display::create_theme()
+{
+	const config& c = theme_current_cfg_->child("main_map");
+	VALIDATE(c, "Theme must define main_map object!");
+	main_map_area_ = theme::calculate_relative_loc(c, screen_.getx(), screen_.gety());
+
+	if (const config &c = theme_current_cfg_->child("main_map_border")) {
+		border_ = theme::tborder(c);
+	} else {
+		border_ = theme::tborder();
+	}
+
+	// create theme dialog
+	static std::set<std::string> reserve_wml_tag;
+	if (reserve_wml_tag.empty()) {
+		reserve_wml_tag.insert("screen");
+		reserve_wml_tag.insert("main_map_border");
+		reserve_wml_tag.insert("main_map");
+		reserve_wml_tag.insert("context_menu");
+	}
+
+	VALIDATE(!theme_, "theme_ must be NULL!");
+	gui2::reload_window_builder(game_config::theme_window_id, *theme_current_cfg_, reserve_wml_tag);
+
+	gui2::ttheme* dlg = create_theme_dlg(*theme_current_cfg_);
+	// below aysn_show maybe exception, evalue dlg to theme_ before it make relase_theme can relase dlg.
+	theme_ = dlg;
+
+	dlg->asyn_show(screen_, main_map_area_);
+	dlg->post_layout();
+	controller_->events::handler::join();
+}
+
+void display::release_theme()
+{
+	if (theme_) {
+		delete theme_;
+		theme_ = NULL;
+	}
 }
 
 const time_of_day& display::get_time_of_day(const map_location& /*loc*/) const
@@ -227,6 +285,15 @@ void display::change_map(const gamemap* m)
 	builder_->change_map(m);
 }
 
+const SDL_Rect& display::minimap_area() const
+{
+	gui2::twidget* widget = get_theme_object("mini-map");
+	if (widget) {
+		return widget->fix_rect(); 
+	}
+	return empty_rect;
+}
+
 const SDL_Rect& display::max_map_area() const
 {
 	static SDL_Rect max_area = {0, 0, 0, 0};
@@ -238,8 +305,8 @@ const SDL_Rect& display::max_map_area() const
 	// To display a hex fully on screen,
 	// a little bit extra space is needed.
 	// Also added the border two times.
-	max_area.w  = static_cast<int>((get_map().w() + 2 * theme_.border().size + 1.0/3.0) * hex_width());
-	max_area.h = static_cast<int>((get_map().h() + 2 * theme_.border().size + 0.5) * hex_size());
+	max_area.w  = static_cast<int>((get_map().w() + 2 * border_.size + 1.0/3.0) * hex_width());
+	max_area.h = static_cast<int>((get_map().h() + 2 * border_.size + 0.5) * hex_size());
 
 	return max_area;
 }
@@ -304,8 +371,8 @@ const map_location display::hex_clicked_on(int xclick, int yclick) const
 const map_location display::pixel_position_to_hex(int x, int y) const
 {
 	// adjust for the border
-	x -= static_cast<int>(theme_.border().size * hex_width());
-	y -= static_cast<int>(theme_.border().size * hex_size());
+	x -= static_cast<int>(border_.size * hex_width());
+	y -= static_cast<int>(border_.size * hex_size());
 	// The editor can modify the border and this will result in a negative y
 	// value. Instead of adding extra cases we just shift the hex. Since the
 	// editor doesn't use the direction this is no problem.
@@ -471,7 +538,7 @@ const rect_of_hexes display::hexes_under_rect(const SDL_Rect& r) const
 	// we will also need to use std::floor to avoid bad rounding at border (negative values)
 	double tile_width = hex_width();
 	double tile_size = hex_size();
-	double border = theme_.border().size;
+	double border = border_.size;
 	// the "-0.25" is for the horizontal imbrication of hexes (1/4 overlaps).
 	// res.left = static_cast<int>(std::floor(-border + x / tile_width - 0.25));
 	res.left = static_cast<int>(std::floor(-border + x / tile_width - 0.333));
@@ -495,22 +562,28 @@ const rect_of_hexes display::hexes_under_rect(const SDL_Rect& r) const
 
 int display::get_location_x(const map_location& loc) const
 {
-	return static_cast<int>(map_area().x + (loc.x + theme_.border().size) * hex_width() - xpos_);
+	return static_cast<int>(map_area().x + (loc.x + border_.size) * hex_width() - xpos_);
 }
 
 int display::get_location_y(const map_location& loc) const
 {
-	return static_cast<int>(map_area().y + (loc.y + theme_.border().size) * zoom_ - ypos_ + (is_odd(loc.x) ? zoom_/2 : 0));
+	return static_cast<int>(map_area().y + (loc.y + border_.size) * zoom_ - ypos_ + (is_odd(loc.x) ? zoom_/2 : 0));
 }
 
 map_location display::minimap_location_on(int x, int y)
 {
 	//TODO: don't return location for this,
 	// instead directly scroll to the clicked pixel position
-
-	if (!point_in_rect(x, y, minimap_area())) {
+	gui2::tminimap* minimap = dynamic_cast<gui2::tminimap*>(get_theme_object("mini-map"));
+	if (!minimap) {
 		return map_location();
 	}
+	SDL_Rect area = minimap->get_rect();
+	if (!point_in_rect(x, y, area)) {
+		return map_location();
+	}
+	x -= area.x;
+	y -= area.y;
 
 	// we transfom the coordinates from minimap to the full map image
 	// probably more adjustements to do (border, minimap shift...)
@@ -531,14 +604,6 @@ map_location display::minimap_location_on(int x, int y)
 		loc.y = get_map().h() - 1;
 
 	return loc;
-}
-
-bool display::unit_image_location_on(int x, int y)
-{
-	if (!point_in_rect(x, y, unit_image_area())) {
-		return false;
-	}
-	return true;
 }
 
 int display::screenshot(std::string filename, bool map_screenshot)
@@ -597,200 +662,38 @@ int display::screenshot(std::string filename, bool map_screenshot)
 	return size;
 }
 
-// only used to context menu
-gui::button* display::find_button(const theme::menu* m, int btnidx)
+void display::widget_set_pip_image(const std::string& id, const std::string& bg, const std::string& fg)
 {
-	size_t i, size;
-	if (!buttons_ctx_) {
-		return NULL;
-	}
-	size = theme_.context_menus().size();
-	for (i = 0; i < size; i ++) {
-		if (buttons_ctx_[i].menu == m) {
-			return buttons_ctx_[i].buttons[btnidx];
+	gui2::tcontrol* widget = dynamic_cast<gui2::tcontrol*>(get_theme_object(id));
+	if (widget) {
+		int w = widget->fix_width();
+		int h = widget->fix_height();
+		if (!w || !h) {
+			w = widget->get_width();
+			h = widget->get_height();
 		}
-	}
-	return NULL;
-}
-
-gui::button* display::find_button(const std::string& id)
-{
-	size_t i, size, i2;
-	for (i = 0; i < buttons_.size(); ++i) {
-		if (buttons_[i].id() == id) {
-			return &buttons_[i];
-		}
-	}
-	// create_buttons may call find_button
-	if (!buttons_ctx_) {
-		return NULL;
-	}
-	size = theme_.context_menus().size();
-	for (i = 0; i < size; i ++) {
-		for (i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
-			if (buttons_ctx_[i].buttons[i2]->id() == id) {
-				return buttons_ctx_[i].buttons[i2];
-			}
-		}
-	}
-	return NULL;
-
-}
-
-void display::create_buttons()
-{
-	std::vector<gui::button> work;
-	size_t	idx, size, idx2, size2;
-	gui::button* btn;
-
-	const std::vector<theme::menu>& buttons = theme_.menus();
-	for (std::vector<theme::menu>::const_iterator i = buttons.begin(); i != buttons.end(); ++i) {
-		const SDL_Rect& loc = i->location(screen_area());
-		gui::button b(screen_, i->title(), string_to_button_type(i->type()), i->image(), gui::button::DEFAULT_SPACE, true, this, &*i, 0, NULL, 0, 0, i->font_size());
-		b.set_id(i->get_id());
-		if (string_to_button_type(i->type()) == gui::button::TYPE_CHECK) {
-			b.set_location(loc.x, loc.y);
-		} else {
-			b.set_location(loc);
-		}
-		if (!i->tooltip().empty()) {
-			tooltips::add_tooltip(loc, i->tooltip());
-		}
-		if (rects_overlap(b.location(), map_outside_area())) {
-			b.set_volatile(true);
-		}
-		
-		gui::button* b_prev = find_button(b.id());
-		if (b_prev) {
-			b.enable(b_prev->enabled());
-		}
-		work.push_back(b);
-	}
-	buttons_.swap(work);
-
-	// work.clear();
-	clear_context_menu_buttons();
-
-	size = theme_.context_menus().size();
-	if (!size) {
-		return;
-	}
-
-	buttons_ctx_ = (menu_button_map*)malloc(sizeof(menu_button_map) * size);
-	memset(buttons_ctx_, 0, sizeof(menu_button_map) * size);
-	std::vector<theme::menu>& menus = theme_.context_menus();
-	idx = 0;
-	for (std::vector<theme::menu>::iterator i = menus.begin(); i != menus.end(); ++i, idx ++) {
-		if (!i->button_style()) {
-			buttons_ctx_[idx].menu = &*i;
-			continue;
-		}
-		if (i->get_id() == "access-unit") {
-			buttons_ctx_[idx].menu = &*i;
-			buttons_ctx_[idx].button_count = 0;
-			set_index_in_map(idx, true);
-			continue;
-		} else if (i->get_id() == "access-hero") {
-			buttons_ctx_[idx].menu = &*i;
-			buttons_ctx_[idx].button_count = 0;
-			set_index_in_map(idx, false);
-			continue;
-		} else if (i->get_id() == "main") {
-			theme_.set_main_context_menu(&*i);
-		}
-		const std::vector<std::string>& items = i->items();
-
-		size2 = items.size();
-		buttons_ctx_[idx].menu = &*i;
-		buttons_ctx_[idx].buttons = (gui::button**)malloc(sizeof(gui::button*) * size2);
-		memset(buttons_ctx_[idx].buttons, 0, sizeof(gui::button*) * size2);
-		buttons_ctx_[idx].button_count = size2;
-
-		std::vector<std::string>::const_iterator item = items.begin();
-		idx2 = 0;
-		while (item != items.end()) {
-			std::string item1 = *item;
-			size_t pos = item->find(":");
-			if (pos != std::string::npos) {
-				item1 = item->substr(pos + 1, std::string::npos);
-			}
-			const SDL_Rect& loc = i->location(screen_area());
-			try {
-				// auto_join = false;
-				btn = buttons_ctx_[idx].buttons[idx2] = new gui::button(screen_, "", string_to_button_type(""), item1, gui::button::DEFAULT_SPACE, false, this, &*i, idx2, NULL, loc.w, loc.h);
-			} catch (...) {
-				throw game::game_error("Could not construct button object: " + item1 + ", mybe no corresponding images");
-			}
-			btn->set_id(item1);
-			btn->set_location(loc.x + idx2 * loc.w, loc.y);
-			// btn->set_location(loc);
-			if (rects_overlap(btn->location(),map_outside_area())) {
-				btn->set_volatile(true);
-			}
-			btn->hide(true);
-			
-			// work.push_back(b);
-
-			++item;
-			idx2 ++;
-		}
-	}
-
-	hide_menu("switch", true);
-}
-
-void display::clear_context_menu_buttons()
-{
-	size_t i, size, i2;
-
-	if (!buttons_ctx_) {
-		return;
-	}
-	size = theme_.context_menus().size();
-	for (i = 0; i < size; i ++) {
-		for (i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
-			// 1.button::button非正常退出(像没有对应该按钮的图片)
-			// 2.display::~display被调用
-			// 3.~display调用clear_context_menu_buttons
-			if (buttons_ctx_[i].buttons[i2]) {
-				buttons_ctx_[i].buttons[i2]->hide(true);
-				delete buttons_ctx_[i].buttons[i2];
-			}
-		}
-		if (!index_in_map(i)) {
-			// 部队快捷访问菜单按钮内存由display析构函数负责释放
-			free(buttons_ctx_[i].buttons);
-		}
-		buttons_ctx_[i].button_count = 0;
-		buttons_ctx_[i].require_count = 0;
-	}
-	free(buttons_ctx_);
-	buttons_ctx_ = NULL;
-}
-
-void display::menu_set_pip_image(const std::string& id, const std::string& fg)
-{
-	gui::button* btn = find_button(id);
-	if (btn) {
-		theme::menu* theme_b = get_theme().get_menu_item(id);
-		btn->set_pip_image(theme_b->image(), fg);
+		surface surf = generate_pip_surface(w, h, bg, fg);
+		widget->set_surface(surf, w, h);
 	}
 }
 
-void display::menu_set_image(const std::string& id, const std::string& image)
+void display::widget_set_image(const std::string& id, const std::string& image)
 {
-	gui::button* btn = find_button(id);
-	if (btn) {
-		btn->set_image(image, -1);
-	}
+	widget_set_surface(id, image::get_image(image));
 }
 
-gui::button::TYPE display::string_to_button_type(std::string type)
+void display::widget_set_surface(const std::string& id, const surface& surf)
 {
-	gui::button::TYPE res = gui::button::TYPE_PRESS;
-	if (type == "checkbox") { res = gui::button::TYPE_CHECK; }
-	else if (type == "image") { res = gui::button::TYPE_IMAGE; }
-	return res;
+	gui2::tcontrol* widget = dynamic_cast<gui2::tcontrol*>(get_theme_object(id));
+	if (widget) {
+		int w = widget->fix_width();
+		int h = widget->fix_height();
+		if (!w || !h) {
+			w = widget->get_width();
+			h = widget->get_height();
+		}
+		widget->set_surface(surf, w, h);
+	}
 }
 
 static const std::string& get_direction(size_t n)
@@ -958,7 +861,7 @@ std::vector<surface> display::get_terrain_images(const map_location &loc,
 		// Cache the offmap name.
 		// Since it is themabel it can change,
 		// so don't make it static.
-		const std::string off_map_name = "terrain/" + theme_.border().tile_image;
+		const std::string off_map_name = "terrain/" + border_.tile_image;
 		for (std::vector<animated<image::locator> >::const_iterator it =
 				terrains->begin(); it != terrains->end(); ++it) {
 
@@ -999,11 +902,24 @@ std::vector<surface> display::get_terrain_images(const map_location &loc,
 	return res;
 }
 
+display::tcanvas_drawing_buffer_lock::tcanvas_drawing_buffer_lock(display& disp)
+	: disp_(disp)
+	, to_canvas_(disp.to_canvas_)
+{
+	disp_.to_canvas_ = true;
+}
+
+display::tcanvas_drawing_buffer_lock::~tcanvas_drawing_buffer_lock()
+{
+	disp_.to_canvas_ = to_canvas_;
+}
+
 void display::drawing_buffer_add(const tdrawing_layer layer,
 		const map_location& loc, int x, int y, const surface& surf,
 		const SDL_Rect &clip)
 {
-	drawing_buffer_.push_back(tblit(layer, loc, x, y, surf, clip));
+	tdrawing_buffer& drawing_buffer = to_canvas_? canvas_drawing_buffer_: drawing_buffer_;
+	drawing_buffer.push_back(tblit(layer, loc, x, y, surf, clip));
 }
 
 void display::drawing_buffer_add(const tdrawing_layer layer,
@@ -1011,7 +927,8 @@ void display::drawing_buffer_add(const tdrawing_layer layer,
 		const std::vector<surface> &surf,
 		const SDL_Rect &clip)
 {
-	drawing_buffer_.push_back(tblit(layer, loc, x, y, surf, clip));
+	tdrawing_buffer& drawing_buffer = to_canvas_? canvas_drawing_buffer_: drawing_buffer_;
+	drawing_buffer.push_back(tblit(layer, loc, x, y, surf, clip));
 }
 
 // FIXME: temporary method. Group splitting should be made
@@ -1088,8 +1005,9 @@ SDL_Rect display::clip_rect_commit() const
 
 void display::drawing_buffer_commit(surface& screen)
 {
+	tdrawing_buffer& drawing_buffer = to_canvas_? canvas_drawing_buffer_: drawing_buffer_;
 	// std::list::sort() is a stable sort
-	drawing_buffer_.sort();
+	drawing_buffer.sort();
 
 	SDL_Rect clip_rect;
 	if (screen.get() == get_screen_surface().get()) {
@@ -1112,7 +1030,7 @@ void display::drawing_buffer_commit(surface& screen)
 	 * layergroup > location > layer > 'tblit' > surface
 	 */
 
-	BOOST_FOREACH (const tblit &blit, drawing_buffer_) {
+	BOOST_FOREACH (const tblit &blit, drawing_buffer) {
 		BOOST_FOREACH (const surface& surf, blit.surf()) {
 			// Note that dstrect can be changed by sdl_blit
 			// and so a new instance should be initialized
@@ -1125,12 +1043,7 @@ void display::drawing_buffer_commit(surface& screen)
 			//NOTE: the screen part should already be marked as 'to update'
 		}
 	}
-	drawing_buffer_clear();
-}
-
-void display::drawing_buffer_clear()
-{
-	drawing_buffer_.clear();
+	drawing_buffer.clear();
 }
 
 void display::sunset(const size_t delay)
@@ -1216,105 +1129,6 @@ void display::update_display()
 	}
 
 	flip();
-}
-
-static void draw_panel(CVideo& video, const theme::panel& panel, std::vector<gui::button>& buttons)
-{
-	//log_scope("draw panel");
-	DBG_DP << "drawing panel " << panel.get_id() << "\n";
-
-	surface surf(image::get_image(panel.image()));
-
-	const SDL_Rect screen = screen_area();
-	SDL_Rect& loc = panel.location(screen);
-
-	DBG_DP << "panel location: x=" << loc.x << ", y=" << loc.y
-			<< ", w=" << loc.w << ", h=" << loc.h << "\n";
-
-	if(!surf.null()) {
-		if(surf->w != loc.w || surf->h != loc.h) {
-			surf.assign(scale_surface(surf,loc.w,loc.h));
-		}
-
-		video.blit_surface(loc.x,loc.y,surf);
-	}
-
-	static bool first_time = true;
-	for(std::vector<gui::button>::iterator b = buttons.begin(); b != buttons.end(); ++b) {
-		if(rects_overlap(b->location(),loc)) {
-			b->set_dirty(true);
-			if (first_time){
-				/**
-				 * @todo FixMe YogiHH:
-				 * This is only made to have the buttons store their background
-				 * information, otherwise the background will appear completely
-				 * black. It would more straightforward to call bg_update, but
-				 * that is not public and there seems to be no other way atm to
-				 * call it. I will check if bg_update can be made public.
-				 */
-				b->hide(true);
-				b->hide(false);
-			}
-		}
-	}
-}
-
-static void draw_label(CVideo& video, surface target, const theme::label& label)
-{
-	std::string text = label.text();
-	if (label.font_rgb_set()) {
-        std::stringstream temp;
-		Uint32 RGB=label.font_rgb();
-        int red = (RGB & 0x00FF0000)>>16;
-        int green = (RGB & 0x0000FF00)>>8;
-        int blue = (RGB & 0x000000FF);
-
-        std::string c_start="<";
-        std::string c_sep=",";
-        std::string c_end=">";
-        std::stringstream color;
-        color << c_start << red << c_sep << green << c_sep << blue << c_end;
-        
-        color << text;
-		text = color.str();
-	}
-	const std::string& icon = label.icon();
-	SDL_Rect& loc = label.location(screen_area());
-
-	if (icon.empty() == false) {
-		surface surf(image::get_image(icon));
-		if (!surf.null()) {
-			if(surf->w > loc.w || surf->h > loc.h) {
-				surf.assign(scale_surface(surf,loc.w,loc.h));
-			}
-
-			sdl_blit(surf,NULL,target,&loc);
-		}
-
-		if(text.empty() == false) {
-			tooltips::add_tooltip(loc,text);
-		}
-	} else if(text.empty() == false) {
-		font::draw_text(&video,loc,label.font_size(),font::NORMAL_COLOR,text,loc.x,loc.y);
-	}
-
-}
-
-void display::draw_all_panels()
-{
-	surface const screen(screen_.getSurface());
-
-	const std::vector<theme::panel>& panels = theme_.panels();
-	for(std::vector<theme::panel>::const_iterator p = panels.begin(); p != panels.end(); ++p) {
-		draw_panel(video(),*p,buttons_);
-	}
-
-	const std::vector<theme::label>& labels = theme_.labels();
-	for(std::vector<theme::label>::const_iterator i = labels.begin(); i != labels.end(); ++i) {
-		draw_label(video(),screen,*i);
-	}
-
-	create_buttons();
 }
 
 static void draw_background(surface screen, const SDL_Rect& area, const std::string& image)
@@ -1496,17 +1310,12 @@ void display::draw_init()
 		invalidateAll_ = true;
 	}
 
-	if(!panelsDrawn_) {
-		draw_all_panels();
-		panelsDrawn_ = true;
-	}
-
 	if(redraw_background_) {
 		// Full redraw of the background
 		const SDL_Rect clip_rect = map_outside_area();
 		const surface screen = get_screen_surface();
 		clip_rect_setter set_clip_rect(screen, &clip_rect);
-		draw_background(screen, clip_rect, theme_.border().background_image);
+		draw_background(screen, clip_rect, border_.background_image);
 
 		redraw_background_ = false;
 
@@ -1561,116 +1370,7 @@ void display::delay(unsigned int milliseconds) const
 		SDL_Delay(milliseconds);
 }
 
-const button_loc& display::menu_pressed()
-{
-	static button_loc loc;
-
-	loc = button_loc_;
-	button_loc_.first = NULL;
-
-	return loc;
-}
-
-bool display::before_press(const void* menu, const size_t btnidx)
-{
-	return true;
-}
-
-void display::pressed(const void* menu, const size_t btnidx)
-{
-	button_loc_.first = (theme::menu*)(menu);
-	button_loc_.second = btnidx;
-}
-
-void display::enable_menu(const std::string& item, bool enable)
-{
-	for (std::vector<theme::menu>::const_iterator menu = theme_.menus().begin(); menu != theme_.menus().end(); ++menu) {
-
-		std::vector<std::string>::const_iterator hasitem = std::find(menu->items().begin(), menu->items().end(), item);
-
-		if (hasitem != menu->items().end()) {
-			const size_t index = menu - theme_.menus().begin();
-			if (index >= buttons_.size()) {
-				assert(false);
-				return;
-			}
-			buttons_[index].enable(enable);
-		}
-	}
-}
-
-void display::hide_menu(const std::string& item, bool hide)
-{
-	for (std::vector<theme::menu>::const_iterator menu = theme_.menus().begin(); menu != theme_.menus().end(); ++menu) {
-
-		std::vector<std::string>::const_iterator hasitem = std::find(menu->items().begin(), menu->items().end(), item);
-
-		if (hasitem != menu->items().end()) {
-			const size_t index = menu - theme_.menus().begin();
-			if(index >= buttons_.size()) {
-				assert(false);
-				return;
-			}
-			buttons_[index].hide(hide);
-		}
-	}
-}
-
 // @flags: which items will be display/hide
-void display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags, uint32_t disable)
-{
-	size_t	i, size, i2;
-	const theme::menu* adjusted = m;
-
-	if (!m) {
-		adjusted = theme_.context_menu("");
-	}
-	if (!adjusted) {
-		return;
-	}
-
-	SDL_Rect loc = adjusted->location(screen_area());
-	size = theme_.context_menus().size();
-	for (i = 0; i < size; i ++) {
-		if (buttons_ctx_[i].menu == adjusted) {
-			break;
-		}
-	}
-
-	for (i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
-		gui::button* b = buttons_ctx_[i].buttons[i2];
-		if (flags & (1 << i2)) {
-			if (!hide) {
-				b->set_location(loc.x, loc.y);
-			}
-			b->hide(hide);
-			if (hide) {
-				b->leave();
-				b->enable();
-#ifdef _WIN32
-				tooltips::clear_tooltips(b->location());
-#endif
-			} else {
-				b->join();
-				if (disable & (1 << i2)) {
-					b->enable(false);
-				}
-#ifdef _WIN32
-				const t_string& str = hotkey::get_hotkey(b->id()).get_description();
-				if (!str.empty()) {
-					tooltips::add_tooltip(b->location(), hotkey::get_hotkey(b->id()).get_description());
-				}
-#endif
-			}
-			// update loc coordinate
-			loc.x += loc.w;
-		}
-	}
-	if (hide) {
-		theme_.set_current_context_menu(NULL);
-	}
-}
-
 void display::goto_main_context_menu()
 {
 }
@@ -1698,56 +1398,91 @@ void display::draw_border(const map_location& loc, const int xpos, const int ypo
 	// First handle the corners :
 	if(loc.x == -1 && loc.y == -1) { // top left corner
 		drawing_buffer_add(LAYER_BORDER, loc, xpos + zoom_/4, ypos,
-			image::get_image(theme_.border().corner_image_top_left, image::SCALED_TO_ZOOM));
+			image::get_image(border_.corner_image_top_left, image::SCALED_TO_ZOOM));
 	} else if(loc.x == get_map().w() && loc.y == -1) { // top right corner
 		// We use the map idea of odd and even, and map coords are internal coords + 1
 		if(loc.x%2 == 0) {
 			drawing_buffer_add(LAYER_BORDER, loc, xpos, ypos + zoom_/2,
-				image::get_image(theme_.border().corner_image_top_right_odd, image::SCALED_TO_ZOOM));
+				image::get_image(border_.corner_image_top_right_odd, image::SCALED_TO_ZOOM));
 		} else {
 			drawing_buffer_add(LAYER_BORDER, loc, xpos, ypos,
-				image::get_image(theme_.border().corner_image_top_right_even, image::SCALED_TO_ZOOM));
+				image::get_image(border_.corner_image_top_right_even, image::SCALED_TO_ZOOM));
 		}
 	} else if(loc.x == -1 && loc.y == get_map().h()) { // bottom left corner
 		drawing_buffer_add(LAYER_BORDER, loc, xpos + zoom_/4, ypos,
-			image::get_image(theme_.border().corner_image_bottom_left, image::SCALED_TO_ZOOM));
+			image::get_image(border_.corner_image_bottom_left, image::SCALED_TO_ZOOM));
 
 	} else if(loc.x == get_map().w() && loc.y == get_map().h()) { // bottom right corner
 		// We use the map idea of odd and even, and map coords are internal coords + 1
 		if(loc.x%2 == 1) {
 			drawing_buffer_add(LAYER_BORDER, loc, xpos, ypos,
-				image::get_image(theme_.border().corner_image_bottom_right_even, image::SCALED_TO_ZOOM));
+				image::get_image(border_.corner_image_bottom_right_even, image::SCALED_TO_ZOOM));
 		} else {
 			drawing_buffer_add(LAYER_BORDER, loc, xpos, ypos,
-				image::get_image(theme_.border().corner_image_bottom_right_odd, image::SCALED_TO_ZOOM));
+				image::get_image(border_.corner_image_bottom_right_odd, image::SCALED_TO_ZOOM));
 		}
 
 	// Now handle the sides:
 	} else if(loc.x == -1) { // left side
 		drawing_buffer_add(LAYER_BORDER, loc, xpos + zoom_/4, ypos,
-			image::get_image(theme_.border().border_image_left, image::SCALED_TO_ZOOM));
+			image::get_image(border_.border_image_left, image::SCALED_TO_ZOOM));
 	} else if(loc.x == get_map().w()) { // right side
 		drawing_buffer_add(LAYER_BORDER, loc, xpos + zoom_/4, ypos,
-			image::get_image(theme_.border().border_image_right, image::SCALED_TO_ZOOM));
+			image::get_image(border_.border_image_right, image::SCALED_TO_ZOOM));
 	} else if(loc.y == -1) { // top side
 		// We use the map idea of odd and even, and map coords are internal coords + 1
 		if(loc.x%2 == 1) {
 			drawing_buffer_add(LAYER_BORDER, loc, xpos, ypos,
-				image::get_image(theme_.border().border_image_top_even, image::SCALED_TO_ZOOM));
+				image::get_image(border_.border_image_top_even, image::SCALED_TO_ZOOM));
 		} else {
 			drawing_buffer_add(LAYER_BORDER, loc, xpos, ypos + zoom_/2,
-				image::get_image(theme_.border().border_image_top_odd, image::SCALED_TO_ZOOM));
+				image::get_image(border_.border_image_top_odd, image::SCALED_TO_ZOOM));
 		}
 	} else if(loc.y == get_map().h()) { // bottom side
 		// We use the map idea of odd and even, and map coords are internal coords + 1
 		if(loc.x%2 == 1) {
 			drawing_buffer_add(LAYER_BORDER, loc, xpos, ypos,
-				image::get_image(theme_.border().border_image_bottom_even, image::SCALED_TO_ZOOM));
+				image::get_image(border_.border_image_bottom_even, image::SCALED_TO_ZOOM));
 		} else {
 			drawing_buffer_add(LAYER_BORDER, loc, xpos, ypos + zoom_/2,
-				image::get_image(theme_.border().border_image_bottom_odd, image::SCALED_TO_ZOOM));
+				image::get_image(border_.border_image_bottom_odd, image::SCALED_TO_ZOOM));
 		}
 	}
+}
+
+gui2::twidget* display::get_theme_object(const std::string& id) const
+{
+	return theme_->get_object(id);
+}
+
+void display::set_theme_object_active(const std::string& id, bool active) const
+{
+	theme_->set_object_active(id, active);
+}
+
+void display::set_theme_object_visible(const std::string& id, const gui2::twidget::tvisible visible) const
+{
+	theme_->set_object_visible(id, visible);
+}
+
+void display::set_theme_object_surface(const std::string& id, const surface& surf) const
+{
+	theme_->set_object_surface(id, surf);
+}
+
+gui2::twidget* display::get_theme_report(int num) const
+{
+	return theme_->get_report(num);
+}
+
+void display::set_theme_report_label(int num, const std::string& label) const
+{
+	return theme_->set_report_label(num, label);
+}
+
+void display::set_theme_report_surface(int num, const surface& surf) const
+{
+	return theme_->set_report_surface(num, surf);
 }
 
 surface display::minimap_surface(int w, int h) 
@@ -1757,16 +1492,22 @@ surface display::minimap_surface(int w, int h)
 
 void display::draw_minimap()
 {
-	const SDL_Rect& area = minimap_area();
-	if(minimap_ == NULL || minimap_->w > area.w || minimap_->h > area.h) {
+	gui2::tminimap* widget = dynamic_cast<gui2::tminimap*>(get_theme_object("mini-map"));
+	if (!widget) {
+		return;
+	}
+	SDL_Rect area = widget->get_rect();
+
+	// const SDL_Rect& area = minimap_area();
+	if (minimap_ == NULL || minimap_->w > area.w || minimap_->h > area.h) {
 		minimap_ = minimap_surface(area.w, area.h);
-		if(minimap_ == NULL) {
+		if (minimap_ == NULL) {
 			return;
 		}
 	}
 
-	const surface screen(screen_.getSurface());
-	clip_rect_setter clip_setter(screen, &area);
+	surface screen = create_neutral_surface(area.w, area.h);
+	area.x = area.y = 0;
 
 	SDL_Color back_color = {31,31,23,255};
 	draw_centered_on_background(minimap_, area, back_color, screen);
@@ -1777,7 +1518,7 @@ void display::draw_minimap()
 	minimap_location_.w = minimap_->w;
 	minimap_location_.h = minimap_->h;
 
-	draw_minimap_units();
+	draw_minimap_units(screen);
 
 	// calculate the visible portion of the map:
 	// scaling between minimap and full map images
@@ -1789,7 +1530,7 @@ void display::draw_minimap()
 	// and the possible difference between real map and outside off-map
 	SDL_Rect map_rect = map_area();
 	SDL_Rect map_out_rect = map_outside_area();
-	double border = theme_.border().size;
+	double border = border_.size;
 	double shift_x = - border*hex_width() - (map_out_rect.w - map_rect.w) / 2;
 	double shift_y = - (border+0.25)*hex_size() - (map_out_rect.h - map_rect.h) / 2;
 
@@ -1803,6 +1544,8 @@ void display::draw_minimap()
                    minimap_location_.y + view_y - 1,
                    view_w + 2, view_h + 2,
                    box_color, screen);
+
+	widget->set_surface(screen, area.w, area.h);
 }
 
 bool display::scroll(int xmove, int ymove)
@@ -1943,10 +1686,7 @@ void display::scroll_to_xy(int screenxpos, int screenypos, SCROLL_TYPE scroll_ty
 
 	if (scroll_type == WARP || turbo_speed() > 2.0 || preferences::scroll_speed() > 99) {
 		scroll(xmove,ymove);
-		uint32_t start = SDL_GetTicks();
 		draw();
-		uint32_t end_scroll_to_tile = SDL_GetTicks();
-		posix_print("display::scroll_to_xy, used time: %u ms\n", SDL_GetTicks() - start);
 		return;
 	}
 
@@ -2187,8 +1927,8 @@ void display::bounds_check_position(int& xpos, int& ypos)
 	const int tile_width = hex_width();
 
 	// Adjust for the border 2 times
-	const int xend = static_cast<int>(tile_width * (get_map().w() + 2 * theme_.border().size) + tile_width/3);
-	const int yend = static_cast<int>(zoom_ * (get_map().h() + 2 * theme_.border().size) + zoom_/2);
+	const int xend = static_cast<int>(tile_width * (get_map().w() + 2 * border_.size) + tile_width/3);
+	const int yend = static_cast<int>(zoom_ * (get_map().h() + 2 * border_.size) + zoom_/2);
 
 	if(xpos > xend - map_area().w) {
 		xpos = xend - map_area().w;
@@ -2220,33 +1960,40 @@ double display::turbo_speed() const
 		return 1.0;
 }
 
-bool display::redraw_everything()
+void display::change_resolution()
 {
-	if (screen_.update_locked())
-		return false;
+	if (controller_) {
+		std::map<const std::string, bool> actives;
+		pre_change_resolution(actives);
+
+		release_theme();
+		// video_.
+		theme::set_resolution2(theme_cfg_, screen_.getx(), screen_.gety());
+		create_theme();
+
+		post_change_resolution(actives);
+		for (std::map<const std::string, bool>::const_iterator it = actives.begin(); it != actives.end(); ++ it) {
+			set_theme_object_active(it->first, it->second);
+		}
+		redraw_everything();
+	}
+}
+
+void display::redraw_everything()
+{
+	if (screen_.update_locked()) {
+		return;
+	}
 
 	invalidateGameStatus_ = true;
 
-	for(size_t n = 0; n != reports::NUM_REPORTS; ++n) {
-		reportRects_[n] = empty_rect;
-		reportSurfaces_[n].assign(NULL);
-		reports_[n] = reports::report();
+	for (std::vector<reports::report>::iterator it = reports_.begin(); it != reports_.end(); ++ it) {
+		*it = reports::report();
 	}
 
 	bounds_check_position();
 
 	tooltips::clear_tooltips();
-
-	// theme_.set_resolution may change context menu, it necessary to release buttons_ctx_ before it.
-	// when relase buttons_ctx_, it need right number of context menu. 
-	clear_context_menu_buttons();
-	theme_.set_resolution(screen_area());
-
-	if(buttons_.empty() == false) {
-		create_buttons();
-	}
-
-	panelsDrawn_ = false;
 
 	labels().recalculate_labels();
 
@@ -2262,8 +2009,54 @@ bool display::redraw_everything()
 	BOOST_FOREACH (boost::function<void(display&)> f, redraw_observers_) {
 		f(*this);
 	}
+}
 
-	return true;
+void display::click_context_menu(const std::string& main, const std::string& id, size_t flags)
+{
+	std::vector<std::string> items = utils::split(id, ':');
+	size_t pos = items[0].rfind("_m");
+	if (pos == items[0].size() - 2) {
+		// cancel current menu, and display sub-menu
+		const std::string item1 = items[0].substr(0, pos);
+		show_context_menu(main, item1);
+	} else {
+		// execute one normal command
+		if (flags & gui2::tcontext_menu::F_HIDE) {
+			hide_context_menu();
+		}
+		if (flags & gui2::tcontext_menu::F_PARAM) {
+			controller_->execute_command(hotkey::get_hotkey(items[0]).get_id(), -1, items[1]);
+
+		} else {
+			controller_->execute_command(hotkey::get_hotkey(items.back()).get_id(), -1, null_str);
+		}
+	}
+}
+
+void display::show_context_menu(const std::string& main_id, const std::string& id)
+{
+	const gui2::tcontext_menu* menu = NULL;
+	if (!main_id.empty()) {
+		menu = theme_->context_menu(main_id);
+	} else {
+		std::vector<gui2::tcontext_menu>& menus = theme_->context_menus();
+		menu = &menus.front();
+	}
+
+	menu->show(*this, *controller_, id);
+}
+
+void display::hide_context_menu(const std::string& main_id)
+{
+	const gui2::tcontext_menu* menu = NULL;
+	if (!main_id.empty()) {
+		menu = theme_->context_menu(main_id);
+	} else {
+		std::vector<gui2::tcontext_menu>& menus = theme_->context_menus();
+		menu = &menus.front();
+	}
+
+	menu->hide();
 }
 
 void display::add_redraw_observer(boost::function<void(display&)> f)
@@ -2310,14 +2103,17 @@ void display::draw(bool update,bool force)
 	// * case of unit in hex but was there last turn=>its hexes are invalidated too
 	// * case of unit inhex not there last turn => it moved, so was invalidated previously
 	if (!get_map().empty()) {
-		//int simulate_delay = 0;
+		invalidate_theme();
 
 		/*
 		 * draw_invalidated() also invalidates the halos, so also needs to be
 		 * ran if invalidated_.empty() == true.
 		 */
 		draw_invalidated();
+
 		drawing_buffer_commit(screen_.getSurface());
+		gui2::async_draw();
+
 		post_commit();
 
 		// clear flag. 
@@ -2549,257 +2345,55 @@ void display::draw_image_for_report(surface& img, SDL_Rect& rect)
 	}
 }
 
-void display::refresh_report(reports::TYPE report_num, reports::report report)
+void display::refresh_report(int num, const reports::report& r)
 {
-	const theme::status_item* const item = theme_.get_status_item(reports::report_name(report_num));
-	if (!item) {
-		reportSurfaces_[report_num].assign(NULL);
+	gui2::twidget* widget = get_theme_report(num);
+	if (!widget) {
 		return;
 	}
 
-	SDL_Rect &rect = reportRects_[report_num];
-	const SDL_Rect &new_rect = item->location(screen_area());
+	const SDL_Rect rect = widget->get_rect();
 
 	// Report and its location is unchanged since last time. Do nothing.
-	if (rect == new_rect && reports_[report_num] == report) {
+	const reports::report& orignal = reports_[num];
+	if (orignal.rect == rect && orignal == r) {
 		return;
 	}
 
-	reports_[report_num] = report;
+	tooltips::clear_tooltips(orignal.rect);
+	reports_[num] = r;
+	reports_[num].rect = rect;
 
-	surface &surf = reportSurfaces_[report_num];
-
-	if (surf) {
-		sdl_blit(surf, NULL, screen_.getSurface(), &rect);
+	if (!r.valid()) {
+		return;
 	}
 
-	// If the rectangle has just changed, assign the surface to it
-	if (new_rect != rect || !surf)
-	{
-		surf.assign(NULL);
-		rect = new_rect;
+	if (r.type == reports::report::LABEL) {
+		set_theme_report_label(num, r.text);
 
-		// If the rectangle is present, and we are blitting text,
-		// then we need to backup the surface.
-		// (Images generally won't need backing up,
-		// unless they are transperant, but that is done later).
-		if (rect.w > 0 && rect.h > 0) {
-			surf.assign(get_surface_portion(screen_.getSurface(), rect));
-			if (reportSurfaces_[report_num] == NULL) {
-				ERR_DP << "Could not backup background for report!\n";
-			}
-		}
+	} else {
+		surface surf = refresh_surface_report(num, reports_[num], *widget);
+		set_theme_report_surface(num, surf);
 	}
 
-	tooltips::clear_tooltips(rect);
-
-	if (report.empty()) return;
-
-	int x = rect.x, y = rect.y;
-
-	// Add prefix, postfix elements.
-	// Make sure that they get the same tooltip
-	// as the guys around them.
-	std::string str = item->prefix();
-	if (!str.empty()) {
-		report.insert(report.begin(), reports::element(str, "", report.begin()->tooltip));
-	}
-	str = item->postfix();
-	if (!str.empty()) {
-		report.push_back(reports::element(str, "", report.back().tooltip));
-	}
-
-	// Loop through and display each report element.
-	int tallest = 0;
-	int image_count = 0;
-	bool used_ellipsis = false;
-	std::ostringstream ellipsis_tooltip;
-	SDL_Rect ellipsis_area = rect;
-
-	reports::report::iterator e = report.begin();
-	for(; e != report.end(); ++e)
-	{
-		SDL_Rect area;
-		if (!e->rect.w) {
-			area = create_rect(x, y, rect.w + rect.x - x, rect.h + rect.y - y);
-		} else {
-			const SDL_Rect& e_rect = e->rect;
-			area = create_rect(rect.x + e_rect.x, rect.y + e_rect.y, e_rect.w, e_rect.h);
-		}
-			
-		if (area.h <= 0) break;
-
-		if (report_num == reports::TURN) {
-			std::vector<std::string> vstr = utils::split(e->text);
-			if (vstr.size() != 4) {
-				goto skip_element;
-			}
-
-			const int bar_turn_png_valid_width = 76;
-			const int left_gap_with = 2;
-			int main_ticks = lexical_cast_default<int>(vstr[0]);
-			int autosave_ticks = lexical_cast_default<int>(vstr[1]);
-
-			double filled = 1.0 * (main_ticks % game_config::ticks_per_turn) / game_config::ticks_per_turn;
-			draw_bar_to_surf("misc/bar-turn.png", screen_.getSurface(), area.x, area.y + 1, area.w - 4, filled, font::GOOD_COLOR, ftofxp(0.8), false);
-
-			SDL_Rect dst_clip;
-			if (autosave_ticks >= 0) {
-				// auto save point
-				int pos = (autosave_ticks % game_config::ticks_per_turn) * bar_turn_png_valid_width / game_config::ticks_per_turn;
-				dst_clip.x = area.x + left_gap_with + pos;
-				dst_clip.y = area.y;
-
-				surface filled_surf = create_compatible_surface(screen_.getSurface(), 2, area.h);
-				SDL_FillRect(filled_surf, NULL, SDL_MapRGBA(filled_surf->format, 255, 0, 0, 1.0));
-				sdl_blit(filled_surf, NULL, screen_.getSurface(), &dst_clip);
-			}
-
-			std::string turn_str = vstr[2];
-			if (lexical_cast_default<int>(vstr[3]) > 0) {
-				turn_str.append("/");
-				turn_str.append(vstr[3]);
-			}
-			dst_clip.x = area.x + (area.w - (turn_str.size() * 8)) / 2;
-			dst_clip.y = area.y + 2;
-			std::stringstream img;
-			for (std::string::const_iterator it = turn_str.begin(); it != turn_str.end(); ++ it) {
-				char ch = *it;
-				img.str("");
-				if (isdigit(ch)) {
-					img << "misc/digit.png~CROP(" << 8 * (ch - 0x30) << ", 0, 8, 12)";
-				} else if (ch == '/') {
-					img << "misc/digit.png~CROP(" << 8 * 10 << ", 0, 8, 12)";
-				}
-				if (!img.str().empty()) {
-					sdl_blit(image::get_image(img.str()), NULL, screen_.getSurface(), &dst_clip);
-					dst_clip.x += 8;
-				}
-			}
-		
-		} else if (!e->text.empty()) {
-			if (used_ellipsis) goto skip_element;
-
-			// Draw a text element.
-			font::ttext text;
-			if (item->font_rgb_set()) {
-				text.set_foreground_color(item->font_rgb());
-			}
-			std::string t = e->text;
-			bool eol = false;
-			if (t[t.size() - 1] == '\n') {
-				eol = true;
-				t = t.substr(0, t.size() - 1);
-			}
-			text.set_font_size(item->font_size());
-			text.set_text(t, true);
-			text.set_maximum_width(area.w);
-			text.set_maximum_height(area.h, false);
-			text.set_ellipse_mode(PANGO_ELLIPSIZE_END);
-			surface s = text.render();
-
-			// check if next element is text with almost no space to show it
-			const int minimal_text = 12; // width in pixels
-			if(!eol && rect.w - (x - rect.x + s->w) < minimal_text
-				 && e+1 != report.end() && !(e+1)->text.empty())
-			{
-				// make this element longer to trigger rendering of ellipsis
-				// (to indicate that next elements have not enough space)
-				//NOTE this space should be longer than minimal_text pixels
-				t = t + "    ";
-				text.set_text(t, true);
-				s = text.render();
-				// use the area of this element for next tooltips
-				used_ellipsis = true;
-				ellipsis_area.x = x;
-				ellipsis_area.y = y;
-				ellipsis_area.w = s->w;
-				ellipsis_area.h = s->h;
-			}
-
-			screen_.blit_surface(x, y, s);
-			area.w = s->w;
-			area.h = s->h;
-			if (area.h > tallest) {
-				tallest = area.h;
-			}
-			if (eol) {
-				x = rect.x;
-				y += tallest;
-				tallest = 0;
-			} else {
-				x += area.w;
-			}
-
-		} else if (!e->image.get_filename().empty()) {
-			if (used_ellipsis) goto skip_element;
-
-			// Draw an image element.
-			surface img(image::get_image(e->image));
-
-			if (!img) {
-				ERR_DP << "could not find image for report: '" << e->image.get_filename() << "'\n";
-				continue;
-			}
-
-			// BUG! correct in future. portrait only tow iamge.
-			if (area.w < img->w && image_count >= 3) {
-				// We have more than one image, and this one doesn't fit.
-				img = surface(image::get_image(game_config::images::ellipsis));
-				used_ellipsis = true;
-			}
-
-			if (img->w < area.w) area.w = img->w;
-			if (img->h < area.h) area.h = img->h;
-			draw_image_for_report(img, area);
-
-			++image_count;
-			if (area.h > tallest) {
-				tallest = area.h;
-			}
-
-			if (!used_ellipsis) {
-				x += area.w;
-			} else {
-				ellipsis_area = area;
-			}
-
-		} else {
-			// No text nor image, skip this element
-			continue;
-		}
-
-		skip_element:
-		if (!e->tooltip.empty()) {
-			if (!used_ellipsis) {
-				tooltips::add_tooltip(area, e->tooltip);
-			} else {
-				// Collect all tooltips for the ellipsis.
-				// TODO: need a better separator
-				// TODO: assign an action
-				ellipsis_tooltip << e->tooltip;
-				if(e+1 != report.end())
-					ellipsis_tooltip << "\n  _________\n\n";
-			}
-		}
-	}
-
-	if (used_ellipsis) {
-		tooltips::add_tooltip(ellipsis_area, ellipsis_tooltip.str());
+	if (!r.tooltip.empty()) {
+		tooltips::add_tooltip(rect, r.tooltip);
 	}
 }
 
 void display::invalidate_all()
 {
-	DBG_DP << "invalidate_all()\n";
 	invalidateAll_ = true;
-	memset(draw_area_, INVALIDATE, draw_area_size_);
+	if (draw_area_) {
+		memset(draw_area_, INVALIDATE, draw_area_size_);
+	}
 }
 
 bool display::invalidate(const map_location& loc)
 {
-	if (invalidateAll_)
+	if (invalidateAll_) {
 		return false;
+	}
 
 	int pos = (loc.y + 1) * draw_area_pitch_ + (loc.x + 1);
 	if (pos < 0 || pos >= draw_area_size_) {
@@ -2884,6 +2478,43 @@ void display::invalidate_animations()
 			invalidate_animations_location(loc);
 		}
 	}
+}
+
+void display::invalidate_theme()
+{
+	const map_location zero_loc(0,0);
+	int zero_x = get_location_x(zero_loc);
+	int zero_y = get_location_y(zero_loc);
+
+	const std::vector<gui2::twidget*>& volatiles = theme_->volatiles();
+	std::vector<SDL_Rect> rects;
+	for (std::vector<gui2::twidget*>::const_iterator it = volatiles.begin(); it != volatiles.end(); ++ it) {
+		gui2::twidget* widget = *it;
+		gui2::twidget::tvisible visible = widget->get_visible();
+		if (visible == gui2::twidget::VISIBLE || widget->get_dirty()) {
+			rects.push_back(widget->get_rect());
+			if (visible != gui2::twidget::VISIBLE) {
+				// when visible --> invisible
+				widget->set_dirty(false);
+			}
+		}
+	}
+
+	rect_of_hexes underlying_hex;
+	for (std::vector<SDL_Rect>::const_iterator it = rects.begin(); it != rects.end(); ++ it) {
+		SDL_Rect r = *it;
+		if (zero_.x != -1 && zero_.y != -1) {
+			r.x += zero_x - zero_.x;
+			r.y += zero_y - zero_.y;
+		}
+		underlying_hex = hexes_under_rect(r);
+		for (rect_of_hexes::iterator it2 = underlying_hex.begin(); it2 != underlying_hex.end(); ++ it2) {
+			invalidate(*it2);
+		}
+	}
+
+	zero_.x = zero_x;
+	zero_.y = zero_y;
 }
 
 void display::float_label(const map_location& loc, const std::string& text,

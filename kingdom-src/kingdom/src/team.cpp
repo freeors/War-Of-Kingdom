@@ -2813,7 +2813,7 @@ bool team::defeat_vote() const
 	}
 }
 
-int team::may_build_count() const
+int team::may_build_wall_count() const
 {
 	if (!tent::tower_mode()) {
 		return 1;
@@ -2883,6 +2883,73 @@ void team::save_last_active_tactic(const std::vector<unit*>& active)
 	}
 }
 
+void set_tactic_widget(gui2::tbutton& widget, hero& h, const std::string& label)
+{
+	int width = widget.fix_width();
+	int height = widget.fix_height();
+
+	surface image_ = make_neutral_surface(image::get_image("themes/tactic-bg.png"));
+	hero* tactic_hero;
+	if (h.valid()) {
+		tactic_hero = &h;
+
+		std::stringstream ss;
+		ss << h.image() << "~SCALE(36, 45)";
+		surface hero_surf = image::get_image(ss.str());
+
+		SDL_Rect clip = ::create_rect(1, 1, 0, 0);
+		blit_surface(hero_surf, NULL, image_, &clip);
+
+		if (!label.empty()) {
+			surface label_surf = font::get_rendered_text2(label);
+			clip.x += 36;
+			clip.y = (height - label_surf->h) / 2;
+			blit_surface(label_surf, NULL, image_, &clip);
+		}
+
+		image_ = scale_surface(image_, width, height);
+
+	} else {
+		tactic_hero = NULL;
+	}
+
+	widget.set_surface(image_, width, height);
+	widget.set_cookie(tactic_hero);
+}
+
+void set_bomb_widget(gui2::tbutton& widget, int bomb_turns)
+{
+	std::stringstream ss;
+	int width = widget.fix_width();
+	int height = widget.fix_height();
+
+	surface image_;
+	if (bomb_turns < game_config::max_bomb_turns) {
+		image_ = make_neutral_surface(image::get_image("themes/bomb-bg.png"));
+	} else {
+		image_ = make_neutral_surface(image::get_image("themes/bomb-full-bg.png"));
+	}
+	
+	
+	SDL_Rect dst_clip = create_rect(26, 20, 0, 0);
+	ss.str("");
+	ss << "misc/digit.png~CROP(" << 8 * bomb_turns << ", 0, 8, 12)";
+	blit_surface(image::get_image(ss.str()), NULL, image_, &dst_clip);
+
+	ss.str("");
+	ss << "misc/digit.png~CROP(" << 8 * 10 << ", 0, 8, 12)";
+	dst_clip.x += 8;
+	blit_surface(image::get_image(ss.str()), NULL, image_, &dst_clip);
+
+	ss.str("");
+	ss << "misc/digit.png~CROP(" << 8 * game_config::max_bomb_turns << ", 0, 8, 12)";
+	dst_clip.x += 8;
+	blit_surface(image::get_image(ss.str()), NULL, image_, &dst_clip);
+
+	image_ = scale_surface(image_, width, height);
+	widget.set_surface(image_, width, height);
+}
+
 void team::refresh_tactic_slots(game_display& disp) const
 {
 	play_controller& controller = *resources::controller;
@@ -2891,7 +2958,7 @@ void team::refresh_tactic_slots(game_display& disp) const
 	std::vector<unit*> tactics = active_tactics();
 	int index = 0;
 	std::stringstream name;
-	gui::button* btn;
+	gui2::tbutton* btn;
 	if (!game_config::hide_tactic_slot && !controller.is_linger_mode() && (allow_active || controller.allow_intervene())) {
 		for (std::vector<slot_cache::tslot>::const_iterator it = slot_cache::cache.begin(); it != slot_cache::cache.end(); ++ it, index ++) {
 			const slot_cache::tslot& slot = *it;
@@ -2903,40 +2970,40 @@ void team::refresh_tactic_slots(game_display& disp) const
 			}
 			name.str("");
 			name << "tactic" << index;
-			btn = disp.find_button(name.str());
+			btn = dynamic_cast<gui2::tbutton*>(disp.get_theme_object(name.str()));
 			if (btn) {
-				btn->set_tactic_image(*h, slot.label());
-				btn->hide(false);
+				set_tactic_widget(*btn, *h, slot.label());
+				btn->set_visible(gui2::twidget::VISIBLE);
 			}
 		}
 		for (; index < game_config::active_tactic_slots; index ++) {
 			name.str("");
 			name << "tactic" << index;
-			btn = disp.find_button(name.str());
-			btn->set_tactic_image(hero_invalid, null_str);
-			btn->hide(!is_human());
+			btn = dynamic_cast<gui2::tbutton*>(disp.get_theme_object(name.str()));
+			set_tactic_widget(*btn, hero_invalid, null_str);
+			btn->set_visible(is_human()? gui2::twidget::VISIBLE: gui2::twidget::INVISIBLE);
 		}
 		for (; index < theme_tactic_slots; index ++) {
 			name.str("");
 			name << "tactic" << index;
-			btn = disp.find_button(name.str());
-			btn->hide();
+			btn = dynamic_cast<gui2::tbutton*>(disp.get_theme_object(name.str()));
+			btn->set_visible(gui2::twidget::INVISIBLE);
 		}
 	} else {
 		for (index = 0; index < theme_tactic_slots; index ++) {
 			name.str("");
 			name << "tactic" << index;
-			btn = disp.find_button(name.str());
-			btn->hide();
+			btn = dynamic_cast<gui2::tbutton*>(disp.get_theme_object(name.str()));
+			btn->set_visible(gui2::twidget::INVISIBLE);
 		}
 	}
 
-	btn = disp.find_button("bomb");
+	btn = dynamic_cast<gui2::tbutton*>(disp.get_theme_object("bomb"));
 	if (!controller.is_linger_mode() && support_bomb) {
-		btn->set_bomb_image(bomb_turns_);
-		btn->hide(false);
+		set_bomb_widget(*btn, bomb_turns_);
+		btn->set_visible(gui2::twidget::VISIBLE);
 	} else {
-		btn->hide();
+		btn->set_visible(gui2::twidget::INVISIBLE);
 	}
 }
 

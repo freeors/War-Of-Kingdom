@@ -107,6 +107,7 @@ namespace game_config
 	int ticks_per_turn = 20000;
 	int feature_increase_spirit = 30; // 30%
 	bool show_side_report = false;
+	const std::string theme_window_id = "theme";
 
 
 	int max_bomb_turns = 2;

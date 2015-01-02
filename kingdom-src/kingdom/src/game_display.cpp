@@ -51,8 +51,12 @@ Growl_Delegate growl_obj;
 #include "play_controller.hpp"
 #include "formula_string_utils.hpp"
 #include <minimap.hpp>
+#include "gui/widgets/button.hpp"
+#include "gui/widgets/report.hpp"
+#include "gui/dialogs/theme2.hpp"
 
 #include <boost/foreach.hpp>
+#include <boost/bind.hpp>
 
 static lg::log_domain log_display("display");
 #define ERR_DP LOG_STREAM(err, log_display)
@@ -61,50 +65,43 @@ static lg::log_domain log_display("display");
 static lg::log_domain log_engine("engine");
 #define ERR_NG LOG_STREAM(err, log_engine)
 
+static std::string miss_anim_err_str = "logic can only process map or canvas animation!";
 std::map<map_location,fixed_t> game_display::debugHighlights_;
+
+extern surface generate_rpg_surface(hero& h);
 
 game_display::taccess_list::taccess_list(unit_map& units, int type)
 	: units_(units)
 	, type_(type)
-	, buttons_(NULL)
-	, count_(0)
-	, index_in_map_(-1)
+	, report(NULL)
 	, start_group_(0)
-	, actable_count_(0)
-	, hide_(false)
+	, button_count(0)
+	, require_count(0)
+	, hide(false)
 {
 }
 
-game_display::taccess_list::~taccess_list()
+void game_display::taccess_list::reset()
 {
-	free_heap();
+	button_count = 0;
+	require_count = 0;
+	start_group_ = 0;
+	hide = false;
 }
 
-void game_display::taccess_list::free_heap()
+void game_display::taccess_list::calculate_require_count(int side)
 {
-	if (buttons_) {
-/*
-		for (size_t index = 0; index < count_; index ++) {
-			buttons_[index]->hide(true);
-			delete buttons_[index];
-		}
-*/
-		free(buttons_);
-		buttons_ = NULL;
-	}
-}
+	const gui2::tgrid::tchild* children = report->content_grid()->children();
 
-void game_display::taccess_list::calculate_require_count(menu_button_map* access_map, int side)
-{
 	if (type_ == TROOP) {
 		const int max_disp_their = preferences::developer()? 200: (tent::turn_based? 0: 6);
 		const bool disp_other_city = preferences::developer(); // include their and ourside
 		int disp_their = 0;
 		int disp_city = 0;
-		access_map->require_count = 2;
-		for (size_t i = 2; i < access_map->button_count; i ++) {
-			gui::button* btn = access_map->buttons[i];
-			unit* u = reinterpret_cast<unit*>(btn->cookie_);
+		require_count = 2;
+		for (size_t i = 1; i < button_count - 1; i ++) {
+			gui2::tbutton* btn = dynamic_cast<gui2::tbutton*>(children[i].widget_);
+			unit* u = reinterpret_cast<unit*>(btn->cookie());
 			int drawn_ticks = u->drawn_ticks();
 			if (!tent::turn_based) {
 				if (u->side() != side + 1) {
@@ -153,35 +150,154 @@ void game_display::taccess_list::calculate_require_count(menu_button_map* access
 			u->set_drawn_ticks(drawn_ticks);	
 
 			if (drawn_ticks != HIDDEN_TICKS) {
-				access_map->require_count ++;
+				require_count ++;
 			}
 		}
 	} else {
-		access_map->require_count = access_map->button_count;
+		require_count = button_count;
 	}
 }
 
-void game_display::taccess_list::reload(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side)
+gui2::tbutton* create_access_button(game_display& disp, const std::string& id, void* cookie, int type)
+{
+	gui2::tbutton* widget = gui2::create_surface_button(id, cookie);
+
+	connect_signal_mouse_left_click(
+		*widget
+		, boost::bind(
+			&game_display::click_access_list
+			, &disp
+			, cookie
+			, type));
+	return widget;
+}
+
+void set_unit_image(void* cookie, surface& image_, int& integer)
+{
+	const int bar_vtl_ticks_width = 6;
+	SDL_Rect dst_clip = create_rect(0, 0, 0, 0);
+	int width = image_->w;
+	int height = image_->h;
+	const unit* u = reinterpret_cast<const unit*>(cookie);
+
+	if (u->get_state(ustate_tag::REVIVALED)) {
+		image_ = adjust_surface_color(image_, 255, 0, 0);
+	}
+
+	int degree = u->percent_ticks();
+	SDL_Color color = font::GOOD_COLOR;
+	if (degree < 50) {
+		color = font::BAD_COLOR;
+	} else if (degree < 100) {
+		color = font::YELLOW_COLOR;
+	}
+
+	std::string img_name = "misc/bar-vtl-ticks.png";
+	if (current_can_action(*u)) {
+		img_name = "misc/bar-vtl-ticks-hot.png";
+	}
+	if (!tent::turn_based || preferences::developer()) {
+		draw_bar_to_surf(img_name, image_, 0, 12, height - 4 - (12 + 1), 1.0 * degree / 100, color, ftofxp(0.8), true);
+	}
+
+	if (u->is_city()) {
+		// city name
+		int font_size = 12;
+		surface text_surf = font::get_rendered_text2(u->name(), -1, font_size, font::BIGMAP_COLOR);
+		surface back_surf = font::get_rendered_text2(u->name(), -1, font_size, font::BLACK_COLOR);
+
+		dst_clip.x = bar_vtl_ticks_width;
+		dst_clip.y = height - 16;
+		SDL_Rect dst;
+		for (int dy=-1; dy <= 1; ++dy) {
+			for (int dx=-1; dx <= 1; ++dx) {
+				if (dx!=0 || dy!=0) {
+					dst.x = dst_clip.x + dx;
+					dst.y = dst_clip.y + dy;
+					sdl_blit(back_surf, NULL, image_, &dst);
+				}
+			}
+		}
+		sdl_blit(text_surf, NULL, image_, &dst_clip);
+	}
+
+	// top-middle
+	dst_clip.x = 8;
+	dst_clip.y = 0;
+	if (u->get_state(ustate_tag::DEPUTE)) {
+		blit_surface(image::get_image("misc/depute.png"), NULL, image_, &dst_clip);
+	}
+	if (u->has_mayor()) {
+		blit_surface(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
+	}
+/*
+	// it is difficult that set_goto is too more. correct in the future.
+	// orb-auto.png
+	dst_clip.y = 0;
+	if (u->human() && u->get_goto().valid()) {
+		surface orb_auto = image::get_image("misc/orb-auto.png");
+		if (orb_auto) {
+			dst_clip.x = width - orb_auto->w;
+			blit_surface(orb_auto, NULL, image_, &dst_clip);
+		}
+	}
+*/
+	integer = preferences::developer()? u->ticks(): u->level();
+}
+
+surface generate_surface(int width, int height, void* cookie, const std::string& stem, int integer, bool greyscale, bool special, const std::string& icon, const std::string& lb_icon)
+{
+	const std::string button_image_file = stem;
+	surface stem_image;
+
+	stem_image = image::get_image(stem);
+	if (greyscale) {
+		stem_image = greyscale_image(stem_image);
+	}
+	stem_image = scale_surface(stem_image, width, height);
+
+	surface image_ = stem_image;
+
+	const int bar_vtl_ticks_width = 6;
+	if (cookie) {
+		set_unit_image(cookie, image_, integer);
+	}
+
+	blit_integer_surface(integer, image_, 0, 0);
+
+	std::stringstream text;
+	SDL_Rect dst_clip = create_rect(0, 0, 0, 0);
+
+	if (!icon.empty()) {
+		text.str("");
+		text << icon << "~SCALE(16, 16)";
+		dst_clip.x = 0;
+		dst_clip.y = 12;
+		blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
+	}
+
+	if (!lb_icon.empty()) {
+		text.str("");
+		text << lb_icon << "~SCALE(16, 16)";
+		dst_clip.x = bar_vtl_ticks_width;
+		dst_clip.y = image_->h - 16;
+		blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
+	}
+	return image_;
+}
+
+void game_display::taccess_list::reload(game_display& gui, int side)
 {
 	size_t i;
-	// size_t unit_button_count, dirty_btn_idx;
-	gui::button* btn;
-	gui::button** tmp;
-	theme::menu* access_unit_menu = access_map->menu;
-
-	// restruct all button
-	access_map->buttons = buttons_;
+	gui2::tbutton* btn;
+	gui2::tpoint unit_size = report->get_unit_size();
 
 	// previous arrow
-	btn = access_map->buttons[0] = 
-		new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, "buttons/arrow_left.png", gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, 0, NULL, loc.w, loc.h);
-	// next arrow
-	btn = access_map->buttons[1] = 
-		new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, "buttons/arrow_right.png", gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, 1, NULL, loc.w, loc.h);
+	btn = create_access_button(gui, null_str, 0, type_);
+	btn->set_surface(image::get_image("buttons/arrow_left.png"), unit_size.x, unit_size.y);
+	report->insert_child(*btn);
 
-	i = 2;
-	actable_count_ = 0;
-	tmp = access_map->buttons;
+	i = 1;
 	const std::vector<artifical*>& holden_cities = gui.teams_[side].holden_cities();
 	if (type_ == TROOP) {
 		for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it) {
@@ -190,9 +306,10 @@ void game_display::taccess_list::reload(game_display& gui, menu_button_map* acce
 				continue;
 			}
 			u->set_drawn_ticks(NONE_TICKS);
-			btn = tmp[i] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, "", gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, i, NULL, loc.w, loc.h);
-			btn->cookie_ = u;
-			btn->cookie_type = gui::button::COOKIE_UNIT;
+
+			btn = create_access_button(gui, null_str, u, type_);
+			report->insert_child(*btn);
+
 			i ++;
 		}
 	} else if (type_ == HERO && !holden_cities.empty()) {
@@ -202,24 +319,21 @@ void game_display::taccess_list::reload(game_display& gui, menu_button_map* acce
 			for (std::vector<hero*>::const_iterator it = fresh.begin(); it != fresh.end(); ++ it) {
 				hero* h = *it;
 
-				// 部队可移动, 追加可移动末尾
-				if (actable_count_ < i - 2) {
-					memmove(&(tmp[actable_count_ + 3]), &(tmp[actable_count_ + 2]), (i - 2 - actable_count_) * sizeof(gui::button*));
-				}
-				btn = tmp[actable_count_ + 2] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, h->image(), gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, actable_count_ + 2, NULL, loc.w, loc.h);
-				btn->cookie_ = h;
-				btn->cookie_type = gui::button::COOKIE_HERO;
+				btn = create_access_button(gui, null_str, h, type_);
+				report->insert_child(*btn);
+
+				surface surf;
 				if (h->utype_ != HEROS_NO_UTYPE) {
 					const unit_type* ut = unit_types.keytype(h->utype_);
 					if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
-						btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+						surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), ut->cost(), false, false, ut->icon(), null_str);
 					} else {
-						btn->set_image(h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
+						surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
 					}
 				} else {
-					btn->set_image(h->image(), -1, false);
+					surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), -1, false, false, null_str, null_str);
 				}
-				actable_count_ ++;
+				btn->set_surface(surf, unit_size.x, unit_size.y);
 
 				i ++;
 			}
@@ -227,19 +341,25 @@ void game_display::taccess_list::reload(game_display& gui, menu_button_map* acce
 			for (std::vector<hero*>::const_iterator it = finish.begin(); it != finish.end(); ++ it) {
 				hero* h = *it;
 
-				// 部队不可移动, 直接追加在末尾
-				btn = tmp[i] = new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, h->image(), gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, i, NULL, loc.w, loc.h);
-				btn->cookie_ = h;
-				btn->cookie_type = gui::button::COOKIE_HERO;
-				btn->set_image(h->image(), -1, true);
-				
+				btn = create_access_button(gui, null_str, h, type_);
+				report->insert_child(*btn);
+
+				surface surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), -1, true, false, null_str, null_str);
+				btn->set_surface(surf, unit_size.x, unit_size.y);
+
 				i ++;
 			}
 		}
 	}
 
-	access_map->button_count = i;
-	calculate_require_count(access_map, side);
+	// next arrow
+	btn = create_access_button(gui, null_str, reinterpret_cast<void*>(1), type_);
+	btn->set_surface(image::get_image("buttons/arrow_right.png"), unit_size.x, unit_size.y);
+	report->insert_child(*btn);
+	i ++;
+
+	button_count = i;
+	calculate_require_count(side);
 
 	// reset start_group_
 	start_group_ = 0;
@@ -247,19 +367,17 @@ void game_display::taccess_list::reload(game_display& gui, menu_button_map* acce
 	gui.redraw_access_unit(this);
 }
 
-void game_display::taccess_list::insert(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie)
+void game_display::taccess_list::insert(game_display& gui, int side, void* cookie)
 {
-	size_t at, i, unit_button_count;
-	gui::button* btn;
-	theme::menu* access_unit_menu = access_map->menu;
+	size_t at;
+	gui2::tpoint unit_size = report->get_unit_size();
+	const gui2::tgrid::tchild* children = report->content_grid()->children();
 
 	const unit* u = reinterpret_cast<unit*>(cookie);
 	hero* h = reinterpret_cast<hero*>(cookie);
 
-	gui::button** tmp = access_map->buttons;
-	unit_button_count = access_map->button_count - 2;
 	if (type_ == TROOP) {
-		at = 0;
+		at = 1;
 		for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it) {
 			unit* u1 = &*it;
 			if (!u1->consider_ticks()) {
@@ -271,249 +389,132 @@ void game_display::taccess_list::insert(game_display& gui, menu_button_map* acce
 			at ++;
 		}
 	} else if (type_ == HERO) {
-		at = unit_button_count;
+		at = button_count - 1;
 	}
 
-	if (unit_button_count && (at != unit_button_count)) {
-		memmove(&(tmp[at + 3]), &(tmp[at + 2]), (unit_button_count - at) * sizeof(gui::button*));
-	}
-	access_map->button_count ++;
-	for (i = at + 3; i < access_map->button_count; i ++) {
-		tmp[i]->btnidx_ = i;
-	}
-	// 新按钮就放在at + 2处
+	gui2::tbutton* btn = create_access_button(gui, null_str, cookie, type_);
+	report->insert_child(*btn, at);
 
-	btn = access_map->buttons[at + 2] = 
-		new gui::button(gui.screen_, "", gui::button::TYPE_PRESS, "", gui::button::DEFAULT_SPACE, true, &gui, access_unit_menu, at + 2, NULL, loc.w, loc.h);
-	btn->cookie_ = cookie;
+	button_count ++;
 
 	if (type_ == TROOP) {
-		btn->cookie_type = gui::button::COOKIE_UNIT;
 
 	} else if (type_ == HERO) {
-		btn->cookie_type = gui::button::COOKIE_HERO;
-
+		surface surf;
 		if (h->utype_ != HEROS_NO_UTYPE) {
 			const unit_type* ut = unit_types.keytype(h->utype_);
 			if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
-				btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
+				surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), ut->cost(), false, false, ut->icon(), null_str);
 			} else {
-				btn->set_image(h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
+				surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
 			}
 		} else {
-			btn->set_image(h->image(), -1, false);
+			surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), -1, false, false, null_str, null_str);
 		}
+		btn->set_surface(surf, unit_size.x, unit_size.y);
 	}
 
-	calculate_require_count(access_map, side);
+	calculate_require_count(side);
 
 	gui.redraw_access_unit(this);
 }
 
-void game_display::taccess_list::erase(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie)
+void game_display::taccess_list::erase(game_display& gui, int side, void* cookie)
 {
-	size_t i, unit_button_count, dirty_btn_idx;
-	gui::button** tmp;
-	theme::menu* access_unit_menu = access_map->menu;
+	size_t i, dirty_btn_idx;
+	const gui2::tgrid::tchild* children = report->content_grid()->children();
 
-	// 根据cookie进行搜索
-	tmp = access_map->buttons;
-	// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
-	unit_button_count = access_map->button_count - 1;
-	// 按钮不可能是0, dirty_btn_idx置0指示无效
-	for (dirty_btn_idx = 0, i = 2; i < access_map->button_count; i ++) {
-		if (dirty_btn_idx && (i < unit_button_count)) {
-			access_map->buttons[i] = access_map->buttons[i + 1];
-			access_map->buttons[i]->btnidx_ --;
-		} else if (tmp[i]->cookie_ == cookie) {
-			// 检查到有按钮要被erase,先进行隐藏
-			gui.hide_access_unit(this);
-			
+	// 0 is reserved by previous button
+	for (dirty_btn_idx = 0, i = 1; i < button_count - 1; i ++) {
+		if (children[i].widget_->cookie() == cookie) {
 			dirty_btn_idx = i;
-			// 测试证明, delete不能清除已画在窗口中的图面
-			access_map->buttons[i]->hide(true);
-			delete access_map->buttons[i];
+			report->erase_child(i);
+			
 			if (type_ == TROOP) {
 				// when ai troop belong to player, form ERASE to INSERT.
 				// in order to keep INSERT right, should set NONE_TICKS when ERASE.
 				unit* u = reinterpret_cast<unit*>(cookie);
 				u->set_drawn_ticks(NONE_TICKS);
 			}
-			// 记住, 别忘这一处
-			// 同样要判断如果是最后一个按钮, 不要执行以下这两个赋值, [i + 1]这个按钮就是不存的
-			if (i < unit_button_count) {
-				access_map->buttons[i] = access_map->buttons[i + 1];
-				access_map->buttons[i]->btnidx_ --;
-			}
-		}
-	}
-	if (!dirty_btn_idx) {
-		// 没有搜索到匹配项
-		return;
-	}
-	access_map->button_count --;
-	calculate_require_count(access_map, side);
-
-	// erase this maybe result group --
-	const SDL_Rect& mid_panel_loc = gui.theme_.mid_panel_location(gui.screen_area());
-	const int can_disp_width = mid_panel_loc.w - (loc.x - mid_panel_loc.x);
-
-	// first tow button are previous and next button
-	if (access_map->require_count > 2 && can_disp_width / loc.w > 2) {
-		size_t need_disp_units = access_map->require_count - 2;
-		size_t can_disp_units = can_disp_width / loc.w - 2;
-		// groups is count
-		size_t groups = ((access_map->require_count - 2) + can_disp_units - 1) / can_disp_units;
-		if (start_group_ == groups) {
-			start_group_ --;
-		}
-	}
-
-	gui.redraw_access_unit(this);
-}
-
-void game_display::taccess_list::disable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie)
-{
-	size_t i, unit_button_count, dirty_btn_idx;
-	gui::button* btn;
-	gui::button** tmp;
-	theme::menu* access_unit_menu = access_map->menu;
-	const unit* u = reinterpret_cast<unit*>(cookie);
-	hero* h = reinterpret_cast<hero*>(cookie);
-
-	// 根据cookie进行搜索
-	tmp = access_map->buttons;
-	// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
-	unit_button_count = access_map->button_count - 1;
-	// 按钮不可能是0, dirty_btn_idx置0指示无效
-	for (dirty_btn_idx = 0, i = 2; i < access_map->button_count; i ++) {
-		if (dirty_btn_idx && (i < unit_button_count)) {
-			access_map->buttons[i] = access_map->buttons[i + 1];
-			access_map->buttons[i]->btnidx_ --;
-		} else if (!dirty_btn_idx && tmp[i]->cookie_ == cookie) {
-			dirty_btn_idx = i;
-			if (dirty_btn_idx >= actable_count_ + 2) {
-				return;
-			}
-			// 检查到有按钮要被erase,先进行隐藏
-			gui.hide_access_unit(this);
-
-			// 测试证明, delete不能清除已画在窗口中的图面
-			btn = access_map->buttons[i];
-			btn->hide(true);
-			
-			// 记住, 别忘这一处
-			// 同样要判断如果是最后一个按钮, 不要执行以下这两个赋值, [i + 1]这个按钮就是不存的
-			if (i < unit_button_count) {
-				access_map->buttons[i] = access_map->buttons[i + 1];
-				access_map->buttons[i]->btnidx_ --;
-			}
-		}
-	}
-	if (!dirty_btn_idx) {
-		// 没有搜索到匹配项
-		return;
-	}
-	if (dirty_btn_idx < actable_count_ + 2) {
-		actable_count_ --;
-	}
-	// 修改图像参数, 向未尾增加该图像
-	if (type_ == TROOP) {
-		btn->set_image(u->master().image(), u->level(), true, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
-	} else if (type_ == HERO) {
-		if (h->utype_ != HEROS_NO_UTYPE) {
-			const unit_type* ut = unit_types.keytype(h->utype_);
-			if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
-				btn->set_image(h->image(), ut->cost(), true, false, ut->icon());
-			} else {
-				btn->set_image(h->image(), ut->cost(), true, false, ut->icon(), "misc/formation.png");
-			}
-		} else {
-			btn->set_image(h->image(), -1, true);
-		}
-	}
-	btn->btnidx_ = unit_button_count;
-	access_map->buttons[unit_button_count] = btn;
-
-	gui.redraw_access_unit(this);
-}
-
-void game_display::taccess_list::enable(game_display& gui, menu_button_map* access_map, const SDL_Rect& loc, int side, void* cookie)
-{
-	size_t i, unit_button_count, dirty_btn_idx;
-	gui::button* btn;
-	gui::button** tmp;
-	theme::menu* access_unit_menu = access_map->menu;
-	const unit* u = reinterpret_cast<unit*>(cookie);
-	hero* h = reinterpret_cast<hero*>(cookie);
-
-	// 根据cookie进行搜索
-	tmp = access_map->buttons;
-	// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
-	unit_button_count = access_map->button_count - 1;
-	// 按钮不可能是0, dirty_btn_idx置0指示无效
-	for (dirty_btn_idx = 0, i = 2; i < access_map->button_count; i ++) {
-		if (tmp[i]->cookie_ == cookie) {
-			dirty_btn_idx = i;
-			if (dirty_btn_idx < actable_count_ + 2) {
-				return;
-			}
-			// 检查到有按钮要被erase,先进行隐藏
-			gui.hide_access_unit(this);
-
-			// 测试证明, delete不能清除已画在窗口中的图面
-			btn = access_map->buttons[i];
-			btn->hide(true);
 			break;
 		}
 	}
 	if (!dirty_btn_idx) {
-		// 没有搜索到匹配项
+		// cannot find.
 		return;
 	}
-	// 重新循环, 把dirty_btn_idx之前的按钮后移一个位置
-	// 在此处,unit_button_count指示单位按钮个数(包括前端两上箭头)-1, 它用于加快for中的那个if判断
-	for (i = dirty_btn_idx - 1; i >= 2; i --) {
-		access_map->buttons[i + 1] = access_map->buttons[i];
-		access_map->buttons[i + 1]->btnidx_ ++;
-	}
+	button_count --;
+	calculate_require_count(side);
 
-	// 可行动按钮数增1
-	actable_count_ ++;
+	// erase this maybe result group --
+	int unit_width = report->get_unit_size().x;
+	const int can_disp_width = report->get_width();
 
-	// 修改图像参数, 向头部增加该图像
-	if (type_ == TROOP) {
-		btn->set_image(u->master().image(), u->level(), false, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
-	} else if (type_ == HERO) {
-		if (h->utype_ != HEROS_NO_UTYPE) {
-			const unit_type* ut = unit_types.keytype(h->utype_);
-			if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
-				btn->set_image(h->image(), ut->cost(), false, false, ut->icon());
-			} else {
-				btn->set_image(h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
-			}
-		} else {
-			btn->set_image(h->image(), -1, false);
+	// first tow button are previous and next button
+	if (require_count > 2 && can_disp_width / unit_width > 2) {
+		size_t need_disp_units = require_count - 2;
+		size_t can_disp_units = can_disp_width / unit_width - 2;
+		// groups is count
+		size_t groups = ((require_count - 2) + can_disp_units - 1) / can_disp_units;
+		if (start_group_ == groups) {
+			start_group_ --;
+
+			// when back to #0, preview button cannot redraw. dirty whole report make it redraw.
+			report->set_dirty();
 		}
 	}
-	btn->btnidx_ = 2;
-	access_map->buttons[2] = btn;
 
 	gui.redraw_access_unit(this);
 }
 
-void game_display::taccess_list::redraw(game_display& gui, menu_button_map* access_map, int side, void* cookie)
+void game_display::taccess_list::enable(game_display& gui, int side, void* cookie)
 {
-	gui::button* btn = NULL;
-	gui::button** tmp;
-	theme::menu* access_unit_menu = access_map->menu;
+	gui2::tbutton* btn = NULL;
+
+	gui2::tpoint unit_size = report->get_unit_size();
+	const gui2::tgrid::tchild* children = report->content_grid()->children();
 	const unit* u = reinterpret_cast<unit*>(cookie);
 	hero* h = reinterpret_cast<hero*>(cookie);
 
-	tmp = access_map->buttons;
-	for (size_t i = 2; i < access_map->button_count && !btn; i ++) {
-		if (tmp[i]->cookie_ == cookie) {
-			btn = tmp[i];
+	for (size_t i = 1; i < button_count - 1 && !btn; i ++) {
+		if (children[i].widget_->cookie() == cookie) {
+			btn = dynamic_cast<gui2::tbutton*>(children[i].widget_);
+		}
+	}
+	if (!btn) {
+		return;
+	}
+
+	if (type_ == TROOP) {
+
+	} else if (type_ == HERO) {
+		surface surf;
+		if (h->utype_ != HEROS_NO_UTYPE) {
+			const unit_type* ut = unit_types.keytype(h->utype_);
+			if (h->noble_ == HEROS_NO_NOBLE || !unit_types.noble(h->noble_).formation()) {
+				surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), ut->cost(), false, false, ut->icon(), null_str);
+			} else {
+				surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), ut->cost(), false, false, ut->icon(), "misc/formation.png");
+			}
+		} else {
+			surf = generate_surface(unit_size.x, unit_size.y, NULL, h->image(), -1, false, false, null_str, null_str);
+		}
+		btn->set_surface(surf, unit_size.x, unit_size.y);
+	}
+}
+
+void game_display::taccess_list::redraw(game_display& gui, int side, void* cookie)
+{
+	gui2::tbutton* btn = NULL;
+	const gui2::tgrid::tchild* children = report->content_grid()->children();
+	gui2::tpoint unit_size = report->get_unit_size();
+
+	const unit* u = reinterpret_cast<unit*>(cookie);
+	hero* h = reinterpret_cast<hero*>(cookie);
+
+	for (size_t i = 1; i < button_count - 1 && !btn; i ++) {
+		if (children[i].widget_->cookie() == cookie) {
+			btn = dynamic_cast<gui2::tbutton*>(children[i].widget_);
 		}
 	}
 	if (!btn) {
@@ -521,7 +522,8 @@ void game_display::taccess_list::redraw(game_display& gui, menu_button_map* acce
 	}
 	
 	if (type_ == TROOP) {
-		btn->set_image(u->master().image(), u->level(), false, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str);
+		surface surf = u->generate_access_surface(unit_size.x, unit_size.y, false);
+		btn->set_surface(surf, unit_size.x, unit_size.y);
 
 	} else if (type_ == HERO) {
 		
@@ -531,7 +533,7 @@ void game_display::taccess_list::redraw(game_display& gui, menu_button_map* acce
 game_display::game_display(unit_map& units, hero_map& heros, play_controller* controller, CVideo& video, const gamemap& map,
 		const tod_manager& tod, const std::vector<team>& t,
 		const config& theme_cfg, const config& level) :
-		display(video, &map, theme_cfg, level),
+		display(controller, video, &map, theme_cfg, level, gui2::tgame_theme::NUM_REPORTS),
 		units_(units),
 		heros_(heros),
 		controller_(controller),
@@ -580,103 +582,55 @@ game_display::game_display(unit_map& units, hero_map& heros, play_controller* co
 		troop_list_(units, taccess_list::TROOP),
 		hero_list_(units, taccess_list::HERO),
 		current_list_type_(taccess_list::TROOP),
-		access_list_side_(-1),
+		access_list_side_(HEROS_INVALID_SIDE),
+		ctrl_bar_(NULL),
 		moving_src_loc_(),
 		moving_dst_loc_()
 {
 	singleton_ = this;
-
-	if (map_->w() && map_->h()) {
-		troop_list_.count_ = map_->w() * map_->h() + 2;
-		troop_list_.buttons_ = (gui::button**)malloc(troop_list_.count_ * sizeof(gui::button*));
-		hero_list_.count_ = heros_.size() + 2;
-		hero_list_.buttons_ = (gui::button**)malloc(hero_list_.count_ * sizeof(gui::button*));
+	
+	if (controller) {
+		SDL_Rect screen = screen_area();
+		std::string patch = get_theme_patch();
+		theme_current_cfg_ = theme::set_resolution(theme_cfg, screen, patch, theme_cfg_);
+		create_theme();
+		gui2::tgame_theme& dlg = *dynamic_cast<gui2::tgame_theme*>(theme_);
+		dlg.report_ptr(&troop_list_.report, &hero_list_.report, NULL);
+		ctrl_bar_ = dlg.context_menu("ctrl-bar");
+		if (hero_list_.report) {
+			hero_list_.report->parent()->set_visible(gui2::twidget::INVISIBLE);
+		}
 	}
 
 	// Inits the flag list and the team colors used by ~TC
-	// std::vector<std::string> side_colors;
 	std::vector<std::string>& side_colors = image::get_team_colors();
 	side_colors.clear();
 
 	for (size_t i = 0; i != teams_.size(); ++i) {
 		add_flag(i, side_colors);
-/*
-		std::string side_color = team::get_side_color_index(i+1);
-		side_colors.push_back(side_color);
-		std::string flag = teams_[i].flag();
-		std::string old_rgb = game_config::flag_rgb;
-		std::string new_rgb = side_color;
-
-		if(flag.empty()) {
-			flag = game_config::images::flag;
-		}
-
-		// Must recolor flag image
-		animated<image::locator> temp_anim;
-
-		std::vector<std::string> items = utils::split(flag);
-		std::vector<std::string>::const_iterator itor = items.begin();
-		for(; itor != items.end(); ++itor) {
-			const std::vector<std::string>& items = utils::split(*itor, ':');
-			std::string str;
-			int time;
-
-			if(items.size() > 1) {
-				str = items.front();
-				time = atoi(items.back().c_str());
-			} else {
-				str = *itor;
-				time = 100;
-			}
-			std::stringstream temp;
-			temp << str << "~RC(" << old_rgb << ">"<< new_rgb << ")";
-			image::locator flag_image(temp.str());
-			temp_anim.add_frame(time, flag_image);
-		}
-		flags_.push_back(temp_anim);
-
-		flags_.back().start_animation(rand()%flags_.back().get_end_time(), true);
-
-		// Must recolor big flag image
-		animated<image::locator> temp_anim2;
-
-		flag = game_config::images::big_flag;
-		items = utils::split(flag);
-		itor = items.begin();
-		for(; itor != items.end(); ++itor) {
-			const std::vector<std::string>& items = utils::split(*itor, ':');
-			std::string str;
-			int time;
-
-			if(items.size() > 1) {
-				str = items.front();
-				time = atoi(items.back().c_str());
-			} else {
-				str = *itor;
-				time = 100;
-			}
-			std::stringstream temp;
-			temp << str << "~RC(" << old_rgb << ">"<< new_rgb << ")";
-			image::locator flag_image(temp.str());
-			if (image::exists(flag_image)) {
-				temp_anim2.add_frame(time, flag_image);
-			}
-		}
-		VALIDATE(temp_anim2.get_frames_count(), _("Invalid [game_config][images].big_flag value."));
-		big_flags_.push_back(temp_anim2);
-
-		big_flags_.back().start_animation(rand() % big_flags_.back().get_end_time(), true);
-
-		big_flags_cache_.push_back(std::map<std::string, surface>());
-*/
 	}
-	// image::set_team_colors(&side_colors);
 
 	// draw nodes for display::draw
 	if (map_->w() && map_->h()) {
 		draw_area_unit_ = (unit**)malloc(map_->w() * map_->h() * sizeof(unit*));
 		pathfind::reallocate_pq(map_->w(), map_->h());
 	}
+}
+
+std::string game_display::get_theme_patch() const
+{
+	std::string id;
+	if (controller_->is_replaying()) {
+		id = "replay";
+	} else if (tent::tower_mode()) {
+		id = "tower";
+	}
+	return id;
+}
+
+gui2::ttheme* game_display::create_theme_dlg(const config& cfg)
+{
+	return new gui2::tgame_theme(*this, *controller_, cfg);
 }
 
 game_display* game_display::create_dummy_display(hero_map& heros, CVideo& video)
@@ -700,54 +654,11 @@ game_display::~game_display()
 	// SDL_FreeSurface(minimap_);
 	prune_chat_messages(true);
 	singleton_ = NULL;
-
-	clear_context_menu_buttons();
 }
 
 void game_display::rebuild_all()
 {
 	display::rebuild_all();
-
-	if (map_->w() != last_map_w_ || map_->h() != last_map_h_) {
-		troop_list_.free_heap();
-		hero_list_.free_heap();
-
-		troop_list_.count_ = map_->w() * map_->h() + 2;
-		troop_list_.buttons_ = (gui::button**)malloc(troop_list_.count_ * sizeof(gui::button*));
-		hero_list_.count_ = heros_.size() + 2;
-		hero_list_.buttons_ = (gui::button**)malloc(hero_list_.count_ * sizeof(gui::button*));
-	}
-}
-
-void game_display::set_index_in_map(int index, bool troop)
-{
-	if (troop) {
-		troop_list_.index_in_map_ = index;
-	} else {
-		hero_list_.index_in_map_ = index;
-	}
-}
-
-bool game_display::index_in_map(int index) const
-{
-	return index == troop_list_.index_in_map_ || index == hero_list_.index_in_map_;
-}
-
-const theme::menu* game_display::access_troop_menu() const 
-{
-	if (!buttons_ctx_) {
-		return NULL;
-	}
-	if (current_list_type_ == taccess_list::TROOP) {
-		if (troop_list_.index_in_map_ != -1) {
-			return buttons_ctx_[troop_list_.index_in_map_].menu;
-		}
-	} else if (current_list_type_ == taccess_list::HERO) {
-		if (hero_list_.index_in_map_ != -1) {
-			return buttons_ctx_[hero_list_.index_in_map_].menu;
-		}
-	}
-	return NULL;
 }
 
 void game_display::construct_road_locs(const std::map<std::pair<int, int>, std::vector<map_location> >& roads)
@@ -1006,20 +917,20 @@ void game_display::resort_access_troops(unit& u, size_t pos)
 void game_display::verify_access_troops() const
 {
 	const taccess_list* list = &troop_list_;
-	const menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
+	const gui2::tgrid::tchild* children = list->report->content_grid()->children();
 	const std::string miss_state_str = "u's state dismiss!";
 	const std::string u_dismatch_str = "u does't match!";
 	const std::string order_dismatch_str = "order does't match!";
 	size_t flips = 0;
 
-	size_t btn_index = 2;
+	size_t btn_index = 1;
 	unit* previous = NULL;
 	for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it, btn_index ++) {
 		unit& a = *it;
 		VALIDATE(!a.get_state(ustate_tag::EXPEDITED), miss_state_str);
-		if (btn_index < access_map->button_count) {
-			gui::button* btn = access_map->buttons[btn_index];
-			unit* b = reinterpret_cast<unit*>(btn->cookie_);
+		if (btn_index < list->button_count - 1) {
+			gui2::twidget* btn = children[btn_index].widget_;
+			unit* b = reinterpret_cast<unit*>(btn->cookie());
 			VALIDATE(&a == b, u_dismatch_str);
 
 			bool match = true;
@@ -1057,139 +968,125 @@ void game_display::refresh_access_heros(int side, refresh_reason reason, void* c
 
 bool game_display::access_is_null(int type) const
 {
-	if (!buttons_ctx_) {
-		return true;
-	}
 	const taccess_list* list = &troop_list_;
 	if (type == taccess_list::HERO) {
 		list = &hero_list_;
 	}
-	if (list->index_in_map_ == -1) {
+	if (!list->report) {
 		return true;
 	}
 
-	const menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
-	return access_map->buttons? false: true;
+	return list->button_count? false: true;
 }
 
 // refresh field troop buttons
 // @side: base 0
 void game_display::refresh_access_list(int side, refresh_reason reason, void* cookie, int type)
 {
-	if (!buttons_ctx_) {
-		return;
-	}
 	taccess_list* list = &troop_list_;
 	if (type == taccess_list::HERO) {
 		list = &hero_list_;
 	}
-	if (list->index_in_map_ == -1) {
+	if (!list->report) {
 		return;
 	}
-	size_t i;
-	menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
-	theme::menu* access_unit_menu = access_map->menu;
-
-	const SDL_Rect& loc = access_unit_menu->location(screen_area());
-	// SDL_Rect clip = {36, 30, 48, 60};
+	if (reason != REFRESH_RELOAD) {
+		// < 2 mean no preview and next, it not reload.
+		if (access_list_side_ == HEROS_INVALID_SIDE || list->button_count < 2) {
+			return;
+		}
+	}
 
 	if (reason == REFRESH_RELOAD) {
 		// destroy all existed button
-		VALIDATE(!access_map->buttons, "game_display::refresh_access_tropps, program error");
+		VALIDATE(!list->button_count, "game_display::refresh_access_tropps, program error");
 
 		access_list_side_ = side;
 
-		list->reload(*this, access_map, loc, side);
+		list->reload(*this, side);
 
-	} else if (access_map->buttons && (type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_INSERT)) {
-		hide_access_unit(list);
+	} else if ((type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_INSERT)) {
+		list->insert(*this, access_list_side_, cookie);
 
-		list->insert(*this, access_map, loc, access_list_side_, cookie);
+	} else if ((type == taccess_list::TROOP || access_list_side_ == side) && reason == REFRESH_ERASE) {
+		list->erase(*this, access_list_side_, cookie);
 
-	} else if (access_map->buttons && (type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_ERASE)) {
-		list->erase(*this, access_map, loc, access_list_side_, cookie);
+	} else if ((type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_ENABLE)) {
+		list->enable(*this, access_list_side_, cookie);
 
-	} else if (access_map->buttons && (type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_SORT)) {
-		list->calculate_require_count(access_map, access_list_side_);
-
-	} else if (access_map->buttons && (type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_ENABLE)) {
-		list->enable(*this, access_map, loc, access_list_side_, cookie);
-
-	} else if (access_map->buttons && (type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_DRAW)) {
+	} else if ((type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_DRAW)) {
 		if (!cookie) {
 			redraw_access_unit(list);
-		} else if (!list->hide_) {
-			list->redraw(*this, access_map, access_list_side_, cookie);
+		} else if (!list->hide) {
+			list->redraw(*this, access_list_side_, cookie);
 		}
 
-	} else if (access_map->buttons && (type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_HIDE)) {
-		bool hide = cookie? true: false;
-		list->hide_ = hide;
-		if (!hide) {
+	} else if ((type == taccess_list::TROOP || access_list_side_ == side) && (reason == REFRESH_HIDE)) {
+		// in order to hide, must use stuff-widget, cannot use set_visible(INVISIBLE)
+		list->hide = cookie? true: false;
+		if (!list->hide) {
 			redraw_access_unit(list);
 		} else {
-			hide_access_unit(list);
+			list->report->hide_children();
 		}
 
-	} else if (access_map->buttons && (reason == REFRESH_CLEAR)) {
-		hide_access_unit(list);
-		for (i = 0; i < access_map->button_count; i ++) {
-			delete access_map->buttons[i];
-		}
-		access_map->buttons = NULL;
-		access_map->button_count = 0; // 这个还是要置的, display清除上下文菜单时要根据它来判断
-		access_map->require_count = 0;
+	} else if (reason == REFRESH_CLEAR) {
+		list->report->erase_children();
+		list->button_count = 0;
+		list->require_count = 0;
+		list->start_group_ = 0;
 	}
 }
 
 // redraw access_unit menu. call refresh_access_troops before it.
 // must valid parameter: start_group_
-// 根据当前按钮数组和要显示组号，在快捷访问部队列表中显示该组中所有部队。它和hide_access_unit功能是相反。
+// 根据当前按钮数组和要显示组号，在快捷访问部队列表中显示该组中所有部队。
 // 注：start_groups_值必须被指定，但如果start_groups_是一个过大非法值（理论上不该出现），会被这函数修改。
 void game_display::redraw_access_unit(taccess_list* list)
 {
 	if (list->type_ != current_list_type_) {
 		return;
 	}
-	if (list->index_in_map_ == -1) {
+	if (!list->report) {
 		return;
 	}
-	if (list->hide_) {
+	if (list->hide) {
 		return;
 	}
 
-	size_t need_disp_units, can_disp_units, stop_disp_unit_plus1, groups;
-	menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
-	theme::menu* access_unit_menu = access_map->menu;
-	gui::button* btn;
+	size_t need_disp_units, can_disp_units, stop_disp_unit_plus1;
+	gui2::tbutton* btn;
 
-	const SDL_Rect& loc = access_unit_menu->location(screen_area());
-	const SDL_Rect& mid_panel_loc = theme_.mid_panel_location(screen_area());
-	const int can_disp_width = mid_panel_loc.w - (loc.x - mid_panel_loc.x);
+	const int unit_width = list->report->get_unit_size().x;
+	const int unit_height = list->report->get_unit_size().y;
+	const int can_disp_width = list->report->get_width();
+	const gui2::tgrid::tchild* children = list->report->content_grid()->children();
 
 	// first tow button are previous and next button
-	if (access_map->require_count > 2) {
-		need_disp_units = access_map->require_count - 2;
+	if (list->require_count >= 2) {
+		need_disp_units = list->require_count - 2;
 	} else {
-		// no unit need be displayed
 		return;
 	}
-	if (can_disp_width / loc.w > 2) {
-		can_disp_units = can_disp_width / loc.w - 2;
+
+	if (can_disp_width / unit_width > 2) {
+		can_disp_units = can_disp_width / unit_width - 2;
 	} else {
 		// width configuration about bottom-middle-panel is too short
 		return;
 	}
 	// groups指示的是显示所有单位需要多少组, 以下计算时应该用access_map->require_count - 2而不是access_map.require_count
-	groups = ((access_map->require_count - 2) + can_disp_units - 1) / can_disp_units;
-	VALIDATE(list->start_group_ < groups, "game_display::redraw_access_unit, start_group_ >= groups, invalid!");
+	if (need_disp_units) {
+		size_t groups = ((list->require_count - 2) + can_disp_units - 1) / can_disp_units;
+		VALIDATE(list->start_group_ < groups, "game_display::redraw_access_unit, start_group_ >= groups, invalid!");
+	}
 
 	// preview arrow
-	btn = access_map->buttons[0];
+	btn = dynamic_cast<gui2::tbutton*>(children[0].widget_);
 	if (list->start_group_) {
-		btn = access_map->buttons[0];
-		btn->set_location(loc.x, loc.y);
-		btn->hide(false);
+		btn->set_visible(gui2::twidget::VISIBLE);
+	} else {
+		btn->set_visible(gui2::twidget::HIDDEN);
 	}
 
 	// need_disp_units, can_disp_units和stop_disp_unit_plus1它不下处理上/下一组两个按钮. 像
@@ -1202,146 +1099,67 @@ void game_display::redraw_access_unit(taccess_list* list)
 		stop_disp_unit_plus1 = need_disp_units;
 	}
 	// main units, bi: Button Index
-	for (size_t bi = 0, i = 0; bi < access_map->button_count; bi ++) {
+	for (size_t bi = 1, i = 0; bi < list->button_count - 1; bi ++) {
+		btn = dynamic_cast<gui2::tbutton*>(children[bi].widget_);
 		if (i >= stop_disp_unit_plus1) {
-			break;
+			btn->set_visible(gui2::twidget::INVISIBLE);
+			continue;
 		}
-		btn = access_map->buttons[bi + 2];
-
+		
 		if (list->type_ == taccess_list::TROOP) {
 			// if hidden, don't include into.
-			unit* u = reinterpret_cast<unit*>(btn->cookie_);
+			unit* u = reinterpret_cast<unit*>(btn->cookie());
 			if (u->drawn_ticks() == HIDDEN_TICKS) {
+				btn->set_visible(gui2::twidget::INVISIBLE);
 				continue;
 			}
 		}
 		if (i < list->start_group_ * can_disp_units) {
 			i ++;
+			btn->set_visible(gui2::twidget::INVISIBLE);
 			continue;
 		}
 		if (list->type_ == taccess_list::TROOP) {
 			// troop image is large amount. refresh when requrie.
-			unit* u = reinterpret_cast<unit*>(btn->cookie_);
+			unit* u = reinterpret_cast<unit*>(btn->cookie());
 			int drawn_ticks = u->drawn_ticks();
 			if (!u->ticks_adjusting && drawn_ticks != unit_map::main_ticks) {
 				u->set_drawn_ticks(unit_map::main_ticks);
 				bool greyscale = tent::turn_based? !u->can_move(): (u->side() != access_list_side_ + 1);
-				btn->set_image(u->master().image(), u->ticks(), greyscale, u->has_mayor(), null_str, u->can_formation_master()? "misc/formation.png": null_str, u->percent_ticks());
+				surface surf = u->generate_access_surface(unit_width, unit_height, greyscale);
+				btn->set_surface(surf, unit_width, unit_height);
 			}
 		}
-		btn->set_location(loc.x + (1 + i - list->start_group_ * can_disp_units) * loc.w, loc.y);
-		btn->hide(false);
+		btn->set_visible(gui2::twidget::VISIBLE);
 		i ++;
 	}
 	// next arrow
-	btn = access_map->buttons[1];
+	btn = dynamic_cast<gui2::tbutton*>(children[list->button_count - 1].widget_);
 	if (need_disp_units > stop_disp_unit_plus1) {
-		btn->set_location(loc.x + (1 + can_disp_units) * loc.w, loc.y);
-		btn->hide(false);
+		btn->set_visible(gui2::twidget::VISIBLE);
+	} else {
+		btn->set_visible(gui2::twidget::INVISIBLE);
 	}
+
+	list->report->replacement_children();
 }
 
-// must valid parameter: start_group_
-void game_display::hide_access_unit(taccess_list* list)
+void game_display::click_access_list(void* cookie, int type)
 {
-	if (list->index_in_map_ == -1) {
-		return;
-	}
+	taccess_list* list = type == taccess_list::HERO? &hero_list_: &troop_list_;
 
-	size_t need_disp_units, can_disp_units, stop_disp_unit_plus1;
-	menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
-	theme::menu* access_unit_menu = access_map->menu;
-	gui::button* btn;
-
-	const SDL_Rect& loc = access_unit_menu->location(screen_area());
-	const SDL_Rect& mid_panel_loc = theme_.mid_panel_location(screen_area());
-	const int can_disp_width = mid_panel_loc.w - (loc.x - mid_panel_loc.x);
-
-	// first tow button are previous and next button
-	if (access_map->require_count > 2) {
-		need_disp_units = access_map->require_count - 2;
-	} else {
-		// no unit need be displayed
-		return;
-	}
-	if (can_disp_width / loc.w > 2) {
-		can_disp_units = can_disp_width / loc.w - 2;
-	} else {
-		// width configuration about bottom-middle-panel is too short
-		return;
-	}
-	// preview arrow
-	btn = access_map->buttons[0];
-	if (list->start_group_) {
-		btn->hide(true);
-	}
-
-	// need_disp_units, can_disp_units和stop_disp_unit_plus1它不下处理上/下一组两个按钮. 像
-	// need_disp_units: 指的就是要被显示的单位数
-	// can_disp_units: 一次最多可显示的单位数
-	// stop_disp_unit_plus1: 此次要显到的终于单位索引值+1, 这个索引值指的是在need_disp_units这个范围内索引值
-	if (need_disp_units > (list->start_group_ + 1) * can_disp_units) {
-		stop_disp_unit_plus1 = (list->start_group_ + 1) * can_disp_units;
-	} else {
-		stop_disp_unit_plus1 = need_disp_units;
-	}
-	// main units, bi: Button Index
-	for (size_t bi = 0, i = 0; bi < access_map->button_count; bi ++) {
-		if (i >= stop_disp_unit_plus1) {
-			break;
-		}
-		btn = access_map->buttons[bi + 2];
-
-		if (list->type_ == taccess_list::TROOP) {
-			// if hidden, don't include into.
-			unit* u = reinterpret_cast<unit*>(btn->cookie_);
-			if (u->drawn_ticks() == HIDDEN_TICKS) {
-				continue;
-			}
-		}
-		if (i < list->start_group_ * can_disp_units) {
-			i ++;
-			continue;
-		}
-		btn->hide(true);
-		i ++;
-	}
-	// next arrow
-	btn = access_map->buttons[1];
-	if (need_disp_units > stop_disp_unit_plus1) {
-		btn->hide(true);
-	}
-}
-
-map_location game_display::access_list_press(size_t btnidx)
-{
-	gui::button* btn = NULL;
-	map_location loc;
-	taccess_list* list = current_list_type_ == taccess_list::HERO? &hero_list_: &troop_list_;
-	menu_button_map* access_map = buttons_ctx_ + list->index_in_map_;
-
-	if (btnidx == 0) {
-		hide_access_unit(list);
+	if (cookie == 0) {
 		-- list->start_group_;
-		redraw_access_unit(list);
-	} else if (btnidx == 1) {
-		hide_access_unit(list);
+	} else if (cookie == reinterpret_cast<void*>(1)) {
 		list->start_group_ ++;
-		redraw_access_unit(list);
 	} else {
-		btn = access_map->buttons[btnidx];
+		controller_->click_access_list(cookie, type);
+		return;
 	}
+	redraw_access_unit(list);
 
-	if (btn) {
-		if (list->type_ == taccess_list::HERO) {
-			hero* h = reinterpret_cast<hero*>(btn->cookie_);
-			loc = map_location(MAGIC_HERO, h->number_);
-		} else {
-			unit* troop = reinterpret_cast<unit*>(btn->cookie_);
-			loc = troop->get_location();
-		}
-	}
-	return loc;
+	// when back to #0, preview button cannot redraw. dirty whole report make it redraw.
+	list->report->set_dirty();
 }
 
 int game_display::next_list_type() const
@@ -1363,98 +1181,24 @@ void game_display::set_current_list_type(int type)
 	if (current_list_type_ == type) {
 		return;
 	}
-	hide_access_unit(&type_2_list(current_list_type_));
+	game_display::taccess_list* list = &type_2_list(current_list_type_);
+	if (list->report) {
+		list->report->hide_children();
+		list->report->parent()->set_visible(gui2::twidget::INVISIBLE);
+	}
 
 	current_list_type_ = type; 
 
-	redraw_access_unit(&type_2_list(current_list_type_));	
-}
-
-void game_display::hide_context_menu(const theme::menu* m, bool hide, uint32_t flags, uint32_t disable)
-{
-	const theme::menu* adjusted = m;
-
-	if (!m) {
-		adjusted = theme_.context_menu("");
+	list = &type_2_list(current_list_type_);
+	if (list->report) {
+		list->report->parent()->set_visible(gui2::twidget::VISIBLE);
+		redraw_access_unit(&type_2_list(current_list_type_));	
 	}
-	if (!adjusted) {
-		return;
-	}
-
-	size_t i;
-	size_t size = theme_.context_menus().size();
-	for (i = 0; i < size; i ++) {
-		if (buttons_ctx_[i].menu == adjusted) {
-			break;
-		}
-	}
-	if (!hide) {
-		const team& current_team = teams_[controller_->current_side() - 1];
-		std::stringstream strstr;
-
-		if (adjusted->get_id() == "build" || adjusted->get_id() == "interior") {
-			int cost_exponent = current_team.cost_exponent();
-
-			const std::set<const unit_type*>& can_build = current_team.builds();
-
-			for (size_t i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
-				gui::button* b = buttons_ctx_[i].buttons[i2];
-				const unit_type* ut = unit_types.id_type(b->id());
-
-				if (!ut) {
-					if (b->id() == "interior_m") {
-						if (can_build.find(unit_types.find_market()) == can_build.end() && 
-							can_build.find(unit_types.find_technology()) == can_build.end() &&
-							can_build.find(unit_types.find_tactic()) == can_build.end() &&
-							can_build.find(unit_types.find_school()) == can_build.end()) {
-							flags &= ~ (1 << i2);
-						}
-					}
-					continue;
-				} 
-				if (can_build.find(ut) == can_build.end()) {
-					flags &= ~ (1 << i2);
-				} else if (ut->master() == hero::number_wall && !current_team.may_build_count()) {
-					flags &= ~ (1 << i2);
-				}
-				strstr.str("");
-				strstr << "buttons/" << b->id() << ".png";
-				int cost = ut->cost() * cost_exponent / 100;
-				if (tent::tower_mode()) {
-					// increase wall's cost.
-					cost *= game_config::tower_cost_ratio;
-				}
-				b->set_image(strstr.str(), cost);
-			}
-		} else if (adjusted->get_id() == "main") {
-			for (size_t i2 = 0; i2 < buttons_ctx_[i].button_count; i2 ++) {
-				if (!(flags & (1 << i2))) {
-					continue;
-				}
-				gui::button* b = buttons_ctx_[i].buttons[i2];
-				if (b->id() == "build_m") {
-					if (tent::tower_mode()) {
-						strstr.str("");
-						strstr << "buttons/" << b->id() << ".png";
-						b->set_image(strstr.str(), current_team.may_build_count());
-					}
-				} else if (b->id() == "abolish") {
-					strstr.str("");
-					strstr << "buttons/" << b->id() << ".png";
-					b->set_pip_image(strstr.str(), "buttons/icon-guard.png");
-				}
-			}
-		}
-	}
-
-	display::hide_context_menu(adjusted, hide, flags, disable);
 }
 
 void game_display::goto_main_context_menu()
 {
-	display::hide_context_menu(NULL, true);
-	theme_.set_current_context_menu(NULL);
-	controller_->show_context_menu(NULL, *this);
+	show_context_menu();
 }
 
 void game_display::pre_draw(rect_of_hexes& hexes) 
@@ -1503,6 +1247,96 @@ void game_display::pre_draw(rect_of_hexes& hexes)
 	 * floating_label level
 	 */
 	prune_chat_messages();
+}
+
+surface generate_turn_surface(const std::string& text, int w, int h)
+{
+	std::vector<std::string> vstr = utils::split(text);
+	if (vstr.size() != 4) {
+		return create_neutral_surface(w, h);
+	}
+
+	surface screen = create_neutral_surface(w, h);
+
+	const int bar_turn_png_valid_width = 76;
+	const int left_gap_with = 2;
+	int main_ticks = lexical_cast_default<int>(vstr[0]);
+	int autosave_ticks = lexical_cast_default<int>(vstr[1]);
+
+	double filled = 1.0 * (main_ticks % game_config::ticks_per_turn) / game_config::ticks_per_turn;
+	draw_bar_to_surf("misc/bar-turn.png", screen, 0, 1, w - 4, filled, font::GOOD_COLOR, ftofxp(0.8), false);
+
+	SDL_Rect dst_clip;
+	if (autosave_ticks >= 0) {
+		// auto save point
+		int pos = (autosave_ticks % game_config::ticks_per_turn) * bar_turn_png_valid_width / game_config::ticks_per_turn;
+		dst_clip.x = 0 + left_gap_with + pos;
+		dst_clip.y = 0;
+
+		surface filled_surf = create_compatible_surface(screen, 2, h);
+		SDL_FillRect(filled_surf, NULL, SDL_MapRGBA(filled_surf->format, 255, 0, 0, 1.0));
+		sdl_blit(filled_surf, NULL, screen, &dst_clip);
+	}
+
+	std::string turn_str = vstr[2];
+	if (lexical_cast_default<int>(vstr[3]) > 0) {
+		turn_str.append("/");
+		turn_str.append(vstr[3]);
+	}
+	dst_clip.x = (w - (turn_str.size() * 8)) / 2;
+	dst_clip.y = 2;
+	std::stringstream img;
+	for (std::string::const_iterator it = turn_str.begin(); it != turn_str.end(); ++ it) {
+		char ch = *it;
+		img.str("");
+		if (isdigit(ch)) {
+			img << "misc/digit.png~CROP(" << 8 * (ch - 0x30) << ", 0, 8, 12)";
+		} else if (ch == '/') {
+			img << "misc/digit.png~CROP(" << 8 * 10 << ", 0, 8, 12)";
+		}
+		if (!img.str().empty()) {
+			sdl_blit(image::get_image(img.str()), NULL, screen, &dst_clip);
+			dst_clip.x += 8;
+		}
+	}
+
+	return screen;
+}
+
+surface generate_unit_image_surface(const unit_map& units, const std::string& text, int w, int h)
+{
+	std::vector<std::string> vstr = utils::split(text);
+	if (vstr.size() != 2) {
+		return create_neutral_surface(w, h);
+	}
+
+	const map_location loc(lexical_cast_default<int>(vstr[0]), lexical_cast_default<int>(vstr[1]));
+	const unit* u = units.find_unit(loc);
+
+	surface surf = image::get_image(image::locator(u->absolute_image(), u->image_mods()));
+	surface screen = scale_surface(surf, w, h);
+
+	if (!u->is_artifical() && u->especial() != NO_ESPECIAL) {
+		SDL_Rect dst_clip = create_rect(0, 0, 0, 0);
+		const std::string& img = unit_types.especial(u->especial()).image_;
+		surf = scale_surface(image::get_image(img), 16, 16);
+		sdl_blit(surf, NULL, screen, &dst_clip);
+	}
+	return screen;
+}
+
+surface game_display::refresh_surface_report(int num, const reports::report& r, gui2::twidget& widget)
+{
+	surface surf;
+	const SDL_Rect rect = widget.get_rect();
+	if (num == gui2::tgame_theme::TURN) {
+		surf = generate_turn_surface(r.text, rect.w, rect.h);
+
+	} else if (num == gui2::tgame_theme::UNIT_IMAGE) {
+		surf = generate_unit_image_surface(units_, r.text, rect.w, rect.h);
+	}
+
+	return surf;
 }
 
 image::TYPE game_display::get_image_type(const map_location& loc) {
@@ -1842,7 +1676,11 @@ void game_display::redraw_units(const std::vector<map_location>& invalidated_uni
 		}
 	}
 	for (std::map<int, animation*>::iterator it = area_anims_.begin(); it != area_anims_.end(); ++ it) {
-		VALIDATE(it->second->type() == anim_map, "draw() logic can only map animation!");
+		tanim_type type = it->second->type();
+		VALIDATE(type == anim_map || type == anim_canvas, miss_anim_err_str);
+		if (type != anim_map) {
+			continue;
+		}
 
 		it->second->update_last_draw_time();
 		area_anim::rt.type = it->second->type();
@@ -1860,7 +1698,7 @@ bool game_display::has_time_area() const
 	return tod_manager_.has_time_area();
 }
 
-void game_display::draw_report(reports::TYPE report_num)
+void game_display::draw_report(int report_num)
 {
 	if(!team_valid()) {
 		return;
@@ -1880,8 +1718,8 @@ void game_display::draw_game_status()
 		return;
 	}
 
-	for(size_t r = reports::STATUS_REPORTS_BEGIN; r != reports::STATUS_REPORTS_END; ++r) {
-		draw_report(reports::TYPE(r));
+	for (int r = gui2::tgame_theme::STATUS_REPORTS_BEGIN; r != gui2::tgame_theme::STATUS_REPORTS_END; ++r) {
+		draw_report(r);
 	}
 }
 
@@ -1893,8 +1731,8 @@ void game_display::show_unit_tip(const unit& troop, const map_location& loc)
 		for (int index = 0; index < game_config::active_tactic_slots; index ++) {
 			name.str("");
 			name << "tactic" << index;
-			gui::button* btn = find_button(name.str());
-			btn->hide();
+			gui2::tbutton* widget = dynamic_cast<gui2::tbutton*>(get_theme_object(name.str()));
+			widget->set_visible(gui2::twidget::INVISIBLE);
 		}
 		invalidate_all();
 	}
@@ -2031,8 +1869,8 @@ void game_display::draw_sidebar()
 {
 	// wb::scoped_planned_pathfind_map future; //< Lasts for whole method.
 
-	draw_report(reports::REPORT_CLOCK);
-	draw_report(reports::REPORT_COUNTDOWN);
+	draw_report(gui2::tgame_theme::REPORT_CLOCK);
+	draw_report(gui2::tgame_theme::REPORT_COUNTDOWN);
 
 	if(teams_.empty()) {
 		return;
@@ -2041,8 +1879,8 @@ void game_display::draw_sidebar()
 	if (invalidateUnit_) {
 		// We display the unit the mouse is over if it is over a unit,
 		// otherwise we display the unit that is selected.
-		for (size_t r = reports::UNIT_REPORTS_BEGIN; r != reports::UNIT_REPORTS_END; ++r) {
-			draw_report(reports::TYPE(r));
+		for (int r = gui2::tgame_theme::UNIT_REPORTS_BEGIN; r != gui2::tgame_theme::UNIT_REPORTS_END; ++r) {
+			draw_report(r);
 		}
 
 		invalidateUnit_ = false;
@@ -2073,7 +1911,7 @@ surface game_display::minimap_surface(int w, int h)
 	return image::getMinimap(w, h, get_map(), viewpoint_);
 }
 
-void game_display::draw_minimap_units()
+void game_display::draw_minimap_units(surface& screen)
 {
 	double xscaling = 1.0 * minimap_location_.w / get_map().w();
 	double yscaling = 1.0 * minimap_location_.h / get_map().h();
@@ -2088,7 +1926,7 @@ void game_display::draw_minimap_units()
 
 		int side = u->side();
 		const SDL_Color col = team::get_minimap_color(side);
-		const Uint32 mapped_col = SDL_MapRGB(video().getSurface()->format,col.r,col.g,col.b);
+		const Uint32 mapped_col = SDL_MapRGB(screen->format, col.r, col.g, col.b);
 
 		double u_x = u->get_location().x * xscaling;
 		double u_y = (u->get_location().y + (is_odd(u->get_location().x) ? 1 : -1)/4.0) * yscaling;
@@ -2101,10 +1939,10 @@ void game_display::draw_minimap_units()
 				, round_double(u_w)
 				, round_double(u_h));
 
-		sdl_fill_rect(video().getSurface(), &r, mapped_col);
+		sdl_fill_rect(screen, &r, mapped_col);
 
 		if (unit_is_city(u)) {
-			draw_rectangle(r.x - 2, r.y - 2, r.w + 4, r.h + 4, mapped_col, video().getSurface());
+			draw_rectangle(r.x - 2, r.y - 2, r.w + 4, r.h + 4, mapped_col, screen);
 		}
 	}
 
@@ -2112,7 +1950,7 @@ void game_display::draw_minimap_units()
 		static surface indicator_dst = image::get_image("misc/move-indicator-dst-mini.png");
 		SDL_Rect dstrect = create_rect(minimap_location_.x + std::min(minimap_location_.w - indicator_dst->w, std::max(0, round_double(moving_dst_loc_.x * xscaling) - indicator_dst->w / 2)), 
 			minimap_location_.y + std::min(minimap_location_.h - indicator_dst->h, std::max(0, round_double(moving_dst_loc_.y * yscaling) - indicator_dst->h / 2)), 0, 0);
-		blit_surface(indicator_dst, NULL, video().getSurface(), &dstrect);
+		blit_surface(indicator_dst, NULL, screen, &dstrect);
 	}
 }
 
@@ -2406,28 +2244,61 @@ surface game_display::get_flag(const map_location& loc)
 	return surface(NULL);
 }
 
-bool game_display::redraw_everything()
+void game_display::pre_change_resolution(std::map<const std::string, bool>& actives)
 {
-	bool redrawn = display::redraw_everything();
-	if (redrawn && controller_) {
-		if (!teams_.empty() && teams_[activeTeam_].is_human() && !controller_->in_browse()) {
-			refresh_access_troops(activeTeam_, REFRESH_RELOAD);
-			refresh_access_heros(activeTeam_, REFRESH_RELOAD);
-			controller_->show_context_menu(NULL, *this);
-		}
-		if (tent::mode == mode_tag::SIEGE && !controller_->is_linger_mode()) {
-			if (controller_->in_browse()) {
-				if (controller_->pause_when_human()) {
-					menu_set_image(game_config::theme_object_id_endturn, "buttons/ctrl-pause2.png");
-				} else {
-					menu_set_image(game_config::theme_object_id_endturn, "buttons/ctrl-pause.png");
-				}
-			} else {
-				menu_set_image(game_config::theme_object_id_endturn, "buttons/ctrl-play.png");
-			}
+	static const char* items[] = {
+		"chat", "card", "undo",	"endturn"
+	};
+	static int nb_items = sizeof(items) / sizeof(items[0]);
+
+	for (int n = 0; n < nb_items; n ++) {
+		gui2::tcontrol* widget = dynamic_cast<gui2::tcontrol*>(get_theme_object(items[n]));
+		if (widget) {
+			actives.insert(std::make_pair(items[n], widget->get_active()));
+		} else {
+			actives.insert(std::make_pair(items[n], true));
 		}
 	}
-	return redrawn;
+}
+
+void game_display::post_change_resolution(const std::map<const std::string, bool>& actives)
+{
+	gui2::tgame_theme& dlg = *dynamic_cast<gui2::tgame_theme*>(theme_);
+	dlg.report_ptr(&troop_list_.report, &hero_list_.report, NULL);
+	ctrl_bar_ = dlg.context_menu("ctrl-bar");
+
+	gui2::treport* require_invisible = NULL;
+	if (current_list_type_ == taccess_list::TROOP) {
+		require_invisible = hero_list_.report;
+	} else {
+		require_invisible = troop_list_.report;
+	}
+	if (require_invisible) {
+		require_invisible->parent()->set_visible(gui2::twidget::INVISIBLE);
+	}
+
+	troop_list_.reset();
+	hero_list_.reset();
+
+	if (!teams_.empty() && teams_[activeTeam_].is_human() && !controller_->in_browse()) {
+		refresh_access_troops(activeTeam_, REFRESH_RELOAD);
+		refresh_access_heros(activeTeam_, REFRESH_RELOAD);
+		show_context_menu();
+	}
+	if (tent::mode == mode_tag::SIEGE && !controller_->is_linger_mode()) {
+		if (controller_->in_browse()) {
+			if (controller_->pause_when_human()) {
+				widget_set_image(game_config::theme_object_id_endturn, "buttons/ctrl-pause2.png");
+			} else {
+				widget_set_image(game_config::theme_object_id_endturn, "buttons/ctrl-pause.png");
+			}
+		} else {
+			widget_set_image(game_config::theme_object_id_endturn, "buttons/ctrl-play.png");
+		}
+	}
+	refresh_card_button(teams_[currentTeam_], *this);
+	widget_set_surface("rpg", generate_rpg_surface(*rpg::h));
+	show_context_menu();
 }
 
 surface game_display::get_big_flag(const map_location& loc)
@@ -2701,6 +2572,11 @@ void game_display::invalidate_animations()
 		terrain_dirty_ = false;
 	}
 	for (std::map<int, animation*>::iterator it = area_anims_.begin(); it != area_anims_.end(); ++ it) {
+		tanim_type type = it->second->type();
+		VALIDATE(type == anim_map || type == anim_canvas, miss_anim_err_str);
+		if (type != anim_map) {
+			continue;
+		}
 		it->second->invalidate(screen_.getSurface());
 	}
 	if (expedite_city_) {
@@ -3601,42 +3477,18 @@ void game_display::set_playing_team(size_t teamindex)
 void game_display::begin_game()
 {
 	in_game_ = true;
-	create_buttons();
+
 	invalidate_all();
 }
 
-void game_display::create_buttons()
+bool game_display::unit_image_location_on(int x, int y)
 {
-	display::create_buttons();
-
-	for (size_t n = 0; n < buttons_.size(); ++ n) {
-		gui::button& b = buttons_[n];
-		const std::string& id = b.id();
-		if (id == "rpg") {
-			b.set_rpg_image(rpg::h);
-		} else if (id == "skip-animation") {
-			b.set_check(false);
-		} else if (id == "undo") {
-			if (controller_->is_linger_mode()) {
-				b.hide();
-			} else {
-				// In linger mode, player_number_ in play_controller is out of range, 
-				// it will result to access exception if call current_team(). 
-				team& current_team = controller_->current_team();
-				if (current_team.uses_shroud() || current_team.uses_fog()) {
-					b.hide();
-				}
-			}
-		} else if (b.id() == "tactic0") {
-			b.hide();
-		} else if (b.id() == "tactic1") {
-			b.hide();
-		} else if (b.id() == "tactic2") {
-			b.hide();
-		} else if (b.id() == "bomb") {
-			b.hide();
-		}
+	gui2::twidget* widget = get_theme_object("unit_image");
+	const SDL_Rect& area = widget->fix_rect();
+	if (!point_in_rect(x, y, area)) {
+		return false;
 	}
+	return true;
 }
 
 namespace {

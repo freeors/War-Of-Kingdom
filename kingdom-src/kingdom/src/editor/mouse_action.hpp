@@ -18,7 +18,6 @@
 
 #include "editor/action_base.hpp"
 #include "editor/editor_map.hpp"
-#include "theme.hpp"
 
 class CKey;
 
@@ -37,7 +36,6 @@ public:
 	mouse_action(const CKey& key)
 		: previous_move_hex_()
 		, key_(key)
-		, toolbar_button_(NULL)
 	{
 	}
 
@@ -98,17 +96,6 @@ public:
 	virtual editor_action* key_event(editor_display& disp, const SDL_Event& e);
 
 	/**
-	 * Helper variable setter - pointer to a toolbar menu/button used for highlighting
-	 * the current action. Should always be NULL or point to a valid menu.
-	 */
-	void set_toolbar_button(const theme::menu* value) { toolbar_button_ = value; }
-
-	/**
-	 * Getter for the (possibly NULL) associated menu/button.
-	 */
-	const theme::menu* toolbar_button() const { return toolbar_button_; }
-
-	/**
 	 * Set the mouse overlay for this action. Defaults to an empty overlay.
 	 */
 	virtual void set_mouse_overlay(editor_display& disp);
@@ -134,11 +121,6 @@ protected:
 	 */
 	const CKey& key_;
 
-private:
-	/**
-	 * Pointer to an associated menu/button, if such exists
-	 */
-	const theme::menu* toolbar_button_;
 };
 
 /**

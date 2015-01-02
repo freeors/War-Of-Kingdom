@@ -22,6 +22,11 @@
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/widgets/control.hpp"
+#include "gui/widgets/settings.hpp"
+
+namespace theme {
+extern SDL_Rect calculate_relative_loc(const config& cfg, int screen_w, int screen_h);
+}
 
 namespace gui2 {
 
@@ -34,9 +39,14 @@ tbuilder_control::tbuilder_control(const config& cfg)
 	, tooltip(cfg["tooltip"].t_str())
 	, help(cfg["help"].t_str())
 	, use_tooltip_on_label_overflow(true)
+	, fix_rect(empty_rect)
 {
-	if(definition.empty()) {
+	if (definition.empty()) {
 		definition = "default";
+	}
+
+	if (cfg.has_attribute("rect")) {
+		fix_rect = theme::calculate_relative_loc(cfg, settings::screen_width, settings::screen_height);
 	}
 
 	VALIDATE_WITH_DEV_MESSAGE(help.empty() || !tooltip.empty()
@@ -61,10 +71,12 @@ void tbuilder_control::init_control(tcontrol* control) const
 	control->set_tooltip(tooltip);
 	control->set_help_message(help);
 	control->set_use_tooltip_on_label_overflow(use_tooltip_on_label_overflow);
-#ifndef LOW_MEM
+	if (fix_rect.w && fix_rect.h) {
+		control->set_fix_rect(fix_rect);
+	}
+
 	control->set_debug_border_mode(debug_border_mode);
 	control->set_debug_border_color(debug_border_color);
-#endif
 }
 
 twidget* tbuilder_control::build(const treplacements& /*replacements*/) const

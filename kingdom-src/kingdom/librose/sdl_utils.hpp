@@ -393,6 +393,11 @@ void draw_solid_tinted_rectangle(int x, int y, int w, int h,
 void draw_centered_on_background(surface surf, const SDL_Rect& rect,
 	const SDL_Color& color, surface target);
 
+void blit_integer_surface(int integer, surface& to, int x, int y);
+surface generate_pip_surface(surface& bg, surface& fg);
+surface generate_pip_surface(int width, int height, const std::string& bg, const std::string& fg);
+surface generate_surface(int width, int height, const std::string& img, int integer, bool greyscale);
+
 std::ostream& operator<<(std::ostream& s, const SDL_Rect& rect);
 
 enum tristate {t_false, t_true, t_unset};
@@ -425,5 +430,18 @@ private:
 
 extern tsurface_is_opaque surface_is_opaque;
 extern const surface* share_canvas_image;
+
+class tshare_canvas_image_lock
+{
+public:
+	tshare_canvas_image_lock(const surface* surf)
+	{
+		share_canvas_image = surf;
+	}
+	~tshare_canvas_image_lock()
+	{
+		share_canvas_image = NULL;
+	}
+};
 
 #endif

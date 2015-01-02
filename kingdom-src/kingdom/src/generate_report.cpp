@@ -36,6 +36,7 @@
 #include "artifical.hpp"
 #include "play_controller.hpp"
 #include "wml_exception.hpp"
+#include "gui/dialogs/theme2.hpp"
 
 #include <iostream>
 #include <ctime>
@@ -46,24 +47,9 @@ extern std::string selected_terrain, left_button_function;
 
 namespace reports {
 
-static void add_status(report &r,
-	char const *path, char const *desc1, char const *desc2)
-{
-	std::ostringstream s;
-	s << gettext(desc1) << gettext(desc2);
-	r.add_image(path, s.str());
-}
-
-static std::string flush(std::ostringstream &s)
-{
-	std::string r(s.str());
-	s.str(std::string());
-	return r;
-}
-
 static char const *naps = "</span>";
 
-report generate_report(TYPE type,
+report generate_report(int num,
                        const team &viewing_team, int current_side, int playing_side,
                        const map_location& loc, const map_location& mouseover,
                        const std::set<std::string> &observers,
@@ -74,13 +60,16 @@ report generate_report(TYPE type,
 	std::vector<team>& teams = *resources::teams;
 	play_controller& controller = *resources::controller;
 	team& playing_team = teams[playing_side - 1];
+	game_display& disp = *resources::screen;
 
 	const unit *u = NULL;
 
-	if ((int(type) >= int(UNIT_REPORTS_BEGIN) && int(type) < int(UNIT_REPORTS_END)) || type == POSITION){
+	if ((num >= gui2::tgame_theme::UNIT_REPORTS_BEGIN && num < gui2::tgame_theme::UNIT_REPORTS_END) || num == gui2::tgame_theme::POSITION) {
 		u = get_visible_unit(loc, viewing_team, show_everything);
-		if (!u && type != POSITION) {
-			return report();
+		if (!u && num != gui2::tgame_theme::POSITION) {
+			report r = report();
+			r.type = disp.cached_report(num).type;
+			return r;
 		}
 	}
 
@@ -89,81 +78,24 @@ report generate_report(TYPE type,
 	using utils::signed_percent;
 	using font::span_color;
 
-	switch(type) {
-	case UNIT_NAME:
-		// str << font::SMALL_TEXT << u->name();
+	switch (num) {
+	case gui2::tgame_theme::UNIT_NAME:
 		str << u->name();
+		break;
 
-		tooltip << _("Name: ") << u->name();
-
-		return report(str.str(), "", tooltip.str());
-	case UNIT_TYPE: {
+	case gui2::tgame_theme::UNIT_TYPE: {
 		if (!u->packed()) {
-			str << "<245,230,193>" << u->type_name();
+			str << tintegrate::generate_format(u->type_name(), "245,230,193,0");
 		} else {
-			str << "<245,230,193>" << u->packee_type()->type_name();
-			str << "[" << u->type_name() << "]";
+			str << tintegrate::generate_format(u->packee_type()->type_name(), "245,230,193,0");
+			str << "(" << u->type_name() << ")";
 		}
 		if (game_config::tiny_gui) {
 			str << "(" << hero::adaptability_str2(ftofxp12(u->adaptability_[u->arms()])) << ")";
 		}
-
-		tooltip << _("Type: ")
-			<< u->type_name();
-
-		return report(str.str(), "", tooltip.str());
+		break;
 	}
-	case UNIT_RACE: {
-		str << "<166,146,117>" << u->race()->name(u->gender());
-
-		return report(str.str(), "", tooltip.str());
-	}
-	case UNIT_SIDE: {
-		std::string flag_icon = teams[u->side() - 1].flag_icon();
-		std::string old_rgb = game_config::flag_rgb;
-		std::string new_rgb = team::get_side_color_index(u->side());
-		std::string mods = "~RC(" + old_rgb + ">" + new_rgb + ")";
-
-		if(flag_icon.empty()) {
-			flag_icon = game_config::images::flag_icon;
-		}
-
-		image::locator flag_icon_img(flag_icon, mods);
-		return report("", flag_icon_img, teams[u->side() - 1].current_player());
-	}
-	case UNIT_LEVEL: {
-		str << u->level();
-
-		tooltip << _("Level: ")
-			<< "<b>" << u->level() << "</b>\n";
-
-		const std::vector<std::string>& adv_to = u->advances_to();
-		if(adv_to.empty()) {
-			tooltip << _("No advancement");
-		} else {
-			tooltip << _("Advances to:") << "\n"
-					<< "<b>\t" << utils::join(adv_to, "\n\t") << "</b>";
-		}
-
-		return report(str.str(), "", tooltip.str());
-	}
-	case UNIT_TRAITS: {
-		report res;
-		const std::vector<t_string>& traits = u->trait_names();
-		unsigned int nb = traits.size();
-		for(unsigned int i = 0; i < nb; ++i) {
-			str << traits[i];
-			if(i != nb - 1 )
-				str << ", ";
-			tooltip << _("Trait: ")
-				<< "<b>" << traits[i] << "</b>\n";
-
-			res.add_text(flush(str), flush(tooltip));
-		}
-
-		return res;
-	}
-	case UNIT_STATUS: {
+	case gui2::tgame_theme::UNIT_STATUS: {
 		if (!u->is_city()) {
 			break;
 		}
@@ -176,19 +108,17 @@ report generate_report(TYPE type,
 		break;
 	}
 
-	case UNIT_HP: {
-		str << font::color2markup(u->hp_color()) << u->hitpoints()
-			<< '/' << u->max_hitpoints();
-
-		return report(str.str(), "", tooltip.str());
+	case gui2::tgame_theme::UNIT_HP: {
+		str << tintegrate::generate_format(u->hitpoints(), font::color2markup(u->hp_color()));
+		str	<< '/' << u->max_hitpoints();
+		break;
 	}
-	case UNIT_XP: {
-		str << font::color2markup(u->xp_color()) << u->experience()
-			<< '/' << u->max_experience();
-
-		return report(str.str(), "", tooltip.str());
+	case gui2::tgame_theme::UNIT_XP: {
+		str << tintegrate::generate_format(u->experience(), font::color2markup(u->xp_color()));
+		str << '/' << u->max_experience();
+		break;
 	}
-	case UNIT_SECOND: {
+	case gui2::tgame_theme::UNIT_SECOND: {
 		if (!u->is_city()) {
 			if (u->second().valid()) {
 				str << u->second().name();
@@ -204,22 +134,15 @@ report generate_report(TYPE type,
 				// str << dgettext("wesnoth-lib", "None");
 			}
 		}
-		return report(str.str(), "", tooltip.str());
+		break;
 	}
-	case UNIT_IMAGE:
+	case gui2::tgame_theme::UNIT_IMAGE:
 	{
-//		const std::vector<Uint32>& old_rgb = u->second.team_rgb_range();
-//		color_range new_rgb = team::get_side_color_range(u->second.side());
-
-		report res("", image::locator(u->absolute_image(), u->image_mods()), "");
-		if (!u->is_artifical() && u->especial() != NO_ESPECIAL) {
-			res.add_image(unit_types.especial(u->especial()).image_, "");
-			res.back().rect.w = 16;
-			res.back().rect.h = 16;
-		}
-		return res;
+		const map_location& loc = u->get_location();
+		str << loc.x << "," << loc.y;
+		return report(report::SURFACE, str.str(), null_str);
 	}
-	case TIME_OF_DAY: {
+	case gui2::tgame_theme::TIME_OF_DAY: {
 		time_of_day tod;
 
 		if (viewing_team.shrouded(mouseover)) {
@@ -247,39 +170,50 @@ report generate_report(TYPE type,
 		else if (tod.lawful_bonus_modified < 0) tod_image += "~DARKEN()";
 		if (preferences::flip_time()) tod_image += "~FL(horiz)";
 
+		str << tod_image;
 		if (game_config::tiny_gui) {
-			return report("", tod_image, "");
-		} else {
-			return report("", tod_image, tooltip.str());
+			tooltip.str("");
 		}
+		break;
 	}
-	case TURN: {
+	case gui2::tgame_theme::TURN: {
 		str << unit_map::main_ticks << "," << controller.autosave_ticks() << ",";
 		str << controller.turn() << "," << resources::tod_manager->number_of_turns();
-		break;
+		return report(report::SURFACE, str.str(), null_str);
 	}
 	// For the following status reports, show them in gray text
 	// when it is not the active player's turn.
-	case GOLD: {
-		//Supposes the full/"pathfind" unit map is applied
+	case gui2::tgame_theme::GOLD: {
+		// Supposes the full/"pathfind" unit map is applied
+		std::stringstream ss;
+		std::string color;
 		int fake_gold = playing_team.gold();
 		if (current_side != playing_side) {
-			str << font::GRAY_TEXT;
+			color = "gray";
 		} else if (fake_gold < 0) {
-			str << font::RED_TEXT;
+			color = "red";
 		}
 
 		int cost_exponent = playing_team.cost_exponent();
 		int hundred = cost_exponent / 100;
 
-		str << playing_team.gold() << "(" << hundred << "." << (cost_exponent - hundred * 100) / 10 << ")";
+		ss << playing_team.gold();
+		ss << "(" << hundred << "." << (cost_exponent - hundred * 100) / 10 << ")";
+		if (!color.empty()) {
+			str << tintegrate::generate_format(ss.str(), color);
+		} else {
+			str << ss.str();
+		}
 		break;
 	}
-	case VILLAGES: {
+	case gui2::tgame_theme::VILLAGES: {
 		const team_data data = calculate_team_data(playing_team, playing_side);
-		if (current_side != playing_side)
-			str << font::GRAY_TEXT;
-		str << data.villages << '/';
+		std::stringstream ss;
+		std::string color;
+		if (current_side != playing_side) {
+			color = "gray";
+		}
+		ss << data.villages << '/';
 		if (viewing_team.uses_shroud()) {
 			int unshrouded_villages = 0;
 			std::vector<map_location>::const_iterator i = map.villages().begin();
@@ -287,45 +221,73 @@ report generate_report(TYPE type,
 				if (!viewing_team.shrouded(*i))
 					++unshrouded_villages;
 			}
-			str << unshrouded_villages;
+			ss << unshrouded_villages;
 		} else {
-			str << map.villages().size();
+			ss << map.villages().size();
+		}
+		if (!color.empty()) {
+			str << tintegrate::generate_format(ss.str(), color);
+		} else {
+			str << ss.str();
 		}
 		break;
 	}
-	case UPKEEP: {
+	case gui2::tgame_theme::UPKEEP: {
 		const team_data data = calculate_team_data(playing_team, playing_side);
-		if (current_side != playing_side)
-			str << font::GRAY_TEXT;
-		str << data.upkeep;
-		break;
-	}
-	case INCOME: {
-		team_data data = calculate_team_data(playing_team, playing_side);
-		if (current_side != playing_side)
-			str << font::GRAY_TEXT;
-		else if (data.net_income < 0)
-			str << font::BAD_TEXT;
-
-		str << data.net_income;
-		break;
-	}
-	 case TECH_INCOME: {
-		team_data data = calculate_team_data(playing_team, playing_side);
+		std::stringstream ss;
+		std::string color;
 		if (current_side != playing_side) {
-			str << font::GRAY_TEXT;
+			color = "gray";
+		}
+		ss << data.upkeep;
+		if (!color.empty()) {
+			str << tintegrate::generate_format(ss.str(), color);
+		} else {
+			str << ss.str();
+		}
+		break;
+	}
+	case gui2::tgame_theme::INCOME: {
+		team_data data = calculate_team_data(playing_team, playing_side);
+		std::stringstream ss;
+		std::string color;
+		if (current_side != playing_side) {
+			color = "gray";
+		} else if (data.net_income < 0) {
+			color = "red";
 		}
 
-		str << data.technology_net_income;
+		ss << data.net_income;
+		if (!color.empty()) {
+			str << tintegrate::generate_format(ss.str(), color);
+		} else {
+			str << ss.str();
+		}
 		break;
 	}
-	case TACTIC: {
+	 case gui2::tgame_theme::TECH_INCOME: {
+		team_data data = calculate_team_data(playing_team, playing_side);
+		std::stringstream ss;
+		std::string color;
+		if (current_side != playing_side) {
+			color = "gray";
+		}
+
+		ss << data.technology_net_income;
+		if (!color.empty()) {
+			str << tintegrate::generate_format(ss.str(), color);
+		} else {
+			str << ss.str();
+		}
+		break;
+	}
+	case gui2::tgame_theme::TACTIC: {
 		int tactic_point = 0;
 		str << tactic_point;
 		break;
 	}
 
-	case POSITION: {
+	case gui2::tgame_theme::POSITION: {
 		// coordinate  [terrain] resitance
 		if (!map.on_board(mouseover)) {
 			break;
@@ -336,15 +298,8 @@ report generate_report(TYPE type,
 		if (terrain == t_translation::OFF_MAP_USER)
 			break;
 
-		str << mouseover;
-		str << "\n";
-
 		if (!viewing_team.shrouded(mouseover)) {
 			const t_translation::t_list& underlying = map.underlying_union_terrain(terrain);
-
-			if (!game_config::tiny_gui) {
-				str << _("Terrains") << ":";
-			}
 
 			if (map.is_village(mouseover)) {
 				int owner = village_owner(mouseover, teams) + 1;
@@ -388,10 +343,14 @@ report generate_report(TYPE type,
 			str << "\n";
 		}
 
-		if (!u)
+		str << mouseover;
+		if (!u) {
 			break;
-		if (viewing_team.shrouded(mouseover))
+		}
+		if (viewing_team.shrouded(mouseover)) {
 			break;
+		}
+		str << "    ";
 
 		int move_cost = u->movement_cost(terrain);
 		int defense = 100 - u->defense_modifier(terrain);
@@ -409,7 +368,7 @@ report generate_report(TYPE type,
 
 		break;
 	}
-	case STRATUM: {
+	case gui2::tgame_theme::STRATUM: {
 		std::string stratum_icon;
 		if (rpg::stratum == hero_stratum_wander) {
 			stratum_icon = "misc/stratum-wander.png";
@@ -420,14 +379,14 @@ report generate_report(TYPE type,
 		} else if (rpg::stratum == hero_stratum_leader) {
 			stratum_icon = "misc/stratum-leader.png";
 		}
-		image::locator stratum_icon_img(stratum_icon);
-		return report("", stratum_icon_img, "");
+		str << stratum_icon;
+		break;
 	}
-	case MERITORIOUS: {
+	case gui2::tgame_theme::MERITORIOUS: {
 		str << rpg::h->meritorious_;
 		break;
 	}
-	case SIDE_PLAYING: {
+	case gui2::tgame_theme::SIDE_PLAYING: {
 		std::string flag_icon = teams[playing_side-1].flag_icon();
 		std::string old_rgb = game_config::flag_rgb;
 		std::string new_rgb = team::get_side_color_index(playing_side);
@@ -437,17 +396,17 @@ report generate_report(TYPE type,
 			flag_icon = game_config::images::flag_icon;
 		}
 
-		image::locator flag_icon_img(flag_icon, mods);
-		std::stringstream strstr;
+		str << flag_icon << mods;
+
 		if (unit::actor) {
-			strstr << unit::actor->name() << "(" << teams[unit::actor->side() - 1].name() << ")";
+			tooltip << unit::actor->name() << "(" << teams[unit::actor->side() - 1].name() << ")";
 		} else {
-			strstr << "-----";
+			tooltip << "-----";
 		}
-		return report("", flag_icon_img, strstr.str());
+		break;
 	}
 
-	case OBSERVERS: {
+	case gui2::tgame_theme::OBSERVERS: {
 		if(observers.empty()) {
 			return report();
 		}
@@ -458,23 +417,27 @@ report generate_report(TYPE type,
 			str << *i << "\n";
 		}
 
-		return report("",game_config::images::observer,str.str());
+		// return report("",game_config::images::observer,str.str());
+		break;
 	}
 
-	case EDITOR_SELECTED_TERRAIN: {
-		if (editor::selected_terrain.empty())
+	case gui2::tgame_theme::EDITOR_SELECTED_TERRAIN:
+		if (editor::selected_terrain.empty()) {
 			return report();
-		else
-			return report(editor::selected_terrain);
-	}
-	case EDITOR_LEFT_BUTTON_FUNCTION: {
-		if (editor::left_button_function.empty())
-			return report();
-		else
-			return report(editor::left_button_function);
-	}
+		} else {
+			str << editor::selected_terrain;
+		}
+		break;
 
-	case REPORT_COUNTDOWN: {
+	case gui2::tgame_theme::EDITOR_LEFT_BUTTON_FUNCTION:
+		if (editor::left_button_function.empty()) {
+			return report();
+		} else {
+			str << editor::left_button_function;
+		}
+		break;
+
+	case gui2::tgame_theme::REPORT_COUNTDOWN: {
 		int min;
 		int sec;
 		if (viewing_team.countdown_time() > 0){
@@ -502,29 +465,29 @@ report generate_report(TYPE type,
 		  // If there is no turn time limit,
 		  // then we display the clock instead.
 		}
-	case REPORT_CLOCK: {
+	case gui2::tgame_theme::REPORT_CLOCK: {
 		time_t t = std::time(NULL);
 		struct tm *lt = std::localtime(&t);
 		if (lt) {
 			char temp[10];
 			size_t s = std::strftime(temp, 10, preferences::clock_format().c_str(), lt);
-			if(s>0) {
-				return report(temp);
+			if (s > 0) {
+				str << temp;
 			} else {
 				return report();
 			}
 		} else {
 			return report();
 		}
+		break;
 	}
 	default:
 		str.str("");
-		str << "Not impletement report type: " << reports::report_name(type);
+		str << "Not impletement report type: " << num;
 		VALIDATE(false, str.str());
 		break;
 	}
-	return report(str.str());
+	return report(report::LABEL, str.str(), tooltip.str());
 }
 
-} // end namespace reports
-
+}

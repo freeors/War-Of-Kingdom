@@ -284,10 +284,7 @@ turn_info::PROCESS_DATA_RESULT turn_info::process_network_data(const config& cfg
 	// The host has ended linger mode in a campaign -> enable the "End scenario" button
 	// and tell we did get the notification.
 	if (cfg.child("notify_next_scenario")) {
-		gui::button* btn_end = resources::screen->find_button("endturn");
-		if(btn_end) {
-			btn_end->enable(true);
-		}
+		resources::screen->set_theme_object_active("endturn", true);
 		return PROCESS_END_LINGER;
 	}
 

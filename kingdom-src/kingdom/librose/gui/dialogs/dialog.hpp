@@ -17,6 +17,7 @@
 #define GUI_DIALOGS_DIALOG_HPP_INCLUDED
 
 #include "gui/dialogs/field-fwd.hpp"
+#include "SDL_rect.h"
 
 #include <string>
 #include <vector>
@@ -136,7 +137,8 @@ public:
 		always_save_fields_(false),
 		fields_(),
 		focus_(),
-		restore_(true)
+		restore_(true),
+		async_window_(NULL)
 	{}
 
 	virtual ~tdialog();
@@ -155,6 +157,10 @@ public:
 	 * @returns                   Whether the final retval_ == twindow::OK
 	 */
 	bool show(CVideo& video, const unsigned auto_close_time = 0);
+
+	void asyn_show(CVideo& video, const SDL_Rect& map_area);
+	void async_draw();
+	const std::vector<gui2::twidget*>& volatiles() const { return volatiles_; }
 
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
@@ -283,6 +289,9 @@ protected:
 	{
 		return register_label(id, mandatory, filename);
 	}
+
+	twindow* async_window_;
+	std::vector<twidget*> volatiles_;
 
 private:
 	/** Returns the window exit status, 0 means not shown. */

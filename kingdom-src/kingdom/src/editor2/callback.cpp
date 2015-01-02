@@ -17,20 +17,6 @@ bool find_topic2(const std::string& dst)
 }
 }
 
-bool in_tower_mode() 
-{ 
-	return false; 
-}
-
-void set_unit_image(void* cookie, surface& image, int& integer)
-{
-}
-
-surface get_genus_surface()
-{
-	return NULL;
-}
-
 void shrouded_and_fogged(const map_location& loc, const void* t, bool& shrouded, bool& fogged)
 {
 }

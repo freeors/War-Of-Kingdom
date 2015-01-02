@@ -39,6 +39,8 @@ REGISTER_WIDGET(scroll_label)
 tscroll_label::tscroll_label()
 	: tscrollbar_container(COUNT)
 	, state_(ENABLED)
+	, auto_scroll_(false)
+	, last_scroll_ticks_(0)
 {
 	connect_signal<event::LEFT_BUTTON_DOWN>(
 			  boost::bind(
@@ -97,6 +99,34 @@ tpoint tscroll_label::pre_request_fix_width(const unsigned maximum_content_grid_
 	label->set_text_maximum_width(maximum_content_grid_width - label->config()->text_extra_width);
 
 	return content_grid()->calculate_best_size();
+}
+
+bool tscroll_label::exist_anim()
+{
+	bool dirty = false;
+	Uint32 now = SDL_GetTicks();
+
+	if (auto_scroll_ && vertical_scrollbar_->get_visible() == twidget::VISIBLE) {
+		const Uint32 interval = 50;
+		if (last_scroll_ticks_) {
+			if (now >= last_scroll_ticks_ + interval) {
+				last_scroll_ticks_ = now;
+				dirty = true;
+
+				unsigned item_position = vertical_scrollbar_->get_item_position();
+				item_position += 10;
+				vertical_scrollbar_->set_item_position(item_position);
+				scrollbar_moved();
+			}
+		}
+	} else {
+		last_scroll_ticks_ = now;
+	}
+
+	if (!dirty) {
+		dirty = tcontrol::exist_anim();
+	}
+	return dirty;
 }
 
 const std::string& tscroll_label::get_control_type() const

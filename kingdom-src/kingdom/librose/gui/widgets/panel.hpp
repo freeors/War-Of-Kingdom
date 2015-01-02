@@ -57,18 +57,16 @@ public:
 	/** Inherited from tcontrol. */
 	unsigned get_state() const { return 0; }
 
-	bool exist_anim() const;
+	bool exist_anim();
 
 private:
 	/** Inherited from tcontrol. */
-	void impl_draw_background(surface& frame_buffer);
 	void impl_draw_background(
 			  surface& frame_buffer
 			, int x_offset
 			, int y_offset);
 
 	/** Inherited from tcontrol. */
-	void impl_draw_foreground(surface& frame_buffer);
 	void impl_draw_foreground(
 			  surface& frame_buffer
 			, int x_offset
