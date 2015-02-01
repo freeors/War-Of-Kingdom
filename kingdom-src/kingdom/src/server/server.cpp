@@ -2752,15 +2752,24 @@ void server::update_game_in_lobby(const wesnothd::game* g, network::connection e
 	}
 }
 
-       #include <sys/types.h>
-       #include <sys/stat.h>
-       #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #ifndef _MSC_VER
-       #include <unistd.h>
+	#include <unistd.h>
 #endif
 
+#include "display.hpp"
+#include "gui/widgets/window.hpp"
 void handle_app_event(Uint32 type)
 {
+}
+
+namespace gui2 {
+int app_show_preferences_dialog(display& disp, bool first)
+{
+	return twindow::OK;
+}
 }
 
 int main(int argc, char** argv) {

@@ -90,7 +90,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(exile)
 
-texile::texile(game_display& disp, hero_map& heros, tgroup& g)
+texile::texile(display& disp, hero_map& heros, tgroup& g)
 	: disp_(disp)
 	, heros_(heros)
 	, group_(g)

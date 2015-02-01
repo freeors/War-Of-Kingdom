@@ -73,7 +73,7 @@ extern std::string parse_message_content(const std::string& content);
 
 REGISTER_DIALOG(edit_box)
 
-tedit_box::tedit_box(game_display& disp, hero_map& heros, const std::string& initial_str, int mode)
+tedit_box::tedit_box(display& disp, hero_map& heros, const std::string& initial_str, int mode)
 	: disp_(disp)
 	, heros_(heros)
 	, initial_str_(initial_str)
@@ -98,7 +98,7 @@ void tedit_box::pre_show(CVideo& /*video*/, twindow& window)
 	label->set_label(strstr.str());
 
 	ttext_box* content_area = find_widget<ttext_box>(&window, "content_area", false, true);
-	content_area->set_value(initial_str_);
+	content_area->set_label(initial_str_);
 	content_area->set_maximum_length(max_size_);
 
 	connect_signal_mouse_left_click(
@@ -126,7 +126,7 @@ void tedit_box::post_show(twindow& window)
 {
 }
 
-bool is_valid_content(const std::string& key, const std::string& str, game_display* disp)
+bool is_valid_content(const std::string& key, const std::string& str, display* disp)
 {
 	// #: chapter separator
 	// |: section separator
@@ -157,14 +157,14 @@ bool is_valid_content(const std::string& key, const std::string& str, game_displ
 	return ret;
 }
 
-std::string text_box_str2(game_display& disp, twindow& window, const std::string& id, const std::string& name, int min, int max)
+std::string text_box_str2(display& disp, twindow& window, const std::string& id, const std::string& name, int min, int max)
 {
 
 	std::stringstream err;
 	utils::string_map symbols;
 
 	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
-	std::string str = widget->get_value();
+	std::string str = widget->label();
 
 	if ((int)str.size() < min || (int)str.size() > max) {
 		symbols["min"] = tintegrate::generate_format(min, "yellow");
@@ -189,7 +189,7 @@ std::string text_box_str2(game_display& disp, twindow& window, const std::string
 void tedit_box::format(twindow& window)
 {
 	ttext_box* widget = find_widget<ttext_box>(&window, "content_area", false, true);
-	std::string content = widget->get_value();
+	std::string content = widget->label();
 
 	tscroll_label* clone = find_widget<tscroll_label>(&window, "clone", false, true);
 	clone->set_label(parse_message_content(content));	
@@ -203,7 +203,7 @@ void tedit_box::create(twindow& window)
 	}
 	// std::string content = text_box_str2(disp_, window, "content_area", _("Content area"), 1, max_size_);
 	ttext_box* widget = find_widget<ttext_box>(&window, "content_area", false, true);
-	result_str_ = widget->get_value();
+	result_str_ = widget->label();
 	if (result_str_.empty()) {
 		return;
 	}

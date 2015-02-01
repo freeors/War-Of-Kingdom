@@ -148,7 +148,8 @@ void tmove_hero::pre_show(CVideo& /*video*/, twindow& window)
 
 	tlistbox* list = find_widget<tlistbox>(&window, "city_list", false, true);
 
-	for (unit_map::iterator it = units_.begin(); it != units_.end(); ++it) {
+	for (unit_map::iterator it2 = units_.begin(); it2 != units_.end(); ++ it2) {
+		unit* it = dynamic_cast<unit*>(&*it2);
 		if (!it->is_city() || it->side() != side_num) {
 			continue;
 		}
@@ -233,7 +234,7 @@ void tmove_hero::catalog_page(twindow& window, int catalog, bool swap)
 	}
 	int index = catalog - MIN_PAGE;
 	
-	if (window.alternate_index() == index) {
+	if (hero_table_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
@@ -246,7 +247,7 @@ void tmove_hero::catalog_page(twindow& window, int catalog, bool swap)
 		selected_row = hero_table_->get_selected_row();
 	}
 
-	window.alternate_uh(hero_table_, index);
+	hero_table_->swap_uh(window, index);
 
 	int hero_index = 0;
 	for (std::vector<hero*>::iterator itor = fresh_heros_.begin(); itor != fresh_heros_.end(); ++ itor, hero_index ++) {
@@ -392,7 +393,7 @@ void tmove_hero::catalog_page(twindow& window, int catalog, bool swap)
 		}
 	}
 	if (swap) {
-		window.alternate_bh(hero_table_, index);
+		hero_table_->swap_bh(window);
 		hero_table_->select_row(selected_row);
 	}
 }

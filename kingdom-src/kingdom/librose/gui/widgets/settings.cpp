@@ -27,11 +27,10 @@
 #include "filesystem.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
-#include "gui/auxiliary/tips.hpp"
+// #include "gui/auxiliary/tips.hpp"
 #include "gui/widgets/window.hpp"
 #include "serialization/parser.hpp"
 #include "serialization/preprocessor.hpp"
-// #include "serialization/schema_validator.hpp"
 #include "formula_string_utils.hpp"
 #include "game_config.hpp"
 #include "loadscreen.hpp"
@@ -97,68 +96,6 @@ static tregistered_widget_type& registred_widget_type()
 	static tregistered_widget_type result;
 	return result;
 }
-
-struct tgui_definition
-{
-	tgui_definition()
-		: id()
-		, description()
-		, control_definition()
-		, windows()
-		, window_types()
-		, popup_show_delay_(0)
-		, popup_show_time_(0)
-		, help_show_time_(0)
-		, double_click_time_(0)
-		, repeat_button_repeat_time_(0)
-		, sound_button_click_()
-		, sound_toggle_button_click_()
-		, sound_toggle_panel_click_()
-		, sound_slider_adjust_()
-		, has_helptip_message_()
-		, tips_()
-	{
-	}
-
-	std::string id;
-	t_string description;
-
-	const std::string& read(const config& cfg);
-
-	/** Activates a gui. */
-	void activate() const;
-
-	typedef std::map <std::string /*control type*/,
-		std::map<std::string /*id*/, tcontrol_definition_ptr> >
-		tcontrol_definition_map;
-
-	tcontrol_definition_map control_definition;
-
-	std::map<std::string, twindow_definition> windows;
-
-	std::map<std::string, twindow_builder> window_types;
-
-	void load_widget_definitions(
-			  const std::string& definition_type
-			, const std::vector<tcontrol_definition_ptr>& definitions);
-private:
-
-	unsigned popup_show_delay_;
-	unsigned popup_show_time_;
-	unsigned help_show_time_;
-	unsigned double_click_time_;
-	unsigned repeat_button_repeat_time_;
-
-	std::string sound_button_click_;
-	std::string sound_toggle_button_click_;
-	std::string sound_toggle_panel_click_;
-	std::string sound_slider_adjust_;
-
-	t_string has_helptip_message_;
-
-	std::map<std::string, config> bubbles_;
-	std::vector<ttip> tips_;
-};
 
 /** theme frame config. */
 config theme_window_cfg;
@@ -678,6 +615,18 @@ void reload_window_builder(const std::string& type, const config& cfg, const std
 
 	twindow::update_screen_size();
 	window->second.read(theme_window_cfg);
+}
+
+void reload_test_window(const std::string& type, const config& cfg)
+{
+	std::map<std::string, tgui_definition>::iterator current_gui2 = guis.find("default");
+	std::map<std::string, twindow_builder>::iterator window = current_gui2->second.window_types.find(type);
+	if (window == current_gui->second.window_types.end()) {
+		throw twindow_builder_invalid_id();
+	}
+	
+	twindow::update_screen_size();
+	window->second.read(cfg);
 }
 
 /*WIKI

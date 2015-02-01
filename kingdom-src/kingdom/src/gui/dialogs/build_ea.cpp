@@ -75,7 +75,7 @@ bool compare_ut_master(const unit_type* l, const unit_type* r)
 	return l->master() <= r->master();
 }
 
-tbuild_ea::tbuild_ea(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, const gamemap& map, team& current_team, int cost_exponent, const map_location& loc)
+tbuild_ea::tbuild_ea(display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, const gamemap& map, team& current_team, int cost_exponent, const map_location& loc)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)

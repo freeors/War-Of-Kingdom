@@ -85,51 +85,22 @@ namespace gui2 {
 
 REGISTER_DIALOG(preferences)
 
-struct video_mode_change_exception 
-{
-	enum TYPE { CHANGE_RESOLUTION, MAKE_FULLSCREEN, MAKE_WINDOWED };
-
-	video_mode_change_exception(TYPE type) : type(type)
-	{}
-
-	TYPE type;
-};
-
-void show_preferences_dialog(display& disp)
+int app_show_preferences_dialog(display& disp, bool first)
 {
 	int start_page = tpreferences::GENERAL_PAGE;
-
-	while (true) {
-		tpreferences dlg(disp, start_page);
-		dlg.show(disp.video());
-		int res = dlg.get_retval();
-		if (res == twindow::OK) {
-			disp.invalidate_all();
-			if (disp.in_game() && !resources::controller->is_replaying()) {
-				play_controller& controller = *resources::controller;
-				if (controller.scenario_env_changed(dlg.get_scenario_env())) {
-					controller.do_scenario_env(dlg.get_scenario_env(), true);
-				}
+	tpreferences dlg(disp, start_page);
+	dlg.show(disp.video());
+	int res = dlg.get_retval();
+	if (res == twindow::OK) {
+		disp.invalidate_all();
+		if (disp.in_theme() && resources::controller && !resources::controller->is_replaying()) {
+			play_controller& controller = *resources::controller;
+			if (controller.scenario_env_changed(dlg.get_scenario_env())) {
+				controller.do_scenario_env(dlg.get_scenario_env(), true);
 			}
-			return;
-		}
-		 
-		if (res == tpreferences::CHANGE_RESOLUTION) {
-			if (preferences::show_video_mode_dialog(disp)) {
-				return;
-			}
-			start_page = tpreferences::DISPLAY_PAGE;
-
-		} else if (res == tpreferences::MAKE_FULLSCREEN) {
-			preferences::set_fullscreen(disp, true);
-			return;
-
-		} else if (res == tpreferences::MAKE_WINDOWED) {
-			preferences::set_fullscreen(disp, false);
-			return;
-
 		}
 	}
+	return res;
 }
 
 tpreferences::tpreferences(display& disp, int start_page)
@@ -142,7 +113,7 @@ tpreferences::tpreferences(display& disp, int start_page)
 	, maximal_defeated_activity_(NULL)
 	, duel_(NULL)
 {
-	if (disp_.in_game()) {
+	if (disp_.in_theme() && resources::controller) {
 		play_controller& controller = *resources::controller;
 		env_.duel = controller.duel();
 		env_.maximal_defeated_activity = game_config::maximal_defeated_activity;
@@ -201,7 +172,7 @@ void tpreferences::pre_show(CVideo& /*video*/, twindow& window)
 			list_item["label"] = sgettext("Advanced section^Advanced");
 			list_item_item.insert(std::make_pair("name", list_item));
 		} else if (index == SCENARIO_PAGE) {
-			if (!disp_.in_game()) {
+			if (!disp_.in_theme() || !resources::controller) {
 				continue;
 			}
 			list_item["label"] = "icons/icon-scenario.png";
@@ -289,12 +260,7 @@ void tpreferences::fullscreen_toggled(twidget* widget)
 	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
 
 	twindow* window = widget->get_window();
-	window->set_retval(toggle->get_value()? MAKE_FULLSCREEN: MAKE_WINDOWED);
-/*
-	throw video_mode_change_exception(toggle->get_value()
-			? video_mode_change_exception::MAKE_FULLSCREEN
-			: video_mode_change_exception::MAKE_WINDOWED);
-*/
+	window->set_retval(toggle->get_value()? preferences::MAKE_FULLSCREEN: preferences::MAKE_WINDOWED);
 }
 
 void tpreferences::flip_time_toggled(twidget* widget)
@@ -311,8 +277,7 @@ void tpreferences::default_move_toggled(twidget* widget)
 
 void tpreferences::video_mode_button(twindow& window)
 {
-	window.set_retval(CHANGE_RESOLUTION);
-	// throw video_mode_change_exception(video_mode_change_exception::CHANGE_RESOLUTION);
+	window.set_retval(preferences::CHANGE_RESOLUTION);
 }
 
 //
@@ -367,58 +332,40 @@ void tpreferences::UI_sound_changed(tslider* widget, int value)
 //
 void tpreferences::maximal_defeated_activity(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> mda_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
-	mda_map.push_back(tval_str(0, "0"));
-	mda_map.push_back(tval_str(50, "50"));
-	mda_map.push_back(tval_str(100, "100"));
-	mda_map.push_back(tval_str(150, "150"));
+	items.push_back(tval_str(0, "0"));
+	items.push_back(tval_str(50, "50"));
+	items.push_back(tval_str(100, "100"));
+	items.push_back(tval_str(150, "150"));
 
-	for (std::vector<tval_str>::iterator it = mda_map.begin(); it != mda_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (env_.maximal_defeated_activity == it->val) {
-			actived_index = std::distance(mda_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, env_.maximal_defeated_activity);
 	dlg.show(disp_.video());
 
-	int selected = dlg.selected_index();
-	if (selected == actived_index) {
+	if (dlg.selected_val() == env_.maximal_defeated_activity) {
 		return;
 	}
-	env_.maximal_defeated_activity = mda_map[selected].val;
+	int selected = dlg.selected_index();
+	env_.maximal_defeated_activity = items[selected].val;
 
-	maximal_defeated_activity_->set_label(mda_map[selected].str);
+	maximal_defeated_activity_->set_label(items[selected].str);
 }
 
 void tpreferences::duel(twindow& window)
 {
 	// The possible eras to play
-	std::vector<std::string> items;
-	std::vector<tval_str> duel_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
-	duel_map.push_back(tval_str(NO_DUEL, _("Hasn't")));
-	duel_map.push_back(tval_str(RANDOM_DUEL, _("Random")));
+	items.push_back(tval_str(NO_DUEL, _("Hasn't")));
+	items.push_back(tval_str(RANDOM_DUEL, _("Random")));
 
-	for (std::vector<tval_str>::iterator it = duel_map.begin(); it != duel_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (env_.duel == it->val) {
-			actived_index = std::distance(duel_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, env_.duel);
 	dlg.show(disp_.video());
 
 	int selected = dlg.selected_index();
-	env_.duel = duel_map[selected].val;
+	env_.duel = items[selected].val;
 
-	duel_->set_label(duel_map[selected].str);
+	duel_->set_label(items[selected].str);
 }
 
 //
@@ -456,39 +403,17 @@ void tpreferences::show_color_cursors_toggled(twidget* widget)
 
 void tpreferences::zoom_button(twindow& window)
 {
-	std::vector<std::string> zooms;
-	zooms.push_back("72 x 72");
-	zooms.push_back("64 x 64");
-	zooms.push_back("56 x 56");
-	zooms.push_back("48 x 48");
+	std::vector<tval_str> items;
+	items.push_back(tval_str(display::ZOOM_72, "72 x 72"));
+	items.push_back(tval_str(display::ZOOM_64, "64 x 64"));
+	items.push_back(tval_str(display::ZOOM_56, "56 x 56"));
+	items.push_back(tval_str(display::ZOOM_48, "48 x 48"));
 
-	int zoom_index;
-	if (display::default_zoom_ == display::ZOOM_72) {
-		zoom_index = 0;
-	} else if (display::default_zoom_ == display::ZOOM_64) {
-		zoom_index = 1;
-	} else if (display::default_zoom_ == display::ZOOM_56) {
-		zoom_index = 2;
-	} else if (display::default_zoom_ == display::ZOOM_48) {
-		zoom_index = 3;
-	} else {
-		VALIDATE(false, _("Invalid display::default_zoom_"));
-	}
-
-	gui2::tcombo_box dlg(zooms, zoom_index);
+	gui2::tcombo_box dlg(items, display::default_zoom_);
 	dlg.show(disp_.video());
 
-	int new_index = dlg.selected_index();
-	if (new_index != zoom_index) {
-		if (new_index == 0) {
-			display::default_zoom_ = display::ZOOM_72;
-		} else if (new_index == 1) {
-			display::default_zoom_ = display::ZOOM_64;
-		} else if (new_index == 2) {
-			display::default_zoom_ = display::ZOOM_56;
-		} else {
-			display::default_zoom_ = display::ZOOM_48;
-		}
+	if (dlg.selected_val() != display::default_zoom_) {
+		display::default_zoom_ = dlg.selected_val();
 		preferences::_set_zoom(display::default_zoom_);
 
 		std::stringstream str;
@@ -541,13 +466,15 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 	}
 	int index = page - MIN_PAGE;
 
-	if (window.alternate_index() == index) {
+	if (options_grid_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
 	
-	window.alternate_uh(options_grid_, index);
-	window.alternate_bh(swap? options_grid_: NULL, index);
+	options_grid_->swap_uh(window, index);
+	if (swap) {
+		options_grid_->swap_bh(window);
+	}
 
 	if (index == GENERAL_PAGE) {
 		tslider* slider = dynamic_cast<tslider*>(options_grid_->find("scroll_slider", false));
@@ -668,7 +595,7 @@ void tpreferences::swap_page(twindow& window, int page, bool swap)
 #endif
 
 		zoom_ = dynamic_cast<tbutton*>(options_grid_->find("zoom_button", false));
-		if (disp_.in_game()) {
+		if (disp_.in_theme()) {
 			zoom_->set_visible(twidget::INVISIBLE);
 		} else {
 			connect_signal_mouse_left_click(

@@ -70,7 +70,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(player_city)
 
-tplayer_city::tplayer_city(game_display& disp, hero_map& heros)
+tplayer_city::tplayer_city(display& disp, hero_map& heros)
 	: disp_(disp)
 	, heros_(heros)
 {
@@ -83,7 +83,7 @@ void tplayer_city::pre_show(CVideo& /*video*/, twindow& window)
 	std::stringstream strstr;
 
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "name", false, true);
-	user_widget->set_value(group.city().name());
+	user_widget->set_label(group.city().name());
 	user_widget->set_maximum_length(max_name_size);
 
 	connect_signal_mouse_left_click(
@@ -101,7 +101,7 @@ void tplayer_city::post_show(twindow& window)
 {
 }
 
-bool is_valid_username2(const std::string& key, const std::string& str, game_display* disp)
+bool is_valid_username2(const std::string& key, const std::string& str, display* disp)
 {
 	// #: chapter separator
 	// |: section separator
@@ -132,7 +132,7 @@ bool is_valid_username2(const std::string& key, const std::string& str, game_dis
 	return ret;
 }
 
-bool is_valid_username(const std::string& key, const std::string& str, game_display* disp)
+bool is_valid_username(const std::string& key, const std::string& str, display* disp)
 {
 	bool ret = utils::isvalid_username(str);
 	if (!ret && disp) {
@@ -158,13 +158,13 @@ bool is_valid_username(const std::string& key, const std::string& str, game_disp
 	return ret;
 }
 
-std::string text_box_str(game_display& disp, twindow& window, const std::string& id, const std::string& name, int min, int max, bool username)
+std::string text_box_str(display& disp, twindow& window, const std::string& id, const std::string& name, int min, int max, bool username)
 {
 	std::stringstream err;
 	utils::string_map symbols;
 
 	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
-	std::string str = widget->get_value();
+	std::string str = widget->label();
 
 	if ((int)str.size() < min || (int)str.size() > max) {
 		symbols["min"] = tintegrate::generate_format(min, "yellow");

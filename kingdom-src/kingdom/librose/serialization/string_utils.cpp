@@ -26,6 +26,9 @@
 #include "log.hpp"
 #include "serialization/string_utils.hpp"
 #include "util.hpp"
+#include "integrate.hpp"
+#include "formula_string_utils.hpp"
+
 #include <boost/array.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -953,7 +956,7 @@ utf8_string lowercase(const utf8_string& s)
 		std::string res;
 
 		for(;itor != utf8_iterator::end(s); ++itor) {
-#if defined(__APPLE__) || defined(__OpenBSD__) || defined(__AMIGAOS4__)
+#if defined(__APPLE__) || defined(__OpenBSD__)
 			/** @todo FIXME: Should we support towupper on recent OSX platforms? */
 			wchar_t uchar = *itor;
 			if(uchar >= 0 && uchar < 0x100)
@@ -1030,6 +1033,101 @@ std::vector<int> to_vector_int(const std::string& value)
 		ret.push_back(lexical_cast_default<int>(*it));
 	}
 	return ret;
+}
+
+void transform_tolower(std::string& str)
+{
+	int s = (int)str.size();
+	const char* c_str = str.c_str();
+
+	int diff = 'a' - 'A';
+	for (int i = 0; i < s; i ++) {
+		if (c_str[i] >= 'A' && c_str[i] <= 'Z') {
+			str[i] = c_str[i] + diff;
+		}
+	}
+}
+
+void transform_tolower(const std::string& src, std::string& dst)
+{
+	int s = (int)src.size();
+	const char* c_str = src.c_str();
+
+	dst.resize(s);
+	int diff = 'a' - 'A';
+	for (int i = 0; i < s; i ++) {
+		if (c_str[i] >= 'A' && c_str[i] <= 'Z') {
+			dst[i] = c_str[i] + diff;
+		} else {
+			dst[i] = c_str[i];
+		}
+	}
+}
+
+// condition id/variable
+static bool is_id_char(char c)
+{
+	return ((c == '_') || (c == '-') || (c == ' '));
+}
+
+static bool is_variable_char(char c) 
+{
+	return ((c == '_') || (c == '-') || (c == '.'));
+}
+
+typedef bool (*is_xxx_char)(char c);
+
+std::string errstr;
+bool isvalid_id_base(const std::string& id, bool first_must_alpha, is_xxx_char fn, int min, int max)
+{
+	utils::string_map symbols;
+	int s = (int)id.size();
+	if (!s) {
+		errstr = dgettext("wesnoth-lib", "Can not empty!");
+ 		return false;
+	}
+	if (s < min) {
+		symbols["min"] = tintegrate::generate_format(min, "yellow");
+		errstr = vgettext("wesnoth-lib", "At least $min characters!", symbols);
+		return false;
+	}
+	if (s > max) {
+		symbols["max"] = tintegrate::generate_format(max, "yellow");
+		errstr = vgettext("wesnoth-lib", "Can not be larger than $max characters!", symbols);
+		return false;
+	}
+	char c = id.at(0);
+	if (c == ' ') {
+		errstr = dgettext("wesnoth-lib", "First character can not empty!");
+		return false;
+	}
+	if (first_must_alpha && !isalpha(c)) {
+		errstr = dgettext("wesnoth-lib", "First character must be alpha!");
+		return false;
+	}
+	if (id == "null") {
+		symbols["str"] = tintegrate::generate_format(id, "yellow");
+		errstr = vgettext("wesnoth-lib", "$str is reserved string!", symbols);
+		return false;
+	}
+
+	const size_t alnum = std::count_if(id.begin(), id.end(), isalnum);
+	const size_t valid_char = std::count_if(id.begin(), id.end(), fn);
+	if ((alnum + valid_char != s) || valid_char == id.size()) {
+		errstr = dgettext("wesnoth-lib", "Contains invalid characters!");
+		return false;
+	}
+	return true;
+}
+
+bool isvalid_id(const std::string& id, bool first_must_alpha, int min, int max)
+{
+	return isvalid_id_base(id, first_must_alpha, is_id_char, min, max);
+}
+
+bool isvalid_variable(const std::string& id, int min, int max)
+{
+	return isvalid_id_base(id, true, is_variable_char, min, max);
 }
 
 } // end namespace utils

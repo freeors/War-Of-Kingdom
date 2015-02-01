@@ -87,7 +87,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(player_selection)
 
-tplayer_selection::tplayer_selection(game_display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero)
+tplayer_selection::tplayer_selection(display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero)
 	: ttent(heros, cards, cfg, campaign_config, player_hero, "rpg")
 	, gui_(gui)
 {
@@ -129,9 +129,8 @@ void tplayer_selection::player_selected(twindow& window)
 void tplayer_selection::player_city(twindow& window)
 {
 	std::stringstream str;
-	std::vector<std::string> items;
+	std::vector<tval_str> items;
 	std::vector<int> citynos;
-	int activity_index = -1;
 
 	tlistbox* list = find_widget<tlistbox>(&window, "player_list", false, true);
 	std::map<int, int>& city_map = (player_ == 0)? city_map_: empty_city_map_;
@@ -147,19 +146,13 @@ void tplayer_selection::player_city(twindow& window)
 			hero& leader = heros_[city_leader_map_.find(it->first)->second];
 			str << leader.name() << ")";
 		}
-		items.push_back(str.str());
-		if (rows_mem_[player_].city_ == it->second) {
-			activity_index = index;
-		}
-	}
-	if (activity_index == -1) {
-		activity_index = 0;
+		items.push_back(tval_str(it->second, str.str()));
 	}
 
-	gui2::tcombo_box dlg(items, activity_index);
+	gui2::tcombo_box dlg(items, rows_mem_[player_].city_);
 	dlg.show(gui_.video());
 
-	activity_index = dlg.selected_index();
+	int activity_index = dlg.selected_index();
 
 	if (rows_mem_[player_].leader_ != player_hero_->number_) {
 		rows_mem_[player_].leader_ = city_leader_map_.find(citynos[activity_index])->second;

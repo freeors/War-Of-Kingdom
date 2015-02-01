@@ -19,7 +19,7 @@
 
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
-#include "game_display.hpp"
+#include "display.hpp"
 #include "card.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/dialogs/combo_box.hpp"
@@ -38,6 +38,7 @@
 #include "game_config.hpp"
 #include "loadscreen.hpp"
 #include <preferences.hpp>
+#include "unit.hpp"
 
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
@@ -532,34 +533,25 @@ void ttent::add_row_to_factions(tlistbox& list, const config& cfg)
 void ttent::player_faction(twindow& window)
 {
 	// The possible eras to play
-	std::vector<std::string> items;
-	std::vector<tval_str> factions_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
 	int number = player_hero_->number_;
-	factions_map.push_back(tval_str(number, heros_[number].name()));
+	items.push_back(tval_str(number, heros_[number].name()));
 
 	const config::const_child_itors& factions = cfg_.child_range("faction");
 	BOOST_FOREACH (const config &cfg, factions) {
 		int number = cfg["leader"].to_int();
-		factions_map.push_back(tval_str(number, heros_[number].name()));
+		items.push_back(tval_str(number, heros_[number].name()));
 	}
 
-	for (std::vector<tval_str>::iterator it = factions_map.begin(); it != factions_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (tent::human_leader_number == it->val) {
-			actived_index = std::distance(factions_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, tent::human_leader_number);
 	dlg.show(gui().video());
 
-	int selected = dlg.selected_index();
-	if (selected == actived_index) {
+	if (dlg.selected_val() == tent::human_leader_number) {
 		return;
 	}
-	tent::human_leader_number = factions_map[selected].val;
+	int selected = dlg.selected_index();
+	tent::human_leader_number = items[selected].val;
 
 	player_faction_->set_label(heros_[tent::human_leader_number].name());
 	faction_list_->remove_row(0);

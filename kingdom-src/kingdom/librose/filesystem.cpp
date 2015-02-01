@@ -106,29 +106,24 @@ void get_files_in_dir(const std::string &directory,
 	// If we have a path to find directories in,
 	// then convert relative pathnames to be rooted
 	// on the wesnoth path
-#ifndef __AMIGAOS4__
-	if(!directory.empty() && directory[0] != '/' && !game_config::path.empty()){
+	if (!directory.empty() && directory[0] != '/' && !game_config::path.empty()){
 		std::string dir = game_config::path + "/" + directory;
-		if(is_directory(dir)) {
+		if (is_directory(dir)) {
 			get_files_in_dir(dir,files,dirs,mode,filter,reorder,checksum);
 			return;
 		}
 	}
-#endif /* __AMIGAOS4__ */
 
 	struct stat st;
 
 	if (reorder == DO_REORDER) {
 		LOG_FS << "searching for _main.cfg in directory " << directory << '\n';
 		std::string maincfg;
-		if (directory.empty() || directory[directory.size()-1] == '/'
-#ifdef __AMIGAOS4__
-			|| (directory[directory.size()-1]==':')
-#endif /* __AMIGAOS4__ */
-		)
+		if (directory.empty() || directory[directory.size()-1] == '/') {
 			maincfg = directory + maincfg_filename;
-		else
+		} else {
 			maincfg = (directory + "/") + maincfg_filename;
+		}
 
 		if (::stat(maincfg.c_str(), &st) != -1) {
 			LOG_FS << "_main.cfg found : " << maincfg << '\n';
@@ -174,21 +169,15 @@ void get_files_in_dir(const std::string &directory,
 #endif /* !APPLE */
 
 		std::string fullname;
-		if (directory.empty() || directory[directory.size()-1] == '/'
-#ifdef __AMIGAOS4__
-			|| (directory[directory.size()-1]==':')
-#endif /* __AMIGAOS4__ */
-		)
+		if (directory.empty() || directory[directory.size()-1] == '/') {
 			fullname = directory + basename;
-		else
+		} else {
 			fullname = directory + "/" + basename;
+		}
 
 		if (::stat(fullname.c_str(), &st) != -1) {
 			if (S_ISREG(st.st_mode)) {
 				if (basename == "mod_config.cfg") {
-					continue;
-				}
-				if ((filter & SKIP_TERRAIN) && basename == "terrain-graphics.cfg") {
 					continue;
 				}
 				if (files != NULL) {
@@ -215,9 +204,6 @@ void get_files_in_dir(const std::string &directory,
 					continue;
 				}
 				if ((filter & SKIP_INTERNAL_DIR) && basename == "units-internal") {
-					continue;
-				}
-				if ((filter & SKIP_TERRAIN) && basename == "terrain-graphics") {
 					continue;
 				}
 				if ((filter & SKIP_BOOK) && basename == "book") {
@@ -573,9 +559,7 @@ void set_preferences_dir(std::string path)
 #else
 	if (path.empty()) path = path2;
 
-#ifdef __AMIGAOS4__
-	game_config::preferences_dir = "PROGDIR:" + path;
-#elif defined(__BEOS__)
+#ifdef __BEOS__
 	if (be_path.InitCheck() != B_OK) {
 		BPath tpath;
 		if (find_directory(B_USER_SETTINGS_DIRECTORY, &be_path, true) == B_OK) {

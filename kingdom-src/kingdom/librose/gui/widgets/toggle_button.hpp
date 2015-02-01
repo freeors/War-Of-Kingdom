@@ -75,6 +75,10 @@ public:
 
 	void set_data(unsigned int data) { data_ = data; }
 	unsigned int get_data() const { return data_; }
+
+	void set_radio(bool val) { radio_ = val; }
+	bool radio() const { return radio_; }
+
 private:
 	/**
 	 * Possible states of the widget.
@@ -120,6 +124,7 @@ private:
 	 * The toggle button can contain an private data.
 	 */
 	unsigned int data_;
+	bool radio_;
 
 	/** Inherited from tcontrol. */
 	const std::string& get_control_type() const;
@@ -136,6 +141,8 @@ private:
 	void signal_handler_left_button_double_click(
 			const event::tevent event, bool& handled);
 };
+
+ttoggle_button* create_toggle_button(const std::string& id, const std::string& definition, void* cookie);
 
 } // namespace gui2
 

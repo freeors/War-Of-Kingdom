@@ -42,6 +42,8 @@ treport::treport()
 	, unit_size_(0, 0)
 	, gap_(0)
 {
+	self_layout_content_ = true;
+
 	connect_signal<event::LEFT_BUTTON_DOWN>(
 			  boost::bind(
 				    &treport::signal_handler_left_button_down
@@ -96,6 +98,14 @@ void treport::hide_children()
 	content_grid_->hide_children(unit_size_.x, unit_size_.y, gap_, extendable_);
 	if (extendable_) {
 		content_resize_request();
+	}
+}
+
+void treport::set_content_size(const tpoint& origin, const tpoint& size)
+{
+	const SDL_Rect& rect = content_grid_->fix_rect();
+	if (!unit_size_.x || !rect.w || !rect.h) {
+		content_grid_->place(origin, size);
 	}
 }
 

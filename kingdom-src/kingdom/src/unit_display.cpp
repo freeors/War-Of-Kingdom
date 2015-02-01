@@ -34,7 +34,7 @@
 
 static void teleport_unit_between( const map_location& a, const map_location& b, unit& temp_unit, bool force_scroll)
 {
-	game_display* disp = game_display::get_singleton();
+	display* disp = display::get_singleton();
 	if(!disp || disp->video().update_locked() || (disp->fogged(a) && disp->fogged(b))) {
 		return;
 	}
@@ -82,7 +82,7 @@ public:
 
 static void move_unit_between(const map_location& a, const map_location& b, unit& temp_unit,unsigned int step_num,unsigned int step_left, bool force_scroll)
 {
-	game_display* disp = game_display::get_singleton();
+	display* disp = display::get_singleton();
 	if (!disp || disp->video().update_locked() || (disp->fogged(a) && disp->fogged(b))) {
 		return;
 	}
@@ -318,7 +318,7 @@ void move_unit(const std::vector<map_location>& path, unit& u,
 		map_location::DIRECTION dir)
 {
 	bool force_scroll = (!resources::controller->is_replaying() && u.human() && animate) || preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	assert(!path.empty());
 	assert(disp);
 	if(!disp || disp->video().update_locked())
@@ -448,7 +448,7 @@ void unit_draw_weapon(const map_location& loc, unit& attacker,
 		const attack_type* attack,const attack_type* secondary_attack, const map_location& defender_loc,unit* defender)
 {
 	bool force_scroll = preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if(!disp ||disp->video().update_locked() || disp->fogged(loc) || preferences::show_combat() == false) {
 		return;
 	}
@@ -467,7 +467,7 @@ void unit_sheath_weapon(const map_location& primary_loc, unit* primary_unit,
 		const attack_type* primary_attack,const attack_type* secondary_attack, const map_location& secondary_loc,unit* secondary_unit)
 {
 	bool force_scroll = preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp ||disp->video().update_locked() || disp->fogged(primary_loc) || preferences::show_combat() == false) {
 		return;
 	}
@@ -528,7 +528,7 @@ void unit_die(const map_location& loc, unit& loser,
 		const attack_type* attack,const attack_type* secondary_attack, const map_location& winner_loc,unit* winner)
 {
 	bool force_scroll = (!resources::controller->is_replaying() && loser.human()) || preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp ||disp->video().update_locked() || disp->fogged(loc) || preferences::show_combat() == false) {
 		return;
 	}
@@ -673,7 +673,7 @@ void unit_attack(unit& attacker, std::vector<unit*>& def_ptr_vec, std::vector<in
 		b_vec.push_back((*b)->get_location());
 	}
 	bool force_scroll = (!resources::controller->is_replaying() && attacker.human() && attacker.task() == unit::TASK_NONE) || preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	std::vector<team>& teams = *resources::teams;
 	if (!disp ||disp->video().update_locked() ||
 			(disp->fogged(a) && disp->fogged(b_vec[0])) || preferences::show_combat() == false) {
@@ -935,7 +935,7 @@ void unit_attack2(unit* attacker, const std::string& type, std::vector<unit*>& d
 		b_vec.push_back((*b)->get_location());
 	}
 	bool force_scroll = (!resources::controller->is_replaying() && attacker && attacker->human() && attacker->task() == unit::TASK_NONE) || preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	std::vector<team>& teams = *resources::teams;
 	if (!disp ||disp->video().update_locked() ||
 			((!attacker || disp->fogged(a)) && disp->fogged(b_vec[0])) || preferences::show_combat() == false) {
@@ -1153,7 +1153,7 @@ void unit_heal2(std::vector<team>& teams, unit_map& units, unit* doctor, unit& p
 	const map_location& patient_loc = patient.get_location();
 	
 	bool force_scroll = preferences::scroll_to_action();
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp || disp->video().update_locked()) {
 		return;
 	}
@@ -1205,7 +1205,7 @@ void unit_destruct(std::vector<team>& teams, unit_map& units, unit* attacker, ar
 	const map_location& defender_loc = defender.get_location();
 	
 	bool force_scroll = preferences::scroll_to_action();
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp || disp->video().update_locked()) {
 		return;
 	}
@@ -1254,7 +1254,7 @@ void unit_destruct(std::vector<team>& teams, unit_map& units, unit* attacker, ar
 // private helper function, set all helpers to default position
 void reset_helpers(const unit *attacker,const unit *defender, bool stronger)
 {
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	unit_map& units = disp->get_units();
 	if (attacker) {
 		unit_ability_list leaders = attacker->get_abilities("leadership");
@@ -1285,18 +1285,18 @@ void unit_recruited(const map_location& loc,const map_location& leader_loc)
 	const events::command_disabler disable_commands;
 
 	bool force_scroll = preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if(!disp || disp->video().update_locked() || disp->fogged(loc)) return;
-	unit_map::iterator u = disp->get_units().find(loc);
-	if(u == disp->get_units().end()) return;
+	unit* u = disp->get_units().find_unit(loc, true);
+	if (!u) return;
 	u->set_hidden(true);
 
 	rect_of_hexes& draw_area = disp->draw_area();
 	if (force_scroll || point_in_rect_of_hexes(loc.x, loc.y, draw_area) || point_in_rect_of_hexes(leader_loc.x, leader_loc.y, draw_area)) {
 		unit_animator animator;
 		if(leader_loc != map_location::null_location) {
-			unit_map::iterator leader = disp->get_units().find(leader_loc);
-			if(leader == disp->get_units().end()) return;
+			unit* leader = disp->get_units().find_unit(leader_loc, true);
+			if (!leader) return;
 			disp->scroll_to_tiles(loc,leader_loc,game_display::ONSCREEN,true,0.0,false);
 			leader->set_facing(leader_loc.get_relative_dir(loc));
 			animator.add_animation(&*leader, "recruiting", leader_loc, loc, 0, true);
@@ -1325,7 +1325,7 @@ void unit_healing(unit& healed, const map_location& healed_loc, const std::vecto
 	}
 	// To human player, I think it isn't necessary to display all heal animation.
 	bool force_scroll = preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if(!disp || disp->video().update_locked() || disp->fogged(healed_loc)) return;
 	rect_of_hexes& draw_area = disp->draw_area();
 	if (force_scroll || point_in_rect_of_hexes(healed_loc.x, healed_loc.y, draw_area)) {
@@ -1356,7 +1356,7 @@ void unit_build(artifical& art)
 	const map_location& art_loc = art.get_location();
 
 	bool force_scroll = preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp || disp->video().update_locked() || disp->fogged(art_loc)) return;
 	rect_of_hexes& draw_area = disp->draw_area();
 
@@ -1381,7 +1381,7 @@ void unit_repair(artifical& art, int healing)
 	const map_location& art_loc = art.get_location();
 
 	bool force_scroll = preferences::scroll_to_action()? true: false;
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp || disp->video().update_locked() || disp->fogged(art_loc)) return;
 	rect_of_hexes& draw_area = disp->draw_area();
 
@@ -1414,20 +1414,22 @@ void wml_animation(const vconfig &cfg, const map_location &default_location)
 
 void wml_animation_internal(unit_animator &animator, const vconfig &cfg, const map_location &default_location)
 {
-	unit_map::iterator u = resources::units->find(default_location);
+	unit* u = resources::units->find_unit(default_location, true);
 
 	// Search for a valid unit filter,
 	// and if we have one, look for the matching unit
 	vconfig filter = cfg.child("filter");
-	if(!filter.null()) {
-		for (u = resources::units->begin(); u != resources::units->end(); ++u) {
-			if (game_events::unit_matches_filter(*u, filter))
+	if (!filter.null()) {
+		for (unit_map::iterator it = resources::units->begin(); it != resources::units->end(); ++ it, u = NULL) {
+			u = dynamic_cast<unit*>(&*it);
+			if (game_events::unit_matches_filter(*u, filter)) {
 				break;
+			}
 		}
 	}
 
 	// We have found a unit that matches the filter
-	if (u.valid() && !resources::screen->fogged(u->get_location()))
+	if (u && !resources::screen->fogged(u->get_location()))
 	{
 		attack_type *primary = NULL;
 		attack_type *secondary = NULL;
@@ -1498,7 +1500,7 @@ void wml_animation_internal(unit_animator &animator, const vconfig &cfg, const m
 
 void card_start(card_map& cards, const card& c)
 {
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (const animation* tpl = area_anim::anim(area_anim::CARD)) {
 		int id = disp->insert_area_anim(*tpl);
 		animation& anim = disp->area_anim(id);
@@ -1523,7 +1525,7 @@ void tactic_start(hero& h)
 
 	const ttactic& t = unit_types.tactic(h.tactic_);
 
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (const animation* tpl = area_anim::anim(area_anim::TACTIC)) {
 		int id = disp->insert_area_anim(*tpl);
 		animation& anim = disp->area_anim(id);
@@ -1551,7 +1553,7 @@ void tactic_start(hero& h)
 void formation_attack_start(const tformation& formation)
 {
 
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (const animation* tpl = area_anim::anim(area_anim::FORMATION_ATTACK)) {
 		int id = disp->insert_area_anim(*tpl);
 		animation& anim = disp->area_anim(id);
@@ -1580,7 +1582,7 @@ void formation_attack_start(const tformation& formation)
 void global_anim_2(int type, const std::string& id1, const std::string& id2, const std::string& text, const SDL_Color& color)
 {
 
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (const animation* tpl = area_anim::anim(type)) {
 		int id = disp->insert_area_anim(*tpl);
 		animation& anim = disp->area_anim(id);
@@ -1609,7 +1611,7 @@ void perfect_anim()
 {
 	const events::command_disabler disable_commands;
 
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (const animation* tpl = area_anim::anim(area_anim::PERFECT)) {
 		int id = disp->insert_area_anim(*tpl);
 		animation& anim = disp->area_anim(id);
@@ -1633,7 +1635,7 @@ void perfect_anim()
 
 int start_title_screen_anim()
 {
-	game_display* disp = game_display::get_singleton();
+	display* disp = display::get_singleton();
 	int id = -1;
 	if (const animation* tpl = area_anim::anim(area_anim::TITLE_SCREEN)) {
 		id = disp->insert_area_anim(*tpl);
@@ -1652,7 +1654,7 @@ void stratagem_anim(const ttechnology& stratagem, const std::string& image, bool
 {
 	const events::command_disabler disable_commands;
 
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (const animation* tpl = area_anim::anim(up? area_anim::STRATAGEM_UP: area_anim::STRATAGEM_DOWN)) {
 		int id = disp->insert_area_anim(*tpl);
 		animation& anim = disp->area_anim(id);
@@ -1681,7 +1683,7 @@ void unit_touching(unit& u, std::vector<unit *>& touchers, int touching, const s
 	if (touching == 0) return;
 	bool force_scroll = preferences::scroll_to_action();
 	const map_location& loc = u.get_location();
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp || disp->video().update_locked() || disp->fogged(loc)) return;
 	rect_of_hexes& draw_area = disp->draw_area();
 	if (force_scroll || point_in_rect_of_hexes(loc.x, loc.y, draw_area)) {
@@ -1715,7 +1717,7 @@ void unit_text(unit& u, bool poisoned, const std::string& text)
 
 	bool force_scroll = preferences::scroll_to_action();
 	const map_location& loc = u.get_location();
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp || disp->video().update_locked() || disp->fogged(loc)) return;
 	rect_of_hexes& draw_area = disp->draw_area();
 
@@ -1758,7 +1760,7 @@ void unit_income(unit& u, int income)
 
 	bool force_scroll = u.human() || preferences::scroll_to_action()? true: false;
 	const map_location& loc = u.get_location();
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (!disp || disp->video().update_locked() || disp->fogged(loc)) return;
 	rect_of_hexes& draw_area = disp->draw_area();
 
@@ -1803,7 +1805,7 @@ void location_text(const std::vector<tlocation_anim>& locs)
 		return;
 	}
 
-	game_display* disp = game_display::get_singleton();
+	display* disp = display::get_singleton();
 	if (!disp || disp->video().update_locked()) {
 		return;
 	}

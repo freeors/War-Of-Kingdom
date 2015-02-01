@@ -64,7 +64,9 @@
 #include "gui/dialogs/prelude.hpp"
 #include "gui/dialogs/book.hpp"
 #include "gui/dialogs/side_report.hpp"
+#include "gui/dialogs/theme2.hpp"
 #include "gui/widgets/window.hpp"
+#include "hotkeys.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -88,7 +90,7 @@ void show_tick_infromation(game_display& disp, const unit_map& units, const play
 
 	size_t index = 0;
 	for (unit_map::const_iterator it = units.begin(); it != units.end(); ++ it) {
-		const unit& u = *it;
+		const unit& u = *dynamic_cast<unit*>(&*it);
 		if (!u.consider_ticks()) {
 			// continue;
 		}
@@ -119,7 +121,6 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	controller_base(ticks, game_config, video),
 	observer(),
 	animation_cache(),
-	prefs_disp_manager_(),
 	tooltips_manager_(),
 	events_manager_(),
 	halo_manager_(),
@@ -134,7 +135,7 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	teams_(),
 	gamestate_(state_of_game),
 	map_(game_config, level["map_data"]),
-	units_(),
+	units_(map_),
 	heros_(heros),
 	heros_start_(heros_start),
 	cards_(cards),
@@ -199,9 +200,6 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	set_defeat_music_list(level_["defeat_music"]);
 
 	game_config::add_color_info(level);
-	hotkey::deactivate_all_scopes();
-	hotkey::set_scope_active(hotkey::SCOPE_GENERAL);
-	hotkey::set_scope_active(hotkey::SCOPE_GAME);
 	try {
 		init(video);
 	
@@ -387,15 +385,6 @@ void play_controller::recover_layout(int random)
 	}
 }
 
-surface generate_rpg_surface(hero& h)
-{
-	surface genus_surf = image::get_image(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
-	surface hero_surf = image::get_image(h.image());
-	surface masked_surf = mask_surface(hero_surf, image::get_image("buttons/photo-mask.png"));
-	blit_surface(genus_surf, NULL, masked_surf, NULL);
-	return masked_surf;
-}
-
 void play_controller::init(CVideo& video)
 {
 	provoke_cache_ready = false;
@@ -449,7 +438,7 @@ void play_controller::init(CVideo& video)
 	}
 
 	if (!replaying_ && level_.child("prelude")) {
-		game_display& disp = *game_display::get_singleton();
+		display& disp = *display::get_singleton();
 		gui2::tprelude dlg(disp, heros_, game_config_, level_);
 		dlg.show(disp.video());
 	}
@@ -721,8 +710,8 @@ void play_controller::init(CVideo& video)
 				city->set_side(t.side());
 				t.add_city(city);
 				city->adjust();
-				// change side, require resort. by far, game_display is invalid, so use resort_map direct.
-				units_.resort_map(*city);
+				// change side, require resort. by far, game_display is invalid, so use sort_map2 direct.
+				units_.sort_map2(*city);
 
 				// wander all hero to other city, and erase it.
 				std::vector<artifical*> citys;
@@ -1211,7 +1200,6 @@ void play_controller::adjust_according_to_group_interior()
 void play_controller::init_managers()
 {
 	LOG_NG << "initializing managers... " << (SDL_GetTicks() - ticks_) << "\n";
-	prefs_disp_manager_.reset(new preferences::display_manager(gui_.get()));
 	tooltips_manager_.reset(new tooltips::manager(gui_->video()));
 	soundsources_manager_.reset(new soundsource::manager(*gui_));
 
@@ -1304,11 +1292,6 @@ void play_controller::place_sides_in_preferred_locations()
 
 void play_controller::objectives(){
 	menu_handler_.objectives(gui_->viewing_team()+1);
-}
-
-void play_controller::show_statistics()
-{
-	menu_handler_.show_statistics(gui_->viewing_team() + 1);
 }
 
 void play_controller::show_rpg()
@@ -1577,7 +1560,7 @@ void play_controller::rpg_exchange(const std::vector<size_t>& human_p, size_t ai
 			// field troop
 			u->replace_captains_internal(h, captains);
 			if (captains.empty()) {
-				units_.erase(u);
+				units_.erase2(u);
 			} else {
 				u->replace_captains(captains);
 			}
@@ -1690,7 +1673,7 @@ void play_controller::rpg_independence(bool replaying)
 
 			} else {
 				// field troop
-				units_.erase(from_leader_unit);
+				units_.erase2(from_leader_unit);
 			}
 			for (std::vector<hero*>::const_iterator it = v.begin(); it != v.end(); ++ it) {
 				rpg_city->fresh_into(**it);
@@ -2263,7 +2246,7 @@ void play_controller::system()
 		show_help();
 
 	} else if (rets[retval] == _QUIT) {
-		if (gui_->in_game()) {
+		if (gui_->in_theme()) {
 			std::stringstream strstr;
 			utils::string_map symbols;
 			
@@ -2330,9 +2313,9 @@ void play_controller::switch_list()
 
 void play_controller::unit_detail()
 {
-	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[gui_->viewing_team()]);
-	if (u_itor.valid()) {
-		menu_handler_.unit_detail(&*u_itor);
+	unit* u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[gui_->viewing_team()]);
+	if (u_itor) {
+		menu_handler_.unit_detail(u_itor);
 	}
 }
 
@@ -2343,7 +2326,7 @@ void play_controller::save_game()
 		config snapshot;
 		to_config(snapshot);
 		savegame::game_savegame save(heros_, heros_start_, gamestate_, *gui_, snapshot);
-		save.save_game_interactive(gui_->video(), "", gui::OK_CANCEL);
+		save.save_game_interactive(gui_->video(), "", true);
 	} else {
 		save_blocker::on_unblock(this,&play_controller::save_game);
 	}
@@ -2354,7 +2337,7 @@ void play_controller::save_replay()
 	if(save_blocker::try_block()) {
 		save_blocker::save_unblocker unblocker;
 		savegame::replay_savegame save(heros_, heros_start_, gamestate_);
-		save.save_game_interactive(gui_->video(), "", gui::OK_CANCEL);
+		save.save_game_interactive(gui_->video(), "", true);
 	} else {
 		save_blocker::on_unblock(this,&play_controller::save_replay);
 	}
@@ -2390,10 +2373,6 @@ void play_controller::load_game()
 void play_controller::preferences()
 {
 	menu_handler_.preferences();
-}
-
-void play_controller::show_chat_log(){
-	menu_handler_.show_chat_log();
 }
 
 void play_controller::show_help()
@@ -2680,7 +2659,7 @@ bool play_controller::do_prefix_unit(int end_ticks, bool replay, bool record_at_
 
 	} else {
 		if (unit::actor->new_turn(*this, random)) {
-			units_.erase(unit::actor);
+			units_.erase2(unit::actor);
 		}
 	}
 
@@ -2742,7 +2721,7 @@ bool play_controller::do_prefix_unit(int end_ticks, bool replay, bool record_at_
 			for (size_t i = 0; i < troops_vsize; i ++) {
 				unit* u = troops_cache_[i];
 				if (u->new_turn(*this, random)) {
-					units_.erase(u);
+					units_.erase2(u);
 				} else if (t.restrict_movement || u->task() == unit::TASK_STATION) {
 					u->set_movement(0);
 				}
@@ -3100,113 +3079,92 @@ bool play_controller::enemies_visible() const
 		return true;
 
 	// See if any enemies are visible
-	for(unit_map::const_iterator u = units_.begin(); u != units_.end(); ++u)
-		if (current_team().is_enemy(u->side()) && !gui_->fogged(u->get_location()))
+	for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it) {
+		unit* u = dynamic_cast<unit*>(&*it);
+		if (current_team().is_enemy(u->side()) && !gui_->fogged(u->get_location())) {
 			return true;
+		}
+	}
 
 	return false;
 }
 
-bool play_controller::execute_command(hotkey::HOTKEY_COMMAND command, int index, std::string str)
+void play_controller::execute_command2(int command, const std::string& sparam)
 {
-	return command_executor::execute_command(command, index, str);
+	using namespace gui2;
+
+	switch(command) {
+	case HOTKEY_UNDO:
+		undo();
+		break;
+	case HOTKEY_REDO:
+		redo();
+		break;
+	case tgame_theme::HOTKEY_INTERIOR:
+		interior();
+		break;
+	case tgame_theme::HOTKEY_TECHNOLOGY_TREE:
+		technology_tree();
+		break;
+	case tgame_theme::HOTKEY_UPLOAD:
+		upload();
+		break;
+	case tgame_theme::HOTKEY_FINAL_BATTLE:
+		final_battle(-1, -1, -1);
+		break;
+	case tgame_theme::HOTKEY_EMPLOY:
+		employ();
+		break;
+	case tgame_theme::HOTKEY_LIST:
+		list();
+		break;
+	case HOTKEY_SYSTEM:
+		system();
+		break;
+	case tgame_theme::HOTKEY_TACTIC0:
+	case tgame_theme::HOTKEY_TACTIC1:
+	case tgame_theme::HOTKEY_TACTIC2:
+		remove_active_tactic(command - tgame_theme::HOTKEY_TACTIC0);
+		break;
+	case tgame_theme::HOTKEY_BOMB:
+		bomb();
+		break;
+	case tgame_theme::HOTKEY_RPG:
+		show_rpg();
+		break;
+	case tgame_theme::HOTKEY_RPG_DETAIL:
+		rpg_detail();
+		break;
+	case tgame_theme::HOTKEY_RPG_TREASURE:
+		assemble_treasure();
+		break;
+	case tgame_theme::HOTKEY_RPG_EXCHANGE:
+		rpg_exchange(empty_vector_size_t, -1);
+		break;
+	case tgame_theme::HOTKEY_RPG_INDEPENDENCE:
+		rpg_independence();
+		break;
+	case tgame_theme::HOTKEY_UNIT_DETAIL:
+		unit_detail();
+		break;
+	default:
+		 controller_base::execute_command2(command, sparam);
+	}
 }
 
-bool play_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int index) const
+bool play_controller::can_execute_command(int command, const std::string& sparam) const
 {
-	if (index >= 0) {
-		unsigned i = static_cast<unsigned>(index);
-		if ((i < savenames_.size() && !savenames_[i].empty()) || (i < wml_commands_.size() && wml_commands_[i] != NULL)) {
-			return true;
-		}
-	}
+	using namespace gui2;
+
 	switch (command) {
-
-	// Commands we can always do:
-	case hotkey::HOTKEY_ZOOM_IN:
-	case hotkey::HOTKEY_ZOOM_OUT:
-	case hotkey::HOTKEY_ZOOM_DEFAULT:
-	case hotkey::HOTKEY_SCREENSHOT:
-	case hotkey::HOTKEY_MAP_SCREENSHOT:
-	case hotkey::HOTKEY_TOGGLE_GRID:
-	case hotkey::HOTKEY_MOUSE_SCROLL:
-	case hotkey::HOTKEY_ANIMATE_MAP:
-	case hotkey::HOTKEY_MUTE:
-	case hotkey::HOTKEY_PREFERENCES:
-	case hotkey::HOTKEY_OBJECTIVES:
-	case hotkey::HOTKEY_STATISTICS:
-	case hotkey::HOTKEY_QUIT_GAME:
-	case hotkey::HOTKEY_CLEAR_MSG:
-	case hotkey::HOTKEY_UNIT_DETAIL:
-	case hotkey::HOTKEY_RPG:
-		return true;
-
-	case hotkey::HOTKEY_HELP:
-		return game_config::tiny_gui? false: true;
-
-	case hotkey::HOTKEY_CHAT_LOG:
-		return network::nconnections() > 0;
-
-	case hotkey::HOTKEY_UNDO:
+	case HOTKEY_UNDO:
 		return !linger_ && !undo_stack_.empty() && !events::commands_disabled && !browse_;
-
+	case tgame_theme::HOTKEY_UNIT_DETAIL:
+		return !events::commands_disabled;
 	default:
-		return false;
+		return true;
 	}
 }
-
-void play_controller::enter_textbox()
-{
-	if(menu_handler_.get_textbox().active() == false) {
-		return;
-	}
-
-	const std::string str = menu_handler_.get_textbox().box()->text();
-	const unsigned int team_num = player_number_;
-	events::mouse_handler& mousehandler = mouse_handler_;
-
-	switch(menu_handler_.get_textbox().mode()) {
-	case gui::TEXTBOX_MESSAGE:
-		menu_handler_.do_speak();
-		menu_handler_.get_textbox().close(*gui_);  //need to close that one after executing do_speak() !
-		break;
-	default:
-		menu_handler_.get_textbox().close(*gui_);
-		ERR_DP << "unknown textbox mode\n";
-	}
-
-}
-
-void play_controller::tab()
-{
-	gui::TEXTBOX_MODE mode = menu_handler_.get_textbox().mode();
-
-	std::set<std::string> dictionary;
-	switch(mode) {
-	case gui::TEXTBOX_MESSAGE:
-	{
-		BOOST_FOREACH (const team& t, teams_) {
-			if(!t.is_empty())
-				dictionary.insert(t.current_player());
-		}
-
-		// Add observers
-		BOOST_FOREACH (const std::string& o, gui_->observers()){
-			dictionary.insert(o);
-		}
-		//Exclude own nick from tab-completion.
-		//NOTE why ?
-		dictionary.erase(preferences::login());
-
-		break;
-	}
-	default:
-		ERR_DP << "unknown textbox mode\n";
-	} //switch(mode)
-
-	menu_handler_.get_textbox().tab(dictionary);
-}
-
 
 team& play_controller::current_team()
 {
@@ -3506,24 +3464,13 @@ events::mouse_handler& play_controller::get_mouse_handler_base() {
 	return mouse_handler_;
 }
 
-game_display& play_controller::get_display() {
-	return *gui_;
-}
-
 bool play_controller::have_keyboard_focus()
 {
-	return !menu_handler_.get_textbox().active();
+	return true;
 }
 
 void play_controller::process_focus_keydown_event(const SDL_Event& event)
 {
-	if(event.key.keysym.sym == SDLK_ESCAPE) {
-		menu_handler_.get_textbox().close(*gui_);
-	} else if(event.key.keysym.sym == SDLK_TAB) {
-		tab();
-	} else if(event.key.keysym.sym == SDLK_RETURN || event.key.keysym.sym == SDLK_KP_ENTER) {
-		enter_textbox();
-	}
 }
 
 void play_controller::process_keydown_event(const SDL_Event& event) {
@@ -3539,9 +3486,9 @@ void play_controller::process_keyup_event(const SDL_Event& event) {
 		if(new_path_turns != mouse_handler_.get_path_turns()) {
 			mouse_handler_.set_path_turns(new_path_turns);
 
-			const unit_map::iterator u = mouse_handler_.selected_unit();
+			unit* u = mouse_handler_.selected_unit();
 
-			if(u != units_.end()) {
+			if (u) {
 				bool teleport = u->get_ability_bool("teleport");
 
 				// if it's not the unit's turn, we reset its moves
@@ -3654,39 +3601,40 @@ bool play_controller::actived_build_menu(const std::string& minor) const
 bool play_controller::in_context_menu(const std::string& id) const
 {
 	std::pair<std::string, std::string> item = gui2::tcontext_menu::extract_item(id);
-	hotkey::HOTKEY_COMMAND command = hotkey::get_hotkey(item.first).get_id();
+	int command = hotkey::get_hotkey(item.first).get_id();
 
+	using namespace gui2;
 	// current side must human player
 	const team& current_team = teams_[player_number_ - 1];
 
-	if (command != hotkey::HOTKEY_LIST && command != hotkey::HOTKEY_SYSTEM && !replaying_ && !current_team.is_human()) {
+	if (command != tgame_theme::HOTKEY_LIST && command != HOTKEY_SYSTEM && !replaying_ && !current_team.is_human()) {
 		return false;
 	}
 	if (linger_) {
-		if (command == hotkey::HOTKEY_LIST || command == hotkey::HOTKEY_SYSTEM) {
+		if (command == tgame_theme::HOTKEY_LIST || command == HOTKEY_SYSTEM) {
 			return true;
 		} else {
-			return command == hotkey::HOTKEY_UPLOAD && !replaying_;
+			return command == tgame_theme::HOTKEY_UPLOAD && !replaying_;
 		}
 	}
-	if (replaying_ && (command == hotkey::HOTKEY_TECHNOLOGY_TREE || command == hotkey::HOTKEY_FINAL_BATTLE)) {
+	if (replaying_ && (command == tgame_theme::HOTKEY_TECHNOLOGY_TREE || command == tgame_theme::HOTKEY_FINAL_BATTLE)) {
 		// current don't support, remark them.
 		return false;
 	}
 
 	const artifical* city = NULL;
 	const map_location& loc = mouse_handler_.get_selected_hex();
-	unit_map::const_iterator itor;
+	const unit* itor = NULL;
 	if (!replaying_) {
 		itor = find_visible_unit(loc, current_team);
 	}
 
 	switch(command) {
 	// Only display these if the mouse is over a castle or keep tile
-	case hotkey::HOTKEY_RECRUIT:
-	case hotkey::HOTKEY_EXPEDITE:
-	case hotkey::HOTKEY_ARMORY:
-	case hotkey::HOTKEY_MOVE:
+	case tgame_theme::HOTKEY_RECRUIT:
+	case tgame_theme::HOTKEY_EXPEDITE:
+	case tgame_theme::HOTKEY_ARMORY:
+	case tgame_theme::HOTKEY_MOVE:
 		if (rpging_ || tent::tower_mode()) {
 			return false;
 		}
@@ -3706,21 +3654,21 @@ bool play_controller::in_context_menu(const std::string& id) const
 		}
 		break;
 
-	case hotkey::HOTKEY_BUILD_M:
+	case tgame_theme::HOTKEY_BUILD_M:
 		if (current_team.builds().empty()) {
 			return false;
 		}
-	case hotkey::HOTKEY_BUILD:
+	case tgame_theme::HOTKEY_BUILD:
 		if (rpging_) {
 			return false;
 		}
 		if (tent::mode == mode_tag::SIEGE) {
 			return false;
 		}
-		if (!itor.valid() || itor->is_artifical() || !itor->human()) {
+		if (!itor || itor->is_artifical() || !itor->human()) {
 			return false;
 		}
-		if (command == hotkey::HOTKEY_BUILD && !in_build_menu(item.second)) {
+		if (command == tgame_theme::HOTKEY_BUILD && !in_build_menu(item.second)) {
 			return false;
 		}
 		if (tent::tower_mode()) {
@@ -3728,33 +3676,33 @@ bool play_controller::in_context_menu(const std::string& id) const
 		}
 		break;
 
-	case hotkey::HOTKEY_GUARD:
+	case tgame_theme::HOTKEY_GUARD:
 		if (tent::tower_mode()) {
 			return false;
 		}
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
-		if (itor.valid() && !itor->is_artifical() && (itor->side() == player_number_) && itor->human()) {
+		if (itor && !itor->is_artifical() && (itor->side() == player_number_) && itor->human()) {
 			return true;
 		}
 		break;
 
-	case hotkey::HOTKEY_ABOLISH:
+	case tgame_theme::HOTKEY_ABOLISH:
 		if (tent::tower_mode()) {
 			return false;
 		}
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
-		if (itor.valid() && !itor->is_artifical() && (itor->side() == player_number_) && itor->human()) {
+		if (itor && !itor->is_artifical() && (itor->side() == player_number_) && itor->human()) {
 			if (itor->task() != unit::TASK_NONE) {
 				return true;
 			}
 		}
 		break;
 
-	case hotkey::HOTKEY_EXTRACT:
+	case tgame_theme::HOTKEY_EXTRACT:
 		if (!tent::tower_mode()) {
 			return false;
 		}
@@ -3764,19 +3712,19 @@ bool play_controller::in_context_menu(const std::string& id) const
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
-		if (itor.valid() && !itor->is_artifical() && (itor->side() == player_number_)) {
+		if (itor && !itor->is_artifical() && (itor->side() == player_number_)) {
 			return true;
 		}
 		break;
 
-	case hotkey::HOTKEY_ADVANCE:
+	case tgame_theme::HOTKEY_ADVANCE:
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
 		if (rpging_) {
 			return false;
 		}
-		if (tent::mode != mode_tag::LAYOUT || !itor.valid() || itor->side() != player_number_) {
+		if (tent::mode != mode_tag::LAYOUT || !itor || itor->side() != player_number_) {
 			return false;
 		}
 		if (itor->is_artifical()) {
@@ -3784,7 +3732,7 @@ bool play_controller::in_context_menu(const std::string& id) const
 		}
 		break;
 
-	case hotkey::HOTKEY_DEMOLISH:
+	case tgame_theme::HOTKEY_DEMOLISH:
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
@@ -3800,7 +3748,7 @@ bool play_controller::in_context_menu(const std::string& id) const
 		if (!actor_can_continue_action(units_, player_number_)) {
 			return false;
 		}
-		if (!itor.valid()) {
+		if (!itor) {
 			return false;
 		}
 
@@ -3811,16 +3759,16 @@ bool play_controller::in_context_menu(const std::string& id) const
 		}
 		break;
 
-	case hotkey::HOTKEY_INTERIOR:
+	case tgame_theme::HOTKEY_INTERIOR:
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
 		if (rpging_) {
 			return false;
 		}
-		return !events::commands_disabled && !itor.valid();
+		return !events::commands_disabled && !itor;
 
-	case hotkey::HOTKEY_TECHNOLOGY_TREE:
+	case tgame_theme::HOTKEY_TECHNOLOGY_TREE:
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
@@ -3830,45 +3778,45 @@ bool play_controller::in_context_menu(const std::string& id) const
 		if (tent::mode == mode_tag::SIEGE) {
 			return false;
 		}
-		return !events::commands_disabled && !itor.valid();
+		return !events::commands_disabled && !itor;
 
-	case hotkey::HOTKEY_EMPLOY:
+	case tgame_theme::HOTKEY_EMPLOY:
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
 		if (rpging_ || tent::mode != mode_tag::TOWER) {
 			return false;
 		}
-		return replaying_ || (!events::commands_disabled && !itor.valid());
+		return replaying_ || (!events::commands_disabled && !itor);
 
-	case hotkey::HOTKEY_UPLOAD:
+	case tgame_theme::HOTKEY_UPLOAD:
 		return linger_ && !rpging_;
 
-	case hotkey::HOTKEY_FINAL_BATTLE:
+	case tgame_theme::HOTKEY_FINAL_BATTLE:
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
 		if (rpging_ || tent::mode != mode_tag::RPG) {
 			return false;
 		}
-		return !events::commands_disabled && (teams_.size() >= 3) && !itor.valid();
+		return !events::commands_disabled && (teams_.size() >= 3) && !itor;
 
-	case hotkey::HOTKEY_LIST:
-	case hotkey::HOTKEY_SYSTEM:
+	case tgame_theme::HOTKEY_LIST:
+	case HOTKEY_SYSTEM:
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
 		if (rpging_) {
 			return false;
 		}
-		return replaying_ || (!events::commands_disabled && !itor.valid() && (has_network_player() || current_team.is_human()));
+		return replaying_ || (!events::commands_disabled && !itor && (has_network_player() || current_team.is_human()));
 
-	case hotkey::HOTKEY_RPG_EXCHANGE:
-	case hotkey::HOTKEY_RPG_INDEPENDENCE:
+	case tgame_theme::HOTKEY_RPG_EXCHANGE:
+	case tgame_theme::HOTKEY_RPG_INDEPENDENCE:
 		if (rpg::stratum != hero_stratum_mayor || linger_ || replaying_ || events::commands_disabled || has_network_player()) {
 			return false;
 		}
-	case hotkey::HOTKEY_RPG_DETAIL:
+	case tgame_theme::HOTKEY_RPG_DETAIL:
 		if (mouse_handler_.in_multistep_state()) {
 			return false;
 		}
@@ -3876,7 +3824,7 @@ bool play_controller::in_context_menu(const std::string& id) const
 			return true;
 		}
 		break;
-	case hotkey::HOTKEY_RPG_TREASURE:
+	case tgame_theme::HOTKEY_RPG_TREASURE:
 		return false;
 
 	default:
@@ -3894,24 +3842,25 @@ bool play_controller::actived_context_menu(const std::string& id) const
 bool play_controller::actived_context_menu2(const std::string& id, const map_location& loc) const
 {
 	std::pair<std::string, std::string> item = gui2::tcontext_menu::extract_item(id);
-	hotkey::HOTKEY_COMMAND command = hotkey::get_hotkey(item.first).get_id();
+	int command = hotkey::get_hotkey(item.first).get_id();
 
+	using namespace gui2;
 	const team& current_team = teams_[player_number_ - 1];
 	const std::vector<artifical*>& holden_cities = current_team.holden_cities();
-	unit_map::const_iterator itor;
+	unit* itor = NULL;
 	if (!replaying_) {
 		itor = find_visible_unit(loc, current_team);
 	}
 	const artifical* city = units_.city_from_loc(loc);
 
 	switch(command) {
-	case hotkey::HOTKEY_EMPLOY:
+	case tgame_theme::HOTKEY_EMPLOY:
 		return !emploies_.empty();
 
-	case hotkey::HOTKEY_BUILD_M:
+	case tgame_theme::HOTKEY_BUILD_M:
 		// in tower_mode(), if can build one type only, it must be wall.
 		if (tent::tower_mode() && current_team.builds().size() == 1) {
-			if (units_.count(loc, false)) {
+			if (units_.valid2(loc, false)) {
 				return false;
 			}
 			const unit_type* wall = unit_types.find_wall();
@@ -3924,13 +3873,13 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 		}
 		break;
 
-	case hotkey::HOTKEY_BUILD:
+	case tgame_theme::HOTKEY_BUILD:
 		if (!actived_build_menu(item.second)) {
 			return false;
 		}
 		break;
 
-	case hotkey::HOTKEY_RECRUIT:
+	case tgame_theme::HOTKEY_RECRUIT:
 		if (rpg::stratum == hero_stratum_citizen) {
 			return false;
 		} else if (rpg::stratum == hero_stratum_mayor && city->mayor() != rpg::h) {
@@ -3940,7 +3889,7 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 			return false;
 		}
 		break;
-	case hotkey::HOTKEY_EXPEDITE:
+	case tgame_theme::HOTKEY_EXPEDITE:
 		if (city->reside_troops().empty()) {
 			return false;
 		}
@@ -3948,7 +3897,7 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 			return false;
 		}
 		break;
-	case hotkey::HOTKEY_ARMORY:
+	case tgame_theme::HOTKEY_ARMORY:
 		{
 			const std::vector<unit*>& reside_troops = city->reside_troops();
 			const std::vector<hero*>& fresh_heros = city->fresh_heros();
@@ -3964,7 +3913,7 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 			}
 			return false;
 		}
-	case hotkey::HOTKEY_MOVE:
+	case tgame_theme::HOTKEY_MOVE:
 		if (rpg::stratum == hero_stratum_citizen) {
 			if (city->cityno() != rpg::h->city_ || rpg::h->status_ != hero_status_idle) {
 				return false;
@@ -3977,20 +3926,20 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 		}
 		break;
 
-	case hotkey::HOTKEY_EXTRACT:
-		if (!itor.valid() || itor->is_artifical() || (itor->side() != player_number_) || !itor->second().valid()) {
+	case tgame_theme::HOTKEY_EXTRACT:
+		if (!itor || itor->is_artifical() || (itor->side() != player_number_) || !itor->second().valid()) {
 			return false;
 		}
 		break;
 
-	case hotkey::HOTKEY_ADVANCE:
-		if (!itor.valid() || itor->side() != player_number_) {
+	case tgame_theme::HOTKEY_ADVANCE:
+		if (!itor || itor->side() != player_number_) {
 			return false;
 		}
 		return itor->type()->can_advance();
 
-	case hotkey::HOTKEY_DEMOLISH:
-		if (!itor.valid() || itor->side() != player_number_ || unit_is_city(&*itor)) {
+	case tgame_theme::HOTKEY_DEMOLISH:
+		if (!itor || itor->side() != player_number_ || unit_is_city(&*itor)) {
 			return false;
 		}
 		if (itor->is_artifical() && !tent::tower_mode()) {
@@ -4009,9 +3958,9 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 					tiles = itor->adjacent_2_;
 					adjacent_size = itor->adjacent_size_2_;
 					for (int i = 0; i != adjacent_size; ++i) {
-						unit_map::const_iterator another = units_.find(tiles[i]);
-						if (another.valid() && another->is_city()) {
-							const artifical* city = unit_2_artifical(&*another);
+						unit* another = units_.find_unit(tiles[i], true);
+						if (another && another->is_city()) {
+							const artifical* city = unit_2_artifical(another);
 							if (city->mayor() == rpg::h) {
 								found_rpg_city = true;
 								break;
@@ -4042,7 +3991,7 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 			return true;			
 		}
 		break;
-	case hotkey::HOTKEY_RPG_TREASURE:
+	case tgame_theme::HOTKEY_RPG_TREASURE:
 		for (std::vector<artifical*>::const_iterator it = holden_cities.begin(); it != holden_cities.end(); ++ it) {
 			const artifical* city = *it;
 
@@ -4072,8 +4021,8 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 			}
 		}
 		return false;
-	case hotkey::HOTKEY_RPG_EXCHANGE:
-	case hotkey::HOTKEY_RPG_INDEPENDENCE:
+	case tgame_theme::HOTKEY_RPG_EXCHANGE:
+	case tgame_theme::HOTKEY_RPG_INDEPENDENCE:
 		if (holden_cities.size() < 2) {
 			return false;
 		}
@@ -4086,12 +4035,13 @@ bool play_controller::actived_context_menu2(const std::string& id, const map_loc
 void play_controller::prepare_show_menu(gui2::tbutton& widget, const std::string& id, int width, int height) const
 {
 	std::pair<std::string, std::string> item = gui2::tcontext_menu::extract_item(id);
-	hotkey::HOTKEY_COMMAND command = hotkey::get_hotkey(item.first).get_id();
+	int command = hotkey::get_hotkey(item.first).get_id();
 
+	using namespace gui2;
 	const team& t = current_team();
 	std::stringstream strstr;
 
-	if (command == hotkey::HOTKEY_BUILD) {
+	if (command == tgame_theme::HOTKEY_BUILD) {
 		int cost_exponent = t.cost_exponent();
 
 		const std::set<const unit_type*>& can_build = t.builds();
@@ -4111,7 +4061,7 @@ void play_controller::prepare_show_menu(gui2::tbutton& widget, const std::string
 		surface surf = generate_surface(width, height, strstr.str(), cost, false);
 		widget.set_surface(surf, width, height);
 
-	} else if (command == hotkey::HOTKEY_BUILD_M) {
+	} else if (command == tgame_theme::HOTKEY_BUILD_M) {
 		if (tent::tower_mode()) {
 			strstr.str("");
 			strstr << "buttons/" << item.first << ".png";
@@ -4120,7 +4070,7 @@ void play_controller::prepare_show_menu(gui2::tbutton& widget, const std::string
 			widget.set_surface(surf, width, height);
 		}
 
-	} else if (command == hotkey::HOTKEY_ABOLISH) {
+	} else if (command == tgame_theme::HOTKEY_ABOLISH) {
 		strstr.str("");
 		strstr << "buttons/" << item.first << ".png";
 		surface surf = generate_pip_surface(width, height, strstr.str(), "buttons/icon-guard.png");
@@ -4130,13 +4080,13 @@ void play_controller::prepare_show_menu(gui2::tbutton& widget, const std::string
 
 void play_controller::refresh_city_buttons(const artifical& city) const
 {
-	static hotkey::HOTKEY_COMMAND city_buttons[] = {
-		hotkey::HOTKEY_RECRUIT, 
-		hotkey::HOTKEY_EXPEDITE, 
-		hotkey::HOTKEY_ARMORY, 
-		hotkey::HOTKEY_MOVE
+	static int city_buttons[] = {
+		gui2::tgame_theme::HOTKEY_RECRUIT,
+		gui2::tgame_theme::HOTKEY_EXPEDITE,
+		gui2::tgame_theme::HOTKEY_ARMORY,
+		gui2::tgame_theme::HOTKEY_MOVE
 	};
-	static int nb = sizeof(city_buttons) / sizeof(hotkey::HOTKEY_COMMAND);
+	static int nb = sizeof(city_buttons) / sizeof(int);
 	for (int i = 0; i < nb; i ++) {
 		gui2::tbutton* widget = dynamic_cast<gui2::tbutton*>(gui_->get_theme_object(hotkey::get_hotkey(city_buttons[i]).get_command()));
 		if (widget) {
@@ -4261,7 +4211,7 @@ void play_controller::process_oos(const std::string& msg) const
 	config snapshot;
 	to_config(snapshot);
 	savegame::oos_savegame save(heros_, heros_start_, snapshot);
-	save.save_game_interactive(resources::screen->video(), message.str(), gui::YES_NO); // can throw end_level_exception
+	save.save_game_interactive(resources::screen->video(), message.str(), false); // can throw end_level_exception
 }
 
 void play_controller::process_oos2(const std::string& msg) const
@@ -4439,7 +4389,7 @@ void play_controller::calculate_commoner_gotos(team& current_team, std::vector<s
 				// it is commoner: transport
 				const map_location& loc = u.get_goto();
 				VALIDATE(loc.valid(), "play_controller, field transport's goto is invalid location!");
-				const unit& fort = *units_.find(loc, false);
+				const unit& fort = *units_.find_unit(loc, false);
 				if (fort.side() == current_team.side()) {
 					std::map<map_location, int>::iterator find = forts.find(loc);
 					if (find != forts.end()) {
@@ -4505,7 +4455,7 @@ void play_controller::calculate_commoner_gotos(team& current_team, std::vector<s
 	//
 	static int max_fort_food = 100;
 	for (std::map<map_location, int>::iterator it = forts.begin(); it != forts.end(); ++ it) {
-		const unit& fort = *units_.find(it->first, false);
+		const unit& fort = *units_.find_unit(it->first, false);
 		int lack_food = max_fort_food - fort.food();
 		int lack_transport = 4 - it->second;
 
@@ -4632,7 +4582,7 @@ void play_controller::calculate_commoner_gotos(team& current_team, std::vector<s
 		if (u.block_turns() < 3) {
 			u.set_block_turns(u.block_turns() + 1);
 		} else {
-			units_.erase(&u);
+			units_.erase2(&u);
 		}
 	}
 }
@@ -4667,7 +4617,7 @@ void play_controller::commoner_back(artifical* entered_city, artifical* belong_c
 	back_commoner.set_goto(belong_city->get_location());
 	back_commoner.set_cityno(belong_city->cityno());
 
-	units_.insert(new std::pair<map_location, unit*>(src_loc, &back_commoner));
+	units_.insert(src_loc, &back_commoner);
 	entered_city->commoner_go_out(back_commoner, false);
 }
 
@@ -4699,7 +4649,7 @@ void play_controller::do_commoner(team& current_team)
 			}
 			const map_location arrived_at = move_unit(false, current_team, *g, goto_loc, false);
 			if (g->second < 0 && arrived_at == src_loc) {
-				const unit& u = *units_.find(src_loc);
+				const unit& u = *units_.find_unit(src_loc, true);
 				if (u.movement_left()) {
 					background->push_back(*g);
 				}
@@ -4755,9 +4705,9 @@ map_location play_controller::move_unit(bool troop, team& current_team, const st
 			// modify! last location must no unit on it.
 			while (!dst_must_reachable) {
 				to = route_.steps.back();
-				if (!units_.count(to)) {
-					unit_map::const_iterator base = units_.find(to, false);
-					if (!base.valid() || base->can_stand(*unit_ptr)) {
+				if (!units_.valid2(to, true)) {
+					unit* base = units_.find_unit(to, false);
+					if (!base || base->can_stand(*unit_ptr)) {
 						break;
 					}
 				} else if (artifical* c = units_.city_from_loc(to)) {
@@ -4812,14 +4762,13 @@ map_location play_controller::move_unit(bool troop, team& current_team, const st
 			}
 		}
 		// do_execute
-		move_spectator.set_unit(units_.find(from));
+		move_spectator.set_unit(units_.find_unit(from, true));
 		
 		bool gamestate_changed = false;
 
 		if (steps.size() >= 2) {
 			if (pair.second >= 0) {
 				artifical* expediting_city = unit_2_artifical(pair.first);
-				// std::vector<unit*>& reside_troops = expediting_city->reside_troops();
 				gui_->place_expedite_city(*expediting_city);
 				units_.set_expediting(expediting_city, troop, pair.second);
 				::move_unit(
@@ -4832,7 +4781,7 @@ map_location play_controller::move_unit(bool troop, team& current_team, const st
 					/*bool continue_move*/ true, //@todo: 1.7 set to false after implemeting interrupt awareness
 					/*bool should_clear_shroud*/ true,
 					/*bool is_replay*/ false);
-				if (!move_spectator.get_unit().valid() || move_spectator.get_unit()->get_location() != from) {
+				if (!move_spectator.get_unit() || move_spectator.get_unit()->get_location() != from) {
 					// move_unit may be not move! reside troop ratain in city.
 				} else {
 					unit_ptr->remove_movement_ai();
@@ -4851,13 +4800,13 @@ map_location play_controller::move_unit(bool troop, team& current_team, const st
 					/*bool is_replay*/ false);
 			}
 			// once unit moved one or more grid, unit_ptr may invalid. below code must not use un!
-			if (!move_spectator.get_unit().valid()) {
+			if (!move_spectator.get_unit()) {
 				// mover is died!
 				unit_location_ = map_location();
-			} else if (move_spectator.get_ambusher().valid() || !move_spectator.get_seen_enemies().empty() || !move_spectator.get_seen_friends().empty() ) {
+			} else if (move_spectator.get_ambusher() || !move_spectator.get_seen_enemies().empty() || !move_spectator.get_seen_friends().empty() ) {
 				unit_location_ = move_spectator.get_unit()->get_location();
 				gamestate_changed = true;
-			} else if (move_spectator.get_unit().valid()){
+			} else if (move_spectator.get_unit()){
 				unit_location_ = move_spectator.get_unit()->get_location();
 				const unit& u = *move_spectator.get_unit();
 				if (unit_location_ != from || (u.is_commoner() && !u.movement_left() && u.get_from().valid())) {
@@ -4867,8 +4816,8 @@ map_location play_controller::move_unit(bool troop, team& current_team, const st
 		}
 
 		if (gamestate_changed) {
-			unit_map::iterator un = units_.find(unit_location_);
-			if (unit_location_ != from && un.valid() && un->movement_left() > 0) {
+			unit* un = units_.find_unit(unit_location_, true);
+			if (unit_location_ != from && un && un->movement_left() > 0) {
 				un->remove_movement_ai();
 			}
 		}

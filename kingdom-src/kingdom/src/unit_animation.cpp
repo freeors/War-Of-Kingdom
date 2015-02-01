@@ -355,19 +355,21 @@ int unit_animation::matches(const game_display &disp,const map_location& loc,con
 			++result;
 		}
 		if(!secondary_unit_filter_.empty()) {
-			unit_map::const_iterator unit;
-			for(unit=disp.get_const_units().begin() ; unit != disp.get_const_units().end() ; ++unit) {
-				if (unit->get_location() == second_loc) {
+			const unit_map& units = disp.get_const_units();
+			unit_map::const_iterator it;
+			for (it = units.begin(); it != units.end(); ++ it) {
+				unit* u = dynamic_cast<unit*>(&*it);
+				if (u->get_location() == second_loc) {
 					std::vector<config>::const_iterator second_itor;
 					for(second_itor = secondary_unit_filter_.begin(); second_itor != secondary_unit_filter_.end(); ++second_itor) {
-						if (!unit->matches_filter(vconfig(*second_itor), second_loc)) return MATCH_FAIL;
+						if (!u->matches_filter(vconfig(*second_itor), second_loc)) return MATCH_FAIL;
 						result++;
 					}
 
 					break;
 				}
 			}
-			if(unit == disp.get_const_units().end()) return MATCH_FAIL;
+			if (it == units.end()) return MATCH_FAIL;
 		}
 
 	} else if (!unit_filter_.empty()) return MATCH_FAIL;
@@ -775,7 +777,7 @@ void unit_animator::add_animation(unit* animated_unit
 	if (!animated_unit) return;
 
 	anim_elem tmp;
-	game_display*disp = game_display::get_singleton();
+	game_display*disp = resources::screen;
 	tmp.my_unit = animated_unit;
 	tmp.text = text;
 	tmp.text_color = text_color;
@@ -830,7 +832,7 @@ void unit_animator::replace_anim_if_invalid(unit* animated_unit
 		, int value2)
 {
 	if(!animated_unit) return;
-	game_display*disp = game_display::get_singleton();
+	game_display*disp = resources::screen;
 
 	if(animated_unit->get_animation() &&
 			!animated_unit->get_animation()->animation_finished_potential() &&
@@ -893,7 +895,7 @@ bool unit_animator::would_end() const
 }
 void unit_animator::wait_until(int animation_time) const
 {
-	game_display*disp = game_display::get_singleton();
+	game_display*disp = resources::screen;
 	double speed = disp->turbo_speed();
 	resources::controller->play_slice(false);
 	int end_tick = animated_units_[0].my_unit->get_animation()->time_to_tick(animation_time);
@@ -913,7 +915,7 @@ void unit_animator::wait_for_end() const
 {
 	if (game_config::no_delay) return;
 	bool finished = false;
-	game_display*disp = game_display::get_singleton();
+	game_display*disp = resources::screen;
 	while(!finished) {
 		resources::controller->play_slice(false);
 		disp->delay(10);

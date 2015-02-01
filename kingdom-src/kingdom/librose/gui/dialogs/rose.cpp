@@ -121,7 +121,7 @@ void trose::post_build(CVideo& video, twindow& window)
 
 static const char* menu_items[] = {
 	"report",
-	"campaign",
+	"edit_dialog",
 	"player",
 	"side",
 	"multiplayer",
@@ -211,6 +211,9 @@ void trose::pre_show(CVideo& video, twindow& window)
 		if (!strcmp(menu_items[item], "player")) {
 			str = player_hero_.image(true);
 
+		} else if (!strcmp(menu_items[item], "edit_dialog")) {
+			str = std::string("icons/studio/") + menu_items[item] + ".png";
+
 		} else if (!strcmp(menu_items[item], "signin")) {
 			if (group.signin().today) {
 				str = std::string("icons/") + "signin-ok" + ".png";
@@ -265,8 +268,8 @@ void trose::pre_show(CVideo& video, twindow& window)
 			retval = QUIT_GAME;
 		} else if (id == "help") {
 			retval = HELP;
-		} else if (id == "campaign") {
-			retval = NEW_CAMPAIGN;
+		} else if (id == "edit_dialog") {
+			retval = EDIT_DIALOG;
 		} else if (id == "player") {
 			retval = PLAYER;
 		} else if (id == "side") {
@@ -324,7 +327,7 @@ bool trose::handle(tlobby::ttype type, const config& data)
 
 void trose::set_retval(twindow& window, int retval)
 {
-	if (retval == NEW_CAMPAIGN) {
+	if (retval == PLAYER_SIDE) {
 		tbutton* b = find_widget<tbutton>(&window, "player", false, false);
 		config cfg;
 		cfg["id"] = "focus";

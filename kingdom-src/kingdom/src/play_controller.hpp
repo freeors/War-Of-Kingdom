@@ -29,6 +29,7 @@
 #include "tod_manager.hpp"
 #include "hero.hpp"
 #include "card.hpp"
+#include "cursor.hpp"
 
 #include <boost/scoped_ptr.hpp>
 
@@ -44,10 +45,6 @@ namespace game_events {
 namespace halo {
 	struct manager;
 } // namespace halo
-
-namespace preferences {
-	struct display_manager;
-}
 
 namespace soundsource {
 	class manager;
@@ -72,7 +69,6 @@ public:
 
 	//event handlers, overridden from command_executor
 	virtual void objectives();
-	virtual void show_statistics();
 
 	virtual void show_rpg();
 	virtual void rpg_detail();
@@ -86,7 +82,6 @@ public:
 	virtual void save_map();
 	virtual void load_game();
 	virtual void preferences();
-	virtual void show_chat_log();
 	virtual void show_help();
 	virtual void undo();
 	virtual void redo();
@@ -220,12 +215,13 @@ public:
 	void clear_slot_cache_selected();
 
 	void click_access_list(void* cookie, int type);
-	virtual bool execute_command(hotkey::HOTKEY_COMMAND command, int index=-1, std::string str = "");
+	virtual void execute_command2(int command, const std::string& sparam);
 
 protected:
 	void slice_before_scroll();
 
-	game_display& get_display();
+	game_display& get_display() { return *gui_; }
+	const game_display& get_display() const { return *gui_; }
 	bool have_keyboard_focus();
 	void process_focus_keydown_event(const SDL_Event& event);
 	void process_keydown_event(const SDL_Event& event);
@@ -233,7 +229,7 @@ protected:
 	void post_mouse_press(const SDL_Event& event);
 
 	/** Check if a command can be executed. */
-	virtual bool can_execute_command(hotkey::HOTKEY_COMMAND command, int index=-1) const;
+	virtual bool can_execute_command(int command, const std::string& sparam) const;
 	
 	/**
 	 *  Determines whether the command should be in the context menu or not.
@@ -259,9 +255,6 @@ protected:
 	bool enemies_visible() const;
 	void adjust_according_to_group_interior();
 
-	void enter_textbox();
-	void tab();
-	
 	/** Find a human team (ie one we own) starting backwards from 'team_num'. */
 	int find_human_team_before(const size_t team) const;
 
@@ -271,7 +264,6 @@ protected:
 	bool calculate_capture() const;
 
 	//managers
-	boost::scoped_ptr<preferences::display_manager> prefs_disp_manager_;
 	boost::scoped_ptr<tooltips::manager> tooltips_manager_;
 	boost::scoped_ptr<game_events::manager> events_manager_;
 	boost::scoped_ptr<halo::manager> halo_manager_;

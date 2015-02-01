@@ -35,19 +35,10 @@ static lg::log_domain log_engine("engine");
 
 terrain_builder::building_rule* terrain_builder::building_rules_ = NULL;
 uint32_t terrain_builder::building_rules_size_ = 0;
-uint32_t terrain_builder::unit_rules_size_ = 14;
-const config* terrain_builder::rules_cfg_ = NULL;
-/*
-terrain_builder::rule_image::rule_image(int layer, int x, int y, bool global_image, int cx, int cy) :
-	layer(layer),
-	basex(x),
-	basey(y),
-	variants(),
-	global_image(global_image),
-	center_x(cx),
-	center_y(cy)
-{}
-*/
+uint32_t terrain_builder::unit_rules_size_;
+const std::string terrain_builder::tb_dat_prefix = "tb-";
+std::string terrain_builder::using_id;
+
 terrain_builder::tile::tile() :
 	flags(),
 	images(),
@@ -55,7 +46,6 @@ terrain_builder::tile::tile() :
 	images_foreground(),
 	images_background(),
 	cached(false)
-	// sorted_images(false)
 {}
 
 void terrain_builder::tile::rebuild_cache(const std::string& tod, logs* log)
@@ -184,37 +174,56 @@ extern terrain_builder::building_rule* wml_building_rules_from_file(const std::s
 // typical value: 3113
 #define MAX_BUILDING_RULES_SIZE		5000
 
-terrain_builder::terrain_builder(const std::string& offmap_image, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
+terrain_builder::terrain_builder(const config& cfg, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
 	: map_(NULL)
 	, selector_(SELECTOR_MAP)
 	, tile_map_(0, 0)
 	, terrain_by_type_()
 {
-	image::precache_file_existence("terrain/");
+	const std::string& id = cfg["id"].str();
+	image::terrain_prefix = game_config::terrain::form_img_prefix(id);
+	image::precache_file_existence(image::terrain_prefix);
+	const std::string offmap_image = "off-map/alpha.png";
 
+	release_heap();
 	// resvesed MAX_BUILDING_RULES_SIZE rules, actual rules must not great than it!
 	building_rules_ = new terrain_builder::building_rule[MAX_BUILDING_RULES_SIZE];
 
 	//off_map first to prevent some default rule seems to block it
 	add_off_map_rule(offmap_image);
 	// parse global terrain rules
-	parse_global_config(*rules_cfg_);
+	parse_global_config(cfg);
 
-	wml_building_rules_to_file(game_config::path + "/xwml/tb.dat", building_rules_, building_rules_size_, nfiles, sum_size, modified);
+	std::stringstream ss;
+	ss << game_config::path + "/xwml/" << tb_dat_prefix << id << ".dat";
+	wml_building_rules_to_file(ss.str(), building_rules_, building_rules_size_, nfiles, sum_size, modified);
 }
 
-terrain_builder::terrain_builder(const gamemap* m) :
+terrain_builder::terrain_builder(const std::string& id, const gamemap* m) :
 	map_(m),
 	selector_(SELECTOR_MAP),
 	tile_map_(map().w(), map().h()),
 	terrain_by_type_()
 {
-	image::precache_file_existence("terrain/");
+	if (id.empty()) {
+		// this is dummy terrain builder.
+		return;
+
+	} else if (id != using_id) {
+		release_heap();
+		using_id = id;
+		game_config::terrain::modify_according_tile(id);
+		image::switch_tile(id);
+	}
+
+	image::precache_file_existence(image::terrain_prefix);
 
 	uint32_t start = SDL_GetTicks();
-	// if (!building_rules_ && rules_cfg_) {
+
 	if (!building_rules_) {
-		building_rules_ = wml_building_rules_from_file(game_config::path + "/xwml/tb.dat", &building_rules_size_);
+		std::stringstream ss;
+		ss << game_config::path + "/xwml/" << tb_dat_prefix << id << ".dat";
+		building_rules_ = wml_building_rules_from_file(ss.str(), &building_rules_size_);
 	}
 
 	uint32_t end_to_sdram = SDL_GetTicks();
@@ -245,36 +254,6 @@ void terrain_builder::release_heap()
 		building_rules_ = NULL;
 	}
 	building_rules_size_ = 0;
-}
-
-void terrain_builder::flush_local_rules()
-{
-/*
-	building_ruleset::iterator i = building_rules_.begin();
-	for (; i != building_rules_.end();){
-		if (i->local)
-			building_rules_.erase(i++);
-		else
-			++i;
-	}
-*/
-}
-
-void terrain_builder::set_terrain_rules_cfg(const config& cfg)
-{
-	if (!rules_cfg_) {
-		rules_cfg_ = &cfg;
-		// use the swap trick to clear the rules cache and get a fresh one.
-		// because simple clear() seems to cause some progressive memory degradation.
-		release_heap();
-	}
-}
-
-void terrain_builder::reload_map()
-{
-	tile_map_.reload(map().w(), map().h());
-	terrain_by_type_.clear();
-	build_terrains();
 }
 
 void terrain_builder::change_map(const gamemap* m)
@@ -340,7 +319,7 @@ void terrain_builder::rebuild_terrain(const map_location &loc)
 		const std::string filename =
 			map().get_terrain_info(loc).minimap_image();
 		animated<image::locator> img_loc;
-		img_loc.add_frame(100,image::locator("terrain/" + filename + ".png"));
+		img_loc.add_frame(100,image::locator(image::terrain_prefix + filename + ".png"));
 		img_loc.start_animation(0, true);
 		btile.images_background.push_back(img_loc);
 
@@ -349,7 +328,7 @@ void terrain_builder::rebuild_terrain(const map_location &loc)
 			const std::string filename_ovl =
 				map().get_terrain_info(loc).minimap_image_overlay();
 			animated<image::locator> img_loc_ovl;
-			img_loc_ovl.add_frame(100,image::locator("terrain/" + filename_ovl + ".png"));
+			img_loc_ovl.add_frame(100,image::locator(image::terrain_prefix + filename_ovl + ".png"));
 			img_loc_ovl.start_animation(0, true);
 			btile.images_background.push_back(img_loc_ovl);
 		}
@@ -366,8 +345,17 @@ void terrain_builder::rebuild_terrain()
 	selector_ = SELECTOR_MAP;
 }
 
+void terrain_builder::reload_map()
+{
+	// branch: change map size.
+	tile_map_.reload(map_->w(), map_->h());
+	terrain_by_type_.clear();
+	build_terrains();
+}
+
 void terrain_builder::rebuild_all()
 {
+	// branch: don't change map size. change terrain.
 	tile_map_.reset();
 	terrain_by_type_.clear();
 	build_terrains();
@@ -442,7 +430,7 @@ bool terrain_builder::load_images(building_rule &rule)
 
 						const size_t tilde = str.find('~');
 						bool has_tilde = tilde != std::string::npos;
-						const std::string filename = "terrain/" + (has_tilde ? str.substr(0,tilde) : str);
+						const std::string filename = image::terrain_prefix + (has_tilde ? str.substr(0,tilde) : str);
 
 						if (!image_exists(filename)){
 							continue; // ignore missing frames

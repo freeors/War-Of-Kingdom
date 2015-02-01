@@ -19,8 +19,6 @@
 #include "global.hpp"
 #include "actions.hpp"
 #include "chat_events.hpp"
-#include "show_dialog.hpp"
-#include "floating_textbox.hpp"
 
 class game_state;
 class tod_manager;
@@ -44,12 +42,10 @@ public:
 	virtual ~menu_handler();
 
 	const undo_list& get_undo_list() const;
-	gui::floating_textbox& get_textbox();
 	void set_gui(game_display* gui) { gui_ = gui; }
 
 	std::string get_title_suffix(int side_num);
 	void objectives(int side_num);
-	void show_statistics(int side_num);
 	void reside_unit_list_in_city(const artifical* city, bool troop = true, bool commoner = false);
 	void field_unit_list_in_city(const artifical* city, bool troop = true, bool commoner = false);
 	int hero_list(std::vector<hero*>& heros);
@@ -61,7 +57,6 @@ public:
 
 	void save_map();
 	void preferences();
-	void show_chat_log();
 	void speak();
 	void whisper();
 	void shout();
@@ -84,14 +79,13 @@ public:
 	bool end_turn(int side_num);
 	void switch_list(int side_num);
 	void change_side(mouse_handler& mousehandler);
-	void label_terrain(mouse_handler& mousehandler, bool team_only);
 	void clear_labels();
 	void execute_gotos(mouse_handler &mousehandler, int side_num);
 	void toggle_grid();
 	void clear_messages();
 
-	unit_map::iterator current_unit();
-	unit_map::const_iterator current_unit(const mouse_handler &mousehandler) const
+	unit* current_unit();
+	const unit* current_unit(const mouse_handler &mousehandler) const
 	{ return const_cast<menu_handler *>(this)->current_unit(); }
 	void do_speak();
 	void clear_undo_stack(int side_num);
@@ -121,7 +115,6 @@ private:
 	game_state& gamestate_;
 
 	undo_list& undo_stack_;
-	gui::floating_textbox textbox_info_;
 	std::string last_search_;
 	map_location last_search_hit_;
 

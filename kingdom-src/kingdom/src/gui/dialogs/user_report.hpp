@@ -20,7 +20,7 @@
 #include <map>
 #include "multiplayer.hpp"
 
-class game_display;
+class display;
 class hero;
 class hero_map;
 
@@ -41,7 +41,7 @@ class tscrollbar_panel;
 class tuser_report : public tdialog
 {
 public:
-	explicit tuser_report(game_display& disp, hero_map& heros, const config& game_config);
+	explicit tuser_report(display& disp, hero_map& heros, const config& game_config);
 
 	~tuser_report();
 
@@ -76,7 +76,7 @@ private:
 	void detail_employee(twindow& window);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	const config& game_config_;
 

@@ -22,6 +22,38 @@
 
 namespace gui2 {
 
+class tradio_page
+{
+public:
+	enum {NO_PAGE = -1};
+	struct tpage 
+	{
+		tpage()
+			: linked_groups()
+		{}
+
+		std::vector<tlinked_group> linked_groups;
+
+		tbuilder_grid_ptr header;
+		tbuilder_grid_ptr row;
+	};
+
+	static void parse_cfg(const config& cfg, std::vector<tradio_page::tpage>& result);
+
+	explicit tradio_page(const std::vector<tpage>& pages, twidget* widget);
+
+	int current_page() const { return current_page_; }
+	bool swap_uh(twindow& window, int page);
+	void swap_bh(twindow& window);
+
+private:
+	const std::vector<tpage>& pages_;
+
+	twidget* widget_;
+	int current_page_;
+	int swaping_page_;
+};
+
 /**
  * A generic container base class.
  *

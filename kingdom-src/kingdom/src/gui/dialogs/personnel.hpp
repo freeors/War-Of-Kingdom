@@ -22,7 +22,7 @@
 #include <hero.hpp>
 #include <set>
 
-class game_display;
+class display;
 class unit_type;
 
 namespace gui2 {
@@ -32,7 +32,7 @@ class tlistbox;
 class tpersonnel : public tdialog
 {
 public:
-	explicit tpersonnel(game_display& disp, hero_map& heros);
+	explicit tpersonnel(display& disp, hero_map& heros);
 
 protected:
 	/** Inherited from tdialog. */
@@ -50,7 +50,7 @@ private:
 	void down(twindow& window);
 	void save(twindow& window);
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 
 	std::vector<int> original_order_;

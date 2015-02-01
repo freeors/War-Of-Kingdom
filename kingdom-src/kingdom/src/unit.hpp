@@ -22,6 +22,7 @@
 #include "unit_types.hpp"
 #include "unit_map.hpp"
 #include "hero.hpp"
+#include "base_unit.hpp"
 
 class game_display;
 class game_state;
@@ -61,31 +62,31 @@ public:
 class move_unit_spectator {
 public:
 	/** add a location of a seen friend */
-	void add_seen_friend(const unit_map::const_iterator &u);
+	void add_seen_friend(const unit* u);
 
 
 	/** add the location of new seen enemy */
-	void add_seen_enemy(const unit_map::const_iterator &u);
+	void add_seen_enemy(const unit* u);
 
 
 	/** get the location of an ambusher */
-	const unit_map::const_iterator& get_ambusher() const;
+	const unit* get_ambusher() const;
 
 
 	/** get the location of a failed teleport */
-	const unit_map::const_iterator& get_failed_teleport() const;
+	const unit* get_failed_teleport() const;
 
 
 	/** get the locations of seen enemies */
-	const std::vector<unit_map::const_iterator>& get_seen_enemies() const;
+	const std::vector<const unit*>& get_seen_enemies() const;
 
 
 	/** get the locations of seen friends */
-	const std::vector<unit_map::const_iterator>& get_seen_friends() const;
+	const std::vector<const unit*>& get_seen_friends() const;
 
 
 	/** get new location of moved unit */
-	const unit_map::const_iterator& get_unit() const;
+	const unit* get_unit() const;
 
 	/** get the locations be interrupted */
 	const std::vector<map_location>& get_interrupted_waypoints() const;
@@ -102,24 +103,24 @@ public:
 
 
 	/** set the location of an ambusher */
-	void set_ambusher(const unit_map::const_iterator &u);
+	void set_ambusher(const unit* u);
 
 
 	/** set the location of a failed teleport */
-	void set_failed_teleport(const unit_map::const_iterator &u);
+	void set_failed_teleport(const unit* u);
 
 
 	/** set the iterator to moved unit*/
-	void set_unit(const unit_map::const_iterator &u);
+	void set_unit(const unit* u);
 
 	/** set the waypoints be interrupted*/
 	void set_interrupted_waypoints(const std::vector<map_location>& waypoints);
 private:
-	unit_map::const_iterator ambusher_;
-	unit_map::const_iterator failed_teleport_;
-	std::vector<unit_map::const_iterator> seen_enemies_;
-	std::vector<unit_map::const_iterator> seen_friends_;
-	unit_map::const_iterator unit_;
+	const unit* ambusher_;
+	const unit* failed_teleport_;
+	std::vector<const unit*> seen_enemies_;
+	std::vector<const unit*> seen_friends_;
+	const unit* unit_;
 	std::vector<map_location> interrupted_waypoints_;
 };
 
@@ -248,7 +249,7 @@ bool actor_can_continue_action(const unit_map& units, int actor_side);
 bool current_can_action(const unit& u);
 int calculate_end_ticks();
 
-class unit: public unit_merit
+class unit: public base_unit, public unit_merit
 {
 public:
 	static std::vector<std::pair<int, unit*> > null_int_unitp_pair;
@@ -303,7 +304,7 @@ public:
 	const std::string& undead_variation() const {return undead_variation_;}
 
 	/** The unit name for display */
-	const t_string &name() const;
+	const t_string& name() const;
 	void regenerate_name();
 
 	/** The unit's profile */
@@ -361,7 +362,6 @@ public:
 	// it's better name is can_recruit(), but back-compitable used
 	bool can_recruits() const { return can_recruit_; }
 	bool can_reside() const { return can_reside_; }
-	bool base() const { return base_; }
 	bool wall() const { return wall_; }
 	bool wall2() const;
 	bool fort() const { return fort_; }
@@ -549,13 +549,9 @@ public:
 
 	bool packed() const;
 
-	const map_location &get_location() const { return loc_; }
-	const std::set<map_location>& get_touch_locations() const { return touch_locs_; }
+	void set_location(const map_location &loc);
 	const std::set<map_location::DIRECTION>& get_touch_dirs() const;
-	/** To be called by unit_map or for temporary units only. */
-	virtual void set_location(const map_location &loc);
-
-	std::set<map_location> get_touch_locations(const gamemap& map, const map_location& loc) const;
+	std::set<map_location> get_touch_locations2(const gamemap& map, const map_location& loc) const;
 
 	const map_location& get_goto() const { return goto_; }
 	void set_goto(const map_location& new_goto);
@@ -691,6 +687,9 @@ public:
 	bool is_capital(const std::vector<team>& teams) const;
 	surface generate_access_surface(int width, int height, bool greyscale) const;
 
+	bool require_sort() const { return consider_ticks(); }
+	bool sort_compare(const base_unit& that) const;
+
 public:
 	uint16_t leadership_;
 	uint16_t force_;
@@ -744,8 +743,6 @@ protected:
 	void add_trait_description(const config& trait);
 
 	config cfg_;
-	map_location loc_;
-	std::set<map_location> touch_locs_;
 
 	std::vector<std::string> advances_to_;
 	std::string type_;
@@ -754,7 +751,6 @@ protected:
 	const unit_type* packee_unit_type_;
 	int especial_;
 	const unit_race* race_;
-	mutable t_string name_;
 	t_string type_name_;
 	std::string undead_variation_;
 	std::string variation_;
@@ -847,7 +843,6 @@ protected:
 	surface desc_rect_;
 
 	int unit_halo_;
-	bool refreshing_; // avoid infinite recursion
 	bool hidden_;
 	bool draw_bars_;
 
@@ -874,7 +869,6 @@ protected:
 	bool artifical_;
 	bool can_recruit_;
 	bool can_reside_;
-	bool base_;
 	bool wall_;
 	bool fort_;
 	bool transport_;
@@ -947,8 +941,7 @@ int side_units_cost(int side_num);
 
 int side_upkeep(int side_num);
 
-unit_map::iterator find_visible_unit(const map_location &loc,
-	const team &current_team, bool see_all = false);
+unit* find_visible_unit(const map_location &loc, const team &current_team, bool see_all = false);
 
 unit *get_visible_unit(const map_location &loc,
 	const team &current_team, bool see_all = false);
@@ -983,10 +976,10 @@ struct temporary_unit_placer
 	virtual  ~temporary_unit_placer();
 
 private:
-	static std::pair<map_location, unit*> aggressing_;
+	static std::pair<map_location, base_unit*> aggressing_;
 	unit_map& m_;
 	const map_location loc_;
-	std::pair<map_location, unit*>* temp_;
+	std::pair<map_location, base_unit*> temp_;
 };
 
 bool extract_hero(unit_map& units, const hero& h);

@@ -125,9 +125,6 @@ namespace {
 	typedef std::pair< std::string, config* > wmi_command_change;
 	std::vector< wmi_command_change > wmi_command_changes;
 
-	const gui::msecs prevent_misclick_duration = 10;
-	const gui::msecs average_frame_time = 30;
-
 	class pump_manager {
 		public:
 		pump_manager() :
@@ -339,7 +336,7 @@ namespace game_events {
 			int match_count = 0;
 			for (unit_map::const_iterator itor = resources::units->begin(); itor != resources::units->end(); ++ itor)
 			{
-				unit& i = *itor;
+				unit& i = *dynamic_cast<unit*>(&*itor);
 				if(i.hitpoints() > 0 && unit_matches_filter(i, *u)) {
 					++match_count;
 					if(counts == default_counts) {
@@ -619,59 +616,6 @@ WML_HANDLER_FUNCTION(remove_shroud, /*event_info*/, cfg)
 WML_HANDLER_FUNCTION(place_shroud, /*event_info*/,cfg)
 {
 	toggle_shroud(false,cfg );
-}
-
-WML_HANDLER_FUNCTION(teleport, event_info, cfg)
-{
-	unit_map::iterator u = resources::units->find(event_info.loc1);
-
-	// Search for a valid unit filter, and if we have one, look for the matching unit
-	const vconfig filter = cfg.child("filter");
-	if(!filter.null()) {
-		for (u = resources::units->begin(); u != resources::units->end(); ++u){
-			if(game_events::unit_matches_filter(*u, filter))
-				break;
-		}
-	}
-
-	if (u == resources::units->end()) return;
-
-	// We have found a unit that matches the filter
-	const map_location dst = cfg_to_loc(cfg);
-	if (dst == u->get_location() || !resources::game_map->on_board(dst)) return;
-
-	const unit *pass_check = &*u;
-	if (cfg["ignore_passability"].to_bool())
-		pass_check = NULL;
-	const map_location vacant_dst = pathfind::find_vacant_tile(*resources::game_map, *resources::teams, *resources::units, dst, pass_check);
-	if (!resources::game_map->on_board(vacant_dst)) return;
-
-	int side = u->side();
-	if (cfg["clear_shroud"].to_bool(true)) {
-		clear_shroud(side);
-	}
-
-	map_location src_loc = u->get_location();
-
-	std::vector<map_location> teleport_path;
-	teleport_path.push_back(src_loc);
-	teleport_path.push_back(vacant_dst);
-	bool animate = cfg["animate"].to_bool();
-	unit_display::move_unit(teleport_path, *u, *resources::teams, animate);
-
-	resources::units->move(src_loc, vacant_dst);
-	unit::clear_status_caches();
-
-	u = resources::units->find(vacant_dst);
-	u->set_standing();
-
-	if (resources::game_map->is_village(vacant_dst)) {
-		get_village(vacant_dst, side);
-	}
-
-	resources::screen->invalidate_unit_after_move(src_loc, dst);
-
-	resources::screen->draw();
 }
 
 WML_HANDLER_FUNCTION(volume, /*event_info*/, cfg)
@@ -1495,7 +1439,7 @@ WML_HANDLER_FUNCTION(unit, /*event_info*/, cfg)
 
 	unit_map::iterator u_itor = units.find(loc);
 	if (u_itor.valid()) {
-		units.erase(&*u_itor);
+		units.erase2(&*u_itor);
 	}
 	units.add(loc, &new_unit);
 	if (resources::game_map->is_village(loc)) {
@@ -1605,7 +1549,7 @@ WML_HANDLER_FUNCTION(sideheros, /*event_info*/, cfg)
 				}
 
 			if (captains.empty()) {
-				units.erase(&u);
+				units.erase2(&u);
 			} else {
 				if (leave_heros.size()) {
 					u.replace_captains(captains);
@@ -1775,7 +1719,8 @@ WML_HANDLER_FUNCTION(object, event_info, cfg)
 
 	map_location loc;
 	if(!filter.null()) {
-		for (unit_map::const_iterator u = resources::units->begin(); u != resources::units->end(); ++ u) {
+		for (unit_map::const_iterator it = resources::units->begin(); it != resources::units->end(); ++ it) {
+			unit* u = dynamic_cast<unit*>(&*it);
 			if (game_events::unit_matches_filter(*u, filter)) {
 				loc = u->get_location();
 				break;
@@ -1787,11 +1732,11 @@ WML_HANDLER_FUNCTION(object, event_info, cfg)
 		loc = event_info.loc1;
 	}
 
-	const unit_map::iterator u = resources::units->find(loc);
+	unit* u = resources::units->find_unit(loc, true);
 
 	std::string command_type = "then";
 
-	if (u != resources::units->end() && (filter.null() || game_events::unit_matches_filter(*u, filter)))
+	if (u && (filter.null() || game_events::unit_matches_filter(*u, filter)))
 	{
 		text = cfg["description"].str();
 
@@ -2083,10 +2028,10 @@ WML_HANDLER_FUNCTION(endlevel, /*event_info*/, cfg)
 	// is fully visible again.
 	unit_map::iterator it = units->begin();
 	while (it != units->end()) {
-		unit& u = *it;
+		unit& u = *dynamic_cast<unit*>(&*it);
 		if (u.hitpoints() <= 0) {
 			if (!u.is_city()) {
-				units->erase(&u);
+				units->erase2(&u);
 				it = units->begin();
 			} else {
 				u.heal(u.max_hitpoints() / 2);
@@ -2208,26 +2153,29 @@ WML_HANDLER_FUNCTION(heal_unit, event_info, cfg)
 	bool animated = cfg["animate"].to_bool();
 
 	const vconfig healed_filter = cfg.child("filter");
-	unit_map::iterator u;
+	unit* u = NULL;
 
 	if (healed_filter.null()) {
 		// Try to take the unit at loc1
-		u = units->find(event_info.loc1);
+		u = units->find_unit(event_info.loc1, true);
 	}
 	else {
-		for(u  = units->begin(); u != units->end(); ++u) {
-			if (game_events::unit_matches_filter(*u, healed_filter))
+		for (unit_map::iterator it = units->begin(); it != units->end(); ++ it, u = NULL) {
+			u = dynamic_cast<unit*>(&*it);
+			if (game_events::unit_matches_filter(*u, healed_filter)) {
 				break;
+			}
 		}
 	}
 
-	if (!u.valid()) return;
+	if (!u) return;
 
 	const vconfig healers_filter = cfg.child("filter_second");
 	std::vector<unit *> healers;
 
 	if (!healers_filter.null()) {
-		for (unit_map::iterator v = units->begin(); v != units->end(); v ++) {
+		for (unit_map::iterator it = units->begin(); it != units->end(); it ++) {
+			unit* v = dynamic_cast<unit*>(&*it);
 			if (game_events::unit_matches_filter(*v, healers_filter) &&
 			    v->has_ability_type("heals")) {
 				healers.push_back(&*v);
@@ -2357,10 +2305,10 @@ hero& handle_speaker(
  *
  * @returns                       The image to show.
  */
-std::string get_image(const vconfig& cfg, unit_map::iterator speaker)
+std::string get_image(const vconfig& cfg, unit* speaker)
 {
 	std::string image = cfg["image"];
-	if (image.empty() && speaker != resources::units->end())
+	if (image.empty() && speaker)
 	{
 		image = speaker->profile();
 		std::string::size_type offset = image.find('~');
@@ -2406,10 +2354,10 @@ std::string get_image(const vconfig& cfg, unit_map::iterator speaker)
  *
  * @returns                       The caption to show.
  */
-std::string get_caption(const vconfig& cfg, unit_map::iterator speaker)
+std::string get_caption(const vconfig& cfg, unit* speaker)
 {
 	std::string caption = cfg["caption"];
-	if (caption.empty() && speaker != resources::units->end()) {
+	if (caption.empty() && speaker) {
 		caption = speaker->name();
 		if(caption.empty()) {
 			caption = speaker->type_name();
@@ -2660,55 +2608,6 @@ WML_HANDLER_FUNCTION(event, /*event_info*/, cfg)
 	}
 }
 
-// Experimental map replace
-WML_HANDLER_FUNCTION(replace_map, /*event_info*/, cfg)
-{
-	gamemap *game_map = resources::game_map;
-
-	gamemap map(*game_map);
-	try {
-		map.read(cfg["map"]);
-	} catch(incorrect_map_format_error&) {
-		lg::wml_error << "replace_map: Unable to load map " << cfg["map"] << "\n";
-		return;
-	} catch(twml_exception& e) {
-		e.show(*resources::screen);
-		return;
-	}
-	if (map.total_width() > game_map->total_width()
-	|| map.total_height() > game_map->total_height()) {
-		if (!cfg["expand"].to_bool()) {
-			lg::wml_error << "replace_map: Map dimension(s) increase but expand is not set\n";
-			return;
-		}
-	}
-	if (map.total_width() < game_map->total_width()
-	|| map.total_height() < game_map->total_height()) {
-		if (!cfg["shrink"].to_bool()) {
-			lg::wml_error << "replace_map: Map dimension(s) decrease but shrink is not set\n";
-			return;
-		}
-		unit_map *units = resources::units;
-		unit_map::iterator itor;
-		for (itor = units->begin(); itor != units->end(); ) {
-			if (!map.on_board(itor->get_location())) {
-				if (!try_add_unit_to_recall_list(itor->get_location(), *itor)) {
-					lg::wml_error << "replace_map: Cannot add a unit that would become off-map to the recall list\n";
-				}
-				// units->erase(itor++);
-				units->erase(itor->get_location());
-				itor++;
-			} else {
-				++itor;
-			}
-		}
-	}
-	*game_map = map;
-	resources::screen->reload_map();
-	screen_needs_rebuild = true;
-	// ai::manager::raise_map_changed();
-}
-
 // Experimental data persistence
 WML_HANDLER_FUNCTION(set_global_variable,/**/,pcfg)
 {
@@ -2773,23 +2672,21 @@ static void commit_wmi_commands() {
 
 static bool process_event(game_events::event_handler& handler, const game_events::queued_event& ev)
 {
-	if (handler.disabled())
+	if (handler.disabled()) {
 		return false;
+	}
 
 	unit_map* units = resources::units;
 	hero_map& heros = *resources::heros;
-	unit* unit1 = NULL;
-	unit_map::iterator u_itor;
-	if ((u_itor = units->find(ev.loc1)) != units->end()) {
-		unit1 = &*u_itor;
-	}
+	unit* unit1 = units->find_unit(ev.loc1, true);
+	
 	unit* unit2 = NULL;
 	artifical* city = NULL;
 	if (unit1 && unit1->is_city() && ev.loc2.x == MAGIC_RESIDE) {
 		city = unit_2_artifical(unit1);
 		unit2 = city->reside_troops()[ev.loc2.y];
-	} else if ((u_itor = units->find(ev.loc2)) != units->end()) {
-		unit2 = &*u_itor;
+	} else {
+		unit2 = units->find_unit(ev.loc2, true);
 	}
 
 	bool filtered_unit1 = false, filtered_unit2 = false;

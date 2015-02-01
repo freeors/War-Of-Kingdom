@@ -39,10 +39,11 @@
 #include "wml_exception.hpp"
 #include "formula_string_utils.hpp"
 #include "loadscreen.hpp"
+#include "hotkeys.hpp"
 
 #include <boost/foreach.hpp>
 
-void play_replay(game_display& disp, game_state& gamestate, const config& game_config, 
+void play_replay(display& disp, game_state& gamestate, const config& game_config, 
 	hero_map& heros, hero_map& heros_start, card_map& cards, CVideo& video)
 {
 	std::string type = gamestate.classification().campaign_type;
@@ -74,7 +75,8 @@ void play_replay(game_display& disp, game_state& gamestate, const config& game_c
 		//	gamestate.abbrev = (*scenario)["abbrev"];
 
 		{
-			game_display_lock loc(disp);
+			display_lock loc(disp);
+			hotkey::scope_changer changer(game_config, "hotkey_game");
 			play_replay_level(game_config, &starting_pos, video, gamestate, heros, heros_start, cards);
 		}
 
@@ -185,7 +187,7 @@ static LEVEL_RESULT playmp_scenario(const config& game_config,
 	return res;
 }
 
-LEVEL_RESULT play_game(game_display& disp, game_state& gamestate, const config& game_config, hero_map& heros, hero_map& heros_start,
+LEVEL_RESULT play_game(display& disp, game_state& gamestate, const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards,
 		io_type_t io_type, bool skip_replay)
 {
@@ -315,7 +317,8 @@ LEVEL_RESULT play_game(game_display& disp, game_state& gamestate, const config& 
 			}
 
 			{
-				game_display_lock loc(disp);
+				display_lock loc(disp);
+				hotkey::scope_changer changer(game_config, "hotkey_game");
 				switch (io_type){
 				case IO_NONE:
 					res = playsingle_scenario(game_config, scenario, disp, gamestate, heros, heros_start, cards, story, skip_replay, end_level);

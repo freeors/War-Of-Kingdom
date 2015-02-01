@@ -352,7 +352,7 @@ public:
 	 * @param fixed_height        Does the group have a fixed height?
 	 */
 	void init_linked_size_group(const std::string& id,
-			const bool fixed_width, const bool fixed_height, bool alternate = false);
+			const bool fixed_width, const bool fixed_height, bool radio = false);
 
 	/**
 	 * Is the linked size group defined for this window?
@@ -418,9 +418,8 @@ public:
 		set_dirty();
 	}
 
-	int alternate_index() const { return alternate_index_; }
-	void alternate_uh(twidget* holder, int index = 0);
-	void alternate_bh(twidget* holder, int index = 0);
+	void radio_page_swap_uh(const tradio_page::tpage& page, twidget* holder, bool first);
+	void radio_page_swap_bh(const tradio_page::tpage& page, twidget* holder);
 
 	std::vector<tdirty_list>& dirty_list();
 	void set_keep_rect(int x, int y = -1, int w = -1, int h = -1);
@@ -580,11 +579,11 @@ private:
 	 */
 	struct tlinked_size
 	{
-		tlinked_size(const bool width = false, const bool height = false, bool alternate = false)
+		tlinked_size(const bool width = false, const bool height = false, bool radio = false)
 			: widgets()
 			, width(width)
 			, height(height)
-			, alternate(alternate)
+			, radio(radio)
 		{
 		}
 
@@ -597,14 +596,13 @@ private:
 		/** Link the widgets in the height? */
 		bool height;
 
-		/** this id is from alternate config*/
-		bool alternate;
+		/** this id is from radio config*/
+		bool radio;
 	};
 
 	/** List of the widgets, whose size are linked together. */
 	std::map<std::string, tlinked_size> linked_size_;
 
-	int alternate_index_;
 	SDL_Rect keep_rect_;
 	const twindow_builder::tresolution* definition_;
 

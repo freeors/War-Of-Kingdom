@@ -65,16 +65,12 @@ void tscroll_text_box::set_text_editable(bool editable)
 	}
 }
 
-std::string tscroll_text_box::get_value() const
+const std::string& tscroll_text_box::label() const
 {
-	if (content_grid()) {
-		const ttext_box* widget = find_widget<const ttext_box>(content_grid(), "_text_box", false, true);
-		return widget->get_value();
-	}
-	return null_str;
+	return real_label_;
 }
 
-void tscroll_text_box::set_value(const std::string& text)
+void tscroll_text_box::set_label(const std::string& text)
 {
 	if (content_grid()) {
 		ttext_box* widget = find_widget<ttext_box>(content_grid(), "_text_box", false, true);
@@ -93,6 +89,7 @@ void tscroll_text_box::insert_img(const std::string& str)
 
 void tscroll_text_box::text_changed_callback(ttext_box* widget)
 {
+	real_label_ = widget->get_value();
 	content_resize_request();
 }
 

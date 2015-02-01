@@ -8,6 +8,8 @@
 #include <windowsx.h>
 #include "gettext.hpp"
 #include "formula_string_utils.hpp"
+#include "image.hpp"
+#include "builder.hpp"
 
 #include "resource.h"
 #include "struct.h"
@@ -406,6 +408,18 @@ void menu_delete_refresh(HMENU hmenu, char *path, BOOL fDir)
 	return;
 }
 
+bool is_tb_dat(const std::string& file)
+{
+	if (file.find(terrain_builder::tb_dat_prefix) != 0) {
+		return false;
+	}
+	if (file.rfind(".dat") != file.size() - 4) {
+		return false;
+	}
+	return true;
+}
+
+
 //
 // On_DlgDDescNotify()
 //
@@ -523,7 +537,7 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 				wgen_enter_ui();
 #endif
 			}
-		} else if (!_stricmp(text, "tb.dat")) {
+		} else if (is_tb_dat(text)) {
 			strcpy(gdmgr._menu_text, TreeView_FormPath(lpNMHdr->hwndFrom, htvi, dirname(game_config::path.c_str())));
 			gdmgr._menu_lparam = (uint32_t)tvi.lParam;
 			editor_config::type = BIN_BUILDINGRULE;

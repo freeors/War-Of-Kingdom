@@ -28,6 +28,7 @@
 #include "gui/auxiliary/window_builder/control.hpp"
 #include "marked-up_text.hpp"
 #include "display.hpp"
+#include "hotkeys.hpp"
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -294,8 +295,15 @@ void tcontrol::calculate_integrate()
 	if (integrate_) {
 		delete integrate_;
 	}
-	if (get_text_maximum_width() > 0) {
-		// before place, not ready.
+	int max = get_text_maximum_width();
+	if (max > 0) {
+		// before place, w_ = 0. it indicate not ready.
+
+		// when place, mybe strenth. when strenth should extend.
+		if (text_maximum_width_ && text_maximum_width_ < max) {
+			text_maximum_width_ = max;
+		}
+
 		integrate_ = new tintegrate(label_, get_text_maximum_width(), -1, config()->text_font_size, font::NORMAL_COLOR, text_editable_);
 		if (!locator_.empty()) {
 			integrate_->fill_locator_rect(locator_, true);
@@ -561,11 +569,21 @@ tpoint tcontrol::get_best_text_size(
 	if (size.y < minimum_size.y) {
 		size.y = minimum_size.y;
 	}
+/*
+	if (size.x > maximum_size.x) {
+		if (label_.find("artifical.cpp:1766 in function") != std::string::npos) {
+			int ii = 0;
+		}
+		size.x = maximum_size.x;
+	}
 
-	DBG_GUI_L << LOG_HEADER
-			<< " label '" << debug_truncate(label_)
-			<< "' result " << size
-			<< ".\n";
+	if (size.y > maximum_size.y) {
+		if (label_.find("artifical.cpp:1766 in function") != std::string::npos) {
+			int ii = 0;
+		}
+		size.y = maximum_size.y;
+	}
+*/
 	return size;
 }
 
@@ -574,14 +592,17 @@ void tcontrol::signal_handler_show_tooltip(
 		, bool& handled
 		, const tpoint& location)
 {
-	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+	return;
+#endif
 
-	if(!tooltip_.empty()) {
+	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
+	if (!tooltip_.empty()) {
 		std::string tip = tooltip_;
 		if(!help_message_.empty()) {
 			utils::string_map symbols;
 			symbols["hotkey"] =
-					hotkey::get_hotkey(hotkey::GLOBAL__HELPTIP).get_name();
+					hotkey::get_hotkey(GLOBAL__HELPTIP).get_name();
 
 			tip = tooltip_ + utils::interpolate_variables_into_string(
 					  settings::has_helptip_message

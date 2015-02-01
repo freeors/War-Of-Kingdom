@@ -395,7 +395,7 @@ void manager::delete_game(const std::string& name)
 	// remove((get_saves_dir() + "/" + modified_name).c_str());
 }
 
-loadgame::loadgame(game_display& gui, hero_map& heros, const config& game_config, game_state& gamestate)
+loadgame::loadgame(display& gui, hero_map& heros, const config& game_config, game_state& gamestate)
 	: game_config_(game_config)
 	, gui_(gui)
 	, heros_(heros)
@@ -624,14 +624,13 @@ bool savegame::save_game_automatic(CVideo& video, bool ask_for_overwrite, const 
 		overwrite = check_overwrite(video);
 
 		if (!overwrite)
-			return save_game_interactive(video, "", gui::OK_CANCEL);
+			return save_game_interactive(video, "", true);
 	}
 
 	return save_game(&video);
 }
 
-bool savegame::save_game_interactive(CVideo& video, const std::string& message,
-									 gui::DIALOG_TYPE dialog_type)
+bool savegame::save_game_interactive(CVideo& video, const std::string& message, bool ok_cancel)
 {
 	show_confirmation_ = true;
 	create_filename();
@@ -641,7 +640,7 @@ bool savegame::save_game_interactive(CVideo& video, const std::string& message,
 
 	do{
 		try{
-			res = show_save_dialog(video, message, dialog_type);
+			res = show_save_dialog(video, message, ok_cancel);
 			exit = true;
 
 			if (res == gui2::twindow::OK){
@@ -663,18 +662,17 @@ bool savegame::save_game_interactive(CVideo& video, const std::string& message,
 	return save_game(&video);
 }
 
-int savegame::show_save_dialog(CVideo& video, const std::string& message, const gui::DIALOG_TYPE dialog_type)
+int savegame::show_save_dialog(CVideo& video, const std::string& message, bool ok_cancel)
 {
 	int res = 0;
 
 	std::string filename = filename_;
 
-	if (dialog_type == gui::OK_CANCEL){
+	if (ok_cancel){
 		gui2::tgame_save dlg(filename, title_);
 		dlg.show(video);
 		res = dlg.get_retval();
-	}
-	else if (dialog_type == gui::YES_NO){
+	} else {
 		gui2::tgame_save_message dlg(title_, filename, message);
 		dlg.show(video);
 		res = dlg.get_retval();
@@ -1106,7 +1104,7 @@ void oos_savegame::create_filename()
 	set_filename(stream.str());
 }
 
-int oos_savegame::show_save_dialog(CVideo& video, const std::string& message, const gui::DIALOG_TYPE /*dialog_type*/)
+int oos_savegame::show_save_dialog(CVideo& video, const std::string& message, bool ok_cancel)
 {
 	static bool ignore_all = false;
 	int res = 0;

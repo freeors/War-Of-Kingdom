@@ -59,6 +59,7 @@ twidget* tbuilder_scroll_text_box::build() const
 	// A textbox doesn't have a label but a text
 	ttext_box* tb = dynamic_cast<ttext_box*>(widget->content_grid()->find("_text_box", false));
 	int text_maximum_width = fix_rect.w;
+
 	if (width.has_formula()) {
 		const game_logic::map_formula_callable& size = get_screen_size_variables();
 		const unsigned w = width(size);

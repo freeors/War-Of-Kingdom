@@ -34,24 +34,24 @@ namespace gui2 {
 
 REGISTER_WIDGET3(ttext_box_definition, password_box, "text_box_definition")
 
-void tpassword_box::set_value(const std::string& text) 
+void tpassword_box::set_label(const std::string& text) 
 {
 	std::string str = text;
 	str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
-	ttext_box::set_value(str);
+	ttext_box::set_label(str);
 	if (!in_operator_) {
-		real_value_ = get_value();
-		ttext_box::set_value(std::string(utils::utf8str_len(real_value_), '*'));
+		real_value_ = label();
+		ttext_box::set_label(std::string(utils::utf8str_len(real_value_), '*'));
 	}
 }
 
-std::string tpassword_box::get_value() const
+const std::string& tpassword_box::label() const
 {
-	std::string str = ttext_box::get_value();
+	value_ = ttext_box::label();
 	if (!in_operator_) {
-		str = tintegrate::drop_escape(str);
+		value_ = tintegrate::drop_escape(value_);
 	}
-	return str;
+	return value_;
 }
 
 class tin_operator_lock
@@ -140,7 +140,7 @@ void tpassword_box::pre_function()
 	if (in_operator_ || !integrate_) {
 		return;
 	}
-	// ttext_box::set_value() will reset the selection,
+	// ttext_box::set_label() will reset the selection,
 	// we therefore have to remember it
 	const std::string before = integrate_->before_str(selection_start_.x, selection_start_.y);
 	std::string selection;
@@ -154,7 +154,7 @@ void tpassword_box::pre_function()
 
 	// Tell ttext_box the actual input of this box
 	std::string str = tintegrate::stuff_escape(real_value_);
-	ttext_box::set_value(str);
+	ttext_box::set_label(str);
 
 	// Restore the selection
 	size_t before_chars = utils::utf8str_len(before);
@@ -184,8 +184,8 @@ void tpassword_box::post_function()
 	}
 
 	// Get the input back and make ttext_box forget it
-	real_value_ = get_value();
-	ttext_box::set_value(std::string(utils::utf8str_len(real_value_), '*'));
+	real_value_ = label();
+	ttext_box::set_label(std::string(utils::utf8str_len(real_value_), '*'));
 
 	// See above
 	size_t before_chars = utils::utf8str_len(before);

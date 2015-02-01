@@ -21,7 +21,7 @@
 #include "multiplayer.hpp"
 #include "gui/dialogs/chat.hpp"
 
-class game_display;
+class display;
 class hero;
 class hero_map;
 
@@ -42,7 +42,7 @@ class tscrollbar_panel;
 class tuser_message : public tdialog, public tlobby::thandler, public tchat_
 {
 public:
-	explicit tuser_message(game_display& disp, hero_map& heros, const config& game_config);
+	explicit tuser_message(display& disp, hero_map& heros, const config& game_config);
 
 	~tuser_message();
 
@@ -83,7 +83,7 @@ private:
 	bool handle(tlobby::ttype type, const config& data);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	const config& game_config_;
 	

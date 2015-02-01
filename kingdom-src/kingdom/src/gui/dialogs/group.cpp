@@ -44,7 +44,6 @@
 #include "gui/dialogs/personnel.hpp"
 #include "gui/dialogs/exile.hpp"
 #include "gui/dialogs/message.hpp"
-#include "gui/dialogs/give.hpp"
 #include <preferences.hpp>
 #include "multiplayer.hpp"
 #include <time.h>
@@ -120,7 +119,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(group2)
 
-tgroup2::tgroup2(game_display& disp, hero_map& heros, const config& game_config, tgroup& group, bool browse)
+tgroup2::tgroup2(display& disp, hero_map& heros, const config& game_config, tgroup& group, bool browse)
 	: disp_(disp)
 	, heros_(heros)
 	, game_config_(game_config)
@@ -1343,32 +1342,6 @@ void tgroup2::remove_associate(twindow& window)
 
 void tgroup2::give_score(twindow& window)
 {
-	std::vector<http::membership>::iterator it = associate_members_.begin();
-	std::advance(it, selected_associate_);
-
-	gui2::tgive dlg(disp_, heros_, *it);
-	try {
-		dlg.show(disp_.video());
-	} catch (twml_exception& e) {
-		e.show(disp_);
-	}
-/*
-	tgroup::tassociate& a = group_.associates()[selected_associate_];
-	http::membership m = http::associate(disp_, heros_, a.username, http::associate_tag_erase);
-	if (m.uid < 0) {
-		return;
-	}
-	if (m.associate != preferences::associate()) {
-		group_.associate_from_str(m.associate);
-		preferences::set_associate(m.associate);
-	}
-
-	std::vector<http::membership>::iterator it = associate_members_.begin();
-	std::advance(it, selected_associate_);
-	associate_members_.erase(it);
-*/
-	// to this, associate memeber's associate is dirty. so don't diplay it on main window.
-	fill_associate_table(window, selected_associate_);
 }
 
 void tgroup2::refresh_associate(twindow& window)
@@ -1946,12 +1919,14 @@ void tgroup2::swap_page(twindow& window, int page, bool swap)
 	}
 	int index = page - MIN_PAGE;
 
-	if (window.alternate_index() == index) {
+	if (page_panel_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
-	window.alternate_uh(page_panel_, index);
-	window.alternate_bh(swap? page_panel_: NULL, index);
+	page_panel_->swap_uh(window, index);
+	if (swap) {
+		page_panel_->swap_bh(window);
+	}
 
 	current_page_ = page;
 

@@ -243,10 +243,8 @@ time_of_day tod_manager::time_of_day_at(const map_location& loc) const
 		get_adjacent_tiles(loc,locs+1);
 
 		for(int i = 0; i != 7; ++i) {
-			const unit_map::const_iterator itor = units.find(locs[i]);
-			if(itor != units.end() &&
-			    itor->get_ability_bool("illuminates") &&
-			    !itor->incapacitated())
+			unit* itor = units.find_unit(locs[i], true);
+			if (itor && itor->get_ability_bool("illuminates") && !itor->incapacitated())
 			{
 				unit_ability_list illum = itor->get_abilities("illuminates");
 				unit_abilities::effect illum_effect(illum, light, false);

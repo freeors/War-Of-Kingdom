@@ -56,7 +56,7 @@ struct tsubcontinent_param {
 class tsiege_tent : public tdialog
 {
 public:
-	explicit tsiege_tent(game_display& disp, hero_map& heros, game_state& state, const config& game_config, tsubcontinent_param* param);
+	explicit tsiege_tent(display& disp, hero_map& heros, game_state& state, const config& game_config, tsubcontinent_param* param);
 
 	config& get_scenario() { return scenario_; }
 protected:
@@ -88,7 +88,7 @@ private:
 	void refresh_interior_ui(tlabel& label, const std::string& interior_str);
 	std::vector<std::vector<std::string> > crop_map(std::vector<std::vector<std::string> >& full_map_str, const map_location& from_loc, const map_location& to_loc);
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	game_state& state_;
 	const config& game_config_;

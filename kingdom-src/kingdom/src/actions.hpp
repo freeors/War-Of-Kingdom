@@ -404,7 +404,7 @@ const unit_type* select_unit_type(const team& current_team, const hero& master, 
 
 bool verify_siege_map_data(const config& game_config, const std::string& map_data);
 
-const ttechnology& browse_stratagem(game_display& disp, int stratagem_tag);
+const ttechnology& browse_stratagem(display& disp, int stratagem_tag);
 
 bool has_enemy_in_3range(const unit_map& units, const gamemap& gmap, const team& current_team, const map_location& loc);
 
@@ -413,5 +413,7 @@ void do_unstage_hero(unit_map& units, hero& h);
 std::string format_loc(const unit_map& units, const map_location& loc, int side);
 
 void do_hate_relation(hero& h1, hero& h2, bool set);
+
+surface generate_rpg_surface(hero& h);
 
 #endif

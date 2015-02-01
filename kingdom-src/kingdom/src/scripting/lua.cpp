@@ -543,9 +543,7 @@ unit *lua_unit::get()
 	}
 
 	// unit_map::iterator ui = resources::units->find(uid);
-	unit_map::iterator ui;
-	if (!ui.valid()) return NULL;
-	return &*ui;
+	return NULL;
 }
 
 /**
@@ -1104,7 +1102,7 @@ static int intf_get_unit(lua_State *L)
 	int y = luaL_optint(L, 2, 0) - 1;
 
 	unit_map &units = *resources::units;
-	unit_map::const_iterator ui;
+	unit* ui = NULL;
 /*
 	if (lua_isnoneornil(L, 2)) {
 		ui = units.find(x + 1);
@@ -1112,7 +1110,7 @@ static int intf_get_unit(lua_State *L)
 		ui = units.find(map_location(x, y));
 	}
 */
-	if (!ui.valid()) return 0;
+	if (!ui) return 0;
 
 	new(lua_newuserdata(L, sizeof(lua_unit))) lua_unit(ui->underlying_id());
 	lua_pushlightuserdata(L
@@ -1129,13 +1127,8 @@ static int intf_get_unit(lua_State *L)
  */
 static int intf_get_displayed_unit(lua_State *L)
 {
-/*	unit_map::const_iterator ui = find_visible_unit(
-		resources::screen->displayed_unit_hex(),
-		(*resources::teams)[resources::screen->viewing_team()],
-		resources::screen->show_everything());
-*/
-	unit_map::const_iterator ui;
-	if (!ui.valid()) return 0;
+	unit* ui = NULL;
+	if (!ui) return 0;
 
 	new(lua_newuserdata(L, sizeof(lua_unit))) lua_unit(ui->underlying_id());
 	lua_pushlightuserdata(L
@@ -1183,9 +1176,10 @@ static int intf_get_units(lua_State *L)
 		return 1;
 	}
 
-	for (unit_map::const_iterator ui = units.begin(), ui_end = units.end();
-	     ui != ui_end; ++ui)
+	for (unit_map::const_iterator it = units.begin(), ui_end = units.end();
+	     it != ui_end; ++ it)
 	{
+		unit* ui = dynamic_cast<unit*>(&*it);
 		if (!filter.null() && !ui->matches_filter(filter, ui->get_location()))
 			continue;
 		new(lua_newuserdata(L, sizeof(lua_unit))) lua_unit(ui->underlying_id());
@@ -1436,8 +1430,8 @@ static int intf_highlight_hex(lua_State *L)
 	resources::screen->highlight_hex(loc);
 	resources::screen->display_unit_hex(loc);
 
-	unit_map::const_iterator i = resources::units->find(loc);
-	if(i != resources::units->end()) {
+	unit* i = resources::units->find_unit(loc, true);
+	if (i) {
 		resources::screen->highlight_reach(pathfind::paths(
 			*resources::game_map, *resources::units, loc, *resources::teams, false,
 			(*i).get_ability_bool("teleport"), resources::teams->front()));
@@ -1963,8 +1957,7 @@ static int intf_find_path(lua_State *L)
 		src.x = luaL_checkinteger(L, arg) - 1;
 		++arg;
 		src.y = luaL_checkinteger(L, arg) - 1;
-		unit_map::const_iterator ui = units.find(src);
-		if (ui.valid()) u = &*ui;
+		u = units.find_unit(src, true);
 		++arg;
 	}
 
@@ -2075,10 +2068,10 @@ static int intf_find_reach(lua_State *L)
 		src.x = luaL_checkinteger(L, arg) - 1;
 		++arg;
 		src.y = luaL_checkinteger(L, arg) - 1;
-		unit_map::const_iterator ui = units.find(src);
-		if (!ui.valid())
+		unit* ui = units.find_unit(src, true);
+		if (!ui)
 			return luaL_argerror(L, 1, "unit not found");
-		u = &*ui;
+		u = ui;
 		++arg;
 	}
 
@@ -3867,8 +3860,8 @@ bool LuaKernel::run_filter(char const *name, unit const &u)
 {
 	lua_State *L = mState;
 
-	unit_map::const_iterator ui = resources::units->find(u.get_location());
-	if (!ui.valid()) return false;
+	unit* ui = resources::units->find_unit(u.get_location(), true);
+	if (!ui) return false;
 
 	// Get the user filter by name.
 	lua_pushstring(L, name);

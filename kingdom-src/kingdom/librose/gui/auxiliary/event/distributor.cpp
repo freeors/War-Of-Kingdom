@@ -209,12 +209,12 @@ void tmouse_motion::signal_handler_sdl_wheel(
 {
 	DBG_GUI_E << LOG_HEADER << event << ".\n";
 
-	if(mouse_captured_) {
+	if (mouse_captured_) {
 		assert(mouse_focus_);
 		owner_.fire(event, *mouse_focus_, coordinate);
 	} else {
 		twidget* mouse_over = owner_.find_at(coordinate, true);
-		if(mouse_over) {
+		if (mouse_over) {
 			owner_.fire(event, *mouse_over, coordinate);
 		}
 	}

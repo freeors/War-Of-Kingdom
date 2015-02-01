@@ -71,7 +71,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(alipay)
 
-talipay::talipay(game_display& disp, hero_map& heros, const std::string& label, int inapp)
+talipay::talipay(display& disp, hero_map& heros, const std::string& label, int inapp)
 	: disp_(disp)
 	, heros_(heros)
 	, inapp_(inapp)
@@ -86,12 +86,12 @@ void talipay::pre_show(CVideo& /*video*/, twindow& window)
 	std::stringstream strstr;
 
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "number", false, true);
-	user_widget->set_value("");
+	user_widget->set_label("");
 	user_widget->set_maximum_length(max_text_size);
 	user_widget->set_visible(twidget::INVISIBLE);
 
 	user_widget = find_widget<ttext_box>(&window, "buyer", false, true);
-	user_widget->set_value("");
+	user_widget->set_label("");
 	user_widget->set_maximum_length(max_text_size);
 	user_widget->set_visible(twidget::INVISIBLE);
 
@@ -151,7 +151,7 @@ std::string talipay::text_box_str(twindow& window, const std::string& id, const 
 	utils::string_map symbols;
 
 	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
-	std::string str = widget->get_value();
+	std::string str = widget->label();
 
 	if (!allow_empty && str.empty()) {
 		symbols["key"] = tintegrate::generate_format(name, "red");

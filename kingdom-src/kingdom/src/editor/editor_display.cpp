@@ -42,7 +42,7 @@ gui2::tbutton* create_terrain_button(editor_controller& controller, const t_stri
 
 editor_display::editor_display(editor_controller& controller, CVideo& video, const editor_map& map,
 		const config& theme_cfg, const config& level)
-	: display(&controller, video, &map, theme_cfg, level, gui2::tgame_theme::NUM_REPORTS)
+	: hex_display(&controller, video, &map, theme_cfg, level, gui2::tgame_theme::NUM_REPORTS)
 	, controller_(controller)
 	, brush_locations_()
 	, toolbar_hint_()
@@ -107,7 +107,7 @@ void editor_display::reload_terrain_palette(const t_translation::t_list& terrain
 	int n = 0;
 	for (t_translation::t_list::const_iterator it = terrains.begin(); it != terrains.end(); ++ it, n ++) {
 		const t_translation::t_terrain& terrain = *it;
-		const std::string filename = "terrain/" + map_->get_terrain_info(terrain).editor_image() + ".png";
+		const std::string filename = image::terrain_prefix + map_->get_terrain_info(terrain).editor_image() + ".png";
 		surface image(image::get_image(filename));
 
 		const gui2::tpoint& unit_size = terrain_palette_->get_unit_size();
@@ -166,7 +166,7 @@ void editor_display::draw_hex(const map_location& loc)
 		}
 
 		if (brush_locations_.find(loc) != brush_locations_.end()) {
-			static const image::locator brush(game_config::images::editor_brush);
+			static const image::locator brush(game_config::terrain::editor_brush);
 			drawing_buffer_add(LAYER_MOUSEOVER_OVERLAY, loc, xpos, ypos,
 					image::get_image(brush, image::SCALED_TO_HEX));
 		}

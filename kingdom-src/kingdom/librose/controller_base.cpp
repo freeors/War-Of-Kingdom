@@ -20,6 +20,7 @@
 #include "display.hpp"
 #include "preferences.hpp"
 #include "mouse_handler_base.hpp"
+#include "hotkeys.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -110,7 +111,7 @@ void controller_base::handle_event(const SDL_Event& event)
 		// in which case the key press events should go only to it.
 		if(have_keyboard_focus()) {
 			process_keydown_event(event);
-			hotkey::key_event(get_display(),event.key,this);
+			// hotkey::key_event(get_display(),event.key,this);
 		} else {
 			process_focus_keydown_event(event);
 			break;
@@ -181,7 +182,14 @@ void controller_base::handle_event(const SDL_Event& event)
 		if (event.wheel.which == SDL_TOUCH_MOUSEID) {
 			break;
 		}
-		handle_scroll_wheel(event.wheel.x, event.wheel.y, MOUSE_HIT_THRESHOLD, MOUSE_MOTION_THRESHOLD);
+		{
+			int x, y;
+			SDL_GetMouseState(&x, &y);
+			if (!point_in_rect(x, y, disp.map_outside_area())) {
+				break;
+			}
+			handle_scroll_wheel(event.wheel.x, event.wheel.y, MOUSE_HIT_THRESHOLD, MOUSE_MOTION_THRESHOLD);
+		}
 		break;
 
 	case SDL_MOUSEBUTTONDOWN:
@@ -376,4 +384,54 @@ const config& controller_base::get_theme(const config& game_config, std::string 
 
 	static config empty;
 	return empty;
+}
+
+bool controller_base::actived_context_menu(const std::string& id) const
+{ 
+	const display& disp = get_display();
+	std::pair<std::string, std::string> item = gui2::tcontext_menu::extract_item(id);
+	int command = hotkey::get_hotkey(item.first).get_id();
+
+	int zoom = disp.hex_width();
+
+	switch (command) {
+	case HOTKEY_ZOOM_IN:
+		return zoom < disp.max_zoom();
+	case HOTKEY_ZOOM_OUT:
+		return zoom > disp.min_zoom();
+	}
+
+	return true; 
+}
+
+void controller_base::execute_command(int command, const std::string& sparam)
+{
+	if (!can_execute_command(command, sparam)) {
+		return;
+	}
+	return execute_command2(command, sparam);
+}
+
+void controller_base::execute_command2(int command, const std::string& sparam)
+{
+	const int zoom_amount = 4;
+	display& disp = get_display();
+
+	switch(command) {
+	case HOTKEY_SYSTEM:
+		// system();
+		return;
+
+	case HOTKEY_ZOOM_IN:
+		disp.set_zoom(zoom_amount);
+		return;
+
+	case HOTKEY_ZOOM_OUT:
+		disp.set_zoom(-zoom_amount);
+		return;
+
+	case HOTKEY_ZOOM_DEFAULT:
+		disp.set_default_zoom();
+		return;
+	}
 }

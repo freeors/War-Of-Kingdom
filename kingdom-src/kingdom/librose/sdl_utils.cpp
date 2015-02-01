@@ -247,9 +247,6 @@ surface create_optimized_surface(const surface &surf)
 surface stretch_surface_horizontal(
 		const surface& surf, const unsigned w, const bool optimize)
 {
-	// Since SDL version 1.1.5 0 is transparent, before 255 was transparent.
-	assert(SDL_ALPHA_TRANSPARENT==0);
-
 	if(surf == NULL)
 		return NULL;
 
@@ -292,9 +289,6 @@ surface stretch_surface_horizontal(
 surface stretch_surface_vertical(
 		const surface& surf, const unsigned h, const bool optimize)
 {
-	// Since SDL version 1.1.5 0 is transparent, before 255 was transparent.
-	assert(SDL_ALPHA_TRANSPARENT==0);
-
 	if(surf == NULL)
 		return NULL;
 
@@ -335,13 +329,11 @@ surface stretch_surface_vertical(
 // NOTE: Don't pass this function 0 scaling arguments.
 surface scale_surface(const surface &surf, int w, int h, bool optimize)
 {
-	// Since SDL version 1.1.5 0 is transparent, before 255 was transparent.
-	assert(SDL_ALPHA_TRANSPARENT==0);
-
-	if(surf == NULL)
+	if (surf == NULL) {
 		return NULL;
+	}
 
-	if(w == surf->w && h == surf->h) {
+	if (w == surf->w && h == surf->h) {
 		return surf;
 	}
 	assert(w >= 0);
@@ -1267,7 +1259,7 @@ void blur_surface(surface& surf, SDL_Rect rect, unsigned depth)
 
 surface blur_alpha_surface(const surface &surf, int depth, bool optimize)
 {
-	if(surf == NULL) {
+	if (surf == NULL) {
 		return NULL;
 	}
 
@@ -1389,8 +1381,9 @@ surface blur_alpha_surface(const surface &surf, int depth, bool optimize)
 
 surface cut_surface(const surface &surf, SDL_Rect const &r)
 {
-	if(surf == NULL)
+	if (surf == NULL) {
 		return NULL;
+	}
 
 	surface res = create_compatible_surface(surf, r.w, r.h);
 
@@ -1443,7 +1436,7 @@ surface cut_surface(const surface &surf, SDL_Rect const &r)
 
 surface blend_surface(const surface &surf, double amount, Uint32 color, bool optimize)
 {
-	if(surf== NULL) {
+	if (surf== NULL) {
 		return NULL;
 	}
 
@@ -1490,13 +1483,13 @@ surface blend_surface(const surface &surf, double amount, Uint32 color, bool opt
 
 surface flip_surface(const surface &surf, bool optimize)
 {
-	if(surf == NULL) {
+	if (surf == NULL) {
 		return NULL;
 	}
 
 	surface nsurf(make_neutral_surface(surf));
 
-	if(nsurf == NULL) {
+	if (nsurf == NULL) {
 		std::cerr << "could not make neutral surface...\n";
 		return NULL;
 	}
@@ -1519,7 +1512,7 @@ surface flip_surface(const surface &surf, bool optimize)
 
 surface flop_surface(const surface &surf, bool optimize)
 {
-	if(surf == NULL) {
+	if (surf == NULL) {
 		return NULL;
 	}
 
@@ -1549,8 +1542,9 @@ surface flop_surface(const surface &surf, bool optimize)
 
 surface create_compatible_surface(const surface &surf, int width, int height)
 {
-	if(surf == NULL)
+	if (surf == NULL) {
 		return NULL;
+	}
 
 	if(width == -1)
 		width = surf->w;
@@ -1574,7 +1568,7 @@ void blit_surface(const surface& src,
 
 	// Get the areas to blit
 	SDL_Rect dst_rect = create_rect(0, 0, dst->w, dst->h);
-	if(dstrect) {
+	if (dstrect) {
 		dst_rect.x = dstrect->x;
 		dst_rect.w -= dstrect->x;
 

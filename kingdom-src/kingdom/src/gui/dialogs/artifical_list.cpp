@@ -162,7 +162,9 @@ void tartifical_list::fill_table(int catalog)
 {
 	const team& viewing_team = teams_[gui_.viewing_team()];
 
-	for (unit_map::const_iterator i = units_.begin(); i != units_.end(); ++i) {
+	for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it) {
+		unit* i = dynamic_cast<unit*>(&*it);
+
 		if ((side_ >= 1) && (i->side() != side_)) {
 			continue;
 		}
@@ -259,7 +261,7 @@ void tartifical_list::catalog_page(twindow& window, int catalog, bool swap)
 	}
 	int index = catalog - MIN_PAGE;
 
-	if (window.alternate_index() == index) {
+	if (hero_table_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
@@ -269,12 +271,12 @@ void tartifical_list::catalog_page(twindow& window, int catalog, bool swap)
 		selected_row = hero_table_->get_selected_row();
 	}
 
-	window.alternate_uh(hero_table_, index);
+	hero_table_->swap_uh(window, index);
 
 	fill_table(catalog);
 
 	if (swap) {
-		window.alternate_bh(hero_table_, index);
+		hero_table_->swap_bh(window);
 		hero_table_->select_row(selected_row);
 	} else {
 		city_changed(window);

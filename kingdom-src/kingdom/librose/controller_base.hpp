@@ -19,7 +19,6 @@
 
 #include "global.hpp"
 
-#include "hotkeys.hpp"
 #include "key.hpp"
 #include "gui/widgets/button.hpp"
 class CVideo;
@@ -28,7 +27,7 @@ namespace events {
 class mouse_handler_base;
 }
 
-class controller_base : public hotkey::command_executor, public events::handler
+class controller_base : public events::handler
 {
 public:
 	enum DIRECTION {UP, DOWN, LEFT, RIGHT, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
@@ -47,8 +46,13 @@ public:
 	virtual events::mouse_handler_base& get_mouse_handler_base() = 0;
 
 	virtual bool in_context_menu(const std::string& id) const { return true; }
-	virtual bool actived_context_menu(const std::string& id) const { return true; }
+	virtual bool actived_context_menu(const std::string& id) const;
 	virtual void prepare_show_menu(gui2::tbutton& widget, const std::string& id, int width, int height) const {}
+
+	void execute_command(int command, const std::string& minor);
+
+	virtual void execute_command2(int command, const std::string& sparam);
+	virtual bool can_execute_command(int command, const std::string& sparam) const { return true; }
 
 protected:
 	/**
@@ -66,6 +70,7 @@ protected:
 	 * Get a reference to a display member a derived class uses
 	 */
 	virtual display& get_display() = 0;
+	virtual const display& get_display() const = 0;
 
 
 	/**

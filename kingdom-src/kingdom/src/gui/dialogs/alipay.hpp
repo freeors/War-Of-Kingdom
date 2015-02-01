@@ -18,7 +18,7 @@
 
 #include "gui/dialogs/dialog.hpp"
 
-class game_display;
+class display;
 class hero_map;
 
 namespace gui2 {
@@ -26,7 +26,7 @@ namespace gui2 {
 class talipay : public tdialog
 {
 public:
-	talipay(game_display& disp, hero_map& heros, const std::string& label, int inapp);
+	talipay(display& disp, hero_map& heros, const std::string& label, int inapp);
 
 private:
 
@@ -43,7 +43,7 @@ private:
 	void pay(twindow& window);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	const int inapp_;
 };

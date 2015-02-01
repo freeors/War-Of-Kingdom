@@ -25,6 +25,7 @@
 #include "map_exception.hpp"
 #include "../../image.hpp"
 #include "../../minimap.hpp"
+#include "game_config.hpp"
 
 #include <boost/bind.hpp>
 
@@ -208,6 +209,7 @@ const surface tminimap::get_image(const int w, const int h)
 		if (type_ == IMG) {
 			surf = image::get_image(map_data_);
 		} else if (type_ == TILE_MAP) {
+			image::ttile_switch_lock lock(game_config::tile_hex);
 			const gamemap map(*terrain_, map_data_);
 			surf = image::getMinimap(w, h, map, NULL);
 		}

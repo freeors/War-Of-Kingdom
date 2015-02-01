@@ -67,8 +67,10 @@ tbuilder_listbox::tbuilder_listbox(const config& cfg)
 	VALIDATE(list_builder->rows == 1
 			, _("A 'list_definition' should contain one row."));
 
+	tradio_page::parse_cfg(cfg.child("radio"), pages);
+
 	const config &data = cfg.child("list_data");
-	if(!data) {
+	if (!data) {
 		return;
 	}
 
@@ -133,8 +135,7 @@ twidget* tbuilder_listbox::build() const
 		return grid;
 	}
 
-	tlistbox *widget = new tlistbox(
-			true, true, tgenerator_::vertical_list, true);
+	tlistbox *widget = new tlistbox(pages, true, true, tgenerator_::vertical_list, true);
 
 	init_control(widget);
 

@@ -20,7 +20,7 @@
 #include "gui/dialogs/lobby/lobby_info.hpp"
 
 class config;
-class game_display;
+class display;
 
 namespace gui2 {
 
@@ -32,7 +32,7 @@ class tmp_create_game : public tdialog, public lobby_base, public trandom_map, p
 {
 public:
 
-	explicit tmp_create_game(game_display& gui, const config& cfg, bool local_only);
+	explicit tmp_create_game(display& gui, const config& cfg, bool local_only);
 
 	int num_turns() const { return num_turns_; }
 
@@ -40,7 +40,7 @@ protected:
 	void update_map_settings(twindow& window);
 	void post_update_map(twindow& window, int select);
 
-	game_display& gui() { return gui_; }
+	display& gui() { return gui_; }
 private:
 
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
@@ -79,7 +79,7 @@ public:
 	void maximal_defeated_activity(twindow& window);
 
 private:
-	game_display& gui_;
+	display& gui_;
 	int num_turns_;
 	int era_index_;
 	bool local_only_;

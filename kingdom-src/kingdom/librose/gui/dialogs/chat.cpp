@@ -191,13 +191,13 @@ void tchat_::send(bool& handled, bool& halt)
 	if (!current_chat_to_) {
 		return;
 	}
-	std::string input_str = input_->get_value();
+	std::string input_str = input_->label();
 	if (is_blank_str(input_str)) {
 		return;
 	}
 	send_whisper(group_, current_chat_to_->username, input_str);
 
-	input_->set_value(null_str);
+	input_->set_label(null_str);
 
 	add_chat_log(current_chat_to_->uid, input_str, false);
 	chat_2_scroll_label(*history_, current_chat_to_->uid, current_chat_to_->username);
@@ -527,7 +527,7 @@ void tchat_::pre_show(twindow& window)
 		user_to_title(*current_chat_to_);
 	}
 
-	input_->set_value(swap_page_input_);
+	input_->set_label(swap_page_input_);
 
 	input_tb_->set_src_pos(src_pos_);
 
@@ -603,7 +603,7 @@ void tchat_::pre_chating_show(twindow& window)
 		current_chat_to_ = &swap_page_chat_to_;
 		user_to_title(swap_page_chat_to_);
 	}
-	input_->set_value(swap_page_input_);
+	input_->set_label(swap_page_input_);
 	input_tb_->set_src_pos(src_pos_);
 
 	ready_face(window);
@@ -747,7 +747,7 @@ void tchat_::swap_page(twindow& window, int page, bool swap)
 	}
 	int index = page - min_page_;
 
-	if (window.alternate_index() == index) {
+	if (page_panel_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
@@ -760,8 +760,10 @@ void tchat_::swap_page(twindow& window, int page, bool swap)
 		desire_swap_page(window, current_page_, false);
 	}
 
-	window.alternate_uh(page_panel_, index);
-	window.alternate_bh(swap? page_panel_: NULL, index);
+	page_panel_->swap_uh(window, index);
+	if (swap) {
+		page_panel_->swap_bh(window);
+	}
 
 	if (page == chat_page_) {
 		tchat_::pre_show(window);
@@ -789,7 +791,7 @@ void tchat_::swap_page2(bool& handled, bool& halt, int page)
 		}
 	}
 	src_pos_ = input_tb_->get_src_pos();
-	swap_page_input_ = input_->get_value();
+	swap_page_input_ = input_->label();
 
 	swap_page(window, page, true);
 

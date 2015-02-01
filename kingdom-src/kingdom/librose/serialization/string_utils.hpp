@@ -326,6 +326,12 @@ bool utf8str_compare(const std::string& str1, const std::string& str2);
 std::set<int> to_set_int(const std::string& value);
 
 std::vector<int> to_vector_int(const std::string& value);
+void transform_tolower(std::string& str);
+void transform_tolower(const std::string& src, std::string& dst);
+
+extern std::string errstr;
+bool isvalid_id(const std::string& id, bool first_must_alpha, int min, int max);
+bool isvalid_variable(const std::string& id);
 
 }
 

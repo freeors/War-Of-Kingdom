@@ -96,10 +96,9 @@ twindow *build(CVideo &video, const twindow_builder::tresolution *definition)
 
 	window->definition_ = definition;
 
-	BOOST_FOREACH(const twindow_builder::tresolution::tlinked_group& lg,
-			definition->linked_groups) {
+	BOOST_FOREACH(const tlinked_group& lg, definition->linked_groups) {
 
-		if(window->has_linked_size_group(lg.id)) {
+		if (window->has_linked_size_group(lg.id)) {
 			utils::string_map symbols;
 			symbols["id"] = lg.id;
 			t_string msg = vgettext(
@@ -442,49 +441,6 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
 		}
 
 		linked_groups.push_back(linked_group);
-	}
-
-	//
-	// alternate
-	//
-	const config& alternate_cfg = cfg.child("alternate");
-	if (!alternate_cfg) return;
-
-	BOOST_FOREACH(const config &item, alternate_cfg.child_range("item")) {
-		alternate_items.push_back(talternate_item());
-		talternate_item& alternate = alternate_items.back();
-
-		if (item.child("linked_group")) {
-			BOOST_FOREACH(const config &lg, item.child_range("linked_group")) {
-				tlinked_group linked_group;
-				linked_group.id = lg["id"].str();
-				linked_group.fixed_width = lg["fixed_width"].to_bool();
-				linked_group.fixed_height = lg["fixed_height"].to_bool();
-
-				VALIDATE(!linked_group.id.empty()
-						, missing_mandatory_wml_key("linked_group", "id"));
-
-				if(!(linked_group.fixed_width || linked_group.fixed_height)) {
-					utils::string_map symbols;
-					symbols["id"] = linked_group.id;
-					t_string msg = vgettext(
-							  "Linked '$id' group needs a 'fixed_width' or "
-								"'fixed_height' key."
-							, symbols);
-
-					VALIDATE(false, msg);
-				}
-
-				alternate.linked_groups.push_back(linked_group);
-			}
-		}
-
-		if (item.child("list_definition")) {
-			alternate.header = new tbuilder_grid(item.child("header"));
-			alternate.row = new tbuilder_grid(item.child("list_definition"));
-		} else {
-			alternate.header = new tbuilder_grid(item.child("grid"));
-		}
 	}
 }
 

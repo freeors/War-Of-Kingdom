@@ -23,10 +23,10 @@
 #include "gui/widgets/spacer.hpp"
 #include "gui/widgets/window.hpp"
 
-#include "posix.h"
-
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
+
+#include "posix.h"
 
 #define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
 #define LOG_HEADER LOG_SCOPE_HEADER + ':'
@@ -81,6 +81,7 @@ tscrollbar_container::tscrollbar_container(const unsigned canvas_count, bool lis
 	, best_size_(0, 0)
 	, size_calculated_(false)
 	, scroll_to_end_(false)
+	, self_layout_content_(false)
 {
 	connect_signal<event::SDL_KEY_DOWN>(boost::bind(
 			&tscrollbar_container::signal_handler_sdl_key_down
@@ -413,6 +414,14 @@ static void set_scrollbar_mode(tgrid* scrollbar_grid, tscrollbar_* scrollbar,
 
 void tscrollbar_container::place(const tpoint& origin, const tpoint& size)
 {
+	// once place, always this size! BUG!!!
+	if (best_size_.x && best_size_.x != size.x) {
+		best_size_.x = size.x;
+	}
+	if (best_size_.y && best_size_.y != size.y) {
+		best_size_.y = size.y;
+	}
+
 	// Inherited.
 	tcontainer_::place(origin, size);
 
@@ -518,15 +527,33 @@ void tscrollbar_container::set_visible_area(const SDL_Rect& area)
 twidget* tscrollbar_container::find_at(
 		const tpoint& coordinate, const bool must_be_active)
 {
-	return tscrollbar_container_implementation
-			::find_at<twidget>(*this, coordinate, must_be_active);
+	VALIDATE(content_ && content_grid_, null_str);
+
+	twidget* result = tcontainer_::find_at(coordinate, must_be_active);
+	if (result == content_) {
+		result = content_grid_->find_at(coordinate, must_be_active);
+		if (!result) {
+			// to support SDL_WHEEL_DOWN/SDL_WHEEL_UP, must can find at "empty" area.
+			result = content_grid_;
+		}
+	}
+	return result;
 }
 
 const twidget* tscrollbar_container::find_at(const tpoint& coordinate,
 		const bool must_be_active) const
 {
-	return tscrollbar_container_implementation
-			::find_at<const twidget>(*this, coordinate, must_be_active);
+	VALIDATE(content_ && content_grid_, null_str);
+
+	const twidget* result = tcontainer_::find_at(coordinate, must_be_active);
+	if (result == content_) {
+		result = content_grid_->find_at(coordinate, must_be_active);
+		if (!result) {
+			// to support SDL_WHEEL_DOWN/SDL_WHEEL_UP, must can find at "empty" area.
+			result = content_grid_;
+		}
+	}
+	return result;
 }
 
 twidget* tscrollbar_container::find(
@@ -859,10 +886,7 @@ void tscrollbar_container::child_populate_dirty_list(twindow& caller,
 
 void tscrollbar_container::set_content_size(const tpoint& origin, const tpoint& size)
 {
-	const SDL_Rect& rect = content_grid_->fix_rect();
-	if (!rect.w || !rect.h) {
-		content_grid_->place(origin, size);
-	}
+	content_grid_->place(origin, size);
 }
 
 void tscrollbar_container::show_content_rect(const SDL_Rect& rect)

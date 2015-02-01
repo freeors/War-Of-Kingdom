@@ -19,7 +19,6 @@
 #include "wml_exception.hpp"
 #include "gui/dialogs/hero_selection.hpp"
 #include "gui/widgets/window.hpp"
-#include "construct_dialog.hpp"
 #include "actions.hpp"
 #include "multiplayer.hpp"
 #include "lobby.hpp"
@@ -215,7 +214,7 @@ void hero::add_modification(unit_map& units, hero_map& heros, std::vector<team>&
 				// field troop
 				u->replace_captains_internal(*this, captains);
 				if (captains.empty()) {
-					units.erase(u);
+					units.erase2(u);
 				} else {
 					u->replace_captains(captains);
 				}
@@ -414,7 +413,7 @@ ublock& duel_ublock(const unit& u)
 
 }
 
-bool tgroup::upgrade_internal(game_display& disp, hero_map& heros, tmember* m, std::map<int, http::temployee>* employees)
+bool tgroup::upgrade_internal(display& disp, hero_map& heros, tmember* m, std::map<int, http::temployee>* employees)
 {
 	utils::string_map symbols;
 	std::stringstream err;
@@ -463,12 +462,12 @@ bool tgroup::upgrade_internal(game_display& disp, hero_map& heros, tmember* m, s
 	return true;
 }
 
-bool tgroup::upgrade_leader(game_display& disp, hero_map& heros)
+bool tgroup::upgrade_leader(display& disp, hero_map& heros)
 {
 	return upgrade_internal(disp, heros, NULL, NULL);
 }
 
-bool tgroup::upgrade_member(game_display& disp, hero_map& heros, hero& h)
+bool tgroup::upgrade_member(display& disp, hero_map& heros, hero& h)
 {
 	tmember& m = member(h);
 	return upgrade_internal(disp, heros, &m, NULL);

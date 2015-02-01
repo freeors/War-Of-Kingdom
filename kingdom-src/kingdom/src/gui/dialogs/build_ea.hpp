@@ -20,7 +20,7 @@
 #include "map_location.hpp"
 #include <vector>
 
-class game_display;
+class display;
 class team;
 class unit_map;
 class hero_map;
@@ -33,7 +33,7 @@ namespace gui2 {
 class tbuild_ea : public tdialog
 {
 public:
-	explicit tbuild_ea(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, const gamemap& map, team& current_team, int cost_exponent, const map_location& loc);
+	explicit tbuild_ea(display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, const gamemap& map, team& current_team, int cost_exponent, const map_location& loc);
 
 	const unit_type* get_selected_ut() const;
 private:
@@ -50,7 +50,7 @@ private:
 
 	void tactic_selected(twindow& window);
 private:
-	game_display& gui_;
+	display& gui_;
 	std::vector<team>& teams_;
 	unit_map& units_;
 	hero_map& heros_;

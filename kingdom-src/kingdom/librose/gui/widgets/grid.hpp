@@ -20,6 +20,8 @@
 
 namespace gui2 {
 
+class tspacer;
+
 /**
  * Base container class.
  *
@@ -38,24 +40,28 @@ public:
 	virtual ~tgrid();
 
 	/***** ***** ***** ***** LAYOUT FLAGS ***** ***** ***** *****/
+	enum {
+		VERTICAL_GROW_SEND_TO_CLIENT   = 1,
+		VERTICAL_ALIGN_TOP             = 2,
+		VERTICAL_ALIGN_CENTER          = 3,
+		VERTICAL_ALIGN_BOTTOM          = 4,
+		VERTICAL_MASK                  = 7,
+    
+	
+		HORIZONTAL_GROW_SEND_TO_CLIENT = 1 << 3,
+		HORIZONTAL_ALIGN_LEFT          = 2 << 3,
+		HORIZONTAL_ALIGN_CENTER        = 3 << 3,
+		HORIZONTAL_ALIGN_RIGHT         = 4 << 3,
+		HORIZONTAL_MASK                = 7 << 3,
+    
+		BORDER_TOP                     = 1 << 6,
+		BORDER_BOTTOM                  = 1 << 7,
+		BORDER_LEFT                    = 1 << 8,
+		BORDER_RIGHT                   = 1 << 9
+	};
+
 	static const unsigned VERTICAL_SHIFT                 = 0;
-	static const unsigned VERTICAL_GROW_SEND_TO_CLIENT   = 1 << VERTICAL_SHIFT;
-	static const unsigned VERTICAL_ALIGN_TOP             = 2 << VERTICAL_SHIFT;
-	static const unsigned VERTICAL_ALIGN_CENTER          = 3 << VERTICAL_SHIFT;
-	static const unsigned VERTICAL_ALIGN_BOTTOM          = 4 << VERTICAL_SHIFT;
-	static const unsigned VERTICAL_MASK                  = 7 << VERTICAL_SHIFT;
-
 	static const unsigned HORIZONTAL_SHIFT               = 3;
-	static const unsigned HORIZONTAL_GROW_SEND_TO_CLIENT = 1 << HORIZONTAL_SHIFT;
-	static const unsigned HORIZONTAL_ALIGN_LEFT          = 2 << HORIZONTAL_SHIFT;
-	static const unsigned HORIZONTAL_ALIGN_CENTER        = 3 << HORIZONTAL_SHIFT;
-	static const unsigned HORIZONTAL_ALIGN_RIGHT         = 4 << HORIZONTAL_SHIFT;
-	static const unsigned HORIZONTAL_MASK                = 7 << HORIZONTAL_SHIFT;
-
-	static const unsigned BORDER_TOP                     = 1 << 6;
-	static const unsigned BORDER_BOTTOM                  = 1 << 7;
-	static const unsigned BORDER_LEFT                    = 1 << 8;
-	static const unsigned BORDER_RIGHT                   = 1 << 9;
 	static const unsigned BORDER_ALL                     =
 		BORDER_TOP | BORDER_BOTTOM | BORDER_LEFT | BORDER_RIGHT;
 
@@ -310,7 +316,7 @@ public:
 	}; // class tchild
 
 	const tchild* children() const { return children_; }
-	size_t children_vsize() const;
+	int children_vsize() const;
 
 public:
 	/** Iterator for the tchild items. */
@@ -375,7 +381,7 @@ private:
 	size_t children_size_;
 	size_t children_vsize_;
 
-	std::vector<twidget*> stuff_widget_;
+	std::vector<tspacer*> stuff_widget_;
 	size_t stuff_size_;
 	tpoint last_draw_end_;
 

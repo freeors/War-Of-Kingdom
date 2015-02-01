@@ -71,7 +71,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(mp_login)
 
-tmp_login::tmp_login(game_display& disp, hero_map& heros, const std::string& label)
+tmp_login::tmp_login(display& disp, hero_map& heros, const std::string& label)
 	: disp_(disp)
 	, heros_(heros)
 	, orignal_username_(preferences::login())
@@ -94,11 +94,11 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 	label->set_label(strstr.str());
 
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "username", false, true);
-	user_widget->set_value(preferences::login());
+	user_widget->set_label(preferences::login());
 	user_widget->set_maximum_length(max_login_size);
 
 	tpassword_box* pw = find_widget<tpassword_box>(&window, "password", false, true);
-	pw->set_value(preferences::password());
+	pw->set_label(preferences::password());
 	pw->set_maximum_length(max_login_size);
 
 	tcontrol* control = find_widget<tcontrol>(&window, "remember_password", false, true);
@@ -137,7 +137,7 @@ void tmp_login::post_show(twindow& window)
 {
 }
 
-extern bool is_valid_username(const std::string& key, const std::string& str, game_display* disp);
+extern bool is_valid_username(const std::string& key, const std::string& str, display* disp);
 
 std::string tmp_login::text_box_str(twindow& window, const std::string& id, const std::string& name, int min, int max, bool allow_empty)
 {
@@ -147,7 +147,7 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 	std::string str;
 	if (id != "password") {
 		ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
-		str = widget->get_value();
+		str = widget->label();
 	} else {
 		tpassword_box* pd = find_widget<tpassword_box>(&window, "password", false, true);
 		str = pd->get_real_value();
@@ -220,7 +220,7 @@ void tmp_login::register1(twindow& window)
 
 	if (create(window, REGISTER)) {
 		ttext_box* widget = find_widget<ttext_box>(&window, "validate_password", false, true);
-		std::string validate_password = widget->get_value();
+		std::string validate_password = widget->label();
 		if (validate_password != preferences::password()) {
 			symbols["validate_password"] = tintegrate::generate_format(_("Validate password"), "red");
 			symbols["password"] = tintegrate::generate_format(_("Password"), "red");

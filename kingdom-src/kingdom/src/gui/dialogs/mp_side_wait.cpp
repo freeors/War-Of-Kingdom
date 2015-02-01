@@ -29,7 +29,6 @@
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/tree_view_node.hpp"
-#include "gui/dialogs/combo_box.hpp"
 #include "gui/dialogs/transient_message.hpp"
 #include "formula_string_utils.hpp"
 #include "map.hpp"
@@ -89,7 +88,7 @@ void tplayer_list_side_wait::init(twindow & w)
 			, true);
 }
 
-tmp_side_wait::tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
+tmp_side_wait::tmp_side_wait(hero_map& heros, hero_map& heros_start, display& disp, gamemap& gmap, const config& game_config,
 			config& gamelist, int game_id, bool observe)
 	: legacy_result_(QUIT)
 	, heros_(heros)

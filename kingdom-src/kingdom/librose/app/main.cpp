@@ -4,6 +4,7 @@
 #include "gui/dialogs/chat.hpp"
 #include "gui/dialogs/rose.hpp"
 #include "gui/dialogs/language_selection.hpp"
+#include "gui/dialogs/combo_box.hpp"
 #include "gui/widgets/window.hpp"
 #include "help.hpp"
 #include "posix.h"
@@ -18,7 +19,6 @@
 #include "hero.hpp"
 #include "sound.hpp"
 #include "builder.hpp"
-#include "widgets/menu.hpp"
 #include "language.hpp"
 #include "hotkeys.hpp"
 #include "cursor.hpp"
@@ -31,12 +31,15 @@
 #include "formula_string_utils.hpp"
 #include "anim_display.hpp"
 #include "version.hpp"
+#include "mkwin_controller.hpp"
 
 #include <errno.h>
 #include <iostream>
 #include <clocale>
 
 #include <boost/foreach.hpp>
+
+extern std::string app_id;
 
 /**
  * I would prefer to setup locale first so that early error
@@ -112,6 +115,7 @@ public:
 	const config& game_config() const { return game_config_; }
 	bool is_loading() { return false; }
 	bool change_language();
+	void start_mkwin();
 
 private:
 	void load_game_cfg(const bool force);
@@ -126,9 +130,7 @@ private:
 	const preferences::base_manager prefs_manager_;
 	const image::manager image_manager_;
 	const events::event_context main_event_context_;
-	const hotkey::manager hotkey_manager_;
 	sound::music_thinker music_thinker_;
-	resize_monitor resize_monitor_;
 	binary_paths_manager paths_manager_;
 
 	util::scoped_ptr<display> disp_;
@@ -147,9 +149,7 @@ game_controller::game_controller(int argc, char** argv)
 	, prefs_manager_()
 	, image_manager_()
 	, main_event_context_()
-	, hotkey_manager_()
 	, music_thinker_()
-	, resize_monitor_()
 	, paths_manager_()
 	, heros_(game_config::path)
 	, disp_(NULL)
@@ -236,6 +236,8 @@ game_controller::game_controller(int argc, char** argv)
 	}
 #endif
 
+	std::replace(game_config::path.begin(), game_config::path.end(), '\\', '/');
+
 	std::cerr << '\n';
 	std::cerr << "Data directory: " << game_config::path
 		<< "\nUser configuration directory: " << get_user_config_dir()
@@ -283,7 +285,6 @@ game_controller::~game_controller()
 		game_config::savegame_cache = NULL;
 	}
 	terrain_builder::release_heap();
-	delete gui::empty_menu;
 	sound::close_sound();
 }
 
@@ -297,17 +298,9 @@ bool game_controller::init_language()
 		return false;
 	}
 
-	hotkey::load_descriptions();
+	// hotkey::load_descriptions();
 
 	return true;
-}
-
-display* create_dummy_display(hero_map& heros, CVideo& video)
-{
-	static config dummy_cfg;
-	static gamemap dummy_map(dummy_cfg, "");
-
-	return new display(NULL, video, &dummy_map, dummy_cfg, dummy_cfg, 0);
 }
 
 display& game_controller::disp()
@@ -316,7 +309,7 @@ display& game_controller::disp()
 		if (get_video_surface() == NULL) {
 			throw CVideo::error();
 		}
-		disp_.assign(create_dummy_display(heros_, video_));
+		disp_.assign(display::create_dummy_display(video_));
 	}
 	return *disp_.get();
 }
@@ -394,11 +387,6 @@ bool game_controller::init_config(const bool force)
 	const config &cfg = game_config().child("game_config");
 	game_config::load_config(cfg ? &cfg : NULL);
 
-	hotkey::deactivate_all_scopes();
-	hotkey::set_scope_active(hotkey::SCOPE_GENERAL);
-	hotkey::set_scope_active(hotkey::SCOPE_GAME);
-
-	hotkey::load_hotkeys(game_config());
 	paths_manager_.set_paths(game_config());
 	::init_textdomains(game_config());
 	// about::set_about(game_config());
@@ -542,8 +530,6 @@ void game_controller::load_game_cfg(const bool force)
 			hashes[ch["id"]] = ch.hash();
 		}
 
-		// terrain_builder::set_terrain_rules_cfg(game_config());
-
 	} catch(game::error& e) {
 		// ERR_CONFIG << "Error loading game configuration files\n";
 		gui2::show_error_message(disp().video(), _("Error loading game configuration files: '") +
@@ -562,6 +548,32 @@ bool game_controller::change_language()
 	wm_title_string += " - " + game_config::version;
 	SDL_SetWindowTitle(disp().video().getWindow(), wm_title_string.c_str());
 	return true;
+}
+
+void game_controller::start_mkwin()
+{
+	display_lock lock(disp());
+	hotkey::scope_changer changer(game_config(), "hotkey_mkwin");
+
+	mkwin_controller mkwin(game_config(), video_);
+	mkwin.main_loop();
+}
+
+namespace gui2 {
+int app_show_preferences_dialog(display& disp, bool first)
+{
+	std::vector<gui2::tval_str> items;
+
+	int fullwindowed = preferences::fullscreen()? preferences::MAKE_WINDOWED: preferences::MAKE_FULLSCREEN;
+	items.push_back(gui2::tval_str(fullwindowed, dgettext("wesnoth-lib", "Full Screen")));
+	items.push_back(gui2::tval_str(preferences::CHANGE_RESOLUTION, dgettext("wesnoth-lib", "Change Resolution")));
+	items.push_back(gui2::tval_str(gui2::twindow::OK, dgettext("wesnoth-lib", "OK")));
+
+	gui2::tcombo_box dlg(items, preferences::CHANGE_RESOLUTION);
+	dlg.show(disp.video());
+
+	return dlg.selected_val();
+}
 }
 
 /**
@@ -675,8 +687,6 @@ static int do_gameloop(int argc, char** argv)
 					? gui2::trose::LOAD_GAME
 					: gui2::trose::NOTHING;
 
-			const preferences::display_manager disp_manager(&game.disp());
-
 			const font::floating_label_context label_manager(game.disp().video().getSurface());
 
 			cursor::set(cursor::NORMAL);
@@ -698,7 +708,8 @@ static int do_gameloop(int argc, char** argv)
 
 			} else if (res == gui2::trose::HELP) {
 
-			} else if (res == gui2::trose::NEW_CAMPAIGN) {
+			} else if (res == gui2::trose::EDIT_DIALOG) {
+				game.start_mkwin();
 
 			} else if (res == gui2::trose::PLAYER) {
 
@@ -726,6 +737,7 @@ static int do_gameloop(int argc, char** argv)
 			} else if (res == gui2::trose::INAPP_PURCHASE) {
 
 			} else if (res == gui2::trose::EDIT_PREFERENCES) {
+				preferences::show_preferences_dialog(game.disp());
 
 			} else if (res == gui2::trose::START_MAP_EDITOR) {
 				
@@ -755,7 +767,7 @@ void handle_app_event(Uint32 type)
 		if (gui2::tinapp_purchase::get_singleton()) {
 			return;
 
-		} else if (resources::screen && resources::screen->in_game()) {
+		} else if (resources::screen && resources::screen->in_theme()) {
 			// throw end_level_exception(QUIT);
 		}
 */
@@ -791,6 +803,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
+	app_id = "studio";
 	if (SDL_Init(SDL_INIT_TIMER) < 0) {
 		fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
 		return(1);
@@ -824,9 +837,6 @@ int main(int argc, char** argv)
 		return 1;
 	} catch(config::error& e) {
 		std::cerr << e.message << "\n";
-		return 1;
-	} catch(gui::button::error&) {
-		std::cerr << "Could not create button: Image could not be found\n";
 		return 1;
 	} catch(CVideo::quit&) {
 		//just means the game should quit

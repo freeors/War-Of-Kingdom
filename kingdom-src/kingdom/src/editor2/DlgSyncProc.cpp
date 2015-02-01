@@ -87,9 +87,7 @@ void sync_update_task_desc(HWND hctl)
 		return;
 	}
 
-#ifndef _ROSE_EDITOR
-	editor_.reload_campaigns_cfg();
-#endif
+	editor_.reload_extendable_cfg();
 
 	char text[_MAX_PATH];
 	editor_.get_wml2bin_desc_from_wml(game_config::path + "/data");

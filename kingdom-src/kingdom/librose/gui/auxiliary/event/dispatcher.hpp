@@ -17,7 +17,8 @@
 #define GUI_WIDGETS_AUXILIARY_EVENT_DISPATCHER_HPP_INCLUDED
 
 #include "gui/auxiliary/event/handler.hpp"
-#include "hotkeys.hpp"
+#include "events.hpp"
+#include "tstring.hpp"
 
 #include <boost/function.hpp>
 #include <boost/mpl/int.hpp>
@@ -131,7 +132,7 @@ typedef
 typedef
 		boost::function<bool(
 				  tdispatcher& dispatcher
-				, hotkey::HOTKEY_COMMAND id)>
+				, int id)>
 		thotkey_function;
 
 /**
@@ -722,7 +723,7 @@ public:
 	 * @param id                  The hotkey to register.
 	 * @param function            The callback function to call.
 	 */
-	void register_hotkey(const hotkey::HOTKEY_COMMAND id
+	void register_hotkey(const int id
 			, const thotkey_function& function);
 
 	/**
@@ -733,7 +734,7 @@ public:
 	 * @returns                   true if the hotkey is handled, false
 	 *                            otherwise.
 	 */
-	bool execute_hotkey(const hotkey::HOTKEY_COMMAND id);
+	bool execute_hotkey(const int id);
 
 private:
 
@@ -774,7 +775,7 @@ private:
 	bool connected_;
 
 	/** The registered hotkeys for this dispatcher. */
-	std::map<hotkey::HOTKEY_COMMAND, thotkey_function> hotkeys_;
+	std::map<int, thotkey_function> hotkeys_;
 };
 
 /***** ***** ***** ***** ***** Common helpers  ***** ***** ***** ***** *****/

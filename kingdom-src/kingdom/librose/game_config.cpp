@@ -201,15 +201,6 @@ namespace game_config
 			flag,
 			flag_icon,
 			big_flag,
-			// hex overlay
-			terrain_mask,
-			grid_top,
-			grid_bottom,
-			mouseover,
-			selected,
-			editor_brush,
-			unreachable,
-			linger,
 			// GUI elements
 			observer,
 			tod_bright,
@@ -222,6 +213,39 @@ namespace game_config
 			ellipsis,
 			missing;
 	} //images
+
+	namespace terrain {
+		// hex overlay
+		std::string short_mask = "alphamask.png",
+		short_grid_top = "grid-top.png",
+		short_grid_bottom = "grid-bottom.png",
+		mouseover,
+		selected,
+		editor_brush,
+		unreachable,
+		disctrict,
+		linger;
+
+		std::string form_img_prefix(const std::string& tile)
+		{
+			return std::string("terrain-") + tile + "/";
+		}
+
+		void modify_according_tile(const std::string& tile)
+		{
+			const std::string img_prefix = form_img_prefix(tile);
+
+			mouseover = img_prefix + "hover-hex.png";
+			selected = "";
+			editor_brush = "editor/brush.png";
+			unreachable = img_prefix + "darken.png";
+			disctrict = img_prefix + "disctrict.png";
+			linger = img_prefix + "darken-linger.png";
+		}
+	}
+	const std::string tile_hex = "hexagonal";
+	const std::string tile_square = "square";
+
 	std::string logo_png = "misc/logo.png";
 	std::string shroud_prefix, fog_prefix;
 
@@ -277,14 +301,10 @@ namespace game_config
 
 
 
-#ifdef __AMIGAOS4__
-	std::string path = "PROGDIR:";
-#else
 #ifdef __APPLE__
 	std::string path = "./";
 #else
 	std::string path = "";
-#endif
 #endif
 
 	std::string preferences_dir = "";
@@ -348,7 +368,7 @@ namespace game_config
 		default_victory_music = v["default_victory_music"].str();
 		default_defeat_music = v["default_defeat_music"].str();
 
-		if(const config &i = v.child("images")){
+		if (const config &i = v.child("images")){
 			using namespace game_config::images;
 			game_title = i["game_title"].str();
 
@@ -366,15 +386,6 @@ namespace game_config
 			flag = i["flag"].str();
 			flag_icon = i["flag_icon"].str();
 			big_flag = i["big_flag"].str();
-
-			terrain_mask = i["terrain_mask"].str();
-			grid_top = i["grid_top"].str();
-			grid_bottom = i["grid_bottom"].str();
-			mouseover = i["mouseover"].str();
-			selected = i["selected"].str();
-			editor_brush = i["editor_brush"].str();
-			unreachable = i["unreachable"].str();
-			linger = i["linger"].str();
 
 			observer = i["observer"].str();
 			tod_bright = i["tod_bright"].str();
@@ -539,7 +550,8 @@ namespace game_config
 		return i->second;
 	}
 
-	Uint32 red_to_green(int val, bool for_text){
+	Uint32 red_to_green(int val, bool for_text)
+	{
 		const std::vector<Uint32>& color_scale =
 				for_text ? red_green_scale_text : red_green_scale;
 		val = std::max<int>(0, std::min<int>(val, 100));

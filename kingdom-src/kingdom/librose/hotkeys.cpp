@@ -39,217 +39,20 @@ static lg::log_domain log_config("config");
 #define DBG_G LOG_STREAM(debug, lg::general)
 #define ERR_CF LOG_STREAM(err, log_config)
 
-namespace {
-
-const struct {
-	hotkey::HOTKEY_COMMAND id;
-	const char* command;
-	const char* description;
-	bool hidden;
-	hotkey::scope scope;
-} hotkey_list_[] = {
-	{ hotkey::HOTKEY_ANIMATE_MAP, "animatemap", N_("Animate Map"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_UNDO, "undo", N_("Undo"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_REDO, "redo", N_("Redo"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_UP, "up", N_("Up"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_DOWN, "down", N_("Down"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_ZOOM_IN, "zoomin", N_("Zoom In"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_ZOOM_OUT, "zoomout", N_("Zoom Out"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_ZOOM_DEFAULT, "zoomdefault", N_("Default Zoom"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_SCREENSHOT, "screenshot", N_("Screenshot"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_MAP_SCREENSHOT, "mapscreenshot", N_("Map Screenshot"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_INTERIOR, "interior", N_("Interior"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TECHNOLOGY_TREE, "technologytree", N_("Adjust"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_UPLOAD, "upload", N_("Upload"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_FINAL_BATTLE, "finalbattle", N_("Final Battle"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_EMPLOY, "employ", N_("Employ"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_LIST, "list", N_("List"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_SYSTEM, "system", N_("System"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TACTIC0, "tactic0", N_("System"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TACTIC1, "tactic1", N_("System"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TACTIC2, "tactic2", N_("System"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_BOMB, "bomb", N_("Bomb"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_RPG, "rpg", N_("RPG"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_RPG_DETAIL, "rpg-detail", N_("RPG Detail"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_RPG_TREASURE, "assemble-treasure", N_("Assemble Treasure"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_RPG_EXCHANGE, "rpg-exchange", N_("RPG Exchange"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_RPG_INDEPENDENCE, "rpg-independence", N_("RPG Independence"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_BUILD_M, "build_m", N_("Build"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_BUILD, "build", N_("Build"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_GUARD, "guard", N_("Guard"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_ABOLISH, "abolish", N_("Abolish"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_EXTRACT, "extract", N_("Extract"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_ADVANCE, "advance", N_("Advance"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_DEMOLISH, "demolish", N_("Demolish"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_ARMORY, "armory", N_("Reform"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_UNIT_DETAIL, "unit_detail", N_("Unit Detail"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_CHAT, "chat", N_("Chat"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_PLAY_CARD, "card", N_("Play Card"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_RECRUIT, "recruit", N_("Recruit"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_EXPEDITE, "expedite", N_("Expedite"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_MOVE, "move", N_("Move Hero"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_SWITCH_LIST, "switch", N_("Switch List"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_ENDTURN, "endturn", N_("End Turn"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_TOGGLE_GRID, "togglegrid", N_("Toggle Grid"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_MOUSE_SCROLL, "mousescroll", N_("Mouse Scrolling"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_MUTE, "mute", N_("Mute"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_SPEAK, "speak", N_("Speak"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_CHANGE_SIDE, "changeside", N_("Change Side (Debug!)"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_PREFERENCES, "preferences", N_("Preferences"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_OBJECTIVES, "objectives", N_("Scenario Objectives"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_STATISTICS, "statistics", N_("Statistics"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_STOP_NETWORK, "stopnetwork", N_("Stop"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_START_NETWORK, "startnetwork", N_("Play"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_QUIT_GAME, "quit", N_("Quit Game"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_LABEL_TEAM_TERRAIN, "labelteamterrain", N_("Set Team Label"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_LABEL_TERRAIN, "labelterrain", N_("Set Label"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_CLEAR_LABELS, "clearlabels", N_("Clear Labels"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_PLAY_REPLAY, "playreplay", N_("Play"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_STOP_REPLAY, "stopreplay", N_("Stop"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_REPLAY_NEXT_TURN, "replaynextturn", N_("Next Turn"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_REPLAY_NEXT_SIDE, "replaynextside", N_("Next Side"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_REPLAY_SHOW_EVERYTHING, "replayshoweverything",
-	  N_("Full map"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_REPLAY_SHOW_EACH, "replayshoweach",
-	  N_("Each team"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_REPLAY_SHOW_TEAM1, "replayshowteam1",
-	  N_("Team 1"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_REPLAY_SKIP_ANIMATION, "replayskipanimation", N_("Skip animation"), false, hotkey::SCOPE_GAME },
-
-	{ hotkey::HOTKEY_EDITOR_QUIT_TO_DESKTOP, "editor-quit-to-desktop", N_("Quit to Desktop"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_CLOSE_MAP, "editor-close-map", N_("Close Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SWITCH_MAP, "editor-switch-map", N_("Switch Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SETTINGS, "editor-settings", N_("Editor Settings"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_PARTIAL_UNDO, "editor-partial-undo", N_("Partial Undo"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_NEW, "editor-map-new", N_("New Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_LOAD, "editor-map-load", N_("Load Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_SAVE, "editor-map-save", N_("Save Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_SAVE_AS, "editor-map-save-as", N_("Save Map As"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_SAVE_ALL, "editor-map-save-all", N_("Save All Maps"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_REVERT, "editor-map-revert", N_("Revert All Changes"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_INFO, "editor-map-info", N_("Map Information"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_TERRAIN_PALETTE_SWAP, "editor-terrain-palette-swap",
-		N_("Swap fore- and background terrains"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_TOOL_NEXT, "editor-tool-next", N_("Next Tool"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_TOOL_PAINT, "editor-tool-paint", N_("Paint Tool"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_TOOL_FILL, "editor-tool-fill", N_("Fill Tool"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_TOOL_SELECT, "editor-tool-select", N_("Selection Tool"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_TOOL_STARTING_POSITION, "editor-tool-starting-position",
-		N_("Set Starting Positions Tool"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_BRUSH_NEXT, "editor-brush-next", N_("Next Brush"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_BRUSH_DEFAULT, "editor-brush-default", N_("Default Brush"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_CUT, "editor-cut", N_("Cut"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_COPY, "editor-copy", N_("Copy"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_PASTE, "editor-paste", N_("Paste"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_EXPORT_SELECTION_COORDS, "editor-export-selection-coords", N_("Export selected coordinates to system clipboard"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SELECT_ALL, "editor-select-all",
-		 N_("Select All"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SELECT_INVERSE, "editor-select-inverse",
-		 N_("Select Inverse"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SELECT_NONE, "editor-select-none",
-		 N_("Select None"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_CLIPBOARD_ROTATE_CW, "editor-clipboard-rotate-cw",
-		 N_("Rotate Clipboard Clockwise"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_CLIPBOARD_ROTATE_CCW, "editor-clipboard-rotate-ccw",
-		 N_("Rotate Clipboard Counter-Clockwise"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_CLIPBOARD_FLIP_HORIZONTAL, "editor-clipboard-flip-horizontal",
-		N_("Flip Clipboard Horizontally"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_CLIPBOARD_FLIP_VERTICAL, "editor-clipboard-flip-vertical",
-		N_("Flip Clipboard Vertically"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SELECTION_ROTATE, "editor-selection-rotate",
-		N_("Rotate Selection"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SELECTION_FLIP, "editor-selection-flip",
-		N_("Flip Selection"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SELECTION_FILL, "editor-selection-fill",
-		N_("Fill Selection"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SELECTION_GENERATE, "editor-selection-generate",
-		N_("Generate Tiles In Selection"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_SELECTION_RANDOMIZE, "editor-selection-randomize",
-		N_("Randomize Tiles In Selection"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_RESIZE, "editor-map-resize",
-		N_("Resize Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_ROTATE, "editor-map-rotate",
-		N_("Rotate Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_GENERATE, "editor-map-generate",
-		 N_("Generate Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_APPLY_MASK, "editor-map-apply-mask",
-		 N_("Apply a Mask"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP_CREATE_MASK_TO, "editor-map-create-mask-to",
-		 N_("Create Mask"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_REFRESH, "editor-refresh",
-		N_("Refresh Display"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_UPDATE_TRANSITIONS, "editor-update-transitions",
-		N_("Update Terrain Transitions"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_AUTO_UPDATE_TRANSITIONS, "editor-auto-update-transitions",
-		N_("Auto-update Terrain Transitions"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_REFRESH_IMAGE_CACHE, "editor-refresh-image-cache",
-		N_("Refresh Image Cache"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_MAP, "editor-map",
-		N_("Map"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_TERRAIN_GROUP, "editor-terrain-group",
-		N_("Switch terrain group"), false, hotkey::SCOPE_EDITOR },
-	{ hotkey::HOTKEY_EDITOR_BRUSH, "editor-brush",
-		N_("Switch brush"), false, hotkey::SCOPE_EDITOR },
-
-
-	{ hotkey::HOTKEY_DELAY_SHROUD, "delayshroud", N_("Delay Shroud Updates"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_UPDATE_SHROUD, "updateshroud", N_("Update Shroud Now"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_SPEAK_ALLY, "speaktoally", N_("Speak to Ally"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_SPEAK_ALL, "speaktoall", N_("Speak to All"), false, hotkey::SCOPE_GAME },
-	{ hotkey::HOTKEY_HELP, "help", N_("Help"), false, hotkey::SCOPE_GENERAL },
-	{ hotkey::HOTKEY_CHAT_LOG, "chatlog", N_("View Chat Log"), false, hotkey::SCOPE_GAME },
-
-	{ hotkey::HOTKEY_CLEAR_MSG, "clearmessages", N_("Clear messages"), false, hotkey::SCOPE_GAME },
-	{
-		  hotkey::TITLE_SCREEN__RELOAD_WML
-		, "title_screen__reload_wml"
-		, N_("Refresh WML")
-		, true
-		, hotkey::SCOPE_GENERAL
-	},
-
-	{ hotkey::HOTKEY_NULL, NULL, NULL, true, hotkey::SCOPE_GENERAL }
-};
-
-std::vector<hotkey::hotkey_item> hotkeys_;
-hotkey::hotkey_item null_hotkey_;
+static std::map<int, hotkey::hotkey_item> hotkeys;
+static hotkey::hotkey_item null_hotkey;
 
 std::string hotkey_tag_name = "hotkey";
 
-std::vector<bool> scope_active_(hotkey::SCOPE_COUNT, false);
-}
-
 namespace hotkey {
-
-
-void deactivate_all_scopes()
-{
-	for (int i = 0; i < hotkey::SCOPE_COUNT; ++i) {
-		scope_active_[i] = false;
-	}
-}
-
-void set_scope_active(scope s, bool set)
-{
-	scope_active_[s] = set;
-}
-
-bool is_scope_active(scope s)
-{
-	return scope_active_[s];
-}
-
-static void key_event_execute(display& disp, const SDL_KeyboardEvent& event, command_executor* executor);
 
 const std::string CLEARED_TEXT = "__none__";
 
-hotkey_item::hotkey_item(HOTKEY_COMMAND id,
-		const std::string& command, const t_string &description, bool hidden,
-		scope s) :
+hotkey_item::hotkey_item(int id,
+		const std::string& command, const t_string &description, bool hidden) :
 	id_(id),
 	command_(command),
 	description_(description),
-	scope_(s),
 	type_(UNBOUND),
 	character_(0),
 	ctrl_(false),
@@ -398,59 +201,31 @@ void hotkey_item::set_key(int character, int keycode, bool shift, bool ctrl, boo
 	}
 }
 
-manager::manager()
-{
-	init();
-}
-
-void manager::init()
-{
-	for (int i = 0; hotkey_list_[i].command; ++i) {
-		hotkeys_.push_back(hotkey_item(hotkey_list_[i].id, hotkey_list_[i].command,
-				"", hotkey_list_[i].hidden, hotkey_list_[i].scope));
-	}
-}
-
-void manager::wipe()
-{
-	hotkeys_.clear();
-}
-
-manager::~manager()
-{
-	wipe();
-}
-
 scope_changer::scope_changer(const config& cfg, const std::string& hotkey_tag)
 : cfg_(cfg)
 , prev_tag_name_(hotkey_tag_name)
-, prev_scope_active_(scope_active_)
 {
-	manager::wipe();
-	manager::init();
-	hotkey::load_descriptions();
-	load_hotkeys(cfg_);
-	set_hotkey_tag_name(hotkey_tag);
+	hotkeys.clear();
+	// hotkey::load_descriptions();
+	// load_hotkeys(cfg_);
+	// set_hotkey_tag_name(hotkey_tag);
 }
 
 scope_changer::~scope_changer()
 {
-	scope_active_.swap(prev_scope_active_);
-	manager::wipe();
-	manager::init();
-	hotkey::load_descriptions();
-	set_hotkey_tag_name(prev_tag_name_);
-	load_hotkeys(cfg_);
+	hotkeys.clear();
+	// hotkey::load_descriptions();
+	// set_hotkey_tag_name(prev_tag_name_);
+	// load_hotkeys(cfg_);
+}
+
+void clear()
+{
+	hotkeys.clear();
 }
 
 void load_descriptions()
 {
-	for (size_t i = 0; hotkey_list_[i].command; ++i) {
-		if (i >= hotkeys_.size()) {
-			ERR_G << "Hotkey list too short: " << hotkeys_.size() << "\n";
-		}
-		hotkeys_[i].set_description(t_string(hotkey_list_[i].description, PACKAGE "-lib"));
-	}
 }
 
 void set_hotkey_tag_name(const std::string& name)
@@ -462,125 +237,115 @@ void load_hotkeys(const config& cfg)
 {
 	BOOST_FOREACH (const config &hk, cfg.child_range(hotkey_tag_name))
 	{
-		hotkey_item& h = get_hotkey(hk["command"]);
+		hotkey_item& h = get_hotkey(hk["command"].str());
 		if(h.get_id() != HOTKEY_NULL) {
 			h.load_from_config(hk);
 		}
 	}
 }
 
+void insert_hotkey(int id, const std::string& command, const t_string& tooltip)
+{
+	std::stringstream err;
+	err << "Duplicate hotkey: "<< id;
+	VALIDATE(hotkeys.find(id) == hotkeys.end(), err.str());
+
+	hotkeys.insert(std::make_pair(id, hotkey_item(id, command, tooltip)));
+}
+
 void save_hotkeys(config& cfg)
 {
 	cfg.clear_children(hotkey_tag_name);
 
-	for(std::vector<hotkey_item>::iterator i = hotkeys_.begin(); i != hotkeys_.end(); ++i) {
-		if (i->hidden() || i->get_type() == hotkey_item::UNBOUND || !i->is_in_active_scope())
+	for(std::map<int, hotkey_item>::iterator it = hotkeys.begin(); it != hotkeys.end(); ++ it) {
+		hotkey_item& key = it->second;
+		if (key.hidden() || key.get_type() == hotkey_item::UNBOUND)
 			continue;
 
 		config& item = cfg.add_child(hotkey_tag_name);
-		item["command"] = i->get_command();
-		if (i->get_type() == hotkey_item::CLEARED)
+		item["command"] = key.get_command();
+		if (key.get_type() == hotkey_item::CLEARED)
 		{
 			item["key"] = CLEARED_TEXT;
 			continue;
 		}
 
-		if (i->get_type() == hotkey_item::BY_KEYCODE) {
-			item["key"] = SDL_GetKeyName(SDLKey(i->get_keycode()));
-			item["shift"] = i->get_shift();
-		} else if (i->get_type() == hotkey_item::BY_CHARACTER) {
-			item["key"] = utils::wchar_to_string(i->get_character());
+		if (key.get_type() == hotkey_item::BY_KEYCODE) {
+			item["key"] = SDL_GetKeyName(SDLKey(key.get_keycode()));
+			item["shift"] = key.get_shift();
+		} else if (key.get_type() == hotkey_item::BY_CHARACTER) {
+			item["key"] = utils::wchar_to_string(key.get_character());
 		}
-		item["alt"] = i->get_alt();
-		item["ctrl"] = i->get_ctrl();
-		item["cmd"] = i->get_cmd();
+		item["alt"] = key.get_alt();
+		item["ctrl"] = key.get_ctrl();
+		item["cmd"] = key.get_cmd();
 	}
 }
 
-hotkey_item& get_hotkey(HOTKEY_COMMAND id)
+hotkey_item& get_hotkey(int id)
 {
-	std::vector<hotkey_item>::iterator itor;
+	std::map<int, hotkey_item>::iterator itor = hotkeys.find(id);
+	if (itor == hotkeys.end())
+		return null_hotkey;
 
-	for (itor = hotkeys_.begin(); itor != hotkeys_.end(); ++itor) {
-		if (itor->get_id() == id)
-			break;
-	}
-
-	if (itor == hotkeys_.end())
-		return null_hotkey_;
-
-	return *itor;
+	return itor->second;
 }
 
 hotkey_item& get_hotkey(const std::string& command)
 {
-	std::vector<hotkey_item>::iterator itor;
+	std::map<int, hotkey_item>::iterator itor;
 
-	for (itor = hotkeys_.begin(); itor != hotkeys_.end(); ++itor) {
-		if (itor->get_command() == command)
+	for (itor = hotkeys.begin(); itor != hotkeys.end(); ++ itor) {
+		if (itor->second.get_command() == command)
 			break;
 	}
 
-	if (itor == hotkeys_.end())
-		return null_hotkey_;
+	if (itor == hotkeys.end())
+		return null_hotkey;
 
-	return *itor;
+	return itor->second;
 }
 
 hotkey_item& get_hotkey(int character, int keycode, bool shift, bool ctrl, bool alt, bool cmd)
 {
-	std::vector<hotkey_item>::iterator itor;
+	std::map<int, hotkey_item>::iterator itor;
 
 	// Sometimes control modifies by -64, ie ^A == 1.
 	if (0 < character && character < 64 && ctrl) {
-		if (shift)
+		if (shift) {
 			character += 64;
-		else
+		} else {
 			character += 96;
-		DBG_G << "Mapped to character " << lexical_cast<std::string>(character) << "\n";
+		}
 	}
 
 	// For some reason on Mac OS, if cmd and shift are down, the character doesn't get upper-cased
 	if (cmd && character > 96 && character < 123 && shift)
 		character -= 32;
 
-	for (itor = hotkeys_.begin(); itor != hotkeys_.end(); ++itor) {
-		if (itor->get_type() == hotkey_item::BY_CHARACTER) {
-			if (character == itor->get_character()) {
-				if (ctrl == itor->get_ctrl()
-						&& alt == itor->get_alt()
-						&& cmd == itor->get_cmd()) {
-					if (itor->is_in_active_scope()) {
-						DBG_G << "Could match by character..." << "yes\n";
-						break;
-					} else {
-						DBG_G << "Could match by character..." << "yes, but scope is inactive\n";
-					}
+	for (itor = hotkeys.begin(); itor != hotkeys.end(); ++itor) {
+		hotkey_item& item = itor->second;
+		if (item.get_type() == hotkey_item::BY_CHARACTER) {
+			if (character == item.get_character()) {
+				if (ctrl == item.get_ctrl()	&& alt == item.get_alt() && cmd == item.get_cmd()) {
+					break;
 				}
-				DBG_G << "Could match by character..." << "but modifiers different\n";
 			}
-		} else if (itor->get_type() == hotkey_item::BY_KEYCODE) {
-			if (keycode == itor->get_keycode()) {
-				if (shift == itor->get_shift()
-						&& ctrl == itor->get_ctrl()
-						&& alt == itor->get_alt()
-						&& cmd == itor->get_cmd()) {
-					if (itor->is_in_active_scope()) {
-						DBG_G << "Could match by keycode..." << "yes\n";
-						break;
-					} else {
-						DBG_G << "Could match by keycode..." << "yes, but scope is inactive\n";
-					}
+		} else if (item.get_type() == hotkey_item::BY_KEYCODE) {
+			if (keycode == item.get_keycode()) {
+				if (shift == item.get_shift() && ctrl == item.get_ctrl() && alt == item.get_alt() && cmd == item.get_cmd()) {
+					// Could match by keycode...yes";
+					break;
 				}
 				// Could match by keycode... but modifiers different;
 			}
 		}
 	}
 
-	if (itor == hotkeys_.end())
-		return null_hotkey_;
+	if (itor == hotkeys.end())
+		return null_hotkey;
 
-	return *itor;
+	return itor->second;
 }
 
 hotkey_item& get_hotkey(const SDL_KeyboardEvent& event)
@@ -592,52 +357,8 @@ hotkey_item& get_hotkey(const SDL_KeyboardEvent& event)
 			(event.keysym.mod & KMOD_LGUI) != 0);
 }
 
-static void _get_visible_hotkey_itor(int index, std::vector<hotkey_item>::iterator& itor)
-{
-	int counter = 0;
-	for (itor = hotkeys_.begin(); itor != hotkeys_.end(); ++itor) {
-		if (itor->hidden() || !itor->is_in_active_scope())
-			continue;
-
-		if (index == counter)
-			break;
-
-		counter++;
-	}
-}
-
-hotkey_item& get_visible_hotkey(int index)
-{
-
-	std::vector<hotkey_item>::iterator itor;
-	_get_visible_hotkey_itor(index, itor);
-	if (itor == hotkeys_.end())
-		return null_hotkey_;
-
-	return *itor;
-}
-
-std::vector<hotkey_item>& get_hotkeys()
-{
-	return hotkeys_;
-}
-
-void key_event(display& disp, const SDL_KeyboardEvent& event, command_executor* executor)
-{
-	if(event.keysym.sym == SDLK_ESCAPE && disp.in_game()) {
-		LOG_G << "escape pressed..showing quit\n";
-		const int res = gui2::show_message(disp.video(), _("Quit"), _("Do you really want to quit?"), gui2::tmessage::yes_no_buttons);
-		if(res != gui2::twindow::CANCEL) {
-			throw end_level_exception(QUIT);
-		} else {
-			return;
-		}
-	}
-
-	key_event_execute(disp,event,executor);
-}
-
-void key_event_execute(display& disp, const SDL_KeyboardEvent& event, command_executor* executor)
+/*
+static void key_event_execute(display& disp, const SDL_KeyboardEvent& event, command_executor* executor)
 {
 	const hotkey_item* hk = &get_hotkey(event);
 
@@ -652,272 +373,23 @@ void key_event_execute(display& disp, const SDL_KeyboardEvent& event, command_ex
 	if(hk->null())
 		return;
 
-	execute_command(disp,hk->get_id(),executor);
+	// int ii = 0
+	// execute_command(disp,hk->get_id(),executor);
 }
 
-bool command_executor::execute_command(HOTKEY_COMMAND command, int /*index*/, std::string str)
+void key_event(display& disp, const SDL_KeyboardEvent& event, command_executor* executor)
 {
-	switch(command) {
-		case HOTKEY_ENDTURN:
-			end_turn();
-			break;
-		case HOTKEY_SWITCH_LIST:
-			switch_list();
-			break;
-		case HOTKEY_UNDO:
-			undo();
-			break;
-		case HOTKEY_REDO:
-			redo();
-			break;
-		case HOTKEY_INTERIOR:
-			interior();
-			break;
-		case HOTKEY_TECHNOLOGY_TREE:
-			technology_tree();
-			break;
-		case HOTKEY_UPLOAD:
-			upload();
-			break;
-		case HOTKEY_FINAL_BATTLE:
-			final_battle();
-			break;
-		case HOTKEY_EMPLOY:
-			employ();
-			break;
-		case HOTKEY_LIST:
-			list();
-			break;
-		case HOTKEY_SYSTEM:
-			system();
-			break;
-		case HOTKEY_TACTIC0:
-		case HOTKEY_TACTIC1:
-		case HOTKEY_TACTIC2:
-			remove_active_tactic(command - HOTKEY_TACTIC0);
-			break;
-		case HOTKEY_BOMB:
-			bomb();
-			break;
-		case HOTKEY_RPG:
-			show_rpg();
-			break;
-		case HOTKEY_RPG_DETAIL:
-			rpg_detail();
-			break;
-		case HOTKEY_RPG_TREASURE:
-			assemble_treasure();
-			break;
-		case HOTKEY_RPG_EXCHANGE:
-			rpg_exchange(empty_vector_size_t, -1);
-			break;
-		case HOTKEY_RPG_INDEPENDENCE:
-			rpg_independence();
-			break;
-		case HOTKEY_TOGGLE_GRID:
-			toggle_grid();
-			break;
-		case HOTKEY_BUILD:
-			build(str);
-			break;
-		case HOTKEY_GUARD:
-			guard();
-			break;
-		case HOTKEY_ABOLISH:
-			abolish();
-			break;
-		case HOTKEY_EXTRACT:
-			extract();
-			break;
-		case HOTKEY_ADVANCE:
-			advance();
-			break;
-		case HOTKEY_DEMOLISH:
-			demolish();
-			break;
-		case HOTKEY_ARMORY:
-			armory();
-			break;
-		case HOTKEY_EXPEDITE:
-			expedite();
-			break;
-		case HOTKEY_RECRUIT:
-			recruit();
-			break;
-		case HOTKEY_MOVE:
-			move();
-			break;
-		case HOTKEY_UNIT_DETAIL:
-			unit_detail();
-			break;
-		case HOTKEY_CHAT:
-			chat();
-			break;
-		case HOTKEY_PLAY_CARD:
-			play_card();
-			break;
-		case HOTKEY_SPEAK:
-			speak();
-			break;
-		case HOTKEY_SPEAK_ALLY:
-			whisper();
-			break;
-		case HOTKEY_SPEAK_ALL:
-			shout();
-			break;
-		case HOTKEY_CHANGE_SIDE:
-			change_side();
-			break;
-		case HOTKEY_PREFERENCES:
-			preferences();
-			break;
-		case HOTKEY_OBJECTIVES:
-			objectives();
-			break;
-		case HOTKEY_STATISTICS:
-			show_statistics();
-			break;
-		case HOTKEY_STOP_NETWORK:
-			stop_network();
-			break;
-		case HOTKEY_START_NETWORK:
-			start_network();
-			break;
-		case HOTKEY_LABEL_TEAM_TERRAIN:
-			label_terrain(true);
-			break;
-		case HOTKEY_LABEL_TERRAIN:
-			label_terrain(false);
-			break;
-		case HOTKEY_CLEAR_LABELS:
-			clear_labels();
-			break;
-		case HOTKEY_DELAY_SHROUD:
-			toggle_shroud_updates();
-			break;
-		case HOTKEY_UPDATE_SHROUD:
-			update_shroud_now();
-			break;
-		case HOTKEY_HELP:
-			show_help();
-			break;
-		case HOTKEY_CHAT_LOG:
-			show_chat_log();
-			break;
-		case HOTKEY_CLEAR_MSG:
-			clear_messages();
-			break;
-		 case HOTKEY_PLAY_REPLAY:
-			play_replay();
-			 break;
-		 case HOTKEY_STOP_REPLAY:
-			 stop_replay();
-			 break;
-		 case HOTKEY_REPLAY_NEXT_TURN:
-			replay_next_turn();
-			 break;
-		 case HOTKEY_REPLAY_NEXT_SIDE:
-			replay_next_side();
-			 break;
-		 case HOTKEY_REPLAY_SHOW_EVERYTHING:
-			replay_show_everything();
-			 break;
-		 case HOTKEY_REPLAY_SHOW_EACH:
-			replay_show_each();
-			 break;
-		 case HOTKEY_REPLAY_SHOW_TEAM1:
-			replay_show_team1();
-			 break;
-		 case HOTKEY_REPLAY_SKIP_ANIMATION:
-			replay_skip_animation();
-			 break;
-		 default:
-			 return false;
-	}
-	return true;
-}
-
-void execute_command(display& disp, HOTKEY_COMMAND command, command_executor* executor, int index, std::string str)
-{
-	const int zoom_amount = 4;
-	bool map_screenshot = false;
-
-	if(executor != NULL) {
-		if(!executor->can_execute_command(command, index) || executor->execute_command(command, index, str))
-		return;
-	}
-	switch(command) {
-		case HOTKEY_ZOOM_IN:
-			disp.set_zoom(zoom_amount);
-			break;
-		case HOTKEY_ZOOM_OUT:
-			disp.set_zoom(-zoom_amount);
-			break;
-		case HOTKEY_ZOOM_DEFAULT:
-			disp.set_default_zoom();
-			break;
-		case HOTKEY_MAP_SCREENSHOT:
-			if (!disp.in_game() && !disp.in_editor())
-				break;
-			map_screenshot = true;
-		case HOTKEY_SCREENSHOT: {
-			std::string name = map_screenshot ? _("Map-Screenshot") : _("Screenshot");
-			std::string filename = get_screenshot_dir() + "/" + name + "_";
-			filename = get_next_filename(filename, ".bmp");
-			int size = disp.screenshot(filename, map_screenshot);
-			if (size > 0) {
-				std::stringstream res;
-				res << filename << " ( " << size/1000000 <<" "<< (size/1000)%1000 << " kB )";
-				gui2::show_message(disp.video(), _("Screenshot done"), res.str());
-			} else
-				gui2::show_message(disp.video(), _("Screenshot done"), "");
-			break;
+	if(event.keysym.sym == SDLK_ESCAPE && disp.in_theme()) {
+		LOG_G << "escape pressed..showing quit\n";
+		const int res = gui2::show_message(disp.video(), _("Quit"), _("Do you really want to quit?"), gui2::tmessage::yes_no_buttons);
+		if(res != gui2::twindow::CANCEL) {
+			throw end_level_exception(QUIT);
+		} else {
+			return;
 		}
-		case HOTKEY_ANIMATE_MAP:
-			preferences::set_animate_map(!preferences::animate_map());
-			break;
-		case HOTKEY_MOUSE_SCROLL:
-			preferences::enable_mouse_scroll(!preferences::mouse_scroll_enabled());
-			break;
-		case HOTKEY_MUTE:
-			{
-				// look if both is not playing
-				static struct before_muted_s
-				{
-					bool playing_sound,playing_music;
-					before_muted_s() : playing_sound(false),playing_music(false){}
-				} before_muted;
-				if (preferences::music_on() || preferences::sound_on())
-				{
-					//then remember settings and mute both
-					before_muted.playing_sound = preferences::sound_on();
-					before_muted.playing_music = preferences::music_on();
-					preferences::set_sound(false);
-					preferences::set_music(false);
-				}
-				else
-				{
-					//then set settings before mute
-					preferences::set_sound(before_muted.playing_sound);
-					preferences::set_music(before_muted.playing_music);
-				}
-			}
-			break;
-		case HOTKEY_QUIT_GAME: {
-			if(disp.in_game()) {
-				DBG_G << "is in game -- showing quit message\n";
-				const int res = gui2::show_message(disp.video(), _("Quit"), _("Do you really want to quit?"), gui2::tmessage::yes_no_buttons, "hero-256/0.png");
-				if(res != gui2::twindow::CANCEL) {
-					throw end_level_exception(QUIT);
-				}
-			}
-
-			break;
-		}
-		default:
-			DBG_G << "command_executor: unknown command number " << command << ", ignoring.\n";
-			break;
 	}
-}
 
+	key_event_execute(disp,event,executor);
+}
+*/
 }

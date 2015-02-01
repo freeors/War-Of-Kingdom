@@ -27,22 +27,17 @@ class tscrollbar_panel;
 class tbutton;
 class tslider;
 
-void show_preferences_dialog(display& disp);
-
 class tpreferences
 	: public tdialog
 {
 public:
 	explicit tpreferences(display& disp, int start_page);
 
-	enum tresult {CHANGE_RESOLUTION = 1, MAKE_FULLSCREEN, MAKE_WINDOWED};
-
 	/***** ***** ***** setters / getters for members ***** ****** *****/
+	enum {MIN_PAGE = 0, GENERAL_PAGE = MIN_PAGE, DISPLAY_PAGE, MUSIC_PAGE, ADVANCED_PAGE, SCENARIO_PAGE, MAX_PAGE = SCENARIO_PAGE};
 
 private:
-	friend void show_preferences_dialog(display& disp);
-
-	enum {MIN_PAGE = 0, GENERAL_PAGE = MIN_PAGE, DISPLAY_PAGE, MUSIC_PAGE, ADVANCED_PAGE, SCENARIO_PAGE, MAX_PAGE = SCENARIO_PAGE};
+	friend int app_show_preferences_dialog(display& disp, bool first);
 
 	/** Called when another page is selected. */
 	void page_selected(twindow& window);

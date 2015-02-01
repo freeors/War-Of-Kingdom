@@ -36,7 +36,6 @@
 #include "gui/widgets/listbox.hpp"
 #endif
 #include "gui/dialogs/message.hpp"
-#include "gui/dialogs/combo_box.hpp"
 #include "gui/dialogs/group.hpp"
 #include "gui/dialogs/hero.hpp"
 #include "preferences_display.hpp"
@@ -118,7 +117,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(user_report)
 
-tuser_report::tuser_report(game_display& disp, hero_map& heros, const config& game_config)
+tuser_report::tuser_report(display& disp, hero_map& heros, const config& game_config)
 	: disp_(disp)
 	, heros_(heros)
 	, game_config_(game_config)
@@ -587,12 +586,14 @@ void tuser_report::swap_page(twindow& window, int page, bool swap)
 	}
 	int index = page - MIN_PAGE;
 
-	if (window.alternate_index() == index) {
+	if (page_panel_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
-	window.alternate_uh(page_panel_, index);
-	window.alternate_bh(swap? page_panel_: NULL, index);
+	page_panel_->swap_uh(window, index);
+	if (swap) {
+		page_panel_->swap_bh(window);
+	}
 
 	if (page == PLAYER_PASS_PAGE) {
 		fill_base(window);

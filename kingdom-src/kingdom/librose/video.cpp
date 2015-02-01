@@ -41,17 +41,6 @@ static lg::log_domain log_display("display");
 namespace {
 	bool fullScreen = false;
 }
-void resize_monitor::process(events::pump_info &info) 
-{
-}
-
-resize_lock::resize_lock()
-{
-}
-
-resize_lock::~resize_lock()
-{
-}
 
 static unsigned int get_flags(unsigned int flags)
 {

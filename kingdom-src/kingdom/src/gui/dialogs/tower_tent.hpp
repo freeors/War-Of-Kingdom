@@ -24,7 +24,7 @@ namespace gui2 {
 class ttower_tent : public ttent, public trandom_map
 {
 public:
-	explicit ttower_tent(game_display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero);
+	explicit ttower_tent(display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero);
 	~ttower_tent();
 
 protected:
@@ -32,7 +32,7 @@ protected:
 	virtual void pre_show(CVideo& video, twindow& window);
 
 	void update_map_settings(twindow& window);
-	game_display& gui() { return gui_; }
+	display& gui() { return gui_; }
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
@@ -41,7 +41,7 @@ private:
 	void turns(twindow& window);
 
 private:
-	game_display& gui_;
+	display& gui_;
 	tbutton* ai_count_;
 	tbutton* turns_;
 };

@@ -34,30 +34,15 @@ enum io_type_t {
 	IO_CLIENT
 };
 
-LEVEL_RESULT play_game(game_display& disp, game_state& state,
+LEVEL_RESULT play_game(display& disp, game_state& state,
 		const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards,
 		io_type_t io_type=IO_NONE,
 		bool skip_replay = false);
 
-void play_replay(game_display& disp, game_state& state,
+void play_replay(display& disp, game_state& state,
 		const config& game_config, hero_map& heros, hero_map& heros_start, 
 		card_map& cards, CVideo& video);
-
-class game_display_lock
-{
-public:
-	game_display_lock(game_display& disp)
-		: disp_(disp)
-	{}
-	~game_display_lock()
-	{
-		game_display::set_singleton(&disp_);
-	}
-
-private:
-	game_display& disp_;
-};
 
 #endif // PLAYCAMPAIGN_H_INCLUDED
 

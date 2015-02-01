@@ -129,7 +129,8 @@ void tfinal_battle::pre_show(CVideo& /*video*/, twindow& window)
 	tlistbox* list = find_widget<tlistbox>(&window, "city_list", false, true);
 
 	int index = 0;
-	for (unit_map::iterator it = units_.begin(); it != units_.end(); ++it) {
+	for (unit_map::iterator it2 = units_.begin(); it2 != units_.end(); ++ it2) {
+		unit* it = dynamic_cast<unit*>(&*it2);
 		if (!it->is_city() || it->side() != side_num) {
 			continue;
 		}

@@ -376,7 +376,7 @@ static void verify(const unit_map& units, const config& cfg) {
 			const map_location loc(u, resources::state_of_game);
 			locs.insert(loc);
 
-			if(units.count(loc) == 0) {
+			if (!units.valid2(loc, true)) {
 				errbuf << "data source says there is a unit at "
 					   << loc << " but none found locally\n";
 			}
@@ -395,8 +395,8 @@ static void verify(const unit_map& units, const config& cfg) {
 	BOOST_FOREACH (const config &un, cfg.child_range("unit"))
 	{
 		const map_location loc(un, resources::state_of_game);
-		const unit_map::const_iterator u = units.find(loc);
-		if(u == units.end()) {
+		unit* u = units.find_unit(loc, true);
+		if (!u) {
 			errbuf << "SYNC VERIFICATION FAILED: data source says there is a '"
 				   << un["type"] << "' (side " << un["side"] << ") at "
 				   << loc << " but there is no local record of it\n";
@@ -4308,7 +4308,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			bool loyalty = child["loyalty"].to_int()? true: false;
 			std::vector<std::string> vector_str = utils::split(child["src"]);
 			map_location src(lexical_cast_default<int>(vector_str[0]) - 1, lexical_cast_default<int>(vector_str[1]) - 1);
-			unit* u = &*resources::units->find(src, (layer == unit_map::OVERLAY)? true: false);
+			unit* u = resources::units->find_unit(src, (layer == unit_map::OVERLAY)? true: false);
 
 			vector_str = utils::split(child["dst"]);
 			map_location dst(lexical_cast_default<int>(vector_str[0]) - 1, lexical_cast_default<int>(vector_str[1]) - 1);
@@ -4322,7 +4322,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			std::vector<std::string> vstr = utils::split(child["loc"]);
 			map_location loc(lexical_cast_default<int>(vstr[0]) - 1, lexical_cast_default<int>(vstr[1]) - 1);
-			unit& u = *units.find(loc, (layer == unit_map::OVERLAY)? true: false);
+			unit& u = *units.find_unit(loc, (layer == unit_map::OVERLAY)? true: false);
 
 			vstr = utils::split(child["states"]);
 			for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
@@ -4338,7 +4338,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			std::vector<std::string> vstr = utils::split(child["loc"]);
 			map_location loc(lexical_cast_default<int>(vstr[0]) - 1, lexical_cast_default<int>(vstr[1]) - 1);
-			unit& u = *units.find(loc, (layer == unit_map::OVERLAY)? true: false);
+			unit& u = *units.find_unit(loc, (layer == unit_map::OVERLAY)? true: false);
 
 			do_clear_formationed(gui, teams, units, u, cost, false);
 
@@ -4374,13 +4374,13 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			hero_map& heros = *resources::heros;
 			std::vector<std::string> vector_str = utils::split(child["tactician"]);
 			map_location tactician_loc(lexical_cast_default<int>(vector_str[0]) - 1, lexical_cast_default<int>(vector_str[1]) - 1);
-			unit& tactician = *units.find(tactician_loc);
+			unit& tactician = *units.find_unit(tactician_loc, true);
 
 			vector_str = utils::split(child["special"]);
 			map_location special_loc(lexical_cast_default<int>(vector_str[0]) - 1, lexical_cast_default<int>(vector_str[1]) - 1);
 			unit* special = NULL;
 			if (special_loc.valid()) {
-				special = &*units.find(special_loc);
+				special = units.find_unit(special_loc, true);
 			}
 
 			hero& h = heros[child["hero"].to_int()];
@@ -4440,7 +4440,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				disband_city->troop_go_out(u);
 				gui.invalidate(loc);
 			} else {
-				unit& u = *units.find(loc, (index == -1 * unit_map::OVERLAY)? true: false);
+				unit& u = *units.find_unit(loc, (index == -1 * unit_map::OVERLAY)? true: false);
 				do_demolish(gui, units, current_team, &u, income, false);
 			}
 
@@ -4451,7 +4451,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			map_location loc(child, NULL);
 
-			unit& u = *units.find(loc);
+			unit& u = *units.find_unit(loc, true);
 			u.inching_block_turns(increase);						
 
 		} else if (const config &child = cfg->child("event")) {
@@ -4460,7 +4460,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			map_location loc(child, NULL);
 
 			if (type == replay::EVENT_ENCOURAGE) {
-				unit& u = *resources::units->find(loc);
+				unit& u = *resources::units->find_unit(loc, true);
 				hero* h2 = u.can_encourage();
 				u.do_encourage(u.master(), *h2);
 				resources::screen->invalidate(loc);
@@ -4602,23 +4602,23 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			map_location src = steps.front();
 			map_location dst = steps.back();
 
-			unit_map::iterator u = units.find(dst);
+			unit* u = units.find_unit(dst, true);
 			if (src == dst) {
 				// Magic: Move with identical source and destination. set movement_ to 0.
 				u->set_movement(0);
 				continue;
 			}
-			
+
 			// destination maybe already occupied! mover may cannot reach dst loc! for example encount to alert attack.
-			if (u.valid() && !unit_is_city(&*u)) {
+			if (u && !unit_is_city(u)) {
 				std::stringstream errbuf;
 				errbuf << "destination already occupied: "
 				       << dst << '\n';
 				replay::process_error(errbuf.str());
 			}
 
-			u = units.find(src);
-			if (!u.valid()) {
+			u = units.find_unit(src, true);
+			if (!u) {
 				std::stringstream errbuf;
 				errbuf << "unfound location for source of movement: "
 				       << src << " -> " << dst << '\n';
@@ -4665,7 +4665,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			if (cfg->child("expedite")) {
 				bool zero_movement = child->get("zero")->to_int()? true: false;
 				if (zero_movement) {
-					units.find(steps.back())->set_movement(0);
+					units.find_unit(steps.back(), true)->set_movement(0);
 				}
 
 				gui.invalidate(steps.front());
@@ -4722,8 +4722,8 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				def_weapon_num = lexical_cast_default<int>(def_weapon);
 			}
 
-			unit_map::iterator u = resources::units->find(src, (layer == unit_map::OVERLAY)? true: false);
-			if (!u.valid()) {
+			unit* u = resources::units->find_unit(src, (layer == unit_map::OVERLAY)? true: false);
+			if (!u) {
 				std::stringstream errbuf;
 				errbuf << "unfound location(" << src << ") for source of attack\n";
 				replay::process_error(errbuf.str());
@@ -4733,9 +4733,9 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 				replay::process_error("illegal weapon type in attack\n");
 			}
 
-			unit_map::iterator tgt = units.find(dst, (defender_layer == unit_map::OVERLAY)? true: false);
+			unit* tgt = units.find_unit(dst, (defender_layer == unit_map::OVERLAY)? true: false);
 
-			if (!tgt.valid()) {
+			if (!tgt) {
 				std::stringstream errbuf;
 				errbuf << "unfound defender for attack: " << src << " -> " << dst << '\n';
 				replay::process_error(errbuf.str());
@@ -4752,14 +4752,14 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 
 			std::pair<map_location, map_location> to_locs = attack_unit(*u, *tgt, weapon_num, def_weapon_num, !get_replay_source().is_skipping(), child.child("duel"), move, constant_attacks);
 
-			u = units.find(to_locs.first);
-			tgt = units.find(to_locs.second);
+			u = units.find_unit(to_locs.first, true);
+			tgt = units.find_unit(to_locs.second, true);
 
-			if (u.valid() && u->advances()) {
+			if (u && u->advances()) {
 				get_replay_source().add_expected_advancement(&*u);
 			}
 			
-			if (tgt.valid() && tgt->advances()) {
+			if (tgt && tgt->advances()) {
 				get_replay_source().add_expected_advancement(&*tgt);
 			}
 
@@ -4854,8 +4854,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 							int x = lexical_cast_default<int>(*it);
 							++ it;
 							int y = lexical_cast_default<int>(*it);
-							unit_map::const_iterator it_u = units.find(map_location(x, y));
-							unit* u = &*it_u;
+							unit* u = units.find_unit(map_location(x, y), true);
 							if (number >= 0) {
 								artifical* art = unit_2_artifical(u);
 								std::vector<unit*>& resides = art->reside_troops();
@@ -4881,7 +4880,7 @@ bool do_replay_handle(int side_num, const std::string &do_untill)
 			int number = child["number"].to_int();
 			bool join = child["join"].to_int()? true: false;
 
-			reform_captain(units, *units.find(loc), heros[number], join, true);
+			reform_captain(units, *units.find_unit(loc, true), heros[number], join, true);
 
 		} else if (const config &child = cfg->child("active_tactic")) {
 			bool add = child["add"].to_int()? true: false;

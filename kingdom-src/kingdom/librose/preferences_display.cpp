@@ -28,7 +28,6 @@
 #include "gettext.hpp"
 #include "gui/dialogs/simple_item_selector.hpp"
 #include "gui/dialogs/transient_message.hpp"
-#include "hotkeys.hpp"
 #include "log.hpp"
 #include "marked-up_text.hpp"
 #include "wml_separators.hpp"
@@ -38,15 +37,6 @@
 bool require_change_resolution = false;
 
 namespace preferences {
-
-display_manager::display_manager(display* d)
-{
-	load_hotkeys();
-}
-
-display_manager::~display_manager()
-{
-}
 
 bool detect_video_settings(CVideo& video, std::pair<int,int>& resolution, int& bpp, int& video_flags)
 {
@@ -183,6 +173,7 @@ bool show_video_mode_dialog(display& disp)
 		resolutions.push_back(std::make_pair(800, 480));
 		resolutions.push_back(std::make_pair(854, 480));
 		resolutions.push_back(std::make_pair(1280, 720));
+		resolutions.push_back(std::make_pair(1280, 800));
 	}
 
 	std::sort(resolutions.begin(),resolutions.end(),compare_resolutions);
@@ -220,6 +211,33 @@ bool show_video_mode_dialog(display& disp)
 	std::pair<int, int>& res = resolutions[static_cast<size_t>(choice)];
 	set_resolution(disp, res.first, res.second);
 	return true;
+}
+
+void show_preferences_dialog(display& disp)
+{
+	bool first = true;
+	while (true) {
+		int res = gui2::app_show_preferences_dialog(disp, first);
+		if (first) {
+			first = false;
+		}
+		if (res == preferences::CHANGE_RESOLUTION) {
+			if (preferences::show_video_mode_dialog(disp)) {
+				return;
+			}
+
+		} else if (res == preferences::MAKE_FULLSCREEN) {
+			preferences::set_fullscreen(disp, true);
+			return;
+
+		} else if (res == preferences::MAKE_WINDOWED) {
+			preferences::set_fullscreen(disp, false);
+			return;
+
+		} else {
+			return;
+		}
+	}
 }
 
 } // end namespace preferences

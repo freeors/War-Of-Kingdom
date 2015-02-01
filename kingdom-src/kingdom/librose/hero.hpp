@@ -1036,9 +1036,9 @@ public:
 	{}
 
 #if defined(_KINGDOM_EXE) || !defined(_WIN32)
-	bool upgrade_leader(game_display& disp, hero_map& heros);
-	bool upgrade_member(game_display& disp, hero_map& heros, hero& h);
-	bool upgrade_internal(game_display& disp, hero_map& heros, tmember* m, std::map<int, http::temployee>* employees);
+	bool upgrade_leader(display& disp, hero_map& heros);
+	bool upgrade_member(display& disp, hero_map& heros, hero& h);
+	bool upgrade_internal(display& disp, hero_map& heros, tmember* m, std::map<int, http::temployee>* employees);
 	int calculate_total_point() const;
 	void from_membership(hero_map& heros, const http::membership& m, int city = HEROS_INVALID_NUMBER);
 	void from_local_membership(display& disp, hero_map& heros, const http::membership& m, bool enhance);

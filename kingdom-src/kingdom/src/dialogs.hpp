@@ -19,9 +19,9 @@ class unit;
 class unit_type;
 class hero;
 class team;
+class display;
 
 #include "map_location.hpp"
-#include "construct_dialog.hpp"
 #include "events.hpp"
 #include "network.hpp"
 

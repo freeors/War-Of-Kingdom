@@ -89,7 +89,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(tower_tent)
 
-ttower_tent::ttower_tent(game_display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero)
+ttower_tent::ttower_tent(display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero)
 	: ttent(heros, cards, cfg, campaign_config, player_hero, "tower")
 	, trandom_map(cfg, mode_tag::TOWER)
 	, gui_(gui)
@@ -138,29 +138,19 @@ void ttower_tent::pre_show(CVideo& video, twindow& window)
 void ttower_tent::ai_count(twindow& window)
 {
 	// The possible eras to play
-	std::vector<std::string> items;
-	std::map<int, tval_str> ai_count_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
+	items.push_back(tval_str(30, "30"));
+	items.push_back(tval_str(40, "40"));
+	items.push_back(tval_str(50, "50"));
+	items.push_back(tval_str(60, "60"));
+	items.push_back(tval_str(70, "70"));
 
-	ai_count_map.insert(std::make_pair(0, tval_str(30, "30")));
-	ai_count_map.insert(std::make_pair(1, tval_str(40, "40")));
-	ai_count_map.insert(std::make_pair(2, tval_str(50, "50")));
-	ai_count_map.insert(std::make_pair(3, tval_str(60, "60")));
-	ai_count_map.insert(std::make_pair(4, tval_str(70, "70")));
-
-	for (std::map<int, tval_str>::iterator it = ai_count_map.begin(); it != ai_count_map.end(); ++ it) {
-		items.push_back(it->second.str);
-		if (tent::ai_count == it->second.val) {
-			actived_index = std::distance(ai_count_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, tent::ai_count);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	tent::ai_count = ai_count_map.find(selected)->second.val;
+	tent::ai_count = items[selected].val;
 
 	std::stringstream strstr;
 	strstr << tent::ai_count;
@@ -170,28 +160,19 @@ void ttower_tent::ai_count(twindow& window)
 void ttower_tent::turns(twindow& window)
 {
 	// The possible eras to play
-	std::vector<std::string> items;
-	std::map<int, tval_str> turns_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
-	turns_map.insert(std::make_pair(0, tval_str(20, "20")));
-	turns_map.insert(std::make_pair(1, tval_str(30, "30")));
-	turns_map.insert(std::make_pair(2, tval_str(50, "50")));
-	turns_map.insert(std::make_pair(3, tval_str(70, "70")));
-	turns_map.insert(std::make_pair(4, tval_str(100, "100")));
+	items.push_back(tval_str(20, "20"));
+	items.push_back(tval_str(30, "30"));
+	items.push_back(tval_str(50, "50"));
+	items.push_back(tval_str(70, "70"));
+	items.push_back(tval_str(100, "100"));
 
-	for (std::map<int, tval_str>::iterator it = turns_map.begin(); it != turns_map.end(); ++ it) {
-		items.push_back(it->second.str);
-		if (tent::turns == it->second.val) {
-			actived_index = std::distance(turns_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, tent::turns);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	tent::turns = turns_map.find(selected)->second.val;
+	tent::turns = items[selected].val;
 
 	std::stringstream strstr;
 	strstr << tent::turns;

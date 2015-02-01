@@ -22,7 +22,6 @@
 
 class config;
 class display;
-class game_display;
 class card_map;
 
 namespace savegame {
@@ -51,7 +50,7 @@ std::string get_color_string(int id);
  * @param game_config The global, top-level WML configuration for the game
  * @param default_controller The default controller type
  */
-void start_local_game(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
+void start_local_game(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
 		card_map& cards, tcontroller default_controller);
 
 /** Starts a multiplayer game in client mode.
@@ -60,7 +59,7 @@ void start_local_game(game_display& disp, const config& game_config, hero_map& h
  * @param game_config The global, top-level WML configuration for the game
  * @param host        The host to connect to.
  */
-void start_client(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
+void start_client(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
 		card_map& cards, const std::string& host);
 
 
@@ -68,7 +67,7 @@ void start_client(game_display& disp, const config& game_config, hero_map& heros
 
 namespace http {
 
-bool register_user(game_display& disp, hero_map& heros, bool check_exist = false);
+bool register_user(display& disp, hero_map& heros, bool check_exist = false);
 struct membership 
 {
 	membership():
@@ -122,19 +121,18 @@ struct membership
 	int tax;
 	int version;
 };
-membership session(game_display& disp, hero_map& heros);
+membership session(display& disp, hero_map& heros);
 membership membership_hero(display& disp, hero_map& heros, bool quiet, const std::string& username = null_str);
-membership membership_from_uid(game_display& disp, hero_map& heros, bool quiet, int uid);
-membership membership_hero2(game_display& disp, hero_map& heros);
-std::vector<membership> membershiplist_vector(game_display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid);
-std::map<int, membership> membershiplist_map(game_display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid);
+membership membership_from_uid(display& disp, hero_map& heros, bool quiet, int uid);
+membership membership_hero2(display& disp, hero_map& heros);
+std::vector<membership> membershiplist_vector(display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid);
+std::map<int, membership> membershiplist_map(display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid);
 membership affirm_ally(display& disp, hero_map& heros, const std::string& username, bool dialog, bool ok);
 membership affirm_terminate(display& disp, hero_map& heros, const std::string& username, bool dialog);
-bool avatar_hero(game_display& disp, hero_map& heros, int uid, bool quiet);
-bool download_avatar(game_display& disp, hero_map& heros);
-bool upload_save(game_display& disp, hero_map& heros, const std::string& name);
-std::string download_save(game_display& disp, hero_map& heros, int sid);
-std::vector<savegame::www_save_info> list_save(game_display& disp, hero_map& heros);
+bool avatar_hero(display& disp, hero_map& heros, int uid, bool quiet);
+bool upload_save(display& disp, hero_map& heros, const std::string& name);
+std::string download_save(display& disp, hero_map& heros, int sid);
+std::vector<savegame::www_save_info> list_save(display& disp, hero_map& heros);
 
 struct pass_statistic {
 	std::string username;
@@ -148,8 +146,8 @@ struct pass_statistic {
 	std::pair<std::string, int> subcontinent;
 };
 
-membership upload_pass(game_display& disp, hero_map& heros, const pass_statistic& stat);
-std::vector<pass_statistic> list_pass(game_display& disp, hero_map& heros);
+membership upload_pass(display& disp, hero_map& heros, const pass_statistic& stat);
+std::vector<pass_statistic> list_pass(display& disp, hero_map& heros);
 
 enum {
 	siege_result_victory,
@@ -189,8 +187,8 @@ struct tsiege_record {
 	std::pair<std::string, int> subcontinent;
 	int employee;
 };
-membership upload_siege(game_display& disp, hero_map& heros, const tsiege_record& record);
-std::vector<tsiege_record> list_siege(game_display& disp, hero_map& heros);
+membership upload_siege(display& disp, hero_map& heros, const tsiege_record& record);
+std::vector<tsiege_record> list_siege(display& disp, hero_map& heros);
 
 struct tsubcontinent_city {
 	tsubcontinent_city(int cityno, int uid, int endurance, int times, int relation)
@@ -266,24 +264,24 @@ struct tmessage_record {
 membership upload_message(display& disp, hero_map& heros, const tmessage_record& record);
 std::vector<tmessage_record> list_message(display& disp, hero_map& heros);
 
-std::vector<pass_statistic> list_board_pass(game_display& disp, hero_map& heros);
-std::vector<membership> list_board_score(game_display& disp, hero_map& heros);
+std::vector<pass_statistic> list_board_pass(display& disp, hero_map& heros);
+std::vector<membership> list_board_score(display& disp, hero_map& heros);
 
-membership upgrade(game_display& disp, hero_map& heros, int number, int coin, int score);
+membership upgrade(display& disp, hero_map& heros, int number, int coin, int score);
 enum {
 	member_reload,
 	member_insert, 
 	member_erase, 
 	member_resort
 };
-membership member(game_display& disp, hero_map& heros, int op, const std::vector<std::pair<int, int> >& m, int coin, int score);
+membership member(display& disp, hero_map& heros, int op, const std::vector<std::pair<int, int> >& m, int coin, int score);
 enum {
 	exile_tag_erase, 
 	exile_tag_join
 };
-membership exile(game_display& disp, hero_map& heros, int tag, const std::vector<std::pair<int, int> >& m, int coin, int score);
+membership exile(display& disp, hero_map& heros, int tag, const std::vector<std::pair<int, int> >& m, int coin, int score);
 
-membership score(game_display& disp, hero_map& heros, int coin, int _score, bool transaction);
+membership score(display& disp, hero_map& heros, int coin, int _score, bool transaction);
 enum {
 	block_tag_city,
 	block_tag_field, 
@@ -295,9 +293,9 @@ enum {
 	block_tag_score,
 };
 membership upload_data(display& disp, hero_map& heros, const std::map<int, std::string>& block, bool quiet, int uid = -1);
-membership upload_layout(game_display& disp, hero_map& heros, const std::string& layout_str, const std::string& map_str);
+membership upload_layout(display& disp, hero_map& heros, const std::string& layout_str, const std::string& map_str);
 
-membership insert_transaction(game_display& disp, hero_map& heros, const std::string& number, const std::string& buyer, int request_uid, int type);
+membership insert_transaction(display& disp, hero_map& heros, const std::string& number, const std::string& buyer, int request_uid, int type);
 enum {
 	associate_tag_insert, 
 	associate_tag_erase, 
@@ -336,12 +334,12 @@ struct temployee {
 	int lock;
 	std::string username;
 };
-membership employee_insert(game_display& disp, hero_map& heros);
-membership employee_common(game_display& disp, hero_map& heros, int tag, const std::set<int>& number, int coin, int score, std::map<int, temployee>* employees);
-std::map<int, temployee> list_employee(game_display& disp, hero_map& heros);
-bool do_employ_bh(game_display& disp, hero_map& heros, bool employ, int number, int coin, int score, std::map<int, temployee>* employees);
-bool employee_employ(game_display& disp, hero_map& heros, hero& h, int score, std::map<int, temployee>* employees);
-bool employee_fire(game_display& disp, hero_map& heros, hero& h, int level, std::map<int, temployee>* employees);
+membership employee_insert(display& disp, hero_map& heros);
+membership employee_common(display& disp, hero_map& heros, int tag, const std::set<int>& number, int coin, int score, std::map<int, temployee>* employees);
+std::map<int, temployee> list_employee(display& disp, hero_map& heros);
+bool do_employ_bh(display& disp, hero_map& heros, bool employ, int number, int coin, int score, std::map<int, temployee>* employees);
+bool employee_employ(display& disp, hero_map& heros, hero& h, int score, std::map<int, temployee>* employees);
+bool employee_fire(display& disp, hero_map& heros, hero& h, int level, std::map<int, temployee>* employees);
 
 enum {
 	signin_tag_fillup, 

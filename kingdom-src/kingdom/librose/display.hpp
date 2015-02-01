@@ -39,6 +39,7 @@ class terrain_builder;
 struct time_of_day;
 class map_labels;
 class arrow;
+class base_unit;
 
 #include "font.hpp"
 #include "key.hpp"
@@ -98,6 +99,9 @@ struct rect_of_hexes {
 #define point_in_rect_of_hexes(x, y, rect)	\
 	((x) >= (rect).left && (y) >= (rect).top[(x) & 1] && (x) <= (rect).right && (y) <= (rect).bottom[(x) & 1])
 
+#define draw_area_index(x, y)	((y) + map_border_size_) * draw_area_pitch_ + ((x) + map_border_size_)
+#define draw_area_val(x, y)		draw_area_[((y) + map_border_size_) * draw_area_pitch_ + ((x) + map_border_size_)]
+
 class display
 {
 public:
@@ -118,11 +122,13 @@ public:
 	enum {ZOOM_72 = 72, ZOOM_64 = 64, ZOOM_56 = 56, ZOOM_48 = 48};
 	static int adjust_zoom(int zoom);
 
-	display(controller_base* controller, CVideo& video, const gamemap* map, const config& theme_cfg,
+	display(const std::string& tile, controller_base* controller, CVideo& video, const gamemap* map, const config& theme_cfg,
 			const config& level, size_t num_reports);
 	virtual ~display();
 	static display* get_singleton() { return singleton_ ;}
 	static void set_singleton(display* s) { singleton_ = s; }
+
+	static display* create_dummy_display(CVideo& video);
 
 	/**
 	 * Updates internals that cache map size. This should be called when the map
@@ -149,8 +155,8 @@ public:
 	/** return the screen surface or the surface used for map_screenshot. */
 	surface get_screen_surface() { return map_screenshot_ ? map_screenshot_surf_ : screen_.getSurface();}
 
-	virtual bool in_game() const { return false; }
-	virtual bool in_editor() const { return false; }
+	// virtual bool in_game() const { return false; }
+	virtual bool in_theme() const { return false; }
 
 	/**
 	 * the dimensions of the display. x and y are width/height.
@@ -168,7 +174,7 @@ public:
 	 * Returns the maximum area used for the map
 	 * regardless to resolution and view size
 	 */
-	const SDL_Rect& max_map_area() const;
+	virtual const SDL_Rect& max_map_area() const;
 
 	/**
 	 * Returns the area used for the map
@@ -192,13 +198,13 @@ public:
 	 * (i.e. not entirely from tip to tip -- use hex_size()
 	 * to get the distance from tip to tip)
 	 */
-	int hex_width() const { return (zoom_*3)/4; }
+	virtual int hex_width() const { return zoom_; }
 
 	/**
 	 * Function which returns the size of a hex in pixels
 	 * (from top tip to bottom tip or left edge to right edge).
 	 */
-	int hex_size() const { return zoom_; }
+	virtual int hex_size() const { return zoom_; }
 
 	/** Returns the current zoom factor. */
 	double get_zoom_factor() const;
@@ -215,7 +221,7 @@ public:
 	 * location of the hex that this pixel corresponds to.
 	 * Returns an invalid location if the mouse isn't over any valid location.
 	 */
-	const map_location pixel_position_to_hex(int x, int y) const;
+	virtual const map_location pixel_position_to_hex(int x, int y) const;
 
 	/**
 	 * given x,y co-ordinates of the mouse, will return the location of the
@@ -234,11 +240,14 @@ public:
 	void invalidate_game_status() { invalidateGameStatus_ = true; }
 
 	/** Functions to get the on-screen positions of hexes. */
-	int get_location_x(const map_location& loc) const;
-	int get_location_y(const map_location& loc) const;
+	virtual int get_location_x(const map_location& loc) const;
+	virtual int get_location_y(const map_location& loc) const;
+
+	int get_scroll_pixel_x(int x) const;
+	int get_scroll_pixel_y(int y) const;
 
 	/** Return the rectangular area of hexes overlapped by r (r is in screen coordinates) */
-	const rect_of_hexes hexes_under_rect(const SDL_Rect& r) const;
+	virtual const rect_of_hexes hexes_under_rect(const SDL_Rect& r) const;
 
 	/** Returns the rectangular area of visible hexes */
 	const rect_of_hexes get_visible_hexes() const { return hexes_under_rect(map_area());};
@@ -352,13 +361,6 @@ public:
 
 	/** Toggle to continuously redraw the screen. */
 	static void toggle_benchmark();
-
-	/**
-	 * Toggle to debug foreground terrain.
-	 * Separate background and foreground layer
-	 * to better spot any error there.
-	 */
-	static void toggle_debug_foreground();
 
 	terrain_builder& get_builder() {return *builder_;};
 
@@ -527,6 +529,9 @@ public:
 	virtual gui2::ttheme* create_theme_dlg(const config& cfg) { return NULL; }
 	const reports::report& cached_report(int num) const { return reports_[num]; }
 
+	int min_zoom() const { return min_zoom_; }
+	int max_zoom() const { return max_zoom_; }
+
 protected:
 	/** Clear the screen contents */
 	void clear_screen();
@@ -607,6 +612,10 @@ protected:
 
 	const std::string& get_variant(const std::vector<std::string>& variants, const map_location &loc) const;
 
+	virtual double minimap_shift_x(const SDL_Rect& map_rect, const SDL_Rect& map_out_rect) const;
+	virtual double minimap_shift_y(const SDL_Rect& map_rect, const SDL_Rect& map_out_rect) const;
+
+protected:
 	CVideo& screen_;
 	const gamemap* map_;
 	int xpos_, ypos_;
@@ -662,6 +671,10 @@ protected:
 	int draw_area_size_;
 	bool drawing_;
 	rect_of_hexes draw_area_rect_;
+	int map_border_size_;
+	// for draw
+	base_unit** draw_area_unit_;
+	size_t draw_area_unit_size_;
 
 	// used for runtime tooltip of mouse-over unit
 	int main_tip_handle_;
@@ -906,6 +919,8 @@ protected:
 	const config* theme_current_cfg_;
 	gui2::ttheme* theme_;
 	
+	int min_zoom_;
+	int max_zoom_;
 	std::map<int, animation*> area_anims_;
 
 private:
@@ -937,6 +952,21 @@ private:
 	 * to simplify the cleaning up of tiles left by units
 	 */
 	static display * singleton_;
+};
+
+class display_lock
+{
+public:
+	display_lock(display& disp)
+		: disp_(disp)
+	{}
+	~display_lock()
+	{
+		display::set_singleton(&disp_);
+	}
+
+private:
+	display& disp_;
 };
 
 const SDL_Rect& calculate_energy_bar(surface surf);

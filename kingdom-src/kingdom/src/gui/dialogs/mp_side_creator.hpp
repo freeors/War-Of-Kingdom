@@ -24,7 +24,7 @@
 #include <hero.hpp>
 
 class config;
-class game_display;
+class display;
 class gamemap;
 
 namespace ai {
@@ -150,7 +150,7 @@ public:
 
 	typedef std::vector<side> side_list;
 
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	gamemap& gmap_;
 	const config& game_config_;
@@ -165,7 +165,7 @@ public:
 	void set_faction(int side, int faction);
 
 
-	explicit tmp_side_creator(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
+	explicit tmp_side_creator(hero_map& heros, hero_map& heros_start, display& disp, gamemap& gmap, const config& game_config,
 			config& gamelist, const mp_game_settings& params, const int num_turns,
 			tcontroller default_controller, bool local_players_only = false);
 

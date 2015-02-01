@@ -42,7 +42,6 @@
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/mp_create_game_set_password.hpp"
 #include "gui/dialogs/transient_message.hpp"
-#include "gui/dialogs/combo_box.hpp"
 #include "formula_string_utils.hpp"
 #include <boost/bind.hpp>
 

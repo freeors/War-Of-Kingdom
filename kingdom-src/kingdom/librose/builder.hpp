@@ -72,6 +72,8 @@ public:
 
 	static const unsigned int DUMMY_HASH = 0;
 
+	static const std::string tb_dat_prefix;
+
 	/** A shorthand typedef for a list of animated image locators,
 	 * the base data type returned by the get_terrain_at method.
 	 */
@@ -80,7 +82,7 @@ public:
 	/** Constructor for the terrain_builder class.
 	 * used to generate tb.dat
 	 */
-	terrain_builder(const std::string& offmap_image, uint32_t nfiles, uint32_t sum_size, uint32_t modified);
+	terrain_builder(const config& cfg, uint32_t nfiles, uint32_t sum_size, uint32_t modified);
 
 	/** Constructor for the terrain_builder class.
 	 *
@@ -93,16 +95,9 @@ public:
 	 *						This image automatically gets the 'terrain/' prefix
 	 *						and '.png' suffix
 	 */
-	terrain_builder(const gamemap* map);
+	terrain_builder(const std::string& id, const gamemap* map);
 	~terrain_builder();
 
-	/**  Set the config where we will parse the global terrain rules.
-	 *   This also flushes the terrain rules cache.
-	 *
-	 * @param cfg			The main grame configuration object, where the
-	 *						[terrain_graphics] rule reside.
-	 */
-	static void set_terrain_rules_cfg(const config& cfg);
 	/**
 	 * Release memroy for building rules.
 	 */
@@ -738,8 +733,6 @@ public:
 	 */
 	void add_off_map_rule(const std::string& image);
 
-	void flush_local_rules();
-
 	/**
 	 * Checks whether a terrain code matches a given list of terrain codes.
 	 *
@@ -825,8 +818,7 @@ public:
 	static uint32_t building_rules_size_;
 	static uint32_t unit_rules_size_;
 
-	/** Config used to parse global terrain rules */
-	static const config* rules_cfg_;
+	static std::string using_id;
 };
 
 bool cb_terrain_matches(const map_location& loc, const t_translation::t_match& terrain_types_match);

@@ -112,7 +112,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(title_screen)
 
-ttitle_screen::ttitle_screen(game_display& disp, hero_map& heros, hero& player_hero)
+ttitle_screen::ttitle_screen(display& disp, hero_map& heros, hero& player_hero)
 	: disp_(disp)
 	, heros_(heros)
 	, player_hero_(player_hero)
@@ -196,8 +196,8 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	control = find_widget<tcontrol>(&window, "revision_number", false, false);
 	if (control) {
 		// control->set_label(_("V") + game_config::version);
-		control->set_label(_("V") + game_config::version + "-alpha");
-		// control->set_label(_("v") + game_config::version + "-beta");
+		// control->set_label(_("V") + game_config::version + "-alpha");
+		control->set_label(_("v") + game_config::version + "-beta");
 		// control->set_label(_("v") + game_config::version + "-beta3");
 	}
 	window.canvas()[0].set_variable("revision_number", variant(_("Version") + std::string(" ") + game_config::version));

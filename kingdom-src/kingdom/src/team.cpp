@@ -1404,11 +1404,11 @@ void team::read(const uint8_t* mem, const gamemap& map, size_t team_size)
 
 bool team::owns_village(const map_location& loc) const
 {
-	unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
-	if (!curr_node || !curr_node->second->fort()) {
+	unit* base = units_.find_unit(loc, false);
+	if (!base || !base->fort()) {
 		return false;
 	}
-	return curr_node->second->side() == info_.side;
+	return base->side() == info_.side;
 }
 
 int team::base_income() const 
@@ -3140,8 +3140,8 @@ int team::get_random_decree(artifical& city, int random)
 			found = false;
 			const std::vector<map_location>& eas = city.economy_area();
 			for (std::vector<map_location>::const_iterator ea = eas.begin(); ea != eas.end(); ++ ea) {
-				unit_map::const_iterator find = units_.find(*ea);
-				if (!find.valid()) {
+				unit* find = units_.find_unit(*ea, true);
+				if (!find) {
 					continue;
 				}
 				if (require.find(find->type()->master()) != require.end()) {
@@ -3164,7 +3164,7 @@ int team::get_random_decree(artifical& city, int random)
 
 bool team::condition_card(const card& c, const map_location& loc)
 {
-	unit_map::iterator itor = find_visible_unit(loc, *this);
+	unit* itor = find_visible_unit(loc, *this);
 	const config& cond_cfg = c.get_cfg().child("condition");
 
 	std::string unit_str = cond_cfg["unit"].str();
@@ -3172,10 +3172,10 @@ bool team::condition_card(const card& c, const map_location& loc)
 	std::string hero_str = c.target_hero()? cond_cfg["hero"].str(): "";
 
 	if (unit_str.empty()) {
-		if (itor.valid()) {
+		if (itor) {
 			return false;
 		}
-	} else if (!itor.valid()) {
+	} else if (!itor) {
 		return false;
 	} else {
 		const std::vector<std::string>& types = utils::split(unit_str);
@@ -3289,7 +3289,7 @@ void team::consume_card(const card& c, const map_location& loc, std::vector<std:
 	}
 }
 
-void touched_heros_internal(unit_map::iterator& u_itor, const std::vector<std::string>& types, std::vector<std::pair<int, unit*> >& pairs)
+void touched_heros_internal(unit* u_itor, const std::vector<std::string>& types, std::vector<std::pair<int, unit*> >& pairs)
 {
 	if (u_itor->is_artifical()) {
 		artifical& art = *unit_2_artifical(&*u_itor);
@@ -3338,7 +3338,7 @@ void touched_heros_internal(unit_map::iterator& u_itor, const std::vector<std::s
 	}
 }
 
-void touched_troops_internal(unit_map::iterator& u_itor, const std::vector<std::string>& types, std::vector<std::pair<int, unit*> >& pairs)
+void touched_troops_internal(unit* u_itor, const std::vector<std::string>& types, std::vector<std::pair<int, unit*> >& pairs)
 {
 	if (u_itor->is_city()) {
 		artifical& art = *unit_2_artifical(&*u_itor);
@@ -3375,14 +3375,14 @@ void team::card_touched(const card& c, const map_location& loc, std::vector<std:
 	if (!range_cfg) {
 		return;
 	}
-	unit_map::iterator u_itor;
+	unit* u_itor = NULL;
 	std::vector<unit*> effected;
 
 	const std::string hero_str = cond_cfg["type"].str();
 	const std::vector<std::string>& types = utils::split(hero_str);
 	
 	if (range_cfg["self"].to_bool()) {
-		u_itor = units_.find(loc);
+		u_itor = units_.find_unit(loc, true);
 		if (c.target_hero()) {
 			touched_heros_internal(u_itor, types, pairs);
 		} else {
@@ -3400,7 +3400,7 @@ void team::card_touched(const card& c, const map_location& loc, std::vector<std:
 		if (!condition_card(c, loc1)) {
 			continue;
 		}
-		u_itor = units_.find(loc1);
+		u_itor = units_.find_unit(loc1, true);
 		if (std::find(effected.begin(), effected.end(), &*u_itor) != effected.end()) {
 			continue;
 		}

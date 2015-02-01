@@ -251,122 +251,82 @@ void tmap_generator::apply_change()
 
 void tmap_generator::players(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> players_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
 	for (int i = min_players; i <= max_players_; i ++) {
-		players_map.push_back(tval_str(i, players_str(i)));
+		items.push_back(tval_str(i, players_str(i)));
 	}
 
-	for (std::vector<tval_str>::iterator it = players_map.begin(); it != players_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (val_nplayers_ == it->val) {
-			actived_index = std::distance(players_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, val_nplayers_);
 	dlg.show(gui_.video());
 
-	int selected = dlg.selected_index();
-	val_nplayers_ = players_map[selected].val;
-
-	players_->set_label(players_map[selected].str);
+	val_nplayers_ = dlg.selected_val();
+	players_->set_label(items[dlg.selected_index()].str);
 }
 
 void tmap_generator::width(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> width_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
 	int step = (max_width_ - min_width_) / 5;
 	if (!step) {
 		step = 1;
 	}
 	for (int i = min_width_; i <= max_width_; i += step) {
-		width_map.push_back(tval_str(i, height_str(i)));
+		items.push_back(tval_str(i, height_str(i)));
 	}
 
-	for (std::vector<tval_str>::iterator it = width_map.begin(); it != width_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (val_width_ == it->val) {
-			actived_index = std::distance(width_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, val_width_);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	val_width_ = width_map[selected].val;
+	val_width_ = items[selected].val;
 
-	width_->set_label(width_map[selected].str);
+	width_->set_label(items[selected].str);
 }
 
 void tmap_generator::height(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> height_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
 	int step = (max_height_ - min_height_) / 5;
 	if (!step) {
 		step = 1;
 	}
 	for (int i = min_height_; i <= max_height_; i += step) {
-		height_map.push_back(tval_str(i, height_str(i)));
+		items.push_back(tval_str(i, height_str(i)));
 	}
 
-	for (std::vector<tval_str>::iterator it = height_map.begin(); it != height_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (val_height_ == it->val) {
-			actived_index = std::distance(height_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, val_height_);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	val_height_ = height_map[selected].val;
+	val_height_ = items[selected].val;
 
-	height_->set_label(height_map[selected].str);
+	height_->set_label(items[selected].str);
 }
 
 void tmap_generator::iterations(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> iterations_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
 	for (int i = min_iterations; i <= max_iterations; i += (max_iterations - min_iterations) / 10) {
-		iterations_map.push_back(tval_str(i, iterations_str(i)));
+		items.push_back(tval_str(i, iterations_str(i)));
 	}
 
-	for (std::vector<tval_str>::iterator it = iterations_map.begin(); it != iterations_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (val_iterations_ == it->val) {
-			actived_index = std::distance(iterations_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, val_iterations_);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	val_iterations_ = iterations_map[selected].val;
+	val_iterations_ = items[selected].val;
 
-	iterations_->set_label(iterations_map[selected].str);
+	iterations_->set_label(items[selected].str);
 }
 
 void tmap_generator::hillsize(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> hillsize_map;
-	int actived_index = 0;
-	
+	std::vector<tval_str> items;
+		
 	int max = max_hillsize;
 	int step = (max_hillsize - min_hillsize) / 10;
 	if (max_width_ < 10 || max_height_ < 10) {
@@ -383,108 +343,74 @@ void tmap_generator::hillsize(twindow& window)
 		step = 2;
 	}
 	for (int i = min_hillsize; i <= max; i += step) {
-		hillsize_map.push_back(tval_str(i, hillsize_str(i)));
+		items.push_back(tval_str(i, hillsize_str(i)));
 	}
 
-	for (std::vector<tval_str>::iterator it = hillsize_map.begin(); it != hillsize_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (val_hill_size_ == it->val) {
-			actived_index = std::distance(hillsize_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, val_hill_size_);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	val_hill_size_ = hillsize_map[selected].val;
+	val_hill_size_ = items[selected].val;
 
-	hillsize_->set_label(hillsize_map[selected].str);
+	hillsize_->set_label(items[selected].str);
 }
 
 void tmap_generator::villages(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> villages_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
 	for (int i = min_villages; i <= max_villages; i += (max_villages - min_villages) / 5) {
-		villages_map.push_back(tval_str(i, villages_str(i)));
+		items.push_back(tval_str(i, villages_str(i)));
 	}
 
-	for (std::vector<tval_str>::iterator it = villages_map.begin(); it != villages_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (val_nvillages_ == it->val) {
-			actived_index = std::distance(villages_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, val_nvillages_);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	val_nvillages_ = villages_map[selected].val;
+	val_nvillages_ = items[selected].val;
 
-	villages_->set_label(villages_map[selected].str);
+	villages_->set_label(items[selected].str);
 }
 
 void tmap_generator::castlesize(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> castlesize_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
-	castlesize_map.push_back(tval_str(2, castlesize_str(2)));
-	castlesize_map.push_back(tval_str(4, castlesize_str(4)));
-	castlesize_map.push_back(tval_str(6, castlesize_str(6)));
-	castlesize_map.push_back(tval_str(8, castlesize_str(8)));
-	castlesize_map.push_back(tval_str(10, castlesize_str(10)));
-	castlesize_map.push_back(tval_str(12, castlesize_str(12)));
-	castlesize_map.push_back(tval_str(14, castlesize_str(14)));
+	items.push_back(tval_str(2, castlesize_str(2)));
+	items.push_back(tval_str(4, castlesize_str(4)));
+	items.push_back(tval_str(6, castlesize_str(6)));
+	items.push_back(tval_str(8, castlesize_str(8)));
+	items.push_back(tval_str(10, castlesize_str(10)));
+	items.push_back(tval_str(12, castlesize_str(12)));
+	items.push_back(tval_str(14, castlesize_str(14)));
 
-	for (std::vector<tval_str>::iterator it = castlesize_map.begin(); it != castlesize_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (val_castle_size_ == it->val) {
-			actived_index = std::distance(castlesize_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, val_castle_size_);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	val_castle_size_ = castlesize_map[selected].val;
+	val_castle_size_ = items[selected].val;
 
-	castlesize_->set_label(castlesize_map[selected].str);
+	castlesize_->set_label(items[selected].str);
 }
 
 void tmap_generator::landform(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> landform_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
-	landform_map.push_back(tval_str(0, landform_str(0)));
-	landform_map.push_back(tval_str(2, landform_str(2)));
-	landform_map.push_back(tval_str(4, landform_str(4)));
-	landform_map.push_back(tval_str(6, landform_str(6)));
-	landform_map.push_back(tval_str(8, landform_str(8)));
-	landform_map.push_back(tval_str(10, landform_str(10)));
+	items.push_back(tval_str(0, landform_str(0)));
+	items.push_back(tval_str(2, landform_str(2)));
+	items.push_back(tval_str(4, landform_str(4)));
+	items.push_back(tval_str(6, landform_str(6)));
+	items.push_back(tval_str(8, landform_str(8)));
+	items.push_back(tval_str(10, landform_str(10)));
 
-	for (std::vector<tval_str>::iterator it = landform_map.begin(); it != landform_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (val_island_size_ == it->val) {
-			actived_index = std::distance(landform_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, val_island_size_);
 	dlg.show(gui_.video());
 
 	int selected = dlg.selected_index();
-	val_island_size_ = landform_map[selected].val;
+	val_island_size_ = items[selected].val;
 
-	landform_->set_label(landform_map[selected].str);
+	landform_->set_label(items[selected].str);
 }
 
 } // namespace

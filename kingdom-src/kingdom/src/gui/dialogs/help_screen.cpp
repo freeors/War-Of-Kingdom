@@ -27,7 +27,6 @@
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/progress_bar.hpp"
 #include "gui/widgets/settings.hpp"
-#include "gui/widgets/text_box.hpp"
 #include "gui/widgets/window.hpp"
 #include "preferences_display.hpp"
 #include "help.hpp"
@@ -112,7 +111,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(help_screen)
 
-thelp_screen::thelp_screen(game_display& disp, hero_map& heros, hero& player_hero)
+thelp_screen::thelp_screen(display& disp, hero_map& heros, hero& player_hero)
 	: disp_(disp)
 	, heros_(heros)
 	, player_hero_(player_hero)

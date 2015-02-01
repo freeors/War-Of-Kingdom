@@ -155,7 +155,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 
 #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
 #else
-	if (!in_tip_state() && !units_.count(new_hex) && !units_.count(new_hex, false)) {
+	if (!in_tip_state() && !units_.valid2(new_hex, true) && !units_.valid2(new_hex, false)) {
 		gui_->hide_tip();
 	}
 #endif
@@ -166,7 +166,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 			// we store the previous hexes used to propose attack direction
 			previous_hex_ = last_hex_;
 			// the hex of the selected unit is also "free"
-			if (last_hex_ == selected_hex_ || find_unit(last_hex_) == units_.end()) {
+			if (last_hex_ == selected_hex_ || !find_unit(last_hex_)) {
 				previous_free_hex_ = last_hex_;
 			}
 		}
@@ -182,19 +182,11 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 	if (reachmap_invalid_) update = true;
 
 	if (update) {
-		unit_map::iterator umapiter = units_.find(new_hex);
-		bool over_is_selfcity = (umapiter.valid() && umapiter->can_reside() && (umapiter->side() == side_num_))? true: false;
+		unit* umapiter = units_.find_unit(new_hex, true);
+		bool over_is_selfcity = (umapiter && umapiter->can_reside() && (umapiter->side() == side_num_))? true: false;
 
 		if (reachmap_invalid_) {
 			reachmap_invalid_ = false;
-			if (!current_paths_.destinations.empty() && !show_partial_move_) {
-				unit_map::iterator u = find_unit(selected_hex_);
-				if (selected_hex_.valid() && u != units_.end() ) {
-					// reselect the unit without firing events (updates current_paths_)
-					// select_hex(selected_hex_, true);
-				}
-				// we do never deselect here, mainly because of canceled attack-move
-			}
 		}
 
 		// reset current_route_ and current_paths if not valid anymore
@@ -218,13 +210,10 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 			gui().highlight_hex(new_hex);
 		}
 
-		const unit_map::iterator selected_itor = find_unit(selected_hex_);
-		unit* selected_unit = NULL;
 		// maybe no unit on selected_hex_. in this case call *selected_itor will result in invalid.
-		if (selected_itor.valid()) {
-			selected_unit = &*selected_itor;
-		}
-		const unit_map::iterator mouseover_unit = find_unit(new_hex);
+		unit* selected_itor = find_unit(selected_hex_);
+		unit* selected_unit = selected_itor;
+		unit* mouseover_unit = find_unit(new_hex);
 
 		// we search if there is an attack possibility and where
 		map_location attack_from;
@@ -332,7 +321,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 				} else if (build_from.valid()) {
 					// cursor: build!
 					cursor::set(dragging_started_ ? cursor::BUILD_DRAG : cursor::BUILD);
-				} else if (!building_bldg_ && !playing_card_ && !selected_unit->is_artifical() && (mouseover_unit == units_.end() || mouseover_unit->can_stand(*selected_unit) || over_is_selfcity) && current_paths_.destinations.contains(new_hex)) {
+				} else if (!building_bldg_ && !playing_card_ && !selected_unit->is_artifical() && (!mouseover_unit || mouseover_unit->can_stand(*selected_unit) || over_is_selfcity) && current_paths_.destinations.contains(new_hex)) {
 					// cursor: footprint
 					if (over_is_selfcity) {
 						cursor::set(dragging_started_ ? cursor::ENTER_DRAG : cursor::ENTER);
@@ -355,7 +344,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 		// the destination is the pointed hex or the adjacent hex
 		// used to attack it
 		map_location dest;
-		unit_map::const_iterator dest_un;
+		unit* dest_un = NULL;
 		if (attack_from.valid()) {
 			dest = attack_from;
 			dest_un = find_unit(dest);
@@ -367,7 +356,7 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 			dest_un = mouseover_unit;
 		}
 
-		if (dest == selected_hex_ || (selected_unit && dest_un.valid() && !dest_un->can_stand(*selected_unit) && !over_is_selfcity)) {
+		if (dest == selected_hex_ || (selected_unit && dest_un && !dest_un->can_stand(*selected_unit) && !over_is_selfcity)) {
 			// 鼠标落回选中格子 || 落在的格子是个站了单位的格子(除去城市)
 			// ===>擦除A--B路线
 			current_route_.steps.clear();
@@ -383,9 +372,9 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 			}
 		}
 
-		unit_map::iterator un = mouseover_unit;
+		unit* un = mouseover_unit;
 
-		if (un != units_.end() && !gui().fogged(un->get_location())) {
+		if (un && !gui().fogged(un->get_location())) {
 			if (!un->is_commoner() && un->side() != side_num_) {
 				if (!over_is_selfcity && current_paths_.destinations.empty()) {
 					//unit under cursor is not on our team, highlight reach
@@ -410,26 +399,17 @@ void mouse_handler::mouse_motion(int x, int y, const bool browse, bool update)
 	}
 }
 
-unit_map::iterator mouse_handler::selected_unit()
+unit* mouse_handler::selected_unit()
 {
-	unit_map::iterator res = find_unit(selected_hex_);
-	if(res != units_.end()) {
+	unit* res = find_unit(selected_hex_);
+	if (res) {
 		return res;
 	} else {
 		return find_unit(last_hex_);
 	}
 }
 
-unit_map::iterator mouse_handler::find_unit(const map_location& hex)
-{
-	unit_map::iterator it = find_visible_unit(hex, viewing_team());
-	if (it.valid())
-		return it;
-	else
-		return resources::units->end();
-}
-
-unit_map::const_iterator mouse_handler::find_unit(const map_location& hex) const
+unit* mouse_handler::find_unit(const map_location& hex) const
 {
 	return find_visible_unit(hex, viewing_team());
 }
@@ -450,7 +430,7 @@ map_location mouse_handler::current_unit_tactic_from(const map_location& loc)
 {
 	const std::pair<map_location, int>& indicator = gui_->tactic_indicator();
 	if (indicator.second >= 0 && indicator.first.valid() && indicator.first == loc) {
-		const unit& tactician = *units_.find(indicator.first);
+		const unit& tactician = *units_.find_unit(indicator.first, true);
 		if (tactician.master().tactic_ != HEROS_NO_TACTIC) {
 			return selected_hex_;
 		}
@@ -495,7 +475,7 @@ map_location mouse_handler::current_unit_interior_from(const map_location& loc)
 {
 	const map_location& interior_indicator = gui_->interior_indicator();
 	if (!expediting_ && interior_indicator.valid() && interior_indicator == loc) {
-		const unit& interior = *units_.find(interior_indicator);
+		const unit& interior = *units_.find_unit(interior_indicator, true);
 		if (interior.is_city()) {
 			return selected_hex_;
 		}
@@ -633,7 +613,7 @@ void mouse_handler::do_right_click(const bool browse)
 		// redisplay context menu
 		show_menu_ = true;
 		// player cancel build, regenerate attack indicator.
-		gui_->set_attack_indicator(&*units_.find(selected_hex_));
+		gui_->set_attack_indicator(units_.find_unit(selected_hex_, true));
 		gui_->clear_build_indicator();
 		// recorder.add_build_cancel();
 
@@ -665,7 +645,7 @@ void mouse_handler::do_right_click(const bool browse)
 		}
 		gui_->set_theme_object_active("endturn", true);
 	}
-	if (units_.count(selected_hex_)) {
+	if (units_.valid2(selected_hex_, true)) {
 		gui_->invalidate_unit();
 	}
 
@@ -719,7 +699,7 @@ bool mouse_handler::post_move_unit(unit& mover, const map_location& stop_loc)
 			gui_->resort_access_troops(mover);
 		}
 
-		if (undo_stack_.empty() || mover.get_move_spectator().get_ambusher().valid()) {
+		if (undo_stack_.empty() || mover.get_move_spectator().get_ambusher()) {
 			// ambusher when move!
 			clear_undo_stack();
 		}
@@ -768,7 +748,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		}
 		//see if we're trying to do a build or move-and-build
 		if (build_from.valid()) {
-			unit& builder = *units_.find(build_from);
+			unit& builder = *units_.find_unit(build_from, true);
 			const unit_type* ut = unit_types.find(building_bldg_->type_id());
 			controller_.do_build(current_team(), &builder, ut, last_hex_);
 
@@ -855,7 +835,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			} else {
 				exit_placing_unit(true);
 
-				unit& mover = *units_.find(hex);
+				unit& mover = *units_.find_unit(hex, true);
 				set_unit_placing(mover);
 			}
 		} else {
@@ -916,11 +896,11 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 	bool check_shroud = current_team().auto_shroud_updates();
 
-	unit_map::iterator clicked_u = find_unit(hex);
+	unit* clicked_u = find_unit(hex);
 	bool cancel_recall = false;
 
 	if (expediting_ && (selected_hex_ != hex)) {
-		if (clicked_u.valid() && !clicked_u->can_stand(*selected_u) && ((clicked_u->side() != selected_u->side()) || !unit_is_city(&*clicked_u) || (clicked_u->get_location() == expediting_city_->get_location()))) {
+		if (clicked_u && !clicked_u->can_stand(*selected_u) && ((clicked_u->side() != selected_u->side()) || !unit_is_city(&*clicked_u) || (clicked_u->get_location() == expediting_city_->get_location()))) {
 			cancel_recall = true;
 		} else if (selected_u && selected_u->movement_cost(map_[hex]) == unit_movement_type::UNREACHABLE) {
 			// during expediting moving left click, selected_u maybe is null.
@@ -978,17 +958,17 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 
 	if (alternate_from.valid()) {
 		if (!preferences::default_move()) {
-			std::vector<std::string> items;
+			std::vector<gui2::tval_str> items;
 			std::stringstream strstr;
 			strstr.str("");
-			strstr << IMAGE_PREFIX << "misc/large-attack.png~SCALE(64, 64)" << COLUMN_SEPARATOR;
+			strstr << tintegrate::generate_img("misc/large-attack.png~SCALE(64, 64)");
 			strstr << dgettext("wesnoth-lib", "Attack wall");
-			items.push_back(strstr.str());
+			items.push_back(gui2::tval_str(0, strstr.str()));
 
 			strstr.str("");
-			strstr << IMAGE_PREFIX << "misc/large-move.png~SCALE(64, 64)" << COLUMN_SEPARATOR;
+			strstr << tintegrate::generate_img("misc/large-move.png~SCALE(64, 64)");
 			strstr << dgettext("wesnoth-lib", "Move to wall");
-			items.push_back(strstr.str());
+			items.push_back(gui2::tval_str(1, strstr.str()));
 
 			gui2::tcombo_box dlg(items, 0);
 			dlg.show(gui_->video());
@@ -1026,7 +1006,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		build_ea(hex);
 
 	} else if (!commands_disabled && !browse && selected_hex_.valid() && selected_hex_ != hex &&
-		selected_u && current_can_action(*selected_u) && (clicked_u == units_.end() || clicked_u->base() || clicked_selfcity) &&
+		selected_u && current_can_action(*selected_u) && (!clicked_u || clicked_u->base() || clicked_selfcity) &&
 		!current_team().shrouded(hex) && !current_route_.steps.empty() && current_route_.steps.front() == selected_hex_) {
 		
 		const pathfind::paths& path = pathfind::paths(map_, units_,
@@ -1059,7 +1039,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 			return false;
 		} else if (stop_at_loc.valid()) {
 			bool stop_on_city = post_move_unit(*selected_u, stop_at_loc);
-			if (stop_on_city || stop_at_loc == hex || spectator.get_ambusher().valid() || !spectator.get_seen_enemies().empty() || !spectator.get_seen_friends().empty()) {
+			if (stop_on_city || stop_at_loc == hex || spectator.get_ambusher() || !spectator.get_seen_enemies().empty() || !spectator.get_seen_friends().empty()) {
 				return false;
 			}
 		}
@@ -1072,7 +1052,7 @@ bool mouse_handler::left_click(int x, int y, const bool browse)
 		show_menu_ = false;
 
 	} else {
-		if (units_.count(selected_hex_)) {
+		if (units_.valid2(selected_hex_, true)) {
 			// last select a non-empty hex. cancel context menu
 			// gui_->goto_main_context_menu();
 			gui_->invalidate_unit();
@@ -1157,8 +1137,8 @@ void mouse_handler::select_hex(const map_location& hex, const bool browse)
 	gui().set_route(NULL);
 	show_partial_move_ = false;
 
-	unit_map::iterator u = find_unit(hex);
-	if (hex.valid() && u != units_.end() && !u->get_hidden()) {
+	unit* u = find_unit(hex);
+	if (hex.valid() && u && !u->get_hidden()) {
 		next_unit_ = u->get_location();
 
 		{
@@ -1225,7 +1205,7 @@ map_location mouse_handler::move_unit_along_current_route(const std::vector<map_
 	end_moving_lock lock(*this);
 
 	begin_moving(steps.front(), steps.back());
-	const unit_map::iterator src_itor = units_.find(steps.front());
+	unit* src_itor = units_.find_unit(steps.front(), true);
 
 	// do not show footsteps during movement
 	gui().set_route(NULL);
@@ -1457,7 +1437,7 @@ bool mouse_handler::cast_tactic(unit& tactician, const map_location& target_loc,
 			gui_->set_selectable_indicator(selectable);
 			selecting_ = true;
 		} else {
-			unit* special = &*find_visible_unit(*selectable.begin(), teams_[tactician.side() - 1]);
+			unit* special = find_visible_unit(*selectable.begin(), teams_[tactician.side() - 1]);
 			cast_tactic_special(tactician, special, browse);
 		}
 	}
@@ -1758,12 +1738,12 @@ void mouse_handler::perform_attack(unit& attacker, unit& defender,
 		commands_disabled--;
 		//if the level ends due to a unit being killed, still see if
 		//either the attacker or defender should advance
-		unit_map::iterator acku = units_.find(to_locs.first);
-		if (acku != units_.end()) {
+		unit* acku = units_.find_unit(to_locs.first, true);
+		if (acku) {
 			dialogs::advance_unit(*acku);
 		}
-		unit_map::iterator defu = units_.find(to_locs.second);
-		if (defu != units_.end()) {
+		unit* defu = units_.find_unit(to_locs.second, true);
+		if (defu) {
 			bool defender_human = teams_[defu->side()-1].is_human();
 			dialogs::advance_unit(*defu, !defender_human);
 		}
@@ -1799,8 +1779,8 @@ std::set<map_location> mouse_handler::get_adj_enemies(const map_location& loc, i
 	map_location adj[6];
 	get_adjacent_tiles(loc, adj);
 	BOOST_FOREACH (const map_location &aloc, adj) {
-		unit_map::const_iterator i = find_unit(aloc);
-		if (i != units_.end() && uteam.is_enemy(i->side()))
+		unit* i = find_unit(aloc);
+		if (i && uteam.is_enemy(i->side()))
 			res.insert(aloc);
 	}
 	return res;
@@ -1824,12 +1804,8 @@ void mouse_handler::set_expedite(artifical* expedite_city, unit& u)
 
 	bool teleport = u.get_ability_bool("teleport");
 
-	// 放置一个临时单位
 	gui().place_expedite_city(*expedite_city);
 	
-	unit_map::iterator iter = find_unit(hex);
-
-	// current_paths_ = paths(map_, units_, hex, teams_, false, teleport, viewing_team(), path_turns_);
 	current_paths_ = pathfind::paths(map_, units_, u, hex, teams_, false, teleport, viewing_team(), path_turns_);
 	gui().highlight_reach(current_paths_);
 	// the highlight now comes from selection

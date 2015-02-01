@@ -68,7 +68,7 @@ public:
 	void set_unit_placing(unit& u);
 	void set_unit_tasking(unit& u);
 
-	unit_map::iterator selected_unit();
+	unit* selected_unit();
 
 	pathfind::marked_route get_route(unit* un, map_location go_to, team &team);
 
@@ -165,8 +165,7 @@ protected:
 	map_location current_unit_clear_formationed_from(const map_location& loc);
 	map_location current_unit_intervene_move_from(const map_location& loc);
 
-	unit_map::const_iterator find_unit(const map_location& hex) const;
-	unit_map::iterator find_unit(const map_location& hex);
+	unit* find_unit(const map_location& hex) const;
 
 private:
 	play_controller& controller_;

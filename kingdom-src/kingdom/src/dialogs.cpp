@@ -38,7 +38,6 @@
 #include "savegame.hpp"
 #include "thread.hpp"
 #include "wml_separators.hpp"
-#include "widgets/progressbar.hpp"
 #include "wml_exception.hpp"
 #include "formula_string_utils.hpp"
 #include "gui/dialogs/game_save.hpp"

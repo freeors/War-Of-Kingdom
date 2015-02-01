@@ -23,7 +23,6 @@
 #include "ai/configuration.hpp"
 #include "config.hpp"
 #include "config_cache.hpp"
-#include "construct_dialog.hpp"
 #include "cursor.hpp"
 #include "dialogs.hpp"
 #include "game_display.hpp"
@@ -53,7 +52,6 @@
 #include "gui/dialogs/signin.hpp"
 #include "gui/dialogs/user_message.hpp"
 #include "gui/dialogs/transient_message.hpp"
-#include "gui/dialogs/combo_box.hpp"
 #include "gui/dialogs/design.hpp"
 #include "gui/dialogs/help_screen.hpp"
 #include "gui/dialogs/book.hpp"
@@ -71,7 +69,6 @@
 #include "loadscreen.hpp"
 #include "log.hpp"
 #include "map_exception.hpp"
-#include "widgets/menu.hpp"
 #include "marked-up_text.hpp"
 #include "multiplayer.hpp"
 #include "network.hpp"
@@ -222,7 +219,7 @@ public:
 	game_controller(int argc, char** argv);
 	~game_controller();
 
-	game_display& disp();
+	display& disp();
 
 	bool init_video();
 	bool init_config(const bool force=false);
@@ -284,9 +281,7 @@ private:
 	const preferences::manager prefs_manager_;
 	const image::manager image_manager_;
 	const events::event_context main_event_context_;
-	const hotkey::manager hotkey_manager_;
 	sound::music_thinker music_thinker_;
-	resize_monitor resize_monitor_;
 	binary_paths_manager paths_manager_;
 
 	bool screenshot_mode_;
@@ -302,7 +297,7 @@ private:
 
 	std::vector<bool> checked_card_;
 
-	util::scoped_ptr<game_display> disp_;
+	util::scoped_ptr<display> disp_;
 
 	game_state state_;
 
@@ -321,9 +316,7 @@ game_controller::game_controller(int argc, char** argv) :
 	prefs_manager_(),
 	image_manager_(),
 	main_event_context_(),
-	hotkey_manager_(),
 	music_thinker_(),
-	resize_monitor_(),
 	paths_manager_(),
 	screenshot_mode_(false),
 	screenshot_map_(),
@@ -420,6 +413,8 @@ game_controller::game_controller(int argc, char** argv) :
 	}
 #endif
 
+	std::replace(game_config::path.begin(), game_config::path.end(), '\\', '/');
+
 	std::cerr << '\n';
 	std::cerr << "Data directory: " << game_config::path
 		<< "\nUser configuration directory: " << get_user_config_dir()
@@ -494,13 +489,13 @@ void regenerate_heros(hero_map& heros)
 	other_group.clear();
 }
 
-game_display& game_controller::disp()
+display& game_controller::disp()
 {
 	if (disp_.get() == NULL) {
 		if(get_video_surface() == NULL) {
 			throw CVideo::error();
 		}
-		disp_.assign(game_display::create_dummy_display(heros_, video_));
+		disp_.assign(display::create_dummy_display(video_));
 	}
 	return *disp_.get();
 }
@@ -578,11 +573,6 @@ bool game_controller::init_config(const bool force)
 	const config &cfg = game_config().child("game_config");
 	game_config::load_config(cfg ? &cfg : NULL);
 
-	hotkey::deactivate_all_scopes();
-	hotkey::set_scope_active(hotkey::SCOPE_GENERAL);
-	hotkey::set_scope_active(hotkey::SCOPE_GAME);
-
-	hotkey::load_hotkeys(game_config());
 	paths_manager_.set_paths(game_config());
 	::init_textdomains(game_config());
 	about::set_about(game_config());
@@ -601,7 +591,7 @@ bool game_controller::init_language()
 		return false;
 	}
 
-	hotkey::load_descriptions();
+	// hotkey::load_descriptions();
 
 	return true;
 }
@@ -1414,8 +1404,7 @@ void game_controller::inapp_purchase()
 
 void game_controller::show_preferences()
 {
-	const preferences::display_manager disp_manager(&disp());
-	gui2::show_preferences_dialog(disp());
+	preferences::show_preferences_dialog(disp());
 }
 
 void game_controller::set_unit_data(config& gc)
@@ -1426,7 +1415,6 @@ void game_controller::set_unit_data(config& gc)
 
 #define MAXLEN_BASENAME		16
 #define BASENAME_DATA		"data.bin"
-// #define BASENAME_DATA		"data2.bin" // used to generate building_rules_
 
 typedef enum {
 	ppmt_data		= 0,
@@ -1598,8 +1586,6 @@ void game_controller::load_game_cfg(const bool force)
 			hashes[ch["id"]] = ch.hash();
 		}
 
-		// terrain_builder::set_terrain_rules_cfg(game_config());
-
 	} catch(game::error& e) {
 		ERR_CONFIG << "Error loading game configuration files\n";
 		gui2::show_error_message(disp().video(), _("Error loading game configuration files: '") +
@@ -1654,7 +1640,8 @@ void game_controller::play_replay()
 
 editor::EXIT_STATUS game_controller::start_editor(const std::string& map_data)
 {
-	game_display_lock loc(disp());
+	display_lock loc(disp());
+	hotkey::scope_changer changer(game_config(), "hotkey_editor");
 
 	int mode = editor::NONE;
 	std::string filename;
@@ -1684,7 +1671,6 @@ game_controller::~game_controller()
 	}
 	terrain_builder::release_heap();
 	pathfind::release_pq();
-	delete gui::empty_menu;
 	sound::close_sound();
 
 	posix_print("game_controller::~game_controller");
@@ -1876,8 +1862,6 @@ static int do_gameloop(int argc, char** argv)
 					? gui2::ttitle_screen::LOAD_GAME
 					: gui2::ttitle_screen::NOTHING;
 
-			const preferences::display_manager disp_manager(&game.disp());
-
 			const font::floating_label_context label_manager(game.disp().video().getSurface());
 
 			cursor::set(cursor::NORMAL);
@@ -2046,7 +2030,7 @@ void handle_app_event(Uint32 type)
 		if (gui2::tinapp_purchase::get_singleton()) {
 			return;
 
-		} else if (resources::screen && resources::screen->in_game()) {
+		} else if (resources::screen && resources::screen->in_theme()) {
 			// throw end_level_exception(QUIT);
 		}
 		longjmp(env1, 2);
@@ -2118,9 +2102,6 @@ int main(int argc, char** argv)
 		return 1;
 	} catch(config::error& e) {
 		std::cerr << e.message << "\n";
-		return 1;
-	} catch(gui::button::error&) {
-		std::cerr << "Could not create button: Image could not be found\n";
 		return 1;
 	} catch(CVideo::quit&) {
 		//just means the game should quit

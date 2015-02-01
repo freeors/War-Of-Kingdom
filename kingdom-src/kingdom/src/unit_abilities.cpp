@@ -123,14 +123,14 @@ bool unit::get_ability_bool(const std::string& ability, const map_location& loc)
 		if (unit_feature_val(hero_feature_shuttle)) {
 			return true;
 		}
-		unit_map::iterator it = units_.find(loc);
-		if (it.valid()) {
+		unit* it = units_.find_unit(loc, true);
+		if (it) {
 			if (it->cancel_zoc()) {
 				return true;
 			}
 		} else if (current_team.ignore_zoc_on_wall_) {
-			it = units_.find(loc, false);
-			if (it.valid() && it->wall()) {
+			it = units_.find_unit(loc, false);
+			if (it && it->wall()) {
 				return true;
 			}
 		}
@@ -377,8 +377,8 @@ bool unit::ability_active(const std::string& ability,const config& cfg,const map
 				map_location::parse_direction(j);
 			if (index == map_location::NDIRECTIONS)
 				continue;
-			unit_map::const_iterator unit = units.find(adjacent[index]);
-			if (unit == units.end())
+			unit* unit = units.find_unit(adjacent[index], true);
+			if (!unit)
 				return false;
 			if (!unit->matches_filter(vconfig(i), unit->get_location(),
 				cache_illuminates(illuminates, ability)))
@@ -819,10 +819,10 @@ bool attack_type::special_active(const config& cfg, bool self) const
 				map_location::parse_direction(j);
 			if (index == map_location::NDIRECTIONS)
 				continue;
-			unit_map::const_iterator unit = unitmap_->find(adjacent[index]);
-			if (unit == unitmap_->end() ||
-			    !unit->matches_filter(vconfig(i), unit->get_location()))
+			unit* unit = unitmap_->find_unit(adjacent[index], true);
+			if (!unit || !unit->matches_filter(vconfig(i), unit->get_location())) {
 				return false;
+			}
 		}
 	}
 

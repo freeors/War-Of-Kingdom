@@ -19,7 +19,7 @@
 #include "filesystem.hpp"
 #include "gamestatus.hpp"
 #include "tod_manager.hpp"
-#include "show_dialog.hpp"
+#include "display.hpp"
 
 class config_writer;
 class game_display;
@@ -84,7 +84,7 @@ private:
 class loadgame
 {
 public:
-	loadgame(game_display& gui, hero_map& heros, const config& game_config, game_state& gamestate);
+	loadgame(display& gui, hero_map& heros, const config& game_config, game_state& gamestate);
 	virtual ~loadgame() {}
 
 	/** Load a game without providing any information. */
@@ -112,7 +112,7 @@ private:
 	void copy_era(config& cfg);
 
 	const config& game_config_;
-	game_display& gui_;
+	display& gui_;
 	hero_map& heros_;
 
 	game_state& gamestate_; /** Primary output information. */
@@ -141,8 +141,7 @@ public:
 
 	/** Save a game interactively through the savegame dialog. Used for manual midgame and replay
 		saves. The return value denotes, if the save was successful or not. */
-	bool save_game_interactive(CVideo& video, const std::string& message,
-		gui::DIALOG_TYPE dialog_type);
+	bool save_game_interactive(CVideo& video, const std::string& message, bool ok_cancel);
 
 	const std::string& filename() const { return filename_; }
 
@@ -181,7 +180,7 @@ private:
 		override this to take effect. */
 	virtual void create_filename() {}
 	/** Display the save game dialog. */
-	virtual int show_save_dialog(CVideo& video, const std::string& message, const gui::DIALOG_TYPE dialog_type);
+	virtual int show_save_dialog(CVideo& video, const std::string& message, bool ok_cancel);
 	/** Ask the user if an existing file should be overwritten. */
 	bool check_overwrite(CVideo& video);
 
@@ -264,7 +263,7 @@ private:
 	/** Create a filename for automatic saves */
 	virtual void create_filename();
 	/** Display the save game dialog. */
-	virtual int show_save_dialog(CVideo& video, const std::string& message, const gui::DIALOG_TYPE dialog_type);
+	virtual int show_save_dialog(CVideo& video, const std::string& message, bool ok_cancel);
 };
 
 /** Class for start-of-scenario saves */

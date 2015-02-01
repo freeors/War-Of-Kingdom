@@ -18,15 +18,15 @@
 
 #include "display.hpp"
 #include "filesystem.hpp"
-#include "filechooser.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
 #include "gui/dialogs/simple_item_selector.hpp"
 #include "gui/dialogs/transient_message.hpp"
+#include "gui/dialogs/browse.hpp"
+#include "gui/widgets/window.hpp"
 #include "lobby_preferences.hpp"
 #include "preferences_display.hpp"
 #include "wml_separators.hpp"
-#include "widgets/slider.hpp"
 #include "formula_string_utils.hpp"
 
 
@@ -73,11 +73,23 @@ std::string show_wesnothd_server_search(display& disp)
 			  _("Find $filename server binary to host networked games")
 			, &symbols);
 
+	{
+		gui2::tbrowse::tparam param(gui2::tbrowse::TYPE_FILE, true, filename, title);
+		gui2::tbrowse dlg(disp, param);
+		dlg.show(disp.video());
+		int res = dlg.get_retval();
+		if (res != gui2::twindow::OK) {
+			return null_str;
+		}
+		return param.result;
+	}
+/*
 	int res = dialogs::show_file_chooser_dialog(disp, path, title, false, filename);
 	if (res == 0)
 		return path;
 	else
 		return "";
+*/
 }
 
 

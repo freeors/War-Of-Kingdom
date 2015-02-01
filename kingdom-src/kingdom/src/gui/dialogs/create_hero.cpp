@@ -108,7 +108,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(create_hero)
 
-tcreate_hero::tcreate_hero(game_display& disp, hero_map& heros)
+tcreate_hero::tcreate_hero(display& disp, hero_map& heros)
 	: disp_(disp)
 	, heros_(heros)
 	, h_(group.leader())
@@ -180,7 +180,7 @@ void tcreate_hero::pre_show(CVideo& video, twindow& window)
 	
 	/**** Set the version number ****/
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "name", false, true);
-	user_widget->set_value(h_.name());
+	user_widget->set_label(h_.name());
 	user_widget->set_active(false);
 
 	user_widget = find_widget<ttext_box>(&window, "surname", false, true);
@@ -422,7 +422,7 @@ void tcreate_hero::refresh_field_ui(twindow& window)
 	control->set_label(hero::gender_str(h_.gender_));
 	
 	ttext_box* user_widget = find_widget<ttext_box>(&window, "surname", false, true);
-	user_widget->set_value(h_.surname());
+	user_widget->set_label(h_.surname());
 
 	set_button_int(window, "leadership", fxptoi9(h_.leadership_));
 	set_button_int(window, "force", fxptoi9(h_.force_));
@@ -510,7 +510,7 @@ void tcreate_hero::account(twindow& window)
 		h_ = group.leader();
 		h_.set_name(group.leader().name());
 		ttext_box* user_widget = find_widget<ttext_box>(&window, "name", false, true);
-		user_widget->set_value(h_.name());
+		user_widget->set_label(h_.name());
 
 		refresh_username(window);
 		refresh_resi_point(window);
@@ -562,27 +562,21 @@ void tcreate_hero::change_avatar(twindow& window, bool gender)
 
 void tcreate_hero::field(twindow& window, int index)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> increase_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
-	increase_map.push_back(tval_str(50, "+50"));
-	increase_map.push_back(tval_str(20, "+20"));
-	increase_map.push_back(tval_str(10, "+10"));
-	increase_map.push_back(tval_str(5, "+5"));
-	increase_map.push_back(tval_str(-5, "-5"));
-	increase_map.push_back(tval_str(-10, "-10"));
-	increase_map.push_back(tval_str(-20, "-20"));
-	increase_map.push_back(tval_str(-50, "-50"));
+	items.push_back(tval_str(50, "+50"));
+	items.push_back(tval_str(20, "+20"));
+	items.push_back(tval_str(10, "+10"));
+	items.push_back(tval_str(5, "+5"));
+	items.push_back(tval_str(-5, "-5"));
+	items.push_back(tval_str(-10, "-10"));
+	items.push_back(tval_str(-20, "-20"));
+	items.push_back(tval_str(-50, "-50"));
 
-	for (std::vector<tval_str>::iterator it = increase_map.begin(); it != increase_map.end(); ++ it) {
-		items.push_back(it->str);
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, 50);
 	dlg.show(disp_.video());
 
-	int increase = increase_map[dlg.selected_index()].val;
+	int increase = dlg.selected_val();
 	int value;
 	uint16_t* ptr;
 
@@ -616,33 +610,33 @@ void tcreate_hero::field(twindow& window, int index)
 void tcreate_hero::adaptability(twindow& window, int type, int index)
 {
 	char text[32];
-	std::vector<std::string> items;
-	int activity_index;
+	std::vector<tval_str> items;
+	int def;
 	std::stringstream str;
 
 	for (int idx = 0; idx <= hero_adaptability_max; idx ++) {
 		sprintf(text, "%s%i", HERO_PREFIX_STR_ADAPTABILITY, idx);
-		items.push_back(dgettext("wesnoth-hero", text)); 
+		items.push_back(tval_str(idx, dgettext("wesnoth-hero", text))); 
 	}
 
 	if (type == hero::ARMS) {
-		activity_index = fxptoi12(h_.arms_[index]);
+		def = fxptoi12(h_.arms_[index]);
 		str << "text_arms" << index;
 	} else {
-		activity_index = fxptoi12(h_.skill_[index]);
+		def = fxptoi12(h_.skill_[index]);
 		str << "text_skill" << index;
 	}
 
-	gui2::tcombo_box dlg(items, activity_index);
+	gui2::tcombo_box dlg(items, def);
 	dlg.show(disp_.video());
 
 	tcontrol* label = find_widget<tcontrol>(&window, str.str(), false, true);
-	activity_index = dlg.selected_index();
+	int selected_val = dlg.selected_val();
 	if (type == hero::ARMS) {
-		h_.arms_[index] = ftofxp12(activity_index);
+		h_.arms_[index] = ftofxp12(selected_val);
 		label->set_label(hero::adaptability_str2(h_.arms_[index]));
 	} else {
-		h_.skill_[index] = ftofxp12(activity_index);
+		h_.skill_[index] = ftofxp12(selected_val);
 		label->set_label(hero::adaptability_str2(h_.skill_[index]));
 	}
 
@@ -660,13 +654,12 @@ int max_side_feature_level()
 
 void tcreate_hero::feature(twindow& window, bool side)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> features_map;
-	int activity_index = 0;
+	std::vector<tval_str> items;
+	int def = HEROS_NO_FEATURE;
 	std::stringstream strstr;
 	const int max_feature_level = side? max_side_feature_level(): 4;
 
-	features_map.push_back(tval_str(HEROS_NO_FEATURE, " "));
+	items.push_back(tval_str(HEROS_NO_FEATURE, " "));
 	std::vector<int> features = hero::valid_features();
 	for (std::vector<int>::const_iterator itor = features.begin(); itor != features.end(); ++ itor) {
 		int level = unit_types.feature_level(*itor);
@@ -675,32 +668,27 @@ void tcreate_hero::feature(twindow& window, bool side)
 		}
 		strstr.str("");
 		strstr << hero::feature_str(*itor) << "(" << level << ")";
-		features_map.push_back(tval_str(*itor, strstr.str()));
-	}
-
-	for (std::vector<tval_str>::iterator it = features_map.begin(); it != features_map.end(); ++ it) {
-		items.push_back(it->str);
+		items.push_back(tval_str(*itor, strstr.str()));
 		if (side) {
-			if (h_.side_feature_ == it->val) {
-				activity_index = std::distance(features_map.begin(), it);
+			if (h_.side_feature_ == *itor) {
+				def = h_.side_feature_;
 			}
-		} else if (h_.feature_ == it->val) {
-			activity_index = std::distance(features_map.begin(), it);
+		} else if (h_.feature_ == *itor) {
+			def = h_.feature_;
 		}
 	}
 
 	std::string str = side? "side_feature": "feature";
 	
-	gui2::tcombo_box dlg(items, activity_index);
+	gui2::tcombo_box dlg(items, def);
 	dlg.show(disp_.video());
 
 	tcontrol* label = find_widget<tcontrol>(&window, str, false, true);
-	activity_index = dlg.selected_index();
 	if (side) {
-		h_.side_feature_ = features_map[activity_index].val;
+		h_.side_feature_ = dlg.selected_val();
 		str = hero::feature_str(h_.side_feature_);
 	} else {
-		h_.feature_ = features_map[activity_index].val;
+		h_.feature_ = dlg.selected_val();
 		str = hero::feature_str(h_.feature_);
 	}
 	label->set_label(str);
@@ -711,30 +699,22 @@ void tcreate_hero::feature(twindow& window, bool side)
 void tcreate_hero::tactic(twindow& window)
 {
 	std::stringstream strstr;
-	std::vector<std::string> items;
-	int activity_index = -1;
-	std::vector<int> tactics_index;
+	std::vector<tval_str> items;
 
-	items.push_back(" ");
-	tactics_index.push_back(HEROS_NO_TACTIC);
+	items.push_back(tval_str(HEROS_NO_TACTIC, " "));
 	const std::map<int, ttactic>& tactics = unit_types.tactics();
 	for (std::map<int, ttactic>::const_iterator it = tactics.begin(); it != tactics.end(); ++ it) {
 		const ttactic& t = it->second;
 
-		if (h_.tactic_ == it->first) {
-			activity_index = items.size();
-		}
 		strstr.str("");
 		strstr << t.name() << "(" << t.level() << ")";
-		items.push_back(strstr.str());
-		tactics_index.push_back(t.index());
+		items.push_back(tval_str(t.index(), strstr.str()));
 	}
 
-	gui2::tcombo_box dlg(items, activity_index);
+	gui2::tcombo_box dlg(items, h_.tactic_);
 	dlg.show(disp_.video());
 
-	activity_index = dlg.selected_index();
-	h_.tactic_ = tactics_index[activity_index];
+	h_.tactic_ = dlg.selected_val();
 
 	tcontrol* label = find_widget<tcontrol>(&window, "tactic", false, true);
 	if (h_.tactic_ != HEROS_NO_TACTIC) {
@@ -748,56 +728,42 @@ void tcreate_hero::tactic(twindow& window)
 
 void tcreate_hero::utype(twindow& window)
 {
-	std::vector<std::string> items;
-	int activity_index = -1;
-	std::vector<int> utypes_index;
+	std::vector<tval_str> items;
 
-	items.push_back(" ");
-	utypes_index.push_back(HEROS_NO_UTYPE);
+	items.push_back(tval_str(HEROS_NO_UTYPE, " "));
 	const std::map<int, const unit_type*>& keytypes = unit_types.keytypes();
 	for (std::map<int, const unit_type*>::const_iterator it = keytypes.begin(); it != keytypes.end(); ++ it) {
 		const unit_type& ut = *(it->second);
-		
-		if (h_.utype_ == it->first) {
-			activity_index = items.size();
-		}
-		items.push_back(ut.type_name());
-		utypes_index.push_back(it->first);
+		items.push_back(tval_str(it->first, ut.type_name()));
 	}
 
-	gui2::tcombo_box dlg(items, activity_index);
+	gui2::tcombo_box dlg(items, h_.utype_);
 	dlg.show(disp_.video());
 
-	activity_index = dlg.selected_index();
-	h_.utype_ = utypes_index[activity_index];
+	h_.utype_ = dlg.selected_val();
 
 	tcontrol* label = find_widget<tcontrol>(&window, "utype", false, true);
-	label->set_label(items[activity_index]);
+	label->set_label(items[dlg.selected_index()].str);
 }
 
 void tcreate_hero::character(twindow& window)
 {
-	std::vector<std::string> items;
-	int activity_index = -1;
-	std::vector<int> characters_index;
+	std::vector<tval_str> items;
 
-	items.push_back(" ");
-	characters_index.push_back(HEROS_NO_CHARACTER);
+	items.push_back(tval_str(HEROS_NO_CHARACTER, " "));
 	const std::map<int, tcharacter>& characters = unit_types.characters();
 	for (std::map<int, tcharacter>::const_iterator it = characters.begin(); it != characters.end(); ++ it) {
 		const tcharacter& t = it->second;
-		items.push_back(t.name());
-		characters_index.push_back(t.index());
+		items.push_back(tval_str(t.index(), t.name()));
 	}
 
-	gui2::tcombo_box dlg(items, activity_index);
+	gui2::tcombo_box dlg(items, h_.character_);
 	dlg.show(disp_.video());
 
-	activity_index = dlg.selected_index();
-	h_.character_ = characters_index[activity_index];
+	h_.character_ = dlg.selected_val();
 
 	tcontrol* label = find_widget<tcontrol>(&window, "character", false, true);
-	label->set_label(items[activity_index]);
+	label->set_label(items[dlg.selected_index()].str);
 
 	refresh_resi_point(window);
 }
@@ -805,7 +771,7 @@ void tcreate_hero::character(twindow& window)
 void tcreate_hero::catalog(twindow& window)
 {
 	std::stringstream str;
-	std::vector<std::string> items;
+	std::vector<tval_str> items;
 	int activity_index = -1;
 
 	for (int i = 0; i < nb_catalogs; i ++) {
@@ -814,21 +780,14 @@ void tcreate_hero::catalog(twindow& window)
 		str << h.name() << "(";
 		int value = h.base_catalog_;
 		str << value << ")";
-		items.push_back(str.str());
-		if (activity_index == -1 && h_.base_catalog_ == h.base_catalog_) {
-			activity_index = i;
-		}
-	}
-	if (activity_index == -1) {
-		activity_index = 0;
+		items.push_back(tval_str(h.base_catalog_, str.str()));
 	}
 
-	gui2::tcombo_box dlg(items, activity_index);
+	gui2::tcombo_box dlg(items, h_.base_catalog_);
 	dlg.show(disp_.video());
 
 	tcontrol* label = find_widget<tcontrol>(&window, "catalog", false, true);
-	activity_index = dlg.selected_index();
-	hero& h = heros_[catalog_items[activity_index]];
+	hero& h = heros_[catalog_items[dlg.selected_index()]];
 	h_.base_catalog_ = h.base_catalog_;
 	h_.float_catalog_ = ftofxp8(h_.base_catalog_);
 	label->set_label(h.name());
@@ -840,7 +799,7 @@ std::string tcreate_hero::text_box_str(twindow& window, const std::string& id, c
 	utils::string_map symbols;
 
 	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
-	std::string str = widget->get_value();
+	std::string str = widget->label();
 	if (!allow_empty && str.empty()) {
 		symbols["key"] = tintegrate::generate_format(name, "red");
 		
@@ -862,7 +821,7 @@ std::string tcreate_hero::text_box_str(twindow& window, const std::string& id, c
 bool tcreate_hero::text_box_int(twindow& window, const std::string& id, const std::string& name, int& value, int min, int max)
 {
 	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
-	std::string str = widget->get_value();
+	std::string str = widget->label();
 	value = atoi(str.c_str());
 	if (value < min || value > max) {
 		std::stringstream err;

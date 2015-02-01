@@ -48,7 +48,7 @@ protected:
 	void regenerate_map(twindow& window);
 	void generator_settings(twindow& window);
 
-	virtual game_display& gui() = 0;
+	virtual display& gui() = 0;
 	virtual void update_map_settings(twindow& window) = 0;
 	virtual void post_update_map(twindow& window, int select) {};
 	void generate_map(twindow& window);

@@ -141,7 +141,7 @@ void tplayer_list_side_creator::init(twindow & w)
 			, true);
 }
 
-tmp_side_creator::tmp_side_creator(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
+tmp_side_creator::tmp_side_creator(hero_map& heros, hero_map& heros_start, display& disp, gamemap& gmap, const config& game_config,
 			config& gamelist, const mp_game_settings& params, const int num_turns,
 			tcontroller default_controller, bool local_players_only)
 	: legacy_result_(QUIT)
@@ -1652,8 +1652,7 @@ void tmp_side_creator::side::player(twindow& window)
 {
 	std::stringstream strstr;
 
-	std::vector<tval_str> player_map;
-	std::vector<std::string> items;
+	std::vector<tval_str> items;
 	std::map<int, std::string> used_user_players = parent_->get_used_user_players();
 
 	std::vector<std::pair<std::string, int> >::iterator itor;
@@ -1680,16 +1679,13 @@ void tmp_side_creator::side::player(twindow& window)
 		}
 		strstr << "text='" << itor->first << "'</format>\n";
 
-		player_map.push_back(tval_str(std::distance(parent_->player_xtypes_.begin(), itor), itor->first));
-		// items.push_back(strstr.str());
-		items.push_back(itor->first);
+		items.push_back(tval_str(std::distance(parent_->player_xtypes_.begin(), itor), itor->first));
 	}
 	
-	gui2::tcombo_box dlg(items);
+	gui2::tcombo_box dlg(items, items.front().val);
 	dlg.show(parent_->disp_.video());
-	int selected2 = dlg.selected_index();
 
-	int selected = player_map[selected2].val;
+	int selected = dlg.selected_val();
 	tcontroller selected_controller = (tcontroller)(parent_->player_xtypes_[selected].second % CNTR_LAST);
 	std::string selected_player_id = null_str;
 	if (parent_->player_xtypes_[selected].second >= CNTR_LAST) {
@@ -1712,10 +1708,9 @@ void tmp_side_creator::side::player(twindow& window)
 
 void tmp_side_creator::side::faction(twindow& window)
 {
-	std::vector<std::string> items, names;
+	std::vector<std::string> names;
 	std::vector<int> side_features;
-	std::vector<tval_str> faction_map;
-	int activity_index = 0;
+	std::vector<tval_str> items;
 	std::stringstream strstr;
 
 	int fix_factions = parent_->factions_.size();
@@ -1727,39 +1722,32 @@ void tmp_side_creator::side::faction(twindow& window)
 			int distance = *it;
 			hero& leader = parent_->users_[distance].group.leader();
 
-			faction_map.push_back(tval_str(fix_factions + distance, IMAGE_PREFIX + std::string(leader.image()) + std::string("~SCALE(32, 40)") + COLUMN_SEPARATOR + leader.name()));
+			items.push_back(tval_str(fix_factions + distance, IMAGE_PREFIX + std::string(leader.image()) + std::string("~SCALE(32, 40)") + COLUMN_SEPARATOR + leader.name()));
 			names.push_back(leader.name());
 			side_features.push_back(leader.side_feature_);
 		}
 	}
 
-	faction_map.push_back(tval_str(RANDOM_FACTION, IMAGE_PREFIX + std::string("units/random-dice.png") + std::string("~SCALE(32, 40)") + COLUMN_SEPARATOR + _("Random")));
+	items.push_back(tval_str(RANDOM_FACTION, IMAGE_PREFIX + std::string("units/random-dice.png") + std::string("~SCALE(32, 40)") + COLUMN_SEPARATOR + _("Random")));
 	names.push_back(_("Random"));
 	side_features.push_back(HEROS_NO_FEATURE);
 
 	candidate = parent_->get_candidate_factions(index_);
 	for (std::vector<int>::const_iterator i = candidate.begin(); i != candidate.end(); ++ i) {
 		hero& leader = parent_->heros_[parent_->factions_[*i].first->get("leader")->to_int()];
-		faction_map.push_back(tval_str(*i ,IMAGE_PREFIX + std::string(leader.image()) + std::string("~SCALE(32, 40)") + COLUMN_SEPARATOR + leader.name()));
+		items.push_back(tval_str(*i ,IMAGE_PREFIX + std::string(leader.image()) + std::string("~SCALE(32, 40)") + COLUMN_SEPARATOR + leader.name()));
 		names.push_back(leader.name());
 		side_features.push_back(leader.side_feature_);
 	}
 
-	for (std::vector<tval_str>::iterator it = faction_map.begin(); it != faction_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (parent_->get_faction(index_) == it->val) {
-			activity_index = std::distance(faction_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, activity_index);
+	gui2::tcombo_box dlg(items, parent_->get_faction(index_));
 	dlg.show(parent_->disp_.video());
 	int selected = dlg.selected_index();
 
 	faction_button_->set_label(names[selected]);
 	feature_button_->set_label(hero::feature_str(side_features[selected]));
 
-	parent_->set_faction(index_, faction_map[selected].val);
+	parent_->set_faction(index_, items[selected].val);
 
 	// changed, send!
 	parent_->refresh_launch();
@@ -1786,29 +1774,20 @@ void tmp_side_creator::side::ally(twindow& window)
 
 void tmp_side_creator::side::gold(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> gold_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
-	gold_map.push_back(tval_str(100, "100"));
-	gold_map.push_back(tval_str(150, "150"));
-	gold_map.push_back(tval_str(200, "200"));
-	gold_map.push_back(tval_str(300, "300"));
+	items.push_back(tval_str(100, "100"));
+	items.push_back(tval_str(150, "150"));
+	items.push_back(tval_str(200, "200"));
+	items.push_back(tval_str(300, "300"));
 
-	for (std::vector<tval_str>::iterator it = gold_map.begin(); it != gold_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (gold_ == it->val) {
-			actived_index = std::distance(gold_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, gold_);
 	dlg.show(parent_->disp_.video());
 
 	int selected = dlg.selected_index();
-	gold_ = gold_map[selected].val;
+	gold_ = items[selected].val;
 
-	gold_button_->set_label(gold_map[selected].str);
+	gold_button_->set_label(items[selected].str);
 
 	// changed, send!
 	parent_->refresh_launch();
@@ -1817,31 +1796,22 @@ void tmp_side_creator::side::gold(twindow& window)
 
 void tmp_side_creator::side::income(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> income_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 	
-	income_map.push_back(tval_str(0, "0"));
-	income_map.push_back(tval_str(20, "20"));
-	income_map.push_back(tval_str(50, "50"));
-	income_map.push_back(tval_str(100, "100"));
-	income_map.push_back(tval_str(150, "150"));
-	income_map.push_back(tval_str(200, "200"));
+	items.push_back(tval_str(0, "0"));
+	items.push_back(tval_str(20, "20"));
+	items.push_back(tval_str(50, "50"));
+	items.push_back(tval_str(100, "100"));
+	items.push_back(tval_str(150, "150"));
+	items.push_back(tval_str(200, "200"));
 
-	for (std::vector<tval_str>::iterator it = income_map.begin(); it != income_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (income_ == it->val) {
-			actived_index = std::distance(income_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, income_);
 	dlg.show(parent_->disp_.video());
 
 	int selected = dlg.selected_index();
-	income_ = income_map[selected].val;
+	income_ = items[selected].val;
 
-	income_button_->set_label(income_map[selected].str);
+	income_button_->set_label(items[selected].str);
 
 	// changed, send!
 	parent_->refresh_launch();

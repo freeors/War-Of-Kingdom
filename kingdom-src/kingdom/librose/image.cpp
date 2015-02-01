@@ -235,6 +235,72 @@ namespace image {
 
 int tile_size = 72;
 
+std::string terrain_prefix;
+surface mask_surf;
+locator grid_top;
+locator grid_bottom;
+const int scale_ratio = 8;
+int scale_ratio_w;
+int scale_ratio_h;
+fadjust_x_y minimap_tile_dst;
+
+void minimap_tile_dst_hex(int& x, int& y)
+{
+	// also do 1-pixel shift because the scaling
+	// function seems to do it with its rounding
+	y = y * scale_ratio_h + scale_ratio_h / 4 * (is_odd(x) ? 1 : -1) - 1;
+	x = x * scale_ratio_w - 1;
+}
+
+void minimap_tile_dst_square(int& x, int& y)
+{
+	// also do 1-pixel shift because the scaling
+	// function seems to do it with its rounding
+	x = x * scale_ratio_w - 1;
+	y = y * scale_ratio_h - 1;
+}
+
+void switch_tile(const std::string& tile)
+{
+	terrain_prefix = game_config::terrain::form_img_prefix(tile);
+	mask_surf = get_image(terrain_prefix + game_config::terrain::short_mask);
+	grid_top = locator(terrain_prefix + game_config::terrain::short_grid_top);
+	grid_bottom = locator(terrain_prefix + game_config::terrain::short_grid_bottom);
+
+	if (tile == game_config::tile_hex) {
+		scale_ratio_w = scale_ratio * 3 / 4;
+		scale_ratio_h = scale_ratio;
+		minimap_tile_dst = minimap_tile_dst_hex;
+	} else {
+		scale_ratio_w = scale_ratio;
+		scale_ratio_h = scale_ratio;
+		minimap_tile_dst = minimap_tile_dst_square;
+	}
+}
+
+ttile_switch_lock::ttile_switch_lock(const std::string& tile)
+	: surf_(mask_surf)
+	, grid_top_(grid_top)
+	, grid_bottom_(grid_bottom)
+	, terrain_prefix_(terrain_prefix)
+	, scale_ratio_w_(scale_ratio_w)
+	, scale_ratio_h_(scale_ratio_h)
+	, minimap_tile_dst_(minimap_tile_dst)
+{
+	switch_tile(tile);
+}
+
+ttile_switch_lock::~ttile_switch_lock()
+{
+	terrain_prefix = terrain_prefix_;
+	mask_surf = surf_;
+	grid_top = grid_top_;
+	grid_bottom = grid_bottom_;
+	scale_ratio_w = scale_ratio_w_;
+	scale_ratio_h = scale_ratio_h_;
+	minimap_tile_dst = minimap_tile_dst_;
+}
+
 }
 
 namespace {
@@ -1281,8 +1347,7 @@ surface get_image(const image::locator& i_locator, TYPE type)
 
 surface get_hexmask()
 {
-	static const image::locator terrain_mask(game_config::images::terrain_mask);
-	return get_image(terrain_mask, UNSCALED);
+	return mask_surf;
 }
 
 bool is_in_hex(const locator& i_locator)
@@ -1390,7 +1455,7 @@ void precache_file_existence(const std::string& subdir)
 {
 	const std::vector<std::string>& paths = get_binary_paths("images");
 
-	for(std::vector<std::string>::const_iterator p = paths.begin();
+	for (std::vector<std::string>::const_iterator p = paths.begin();
 			 p != paths.end(); ++p) {
 
 		const std::string dir = *p + "/" + subdir;

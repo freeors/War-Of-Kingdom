@@ -18,8 +18,8 @@
 #include "brush.hpp"
 #include "editor_display.hpp"
 #include "mouse_action.hpp"
+#include "builder.hpp"
 
-#include "../construct_dialog.hpp"
 #include "gettext.hpp"
 
 
@@ -139,9 +139,9 @@ bool mouse_action::has_ctrl_modifier() const
 void mouse_action::set_terrain_mouse_overlay(editor_display& disp, t_translation::t_terrain fg,
 		t_translation::t_terrain bg)
 {
-	surface image_fg(image::get_image("terrain/"
+	surface image_fg(image::get_image(image::terrain_prefix
 		+ disp.get_map().get_terrain_info(fg).editor_image() + ".png"));
-	surface image_bg(image::get_image("terrain/"
+	surface image_bg(image::get_image(image::terrain_prefix
 		+ disp.get_map().get_terrain_info(bg).editor_image() + ".png"));
 
 	if (image_fg == NULL || image_bg == NULL) {
@@ -422,6 +422,9 @@ editor_action* mouse_action_starting_position::up_left(editor_display& disp, int
 	if (!disp.map().on_board(hex)) {
 		return NULL;
 	}
+
+	return NULL;
+/*
 	int player_starting_at_hex = disp.map().is_starting_position(hex) + 1;
 	std::vector<std::string> players;
 	players.push_back(_("(Player)^None"));
@@ -444,6 +447,7 @@ editor_action* mouse_action_starting_position::up_left(editor_display& disp, int
 	}
 	update_brush_highlights(disp, hex);
 	return a;
+*/
 }
 
 editor_action* mouse_action_starting_position::click_left(editor_display& /*disp*/, int /*x*/, int /*y*/)

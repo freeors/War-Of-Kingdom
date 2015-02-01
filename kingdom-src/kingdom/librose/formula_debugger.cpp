@@ -155,7 +155,7 @@ void formula_debugger::check_breakpoints()
 
 void formula_debugger::show_gui()
 {
-	if (!display::get_singleton() || !display::get_singleton()->in_game()) {
+	if (!display::get_singleton() || !display::get_singleton()->in_theme()) {
 		WRN_FDB << "do not showing debug window due to NULL gui" << std::endl;
 		return;
 	}

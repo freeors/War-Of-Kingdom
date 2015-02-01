@@ -68,8 +68,6 @@ static lg::log_domain log_engine("engine");
 static std::string miss_anim_err_str = "logic can only process map or canvas animation!";
 std::map<map_location,fixed_t> game_display::debugHighlights_;
 
-extern surface generate_rpg_surface(hero& h);
-
 game_display::taccess_list::taccess_list(unit_map& units, int type)
 	: units_(units)
 	, type_(type)
@@ -301,7 +299,7 @@ void game_display::taccess_list::reload(game_display& gui, int side)
 	const std::vector<artifical*>& holden_cities = gui.teams_[side].holden_cities();
 	if (type_ == TROOP) {
 		for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it) {
-			unit* u = &*it;
+			unit* u = dynamic_cast<unit*>(&*it);
 			if (!u->consider_ticks()) {
 				continue;
 			}
@@ -379,7 +377,7 @@ void game_display::taccess_list::insert(game_display& gui, int side, void* cooki
 	if (type_ == TROOP) {
 		at = 1;
 		for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it) {
-			unit* u1 = &*it;
+			unit* u1 = dynamic_cast<unit*>(&*it);
 			if (!u1->consider_ticks()) {
 				continue;
 			}
@@ -533,7 +531,7 @@ void game_display::taccess_list::redraw(game_display& gui, int side, void* cooki
 game_display::game_display(unit_map& units, hero_map& heros, play_controller* controller, CVideo& video, const gamemap& map,
 		const tod_manager& tod, const std::vector<team>& t,
 		const config& theme_cfg, const config& level) :
-		display(controller, video, &map, theme_cfg, level, gui2::tgame_theme::NUM_REPORTS),
+		hex_display(controller, video, &map, theme_cfg, level, gui2::tgame_theme::NUM_REPORTS),
 		units_(units),
 		heros_(heros),
 		controller_(controller),
@@ -577,8 +575,6 @@ game_display::game_display(unit_map& units, hero_map& heros, play_controller* co
 		disctrict_(),
 		disctrict_old_(),
 		disctrict_changed_(true),
-		draw_area_unit_(NULL),
-		draw_area_unit_size_(0),
 		troop_list_(units, taccess_list::TROOP),
 		hero_list_(units, taccess_list::HERO),
 		current_list_type_(taccess_list::TROOP),
@@ -587,7 +583,7 @@ game_display::game_display(unit_map& units, hero_map& heros, play_controller* co
 		moving_src_loc_(),
 		moving_dst_loc_()
 {
-	singleton_ = this;
+	// singleton_ = this;
 	
 	if (controller) {
 		SDL_Rect screen = screen_area();
@@ -612,7 +608,6 @@ game_display::game_display(unit_map& units, hero_map& heros, play_controller* co
 
 	// draw nodes for display::draw
 	if (map_->w() && map_->h()) {
-		draw_area_unit_ = (unit**)malloc(map_->w() * map_->h() * sizeof(unit*));
 		pathfind::reallocate_pq(map_->w(), map_->h());
 	}
 }
@@ -633,27 +628,11 @@ gui2::ttheme* game_display::create_theme_dlg(const config& cfg)
 	return new gui2::tgame_theme(*this, *controller_, cfg);
 }
 
-game_display* game_display::create_dummy_display(hero_map& heros, CVideo& video)
-{
-	static unit_map dummy_umap;
-	static config dummy_cfg;
-	static gamemap dummy_map(dummy_cfg, "");
-	static tod_manager dummy_tod(dummy_cfg, 0);
-	static std::vector<team> dummy_teams;
-	return new game_display(dummy_umap, heros, NULL, video, dummy_map, dummy_tod,
-			dummy_teams, dummy_cfg, dummy_cfg);
-}
-
 game_display::~game_display()
 {
-	if (draw_area_unit_) {
-		free(draw_area_unit_);
-		draw_area_unit_ = NULL;
-		draw_area_unit_size_ = 0;
-	}
 	// SDL_FreeSurface(minimap_);
 	prune_chat_messages(true);
-	singleton_ = NULL;
+	// singleton_ = NULL;
 }
 
 void game_display::rebuild_all()
@@ -877,7 +856,7 @@ void game_display::highlight_hex(map_location hex)
 		u = get_visible_unit(mouseoverHex_, teams_[viewing_team()], !viewpoint_);
 		if (u) {
 			// mouse moved from unit hex to non-unit hex
-			if (units_.count(selectedHex_)) {
+			if (units_.valid2(selectedHex_, true)) {
 				invalidate_unit();
 			}
 		}
@@ -907,9 +886,9 @@ void game_display::resort_access_troops(unit& u, size_t pos)
 {
 	refresh_access_troops(u.side() - 1, game_display::REFRESH_ERASE, &u);
 	if (pos != -1) {
-		units_.resort_map(pos);
+		units_.sort_map(pos);
 	} else {
-		units_.resort_map(u);
+		units_.sort_map2(u);
 	}
 	refresh_access_troops(u.side() - 1, game_display::REFRESH_INSERT, &u);
 }
@@ -926,7 +905,7 @@ void game_display::verify_access_troops() const
 	size_t btn_index = 1;
 	unit* previous = NULL;
 	for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it, btn_index ++) {
-		unit& a = *it;
+		unit& a = *dynamic_cast<unit*>(&*it);
 		VALIDATE(!a.get_state(ustate_tag::EXPEDITED), miss_state_str);
 		if (btn_index < list->button_count - 1) {
 			gui2::twidget* btn = children[btn_index].widget_;
@@ -1214,7 +1193,7 @@ void game_display::pre_draw(rect_of_hexes& hexes)
 	std::vector<tformation> formations;
 	std::set<const unit*> uncalculated;
 	for (size_t i = 0; i < draw_area_unit_size_; i ++) {
-		unit* u = draw_area_unit_[i];
+		unit* u = dynamic_cast<unit*>(draw_area_unit_[i]);
 		if (u->is_artifical() || u->is_commoner()) {
 			continue;
 		}
@@ -1366,14 +1345,14 @@ void game_display::draw_invalidated()
 
 		loc_n = loc.get_direction(map_location::NORTH);
 		if (point_in_rect_of_hexes(loc_n.x, loc_n.y, draw_area_rect_)) {
-			draw_area_[(loc_n.y + 1) * draw_area_pitch_ + (loc_n.x + 1)] = INVALIDATE;
+			draw_area_val(loc_n.x, loc_n.y) = INVALIDATE;
 		}
 		loc_ne = loc.get_direction(map_location::NORTH_EAST);
 		if (point_in_rect_of_hexes(loc_ne.x, loc_ne.y, draw_area_rect_)) {
-			draw_area_[(loc_ne.y + 1) * draw_area_pitch_ + (loc_ne.x + 1)] = INVALIDATE;
+			draw_area_val(loc_ne.x, loc_ne.y) = INVALIDATE;
 		}
 
-		draw_area_[(loc.y + 1) * draw_area_pitch_ + (loc.x + 1)] = INVALIDATE_UNIT;
+		draw_area_val(loc.x, loc.y) = INVALIDATE_UNIT;
 		unit_invals.push_back(loc);
 	}
 
@@ -1382,27 +1361,27 @@ void game_display::draw_invalidated()
 
 		loc_n = loc.get_direction(map_location::NORTH);
 		if (point_in_rect_of_hexes(loc_n.x, loc_n.y, draw_area_rect_)) {
-			draw_area_[(loc_n.y + 1) * draw_area_pitch_ + (loc_n.x + 1)] = INVALIDATE;
+			draw_area_val(loc_n.x, loc_n.y) = INVALIDATE;
 		}
 		loc_ne = loc.get_direction(map_location::NORTH_EAST);
 		if (point_in_rect_of_hexes(loc_ne.x, loc_ne.y, draw_area_rect_)) {
-			draw_area_[(loc_ne.y + 1) * draw_area_pitch_ + (loc_ne.x + 1)] = INVALIDATE;
+			draw_area_val(loc_ne.x, loc_ne.y) = INVALIDATE;
 		}
 
-		if (draw_area_[(loc.y + 1) * draw_area_pitch_ + (loc.x + 1)] != INVALIDATE_UNIT) {
-			draw_area_[(loc.y + 1) * draw_area_pitch_ + (loc.x + 1)] = INVALIDATE_UNIT;
+		if (draw_area_val(loc.x, loc.y) != INVALIDATE_UNIT) {
+			draw_area_val(loc.x, loc.y) = INVALIDATE_UNIT;
 			unit_invals.push_back(loc);
 		}
 	}
 	if (expedite_city_ && point_in_rect_of_hexes(expedite_city_->get_location().x, expedite_city_->get_location().y, draw_area_rect_)) {
 		const std::set<map_location>& touch_locs = expedite_city_->get_touch_locations();
 		for (std::set<map_location>::const_iterator itor = touch_locs.begin(); itor != touch_locs.end(); ++ itor) {
-			draw_area_[(itor->y + 1) * draw_area_pitch_ + (itor->x + 1)] = INVALIDATE_UNIT;
+			draw_area_val(itor->x, itor->y) = INVALIDATE_UNIT;
 		}
 
 		const map_location& loc = expedite_city_->get_location();
-		if (draw_area_[(loc.y + 1) * draw_area_pitch_ + (loc.x + 1)] != INVALIDATE_UNIT) {
-			draw_area_[(loc.y + 1) * draw_area_pitch_ + (loc.x + 1)] = INVALIDATE_UNIT;
+		if (draw_area_val(loc.x, loc.y) != INVALIDATE_UNIT) {
+			draw_area_val(loc.x, loc.y) = INVALIDATE_UNIT;
 			unit_invals.push_back(loc);
 		}
 	}
@@ -1517,13 +1496,11 @@ void game_display::draw_hex(const map_location& loc)
 	// We remove the reachability mask of the unit
 	// that we want to attack.
 	if (!is_shrouded && !reach_map_.empty() && reach_map_.find(loc) != reach_map_.end()) {
-		// drawing_buffer_add(LAYER_REACHMAP, loc, xpos, ypos, image::get_image(game_config::images::unreachable,image::SCALED_TO_HEX));
-		// drawing_buffer_add(LAYER_UNIT_MOVE_DEFAULT, loc, xpos, ypos, image::get_image(game_config::images::unreachable, image::SCALED_TO_HEX));
-		drawing_buffer_add(LAYER_GRID_BOTTOM, loc, xpos, ypos, image::get_image(game_config::images::unreachable, image::SCALED_TO_HEX));
+		drawing_buffer_add(LAYER_GRID_BOTTOM, loc, xpos, ypos, image::get_image(game_config::terrain::unreachable, image::SCALED_TO_HEX));
 	}
 
 	if (!disctrict_.empty() && disctrict_.find(loc) != disctrict_.end()) {
-		drawing_buffer_add(LAYER_MOVE_INFO/*LAYER_REACHMAP*/, loc, xpos, ypos, image::get_image("terrain/disctrict.png", image::SCALED_TO_HEX));
+		drawing_buffer_add(LAYER_MOVE_INFO, loc, xpos, ypos, image::get_image(game_config::terrain::disctrict, image::SCALED_TO_HEX));
 	}
 
 	// Footsteps indicating a movement path
@@ -1630,13 +1607,13 @@ void game_display::draw_hex(const map_location& loc)
 	// Linger overlay unconditionally otherwise it might give glitches
 	// so it's drawn over the shroud and fog.
 	if (game_mode_ != RUNNING) {
-		static const image::locator linger(game_config::images::linger);
+		static const image::locator linger(game_config::terrain::linger);
 		drawing_buffer_add(LAYER_LINGER_OVERLAY, loc, xpos, ypos,
 			image::get_image(linger, image::TOD_COLORED));
 	}
 
-	if(on_map && loc == selectedHex_ && !game_config::images::selected.empty()) {
-		static const image::locator selected(game_config::images::selected);
+	if(on_map && loc == selectedHex_ && !game_config::terrain::selected.empty()) {
+		static const image::locator selected(game_config::terrain::selected);
 		drawing_buffer_add(LAYER_SELECTED_HEX, loc, xpos, ypos,
 				image::get_image(selected, image::SCALED_TO_HEX));
 	}
@@ -1728,9 +1705,9 @@ void game_display::show_unit_tip(const unit& troop, const map_location& loc)
 	if (!game_config::tiny_gui) {
 		// hide tactic slots
 		std::stringstream name;
-		for (int index = 0; index < game_config::active_tactic_slots; index ++) {
+		for (int n = 0; n < game_config::active_tactic_slots; n ++) {
 			name.str("");
-			name << "tactic" << index;
+			name << "tactic" << n;
 			gui2::tbutton* widget = dynamic_cast<gui2::tbutton*>(get_theme_object(name.str()));
 			widget->set_visible(gui2::twidget::INVISIBLE);
 		}
@@ -1850,7 +1827,7 @@ void game_display::show_tip(const std::string& message, const map_location& loc,
 
 void game_display::hide_tip()
 {
-	if (!in_game()) {
+	if (!in_theme()) {
 		return;
 	}
 	if (main_tip_handle_) {
@@ -1887,13 +1864,13 @@ void game_display::draw_sidebar()
 
 		if (resources::controller->is_recovering(currentTeam_ + 1) || tent::mode == mode_tag::SIEGE || !events::commands_disabled) {
 #if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
-			unit_map::const_iterator selected_it = find_visible_unit(selectedHex_, teams_[currentTeam_]);
-			if (selected_it.valid() && !fogged(selectedHex_)) {
+			const unit* selected_it = find_visible_unit(selectedHex_, teams_[currentTeam_]);
+			if (selected_it && !fogged(selectedHex_)) {
 				show_unit_tip(*selected_it, selected_it->get_location());
 			}
 #else
-			unit_map::const_iterator mouseover_it = find_visible_unit(mouseoverHex_, teams_[currentTeam_]);
-			if (mouseover_it.valid() && !fogged(mouseoverHex_)) {
+			const unit* mouseover_it = find_visible_unit(mouseoverHex_, teams_[currentTeam_]);
+			if (mouseover_it && !fogged(mouseoverHex_)) {
 				show_unit_tip(*mouseover_it, mouseover_it->get_location());
 			}
 #endif
@@ -1916,7 +1893,8 @@ void game_display::draw_minimap_units(surface& screen)
 	double xscaling = 1.0 * minimap_location_.w / get_map().w();
 	double yscaling = 1.0 * minimap_location_.h / get_map().h();
 
-	for(unit_map::const_iterator u = units_.begin(); u != units_.end(); ++u) {
+	for(unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it) {
+		const unit* u = dynamic_cast<const unit*>(&*it);
 		if (fogged(u->get_location()) ||
 		    (teams_[currentTeam_].is_enemy(u->side()) &&
 		     u->invisible(u->get_location())) ||
@@ -2072,8 +2050,8 @@ void game_display::draw_movement_info(const map_location& loc)
 	// Don't use empty route or the first step (the unit will be there)
 	if(w != route_.marks.end()
 				&& !route_.steps.empty() && route_.steps.front() != loc) {
-		const unit_map::const_iterator un = units_.find(route_.steps.front());
-		if(un != units_.end()) {
+		const unit* un = units_.find_unit(route_.steps.front(), true);
+		if (un) {
 			// Display the def% of this terrain
 			int def =  100 - un->defense_modifier(get_map().get_terrain(loc));
 			std::stringstream def_text;
@@ -2122,9 +2100,9 @@ void game_display::draw_movement_info(const map_location& loc)
 	// When out-of-turn, it's still interesting to check out the terrain defs of the selected unit
 	else if (selectedHex_.valid() && loc == mouseoverHex_)
 	{
-		const unit_map::const_iterator selectedUnit = units_.find(selectedHex_);
-		const unit_map::const_iterator mouseoveredUnit = units_.find(mouseoverHex_);
-		if(selectedUnit != units_.end() && mouseoveredUnit == units_.end()) {
+		const unit* selectedUnit = units_.find_unit(selectedHex_, true);
+		const unit* mouseoveredUnit = units_.find_unit(mouseoverHex_, true);
+		if (selectedUnit && !mouseoveredUnit) {
 			// Display the def% of this terrain
 			int def =  100 - selectedUnit->defense_modifier(get_map().get_terrain(loc));
 			std::stringstream def_text;
@@ -2164,8 +2142,8 @@ std::vector<surface> game_display::footsteps_images(const map_location& loc)
 
 	// Check which footsteps images of game_config we will use
 	int move_cost = 1;
-	const unit_map::const_iterator u = units_.find(route_.steps.front());
-	if(u != units_.end()) {
+	const unit* u = units_.find_unit(route_.steps.front(), true);
+	if (u) {
 		move_cost = u->movement_cost(get_map().get_terrain(loc));
 	}
 	int image_number = std::min<int>(move_cost, game_config::foot_speed_prefix.size());
@@ -2220,8 +2198,8 @@ surface game_display::get_flag(const map_location& loc)
 	t_translation::t_terrain terrain = get_map().get_terrain(loc);
 
 	size_t side = 0;
-	unit_map::const_iterator u_itor = units_.find(loc);
-	if (u_itor.valid() && u_itor->type() == unit_types.find_keep()) {
+	const unit* u_itor = units_.find_unit(loc, true);
+	if (u_itor && u_itor->type() == unit_types.find_keep()) {
 		side = u_itor->side();
 	}
 	if (!side && !get_map().is_village(terrain)) {
@@ -2230,8 +2208,8 @@ surface game_display::get_flag(const map_location& loc)
 
 	if (!side) {
 		side = player_teams::village_owner(loc) + 1;
-		unit_map::const_iterator it = units_.find(loc, false);
-		if (it != units_.end()) {
+		const unit* it = units_.find_unit(loc, false);
+		if (it) {
 			side = it->side();
 		}
 	}
@@ -2465,7 +2443,7 @@ void game_display::process_reachmap_changes()
 		for (reach_map::iterator reach = full.begin(); reach != full.end(); ++reach) {
 			if (point_in_rect_of_hexes(reach->first.x, reach->first.y, draw_area_rect_)) {
 				// Location needs to be darkened or brightened
-				draw_area_[(reach->first.y + 1) * draw_area_pitch_ + (reach->first.x + 1)] = INVALIDATE;
+				draw_area_val(reach->first.x, reach->first.y) = INVALIDATE;
 			}
 		}
 	} else if (!reach_map_.empty()) {
@@ -2540,8 +2518,8 @@ void game_display::invalidate_animations_location(const map_location& loc)
 {
 	if (get_map().is_village(loc)) {
 		int owner = player_teams::village_owner(loc);
-		unit_map::const_iterator it = units_.find(loc, false);
-		if (it != units_.end()) {
+		const unit* it = units_.find_unit(loc, false);
+		if (it) {
 			owner = it->side() - 1;
 		}
 		if (owner >= 0 && flags_[owner].need_update()
@@ -2584,8 +2562,9 @@ void game_display::invalidate_animations()
 		expedite_city_->invalidate(expedite_city_->get_location());
 	}
 	for (size_t i = 0; i < draw_area_unit_size_; i ++) {
-		draw_area_unit_[i]->refresh();
-		draw_area_unit_[i]->invalidate(draw_area_unit_[i]->get_location());
+		unit* u = dynamic_cast<unit*>(draw_area_unit_[i]);
+		u->refresh();
+		u->invalidate(u->get_location());
 	}
 	if (temp_unit_) {
 		temp_unit_->refresh();
@@ -2846,11 +2825,8 @@ void game_display::set_attack_indicator(unit* attack, bool browse)
 			for (size_t i = 0; i < size; i ++) {
 				relative_loc.x = loc.x + adjacent_ptr[i].x;
 				relative_loc.y = loc.y + adjacent_ptr[i].y;
-				if (units_.count(relative_loc) || units_.count(relative_loc, false)) {
-					unit_map::iterator other = units_.find(relative_loc);
-					if (other == units_.end()) {
-						other = units_.find(relative_loc, false);
-					}
+				if (units_.valid2(relative_loc, true) || units_.valid2(relative_loc, false)) {
+					unit* other = units_.find_unit(relative_loc);
 					if (!current_team.fogged(relative_loc) && current_team.is_enemy(other->side()) && !other->invisible(relative_loc)) {
 						if (formation.valid() && !formation.disable_) {
 							const tformation_profile& profile = *formation.profile_;
@@ -2903,7 +2879,6 @@ void game_display::set_hero_indicator(const hero& h)
 	int cost_exponent = current_team.cost_exponent();
 	int holden_troops = current_team.holden_troops();
 
-	unit_map::const_iterator adj;
 	int n;
 	map_location adjs[6];
 
@@ -2941,8 +2916,8 @@ void game_display::set_hero_indicator(const hero& h)
 				if ((tent::mode == mode_tag::LAYOUT || gold >= ut->cost() * cost_exponent / 100) && mtype.movement_cost(map, terrain) != unit_movement_type::UNREACHABLE) {
 					get_adjacent_tiles(loc, adjs);
 					for (n = 0; n < 6; n ++) {
-						adj = units_.find(adjs[n]);
-						if (adj.valid() && adj->is_city() && current_team.is_enemy(adj->side())) {
+						const unit* adj = units_.find_unit(adjs[n], true);
+						if (adj && adj->is_city() && current_team.is_enemy(adj->side())) {
 							break;
 						}
 					}
@@ -2962,7 +2937,6 @@ void game_display::set_placable_indicator(unit& u)
 	const gamemap& map = *map_;
 
 	if (!current_team.allow_intervene) {
-		unit_map::const_iterator adj;
 		int n;
 		map_location adjs[6];
 
@@ -2981,8 +2955,8 @@ void game_display::set_placable_indicator(unit& u)
 					if (mtype.movement_cost(map, terrain) != unit_movement_type::UNREACHABLE) {
 						get_adjacent_tiles(loc, adjs);
 						for (n = 0; n < 6; n ++) {
-							adj = units_.find(adjs[n]);
-							if (adj.valid() && adj->is_city() && current_team.is_enemy(adj->side())) {
+							const unit* adj = units_.find_unit(adjs[n], true);
+							if (adj && adj->is_city() && current_team.is_enemy(adj->side())) {
 								break;
 							}
 						}
@@ -3143,8 +3117,8 @@ void game_display::set_build_indicator(const unit* builder, const artifical* new
 				size_t i2, size2 = (sizeof(adjacent_1) / sizeof(map_offset)) >> 1;
 				for (i2 = 0; i2 < size2; i2 ++) {
 					map_location relative_loc2(relative_loc.x + adjacent2_ptr[i2].x, relative_loc.y + adjacent2_ptr[i2].y);
-					unit_map::iterator itor = units_.find(relative_loc2);
-					if (itor.valid() && itor->emits_zoc() && itor->is_artifical()) {
+					unit* itor = units_.find_unit(relative_loc2, true);
+					if (itor && itor->emits_zoc() && itor->is_artifical()) {
 						break;
 					}
 				}
@@ -3644,7 +3618,7 @@ void game_display::prune_chat_messages(bool remove_all)
 	}
 }
 
-game_display *game_display::singleton_ = NULL;
+// game_display *game_display::singleton_ = NULL;
 
 void set_zoom_to_default(int zoom)
 {

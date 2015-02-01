@@ -22,20 +22,6 @@
 
 namespace unit_helper {
 
-/**
- * Encapsulates the logic for deciding whether an iterator @a u points to
- * a unit that can advance.
- * @return true if the unit exists, has available advances, and can_advance().
- */
-bool will_certainly_advance(const unit_map::iterator &u);
-
-/**
- * Determines the total number of available advancements (of any kind) for
- * a given unit. This includes normal advances and modifiers.
- * @return the total number of possible advancements.
- */
-int number_of_possible_advances(const unit &unit);
-
 }
 
 #endif

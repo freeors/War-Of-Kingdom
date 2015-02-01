@@ -74,7 +74,7 @@ namespace preferences
 class editor
 {
 public:
-	enum BIN_TYPE {BIN_MIN = 0, MAIN_DATA = BIN_MIN, GUI, LANGUAGE, BIN_SYSTEM_MAX = LANGUAGE, SCENARIO_DATA, CAMPAIGNS, BIN_MAX = CAMPAIGNS};
+	enum BIN_TYPE {BIN_MIN = 0, MAIN_DATA = BIN_MIN, GUI, LANGUAGE, BIN_SYSTEM_MAX = LANGUAGE, TB_DAT, SCENARIO_DATA, EXTENDABLE};
 	struct wml2bin_desc {
 		wml2bin_desc();
 		std::string bin_name;
@@ -90,7 +90,7 @@ public:
 
 	bool load_game_cfg(const BIN_TYPE type, const char* name = NULL, bool write_file = true, uint32_t nfiles = 0, uint32_t sum_size = 0, uint32_t modified = 0);
 	void get_wml2bin_desc_from_wml(std::string& path);
-	void reload_campaigns_cfg();
+	void reload_extendable_cfg();
 	std::string check_scenario_cfg(const config& scenario_cfg);
 	std::string check_mplayer_bin(const config& mplayer_cfg);
 	std::string check_data_bin(const config& data_cfg);
@@ -99,12 +99,11 @@ public:
 	const std::vector<std::pair<BIN_TYPE, wml2bin_desc> >& wml2bin_descs() const { return wml2bin_descs_; }
 
 	const config& campaigns_config() const { return campaigns_config_; }
-private:
-	void write_tb_dat_if() const;
 
 private:
 	config game_config_;
 	config campaigns_config_;
+	config tbs_config_;
 	game_config::config_cache& cache_;
 	std::vector<std::pair<BIN_TYPE, wml2bin_desc> > wml2bin_descs_;
 };

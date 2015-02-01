@@ -69,7 +69,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(signin)
 
-tsignin::tsignin(game_display& disp, hero_map& heros)
+tsignin::tsignin(display& disp, hero_map& heros)
 	: disp_(disp)
 	, heros_(heros)
 {

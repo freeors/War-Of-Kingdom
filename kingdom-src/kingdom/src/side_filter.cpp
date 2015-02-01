@@ -124,7 +124,8 @@ bool side_filter::match_internal(const team &t) const
 	if(cfg_.has_child("has_unit")) {
 		const vconfig& unit_filter = cfg_.child("has_unit");
 		bool found = false;
-		for (unit_map::iterator u = resources::units->begin(); u != resources::units->end(); ++ u) {
+		for (unit_map::iterator it = resources::units->begin(); it != resources::units->end(); ++ it) {
+			unit* u = dynamic_cast<unit*>(&*it);
 			if (u->side() != t.side()) {
 				continue;
 			}

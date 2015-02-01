@@ -161,7 +161,7 @@ tsubcontinent::tcity& tsubcontinent::tparam::find_city(int cityno)
 	return *it;
 }
 
-tsubcontinent::tsubcontinent(game_display& disp, hero_map& heros, game_state& state, const config& game_config)
+tsubcontinent::tsubcontinent(display& disp, hero_map& heros, game_state& state, const config& game_config)
 	: disp_(disp)
 	, heros_(heros)
 	, state_(state)

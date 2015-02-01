@@ -87,7 +87,7 @@ REGISTER_DIALOG(book)
 
 help::section toplevel;
 
-tbook::tbook(game_display& disp, gamemap* map, hero_map& heros, const config& game_config, const std::string& tag)
+tbook::tbook(display& disp, gamemap* map, hero_map& heros, const config& game_config, const std::string& tag)
 	: disp_(disp)
 	, map_(map)
 	, heros_(heros)

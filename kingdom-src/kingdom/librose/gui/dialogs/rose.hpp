@@ -44,7 +44,7 @@ public:
 	 * @todo Evaluate the best place for these items.
 	 */
 	enum tresult {
-			NEW_CAMPAIGN = 1     /**< Let user select a campaign to play */
+			EDIT_DIALOG = 1     /**< Let user select a campaign to play */
 			, PLAYER
 			, PLAYER_SIDE
 			, MULTIPLAYER         /**<

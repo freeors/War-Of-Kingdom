@@ -24,14 +24,4 @@
 
 namespace unit_helper {
 
-int number_of_possible_advances(const unit &u)
-{
-	return u.advances_to().size() + u.get_modification_advances().size();
-}
-
-bool will_certainly_advance(const unit_map::iterator &u)
-{
-	return u.valid() && u->advances() && number_of_possible_advances(*u) > 0;
-}
-
 }

@@ -89,7 +89,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(city_list)
 
-tcity_list::tcity_list(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side_num, int start)
+tcity_list::tcity_list(display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side_num, int start)
 	: gui_(gui)
 	, teams_(teams)
 	, units_(units)
@@ -311,7 +311,7 @@ void tcity_list::catalog_page(twindow& window, int catalog, bool swap)
 	}
 	int index = catalog - MIN_PAGE;
 
-	if (window.alternate_index() == index) {
+	if (hero_table_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
@@ -324,12 +324,12 @@ void tcity_list::catalog_page(twindow& window, int catalog, bool swap)
 		selected_row = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true))->get_data();
 	}
 
-	window.alternate_uh(hero_table_, index);
+	hero_table_->swap_uh(window, index);
 
 	fill_table(catalog);
 
 	if (swap) {
-		window.alternate_bh(hero_table_, index);
+		hero_table_->swap_bh(window);
 		hero_table_->select_row(selected_row);
 		// swap to other page, there is no sorted column.
 		sorting_widget_ = NULL;

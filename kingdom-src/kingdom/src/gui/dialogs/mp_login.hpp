@@ -18,7 +18,7 @@
 
 #include "gui/dialogs/dialog.hpp"
 
-class game_display;
+class display;
 class hero_map;
 
 namespace gui2 {
@@ -27,7 +27,7 @@ class tmp_login : public tdialog
 {
 public:
 	enum {REGISTER, LOGIN};
-	tmp_login(game_display& disp, hero_map& heros, const std::string& label);
+	tmp_login(display& disp, hero_map& heros, const std::string& label);
 
 	bool dirty() const;
 private:
@@ -47,7 +47,7 @@ private:
 	bool create(twindow& window, int operate);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	std::string orignal_username_;
 	std::string orignal_password_;

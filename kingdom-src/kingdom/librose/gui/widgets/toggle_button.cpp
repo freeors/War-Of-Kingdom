@@ -32,11 +32,32 @@
 
 namespace gui2 {
 
+ttoggle_button* create_toggle_button(const config& cfg)
+{
+	implementation::tbuilder_toggle_button builder(cfg);
+	return dynamic_cast<ttoggle_button*>(builder.build());
+}
+
+ttoggle_button* create_toggle_button(const std::string& id, const std::string& definition, void* cookie)
+{
+	config cfg;
+
+	if (!id.empty()) {
+		cfg["id"] = id;
+	}
+	cfg["definition"] = definition;
+
+	ttoggle_button* widget = create_toggle_button(cfg);
+	widget->set_cookie(cookie);
+	return widget;
+}
+
 REGISTER_WIDGET(toggle_button)
 
 ttoggle_button::ttoggle_button()
 	: tcontrol(COUNT)
 	, state_(ENABLED)
+	, radio_(false)
 	, retval_(0)
 	, callback_state_change_()
 	, icon_name_()
@@ -98,11 +119,11 @@ void ttoggle_button::update_canvas()
 
 void ttoggle_button::set_value(const bool selected)
 {
-	if(selected == get_value()) {
+	if (selected == get_value()) {
 		return;
 	}
 
-	if(selected) {
+	if (selected) {
 		set_state(static_cast<tstate>(state_ + ENABLED_SELECTED));
 	} else {
 		set_state(static_cast<tstate>(state_ - ENABLED_SELECTED));
@@ -111,7 +132,7 @@ void ttoggle_button::set_value(const bool selected)
 
 void ttoggle_button::set_retval(const int retval)
 {
-	if(retval == retval_) {
+	if (retval == retval_) {
 		return;
 	}
 
@@ -172,15 +193,19 @@ void ttoggle_button::signal_handler_left_button_click(
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
 
+	if (radio_ && get_value()) {
+		return;
+	}
+
 	sound::play_UI_sound(settings::sound_toggle_button_click);
 
-	if(get_value()) {
+	if (get_value()) {
 		set_state(ENABLED);
 	} else {
 		set_state(ENABLED_SELECTED);
 	}
 
-	if(callback_state_change_) {
+	if (callback_state_change_) {
 		callback_state_change_(this);
 	}
 	handled = true;

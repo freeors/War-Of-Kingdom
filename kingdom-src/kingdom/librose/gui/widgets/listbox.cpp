@@ -47,9 +47,10 @@ void callback_list_item_clicked(twidget* caller)
 
 } // namespace
 
-tlistbox::tlistbox(const bool has_minimum, const bool has_maximum,
+tlistbox::tlistbox(const std::vector<tradio_page::tpage>& pages, const bool has_minimum, const bool has_maximum,
 		const tgenerator_::tplacement placement, const bool select)
 	: tscrollbar_container(2, true) // FIXME magic number
+	, tradio_page(pages, this)
 	, generator_(
 			tgenerator_::build(has_minimum, has_maximum, placement, select))
 	, list_builder_(NULL)

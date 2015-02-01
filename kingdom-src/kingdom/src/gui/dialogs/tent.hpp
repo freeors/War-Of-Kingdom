@@ -20,7 +20,7 @@
 
 #include "config.hpp"
 
-class game_display;
+class display;
 class hero_map;
 class hero;
 class card_map;
@@ -56,7 +56,7 @@ protected:
 	/** Inherited from tdialog. */
 	void post_show(twindow& window);
 
-	virtual game_display& gui() = 0;
+	virtual display& gui() = 0;
 	virtual void player_selected(twindow& window);
 private:
 	void init_player_list(tlistbox& list, twindow& window);

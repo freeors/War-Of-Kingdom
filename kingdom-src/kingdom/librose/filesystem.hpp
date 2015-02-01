@@ -39,7 +39,7 @@ struct io_exception : public game::error {
 struct file_tree_checksum;
 
 enum file_name_option { ENTIRE_FILE_PATH, FILE_NAME_ONLY };
-enum file_filter_option { NO_FILTER = 0, SKIP_MEDIA_DIR = 0x1, SKIP_SCENARIO_DIR = 0x2, SKIP_GUI_DIR = 0x4, SKIP_INTERNAL_DIR = 0x8, SKIP_TERRAIN = 0x10, SKIP_BOOK = 0x20};
+enum file_filter_option { NO_FILTER = 0, SKIP_MEDIA_DIR = 0x1, SKIP_SCENARIO_DIR = 0x2, SKIP_GUI_DIR = 0x4, SKIP_INTERNAL_DIR = 0x8, SKIP_BOOK = 0x10};
 enum file_reorder_option { DONT_REORDER, DO_REORDER };
 
 /**

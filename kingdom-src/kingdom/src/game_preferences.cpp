@@ -821,9 +821,9 @@ void encounter_recruitable_units(std::vector<team>& teams)
 }
 
 void encounter_start_units(unit_map& units){
-	for (unit_map::const_iterator help_unit_it = units.begin();
-		 help_unit_it != units.end(); ++help_unit_it) {
-		const std::string name = help_unit_it->type_id();
+	for (unit_map::const_iterator help_unit_it = units.begin(); help_unit_it != units.end(); ++help_unit_it) {
+		unit* u = dynamic_cast<unit*>(&*help_unit_it);
+		const std::string name = u->type_id();
 		encountered_units_set.insert(name);
 	}
 }

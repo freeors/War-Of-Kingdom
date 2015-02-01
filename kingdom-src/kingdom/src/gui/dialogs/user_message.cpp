@@ -37,7 +37,6 @@
 #include "gui/widgets/listbox.hpp"
 #endif
 #include "gui/dialogs/message.hpp"
-#include "gui/dialogs/combo_box.hpp"
 #include "gui/dialogs/group.hpp"
 #include "gui/dialogs/hero.hpp"
 #include "gui/dialogs/edit_box.hpp"
@@ -118,7 +117,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(user_message)
 
-tuser_message::tuser_message(game_display& disp, hero_map& heros, const config& game_config)
+tuser_message::tuser_message(display& disp, hero_map& heros, const config& game_config)
 	: tchat_(disp, group, MIN_PAGE, CHAT_PAGE, CHATING_PAGE)
 	, disp_(disp)
 	, heros_(heros)

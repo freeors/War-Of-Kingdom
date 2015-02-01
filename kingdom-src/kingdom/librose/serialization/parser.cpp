@@ -478,9 +478,12 @@ static void write_internal(config const &cfg, std::ostream &out, std::string& te
 	}
 }
 
-void write(std::ostream &out, config const &cfg, unsigned int level)
+void write(std::ostream &out, config const &cfg, unsigned int level, const std::string& def)
 {
-	std::string textdomain = PACKAGE;
+	std::string textdomain = def;
 	write_internal(cfg, out, textdomain, level);
 }
+
+
+
 

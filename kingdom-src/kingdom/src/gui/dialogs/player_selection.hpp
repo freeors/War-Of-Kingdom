@@ -29,7 +29,7 @@ class tbutton;
 class tplayer_selection : public ttent
 {
 public:
-	explicit tplayer_selection(game_display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero);
+	explicit tplayer_selection(display& gui, hero_map& heros, card_map& cards, const config& cfg, const config& campaign_config, hero& player_hero);
 	~tplayer_selection();
 
 protected:
@@ -37,14 +37,14 @@ protected:
 	void pre_show(CVideo& video, twindow& window);
 
 	void player_selected(twindow& window);
-	game_display& gui() { return gui_; }
+	display& gui() { return gui_; }
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	const std::string& window_id() const;
 
 	void player_city(twindow& window);
 private:
-	game_display& gui_;
+	display& gui_;
 };
 
 }

@@ -48,7 +48,7 @@ class tinapp_purchase : public tdialog
 public:
 	static tinapp_purchase* get_singleton() { return singleton_ ;}
 
-	tinapp_purchase(game_display& disp, hero_map& heros, bool browse);
+	tinapp_purchase(display& disp, hero_map& heros, bool browse);
 	~tinapp_purchase();
 
 	void refresh_list(bool clear_items, bool set_purchase = false);
@@ -57,7 +57,7 @@ public:
 	tinapp_item& get_item(int index);
 
 	void purchase_status(bool exit);
-	game_display& disp() { return disp_; }
+	display& disp() { return disp_; }
 	hero_map& heros() { return heros_; }
 private:
 	void restore(twindow& window);
@@ -78,7 +78,7 @@ private:
 	void post_show(twindow& window);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	std::vector<tinapp_item> items_;
 	tbutton* restore_;

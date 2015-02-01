@@ -20,7 +20,7 @@
 
 #include "config.hpp"
 
-class game_display;
+class display;
 class team;
 class unit_map;
 class artifical;
@@ -40,7 +40,7 @@ class tcity_list : public tdialog
 public:
 	enum {MIN_PAGE = 0, STATUS_PAGE = MIN_PAGE, UNITS_PAGE, INTERIOR_PAGE, MAX_PAGE = INTERIOR_PAGE};
 
-	explicit tcity_list(game_display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side_num, int start = MIN_PAGE);
+	explicit tcity_list(display& gui, std::vector<team>& teams, unit_map& units, hero_map& heros, game_state& gamestate, int side_num, int start = MIN_PAGE);
 
 	bool compare_row(tgrid& row1, tgrid& row2);
 protected:
@@ -62,7 +62,7 @@ private:
 
 	void sort_column(tbutton& widget);
 private:
-	game_display& gui_;
+	display& gui_;
 	std::vector<team>& teams_;
 	unit_map& units_;
 	hero_map& heros_;

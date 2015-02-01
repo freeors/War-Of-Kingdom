@@ -22,7 +22,7 @@
 #include <hero.hpp>
 #include <set>
 
-class game_display;
+class display;
 class unit_type;
 
 namespace gui2 {
@@ -32,7 +32,7 @@ class tlistbox;
 class texile : public tdialog
 {
 public:
-	explicit texile(game_display& disp, hero_map& heros, tgroup& g);
+	explicit texile(display& disp, hero_map& heros, tgroup& g);
 
 	bool dirty() const { return dirty_; }
 protected:
@@ -52,7 +52,7 @@ private:
 	void discard(twindow& window);
 	void detail(twindow& window);
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	tgroup& group_;
 	int selected_number_;

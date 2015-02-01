@@ -350,15 +350,15 @@ bool tdispatcher::fire(const tevent event, twidget& target, tmessage& message)
 			, ttrigger_message(message));
 }
 
-void tdispatcher::register_hotkey(const hotkey::HOTKEY_COMMAND id
+void tdispatcher::register_hotkey(const int id
 		, const thotkey_function& function)
 {
 	hotkeys_[id] = function;
 }
 
-bool tdispatcher::execute_hotkey(const hotkey::HOTKEY_COMMAND id)
+bool tdispatcher::execute_hotkey(const int id)
 {
-	std::map<hotkey::HOTKEY_COMMAND, thotkey_function>::iterator
+	std::map<int, thotkey_function>::iterator
 			itor = hotkeys_.find(id);
 
 	if(itor == hotkeys_.end()) {

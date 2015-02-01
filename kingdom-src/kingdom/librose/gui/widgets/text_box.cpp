@@ -95,10 +95,10 @@ ttext_box::~ttext_box()
 void ttext_box::set_maximum_length(const size_t maximum_length)
 {
 	maximum_length_ = maximum_length;
-	set_value(label_);
+	set_label(label_);
 }
 
-void ttext_box::set_value(const std::string& text)
+void ttext_box::set_label(const std::string& text)
 {
 	std::string tmp_text;
 	bool use_tmp_text = false;
@@ -122,7 +122,7 @@ void ttext_box::set_value(const std::string& text)
 	const std::string& result_text = use_tmp_text? tmp_text: text;
 
 	if (result_text != label_ || use_tmp_text) {
-		set_label(result_text);
+		tcontrol::set_label(result_text);
 		
 		if (text_changed_callback_) {
 			text_changed_callback_(this);
@@ -132,6 +132,16 @@ void ttext_box::set_value(const std::string& text)
 		update_canvas();
 		set_dirty();
 	}
+}
+
+void ttext_box::set_value(const std::string& label) 
+{ 
+	set_label(tintegrate::stuff_escape(label)); 
+}
+
+std::string ttext_box::get_value() const
+{ 
+	return tintegrate::drop_escape(label_);
 }
 
 void ttext_box::goto_end_of_data(const bool select)
@@ -204,7 +214,7 @@ void ttext_box::insert_str(const std::string& str)
 	// after delete, start maybe in end outer.
 	selection_start_ = new_start;
 
-	set_value(text);
+	set_label(text);
 
 	set_cursor(selection_start_, false);
 }
@@ -230,7 +240,7 @@ void ttext_box::insert_img(const std::string& str)
 	// after delete, start maybe in end outer.
 	selection_start_ = new_start;
 
-	set_value(text);
+	set_label(text);
 
 	set_cursor(selection_start_, false);
 }
@@ -793,7 +803,7 @@ void ttext_box::update_canvas()
 	
 	BOOST_FOREACH(tcanvas& tmp, canvas()) {
 
-		tmp.set_variable("text", variant(get_value()));
+		tmp.set_variable("text", variant(label()));
 		tmp.set_variable("text_x_offset", variant(text_x_offset_));
 		tmp.set_variable("text_y_offset", variant(text_y_offset_));
 		tmp.set_variable("text_maximum_width", variant(max_width));
@@ -827,9 +837,9 @@ void ttext_box::delete_char(const bool backspace)
 
 	SDL_Rect new_start;
 	const std::string& text = integrate_->handle_char(true, start.x, start.y, backspace, new_start);
-	if (text != get_value()) {
+	if (text != label()) {
 		selection_start_ = new_start;
-		set_value(text);
+		set_label(text);
 		// repoint
 		set_cursor(selection_start_, false);
 	}
@@ -848,7 +858,7 @@ void ttext_box::delete_selection()
 	const std::string& text = integrate_->handle_selection(start.x, start.y, end.x, end.y, &new_start);
 	// after delete, start maybe in end outer.
 	selection_start_ = new_start;
-	set_value(text);
+	set_label(text);
 
 	set_cursor(selection_start_, false);
 }
@@ -913,7 +923,7 @@ void ttext_box::handle_key_clear_line(SDLMod /*modifier*/, bool& handled)
 {
 	handled = true;
 
-	set_value("");
+	set_label("");
 }
 
 void ttext_box::load_config_extra()

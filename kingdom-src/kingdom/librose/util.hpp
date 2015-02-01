@@ -277,6 +277,7 @@ inline bool contains(const Container & container, const Value & value)
 
 }//namespace util
 
+enum tristate {t_false, t_true, t_unset};
 
 #if 1
 # include <SDL_types.h>

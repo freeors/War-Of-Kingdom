@@ -93,7 +93,7 @@ enum server_type {
 
 }
 
-static server_type open_connection(game_display& disp, hero_map& heros, const std::string& original_host)
+static server_type open_connection(display& disp, hero_map& heros, const std::string& original_host)
 {
 	std::string h = original_host;
 
@@ -1230,6 +1230,8 @@ membership http_agent::do_uploadpass(const pass_statistic& stat)
 		return m;
 	}
 
+	
+
 	return m;
 }
 
@@ -1294,6 +1296,7 @@ membership http_agent::do_uploadsiege(const tsiege_record& rec)
 		return m;
 	}
 
+	
 
 	return m;
 }
@@ -1498,10 +1501,55 @@ std::vector<ttitle_record> http_agent::do_listtitle()
 membership http_agent::do_uploadmessage(const tmessage_record& rec)
 {
 	membership m;
-	if (commerce_protection(disp_, "http_agent::do_uploadmessage()")) {
+	if (!do_prepare(true)) {
 		return m;
 	}
 
+	std::stringstream content;
+	content << rec.sender << "&" << rec.receiver_username << "&";
+	content << rec.content << "&";
+	content << rec.create_time;
+
+	trequest request(*this, "uploadmessage", content.str());
+	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
+
+	std::vector<char> buf;
+	dialogs::network_receive_dialog(disp_, "", buf, sock_);
+
+	utils::string_map symbols;
+	config data;
+	int content_start = http_2_cfg(buf, data);
+
+	if (content_start != -1 && content_start < (int)buf.size()) {
+		char* content = &buf[content_start];
+		int content_length = (int)buf.size() - content_start;
+
+		if (access_denied(data, content, content_length)) {
+			return m;
+		}
+		content = content + magic_.size();
+		content_length -= magic_.size();
+		
+		std::string str;
+		str.assign(content, content_length);
+
+		std::stringstream err;
+		if (str == "duplicate") {
+			symbols["create"] = tintegrate::generate_format(format_time_date(rec.create_time), "red");
+			err << vgettext("wesnoth-lib", "Had uploaded message that create at $create, cannot upload again!", symbols);
+			
+		} else if (str == "error_receiver") {
+			symbols["create"] = tintegrate::generate_format(rec.receiver_username, "red");
+			err << vgettext("wesnoth-lib", "Receiver don't exist!", symbols);
+			
+		} 
+		if (!err.str().empty()) {
+			gui2::show_message(disp_.video(), "", err.str());
+			return m;
+		}
+
+		m = parse_membership_result(str);
+	}
 
 	return m;
 }
@@ -1659,6 +1707,7 @@ membership http_agent::do_upgrade(int number, int coin, int score)
 		return member;
 	}
 
+	
 	return member;
 }
 
@@ -1688,6 +1737,7 @@ membership http_agent::do_member(int op, const std::vector<std::pair<int, int> >
 		return member;
 	}
 
+	
 	return member;
 }
 
@@ -1708,6 +1758,7 @@ membership http_agent::do_exile(int tag, const std::vector<std::pair<int, int> >
 		return member;
 	}
 
+	
 	return member;
 }
 
@@ -1718,59 +1769,7 @@ membership http_agent::do_score(int coin, int score, bool transaction)
 		return member;
 	}
 
-	if (!do_prepare(true)) {
-		return member;
-	}
-
-	std::stringstream content;
-	content << "coin=" << coin;
-	content << "&score=" << score;
-	if (transaction) {
-		content << "&transaction";
-	}
-
-	trequest request(*this, "score", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	config data;
-	int content_start = http_2_cfg(buf, data);
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return member;
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-
-		// buf maybe not end with '\0'
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["action"] = tintegrate::generate_format(_("Score"), "yellow");
-		if (str == "mishero") {
-			err << vgettext("When $action, unknown hero!", symbols);
-		} else if (str == "misstatus") {
-			err << vgettext("When $action, error status!", symbols);
-		} else if (str == "misscore") {
-			err << vgettext("When $action, error score!", symbols);
-		} 
-		if (err.str().empty()) {
-			member = parse_membership_result(str);
-			if (member.uid < 0) {
-				err << vgettext("When $action, unknown error!", symbols);
-			}
-		}
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-		}
-	}
+	
 	return member;
 }
 
@@ -1803,66 +1802,7 @@ membership http_agent::upload_data(const std::map<int, std::string>& block, bool
 		return member;
 	}
 
-	if (block.empty()) {
-		return member;
-	}
-	if (!do_prepare(true, quiet)) {
-		return member;
-	}
-
-	std::stringstream content;
-	for (std::map<int, std::string>::const_iterator it = block.begin(); it != block.end(); ++ it) {
-		if (it != block.begin()) {
-			content << "&";
-		}
-		content << block_tag_str(it->first) << "#" << it->second;
-	}
-	if (uid >= 0) {
-		content << "&uid#" << uid;
-	}
-
-	trequest request(*this, "blockdata", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	config data;
-	int content_start = http_2_cfg(buf, data);
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return member;
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-
-		// buf maybe not end with '\0'
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["action"] = tintegrate::generate_format(_("Save Layout"), "yellow");
-		if (str == "mishero") {
-			err << vgettext("When $action, unknown hero!", symbols);
-		} else if (str == "misstatus") {
-			err << vgettext("When $action, error status!", symbols);
-		} else if (str == "misscore") {
-			err << vgettext("When $action, error score!", symbols);
-		} 
-		if (err.str().empty()) {
-			member = parse_membership_result(str, true);
-			if (member.uid < 0) {
-				err << vgettext("When $action, unknown error!", symbols);
-			}
-		}
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-		}
-	}
+	
 	return member;
 }
 
@@ -1873,57 +1813,7 @@ membership http_agent::insert_transaction(const std::string& number, const std::
 		return member;
 	}
 
-	if (!do_prepare(true)) {
-		return member;
-	}
-
-	std::stringstream content;
-	content << "do=" << type;
-	content << "&number=" << number;
-	content << "&buyer=" << buyer;
-	content << "&uid=" << request_uid;
-
-	trequest request(*this, "transaction", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	config data;
-	int content_start = http_2_cfg(buf, data);
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return member;
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-
-		// buf maybe not end with '\0'
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["action"] = tintegrate::generate_format(_("transaction^Insert"), "yellow");
-		if (str == "number_error") {
-			err << vgettext("When $action, error number!", symbols);
-		} else if (str == "buyer_error") {
-			err << vgettext("When $action, error buyer!", symbols);
-		} else if (str == "number_duplicate") {
-			err << vgettext("When $action, duplicate number!", symbols);
-		} else {
-			member = parse_membership_result(str);
-			if (member.uid < 0) {
-				err << vgettext("When $action, unknown error!", symbols);
-			} 
-		}
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-		}
-	}
+	
 	return member;
 }
 
@@ -1956,59 +1846,7 @@ membership http_agent::do_associate(const std::string& username, int tag, bool c
 		return member;
 	}
 
-	const std::string& _do = associate_tag_str(tag);
-	if (_do.empty()) {
-		return member;
-	}
-	if (!do_prepare(check_network)) {
-		return member;
-	}
-
-	std::stringstream content;
-	content << "do=" << _do << "&username=" << username;
-
-	trequest request(*this, "associate", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	config data;
-	int content_start = http_2_cfg(buf, data);
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return member;
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-
-		// buf maybe not end with '\0'
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["action"] = tintegrate::generate_format(_("Associate"), "yellow");
-		if (str == "username_cannot_myself") {
-			err << dsgettext("wesnoth-lib", "Username cannot be myself!");
-		} else if (str == "misstatus") {
-			err << vgettext("When $action, error status!", symbols);
-		} else if (str == "misscore") {
-			err << vgettext("When $action, error score!", symbols);
-		} 
-		if (err.str().empty()) {
-			member = parse_membership_result(str);
-			if (member.uid < 0) {
-				err << vgettext("When $action, unknown error!", symbols);
-			}
-		}
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-		}
-	}
+	
 	return member;
 }
 
@@ -2035,10 +1873,6 @@ std::string employee_tag_str(int tag)
 membership http_agent::do_employee_insert(hero_map& heros)
 {
 	membership member;
-	if (commerce_protection(disp_, "http_agent::do_employee_insert()")) {
-		return member;
-	}
-
 	const std::string& _do = employee_tag_str(employee_tag_insert);
 	if (_do.empty()) {
 		return member;
@@ -2120,93 +1954,7 @@ membership http_agent::do_employee_common(int tag, const std::set<int>& number, 
 		return member;
 	}
 
-	const std::string& _do = employee_tag_str(tag);
-	if (_do.empty() || number.empty()) {
-		return member;
-	}
-	if (!do_prepare(true)) {
-		return member;
-	}
-
-	std::stringstream content;
-	content << "do=" << _do << "&param=";
-	bool first = true;
-	for (std::set<int>::const_iterator it = number.begin(); it != number.end(); ++ it) {
-		if (!first) {
-			content << ",";
-		} else {
-			first = false;
-		}
-		content << *it;
-	}
-	if (coin) {
-		content << "&coin=" << coin;
-	}
-	if (score) {
-		content << "&score=" << score;
-	}
-
-	trequest request(*this, "employee", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	config data;
-	int content_start = http_2_cfg(buf, data);
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return member;
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-
-		// buf maybe not end with '\0'
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["action"] = tintegrate::generate_format(_("Employee"), "yellow");
-		if (str == "uid_error") {
-			err << vgettext("wesnoth-lib", "uid_error", symbols);
-		} else if (str == "id_absent") {
-			err << vgettext("wesnoth-lib", "id_absent", symbols);
-		} else if (str == "lock_status_error") {
-			err << vgettext("wesnoth-lib", "lock_status_error", symbols);
-		} else if (str == "level_error") {
-			err << vgettext("wesnoth-lib", "level_error", symbols);
-		} 
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-			return member;
-		}
-
-		std::string membership_size_str, listemployee_size_str;
-		membership_size_str.assign(content, 8);
-		char* endptr;
-		int membership_size = (int)strtol(membership_size_str.c_str(), &endptr, 16);
-		if (content_length <= 8 + membership_size) {
-			return member;
-		}
-		listemployee_size_str.assign(content + 8 + membership_size, 8);
-		int listemployee_size = (int)strtol(listemployee_size_str.c_str(), &endptr, 16);
-		if (content_length != 8 + membership_size + 8 + listemployee_size) {
-			return member;
-		}
-
-		std::string membership_str, listemployee_str;
-		membership_str.assign(content + 8, membership_size);
-		listemployee_str.assign(content + 8 + membership_size + 8, listemployee_size);
-
-		member = parse_membership_result(membership_str, false);
-		if (member.uid >= 0 && employees) {
-			*employees = parse_employeelist_str_2_map(listemployee_str);
-		}
-	}
+	
 	return member;
 }
 
@@ -2287,58 +2035,7 @@ membership http_agent::do_signin(int tag)
 		return member;
 	}
 
-	const std::string& _do = signin_tag_str(tag);
-	if (_do.empty()) {
-		return member;
-	}
-	if (!do_prepare(true)) {
-		return member;
-	}
-
-	std::stringstream content;
-	content << "do=" << _do;
-
-	trequest request(*this, "signin", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	config data;
-	int content_start = http_2_cfg(buf, data);
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return member;
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-
-		// buf maybe not end with '\0'
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["action"] = tintegrate::generate_format(_("Sign in"), "yellow");
-		if (str == "uid_error") {
-			err << vgettext("wesnoth-lib", "uid_error", symbols);
-		} else if (str == "id_absent") {
-			err << vgettext("wesnoth-lib", "id_absent", symbols);
-		} else if (str == "lock_status_error") {
-			err << vgettext("wesnoth-lib", "lock_status_error", symbols);
-		} else if (str == "level_error") {
-			err << vgettext("wesnoth-lib", "level_error", symbols);
-		} 
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-			return member;
-		}
-
-		member = parse_membership_result(str, false);
-	}
+	
 	return member;
 }
 
@@ -2360,65 +2057,11 @@ std::pair<tsubcontinent_record, membership> http_agent::do_subcontinent(int tag,
 		return std::make_pair(rec, member);
 	}
 
-	const std::string& _do = subcontinent_tag_str(tag);
-	if (_do.empty()) {
-		return std::make_pair(rec, member);
-	}
-	if (!do_prepare(true)) {
-		return std::make_pair(rec, member);
-	}
-
-	std::stringstream content;
-	content << "do=" << _do << "&";
-	content << "id=" << id << "&";
-	content << "cityno=" << cityno;
-
-	trequest request(*this, "subcontinent", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	config data;
-	int content_start = http_2_cfg(buf, data);
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return std::make_pair(rec, member);
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-
-		// buf maybe not end with '\0'
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["action"] = tintegrate::generate_format(_("Subcontinent"), "yellow");
-		if (str == "error_do") {
-			err << vgettext("wesnoth-lib", "error do", symbols);
-		} else if (str == "error_param") {
-			err << vgettext("wesnoth-lib", "error param", symbols);
-		} 
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-			return std::make_pair(rec, member);
-		}
-
-		const std::vector<std::string> vstr = utils::split(str, '#', utils::STRIP_SPACES);
-		if (vstr.size() != 2) {
-			return std::make_pair(rec, member);
-		}
-		rec = parse_subcontinent_result(vstr[0]);
-		member = parse_membership_result(vstr[1], true);
-	}
+	
 	return std::make_pair(rec, member);
 }
 
-bool register_user(game_display& disp, hero_map& heros, bool check_exist)
+bool register_user(display& disp, hero_map& heros, bool check_exist)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2427,7 +2070,7 @@ bool register_user(game_display& disp, hero_map& heros, bool check_exist)
 	return agent.do_register(check_exist);
 }
 
-membership session(game_display& disp, hero_map& heros)
+membership session(display& disp, hero_map& heros)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2445,7 +2088,7 @@ membership membership_hero(display& disp, hero_map& heros, bool quiet, const std
 	return agent.do_membership(quiet, -1, username);
 }
 
-membership membership_from_uid(game_display& disp, hero_map& heros, bool quiet, int uid)
+membership membership_from_uid(display& disp, hero_map& heros, bool quiet, int uid)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2488,7 +2131,7 @@ membership affirm_terminate(display& disp, hero_map& heros, const std::string& u
 	return http::associate(disp, heros, username, associate_tag_terminate, false);
 }
 
-membership membership_hero2(game_display& disp, hero_map& heros)
+membership membership_hero2(display& disp, hero_map& heros)
 {
 	membership member = membership_hero(disp, heros, true);
 	if (member.uid < 0) {
@@ -2498,7 +2141,7 @@ membership membership_hero2(game_display& disp, hero_map& heros)
 	return member;
 }
 
-std::vector<membership> membershiplist_vector(game_display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid)
+std::vector<membership> membershiplist_vector(display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2507,7 +2150,7 @@ std::vector<membership> membershiplist_vector(game_display& disp, hero_map& hero
 	return agent.do_membershiplist_vector(quiet, request_str, uid);
 }
 
-std::map<int, membership> membershiplist_map(game_display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid)
+std::map<int, membership> membershiplist_map(display& disp, hero_map& heros, bool quiet, const std::string& request_str, bool uid)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2516,7 +2159,7 @@ std::map<int, membership> membershiplist_map(game_display& disp, hero_map& heros
 	return agent.do_membershiplist_map(quiet, request_str, uid);
 }
 
-bool avatar_hero(game_display& disp, hero_map& heros, int uid, bool quiet)
+bool avatar_hero(display& disp, hero_map& heros, int uid, bool quiet)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2525,7 +2168,7 @@ bool avatar_hero(game_display& disp, hero_map& heros, int uid, bool quiet)
 	return agent.do_avatar(uid, quiet);
 }
 
-bool upload_save(game_display& disp, hero_map& heros, const std::string& name)
+bool upload_save(display& disp, hero_map& heros, const std::string& name)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2534,7 +2177,7 @@ bool upload_save(game_display& disp, hero_map& heros, const std::string& name)
 	return agent.do_uploadsave(name);
 }
 
-std::string download_save(game_display& disp, hero_map& heros, int sid)
+std::string download_save(display& disp, hero_map& heros, int sid)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2543,7 +2186,7 @@ std::string download_save(game_display& disp, hero_map& heros, int sid)
 	return agent.do_downloadsave(sid);
 }
 
-std::vector<savegame::www_save_info> list_save(game_display& disp, hero_map& heros)
+std::vector<savegame::www_save_info> list_save(display& disp, hero_map& heros)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2552,7 +2195,7 @@ std::vector<savegame::www_save_info> list_save(game_display& disp, hero_map& her
 	return agent.do_listsave();
 }
 
-membership upload_pass(game_display& disp, hero_map& heros, const pass_statistic& stat)
+membership upload_pass(display& disp, hero_map& heros, const pass_statistic& stat)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2561,7 +2204,7 @@ membership upload_pass(game_display& disp, hero_map& heros, const pass_statistic
 	return agent.do_uploadpass(stat);
 }
 
-std::vector<pass_statistic> list_pass(game_display& disp, hero_map& heros)
+std::vector<pass_statistic> list_pass(display& disp, hero_map& heros)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2570,7 +2213,7 @@ std::vector<pass_statistic> list_pass(game_display& disp, hero_map& heros)
 	return agent.do_listpass();
 }
 
-membership upload_siege(game_display& disp, hero_map& heros, const tsiege_record& rec)
+membership upload_siege(display& disp, hero_map& heros, const tsiege_record& rec)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2579,7 +2222,7 @@ membership upload_siege(game_display& disp, hero_map& heros, const tsiege_record
 	return agent.do_uploadsiege(rec);
 }
 
-std::vector<tsiege_record> list_siege(game_display& disp, hero_map& heros)
+std::vector<tsiege_record> list_siege(display& disp, hero_map& heros)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2626,7 +2269,7 @@ std::vector<tmessage_record> list_message(display& disp, hero_map& heros)
 	return agent.do_listmessage();
 }
 
-std::vector<pass_statistic> list_board_pass(game_display& disp, hero_map& heros)
+std::vector<pass_statistic> list_board_pass(display& disp, hero_map& heros)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2635,7 +2278,7 @@ std::vector<pass_statistic> list_board_pass(game_display& disp, hero_map& heros)
 	return agent.do_listboard_pass();
 }
 
-std::vector<membership> list_board_score(game_display& disp, hero_map& heros)
+std::vector<membership> list_board_score(display& disp, hero_map& heros)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2644,7 +2287,7 @@ std::vector<membership> list_board_score(game_display& disp, hero_map& heros)
 	return agent.do_listboard_score();
 }
 
-membership upgrade(game_display& disp, hero_map& heros, int number, int coin, int score)
+membership upgrade(display& disp, hero_map& heros, int number, int coin, int score)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2653,7 +2296,7 @@ membership upgrade(game_display& disp, hero_map& heros, int number, int coin, in
 	return agent.do_upgrade(number, coin, score);
 }
 
-membership member(game_display& disp, hero_map& heros, int op, const std::vector<std::pair<int, int> >& m, int coin, int score)
+membership member(display& disp, hero_map& heros, int op, const std::vector<std::pair<int, int> >& m, int coin, int score)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2662,7 +2305,7 @@ membership member(game_display& disp, hero_map& heros, int op, const std::vector
 	return agent.do_member(op, m, coin, score);
 }
 
-membership exile(game_display& disp, hero_map& heros, int tag, const std::vector<std::pair<int, int> >& m, int coin, int score)
+membership exile(display& disp, hero_map& heros, int tag, const std::vector<std::pair<int, int> >& m, int coin, int score)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2671,7 +2314,7 @@ membership exile(game_display& disp, hero_map& heros, int tag, const std::vector
 	return agent.do_exile(tag, m, coin, score);
 }
 
-membership score(game_display& disp, hero_map& heros, int coin, int _score, bool transaction)
+membership score(display& disp, hero_map& heros, int coin, int _score, bool transaction)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2689,7 +2332,7 @@ membership upload_data(display& disp, hero_map& heros, const std::map<int, std::
 	return agent.upload_data(block, quiet, uid);
 }
 
-membership upload_layout(game_display& disp, hero_map& heros, const std::string& layout_str, const std::string& map_str)
+membership upload_layout(display& disp, hero_map& heros, const std::string& layout_str, const std::string& map_str)
 {
 	std::map<int, std::string> block;
 	block.insert(std::make_pair((int)http::block_tag_layout, layout_str));
@@ -2697,7 +2340,7 @@ membership upload_layout(game_display& disp, hero_map& heros, const std::string&
 	return http::upload_data(disp, heros, block, false, -1);
 }
 
-membership insert_transaction(game_display& disp, hero_map& heros, const std::string& number, const std::string& buyer, int request_uid, int type)
+membership insert_transaction(display& disp, hero_map& heros, const std::string& number, const std::string& buyer, int request_uid, int type)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2715,7 +2358,7 @@ membership associate(display& disp, hero_map& heros, const std::string& username
 	return agent.do_associate(username, tag, check_network);
 }
 
-membership employee_insert(game_display& disp, hero_map& heros)
+membership employee_insert(display& disp, hero_map& heros)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2724,7 +2367,7 @@ membership employee_insert(game_display& disp, hero_map& heros)
 	return agent.do_employee_insert(heros);
 }
 
-membership employee_common(game_display& disp, hero_map& heros, int tag, const std::set<int>& number, int coin, int score, std::map<int, temployee>* employees)
+membership employee_common(display& disp, hero_map& heros, int tag, const std::set<int>& number, int coin, int score, std::map<int, temployee>* employees)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2733,7 +2376,7 @@ membership employee_common(game_display& disp, hero_map& heros, int tag, const s
 	return agent.do_employee_common(tag, number, coin, score, employees);
 }
 
-std::map<int, temployee> list_employee(game_display& disp, hero_map& heros)
+std::map<int, temployee> list_employee(display& disp, hero_map& heros)
 {
 	network::http_data_lock data_lock;
 	const network::manager net_manager(1, 1);
@@ -2742,7 +2385,7 @@ std::map<int, temployee> list_employee(game_display& disp, hero_map& heros)
 	return agent.do_list_employee();
 }
 
-bool do_employ_bh(game_display& disp, hero_map& heros, bool employ, int number, int coin, int score, std::map<int, temployee>* employees)
+bool do_employ_bh(display& disp, hero_map& heros, bool employ, int number, int coin, int score, std::map<int, temployee>* employees)
 {
 	std::set<int> numbers;
 
@@ -2755,7 +2398,7 @@ bool do_employ_bh(game_display& disp, hero_map& heros, bool employ, int number, 
 	return true;
 }
 
-bool employee_employ(game_display& disp, hero_map& heros, hero& h, int score, std::map<int, temployee>* employees)
+bool employee_employ(display& disp, hero_map& heros, hero& h, int score, std::map<int, temployee>* employees)
 {
 	utils::string_map symbols;
 	std::string message;
@@ -2781,7 +2424,7 @@ bool employee_employ(game_display& disp, hero_map& heros, hero& h, int score, st
 	return do_employ_bh(disp, heros, true, h.number_, coin_income, score_income, employees);
 }
 
-bool employee_fire(game_display& disp, hero_map& heros, hero& h, int level, std::map<int, temployee>* employees)
+bool employee_fire(display& disp, hero_map& heros, hero& h, int level, std::map<int, temployee>* employees)
 {
 	utils::string_map symbols;
 	std::string message;
@@ -2836,7 +2479,7 @@ std::pair<tsubcontinent_record, membership> subcontinent(display& disp, hero_map
 // creating the dialogs, then, according to the dialog result, of calling other
 // of those screen functions.
 
-static void enter_wait_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, card_map& cards, config& gamelist, int game_id, bool observe)
+static void enter_wait_mode(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, card_map& cards, config& gamelist, int game_id, bool observe)
 {
 	mp::result res;
 	game_state state;
@@ -2872,9 +2515,9 @@ static void enter_wait_mode(game_display& disp, const config& game_config, hero_
 	}
 }
 
-static void enter_create_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, card_map& cards, config& gamelist, tcontroller default_controller, bool local_players_only = false);
+static void enter_create_mode(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, card_map& cards, config& gamelist, tcontroller default_controller, bool local_players_only = false);
 
-static void enter_connect_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start,
+static void enter_connect_mode(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards,
 		config& gamelist, const mp_game_settings& params,
 		const int num_turns, tcontroller default_controller, bool local_players_only = false)
@@ -2921,7 +2564,7 @@ static void enter_connect_mode(game_display& disp, const config& game_config, he
 	}
 }
 
-static void enter_create_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
+static void enter_create_mode(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
 		card_map& cards, config& gamelist, tcontroller default_controller, bool local_players_only)
 {
 	mp::result res;
@@ -2955,14 +2598,7 @@ static void enter_create_mode(game_display& disp, const config& game_config, her
 	}
 }
 
-static void do_preferences_dialog(game_display& disp, const config& game_config)
-{
-	const preferences::display_manager disp_manager(&disp);
-	gui2::show_preferences_dialog(disp);
-	return;
-}
-
-static void enter_lobby_mode(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
+static void enter_lobby_mode(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start, 
 		card_map& cards, config& gamelist)
 {
 
@@ -3053,13 +2689,6 @@ static void enter_lobby_mode(game_display& disp, const config& game_config, hero
 			break;
 		case mp::QUIT:
 			return;
-		case mp::PREFERENCES:
-			{
-				do_preferences_dialog(disp, game_config);
-				//update lobby content
-				network::send_data(config("refresh_lobby"), 0);
-			}
-			break;
 		default:
 			return;
 		}
@@ -3093,7 +2722,7 @@ std::string get_color_string(int id)
 	return game_config::team_rgb_name[id % game_config::team_rgb_name.size()].second;
 }
 
-void start_local_game(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start,
+void start_local_game(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards, tcontroller default_controller)
 {
 	const rand_rng::set_random_generator generator_setter(&recorder);
@@ -3103,7 +2732,7 @@ void start_local_game(game_display& disp, const config& game_config, hero_map& h
 	enter_create_mode(disp, game_config, heros, heros_start, cards, gamelist, default_controller, true);
 }
 
-void start_client(game_display& disp, const config& game_config, hero_map& heros, hero_map& heros_start,
+void start_client(display& disp, const config& game_config, hero_map& heros, hero_map& heros_start,
 		card_map& cards, const std::string& host)
 {
 	const rand_rng::set_random_generator generator_setter(&recorder);
@@ -3130,6 +2759,8 @@ std::string calculate_res_checksum(display& disp, const config& game_config)
 	if (commerce_protection(disp, "calculate_res_checksum()")) {
 		return ret;
 	}
+
+	
 
 	return ret;
 }

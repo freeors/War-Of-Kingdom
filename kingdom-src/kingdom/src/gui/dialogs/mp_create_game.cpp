@@ -50,7 +50,7 @@ extern void common_genus(tbutton& genus);
 
 REGISTER_DIALOG(mp_create_game)
 
-tmp_create_game::tmp_create_game(game_display& gui, const config& cfg, bool local_only) :
+tmp_create_game::tmp_create_game(display& gui, const config& cfg, bool local_only) :
 	trandom_map(cfg, mode_tag::RPG, local_only)
 	, gui_(gui)
 	, num_turns_(0)
@@ -192,9 +192,10 @@ void tmp_create_game::genus(twindow& window)
 void tmp_create_game::era(twindow& window)
 {
 	// The possible eras to play
-	std::vector<std::string> eras;
+	std::vector<tval_str> eras;
+	int index = 0;
 	BOOST_FOREACH (const config &er, cfg_.child_range("era")) {
-		eras.push_back(er["name"]);
+		eras.push_back(tval_str(index ++, er["name"]));
 	}
 	if (eras.empty()) {
 		gui2::show_transient_message(gui_.video(), "", _("No eras found."));
@@ -205,7 +206,7 @@ void tmp_create_game::era(twindow& window)
 	dlg.show(gui_.video());
 
 	era_index_ = dlg.selected_index();
-	era_->set_label(eras[era_index_]);
+	era_->set_label(eras[era_index_].str);
 	preferences::set_era(era_index_);
 }
 
@@ -219,36 +220,16 @@ void tmp_create_game::password(twindow& window)
 void tmp_create_game::maximal_defeated_activity(twindow& window)
 {
 	// The possible eras to play
-	std::vector<std::string> activities;
-	activities.push_back("0");
-	activities.push_back("50");
-	activities.push_back("100");
-	activities.push_back("150");
+	std::vector<tval_str> activities;
+	activities.push_back(tval_str(0, "0"));
+	activities.push_back(tval_str(50, "50"));
+	activities.push_back(tval_str(100, "100"));
+	activities.push_back(tval_str(150, "150"));
 	
-	int activity_index;
-	if (game_config::maximal_defeated_activity <= 0) {
-		activity_index = 0;
-	} else if (game_config::maximal_defeated_activity <= 50) {
-		activity_index = 1;
-	} else if (game_config::maximal_defeated_activity <= 100) {
-		activity_index = 2;
-	} else {
-		activity_index = 3;
-	}
-
-	gui2::tcombo_box dlg(activities, activity_index);
+	gui2::tcombo_box dlg(activities, game_config::maximal_defeated_activity);
 	dlg.show(gui_.video());
 
-	activity_index = dlg.selected_index();
-	if (activity_index == 0) {
-		game_config::maximal_defeated_activity = 0;
-	} else if (activity_index == 1) {
-		game_config::maximal_defeated_activity = 50;
-	} else if (activity_index == 2) {
-		game_config::maximal_defeated_activity = 100;
-	} else {
-		game_config::maximal_defeated_activity = 150;
-	}
+	game_config::maximal_defeated_activity = dlg.selected_val();
 
 	std::stringstream str;
 	str << game_config::maximal_defeated_activity;

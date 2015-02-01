@@ -231,15 +231,16 @@ bool mouse_handler_base::left_click(int x, int y, const bool /*browse*/)
 {
 	// clicked on a hex on the minimap? then initiate minimap scrolling
 	const map_location& loc = gui().minimap_location_on(x, y);
+	display& disp = gui();
 	minimap_scrolling_ = false;
-	if(loc.valid()) {
+	if (loc.valid()) {
 		minimap_scrolling_ = true;
 		last_hex_ = loc;
-		gui().scroll_to_tile(loc,display::WARP, false);
+		disp.scroll_to_tile(loc,display::WARP, false);
 		return true;
 	}
 	// clicked on a hex on the mainmap?
-	if (gui().hex_clicked_on(x, y).valid()) { 
+	if (disp.hex_clicked_on(x, y).valid()) { 
 		return false;
 	}
 	return true;

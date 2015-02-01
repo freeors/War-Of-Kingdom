@@ -20,11 +20,11 @@
 
 #include "about.hpp"
 
-#include "construct_dialog.hpp"
 #include "display.hpp"
 #include "gettext.hpp"
 #include "marked-up_text.hpp"
 #include "game_config.hpp"
+#include "cursor.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -171,6 +171,8 @@ void set_about(const config &cfg)
  */
 void show_about(display &disp, const std::string &campaign)
 {
+	return;
+/*
 	cursor::set(cursor::WAIT);
 	CVideo &video = disp.video();
 	surface screen = video.getSurface();
@@ -356,6 +358,7 @@ void show_about(display &disp, const std::string &campaign)
 		disp.delay(20);
 
 	} while(!close.pressed() && (last_escape || !key[SDLK_ESCAPE]));
+*/
 }
 
 } // end namespace about

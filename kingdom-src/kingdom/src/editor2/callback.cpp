@@ -3,6 +3,7 @@
 #include "help.hpp"
 #include "gettext.hpp"
 #include "filesystem.hpp"
+#include "gui/widgets/window.hpp"
 
 void set_zoom_to_default(int zoom)
 {
@@ -28,4 +29,11 @@ bool cb_terrain_matches(const map_location& loc, const t_translation::t_match& t
 
 void cb_build_terrains(std::map<t_translation::t_terrain, std::vector<map_location> >& terrain_by_type)
 {
+}
+
+namespace gui2 {
+int app_show_preferences_dialog(display& disp, bool first)
+{
+	return twindow::OK;
+}
 }

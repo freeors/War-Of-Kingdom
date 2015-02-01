@@ -19,7 +19,7 @@
 #include "gui/dialogs/dialog.hpp"
 #include <map>
 
-class game_display;
+class display;
 class hero_map;
 
 namespace gui2 {
@@ -30,7 +30,7 @@ public:
 	enum tstyle {style_transition, style_min = style_transition, style_stuff, style_max = style_stuff};
 	static std::map<tstyle, std::string> styles;
 
-	tdesign(game_display& disp, hero_map& heros);
+	tdesign(display& disp, hero_map& heros);
 
 private:
 
@@ -49,7 +49,7 @@ private:
 	void execute(twindow& window);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 
 	tstyle style_;

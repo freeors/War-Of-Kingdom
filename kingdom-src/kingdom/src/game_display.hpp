@@ -25,7 +25,7 @@ class controller_base;
 
 #include "animated.hpp"
 #include "chat_events.hpp"
-#include "display.hpp"
+#include "hex_display.hpp"
 #include "pathfind/pathfind.hpp"
 #include "team.hpp"
 
@@ -40,7 +40,7 @@ namespace gui2 {
 class treport;
 }
 
-class game_display : public display
+class game_display : public hex_display
 {
 public:
 	struct taccess_list {
@@ -73,15 +73,7 @@ public:
 			const std::vector<team>& t, const config& theme_cfg,
 			const config& level);
 
-	static game_display* create_dummy_display(hero_map& heros, CVideo& video);
-
 	~game_display();
-	static game_display* get_singleton() { return singleton_ ;}
-	static void set_singleton(game_display* s) 
-	{ 
-		singleton_ = s;
-		display::set_singleton(s);
-	}
 
 	std::string get_theme_patch() const;
 	gui2::ttheme* create_theme_dlg(const config& cfg);
@@ -405,7 +397,9 @@ public:
 
 	void begin_game();
 
-	virtual bool in_game() const { return in_game_; }
+	// virtual bool in_game() const { return in_game_; }
+	bool in_theme() const { return true; }
+
 	void draw_bar(const std::string& image, int xpos, int ypos,
 		const map_location& loc, int size, double filled,
 		const SDL_Color& col, fixed_t alpha, bool vtl = true);
@@ -559,10 +553,6 @@ private:
 
 	gui2::tcontext_menu* ctrl_bar_;
 
-	// for draw
-	unit** draw_area_unit_;
-	size_t draw_area_unit_size_;
-	
 	map_location moving_src_loc_;
 	map_location moving_dst_loc_;
 
@@ -581,7 +571,7 @@ private:
 	 * the tiles invalidated at last redraw,
 	 * to simplify the cleaning up of tiles left by units
 	 */
-	static game_display * singleton_;
+	// static game_display * singleton_;
 };
 
 namespace reports {

@@ -30,10 +30,11 @@
 #include "gui/dialogs/combo_box.hpp"
 #include "gui/dialogs/system.hpp"
 #include "gui/dialogs/preferences.hpp"
+#include "gui/dialogs/browse.hpp"
+#include "gui/dialogs/theme2.hpp"
 #include "gui/widgets/window.hpp"
 
 #include "clipboard.hpp"
-#include "../filechooser.hpp"
 #include "filesystem.hpp"
 #include "../game_preferences.hpp"
 #include "gettext.hpp"
@@ -44,6 +45,7 @@
 #include "sound.hpp"
 #include "integrate.hpp"
 #include "../multiplayer.hpp"
+#include "hotkeys.hpp"
 
 #include "formula_string_utils.hpp"
 
@@ -140,7 +142,6 @@ editor_controller::editor_controller(const config &game_config, CVideo& video, h
 	, map_generators_()
 	, tods_()
 	, palette_()
-	, prefs_disp_manager_(NULL)
 	, tooltip_manager_(video)
 	, floating_label_manager_(NULL)
 	, do_quit_(false)
@@ -170,10 +171,9 @@ editor_controller::editor_controller(const config &game_config, CVideo& video, h
 	init_tods(game_config);
 	init_sidebar(game_config);
 	init_music(game_config);
-	hotkey_set_mouse_action(hotkey::HOTKEY_EDITOR_TOOL_PAINT);
+	hotkey_set_mouse_action(gui2::teditor_theme::HOTKEY_EDITOR_TOOL_PAINT);
 	rng_.reset(new rand_rng::rng());
 	rng_setter_.reset(new rand_rng::set_random_generator(rng_.get()));
-	hotkey::get_hotkey(hotkey::HOTKEY_QUIT_GAME).set_description(_("Quit Editor"));
 	get_map_context().set_starting_position_labels(gui());
 	cursor::set(cursor::NORMAL);
 	image::set_color_adjustment(preferences::editor::tod_r(), preferences::editor::tod_g(), preferences::editor::tod_b());
@@ -196,7 +196,6 @@ void editor_controller::init_gui(CVideo& video)
 	const config &theme_cfg = get_theme(game_config_, "editor");
 	gui_.reset(new editor_display(*this, video, get_map(), theme_cfg, config()));
 	gui_->set_grid(preferences::grid());
-	prefs_disp_manager_.reset(new preferences::display_manager(&gui()));
 	gui_->add_redraw_observer(boost::bind(&editor_controller::display_redraw_callback, this, _1));
 	floating_label_manager_.reset(new font::floating_label_context(video.getSurface()));
 	gui().set_draw_coordinates(preferences::editor::draw_hex_coordinates());
@@ -230,19 +229,19 @@ void editor_controller::init_brushes(const config& game_config)
 
 void editor_controller::init_mouse_actions(const config& game_config)
 {
-	mouse_actions_.insert(std::make_pair(hotkey::HOTKEY_EDITOR_TOOL_PAINT,
+	mouse_actions_.insert(std::make_pair(gui2::teditor_theme::HOTKEY_EDITOR_TOOL_PAINT,
 		new mouse_action_paint(foreground_terrain_, background_terrain_, &brush_, key_)));
-	mouse_actions_.insert(std::make_pair(hotkey::HOTKEY_EDITOR_TOOL_FILL,
+	mouse_actions_.insert(std::make_pair(gui2::teditor_theme::HOTKEY_EDITOR_TOOL_FILL,
 		new mouse_action_fill(foreground_terrain_, background_terrain_, key_)));
-	mouse_actions_.insert(std::make_pair(hotkey::HOTKEY_EDITOR_TOOL_SELECT,
+	mouse_actions_.insert(std::make_pair(gui2::teditor_theme::HOTKEY_EDITOR_TOOL_SELECT,
 		new mouse_action_select(&brush_, key_)));
-	mouse_actions_.insert(std::make_pair(hotkey::HOTKEY_EDITOR_TOOL_STARTING_POSITION,
+	mouse_actions_.insert(std::make_pair(gui2::teditor_theme::HOTKEY_EDITOR_TOOL_STARTING_POSITION,
 		new mouse_action_starting_position(key_)));
-	mouse_actions_.insert(std::make_pair(hotkey::HOTKEY_EDITOR_PASTE,
+	mouse_actions_.insert(std::make_pair(gui2::teditor_theme::HOTKEY_EDITOR_PASTE,
 		new mouse_action_paste(clipboard_, key_)));
 	BOOST_FOREACH (const config &c, game_config.child_range("editor_tool_hint")) {
 		mouse_action_map::iterator i =
-			mouse_actions_.find(hotkey::get_hotkey(c["id"]).get_id());
+			mouse_actions_.find(hotkey::get_hotkey(c["id"].str()).get_id());
 		if (i != mouse_actions_.end()) {
 			mouse_action_hints_.insert(std::make_pair(i->first, c["text"]));
 		}
@@ -463,10 +462,17 @@ void editor_controller::load_map_dialog(bool force_same_context /* = false */)
 	if (fn.empty()) {
 		fn = default_dir_;
 	}
-	int res = dialogs::show_file_chooser_dialog(gui(), fn, _("Choose a Map to Open"));
-	if (res == 0) {
-		load_map(fn, force_same_context ? false : use_mdi_);
+	{
+		gui2::tbrowse::tparam param(gui2::tbrowse::TYPE_FILE, true, fn, _("Choose a Map to Open"));
+		gui2::tbrowse dlg(*gui_, param);
+		dlg.show(gui_->video());
+		int res = dlg.get_retval();
+		if (res != gui2::twindow::OK) {
+			return;
+		}
+		fn = param.result;
 	}
+	load_map(fn, force_same_context ? false : use_mdi_);
 }
 
 void editor_controller::new_map_dialog()
@@ -489,24 +495,17 @@ void editor_controller::save_map_as_dialog()
 	if (input_name.empty()) {
 		input_name = default_dir_;
 	}
-	const std::string old_input_name = input_name;
 
-	int res = 0;
-	int overwrite_res = 1;
-	do {
-		input_name = old_input_name;
-		res = dialogs::show_file_chooser_dialog_save(gui(), input_name, _("Save the Map As"));
-		if (res == 0) {
-			if (file_exists(input_name)) {
-				const int res = gui2::show_message(gui().video(), "", _("The file already exists. Do you want to overwrite it?"), gui2::tmessage::yes_no_buttons);
-				overwrite_res = gui2::twindow::CANCEL == res ? 1 : 0;
-			} else {
-				overwrite_res = 0;
-			}
-		} else {
-			return; //cancel pressed
+	{
+		gui2::tbrowse::tparam param(gui2::tbrowse::TYPE_FILE, false, input_name, _("Save the Map As"), dgettext("wesnoth-lib", "Save"));
+		gui2::tbrowse dlg(*gui_, param);
+		dlg.show(gui_->video());
+		int res = dlg.get_retval();
+		if (res != gui2::twindow::OK) {
+			return;
 		}
-	} while (overwrite_res != 0);
+		input_name = param.result;
+	}
 
 	save_map_as(input_name);
 }
@@ -543,6 +542,7 @@ void editor_controller::generate_map_dialog()
 
 void editor_controller::apply_mask_dialog()
 {
+/*
 	std::string fn = get_map_context().get_filename();
 	if (fn.empty()) {
 		fn = default_dir_;
@@ -561,10 +561,12 @@ void editor_controller::apply_mask_dialog()
 			return;
 		}
 	}
+*/
 }
 
 void editor_controller::create_mask_to_dialog()
 {
+/*
 	std::string fn = get_map_context().get_filename();
 	if (fn.empty()) {
 		fn = default_dir_;
@@ -583,6 +585,7 @@ void editor_controller::create_mask_to_dialog()
 			return;
 		}
 	}
+*/
 }
 
 void editor_controller::resize_map_dialog()
@@ -844,299 +847,52 @@ void editor_controller::refresh_after_action(bool drag_part)
 	gui().recalculate_minimap();
 }
 
-bool editor_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int index) const
+void editor_controller::execute_command2(int command, const std::string& sparam)
 {
-
-	using namespace hotkey; //reduce hotkey:: clutter
+	using namespace gui2;
 	switch (command) {
-		case HOTKEY_NULL:
-			if (index >= 0) {
-				unsigned i = static_cast<unsigned>(index);
-				if (i < map_contexts_.size()) {
-					return true;
-				}
-			}
-			return false;
-		case HOTKEY_ZOOM_IN:
-		case HOTKEY_ZOOM_OUT:
-		case HOTKEY_ZOOM_DEFAULT:
-		case HOTKEY_SCREENSHOT:
-		case HOTKEY_MAP_SCREENSHOT:
-		case HOTKEY_TOGGLE_GRID:
-		case HOTKEY_MOUSE_SCROLL:
-		case HOTKEY_ANIMATE_MAP:
-		case HOTKEY_MUTE:
-		case HOTKEY_PREFERENCES:
-		case HOTKEY_HELP:
-		case HOTKEY_QUIT_GAME:
-			return true; //general hotkeys we can always do
 		case HOTKEY_UNDO:
-			return true;
+			undo();
+			return;
 		case HOTKEY_REDO:
-			return true;
-		case HOTKEY_EDITOR_PARTIAL_UNDO:
-			return true;
-		case TITLE_SCREEN__RELOAD_WML:
-		case HOTKEY_EDITOR_QUIT_TO_DESKTOP:
-		case HOTKEY_EDITOR_SETTINGS:
-		case HOTKEY_EDITOR_MAP_NEW:
-		case HOTKEY_EDITOR_MAP_LOAD:
-		case HOTKEY_EDITOR_MAP_SAVE_AS:
-		case HOTKEY_EDITOR_BRUSH_NEXT:
-		case HOTKEY_EDITOR_TOOL_NEXT:
-		case HOTKEY_EDITOR_TERRAIN_PALETTE_SWAP:
-			return true; //editor hotkeys we can always do
-		case HOTKEY_EDITOR_MAP_SAVE:
-		case HOTKEY_EDITOR_MAP_SAVE_ALL:
-		case HOTKEY_EDITOR_SWITCH_MAP:
-		case HOTKEY_EDITOR_CLOSE_MAP:
-			return true;
-		case HOTKEY_EDITOR_MAP_REVERT:
-			return !get_map_context().get_filename().empty();
-			return true;
-		case HOTKEY_EDITOR_TOOL_PAINT:
-		case HOTKEY_EDITOR_TOOL_FILL:
-		case HOTKEY_EDITOR_TOOL_SELECT:
-		case HOTKEY_EDITOR_TOOL_STARTING_POSITION:
-			return true; //tool selection always possible
-		case HOTKEY_EDITOR_CUT:
-		case HOTKEY_EDITOR_COPY:
-		case HOTKEY_EDITOR_EXPORT_SELECTION_COORDS:
-		case HOTKEY_EDITOR_SELECTION_FILL:
-		case HOTKEY_EDITOR_SELECTION_RANDOMIZE:
-			return !get_map().selection().empty();
-		case HOTKEY_EDITOR_SELECTION_ROTATE:
-		case HOTKEY_EDITOR_SELECTION_FLIP:
-		case HOTKEY_EDITOR_SELECTION_GENERATE:
-			return false; //not implemented
-		case HOTKEY_EDITOR_PASTE:
-			return !clipboard_.empty();
-		case HOTKEY_EDITOR_CLIPBOARD_ROTATE_CW:
-		case HOTKEY_EDITOR_CLIPBOARD_ROTATE_CCW:
-		case HOTKEY_EDITOR_CLIPBOARD_FLIP_HORIZONTAL:
-		case HOTKEY_EDITOR_CLIPBOARD_FLIP_VERTICAL:
-			return !clipboard_.empty();
-		case HOTKEY_EDITOR_SELECT_ALL:
-		case HOTKEY_EDITOR_SELECT_INVERSE:
-		case HOTKEY_EDITOR_SELECT_NONE:
-		case HOTKEY_EDITOR_MAP_RESIZE:
-		case HOTKEY_EDITOR_MAP_GENERATE:
-		case HOTKEY_EDITOR_MAP_APPLY_MASK:
-		case HOTKEY_EDITOR_MAP_CREATE_MASK_TO:
-		case HOTKEY_EDITOR_REFRESH:
-		case HOTKEY_EDITOR_UPDATE_TRANSITIONS:
-		case HOTKEY_EDITOR_AUTO_UPDATE_TRANSITIONS:
-		case HOTKEY_EDITOR_REFRESH_IMAGE_CACHE:
-			return true;
-		case HOTKEY_EDITOR_MAP_ROTATE:
-			return false; //not implemented
-
-		case HOTKEY_SYSTEM:
-		case HOTKEY_EDITOR_MAP:
-		case HOTKEY_UP:
-		case HOTKEY_DOWN:
-		case HOTKEY_EDITOR_TERRAIN_GROUP:
-		case HOTKEY_EDITOR_BRUSH:
-			return true;
-
-		default:
-			return false;
-	}
-}
-
-bool editor_controller::execute_command(hotkey::HOTKEY_COMMAND command, int index, std::string str)
-{
-	SCOPE_ED;
-	using namespace hotkey;
-	const int zoom_amount = 4;
-	switch (command) {
-		case HOTKEY_NULL:
-			if (index >= 0) {
-				unsigned i = static_cast<unsigned>(index);
-				if (i < map_contexts_.size()) {
-					switch_context(index);
-					return true;
-				}
-			}
-			return false;
-		case HOTKEY_QUIT_GAME:
-			quit_confirm(EXIT_NORMAL);
-			return true;
-		case HOTKEY_EDITOR_QUIT_TO_DESKTOP:
-			quit_confirm(EXIT_QUIT_TO_DESKTOP);
-			return true;
-		case TITLE_SCREEN__RELOAD_WML:
-			save_all_maps(true);
-			do_quit_ = true;
-			quit_mode_ = EXIT_RELOAD_DATA;
-			return true;
-		case HOTKEY_EDITOR_SETTINGS:
-			editor_settings_dialog();
-			return true;
-		case HOTKEY_EDITOR_TERRAIN_PALETTE_SWAP:
-			palette_->swap();
-			set_mouseover_overlay();
-			return true;
-		case HOTKEY_EDITOR_PARTIAL_UNDO:
-			if (dynamic_cast<const editor_action_chain*>(get_map_context().last_undo_action()) != NULL) {
-				get_map_context().partial_undo();
-				refresh_after_action();
-			} else {
-				undo();
-			}
-			return true;
-		case HOTKEY_EDITOR_TOOL_PAINT:
-		case HOTKEY_EDITOR_TOOL_FILL:
-		case HOTKEY_EDITOR_TOOL_SELECT:
-		case HOTKEY_EDITOR_TOOL_STARTING_POSITION:
-			hotkey_set_mouse_action(command);
-			return true;
-		case HOTKEY_EDITOR_PASTE: //paste is somewhat different as it might be "one action then revert to previous mode"
-			hotkey_set_mouse_action(command);
-			return true;
-		case HOTKEY_EDITOR_CLIPBOARD_ROTATE_CW:
-			clipboard_.rotate_60_cw();
-			update_mouse_action_highlights();
-			return true;
-		case HOTKEY_EDITOR_CLIPBOARD_ROTATE_CCW:
-			clipboard_.rotate_60_ccw();
-			update_mouse_action_highlights();
-			return true;
-		case HOTKEY_EDITOR_CLIPBOARD_FLIP_HORIZONTAL:
-			clipboard_.flip_horizontal();
-			update_mouse_action_highlights();
-			return true;
-		case HOTKEY_EDITOR_CLIPBOARD_FLIP_VERTICAL:
-			clipboard_.flip_vertical();
-			update_mouse_action_highlights();
-			return true;
-		case HOTKEY_EDITOR_BRUSH_NEXT:
-			cycle_brush();
-			return true;
-		case HOTKEY_EDITOR_COPY:
-			copy_selection();
-			return true;
-		case HOTKEY_EDITOR_CUT:
-			cut_selection();
-			return true;
-		case HOTKEY_EDITOR_EXPORT_SELECTION_COORDS:
-			export_selection_coords();
-			return true;
-		case HOTKEY_EDITOR_SELECT_ALL:
-			if (!get_map().everything_selected()) {
-				perform_refresh(editor_action_select_all());
-				return true;
-			} //else intentionally fall through
-		case HOTKEY_EDITOR_SELECT_INVERSE:
-			perform_refresh(editor_action_select_inverse());
-			return true;
-		case HOTKEY_EDITOR_SELECT_NONE:
-			perform_refresh(editor_action_select_none());
-		case HOTKEY_EDITOR_SELECTION_FILL:
-			fill_selection();
-			return true;
-		case HOTKEY_EDITOR_SELECTION_RANDOMIZE:
-			perform_refresh(editor_action_shuffle_area(get_map().selection()));
-			return true;
-		case HOTKEY_EDITOR_CLOSE_MAP:
-			close_current_context();
-			return true;
-		case HOTKEY_EDITOR_MAP_LOAD:
-			load_map_dialog();
-			return true;
-		case HOTKEY_EDITOR_MAP_REVERT:
-			revert_map();
-			return true;
-		case HOTKEY_EDITOR_MAP_NEW:
-			new_map_dialog();
-			return true;
-		case HOTKEY_EDITOR_MAP_SAVE:
-			save_map();
-			return true;
-		case HOTKEY_EDITOR_MAP_SAVE_ALL:
-			save_all_maps();
-			return true;
-		case HOTKEY_EDITOR_MAP_SAVE_AS:
-			save_map_as_dialog();
-			return true;
-		case HOTKEY_EDITOR_MAP_GENERATE:
-			generate_map_dialog();
-			return true;
-		case HOTKEY_EDITOR_MAP_APPLY_MASK:
-			apply_mask_dialog();
-			return true;
-		case HOTKEY_EDITOR_MAP_CREATE_MASK_TO:
-			create_mask_to_dialog();
-			return true;
-		case HOTKEY_EDITOR_MAP_RESIZE:
-			resize_map_dialog();
-			return true;
-		case HOTKEY_EDITOR_AUTO_UPDATE_TRANSITIONS:
-			auto_update_transitions_ = (auto_update_transitions_ + 1)
-				% preferences::editor::TransitionUpdateMode::count;
-			preferences::editor::set_auto_update_transitions(auto_update_transitions_);
-			if (auto_update_transitions_ != preferences::editor::TransitionUpdateMode::on) {
-				return true;
-			} // else intentionally fall through
-		case HOTKEY_EDITOR_UPDATE_TRANSITIONS:
-			refresh_all();
-			return true;
-		case HOTKEY_EDITOR_REFRESH:
-			reload_map();
-			return true;
-		case HOTKEY_EDITOR_REFRESH_IMAGE_CACHE:
-			refresh_image_cache();
-			return true;
-
-		case HOTKEY_EDITOR_MAP:
+			redo();
+			return;
+		
+		case teditor_theme::HOTKEY_EDITOR_MAP:
 			do_map();
-			return true;
-		case HOTKEY_UP:
+			return;
+		case teditor_theme::HOTKEY_UP:
 			gui_->scroll_up();
-			return true;
-		case HOTKEY_DOWN:
+			return;
+		case teditor_theme::HOTKEY_DOWN:
 			gui_->scroll_down();
-			return true;
+			return;
 
-		case HOTKEY_EDITOR_TERRAIN_GROUP:
+		case teditor_theme::HOTKEY_EDITOR_TERRAIN_GROUP:
 			change_terrain_group(palette_->current_group_id());
-			return true;
+			return;
 
-		case HOTKEY_EDITOR_BRUSH:
+		case teditor_theme::HOTKEY_EDITOR_BRUSH:
 			change_brush();
-			return true;
+			return;
 
 		case HOTKEY_SYSTEM:
 			system();
-			return true;
-
-		case HOTKEY_ZOOM_IN:
-			gui_->set_zoom(zoom_amount);
-			return true;
-		case HOTKEY_ZOOM_OUT:
-			gui_->set_zoom(-zoom_amount);
-			return true;
-		case HOTKEY_ZOOM_DEFAULT:
-			gui_->set_default_zoom();
-			return true;
+			return;
 
 		default:
-			return controller_base::execute_command(command, index);
+			controller_base::execute_command2(command, sparam);
 	}
-	return false;
 }
 
 void editor_controller::change_terrain_group(const std::string& id) const
 {
-	std::vector<std::string> items;
-	std::vector<gui2::tval_str> group_map;
+	std::vector<gui2::tval_str> items;
 	int actived_index = 0;
 	
 	const std::vector<terrain_group>& groups = palette_->terrain_groups();
 	for (std::vector<terrain_group>::const_iterator it = groups.begin(); it != groups.end(); ++ it) {
-		group_map.push_back(gui2::tval_str(std::distance(groups.begin(), it), it->name));
-
-		items.push_back(group_map.back().str);
+		items.push_back(gui2::tval_str(std::distance(groups.begin(), it), it->name));
 		if (id == it->id) {
 			actived_index = std::distance(groups.begin(), it);
 		}
@@ -1154,14 +910,11 @@ void editor_controller::change_terrain_group(const std::string& id) const
 
 void editor_controller::change_brush()
 {
-	std::vector<std::string> items;
-	std::vector<gui2::tval_str> brush_map;
+	std::vector<gui2::tval_str> items;
 	int actived_index = 0;
 	
 	for (std::vector<brush>::iterator it = brushes_.begin(); it != brushes_.end(); ++ it) {
-		brush_map.push_back(gui2::tval_str(std::distance(brushes_.begin(), it), it->name()));
-
-		items.push_back(brush_map.back().str);
+		items.push_back(gui2::tval_str(std::distance(brushes_.begin(), it), it->name()));
 		if (brush_ == &*it) {
 			actived_index = std::distance(brushes_.begin(), it);
 		}
@@ -1336,8 +1089,7 @@ void editor_controller::cycle_brush()
 
 void editor_controller::preferences()
 {
-	gui2::show_preferences_dialog(*gui_);
-	// preferences::show_preferences_dialog(*gui_, game_config_);
+	preferences::show_preferences_dialog(*gui_);
 	gui_->redraw_everything();
 }
 
@@ -1386,9 +1138,9 @@ void editor_controller::fill_selection()
 
 std::string left_button_function;
 
-void editor_controller::hotkey_set_mouse_action(hotkey::HOTKEY_COMMAND command)
+void editor_controller::hotkey_set_mouse_action(int command)
 {
-	std::map<hotkey::HOTKEY_COMMAND, mouse_action*>::iterator i = mouse_actions_.find(command);
+	std::map<int, mouse_action*>::iterator i = mouse_actions_.find(command);
 	if (i != mouse_actions_.end()) {
 		mouse_action_ = i->second;
 		set_mouseover_overlay();
@@ -1401,9 +1153,9 @@ void editor_controller::hotkey_set_mouse_action(hotkey::HOTKEY_COMMAND command)
 	}
 }
 
-bool editor_controller::is_mouse_action_set(hotkey::HOTKEY_COMMAND command) const
+bool editor_controller::is_mouse_action_set(int command) const
 {
-	std::map<hotkey::HOTKEY_COMMAND, mouse_action*>::const_iterator i = mouse_actions_.find(command);
+	std::map<int, mouse_action*>::const_iterator i = mouse_actions_.find(command);
 	return (i != mouse_actions_.end()) && (i->second == mouse_action_);
 }
 
@@ -1420,11 +1172,6 @@ void editor_controller::update_mouse_action_highlights()
 events::mouse_handler_base& editor_controller::get_mouse_handler_base()
 {
 	return *this;
-}
-
-editor_display& editor_controller::get_display()
-{
-	return *gui_;
 }
 
 mouse_action* editor_controller::get_mouse_action()

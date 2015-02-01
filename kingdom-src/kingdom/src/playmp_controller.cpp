@@ -609,7 +609,7 @@ void playmp_controller::process_oos(const std::string& err_msg) const {
 	config snapshot;
 	to_config(snapshot);
 	savegame::oos_savegame save(heros_, heros_start_, snapshot);
-	save.save_game_interactive(resources::screen->video(), temp_buf.str(), gui::YES_NO);
+	save.save_game_interactive(resources::screen->video(), temp_buf.str(), false);
 }
 
 void playmp_controller::handle_generic_event(const std::string& name){
@@ -634,31 +634,6 @@ void playmp_controller::handle_generic_event(const std::string& name){
 		throw end_turn_exception();
 	}
 */
-}
-
-bool playmp_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int index) const
-{
-	bool res = true;
-	switch (command){
-		case hotkey::HOTKEY_SPEAK:
-		case hotkey::HOTKEY_SPEAK_ALLY:
-		case hotkey::HOTKEY_SPEAK_ALL:
-			res = network::nconnections() > 0;
-			break;
-		case hotkey::HOTKEY_START_NETWORK:
-		case hotkey::HOTKEY_STOP_NETWORK:
-			res = is_observer();
-			break;
-		case hotkey::HOTKEY_STOP_REPLAY:
-			if (is_observer()){
-				network_processing_stopped_ = true;
-				LOG_NG << "network processing stopped";
-			}
-			break;
-	    default:
-			return playsingle_controller::can_execute_command(command, index);
-	}
-	return res;
 }
 
 void playmp_controller::sync_undo()

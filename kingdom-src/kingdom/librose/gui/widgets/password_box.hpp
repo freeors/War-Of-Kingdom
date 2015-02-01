@@ -53,12 +53,14 @@ public:
 	tpassword_box() 
 		: ttext_box()
 		, real_value_()
+		, value_()
 		, in_operator_(false)
 	{}
 
 	/** Inherited from ttext_. */
-	virtual void set_value(const std::string& text);
-	virtual std::string get_value() const;
+	virtual void set_label(const std::string& label);
+	virtual const std::string& label() const;
+
 	std::string get_real_value() const { return real_value_; }
 	void set_maximum_length(const size_t maximum_length);
 
@@ -83,6 +85,7 @@ private:
 	void post_function();
 
 	std::string real_value_;
+	mutable std::string value_;
 	bool in_operator_;
 
 	/** Inherited from ttext_box. */

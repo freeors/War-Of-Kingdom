@@ -220,7 +220,7 @@ void ttree_view::finalize_setup()
 				| tgrid::HORIZONTAL_GROW_SEND_TO_CLIENT
 			, 0);
 }
-
+/*
 twidget* ttree_view::find_at(
 		const tpoint& coordinate, const bool must_be_active)
 {
@@ -235,7 +235,7 @@ twidget* ttree_view::find_at(
 	}
 	return w;
 }
-
+*/
 const std::string& ttree_view::get_control_type() const
 {
 	static const std::string type = "tree_view";

@@ -19,7 +19,7 @@
 #include "gui/dialogs/dialog.hpp"
 #include <hero.hpp>
 
-class game_display;
+class display;
 class hero_map;
 class config;
 
@@ -37,7 +37,7 @@ namespace gui2 {
 class tcreate_hero : public tdialog
 {
 public:
-	explicit tcreate_hero(game_display& disp, hero_map& heros);
+	explicit tcreate_hero(display& disp, hero_map& heros);
 
 	~tcreate_hero();
 
@@ -77,7 +77,7 @@ private:
 	void refresh_resi_point(twindow& window) const;
 	void refresh_field_ui(twindow& window);
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	hero h_;
 

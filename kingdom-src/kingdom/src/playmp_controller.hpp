@@ -54,7 +54,6 @@ protected:
 	virtual void shout();
 	virtual void start_network();
 	virtual void stop_network();
-	virtual bool can_execute_command(hotkey::HOTKEY_COMMAND command, int index=-1) const;
 
 	virtual void play_side();
 	virtual void before_human_turn(bool save);

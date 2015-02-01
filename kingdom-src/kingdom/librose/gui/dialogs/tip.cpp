@@ -64,12 +64,12 @@ REGISTER_WINDOW(tooltip_large)
  * * tooltip
  * * helptip
  */
-class ttip
+class ttip2
 	: public tpopup
 {
 public:
 
-	ttip()
+	ttip2()
 		: tpopup()
 		, window_id_()
 		, message_()
@@ -111,7 +111,7 @@ private:
 
 };
 
-void ttip::pre_show(CVideo& /*video*/, twindow& window)
+void ttip2::pre_show(CVideo& /*video*/, twindow& window)
 {
 	find_widget<tcontrol>(&window, "label", false).set_label(message_);
 
@@ -119,20 +119,20 @@ void ttip::pre_show(CVideo& /*video*/, twindow& window)
 	window.set_variable("mouse_y", variant(mouse_.y));
 }
 
-const std::string& ttip::window_id() const
+const std::string& ttip2::window_id() const
 {
 	return window_id_;
 }
 
 namespace tip {
 
-static ttip& tip()
+static ttip2& tip()
 {
 	/*
 	 * Allocating a static tip object causes a segmentation fault when Wesnoth
 	 * termines. So instead create an object on the heap and never free it.
 	 */
-	static ttip *t = new ttip();
+	static ttip2 *t = new ttip2();
 	return *t;
 }
 
@@ -145,7 +145,7 @@ void show(CVideo& video
 	 * For now allow invalid tip names, might turn them to invalid wml messages
 	 * later on.
 	 */
-	ttip& t = tip();
+	ttip2& t = tip();
 	t.set_window_id(window_id);
 	t.set_message(message);
 	t.set_mouse(mouse);

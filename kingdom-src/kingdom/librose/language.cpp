@@ -184,13 +184,11 @@ static void wesnoth_setlocale(int category, std::string const &slocale,
 
 	WRN_G << "setlocale() failed for '" << slocale << "'.\n";
 #ifndef _WIN32
-#ifndef __AMIGAOS4__
-		if(category == LC_MESSAGES) {
-			WRN_G << "Setting LANGUAGE to '" << slocale << "'.\n";
-			setenv("LANGUAGE", slocale.c_str(), 1);
-			std::setlocale(LC_MESSAGES, "");
-		}
-#endif
+	if (category == LC_MESSAGES) {
+		WRN_G << "Setting LANGUAGE to '" << slocale << "'.\n";
+		setenv("LANGUAGE", slocale.c_str(), 1);
+		std::setlocale(LC_MESSAGES, "");
+	}
 #endif
 
 	done:

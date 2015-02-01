@@ -23,7 +23,6 @@
 #include "game_events.hpp"
 #include "game_preferences.hpp"
 #include "gettext.hpp"
-#include "hotkeys.hpp"
 #include "log.hpp"
 #include "map.hpp"
 #include "map_label.hpp"
@@ -83,37 +82,37 @@ private:
 	const gamemap& map_;
 };
 
-void move_unit_spectator::add_seen_friend(const unit_map::const_iterator &u)
+void move_unit_spectator::add_seen_friend(const unit* u)
 {
 	seen_friends_.push_back(u);
 }
 
 
-void move_unit_spectator::add_seen_enemy(const unit_map::const_iterator &u)
+void move_unit_spectator::add_seen_enemy(const unit* u)
 {
 	seen_enemies_.push_back(u);
 }
 
 
-const unit_map::const_iterator& move_unit_spectator::get_ambusher() const
+const unit* move_unit_spectator::get_ambusher() const
 {
 	return ambusher_;
 }
 
 
-const unit_map::const_iterator& move_unit_spectator::get_failed_teleport() const
+const unit* move_unit_spectator::get_failed_teleport() const
 {
 	return failed_teleport_;
 }
 
 
-const std::vector<unit_map::const_iterator>& move_unit_spectator::get_seen_enemies() const
+const std::vector<const unit*>& move_unit_spectator::get_seen_enemies() const
 {
 	return seen_enemies_;
 }
 
 
-const std::vector<unit_map::const_iterator>& move_unit_spectator::get_seen_friends() const
+const std::vector<const unit*>& move_unit_spectator::get_seen_friends() const
 {
 	return seen_friends_;
 }
@@ -123,14 +122,19 @@ const std::vector<map_location>& move_unit_spectator::get_interrupted_waypoints(
 	return interrupted_waypoints_;
 }
 
-const unit_map::const_iterator& move_unit_spectator::get_unit() const
+const unit* move_unit_spectator::get_unit() const
 {
 	return unit_;
 }
 
 
-move_unit_spectator::move_unit_spectator(const unit_map &units)
-	: ambusher_(units.end()), failed_teleport_(units.end()), seen_enemies_(), seen_friends_(), interrupted_waypoints_(), unit_(units.end())
+move_unit_spectator::move_unit_spectator(const unit_map& units)
+	: ambusher_(NULL)
+	, failed_teleport_(NULL)
+	, seen_enemies_()
+	, seen_friends_()
+	, interrupted_waypoints_()
+	, unit_(NULL)
 {
 }
 
@@ -139,24 +143,24 @@ move_unit_spectator::~move_unit_spectator()
 {
 }
 
-void move_unit_spectator::reset(const unit_map &units)
+void move_unit_spectator::reset(const unit_map& units)
 {
-	ambusher_ = units.end();
-	failed_teleport_ = units.end();
+	ambusher_ = NULL;
+	failed_teleport_ = NULL;
 	seen_enemies_.clear();
 	seen_friends_.clear();
 	interrupted_waypoints_.clear();
-	unit_ = units.end();
+	unit_ = NULL;
 }
 
 
-void move_unit_spectator::set_ambusher(const unit_map::const_iterator &u)
+void move_unit_spectator::set_ambusher(const unit* u)
 {
 	ambusher_ = u;
 }
 
 
-void move_unit_spectator::set_failed_teleport(const unit_map::const_iterator &u)
+void move_unit_spectator::set_failed_teleport(const unit* u)
 {
 	failed_teleport_ = u;
 }
@@ -166,7 +170,7 @@ void move_unit_spectator::set_interrupted_waypoints(const std::vector<map_locati
 	interrupted_waypoints_ = waypoints;
 }
 
-void move_unit_spectator::set_unit(const unit_map::const_iterator &u)
+void move_unit_spectator::set_unit(const unit* u)
 {
 	unit_ = u;
 }
@@ -175,12 +179,12 @@ map_location under_leadership(const unit_map& units,
 		const map_location& loc, int* bonus)
 {
 
-	const unit_map::const_iterator un = units.find(loc);
-	if(un == units.end()) {
+	const unit* u = units.find_unit(loc, true);
+	if (!u) {
 		return map_location::null_location;
 	}
-	unit_ability_list abil = un->get_abilities("leadership");
-	if(bonus) {
+	unit_ability_list abil = u->get_abilities("leadership");
+	if (bonus) {
 		*bonus = abil.highest("value").first;
 	}
 	return abil.highest("value").second;
@@ -234,10 +238,12 @@ map_location best_attacker_location_from_range(const unit_map& units_, const uni
 		VALIDATE(false, _("do_attack_analysis, unknown range."));
 	}
 	for (int i = 0; i != adjacent_size; ++i) {
-		unit_map::node* base = units_.get_cookie(tiles[i], false);
-		unit_map::node* overlay = units_.get_cookie(tiles[i]);
-		if (!overlay && base && base->second->wall()) {
-			return tiles[i];
+		unit* base = units_.find_unit(tiles[i], false);
+		unit* overlay = units_.find_unit(tiles[i], true);
+		if (!overlay && base) {
+			if (base->wall()) {
+				return tiles[i];
+			}
 		}
 	}
 	return def;
@@ -813,14 +819,14 @@ battle_context::unit_stats::unit_stats(const unit &u, const map_location& u_loc,
 
 		// conside wall
 		if (!u.wall()) {
-			unit_map::const_iterator itor = units.find(u_loc, false);
-			if (itor.valid() && itor->wall()) {
+			const unit* u = units.find_unit(u_loc, false);
+			if (u && u->wall()) {
 				damage += damage / 10;
 			}
 		}
 		if (!opp.wall()) {
-			unit_map::const_iterator itor = units.find(opp_loc, false);
-			if (itor.valid() && itor->wall()) {
+			const unit* u = units.find_unit(opp_loc, false);
+			if (u && u->wall()) {
 				damage -= damage / 3;
 			}
 		}
@@ -1048,13 +1054,13 @@ attack::unit_info::unit_info(unit& u, int weapon, unit_map& units)
 
 unit& attack::unit_info::get_unit()
 {
-	return *units_.find(loc_, !base_);
+	return *units_.find_unit(loc_, !base_);
 }
 
 bool attack::unit_info::valid()
 {
-	unit_map::const_iterator u_itor = units_.find(loc_, !base_);
-	return u_itor.valid() && u_itor->signature == signature_;
+	const unit* u = units_.find_unit(loc_, !base_);
+	return u && u->signature == signature_;
 }
 
 std::string attack::unit_info::dump()
@@ -1077,11 +1083,11 @@ public:
 
 	bool valid()
 	{
-		unit_map::iterator itor = units_.find(loc_, !base_);
-		if (itor == units_.end()) {
+		unit* u = units_.find_unit(loc_, !base_);
+		if (!u) {
 			return false; 
 		}
-		return itor->signature == signature_;
+		return u->signature == signature_;
 	}
 
 	~event_lock() 
@@ -1216,7 +1222,7 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 			resources::screen->invalidate(cobj->get_location());
 		}
 
-		units.erase(&die);
+		units.erase2(&die);
 
 		// there is why not process unstage.
 		// if has leader, it will wrong. I assume desiger should consider these hero more.
@@ -1266,7 +1272,7 @@ void unit_die(unit_map& units, unit& die, void* a_info_p, int die_activity, int 
 			units.city_from_cityno(die.cityno())->increase_police(-4);
 		}
 		if (!die.fort()) {
-			units.erase(&die);
+			units.erase2(&die);
 		} else {
 			cobj = dynamic_cast<artifical*>(&die);
 			if (a_side != HEROS_INVALID_SIDE) {
@@ -1693,8 +1699,8 @@ bool attack::perform_hit(bool attacker_turn)
 		anim_lock->push_defender(center_defender_ptr);
 	}
 
-	unit_map::iterator find = units_.find(attacker_stats->effecting_tactic);
-	artifical* t = (find.valid() && find->type()->master() == hero::number_tactic)? unit_2_artifical(&*find): NULL;
+	unit* find = units_.find_unit(attacker_stats->effecting_tactic, true);
+	artifical* t = (find && find->type()->master() == hero::number_tactic)? unit_2_artifical(find): NULL;
 	unit_display::unit_attack(attacker.get_unit(), def_ptr_vec, damage_vec,
 		attacker_stats->weapon, defender_stats->weapon,
 		abs_n, hit_text_vec, attacker_stats->drains, stronger, "", t, attacker_stats->defender_formation);
@@ -1788,7 +1794,7 @@ bool attack::weapon_move(unit& u, const map_location& from, const map_location& 
 	gamemap& map = *resources::game_map;
 
 	unit_map::const_iterator u_base_itor = units_.find(to, false);
-	if (map.on_board(to) && !units_.count(to) && (u.movement_cost(map[to], &to) != unit_movement_type::UNREACHABLE) && !u_base_itor.valid()) {
+	if (map.on_board(to) && !units_.valid2(to, true) && (u.movement_cost(map[to], &to) != unit_movement_type::UNREACHABLE) && !u_base_itor.valid()) {
 		for (size_t i = 0; i < u.adjacent_size_; i ++) {
 			invalid_locs.insert(u.adjacent_[i]);
 		}
@@ -1972,13 +1978,13 @@ std::pair<map_location, map_location> attack::perform()
 	//
 	std::string text;
 	for (size_t i = 0; i < attacker.adjacent_size_; i ++) {
-		unit_map::const_iterator itor = units_.find(attacker.adjacent_[i]);
-		if (!itor.valid() || attacker.side() != itor->side()) {
+		const unit* u2 = units_.find_unit(attacker.adjacent_[i], true);
+		if (!u2 || attacker.side() != u2->side()) {
 			continue;
 		}
 		hero& h1 = attacker.master();
 		hero* h2 = NULL;
-		const unit& that = *itor;
+		const unit& that = *u2;
 		int united_level = that.character_level(apply_to_tag::UNITED);
 		if (united_level) {
 			int reinforce_percent = 10 - (5 * united_level) / 100;
@@ -2004,7 +2010,7 @@ std::pair<map_location, map_location> attack::perform()
 			}
 		}
 		if (h2) {
-			if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(itor->get_location().x, itor->get_location().y, draw_area)) {
+			if (point_in_rect_of_hexes(attacker.get_location().x, attacker.get_location().y, draw_area) || point_in_rect_of_hexes(u2->get_location().x, u2->get_location().y, draw_area)) {
 				unit_display::global_anim_2(area_anim::REINFORCE, h1.image(true), h2->image(true), text);
 			}
 			a_.reinforced_ = true;
@@ -2187,9 +2193,9 @@ std::pair<map_location, map_location> attack::perform()
 	invalid_locs.insert(a_.loc_);
 	invalid_locs.insert(d_.loc_);
 	while (move_ && a_.valid() && a_stats_->weapon && !attacker_is_artifical && !defender_is_artifical && !defender_is_commoner) {
-		unit_map::const_iterator a_base_itor = units_.find(a_.loc_, false);
-		unit_map::const_iterator d_base_itor = units_.find(d_.loc_, false);
-		if ((a_base_itor.valid() && a_base_itor->wall()) || (d_base_itor.valid() && d_base_itor->wall())) {
+		const unit* a_base = units_.find_unit(a_.loc_, false);
+		const unit* d_base = units_.find_unit(d_.loc_, false);
+		if ((a_base && a_base->wall()) || (d_base && d_base->wall())) {
 			break;
 		}
 
@@ -2411,11 +2417,11 @@ void carry_supplying(const team& current_team, unit_map& units, unit& provider)
 		}
 		for (size_t adj = 0; adj < adjance_size; adj ++) {
 			const map_location& loc = tiles[adj];
-			unit_map::iterator it = units.find(loc);
-			if (!it.valid()) {
+			unit* u2 = units.find_unit(loc, true);
+			if (!u2) {
 				continue;
 			}
-			unit& that = *it;
+			unit& that = *u2;
 			if (that.is_artifical() || that.is_commoner()) {
 				continue;
 			} 
@@ -2524,6 +2530,7 @@ void calculate_end_turn(std::vector<team>& teams, int side)
 	const std::pair<unit**, size_t> p = current_team.field_troop();
 	for (size_t i = 0; i < p.second; i ++) {
 		unit* u = p.first[i];
+
 		u->end_turn(true);
 	}
 }
@@ -2938,9 +2945,9 @@ void road_guarding(unit_map& units, std::vector<team>& teams, const std::map<map
 			int a_side = it2->first->side();
 			int b_side = it2->second->side();
 			if (a_side == b_side && a_side == side) {
-				u_it = units.find(loc);
-				if (u_it != units.end() && current_team.is_enemy(u_it->side())) {
-					unit& u = *u_it;
+				unit* u2 = units.find_unit(loc, true);
+				if (u2 && current_team.is_enemy(u2->side())) {
+					unit& u = *u2;
 					size_t a_distance = distance_between(loc, it2->first->get_location());
 					size_t b_distance = distance_between(loc, it2->second->get_location());
 					// at middle, max damage.
@@ -3120,14 +3127,11 @@ namespace {
 		team& tm = (*resources::teams)[side - 1];
 		unit_map& units = *resources::units;
 
-		unit_map::iterator u = units.find(loc);
-		if (!u.valid()) {
-			u = units.find(loc, false);
-		}
-		unit& un = *u;
-		if (!u.valid()) {
+		unit* u = units.find_unit(loc);
+		if (!u) {
 			return false;
 		}
+		unit& un = *u;
 
 		if (un.is_artifical() || unit_feature_val2(un, hero_feature_scout)) {
 			un.set_state(ustate_tag::LEGERITIED, true);
@@ -3152,14 +3156,11 @@ namespace {
 		for(std::vector<map_location>::const_iterator it =
 				cleared_locations.begin(); it != cleared_locations.end(); ++it) {
 
-			const unit_map::const_iterator sighted = resources::units->find(*it);
-			if (sighted.valid() &&
-			    (!sighted->invisible(*it)
-			     || !tm.is_enemy(sighted->side())))
-			{
+			const unit* sighted = resources::units->find_unit(*it, true);
+			if (sighted && (!sighted->invisible(*it) || !tm.is_enemy(sighted->side()))) {
 				//check if we know this unit, but we always know ourself
 				//just in case we managed to move on a fogged hex (teleport)
-				if(seen_units != NULL && known_units != NULL
+				if (seen_units != NULL && known_units != NULL
 						&& known_units->count(*it) == 0 && *it != loc && *it == sighted->get_location()) {
 					if (!(sighted->get_state(ustate_tag::PETRIFIED)))
 					{
@@ -3187,12 +3188,11 @@ void recalculate_fog(int side)
 
 	tm.refog();
 
-	for (unit_map::iterator i = resources::units->begin(); i != resources::units->end(); ++i)
-	{
-		if (i->side() == side) {
-			const unit_movement_resetter move_resetter(*i);
-
-			clear_shroud_unit(i->get_location(), side);
+	for (unit_map::iterator i = resources::units->begin(); i != resources::units->end(); ++i) {
+		unit* u = dynamic_cast<unit*>(&*i);
+		if (u->side() == side) {
+			const unit_movement_resetter move_resetter(*u);
+			clear_shroud_unit(u->get_location(), side);
 		}
 	}
 
@@ -3212,10 +3212,11 @@ bool clear_shroud(int side)
 
 	unit_map::iterator i;
 	for (i = resources::units->begin(); i != resources::units->end(); ++i) {
-		if (i->side() == side) {
-			const unit_movement_resetter move_resetter(*i);
+		unit* u = dynamic_cast<unit*>(&*i);
+		if (u->side() == side) {
+			const unit_movement_resetter move_resetter(*u);
 
-			result |= clear_shroud_unit(i->get_location(), side);
+			result |= clear_shroud_unit(u->get_location(), side);
 		}
 	}
 
@@ -3275,7 +3276,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	const expedite_release release_expedite(disp, units);
 
-	unit_map::iterator ui = units.find(route.front());
+	unit* ui = units.find_unit(route.front(), true);
 	unit& mover = *ui;
 	bool mover_is_commoner = ui->is_commoner();
 	bool mover_is_trader = ui->is_path_along_road();
@@ -3290,7 +3291,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	// get city-owner grid condition. move_unit is called must in expediting state used for expedit.  
 	void* expediting_city_cookie = NULL;
 	if (units.expediting()) {
-		expediting_city_cookie = units.expediting_city_node();
+		expediting_city_cookie = units.expediting_city();
 	}
 
 
@@ -3304,7 +3305,8 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	std::set<map_location> known_units;
 	if (check_shroud) {
-		for(unit_map::const_iterator u = units.begin(); u != units.end(); ++u) {
+		for (unit_map::const_iterator it = units.begin(); it != units.end(); ++ it) {
+			const unit* u = dynamic_cast<const unit*>(&*it);
 			if (!tm->fogged(u->get_location())) {
 				known_units.insert(u->get_location());
 				tm->see(u->side() - 1);
@@ -3327,16 +3329,16 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	pathfind::last_location = *route.begin();
 	for (step = route.begin()+1; step != route.end(); ++step) {
 		const map_location& cur_loc = *step;
-		if (expediting_city_cookie && units.get_cookie(cur_loc) == expediting_city_cookie) {
+		if (expediting_city_cookie && units.find_unit(cur_loc, true) == expediting_city_cookie) {
 			pathfind::last_location = cur_loc;
 			continue;
 		}
 		const bool skirmisher = ui->get_ability_bool("skirmisher", cur_loc);
 
 		int cost;
-		unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units.get_cookie(*step, false));
-		if (curr_node && curr_node->second->wall2()) {
-			const unit* w = curr_node->second;
+		unit* curr_node = units.find_unit(*step, false);
+		if (curr_node && curr_node->wall2()) {
+			const unit* w = curr_node;
 			cost = pathfind::location_cost(units, *tm, *ui, tm->is_enemy(w->side()), false);
 		} else {
 			const t_translation::t_terrain terrain = map[*step];
@@ -3349,11 +3351,10 @@ size_t move_unit(move_unit_spectator* move_spectator,
 			//check whether any sighted unit is an enemy
 			for (std::set<map_location>::iterator it = seen_units.begin(); it != seen_units.end(); ++it)
 			{
-				const unit_map::const_iterator u = units.find(*it);
+				const unit* u = units.find_unit(*it, true);
 
 				// Unit may have been removed by an event.
-				if(u == units.end()) {
-					DBG_NG << "was removed\n";
+				if (!u) {
 					continue;
 				}
 
@@ -3367,13 +3368,11 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		}
 
 		if (cost >moves_left || discovered_unit || alerted_unit || (continue_move == false && sighted_interrupts)) {
-			// if (!skirmisher) {
-				break; // not enough MP or spotted new enemies
-			// }
+			break; // not enough MP or spotted new enemies
 		}
 
-		const unit_map::const_iterator enemy_unit = units.find(*step);
-		if (enemy_unit != units.end()) {
+		const unit* enemy_unit = units.find_unit(*step, true);
+		if (enemy_unit) {
 			if (tm->is_enemy(enemy_unit->side())) {
 				if (move_spectator != NULL) {
 					move_spectator->set_ambusher(enemy_unit);
@@ -3392,7 +3391,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		if (should_clear_shroud && (tm->uses_shroud() || tm->uses_fog())) {
 			//we don't want to interrupt our move when we are on an other unit
 			//or a uncaptured village (except if it was our plan to end there)
-			if (units.count(*step) == 0 &&
+			if (units.valid2(*step, true) == 0 &&
 			    (!map.is_village(*step) || tm->owns_village(*step) || step + 1 == route.end()))
 			{
 				DBG_NG << "checking for units from " << (step->x+1) << "," << (step->y+1) << "\n";
@@ -3425,16 +3424,16 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		}
 
 		// check alert attack, ignore loc that target cann't stand on.
-		if (!enemy_unit.valid()) {
-			unit_map::const_iterator base = units.find(*step, false);
-			if (!base.valid() || base->can_stand(*ui)) {
+		if (!enemy_unit) {
+			const unit* base = units.find_unit(*step, false);
+			if (!base || base->can_stand(*ui)) {
 				alerted_unit = loc_in_alert_area(teams, *ui, pathfind::last_location, *step);
 				if (alerted_unit) {
 					should_clear_stack = true;
 					moves_left = 0;
 					alerted_unit->set_alert_turns(0);
 					if (move_spectator != NULL) {
-						move_spectator->set_ambusher(units.find(alerted_unit->get_location()));
+						move_spectator->set_ambusher(units.find_unit(alerted_unit->get_location(), true));
 					}
 					ambushed_string = dgettext("wesnoth-lib", "Alerted!");
 				}
@@ -3477,8 +3476,8 @@ size_t move_unit(move_unit_spectator* move_spectator,
 					} else {
 						discover_by_scout = true;
 					}
-					if (move_spectator!=NULL) {
-						move_spectator->set_ambusher(units.find(adjacent_loc));
+					if (move_spectator != NULL) {
+						move_spectator->set_ambusher(units.find_unit(adjacent_loc, true));
 					}
 
 					unit_ability_list hides = u->get_abilities("hides");
@@ -3536,7 +3535,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 			break;
 		}
 		if (!u->base()) {
-			if (unit_is_city(u) && u->side() == ui->side() && (!expediting_city_cookie || units.get_cookie(loc) != expediting_city_cookie)) {
+			if (unit_is_city(u) && u->side() == ui->side() && (!expediting_city_cookie || units.find_unit(loc, true) != expediting_city_cookie)) {
 				last_city_loc.first = loc;
 			}
 		} else if (u->can_stand(*ui)) {
@@ -3596,10 +3595,10 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	map_location adjacent[6];
 	get_adjacent_tiles(steps.back(), adjacent);
 	for (int i = 0; i != 6; ++i) {
-		const unit_map::const_iterator it = units.find(adjacent[i]);
-		if (it != units.end() && tm->is_enemy(it->side()) &&
-				it->invisible(it->get_location()))
+		const unit* it = units.find_unit(adjacent[i], true);
+		if (it && tm->is_enemy(it->side()) && it->invisible(it->get_location())) {
 			disp.invalidate(adjacent[i]);
+		}
 	}
 
 	bool event_mutated = false;
@@ -3623,10 +3622,13 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		}
 	}
 
-	event_mutated |= !units.move(ui->get_location(), steps.back());
+	units.move(ui->get_location(), steps.back());
+	if (entered_city) {
+		event_mutated = true;
+	}
 	unit::clear_status_caches();
 
-	ui = units.find(steps.back());
+	ui = units.find_unit(steps.back(), true);
 	ui->set_standing();
 
 	if (discovered_unit || alerted_unit) {
@@ -3680,9 +3682,9 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	event_mutated |= game_events::pump();
 
 	//NOTE: an wml event may have removed the unit pointed by ui
-	unit_map::iterator maybe_ui = units.find(steps.back());
+	unit* maybe_ui = units.find_unit(steps.back(), true);
 	// and always disable the previous iterator
-	ui = units.end();
+	ui = NULL;
 
 	// mover maybe come into city. In that case, don't update spectator that is part of mover.
 	if (move_spectator && (!spectator_in_mover || !units.city_from_loc(steps.back()))) {
@@ -3691,7 +3693,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 
 	if (undo_stack != NULL) {
 		should_clear_stack = should_clear_shroud && (tm->uses_shroud() || tm->uses_fog());
-		if (event_mutated || should_clear_stack || maybe_ui == units.end()) {
+		if (event_mutated || should_clear_stack || !maybe_ui) {
 			apply_shroud_changes(*undo_stack, team_num + 1);
 		}
 		undo_stack->clear();
@@ -3729,10 +3731,10 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		int nfriends = 0, nenemies = 0;
 		for(std::set<map_location>::const_iterator i = seen_units.begin(); i != seen_units.end(); ++i) {
 			DBG_NG << "processing unit at " << (i->x+1) << "," << (i->y+1) << "\n";
-			const unit_map::const_iterator u = units.find(*i);
+			const unit* u = units.find_unit(*i, true);
 
 			// Unit may have been removed by an event.
-			if(u == units.end()) {
+			if (!u) {
 				DBG_NG << "was removed\n";
 				continue;
 			}
@@ -3819,7 +3821,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 			if (forward) {
 				controller->commoner_back(entered_city, belong_city, steps.front());
 				if (move_spectator && !spectator_in_mover) {
-					move_spectator->set_unit(units.find(steps.front()));
+					move_spectator->set_unit(units.find_unit(steps.front(), true));
 				}
 				if (commoner.movement_left() > 0) {
 					commoner.set_movement(0);
@@ -3829,13 +3831,13 @@ size_t move_unit(move_unit_spectator* move_spectator,
 		} else if (task == unit::TASK_TRANSFER || task == unit::TASK_BACK) {
 			commoner.set_task(unit::TASK_NONE);
 		}
-	} else if (mover_is_transport && maybe_ui.valid()) {
+	} else if (mover_is_transport && maybe_ui) {
 		maybe_ui->set_block_turns(0);
 
-		unit_map::iterator it = units.find(steps.back(), false);
-		if (it != units.end() && it->fort()) {
-			do_supply(*tm, units, *maybe_ui, *unit_2_artifical(&*it));
-			maybe_ui = units.find(steps.back());
+		unit* it = units.find_unit(steps.back(), false);
+		if (it && it->fort()) {
+			do_supply(*tm, units, *maybe_ui, *unit_2_artifical(it));
+			maybe_ui = units.find_unit(steps.back(), true);
 			if (move_spectator && !spectator_in_mover) {
 				move_spectator->set_unit(maybe_ui);
 			}
@@ -3849,12 +3851,12 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	// I select 2).
 	if (!controller->is_recovering(team_num + 1) && alerted_unit) {
 		// attack no defend!
-		if (maybe_ui.valid() && !no_fightback_attack(*alerted_unit, *maybe_ui)) {
-			move_spectator->set_unit(units.end());
+		if (maybe_ui && !no_fightback_attack(*alerted_unit, *maybe_ui)) {
+			move_spectator->set_unit(NULL);
 		}
 		event_mutated = true;
 
-	} else if (!controller->is_recovering(team_num + 1) && !to_city && maybe_ui.valid()) {
+	} else if (!controller->is_recovering(team_num + 1) && !to_city && maybe_ui) {
 		int random = rand();
 		unit& mover2 = *maybe_ui;
 		// 1/16---1/8
@@ -3944,13 +3946,13 @@ std::pair<map_location, map_location> attack_enemy(unit* a_, unit* d_, int att_w
 
 	to_locs = attack_unit(*a_, *d_, att_weapon, def_weapon, true, config::invalid, move, constant_attacks);
 
-	unit_map::iterator attacker = units_.find(to_locs.first);
-	if (attacker != units_.end()) {
+	unit* attacker = units_.find_unit(to_locs.first, true);
+	if (attacker) {
 		dialogs::advance_unit(*attacker, true);
 	}
 
-	unit_map::iterator defender = units_.find(to_locs.second);
-	if (defender != units_.end()) {
+	unit* defender = units_.find_unit(to_locs.second, true);
+	if (defender) {
 		const size_t defender_team = size_t(defender->side()) - 1;
 		if (defender_team < teams_.size()) {
 			dialogs::advance_unit(*defender, !teams_[defender_team].is_human());
@@ -3985,9 +3987,9 @@ bool unit_can_move(const unit &u)
 	get_adjacent_tiles(u.get_location(), locs);
 	for(int n = 0; n != 6; ++n) {
 		if (resources::game_map->on_board(locs[n])) {
-			const unit_map::const_iterator i = resources::units->find(locs[n]);
-			if (i.valid()) {
-				if(!i->incapacitated() && current_team.is_enemy(i->side())) {
+			const unit* i = resources::units->find_unit(locs[n], true);
+			if (i) {
+				if (!i->incapacitated() && current_team.is_enemy(i->side())) {
 					return true;
 				}
 			}
@@ -4142,8 +4144,8 @@ void erase_random_card(team& t, game_display& disp, unit_map& units, hero_map& h
 
 artifical* artifical_existed_ea(unit_map& units, const map_location& loc)
 {
-	unit_map::iterator find = units.find(loc);
-	if (!find.valid()) {
+	unit* find = units.find_unit(loc, true);
+	if (!find) {
 		return NULL;
 	}
 	int master = find->type()->master();
@@ -4165,15 +4167,15 @@ void calculate_wall_tiles(unit_map& units, gamemap& map, artifical& owner, std::
 	for (int i = 0; i != adjacent_size; ++ i) {
 		// find count of keep
 		// find vacant tile
-		unit_map::const_iterator itor = units.find(tiles[i]);
-		if (itor.valid()) {
+		const unit* itor = units.find_unit(tiles[i], true);
+		if (itor) {
 			if (itor->type() == keep_type) {
 				keeps.push_back(&tiles[i]);
 			}
 			continue;
 		}
-		itor = units.find(tiles[i], false);
-		if (itor.valid()) {
+		itor = units.find_unit(tiles[i], false);
+		if (itor) {
 			if (itor->type() == keep_type) {
 				keeps.push_back(&tiles[i]);
 			}
@@ -4199,15 +4201,15 @@ size_t calculate_keeps(unit_map& units, const artifical& owner)
 
 	for (int i = 0; i != adjacent_size; ++ i) {
 		// find count of keep
-		unit_map::const_iterator itor = units.find(tiles[i]);
-		if (itor.valid()) {
+		const unit* itor = units.find_unit(tiles[i], true);
+		if (itor) {
 			if (itor->type() == keep_type) {
 				keeps ++;
 			}
 			continue;
 		}
-		itor = units.find(tiles[i], false);
-		if (itor.valid()) {
+		itor = units.find_unit(tiles[i], false);
+		if (itor) {
 			if (itor->type() == keep_type) {
 				keeps ++;
 			}
@@ -4512,7 +4514,7 @@ unit* select_provoke_target(unit_map& units, const team& current_team, unit& tac
 		if (ttactic::select_one(part_tactic.apply_to())) {
 			std::vector<map_location> locs = it->second;
 			for (std::vector<map_location>::iterator it2 = locs.begin(); it2 != locs.end();) {
-				unit* u = &*find_visible_unit(*it2, current_team);
+				unit* u = find_visible_unit(*it2, current_team);
 				if (u->provoked_turns()) {
 					it2 = locs.erase(it2);
 				} else {
@@ -4521,10 +4523,10 @@ unit* select_provoke_target(unit_map& units, const team& current_team, unit& tac
 			}
 			if (!locs.empty()) {
 				const map_location& loc = locs[rand() % locs.size()];
-				special = &*find_visible_unit(loc, current_team);
+				special = find_visible_unit(loc, current_team);
 			} else if (!it->second.empty()) {
 				// all enemy has been provoked, select first.
-				special = &*find_visible_unit(it->second[0], current_team);
+				special = find_visible_unit(it->second[0], current_team);
 			}
 			break;
 		}
@@ -4664,7 +4666,6 @@ void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std:
 {
 	team& u_team = teams[u.side() - 1];
 	
-	unit_map::iterator u_it;
 	std::map<unit*, int> touched;
 
 	const map_location* tiles = u.adjacent_;
@@ -4678,15 +4679,15 @@ void damage_range(unit_map& units, std::vector<team>& teams, unit& u, const std:
 	
 		for (size_t adj = 0; adj != adjance_size; adj ++) {
 			const map_location& loc = tiles[adj];
-			u_it = find_visible_unit(loc, u_team);
-			if (!u_it.valid()) {
+			unit* u_it = find_visible_unit(loc, u_team);
+			if (!u_it) {
 				continue;
 			}
 
 			if (!u_team.is_enemy(u_it->side())) {
 				continue;
 			}
-			if (touched.find(&*u_it) != touched.end()) {
+			if (touched.find(u_it) != touched.end()) {
 				continue;
 			}
 			unit& opp = *u_it;
@@ -4822,7 +4823,7 @@ void do_supply(team& current_team, unit_map& units, unit& transport, artifical& 
 	if (!strstr.str().empty()) {
 		unit_display::unit_text(fort, false, strstr.str());
 	}
-	units.erase(&transport);
+	units.erase2(&transport);
 }
 
 int calculate_weapon(const unit& attacker, const unit& defender)
@@ -5435,7 +5436,7 @@ void do_demolish(game_display& gui, unit_map& units, team& current_team, unit* u
 		}
 	}
 
-	units.erase(u);
+	units.erase2(u);
 	current_team.spend_gold(-1 * income);
 
 	// invalidate adjacent locs
@@ -5489,12 +5490,12 @@ bool adjacent_has_enemy(const unit_map& units, const team& current_team, const u
 	size_t adjacent_size = u.adjacent_size_;
 
 	for (int i = 0; i != adjacent_size; ++ i) {
-		unit_map::const_iterator another = units.find(tiles[i]);
-		if (another.valid() && current_team.is_enemy(another->side())) {
+		const unit* another = units.find_unit(tiles[i], true);
+		if (another && current_team.is_enemy(another->side())) {
 			return true;
 		}
-		another = units.find(tiles[i], false);
-		if (another.valid() && current_team.is_enemy(another->side())) {
+		another = units.find_unit(tiles[i], false);
+		if (another && current_team.is_enemy(another->side())) {
 			return true;
 		}
 	}
@@ -5564,7 +5565,7 @@ void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, uni
 	if (disp) {
 		disp->resort_access_troops(u);
 	} else {
-		units.resort_map(u);
+		units.sort_map2(u);
 	}
 	unit_display::unit_recruited(u.get_location());
 }
@@ -6055,32 +6056,22 @@ bool verify_siege_map_data(const config& game_config, const std::string& map_dat
 	return true;
 }
 
-const ttechnology& browse_stratagem(game_display& disp, int stratagem_tag)
+const ttechnology& browse_stratagem(display& disp, int stratagem_tag)
 {
-	std::vector<std::string> items;
-	std::vector<gui2::tval_str> stratagem_map;
+	std::vector<gui2::tval_str> items;
 	std::stringstream strstr;
-	int actived_index = 0;
 
 	for (int n = stratagem_tag::min; n <= stratagem_tag::max; n ++) {
 		const ttechnology& s = stratagem_tag::technology(n);
 		strstr.str("");
 		strstr << s.name();
-		stratagem_map.push_back(gui2::tval_str(n, strstr.str()));
-
-		if (stratagem_tag == n) {
-			actived_index = n - stratagem_tag::min;
-		}
+		items.push_back(gui2::tval_str(n, strstr.str()));
 	}
 
-	for (std::vector<gui2::tval_str>::iterator it = stratagem_map.begin(); it != stratagem_map.end(); ++ it) {
-		items.push_back(it->str);
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, stratagem_tag);
 	dlg.show(disp.video());
 
-	return stratagem_tag::technology(stratagem_map[dlg.selected_index()].val);
+	return stratagem_tag::technology(dlg.selected_val());
 }
 
 bool has_enemy_in_3range(const unit_map& units, const gamemap& gmap, const team& current_team, const map_location& loc)
@@ -6174,7 +6165,7 @@ void do_unstage_hero(unit_map& units, hero& h)
 
 		if (captains.empty()) {
 			if (!u->is_resided()) {
-				units.erase(u);
+				units.erase2(u);
 			} else {
 				artifical& city = *units.city_from_loc(u->get_location());
 				city.troop_go_out(*u);
@@ -6218,8 +6209,8 @@ std::string format_loc(const unit_map& units, const map_location& loc, int side)
 	if (to_city) {
 		strstr << to_city->name();
 	} else {
-		unit_map::const_iterator base = units.find(loc, false);
-		if (base.valid() && base->fort()) {
+		const unit* base = units.find_unit(loc, false);
+		if (base && base->fort()) {
 			if (side == HEROS_INVALID_SIDE || side == base->side()) {
 				strstr << base->name();
 			} else {
@@ -6253,4 +6244,13 @@ void do_hate_relation(hero& h1, hero& h2, bool set)
 	if (!message.empty()) {
 		game_events::show_hero_message(&h1, NULL, message, incident);
 	}
+}
+
+surface generate_rpg_surface(hero& h)
+{
+	surface genus_surf = image::get_image(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
+	surface hero_surf = image::get_image(h.image());
+	surface masked_surf = mask_surface(hero_surf, image::get_image("buttons/photo-mask.png"));
+	blit_surface(genus_surf, NULL, masked_surf, NULL);
+	return masked_surf;
 }

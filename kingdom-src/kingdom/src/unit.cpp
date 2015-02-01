@@ -390,13 +390,13 @@ dont_wander_lock::~dont_wander_lock()
 
 // Copy constructor
 unit::unit(const unit& o):
+	base_unit(o),
 	unit_merit(o),
 	/* unit */
 	units_(o.units_),
 	heros_(o.heros_),
 	teams_(o.teams_),
 	cfg_(o.cfg_),
-	loc_(o.loc_),
 	advances_to_(o.advances_to_),
 	type_(o.type_),
 	packee_type_(o.packee_type_),
@@ -404,7 +404,6 @@ unit::unit(const unit& o):
 	packee_unit_type_(o.packee_unit_type_),
 	especial_(o.especial_),
 	race_(o.race_),
-	name_(o.name_),
 	type_name_(o.type_name_),
 	undead_variation_(o.undead_variation_),
 	variation_(o.variation_),
@@ -461,7 +460,6 @@ unit::unit(const unit& o):
 
 	frame_begin_time_(o.frame_begin_time_),
 	unit_halo_(halo::NO_HALO),
-	refreshing_(o.refreshing_),
 	hidden_(o.hidden_),
 	draw_bars_(o.draw_bars_),
 
@@ -487,7 +485,6 @@ unit::unit(const unit& o):
 	artifical_(o.artifical_),
 	can_recruit_(o.can_recruit_),
 	can_reside_(o.can_reside_),
-	base_(o.base_),
 	wall_(o.wall_),
 	fort_(o.fort_),
 	transport_(o.transport_),
@@ -507,7 +504,6 @@ unit::unit(const unit& o):
 	spirit_(o.spirit_),
 	charm_(o.charm_),
 	characters_(o.characters_),
-	touch_locs_(o.touch_locs_),
 	adjacent_size_(o.adjacent_size_),
 	adjacent_size_2_(o.adjacent_size_2_),
 	adjacent_size_3_(o.adjacent_size_3_),
@@ -561,7 +557,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	heros_(heros),
 	teams_(teams),
 	cfg_(cfg),
-	loc_(), // !!! don't evalidate loc_, should use set_location to evalidate loc_
 	advances_to_(),
 	type_(cfg["type"]),
 	packee_type_(),
@@ -569,7 +564,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	packee_unit_type_(NULL),
 	especial_(-1),
 	race_(NULL),
-	name_(),
 	type_name_(),
 	undead_variation_(),
 	variation_(cfg["variation"]),
@@ -618,7 +612,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	next_idling_(0),
 	frame_begin_time_(0),
 	unit_halo_(halo::NO_HALO),
-	refreshing_(false),
 	hidden_(false),
 	draw_bars_(false),
 	invisibility_cache_(),
@@ -643,7 +636,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	artifical_(is_artifical),
 	can_recruit_(false),
 	can_reside_(false),
-	base_(false),
 	wall_(false),
 	fort_(false),
 	transport_(false),
@@ -651,7 +643,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	walk_wall_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
-	touch_locs_(),
 	adjacent_size_(0),
 	adjacent_size_2_(0),
 	adjacent_size_3_(0),
@@ -858,7 +849,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	heros_(heros),
 	teams_(teams),
 	cfg_(),
-	loc_(), // !!! don't evalidate loc_, should use set_location to evalidate loc_
 	advances_to_(),
 	type_(),
 	packee_type_(),
@@ -866,7 +856,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	packee_unit_type_(NULL),
 	especial_(-1),
 	race_(NULL),
-	name_(),
 	type_name_(),
 	undead_variation_(),
 	variation_(),
@@ -915,7 +904,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	next_idling_(0),
 	frame_begin_time_(0),
 	unit_halo_(halo::NO_HALO),
-	refreshing_(false),
 	hidden_(false),
 	draw_bars_(false),
 	invisibility_cache_(),
@@ -940,7 +928,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	artifical_(artifical),
 	can_recruit_(false),
 	can_reside_(false),
-	base_(false),
 	wall_(false),
 	fort_(false),
 	transport_(false),
@@ -948,7 +935,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uin
 	walk_wall_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
-	touch_locs_(),
 	adjacent_size_(0),
 	adjacent_size_2_(0),
 	adjacent_size_3_(0),
@@ -1054,7 +1040,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	heros_(heros),
 	teams_(teams),
 	cfg_(),
-	loc_(),
 	advances_to_(),
 	type_(),
 	packee_type_(),
@@ -1062,7 +1047,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	unit_type_(NULL),
 	packee_unit_type_(NULL),
 	race_(NULL),
-	name_(),
 	type_name_(),
 	undead_variation_(),
 	variation_(),
@@ -1110,7 +1094,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	next_idling_(0),
 	frame_begin_time_(0),
 	unit_halo_(halo::NO_HALO),
-	refreshing_(false),
 	hidden_(false),
 	draw_bars_(false),
 	invisibility_cache_(),
@@ -1135,7 +1118,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	artifical_(is_artifical),
 	can_recruit_(false),
 	can_reside_(false),
-	base_(false),
 	wall_(false),
 	fort_(false),
 	transport_(false),
@@ -1143,7 +1125,6 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	walk_wall_(false),
 	terrain_(t_translation::NONE_TERRAIN),
 	arms_(0),
-	touch_locs_(),
 	adjacent_size_(0),
 	adjacent_size_2_(0),
 	adjacent_size_3_(0),
@@ -2346,7 +2327,7 @@ bool unit::can_increase_experience() const
 
 void unit::get_experience(const increase_xp::ublock& ub, int xp, bool master, bool second, bool third) 
 { 
-	game_display &disp = *game_display::get_singleton();
+	game_display &disp = *resources::screen;
 	bool has_carry = false;
 	bool advance_packs = false;
 	bool has_rpg = false;
@@ -2643,7 +2624,7 @@ int unit::increase_ticks(int inc, int min, bool refresh_gui)
 	}
 
 	if (refresh_gui && orignal != ticks_) {
-		game_display& disp = *game_display::get_singleton();
+		game_display& disp = *resources::screen;
 		disp.resort_access_troops(*this);
 	}
 
@@ -2872,17 +2853,15 @@ std::pair<hero*, int> unit::calculate_tactic_score() const
 		for (size_t adj = 0; adj < adjance_size; adj ++) {
 			const map_location& loc = tiles[adj];
 			// overlay
-			unit_map::node* curr_node;
-			
 			for (int layer = 0; layer < 2; layer ++) {
+				const unit* u = NULL;
 				if (layer == 0) {
-					curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc));
+					u = units_.find_unit(loc, true);
 				} else {
-					curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
+					u = units_.find_unit(loc, false);
 				}
 
-				if (curr_node) {
-					const unit* u = curr_node->second;
+				if (u) {
 					if (calculated.find(u) != calculated.end()) {
 						continue;
 					}
@@ -3678,13 +3657,16 @@ bool unit::internal_matches_filter(const vconfig& cfg, const map_location& loc, 
 			std::vector<map_location::DIRECTION>::const_iterator j, j_end = dirs.end();
 			for (j = dirs.begin(); j != j_end; ++j) {
 				unit_map::const_iterator unit_itor = units.find(adjacent[*j]);
-				if (unit_itor == units.end()
-				|| !unit_itor->matches_filter(*i, unit_itor->get_location(), use_flat_tod)) {
+				if (unit_itor == units.end()) {
+					continue;
+				}
+				const unit* u = dynamic_cast<const unit*>(&*unit_itor);
+				if (!u->matches_filter(*i, u->get_location(), use_flat_tod)) {
 					continue;
 				}
 				config::attribute_value i_is_enemy = (*i)["is_enemy"];
 				if (i_is_enemy.blank() || i_is_enemy.to_bool() ==
-				    teams_manager::get_teams()[this->side() - 1].is_enemy(unit_itor->side())) {
+				    teams_manager::get_teams()[this->side() - 1].is_enemy(u->side())) {
 					++match_count;
 				}
 			}
@@ -5383,7 +5365,7 @@ const surface unit::still_image(bool scaled) const
 
 void unit::set_standing(bool with_bars)
 {
-	game_display *disp = game_display::get_singleton();
+	game_display *disp = resources::screen;
 
 	if (!incapacitated()) {
 		start_animation(INT_MAX, choose_animation(*disp, loc_, "standing"),
@@ -5396,28 +5378,28 @@ void unit::set_standing(bool with_bars)
 
 void unit::set_ghosted(bool with_bars)
 {
-	game_display *disp = game_display::get_singleton();
+	game_display *disp = resources::screen;
 	start_animation(INT_MAX, choose_animation(*disp, loc_, "ghosted"),
 			with_bars, true);
 }
 
 void unit::set_disabled_ghosted(bool with_bars)
 {
-	game_display *disp = game_display::get_singleton();
+	game_display *disp = resources::screen;
 	start_animation(INT_MAX, choose_animation(*disp, loc_, "disabled_ghosted"),
 			with_bars, true);
 }
 
 void unit::set_idling()
 {
-	game_display *disp = game_display::get_singleton();
+	game_display *disp = resources::screen;
 	start_animation(INT_MAX, choose_animation(*disp, loc_, "idling"),
 		true, false, "", 0, STATE_FORGET);
 }
 
 void unit::set_selecting()
 {
-	const game_display *disp =  game_display::get_singleton();
+	const game_display *disp =  resources::screen;
 	if (!get_state(ustate_tag::PETRIFIED)) {
 		start_animation(INT_MAX, choose_animation(*disp, loc_, "selected"),
 			true, false, "", 0, STATE_FORGET);
@@ -5430,7 +5412,7 @@ void unit::set_selecting()
 void unit::start_animation(int start_time, const unit_animation *animation,
 	bool with_bars, bool cycles, const std::string &text, Uint32 text_color, STATE state)
 {
-	const game_display * disp =  game_display::get_singleton();
+	const game_display * disp =  resources::screen;
 	state_ = state;
 	if (!animation) {
 		if (state != STATE_STANDING)
@@ -5462,7 +5444,7 @@ void unit::set_facing(map_location::DIRECTION dir) {
 
 void unit::redraw_unit()
 {
-	game_display& disp = *game_display::get_singleton();
+	game_display& disp = *resources::screen;
 	const gamemap& map = disp.get_map();
 	
 	if (!loc_.valid() || hidden_ || disp.fogged(loc_) ||
@@ -5911,7 +5893,7 @@ bool unit::invalidate(const map_location &loc)
 	bool result = false;
 
 
-	game_display * disp =  game_display::get_singleton();
+	game_display * disp = resources::screen;
 	disp->invalidate(touch_locs_);
 
 	// Very early calls, anim not initialized yet
@@ -6770,7 +6752,7 @@ bool unit::invisible(const map_location& loc, bool see_all) const
 	// Test hidden status
 	bool is_inv = !get_state(ustate_tag::UNCOVERED) && !artifical_;
 	if (is_inv) {
-		unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
+		unit* curr_node = units_.find_unit(loc, false);
 		is_inv = !curr_node && get_ability_bool("hides", loc);
 	}
 	if (is_inv) {
@@ -7113,7 +7095,8 @@ unit_movement_resetter::~unit_movement_resetter()
 int side_units(int side)
 {
 	int res = 0;
-	for (unit_map::const_iterator u = resources::units->begin(); u != resources::units->end(); ++ u) {
+	for (unit_map::const_iterator it = resources::units->begin(); it != resources::units->end(); ++ it) {
+		const unit* u = dynamic_cast<const unit*>(&*it);
 		if (u->side() == side) ++res;
 	}
 	return res;
@@ -7122,34 +7105,32 @@ int side_units(int side)
 int side_units_cost(int side)
 {
 	int res = 0;
-	for (unit_map::const_iterator u = resources::units->begin(); u != resources::units->end(); ++ u) {
+	for (unit_map::const_iterator it = resources::units->begin(); it != resources::units->end(); ++ it) {
+		const unit* u = dynamic_cast<const unit*>(&*it);
 		if (u->side() == side) res += u->cost();
 	}
 	return res;
 }
 
-unit_map::iterator find_visible_unit(const map_location &loc,
-	const team& current_team, bool see_all)
+unit* find_visible_unit(const map_location &loc, const team& current_team, bool see_all)
 {
 	unit_map& units = *resources::units;
-	if (!resources::game_map->on_board(loc)) return units.end();
-	unit_map::iterator u = units.find(loc);
-	if (!u.valid()) {
-		u = units.find(loc, false);
-	}
+	if (!resources::game_map->on_board(loc)) return NULL;
+	unit* u = units.find_unit(loc);
 	if (see_all) return u;
-	if (!u.valid() || current_team.fogged(loc) || (current_team.is_enemy(u->side()) && u->invisible(loc)))
-		return units.end();
+
+	if (!u) {
+		return u;
+	}
+	if (current_team.fogged(loc) || (current_team.is_enemy(u->side()) && u->invisible(loc))) {
+		return NULL;
+	}
 	return u;
 }
 
-unit *get_visible_unit(const map_location &loc,
-	const team &current_team, bool see_all)
+unit* get_visible_unit(const map_location &loc,	const team &current_team, bool see_all)
 {
-	unit_map::iterator ui = find_visible_unit(loc,
-		current_team, see_all);
-	if (ui == resources::units->end()) return NULL;
-	return &*ui;
+	return find_visible_unit(loc, current_team, see_all);
 }
 
 void unit::refresh()
@@ -7158,7 +7139,7 @@ void unit::refresh()
 		set_standing();
 		return;
 	}
-	game_display &disp = *game_display::get_singleton();
+	game_display &disp = *resources::screen;
 	if (state_ != STATE_STANDING || get_current_animation_tick() < next_idling_ ||
 	    !disp.tile_nearly_on_screen(loc_) || incapacitated())
 	{
@@ -7185,22 +7166,24 @@ team_data calculate_team_data(const team& tm, int)
 	return res;
 }
 
-std::pair<map_location, unit*> temporary_unit_placer::aggressing_;
+std::pair<map_location, base_unit*> temporary_unit_placer::aggressing_;
 
 temporary_unit_placer::temporary_unit_placer(unit_map& m, const map_location& loc, unit* u)
-	: m_(m), loc_(loc), temp_(m.extract(loc))
+	: m_(m)
+	, loc_(loc)
+	, temp_(std::make_pair(u->get_location(), m.extract(loc)))
 {
 	aggressing_.first = loc;
 	aggressing_.second = u;
 
-	m.place(&aggressing_);
+	m.place(aggressing_.first, aggressing_.second);
 }
 
 temporary_unit_placer::~temporary_unit_placer()
 {
 	m_.extract(loc_);
-	if (temp_) {
-		m_.place(temp_);
+	if (temp_.second) {
+		m_.place(temp_.first, temp_.second);
 	}
 	// In construct, m.place(&aggressing_) will update loc_ of u,
 	// so after temporary_unit_placer, loc_ of u is updated.
@@ -7243,7 +7226,7 @@ void unit::set_hidden(bool state) {
 	clear_haloes();
 }
 
-std::set<map_location> unit::get_touch_locations(const gamemap& map, const map_location& loc) const
+std::set<map_location> unit::get_touch_locations2(const gamemap& map, const map_location& loc) const
 {
 	std::set<map_location> touch_locs;
 
@@ -7668,7 +7651,7 @@ bool extract_hero(unit_map& units, const hero& h)
 				}
 			}
 			if (captains.empty()) {
-				units.erase(&u);
+				units.erase2(&u);
 			} else if (found) {
 				u.replace_captains(captains);
 			}
@@ -7926,6 +7909,12 @@ bool unit::is_capital(const std::vector<team>& teams) const
 {
 	const team& t = teams[side_ - 1];
 	return master_->number_ == t.capital_number();
+}
+
+bool unit::sort_compare(const base_unit& that_base) const
+{
+	const unit* that = dynamic_cast<const unit*>(&that_base);
+	return !that->consider_ticks() || compare_action_order(*that);
 }
 
 surface unit::generate_access_surface(int width, int height, bool greyscale) const

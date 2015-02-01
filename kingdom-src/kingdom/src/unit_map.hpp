@@ -17,21 +17,15 @@
 #ifndef UNIT_MAP_H_INCLUDED
 #define UNIT_MAP_H_INCLUDED
 
-#include "map_location.hpp"
-
-#include <cassert>
-
-#include "sdl_utils.hpp"
+#include "base_map.hpp"
 
 class unit;
 class hero;
 class team;
 class artifical;
 class unit_map;
-class gamemap;
 class game_state;
 class game_display;
-struct rect_of_hexes;
 class strategy;
 
 #define CITYS_INVALID_NUMBER	0xffffffff
@@ -39,8 +33,6 @@ class strategy;
 class city_map
 {
 public:
-	static bool affect_team_;
-
 	city_map();
 	~city_map();
 
@@ -299,12 +291,9 @@ public:
 // Also, we want iterators to remain valid as much as reasonable as the underlying map is changed
 // and we want a way to test an iterator for validity.
 
-class unit_map
+class unit_map: public base_map
 {
 public:
-	typedef std::pair<map_location, unit*> node;
-	enum {BASE = 1, OVERLAY};
-
 	static surface desc_bg_[10];
 	static surface desc_hot;
 	static surface enemy_orb_, ally_orb_, moved_orb_, unmoved_orb_, partmoved_orb_, automatic_orb_, self_orb_;
@@ -321,117 +310,10 @@ public:
 
 	static std::map<const map_location, int> economy_areas_;
 
-	unit_map();
+	unit_map(const gamemap& gmap);
 	unit_map& operator=(const unit_map &that);
 
 	~unit_map();
-
-
-// ~~~ Begin iterator code ~~~
-	template <typename X, typename Y>
-	struct convertible;
-
-	template <typename iter_types>
-	struct iterator_base {
-		typedef typename iter_types::map_type map_type;
-		typedef typename iter_types::value_type value_type;
-		typedef typename iter_types::reference_type reference_type;
-		typedef typename iter_types::pointer_type pointer_type;
-		typedef unit* pointer;
-		typedef unit& reference;
-
-		iterator_base() : 
-			map_(NULL), 
-			i_(0), 
-			iter_valid_(false), 
-			ptr_(NULL)
-		{}
-
-		iterator_base(size_t i, map_type* m) : 
-			map_(m), 
-			i_(i),
-			iter_valid_(true)
-		{
-			if (i != m->map_vsize_) {
-				ptr_ = m->map_[i];
-			} else  {
-				ptr_ = NULL;
-			}
-		}
-
-		template <typename that_types>
-		iterator_base(const iterator_base<that_types>& that) :
-			map_(that.map_),
-			ptr_(that.ptr_),
-			i_(that.i_),
-			iter_valid_(that.iter_valid_)
-		{}
-
-		iterator_base(pointer_type ptr, map_type* m) : 
-			ptr_(ptr), 
-			map_(m), 
-			i_(0),
-			iter_valid_(false)
-		{}
-
-		pointer operator->() const { return ptr_->second; }
-		reference operator*() const { return *ptr_->second; }
-
-		iterator_base& operator++();
-		iterator_base operator++(int);
-
-		iterator_base& operator--();
-		iterator_base operator--(int);
-
-		// bool valid() const { return ptr_ && map_->valid(ptr_->first); }
-		bool valid() const { return ptr_? true: false; }
-
-		bool operator==(const iterator_base& rhs) const { return ptr_ == rhs.ptr_; }
-		// bool operator!=(const iterator_base& rhs) const { return !operator==(rhs); }
-		bool operator!=(const iterator_base& rhs) const { return ptr_ != rhs.ptr_; }
-
-		map_type* get_map() const { return map_; }
-
-		template <typename X> friend struct iterator_base;
-		// friend class map_type;
-
-	private:
-		map_type* map_;
-
-		size_t i_;
-		node* ptr_;
-		bool iter_valid_;
-	};
-
-	struct standard_iter_types {
-		typedef unit_map map_type;
-		typedef std::pair<map_location, unit*> value_type;
-		typedef value_type* pointer_type;
-		typedef value_type& reference_type;
-	};
-
-	struct const_iter_types {
-		typedef const unit_map map_type;
-		typedef const std::pair<map_location, unit*> value_type;
-		typedef value_type* pointer_type;
-		typedef value_type& reference_type;
-	};
-
-
-// ~~~ End iterator code ~~~
-
-
-
-	/**
-	 * unit_iterators iterate over all units in the unit_map. A unit_iterator is invalidated if
-	 * unit_map::erase, unit_map::extract, or unit_map::replace are called with the location of the
-	 * unit that the unit_iterator points to. It will become valid again if unit_map::add is called with
-	 * a pair containing the unit that the iterator points to. Basically, as long as the unit is on the
-	 * gamemap somewhere, the iterator will be valid.
-	 * provided as a convenience as unit_map used to be an std::map 
-	 */
-	typedef iterator_base<standard_iter_types> iterator;
-	typedef iterator_base<const_iter_types> const_iterator;
 
 	void create_coor_map(int w, int h);
 
@@ -450,34 +332,13 @@ public:
 	const_iterator find_leader(int side) const
 	{ return const_cast<unit_map *>(this)->find_leader(side); }
 
-	size_t count(const map_location& loc, bool overlay = true) const;
-
-	/**
-	 * Return iterators are implicitly converted to other types as needed.
-	 */
-	iterator begin();
-	const_iterator begin() const;
-
-	// iterator end() { return iterator(map_.end(), this); }
-	// const_iterator end() const { return const_iterator(map_.end(), this); }
-
-	iterator end() { return iterator(map_vsize_, this); }
-	const_iterator end() const { return const_iterator(map_vsize_, this); }
-
-	// size_t size() const { return map_.size(); }
-	size_t size() const { return map_vsize_; }
-	
-	void clear();
-
-	void resort_map(size_t pos);
-	void resort_map(const unit& u);
 	void multi_resort_map(game_display* disp, const std::vector<unit*>& v, bool full);
 
 	/**
 	 * Adds a copy of unit @a u at location @a l of the map.
 	 */
 	// void add(const map_location &l, const unit& u);
-	void add(const map_location& l, const unit* u);
+	void add(const map_location& l, const base_unit* u);
 
 	/**
 	 * Adds the pair location/unit to the map.
@@ -486,35 +347,23 @@ public:
 	 * @note The map takes ownership of the pointed object.
 	 * @note This function should be used in conjunction with #extract only.
 	 */
-	bool insert(std::pair<map_location, unit*>* p);
+	void insert(const map_location loc, base_unit* u);
 
 	/**
 	 * Moves a unit from location @a src to location @a dst.
 	 */
-	bool move(const map_location &src, const map_location &dst);
-
-	/** Like add, but loc must be occupied (implicitly erased). */
-	void replace(const map_location &l, const unit* u);
+	void move(const map_location src, const map_location& dst);
 
 	/** Erases the pair<location, unit> of this location. */
-	// template <typename T>
-	// void erase(const T& iter);
-	bool erase(const map_location& loc, bool overlay = true);
-	bool erase(unit* u, bool delete_unit = true);
+	bool erase2(base_unit* u, bool delete_unit = true);
 
 	/** Extract (like erase, but don't delete). */
-	std::pair<map_location, unit*>* extract(const map_location& loc);
-	void place(std::pair<map_location, unit*>* p);
-
-	bool valid(const map_location& loc, bool check_loc = true, bool overlay = true) const;
 
 	void set_expediting(artifical* city = NULL, bool troop = true, int index = 0);
 	bool last_expedite_troop(void) const;
 	int last_expedite_index(void) const;
 	bool expediting(void) const;
-	node* expediting_city_node(void) const;
-	node* get_cookie(const map_location& loc, bool overlay = true) const;
-	void* get_cookie2(const map_location& loc, bool overlay = true) const;
+	artifical* expediting_city(void) const;
 
 	artifical* city_from_cityno(int cityno) const;
 	artifical* city_from_loc(const map_location& loc) const;
@@ -523,20 +372,18 @@ public:
 
 	bool side_survived(int side, int* residuals = NULL) const;
 
-	size_t units_from_rect(unit** draw_area_unit, const rect_of_hexes& draw_area_rect);
 	void ally_terminate_adjust(team& adjusting_team, const SDL_Rect& rect);
 
 	void calculate_mrs_data(game_state& state, std::vector<mr_data>& mrs, int side, bool action = true);
 	void calculate_mr_rects_from_city_rect(std::vector<team>& teams, gamemap& map, std::vector<mr_data>& mrs, int side);
 	void ai_capture_aggressed(artifical& aggressed, int side, bool to_recorder);
 
-	const map_location& center_loc(const map_location& loc) const;
-
 	void extract_heros_number();
 	void recalculate_heros_pointer();
 
 	unit* find_unit(const hero& h) const;
 	unit* find_unit(const map_location& loc) const;
+	unit* find_unit(const map_location& loc, bool overlay) const;
 
 	unit& current_unit();
 	void do_escape_ticks_uh(const std::vector<team>& teams, game_display& disp, int escape, bool first_zero);
@@ -546,98 +393,13 @@ public:
 	bool compare_enemy_cities(const mr_data& mr, artifical& a, artifical& b);
 
 private:
-	void delete_all();
-
-	/**
-	 * map_location -> unit
-	 */
-	node** map_;
-	size_t map_vsize_;
-
-	int w_, h_;
-
-	struct loc_cookie {
-		node* base;
-		node* overlay;
-	};
-
-	loc_cookie* coor_map_;
-
 	// used to spread all city
 	city_map citys_;
 
-	//
-	// recalling secton
-	//
-
 	bool expediting_;
-	node* expediting_node_;
 	artifical* expediting_city_;
 	bool expediting_troop_;
 	int expediting_index_;
 };
-
-// define allowed conversions.
-template <>
-struct unit_map::convertible<unit_map::standard_iter_types, unit_map::const_iter_types> { };
-
-template <typename T>
-struct unit_map::convertible<T, T> { };
-
-template <typename iter_types>
-unit_map::iterator_base<iter_types>& unit_map::iterator_base<iter_types>::operator++() 
-{
-	if (!iter_valid_) {
-		for (size_t i = 0; i < map_->map_vsize_; i ++) {
-			if (map_->map_[i] == ptr_) {
-				i_ = i;
-				break;
-			}
-		}
-		iter_valid_ = true;
-	}
-	++i_;
-	if (i_ != map_->map_vsize_) {
-		ptr_ = map_->map_[i_];
-	} else {
-		ptr_ = NULL;
-	}
-
-	return *this;
-}
-
-template <typename iter_types>
-unit_map::iterator_base<iter_types> unit_map::iterator_base<iter_types>::operator++(int) 
-{
-	unit_map::iterator_base<iter_types> temp(*this);
-	operator++();
-	return temp;
-}
-
-template <typename iter_types>
-unit_map::iterator_base<iter_types>& unit_map::iterator_base<iter_types>::operator--() 
-{
-	if (!iter_valid_) {
-		for (size_t i = 0; i < map_->map_vsize_; i ++) {
-			if (map_->map_[i] == ptr_) {
-				i_ = i;
-				break;
-			}
-		}
-		iter_valid_ = true;
-	}
-	-- i_;
-	ptr_ = map_->map_[i_];
-
-	return *this;
-}
-
-template <typename iter_types>
-unit_map::iterator_base<iter_types> unit_map::iterator_base<iter_types>::operator--(int) 
-{
-	unit_map::iterator_base<iter_types> temp(*this);
-	operator--();
-	return temp;
-}
 
 #endif	// UNIT_MAP_H_INCLUDED

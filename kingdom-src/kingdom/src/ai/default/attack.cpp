@@ -101,30 +101,28 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 	}
 
 	// see remark#42. why up is point and not object.
-	std::pair<map_location, unit*>* up;
-	std::pair<map_location, unit*> up_reside;
+	base_unit* up;
 
 	if (m.first.second < 0) {
 		// We fix up units map to reflect what this would look like.
 		if (m.second == orig_loc) {
-			up = units.get_cookie(m.second, !m.first.first->base());
+			up = m.first.first;
 		} else {
 			up = units.extract(orig_loc);
-			up->first = m.second;
-			units.place(up);
+			VALIDATE(up == m.first.first, "field troop. up must equal m.first.first!");
+			units.place(m.second, up);
 		}
 	} else {
-		up_reside = std::make_pair(m.second, m.first.first);
-		up = &up_reside;
-		units.place(up);
+		units.place(m.second, m.first.first);
+		up = m.first.first;
 	}
 
-	unit_map::node* base = units.get_cookie(m.second, false);
-	bool on_wall = base && base->second->wall();
+	unit* base = units.find_unit(m.second, false);
+	bool on_wall = base && base->wall();
 
 	bool from_cache = false;
 	battle_context *bc;
-	const unit* src_ptr = up->second;
+	const unit* src_ptr = dynamic_cast<unit*>(up);
 
 	// This cache is only about 99% correct, but speeds up evaluation by about 1000 times.
 	// We recalculate when we actually attack.
@@ -225,7 +223,7 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 	} else {
 		units.extract(m.second);
 		// set_location() will update loc_ of up->second, it is time to be back to orig_loc.
-		up->second->set_location(orig_loc);
+		up->set_location(orig_loc);
 	}
 }
 

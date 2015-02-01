@@ -742,7 +742,7 @@ void game_state::build_team(const config& side_cfg,
 				") for a city on side " +
 				lexical_cast<std::string>(side) + ".");
 		} else {
-			std::set<map_location> touch_locs = new_unit.get_touch_locations(map, loc);
+			std::set<map_location> touch_locs = new_unit.get_touch_locations2(map, loc);
 			for (std::set<map_location>::const_iterator it = touch_locs.begin(); it != touch_locs.end(); ++ it) {
 				if (units.find(*it) != units.end()) {
 					unit_map::iterator find = units.find(*it, !new_unit.base());
@@ -877,7 +877,7 @@ void game_state::build_team(const uint8_t* mem,
 				") for a city on side " +
 				lexical_cast<std::string>(side) + ".");
 		} else {
-			std::set<map_location> touch_locs = new_unit->get_touch_locations(map, loc);
+			std::set<map_location> touch_locs = new_unit->get_touch_locations2(map, loc);
 			for (std::set<map_location>::const_iterator it = touch_locs.begin(); it != touch_locs.end(); ++ it) {
 				if (units.find(*it, !new_unit->base()) != units.end()) {
 					unit_map::iterator find = units.find(*it, !new_unit->base());

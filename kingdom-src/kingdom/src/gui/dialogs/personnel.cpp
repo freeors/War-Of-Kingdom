@@ -87,7 +87,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(personnel)
 
-tpersonnel::tpersonnel(game_display& disp, hero_map& heros)
+tpersonnel::tpersonnel(display& disp, hero_map& heros)
 	: disp_(disp)
 	, heros_(heros)
 	, original_order_()

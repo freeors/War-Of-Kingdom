@@ -19,7 +19,7 @@
 #include "gui/dialogs/dialog.hpp"
 #include "lobby.hpp"
 
-class game_display;
+class display;
 class hero_map;
 class hero;
 
@@ -36,7 +36,7 @@ namespace gui2 {
 class ttitle_screen : public tdialog, public tlobby::thandler
 {
 public:
-	ttitle_screen(game_display& disp, hero_map& heros, hero& player_hero);
+	ttitle_screen(display& disp, hero_map& heros, hero& player_hero);
 
 	~ttitle_screen();
 
@@ -89,7 +89,7 @@ private:
 	void adjust_field() const;
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	hero& player_hero_;
 	int title_screen_anim_id_;

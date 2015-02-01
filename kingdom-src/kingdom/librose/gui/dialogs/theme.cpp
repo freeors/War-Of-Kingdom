@@ -13,6 +13,8 @@
    See the COPYING file for more details.
 */
 
+#define GETTEXT_DOMAIN "wesnoth-lib"
+
 #include "gui/dialogs/helper.hpp"
 #include "gui/dialogs/theme.hpp"
 #include "gui/widgets/button.hpp"
@@ -23,10 +25,14 @@
 #include "formula_string_utils.hpp"
 #include "font.hpp"
 #include "gettext.hpp"
+#include "help.hpp"
 #include "display.hpp"
 #include "controller_base.hpp"
+#include "hotkeys.hpp"
 
 #include <boost/bind.hpp>
+
+std::string app_id;
 
 namespace theme {
 
@@ -302,6 +308,7 @@ static void do_resolve_rects(const config& cfg, config& resolved_config, config*
 
 tborder::tborder() :
 	size(0.0),
+	view_rectange_color(help::string_to_color("white")),
 	background_image(),
 	tile_image(),
 	corner_image_top_left(),
@@ -321,6 +328,7 @@ tborder::tborder() :
 
 tborder::tborder(const config& cfg) :
 	size(cfg["border_size"].to_double()),
+	view_rectange_color(help::string_to_color(cfg["view_rectangle_color"].str())),
 
 	background_image(cfg["background_image"]),
 	tile_image(cfg["tile_image"]),
@@ -482,6 +490,10 @@ namespace gui2 {
 gui2::tbutton* create_context_button(display& disp, const std::string& main, const std::string& id, size_t flags, int width, int height)
 {
 	gui2::tbutton* widget = gui2::create_surface_button(id, NULL);
+	const hotkey::hotkey_item& hotkey = hotkey::get_hotkey(id);
+	if (!hotkey.null()) {
+		widget->set_tooltip(hotkey.get_description());
+	}
 
 	connect_signal_mouse_left_click(
 		*widget
@@ -494,8 +506,9 @@ gui2::tbutton* create_context_button(display& disp, const std::string& main, con
 
 	widget->set_visible(gui2::twidget::INVISIBLE);
 
+	const std::string prefix = std::string("buttons/") + app_id + "/";
 	// set surface
-	surface surf = image::get_image(std::string("buttons/") + id + ".png");
+	surface surf = image::get_image(prefix + id + ".png");
 	if (surf) {
 		widget->set_surface(surf, width, height);
 	}
@@ -658,6 +671,19 @@ void ttheme::pre_show(CVideo& video, twindow& window)
 	window_ = &window;
 	join();
 
+	hotkey::insert_hotkey(HOTKEY_ZOOM_IN, "zoomin", _("Zoom In"));
+	hotkey::insert_hotkey(HOTKEY_ZOOM_OUT, "zoomout", _("Zoom In"));
+	hotkey::insert_hotkey(HOTKEY_ZOOM_DEFAULT, "zoomdefault", _("Default Zoom"));
+	hotkey::insert_hotkey(HOTKEY_SCREENSHOT, "screenshop", _("Screenshot"));
+	hotkey::insert_hotkey(HOTKEY_MAP_SCREENSHOT, "mapscreenshop", _("Map Screenshot"));
+	hotkey::insert_hotkey(HOTKEY_CHAT, "chat", _("Chat"));
+	hotkey::insert_hotkey(HOTKEY_UNDO, "undo", _("Undo"));
+	hotkey::insert_hotkey(HOTKEY_REDO, "redo", _("Redo"));
+	hotkey::insert_hotkey(HOTKEY_COPY, "copy", _("Copy"));
+	hotkey::insert_hotkey(HOTKEY_PASTE, "paste", _("Paste"));
+	hotkey::insert_hotkey(HOTKEY_HELP, "help", _("Help"));
+	hotkey::insert_hotkey(HOTKEY_SYSTEM, "system", _("System"));
+
 	app_pre_show();
 
 	utils::string_map symbols;
@@ -697,6 +723,22 @@ void ttheme::post_layout()
 		m.report = report;
 		m.load(disp_, cfg);
 	}
+}
+
+void ttheme::click_generic_handler(tcontrol& widget, const std::string& sparam)
+{
+	const hotkey::hotkey_item& hotkey = hotkey::get_hotkey(widget.id());
+	if (!hotkey.null()) {
+		widget.set_tooltip(hotkey.get_description());
+	}
+
+	connect_signal_mouse_left_click(
+		widget
+		, boost::bind(
+			&controller_base::execute_command
+			, &controller_
+			, hotkey.get_id()
+			, sparam));
 }
 
 twidget* ttheme::get_object(const std::string& id) const

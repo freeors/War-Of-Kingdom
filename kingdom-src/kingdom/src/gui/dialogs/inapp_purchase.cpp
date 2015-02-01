@@ -67,7 +67,7 @@ std::string format_time_local2(time_t t)
 	return time_buf;
 }
 
-void show_fail_tip(game_display& disp, const std::string& item)
+void show_fail_tip(display& disp, const std::string& item)
 {
 	std::stringstream err;
 	utils::string_map symbols;
@@ -80,7 +80,7 @@ void show_fail_tip(game_display& disp, const std::string& item)
 	gui2::show_message(disp.video(), "", err.str());
 }
 
-void upload_inapp_2_data_server(int inapp, game_display& disp, hero_map& heros, const std::string& name)
+void upload_inapp_2_data_server(int inapp, display& disp, hero_map& heros, const std::string& name)
 {
 	const std::string number = "ios_magic_number_123";
 	const std::string buyer = "ios_magic_buyer_1234";
@@ -238,7 +238,7 @@ tinapp_item::tinapp_item(int _index, const std::string& _short_id)
 
 tinapp_purchase* tinapp_purchase::singleton_ = NULL;
 
-tinapp_purchase::tinapp_purchase(game_display& disp, hero_map& heros, bool browse)
+tinapp_purchase::tinapp_purchase(display& disp, hero_map& heros, bool browse)
 	: disp_(disp)
 	, heros_(heros)
 	, browse_(browse)

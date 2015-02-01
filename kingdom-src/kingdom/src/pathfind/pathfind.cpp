@@ -29,7 +29,7 @@
 #include "map.hpp"
 #include "resources.hpp"
 #include "team.hpp"
-#include "unit.hpp"
+#include "artifical.hpp"
 #include "unit_map.hpp"
 #include "wml_exception.hpp"
 #include "play_controller.hpp"
@@ -50,8 +50,8 @@ bool can_generate(const gamemap& map, const std::vector<team>& teams, const unit
 	if (u.movement_cost(map[loc]) == unit_movement_type::UNREACHABLE) {
 		return false;
 	}
-	unit_map::const_iterator it = units.find(loc, false);
-	if (it.valid() && !it->can_stand(u)) {
+	unit* it = units.find_unit(loc, false);
+	if (it && !it->can_stand(u)) {
 		return false;
 	}
 
@@ -232,9 +232,9 @@ static void find_routes(const gamemap& map, const unit_map& units,
 	// prepare self-city grid condition
 	void* expediting_city_cookie = NULL;
 	if (units.expediting()) {
-		expediting_city_cookie = units.expediting_city_node();
+		expediting_city_cookie = units.expediting_city();
 	} else if (units.city_from_loc(loc)) {
-		expediting_city_cookie = units.get_cookie(loc);
+		expediting_city_cookie = units.find_unit(loc, true);
 	}
 
 	std::vector<map_location> locs(6 + teleports.size());
@@ -286,19 +286,19 @@ static void find_routes(const gamemap& map, const unit_map& units,
 			// because add wall, n2-next cost is dependent of direction! below statement is fall short.
 			// u.movement_cost is a bit complex, try reduce call times.
 			// only wall, only it dependent of direction!
-			unit_map::node* curr_node = units.get_cookie(locs[i], false);
-			if (!curr_node || !curr_node->second->wall()) {
+			unit* base = units.find_unit(locs[i], false);
+			if (!base || !base->wall()) {
 				if (next_visited) continue;
 			}
 
 			int move_cost;
-			if (expediting_city_cookie && units.get_cookie(locs[i]) == expediting_city_cookie) {
+			if (expediting_city_cookie && units.find_unit(locs[i], true) == expediting_city_cookie) {
 				move_cost = 0;
 			} else if (road && std::find(road->begin(), road->end(), locs[i]) == road->end()) {
 				move_cost = unit_movement_type::UNREACHABLE;
 			} else {
-				if (curr_node && curr_node->second->wall2()) {
-					const unit* w = curr_node->second;
+				if (base && base->wall2()) {
+					const unit* w = base;
 					move_cost = pathfind::location_cost(units, current_team, u, current_team.is_enemy(w->side()), false);
 				} else {
 					move_cost = u.movement_cost(map[locs[i]], &locs[i]);
@@ -429,8 +429,8 @@ pathfind::paths::paths(gamemap const &map, unit_map const &units,
 		int additional_turns, bool see_all, bool ignore_units)
 	: destinations()
 {
-	const unit_map::const_iterator i = units.find(loc);
-	if(i == units.end()) {
+	const unit* i = units.find_unit(loc, true);
+	if (!i) {
 		ERR_PF << "paths::paths() -- unit not found\n";
 		return;
 	}
@@ -470,8 +470,8 @@ pathfind::marked_route pathfind::mark_route(const plain_route &rt,
 	res.route = rt;
 
 	unit_map& units = *resources::units;
-	unit_map::const_iterator it = resources::units->find(rt.steps.front());
-	if (it == resources::units->end()) return marked_route();
+	unit* it = resources::units->find_unit(rt.steps.front(), true);
+	if (!it) return marked_route();
 	unit const& u = *it;
 
 	int turns = 0;
@@ -494,9 +494,9 @@ pathfind::marked_route pathfind::mark_route(const plain_route &rt,
 			move_cost = 0;
 
 		} else {
-			unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units.get_cookie(*(i + 1), false));
-			if (curr_node && curr_node->second->wall2()) {
-				const unit* w = curr_node->second;
+			unit* base = units.find_unit(*(i + 1), false);
+			if (base && base->wall2()) {
+				const unit* w = base;
 				move_cost = location_cost(units, unit_team, u, unit_team.is_enemy(w->side()), false);
 
 			} else {
@@ -577,9 +577,9 @@ pathfind::shortest_path_calculator::shortest_path_calculator(unit const &u, team
 {
 	const map_location& loc = u.get_location();
 	if (units.expediting()) {
-		expediting_city_cookie_ = units.expediting_city_node();
-	} else if (units.city_from_loc(loc)) {
-		expediting_city_cookie_ = units.get_cookie(loc);
+		expediting_city_cookie_ = units.expediting_city();
+	} else {
+		expediting_city_cookie_ = units.city_from_loc(loc);
 	}
 }
 
@@ -594,9 +594,9 @@ bool is_expedit_at;
 int pathfind::location_cost(const unit_map& units, const team& current_team, const unit& u, bool enemy, bool ignore_wall)
 {
 
-	unit_map::node* last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location, false));
+	unit* last_node = units.find_unit(pathfind::last_location, false);
 	if (!last_node) {
-		last_node = reinterpret_cast<unit_map::node*>(units.get_cookie(pathfind::last_location));
+		last_node = units.find_unit(pathfind::last_location, true);
 	}
 	const unit_type* ut = u.type();
 	if (u.packed()) {
@@ -605,7 +605,7 @@ int pathfind::location_cost(const unit_map& units, const team& current_team, con
 	if (!ut->land_wall() || (enemy && !current_team.land_enemy_wall_)) {
 		return 2 * u.total_movement();
 
-	} else if (u.is_commoner() || (last_node && last_node->second->walk_wall())) {
+	} else if (u.is_commoner() || (last_node && last_node->walk_wall())) {
 		// keep/wall ---> wall, cost: 1
 		return 1;
 	} else {
@@ -626,11 +626,10 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 		return getNoPathValue();
 	}
 
-	if (expediting_city_cookie_ && units_.get_cookie(loc) == expediting_city_cookie_) {
+	if (expediting_city_cookie_ && units_.city_from_loc(loc) == expediting_city_cookie_) {
 		// move cost in self-city grid is 0.
 		pathfind::is_expedit_at = true;
-		const unit_map::node* n = (const unit_map::node*)expediting_city_cookie_;
-		if (pathfind::last_location == n->first || units_.get_cookie(pathfind::last_location) == expediting_city_cookie_) {
+		if (pathfind::last_location == expediting_city_cookie_->get_location() || units_.city_from_loc(pathfind::last_location) == expediting_city_cookie_) {
 			// a grid belong expediting city to other grid belong same city. 0 cost. 
 			return 0;
 		} else {
@@ -655,12 +654,12 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 	bool is_enemy_fort = false;
 
 	// cost of wall
-	unit_map::node* curr_node = reinterpret_cast<unit_map::node*>(units_.get_cookie(loc, false));
+	unit* curr_node = units_.find_unit(loc, false);
 	// remark varible, so that caller can use it.
 	if (curr_node) {
-		if (curr_node->second->wall2()) {
+		if (curr_node->wall2()) {
 			pathfind::is_wall = true;
-		} else if (curr_node->second->fort() && current_team.is_enemy(curr_node->second->side())) {
+		} else if (curr_node->fort() && current_team.is_enemy(curr_node->side())) {
 			is_enemy_fort = true;
 		}
 	}
@@ -676,7 +675,7 @@ double pathfind::shortest_path_calculator::cost(const map_location& loc, const d
 		terrain_cost = unit_movement_type::UNREACHABLE;
 
 	} */ else if (pathfind::is_wall) {
-		const unit* w = curr_node->second;
+		const unit* w = curr_node;
 		enemy_wall = current_team.is_enemy(w->side());
 		terrain_cost = location_cost(units_, current_team, unit_, enemy_wall, ignore_city);
 

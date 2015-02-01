@@ -15,7 +15,7 @@
 #define GETTEXT_DOMAIN "wesnoth-lib"
 
 #include "gui/dialogs/lobby_main.hpp"
-#include "gui/dialogs/field.hpp"
+// #include "gui/dialogs/field.hpp"
 #include "gui/dialogs/helper.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/chat.hpp"

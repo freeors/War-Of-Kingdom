@@ -33,6 +33,7 @@
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/side_report.hpp"
 #include "gui/dialogs/chat.hpp"
+#include "gui/dialogs/theme2.hpp"
 #include "log.hpp"
 #include "map_label.hpp"
 #include "marked-up_text.hpp"
@@ -47,6 +48,7 @@
 #include "unit_display.hpp"
 #include "artifical.hpp"
 #include "wml_exception.hpp"
+#include "hotkeys.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -65,7 +67,6 @@ playsingle_controller::playsingle_controller(const config& level,
 		ticks, num_turns, game_config, video, skip_replay, false),
 	cursor_setter(cursor::NORMAL),
 	data_backlog_(),
-	textbox_info_(),
 	replay_sender_(recorder),
 	player_type_changed_(false),
 	skip_next_turn_(false),
@@ -164,7 +165,7 @@ void playsingle_controller::move()
 
 void playsingle_controller::armory()
 {
-	if (!browse_ && units_.count(mouse_handler_.get_selected_hex())) {
+	if (!browse_ && units_.valid2(mouse_handler_.get_selected_hex(), true)) {
 		menu_handler_.armory(mouse_handler_, player_number_, *unit_2_artifical(&*units_.find(mouse_handler_.get_selected_hex())));
 	}
 }
@@ -178,47 +179,47 @@ void playsingle_controller::build(const std::string& type)
 	// 1. 鼠标左键选中一个部队，底下出现“部队可操作”菜单，再进入“可建造建筑物”菜单
 	// 2. 这时按下部队快捷列表！！鼠标出现未选中任何部队，但“可建造建筑物”菜单不消失。此次选择一种建筑物，导致非法。
 	// ——这个问题说来是“可建造建筑物”菜单不消失造成的，但这里为安全考虑，也作一下是否有效判断。
-	if (!browse_ && units_.count(mouse_handler_.get_selected_hex())) {
-		menu_handler_.build(type, mouse_handler_, *units_.find(mouse_handler_.get_selected_hex()));
+	if (!browse_ && units_.valid2(mouse_handler_.get_selected_hex(), true)) {
+		menu_handler_.build(type, mouse_handler_, *units_.find_unit(mouse_handler_.get_selected_hex(), true));
 	}
 }
 
 void playsingle_controller::guard()
 {
-	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
-	if (!browse_ && u_itor.valid()) {
+	unit* u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor) {
 		menu_handler_.guard(mouse_handler_, *u_itor);
 	}
 }
 
 void playsingle_controller::abolish()
 {
-	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
-	if (!browse_ && u_itor.valid()) {
+	unit* u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor) {
 		menu_handler_.abolish(mouse_handler_, *u_itor);
 	}
 }
 
 void playsingle_controller::extract()
 {
-	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
-	if (!browse_ && u_itor.valid()) {
+	unit* u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor) {
 		menu_handler_.extract(mouse_handler_, *u_itor);
 	}
 }
 
 void playsingle_controller::advance()
 {
-	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
-	if (!browse_ && u_itor.valid()) {
-		menu_handler_.advance(mouse_handler_, &*u_itor);
+	unit* u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor) {
+		menu_handler_.advance(mouse_handler_, u_itor);
 	}
 }
 
 void playsingle_controller::demolish()
 {
-	unit_map::iterator u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
-	if (!browse_ && u_itor.valid()) {
+	unit* u_itor = find_visible_unit(mouse_handler_.get_selected_hex(), teams_[player_number_ -1]);
+	if (!browse_ && u_itor) {
 		menu_handler_.demolish(mouse_handler_, &*u_itor);
 	}
 }
@@ -300,10 +301,6 @@ void playsingle_controller::check_end_level()
 
 void playsingle_controller::change_side(){
 	menu_handler_.change_side(mouse_handler_);
-}
-
-void playsingle_controller::label_terrain(bool team_only){
-	menu_handler_.label_terrain(mouse_handler_, team_only);
 }
 
 void playsingle_controller::clear_labels(){
@@ -571,7 +568,7 @@ LEVEL_RESULT playsingle_controller::play_scenario(
 		config snapshot;
 		to_config(snapshot);
 		savegame::game_savegame save(heros_, heros_start_, gamestate_, *gui_, snapshot);
-		save.save_game_interactive(gui_->video(), _("A network disconnection has occurred, and the game cannot continue. Do you want to save the game?"), gui::YES_NO);
+		save.save_game_interactive(gui_->video(), _("A network disconnection has occurred, and the game cannot continue. Do you want to save the game?"), false);
 		if(disconnect) {
 			throw network::error();
 		} else {
@@ -861,8 +858,8 @@ void playsingle_controller::execute_guard_attack(int team_index)
 			}
 			
 			for (size_t j = 0; j != adjacent_size; ++j) {
-				unit_map::iterator opp = find_visible_unit(tiles[j], current_team);
-				if (!opp.valid() || !current_team.is_enemy(opp->side())) {
+				unit* opp = find_visible_unit(tiles[j], current_team);
+				if (!opp || !current_team.is_enemy(opp->side())) {
 					continue;
 				}
 				if (bc) {
@@ -872,11 +869,11 @@ void playsingle_controller::execute_guard_attack(int team_index)
 				}
 				std::pair<map_location, map_location> to_locs = attack_enemy(art, &*opp, bc->get_attacker_stats().attack_num, bc->get_defender_stats().attack_num);
 				// attacker maybe advance. it is necessary that reget art.
-				unit_map::iterator u = units_.find(to_locs.first);
-				if (u == units_.end()) {
+				unit* u = units_.find_unit(to_locs.first, true);
+				if (!u) {
 					break;
 				} else {
-					art = &*u;
+					art = u;
 					art->set_attacks(art->attacks_total());
 				}
 			}
@@ -1268,57 +1265,79 @@ void playsingle_controller::store_gold(bool obs)
 	}
 }
 
-bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int index) const
+void playsingle_controller::execute_command2(int command, const std::string& sparam)
 {
+	using namespace gui2;
+
+	switch(command) {
+	case tgame_theme::HOTKEY_ENDTURN:
+		end_turn();
+		break;
+	case tgame_theme::HOTKEY_BUILD:
+		build(sparam);
+		break;
+	case tgame_theme::HOTKEY_GUARD:
+		guard();
+		break;
+	case tgame_theme::HOTKEY_ABOLISH:
+		abolish();
+		break;
+	case tgame_theme::HOTKEY_EXTRACT:
+		extract();
+		break;
+	case tgame_theme::HOTKEY_ADVANCE:
+		advance();
+		break;
+	case tgame_theme::HOTKEY_DEMOLISH:
+		demolish();
+		break;
+	case tgame_theme::HOTKEY_ARMORY:
+		armory();
+		break;
+	case tgame_theme::HOTKEY_EXPEDITE:
+		expedite();
+		break;
+	case tgame_theme::HOTKEY_RECRUIT:
+		recruit();
+		break;
+	case tgame_theme::HOTKEY_MOVE:
+		move();
+		break;
+	case tgame_theme::HOTKEY_PLAY_CARD:
+		play_card();
+		break;
+	case HOTKEY_CHAT:
+		chat();
+		break;
+	default:
+		play_controller::execute_command2(command, sparam);
+	}
+}
+
+bool playsingle_controller::can_execute_command(int command, const std::string& sparam) const
+{
+	using namespace gui2;
+
 	bool res = true;
 	switch (command) {
-		case hotkey::HOTKEY_CHAT:
+		case HOTKEY_CHAT:
 			return true;
 
-		case hotkey::HOTKEY_PLAY_CARD:
+		case tgame_theme::HOTKEY_PLAY_CARD:
 			return !browse_ && !linger_ && !events::commands_disabled && !mouse_handler_.in_multistep_state();
-		case hotkey::HOTKEY_ENDTURN:
+		case tgame_theme::HOTKEY_ENDTURN:
 			if (tent::mode == mode_tag::SIEGE) {
 				return true;
 			}
 			return (!browse_ || linger_) && !events::commands_disabled;
 
-		case hotkey::HOTKEY_SWITCH_LIST:
+		case tgame_theme::HOTKEY_SWITCH_LIST:
 			return !events::commands_disabled;
 
-		case hotkey::HOTKEY_UNIT_DETAIL:
-			return !events::commands_disabled;
-
-		case hotkey::HOTKEY_DELAY_SHROUD:
-			return false; 
-		case hotkey::HOTKEY_UPDATE_SHROUD:
-			return !linger_
-				&& player_number_ == gui_->viewing_side()
-				&& !events::commands_disabled
-				&& teams_[gui_->viewing_team()].auto_shroud_updates() == false;
-
-		// Commands we can only do if in debug mode
-		case hotkey::HOTKEY_CHANGE_SIDE:
-			return !events::commands_disabled && game_config::debug && map_.on_board(mouse_handler_.get_last_hex());
-
-		case hotkey::HOTKEY_CLEAR_LABELS:
-			res = !is_observer();
-			break;
-		case hotkey::HOTKEY_LABEL_TEAM_TERRAIN:
-
-		case hotkey::HOTKEY_LABEL_TERRAIN: {
-			const terrain_label *label = resources::screen->labels().get_label(mouse_handler_.get_last_hex());
-			res = !events::commands_disabled && map_.on_board(mouse_handler_.get_last_hex())
-				&& !gui_->shrouded(mouse_handler_.get_last_hex())
-				&& !is_observer()
-				&& (!label || !label->immutable());
-			break;
-		}
-
-		case hotkey::HOTKEY_BOMB:
-		case hotkey::HOTKEY_TACTIC0:
-		case hotkey::HOTKEY_TACTIC1:
-		case hotkey::HOTKEY_TACTIC2:
+		case tgame_theme::HOTKEY_BOMB:
+		case tgame_theme::HOTKEY_TACTIC0:
+		case tgame_theme::HOTKEY_TACTIC1:
+		case tgame_theme::HOTKEY_TACTIC2:
 			if (rpging_ || replaying_) {
 				res = false;
 			} else if (!allow_intervene_) {
@@ -1329,7 +1348,7 @@ bool playsingle_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, 
 			break;
 
 		default: 
-			return play_controller::can_execute_command(command, index);
+			return play_controller::can_execute_command(command, sparam);
 	}
 	return res;
 }

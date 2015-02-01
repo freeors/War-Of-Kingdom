@@ -22,6 +22,7 @@
 #define GUI_WIDGETS_SETTING_HPP_INCLUDED
 
 #include "gui/auxiliary/widget_definition/window.hpp"
+#include "gui/auxiliary/tips.hpp"
 
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
@@ -136,72 +137,137 @@ void load_widget_definitions(
 }
 
 
-	tresolution_definition_ptr get_control(
-		const std::string& control_type, const std::string& definition);
+tresolution_definition_ptr get_control(
+	const std::string& control_type, const std::string& definition);
 
-	/** Helper struct to signal that get_window_builder failed. */
-	struct twindow_builder_invalid_id {};
+/** Helper struct to signal that get_window_builder failed. */
+struct twindow_builder_invalid_id {};
+
+/**
+ * Returns an interator to the requested builder.
+ *
+ * The builder is determined by the @p type and the current screen
+ * resolution.
+ *
+ * @pre                       There is a valid builder for @p type at the
+ *                            current resolution.
+ *
+ * @throw twindow_builder_invalid_id
+ *                            When the precondition is violated.
+ *
+ * @param type                The type of builder window to get.
+ *
+ * @returns                   An iterator to the requested builder.
+ */
+std::vector<twindow_builder::tresolution>::const_iterator
+	get_window_builder(const std::string& type);
+
+void reload_window_builder(const std::string& type, const config& cfg, const std::set<std::string>& reserve_wml_tag);
+void reload_test_window(const std::string& type, const config& cfg);
+
+/** Loads the setting for the theme. */
+void load_settings();
+
+/** This namespace contains the 'global' settings. */
+namespace settings {
 
 	/**
-	 * Returns an interator to the requested builder.
-	 *
-	 * The builder is determined by the @p type and the current screen
-	 * resolution.
-	 *
-	 * @pre                       There is a valid builder for @p type at the
-	 *                            current resolution.
-	 *
-	 * @throw twindow_builder_invalid_id
-	 *                            When the precondition is violated.
-	 *
-	 * @param type                The type of builder window to get.
-	 *
-	 * @returns                   An iterator to the requested builder.
+	 * The screen resolution should be available for all widgets since
+	 * their drawing method will depend on it.
 	 */
-	std::vector<twindow_builder::tresolution>::const_iterator
-		get_window_builder(const std::string& type);
+	extern unsigned screen_width;
+	extern unsigned screen_height;
 
-	void reload_window_builder(const std::string& type, const config& cfg, const std::set<std::string>& reserve_wml_tag);
+	extern unsigned keyboard_height;
 
-	/** Loads the setting for the theme. */
-	void load_settings();
+	/**
+	 * The size of the map area, if not available equal to the screen
+	 * size.
+	 */
+	extern unsigned gamemap_width;
+	extern unsigned gamemap_height;
 
-	/** This namespace contains the 'global' settings. */
-	namespace settings {
+	/** These are copied from the active gui. */
+	extern unsigned popup_show_delay;
+	extern unsigned popup_show_time;
+	extern unsigned help_show_time;
+	extern unsigned double_click_time;
+	extern unsigned repeat_button_repeat_time;
 
-		/**
-		 * The screen resolution should be available for all widgets since
-		 * their drawing method will depend on it.
-		 */
-		extern unsigned screen_width;
-		extern unsigned screen_height;
+	extern std::string sound_button_click;
+	extern std::string sound_toggle_button_click;
+	extern std::string sound_toggle_panel_click;
+	extern std::string sound_slider_adjust;
 
-		extern unsigned keyboard_height;
+	extern t_string has_helptip_message;
 
-		/**
-		 * The size of the map area, if not available equal to the screen
-		 * size.
-		 */
-		extern unsigned gamemap_width;
-		extern unsigned gamemap_height;
+	extern std::map<std::string, config> bubbles;
+	std::vector<ttip> get_tips();
+}
 
-		/** These are copied from the active gui. */
-		extern unsigned popup_show_delay;
-		extern unsigned popup_show_time;
-		extern unsigned help_show_time;
-		extern unsigned double_click_time;
-		extern unsigned repeat_button_repeat_time;
-
-		extern std::string sound_button_click;
-		extern std::string sound_toggle_button_click;
-		extern std::string sound_toggle_panel_click;
-		extern std::string sound_slider_adjust;
-
-		extern t_string has_helptip_message;
-
-		extern std::map<std::string, config> bubbles;
-		std::vector<ttip> get_tips();
+struct tgui_definition
+{
+	tgui_definition()
+		: id()
+		, description()
+		, control_definition()
+		, windows()
+		, window_types()
+		, popup_show_delay_(0)
+		, popup_show_time_(0)
+		, help_show_time_(0)
+		, double_click_time_(0)
+		, repeat_button_repeat_time_(0)
+		, sound_button_click_()
+		, sound_toggle_button_click_()
+		, sound_toggle_panel_click_()
+		, sound_slider_adjust_()
+		, has_helptip_message_()
+		, tips_()
+	{
 	}
+
+	std::string id;
+	t_string description;
+
+	const std::string& read(const config& cfg);
+
+	/** Activates a gui. */
+	void activate() const;
+
+	typedef std::map <std::string /*control type*/,
+		std::map<std::string /*id*/, tcontrol_definition_ptr> >
+		tcontrol_definition_map;
+
+	tcontrol_definition_map control_definition;
+
+	std::map<std::string, twindow_definition> windows;
+
+	std::map<std::string, twindow_builder> window_types;
+
+	void load_widget_definitions(
+			  const std::string& definition_type
+			, const std::vector<tcontrol_definition_ptr>& definitions);
+private:
+
+	unsigned popup_show_delay_;
+	unsigned popup_show_time_;
+	unsigned help_show_time_;
+	unsigned double_click_time_;
+	unsigned repeat_button_repeat_time_;
+
+	std::string sound_button_click_;
+	std::string sound_toggle_button_click_;
+	std::string sound_toggle_panel_click_;
+	std::string sound_slider_adjust_;
+
+	t_string has_helptip_message_;
+
+	std::map<std::string, config> bubbles_;
+	std::vector<ttip> tips_;
+};
+
+extern std::map<std::string, tgui_definition>::const_iterator current_gui;
 
 } // namespace gui2
 

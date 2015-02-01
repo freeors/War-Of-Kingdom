@@ -28,6 +28,7 @@
 #include "artifical.hpp"
 #include "replay.hpp"
 #include "wml_exception.hpp"
+#include "gui/dialogs/theme2.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -78,7 +79,6 @@ replay_controller::replay_controller(const config& level,
 	play_controller(level, state_of_game, heros, heros_start, cards, ticks, num_turns, game_config, video, false, true),
 	teams_start_(),
 	gamestate_start_(gamestate_),
-	units_start_(),
 	tod_manager_start_(level, num_turns, &state_of_game),
 	current_turn_(1),
 	delay_(0),
@@ -86,7 +86,6 @@ replay_controller::replay_controller(const config& level,
 	show_everything_(false),
 	show_team_(state_of_game.classification().campaign_type == "multiplayer" ? 0 : 1)
 {
-	// units_start_ = units_;
 	// teams_start_ = teams_;
 
 	init();
@@ -113,10 +112,6 @@ void replay_controller::init(){
 		holden_cities.clear();
 		itor->clear_troop();
 	}
-
-	city_map::affect_team_ = false;
-	//!! units_start_ = units_; rpg::humans duplicated
-	city_map::affect_team_ = true;
 
 	gamestate_start_ = gamestate_;
 
@@ -183,7 +178,7 @@ void replay_controller::process_oos(const std::string& msg) const
 	config snapshot;
 	to_config(snapshot);
 	savegame::oos_savegame save(heros_, heros_start_, snapshot);
-	save.save_game_interactive(resources::screen->video(), message.str(), gui::YES_NO); // can throw end_level_exception
+	save.save_game_interactive(resources::screen->video(), message.str(), false); // can throw end_level_exception
 }
 
 void replay_controller::replay_show_everything(){
@@ -323,34 +318,24 @@ void replay_controller::update_gui(){
 	(*gui_).draw();
 }
 
-void replay_controller::preferences(){
+void replay_controller::preferences()
+{
 	play_controller::preferences();
 	update_gui();
 }
 
-void replay_controller::show_statistics(){
-	menu_handler_.show_statistics(gui_->playing_team()+1);
-}
-
-bool replay_controller::can_execute_command(hotkey::HOTKEY_COMMAND command, int index) const
+void replay_controller::execute_command2(int command, const std::string& sparam)
 {
-	bool result = play_controller::can_execute_command(command,index);
+	using namespace gui2;
 
 	switch(command) {
-
-	//commands we can always do
-	case hotkey::HOTKEY_PLAY_REPLAY:
-	case hotkey::HOTKEY_STOP_REPLAY:
-	case hotkey::HOTKEY_REPLAY_NEXT_TURN:
-	case hotkey::HOTKEY_REPLAY_NEXT_SIDE:
-	case hotkey::HOTKEY_REPLAY_SHOW_EVERYTHING:
-	case hotkey::HOTKEY_REPLAY_SHOW_EACH:
-	case hotkey::HOTKEY_REPLAY_SHOW_TEAM1:
-	case hotkey::HOTKEY_REPLAY_SKIP_ANIMATION:
-	case hotkey::HOTKEY_CHAT_LOG:
-		return true;
-
+	case tgame_theme::HOTKEY_PLAY_REPLAY:
+		play_replay();
+		break;
+	case tgame_theme::HOTKEY_STOP_REPLAY:
+		stop_replay();
+		break;
 	default:
-		return result;
+		play_controller::execute_command2(command, sparam);
 	}
 }

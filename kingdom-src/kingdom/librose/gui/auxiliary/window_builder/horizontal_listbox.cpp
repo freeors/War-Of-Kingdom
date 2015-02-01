@@ -85,8 +85,7 @@ twidget* tbuilder_horizontal_listbox::build() const
 	}
 	return widget;
 #else
-	tlistbox *widget = new tlistbox(
-			true, true, tgenerator_::horizontal_list, true);
+	tlistbox *widget = new tlistbox(pages, true, true, tgenerator_::horizontal_list, true);
 
 	init_control(widget);
 

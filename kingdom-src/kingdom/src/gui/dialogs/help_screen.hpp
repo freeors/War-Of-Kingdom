@@ -18,7 +18,7 @@
 
 #include "gui/dialogs/dialog.hpp"
 
-class game_display;
+class display;
 class hero_map;
 class hero;
 
@@ -35,7 +35,7 @@ namespace gui2 {
 class thelp_screen : public tdialog
 {
 public:
-	thelp_screen(game_display& disp, hero_map& heros, hero& player_hero);
+	thelp_screen(display& disp, hero_map& heros, hero& player_hero);
 
 	~thelp_screen();
 
@@ -62,7 +62,7 @@ private:
 	void set_retval(twindow& window, int retval);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	hero& player_hero_;
 	int title_screen_anim_id_;

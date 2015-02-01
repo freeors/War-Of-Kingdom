@@ -18,7 +18,7 @@
 
 #include "gui/dialogs/dialog.hpp"
 
-class game_display;
+class display;
 class hero_map;
 
 namespace gui2 {
@@ -27,7 +27,7 @@ class tedit_box : public tdialog
 {
 public:
 	enum {NONE, SEND_MESSAGE};
-	tedit_box(game_display& disp, hero_map& heros, const std::string& initial_str, int mode = NONE);
+	tedit_box(display& disp, hero_map& heros, const std::string& initial_str, int mode = NONE);
 
 	const std::string& get_receiver_str() const { return receiver_str_; }
 	const std::string& get_result_str() const { return result_str_; }
@@ -46,7 +46,7 @@ private:
 	void create(twindow& window);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	std::string initial_str_;
 	int mode_;

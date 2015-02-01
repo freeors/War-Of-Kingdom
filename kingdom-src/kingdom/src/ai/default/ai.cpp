@@ -186,7 +186,6 @@ void ai_default::calculate_possible_moves2(std::vector<std::pair<unit*, int> > t
 					index, pathfind::paths(map_, units_, *unit_ptr, un_loc, teams_, false, false, current_team_, 0, see_all)));
 	}
 
-	unit_map::const_iterator base;
 	guard_cache::tguard* guard;
 	for (std::map<int, pathfind::paths>::iterator m = res.begin(); m != res.end(); ++m) {
 		unit* src_ptr = troops[m->first].first;
@@ -215,9 +214,9 @@ void ai_default::calculate_possible_moves2(std::vector<std::pair<unit*, int> > t
 				}
 			}
 
-			if (src != dst && !units_.find(dst).valid()) {
-				base = units_.find(dst, false);
-				if (!base.valid() || base->can_stand(*src_ptr)) {
+			if (src != dst && !units_.find_unit(dst, true)) {
+				unit* base = units_.find_unit(dst, false);
+				if (!base || base->can_stand(*src_ptr)) {
 					srcdst.insert(std::make_pair(m->first, dst));
 					dstsrc.insert(std::make_pair(dst, m->first));
 					src_ptr->fill_movable_loc(dst);
@@ -383,7 +382,7 @@ void ai_default::calculate_mr_target(int index)
 					troop->set_goto(find_provoke(troop)->get_location());
 				} else if (current_team_.auto_move_human || !troop->human()) {
 					const map_location& goto_loc = troop->get_goto();
-					if (goto_loc.valid() && troop->get_location() != goto_loc && !units_.count(goto_loc, false)) {
+					if (goto_loc.valid() && troop->get_location() != goto_loc && !units_.valid2(goto_loc, false)) {
 						if (map_.is_village(goto_loc) && !current_team_.owns_village(goto_loc)) {
 							capturing_villages_.insert(goto_loc);
 						} else {
@@ -452,7 +451,7 @@ void ai_default::calculate_mr_target(int index)
 				} else if (current_team_.auto_move_human || !troop->human()) {
 					const map_location& goto_loc = troop->get_goto();
 					if (goto_loc.valid() && troop->get_location() != goto_loc) {
-						if (!units_.count(goto_loc, false)) {
+						if (!units_.valid2(goto_loc, false)) {
 							if (map_.is_village(goto_loc) && !current_team_.owns_village(goto_loc)) {
 								capturing_villages_.insert(goto_loc);
 							} else {
@@ -562,7 +561,7 @@ void ai_default::calculate_mr_target(int index)
 					troop->set_goto(find_provoke(troop)->get_location());
 				} else if (current_team_.auto_move_human || !troop->human()) {
 					const map_location& goto_loc = troop->get_goto();
-					if (goto_loc.valid() && troop->get_location() != goto_loc && !units_.count(goto_loc, false)) {
+					if (goto_loc.valid() && troop->get_location() != goto_loc && !units_.valid2(goto_loc, false)) {
 						if (map_.is_village(goto_loc) && !current_team_.owns_village(goto_loc)) {
 							capturing_villages_.insert(goto_loc);
 						} else {
@@ -1271,7 +1270,7 @@ bool ai_default::do_combat(unit* actor)
 			}
 		}
 
-		unit* to_ptr = &*units_.find(to, !attacker_base);
+		unit* to_ptr = units_.find_unit(to, !attacker_base);
 
 		bool special_attacked = false;
 		if (to_ptr->can_formation_attack() && to_ptr->formation_attack_enable()) {
@@ -1618,7 +1617,7 @@ void ai_default::analyze_targets(unit* actor, std::vector<attack_analysis>& res)
 	time_taken_cal = SDL_GetTicks() - ticks;
 
 	for (unit_map::const_iterator j = units_.begin(); j != units_.end(); ++j) {
-		unit& target = *j;
+		unit& target = *dynamic_cast<unit*>(&*j);
 		const map_location& candidate_loc = target.get_location();
 		if (target.wall() && units_.find(candidate_loc).valid()) {
 			// if has unit on it, cannot attack this wall.
@@ -1829,8 +1828,7 @@ void ai_default::do_attack_analysis(
 			// See if the current unit can reach that position.
 			if (!src_ptr->movement_left()) {
 				// to cannot movable unit, use simple calculate.
-				// if (curr_pair.second >= 0 || tiles[j] != current_unit) {
-				if (curr_pair.second >= 0 || units_.get_cookie(tiles[j], !src_ptr->base()) != units_.get_cookie(current_unit, !src_ptr->base())) {
+				if (curr_pair.second >= 0 || units_.find_unit(tiles[j], !src_ptr->base()) != units_.find_unit(current_unit, !src_ptr->base())) {
 					total_time_unmove += SDL_GetTicks() - ticks_move;
 					continue;
 				} else {
@@ -1898,7 +1896,7 @@ void ai_default::do_attack_analysis(
 			units.erase(units.begin() + i);
 
 			// don't use units[i].first, i is invalid because of erase.
-			if (units_.get_cookie(tiles[cur_position], !src_ptr->base()) != units_.get_cookie(src_ptr->get_location(), !src_ptr->base())) {
+			if (units_.find_unit(tiles[cur_position], !src_ptr->base()) != units_.find_unit(src_ptr->get_location(), !src_ptr->base())) {
 				cur_analysis.movements.push_back(std::make_pair(curr_pair, tiles[cur_position]));
 			} else {
 				cur_analysis.movements.push_back(std::make_pair(curr_pair, src_ptr->get_location()));
@@ -1949,8 +1947,8 @@ int ai_default::rate_terrain(const unit& u, const map_location& loc) const
 		rating += healing_value;
 	}
 
-	unit_map::node* curr_node = units_.get_cookie(loc, false);
-	if (curr_node && curr_node->second->wall()) {
+	unit* base = units_.find_unit(loc, false);
+	if (base && base->wall()) {
 		rating += wall_value;
 	}
 

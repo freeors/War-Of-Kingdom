@@ -10,7 +10,7 @@
  * before and after each release.
  */
 
-#define ROSE_VERSION	"0.0.2"
+#define ROSE_VERSION	"0.0.3"
 
 //always use the version string in here, otherwise autotools can override in
 //a bad way...

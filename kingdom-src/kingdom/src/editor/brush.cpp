@@ -32,7 +32,7 @@ brush::brush()
 brush::brush(const config& cfg)
 	: relative_tiles_()
  	, name_(cfg["name"])
-	, image_(std::string("icons/action/editor-") + cfg["id"].str() + "_30.png")
+	, image_(std::string("buttons/editor-") + cfg["id"].str() + "_30.png")
 {
 	int radius = cfg["radius"];
 	if (radius > 0) {

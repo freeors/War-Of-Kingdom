@@ -334,8 +334,8 @@ void tinterior::pre_show(CVideo& /*video*/, twindow& window)
 	// calculate artificals
 	const std::vector<map_location>& economy_area = city_.economy_area();
 	for (std::vector<map_location>::const_iterator it = economy_area.begin(); it != economy_area.end(); ++ it) {
-		unit_map::const_iterator find = units_.find(*it);
-		if (!find.valid()) {
+		unit* find = units_.find_unit(*it, true);
+		if (!find) {
 			continue;
 		}
 		std::map<const unit_type*, int>::iterator find2 = market_map_.find(find->type());
@@ -483,7 +483,7 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 	}
 	int index = catalog - MIN_PAGE;
 	
-	if (window.alternate_index() == index) {
+	if (hero_table_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
@@ -496,7 +496,7 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 		selected_row = hero_table_->get_selected_row();
 	}
 
-	window.alternate_uh(hero_table_, index);
+	hero_table_->swap_uh(window, index);
 
 	int hero_index = 0;
 	for (std::vector<hero*>::iterator itor = fresh_heros_.begin(); itor != fresh_heros_.end(); ++ itor, hero_index ++) {
@@ -678,7 +678,7 @@ void tinterior::catalog_page(twindow& window, int catalog, bool swap)
 		}
 	}
 	if (swap) {
-		window.alternate_bh(hero_table_, index);
+		hero_table_->swap_bh(window);
 		hero_table_->select_row(selected_row);
 	}
 }

@@ -427,6 +427,9 @@ protected:
 	/** Dummy spacer to hold the contents location. */
 	tspacer *content_;
 
+	/** it will use self layout method. */
+	bool self_layout_content_;
+
 private:
 
 	/**

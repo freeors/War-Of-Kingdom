@@ -49,9 +49,9 @@ public:
 		{ state_ = active ? ENABLED : DISABLED; }
 
 	/** Inherited from ttext_box. */
-	std::string get_value() const;
+	const std::string& label() const;
+	void set_label(const std::string& text);
 
-	void set_value(const std::string& text);
 	void insert_img(const std::string& str);
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
@@ -63,6 +63,8 @@ public:
 	void text_changed_callback(ttext_box* tb);
 	void mouse_moved_callback(ttext_box* tb);
 private:
+
+	mutable std::string real_label_;
 
 	tpoint pre_request_fix_width(const unsigned maximum_content_grid_width);
 	/**

@@ -855,7 +855,7 @@ void artifical::issue_decree(const config& effect)
 
 void artifical::redraw_unit()
 {
-	game_display &disp = *game_display::get_singleton();
+	game_display &disp = *resources::screen;
 	const gamemap &map = disp.get_map();
 	if (!loc_.valid() || hidden_ || disp.fogged(loc_) || (invisible(loc_) && disp.get_teams()[disp.viewing_team()].is_enemy(side()))) {
 		clear_haloes();
@@ -1570,7 +1570,7 @@ bool artifical::troop_come_into(unit* that, int pos)
 // used to field troop come into
 bool artifical::troop_come_into2(unit* troop, int pos)
 {
-	units_.erase(troop, false);
+	units_.erase2(troop, false);
 
 	// below state will change belong city of troop, must place after .erase.
 	return troop_come_into(troop, pos);
@@ -1578,7 +1578,7 @@ bool artifical::troop_come_into2(unit* troop, int pos)
 
 void unit_belong_to2(std::vector<team>& teams, unit_map& units, int to_cityno, unit* troop, bool loyalty, bool to_recorder)
 {
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	artifical* to = units.city_from_cityno(to_cityno);
 	int side = to? to->side(): team::empty_side;
 
@@ -1624,7 +1624,7 @@ void unit_belong_to2(std::vector<team>& teams, unit_map& units, int to_cityno, u
 			src_city->field_arts_erase(unit_2_artifical(troop));
 		}
 	} else if (troop->consider_ticks()) {
-		game_display* disp = game_display::get_singleton();
+		game_display* disp = resources::screen;
 		if (disp) {
 			disp->refresh_access_troops(troop->side() - 1, game_display::REFRESH_ERASE, const_cast<unit*>(troop));
 		}
@@ -1679,7 +1679,7 @@ void unit_belong_to2(std::vector<team>& teams, unit_map& units, int to_cityno, u
 			if (disp) {
 				disp->resort_access_troops(*troop);
 			} else {
-				units.resort_map(*troop);
+				units.sort_map2(*troop);
 			}
 		}
 	}
@@ -1713,7 +1713,7 @@ void artifical::commoner_go_out(const unit& u, bool del)
 
 void artifical::field_troops_add(unit* troop)
 {
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (disp) {
 		disp->refresh_access_troops(side_ - 1, game_display::REFRESH_INSERT, troop);
 	}
@@ -1735,7 +1735,7 @@ void artifical::field_troops_erase(const unit* troop)
 {
 	std::vector<unit*>::iterator itor = std::find(field_troops_.begin(), field_troops_.end(), troop);
 	if (itor != field_troops_.end()) {
-		game_display* disp = game_display::get_singleton();
+		game_display* disp = resources::screen;
 		if (disp) {
 			disp->refresh_access_troops(troop->side() - 1, game_display::REFRESH_ERASE, const_cast<unit*>(troop));
 		}
@@ -1765,7 +1765,7 @@ void artifical::hero_go_out(const hero& h)
 	std::vector<hero*>::iterator find = std::find(fresh_heros_.begin(), fresh_heros_.end(), &h);
 	VALIDATE(find != fresh_heros_.end(), "artifical::hero_go_out, cannot fnind going out hero!");
 
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (disp) {
 		disp->refresh_access_heros(side_ - 1, game_display::REFRESH_ERASE, *find);
 	}
@@ -1786,7 +1786,7 @@ void artifical::fresh_into(hero& h)
 	h.side_ = side_ - 1;
 	fresh_heros_.push_back(&h);
 
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (disp) {
 		disp->refresh_access_heros(side_ - 1, game_display::REFRESH_INSERT, &h);
 	}
@@ -1814,7 +1814,7 @@ void artifical::finish_into(hero& h, uint8_t status)
 	h.side_ = side_ - 1;
 	finish_heros_.push_back(&h);
 
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	if (disp) {
 		disp->refresh_access_heros(side_ - 1, game_display::REFRESH_INSERT, &h);
 	}
@@ -1822,7 +1822,7 @@ void artifical::finish_into(hero& h, uint8_t status)
 
 void artifical::finish_2_fresh()
 {
-	game_display* disp = game_display::get_singleton();
+	game_display* disp = resources::screen;
 	for (std::vector<hero*>::iterator it = finish_heros_.begin(); it != finish_heros_.end(); ++ it) {
 		hero& h = **it;
 		h.status_ = hero_status_idle;
@@ -1948,8 +1948,8 @@ void artifical::change_to_special_unit(game_display& disp, int attacker_side, in
 		}
 		for (size_t adj = 0; adj < adjance_size; adj ++) {
 			const map_location& loc = tiles[adj];
-			unit_map::iterator find = units_.find(loc);
-			if (find.valid()) {
+			unit* find = units_.find_unit(loc, true);
+			if (find) {
 				unit& u = *find;
 				if (!u.is_artifical() && u.side() == attacker_side && u.packee_type()->especial() == NO_ESPECIAL) {
 					desire.push_back(&u);
@@ -2268,7 +2268,7 @@ void artifical::fallen(int a_side, unit* attacker)
 		}
 
 		if (current_troop->is_soldier()) {
-			units_.erase(current_troop);
+			units_.erase2(current_troop);
 			continue;
 			
 		} else if (city_same_side) {
@@ -2277,8 +2277,8 @@ void artifical::fallen(int a_side, unit* attacker)
 		} else {
 			if (!force_wander) {
 				for (size_t i = 0; i < current_troop->adjacent_size_; i ++) {
-					unit_map::iterator u_itor = units_.find(current_troop->adjacent_[i]);
-					if (u_itor.valid() && unit_feature_val2(*u_itor, hero_feature_lobbyist) && u_itor->side() != current_troop->side()) {
+					unit* u_itor = units_.find_unit(current_troop->adjacent_[i], true);
+					if (u_itor && unit_feature_val2(*u_itor, hero_feature_lobbyist) && u_itor->side() != current_troop->side()) {
 					// should use below statement
 					// if (u_itor.valid() && unit_feature_val2(*u_itor, hero_feature_lobbyist) && u_itor->side() == a_side) {
 						if (lobbyisted_troops.find(&*u_itor) != lobbyisted_troops.end()) {
@@ -2346,7 +2346,7 @@ void artifical::fallen(int a_side, unit* attacker)
 			join_anim(&current_troop->master(), join_to_city, message);
 		}
 		if (!city_same_side && !join_to_city) {
-			units_.erase(current_troop);
+			units_.erase2(current_troop);
 		}
 	}
 
@@ -2364,7 +2364,7 @@ void artifical::fallen(int a_side, unit* attacker)
 			random = get_random();
 			join_to_city = NULL;
 
-			units_.erase(current_troop);
+			units_.erase2(current_troop);
 		}
 	}
 
@@ -2375,7 +2375,7 @@ void artifical::fallen(int a_side, unit* attacker)
 		std::map<const map_location, int>::const_iterator it2 = unit_map::economy_areas_.find(current_art->get_location());
 
 		if (current_art->wall() || current_art->type() == unit_types.find_keep()) {
-			units_.erase(current_art);
+			units_.erase2(current_art);
 
 		} else if (it2 != unit_map::economy_areas_.end()) {
 			unit_belong_to(current_art);
@@ -2398,7 +2398,7 @@ void artifical::fallen(int a_side, unit* attacker)
 				cobj->unit_belong_to(current_art);
 
 			} else {
-				units_.erase(current_art);
+				units_.erase2(current_art);
 			}
 		}
 	}
@@ -2699,7 +2699,7 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 		current_troop->remove_from_slot_cache();
 		if (independenced) {
 			if (current_troop->is_soldier()) {
-				units_.erase(current_troop);
+				units_.erase2(current_troop);
 
 			} else if ((current_troop != from_leader_unit && current_troop->human()) || !aggressing) {
 				if (!current_troop->human()) {
@@ -2774,12 +2774,11 @@ void artifical::independence(bool independenced, team& to_team, artifical* rpg_c
 
 bool artifical::is_surrounded() const
 {
-	unit_map::const_iterator it;
 	const team& city_team = teams_[side_ - 1];
 
 	for (size_t i = 0; i < adjacent_size_; i ++) {
-		it = units_.find(adjacent_[i]);
-		if ((it == units_.end()) || !city_team.is_enemy(it->side())) {
+		const unit* it = units_.find_unit(adjacent_[i], true);
+		if (!it || !city_team.is_enemy(it->side())) {
 			return false;
 		}
 	}
@@ -3098,8 +3097,8 @@ void artifical::calculate_ea_tiles(std::vector<const map_location*>& ea_vacants,
 	technologies = 0;
 	tactics = 0;
 	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
-		unit_map::const_iterator find = units_.find(*ea);
-		if (!find.valid()) {
+		const unit* find = units_.find_unit(*ea, true);
+		if (!find) {
 			ea_vacants.push_back(&*ea);
 		} else if (find->type()->master() == hero::number_market) {
 			markets ++;
@@ -3117,8 +3116,8 @@ void artifical::calculate_ea_tiles(int& markets, int& technologies, int& tactics
 	technologies = 0;
 	tactics = 0;
 	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
-		unit_map::const_iterator find = units_.find(*ea);
-		if (!find.valid()) {
+		const unit* find = units_.find_unit(*ea, true);
+		if (!find) {
 			continue;
 		} else if (find->type()->master() == hero::number_market) {
 			markets ++;
@@ -3176,8 +3175,8 @@ void artifical::demolish_ea(const std::set<const unit_type*>& can_build_ea)
 {
 	// don't demolish as long as has vacant ea.
 	for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
-		unit_map::const_iterator find = units_.find(*ea);
-		if (!find.valid()) {
+		const unit* find = units_.find_unit(*ea, true);
+		if (!find) {
 			return;
 		} else {
 			int master = find->type()->master();
@@ -3210,8 +3209,8 @@ void artifical::demolish_ea(const std::set<const unit_type*>& can_build_ea)
 	} else if (can_tactic && (hit_points_ < max_hit_points_ / 2 || (int)adjacent.size() >= tactic_requrie_min_adjacents) && !t && technologies) {
 		// demolish a technologies
 		for (std::vector<map_location>::const_iterator ea = economy_area_.begin(); ea != economy_area_.end(); ++ ea) {
-			unit_map::const_iterator find = units_.find(*ea);
-			if (find.valid() && find->type()->master() == hero::number_technology && find->level() < 3) {
+			unit* find = units_.find_unit(*ea, true);
+			if (find && find->type()->master() == hero::number_technology && find->level() < 3) {
 				if (!adjacent_has_enemy(units_, current_team, *find)) {
 					do_demolish(*resources::screen, units_, current_team, &*find, 0, false);
 					break;
@@ -3379,8 +3378,8 @@ int artifical::total_gold_income(int market_increase) const
 
 	int income = gold_bonus();
 	for (std::vector<map_location>::const_iterator it = economy_area_.begin(); it != economy_area_.end(); ++ it) {
-		unit_map::const_iterator find = units_.find(*it);
-		if (find.valid() && find->is_artifical()) {
+		const unit* find = units_.find_unit(*it, true);
+		if (find && find->is_artifical()) {
 			income += find->gold_income();
 		}
 	}
@@ -3406,8 +3405,8 @@ int artifical::total_technology_income(int technology_increase) const
 
 	int income = technology_bonus();
 	for (std::vector<map_location>::const_iterator it = economy_area_.begin(); it != economy_area_.end(); ++ it) {
-		unit_map::const_iterator find = units_.find(*it);
-		if (find.valid() && find->is_artifical()) {
+		const unit* find = units_.find_unit(*it, true);
+		if (find && find->is_artifical()) {
 			income += find->technology_income();
 		}
 	}

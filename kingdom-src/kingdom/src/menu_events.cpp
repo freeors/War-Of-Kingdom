@@ -25,7 +25,6 @@
 #include "ai/manager.hpp"
 #include "dialogs.hpp"
 #include "formatter.hpp"
-#include "filechooser.hpp"
 #include "game_end_exceptions.hpp"
 #include "game_events.hpp"
 #include "gettext.hpp"
@@ -62,7 +61,6 @@
 #include "resources.hpp"
 #include "savegame.hpp"
 #include "sound.hpp"
-#include "statistics_dialog.hpp"
 #include "unit_display.hpp"
 #include "wml_separators.hpp"
 #include "formula_string_utils.hpp"
@@ -211,7 +209,6 @@ menu_handler::menu_handler(play_controller& controller, game_display* gui, unit_
 	tod_manager_(tod_mng),
 	gamestate_(gamestate),
 	undo_stack_(undo_stack),
-	textbox_info_(),
 	last_search_(),
 	last_search_hit_(),
 	last_recruit_()
@@ -224,11 +221,6 @@ menu_handler::~menu_handler()
 const undo_list& menu_handler::get_undo_list() const
 {
 	 return undo_stack_;
-}
-
-gui::floating_textbox& menu_handler::get_textbox()
-{
-	return textbox_info_;
 }
 
 std::string menu_handler::get_title_suffix(int side_num)
@@ -258,19 +250,6 @@ void menu_handler::objectives(int side_num)
 	team &current_team = teams_[side_num - 1];
 	dialogs::show_objectives(level_, current_team);
 	current_team.reset_objectives_changed();
-}
-
-void menu_handler::show_statistics(int side_num)
-{
-	team &current_team = teams_[side_num - 1];
-	// Current Player name
-	const std::string &player = current_team.current_player();
-	//add player's name to title of dialog
-	std::stringstream title_str;
-	title_str <<  _("Statistics") << " (" << player << ")";
-	statistics_dialog stats_dialog(*gui_, title_str.str(),
-		side_num, current_team.save_id(), player);
-	stats_dialog.show();
 }
 
 void menu_handler::reside_unit_list_in_city(const artifical* city, bool troop, bool commoner)
@@ -416,6 +395,7 @@ void menu_handler::system(int side_num)
 
 void menu_handler::save_map()
 {
+/*
 	std::string input_name = get_dir(get_dir(get_user_data_dir() + "/editor") + "/maps/");
 	int res = 0;
 	int overwrite = 1;
@@ -433,6 +413,8 @@ void menu_handler::save_map()
 		}
 	} while (res == 0 && overwrite != 0);
 
+
+
 	// Try to save the map, if it fails we reset the filename.
 	if (res == 0) {
 		try {
@@ -445,24 +427,21 @@ void menu_handler::save_map()
 			gui2::show_transient_message(gui_->video(), "", msg);
 		}
 	}
+*/
 }
 
 void menu_handler::preferences()
 {
-	gui2::show_preferences_dialog(*gui_);
-}
-
-void menu_handler::show_chat_log()
-{
-	std::string text = recorder.build_chat_log();
-	gui::show_dialog(*gui_,NULL,_("Chat Log"),"",gui::CLOSE_ONLY,NULL,NULL,"",&text);
+	preferences::show_preferences_dialog(*gui_);
 }
 
 void menu_handler::speak()
 {
+/*
 	textbox_info_.show(gui::TEXTBOX_MESSAGE,_("Message:"),
 		has_friends() ? is_observer() ? _("Send to observers only") : _("Send to allies only")
 					  : "", preferences::message_private(), *gui_);
+*/
 }
 
 void menu_handler::whisper()
@@ -627,10 +606,11 @@ void menu_handler::move(bool browse, int side_num, const map_location &last_hex)
 	}
 
 	artifical* dst_city = NULL;
-	for (unit_map::iterator itor = units_.begin(); itor != units_.end(); ++ itor) {
-		if (itor->is_city() && (itor->side() == side_num)) {
-			if (src_city != &*itor) {
-				dst_city = unit_2_artifical(&*itor);
+	for (unit_map::iterator it = units_.begin(); it != units_.end(); ++ it) {
+		unit* u = dynamic_cast<unit*>(&*it);
+		if (u->is_city() && (u->side() == side_num)) {
+			if (src_city != u) {
+				dst_city = unit_2_artifical(u);
 				break;
 			}
 		}
@@ -729,37 +709,32 @@ void menu_handler::extract(mouse_handler& mousehandler, unit& u)
 {
 	int side = u.side();
 
-	std::vector<hero*> vh;
-	std::vector<std::string> items;
+	std::vector<gui2::tval_str> items;
 	std::stringstream strstr;
 
 	strstr.str("");
-	strstr << IMAGE_PREFIX << u.second().image() << "~SCALE(48, 60)" << COLUMN_SEPARATOR;
+	strstr << tintegrate::generate_img(std::string(u.second().image()) + "~SCALE(48, 60)");
 	strstr << u.second().name();
-	items.push_back(strstr.str());
-	vh.push_back(&u.second());
+	items.push_back(gui2::tval_str(u.second().number_, strstr.str()));
 
 	if (u.third().valid()) {
 		strstr.str("");
-		strstr << IMAGE_PREFIX << u.third().image() << "~SCALE(48, 60)" << COLUMN_SEPARATOR;
+		strstr << tintegrate::generate_img(std::string(u.third().image()) + "~SCALE(48, 60)");
 		strstr << u.third().name();
-		items.push_back(strstr.str());
-		vh.push_back(&u.third());
+		items.push_back(gui2::tval_str(u.third().number_, strstr.str()));
 	}
 
 	mousehandler.clear();
 	clear_undo_stack(side);
 
 	hero* extracted = NULL;
-	if (vh.size() == 1) {
-		extracted = vh.front();
+	if (items.size() == 1) {
+		extracted = &u.second();
 	} else {
-		gui2::tcombo_box dlg(items, 0, gui2::tcombo_box::EXTRACT);
+		gui2::tcombo_box dlg(items, u.second().number_, gui2::tcombo_box::EXTRACT);
 		dlg.show(gui_->video());
 		if (dlg.get_retval() == gui2::twindow::OK) {
-			std::vector<hero*>::iterator it = vh.begin();
-			std::advance(it, dlg.selected_index());
-			extracted = *it;
+			extracted = &heros_[dlg.selected_val()];
 		}
 	}
 	if (extracted) {
@@ -962,10 +937,10 @@ void menu_handler::undo(int side_num)
 		const int starting_moves = action.starting_moves;
 		std::vector<map_location> route = action.route;
 		std::reverse(route.begin(), route.end());
-		unit_map::iterator u = units_.find(route.front());
-		const unit_map::iterator u_end = units_.find(route.back());
+		unit* u = units_.find_unit(route.front(), true);
+		unit* u_end = units_.find_unit(route.back(), true);
 
-		VALIDATE(u != units_.end(), "menu_handler::undo, Illegal 'undo' found. Possible abuse of [allow_undo]?");
+		VALIDATE(u, "menu_handler::undo, Illegal 'undo' found. Possible abuse of [allow_undo]?");
 		
 		if (map_.is_village(route.front())) {
 			get_village(route.front(), action.original_village_owner + 1);
@@ -978,18 +953,18 @@ void menu_handler::undo(int side_num)
 		VALIDATE(!unit_is_city(&*u), "menu_handler::undo, cannot support undo that start from city!");
 
 		// start: non-city
-		if (!u_end.valid() || !unit_is_city(&*u_end)) {
+		if (!u_end || !unit_is_city(u_end)) {
 			// end: non-city
 			action.starting_moves = u->movement_left();
 
 			unit_display::move_unit(route, *u, teams_);
-			std::pair<map_location, unit*>* up = units_.extract(u->get_location());
-			up->second->set_goto(map_location());
-			up->second->set_movement(starting_moves);
-			up->first = route.back();
-			// units_.insert(up);
-			units_.place(up);
-			up->second->set_standing();
+			units_.extract(u->get_location());
+
+			u->set_goto(map_location());
+			u->set_movement(starting_moves);
+
+			units_.place(route.back(), u);
+			u->set_standing();
 
 			if (tent::turn_based) {
 				gui_->resort_access_troops(*u);
@@ -1000,9 +975,9 @@ void menu_handler::undo(int side_num)
 			u->set_goto(map_location());
 			u->set_movement(starting_moves);
 						
-			artifical* stop_city = unit_2_artifical(&*u_end);
+			artifical* stop_city = unit_2_artifical(u_end);
 
-			stop_city->troop_come_into2(&*u, action.recall_pos);
+			stop_city->troop_come_into2(u, action.recall_pos);
 
 			// unit_display::move_unit will update centor location of u->second to location of city.
 			// Centor location of u->second must be back to u->first before call units_.erase.
@@ -1168,25 +1143,23 @@ void menu_handler::switch_list(int side_num)
 	gui_->set_current_list_type(gui_->next_list_type());
 }
 
-unit_map::iterator menu_handler::current_unit()
+unit* menu_handler::current_unit()
 {
 	const mouse_handler& mousehandler = resources::controller->get_mouse_handler_base();
 
-	unit_map::iterator res = find_visible_unit(mousehandler.get_last_hex(),
-		teams_[gui_->viewing_team()]);
-	if(res != units_.end()) {
+	unit* res = find_visible_unit(mousehandler.get_last_hex(),	teams_[gui_->viewing_team()]);
+	if (res) {
 		return res;
 	} else {
-		return find_visible_unit(mousehandler.get_selected_hex(),
-			teams_[gui_->viewing_team()]);
+		return find_visible_unit(mousehandler.get_selected_hex(), teams_[gui_->viewing_team()]);
 	}
 }
 
 void menu_handler::change_side(mouse_handler& mousehandler)
 {
 	const map_location& loc = mousehandler.get_last_hex();
-	const unit_map::iterator i = units_.find(loc);
-	if(i == units_.end()) {
+	unit* i = units_.find_unit(loc, true);
+	if (!i) {
 		if(!map_.is_village(loc))
 			return;
 
@@ -1209,38 +1182,6 @@ void menu_handler::change_side(mouse_handler& mousehandler)
 		if(map_.is_village(loc)) {
 			get_village(loc, side);
 		}
-	}
-}
-
-void menu_handler::label_terrain(mouse_handler& mousehandler, bool team_only)
-{
-	const map_location& loc = mousehandler.get_last_hex();
-	if (map_.on_board(loc) == false) {
-		return;
-	}
-	gui::dialog d(*gui_, _("Place Label"), "", gui::OK_CANCEL);
-	const terrain_label* old_label = gui_->labels().get_label(loc);
-	d.set_textbox(_("Label: "), (old_label ? old_label->text() : ""), map_labels::get_max_chars());
-	d.add_option(_("Team only"), team_only, gui::dialog::BUTTON_CHECKBOX_LEFT);
-
-	if(!d.show()) {
-		std::string team_name;
-		SDL_Color colour = font::LABEL_COLOR;
-
-		if (d.option_checked()) {
-			team_name = gui_->labels().team_name();
-		} else {
-			colour = int_to_color(team::get_side_rgb(gui_->viewing_side()));
-		}
-		const std::string& old_team_name = old_label ? old_label->team_name() : "";
-		// remove the old label if we changed the team_name
-		if (d.option_checked() == (old_team_name == "")) {
-			const terrain_label* old = gui_->labels().set_label(loc, "", old_team_name, colour);
-			if (old) recorder.add_label(old);
-		}
-		const terrain_label* res = gui_->labels().set_label(loc, d.textbox_text(), team_name, colour);
-		if (res)
-			recorder.add_label(res);
 	}
 }
 
@@ -1324,7 +1265,7 @@ void menu_handler::execute_gotos(mouse_handler& mousehandler, int side)
 
 			// we delay each blocked move because some other change
 			// may open a another not blocked path
-			if (units_.count(next_stop)) {
+			if (units_.valid2(next_stop, true)) {
 				blocked_unit = true;
 				if (wait_blocker_move)
 					continue;
@@ -1393,10 +1334,8 @@ void menu_handler::toggle_grid()
 	gui_->invalidate_all();
 }
 
-void menu_handler::do_speak(){
-	//None of the two parameters really needs to be passed since the informations belong to members of the class.
-	//But since it makes the called method more generic, it is done anyway.
-	chat_handler::do_speak(textbox_info_.box()->text(),textbox_info_.check() != NULL ? textbox_info_.check()->checked() : false);
+void menu_handler::do_speak()
+{
 }
 
 

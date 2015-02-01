@@ -18,7 +18,7 @@
 
 #include "gui/dialogs/dialog.hpp"
 
-class game_display;
+class display;
 class hero_map;
 
 namespace gui2 {
@@ -26,7 +26,7 @@ namespace gui2 {
 class tplayer_city : public tdialog
 {
 public:
-	tplayer_city(game_display& disp, hero_map& heros);
+	tplayer_city(display& disp, hero_map& heros);
 
 private:
 
@@ -42,7 +42,7 @@ private:
 	void create(twindow& window);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 };
 

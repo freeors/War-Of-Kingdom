@@ -24,7 +24,7 @@
 #include "multiplayer.hpp"
 #include "animation.hpp"
 
-class game_display;
+class display;
 class unit_type;
 
 namespace gui2 {
@@ -37,7 +37,7 @@ class tscrollbar_panel;
 class tgroup2 : public tdialog
 {
 public:
-	explicit tgroup2(game_display& disp, hero_map& heros, const config& game_config, tgroup& group, bool browse = false);
+	explicit tgroup2(display& disp, hero_map& heros, const config& game_config, tgroup& group, bool browse = false);
 
 	enum tresult {LAYOUT = 1, START_MAP_EDITOR};
 	std::string get_selected_map_data() const;
@@ -110,7 +110,7 @@ private:
 	void enable_window_ui(twindow& window, bool enable);
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	const config& game_config_;
 	tgroup& group_;

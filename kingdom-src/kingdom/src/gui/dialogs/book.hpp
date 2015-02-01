@@ -24,7 +24,7 @@
 #include "unit_types.hpp"
 #include "help.hpp"
 
-class game_display;
+class display;
 class hero_map;
 
 namespace gui2 {
@@ -47,7 +47,7 @@ public:
 		ttree_view_node* node;
 	};
 
-	explicit tbook(game_display& disp, gamemap* map, hero_map& heros, const config& game_config, const std::string& tag);
+	explicit tbook(display& disp, gamemap* map, hero_map& heros, const config& game_config, const std::string& tag);
 	~tbook();
 
 protected:
@@ -68,7 +68,7 @@ private:
 	ttree_view_node* cookie_rfind_node(const help::topic* t) const;
 	void switch_to_topic(twindow& window, const help::topic& t);
 private:
-	game_display& disp_;
+	display& disp_;
 	gamemap* map_;
 	hero_map& heros_;
 	const config& game_config_;

@@ -64,7 +64,7 @@ tgrid::~tgrid()
 			delete children_[n].widget_;
 			children_[n].widget_ = NULL;
 		}
-		for (std::vector<twidget*>::const_iterator it = stuff_widget_.begin(); it != stuff_widget_.end(); ++ it) {
+		for (std::vector<tspacer*>::const_iterator it = stuff_widget_.begin(); it != stuff_widget_.end(); ++ it) {
 			delete *it;
 		}
 		free(children_);
@@ -206,6 +206,7 @@ void tgrid::init_report(int unit_w, int unit_h, int gap, bool extendable)
 
 	int cols = 1;
 	if (extendable) {
+		VALIDATE(unit_w, "Multiline only support fixed size!");
 		/*
 		 * width >= n * unit_w + (n - 1) * gap_w;
 		 * width >= n * unit_w + n * gap_w - gap_w;
@@ -215,6 +216,9 @@ void tgrid::init_report(int unit_w, int unit_h, int gap, bool extendable)
 		cols = (w_ + gap) / (unit_w + gap);
 	}
 
+	if (!unit_w && row_height_.empty()) {
+		row_height_.push_back(0);
+	}
 	row_height_[0] = unit_h;
 	for (int n = 0; n < cols; n ++) {
 		ss.str("");
@@ -226,7 +230,7 @@ void tgrid::init_report(int unit_w, int unit_h, int gap, bool extendable)
 	stuff_size_ = cols_;
 }
 
-size_t tgrid::children_vsize() const
+int tgrid::children_vsize() const
 {
 	return children_vsize_ - stuff_size_;
 }
@@ -253,15 +257,19 @@ void tgrid::insert_child(int unit_w, int unit_h, twidget& widget, size_t at, boo
 			row_height_.push_back(unit_h);
 			// append all stuff widget
 			resize_children((rows_ * cols_) + 1);
-			for (std::vector<twidget*>::const_iterator it = stuff_widget_.begin(); it != stuff_widget_.end(); ++ it) {
+			for (std::vector<tspacer*>::const_iterator it = stuff_widget_.begin(); it != stuff_widget_.end(); ++ it) {
 				children_[children_vsize_ ++].widget_ = *it;
 			}
 			stuff_size_ = max_cols;
 		}
 	} else {
-		cols_ ++;
-		// i think, all grow factor is 0.
+		// i think, all grow factor is 0. except last stuff.
+		if (cols_ > 0) {
+			// last is stuff. it's grow factor is 1.
+			col_grow_factor_[cols_ - 1] = 0;
+		}
 		col_grow_factor_.push_back(0);
+		cols_ ++;
 		col_width_.push_back(unit_w);
 	
 		resize_children((rows_ * cols_) + 1);
@@ -288,6 +296,7 @@ void tgrid::erase_child(size_t at, bool extendable)
 	if (at < children_vsize_ - 1) {
 		memcpy(&(children_[at]), &(children_[at + 1]), (children_vsize_ - at - 1) * sizeof(tchild));
 	}
+	children_[children_vsize_ - 1].widget_ = NULL;
 
 	size_t max_cols = stuff_widget_.size();
 	if (extendable) {
@@ -307,6 +316,7 @@ void tgrid::erase_child(size_t at, bool extendable)
 
 		cols_ = children_vsize_;
 		col_grow_factor_.resize(cols_);
+		col_width_.pop_back();
 	}
 }
 
@@ -318,7 +328,10 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 	
 	tpoint origin(x_, y_);
 	tpoint size(unit_w, unit_h);
-	
+
+	// for variable-size, should recalculte size. 
+	row_height_[0] = unit_h;
+
 	size_t max_cols = stuff_widget_.size();
 	size_t n = 0, row = 0, col = 0;
 	size_t end;
@@ -335,7 +348,7 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 			continue;
 		}
 
-		child.flags_ = 0;
+		child.flags_ = VERTICAL_ALIGN_CENTER;
 		
 		tpoint origin2 = widget2->get_origin();
 		if (extendable) {
@@ -354,14 +367,22 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 			child.border_size_ = gap;
 		}
 
-		if (visible == twidget::VISIBLE && (origin2 != origin || widget2->get_size() != size)) {
+
+		if (!unit_w) {
+			size = widget2->get_best_size();
+			col_width_[col] = size.x;
+			if (size.y > static_cast<int>(row_height_[0])) {
+				row_height_[0] = size.y;
+			}
+		}
+		if (w_ && visible == twidget::VISIBLE && (origin2 != origin || widget2->get_size() != size)) {
 			if (origin2.x != -1 && origin2.y != -1) {
 				widget2->twidget::place(origin, size);
 			} else {
 				widget2->place(origin, size);
 			}
 		}
-		origin.x += unit_w;
+		origin.x += size.x;
 
 		col ++;
 		if (extendable) {
@@ -378,7 +399,7 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 		if (rows_ > 1 && stuff_size_ == max_cols) {
 			origin.y -= unit_h + gap;
 			size.y = 0;
-			for (std::vector<twidget*>::const_iterator it = stuff_widget_.begin(); it != stuff_widget_.end(); ++ it) {
+			for (std::vector<tspacer*>::const_iterator it = stuff_widget_.begin(); it != stuff_widget_.end(); ++ it) {
 				twidget* widget = *it;
 				widget->set_size(size);
 			}
@@ -392,14 +413,23 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 		h_ = h;
 
 	} else {
+		children_[children_vsize_ - 1].flags_ = VERTICAL_GROW_SEND_TO_CLIENT | HORIZONTAL_GROW_SEND_TO_CLIENT;
 		// place stuff. stuff is always visible.
 		if (origin.x < last_draw_end_.x) {
 			size.x = last_draw_end_.x - origin.x;
 		} else {
 			size.x = 0;
 		}
-		stuff_widget_[0]->place(origin, size);
-		stuff_widget_[0]->set_visible_area(get_rect());
+		tspacer* stuff = stuff_widget_[0];
+		col_grow_factor_[col_grow_factor_.size() - 1] = 1;
+		if (w_) {
+			col_width_[col] = size.x;
+
+			size.y = row_height_[0];
+			stuff->set_best_size(size);
+		}
+		stuff->place(origin, size);
+		stuff->set_visible_area(get_rect());
 	}
 }
 
@@ -422,6 +452,9 @@ void tgrid::erase_children(int unit_w, int unit_h, int gap, bool extendable)
 	rows_ = 1;
 	cols_ = children_vsize_;
 	col_grow_factor_.resize(cols_);
+	if (!extendable) {
+		col_width_.resize(cols_);
+	}
 	replacement_children(unit_w, unit_h, gap, extendable);
 
 	set_dirty();
@@ -1127,7 +1160,7 @@ void cell_place(tgrid::tchild& cell, tpoint origin, tpoint size)
 
 	} else {
 		// err << " Invalid vertical alignment '" << v_flag << "' specified."
-		assert(false);
+		VALIDATE(false, null_str);
 	}
 
 	const unsigned h_flag = cell.flags_ & tgrid::HORIZONTAL_MASK;
@@ -1152,7 +1185,7 @@ void cell_place(tgrid::tchild& cell, tpoint origin, tpoint size)
 
 	} else {
 		// err << " No horizontal alignment '" << h_flag << "' specified.";
-		assert(false);
+		VALIDATE(false, null_str);
 	}
 
 	cell.widget_->place(widget_orig, widget_size);

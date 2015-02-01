@@ -30,7 +30,6 @@
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/scrollbar_panel.hpp"
 #include "gui/dialogs/message.hpp"
-#include "gui/dialogs/combo_box.hpp"
 #include "preferences_display.hpp"
 #include "hero.hpp"
 #include "unit_types.hpp"
@@ -260,7 +259,7 @@ void thero::fill_biography(twindow& window)
 		strstr << "(";
 		strstr << hero::feature_str(t.feature());
 		strstr << ")";
-		text_box->set_value(strstr.str());
+		text_box->set_label(strstr.str());
 	}
 	text_box->set_active(false);
 
@@ -275,12 +274,14 @@ void thero::swap_page(twindow& window, int page, bool swap)
 	}
 	int index = page - MIN_PAGE;
 
-	if (window.alternate_index() == index) {
+	if (page_panel_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
-	window.alternate_uh(page_panel_, index);
-	window.alternate_bh(swap? page_panel_: NULL, index);
+	page_panel_->swap_uh(window, index);
+	if (swap) {
+		page_panel_->swap_bh(window);
+	}
 
 	if (page == BASE_PAGE) {
 		fill_base(window);

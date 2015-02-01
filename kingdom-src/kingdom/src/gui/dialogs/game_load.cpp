@@ -23,7 +23,7 @@
 #include "game_config.hpp"
 #include "game_preferences.hpp"
 #include "gui/auxiliary/log.hpp"
-#include "gui/dialogs/field.hpp"
+// #include "gui/dialogs/field.hpp"
 #include "gui/dialogs/game_delete.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/helper.hpp"
@@ -95,7 +95,7 @@ namespace gui2 {
 
 REGISTER_DIALOG(game_load)
 
-tgame_load::tgame_load(game_display& disp, hero_map& heros, const config& cache_config, bool allow_network)
+tgame_load::tgame_load(display& disp, hero_map& heros, const config& cache_config, bool allow_network)
 	: disp_(disp)
 	, heros_(heros)
 	, filename_()
@@ -420,11 +420,11 @@ void tgame_load::swap_page(twindow& window, int page, bool swap)
 	}
 	int index = page - MIN_PAGE;
 
-	if (window.alternate_index() == index) {
+	if (savegame_list_->current_page() == index) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
-	window.alternate_uh(savegame_list_, index);
+	savegame_list_->swap_uh(window, index);
 
 	current_page_ = page;
 
@@ -434,7 +434,9 @@ void tgame_load::swap_page(twindow& window, int page, bool swap)
 	} else if (page == NETWORK_PAGE) {
 		fill_network(window);
 	}
-	window.alternate_bh(swap? savegame_list_: NULL, index);
+	if (swap) {
+		savegame_list_->swap_bh(window);
+	}
 }
 
 } // namespace gui2

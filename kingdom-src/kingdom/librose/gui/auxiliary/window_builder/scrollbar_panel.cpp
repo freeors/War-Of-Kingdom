@@ -42,11 +42,13 @@ tbuilder_scrollbar_panel::tbuilder_scrollbar_panel(const config& cfg)
 	VALIDATE(definition, _("No list defined."));
 	grid = new tbuilder_grid(definition);
 	assert(grid);
+
+	tradio_page::parse_cfg(cfg.child("radio"), pages);
 }
 
 twidget* tbuilder_scrollbar_panel::build() const
 {
-	tscrollbar_panel *widget = new tscrollbar_panel();
+	tscrollbar_panel *widget = new tscrollbar_panel(pages);
 
 	init_control(widget);
 

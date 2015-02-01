@@ -222,7 +222,6 @@ game_info::game_info(const config& game, const config& game_config)
 	} else {
 		try {
 			gamemap map(game_config, map_data);
-			//mini_map = image::getMinimap(minimap_size_, minimap_size_, map, 0);
 			std::ostringstream msi;
 			msi << map.w() << 'x' << map.h();
 			map_size_info = msi.str();

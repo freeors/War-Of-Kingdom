@@ -61,8 +61,12 @@ public:
 	 * That class overrides the set_value function to replace it with asterisk.
 	 * There might be more generic way to do it when more classes are needed.
 	 */
-	virtual void set_value(const std::string& text);
-	virtual std::string get_value() const { return label_; }
+	virtual void set_label(const std::string& label);
+	virtual const std::string& label() const { return label_; }
+
+
+	void set_value(const std::string& label);
+	std::string get_value() const;
 
 	/** Set the text_changed callback. */
 	void set_text_changed_callback(boost::function< void (ttext_box* textboxt) > cb)

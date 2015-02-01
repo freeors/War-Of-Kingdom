@@ -400,8 +400,6 @@ surface generate_surface(int width, int height, const std::string& img, int inte
 
 std::ostream& operator<<(std::ostream& s, const SDL_Rect& rect);
 
-enum tristate {t_false, t_true, t_unset};
-
 class tsurface_is_opaque
 {
 public:

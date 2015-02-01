@@ -24,6 +24,7 @@
 class gamemap;
 class team;
 class unit;
+class artifical;
 class unit_map;
 class unit_movement_type;
 
@@ -215,7 +216,7 @@ private:
 	bool const ignore_unit_;
 	bool const ignore_defense_;
 	bool see_all_;
-	void* expediting_city_cookie_;
+	artifical* expediting_city_cookie_;
 };
 
 struct commoner_path_calculator : shortest_path_calculator

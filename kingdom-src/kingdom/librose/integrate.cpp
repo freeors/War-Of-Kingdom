@@ -736,6 +736,7 @@ void tintegrate::down_one_line()
 	if (curr_loc_.first > maximum_width_) {
 		maximum_width_ = curr_loc_.first;
 	}
+
 	curr_row_height_ = min_row_height_;
 	contents_height_ = std::max<int>(curr_loc_.second + curr_row_height_, contents_height_);
 	curr_loc_.first = get_min_x(curr_loc_.second, curr_row_height_);

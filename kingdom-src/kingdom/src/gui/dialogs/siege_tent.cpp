@@ -99,7 +99,7 @@ extern void common_genus(tbutton& genus);
 
 REGISTER_DIALOG(siege_tent)
 
-tsiege_tent::tsiege_tent(game_display& disp, hero_map& heros, game_state& state, const config& game_config, tsubcontinent_param* param)
+tsiege_tent::tsiege_tent(display& disp, hero_map& heros, game_state& state, const config& game_config, tsubcontinent_param* param)
 	: disp_(disp)
 	, heros_(heros)
 	, state_(state)
@@ -650,9 +650,7 @@ void tsiege_tent::genereate_roam_troops(config& side_cfg, tgroup& g, const map_l
 void tsiege_tent::reinforce_attacker(twindow& window)
 {
 	std::stringstream strstr;
-	std::vector<std::string> items;
-	std::vector<tval_str> associate_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
 	std::set<int> agreement;
 	agreement.insert(tgroup::tassociate::ally);
@@ -663,25 +661,18 @@ void tsiege_tent::reinforce_attacker(twindow& window)
 		strstr.str("");
 		strstr << it->username;
 		strstr << "(" <<  utils::split(associate_members_.find(it->uid)->second.member).size() << ")";
-		associate_map.push_back(tval_str(it->uid, strstr.str()));
+		items.push_back(tval_str(it->uid, strstr.str()));
 	}
 
-	for (std::vector<tval_str>::iterator it = associate_map.begin(); it != associate_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (reinforce_attacker_.first == it->val) {
-			actived_index = std::distance(associate_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, reinforce_attacker_.first);
 	dlg.show(disp_.video());
 
-	int selected = dlg.selected_index();
-	if (selected == actived_index) {
+	if (dlg.selected_val() == reinforce_attacker_.first) {
 		return;
 	}
 
-	const tgroup::tassociate& a = group.associate(associate_map[selected].val);
+	int selected = dlg.selected_index();
+	const tgroup::tassociate& a = group.associate(items[selected].val);
 	set_reinforce_attacker(window, a.uid, a.username);
 
 	refresh_reinforce_defender_str(window);
@@ -719,34 +710,24 @@ std::vector<tgroup::tassociate> tsiege_tent::reinforce_attacker_list() const
 void tsiege_tent::defender_username(twindow& window)
 {
 	std::stringstream strstr;
-	std::vector<std::string> items;
-	std::vector<tval_str> associate_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
 	std::vector<tgroup::tassociate> candidate = defender_list();
 	for (std::vector<tgroup::tassociate>::const_iterator it = candidate.begin(); it != candidate.end(); ++ it) {
 		strstr.str("");
 		strstr << it->username;
 		strstr << "(" <<  utils::split(associate_members_.find(it->uid)->second.member).size() << ")";
-		associate_map.push_back(tval_str(it->uid, strstr.str()));
+		items.push_back(tval_str(it->uid, strstr.str()));
 	}
 
-	for (std::vector<tval_str>::iterator it = associate_map.begin(); it != associate_map.end(); ++ it) {
-		items.push_back(it->str);
-		if (defender_.first == it->val) {
-			actived_index = std::distance(associate_map.begin(), it);
-		}
-	}
-	
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, defender_.first);
 	dlg.show(disp_.video());
 
-	int selected = dlg.selected_index();
-	if (selected == actived_index) {
+	if (dlg.selected_val() == defender_.first) {
 		return;
 	}
 
-	int uid = associate_map[selected].val;
+	int uid = dlg.selected_val();
 	set_defender(window, uid, associate_members_.find(uid)->second.name);
 
 	refresh_reinforce_defender_str(window);

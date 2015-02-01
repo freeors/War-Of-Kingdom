@@ -54,7 +54,6 @@ editor::wml2bin_desc::wml2bin_desc() :
 {}
 
 #define BASENAME_DATA		"data.bin"
-#define BASENAME_DATA2		"data2.bin"
 #define BASENAME_GUI		"gui.bin"
 #define BASENAME_LANGUAGE	"language.bin"
 #define BASENAME_CAMPAIGNS	"campaigns.bin"
@@ -266,14 +265,32 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 		tmpcfg.clear();
 		game_config_.clear();
 		cache_.clear_defines();
-		if (type == editor::SCENARIO_DATA) {
+
+		if (type == editor::TB_DAT) {
+			VALIDATE(!editor_config::data_cfg.empty(), "Generate TB_DAT must be after data.bin!");
+
+			std::string str = name;
+			const size_t pos_ext = str.rfind(".");
+			str = str.substr(0, pos_ext);
+			str = str.substr(terrain_builder::tb_dat_prefix.size());
+
+			const config& tb_cfg = tbs_config_.find_child("tb", "id", str);
+			cache_.add_define(tb_cfg["define"].str());
+			cache_.get_config(game_config::path + "/data/tb.cfg", tmpcfg);
+
+			if (write_file) {
+				const config& tb_parsed_cfg = tmpcfg.find_child("tb", "id", str);
+				binary_paths_manager paths_manager(editor_config::data_cfg);
+				terrain_builder(tb_parsed_cfg, nfiles, sum_size, modified);
+			}
+
+		} else if (type == editor::SCENARIO_DATA) {
 			std::string name_str = std::string(name);
 			const size_t pos_ext = name_str.rfind(".");
 			name_str = name_str.substr(0, pos_ext);
 
 			config& campaign_cfg = campaigns_config_.find_child("campaign", "id", name_str);
 			cache_.add_define(campaign_cfg["define"].str());
-			cache_.add_define("EASY");
 			cache_.get_config(game_config::path + "/data", game_config_);
 			// ::init_textdomains(game_config_);
 			
@@ -310,14 +327,17 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 			if (write_file) {
 				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_LANGUAGE, game_config_, nfiles, sum_size, modified);
 			}
-		} else if (type == editor::CAMPAIGNS)  {
+		} else if (type == editor::EXTENDABLE)  {
 			// no pre-defined
-			const std::string file = game_config::path + "/data/campaigns.cfg";
-			if (file_exists(file)) {
-				cache_.get_config(game_config::path + "/data/campaigns.cfg", campaigns_config_);
-				if (write_file) {
-					wml_config_to_file(game_config::path + "/xwml/" + name, campaigns_config_, nfiles, sum_size, modified);
-				}
+			VALIDATE(!write_file, "EXTENDABLE don't support write!");
+
+			const std::string campaigns_cfg = game_config::path + "/data/campaigns.cfg";
+			if (file_exists(campaigns_cfg)) {
+				cache_.get_config(campaigns_cfg, campaigns_config_);
+			}
+			const std::string tb_cfg = game_config::path + "/data/tb.cfg";
+			if (file_exists(tb_cfg)) {
+				cache_.get_config(tb_cfg, tbs_config_);
 			}
 		} else {
 			// type == editor::MAIN_DATA
@@ -331,13 +351,6 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 				throw game::error(std::string("<") + BASENAME_DATA + std::string(">") + err_str);
 			}
 
-			if (write_file) {
-				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_DATA2, game_config_, nfiles, sum_size, modified);
-
-				write_tb_dat_if();
-			}
-			// remove all [terrain_graphics] tags
-			game_config_.clear_children("terrain_graphics");
 			if (write_file) {
 				wml_config_to_file(game_config::path + "/xwml/" + BASENAME_DATA, game_config_, nfiles, sum_size, modified);
 			}
@@ -354,14 +367,30 @@ bool editor::load_game_cfg(const editor::BIN_TYPE type, const char* name, bool w
 	return true;
 }
 
-void editor::reload_campaigns_cfg()
+void editor::reload_extendable_cfg()
 {
-	load_game_cfg(CAMPAIGNS, BASENAME_CAMPAIGNS, false);
+	load_game_cfg(EXTENDABLE, null_str.c_str(), false);
 	// load_game_cfg will translate relative msgid without load textdomain.
 	// result of load_game_cfg used to known what campaign, not detail information.
 	// To detail information, need load textdomain, so call t_string::reset_translations(), 
 	// let next translate correctly.
 	t_string::reset_translations();
+}
+
+std::vector<std::string> generate_tb_short_paths(const std::string& id)
+{
+	std::stringstream ss;
+	std::vector<std::string> short_paths;
+
+	ss.str("");
+	ss << "data/core/terrain-graphics-" << id;
+	short_paths.push_back(ss.str());
+
+	ss.str("");
+	ss << "data/core/images/terrain-" << id;
+	short_paths.push_back(ss.str());
+
+	return short_paths;
 }
 
 // @path: c:\kingdom-res\data
@@ -377,9 +406,18 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 	for (editor::BIN_TYPE type = editor::BIN_MIN; type <= editor::BIN_SYSTEM_MAX; type = (editor::BIN_TYPE)(type + 1)) {
 		bin_types.push_back(type);
 	}
+
+	// tb-[tile].dat
+	std::vector<std::string> tbs;
+	size_t tb_index = 0;
+	BOOST_FOREACH (const config& cfg, tbs_config_.child_range("tb")) {
+		tbs.push_back(cfg["id"].str());
+		bin_types.push_back(editor::TB_DAT);
+	}
+
 	// search <data>/campaigns, and form [campaign].bin
-	std::string campaigns_path = path + "/campaigns";
 	std::vector<std::string> campaigns;
+	size_t campaign_index = 0;
 
 	BOOST_FOREACH (const config& cfg, campaigns_config_.child_range("campaign")) {
 		campaigns.push_back(cfg["id"].str());
@@ -388,23 +426,47 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 
 	wml2bin_descs_.clear();
 
-	size_t campaign_index = 0;
 	for (std::vector<editor::BIN_TYPE>::const_iterator itor = bin_types.begin(); itor != bin_types.end(); ++ itor) {
 		editor::BIN_TYPE type = *itor;
 
 		defines_string.str("");
 		short_paths.clear();
+		bool calculated_wml_checksum = false;
+
 		int filter = SKIP_MEDIA_DIR;
-		if (type == editor::SCENARIO_DATA) {
+		if (type == editor::TB_DAT) {
+			const std::string& id = tbs[tb_index];
+			short_paths = generate_tb_short_paths(id);
+			filter = 0;
+
+			data_tree_checksum(short_paths, dir_checksum, filter);
+			desc.wml_nfiles = dir_checksum.nfiles;
+			desc.wml_sum_size = dir_checksum.sum_size;
+			desc.wml_modified = dir_checksum.modified;
+
+			struct stat st;
+			const std::string terrain_graphics_cfg = game_config::path + "/data/core/terrain-graphics-" + id + ".cfg";
+			if (::stat(terrain_graphics_cfg.c_str(), &st) != -1) {
+				if (st.st_mtime > desc.wml_modified) {
+					desc.wml_modified = st.st_mtime;
+				}
+				desc.wml_sum_size += st.st_size;
+				desc.wml_nfiles ++;
+			}
+			calculated_wml_checksum = true;
+
+			desc.bin_name = terrain_builder::tb_dat_prefix + tbs[tb_index] + ".dat";
+			tb_index ++;
+
+		} else if (type == editor::SCENARIO_DATA) {
 			short_paths.push_back("data/core");
 			short_paths.push_back(std::string("data/campaigns/") + campaigns[campaign_index]);
-			filter |= SKIP_GUI_DIR | SKIP_INTERNAL_DIR | SKIP_TERRAIN | SKIP_BOOK;
+			filter |= SKIP_GUI_DIR | SKIP_INTERNAL_DIR | SKIP_BOOK;
 
 			desc.bin_name = campaigns[campaign_index] + ".bin";
 			
 			defines_string << path;
 			defines_string << " " << campaigns[campaign_index];
-			defines_string << " EASY";
 
 			bin_to_path = game_config::path + "/xwml/campaigns";
 
@@ -438,11 +500,12 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 		sha1_hash sha(defines_string.str());
 		desc.sha1 = sha.display();
 
-		data_tree_checksum(short_paths, dir_checksum, filter);
-
-		desc.wml_nfiles = dir_checksum.nfiles;
-		desc.wml_sum_size = dir_checksum.sum_size;
-		desc.wml_modified = dir_checksum.modified;
+		if (!calculated_wml_checksum) {
+			data_tree_checksum(short_paths, dir_checksum, filter);
+			desc.wml_nfiles = dir_checksum.nfiles;
+			desc.wml_sum_size = dir_checksum.sum_size;
+			desc.wml_modified = dir_checksum.modified;
+		}
 
 		if (!wml_checksum_from_file(bin_to_path + "/" + desc.bin_name, &desc.bin_nfiles, &desc.bin_sum_size, (uint32_t*)&desc.bin_modified)) {
 			desc.bin_nfiles = desc.bin_sum_size = desc.bin_modified = 0;
@@ -452,46 +515,6 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 	}
 
 	return;
-}
-
-void editor::write_tb_dat_if() const
-{
-	editor::wml2bin_desc desc;
-	file_tree_checksum dir_checksum;
-	std::vector<std::string> short_paths;
-	const std::string bin_to_path = game_config::path + "/xwml";
-
-	short_paths.push_back("data/core/terrain-graphics");
-	short_paths.push_back("data/core/images/terrain");
-	desc.bin_name = BASENAME_TB;
-
-	int filter = 0;
-	data_tree_checksum(short_paths, dir_checksum, filter);
-	desc.wml_nfiles = dir_checksum.nfiles;
-	desc.wml_sum_size = dir_checksum.sum_size;
-	desc.wml_modified = dir_checksum.modified;
-
-	struct stat st;
-	const std::string terrain_graphics_cfg = game_config::path + "/data/core/terrain-graphics.cfg";
-	if (::stat(terrain_graphics_cfg.c_str(), &st) != -1) {
-		if (st.st_mtime > desc.wml_modified) {
-			desc.wml_modified = st.st_mtime;
-		}
-		desc.wml_sum_size += st.st_size;
-		desc.wml_nfiles ++;
-	}
-
-	if (!wml_checksum_from_file(bin_to_path + "/" + desc.bin_name, &desc.bin_nfiles, &desc.bin_sum_size, (uint32_t*)&desc.bin_modified)) {
-		desc.bin_nfiles = desc.bin_sum_size = desc.bin_modified = 0;
-	}
-
-	if (desc.wml_nfiles != desc.bin_nfiles || desc.wml_sum_size != desc.bin_sum_size || desc.wml_modified != desc.bin_modified) {
-		binary_paths_manager paths_manager(game_config_);
-		terrain_builder::release_heap();
-		terrain_builder::set_terrain_rules_cfg(game_config_);
-
-		terrain_builder("off-map/alpha.png", desc.wml_nfiles, desc.wml_sum_size, desc.wml_modified);
-	}
 }
 
 const config& generate_cfg(const config& data_cfg, const std::string& type)

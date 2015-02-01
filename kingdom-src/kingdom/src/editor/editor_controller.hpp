@@ -43,10 +43,6 @@ class rng;
 struct set_random_generator;
 }
 
-namespace preferences {
-	struct display_manager;
-} // namespace preferences
-
 namespace editor {
 
 struct size_specs;
@@ -217,12 +213,6 @@ class editor_controller : public controller_base,
 		 */
 		void refresh_all();
 
-		/** command_executor override */
-		bool can_execute_command(hotkey::HOTKEY_COMMAND, int index = -1) const;
-
-		/** command_executor override */
-		bool execute_command(hotkey::HOTKEY_COMMAND command, int index = -1, std::string str = "");
-
 		/** Menu expanding for open maps list */
 		void expand_open_maps_menu(std::vector<std::string>& items);
 
@@ -250,12 +240,12 @@ class editor_controller : public controller_base,
 		/**
 		 * Set the current mouse action based on a hotkey id
 		 */
-		void hotkey_set_mouse_action(hotkey::HOTKEY_COMMAND command);
+		void hotkey_set_mouse_action(int command);
 
 		/**
 		 * @return true if the mouse action identified by the hotkey is active
 		 */
-		bool is_mouse_action_set(hotkey::HOTKEY_COMMAND command) const;
+		bool is_mouse_action_set(int command) const;
 
 		void update_mouse_action_highlights();
 
@@ -287,7 +277,8 @@ class editor_controller : public controller_base,
 		/* controller_base overrides */
 		void process_keyup_event(const SDL_Event& event);
 		mouse_handler_base& get_mouse_handler_base();
-		editor_display& get_display();
+		editor_display& get_display() { return *gui_; }
+		const editor_display& get_display() const { return *gui_; }
 
 		/** Get the current mouse action */
 		mouse_action* get_mouse_action();
@@ -317,6 +308,9 @@ class editor_controller : public controller_base,
 
 		std::vector<std::string> map_modified() const;
 	private:
+		/** command_executor override */
+		void execute_command2(int command, const std::string& sparam);
+
 		/** init the display object and general set-up */
 		void init_gui(CVideo& video);
 
@@ -397,7 +391,6 @@ class editor_controller : public controller_base,
 		boost::scoped_ptr<terrain_palette> palette_;
 
 		/* managers */
-		boost::scoped_ptr<preferences::display_manager> prefs_disp_manager_;
 		tooltips::manager tooltip_manager_;
 		boost::scoped_ptr<font::floating_label_context> floating_label_manager_;
 
@@ -411,11 +404,11 @@ class editor_controller : public controller_base,
 		/** The current brush */
 		brush* brush_;
 
-		typedef std::map<hotkey::HOTKEY_COMMAND, mouse_action*> mouse_action_map;
+		typedef std::map<int, mouse_action*> mouse_action_map;
 		/** The mouse actions */
 		mouse_action_map mouse_actions_;
 
-		typedef std::map<hotkey::HOTKEY_COMMAND, std::string> mouse_action_string_map;
+		typedef std::map<int, std::string> mouse_action_string_map;
 		/** Usage tips for mouse actions */
 		mouse_action_string_map mouse_action_hints_;
 

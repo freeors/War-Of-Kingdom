@@ -60,6 +60,8 @@ public:
 	void erase_children();
 	void hide_children();
 
+	void set_content_size(const tpoint& origin, const tpoint& size);
+
 private:
 	/** Inherited from tcontrol. */
 	void impl_draw_background(

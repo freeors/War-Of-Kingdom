@@ -43,8 +43,7 @@
 #include "preferences_display.hpp"
 #include "video.hpp"
 #include "formula_string_utils.hpp"
-
-#include "posix.h"
+#include "hotkeys.hpp"
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -303,7 +302,6 @@ twindow::twindow(CVideo& video,
 	, y_(y)
 	, w_(w)
 	, h_(h)
-	, alternate_index_(-1)
 	, keep_rect_(::create_rect(-1, -1, -1, -1))
 	, tooltip_(tooltip)
 	, helptip_(helptip)
@@ -386,7 +384,7 @@ twindow::twindow(CVideo& video,
 				, _3)
 			, event::tdispatcher::back_pre_child);
 
-	register_hotkey(hotkey::GLOBAL__HELPTIP, boost::bind(gui2::helptip));
+	register_hotkey(GLOBAL__HELPTIP, boost::bind(gui2::helptip));
 }
 
 twindow::~twindow()
@@ -849,12 +847,12 @@ void twindow::invalidate_layout()
 }
 
 void twindow::init_linked_size_group(const std::string& id,
-		const bool fixed_width, const bool fixed_height, bool alternate)
+		const bool fixed_width, const bool fixed_height, bool radio)
 {
 	assert(fixed_width || fixed_height);
 	assert(!has_linked_size_group(id));
 
-	linked_size_[id] = tlinked_size(fixed_width, fixed_height, alternate);
+	linked_size_[id] = tlinked_size(fixed_width, fixed_height, radio);
 }
 
 bool twindow::has_linked_size_group(const std::string& id)
@@ -1314,12 +1312,12 @@ void twindow_implementation::layout(twindow& window,
 	}
 }
 
-void twindow::alternate_uh(twidget* holder, int index)
+void twindow::radio_page_swap_uh(const tradio_page::tpage& page, twidget* holder, bool first)
 {
 	// earse linked_size_
-	typedef std::pair<const std::string, tlinked_size> hack;
+	// typedef std::pair<const std::string, tlinked_size> hack;
 	for (std::map<std::string, tlinked_size>::iterator hack = linked_size_.begin(); hack != linked_size_.end();) {
-		if (!hack->second.alternate) {
+		if (!hack->second.radio) {
 			hack ++;
 			continue;
 		}
@@ -1329,8 +1327,7 @@ void twindow::alternate_uh(twidget* holder, int index)
 	}
 
 	// add linked_size_
-	BOOST_FOREACH(const twindow_builder::tresolution::tlinked_group& lg,
-		definition_->alternate_items[index].linked_groups) {
+	BOOST_FOREACH(const tlinked_group& lg, page.linked_groups) {
 
 		if (has_linked_size_group(lg.id)) {
 			utils::string_map symbols;
@@ -1348,14 +1345,14 @@ void twindow::alternate_uh(twidget* holder, int index)
 	// keyboard focus maybe in delete control, set keyboard_focus_ to null.
 	// keyboard_capture(NULL);
 
-	if (definition_->alternate_items[index].row) {
+	if (page.row) {
 		tlistbox* table = dynamic_cast<tlistbox*>(holder);
 
-		table->set_list_builder(definition_->alternate_items[index].row);
+		table->set_list_builder(page.row);
 
 		// _header_grid
 		tgrid* grid_ptr = new tgrid();
-		definition_->alternate_items[index].header->build(grid_ptr);
+		page.header->build(grid_ptr);
 		grid_ptr->set_id("_header_grid");
 		twidget* widget = table->content_grid()->swap_child("_header_grid", grid_ptr, true, this);
 		VALIDATE(widget, "original grid cannot find table_header id");
@@ -1363,14 +1360,14 @@ void twindow::alternate_uh(twidget* holder, int index)
 	} else {
 		tscrollbar_panel* panel = dynamic_cast<tscrollbar_panel*>(holder);
 
-		if (alternate_index_ >= 0 && keep_rect_.x == -1) {
+		if (!first && keep_rect_.x == -1) {
 			// from a valid page to another page.
 			set_keep_rect(get_x(), get_y(), get_width(), get_height());
 			panel->set_best_size(gui2::tpoint(panel->get_width(), panel->get_height()));
 		}
 		// _grid
 		tgrid* grid_ptr = new tgrid();
-		definition_->alternate_items[index].header->build(grid_ptr);
+		page.header->build(grid_ptr);
 		grid_ptr->set_id("_grid");
 		twidget* widget = panel->content_grid()->swap_child("_grid", grid_ptr, false, this);
 		VALIDATE(widget, "original grid cannot find _grid id");
@@ -1378,28 +1375,22 @@ void twindow::alternate_uh(twidget* holder, int index)
 	}
 }
 
-void twindow::alternate_bh(twidget* holder, int index)
+void twindow::radio_page_swap_bh(const tradio_page::tpage& page, twidget* holder)
 {
-	if (definition_->alternate_items[index].row) {
-		if (holder) {
-			tlistbox* table = dynamic_cast<tlistbox*>(holder);
+	if (page.row) {
+		tlistbox* table = dynamic_cast<tlistbox*>(holder);
 
-			table->layout_init(true);
-			layout_linked_widgets();
-			// content_grid_ is changed, get new all size, include content_grid_'s size.
-			// immediate, tlistbox::layout_children will call, must make sure content_grid's size is right.
-			table->invalidate_layout(); // 
-			table->get_best_size();
-		}
+		table->layout_init(true);
+		layout_linked_widgets();
+		// content_grid_ is changed, get new all size, include content_grid_'s size.
+		// immediate, tlistbox::layout_children will call, must make sure content_grid's size is right.
+		table->invalidate_layout(); // 
+		table->get_best_size();
+
 	} else {
-		if (holder) {
-			// layout window.
-			invalidate_layout();
-		}
+		// layout window.
+		invalidate_layout();
 	}
-
-	// remember this index
-	alternate_index_ = index;
 }
 
 void twindow::mouse_capture(const bool capture)

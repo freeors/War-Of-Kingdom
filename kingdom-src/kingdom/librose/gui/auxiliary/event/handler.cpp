@@ -60,16 +60,6 @@ extern int revise_screen_height(int height);
 
 namespace gui2 {
 
-struct video_mode_change_exception 
-{
-	enum TYPE { CHANGE_RESOLUTION, MAKE_FULLSCREEN, MAKE_WINDOWED };
-
-	video_mode_change_exception(TYPE type) : type(type)
-	{}
-
-	TYPE type;
-};
-
 namespace event {
 
 /***** Static data. *****/

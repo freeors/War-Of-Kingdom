@@ -29,8 +29,7 @@ namespace implementation {
 }
 
 /** The listbox class. */
-class tlistbox
-		: public tscrollbar_container
+class tlistbox: public tscrollbar_container, public tradio_page
 {
 	friend struct implementation::tbuilder_listbox;
 	friend struct implementation::tbuilder_horizontal_listbox;
@@ -47,7 +46,7 @@ public:
 	 * @param select              Select an item when selected, if false it
 	 *                            changes the visible state instead.
 	 */
-	tlistbox(const bool has_minimum, const bool has_maximum,
+	tlistbox(const std::vector<tradio_page::tpage>& pages, const bool has_minimum, const bool has_maximum,
 			const tgenerator_::tplacement placement, const bool select);
 
 	/***** ***** ***** ***** Row handling. ***** ***** ****** *****/

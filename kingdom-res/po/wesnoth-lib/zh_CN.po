@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2014-12-29 16:31+0800\n"
+"PO-Revision-Date: 2015-01-29 22:40+0800\n"
 "Last-Translator: \n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -4897,6 +4897,9 @@ msgstr "$do成功！"
 msgid "Append"
 msgstr "添加"
 
+msgid "Modify"
+msgstr "修改"
+
 msgid "Agreement"
 msgstr "协议"
 
@@ -5559,6 +5562,30 @@ msgstr "状态报告（$id）必须使用固定坐标。"
 
 msgid "Defined $id conext menu, but not define same id report widget!"
 msgstr "定义了$id上下文菜单，但没有定义同id报表控件！"
+
+msgid "file^Size"
+msgstr "大小"
+
+msgid "Choose a Window to Open"
+msgstr "选择要打开的窗口"
+
+msgid "Open"
+msgstr "打开"
+
+msgid "My Document"
+msgstr "我的文档"
+
+msgid "Sandbox"
+msgstr "沙盒"
+
+msgid "File name"
+msgstr "文件名"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Save As"
+msgstr "另存为"
 
 #~ msgid "Join Official Server"
 #~ msgstr "加入官方服务器"

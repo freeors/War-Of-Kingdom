@@ -118,7 +118,7 @@ tprelude::ttype tprelude::find(const std::string& tag)
 	return NONE;
 }
 
-tprelude::tprelude(game_display& disp, hero_map& heros, const config& game_config, const config& cfg)
+tprelude::tprelude(display& disp, hero_map& heros, const config& game_config, const config& cfg)
 	: disp_(disp)
 	, heros_(heros)
 	, game_config_(game_config)
@@ -145,7 +145,7 @@ void tprelude::post_build(CVideo& video, twindow& window)
 {
 }
 
-int ready_outer_anim(game_display& disp, tcontrol& widget, const config& cfg, bool cycles)
+int ready_outer_anim(display& disp, tcontrol& widget, const config& cfg, bool cycles)
 {
 	std::stringstream key;
 	config anim_cfg;

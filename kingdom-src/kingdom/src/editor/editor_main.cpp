@@ -16,7 +16,6 @@
 
 #include "editor_controller.hpp"
 
-#include "../construct_dialog.hpp"
 #include "gettext.hpp"
 #include "filesystem.hpp"
 #include "hero.hpp"
@@ -32,10 +31,6 @@ EXIT_STATUS start(const config& game_conf, CVideo& video, hero_map& heros, int m
 {
 	EXIT_STATUS e = EXIT_ERROR;
 	try {
-		hotkey::scope_changer h_(game_conf, "hotkey_editor");
-		hotkey::deactivate_all_scopes();
-		hotkey::set_scope_active(hotkey::SCOPE_GENERAL);
-		hotkey::set_scope_active(hotkey::SCOPE_EDITOR);
 		editor_controller editor(game_conf, video, heros, mode);
 		if (!filename.empty()) {
 			if (is_directory(filename)) {

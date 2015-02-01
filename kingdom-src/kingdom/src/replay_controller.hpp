@@ -33,11 +33,8 @@ public:
 		const int ticks, const int num_turns, const config& game_config, CVideo& video);
 	virtual ~replay_controller();
 
-	virtual bool can_execute_command(hotkey::HOTKEY_COMMAND command, int index=-1) const;
-
 	//event handlers
 	virtual void preferences();
-	virtual void show_statistics();
 	void play_replay();
 	void stop_replay();
 	void replay_next_turn();
@@ -62,6 +59,9 @@ protected:
 	void linger();
 
 private:
+	/** command_executor override */
+	void execute_command2(int command, const std::string& sparam);
+
 	void init();
 	virtual void play_turn();
 	virtual void play_side();
@@ -69,7 +69,6 @@ private:
 	void update_gui();
 
 	game_state gamestate_start_;
-	unit_map units_start_;
 	tod_manager tod_manager_start_;
 
 	unsigned int current_turn_;

@@ -31,6 +31,7 @@ struct tborder
 	tborder(const config& cfg);
 
 	double size;
+	SDL_Color view_rectange_color;
 
 	std::string background_image;
 	std::string tile_image;
@@ -119,6 +120,9 @@ public:
 
 	std::vector<tcontext_menu>& context_menus() { return context_menus_; }
 	tcontext_menu* context_menu(const std::string& id);
+
+protected:
+	void click_generic_handler(tcontrol& widget, const std::string& sparam);
 
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */

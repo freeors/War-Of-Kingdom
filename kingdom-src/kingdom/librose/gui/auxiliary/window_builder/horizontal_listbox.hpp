@@ -43,6 +43,7 @@ struct tbuilder_horizontal_listbox
 	 * serialize the data in the config, so the config is no longer required.
 	 */
 	std::vector<string_map> list_data;
+	std::vector<tradio_page::tpage> pages;
 };
 
 } // namespace implementation

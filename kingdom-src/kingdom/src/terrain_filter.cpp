@@ -40,6 +40,7 @@ terrain_filter::~terrain_filter()
 // and so we don't care about the warnings this quick fix generates
 #pragma warning(push)
 #pragma warning(disable:4413)
+/*
 terrain_filter::terrain_filter():
 	cfg_(vconfig::unconstructed_vconfig()),
 	units_(unit_map()),
@@ -49,6 +50,7 @@ terrain_filter::terrain_filter():
 {
 	assert(false);
 }
+*/
 #pragma warning(pop)
 #endif
 
@@ -144,8 +146,8 @@ bool terrain_filter::match_internal(const map_location& loc, const bool ignore_x
 	//Allow filtering on unit
 	if(cfg_.has_child("filter")) {
 		const vconfig& unit_filter = cfg_.child("filter");
-		const unit_map::const_iterator u = units_.find(loc);
-		if (u == units_.end() || !u->matches_filter(unit_filter, loc, flat_))
+		unit* u = units_.find_unit(loc, true);
+		if (!u || !u->matches_filter(unit_filter, loc, flat_))
 			return false;
 	}
 

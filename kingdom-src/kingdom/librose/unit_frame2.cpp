@@ -404,10 +404,6 @@ std::vector<SDL_Rect> unit_frame::get_overlaped_rect_area_mode(const int frame_t
 	bool facing_west = false;
 	bool facing_north = true;
 
-	const map_location zero_loc(0,0);
-	zero_x_ = disp.get_location_x(zero_loc);
-	zero_y_ = disp.get_location_y(zero_loc);
-
 	std::vector<SDL_Rect> result;
 	if (image != NULL || !current_data.stext.empty()) {
 		bool facing_west = false;

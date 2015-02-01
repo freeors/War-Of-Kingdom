@@ -4877,6 +4877,9 @@ msgstr ""
 msgid "Append"
 msgstr ""
 
+msgid "Modify"
+msgstr ""
+
 msgid "Agreement"
 msgstr ""
 
@@ -5432,4 +5435,28 @@ msgid "Report widget($id) must use fix rect."
 msgstr ""
 
 msgid "Defined $id conext menu, but not define same id report widget!"
+msgstr ""
+
+msgid "file^Size"
+msgstr ""
+
+msgid "Choose a Window to Open"
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "My Document"
+msgstr ""
+
+msgid "Sandbox"
+msgstr ""
+
+msgid "File name"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save As"
 msgstr ""

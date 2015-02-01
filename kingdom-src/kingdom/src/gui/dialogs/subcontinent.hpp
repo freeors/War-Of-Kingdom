@@ -65,7 +65,7 @@ public:
 
 	enum tresult { SIEGE = 1, SCENARIO};
 
-	tsubcontinent(game_display& disp, hero_map& heros, game_state& state, const config& game_config);
+	tsubcontinent(display& disp, hero_map& heros, game_state& state, const config& game_config);
 
 	~tsubcontinent();
 
@@ -104,7 +104,7 @@ private:
 	void execute_bh(twindow& window, int tag);
 	std::vector<std::vector<std::string> > crop_map(std::vector<std::vector<std::string> >& full_map_str, const map_location& from_loc, const map_location& to_loc);
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	game_state& state_;
 	const config& game_config_;

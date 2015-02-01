@@ -508,10 +508,7 @@ void scoped_xy_unit::activate()
 		u = city_->reside_troops()[y_];
 		loc = city_->get_location();
 	} else {
-		unit_map::const_iterator itor = umap_.find(loc);
-		if (itor != umap_.end()) {
-			u = &*itor;
-		}
+		u = umap_.find_unit(loc, true);
 	}	
 	if (u) {
 		config &tmp_cfg = store();

@@ -22,7 +22,7 @@
 
 class hero_map;
 class config;
-class game_display;
+class display;
 class gamemap;
 
 namespace gui2 {
@@ -43,12 +43,12 @@ public:
 class tmp_side_wait : public tdialog, public lobby_base, public tlobby::thandler
 {
 public:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	gamemap& gmap_;
 	const config& game_config_;
 
-	explicit tmp_side_wait(hero_map& heros, hero_map& heros_start, game_display& disp, gamemap& gmap, const config& game_config,
+	explicit tmp_side_wait(hero_map& heros, hero_map& heros_start, display& disp, gamemap& gmap, const config& game_config,
 			config& gamelist, int game_id, bool observe);
 
 	~tmp_side_wait();

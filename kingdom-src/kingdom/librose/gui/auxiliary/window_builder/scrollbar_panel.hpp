@@ -24,8 +24,7 @@ namespace gui2 {
 
 namespace implementation {
 
-struct tbuilder_scrollbar_panel
-	: public tbuilder_control
+struct tbuilder_scrollbar_panel	: public tbuilder_control
 {
 	explicit tbuilder_scrollbar_panel(const config& cfg);
 
@@ -35,6 +34,7 @@ struct tbuilder_scrollbar_panel
 	tscrollbar_container::tscrollbar_mode horizontal_scrollbar_mode;
 
 	tbuilder_grid_ptr grid;
+	std::vector<tradio_page::tpage> pages;
 };
 
 } // namespace implementation

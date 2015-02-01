@@ -17,7 +17,7 @@
 #define EDITOR_EDITOR_DISPLAY_HPP_INCLUDED
 
 #include "editor_map.hpp"
-#include "display.hpp"
+#include "hex_display.hpp"
 #include "editor_palettes.hpp"
 
 namespace gui2 {
@@ -30,7 +30,7 @@ namespace editor {
 
 class editor_controller;
 
-class editor_display : public display
+class editor_display : public hex_display
 {
 public:
 	editor_display(editor_controller& controller, CVideo& video, const editor_map& map, const config& theme_cfg,
@@ -40,7 +40,7 @@ public:
 	gui2::ttheme* create_theme_dlg(const config& cfg);
 	void post_change_resolution(const std::map<const std::string, bool>& actives);
 
-	bool in_editor() const { return true; }
+	bool in_theme() const { return true; }
 
 	void add_brush_loc(const map_location& hex);
 	void set_brush_locs(const std::set<map_location>& hexes);

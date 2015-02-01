@@ -19,7 +19,7 @@
 #include "gui/dialogs/dialog.hpp"
 #include "config.hpp"
 
-class game_display;
+class display;
 class hero_map;
 
 namespace gui2 {
@@ -52,7 +52,7 @@ public:
 	static void fill_tags();
 	static ttype find(const std::string& tag);
 
-	tprelude(game_display& disp, hero_map& heros, const config& game_config, const config& part);
+	tprelude(display& disp, hero_map& heros, const config& game_config, const config& part);
 
 	~tprelude();
 
@@ -82,7 +82,7 @@ private:
 	void timer_handler();
 
 private:
-	game_display& disp_;
+	display& disp_;
 	hero_map& heros_;
 	const config& game_config_;
 

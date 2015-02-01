@@ -91,7 +91,7 @@ REGISTER_DIALOG(design)
 
 std::map<tdesign::tstyle, std::string> tdesign::styles;
 
-tdesign::tdesign(game_display& disp, hero_map& heros)
+tdesign::tdesign(display& disp, hero_map& heros)
 	: disp_(disp)
 	, heros_(heros)
 	, style_(style_min)
@@ -167,7 +167,7 @@ void tdesign::refresh_according_to_style(twindow& window)
 	} else if (style_ == style_stuff) {
 		strstr << "green-stuff-";
 	}
-	user_widget->set_value(strstr.str());
+	user_widget->set_label(strstr.str());
 
 	// second tag/input
 	strstr.str("");
@@ -184,7 +184,7 @@ void tdesign::refresh_according_to_style(twindow& window)
 	strstr.str("");
 	if (style_ == style_transition) {
 		strstr << "green";
-		user_widget->set_value(strstr.str());
+		user_widget->set_label(strstr.str());
 		user_widget->set_visible(twidget::VISIBLE);
 	} else if (style_ == style_stuff) {
 		user_widget->set_visible(twidget::INVISIBLE);
@@ -197,7 +197,7 @@ std::string tdesign::text_box_str(twindow& window, const std::string& id, const 
 	utils::string_map symbols;
 
 	ttext_box* widget = find_widget<ttext_box>(&window, id, false, true);
-	std::string str = widget->get_value();
+	std::string str = widget->label();
 
 	if (!allow_empty && str.empty()) {
 		symbols["key"] = tintegrate::generate_format(name, "red");
@@ -224,22 +224,16 @@ std::string tdesign::text_box_str(twindow& window, const std::string& id, const 
 
 void tdesign::style(twindow& window)
 {
-	std::vector<std::string> items;
-	std::vector<tval_str> style_map;
-	int actived_index = 0;
+	std::vector<tval_str> items;
 
 	for (std::map<tstyle, std::string>::const_iterator it = styles.begin(); it != styles.end(); ++ it) {
-		style_map.push_back(tval_str(it->first, it->second));
-		items.push_back(IMAGE_PREFIX + it->second);
-		if (style_ == it->first) {
-			actived_index = style_ - style_min;
-		}
+		items.push_back(tval_str(it->first, it->second));
 	}
 
-	gui2::tcombo_box dlg(items, actived_index);
+	gui2::tcombo_box dlg(items, style_);
 	dlg.show(disp_.video());
 
-	style_ = (tstyle)style_map[dlg.selected_index()].val;
+	style_ = (tstyle)dlg.selected_val();
 
 	tcontrol* label = find_widget<tcontrol>(&window, "style", false, true);
 	label->set_label(tintegrate::generate_img(styles.find(style_)->second));

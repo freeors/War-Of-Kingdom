@@ -47,13 +47,13 @@ public:
 	virtual void play_card();
 	virtual void expedite();
 	virtual void move();
-	virtual bool can_execute_command(hotkey::HOTKEY_COMMAND command, int index=-1) const;
+	virtual bool can_execute_command(int command, const std::string& sparam) const;
+	virtual void execute_command2(int command, const std::string& sparam);
 	virtual void toggle_shroud_updates();
 	virtual void update_shroud_now();
 	virtual void end_turn();
 	virtual void force_end_turn();
 	virtual void change_side();
-	virtual void label_terrain(bool);
 	virtual void clear_labels();
 	virtual void clear_messages();
 
@@ -85,7 +85,6 @@ protected:
 
 	const cursor::setter cursor_setter;
 	std::deque<config> data_backlog_;
-	gui::floating_textbox textbox_info_;
 	replay_network_sender replay_sender_;
 
 	bool player_type_changed_;
