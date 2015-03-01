@@ -23,6 +23,8 @@
 #include <cassert>
 
 class gamemap;
+class display;
+class controller_base;
 struct rect_of_hexes;
 
 // base_map is used primarily as a map<location, unit>, but we need to be able to move a unit
@@ -33,9 +35,47 @@ struct rect_of_hexes;
 class base_map
 {
 public:
+	class tconsistent_lock
+	{
+	public:
+		tconsistent_lock(base_map& units)
+			: units_(units)
+			, original_(units.consistent_)
+		{
+			units_.consistent_ = true;
+		}
+		~tconsistent_lock()
+		{
+			units_.consistent_ = original_;
+		}
+
+	private:
+		base_map& units_;
+		bool original_;
+	};
+
+	class tplace_unsort_lock
+	{
+	public:
+		tplace_unsort_lock(base_map& units)
+			: units_(units)
+			, original_(units.place_unsort_)
+		{
+			units_.place_unsort_ = true;
+		}
+		~tplace_unsort_lock()
+		{
+			units_.place_unsort_ = original_;
+		}
+
+	private:
+		base_map& units_;
+		bool original_;
+	};
+
 	enum {BASE = 1, OVERLAY};
 
-	base_map(const gamemap& gmap);
+	base_map(controller_base& controller, const gamemap& gmap, bool consistent);
 	base_map& operator=(const base_map &that);
 	virtual ~base_map();
 
@@ -59,7 +99,7 @@ public:
 			ptr_(NULL)
 		{}
 
-		iterator_base(size_t i, map_type* m) : 
+		iterator_base(int i, map_type* m) : 
 			map_(m), 
 			i_(i),
 			iter_valid_(true)
@@ -110,7 +150,7 @@ public:
 	private:
 		map_type* map_;
 
-		size_t i_;
+		int i_;
 		base_unit* ptr_;
 		bool iter_valid_;
 	};
@@ -148,6 +188,11 @@ public:
 	virtual void create_coor_map(int w, int h);
 	void clear();
 
+	controller_base& get_controller() { return controller_; }
+	const controller_base& get_controller() const { return controller_; }
+
+	bool consistent() const { return consistent_;}
+	void set_consistent(bool val) { consistent_ = val; }
 	/**
 	 * Return iterators are implicitly converted to other types as needed.
 	 */
@@ -160,7 +205,7 @@ public:
 	iterator end() { return iterator(map_vsize_, this); }
 	const_iterator end() const { return const_iterator(map_vsize_, this); }
 
-	size_t size() const { return map_vsize_; }
+	int size() const { return map_vsize_; }
 
 	virtual void add(const map_location& loc, const base_unit* u) = 0;
 
@@ -172,8 +217,11 @@ public:
 	 * @note This function should be used in conjunction with #extract only.
 	 */
 	virtual void insert(const map_location loc, base_unit* u);
-	virtual void sort_map(size_t pos);
-	virtual void sort_map2(const base_unit& u);
+	virtual void sort_map(const base_unit& u);
+
+	virtual void insert2(const display& disp, base_unit* u);
+	base_unit* unit_clicked_on(const int xclick, const int yclick, const map_location& mloc) const;
+	map_location conflict_calculate_loc(const base_unit& u);
 
 	/**
 	 * Moves a unit from location @a src to location @a dst.
@@ -201,15 +249,23 @@ public:
 
 	base_unit* find_base_unit(const map_location& loc) const;
 	base_unit* find_base_unit(const map_location& loc, bool overlay) const;
+	base_unit* find_base_unit(int i) const { return map_[i]; }
+
+	void verify_map_index() const;
+
+private:
+	void expand_coor_map(int w);
 
 protected:
 	const gamemap& gmap_;
 
+	bool consistent_;
+	bool place_unsort_;
 	/**
 	 * map_location -> base_unit
 	 */
 	base_unit** map_;
-	size_t map_vsize_;
+	int map_vsize_;
 
 	int w_, h_;
 
@@ -217,8 +273,10 @@ protected:
 		base_unit* base;
 		base_unit* overlay;
 	};
-
 	loc_cookie* coor_map_;
+
+private:
+	controller_base& controller_;
 };
 
 // define allowed conversions.
@@ -232,7 +290,7 @@ template <typename iter_types>
 base_map::iterator_base<iter_types>& base_map::iterator_base<iter_types>::operator++() 
 {
 	if (!iter_valid_) {
-		for (size_t i = 0; i < map_->map_vsize_; i ++) {
+		for (int i = 0; i < map_->map_vsize_; i ++) {
 			if (map_->map_[i] == ptr_) {
 				i_ = i;
 				break;
@@ -240,7 +298,7 @@ base_map::iterator_base<iter_types>& base_map::iterator_base<iter_types>::operat
 		}
 		iter_valid_ = true;
 	}
-	++i_;
+	++ i_;
 	if (i_ != map_->map_vsize_) {
 		ptr_ = map_->map_[i_];
 	} else {
@@ -262,7 +320,7 @@ template <typename iter_types>
 base_map::iterator_base<iter_types>& base_map::iterator_base<iter_types>::operator--()
 {
 	if (!iter_valid_) {
-		for (size_t i = 0; i < map_->map_vsize_; i ++) {
+		for (int i = 0; i < map_->map_vsize_; i ++) {
 			if (map_->map_[i] == ptr_) {
 				i_ = i;
 				break;

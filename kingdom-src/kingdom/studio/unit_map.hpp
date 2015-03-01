@@ -16,7 +16,7 @@
 #ifndef STUDIO_UNIT_MAP_HPP_INCLUDED
 #define STUDIO_UNIT_MAP_HPP_INCLUDED
 
-#include "unit.hpp"
+#include "unit2.hpp"
 #include "base_map.hpp"
 
 class mkwin_controller;
@@ -24,7 +24,7 @@ class mkwin_controller;
 class unit_map: public base_map
 {
 public:
-	unit_map(mkwin_controller& controller, const gamemap& gmap);
+	unit_map(mkwin_controller& controller, const gamemap& gmap, bool consistent);
 
 	void create_coor_map(int w, int h);
 	void add(const map_location& loc, const base_unit* base_u);
@@ -32,8 +32,10 @@ public:
 	unit* find_unit(const map_location& loc) const;
 	unit* find_unit(const map_location& loc, bool verlay) const;
 
+	unit* find_unit(int i) const { return dynamic_cast<unit*>(map_[i]); }
+
 	void move_mass(bool horizontal, bool extend, int start, int stop);
-	void save_map_to(unit::tchild& child);
+	void save_map_to(unit::tchild& child, bool clear);
 	void restore_map_from(const unit::tchild& child);
 
 	void move_line(bool horizontal, const int index);

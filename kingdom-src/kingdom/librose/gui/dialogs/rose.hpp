@@ -50,7 +50,7 @@ public:
 			, MULTIPLAYER         /**<
 			                       * Play single scenario against humans or AI
 			                       */
-			, LOAD_GAME
+			, EDIT_THEME
 			, REPORT
 			, START_MAP_EDITOR
 			, CHANGE_LANGUAGE

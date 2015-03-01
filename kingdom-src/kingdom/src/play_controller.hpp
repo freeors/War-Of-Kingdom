@@ -214,8 +214,8 @@ public:
 	bool allow_active() const { return allow_active_; }
 	void clear_slot_cache_selected();
 
-	void click_access_list(void* cookie, int type);
 	virtual void execute_command2(int command, const std::string& sparam);
+	void click_tabbar(gui2::twidget* widget, const std::string& sparam);
 
 protected:
 	void slice_before_scroll();

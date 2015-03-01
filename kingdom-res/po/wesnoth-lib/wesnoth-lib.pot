@@ -3209,6 +3209,9 @@ msgstr ""
 msgid "Save Map"
 msgstr ""
 
+msgid "Save Window"
+msgstr ""
+
 #: src/hotkeys.cpp:73
 msgid "Recruit"
 msgstr ""
@@ -3358,6 +3361,9 @@ msgstr ""
 
 #: src/hotkeys.cpp:124
 msgid "Load Map"
+msgstr ""
+
+msgid "Load Window"
 msgstr ""
 
 #: src/hotkeys.cpp:126

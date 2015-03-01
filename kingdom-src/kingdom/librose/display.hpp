@@ -116,7 +116,7 @@ public:
 		bool to_canvas_;
 	};
 
-	static int last_zoom_;
+	static int last_zoom;
 	static int default_zoom_;
 
 	enum {ZOOM_72 = 72, ZOOM_64 = 64, ZOOM_56 = 56, ZOOM_48 = 48};
@@ -215,6 +215,8 @@ public:
 	 * Returns an invalid location if the mouse isn't over any valid location.
 	 */
 	const map_location hex_clicked_on(int x, int y) const;
+
+	void pixel_screen_to_map(int& xclick, int& yclick) const;
 
 	/**
 	 * given x,y co-ordinates of a pixel on the map, will return the
@@ -517,6 +519,7 @@ public:
 	void draw_float_anim();
 	void undraw_float_anim();
 
+	gui2::ttheme* get_theme() { return theme_; }
 	gui2::twidget* get_theme_object(const std::string& id) const ;
 	void set_theme_object_active(const std::string& id, bool active) const;
 	void set_theme_object_visible(const std::string& id, const gui2::twidget::tvisible visible) const;
@@ -615,6 +618,8 @@ protected:
 	virtual double minimap_shift_x(const SDL_Rect& map_rect, const SDL_Rect& map_out_rect) const;
 	virtual double minimap_shift_y(const SDL_Rect& map_rect, const SDL_Rect& map_out_rect) const;
 
+	virtual void post_zoom() {}
+
 protected:
 	CVideo& screen_;
 	const gamemap* map_;
@@ -658,6 +663,8 @@ protected:
 
 	map_location selectedHex_;
 	map_location mouseoverHex_;
+	bool show_hover_over_;
+
 	CKey keys_;
 
 	/** Local cache for preferences::animate_map, since it is constantly queried. */

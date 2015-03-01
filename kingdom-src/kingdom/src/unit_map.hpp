@@ -27,6 +27,7 @@ class unit_map;
 class game_state;
 class game_display;
 class strategy;
+class play_controller;
 
 #define CITYS_INVALID_NUMBER	0xffffffff
 
@@ -310,7 +311,7 @@ public:
 
 	static std::map<const map_location, int> economy_areas_;
 
-	unit_map(const gamemap& gmap);
+	unit_map(play_controller& controller, const gamemap& gmap);
 	unit_map& operator=(const unit_map &that);
 
 	~unit_map();
@@ -348,6 +349,7 @@ public:
 	 * @note This function should be used in conjunction with #extract only.
 	 */
 	void insert(const map_location loc, base_unit* u);
+	void sort_map(const base_unit& u);
 
 	/**
 	 * Moves a unit from location @a src to location @a dst.
@@ -394,6 +396,7 @@ public:
 
 private:
 	// used to spread all city
+	play_controller& controller_;
 	city_map citys_;
 
 	bool expediting_;

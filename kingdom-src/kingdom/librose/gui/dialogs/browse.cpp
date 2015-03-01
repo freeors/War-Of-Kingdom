@@ -191,20 +191,6 @@ void tbrowse::init_entry(twindow& window)
 	}
 }
 
-tbutton* create_button(const std::string& id, const std::string& definition, void* cookie)
-{
-	config cfg;
-
-	if (!id.empty()) {
-		cfg["id"] = id;
-	}
-	cfg["definition"] = definition;
-
-	tbutton* widget = create_button(cfg);
-	widget->set_cookie(cookie);
-	return widget;
-}
-
 gui2::tbutton* tbrowse::create_navigate_button(twindow& window, const std::string& label, int index)
 {
 	gui2::tbutton* widget = create_button(null_str, "text", NULL);

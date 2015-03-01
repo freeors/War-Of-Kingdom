@@ -23,6 +23,10 @@
 #include "gui/widgets/button.hpp"
 class CVideo;
 
+namespace gui2 {
+class treport;
+}
+
 namespace events {
 class mouse_handler_base;
 }
@@ -54,6 +58,16 @@ public:
 	virtual void execute_command2(int command, const std::string& sparam);
 	virtual bool can_execute_command(int command, const std::string& sparam) const { return true; }
 
+	// true: halt. false: continue to exectue base action.
+	virtual bool toggle_tabbar(gui2::twidget* widget) { return true; }
+	virtual void click_tabbar(gui2::twidget* widget, const std::string& sparam) {}
+
+	/**
+	 * Get a reference to a display member a derived class uses
+	 */
+	virtual display& get_display() = 0;
+	virtual const display& get_display() const = 0;
+
 protected:
 	/**
 	 * Called by play_slice after events:: calls, but before processing scroll
@@ -65,13 +79,6 @@ protected:
 	 * Called at the very end of play_slice
 	 */
 	virtual void slice_end();
-
-	/**
-	 * Get a reference to a display member a derived class uses
-	 */
-	virtual display& get_display() = 0;
-	virtual const display& get_display() const = 0;
-
 
 	/**
 	 * Derived classes should override this to return false when arrow keys

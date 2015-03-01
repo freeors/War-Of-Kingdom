@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2015-01-29 22:40+0800\n"
+"PO-Revision-Date: 2015-02-28 10:42+0800\n"
 "Last-Translator: \n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -3207,6 +3207,9 @@ msgstr "保存录像"
 msgid "Save Map"
 msgstr "保存地图"
 
+msgid "Save Window"
+msgstr "保存窗口"
+
 #: src/hotkeys.cpp:73
 msgid "Recruit"
 msgstr "征募"
@@ -3358,6 +3361,9 @@ msgstr "部分撤销"
 #: src/hotkeys.cpp:124
 msgid "Load Map"
 msgstr "读取地图"
+
+msgid "Load Window"
+msgstr "加载窗口"
 
 #: src/hotkeys.cpp:126
 msgid "Save Map As"

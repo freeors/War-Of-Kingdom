@@ -17,10 +17,13 @@
 #define GUI_WIDGETS_REPORT_HPP_INCLUDED
 
 #include "gui/widgets/scrollbar_container.hpp"
+#include <boost/function.hpp>
 
 namespace gui2 {
 
 class tspacer;
+class tbutton;
+class ttabbar;
 
 namespace implementation {
 	struct tbuilder_report;
@@ -36,12 +39,16 @@ namespace implementation {
 class treport : public tscrollbar_container
 {
 	friend struct implementation::tbuilder_report;
+	friend class ttabbar;
 public:
 
 	treport();
+	~treport();
 
 	void init_report(int unit_w, int unit_h, int gap);
-	const tpoint& get_unit_size() { return unit_size_; }
+	const tpoint& get_unit_size() const { return unit_size_; }
+	int get_unit_width() const { return unit_size_.x; }
+	int get_unit_height() const { return unit_size_.y; }
 
 	/** Inherited from tcontainer_. */
 	void set_self_active(const bool active)
@@ -54,12 +61,14 @@ public:
 	unsigned get_state() const { return state_; }
 
 	// below 5 function special to report control.
-	void insert_child(twidget& widget, size_t at = -1);
-	void erase_child(size_t at);
+	void insert_child(twidget& widget, int at = npos);
+	void erase_child(int at);
 	void replacement_children();
 	void erase_children();
 	void hide_children();
 
+	void layout_init(const bool full_initialization);
+	tpoint calculate_best_size() const;
 	void set_content_size(const tpoint& origin, const tpoint& size);
 
 private:
@@ -101,6 +110,56 @@ private:
 	tpoint unit_size_;
 	int gap_;
 	bool extendable_;
+
+	bool content_layouted_;
+	ttabbar* tabbar_;
+};
+
+class ttabbar
+{
+	friend class treport;
+public:
+	static const int front_childs = 1; // 1: previous
+	static const int back_childs = 2; // 1: stuff, 1: next
+	static ttabbar* get_tabbar(twidget* widget);
+
+	ttabbar(bool toggle, bool segment, const std::string& definition);
+	~ttabbar();
+
+	void set_report(treport* report, int width = 0, int height = 0);
+	treport* report() const { return report_; }
+	tcontrol* create_child(const std::string& id, const std::string& tooltip, void* cookie, const std::string& sparam);
+	void insert_child(twidget& widget, int at = twidget::npos);
+	void erase_child(int at);
+	void erase_children(bool clear_additional = false);
+	void hide_children();
+	void replacement_children(int grid_width = 0, int grid_height = 0);
+	void set_visible(int at, bool visible);
+	bool get_visible(int at) const;
+
+	int childs() const;
+	int get_index(const twidget* widget) const;
+	const tgrid::tchild& get_child(int at) const;
+	void select(int index);
+	void select(twidget* widget);
+	void set_callback_show(boost::function<void (ttabbar*, const tgrid::tchild& child)> callback) { callback_show_ = callback; }
+
+private:
+	void click(bool previous);
+	void validate_start();
+
+private:
+	treport* report_;
+	bool toggle_;
+	bool segment_;
+	std::string definition_;
+	int start_;
+	int segment_childs_;
+	tbutton* previous_;
+	tspacer* stuff_widget_;
+	tbutton* next_;
+	boost::function<void (ttabbar*, const tgrid::tchild& child)> callback_show_;
+	int max_height_;
 };
 
 } // namespace gui2

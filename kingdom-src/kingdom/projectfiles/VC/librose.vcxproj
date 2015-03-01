@@ -1,0 +1,1174 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CD5C07CC-2E4B-4ECB-83E8-498A0624EC5F}</ProjectGuid>
+    <RootNamespace>librose</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\librose\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\librose\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\external\boost;..\..\external\bzip2;..\..\external\zlib;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;NOMINMAX;_CRT_SECURE_NO_WARNINGS;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\external\boost;..\..\external\bzip2;..\..\external\zlib;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;NOMINMAX;_CRT_SECURE_NO_WARNINGS;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\librose\animation.cpp" />
+    <ClCompile Include="..\..\librose\area_anim.cpp" />
+    <ClCompile Include="..\..\librose\arrow.cpp" />
+    <ClCompile Include="..\..\librose\builder.cpp" />
+    <ClCompile Include="..\..\librose\callable_objects.cpp" />
+    <ClCompile Include="..\..\librose\clipboard.cpp" />
+    <ClCompile Include="..\..\librose\color_range.cpp" />
+    <ClCompile Include="..\..\librose\config.cpp" />
+    <ClCompile Include="..\..\librose\config_cache.cpp" />
+    <ClCompile Include="..\..\librose\cursor.cpp" />
+    <ClCompile Include="..\..\librose\display.cpp" />
+    <ClCompile Include="..\..\librose\events.cpp" />
+    <ClCompile Include="..\..\librose\filesystem.cpp" />
+    <ClCompile Include="..\..\librose\filter_tag.cpp" />
+    <ClCompile Include="..\..\librose\font.cpp" />
+    <ClCompile Include="..\..\librose\formula.cpp" />
+    <ClCompile Include="..\..\librose\formula_debugger.cpp" />
+    <ClCompile Include="..\..\librose\formula_debugger_fwd.cpp" />
+    <ClCompile Include="..\..\librose\formula_function.cpp" />
+    <ClCompile Include="..\..\librose\formula_string_utils.cpp" />
+    <ClCompile Include="..\..\librose\formula_tokenizer.cpp" />
+    <ClCompile Include="..\..\librose\game_config.cpp" />
+    <ClCompile Include="..\..\librose\generic_event.cpp" />
+    <ClCompile Include="..\..\librose\gettext.cpp" />
+    <ClCompile Include="..\..\librose\gui\dialogs\theme2.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\halo.cpp" />
+    <ClCompile Include="..\..\librose\help.cpp" />
+    <ClCompile Include="..\..\librose\hero_i.cpp" />
+    <ClCompile Include="..\..\librose\hotkeys.cpp" />
+    <ClCompile Include="..\..\librose\image.cpp" />
+    <ClCompile Include="..\..\librose\image_function.cpp" />
+    <ClCompile Include="..\..\librose\integrate.cpp" />
+    <ClCompile Include="..\..\librose\key.cpp" />
+    <ClCompile Include="..\..\librose\language.cpp" />
+    <ClCompile Include="..\..\librose\loadscreen.cpp" />
+    <ClCompile Include="..\..\librose\lobby.cpp" />
+    <ClCompile Include="..\..\librose\log.cpp" />
+    <ClCompile Include="..\..\librose\lua_jailbreak_exception.cpp" />
+    <ClCompile Include="..\..\librose\map.cpp" />
+    <ClCompile Include="..\..\librose\map_label.cpp" />
+    <ClCompile Include="..\..\librose\map_location.cpp" />
+    <ClCompile Include="..\..\librose\marked-up_text.cpp" />
+    <ClCompile Include="..\..\librose\minimap.cpp" />
+    <ClCompile Include="..\..\librose\network.cpp" />
+    <ClCompile Include="..\..\librose\network_worker.cpp" />
+    <ClCompile Include="..\..\librose\preferences.cpp" />
+    <ClCompile Include="..\..\librose\preferences_display.cpp" />
+    <ClCompile Include="..\..\librose\race.cpp" />
+    <ClCompile Include="..\..\librose\random.cpp" />
+    <ClCompile Include="..\..\librose\reports.cpp" />
+    <ClCompile Include="..\..\librose\saes.cpp" />
+    <ClCompile Include="..\..\librose\sdl_utils.cpp" />
+    <ClCompile Include="..\..\librose\sha1.cpp" />
+    <ClCompile Include="..\..\librose\sound.cpp" />
+    <ClCompile Include="..\..\librose\sound_music_track.cpp" />
+    <ClCompile Include="..\..\librose\terrain.cpp" />
+    <ClCompile Include="..\..\librose\terrain_translation.cpp" />
+    <ClCompile Include="..\..\librose\theme.cpp" />
+    <ClCompile Include="..\..\librose\thread.cpp" />
+    <ClCompile Include="..\..\librose\time_of_day.cpp" />
+    <ClCompile Include="..\..\librose\tooltips.cpp" />
+    <ClCompile Include="..\..\librose\tstring.cpp" />
+    <ClCompile Include="..\..\librose\unit_frame.cpp" />
+    <ClCompile Include="..\..\librose\unit_frame2.cpp" />
+    <ClCompile Include="..\..\librose\util.cpp" />
+    <ClCompile Include="..\..\librose\variant.cpp" />
+    <ClCompile Include="..\..\librose\version.cpp" />
+    <ClCompile Include="..\..\librose\video.cpp" />
+    <ClCompile Include="..\..\librose\wml_exception.cpp" />
+    <ClCompile Include="..\..\librose\xwml.cpp" />
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\bzip2.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\file_descriptor.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\gzip.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\mapped_file.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\zlib.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\iostreams\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\c_regex_traits.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\cpp_regex_traits.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\cregex.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\fileiter.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\icu.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\instances.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\posix_api.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\regex.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\regex_debug.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\regex_raw_buffer.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\regex_traits_defaults.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\static_mutex.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\usinstances.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\w32_regex_traits.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\wc_regex_traits.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\wide_posix_api.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\winstances.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)boost\regex\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\blocksort.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)bzip2\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)bzip2\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\bzlib.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)bzip2\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)bzip2\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\compress.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)bzip2\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)bzip2\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\crctable.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)bzip2\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)bzip2\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\decompress.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)bzip2\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)bzip2\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\huffman.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)bzip2\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)bzip2\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\randtable.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)bzip2\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)bzip2\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\binary_or_text.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)serialization\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)serialization\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\parser.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)serialization\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)serialization\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\preprocessor.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)serialization\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)serialization\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\string_utils.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)serialization\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)serialization\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\tokenizer.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)serialization\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)serialization\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\adler32.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\compress.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\crc32.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\deflate.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\gzclose.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\gzlib.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\gzread.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\gzwrite.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\infback.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\inffast.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\inflate.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\inftrees.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\trees.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\uncompr.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\zutil.c">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)zlib\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)zlib\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\canvas.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\log.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\old_markup.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\placer.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\timer.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\tips.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\event\dispatcher.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\event\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\event\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\event\distributor.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\event\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\event\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\event\handler.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\event\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\event\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\iterator\iterator.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\iterator\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\iterator\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\iterator\walker_grid.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\iterator\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\iterator\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\iterator\walker_widget.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\iterator\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\iterator\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\placer\horizontal_list.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\placer\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\placer\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\placer\vertical_list.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\placer\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\placer\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\control.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\drawing.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\helper.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\horizontal_listbox.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\horizontal_scrollbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\image.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\instance.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\label.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\listbox.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\matrix.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\minimap.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\multi_page.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\pane.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\password_box.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\progress_bar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\repeating_button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\scroll_label.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\scroll_text_box.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\scrollbar_panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\slider.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\spacer.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\stacked_widget.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\text_box.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\theme.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\toggle_button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\toggle_panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\tree_view.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\vertical_scrollbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\viewport.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\window_builder\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\drawing.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\horizontal_scrollbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\image.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\label.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\listbox.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\matrix.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\minimap.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\multi_page.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\progress_bar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\repeating_button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\scroll_label.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\scroll_text_box.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\scrollbar_panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\slider.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\spacer.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\stacked_widget.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\text_box.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\theme.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\toggle_button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\toggle_panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\tree_view.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\vertical_scrollbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\window.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\auxiliary\widget_definition\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\chat.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\dialog.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\formula_debugger.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\language_selection.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\message.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\netdiag.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\popup.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\rose.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\simple_item_selector.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\tip.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\transient_message.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\lib\types\point.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\lib\types\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\lib\types\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\container.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\control.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\debug.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\drawing.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\generator.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\grid.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\helper.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\horizontal_scrollbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\image.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\label.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\list.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\listbox.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\matrix.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\minimap.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\multi_page.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\pane.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\password_box.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\progress_bar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\repeating_button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scroll_label.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scroll_text_box.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scrollbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scrollbar_container.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scrollbar_panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\settings.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\slider.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\spacer.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\stacked_widget.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\text_box.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\theme2.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\toggle_button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\toggle_panel.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\tree_view.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\tree_view_node.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\vertical_scrollbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\viewport.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\widget.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\window.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\button.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\drop_target.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\file_menu.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\label.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\menu.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\menu_style.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\progressbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\scrollarea.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\scrollbar.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\scrollpane.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\slider.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\textbox.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\widgets\widget.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)widgets\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)widgets\</ObjectFileName>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\external\boost\libs\regex\src\internals.hpp" />
+    <ClInclude Include="..\..\external\bzip2\bzlib.h" />
+    <ClInclude Include="..\..\external\bzip2\bzlib_private.h" />
+    <ClInclude Include="..\..\librose\animated.hpp" />
+    <ClInclude Include="..\..\librose\animation.hpp" />
+    <ClInclude Include="..\..\librose\area_anim.hpp" />
+    <ClInclude Include="..\..\librose\arrow.hpp" />
+    <ClInclude Include="..\..\librose\asserts.hpp" />
+    <ClInclude Include="..\..\librose\builder.hpp" />
+    <ClInclude Include="..\..\librose\callable_objects.hpp" />
+    <ClInclude Include="..\..\librose\clipboard.hpp" />
+    <ClInclude Include="..\..\librose\color_range.hpp" />
+    <ClInclude Include="..\..\librose\config.hpp" />
+    <ClInclude Include="..\..\librose\config_cache.hpp" />
+    <ClInclude Include="..\..\librose\cursor.hpp" />
+    <ClInclude Include="..\..\librose\display.hpp" />
+    <ClInclude Include="..\..\librose\events.hpp" />
+    <ClInclude Include="..\..\librose\exceptions.hpp" />
+    <ClInclude Include="..\..\librose\filesystem.hpp" />
+    <ClInclude Include="..\..\librose\filter_tag.hpp" />
+    <ClInclude Include="..\..\librose\font.hpp" />
+    <ClInclude Include="..\..\librose\formatter.hpp" />
+    <ClInclude Include="..\..\librose\formula.hpp" />
+    <ClInclude Include="..\..\librose\formula_callable.hpp" />
+    <ClInclude Include="..\..\librose\formula_callable_fwd.hpp" />
+    <ClInclude Include="..\..\librose\formula_debugger.hpp" />
+    <ClInclude Include="..\..\librose\formula_debugger_fwd.hpp" />
+    <ClInclude Include="..\..\librose\formula_function.hpp" />
+    <ClInclude Include="..\..\librose\formula_fwd.hpp" />
+    <ClInclude Include="..\..\librose\formula_string_utils.hpp" />
+    <ClInclude Include="..\..\librose\formula_tokenizer.hpp" />
+    <ClInclude Include="..\..\librose\game_config.hpp" />
+    <ClInclude Include="..\..\librose\game_end_exceptions.hpp" />
+    <ClInclude Include="..\..\librose\generic_event.hpp" />
+    <ClInclude Include="..\..\librose\gettext.hpp" />
+    <ClInclude Include="..\..\librose\global.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\theme2.hpp" />
+    <ClInclude Include="..\..\librose\halo.hpp" />
+    <ClInclude Include="..\..\librose\help.hpp" />
+    <ClInclude Include="..\..\librose\hero.hpp" />
+    <ClInclude Include="..\..\librose\hotkeys.hpp" />
+    <ClInclude Include="..\..\librose\image.hpp" />
+    <ClInclude Include="..\..\librose\image_function.hpp" />
+    <ClInclude Include="..\..\librose\integrate.hpp" />
+    <ClInclude Include="..\..\librose\key.hpp" />
+    <ClInclude Include="..\..\librose\language.hpp" />
+    <ClInclude Include="..\..\librose\lexical_cast.hpp" />
+    <ClInclude Include="..\..\librose\loadscreen.hpp" />
+    <ClInclude Include="..\..\librose\lobby.hpp" />
+    <ClInclude Include="..\..\librose\log.hpp" />
+    <ClInclude Include="..\..\librose\lua_jailbreak_exception.hpp" />
+    <ClInclude Include="..\..\librose\map.hpp" />
+    <ClInclude Include="..\..\librose\map_exception.hpp" />
+    <ClInclude Include="..\..\librose\map_label.hpp" />
+    <ClInclude Include="..\..\librose\map_location.hpp" />
+    <ClInclude Include="..\..\librose\map_utils.hpp" />
+    <ClInclude Include="..\..\librose\marked-up_text.hpp" />
+    <ClInclude Include="..\..\librose\minimap.hpp" />
+    <ClInclude Include="..\..\librose\multiplayer_error_codes.hpp" />
+    <ClInclude Include="..\..\librose\network.hpp" />
+    <ClInclude Include="..\..\librose\network_worker.hpp" />
+    <ClInclude Include="..\..\librose\posix.h" />
+    <ClInclude Include="..\..\librose\preferences.hpp" />
+    <ClInclude Include="..\..\librose\preferences_display.hpp" />
+    <ClInclude Include="..\..\librose\race.hpp" />
+    <ClInclude Include="..\..\librose\random.hpp" />
+    <ClInclude Include="..\..\librose\reference_counted_object.hpp" />
+    <ClInclude Include="..\..\librose\reports.hpp" />
+    <ClInclude Include="..\..\librose\rng.hpp" />
+    <ClInclude Include="..\..\librose\saes.hpp" />
+    <ClInclude Include="..\..\librose\sdl_utils.hpp" />
+    <ClInclude Include="..\..\librose\sha1.hpp" />
+    <ClInclude Include="..\..\librose\sound.hpp" />
+    <ClInclude Include="..\..\librose\sound_music_track.hpp" />
+    <ClInclude Include="..\..\librose\terrain.hpp" />
+    <ClInclude Include="..\..\librose\terrain_translation.hpp" />
+    <ClInclude Include="..\..\librose\text.hpp" />
+    <ClInclude Include="..\..\librose\theme.hpp" />
+    <ClInclude Include="..\..\librose\thread.hpp" />
+    <ClInclude Include="..\..\librose\time_of_day.hpp" />
+    <ClInclude Include="..\..\librose\tooltips.hpp" />
+    <ClInclude Include="..\..\librose\tstring.hpp" />
+    <ClInclude Include="..\..\librose\unit_frame.hpp" />
+    <ClInclude Include="..\..\librose\util.hpp" />
+    <ClInclude Include="..\..\librose\variant.hpp" />
+    <ClInclude Include="..\..\librose\version.hpp" />
+    <ClInclude Include="..\..\librose\video.hpp" />
+    <ClInclude Include="..\..\librose\wesconfig.h" />
+    <ClInclude Include="..\..\librose\wml_exception.hpp" />
+    <ClInclude Include="..\..\librose\wml_separators.hpp" />
+    <ClInclude Include="..\..\librose\serialization\binary_or_text.hpp" />
+    <ClInclude Include="..\..\librose\serialization\parser.hpp" />
+    <ClInclude Include="..\..\librose\serialization\preprocessor.hpp" />
+    <ClInclude Include="..\..\librose\serialization\string_utils.hpp" />
+    <ClInclude Include="..\..\librose\serialization\tokenizer.hpp" />
+    <ClInclude Include="..\..\external\zlib\crc32.h" />
+    <ClInclude Include="..\..\external\zlib\deflate.h" />
+    <ClInclude Include="..\..\external\zlib\gzguts.h" />
+    <ClInclude Include="..\..\external\zlib\inffast.h" />
+    <ClInclude Include="..\..\external\zlib\inffixed.h" />
+    <ClInclude Include="..\..\external\zlib\inflate.h" />
+    <ClInclude Include="..\..\external\zlib\inftrees.h" />
+    <ClInclude Include="..\..\external\zlib\trees.h" />
+    <ClInclude Include="..\..\external\zlib\zconf.h" />
+    <ClInclude Include="..\..\external\zlib\zlib.h" />
+    <ClInclude Include="..\..\external\zlib\zutil.h" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\canvas.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\filter.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\formula.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\layout_exception.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\log.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\notifiee.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\notifier.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\old_markup.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\placer.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\timer.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\tips.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\dispatcher.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\dispatcher_private.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\distributor.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\handler.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\message.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\exception.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\iterator.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\policy_order.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\policy_visit.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\walker.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\walker_grid.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\walker_widget.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\placer\horizontal_list.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\placer\vertical_list.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\button.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\control.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\drawing.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\helper.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\horizontal_listbox.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\horizontal_scrollbar.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\image.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\instance.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\label.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\listbox.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\matrix.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\minimap.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\multi_page.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\pane.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\password_box.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\progress_bar.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\repeating_button.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\scroll_label.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\scroll_text_box.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\scrollbar_panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\slider.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\spacer.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\stacked_widget.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\text_box.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\theme.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\toggle_button.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\toggle_panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\tree_view.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\vertical_scrollbar.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\viewport.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\button.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\drawing.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\horizontal_scrollbar.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\image.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\label.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\listbox.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\matrix.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\minimap.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\multi_page.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\progress_bar.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\repeating_button.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\scroll_label.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\scroll_text_box.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\scrollbar_panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\slider.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\spacer.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\stacked_widget.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\text_box.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\theme.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\toggle_button.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\toggle_panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\tree_view.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\vertical_scrollbar.hpp" />
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\window.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\chat.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\dialog.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\field-fwd.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\field.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\formula_debugger.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\helper.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\language_selection.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\message.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\netdiag.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\popup.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\rose.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\simple_item_selector.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\tip.hpp" />
+    <ClInclude Include="..\..\librose\gui\dialogs\transient_message.hpp" />
+    <ClInclude Include="..\..\librose\gui\lib\types\point.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\button.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\clickable.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\container.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\control.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\debug.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\drawing.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\event_executor.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\generator.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\generator_private.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\grid.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\grid_private.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\helper.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\horizontal_scrollbar.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\image.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\integer_selector.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\label.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\list.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\listbox.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\matrix.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\minimap.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\multi_page.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\pane.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\password_box.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\progress_bar.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\repeating_button.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\scroll_label.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\scroll_text_box.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\scrollbar.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\scrollbar_container.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\scrollbar_container_private.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\scrollbar_panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\selectable.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\settings.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\slider.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\spacer.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\stacked_widget.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\text_box.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\theme2.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\toggle_button.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\toggle_panel.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\tree_view.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\tree_view_node.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\vertical_scrollbar.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\viewport.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\widget.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\window.hpp" />
+    <ClInclude Include="..\..\librose\gui\widgets\window_private.hpp" />
+    <ClInclude Include="..\..\librose\widgets\button.hpp" />
+    <ClInclude Include="..\..\librose\widgets\drop_target.hpp" />
+    <ClInclude Include="..\..\librose\widgets\file_menu.hpp" />
+    <ClInclude Include="..\..\librose\widgets\label.hpp" />
+    <ClInclude Include="..\..\librose\widgets\menu.hpp" />
+    <ClInclude Include="..\..\librose\widgets\progressbar.hpp" />
+    <ClInclude Include="..\..\librose\widgets\scrollarea.hpp" />
+    <ClInclude Include="..\..\librose\widgets\scrollbar.hpp" />
+    <ClInclude Include="..\..\librose\widgets\scrollpane.hpp" />
+    <ClInclude Include="..\..\librose\widgets\slider.hpp" />
+    <ClInclude Include="..\..\librose\widgets\textbox.hpp" />
+    <ClInclude Include="..\..\librose\widgets\widget.hpp" />
+    <ClInclude Include="..\..\librose\utils\reference_counter.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\librose\animated.i" />
+    <None Include="..\..\librose\utils\const_clone.tpp" />
+    <None Include="..\..\librose\utils\enumerate.tpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -3326,6 +3326,7 @@ size_t move_unit(move_unit_spectator* move_spectator,
 	std::vector<map_location>::const_iterator step;
 	std::string ambushed_string;
 
+	
 	pathfind::last_location = *route.begin();
 	for (step = route.begin()+1; step != route.end(); ++step) {
 		const map_location& cur_loc = *step;
@@ -5565,7 +5566,7 @@ void do_direct_move(std::vector<team>& teams, unit_map& units, gamemap& map, uni
 	if (disp) {
 		disp->resort_access_troops(u);
 	} else {
-		units.sort_map2(u);
+		units.sort_map(u);
 	}
 	unit_display::unit_recruited(u.get_location());
 }
@@ -6251,6 +6252,6 @@ surface generate_rpg_surface(hero& h)
 	surface genus_surf = image::get_image(unit_types.genus(tent::turn_based? tgenus::TURN_BASED: tgenus::HALF_REALTIME).icon());
 	surface hero_surf = image::get_image(h.image());
 	surface masked_surf = mask_surface(hero_surf, image::get_image("buttons/photo-mask.png"));
-	blit_surface(genus_surf, NULL, masked_surf, NULL);
+	sdl_blit(genus_surf, NULL, masked_surf, NULL);
 	return masked_surf;
 }

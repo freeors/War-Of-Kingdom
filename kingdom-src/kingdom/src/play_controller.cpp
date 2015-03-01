@@ -135,7 +135,7 @@ play_controller::play_controller(const config& level, game_state& state_of_game,
 	teams_(),
 	gamestate_(state_of_game),
 	map_(game_config, level["map_data"]),
-	units_(map_),
+	units_(*this, map_),
 	heros_(heros),
 	heros_start_(heros_start),
 	cards_(cards),
@@ -710,8 +710,8 @@ void play_controller::init(CVideo& video)
 				city->set_side(t.side());
 				t.add_city(city);
 				city->adjust();
-				// change side, require resort. by far, game_display is invalid, so use sort_map2 direct.
-				units_.sort_map2(*city);
+				// change side, require resort. by far, game_display is invalid, so use sort_map direct.
+				units_.sort_map(*city);
 
 				// wander all hero to other city, and erase it.
 				std::vector<artifical*> citys;
@@ -5410,10 +5410,11 @@ void play_controller::do_build(team& builder_team, unit* builder, const unit_typ
 	unit_display::unit_build(*map_art);
 }
 
-void play_controller::click_access_list(void* cookie, int type)
+void play_controller::click_tabbar(gui2::twidget* widget, const std::string& sparam)
 {
-	unit* u = reinterpret_cast<unit*>(cookie);
-	hero* h = reinterpret_cast<hero*>(cookie);
+	int type = gui_->current_list_type();
+	unit* u = reinterpret_cast<unit*>(widget->cookie());
+	hero* h = reinterpret_cast<hero*>(widget->cookie());
 
 	if (type == game_display::taccess_list::HERO) {
 		mouse_handler_.set_hero_placing(h);
@@ -5436,4 +5437,8 @@ void play_controller::click_access_list(void* cookie, int type)
 			dlg.show(gui_->video());
 		}
 	}
+/*
+	bar.set_visible(bar.get_index(widget), false);
+	bar.replacement_children();
+*/
 }

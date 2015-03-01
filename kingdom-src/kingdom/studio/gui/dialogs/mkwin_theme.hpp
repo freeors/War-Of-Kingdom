@@ -22,6 +22,7 @@
 
 class mkwin_display;
 class mkwin_controller;
+class unit_map;
 
 namespace gui2 {
 
@@ -52,7 +53,7 @@ public:
 		HOTKEY_RCLICK,
 
 		HOTKEY_RUN,
-		HOTKEY_SETTING, HOTKEY_SPECIAL_SETTING, HOTKEY_LINKED_GROUP, HOTKEY_ERASE,
+		HOTKEY_SETTING, HOTKEY_SPECIAL_SETTING, HOTKEY_RECT_SETTING, HOTKEY_LINKED_GROUP, HOTKEY_MODE_SETTING, HOTKEY_ERASE,
 		HOTKEY_INSERT_TOP, HOTKEY_INSERT_BOTTOM, HOTKEY_ERASE_ROW,
 		HOTKEY_INSERT_LEFT, HOTKEY_INSERT_RIGHT, HOTKEY_ERASE_COLUMN,
 		HOTKEY_INSERT_CHILD, HOTKEY_ERASE_CHILD
@@ -61,11 +62,18 @@ public:
 	tmkwin_theme(mkwin_display& disp, mkwin_controller& controller, const config& cfg);
 	void report_ptr(treport** unit_ptr, treport** hero_ptr, treport** ctrl_bar_ptr);
 
+	void load_widget_page();
+	void load_object_page(const unit_map& units);
+
+	void fill_object_list(const unit_map& units);
+
 private:
 	void app_pre_show();
+	void object_selected(twindow& window);
 
 private:
 	mkwin_controller& controller_;
+
 };
 
 } //end namespace gui2

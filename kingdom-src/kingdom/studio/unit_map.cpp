@@ -22,8 +22,8 @@
 #include "gui/widgets/report.hpp"
 #include "game_config.hpp"
 
-unit_map::unit_map(mkwin_controller& controller, const gamemap& gmap)
-	: base_map(gmap)
+unit_map::unit_map(mkwin_controller& controller, const gamemap& gmap, bool consistent)
+	: base_map(controller, gmap, consistent)
 	, controller_(controller)
 {
 }
@@ -42,7 +42,7 @@ void unit_map::create_coor_map(int w, int h)
 		map_vsize_ = orignal_map_vsize;
 		memcpy(map_, orignal_map, map_vsize_ * sizeof(base_unit*));
 
-		for (size_t i = 0; i < map_vsize_; i ++) {
+		for (int i = 0; i < map_vsize_; i ++) {
 			base_unit* n = map_[i];
 			const map_location& loc = n->get_location();
 			int pitch = loc.y * w;
@@ -97,52 +97,81 @@ unit* unit_map::find_unit(const map_location& loc, bool overlay) const
 }
 
 
-void unit_map::save_map_to(unit::tchild& child)
+void unit_map::save_map_to(unit::tchild& child, bool clear)
 {
 	child.clear(false);
 
 	child.window = dynamic_cast<unit*>(map_[0]);
-	for (int x = 1; x < w_; x ++) {
-		child.cols.push_back(dynamic_cast<unit*>(map_[x]));
-	}
-	for (int y = 1; y < h_; y ++) {
-		int pitch = y * w_;
-		for (int x = 0; x < w_; x ++) {
-			if (x) {
-				child.units.push_back(dynamic_cast<unit*>(map_[pitch + x]));
+	if (consistent_) {
+		for (int x = 1; x < w_; x ++) {
+			child.cols.push_back(dynamic_cast<unit*>(map_[x]));
+		}
+		for (int y = 1; y < h_; y ++) {
+			int pitch = y * w_;
+			for (int x = 0; x < w_; x ++) {
+				if (x) {
+					child.units.push_back(dynamic_cast<unit*>(map_[pitch + x]));
+				} else {
+					child.rows.push_back(dynamic_cast<unit*>(map_[pitch + x]));
+				}
+			}
+		}
+	} else {
+		for (int i = 1; i < map_vsize_; i ++) {
+			unit* u = dynamic_cast<unit*>(map_[i]);
+			if (u->type() == unit::ROW) {
+				child.rows.push_back(dynamic_cast<unit*>(map_[i]));
+			} else if (u->type() == unit::COLUMN) {
+				child.cols.push_back(dynamic_cast<unit*>(map_[i]));
 			} else {
-				child.rows.push_back(dynamic_cast<unit*>(map_[pitch + x]));
+				child.units.push_back(dynamic_cast<unit*>(map_[i]));
 			}
 		}
 	}
 
-	// clear, except unit.
-	if (coor_map_) {
-		free(coor_map_);
-		coor_map_ = NULL;
+	if (clear) {
+		// clear, except unit.
+		if (coor_map_) {
+			free(coor_map_);
+			coor_map_ = NULL;
+		}
+		free(map_);
+		map_ = NULL;
+		map_vsize_ = 0;
 	}
-	free(map_);
-	map_ = NULL;
-	map_vsize_ = 0;
 }
 
 void unit_map::restore_map_from(const unit::tchild& child)
 {
 	VALIDATE(!map_vsize_, "map_vsize_ must be 0.");
 
-	insert(map_location(0, 0), child.window);
-	for (int x = 1; x < w_; x ++) {
-		insert(map_location(x, 0), child.cols[x - 1]);
-	}
-	int uindex = 0;
-	for (int y = 1; y < h_; y ++) {
-		int pitch = y * w_;
-		for (int x = 0; x < w_; x ++) {
-			if (x) {
-				insert(map_location(x, y), child.units[uindex ++]);
-			} else {
-				insert(map_location(x, y), child.rows[y - 1]);
+	if (consistent_) {
+		insert(map_location(0, 0), child.window);
+		for (int x = 1; x < w_; x ++) {
+			insert(map_location(x, 0), child.cols[x - 1]);
+		}
+		int uindex = 0;
+		for (int y = 1; y < h_; y ++) {
+			int pitch = y * w_;
+			for (int x = 0; x < w_; x ++) {
+				if (x) {
+					insert(map_location(x, y), child.units[uindex ++]);
+				} else {
+					insert(map_location(x, y), child.rows[y - 1]);
+				}
 			}
+		}
+	} else {
+		display& disp = controller_.get_display();
+		insert2(disp, child.window);
+		for (std::vector<unit*>::const_iterator it = child.rows.begin(); it != child.rows.end(); ++ it) {
+			insert2(disp, *it);
+		}
+		for (std::vector<unit*>::const_iterator it = child.cols.begin(); it != child.cols.end(); ++ it) {
+			insert2(disp, *it);
+		}
+		for (std::vector<unit*>::const_iterator it = child.units.begin(); it != child.units.end(); ++ it) {
+			insert2(disp, *it);
 		}
 	}
 }
@@ -180,7 +209,7 @@ void unit_map::move_line(bool horizontal, const int index)
 				from_u->set_location(map_location(x, to));
 				coor_map_[to_pitch + x].overlay = from_u;
 
-				sort_map2(*from_u);
+				sort_map(*from_u);
 			}
 		}
 
@@ -191,7 +220,7 @@ void unit_map::move_line(bool horizontal, const int index)
 			from_u->set_location(map_location(x, to));
 			coor_map_[pitch + x].overlay = from_u;
 
-			sort_map2(*from_u);
+			sort_map(*from_u);
 		}
 	} else {
 		for (int y = 0; y < h_; y ++) {
@@ -214,7 +243,7 @@ void unit_map::move_line(bool horizontal, const int index)
 				from_u->set_location(map_location(to, y));
 				coor_map_[pitch + to].overlay = from_u;
 
-				sort_map2(*from_u);
+				sort_map(*from_u);
 			}
 		}
 
@@ -225,7 +254,7 @@ void unit_map::move_line(bool horizontal, const int index)
 			from_u->set_location(map_location(to, y));
 			coor_map_[pitch + to].overlay = from_u;
 
-			sort_map2(*from_u);
+			sort_map(*from_u);
 		}
 	}
 }
@@ -254,9 +283,9 @@ void unit_map::swap_line(bool horizontal, const int index)
 			base_unit* to = coor_map_[next_pitch + x].overlay;
 
 			from->set_location(map_location(x, next));
-			sort_map2(*from);
+			sort_map(*from);
 			to->set_location(map_location(x, index));
-			sort_map2(*to);
+			sort_map(*to);
 
 			coor_map_[from_pitch + x].overlay = to;
 			coor_map_[next_pitch + x].overlay = from;
@@ -269,9 +298,9 @@ void unit_map::swap_line(bool horizontal, const int index)
 			base_unit* to = coor_map_[pitch + next].overlay;
 
 			from->set_location(map_location(next, y));
-			sort_map2(*from);
+			sort_map(*from);
 			to->set_location(map_location(index, y));
-			sort_map2(*to);
+			sort_map(*to);
 
 			coor_map_[pitch + index].overlay = to;
 			coor_map_[pitch + next].overlay = from;

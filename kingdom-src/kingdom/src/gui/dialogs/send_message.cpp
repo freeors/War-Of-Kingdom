@@ -15,7 +15,7 @@
 
 #define GETTEXT_DOMAIN "wesnoth-lib"
 
-#include "gui/dialogs/edit_box.hpp"
+#include "gui/dialogs/send_message.hpp"
 
 #include "game_display.hpp"
 #include "game_preferences.hpp"
@@ -71,9 +71,9 @@ extern std::string parse_message_content(const std::string& content);
  * @end{table}
  */
 
-REGISTER_DIALOG(edit_box)
+REGISTER_DIALOG(send_message)
 
-tedit_box::tedit_box(display& disp, hero_map& heros, const std::string& initial_str, int mode)
+tsend_message::tsend_message(display& disp, hero_map& heros, const std::string& initial_str, int mode)
 	: disp_(disp)
 	, heros_(heros)
 	, initial_str_(initial_str)
@@ -84,7 +84,7 @@ tedit_box::tedit_box(display& disp, hero_map& heros, const std::string& initial_
 {
 }
 
-void tedit_box::pre_show(CVideo& /*video*/, twindow& window)
+void tsend_message::pre_show(CVideo& /*video*/, twindow& window)
 {
 	std::stringstream strstr;
 
@@ -104,14 +104,14 @@ void tedit_box::pre_show(CVideo& /*video*/, twindow& window)
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "format", false)
 		, boost::bind(
-		&tedit_box::format
+		&tsend_message::format
 		, this
 		, boost::ref(window)));
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "create", false)
 		, boost::bind(
-		&tedit_box::create
+		&tsend_message::create
 		, this
 		, boost::ref(window)));
 	strstr.str("");
@@ -122,7 +122,7 @@ void tedit_box::pre_show(CVideo& /*video*/, twindow& window)
 	clone->set_label(parse_message_content(initial_str_));
 }
 
-void tedit_box::post_show(twindow& window)
+void tsend_message::post_show(twindow& window)
 {
 }
 
@@ -186,7 +186,7 @@ std::string text_box_str2(display& disp, twindow& window, const std::string& id,
 	return str;
 }
 
-void tedit_box::format(twindow& window)
+void tsend_message::format(twindow& window)
 {
 	ttext_box* widget = find_widget<ttext_box>(&window, "content_area", false, true);
 	std::string content = widget->label();
@@ -195,7 +195,7 @@ void tedit_box::format(twindow& window)
 	clone->set_label(parse_message_content(content));	
 }
 
-void tedit_box::create(twindow& window)
+void tsend_message::create(twindow& window)
 {
 	receiver_str_ = text_box_str2(disp_, window, "receiver", _("Receiver"), 1, max_size_);
 	if (receiver_str_.empty()) {

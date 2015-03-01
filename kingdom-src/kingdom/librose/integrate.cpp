@@ -807,10 +807,8 @@ surface tintegrate::get_surface()
 				anims_.insert(std::make_pair(index, id));
 			}
 
-		} else if (dst.w != 8 || dst.h != 12) {
-			sdl_blit(it->surf, NULL, screen, &dst);
 		} else {
-			blit_surface(it->surf, NULL, screen, &dst);
+			sdl_blit(it->surf, NULL, screen, &dst);
 		}
 	}
 

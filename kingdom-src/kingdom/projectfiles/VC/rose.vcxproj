@@ -1,0 +1,136 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3641E31E-36BF-4E03-8879-DE33ADC07D68}</ProjectGuid>
+    <RootNamespace>rose</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\rose\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\rose\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\src;..\..\external\boost;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;librose.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib;..\..\..\gettext\gettext-framework\lib\intl.lib;..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL2_mixer.lib;..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib;..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib;..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2.dll $(TargetDir)\SDL2.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_ttf.dll $(TargetDir)\SDL2_ttf.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_mixer.dll $(TargetDir)\SDL2_mixer.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_net.dll $(TargetDir)\SDL2_net.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_image.dll $(TargetDir)\SDL2_image.dll
+copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)intl.dll
+
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\src;..\..\external\boost;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;librose.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib;..\..\..\gettext\gettext-framework\lib\intl.lib;..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL2_mixer.lib;..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib;..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib;..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2.dll $(TargetDir)\SDL2.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_ttf.dll $(TargetDir)\SDL2_ttf.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_mixer.dll $(TargetDir)\SDL2_mixer.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_net.dll $(TargetDir)\SDL2_net.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_image.dll $(TargetDir)\SDL2_image.dll
+copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)intl.dll
+
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\librose\app\anim_display.cpp" />
+    <ClCompile Include="..\..\librose\app\callback.cpp" />
+    <ClCompile Include="..\..\librose\app\hero.cpp" />
+    <ClCompile Include="..\..\librose\app\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\librose\app\anim_display.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="librose.vcxproj">
+      <Project>{cd5c07cc-2e4b-4ecb-83e8-498a0624ec5f}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

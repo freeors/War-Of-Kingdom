@@ -100,6 +100,7 @@ void attack_analysis::analyze(const gamemap& map, unit_map& units,
 		throw game::game_error(std::string("ai::attack_analisis::analyze, reside troop(") +  m.first.first->name() + ") mustnot at city!");
 	}
 
+	unit_map::tplace_unsort_lock lock(units);
 	// see remark#42. why up is point and not object.
 	base_unit* up;
 

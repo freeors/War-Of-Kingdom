@@ -19,6 +19,8 @@
 
 #include "gui/dialogs/field.hpp"
 #include "gui/widgets/integer_selector.hpp"
+#include "gui/widgets/report.hpp"
+#include "gui/widgets/toggle_button.hpp"
 #include "video.hpp"
 #include "tooltips.hpp"
 #include "display.hpp"
@@ -239,6 +241,12 @@ void tdialog::finalize_fields(twindow& window, const bool save_fields)
 		}
 		field->detach_from_window();
 	}
+}
+
+void tdialog::toggle_tabbar(twidget* widget)
+{
+	ttabbar* bar = ttabbar::get_tabbar(widget);
+	bar->select(widget);
 }
 
 } // namespace gui2

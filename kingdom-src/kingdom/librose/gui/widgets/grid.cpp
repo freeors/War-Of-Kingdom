@@ -60,7 +60,7 @@ tgrid::tgrid(const unsigned rows, const unsigned cols)
 tgrid::~tgrid()
 {
 	if (children_) {
-		for (size_t n = 0; n < children_vsize_ - stuff_size_; n ++) {
+		for (int n = 0; n < children_vsize_ - stuff_size_; n ++) {
 			delete children_[n].widget_;
 			children_[n].widget_ = NULL;
 		}
@@ -117,7 +117,7 @@ twidget* tgrid::swap_child(
 {
 	assert(widget);
 
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 		if (child.widget_->id() != id) {
 			if (recurse) {
@@ -163,7 +163,7 @@ void tgrid::remove_child(const unsigned row, const unsigned col)
 
 void tgrid::remove_child(const std::string& id, const bool find_all)
 {
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 
 		if (child.widget_->id() == id) {
@@ -177,7 +177,7 @@ void tgrid::remove_child(const std::string& id, const bool find_all)
 	}
 }
 
-void tgrid::resize_children(size_t size)
+void tgrid::resize_children(int size)
 {
 	if (size > children_size_) {
 		do {
@@ -235,13 +235,13 @@ int tgrid::children_vsize() const
 	return children_vsize_ - stuff_size_;
 }
 
-void tgrid::insert_child(int unit_w, int unit_h, twidget& widget, size_t at, bool extendable)
+void tgrid::insert_child(int unit_w, int unit_h, twidget& widget, int at, bool extendable)
 {
 	size_t max_cols = stuff_widget_.size();
 
 	// make sure the new child is valid before deferring
 	widget.set_parent(this);
-	if (at > children_vsize_ - stuff_size_) {
+	if (at == npos || at > children_vsize_ - stuff_size_) {
 		at = children_vsize_ - stuff_size_;
 	}
 
@@ -282,13 +282,13 @@ void tgrid::insert_child(int unit_w, int unit_h, twidget& widget, size_t at, boo
 	}
 }
 
-void tgrid::erase_child(size_t at, bool extendable)
+void tgrid::erase_child(int at, bool extendable)
 {
 	if (stuff_widget_.empty()) {
 		return;
 	}
 
-	if (at >= children_vsize_ - stuff_size_) {
+	if (at == npos || at >= children_vsize_ - stuff_size_) {
 		return;
 	}
 	delete children_[at].widget_;
@@ -348,8 +348,6 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 			continue;
 		}
 
-		child.flags_ = VERTICAL_ALIGN_CENTER;
-		
 		tpoint origin2 = widget2->get_origin();
 		if (extendable) {
 			if (col) {
@@ -366,6 +364,8 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 		if (child.flags_) {
 			child.border_size_ = gap;
 		}
+
+		child.flags_ |= VERTICAL_ALIGN_CENTER | HORIZONTAL_ALIGN_CENTER;
 
 
 		if (!unit_w) {
@@ -439,12 +439,12 @@ void tgrid::erase_children(int unit_w, int unit_h, int gap, bool extendable)
 		return;
 	}
 
-	size_t n = 0;
+	int n = 0;
 	for (; n < children_vsize_ - stuff_size_; n ++) {
 		delete children_[n].widget_;
 		children_[n].widget_ = NULL;
 	}
-	for (size_t n2 = 0; n < children_vsize_; n ++, n2 ++) {
+	for (int n2 = 0; n < children_vsize_; n ++, n2 ++) {
 		children_[n2] = children_[n];
 	}
 	children_vsize_ = stuff_size_;
@@ -466,7 +466,7 @@ void tgrid::hide_children(int unit_w, int unit_h, int gap, bool extendable)
 		return;
 	}
 
-	for (size_t n = 0; n < children_vsize_ - stuff_size_; n ++) {
+	for (int n = 0; n < children_vsize_ - stuff_size_; n ++) {
 		children_[n].widget_->set_visible(twidget::INVISIBLE);
 	}
 	replacement_children(unit_w, unit_h, gap, extendable);
@@ -482,7 +482,7 @@ void tgrid::update_last_draw_end()
 
 void tgrid::set_active(const bool active)
 {
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 
 		twidget* widget = child.widget_;
@@ -509,7 +509,7 @@ void tgrid::layout_init(const bool full_initialization)
 	twidget::layout_init(full_initialization);
 
 	// Clear child caches.
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 
 		cell_layout_init(child, full_initialization);
@@ -774,7 +774,7 @@ tpoint tgrid::calculate_best_size_fix() const
 
 bool tgrid::can_wrap() const
 {
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		const tchild& child = children_[n];
 		if (child.widget_ && child.widget_->can_wrap()) {
 			return true;
@@ -919,7 +919,7 @@ void tgrid::set_origin(const tpoint& origin)
 	// Inherited.
 	twidget::set_origin(origin);
 
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 
 		twidget* widget = child.widget_;
@@ -936,7 +936,7 @@ void tgrid::set_visible_area(const SDL_Rect& area)
 	// Inherited.
 	twidget::set_visible_area(area);
 
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 
 		twidget* widget = child.widget_;
@@ -948,7 +948,7 @@ void tgrid::set_visible_area(const SDL_Rect& area)
 
 void tgrid::layout_children()
 {
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 		assert(child.widget_);
 		child.widget_->layout_children();
@@ -960,7 +960,7 @@ void tgrid::child_populate_dirty_list(twindow& caller,
 {
 	assert(!call_stack.empty() && call_stack.back() == this);
 
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 
 		assert(child.widget_);
@@ -1003,7 +1003,7 @@ bool tgrid::has_widget(const twidget* widget) const
 		return true;
 	}
 
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		const tchild& child = children_[n];
 		if (child.widget_->has_widget(widget)) {
 			return true;
@@ -1018,7 +1018,7 @@ bool tgrid::disable_click_dismiss() const
 		return false;
 	}
 
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		const tchild& child = children_[n];
 		const twidget* widget = child.widget_;
 		assert(widget);
@@ -1163,6 +1163,7 @@ void cell_place(tgrid::tchild& cell, tpoint origin, tpoint size)
 		VALIDATE(false, null_str);
 	}
 
+	
 	const unsigned h_flag = cell.flags_ & tgrid::HORIZONTAL_MASK;
 
 	if (h_flag == tgrid::HORIZONTAL_GROW_SEND_TO_CLIENT) {
@@ -1259,7 +1260,7 @@ void tgrid::impl_draw_children(
 	assert(get_visible() == twidget::VISIBLE);
 	set_dirty(false);
 
-	for (size_t n = 0; n < children_vsize_; n ++) {
+	for (int n = 0; n < children_vsize_; n ++) {
 		tchild& child = children_[n];
 
 		twidget* widget = child.widget_;

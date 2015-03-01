@@ -60,7 +60,7 @@ struct tgrid_implementation
 		typedef typename utils::tconst_clone<tgrid::tchild, W>::type hack;
 		
 		// BOOST_FOREACH(hack& child, grid.children_) {
-		for (size_t n = 0; n < grid.children_vsize_; n ++) {
+		for (int n = 0; n < grid.children_vsize_; n ++) {
 			hack& child = grid.children_[n];
 
 			W* widget = child.widget_;
@@ -97,7 +97,7 @@ struct tgrid_implementation
 
 		typedef typename utils::tconst_clone<tgrid::tchild, W>::type hack;
 		// BOOST_FOREACH(hack& child, grid.children_) {
-		for (size_t n = 0; n < grid.children_vsize_; n ++) {
+		for (int n = 0; n < grid.children_vsize_; n ++) {
 			hack& child = grid.children_[n];
 
 			widget = child.widget_;

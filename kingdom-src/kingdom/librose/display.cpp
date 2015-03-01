@@ -64,7 +64,7 @@ namespace {
 }
 
 int display::default_zoom_ = display::ZOOM_72;
-int display::last_zoom_ = display::ZOOM_72;
+int display::last_zoom = display::ZOOM_72;
 
 int display::adjust_zoom(int zoom)
 {
@@ -124,6 +124,7 @@ display::display(const std::string& tile, controller_base* controller, CVideo& v
 	, shroud_images_()
 	, selectedHex_()
 	, mouseoverHex_()
+	, show_hover_over_(true)
 	, keys_()
 	, animate_map_(true)
 	, local_tod_light_(false)
@@ -149,8 +150,8 @@ display::display(const std::string& tile, controller_base* controller, CVideo& v
 	, drawing_(false)
 	, main_tip_handle_(0)
 	, area_anims_()
-	, min_zoom_(36)
-	, max_zoom_(144)
+	, min_zoom_(MinZoom)
+	, max_zoom_(MaxZoom)
 	, reports_(num_reports)
 {
 	singleton_ = this;
@@ -169,7 +170,7 @@ display::display(const std::string& tile, controller_base* controller, CVideo& v
 	set_turbo(preferences::turbo());
 	set_turbo_speed(preferences::turbo_speed());
 
-	last_zoom_ = zoom_;
+	last_zoom = zoom_;
 
 	fill_images_list(game_config::fog_prefix, fog_images_);
 	fill_images_list(game_config::shroud_prefix, shroud_images_);
@@ -382,6 +383,22 @@ bool display::outside_area(const SDL_Rect& area, const int x, const int y) const
 double display::get_zoom_factor() const 
 { 
 	return double(zoom_)/double(image::tile_size);
+}
+
+void display::pixel_screen_to_map(int& xclick, int& yclick) const
+{
+	const SDL_Rect& rect = map_area();
+	if (point_in_rect(xclick, yclick, rect) == false) {
+		xclick = -1;
+		yclick = -1;
+		return;
+	}
+
+	xclick -= rect.x;
+	yclick -= rect.y;
+
+	xclick = xpos_ + xclick;
+	yclick = ypos_ + yclick;
 }
 
 // This function use the screen as reference
@@ -1531,27 +1548,27 @@ bool display::scroll(int xmove, int ymove)
 void display::set_zoom(int amount)
 {
 	int new_zoom = zoom_ + amount;
-	if (new_zoom < MinZoom) {
-		new_zoom = MinZoom;
+	if (new_zoom < min_zoom_) {
+		new_zoom = min_zoom_;
 	}
-	if (new_zoom > MaxZoom) {
-		new_zoom = MaxZoom;
+	if (new_zoom > max_zoom_) {
+		new_zoom = max_zoom_;
 	}
 	if (new_zoom != zoom_) {
 		SDL_Rect const &area = map_area();
 		xpos_ += (xpos_ + area.w / 2) * amount / zoom_;
 		ypos_ += (ypos_ + area.h / 2) * amount / zoom_;
 
+		last_zoom = zoom_;
 		zoom_ = new_zoom;
-		bounds_check_position();
-		if (zoom_ != default_zoom_) {
-			last_zoom_ = zoom_;
-		}
-		image::set_zoom(zoom_);
 
+		bounds_check_position();
+		image::set_zoom(zoom_);
 		labels().recalculate_labels();
 		redraw_background_ = true;
 		invalidate_all();
+
+		post_zoom();
 
 		// Forces a redraw after zooming.
 		// This prevents some graphic glitches from occurring.
@@ -1561,13 +1578,8 @@ void display::set_zoom(int amount)
 
 void display::set_default_zoom()
 {
-	if (zoom_ != default_zoom_) {
-		last_zoom_ = zoom_;
-		set_zoom(default_zoom_ - zoom_ );
-	} else {
-		// When we are already at the default zoom,
-		// switch to the last zoom used
-		set_zoom(last_zoom_ - zoom_);
+	if (zoom_ != image::tile_size) {
+		set_zoom(image::tile_size);
 	}
 }
 
@@ -1827,12 +1839,12 @@ void display::bounds_check_position()
 {
 	const int orig_zoom = zoom_;
 
-	if(zoom_ < MinZoom) {
-		zoom_ = MinZoom;
+	if (zoom_ < min_zoom_) {
+		zoom_ = min_zoom_;
 	}
 
-	if(zoom_ > MaxZoom) {
-		zoom_ = MaxZoom;
+	if (zoom_ > max_zoom_) {
+		zoom_ = max_zoom_;
 	}
 
 	bounds_check_position(xpos_, ypos_);
@@ -2182,7 +2194,7 @@ void display::draw_hex(const map_location& loc)
 		drawing_buffer_add(LAYER_FOG_SHROUD, loc, xpos, ypos, get_fog_shroud_images(loc, image_type));
 	}
 
-	if (on_map && loc == mouseoverHex_) {
+	if (on_map && show_hover_over_ && loc == mouseoverHex_) {
 		drawing_buffer_add(LAYER_UNIT_MISSILE_DEFAULT,
 				loc, xpos, ypos, image::get_image(game_config::terrain::mouseover, image::SCALED_TO_HEX));
 	}
@@ -2687,9 +2699,9 @@ void draw_bar_to_surf(const std::string& image, surface& dst_surf, int x, int y,
 	if (vtl) {
 		bot.h = surf->h - bot.y;
 
-		blit_surface(surf, &top, dst_surf, &dst_clip);
+		sdl_blit(surf, &top, dst_surf, &dst_clip);
 		dst_clip.y += top.h;
-		blit_surface(surf, &bot, dst_surf, &dst_clip);
+		sdl_blit(surf, &bot, dst_surf, &dst_clip);
 
 		// drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos, ypos, surf, top);
 		// drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos, ypos + top.h, surf, bot);
@@ -2703,10 +2715,8 @@ void draw_bar_to_surf(const std::string& image, surface& dst_surf, int x, int y,
 
 		// ???I don't know why below tow blit_surface not work?? must use sdl_blit.
 		// reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21963
-		// blit_surface(surf, &top, dst_surf, &dst_clip);
 		sdl_blit(surf, &top, dst_surf, &dst_clip);
 		dst_clip.x += top.w;
-		// blit_surface(surf, &bot, dst_surf, &dst_clip);
 		sdl_blit(surf, &bot, dst_surf, &dst_clip);
 
 		// drawing_buffer_add(LAYER_UNIT_BAR, loc, xpos, ypos, surf, top);
@@ -2731,12 +2741,10 @@ void draw_bar_to_surf(const std::string& image, surface& dst_surf, int x, int y,
 		if (vtl) {
 			dst_clip.x = x + bar_loc.x;
 			dst_clip.y = y + bar_loc.y + unfilled;
-			// use sdl_blit insteal of blit_surface
 			sdl_blit(filled_surf, NULL, dst_surf, &dst_clip);
 		} else {
 			dst_clip.x = x + bar_loc.x;
 			dst_clip.y = y + bar_loc.y;
-			// use sdl_blit insteal of blit_surface
 			// 1. right color
 			// 2. this source surface is safe. it will release once used.
 			sdl_blit(filled_surf, NULL, dst_surf, &dst_clip);

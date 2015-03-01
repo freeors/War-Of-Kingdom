@@ -28,6 +28,7 @@ class controller_base;
 #include "hex_display.hpp"
 #include "pathfind/pathfind.hpp"
 #include "team.hpp"
+#include "gui/widgets/report.hpp"
 
 #include <deque>
 
@@ -60,12 +61,10 @@ public:
 		// for access_troops
 		unit_map& units_;
 		int type_;
-		gui2::treport* report;
-		size_t start_group_;
 		bool hide;
+		gui2::ttabbar bar;
 
-		size_t button_count;
-		size_t require_count;
+		bool reloaded;
 	};
 
 	game_display(unit_map& units, hero_map& heros, play_controller* controller, CVideo& video,
@@ -177,11 +176,10 @@ public:
 	void refresh_access_troops(int side, refresh_reason reason, void* cookie = NULL);
 	void refresh_access_heros(int side, refresh_reason reason, void* cookie = NULL);
 	bool access_is_null(int type) const;
-	void resort_access_troops(unit& u, size_t pos = -1);
+	void resort_access_troops(unit& u);
 	void verify_access_troops() const;
 
-	void redraw_access_unit(taccess_list* list);
-	void click_access_list(void* cookie, int type);
+	void show_access_troop(gui2::ttabbar* bar, const gui2::tgrid::tchild& child);
 	int current_list_type() const { return current_list_type_; }
 	int next_list_type() const;
 	void set_current_list_type(int type);

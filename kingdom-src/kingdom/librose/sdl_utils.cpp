@@ -23,16 +23,21 @@
 #include "sdl_utils.hpp"
 #include "video.hpp"
 #include "image.hpp"
+#include "wml_exception.hpp"
 
 #include <algorithm>
 #include <cassert>
 #include <cstring>
 #include <iostream>
 
+const SDL_Rect empty_rect = {0, 0, 0, 0};
+const SDL_Rect invalid_rect = {-1, -1, 0, 0};
+
 void surface::sdl_add_ref(SDL_Surface *surf)
 {
-	if (surf != NULL)
+	if (surf != NULL) {
 		++surf->refcount;
+	}
 }
 
 void surface::free_sdl_surface::operator()(SDL_Surface *surf) const
@@ -52,26 +57,30 @@ bool is_neutral(const surface& surf)
 
 surface_lock::surface_lock(surface &surf) : surface_(surf), locked_(false)
 {
-	if (SDL_MUSTLOCK(surface_))
+	if (SDL_MUSTLOCK(surface_)) {
 		locked_ = SDL_LockSurface(surface_) == 0;
+	}
 }
 
 surface_lock::~surface_lock()
 {
-	if (locked_)
+	if (locked_) {
 		SDL_UnlockSurface(surface_);
+	}
 }
 
 const_surface_lock::const_surface_lock(const surface &surf) : surface_(surf), locked_(false)
 {
-	if (SDL_MUSTLOCK(surface_))
+	if (SDL_MUSTLOCK(surface_)) {
 		locked_ = SDL_LockSurface(surface_) == 0;
+	}
 }
 
 const_surface_lock::~const_surface_lock()
 {
-	if (locked_)
+	if (locked_) {
 		SDL_UnlockSurface(surface_);
+	}
 }
 
 SDL_Color int_to_color(const Uint32 rgb)
@@ -96,6 +105,132 @@ SDL_Color create_color(const unsigned char red
 	result.a = alpha;
 
 	return result;
+}
+
+void put_pixel(
+		  const ptrdiff_t start
+		, const Uint32 color
+		, const unsigned w
+		, const unsigned x
+		, const unsigned y)
+{
+	*reinterpret_cast<Uint32*>(start + (y * w * 4) + x * 4) = color;
+}
+
+void draw_line(
+		  surface& canvas
+		, Uint32 color
+		, unsigned x1
+		, unsigned y1
+		, const unsigned x2
+		, unsigned y2)
+{
+	color = SDL_MapRGBA(canvas->format,
+		((color & 0xFF000000) >> 24),
+		((color & 0x00FF0000) >> 16),
+		((color & 0x0000FF00) >> 8),
+		((color & 0x000000FF)));
+
+	ptrdiff_t start = reinterpret_cast<ptrdiff_t>(canvas->pixels);
+	unsigned w = canvas->w;
+
+	VALIDATE(static_cast<int>(x1) < canvas->w, null_str);
+	VALIDATE(static_cast<int>(x2) < canvas->w, null_str);
+	VALIDATE(static_cast<int>(y1) < canvas->h, null_str);
+	VALIDATE(static_cast<int>(y2) < canvas->h, null_str);
+
+	// use a special case for vertical lines
+	if(x1 == x2) {
+		if(y2 < y1) {
+			std::swap(y1, y2);
+		}
+
+		for(unsigned y = y1; y <= y2; ++y) {
+			put_pixel(start, color, w, x1, y);
+		}
+		return;
+	}
+
+	// use a special case for horizontal lines
+	if(y1 == y2) {
+		for(unsigned x  = x1; x <= x2; ++x) {
+			put_pixel(start, color, w, x, y1);
+		}
+		return;
+	}
+
+	// Algorithm based on
+	// http://de.wikipedia.org/wiki/Bresenham-Algorithmus#Kompakte_Variante
+	// version of 26.12.2010.
+	const int dx = x2 - x1; // precondition x2 >= x1
+	const int dy = abs(static_cast<int>(y2 - y1));
+	const int step_x = 1;
+	const int step_y = y1 < y2 ? 1 : -1;
+	int err = (dx > dy ? dx : -dy) / 2;
+	int e2;
+
+	for(;;){
+		put_pixel(start, color, w, x1, y1);
+		if(x1 == x2 && y1 == y2) {
+			break;
+		}
+		e2 = err;
+		if(e2 > -dx) {
+			err -= dy;
+			x1 += step_x;
+		}
+		if(e2 <  dy) {
+			err += dx;
+			y1 += step_y;
+		}
+	}
+}
+
+void draw_circle(
+		  surface& canvas
+		, Uint32 color
+		, const unsigned x_centre
+		, const unsigned y_centre
+		, const unsigned radius)
+{
+	color = SDL_MapRGBA(canvas->format,
+		((color & 0xFF000000) >> 24),
+		((color & 0x00FF0000) >> 16),
+		((color & 0x0000FF00) >> 8),
+		((color & 0x000000FF)));
+
+	ptrdiff_t start = reinterpret_cast<ptrdiff_t>(canvas->pixels);
+	unsigned w = canvas->w;
+
+	assert(static_cast<int>(x_centre + radius) < canvas->w);
+	assert(static_cast<int>(x_centre - radius) >= 0);
+	assert(static_cast<int>(y_centre + radius) < canvas->h);
+	assert(static_cast<int>(y_centre - radius) >= 0);
+
+	// Algorithm based on
+	// http://de.wikipedia.org/wiki/Rasterung_von_Kreisen#Methode_von_Horn
+	// version of 2011.02.07.
+	int d = -static_cast<int>(radius);
+	int x = radius;
+	int y = 0;
+	while(!(y > x)) {
+		put_pixel(start, color, w, x_centre + x, y_centre + y);
+		put_pixel(start, color, w, x_centre + x, y_centre - y);
+		put_pixel(start, color, w, x_centre - x, y_centre + y);
+		put_pixel(start, color, w, x_centre - x, y_centre - y);
+
+		put_pixel(start, color, w, x_centre + y, y_centre + x);
+		put_pixel(start, color, w, x_centre + y, y_centre - x);
+		put_pixel(start, color, w, x_centre - y, y_centre + x);
+		put_pixel(start, color, w, x_centre - y, y_centre - x);
+
+		d += 2 * y + 1;
+		++y;
+		if(d > 0) {
+			d += -2 * x + 2;
+			--x;
+		}
+	}
 }
 
 SDLKey sdl_keysym_from_name(std::string const &keyname)
@@ -1965,6 +2100,14 @@ void draw_centered_on_background(surface surf, const SDL_Rect& rect, const SDL_C
 
 void blit_integer_surface(int integer, surface& to, int x, int y)
 {
+	const int digit_width = 8;
+	const int digit_height = 12;
+	if (to->w < 8) {
+		return;
+	}
+	if (to->h < digit_height) {
+		return;
+	}
 	if (integer < 0) {
 		integer *= -1;
 	}
@@ -1989,8 +2132,11 @@ void blit_integer_surface(int integer, surface& to, int x, int y)
 
 		ss.str("");
 		ss << "misc/digit.png~CROP(" << (8 * digit) << ", 0, 8, 12)";
-		blit_surface(image::get_image(ss.str()), NULL, to, &dst_clip);
-		dst_clip.x += 8;
+		sdl_blit(image::get_image(ss.str()), NULL, to, &dst_clip);
+		dst_clip.x += digit_width;
+		if (dst_clip.x > to->w) {
+			break;
+		}
 	} while (max > 1);
 }
 
@@ -2008,7 +2154,7 @@ surface generate_pip_surface(surface& bg, surface& fg)
 		if (result->h > fg->h) {
 			dst_clip.y = (result->h - fg->h) / 2;
 		}
-		blit_surface(fg, NULL, result, &dst_clip);
+		sdl_blit(fg, NULL, result, &dst_clip);
 	}
 
 	return result;

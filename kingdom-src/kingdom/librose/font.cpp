@@ -1154,21 +1154,22 @@ surface floating_label::create_surface()
 			foreground = adjust_surface_alpha(foreground, ftofxp(1.13), false);
 
 			SDL_Rect r = create_rect( border_, border_, 0, 0);
-			SDL_SetAlpha(foreground,SDL_SRCALPHA,SDL_ALPHA_OPAQUE);
-			blit_surface(foreground, NULL, background, &r);
+			SDL_SetAlpha(foreground, SDL_SRCALPHA, SDL_ALPHA_OPAQUE);
+			sdl_blit(foreground, NULL, background, &r);
 
 			surf_ = create_optimized_surface(background);
 			// RLE compression seems less efficient for big semi-transparent area
 			// so, remove it for this case, but keep the optimized display format
 			SDL_SetAlpha(surf_,SDL_SRCALPHA,SDL_ALPHA_OPAQUE);
-		}
-		else {
+
+		} else {
 			// background is blurred shadow of the text
 			surface background = create_neutral_surface
 				(foreground->w + 4, foreground->h + 4);
 			sdl_fill_rect(background, NULL, 0);
 			SDL_Rect r = { 2, 2, 0, 0 };
-			blit_surface(foreground, NULL, background, &r);
+			// blit_surface(foreground, NULL, background, &r);
+			sdl_blit(foreground, NULL, background, &r);
 			background = shadow_image(background, false);
 
 			if (background == NULL) {
@@ -1176,8 +1177,8 @@ surface floating_label::create_surface()
 				surf_ = create_optimized_surface(foreground);
 				return surf_;
 			}
-			SDL_SetAlpha(foreground,SDL_SRCALPHA,SDL_ALPHA_OPAQUE);
-			blit_surface(foreground, NULL, background, &r);
+			SDL_SetAlpha(foreground, SDL_SRCALPHA, SDL_ALPHA_OPAQUE);
+			sdl_blit(foreground, NULL, background, &r);
 			surf_ = create_optimized_surface(background);
 		}
 	}
@@ -1845,7 +1846,8 @@ surface ttext::render()
 			for (std::vector<surface>::const_iterator j = i->begin(), j_end = i->end(); j != j_end; ++j) {
 				SDL_SetAlpha(*j, 0, 0); // direct blit without alpha blending
 				SDL_Rect dstrect = create_rect(xpos, ypos, 0, 0);
-				blit_surface(*j, NULL, res, &dstrect);
+				// blit_surface(*j, NULL, res, &dstrect);
+				sdl_blit(*j, NULL, res, &dstrect);
 				xpos += (*j)->w;
 				height = std::max<size_t>((*j)->h, height);
 			}

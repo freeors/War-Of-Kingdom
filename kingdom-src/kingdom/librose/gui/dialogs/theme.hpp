@@ -23,6 +23,8 @@
 class display;
 class controller_base;
 
+#define THEME_NO_SIZE	1
+
 namespace theme {
 
 struct tborder 
@@ -69,6 +71,11 @@ ANCHORING read_anchor(const std::string& str);
 SDL_Rect calculate_relative_loc(const config& cfg, int screen_w, int screen_h);
 const config* set_resolution(const config& cfg, const SDL_Rect& screen, const std::string& patch, config& resolved_config);
 const config* set_resolution2(const config& cfg, int screen_w, int screen_h);
+
+extern const int XDim;
+extern const int YDim;
+extern const std::string id_screen;
+extern const std::string id_main_map;
 
 void set_known_themes(const config* cfg);
 extern std::map<std::string, config> known_themes;
@@ -123,6 +130,8 @@ public:
 
 protected:
 	void click_generic_handler(tcontrol& widget, const std::string& sparam);
+	void toggle_tabbar(twidget* widget);
+	void click_tabbar(twidget* widget, const std::string& sparam);
 
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */

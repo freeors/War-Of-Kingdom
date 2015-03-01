@@ -78,7 +78,7 @@ surface blit_function::operator()(const surface& src) const
 	surface nsrc = make_neutral_surface(src);
 	surface nsurf = make_neutral_surface(surf_);
 	SDL_Rect r = create_rect(x_, y_, 0, 0);
-	blit_surface(nsurf, NULL, nsrc, &r);
+	sdl_blit(nsurf, NULL, nsrc, &r);
 	return nsrc;
 }
 
@@ -88,7 +88,7 @@ surface mask_function::operator()(const surface& src) const
 		return mask_surface(src, mask_);
 	SDL_Rect r = create_rect(x_, y_, 0, 0);
 	surface new_mask = create_neutral_surface(src->w, src->h);
-	blit_surface(mask_, NULL, new_mask, &r);
+	sdl_blit(mask_, NULL, new_mask, &r);
 	return mask_surface(src, new_mask);
 }
 
@@ -148,7 +148,7 @@ surface brighten_function::operator()(const surface &src) const
 	surface ret = make_neutral_surface(src);
 	surface tod_bright(image::get_image(game_config::images:: tod_bright));
 	if (tod_bright)
-		blit_surface(tod_bright, NULL, ret, NULL);
+		sdl_blit(tod_bright, NULL, ret, NULL);
 	return ret;
 }
 
@@ -157,7 +157,7 @@ surface darken_function::operator()(const surface &src) const
 	surface ret = make_neutral_surface(src);
 	surface tod_dark(image::get_image(game_config::images::tod_dark));
 	if (tod_dark)
-		blit_surface(tod_dark, NULL, ret, NULL);
+		sdl_blit(tod_dark, NULL, ret, NULL);
 	return ret;
 }
 

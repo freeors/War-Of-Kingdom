@@ -13,8 +13,8 @@
    See the COPYING file for more details.
 */
 
-#ifndef GUI_DIALOGS_EDIT_BOX_HPP_INCLUDED
-#define GUI_DIALOGS_EDIT_BOX_HPP_INCLUDED
+#ifndef GUI_DIALOGS_SEND_MESSAGE_HPP_INCLUDED
+#define GUI_DIALOGS_SEND_MESSAGE_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
 
@@ -23,11 +23,11 @@ class hero_map;
 
 namespace gui2 {
 
-class tedit_box : public tdialog
+class tsend_message : public tdialog
 {
 public:
 	enum {NONE, SEND_MESSAGE};
-	tedit_box(display& disp, hero_map& heros, const std::string& initial_str, int mode = NONE);
+	tsend_message(display& disp, hero_map& heros, const std::string& initial_str, int mode = NONE);
 
 	const std::string& get_receiver_str() const { return receiver_str_; }
 	const std::string& get_result_str() const { return result_str_; }

@@ -197,8 +197,8 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	if (control) {
 		// control->set_label(_("V") + game_config::version);
 		// control->set_label(_("V") + game_config::version + "-alpha");
-		control->set_label(_("v") + game_config::version + "-beta");
-		// control->set_label(_("v") + game_config::version + "-beta3");
+		// control->set_label(_("v") + game_config::version + "-beta");
+		control->set_label(_("v") + game_config::version + "-beta2");
 	}
 	window.canvas()[0].set_variable("revision_number", variant(_("Version") + std::string(" ") + game_config::version));
 

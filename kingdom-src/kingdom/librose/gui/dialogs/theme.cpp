@@ -36,10 +36,13 @@ std::string app_id;
 
 namespace theme {
 
-int XDim = 1024;
-int YDim = 768;
+const int XDim = 1024;
+const int YDim = 768;
 
-typedef struct { size_t x1,y1,x2,y2; } _rect;
+const std::string id_screen = "screen";
+const std::string id_main_map = "main-map";
+
+typedef struct { size_t x1, y1, x2, y2; } _rect;
 _rect ref_rect = { 0, 0, 0, 0 };
 
 static size_t compute(std::string expr, size_t ref1, size_t ref2 = 0 ) 
@@ -55,10 +58,10 @@ static size_t compute(std::string expr, size_t ref1, size_t ref2 = 0 )
 }
 
 // If x2 or y2 are not specified, use x1 and y1 values
-static _rect read_rect(const config& cfg) 
+static _rect read_rect(const std::string& str) 
 {
 	_rect rect = { 0, 0, 0, 0 };
-	std::vector<std::string> items = utils::split(cfg["rect"].str());
+	std::vector<std::string> items = utils::split(str);
 	if (items.size() >= 1) {
 		rect.x1 = atoi(items[0].c_str());
 	}
@@ -82,10 +85,10 @@ static _rect read_rect(const config& cfg)
 	return rect;
 }
 
-SDL_Rect read_sdl_rect(const config& cfg) 
+SDL_Rect read_sdl_rect(const std::string& str) 
 {
 	SDL_Rect sdlrect;
-	const _rect rect = read_rect(cfg);
+	const _rect rect = read_rect(str);
 	sdlrect.x = rect.x1;
 	sdlrect.y = rect.y1;
 	sdlrect.w = (rect.x2 > rect.x1) ? (rect.x2 - rect.x1) : 0;
@@ -293,10 +296,13 @@ static void do_resolve_rects(const config& cfg, config& resolved_config, config*
 
 			if (ref["id"].empty()) {
 				// Reference to non-existent rect id cfg["ref"]
-			} else if (ref["rect"].empty()) {
-				// Reference to id cfg["ref"] which does not have a rect
 			} else {
-				ref_rect = read_rect(ref);
+				const std::string& rect = ref["rect"].str();
+				if (rect.empty()) {
+					// Reference to id cfg["ref"] which does not have a rect
+				} else {
+					ref_rect = read_rect(rect);
+				}
 			}
 		}
 	}
@@ -372,66 +378,66 @@ ANCHORING read_anchor(const std::string& str)
 
 SDL_Rect calculate_relative_loc(const config& cfg, int screen_w, int screen_h)
 {
-	SDL_Rect relative_loc_ = read_sdl_rect(cfg);
+	SDL_Rect relative_loc;
 	ANCHORING xanchor_ = read_anchor(cfg["xanchor"]);
 	ANCHORING yanchor_ = read_anchor(cfg["yanchor"]);
-	SDL_Rect loc_ = read_sdl_rect(cfg);
+	SDL_Rect loc_ = read_sdl_rect(cfg["rect"].str());
 
 	switch (xanchor_) {
 	case FIXED:
-		relative_loc_.x = loc_.x;
-		relative_loc_.w = loc_.w;
+		relative_loc.x = loc_.x;
+		relative_loc.w = loc_.w;
 		break;
 	case TOP_ANCHORED:
-		relative_loc_.x = loc_.x;
-		relative_loc_.w = screen_w - std::min<size_t>(XDim - loc_.w,screen_w);
+		relative_loc.x = loc_.x;
+		relative_loc.w = screen_w - std::min<size_t>(XDim - loc_.w,screen_w);
 		break;
 	case BOTTOM_ANCHORED:
-		relative_loc_.x = screen_w - std::min<size_t>(XDim - loc_.x,screen_w);
-		relative_loc_.w = loc_.w;
+		relative_loc.x = screen_w - std::min<size_t>(XDim - loc_.x,screen_w);
+		relative_loc.w = loc_.w;
 		break;
 	case PROPORTIONAL:
-		relative_loc_.x = (loc_.x*screen_w)/XDim;
-		relative_loc_.w = (loc_.w*screen_w)/XDim;
+		relative_loc.x = (loc_.x*screen_w)/XDim;
+		relative_loc.w = (loc_.w*screen_w)/XDim;
 		break;
 	default:
-		assert(false);
+		VALIDATE(false, null_str);
 	}
 
 	switch(yanchor_) {
 	case FIXED:
-		relative_loc_.y = loc_.y;
-		relative_loc_.h = loc_.h;
+		relative_loc.y = loc_.y;
+		relative_loc.h = loc_.h;
 		break;
 	case TOP_ANCHORED:
-		relative_loc_.y = loc_.y;
-		relative_loc_.h = screen_h - std::min<size_t>(YDim - loc_.h,screen_h);
+		relative_loc.y = loc_.y;
+		relative_loc.h = screen_h - std::min<size_t>(YDim - loc_.h,screen_h);
 		break;
 	case BOTTOM_ANCHORED:
-		relative_loc_.y = screen_h - std::min<size_t>(YDim - loc_.y,screen_h);
-		relative_loc_.h = loc_.h;
+		relative_loc.y = screen_h - std::min<size_t>(YDim - loc_.y,screen_h);
+		relative_loc.h = loc_.h;
 		break;
 	case PROPORTIONAL:
-		relative_loc_.y = (loc_.y*screen_h)/YDim;
-		relative_loc_.h = (loc_.h*screen_h)/YDim;
+		relative_loc.y = (loc_.y*screen_h)/YDim;
+		relative_loc.h = (loc_.h*screen_h)/YDim;
 		break;
 	default:
-		assert(false);
+		VALIDATE(false, null_str);
 	}
 
-	relative_loc_.x = std::min<int>(relative_loc_.x,screen_w);
-	relative_loc_.w = std::min<int>(relative_loc_.w,screen_w - relative_loc_.x);
-	relative_loc_.y = std::min<int>(relative_loc_.y,screen_h);
-	relative_loc_.h = std::min<int>(relative_loc_.h,screen_h - relative_loc_.y);
+	relative_loc.x = std::min<int>(relative_loc.x, screen_w);
+	relative_loc.w = std::min<int>(relative_loc.w, screen_w - relative_loc.x);
+	relative_loc.y = std::min<int>(relative_loc.y, screen_h);
+	relative_loc.h = std::min<int>(relative_loc.h, screen_h - relative_loc.y);
 
 	// when MOD wirte [theme] mistake, will result to relative_loc_.x/y/w.h less than 0. 
 	// it is invalid, there set to 0 in order to avoid ACCESS Excepetion. MOD should correct them.
-	if (relative_loc_.x < 0) relative_loc_.x = 0;
-	if (relative_loc_.y < 0) relative_loc_.y = 0;
-	if (relative_loc_.w < 0) relative_loc_.w = 2;
-	if (relative_loc_.h < 0) relative_loc_.h = 2;
+	if (relative_loc.x < 0) relative_loc.x = 0;
+	if (relative_loc.y < 0) relative_loc.y = 0;
+	if (relative_loc.w < 0) relative_loc.w = THEME_NO_SIZE;
+	if (relative_loc.h < 0) relative_loc.h = THEME_NO_SIZE;
 
-	return relative_loc_;
+	return relative_loc;
 }
 
 const config* set_resolution(const config& cfg, const SDL_Rect& screen, const std::string& patch, config& resolved_config)
@@ -739,6 +745,19 @@ void ttheme::click_generic_handler(tcontrol& widget, const std::string& sparam)
 			, &controller_
 			, hotkey.get_id()
 			, sparam));
+}
+
+void ttheme::toggle_tabbar(twidget* widget)
+{
+	bool conti = controller_.toggle_tabbar(widget);
+	if (conti) {
+		tdialog::toggle_tabbar(widget);
+	}
+}
+
+void ttheme::click_tabbar(twidget* widget, const std::string& sparam)
+{
+	controller_.click_tabbar(widget, sparam);
 }
 
 twidget* ttheme::get_object(const std::string& id) const

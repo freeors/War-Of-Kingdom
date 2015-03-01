@@ -81,7 +81,6 @@ tscrollbar_container::tscrollbar_container(const unsigned canvas_count, bool lis
 	, best_size_(0, 0)
 	, size_calculated_(false)
 	, scroll_to_end_(false)
-	, self_layout_content_(false)
 {
 	connect_signal<event::SDL_KEY_DOWN>(boost::bind(
 			&tscrollbar_container::signal_handler_sdl_key_down

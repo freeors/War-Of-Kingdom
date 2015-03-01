@@ -39,7 +39,7 @@
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/group.hpp"
 #include "gui/dialogs/hero.hpp"
-#include "gui/dialogs/edit_box.hpp"
+#include "gui/dialogs/send_message.hpp"
 #include "preferences_display.hpp"
 #include "formula_string_utils.hpp"
 #include "filesystem.hpp"
@@ -323,7 +323,7 @@ void tuser_message::send_message(twindow& window)
 	// std::string initial_str = dsgettext("wesnoth-lib", "Announcement content");
 	std::stringstream initial_str;
 	initial_str << game_config::data_server_magic_word << "|3|0|coin=20,score=300|service@leagor.com";
-	gui2::tedit_box dlg(disp_, heros_, initial_str.str(), gui2::tedit_box::SEND_MESSAGE);
+	gui2::tsend_message dlg(disp_, heros_, initial_str.str(), gui2::tsend_message::SEND_MESSAGE);
 	try {
 		dlg.show(disp_.video());
 	} catch(twml_exception& e) {

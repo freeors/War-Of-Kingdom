@@ -551,8 +551,9 @@ unit::unit(const unit& o):
 	}
 }
            
-unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, const config& cfg, bool use_traits, bool is_artifical) :
-	unit_merit(),
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, const config& cfg, bool use_traits, bool is_artifical) 
+	: base_unit(units)
+	, unit_merit(),
 	units_(units),
 	heros_(heros),
 	teams_(teams),
@@ -843,7 +844,8 @@ unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_stat
 	path_along_road_ = commoner_ && !transport_;
 }
 
-unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uint8_t* mem, bool use_traits, bool artifical) :
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, const uint8_t* mem, bool use_traits, bool artifical) 
+	: base_unit(units),
 	unit_merit(),
 	units_(units),
 	heros_(heros),
@@ -1034,7 +1036,8 @@ void unit::clear_status_caches()
 	units_with_cache.clear();
 }
 
-unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, type_heros_pair& t, int cityno, bool real_unit, bool is_artifical) :
+unit::unit(unit_map& units, hero_map& heros, std::vector<team>& teams, game_state& state, type_heros_pair& t, int cityno, bool real_unit, bool is_artifical) 
+	: base_unit(units),
 	unit_merit(),
 	units_(units),
 	heros_(heros),
@@ -7291,6 +7294,7 @@ void unit::set_location(const map_location &loc)
 	}
 
 	touch_locs_.clear();
+	draw_locs_.clear();
 	adjacent_size_ = 0;
 	adjacent_size_2_ = 0;
 	adjacent_size_3_ = 0;
@@ -7299,6 +7303,7 @@ void unit::set_location(const map_location &loc)
 	touch_locs_.insert(loc_);
 	
 	if (!this_is_city() || get_touch_dirs().empty()) {
+		
 		map_offset* adjacent_ptr;
 		size_t i, size;
 
@@ -7332,6 +7337,10 @@ void unit::set_location(const map_location &loc)
 				adjacent_size_3_ ++;
 			}
 		}
+
+		draw_locs_.insert(loc_);
+		draw_locs_.insert(adjacent_[0]);
+		draw_locs_.insert(adjacent_[1]);
 
 		do_pack(map);
 	}
@@ -7974,10 +7983,10 @@ surface unit::generate_access_surface(int width, int height, bool greyscale) con
 	dst_clip.x = 8;
 	dst_clip.y = 0;
 	if (get_state(ustate_tag::DEPUTE)) {
-		blit_surface(image::get_image("misc/depute.png"), NULL, image_, &dst_clip);
+		sdl_blit(image::get_image("misc/depute.png"), NULL, image_, &dst_clip);
 	}
 	if (has_mayor()) {
-		blit_surface(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
+		sdl_blit(image::get_image("misc/special-unit.png"), NULL, image_, &dst_clip);
 	}
 
 	int integer = preferences::developer()? ticks(): level();
@@ -7992,7 +8001,7 @@ surface unit::generate_access_surface(int width, int height, bool greyscale) con
 		text << lb_icon << "~SCALE(16, 16)";
 		dst_clip.x = bar_vtl_ticks_width;
 		dst_clip.y = image_->h - 16;
-		blit_surface(image::get_image(text.str()), NULL, image_, &dst_clip);
+		sdl_blit(image::get_image(text.str()), NULL, image_, &dst_clip);
 	}
 	return image_;
 }

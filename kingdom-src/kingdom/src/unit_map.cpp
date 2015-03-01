@@ -211,8 +211,9 @@ void unit_map::set_zoom()
 
 #define index(x, y)  (w_ * (y) + (x))
 
-unit_map::unit_map(const gamemap& gmap) 
-	: base_map(gmap) 
+unit_map::unit_map(play_controller& controller, const gamemap& gmap) 
+	: base_map(controller, gmap, true)
+	, controller_(controller)
 	, citys_()
 	, expediting_(false)
 	, expediting_city_(NULL)
@@ -261,7 +262,7 @@ unit_map::~unit_map()
 
 void unit_map::extract_heros_number()
 {
-	for (size_t i = 0; i < map_vsize_; i ++) {
+	for (int i = 0; i < map_vsize_; i ++) {
 		unit* u = dynamic_cast<unit*>(map_[i]);
 		u->extract_heros_number();
 	}	
@@ -269,7 +270,7 @@ void unit_map::extract_heros_number()
 
 void unit_map::recalculate_heros_pointer()
 {
-	for (size_t i = 0; i < map_vsize_; i ++) {
+	for (int i = 0; i < map_vsize_; i ++) {
 		unit* u = dynamic_cast<unit*>(map_[i]);
 		u->recalculate_heros_pointer();
 	}	
@@ -374,6 +375,8 @@ void unit_map::set_expediting(artifical* city, bool troop, int index)
 			const map_location& loc = expediting_city_->get_location();
 
 			// swap back
+			base_unit* u = coor_map_[index(loc.x, loc.y)].overlay;
+			u->set_map_index(UNIT_NO_INDEX);
 			coor_map_[index(loc.x, loc.y)].overlay = expediting_city_;
 
 			expediting_city_ = NULL;
@@ -394,7 +397,8 @@ void unit_map::set_expediting(artifical* city, bool troop, int index)
 	}
 
 	// 2.
-	size_t i;
+/*
+	int i;
 	base_unit* ptr = coor_map_[index(loc.x, loc.y)].overlay;
 	for (i = 0; i < map_vsize_; i ++) {
 		if (map_[i] == ptr) {
@@ -404,7 +408,10 @@ void unit_map::set_expediting(artifical* city, bool troop, int index)
 	if (i == map_vsize_) {
 		return;
 	}
+*/
 	coor_map_[index(loc.x, loc.y)].overlay = expediting_node;
+	expediting_node->set_map_index(city->get_map_index());
+
 
 	// enter into expedit state.
 	expediting_ = true;
@@ -462,7 +469,6 @@ void unit_map::add(const map_location&l, const base_unit* base_u)
 void unit_map::move(const map_location src, const map_location& dst) 
 {
 	std::vector<team>& teams = *resources::teams;
-	size_t i;
 	artifical* cobj = city_from_loc(dst);
 		
 	unit& u = *dynamic_cast<unit*>(extract(src));
@@ -503,18 +509,12 @@ void unit_map::move(const map_location src, const map_location& dst)
 		}
 		
 	} else {
-		// destination: city
-		for (i = 0; i < map_vsize_; i ++) {
-			if (map_[i] == &u) {
-				break;
-			}
-		}
-		VALIDATE(i != map_vsize_, "unitmap::move, i == map_vsize, check code!");
-
-		if (i < map_vsize_ - 1) {
-			memcpy(&(map_[i]), &(map_[i + 1]), (map_vsize_ - i - 1) * sizeof(base_unit*));
-		}
 		map_vsize_ --;
+		for (int i = u.get_map_index(); i < map_vsize_; i ++) {
+			map_[i] = map_[i + 1];
+			map_[i]->set_map_index(i);
+		}
+		map_[map_vsize_] = NULL;
 
 		if (!expediting_) {
 			// troop come into city.
@@ -527,6 +527,8 @@ void unit_map::move(const map_location src, const map_location& dst)
 			}
 			teams[u.side() - 1].erase_troop(&u);
 		}
+
+		u.set_map_index(UNIT_NO_INDEX);
 
 		// below statement will change cityno, place here
 		cobj->troop_come_into(&u);
@@ -548,14 +550,14 @@ void unit_map::multi_resort_map(game_display* disp, const std::vector<unit*>& v,
 		if (disp) {
 			disp->resort_access_troops(u);
 		} else {
-			sort_map2(u);
+			sort_map(u);
 		}
 	}
 }
 
 unit& unit_map::current_unit()
 {
-	size_t i;
+	int i;
 	for (i = 0; i < map_vsize_; i ++) {
 		unit* u = dynamic_cast<unit*>(map_[i]);
 		if (!u->consider_ticks()) {
@@ -578,7 +580,7 @@ void unit_map::do_escape_ticks_uh(const std::vector<team>& teams, game_display& 
 	std::vector<unit*> decreases;
 	// 1th sort: normal or increase unit. these cannot goto behind i.
 	const unit* last = NULL;
-	for (size_t i = 0; i < map_vsize_; i ++) {
+	for (int i = 0; i < map_vsize_; i ++) {
 		unit& u = *dynamic_cast<unit*>(map_[i]);
 
 		if (!u.consider_ticks()) {
@@ -603,7 +605,7 @@ void unit_map::do_escape_ticks_uh(const std::vector<team>& teams, game_display& 
 			u.ticks_adjusting = true;
 
 		} else if (adjusted > escape) {
-			disp.resort_access_troops(u, i);
+			disp.resort_access_troops(u);
 
 		}
 	}
@@ -616,7 +618,7 @@ void unit_map::do_escape_ticks_uh(const std::vector<team>& teams, game_display& 
 
 void unit_map::do_escape_ticks_bh(const std::vector<team>& teams, game_display& disp, int player_number)
 {
-	size_t i = 0;
+	int i = 0;
 	std::vector<unit*> v;
 
 	if (!tent::turn_based) {
@@ -675,46 +677,18 @@ void unit_map::do_escape_ticks_bh(const std::vector<team>& teams, game_display& 
 
 void unit_map::insert(const map_location loc, base_unit* base_u)
 {
-	std::stringstream err;
-	if (!loc.valid()) {
-		err << "Trying to add " << base_u->name() << " at an invalid location; Discarding.";
-		delete base_u;
-		VALIDATE(false, err.str());
-	}
 	unit* u = dynamic_cast<unit*>(base_u);
-	bool base = u->base();
-
-	if ((base && coor_map_[index(loc.x, loc.y)].base) ||
-		(!base && coor_map_[index(loc.x, loc.y)].overlay)) {
-		err << "trying to overwrite existing unit at (" << loc.x << ", " << loc.y << ")";
-		delete base_u;
-		VALIDATE(false, err.str());
-	}
-
+/*
 	if (unit_is_city(u)) {
 		// to city, in order to city_from_loc valid, first set cookie valid!
 		// if city has reside troop, set_location of reside troop need valid city cookie infromation.
 		// of course this equal is duplicate and below touch_locs equals.
 		coor_map_[index(loc.x, loc.y)].overlay = u;
-	}
 
-	u->set_location(loc);
-
-	// it is called after set_location directly, use touch_locs safely.
-	const std::set<map_location>& touch_locs = u->get_touch_locations();
-	for (std::set<map_location>::const_iterator itor = touch_locs.begin(); itor != touch_locs.end(); ++ itor) {
-		if (base) {
-			coor_map_[index(itor->x, itor->y)].base = u;
-		} else {
-			coor_map_[index(itor->x, itor->y)].overlay = u;
-		}
+		// it is done in base_map::insert
 	}
-
-	// insert p into time-axis.*
-	map_[map_vsize_ ++] = u;
-	if (u->require_sort()) {
-		sort_map(map_vsize_ - 1);
-	}
+*/
+	base_map::insert(loc, base_u);
 
 	game_display* disp = resources::screen;
 
@@ -755,25 +729,14 @@ void unit_map::insert(const map_location loc, base_unit* base_u)
 	}
 }
 
+void unit_map::sort_map(const base_unit& u2)
+{
+	base_map::sort_map(u2);
+}
+
 bool unit_map::erase2(base_unit* base_u, bool delete_unit)
 {
-	size_t i;
 	unit* u = dynamic_cast<unit*>(base_u);
-	bool base = u->base();
-	const map_location& loc = u->get_location();
-
-	for (i = 0; i < map_vsize_; i ++) {
-		if (map_[i] == base_u) {
-			break;
-		}
-	}
-
-	VALIDATE(i != map_vsize_, "unitmap::erase, i == map_vsize, check code!");
-
-	if (i < map_vsize_ - 1) {
-		memcpy(&(map_[i]), &(map_[i + 1]), (map_vsize_ - i - 1) * sizeof(base_unit*));
-	}
-	map_vsize_ --;
 
 	game_display* disp = resources::screen;
 	if (unit_is_city(u)) {
@@ -796,39 +759,13 @@ bool unit_map::erase2(base_unit* base_u, bool delete_unit)
 	if (!unit_is_city(u)) {
 		(*resources::teams)[u->side() - 1].erase_troop(u);
 	}
-
-	std::set<map_location> invalid_locs;
-	invalid_locs.insert(loc);
-	if (base) {
-		coor_map_[index(loc.x, loc.y)].base = NULL;
-	} else {
-		coor_map_[index(loc.x, loc.y)].overlay = NULL;
-	}
-	const std::set<map_location::DIRECTION>& touch_dirs = u->get_touch_dirs();
-	for (std::set<map_location::DIRECTION>::const_iterator itor = touch_dirs.begin(); itor != touch_dirs.end(); ++ itor) {
-		map_location offset = loc.get_direction(*itor);
-		if (base) {
-			coor_map_[index(offset.x, offset.y)].base = NULL;
-		} else {
-			coor_map_[index(offset.x, offset.y)].overlay = NULL;
-		}
-		invalid_locs.insert(offset);
-	}
-
-	for (size_t i = 0; i < u->adjacent_size_; i ++) {
-		invalid_locs.insert(u->adjacent_[i]);
-	}
-
 	if (disp) {
 		if (u->terrain() != t_translation::NONE_TERRAIN) {
 			disp->set_terrain_dirty();
 		}
-		disp->invalidate(invalid_locs);
 	}
 
-	if (delete_unit) {
-		delete u;
-	}
+	base_map::erase2(u, delete_unit);
 
 	return true;
 }
@@ -883,7 +820,7 @@ const artifical* unit_map::city_from_seed(size_t seed) const
 bool unit_map::side_survived(int side, int* residuals) const
 {
 	int residuals_internal = 0;
-	for (size_t i = 0; i < map_vsize_; i ++) {
+	for (int i = 0; i < map_vsize_; i ++) {
 		const unit* u = dynamic_cast<unit*>(map_[i]);
 		if (u->side() == side) {
 			if (residuals) {

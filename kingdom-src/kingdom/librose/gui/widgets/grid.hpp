@@ -57,7 +57,9 @@ public:
 		BORDER_TOP                     = 1 << 6,
 		BORDER_BOTTOM                  = 1 << 7,
 		BORDER_LEFT                    = 1 << 8,
-		BORDER_RIGHT                   = 1 << 9
+		BORDER_RIGHT                   = 1 << 9,
+
+		USER_PRIVATE                   = 1 << 10
 	};
 
 	static const unsigned VERTICAL_SHIFT                 = 0;
@@ -286,13 +288,13 @@ public:
 	void place_fix(const tpoint& origin, const tpoint& size);
 
 	void init_report(int unit_w, int unit_y, int gap, bool extendable);
-	void insert_child(int unit_w, int unit_h, twidget& widget, size_t at, bool extendable);
-	void erase_child(size_t at, bool extendable);
+	void insert_child(int unit_w, int unit_h, twidget& widget, int at, bool extendable);
+	void erase_child(int at, bool extendable);
 	void replacement_children(int unit_w, int unit_h, int gap, bool extendable);
 	void erase_children(int unit_w, int unit_h, int gap, bool extendable);
 	void hide_children(int unit_w, int unit_h, int gap, bool extendable);
 
-	void resize_children(size_t size);
+	void resize_children(int size);
 
 	/** Child item of the grid. */
 	struct tchild {
@@ -315,6 +317,7 @@ public:
 
 	}; // class tchild
 
+	tchild* children() { return children_; }
 	const tchild* children() const { return children_; }
 	int children_vsize() const;
 
@@ -378,11 +381,11 @@ private:
 	 * is: row * cols_ + col. All other vectors use the same access formula.
 	 */
 	tchild* children_;
-	size_t children_size_;
-	size_t children_vsize_;
+	int children_size_;
+	int children_vsize_;
 
 	std::vector<tspacer*> stuff_widget_;
-	size_t stuff_size_;
+	int stuff_size_;
 	tpoint last_draw_end_;
 
 	const tchild& child(const unsigned row, const unsigned col) const

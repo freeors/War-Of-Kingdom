@@ -39,6 +39,29 @@
 
 namespace gui2 {
 
+class tblend_none_lock
+{
+public:
+	tblend_none_lock(surface& surf)
+		: surf_(surf)
+	{
+		SDL_GetSurfaceBlendMode(surf, &orignal_);
+		if (orignal_ != SDL_BLENDMODE_NONE) {
+			SDL_SetSurfaceBlendMode(surf, SDL_BLENDMODE_NONE);
+		}
+	}
+	~tblend_none_lock()
+	{
+		if (orignal_ != SDL_BLENDMODE_NONE) {
+			SDL_SetSurfaceBlendMode(surf_, orignal_);
+		}
+	}
+
+private:
+	surface& surf_;
+	SDL_BlendMode orignal_;
+};
+
 namespace {
 
 /*WIKI
@@ -80,188 +103,6 @@ namespace {
  * @end{tag}{name="blur"}
  * @end{tag}{name="pre_commit"}
  */
-
-/***** ***** ***** ***** ***** DRAWING PRIMITIVES ***** ***** ***** ***** *****/
-
-/**
- * Draws a single pixel on a surface.
- *
- * @pre                   The caller needs to make sure the selected coordinate
- *                        fits on the @p surface.
- * @pre                   The @p canvas is locked.
- *
- * @param start           The memory address which is the start of the surface
- *                        buffer to draw in.
- * @param color           The color of the pixel to draw.
- * @param w               The width of the surface.
- * @param x               The x coordinate of the pixel to draw.
- * @param y               The y coordinate of the pixel to draw.
- */
-static void put_pixel(
-		  const ptrdiff_t start
-		, const Uint32 color
-		, const unsigned w
-		, const unsigned x
-		, const unsigned y)
-{
-	*reinterpret_cast<Uint32*>(start + (y * w * 4) + x * 4) = color;
-}
-
-/**
- * Draws a line on a surface.
- *
- * @pre                   The caller needs to make sure the entire line fits on
- *                        the @p surface.
- * @pre                   @p x2 >= @p x1
- * @pre                   The @p surface is locked.
- *
- * @param canvas          The canvas to draw upon, the caller should lock the
- *                        surface before calling.
- * @param color           The color of the line to draw.
- * @param x1              The start x coordinate of the line to draw.
- * @param y1              The start y coordinate of the line to draw.
- * @param x2              The end x coordinate of the line to draw.
- * @param y2              The end y coordinate of the line to draw.
- */
-static void draw_line(
-		  surface& canvas
-		, Uint32 color
-		, unsigned x1
-		, unsigned y1
-		, const unsigned x2
-		, unsigned y2)
-{
-	color = SDL_MapRGBA(canvas->format,
-		((color & 0xFF000000) >> 24),
-		((color & 0x00FF0000) >> 16),
-		((color & 0x0000FF00) >> 8),
-		((color & 0x000000FF)));
-
-	ptrdiff_t start = reinterpret_cast<ptrdiff_t>(canvas->pixels);
-	unsigned w = canvas->w;
-
-	DBG_GUI_D << "Shape: draw line from "
-			<< x1 << ',' << y1 << " to " << x2 << ',' << y2
-			<< " canvas width " << w << " canvas height "
-			<< canvas->h << ".\n";
-
-	assert(static_cast<int>(x1) < canvas->w);
-	assert(static_cast<int>(x2) < canvas->w);
-	assert(static_cast<int>(y1) < canvas->h);
-	assert(static_cast<int>(y2) < canvas->h);
-
-	// use a special case for vertical lines
-	if(x1 == x2) {
-		if(y2 < y1) {
-			std::swap(y1, y2);
-		}
-
-		for(unsigned y = y1; y <= y2; ++y) {
-			put_pixel(start, color, w, x1, y);
-		}
-		return;
-	}
-
-	// use a special case for horizontal lines
-	if(y1 == y2) {
-		for(unsigned x  = x1; x <= x2; ++x) {
-			put_pixel(start, color, w, x, y1);
-		}
-		return;
-	}
-
-	// Algorithm based on
-	// http://de.wikipedia.org/wiki/Bresenham-Algorithmus#Kompakte_Variante
-	// version of 26.12.2010.
-	const int dx = x2 - x1; // precondition x2 >= x1
-	const int dy = abs(static_cast<int>(y2 - y1));
-	const int step_x = 1;
-	const int step_y = y1 < y2 ? 1 : -1;
-	int err = (dx > dy ? dx : -dy) / 2;
-	int e2;
-
-	for(;;){
-		put_pixel(start, color, w, x1, y1);
-		if(x1 == x2 && y1 == y2) {
-			break;
-		}
-		e2 = err;
-		if(e2 > -dx) {
-			err -= dy;
-			x1 += step_x;
-		}
-		if(e2 <  dy) {
-			err += dx;
-			y1 += step_y;
-		}
-	}
-}
-
-/**
- * Draws a circle on a surface.
- *
- * @pre                   The circle must fit on the canvas.
- * @pre                   The @p surface is locked.
- *
- * @param canvas          The canvas to draw upon, the caller should lock the
- *                        surface before calling.
- * @param color           The color of the circle to draw.
- * @param x_centre        The x coordinate of the centre of the circle to draw.
- * @param y_centre        The y coordinate of the centre of the circle to draw.
- * @param radius          The radius of the circle to draw.
- */
-static void draw_circle(
-		  surface& canvas
-		, Uint32 color
-		, const unsigned x_centre
-		, const unsigned y_centre
-		, const unsigned radius)
-{
-	color = SDL_MapRGBA(canvas->format,
-		((color & 0xFF000000) >> 24),
-		((color & 0x00FF0000) >> 16),
-		((color & 0x0000FF00) >> 8),
-		((color & 0x000000FF)));
-
-	ptrdiff_t start = reinterpret_cast<ptrdiff_t>(canvas->pixels);
-	unsigned w = canvas->w;
-
-	DBG_GUI_D << "Shape: draw circle at "
-			<< x_centre << ',' << y_centre
-			<< " with radius " << radius
-			<< " canvas width " << w << " canvas height "
-			<< canvas->h << ".\n";
-
-	assert(static_cast<int>(x_centre + radius) < canvas->w);
-	assert(static_cast<int>(x_centre - radius) >= 0);
-	assert(static_cast<int>(y_centre + radius) < canvas->h);
-	assert(static_cast<int>(y_centre - radius) >= 0);
-
-	// Algorithm based on
-	// http://de.wikipedia.org/wiki/Rasterung_von_Kreisen#Methode_von_Horn
-	// version of 2011.02.07.
-	int d = -static_cast<int>(radius);
-	int x = radius;
-	int y = 0;
-	while(!(y > x)) {
-		put_pixel(start, color, w, x_centre + x, y_centre + y);
-		put_pixel(start, color, w, x_centre + x, y_centre - y);
-		put_pixel(start, color, w, x_centre - x, y_centre + y);
-		put_pixel(start, color, w, x_centre - x, y_centre - y);
-
-		put_pixel(start, color, w, x_centre + y, y_centre + x);
-		put_pixel(start, color, w, x_centre + y, y_centre - x);
-		put_pixel(start, color, w, x_centre - y, y_centre + x);
-		put_pixel(start, color, w, x_centre - y, y_centre - x);
-
-		d += 2 * y + 1;
-		++y;
-		if(d > 0) {
-			d += -2 * x + 2;
-			--x;
-		}
-	}
-}
 
 /***** ***** ***** ***** ***** LINE ***** ***** ***** ***** *****/
 
@@ -1091,19 +932,23 @@ void timage::draw(surface& canvas
 	local_variables.add("image_original_height", variant(image_->h));
 
 	unsigned w = w_(local_variables);
+	VALIDATE(static_cast<int>(w) >= 0, "Image doesn't fit on canvas.");
+/*
 	VALIDATE_WITH_DEV_MESSAGE(
 			  static_cast<int>(w) >= 0
 			, _("Image doesn't fit on canvas.")
 			, (formatter() << "Image '" << name
 				<< "', w = " << static_cast<int>(w) << ".").str());
-
+*/
 	unsigned h = h_(local_variables);
+	VALIDATE(static_cast<int>(h) >= 0, "Image doesn't fit on canvas.");
+/*
 	VALIDATE_WITH_DEV_MESSAGE(
 			  static_cast<int>(h) >= 0
 			, _("Image doesn't fit on canvas.")
 			, (formatter() << "Image '" << name
 				<< "', h = " << static_cast<int>(h) << ".").str());
-
+*/
 	if ((!w && w_.has_formula()) || (!h && h_.has_formula())) { 
 		return;
 	}
@@ -1112,19 +957,24 @@ void timage::draw(surface& canvas
 	local_variables.add("image_height", variant(h ? h : image_->h));
 
 	const unsigned x = x_(local_variables);
+	VALIDATE(static_cast<int>(x) >= 0, "Image doesn't fit on canvas.");
+/*
 	VALIDATE_WITH_DEV_MESSAGE(
 			  static_cast<int>(x) >= 0
 			, _("Image doesn't fit on canvas.")
 			, (formatter() << "Image '" << name
 				<< "', x = " << static_cast<int>(x) << ".").str());
+*/
 
 	const unsigned y = y_(local_variables);
+	VALIDATE(static_cast<int>(y) >= 0, "Image doesn't fit on canvas.");
+/*
 	VALIDATE_WITH_DEV_MESSAGE(
 			  static_cast<int>(y) >= 0
 			, _("Image doesn't fit on canvas.")
 			, (formatter() << "Image '" << name
 				<< "', y = " << static_cast<int>(y) << ".").str());
-
+*/
 	// Copy the data to local variables to avoid overwriting the originals.
 	SDL_Rect src_clip = src_clip_;
 	SDL_Rect dst_clip = ::create_rect(x, y, 0, 0);
@@ -1166,14 +1016,15 @@ void timage::draw(surface& canvas
 				const int rows = (h + image_->h - 1) / image_->h;
 				surf = create_neutral_surface(w, h);
 
-				for(int x = 0; x < columns; ++x) {
-					for(int y = 0; y < rows; ++y) {
-						const SDL_Rect dest = ::create_rect(
+				for (int x = 0; x < columns; ++x) {
+					for (int y = 0; y < rows; ++y) {
+						SDL_Rect dest = ::create_rect(
 								  x * image_->w
 								, y * image_->h
 								, 0
 								, 0);
-						blit_surface(image_, NULL, surf, &dest);
+						// blit_surface(image_, NULL, surf, &dest);
+						sdl_blit(image_, NULL, surf, &dest);
 					}
 				}
 
@@ -1199,7 +1050,7 @@ void timage::draw(surface& canvas
 		surf = flip_surface(surf, false);
 	}
 
-	blit_surface(surf, &src_clip, canvas, &dst_clip);
+	sdl_blit(surf, &src_clip, canvas, &dst_clip);
 }
 
 timage::tresize_mode timage::get_resize_mode(const std::string& resize_mode)
@@ -1419,6 +1270,8 @@ void ttext::draw(surface& canvas
 		clip.y += (surf->h - canvas->h) / 2;
 		clip.h -= surf->h - canvas->h;
 	}
+
+	// tblend_none_lock lock(surf);
 
 	SDL_Rect dst = ::create_rect(x, y, canvas->w, canvas->h);
 	blit_surface(surf, &clip, canvas, &dst);

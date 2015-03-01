@@ -49,9 +49,11 @@ typedef enum {
 #define MOUSE_HIT_THRESHOLD			0
 #define MOUSE_MOTION_THRESHOLD		1
 
-namespace {
-const SDL_Rect empty_rect = { 0, 0, 0, 0 };
-}
+extern const SDL_Rect empty_rect;
+extern const SDL_Rect invalid_rect;
+
+#define is_empty_rect(rect)		(!(rect).w || !(rect).h)
+#define is_valid_rect(rect)		((rect).x >= 0 && (rect).y >= 0)
 
 SDLKey sdl_keysym_from_name(std::string const &keyname);
 
@@ -312,6 +314,73 @@ SDL_Color create_color(const unsigned char red
 		, unsigned char green
 		, unsigned char blue
 		, unsigned char unused = 255);
+
+/***** ***** ***** ***** ***** DRAWING PRIMITIVES ***** ***** ***** ***** *****/
+
+/**
+ * Draws a single pixel on a surface.
+ *
+ * @pre                   The caller needs to make sure the selected coordinate
+ *                        fits on the @p surface.
+ * @pre                   The @p canvas is locked.
+ *
+ * @param start           The memory address which is the start of the surface
+ *                        buffer to draw in.
+ * @param color           The color of the pixel to draw.
+ * @param w               The width of the surface.
+ * @param x               The x coordinate of the pixel to draw.
+ * @param y               The y coordinate of the pixel to draw.
+ */
+void put_pixel(
+		  const ptrdiff_t start
+		, const Uint32 color
+		, const unsigned w
+		, const unsigned x
+		, const unsigned y);
+
+/**
+ * Draws a line on a surface.
+ *
+ * @pre                   The caller needs to make sure the entire line fits on
+ *                        the @p surface.
+ * @pre                   @p x2 >= @p x1
+ * @pre                   The @p surface is locked.
+ *
+ * @param canvas          The canvas to draw upon, the caller should lock the
+ *                        surface before calling.
+ * @param color           The color of the line to draw.
+ * @param x1              The start x coordinate of the line to draw.
+ * @param y1              The start y coordinate of the line to draw.
+ * @param x2              The end x coordinate of the line to draw.
+ * @param y2              The end y coordinate of the line to draw.
+ */
+void draw_line(
+		  surface& canvas
+		, Uint32 color
+		, unsigned x1
+		, unsigned y1
+		, const unsigned x2
+		, unsigned y2);
+
+/**
+ * Draws a circle on a surface.
+ *
+ * @pre                   The circle must fit on the canvas.
+ * @pre                   The @p surface is locked.
+ *
+ * @param canvas          The canvas to draw upon, the caller should lock the
+ *                        surface before calling.
+ * @param color           The color of the circle to draw.
+ * @param x_centre        The x coordinate of the centre of the circle to draw.
+ * @param y_centre        The y coordinate of the centre of the circle to draw.
+ * @param radius          The radius of the circle to draw.
+ */
+void draw_circle(
+		  surface& canvas
+		, Uint32 color
+		, const unsigned x_centre
+		, const unsigned y_centre
+		, const unsigned radius);
 
 /**
  * Helper class for pinning SDL surfaces into memory.

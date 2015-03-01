@@ -364,10 +364,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\librose\reports.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\..\librose\saes.cpp"
 				>
 			</File>
@@ -3796,6 +3792,30 @@
 				</File>
 				<File
 					RelativePath="..\..\librose\gui\dialogs\dialog.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\librose\gui\dialogs\edit_box.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\librose\gui\dialogs\edit_box.hpp"
 					>
 				</File>
 				<File

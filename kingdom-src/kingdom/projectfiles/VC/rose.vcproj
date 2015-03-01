@@ -166,6 +166,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine=""
 			/>
 		</Configuration>
 	</Configurations>
@@ -206,6 +207,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\studio\unit2.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\studio\unit_map.cpp"
 				>
 			</File>
@@ -229,6 +234,10 @@
 			</File>
 			<File
 				RelativePath="..\..\studio\unit.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\studio\unit2.hpp"
 				>
 			</File>
 			<File
@@ -325,6 +334,30 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\studio\gui\dialogs\grid_setting.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\studio\gui\dialogs\grid_setting.hpp"
+					>
+				</File>
+				<File
 					RelativePath="..\..\studio\gui\dialogs\linked_group.cpp"
 					>
 					<FileConfiguration
@@ -370,6 +403,78 @@
 				</File>
 				<File
 					RelativePath="..\..\studio\gui\dialogs\mkwin_theme.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\studio\gui\dialogs\mode_navigate.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\studio\gui\dialogs\mode_navigate.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\studio\gui\dialogs\mode_setting.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\studio\gui\dialogs\mode_setting.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\studio\gui\dialogs\rect_setting.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\studio\gui\dialogs\rect_setting.hpp"
 					>
 				</File>
 				<File

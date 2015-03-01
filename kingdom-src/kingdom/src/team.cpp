@@ -2898,13 +2898,13 @@ void set_tactic_widget(gui2::tbutton& widget, hero& h, const std::string& label)
 		surface hero_surf = image::get_image(ss.str());
 
 		SDL_Rect clip = ::create_rect(1, 1, 0, 0);
-		blit_surface(hero_surf, NULL, image_, &clip);
+		sdl_blit(hero_surf, NULL, image_, &clip);
 
 		if (!label.empty()) {
 			surface label_surf = font::get_rendered_text2(label);
 			clip.x += 36;
 			clip.y = (height - label_surf->h) / 2;
-			blit_surface(label_surf, NULL, image_, &clip);
+			sdl_blit(label_surf, NULL, image_, &clip);
 		}
 
 		image_ = scale_surface(image_, width, height);
@@ -2934,17 +2934,17 @@ void set_bomb_widget(gui2::tbutton& widget, int bomb_turns)
 	SDL_Rect dst_clip = create_rect(26, 20, 0, 0);
 	ss.str("");
 	ss << "misc/digit.png~CROP(" << 8 * bomb_turns << ", 0, 8, 12)";
-	blit_surface(image::get_image(ss.str()), NULL, image_, &dst_clip);
+	sdl_blit(image::get_image(ss.str()), NULL, image_, &dst_clip);
 
 	ss.str("");
 	ss << "misc/digit.png~CROP(" << 8 * 10 << ", 0, 8, 12)";
 	dst_clip.x += 8;
-	blit_surface(image::get_image(ss.str()), NULL, image_, &dst_clip);
+	sdl_blit(image::get_image(ss.str()), NULL, image_, &dst_clip);
 
 	ss.str("");
 	ss << "misc/digit.png~CROP(" << 8 * game_config::max_bomb_turns << ", 0, 8, 12)";
 	dst_clip.x += 8;
-	blit_surface(image::get_image(ss.str()), NULL, image_, &dst_clip);
+	sdl_blit(image::get_image(ss.str()), NULL, image_, &dst_clip);
 
 	image_ = scale_surface(image_, width, height);
 	widget.set_surface(image_, width, height);

@@ -37,32 +37,61 @@ std::string form_widget_png(const std::string& type, const std::string& definiti
 	}
 }
 
-unit::unit(mkwin_controller& controller, mkwin_display& disp, const std::pair<std::string, gui2::tcontrol_definition_ptr>& widget, unit* parent)
-	: controller_(controller)
+const std::string tmode::def_id = "default";
+
+std::vector<std::string> tadjust::change_fields;
+std::vector<std::string> tadjust::rect_fields;
+const tadjust null_adjust(tadjust::NONE, tres(1024, 768), config());
+
+void tadjust::init_fields()
+{
+	if (!rect_fields.empty()) {
+		return;
+	}
+	rect_fields.push_back("rect");
+	rect_fields.push_back("ref");
+	rect_fields.push_back("xanchor");
+	rect_fields.push_back("yanchor");
+	change_fields = rect_fields;
+}
+
+unit::unit(mkwin_controller& controller, mkwin_display& disp, unit_map& units, const std::pair<std::string, gui2::tcontrol_definition_ptr>& widget, unit* parent)
+	: base_unit(units)
+	, controller_(controller)
 	, disp_(disp)
+	, units_(units)
 	, widget_(widget)
 	, type_(WIDGET)
 	, parent_(parent)
+	, adjusts_()
 {
 }
 
-unit::unit(mkwin_controller& controller, mkwin_display& disp, int type, unit* parent)
-	: controller_(controller)
+unit::unit(mkwin_controller& controller, mkwin_display& disp, unit_map& units, int type, unit* parent)
+	: base_unit(units)
+	, controller_(controller)
 	, disp_(disp)
+	, units_(units)
 	, widget_()
 	, type_(type)
 	, parent_(parent)
+	, adjusts_()
 {
+	if (type == WINDOW && !parent) {
+		cell_.id = gui2::untitled;
+	}
 }
 
 unit::unit(const unit& that)
 	: base_unit(that)
 	, controller_(that.controller_)
 	, disp_(that.disp_)
+	, units_(that.units_)
 	, type_(that.type_)
 	, parent_(that.parent_)
 	, widget_(that.widget_)
 	, cell_(that.cell_)
+	, adjusts_(that.adjusts_)
 {
 	// caller require call set_parent to set self-parent.
 
@@ -104,6 +133,47 @@ unit::~unit()
 	}
 }
 
+void unit::redraw_widget(int xsrc, int ysrc, int width, int height)
+{
+	disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT, 
+		loc_, xsrc, ysrc, image::get_image(image(), image::SCALED_TO_ZOOM));
+
+	if (cell_.cfg["rect"].empty()) {
+		unsigned h_flag = cell_.widget.cell.flags_ & gui2::tgrid::HORIZONTAL_MASK;
+		disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
+			loc_, xsrc + width - 32, ysrc, image::get_image(gui2::horizontal_layout.find(h_flag)->second.icon));
+
+		unsigned v_flag = cell_.widget.cell.flags_ & gui2::tgrid::VERTICAL_MASK;
+		disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
+			loc_, xsrc + width - 16, ysrc, image::get_image(gui2::vertical_layout.find(v_flag)->second.icon));
+	} else {
+		surface surf = image::get_image("misc/station.png");
+		if (surf) {
+			disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT, loc_, xsrc + width - surf->w, ysrc, surf);
+		}
+	}
+
+	surface text_surf;
+	if (!cell_.id.empty()) {
+		surface text_surf = font::get_rendered_text2(cell_.id, -1, 10, font::BLACK_COLOR);
+		if (text_surf->w > width) {
+			SDL_Rect r = create_rect(0, 0, width, text_surf->h);
+			text_surf = cut_surface(text_surf, r); 
+		}
+		disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
+			loc_, xsrc, ysrc + height / 2, text_surf);
+	}
+	if (!cell_.widget.label.empty()) {
+		text_surf = font::get_rendered_text2(cell_.widget.label, -1, 10, font::BLUE_COLOR);
+		if (text_surf->w > width) {
+			SDL_Rect r = create_rect(0, 0, width, text_surf->h);
+			text_surf = cut_surface(text_surf, r); 
+		}
+		disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
+			loc_, xsrc, ysrc + height / 2 + 10, text_surf);
+	}
+}
+
 void unit::redraw_unit()
 {
 	if (!loc_.valid()) {
@@ -130,36 +200,7 @@ void unit::redraw_unit()
 		if (is_spacer()) {
 
 		} else {
-			disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT, 
-				loc_, xsrc, ysrc, image::get_image(image(), image::SCALED_TO_ZOOM));
-
-			unsigned h_flag = cell_.widget.cell.flags_ & gui2::tgrid::HORIZONTAL_MASK;
-			disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
-				loc_, xsrc + zoom - 32, ysrc, image::get_image(gui2::horizontal_layout.find(h_flag)->second.icon));
-
-			unsigned v_flag = cell_.widget.cell.flags_ & gui2::tgrid::VERTICAL_MASK;
-			disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
-				loc_, xsrc + zoom - 16, ysrc, image::get_image(gui2::vertical_layout.find(v_flag)->second.icon));
-
-			surface text_surf;
-			if (!cell_.widget.id.empty()) {
-				surface text_surf = font::get_rendered_text2(cell_.widget.id, -1, 10, font::BLACK_COLOR);
-				if (text_surf->w > zoom) {
-					SDL_Rect r = create_rect(0, 0, zoom, text_surf->h);
-					text_surf = cut_surface(text_surf, r); 
-				}
-				disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
-					loc_, xsrc, ysrc + zoom / 2, text_surf);
-			}
-			if (!cell_.widget.label.empty()) {
-				text_surf = font::get_rendered_text2(cell_.widget.label, -1, 10, font::BLUE_COLOR);
-				if (text_surf->w > zoom) {
-					SDL_Rect r = create_rect(0, 0, zoom, text_surf->h);
-					text_surf = cut_surface(text_surf, r); 
-				}
-				disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
-					loc_, xsrc, ysrc + zoom / 2 + 10, text_surf);
-			}
+			redraw_widget(xsrc, ysrc, zoom, zoom);
 		}
 
 		if (has_child()) {
@@ -168,15 +209,13 @@ void unit::redraw_unit()
 		}
 
 	} else if (type_ == WINDOW) {
-		if (controller_.parent_nodes().size() == 1) {
-			disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT, 
-				loc_, xsrc, ysrc, image::get_image(image(), image::SCALED_TO_ZOOM));
+		disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT, 
+			loc_, xsrc, ysrc, image::get_image(image(), image::SCALED_TO_ZOOM));
 
-			if (!cell_.window.id.empty()) {
-				surface text_surf = font::get_rendered_text2(cell_.window.id, -1, 10, font::BLACK_COLOR);
-				disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
-					loc_, xsrc, ysrc + zoom / 2, text_surf);
-			}
+		if (!cell_.id.empty()) {
+			surface text_surf = font::get_rendered_text2(cell_.id, -1, 10, font::BLACK_COLOR);
+			disp_.drawing_buffer_add(display::LAYER_UNIT_DEFAULT,
+				loc_, xsrc, ysrc + zoom / 2, text_surf);
 		}
 
 	} else if (type_ == COLUMN) {
@@ -211,11 +250,17 @@ std::string unit::image() const
 	} else if (type_ == ROW) {
 		return widget_prefix + "row.png";
 	} else if (type_ == WINDOW) {
-		return widget_prefix + "window.png";
+		if (!controller_.current_unit()) {
+			return widget_prefix + "window.png";
+		} else {
+			return widget_prefix + "grid.png";
+		}
 	} else if (widget_.first == "grid") {
 		return widget_prefix + "grid.png";
-	} else {
+	} else if (widget_.second.get()) {
 		return form_widget_png(widget_.first, widget_.second->id);
+	} else {
+		return widget_prefix + "default.png";
 	}
 }
 
@@ -244,24 +289,40 @@ int unit::children_layers() const
 	return 0;
 }
 
+bool unit::is_main_map() const 
+{ 
+	return type_ == WIDGET && cell_.id == theme::id_main_map; 
+}
+
+const unit* unit::parent_at_top() const
+{
+	const unit* result = this;
+	while (result->parent_) {
+		result = result->parent_;
+	}
+	return result;
+}
+
 void unit::insert_child(int w, int h)
 {
+	unit_map::tconsistent_lock lock(units_);
+
 	tchild child;
 
-	child.window = new unit(controller_, disp_, WINDOW, this);
+	child.window = new unit(controller_, disp_, units_, WINDOW, this);
 	child.window->set_location(map_location(0, 0));
 	for (int x = 1; x < w; x ++) {
-		child.cols.push_back(new unit(controller_, disp_, COLUMN, this));
+		child.cols.push_back(new unit(controller_, disp_, units_, COLUMN, this));
 		child.cols.back()->set_location(map_location(x, 0));
 	}
 	for (int y = 1; y < h; y ++) {
 		int pitch = y * w;
 		for (int x = 0; x < w; x ++) {
 			if (x) {
-				child.units.push_back(new unit(controller_, disp_, disp_.spacer, this));
+				child.units.push_back(new unit(controller_, disp_, units_, disp_.spacer, this));
 				child.cols.back()->set_location(map_location(x, y));
 			} else {
-				child.rows.push_back(new unit(controller_, disp_, ROW, this));
+				child.rows.push_back(new unit(controller_, disp_, units_, ROW, this));
 				child.rows.back()->set_location(map_location(0, y));
 			}
 		}
@@ -329,7 +390,7 @@ std::string formual_extract_str(const std::string& str)
 
 void unit::generate_window(config& cfg) const
 {
-	cfg["id"] = cell_.window.id;
+	cfg["id"] = cell_.id;
 	cfg["description"] = t_string(cell_.window.description, cell_.window.textdomain);
 
 	config& res_cfg = cfg.add_child("resolution");
@@ -405,7 +466,6 @@ void unit::generate_column(config& cfg) const
 void unit::generate_widget(config& cfg) const
 {
 	std::stringstream ss;
-	cfg.clear();
 
 	if (cell_.widget.cell.border_size_ && cell_.widget.cell.flags_ & gui2::tgrid::BORDER_ALL) {
 		ss.str("");
@@ -458,8 +518,8 @@ void unit::generate_widget(config& cfg) const
 	}
 
 	config& sub = cfg.add_child(widget_.first);
-	if (!cell_.widget.id.empty()) {
-		sub["id"] = cell_.widget.id;
+	if (!cell_.id.empty()) {
+		sub["id"] = cell_.id;
 	}
 	if (widget_.second.get()) {
 		sub["definition"] = widget_.second->id;
@@ -473,7 +533,9 @@ void unit::generate_widget(config& cfg) const
 		if (!cell_.widget.height.empty()) {
 			sub["height"] = formual_fill_str(cell_.widget.height);
 		}
-	} 
+	}
+	sub.merge_attributes(cell_.cfg);
+
 	if (is_scroll()) {
 		if (cell_.widget.horizontal_mode != gui2::tscrollbar_container::auto_visible_first_run) {
 			sub["horizontal_scrollbar_mode"] = gui2::horizontal_mode.find(cell_.widget.horizontal_mode)->second.id;
@@ -626,6 +688,9 @@ void unit::tchild::generate(config& cfg) const
 	config unit_cfg;
 	config* row_cfg = NULL;
 	int current_y = -1;
+	if (!window->cell().id.empty() && window->cell().id != gui2::untitled) {
+		cfg["id"] = window->cell().id;
+	}
 	for (int y = 0; y < (int)rows.size(); y ++) {
 		int pitch = y * (int)cols.size();
 		for (int x = 0; x < (int)cols.size(); x ++) {
@@ -637,6 +702,7 @@ void unit::tchild::generate(config& cfg) const
 				unit* row = rows[y];
 				row->generate(*row_cfg);
 			}
+			unit_cfg.clear();
 			u->generate(unit_cfg);
 			if (y == 0) {
 				unit* column = cols[x];
@@ -670,7 +736,7 @@ void unit::from_window(const config& cfg)
 	// [/window]
 
 	set_location(map_location(0, 0));
-	cell_.window.id = cfg["id"].str();
+	cell_.id = cfg["id"].str();
 	t_string description = cfg["description"].t_str();
 	split_t_string(description, cell_.window.textdomain, cell_.window.description);
 	
@@ -702,16 +768,28 @@ void unit::from_column(const config& cfg)
 
 void unit::from_widget(const config& cfg)
 {
-	cell_.widget.cell.flags_ = gui2::implementation::read_flags(cfg);
-	cell_.widget.cell.border_size_ = cfg["border_size"].to_int();
+	if (units_.consistent()) {
+		cell_.widget.cell.flags_ = gui2::implementation::read_flags(cfg);
+		cell_.widget.cell.border_size_ = cfg["border_size"].to_int();
+	}
 
-	const config& sub_cfg = cfg.child(widget_.first);
-	cell_.widget.id = sub_cfg["id"].str();
+	const config& sub_cfg = units_.consistent()? cfg.child(widget_.first): cfg;
+	cell_.id = sub_cfg["id"].str();
 	cell_.widget.linked_group = sub_cfg["linked_group"].str();
 	cell_.widget.width = formual_extract_str(sub_cfg["width"].str());
 	cell_.widget.height = formual_extract_str(sub_cfg["height"].str());
 	split_t_string(sub_cfg["label"].t_str(), cell_.widget.label_textdomain, cell_.widget.label);
 	split_t_string(sub_cfg["tooltip"].t_str(), cell_.widget.tooltip_textdomain, cell_.widget.tooltip);
+
+	if (!sub_cfg["rect"].empty()) {
+		const config& rect_cfg = controller_.find_rect_cfg(widget_.first, cell_.id);
+		for (std::vector<std::string>::const_iterator it = tadjust::rect_fields.begin(); it != tadjust::rect_fields.end(); ++ it) {
+			const std::string& k = *it;
+			if (!rect_cfg[k].empty()) {
+				cell_.cfg[k] = rect_cfg[k];
+			}
+		}
+	}
 
 	if (is_scroll()) {
 		cell_.widget.vertical_mode = gui2::implementation::get_scrollbar_mode(sub_cfg["vertical_scrollbar_mode"]);
@@ -740,39 +818,72 @@ void unit::from_widget(const config& cfg)
 	}
 }
 
-void unit::tchild::from(mkwin_controller& controller, mkwin_display& disp, unit* parent, const config& cfg)
+void unit::tchild::from(mkwin_controller& controller, mkwin_display& disp, unit_map& units2, unit* parent, const config& cfg)
 {
-	window = new unit(controller, disp, unit::WINDOW, parent);
-	// generate require x, y. for example, according it to next line.
-	window->set_location(map_location(0, 0));
+	if (parent || !controller.theme()) {
+		unit_map::tconsistent_lock lock(units2);
 
-	bool first_row = true;
-	std::string type, definition;
-	BOOST_FOREACH (const config& row, cfg.child_range("row")) {
-		rows.push_back(new unit(controller, disp, unit::ROW, parent));
-		rows.back()->set_location(map_location(0, rows.size()));
-		rows.back()->from(row);
-		
-		BOOST_FOREACH (const config& col, row.child_range("column")) {
-			if (first_row) {
-				cols.push_back(new unit(controller, disp, unit::COLUMN, parent));
-				cols.back()->set_location(map_location(cols.size(), 0));
-				cols.back()->from(col);
-			}
-			int colno = 1;
-			BOOST_FOREACH (const config::any_child& c, col.all_children_range()) {
-				type = c.key;
-				definition = c.cfg["definition"].str();
-				gui2::tcontrol_definition_ptr ptr;
-				if (type != "grid") {
-					ptr = mkwin_display::find_widget(type, definition);
-				}
-				units.push_back(new unit(controller, disp, std::make_pair(type, ptr), parent));
-				units.back()->set_location(map_location(colno ++, rows.size()));
-				units.back()->from(col);
-			}
+		window = new unit(controller, disp, units2, unit::WINDOW, parent);
+		if (!cfg["id"].empty()) {
+			window->cell().id = cfg["id"].str();
 		}
-		first_row = false;
+		// generate require x, y. for example, according it to next line.
+		window->set_location(map_location(0, 0));
+
+		bool first_row = true;
+		std::string type, definition;
+		BOOST_FOREACH (const config& row, cfg.child_range("row")) {
+			rows.push_back(new unit(controller, disp, units2, unit::ROW, parent));
+			rows.back()->set_location(map_location(0, rows.size()));
+			rows.back()->from(row);
+			
+			BOOST_FOREACH (const config& col, row.child_range("column")) {
+				if (first_row) {
+					cols.push_back(new unit(controller, disp, units2, unit::COLUMN, parent));
+					cols.back()->set_location(map_location(cols.size(), 0));
+					cols.back()->from(col);
+				}
+				int colno = 1;
+				BOOST_FOREACH (const config::any_child& c, col.all_children_range()) {
+					type = c.key;
+					definition = c.cfg["definition"].str();
+					gui2::tcontrol_definition_ptr ptr;
+					if (type != "grid") {
+						ptr = mkwin_display::find_widget(type, definition);
+					}
+					units.push_back(new unit(controller, disp, units2, std::make_pair(type, ptr), parent));
+					units.back()->set_location(map_location(colno ++, rows.size()));
+					units.back()->from(col);
+				}
+			}
+			first_row = false;
+		}
+	} else {
+		std::string type, definition;
+		double factor = disp.get_zoom_factor();
+		int zoom = disp.hex_size();
+		bool valid = false;
+		BOOST_FOREACH (const config::any_child& v, cfg.all_children_range()) {
+			if (!valid) {
+				if (v.key == "main_map_border") {
+					valid = true;
+				}
+				continue;
+			}
+			type = v.key;
+			definition = v.cfg["definition"].str();
+			gui2::tcontrol_definition_ptr ptr;
+			if (type != "grid" && type != "main_map") {
+				ptr = mkwin_display::find_widget(type, definition);
+			}
+			SDL_Rect rect = theme::calculate_relative_loc(v.cfg, theme::XDim, theme::YDim);
+			rect = create_rect(rect.x * factor, rect.y * factor, rect.w * factor, rect.h * factor);
+			rect.x += zoom;
+			rect.y += zoom;
+			units.push_back(new unit2(controller, disp, units2, std::make_pair(type, ptr), parent, rect));
+			units.back()->from(v.cfg);
+			units2.insert2(disp, units.back());
+		}
 	}
 }
 
@@ -780,7 +891,7 @@ void unit::from_grid(const config& cfg)
 {
 	children_.push_back(tchild());
 	unit::tchild& child = children_.back();
-	child.from(controller_, disp_, this, cfg);
+	child.from(controller_, disp_, units_, this, cfg);
 }
 
 void unit::from_stacked_widget(const config& cfg)
@@ -791,7 +902,7 @@ void unit::from_stacked_widget(const config& cfg)
 	}
 	BOOST_FOREACH (const config& layer, stack_cfg.child_range("layer")) {
 		children_.push_back(tchild());
-		children_.back().from(controller_, disp_, this, layer);
+		children_.back().from(controller_, disp_, units_, this, layer);
 	}
 }
 
@@ -800,18 +911,18 @@ void unit::from_listbox(const config& cfg)
 	const config& header = cfg.child("header");
 	if (header) {
 		children_.push_back(tchild());
-		children_.back().from(controller_, disp_, this, header);
+		children_.back().from(controller_, disp_, units_, this, header);
 	} else {
 		insert_child(mkwin_controller::default_width, mkwin_controller::default_height);
 	}
 
 	children_.push_back(tchild());
-	children_.back().from(controller_, disp_, this, cfg.child("list_definition"));
+	children_.back().from(controller_, disp_, units_, this, cfg.child("list_definition"));
 
 	const config& footer = cfg.child("footer");
 	if (footer) {
 		children_.push_back(tchild());
-		children_.back().from(controller_, disp_, this, footer);
+		children_.back().from(controller_, disp_, units_, this, footer);
 	} else {
 		insert_child(mkwin_controller::default_width, mkwin_controller::default_height);
 	}
@@ -820,13 +931,13 @@ void unit::from_listbox(const config& cfg)
 void unit::from_toggle_panel(const config& cfg)
 {
 	children_.push_back(tchild());
-	children_.back().from(controller_, disp_, this, cfg.child("grid"));
+	children_.back().from(controller_, disp_, units_, this, cfg.child("grid"));
 }
 
 void unit::from_scrollbar_panel(const config& cfg)
 {
 	children_.push_back(tchild());
-	children_.back().from(controller_, disp_, this, cfg.child("definition"));
+	children_.back().from(controller_, disp_, units_, this, cfg.child("definition"));
 }
 
 void unit::from_tree_view(const config& cfg)
@@ -839,7 +950,7 @@ void unit::from_tree_view(const config& cfg)
 	cell_.widget.tree_view.node_id = node_cfg["id"].str();
 
 	children_.push_back(tchild());
-	children_.back().from(controller_, disp_, this, node_cfg.child("node_definition"));
+	children_.back().from(controller_, disp_, units_, this, node_cfg.child("node_definition"));
 }
 
 void unit::from_drawing(const config& cfg)
@@ -857,4 +968,84 @@ void unit::from_drawing(const config& cfg)
 	cell_.widget.draw.w = formual_extract_str(image_cfg["w"].str());
 	cell_.widget.draw.h = formual_extract_str(image_cfg["h"].str());
 	cell_.widget.draw.name = formual_extract_str(image_cfg["name"].str());
+}
+
+tadjust unit::adjust(const tmode& mode, int type)
+{
+	std::map<std::string, std::vector<tadjust> >::const_iterator it = adjusts_.find(mode.id);
+	if (it == adjusts_.end()) {
+		return null_adjust;
+	}
+	for (std::vector<tadjust>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+		if (it2->type == type && it2->res == mode.res) {
+			return *it2;
+		}
+	}
+	return null_adjust;
+}
+
+void unit::insert_adjust(const tmode& mode, const tadjust& adjust)
+{
+	VALIDATE(mode.res == adjust.res, null_str);
+
+	std::map<std::string, std::vector<tadjust> >::iterator it = adjusts_.find(mode.id);
+	if (it == adjusts_.end()) {
+		adjusts_.insert(std::make_pair(mode.id, std::vector<tadjust>(1, adjust)));
+		return;
+	}
+
+	for (std::vector<tadjust>::iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+		if (it2->res == mode.res && it2->type == adjust.type) {
+			it2->cfg = adjust.cfg;
+			return;
+		}
+	}
+	it->second.push_back(adjust);
+}
+
+void unit::erase_adjust(const tmode& mode, int type)
+{
+	std::map<std::string, std::vector<tadjust> >::iterator it = adjusts_.find(mode.id);
+	if (it == adjusts_.end()) {
+		return;
+	}
+
+	for (std::vector<tadjust>::iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+		if (it2->res == mode.res && it2->type == type) {
+			it->second.erase(it2);
+			return;
+		}
+	}
+}
+
+void unit::generate_adjust(const tmode& mode, config& cfg)
+{
+	std::map<std::string, std::vector<tadjust> >::const_iterator it = adjusts_.find(mode.id);
+	if (it == adjusts_.end()) {
+		return;
+	}
+
+	for (std::vector<tadjust>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++ it2) {
+		const tadjust& adjust = *it2;
+		if (adjust.res != mode.res) {
+			continue;
+		}
+		if (adjust.type == tadjust::CHANGE) {
+			if (tadjust::different_cfg(cell_.cfg, adjust.cfg)) {
+				config& change = cfg.add_child("change");
+				change["id"] = cell_.id;
+				for (std::vector<std::string>::const_iterator it = tadjust::change_fields.begin(); it != tadjust::change_fields.end(); ++ it) {
+					const std::string& k = *it;
+					if (cell_.cfg[k] != adjust.cfg[k]) {
+						change[k] = adjust.cfg[k];
+					}
+				}
+			}
+			
+		} else if (adjust.type == tadjust::REMOVE) {
+
+		} else if (adjust.type == tadjust::ADD) {
+
+		}
+	}
 }

@@ -174,6 +174,9 @@ public:
 
 	void set_restore(const bool restore) { restore_ = restore; }
 
+	virtual void toggle_tabbar(twidget* widget);
+	virtual void click_tabbar(twidget* widget, const std::string& sparam) {}
+
 protected:
 
 	/**

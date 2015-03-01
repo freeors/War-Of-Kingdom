@@ -115,7 +115,7 @@ public:
 	const config& game_config() const { return game_config_; }
 	bool is_loading() { return false; }
 	bool change_language();
-	void start_mkwin();
+	void start_mkwin(bool theme);
 
 private:
 	void load_game_cfg(const bool force);
@@ -550,12 +550,12 @@ bool game_controller::change_language()
 	return true;
 }
 
-void game_controller::start_mkwin()
+void game_controller::start_mkwin(bool theme)
 {
 	display_lock lock(disp());
 	hotkey::scope_changer changer(game_config(), "hotkey_mkwin");
 
-	mkwin_controller mkwin(game_config(), video_);
+	mkwin_controller mkwin(game_config(), video_, theme);
 	mkwin.main_loop();
 }
 
@@ -683,9 +683,7 @@ static int do_gameloop(int argc, char** argv)
 
 			loadscreen_manager.reset();
 
-			gui2::trose::tresult res = game.is_loading()
-					? gui2::trose::LOAD_GAME
-					: gui2::trose::NOTHING;
+			gui2::trose::tresult res = gui2::trose::NOTHING;
 
 			const font::floating_label_context label_manager(game.disp().video().getSurface());
 
@@ -703,13 +701,13 @@ static int do_gameloop(int argc, char** argv)
 				posix_print("do_gameloop, received QUIT_GAME, will exit!\n");
 				return 0;
 
-			} else if (res == gui2::trose::LOAD_GAME) {
-				anim_display::start_title_screen_anim();
+			} else if (res == gui2::trose::EDIT_THEME) {
+				game.start_mkwin(true);
 
 			} else if (res == gui2::trose::HELP) {
 
 			} else if (res == gui2::trose::EDIT_DIALOG) {
-				game.start_mkwin();
+				game.start_mkwin(false);
 
 			} else if (res == gui2::trose::PLAYER) {
 
@@ -718,6 +716,7 @@ static int do_gameloop(int argc, char** argv)
 			} else if (res == gui2::trose::REPORT) {
 
 			} else if (res == gui2::trose::MULTIPLAYER) {
+				anim_display::start_title_screen_anim();
 
 			} else if (res == gui2::trose::CHANGE_LANGUAGE) {
 				if (game.change_language()) {

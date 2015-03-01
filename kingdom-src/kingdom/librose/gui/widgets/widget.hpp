@@ -56,6 +56,7 @@ class twidget
 	friend class twindow; // needed for modifying the layout_size.
 
 public:
+	static const int npos = -1;
 
 	/** @deprecated use the second overload. */
 	twidget();
@@ -71,7 +72,7 @@ public:
 	virtual ~twidget();
 
 	/***** ***** ***** ***** flags ***** ***** ***** *****/
-
+	
 	/** Visibility settings done by the user. */
 	enum tvisible {
 		/**
@@ -401,6 +402,7 @@ public:
 	}
 
 	void set_fix_rect(const SDL_Rect& area) { fix_rect_ = area; }
+	void set_fix_size(int w, int h) { fix_rect_.w = w; fix_rect_.h = h; }
 	const SDL_Rect& fix_rect() const { return fix_rect_; }
 	int fix_width() const { return fix_rect_.w; }
 	int fix_height() const { return fix_rect_.h; }
@@ -560,6 +562,10 @@ public:
 
 	virtual bool exist_anim() { return false; }
 
+	/***** ***** ***** setters / getters for members ***** ****** *****/
+	void set_layout_size(const tpoint& size);
+	const tpoint& layout_size() const { return layout_size_; }
+
 private:
 
 	/**
@@ -575,11 +581,6 @@ private:
 	 */
 	virtual void child_populate_dirty_list(twindow& /*caller*/,
 			const std::vector<twidget*>& /*call_stack*/) {}
-protected:
-	/***** ***** ***** setters / getters for members ***** ****** *****/
-
-	void set_layout_size(const tpoint& size);
-	const tpoint& layout_size() const { return layout_size_; }
 
 public:
 

@@ -90,9 +90,20 @@ struct tscroll_mode
 	std::string id;
 	std::string description;
 };
-
 extern std::map<int, tscroll_mode> horizontal_mode;
 extern std::map<int, tscroll_mode> vertical_mode;
+
+struct tanchor
+{
+	tanchor(int val, const std::string& description, bool horizontal);
+
+	int val;
+	std::string id;
+	std::string description;
+};
+extern std::map<int, tanchor> horizontal_anchor;
+extern std::map<int, tanchor> vertical_anchor;
+
 void init_layout_mode();
 
 struct tcell_setting {
@@ -106,7 +117,6 @@ struct tcell_setting {
 		widget.tree_view.indention_step_size = 0;
 		widget.tree_view.node_id = "node";
 
-		window.id = untitled;
 		window.textdomain = "wesnoth-lib";
 		window.click_dismiss = false;
 		window.definition = "default";
@@ -122,9 +132,10 @@ struct tcell_setting {
 		column.grow_factor = 0;
 	}
 
+	std::string id;
+	config cfg;
 	struct {
 		gui2::tgrid::tchild cell;
-		std::string id;
 		std::string linked_group;
 		std::string width;
 		std::string height;
@@ -151,7 +162,6 @@ struct tcell_setting {
 	} widget;
 
 	struct {
-		std::string id;
 		std::string textdomain;
 		std::string description;
 		std::string definition;
@@ -178,7 +188,7 @@ class tsetting_dialog: public tdialog
 {
 public:
 	static const int min_id_len = 1;
-	static const int max_id_len = 24;
+	static const int max_id_len = 32;
 
 	tsetting_dialog(const tcell_setting& cell)
 		: cell_(cell)

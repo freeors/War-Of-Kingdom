@@ -125,7 +125,7 @@ static const char* menu_items[] = {
 	"player",
 	"side",
 	"multiplayer",
-	"load",
+	"edit_theme",
 	"signin",
 	"design",
 	"shop",
@@ -214,6 +214,9 @@ void trose::pre_show(CVideo& video, twindow& window)
 		} else if (!strcmp(menu_items[item], "edit_dialog")) {
 			str = std::string("icons/studio/") + menu_items[item] + ".png";
 
+		} else if (!strcmp(menu_items[item], "edit_theme")) {
+			str = std::string("icons/studio/") + menu_items[item] + ".png";
+
 		} else if (!strcmp(menu_items[item], "signin")) {
 			if (group.signin().today) {
 				str = std::string("icons/") + "signin-ok" + ".png";
@@ -276,8 +279,8 @@ void trose::pre_show(CVideo& video, twindow& window)
 			retval = PLAYER_SIDE;
 		} else if (id == "multiplayer") {
 			retval = MULTIPLAYER;
-		} else if (id == "load") {
-			retval = LOAD_GAME;
+		} else if (id == "edit_theme") {
+			retval = EDIT_THEME;
 		} else if (id == "report") {
 			retval = REPORT;
 		} else if (id == "language") {
@@ -327,7 +330,7 @@ bool trose::handle(tlobby::ttype type, const config& data)
 
 void trose::set_retval(twindow& window, int retval)
 {
-	if (retval == PLAYER_SIDE) {
+	if (retval == INAPP_PURCHASE) {
 		tbutton* b = find_widget<tbutton>(&window, "player", false, false);
 		config cfg;
 		cfg["id"] = "focus";
@@ -336,7 +339,7 @@ void trose::set_retval(twindow& window, int retval)
 
 		return;
 
-	} else if (retval == MULTIPLAYER) {
+	} else if (retval == REPORT) {
 		tbutton* b = find_widget<tbutton>(&window, "player", false, false);
 		config cfg;
 		cfg["id"] = "focus";
@@ -345,7 +348,7 @@ void trose::set_retval(twindow& window, int retval)
 
 		return;
 
-	} else if (retval == INAPP_PURCHASE) {
+	} else if (retval == PLAYER_SIDE) {
 		if (!ids.empty()) {
 			tbutton* b = find_widget<tbutton>(&window, "player", false, false);
 			b->erase_animation(ids.front());

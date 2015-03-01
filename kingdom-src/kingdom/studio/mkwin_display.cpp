@@ -19,7 +19,6 @@
 #include "unit_map.hpp"
 #include "gui/dialogs/mkwin_theme.hpp"
 #include "gui/widgets/settings.hpp"
-#include "gui/widgets/report.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "game_config.hpp"
 
@@ -50,8 +49,12 @@ mkwin_display::mkwin_display(mkwin_controller& controller, unit_map& units, CVid
 	, controller_(controller)
 	, units_(units)
 	, current_widget_type_()
+	, scroll_header_(true, false, "icon36")
 {
-	min_zoom_ = 64;
+	min_zoom_ = 48;
+	max_zoom_ = 144;
+
+	show_hover_over_ = false;
 
 	// must use grid.
 	set_grid(true);
@@ -70,6 +73,10 @@ mkwin_display::mkwin_display(mkwin_controller& controller, unit_map& units, CVid
 	reload_widget_palette();
 	sheet_header_ = dynamic_cast<gui2::treport*>(get_theme_object("sheet-header"));
 	reload_sheet_header();
+
+	gui2::treport* report = dynamic_cast<gui2::treport*>(get_theme_object("scroll-header"));
+	scroll_header_.set_report(report);
+	reload_scroll_header();
 
 	click_widget(spacer.first, spacer.second->id);
 }
@@ -95,6 +102,10 @@ void mkwin_display::post_change_resolution(const std::map<const std::string, boo
 
 	sheet_header_ = dynamic_cast<gui2::treport*>(get_theme_object("sheet-header"));
 	reload_sheet_header();
+
+	gui2::treport* report = dynamic_cast<gui2::treport*>(get_theme_object("scroll-header"));
+	scroll_header_.set_report(report);
+	reload_scroll_header();
 
 	controller_.post_change_resolution();
 }
@@ -260,6 +271,32 @@ gui2::ttoggle_button* mkwin_display::sheet_widget(int index) const
 	return dynamic_cast<gui2::ttoggle_button*>(children[index].widget_);
 }
 
+gui2::ttoggle_button* mkwin_display::scroll_header_widget(int index) const
+{
+	const gui2::tgrid::tchild* children = scroll_header_.report()->content_grid()->children();
+	return dynamic_cast<gui2::ttoggle_button*>(children[index].widget_);
+}
+
+void mkwin_display::reload_scroll_header()
+{
+	std::vector<std::string> images;
+	images.push_back("buttons/studio/widget-palette.png");
+	images.push_back("buttons/studio/object-list.png");
+
+	scroll_header_.erase_children();
+	
+	int index = 0;
+	for (std::vector<std::string>::const_iterator it = images.begin(); it != images.end(); ++ it, index ++) {
+		gui2::tcontrol* widget = scroll_header_.create_child(null_str, null_str, reinterpret_cast<void*>(index), null_str);
+		widget->set_label(*it);
+		scroll_header_.insert_child(*widget, index);
+
+	}
+	scroll_header_.select(0);
+
+	scroll_header_.replacement_children();
+}
+
 void mkwin_display::scroll_top(gui2::treport& widget)
 {
 	widget.scroll_vertical_scrollbar(gui2::tscrollbar_::BEGIN);
@@ -343,6 +380,27 @@ void mkwin_display::set_mouse_overlay(surface& image_fg)
 	using_mouseover_hex_overlay_ = image;
 }
 
+void mkwin_display::post_zoom()
+{
+	if (!controller_.in_theme_top()) {
+		return;
+	}
+	double factor = double(zoom_) / double(last_zoom);
+	SDL_Rect new_rect;
+	// don't use units_, set_rect maybe change map_'s sequence.
+	std::vector<unit*> top_units;
+	for (unit_map::const_iterator it = units_.begin(); it != units_.end(); ++ it) {
+		unit* u = dynamic_cast<unit*>(&*it);
+		top_units.push_back(u);
+	}
+	for (std::vector<unit*>::const_iterator it = top_units.begin(); it != top_units.end(); ++ it) {
+		unit* u = *it;
+		const SDL_Rect& rect = u->get_rect();
+		new_rect = create_rect(rect.x * factor, rect.y * factor, rect.w * factor, rect.h * factor);
+		u->set_rect(new_rect);
+	}
+}
+
 void mkwin_display::pre_draw(rect_of_hexes& hexes)
 {
 	// generate all units in current win.
@@ -355,9 +413,13 @@ void mkwin_display::draw_invalidated()
 	std::vector<map_location> unit_invals;
 
 	for (size_t i = 0; i < draw_area_unit_size_; i ++) {
-		const map_location& loc = draw_area_unit_[i]->get_location();
+		const base_unit* u = draw_area_unit_[i];
 
-		draw_area_val(loc.x, loc.y) = INVALIDATE_UNIT;
+		const std::set<map_location>& draw_locs = u->get_draw_locations();
+		invalidate(draw_locs);
+
+		const map_location& loc = u->get_location();
+		// draw_area_val(loc.x, loc.y) = INVALIDATE_UNIT;
 		unit_invals.push_back(loc);
 	}
 

@@ -17,6 +17,8 @@
 #include "controller_base.hpp"
 
 #include "gui/auxiliary/event/handler.hpp"
+#include "gui/widgets/toggle_button.hpp"
+#include "gui/widgets/report.hpp"
 #include "display.hpp"
 #include "preferences.hpp"
 #include "mouse_handler_base.hpp"
@@ -125,6 +127,11 @@ void controller_base::handle_event(const SDL_Event& event)
 		if (events::ignore_finger_event) {
 			break;
 		}
+		SDL_GetMouseState(&x, &y);
+		if (!point_in_rect(x, y, disp.map_outside_area())) {
+			break;
+		}
+
 		x = event.tfinger.x * video.getx();
 		y = event.tfinger.y * video.gety();
 		dx = event.tfinger.dx * video.getx();
@@ -182,14 +189,11 @@ void controller_base::handle_event(const SDL_Event& event)
 		if (event.wheel.which == SDL_TOUCH_MOUSEID) {
 			break;
 		}
-		{
-			int x, y;
-			SDL_GetMouseState(&x, &y);
-			if (!point_in_rect(x, y, disp.map_outside_area())) {
-				break;
-			}
-			handle_scroll_wheel(event.wheel.x, event.wheel.y, MOUSE_HIT_THRESHOLD, MOUSE_MOTION_THRESHOLD);
+		SDL_GetMouseState(&x, &y);
+		if (!point_in_rect(x, y, disp.map_outside_area())) {
+			break;
 		}
+		handle_scroll_wheel(event.wheel.x, event.wheel.y, MOUSE_HIT_THRESHOLD, MOUSE_MOTION_THRESHOLD);
 		break;
 
 	case SDL_MOUSEBUTTONDOWN:
@@ -435,3 +439,4 @@ void controller_base::execute_command2(int command, const std::string& sparam)
 		return;
 	}
 }
+

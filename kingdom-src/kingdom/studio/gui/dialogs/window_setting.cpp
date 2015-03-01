@@ -90,7 +90,7 @@ void twindow_setting::pre_show(CVideo& /*video*/, twindow& window)
 	label->set_label(ss.str());
 
 	ttext_box* text_box = find_widget<ttext_box>(&window, "id", false, true);
-	text_box->set_label(cell_.window.id);
+	text_box->set_label(cell_.id);
 
 	text_box = find_widget<ttext_box>(&window, "description", false, true);
 	text_box->set_value(cell_.window.description);
@@ -279,8 +279,8 @@ void twindow_setting::set_textdomain_label(twindow& window)
 void twindow_setting::save(twindow& window, bool& handled, bool& halt)
 {
 	ttext_box* text_box = find_widget<ttext_box>(&window, "id", false, true);
-	cell_.window.id = text_box->label();
-	if (!utils::isvalid_id(cell_.window.id, false, min_id_len, max_id_len)) {
+	cell_.id = text_box->label();
+	if (!utils::isvalid_id(cell_.id, false, min_id_len, max_id_len)) {
 		handled = true;
 		halt = true;
 		show_id_error(disp_, "id", utils::errstr);

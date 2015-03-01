@@ -819,6 +819,8 @@ void artifical::set_location(const map_location &loc)
 		std::copy(adjacent_3_, adjacent_3_ + adjacent_size_3_, adjacent_2_);
 		adjacent_size_2_ = adjacent_size_3_;
 	}
+
+	draw_locs_ = touch_locs_;
 }
 
 void artifical::issue_decree(const config& effect)
@@ -1679,7 +1681,7 @@ void unit_belong_to2(std::vector<team>& teams, unit_map& units, int to_cityno, u
 			if (disp) {
 				disp->resort_access_troops(*troop);
 			} else {
-				units.sort_map2(*troop);
+				units.sort_map(*troop);
 			}
 		}
 	}

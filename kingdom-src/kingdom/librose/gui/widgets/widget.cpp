@@ -34,7 +34,7 @@ twidget::twidget()
 	, visible_(VISIBLE)
 	, drawing_action_(DRAWN)
 	, clip_rect_()
-	, fix_rect_(empty_rect)
+	, fix_rect_(invalid_rect)
 	, cookie_(NULL)
 	, layout_size_(tpoint(0,0))
 	, linked_group_()
@@ -59,7 +59,7 @@ twidget::twidget(const tbuilder_widget& builder)
 	, visible_(VISIBLE)
 	, drawing_action_(DRAWN)
 	, clip_rect_()
-	, fix_rect_(empty_rect)
+	, fix_rect_(invalid_rect)
 	, cookie_(NULL)
 	, layout_size_(tpoint(0,0))
 	, linked_group_(builder.linked_group)
@@ -109,14 +109,14 @@ void twidget::layout_init(const bool /*full_initialization*/)
 	assert(get_window());
 
 	layout_size_ = tpoint(0,0);
-	if(!linked_group_.empty()) {
+	if (!linked_group_.empty()) {
 		get_window()->add_linked_widget(linked_group_, this);
 	}
 }
 
 tpoint twidget::get_best_size() const
 {
-	if (!fix_rect_.w || !fix_rect_.h) {
+	if (is_empty_rect(fix_rect_)) {
 		tpoint result = layout_size_;
 		if(result == tpoint(0, 0)) {
 			result = calculate_best_size();
@@ -134,7 +134,7 @@ tpoint twidget::get_best_size() const
 
 void twidget::place(const tpoint& origin, const tpoint& size)
 {
-	if (!fix_rect_.w || !fix_rect_.h) {
+	if (!is_valid_rect(fix_rect_)) {
 		assert(size.x >= 0);
 		assert(size.y >= 0);
 

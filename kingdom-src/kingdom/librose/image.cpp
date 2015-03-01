@@ -1141,7 +1141,7 @@ std::vector<std::string>& get_team_colors()
 
 void set_zoom(int amount)
 {
-	if(amount != zoom) {
+	if (amount != zoom) {
 		zoom = amount;
 		tod_colored_images_.flush();
 		brightened_images_.flush();

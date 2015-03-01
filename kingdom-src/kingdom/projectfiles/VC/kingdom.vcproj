@@ -640,11 +640,11 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath="..\..\packaging\windows\kingdom.ico"
+				RelativePath=".\kingdom.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\kingdom.ico"
+				RelativePath="..\..\packaging\windows\kingdom.ico"
 				>
 			</File>
 			<File
@@ -1328,30 +1328,6 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\duel.hpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\src\gui\dialogs\edit_box.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\gui\dialogs\"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\gui\dialogs\"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\src\gui\dialogs\edit_box.hpp"
 					>
 				</File>
 				<File
@@ -2440,6 +2416,30 @@
 				</File>
 				<File
 					RelativePath="..\..\src\gui\dialogs\select_unit.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\send_message.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\src\gui\dialogs\send_message.hpp"
 					>
 				</File>
 				<File

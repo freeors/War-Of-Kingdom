@@ -18,6 +18,7 @@
 
 #include "display.hpp"
 #include "gui/auxiliary/widget_definition.hpp"
+#include "gui/widgets/report.hpp"
 
 class mkwin_controller;
 struct tsheet_node;
@@ -53,6 +54,8 @@ public:
 	gui2::ttoggle_button* sheet_widget(int index) const;
 	void resume_mouseover_hex_overlay() { set_mouseover_hex_overlay(using_mouseover_hex_overlay_); }
 
+	gui2::ttoggle_button* scroll_header_widget(int index) const;
+
 	std::pair<std::string, gui2::tcontrol_definition_ptr> spacer;
 
 protected:
@@ -69,12 +72,14 @@ protected:
 	void draw_sidebar();
 	void draw_invalidated();
 	void redraw_units(const std::vector<map_location>& invalidated_unit_locs);
+	void post_zoom();
 
 	void set_mouse_overlay(surface& image_fg);
-
+	
 private:
 	void reload_widget_palette();
 	void reload_sheet_header();
+	void reload_scroll_header();
 	void scroll_top(gui2::treport& widget);
 	void scroll_bottom(gui2::treport& widget);
 
@@ -83,6 +88,7 @@ private:
 	unit_map& units_;
 	gui2::treport* widget_palette_;
 	gui2::treport* sheet_header_;
+	gui2::ttabbar scroll_header_;
 
 	std::string current_widget_type_;
 	std::pair<std::string, gui2::tcontrol_definition_ptr> selected_widget_;

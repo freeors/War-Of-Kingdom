@@ -1,0 +1,235 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E4CB8F97-7409-4F93-A097-D4D6AF754C9E}</ProjectGuid>
+    <RootNamespace>editor</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\editor2\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\editor2\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\src;..\..\external\boost;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;ws2_32.lib;librose.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib;..\..\..\gettext\gettext-framework\lib\intl.lib;..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL2_mixer.lib;..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib;..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib;..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2.dll $(TargetDir)\SDL2.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_image.dll $(TargetDir)\SDL2_image.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_net.dll $(TargetDir)\SDL2_net.dll
+copy $(SolutionDir)\..\..\..\SDL\SDL-dev-framework\dll\SDL2_ttf.dll $(TargetDir)\SDL2_ttf.dll
+copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)intl.dll
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\src;..\..\external\boost;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>comctl32.lib;ws2_32.lib;librose.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib;..\..\..\gettext\gettext-framework\lib\intl.lib;..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL2_mixer.lib;..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib;..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib;..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\editor2\callback.cpp" />
+    <ClCompile Include="..\..\src\editor2\hero.cpp" />
+    <ClCompile Include="..\..\src\unit_types.cpp" />
+    <ClCompile Include="..\..\src\editor2\animation.cpp" />
+    <ClCompile Include="..\..\src\editor2\book.cpp" />
+    <ClCompile Include="..\..\src\editor2\config.cpp" />
+    <ClCompile Include="..\..\src\editor2\DlgBuilderProc.cpp" />
+    <ClCompile Include="..\..\src\editor2\DlgCampaignProc.cpp" />
+    <ClCompile Include="..\..\src\editor2\DlgCoreProc.cpp" />
+    <ClCompile Include="..\..\src\editor2\DlgDDescProc.cpp" />
+    <ClCompile Include="..\..\src\editor2\DlgHEditorProc.cpp" />
+    <ClCompile Include="..\..\src\editor2\DlgSyncProc.cpp" />
+    <ClCompile Include="..\..\src\editor2\DlgTitleProc.cpp" />
+    <ClCompile Include="..\..\src\editor2\DlgVisualProc.cpp" />
+    <ClCompile Include="..\..\src\editor2\editor.cpp" />
+    <ClCompile Include="..\..\src\editor2\event.cpp" />
+    <ClCompile Include="..\..\src\editor2\faction.cpp" />
+    <ClCompile Include="..\..\src\editor2\feature.cpp" />
+    <ClCompile Include="..\..\src\editor2\formation.cpp" />
+    <ClCompile Include="..\..\src\editor2\integrate.cpp" />
+    <ClCompile Include="..\..\src\editor2\main.cpp" />
+    <ClCompile Include="..\..\src\editor2\multiplayer.cpp" />
+    <ClCompile Include="..\..\src\editor2\noble.cpp" />
+    <ClCompile Include="..\..\src\editor2\rectangle.cpp" />
+    <ClCompile Include="..\..\src\editor2\terrain.cpp" />
+    <ClCompile Include="..\..\src\editor2\utype.cpp" />
+    <ClCompile Include="..\..\src\editor2\win32x.cpp" />
+    <ClCompile Include="..\..\src\editor2\xfunc.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\editor2\backup.ico" />
+    <None Include="..\..\src\editor2\backup_dis.ico" />
+    <None Include="..\..\src\editor2\build.ico" />
+    <None Include="..\..\src\editor2\build_dis.ico" />
+    <None Include="..\..\src\editor2\cancel.ico" />
+    <None Include="..\..\src\editor2\cancel_select.bmp" />
+    <None Include="..\..\src\editor2\cancel_unselect.bmp" />
+    <None Include="..\..\src\editor2\check.ico" />
+    <None Include="..\..\src\editor2\clock.ico" />
+    <None Include="..\..\src\editor2\del.ico" />
+    <None Include="..\..\src\editor2\del_dis.ico" />
+    <None Include="..\..\src\editor2\device.ico" />
+    <None Include="..\..\src\editor2\dir.ico" />
+    <None Include="..\..\src\editor2\download.ico" />
+    <None Include="..\..\src\editor2\editor.ico" />
+    <None Include="..\..\src\editor2\evt_attribute.ico" />
+    <None Include="..\..\src\editor2\evt_command.ico" />
+    <None Include="..\..\src\editor2\evt_condition.ico" />
+    <None Include="..\..\src\editor2\evt_event.ico" />
+    <None Include="..\..\src\editor2\evt_filter.ico" />
+    <None Include="..\..\src\editor2\evt_if.ico" />
+    <None Include="..\..\src\editor2\evt_then.ico" />
+    <None Include="..\..\src\editor2\ini.ico" />
+    <None Include="..\..\src\editor2\new.ico" />
+    <None Include="..\..\src\editor2\new_dis.ico" />
+    <None Include="..\..\src\editor2\ok.ico" />
+    <None Include="..\..\src\editor2\ok_select.bmp" />
+    <None Include="..\..\src\editor2\ok_unselect.bmp" />
+    <None Include="..\..\src\editor2\open.ico" />
+    <None Include="..\..\src\editor2\open_dis.ico" />
+    <None Include="..\..\src\editor2\openpcdir.ico" />
+    <None Include="..\..\src\editor2\openpcdir_dis.ico" />
+    <None Include="..\..\src\editor2\particular.ico" />
+    <None Include="..\..\src\editor2\reboot_disable.bmp" />
+    <None Include="..\..\src\editor2\reboot_select.bmp" />
+    <None Include="..\..\src\editor2\reboot_unselect.bmp" />
+    <None Include="..\..\src\editor2\reboot_unselect_light.bmp" />
+    <None Include="..\..\src\editor2\refresh.ico" />
+    <None Include="..\..\src\editor2\refresh_dis.ico" />
+    <None Include="..\..\src\editor2\refresh_unselect.bmp" />
+    <None Include="..\..\src\editor2\rename.ico" />
+    <None Include="..\..\src\editor2\rename_dis.ico" />
+    <None Include="..\..\src\editor2\reset.ico" />
+    <None Include="..\..\src\editor2\reset_dis.ico" />
+    <None Include="..\..\src\editor2\save.ico" />
+    <None Include="..\..\src\editor2\save_dis.ico" />
+    <None Include="..\..\src\editor2\sync.ico" />
+    <None Include="..\..\src\editor2\sync_dis.ico" />
+    <None Include="..\..\src\editor2\title_about.ico" />
+    <None Include="..\..\src\editor2\title_about_dis.ico" />
+    <None Include="..\..\src\editor2\title_play.ico" />
+    <None Include="..\..\src\editor2\title_play_dis.ico" />
+    <None Include="..\..\src\editor2\title_sync.ico" />
+    <None Include="..\..\src\editor2\title_sync_dis.ico" />
+    <None Include="..\..\src\editor2\title_update.ico" />
+    <None Include="..\..\src\editor2\title_update_dis.ico" />
+    <None Include="..\..\src\editor2\title_wgen.ico" />
+    <None Include="..\..\src\editor2\title_wgen_dis.ico" />
+    <None Include="..\..\src\editor2\title_xchg.ico" />
+    <None Include="..\..\src\editor2\title_xchg_dis.ico" />
+    <None Include="..\..\src\editor2\txt.ico" />
+    <None Include="..\..\src\editor2\uncheck.ico" />
+    <None Include="..\..\src\editor2\unknown.ico" />
+    <None Include="..\..\src\editor2\upload.ico" />
+    <None Include="..\..\src\editor2\welcome.bmp" />
+    <None Include="..\..\src\editor2\with_sync.ico" />
+    <None Include="..\..\src\editor2\without_sync.ico" />
+    <None Include="..\..\src\editor2\xchg.ico" />
+    <None Include="..\..\src\editor2\xchg_dis.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\src\editor2\resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\editor2\win32x.h" />
+    <ClInclude Include="..\..\src\editor2\xfunc.h" />
+    <ClInclude Include="..\..\src\editor2\animation.hpp" />
+    <ClInclude Include="..\..\src\editor2\DlgBuilderProc.hpp" />
+    <ClInclude Include="..\..\src\editor2\DlgCampaignProc.hpp" />
+    <ClInclude Include="..\..\src\editor2\DlgCoreProc.hpp" />
+    <ClInclude Include="..\..\src\editor2\editor.hpp" />
+    <ClInclude Include="..\..\src\editor2\event.hpp" />
+    <ClInclude Include="..\..\src\editor2\integrate.hpp" />
+    <ClInclude Include="..\..\src\editor2\multiplayer.hpp" />
+    <ClInclude Include="..\..\src\editor2\rectangle.hpp" />
+    <ClInclude Include="..\..\src\editor2\resource.h" />
+    <ClInclude Include="..\..\src\editor2\struct.h" />
+    <ClInclude Include="..\..\src\unit_types.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="librose.vcxproj">
+      <Project>{cd5c07cc-2e4b-4ecb-83e8-498a0624ec5f}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

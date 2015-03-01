@@ -129,6 +129,7 @@ private:
 };
 
 tbutton* create_button(const config& cfg);
+tbutton* create_button(const std::string& id, const std::string& definition, void* cookie);
 tbutton* create_surface_button(const std::string& id, void* cookie);
 } // namespace gui2
 

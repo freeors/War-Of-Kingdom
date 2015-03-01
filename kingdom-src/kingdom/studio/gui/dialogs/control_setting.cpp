@@ -31,6 +31,7 @@
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/dialogs/combo_box.hpp"
 #include "gui/dialogs/message.hpp"
+#include "gui/dialogs/theme.hpp"
 #include "gui/auxiliary/window_builder.hpp"
 #include "unit.hpp"
 #include <cctype>
@@ -91,6 +92,30 @@ std::map<int, tlayout> vertical_layout;
 std::map<int, tscroll_mode> horizontal_mode;
 std::map<int, tscroll_mode> vertical_mode;
 
+tanchor::tanchor(int val, const std::string& description, bool horizontal)
+	: val(val)
+	, id()
+	, description(description)
+{
+	if (val == theme::TOP_ANCHORED) {
+		if (horizontal) {
+			id = "left";
+		} else {
+			id = "top";
+		}
+	} else if (val == theme::BOTTOM_ANCHORED) {
+		if (horizontal) {
+			id = "right";
+		} else {
+			id = "bottom";
+		}
+	} else if (val == theme::FIXED) {
+		id = "fixed"; // default
+	}
+}
+std::map<int, tanchor> horizontal_anchor;
+std::map<int, tanchor> vertical_anchor;
+
 void init_layout_mode()
 {
 	if (horizontal_layout.empty()) {
@@ -135,6 +160,18 @@ void init_layout_mode()
 			tscroll_mode(tscrollbar_container::always_invisible, "Always invisible")));
 		vertical_mode.insert(std::make_pair(tscrollbar_container::auto_visible, 
 			tscroll_mode(tscrollbar_container::auto_visible, "Auto visible")));
+	}
+
+	if (horizontal_anchor.empty()) {
+		horizontal_anchor.insert(std::make_pair(theme::FIXED, tanchor(theme::FIXED, "x fixed, width fixed", true)));
+		horizontal_anchor.insert(std::make_pair(theme::TOP_ANCHORED, tanchor(theme::TOP_ANCHORED, "x fixed, width scalable", true)));
+		horizontal_anchor.insert(std::make_pair(theme::BOTTOM_ANCHORED, tanchor(theme::BOTTOM_ANCHORED, "x scalable, width fixed", true)));
+	}
+
+	if (vertical_anchor.empty()) {
+		vertical_anchor.insert(std::make_pair(theme::FIXED, tanchor(theme::FIXED, "y fixed, height fixed", false)));
+		vertical_anchor.insert(std::make_pair(theme::TOP_ANCHORED, tanchor(theme::TOP_ANCHORED, "y fixed, height scalable", false)));
+		vertical_anchor.insert(std::make_pair(theme::BOTTOM_ANCHORED, tanchor(theme::BOTTOM_ANCHORED, "y scalable, height fixed", false)));
 	}
 }
 
@@ -233,7 +270,7 @@ void tcontrol_setting::pre_show(CVideo& /*video*/, twindow& window)
 
 	text_box = find_widget<ttext_box>(&window, "_id", false, true);
 	text_box->set_maximum_length(max_id_len);
-	text_box->set_label(cell_.widget.id);
+	text_box->set_label(cell_.id);
 
 	find_widget<ttext_box>(&window, "_width", false, true)->set_value(cell_.widget.width);
 	find_widget<ttext_box>(&window, "_height", false, true)->set_value(cell_.widget.height);
@@ -270,13 +307,13 @@ void tcontrol_setting::save(twindow& window, bool& handled, bool& halt)
 	}
 
 	text_box = find_widget<ttext_box>(&window, "_id", false, true);
-	cell_.widget.id = text_box->label();
+	cell_.id = text_box->label();
 	// id maybe empty.
-	if (!cell_.widget.id.empty() && !utils::isvalid_id(cell_.widget.id, false, min_id_len, max_id_len)) {
+	if (!cell_.id.empty() && !utils::isvalid_id(cell_.id, false, min_id_len, max_id_len)) {
 		gui2::show_message(disp_.video(), "", utils::errstr);
 		return ;
 	}
-	utils::transform_tolower(cell_.widget.id);
+	utils::transform_tolower(cell_.id);
 
 	text_box = find_widget<ttext_box>(&window, "_width", false, true);
 	cell_.widget.width = text_box->get_value();

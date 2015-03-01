@@ -19,6 +19,7 @@
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/report.hpp"
+#include "gui/widgets/listbox.hpp"
 
 #include "mkwin_display.hpp"
 #include "mkwin_controller.hpp"
@@ -73,8 +74,10 @@ void tmkwin_theme::app_pre_show()
 
 	hotkey::insert_hotkey(HOTKEY_RUN, "run", _("Run"));
 	hotkey::insert_hotkey(HOTKEY_SETTING, "setting", _("Setting"));
+	hotkey::insert_hotkey(HOTKEY_RECT_SETTING, "rect_setting", _("Rect Setting"));
 	hotkey::insert_hotkey(HOTKEY_SPECIAL_SETTING, "special_setting", _("Special Setting"));
 	hotkey::insert_hotkey(HOTKEY_LINKED_GROUP, "linked_group", _("Linked group"));
+	hotkey::insert_hotkey(HOTKEY_MODE_SETTING, "mode_setting", _("Mode Setting"));
 	hotkey::insert_hotkey(HOTKEY_ERASE, "erase", _("Erase"));
 
 	hotkey::insert_hotkey(HOTKEY_INSERT_TOP, "insert_top", _("Insert top"));
@@ -87,21 +90,94 @@ void tmkwin_theme::app_pre_show()
 	hotkey::insert_hotkey(HOTKEY_INSERT_CHILD, "insert_child", _("Insert child"));
 	hotkey::insert_hotkey(HOTKEY_ERASE_CHILD, "erase_child", _("Erase child"));
 
-
-	tbutton* widget = find_widget<tbutton>(window_, "select", true, true);
+	// widget page
+	tbutton* widget = dynamic_cast<tbutton*>(get_object("select"));
 	widget->set_surface(image::get_image("buttons/studio/select.png"), widget->fix_width(), widget->fix_height());
 	click_generic_handler(*widget, null_str);
 
-	widget = find_widget<tbutton>(window_, "status", true, true);
+	widget = dynamic_cast<tbutton*>(get_object("status"));
 	widget->set_surface(image::get_image("buttons/status.png"), widget->fix_width(), widget->fix_height());
 	click_generic_handler(*widget, null_str);
 
-	widget = find_widget<tbutton>(window_, "grid", true, true);
+	widget = dynamic_cast<tbutton*>(get_object("grid"));
 	widget->set_surface(image::get_image("buttons/studio/grid.png"), widget->fix_width(), widget->fix_height());
 	click_generic_handler(*widget, null_str);
 
-	widget = find_widget<tbutton>(window_, "rclick", true, true);
+	widget = dynamic_cast<tbutton*>(get_object("rclick"));
 	click_generic_handler(*widget, null_str);
+
+	tlistbox* list = dynamic_cast<tlistbox*>(get_object("object-list"));
+	list->set_callback_value_change(dialog_callback<tmkwin_theme, &tmkwin_theme::object_selected>);
+
+	load_widget_page();
+}
+
+void tmkwin_theme::load_widget_page()
+{
+	set_object_visible("widget_layer", twidget::VISIBLE);
+	set_object_visible("object_layer", twidget::INVISIBLE);
+}
+
+void tmkwin_theme::load_object_page(const unit_map& units)
+{
+	set_object_visible("widget_layer", twidget::INVISIBLE);
+	set_object_visible("object_layer", twidget::VISIBLE);
+
+	fill_object_list(units);
+}
+
+void tmkwin_theme::object_selected(twindow& window)
+{
+	tlistbox& list = find_widget<tlistbox>(&window, "object-list", false);
+	tgrid* grid = list.get_row_grid(list.get_selected_row());
+
+	unit* u = reinterpret_cast<unit*>(grid->cookie());
+	controller_.select_unit(u);
+}
+
+void tmkwin_theme::fill_object_list(const unit_map& units)
+{
+	tlistbox* list = dynamic_cast<tlistbox*>(get_object("object-list"));
+	list->clear();
+
+	const map_location& selected_hex = controller_.selected_hex();
+	std::stringstream ss;
+	int index = 0;
+	int cursel = 0;
+	for (unit_map::const_iterator it = units.begin(); it != units.end(); ++ it) {
+		unit& u = *dynamic_cast<unit*>(&*it);
+		if (u.type() != unit::WIDGET) {
+			continue;
+		}
+		if (u.get_location() == selected_hex) {
+			cursel = index;
+		}
+		string_map list_item;
+		std::map<std::string, string_map> list_item_item;
+
+		list_item["label"] = str_cast(index ++);
+		list_item_item.insert(std::make_pair("number", list_item));
+
+		list_item["label"] = u.cell().id;
+		list_item_item.insert(std::make_pair("id", list_item));
+
+		ss.str("");
+		const SDL_Rect& rect = u.get_rect();
+		// ss << rect.x << "," << rect.y << "," << rect.w << "," << rect.h;
+		ss << rect.x << "," << rect.y;
+		list_item["label"] = ss.str();
+		list_item_item.insert(std::make_pair("rect", list_item));
+
+		list->add_row(list_item_item);
+
+		tgrid* grid = list->get_row_grid(list->get_item_count() - 1);
+		grid->set_cookie(reinterpret_cast<void*>(&u));
+	}
+	if (list->get_item_count()) {
+		list->select_row(cursel);
+	}
+	list->invalidate_layout();
+	// window.invalidate_layout();
 }
 
 } //end namespace gui2
