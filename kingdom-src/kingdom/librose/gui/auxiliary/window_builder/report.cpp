@@ -56,6 +56,7 @@ twidget* tbuilder_report::build() const
 
 	widget->set_vertical_scrollbar_mode(vertical_scrollbar_mode);
 	widget->set_horizontal_scrollbar_mode(horizontal_scrollbar_mode);
+	widget->set_best_size(width, height);
 
 	boost::intrusive_ptr<const treport_definition::tresolution> conf =
 			boost::dynamic_pointer_cast<const treport_definition::tresolution>(widget->config());

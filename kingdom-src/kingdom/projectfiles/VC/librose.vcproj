@@ -356,6 +356,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\librose\proto_irc.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\librose\race.cpp"
 				>
 			</File>
@@ -1228,6 +1232,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\librose\ichat.hpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\librose\image.hpp"
 				>
 			</File>
@@ -1321,6 +1329,10 @@
 			</File>
 			<File
 				RelativePath="..\..\librose\preferences_display.hpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\librose\proto_irc.hpp"
 				>
 			</File>
 			<File
@@ -2634,30 +2646,6 @@
 						>
 					</File>
 					<File
-						RelativePath="..\..\librose\gui\auxiliary\window_builder\multi_page.cpp"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								ObjectFile="$(IntDir)\gui\auxiliary\window_builder\"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								ObjectFile="$(IntDir)\gui\auxiliary\window_builder\"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\librose\gui\auxiliary\window_builder\multi_page.hpp"
-						>
-					</File>
-					<File
 						RelativePath="..\..\librose\gui\auxiliary\window_builder\pane.cpp"
 						>
 						<FileConfiguration
@@ -3286,30 +3274,6 @@
 						>
 					</File>
 					<File
-						RelativePath="..\..\librose\gui\auxiliary\widget_definition\multi_page.cpp"
-						>
-						<FileConfiguration
-							Name="Debug|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								ObjectFile="$(IntDir)\gui\auxiliary\widget_definition\"
-							/>
-						</FileConfiguration>
-						<FileConfiguration
-							Name="Release|Win32"
-							>
-							<Tool
-								Name="VCCLCompilerTool"
-								ObjectFile="$(IntDir)\gui\auxiliary\widget_definition\"
-							/>
-						</FileConfiguration>
-					</File>
-					<File
-						RelativePath="..\..\librose\gui\auxiliary\widget_definition\multi_page.hpp"
-						>
-					</File>
-					<File
 						RelativePath="..\..\librose\gui\auxiliary\widget_definition\panel.cpp"
 						>
 						<FileConfiguration
@@ -3876,6 +3840,30 @@
 				</File>
 				<File
 					RelativePath="..\..\librose\gui\dialogs\language_selection.hpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\librose\gui\dialogs\login.cpp"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							ObjectFile="$(IntDir)\gui\dialogs\"
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\librose\gui\dialogs\login.hpp"
 					>
 				</File>
 				<File
@@ -4508,30 +4496,6 @@
 				</File>
 				<File
 					RelativePath="..\..\librose\gui\widgets\minimap.hpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\librose\gui\widgets\multi_page.cpp"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\gui\widgets\"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							ObjectFile="$(IntDir)\gui\widgets\"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\librose\gui\widgets\multi_page.hpp"
 					>
 				</File>
 				<File

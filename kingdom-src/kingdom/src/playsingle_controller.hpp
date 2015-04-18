@@ -57,7 +57,7 @@ public:
 	virtual void clear_labels();
 	virtual void clear_messages();
 
-	virtual bool handle(tlobby::ttype type, const config& data);
+	virtual bool handle(int tag, tsock::ttype type, const config& data);
 
 	void linger();
 

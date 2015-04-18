@@ -40,7 +40,7 @@ tnetdiag::~tnetdiag()
 void tnetdiag::pre_show(CVideo& /*video*/, twindow& window)
 {
 	log_ = &find_widget<tscroll_label>(&window, "log", false);
-	log_->set_label(lobby.format_log_str());
+	log_->set_label(lobby->format_log_str());
 	log_->set_scroll_to_end(true);
 
 	connect_signal_mouse_left_click(
@@ -65,9 +65,9 @@ void tnetdiag::post_show(twindow& /*window*/)
 {
 }
 
-void tnetdiag::handle(tlobby::tstate s, const std::string& msg)
+void tnetdiag::handle(const tsock& s, const std::string& msg)
 {
-	log_->set_label(lobby.format_log_str());
+	log_->set_label(lobby->format_log_str());
 	// log_->scroll_vertical_scrollbar(tscrollbar_::END);
 }
 
@@ -78,7 +78,7 @@ void tnetdiag::connect_button_callback(twindow& window)
 void tnetdiag::clear_button_callback(twindow& window)
 {
 	log_->set_label(null_str);
-	lobby.clear_log();
+	lobby->clear_log();
 }
 
 } //end namespace gui2

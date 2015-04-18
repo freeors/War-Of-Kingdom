@@ -124,6 +124,8 @@ bool is_directory(const std::string& fname);
 
 /** Returns true if a file or directory with such name already exists. */
 bool file_exists(const std::string& name);
+void file_remove(const std::string& name);
+void file_rename(const std::string& from, const std::string& to);
 
 /** Get the creation time of a file. */
 time_t file_create_time(const std::string& fname);

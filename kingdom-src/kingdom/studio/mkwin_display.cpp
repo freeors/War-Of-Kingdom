@@ -167,7 +167,6 @@ void mkwin_display::reload_widget_palette()
 		exclude.insert("horizontal_scrollbar");
 		exclude.insert("vertical_scrollbar");
 		exclude.insert("slider");
-		exclude.insert("multi_page");
 		exclude.insert("matrix");
 		exclude.insert("horizontal_listbox");
 	}

@@ -143,7 +143,7 @@ void playsingle_controller::init_gui()
 		teams_[human_team_].set_objectives_changed(false);
 	}
 
-	if (lobby.sock == network::null_connection) {
+	if (lobby->chat.ready()) {
 		refresh_chat_button(*gui_, "misc/network-disconnected.png");
 	}
 	tlobby::thandler::join();
@@ -229,7 +229,7 @@ void playsingle_controller::chat()
 	gui2::tchat2 dlg(*gui_, human_team_group());
 	dlg.show(gui_->video());
 
-	if (lobby.sock != network::null_connection) {
+	if (lobby->chat.ready()) {
 		refresh_chat_button(*gui_, null_str);
 	}
 }
@@ -494,7 +494,7 @@ LEVEL_RESULT playsingle_controller::play_scenario(
 				info["type"] = "termination";
 				info["condition"] = "game over";
 				info["result"] = gamestate_.classification().completion;
-				network::send_data(cfg, 0);
+				network::send_data(lobby->transit, cfg);
 			} else {
 				gui2::show_transient_message(gui_->video(),_("Game Over"),
 									_("The game is over."));
@@ -1007,7 +1007,7 @@ void playsingle_controller::linger()
 	gui_->redraw_everything();
 
 	// button be reconstruct.
-	if (lobby.sock == network::null_connection) {
+	if (lobby->chat.ready()) {
 		refresh_chat_button(*gui_, "misc/network-disconnected.png");
 	}
 
@@ -1042,16 +1042,16 @@ void playsingle_controller::linger()
 	LOG_NG << "ending end-of-scenario linger\n";
 }
 
-bool playsingle_controller::handle(tlobby::ttype type, const config& data)
+bool playsingle_controller::handle(int tag, tsock::ttype type, const config& data)
 {
 /*
 	int ii = 0;
-	if (type == tlobby::t_connected || type == tlobby::t_disconnected) {
-		const std::string fg = type == tlobby::t_connected? null_str: "misc/network-disconnected.png";
+	if (type == tsock::t_connected || type == tsock::t_disconnected) {
+		const std::string fg = type == tsock::t_connected? null_str: "misc/network-disconnected.png";
 		refresh_chat_button(*gui_, fg);
 	}
 */
-	if (type != tlobby::t_data) {
+	if (type != tsock::t_data) {
 		return false;
 	}
 	if (const config& c = data.child("whisper")) {

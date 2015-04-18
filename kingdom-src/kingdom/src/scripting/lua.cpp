@@ -64,7 +64,6 @@
 #else
 #include "gui/widgets/listbox.hpp"
 #endif
-#include "gui/widgets/multi_page.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/text_box.hpp"
 #include "gui/widgets/toggle_button.hpp"
@@ -2717,21 +2716,6 @@ static gui2::twidget *find_widget(lua_State *L, int i, bool readonly)
 			}
 			w = l->get_row_grid(v - 1);
 		}
-		else if (gui2::tmulti_page *l = dynamic_cast<gui2::tmulti_page *>(w))
-		{
-			int v = lua_tointeger(L, i);
-			if (v < 1)
-				goto error_call_destructors_1;
-			int n = l->get_page_count();
-			if (v > n) {
-				if (readonly)
-					goto error_call_destructors_1;
-				utils::string_map dummy;
-				for (; n < v; ++n)
-					l->add_page(dummy);
-			}
-			w = &l->page_grid(v - 1);
-		}
 		else
 		{
 			char const *m = lua_tostring(L, i);
@@ -2799,15 +2783,6 @@ static int intf_set_dialog_value(lua_State *L)
 		else
 			return luaL_argerror(L, 1, "out of bounds");
 	}
-	else if (gui2::tmulti_page *l = dynamic_cast<gui2::tmulti_page *>(w))
-	{
-		int v = luaL_checkinteger(L, 1);
-		int n = l->get_page_count();
-		if (1 <= v && v <= n)
-			l->select_page(v - 1);
-		else
-			return luaL_argerror(L, 1, "out of bounds");
-	}
 	else if (gui2::ttoggle_button *b = dynamic_cast<gui2::ttoggle_button *>(w))
 	{
 		b->set_value(lua_toboolean(L, 1));
@@ -2862,8 +2837,6 @@ static int intf_get_dialog_value(lua_State *L)
 #endif
 	{
 		lua_pushinteger(L, l->get_selected_row() + 1);
-	} else if (gui2::tmulti_page *l = dynamic_cast<gui2::tmulti_page *>(w)) {
-		lua_pushinteger(L, l->get_selected_page() + 1);
 	} else if (gui2::ttoggle_button *b = dynamic_cast<gui2::ttoggle_button *>(w)) {
 		lua_pushboolean(L, b->get_value());
 	} else if (gui2::ttext_box *t = dynamic_cast<gui2::ttext_box *>(w)) {

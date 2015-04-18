@@ -410,7 +410,7 @@ void tside_report::sort_column(tbutton& widget)
 	}
 	
 	hero_table_->sort(this, callback_compare_row);
-	hero_table_->invalidate_layout();
+	hero_table_->invalidate_layout(false);
 }
 
 } // namespace gui2

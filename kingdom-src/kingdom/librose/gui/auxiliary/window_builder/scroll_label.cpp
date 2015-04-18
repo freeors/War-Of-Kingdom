@@ -47,6 +47,7 @@ twidget* tbuilder_scroll_label::build() const
 
 	widget->set_vertical_scrollbar_mode(vertical_scrollbar_mode);
 	widget->set_horizontal_scrollbar_mode(horizontal_scrollbar_mode);
+	widget->set_best_size(width, height);
 
 	boost::intrusive_ptr<const tscroll_label_definition::tresolution> conf =
 			boost::dynamic_pointer_cast
@@ -57,22 +58,6 @@ twidget* tbuilder_scroll_label::build() const
 	widget->finalize_setup();
 
 	tlabel* label = dynamic_cast<tlabel*>(widget->content_grid()->find("_label", false));
-	int text_maximum_width = fix_rect.w;
-	if (width.has_formula()) {
-		const game_logic::map_formula_callable& size = get_screen_size_variables();
-		const unsigned w = width(size);
-		if (w) {
-			text_maximum_width = w;
-			unsigned h = 0;
-			if (height.has_formula()) {
-				h = height(size);
-			}
-			widget->set_best_size(tpoint(w, h));
-		}
-	}
-	if (text_maximum_width) {
-		label->set_text_maximum_width(text_maximum_width - label->config()->text_extra_width);
-	}
 	widget->set_text_editable(true);
 
 	DBG_GUI_G << "Window builder: placed scroll label '"

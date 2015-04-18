@@ -128,6 +128,8 @@ public:
 	std::vector<tcontext_menu>& context_menus() { return context_menus_; }
 	tcontext_menu* context_menu(const std::string& id);
 
+	void destruct_widget(const twidget* widget);
+
 protected:
 	void click_generic_handler(tcontrol& widget, const std::string& sparam);
 	void toggle_tabbar(twidget* widget);
@@ -140,7 +142,7 @@ private:
 	/** Inherited from tdialog. */
 	void pre_show(CVideo& video, twindow& window);
 
-	void handle(tlobby::tstate s, const std::string& msg);
+	void handle(const tsock& sock, const std::string& msg);
 
 	virtual void app_pre_show() {}
 	

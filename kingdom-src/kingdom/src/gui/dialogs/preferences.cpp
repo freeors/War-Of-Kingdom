@@ -123,7 +123,7 @@ tpreferences::tpreferences(display& disp, int start_page)
 
 void tpreferences::page_selected(twindow& window)
 {
-	page_ = find_widget<tlistbox>(&window, "campaign_list", false).get_selected_row();
+	page_ = find_widget<tlistbox>(&window, "option_list", false).get_selected_row();
 
 	swap_page(window, page_ + MIN_PAGE, true);
 }
@@ -136,7 +136,7 @@ void tpreferences::pre_show(CVideo& /*video*/, twindow& window)
 
 	// Setup campaign list.
 	tlistbox& list =
-			find_widget<tlistbox>(&window, "campaign_list", false);
+			find_widget<tlistbox>(&window, "option_list", false);
 
 	list.set_callback_value_change(dialog_callback
 			<tpreferences

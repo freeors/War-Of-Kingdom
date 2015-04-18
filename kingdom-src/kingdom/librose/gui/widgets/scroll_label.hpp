@@ -51,6 +51,11 @@ public:
 	void set_self_active(const bool active)
 		{ state_ = active ? ENABLED : DISABLED; }
 
+	/** Inherited from tscrollbar_container. */
+	tpoint calculate_best_size() const;
+	void set_content_size(const tpoint& origin, const tpoint& size);
+	bool content_empty() const;
+
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
 	bool get_active() const { return state_ != DISABLED; }
@@ -62,7 +67,6 @@ public:
 	void set_auto_scroll(bool val) { auto_scroll_ = val; }
 
 private:
-	tpoint pre_request_fix_width(const unsigned maximum_content_grid_width);
 	/**
 	 * Possible states of the widget.
 	 *

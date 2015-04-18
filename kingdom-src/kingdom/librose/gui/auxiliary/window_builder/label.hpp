@@ -34,9 +34,6 @@ struct tbuilder_label
 	unsigned characters_per_line;
 
 	PangoAlignment text_alignment;
-private:
-	tformula<unsigned> width_;
-	tformula<unsigned> height_;
 };
 
 } // namespace implementation

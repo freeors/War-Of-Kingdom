@@ -15,10 +15,10 @@
 
 #define GETTEXT_DOMAIN "wesnoth-lib"
 
-#include "gui/dialogs/mp_login.hpp"
+#include "gui/dialogs/login.hpp"
 
-#include "game_display.hpp"
-#include "game_preferences.hpp"
+#include "display.hpp"
+#include "preferences.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
 #include "gui/widgets/password_box.hpp"
@@ -31,7 +31,6 @@
 #include "help.hpp"
 #include "gettext.hpp"
 #include "formula_string_utils.hpp"
-#include "multiplayer.hpp"
 
 #include <boost/bind.hpp>
 
@@ -69,9 +68,9 @@ namespace gui2 {
  * @end{table}
  */
 
-REGISTER_DIALOG(mp_login)
+REGISTER_DIALOG(login)
 
-tmp_login::tmp_login(display& disp, hero_map& heros, const std::string& label)
+tlogin::tlogin(display& disp, hero_map& heros, const std::string& label)
 	: disp_(disp)
 	, heros_(heros)
 	, orignal_username_(preferences::login())
@@ -83,7 +82,7 @@ tmp_login::tmp_login(display& disp, hero_map& heros, const std::string& label)
 
 const size_t max_login_size = 15;
 
-void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
+void tlogin::pre_show(CVideo& /*video*/, twindow& window)
 {
 	std::stringstream strstr;
 
@@ -101,21 +100,25 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 	pw->set_label(preferences::password());
 	pw->set_maximum_length(max_login_size);
 
+	user_widget = find_widget<ttext_box>(&window, "nick", false, true);
+	user_widget->set_label(preferences::nick());
+	user_widget->set_maximum_length(max_login_size);
+
 	tcontrol* control = find_widget<tcontrol>(&window, "remember_password", false, true);
 	control->set_visible(twidget::INVISIBLE);	
 
 	utils::string_map symbols;
-	label = find_widget<tlabel>(&window, "remark", false, true);
+	tscroll_label* label2 = find_widget<tscroll_label>(&window, "remark", false, true);
 	symbols["server"] = tintegrate::generate_format(game_config::bbs_server.name, "green");
 	symbols["host"] = tintegrate::generate_format(game_config::bbs_server.host, "green");
 	symbols["register"] = tintegrate::generate_format(_("Register"), "blue");
 	symbols["ok"] = tintegrate::generate_format(_("OK"), "yellow");
-	label->set_label(vgettext("wesnoth-lib", "account^remark($server, $host, $register, $ok)", symbols));
+	label2->set_label(vgettext("wesnoth-lib", "account^remark($server, $host, $register, $ok)", symbols));
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "register", false)
 		, boost::bind(
-		&tmp_login::register1
+		&tlogin::register1
 		, this
 		, boost::ref(window)));
 	strstr.str("");
@@ -125,7 +128,7 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "create", false)
 		, boost::bind(
-		&tmp_login::create
+		&tlogin::create
 		, this
 		, boost::ref(window)
 		, (int)LOGIN));
@@ -133,13 +136,11 @@ void tmp_login::pre_show(CVideo& /*video*/, twindow& window)
 	find_widget<tbutton>(&window, "cancel", false).set_visible(twidget::INVISIBLE);
 }
 
-void tmp_login::post_show(twindow& window)
+void tlogin::post_show(twindow& window)
 {
 }
 
-extern bool is_valid_username(const std::string& key, const std::string& str, display* disp);
-
-std::string tmp_login::text_box_str(twindow& window, const std::string& id, const std::string& name, int min, int max, bool allow_empty)
+std::string tlogin::text_box_str(twindow& window, const std::string& id, const std::string& name, int min, int max, bool allow_empty)
 {
 	std::stringstream err;
 	utils::string_map symbols;
@@ -153,12 +154,15 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 		str = pd->get_real_value();
 	}
 
-	if (!allow_empty && str.empty()) {
-		symbols["key"] = tintegrate::generate_format(name, "red");
-		
-		err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
-		gui2::show_message(disp_.video(), "", err.str());
+	if (str.empty()) {
+		if (!allow_empty) {
+			symbols["key"] = tintegrate::generate_format(name, "red");
+			
+			err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
+			gui2::show_message(disp_.video(), "", err.str());
+		}
 		return str;
+
 	} else if ((int)str.size() < min || (int)str.size() > max) {
 		symbols["min"] = tintegrate::generate_format(min, "yellow");
 		symbols["max"] = tintegrate::generate_format(max, "yellow");
@@ -169,7 +173,8 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 		return null_str;
 
 	} else if (id == "username") {
-		if (!is_valid_username(name, str, &disp_)) {
+		if (!utils::isvalid_username(str)) {
+			gui2::show_message(disp_.video(), "", utils::errstr);
 			return null_str;
 		} else if (game_config::is_reserve_player(str)) {
 			symbols["key"] = tintegrate::generate_format(name, "red");
@@ -178,11 +183,15 @@ std::string tmp_login::text_box_str(twindow& window, const std::string& id, cons
 			gui2::show_message(disp_.video(), "", err.str());
 			return null_str;
 		}
+	} else if (id == "nick") {
+		if (!utils::isvalid_nick(str)) {
+			return null_str;
+		}
 	}
 	return str;
 }
 
-bool tmp_login::create(twindow& window, int operate)
+bool tlogin::create(twindow& window, int operate)
 {
 	int min_username_char = (operate == REGISTER)? 6: 3;
 	std::string username = text_box_str(window, "username", _("Name"), min_username_char, max_login_size * 4, false);
@@ -199,6 +208,18 @@ bool tmp_login::create(twindow& window, int operate)
 		}
 	}
 
+	std::string nick = text_box_str(window, "nick", _("Nick"), 0, max_login_size * 4, true);
+	if (nick.empty() && !utils::isvalid_nick(username)) {
+		std::stringstream err;
+		utils::string_map symbols;
+
+		symbols["username"] = tintegrate::generate_format(username, "yellow");
+		err << vgettext("wesnoth-lib", "$username of username is not a valid nick, you require to set a valid nick separately!\n Nick can ony use alpha, number and _.", symbols);
+		gui2::show_message(disp_.video(), "", err.str());
+		return false;
+	}
+	preferences::set_nick(nick);
+
 	preferences::set_remember_password(true);
 	preferences::set_password(password);
 
@@ -206,13 +227,15 @@ bool tmp_login::create(twindow& window, int operate)
 	h.set_name(username);
 	preferences::set_hero(heros_, h);
 
+	lobby->set_nick2(group.leader().name());
+
 	if (operate == LOGIN) {
 		window.set_retval(twindow::OK);
 	}
 	return true;
 }
 
-void tmp_login::register1(twindow& window)
+void tlogin::register1(twindow& window)
 {
 	std::stringstream err;
 	utils::string_map symbols;
@@ -241,7 +264,7 @@ void tmp_login::register1(twindow& window)
 	}
 }
 
-bool tmp_login::dirty() const
+bool tlogin::dirty() const
 {
 	return registed_ || preferences::login() != orignal_username_ || preferences::password() != orignal_password_;
 }

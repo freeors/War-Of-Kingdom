@@ -206,6 +206,9 @@ public:
 
 	bool callback_valid_id(const unit* u, bool show_error);
 
+	unit_map& get_units() { return units_; }
+	const unit_map& get_units() const { return units_; }
+
 private:
 	/** command_executor override */
 	void execute_command2(int command, const std::string& sparam);

@@ -63,7 +63,6 @@ private:
 	void restore(twindow& window);
 	void purchase(twindow& window);
 	void quit(twindow& window);
-	void timer_handler();
 
 	void item_selected(twindow& window);
 	void refresh_tip(twindow& window, const tinapp_item& item);
@@ -88,9 +87,8 @@ private:
 	bool browse_;
 
 	// timer
-	unsigned long ing_timer_;
-	int ing_ticks_;
 	int ing_item_;
+	int operating_anim_;
 
 	static tinapp_purchase* singleton_;
 };

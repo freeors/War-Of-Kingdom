@@ -20,12 +20,22 @@
 #include "gui/auxiliary/widget_definition/scrollbar_panel.hpp"
 #include "gui/auxiliary/window_builder/scrollbar_panel.hpp"
 #include "gui/widgets/settings.hpp"
+#include "gui/widgets/scrollbar.hpp"
 
 #include <boost/bind.hpp>
 
 namespace gui2 {
 
 REGISTER_WIDGET(scrollbar_panel)
+
+void tscrollbar_panel::set_content_size(const tpoint& origin, const tpoint& desire_size)
+{
+	const tpoint actual_size = content_grid_->get_best_size();
+	calculate_scrollbar(actual_size, desire_size);
+
+	const tpoint size(std::max(actual_size.x, desire_size.x), std::max(actual_size.y, desire_size.y));
+	tscrollbar_container::set_content_size(origin, size);
+}
 
 const std::string& tscrollbar_panel::get_control_type() const
 {

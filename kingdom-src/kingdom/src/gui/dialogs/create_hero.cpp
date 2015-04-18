@@ -28,7 +28,7 @@
 #include "gui/widgets/window.hpp"
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/combo_box.hpp"
-#include "gui/dialogs/mp_login.hpp"
+#include "gui/dialogs/login.hpp"
 #include "preferences_display.hpp"
 #include "formula_string_utils.hpp"
 #include "multiplayer.hpp"
@@ -494,7 +494,7 @@ void tcreate_hero::refresh_field_ui(twindow& window)
 
 void tcreate_hero::account(twindow& window)
 {
-	gui2::tmp_login dlg(disp_, heros_, "");
+	gui2::tlogin dlg(disp_, heros_, "");
 	dlg.show(disp_.video());
 
 	if (dlg.dirty()) {
@@ -518,8 +518,6 @@ void tcreate_hero::account(twindow& window)
 
 		// portrait dirty
 		window.invalidate_layout();
-
-		lobby.process_error("Login changed!");
 	}
 }
 

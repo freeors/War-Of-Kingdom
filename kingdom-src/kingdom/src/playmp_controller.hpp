@@ -38,7 +38,7 @@ public:
 	bool counting_down();
 	void reset_countdown();
 	void think_about_countdown(int ticks);
-	bool handle(tlobby::ttype type, const config& data);
+	bool handle(int tag, tsock::ttype type, const config& data);
 	void linger();
 	/** Wait for the host to upload the next scenario. */
 	void wait_for_upload();

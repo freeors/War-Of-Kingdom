@@ -83,6 +83,7 @@ public:
 
 	bool exist_anim() const { return exist_anim_; }
 	bool exist_bubble() const { return !bubble_anims_.empty(); }
+	const std::map<int, int>& anims() const { return anims_; }
 
 	void set_layout_offset(int x, int y) { layout_offset_.x = x; layout_offset_.y = y; }
 

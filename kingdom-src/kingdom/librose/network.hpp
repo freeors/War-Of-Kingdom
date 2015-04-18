@@ -21,13 +21,16 @@
  * Enable bandwidth stats
  **/
 
-class config;
+class tsock;
 
 #include "exceptions.hpp"
 #include "SDL_net.h"
+#include "config.hpp"
+#include "thread.hpp"
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include <boost/shared_ptr.hpp>
 
@@ -39,6 +42,7 @@ namespace threading
 }
 
 // This module wraps the network interface.
+enum SOCKET_STATE { SOCKET_READY, SOCKET_LOCKED, SOCKET_ERRORED, SOCKET_INTERRUPT };
 
 namespace network {
 
@@ -88,7 +92,7 @@ struct server_manager {
 	                     NO_SERVER };           /**< Won't try to create a server at all. */
 
 	// Throws error.
-	server_manager(int port, CREATE_SERVER create_server=MUST_CREATE_SERVER);
+	server_manager(tsock& sock, int port, CREATE_SERVER create_server=MUST_CREATE_SERVER);
 	~server_manager();
 
 	bool is_running() const;
@@ -152,9 +156,9 @@ bool is_server();
  * @returns                       The new connection on success, or 0 on failure.
  * @throw error
  */
-connection connect(const std::string& host, int port = 15000);
+connection connect(tsock& sock, const std::string& host, int port = 15000);
 
-connection connect(const std::string& host, int port, bool xmit_http_data, bool lobby, threading::waiter& waiter);
+void connect(tsock& sock, const std::string& host, int port, threading::waiter& waiter);
 
 /**
  * Function to accept a connection from a remote host.
@@ -164,7 +168,7 @@ connection connect(const std::string& host, int port, bool xmit_http_data, bool 
  *
  * @throw error
  */
-connection accept_connection();
+connection accept_connection(tsock& sock);
 
 /**
  * Function to disconnect from a certain host,
@@ -207,8 +211,6 @@ struct bandwidth_in {
 
 typedef boost::shared_ptr<bandwidth_in> bandwidth_in_ptr;
 
-bool get_connection_xmit_http_data(TCPsocket s);
-
 /**
  * Function to receive data from either a certain connection,
  * or all connections if connection_num is 0.
@@ -222,7 +224,7 @@ bool get_connection_xmit_http_data(TCPsocket s);
  */
 connection receive_data(config& cfg, connection connection_num=0, bandwidth_in_ptr* b = 0);
 connection receive_data(config& cfg, connection connection_num, unsigned int timeout, bandwidth_in_ptr* b = 0);
-connection receive_data(std::vector<char>& buf, bandwidth_in_ptr* = 0);
+connection receive_data(std::vector<char>& buf, connection connection_num=0, bandwidth_in_ptr* = 0);
 
 void send_file(const std::string&, connection, const std::string& packet_type = "unknown");
 
@@ -232,8 +234,7 @@ void send_file(const std::string&, connection, const std::string& packet_type = 
  *
  * @throw error
  */
-size_t send_data(const config& cfg, connection connection_num = 0,
-		const std::string& packet_type = "unknown");
+size_t send_data(tsock& info, const config& cfg, const std::string& packet_type = "unknown");
 
 void send_raw_data(const char* buf, int len, connection connection_num,
 		const std::string& packet_type = "unknown");
@@ -300,13 +301,45 @@ struct statistics
 statistics get_send_stats(connection handle);
 statistics get_receive_stats(connection handle);
 
+struct buffer {
+	explicit buffer(TCPsocket sock) :
+		sock(sock),
+		config_buf(),
+		config_error(""),
+		stream(),
+		raw_buffer()
+		{}
+
+	TCPsocket sock;
+	mutable config config_buf;
+	std::string config_error;
+	std::ostringstream stream;
+
+	/**
+	 * This field is used if we're sending a raw buffer instead of through a
+	 * config object. It will contain the entire contents of the buffer being
+	 * sent.
+	 */
+	std::vector<char> raw_buffer;
+};
+
 /** Amount of seconds after the last server ping when we assume to have timed out. */
 extern unsigned int ping_timeout;
 /** Minimum interval between pings. */
 const int ping_interval = 30;
 
-extern connection lobby_sock;
-extern std::string lobby_sock_error;
+typedef std::map<TCPsocket, std::pair<network::statistics,network::statistics> > socket_stats_map;
+extern socket_stats_map transfer_stats;
+extern threading::mutex* stats_mutex;
+
+bool receive_with_timeout(tsock& info, char* buf, size_t nbytes,
+		bool update_stats=false, int idle_timeout_ms=30000,
+		int total_timeout_ms=300000, int* ret_size = NULL);
+
+void output_to_buffer(TCPsocket /*sock*/, const config& cfg, std::ostringstream& compressor);
+void make_network_buffer(const char* input, int len, std::vector<char>& buf);
+void queue_buffer(TCPsocket sock, network::buffer* queued_buf);
+
 } // network namespace
 
 

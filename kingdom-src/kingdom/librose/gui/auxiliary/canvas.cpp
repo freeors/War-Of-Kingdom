@@ -1207,10 +1207,6 @@ void ttext::draw(surface& canvas
 		return;
 	}
 
-	if (text.str().find("kingdom-mythology-patch") != std::string::npos) {
-		int ii = 0;
-	}
-
 	surface surf;
 	if (!share_canvas_integrate) {
 		bool text_editable = editable_(variables);

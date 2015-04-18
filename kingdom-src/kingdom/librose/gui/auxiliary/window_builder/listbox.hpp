@@ -39,11 +39,8 @@ struct tbuilder_listbox
 
 	tbuilder_grid_ptr list_builder;
 
-	/** The width of the widget. */
-	tformula<unsigned> width;
-
-	/** The height of the widget. */
-	tformula<unsigned> height;
+	std::string width;
+	std::string height;
 
 	/**
 	 * Listbox data.

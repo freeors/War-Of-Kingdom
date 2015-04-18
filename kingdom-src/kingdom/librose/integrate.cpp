@@ -238,6 +238,8 @@ tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_he
 	, default_font_color_(default_font_color)
 	, align_bottom_(true)
 	, exist_anim_(false)
+	, anims_()
+	, bubble_anims_()
 {
 	// Parse and add the text.
 	std::map<int, std::string> parsed_items;
@@ -245,7 +247,7 @@ tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_he
 	try {
 		parsed_items = help::parse_text(src);
 	} 
-	catch (help::parse_error& e) {
+	catch (help::parse_error&) {
 		// [see remark#30] process character: '<' 
 		add_text_item(0, 0, src, default_font_color_);
 	}
@@ -254,31 +256,30 @@ tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_he
 	for (it = parsed_items.begin(); it != parsed_items.end(); ++it) {
 		if (it->second != "" && it->second[0] == '[') {
 			// Should be parsed as WML.
+			config cfg;
 			try {
-				config cfg;
+				// for exampl: [OPAL] | Merchants: PexPeppers, Dr. Peck
 				std::istringstream stream(it->second);
 				read(cfg, stream);
 
+			} catch (help::parse_error&) {
+				add_text_item(it->first, it->first, it->second, default_font_color_);
+			}
+
 #define TRY(name) do { \
-				if (config &child = cfg.child(#name)) \
-					handle_##name##_cfg(it->first, child); \
-				} while (0)
+			if (config &child = cfg.child(#name)) \
+				handle_##name##_cfg(it->first, child); \
+			} while (0)
 
-				TRY(ref);
-				TRY(img);
-				TRY(bold);
-				TRY(italic);
-				TRY(header);
-				TRY(jump);
-				TRY(format);
-
+			TRY(ref);
+			TRY(img);
+			TRY(bold);
+			TRY(italic);
+			TRY(header);
+			TRY(jump);
+			TRY(format);
 #undef TRY
 
-			}
-			catch (config::error& e) {
-				throw config::error(e.message);
-
-			}
 		} else {
 			add_text_item(it->first, it->first, it->second, default_font_color_);
 		}

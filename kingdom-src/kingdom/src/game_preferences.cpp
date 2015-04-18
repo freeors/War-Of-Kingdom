@@ -33,19 +33,6 @@
 
 #include <boost/foreach.hpp>
 
-bool is_legal_utf8_str(const std::string& str)
-{
-	try {
-		utils::utf8_iterator ch(str);
-		for (utils::utf8_iterator end = utils::utf8_iterator::end(str); ch != end; ++ ch) {
-		}
-	}
-	catch (utils::invalid_utf8_exception&) {
-		return false;
-	}
-	return true;
-}
-
 namespace {
 
 bool message_private_on = false;
@@ -344,57 +331,6 @@ std::string campaign_server()
 void set_campaign_server(const std::string& host)
 {
 	preferences::set("campaign_server", host);
-}
-
-std::string encode_pw(const std::string& str)
-{
-	std::stringstream ss;
-	ss << "pw_";
-	if (is_legal_utf8_str(str)) {
-		ss << str;
-	}
-	return ss.str();
-}
-
-std::string decode_pw(const std::string& str)
-{
-	if (!is_legal_utf8_str(str)) {
-		return null_str;
-	}
-
-	int pos = str.find("pw_");
-	if (pos != std::string::npos) {
-		return str.substr(3);
-	} else {
-		return str;
-	}
-}
-
-std::string password()
-{
-	if (login() == public_account) {
-		return public_password;
-	} else if (remember_password()) {
-		return decode_pw(preferences::get("password"));
-	}
-	return "";
-}
-
-void set_password(const std::string& password)
-{
-	if (remember_password()) {
-		preferences::set("password", encode_pw(password));
-	}
-}
-
-bool remember_password()
-{
-	return preferences::get("remember_password", false);
-}
-
-void set_remember_password(bool remember)
-{
-	preferences::set("remember_password", remember);
 }
 
 bool turn_dialog()

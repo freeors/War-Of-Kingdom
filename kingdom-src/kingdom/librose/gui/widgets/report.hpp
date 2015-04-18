@@ -133,13 +133,15 @@ public:
 	void erase_child(int at);
 	void erase_children(bool clear_additional = false);
 	void hide_children();
-	void replacement_children(int grid_width = 0, int grid_height = 0);
+	void replacement_children();
 	void set_visible(int at, bool visible);
 	bool get_visible(int at) const;
 
 	int childs() const;
 	int get_index(const twidget* widget) const;
+	int get_index2(const void* cookie) const;
 	const tgrid::tchild& get_child(int at) const;
+	tcontrol* get_widget(int at) const;
 	void select(int index);
 	void select(twidget* widget);
 	void set_callback_show(boost::function<void (ttabbar*, const tgrid::tchild& child)> callback) { callback_show_ = callback; }
@@ -147,6 +149,7 @@ public:
 private:
 	void click(bool previous);
 	void validate_start();
+	int calculate_requrie_back_widgets() const;
 
 private:
 	treport* report_;
@@ -154,7 +157,11 @@ private:
 	bool segment_;
 	std::string definition_;
 	int start_;
+
+	// when segment_, segment_childs_ is visible widget count at one group.
+	// when !segment_, segment_childs_ is visible widget count at this time.
 	int segment_childs_;
+
 	tbutton* previous_;
 	tspacer* stuff_widget_;
 	tbutton* next_;

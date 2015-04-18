@@ -89,7 +89,7 @@ private:
 	/**
 	 * Network polling callback
 	 */
-	bool handle(tlobby::ttype type, const config& data);
+	bool handle(int tag, tsock::ttype type, const config& data);
 	
 	void update_playerlist();
 

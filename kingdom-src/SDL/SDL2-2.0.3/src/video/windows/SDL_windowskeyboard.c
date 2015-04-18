@@ -873,7 +873,7 @@ IME_HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM *lParam, SDL_VideoD
             ImmReleaseContext(hwnd, himc);
             break;
         case IMN_CLOSECANDIDATE:
-            // trap = SDL_TRUE;
+            trap = SDL_TRUE;
             // IME_HideCandidateList(videodata);
             break;
         case IMN_PRIVATE:

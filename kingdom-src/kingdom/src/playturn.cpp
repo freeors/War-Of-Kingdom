@@ -304,7 +304,7 @@ void turn_info::change_controller(const std::string& side, const std::string& co
 	change["side"] = side;
 	change["controller"] = controller;
 
-	network::send_data(cfg, 0);
+	network::send_data(lobby->transit, cfg);
 }
 
 
@@ -315,7 +315,7 @@ void turn_info::change_side_controller(const std::string& side, const std::strin
 	change["side"] = side;
 	change["player"] = player;
 	if (own_side) change["own_side"] = true;
-	network::send_data(cfg, 0);
+	network::send_data(lobby->transit, cfg);
 }
 
 #if 0
@@ -325,6 +325,6 @@ void turn_info::take_side(const std::string& side, const std::string& controller
 	cfg["side"] = side;
 	cfg["controller"] = controller;
 	cfg["name"] = controller+side;
-	network::send_data(cfg, 0, true);
+	network::send_data(lobby->transit, cfg);
 }
 #endif

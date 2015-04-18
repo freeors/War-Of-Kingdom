@@ -26,7 +26,6 @@
 #include "gui/dialogs/mp_create_game.hpp"
 #include "gui/dialogs/mp_side_creator.hpp"
 #include "gui/dialogs/mp_side_wait.hpp"
-#include "gui/dialogs/mp_login.hpp"
 #include "gui/dialogs/preferences.hpp"
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/widgets/settings.hpp"
@@ -77,293 +76,12 @@ public:
 			LOG_NW << "sending leave_game\n";
 			config cfg;
 			cfg.add_child("leave_game");
-			network::send_data(cfg, 0);
+			network::send_data(lobby->transit, cfg);
 			LOG_NW << "sent leave_game\n";
 		}
 	};
 };
 
-namespace {
-
-enum server_type {
-	ABORT_SERVER,
-	WESNOTHD_SERVER,
-	SIMPLE_SERVER
-};
-
-}
-
-static server_type open_connection(display& disp, hero_map& heros, const std::string& original_host)
-{
-	std::string h = original_host;
-
-	if(h.empty()) {
-		gui2::tmp_connect dlg;
-
-		dlg.show(disp.video());
-		if(dlg.get_retval() == gui2::twindow::OK) {
-			h = preferences::network_host();
-		} else {
-			return ABORT_SERVER;
-		}
-	}
-
-	network::connection sock;
-
-	const int pos = h.find_first_of(":");
-	std::string host;
-	unsigned int port;
-
-	if(pos == -1) {
-		host = h;
-		port = 15000;
-	} else {
-		host = h.substr(0, pos);
-		port = lexical_cast_default<unsigned int>(h.substr(pos + 1), 15000);
-	}
-
-	// shown_hosts is used to prevent the client being locked in a redirect
-	// loop.
-	typedef std::pair<std::string, int> hostpair;
-	std::set<hostpair> shown_hosts;
-	shown_hosts.insert(hostpair(host, port));
-
-	config data;
-	sock = dialogs::network_connect_dialog(disp, "", host, port, false);
-
-	do {
-
-		if (!sock) {
-			return ABORT_SERVER;
-		}
-
-		data.clear();
-
-		network::connection data_res = dialogs::network_receive_dialog(disp, "", data, 0, 0);
-		if (!data_res) {
-			return ABORT_SERVER;
-		}
-		mp::check_response(data_res, data);
-
-		// Backwards-compatibility "version" attribute
-		const std::string& version = data["version"];
-		if(version.empty() == false && version != game_config::version) {
-			utils::string_map i18n_symbols;
-			i18n_symbols["version1"] = version;
-			i18n_symbols["version2"] = game_config::version;
-			const std::string errorstring = vgettext("The server requires version '$version1' while you are using version '$version2'", i18n_symbols);
-			throw network::error(errorstring);
-		}
-
-		// Check for "redirect" messages
-		if (const config &redirect = data.child("redirect"))
-		{
-			host = redirect["host"].str();
-			port =redirect["port"].to_int(15000);
-
-			if(shown_hosts.find(hostpair(host,port)) != shown_hosts.end()) {
-				throw network::error(_("Server-side redirect loop"));
-			}
-			shown_hosts.insert(hostpair(host, port));
-
-			if(network::nconnections() > 0)
-				network::disconnect();
-			sock = dialogs::network_connect_dialog(disp, "", host, port, false);
-			continue;
-		}
-
-		if(data.child("version")) {
-			config cfg;
-			config res;
-			// cfg["version"] = game_config::version;
-			// fake version, in order to login in wesnoth server
-			// cfg["version"] = "1.9.10";
-			cfg["version"] = "test";
-			res.add_child("version", cfg);
-			network::send_data(res, 0);
-		}
-
-		//if we got a direction to login
-		if(data.child("mustlogin")) {
-
-			for(;;) {
-				std::string password_reminder = "";
-
-				std::string login = preferences::login();
-
-				config response ;
-				config &sp = response.add_child("login") ;
-				sp["username"] = login ;
-
-				// Login and enable selective pings -- saves server bandwidth
-				// If ping_timeout has a non-zero value, do not enable
-				// selective pings as this will cause clients to falsely
-				// believe the server has died and disconnect.
-				// if (preferences::get_ping_timeout()) {
-				if (false) {
-					// Pings required so disable selective pings
-					sp["selective_ping"] = false;
-				} else {
-					// Client is bandwidth friendly so allow
-					// server to optimize ping frequency as needed.
-					sp["selective_ping"] = true;
-				}
-				network::send_data(response, 0);
-
-				// Get response for our login request...
-				// network::connection data_res = network::receive_data(data, 0, 3000);
-				network::connection data_res = dialogs::network_receive_dialog(disp, "", data, 0, 0);
-				if (!data_res) {
-					throw network::error(_("Connection timed out"));
-				}
-
-				config *error = &data.child("error");
-
-				// ... and get us out of here if the server did not complain
-				if (!*error) break;
-
-				do {
-					std::string password = preferences::password();
-
-					bool fall_through = (*error)["force_confirmation"].to_bool() ?
-						(gui2::show_message(disp.video(), _("Confirm"), (*error)["message"], gui2::tmessage::ok_cancel_buttons) == gui2::twindow::CANCEL) :
-						false;
-
-					const bool is_pw_request = !((*error)["password_request"].empty()) && !(password.empty());
-
-					// If the server asks for a password, provide one if we can
-					// or request a password reminder.
-					// Otherwise or if the user pressed 'cancel' in the confirmation dialog
-					// above go directly to the username/password dialog
-					if((is_pw_request || !password_reminder.empty()) && !fall_through) {
-						if(is_pw_request) {
-							if ((*error)["phpbb_encryption"].to_bool())
-							{
-
-								// Apparently HTML key-characters are passed to the hashing functions of phpbb in this escaped form.
-								// I will do closer investigations on this, for now let's just hope these are all of them.
-
-								// Note: we must obviously replace '&' first, I wasted some time before I figured that out... :)
-								for(std::string::size_type pos = 0; (pos = password.find('&', pos)) != std::string::npos; ++pos )
-									password.replace(pos, 1, "&amp;");
-								for(std::string::size_type pos = 0; (pos = password.find('\"', pos)) != std::string::npos; ++pos )
-									password.replace(pos, 1, "&quot;");
-								for(std::string::size_type pos = 0; (pos = password.find('<', pos)) != std::string::npos; ++pos )
-									password.replace(pos, 1, "&lt;");
-								for(std::string::size_type pos = 0; (pos = password.find('>', pos)) != std::string::npos; ++pos )
-									password.replace(pos, 1, "&gt;");
-
-								const std::string salt = (*error)["salt"];
-
-								if (salt.length() < 12) {
-									throw network::error(_("Bad data received from server"));
-								}
-
-								sp["password"] = util::create_hash(util::create_hash(password, util::get_salt(salt),
-										util::get_iteration_count(salt)), salt.substr(12, 8));
-
-							} else {
-								sp["password"] = password;
-							}
-						}
-
-						sp["password_reminder"] = password_reminder;
-
-						// Once again send our request...
-						network::send_data(response, 0);
-
-						network::connection data_res = network::receive_data(data, 0, 3000);
-						if(!data_res) {
-							throw network::error(_("Connection timed out"));
-						}
-
-						error = &data.child("error");
-
-						// ... and get us out of here if the server is happy now
-						if (!*error) break;
-
-
-					}
-
-					password_reminder = "";
-
-					// Providing a password either was not attempted because we did not
-					// have any or failed:
-					// Now show a dialog that displays the error and allows to
-					// enter a new user name and/or password
-
-					std::string error_message;
-					utils::string_map i18n_symbols;
-					i18n_symbols["nick"] = login;
-
-					if((*error)["error_code"] == MP_MUST_LOGIN) {
-						error_message = _("You must login first.");
-					} else if((*error)["error_code"] == MP_NAME_TAKEN_ERROR) {
-						error_message = vgettext("The nick '$nick' is already taken.", i18n_symbols);
-					} else if((*error)["error_code"] == MP_INVALID_CHARS_IN_NAME_ERROR) {
-						error_message = vgettext("The nick '$nick' contains invalid "
-								"characters. Only alpha-numeric characters, underscores and "
-								"hyphens are allowed.", i18n_symbols);
-					} else if((*error)["error_code"] == MP_NAME_TOO_LONG_ERROR) {
-						error_message = vgettext("The nick '$nick' is too long. Nicks must "
-								"be 20 characters or less.", i18n_symbols);
-					} else if((*error)["error_code"] == MP_NAME_RESERVED_ERROR) {
-						error_message = vgettext("The nick '$nick' is reserved and cannot be used by players.", i18n_symbols);
-					} else if((*error)["error_code"] == MP_NAME_UNREGISTERED_ERROR) {
-						error_message = vgettext("The nick '$nick' is not registered on this server.", i18n_symbols)
-								+ _(" This server disallows unregistered nicks.");
-					} else if((*error)["error_code"] == MP_PASSWORD_REQUEST) {
-						error_message = vgettext("The nick '$nick' is registered on this server.", i18n_symbols);
-					} else if((*error)["error_code"] == MP_PASSWORD_REQUEST_FOR_LOGGED_IN_NAME) {
-						error_message = vgettext("The nick '$nick' is registered on this server.", i18n_symbols)
-								+ "\n\n" + _("WARNING: There is already a client using this nick, "
-								"logging in will cause that client to be kicked!");
-					} else if((*error)["error_code"] == MP_NO_SEED_ERROR) {
-						error_message = _("Error in the login procedure (the server had no "
-								"seed for your connection).");
-					} else if((*error)["error_code"] == MP_INCORRECT_PASSWORD_ERROR) {
-						error_message = _("The password you provided was incorrect.");
-					} else {
-						error_message = (*error)["message"].str();
-					}
-
-					// gui2::tmp_login dlg(error_message, !((*error)["password_request"].empty()));
-					gui2::tmp_login dlg(disp, heros, error_message);
-					dlg.show(disp.video());
-
-					switch(dlg.get_retval()) {
-						//Log in with password
-						case gui2::twindow::OK:
-							break;
-						//Request a password reminder
-						case 1:
-							password_reminder = "yes";
-							break;
-						// Cancel
-						default: return ABORT_SERVER;
-					}
-
-				// If we have got a new username we have to start all over again
-				} while(login == preferences::login());
-
-				// Somewhat hacky...
-				// If we broke out of the do-while loop above error
-				// is still going to be NULL
-				if(!*error) break;
-			} // end login loop
-		}
-	} while(!(data.child("join_lobby") || data.child("join_game")));
-
-	if (h != preferences::server_list().front().address)
-		preferences::set_network_host(h);
-
-	if (data.child("join_lobby")) {
-		return WESNOTHD_SERVER;
-	} else {
-		return SIMPLE_SERVER;
-	}
-
-}
 
 bool commerce_protection(display& disp, const std::string& function)
 {
@@ -560,7 +278,7 @@ bool http_agent::do_prepare(bool check_network, bool quiet)
 			game_config::timestamp = m.timestamp;
 		}
 	}
-	sock_ = dialogs::network_connect_dialog(disp_, "", game_config::bbs_server.host, game_config::bbs_server.port, true, quiet);
+	sock_ = dialogs::network_connect_dialog(disp_, "", game_config::bbs_server.host, game_config::bbs_server.port, quiet);
 
 	return sock_;
 }
@@ -1501,55 +1219,11 @@ std::vector<ttitle_record> http_agent::do_listtitle()
 membership http_agent::do_uploadmessage(const tmessage_record& rec)
 {
 	membership m;
-	if (!do_prepare(true)) {
+	if (commerce_protection(disp_, "http_agent::do_uploadmessage()")) {
 		return m;
 	}
 
-	std::stringstream content;
-	content << rec.sender << "&" << rec.receiver_username << "&";
-	content << rec.content << "&";
-	content << rec.create_time;
-
-	trequest request(*this, "uploadmessage", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	utils::string_map symbols;
-	config data;
-	int content_start = http_2_cfg(buf, data);
-
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return m;
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-		
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		if (str == "duplicate") {
-			symbols["create"] = tintegrate::generate_format(format_time_date(rec.create_time), "red");
-			err << vgettext("wesnoth-lib", "Had uploaded message that create at $create, cannot upload again!", symbols);
-			
-		} else if (str == "error_receiver") {
-			symbols["create"] = tintegrate::generate_format(rec.receiver_username, "red");
-			err << vgettext("wesnoth-lib", "Receiver don't exist!", symbols);
-			
-		} 
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-			return m;
-		}
-
-		m = parse_membership_result(str);
-	}
+	
 
 	return m;
 }
@@ -1873,77 +1547,10 @@ std::string employee_tag_str(int tag)
 membership http_agent::do_employee_insert(hero_map& heros)
 {
 	membership member;
-	const std::string& _do = employee_tag_str(employee_tag_insert);
-	if (_do.empty()) {
-		return member;
-	}
-	if (!do_prepare(true)) {
+	if (commerce_protection(disp_, "http_agent::do_employee_insert()")) {
 		return member;
 	}
 
-	std::stringstream content;
-	content << "do=" << _do << "&param=";
-	bool first = true;
-	for (hero_map::const_iterator it = heros.begin(); it != heros.end(); ++ it) {
-		const hero& h = *it;
-		if (h.number_ >= hero_map::map_size_from_dat) {
-			break;
-		}
-		if (!h.get_flag(hero_flag_employee)) {
-			continue;
-		}
-		if (!first) {
-			content << "|";
-		} else {
-			first = false;
-		}
-		int number = h.number_;
-		int cost = game_config::employee_base_score + h.cost_;
-		content << number << "," << game_config::min_employee_level << "," << cost;
-	}
-
-	trequest request(*this, "employee", content.str());
-	dialogs::network_send_dialog(disp_, "", request.buf, request.size, sock_);
-
-	std::vector<char> buf;
-	dialogs::network_receive_dialog(disp_, "", buf, sock_);
-
-	config data;
-	int content_start = http_2_cfg(buf, data);
-	if (content_start != -1 && content_start < (int)buf.size()) {
-		char* content = &buf[content_start];
-		int content_length = (int)buf.size() - content_start;
-
-		if (access_denied(data, content, content_length)) {
-			return member;
-		}
-		content = content + magic_.size();
-		content_length -= magic_.size();
-
-		// buf maybe not end with '\0'
-		std::string str;
-		str.assign(content, content_length);
-
-		std::stringstream err;
-		utils::string_map symbols;
-		symbols["action"] = tintegrate::generate_format(_("Employee"), "yellow");
-		if (str == "id_absent") {
-			err << vgettext("wesnoth-lib", "When $action, id_absent!", symbols);
-		} else if (str == "misstatus") {
-			err << vgettext("wesnoth-lib", "When $action, error status!", symbols);
-		} else if (str == "misscore") {
-			err << vgettext("wesnoth-lib", "When $action, error score!", symbols);
-		} 
-		if (err.str().empty()) {
-			member = parse_membership_result(str);
-			if (member.uid < 0) {
-				err << vgettext("When $action, unknown error!", symbols);
-			}
-		}
-		if (!err.str().empty()) {
-			gui2::show_message(disp_.video(), "", err.str());
-		}
-	}
 	return member;
 }
 
@@ -2559,7 +2166,7 @@ static void enter_connect_mode(display& disp, const config& game_config, hero_ma
 		break;
 	case mp::QUIT:
 	default:
-		network::send_data(config("refresh_lobby"), 0);
+		network::send_data(lobby->transit, config("refresh_lobby"));
 		break;
 	}
 }
@@ -2583,7 +2190,7 @@ static void enter_create_mode(display& disp, const config& game_config, hero_map
 		params = dlg.get_parameters();
 		num_turns = dlg.num_turns();
 
-		// network::send_data(config("refresh_lobby"), 0);
+		// network::send_data(lobby->transit, config("refresh_lobby"));
 	}
 
 	switch (res) {
@@ -2593,7 +2200,7 @@ static void enter_create_mode(display& disp, const config& game_config, hero_map
 	case mp::QUIT:
 	default:
 		//update lobby content
-		network::send_data(config("refresh_lobby"), 0);
+		network::send_data(lobby->transit, config("refresh_lobby"));
 		break;
 	}
 }
@@ -2662,7 +2269,7 @@ static void enter_lobby_mode(display& disp, const config& game_config, hero_map&
 					gui2::show_error_message(disp.video(), error.message);
 				}
 				//update lobby content
-				network::send_data(config("refresh_lobby"), 0);
+				network::send_data(lobby->transit, config("refresh_lobby"));
 			}
 			break;
 		case mp::OBSERVE:
@@ -2675,7 +2282,7 @@ static void enter_lobby_mode(display& disp, const config& game_config, hero_map&
 			}
 			// update lobby content unconditionally because we might have left only after the
 			// game ended in which case we ignored the gamelist and need to request it again
-			network::send_data(config("refresh_lobby"), 0);
+			network::send_data(lobby->transit, config("refresh_lobby"));
 			break;
 		case mp::CREATE:
 			try {
@@ -2684,7 +2291,7 @@ static void enter_lobby_mode(display& disp, const config& game_config, hero_map&
 				if (!error.message.empty())
 					gui2::show_error_message(disp.video(), error.message);
 				//update lobby content
-				network::send_data(config("refresh_lobby"), 0);
+				network::send_data(lobby->transit, config("refresh_lobby"));
 			}
 			break;
 		case mp::QUIT:
@@ -2739,16 +2346,7 @@ void start_client(display& disp, const config& game_config, hero_map& heros, her
 	const network::manager net_manager(1,1);
 
 	config gamelist;
-	// server_type type = open_connection(disp, heros, host);
-	server_type type = WESNOTHD_SERVER;
-
-	switch(type) {
-	case WESNOTHD_SERVER:
-		enter_lobby_mode(disp, game_config, heros, heros_start, cards, gamelist);
-		break;
-	case ABORT_SERVER:
-		break;
-	}
+	enter_lobby_mode(disp, game_config, heros, heros_start, cards, gamelist);
 }
 
 }
@@ -2761,7 +2359,6 @@ std::string calculate_res_checksum(display& disp, const config& game_config)
 	}
 
 	
-
 	return ret;
 }
 

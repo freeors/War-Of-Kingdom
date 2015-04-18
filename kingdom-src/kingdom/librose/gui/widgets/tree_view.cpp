@@ -24,6 +24,7 @@
 #include "gui/widgets/tree_view_node.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/selectable.hpp"
+#include "gui/widgets/spacer.hpp"
 
 #include <boost/bind.hpp>
 
@@ -38,7 +39,6 @@ ttree_view::ttree_view(const std::vector<tnode_definition>& node_definitions)
 	: tscrollbar_container(2)
 	, node_definitions_(node_definitions)
 	, indention_step_size_(0)
-	, need_layout_(false)
 	, root_node_(new ttree_view_node(
 		  "root"
 		, node_definitions_
@@ -48,6 +48,7 @@ ttree_view::ttree_view(const std::vector<tnode_definition>& node_definitions)
 	, selected_item_(NULL)
 	, selection_change_callback_()
 	, left_align_(false)
+	, no_indentation_(false)
 {
 	connect_signal<event::LEFT_BUTTON_DOWN>(
 			  boost::bind(
@@ -81,12 +82,12 @@ void ttree_view::remove_node(ttree_view_node* node)
 
 	node->parent_node_->children_.erase(itor);
 
-	if(get_size() == tpoint(0, 0)) {
+	if (get_size() == tpoint(0, 0)) {
 		return;
 	}
 
 	// Don't shrink the width, need to think about a good algorithm to do so.
-	resize_content(0, -node_size.y);
+	invalidate_layout(false);
 }
 
 void ttree_view::child_populate_dirty_list(twindow& caller
@@ -99,14 +100,52 @@ void ttree_view::child_populate_dirty_list(twindow& caller
 	root_node_->impl_populate_dirty_list(caller, call_stack);
 }
 
+void ttree_view::set_content_size(const tpoint& origin, const tpoint& desire_size)
+{
+	tpoint size = desire_size;
+	if (left_align_ && !empty()) {
+		tgrid& item = root_node_->children_.begin()->grid_;
+		// by this time, hasn't called place(), cannot use get_size().
+		int height = item.get_best_size().y;
+		if (height <= size.y) {
+			int list_height = size.y / height * height;
+
+			// reduce hight if allow height > get_best_size().y
+			height = root_node_->get_best_size().y;
+			if (list_height > height) {
+				list_height = height;
+			}
+			size.y = list_height;
+			if (size.y != desire_size.y) {
+				content_->set_size(size);
+			}
+		}
+	}
+
+	const tpoint actual_size = content_grid_->get_best_size();
+	calculate_scrollbar(actual_size, size);
+	if (size.y != desire_size.y) {
+		int diff_y = desire_size.y - size.y;
+		if (vertical_scrollbar_grid_->get_visible() == twidget::VISIBLE) {
+			tpoint vertical_size = vertical_scrollbar_grid_->get_size();
+			vertical_size.y -= diff_y;
+			vertical_scrollbar_grid_->place(vertical_scrollbar_grid_->get_origin(), vertical_size);
+		}
+		if (horizontal_scrollbar_grid_->get_visible() == twidget::VISIBLE) {
+			tpoint horizontal_origin = horizontal_scrollbar_grid_->get_origin();
+			horizontal_origin.y -= diff_y;
+			horizontal_scrollbar_grid_->set_origin(horizontal_origin);
+		}
+	}
+
+	size.x = std::max(actual_size.x, size.x);
+	size.y = std::max(actual_size.y, size.y);
+	tscrollbar_container::set_content_size(origin, size);
+}
+
 bool ttree_view::empty() const
 {
 	return root_node_->empty();
-}
-
-void ttree_view::layout_children()
-{
-	layout_children(false);
 }
 
 void ttree_view::set_select_item(ttree_view_node* node)
@@ -160,51 +199,6 @@ void ttree_view::adjust_offset(int& x_offset, int& y_offset)
 	}
 }
 
-void ttree_view::resize_content(
-		  const int width_modification
-		, const int height_modification)
-{
-	DBG_GUI_L << LOG_HEADER << " current size " << content_grid()->get_size()
-			<< " width_modification " << width_modification
-			<< " height_modification " << height_modification
-			<< ".\n";
-
-	if(content_resize_request(width_modification, height_modification)) {
-
-		// Calculate new size.
-		tpoint size = content_grid()->get_size();
-		size.x += width_modification;
-		size.y += height_modification;
-
-		// Set new size.
-		content_grid()->set_size(size);
-
-		// Set status.
-		need_layout_ = true;
-		// If the content grows assume it "overwrites" the old content.
-		if(width_modification < 0 || height_modification < 0) {
-			set_dirty();
-		}
-		DBG_GUI_L << LOG_HEADER << " succeeded.\n";
-	} else {
-		DBG_GUI_L << LOG_HEADER << " failed.\n";
-	}
-}
-
-void ttree_view::layout_children(const bool force)
-{
-	assert(root_node_ && content_grid());
-
-	if(need_layout_ || force) {
-		root_node_->place(indention_step_size_
-			, get_origin()
-			, content_grid()->get_size().x);
-		root_node_->set_visible_area(content_visible_area_);
-
-		need_layout_ = false;
-	}
-}
-
 void ttree_view::finalize_setup()
 {
 	// Inherited.
@@ -220,22 +214,7 @@ void ttree_view::finalize_setup()
 				| tgrid::HORIZONTAL_GROW_SEND_TO_CLIENT
 			, 0);
 }
-/*
-twidget* ttree_view::find_at(
-		const tpoint& coordinate, const bool must_be_active)
-{
-	twidget* w = tscrollbar_container::find_at(coordinate, must_be_active);
-	if (!w && selected_item_) {
-		// to support SDL_WHEEL_DOWN/SDL_WHEEL_UP, must can find at "empty" area.
-		// as find, function is called in event chain, so finded must be child, here select selected_item_ as child.
-		w = twidget::find_at(coordinate, must_be_active);
-		if (w) {
-			w = selected_item_;
-		}
-	}
-	return w;
-}
-*/
+
 const std::string& ttree_view::get_control_type() const
 {
 	static const std::string type = "tree_view";

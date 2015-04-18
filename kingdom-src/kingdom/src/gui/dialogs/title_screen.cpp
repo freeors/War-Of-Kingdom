@@ -195,10 +195,10 @@ void ttitle_screen::pre_show(CVideo& video, twindow& window)
 	// Set the version number
 	control = find_widget<tcontrol>(&window, "revision_number", false, false);
 	if (control) {
-		// control->set_label(_("V") + game_config::version);
+		control->set_label(_("V") + game_config::version);
 		// control->set_label(_("V") + game_config::version + "-alpha");
 		// control->set_label(_("v") + game_config::version + "-beta");
-		control->set_label(_("v") + game_config::version + "-beta2");
+		// control->set_label(_("v") + game_config::version + "-beta3");
 	}
 	window.canvas()[0].set_variable("revision_number", variant(_("Version") + std::string(" ") + game_config::version));
 
@@ -323,9 +323,9 @@ void ttitle_screen::post_show(twindow& window)
 {
 }
 
-bool ttitle_screen::handle(tlobby::ttype type, const config& data)
+bool ttitle_screen::handle(int tag, tsock::ttype type, const config& data)
 {
-	if (type != tlobby::t_data) {
+	if (type != tsock::t_data) {
 		return false;
 	}
 	if (const config& c = data.child("whisper")) {

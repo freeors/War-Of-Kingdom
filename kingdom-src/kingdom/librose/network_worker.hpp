@@ -19,8 +19,6 @@
 #include <map>
 #include "network.hpp"
 
-class config;
-
 /**
  * Aligns a variable on a 4 byte boundary.
  *
@@ -61,19 +59,16 @@ void receive_data(TCPsocket sock);
 
 TCPsocket get_received_data(TCPsocket sock, config& cfg, network::bandwidth_in_ptr&);
 
-TCPsocket get_received_data(std::vector<char>& buf);
+TCPsocket get_received_data(TCPsocket sock, std::vector<char>& buf);
 
 void queue_file(TCPsocket sock, const std::string&);
 
-void queue_raw_data(TCPsocket sock, const char* buf, int len);
-void queue_http_data(TCPsocket sock, const char* buf, int len);
 size_t queue_data(TCPsocket sock, const config& buf, const std::string& packet_type);
 bool is_locked(const TCPsocket sock);
 bool close_socket(TCPsocket sock);
 TCPsocket detect_error();
 
 std::pair<network::statistics,network::statistics> get_current_transfer_stats(TCPsocket sock);
-
 }
 
 #endif

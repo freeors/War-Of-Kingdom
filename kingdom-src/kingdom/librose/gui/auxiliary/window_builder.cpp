@@ -39,7 +39,6 @@
 #include "gui/auxiliary/window_builder/drawing.hpp"
 #include "gui/auxiliary/window_builder/pane.hpp"
 #include "gui/auxiliary/window_builder/password_box.hpp"
-#include "gui/auxiliary/window_builder/multi_page.hpp"
 #include "gui/auxiliary/window_builder/progress_bar.hpp"
 #include "gui/auxiliary/window_builder/viewport.hpp"
 #endif
@@ -227,7 +226,6 @@ tbuilder_widget_ptr create_builder_widget(const config& cfg)
 	TRY(button);
 	TRY(drawing);
 	TRY(password_box);
-	TRY(multi_page);
 	TRY(progress_bar);
 #undef TRY
 #endif

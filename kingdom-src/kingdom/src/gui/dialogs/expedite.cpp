@@ -115,15 +115,18 @@ void set_task_str(twindow& window, const unit& u)
 	} else {
 		task->set_label(_("Abolish"));
 	}
+	task->set_active(u.human());
 }
 
 void texpedite::type_selected(twindow& window)
 {
 	tlistbox& list = find_widget<tlistbox>(&window, "type_list", false);
 	tbutton* task = find_widget<tbutton>(&window, "task", false, true);
+	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 
+	// prevent visible/disable disband button from layouting window.
 	twindow::tinvalidate_layout_blocker invalidate_layout_blocker(window);
-	list.invalidate_layout();
+	list.invalidate_layout(false);
 
 	troop_index_ = list.get_selected_row();
 	refresh_tooltip(window);
@@ -145,12 +148,11 @@ void texpedite::type_selected(twindow& window)
 		}
 
 		set_task_str(window, u);
-
-		tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
 		ok->set_active(u.human() && can_move(u));
 
 	} else {
-		task->set_visible(twidget::INVISIBLE);
+		task->set_active(false);
+		ok->set_active(false);
 	}
 }
 
@@ -361,24 +363,10 @@ void texpedite::disband(bool& handled, bool& halt, int index)
 
 		disband.set_active(city_.reside_troops()[i]->human());
 	}
-
-	tbutton* ok = find_widget<tbutton>(&window, "ok", false, true);
-	if (!city_.reside_troops().empty()) {
-		if (index == size) {
-			index --;
-		}
-		list->select_row(index);
-		const unit& u = *city_.reside_troops()[index];
-		ok->set_active(can_move(u) && u.human());
-	} else {
-		ok->set_active(false);
-	}
 	type_selected(window);
 
 	handled = true;
 	halt = true;
-
-	window.invalidate_layout();
 }
 
 bool texpedite::can_move(const unit& u)

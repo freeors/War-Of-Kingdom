@@ -9,11 +9,6 @@
  * This file should only be modified by the packager of the tarball
  * before and after each release.
  */
-
-#define ROSE_VERSION	"0.0.4"
-
-//always use the version string in here, otherwise autotools can override in
-//a bad way...
 #ifndef PACKAGE
 #define PACKAGE "wesnoth"
 #endif

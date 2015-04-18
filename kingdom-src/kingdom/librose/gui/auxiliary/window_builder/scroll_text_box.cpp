@@ -47,6 +47,7 @@ twidget* tbuilder_scroll_text_box::build() const
 
 	widget->set_vertical_scrollbar_mode(vertical_scrollbar_mode);
 	widget->set_horizontal_scrollbar_mode(horizontal_scrollbar_mode);
+	widget->set_best_size(width, height);
 
 	boost::intrusive_ptr<const tscroll_text_box_definition::tresolution> conf =
 			boost::dynamic_pointer_cast
@@ -58,23 +59,6 @@ twidget* tbuilder_scroll_text_box::build() const
 
 	// A textbox doesn't have a label but a text
 	ttext_box* tb = dynamic_cast<ttext_box*>(widget->content_grid()->find("_text_box", false));
-	int text_maximum_width = fix_rect.w;
-
-	if (width.has_formula()) {
-		const game_logic::map_formula_callable& size = get_screen_size_variables();
-		const unsigned w = width(size);
-		if (w) {
-			text_maximum_width = w;
-			unsigned h = 0;
-			if (height.has_formula()) {
-				h = height(size);
-			}
-			widget->set_best_size(tpoint(w, h));
-		}
-	}
-	if (text_maximum_width) {
-		tb->set_text_maximum_width(text_maximum_width - tb->config()->text_extra_width);
-	}
 	tb->set_value(label);
 
 	DBG_GUI_G << "Window builder: placed text box '"

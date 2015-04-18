@@ -80,7 +80,7 @@ void tsignin::refresh_signin_information(twindow& window) const
 	std::stringstream strstr;
 	utils::string_map symbols;
 
-	tlabel* label = find_widget<tlabel>(&window, "remark", false, true);
+	tscroll_label* label = find_widget<tscroll_label>(&window, "remark", false, true);
 	symbols["continue"] = tintegrate::generate_format(group.signin().continue_days, "green");
 	symbols["break"] = tintegrate::generate_format(group.signin().break_days, "red");
 	symbols["have"] = group.signin().today? dsgettext("wesnoth-lib", "been^have"): dsgettext("wesnoth-lib", "been^haven't");
@@ -88,7 +88,7 @@ void tsignin::refresh_signin_information(twindow& window) const
 	strstr << vgettext("wesnoth-lib", "You have been sign in $continue days, broken $break days. Today $have sign in.", symbols);
 	label->set_label(strstr.str());
 
-	label = find_widget<tlabel>(&window, "fillup_remark", false, true);
+	label = find_widget<tscroll_label>(&window, "fillup_remark", false, true);
 	tbutton* button = find_widget<tbutton>(&window, "fillup", false, true);
 	if (group.signin().break_days) {
 		symbols.clear();
@@ -120,7 +120,7 @@ void tsignin::pre_show(CVideo& /*video*/, twindow& window)
 	strstr.str("");
 	symbols["fillup"] = tintegrate::generate_format(_("signin^Fill up"), "blue");
 	strstr << vgettext("wesnoth-lib", "sign in remark($fillup)", symbols);
-	tlabel* label = find_widget<tlabel>(&window, "signin_remark", false, true);
+	tscroll_label* label = find_widget<tscroll_label>(&window, "signin_remark", false, true);
 	label->set_label(strstr.str());
 
 	connect_signal_mouse_left_click(

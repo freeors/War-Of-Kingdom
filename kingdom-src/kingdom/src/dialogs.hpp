@@ -47,7 +47,7 @@ bool animate_unit_advancement(unit& u, size_t choice);
 
 void show_objectives(const config &level, const team& t);
 
-network::connection network_connect_dialog(display& disp, const std::string& msg, const std::string& hostname, int port, bool xmit_http_data, bool quiet = false);
+network::connection network_connect_dialog(display& disp, const std::string& msg, const std::string& hostname, int port, bool quiet);
 void network_receive_dialog(display& disp, const std::string& msg, std::vector<char>& buf, network::connection connection_num, int hidden_ms = 4);
 network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num = 0, int hidden_ms = 4);
 void network_send_dialog(display& disp, const std::string& msg, const char* buf, int len, network::connection connection_num, int hidden_ms = 4);

@@ -681,7 +681,6 @@ void play_controller::init(CVideo& video)
 			} else {
 				side_cfg["controller"] = "human";
 				side_cfg["gold"] = "200";
-				
 				side_cfg["candidate_cards"] = "$player.candidate_cards";
 
 				strstr.str("");

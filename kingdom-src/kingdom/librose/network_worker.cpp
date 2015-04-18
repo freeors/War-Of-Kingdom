@@ -32,6 +32,7 @@
 #include "serialization/parser.hpp"
 #include "wesconfig.h"
 #include "util.hpp"
+#include "lobby.hpp"
 
 #include <cerrno>
 #include <deque>
@@ -44,7 +45,7 @@
 #endif
 
 
-#if defined(_WIN32) || defined(__WIN32__) || defined (WIN32)
+#if defined(_WIN32)
 #  undef INADDR_ANY
 #  undef INADDR_BROADCAST
 #  undef INADDR_NONE
@@ -57,11 +58,7 @@ typedef int socklen_t;
 #else
 #  include <sys/types.h>
 #  include <sys/socket.h>
-#  ifdef __BEOS__
-#    include <socket.h>
-#  else
-#    include <fcntl.h>
-#  endif
+#  include <fcntl.h>
 #  define SOCKET int
 #  ifdef HAVE_POLL_H
 #    define USE_POLL 1
@@ -89,7 +86,7 @@ static lg::log_domain log_network("network");
 #define LOG_NW LOG_STREAM(info, log_network)
 #define ERR_NW LOG_STREAM(err, log_network)
 
-namespace {
+// namespace {
 struct _TCPsocket {
 	int ready;
 	SOCKET channel;
@@ -108,50 +105,26 @@ size_t max_threads = 0;
 
 size_t get_shard(TCPsocket sock) { return reinterpret_cast<uintptr_t>(sock)%NUM_SHARDS; }
 
-struct buffer {
-	explicit buffer(TCPsocket sock) :
-		sock(sock),
-		config_buf(),
-		config_error(""),
-		stream(),
-		raw_buffer()
-		{}
-
-	TCPsocket sock;
-	mutable config config_buf;
-	std::string config_error;
-	std::ostringstream stream;
-
-	/**
-	 * This field is used if we're sending a raw buffer instead of through a
-	 * config object. It will contain the entire contents of the buffer being
-	 * sent.
-	 */
-	std::vector<char> raw_buffer;
-};
-
-
 bool managed = false, raw_data_only = false;
-typedef std::vector< buffer* > buffer_set;
+typedef std::vector<network::buffer*> buffer_set;
 buffer_set outgoing_bufs[NUM_SHARDS];
 
 /** a queue of sockets that we are waiting to receive on */
 typedef std::vector<TCPsocket> receive_list;
 receive_list pending_receives[NUM_SHARDS];
 
-typedef std::deque<buffer*> received_queue;
+typedef std::deque<network::buffer*> received_queue;
 received_queue received_data_queue;  // receive_mutex
 
-enum SOCKET_STATE { SOCKET_READY, SOCKET_LOCKED, SOCKET_ERRORED, SOCKET_INTERRUPT };
-typedef std::map<TCPsocket,SOCKET_STATE> socket_state_map;
-typedef std::map<TCPsocket, std::pair<network::statistics,network::statistics> > socket_stats_map;
+typedef std::map<TCPsocket, SOCKET_STATE> socket_state_map;
+// typedef std::map<TCPsocket, std::pair<network::statistics,network::statistics> > socket_stats_map;
 
 socket_state_map sockets_locked[NUM_SHARDS];
-socket_stats_map transfer_stats; // stats_mutex
+// socket_stats_map transfer_stats; // stats_mutex
 
 int socket_errors[NUM_SHARDS];
 threading::mutex* shard_mutexes[NUM_SHARDS];
-threading::mutex* stats_mutex = NULL;
+// threading::mutex* stats_mutex = NULL;
 threading::mutex* received_mutex = NULL;
 threading::condition* cond[NUM_SHARDS];
 
@@ -192,11 +165,13 @@ void check_send_buffer_size(TCPsocket& s)
 	DBG_NW << "send buffer size: " << system_send_buffer_size << "\n";
 }
 
-bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
-		bool update_stats=false, int idle_timeout_ms=30000,
-		int total_timeout_ms=300000, int* ret_size = NULL)
+namespace network
 {
-	bool xmit_http_data = network::get_connection_xmit_http_data(s);
+bool receive_with_timeout(tsock& info, char* buf, size_t nbytes,
+		bool update_stats, int idle_timeout_ms,
+		int total_timeout_ms, int* ret_size)
+{
+	TCPsocket s = info.sock();
 
 #if !defined(USE_POLL) && !defined(USE_SELECT)
 	int startTicks = SDL_GetTicks();
@@ -209,9 +184,10 @@ bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 	while(nbytes > 0) {
 		const int bytes_read = receive_bytes(s, buf, nbytes);
 		if (bytes_read == 0) {
-			return (ret_size && *ret_size)? true: false;
+			// network exception. for example connection broken.
+			return false;
 		} else if (bytes_read < 0) {
-#if defined(EAGAIN) && !defined(__BEOS__) && !defined(_WIN32)
+#if defined(EAGAIN) && !defined(_WIN32)
 			if (errno == EAGAIN)
 #elif defined(_WIN32) && defined(WSAEWOULDBLOCK)
 			if (WSAGetLastError() == WSAEWOULDBLOCK)
@@ -309,7 +285,7 @@ bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 		} else {
 			timeout_ms = idle_timeout_ms;
 			buf += bytes_read;
-			if(update_stats && (!raw_data_only || xmit_http_data)) {
+			if (update_stats && info.require_stats) {
 				const threading::lock lock(*stats_mutex);
 				transfer_stats[s].second.transfer(static_cast<size_t>(bytes_read));
 			}
@@ -343,93 +319,83 @@ bool receive_with_timeout(TCPsocket s, char* buf, size_t nbytes,
 /**
  * @todo See if the TCPsocket argument should be removed.
  */
-static void output_to_buffer(TCPsocket /*sock*/, const config& cfg, std::ostringstream& compressor)
+void output_to_buffer(TCPsocket /*sock*/, const config& cfg, std::ostringstream& compressor)
 {
 	config_writer writer(compressor, true);
 	writer.write(cfg);
 }
 
-static void make_network_buffer(const char* input, int len, std::vector<char>& buf)
+void make_network_buffer(const char* input, int len, std::vector<char>& buf)
 {
 	buf.resize(4 + len);
 	SDLNet_Write32(len, &buf[0]);
 	memcpy(&buf[4], input, len);
 }
 
-static SOCKET_STATE send_buffer(TCPsocket sock, std::vector<char>& buf, int in_size = -1)
+void queue_buffer(TCPsocket sock, network::buffer* queued_buf)
 {
-#ifdef __BEOS__
-	int timeout = 60000;
-#endif
-//	check_send_buffer_size(sock);
-	size_t upto = 0;
-	size_t size = buf.size();
-	if (in_size != -1)
-		size = in_size;
+	const size_t shard = get_shard(sock);
+	const threading::lock lock(*shard_mutexes[shard]);
+	outgoing_bufs[shard].push_back(queued_buf);
+	socket_state_map::const_iterator i = sockets_locked[shard].insert(std::pair<TCPsocket,SOCKET_STATE>(sock,SOCKET_READY)).first;
+	if (i->second == SOCKET_READY || i->second == SOCKET_ERRORED) {
+		{
+			// posix_print("#%i, main, queue_buffer, waill notify_one\n", SDL_GetTicks());
+		}
+		cond[shard]->notify_one();
+	}
+
+}
+
+static SOCKET_STATE send_buffer(tsock& info, std::vector<char>& buf, int size)
+{
+	TCPsocket sock = info.sock();
+
+	int upto = 0;
 	int send_len = 0;
 
-	bool xmit_http_data = network::get_connection_xmit_http_data(sock);
-
-	if (!raw_data_only || xmit_http_data)
-	{
+	if (info.require_stats) {
 		const threading::lock lock(*stats_mutex);
 		transfer_stats[sock].first.fresh_current(size);
 	}
-#ifdef __BEOS__
-	while(upto < size && timeout > 0) {
-#else
-	while(true) {
-#endif
+	while (true) {
 		{
 			const size_t shard = get_shard(sock);
 			// check if the socket is still locked
 			const threading::lock lock(*shard_mutexes[shard]);
-			if(sockets_locked[shard][sock] != SOCKET_LOCKED)
-			{
+			if (sockets_locked[shard][sock] != SOCKET_LOCKED) {
 				return SOCKET_ERRORED;
 			}
 		}
 		send_len = static_cast<int>(size - upto);
 		int res;
 		
-		if (!xmit_http_data) {
-			res = SDLNet_TCP_Send(sock, &buf[upto],send_len);
-		} else {
-			// 8 * 1024, keep consistance with send_file
-			send_len = send_len <= 8 * 1024? send_len: 8 * 1024;
-			res = SDLNet_TCP_Send(sock, &buf[upto], send_len);
-			if (res == send_len) {
-				upto += static_cast<size_t>(res);
-				if (upto != size) {
-					const threading::lock lock(*stats_mutex);
-					transfer_stats[sock].first.transfer(static_cast<size_t>(res));
-
-					continue;
-				}
-			}
-		}
-
-
-		if( res == send_len) {
-			if (!raw_data_only || xmit_http_data)
-			{
+		// 8 * 1024, keep consistance with send_file
+		send_len = send_len <= 8 * 1024? send_len: 8 * 1024;
+		res = SDLNet_TCP_Send(sock, &buf[upto], send_len);
+		if (res == send_len) {
+			upto += static_cast<size_t>(res);
+			if (info.require_stats) {
 				const threading::lock lock(*stats_mutex);
 				transfer_stats[sock].first.transfer(static_cast<size_t>(res));
 			}
+			if (upto != size) {
+				continue;
+			}
 			return SOCKET_READY;
 		}
+
 #if defined(_WIN32)
-		if(WSAGetLastError() == WSAEWOULDBLOCK)
-#elif defined(EAGAIN) && !defined(__BEOS__)
-		if(errno == EAGAIN)
+		if (WSAGetLastError() == WSAEWOULDBLOCK)
+#elif defined(EAGAIN)
+		if (errno == EAGAIN)
 #elif defined(EWOULDBLOCK)
-		if(errno == EWOULDBLOCK)
+		if (errno == EWOULDBLOCK)
 #endif
 		{
 			// update how far we are
 			upto += static_cast<size_t>(res);
-			if (!raw_data_only || xmit_http_data)
-			{
+			if (info.require_stats) {
 				const threading::lock lock(*stats_mutex);
 				transfer_stats[sock].first.transfer(static_cast<size_t>(res));
 			}
@@ -444,7 +410,7 @@ static SOCKET_STATE send_buffer(TCPsocket sock, std::vector<char>& buf, int in_s
 
 			if(poll_res > 0)
 				continue;
-#elif defined(USE_SELECT) && !defined(__BEOS__)
+#elif defined(USE_SELECT)
 			fd_set writefds;
 			FD_ZERO(&writefds);
 			FD_SET(((_TCPsocket*)sock)->channel, &writefds);
@@ -457,18 +423,9 @@ static SOCKET_STATE send_buffer(TCPsocket sock, std::vector<char>& buf, int in_s
 				retval = select(((_TCPsocket*)sock)->channel + 1, NULL, &writefds, NULL, &tv);
 			} while(retval == -1 && errno == EINTR);
 
-			if(retval > 0)
+			if (retval > 0) {
 				continue;
-#elif defined(__BEOS__)
-			if(res > 0) {
-				// some data was sent, reset timeout
-				timeout = 60000;
-			} else {
-				// sleep for 100 milliseconds
-				SDL_Delay(100);
-				timeout -= 100;
 			}
-			continue;
 #endif
 		}
 
@@ -498,7 +455,7 @@ struct close_fd {
 typedef util::scoped_resource<int, close_fd> scoped_fd;
 #endif
 
-static SOCKET_STATE send_file(buffer* buf)
+static SOCKET_STATE send_file(tsock& info, network::buffer* buf)
 {
 	size_t upto = 0;
 	size_t filesize = file_size(buf->config_error);
@@ -521,7 +478,7 @@ static SOCKET_STATE send_file(buffer* buf)
 
 		SOCKET_STATE result;
 		if (poll_res > 0)
-			result = send_buffer(buf->sock, buffer, 4);
+			result = send_buffer(info, buf->sock, buffer, 4);
 		else
 			result = SOCKET_ERRORED;
 
@@ -574,7 +531,7 @@ static SOCKET_STATE send_file(buffer* buf)
 	buf->raw_buffer.resize(std::min<size_t>(1024*8, filesize));
 	SDLNet_Write32(filesize,&buf->raw_buffer[0]);
 	scoped_istream file_stream = istream_file(buf->config_error);
-	SOCKET_STATE result = send_buffer(buf->sock, buf->raw_buffer, 4);
+	SOCKET_STATE result = send_buffer(info, buf->raw_buffer, 4);
 
 	if (!file_stream->good()) {
 		ERR_NW << "send_file: Couldn't open file " << buf->config_error << "\n";
@@ -590,7 +547,7 @@ static SOCKET_STATE send_file(buffer* buf)
 		send_size = file_stream->gcount();
 		upto += send_size;
 		// send data to socket
-		result = send_buffer(buf->sock, buf->raw_buffer, send_size);
+		result = send_buffer(info, buf->raw_buffer, send_size);
 		if (result != SOCKET_READY)
 		{
 			break;
@@ -609,102 +566,6 @@ static SOCKET_STATE send_file(buffer* buf)
 	return result;
 }
 
-static SOCKET_STATE receive_buf(TCPsocket sock, std::vector<char>& buf)
-{
-	char num_buf[4] ALIGN_4;
-	bool res = receive_with_timeout(sock,num_buf,4,false);
-
-	if(!res) {
-		return SOCKET_ERRORED;
-	}
-
-	const int len = SDLNet_Read32(reinterpret_cast<void*>(num_buf));
-
-	if(len < 1 || len > 100000000) {
-		return SOCKET_ERRORED;
-	}
-
-	buf.resize(len);
-	char* beg = &buf[0];
-	const char* const end = beg + len;
-
-	if (!raw_data_only)
-	{
-		const threading::lock lock(*stats_mutex);
-		transfer_stats[sock].second.fresh_current(len);
-	}
-
-	res = receive_with_timeout(sock, beg, end - beg, true);
-	if(!res) {
-		return SOCKET_ERRORED;
-	}
-
-	return SOCKET_READY;
-}
-
-static SOCKET_STATE receive_http_buf(TCPsocket sock, std::vector<char>& buf)
-{
-	const int support_max_header_size = 1024;
-	int read_size, total_size, ret_size;
-
-	size_t end_header;
-	std::string header;
-	header.resize(support_max_header_size);
-	read_size = 0;
-	{
-		const threading::lock lock(*stats_mutex);
-		transfer_stats[sock].second.fresh_current(support_max_header_size * 100);
-	}
-
-	do {
-		bool res = receive_with_timeout(sock, &header[read_size], support_max_header_size - read_size, true, 30000, 300000, &ret_size);
-		if (!res) {
-			return SOCKET_ERRORED;
-		}
-		if (!ret_size) {
-			// resumme can read header with continue.
-			return SOCKET_ERRORED;
-		}
-		read_size += ret_size;
-		end_header = header.find("\r\n\r\n");
-	} while (end_header == std::string::npos);
-
-	int content_length = 0;
-	size_t start = header.find("Content-Length:", 0);
-	if (start != std::string::npos && start < end_header) {
-		start += 15;
-		size_t end = header.find("\r\n", start);
-		if (end != std::string::npos && end <= end_header) {
-			std::string str = header.substr(start, end - start);
-			content_length = lexical_cast<int>(str);
-		}
-	}
-	
-	total_size = end_header + 4 + content_length;
-	if (total_size < read_size) {
-		// invalid http response
-		// return SOCKET_ERRORED;
-
-		buf.resize(read_size);
-		memcpy(&buf[0], &header[0], read_size);
-		return SOCKET_READY;
-	}
-	buf.resize(total_size);
-	memcpy(&buf[0], &header[0], read_size);
-	if  (total_size - read_size > 0) {
-		{
-			const threading::lock lock(*stats_mutex);
-			transfer_stats[sock].second.fresh_current(total_size);
-			transfer_stats[sock].second.transfer(read_size);
-		}
-
-		bool res = receive_with_timeout(sock, &buf[read_size], total_size - read_size, true);
-		if (!res) {
-			return SOCKET_ERRORED;
-		}
-	}
-
-	return SOCKET_READY;
 }
 
 inline void check_socket_result(TCPsocket& sock, SOCKET_STATE& result)
@@ -723,13 +584,13 @@ static int process_queue(void* shard_num)
 {
 	size_t shard = static_cast<size_t>(reinterpret_cast<uintptr_t>(shard_num));
 	DBG_NW << "thread started...\n";
-	for(;;) {
+	for (;;) {
 
 		//if we find a socket to send data to, sent_buf will be non-NULL. If we find a socket
 		//to receive data from, sent_buf will be NULL. 'sock' will always refer to the socket
 		//that data is being sent to/received from
 		TCPsocket sock = NULL;
-		buffer* sent_buf = 0;
+		network::buffer* sent_buf = 0;
 
 		{
 			const threading::lock lock(*shard_mutexes[shard]);
@@ -747,13 +608,27 @@ static int process_queue(void* shard_num)
 					return 0;
 			}
 			waiting_threads[shard]++;
-			for(;;) {
+			for (;;) {
 
 				buffer_set::iterator itor = outgoing_bufs[shard].begin(), itor_end = outgoing_bufs[shard].end();
-				for(; itor != itor_end; ++itor) {
+				for (; itor != itor_end; ++itor) {
 					socket_state_map::iterator lock_it = sockets_locked[shard].find((*itor)->sock);
 					assert(lock_it != sockets_locked[shard].end());
-					if(lock_it->second == SOCKET_READY) {
+					if (lock_it->second == SOCKET_READY) {
+/*
+						has BUG. below lobby->get_connection_details2 maybe not find!
+						tsock& info = lobby->get_connection_details2((*itor)->sock);
+						if (managed && info.msg_send_gap) {
+							Uint32 now = SDL_GetTicks();
+							if (now < info.msg_send_time + info.msg_send_gap) {
+								// delay send. send buf is order by time, must send base this order. use break(not continue)!
+								posix_print("#%i, process_queue, delay send msg, msg_send_time: %i, managed: %s!\n", 
+									SDL_GetTicks(), info.msg_send_time, managed? "true": "false");
+								break;
+							}
+							info.msg_send_time = now;
+						}
+*/
 						lock_it->second = SOCKET_LOCKED;
 						sent_buf = *itor;
 						sock = sent_buf->sock;
@@ -762,9 +637,9 @@ static int process_queue(void* shard_num)
 					}
 				}
 
-				if(sock == NULL) {
+				if (sock == NULL) {
 					receive_list::iterator itor = pending_receives[shard].begin(), itor_end = pending_receives[shard].end();
-					for(; itor != itor_end; ++itor) {
+					for (; itor != itor_end; ++itor) {
 						socket_state_map::iterator lock_it = sockets_locked[shard].find(*itor);
 						assert(lock_it != sockets_locked[shard].end());
 						if(lock_it->second == SOCKET_READY) {
@@ -776,22 +651,39 @@ static int process_queue(void* shard_num)
 					}
 				}
 
-				if(sock != NULL) {
+				if (sock != NULL) {
 					break;
 				}
 
-				if(managed == false) {
-					DBG_NW << "worker thread exiting...\n";
+				if (managed == false) {
+					posix_print("worker thread exiting...\n");
 					waiting_threads[shard]--;
 					to_clear[shard].push_back(threading::get_current_thread_id());
 					return 0;
 				}
 
-				cond[shard]->wait(*shard_mutexes[shard]); // temporarily release the mutex and wait for a buffer
+				// if (outgoing_bufs[shard].empty()) {
+					// no desire send buf, wait!
+				if (true) {
+					{
+						// posix_print("#%i, process_queue, before wait\n", SDL_GetTicks());
+					}
+
+					cond[shard]->wait(*shard_mutexes[shard]); // temporarily release the mutex and wait for a buffer
+
+					{
+						// posix_print("#%i, process_queue, after wait\n", SDL_GetTicks());
+					}
+				} else {
+					// exist delay send buf. delay a short time!
+					SDL_mutexV(shard_mutexes[shard]->m_);
+					SDL_Delay(10);
+					SDL_mutexP(shard_mutexes[shard]->m_);
+				}
 			}
 			waiting_threads[shard]--;
 			// if we are the last thread in the pool, create a new one
-			if(!waiting_threads[shard] && managed == true) {
+			if (!waiting_threads[shard] && managed == true) {
 				// max_threads of 0 is unlimited
 				if(!max_threads || max_threads >threads[shard].size()) {
 					threading::thread * tmp = new threading::thread(process_queue,shard_num);
@@ -801,45 +693,40 @@ static int process_queue(void* shard_num)
 		}
 
 		assert(sock);
-		bool xmit_http_data = network::get_connection_xmit_http_data(sock);
 
+		tsock& info = lobby->get_connection_details2(sock);
 		DBG_NW << "thread found a buffer...\n";
 
 		SOCKET_STATE result = SOCKET_READY;
 		std::vector<char> buf;
 
-		if(sent_buf) {
-
- 			if(!sent_buf->config_error.empty())
- 			{
+		if (sent_buf) {
+ 			if (!sent_buf->config_error.empty()) {
  				// We have file to send over net
- 				result = send_file(sent_buf);
+ 				result = send_file(info, sent_buf);
 			} else {
-				if(sent_buf->raw_buffer.empty()) {
+				if (sent_buf->raw_buffer.empty()) {
 					const std::string &value = sent_buf->stream.str();
-					make_network_buffer(value.c_str(), value.size(), sent_buf->raw_buffer);
+					network::make_network_buffer(value.c_str(), value.size(), sent_buf->raw_buffer);
 				}
 
-				result = send_buffer(sent_buf->sock, sent_buf->raw_buffer);
+				result = network::send_buffer(info, sent_buf->raw_buffer, sent_buf->raw_buffer.size());
 			}
 			delete sent_buf;
 		} else {
-			if (!xmit_http_data) {
-				result = receive_buf(sock,buf);
-			} else {
-				result = receive_http_buf(sock,buf);
-			}
+			result = info.receive_buf(buf);
 		}
 
-		if(result != SOCKET_READY || buf.empty())
-		{
+		if (result != SOCKET_READY || buf.empty()) {
+			// if it is send result in, buf.empty() is equal true. at same time, result == SOCKET_READY.
+			// so if send, must enter here.
 			check_socket_result(sock,result);
-		       	continue;
+		    continue;
 		}
 		//if we received data, add it to the queue
-		buffer* received_data = new buffer(sock);
+		network::buffer* received_data = new network::buffer(sock);
 
-		if (xmit_http_data || raw_data_only) {
+		if (info.raw_data_only) {
 			received_data->raw_buffer.swap(buf);
 		} else {
 			std::string buffer(buf.begin(), buf.end());
@@ -862,7 +749,7 @@ static int process_queue(void* shard_num)
 	// unreachable
 }
 
-} //anonymous namespace
+// } //anonymous namespace
 
 namespace network_worker_pool
 {
@@ -875,7 +762,7 @@ manager::manager(size_t p_min_threads,size_t p_max_threads) : active_(!managed)
 			shard_mutexes[i] = new threading::mutex();
 			cond[i] = new threading::condition();
 		}
-		stats_mutex = new threading::mutex();
+		network::stats_mutex = new threading::mutex();
 		received_mutex = new threading::mutex();
 
 		min_threads = p_min_threads;
@@ -904,11 +791,11 @@ manager::~manager()
 
  			cond[shard]->notify_all();
 
-			for(std::map<Uint32,threading::thread*>::const_iterator i = threads[shard].begin(); i != threads[shard].end(); ++i) {
+			for (std::map<Uint32,threading::thread*>::const_iterator i = threads[shard].begin(); i != threads[shard].end(); ++i) {
 
-				DBG_NW << "waiting for thread " << i->first << " to exit...\n";
+				posix_print("waiting for thread %i to exit...\n", i->first);
 				delete i->second;
-				DBG_NW << "thread exited...\n";
+				posix_print("thread exited...\n");
 			}
 
 			// Condition variables must be deleted first as
@@ -925,15 +812,15 @@ manager::~manager()
  			shard_mutexes[shard] = NULL;
  		}
 
-		delete stats_mutex;
+		delete network::stats_mutex;
 		delete received_mutex;
-		stats_mutex = 0;
+		network::stats_mutex = 0;
 		received_mutex = 0;
 
 		for(int i = 0; i != NUM_SHARDS; ++i) {
 			sockets_locked[i].clear();
 		}
-		transfer_stats.clear();
+		network::transfer_stats.clear();
 
 		DBG_NW << "exiting manager::~manager()\n";
 	}
@@ -974,6 +861,9 @@ void receive_data(TCPsocket sock)
 
 		socket_state_map::const_iterator i = sockets_locked[shard].insert(std::pair<TCPsocket,SOCKET_STATE>(sock,SOCKET_READY)).first;
 		if(i->second == SOCKET_READY || i->second == SOCKET_ERRORED) {
+			{
+				// posix_print("#%i, main, receive_data, waill notify_one\n", SDL_GetTicks());
+			}
 			cond[shard]->notify_one();
 		}
 	}
@@ -981,33 +871,33 @@ void receive_data(TCPsocket sock)
 
 TCPsocket get_received_data(TCPsocket sock, config& cfg, network::bandwidth_in_ptr& bandwidth_in)
 {
-	assert(!raw_data_only);
+	assert(sock);
 	const threading::lock lock_received(*received_mutex);
 	received_queue::iterator itor = received_data_queue.begin();
-	for(; itor != received_data_queue.end(); ++itor) {
+	for (; itor != received_data_queue.end(); ++itor) {
 		const TCPsocket res = (*itor)->sock;
 		if (sock != NULL) {
 			if (res == sock) {
 				break;
 			}
-		} else if (!network::get_connection_xmit_http_data(res)) {
+		} else if (!lobby->get_connection_details2(res).raw_data_only) {
 			break;
 		}
 	}
 
-	if(itor == received_data_queue.end()) {
+	if (itor == received_data_queue.end()) {
 		return NULL;
 	} else if (!(*itor)->config_error.empty()){
 		// throw the error in parent thread
 		std::string error = (*itor)->config_error;
-		buffer* buf = *itor;
+		network::buffer* buf = *itor;
 		received_data_queue.erase(itor);
 		delete buf;
 		throw config::error(error);
 	} else {
 		cfg.swap((*itor)->config_buf);
 		const TCPsocket res = (*itor)->sock;
-		buffer* buf = *itor;
+		network::buffer* buf = *itor;
 		bandwidth_in.reset(new network::bandwidth_in((*itor)->raw_buffer.size()));
 		received_data_queue.erase(itor);
 		delete buf;
@@ -1015,26 +905,30 @@ TCPsocket get_received_data(TCPsocket sock, config& cfg, network::bandwidth_in_p
 	}
 }
 
-TCPsocket get_received_data(std::vector<char>& out)
+TCPsocket get_received_data(TCPsocket sock, std::vector<char>& out)
 {
+	assert(sock);
 	const threading::lock lock_received(*received_mutex);
 	if(received_data_queue.empty()) {
 		return NULL;
 	}
 	received_queue::iterator itor = received_data_queue.begin();
-	if (!raw_data_only) {
-		for(; itor != received_data_queue.end(); ++itor) {
-			const TCPsocket res = (*itor)->sock;
-			if (network::get_connection_xmit_http_data(res)) {
+	for (; itor != received_data_queue.end(); ++itor) {
+		const TCPsocket res = (*itor)->sock;
+		if (sock != NULL) {
+			if (res == sock) {
 				break;
 			}
+		} else if (lobby->get_connection_details2(res).raw_data_only) {
+			break;
 		}
 	}
+
 	if (itor == received_data_queue.end()) {
 		return NULL;
 	}
 
-	buffer* buf = *itor;
+	network::buffer* buf = *itor;
 	received_data_queue.erase(itor);
 	out.swap(buf->raw_buffer);
 	const TCPsocket res = buf->sock;
@@ -1042,52 +936,11 @@ TCPsocket get_received_data(std::vector<char>& out)
 	return res;
 }
 
-static void queue_buffer(TCPsocket sock, buffer* queued_buf)
-{
-	const size_t shard = get_shard(sock);
-	const threading::lock lock(*shard_mutexes[shard]);
-	outgoing_bufs[shard].push_back(queued_buf);
-	socket_state_map::const_iterator i = sockets_locked[shard].insert(std::pair<TCPsocket,SOCKET_STATE>(sock,SOCKET_READY)).first;
-	if(i->second == SOCKET_READY || i->second == SOCKET_ERRORED) {
-		cond[shard]->notify_one();
-	}
-
-}
-
-void queue_raw_data(TCPsocket sock, const char* buf, int len)
-{
-	buffer* queued_buf = new buffer(sock);
-	assert(*buf == 31);
-	make_network_buffer(buf, len, queued_buf->raw_buffer);
-	queue_buffer(sock, queued_buf);
-}
-
-void queue_http_data(TCPsocket sock, const char* buf, int len)
-{
-	buffer* queued_buf = new buffer(sock);
-	queued_buf->raw_buffer.resize(len);
-	memcpy(&queued_buf->raw_buffer[0], buf, len);
-	queue_buffer(sock, queued_buf);
-}
-
 void queue_file(TCPsocket sock, const std::string& filename)
 {
- 	buffer* queued_buf = new buffer(sock);
+ 	network::buffer* queued_buf = new network::buffer(sock);
  	queued_buf->config_error = filename;
- 	queue_buffer(sock, queued_buf);
-}
-
-size_t queue_data(TCPsocket sock,const config& buf, const std::string& packet_type)
-{
-	DBG_NW << "queuing data...\n";
-
-	buffer* queued_buf = new buffer(sock);
-	output_to_buffer(sock, buf, queued_buf->stream);
-	const size_t size = queued_buf->stream.str().size();
-
-	network::add_bandwidth_out(packet_type, size);
-	queue_buffer(sock, queued_buf);
-	return size;
+	network::queue_buffer(sock, queued_buf);
 }
 
 namespace
@@ -1101,7 +954,7 @@ void remove_buffers(TCPsocket sock)
 		for(buffer_set::iterator i = outgoing_bufs[shard].begin(); i != outgoing_bufs[shard].end();) {
 			if ((*i)->sock == sock)
 			{
-				buffer* buf = *i;
+				network::buffer* buf = *i;
 				i = outgoing_bufs[shard].erase(i);
 				delete buf;
 			}
@@ -1117,7 +970,7 @@ void remove_buffers(TCPsocket sock)
 
 		for(received_queue::iterator j = received_data_queue.begin(); j != received_data_queue.end(); ) {
 			if((*j)->sock == sock) {
-				buffer *buf = *j;
+				network::buffer *buf = *j;
 				j = received_data_queue.erase(j);
 				delete buf;
 			} else {
@@ -1193,8 +1046,8 @@ TCPsocket detect_error()
 
 std::pair<network::statistics,network::statistics> get_current_transfer_stats(TCPsocket sock)
 {
-	const threading::lock lock(*stats_mutex);
-	return transfer_stats[sock];
+	const threading::lock lock(*network::stats_mutex);
+	return network::transfer_stats[sock];
 }
 
 } // network_worker_pool namespace

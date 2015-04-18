@@ -25,6 +25,8 @@
 static int run_async_operation(void* data)
 {
 	threading::async_operation_ptr op(*reinterpret_cast<threading::async_operation_ptr*>(data));
+
+	op->set_created(true);
 	op->run();
 
 	const threading::lock l(op->get_mutex());
@@ -141,6 +143,14 @@ bool condition::notify_all()
 	return true;
 }
 
+waiter::ACTION waiter::process(async_operation_ptr op)
+{
+	while (!op->created()) {
+		SDL_Delay(1);
+	}
+	return WAIT;
+}
+
 bool async_operation::notify_finished()
 {
 	finishedVar_ = true;
@@ -159,6 +169,7 @@ async_operation::RESULT async_operation::execute(async_operation_ptr this_ptr, w
 	//the thread needs access to the mutex before it terminates
 	{
 		const lock l(get_mutex());
+		// i cannot know why use below. Make a point, it can make delete this_ptr at main-thead, other not new-thread.
 		active_.push_back(this_ptr);
 
 		thread_.reset(new thread(run_async_operation,&this_ptr));

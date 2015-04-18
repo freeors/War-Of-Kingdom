@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include "wml_exception.hpp"
 #include "gettext.hpp"
+#include "serialization/parser.hpp"
 
 #include "win32x.h"
 #include "struct.h"
@@ -517,9 +518,39 @@ void editor::get_wml2bin_desc_from_wml(std::string& path)
 	return;
 }
 
-const config& generate_cfg(const config& data_cfg, const std::string& type)
+void reload_generate_cfg()
 {
-	BOOST_FOREACH (const config& c, data_cfg.child_range("generate")) {
+	generate_cfg.clear();
+	if (check_wok_root_folder(game_config::path)) {
+		game_config::config_cache& cache = game_config::config_cache::instance();
+		cache.clear_defines();
+
+		// topen_unicode_lock lock(true);
+		cache.get_config(game_config::path + "/data/generate.cfg", generate_cfg);
+	}
+}
+
+void reload_mod_configs()
+{
+	if (generate_cfg.empty()) {
+		reload_generate_cfg();
+	}
+
+	BOOST_FOREACH (const config& c, generate_cfg.child_range("generate")) {
+		const std::string& type = c["type"].str();
+		if (type == "mod") {
+			mod_configs.push_back(tmod_config(c));
+		}
+	}
+}
+
+const config& get_generate_cfg(const config& data_cfg, const std::string& type)
+{
+	if (generate_cfg.empty()) {
+		reload_generate_cfg();
+	}
+
+	BOOST_FOREACH (const config& c, generate_cfg.child_range("generate")) {
 		if (type == c["type"].str()) {
 			return c;
 		}

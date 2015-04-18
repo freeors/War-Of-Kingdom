@@ -323,7 +323,7 @@ private:
 
 void connection_recv_buf::poll()
 {
-	network::connection sock = network::receive_data(buf_);
+	network::connection sock = network::receive_data(buf_, lobby->http.conn());
 	if (sock != network::null_connection) {
 		cancel();
 	}
@@ -340,7 +340,7 @@ public:
 		join();
 	}
 
-	bool handle(tlobby::ttype type, const config& data);
+	bool handle(int tag, tsock::ttype type, const config& data);
 	void poll();
 	network::connection res() const { return res_; }
 private:
@@ -348,11 +348,11 @@ private:
 	network::connection res_;
 };
 
-bool connection_recv_cfg::handle(tlobby::ttype type, const config& data)
+bool connection_recv_cfg::handle(int tag, tsock::ttype type, const config& data)
 {
-	if (type == tlobby::t_data) {
+	if (type == tsock::t_data) {
 		data_ = data;
-		res_ = lobby.sock;
+		res_ = lobby->chat.conn();
 		return true;
 	}
 
@@ -428,6 +428,8 @@ private:
 
 connect_waiter::ACTION connect_waiter::process(threading::async_operation_ptr op)
 {
+	waiter::process(op);
+
 	try {
 		network_asio::connection_open conn(op);
 		gui2::tnetwork_transmission dlg(conn, msg_, "");
@@ -476,13 +478,14 @@ std::string form_receive_from_title()
 	return vgettext("Reading from $server...", i18n_symbols);
 }
 
-network::connection network_connect_dialog(display& disp, const std::string&, const std::string& hostname, int port, bool xmit_http_data, bool quiet)
+network::connection network_connect_dialog(display& disp, const std::string&, const std::string& hostname, int port, bool quiet)
 {
 	network::connection conn = network::null_connection;
 
 	connect_waiter waiter(disp, form_connect_to_title());
 	try {
-		conn = network::connect(hostname, port, xmit_http_data, false, waiter);
+		network::connect(lobby->http, hostname, port, waiter);
+		conn = lobby->http.conn();
 	} catch (network::error& e) {
 		std::string err = e.message;
 		if (e.message.empty()) {

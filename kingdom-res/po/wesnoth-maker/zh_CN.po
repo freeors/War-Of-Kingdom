@@ -6,9 +6,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
-"POT-Creation-Date: 2014-11-29 21:58+0800\n"
-"PO-Revision-Date: 2014-11-29 22:11+0800\n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"POT-Creation-Date: 2015-03-03 14:45+0800\n"
+"PO-Revision-Date: 2015-03-03 14:46+0800\n"
+"Last-Translator: \n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -862,19 +862,19 @@ msgstr "添加道路"
 
 #: DlgCampaignProc.cpp:6692 DlgCampaignProc.cpp:6719 DlgCoreProc.cpp:3089
 #: DlgHEditorProc.cpp:1383 animation.cpp:2271 book.cpp:943 event.cpp:5476
-#: event.cpp:8710 feature.cpp:698 main.cpp:851 noble.cpp:561 utype.cpp:4151
+#: event.cpp:8710 feature.cpp:698 main.cpp:854 noble.cpp:561 utype.cpp:4151
 msgid "Edit..."
 msgstr "编辑..."
 
 #: DlgCampaignProc.cpp:6693 DlgCampaignProc.cpp:6720 DlgCampaignProc.cpp:6742
 #: DlgCoreProc.cpp:3090 DlgHEditorProc.cpp:1389 animation.cpp:2274
-#: book.cpp:944 event.cpp:5477 event.cpp:8711 feature.cpp:699 main.cpp:852
+#: book.cpp:944 event.cpp:5477 event.cpp:8711 feature.cpp:699 main.cpp:855
 #: noble.cpp:562 utype.cpp:4152
 msgid "Delete..."
 msgstr "删除..."
 
 #: DlgCampaignProc.cpp:6718 DlgCampaignProc.cpp:6740 DlgCoreProc.cpp:3088
-#: DlgHEditorProc.cpp:1382 main.cpp:850 utype.cpp:4150
+#: DlgHEditorProc.cpp:1382 main.cpp:853 utype.cpp:4150
 msgid "Add..."
 msgstr "添加..."
 
@@ -894,7 +894,7 @@ msgstr "战役ID（一旦设置，将来不能修改）"
 msgid "First scenario ID(May modify in future)"
 msgstr "第一关卡ID（将来能修改）"
 
-#: DlgCampaignProc.cpp:6979 DlgCampaignProc.cpp:7091 main.cpp:840
+#: DlgCampaignProc.cpp:6979 DlgCampaignProc.cpp:7091 main.cpp:843
 msgid "New"
 msgstr "新建"
 
@@ -935,7 +935,7 @@ msgid ""
 "Do you want to delete scenario: \"$scenario\" of campaign: \"$campaign\"?"
 msgstr "你想删除“$campaign”战役的“$scenario”关卡吗？"
 
-#: DlgCampaignProc.cpp:7285 DlgDDescProc.cpp:340 DlgDDescProc.cpp:364
+#: DlgCampaignProc.cpp:7285 DlgDDescProc.cpp:356 DlgDDescProc.cpp:380
 #: DlgHEditorProc.cpp:1092 animation.cpp:1967 animation.cpp:2151 book.cpp:648
 #: event.cpp:9078 utype.cpp:3538
 msgid "Confirm delete"
@@ -961,7 +961,7 @@ msgstr "错误值"
 msgid "Side"
 msgstr ""
 
-#: DlgCampaignProc.cpp:7396 DlgSyncProc.cpp:193
+#: DlgCampaignProc.cpp:7396 DlgSyncProc.cpp:191
 msgid "Status"
 msgstr "状态"
 
@@ -1346,54 +1346,62 @@ msgstr ""
 msgid "Edit treasure"
 msgstr "编辑宝物"
 
-#: DlgDDescProc.cpp:198
+#: DlgDDescProc.cpp:200
 msgid "\"$directory\" isn't valid resource directory, please select again"
 msgstr "“$directory”不是有效资源包目录，请重新选择"
 
-#: DlgDDescProc.cpp:218
+#: DlgDDescProc.cpp:220
 msgid "Do you want to extract release package to \"C:\\kingdom-ins\"?"
 msgstr "你想提取发布包到“C:\\kingdom-ins”吗？"
 
-#: DlgDDescProc.cpp:220 DlgDDescProc.cpp:238 DlgDDescProc.cpp:262
-#: DlgDDescProc.cpp:279
+#: DlgDDescProc.cpp:222 DlgDDescProc.cpp:240 DlgDDescProc.cpp:270
+#: DlgDDescProc.cpp:294
 msgid "Confirm generate"
 msgstr "确认生成"
 
-#: DlgDDescProc.cpp:226
+#: DlgDDescProc.cpp:227
+msgid "Success"
+msgstr ""
+
+#: DlgDDescProc.cpp:227
+msgid "Fail"
+msgstr ""
+
+#: DlgDDescProc.cpp:228
 msgid "Extract release package from \"$src\" to \"C:\\kingdom-ins\", $result!"
 msgstr "从“$src”提取发布包到“C:\\kingdom-ins”，$result！"
 
-#: DlgDDescProc.cpp:236
+#: DlgDDescProc.cpp:238
 msgid "Do you want to extract Rose package to $dst?"
 msgstr "你想提取Rose包到“$dst”吗？"
 
-#: DlgDDescProc.cpp:244
+#: DlgDDescProc.cpp:246
 msgid "Extract Rose package from \"$src\" to \"$dst\", $result!"
 msgstr "从“$src”提取Rose包到“$dst”，$result！"
 
-#: DlgDDescProc.cpp:260
-msgid "Do you want to generate star resource package to $mod_res_path?"
-msgstr "你想提取星光大道资源包到“$mod_res_path”吗？"
+#: DlgDDescProc.cpp:268
+msgid "Do you want to generate $mod resource package to $mod_res_path?"
+msgstr "你想提取$mod资源包到“$mod_res_path”吗？"
 
-#: DlgDDescProc.cpp:270
+#: DlgDDescProc.cpp:278
 msgid ""
-"Generate star resource package from \"$src1\" and \"$src2\" to \"$dst\", "
+"Generate $mod resource package from \"$src1\" and \"$src2\" to \"$dst\", "
 "$result!"
-msgstr "从“$src1”、“$src2”共同生成星光大道资源包到“$dst”，$result！"
+msgstr "从“$src1”、“$src2”共同生成$mod资源包到“$dst”，$result！"
 
-#: DlgDDescProc.cpp:277
-msgid "Do you want to extract star different files to $mod_patch_path?"
-msgstr "你想提取星光大道区别文件到“$mod_patch_path”吗？"
+#: DlgDDescProc.cpp:292
+msgid "Do you want to extract $mod different files to $mod_patch_path?"
+msgstr "你想提取$mod区别文件到“$mod_patch_path”吗？"
 
-#: DlgDDescProc.cpp:286
-msgid "Extract star different files from \"$src\" to \"$dst\", $result!"
-msgstr "从“$src”提取星光大道区别文件到“$dst”，$result！"
+#: DlgDDescProc.cpp:301
+msgid "Extract $mod different files from \"$src\" to \"$dst\", $result!"
+msgstr "从“$src”提取$mod区别文件到“$dst”，$result！"
 
-#: DlgDDescProc.cpp:338
+#: DlgDDescProc.cpp:354
 msgid "Do you want to delete file: \"$file\" and directory: \"$directory\"?"
 msgstr "你想删除文件：“$file”，以及目录“$directory”？"
 
-#: DlgDDescProc.cpp:362
+#: DlgDDescProc.cpp:378
 msgid "Will generate non-sync, do you want to only delete file: \"$file\"?"
 msgstr "将产生不同步，你想只删除文件：“$file”吗？"
 
@@ -1513,19 +1521,19 @@ msgid ""
 "manually."
 msgstr "提取$hero并添加成功！为完整，你需要手动编辑wesnoth-hero.po。"
 
-#: DlgSyncProc.cpp:164
+#: DlgSyncProc.cpp:162
 msgid "Need restart if changed"
 msgstr "如果改变需要重运行"
 
-#: DlgSyncProc.cpp:172
+#: DlgSyncProc.cpp:170
 msgid "File name"
 msgstr "文件名"
 
-#: DlgSyncProc.cpp:181 DlgSyncProc.cpp:187
+#: DlgSyncProc.cpp:179 DlgSyncProc.cpp:185
 msgid "Checksum"
 msgstr "校验和"
 
-#: DlgSyncProc.cpp:199
+#: DlgSyncProc.cpp:197
 msgid "SHA1"
 msgstr "SHA1"
 
@@ -1811,27 +1819,27 @@ msgstr "距离"
 msgid "Icon"
 msgstr "图标"
 
-#: editor.cpp:612 editor.cpp:721
+#: editor.cpp:629 editor.cpp:745
 msgid "File"
 msgstr "文件"
 
-#: editor.cpp:614 editor.cpp:628 editor.cpp:669 editor.cpp:721
+#: editor.cpp:631 editor.cpp:652 editor.cpp:693 editor.cpp:745
 msgid "Directory"
 msgstr "目录"
 
-#: editor.cpp:616
+#: editor.cpp:633
 msgid "Files"
 msgstr "多文件"
 
-#: editor.cpp:630 editor.cpp:671 editor.cpp:723
+#: editor.cpp:654 editor.cpp:695 editor.cpp:747
 msgid "Delete $type, from $dst fail!"
 msgstr ""
 
-#: editor.cpp:688
+#: editor.cpp:712
 msgid "Copy $type, from $src to $dst fail!"
 msgstr "复制“$src”到“$dst”失败！"
 
-#: editor.cpp:757
+#: editor.cpp:781
 msgid "Delete: $name fail!"
 msgstr "删除：$name 失败"
 
@@ -2129,7 +2137,7 @@ msgstr "修改势力"
 
 #: event.cpp:6326 event.cpp:6332 event.cpp:6355 event.cpp:6547 event.cpp:7699
 #: event.cpp:8254 faction.cpp:843 faction.cpp:1087 feature.cpp:570
-#: main.cpp:828 main.cpp:833 main.cpp:846
+#: main.cpp:831 main.cpp:836 main.cpp:849
 msgid "Delete"
 msgstr "删除"
 
@@ -2165,7 +2173,7 @@ msgstr "消息"
 msgid "Defined variable(Right click popup menu)"
 msgstr "已定义变量（右键弹出菜单）"
 
-#: event.cpp:7701 faction.cpp:1089 main.cpp:835
+#: event.cpp:7701 faction.cpp:1089 main.cpp:838
 msgid "Delete all"
 msgstr "删除全部"
 
@@ -2365,31 +2373,31 @@ msgstr "提取发布包到“C:\\kingdom-ins”"
 msgid "Extract Rose package"
 msgstr "提取Rose包"
 
-#: main.cpp:810
+#: main.cpp:814
 msgid "Generate resource package to $mod_res_path"
 msgstr "生成资源包到“$mod_res_path”"
 
-#: main.cpp:811
+#: main.cpp:815
 msgid "Extract different files to $mod_patch_path"
 msgstr "提取差别文件到“$mod_patch_path”"
 
-#: main.cpp:821
+#: main.cpp:824
 msgid "WML format"
 msgstr "WML格式"
 
-#: main.cpp:826
+#: main.cpp:829
 msgid "Delete relative *.cfg at the same time"
 msgstr "同时删除相关配置文件"
 
-#: main.cpp:842
+#: main.cpp:845
 msgid "Integrate"
 msgstr "图文混编"
 
-#: main.cpp:844
+#: main.cpp:847
 msgid "Explorer"
 msgstr "浏览"
 
-#: main.cpp:856
+#: main.cpp:859
 msgid "Reset all to default"
 msgstr "全部恢复到默认"
 

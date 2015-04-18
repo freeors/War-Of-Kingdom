@@ -1,1 +1,1 @@
-kingdomd.exe -c "C:/Documents and Settings/ancientcc/My Documents/My Games/Kingdom0.1/lan_server.cfg" -t 2 -T 5"
+kingdomd.exe -c "C:\Users\Administrator\Documents\My Games\kingdom\lan_server.cfg" -t 2 -T 5"

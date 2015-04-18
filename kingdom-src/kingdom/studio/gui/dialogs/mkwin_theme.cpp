@@ -129,7 +129,11 @@ void tmkwin_theme::load_object_page(const unit_map& units)
 void tmkwin_theme::object_selected(twindow& window)
 {
 	tlistbox& list = find_widget<tlistbox>(&window, "object-list", false);
-	tgrid* grid = list.get_row_grid(list.get_selected_row());
+	int cursel = list.get_selected_row();
+	if (cursel < 0) {
+		return;
+	}
+	tgrid* grid = list.get_row_grid(cursel);
 
 	unit* u = reinterpret_cast<unit*>(grid->cookie());
 	controller_.select_unit(u);
@@ -176,7 +180,7 @@ void tmkwin_theme::fill_object_list(const unit_map& units)
 	if (list->get_item_count()) {
 		list->select_row(cursel);
 	}
-	list->invalidate_layout();
+	list->invalidate_layout(true);
 	// window.invalidate_layout();
 }
 

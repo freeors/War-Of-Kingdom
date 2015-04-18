@@ -954,7 +954,7 @@ void mkwin_controller::load_window()
 
 	config window_cfg;
 	if (browse_cfg) {
-		std::string initial = game_config::preferences_dir + "/editor/maps";
+		std::string initial = game_config::preferences_dir_utf8 + "/editor/maps";
 		gui2::tbrowse::tparam param(gui2::tbrowse::TYPE_FILE, true, initial, dgettext("wesnoth-lib", "Choose a Window to Open"));
 		param.extra = gui2::tbrowse::tentry(game_config::path + "/data/gui/default/window", _("gui/window"), "misc/dir-res.png");
 		gui2::tbrowse dlg(*gui_, param);
@@ -1052,7 +1052,7 @@ void mkwin_controller::load_window()
 void mkwin_controller::save_window(bool as)
 {
 	const unit* u = get_window();
-	std::string fname = game_config::preferences_dir + "/editor/maps/";
+	std::string fname = game_config::preferences_dir_utf8 + "/editor/maps/";
 	{
 		gui2::tbrowse::tparam param(gui2::tbrowse::TYPE_FILE, false, fname, dgettext("wesnoth-lib", "Choose a Window to Save"), dgettext("wesnoth-lib", "Save"));
 		param.extra = gui2::tbrowse::tentry(game_config::path + "/data/gui/default/window", _("gui/window"), "misc/dir-res.png");

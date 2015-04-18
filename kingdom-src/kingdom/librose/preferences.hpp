@@ -115,6 +115,24 @@ namespace preferences {
 	void set_developer(bool ison);
 	bool developer();
 
+	std::string nick();
+	void set_nick(const std::string& nick);
+
+	bool chat();
+	void set_chat(bool val);
+
+	std::string chat_person();
+	void set_chat_person(const std::string& person);
+
+	std::string chat_channel();
+	void set_chat_channel(const std::string& chanel);
+
+	std::string password();
+	void set_password(const std::string& password);
+
+	bool remember_password();
+	void set_remember_password(bool remember);
+
 	bool turbo();
 	void _set_turbo(bool ison);
 

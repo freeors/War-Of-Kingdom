@@ -5059,7 +5059,7 @@ public:
 		if (const unit_race *r = unit_types.find_race(race_id)) {
 			race_name = r->plural_name();
 		} else {
-			race_name = _ ("race^Miscellaneous");
+			race_name = _("race^Miscellaneous");
 		}
 		ss << _("Race: ");
 		ss << "<ref>dst='" << escape("..race_"+race_id) << "' text='" << escape(race_name) << "'</ref>";
@@ -5314,7 +5314,7 @@ void generate_races_sections(const config *help_cfg, section &sec, int level)
 		if (const unit_race *r = unit_types.find_race(*it)) {
 			title = r->plural_name();
 		} else {
-			title = _ ("race^Miscellaneous");
+			title = _("race^Miscellaneous");
 		}
 		section_cfg["title"] = title;
 
@@ -5361,7 +5361,7 @@ std::vector<topic> generate_unit_topics(const bool sort_generated, const std::st
 		race_description = r->description();
 		// if (description.empty()) description =  _("No description Available");
 	} else {
-		race_name = _ ("race^Miscellaneous");
+		race_name = _("race^Miscellaneous");
 		// description =  _("Here put the description of the Miscellaneous race");
 	}
 

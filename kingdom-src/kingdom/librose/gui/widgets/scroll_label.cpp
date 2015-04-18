@@ -64,7 +64,8 @@ void tscroll_label::set_label(const std::string& label)
 		}
 		widget->set_label(label);
 
-		content_resize_request();
+		// scroll_label hasn't linked_group widget, to save time, don't calcuate linked_group.
+		invalidate_layout(false);
 	}
 }
 
@@ -85,20 +86,50 @@ void tscroll_label::finalize_subclass()
 	lbl->set_can_wrap(true);
 }
 
+tpoint tscroll_label::calculate_best_size() const
+{
+	const twindow* window = get_window();
+	unsigned w = best_width_(window->variables());
+
+	unsigned maximum_width = settings::screen_width;
+	if (w > settings::screen_width) {
+		const tpoint vertical_scrollbar = scrollbar_size(*vertical_scrollbar_grid_, vertical_scrollbar_mode_);
+		maximum_width = w - settings::screen_width - vertical_scrollbar.x;
+	}
+
+	tlabel* label = dynamic_cast<tlabel*>(content_grid_->find("_label", false));
+
+	ttext_maximum_width_lock lock(*label, maximum_width);
+	return tscrollbar_container::calculate_best_size();
+}
+
+void tscroll_label::set_content_size(const tpoint& origin, const tpoint& desire_size)
+{
+	tlabel* label = dynamic_cast<tlabel*>(content_grid()->find("_label", false));
+	label->set_text_maximum_width(desire_size.x);
+
+	const tpoint actual_size = content_grid_->get_best_size();
+	bool changed = calculate_scrollbar(actual_size, desire_size);
+	if (changed) {
+		label->clear_label_size_cache();
+	}
+
+	const tpoint size(std::max(actual_size.x, desire_size.x), std::max(actual_size.y, desire_size.y));
+	tscrollbar_container::set_content_size(origin, size);
+}
+
+bool tscroll_label::content_empty() const
+{
+	const tlabel* label = dynamic_cast<const tlabel*>(content_grid()->find("_label", false));
+	return label->label().empty();
+}
+
 void tscroll_label::set_text_editable(bool editable)
 {
 	if (content_grid()) {
 		tlabel* widget = find_widget<tlabel>(content_grid(), "_label", false, true);
 		widget->set_text_editable(editable);
 	}
-}
-
-tpoint tscroll_label::pre_request_fix_width(const unsigned maximum_content_grid_width)
-{
-	tlabel* label = dynamic_cast<tlabel*>(content_grid()->find("_label", false));
-	label->set_text_maximum_width(maximum_content_grid_width - label->config()->text_extra_width);
-
-	return content_grid()->calculate_best_size();
 }
 
 bool tscroll_label::exist_anim()

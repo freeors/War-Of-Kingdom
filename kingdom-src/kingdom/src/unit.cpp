@@ -3048,6 +3048,11 @@ void unit::new_turn_core()
 	// attacks_left_ = max_attacks_;
 	set_state(ustate_tag::UNCOVERED, false);
 	set_state(ustate_tag::FORMATION_ATTACKED, false);
+
+	// below changed movement_, require draw.
+	if (drawn_ticks_ != HIDDEN_TICKS) {
+		drawn_ticks_ = NONE_TICKS;
+	}
 }
 
 bool unit::new_turn(play_controller& controller, int)

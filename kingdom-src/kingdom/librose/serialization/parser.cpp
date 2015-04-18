@@ -31,6 +31,7 @@
 #include "serialization/preprocessor.hpp"
 #include "serialization/tokenizer.hpp"
 #include "serialization/string_utils.hpp"
+#include "help.hpp"
 
 #include <stack>
 
@@ -328,16 +329,8 @@ void parser::error(const std::string& error_type)
 	i18n_symbols["value"] = tok_->current_token().value;
 	std::stringstream ss;
 	ss << tok_->get_start_line() << " " << tok_->get_file();
-#ifdef DEBUG
-	i18n_symbols["previous_value"] = tok_->previous_token().value;
-	throw config::error(
-		lineno_string(i18n_symbols, ss.str(),
-		              N_("$error, value '$value', previous '$previous_value' at $pos")));
-#else
-	throw config::error(
-		lineno_string(i18n_symbols, ss.str(),
-		              N_("$error, value '$value' at $pos")));
-#endif
+
+	throw help::parse_error(lineno_string(i18n_symbols, ss.str(), N_("$error, value '$value' at $pos")));
 }
 
 } // end anon namespace
@@ -463,8 +456,9 @@ void write_close_child(std::ostream &out, const std::string &child, unsigned int
 
 static void write_internal(config const &cfg, std::ostream &out, std::string& textdomain, size_t tab = 0)
 {
-	if (tab > max_recursion_levels)
+	if (tab > max_recursion_levels) {
 		throw config::error("Too many recursion levels in config write");
+	}
 
 	BOOST_FOREACH (const config::attribute &i, cfg.attribute_range()) {
 		write_key_val(out, i.first, i.second, tab, textdomain);

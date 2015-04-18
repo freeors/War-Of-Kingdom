@@ -34,15 +34,13 @@ struct tbuilder_report
 	tscrollbar_container::tscrollbar_mode vertical_scrollbar_mode;
 	tscrollbar_container::tscrollbar_mode horizontal_scrollbar_mode;
 
-	/** The width of the widget. */
-	tformula<unsigned> width;
-
-	/** The height of the widget. */
-	tformula<unsigned> height;
-
 	int unit_width;
 	int unit_height;
 	int gap;
+
+	/** The width of the widget. */
+	std::string width;
+	std::string height;
 };
 
 } // namespace implementation

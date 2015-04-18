@@ -304,9 +304,10 @@ void tnoble2::set_internal(twindow& window, const tnoble& noble)
 
 void tnoble2::treasure_selected(twindow& window)
 {
-	noble_list_index_ = treasure_list_->get_selected_row();
+	const int cursel = treasure_list_->get_selected_row();
 
-	if (human_list_->get_item_count()) {
+	if (cursel >= 0 && human_list_->get_item_count()) {
+		noble_list_index_ = cursel;
 		const hero& h = heros_[human_pairs_[human_index_].first];
 		refresh_3button(window, unit_types.noble(noble_list_index_2_noble_index()), h);
 	}
@@ -314,10 +315,13 @@ void tnoble2::treasure_selected(twindow& window)
 
 void tnoble2::human_selected(twindow& window)
 {
-	human_index_ = human_list_->get_selected_row();
+	const int cursel = human_list_->get_selected_row();
 
-	const hero& h = heros_[human_pairs_[human_index_].first];
-	refresh_3button(window, unit_types.noble(noble_list_index_2_noble_index()), h);
+	if (cursel >= 0) {
+		human_index_ = cursel;
+		const hero& h = heros_[human_pairs_[human_index_].first];
+		refresh_3button(window, unit_types.noble(noble_list_index_2_noble_index()), h);
+	}
 }
 
 void tnoble2::refresh_3button(twindow& window, const tnoble& noble, const hero& h)

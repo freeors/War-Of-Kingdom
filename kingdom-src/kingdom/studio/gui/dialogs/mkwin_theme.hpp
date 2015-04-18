@@ -27,6 +27,7 @@ class unit_map;
 namespace gui2 {
 
 class treport;
+class tscrollbar_panel;
 
 class tmkwin_theme: public ttheme
 {
@@ -73,7 +74,6 @@ private:
 
 private:
 	mkwin_controller& controller_;
-
 };
 
 } //end namespace gui2

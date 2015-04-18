@@ -54,12 +54,14 @@ private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */
 	virtual const std::string& window_id() const;
 
+	std::string generate_summary(const std::string& game, const config& cfg_summary) const;
+
 	void list_item_clicked(twindow& window);
 	void delete_button_callback(twindow& window);
 	void xmit_button_callback(twindow& window);
 
 	void display_savegame(twindow& window);
-	void evaluate_summary_string(std::stringstream& str, const config& cfg_summary);
+	void evaluate_summary_string(std::stringstream& str, const config& cfg_summary) const;
 	void fill_game_list(twindow& window, std::vector<savegame::save_info>& games);
 
 private:

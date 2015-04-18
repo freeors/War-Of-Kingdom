@@ -44,6 +44,7 @@ treport::treport()
 	, state_(ENABLED)
 	, unit_size_(0, 0)
 	, gap_(0)
+	, extendable_(false)
 	, content_layouted_(false)
 	, tabbar_(NULL)
 {
@@ -73,9 +74,13 @@ void treport::init_report(int unit_w, int unit_h, int gap)
 void treport::insert_child(twidget& widget, int at)
 {
 	if (!content_grid_->get_cols()) {
-		VALIDATE(w_ >= (unsigned)(unit_size_.x + gap_ + unit_size_.x), "Width of report must not less than 2*unit_w + gap_w!");
 		VALIDATE(get_horizontal_scrollbar_mode() == always_invisible, "Don't support horizontal scrollbar!");
 		extendable_ = get_vertical_scrollbar_mode() != always_invisible;
+		if (extendable_) {
+			// multi-report must use fixed size.
+			// in order to calculate cols, first require know w_, h_
+			VALIDATE(w_ >= (unsigned)(unit_size_.x + gap_ + unit_size_.x), "Width of report must not less than 2*unit_w + gap_w!");
+		}
 
 		content_grid_->init_report(unit_size_.x, unit_size_.y,gap_, extendable_);
 	}
@@ -91,7 +96,8 @@ void treport::replacement_children()
 {
 	content_grid_->replacement_children(unit_size_.x, unit_size_.y, gap_, extendable_);
 	if (extendable_) {
-		content_resize_request();
+		// it must be same-size, to save time, don't calcuate linked_group.
+		invalidate_layout(false);
 	}
 }
 
@@ -100,7 +106,8 @@ void treport::erase_children()
 	content_grid_->erase_children(unit_size_.x, unit_size_.y, gap_, extendable_);
 
 	if (extendable_) {
-		content_resize_request();
+		// it must be same-size, to save time, don't calcuate linked_group.
+		invalidate_layout(false);
 	}
 }
 
@@ -108,7 +115,8 @@ void treport::hide_children()
 {
 	content_grid_->hide_children(unit_size_.x, unit_size_.y, gap_, extendable_);
 	if (extendable_) {
-		content_resize_request();
+		// it must be same-size, to save time, don't calcuate linked_group.
+		invalidate_layout(false);
 	}
 }
 
@@ -154,17 +162,26 @@ tpoint treport::calculate_best_size() const
 	return result;
 }
 
-void treport::set_content_size(const tpoint& origin, const tpoint& size)
+void treport::set_content_size(const tpoint& origin, const tpoint& desire_size)
 {
 	const SDL_Rect& rect = content_grid_->fix_rect();
+	// multi-line report are both unit_size != 0 and fix_rect.
 	if (!unit_size_.x || !rect.w || !rect.h) {
-		if (!content_layouted_) {
+		// if valid, must be single line, and single line must not be horizontal bar.
+		content_grid_->twidget::place(origin, desire_size);
+		// if (!content_layouted_) {
 			if (tabbar_) {
-				tabbar_->replacement_children(size.x, size.y);
+				tabbar_->replacement_children();
+			} else {
+				content_grid_->replacement_children(unit_size_.x, unit_size_.y, gap_, extendable_);
 			}
-			content_layouted_ = true;
-		}
-		content_grid_->place(origin, size);
+			// content_layouted_ = true;
+		// }
+/*
+		// const tpoint actual_size = content_grid_->get_best_size();
+		// const tpoint size(std::max(actual_size.x, desire_size.x), std::max(actual_size.y, desire_size.y));
+		content_grid_->place(origin, desire_size);
+*/
 	}
 }
 
@@ -209,7 +226,7 @@ ttabbar::ttabbar(bool toggle, bool segment, const std::string& definition)
 	, segment_(segment)
 	, definition_(definition)
 	, start_(0)
-	, segment_childs_(1)
+	, segment_childs_(0)
 	, max_height_(0)
 	, previous_(NULL)
 	, stuff_widget_(NULL)
@@ -246,7 +263,10 @@ void ttabbar::validate_start()
 	gui2::tgrid::tchild* children = report_->content_grid()->children();
 	int childs = report_->content_grid()->children_vsize() - back_childs;
 
-	start_ -= start_ % segment_childs_;
+	if (segment_) {
+		// to segment_, start_ must be integer times of segment_childs_
+		start_ -= start_ % segment_childs_;
+	}
 	int n, tmp;
 	for (n = front_childs, tmp = 0; n < childs && tmp <= start_; n ++) {
 		if (get_visible2(children, n)) {
@@ -254,23 +274,84 @@ void ttabbar::validate_start()
 		}
 	}
 	while (start_ && tmp <= start_) {
-		start_ -= segment_childs_;
+		if (segment_) {
+			start_ -= segment_childs_;
+		} else {
+			start_ --;
+		}
 	}
+}
+
+int ttabbar::calculate_requrie_back_widgets() const
+{
+	VALIDATE(!segment_ && start_, "Must in !segment_ and (start_ != 0)");
+		
+	tgrid::tchild* children = report_->content_grid()->children();
+	int childs = report_->content_grid()->children_vsize() - back_childs;
+
+	int n = front_childs - 1, tmp = 0;
+	// 1. calculate n that crospond to start_.
+	do {
+		n ++;
+		if (get_visible2(children, n)) {
+			tmp ++;
+		}
+	} while (tmp != start_);
+
+
+	int grid_width = report_->content_grid_->get_width();
+	int additive_width = next_->fix_width();
+	int unit_w = report_->unit_size_.x;
+	int last_width = 0;
+
+	// 2. backward caculate how many widgets can hold?
+	for (tmp = 0, n --; n >= 0 && additive_width < grid_width; n --) {
+		if (!get_visible2(children, n)) {
+			continue;
+		}
+		twidget* widget = children[n].widget_;
+
+		if (!report_->unit_size_.x) {
+			unit_w = widget->get_best_size().x;
+		}
+		additive_width += unit_w + report_->gap_;
+		last_width = unit_w;
+		tmp ++;
+	}
+	if (tmp < start_) {
+		// require visible "previous"
+		additive_width -= last_width + report_->gap_;
+		tmp --;
+
+		if (grid_width - additive_width < previous_->fix_width()) {
+			// invisible one still cannot hold "previous", invisible more.
+			// assume "previous" width cannot exceed tow width.
+			tmp --;
+		}
+	} else if (additive_width > grid_width) {
+		// needn't visible "previous"
+		tmp --;
+	}
+	return tmp;
 }
 
 void ttabbar::click(bool previous)
 {
 	if (previous) {
-		start_ -= segment_childs_;
+		if (segment_) {
+			start_ -= segment_childs_;
+		} else {
+			start_ -= calculate_requrie_back_widgets();
+		}
 	} else {
 		start_ += segment_childs_;
 	}
 
 	replacement_children();
 
-	if (segment_ && previous) {
-		// when back to #0, preview button cannot redraw. dirty whole report make it redraw.
-		// but if preview, thw whole bar should redraw, so set all report.
+	if (previous) {
+		// when back to #0 group, preview button cannot redraw. dirty whole report make it redraw.
+		// On the other handle, once press "preview", the whole bar should redraw, so dirty whole report is acceptable.
 		report_->set_dirty();
 	}
 }
@@ -283,7 +364,7 @@ void ttabbar::set_report(treport* report, int width, int height)
 		return;
 	}
 	start_ = 0;
-	segment_childs_ = 1;
+	segment_childs_ = 0;
 
 	VALIDATE(!segment_ || report_->unit_size_.x, "variable tabbar must not be segment!");
 	if (report->unit_size_.x) {
@@ -349,6 +430,7 @@ tcontrol* ttabbar::create_child(const std::string& id, const std::string& toolti
 
 	} else {
 		widget = create_button(id, definition_, cookie);
+		widget->set_tooltip(tooltip);
 		connect_signal_mouse_left_click(
 			*widget
 			, boost::bind(
@@ -410,7 +492,7 @@ void ttabbar::erase_children(bool clear_additional)
 	}
 
 	start_ = 0;
-	segment_childs_ = 1;
+	segment_childs_ = 0;
 }
 
 void ttabbar::hide_children()
@@ -418,35 +500,39 @@ void ttabbar::hide_children()
 	report_->hide_children();
 
 	start_ = 0;
-	segment_childs_ = 1;
+	segment_childs_ = 0;
 }
 
-void ttabbar::replacement_children(int grid_width, int grid_height)
+void ttabbar::replacement_children()
 {
-	if (!grid_width) {
-		grid_width = report_->content_grid_->get_width();
-		grid_height = report_->content_grid_->get_height();
+	int grid_width = report_->content_grid_->get_width();
+	int grid_height = report_->content_grid_->get_height();
+	if (grid_width <= 0) {
+		return;
 	}
 
 	const tgrid::tchild* children = report_->content_grid()->children();
 	int vsize = report_->content_grid_->children_vsize();
-	if (grid_width <= 0) {
-		return;
-	}
+	
 	int unit_w = report_->unit_size_.x;
-	if (segment_ && segment_childs_ == 1) {
-		segment_childs_ = (grid_width + report_->gap_) / (report_->unit_size_.x + report_->gap_) - 2;
-		VALIDATE(segment_childs_ > 0, null_str);
+	if (segment_) {
+		if (!segment_childs_) {
+			segment_childs_ = (grid_width + report_->gap_) / (report_->unit_size_.x + report_->gap_) - 2;
+			VALIDATE(segment_childs_ > 0, null_str);
+		}
+	} else {
+		segment_childs_ = 0;
 	}
 
-	int last_n = -1, last_width = 0;
-	bool require_previous = false, require_next = false;
+	int last_n = twidget::npos, last_width = 0;
+	bool require_next = false;
 
 	int n = front_childs;
 	for (int tmp = 0; tmp < start_; n ++) {
 		const tgrid::tchild& child = children[n];
 		twidget* widget = child.widget_;
 
+		// these widget not in current group, as if user require visilbe, but invisible.
 		widget->set_visible(twidget::INVISIBLE);
 
 		if (get_visible2(children, n)) {
@@ -478,13 +564,14 @@ void ttabbar::replacement_children(int grid_width, int grid_height)
 		if (!report_->unit_size_.x) {
 			unit_w = widget->get_best_size().x;
 		}
-		if (require_next || additive_width + unit_w > grid_width || additive_child == segment_childs_) {
+		if (require_next || additive_width + unit_w > grid_width || (segment_ && additive_child == segment_childs_)) {
 			widget->set_visible(twidget::INVISIBLE);
 			if (!require_next) {
 				if (!segment_) {
 					if (grid_width - additive_width >= next_->fix_width()) {
-						last_n = -1;
+						last_n = twidget::npos;
 					} else {
+						// residue width cannot hold "next" button, invisible last widget to lengthen residue width.
 						additive_width -= last_width + report_->gap_;
 					}
 				}
@@ -501,6 +588,7 @@ void ttabbar::replacement_children(int grid_width, int grid_height)
 			additive_width += unit_w + report_->gap_;
 			last_n = n;
 			last_width = unit_w;
+			segment_childs_ ++;
 		} else {
 			additive_child ++;
 		}
@@ -510,6 +598,7 @@ void ttabbar::replacement_children(int grid_width, int grid_height)
 	if (require_next) {
 		if (last_n != twidget::npos) {
 			children[last_n].widget_->set_visible(twidget::INVISIBLE);
+			segment_childs_ --;
 		}
 		spacer_width = grid_width - additive_width - next_->fix_width();
 	}
@@ -566,10 +655,28 @@ int ttabbar::get_index(const twidget* widget) const
 	return twidget::npos;
 }
 
+int ttabbar::get_index2(const void* cookie) const
+{
+	const gui2::tgrid::tchild* children = report_->content_grid()->children();
+	int childs = report_->content_grid()->children_vsize() - back_childs;
+	for (int i = front_childs; i < childs; i ++) {
+		if (children[i].widget_->cookie() == cookie) {
+			return i - front_childs;
+		}
+	}
+	return twidget::npos;
+}
+
 const tgrid::tchild& ttabbar::get_child(int at) const
 {
 	const gui2::tgrid::tchild* children = report_->content_grid()->children();
 	return children[front_childs + at];
+}
+
+tcontrol* ttabbar::get_widget(int at) const
+{
+	const gui2::tgrid::tchild* children = report_->content_grid()->children();
+	return dynamic_cast<tcontrol*>(children[front_childs + at].widget_);
 }
 
 void ttabbar::select(int index)

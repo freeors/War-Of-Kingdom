@@ -32,6 +32,7 @@
 #include "serialization/preprocessor.hpp"
 #include "serialization/string_utils.hpp"
 #include "util.hpp"
+#include "lobby.hpp"
 
 #include "game.hpp"
 #include "input_stream.hpp"
@@ -124,6 +125,130 @@ static lg::log_domain log_config("config");
 #define SIGHUP 20
 #endif
 /** @todo FIXME: should define SIGINT here too, but to what? */
+
+class twesnothd_lobby: public tlobby
+{
+public:
+	static const int wesnoth_tag = min_app_tag;
+
+	class twesnothd_sock: public tsock
+	{
+	public:
+		twesnothd_sock()
+			: tsock(wesnoth_tag)
+		{
+			require_stats = false;
+		}
+		void process() {};
+	};
+
+	class taccept_sock: public tsock
+	{
+	public:
+		taccept_sock()
+			: tsock(0)
+		{}
+
+		bool connect(TCPsocket sock, const std::string& host, int port)
+		{
+			// Receive the 4 bytes telling us if they're a new connection
+			// or trying to recover a connection
+			char buf[4] ALIGN_4;
+
+			const int len = SDLNet_TCP_Recv(sock, buf, 4);
+			if (len != 4) {
+				return false;
+			}
+			const int handle = SDLNet_Read32(reinterpret_cast<void*>(buf));
+			// DBG_NW << "received handshake from client: '" << handle << "'\n";
+
+			tsock::connect(sock, host, port);
+
+			// Send back their connection number
+			SDLNet_Write32(conn_, reinterpret_cast<void*>(buf));
+			const int nbytes = SDLNet_TCP_Send(sock,buf,4);
+			if(nbytes != 4) {
+				return false;
+			}
+			return true;
+		}
+
+		// below 2 function is same as tlobby::ttransit_sock.
+		SOCKET_STATE receive_buf(std::vector<char>& buf);
+		size_t queue_raw_data(const char* buf, int len);
+	};
+
+	twesnothd_lobby()
+		: tlobby()
+	{
+		socks_.push_back(&wesnothd_sock);
+	}
+
+private:
+	tsock* get_accept_sock()
+	{
+		return new taccept_sock();
+	}
+
+public:
+	twesnothd_sock wesnothd_sock;
+};
+
+size_t twesnothd_lobby::taccept_sock::queue_raw_data(const char* buf, int len)
+{
+	network::buffer* queued_buf = new network::buffer(sock2_);
+	assert(*buf == 31);
+	network::make_network_buffer(buf, len, queued_buf->raw_buffer);
+	network::queue_buffer(sock2_, queued_buf);
+	return 4 + len;
+}
+
+SOCKET_STATE twesnothd_lobby::taccept_sock::receive_buf(std::vector<char>& buf)
+{
+	char num_buf[4] ALIGN_4;
+	bool res = network::receive_with_timeout(*this, num_buf, 4, false);
+
+	if (!res) {
+		return SOCKET_ERRORED;
+	}
+
+	const int len = SDLNet_Read32(reinterpret_cast<void*>(num_buf));
+
+	if (len < 1 || len > 100000000) {
+		return SOCKET_ERRORED;
+	}
+
+	buf.resize(len);
+	char* beg = &buf[0];
+	const char* const end = beg + len;
+
+	if (require_stats) {
+		const threading::lock lock(*network::stats_mutex);
+		network::transfer_stats[sock2_].second.fresh_current(len);
+	}
+
+	res = network::receive_with_timeout(*this, beg, end - beg, true);
+	if (!res) {
+		return SOCKET_ERRORED;
+	}
+
+	return SOCKET_READY;
+}
+
+class tlobby_manager
+{
+public:
+	tlobby_manager()
+	{
+		lobby = new twesnothd_lobby();
+	}
+	~tlobby_manager()
+	{
+		if (lobby) {
+			delete lobby;
+		}
+	}
+};
 
 sig_atomic_t config_reload = 0;
 
@@ -320,7 +445,7 @@ namespace {
 server::server(int port, const std::string& config_file, size_t min_threads,
 		size_t max_threads) :
 	net_manager_(min_threads, max_threads),
-	server_(port),
+	server_(lobby->sock(twesnothd_lobby::wesnoth_tag), port),
 	ban_manager_(),
 	ip_log_(),
 	failed_logins_(),
@@ -728,7 +853,7 @@ void server::run() {
 
 			network::process_send_queue();
 
-			network::connection sock = network::accept_connection();
+			network::connection sock = network::accept_connection(lobby->sock(twesnothd_lobby::wesnoth_tag));
 			if (sock) {
 				const std::string ip = network::ip_address(sock);
 				const std::string reason = is_ip_banned(ip);
@@ -752,7 +877,7 @@ void server::run() {
 
 			std::vector<char> buf;
 			network::bandwidth_in_ptr bandwidth_type;
-			while ((sock = network::receive_data(buf, &bandwidth_type)) != network::null_connection) {
+			while ((sock = network::receive_data(buf, 0, &bandwidth_type)) != network::null_connection) {
 				metrics_.service_request();
 
 				if(buf.empty()) {
@@ -986,7 +1111,7 @@ void server::process_login(const network::connection sock,
 				<< ":" << config_it->second["port"] << "\n";
 			config response;
 			response.add_child("redirect", config_it->second);
-			network::send_data(response, sock, "redirect");
+			network::send_data(lobby->get_connection_details(sock), response, "redirect");
 			return;
 		}
 		// Check if it's a version we should start a proxy for.
@@ -1001,7 +1126,7 @@ void server::process_login(const network::connection sock,
 				<< "\tplayer joined using version " << version_str
 				<< ":\tconnecting them by proxy to " << config_it->second["host"]
 				<< ":" << config_it->second["port"] << "\n";
-			proxy::create_proxy(sock, config_it->second["host"],
+			proxy::create_proxy(lobby->sock(twesnothd_lobby::wesnoth_tag), sock, config_it->second["host"],
 				config_it->second["port"].to_int(15000));
 			return;
 		}
@@ -1021,7 +1146,7 @@ void server::process_login(const network::connection sock,
 			// This cannot happen with the current way accepted_versions_ is populated
 			ERR_SERVER << "ERROR: This server doesn't accept any versions at all.\n";
 		}
-		network::send_data(response, sock, "error");
+		network::send_data(lobby->get_connection_details(sock), response, "error");
 		return;
 	}
 
@@ -2879,6 +3004,7 @@ int main(int argc, char** argv) {
 	network::set_raw_data_only();
 
 	try {
+		tlobby_manager lobby_manager;
 		server(port, config_file, min_threads, max_threads).run();
 	} catch(network::error& e) {
 		ERR_SERVER << "Caught network error while server was running. Aborting.: "

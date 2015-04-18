@@ -212,11 +212,11 @@ namespace {
 }
 
 //make sure we think about countdown even while dialogs are open
-bool playmp_controller::handle(tlobby::ttype type, const config& data)
+bool playmp_controller::handle(int tag, tsock::ttype type, const config& data)
 {
-	playsingle_controller::handle(type, data);
+	playsingle_controller::handle(tag, type, data);
 
-	if (type == tlobby::t_disconnected && has_network_player()) {
+	if (type == tsock::t_disconnected && has_network_player()) {
 		throw network::error("shut down");
 	}
 	if (playmp_controller::counting_down()) {
@@ -224,7 +224,7 @@ bool playmp_controller::handle(tlobby::ttype type, const config& data)
 		//	playmp_controller::think_about_countdown(info.ticks());
 		// }
 	}
-	if (type != tlobby::t_data) {
+	if (type != tsock::t_data) {
 		return false;
 	}
 	received_data_cfg_.push_back(data);
@@ -293,7 +293,7 @@ void playmp_controller::play_human_turn()
 			received_data_cfg_.clear();
 			for (std::vector<config>::const_iterator it = cfgs.begin(); it != cfgs.end(); ++ it) {
 				const config& cfg = *it;
-				if (turn_data_->process_network_data(cfg, lobby.sock, backlog, skip_replay_) == turn_info::PROCESS_RESTART_TURN) {
+				if (turn_data_->process_network_data(cfg, lobby->transit.conn(), backlog, skip_replay_) == turn_info::PROCESS_RESTART_TURN) {
 					// Clean undo stack if turn has to be restarted (losing control)
 					if (!undo_stack_.empty()) {
 						font::floating_label flabel(_("Undoing moves not yet transmitted to the server."));
@@ -535,7 +535,7 @@ void playmp_controller::play_network_turn(){
 			} else if (!received_data_cfg_.empty()) {
 				cfg = received_data_cfg_.front();
 				received_data_cfg_.erase(received_data_cfg_.begin());
-				from = lobby.sock;
+				from = lobby->transit.conn();
 			}
 
 			if (!cfg.empty()) {
@@ -592,7 +592,7 @@ void playmp_controller::process_oos(const std::string& err_msg) const {
 	config& info = cfg.add_child("info");
 	info["type"] = "termination";
 	info["condition"] = "out of sync";
-	network::send_data(cfg, 0);
+	network::send_data(lobby->transit, cfg);
 
 	std::stringstream temp_buf;
 	std::vector<std::string> err_lines = utils::split(err_msg,'\n');

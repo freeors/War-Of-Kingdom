@@ -49,7 +49,8 @@ static char			gtext[_MAX_PATH];
 dvrmgr_t			gdmgr;
 
 editor editor_;
-tmod_config mod_config;
+config generate_cfg;
+std::vector<tmod_config> mod_configs;
 
 #define EDITOR_ICO					"editor.ico"
 
@@ -802,18 +803,21 @@ void prepare_popup_menu()
 	AppendMenu(gdmgr._hpopup_new, MF_STRING, IDM_NEW_CAMPAIGN, dgettext_2_ansi("wesnoth-lib", "Campaign"));
 
 	// star
-	if (mod_config.valid()) {
-		gdmgr._hpopup_star = CreatePopupMenu();
+	AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
+	int index = 0;
+	for (std::vector<tmod_config>::const_iterator it = mod_configs.begin(); it != mod_configs.end(); ++ it) {
+		const tmod_config& mod = *it;
 
-		symbols["mod_res_path"] = mod_config.get_path(tmod_config::res_tag);
-		symbols["mod_patch_path"] = mod_config.get_path(tmod_config::patch_tag);
-		AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_RESOURCE, utf8_2_ansi(vgettext2("Generate resource package to $mod_res_path", symbols).c_str()));
-		AppendMenu(gdmgr._hpopup_star, MF_STRING, IDM_STAR_PATCH, utf8_2_ansi(vgettext2("Extract different files to $mod_patch_path", symbols).c_str()));
+		HMENU hpopup = CreatePopupMenu();
 
-		AppendMenu(gdmgr._hpopup_new, MF_SEPARATOR, 0, NULL);
-		AppendMenu(gdmgr._hpopup_new, MF_POPUP, (UINT_PTR)(gdmgr._hpopup_star), utf8_2_ansi(mod_config.name().c_str()));
-	} else {
-		gdmgr._hpopup_star = NULL;
+		symbols["mod_res_path"] = mod.get_path(tmod_config::res_tag);
+		symbols["mod_patch_path"] = mod.get_path(tmod_config::patch_tag);
+		AppendMenu(hpopup, MF_STRING, IDM_MOD_RES0 + index, utf8_2_ansi(vgettext2("Generate resource package to $mod_res_path", symbols).c_str()));
+		AppendMenu(hpopup, MF_STRING, IDM_MOD_PATCH0 + index, utf8_2_ansi(vgettext2("Extract different files to $mod_patch_path", symbols).c_str()));
+
+		AppendMenu(gdmgr._hpopup_new, MF_POPUP, (UINT_PTR)(hpopup), utf8_2_ansi(mod.name().c_str()));
+
+		gdmgr._hpopup_mod[index ++] = hpopup;
 	}
 
 	// menu item: coherence
@@ -935,9 +939,12 @@ void uninit_dvrmgr_struct(void)
 	if (gdmgr._hpopup_new) {
 		DestroyMenu(gdmgr._hpopup_new);
 	}
-	if (gdmgr._hpopup_star) {
-		DestroyMenu(gdmgr._hpopup_star);
+
+	for (int i = 0; i < (int)mod_configs.size(); ++ i) {
+		HMENU hpopup = gdmgr._hpopup_mod[i];
+		DestroyMenu(hpopup);
 	}
+
 	if (gdmgr._hpopup_explorer) {
 		DestroyMenu(gdmgr._hpopup_explorer);
 	}
@@ -1451,14 +1458,8 @@ int PASCAL WinMain(HINSTANCE inst, HINSTANCE, LPSTR lpCmdLine, int nCmdShow)
 			}
 		}
 
-		BOOST_FOREACH (const config& c, editor_config::data_cfg.child_range("generate")) {
-			const std::string& type = c["type"].str();
-			if (type == "mod") {
-				mod_config = tmod_config(c);
-				break;
-			}
-		}
-
+		reload_mod_configs();
+		
 		prepare_popup_menu();
 		
 		//

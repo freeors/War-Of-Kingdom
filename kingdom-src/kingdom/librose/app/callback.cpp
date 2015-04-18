@@ -2,6 +2,7 @@
 #include "display.hpp"
 #include "help.hpp"
 #include "wml_exception.hpp"
+#include "hero.hpp"
 
 void set_zoom_to_default(int zoom)
 {
@@ -14,9 +15,7 @@ bool find_topic2(const std::string& dst)
 {
 	return true;
 }
-}
 
-namespace help {
 std::vector<topic> generate_topics(const bool sort_generated, const std::string &generator)
 {
 	std::vector<topic> res;
@@ -26,6 +25,13 @@ std::vector<topic> generate_topics(const bool sort_generated, const std::string 
 void generate_sections(const config *help_cfg, const std::string &generator, section &sec, int level)
 {
 	return;
+}
+}
+
+namespace http {
+bool register_user(display& disp, hero_map& heros, bool check_exist)
+{
+	return true;
 }
 }
 

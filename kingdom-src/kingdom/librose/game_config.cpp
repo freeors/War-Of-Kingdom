@@ -44,6 +44,8 @@ void get_serialnumber(char* sn)
 
 namespace game_config
 {
+	std::string app;
+	std::string app_channel;
 	int base_income = 2;
 	int village_income = 2;
 	int hero_income = 2;
@@ -54,8 +56,8 @@ namespace game_config
 	unsigned lobby_network_timer = 100;
 	unsigned lobby_refresh = 4000;
 	const int gold_carryover_percentage = 80;
-	const std::string rose_version = ROSE_VERSION;
-	std::string version = "1.0.30";
+	const std::string rose_version = "0.0.5";
+	std::string version = "1.0.31";
 	version_info wesnoth_version(version);
 	int reside_troop_increase_loyalty = 50;
 	int field_troop_increase_loyalty = 10;
@@ -134,8 +136,8 @@ namespace game_config
 
 	std::string checksum;
 	bool server_matched = true;
-	const std::string service_email = "service@leagor.com";
-	const std::string sales_email = "sales@leagor.com";
+	const std::string service_email = "ancientcc@gmail.com";
+	const std::string sales_email = "ancientcc@gmail.com";
 	std::string wesnoth_program_dir;
 	bool debug = false, editor = false, no_delay = false, disable_autosave = false;
 

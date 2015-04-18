@@ -76,7 +76,7 @@ talipay::talipay(display& disp, hero_map& heros, const std::string& label, int i
 	, heros_(heros)
 	, inapp_(inapp)
 {
-	register_label("login_label", false, label);
+	// register_label("login_label", false, label);
 }
 
 const size_t max_text_size = 30;
@@ -97,7 +97,7 @@ void talipay::pre_show(CVideo& /*video*/, twindow& window)
 
 	strstr.str("");
 	utils::string_map symbols;
-	tlabel* label = find_widget<tlabel>(&window, "remark", false, true);
+	tscroll_label* scroll_label = find_widget<tscroll_label>(&window, "remark", false, true);
 	symbols["alipay"] = tintegrate::generate_format(_("Alipay"), "green");
 	symbols["mail"] = tintegrate::generate_format(game_config::sales_email, "green");
 	symbols["money"] = tintegrate::generate_format(15, "green");
@@ -111,11 +111,11 @@ void talipay::pre_show(CVideo& /*video*/, twindow& window)
 	symbols["pay"] = tintegrate::generate_format(_("Pay"), "blue");
 
 	strstr << "\n\n" << vgettext("wesnoth-lib", "payment^pay remark($ps, $alipay, $mail, $pay)", symbols);
-	label->set_label(strstr.str());
+	scroll_label->set_label(strstr.str());
 
 	symbols.clear();
 	symbols["hotkey"] = tintegrate::generate_format("CTRL+V", "yellow");
-	label = find_widget<tlabel>(&window, "number_tag", false, true);
+	tlabel* label = find_widget<tlabel>(&window, "number_tag", false, true);
 	strstr.str("");
 	strstr << _("Transaction number");
 	strstr << "(" << vgettext("wesnoth-lib", "When input, may use $hotkey", symbols) << ")";
@@ -204,4 +204,8 @@ void talipay::pay(twindow& window)
 }
 
 } // namespace gui2
-
+/*
+horizontal_scrollbar_mode = "never"
+width = "(screen_width + {WINDOW_WIDTH} - {PORTRAIT_WIDTH} - 30)"
+height = "(screen_height)"
+*/

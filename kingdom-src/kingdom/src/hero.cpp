@@ -582,7 +582,6 @@ void tgroup::from_local_membership(display& disp, hero_map& heros, const http::m
 		} else if (a.agreement == tgroup::tassociate::requestterminate && !a.t) {
 			m2 = http::affirm_terminate(disp, heros, a.username, true);
 		}
-		lookup_users_insert(a.uid, a.username);
 	}
 	if (m2.uid >= 0 && m2.associate != associate_to_str()) {
 		associate_from_str(m2.associate);

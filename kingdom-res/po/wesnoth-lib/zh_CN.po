@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2015-02-28 10:42+0800\n"
+"PO-Revision-Date: 2015-04-18 09:34+0800\n"
 "Last-Translator: \n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
@@ -264,9 +264,8 @@ msgstr "风车"
 
 #. [terrain_type]: id=campfire
 #: data/core/terrain.cfg:409
-#, fuzzy
 msgid "Campfire"
-msgstr "战役"
+msgstr ""
 
 #. [terrain_type]: id=fence
 #: data/core/terrain.cfg:418
@@ -5038,8 +5037,8 @@ msgstr "该条交易记录已经被使用过！"
 msgid "payment^course($alipay, $mail, $money, $pay)"
 msgstr ""
 "一、登录$alipay官方网站（www.alipay.com），执行“转账“。\n"
-"二、“收款人”输入$mail（一旦正确会变为“**飞(sales@leagor.com)”），“付款金额”输"
-"入内购项对应的值，“付款说明”中写上游戏中的账号名和内购项名称。\n"
+"二、“收款人”输入$mail（一旦正确会变为“*佐(ancientcc@gmail.com)”），“付款金"
+"额”输入内购项对应的值，“付款说明”中写上游戏中的账号名和内购项名称。\n"
 "三、一旦后台处理完内购，玩家除了在游戏中看到变换，像王国币增加了，还会收到一"
 "条内购成功的消息。"
 
@@ -5592,6 +5591,60 @@ msgstr "保存"
 
 msgid "Save As"
 msgstr "另存为"
+
+msgid "Find"
+msgstr "查找"
+
+msgid "Nick"
+msgstr "昵称"
+
+msgid "Nick when chat"
+msgstr "聊天时昵称"
+
+msgid ""
+"$username of username is not a valid nick, you require to set a valid nick "
+"separately!\n"
+" Nick can ony use alpha, number and _."
+msgstr ""
+"账号$username不是有效昵称，你需要单独设置一个昵称！\n"
+"昵称只能使用字母、数字和_"
+
+msgid ""
+"After $part, you can not receive message from $channel. Do you want to $part?"
+msgstr "$part后，将不再接收从$channel发来的消息。确定要$part吗？"
+
+msgid "You set $nick into $channel successfully!"
+msgstr "您已成功把$nick加入$channel！"
+
+msgid "Do you want remove $nick from $channel?"
+msgstr "您真的要把$nick从$channel中移除吗？"
+
+msgid "Min users"
+msgstr "最小成员数"
+
+msgid "Friend"
+msgstr "好友"
+
+msgid "Part"
+msgstr "退出"
+
+msgid "%b %d %y"
+msgstr "%Y年%m月%d日"
+
+msgid "%H:%M"
+msgstr "%H:%M"
+
+msgid "%A, %H:%M"
+msgstr "%m月%d日 %H:%M"
+
+msgid "%b %d"
+msgstr "%m月%d日"
+
+msgid "%a %b %d %H:%M %Y"
+msgstr "%Y年%m月%d日，%H时%M分"
+
+msgid "Transit"
+msgstr "中转"
 
 #~ msgid "Join Official Server"
 #~ msgstr "加入官方服务器"

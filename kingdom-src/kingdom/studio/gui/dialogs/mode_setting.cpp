@@ -93,6 +93,20 @@ void tmode_setting::pre_show(CVideo& /*video*/, twindow& window)
 	// tlistbox& list = find_widget<tlistbox>(&window, "change_list", false);
 	// list.set_callback_value_change(dialog_callback<tmode_setting, &tmode_setting::item_selected>);
 	fill_change_list(window);
+
+	connect_signal_mouse_left_click(
+			  find_widget<tbutton>(&window, "delete_mode", false)
+			, boost::bind(
+				&tmode_setting::delete_mode
+				, this
+				, boost::ref(window)));
+
+	connect_signal_mouse_left_click(
+			  find_widget<tbutton>(&window, "modify_mode", false)
+			, boost::bind(
+				&tmode_setting::modify_mode
+				, this
+				, boost::ref(window)));
 }
 
 void tmode_setting::post_show(twindow& window)
@@ -130,7 +144,7 @@ void tmode_setting::fill_change_list(twindow& window)
 
 		list.add_row(list_item_item);
 	}
-	list.invalidate_layout();
+	list.invalidate_layout(true);
 }
 
 int tmode_setting::calculate_change_count(int at) const
@@ -181,6 +195,14 @@ void tmode_setting::item_selected(twindow& window)
 {
 	tlistbox& list = find_widget<tlistbox>(&window, "default", false);
 	int row = list.get_selected_row();
+}
+
+void tmode_setting::delete_mode(twindow& window)
+{
+}
+
+void tmode_setting::modify_mode(twindow& window)
+{
 }
 
 }

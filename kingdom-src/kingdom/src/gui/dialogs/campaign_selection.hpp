@@ -28,13 +28,22 @@ class tcampaign_selection
 	: public tdialog
 {
 public:
+	struct tcampaign 
+	{
+		tcampaign(const std::string& description, const std::string& image)
+			: description(description)
+			, image(image)
+		{}
+
+		std::string description;
+		std::string image;
+	};
+
 	explicit tcampaign_selection(const std::vector<config>& campaigns, int catalog)
-		: campaigns_(campaigns)
+		: campaigns_cfg_(campaigns)
 		, catalog_(catalog)
 		, choice_(-1)
-
-	{
-	}
+	{}
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
@@ -55,7 +64,8 @@ private:
 	void post_show(twindow& window);
 
 	/** Contains the config objects for all campaigns. */
-	const std::vector<config> &campaigns_;
+	const std::vector<config>& campaigns_cfg_;
+	std::vector<tcampaign> campaigns_;
 
 	int catalog_;
 

@@ -207,13 +207,14 @@ tpoint tcontrol::get_config_maximum_size() const
 	assert(config_);
 
 	tpoint result(config_->max_width, config_->max_height);
+/*
 	if (!result.x) {
 		result.x = settings::screen_width;
 	}
 	if (!result.y) {
 		result.y = settings::screen_height;
 	}
-
+*/
 	DBG_GUI_L << LOG_HEADER << " result " << result << ".\n";
 	return result;
 }
@@ -271,6 +272,13 @@ tpoint tcontrol::calculate_best_size() const
 
 	const tpoint minimum = get_config_default_size();
 	tpoint maximum = get_config_maximum_size();
+	if (!maximum.x) {
+		maximum.x = settings::screen_width;
+	}
+	if (!maximum.y) {
+		maximum.y = settings::screen_height;
+	}
+	maximum.x -= config_->text_extra_width;
 	if (text_maximum_width_ && maximum.x > text_maximum_width_) {
 		maximum.x = text_maximum_width_;
 	}
@@ -298,12 +306,6 @@ void tcontrol::calculate_integrate()
 	int max = get_text_maximum_width();
 	if (max > 0) {
 		// before place, w_ = 0. it indicate not ready.
-
-		// when place, mybe strenth. when strenth should extend.
-		if (text_maximum_width_ && text_maximum_width_ < max) {
-			text_maximum_width_ = max;
-		}
-
 		integrate_ = new tintegrate(label_, get_text_maximum_width(), -1, config()->text_font_size, font::NORMAL_COLOR, text_editable_);
 		if (!locator_.empty()) {
 			integrate_->fill_locator_rect(locator_, true);
@@ -381,6 +383,11 @@ void tcontrol::set_definition(const std::string& definition)
 #endif
 }
 
+void tcontrol::clear_label_size_cache()
+{
+	label_size_.second.x = 0;
+}
+
 void tcontrol::set_label(const std::string& label)
 {
 	if (label == label_) {
@@ -449,7 +456,7 @@ int tcontrol::get_text_maximum_height() const
 
 void tcontrol::set_text_maximum_width(int maximum)
 {
-	text_maximum_width_ = maximum;
+	text_maximum_width_ = maximum - config_->text_extra_height;
 }
 
 bool tcontrol::exist_anim()

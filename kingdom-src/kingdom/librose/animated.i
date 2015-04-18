@@ -184,14 +184,18 @@ bool animated<T,T_void_value>::need_update() const
 template<typename T,  typename T_void_value>
 bool animated<T,T_void_value>::animation_finished_potential() const
 {
-	if(frames_.empty())
+	if (frames_.empty()) {
 		return true;
-	if(!started_ && start_tick_ == 0)
+	}
+	if (!started_ && start_tick_ == 0) {
 		return true;
-	if(cycles_ )
-                return true;
-        if(tick_to_time(current_ticks) > get_end_time())
+	}
+	if (cycles_) {
 		return true;
+	}
+	if (tick_to_time(current_ticks) > get_end_time()) {
+		return true;
+	}
 
 	return false;
 }

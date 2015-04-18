@@ -58,6 +58,9 @@ struct tbuilder_tree_view
 	 * I don't foresee that somebody wants to pre-fill a tree view. If the need
 	 * arises the data part can be added.
 	 */
+
+	std::string width;
+	std::string height;
 };
 
 } // namespace implementation

@@ -188,7 +188,7 @@ void tuser_message::pre_show(CVideo& video, twindow& window)
 	swap_page(window, CHAT_PAGE, false);
 	sheet_.begin()->second->set_value(true);
 
-	update_network_status(window, lobby.ready());
+	update_network_status(window, lobby->chat.ready());
 	join();
 }
 
@@ -472,50 +472,18 @@ void tuser_message::detail_group(twindow& window)
 	}
 }
 
-void tuser_message::keyboard_shown(twindow& window)
+bool tuser_message::handle_raw(int at, tsock::ttype type, const char* param[])
 {
-	tchat_::keyboard_shown(window);
-	find_widget<ttoggle_button>(&window, "chat", false, true)->set_visible(twidget::INVISIBLE);
-	find_widget<ttoggle_button>(&window, "message", false, true)->set_visible(twidget::INVISIBLE);
-	find_widget<ttoggle_button>(&window, "siege_record", false, true)->set_visible(twidget::INVISIBLE);
-}
-
-void tuser_message::keyboard_hidden(twindow& window)
-{
-	tchat_::keyboard_hidden(window);
-	find_widget<ttoggle_button>(&window, "chat", false, true)->set_visible(twidget::VISIBLE);
-	find_widget<ttoggle_button>(&window, "message", false, true)->set_visible(twidget::VISIBLE);
-	find_widget<ttoggle_button>(&window, "siege_record", false, true)->set_visible(twidget::VISIBLE);
-}
-
-bool tuser_message::handle(tlobby::ttype type, const config& data)
-{
-	if (type == tlobby::t_connected || type == tlobby::t_disconnected) {
-		update_network_status(*page_panel_->get_window(), type == tlobby::t_connected);
-		process_network_status(type == tlobby::t_connected);
-	}
-
-	if (type != tlobby::t_data) {
+	if (at != tlobby::tag_chat) {
 		return false;
 	}
 
-	bool halt = true;
-	if (const config &c = data.child("message")) {
-		process_message(c);
-
-	} else if (const config &c = data.child("whisper")) {
-		process_message(c, true);
-
-	} else if(data.child("gamelist")) {
-		process_userlist(data);
-
-	} else if (const config &c = data.child("gamelist_diff")) {
-		process_userlist_diff(c);
-
-	} else {
-		halt = false;
+	if (type == tsock::t_connected || type == tsock::t_disconnected) {
+		update_network_status(*page_panel_->get_window(), type == tsock::t_connected);
+		process_network_status(type == tsock::t_connected);
 	}
-	return halt;
+
+	return tchat_::handle_raw(at, type, param);
 }
 
 void tuser_message::update_network_status(twindow& window, bool connected)

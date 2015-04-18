@@ -868,13 +868,12 @@ void twindow::add_linked_widget(const std::string& id, twidget* widget)
 	VALIDATE(has_linked_size_group(id), err.str());
 
 	std::vector<twidget*>& widgets = linked_size_[id].widgets;
-	if(std::find(widgets.begin(), widgets.end(), widget) == widgets.end()) {
+	if (std::find(widgets.begin(), widgets.end(), widget) == widgets.end()) {
 		widgets.push_back(widget);
 	}
 }
 
-void twindow::remove_linked_widget(const std::string& id
-		, const twidget* widget)
+void twindow::remove_linked_widget(const std::string& id, const twidget* widget)
 {
 	assert(widget);
 	// assert(has_linked_size_group(id));
@@ -887,11 +886,10 @@ void twindow::remove_linked_widget(const std::string& id
 	std::vector<twidget*>::iterator itor =
 			std::find(widgets.begin(), widgets.end(), widget);
 
-	if(itor != widgets.end()) {
+	if (itor != widgets.end()) {
 		widgets.erase(itor);
 
-		assert(std::find(widgets.begin(), widgets.end(), widget)
-			   == widgets.end());
+		assert(std::find(widgets.begin(), widgets.end(), widget) == widgets.end());
 	}
 }
 
@@ -958,15 +956,13 @@ void twindow::layout()
 	layout_init(true);
 	generate_dot_file("layout_init", LAYOUT);
 
-	layout_linked_widgets();
+	layout_linked_widgets(NULL);
 
+	/***** Get the best location for the window *****/
+	tpoint size = get_best_size();
 
-	try {
-		twindow_implementation::layout(*this, maximum_width, maximum_height);
-
-	} catch (tlayout_exception_resize_failed&) {
-
-		/** @todo implement the scrollbars on the window. */
+	if (size.x > static_cast<int>(maximum_width) || size.y > static_cast<int>(maximum_height)) {
+		// @todo implement the scrollbars on the window.
 
 		std::stringstream sstr;
 		sstr << __FILE__ << ":" << __LINE__ << " in function '" << __func__
@@ -998,7 +994,7 @@ void twindow::layout()
 		layout_init(true);
 		generate_dot_file("layout_init", LAYOUT);
 
-		layout_linked_widgets();
+		layout_linked_widgets(NULL);
 
 		try {
 			twindow_implementation::layout(*this, maximum_width, maximum_height);
@@ -1021,11 +1017,6 @@ void twindow::layout()
 						"which doesn't fit on the screen."), sstr.str());
 		}
 	}
-
-	/***** Get the best location for the window *****/
-	tpoint size = get_best_size();
-
-	assert(size.x <= maximum_width && size.y <= maximum_height);
 
 	tpoint origin(0, 0);
 
@@ -1118,13 +1109,15 @@ tpoint twindow::calculate_best_size() const
 	}
 }
 
-void twindow::layout_linked_widgets()
+void twindow::layout_linked_widgets(const twidget* parent)
 {
 	// evaluate the group sizes
+	std::map<const twidget*, tpoint> cache;
 	typedef std::pair<const std::string, tlinked_size> hack;
 	BOOST_FOREACH(hack& linked_size, linked_size_) {
 
 		tpoint max_size(0, 0);
+		cache.clear();
 
 		// Determine the maximum size.
 		BOOST_FOREACH(twidget* widget, linked_size.second.widgets) {
@@ -1134,11 +1127,12 @@ void twindow::layout_linked_widgets()
 			}
 
 			const tpoint size = widget->get_best_size();
+			cache.insert(std::make_pair(widget, size));
 
-			if(size.x > max_size.x) {
+			if (size.x > max_size.x) {
 				max_size.x = size.x;
 			}
-			if(size.y > max_size.y) {
+			if (size.y > max_size.y) {
 				max_size.y = size.y;
 			}
 		}
@@ -1150,15 +1144,28 @@ void twindow::layout_linked_widgets()
 				continue;
 			}
 
-			tpoint size = widget->get_best_size();
+			// tpoint size = widget->get_best_size();
+			tpoint size = cache.find(widget)->second;
 
-			if(linked_size.second.width) {
+			if (linked_size.second.width) {
 				size.x = max_size.x;
 			}
-			if(linked_size.second.height) {
+			if (linked_size.second.height) {
 				size.y = max_size.y;
 			}
 
+			if (parent) {
+				const twidget* tmp = widget;
+				do {
+					if (tmp == parent) {
+						break;
+					}
+					tmp = tmp->parent_;
+				} while (tmp);
+				if (tmp != parent) {
+					continue;
+				}
+			}
 			widget->set_layout_size(size);
 		}
 	}
@@ -1252,6 +1259,17 @@ void twindow_implementation::layout(twindow& window,
 	try {
 		tpoint size = window.get_best_size();
 
+		std::stringstream err;
+		if (size.x > static_cast<int>(maximum_width)) {
+			err << " Result: Width failed. Wanted width " << maximum_width << " resulting width " << size.x << ".";
+			VALIDATE(false, err.str());
+		}
+		if (size.y > static_cast<int>(maximum_height)) {
+			err << " Result: Height failed. Wanted height " << maximum_height << " resulting height " << size.y << ".";
+			VALIDATE(false, err.str());
+		}
+
+/*
 		DBG_GUI_L << LOG_IMPL_HEADER
 				<< " best size : " << size
 				<< " maximum size : " << maximum_width << ',' << maximum_height
@@ -1300,13 +1318,13 @@ void twindow_implementation::layout(twindow& window,
 
 		DBG_GUI_L << LOG_IMPL_HEADER << " Result: Resizing succeeded.\n";
 		return;
-
+*/
 	} catch (tlayout_exception_width_modified&) {
 		DBG_GUI_L << LOG_IMPL_HEADER
 				<< " Status: Width has been modified, rerun.\n";
 
 		window.layout_init(false);
-		window.layout_linked_widgets();
+		window.layout_linked_widgets(NULL);
 		layout(window, maximum_width, maximum_height);
 		return;
 	}
@@ -1360,11 +1378,6 @@ void twindow::radio_page_swap_uh(const tradio_page::tpage& page, twidget* holder
 	} else {
 		tscrollbar_panel* panel = dynamic_cast<tscrollbar_panel*>(holder);
 
-		if (!first && keep_rect_.x == -1) {
-			// from a valid page to another page.
-			set_keep_rect(get_x(), get_y(), get_width(), get_height());
-			panel->set_best_size(gui2::tpoint(panel->get_width(), panel->get_height()));
-		}
 		// _grid
 		tgrid* grid_ptr = new tgrid();
 		page.header->build(grid_ptr);
@@ -1377,20 +1390,11 @@ void twindow::radio_page_swap_uh(const tradio_page::tpage& page, twidget* holder
 
 void twindow::radio_page_swap_bh(const tradio_page::tpage& page, twidget* holder)
 {
-	if (page.row) {
-		tlistbox* table = dynamic_cast<tlistbox*>(holder);
+	tscrollbar_container* container = dynamic_cast<tscrollbar_container*>(holder);
 
-		table->layout_init(true);
-		layout_linked_widgets();
-		// content_grid_ is changed, get new all size, include content_grid_'s size.
-		// immediate, tlistbox::layout_children will call, must make sure content_grid's size is right.
-		table->invalidate_layout(); // 
-		table->get_best_size();
-
-	} else {
-		// layout window.
-		invalidate_layout();
-	}
+	// container->layout_init(true);
+	// layout_linked_widgets(holder);
+	container->invalidate_layout(true);
 }
 
 void twindow::mouse_capture(const bool capture)

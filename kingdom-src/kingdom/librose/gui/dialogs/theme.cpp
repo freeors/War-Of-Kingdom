@@ -29,10 +29,9 @@
 #include "display.hpp"
 #include "controller_base.hpp"
 #include "hotkeys.hpp"
+#include "game_config.hpp"
 
 #include <boost/bind.hpp>
-
-std::string app_id;
 
 namespace theme {
 
@@ -512,7 +511,7 @@ gui2::tbutton* create_context_button(display& disp, const std::string& main, con
 
 	widget->set_visible(gui2::twidget::INVISIBLE);
 
-	const std::string prefix = std::string("buttons/") + app_id + "/";
+	const std::string prefix = std::string("buttons/") + game_config::app + "/";
 	// set surface
 	surface surf = image::get_image(prefix + id + ".png");
 	if (surf) {
@@ -760,6 +759,16 @@ void ttheme::click_tabbar(twidget* widget, const std::string& sparam)
 	controller_.click_tabbar(widget, sparam);
 }
 
+void ttheme::destruct_widget(const twidget* widget)
+{
+	for (std::map<std::string, twidget*>::iterator it = cached_widgets_.begin(); it != cached_widgets_.end(); ++ it) {
+		if (widget == it->second) {
+			cached_widgets_.erase(it);
+			return;
+		}
+	}
+}
+
 twidget* ttheme::get_object(const std::string& id) const
 {
 	std::map<std::string, twidget*>::const_iterator it = cached_widgets_.find(id);
@@ -829,7 +838,7 @@ tcontext_menu* ttheme::context_menu(const std::string& id)
 	return NULL;
 }
 
-void ttheme::handle(tlobby::tstate s, const std::string& msg)
+void ttheme::handle(const tsock& sock, const std::string& msg)
 {
 	// log_->set_label(lobby.format_log_str());
 	// log_->scroll_vertical_scrollbar(tscrollbar_::END);

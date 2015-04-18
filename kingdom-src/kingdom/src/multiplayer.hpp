@@ -67,7 +67,6 @@ void start_client(display& disp, const config& game_config, hero_map& heros, her
 
 namespace http {
 
-bool register_user(display& disp, hero_map& heros, bool check_exist = false);
 struct membership 
 {
 	membership():

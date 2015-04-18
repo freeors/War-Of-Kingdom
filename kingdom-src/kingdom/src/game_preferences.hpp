@@ -78,12 +78,6 @@ namespace preferences {
 		extern std::string password;
 	}
 
-	std::string password();
-	void set_password(const std::string& password);
-
-	bool remember_password();
-	void set_remember_password(bool remember);
-
 	bool turn_dialog();
 	void set_turn_dialog(bool ison);
 

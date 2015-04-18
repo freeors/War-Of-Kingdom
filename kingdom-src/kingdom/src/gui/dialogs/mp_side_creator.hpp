@@ -262,7 +262,7 @@ private:
 	/**
 	 * Network polling callback
 	 */
-	bool handle(tlobby::ttype type, const config& data);
+	bool handle(int tag, tsock::ttype type, const config& data);
 	void process_network_error(network::error& error);
 
 	const tgroup& saved_allow_username(const std::string& username);

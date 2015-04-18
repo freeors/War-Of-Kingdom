@@ -1063,8 +1063,6 @@
 #define IDM_REFRESH                     40029
 #define IDM_SYNC_SYNC                   40031
 #define IDM_SYNC_OPENPCDIR              40033
-#define IDM_STAR_RESOURCE               40035
-#define IDM_STAR_PATCH                  40037
 #define IDM_INTEGRATE                   40038
 #define IDM_NEW                         40039
 #define IDM_DOWNLOAD                    40041
@@ -1178,13 +1176,23 @@
 #define IDM_EXCHANGE                    40154
 #define IDM_APPEND                      40155
 #define IDM_NEW_EXTRAROSE               40156
+#define IDM_MOD_RES0                    40160
+#define IDM_MOD_RES1                    40161
+#define IDM_MOD_RES2                    40162
+#define IDM_MOD_RES3                    40163
+#define IDM_MOD_RES4                    40164
+#define IDM_MOD_PATCH0                  40165
+#define IDM_MOD_PATCH1                  40166
+#define IDM_MOD_PATCH2                  40167
+#define IDM_MOD_PATCH3                  40168
+#define IDM_MOD_PATCH4                  40169
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        302
-#define _APS_NEXT_COMMAND_VALUE         40157
+#define _APS_NEXT_COMMAND_VALUE         40170
 #define _APS_NEXT_CONTROL_VALUE         1677
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

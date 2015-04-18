@@ -35,8 +35,8 @@ public:
 	tscrollbar_container::tscrollbar_mode horizontal_scrollbar_mode;
 
 	/** The width of the widget. */
-	tformula<unsigned> width;
-	tformula<unsigned> height;
+	std::string width;
+	std::string height;
 };
 
 

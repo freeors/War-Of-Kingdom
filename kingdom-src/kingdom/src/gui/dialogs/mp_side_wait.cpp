@@ -138,7 +138,7 @@ void tmp_side_wait::pre_show(CVideo& /*video*/, twindow& window)
 	join_cfg["id"] = game_id_;
 	join_cfg["observe"] = false;
 	join_cfg["password"] = game_config::checksum;
-	network::send_data(response, 0);
+	network::send_data(lobby->chat, response);
 
 	join_game(window, observe_);
 
@@ -237,7 +237,7 @@ void tmp_side_wait::join_game(twindow& window, bool observe)
 			change["faction"] = 0; // now, it is ignored
 			change["leader"] = "random"; // now, it is ignored
 			change["gender"] = "random"; // now, it is ignored
-			network::send_data(faction, 0);
+			network::send_data(lobby->chat, faction);
 		}
 
 	}
@@ -284,13 +284,13 @@ void tmp_side_wait::cancel(twindow& window)
 	window.close();
 }
 
-bool tmp_side_wait::handle(tlobby::ttype type, const config& data)
+bool tmp_side_wait::handle(int tag, tsock::ttype type, const config& data)
 {
-	if (type == tlobby::t_disconnected) {
+	if (type == tsock::t_disconnected) {
 		legacy_result_ = QUIT;
 		sides_table_->get_window()->set_retval(twindow::CANCEL);
 	}
-	if (type != tlobby::t_data) {
+	if (type != tsock::t_data) {
 		return false;
 	}
 	twindow& window = *sides_table_->get_window();

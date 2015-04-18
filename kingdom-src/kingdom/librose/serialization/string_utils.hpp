@@ -48,6 +48,8 @@ extern const std::string unicode_figure_dash;
 extern const std::string unicode_multiplication_sign;
 extern const std::string unicode_bullet;
 
+bool to_bool(const std::string& str, bool def = false);
+int to_int(const std::string& str, int def = 0);
 bool isnewline(const char c);
 bool portable_isspace(const char c);
 bool notspace(char c);
@@ -299,6 +301,9 @@ std::string wchar_to_string(const wchar_t);
 /** Returns utf8 character count. */
 size_t utf8str_len(const std::string& utf8str);
 
+/** whether utf8str is utf8 encoding or not. */
+bool is_utf8str(const std::string& utf8str);
+
 /** Returns a lowercased version of the string. */
 utf8_string lowercase(const utf8_string&);
 
@@ -332,6 +337,7 @@ void transform_tolower(const std::string& src, std::string& dst);
 extern std::string errstr;
 bool isvalid_id(const std::string& id, bool first_must_alpha, int min, int max);
 bool isvalid_variable(const std::string& id);
+bool isvalid_nick(const std::string& nick);
 
 }
 

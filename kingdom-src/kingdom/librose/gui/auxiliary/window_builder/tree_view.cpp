@@ -38,6 +38,9 @@ tbuilder_tree_view::tbuilder_tree_view(const config& cfg)
 			get_scrollbar_mode(cfg["horizontal_scrollbar_mode"]))
 	, indention_step_size(cfg["indention_step_size"])
 	, nodes()
+	, width(cfg["width"])
+	, height(cfg["height"])
+
 {
 
 	BOOST_FOREACH(const config &node, cfg.child_range("node")) {
@@ -59,6 +62,7 @@ twidget* tbuilder_tree_view::build() const
 
 	widget->set_vertical_scrollbar_mode(vertical_scrollbar_mode);
 	widget->set_horizontal_scrollbar_mode(horizontal_scrollbar_mode);
+	widget->set_best_size(width, height);
 
 	widget->set_indention_step_size(indention_step_size);
 

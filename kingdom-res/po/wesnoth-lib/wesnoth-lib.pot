@@ -5466,3 +5466,51 @@ msgstr ""
 
 msgid "Save As"
 msgstr ""
+
+msgid "Find"
+msgstr ""
+
+msgid "Nick"
+msgstr ""
+
+msgid "Nick when chat"
+msgstr ""
+
+msgid "$username of username is not a valid nick, you require to set a valid nick separately!\n Nick can ony use alpha, number and _."
+msgstr ""
+
+msgid "After $part, you can not receive message from $channel. Do you want to $part?"
+msgstr ""
+
+msgid "You set $nick into $channel successfully!"
+msgstr ""
+
+msgid "Do you want remove $nick from $channel?"
+msgstr ""
+
+msgid "Min users"
+msgstr ""
+
+msgid "Friend"
+msgstr ""
+
+msgid "Part"
+msgstr ""
+
+msgid "%b %d %y"
+msgstr ""
+
+msgid "%H:%M"
+msgstr ""
+
+msgid "%A, %H:%M"
+msgstr ""
+
+msgid "%b %d"
+msgstr ""
+
+msgid "%a %b %d %H:%M %Y"
+msgstr ""
+
+msgid "Transit"
+msgstr ""

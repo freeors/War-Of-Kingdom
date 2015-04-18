@@ -369,7 +369,8 @@ void tvertical_list::place(const tpoint& origin, const tpoint& size)
 		current_origin.y += best_size.y;
 	}
 
-	assert(current_origin.y == origin.y + size.y);
+	int ii = 0;
+	// assert(current_origin.y == origin.y + size.y);
 }
 
 void tvertical_list::set_origin(const tpoint& origin)

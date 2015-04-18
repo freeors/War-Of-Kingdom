@@ -30,8 +30,6 @@ tbuilder_label::tbuilder_label(const config& cfg)
 	, wrap(cfg["wrap"].to_bool())
 	, characters_per_line(cfg["characters_per_line"])
 	, text_alignment(decode_text_alignment(cfg["text_alignment"]))
-	, width_(cfg["width"])
-	, height_(cfg["height"])
 {
 }
 
@@ -41,22 +39,6 @@ twidget* tbuilder_label::build() const
 
 	init_control(label);
 
-	int text_maximum_width = fix_rect.w;
-	if (width_.has_formula() || height_.has_formula()) {
-		const game_logic::map_formula_callable& size = get_screen_size_variables();
-
-		unsigned width = width_(size);
-		unsigned height = height_(size);
-
-		text_maximum_width = width;
-		if (width || height) {
-			label->set_best_size(tpoint(width, height));
-		}
-	}
-	if (text_maximum_width) {
-		label->set_text_maximum_width(text_maximum_width);
-	}
-	
 	label->set_can_wrap(wrap);
 	label->set_characters_per_line(characters_per_line);
 	label->set_text_alignment(text_alignment);

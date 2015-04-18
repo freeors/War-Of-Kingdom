@@ -5449,10 +5449,6 @@ msgstr ""
 msgid "Don’t ask me again!"
 msgstr ""
 
-#: src/dialogs.cpp:455 src/savegame.cpp:135
-msgid "%a %b %d %H:%M %Y"
-msgstr ""
-
 msgid "$d days"
 msgstr ""
 
@@ -5490,23 +5486,6 @@ msgstr ""
 
 #: src/dialogs.cpp:514
 msgid "Version: "
-msgstr ""
-
-#: src/dialogs.cpp:538 src/dialogs.cpp:554 src/savegame.cpp:164
-#: src/savegame.cpp:180
-msgid "%b %d %y"
-msgstr ""
-
-#: src/dialogs.cpp:544 src/savegame.cpp:170
-msgid "%H:%M"
-msgstr ""
-
-#: src/dialogs.cpp:547 src/savegame.cpp:173
-msgid "%A, %H:%M"
-msgstr ""
-
-#: src/dialogs.cpp:550 src/savegame.cpp:176
-msgid "%b %d"
 msgstr ""
 
 #: src/dialogs.cpp:578
@@ -8488,4 +8467,7 @@ msgid "Miss"
 msgstr ""
 
 msgid "Legend of Mythology"
+msgstr ""
+
+msgid "Avenue of Stars"
 msgstr ""

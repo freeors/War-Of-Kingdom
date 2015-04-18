@@ -48,6 +48,8 @@ private:
 	std::string form_tab_label(int at) const;
 
 	int calculate_change_count(int at) const;
+	void delete_mode(twindow& window);
+	void modify_mode(twindow& window);
 
 private:
 	unit_map& units_;

@@ -57,15 +57,13 @@ public:
 	/** Inherited from tscrollbar_container. */
 	void child_populate_dirty_list(twindow& caller,
 			const std::vector<twidget*>& call_stack);
+	void set_content_size(const tpoint& origin, const tpoint& desire_size);
 
 	/** Inherited from tcontainer_. */
 	void set_self_active(const bool /*active*/)  {}
 //		{ state_ = active ? ENABLED : DISABLED; }
 
 	bool empty() const;
-
-	/** Inherited from tscrollbar_container. */
-	void layout_children();
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
@@ -86,6 +84,8 @@ public:
 	}
 
 	void set_left_align() { left_align_ = true; } 
+
+	void set_no_indentation(bool val) { no_indentation_ = val; }
 
 	/** Inherited from tscrollbar_container. */
 	// twidget* find_at(const tpoint& coordinate, const bool must_be_active);
@@ -121,8 +121,6 @@ private:
 
 	unsigned indention_step_size_;
 
-	bool need_layout_;
-
 	ttree_view_node* root_node_;
 
 	ttree_view_node* selected_item_;
@@ -130,28 +128,7 @@ private:
 	boost::function<void ()> selection_change_callback_;
 
 	bool left_align_;
-
-	/**
-	 * Resizes the content.
-	 *
-	 * The resize either happens due to resizing the content or invalidate the
-	 * layout of the window.
-	 *
-	 * @param width_modification  The wanted modification to the width:
-	 *                            * negative values reduce width.
-	 *                            * zero leave width as is.
-	 *                            * positive values increase width.
-	 * @param height_modification The wanted modification to the height:
-	 *                            * negative values reduce height.
-	 *                            * zero leave height as is.
-	 *                            * positive values increase height.
-	 */
-	void resize_content(
-			  const int width_modification
-			, const int height_modification);
-
-	/** Layouts the children if needed. */
-	void layout_children(const bool force);
+	bool no_indentation_;
 
 	/** Inherited from tcontainer_. */
 	virtual void finalize_setup();

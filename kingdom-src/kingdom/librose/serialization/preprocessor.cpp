@@ -399,7 +399,22 @@ class preprocessor_file: preprocessor
 public:
 	preprocessor_file(preprocessor_streambuf &, std::string const &);
 	virtual bool get_chunk();
+
+	static bool open_unicode;
 };
+
+bool preprocessor_file::open_unicode = false;
+
+topen_unicode_lock::topen_unicode_lock(bool unicode)
+	: original_(preprocessor_file::open_unicode)
+{
+	preprocessor_file::open_unicode = unicode;
+}
+
+topen_unicode_lock::~topen_unicode_lock()
+{
+	preprocessor_file::open_unicode = original_;
+}
 
 /**
  * Specialized preprocessor for handling any kind of input stream.
@@ -501,7 +516,7 @@ preprocessor_file::preprocessor_file(preprocessor_streambuf &t, std::string cons
 		get_files_in_dir(name, &files_, NULL, ENTIRE_FILE_PATH, SKIP_MEDIA_DIR, DO_REORDER);
 	} else {
 		increment_preprocessor_progress(name, true);
-		std::istream * file_stream = istream_file(name);
+		std::istream * file_stream = istream_file(name, open_unicode);
 		if (!file_stream->good()) {
 			ERR_CF << "Could not open file " << name << "\n";
 			delete file_stream;

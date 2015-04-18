@@ -30,19 +30,10 @@ public:
 		, state_(ENABLED)
 		, can_wrap_(false)
 		, characters_per_line_(0)
-		, best_size_(0, 0)
 	{
 	}
 
 	/***** ***** ***** ***** layout functions ***** ***** ***** *****/
-
-private:
-	/** Inherited from tcontrol. */
-	tpoint calculate_best_size() const
-	{
-		return best_size_ != tpoint(0, 0)
-			? best_size_ : tcontrol::calculate_best_size();
-	}
 
 public:
 	/** Inherited from twidget. */
@@ -69,8 +60,6 @@ public:
 	void set_can_wrap(const bool wrap) { can_wrap_ = wrap; }
 
 	void set_characters_per_line(const unsigned set_characters_per_line);
-
-	void set_best_size(const tpoint& best_size) { best_size_ = best_size; }
 private:
 
 	/**
@@ -99,9 +88,6 @@ private:
 	 * The maximum is not an exact maximum, it uses the average character width.
 	 */
 	unsigned characters_per_line_;
-
-	/** When we're used as a fixed size item, this holds the best size. */
-	tpoint best_size_;
 
 	/** Inherited from tcontrol. */
 	const std::string& get_control_type() const;

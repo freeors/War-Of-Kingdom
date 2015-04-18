@@ -18,7 +18,7 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/auxiliary/event/message.hpp"
-#include "gui/auxiliary/log.hpp"
+#include "gui/dialogs/dialog.hpp"
 
 namespace gui2 {
 
@@ -74,18 +74,21 @@ twidget::twidget(const tbuilder_widget& builder)
 
 twidget::~twidget()
 {
-	DBG_GUI_LF << "widget destroy: " << static_cast<void*>(this)
-		<< " (id: " << id_ << ")\n";
-
 	twidget* p = parent();
-	while(p) {
+	while (p) {
 		fire(event::NOTIFY_REMOVAL, *p, NULL);
 		p = p->parent();
 	}
 
-	if(!linked_group_.empty()) {
-		if(twindow* window = get_window()) {
+	twindow* window = get_window();
+
+	if (window) {
+		if (!linked_group_.empty()) {
 			window->remove_linked_widget(linked_group_, this);
+		}
+		tdialog* dialog = window->dialog();
+		if (dialog) {
+			dialog->destruct_widget(this);
 		}
 	}
 }
@@ -118,13 +121,9 @@ tpoint twidget::get_best_size() const
 {
 	if (is_empty_rect(fix_rect_)) {
 		tpoint result = layout_size_;
-		if(result == tpoint(0, 0)) {
+		if (result == tpoint(0, 0)) {
 			result = calculate_best_size();
 		}
-
-#ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
-		last_best_size_ = result;
-#endif
 		return result;
 
 	} else {

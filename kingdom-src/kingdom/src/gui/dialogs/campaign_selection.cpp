@@ -25,7 +25,7 @@
 #else
 #include "gui/widgets/listbox.hpp"
 #endif
-#include "gui/widgets/multi_page.hpp"
+#include "gui/widgets/scrollbar_panel.hpp"
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/toggle_panel.hpp"
@@ -65,11 +65,7 @@ namespace gui2 {
  *         determines whether or not the user has finished the campaign and
  *         sets the visible flag for the widget accordingly. $
  *
- * campaign_details & & multi_page & m &
- *         A multi page widget that shows more details for the selected
- *         campaign. $
- *
- * -image & & image & o &
+  * -image & & image & o &
  *         The image for the campaign. $
  *
  * -description & & control & o &
@@ -82,14 +78,17 @@ REGISTER_DIALOG(campaign_selection)
 
 void tcampaign_selection::campaign_selected(twindow& window)
 {
-		const int selected_row =
-				find_widget<tlistbox>(&window, "campaign_list", false)
-					.get_selected_row();
+	const int selected_row = find_widget<tlistbox>(&window, "campaign_list", false).get_selected_row();
 
-		tmulti_page& multi_page = find_widget<tmulti_page>(
-				&window, "campaign_details", false);
+	tscrollbar_panel& multi_page = find_widget<tscrollbar_panel>(&window, "campaign_details", false);
 
-		multi_page.select_page(selected_row);
+	tscroll_label& label = find_widget<tscroll_label>(&window, "description", false);
+	label.set_label(campaigns_[selected_row].description);
+
+	tcontrol& image = find_widget<tcontrol>(&window, "image", false);
+	image.set_label(campaigns_[selected_row].image);
+
+	window.invalidate_layout();
 }
 
 void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
@@ -114,20 +113,17 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 #endif
 	window.keyboard_capture(&list);
 
-	std::vector<config> campaigns = campaigns_;
-	campaigns.push_back(config());
-	config& sub = campaigns.back();
+	std::vector<config> campaigns_cfg = campaigns_cfg_;
+	campaigns_cfg.push_back(config());
+	config& sub = campaigns_cfg.back();
 	sub["id"] = "random_map";
 	sub["name"] = dsgettext("wesnoth-multiplayer", "random_map");
 	sub["description"] = dsgettext("wesnoth-multiplayer", "random_map description");
 	sub["icon"] = "data/campaigns/random_map/images/icon.png";
 	sub["image"] = "data/campaigns/random_map/images/image.png";
 
-	/***** Setup campaign details. *****/
-	tmulti_page& multi_page = find_widget<tmulti_page>(&window, "campaign_details", false);
-
 	size_t n = 0;
-	BOOST_FOREACH (const config &c, campaigns) {
+	BOOST_FOREACH (const config &c, campaigns_cfg) {
 		const std::string catalog = c["catalog"].str();
 		if (catalog_ == NONE_CATALOG) {
 			if (!catalog.empty()) {
@@ -174,17 +170,7 @@ void tcampaign_selection::pre_show(CVideo& /*video*/, twindow& window)
 		toggle->set_data(n ++);
 
 		/*** Add detail item ***/
-		string_map detail_item;
-		std::map<std::string, string_map> detail_page;
-
-		detail_item["label"] = c["description"];
-		detail_item["use_markup"] = "true";
-		detail_page.insert(std::make_pair("description", detail_item));
-
-		detail_item["label"] = c["image"];
-		detail_page.insert(std::make_pair("image", detail_item));
-
-		multi_page.add_page(detail_page);
+		campaigns_.push_back(tcampaign(c["description"].str(), c["image"].str()));
 	}
 	
 	campaign_selected(window);

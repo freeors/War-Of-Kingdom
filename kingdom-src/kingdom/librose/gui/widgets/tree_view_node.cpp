@@ -60,8 +60,12 @@ ttree_view_node::ttree_view_node(const std::string& id
 						, false
 						, false);
 
-				if(icon_) {
-					icon_->set_visible(twidget::HIDDEN);
+				if (icon_) {
+					tvisible visible = twidget::HIDDEN;
+					if (parent_tree_view.no_indentation_ && get_indention_level() >= 2) {
+						visible = twidget::INVISIBLE;
+					}
+					icon_->set_visible(visible);
 					icon_->connect_signal<event::LEFT_BUTTON_CLICK>(
 							boost::bind(&ttree_view_node::
 								signal_handler_left_button_click
@@ -142,26 +146,11 @@ ttree_view_node& ttree_view_node::add_child(
 		return *itor;
 	}
 
-	if(tree_view().get_size() == tpoint(0, 0)) {
+	if (tree_view().get_size() == tpoint(0, 0)) {
 		return *itor;
 	}
 
-	assert(tree_view().content_grid());
-	const int current_width = tree_view().content_grid()->get_width();
-
-	// Calculate width modification.
-	tpoint best_size = itor->get_best_size();
-	best_size.x += get_indention_level() * tree_view().indention_step_size_;
-	const unsigned width_modification = best_size.x > current_width
-			? best_size.x - current_width
-			: 0;
-
-	// Calculate height modification.
-	const int height_modification = best_size.y;
-	assert(height_modification > 0);
-
-	// Request new size.
-	tree_view().resize_content(width_modification, height_modification);
+	tree_view().invalidate_layout(false);
 
 	return *itor;
 }
@@ -219,12 +208,52 @@ void ttree_view_node::unfold(const texpand_mode /*mode*/)
 }
 #endif
 
+void ttree_view_node::fold()
+{
+	if (!empty() && icon_ && !icon_->get_value()) {
+		icon_->set_value(true);
+	}
+}
+
+void ttree_view_node::unfold()
+{
+	if (!empty() && icon_ && icon_->get_value()) {
+		icon_->set_value(false);
+	}
+}
+
+void ttree_view_node::fold_children()
+{
+	for (boost::ptr_vector<ttree_view_node>::iterator it = children_.begin (); it != children_.end (); ++ it) {
+		ttree_view_node& node = *it;
+
+		if (node.grid_.get_visible() == twidget::INVISIBLE) {
+			continue;
+		}
+
+		node.fold();
+	}
+}
+
+void ttree_view_node::unfold_children()
+{
+	for (boost::ptr_vector<ttree_view_node>::iterator it = children_.begin (); it != children_.end (); ++ it) {
+		ttree_view_node& node = *it;
+
+		if (node.grid_.get_visible() == twidget::INVISIBLE) {
+			continue;
+		}
+
+		node.unfold();
+	}
+}
+
 void ttree_view_node::clear()
 {
 	/** @todo Also try to find the optimal width. */
 	int height_reduction = 0;
 
-	if(!is_folded()) {
+	if (!is_folded()) {
 		BOOST_FOREACH(const ttree_view_node& node, children_) {
 			height_reduction += node.get_current_size().y;
 		}
@@ -232,11 +261,11 @@ void ttree_view_node::clear()
 
 	children_.clear();
 
-	if(height_reduction == 0) {
+	if (height_reduction == 0) {
 		return;
 	}
 
-	tree_view().resize_content(0, -height_reduction);
+	tree_view().invalidate_layout(false);
 }
 
 struct ttree_view_node_implementation
@@ -483,13 +512,13 @@ void ttree_view_node::place(const tpoint& origin, const tpoint& size)
 	// Inherited.
 	twidget::place(origin, size);
 
-	tree_view().layout_children(true);
+	VALIDATE(is_root_node(), "Only root node use normal place!");
+
+	place(tree_view_.indention_step_size_, tree_view_.get_origin(), tree_view_.content_grid()->get_size().x);
+	set_visible_area(tree_view_.content_visible_area());
 }
 
-unsigned ttree_view_node::place(
-	  const unsigned indention_step_size
-	, tpoint origin
-	, unsigned width)
+unsigned ttree_view_node::place(const unsigned indention_step_size, tpoint origin, unsigned width)
 {
 	log_scope2(log_gui_layout, LOG_SCOPE_HEADER);
 	DBG_GUI_L << LOG_HEADER << " origin " << origin << ".\n";
@@ -503,13 +532,13 @@ unsigned ttree_view_node::place(
 	best_size.x = width;
 	grid_.place(origin, best_size);
 
-	if(!is_root_node()) {
+	if (!is_root_node()) {
 		origin.x += indention_step_size;
 		width -= indention_step_size;
 	}
 	origin.y += best_size.y;
 
-	if(is_folded()) {
+	if (is_folded()) {
 		DBG_GUI_L << LOG_HEADER << " folded node done.\n";
 		return origin.y - offset;
 	}
@@ -526,10 +555,7 @@ unsigned ttree_view_node::place(
 	return origin.y - offset;
 }
 
-unsigned ttree_view_node::place_left_align(
-	  const unsigned indention_step_size
-	, tpoint origin
-	, unsigned width)
+unsigned ttree_view_node::place_left_align(const unsigned indention_step_size, tpoint origin, unsigned width)
 {
 	const unsigned offset = origin.y;
 	tpoint best_size = grid_.get_best_size();
@@ -571,7 +597,7 @@ void ttree_view_node::set_visible_area(const SDL_Rect& area)
 	DBG_GUI_L << LOG_HEADER << " area " << area << ".\n";
 	grid_.set_visible_area(area);
 
-	if(is_folded()) {
+	if (is_folded()) {
 		DBG_GUI_L << LOG_HEADER << " folded node done.\n";
 		return;
 	}
@@ -600,47 +626,15 @@ void ttree_view_node::impl_draw_children(
 void ttree_view_node::signal_handler_left_button_click(
 		const event::tevent event)
 {
-	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
-
-	/**
-	 * @todo Rewrite this sizing code for the folding/unfolding.
-	 *
-	 * The code works but feels rather hacky, so better move back to the
-	 * drawingboard for 1.9.
-	 */
-
 	// is_folded() returns the new state.
-	if(is_folded()) {
-
+	if (is_folded()) {
 		// From unfolded to folded.
-		const tpoint current_size(get_current_size().x, get_unfolded_size().y);
-		const tpoint new_size = get_folded_size();
 
-		int width_modification = new_size.x - current_size.x;
-		if(width_modification < 0) {
-			width_modification = 0;
-		}
-
-		const int height_modification = new_size.y - current_size.y;
-		assert(height_modification <= 0);
-
-		tree_view().resize_content(width_modification, height_modification);
 	} else {
-
 		// From folded to unfolded.
-		const tpoint current_size(get_current_size().x, get_folded_size().y);
-		const tpoint new_size = get_unfolded_size();
-
-		int width_modification = new_size.x - current_size.x;
-		if(width_modification < 0) {
-			width_modification = 0;
-		}
-
-		const int height_modification = new_size.y - current_size.y;
-		assert(height_modification >= 0);
-
-		tree_view().resize_content(width_modification, height_modification);
 	}
+
+	tree_view().invalidate_layout(false);
 }
 
 void ttree_view_node::signal_handler_label_left_button_click(

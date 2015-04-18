@@ -54,7 +54,7 @@ struct tlobby_chat_window
 	int pending_messages;
 };
 
-class tlobby_main : public tdialog, public lobby_base, public tlobby::thandler, public tchat_
+class tlobby_main : public tchat_, public lobby_base, public tlobby::thandler
 {
 public:
 	tlobby_main(const config& game_config, lobby_info& info, display& disp, hero_map& heros, hero_map& heros_start);
@@ -98,8 +98,6 @@ public:
 	void do_notify(t_notify_mode mode);
 
 protected:
-	void keyboard_shown(twindow& window);
-	void keyboard_hidden(twindow& window);
 	void update_network_status(twindow& window, bool connected);
 
 private:
@@ -140,7 +138,7 @@ private:
 	/**
 	 * Network polling callback
 	 */
-	bool handle(tlobby::ttype type, const config& data);
+	bool handle(int tag, tsock::ttype type, const config& data);
 
 	// void process_message(const config& data, bool whisper = false);
 

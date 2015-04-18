@@ -23,7 +23,7 @@
 namespace proxy
 {
 
-void create_proxy(network::connection sock, const std::string& host, int port);
+void create_proxy(tsock& sock2, network::connection sock, const std::string& host, int port);
 bool is_proxy(network::connection sock);
 void disconnect(network::connection sock);
 

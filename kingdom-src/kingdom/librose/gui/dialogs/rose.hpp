@@ -66,7 +66,7 @@ public:
 			                       */
 			};
 
-	bool handle(tlobby::ttype type, const config& data);
+	bool handle(int tag, tsock::ttype type, const config& data);
 private:
 
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */

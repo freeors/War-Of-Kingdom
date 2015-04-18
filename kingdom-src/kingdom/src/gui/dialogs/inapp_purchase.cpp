@@ -35,7 +35,7 @@
 #include "gui/dialogs/message.hpp"
 #include "language.hpp"
 #include "game_preferences.hpp"
-#include "gui/auxiliary/timer.hpp"
+// #include "gui/auxiliary/timer.hpp"
 #include "filesystem.hpp"
 #include "multiplayer.hpp"
 
@@ -61,7 +61,7 @@ std::string format_time_local2(time_t t)
 	char time_buf[256] = {0};
 	tm* tm_l = localtime(&t);
 	if (tm_l) {
-		strftime(time_buf, sizeof(time_buf), dsgettext("wesnoth", "%b %d %y"), tm_l);
+		strftime(time_buf, sizeof(time_buf), dsgettext("wesnoth-lib", "%b %d %y"), tm_l);
 	}
 
 	return time_buf;
@@ -154,6 +154,7 @@ extern "C" void inapp_purchase_cb(const char* identifier, int complete)
 			strstr << vgettext("wesnoth-lib", "Restore purchased items $result|!", symbols);
 		}
 		dlg.status().set_label(strstr.str());
+        dlg.status().get_window()->invalidate_layout();
 	}
 }
 
@@ -246,17 +247,14 @@ tinapp_purchase::tinapp_purchase(display& disp, hero_map& heros, bool browse)
 	, purchase_(NULL)
 	, status_(NULL)
 	, list_(NULL)
-	, ing_timer_(0)
 	, ing_item_(-1)
+	, operating_anim_(twidget::npos)
 {
 	singleton_ = this;
 }
 
 tinapp_purchase::~tinapp_purchase()
 {
-	if (ing_timer_) {
-		gui2::remove_timer(ing_timer_);
-	}
 	singleton_ = NULL;
 }
 
@@ -268,7 +266,7 @@ void tinapp_purchase::item_selected(twindow& window)
 
 	int cursel = list.get_selected_row();
 
-	purchase_->set_active(!browse_ && !ing_timer_);
+	purchase_->set_active(!browse_ && operating_anim_ == twidget::npos);
 
 	refresh_tip(window, items_[cursel]);
 }
@@ -469,6 +467,7 @@ void tinapp_purchase::purchase(twindow& window)
 	ing_item_ = res;
 	purchase_status(false);
 #else
+
 	tlistbox& list = find_widget<tlistbox>(&window, "item_list", false);
 	int cursel = list.get_selected_row();
 
@@ -483,7 +482,7 @@ void tinapp_purchase::purchase(twindow& window)
 
 void tinapp_purchase::quit(twindow& window)
 {
-	if (!ing_timer_) {
+	if (operating_anim_ == twidget::npos) {
 		window.set_retval(twindow::OK);
 		return;
 	}
@@ -494,25 +493,6 @@ void tinapp_purchase::quit(twindow& window)
 		return;
 	}
 	window.set_retval(twindow::OK);
-}
-
-void tinapp_purchase::timer_handler()
-{
-	std::stringstream strstr;
-	utils::string_map symbols;
-	if (ing_item_ >= 0) {
-		symbols["name"] = tintegrate::generate_format(items_[ing_item_].name, "blue");
-		strstr << vgettext("wesnoth-lib", "Purchasing '$name'", symbols);
-	} else {
-		strstr << vgettext("wesnoth-lib", "Restoring purchased items", symbols);
-	}
-	
-	std::string bar = "..........";
-	bar.resize(ing_ticks_ % 10);
-	strstr << bar;
-	status_->set_label(strstr.str());
-
-	ing_ticks_ ++;
 }
 
 tinapp_item& tinapp_purchase::get_item(int index)
@@ -530,18 +510,34 @@ tinapp_item& tinapp_purchase::get_item(int index)
 
 void tinapp_purchase::purchase_status(bool exit)
 {
+	twindow* window = purchase_->get_window();
+	tlabel* status_anim_ = find_widget<tlabel>(window, "status-anim", false, true);
+
 	if (!exit) {
         restore_->set_active(false);
 		purchase_->set_active(false);
 
-		ing_ticks_ = 0;
-		ing_timer_ = add_timer(50, boost::bind(&tinapp_purchase::timer_handler, this), true);
+		std::stringstream ss;
+		utils::string_map symbols;
+		if (ing_item_ >= 0) {
+			symbols["name"] = tintegrate::generate_format(items_[ing_item_].name, "blue");
+			ss << vgettext("wesnoth-lib", "Purchasing '$name'", symbols);
+		} else {
+			ss << vgettext("wesnoth-lib", "Restoring purchased items", symbols);
+		}
+		status_->set_label(ss.str());
+		window->invalidate_layout();
+
+		config cfg;
+		cfg["id"] = area_anim::rfind(area_anim::OPERATING);
+		operating_anim_ = status_anim_->insert_animation(cfg, false);
+
 	} else {
-		gui2::remove_timer(ing_timer_);
+		status_anim_->erase_animation(operating_anim_);
+        operating_anim_ = twidget::npos;
 
         restore_->set_active(true);
 		purchase_->set_active(!items_[list_->get_selected_row()].purchased);
-		ing_timer_ = 0;
 
 		ing_item_ = -1;
 	}

@@ -417,6 +417,7 @@ public:
 		variables_.add(key, value);
 		set_dirty();
 	}
+	const game_logic::map_formula_callable& variables() const { return variables_; }
 
 	void radio_page_swap_uh(const tradio_page::tpage& page, twidget* holder, bool first);
 	void radio_page_swap_bh(const tradio_page::tpage& page, twidget* holder);
@@ -431,7 +432,7 @@ public:
 	 *
 	 * @see layout_algorithm for more information.
 	 */
-	void layout_linked_widgets();
+	void layout_linked_widgets(const twidget* parent);
 
 	/** Inherited from twidget. */
 	tpoint calculate_best_size() const;

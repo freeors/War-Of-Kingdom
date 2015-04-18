@@ -177,6 +177,8 @@ public:
 	virtual void toggle_tabbar(twidget* widget);
 	virtual void click_tabbar(twidget* widget, const std::string& sparam) {}
 
+	virtual void destruct_widget(const twidget* widget) {}
+
 protected:
 
 	/**

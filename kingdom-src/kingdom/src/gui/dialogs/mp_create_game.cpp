@@ -276,9 +276,9 @@ void tmp_create_game::post_show(twindow& window)
 	parameters_.password = game_config::checksum;
 }
 
-bool tmp_create_game::handle(tlobby::ttype type, const config& data)
+bool tmp_create_game::handle(int tag, tsock::ttype type, const config& data)
 {
-	if (type == tlobby::t_disconnected && !local_only_) {
+	if (type == tsock::t_disconnected && !local_only_) {
 		launch_game_->get_window()->set_retval(twindow::CANCEL);
 	}
 	return false;

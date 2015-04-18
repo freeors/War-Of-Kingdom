@@ -11,12 +11,12 @@
    #define NUMELMS(aa) (sizeof(aa)/sizeof((aa)[0]))
 #endif
 
-#define MAX_BYTES_PERLINE		8
 #define TB_BTNS_COUNT_SYS		6
 #define TB_BTNS_COUNT_SYNC		6
 #define TB_BTNS_COUNT_WGEN		17
 #define TB_BTNS_COUNT_CAMPAIGN	7
 #define TB_BTNS_COUNT_CORE		7
+#define MAX_MODS				5
 
 typedef enum {
 	da_unknown		= 0,
@@ -141,7 +141,7 @@ typedef struct {
 
 	HMENU			_hpopup_ddesc;
 	HMENU			_hpopup_new;
-	HMENU			_hpopup_star;
+	HMENU			_hpopup_mod[MAX_MODS];
 	HMENU			_hpopup_explorer;
 	HMENU			_hpopup_delete;
 	HMENU			_hpopup_delete2;

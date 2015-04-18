@@ -956,6 +956,7 @@ void game_display::show_access_troop(gui2::ttabbar* bar, const gui2::tgrid::tchi
 	// troop image is large amount. refresh when requrie.
 	unit* u = reinterpret_cast<unit*>(widget->cookie());
 	int drawn_ticks = u->drawn_ticks();
+
 	if (!u->ticks_adjusting && drawn_ticks != unit_map::main_ticks) {
 		u->set_drawn_ticks(unit_map::main_ticks);
 		bool greyscale = tent::turn_based? !u->can_move(): (u->side() != access_list_side_ + 1);

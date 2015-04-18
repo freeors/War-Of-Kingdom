@@ -99,8 +99,9 @@ tbrowse::tbrowse(display& disp, tparam& param)
 	, ok_(NULL)
 	, current_dir_(get_path(param.initial))
 {
-	if (!is_directory(current_dir_)) {
-		current_dir_ = get_path(game_config::preferences_dir);
+	std::string current_dir_ansi = conv_ansi_utf8_2(current_dir_, false);
+	if (!is_directory(current_dir_ansi)) {
+		current_dir_ = get_path(game_config::preferences_dir_utf8);
 	}
 }
 
@@ -156,7 +157,7 @@ void tbrowse::post_show(twindow& window)
 
 void tbrowse::init_entry(twindow& window)
 {
-	entries_.push_back(tentry(game_config::preferences_dir, _("My Document"), "misc/document.png", "document"));
+	entries_.push_back(tentry(game_config::preferences_dir_utf8, _("My Document"), "misc/document.png", "document"));
 #ifdef _WIN32
 	entries_.push_back(tentry("c:", _("C:"), "misc/disk.png", "device1"));
 #else
@@ -387,7 +388,8 @@ void tbrowse::reload_file_table(twindow& window, int cursel)
 
 	item_selected(window);
 
-	window.invalidate_layout();
+	// window.invalidate_layout();
+	list->invalidate_layout(true);
 }
 
 void tbrowse::update_file_lists(twindow& window)

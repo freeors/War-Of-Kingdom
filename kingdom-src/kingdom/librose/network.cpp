@@ -27,6 +27,7 @@
 #include "thread.hpp"
 #include "util.hpp"
 #include "config.hpp"
+#include "lobby.hpp"
 
 #include "filesystem.hpp"
 
@@ -39,7 +40,7 @@
 #include <stdexcept>
 
 #include <signal.h>
-#if defined(_WIN32) || defined(__WIN32__) || defined (WIN32)
+#if defined(_WIN32)
 #undef INADDR_ANY
 #undef INADDR_BROADCAST
 #undef INADDR_NONE
@@ -49,11 +50,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>  // for TCP_NODELAY
-#ifdef __BEOS__
-#include <socket.h>
-#else
 #include <fcntl.h>
-#endif
 #define SOCKET int
 #endif
 
@@ -66,82 +63,23 @@ static lg::log_domain log_network("network");
 
 namespace {
 
-// We store the details of a connection in a map that must be looked up by its handle.
-// This allows a connection to be disconnected and then recovered,
-// but the handle remains the same, so it's all seamless to the user.
-struct connection_details {
-	connection_details(TCPsocket sock, const std::string& host, int port, bool xmit_http_data)
-		: sock(sock), host(host), port(port), xmit_http_data(xmit_http_data), remote_handle(0),
-	      connected_at(SDL_GetTicks())
-	{}
-
-	TCPsocket sock;
-	std::string host;
-	int port;
-	bool xmit_http_data;
-
-	// The remote handle is the handle assigned to this connection by the remote host.
-	// Is 0 before a handle has been assigned.
-	int remote_handle;
-
-	int connected_at;
-};
-
-typedef std::map<network::connection,connection_details> connection_map;
-connection_map connections;
-
-network::connection connection_id = 1;
-
 /** Stores the time of the last server ping we received. */
 time_t last_ping, last_ping_check = 0;
 
 } // end anon namespace
 
-static int create_connection(TCPsocket sock, const std::string& host, int port, bool xmit_http_data)
-{
-	connections.insert(std::pair<network::connection,connection_details>(connection_id,connection_details(sock, host, port, xmit_http_data)));
-	return connection_id++;
-}
-
-static connection_details& get_connection_details(network::connection handle)
-{
-	const connection_map::iterator i = connections.find(handle);
-	if(i == connections.end()) {
-		throw network::error(_("invalid network handle"));
-	}
-
-	return i->second;
-}
-
 static TCPsocket get_socket(network::connection handle)
 {
-	return get_connection_details(handle).sock;
-}
-
-static void remove_connection(network::connection handle)
-{
-	connections.erase(handle);
-}
-
-static bool is_pending_remote_handle(network::connection handle)
-{
-	const connection_details& details = get_connection_details(handle);
-	return details.host != "" && details.remote_handle == 0 && !details.xmit_http_data;
-}
-
-static void set_remote_handle(network::connection handle, int remote_handle)
-{
-	get_connection_details(handle).remote_handle = remote_handle;
+	return lobby->get_connection_details(handle).sock();
 }
 
 static void check_error()
 {
 	const TCPsocket sock = network_worker_pool::detect_error();
-	if(sock) {
-		for(connection_map::const_iterator i = connections.begin(); i != connections.end(); ++i) {
-			if(i->second.sock == sock) {
-				throw network::error(_("Client disconnected"),i->first);
-			}
+	if (sock) {
+		const tsock& info = lobby->get_connection_details2(sock);
+		if (info.valid()) {
+			throw network::error(_("Client disconnected"), info.conn());
 		}
 	}
 }
@@ -208,14 +146,15 @@ network_worker_pool::manager* worker_pool_man = NULL;
 
 namespace network {
 
+socket_stats_map transfer_stats; // stats_mutex
+threading::mutex* stats_mutex = NULL;
+
 /**
  * Amount of seconds after the last server ping when we assume to have timed out.
  * When set to '0' ping timeout isn't checked.
  * Gets set in preferences::manager according to the preferences file.
  */
 unsigned int ping_timeout = 0;
-connection lobby_sock;
-std::string lobby_sock_error;
 
 connection_stats::connection_stats(int sent, int received, int connected_at)
        : bytes_sent(sent), bytes_received(received), time_connected(SDL_GetTicks() - connected_at)
@@ -223,8 +162,8 @@ connection_stats::connection_stats(int sent, int received, int connected_at)
 
 connection_stats get_connection_stats(connection connection_num)
 {
-	connection_details& details = get_connection_details(connection_num);
-	return connection_stats(get_send_stats(connection_num).total,get_receive_stats(connection_num).total,details.connected_at);
+	tsock& details = lobby->get_connection_details(connection_num);
+	return connection_stats(get_send_stats(connection_num).total, get_receive_stats(connection_num).total, details.connected_at_);
 }
 
 error::error(const std::string& msg, connection sock) : game::error(msg), socket(sock)
@@ -265,7 +204,7 @@ manager::manager(size_t min_threads, size_t max_threads) : free_(true)
 
 manager::~manager()
 {
-	if(free_) {
+	if (free_) {
 		disconnect();
 		delete worker_pool_man;
 		worker_pool_man = NULL;
@@ -322,11 +261,11 @@ void set_proxy_password( const std::string& )
 }
 // --- End Proxy methods
 
-server_manager::server_manager(int port, CREATE_SERVER create_server) : free_(false), connection_(0)
+server_manager::server_manager(tsock& sock, int port, CREATE_SERVER create_server) : free_(false), connection_(0)
 {
-	if(create_server != NO_SERVER && !server_socket) {
+	if (create_server != NO_SERVER && !server_socket) {
 		try {
-			connection_ = connect("",port);
+			connection_ = connect(sock, "", port);
 			server_socket = get_socket(connection_);
 		} catch(network::error&) {
 			if(create_server == MUST_CREATE_SERVER) {
@@ -348,9 +287,10 @@ server_manager::~server_manager()
 
 void server_manager::stop()
 {
-	if(free_) {
+	if (free_) {
+		lobby->pre_disconnect(connection_);
 		SDLNet_TCP_Close(server_socket);
-		remove_connection(connection_);
+		lobby->post_disconnect(connection_);
 		server_socket = 0;
 		free_ = false;
 	}
@@ -376,42 +316,33 @@ namespace {
 class connect_operation : public threading::async_operation
 {
 public:
-	connect_operation(const std::string& host, int port, bool xmit_http_data, bool lobby) 
-		: host_(host)
+	connect_operation(tsock& sock, const std::string& host, int port) 
+		: sock_(sock)
+		, host_(host)
 		, port_(port)
-		, xmit_http_data_(xmit_http_data)
-		, lobby_(lobby)
-		, error_(NULL)
-		, connect_(0)
+		, error_()
 	{}
 	~connect_operation() {};
 
 	void check_error();
 	void run();
 
-	network::connection result() const { return connect_; }
+	network::connection result() const { return sock_.conn(); }
 
-	bool lobby() const { return lobby_; }
 	void result_to_lobby()
 	{
-		lobby_sock = connect_;
-		lobby_sock_error.clear();
-		if (error_) {
-			lobby_sock_error = error_;
-		}
+		sock_.set_connect_result(error_);
 	}
 private:
+	tsock& sock_;
 	std::string host_;
 	int port_;
-	bool xmit_http_data_;
-	bool lobby_;
-	const char* error_;
-	network::connection connect_;
+	std::string error_;
 };
 
 void connect_operation::check_error()
 {
-	if(error_ != NULL) {
+	if (!error_.empty()) {
 		throw error(error_);
 	}
 }
@@ -435,10 +366,6 @@ public:
 
 	~tlobby_sock_lock() 
 	{
-		if (!op_.lobby()) {
-			return;
-		}
-		// this is lobby connect, should set socket to lobby.
 		op_.result_to_lobby();
 	}
 
@@ -479,13 +406,13 @@ void connect_operation::run()
 
 
 // Use non blocking IO
-#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+#if defined(_WIN32)
 	{
 		unsigned long mode = 1;
 
 		ioctlsocket (((_TCPsocket*)sock)->channel, FIONBIO, &mode);
 	}
-#elif !defined(__BEOS__)
+#else
 	int flags;
 	flags = fcntl((reinterpret_cast<_TCPsocket*>(sock))->channel, F_GETFL, 0);
 #if defined(O_NONBLOCK)
@@ -500,22 +427,15 @@ void connect_operation::run()
 		SDLNet_TCP_Close(sock);
 		return;
 	}
-#else
-	int on = 1;
-	if(setsockopt(((_TCPsocket*)sock)->channel, SOL_SOCKET, SO_NONBLOCK, &on, sizeof(int)) < 0) {
-		error_ = ("Could not make socket non-blocking: " + std::string(strerror(errno))).c_str();
-		SDLNet_TCP_Close(sock);
-		return;
-	}
 #endif
 
 	// If this is a server socket
-	if(hostname == NULL) {
+	if (hostname == NULL) {
 		const threading::lock l(get_mutex());
-		connect_ = create_connection(sock, "", port_, xmit_http_data_);
+		sock_.connect(sock, "", port_);
 		return;
 	}
-
+/*
 	if (!xmit_http_data_) {
 		// Send data telling the remote host that this is a new connection
 		char buf[4] ALIGN_4;
@@ -527,19 +447,24 @@ void connect_operation::run()
 			return;
 		}
 	}
-
+*/
 	// No blocking operations from here on
 	const threading::lock l(get_mutex());
 	DBG_NW << "sent handshake...\n";
 
-	if(is_aborted()) {
+	if (is_aborted()) {
 		DBG_NW << "connect operation aborted by calling thread\n";
 		SDLNet_TCP_Close(sock);
 		return;
 	}
 
 	// Allocate this connection a connection handle
-	connect_ = create_connection(sock, host_, port_, xmit_http_data_);
+	if (!sock_.connect(sock, host_, port_)) {
+		error_ = "Could not send initial handshake";
+		SDLNet_TCP_Close(sock);
+		return;
+	}
+	network::connection conn = sock_.conn();
 
 	const int res = SDLNet_TCP_AddSocket(socket_set,sock);
 	if(res == -1) {
@@ -548,9 +473,9 @@ void connect_operation::run()
 		return;
 	}
 
-	waiting_sockets.insert(connect_);
+	waiting_sockets.insert(conn);
 
-	sockets.push_back(connect_);
+	sockets.push_back(conn);
 
 	while(!notify_finished()) {};
 }
@@ -559,24 +484,23 @@ void connect_operation::run()
 } // end namespace
 
 
-connection connect(const std::string& host, int port)
+connection connect(tsock& sock, const std::string& host, int port)
 {
-	connect_operation op(host, port, false, false);
+	connect_operation op(sock, host, port);
 	op.run();
 	op.check_error();
-	return op.result();
+	return sock.conn();
 }
 
-connection connect(const std::string& host, int port, bool xmit_http_data, bool lobby, threading::waiter& waiter)
+void connect(tsock& sock, const std::string& host, int port, threading::waiter& waiter)
 {
-	const threading::async_operation_ptr op(new connect_operation(host, port, xmit_http_data, lobby));
+	const threading::async_operation_ptr op(new connect_operation(sock, host, port));
 	const connect_operation::RESULT res = op->execute(op, waiter);
-	if(res == connect_operation::ABORTED) {
-		return 0;
+	if (res == connect_operation::ABORTED) {
+		return;
 	}
 
 	static_cast<connect_operation*>(op.get())->check_error();
-	return static_cast<connect_operation*>(op.get())->result();
 }
 
 namespace {
@@ -591,13 +515,14 @@ connection accept_connection_pending(std::vector<TCPsocket>& pending_sockets,
 
 	if (i == pending_sockets.end()) return 0;
 
-	// Receive the 4 bytes telling us if they're a new connection
-	// or trying to recover a connection
-	char buf[4] ALIGN_4;
-
 	const TCPsocket psock = *i;
 	SDLNet_TCP_DelSocket(pending_socket_set,psock);
 	pending_sockets.erase(i);
+
+/*
+	// Receive the 4 bytes telling us if they're a new connection
+	// or trying to recover a connection
+	char buf[4] ALIGN_4;
 
 	DBG_NW << "receiving data from pending socket...\n";
 
@@ -620,7 +545,8 @@ connection accept_connection_pending(std::vector<TCPsocket>& pending_sockets,
 		throw network::error(_("Could not add socket to socket set"));
 	}
 
-	const connection connect = create_connection(psock, "", 0, false);
+	lobby->insert_accept_sock(psock);
+	const connection connect = lobby->get_connection_details2(psock).conn();
 
 	// Send back their connection number
 	SDLNet_Write32(connect, reinterpret_cast<void*>(buf));
@@ -628,9 +554,25 @@ connection accept_connection_pending(std::vector<TCPsocket>& pending_sockets,
 	if(nbytes != 4) {
 		SDLNet_TCP_DelSocket(socket_set,psock);
 		SDLNet_TCP_Close(psock);
-		remove_connection(connect);
+		lobby->disconnect_connection(connect);
 		throw network::error(_("Could not send initial handshake"));
 	}
+*/
+
+	const int res = SDLNet_TCP_AddSocket(socket_set, psock);
+	if (res == -1) {
+		ERR_NW << "SDLNet_GetError() is " << SDLNet_GetError() << "\n";
+		SDLNet_TCP_Close(psock);
+
+		throw network::error(_("Could not add socket to socket set"));
+	}
+
+	if (!lobby->insert_accept_sock(psock)) {
+		SDLNet_TCP_DelSocket(socket_set,psock);
+		SDLNet_TCP_Close(psock);
+		throw network::error(_("Could not send initial handshake"));
+	}
+	const connection connect = lobby->get_connection_details2(psock).conn();
 
 	waiting_sockets.insert(connect);
 	sockets.push_back(connect);
@@ -639,7 +581,7 @@ connection accept_connection_pending(std::vector<TCPsocket>& pending_sockets,
 
 } //anon namespace
 
-connection accept_connection()
+connection accept_connection(tsock& sock2)
 {
 	if(!server_socket) {
 		return 0;
@@ -694,7 +636,7 @@ connection accept_connection()
 
 bool disconnect(connection s)
 {
-	if(s == 0) {
+	if (s == 0) {
 		while(sockets.empty() == false) {
 			assert(sockets.back() != 0);
 			while(disconnect(sockets.back()) == false) {
@@ -705,13 +647,13 @@ bool disconnect(connection s)
 	}
 	if (!is_server()) last_ping = 0;
 
-	const connection_map::iterator info = connections.find(s);
-	if(info != connections.end()) {
-		if (info->second.sock == server_socket)
-		{
+	tsock& info = lobby->get_connection_details(s);
+	if (info.valid()) {
+		if (info.sock() == server_socket) {
 			return true;
 		}
-		if (!network_worker_pool::close_socket(info->second.sock)) {
+		info.pre_disconnect();
+		if (!network_worker_pool::close_socket(info.sock())) {
 			return false;
 		}
 	}
@@ -719,26 +661,25 @@ bool disconnect(connection s)
 	bad_sockets.erase(s);
 
 	std::deque<network::connection>::iterator dqi = std::find(disconnection_queue.begin(),disconnection_queue.end(),s);
-	if(dqi != disconnection_queue.end()) {
+	if (dqi != disconnection_queue.end()) {
 		disconnection_queue.erase(dqi);
 	}
 
 	const sockets_list::iterator i = std::find(sockets.begin(),sockets.end(),s);
-	if(i != sockets.end()) {
+	if (i != sockets.end()) {
 		sockets.erase(i);
-
 		const TCPsocket sock = get_socket(s);
 
 		waiting_sockets.erase(s);
 		SDLNet_TCP_DelSocket(socket_set,sock);
 		SDLNet_TCP_Close(sock);
 
-		remove_connection(s);
 	} else {
 		if(sockets.size() == 1) {
 			DBG_NW << "valid socket: " << static_cast<int>(*sockets.begin()) << "\n";
 		}
 	}
+	info.post_disconnect();
 
 	return true;
 }
@@ -748,24 +689,11 @@ void queue_disconnect(network::connection sock)
 	disconnection_queue.push_back(sock);
 }
 
-bool get_connection_xmit_http_data(TCPsocket s)
-{
-	std::map<network::connection,connection_details>::const_iterator it = connections.begin();
-	for (; it != connections.end(); ++ it) {
-		if (it->second.sock == s) {
-			return it->second.xmit_http_data;
-		}
-	}
-	throw network::error(_("invalid network TCPsocket"));
-	return it->second.xmit_http_data;
-}
-
 connection receive_data(config& cfg, connection connection_num, unsigned int timeout, bandwidth_in_ptr* bandwidth_in)
 {
 	unsigned int start_ticks = SDL_GetTicks();
 	while(true) {
-		const connection res = receive_data(
-				cfg,connection_num, bandwidth_in);
+		const connection res = receive_data(cfg, connection_num, bandwidth_in);
 		if(res != 0) {
 			return res;
 		}
@@ -808,24 +736,12 @@ connection receive_data(config& cfg, connection connection_num, bandwidth_in_ptr
 	const int res = SDLNet_CheckSockets(socket_set,0);
 
 	for (std::set<network::connection>::iterator i = waiting_sockets.begin(); res != 0 && i != waiting_sockets.end(); ) {
-		connection_details& details = get_connection_details(*i);
-		const TCPsocket sock = details.sock;
+		tsock& details = lobby->get_connection_details(*i);
+		const TCPsocket sock = details.sock();
 		if (SDLNet_SocketReady(sock)) {
-			// See if this socket is still waiting for it to be assigned its remote handle.
-			// If it is, then the first 4 bytes must be the remote handle.
-			if (is_pending_remote_handle(*i)) {
-				char buf[4] ALIGN_4;
-				int len = SDLNet_TCP_Recv(sock, buf, 4);
-				if (len != 4) {
-					throw error("Remote host disconnected",*i);
-				}
-
-				const int remote_handle = SDLNet_Read32(reinterpret_cast<void*>(buf));
-				set_remote_handle(*i,remote_handle);
-
+			if (!details.receive_probed()) {
 				continue;
 			}
-
 			waiting_sockets.erase(i++);
 			SDLNet_TCP_DelSocket(socket_set,sock);
 			network_worker_pool::receive_data(sock);
@@ -866,13 +782,8 @@ connection receive_data(config& cfg, connection connection_num, bandwidth_in_ptr
 		return 0;
 	}
 
-	connection result = 0;
-	for(connection_map::const_iterator j = connections.begin(); j != connections.end(); ++j) {
-		if(j->second.sock == sock) {
-			result = j->first;
-			break;
-		}
-	}
+	connection result = lobby->get_connection_details2(sock).conn();
+
 	if(!cfg.empty()) {
 		DBG_NW << "RECEIVED from: " << result << ": " << cfg;
 	}
@@ -891,7 +802,7 @@ connection receive_data(config& cfg, connection connection_num, bandwidth_in_ptr
 	return result;
 }
 
-connection receive_data(std::vector<char>& buf, bandwidth_in_ptr* bandwidth_in)
+connection receive_data(std::vector<char>& buf, connection connection_num, bandwidth_in_ptr* bandwidth_in)
 {
 	if(!socket_set) {
 		return 0;
@@ -916,25 +827,12 @@ connection receive_data(std::vector<char>& buf, bandwidth_in_ptr* bandwidth_in)
 	const int res = SDLNet_CheckSockets(socket_set,0);
 
 	for(std::set<network::connection>::iterator i = waiting_sockets.begin(); res != 0 && i != waiting_sockets.end(); ) {
-		connection_details& details = get_connection_details(*i);
-		const TCPsocket sock = details.sock;
+		tsock& details = lobby->get_connection_details(*i);
+		const TCPsocket sock = details.sock();
 		if(SDLNet_SocketReady(sock)) {
-
-			// See if this socket is still waiting for it to be assigned its remote handle.
-			// If it is, then the first 4 bytes must be the remote handle.
-			if(is_pending_remote_handle(*i)) {
-				char buf[4] ALIGN_4;
-				int len = SDLNet_TCP_Recv(sock,buf,4);
-				if(len != 4) {
-					throw error("Remote host disconnected",*i);
-				}
-
-				const int remote_handle = SDLNet_Read32(reinterpret_cast<void*>(buf));
-				set_remote_handle(*i,remote_handle);
-
+			if (!details.receive_probed()) {
 				continue;
 			}
-
 			waiting_sockets.erase(i++);
 			SDLNet_TCP_DelSocket(socket_set,sock);
 			network_worker_pool::receive_data(sock);
@@ -943,8 +841,8 @@ connection receive_data(std::vector<char>& buf, bandwidth_in_ptr* bandwidth_in)
 		}
 	}
 
-
-	TCPsocket sock = network_worker_pool::get_received_data(buf);
+	TCPsocket sock = connection_num == 0 ? 0 : get_socket(connection_num);
+	sock = network_worker_pool::get_received_data(sock, buf);
 	if (sock == NULL) {
 		return 0;
 	}
@@ -967,18 +865,14 @@ connection receive_data(std::vector<char>& buf, bandwidth_in_ptr* bandwidth_in)
 		SDLNet_TCP_Close(sock);
 		return 0;
 	}
-	connection result = 0;
-	for(connection_map::const_iterator j = connections.begin(); j != connections.end(); ++j) {
-		if(j->second.sock == sock) {
-			result = j->first;
-			break;
-		}
-	}
+	
+	connection result = lobby->get_connection_details2(sock).conn();
 
 	assert(result != 0);
 	waiting_sockets.insert(result);
 	return result;
 }
+
 struct bandwidth_stats {
 	int out_packets;
 	int out_bytes;
@@ -1115,8 +1009,8 @@ void send_file(const std::string& filename, connection connection_num, const std
 		return;
 	}
 
-	const connection_map::iterator info = connections.find(connection_num);
-	if (info == connections.end()) {
+	const tsock& info = lobby->get_connection_details(connection_num);
+	if (!info.valid()) {
 		ERR_NW << "Error: socket: " << connection_num
 			<< "\tnot found in connection_map. Not sending...\n";
 		return;
@@ -1124,24 +1018,23 @@ void send_file(const std::string& filename, connection connection_num, const std
 
 	const int packet_headers = 4;
 	add_bandwidth_out(packet_type, file_size(filename) + packet_headers);
-	network_worker_pool::queue_file(info->second.sock, filename);
+	network_worker_pool::queue_file(info.sock(), filename);
 
 }
 
-size_t send_data(const config& cfg, connection connection_num, const std::string& packet_type)
+size_t send_data(tsock& info, const config& cfg, const std::string& packet_type)
 {
-	DBG_NW << "in send_data()...\n";
+	connection connection_num = info.conn();
 
-	if(cfg.empty()) {
+	if (cfg.empty()) {
 		return 0;
 	}
 
-	if(bad_sockets.count(connection_num) || bad_sockets.count(0)) {
+	if (bad_sockets.count(connection_num) || bad_sockets.count(0)) {
 		return 0;
 	}
-
-//	log_scope2(network, "sending data");
-	if(!connection_num) {
+/*
+	if (!connection_num) {
 		DBG_NW << "sockets: " << sockets.size() << "\n";
 		size_t size = 0;
 		for(sockets_list::const_iterator i = sockets.begin();
@@ -1151,16 +1044,8 @@ size_t send_data(const config& cfg, connection connection_num, const std::string
 		}
 		return size;
 	}
-
-	const connection_map::iterator info = connections.find(connection_num);
-	if (info == connections.end()) {
-		ERR_NW << "Error: socket: " << connection_num
-			<< "\tnot found in connection_map. Not sending...\n";
-		return 0;
-	}
-
-	LOG_NW << "SENDING to: " << connection_num << ": " << cfg;
-	return network_worker_pool::queue_data(info->second.sock, cfg, packet_type);
+*/
+	return info.queue_data(cfg, packet_type);
 }
 
 void send_raw_data(const char* buf, int len, connection connection_num, const std::string& packet_type)
@@ -1181,19 +1066,15 @@ void send_raw_data(const char* buf, int len, connection connection_num, const st
 		return;
 	}
 
-	const connection_map::iterator info = connections.find(connection_num);
-	if (info == connections.end()) {
+	tsock& info = lobby->get_connection_details(connection_num);
+	if (!info.valid()) {
 		ERR_NW << "Error: socket: " << connection_num
 			<< "\tnot found in connection_map. Not sending...\n";
 		return;
 	}
 
-	add_bandwidth_out(packet_type, len + info->second.xmit_http_data? 0: 4);
-	if (!info->second.xmit_http_data) {
-		network_worker_pool::queue_raw_data(info->second.sock, buf, len);
-	} else {
-		network_worker_pool::queue_http_data(info->second.sock, buf, len);
-	}
+	size_t res = info.queue_raw_data(buf, len);
+	add_bandwidth_out(packet_type, res);
 }
 
 void process_send_queue(connection, size_t)
@@ -1203,12 +1084,12 @@ void process_send_queue(connection, size_t)
 
 void send_data_all_except(const config& cfg, connection connection_num, const std::string& packet_type)
 {
-	for(sockets_list::const_iterator i = sockets.begin(); i != sockets.end(); ++i) {
-		if(*i == connection_num) {
+	for (sockets_list::const_iterator i = sockets.begin(); i != sockets.end(); ++i) {
+		if (*i == connection_num) {
 			continue;
 		}
 
-		send_data(cfg,*i, packet_type);
+		send_data(lobby->get_connection_details(*i), cfg, packet_type);
 	}
 }
 

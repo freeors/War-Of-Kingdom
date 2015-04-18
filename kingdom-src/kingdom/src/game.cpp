@@ -45,7 +45,6 @@
 #include "gui/dialogs/message.hpp"
 #include "gui/dialogs/mp_method_selection.hpp"
 #include "gui/dialogs/title_screen.hpp"
-#include "gui/dialogs/mp_login.hpp"
 #include "gui/dialogs/preferences.hpp"
 #include "gui/dialogs/create_hero.hpp"
 #include "gui/dialogs/user_report.hpp"
@@ -574,7 +573,7 @@ bool game_controller::init_config(const bool force)
 	game_config::load_config(cfg ? &cfg : NULL);
 
 	paths_manager_.set_paths(game_config());
-	::init_textdomains(game_config());
+	// ::init_textdomains(game_config());
 	about::set_about(game_config());
 	ai::configuration::init(game_config());
 
@@ -1501,8 +1500,6 @@ void game_controller::load_game_cfg(const bool force)
 			game_config_.append(tmpcfg);
 
 		}
-		// ::init_textdomains(game_config_);
-		// cache_.get_config(game_config::path +"/data", game_config_);
 
 		main_transaction.lock();
 
@@ -1703,8 +1700,6 @@ static void init_locale()
 	bind_textdomain_codeset (PACKAGE, "UTF-8");
 	bindtextdomain (PACKAGE "-lib", intl_dir.c_str());
 	bind_textdomain_codeset (PACKAGE "-lib", "UTF-8");
-	bindtextdomain (PACKAGE "-hero", intl_dir.c_str());
-	bind_textdomain_codeset (PACKAGE "-hero", "UTF-8");
 	textdomain (PACKAGE);
 }
 
@@ -1740,6 +1735,21 @@ std::string generate_about_text2()
 	return text;
 }
 
+class tlobby_manager
+{
+public:
+	tlobby_manager()
+	{
+		lobby = new tlobby();
+	}
+	~tlobby_manager()
+	{
+		if (lobby) {
+			delete lobby;
+		}
+	}
+};
+
 /**
  * Setups the game environment and enters
  * the titlescreen or game loops.
@@ -1762,16 +1772,21 @@ static int do_gameloop(int argc, char** argv)
 	//static initialization (befire any srand() call)
 	recorder.set_seed(rand());
 
-	// always connect to lobby server.
-	const network::manager net_manager(1, 1);
-	lobby.set_host("www.leagor.com", 15000);
-	// lobby.set_host("192.168.1.103", 15000);
-	lobby.join();
-
 	game_controller game(argc,argv);
 	const int start_ticks = SDL_GetTicks();
 
 	init_locale();
+
+	// always connect to lobby server.
+	tlobby_manager lobby_manager;
+	const network::manager net_manager(1, 1);
+	lobby->chat.set_host("chat.freenode.net", 6665);
+
+	// server isn't running, disable transit.
+	// lobby->transit.set_host("localhost", 15000);
+
+	lobby->join();
+	lobby->set_nick2(group.leader().name());
 
 	bool res;
 
@@ -2065,10 +2080,14 @@ int main(int argc, char** argv)
 #if defined(__APPLE__) && TARGET_OS_IPHONE
 		SDL_SetHint(SDL_HINT_IDLE_TIMER_DISABLED, "0");
 #endif
+		if (lobby) {
+			delete lobby;
+		}
 		preferences::write_preferences();
 		return 1;
 	}
 
+	game_config::app_channel = "#war-of-kingdom";
 	if (SDL_Init(SDL_INIT_TIMER) < 0) {
 		fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
 		return(1);

@@ -4937,7 +4937,7 @@ void replay_network_sender::sync_non_undoable()
 		config cfg;
 		const config& data = cfg.add_child("turn", obj_.get_data_range(upto_, cmd_end - 1));
 		if (data.empty() == false) {
-			network::send_data(cfg, 0);
+			network::send_data(lobby->transit, cfg);
 			// upto_ += data.get_children("command").size();
 		}
 
@@ -4951,7 +4951,7 @@ void replay_network_sender::commit_and_sync()
 		config cfg;
 		const config& data = cfg.add_child("turn", obj_.get_data_range(upto_,obj_.ncommands()));
 		if (data.empty() == false) {
-			network::send_data(cfg, 0);
+			network::send_data(lobby->transit, cfg);
 		}
 		upto_ = obj_.ncommands();
 	}

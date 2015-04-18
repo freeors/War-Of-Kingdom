@@ -25,8 +25,8 @@ extern editor editor_;
 static void OnDeleteBt(HWND hdlgP, char *fname);
 bool extra_kingdom_ins_disk(char* kingdom_src, char* kingdom_ins, char* kingdon_ins_android);
 bool extract_rose(tcopier& copier);
-BOOL generate_kingdom_mod_res(const std::string& kingdom_res, const std::string& kingdom_star_patch, const std::string& kingdom_star);
-BOOL extract_kingdom_star_patch(const std::string& kingdom_star, const std::string& kingdom_star_patch);
+BOOL generate_kingdom_mod_res(tmod_config& mod_config, const std::string& kingdom_res, const std::string& kingdom_star_patch, const std::string& kingdom_star);
+BOOL extract_kingdom_star_patch(tmod_config& mod_config, const std::string& kingdom_star, const std::string& kingdom_star_patch);
 
 void create_ddesc_toolinfo(HWND hwndP)
 {
@@ -232,7 +232,7 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 
 	case IDM_NEW_EXTRAROSE:
 		{
-			tcopier copier(generate_cfg(editor_config::data_cfg, "rose"));
+			tcopier copier(get_generate_cfg(editor_config::data_cfg, "rose"));
 
 			symbols["dst"] = copier.get_path("rose_src");
 			strcpy(text, utf8_2_ansi(vgettext2("Do you want to extract Rose package to $dst?", symbols).c_str())); 
@@ -257,38 +257,52 @@ void On_DlgDDescCommand(HWND hdlgP, int id, HWND hwndCtrl, UINT codeNotify)
 		break;
 #endif
 
-	case IDM_STAR_RESOURCE:
-		symbols["mod_res_path"] = mod_config.get_path(tmod_config::res_tag);
-		strcpy(text, utf8_2_ansi(vgettext2("Do you want to generate star resource package to $mod_res_path?", symbols).c_str()));
+	case IDM_MOD_RES0:
+	case IDM_MOD_RES1:
+	case IDM_MOD_RES2:
+	case IDM_MOD_RES3:
+	case IDM_MOD_RES4: {
+		tmod_config& current_mod = mod_configs[id - IDM_MOD_RES0];
+		symbols["mod"] = current_mod.name();
+		symbols["mod_res_path"] = current_mod.get_path(tmod_config::res_tag);
+		strcpy(text, utf8_2_ansi(vgettext2("Do you want to generate $mod resource package to $mod_res_path?", symbols).c_str()));
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Confirm generate"));
 		retval = MessageBox(hdlgP, text, strstr.str().c_str(), MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
-			fok = generate_kingdom_mod_res(gdmgr._menu_text, mod_config.get_path(tmod_config::patch_tag), mod_config.get_path(tmod_config::res_tag));
+			fok = generate_kingdom_mod_res(current_mod, gdmgr._menu_text, current_mod.get_path(tmod_config::patch_tag), current_mod.get_path(tmod_config::res_tag));
 			symbols["src1"] = gdmgr._menu_text;
-			symbols["src2"] = mod_config.get_path(tmod_config::patch_tag);
-			symbols["dst"] = mod_config.get_path(tmod_config::res_tag);
+			symbols["src2"] = current_mod.get_path(tmod_config::patch_tag);
+			symbols["dst"] = current_mod.get_path(tmod_config::res_tag);
 			symbols["result"] = fok? "Success": "Fail";
-			strcpy(text, utf8_2_ansi(vgettext2("Generate star resource package from \"$src1\" and \"$src2\" to \"$dst\", $result!", symbols).c_str())); 
+			strcpy(text, utf8_2_ansi(vgettext2("Generate $mod resource package from \"$src1\" and \"$src2\" to \"$dst\", $result!", symbols).c_str())); 
 			posix_print_mb(text);
 		}
 		break;
+	}
 
-	case IDM_STAR_PATCH:
-		symbols["mod_patch_path"] = mod_config.get_path(tmod_config::patch_tag);
-		strcpy(text, utf8_2_ansi(vgettext2("Do you want to extract star different files to $mod_patch_path?", symbols).c_str()));
+	case IDM_MOD_PATCH0:
+	case IDM_MOD_PATCH1:
+	case IDM_MOD_PATCH2:
+	case IDM_MOD_PATCH3:
+	case IDM_MOD_PATCH4: {
+		tmod_config& current_mod = mod_configs[id - IDM_MOD_PATCH0];
+		symbols["mod"] = current_mod.name();
+		symbols["mod_patch_path"] = current_mod.get_path(tmod_config::patch_tag);
+		strcpy(text, utf8_2_ansi(vgettext2("Do you want to extract $mod different files to $mod_patch_path?", symbols).c_str()));
 		strstr.str("");
 		strstr << utf8_2_ansi(_("Confirm generate"));
 		retval = MessageBox(hdlgP, text, strstr.str().c_str(), MB_YESNO | MB_DEFBUTTON2);
 		if (retval == IDYES) {
-			fok = extract_kingdom_star_patch(gdmgr._menu_text, mod_config.get_path(tmod_config::patch_tag));
+			fok = extract_kingdom_star_patch(current_mod, gdmgr._menu_text, current_mod.get_path(tmod_config::patch_tag));
 			symbols["src"] = gdmgr._menu_text;
-			symbols["dst"] = mod_config.get_path(tmod_config::patch_tag);
+			symbols["dst"] = current_mod.get_path(tmod_config::patch_tag);
 			symbols["result"] = fok? "Success": "Fail";
-			strcpy(text, utf8_2_ansi(vgettext2("Extract star different files from \"$src\" to \"$dst\", $result!", symbols).c_str())); 
+			strcpy(text, utf8_2_ansi(vgettext2("Extract $mod different files from \"$src\" to \"$dst\", $result!", symbols).c_str())); 
 			posix_print_mb(text);
 		}
 		break;
+	}
 
 	case IDM_EXPLORER_WML:
 		if (!_stricmp(gdmgr._menu_text, "hero.dat")) {
@@ -465,18 +479,25 @@ BOOL On_DlgDDescNotify(HWND hdlgP, int DlgItem, LPNMHDR lpNMHdr)
 		}
 		// star
 		if (!can_execute_tack(TASK_NEW) || strcasecmp(gdmgr._menu_text, game_config::path.c_str())) {
-			EnableMenuItem(gdmgr._hpopup_new, (UINT_PTR)(gdmgr._hpopup_star), MF_BYCOMMAND | MF_GRAYED);
-		} else {
-			EnableMenuItem(gdmgr._hpopup_new, (UINT_PTR)(gdmgr._hpopup_star), MF_BYCOMMAND | MF_ENABLED);
-			if (game_config::path.find("kingdom-res") == std::string::npos) {
-				EnableMenuItem(gdmgr._hpopup_star, IDM_STAR_RESOURCE, MF_BYCOMMAND | MF_GRAYED);
-			} else {
-				EnableMenuItem(gdmgr._hpopup_star, IDM_STAR_RESOURCE, MF_BYCOMMAND | MF_ENABLED);
+			for (int i = 0; i < (int)mod_configs.size(); ++ i) {
+				HMENU hpopup = gdmgr._hpopup_mod[i];
+				EnableMenuItem(gdmgr._hpopup_new, (UINT_PTR)(hpopup), MF_BYCOMMAND | MF_GRAYED);
 			}
-			if (game_config::path.find(mod_config.res_short_path) == std::string::npos) {
-				EnableMenuItem(gdmgr._hpopup_star, IDM_STAR_PATCH, MF_BYCOMMAND | MF_GRAYED);
-			} else {
-				EnableMenuItem(gdmgr._hpopup_star, IDM_STAR_PATCH, MF_BYCOMMAND | MF_ENABLED);
+		} else {
+			for (int i = 0; i < (int)mod_configs.size(); ++ i) {
+				tmod_config& current_mod = mod_configs[i];
+				HMENU hpopup = gdmgr._hpopup_mod[i];
+				EnableMenuItem(gdmgr._hpopup_new, (UINT_PTR)(hpopup), MF_BYCOMMAND | MF_ENABLED);
+				if (game_config::path.find("kingdom-res") == std::string::npos) {
+					EnableMenuItem(hpopup, IDM_MOD_RES0 + i, MF_BYCOMMAND | MF_GRAYED);
+				} else {
+					EnableMenuItem(hpopup, IDM_MOD_RES0 + i, MF_BYCOMMAND | MF_ENABLED);
+				}
+				if (game_config::path.find(current_mod.res_short_path) == std::string::npos) {
+					EnableMenuItem(hpopup, IDM_MOD_PATCH0 + i, MF_BYCOMMAND | MF_GRAYED);
+				} else {
+					EnableMenuItem(hpopup, IDM_MOD_PATCH0 + i, MF_BYCOMMAND | MF_ENABLED);
+				}
 			}
 		}
 			
@@ -746,7 +767,7 @@ void OnDeleteBt(HWND hdlgP, char *fname)
 
 bool extra_kingdom_ins_disk(char* kingdom_src, char* kingdom_ins, char* kingdom_ins_android)
 {
-	tcopier copier(generate_cfg(editor_config::data_cfg, "release"));
+	tcopier copier(get_generate_cfg(editor_config::data_cfg, "release"));
 	tcallback_lock lock(false, boost::bind(&tcopier::do_delete_path, &copier, _1));
 
 	if (!copier.make_path("ins") || !copier.make_path("ins_android")) {
@@ -779,14 +800,17 @@ bool extract_rose(tcopier& copier)
 	return true;
 }
 
-BOOL generate_kingdom_mod_res(const std::string& kingdom_res, const std::string& kingdom_star_patch, const std::string& kingdom_star)
+BOOL generate_kingdom_mod_res(tmod_config& mod_config, const std::string& kingdom_res, const std::string& kingdom_star_patch, const std::string& kingdom_star)
 {
-	tcopier copier(generate_cfg(editor_config::data_cfg, "copy"));
+	config copy_cfg = get_generate_cfg(editor_config::data_cfg, "copy");
+	copy_cfg["path-res_mod"] = mod_config.get_path("res");
+	tcopier copier(copy_cfg);
 	tcallback_lock lock(false, boost::bind(&tcopier::do_delete_path, &copier, _1));
 
 	if (!copier.make_path("res_mod")) {
 		return false;
 	}
+
 	if (!copier.do_copy("res", "res_mod")) {
 		return false;
 	}
@@ -799,7 +823,7 @@ BOOL generate_kingdom_mod_res(const std::string& kingdom_res, const std::string&
 	return true;
 }
 
-BOOL extract_kingdom_star_patch(const std::string& kingdom_star, const std::string& kingdom_star_patch)
+BOOL extract_kingdom_star_patch(tmod_config& mod_config, const std::string& kingdom_star, const std::string& kingdom_star_patch)
 {
 	return mod_config.opeate_file(false);
 }

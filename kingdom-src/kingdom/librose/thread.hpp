@@ -99,11 +99,12 @@ public:
 	friend class lock;
 	friend class condition;
 
+public:
+	SDL_mutex* const m_;
+
 private:
 	mutex(const mutex&);
 	void operator=(const mutex&);
-
-	SDL_mutex* const m_;
 };
 
 // Binary mutex locking.
@@ -201,7 +202,7 @@ public:
 	enum ACTION { WAIT, ABORT };
 
 	virtual ~waiter() {}
-	virtual ACTION process(async_operation_ptr op) = 0;
+	virtual ACTION process(async_operation_ptr op);
 };
 
 typedef std::list<async_operation_ptr> active_operation_list;
@@ -222,7 +223,7 @@ public:
 	enum RESULT { COMPLETED, ABORTED };
 
 	async_operation() :
-		thread_(), aborted_(false), finished_(), finishedVar_(false), mutex_()
+		thread_(), created_(false), aborted_(false), finished_(), finishedVar_(false), mutex_()
 	{
 		while (!active_.empty() && active_.front().unique())
 			active_.pop_front();
@@ -234,6 +235,9 @@ public:
 	mutex& get_mutex() { return mutex_; }
 
 	virtual void run() = 0;
+
+	void set_created(bool val) { created_ = val; }
+	bool created() const { return created_; }
 
 	//notify that the operation is finished. Can be called from within the thread
 	//while holding the mutex and after checking is_aborted()
@@ -248,6 +252,7 @@ private:
 	friend class network_asio::connection_open;
 
 	boost::scoped_ptr<thread> thread_;
+	bool created_;
 	bool aborted_;
 	condition finished_;
 	bool finishedVar_;

@@ -216,7 +216,8 @@ void tgrid::init_report(int unit_w, int unit_h, int gap, bool extendable)
 		cols = (w_ + gap) / (unit_w + gap);
 	}
 
-	if (!unit_w && row_height_.empty()) {
+	// although rows_ = 1, if tgrid::calcuate_best_size don't called, row_height_ is empty
+	if (row_height_.empty()) {
 		row_height_.push_back(0);
 	}
 	row_height_[0] = unit_h;
@@ -349,6 +350,7 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 		}
 
 		tpoint origin2 = widget2->get_origin();
+		tpoint size2 = widget2->get_size();
 		if (extendable) {
 			if (col) {
 				child.flags_ |= tgrid::BORDER_LEFT;
@@ -360,6 +362,7 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 			}
 		} else if (col) {
 			child.flags_ |= tgrid::BORDER_LEFT;
+			origin.x += gap;
 		}
 		if (child.flags_) {
 			child.border_size_ = gap;
@@ -375,8 +378,8 @@ void tgrid::replacement_children(int unit_w, int unit_h, int gap, bool extendabl
 				row_height_[0] = size.y;
 			}
 		}
-		if (w_ && visible == twidget::VISIBLE && (origin2 != origin || widget2->get_size() != size)) {
-			if (origin2.x != -1 && origin2.y != -1) {
+		if (w_ && visible == twidget::VISIBLE && (origin2 != origin || size2 != size)) {
+			if (origin2.x != -1 && origin2.y != -1 && size2 == size) {
 				widget2->twidget::place(origin, size);
 			} else {
 				widget2->place(origin, size);
@@ -888,9 +891,12 @@ void tgrid::place(const tpoint& origin, const tpoint& size)
 	}
 
 	// This shouldn't be possible...
-	std::stringstream str;
-	str << "tgrid::place, undesired best_size(" << best_size.x << ", " << best_size.y << ") vs size(" << size.x << ", " << size.y << ").";
-	VALIDATE(false, str.str());
+	std::stringstream err;
+	if (!parent()->id().empty()) {
+		err << tintegrate::generate_format(parent()->id(), "yellow");
+	}
+	err << " tgrid::place, undesired best_size(" << best_size.x << ", " << best_size.y << ") vs size(" << size.x << ", " << size.y << ").";
+	VALIDATE(false, err.str());
 }
 
 void tgrid::place_fix(const tpoint& origin, const tpoint& size)
@@ -1141,7 +1147,7 @@ void cell_place(tgrid::tchild& cell, tpoint origin, tpoint size)
 	const unsigned v_flag = cell.flags_ & tgrid::VERTICAL_MASK;
 
 	if (v_flag == tgrid::VERTICAL_GROW_SEND_TO_CLIENT) {
-		if(maximum_size.y) {
+		if (maximum_size.y) {
 			widget_size.y = std::min(size.y, maximum_size.y);
 		} else {
 			widget_size.y = size.y;
@@ -1167,7 +1173,7 @@ void cell_place(tgrid::tchild& cell, tpoint origin, tpoint size)
 	const unsigned h_flag = cell.flags_ & tgrid::HORIZONTAL_MASK;
 
 	if (h_flag == tgrid::HORIZONTAL_GROW_SEND_TO_CLIENT) {
-		if(maximum_size.x) {
+		if (maximum_size.x) {
 			widget_size.x = std::min(size.x, maximum_size.x);
 		} else {
 			widget_size.x = size.x;

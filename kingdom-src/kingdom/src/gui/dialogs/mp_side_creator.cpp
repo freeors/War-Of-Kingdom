@@ -238,7 +238,7 @@ void tmp_side_creator::pre_show(CVideo& /*video*/, twindow& window)
 		}
 	}
 	create_game["human_sides"] = lexical_cast<std::string>(human_sides);*/
-	network::send_data(response, 0);
+	network::send_data(lobby->chat, response);
 
 	update_user_combos();
 	// Take the first available side or available side with id == login
@@ -248,7 +248,7 @@ void tmp_side_creator::pre_show(CVideo& /*video*/, twindow& window)
 	refresh_launch();
 	
 	// If we are connected, send data to the connected host
-	network::send_data(level_, 0);
+	network::send_data(lobby->chat, level_);
 
 	join();
 }
@@ -297,7 +297,7 @@ void tmp_side_creator::start_game()
 	// Make other clients not show the results of resolve_random().
 	config lock;
 	lock.add_child("stop_updates");
-	network::send_data(lock, 0);
+	network::send_data(lobby->chat, lock);
 	update_and_send_diff(true);
 
 	// Send replay_data_
@@ -445,7 +445,7 @@ void tmp_side_creator::start_game()
 		users_2_groups(users_, member_users_);
 	}
 
-	network::send_data(config("start_game"), 0);
+	network::send_data(lobby->chat, config("start_game"));
 }
 
 void tmp_side_creator::launch(twindow& window)
@@ -460,7 +460,7 @@ void tmp_side_creator::cancel(twindow& window)
 	if (network::nconnections() > 0) {
 		config cfg;
 		cfg.add_child("leave_game");
-		network::send_data(cfg, 0);
+		network::send_data(lobby->chat, cfg);
 	}
 */
 	legacy_result_ = QUIT;
@@ -800,7 +800,7 @@ void tmp_side_creator::update_and_send_diff(bool update_time_of_day)
 	if (!diff.empty()) {
 		config scenario_diff;
 		scenario_diff.add_child("scenario_diff", diff);
-		network::send_data(scenario_diff, 0);
+		network::send_data(lobby->chat, scenario_diff);
 	}
 }
 
@@ -946,13 +946,13 @@ void tmp_side_creator::update_playerlist()
 	player_list_.active_game.auto_hide();
 }
 
-bool tmp_side_creator::handle(tlobby::ttype type, const config& data)
+bool tmp_side_creator::handle(int tag, tsock::ttype type, const config& data)
 {
-	if (type == tlobby::t_disconnected && !local_only_) {
+	if (type == tsock::t_disconnected && !local_only_) {
 		legacy_result_ = QUIT;
 		sides_table_->get_window()->set_retval(twindow::CANCEL);
 	}
-	if (type != tlobby::t_data) {
+	if (type != tsock::t_data) {
 		return false;
 	}
 
@@ -986,7 +986,7 @@ bool tmp_side_creator::handle(tlobby::ttype type, const config& data)
 		if (name.empty()) {
 			config response;
 			response["failed"] = true;
-			network::send_data(response, lobby.sock);
+			network::send_data(lobby->chat, response);
 			// ERR_CF << "ERROR: No username provided with the side.\n";
 			return true;
 		}
@@ -1001,13 +1001,13 @@ bool tmp_side_creator::handle(tlobby::ttype type, const config& data)
 				config response;
 				response["failed"] = true;
 				response["message"] = "The nick '" + name + "' is already in use.";
-				network::send_data(response, lobby.sock);
+				network::send_data(lobby->chat, response);
 				return true;
 			} else {
 				users_.erase(player);
 				config observer_quit;
 				observer_quit.add_child("observer_quit")["name"] = name;
-				network::send_data(observer_quit, 0);
+				network::send_data(lobby->chat, observer_quit);
 				update_user_combos();
 			}
 		}
@@ -1029,12 +1029,12 @@ bool tmp_side_creator::handle(tlobby::ttype type, const config& data)
 				if(itor == sides_.end()) {
 					config response;
 					response["failed"] = true;
-					network::send_data(response, lobby.sock);
+					network::send_data(lobby->chat, response);
 					config kick;
 					kick["username"] = data["name"];
 					config res;
 					res.add_child("kick", kick);
-					network::send_data(res, 0);
+					network::send_data(lobby->chat, res);
 					update_user_combos();
 					update_and_send_diff();
 					// ERR_CF << "ERROR: Couldn't assign a side to '" << name << "'\n";
@@ -1048,11 +1048,11 @@ bool tmp_side_creator::handle(tlobby::ttype type, const config& data)
 					return true;
 				}
 				// Adds the name to the list
-				users_.push_back(connected_user(name, CNTR_NETWORK, lobby.sock));
+				users_.push_back(connected_user(name, CNTR_NETWORK, lobby->chat.conn()));
 				users_.back().group = g;
 			} else {
 				// Adds the name to the list				
-				users_.push_back(connected_user(name, CNTR_NETWORK, lobby.sock));
+				users_.push_back(connected_user(name, CNTR_NETWORK, lobby->chat.conn()));
 				// it will modify heros_, don't execute when saved_game.
 				regenerate_hero_map_from_users(disp_, heros_, users_, member_users_);
 			}
@@ -1072,7 +1072,7 @@ bool tmp_side_creator::handle(tlobby::ttype type, const config& data)
 			// ERR_CF << "tried to take illegal side: " << side_taken << '\n';
 			config response;
 			response["failed"] = true;
-			network::send_data(response, lobby.sock);
+			network::send_data(lobby->chat, response);
 		}
 		return true;
 	}
@@ -1092,7 +1092,7 @@ bool tmp_side_creator::handle(tlobby::ttype type, const config& data)
 		if(!observer_name.empty()) {
 			connected_user_list::iterator player = find_player(observer_name);
 			if(player == users_.end()) {
-				users_.push_back(connected_user(observer_name, CNTR_NETWORK, lobby.sock));
+				users_.push_back(connected_user(observer_name, CNTR_NETWORK, lobby->chat.conn()));
 				update_user_combos();
 				refresh_launch();
 				update_and_send_diff();

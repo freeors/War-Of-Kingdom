@@ -43,9 +43,9 @@ network::connection find_peer(network::connection sock)
 namespace proxy
 {
 
-void create_proxy(network::connection sock, const std::string& host, int port)
+void create_proxy(tsock& sock2, network::connection sock, const std::string& host, int port)
 {
-	const network::connection peer = network::connect(host,port);
+	const network::connection peer = network::connect(sock2, host, port);
 	if(!peer) {
 		network::disconnect(sock);
 	} else {

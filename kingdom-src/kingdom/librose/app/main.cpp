@@ -5,6 +5,7 @@
 #include "gui/dialogs/rose.hpp"
 #include "gui/dialogs/language_selection.hpp"
 #include "gui/dialogs/combo_box.hpp"
+#include "gui/dialogs/login.hpp"
 #include "gui/widgets/window.hpp"
 #include "help.hpp"
 #include "posix.h"
@@ -39,8 +40,6 @@
 
 #include <boost/foreach.hpp>
 
-extern std::string app_id;
-
 /**
  * I would prefer to setup locale first so that early error
  * messages can get localized, but we need the game_controller
@@ -60,8 +59,6 @@ static void init_locale()
 	bind_textdomain_codeset(PACKAGE, "UTF-8");
 	bindtextdomain(PACKAGE "-lib", intl_dir.c_str());
 	bind_textdomain_codeset (PACKAGE "-lib", "UTF-8");
-	bindtextdomain(PACKAGE "-hero", intl_dir.c_str());
-	bind_textdomain_codeset(PACKAGE "-hero", "UTF-8");
 	textdomain(PACKAGE);
 }
 
@@ -116,6 +113,8 @@ public:
 	bool is_loading() { return false; }
 	bool change_language();
 	void start_mkwin(bool theme);
+
+	hero_map& heros() { return heros_; }
 
 private:
 	void load_game_cfg(const bool force);
@@ -576,6 +575,22 @@ int app_show_preferences_dialog(display& disp, bool first)
 }
 }
 
+class tlobby_manager
+{
+public:
+	tlobby_manager()
+	{
+		lobby = new tlobby();
+	}
+	~tlobby_manager()
+	{
+		if (lobby) {
+			delete lobby;
+			lobby = NULL;
+		}
+	}
+};
+
 /**
  * Setups the game environment and enters
  * the titlescreen or game loops.
@@ -598,16 +613,17 @@ static int do_gameloop(int argc, char** argv)
 	game_config::wesnoth_version = version_info(game_config::version);
 	game_config::logo_png = "misc/rose-logo.png";
 
-	// always connect to lobby server.
-	const network::manager net_manager(1, 1);
-	lobby.set_host("www.leagor.com", 15000);
-	// lobby.set_host("192.168.1.100", 15000);
-	lobby.join();
-
 	game_controller game(argc, argv);
 	const int start_ticks = SDL_GetTicks();
 
 	init_locale();
+
+	// always connect to lobby server.
+	tlobby_manager lobby_manager;
+	const network::manager net_manager(1, 1);
+	lobby->chat.set_host("chat.freenode.net", 6665);
+	lobby->join();
+	lobby->set_nick2(group.leader().name());
 
 	bool res;
 
@@ -710,6 +726,8 @@ static int do_gameloop(int argc, char** argv)
 				game.start_mkwin(false);
 
 			} else if (res == gui2::trose::PLAYER) {
+				gui2::tlogin dlg(game.disp(), game.heros(), "");
+				dlg.show(game.disp().video());
 
 			} else if (res == gui2::trose::PLAYER_SIDE) {
 
@@ -726,8 +744,7 @@ static int do_gameloop(int argc, char** argv)
 
 			} else if (res == gui2::trose::MESSAGE) {
 				gui2::tchat2 dlg(game.disp(), group);
-				display& disp = *display::get_singleton();
-				dlg.show(disp.video());	
+				dlg.show(game.disp().video());
 			
 			} else if (res == gui2::trose::SIGNIN) {
 
@@ -798,11 +815,16 @@ int main(int argc, char** argv)
 #if defined(__APPLE__) && TARGET_OS_IPHONE
 		SDL_SetHint(SDL_HINT_IDLE_TIMER_DISABLED, "0");
 #endif
+		if (lobby) {
+			delete lobby;
+		}
 		preferences::write_preferences();
 		return 1;
 	}
 
-	app_id = "studio";
+	game_config::app = "studio";
+	// game_config::app_channel = "#rose";
+	game_config::app_channel = "#war-of-kingdom";
 	if (SDL_Init(SDL_INIT_TIMER) < 0) {
 		fprintf(stderr, "Couldn't initialize SDL: %s\n", SDL_GetError());
 		return(1);

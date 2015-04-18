@@ -209,7 +209,7 @@ void trose::pre_show(CVideo& video, twindow& window)
 		}
 		std::string str;
 		if (!strcmp(menu_items[item], "player")) {
-			str = player_hero_.image(true);
+			str = "hero-256/100.png";
 
 		} else if (!strcmp(menu_items[item], "edit_dialog")) {
 			str = std::string("icons/studio/") + menu_items[item] + ".png";
@@ -313,9 +313,13 @@ void trose::post_show(twindow& window)
 {
 }
 
-bool trose::handle(tlobby::ttype type, const config& data)
+bool trose::handle(int tag, tsock::ttype type, const config& data)
 {
-	if (type != tlobby::t_data) {
+	if (tag != tlobby::tag_chat) {
+		return false;
+	}
+
+	if (type != tsock::t_data) {
 		return false;
 	}
 	if (const config& c = data.child("whisper")) {
@@ -333,7 +337,7 @@ void trose::set_retval(twindow& window, int retval)
 	if (retval == INAPP_PURCHASE) {
 		tbutton* b = find_widget<tbutton>(&window, "player", false, false);
 		config cfg;
-		cfg["id"] = "focus";
+		cfg["id"] = area_anim::rfind(area_anim::OPERATING);
 		int id = b->insert_animation(cfg, false);
 		ids.push_back(id);
 
@@ -342,7 +346,7 @@ void trose::set_retval(twindow& window, int retval)
 	} else if (retval == REPORT) {
 		tbutton* b = find_widget<tbutton>(&window, "player", false, false);
 		config cfg;
-		cfg["id"] = "focus";
+		cfg["id"] = area_anim::rfind(area_anim::OPERATING);
 		int id = b->insert_animation(cfg, true);
 		ids.push_back(id);
 

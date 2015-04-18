@@ -26,6 +26,7 @@
 #include "gui/auxiliary/window_builder/horizontal_listbox.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
+#include "gui/widgets/spacer.hpp"
 
 #include <boost/bind.hpp>
 
@@ -55,7 +56,6 @@ tlistbox::tlistbox(const std::vector<tradio_page::tpage>& pages, const bool has_
 			tgenerator_::build(has_minimum, has_maximum, placement, select))
 	, list_builder_(NULL)
 	, callback_value_changed_(NULL)
-	, need_layout_(false)
 {
 }
 
@@ -79,25 +79,22 @@ void tlistbox::remove_row(const unsigned row, unsigned count)
 {
 	assert(generator_);
 
-	if(row >= get_item_count()) {
+	if (row >= get_item_count()) {
 		return;
 	}
 
-	if(!count || count > get_item_count()) {
+	if (!count || count > get_item_count()) {
 		count = get_item_count();
 	}
 
-	int height_reduced = 0;
-	for(; count; --count) {
-		if(generator_->item(row).get_visible() != INVISIBLE) {
-			height_reduced += generator_->item(row).get_height();
-		}
+	const unsigned selected_row = get_selected_row();
+	bool change_select = selected_row >= row && selected_row < row + count;
+
+	for (; count; -- count) {
 		generator_->delete_item(row);
 	}
 
-	if(height_reduced != 0) {
-		resize_content(0, -height_reduced);
-	}
+	invalidate_layout(false);
 }
 
 void tlistbox::clear()
@@ -134,26 +131,14 @@ void tlistbox::set_row_shown(const unsigned row, const bool shown)
 
 	const int selected_row = get_selected_row();
 
-	bool resize_needed;
 	{
 		twindow::tinvalidate_layout_blocker invalidate_layout_blocker(*window);
-
 		generator_->set_item_shown(row, shown);
-		generator_->place(generator_->get_origin()
-				, generator_->calculate_best_size());
-		resize_needed = !content_resize_request();
 	}
-
-	if(resize_needed) {
-		window->invalidate_layout();
-	} else {
-		content_grid_->set_visible_area(content_visible_area());
-		set_dirty();
-	}
-
-	if(selected_row != get_selected_row() && callback_value_changed_) {
+	if (selected_row != get_selected_row() && callback_value_changed_) {
 		callback_value_changed_(this);
 	}
+	invalidate_layout(false);
 }
 
 void tlistbox::set_row_shown(const std::vector<bool>& shown)
@@ -166,28 +151,16 @@ void tlistbox::set_row_shown(const std::vector<bool>& shown)
 
 	const int selected_row = get_selected_row();
 
-	bool resize_needed;
 	{
 		twindow::tinvalidate_layout_blocker invalidate_layout_blocker(*window);
-
-		for(size_t i = 0; i < shown.size(); ++i) {
+		for (size_t i = 0; i < shown.size(); ++i) {
 			generator_->set_item_shown(i, shown[i]);
 		}
-		generator_->place(generator_->get_origin()
-				, generator_->calculate_best_size());
-		resize_needed = !content_resize_request();
 	}
-
-	if(resize_needed) {
-		window->invalidate_layout();
-	} else {
-		content_grid_->set_visible_area(content_visible_area());
-		set_dirty();
-	}
-
-	if(selected_row != get_selected_row() && callback_value_changed_) {
+	if (selected_row != get_selected_row() && callback_value_changed_) {
 		callback_value_changed_(this);
 	}
+	invalidate_layout(false);
 }
 
 const tgrid* tlistbox::get_row_grid(const unsigned row) const
@@ -240,25 +213,6 @@ void tlistbox::list_item_clicked(twidget* caller)
 	assert(false);
 }
 
-bool tlistbox::update_content_size()
-{
-	if(get_visible() == twidget::INVISIBLE) {
-		return true;
-	}
-
-	if(get_size() == tpoint(0, 0)) {
-		return false;
-	}
-
-	if(content_resize_request(true)) {
-		content_grid_->set_visible_area(content_visible_area());
-		set_dirty();
-		return true;
-	}
-
-	return false;
-}
-
 void tlistbox::place(const tpoint& origin, const tpoint& size)
 {
 	// Inherited.
@@ -273,7 +227,7 @@ void tlistbox::place(const tpoint& origin, const tpoint& size)
 	 * resizing dialogs a lot. Need more work later on.
 	 */
 	const int selected_item = generator_->get_selected_item();
-	if(selected_item != -1) {
+	if (selected_item != -1) {
 		const SDL_Rect& visible = content_visible_area();
 		SDL_Rect rect = generator_->item(selected_item).get_rect();
 
@@ -283,30 +237,6 @@ void tlistbox::place(const tpoint& origin, const tpoint& size)
 		// show_content_rect(rect);
 		scrollbar_moved();
 	}
-}
-
-tpoint tlistbox::adjust_content_size(const tpoint& size)
-{
-	unsigned items = generator_->get_item_count();
-	if (!items) {
-		return size;
-	}
-	tgrid* header = find_widget<tgrid>(content_grid(), "_header_grid", true, false);
-	// by this time, hasn't called place(), cannot use get_size().
-	int header_height = header->get_best_size().y;
-	int height = generator_->item(0).get_best_size().y;
-	if (header_height + height > size.y) {
-		return size;
-	}
-	int list_height = size.y - header_height;
-	list_height = list_height / height * height;
-
-	// reduce hight if necessary.
-	height = generator_->get_best_size().y;
-	if (list_height > height) {
-		list_height = height;
-	}
-	return tpoint(size.x, header_height + list_height);
 }
 
 void tlistbox::adjust_offset(int& x_offset, int& y_offset)
@@ -348,61 +278,6 @@ void tlistbox::set_content_grid_visible_area(const SDL_Rect& area)
 	list_area.y = area.y + size.y;
 	list_area.h = area.h - size.y;
 	generator_->set_visible_area(list_area);
-}
-
-void tlistbox::resize_content(
-		  const int width_modification
-		, const int height_modification)
-{
-	DBG_GUI_L << LOG_HEADER << " current size " << content_grid()->get_size()
-			<< " width_modification " << width_modification
-			<< " height_modification " << height_modification
-			<< ".\n";
-
-	if(content_resize_request(width_modification, height_modification)) {
-
-		// Calculate new size.
-		tpoint size = content_grid()->get_size();
-		size.x += width_modification;
-		size.y += height_modification;
-
-		// Set new size.
-		content_grid()->set_size(size);
-
-		// Set status.
-		need_layout_ = true;
-		// If the content grows assume it "overwrites" the old content.
-		if(width_modification < 0 || height_modification < 0) {
-			set_dirty();
-		}
-
-		// content_size_ = tpoint(0, 0);
-
-		DBG_GUI_L << LOG_HEADER << " succeeded.\n";
-	} else {
-		DBG_GUI_L << LOG_HEADER << " failed.\n";
-	}
-}
-
-void tlistbox::layout_children()
-{
-	layout_children(false);
-}
-
-void tlistbox::child_populate_dirty_list(twindow& caller,
-		const std::vector<twidget*>& call_stack)
-{
-	// Inherited.
-	tscrollbar_container::child_populate_dirty_list(caller, call_stack);
-
-/*
-	tscrollbar_container::child_populate_dirty_list has called content_grid_->populate_dirty_list,
-	it includs generator_->populate_dirty_list.
-
-	assert(generator_);
-	std::vector<twidget*> child_call_stack = call_stack;
-	generator_->populate_dirty_list(caller, child_call_stack);
-*/
 }
 
 void tlistbox::handle_key_up_arrow(SDLMod modifier, bool& handled)
@@ -570,28 +445,53 @@ void tlistbox::finalize(
 
 }
 
-void tlistbox::set_content_size(const tpoint& origin, const tpoint& size)
+void tlistbox::set_content_size(const tpoint& origin, const tpoint& desire_size)
 {
-	/** @todo This function needs more testing. */
-	assert(content_grid());
+	tpoint size = desire_size;
+	unsigned items = generator_->get_item_count();
+	if (items) {
+		tgrid* header = find_widget<tgrid>(content_grid_, "_header_grid", true, false);
+		// by this time, hasn't called place(), cannot use get_size().
+		int header_height = header->get_best_size().y;
+		int height = generator_->item(0).get_best_size().y;
+		if (header_height + height <= size.y) {
+			int list_height = size.y - header_height;
+			list_height = list_height / height * height;
 
-	const int best_height = content_grid()->get_best_size().y;
-	const tpoint s(size.x, size.y < best_height ? size.y : best_height);
+			// reduce hight if allow height > header_height + get_best_size().y
+			height = generator_->get_best_size().y;
+			if (list_height > height) {
+				list_height = height;
+			}
 
-	tscrollbar_container::set_content_size(origin, s);
-}
+			size.y = header_height + list_height;
 
-void tlistbox::layout_children(const bool force)
-{
-	assert(content_grid());
-
-	if (need_layout_ || force) {
-		place(get_origin(), get_size());
-		// set_content_grid_visible_area(content_visible_area_);
-
-		need_layout_ = false;
-		set_dirty();
+			if (size.y != desire_size.y) {
+				content_->set_size(size);
+			}
+		}
 	}
+
+	const tpoint actual_size = content_grid_->get_best_size();
+	calculate_scrollbar(actual_size, size);
+
+	if (size.y != desire_size.y) {
+		int diff_y = desire_size.y - size.y;
+		if (vertical_scrollbar_grid_->get_visible() == twidget::VISIBLE) {
+			tpoint vertical_size = vertical_scrollbar_grid_->get_size();
+			vertical_size.y -= diff_y;
+			vertical_scrollbar_grid_->place(vertical_scrollbar_grid_->get_origin(), vertical_size);
+		}
+		if (horizontal_scrollbar_grid_->get_visible() == twidget::VISIBLE) {
+			tpoint horizontal_origin = horizontal_scrollbar_grid_->get_origin();
+			horizontal_origin.y -= diff_y;
+			horizontal_scrollbar_grid_->set_origin(horizontal_origin);
+		}
+	}
+
+	size.x = std::max(actual_size.x, size.x);
+	size.y = std::max(actual_size.y, size.y);
+	tscrollbar_container::set_content_size(origin, size);
 }
 
 void tlistbox::set_list_builder(tbuilder_grid_ptr list_builder)
@@ -612,13 +512,9 @@ void tlistbox::set_list_builder(tbuilder_grid_ptr list_builder)
 		generator_->delete_item(0);
 	}
 
-	need_layout_ = true;
-	set_dirty();
-
-	// in order to decide visiable/invisiable scrollbar, reset content_size_
-	// content_size_ = tpoint(0, 0);
-
 	list_builder_ = list_builder; 
+
+	invalidate_layout(false);
 }
 
 const std::string& tlistbox::get_control_type() const

@@ -381,7 +381,7 @@ void tpane::signal_handler_request_placement(
 					 * polishing and testing.
 					 */
 					item.grid->layout_init(false);
-					get_window()->layout_linked_widgets();
+					get_window()->layout_linked_widgets(NULL);
 
 					/*
 					 * By not calling init layout it uses its previous size

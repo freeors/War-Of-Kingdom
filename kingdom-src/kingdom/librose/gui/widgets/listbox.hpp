@@ -181,36 +181,12 @@ public:
 //		{ state_ = active ? ENABLED : DISABLED; }
 //
 
-	/**
-	 * Request to update the size of the content after changing the content.
-	 *
-	 * When a resize is required the container first can try to handle it
-	 * itself. If it can't honour the request the function will call @ref
-	 * twindow::invalidate_layout().
-	 *
-	 * @note Calling this function on a widget with size == (0, 0) results
-	 * false but doesn't call invalidate_layout, the engine expects to be in
-	 * build up phase with the layout already invalidated.
-	 *
-	 * @returns                      True if the resizing succeeded, false
-	 *                               otherwise.
-	 */
-	bool update_content_size();
-
 	/***** ***** ***** ***** inherited ***** ***** ****** *****/
 
 	/** Inherited from tscrollbar_container. */
 	void place(const tpoint& origin, const tpoint& size);
 
 	/** Inherited from tscrollbar_container. */
-	void layout_children();
-
-	/** Inherited from tscrollbar_container. */
-	void child_populate_dirty_list(twindow& caller,
-			const std::vector<twidget*>& call_stack);
-
-	/** Inherited from tscrollbar_container. */
-	tpoint adjust_content_size(const tpoint& size);
 	void adjust_offset(int& x_offset, int& y_offset);
 	void set_content_grid_origin(const tpoint& origin, const tpoint& content_origin);
 	void set_content_grid_visible_area(const SDL_Rect& area);
@@ -221,8 +197,6 @@ public:
 		{ callback_value_changed_ = callback; }
 
 	void set_list_builder(tbuilder_grid_ptr list_builder);
-
-	void invalidate_layout() { need_layout_ = true; }
 
 protected:
 
@@ -287,30 +261,6 @@ private:
 	 * change the selected item.
 	 */
 	void (*callback_value_changed_) (twidget*);
-
-	bool need_layout_;
-
-	/**
-	 * Resizes the content.
-	 *
-	 * The resize either happens due to resizing the content or invalidate the
-	 * layout of the window.
-	 *
-	 * @param width_modification  The wanted modification to the width:
-	 *                            * negative values reduce width.
-	 *                            * zero leave width as is.
-	 *                            * positive values increase width.
-	 * @param height_modification The wanted modification to the height:
-	 *                            * negative values reduce height.
-	 *                            * zero leave height as is.
-	 *                            * positive values increase height.
-	 */
-	void resize_content(
-			  const int width_modification
-			, const int height_modification);
-
-	/** Layouts the children if needed. */
-	void layout_children(const bool force);
 
 	/** Inherited from tscrollbar_container. */
 	virtual void set_content_size(const tpoint& origin, const tpoint& size);

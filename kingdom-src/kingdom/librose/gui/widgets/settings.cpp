@@ -462,7 +462,7 @@ void load_settings()
 		guis.insert(child);
 	}
 
-	VALIDATE(guis.find("default") != guis.end(), _ ("No default gui defined."));
+	VALIDATE(guis.find("default") != guis.end(), _("No default gui defined."));
 
 	current_gui = guis.find("default");
 	current_gui->second.activate();
@@ -602,15 +602,23 @@ void reload_window_builder(const std::string& type, const config& cfg, const std
 	if (window == current_gui->second.window_types.end()) {
 		throw twindow_builder_invalid_id();
 	}
-	config& grid_cfg = theme_window_cfg.child("resolution").child("grid");
+	config& res_cfg = theme_window_cfg.child("resolution");
+	res_cfg.clear_children("linked_group");
+
+	config& grid_cfg = res_cfg.child("grid");
 	grid_cfg.clear_children("row");
 	config& row_cfg = grid_cfg.add_child("row");
 	BOOST_FOREACH (const config::any_child &value, cfg.all_children_range()) {
 		if (reserve_wml_tag.find(value.key) != reserve_wml_tag.end()) {
 			continue;
 		}
-		config& childcfg = row_cfg.add_child("column");
-		childcfg.add_child(value.key, value.cfg);
+		config* childcfg;
+		if (value.key == "linked_group") {
+			childcfg = &res_cfg;
+		} else {
+			childcfg = &row_cfg.add_child("column");
+		}
+		childcfg->add_child(value.key, value.cfg);
 	}
 
 	twindow::update_screen_size();

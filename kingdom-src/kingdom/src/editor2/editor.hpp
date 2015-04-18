@@ -108,8 +108,6 @@ private:
 	std::vector<std::pair<BIN_TYPE, wml2bin_desc> > wml2bin_descs_;
 };
 
-const config& generate_cfg(const config& data_cfg, const std::string& type);
-
 class tcallback_lock
 {
 public:
@@ -184,6 +182,11 @@ public:
 public:
 	std::string res_short_path;
 };
-extern tmod_config mod_config;
+extern config generate_cfg;
+extern std::vector<tmod_config> mod_configs;
+
+void reload_generate_cfg();
+void reload_mod_configs();
+const config& get_generate_cfg(const config& data_cfg, const std::string& type);
 
 #endif // __EDITOR_HPP_

@@ -63,6 +63,21 @@ struct tpoint
 
 std::ostream &operator<<(std::ostream &stream, const tpoint& point);
 
+struct tset_point_lock
+{
+	tset_point_lock(tpoint& point, int value)
+		: point(point)
+		, value(value)
+	{}
+
+	~tset_point_lock()
+	{
+		point.x = point.y = value;	
+	}
+
+	tpoint& point;
+	int value;
+};
 
 } // namespace gui2
 

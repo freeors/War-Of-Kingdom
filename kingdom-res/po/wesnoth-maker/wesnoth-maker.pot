@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2014-11-29 21:58+0800\n"
-"PO-Revision-Date: 2014-11-29 21:58+0800\n"
+"POT-Creation-Date: 2015-03-03 14:45+0800\n"
+"PO-Revision-Date: 2015-03-03 14:45+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -685,19 +685,19 @@ msgstr ""
 
 #: DlgCampaignProc.cpp:6692 DlgCampaignProc.cpp:6719 DlgCoreProc.cpp:3089
 #: DlgHEditorProc.cpp:1383 animation.cpp:2271 book.cpp:943 event.cpp:5476
-#: event.cpp:8710 feature.cpp:698 main.cpp:851 noble.cpp:561 utype.cpp:4151
+#: event.cpp:8710 feature.cpp:698 main.cpp:854 noble.cpp:561 utype.cpp:4151
 msgid "Edit..."
 msgstr ""
 
 #: DlgCampaignProc.cpp:6693 DlgCampaignProc.cpp:6720 DlgCampaignProc.cpp:6742
 #: DlgCoreProc.cpp:3090 DlgHEditorProc.cpp:1389 animation.cpp:2274
-#: book.cpp:944 event.cpp:5477 event.cpp:8711 feature.cpp:699 main.cpp:852
+#: book.cpp:944 event.cpp:5477 event.cpp:8711 feature.cpp:699 main.cpp:855
 #: noble.cpp:562 utype.cpp:4152
 msgid "Delete..."
 msgstr ""
 
 #: DlgCampaignProc.cpp:6718 DlgCampaignProc.cpp:6740 DlgCoreProc.cpp:3088
-#: DlgHEditorProc.cpp:1382 main.cpp:850 utype.cpp:4150
+#: DlgHEditorProc.cpp:1382 main.cpp:853 utype.cpp:4150
 msgid "Add..."
 msgstr ""
 
@@ -717,7 +717,7 @@ msgstr ""
 msgid "First scenario ID(May modify in future)"
 msgstr ""
 
-#: DlgCampaignProc.cpp:6979 DlgCampaignProc.cpp:7091 main.cpp:840
+#: DlgCampaignProc.cpp:6979 DlgCampaignProc.cpp:7091 main.cpp:843
 msgid "New"
 msgstr ""
 
@@ -758,7 +758,7 @@ msgid ""
 "Do you want to delete scenario: \"$scenario\" of campaign: \"$campaign\"?"
 msgstr ""
 
-#: DlgCampaignProc.cpp:7285 DlgDDescProc.cpp:340 DlgDDescProc.cpp:364
+#: DlgCampaignProc.cpp:7285 DlgDDescProc.cpp:356 DlgDDescProc.cpp:380
 #: DlgHEditorProc.cpp:1092 animation.cpp:1967 animation.cpp:2151 book.cpp:648
 #: event.cpp:9078 utype.cpp:3538
 msgid "Confirm delete"
@@ -784,7 +784,7 @@ msgstr ""
 msgid "Side"
 msgstr ""
 
-#: DlgCampaignProc.cpp:7396 DlgSyncProc.cpp:193
+#: DlgCampaignProc.cpp:7396 DlgSyncProc.cpp:191
 msgid "Status"
 msgstr ""
 
@@ -1163,54 +1163,62 @@ msgstr ""
 msgid "Edit treasure"
 msgstr ""
 
-#: DlgDDescProc.cpp:198
+#: DlgDDescProc.cpp:200
 msgid "\"$directory\" isn't valid resource directory, please select again"
 msgstr ""
 
-#: DlgDDescProc.cpp:218
+#: DlgDDescProc.cpp:220
 msgid "Do you want to extract release package to \"C:\\kingdom-ins\"?"
 msgstr ""
 
-#: DlgDDescProc.cpp:220 DlgDDescProc.cpp:238 DlgDDescProc.cpp:262
-#: DlgDDescProc.cpp:279
+#: DlgDDescProc.cpp:222 DlgDDescProc.cpp:240 DlgDDescProc.cpp:270
+#: DlgDDescProc.cpp:294
 msgid "Confirm generate"
 msgstr ""
 
-#: DlgDDescProc.cpp:226
+#: DlgDDescProc.cpp:227
+msgid "Success"
+msgstr ""
+
+#: DlgDDescProc.cpp:227
+msgid "Fail"
+msgstr ""
+
+#: DlgDDescProc.cpp:228
 msgid "Extract release package from \"$src\" to \"C:\\kingdom-ins\", $result!"
 msgstr ""
 
-#: DlgDDescProc.cpp:236
+#: DlgDDescProc.cpp:238
 msgid "Do you want to extract Rose package to $dst?"
 msgstr ""
 
-#: DlgDDescProc.cpp:244
+#: DlgDDescProc.cpp:246
 msgid "Extract Rose package from \"$src\" to \"$dst\", $result!"
 msgstr ""
 
-#: DlgDDescProc.cpp:260
-msgid "Do you want to generate star resource package to $mod_res_path?"
+#: DlgDDescProc.cpp:268
+msgid "Do you want to generate $mod resource package to $mod_res_path?"
 msgstr ""
 
-#: DlgDDescProc.cpp:270
+#: DlgDDescProc.cpp:278
 msgid ""
-"Generate star resource package from \"$src1\" and \"$src2\" to \"$dst\", "
+"Generate $mod resource package from \"$src1\" and \"$src2\" to \"$dst\", "
 "$result!"
 msgstr ""
 
-#: DlgDDescProc.cpp:277
-msgid "Do you want to extract star different files to $mod_patch_path?"
+#: DlgDDescProc.cpp:292
+msgid "Do you want to extract $mod different files to $mod_patch_path?"
 msgstr ""
 
-#: DlgDDescProc.cpp:286
-msgid "Extract star different files from \"$src\" to \"$dst\", $result!"
+#: DlgDDescProc.cpp:301
+msgid "Extract $mod different files from \"$src\" to \"$dst\", $result!"
 msgstr ""
 
-#: DlgDDescProc.cpp:338
+#: DlgDDescProc.cpp:354
 msgid "Do you want to delete file: \"$file\" and directory: \"$directory\"?"
 msgstr ""
 
-#: DlgDDescProc.cpp:362
+#: DlgDDescProc.cpp:378
 msgid "Will generate non-sync, do you want to only delete file: \"$file\"?"
 msgstr ""
 
@@ -1330,19 +1338,19 @@ msgid ""
 "manually."
 msgstr ""
 
-#: DlgSyncProc.cpp:164
+#: DlgSyncProc.cpp:162
 msgid "Need restart if changed"
 msgstr ""
 
-#: DlgSyncProc.cpp:172
+#: DlgSyncProc.cpp:170
 msgid "File name"
 msgstr ""
 
-#: DlgSyncProc.cpp:181 DlgSyncProc.cpp:187
+#: DlgSyncProc.cpp:179 DlgSyncProc.cpp:185
 msgid "Checksum"
 msgstr ""
 
-#: DlgSyncProc.cpp:199
+#: DlgSyncProc.cpp:197
 msgid "SHA1"
 msgstr ""
 
@@ -1626,27 +1634,27 @@ msgstr ""
 msgid "Icon"
 msgstr ""
 
-#: editor.cpp:612 editor.cpp:721
+#: editor.cpp:629 editor.cpp:745
 msgid "File"
 msgstr ""
 
-#: editor.cpp:614 editor.cpp:628 editor.cpp:669 editor.cpp:721
+#: editor.cpp:631 editor.cpp:652 editor.cpp:693 editor.cpp:745
 msgid "Directory"
 msgstr ""
 
-#: editor.cpp:616
+#: editor.cpp:633
 msgid "Files"
 msgstr ""
 
-#: editor.cpp:630 editor.cpp:671 editor.cpp:723
+#: editor.cpp:654 editor.cpp:695 editor.cpp:747
 msgid "Delete $type, from $dst fail!"
 msgstr ""
 
-#: editor.cpp:688
+#: editor.cpp:712
 msgid "Copy $type, from $src to $dst fail!"
 msgstr ""
 
-#: editor.cpp:757
+#: editor.cpp:781
 msgid "Delete: $name fail!"
 msgstr ""
 
@@ -1945,7 +1953,7 @@ msgstr ""
 
 #: event.cpp:6326 event.cpp:6332 event.cpp:6355 event.cpp:6547 event.cpp:7699
 #: event.cpp:8254 faction.cpp:843 faction.cpp:1087 feature.cpp:570
-#: main.cpp:828 main.cpp:833 main.cpp:846
+#: main.cpp:831 main.cpp:836 main.cpp:849
 msgid "Delete"
 msgstr ""
 
@@ -1981,7 +1989,7 @@ msgstr ""
 msgid "Defined variable(Right click popup menu)"
 msgstr ""
 
-#: event.cpp:7701 faction.cpp:1089 main.cpp:835
+#: event.cpp:7701 faction.cpp:1089 main.cpp:838
 msgid "Delete all"
 msgstr ""
 
@@ -2177,31 +2185,31 @@ msgstr ""
 msgid "Extract Rose package"
 msgstr ""
 
-#: main.cpp:810
+#: main.cpp:814
 msgid "Generate resource package to $mod_res_path"
 msgstr ""
 
-#: main.cpp:811
+#: main.cpp:815
 msgid "Extract different files to $mod_patch_path"
 msgstr ""
 
-#: main.cpp:821
+#: main.cpp:824
 msgid "WML format"
 msgstr ""
 
-#: main.cpp:826
+#: main.cpp:829
 msgid "Delete relative *.cfg at the same time"
 msgstr ""
 
-#: main.cpp:842
+#: main.cpp:845
 msgid "Integrate"
 msgstr ""
 
-#: main.cpp:844
+#: main.cpp:847
 msgid "Explorer"
 msgstr ""
 
-#: main.cpp:856
+#: main.cpp:859
 msgid "Reset all to default"
 msgstr ""
 

@@ -32,6 +32,24 @@ class tcontrol : public virtual twidget
 {
 	friend class tdebug_layout_graph;
 public:
+	class ttext_maximum_width_lock
+	{
+	public:
+		ttext_maximum_width_lock(tcontrol& widget, int text_maximum_width2)
+			: widget_(widget)
+			, original_(widget.text_maximum_width_)
+		{
+			widget_.text_maximum_width_ = text_maximum_width2 - widget.config_->text_extra_width;
+		}
+		~ttext_maximum_width_lock()
+		{
+			widget_.text_maximum_width_ = original_;
+		}
+
+	private:
+		tcontrol& widget_;
+		int original_;
+	};
 
 	/** @deprecated Used the second overload. */
 	explicit tcontrol(const unsigned canvas_count);
@@ -283,6 +301,7 @@ public:
 
 	// limit width of text when calculate_best_size.
 	void set_text_maximum_width(int maximum);
+	void clear_label_size_cache();
 
 protected:
 	void set_config(tresolution_definition_ptr config) { config_ = config; }

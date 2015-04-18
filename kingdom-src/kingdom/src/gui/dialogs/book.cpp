@@ -166,6 +166,8 @@ void tbook::pre_show(CVideo& /*video*/, twindow& window)
 				  , this
 				  , boost::ref(window))
 			, event::tdispatcher::front_pre_child);
+
+	tree_->get_root_node().fold_children();
 }
 
 ttree_view_node* tbook::cookie_rfind_node(const help::topic* t) const

@@ -34,6 +34,7 @@
 #include "display.hpp"
 #include "gettext.hpp"
 #include "hero.hpp"
+#include "lobby.hpp"
 
 #include <sys/stat.h> // for setting the permissions of the preferences file
 
@@ -100,6 +101,7 @@ void write_preferences()
 #ifndef _WIN32
     bool prefs_file_existed = access(get_prefs_file().c_str(), F_OK) == 0;
 #endif
+
 	try {
 		scoped_ostream prefs_file = ostream_file(get_prefs_file(), true);
 		write(*prefs_file, prefs);
@@ -515,6 +517,97 @@ void set_developer(bool ison)
 bool developer()
 {
 	return prefs["developer"].to_bool();
+}
+
+std::string nick()
+{
+	return prefs["nick"].str();
+}
+
+void set_nick(const std::string& nick)
+{
+	prefs["nick"] = nick;
+}
+
+bool chat()
+{
+	return prefs["chat"].to_bool(true);
+}
+
+void set_chat(bool val)
+{
+	prefs["chat"] = val;
+}
+
+std::string chat_person()
+{
+	return prefs["chat_person"].str();
+}
+
+void set_chat_person(const std::string& person)
+{
+	prefs["chat_person"] = person;
+}
+
+std::string chat_channel()
+{
+	return prefs["chat_channel"].str();
+}
+
+void set_chat_channel(const std::string& channel)
+{
+	prefs["chat_channel"] = channel;
+}
+
+std::string encode_pw(const std::string& str)
+{
+	std::stringstream ss;
+	ss << "pw_";
+	if (utils::is_utf8str(str)) {
+		ss << str;
+	}
+	return ss.str();
+}
+
+std::string decode_pw(const std::string& str)
+{
+	if (!utils::is_utf8str(str)) {
+		return null_str;
+	}
+
+	int pos = str.find("pw_");
+	if (pos != std::string::npos) {
+		return str.substr(3);
+	} else {
+		return str;
+	}
+}
+
+std::string password()
+{
+	if (login() == public_account) {
+		return public_password;
+	} else if (remember_password()) {
+		return decode_pw(preferences::get("password"));
+	}
+	return "";
+}
+
+void set_password(const std::string& password)
+{
+	if (remember_password()) {
+		preferences::set("password", encode_pw(password));
+	}
+}
+
+bool remember_password()
+{
+	return preferences::get("remember_password", false);
+}
+
+void set_remember_password(bool remember)
+{
+	preferences::set("remember_password", remember);
 }
 
 bool turbo()

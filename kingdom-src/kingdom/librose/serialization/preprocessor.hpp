@@ -77,4 +77,14 @@ std::istream *preprocess_file(std::string const &fname, preproc_map *defines = N
 void preprocess_resource(const std::string& res_name, preproc_map *defines_map,
 			bool write_cfg=false, bool write_plain_cfg=false, std::string target_directory="");
 
+class topen_unicode_lock
+{
+public:
+	topen_unicode_lock(bool unicode);
+	~topen_unicode_lock();
+
+private:
+	bool original_;
+};
+
 #endif

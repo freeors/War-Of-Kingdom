@@ -44,7 +44,7 @@ private:
 	void connect_button_callback(twindow& window);
 	void clear_button_callback(twindow& window);
 
-	void handle(tlobby::tstate s, const std::string& msg);
+	void handle(const tsock& sock, const std::string& msg);
 
 private:
 	tscroll_label* log_;

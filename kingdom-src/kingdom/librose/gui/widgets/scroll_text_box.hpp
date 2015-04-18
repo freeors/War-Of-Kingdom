@@ -54,6 +54,11 @@ public:
 
 	void insert_img(const std::string& str);
 
+	/** Inherited from tscrollbar_container. */
+	tpoint calculate_best_size() const;
+	void set_content_size(const tpoint& origin, const tpoint& size);
+	bool content_empty() const;
+
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
 	bool get_active() const { return state_ != DISABLED; }
@@ -66,7 +71,6 @@ private:
 
 	mutable std::string real_label_;
 
-	tpoint pre_request_fix_width(const unsigned maximum_content_grid_width);
 	/**
 	 * Possible states of the widget.
 	 *

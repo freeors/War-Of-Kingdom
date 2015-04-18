@@ -30,6 +30,7 @@
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/image.hpp"
 #include "gui/widgets/label.hpp"
+#include "gui/widgets/scroll_label.hpp"
 #ifdef GUI2_EXPERIMENTAL_LISTBOX
 #include "gui/widgets/list.hpp"
 #else
@@ -183,6 +184,22 @@ void tgame_load::post_show(twindow& window)
 {
 }
 
+std::string tgame_load::generate_summary(const std::string& game, const config& cfg_summary) const
+{
+	std::stringstream ss;
+
+	ss << game;
+	ss << "\n";
+	ss << "\n";
+
+	ss << format_time_local(cfg_summary["create"].to_long()) << "\n";
+	ss << _("Total time") << ": " << format_time_elapse(cfg_summary["duration"].to_int());
+	ss << "(" << tintegrate::generate_format(cfg_summary["hash"].to_int(), "yellow") << ")";
+	evaluate_summary_string(ss, cfg_summary);
+
+	return ss.str();
+}
+
 void tgame_load::display_savegame(twindow& window)
 {
 	const int selected_row = savegame_list_->get_selected_row();
@@ -213,17 +230,9 @@ void tgame_load::display_savegame(twindow& window)
 		find_widget<tminimap>(&window, "minimap", false).
 				set_map_data(tminimap::TILE_MAP, cfg_summary["map_data"]);
 
-		find_widget<tlabel>(&window, "lblScenario", false).set_label(game.name);
+		find_widget<tscroll_label>(&window, "lblSummary", false).set_label(generate_summary(game.name, cfg_summary));
 
-		std::stringstream str;
-		str << format_time_local(cfg_summary["create"].to_long()) << "\n";
-		str << _("Total time") << ": " << format_time_elapse(cfg_summary["duration"].to_int());
-		str << "(" << tintegrate::generate_format(cfg_summary["hash"].to_int(), "yellow") << ")";
-		evaluate_summary_string(str, cfg_summary);
-
-		find_widget<tlabel>(&window, "lblSummary", false).set_label(str.str());
-
-		window.invalidate_layout();
+		// window.invalidate_layout();
 
 	} else if (current_page_ == NETWORK_PAGE) {
 		preview_pane.set_visible(twidget::VISIBLE);
@@ -233,14 +242,12 @@ void tgame_load::display_savegame(twindow& window)
 
 		find_widget<tminimap>(&window, "minimap", false).set_map_data(tminimap::TILE_MAP, "");
 
-		find_widget<tlabel>(&window, "lblScenario", false).set_label(game.name);
-
-		find_widget<tlabel>(&window, "lblSummary", false).set_label("");
+		find_widget<tscroll_label>(&window, "lblSummary", false).set_label(generate_summary(game.name, null_cfg));
 	}
 }
 
-void tgame_load::evaluate_summary_string(std::stringstream& str
-		, const config& cfg_summary){
+void tgame_load::evaluate_summary_string(std::stringstream& str, const config& cfg_summary) const
+{
 
 	const std::string& campaign_type = cfg_summary["campaign_type"];
 	if (cfg_summary["corrupt"].to_bool()) {

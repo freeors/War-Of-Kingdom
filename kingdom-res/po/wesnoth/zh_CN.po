@@ -11,8 +11,8 @@ msgstr ""
 "Project-Id-Version: wesnoth\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
 "POT-Creation-Date: 2010-12-08 18:05+0100\n"
-"PO-Revision-Date: 2014-11-30 14:59+0800\n"
-"Last-Translator: ancientcc <ancientcc@gmail.com>\n"
+"PO-Revision-Date: 2015-04-17 17:09+0800\n"
+"Last-Translator: \n"
 "Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
@@ -6618,10 +6618,6 @@ msgstr "您真的想删除这个游戏吗？"
 msgid "Don’t ask me again!"
 msgstr "不要再问我！"
 
-#: src/dialogs.cpp:455 src/savegame.cpp:135
-msgid "%a %b %d %H:%M %Y"
-msgstr "%Y年%m月%d日，%H时%M分"
-
 msgid "$d days"
 msgstr "$d天"
 
@@ -6660,23 +6656,6 @@ msgstr "难度："
 #: src/dialogs.cpp:514
 msgid "Version: "
 msgstr "版本："
-
-#: src/dialogs.cpp:538 src/dialogs.cpp:554 src/savegame.cpp:164
-#: src/savegame.cpp:180
-msgid "%b %d %y"
-msgstr "%Y年%m月%d日"
-
-#: src/dialogs.cpp:544 src/savegame.cpp:170
-msgid "%H:%M"
-msgstr "%H:%M"
-
-#: src/dialogs.cpp:547 src/savegame.cpp:173
-msgid "%A, %H:%M"
-msgstr "%m月%d日 %H:%M"
-
-#: src/dialogs.cpp:550 src/savegame.cpp:176
-msgid "%b %d"
-msgstr "%m月%d日"
 
 #: src/dialogs.cpp:578
 msgid "No Saved Games"
@@ -9749,6 +9728,24 @@ msgstr "闪避"
 
 msgid "Legend of Mythology"
 msgstr "太古神谈"
+
+msgid "Avenue of Stars"
+msgstr "星光大道"
+
+#~ msgid "%a %b %d %H:%M %Y"
+#~ msgstr "%Y年%m月%d日，%H时%M分"
+
+#~ msgid "%b %d %y"
+#~ msgstr "%Y年%m月%d日"
+
+#~ msgid "%H:%M"
+#~ msgstr "%H:%M"
+
+#~ msgid "%A, %H:%M"
+#~ msgstr "%m月%d日 %H:%M"
+
+#~ msgid "%b %d"
+#~ msgstr "%m月%d日"
 
 #~ msgid "Initializing user interface"
 #~ msgstr "正在初始化用户界面......"

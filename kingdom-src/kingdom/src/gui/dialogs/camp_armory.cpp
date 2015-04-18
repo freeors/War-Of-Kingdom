@@ -28,7 +28,7 @@
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/label.hpp"
-#include "gui/widgets/multi_page.hpp"
+#include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/progress_bar.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
@@ -279,7 +279,7 @@ void tcamp_armory::refresh_according_to_troop(twindow& window, const int curr)
 	toggle->set_active(false);
 
 	tlabel* label;
-	// leadership
+/*	// leadership
 	label = find_widget<tlabel>(&window, "tip_leadership", false, true);
 	label->set_label(lexical_cast<std::string>(u.leadership_));
 
@@ -298,7 +298,7 @@ void tcamp_armory::refresh_according_to_troop(twindow& window, const int curr)
 	// charm
 	label = find_widget<tlabel>(&window, "tip_charm", false, true);
 	label->set_label(lexical_cast<std::string>(u.charm_));
-
+*/
 	// hp
 	label = find_widget<tlabel>(&window, "tip_hp", false, true);
 	str.str("");
@@ -318,87 +318,8 @@ void tcamp_armory::refresh_according_to_troop(twindow& window, const int curr)
 	label->set_label(str.str());
 
 	// traits
-	str.str("");
-	str << _("Traits") << ": " << utils::join(u.trait_names(), ", ");
-	label = find_widget<tlabel>(&window, "tip_traits", false, true);
-	label->set_label(str.str());
-
-	// abilities
-	str.str("");
-	std::vector<std::string> abilities_tt;
-	abilities_tt = u.ability_tooltips(true);
-	str << _("Abilities") << ": ";
-	if (!abilities_tt.empty()) {
-		std::vector<t_string> abilities;
-		for (std::vector<std::string>::const_iterator a = abilities_tt.begin(); a != abilities_tt.end(); a += 2) {
-			abilities.push_back(*a);
-		}
-
-		for (std::vector<t_string>::const_iterator a = abilities.begin(); a != abilities.end(); a++) {
-			if (a != abilities.begin()) {
-				if (a - abilities.begin() != 2) {
-					str << ", ";
-				} else {
-					str << "\n    ";
-				}
-			}
-			str << (*a);
-		}
-	}
-	label = find_widget<tlabel>(&window, "tip_abilities", false, true);
-	label->set_label(str.str());
-
-	// feature
-	str.str("");
-	int index = 0;
-	str << _("Feature") << ": ";
-	for (int i = 0; i < HEROS_MAX_FEATURE; i ++) {
-		if (unit_feature_val2(u, i) == hero_feature_single_result) {
-			if (index > 0) {
-				if (index != 2) {
-					str << ", ";
-				} else {
-					str << "\n    ";
-				}
-			}
-			index ++;
-			str << u.master().feature_str(i);
-		}
-	}
-	label = find_widget<tlabel>(&window, "tip_feature", false, true);
-	label->set_label(str.str());
-
-	// adaptability
-	str.str("");
-	str << _("Adaptability") << ": ";
-	str << hero::arms_str(u.arms()) << "(" << hero::adaptability_str2(ftofxp12(u.adaptability_[u.arms()])) << ")";
-	label = find_widget<tlabel>(&window, "tip_adaptability", false, true);
-	label->set_label(str.str());
-
-	// attack
-	str.str("");
-	std::vector<attack_type>* attacks_ptr = const_cast<std::vector<attack_type>*>(&u.attacks());
-	for (std::vector<attack_type>::const_iterator at_it = attacks_ptr->begin(); at_it != attacks_ptr->end(); ++at_it) {
-		// see generate_report() in generate_report.cpp
-		str << at_it->name() << " (" << dgettext("wesnoth", at_it->type().c_str()) << ")\n";
-
-		std::string accuracy = at_it->accuracy_parry_description();
-		if(accuracy.empty() == false) {
-			accuracy += " ";
-		}
-
-		str << "  " << at_it->damage() << "-" << at_it->num_attacks()
-			<< " " << accuracy << "- " << dgettext("wesnoth", at_it->range().c_str());
-
-		std::string special = at_it->weapon_specials(true);
-		if (!special.empty()) {
-			str << "(" << special << ")";
-		}
-		str << "\n";
-	}
-	label = find_widget<tlabel>(&window, "tip_attack", false, true);
-	label->set_label(str.str());
-
+	tscroll_label* label2 = find_widget<tscroll_label>(&window, "tip_traits", false, true);
+	label2->set_label(u.form_tip(true));
 
 	str.str("");
 	str << "candidate_hero" << candidate_heros_.size();

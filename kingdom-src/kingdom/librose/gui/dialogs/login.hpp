@@ -13,21 +13,25 @@
    See the COPYING file for more details.
 */
 
-#ifndef GUI_DIALOGS_MP_LOGIN_HPP_INCLUDED
-#define GUI_DIALOGS_MP_LOGIN_HPP_INCLUDED
+#ifndef GUI_DIALOGS_LOGIN_HPP_INCLUDED
+#define GUI_DIALOGS_LOGIN_HPP_INCLUDED
 
 #include "gui/dialogs/dialog.hpp"
 
 class display;
 class hero_map;
 
+namespace http {
+bool register_user(display& disp, hero_map& heros, bool check_exist = false);
+}
+
 namespace gui2 {
 
-class tmp_login : public tdialog
+class tlogin : public tdialog
 {
 public:
 	enum {REGISTER, LOGIN};
-	tmp_login(display& disp, hero_map& heros, const std::string& label);
+	tlogin(display& disp, hero_map& heros, const std::string& label);
 
 	bool dirty() const;
 private:
