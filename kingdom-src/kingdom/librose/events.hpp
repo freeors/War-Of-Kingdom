@@ -37,6 +37,57 @@ enum HOTKEY_COMMAND {
 	HOTKEY_MIN = 100
 };
 
+struct tfinger
+{
+	tfinger(SDL_FingerID id, int x, int y, Uint32 active)
+		: fingerId(id)
+		, x(x)
+		, y(y)
+		, active(active)
+	{}
+
+	bool operator==(const tfinger& that) const
+	{
+		if (fingerId != that.fingerId) return false;
+		return true;
+	}
+	bool operator!=(const tfinger& that) const { return !operator==(that); }
+
+
+	SDL_FingerID fingerId;
+	int x;
+	int y;
+	Uint32 active;
+};
+
+class base_finger
+{
+protected:
+	base_finger();
+
+	void process_event(const SDL_Event& event);
+
+	// generate multigesture whether or not.
+	bool multi_gestures() const;
+
+	virtual bool finger_coordinate_valid(int x, int y) const { return true; }
+	virtual bool mouse_wheel_coordinate_valid(int x, int y) const { return true; }
+
+	virtual void handle_swipe(int x, int y, int dx, int dy) {}
+	virtual void handle_pinch(int x, int y, bool out) {}
+	virtual void handle_mouse_down(const SDL_MouseButtonEvent& button) {}
+	virtual void handle_mouse_up(const SDL_MouseButtonEvent& button) {}
+	virtual void handle_mouse_motion(const SDL_MouseMotionEvent& motion) {}
+	virtual void handle_mouse_wheel(const SDL_MouseWheelEvent& wheel, int x, int y, Uint8 mouse_flags) {}
+
+protected:
+	std::vector<tfinger> fingers_;
+	int pinch_distance_;
+	int mouse_motions_;
+	Uint32 pinch_noisc_time_;
+	Uint32 last_pinch_ticks_;
+};
+
 namespace events
 {
 
@@ -54,12 +105,7 @@ public:
 	virtual void process_event() {}
 	virtual void draw() {}
 
-	virtual void volatile_draw() {}
-	virtual void volatile_undraw() {}
-
 	virtual bool requires_event_focus(const SDL_Event * = NULL) const { return false; }
-
-	virtual void process_help_string(int /*mousex*/, int /*mousey*/) {}
 
 	virtual void join(); /*joins the current event context*/
 	virtual void leave(); /*leave the event context*/
@@ -97,20 +143,12 @@ struct event_context
 //causes events to be dispatched to all handler objects.
 void pump();
 
-struct pump_info {
-	pump_info() : resize_dimensions(), ticks_(0) {}
-	std::pair<int,int> resize_dimensions;
-	int ticks(unsigned *refresh_counter=NULL, unsigned refresh_rate=1);
-private:
-	int ticks_; //0 if not calculated
-};
-
 class pump_monitor {
 //pump_monitors receive notifcation after an events::pump() occurs
 public:
 	pump_monitor(bool auto_join = true);
 	virtual ~pump_monitor();
-	virtual void process(pump_info& info) = 0;
+	virtual void monitor_process() = 0;
 	void join(); /*joins the current monitor*/
 private:
 	bool has_joined_;
@@ -120,9 +158,6 @@ int discard(Uint32 event_mask_min, Uint32 event_mask_max);
 
 void raise_process_event();
 void raise_draw_event();
-void raise_volatile_draw_event();
-void raise_volatile_undraw_event();
-void raise_help_string_event(int mousex, int mousey);
 
 extern bool ignore_finger_event;
 }

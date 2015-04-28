@@ -24,7 +24,6 @@
 #include "binary_or_text.hpp"
 #include "config.hpp"
 #include "log.hpp"
-#include "wesconfig.h"
 #include "serialization/parser.hpp"
 
 #include <boost/iostreams/filter/gzip.hpp>
@@ -39,7 +38,7 @@ config_writer::config_writer(
 		out_(*out_ptr_), //now MSVC will allow binding to the reference member
 		compress_(compress),
 		level_(0),
-		textdomain_(PACKAGE)
+		textdomain_("rose-lib")
 {
 	if(compress_) {
 		if (level >=0)

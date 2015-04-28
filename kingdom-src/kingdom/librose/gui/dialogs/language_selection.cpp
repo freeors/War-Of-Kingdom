@@ -13,15 +13,11 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/language_selection.hpp"
 
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-#include "gui/widgets/list.hpp"
-#else
 #include "gui/widgets/listbox.hpp"
-#endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "language.hpp"
@@ -62,6 +58,8 @@ REGISTER_DIALOG(language_selection)
 
 void tlanguage_selection::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	tlistbox& list = find_widget<tlistbox>(&window, "language_list", false);
 	window.keyboard_capture(&list);
 
@@ -92,11 +90,8 @@ void tlanguage_selection::pre_show(CVideo& /*video*/, twindow& window)
 
 void tlanguage_selection::post_show(twindow& window)
 {
-	if(get_retval() == twindow::OK) {
-		const int res = find_widget<tlistbox>(&window, "language_list", false)
-				.get_selected_row();
-
-		assert(res != -1);
+	if (get_retval() == twindow::OK) {
+		const int res = find_widget<tlistbox>(&window, "language_list", false).get_selected_row();
 
 		const std::vector<language_def>& languages = get_languages();
 		::set_language(languages[res]);

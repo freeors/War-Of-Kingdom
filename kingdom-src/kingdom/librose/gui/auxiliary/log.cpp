@@ -18,7 +18,7 @@
  * Define the loggers for the gui toolkit.
  */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/log.hpp"
 

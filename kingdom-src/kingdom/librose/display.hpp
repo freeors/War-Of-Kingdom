@@ -63,7 +63,8 @@ class controller_base;
  * Rectangular area of hexes, allowing to decide how the top and bottom
  * edges handles the vertical shift for each parity of the x coordinate
  */
-struct rect_of_hexes {
+struct rect_of_hexes 
+{
 	int left;
 	int right;
 	int top[2]; // for even and odd values of x, respectively
@@ -96,6 +97,19 @@ struct rect_of_hexes {
 	iterator end() const;
 };
 
+struct tsurf_buf
+{
+	tsurf_buf()
+		: rect(create_rect(0, 0, 0, 0))
+	{}
+
+	SDL_Rect rect;  // based on screen coordinate
+	surface surf;  // foreground surface
+	surface buffer; // background surface
+};
+
+#define ZOOM_INCREMENT		4
+
 #define point_in_rect_of_hexes(x, y, rect)	\
 	((x) >= (rect).left && (y) >= (rect).top[(x) & 1] && (x) <= (rect).right && (y) <= (rect).bottom[(x) & 1])
 
@@ -116,8 +130,8 @@ public:
 		bool to_canvas_;
 	};
 
-	static int last_zoom;
-	static int default_zoom_;
+	static bool require_change_resolution;
+	static int initial_zoom;
 
 	enum {ZOOM_72 = 72, ZOOM_64 = 64, ZOOM_56 = 56, ZOOM_48 = 48};
 	static int adjust_zoom(int zoom);
@@ -191,6 +205,8 @@ public:
 
 	/** Check if the bbox of the hex at x,y has pixels outside the area rectangle. */
 	bool outside_area(const SDL_Rect& area, const int x,const int y) const;
+
+	int zoom() const { return zoom_; }
 
 	/**
 	 * Function which returns the width of a hex in pixels,
@@ -361,15 +377,9 @@ public:
 	 */
 	static void sunset(const size_t delay = 0);
 
-	/** Toggle to continuously redraw the screen. */
-	static void toggle_benchmark();
-
 	terrain_builder& get_builder() {return *builder_;};
 
 	void flip();
-
-	/** Copy the backbuffer to the framebuffer. */
-	void update_display();
 
 	/** Rebuild all dynamic terrain. */
 	virtual void rebuild_all();
@@ -464,6 +474,8 @@ public:
 	                     bool only_if_possible=false,
 			     double add_spacing=0.0, bool force = true);
 
+	void scroll_to_xy(int screenxpos, int screenypos, SCROLL_TYPE scroll_type, bool force = true);
+
 	/** Expose the event, so observers can be notified about map scrolling. */
 	events::generic_event &scroll_event() const { return scroll_event_; }
 
@@ -534,6 +546,12 @@ public:
 
 	int min_zoom() const { return min_zoom_; }
 	int max_zoom() const { return max_zoom_; }
+	bool point_in_volatiles(int x, int y) const;
+
+	virtual void shrouded_and_fogged(const map_location& loc, bool& shrouded, bool& fogged) const {}
+
+	// valid on iOS
+	void set_statusbar(bool show, bool white_fg);
 
 protected:
 	/** Clear the screen contents */
@@ -564,7 +582,7 @@ protected:
 	 * Hook for actions to take right after draw() calls drawing_buffer_commit
 	 * No action here by default.
 	 */
-	virtual void post_commit() {}
+	void post_commit();
 
 	/**
 	 * Redraws a single gamemap location.
@@ -609,8 +627,6 @@ protected:
 
 	void draw_image_for_report(surface& img, SDL_Rect& rect);
 
-	void scroll_to_xy(int screenxpos, int screenypos, SCROLL_TYPE scroll_type,bool force = true);
-
 	void fill_images_list(const std::string& prefix, std::vector<std::string>& images);
 
 	const std::string& get_variant(const std::vector<std::string>& variants, const map_location &loc) const;
@@ -618,7 +634,7 @@ protected:
 	virtual double minimap_shift_x(const SDL_Rect& map_rect, const SDL_Rect& map_out_rect) const;
 	virtual double minimap_shift_y(const SDL_Rect& map_rect, const SDL_Rect& map_out_rect) const;
 
-	virtual void post_zoom() {}
+	virtual void post_set_zoom(int last_zoom) {}
 
 protected:
 	CVideo& screen_;
@@ -642,6 +658,8 @@ protected:
 	int last_map_h_;
 
 	gui2::tpoint zero_;
+	bool portrait_;
+	bool always_bottom_;
 
 	/** Event raised when the map is being scrolled */
 	mutable events::generic_event scroll_event_;
@@ -885,6 +903,9 @@ public:
 	/** Draws the drawing_buffer_ and clears it. */
 	void drawing_buffer_commit(surface& screen);
 
+	virtual void draw_floating(surface& screen) {}
+	virtual void undraw_floating(surface& screen);
+
 protected:
 	void create_theme();
 	void release_theme();
@@ -930,9 +951,13 @@ protected:
 	int max_zoom_;
 	std::map<int, animation*> area_anims_;
 
+	int halo_id_;
+	std::map<int, tsurf_buf> haloes_;
+
+	gui2::twidget::torientation orientation_;
+	bool original_landscape_;
+
 private:
-	/** Handle for the label which displays frames per second. */
-	int fps_handle_;
 	/** Count work done for the debug info displayed under fps */
 	int invalidated_hexes_;
 	int drawn_hexes_;
@@ -976,9 +1001,8 @@ private:
 	display& disp_;
 };
 
-const SDL_Rect& calculate_energy_bar(surface surf);
+const SDL_Rect& calculate_energy_bar(const surface& surf);
 void draw_bar_to_surf(const std::string& image, surface& dst_surf, int x, int y, int size, double filled, const SDL_Color& col, fixed_t alpha, bool vtl);
-void set_zoom_to_default(int zoom);
 
 #endif
 

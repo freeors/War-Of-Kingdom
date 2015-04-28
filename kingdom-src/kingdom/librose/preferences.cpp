@@ -20,7 +20,7 @@
 
 #include "global.hpp"
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "config.hpp"
 #include "filesystem.hpp"
@@ -110,7 +110,7 @@ void write_preferences()
 	}
 
 
-    #ifndef _WIN32
+#ifndef _WIN32
 
     if(!prefs_file_existed) {
 
@@ -120,7 +120,7 @@ void write_preferences()
 
     }
 
-    #endif
+#endif
 
 
 }
@@ -172,6 +172,11 @@ std::string get(const std::string& key) {
 bool get(const std::string &key, bool def)
 {
 	return prefs[key].to_bool(def);
+}
+
+int get2(const std::string &key, int def)
+{
+	return prefs[key].to_int(def);
 }
 
 void disable_preferences_save() {
@@ -333,24 +338,31 @@ int min_allowed_height()
 
 std::pair<int,int> resolution()
 {
+	int width, height;
 	const std::string postfix = fullscreen() ? "resolution" : "windowsize";
 	std::string x = prefs['x' + postfix], y = prefs['y' + postfix];
 	if (!x.empty() && !y.empty()) {
-		std::pair<int,int> res(std::max(atoi(x.c_str()), min_allowed_width()),
-		                       std::max(atoi(y.c_str()), min_allowed_height()));
+		width = std::max(atoi(x.c_str()), min_allowed_width());
+		height = std::max(atoi(y.c_str()), min_allowed_height());
+		// width/height from preferences.cfg must be landscape.
+		if (width < height) {
+			int tmp = width;
+			width = height;
+			height = tmp;
+		}
 
-		// Make sure resolutions are always divisible by 4
-		//res.first &= ~3;
-		//res.second &= ~3;
-		return res;
 	} else {
 #if defined(__APPLE__) && TARGET_OS_IPHONE
-		return std::pair<int, int>(480, 320);
+		width = 480;
+		height = 320;
 #else
-		// return std::pair<int, int>(1024, 768);
-		return std::pair<int, int>(800, 600);
+		width = 800;
+		height = 600;
 #endif
 	}
+
+	gui2::tpoint landscape_size = gui2::twidget::toggle_orientation_size(width, height);
+	return std::make_pair(landscape_size.x, landscape_size.y);
 }
 
 int noble()
@@ -642,7 +654,11 @@ void _set_default_move(const bool ison)
 
 std::string language()
 {
-	return prefs["locale"];
+	std::string str = prefs["locale"];
+	if (str.empty()) {
+		str = "zh_CN";
+	}
+	return str;
 }
 
 void set_language(const std::string& s)
@@ -668,36 +684,6 @@ int zoom()
 void _set_zoom(int value)
 {
 	preferences::set("zoom", display::adjust_zoom(value));
-}
-
-size_t sound_buffer_size()
-{
-	// Sounds don't sound good on Windows unless the buffer size is 4k,
-	// but this seems to cause crashes on other systems...
-	#ifdef _WIN32
-		const size_t buf_size = 4096;
-	#else
-		const size_t buf_size = 1024;
-	#endif
-
-	return prefs["sound_buffer_size"].to_int(buf_size);
-}
-
-void save_sound_buffer_size(const size_t size)
-{
-	#ifdef _WIN32
-		const char* buf_size = "4096";
-	#else
-		const char* buf_size = "1024";
-	#endif
-
-	const std::string new_size = lexical_cast_default<std::string>(size, buf_size);
-	if (get("sound_buffer_size") == new_size)
-		return;
-
-	preferences::set("sound_buffer_size", new_size);
-
-	sound::reset_sound();
 }
 
 int music_volume()
@@ -968,22 +954,6 @@ void add_alias(const std::string &alias, const std::string &command)
 const config &get_alias()
 {
 	return get_child("alias");
-}
-
-unsigned int sample_rate()
-{
-	return prefs["sample_rate"].to_int(44100);
-}
-
-void save_sample_rate(const unsigned int rate)
-{
-	if (sample_rate() == rate)
-		return;
-
-	prefs["sample_rate"] = int(rate);
-
-	// If audio is open, we have to re set sample rate
-	sound::reset_sound();
 }
 
 } // end namespace preferences

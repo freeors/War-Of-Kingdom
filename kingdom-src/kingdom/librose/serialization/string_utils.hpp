@@ -333,11 +333,15 @@ std::set<int> to_set_int(const std::string& value);
 std::vector<int> to_vector_int(const std::string& value);
 void transform_tolower(std::string& str);
 void transform_tolower(const std::string& src, std::string& dst);
+void transform_toupper(std::string& str);
+std::string transform_toupper(const std::string& src);
 
 extern std::string errstr;
 bool isvalid_id(const std::string& id, bool first_must_alpha, int min, int max);
 bool isvalid_variable(const std::string& id);
 bool isvalid_nick(const std::string& nick);
+
+bool isinteger(const char* str);
 
 }
 

@@ -73,15 +73,15 @@ public:
 	 * @returns true when the caller should not process the mouse motion
 	 * further (i.e. should return), false otherwise.
 	 */
-	bool mouse_motion_default(int x, int y, bool update);
+	bool mouse_motion_default(int x, int y);
 
 	/**
 	 * Called when a mouse motion event takes place. Derived classes mustprovide an
 	 * implementation, possibly using mouse_motion_default().
 	 */
-	virtual void mouse_motion(int x, int y, const bool browse, bool update = false);
+	virtual void mouse_motion(int x, int y, const bool browse);
 
-	virtual void mouse_press(const SDL_MouseButtonEvent& event, const bool browse);
+	virtual void mouse_press(const SDL_MouseButtonEvent& event, bool motions, const bool browse);
 	bool is_left_click(const SDL_MouseButtonEvent& event) const;
 	bool is_middle_click(const SDL_MouseButtonEvent& event) const;
 	bool is_right_click(const SDL_MouseButtonEvent& event) const;
@@ -100,7 +100,7 @@ public:
 	 * This means do not treat the call as a start of drag movement.
 	 * FIXME: This return value is currently ignored
 	 */
-	virtual bool left_click(int x, int y, const bool browse);
+	virtual bool left_mouse_down(int x, int y, const bool browse);
 
 	/**
 	 * Called whenever the left mouse drag has "ended".
@@ -110,7 +110,7 @@ public:
 	/**
 	 * Called when the left mouse button is up
 	 */
-	virtual void left_mouse_up(int x, int y, const bool browse);
+	virtual void left_mouse_up(int x, int y, bool motions, const bool browse);
 
 	/**
 	 * Overridden in derived classes, called on a right click (mousedown).

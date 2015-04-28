@@ -39,6 +39,9 @@ public:
 	/** Select the control. */
 	virtual void set_value(const bool) = 0;
 
+	/** Is the control can selectable? */
+	virtual bool can_selectable() const = 0;
+
 	/**
 	 * When the user does something to change the widget state this event is
 	 * fired. Most of the time it will be a left click on the widget.

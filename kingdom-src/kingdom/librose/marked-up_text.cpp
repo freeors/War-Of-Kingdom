@@ -19,7 +19,7 @@
  * E.g. "@Victory" will be shown in green.
  */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 
@@ -31,138 +31,6 @@
 #include "wml_exception.hpp"
 
 namespace font {
-
-const char LARGE_TEXT='*', SMALL_TEXT='`',
-		   BOLD_TEXT='~',  ITALIC_TEXT='/', 
-		   UNDERLINE_TEXT='_', NORMAL_TEXT='{',
-		   NULL_MARKUP='^',
-		   BLACK_TEXT='}', GRAY_TEXT='|',
-           GOOD_TEXT='@',  BAD_TEXT='#',
-           GREEN_TEXT='@', RED_TEXT='#',
-           COLOR_TEXT='<', IMAGE='&';
-
-const std::string weapon = "<245,230,193>",
-		weapon_details = "<166,146,117>",
-		unit_type = "<245,230,193>",
-		race = "<166,146,117>";
-
-const SDL_Color
-	weapon_color = { 245, 230, 193, 255 },
-	good_dmg_color = { 130, 240, 50, 255 },
-	bad_dmg_color = { 250, 140, 80, 255 },
-	weapon_details_color = { 166, 146, 117, 255 },
-	unit_type_color = { 245, 230, 193, 255 },
-	race_color = { 166, 146, 117, 255 };
-
-const std::string weapon_numbers_sep = "¨C", weapon_details_sep = "¨C";
-
-std::string::const_iterator parse_markup(std::string::const_iterator i1,
-												std::string::const_iterator i2,
-												int* font_size,
-												SDL_Color* color, int* style)
-{
-	std::string::const_iterator i_start=i1;
-	while(i1 != i2) {
-		switch(*i1) {
-		case '\\':
-			// This must either be a quoted special character or a
-			// quoted backslash - either way, remove leading backslash
-			break;
-		case BAD_TEXT:
-			if (color) *color = BAD_COLOR;
-			break;
-		case GOOD_TEXT:
-			if (color) *color = GOOD_COLOR;
-			break;
-		case NORMAL_TEXT:
-			if (color) *color = NORMAL_COLOR;
-			break;
-		case BLACK_TEXT:
-			if (color) *color = BLACK_COLOR;
-			break;
-		case GRAY_TEXT:
-			if (color) *color = GRAY_COLOR;
-			break;
-		case LARGE_TEXT:
-			if (font_size) *font_size += 2;
-			break;
-		case SMALL_TEXT:
-			if (font_size) *font_size -= 2;
-			break;
-		case BOLD_TEXT:
-			if (style) *style |= TTF_STYLE_BOLD;
-			break;
-		case ITALIC_TEXT:
-			if (style) *style |= TTF_STYLE_ITALIC;
-			break;
-		case UNDERLINE_TEXT:
-			if (style) *style |= TTF_STYLE_UNDERLINE;
-			break;
-		case NULL_MARKUP:
-			return i1+1;
-		case COLOR_TEXT:
-			{
-				std::string::const_iterator start = i1;
-				// Very primitive parsing for rgb value
-				// should look like <213,14,151>
-				++i1;
-				Uint8 red=0, green=0, blue=0, temp=0;
-				while (i1 != i2 && *i1 >= '0' && *i1<='9') {
-					temp*=10;
-					temp += lexical_cast<int, char>(*i1);
-					++i1;
-				}
-				red=temp;
-				temp=0;
-				if (i1 != i2 && ',' == (*i1)) {
-					++i1;
-					while(i1 != i2 && *i1 >= '0' && *i1<='9'){
-						temp*=10;
-						temp += lexical_cast<int, char>(*i1);
-						++i1;
-					}
-					green=temp;
-					temp=0;
-				}
-				if (i1 != i2 && ',' == (*i1)) {
-					++i1;
-					while(i1 != i2 && *i1 >= '0' && *i1<='9'){
-						temp*=10;
-						temp += lexical_cast<int, char>(*i1);
-						++i1;
-					}
-				}
-				blue=temp;
-				if (i1 != i2 && '>' == (*i1)) {
-					SDL_Color temp_color = {red, green, blue, 0};
-					if (color) *color = temp_color;
-				} else {
-					// stop parsing and do not consume any chars
-					return start;
-				}
-				if (i1 == i2) return i1;
-				break;
-			}
-		default:
-			return i1;
-		}
-		++i1;
-	}
-	return i1;
-}
-
-std::string del_tags(const std::string& text){
-	int ignore_int;
-	SDL_Color ignore_color;
-	std::vector<std::string> lines = utils::split(text, '\n', 0);
-	std::vector<std::string>::iterator line;
-	for(line = lines.begin(); line != lines.end(); ++line) {
-		std::string::const_iterator i1 = line->begin(),
-			i2 = line->end();
-		*line = std::string(parse_markup(i1,i2,&ignore_int,&ignore_color,&ignore_int),i2);
-	}
-	return utils::join(lines, "\n");
-}
 
 std::string color2markup(const SDL_Color &color)
 {
@@ -180,89 +48,6 @@ std::string color2hexa(const SDL_Color &color)
 	char buf[7];
 	sprintf(buf, "%02x%02x%02x", color.r, color.g, color.b);
 	return buf;
-}
-
-std::string span_color(const SDL_Color &color)
-{
-	return "<span foreground=\"#" + font::color2hexa(color) + "\">";
-}
-
-SDL_Rect text_area(const std::string& text, int size, int style)
-{
-	const SDL_Rect area = {0,0,10000,10000};
-	return draw_text(NULL, area, size, font::NORMAL_COLOR, text, 0, 0, false, style);
-}
-
-SDL_Rect draw_text(surface dst, const SDL_Rect& area, int size,
-                   const SDL_Color& color, const std::string& txt,
-                   int x, int y, bool use_tooltips, int style)
-{
-	// Make sure there's always at least a space,
-	// so we can ensure that we can return a rectangle for height
-	static const std::string blank_text(" ");
-	const std::string& text = txt.empty() ? blank_text : txt;
-
-	SDL_Rect res;
-	res.x = x;
-	res.y = y;
-	res.w = 0;
-	res.h = 0;
-
-	std::string::const_iterator i1 = text.begin();
-	std::string::const_iterator i2 = std::find(i1,text.end(),'\n');
-	for(;;) {
-		SDL_Color col = color;
-		int sz = size;
-		int text_style = style;
-
-		i1 = parse_markup(i1,i2,&sz,&col,&text_style);
-
-		if(i1 != i2) {
-			std::string new_string = utils::unescape(std::string(i1, i2));
-
-			const SDL_Rect rect = draw_text_line(dst, area, sz, col, new_string, x, y, use_tooltips, text_style);
-			if(rect.w > res.w) {
-				res.w = rect.w;
-			}
-
-			res.h += rect.h;
-			y += rect.h;
-		}
-
-		if(i2 == text.end()) {
-			break;
-		}
-
-		i1 = i2+1;
-		i2 = std::find(i1,text.end(),'\n');
-	}
-
-	return res;
-}
-
-SDL_Rect draw_text(CVideo* gui, const SDL_Rect& area, int size,
-                   const SDL_Color& color, const std::string& txt,
-                   int x, int y, bool use_tooltips, int style)
-{
-	return draw_text(gui != NULL ? gui->getSurface() : NULL, area, size, color, txt, x, y, use_tooltips, style);
-}
-
-bool is_format_char(char c)
-{
-	switch(c) {
-	case LARGE_TEXT:
-	case SMALL_TEXT:
-	case GOOD_TEXT:
-	case BAD_TEXT:
-	case NORMAL_TEXT:
-	case BLACK_TEXT:
-	case GRAY_TEXT:
-	case BOLD_TEXT:
-	case NULL_MARKUP:
-		return true;
-	default:
-		return false;
-	}
 }
 
 bool is_cjk_char(const wchar_t c)
@@ -308,6 +93,7 @@ bool is_cjk_char(const wchar_t c)
 		(ch >= 0xac00 && ch < 0xd7af) ||
 		(ch >= 0xff00 && ch < 0xffef);
 }
+
 static void cut_word(std::string& line, std::string& word, int font_size, int style, int max_width)
 {
 	std::string tmp = line;
@@ -540,14 +326,6 @@ std::string word_wrap_text(const std::string& unwrapped_text, int font_sz,
 		}
 	}
 	return wrapped_text;
-}
-
-SDL_Rect draw_wrapped_text(CVideo* gui, const SDL_Rect& area, int font_size,
-		     const SDL_Color& color, const std::string& text,
-		     int x, int y, int max_width)
-{
-	std::string wrapped_text = word_wrap_text(text, font_size, max_width);
-	return font::draw_text(gui, area, font_size, color, wrapped_text, x, y, false);
 }
 
 bool can_break(const wchar_t previous, const wchar_t ch)

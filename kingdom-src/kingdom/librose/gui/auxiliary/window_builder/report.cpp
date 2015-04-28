@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/window_builder/report.hpp"
 
@@ -23,8 +23,6 @@
 #include "gui/auxiliary/window_builder/helper.hpp"
 #include "gui/widgets/grid.hpp"
 #include "gui/widgets/report.hpp"
-// #include "gui/widgets/pane.hpp"
-// #include "gui/widgets/viewport.hpp"
 #include "gui/widgets/settings.hpp"
 #include "wml_exception.hpp"
 
@@ -46,11 +44,16 @@ tbuilder_report::tbuilder_report(const config& cfg)
 	, unit_height(cfg["unit_height"])
 	, gap(cfg["gap"])
 {
+	if (twidget::hdpi) {
+		unit_width *= twidget::hdpi_ratio;
+		unit_height *= twidget::hdpi_ratio;
+		gap *= twidget::hdpi_ratio;
+	}
 }
 
 twidget* tbuilder_report::build() const
 {
-	treport* widget = new treport();
+	treport* widget = new treport(unit_width, unit_height, gap);
 
 	init_control(widget);
 
@@ -64,7 +67,6 @@ twidget* tbuilder_report::build() const
 
 	widget->init_grid(conf->grid);
 	widget->finalize_setup();
-	widget->init_report(unit_width, unit_height, gap);
 
 	return widget;
 }

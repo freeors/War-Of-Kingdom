@@ -168,7 +168,7 @@ frame_parameters::frame_parameters() :
 	auto_hflip(t_unset),
 	primary_frame(t_unset),
 	drawing_layer(display::LAYER_UNIT_DEFAULT - display::LAYER_UNIT_FIRST),
-	screen_mode(false),
+	area_mode(false),
 	sound_filter()
 {}
 

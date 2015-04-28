@@ -18,13 +18,9 @@
 
 #include "config.hpp"
 #include "filesystem.hpp"
-#include "log.hpp"
 #include "serialization/string_utils.hpp"
 #include "util.hpp"
 
-static lg::log_domain log_audio("audio");
-#define ERR_AUDIO LOG_STREAM(err, log_audio)
-#define LOG_AUDIO LOG_STREAM(info, log_audio)
 
 namespace sound {
 
@@ -66,18 +62,22 @@ music_track::music_track(const std::string& v_name) :
 void music_track::resolve()
 {
 	if (id_.empty()) {
-		ERR_AUDIO << "empty track filename specified\n";
 		return;
 	}
 
-	file_path_ = get_binary_file_location("music", id_);
+#ifdef _WIN32
+	if (id_.size() >= 2 && id_.c_str()[1] == ':') {
+#else
+	if (id_.c_str()[0] == '/') {
+#endif
+		file_path_ = id_;
+	} else {
+		file_path_ = get_binary_file_location("music", id_);
+	}
 
 	if (file_path_.empty()) {
-		ERR_AUDIO << "could not find track '" << id_ << "'\n";
 		return;
 	}
-
-	LOG_AUDIO << "resolved music track '" << id_ << "' into '" << file_path_ << "'\n";
 }
 
 void music_track::write(config &parent_node, bool append)
@@ -86,7 +86,7 @@ void music_track::write(config &parent_node, bool append)
 	m["name"] = id_;
 	m["ms_before"] = ms_before_;
 	m["ms_after"] = ms_after_;
-	if(append) {
+	if (append) {
 		m["append"] = true;
 	}
 }

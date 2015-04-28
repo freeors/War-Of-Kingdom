@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/message.hpp"
 
@@ -24,7 +24,7 @@
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "log.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -68,15 +68,13 @@ struct tmessage_implementation
 
 void tmessage::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	// ***** Validate the required buttons ***** ***** ***** *****
-	tmessage_implementation::
-			init_button(window, buttons_[left_1], "left_side");
 	tmessage_implementation::
 			init_button(window, buttons_[cancel], "cancel");
 	tmessage_implementation::
 			init_button(window, buttons_[ok] ,"ok");
-	tmessage_implementation::
-			init_button(window, buttons_[right_1], "right_side");
 
 	// ***** ***** ***** ***** Set up the widgets ***** ***** ***** *****
 	if(!title_.empty()) {

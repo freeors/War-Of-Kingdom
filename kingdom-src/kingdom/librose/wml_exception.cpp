@@ -18,7 +18,7 @@
  *  Implementation for wml_exception.hpp.
  */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 #include "wml_exception.hpp"
@@ -26,6 +26,7 @@
 #include "display.hpp"
 #include "gettext.hpp"
 #include "gui/dialogs/message.hpp"
+#include "gui/widgets/settings.hpp"
 #include "formula_string_utils.hpp"
 #include "log.hpp"
 #include "filesystem.hpp"
@@ -60,6 +61,11 @@ void wml_exception(
 
 void twml_exception::show(display &disp)
 {
+	if (!gui2::settings::actived) {
+		show();
+		return;
+	}
+
 	std::ostringstream sstr;
 
 	// The extra spaces between the \n are needed, otherwise the dialog doesn't show
@@ -106,10 +112,10 @@ std::string missing_mandatory_wml_key(
 		symbols["primary_key"] = primary_key;
 		symbols["primary_value"] = primary_value;
 
-		return vgettext("In section '[$section|]' where '$primary_key| = "
+		return vgettext2("In section '[$section|]' where '$primary_key| = "
 			"$primary_value' the mandatory key '$key|' isn't set.", symbols);
 	} else {
-		return vgettext("In section '[$section|]' the "
+		return vgettext2("In section '[$section|]' the "
 			"mandatory key '$key|' isn't set.", symbols);
 	}
 }
@@ -125,7 +131,7 @@ std::string deprecate_wml_key_warning(
 	symbols["key"] = key;
 	symbols["removal_version"] = removal_version;
 
-	return vgettext("The key '$key' is deprecated and support "
+	return vgettext2("The key '$key' is deprecated and support "
 			"will be removed in version $removal_version.", symbols);
 }
 
@@ -143,7 +149,7 @@ std::string deprecated_renamed_wml_key_warning(
 	symbols["key"] = key;
 	symbols["removal_version"] = removal_version;
 
-	return vgettext(
+	return vgettext2(
 			  "The key '$deprecated_key' has been renamed to '$key'. "
 				"Support for '$deprecated_key' will be removed in version "
 				"$removal_version."

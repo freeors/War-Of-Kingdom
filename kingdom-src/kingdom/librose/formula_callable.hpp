@@ -1,6 +1,5 @@
-/* $Id: formula_callable.hpp 47229 2010-10-26 21:37:45Z mordante $ */
 /*
-   Copyright (C) 2008 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2008 - 2015 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -62,7 +61,7 @@ public:
 		return do_compare(other) < 0;
 	}
 
-	virtual void get_inputs(std::vector<formula_input>* /*inputs*/) const {};
+	virtual void get_inputs(std::vector<formula_input>* /*inputs*/) const {}
 
         //note: this function should NOT overwrite str, but append text to it!
 	void serialize(std::string& str) const {

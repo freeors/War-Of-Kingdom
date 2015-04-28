@@ -17,7 +17,7 @@
  * @file
  * Screen with logo and "Loading ..."-progressbar during program-startup.
  */
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "loadscreen.hpp"
 
@@ -29,7 +29,7 @@
 #include "video.hpp"
 #include "image.hpp"
 #include "wml_exception.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 
 #include <SDL_events.h>
 #include <SDL_image.h>
@@ -69,6 +69,8 @@ void loadscreen::global_loadscreen_manager::reset()
 		global_loadscreen = 0;
 	}
 }
+
+static surface scaled_logo_surface;
 
 loadscreen::loadscreen(CVideo &screen, const int &percent):
 	screen_(screen),
@@ -121,6 +123,17 @@ void loadscreen::draw_screen(const std::string &text)
 				logo_drawn_ = false;
 			}
 		}
+	}
+
+	if (game_config::app == "sleep" || game_config::app == "sesame") {
+		// Update the rectangle.
+		if (!scaled_logo_surface) {
+			scaled_logo_surface = scale_surface(logo_surface_, gdis->w, gdis->h);
+		}
+		area.x = area.y = 0;
+		sdl_blit(scaled_logo_surface, 0, gdis, &area);
+		screen_.flip();
+		return;
 	}
 
 	// Draw logo if it was successfully loaded.
@@ -183,9 +196,16 @@ void loadscreen::draw_screen(const std::string &text)
 		textarea_ = font::line_size(text, font::SIZE_NORMAL);
 		textarea_.x = scrx/2 + bw + bispw - textarea_.w / 2;
 		textarea_.y = pby + pbh + 4*(bw + bispw);
-		textarea_ = font::draw_text(&screen_,textarea_,font::SIZE_NORMAL,font::NORMAL_COLOR,text,textarea_.x,textarea_.y);
+
+		surface surf = font::get_rendered_text2(text, textarea_.w, font::SIZE_NORMAL, font::NORMAL_COLOR);
+		textarea_.w = surf->w;
+		textarea_.h = surf->h;
+		SDL_Rect dst = textarea_;
+		sdl_blit(surf, NULL, screen_.getSurface(), &dst);
+
 		SDL_Rect refresh = union_rects(oldarea, textarea_);
 	}
+
 	// Update the rectangle.
 	screen_.flip();
 }
@@ -266,7 +286,7 @@ void loadscreen::start_stage(char const *id)
 
 	const load_stage &cs = stages[s];
 	global_loadscreen->prcnt_ = cs.start_pos;
-	global_loadscreen->draw_screen(gettext(cs.name));
+	global_loadscreen->draw_screen(_(cs.name));
 	stage_counter[s] = 0;
 	stage_time[s] = SDL_GetTicks();
 	current_stage = s;

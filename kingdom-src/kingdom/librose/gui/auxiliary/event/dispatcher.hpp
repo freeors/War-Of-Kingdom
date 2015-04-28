@@ -51,7 +51,8 @@ typedef
 			  tdispatcher& dispatcher
 			, const tevent event
 			, bool& handled
-			, bool& halt)>
+			, bool& halt
+			, const int val)>
 		tsignal_function;
 
 /**
@@ -192,7 +193,7 @@ public:
 	bool has_event(const tevent event, const tevent_type event_type);
 
 	/** Fires an event which has no extra parameters. */
-	bool fire(const tevent event, twidget& target);
+	bool fire(const tevent event, twidget& target, const int val = 0);
 
 	/**
 	 * Fires an event which takes a coordinate parameter.
@@ -238,7 +239,7 @@ public:
 	 * @param event                  The event to fire.
 	 * @param target                 The widget that should receive the event.
 	 */
-	bool fire(const tevent event, twidget& target, void*);
+	bool fire2(const tevent event, twidget& target);
 
 	/**
 	 * Fires an event which takes message parameters.

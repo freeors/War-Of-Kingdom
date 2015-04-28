@@ -30,15 +30,15 @@
 #include "marked-up_text.hpp"
 #include "map.hpp"
 #include "map_label.hpp"
-#include "text.hpp"
 #include "time_of_day.hpp"
-#include "tooltips.hpp"
 #include "arrow.hpp"
 #include "minimap.hpp"
 #include "wml_exception.hpp"
 #include "gui/widgets/minimap.hpp"
 #include "gui/widgets/settings.hpp"
+#include "gui/widgets/window.hpp"
 #include "gui/auxiliary/event/handler.hpp"
+#include "gui/auxiliary/window_builder/helper.hpp"
 #include "controller_base.hpp"
 
 #include <boost/foreach.hpp>
@@ -59,12 +59,10 @@ namespace {
 	const int MinZoom = 4;
 	const int MaxZoom = 200;
 	size_t sunset_delay = 0;
-
-	bool benchmark = false;
 }
 
-int display::default_zoom_ = display::ZOOM_72;
-int display::last_zoom = display::ZOOM_72;
+bool display::require_change_resolution = false;
+int display::initial_zoom = display::ZOOM_72;
 
 int display::adjust_zoom(int zoom)
 {
@@ -92,17 +90,20 @@ display::display(const std::string& tile, controller_base* controller, CVideo& v
 	: controller_(controller)
 	, screen_(video)
 	, map_(map)
+	, orientation_(gui2::implementation::get_orientation(theme_cfg["orientation"]))
+	, original_landscape_(gui2::twidget::current_landscape)
 	, xpos_(0)
 	, ypos_(0)
 	, last_map_w_(0)
 	, last_map_h_(0)
 	, zero_(0, 0)
+	, always_bottom_(false)
 	, theme_cfg_()
 	, main_map_area_(empty_rect)
 	, border_()
 	, theme_current_cfg_(NULL)
 	, theme_(NULL)
-	, zoom_(default_zoom_)
+	, zoom_(initial_zoom)
 	, builder_(new terrain_builder(tile, map))
 	, minimap_(NULL)
 	, minimap_location_(empty_rect)
@@ -132,7 +133,6 @@ display::display(const std::string& tile, controller_base* controller, CVideo& v
 	, canvas_drawing_buffer_()
 	, to_canvas_(false)
 	, map_screenshot_(false)
-	, fps_handle_(0)
 	, invalidated_hexes_(0)
 	, drawn_hexes_(0)
 	, idle_anim_rate_(1.0)
@@ -150,11 +150,14 @@ display::display(const std::string& tile, controller_base* controller, CVideo& v
 	, drawing_(false)
 	, main_tip_handle_(0)
 	, area_anims_()
+	, halo_id_(0)
 	, min_zoom_(MinZoom)
 	, max_zoom_(MaxZoom)
 	, reports_(num_reports)
 {
 	singleton_ = this;
+
+	gui2::twindow::enter_orientation(orientation_);
 
 	// show coordinate and terrain
 	// draw_coordinates_ = true;
@@ -170,12 +173,13 @@ display::display(const std::string& tile, controller_base* controller, CVideo& v
 	set_turbo(preferences::turbo());
 	set_turbo_speed(preferences::turbo_speed());
 
-	last_zoom = zoom_;
-
 	fill_images_list(game_config::fog_prefix, fog_images_);
 	fill_images_list(game_config::shroud_prefix, shroud_images_);
 
-	// image::set_zoom(zoom_);
+	if (controller_) {
+		controller_->set_zoom(zoom_);
+	}
+	image::set_zoom(zoom_);
 
 	draw_area_ = NULL;
 	// allocate memory for access troops
@@ -210,6 +214,9 @@ display::~display()
 		draw_area_unit_ = NULL;
 		draw_area_unit_size_ = 0;
 	}
+
+	gui2::twindow::recover_landscape(original_landscape_);
+
 	singleton_ = NULL;
 }
 
@@ -225,15 +232,14 @@ void display::create_theme()
 		border_ = theme::tborder();
 	}
 
-	// create theme dialog
 	static std::set<std::string> reserve_wml_tag;
 	if (reserve_wml_tag.empty()) {
-		reserve_wml_tag.insert("screen");
-		reserve_wml_tag.insert("main_map_border");
+		reserve_wml_tag = controller_base::theme_reserved_wml;
 		reserve_wml_tag.insert("main_map");
-		reserve_wml_tag.insert("context_menu");
+		reserve_wml_tag.erase("linked_group");
 	}
 
+	// create theme dialog
 	VALIDATE(!theme_, "theme_ must be NULL!");
 	gui2::reload_window_builder(game_config::theme_window_id, *theme_current_cfg_, reserve_wml_tag);
 
@@ -242,7 +248,14 @@ void display::create_theme()
 	theme_ = dlg;
 
 	dlg->asyn_show(screen_, main_map_area_);
+
 	dlg->post_layout();
+
+	if (always_bottom_) {
+		ypos_ = max_map_area().h;
+		bounds_check_position(xpos_, ypos_);
+	}
+
 	controller_->events::handler::join();
 }
 
@@ -284,6 +297,7 @@ const std::string& display::get_variant(const std::vector<std::string>& variants
 	return variants[abs(loc.x + loc.y) % variants.size()];
 }
 
+
 void display::rebuild_all()
 {
 	// map editor: new/load other map, resize this map(this isn't call change_map)
@@ -302,12 +316,18 @@ void display::reload_map()
 		memset(draw_area_, BOARD, last_map_w_ * last_map_h_);
 		draw_area_pitch_ = last_map_w_;
 		draw_area_size_ = last_map_w_ * last_map_h_;
-		map_border_size_ = map_->border_size();
 
+		map_border_size_ = map_->border_size();
 		if (draw_area_unit_) {
 			free(draw_area_unit_);
 		}
 		draw_area_unit_ = (base_unit**)malloc(map_->w() * map_->h() * sizeof(base_unit*));
+
+		// invalidate whole main-map.
+		redraw_background_ = true;
+		bounds_check_position();
+		invalidate_all();
+		recalculate_minimap();
 	}
 	builder_->reload_map();
 }
@@ -338,8 +358,8 @@ const SDL_Rect& display::max_map_area() const
 	// To display a hex fully on screen,
 	// a little bit extra space is needed.
 	// Also added the border two times.
-	max_area.w  = static_cast<int>((get_map().w() + 2 * border_.size) * hex_width());
-	max_area.h = static_cast<int>((get_map().h() + 2 * border_.size) * hex_size());
+	max_area.w  = static_cast<int>((map_->w() + 2 * border_.size) * hex_width());
+	max_area.h = static_cast<int>((map_->h() + 2 * border_.size) * hex_size());
 
 	return max_area;
 }
@@ -433,6 +453,20 @@ const map_location display::pixel_position_to_hex(int x, int y) const
 	}
 
 	return result;
+}
+
+bool display::point_in_volatiles(int x, int y) const
+{
+	const std::vector<gui2::twidget*>& volatiles = theme_->volatiles();
+	for (std::vector<gui2::twidget*>::const_iterator it = volatiles.begin(); it != volatiles.end(); ++ it) {
+		const gui2::twidget* widget = *it;
+		if (widget->get_visible() == gui2::twidget::VISIBLE) {
+			if (point_in_rect(x, y, widget->get_rect())) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 void rect_of_hexes::iterator::operator++()
@@ -951,7 +985,7 @@ inline display::drawing_buffer_key::drawing_buffer_key(const map_location &loc, 
 
 SDL_Rect display::clip_rect_commit() const
 {
-	return in_theme()? map_area(): area_anim::rt.rect;
+	return in_theme()? map_area(): anim2::rt.rect;
 }
 
 void display::drawing_buffer_commit(surface& screen)
@@ -964,7 +998,7 @@ void display::drawing_buffer_commit(surface& screen)
 	if (screen.get() == get_screen_surface().get()) {
 		clip_rect = clip_rect_commit();
 	} else {
-		clip_rect = area_anim::rt.rect;
+		clip_rect = anim2::rt.rect;
 	}
 	clip_rect_setter set_clip_rect(screen, &clip_rect);
 
@@ -997,15 +1031,21 @@ void display::drawing_buffer_commit(surface& screen)
 	drawing_buffer.clear();
 }
 
+void display::undraw_floating(surface& screen)
+{
+	for (std::map<int, tsurf_buf>::reverse_iterator it = haloes_.rbegin(); it != haloes_.rend(); ++ it) {
+		tsurf_buf& buf = it->second;
+		if (is_empty_rect(buf.rect)) {
+			continue;
+		}
+		sdl_blit(buf.surf, NULL, screen, &buf.rect);
+	}
+}
+
 void display::sunset(const size_t delay)
 {
 	// This allow both parametric and toggle use
 	sunset_delay = (sunset_delay == 0 && delay == 0) ? 3 : delay;
-}
-
-void display::toggle_benchmark()
-{
-	benchmark = !benchmark;
 }
 
 void display::flip()
@@ -1022,59 +1062,15 @@ void display::flip()
 		fill_rect_alpha(r, color, 1, frameBuffer);
 	}
 
+	theme_->get_window()->draw_tooltip(frameBuffer);
 	font::draw_floating_labels(frameBuffer);
-	events::raise_volatile_draw_event();
 	cursor::draw(frameBuffer);
 
 	video().flip();
 
 	cursor::undraw(frameBuffer);
-	events::raise_volatile_undraw_event();
 	font::undraw_floating_labels(frameBuffer);
-}
-
-void display::update_display()
-{
-	if (screen_.update_locked()) {
-		return;
-	}
-
-	if (benchmark) {
-		static int last_sample = SDL_GetTicks();
-		static int frames = 0;
-		++frames;
-		const int sample_freq = 10;
-		if(frames == sample_freq) {
-			const int this_sample = SDL_GetTicks();
-
-			const int fps = (frames*1000)/(this_sample - last_sample);
-			last_sample = this_sample;
-			frames = 0;
-
-			if(fps_handle_ != 0) {
-				font::remove_floating_label(fps_handle_);
-				fps_handle_ = 0;
-			}
-			std::ostringstream stream;
-			stream << "fps: " << fps;
-			drawn_hexes_ = 0;
-			invalidated_hexes_ = 0;
-
-			font::floating_label flabel(stream.str());
-			flabel.set_font_size(12);
-			flabel.set_color(benchmark ? font::BAD_COLOR : font::NORMAL_COLOR);
-			flabel.set_position(10, 100);
-
-			fps_handle_ = font::add_floating_label(flabel);
-		}
-	} else if(fps_handle_ != 0) {
-		font::remove_floating_label(fps_handle_);
-		fps_handle_ = 0;
-		drawn_hexes_ = 0;
-		invalidated_hexes_ = 0;
-	}
-
-	flip();
+	theme_->get_window()->undraw_tooltip(frameBuffer);
 }
 
 static void draw_background(surface screen, const SDL_Rect& area, const std::string& image)
@@ -1198,7 +1194,7 @@ void display::render_image(int x, int y, const display::tdrawing_layer drawing_l
 			//the lower part will be transparent
 			float alpha_base = 0.3; // 30% alpha at surface of water
 			float alpha_delta = 0.015; // lose 1.5% per pixel depth
-			alpha_delta *= zoom_ / default_zoom_; // adjust with zoom
+			alpha_delta *= zoom_ / initial_zoom; // adjust with zoom
 			surf = submerge_alpha(surf, depth, alpha_base, alpha_delta, false);
 
 			srcrect.y = submerge_height;
@@ -1252,11 +1248,7 @@ void display::draw_init()
 		return;
 	}
 
-	if(benchmark) {
-		invalidateAll_ = true;
-	}
-
-	if(redraw_background_) {
+	if (redraw_background_) {
 		// Full redraw of the background
 		const SDL_Rect clip_rect = map_outside_area();
 		const surface screen = get_screen_surface();
@@ -1269,9 +1261,7 @@ void display::draw_init()
 		invalidateAll_ = true;
 	}
 
-	if(invalidateAll_) {
-		DBG_DP << "draw() with invalidateAll\n";
-
+	if (invalidateAll_) {
 		// toggle invalidateAll_ first to allow regular invalidations
 		invalidateAll_ = false;
 		invalidate_locations_in_rect(map_area());
@@ -1286,14 +1276,14 @@ void display::draw_wrap(bool update, bool force)
 	const int current_time = SDL_GetTicks();
 	const int wait_time = nextDraw_ - current_time;
 
-	if(redrawMinimap_) {
+	if (redrawMinimap_) {
 		redrawMinimap_ = false;
 		draw_minimap();
 	}
 
-	if(update) {
-		update_display();
-		if(!force && !benchmark && wait_time > 0) {
+	if (update) {
+		flip();
+		if (!force && wait_time > 0) {
 			// If it's not time yet to draw, delay until it is
 			SDL_Delay(wait_time);
 		}
@@ -1429,7 +1419,7 @@ double display::minimap_shift_y(const SDL_Rect& map_rect, const SDL_Rect& map_ou
 void display::draw_minimap()
 {
 	gui2::tminimap* widget = dynamic_cast<gui2::tminimap*>(get_theme_object("mini-map"));
-	if (!widget) {
+	if (!widget || widget->get_visible() != gui2::twidget::VISIBLE) {
 		return;
 	}
 	SDL_Rect area = widget->get_rect();
@@ -1439,6 +1429,10 @@ void display::draw_minimap()
 		minimap_ = minimap_surface(area.w, area.h);
 		if (minimap_ == NULL) {
 			return;
+		}
+		if (always_bottom_ && (minimap_->w != area.w || minimap_->h != area.h)) {
+			surface surf = scale_surface(minimap_, area.w, area.h);
+			minimap_ = surf;
 		}
 	}
 
@@ -1474,6 +1468,10 @@ void display::draw_minimap()
 	int view_y = static_cast<int>((ypos_ + shift_y) * yscaling);
 	int view_w = static_cast<int>(map_out_rect.w * xscaling);
 	int view_h = static_cast<int>(map_out_rect.h * yscaling);
+	if (always_bottom_) {
+		view_y = 1;
+		view_h = minimap_->h - 2;
+	}
 
 	const Uint32 box_color = SDL_MapRGB(minimap_->format, border_.view_rectange_color.r, border_.view_rectange_color.g, border_.view_rectange_color.b);
 	draw_rectangle(minimap_location_.x + view_x - 1,
@@ -1486,6 +1484,10 @@ void display::draw_minimap()
 
 bool display::scroll(int xmove, int ymove)
 {
+	if (always_bottom_ && ymove) {
+		ymove = 0;
+	}
+
 	const int orig_x = xpos_;
 	const int orig_y = ypos_;
 	xpos_ += xmove;
@@ -1495,8 +1497,9 @@ bool display::scroll(int xmove, int ymove)
 	const int dy = orig_y - ypos_; // dy = -ymove
 
 	// Only invalidate if we've actually moved
-	if(dx == 0 && dy == 0)
+	if (dx == 0 && dy == 0) {
 		return false;
+	}
 
 	font::scroll_floating_labels(dx, dy);
 
@@ -1513,16 +1516,6 @@ bool display::scroll(int xmove, int ymove)
 	if (!screen_.update_locked()) {
 		sdl_blit(screen, &srcrect, screen, &dstrect);
 	}
-/*
-//This is necessary to avoid a crash in some SDL versions on some systems
-//see http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=462794
-//FIXME remove this once the latest stable SDL release doesn't crash as 1.2.13 does
-#ifdef _MSC_VER
-    __asm{cld};
-#elif defined(__GNUG__) && (defined(__i386__) || defined(__x86_64__))
-    asm("cld");
-#endif
-*/
 	// Invalidate locations in the newly visible rects
 
 	if (dy != 0) {
@@ -1547,6 +1540,8 @@ bool display::scroll(int xmove, int ymove)
 
 void display::set_zoom(int amount)
 {
+	VALIDATE(controller_, "dummy display, must not call set_zoom!");
+
 	int new_zoom = zoom_ + amount;
 	if (new_zoom < min_zoom_) {
 		new_zoom = min_zoom_;
@@ -1559,16 +1554,20 @@ void display::set_zoom(int amount)
 		xpos_ += (xpos_ + area.w / 2) * amount / zoom_;
 		ypos_ += (ypos_ + area.h / 2) * amount / zoom_;
 
-		last_zoom = zoom_;
+		int last_zoom = zoom_;
 		zoom_ = new_zoom;
+		controller_->set_zoom(zoom_);
 
+		if (always_bottom_) {
+			ypos_ = max_map_area().h;
+		}
 		bounds_check_position();
 		image::set_zoom(zoom_);
 		labels().recalculate_labels();
 		redraw_background_ = true;
 		invalidate_all();
 
-		post_zoom();
+		post_set_zoom(last_zoom);
 
 		// Forces a redraw after zooming.
 		// This prevents some graphic glitches from occurring.
@@ -1849,7 +1848,7 @@ void display::bounds_check_position()
 
 	bounds_check_position(xpos_, ypos_);
 
-	if(zoom_ != orig_zoom) {
+	if (zoom_ != orig_zoom) {
 		image::set_zoom(zoom_);
 	}
 }
@@ -1901,6 +1900,7 @@ extern void clear();
 
 void display::change_resolution()
 {
+	require_change_resolution = false;
 	if (controller_) {
 		hotkey::clear();
 
@@ -1916,7 +1916,11 @@ void display::change_resolution()
 		for (std::map<const std::string, bool>::const_iterator it = actives.begin(); it != actives.end(); ++ it) {
 			set_theme_object_active(it->first, it->second);
 		}
-		redraw_everything();
+
+		{
+			// update_locker lock_display(video());
+			redraw_everything();
+		}
 	}
 }
 
@@ -1933,8 +1937,6 @@ void display::redraw_everything()
 	}
 
 	bounds_check_position();
-
-	tooltips::clear_tooltips();
 
 	labels().recalculate_labels();
 
@@ -1976,6 +1978,9 @@ void display::click_context_menu(const std::string& main, const std::string& id,
 
 void display::show_context_menu(const std::string& main_id, const std::string& id)
 {
+	std::vector<gui2::tcontext_menu>& menus = theme_->context_menus();
+	VALIDATE(!menus.empty(), "No context menu, must not cal show_context_menu!");
+
 	const gui2::tcontext_menu* menu = NULL;
 	if (!main_id.empty()) {
 		menu = theme_->context_menu(main_id);
@@ -2050,12 +2055,16 @@ void display::draw(bool update,bool force)
 		 * draw_invalidated() also invalidates the halos, so also needs to be
 		 * ran if invalidated_.empty() == true.
 		 */
+		undraw_floating(screen_.getSurface());
+		halo::unrender();
+
 		draw_invalidated();
 
 		drawing_buffer_commit(screen_.getSurface());
-		gui2::async_draw();
 
 		post_commit();
+
+		gui2::async_draw();
 
 		// clear flag. 
 		// draw_sidebar may genrate new invalidate loc(ex. show_unit_tip), keep those dirty so next draw will update then
@@ -2067,6 +2076,12 @@ void display::draw(bool update,bool force)
 	draw_wrap(update, force);
 	
 	drawing_ = false;
+}
+
+void display::post_commit()
+{
+	halo::render();
+	draw_floating(screen_.getSurface());
 }
 
 map_labels& display::labels()
@@ -2254,7 +2269,7 @@ void display::draw_image_for_report(surface& img, SDL_Rect& rect)
 		}
 
 		if(visible_area.w > rect.w || visible_area.h > rect.h) {
-			img.assign(get_surface_portion(img,visible_area,false));
+			img.assign(get_surface_portion(img,visible_area));
 			img.assign(scale_surface(img,rect.w,rect.h));
 			visible_area.x = 0;
 			visible_area.y = 0;
@@ -2292,7 +2307,6 @@ void display::refresh_report(int num, const reports::report& r)
 		return;
 	}
 
-	tooltips::clear_tooltips(orignal.rect);
 	reports_[num] = r;
 	reports_[num].rect = rect;
 
@@ -2309,7 +2323,8 @@ void display::refresh_report(int num, const reports::report& r)
 	}
 
 	if (!r.tooltip.empty()) {
-		tooltips::add_tooltip(rect, r.tooltip);
+		gui2::tcontrol* widget2 = dynamic_cast<gui2::tcontrol*>(widget);
+		widget2->set_tooltip(r.tooltip);
 	}
 }
 
@@ -2340,8 +2355,9 @@ bool display::invalidate(const map_location& loc)
 
 bool display::invalidate(const std::set<map_location>& locs)
 {
-	if (invalidateAll_)
+	if (invalidateAll_) {
 		return false;
+	}
 
 	bool ret = false;
 	BOOST_FOREACH (const map_location& loc, locs) {
@@ -2385,11 +2401,13 @@ bool display::invalidate_visible_locations_in_rect(const SDL_Rect& rect)
 
 bool display::invalidate_locations_in_rect(const SDL_Rect& rect)
 {
-	if (invalidateAll_)
+	if (invalidateAll_) {
 		return false;
+	}
 
 	bool result = false;
-	BOOST_FOREACH (const map_location &loc, hexes_under_rect(rect)) {
+	rect_of_hexes hexes = hexes_under_rect(rect);
+	BOOST_FOREACH (const map_location &loc, hexes) {
 		result |= invalidate(loc);
 	}
 	return result;
@@ -2430,6 +2448,10 @@ void display::invalidate_theme()
 				widget->set_dirty(false);
 			}
 		}
+	}
+	gui2::twindow* window = theme_->get_window();
+	if (window->has_tooltip()) {
+		rects.push_back(window->tooltip_rect());
 	}
 
 	rect_of_hexes underlying_hex;
@@ -2523,9 +2545,9 @@ void display::draw_float_anim()
 		return;
 	}
 
-	// invalidate_animations();
 	new_animation_frame();
 	
+	SDL_Rect rect;
 	for (std::map<int, animation*>::iterator it = area_anims_.begin(); it != area_anims_.end(); ++ it) {
 		animation& anim = *it->second;
 		if (anim.type() != anim_float || !anim.started()) {
@@ -2533,7 +2555,13 @@ void display::draw_float_anim()
 		}
 
 		anim.update_last_draw_time();
-		anim.redraw(screen_.getSurface(), screen_area());
+
+		float_animation* anim2 = dynamic_cast<float_animation*>(&anim);
+		rect = anim2->special_rect();
+		if (is_null_rect(rect)) {
+			rect = screen_area();
+		}
+		anim.redraw(screen_.getSurface(), rect);
 	}
 
 	drawing_buffer_commit(screen_.getSurface());
@@ -2601,6 +2629,12 @@ void display::update_arrow(arrow & arrow)
 	}
 }
 
+void display::set_statusbar(bool show, bool white_fg)
+{
+	SDL_SetWindowData(NULL, "statusbar_show", (void*)(show? 1: 0));
+	SDL_SetWindowData(NULL, "statusbar_style", (void*)(white_fg? 1: 0));
+}
+
 std::map<surface,SDL_Rect> energy_bar_rects;
 
 struct is_energy_color {
@@ -2616,7 +2650,7 @@ struct is_energy_color {
  * White pixels are substituted for the color of the energy.
  */
 
-const SDL_Rect& calculate_energy_bar(surface surf)
+const SDL_Rect& calculate_energy_bar(const surface& surf)
 {
 	const std::map<surface,SDL_Rect>::const_iterator i = energy_bar_rects.find(surf);
 	if(i != energy_bar_rects.end()) {
@@ -2625,14 +2659,14 @@ const SDL_Rect& calculate_energy_bar(surface surf)
 
 	int first_row = -1, last_row = -1, first_col = -1, last_col = -1;
 
-	surface image(make_neutral_surface(surf));
+	VALIDATE(is_neutral_surface(surf), null_str);
 
-	const_surface_lock image_lock(image);
+	const_surface_lock image_lock(surf);
 	const Uint32* const begin = image_lock.pixels();
 
-	for(int y = 0; y != image->h; ++y) {
-		const Uint32* const i1 = begin + image->w*y;
-		const Uint32* const i2 = i1 + image->w;
+	for(int y = 0; y != surf->h; ++y) {
+		const Uint32* const i1 = begin + surf->w * y;
+		const Uint32* const i2 = i1 + surf->w;
 		const Uint32* const itor = std::find_if(i1,i2,is_energy_color());
 		const int count = std::count_if(itor,i2,is_energy_color());
 
@@ -2713,8 +2747,6 @@ void draw_bar_to_surf(const std::string& image, surface& dst_surf, int x, int y,
 		bot.w = surf->w - bot.x;
 		bot.h = surf->h;
 
-		// ???I don't know why below tow blit_surface not work?? must use sdl_blit.
-		// reference http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21963
 		sdl_blit(surf, &top, dst_surf, &dst_clip);
 		dst_clip.x += top.w;
 		sdl_blit(surf, &bot, dst_surf, &dst_clip);

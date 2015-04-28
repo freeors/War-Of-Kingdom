@@ -43,6 +43,7 @@ public:
 	t_string label;
 	t_string tooltip;
 	t_string help;
+	unsigned drag;
 	bool use_tooltip_on_label_overflow;
 	SDL_Rect fix_rect;
 };

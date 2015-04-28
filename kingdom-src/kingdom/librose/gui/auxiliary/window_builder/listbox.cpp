@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/window_builder/listbox.hpp"
 
@@ -22,13 +22,7 @@
 #include "gui/auxiliary/widget_definition/listbox.hpp"
 #include "gui/auxiliary/window_builder/helper.hpp"
 #include "gui/widgets/grid.hpp"
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-#include "gui/widgets/list.hpp"
-#else
 #include "gui/widgets/listbox.hpp"
-#endif
-#include "gui/widgets/pane.hpp"
-#include "gui/widgets/viewport.hpp"
 #include "gui/widgets/settings.hpp"
 #include "wml_exception.hpp"
 
@@ -64,10 +58,7 @@ tbuilder_listbox::tbuilder_listbox(const config& cfg)
 	VALIDATE(l, _("No list defined."));
 	list_builder = new tbuilder_grid(l);
 	assert(list_builder);
-	VALIDATE(list_builder->rows == 1
-			, _("A 'list_definition' should contain one row."));
-
-	tradio_page::parse_cfg(cfg.child("radio"), pages);
+	VALIDATE(list_builder->rows <= 2, _("A 'list_definition' should contain one or tow row."));
 
 	const config &data = cfg.child("list_data");
 	if (!data) {
@@ -93,49 +84,7 @@ tbuilder_listbox::tbuilder_listbox(const config& cfg)
 
 twidget* tbuilder_listbox::build() const
 {
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-	tlist *widget = new tlist(true
-			, true
-			, tgenerator_::vertical_list
-			, true
-			, list_builder);
-
-	init_control(widget);
-	if(!list_data.empty()) {
-		widget->append_rows(list_data);
-	}
-	return widget;
-#else
-	if(new_widgets) {
-
-		tpane *pane = new tpane(list_builder);
-		pane->set_id(id);
-
-
-		tgrid* grid = new tgrid();
-		grid->set_rows_cols(1, 1);
-#if 0
-		grid->set_child(
-				  pane
-				, 0
-				, 0
-				, tgrid::VERTICAL_GROW_SEND_TO_CLIENT
-					| tgrid::HORIZONTAL_GROW_SEND_TO_CLIENT
-				, tgrid::BORDER_ALL);
-#else
-		tviewport *viewport = new tviewport(*pane);
-		grid->set_child(
-				  viewport
-				, 0
-				, 0
-				, tgrid::VERTICAL_GROW_SEND_TO_CLIENT
-					| tgrid::HORIZONTAL_GROW_SEND_TO_CLIENT
-				, tgrid::BORDER_ALL);
-#endif
-		return grid;
-	}
-
-	tlistbox *widget = new tlistbox(pages, true, true, tgenerator_::vertical_list, true);
+	tlistbox *widget = new tlistbox();
 
 	init_control(widget);
 
@@ -162,7 +111,6 @@ twidget* tbuilder_listbox::build() const
 	widget->finalize(header, footer, list_data);
 
 	return widget;
-#endif
 }
 
 } // namespace implementation

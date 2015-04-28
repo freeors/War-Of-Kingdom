@@ -17,6 +17,7 @@
  *  @file
  *  Video-testprogram, standalone
  */
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 
@@ -28,6 +29,7 @@
 #include "sdl_utils.hpp"
 #include "video.hpp"
 #include "display.hpp"
+#include "gettext.hpp"
 
 #include <boost/foreach.hpp>
 #include <vector>
@@ -47,10 +49,14 @@ static unsigned int get_flags(unsigned int flags)
 #if defined(__APPLE__) && TARGET_OS_IPHONE
 	flags |= SDL_WINDOW_BORDERLESS;
 #else
-	if (!(flags & SDL_WINDOW_FULLSCREEN))
+	if (!(flags & SDL_WINDOW_FULLSCREEN)) {
 		flags |= SDL_WINDOW_RESIZABLE;
+	}
 #endif
 
+	if (gui2::twidget::hdpi) {
+		flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+	}
 	return flags;
 }
 
@@ -87,15 +93,6 @@ SDL_Window* window = NULL;
 surface frameBuffer = NULL;
 SDL_Texture* frameTexture = NULL;
 
-}
-
-surface display_format_alpha(surface surf)
-{
-	if (frameBuffer) {
-		return SDL_DisplayFormatAlpha(frameBuffer, surf);
-	} else {
-		return NULL;
-	}
 }
 
 surface get_video_surface()
@@ -165,7 +162,7 @@ int CVideo::modePossible(int w, int h, int bits_per_pixel, int flags )
 	return 32;
 }
 
-int CVideo::setMode(int x, int y, int bits_per_pixel, int flags)
+int CVideo::setMode(int w, int h, int bits_per_pixel, int flags)
 {
 	bool reset_zoom = frameBuffer? false: true;
 
@@ -187,20 +184,31 @@ int CVideo::setMode(int x, int y, int bits_per_pixel, int flags)
 	if (renderer) {
 		SDL_DestroyRenderer(renderer);
 	}
-	
-	window = SDL_CreateWindow("War of Kingdom",
-                          SDL_WINDOWPOS_UNDEFINED,
-                          SDL_WINDOWPOS_UNDEFINED,
-                          x, y,
-                          flags);
+
+	int x = SDL_WINDOWPOS_UNDEFINED;
+	int y = SDL_WINDOWPOS_UNDEFINED;
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
+	if (gui2::twidget::hdpi) {
+		x = y = 0;
+	}
+#endif
+	window = SDL_CreateWindow(_(game_config::app_msgid.c_str()), x, y, w, h, flags);
 
 	int ret_w, ret_h;
 	SDL_GetWindowSize(window, &ret_w, &ret_h);
 
 	renderer = SDL_CreateRenderer(window, -1, 0);
-	frameBuffer = SDL_CreateRGBSurface(0, x, y, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
+	if (gui2::twidget::hdpi) {
+		// Fix Bug!
+		SDL_SetWindowSize(window, w, h);
+	}
+#endif
+
+	frameBuffer = SDL_CreateRGBSurface(0, w, h, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
 	SDL_SetSurfaceBlendMode(frameBuffer, SDL_BLENDMODE_NONE);
-	frameTexture = SDL_CreateTexture(renderer, current_format, SDL_TEXTUREACCESS_STREAMING, x, y);
+	frameTexture = SDL_CreateTexture(renderer, current_format, SDL_TEXTUREACCESS_STREAMING, w, h);
 
 	// frameBuffer's refcount should be 1. If not, check SDL_SetVideoMode!
 	// 1 is holded by frameBuffer.
@@ -210,13 +218,11 @@ int CVideo::setMode(int x, int y, int bits_per_pixel, int flags)
 	
 	if (frameBuffer != NULL) {
 		image::set_pixel_format(frameBuffer->format);
-		if (frameBuffer->w < 800 || frameBuffer->h < 600) {
-			game_config::tiny_gui = true;
-		} else {
-			game_config::tiny_gui = false;
-		}
+		game_config::tiny_gui = frameBuffer->w < 800 * gui2::twidget::hdpi_ratio || frameBuffer->h < 600 * gui2::twidget::hdpi_ratio;
 		if (reset_zoom) {
-			set_zoom_to_default(preferences::zoom());
+			int zoom = preferences::zoom();
+			display::initial_zoom = zoom;
+			image::set_zoom(display::initial_zoom);
 		}
 		return bits_per_pixel;
 	} else	{
@@ -249,6 +255,11 @@ SDL_Rect CVideo::bound() const
 	return rc;
 }
 
+void CVideo::sdl_set_window_size(int width, int height)
+{
+	SDL_SetWindowSize(window, width, height);
+}
+
 Uint32 CVideo::getformat() const
 {
 	return current_format;
@@ -264,10 +275,11 @@ void CVideo::flip()
 
 void CVideo::lock_updates(bool value)
 {
-	if(value == true)
-		++updatesLocked_;
-	else
-		--updatesLocked_;
+	if (value == true) {
+		++ updatesLocked_;
+	} else {
+		-- updatesLocked_;
+	}
 }
 
 bool CVideo::update_locked() const

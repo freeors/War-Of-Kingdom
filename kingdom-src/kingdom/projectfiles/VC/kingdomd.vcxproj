@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{02B7BDEF-885D-43A9-B01C-FC85B74D5B70}</ProjectGuid>
+    <RootNamespace>kingdomd</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\kingdomd\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\kingdomd\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\external\boost;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;LOCALEDIR="translations";FIFODIR="/var/run/wesnothd";HAVE_CONFIG_H;DISABLE_POOL_ALLOC;HAS_RELATIVE_LOCALEDIR=1;CMAKE_INTDIR="Release";BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;librose.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib;..\..\..\gettext\gettext-framework\lib\intl.lib;..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib;..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL2_mixer.lib;..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib;..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\external\boost;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;NOMINMAX;NDEBUG;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;librose.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2.lib;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\lib\SDL2main.lib;..\..\..\gettext\gettext-framework\lib\intl.lib;..\..\..\SDL\SDL-dev-framework\SDL_image\lib\SDL2_image.lib;..\..\..\SDL\SDL-dev-framework\SDL_mixer\lib\SDL2_mixer.lib;..\..\..\SDL\SDL-dev-framework\SDL_ttf\lib\SDL2_ttf.lib;..\..\..\SDL\SDL-dev-framework\SDL_net\lib\SDL2_net.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\kingdom\server\ban.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\server\forum_user_handler.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\server\game.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\server\input_stream.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\server\metrics.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\server\player.cpp" />
+    <ClCompile Include="..\..\kingdom\server\player_network.cpp" />
+    <ClCompile Include="..\..\kingdom\server\proxy.cpp" />
+    <ClCompile Include="..\..\kingdom\server\room.cpp" />
+    <ClCompile Include="..\..\kingdom\server\room_manager.cpp" />
+    <ClCompile Include="..\..\kingdom\server\sample_user_handler.cpp" />
+    <ClCompile Include="..\..\kingdom\server\server.cpp" />
+    <ClCompile Include="..\..\kingdom\server\simple_wml.cpp" />
+    <ClCompile Include="..\..\kingdom\server\user_handler.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\kingdom\server\ban.hpp" />
+    <ClInclude Include="..\..\kingdom\server\forum_user_handler.hpp" />
+    <ClInclude Include="..\..\kingdom\server\game.hpp" />
+    <ClInclude Include="..\..\kingdom\server\input_stream.hpp" />
+    <ClInclude Include="..\..\kingdom\server\metrics.hpp" />
+    <ClInclude Include="..\..\kingdom\server\player.hpp" />
+    <ClInclude Include="..\..\kingdom\server\player_network.hpp" />
+    <ClInclude Include="..\..\kingdom\server\proxy.hpp" />
+    <ClInclude Include="..\..\kingdom\server\room.hpp" />
+    <ClInclude Include="..\..\kingdom\server\room_manager.hpp" />
+    <ClInclude Include="..\..\kingdom\server\sample_user_handler.hpp" />
+    <ClInclude Include="..\..\kingdom\server\server.hpp" />
+    <ClInclude Include="..\..\kingdom\server\simple_wml.hpp" />
+    <ClInclude Include="..\..\kingdom\server\user_handler.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="librose.vcxproj">
+      <Project>{cd5c07cc-2e4b-4ecb-83e8-498a0624ec5f}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

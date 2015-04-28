@@ -20,13 +20,13 @@
  * How to use gettext for wesnoth source files:
  * -# include this header file in the .cpp file
  * -# make sure, that the source file is listed in the respective POTFILES.in
- *    for the textdomain, in the case of wesnoth-lib it is this file:
- *    po/wesnoth-lib/POTFILES.in
+ *    for the textdomain, in the case of rose-lib it is this file:
+ *    po/rose-lib/POTFILES.in
  * -# add the following include to set the correct textdomain, in this example
- *    wesnoth-lib (not required for the domain 'wesnoth', required for all
+ *    rose-lib (not required for the domain 'rose', required for all
  *    other textdomains).
  *    @code
- *    #define GETTEXT_DOMAIN "wesnoth-lib"
+ *    #define GETTEXT_DOMAIN "rose-lib"
  *    @endcode
  *
  * This should be all that is required to have your strings that are marked
@@ -43,23 +43,17 @@
 #undef setlocale
 #endif
 
-const char* egettext(const char*);
-const char* sgettext(const char*);
 const char* dsgettext(const char * domainname, const char *msgid);
 const char* sngettext(const char *singular, const char *plural, int n);
 const char* dsngettext(const char * domainname, const char *singular, const char *plural, int n);
 
+extern char def_textdomain[];
+
 #ifdef GETTEXT_DOMAIN
-# define _(String) dsgettext(GETTEXT_DOMAIN,String)
+# define _(String) dsgettext(GETTEXT_DOMAIN, String)
 # define _n(String1,String2,Int) dsngettext(String1,String2,Int)
-# ifdef gettext
-#  undef gettext
-# endif
-# define gettext(String) dgettext(GETTEXT_DOMAIN,String)
-# define sgettext(String) dsgettext(GETTEXT_DOMAIN,String)
-# define sngettext(String1,String2,Int) dsngettext(GETTEXT_DOMAIN,String1,String2,Int)
 #else
-# define _(String) sgettext(String)
+# define _(String) dsgettext(def_textdomain, String)
 # define _n(String1,String2,Int) sngettext(String1,String2,Int)
 #endif
 

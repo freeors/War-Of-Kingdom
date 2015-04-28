@@ -15,11 +15,11 @@
 
 #include "image_function.hpp"
 
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "image.hpp"
 #include "log.hpp"
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 static lg::log_domain log_display("display");
 #define ERR_DP LOG_STREAM(err, log_display)
@@ -74,7 +74,6 @@ surface crop_function::operator()(const surface& src) const
 
 surface blit_function::operator()(const surface& src) const
 {
-	//blit_surface want neutral surfaces
 	surface nsrc = make_neutral_surface(src);
 	surface nsurf = make_neutral_surface(surf_);
 	SDL_Rect r = create_rect(x_, y_, 0, 0);

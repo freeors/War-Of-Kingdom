@@ -20,7 +20,7 @@
 
 #include "hex_display.hpp"
 #include "map.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 
 hex_display::hex_display(controller_base* controller, CVideo& video, const gamemap* map, const config& theme_cfg, const config& level, size_t num_reports)
 	: display(game_config::tile_hex, controller, video, map, theme_cfg, level, num_reports)

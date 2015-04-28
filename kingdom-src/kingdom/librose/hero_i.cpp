@@ -4,7 +4,7 @@
 #include "filesystem.hpp"
 #include "wml_exception.hpp"
 #include "formula_string_utils.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "integrate.hpp"
 
 hero hero_invalid = hero(HEROS_INVALID_NUMBER);
@@ -683,7 +683,7 @@ std::string hero_::biography2(const hero_map& heros)
 	std::stringstream strstr;
 	utils::string_map symbols;
 	symbols["leader"] = tintegrate::generate_format(heros[player_].name(), "green");
-	strstr << vgettext("wesnoth-lib", "Hero that belong to $leader.", symbols) << "\n";
+	strstr << vgettext2("Hero that belong to $leader.", symbols) << "\n";
 	strstr << biography();
 
 	return strstr.str();
@@ -1476,7 +1476,9 @@ hero_map::hero_map(const std::string& path) :
 	map_(NULL),
 	map_vsize_(0)
 {
-	hero::image_file_root_ = path + "/data/core/images";
+	if (!path.empty()) {
+		set_path(path);
+	}
 }
 
 hero_map::~hero_map()
@@ -1496,7 +1498,7 @@ hero_map& hero_map::operator=(const hero_map &that)
 
 void hero_map::set_path(const std::string& path)
 {
-	hero::image_file_root_ = path + "/data/core/images";
+	hero::image_file_root_ = path + "/" + game_config::app_dir + "/images";
 }
 
 void hero_map::realloc_hero_map(const size_t size)

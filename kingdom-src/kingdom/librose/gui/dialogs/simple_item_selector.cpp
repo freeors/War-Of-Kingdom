@@ -13,17 +13,13 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/simple_item_selector.hpp"
 
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-	#include "gui/widgets/list.hpp"
-#else
-	#include "gui/widgets/listbox.hpp"
-#endif
+#include "gui/widgets/listbox.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 
@@ -79,6 +75,8 @@ tsimple_item_selector::tsimple_item_selector(const std::string& title, const std
 
 void tsimple_item_selector::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	tlabel& ltitle = find_widget<tlabel>(&window, "title", false);
 	tcontrol& lmessage = find_widget<tcontrol>(&window, "message", false);
 	tlistbox& list = find_widget<tlistbox>(&window, "listbox", false);
@@ -98,7 +96,7 @@ void tsimple_item_selector::pre_show(CVideo& /*video*/, twindow& window)
 		list.add_row(data);
 	}
 
-	if(index_ != -1 && static_cast<unsigned>(index_) < list.get_item_count()) {
+	if(index_ != -1 && index_ < list.get_item_count()) {
 		list.select_row(index_);
 	}
 

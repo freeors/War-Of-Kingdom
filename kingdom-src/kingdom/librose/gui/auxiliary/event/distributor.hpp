@@ -46,6 +46,7 @@
 namespace gui2{
 
 class twidget;
+class tcontrol;
 
 namespace event {
 
@@ -68,6 +69,9 @@ public:
 	 */
 	void capture_mouse(//twidget* widget);
 			const bool capture = true);
+
+	void generate_focus_drags(twidget* focus, std::vector<tcontrol*>& drags, bool started) const;
+
 protected:
 
     /** The widget that currently has the mouse focus_. */
@@ -116,7 +120,7 @@ protected:
 	void mouse_enter(twidget* mouse_over);
 
 	/** Called when the mouse leaves the current widget. */
-	void mouse_leave();
+	void mouse_leave(const tpoint& coordinate);
 
 private:
 
@@ -138,11 +142,6 @@ private:
 			, const tpoint& coordinate);
 
 	void signal_handler_sdl_wheel(
-			  const event::tevent event
-			, bool& handled
-			, const tpoint& coordinate);
-
-	void signal_handler_show_helptip(
 			  const event::tevent event
 			, bool& handled
 			, const tpoint& coordinate);
@@ -209,8 +208,9 @@ private:
 		, bool& handled
 		, const tpoint& coordinate);
 
+	std::pair<twidget*, twidget*> drag_or_click(twidget* focus, twidget* mouse_over) const;
 
-	void mouse_button_click(twidget* widget);
+	void mouse_button_click(twidget* drag, twidget* click);
 };
 
 /***** ***** ***** ***** tdistributor ***** ***** ***** ***** *****/

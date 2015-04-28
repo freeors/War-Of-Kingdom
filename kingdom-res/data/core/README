@@ -1,5 +1,0 @@
-This directory contains the core resources usable in WML by all campaigns
-and add-on packages.
-
-terrain-graphics.cfg__: equal file as terrain-graphics.cfg that tick off "# " ect.
-   Use it compare to terrain-graphics.cfg in wesnoth package.

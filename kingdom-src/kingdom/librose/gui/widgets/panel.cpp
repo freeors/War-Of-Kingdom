@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/panel.hpp"
 
@@ -31,6 +31,12 @@ namespace gui2 {
 
 REGISTER_WIDGET(panel)
 
+tpanel::tpanel(const unsigned canvas_count) 
+	: tcontainer_(canvas_count)
+	, hole_left_(0)
+	, hole_right_(0)
+{}
+
 SDL_Rect tpanel::get_client_rect() const
 {
 	boost::intrusive_ptr<const tpanel_definition::tresolution> conf =
@@ -46,9 +52,45 @@ SDL_Rect tpanel::get_client_rect() const
 	return result;
 }
 
+void tpanel::set_hole_variable(int left, int right)
+{
+	if (left < 0 || right < 0) {
+		return;
+	}
+
+	if (left != hole_left_ || right != hole_right_) {
+		hole_left_ = left;
+		hole_right_ = right;
+		if (x_ >= 0) {
+			update_canvas();
+			set_dirty();
+		}
+	}
+}
+
+void tpanel::update_canvas()
+{
+	// Inherit.
+	tcontrol::update_canvas();
+
+	int left = hole_left_ - x_;
+	int right = hole_right_ - x_;
+	right -= 1;
+	if (left < 0) {
+		left = 0;
+	}
+	if (right < 0) {
+		right = 0;
+	}
+
+	// set icon in canvases
+	canvas(0).set_variable("hole_left", variant(left));
+	canvas(0).set_variable("hole_right", variant(right));
+}
+
 bool tpanel::exist_anim()
 {
-	return canvas(0).exist_anim() || canvas(1).exist_anim();
+	return tcontrol::exist_anim() || canvas(1).exist_anim();
 }
 
 void tpanel::impl_draw_background(
@@ -56,14 +98,10 @@ void tpanel::impl_draw_background(
 		, int x_offset
 		, int y_offset)
 {
-	DBG_GUI_D << LOG_HEADER
-			<< " size " << get_rect()
-			<< ".\n";
+	// tpanel's get_state must be return 0.
+	// look canvas(0) as standard canvas. animation is add to it.
 
-	std::vector<int> anims;
-	canvas(0).blit(
-			  frame_buffer
-			, calculate_blitting_rectangle(x_offset, y_offset), get_dirty(), anims, anims);
+	tcontrol::impl_draw_background(frame_buffer, x_offset, y_offset);
 }
 
 void tpanel::impl_draw_foreground(

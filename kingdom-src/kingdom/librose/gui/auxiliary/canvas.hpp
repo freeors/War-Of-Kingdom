@@ -136,6 +136,8 @@ public:
 		set_dirty();
 	}
 
+	const game_logic::map_formula_callable& variables() const { return variables_; }
+
 	bool start_animation();
 	bool exist_anim() const { return !anims_.empty(); }
 

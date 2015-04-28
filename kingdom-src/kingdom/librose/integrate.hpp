@@ -12,8 +12,8 @@
 
    See the COPYING file for more details.
 */
-#ifndef ROSE_INTEGRATE_HPP_INCLUDED
-#define ROSE_INTEGRATE_HPP_INCLUDED
+#ifndef LIBROSE_INTEGRATE_HPP_INCLUDED
+#define LIBROSE_INTEGRATE_HPP_INCLUDED
 
 #include "exceptions.hpp"
 #include "sdl_utils.hpp"
@@ -89,6 +89,9 @@ public:
 
 	bool align_bottom() const { return align_bottom_; }
 	void set_align_bottom(bool value) { align_bottom_ = value; }
+
+	bool empty() const { return items_.empty(); }
+	void clear();
 
 	/// An item that is displayed in the text area. Contains the surface
 	/// that should be blitted along with some other information.

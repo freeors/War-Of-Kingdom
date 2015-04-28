@@ -57,31 +57,26 @@ extern const SDL_Color NORMAL_COLOR, GRAY_COLOR, LOBBY_COLOR, GOOD_COLOR, BAD_CO
                        PETRIFIED_COLOR, TITLE_COLOR, DISABLED_COLOR, LABEL_COLOR, BLUE_COLOR;
 
 // font sizes, to be made theme parameters
-const int SIZE_NORMAL = 16;
-inline int relative_size(int size)
-{
-	return (SIZE_NORMAL * size / 16);
-}
+const int SIZE_XTINY_MDPI = 10;
+const int SIZE_TINY_MDPI = 12;
+const int SIZE_SMALL_MDPI = 14;
+const int SIZE_NORMAL_MDPI = 16;
+const int SIZE_LARGE_MDPI = 18;
+const int SIZE_XLARGE_MDPI = 24;
 
-// automatic computation of other font sizes, to be made a default for theme-provided values
-const int
-	SIZE_TINY       = relative_size(12),
-	SIZE_SMALL      = relative_size(14),
-
-	SIZE_LARGE      = relative_size(18),
-	SIZE_XLARGE     = relative_size(24)
-  ;
+extern int SIZE_XTINY;
+extern int SIZE_TINY;
+extern int SIZE_SMALL;
+extern int SIZE_NORMAL;
+extern int SIZE_LARGE;
+extern int SIZE_XLARGE;
 
 // using tintegrate
 surface get_rendered_text2(const std::string& text, int maximum_width = -1, int font_size = SIZE_NORMAL, const SDL_Color& color = NORMAL_COLOR, bool editable = false);
 gui2::tpoint get_rendered_text_size(const std::string& text, int maximum_width = -1, int font_size = SIZE_NORMAL, const SDL_Color& color = NORMAL_COLOR, bool editable = false);
 
 // Returns a SDL surface containing the text rendered in a given color.
-surface get_rendered_text(const std::string& text, int size, const SDL_Color& color, int style=0);
-
-SDL_Rect draw_text_line(surface gui_surface, const SDL_Rect& area, int size,
-						const SDL_Color& color, const std::string& text,
-						int x, int y, bool use_tooltips, int style);
+surface get_rendered_text(const std::string& text, int size, const SDL_Color& color, int style);
 
 // Returns the maximum height of a font, in pixels
 int get_max_height(int size);
@@ -104,8 +99,6 @@ SDL_Rect line_size(const std::string& line, int font_size, int style=TTF_STYLE_N
  */
 std::string make_text_ellipsis(const std::string& text, int font_size, int max_width, int style = TTF_STYLE_NORMAL);
 std::string make_text_ellipsis(const std::string& text, size_t max_count);
-
-std::string make_text_hide(const std::string& text, bool always, size_t front_should_hide_width, size_t hiden_width, int font_size, int max_showable_width, bool with_tags, bool parse_for_style);
 
 /// structure which will hide all current floating labels, and cause floating labels
 /// instantiated after it is created to be displayed

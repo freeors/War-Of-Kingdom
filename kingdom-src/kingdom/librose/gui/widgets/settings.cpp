@@ -18,7 +18,7 @@
  * Implementation of settings.hpp.
  */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/settings.hpp"
 
@@ -27,13 +27,13 @@
 #include "filesystem.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
-// #include "gui/auxiliary/tips.hpp"
 #include "gui/widgets/window.hpp"
 #include "serialization/parser.hpp"
 #include "serialization/preprocessor.hpp"
 #include "formula_string_utils.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "loadscreen.hpp"
+#include "font.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -41,19 +41,29 @@ namespace gui2 {
 
 bool new_widgets = false;
 
+void ttip_definition::read(const config& _cfg)
+{
+	text_extra_width = _cfg["text_extra_width"].to_int();
+	text_extra_height = _cfg["text_extra_height"].to_int();
+	text_font_size = _cfg["text_font_size"].to_int(font::SIZE_NORMAL);
+	vertical_gap = _cfg["vertical_gap"].to_int();
+
+	if (twidget::hdpi) {
+		text_extra_width *= twidget::hdpi_ratio;
+		text_extra_height *= twidget::hdpi_ratio;
+		text_font_size *= twidget::hdpi_ratio;
+		vertical_gap *= twidget::hdpi_ratio;
+	}
+
+	cfg = _cfg;
+}
+
 namespace settings {
 	unsigned screen_width = 0;
 	unsigned screen_height = 0;
 	unsigned keyboard_height = 0;
 
-	unsigned gamemap_width = 0;
-	unsigned gamemap_height = 0;
-
-	unsigned popup_show_delay = 0;
-	unsigned popup_show_time = 0;
-	unsigned help_show_time = 0;
 	unsigned double_click_time = 0;
-	unsigned repeat_button_repeat_time = 0;
 
 	std::string sound_button_click = "";
 	std::string sound_toggle_button_click = "";
@@ -62,13 +72,10 @@ namespace settings {
 
 	t_string has_helptip_message;
 
-	std::map<std::string, config> bubbles;
-	std::vector<ttip> tips;
+	std::map<std::string, tbuilder_widget_ptr> portraits;
+	std::map<std::string, ttip_definition> tip_cfgs;
 
-	std::vector<ttip> get_tips()
-	{
-		return tips::shuffle(tips);
-	}
+	bool actived = false;
 
 } // namespace settings
 
@@ -261,6 +268,11 @@ const std::string& tgui_definition::read(const config& cfg)
 	err << "must define theme window, id: " << game_config::theme_window_id;
 	VALIDATE(!theme_window_cfg.empty(), err.str());
 
+	BOOST_FOREACH(const config& theme, cfg.child_range("theme")) {
+		std::pair<std::map<std::string, config>::iterator, bool> ins = theme_cfgs.insert(std::make_pair(theme["id"].str(), theme));
+		VALIDATE(ins.second, "define theme duplicated!");
+	}
+
 	/***** settings *****/
 /*WIKI
  * @page = GUIToolkitWML
@@ -270,21 +282,8 @@ const std::string& tgui_definition::read(const config& cfg)
  * @begin{tag}{name="settings"}{min="0"}{max="1"}
  * A setting section has the following variables:
  * @begin{table}{config}
- *     popup_show_delay & unsigned & 0 & The time it take before the popup shows
- *                                     if the mouse moves over the widget. 0
- *                                     means show directly. $
- *     popup_show_time & unsigned & 0 &  The time a shown popup remains visible.
- *                                     0 means until the mouse leaves the
- *                                     widget. $
- *     help_show_time & unsigned & 0 &   The time a shown help remains visible.
- *                                     0 means until the mouse leaves the
- *                                     widget. $
  *     double_click_time & unsigned & &   The time between two clicks to still be a
  *                                     double click. $
- *     repeat_button_repeat_time & unsigned & 0 &
- *                                     The time a repeating button waits before
- *                                     the next event is issued if the button
- *                                     is still pressed down. $
  *
  *     sound_button_click & string & "" &
  *                                     The sound played if a button is
@@ -331,12 +330,7 @@ const std::string& tgui_definition::read(const config& cfg)
  */
 	const config &settings = cfg.child("settings");
 
-	popup_show_delay_ = settings["popup_show_delay"];
-	popup_show_time_ = settings["popup_show_time"];
-	help_show_time_ = settings["help_show_time"];
 	double_click_time_ = settings["double_click_time"];
-
-	repeat_button_repeat_time_ = settings["repeat_button_repeat_time"];
 
 	VALIDATE(double_click_time_, missing_mandatory_wml_key("settings", "double_click_time"));
 
@@ -350,28 +344,38 @@ const std::string& tgui_definition::read(const config& cfg)
 	VALIDATE(!has_helptip_message_.empty(),
 			missing_mandatory_wml_key("[settings]", "has_helptip_message"));
 
-	BOOST_FOREACH(const config& bubble, cfg.child_range("bubble")) {
-		bubbles_.insert(std::make_pair(bubble["id"].str(), bubble));
+	// require portraits valid before build window.
+	BOOST_FOREACH(const config& portrait, cfg.child_range("portrait")) {
+		std::string id;
+		std::string type;
+		BOOST_FOREACH (const config::any_child& v, portrait.all_children_range()) {
+			id = v.cfg["id"].str();
+			type = v.key;
+			VALIDATE(!id.empty(), "portrait cfg of tpl_widget must define id!");
+			portraits_.insert(std::make_pair(id, create_builder_widget2(type, v.cfg)));
+		}
 	}
-	tips_ = tips::load(cfg);
+	BOOST_FOREACH(const config& tip, cfg.child_range("tip_definition")) {
+		std::pair<std::map<std::string, ttip_definition>::iterator, bool> ins = tip_cfgs_.insert(std::make_pair(tip["id"].str(), ttip_definition()));
+		VALIDATE(ins.second, "define tip duplicated!");
+		ins.first->second.read(tip);
+	}
 
 	return id;
 }
 
 void tgui_definition::activate() const
 {
-	settings::popup_show_delay = popup_show_delay_;
-	settings::popup_show_time = popup_show_time_;
-	settings::help_show_time = help_show_time_;
 	settings::double_click_time = double_click_time_;
-	settings::repeat_button_repeat_time = repeat_button_repeat_time_;
 	settings::sound_button_click = sound_button_click_;
 	settings::sound_toggle_button_click = sound_toggle_button_click_;
 	settings::sound_toggle_panel_click = sound_toggle_panel_click_;
 	settings::sound_slider_adjust = sound_slider_adjust_;
 	settings::has_helptip_message = has_helptip_message_;
-	settings::bubbles = bubbles_;
-	settings::tips = tips_;
+	settings::portraits = portraits_;
+	settings::tip_cfgs = tip_cfgs_;
+
+	settings::actived = true;
 }
 
 void tgui_definition::load_widget_definitions(
@@ -381,8 +385,8 @@ void tgui_definition::load_widget_definitions(
 	BOOST_FOREACH(const tcontrol_definition_ptr& def, definitions) {
 
 		// We assume all definitions are unique if not we would leak memory.
-		assert(control_definition[definition_type].find(def->id)
-				== control_definition[definition_type].end());
+		VALIDATE(control_definition[definition_type].find(def->id)
+				== control_definition[definition_type].end(), "Multi-define id!");
 
 		control_definition[definition_type]
 				.insert(std::make_pair(def->id, def));
@@ -391,7 +395,7 @@ void tgui_definition::load_widget_definitions(
 	utils::string_map symbols;
 	symbols["definition"] = definition_type;
 	symbols["id"] = "default";
-	t_string msg(vgettext(
+	t_string msg(vgettext2( 
 			  "Widget definition '$definition' "
 			  "doesn't contain the definition for '$id'."
 			, symbols));
@@ -520,39 +524,32 @@ tresolution_definition_ptr get_control(
 		const std::string& control_type, const std::string& definition)
 {
 	const tgui_definition::tcontrol_definition_map::const_iterator
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-		control_definition = (control_type == "list")
-				? current_gui->second.control_definition.find("listbox")
-				: current_gui->second.control_definition.find(control_type);
-#else
-		control_definition =
-				current_gui->second.control_definition.find(control_type);
-#endif
+	control_definition = current_gui->second.control_definition.find(control_type);
 
 	ASSERT_LOG(control_definition != current_gui->second.control_definition.end(),
 			"Type '" << control_type << "' is unknown.");
 
-
 	std::map<std::string, tcontrol_definition_ptr>::const_iterator
 		control = control_definition->second.find(definition);
 
-	if(control == control_definition->second.end()) {
+	if (control == control_definition->second.end()) {
 		LOG_GUI_G << "Control: type '" << control_type << "' definition '"
 			<< definition << "' not found, falling back to 'default'.\n";
 		control = control_definition->second.find("default");
-		assert(control != control_definition->second.end());
+		VALIDATE(control != control_definition->second.end(), "Cannot find defnition, failling back to default!");
 	}
 
-	for(std::vector<tresolution_definition_ptr>::const_iterator
+	tpoint landscape_size = twidget::toggle_orientation_size(settings::screen_width, settings::screen_height);
+
+	for (std::vector<tresolution_definition_ptr>::const_iterator
 			itor = (*control->second).resolutions.begin(),
 			end = (*control->second).resolutions.end();
 			itor != end;
 			++itor) {
 
-		if(settings::screen_width <= (**itor).window_width ||
-				settings::screen_height <= (**itor).window_height) {
-
+		if (landscape_size.x <= (int)(**itor).window_width || landscape_size.y <= (int)(**itor).window_height) {
 			return *itor;
+
 		} else if (itor == end - 1) {
 			return *itor;
 		}
@@ -569,30 +566,39 @@ std::vector<twindow_builder::tresolution>::const_iterator get_window_builder(
 	std::map<std::string, twindow_builder>::const_iterator
 		window = current_gui->second.window_types.find(type);
 
-	if(true) { // FIXME Test for default gui.
-		if(window == current_gui->second.window_types.end()) {
-			throw twindow_builder_invalid_id();
-		}
-	} else {
-		// FIXME Get the definition in the default gui and do an assertion test.
+	if (window == current_gui->second.window_types.end()) {
+		throw twindow_builder_invalid_id();
 	}
 
-	for(std::vector<twindow_builder::tresolution>::const_iterator
+	tpoint landscape_size = twidget::toggle_orientation_size(settings::screen_width, settings::screen_height);
+
+	for (std::vector<twindow_builder::tresolution>::const_iterator
 			itor = window->second.resolutions.begin(),
 			end = window->second.resolutions.end();
 			itor != end;
 			++itor) {
 
-		if(settings::screen_width <= itor->window_width &&
-				settings::screen_height <= itor->window_height) {
-
+		if (landscape_size.x <= (int)itor->window_width || landscape_size.y <= (int)itor->window_height) {
 			return itor;
+
 		} else if (itor == end - 1) {
 			return itor;
 		}
 	}
 
 	ERROR_LOG(false);
+}
+
+const config& get_theme(const std::string& id)
+{
+	const std::string id2 = id.empty()? "default": id;
+	std::map<std::string, config>::const_iterator it = current_gui->second.theme_cfgs.find(id2);
+
+	std::stringstream err;
+	err << "Can not find theme: " << tintegrate::generate_format(id, "red");
+	VALIDATE(it != current_gui->second.theme_cfgs.end(), err.str());
+
+	return it->second;
 }
 
 void reload_window_builder(const std::string& type, const config& cfg, const std::set<std::string>& reserve_wml_tag)
@@ -635,6 +641,36 @@ void reload_test_window(const std::string& type, const config& cfg)
 	
 	twindow::update_screen_size();
 	window->second.read(cfg);
+}
+
+bool valid_control_definition(const std::string& type, const std::string& definition)
+{
+	const tgui_definition::tcontrol_definition_map& controls = current_gui->second.control_definition;
+	const std::map<std::string, tcontrol_definition_ptr>& map = controls.find(type)->second;
+
+	return map.find(definition) != map.end();
+}
+
+std::string scale_with_size(const std::string& file, int width, int height)
+{
+	if (file.empty()) {
+		return null_str;
+	}
+	std::stringstream ss;
+	ss << file + "~SCALE(" << width << ", " << height << ")";
+
+	return ss.str();
+}
+
+std::string scale_with_screen_size(const std::string& file)
+{
+	if (file.empty()) {
+		return null_str;
+	}
+	std::stringstream ss;
+	ss << file + "~SCALE(" << settings::screen_width << ", " << settings::screen_height << ")";
+
+	return ss.str();
 }
 
 /*WIKI

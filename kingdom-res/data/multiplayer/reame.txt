@@ -1,2 +1,0 @@
-A：为什么“scenrios”、“maps”目录名要改为“mscenarios”、“mmaps”？
-Q：是为了SLG Maker。SLG Maker在查data.bin是否是最新时，加提高data.bin确实应该重编译命中率，会设置为忽略“scenrios”、“maps”（要忽略掉战役）。但此处的“scenrios”、“maps”是不能忽略的，所以改名。

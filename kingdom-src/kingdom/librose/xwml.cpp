@@ -1,4 +1,4 @@
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 #include "global.hpp"
 #include <map>
 #include <string>
@@ -7,6 +7,7 @@
 #include "config.hpp"
 #include "filesystem.hpp"
 #include "tstring.hpp"
+#include "rose_config.hpp"
 
 // terrain_builder
 #include "builder.hpp"
@@ -14,6 +15,7 @@
 
 #include "map.hpp"
 
+#include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 #include "posix.h"
 
@@ -22,21 +24,27 @@
 #define WMLBIN_MARK_VALUE		"[val]"
 #define WMLBIN_MARK_VALUE_LEN	5
 
-uint32_t tstring_textdomain_idx(const char *textdomain, std::vector<std::string> &td) 
+// find index of textdomain. it doesn't exist in current tds, insert it.
+static uint32_t tstring_textdomain_idx(const char *textdomain, std::vector<std::string>& tds, std::vector<std::set<std::string> >& msgids) 
 {
-	std::vector<std::string>::iterator iter = find(td.begin(), td.end(), textdomain);
-	if (iter != td.end()) {
-		return iter - td.begin() + 1;
-	} else {
+	if (!textdomain || textdomain[0] == '\0') {
 		return 0;
+	}
+	std::vector<std::string>::const_iterator it = find(tds.begin(), tds.end(), textdomain);
+	if (it != tds.end()) {
+		return it - tds.begin() + 1;
+	} else {
+		tds.push_back(textdomain);
+		msgids.resize(tds.size());
+		return tds.size();
 	}
 }
 
-// @deep: 嵌套深度, 顶层: 0
-void wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len, std::vector<std::string> &td, uint16_t deep)
+// @deep: nesting deep. top level: 0
+static uint32_t wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len, std::vector<std::string>& td, uint16_t deep, std::vector<std::set<std::string> >& msgids)
 {
-	uint32_t							u32n, bytertd;
-	int									first;
+	uint32_t u32n, bytertd, bytes = 0;
+	int first;
 		
 	// config::child_list::const_iterator	ichildlist;
 	// string_map::const_iterator			istrmap;
@@ -49,6 +57,8 @@ void wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len,
 		posix_fwrite(fp, &u32n, sizeof(u32n), bytertd);
 		posix_fwrite(fp, value.key.c_str(), posix_lo16(u32n), bytertd);
 
+		bytes += WMLBIN_MARK_CONFIG_LEN + sizeof(u32n) + posix_lo16(u32n);
+
 		*max_str_len = posix_max(*max_str_len, value.key.size());
 
 		// save {[val]}{len}{name0}{len}{val0}{len}{name1}{len}{val1}{...}
@@ -58,6 +68,9 @@ void wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len,
 		BOOST_FOREACH (const config::attribute &istrmap, value.cfg.attribute_range()) {
 			if (first) {
 				posix_fwrite(fp, WMLBIN_MARK_VALUE, WMLBIN_MARK_VALUE_LEN, bytertd);
+
+				bytes += WMLBIN_MARK_VALUE_LEN;
+
 				first = 0;
 			}
 			u32n = istrmap.first.size();
@@ -65,21 +78,26 @@ void wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len,
 			posix_fwrite(fp, istrmap.first.c_str(), u32n, bytertd);
 			*max_str_len = posix_max(*max_str_len, u32n);
 
+			bytes += sizeof(u32n) + u32n;
+
 			if (istrmap.second.t_str().translatable()) {
 				// parse translatable string
 				std::vector<t_string_base::trans_str> trans = istrmap.second.t_str().valuex();
 				for (std::vector<t_string_base::trans_str>::const_iterator ti = trans.begin(); ti != trans.end(); ti ++) {
+					int td_index = 0;
 					if (ti == trans.begin()) {
 						if (ti->td.empty()) {
 							u32n = posix_mku32(0, posix_mku16(0, trans.size()));
 						} else {
-							u32n = posix_mku32(0, posix_mku16(tstring_textdomain_idx(ti->td.c_str(), td), trans.size()));
+							td_index = tstring_textdomain_idx(ti->td.c_str(), td, msgids);
+							u32n = posix_mku32(0, posix_mku16(td_index, trans.size()));
 						}
 					} else {
 						if (ti->td.empty()) {
 							u32n = posix_mku32(0, 0);
 						} else {
-							u32n = posix_mku32(0, posix_mku16(tstring_textdomain_idx(ti->td.c_str(), td), 0));
+							td_index = tstring_textdomain_idx(ti->td.c_str(), td, msgids);
+							u32n = posix_mku32(0, posix_mku16(td_index, 0));
 						}
 					}
 					// flag
@@ -88,6 +106,13 @@ void wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len,
 					u32n = ti->str.size();
 					posix_fwrite(fp, &u32n, sizeof(u32n), bytertd);
 					posix_fwrite(fp, ti->str.c_str(), u32n, bytertd);
+
+					if (td_index) {
+						std::set<std::string>& item = msgids[td_index - 1];
+						item.insert(ti->str);
+					}
+
+					bytes += sizeof(u32n) + sizeof(u32n) + u32n;
 				}
 			} else {
 				// flag
@@ -97,76 +122,148 @@ void wml_config_to_fp(posix_file_t fp, const config &cfg, uint32_t *max_str_len,
 				u32n = istrmap.second.str().size();
 				posix_fwrite(fp, &u32n, sizeof(u32n), bytertd);
 				posix_fwrite(fp, istrmap.second.str().c_str(), u32n, bytertd);
+
+				bytes += sizeof(u32n) + sizeof(u32n) + u32n;
 			}
 			*max_str_len = posix_max(*max_str_len, u32n);
 
 		}		
-		wml_config_to_fp(fp, value.cfg, max_str_len, td, deep + 1);
+		bytes += wml_config_to_fp(fp, value.cfg, max_str_len, td, deep + 1, msgids);
 	}
 
+	return bytes;
+}
+
+bool is_all_asci(const char* c_str, int len)
+{
+	for (int i = 0; i < len; i ++) {
+		if (c_str[i] & 0x80) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static void generate_cfg_cpp(const std::string& fname, const std::vector<std::string>& tdomain, const std::vector<std::set<std::string> >& msgids, uint32_t max_str_len)
+{
+	// if destination file is at <res>/xwml, write cfg-cpp.
+	const std::string xwml_path = game_config::path + "/xwml";
+	if (fname.find(xwml_path) != 0) {
+		return;
+	}
+	const std::string xwml_sub_dir = directory_name(fname.substr(xwml_path.size() + 1));
+	const std::string main_name = file_main_name(file_name(fname));
+
+	// write this to path/po/cfg-cpp/<textdomain>/<xwml_sub_dir>/<bin>.cpp
+	const int increase_size = max_str_len < 8192? 8192: align_ceil(max_str_len, 1024);
+	uint32_t bytertd;
+	int at = 0, vsize = 0, msgid_size;
+	std::stringstream ss;
+	for (std::vector<std::set<std::string> >::const_iterator it = msgids.begin(); it != msgids.end(); ++ it, at ++) {
+		const std::set<std::string>& item = *it;
+		if (item.empty()) {
+			continue;
+		}
+		ss.str("");
+		ss << game_config::path << "/po/cfg-cpp/" << tdomain[at] << "/";
+		const std::string dir_name = directory_name(fname);
+		if (!xwml_sub_dir.empty()) {
+			ss << xwml_sub_dir;
+		}
+		create_directory_if_missing(ss.str());
+		ss << main_name << ".cpp";
+
+		tfopen_lock lock(ss.str(), GENERIC_WRITE, CREATE_ALWAYS);
+		if (!lock.valid()) {
+			continue;
+		}
+		lock.resize_data(increase_size);
+		vsize = 0;
+		for (std::set<std::string>::const_iterator it2 = item.begin(); it2 != item.end(); ++ it2) {
+			std::string msgid = *it2;
+			if (msgid.empty()) {
+				continue;
+			}
+			msgid_size = msgid.size();
+			if (!is_all_asci(msgid.c_str(), msgid_size)) {
+				continue;
+			}
+
+			size_t pos = msgid.find("\n");
+			if (pos != std::string::npos && (int)pos < msgid_size - 1) {
+				boost::algorithm::replace_all(msgid, "\n", std::string("\\n\"\n\""));
+			}
+			if (vsize) {
+				memcpy(lock.data + vsize, "\n\n", 2);
+				vsize += 2;
+			}
+			memcpy(lock.data + vsize, "_(\"", 3);
+			vsize += 3;
+			if (vsize + msgid_size + 16 >= lock.data_size) {
+				lock.resize_data(lock.data_size + increase_size, vsize);
+			}
+			memcpy(lock.data + vsize, msgid.c_str(), msgid_size);
+			vsize += msgid_size;
+			memcpy(lock.data + vsize, "\");", 3);
+			vsize += 3;
+		}
+		posix_fwrite(lock.fp, lock.data, vsize, bytertd);
+	}
 	return;
 }
 
-// config就三个成员变量, values, children, orderer_children. orderer_child_ren可由children推出
-// config被组织成一个树状结构
-void wml_config_to_file(const std::string &fname, config &cfg, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
+void wml_config_to_file(const std::string& fname, config &cfg, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
 {
-	posix_file_t						fp = INVALID_FILE;
 	uint32_t							max_str_len, bytertd, u32n; 
 
 	std::vector<std::string>			tdomain;
 	
-	posix_print("<xwml.cpp>::wml_config_to_file------fname: %s\n", fname.c_str());
-
-	posix_fopen(fname.c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
-	if (fp == INVALID_FILE) {
-		posix_print("------<xwml.cpp>::wml_config_to_file, cannot create %s for wrtie\n", fname.c_str());
-		goto exit;
+	tfopen_lock lock(fname, GENERIC_WRITE, CREATE_ALWAYS);
+	if (!lock.valid()) {
+		posix_print("------<xwml.cpp>::wml_config_to_file, cannot create %s for write\n", fname.c_str());
+		return;
 	}
-	// 
 
 	max_str_len = posix_max(WMLBIN_MARK_CONFIG_LEN, WMLBIN_MARK_VALUE_LEN);
-	posix_fseek(fp, 16 + sizeof(max_str_len) + sizeof(u32n), 0);
+	uint32_t header_len = 16 + sizeof(max_str_len) + sizeof(u32n);
+	posix_fseek(lock.fp, header_len, 0);
 
-	// write [textdomain]
-	BOOST_FOREACH (const config &d, cfg.child_range("textdomain")) {
-		if (std::find(tdomain.begin(), tdomain.end(), d.get("name")->str()) != tdomain.end()) {
-			continue;
-		}
-		tdomain.push_back(d.get("name")->str());
-		u32n = tdomain.back().size();
-		posix_fwrite(fp, &u32n, sizeof(u32n), bytertd);
-		posix_fwrite(fp, tdomain.back().c_str(), u32n, bytertd);
-	}
+	std::vector<std::set<std::string> > msgids;
+	uint32_t data_len = wml_config_to_fp(lock.fp, cfg, &max_str_len, tdomain, 0, msgids);
 
-	wml_config_to_fp(fp, cfg, &max_str_len, tdomain, 0);
-
-	// update max_str_len/textdomain_count
-	posix_fseek(fp, 0, 0);
+	// update max_str_len/data_len
+	posix_fseek(lock.fp, 0, 0);
 
 	// 0--15
 	u32n = mmioFOURCC('X', 'W', 'M', 'L');
-	posix_fwrite(fp, &u32n, 4, bytertd);
-	posix_fwrite(fp, &nfiles, 4, bytertd);
-	posix_fwrite(fp, &sum_size, 4, bytertd);
-	posix_fwrite(fp, &modified, 4, bytertd);
+	posix_fwrite(lock.fp, &u32n, 4, bytertd);
+	posix_fwrite(lock.fp, &nfiles, 4, bytertd);
+	posix_fwrite(lock.fp, &sum_size, 4, bytertd);
+	posix_fwrite(lock.fp, &modified, 4, bytertd);
 	// 16--19(max_str_len)
-	posix_fwrite(fp, &max_str_len, sizeof(max_str_len), bytertd);
-	// 20--23(textdomain_count)
-	u32n = tdomain.size();
-	posix_fwrite(fp, &u32n, sizeof(u32n), bytertd);
+	posix_fwrite(lock.fp, &max_str_len, sizeof(max_str_len), bytertd);
+	// 20--23(data_len)
+	posix_fwrite(lock.fp, &data_len, sizeof(u32n), bytertd);
 
-	posix_print("------<xwml.cpp>::wml_config_to_file, return\n");
-exit:
-	if (fp != INVALID_FILE) {
-		posix_fclose(fp);
+	// write [textdomain]
+	posix_fseek(lock.fp, header_len + data_len, 0);
+
+	// write [textdomain]
+	u32n = tdomain.size();
+	posix_fwrite(lock.fp, &u32n, sizeof(u32n), bytertd);
+
+	for (std::vector<std::string>::const_iterator it = tdomain.begin(); it != tdomain.end(); ++ it) {
+		const std::string& str = *it;
+		u32n = str.size();
+		posix_fwrite(lock.fp, &u32n, sizeof(u32n), bytertd);
+		posix_fwrite(lock.fp, str.c_str(), u32n, bytertd);
 	}
 
-	return;
+	generate_cfg_cpp(fname, tdomain, msgids, max_str_len);
 }
 
 
-int wml_config_from_data(uint8_t *data, uint32_t datalen, uint8_t *namebuf, uint8_t *valbuf, std::vector<std::string> &tdomain, config &cfg)
+bool wml_config_from_data(uint8_t *data, uint32_t datalen, uint8_t *namebuf, uint8_t *valbuf, std::vector<std::string> &tdomain, config &cfg)
 {
 	int									retval;
 	uint8_t								*rdpos = data;
@@ -179,15 +276,13 @@ int wml_config_from_data(uint8_t *data, uint32_t datalen, uint8_t *namebuf, uint
 
 	lastcfg.push_back(&cfg);
 
-	uint32_t max_str_len = 0;
-	int debug = 0;
 	while (rdpos < data + datalen) {
 
 		// posix_print("in while, rdpos: %p, pos: %u(0x%x)", rdpos, rdpos - data + 4, rdpos - data + 4);
 		// read {[cfg]}{len}{name}
 		if (memcmp(rdpos, WMLBIN_MARK_CONFIG, WMLBIN_MARK_CONFIG_LEN)) {
-			posix_print("mark is not %s\n", WMLBIN_MARK_CONFIG);
-			goto exit;
+			// invalid format.
+			return false;
 		}
 		rdpos = rdpos + WMLBIN_MARK_CONFIG_LEN;
 		memcpy(&u32n, rdpos, sizeof(u32n));
@@ -270,181 +365,142 @@ int wml_config_from_data(uint8_t *data, uint32_t datalen, uint8_t *namebuf, uint
 		}
 	}
 
-	retval = 0;
-exit:
-
-	return retval;
+	return true;
 }
 
-#define MAXLEN_TEXTDOMAIN		63
+#define MIN_XMIN_BIN_SIZE		28	// 16 + 4 + 4 +....+4... last +4 is size of textdomain.
 
 void wml_config_from_file(const std::string &fname, config &cfg, uint32_t* nfiles, uint32_t* sum_size, uint32_t* modified)
 {
-	posix_file_t						fp = INVALID_FILE;
-	uint32_t							datalen, fsizelow, fsizehigh, max_str_len, bytertd, tdcnt, idx, len;
-	uint8_t								*data = NULL, *namebuf = NULL, *valbuf = NULL;
+	uint32_t							fsizelow, fsizehigh, max_str_len, data_len, bytertd, tdcnt, idx, len;
+	uint8_t								*namebuf = NULL, *valbuf = NULL;
 	char								tdname[MAXLEN_TEXTDOMAIN + 1];
 
 	std::vector<std::string>			tdomain;
 
 	posix_print("<xwml.cpp>::wml_config_from_file------fname: %s\n", fname.c_str());
 
-	cfg.clear();	// 首先清空,以下是增加方式
+	cfg.clear();	// first clear. below action is add.
 
-	posix_fopen(fname.c_str(), GENERIC_READ, OPEN_EXISTING, fp);
-	if (fp == INVALID_FILE) {
+	tfopen_lock lock(fname, GENERIC_READ, OPEN_EXISTING);
+	if (!lock.valid()) {
 		posix_print("------<xwml.cpp>::wml_config_from_file, cannot create %s for read\n", fname.c_str());
-		goto exit;
+		return;
 	}
-	posix_fsize(fp, fsizelow, fsizehigh);
-	if (fsizelow <= 16) {
-		goto exit;
+	posix_fsize(lock.fp, fsizelow, fsizehigh);
+	if (fsizelow <= MIN_XMIN_BIN_SIZE) {
+		return;
 	}
-	posix_fseek(fp, 0, 0);
-	posix_fread(fp, &len, 4, bytertd);
-	// 判断是不是XWML
+	posix_fseek(lock.fp, 0, 0);
+	posix_fread(lock.fp, &len, 4, bytertd);
 	if (len != mmioFOURCC('X', 'W', 'M', 'L')) {
-		goto exit;
+		return;
 	}
-	posix_fread(fp, &len, 4, bytertd);
+	posix_fread(lock.fp, &len, 4, bytertd);
 	if (nfiles) {
 		*nfiles = len;
 	}
-	posix_fread(fp, &len, 4, bytertd);
+	posix_fread(lock.fp, &len, 4, bytertd);
 	if (sum_size) {
 		*sum_size = len;
 	}
-	posix_fread(fp, &len, 4, bytertd);
+	posix_fread(lock.fp, &len, 4, bytertd);
 	if (modified) {
 		*modified = len;
 	}
-	posix_fread(fp, &max_str_len, sizeof(max_str_len), bytertd);
-			
-	// 读出po
-	posix_fread(fp, &tdcnt, sizeof(tdcnt), bytertd);
-	datalen = fsizelow - 16 - sizeof(max_str_len) - sizeof(tdcnt);
+	posix_fread(lock.fp, &max_str_len, sizeof(max_str_len), bytertd);
+	
+	// read data_len
+	posix_fread(lock.fp, &data_len, sizeof(data_len), bytertd);
+
+	uint32_t header_len = 16 + sizeof(max_str_len) + sizeof(data_len);
+	posix_fseek(lock.fp, header_len + data_len, 0);
+
+	// read textdomain
+	posix_fread(lock.fp, &tdcnt, sizeof(tdcnt), bytertd);
 	for (idx = 0; idx < tdcnt; idx ++) {
-		posix_fread(fp, &len, sizeof(uint32_t), bytertd);
-		posix_fread(fp, tdname, len, bytertd);
+		posix_fread(lock.fp, &len, sizeof(uint32_t), bytertd);
+		posix_fread(lock.fp, tdname, len, bytertd);
 		tdname[len] = 0;
 		tdomain.push_back(tdname);
 
-		datalen -= sizeof(uint32_t) + len;
-
 		t_string::add_textdomain(tdomain.back(), get_intl_dir());
 	}
-		
-	data = (uint8_t *)malloc(datalen);
+	
+	lock.resize_data(data_len);
+
 	namebuf = (uint8_t *)malloc(max_str_len + 1 + 1024);
 	valbuf = (uint8_t *)malloc(max_str_len + 1 + 1024);
 
-	// 剩下数据读出sram
-	posix_fread(fp, data, datalen, bytertd);
+	// read data to memory
+	posix_fseek(lock.fp, header_len, 0);
+	posix_fread(lock.fp, lock.data, data_len, bytertd);
 
-	wml_config_from_data(data, datalen, namebuf, valbuf, tdomain, cfg);
+	wml_config_from_data((uint8_t*)lock.data, data_len, namebuf, valbuf, tdomain, cfg);
 
-exit:
-	if (fp != INVALID_FILE) {
-		posix_fclose(fp);
-	}
-	if (data) {
-		free(data);
-	}
 	if (namebuf) {
 		free(namebuf);
 	}
 	if (valbuf) {
 		free(valbuf);
 	}
-	return;
 }
 
 bool wml_checksum_from_file(const std::string &fname, uint32_t* nfiles, uint32_t* sum_size, uint32_t* modified)
 {
-	posix_file_t fp = INVALID_FILE;
 	uint32_t fsizelow, fsizehigh, bytertd, tmp;
-	bool ok = false;
 
-	posix_fopen(fname.c_str(), GENERIC_READ, OPEN_EXISTING, fp);
-	if (fp == INVALID_FILE) {
-		goto exit;
+	tfopen_lock lock(fname, GENERIC_READ, OPEN_EXISTING);
+	if (!lock.valid()) {
+		return false;
 	}
-	posix_fsize(fp, fsizelow, fsizehigh);
+	posix_fsize(lock.fp, fsizelow, fsizehigh);
 	if (fsizelow <= 16) {
-		goto exit;
+		return false;
 	}
-	posix_fseek(fp, 0, 0);
-	posix_fread(fp, &tmp, 4, bytertd);
-	// 判断是不是XWML
+	posix_fseek(lock.fp, 0, 0);
+	posix_fread(lock.fp, &tmp, 4, bytertd);
 	if (tmp != mmioFOURCC('X', 'W', 'M', 'L')) {
-		goto exit;
+		return false;
 	}
-	posix_fread(fp, &tmp, 4, bytertd);
+	posix_fread(lock.fp, &tmp, 4, bytertd);
 	if (nfiles) {
 		*nfiles = tmp;
 	}
-	posix_fread(fp, &tmp, 4, bytertd);
+	posix_fread(lock.fp, &tmp, 4, bytertd);
 	if (sum_size) {
 		*sum_size = tmp;
 	}
-	posix_fread(fp, &tmp, 4, bytertd);
+	posix_fread(lock.fp, &tmp, 4, bytertd);
 	if (modified) {
 		*modified = tmp;
 	}
-	ok = true;		
-exit:
-	if (fp != INVALID_FILE) {
-		posix_fclose(fp);
-	}
-	return ok;
-}
 
-void string_to_file(std::string str, char* fname)
-{
-	posix_file_t	fp;
-	uint32_t		bytertd;
-
-    posix_fopen(fname, GENERIC_WRITE, CREATE_ALWAYS, fp);
-	if (fp == INVALID_FILE) {
-		posix_print_mb("string_to_file, cann't create file %s for write", fname);
-		return;
-	}
-	posix_fwrite(fp, str.c_str(), str.length(), bytertd);
-	posix_fclose(fp);
-	return;
+	return true;
 }
 
 unsigned char calcuate_xor_from_file(const std::string &fname)
 {
-	posix_file_t fp = INVALID_FILE;
 	uint32_t fsizelow, fsizehigh, bytertd, pos;
 	unsigned char ret = 0;
-	unsigned char* data = NULL;
 
-	posix_fopen(fname.c_str(), GENERIC_READ, OPEN_EXISTING, fp);
-	if (fp == INVALID_FILE) {
-		goto exit;
+	tfopen_lock lock(fname, GENERIC_READ, OPEN_EXISTING);
+	if (!lock.valid()) {
+		return 0;
 	}
-	posix_fsize(fp, fsizelow, fsizehigh);
+	posix_fsize(lock.fp, fsizelow, fsizehigh);
 	if (!fsizelow && !fsizehigh) {
-		goto exit;
+		return 0;
 	}
-	posix_fseek(fp, 0, 0);
-	data = (unsigned char*)malloc(fsizelow);
+	posix_fseek(lock.fp, 0, 0);
+	lock.resize_data(fsizelow);
 	
-	posix_fread(fp, data, fsizelow, bytertd);
+	posix_fread(lock.fp, lock.data, fsizelow, bytertd);
 	pos = 0;
 	while (pos < fsizelow) {
-		ret ^= data[pos ++];
+		ret ^= lock.data[pos ++];
 	}
 
-exit:
-	if (fp != INVALID_FILE) {
-		posix_fclose(fp);
-	}
-	if (data) {
-		free(data);
-	}
 	return ret;
 }
 
@@ -720,7 +776,7 @@ terrain_builder::building_rule* wml_building_rules_from_file(const std::string& 
 	strbuf = (uint8_t *)malloc(max_str_len + 1);
 	variations = (uint8_t *)malloc(max_str_len + 1);
 
-	// 剩下数据读出sram
+	// read file data to memory
 	posix_fread(fp, data, datalen, bytertd);
 
 	posix_print("max_str_len: %u, fsizelow: %u, datalen: %u\n", max_str_len, fsizelow, datalen);

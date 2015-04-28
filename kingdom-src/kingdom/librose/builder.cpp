@@ -24,9 +24,10 @@
 #include "map.hpp"
 #include "serialization/string_utils.hpp"
 #include "image.hpp"
+#include "base_map.hpp"
 
 #include <boost/foreach.hpp>
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "posix.h"
 
 static lg::log_domain log_engine("engine");
@@ -176,6 +177,7 @@ extern terrain_builder::building_rule* wml_building_rules_from_file(const std::s
 
 terrain_builder::terrain_builder(const config& cfg, uint32_t nfiles, uint32_t sum_size, uint32_t modified)
 	: map_(NULL)
+	, units_(NULL)
 	, selector_(SELECTOR_MAP)
 	, tile_map_(0, 0)
 	, terrain_by_type_()
@@ -199,11 +201,12 @@ terrain_builder::terrain_builder(const config& cfg, uint32_t nfiles, uint32_t su
 	wml_building_rules_to_file(ss.str(), building_rules_, building_rules_size_, nfiles, sum_size, modified);
 }
 
-terrain_builder::terrain_builder(const std::string& id, const gamemap* m) :
-	map_(m),
-	selector_(SELECTOR_MAP),
-	tile_map_(map().w(), map().h()),
-	terrain_by_type_()
+terrain_builder::terrain_builder(const std::string& id, const gamemap* m) 
+	: map_(m)
+	, units_(NULL)
+	, selector_(SELECTOR_MAP)
+	, tile_map_(map().w(), map().h())
+	, terrain_by_type_()
 {
 	if (id.empty()) {
 		// this is dummy terrain builder.
@@ -1006,7 +1009,7 @@ bool terrain_builder::rule_matches(const terrain_builder::building_rule &rule,
 				if (!terrain_matches(map().get_terrain(tloc), cons.terrain_types_match)) {
 					return false;
 				}
-			} else if (!cb_terrain_matches(tloc, cons.terrain_types_match)) {
+			} else if (!units_->terrain_matches(tloc, cons.terrain_types_match)) {
 				return false;
 			}
 		}
@@ -1104,7 +1107,7 @@ void terrain_builder::build_terrains()
 			}
 		}
 	} else {
-		cb_build_terrains(terrain_by_type_);
+		units_->build_terrains(terrain_by_type_);
 	}
 
 	uint32_t min_rule, max_rule;

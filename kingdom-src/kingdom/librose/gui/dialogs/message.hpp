@@ -42,10 +42,8 @@ public:
 	{}
 
 	enum tbutton_id {
-		  left_1 = 0
-		, cancel
+		cancel = 0
 		, ok
-		, right_1
 		, count
 	};
 

@@ -28,7 +28,6 @@ struct surface;
 #define VIDEO_MEMORY SDL_HWSURFACE
 #define SYSTEM_MEMORY SDL_SWSURFACE
 
-surface display_format_alpha(surface surf);
 surface get_video_surface();
 SDL_Rect screen_area();
 
@@ -49,6 +48,8 @@ public:
 	int getx() const;
 	int gety() const;
 	SDL_Rect bound() const;
+
+	void sdl_set_window_size(int width, int height);
 
 	//blits a surface with black as alpha
 	void blit_surface(int x, int y, surface surf, SDL_Rect* srcrect=NULL, SDL_Rect* clip_rect=NULL);

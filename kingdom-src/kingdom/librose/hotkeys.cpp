@@ -15,7 +15,7 @@
 
 #include "global.hpp"
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "display.hpp"
 #include "hotkeys.hpp"
@@ -27,7 +27,6 @@
 #include "gui/widgets/window.hpp"
 #include "filesystem.hpp"
 #include "log.hpp"
-#include "wesconfig.h"
 #include "wml_separators.hpp"
 #include "hero.hpp"
 
@@ -357,39 +356,4 @@ hotkey_item& get_hotkey(const SDL_KeyboardEvent& event)
 			(event.keysym.mod & KMOD_LGUI) != 0);
 }
 
-/*
-static void key_event_execute(display& disp, const SDL_KeyboardEvent& event, command_executor* executor)
-{
-	const hotkey_item* hk = &get_hotkey(event);
-
-#if 0
-	// This is not generally possible without knowing keyboard layout.
-	if(hk->null()) {
-		//no matching hotkey was found, but try an in-exact match.
-		hk = &get_hotkey(event, true);
-	}
-#endif
-
-	if(hk->null())
-		return;
-
-	// int ii = 0
-	// execute_command(disp,hk->get_id(),executor);
-}
-
-void key_event(display& disp, const SDL_KeyboardEvent& event, command_executor* executor)
-{
-	if(event.keysym.sym == SDLK_ESCAPE && disp.in_theme()) {
-		LOG_G << "escape pressed..showing quit\n";
-		const int res = gui2::show_message(disp.video(), _("Quit"), _("Do you really want to quit?"), gui2::tmessage::yes_no_buttons);
-		if(res != gui2::twindow::CANCEL) {
-			throw end_level_exception(QUIT);
-		} else {
-			return;
-		}
-	}
-
-	key_event_execute(disp,event,executor);
-}
-*/
 }

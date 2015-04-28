@@ -34,7 +34,6 @@ struct tbuilder_scrollbar_panel	: public tbuilder_control
 	tscrollbar_container::tscrollbar_mode horizontal_scrollbar_mode;
 
 	tbuilder_grid_ptr grid;
-	std::vector<tradio_page::tpage> pages;
 
 	std::string width;
 	std::string height;

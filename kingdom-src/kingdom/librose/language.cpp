@@ -23,7 +23,6 @@
 #include "serialization/parser.hpp"
 #include "serialization/preprocessor.hpp"
 #include "loadscreen.hpp"
-#include "posix.h"
 
 #include <stdexcept>
 #include <clocale>
@@ -104,7 +103,7 @@ bool load_language_list()
 
 	known_languages.clear();
 	known_languages.push_back(
-		language_def("", t_string(N_("System default language"), "wesnoth"), "ltr", "", "A"));
+		language_def("", _("System default language"), "ltr", "", "A"));
 
 	BOOST_FOREACH (const config &lang, cfg.child_range("locale"))
 	{
@@ -135,7 +134,7 @@ static void wesnoth_setlocale(int category, std::string const &slocale,
 	// FIXME: add configure check for unsetenv
 #if defined(__APPLE__) || defined(ANDROID)
 	if (category == LC_MESSAGES && setenv("LANG", locale.c_str(), 1) == -1) {
-		posix_print("wesnoth_setlocal, setenv LANG failed");
+		// wesnoth_setlocal, setenv LANG failed
 	}
 #endif
 
@@ -274,29 +273,6 @@ const language_def& get_locale()
 
 	LOG_G << "locale could not be determined; defaulting to system locale\n";
 	return known_languages[0];
-}
-
-void init_textdomains(const config& cfg)
-{
-	BOOST_FOREACH (const config &t, cfg.child_range("textdomain"))
-	{
-		const std::string &name = t["name"];
-		const std::string &path = t["path"];
-
-		if(path.empty()) {
-			t_string::add_textdomain(name, get_intl_dir());
-		} else {
-			std::string location = get_binary_dir_location("", path);
-
-			if (location.empty()) {
-				//if location is empty, this causes a crash on Windows, so we
-				//disallow adding empty domains
-				ERR_G << "no location found for '" << path << "', skipping textdomain\n";
-			} else {
-				t_string::add_textdomain(name, location);
-			}
-		}
-	}
 }
 
 /* vim:set encoding=utf-8: */

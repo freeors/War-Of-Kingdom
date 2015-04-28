@@ -14,7 +14,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 
@@ -50,8 +50,9 @@ std::string tintegrate::generate_img(const std::string& src, tintegrate::ALIGNME
 	if (floating) {
 		strstr << " float=yes";
 	}
+/*
 	strstr << " box=no";
-
+*/
 	strstr << "</img>";
 /*
 	if (floating) {
@@ -258,10 +259,19 @@ tintegrate::tintegrate(const std::string& src, int maximum_width, int maximum_he
 			// Should be parsed as WML.
 			config cfg;
 			try {
+/*
+				if (it->second == "[format]text=\"37.0\"[/format]") {
+					int ii = 0;
+				}
+*/
 				// for exampl: [OPAL] | Merchants: PexPeppers, Dr. Peck
 				std::istringstream stream(it->second);
 				read(cfg, stream);
-
+/*
+				if (it->second == "[format]text=\"37.0\"[/format]") {
+					int ii = 0;
+				}
+*/
 			} catch (help::parse_error&) {
 				add_text_item(it->first, it->first, it->second, default_font_color_);
 			}
@@ -327,12 +337,12 @@ void tintegrate::handle_ref_cfg(int tag_start, const config &cfg)
 	}
 
 	int start = forward_pos(tag_start, "text");
-	if (!help::find_topic2(dst) && !force) {
-		// detect the broken link but quietly silence the hyperlink for normal user
-		add_text_item(tag_start, start, text, default_font_color_, "", true);
+	if (force || (!help::book_toplevel || help::find_topic(*help::book_toplevel, dst))) {
+		add_text_item(tag_start, start, text, default_font_color_, dst);
 
 	} else {
-		add_text_item(tag_start, start, text, default_font_color_, dst);
+		// detect the broken link but quietly silence the hyperlink for normal user
+		add_text_item(tag_start, start, text, default_font_color_, "", true);
 	}
 
 }
@@ -569,8 +579,8 @@ void tintegrate::add_img_item(int start, const std::string& path, const std::str
 
 	} else {
 		anim_id = path.substr(pos + anim_tag_prefix.size());
-		int type = area_anim::find(anim_id);
-		if (type == area_anim::NONE) {
+		int type = anim2::find(anim_id);
+		if (type == anim2::NONE) {
 			return;
 		}
 		width = cfg["width"].to_int();
@@ -1884,3 +1894,8 @@ SDL_Rect tintegrate::key_arrow(int x, int y, bool up) const
 	return editable_at(x, y);
 }
 
+void tintegrate::clear()
+{
+	src_.clear();
+	items_.clear();
+}

@@ -39,8 +39,7 @@ namespace implementation {
  *
  * @todo events are not yet send to the content grid.
  */
-class tscrollbar_container
-	: public tcontainer_
+class tscrollbar_container: public tcontainer_
 {
 	friend class tdebug_layout_graph;
 
@@ -48,9 +47,7 @@ class tscrollbar_container
 	friend struct implementation::tbuilder_scroll_text_box;
 	friend struct implementation::tbuilder_report;
 	friend struct implementation::tbuilder_scrollbar_panel;
-#ifndef GUI2_EXPERIMENTAL_LISTBOX
 	friend class tlistbox;
-#endif
 	friend class ttree_view;
 	friend class tscroll_label;
 	friend class tscroll_text_box;
@@ -84,10 +81,6 @@ public:
 
 	/** The way to handle the showing or hiding of the scrollbar. */
 	enum tscrollbar_mode {
-		always_visible,           /**<
-		                           * The scrollbar is always shown, whether
-		                           * needed or not.
-		                           */
 		always_invisible,         /**<
 		                           * The scrollbar is never shown even not
 		                           * when needed. There's also no space
@@ -100,25 +93,12 @@ public:
 		                           * reserved, just in case it's needed after
 		                           * the initial sizing (due to adding items).
 		                           */
-		auto_visible_first_run    /**<
-		                           * Like auto_visible, but when not needed
-		                           * upon the initial layout phase, the bars
-		                           * are not shown and no space is reserved
-		                           * for them. (The algorithm hides them by
-		                           * default.
-		                           */
 	};
 
 	/***** ***** ***** ***** layout functions ***** ***** ***** *****/
 
 	/** Inherited from tcontainer_. */
 	void layout_init(const bool full_initialization);
-
-	/** Inherited from twidget. */
-	void request_reduce_height(const unsigned maximum_height);
-
-	/** Inherited from tcontrol. */
-	void request_reduce_width(const unsigned maximum_width);
 
 	/** Inherited from tcontainer_. */
 	bool can_wrap() const
@@ -130,6 +110,8 @@ public:
 	}
 
 	void set_best_size(const std::string& width, const std::string& height);
+
+	const tgrid& layout_grid() const { return *content_grid_; }
 
 private:
 	/** Inherited from tcontainer_. */
@@ -161,8 +143,7 @@ public:
 	twidget* find_at(const tpoint& coordinate, const bool must_be_active);
 
 	/** Inherited from tcontainer_. */
-	const twidget* find_at(const tpoint& coordinate,
-			const bool must_be_active) const;
+	const twidget* find_at(const tpoint& coordinate, const bool must_be_active) const;
 
 	/** Inherited from tcontainer_. */
 	twidget* find(const std::string& id, const bool must_be_active);
@@ -226,8 +207,9 @@ public:
 	virtual bool content_empty() const { return false; }
 	virtual void invalidate_layout(bool calculate_linked_group);
 
-protected:
+	std::string generate_layout_str(const int level) const;
 
+protected:
 	/**
 	 * Shows a certain part of the content.
 	 *
@@ -364,6 +346,9 @@ protected:
 
 	bool calculate_scrollbar(const tpoint& actual_size, const tpoint& desire_size);
 
+	tpoint validate_content_grid_origin(const tpoint& content_origin, const tpoint& content_size, const tpoint& origin, const tpoint& size) const;
+
+protected:
 	/** When we're used as a fixed size item, this holds the best size. */
 	tformula<unsigned> best_width_;
 	tformula<unsigned> best_height_;
@@ -444,6 +429,8 @@ private:
 	/** Inherited from tcontainer_. */
 	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
+	void broadcast_frame_buffer(surface& frame_buffer);
+
 	/** Inherited from tcontainer_. */
 	void child_populate_dirty_list(twindow& caller,
 		const std::vector<twidget*>& call_stack);
@@ -457,7 +444,7 @@ private:
 	 * @param origin              The origin for the content.
 	 * @param size                The size of the content.
 	 */
-	virtual void set_content_size(const tpoint& origin, const tpoint& size);
+	virtual void place_content_grid(const tpoint& content_origin, const tpoint& content_size, const tpoint& desire_origin) = 0;
 
 	/** Helper function which needs to be called after the scollbar moved. */
 	void scrollbar_moved();

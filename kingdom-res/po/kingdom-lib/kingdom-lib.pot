@@ -1,0 +1,5075 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: kingdom-lib\n"
+"POT-Creation-Date: 2016-02-04 19:31+0800\n"
+"PO-Revision-Date: 2016-01-03 20:34+0800\n"
+"Last-Translator: ancientcc <ancientcc@leagor.com>\n"
+"Language-Team: \n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.6\n"
+"X-Poedit-KeywordsList: _;vgettext2\n"
+"X-Poedit-Basepath: ../../..\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: kingdom-src/kingdom/src\n"
+"X-Poedit-SearchPath-1: kingdom-res/po/cfg-cpp/kingdom-lib\n"
+"X-Poedit-SearchPathExcluded-0: kingdom-src/kingdom/src/editor2\n"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/_bonus.cpp:1
+msgid "War of Kingdom"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/data.cpp:1
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:359
+msgid "Player side"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/data.cpp:3
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:689
+#: kingdom-src/kingdom/src/multiplayer.cpp:2368
+msgid "Sign in"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:1
+msgid "("
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:3
+msgid ")"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:5
+msgid "3th payment"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:7
+msgid "80%"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:9
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:130
+msgid "Ability"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:11
+msgid "Accelerated Speed"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:13
+msgid "Action"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:15
+#: kingdom-src/kingdom/src/unit.cpp:4428
+msgid "Activity"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:17
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:132
+#: kingdom-src/kingdom/src/unit.cpp:6519
+msgid "Adaptability"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:19
+msgid "Add As Friend"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:21
+msgid "Add As Ignore"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:23
+msgid "Address"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:25
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:120
+msgid "Advance Unit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:27
+msgid "Agreement"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:29
+msgid "Alipay dialog"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:31
+msgid "All side"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:33
+msgid "Allow more than one map to be open at the same time (MDI)"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:35
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1482
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:128
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:169
+msgid "Ally"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:37
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1865
+msgid "Append"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:39
+msgid "Apply"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:41
+#: kingdom-src/kingdom/src/play_controller.cpp:1843
+msgid "Appoint Noble"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:43
+msgid "Appoint mayor"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:45
+msgid "Artifical"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:47
+msgid "Artifical List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:49
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:84
+#: kingdom-src/kingdom/src/play_controller.cpp:1842
+msgid "Assemble Treasure"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:51
+msgid "Assign sides to players at random"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:53
+msgid "Assist design"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:55
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:333
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1563
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:358
+#: kingdom-src/kingdom/src/multiplayer.cpp:2037
+msgid "Associate"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:57
+msgid "Attack"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:59
+msgid "Attack enemy"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:61
+msgid "Attacker's reinforce"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:63
+msgid "Auto scroll"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:65
+msgid "Auto-update map view"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:67
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:318
+msgid "Avatar"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:69
+msgid "Background material about game's role"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:71
+msgid "Ban"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:73
+msgid "Base"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:75
+msgid "Base Gold"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:77
+#: kingdom-src/kingdom/src/team.cpp:2850
+msgid "Been damage"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:79
+msgid "Blue:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:81
+#: kingdom-src/kingdom/src/gui/dialogs/employ.cpp:135
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:282
+#: kingdom-src/kingdom/src/gui/dialogs/interior.cpp:276
+#: kingdom-src/kingdom/src/gui/dialogs/technology_tree.cpp:223
+msgid "Browse"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:83
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:182
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:87
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:88
+msgid "Build"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:85
+msgid "Cancel"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:87
+msgid "Capital"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:89
+msgid "Card"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:91
+#: kingdom-src/kingdom/src/gui/dialogs/tactic.cpp:193
+msgid "Cast tactic"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:93
+msgid "Castle Size:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:95
+#: kingdom-src/kingdom/src/team.cpp:2847
+msgid "Cause damage"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:97
+msgid "Change Resolution"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:99
+msgid "Change control"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:101
+msgid "Change the language"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:103
+msgid "Charm"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:105
+#: kingdom-src/kingdom/src/gui/dialogs/lobby_main.cpp:465
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:484
+msgid "Chat"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:107
+msgid "Chat Timestamping when multiplayer"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:109
+msgid "Choose tactic"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:111
+msgid "Choose weapon:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:113
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1601
+#: kingdom-src/kingdom/src/unit.cpp:4337
+#: kingdom-src/kingdom/src/unit.cpp:4339
+#: kingdom-src/kingdom/src/unit.cpp:4437
+#: kingdom-src/kingdom/src/unit.cpp:4439
+#: kingdom-src/kingdom/src/unit.cpp:4466
+#: kingdom-src/kingdom/src/unit.cpp:4468
+msgid "City"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:115
+msgid "City List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:117
+msgid "City Rect."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:119
+msgid "Close"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:121
+msgid "Coin to score"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:123
+msgid "Command"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:125
+#: kingdom-src/kingdom/src/gui/dialogs/interior.cpp:100
+msgid "Commercial"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:127
+#: kingdom-src/kingdom/src/unit.cpp:4656
+#: kingdom-src/kingdom/src/unit.cpp:4658
+msgid "Commoner"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:129
+msgid "Config city"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:131
+msgid "Configure the game's settings"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:133
+msgid "Connect"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:135
+msgid "Connect to Server"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:137
+msgid "Consider Rect."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:139
+msgid "Consort"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:141
+msgid "Content"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:143
+msgid "Controller"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:145
+msgid "Copy edge terrain"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:147
+msgid "Cost"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:149
+msgid "Create Game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:151
+msgid "Create Unit (Debug!)"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:153
+msgid "Create game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:155
+msgid "Create new map"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:157
+msgid "Create time"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:159
+msgid "Credit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:161
+#: kingdom-src/kingdom/src/gui/dialogs/mp_method_selection.cpp:79
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:212
+msgid "Crusage for subcontinent"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:163
+msgid "Current mayor"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:165
+msgid "Custom lighting setting"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:167
+msgid "Date"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:169
+#: kingdom-src/kingdom/src/unit.cpp:4622
+#: kingdom-src/kingdom/src/unit.cpp:4624
+msgid "Decree"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:171
+msgid "Default"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:173
+#: kingdom-src/kingdom/src/team.cpp:2853
+msgid "Defeat units"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:175
+msgid "Defender's reinforce"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:177
+msgid "Delete"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:179
+msgid "Delete Save"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:181
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:274
+msgid "Description"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:183
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1929
+msgid "Detail"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:185
+msgid "Developer"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:187
+msgid "Diplomatism"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:189
+msgid "Disband"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:191
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:259
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:850
+msgid "Discard"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:193
+msgid "Display user report"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:195
+msgid "Do you really want to delete this game?"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:197
+msgid "Don't display message when replay"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:199
+msgid "Down"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:201
+msgid "Draw Hex Coordinates"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:203
+msgid "Draw Terrain Codes"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:205
+msgid "Duel"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:207
+msgid "EA"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:209
+msgid "Edit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:211
+msgid "Edit box"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:213
+msgid "Edit send message"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:215
+msgid "Editor"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:217
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:960
+msgid "Editor Settings"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:219
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:327
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:899
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1120
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:76
+msgid "Employ"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:221
+msgid "Employ dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:223
+msgid "Employ hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:225
+msgid "Enable scroll tracking of unit actions"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:227
+msgid "Endurance"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:229
+msgid "Enemy Cities[0]"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:231
+msgid "Exchange"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:233
+msgid "Exchange (Rate:200)"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:235
+msgid "Exchange Hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:237
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:218
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:697
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:862
+#: kingdom-src/kingdom/src/multiplayer.cpp:1736
+msgid "Exile"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:239
+msgid "Exile(12)"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:241
+msgid "Expand / shrink direction"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:243
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:98
+msgid "Expedite"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:245
+msgid "Experience modifier"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:247
+msgid "Explain"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:249
+msgid "Exploiture"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:251
+msgid "Faction"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:253
+msgid "Faction/Side feature"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:255
+msgid "Father"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:257
+msgid "Feature"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:259
+msgid "Female"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:261
+#: kingdom-src/kingdom/src/menu_events.cpp:316
+msgid "Field Troop"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:263
+#: kingdom-src/kingdom/src/menu_events.cpp:318
+msgid "Field commoner"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:265
+msgid "Field turns"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:267
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:75
+msgid "Final Battle"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:269
+msgid "Find"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:271
+msgid "Finish Hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:273
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:305
+msgid "Fog"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:275
+msgid "Fog of War"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:277
+msgid "Forbid"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:279
+msgid "Force"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:281
+msgid "Format"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:283
+msgid "Formation attack"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:285
+msgid "Formation attack."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:287
+msgid "Fresh Hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:289
+msgid "Friends/Ignored List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:291
+msgid "Front Cities[0]"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:293
+msgid "Full Screen"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:295
+msgid "Game Lobby: "
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:297
+msgid "Game genus"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:299
+msgid "Games"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:301
+msgid "Gender"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:303
+msgid "Gender:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:305
+msgid "Generate"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:307
+msgid "Generate Random Map"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:309
+msgid "Get one card every 25 turns"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:311
+msgid "Give"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:313
+msgid "Gold"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:315
+#: kingdom-src/kingdom/src/unit.cpp:4670
+#: kingdom-src/kingdom/src/unit.cpp:4672
+#: kingdom-src/kingdom/src/unit.cpp:4684
+#: kingdom-src/kingdom/src/unit.cpp:4686
+msgid "Gold income"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:317
+msgid "Gold per village"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:319
+msgid "Gold/Income"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:321
+msgid "Gold/Technology"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:323
+msgid "Green:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:325
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:376
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:549
+msgid "Grid Size"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:327
+msgid "Group"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:329
+msgid "Guide"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:331
+msgid "HP"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:333
+msgid "Hate"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:335
+msgid "Height:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:337
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:107
+#: kingdom-src/kingdom/src/unit.cpp:4358
+#: kingdom-src/kingdom/src/unit.cpp:4360
+msgid "Hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:339
+msgid "Hero List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:341
+msgid "Hero count of AI on stage"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:343
+msgid "Hero dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:345
+msgid "Hero list dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:347
+msgid "History"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:349
+msgid "How to set map"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:351
+msgid "I'm Ready"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:353
+msgid "If appoint new mayor"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:355
+msgid "Ignore All"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:357
+msgid "Inapp purchase dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:359
+msgid "Independence"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:361
+msgid "Intellect"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:363
+#: kingdom-src/kingdom/src/gui/dialogs/interior.cpp:271
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:508
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:72
+msgid "Interior"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:365
+msgid "Interrupt move when an ally is sighted"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:367
+msgid "Intimate"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:369
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:249
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:301
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:307
+msgid "Join"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:371
+msgid "Kick"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:373
+msgid "Landform:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:375
+msgid "Leader"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:377
+msgid "Leadership"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:379
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:122
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:163
+msgid "Left turns"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:381
+msgid "Level"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:383
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:75
+#: kingdom-src/kingdom/src/play_controller.cpp:2177
+#: kingdom-src/kingdom/src/play_controller.cpp:2190
+msgid "Load Game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:385
+msgid "Load a saved game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:387
+msgid "Lobby"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:389
+msgid "Local"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:391
+msgid "Localize save file name"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:393
+msgid "Login:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:395
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:113
+#: kingdom-src/kingdom/src/hero.cpp:140
+#: kingdom-src/kingdom/src/unit.cpp:4424
+msgid "Loyalty"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:397
+msgid "Male"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:399
+msgid "Map Editor"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:401
+msgid "Map Generator"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:403
+msgid "Map size: "
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:405
+msgid "Map to play"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:407
+msgid "Market"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:409
+msgid "Max Hill Size:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:411
+msgid "Maximal defeated activity"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:413
+msgid "Maximum Auto-Saves: "
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:415
+msgid "Merit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:417
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:172
+msgid "Message"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:419
+msgid "Message:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:421
+msgid "Messaging"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:423
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:241
+msgid "Military"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:425
+msgid "Moderating"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:427
+msgid "More tactic slot"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:429
+msgid "Mother"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:431
+#: kingdom-src/kingdom/src/unit.cpp:152
+msgid "Move"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:433
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:99
+msgid "Move Hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:435
+msgid "Movement"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:437
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:273
+msgid "Multiplayer"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:439
+msgid "Multiplayer Lobby"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:441
+msgid "Multiplayer command dialog"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:443
+msgid "Music"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:445
+msgid "My side"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:447
+msgid "NPC"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:449
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:844
+msgid "Name"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:451
+msgid "Name of game:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:453
+msgid "Name:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:455
+msgid "Navigation civilization"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:457
+msgid "Net Income"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:459
+msgid "Network"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:461
+msgid "New Map"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:463
+msgid "New height:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:465
+msgid "New width:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:467
+msgid "Next"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:469
+msgid "Next Generator"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:471
+msgid "Nick"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:473
+#: kingdom-src/kingdom/src/gui/dialogs/noble.cpp:188
+#: kingdom-src/kingdom/src/gui/dialogs/noble_list.cpp:173
+msgid "No"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:475
+msgid "No biography available."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:477
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1187
+msgid "Noble"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:479
+msgid "Number of Hills:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:481
+msgid "Number of turns"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:483
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:328
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:246
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:98
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:120
+msgid "OK"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:485
+msgid "OOS error"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:487
+msgid "Oath"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:489
+msgid "Objectives"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:491
+msgid "Observe"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:493
+msgid "Observers"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:495
+msgid "Old height:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:497
+msgid "Old width:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:499
+msgid "Operational guidelines for game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:501
+msgid "Opinion of cities in side"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:503
+#: kingdom-src/kingdom/src/savegame.cpp:697
+msgid "Overwrite?"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:505
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:129
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:130
+msgid "Ownership"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:507
+msgid "Password:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:509
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:106
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:113
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:141
+msgid "Pay"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:511
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:135
+msgid "Personal"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:513
+msgid "Personnel"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:515
+msgid "Plan"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:517
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:96
+msgid "Play Card"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:519
+msgid "Play a campaign"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:521
+msgid ""
+"Play multiplayer (hotseat, LAN, or Internet), or a single scenario "
+"against the AI"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:523
+#: kingdom-src/kingdom/src/editor/editor_map.cpp:150
+msgid "Player"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:525
+msgid "Player city dialog"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:527
+msgid "Player pass"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:529
+msgid "Player selection dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:531
+msgid "Player/Type"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:533
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:277
+msgid "Players"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:535
+msgid "Players:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:537
+msgid "Players: "
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:539
+msgid "Please choose item you want to purchase"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:541
+msgid "Points"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:543
+msgid "Position"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:545
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:957
+#: kingdom-src/kingdom/src/play_controller.cpp:2194
+msgid "Preferences"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:547
+msgid "Previous"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:549
+msgid "Profile player hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:551
+msgid "Profile player's side"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:553
+msgid "Purchase"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:555
+msgid "Purchase item"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:557
+msgid "Quick replay"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:559
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:360
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:963
+#: kingdom-src/kingdom/src/play_controller.cpp:2202
+#: kingdom-src/kingdom/src/play_controller.cpp:2263
+msgid "Quit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:561
+msgid "Quit Game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:563
+msgid "Quit the game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:565
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:83
+msgid "RPG Detail"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:567
+msgid "Race"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:569
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:506
+msgid "Range"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:571
+msgid "Rank pass"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:573
+msgid "Rank score"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:575
+msgid "Reason:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:577
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:202
+msgid "Receiver"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:579
+#: kingdom-src/kingdom/src/gui/dialogs/recruit.cpp:285
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:97
+msgid "Recruit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:581
+msgid "Recruit dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:583
+msgid "Red:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:585
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:94
+msgid "Reform"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:587
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1890
+msgid "Refresh"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:589
+msgid "Regenerate"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:591
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:136
+msgid "Relation"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:593
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:284
+msgid "Reloaded game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:595
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1904
+msgid "Remove"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:597
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:751
+msgid "Repair"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:599
+msgid "Requires a password to join"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:601
+msgid "Researching"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:603
+msgid "Reside Hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:605
+#: kingdom-src/kingdom/src/menu_events.cpp:278
+msgid "Reside Troop"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:607
+#: kingdom-src/kingdom/src/menu_events.cpp:280
+msgid "Reside commoner"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:609
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:1019
+msgid "Resize Map"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:611
+msgid "Resize map"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:613
+msgid "Restore"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:615
+msgid "Result"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:617
+msgid "Return to title screen"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:619
+msgid "Reverse Time Graphics"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:621
+msgid "Roads Between Castles"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:623
+#: kingdom-src/kingdom/src/play_controller.cpp:2171
+#: kingdom-src/kingdom/src/savegame.cpp:1136
+msgid "Save Game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:625
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:946
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:302
+msgid "Save Map"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:627
+#: kingdom-src/kingdom/src/savegame.cpp:696
+msgid "Save already exists. Do you want to overwrite it?"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:629
+msgid "Score to coin"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:631
+msgid "Scroll Speed:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:633
+msgid "Select"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:635
+msgid "Select Hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:637
+msgid "Select Troop"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:639
+msgid "Select city for player hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:641
+msgid "Select desired mayor"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:643
+msgid "Select destination city"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:645
+msgid "Select final capital"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:647
+msgid "Select player"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:649
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:507
+msgid "Send"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:651
+msgid "Send a private message"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:653
+msgid "Sender"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:655
+msgid "Server:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:657
+msgid "Set Password"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:659
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:209
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:148
+msgid "Set Side"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:661
+msgid ""
+"Set the password that people wanting to join your game as players must "
+"enter."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:663
+msgid "Settings"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:665
+msgid "Settings..."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:667
+msgid "Shop"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:669
+msgid "Show Color Cursors"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:671
+msgid "Show Grid"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:673
+msgid "Show message"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:675
+msgid "Show side report when city takes turn."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:677
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:308
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:311
+msgid "Shroud"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:679
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:107
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:139
+msgid "Side"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:681
+msgid "Side List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:683
+msgid "Side feature"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:685
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:178
+msgid "Siege record"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:687
+msgid "Siege tent"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:691
+msgid "Sign in dialog"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:693
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:278
+msgid "Size"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:695
+msgid "Sound effects"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:697
+msgid "Speed: "
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:699
+msgid "Start Gold"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:701
+msgid "Start a new single player campaign"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:703
+msgid "Start a tutorial to familiarize yourself with the game"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:705
+msgid "Start the map editor"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:707
+msgid "Status"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:709
+#: kingdom-src/kingdom/src/play_controller.cpp:1847
+#: kingdom-src/kingdom/src/play_controller.cpp:2254
+msgid "Stratagem"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:711
+msgid "Strategy"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:713
+msgid "Strategy List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:715
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:119
+msgid "Stratum"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:717
+msgid "Tactic."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:719
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:112
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:144
+msgid "Target"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:721
+#: kingdom-src/kingdom/src/gui/dialogs/interior.cpp:105
+msgid "Technology"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:723
+#: kingdom-src/kingdom/src/unit.cpp:4676
+#: kingdom-src/kingdom/src/unit.cpp:4678
+#: kingdom-src/kingdom/src/unit.cpp:4692
+#: kingdom-src/kingdom/src/unit.cpp:4694
+msgid "Technology income"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:725
+#: kingdom-src/kingdom/src/gui/dialogs/technology_tree.cpp:218
+#: kingdom-src/kingdom/src/play_controller.cpp:1844
+msgid "Technology tree"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:727
+msgid "Tent"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:729
+msgid "The armory screen of camp."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:731
+msgid "Time"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:733
+msgid "Time limit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:735
+msgid "Time of day lighting preset"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:737
+msgid "Time:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:739
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:189
+msgid "Total time"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:741
+msgid "Tower"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:743
+msgid "Tower tent dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:745
+#: kingdom-src/kingdom/src/unit.cpp:4522
+msgid "Traits"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:747
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:129
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:188
+msgid "Transaction buyer"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:749
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:122
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:183
+msgid "Transaction number"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:751
+#: kingdom-src/kingdom/src/gui/dialogs/treasure_list.cpp:104
+msgid "Treasure List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:753
+msgid "Troop"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:755
+#: kingdom-src/kingdom/src/gui/dialogs/unit_detail.cpp:117
+msgid "Troop Detail"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:757
+msgid "Troop List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:759
+msgid "Turn Bell"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:761
+#: kingdom-src/kingdom/src/gui/dialogs/campaign_selection.cpp:94
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:275
+msgid "Tutorial"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:763
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:504
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:116
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:150
+msgid "Type"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:765
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:95
+msgid "Unit Detail"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:767
+msgid "Unit Merit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:769
+msgid "Unit attack dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:771
+msgid "Units"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:773
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:210
+msgid "Unknown era"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:775
+msgid "Unlimited"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:777
+msgid "Up"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:779
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1153
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1580
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1831
+#: kingdom-src/kingdom/src/multiplayer.cpp:1563
+msgid "Upgrade"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:781
+msgid "Upkeep"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:783
+msgid "Uploader"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:785
+msgid "Use map settings"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:787
+msgid "User Interface Sounds"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:789
+msgid "Username"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:791
+msgid "VIP exclusive"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:793
+#: kingdom-src/kingdom/src/gui/dialogs/title_screen.cpp:202
+msgid "Version"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:795
+msgid "View List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:797
+msgid "Village Gold"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:799
+msgid "Villages"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:801
+msgid "Villages:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:803
+msgid "Vote"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:805
+msgid "Wander Hero"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:807
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:121
+msgid "What should our victorious unit become?"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:809
+msgid "When sneak wall, force to move"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:811
+msgid "Width:"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:813
+msgid "XP"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:815
+msgid "Xmit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:817
+#: kingdom-src/kingdom/src/gui/dialogs/noble.cpp:188
+#: kingdom-src/kingdom/src/gui/dialogs/noble_list.cpp:173
+msgid "Yes"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:819
+msgid "You will now connect to the multiplayer server."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:821
+msgid "ancientcc1"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:823
+msgid "contest^Title"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:825
+msgid "continuous replay"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:827
+msgid "gold"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:829
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1738
+#: kingdom-src/kingdom/src/play_controller.cpp:2256
+msgid "group^Layout"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:831
+msgid "income"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:833
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:400
+msgid "kingdom^Coin"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:835
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:385
+msgid "kingdom^Score"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:837
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:311
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:321
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:872
+msgid "member^Fix"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:839
+msgid "noble^Level"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:841
+msgid "object^Name"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:843
+msgid "pause at end of turn"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:845
+msgid "prelude"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:847
+msgid "quantity^Hold"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:849
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:427
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1640
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1655
+msgid "score^Exchange"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:851
+msgid "side^Attacker"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:853
+msgid "side^Character"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:855
+msgid "side^Defender"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:857
+msgid "side^Feature"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:859
+msgid "side^Reinforce"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:861
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:98
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:105
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:123
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:152
+msgid "signin^Fill up"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:863
+msgid "spirit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:865
+msgid "subcontinent remark"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:867
+#: kingdom-src/kingdom/src/gui/dialogs/tactic.cpp:199
+msgid "tactic^Cast"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:869
+msgid "tactical^Formation"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:871
+#: kingdom-src/kingdom/src/unit.cpp:4482
+#: kingdom-src/kingdom/src/unit.cpp:4484
+#: kingdom-src/kingdom/src/unit.cpp:5150
+msgid "troop^Type"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:873
+msgid "upkeep"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:875
+msgid "villages"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:877
+msgid "x"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:205
+#: kingdom-src/kingdom/src/actions.cpp:278
+#: kingdom-src/kingdom/src/actions.cpp:337
+#: kingdom-src/kingdom/src/actions.cpp:1839
+msgid "An invalid attacker weapon got selected."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:210
+#: kingdom-src/kingdom/src/actions.cpp:283
+msgid "An invalid defender weapon got selected."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:238
+#: kingdom-src/kingdom/src/ai/default/ai.cpp:1813
+msgid "do_attack_analysis, unknown range."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1217
+#: kingdom-src/kingdom/src/game_events.cpp:1653
+#: kingdom-src/kingdom/src/hero.cpp:170
+#: kingdom-src/kingdom/src/play_controller.cpp:5130
+msgid "Let me join in. I will do my best to maintenance our honor."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1656
+msgid "female^poisoned"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1656
+msgid "poisoned"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1663
+msgid "female^slowed"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1663
+#: kingdom-src/kingdom/src/actions.cpp:4361
+#: kingdom-src/kingdom/src/actions.cpp:4398
+msgid "slowed"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1670
+msgid "female^broken"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1670
+#: kingdom-src/kingdom/src/actions.cpp:4353
+#: kingdom-src/kingdom/src/actions.cpp:4390
+msgid "broken"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1677
+msgid "female^petrified"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1677
+msgid "petrified"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1682
+msgid "female^injured"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1682
+msgid "injured"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1686
+msgid "indomitable"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1689
+#: kingdom-src/kingdom/src/artifical.cpp:1425
+msgid "Miss"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1838
+msgid "Attacker is not attacks!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1864
+msgid "I take a duel with $second, and victory."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1866
+msgid "I take a duel with $second, but defeated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1868
+msgid "I take a duel with $second, and tied."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1926
+msgid "$first is here, who dares to take a duel with me!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1999
+#: kingdom-src/kingdom/src/actions.cpp:2036
+#: kingdom-src/kingdom/src/actions.cpp:2076
+#: kingdom-src/kingdom/src/unit.cpp:4758
+#: kingdom-src/kingdom/src/unit.cpp:4760
+#: kingdom-src/kingdom/src/unit.cpp:5206
+msgid "tactic"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:2005
+#: kingdom-src/kingdom/src/actions.cpp:2083
+msgid "consort"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:2007
+#: kingdom-src/kingdom/src/actions.cpp:2085
+msgid "oath"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:2053
+msgid "hate"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:3439
+msgid "Alerted!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:3492
+msgid "Ambushed!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:3494
+msgid "Discover ambusher!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:3779
+msgid "Units sighted! ($friendphrase, $enemyphrase)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:4124
+#: kingdom-src/kingdom/src/play_controller.cpp:2838
+#: kingdom-src/kingdom/src/replay.cpp:4825
+msgid "Get card: $first."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:4142
+#: kingdom-src/kingdom/src/replay.cpp:4875
+msgid "Lost card: $first."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:6238
+msgid ""
+"Hate of national perdition! I will be mutually exclusive with $second."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:6243
+#: kingdom-src/kingdom/src/game_events.cpp:3225
+msgid "I'm happy! I got rid of hate with $second."
+msgstr ""
+
+#: kingdom-src/kingdom/src/ai/default/ai.cpp:1398
+msgid "Prepare to battle, please recruit!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/ai/default/attack.cpp:94
+msgid "ai::attack_analisis::analyze, movements is empty!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/ai/default/attack.cpp:137
+msgid "ai::attack_analisis::analyze, cannot find <target, src> pair in usc."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:1205
+#: kingdom-src/kingdom/src/unit.cpp:3067
+msgid ""
+"In misfortune time, it is necessary to search chance that can carry out "
+"value of life."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:1867
+msgid "Go here, Can live the life I would like to?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2194
+#: kingdom-src/kingdom/src/artifical.cpp:2344
+msgid "Find wise leader, $first would like to lead troop join in."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2196
+#: kingdom-src/kingdom/src/artifical.cpp:2346
+msgid "Find wise leader, I would like to lead troop join in."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2247
+msgid "Find wise leader, let me join in."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2428
+msgid "$first occupy $second."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2453
+#: kingdom-src/kingdom/src/play_controller.cpp:1638
+msgid "$first is defeated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2883
+msgid "Your official of $city's mayor is terminated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2886
+msgid "$hero official of $city's mayor is terminated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2891
+msgid "Congratulate! You are appointed $city mayor."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2894
+msgid "Congratulate! $hero is appointed $city mayor."
+msgstr ""
+
+#: kingdom-src/kingdom/src/dialogs.cpp:252
+msgid "No objectives available"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:72
+msgid "This terrain can not place at this area!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:77
+msgid "This terrain may draw on $count grid at most!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:79
+msgid "When drawing map, can not use this terrain!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:84
+msgid "Combining this terrain can not exceed $count grid!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:314
+msgid "Fatal error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:339
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:1065
+msgid "(New Map)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:351
+#: kingdom-src/kingdom/src/play_controller.cpp:2262
+msgid "Do you really want to quit?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:353
+msgid ""
+"Do you really want to quit? Changes in the map since the last save will "
+"be lost."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:355
+msgid ""
+"Do you really want to quit? The following maps were modified and all "
+"changes since the last save will be lost:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:425
+msgid "No editor time-of-day found."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:446
+msgid "Unsaved Changes"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:446
+msgid ""
+"Do you want to discard all changes you made to the map since the last "
+"save?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:466
+msgid "Choose a Map to Open"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:500
+msgid "Save the Map As"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:500
+msgid "Save"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:517
+msgid "No random map generators found."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:530
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:534
+msgid "Map creation failed."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:686
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:728
+msgid "This map is already open."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:707
+msgid "Map saved."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:751
+msgid "Loaded embedded map data"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:752
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:766
+msgid "Map loaded from scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:762
+msgid ""
+"Loaded referenced map file:\n"
+"$new"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:772
+msgid "Error loading map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:942
+msgid "Load Map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:1025
+msgid "Generate Map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_map.cpp:257
+msgid "The size of the target map is different from the current map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_palettes.cpp:218
+msgid "FG: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_palettes.cpp:219
+msgid "BG: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:157
+msgid "File not found"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:179
+msgid ""
+"The map file looks like a scenario, but the map_data value does not point "
+"to an existing file"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:198
+msgid "Empty map file"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:321
+msgid "Could not save into scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:328
+msgid "Could not save the map: $msg"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:410 kingdom-src/kingdom/src/game.cpp:428
+msgid "The file you have tried to load is corrupt"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:413 kingdom-src/kingdom/src/game.cpp:431
+#: kingdom-src/kingdom/src/savegame.cpp:541
+msgid "The file you have tried to load is corrupt: '"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:421
+msgid "File I/O Error while reading the game"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:423
+msgid "File I/O Error while reading the game: '"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:659
+msgid "No campaigns are available.\n"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:999
+msgid ""
+"$username is reserved! Please modify to your username. To modify: Enter "
+"your username in \"Player profile\" Setting."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1043
+msgid "Do you really want to start the server?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1044
+msgid ""
+"The server will run in a background process until all users have "
+"disconnected."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1113
+msgid "Error while starting server: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1115
+#: kingdom-src/kingdom/src/playcampaign.cpp:91
+#: kingdom-src/kingdom/src/playcampaign.cpp:334
+msgid "The game could not be loaded: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1117
+#: kingdom-src/kingdom/src/playcampaign.cpp:93
+#: kingdom-src/kingdom/src/playcampaign.cpp:337
+msgid "Error while playing the game: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1135
+#: kingdom-src/kingdom/src/playcampaign.cpp:95
+#: kingdom-src/kingdom/src/playcampaign.cpp:340
+msgid "The game map could not be loaded: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1157
+msgid ""
+"$account that you are logining is public account, In-App Purchases on it "
+"are shared with other player. In order to benefit to youself only, advise "
+"login again with private account."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1331
+msgid "ERROR DETAILS:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1351
+msgid "Error loading game configuration files: '"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1352
+msgid "' (The game will now exit)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:1628
+msgid ""
+"Detectd capability of player hero is more than allocatable point, system "
+"has reset it. To modify, set capability in \"Player profile\"."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_display.cpp:602
+msgid "map error, road that from $from to $to exists other city: $other!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_display.cpp:720
+msgid "Invalid [game_config][images].big_flag value."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:174
+msgid "Error: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:177
+msgid "Warning: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:180
+msgid "Debug: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:183
+msgid "Info: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:1561
+#: kingdom-src/kingdom/src/game_events.cpp:1608
+#: kingdom-src/kingdom/src/game_events.cpp:1630
+msgid "I will leave for a while, and be back in future."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:1670
+#: kingdom-src/kingdom/src/play_controller.cpp:2529
+msgid ""
+"lips death and teeth cold, all ai sides concluded treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:3211
+msgid "I'm happy! I have married with $second."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:3216
+msgid "I'm happy! I have oathed with $second."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:3270
+msgid "$first want to marry with $second, do you agree?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:3272
+msgid "$first want to oath with $second, do you agree?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_preferences.cpp:290
+msgid "No server has been defined."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_preferences_display.cpp:73
+msgid "Find $filename server binary to host networked games"
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:157
+msgid "Lawful units: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:158
+msgid "Neutral units: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:159
+msgid "Chaotic units: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:162
+msgid "Liminal units: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:410
+msgid "Observers:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:103
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:111
+msgid "Alipay"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:107
+msgid "payment^course($alipay, $mail, $money, $pay)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:110
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:238
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1811
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:219
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:95
+msgid "PS"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:115
+msgid "payment^pay remark($ps, $alipay, $mail, $pay)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:123
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:130
+msgid "When input, may use $hotkey"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:161
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:804
+msgid "Invalid '$key' value, not accept empty"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:170
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:177
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:177
+msgid "'$key' value must combine $min to $max characters"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:172
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:179
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:179
+msgid "'$key' value must be $min characters"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:201
+#: kingdom-src/kingdom/src/multiplayer.cpp:1953
+msgid "transaction^Insert"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:202
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:428
+msgid "$do successfully!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:104
+msgid "side artifical list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:106
+msgid "artifical list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:243
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:226
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:293
+msgid "Petrified "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:246
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:228
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:295
+msgid "Slowed "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:249
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:230
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:297
+msgid "Poisoned "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:224
+msgid "<header>text='Units having this ability'</header>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:288
+msgid "<header>text='Units having this special attack'</header>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:321
+msgid "Leaders:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:330
+msgid "Recruits:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:344
+msgid "Era:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:352
+msgid "Factions:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:359
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:361
+msgid "Factions"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:362
+msgid "Factions are only used in multiplayer"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:396
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:103
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:143
+msgid "level"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:428
+msgid "Advances from: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:430
+msgid "Advances to: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:452
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:710
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:755
+msgid "race^Miscellaneous"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:454
+msgid "Race: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:461
+msgid "Abilities: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:478
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:109
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:149
+msgid "HP: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:479
+msgid "Moves: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:480
+msgid "Cost: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:481
+msgid "Alignment: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:487
+msgid "Required XP: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:496
+msgid "unit help^Attacks"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:503
+msgid "unit help^Name"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:505
+msgid "Strikes"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:507
+msgid "Special"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:556
+msgid "Resistances"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:560
+msgid "Attack Type"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:561
+msgid "Resistance"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:596
+msgid "Terrain Modifiers"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:600
+msgid "Terrain"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:601
+msgid "Defense"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:602
+msgid "Movement Cost"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:716
+msgid "<header>text='Units of this race'</header>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:138
+msgid ""
+"Technology income of side equals all cities income divided by number of "
+"city."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:140
+msgid "More tactic's effect that belong to same city can not be added."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:142
+msgid "Must exist tow keep at least before building wall."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:146
+msgid "Economy increase holden card at scenario start."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:148
+msgid "Military increase hero's leadership at scenario start."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:150
+msgid "Culture increase hero's charm at scenario start."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:152
+msgid "Science increase holden technology at scenario start."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:239
+msgid "Economy"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:243
+msgid "Culture"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:245
+msgid "Science"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:248
+msgid "Increase $item every day."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/camp_armory.cpp:162
+#: kingdom-src/kingdom/src/gui/dialogs/prelude.cpp:226
+#: kingdom-src/kingdom/src/gui/dialogs/prelude.cpp:315
+msgid "Battle"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/campaign_selection.cpp:109
+msgid "random_map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/campaign_selection.cpp:110
+msgid "random_map description"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:110
+msgid "side city list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:112
+msgid "city list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:265
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1490
+#: kingdom-src/kingdom/src/gui/dialogs/play_card.cpp:176
+#: kingdom-src/kingdom/src/unit.cpp:4562
+#: kingdom-src/kingdom/src/unit.cpp:4630
+msgid "None"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:291
+msgid "Stronger"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:811
+msgid "Include unsupportable character: $char, invalid '$str' value"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:835
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:369
+msgid "Range is [$min, $max], invalid '$key' value:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:847
+msgid "Surname"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/editor_settings.cpp:148
+msgid "Custom setting"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exchange.cpp:147
+#: kingdom-src/kingdom/src/gui/dialogs/exchange.cpp:205
+#: kingdom-src/kingdom/src/gui/dialogs/hero_selection.cpp:270
+#: kingdom-src/kingdom/src/gui/dialogs/noble.cpp:238
+#: kingdom-src/kingdom/src/gui/dialogs/treasure.cpp:213
+msgid "name^Troop"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:146
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:62
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:999
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:142
+#: kingdom-src/kingdom/src/gui/dialogs/user_report.cpp:350
+msgid "rank^Gold"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:148
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:64
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1001
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:144
+#: kingdom-src/kingdom/src/gui/dialogs/user_report.cpp:352
+msgid "rank^Silver"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:150
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:66
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1003
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:146
+#: kingdom-src/kingdom/src/gui/dialogs/user_report.cpp:354
+msgid "rank^Copper"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:239
+msgid ""
+"There are at most $count exiled hero. Half heros will be on stage in "
+"Siege mode."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:302
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:548
+msgid "Repertory is less than $score score, cannot $do."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:309
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:557
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:153
+msgid "Do you want to spend $score score to $do?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:312
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:699
+msgid "$name will put into $location."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:344
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:696
+#: kingdom-src/kingdom/src/multiplayer.cpp:2841
+msgid "May get $coin coin and $score score, do you want to discard $name?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/expedite.cpp:108
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:510
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:89
+#: kingdom-src/kingdom/src/unit.cpp:4567
+msgid "Guard"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/expedite.cpp:110
+msgid "Abolish guard"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/expedite.cpp:112
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:90
+msgid "Abolish"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/final_battle.cpp:122
+msgid "If capture $count cities again, all AI will ally."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:247
+msgid "#(Invalid)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:266
+msgid "Campaign: $campaign_name"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:283
+#: kingdom-src/kingdom/src/savegame.cpp:1047
+msgid "replay"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:285
+#: kingdom-src/kingdom/src/savegame.cpp:1101
+#: kingdom-src/kingdom/src/savegame.cpp:1147
+msgid "Turn"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:287
+msgid "Scenario Start"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:291
+msgid "Version: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:332
+msgid "You can upload one only, it will delete existed, continue?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:333
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:344
+msgid "Confirm"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:343
+msgid "This file is corrupted, can not upload!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:366
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:74
+msgid "Upload"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:393
+msgid "Download"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:250
+msgid "$leader's side"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:413
+msgid "Do you want to exchange $from to $to?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:520
+msgid ""
+"May get $coin coin and $score score, do you want to redraw $count hero?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:547
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:556
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1139
+msgid "group^Draw"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:606
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:618
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:630
+msgid "Upgrade to $to"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:701
+msgid "$location is full, $name will lose."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:903
+msgid "Fire"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1187
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1601
+msgid ":"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1226
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1477
+msgid "Request ally"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1228
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1232
+msgid "Undo"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1230
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1485
+msgid "Request terminate"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1283
+msgid "Username doesn't allow empty!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1285
+#: kingdom-src/kingdom/src/multiplayer.cpp:2039
+msgid "Username cannot be myself!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1291
+msgid "Username has existd in associate list, cannot append!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1305
+msgid "$username doesn't exist!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1477
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1479
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1485
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1487
+msgid "process^going"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1479
+msgid "Be requested ally"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1487
+msgid "Be requested terminate"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1501
+msgid "Initiation time: $time"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1506
+msgid "Termiante automatically after $space"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1607
+msgid "Exchange rate"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1739
+#: kingdom-src/kingdom/src/multiplayer.cpp:1891
+#: kingdom-src/kingdom/src/play_controller.cpp:2180
+msgid "Save Layout"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1740
+msgid ""
+"1: Select the map want to set.\n"
+"2: Play $layout, execute $save."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1761
+msgid "Using map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1812
+msgid "If defend city fail, you will lose a employee."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:133
+#: kingdom-src/kingdom/src/unit.cpp:4821
+#: kingdom-src/kingdom/src/unit.cpp:4823
+msgid "Skill"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:60
+msgid "%b %d %y"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:75
+msgid ""
+"Update database fail when execute In-App Purchase! In order to compensate "
+"data you should get, please send In-App Purchase information to $mail. In-"
+"App Purchase information include: date($date), item($item), "
+"username($username)."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:132
+msgid "Success"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:134
+msgid "Failed"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:148
+msgid "Purchas '$name' $result|!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:150
+msgid "Restore purchased items $result|!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:277
+msgid "Notice"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:287
+msgid "You is VIP currently, hold $day day still"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:289
+msgid "You isn't VIP currently"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:293
+msgid "You"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:296
+msgid "$username has $coin coin and $score score"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:360
+msgid "coin^Unit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:391
+msgid "Only $platforms support in-app purchase"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:484
+msgid ""
+"System is processing inapp-purchase request, and force to quit maybe "
+"result data not integrated. Do you want to Quit?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:518
+msgid "Purchasing '$name'"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:520
+msgid "Restoring purchased items"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/independence.cpp:109
+msgid "It is all up with the wind, $side will fallen."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/independence.cpp:111
+msgid "There are enough troops, $side will be again you."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:205
+msgid "Unknown era: $era_id"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:265
+msgid "Remote scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:273
+msgid "Unknown scenario: $scenario_id"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:278
+msgid "Unknown scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:295
+msgid "Turn "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:313
+msgid "none"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby_main.cpp:327
+msgid "Games: showing $num_shown out of $num_total"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby_main.cpp:368
+msgid "Observers allowed"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby_main.cpp:371
+msgid "Observers not allowed"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/map_generator.cpp:118
+msgid "/1000 tiles"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/map_generator.cpp:133
+msgid "Inland"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/map_generator.cpp:135
+msgid "Coastal"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/map_generator.cpp:137
+msgid "Island"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_create_game.cpp:142
+msgid "$login|'s game"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_create_game.cpp:201
+msgid "No eras found."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_create_game.cpp:202
+msgid "No eras found"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_method_selection.cpp:78
+msgid "Attack Player"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_method_selection.cpp:80
+msgid "Enter multiplayer lobby"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_method_selection.cpp:82
+msgid "Host Networked Game"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:135
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:83
+msgid "Selected game"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:215
+msgid "The scenario is invalid because it has no id."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:219
+msgid "The scenario is invalid because it has no sides."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:520
+msgid "The save game reserved for $allow, don't support $exclude."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:668
+msgid "Cannot find era $era"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:689
+msgid "Victory:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:689
+msgid "Defeat enemy leader(s)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:718
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:430
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:302
+msgid "Network Player"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:720
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:298
+msgid "Local Player"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:722
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:432
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:300
+msgid "Computer Player"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:723
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:434
+msgid "Empty"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:872
+msgid "Waiting for players to join..."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:873
+msgid "Waiting for players to choose factions..."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:1392
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:1607
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:1729
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:1730
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:445
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:316
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:586
+msgid "Random"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:152
+msgid "Waiting for game to start..."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:166
+msgid "Getting game data..."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:221
+msgid "No era information found."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:301
+msgid "Response"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/network_transmission.cpp:102
+#: kingdom-src/kingdom/src/gui/dialogs/network_transmission.cpp:104
+msgid "unit_byte^B"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/noble.cpp:183
+#: kingdom-src/kingdom/src/gui/dialogs/noble_list.cpp:168
+#: kingdom-src/kingdom/src/gui/dialogs/user_report.cpp:466
+msgid "noble^Lv$level"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:220
+msgid ""
+"First $tower heros is fixed in tower mode. First $rpg heros can be on "
+"stage in RPG mode."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/play_card.cpp:178
+msgid "Single"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/play_card.cpp:180
+msgid "Multi"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:131
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:156
+msgid "$key cannot include $invalids!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:157
+msgid ""
+"$username may only use below special character: $special, and must not be "
+"all special!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:194
+msgid "City name"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:130
+msgid "Prefs section^General"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:136
+msgid "Prefs section^Display"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:142
+msgid "Prefs section^Sound"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:148
+msgid "Advanced section^Advanced"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:156
+msgid "Prefs section^Scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:315
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:582
+msgid "Hasn't"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:584
+msgid "Always"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:76
+msgid "Load Game..."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:87
+msgid "Siege map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:280
+msgid "Error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:147
+msgid "Wait, leader will order you to recruit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:161
+msgid "Get mroe meritorious, will be appointed mayor"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:164
+msgid "To $meritorious, will control more troops"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:166
+msgid "To $meritorious, will be appointed mayor"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:170
+msgid "Capture more city, can be independent"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:172
+msgid "Be independent will be to leader"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:176
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:156
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:222
+msgid "---"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:267
+msgid "RPG Troop"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:123
+msgid "Change unit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:124
+msgid "Which should you change?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:126
+msgid "Human Control"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:127
+msgid "Which should you control?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:96
+msgid "Please input content wanted to send"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:98
+msgid "Please input content"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:304
+msgid "(Empty slot)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:306
+msgid "Unknown"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:311
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:314
+msgid "yes"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:311
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:314
+msgid "no"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:512
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:152
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:218
+msgid "Aggress"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:514
+msgid "Chaotic"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_report.cpp:133
+msgid "Researching technology"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_report.cpp:152
+msgid "Have researched out all technology"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_report.cpp:157
+msgid "Unallocated treasure"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_report.cpp:162
+msgid "Unallocated noble"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:361
+msgid ""
+"Require seting '$associate' in '$side'. Player that no agreement can be "
+"defender, ally agreement can be reinforce."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:363
+msgid ""
+"No attackable player! Require seting '$associate' in '$side', and set at "
+"least one no agreement."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:824
+msgid "Do you want to save $username|'s map to your city map?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:86
+msgid "been^have"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:86
+msgid "been^haven't"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:88
+msgid ""
+"You have been sign in $continue days, broken $break days. Today $have "
+"sign in."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:101
+msgid "fill up sign in($ps, $break, $max_break, $fillup)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:124
+msgid "sign in remark($fillup)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:163
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:762
+#: kingdom-src/kingdom/src/hero.cpp:440
+msgid ""
+"Repertory is not enough to pay $coin coin and $score score. If lack one "
+"only, can exchange between coin and score."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:154
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:220
+msgid "Defend"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:752
+msgid ""
+"Spend $score score may increase 10 endurance.\n"
+"Do you want to spend $score score to $do?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:776
+msgid "Do you want to discard $city?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/tactic.cpp:201
+msgid "Active tactic"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/tactic.cpp:202
+msgid "tactic^Active"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/tent.cpp:332
+msgid "ttent::pre_show, there is no item in player_list!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:73
+msgid "Adjust"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:77
+msgid "List"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:78
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:79
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:80
+msgid "Tactic"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:81
+msgid "Bomb"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:82
+msgid "RPG"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:85
+msgid "RPG Exchange"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:86
+msgid "RPG Independence"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:91
+msgid "Extract"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:92
+msgid "Advance"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:93
+msgid "Demolish"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:100
+msgid "End Turn"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:101
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:102
+msgid "Play"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:181
+msgid "Paint Tool"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:182
+msgid "Fill Tool"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:183
+msgid "Selection Tool"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:184
+msgid "Set Starting Positions Tool"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:185
+msgid "Paste"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:186
+#: kingdom-src/kingdom/src/play_controller.cpp:2252
+msgid "Map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:187
+msgid "Switch terrain group"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:188
+msgid "Switch brush"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/title_screen.cpp:200
+msgid "v"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/treasure.cpp:246
+msgid ""
+"Duration this time, if remove $treasure from $hero, cannot assemble "
+"treasure to $hero again. Do you want to remove?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/treasure_list.cpp:102
+msgid "Side Treasure List"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:109
+msgid "side troop list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:111
+msgid "troop list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:115
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:155
+msgid "XP: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/unit_detail.cpp:112
+msgid "City Detail"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/unit_detail.cpp:114
+msgid "Artifical Detail"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/unit_merit.cpp:47
+msgid " troop"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:203
+msgid "Not conform to the format message"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:229
+msgid ""
+"You continue to sign in $continue days, reward $coin coin and $score "
+"score."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:236
+msgid ""
+"You have broken $break days, exceeded $max_break, and result to clear "
+"Sign in data."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:255
+msgid ""
+"You hold $coin2 coin and $score2 score, most score, so win $title as an "
+"honour. Reward $coin coin and $score score."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:259
+msgid ""
+"In the last $days days, you attack other city to $count times, most "
+"times, so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:263
+msgid ""
+"In the last $days days, your city was attacked to $count times, most "
+"times, so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:267
+msgid ""
+"In the last $days days, you pass $count times RPG scenario, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:271
+msgid ""
+"In the last $days days, you pass $count times Tower scenario, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:288
+msgid "Inapp-purchase successfully! Increase $day days VIP membership."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:296
+msgid "Inapp-purchase successfully! Increase $coin coin and $score score."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:305
+msgid ""
+"System modified your data: $coin coin, $score score. If you have any "
+"questions, please contact $contact."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:342
+msgid "Send successfully!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:591
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:1212
+msgid "Victory"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:593
+#: kingdom-src/kingdom/src/playcampaign.cpp:121
+#: kingdom-src/kingdom/src/playcampaign.cpp:163
+msgid "Defeat"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:595
+msgid "City fallen"
+msgstr ""
+
+#: kingdom-src/kingdom/src/hero.cpp:55
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage."
+msgstr ""
+
+#: kingdom-src/kingdom/src/hero.cpp:60
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage. It is $treasure, and give it to you."
+msgstr ""
+
+#: kingdom-src/kingdom/src/hero.cpp:258
+msgid "Feeling between $first and $second is increased."
+msgstr ""
+
+#: kingdom-src/kingdom/src/mapgen.cpp:741
+msgid "Random maps with an odd width aren't supported."
+msgstr ""
+
+#: kingdom-src/kingdom/src/mapgen.cpp:1010
+msgid ""
+"No valid castle location found. Too many or too few mountain hexes? "
+"(please check the 'max hill size' parameter)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:114
+msgid "My lord, this unit is loyal and requires no upkeep! "
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:114
+#: kingdom-src/kingdom/src/menu_events.cpp:117
+#: kingdom-src/kingdom/src/menu_events.cpp:121
+msgid "Do you really want to dismiss him?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:115
+#: kingdom-src/kingdom/src/menu_events.cpp:118
+#: kingdom-src/kingdom/src/menu_events.cpp:122
+msgid "Do you really want to dismiss her?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:117
+msgid "My lord, this unit is an experienced one, having advanced levels! "
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:121
+msgid "My lord, this unit is close to advancing a level! "
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:176
+msgid "Do you really want to discard one card randomly?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:179
+msgid "$first, do you really want to discard it?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:276
+msgid "Reside unit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:314
+msgid "Field unit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:488
+msgid ""
+"There are no troops available to recall\n"
+"(You must have veteran survivors from a previous scenario)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:569
+msgid "There are no holded card"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:604
+msgid "There are no hero available to move"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:619
+msgid "There are no city available to move"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:678
+msgid "You don't have enough gold to build that artifical"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:779
+msgid "Do you really want to demolish $type?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:811
+#: kingdom-src/kingdom/src/menu_events.cpp:833
+msgid "There are no available troop to rearm"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1073
+msgid "There is $count vacant tactic. Do you really want to end your turn?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1126
+msgid ""
+"$city and other $cities cities have $heros low loyalty heros. If not "
+"process, heros may wander in next turn. Do you really want to end your "
+"turn?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1128
+msgid ""
+"$city has $heros low loyalty heros. If not process, heros may wander in "
+"next turn. Do you really want to end your turn?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1300
+msgid "Troop has come into $city as planned!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1303
+msgid ""
+"As planned, troop require to arrive at $loc, but come into $city in the "
+"middle. If want to continue arriving at $loc, please command again."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1504
+msgid "This command is currently unavailable."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1510
+msgid ""
+"Unknown command '$command', try $help_command for a list of available "
+"commands."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1519
+msgid ""
+"Available commands list and command-specific help. Use \"help all\" to "
+"include currently unavailable commands."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1521
+msgid "do not translate the 'all'^[all|<command>]"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1565
+msgid "Error:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1571
+msgid "Missing argument $arg_id"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1619
+#: kingdom-src/kingdom/src/menu_events.cpp:1620
+#: kingdom-src/kingdom/src/menu_events.cpp:1643
+msgid "help"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1619
+msgid ""
+"Available commands $flags_description:\n"
+"$list_of_commands"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1620
+msgid "Type $help_command <command> for more info."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1631
+msgid " No help available."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1636
+msgid "Usage:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1641
+msgid "aliases:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1762
+msgid "(A) - admin command"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1769
+msgid "(admin only)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1789
+msgid ""
+"Send a query to the server. Without arguments the server should tell you "
+"the available commands."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1793
+msgid ""
+"Ban and kick a player or observer. If he is not in the game but on the "
+"server he will only be banned."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1794
+#: kingdom-src/kingdom/src/menu_events.cpp:1797
+#: kingdom-src/kingdom/src/menu_events.cpp:1799
+#: kingdom-src/kingdom/src/menu_events.cpp:1801
+#: kingdom-src/kingdom/src/menu_events.cpp:1803
+#: kingdom-src/kingdom/src/menu_events.cpp:1828
+#: kingdom-src/kingdom/src/menu_events.cpp:1830
+#: kingdom-src/kingdom/src/menu_events.cpp:1832
+#: kingdom-src/kingdom/src/menu_events.cpp:1846
+msgid "<nick>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1796
+msgid "Unban a user. He does not have to be in the game but on the server."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1799
+msgid "Kick a player or observer."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1801
+msgid "Mute an observer. Without an argument displays the mute status."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1803
+msgid "Unmute an observer. Without an argument unmutes everyone."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1805
+msgid "Mute/Unmute all observers. (toggles)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1815
+msgid "Send a message to the server admins currently online"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1817
+msgid "Send an emotion or personal action in chat."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1817
+msgid "<message>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1820
+msgid ""
+"Sends a private message. You can't send messages to players that don't "
+"control a side in a running game you are in."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1822
+msgid "<nick> <message>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1826
+msgid "Change the log level of a log domain."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1826
+msgid "<level> <domain>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1828
+msgid "Add a nick to your ignores list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1830
+msgid "Add a nick to your friends list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1832
+msgid "Remove a nick from your ignores or friends list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1834
+msgid "Show your ignores and friends list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1837
+msgid "Display version information."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1839
+msgid "Register your nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1839
+msgid "<password> <email (optional)>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1841
+msgid "Drop your nick."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1843
+msgid "Update details for your nick. For possible details see '/details'."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1844
+msgid "<detail> <value>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1846
+msgid "Request information about a nick."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1848
+msgid "Request a list of details you can set for your registered nick."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1850
+msgid "Join a room."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1850
+#: kingdom-src/kingdom/src/menu_events.cpp:1853
+#: kingdom-src/kingdom/src/menu_events.cpp:1855
+msgid "<room>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1853
+msgid "Part a room."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1855
+msgid "List room members."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1857
+msgid "List available rooms."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1859
+msgid "Room message."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1859
+msgid "<room> <msg>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1861
+msgid "Room query."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1861
+msgid "<room> <type> [value]"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1939
+#: kingdom-src/kingdom/src/menu_events.cpp:1945
+#: kingdom-src/kingdom/src/menu_events.cpp:1995
+msgid "ignores list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1939
+#: kingdom-src/kingdom/src/menu_events.cpp:1958
+msgid "(empty)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1945
+msgid "Added to ignore list: $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1948
+#: kingdom-src/kingdom/src/menu_events.cpp:1967
+msgid "Invalid username: $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1958
+#: kingdom-src/kingdom/src/menu_events.cpp:1965
+#: kingdom-src/kingdom/src/menu_events.cpp:1991
+msgid "friends list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1965
+msgid "Added to friends list: $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1981
+#: kingdom-src/kingdom/src/menu_events.cpp:1999
+msgid "friends and ignores list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1981
+msgid "Removed from list: $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1999
+msgid "There are no players on your friends or ignore list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2004
+msgid "version"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2020
+msgid "registering with password *** and no email address"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2024
+msgid "registering with password *** and email address $email"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2027
+#: kingdom-src/kingdom/src/menu_events.cpp:2038
+#: kingdom-src/kingdom/src/menu_events.cpp:2056
+#: kingdom-src/kingdom/src/menu_events.cpp:2070
+msgid "nick registration"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2038
+msgid "dropping your username"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2056
+msgid "setting $var to $value"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2070
+msgid "requesting information for user $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2167
+msgid "Unknown debug level: '$level'."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2168
+#: kingdom-src/kingdom/src/menu_events.cpp:2176
+msgid "error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2175
+msgid "Unknown debug domain: '$domain'."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2183
+msgid "Switched domain: '$domain' to level: '$level'."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2253
+msgid "whisper to $receiver"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2260
+msgid "whisper: $sender"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:964
+msgid "Attack wall"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:969
+msgid "Move to wall"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1019
+msgid "Do you really command $troop to enter $city?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1021
+msgid "Do you really command $troop to move to village?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1026
+msgid "Do you really command $troop to move to $loc?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1840
+msgid "Select a grid to build on"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1865
+msgid "Select a unit to action on"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1915
+msgid "Select a grid to place, or a troop to join"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1934
+msgid "Select a grid to move at"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1949
+msgid "Select a grid to guard at"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:96
+msgid ""
+"Because of product commercialization, $function does not open source code."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:98
+msgid ""
+"Please do not use self-compile project to commerce, for example upload "
+"data to Data Server."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:196
+#: kingdom-src/kingdom/src/multiplayer.cpp:343
+msgid ""
+"Invalid access! You modified resources files, or check if your version is "
+"the newest."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:328
+msgid ""
+"$response\n"
+"\n"
+"Please check setting of BBS Server!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:333
+msgid "Register, config account"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:334
+msgid ""
+"Invalid access! Please check your $server login information. To set up: "
+"Press $account in \"Player profile\" Setting."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:338
+msgid "Invalid access! pre_kingdom_version table on $server isn't ready."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:347
+msgid "Invalid access! Security error, someone maybe attack cipher."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:351
+msgid "Invalid access! Secret key error, Secret key on $server isn't ready."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:355
+msgid ""
+"Invalid access! Timestamp error. Check whether login a username on more "
+"device at same time, or restart game."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:358
+msgid ""
+"Send a command that server doesn't support!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:361
+#: kingdom-src/kingdom/src/multiplayer.cpp:525
+#: kingdom-src/kingdom/src/multiplayer.cpp:570
+msgid ""
+"Receive unkonwn data!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:469
+msgid "Register success!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:473
+msgid "Username is duplicated!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:476
+msgid "Username is protected!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:479
+msgid "Unknown error!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:696
+#: kingdom-src/kingdom/src/multiplayer.cpp:734
+msgid "middle avatar"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:697
+#: kingdom-src/kingdom/src/multiplayer.cpp:756
+msgid "small avatar"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:700
+msgid ""
+"No avater on $server. You can upload $middle and $small to custom "
+"visualization."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:737
+#: kingdom-src/kingdom/src/multiplayer.cpp:759
+msgid ""
+"Download $name fail! $name format (size: $size, type: png), please check "
+"uploaded file on $server."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:870
+msgid "$file maybe deleted by server. Download fail!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:977
+#: kingdom-src/kingdom/src/multiplayer.cpp:1096
+msgid "This save's score($score) is invalid, cannot upload!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:981
+#: kingdom-src/kingdom/src/multiplayer.cpp:1100
+msgid "Had uploaded pass that create at $create, cannot upload again!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:984
+#: kingdom-src/kingdom/src/multiplayer.cpp:1107
+msgid "param error. cannot upload!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1104
+msgid "Had uploaded at least $max sieges today. cannot upload more!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1359
+msgid "Had uploaded message that create at $create, cannot upload again!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1363
+msgid "Receiver don't exist!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1565
+#: kingdom-src/kingdom/src/multiplayer.cpp:1654
+#: kingdom-src/kingdom/src/multiplayer.cpp:1738
+#: kingdom-src/kingdom/src/multiplayer.cpp:1801
+#: kingdom-src/kingdom/src/multiplayer.cpp:1893
+msgid "When $action, unknown hero!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1567
+#: kingdom-src/kingdom/src/multiplayer.cpp:1656
+#: kingdom-src/kingdom/src/multiplayer.cpp:1740
+#: kingdom-src/kingdom/src/multiplayer.cpp:1803
+#: kingdom-src/kingdom/src/multiplayer.cpp:1895
+#: kingdom-src/kingdom/src/multiplayer.cpp:2041
+#: kingdom-src/kingdom/src/multiplayer.cpp:2142
+msgid "When $action, error status!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1569
+#: kingdom-src/kingdom/src/multiplayer.cpp:1658
+#: kingdom-src/kingdom/src/multiplayer.cpp:1742
+#: kingdom-src/kingdom/src/multiplayer.cpp:1805
+#: kingdom-src/kingdom/src/multiplayer.cpp:1897
+#: kingdom-src/kingdom/src/multiplayer.cpp:2043
+#: kingdom-src/kingdom/src/multiplayer.cpp:2144
+msgid "When $action, error score!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1574
+#: kingdom-src/kingdom/src/multiplayer.cpp:1663
+#: kingdom-src/kingdom/src/multiplayer.cpp:1747
+#: kingdom-src/kingdom/src/multiplayer.cpp:1810
+#: kingdom-src/kingdom/src/multiplayer.cpp:1902
+#: kingdom-src/kingdom/src/multiplayer.cpp:1963
+#: kingdom-src/kingdom/src/multiplayer.cpp:2048
+#: kingdom-src/kingdom/src/multiplayer.cpp:2149
+msgid "When $action, unknown error!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1599
+msgid "member^Reload"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1600
+msgid "member^Insert"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1601
+msgid "member^Erase"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1602
+msgid "member^Resort"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1799
+msgid "Score"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1955
+msgid "When $action, error number!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1957
+msgid "When $action, error buyer!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1959
+msgid "When $action, duplicate number!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2138
+#: kingdom-src/kingdom/src/multiplayer.cpp:2216
+msgid "Employee"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2140
+msgid "When $action, id_absent!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2218
+#: kingdom-src/kingdom/src/multiplayer.cpp:2370
+msgid "uid_error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2220
+#: kingdom-src/kingdom/src/multiplayer.cpp:2372
+msgid "id_absent"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2222
+#: kingdom-src/kingdom/src/multiplayer.cpp:2374
+msgid "lock_status_error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2224
+#: kingdom-src/kingdom/src/multiplayer.cpp:2376
+msgid "level_error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2443
+msgid "Subcontinent"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2445
+msgid "error do"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2447
+msgid "error param"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2509
+msgid "$username wants to ally, do you agree?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2526
+msgid "Notice, $username declares to terminate with you!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2808
+msgid "Repertory is less than $cost score!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2815
+msgid "Do you want to spend $cost score to employ $name?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/pathfind/pathfind.cpp:687
+msgid "Terrain with a movement cost less than 1 encountered."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:660
+msgid "Map is for subcontinent. Find improper city location: $name($x, $y)."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:670
+msgid "Location.x of city must be in [$x1, $x2], y in [$y1, $y2]!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1579
+msgid "You exchanged $ai using $human."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1632
+msgid "$first declared independence."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1739
+msgid "$first declared belonging to $second."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1885
+msgid "There is no employable hero."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1923
+msgid "scenario^Difficulty"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1929
+msgid "scenario^Turns"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1933
+msgid "scenario^Capture fort"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1940
+#: kingdom-src/kingdom/src/team.cpp:2856
+msgid "scenario^Perfect turns"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1988
+#: kingdom-src/kingdom/src/play_controller.cpp:2030
+msgid "No coin and score, cannot upload!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2034
+msgid "There is in test mode, cannot upload!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2041
+msgid "Save is more than $threshold hour, cannot upload!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2072
+msgid "$username lose $name!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2074
+msgid "Upload successfully!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2091
+#: kingdom-src/kingdom/src/play_controller.cpp:2135
+#: kingdom-src/kingdom/src/unit.cpp:4458
+msgid "Void"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2092
+#: kingdom-src/kingdom/src/play_controller.cpp:2136
+msgid "final battle"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2092
+#: kingdom-src/kingdom/src/play_controller.cpp:2136
+msgid ""
+"human capital: $first\n"
+"\n"
+"\n"
+"\n"
+"ai capital: $second"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2174
+#: kingdom-src/kingdom/src/savegame.cpp:1036
+msgid "Save Replay"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2198
+msgid "Help"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2259
+msgid "$name is dirty, but not save."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2295
+msgid "Do you want to spend $cost gold to purchase move?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2302
+msgid "If have $cost gold, you can purchase move."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2571
+msgid "$side begin to research $begin!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4211
+msgid ""
+"The game is out of sync. It might not make much sense to continue. Do you "
+"want to save your game?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4212
+#: kingdom-src/kingdom/src/replay_controller.cpp:176
+msgid "Error details:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4232
+msgid ""
+"Sorry, run into program BUG. Program has save scene to $save. Hope you to "
+"upload it to sever, so that developer can solve it."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4253
+msgid "There are no hero available to recruit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4257
+msgid "There are no unit type available to recruit."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4288
+msgid "You don't have enough gold to recruit that unit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4891
+msgid "You can control more troop."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:5182
+msgid ""
+"In order to aggress upon $city, $first and $second concluded treaty of "
+"alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:5184
+msgid ""
+"In order to defend $city, $first and $second concluded treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:5286
+msgid "Map error. Too short road from $from to $to, at least $shortest!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:122
+#: kingdom-src/kingdom/src/playcampaign.cpp:164
+msgid "You have been defeated!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:344
+msgid "Error while reading the WML: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:376
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:499
+msgid "Game Over"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:377
+msgid "This scenario has ended. Do you want to continue the campaign?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:442
+msgid "Unknown scenario: '$scenario|'"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:100
+msgid "$name has taken control"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:102
+msgid "Turn changed"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:299
+msgid "Undoing moves not yet transmitted to the server."
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:469
+msgid "Waiting for next scenario..."
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:599
+msgid ""
+"The game is out of sync, and cannot continue. There are a number of "
+"reasons this could happen: this can occur if you or another player have "
+"modified their game settings. This may mean one of the players is "
+"attempting to cheat. It could also be due to a bug in the game, but this "
+"is less likely.\n"
+"\n"
+"Do you want to save an error log of your game?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:319
+msgid "Remaining gold: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:323
+msgid "Early finish bonus: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:325
+msgid "per turn"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:326
+msgid "Turns finished early: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:328
+msgid "Bonus: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:331
+msgid "Gold: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:335
+msgid "Carry over percentage: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:338
+msgid "Bonus Gold: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:340
+msgid "Retained Gold: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:500
+msgid "The game is over."
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:571
+msgid ""
+"A network disconnection has occurred, and the game cannot continue. Do "
+"you want to save the game?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:781
+msgid "It is now $name|'s turn"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:1209
+msgid "Scenario Report"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:1213
+msgid "You have emerged victorious!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playturn.cpp:209
+msgid "Replace with AI"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playturn.cpp:210
+msgid "Abort game"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playturn.cpp:216
+#: kingdom-src/kingdom/src/playturn.cpp:230
+msgid "Replace with $player"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playturn.cpp:236
+msgid "$player has left the game. What do you want to do?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/replay_controller.cpp:175
+msgid ""
+"The replay is corrupt/out of sync. It might not make much sense to "
+"continue. Do you want to save the game?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:129
+#: kingdom-src/kingdom/src/savegame.cpp:131
+msgid " replay"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:357
+#: kingdom-src/kingdom/src/savegame.cpp:369
+#: kingdom-src/kingdom/src/savegame.cpp:1083
+msgid "Auto-Save"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:451
+#: kingdom-src/kingdom/src/savegame.cpp:455
+msgid ""
+"Warning: The file you have tried to load is corrupt. Loading anyway.\n"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:489
+msgid "This save is from a version too old to be loaded."
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:493
+msgid ""
+"This save is from a different version of the game. Do you want to try to "
+"load it?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:547
+msgid "This is not a multiplayer save"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:612
+msgid "The game could not be saved: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:696
+msgid "Name: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:707
+msgid "Save names should not end on '.gz'. Please choose a different name."
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:777
+msgid "Saved"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:777
+msgid "The game has been saved"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:838
+msgid "Could not write to file"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:1059
+msgid "Could not auto save the game. Please save the game manually."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:1613
+msgid "Your noble of $noble is terminated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:1616
+msgid "$hero noble of $noble is terminated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:1621
+msgid "Congratulate! You are appointed $noble."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:1624
+msgid "Congratulate! $hero is appointed $noble."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2030
+msgid "$side finished researching $end, will begin to research $begin!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2032
+msgid "$side finished researching $end, and have gotten all technology!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2162
+msgid "$first and $second concluded treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2164
+msgid "$first and $second terminate treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2237
+#: kingdom-src/kingdom/src/team.cpp:2301
+msgid ""
+"End aggressing upon $city, $first and $second terminate treaty of "
+"alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2239
+#: kingdom-src/kingdom/src/team.cpp:2303
+msgid ""
+"End defending $city, $first and $second terminate treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2844
+msgid "Results of battle"
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:3445
+msgid "Find treasure: $first($second)!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/tod_manager.cpp:125
+msgid "No time of day has been defined."
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:148
+msgid "Formation"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:1531
+msgid "Unknown unit type '$type|' while generating traits"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4345
+msgid "Reside"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4345
+msgid "Field"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4450
+#: kingdom-src/kingdom/src/unit.cpp:4452
+msgid "Mayor"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4542
+msgid "Moves"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4554
+#: kingdom-src/kingdom/src/unit.cpp:4556
+msgid "AMLA"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4563
+msgid "task^Back"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4564
+msgid "task^Trade"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4565
+msgid "task^Transfer"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4566
+msgid "task^Station"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4571
+#: kingdom-src/kingdom/src/unit.cpp:4573
+#: kingdom-src/kingdom/src/unit.cpp:4582
+msgid "Task"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4578
+msgid "trade^Back"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4600
+#: kingdom-src/kingdom/src/unit.cpp:4602
+msgid "Income"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4614
+#: kingdom-src/kingdom/src/unit.cpp:4616
+msgid "Block turns"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4634
+#: kingdom-src/kingdom/src/unit.cpp:4636
+msgid "Police"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4648
+#: kingdom-src/kingdom/src/unit.cpp:4650
+msgid "Soldiers"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4664
+#: kingdom-src/kingdom/src/unit.cpp:4666
+msgid "Front"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4705
+#: kingdom-src/kingdom/src/unit.cpp:4707
+#: kingdom-src/kingdom/src/unit.cpp:5161
+msgid "Abilities"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4731
+#: kingdom-src/kingdom/src/unit.cpp:4733
+#: kingdom-src/kingdom/src/unit.cpp:5183
+msgid "feature"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:6343
+msgid "Munition"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:7698
+msgid "$second! let improve morale, prepare to better battle."
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_display.cpp:512
+msgid "Capture $city"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_display.cpp:1623
+msgid "perfect^Perfect"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:1376
+#, no-c-format
+msgid "% accuracy"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:1387
+#, no-c-format
+msgid "% parry"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:2882
+msgid "No description available."
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:3174
+msgid "mode^Scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:3176
+msgid "mode^RPG"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:3178
+msgid "mode^Tower"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:3180
+msgid "mode^Siege"
+msgstr ""

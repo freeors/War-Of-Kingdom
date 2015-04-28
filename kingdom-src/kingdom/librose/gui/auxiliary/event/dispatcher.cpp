@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/event/dispatcher_private.hpp"
 
@@ -129,17 +129,24 @@ public:
 class ttrigger
 {
 public:
+	ttrigger(const int val)
+		: val_(val)
+	{}
+
 	void operator()(tsignal_function functor
 			, tdispatcher& dispatcher
 			, const tevent event
 			, bool& handled
 			, bool& halt)
 	{
-		functor(dispatcher, event, handled, halt);
+		functor(dispatcher, event, handled, halt, val_);
 	}
+
+private:
+	int val_;
 };
 
-bool tdispatcher::fire(const tevent event, twidget& target)
+bool tdispatcher::fire(const tevent event, twidget& target, const int val)
 {
 	assert(find<tset_event>(event, tevent_in_set()));
 	switch(event) {
@@ -152,7 +159,7 @@ bool tdispatcher::fire(const tevent event, twidget& target)
 					>(
 					  dynamic_cast<twidget*>(this)
 					, &target
-					, ttrigger());
+					, ttrigger(val));
 
 		case MIDDLE_BUTTON_DOUBLE_CLICK :
 			return fire_event_double_click<
@@ -163,7 +170,7 @@ bool tdispatcher::fire(const tevent event, twidget& target)
 					>(
 					  dynamic_cast<twidget*>(this)
 					, &target
-					, ttrigger());
+					, ttrigger(val));
 
 		case RIGHT_BUTTON_DOUBLE_CLICK :
 			return fire_event_double_click<
@@ -174,13 +181,13 @@ bool tdispatcher::fire(const tevent event, twidget& target)
 					>(
 					  dynamic_cast<twidget*>(this)
 					, &target
-					, ttrigger());
+					, ttrigger(val));
 
 		default :
 			return fire_event<tsignal_function>(event
 				, dynamic_cast<twidget*>(this)
 				, &target
-				, ttrigger());
+				, ttrigger(val));
 	}
 }
 
@@ -308,9 +315,7 @@ public:
 	}
 };
 
-bool tdispatcher::fire(const tevent event
-		, twidget& target
-		, void*)
+bool tdispatcher::fire2(const tevent event, twidget& target)
 {
 	assert(find<tset_event_notification>(event, tevent_in_set()));
 	return fire_event<tsignal_notification_function>(event

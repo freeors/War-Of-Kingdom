@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/slider.hpp"
 
@@ -24,6 +24,7 @@
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/settings.hpp"
 #include "sound.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/bind.hpp>
 #include <boost/foreach.hpp>
@@ -42,7 +43,7 @@ static int distance(const int a, const int b)
 	 * inlined.
 	 */
 	int result =  b - a;
-	assert(result >= 0);
+	VALIDATE(result >= 0, null_str);
 	return result;
 }
 
@@ -63,28 +64,20 @@ tslider::tslider():
 
 tpoint tslider::calculate_best_size() const
 {
-	log_scope2(log_gui_layout, LOG_SCOPE_HEADER);
-
 	// Inherited.
 	tpoint result = tcontrol::calculate_best_size();
-	if(best_slider_length_ != 0) {
+	if (best_slider_length_ != 0) {
 
 		// Override length.
 		boost::intrusive_ptr<const tslider_definition::tresolution> conf =
-			boost::dynamic_pointer_cast<const tslider_definition::tresolution>
-			(config());
+			boost::dynamic_pointer_cast<const tslider_definition::tresolution>(config());
 
-		assert(conf);
+		VALIDATE(conf, null_str);
 
 		result.x = conf->left_offset + best_slider_length_ + conf->right_offset;
 	}
 
-	DBG_GUI_L << LOG_HEADER
-		<< " best_slider_length " << best_slider_length_
-		<< " result " << result
-		<< ".\n";
 	return result;
-
 }
 
 void tslider::set_value(const int value)
@@ -109,7 +102,7 @@ void tslider::set_minimum_value(const int minimum_value)
 	}
 
 	/** @todo maybe make it a VALIDATE. */
-	assert(minimum_value < get_maximum_value());
+	VALIDATE(minimum_value < get_maximum_value(), null_str);
 
 	const int value = get_value();
 	const int maximum_value = get_maximum_value();
@@ -132,7 +125,7 @@ void tslider::set_maximum_value(const int maximum_value)
 	}
 
 	/** @todo maybe make it a VALIDATE. */
-	assert(minimum_value_ < maximum_value);
+	VALIDATE(minimum_value_ < maximum_value, null_str);
 
 	const int value = get_value();
 
@@ -149,7 +142,7 @@ void tslider::set_maximum_value(const int maximum_value)
 t_string tslider::get_value_label() const
 {
 	if(!value_labels_.empty()) {
-		assert(value_labels_.size() == get_item_count());
+		VALIDATE(value_labels_.size() == get_item_count(), null_str);
 		return value_labels_[get_item_position()];
 	} else if(!minimum_value_label_.empty()
 			&& get_value() == get_minimum_value()) {
@@ -175,7 +168,6 @@ unsigned tslider::minimum_positioner_length() const
 {
 	boost::intrusive_ptr<const tslider_definition::tresolution> conf =
 		boost::dynamic_pointer_cast<const tslider_definition::tresolution>(config());
-	assert(conf);
 	return conf->minimum_positioner_length;
 }
 
@@ -183,7 +175,6 @@ unsigned tslider::maximum_positioner_length() const
 {
 	boost::intrusive_ptr<const tslider_definition::tresolution> conf =
 		boost::dynamic_pointer_cast<const tslider_definition::tresolution>(config());
-	assert(conf);
 	return conf->maximum_positioner_length;
 }
 
@@ -191,7 +182,6 @@ unsigned tslider::offset_before() const
 {
 	boost::intrusive_ptr<const tslider_definition::tresolution> conf =
 		boost::dynamic_pointer_cast<const tslider_definition::tresolution>(config());
-	assert(conf);
 	return conf->left_offset;
 }
 
@@ -199,7 +189,6 @@ unsigned tslider::offset_after() const
 {
 	boost::intrusive_ptr<const tslider_definition::tresolution> conf =
 		boost::dynamic_pointer_cast<const tslider_definition::tresolution>(config());
-	assert(conf);
 	return conf->right_offset;
 }
 

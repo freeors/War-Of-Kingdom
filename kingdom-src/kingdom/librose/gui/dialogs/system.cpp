@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/system.hpp"
 
@@ -69,6 +69,8 @@ tsystem::tsystem(const std::vector<titem>& items)
 
 void tsystem::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	std::stringstream strstr;
 
 	for (int n = 0; n < max_items; n ++) {

@@ -45,6 +45,31 @@ namespace event {
 	class tdistributor;
 } // namespace event
 
+class ttransition
+{
+public:
+	enum { fade_none, fade_left = 0x1, fade_right = 0x2, fade_up = 0x4, fade_down = 0x8};
+
+	static const int normal_duration;
+	ttransition()
+		: transition_start_time_(twidget::npos)
+		, transition_fade_(fade_none)
+		, transition_duration_(0)
+		// , transition_last_offset_(twidget::npos)
+	{}
+
+	void set_transition_fade(int val) { transition_fade_ = val; }
+	void set_transition(surface& surf, int start, int duration = normal_duration);
+
+protected:
+	surface transition_surf_;
+	surface transition_frame_buffer_;
+	int transition_fade_;
+	int transition_start_time_;
+	int transition_duration_;
+	// int transition_last_offset_;
+};
+
 /**
  * base class of top level items, the only item
  * which needs to store the final canvases to draw on
@@ -52,14 +77,29 @@ namespace event {
 class twindow
 	: public tpanel
 	, public cursor::setter
+	, public ttransition
 {
 	friend class tdebug_layout_graph;
 	friend twindow *build(CVideo &, const twindow_builder::tresolution *);
-	friend struct twindow_implementation;
 	friend class tinvalidate_layout_blocker;
 	friend class tpane;
 
 public:
+
+	static bool set_orientation_resolution();
+	static void enter_orientation(torientation orientation);
+	static void recover_landscape(bool original_landscape);
+
+	struct tlayout_exception 
+	{
+		tlayout_exception(const twindow& target, const std::string& reason) 
+			: target(target)
+			, reason(reason)
+		{}
+
+		const twindow& target;
+		const std::string reason;
+	};
 
 	twindow(CVideo& video,
 		tformula<unsigned>x,
@@ -73,10 +113,14 @@ public:
 		const unsigned maximum_height,
 		const std::string& definition,
 		const bool theme,
+		const torientation orientation,
 		const twindow_builder::tresolution::ttip& tooltip,
 		const twindow_builder::tresolution::ttip& helptip);
 
 	~twindow();
+
+	static const std::string visual_layout_id;
+	static surface last_frame_buffer;
 
 	/**
 	 * Update the size of the screen variables in settings.
@@ -285,27 +329,6 @@ public:
 	const twidget* find(const std::string& id,
 			const bool must_be_active) const
 		{ return tcontainer_::find(id, must_be_active); }
-#if 0
-	/** @todo Implement these functions. */
-	/**
-	 * Register a widget that prevents easy closing.
-	 *
-	 * Duplicate registration are ignored. See click_dismiss_ for more info.
-	 *
-	 * @param id                  The id of the widget to register.
-	 */
-	void add_click_dismiss_blocker(const std::string& id);
-
-	/**
-	 * Unregister a widget the prevents easy closing.
-	 *
-	 * Removing a non registered id is allowed but will do nothing. See
-	 * click_dismiss_ for more info.
-	 *
-	 * @param id                  The id of the widget to register.
-	 */
-	void remove_click_dismiss_blocker(const std::string& id);
-#endif
 
 	/**
 	 * Does the window close easily?
@@ -419,14 +442,13 @@ public:
 	}
 	const game_logic::map_formula_callable& variables() const { return variables_; }
 
-	void radio_page_swap_uh(const tradio_page::tpage& page, twidget* holder, bool first);
-	void radio_page_swap_bh(const tradio_page::tpage& page, twidget* holder);
-
 	std::vector<tdirty_list>& dirty_list();
 	void set_keep_rect(int x, int y = -1, int w = -1, int h = -1);
 	const SDL_Rect& keep_rect() const { return keep_rect_; }
 	std::vector<twidget*> set_fix_coordinate(const SDL_Rect& map_area);
 	bool is_theme() const { return fix_coordinate_; }
+	torientation get_orientation() const { return orientation_; }
+
 	/**
 	 * Layouts the linked widgets.
 	 *
@@ -436,6 +458,21 @@ public:
 
 	/** Inherited from twidget. */
 	tpoint calculate_best_size() const;
+
+	/** Inherited from tcontrol. */
+	void impl_draw_background(
+			  surface& frame_buffer
+			, int x_offset
+			, int y_offset);
+
+	/** Inherited from tcontrol. */
+	void impl_draw_foreground(
+			  surface& frame_buffer
+			, int x_offset
+			, int y_offset);
+
+	/** Inherited from twidget. */
+	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
 
 	/**
 	 * Layouts the window.
@@ -447,6 +484,16 @@ public:
 	 */
 	void layout();
 
+	void insert_tooltip(const std::string& msg, const twidget& widget);
+	void draw_tooltip(surface& screen);
+	void undraw_tooltip(surface& screen);
+	void remove_tooltip();
+	const SDL_Rect& tooltip_rect() const { return tooltip_rect_; }
+	bool has_tooltip() const { return !!tooltip_surf_; }
+
+	void set_layer_style(bool val) { layer_style_ = val; }
+	bool layer_draging() const { return layer_draging_; }
+	void set_layer_draging(bool val);
 private:
 
 	/** Needed so we can change what's drawn on the screen. */
@@ -614,14 +661,6 @@ private:
 	const std::string& get_control_type() const;
 
 	/**
-	 * Inherited from tpanel.
-	 *
-	 * Don't call this function it's only asserts.
-	 */
-	void draw(surface& surface, const bool force = false,
-			const bool invalidate_background = false);
-
-	/**
 	 * The list with dirty items in the window.
 	 *
 	 * When drawing only the widgets that are dirty are updated. The draw()
@@ -631,27 +670,24 @@ private:
 
 	tristate bg_opaque_;
 	bool fix_coordinate_;
+	torientation orientation_;
+	bool original_landscape_;
+
+	SDL_Rect tooltip_rect_;
+	surface tooltip_surf_;
+	surface tooltip_buf_;
+
+	bool layer_style_;
+	surface owner_surf_;
+	surface layer_background_surf_;
+	bool layer_draging_;
+
 	/**
 	 * Finishes the initialization of the grid.
 	 *
 	 * @param content_grid        The new contents for the content grid.
 	 */
 	void finalize(const boost::intrusive_ptr<tbuilder_grid>& content_grid);
-
-#ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
-	tdebug_layout_graph* debug_layout_;
-
-public:
-
-	/** wrapper for tdebug_layout_graph::generate_dot_file. */
-	void generate_dot_file(
-			const std::string& generator, const unsigned domain);
-private:
-
-#else
-	void generate_dot_file(const std::string&,
-			const unsigned) {}
-#endif
 
 	event::tdistributor* event_distributor_;
 
@@ -698,15 +734,26 @@ private:
 			, bool& handled
 			, event::tmessage& message);
 
-	void signal_handler_message_show_helptip(
-			  const event::tevent event
-			, bool& handled
-			, event::tmessage& message);
-
 	void signal_handler_request_placement(
 			  const event::tevent event
 			, bool& handled);
 };
+
+template <class D, class W, void (D::*fptr)(twindow&, W&)>
+void dialog_callback2(twidget* caller)
+{
+	D* dialog = dynamic_cast<D*>(caller->dialog());
+	twindow* window = dynamic_cast<twindow*>(caller->get_window());
+	(dialog->*fptr)(*window, *dynamic_cast<W*>(caller));
+}
+
+template <class D, class W, void (D::*fptr)(twindow&, W&, const int)>
+void dialog_callback3(twidget* caller, const int type)
+{
+	D* dialog = dynamic_cast<D*>(caller->dialog());
+	twindow* window = dynamic_cast<twindow*>(caller->get_window());
+	(dialog->*fptr)(*window, *dynamic_cast<W*>(caller), type);
+}
 
 } // namespace gui2
 

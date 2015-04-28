@@ -27,7 +27,6 @@
 #include "log.hpp"
 #include "gettext.hpp"
 #include "loadscreen.hpp"
-#include "wesconfig.h"
 #include "serialization/preprocessor.hpp"
 #include "serialization/tokenizer.hpp"
 #include "serialization/string_utils.hpp"

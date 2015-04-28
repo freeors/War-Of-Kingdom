@@ -18,6 +18,7 @@
 
 #include "gui/dialogs/field-fwd.hpp"
 #include "SDL_rect.h"
+#include "gui/widgets/widget.hpp"
 
 #include <string>
 #include <vector>
@@ -174,10 +175,12 @@ public:
 
 	void set_restore(const bool restore) { restore_ = restore; }
 
-	virtual void toggle_tabbar(twidget* widget);
-	virtual void click_tabbar(twidget* widget, const std::string& sparam) {}
+	virtual bool pre_toggle_tabbar(twidget* widget, twidget* previous) { return true; }
+	virtual void toggle_report(twidget* widget);
+	virtual bool click_report(twidget* widget) { return false; }
 
 	virtual void destruct_widget(const twidget* widget) {}
+	virtual void draw_layer(surface& frame_buffer, surface& bg_surf, surface& owner_surf) {}
 
 protected:
 

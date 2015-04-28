@@ -127,10 +127,15 @@ void load_widget_definitions(
 {
 	std::vector<tcontrol_definition_ptr> definitions;
 
-	BOOST_FOREACH(const config& definition
-			, cfg.child_range(key ? key : definition_type + "_definition")) {
-
+	BOOST_FOREACH(const config& definition, cfg.child_range(key ? key : definition_type + "_definition")) {
 		definitions.push_back(new T(definition));
+	}
+
+	const std::string dpi_wml = twidget::hdpi? "widget_hdpi": "widget_mdpi";
+	if (const config& widget_dpi = cfg.child(dpi_wml)) {
+		BOOST_FOREACH(const config& definition, widget_dpi.child_range(key ? key : definition_type + "_definition")) {
+			definitions.push_back(new T(definition));
+		}
 	}
 
 	load_widget_definitions(gui_definition, definition_type, definitions);
@@ -162,11 +167,27 @@ struct twindow_builder_invalid_id {};
 std::vector<twindow_builder::tresolution>::const_iterator
 	get_window_builder(const std::string& type);
 
+const config& get_theme(const std::string& id);
 void reload_window_builder(const std::string& type, const config& cfg, const std::set<std::string>& reserve_wml_tag);
 void reload_test_window(const std::string& type, const config& cfg);
+bool valid_control_definition(const std::string& type, const std::string& definition);
+std::string scale_with_size(const std::string& file, int width, int height);
+std::string scale_with_screen_size(const std::string& file);
 
 /** Loads the setting for the theme. */
 void load_settings();
+
+struct ttip_definition
+{
+	void read(const config& _cfg);
+
+	int text_extra_width;
+	int text_extra_height;
+	int text_font_size;
+	int vertical_gap;
+
+	config cfg;
+};
 
 /** This namespace contains the 'global' settings. */
 namespace settings {
@@ -180,19 +201,8 @@ namespace settings {
 
 	extern unsigned keyboard_height;
 
-	/**
-	 * The size of the map area, if not available equal to the screen
-	 * size.
-	 */
-	extern unsigned gamemap_width;
-	extern unsigned gamemap_height;
-
 	/** These are copied from the active gui. */
-	extern unsigned popup_show_delay;
-	extern unsigned popup_show_time;
-	extern unsigned help_show_time;
 	extern unsigned double_click_time;
-	extern unsigned repeat_button_repeat_time;
 
 	extern std::string sound_button_click;
 	extern std::string sound_toggle_button_click;
@@ -201,8 +211,11 @@ namespace settings {
 
 	extern t_string has_helptip_message;
 
-	extern std::map<std::string, config> bubbles;
-	std::vector<ttip> get_tips();
+	extern std::map<std::string, tbuilder_widget_ptr> portraits;
+	extern std::map<std::string, ttip_definition> tip_cfgs;
+	extern std::vector<config> theme_cfgs;
+
+	extern bool actived;
 }
 
 struct tgui_definition
@@ -213,17 +226,12 @@ struct tgui_definition
 		, control_definition()
 		, windows()
 		, window_types()
-		, popup_show_delay_(0)
-		, popup_show_time_(0)
-		, help_show_time_(0)
 		, double_click_time_(0)
-		, repeat_button_repeat_time_(0)
 		, sound_button_click_()
 		, sound_toggle_button_click_()
 		, sound_toggle_panel_click_()
 		, sound_slider_adjust_()
 		, has_helptip_message_()
-		, tips_()
 	{
 	}
 
@@ -245,16 +253,14 @@ struct tgui_definition
 
 	std::map<std::string, twindow_builder> window_types;
 
+	std::map<std::string, config> theme_cfgs;
+
 	void load_widget_definitions(
 			  const std::string& definition_type
 			, const std::vector<tcontrol_definition_ptr>& definitions);
 private:
 
-	unsigned popup_show_delay_;
-	unsigned popup_show_time_;
-	unsigned help_show_time_;
 	unsigned double_click_time_;
-	unsigned repeat_button_repeat_time_;
 
 	std::string sound_button_click_;
 	std::string sound_toggle_button_click_;
@@ -263,8 +269,8 @@ private:
 
 	t_string has_helptip_message_;
 
-	std::map<std::string, config> bubbles_;
-	std::vector<ttip> tips_;
+	std::map<std::string, tbuilder_widget_ptr> portraits_;
+	std::map<std::string, ttip_definition> tip_cfgs_;
 };
 
 extern std::map<std::string, tgui_definition>::const_iterator current_gui;

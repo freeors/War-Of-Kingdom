@@ -64,6 +64,7 @@ SDL_Rect create_rect(const tpoint& origin, const tpoint& size);
  *
  * @returns                       The color.
  */
+#define MAGIC_COLOR		0x5a5a5a00
 Uint32 decode_color(const std::string& color);
 
 /**

@@ -27,6 +27,8 @@
 
 namespace gui2 {
 
+class twidget;
+
 namespace event {
 
 /**
@@ -52,8 +54,10 @@ struct tmessage_show_tooltip
 {
 	tmessage_show_tooltip(
 			  const std::string& message_
+			, const twidget& widget_
 			, const tpoint& location_)
 		: message(message_)
+		, widget(widget_)
 		, location(location_)
 	{
 	}
@@ -61,26 +65,10 @@ struct tmessage_show_tooltip
 	/** The message to show on the tooltip. */
 	const std::string message;
 
+	/** The widget where to show the tooltip. */
+	const twidget& widget;
+
 	/** The location where to show the tooltip. */
-	const tpoint location;
-};
-
-/** The message for MESSAGE_SHOW_HELPTIP. */
-struct tmessage_show_helptip
-	: public tmessage
-{
-	tmessage_show_helptip(
-			  const std::string& message_
-			, const tpoint& location_)
-		: message(message_)
-		, location(location_)
-	{
-	}
-
-	/** The message to show on the helptip. */
-	const std::string message;
-
-	/** The location where to show the helptip. */
 	const tpoint location;
 };
 

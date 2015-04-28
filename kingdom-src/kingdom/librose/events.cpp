@@ -24,6 +24,7 @@
 #include "game_end_exceptions.hpp"
 #include "display.hpp"
 #include "preferences.hpp"
+#include "gui/widgets/settings.hpp"
 #include "posix.h"
 
 #include "SDL.h"
@@ -39,28 +40,168 @@
 extern void handle_app_event(Uint32 type);
 
 int cached_draw_events = 0;
-extern bool require_change_resolution;
 
-int revise_screen_width(int width)
+base_finger::base_finger()
+	: pinch_distance_(0)
+	, mouse_motions_(0)
+	, pinch_noisc_time_(100)
+	, last_pinch_ticks_(0)
+{}
+
+#define PINCH_SQUARE_THRESHOLD		6400
+void base_finger::process_event(const SDL_Event& event)
 {
-	if (width < preferences::min_allowed_width()) {
-		return preferences::min_allowed_width();
+	int x, y, dx, dy;
+	bool hit = false;
+	Uint8 mouse_flags;
+	Uint32 now = SDL_GetTicks();
+
+	unsigned screen_width2 = gui2::settings::screen_width;
+	unsigned screen_height2 = gui2::settings::screen_height;
+#if (defined(__APPLE__) && TARGET_OS_IPHONE)
+	if (gui2::twidget::hdpi) {
+		screen_width2 /= gui2::twidget::hdpi_ratio;
+		screen_height2 /= gui2::twidget::hdpi_ratio;
 	}
-	return width;
+#endif
+
+	switch(event.type) {
+	case SDL_FINGERDOWN:
+		x = event.tfinger.x * screen_width2;
+		y = event.tfinger.y * screen_height2;
+		if (!finger_coordinate_valid(x, y)) {
+			return;
+		}
+		fingers_.push_back(tfinger(event.tfinger.fingerId, x, y, now));
+		break;
+
+	case SDL_FINGERMOTION:
+		{
+			int x1 = 0, y1 = 0, x2 = 0, y2 = 0, at = 0;
+			x = event.tfinger.x * screen_width2;
+			y = event.tfinger.y * screen_height2;
+			dx = event.tfinger.dx * screen_width2;
+			dy = event.tfinger.dy * screen_height2;
+
+			for (std::vector<tfinger>::iterator it = fingers_.begin(); it != fingers_.end(); ++ it, at ++) {
+				tfinger& finger = *it;
+				if (finger.fingerId == event.tfinger.fingerId) {
+					finger.x = x;
+					finger.y = y;
+					finger.active = now;
+					hit = true;
+				}
+				if (at == 0) {
+					x1 = finger.x;
+					y1 = finger.y;
+				} else if (at == 1) {
+					x2 = finger.x;
+					y2 = finger.y;
+				}
+			}
+			if (!hit) {
+				return;
+			}
+			if (!finger_coordinate_valid(x, y)) {
+				return;
+			}
+			
+			if (fingers_.size() == 1) {
+				handle_swipe(x, y, dx, dy);
+
+			} else if (fingers_.size() == 2) {
+				// calculate distance between finger
+				int distance = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);
+				if (pinch_distance_ != gui2::twidget::npos) {
+					int diff = pinch_distance_ - distance;
+					if (abs(diff) >= PINCH_SQUARE_THRESHOLD * gui2::twidget::hdpi_ratio) {
+						pinch_distance_ = distance;
+						if (now - last_pinch_ticks_ > pinch_noisc_time_) {
+							last_pinch_ticks_ = now;
+							handle_pinch(x, y, diff > 0);
+						}
+					}
+				} else {
+					pinch_distance_ = distance;
+				}
+			}
+		}
+		break;
+
+	case SDL_FINGERUP:
+		for (std::vector<tfinger>::iterator it = fingers_.begin(); it != fingers_.end(); ) {
+			const tfinger& finger = *it;
+			if (finger.fingerId == event.tfinger.fingerId) {
+				it = fingers_.erase(it);
+			} else if (now > finger.active + 5000) {
+				it = fingers_.erase(it);
+			} else {
+				++ it;
+			}
+		}
+		break;
+
+	case SDL_MULTIGESTURE:
+		// Now I don't use SDL logic, process multi-finger myself. Ignore it.
+		break;
+
+	case SDL_MOUSEBUTTONDOWN:
+		mouse_motions_ = 0;
+		pinch_distance_ = gui2::twidget::npos;
+		handle_mouse_down(event.button);
+		break;
+
+	case SDL_MOUSEBUTTONUP:
+		// 1. once one finger up, thank this finger end.
+		// 2. solve mouse_up nest.
+		fingers_.clear();
+
+		handle_mouse_up(event.button);
+		break;
+
+	case SDL_MOUSEMOTION:
+		mouse_motions_ ++;
+		handle_mouse_motion(event.motion);
+		break;
+
+	case SDL_MOUSEWHEEL:
+		if (event.wheel.which == SDL_TOUCH_MOUSEID) {
+			break;
+		}
+		mouse_flags = SDL_GetMouseState(&x, &y);
+		if (!mouse_wheel_coordinate_valid(x, y)) {
+			return;
+		}
+#ifdef _WIN32
+		if (mouse_flags & SDL_BUTTON(SDL_BUTTON_LEFT) && abs(event.wheel.y) >= MOUSE_MOTION_THRESHOLD) {
+			// left mouse + wheel vetical ==> pinch
+			mouse_motions_ ++;
+			Uint32 now = SDL_GetTicks();
+			if (now - last_pinch_ticks_ > pinch_noisc_time_) {
+				last_pinch_ticks_ = now;
+				handle_pinch(x, y, event.wheel.y > 0);
+			}
+			
+		} else
+#endif
+		{
+			handle_mouse_wheel(event.wheel, x, y, mouse_flags);
+		}
+		break;
+	}
 }
 
-int revise_screen_height(int height)
+bool base_finger::multi_gestures() const
 {
-	if (height < preferences::min_allowed_height()) {
-		return preferences::min_allowed_height();
+	if (fingers_.size() < 2) {
+		return false;
 	}
-	return height;
+	return true;
 }
 
 namespace events
 {
 
-void raise_help_string_event(int mousex, int mousey);
 bool ignore_finger_event;
 
 struct context
@@ -331,8 +472,6 @@ void pump()
 {
 	SDL_PumpEvents();
 
-	pump_info info;
-
 	SDL_Event temp_event;
 	int poll_count = 0;
 	int begin_ignoring = 0;
@@ -398,8 +537,7 @@ void pump()
 					// if the window must be redrawn, update the entire screen
 
 				} else if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-					info.resize_dimensions.first = revise_screen_width(event.window.data1);
-					info.resize_dimensions.second = revise_screen_height(event.window.data2);
+					
 				}
 				break;
 
@@ -407,7 +545,6 @@ void pump()
 				//always make sure a cursor is displayed if the
 				//mouse moves or if the user clicks
 				cursor::set_focus(true);
-				raise_help_string_event(event.motion.x,event.motion.y);
 				break;
 			}
 
@@ -452,8 +589,7 @@ void pump()
 			//so we must use indexes instead of iterators here.
 			for (size_t i1 = 0, i2 = event_handlers.size(); i1 != i2 && i1 < event_handlers.size(); ++i1) {
 				event_handlers[i1]->handle_event(event);
-				if (require_change_resolution) {
-					require_change_resolution = false;
+				if (display::require_change_resolution) {
 					display* disp = display::get_singleton();
 					disp->change_resolution();
 				}
@@ -463,7 +599,7 @@ void pump()
 
 	//inform the pump monitors that an events::pump() has occurred
 	for (size_t i1 = 0, i2 = pump_monitors.size(); i1 != i2 && i1 < pump_monitors.size(); ++i1) {
-		pump_monitors[i1]->process(info);
+		pump_monitors[i1]->monitor_process();
 	}
 }
 
@@ -494,46 +630,6 @@ void raise_draw_event()
 	}
 }
 
-void raise_volatile_draw_event()
-{
-	if(event_contexts.empty() == false) {
-
-		const std::vector<handler*>& event_handlers = event_contexts.back().handlers;
-
-		//events may cause more event handlers to be added and/or removed,
-		//so we must use indexes instead of iterators here.
-		for(size_t i1 = 0, i2 = event_handlers.size(); i1 != i2 && i1 < event_handlers.size(); ++i1) {
-			event_handlers[i1]->volatile_draw();
-		}
-	}
-}
-
-void raise_volatile_undraw_event()
-{
-	if(event_contexts.empty() == false) {
-
-		const std::vector<handler*>& event_handlers = event_contexts.back().handlers;
-
-		//events may cause more event handlers to be added and/or removed,
-		//so we must use indexes instead of iterators here.
-		for(size_t i1 = 0, i2 = event_handlers.size(); i1 != i2 && i1 < event_handlers.size(); ++i1) {
-			event_handlers[i1]->volatile_undraw();
-		}
-	}
-}
-
-void raise_help_string_event(int mousex, int mousey)
-{
-	if(event_contexts.empty() == false) {
-
-		const std::vector<handler*>& event_handlers = event_contexts.back().handlers;
-
-		for(size_t i1 = 0, i2 = event_handlers.size(); i1 != i2 && i1 < event_handlers.size(); ++i1) {
-			event_handlers[i1]->process_help_string(mousex,mousey);
-		}
-	}
-}
-
 int discard(Uint32 event_mask_min, Uint32 event_mask_max)
 {
 	int discard_count = 0;
@@ -556,14 +652,6 @@ int discard(Uint32 event_mask_min, Uint32 event_mask_max)
 	}
 
 	return discard_count;
-}
-
-int pump_info::ticks(unsigned *refresh_counter, unsigned refresh_rate) 
-{
-	if(!ticks_ && !(refresh_counter && ++*refresh_counter % refresh_rate)) {
-		ticks_ = ::SDL_GetTicks();
-	}
-	return ticks_;
 }
 
 } //end events namespace

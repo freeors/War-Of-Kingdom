@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/login.hpp"
 
@@ -84,6 +84,8 @@ const size_t max_login_size = 15;
 
 void tlogin::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	std::stringstream strstr;
 
 	tlabel* label = find_widget<tlabel>(&window, "forum", false, true);
@@ -113,7 +115,7 @@ void tlogin::pre_show(CVideo& /*video*/, twindow& window)
 	symbols["host"] = tintegrate::generate_format(game_config::bbs_server.host, "green");
 	symbols["register"] = tintegrate::generate_format(_("Register"), "blue");
 	symbols["ok"] = tintegrate::generate_format(_("OK"), "yellow");
-	label2->set_label(vgettext("wesnoth-lib", "account^remark($server, $host, $register, $ok)", symbols));
+	label2->set_label(vgettext2("account^remark($server, $host, $register, $ok)", symbols));
 
 	connect_signal_mouse_left_click(
 		find_widget<tbutton>(&window, "register", false)
@@ -158,7 +160,7 @@ std::string tlogin::text_box_str(twindow& window, const std::string& id, const s
 		if (!allow_empty) {
 			symbols["key"] = tintegrate::generate_format(name, "red");
 			
-			err << vgettext("wesnoth-lib", "Invalid '$key' value, not accept empty", symbols);
+			err << vgettext2("Invalid '$key' value, not accept empty", symbols);
 			gui2::show_message(disp_.video(), "", err.str());
 		}
 		return str;
@@ -168,7 +170,7 @@ std::string tlogin::text_box_str(twindow& window, const std::string& id, const s
 		symbols["max"] = tintegrate::generate_format(max, "yellow");
 		symbols["key"] = tintegrate::generate_format(name, "red");
 		
-		err << vgettext("wesnoth-lib", "'$key' value must combine $min to $max characters", symbols);
+		err << vgettext2("'$key' value must combine $min to $max characters", symbols);
 		gui2::show_message(disp_.video(), "", err.str());
 		return null_str;
 
@@ -179,7 +181,7 @@ std::string tlogin::text_box_str(twindow& window, const std::string& id, const s
 		} else if (game_config::is_reserve_player(str)) {
 			symbols["key"] = tintegrate::generate_format(name, "red");
 			symbols["username"] = tintegrate::generate_format(str, "red");
-			err << vgettext("wesnoth-lib", "Invalid '$key' value, $username is reserved!", symbols);
+			err << vgettext2("Invalid '$key' value, $username is reserved!", symbols);
 			gui2::show_message(disp_.video(), "", err.str());
 			return null_str;
 		}
@@ -214,7 +216,7 @@ bool tlogin::create(twindow& window, int operate)
 		utils::string_map symbols;
 
 		symbols["username"] = tintegrate::generate_format(username, "yellow");
-		err << vgettext("wesnoth-lib", "$username of username is not a valid nick, you require to set a valid nick separately!\n Nick can ony use alpha, number and _.", symbols);
+		err << vgettext2("$username of username is not a valid nick, you require to set a valid nick separately!\n Nick can ony use alpha, number and _.", symbols);
 		gui2::show_message(disp_.video(), "", err.str());
 		return false;
 	}
@@ -247,14 +249,14 @@ void tlogin::register1(twindow& window)
 		if (validate_password != preferences::password()) {
 			symbols["validate_password"] = tintegrate::generate_format(_("Validate password"), "red");
 			symbols["password"] = tintegrate::generate_format(_("Password"), "red");
-			err << vgettext("wesnoth-lib", "$validate_password isn't same as $password", symbols);
+			err << vgettext2("$validate_password isn't same as $password", symbols);
 			gui2::show_message(disp_.video(), "", err.str());
 			return;
 		}
 		if ((int)validate_password.size() < min_password_chars) {
 			symbols["min"] = tintegrate::generate_format(min_password_chars, "yellow");
 		
-			err << vgettext("wesnoth-lib", "When register, password must be greater than or equal to $min characters", symbols);
+			err << vgettext2("When register, password must be greater than or equal to $min characters", symbols);
 			gui2::show_message(disp_.video(), "", err.str());
 			return;
 		}

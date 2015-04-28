@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/combo_box.hpp"
 
@@ -21,11 +21,7 @@
 #include "gettext.hpp"
 
 #include "gui/dialogs/helper.hpp"
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-#include "gui/widgets/list.hpp"
-#else
 #include "gui/widgets/listbox.hpp"
-#endif
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/widgets/toggle_panel.hpp"
@@ -83,6 +79,8 @@ tcombo_box::tcombo_box(const std::vector<tval_str>& items, int val, int type)
 
 void tcombo_box::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	tlabel* title = find_widget<tlabel>(&window, "title", false, true);
 	if (type_ == EXTRACT) {
 		title->set_label(_("Extract hero"));
@@ -103,18 +101,16 @@ void tcombo_box::pre_show(CVideo& /*video*/, twindow& window)
 		data["label"]["label"] = item.str;
 		list.add_row(data);
 
-		tgrid* grid_ptr = list.get_row_grid(item_index);
-		ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("item", true));
 		item_index ++;
 	}
-	list.set_callback_value_change(dialog_callback<tcombo_box, &tcombo_box::item_selected>);
+	list.set_callback_value_change(dialog_callback3<tcombo_box, tlistbox, &tcombo_box::item_selected>);
 
 	if (index_ != -1) {
 		list.select_row(index_);
 	}
 }
 
-void tcombo_box::item_selected(twindow& window)
+void tcombo_box::item_selected(twindow& window, tlistbox& list, const int type)
 {
 	if (type_ != EXTRACT) {
 		window.set_retval(twindow::OK);

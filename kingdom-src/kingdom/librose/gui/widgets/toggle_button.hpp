@@ -66,6 +66,10 @@ public:
 	void set_retval(const int retval);
 
 	/** Inherited from tselectable_. */
+	void set_callback_state_pre_change(boost::function<bool (twidget*)> callback)
+		{ callback_state_pre_change_ = callback; }
+
+	/** Inherited from tselectable_. */
 	void set_callback_state_change(boost::function<void (twidget*)> callback)
 		{ callback_state_change_ = callback; }
 
@@ -78,6 +82,8 @@ public:
 
 	void set_radio(bool val) { radio_ = val; }
 	bool radio() const { return radio_; }
+
+	bool can_selectable() const;
 
 private:
 	/**
@@ -112,6 +118,9 @@ private:
 	int retval_;
 
 	/** See tselectable_::set_callback_state_change. */
+	boost::function<bool (twidget*)> callback_state_pre_change_;
+
+	/** See tselectable_::set_callback_state_change. */
 	boost::function<void (twidget*)> callback_state_change_;
 
 	/**
@@ -136,7 +145,7 @@ private:
 	void signal_handler_mouse_leave(const event::tevent event, bool& handled);
 
 	void signal_handler_left_button_click(
-			const event::tevent event, bool& handled);
+			const event::tevent event, bool& handled, bool& halt);
 
 	void signal_handler_left_button_double_click(
 			const event::tevent event, bool& handled);

@@ -69,6 +69,7 @@ base_unit* base_map::find_base_unit(const map_location& loc) const
 
 void base_map::create_coor_map(int w, int h)
 {
+	VALIDATE(!map_ && !map_vsize_ && !coor_map_, "Error state!");
 	map_ = (base_unit**)malloc(w * h * sizeof(base_unit*));
 	memset(map_, 0, w * h * sizeof(base_unit*));
 	map_vsize_ = 0;
@@ -192,15 +193,23 @@ void base_map::expand_coor_map(int w)
 {
 	VALIDATE(w > w_, null_str);
 
-	loc_cookie* tmp = (loc_cookie*)malloc(w * h_ * sizeof(loc_cookie));
-	memset(tmp, 0, w * h_ * sizeof(loc_cookie));
+	// map_ must point to size w_ * h_!
+	base_unit** tmp = (base_unit**)malloc(w * h_ * sizeof(base_unit*));
+	memset(tmp, 0, w * h_ * sizeof(base_unit*));
+	if (map_vsize_) {
+		memcpy(tmp, map_, map_vsize_ * sizeof(base_unit*));
+	}
+	map_ = tmp;
+
+	loc_cookie* tmp2 = (loc_cookie*)malloc(w * h_ * sizeof(loc_cookie));
+	memset(tmp2, 0, w * h_ * sizeof(loc_cookie));
 
 	for (int y = 0; y < h_; y ++) {
-		memcpy(tmp + (y * w), coor_map_ + (y * w_), w_ * sizeof(loc_cookie));
+		memcpy(tmp2 + (y * w), coor_map_ + (y * w_), w_ * sizeof(loc_cookie));
 	}
 	free(coor_map_);
 
-	coor_map_ = tmp;
+	coor_map_ = tmp2;
 	w_ = w;
 }
 
@@ -250,7 +259,7 @@ base_unit* base_map::unit_clicked_on(const int xclick, const int yclick, const m
 		int min_y = INT_MAX;
 		for (int x = mloc.x; x >= 0; x --) {
 			u = coor_map_[pitch + x].overlay;
-			if (u) {
+			if (u && !u->hidden_) {
 				const SDL_Rect& rect = u->get_rect();
 				if (point_in_rect(xmap, ymap, rect)) {
 					return u;
@@ -268,7 +277,7 @@ base_unit* base_map::unit_clicked_on(const int xclick, const int yclick, const m
 		}
 		for (int x1 = w; x1 < w_; x1 ++) {
 			u = coor_map_[pitch + x1].overlay;
-			if (u) {
+			if (u && !u->hidden_) {
 				const SDL_Rect& rect = u->get_rect();
 				if (point_in_rect(xmap, ymap, rect)) {
 					return u;
@@ -319,8 +328,10 @@ void base_map::clear()
 	for (size_t i = 0; i != map_vsize_; ++i) {
 		delete map_[i];
 	}
-	free(map_);
-	map_ = NULL;
+	if (map_) {
+		free(map_);
+		map_ = NULL;
+	}
 	map_vsize_ = 0;
 }
 

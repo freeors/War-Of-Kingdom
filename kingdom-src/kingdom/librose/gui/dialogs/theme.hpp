@@ -69,7 +69,7 @@ struct tborder
 enum ANCHORING { FIXED, TOP_ANCHORED, PROPORTIONAL, BOTTOM_ANCHORED };
 ANCHORING read_anchor(const std::string& str);
 SDL_Rect calculate_relative_loc(const config& cfg, int screen_w, int screen_h);
-const config* set_resolution(const config& cfg, const SDL_Rect& screen, const std::string& patch, config& resolved_config);
+const config* set_resolution(const config& cfg, int screen_w, int screen_h, const std::string& patch, config& resolved_config);
 const config* set_resolution2(const config& cfg, int screen_w, int screen_h);
 
 extern const int XDim;
@@ -129,11 +129,12 @@ public:
 	tcontext_menu* context_menu(const std::string& id);
 
 	void destruct_widget(const twidget* widget);
+	twindow* get_window() const { return window_; }
 
 protected:
 	void click_generic_handler(tcontrol& widget, const std::string& sparam);
-	void toggle_tabbar(twidget* widget);
-	void click_tabbar(twidget* widget, const std::string& sparam);
+	void toggle_report(twidget* widget);
+	bool click_report(twidget* widget);
 
 private:
 	/** Inherited from tdialog, implemented by REGISTER_DIALOG. */

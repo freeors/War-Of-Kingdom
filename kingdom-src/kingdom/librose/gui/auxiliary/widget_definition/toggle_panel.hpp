@@ -35,6 +35,8 @@ struct ttoggle_panel_definition
 
 		unsigned left_border;
 		unsigned right_border;
+
+		bool frame;
 	};
 };
 

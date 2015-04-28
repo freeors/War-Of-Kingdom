@@ -19,6 +19,7 @@
  * @file
  * Various string-routines.
  */
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 
@@ -523,7 +524,7 @@ std::string si_string(double input, bool base2, std::string unit) {
 		strings9 tmp = { {
 			"",
 			_("prefix_milli^m"),
-			_("prefix_micro^µ"),
+			_("prefix_micro^u"),
 			_("prefix_nano^n"),
 			_("prefix_pico^p"),
 			_("prefix_femto^f"),
@@ -920,7 +921,8 @@ size_t utf8str_len(const std::string& utf8str)
 {
 	size_t size = 0;
 	utils::utf8_iterator itor(utf8str);
-	for (; itor != utils::utf8_iterator::end(utf8str); ++ itor) {
+	utils::utf8_iterator end = utils::utf8_iterator::end(utf8str);
+	for (; itor != end; ++ itor) {
 		size ++;
 	}
 	return size;
@@ -1054,6 +1056,38 @@ void transform_tolower(const std::string& src, std::string& dst)
 	}
 }
 
+void transform_toupper(std::string& str)
+{
+	int s = (int)str.size();
+	const char* c_str = str.c_str();
+
+	int diff = 'A' - 'a';
+	for (int i = 0; i < s; i ++) {
+		if (c_str[i] >= 'a' && c_str[i] <= 'z') {
+			str[i] = c_str[i] + diff;
+		}
+	}
+}
+
+std::string transform_toupper(const std::string& src)
+{
+	int s = (int)src.size();
+	const char* c_str = src.c_str();
+
+	std::string dst;
+	dst.resize(s);
+
+	int diff = 'A' - 'a';
+	for (int i = 0; i < s; i ++) {
+		if (c_str[i] >= 'a' && c_str[i] <= 'z') {
+			dst[i] = c_str[i] + diff;
+		} else {
+			dst[i] = c_str[i];
+		}
+	}
+	return dst;
+}
+
 // condition id(only ASCII)/variable(only ASCII)/username
 static bool is_id_char(char c)
 {
@@ -1074,40 +1108,40 @@ bool isvalid_id_base(const std::string& id, bool first_must_alpha, is_xxx_char f
 	int s = (int)id.size();
 	if (!s) {
 		if (min > 0) {
-			errstr = dgettext("wesnoth-lib", "Can not empty!");
+			errstr = _("Can not empty!");
  			return false;
 		}
 		return true;
 	}
 	if (s < min) {
 		symbols["min"] = tintegrate::generate_format(min, "yellow");
-		errstr = vgettext("wesnoth-lib", "At least $min characters!", symbols);
+		errstr = vgettext2("At least $min characters!", symbols);
 		return false;
 	}
 	if (s > max) {
 		symbols["max"] = tintegrate::generate_format(max, "yellow");
-		errstr = vgettext("wesnoth-lib", "Can not be larger than $max characters!", symbols);
+		errstr = vgettext2("Can not be larger than $max characters!", symbols);
 		return false;
 	}
 	char c = id.at(0);
 	if (c == ' ') {
-		errstr = dgettext("wesnoth-lib", "First character can not empty!");
+		errstr = _("First character can not empty!");
 		return false;
 	}
 	if (first_must_alpha && !isalpha(c)) {
-		errstr = dgettext("wesnoth-lib", "First character must be alpha!");
+		errstr = _("First character must be alpha!");
 		return false;
 	}
 	if (id == "null") {
 		symbols["str"] = tintegrate::generate_format(id, "yellow");
-		errstr = vgettext("wesnoth-lib", "$str is reserved string!", symbols);
+		errstr = vgettext2("$str is reserved string!", symbols);
 		return false;
 	}
 
 	const size_t alnum = std::count_if(id.begin(), id.end(), isalnum);
 	const size_t valid_char = std::count_if(id.begin(), id.end(), fn);
 	if ((alnum + valid_char != s) || valid_char == id.size()) {
-		errstr = dgettext("wesnoth-lib", "Contains invalid characters!");
+		errstr = _("Contains invalid characters!");
 		return false;
 	}
 	return true;
@@ -1153,11 +1187,11 @@ bool isvalid_username(const std::string& username)
 			chars ++;
 		}
 		if ((alnum + valid_char != chars) || valid_char == chars || !chars) {
-			errstr = dgettext("wesnoth-lib", "Contains invalid characters!");
+			errstr = _("Contains invalid characters!");
 			return false;
 		}
 	} catch (utils::invalid_utf8_exception&) {
-		errstr = dgettext("wesnoth-lib", "Invalid UTF-8 string!");
+		errstr = _("Invalid UTF-8 string!");
 		return false;
 	}
 	return true;
@@ -1174,6 +1208,31 @@ bool isvalid_wildcard(const std::string& username)
 			|| valid_char == username.size() || username.empty() )
 	{
 		return false;
+	}
+	return true;
+}
+
+bool isinteger(const char* str)
+{
+	if (!str) {
+		return false;
+	}
+	int len = (int)strlen(str);
+	if (!len) {
+		return false;
+	}
+	char ch = str[0];
+	if (ch == '-' || ch == '+') {
+		if (len == 1) {
+			return false;
+		}
+	} else if (!isdigit(ch)) {
+		return false;
+	}
+	for (int i = 1; i < len; i ++) {
+		if (!isdigit(str[i])) {
+			return false;
+		}
 	}
 	return true;
 }

@@ -22,7 +22,7 @@
 
 #include "log.hpp"
 #include "map_location.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 
 #include <boost/foreach.hpp>
 

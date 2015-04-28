@@ -17,7 +17,7 @@
  * @file
  * File-IO
  */
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 
@@ -37,6 +37,8 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <libgen.h>
+#include <sys/param.h> // statfs 
+#include <sys/mount.h> // statfs
 #endif /* !_WIN32 */
 
 // for getenv
@@ -51,7 +53,7 @@
 
 #include "config.hpp"
 #include "filesystem.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "log.hpp"
 #include "loadscreen.hpp"
 #include "scoped_resource.hpp"
@@ -59,6 +61,7 @@
 #include "formula_string_utils.hpp"
 #include "posix.h"
 #include "saes.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -171,11 +174,6 @@ void get_files_in_dir(const std::string &directory,
 
 		if (::stat(fullname.c_str(), &st) != -1) {
 			if (S_ISREG(st.st_mode)) {
-/*
-				if (basename == "generate.cfg") {
-					continue;
-				}
-*/
 				if (files != NULL) {
 					if (mode == ENTIRE_FILE_PATH)
 						files->push_back(fullname);
@@ -296,18 +294,7 @@ std::string get_addon_campaigns_dir()
 
 std::string get_intl_dir()
 {
-	static char* translations = "translations";
-#ifdef _WIN32
-	// return get_cwd() + "/translations";
-	if (!game_config::path.empty()) {
-		return game_config::path + "/translations";
-	} else {
-		return get_cwd() + "/translations";
-	}
-#else
-
-	return game_config::path + "/" + translations;
-#endif
+	return game_config::path + "/translations";
 }
 
 std::string get_screenshot_dir()
@@ -358,7 +345,74 @@ std::string get_dir(const std::string& dir_path)
 
 bool make_directory(const std::string& path)
 {
-	return (mkdir(path.c_str(),AccessMode) == 0);
+	if (path.empty()) {
+		return false;
+	}
+
+#ifdef _WIN32
+	HANDLE fFile; // File Handle
+	WIN32_FIND_DATA fileinfo; // File Information Structure
+	std::vector<std::string> m_arr; // CString Array to  hold Directory Structures
+	BOOL tt; // BOOL used to test if Create Directory was successful
+	size_t x1 = 0; // Counter
+	std::string tem = ""; // Temporary std::string Object
+    
+	std::string path2 = path;
+	boost::algorithm::replace_all(path2, std::string("/"), std::string("\\"));
+
+	fFile = FindFirstFile(path2.c_str(), &fileinfo);
+    
+	// if the file exists and it is a directory
+	if ((fFile != INVALID_HANDLE_VALUE) && (fileinfo.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY)) {
+		// Directory Exists close file and return
+		FindClose(fFile);
+		return FALSE;
+	}
+	// Close the file
+	FindClose(fFile);
+
+	m_arr.clear();
+    
+	for (x1 = 0; x1 < path2.size(); x1++ ) { // Parse the supplied CString Directory String
+		if (path2.at(x1) != '\\') { // if the Charachter is not a \     
+			tem += path2.at(x1); // add the character to the Temp String   
+		} else {
+			m_arr.push_back(tem); // if the Character is a \     
+			tem += "\\"; // Now add the \ to the temp string
+		}   
+		if (x1 == path2.size()-1) { //   If   we   reached   the   end   of   the   String   
+			m_arr.push_back(tem);
+		}
+	}   
+    
+	// Now lets cycle through the String Array and create each directory in turn   
+	for (std::vector<std::string>::const_iterator itor = m_arr.begin() + 1; itor != m_arr.end(); ++ itor) {
+		tt = CreateDirectory((*itor).c_str(), NULL);
+    
+		// If the Directory exists it will return a false
+		if (tt) {
+			// If we were successful we set the attributes to normal
+			SetFileAttributes((*itor).c_str(), FILE_ATTRIBUTE_NORMAL);
+		}
+	}
+	// Now lets see if the directory was successfully created
+	fFile = FindFirstFile(path2.c_str(), &fileinfo);
+    
+	m_arr.clear();
+	if (fileinfo.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY) {   
+		// Directory Exists close file and return
+		FindClose(fFile);
+		return false;
+	} else {   
+		// For Some reason the Function Failed Return FALSE
+		FindClose(fFile);
+		return false;
+	}
+	return true;
+
+#else
+	return (mkdir(path.c_str(), AccessMode) == 0);
+#endif
 }
 
 // This deletes a directory with no hidden files and subdirectories.
@@ -437,14 +491,14 @@ std::string get_exe_dir()
 
 bool create_directory_if_missing(const std::string& dirname)
 {
-	if(is_directory(dirname)) {
-		DBG_FS << "directory " << dirname << " exists, not creating\n";
-		return true;
-	} else if(file_exists(dirname)) {
-		ERR_FS << "cannot create directory " << dirname << "; file exists\n";
+	if (dirname.empty()) {
 		return false;
 	}
-	DBG_FS << "creating missing directory " << dirname << '\n';
+	if (is_directory(dirname)) {
+		return true;
+	} else if(file_exists(dirname)) {
+		return false;
+	}
 	return make_directory(dirname);
 }
 bool create_directory_if_missing_recursive(const std::string& dirname)
@@ -899,10 +953,55 @@ void file_rename(const std::string& from, const std::string& to)
 time_t file_create_time(const std::string& fname)
 {
 	struct stat buf;
-	if(::stat(fname.c_str(),&buf) == -1)
+	if (::stat(fname.c_str(),&buf) == -1) {
 		return 0;
+	}
 
 	return buf.st_mtime;
+}
+
+int64_t file_size(const std::string& fname, bool to_utf16)
+{
+	struct stat buf;
+	std::string fname2 = fname;
+
+	const char* c_str = fname.c_str();
+	if (to_utf16) {
+#ifdef _WIN32
+		conv_ansi_utf8(fname2, false);
+#endif
+		c_str = fname2.c_str();
+	}
+	if (::stat(c_str, &buf) == -1) {
+		return -1;
+	}
+
+	return buf.st_size;
+}
+
+int64_t disk_free_space(const std::string& root_name)
+{
+	int64_t ret = -1;
+
+#ifdef _WIN32
+	const char* c_str = root_name.c_str();
+	if (root_name.size() >= 2 && c_str[1] == ':') {
+		std::string name2 = root_name.substr(0, 2);
+		name2 += "\\";
+		DWORD sectors_per_cluster, bytes_per_sector, free_clusters, clusters;
+
+		GetDiskFreeSpace(root_name.c_str(), &sectors_per_cluster, &bytes_per_sector, &free_clusters, &clusters);
+		ret = sectors_per_cluster * bytes_per_sector * free_clusters;
+	}
+// #elif (defined(__APPLE__) && TARGET_OS_IPHONE)
+#else
+	struct statfs buf;  
+	if (statfs("/var", &buf) >= 0){  
+		ret = (int64_t)(buf.f_bsize * buf.f_bfree);  
+	} 
+#endif
+
+	return ret;
 }
 
 /**
@@ -976,15 +1075,6 @@ void data_tree_checksum(const std::vector<std::string>& paths, file_tree_checksu
 	}
 }
 
-int file_size(const std::string& fname)
-{
-	struct stat buf;
-	if(::stat(fname.c_str(),&buf) == -1)
-		return -1;
-
-	return buf.st_size;
-}
-
 std::string file_name(const std::string& file)
 // Analogous to POSIX basename(3), but for C++ string-object pathnames
 {
@@ -996,12 +1086,14 @@ std::string file_name(const std::string& file)
 
 	std::string::size_type pos = file.find_last_of(dir_separators);
 
-	if(pos == std::string::npos)
+	if (pos == std::string::npos) {
 		return file;
-	if(pos >= file.size()-1)
+	}
+	if (pos >= file.size() - 1) {
 		return "";
+	}
 
-	return file.substr(pos+1);
+	return file.substr(pos + 1);
 }
 
 std::string directory_name(const std::string& file)
@@ -1015,15 +1107,42 @@ std::string directory_name(const std::string& file)
 
 	std::string::size_type pos = file.find_last_of(dir_separators);
 
-	if(pos == std::string::npos)
+	if (pos == std::string::npos) {
 		return "";
+	}
 
-	return file.substr(0,pos+1);
+	return file.substr(0, pos + 1);
+}
+
+std::string file_main_name(const std::string& file)
+{
+	std::string::size_type pos = file.find_last_of(".");
+
+	if (pos == std::string::npos) {
+		return file;
+	}
+
+	return file.substr(0, pos);
+}
+
+std::string file_ext_name(const std::string& file)
+{
+	std::string::size_type pos = file.find_last_of(".");
+
+	if (pos == std::string::npos) {
+		return "";
+	}
+	if (pos >= file.size() - 1) {
+		return "";
+	}
+
+	return file.substr(pos + 1);
 }
 
 namespace {
 
-std::set<std::string> binary_paths;
+#define PRIORITIEST_BINARY_PATHS	1
+std::vector<std::string> binary_paths;
 
 typedef std::map<std::string,std::vector<std::string> > paths_map;
 paths_map binary_paths_cache;
@@ -1032,8 +1151,11 @@ paths_map binary_paths_cache;
 
 static void init_binary_paths()
 {
-	if(binary_paths.empty()) {
-		binary_paths.insert("");
+	if (binary_paths.empty()) {
+		binary_paths.push_back(""); // userdata directory
+		// here is self-add paths
+		binary_paths.push_back(game_config::app_dir + "/");
+		binary_paths.push_back("data/core/");
 	}
 }
 
@@ -1055,17 +1177,26 @@ void binary_paths_manager::set_paths(const config& cfg)
 	cleanup();
 	init_binary_paths();
 
-	BOOST_FOREACH (const config &bp, cfg.child_range("binary_path"))
-	{
+	int inserted = 0;
+	BOOST_FOREACH (const config &bp, cfg.child_range("binary_path")) {
 		std::string path = bp["path"].str();
 		if (path.find("..") != std::string::npos) {
 			ERR_FS << "Invalid binary path '" << path << "'\n";
 			continue;
 		}
-		if (!path.empty() && path[path.size()-1] != '/') path += "/";
-		if(binary_paths.count(path) == 0) {
-			binary_paths.insert(path);
+		if (!path.empty() && path[path.size()-1] != '/') {
+			path += "/";
+		}
+		std::vector<std::string>::iterator it = std::find(binary_paths.begin(), binary_paths.end(), path);
+		if (it == binary_paths.end()) {
+			it = binary_paths.begin();
+			std::advance(it, PRIORITIEST_BINARY_PATHS + inserted);
+			binary_paths.insert(it, path);
+
+			VALIDATE(std::find(paths_.begin(), paths_.end(), path) == paths_.end(), null_str);
+
 			paths_.push_back(path);
+			inserted ++;
 		}
 	}
 }
@@ -1074,9 +1205,11 @@ void binary_paths_manager::cleanup()
 {
 	binary_paths_cache.clear();
 
-	for(std::vector<std::string>::const_iterator i = paths_.begin(); i != paths_.end(); ++i) {
-		binary_paths.erase(*i);
+	for (std::vector<std::string>::const_iterator i = paths_.begin(); i != paths_.end(); ++i) {
+		std::vector<std::string>::iterator it2 = std::find(binary_paths.begin(), binary_paths.end(), *i);
+		binary_paths.erase(it2);
 	}
+	paths_.clear();
 }
 
 void clear_binary_paths_cache()
@@ -1104,19 +1237,14 @@ const std::vector<std::string>& get_binary_paths(const std::string& type)
 
 	BOOST_FOREACH (const std::string &path, binary_paths)
 	{
-		res.push_back(get_user_data_dir() + "/" + path + type + "/");
-
-		if(!game_config::path.empty()) {
+		if (path.empty()) {
+			res.push_back(get_user_data_dir() + "/");
+			res.push_back(get_user_data_dir() + "/" + type + "/");
+			res.push_back(game_config::path + "/");
+		} else {
 			res.push_back(game_config::path + "/" + path + type + "/");
 		}
 	}
-
-	// not found in "/type" directory, try main directory
-	res.push_back(get_user_data_dir() + "/");
-
-	if(!game_config::path.empty())
-		res.push_back(game_config::path+"/");
-
 	return res;
 }
 
@@ -1507,6 +1635,34 @@ std::string format_time_ymd(time_t t)
 	return time_buf;
 }
 
+std::string format_time_hms(time_t t)
+{
+	char time_buf[256] = {0};
+	tm* tm_l = localtime(&t);
+	if (tm_l) {
+		const size_t res = strftime(time_buf, sizeof(time_buf), _("%H:%M:%S"), tm_l);
+		if (res == 0) {
+			time_buf[0] = 0;
+		}
+	}
+
+	return time_buf;
+}
+
+std::string format_time_hm(time_t t)
+{
+	char time_buf[256] = {0};
+	tm* tm_l = localtime(&t);
+	if (tm_l) {
+		const size_t res = strftime(time_buf, sizeof(time_buf), _("%H:%M"), tm_l);
+		if (res == 0) {
+			time_buf[0] = 0;
+		}
+	}
+
+	return time_buf;
+}
+
 std::string format_time_date(time_t t)
 {
 	time_t curtime = time(NULL);
@@ -1568,7 +1724,51 @@ std::string format_time_local(time_t t)
 	return time_buf;
 }
 
-std::string format_time_elapse(time_t elapse)
+std::string format_time_ymdhms(time_t t)
+{
+	char time_buf[256] = {0};
+	tm* tm_l = localtime(&t);
+	if (tm_l) {
+		const size_t res = strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", tm_l);
+		if (res == 0) {
+			time_buf[0] = 0;
+		}
+	}
+
+	return time_buf;
+}
+
+std::string format_elapse_hms(time_t elapse, bool align)
+{
+	if (elapse < 0) {
+		elapse = 0;
+	}
+	int sec = elapse % 60;
+	int min = (elapse / 60) % 60;
+	int hour = elapse / 3600;
+
+	std::stringstream ss;
+	if (align || hour) {
+		if (align) {
+			ss << std::setfill('0') << std::setw(2);
+		}
+		ss << hour << _("time^h");
+	}
+	if (align || hour || min) {
+		if (align) {
+			ss << std::setfill('0') << std::setw(2);
+		}
+		ss << min << _("time^m");
+	}
+	if (align) {
+		ss << std::setfill('0') << std::setw(2);
+	}
+	ss << sec << _("time^s");
+	
+	return ss.str();
+}
+
+std::string format_elapse_hms2(time_t elapse, bool align)
 {
 	if (elapse < 0) {
 		elapse = 0;
@@ -1582,13 +1782,76 @@ std::string format_time_elapse(time_t elapse)
 	if (day) {
 		utils::string_map symbols;
 		symbols["d"] = str_cast(day);
-		strstr << vgettext("$d days", symbols) << " ";
+		strstr << vgettext("rose-lib", "$d days", symbols) << " ";
 	}
 	strstr << std::setfill('0') << std::setw(2) << hour << ":";
 	strstr << std::setfill('0') << std::setw(2) << min << ":";
 	strstr << std::setfill('0') << std::setw(2) << sec;
 	
 	return strstr.str();
+}
+
+std::string format_elapse_hm(time_t elapse, bool align)
+{
+	if (elapse < 0) {
+		elapse = 0;
+	}
+	int sec = elapse % 60;
+	int min = (elapse / 60) % 60;
+	int hour = (elapse / 3600) % 24;
+	int day = elapse / (3600 * 24);
+
+	std::stringstream ss;
+	if (align) {
+		ss << std::setfill('0') << std::setw(2);
+	}
+	ss << hour << _("time^h");
+	ss << std::setfill('0') << std::setw(2) << min << _("time^m");
+	
+	return ss.str();
+}
+
+std::string format_elapse_hm2(time_t elapse, bool align)
+{
+	if (elapse < 0) {
+		elapse = 0;
+	}
+	int sec = elapse % 60;
+	int min = (elapse / 60) % 60;
+	int hour = (elapse / 3600) % 24;
+	int day = elapse / (3600 * 24);
+
+	std::stringstream ss;
+	if (align) {
+		ss << std::setfill('0') << std::setw(2);
+	}
+	ss << hour << ":";
+	ss << std::setfill('0') << std::setw(2) << min;
+	
+	return ss.str();
+}
+
+std::string format_elapse_ms(time_t elapse, bool align)
+{
+	if (elapse < 0) {
+		elapse = 0;
+	}
+	int sec = elapse % 60;
+	int min = elapse / 60;
+
+	std::stringstream ss;
+	if (min || align) {
+		if (align) {
+			ss << std::setfill('0') << std::setw(2);
+		}
+		ss << min << _("time^m");
+	}
+	if (align) {
+		ss << std::setfill('0') << std::setw(2);
+	}
+	ss << sec << _("time^s");
+	
+	return ss.str();
 }
 
 //
@@ -1634,3 +1897,56 @@ tsaes_decrypt::tsaes_decrypt(const char* ptext, int s, unsigned char* key)
 	}
 }
 
+void tfopen_lock::resize_data(int size, int vsize)
+{
+	VALIDATE(size >= 0, null_str);
+
+	if (size > data_size) {
+		char* tmp = (char*)malloc(size);
+		if (data) {
+			if (vsize) {
+				memcpy(tmp, data, vsize);
+			}
+			free(data);
+		}
+		data = tmp;
+		data_size = size;
+	}
+}
+
+void tfopen_lock::move(int64_t from, int64_t to, int size)
+{
+	if (from <= to || size < 0) {
+		return;
+	}
+
+	uint32_t fsizelow, fsizehigh, bytertd;
+	posix_fsize(fp, fsizelow, fsizehigh);
+	int64_t fsize = posix_mki64(fsizelow, fsizehigh);
+
+	if (!size || fsize - from < size) {
+		size = fsize - from;
+	}
+	if (!fsize) {
+		return;
+	}
+
+	const int byte_per_block = 1024 * 1024;
+	resize_data(byte_per_block);
+
+	int once_read;
+	if (from > to) {
+		while (from < fsize) {
+			once_read = std::min<int64_t>(byte_per_block, fsize - from);
+
+			posix_fseek(fp, posix_lo32(from), posix_hi32(from));
+			posix_fread(fp, data, once_read, bytertd);
+
+			posix_fseek(fp, posix_lo32(to), posix_hi32(to));
+			posix_fwrite(fp, data, once_read, bytertd);
+
+			from += once_read;
+			to += once_read;
+		}
+	}
+}

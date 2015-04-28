@@ -1,9 +1,7 @@
-#War Of Kingdom
-
-- War of Kingdom is a open source, turn-based tactical strategy game.  
-- War of Kingdom is based [Rose](https://github.com/freeors/Rose). Rose is a Cross-Platform SDK.
-
-How to Compile<br>
+War Of Kingdom<br>
 ---
-Chinese: [《Rose: 跨平台C++ SDK》](http://www.freeors.com/download/Cross-Platform C++ SDK.pdf)<br>
-Other Language: [Compile and Run](http://www.freeors.com/bbs/forum.php?mod=viewthread&tid=21237&extra=page%3D1)
+War of Kingdom is a open source, turn-based tactical strategy game. It is based [Rose](https://github.com/freeors/Rose). For more information on War of Kingdom please browse our [site](http://www.freeors.com).<br>
+
+V1.0.31<br>
+----
+* Base Rose V0.0.12

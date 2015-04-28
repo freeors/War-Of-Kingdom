@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/event/handler.hpp"
 
@@ -28,7 +28,9 @@
 #include "video.hpp"
 #include "display.hpp"
 #include "gui/widgets/settings.hpp"
+#include "preferences.hpp"
 #include "wml_exception.hpp"
+#include "posix.h"
 
 #include <boost/foreach.hpp>
 
@@ -55,10 +57,21 @@
 /* Since this code is still very experimental it's not enabled yet. */
 //#define ENABLE
 
-extern int revise_screen_width(int width);
-extern int revise_screen_height(int height);
-
 namespace gui2 {
+
+tpoint revise_screen_size(const int width, const int height)
+{
+	tpoint landscape_size = twidget::toggle_orientation_size(width, height);
+	if (landscape_size.x < preferences::min_allowed_width()) {
+		landscape_size.x = preferences::min_allowed_width();
+	}
+	if (landscape_size.y < preferences::min_allowed_height()) {
+		landscape_size.y = preferences::min_allowed_height();
+	}
+
+	tpoint normal_size = twidget::toggle_orientation_size(landscape_size.x, landscape_size.y);
+	return normal_size;
+}
 
 namespace event {
 
@@ -124,8 +137,7 @@ static Uint32 timer_sdl_poll_events(Uint32, void*)
  *
  * It's a new experimental class.
  */
-class thandler
-	: public events::handler
+class thandler: public events::handler, public base_finger
 {
 	friend bool gui2::is_in_dialog();
 	friend void gui2::async_draw();
@@ -156,6 +168,12 @@ public:
 	tdispatcher* mouse_focus;
 
 private:
+	// override base_finger
+	void handle_swipe(int x, int y, int dx, int dy);
+	void handle_mouse_down(const SDL_MouseButtonEvent& button);
+	void handle_mouse_up(const SDL_MouseButtonEvent& button);
+	void handle_mouse_motion(const SDL_MouseMotionEvent& motion);
+	void handle_mouse_wheel(const SDL_MouseWheelEvent& wheel, int x, int y, Uint8 mouse_flags);
 
 	/**
 	 * Reinitializes the state of all dispatchers.
@@ -270,6 +288,7 @@ private:
 	 */
 	void keyboard(const tevent event);
 
+private:
 	/**
 	 * The dispatchers.
 	 *
@@ -286,9 +305,6 @@ private:
 	 */
 	tdispatcher* keyboard_focus_;
 	friend void capture_keyboard(tdispatcher*);
-
-	// swip
-	bool wait_bh_event_;
 };
 
 thandler::thandler()
@@ -296,9 +312,8 @@ thandler::thandler()
 	, mouse_focus(NULL)
 	, dispatchers_()
 	, keyboard_focus_(NULL)
-	, wait_bh_event_(false)
 {
-	if(SDL_WasInit(SDL_INIT_TIMER) == 0) {
+	if (SDL_WasInit(SDL_INIT_TIMER) == 0) {
 		if(SDL_InitSubSystem(SDL_INIT_TIMER) == -1) {
 			assert(false);
 		}
@@ -317,199 +332,191 @@ thandler::~thandler()
 #endif
 }
 
-void thandler::handle_event(const SDL_Event& event)
+void thandler::handle_swipe(int x, int y, int dx, int dy)
 {
-	/** No dispatchers drop the event. */
-	if(dispatchers_.empty()) {
+	int abs_dx = abs(dx);
+	int abs_dy = abs(dy);
+	if (abs_dx <= FINGER_HIT_THRESHOLD && abs_dy <= FINGER_HIT_THRESHOLD) {
 		return;
 	}
 
-	int abs_dx, abs_dy, x, y, dx, dy;
-	SDL_Event dump_event;
+	if (abs_dx >= abs_dy && abs_dx >= FINGER_MOTION_THRESHOLD) {
+		// x axis
+		if (dx > 0) {
+			mouse(SDL_WHEEL_LEFT, tpoint(x, y));
+		} else {
+			mouse(SDL_WHEEL_RIGHT, tpoint(x, y));
+		}
+
+	} else if (abs_dx < abs_dy && abs_dy >= FINGER_MOTION_THRESHOLD) {
+		// y axis
+		if (dy > 0) {
+			mouse(SDL_WHEEL_UP, tpoint(x, y));
+		} else {
+			mouse(SDL_WHEEL_DOWN, tpoint(x, y));
+		}
+	}
+}
+
+void thandler::handle_mouse_down(const SDL_MouseButtonEvent& button)
+{
+	mouse_button_down(tpoint(button.x, button.y), button.button);
+}
+
+void thandler::handle_mouse_up(const SDL_MouseButtonEvent& button)
+{
+	if (!multi_gestures()) {
+		mouse_button_up(tpoint(button.x, button.y), button.button);
+	} else {
+		mouse_button_up(tpoint(twidget::npos, twidget::npos), button.button);
+	}
+}
+
+void thandler::handle_mouse_motion(const SDL_MouseMotionEvent& motion)
+{
+	if (!multi_gestures()) {
+		mouse(SDL_MOUSE_MOTION, tpoint(motion.x, motion.y));
+	} else {
+		mouse(SDL_MOUSE_MOTION, tpoint(twidget::npos, twidget::npos));
+	}
+}
+
+void thandler::handle_mouse_wheel(const SDL_MouseWheelEvent& wheel, int x, int y, Uint8 mouse_flags)
+{
+	int abs_dx, abs_dy;
+
+	abs_dx = abs(wheel.x);
+	abs_dy = abs(wheel.y);
+	if (abs_dx <= MOUSE_HIT_THRESHOLD && abs_dy <= MOUSE_HIT_THRESHOLD) {
+		return;
+	}
+	mouse(SDL_MOUSE_MOTION, tpoint(x, y));
+	if (abs_dx >= abs_dy && abs_dx >= MOUSE_MOTION_THRESHOLD) {
+		// x axis
+		if (wheel.x > 0) {
+			mouse(SDL_WHEEL_LEFT, tpoint(x, y));
+		} else {
+			mouse(SDL_WHEEL_RIGHT, tpoint(x, y));
+		}
+	} else if (abs_dx < abs_dy && abs_dy >= MOUSE_MOTION_THRESHOLD) {
+		// y axis
+		if (wheel.y > 0) {
+			mouse(SDL_WHEEL_UP, tpoint(x, y));
+		} else {
+			mouse(SDL_WHEEL_DOWN, tpoint(x, y));
+		}
+	}
+}
+
+void thandler::handle_event(const SDL_Event& event)
+{
+	/** No dispatchers drop the event. */
+	if (dispatchers_.empty()) {
+		return;
+	}
+
+	int x = 0, y = 0;
 
 	switch(event.type) {
-		case SDL_FINGERDOWN:
-			wait_bh_event_ = true;
-			break;
+	case SDL_FINGERDOWN:
+	case SDL_FINGERMOTION:
+	case SDL_FINGERUP:
+	case SDL_MULTIGESTURE:
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
+	case SDL_MOUSEMOTION:
+	case SDL_MOUSEWHEEL:
+		base_finger::process_event(event);
+		break;
 
-		case SDL_FINGERMOTION:
-			x = event.tfinger.x * settings::screen_width;
-			y = event.tfinger.y * settings::screen_height;
-			dx = event.tfinger.dx * settings::screen_width;
-			dy = event.tfinger.dy * settings::screen_height;
+	case SHOW_HELPTIP_EVENT:
+		mouse(SHOW_HELPTIP, get_mouse_position());
+		break;
 
-			abs_dx = abs(dx);
-			abs_dy = abs(dy);
-			if (abs_dx <= FINGER_HIT_THRESHOLD && abs_dy <= FINGER_HIT_THRESHOLD) {
-				break;
-			}
-			mouse(SDL_MOUSE_MOTION, tpoint(x, y));
-			if (abs_dx >= abs_dy && abs_dx >= FINGER_MOTION_THRESHOLD) {
-				// x axis
-				if (dx > 0) {
-					mouse(SDL_WHEEL_LEFT, tpoint(x, y));
-				} else {
-					mouse(SDL_WHEEL_RIGHT, tpoint(x, y));
-				}
-			} else if (abs_dx < abs_dy && abs_dy >= FINGER_MOTION_THRESHOLD) {
-				// y axis
-				if (dy > 0) {
-					mouse(SDL_WHEEL_UP, tpoint(x, y));
-				} else {
-					mouse(SDL_WHEEL_DOWN, tpoint(x, y));
-				}
-			}
-
-			SDL_PumpEvents();
-			while (SDL_PeepEvents(&dump_event, 1, SDL_GETEVENT, INPUT_MASK_MIN, INPUT_MASK_MAX) > 0) {};
-
-			wait_bh_event_ = false;
-			break;
-
-		case SDL_MOUSEWHEEL:
-			if (event.wheel.which == SDL_TOUCH_MOUSEID) {
-				break;
-			}
-			abs_dx = abs(event.wheel.x);
-			abs_dy = abs(event.wheel.y);
-			if (abs_dx <= MOUSE_HIT_THRESHOLD && abs_dy <= MOUSE_HIT_THRESHOLD) {
-				break;
-			}
-			SDL_GetMouseState(&x, &y);
-			mouse(SDL_MOUSE_MOTION, tpoint(x, y));
-			if (abs_dx >= abs_dy && abs_dx >= MOUSE_MOTION_THRESHOLD) {
-				// x axis
-				if (event.wheel.x > 0) {
-					mouse(SDL_WHEEL_LEFT, tpoint(x, y));
-				} else {
-					mouse(SDL_WHEEL_RIGHT, tpoint(x, y));
-				}
-			} else if (abs_dx < abs_dy && abs_dy >= MOUSE_MOTION_THRESHOLD) {
-				// y axis
-				if (event.wheel.y > 0) {
-					mouse(SDL_WHEEL_UP, tpoint(x, y));
-				} else {
-					mouse(SDL_WHEEL_DOWN, tpoint(x, y));
-				}
-			}
-			break;
-
-		case SDL_MOUSEMOTION:
-			if (event.button.which == SDL_TOUCH_MOUSEID) {
-				break;
-			}
-			mouse(SDL_MOUSE_MOTION, tpoint(event.motion.x, event.motion.y));
-			break;
-
-		case SDL_MOUSEBUTTONDOWN:
-			if (event.button.which == SDL_TOUCH_MOUSEID) {
-				break;
-			}
-			mouse_button_down(tpoint(event.button.x, event.button.y), event.button.button);
-			break;
-
-		case SDL_FINGERUP:
-			if (!wait_bh_event_) {
-				break;
-			}
-			x = event.tfinger.x * settings::screen_width;
-			y = event.tfinger.y * settings::screen_height;
-			mouse(SDL_MOUSE_MOTION, tpoint(x, y));
-			// simulate SDL_MOUSEBUTTONDOWN
-			mouse_button_down(tpoint(x, y), SDL_BUTTON_LEFT);
-
-		case SDL_MOUSEBUTTONUP:
-			if (event.type == SDL_FINGERUP) {
-				mouse_button_up(tpoint(x, y), SDL_BUTTON_LEFT);
-			} else {
-				if (event.button.which == SDL_TOUCH_MOUSEID) {
-					break;
-				}
-				mouse_button_up(tpoint(event.button.x, event.button.y), event.button.button);
-			}
-			wait_bh_event_ = false;
-			break;
-
-		case SHOW_HELPTIP_EVENT:
-			mouse(SHOW_HELPTIP, get_mouse_position());
-			break;
-
-		case HOVER_REMOVE_POPUP_EVENT:
+	case HOVER_REMOVE_POPUP_EVENT:
 //			remove_popup();
-			break;
+		break;
 
-		case DRAW_EVENT:
-			draw(false);
-			break;
+	case DRAW_EVENT:
+		draw(false);
+		break;
 
-		case TIMER_EVENT:
-			execute_timer(reinterpret_cast<long>(event.user.data1));
-			break;
+	case TIMER_EVENT:
+		execute_timer(reinterpret_cast<long>(event.user.data1));
+		break;
 
-		case CLOSE_WINDOW_EVENT:
-				{
-					/** @todo Convert this to a proper new style event. */
-					DBG_GUI_E << "Firing " << CLOSE_WINDOW << ".\n";
+	case CLOSE_WINDOW_EVENT:
+		{
+			/** @todo Convert this to a proper new style event. */
+			DBG_GUI_E << "Firing " << CLOSE_WINDOW << ".\n";
 
-					twindow* window = twindow::window_instance(event.user.code);
-					if(window) {
-						window->set_retval(twindow::AUTO_CLOSE);
-					}
-				}
-			break;
-
-		case SDL_JOYBUTTONDOWN:
-			button_down(event.jbutton);
-			break;
-
-		case SDL_JOYBUTTONUP:
-			break;
-
-		case SDL_JOYAXISMOTION:
-			break;
-
-		case SDL_JOYHATMOTION:
-			hat_motion(event.jhat);
-			break;
-
-		case SDL_KEYDOWN:
-			key_down(event.key);
-			break;
-
-		case SDL_TEXTINPUT:
-            text_input(event.text);
-			break;
-
-		case SDL_WINDOWEVENT:
-			if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
-				// draw(true);
-
-			} else if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-				video_resize(tpoint(revise_screen_width(event.window.data1), revise_screen_height(event.window.data2)));
-
-			} else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED || event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
-				activate();
+			twindow* window = twindow::window_instance(event.user.code);
+			if(window) {
+				window->set_retval(twindow::AUTO_CLOSE);
 			}
-			break;
+		}
+		break;
+
+	case SDL_JOYBUTTONDOWN:
+		button_down(event.jbutton);
+		break;
+
+	case SDL_JOYBUTTONUP:
+		break;
+
+	case SDL_JOYAXISMOTION:
+		break;
+
+	case SDL_JOYHATMOTION:
+		hat_motion(event.jhat);
+		break;
+
+	case SDL_KEYDOWN:
+		key_down(event.key);
+		break;
+
+	case SDL_TEXTINPUT:
+        text_input(event.text);
+		break;
+
+	case SDL_WINDOWEVENT:
+		if (event.window.event == SDL_WINDOWEVENT_LEAVE) {
+			Uint8 mouse_flags = SDL_GetMouseState(&x, &y);
+			if (mouse_flags & SDL_BUTTON(SDL_BUTTON_LEFT)) {
+				// mouse had leave window, simulate mouse motion and mouse up.
+				mouse(SDL_MOUSE_MOTION, tpoint(twidget::npos, twidget::npos));
+				mouse_button_up(tpoint(twidget::npos, twidget::npos), SDL_BUTTON_LEFT);
+			}
+
+		} else if (event.window.event == SDL_WINDOWEVENT_EXPOSED) {
+			// draw(true);
+
+		} else if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+			video_resize(revise_screen_size(event.window.data1, event.window.data2));
+
+		} else if (event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED || event.window.event == SDL_WINDOWEVENT_FOCUS_LOST) {
+			activate();
+		}
+		break;
 
 #if defined(_X11) && !defined(__APPLE__)
-		case SDL_SYSWMEVENT: {
-			DBG_GUI_E << "Event: System event.\n";
-			//clipboard support for X11
-			handle_system_event(event);
-			break;
-		}
+	case SDL_SYSWMEVENT: {
+		DBG_GUI_E << "Event: System event.\n";
+		//clipboard support for X11
+		handle_system_event(event);
+		break;
+	}
 #endif
 
-		// Silently ignored events.
-		case SDL_KEYUP:
-		case DOUBLE_CLICK_EVENT:
-			break;
+	// Silently ignored events.
+	case SDL_KEYUP:
+	case DOUBLE_CLICK_EVENT:
+		break;
 
-		default:
-			WRN_GUI_E << "Unhandled event "
-					<< static_cast<Uint32>(event.type) << ".\n";
-			break;
+	default:
+		WRN_GUI_E << "Unhandled event "
+				<< static_cast<Uint32>(event.type) << ".\n";
+		break;
 	}
 }
 
@@ -564,9 +571,7 @@ void thandler::disconnect(tdispatcher* dispatcher)
 void thandler::activate()
 {
 	BOOST_FOREACH(tdispatcher* dispatcher, dispatchers_) {
-		dispatcher->fire(SDL_ACTIVATE
-				, dynamic_cast<twidget&>(*dispatcher)
-				, NULL);
+		dispatcher->fire2(SDL_ACTIVATE, dynamic_cast<twidget&>(*dispatcher));
 	}
 }
 
@@ -591,6 +596,12 @@ void thandler::draw(const bool force)
 	std::vector<bool> require_draw;
 	int last_area = 0;
 	for (std::vector<tdispatcher*>::const_reverse_iterator rit = dispatchers_.rbegin(); rit != dispatchers_.rend(); ++ rit) {
+		{
+			// only draw topest window.
+			require_draw.insert(require_draw.begin(), require_draw.empty());
+			continue;
+		}
+
 		twindow* widget = dynamic_cast<twindow*>(*rit);
 		if (widget->is_theme()) {
 			require_draw.insert(require_draw.begin(), false);
@@ -628,26 +639,38 @@ void thandler::draw(const bool force)
 	if (!dispatchers_.empty()) {
 		display* disp = display::get_singleton();
 		
-		CVideo& video = dynamic_cast<twindow&>(*dispatchers_.back()).video();
+		twindow* window = dynamic_cast<twindow*>(dispatchers_.back());
+		CVideo& video = window->video();
 
 		surface frame_buffer = video.getSurface();
 
+		// tip's buff will used to other place, require remember first.
+		window->draw_tooltip(frame_buffer);
 		disp->draw_float_anim();
 		cursor::draw(frame_buffer);
+
 		video.flip();
+
 		cursor::undraw(frame_buffer);
 		disp->undraw_float_anim();
+		window->undraw_tooltip(frame_buffer);
 	}
 }
 
 void thandler::video_resize(const tpoint& new_size)
 {
-	DBG_GUI_E << "Firing: " << SDL_VIDEO_RESIZE << ".\n";
+	if (dispatchers_.size() > 1) {
+		// when tow or more, forbidden scale.
+		// It is bug, require deal with in the feature.
+
+		// I cannot change SDL_VIDEO_RESIZE runtime. replace with recovering window size.
+		display* disp = display::get_singleton();
+		disp->video().sdl_set_window_size(settings::screen_width, settings::screen_height);
+		return;
+	}
 
 	BOOST_FOREACH(tdispatcher* dispatcher, dispatchers_) {
-		dispatcher->fire(SDL_VIDEO_RESIZE
-				, dynamic_cast<twidget&>(*dispatcher)
-				, new_size);
+		dispatcher->fire(SDL_VIDEO_RESIZE, dynamic_cast<twidget&>(*dispatcher), new_size);
 	}
 }
 
@@ -656,27 +679,21 @@ void thandler::mouse(const tevent event, const tpoint& position)
 	DBG_GUI_E << "Firing: " << event << ".\n";
 
 	if (mouse_focus) {
-		mouse_focus->fire(event
-				, dynamic_cast<twidget&>(*mouse_focus)
-				, position);
+		mouse_focus->fire(event, dynamic_cast<twidget&>(*mouse_focus), position);
 	} else {
 
 		for(std::vector<tdispatcher*>::reverse_iterator ritor =
 				dispatchers_.rbegin(); ritor != dispatchers_.rend(); ++ritor) {
 
 			if((**ritor).get_mouse_behaviour() == tdispatcher::all) {
-				(**ritor).fire(event
-						, dynamic_cast<twidget&>(**ritor)
-						, position);
+				(**ritor).fire(event, dynamic_cast<twidget&>(**ritor), position);
 				break;
 			}
 			if((**ritor).get_mouse_behaviour() == tdispatcher::none) {
 				continue;
 			}
 			if((**ritor).is_at(position)) {
-				(**ritor).fire(event
-						, dynamic_cast<twidget&>(**ritor)
-						, position);
+				(**ritor).fire(event, dynamic_cast<twidget&>(**ritor), position);
 				break;
 			}
 		}
@@ -780,10 +797,7 @@ void thandler::key_down(const SDL_KeyboardEvent& event)
 void thandler::text_input(const SDL_TextInputEvent& event)
 {
 	if (tdispatcher* dispatcher = keyboard_dispatcher()) {
-		dispatcher->fire(SDL_TEXT_INPUT
-				, dynamic_cast<twidget&>(*dispatcher)
-				, 0
-				, event.text);
+		dispatcher->fire(SDL_TEXT_INPUT, dynamic_cast<twidget&>(*dispatcher)	, 0, event.text);
 	}
 }
 
@@ -805,11 +819,7 @@ void thandler::key_down(const SDLKey key
 	DBG_GUI_E << "Firing: " << SDL_KEY_DOWN << ".\n";
 
 	if(tdispatcher* dispatcher = keyboard_dispatcher()) {
-		dispatcher->fire(SDL_KEY_DOWN
-				, dynamic_cast<twidget&>(*dispatcher)
-				, key
-				, modifier
-				, unicode);
+		dispatcher->fire(SDL_KEY_DOWN, dynamic_cast<twidget&>(*dispatcher), key, modifier, unicode);
 	}
 }
 
@@ -951,7 +961,6 @@ std::ostream& operator<<(std::ostream& stream, const tevent event)
 		case SDL_ACTIVATE           : stream << "SDL activate"; break;
 		case MESSAGE_SHOW_TOOLTIP   : stream << "message show tooltip"; break;
 		case SHOW_HELPTIP           : stream << "show helptip"; break;
-		case MESSAGE_SHOW_HELPTIP   : stream << "message show helptip"; break;
 		case REQUEST_PLACEMENT      : stream << "request placement"; break;
 	}
 
@@ -964,10 +973,13 @@ void async_draw()
 {
 	
 	/* It is call by display::draw only.
-	 * There is 2 window at max. First is theme, second is tooltip.
+	 * if there are tow or more dialog, in change resolution.
 	 */
-	assert(event::handler);
-
+/*
+	if (event::handler->dispatchers_.size() > 1) {
+		return;
+	}
+*/
 	bool first = true;
 	BOOST_FOREACH(event::tdispatcher* dispatcher, event::handler->dispatchers_) {
 		if (!first) {

@@ -14,24 +14,23 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 
 #include "config.hpp"
 #include "filesystem.hpp"
 #include "font.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "log.hpp"
 #include "marked-up_text.hpp"
-#include "text.hpp"
-#include "tooltips.hpp"
 #include "video.hpp"
 #include "serialization/parser.hpp"
 #include "serialization/preprocessor.hpp"
 #include "serialization/string_utils.hpp"
 #include "help.hpp"
 #include "gui/widgets/helper.hpp"
+#include "gui/widgets/settings.hpp"
 #include "wml_exception.hpp"
 #include "image.hpp"
 #include "display.hpp"
@@ -53,20 +52,14 @@ static lg::log_domain log_font("font");
 #endif
 
 // sdl-2.0
-int SDL_SetAlpha(SDL_Surface * surface, Uint32 flag, Uint8 value)
+int SDL_SetAlpha(SDL_Surface * surface, Uint32 flag, Uint8 /*value*/)
 {
     if (flag & SDL_SRCALPHA) {
-        /* According to the docs, value is ignored for alpha surfaces */
-        if (surface->format->Amask) {
-            value = 0xFF;
-        }
-        SDL_SetSurfaceAlphaMod(surface, value);
         SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_BLEND);
     } else {
-        SDL_SetSurfaceAlphaMod(surface, 0xFF);
         SDL_SetSurfaceBlendMode(surface, SDL_BLENDMODE_NONE);
     }
-    SDL_SetSurfaceRLE(surface, (flag & SDL_RLEACCEL));
+	// SDL_SetSurfaceRLE(surface, (flag & SDL_RLEACCEL));
 
     return 0;
 }
@@ -87,58 +80,6 @@ Uint8 SDL_GetAppState(SDL_Window* window)
         state |= SDL_APPMOUSEFOCUS;
     }
     return state;
-}
-
-SDL_Surface* SDL_DisplayFormatAlpha(SDL_Surface* screen_surf, SDL_Surface * surface)
-{
-    SDL_PixelFormat *vf;
-    SDL_PixelFormat *format;
-    SDL_Surface *converted;
-    /* default to ARGB8888 */
-    Uint32 amask = 0xff000000;
-    Uint32 rmask = 0x00ff0000;
-    Uint32 gmask = 0x0000ff00;
-    Uint32 bmask = 0x000000ff;
-
-    vf = screen_surf->format;
-
-    switch (vf->BytesPerPixel) {
-    case 2:
-        /* For XGY5[56]5, use, AXGY8888, where {X, Y} = {R, B}.
-           For anything else (like ARGB4444) it doesn't matter
-           since we have no special code for it anyway */
-        if ((vf->Rmask == 0x1f) &&
-            (vf->Bmask == 0xf800 || vf->Bmask == 0x7c00)) {
-            rmask = 0xff;
-            bmask = 0xff0000;
-        }
-        break;
-
-    case 3:
-    case 4:
-        /* Keep the video format, as long as the high 8 bits are
-           unused or alpha */
-        if ((vf->Rmask == 0xff) && (vf->Bmask == 0xff0000)) {
-            rmask = 0xff;
-            bmask = 0xff0000;
-        }
-        break;
-
-    default:
-        /* We have no other optimised formats right now. When/if a new
-           optimised alpha format is written, add the converter here */
-        break;
-    }
-    format = SDL_AllocFormat(SDL_MasksToPixelFormatEnum(32, rmask,
-                                                            gmask,
-                                                            bmask,
-                                                            amask));
-    if (!format) {
-        return NULL;
-    }
-    converted = SDL_ConvertSurface(surface, format, SDL_RLEACCEL);
-    SDL_FreeFormat(format);
-    return converted;
 }
 
 // Signed int. Negative values mean "no subset".
@@ -252,7 +193,8 @@ typedef std::map<std::string,SDL_Rect> line_size_cache_map;
 static std::map<int,std::map<int,line_size_cache_map> > line_size_cache;
 
 //Splits the UTF-8 text into text_chunks using the same font.
-static std::vector<text_chunk> split_text(std::string const & utf8_text) {
+static std::vector<text_chunk> split_text(std::string const & utf8_text) 
+{
 	text_chunk current_chunk(0);
 	std::vector<text_chunk> chunks;
 
@@ -500,6 +442,13 @@ const SDL_Color NORMAL_COLOR = {0xDD,0xDD,0xDD,0},
 				BIGMAP_COLOR = {0xFF,0xFF,0xFF,0};
 const SDL_Color DISABLED_COLOR = inverse(PETRIFIED_COLOR);
 
+int SIZE_XTINY = SIZE_XTINY_MDPI;
+int SIZE_TINY = SIZE_TINY_MDPI;
+int SIZE_SMALL = SIZE_SMALL_MDPI;
+int SIZE_NORMAL = SIZE_NORMAL_MDPI;
+int SIZE_LARGE = SIZE_LARGE_MDPI;
+int SIZE_XLARGE = SIZE_XLARGE_MDPI;
+
 }
 
 static const size_t max_text_line_width = 4096;
@@ -508,10 +457,6 @@ class text_surface
 {
 public:
 	text_surface(std::string const &str, int size, SDL_Color color, int style);
-	text_surface(int size, SDL_Color color, int style);
-	void set_text(std::string const &str);
-
-	size_t measure_partial(const unsigned column);
 
 	void measure() const;
 	size_t width() const;
@@ -526,6 +471,10 @@ public:
 			&& color_ == t.color_ && style_ == t.style_ && str_ == t.str_;
 	}
 	bool operator!=(text_surface const &t) const { return !operator==(t); }
+
+private:
+	void hash();
+
 private:
 	int hash_;
 	int font_size_;
@@ -540,7 +489,6 @@ private:
 	bool is_rtl_;
 	void bidi_cvt();
 #endif
-	void hash();
 };
 
 #ifdef	HAVE_FRIBIDI
@@ -596,40 +544,12 @@ text_surface::text_surface(std::string const &str, int size,
 	hash();
 }
 
-text_surface::text_surface(int size, SDL_Color color, int style) :
-	hash_(0),
-	font_size_(size),
-	color_(color),
-	style_(style),
-	w_(-1),
-	h_(-1),
-	str_(),
-	initialized_(false),
-	chunks_(),
-	surfs_()
-#ifdef	HAVE_FRIBIDI
-	,is_rtl_(false)
-#endif
-{
-}
-
-void text_surface::set_text(std::string const &str)
-{
-	initialized_ = false;
-	w_ = -1;
-	h_ = -1;
-	str_ = str;
-#ifdef	HAVE_FRIBIDI
-	bidi_cvt();
-#endif
-	hash();
-}
-
 void text_surface::hash()
 {
 	int h = 0;
-	for(std::string::const_iterator it = str_.begin(), it_end = str_.end(); it != it_end; ++it)
+	for (std::string::const_iterator it = str_.begin(), it_end = str_.end(); it != it_end; ++it) {
 		h = ((h << 9) | (h >> (sizeof(int) * 8 - 9))) ^ (*it);
+	}
 	hash_ = h;
 }
 
@@ -641,8 +561,9 @@ void text_surface::measure() const
 	BOOST_FOREACH (text_chunk const &chunk, chunks_)
 	{
 		TTF_Font* ttfont = get_font(font_id(chunk.subset, font_size_));
-		if(ttfont == NULL)
+		if (ttfont == NULL) {
 			continue;
+		}
 		font_style_setter const style_setter(ttfont, style_);
 
 		int w, h;
@@ -652,40 +573,12 @@ void text_surface::measure() const
 	}
 }
 
-size_t text_surface::measure_partial(const unsigned column)
-{
-	size_t total_w = 0, total_h = 0;
-	unsigned uncalc_column = column;
-	
-	if (column == 0) {
-		return 0;
-	}
-	if (chunks_.empty()) {
-		chunks_ = split_text(str_);
-	}
-	BOOST_FOREACH (text_chunk const &chunk, chunks_) {
-		TTF_Font* ttfont = get_font(font_id(chunk.subset, font_size_));
-		if (ttfont == NULL)
-			continue;
-		font_style_setter const style_setter(ttfont, style_);
-
-		int w, h;
-		std::string tmp;
-		for (utils::utf8_iterator itor(chunk.text); uncalc_column && itor != utils::utf8_iterator::end(chunk.text); ++itor, uncalc_column --) {
-			tmp.append(itor.substr().first, itor.substr().second);
-		}
-		TTF_SizeUTF8(ttfont, tmp.c_str(), &w, &h);
-		total_w += w;
-		total_h = std::max<int>(total_h, h);
-	}
-	return total_w;
-}
-
 size_t text_surface::width() const
 {
 	if (w_ == -1) {
-		if(chunks_.empty())
+		if (chunks_.empty()) {
 			chunks_ = split_text(str_);
+		}
 		measure();
 	}
 	return w_;
@@ -694,8 +587,9 @@ size_t text_surface::width() const
 size_t text_surface::height() const
 {
 	if (h_ == -1) {
-		if(chunks_.empty())
+		if (chunks_.empty()) {
 			chunks_ = split_text(str_);
+		}
 		measure();
 	}
 	return h_;
@@ -703,15 +597,17 @@ size_t text_surface::height() const
 
 std::vector<surface> const &text_surface::get_surfaces() const
 {
-	if(initialized_)
+	if (initialized_) {
 		return surfs_;
+	}
 
 	initialized_ = true;
 
 	// Impose a maximal number of characters for a text line. Do now draw
 	// any text longer that that, to prevent a SDL buffer overflow
-	if(width() > max_text_line_width)
+	if (width() > max_text_line_width) {
 		return surfs_;
+	}
 
 	BOOST_FOREACH (text_chunk const &chunk, chunks_)
 	{
@@ -721,8 +617,9 @@ std::vector<surface> const &text_surface::get_surfaces() const
 		font_style_setter const style_setter(ttfont, style_);
 
 		surface s = surface(TTF_RenderUTF8_Blended(ttfont, chunk.text.c_str(), color_));
-		if(!s.null())
+		if (!s.null()) {
 			surfs_.push_back(s);
+		}
 	}
 
 	return surfs_;
@@ -758,45 +655,18 @@ void text_cache::resize(unsigned int size)
 
 text_surface &text_cache::find(text_surface const &t)
 {
-	static size_t lookup_ = 0, hit_ = 0;
 	text_list::iterator it_bgn = cache_.begin(), it_end = cache_.end();
 	text_list::iterator it = std::find(it_bgn, it_end, t);
 	if (it != it_end) {
 		cache_.splice(it_bgn, cache_, it);
-		++hit_;
 	} else {
-		if (cache_.size() >= max_size_)
+		if (cache_.size() >= max_size_) {
 			cache_.pop_back();
+		}
 		cache_.push_front(t);
 	}
-	if (++lookup_ % 1000 == 0) {
-		DBG_FT << "Text cache: " << lookup_ << " lookups, " << (hit_ / 10) << "% hits\n";
-		hit_ = 0;
-	}
+
 	return cache_.front();
-}
-
-// }
-
-static surface render_text(const std::string& text, int fontsize, const SDL_Color& color, int style, bool use_markup)
-{
-	if (text.empty()) {
-		return surface();
-	}
-	try {
-		ttext text_;
-		text_.set_foreground_color((color.r << 24) | (color.g << 16) | (color.b << 8) | 255);
-		text_.set_font_size(fontsize);
-		text_.set_font_style(style);
-		// text_.set_maximum_width(width_ < 0 ? clip_rect_.w : width_);
-		// text_.set_maximum_height(clip_rect_.h);
-		text_.set_text(text, use_markup);
-		return text_.render();
-	}
-	catch (utils::invalid_utf8_exception&) {
-		// Invalid UTF-8 string
-		return surface();
-	}
 }
 
 surface get_rendered_text2(const std::string& text, int maximum_width, int font_size, const SDL_Color& color, bool editable)
@@ -805,11 +675,11 @@ surface get_rendered_text2(const std::string& text, int maximum_width, int font_
 		return surface();
 	}
 	try {
-		if (maximum_width <= 0) maximum_width = 480;
+		if (maximum_width <= 0) maximum_width = gui2::settings::screen_width;
 		tintegrate integrate(text, maximum_width, -1, font_size, color, editable);
 		return integrate.get_surface();
 	}
-	catch(utils::invalid_utf8_exception&) {
+	catch (utils::invalid_utf8_exception&) {
 		// Invalid UTF-8 string
 		return surface();
 	}
@@ -817,7 +687,7 @@ surface get_rendered_text2(const std::string& text, int maximum_width, int font_
 
 gui2::tpoint get_rendered_text_size(const std::string& text, int maximum_width, int font_size, const SDL_Color& color, bool editable)
 {
-	if (text.empty() || maximum_width <= 0) {
+	if (text.empty() || maximum_width <= 0 || !font_size) {
 		return gui2::tpoint(0, 0);
 	}
 	try {
@@ -831,85 +701,80 @@ gui2::tpoint get_rendered_text_size(const std::string& text, int maximum_width, 
 	}
 }
 
-// it is called by tintegrate
-surface get_rendered_text(const std::string& str, int size, const SDL_Color& color, int style)
+static surface text_render(const std::string& text, int font_size, const SDL_Color& font_color, int style)
 {
-	return render_text(str, size, color, style, false);
+	text_surface txt_surf(text, font_size, font_color, style);
+	
+	text_surface* const cached_surf = &text_cache::find(txt_surf);
+	const std::vector<surface>& surfs = cached_surf->get_surfaces();
+
+	surface ret;
+	if (surfs.empty()) {
+		return ret;
+	}
+
+	size_t width = cached_surf->width();
+	size_t height = cached_surf->height();
+
+	ret = create_neutral_surface(width, height);
+	if (!ret) {
+		return ret;
+	}
+
+	// we keep blank lines and spaces (may be wanted for indentation)
+	if (surfs.size() == 1) {
+		ret = surfs.front();
+		SDL_SetAlpha(ret, SDL_SRCALPHA, SDL_ALPHA_OPAQUE);
+
+	} else {
+		ret = create_neutral_surface(width, height);
+		if (!ret) {
+			return ret;
+		}
+
+		size_t xpos = 0;
+		for (std::vector<surface>::const_iterator it = surfs.begin(), it_end = surfs.end(); it != it_end; ++ it) {
+			const surface& surf = *it;
+			SDL_SetAlpha(surf, 0, 0); // direct blit without alpha blending
+			SDL_Rect dstrect = create_rect(xpos, 0, 0, 0);
+			sdl_blit(surf, NULL, ret, &dstrect);
+			xpos += surf->w;
+		}
+
+		SDL_SetAlpha(ret, SDL_SRCALPHA, SDL_ALPHA_OPAQUE);
+	}
+
+	return ret;
 }
 
-SDL_Rect draw_text_line(surface gui_surface, const SDL_Rect& area, int size,
-		   const SDL_Color& color, const std::string& text,
-		   int x, int y, bool use_tooltips, int style)
+// it is called by tintegrate only!
+surface get_rendered_text(const std::string& text, int font_size, const SDL_Color& color, int style)
 {
-	if (gui_surface.null()) {
-		text_surface const &u = text_cache::find(text_surface(text, size, color, style));
-		return create_rect(0, 0, u.width(), u.height());
+	if (!font_size) {
+		return surface();
 	}
 
-	if(area.w == 0) {  // no place to draw
-		return create_rect(0, 0, 0, 0);
+	if (text.empty()) {
+		return surface();
 	}
+	VALIDATE(!strchr(text.c_str(), '\n'), null_str);
 
-	const std::string etext = make_text_ellipsis(text, size, area.w);
-
-	// for the main current use, we already parsed markup
-	surface surface(render_text(etext,size,color,style,false));
-	if(surface == NULL) {
-		return create_rect(0, 0, 0, 0);
+	try {
+		return text_render(text, font_size, color, style);
 	}
-
-	SDL_Rect dest;
-	if(x!=-1) {
-		dest.x = x;
-#ifdef	HAVE_FRIBIDI
-		// Oron -- Conditional, until all draw_text_line calls have fixed area parameter
-		if(getenv("NO_RTL") == NULL) {
-			bool is_rtl = text_cache::find(text_surface(text, size, color, style)).is_rtl();
-			if(is_rtl)
-				dest.x = area.x + area.w - surface->w - (x - area.x);
-		}
-#endif
-	} else
-		dest.x = (area.w/2)-(surface->w/2);
-	if(y!=-1)
-		dest.y = y;
-	else
-		dest.y = (area.h/2)-(surface->h/2);
-	dest.w = surface->w;
-	dest.h = surface->h;
-
-	if(line_width(text, size) > area.w) {
-		tooltips::add_tooltip(dest,text);
+	catch (utils::invalid_utf8_exception&) {
+		// Invalid UTF-8 string
+		return surface();
 	}
-
-	if(dest.x + dest.w > area.x + area.w) {
-		dest.w = area.x + area.w - dest.x;
-	}
-
-	if(dest.y + dest.h > area.y + area.h) {
-		dest.h = area.y + area.h - dest.y;
-	}
-
-	if(gui_surface != NULL) {
-		SDL_Rect src = dest;
-		src.x = 0;
-		src.y = 0;
-		sdl_blit(surface,&src,gui_surface,&dest);
-	}
-
-	if(use_tooltips) {
-		tooltips::add_tooltip(dest,text);
-	}
-
-	return dest;
 }
 
 int get_max_height(int size)
 {
 	// Only returns the maximal size of the first font
 	TTF_Font* const font = get_font(font_id(0, size));
-	if(font == NULL)
+	if (font == NULL) {
 		return 0;
+	}
 	return TTF_FontHeight(font);
 }
 
@@ -935,7 +800,7 @@ SDL_Rect line_size(const std::string& line, int font_size, int style)
 	line_size_cache_map& cache = line_size_cache[style][font_size];
 
 	const line_size_cache_map::const_iterator i = cache.find(line);
-	if(i != cache.end()) {
+	if (i != cache.end()) {
 		return i->second;
 	}
 
@@ -952,8 +817,7 @@ SDL_Rect line_size(const std::string& line, int font_size, int style)
 	return res;
 }
 
-std::string make_text_ellipsis(const std::string &text, int font_size,
-	int max_width, int style)
+std::string make_text_ellipsis(const std::string &text, int font_size, int max_width, int style)
 {
 	static const std::string ellipsis = "...";
 
@@ -1008,68 +872,6 @@ std::string make_text_ellipsis(const std::string& text, size_t max_count)
 	}
 
 	return text; // Should not happen
-}
-
-std::string make_text_hide(const std::string& text, bool always, size_t front_should_hide_width, size_t hiden_width, int font_size, int max_showable_width, bool with_tags, bool parse_for_style)
-{
-	static const std::string single_char = " ";
-
-	SDL_Color unused_color;
-	int unused_int;
-	int style = TTF_STYLE_NORMAL;
-	std::string text1 = with_tags? text: del_tags(text);
-	if (parse_for_style) parse_markup(text.begin(), text.end(), &unused_int, &unused_color, &style);
-	
-	int text_width = line_width(text1, font_size, style);
-	if (always) {
-		if (text_width <= max_showable_width) {
-			return text;
-		}
-		if (line_width(single_char, font_size, style) > max_showable_width) {
-			return "";
-		}
-	} else {
-		if (hiden_width + text_width <= front_should_hide_width) {
-			return "";
-		}
-		if (hiden_width >= front_should_hide_width && line_width(single_char, font_size, style) > max_showable_width) {
-			return "";
-		}
-	}
-	
-	std::string current_substring, hide_substring;
-
-	// get markup substring
-	size_t pos = text.rfind(text1);
-	std::string markup_substring;
-	if (pos != std::string::npos) {
-		markup_substring = text.substr(0, pos);
-	}
-
-	utils::utf8_iterator itor(text1);
-
-	for (; itor != utils::utf8_iterator::end(text1); ++itor) {
-		std::string tmp = current_substring;
-		tmp.append(itor.substr().first, itor.substr().second);
-
-		if (always || hiden_width >= front_should_hide_width) {
-			if (line_width(tmp, font_size, style) > max_showable_width) {
-				markup_substring.insert(markup_substring.size(), current_substring);
-				return markup_substring;
-			}
-			current_substring.append(itor.substr().first, itor.substr().second);
-		} else {
-			hide_substring.append(itor.substr().first, itor.substr().second);
-			int hide_substring_width = line_width(hide_substring, font_size, style);
-			if (hiden_width + hide_substring_width > front_should_hide_width) {
-				current_substring.append(itor.substr().first, itor.substr().second);
-				// set hiden_width equal to front_should_hide_width
-				hiden_width = front_should_hide_width;
-			}
-		}
-	}
-	markup_substring.insert(markup_substring.size(), current_substring);
-	return markup_substring;
 }
 
 }
@@ -1168,7 +970,6 @@ surface floating_label::create_surface()
 				(foreground->w + 4, foreground->h + 4);
 			sdl_fill_rect(background, NULL, 0);
 			SDL_Rect r = { 2, 2, 0, 0 };
-			// blit_surface(foreground, NULL, background, &r);
 			sdl_blit(foreground, NULL, background, &r);
 			background = shadow_image(background, false);
 
@@ -1198,8 +999,9 @@ void floating_label::draw(surface screen)
 		return;
 	}
 
-	if(buf_ == NULL) {
+	if (buf_ == NULL) {
 		buf_.assign(create_compatible_surface(screen, surf_->w, surf_->h));
+		SDL_SetSurfaceBlendMode(buf_, SDL_BLENDMODE_NONE);
 		if(buf_ == NULL) {
 			return;
 		}
@@ -1211,8 +1013,8 @@ void floating_label::draw(surface screen)
 
 	SDL_Rect rect = create_rect(xpos(surf_->w), ypos_, surf_->w, surf_->h);
 	const clip_rect_setter clip_setter(screen, &clip_rect_);
-	sdl_blit(screen,&rect,buf_,NULL);
-	sdl_blit(surf_,NULL,screen,&rect);
+	sdl_blit(screen, &rect, buf_, NULL);
+	sdl_blit(surf_, NULL, screen, &rect);
 }
 
 void floating_label::undraw(surface screen)
@@ -1223,7 +1025,7 @@ void floating_label::undraw(surface screen)
 
 	SDL_Rect rect = create_rect(xpos(surf_->w), ypos_, surf_->w, surf_->h);
 	const clip_rect_setter clip_setter(screen, &clip_rect_);
-	sdl_blit(buf_,NULL,screen,&rect);
+	sdl_blit(buf_, NULL, screen, &rect);
 
 	move(xmove_,ymove_);
 	if(lifetime_ > 0) {
@@ -1453,413 +1255,3 @@ void cache_mode(CACHE mode)
 
 
 }
-
-namespace font {
-
-const unsigned ttext::STYLE_NORMAL = TTF_STYLE_NORMAL;
-const unsigned ttext::STYLE_BOLD = TTF_STYLE_BOLD;
-const unsigned ttext::STYLE_ITALIC = TTF_STYLE_ITALIC;
-const unsigned ttext::STYLE_UNDERLINE = TTF_STYLE_UNDERLINE;
-
-ttext::ttext() :
-	rect_(),
-	surface_(),
-	text_(),
-	markedup_text_(false),
-	font_size_(14),
-	font_style_(STYLE_NORMAL),
-	foreground_color_(0xFFFFFFFF), // solid white
-	maximum_width_(-1),
-	maximum_height_(-1),
-	ellipse_mode_(PANGO_ELLIPSIZE_NONE),
-	maximum_length_(std::string::npos),
-	calculation_dirty_(true),
-	length_(0),
-	surface_dirty_(true),
-	cached_surfs_()
-{
-
-}
-
-ttext::~ttext()
-{
-
-}
-
-int ttext::get_width()
-{
-	return get_size().x;
-}
-
-int ttext::get_height()
-{
-	return get_size().y;
-}
-
-gui2::tpoint ttext::get_size()
-{
-	if (text_.empty()) {
-		return gui2::tpoint(0, 0);
-	}
-	recalculate();
-
-	return gui2::tpoint(rect_.w, rect_.h);
-}
-
-bool ttext::is_truncated() const
-{
-	return false;
-}
-
-unsigned ttext::insert_text(const unsigned offset, const std::string& text)
-{
-	if(text.empty()) {
-		return 0;
-	}
-
-	return insert_unicode(offset, utils::string_to_wstring(text));
-}
-
-bool ttext::insert_unicode(const unsigned offset, const wchar_t unicode)
-{
-	return (insert_unicode(offset, wide_string(1, unicode)) == 1);
-}
-
-unsigned ttext::insert_unicode(const unsigned offset, const wide_string& unicode)
-{
-	assert(offset <= length_);
-
-	if(length_ == maximum_length_) {
-		return 0;
-	}
-
-	const unsigned len = length_ + unicode.size() > maximum_length_
-		? maximum_length_ - length_  : unicode.size();
-
-	wide_string tmp = utils::string_to_wstring(text_);
-	tmp.insert(tmp.begin() + offset, unicode.begin(), unicode.begin() + len);
-
-	set_text(utils::wstring_to_string(tmp), false);
-
-	return len;
-}
-
-// chars --> pixel
-// Only support one line!
-gui2::tpoint ttext::get_cursor_position(const unsigned column, const unsigned line)
-{
-	recalculate();
-	if (cached_surfs_.size() <= line) {
-		return gui2::tpoint(0, 0);
-	}
-	if (column == 0) {
-		return gui2::tpoint(0, 0);
-	}
-	return gui2::tpoint(cached_surfs_[line].measure_partial(column), 0);
-}
-
-// pixels --> chars(index) 
-// Only support one line!
-gui2::tpoint ttext::get_column_line(const gui2::tpoint& position)
-{
-	int line, offset;
-	offset = position.x;
-	line = 0;
-
-	int pos = 0, last_pos;
-	for (size_t i = 1; ; ++i) {
-		last_pos = pos;
-		pos = get_cursor_position(i, line).x;
-
-		if (last_pos == pos) {
-			return  gui2::tpoint(i - 1, line);
-		}
-		if (pos >= offset) {
-			return  gui2::tpoint(i - 1, line);
-		}
-	}
-}
-
-bool ttext::set_text(const std::string& text, const bool markedup)
-{
-	// markedup decide markedup whether or not
-	if (markedup != markedup_text_ || text != text_) {
-		text_ = text;
-		markedup_text_ = markedup;
-
-		calculation_dirty_ = true;
-		surface_dirty_ = true;
-	}
-	return true;
-}
-/*
-const std::string& ttext::text() const 
-{ 
-	return text_; 
-}
-*/
-size_t ttext::get_length() 
-{ 
-	if (calculation_dirty_) {
-		recalculate();
-	}
-	return length_;
-}
-
-ttext& ttext::set_font_size(const unsigned font_size)
-{
-	if(font_size != font_size_) {
-		font_size_ = font_size;
-		calculation_dirty_ = true;
-		surface_dirty_ = true;
-	}
-
-	return *this;
-}
-
-ttext& ttext::set_font_style(const unsigned font_style)
-{
-	if(font_style != font_style_) {
-		font_style_ = font_style;
-		calculation_dirty_ = true;
-		surface_dirty_ = true;
-	}
-
-	return *this;
-}
-
-ttext& ttext::set_foreground_color(const Uint32 color)
-{
-	if(color != foreground_color_) {
-		foreground_color_ = color;
-		calculation_dirty_ = true;
-		surface_dirty_ = true;
-	}
-
-	return *this;
-}
-
-ttext& ttext::set_maximum_width(int width)
-{
-	if (width <= 0) {
-		width = -1;
-	}
-
-	if (width != maximum_width_) {
-		maximum_width_ = width;
-		calculation_dirty_ = true;
-		surface_dirty_ = true;
-	}
-
-	return *this;
-}
-
-ttext& ttext::set_characters_per_line(const unsigned characters_per_line)
-{
-	// todo: impletement it in future.
-
-	return *this;
-}
-
-ttext& ttext::set_maximum_height(int height, bool multiline)
-{
-	if (height <= 0) {
-		height = -1;
-		multiline = false;
-	}
-
-	if (height != maximum_height_) {
-		maximum_height_ = height;
-		calculation_dirty_ = true;
-		surface_dirty_ = true;
-	}
-
-	return *this;
-}
-
-ttext& ttext::set_ellipse_mode(const PangoEllipsizeMode ellipse_mode)
-{
-	if(ellipse_mode != ellipse_mode_) {
-		ellipse_mode_ = ellipse_mode;
-		calculation_dirty_ = true;
-		surface_dirty_ = true;
-	}
-
-	return *this;
-}
-
-ttext &ttext::set_alignment(const PangoAlignment alignment)
-{
-	// todo: impletement it in future.
-
-	return *this;
-}
-
-ttext& ttext::set_maximum_length(const size_t maximum_length)
-{
-	if (maximum_length != maximum_length_) {
-		maximum_length_ = maximum_length;
-		if (length_ > maximum_length_) {
-
-			wide_string tmp = utils::string_to_wstring(text_);
-			tmp.resize(maximum_length_);
-			set_text(utils::wstring_to_string(tmp), false);
-		}
-	}
-
-	return *this;
-}
-
-void ttext::set_dirty(bool dirty)
-{
-	calculation_dirty_ = dirty;
-	surface_dirty_ = dirty;
-}
-
-void ttext::recalculate()
-{
-	if (!calculation_dirty_) {
-		return;
-	}
-
-	// we keep blank lines and spaces (may be wanted for indentation)
-	const std::vector<std::string> lines = utils::split(text_, '\n', 0);
-	size_t width = 0, height = 0, length = 0;
-
-	calculation_dirty_ = false;
-	
-	cached_surfs_.clear();
-
-	for (std::vector< std::string >::const_iterator ln = lines.begin(), ln_end = lines.end(); ln != ln_end; ++ln) {
-
-		int sz = font_size_;
-		int text_style = font_style_;
-		SDL_Color color = int_to_color(foreground_color_ >> 8);
-
-		std::string::const_iterator after_markup = markedup_text_? 
-			parse_markup(ln->begin(), ln->end(), &sz, &color, &text_style): ln->begin();
-
-		std::vector<std::string> wrapped_lines;
-		
-		if (after_markup == ln->end()) {
-			wrapped_lines.push_back("");
-		} else if (maximum_width_ > 0) {
-			// Width of chars calling TTF_SizeUTF8 in statement is less than accumulative total.
-			// word_wrap_text's method is accumulative total, so it maybe large than maximum_width_.
-			std::string unwrapped_text(after_markup, ln->end());
-			const int unwrapped_text_width = line_size(unwrapped_text, sz, text_style).w;
-
-			if (unwrapped_text_width <= maximum_width_) {
-				wrapped_lines.push_back(unwrapped_text);
-			} else if (ellipse_mode_ == PANGO_ELLIPSIZE_NONE) {
-				// this will result tow or more item.
-				wrapped_lines = utils::split(word_wrap_text(std::string(after_markup, ln->end()), sz, maximum_width_), '\n', 0);
-			} else {
-				wrapped_lines.push_back(make_text_ellipsis(std::string(after_markup, ln->end()), sz, maximum_width_, text_style));
-			}
-			if (!unwrapped_text.empty() && !wrapped_lines.empty() && wrapped_lines[0].empty()) {
-				// this is mod bug, but not result to ACCESS EXCEPTION, update it. progream must attion it!
-				wrapped_lines[0] = unwrapped_text;
-			}
-		} else {
-			wrapped_lines.push_back(std::string(after_markup, ln->end()));
-		}
-		
-		for (std::vector< std::string >::const_iterator wrapped_ln = wrapped_lines.begin(), wrapped_ln_end = wrapped_lines.end(); wrapped_ln != wrapped_ln_end; ++ wrapped_ln) {
-			text_surface txt_surf(sz, color, text_style);
-
-			if (after_markup == ln->end() && (ln+1 != ln_end || lines.begin() + 1 == ln_end)) {
-				// we replace empty line by a space (to have a line height)
-				// except for the last line if we have several
-				txt_surf.set_text(" ");
-			} else {
-				txt_surf.set_text(*wrapped_ln);
-			
-				// length is length of all chars
-				for (utils::utf8_iterator itor(*wrapped_ln); itor != utils::utf8_iterator::end(*wrapped_ln); ++itor) {
-					length ++;
-				}
-			}
-
-			text_surface* const cached_surf = &text_cache::find(txt_surf);
-			const std::vector<surface>&res = cached_surf->get_surfaces();
-
-			if (!res.empty()) {
-				cached_surfs_.push_back(*cached_surf);
-				width = std::max<size_t>(cached_surf->width(), width);
-				height += cached_surf->height();
-			}
-		}
-	}
-
-	rect_.w = width;
-	if (maximum_width_ > 0 && maximum_width_ < rect_.w) {
-		rect_.w = maximum_width_;
-	}
-	rect_.h = height;
-	rect_.x = rect_.y = 0;
-	length_ = length;
-}
-
-surface ttext::render()
-{
-	// when text_ is empty, don' return null, replace space. it is necessary for tintegrate.
-	if (!surface_dirty_) {
-		return surface_;
-	}
-	recalculate();
-
-	surface_dirty_ = true;
-	// we keep blank lines and spaces (may be wanted for indentation)
-	std::vector<std::vector<surface> > surfaces;
-	surfaces.reserve(cached_surfs_.size());
-
-	for(std::vector<text_surface>::const_iterator text_surf = cached_surfs_.begin(), text_surf_end = cached_surfs_.end(); text_surf != text_surf_end; ++ text_surf) {
-
-		const text_surface& cached_surf = *text_surf;
-		const std::vector<surface>&res = cached_surf.get_surfaces();
-
-		if (!res.empty()) {
-			surfaces.push_back(res);
-		}
-	}
-
-	if (surfaces.empty()) {
-		surface_.assign(NULL);
-	} else if (surfaces.size() == 1 && surfaces.front().size() == 1) {
-		surface surf = surfaces.front().front();
-		SDL_SetAlpha(surf, SDL_SRCALPHA | SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
-		surface_.assign(surf);
-	} else {
-
-		surface res(create_neutral_surface(rect_.w, rect_.h));
-		if (res.null()) {
-			surface_.assign(NULL);
-			return surface_;
-		}
-
-		size_t ypos = 0;
-		for (std::vector<std::vector<surface> >::const_iterator i = surfaces.begin(), i_end = surfaces.end(); i != i_end; ++i) {
-			size_t xpos = 0;
-			size_t height = 0;
-
-			for (std::vector<surface>::const_iterator j = i->begin(), j_end = i->end(); j != j_end; ++j) {
-				SDL_SetAlpha(*j, 0, 0); // direct blit without alpha blending
-				SDL_Rect dstrect = create_rect(xpos, ypos, 0, 0);
-				// blit_surface(*j, NULL, res, &dstrect);
-				sdl_blit(*j, NULL, res, &dstrect);
-				xpos += (*j)->w;
-				height = std::max<size_t>((*j)->h, height);
-			}
-			ypos += height;
-		}
-
-		SDL_SetAlpha(res, SDL_SRCALPHA | SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
-		surface_.assign(res);
-	}
-
-	return surface_;
-}
-
-} // namespace font
-

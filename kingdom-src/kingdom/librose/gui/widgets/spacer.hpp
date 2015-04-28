@@ -32,9 +32,9 @@ namespace gui2 {
 class tspacer : public tcontrol
 {
 public:
-	tspacer() :
-		tcontrol(0),
-		best_size_(0, 0)
+	tspacer()
+		: tcontrol(0)
+		, best_size_(0, 0)
 	{
 	}
 
@@ -64,7 +64,6 @@ public:
 	bool disable_click_dismiss() const { return false; }
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
-
 	void set_best_size(const tpoint& best_size) { best_size_ = best_size; }
 
 private:

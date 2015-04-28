@@ -160,22 +160,19 @@ void animated<T,T_void_value>::update_last_draw_time(double acceleration)
 template<typename T,  typename T_void_value>
 bool animated<T,T_void_value>::need_update() const
 {
-	if(force_next_update_) {
+	if (force_next_update_) {
 		return true;
 	}
-	if(does_not_change_) {
+	if (does_not_change_) {
 		return false;
 	}
-	if(frames_.empty()) {
+	if (frames_.empty()) {
 		return false;
 	}
-	if(!started_ && start_tick_ == 0) {
+	if (!started_ && start_tick_ == 0) {
 		return false;
 	}
-	if(current_ticks >
-            static_cast<int>(get_current_frame_end_time() /
-            acceleration_+start_tick_)){
-
+	if (current_ticks > static_cast<int>(get_current_frame_end_time() / acceleration_ + start_tick_)) {
 		return true;
 	}
 	return false;

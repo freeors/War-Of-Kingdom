@@ -30,7 +30,6 @@
 #include "thread.hpp"
 #include "serialization/binary_or_text.hpp"
 #include "serialization/parser.hpp"
-#include "wesconfig.h"
 #include "util.hpp"
 #include "lobby.hpp"
 
@@ -85,6 +84,8 @@ static lg::log_domain log_network("network");
 #define DBG_NW LOG_STREAM(debug, log_network)
 #define LOG_NW LOG_STREAM(info, log_network)
 #define ERR_NW LOG_STREAM(err, log_network)
+
+extern int dbg_error_no;
 
 // namespace {
 struct _TCPsocket {
@@ -185,7 +186,15 @@ bool receive_with_timeout(tsock& info, char* buf, size_t nbytes,
 		const int bytes_read = receive_bytes(s, buf, nbytes);
 		if (bytes_read == 0) {
 			// network exception. for example connection broken.
-			return false;
+
+			// to some case, receiver doesn't know how many bytes will received, so set a subjective nbytes. for example http first read.
+			// if total receivable bytes isn't larger nbytes. next receive will result to return bytes_read = 0!
+			// in this case(ret_size!=NULL) think successfully once has recieved data.
+			if (!ret_size || !*ret_size) {
+				return false;
+			} else {
+				return true;
+			}
 		} else if (bytes_read < 0) {
 #if defined(EAGAIN) && !defined(_WIN32)
 			if (errno == EAGAIN)
@@ -364,6 +373,7 @@ static SOCKET_STATE send_buffer(tsock& info, std::vector<char>& buf, int size)
 			// check if the socket is still locked
 			const threading::lock lock(*shard_mutexes[shard]);
 			if (sockets_locked[shard][sock] != SOCKET_LOCKED) {
+				dbg_error_no = 9;
 				return SOCKET_ERRORED;
 			}
 		}
@@ -429,6 +439,7 @@ static SOCKET_STATE send_buffer(tsock& info, std::vector<char>& buf, int size)
 #endif
 		}
 
+		dbg_error_no = 10;
 		return SOCKET_ERRORED;
 	}
 }
@@ -458,7 +469,7 @@ typedef util::scoped_resource<int, close_fd> scoped_fd;
 static SOCKET_STATE send_file(tsock& info, network::buffer* buf)
 {
 	size_t upto = 0;
-	size_t filesize = file_size(buf->config_error);
+	size_t filesize = file_size(buf->config_error, false);
 #ifdef HAVE_SENDFILE
 	// implements linux sendfile support
 	LOG_NW << "send_file use system sendfile: " << (network_use_system_sendfile?"yes":"no") << "\n";
@@ -584,6 +595,8 @@ static int process_queue(void* shard_num)
 {
 	size_t shard = static_cast<size_t>(reinterpret_cast<uintptr_t>(shard_num));
 	DBG_NW << "thread started...\n";
+	textendable_buf buf;
+
 	for (;;) {
 
 		//if we find a socket to send data to, sent_buf will be non-NULL. If we find a socket
@@ -629,6 +642,7 @@ static int process_queue(void* shard_num)
 							info.msg_send_time = now;
 						}
 */
+
 						lock_it->second = SOCKET_LOCKED;
 						sent_buf = *itor;
 						sock = sent_buf->sock;
@@ -698,7 +712,8 @@ static int process_queue(void* shard_num)
 		DBG_NW << "thread found a buffer...\n";
 
 		SOCKET_STATE result = SOCKET_READY;
-		std::vector<char> buf;
+		
+		buf.vsize = 0;
 
 		if (sent_buf) {
  			if (!sent_buf->config_error.empty()) {
@@ -717,7 +732,7 @@ static int process_queue(void* shard_num)
 			result = info.receive_buf(buf);
 		}
 
-		if (result != SOCKET_READY || buf.empty()) {
+		if (result != SOCKET_READY || !buf.vsize) {
 			// if it is send result in, buf.empty() is equal true. at same time, result == SOCKET_READY.
 			// so if send, must enter here.
 			check_socket_result(sock,result);
@@ -727,14 +742,18 @@ static int process_queue(void* shard_num)
 		network::buffer* received_data = new network::buffer(sock);
 
 		if (info.raw_data_only) {
-			received_data->raw_buffer.swap(buf);
+			received_data->raw_buffer.resize(buf.vsize);
+			memcpy(&received_data->raw_buffer[0], buf.data, buf.vsize);
+			// received_data->raw_buffer.swap(buf);
 		} else {
-			std::string buffer(buf.begin(), buf.end());
-			std::istringstream stream(buffer);
+			std::stringstream gangplank;
+			std::iostream stream(gangplank.rdbuf());
+			stream.write(buf.data, buf.vsize);
+			// std::string buffer(buf.begin(), buf.end());
+			// std::istringstream stream(buffer);
 			try {
 				read_gz(received_data->config_buf, stream);
-			} catch(config::error &e)
-			{
+			} catch(config::error &e) {
 				received_data->config_error = e.message;
 			}
 		}
@@ -990,51 +1009,47 @@ bool is_locked(const TCPsocket sock) {
 	return (lock_it->second == SOCKET_LOCKED);
 }
 
-bool close_socket(TCPsocket sock)
+void close_socket(TCPsocket sock)
 {
-	{
+	// make sure remove sock, before exit it!
+	while (true) {
 		const size_t shard = get_shard(sock);
 		const threading::lock lock(*shard_mutexes[shard]);
 
 		pending_receives[shard].erase(std::remove(pending_receives[shard].begin(),pending_receives[shard].end(),sock),pending_receives[shard].end());
 
 		const socket_state_map::iterator lock_it = sockets_locked[shard].find(sock);
-		if(lock_it == sockets_locked[shard].end()) {
+		if (lock_it == sockets_locked[shard].end()) {
 			remove_buffers(sock);
-			return true;
+			break;
 		}
 		if (!(lock_it->second == SOCKET_LOCKED || lock_it->second == SOCKET_INTERRUPT)) {
 			sockets_locked[shard].erase(lock_it);
 			remove_buffers(sock);
-			return true;
+			break;
 		} else {
 			lock_it->second = SOCKET_INTERRUPT;
-			return false;
+			// xmit thread LOCKED this sock, reqruie that thread process sock.
+			SDL_Delay(2);
 		}
-
 	}
-
-
 }
 
 TCPsocket detect_error()
 {
-	for(size_t shard = 0; shard != NUM_SHARDS; ++shard) {
+	for (size_t shard = 0; shard != NUM_SHARDS; ++shard) {
 		const threading::lock lock(*shard_mutexes[shard]);
-		if(socket_errors[shard] > 0) {
-			for(socket_state_map::iterator i = sockets_locked[shard].begin(); i != sockets_locked[shard].end();) {
-				if(i->second == SOCKET_ERRORED) {
-					--socket_errors[shard];
+		if (socket_errors[shard] > 0) {
+			for (socket_state_map::iterator i = sockets_locked[shard].begin(); i != sockets_locked[shard].end();) {
+				if (i->second == SOCKET_ERRORED) {
+					-- socket_errors[shard];
 					const TCPsocket sock = i->first;
 					sockets_locked[shard].erase(i++);
 					pending_receives[shard].erase(std::remove(pending_receives[shard].begin(),pending_receives[shard].end(),sock),pending_receives[shard].end());
 					remove_buffers(sock);
 					return sock;
 				}
-				else
-				{
-					++i;
-				}
+				++ i;
 			}
 		}
 

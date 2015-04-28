@@ -1,0 +1,6402 @@
+# translation of en_GB.po to English (British)
+# Peter J Ross <pjr@insurgent.org>, 2006.
+# Peter J Ross <wesnoth@pjr.britishlibrary.net>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: en_GB\n"
+"Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
+"POT-Creation-Date: 2010-12-08 18:05+0100\n"
+"PO-Revision-Date: 2015-11-05 22:41+0800\n"
+"Last-Translator: \n"
+"Language-Team: English (British) <en@li.org>\n"
+"Language: en_GB\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 1.6.5\n"
+
+#. [terrain_type]: id=deep_water
+#. [terrain_type]: id=deep_water_gray
+#. [terrain_type]: id=deep_water_tropical
+#: data/core/terrain.cfg:18 data/core/terrain.cfg:29 data/core/terrain.cfg:39
+#, fuzzy
+msgid "Deep Water"
+msgstr "Deep Water"
+
+#. [terrain_type]: id=deep_water_gray
+#: data/core/terrain.cfg:19
+#, fuzzy
+msgid "Gray Deep Water"
+msgstr "Deep Water"
+
+#. [terrain_type]: id=deep_water
+#: data/core/terrain.cfg:30
+#, fuzzy
+msgid "Medium Deep Water"
+msgstr "Deep Water"
+
+#. [terrain_type]: id=deep_water_tropical
+#: data/core/terrain.cfg:40
+#, fuzzy
+msgid "Tropical Deep Water"
+msgstr "Tropical Forest"
+
+#. [terrain_type]: id=gray_tropical_water
+#. [terrain_type]: id=shallow_water
+#. [terrain_type]: id=tropical_water
+#: data/core/terrain.cfg:50 data/core/terrain.cfg:61 data/core/terrain.cfg:71
+msgid "Shallow Water"
+msgstr "Shallow Water"
+
+#. [terrain_type]: id=gray_tropical_water
+#: data/core/terrain.cfg:51
+#, fuzzy
+msgid "Gray Shallow Water"
+msgstr "Shallow Water"
+
+#. [terrain_type]: id=shallow_water
+#: data/core/terrain.cfg:62
+#, fuzzy
+msgid "Medium Shallow Water"
+msgstr "Shallow Water"
+
+#. [terrain_type]: id=tropical_water
+#: data/core/terrain.cfg:72
+#, fuzzy
+msgid "Tropical Shallow Water"
+msgstr "Shallow Water"
+
+#. [terrain_type]: id=ford
+#: data/core/terrain.cfg:82
+msgid "Ford"
+msgstr ""
+
+#. [terrain_type]: id=gray_reef
+#. [terrain_type]: id=reef
+#. [terrain_type]: id=tropical_reef
+#: data/core/terrain.cfg:92 data/core/terrain.cfg:103
+#: data/core/terrain.cfg:112
+msgid "Coastal Reef"
+msgstr "Coastal Reef"
+
+#. [terrain_type]: id=gray_reef
+#: data/core/terrain.cfg:93
+#, fuzzy
+msgid "Gray Coastal Reef"
+msgstr "Coastal Reef"
+
+#. [terrain_type]: id=tropical_reef
+#: data/core/terrain.cfg:113
+#, fuzzy
+msgid "Tropical Coastal Reef"
+msgstr "Coastal Reef"
+
+#. [terrain_type]: id=quagmire
+#. [terrain_type]: id=swamp_water
+#: data/core/terrain.cfg:125 data/core/terrain.cfg:134
+msgid "Swamp"
+msgstr "Swamp"
+
+#. [terrain_type]: id=quagmire
+#: data/core/terrain.cfg:135
+msgid "Muddy Quagmire"
+msgstr ""
+
+#. [terrain_type]: id=grass_dry
+#. [terrain_type]: id=grassland
+#. [terrain_type]: id=leaf_litter
+#. [terrain_type]: id=savanna
+#: data/core/terrain.cfg:152 data/core/terrain.cfg:163
+#: data/core/terrain.cfg:174 data/core/terrain.cfg:184
+msgid "Grassland"
+msgstr "Grassland"
+
+#. [terrain_type]: id=grassland
+#: data/core/terrain.cfg:153
+msgid "Green Grass"
+msgstr ""
+
+#. [terrain_type]: id=savanna
+#: data/core/terrain.cfg:164
+msgid "Semi-dry Grass"
+msgstr ""
+
+#. [terrain_type]: id=grass_dry
+#: data/core/terrain.cfg:175
+msgid "Dry Grass"
+msgstr ""
+
+#. [terrain_type]: id=leaf_litter
+#: data/core/terrain.cfg:185
+msgid "Leaf Litter"
+msgstr ""
+
+#. [terrain_type]: id=dirt
+#. [terrain_type]: id=dirt_dark
+#. [terrain_type]: id=dirt_dry
+#: data/core/terrain.cfg:196 data/core/terrain.cfg:206
+#: data/core/terrain.cfg:216
+#, fuzzy
+msgid "Dirt"
+msgstr "Dirt"
+
+#. [terrain_type]: id=dirt_dark
+#: data/core/terrain.cfg:197
+#, fuzzy
+msgid "Dark Dirt"
+msgstr "Dirt"
+
+#. [terrain_type]: id=dirt
+#: data/core/terrain.cfg:207
+msgid "Regular Dirt"
+msgstr ""
+
+#. [terrain_type]: id=dirt_dry
+#: data/core/terrain.cfg:217
+#, fuzzy
+msgid "Dry Dirt"
+msgstr "Dirt"
+
+#. [terrain_type]: id=cave_path
+#. [terrain_type]: id=flagstones_dark
+#. [terrain_type]: id=road
+#. [terrain_type]: id=road_clean
+#. [terrain_type]: id=stone_path
+#: data/core/terrain.cfg:226 data/core/terrain.cfg:236
+#: data/core/terrain.cfg:246 data/core/terrain.cfg:946
+#: data/core/terrain.cfg:956
+msgid "Road"
+msgstr "Road"
+
+#. [terrain_type]: id=road
+#: data/core/terrain.cfg:227
+msgid "Regular Cobbles"
+msgstr ""
+
+#. [terrain_type]: id=road_clean
+#: data/core/terrain.cfg:237
+#, fuzzy
+msgid "Clean Gray Cobbles"
+msgstr "Clear Labels"
+
+#. [terrain_type]: id=stone_path
+#: data/core/terrain.cfg:247
+msgid "Overgrown Cobbles"
+msgstr ""
+
+#. [terrain_type]: id=ice
+#: data/core/terrain.cfg:260
+msgid "Ice"
+msgstr "Ice"
+
+#. [terrain_type]: id=snow
+#: data/core/terrain.cfg:269
+msgid "Snow"
+msgstr "Snow"
+
+#. [terrain_type]: id=desert
+#: data/core/terrain.cfg:282
+#, fuzzy
+msgid "Desert"
+msgstr "Desert"
+
+#. [terrain_type]: id=desert
+#: data/core/terrain.cfg:283
+#, fuzzy
+msgid "Desert Sands"
+msgstr "Desert Mountains"
+
+#. [terrain_type]: id=sand
+#: data/core/terrain.cfg:292
+msgid "Sand"
+msgstr "Sand"
+
+#. [terrain_type]: id=sand
+#: data/core/terrain.cfg:293
+msgid "Beach Sands"
+msgstr ""
+
+#. [terrain_type]: id=oasis
+#: data/core/terrain.cfg:301
+msgid "Oasis"
+msgstr "Oasis"
+
+#. [terrain_type]: id=sand_rubble
+#: data/core/terrain.cfg:313
+msgid "Rubble"
+msgstr "Rubble"
+
+#. [terrain_type]: id=crater
+#: data/core/terrain.cfg:323
+msgid "Crater"
+msgstr "Crater"
+
+#. [terrain_type]: id=flowers_mixed
+#: data/core/terrain.cfg:337
+#, fuzzy
+msgid "Mixed Flowers"
+msgstr "Fall Mixed Forest"
+
+#. [terrain_type]: id=farm
+#: data/core/terrain.cfg:346
+msgid "Farmland"
+msgstr "Farmland"
+
+#. [terrain_type]: id=stones_small
+#: data/core/terrain.cfg:355
+msgid "Stones"
+msgstr ""
+
+#. [terrain_type]: id=mushrooms_small
+#: data/core/terrain.cfg:364
+msgid "Small Mushrooms"
+msgstr ""
+
+#. [terrain_type]: id=mushrooms_farm
+#: data/core/terrain.cfg:373
+#, fuzzy
+msgid "Mushroom Farm"
+msgstr "Mushroom Grove"
+
+#. [terrain_type]: id=desert_plants
+#: data/core/terrain.cfg:382
+#, fuzzy
+msgid "Desert Plants"
+msgstr "Desert Mountains"
+
+#. [terrain_type]: id=desert_plants_sans_bones
+#: data/core/terrain.cfg:391
+msgid "Desert Plants without Bones"
+msgstr ""
+
+#. [terrain_type]: id=windmill
+#: data/core/terrain.cfg:400
+msgid "Windmill"
+msgstr ""
+
+#. [terrain_type]: id=campfire
+#: data/core/terrain.cfg:409
+#, fuzzy
+msgid "Campfire"
+msgstr "Campaign"
+
+#. [terrain_type]: id=fence
+#: data/core/terrain.cfg:418
+msgid "Fence"
+msgstr ""
+
+#. [terrain_type]: id=sand_drifts
+#: data/core/terrain.cfg:427
+msgid "Stones with Sand Drifts"
+msgstr ""
+
+#. [terrain_type]: id=water-lilies
+#: data/core/terrain.cfg:436
+msgid "Water Lilies"
+msgstr ""
+
+#. [terrain_type]: id=water-lilies-flower
+#: data/core/terrain.cfg:446
+msgid "Flowering Water Lilies"
+msgstr ""
+
+#. [terrain_type]: id=great_tree
+#. [terrain_type]: id=great_tree_dead
+#: data/core/terrain.cfg:460 data/core/terrain.cfg:461
+#: data/core/terrain.cfg:472
+msgid "Great Tree"
+msgstr "Great Tree"
+
+#. [terrain_type]: id=great_tree_dead
+#: data/core/terrain.cfg:473
+#, fuzzy
+msgid "Dead Great Tree"
+msgstr "Great Tree"
+
+#. [terrain_type]: id=deciduous_forest_fall
+#. [terrain_type]: id=deciduous_forest_summer
+#. [terrain_type]: id=deciduous_forest_winter
+#. [terrain_type]: id=deciduous_forest_winter_snow
+#. [terrain_type]: id=forest
+#. [terrain_type]: id=mixed_forest_fall
+#. [terrain_type]: id=mixed_forest_summer
+#. [terrain_type]: id=mixed_forest_winter
+#. [terrain_type]: id=mixed_forest_winter_snow
+#. [terrain_type]: id=palm_desert_forest
+#. [terrain_type]: id=palm_forest
+#. [terrain_type]: id=pine_forest
+#. [terrain_type]: id=rainforest
+#. [terrain_type]: id=savanna_forest
+#. [terrain_type]: id=snow_forest
+#. [terrain_type]: id=tropical_forest
+#: data/core/terrain.cfg:484 data/core/terrain.cfg:496
+#: data/core/terrain.cfg:508 data/core/terrain.cfg:520
+#: data/core/terrain.cfg:532 data/core/terrain.cfg:544
+#: data/core/terrain.cfg:556 data/core/terrain.cfg:568
+#: data/core/terrain.cfg:580 data/core/terrain.cfg:592
+#: data/core/terrain.cfg:604 data/core/terrain.cfg:616
+#: data/core/terrain.cfg:628 data/core/terrain.cfg:640
+#: data/core/terrain.cfg:652 data/core/terrain.cfg:2311
+msgid "Forest"
+msgstr "Forest"
+
+#. [terrain_type]: id=tropical_forest
+#: data/core/terrain.cfg:485
+msgid "Tropical Forest"
+msgstr "Tropical Forest"
+
+#. [terrain_type]: id=rainforest
+#: data/core/terrain.cfg:497
+#, fuzzy
+msgid "Rainforest"
+msgstr "Pine Forest"
+
+#. [terrain_type]: id=palm_desert_forest
+#: data/core/terrain.cfg:509
+#, fuzzy
+msgid "Palm Forest"
+msgstr "Pine Forest"
+
+#. [terrain_type]: id=palm_forest
+#: data/core/terrain.cfg:521
+#, fuzzy
+msgid "Dense Palm Forest"
+msgstr "Pine Forest"
+
+#. [terrain_type]: id=savanna_forest
+#: data/core/terrain.cfg:533
+msgid "Savanna"
+msgstr "Savanna"
+
+#. [terrain_type]: id=pine_forest
+#: data/core/terrain.cfg:545
+msgid "Pine Forest"
+msgstr "Pine Forest"
+
+#. [terrain_type]: id=snow_forest
+#: data/core/terrain.cfg:557
+msgid "Snowy Pine Forest"
+msgstr "Snowy Pine Forest"
+
+#. [terrain_type]: id=deciduous_forest_summer
+#: data/core/terrain.cfg:569
+msgid "Summer Deciduous Forest"
+msgstr "Summer Deciduous Forest"
+
+#. [terrain_type]: id=deciduous_forest_fall
+#: data/core/terrain.cfg:581
+msgid "Fall Deciduous Forest"
+msgstr "Fall Deciduous Forest"
+
+#. [terrain_type]: id=deciduous_forest_winter
+#: data/core/terrain.cfg:593
+msgid "Winter Deciduous Forest"
+msgstr "Winter Deciduous Forest"
+
+#. [terrain_type]: id=deciduous_forest_winter_snow
+#: data/core/terrain.cfg:605
+msgid "Snowy Deciduous Forest"
+msgstr "Snowy Deciduous Forest"
+
+#. [terrain_type]: id=mixed_forest_summer
+#: data/core/terrain.cfg:617
+msgid "Summer Mixed Forest"
+msgstr "Summer Mixed Forest"
+
+#. [terrain_type]: id=mixed_forest_fall
+#: data/core/terrain.cfg:629
+msgid "Fall Mixed Forest"
+msgstr "Fall Mixed Forest"
+
+#. [terrain_type]: id=mixed_forest_winter
+#: data/core/terrain.cfg:641
+msgid "Winter Mixed Forest"
+msgstr "Winter Mixed Forest"
+
+#. [terrain_type]: id=mixed_forest_winter_snow
+#: data/core/terrain.cfg:653
+msgid "Snowy Mixed Forest"
+msgstr "Snowy Mixed Forest"
+
+#. [terrain_type]: id=deciduous_forest_fall_hills
+#. [terrain_type]: id=deciduous_forest_summer_hills
+#. [terrain_type]: id=deciduous_forest_winter_hills
+#. [terrain_type]: id=deciduous_forest_winter_snow_hills
+#. [terrain_type]: id=forest_palm_desert_hills
+#. [terrain_type]: id=forest_palm_hills
+#. [terrain_type]: id=forest_tropical_hills
+#. [terrain_type]: id=forested_hills
+#. [terrain_type]: id=forested_snow_hills
+#. [terrain_type]: id=hills
+#. [terrain_type]: id=hills_dry
+#. [terrain_type]: id=mixed_forest_fall_hills
+#. [terrain_type]: id=mixed_forest_summer_hills
+#. [terrain_type]: id=mixed_forest_winter_hills
+#. [terrain_type]: id=mixed_forest_winter_snow_hills
+#. [terrain_type]: id=savanna_hills
+#. [terrain_type]: id=snow_hills
+#: data/core/terrain.cfg:668 data/core/terrain.cfg:677
+#: data/core/terrain.cfg:697 data/core/terrain.cfg:745
+#: data/core/terrain.cfg:756 data/core/terrain.cfg:767
+#: data/core/terrain.cfg:778 data/core/terrain.cfg:789
+#: data/core/terrain.cfg:800 data/core/terrain.cfg:811
+#: data/core/terrain.cfg:822 data/core/terrain.cfg:833
+#: data/core/terrain.cfg:844 data/core/terrain.cfg:855
+#: data/core/terrain.cfg:866 data/core/terrain.cfg:877
+#: data/core/terrain.cfg:888
+msgid "Hills"
+msgstr "Hills"
+
+#. [terrain_type]: id=hills
+#: data/core/terrain.cfg:669
+#, fuzzy
+msgid "Regular Hills"
+msgstr "Hills"
+
+#. [terrain_type]: id=hills_dry
+#: data/core/terrain.cfg:678
+#, fuzzy
+msgid "Dry Hills"
+msgstr "Hills"
+
+#. [terrain_type]: id=desert_hills
+#: data/core/terrain.cfg:687
+msgid "Dunes"
+msgstr "Dunes"
+
+#. [terrain_type]: id=snow_hills
+#: data/core/terrain.cfg:698
+msgid "Snow Hills"
+msgstr "Snow Hills"
+
+#. [terrain_type]: id=cloud
+#. [terrain_type]: id=cloud_snow
+#. [terrain_type]: id=clouddesert
+#. [terrain_type]: id=desert_mountains
+#. [terrain_type]: id=mountains
+#. [terrain_type]: id=snow_mountains
+#: data/core/terrain.cfg:712 data/core/terrain.cfg:720
+#: data/core/terrain.cfg:730 data/core/terrain.cfg:1112
+#: data/core/terrain.cfg:1122 data/core/terrain.cfg:1132
+msgid "Mountains"
+msgstr "Mountains"
+
+#. [terrain_type]: id=desert_mountains
+#: data/core/terrain.cfg:721
+#, fuzzy
+msgid "Dry Mountains"
+msgstr "Desert Mountains"
+
+#. [terrain_type]: id=snow_mountains
+#: data/core/terrain.cfg:731
+msgid "Snowy Mountains"
+msgstr "Snowy Mountains"
+
+#. [terrain_type]: id=forested_hills
+#: data/core/terrain.cfg:746
+msgid "Forested Hills"
+msgstr "Forested Hills"
+
+#. [terrain_type]: id=forested_snow_hills
+#: data/core/terrain.cfg:757
+msgid "Forested Snow Hills"
+msgstr "Forested Snow Hills"
+
+#. [terrain_type]: id=deciduous_forest_summer_hills
+#: data/core/terrain.cfg:768
+msgid "Summer Deciduous Forested Hills"
+msgstr "Summer Deciduous Forested Hills"
+
+#. [terrain_type]: id=deciduous_forest_fall_hills
+#: data/core/terrain.cfg:779
+msgid "Fall Deciduous Forested Hills"
+msgstr "Fall Deciduous Forested Hills"
+
+#. [terrain_type]: id=deciduous_forest_winter_hills
+#: data/core/terrain.cfg:790
+msgid "Winter Deciduous Forested Hills"
+msgstr "Winter Deciduous Forested Hills"
+
+#. [terrain_type]: id=deciduous_forest_winter_snow_hills
+#: data/core/terrain.cfg:801
+msgid "Snowy Deciduous Forested Hills"
+msgstr "Snowy Deciduous Forested Hills"
+
+#. [terrain_type]: id=mixed_forest_summer_hills
+#: data/core/terrain.cfg:812
+msgid "Summer Mixed Forested Hills"
+msgstr "Summer Mixed Forested Hills"
+
+#. [terrain_type]: id=mixed_forest_fall_hills
+#: data/core/terrain.cfg:823
+#, fuzzy
+msgid "Fall Mixed Forested Hills"
+msgstr "Snowy Mixed Forested Hills"
+
+#. [terrain_type]: id=mixed_forest_winter_hills
+#: data/core/terrain.cfg:834
+msgid "Winter Mixed Forested Hills"
+msgstr "Winter Mixed Forested Hills"
+
+#. [terrain_type]: id=mixed_forest_winter_snow_hills
+#: data/core/terrain.cfg:845
+msgid "Snowy Mixed Forested Hills"
+msgstr "Snowy Mixed Forested Hills"
+
+#. [terrain_type]: id=forest_tropical_hills
+#: data/core/terrain.cfg:856
+#, fuzzy
+msgid "Tropical Forested Hills"
+msgstr "Tropical Forest"
+
+#. [terrain_type]: id=forest_palm_desert_hills
+#: data/core/terrain.cfg:867
+#, fuzzy
+msgid "Palm Forested Hills"
+msgstr "Forested Hills"
+
+#. [terrain_type]: id=forest_palm_hills
+#: data/core/terrain.cfg:878
+#, fuzzy
+msgid "Dense Palm Forested Hills"
+msgstr "Forested Hills"
+
+#. [terrain_type]: id=savanna_hills
+#: data/core/terrain.cfg:889
+#, fuzzy
+msgid "Savanna Forested Hills"
+msgstr "Forested Hills"
+
+#. [terrain_type]
+#: data/core/terrain.cfg:901
+#, fuzzy
+msgid "Wooden Floor"
+msgstr "Cave Wall"
+
+#. [terrain_type]
+#: data/core/terrain.cfg:903
+msgid "Basic Wooden Floor"
+msgstr ""
+
+#. [terrain_type]: id=lit
+#: data/core/terrain.cfg:916
+msgid "Lit"
+msgstr "Lit"
+
+#. [terrain_type]: id=lit
+#: data/core/terrain.cfg:917
+msgid "Beam of Light"
+msgstr ""
+
+#. [terrain_type]: id=cave
+#. [terrain_type]: id=cave_earthy
+#: data/core/terrain.cfg:927 data/core/terrain.cfg:936
+msgid "Cave"
+msgstr "Cave"
+
+#. [terrain_type]: id=cave
+#: data/core/terrain.cfg:928
+#, fuzzy
+msgid "Cave Floor"
+msgstr "Cave Wall"
+
+#. [terrain_type]: id=cave_earthy
+#: data/core/terrain.cfg:937
+msgid "Earthy Cave Floor"
+msgstr ""
+
+#. [terrain_type]: id=flagstones_dark
+#: data/core/terrain.cfg:947
+msgid "Dark Flagstones"
+msgstr ""
+
+#. [terrain_type]: id=cave_path
+#: data/core/terrain.cfg:957
+#, fuzzy
+msgid "Cave Path"
+msgstr "Cave path"
+
+#. [terrain_type]: id=fungus
+#. [terrain_type]: id=fungus_beam
+#: data/core/terrain.cfg:966 data/core/terrain.cfg:975
+msgid "Mushroom Grove"
+msgstr "Mushroom Grove"
+
+#. [terrain_type]: id=fungus_beam
+#: data/core/terrain.cfg:976
+#, fuzzy
+msgid "Lit Mushroom Grove"
+msgstr "Mushroom Grove"
+
+#. [terrain_type]: id=rocky_cave
+#: data/core/terrain.cfg:987
+msgid "Rockbound Cave"
+msgstr "Rockbound Cave"
+
+#. [terrain_type]: id=mine_rails
+#. [terrain_type]: id=mine_railsdiag1
+#. [terrain_type]: id=mine_railsdiag2
+#: data/core/terrain.cfg:999 data/core/terrain.cfg:1011
+#: data/core/terrain.cfg:1023
+msgid "Mine Rail"
+msgstr ""
+
+#. [terrain_type]: id=abyss
+#. [terrain_type]: id=canyon
+#. [terrain_type]: id=chasm_earthy
+#. [terrain_type]: id=lava_chasm
+#: data/core/terrain.cfg:1040 data/core/terrain.cfg:1051
+#: data/core/terrain.cfg:1062 data/core/terrain.cfg:1073
+#, fuzzy
+msgid "Chasm"
+msgstr "Lava Chasm"
+
+#. [terrain_type]: id=canyon
+#: data/core/terrain.cfg:1041
+msgid "Regular Chasm"
+msgstr ""
+
+#. [terrain_type]: id=chasm_earthy
+#: data/core/terrain.cfg:1052
+msgid "Earthy Chasm"
+msgstr ""
+
+#. [terrain_type]: id=abyss
+#: data/core/terrain.cfg:1063
+msgid "Ethereal Abyss"
+msgstr ""
+
+#. [terrain_type]: id=lava_chasm
+#: data/core/terrain.cfg:1074
+msgid "Lava Chasm"
+msgstr "Lava Chasm"
+
+#. [terrain_type]: id=lava
+#: data/core/terrain.cfg:1085
+msgid "Lava"
+msgstr "Lava"
+
+#. [terrain_type]: id=volcano
+#: data/core/terrain.cfg:1097
+msgid "Volcano"
+msgstr ""
+
+#. [terrain_type]: id=cloud
+#: data/core/terrain.cfg:1113
+#, fuzzy
+msgid "Regular Impassable Mountains"
+msgstr "Impassable Mountains"
+
+#. [terrain_type]: id=clouddesert
+#: data/core/terrain.cfg:1123
+#, fuzzy
+msgid "Desert Impassable Mountains"
+msgstr "Impassable Mountains"
+
+#. [terrain_type]: id=cloud_snow
+#: data/core/terrain.cfg:1133
+#, fuzzy
+msgid "Snowy Impassable Mountains"
+msgstr "Impassable Mountains"
+
+#. [terrain_type]: id=cavewall
+#. [terrain_type]: id=cavewall_earthy
+#. [terrain_type]: id=cavewall_earthy_hewn
+#. [terrain_type]: id=cavewall_hewn
+#: data/core/terrain.cfg:1143 data/core/terrain.cfg:1154
+#: data/core/terrain.cfg:1165 data/core/terrain.cfg:1176
+#, fuzzy
+msgid "Cave Wall"
+msgstr "Cave Wall"
+
+#. [terrain_type]: id=cavewall
+#: data/core/terrain.cfg:1144
+#, fuzzy
+msgid "Natural Cave Wall"
+msgstr "Cave Wall"
+
+#. [terrain_type]: id=cavewall_hewn
+#: data/core/terrain.cfg:1155
+#, fuzzy
+msgid "Hewn Cave Wall"
+msgstr "Cave Wall"
+
+#. [terrain_type]: id=cavewall_earthy
+#: data/core/terrain.cfg:1166
+msgid "Natural Earthy Cave Wall"
+msgstr ""
+
+#. [terrain_type]: id=cavewall_earthy_hewn
+#: data/core/terrain.cfg:1177
+msgid "Reinforced Earthy Cave Wall"
+msgstr ""
+
+#. [terrain_type]: id=wall_stone
+#. [terrain_type]: id=wall_stone_lit
+#: data/core/terrain.cfg:1187 data/core/terrain.cfg:1197
+#, fuzzy
+msgid "Stone Wall"
+msgstr "Cave Wall"
+
+#. [terrain_type]: id=wall_stone_lit
+#: data/core/terrain.cfg:1198
+msgid "Lit Stone Wall"
+msgstr ""
+
+#. [terrain_type]: id=impassable_overlay
+#: data/core/terrain.cfg:1208
+#, fuzzy
+msgid "Impassable Overlay"
+msgstr "Impassable"
+
+#. [terrain_type]: id=unwalkable_overlay
+#: data/core/terrain.cfg:1219
+#, fuzzy
+msgid "Unwalkable Overlay"
+msgstr "Impassable"
+
+#. [terrain_type]: id=off_map
+#. [terrain_type]: id=off_map2
+#. [terrain_type]: id=void
+#: data/core/terrain.cfg:1230 data/core/terrain.cfg:2262
+#: data/core/terrain.cfg:2272
+msgid "Void"
+msgstr "Void"
+
+#. [terrain_type]: id=camp_village
+#. [terrain_type]: id=city_village
+#. [terrain_type]: id=city_village_ruin
+#. [terrain_type]: id=city_village_wno
+#. [terrain_type]: id=desert_village
+#. [terrain_type]: id=desert_village_tent
+#. [terrain_type]: id=drake_village
+#. [terrain_type]: id=dwarven_village
+#. [terrain_type]: id=elven_snow_village
+#. [terrain_type]: id=elven_village
+#. [terrain_type]: id=hill_village
+#. [terrain_type]: id=hill_village_ruin
+#. [terrain_type]: id=human_village
+#. [terrain_type]: id=human_village_ruin
+#. [terrain_type]: id=hut_snow_village
+#. [terrain_type]: id=hut_village
+#. [terrain_type]: id=igloo
+#. [terrain_type]: id=logcabin_snow_village
+#. [terrain_type]: id=logcabin_village
+#. [terrain_type]: id=mermen-village
+#. [terrain_type]: id=orcish_snow_village
+#. [terrain_type]: id=orcish_village
+#. [terrain_type]: id=snow-hill_village
+#. [terrain_type]: id=snow_village
+#. [terrain_type]: id=swamp_village
+#. [terrain_type]: id=tropical_forest_village
+#. [terrain_type]: id=underground_village
+#. [terrain_type]: id=village
+#. [terrain_type]: id=village_overlay
+#. [terrain_type]: id=windmill_village
+#: data/core/terrain.cfg:1245 data/core/terrain.cfg:1258
+#: data/core/terrain.cfg:1271 data/core/terrain.cfg:1286
+#: data/core/terrain.cfg:1299 data/core/terrain.cfg:1314
+#: data/core/terrain.cfg:1327 data/core/terrain.cfg:1342
+#: data/core/terrain.cfg:1355 data/core/terrain.cfg:1368
+#: data/core/terrain.cfg:1381 data/core/terrain.cfg:1394
+#: data/core/terrain.cfg:1407 data/core/terrain.cfg:1420
+#: data/core/terrain.cfg:1433 data/core/terrain.cfg:1446
+#: data/core/terrain.cfg:1459 data/core/terrain.cfg:1472
+#: data/core/terrain.cfg:1485 data/core/terrain.cfg:1500
+#: data/core/terrain.cfg:1513 data/core/terrain.cfg:1526
+#: data/core/terrain.cfg:1539 data/core/terrain.cfg:1552
+#: data/core/terrain.cfg:1565 data/core/terrain.cfg:1578
+#: data/core/terrain.cfg:1593 data/core/terrain.cfg:1606
+#: data/core/terrain.cfg:1621 data/core/terrain.cfg:2325
+msgid "Village"
+msgstr "Village"
+
+#. [terrain_type]: id=desert_village
+#: data/core/terrain.cfg:1246
+#, fuzzy
+msgid "Adobe Village"
+msgstr "Village"
+
+#. [terrain_type]: id=desert_village_tent
+#: data/core/terrain.cfg:1259
+msgid "Desert Tent Village"
+msgstr ""
+
+#. [terrain_type]: id=camp_village
+#: data/core/terrain.cfg:1272
+#, fuzzy
+msgid "Tent Village"
+msgstr "Village"
+
+#. [terrain_type]: id=orcish_village
+#: data/core/terrain.cfg:1287
+#, fuzzy
+msgid "Orcish Village"
+msgstr "Village"
+
+#. [terrain_type]: id=orcish_snow_village
+#: data/core/terrain.cfg:1300
+msgid "Snowy Orcish Village"
+msgstr ""
+
+#. [terrain_type]: id=elven_snow_village
+#: data/core/terrain.cfg:1315
+msgid "Snowy Elven Village"
+msgstr ""
+
+#. [terrain_type]: id=elven_village
+#: data/core/terrain.cfg:1328
+#, fuzzy
+msgid "Elven Village"
+msgstr "Village"
+
+#. [terrain_type]: id=human_village
+#: data/core/terrain.cfg:1343
+msgid "Cottage"
+msgstr ""
+
+#. [terrain_type]: id=snow_village
+#: data/core/terrain.cfg:1356
+#, fuzzy
+msgid "Snowy Cottage"
+msgstr "Snowy Mountains"
+
+#. [terrain_type]: id=human_village_ruin
+#: data/core/terrain.cfg:1369
+#, fuzzy
+msgid "Ruined Cottage"
+msgstr "Snowy Mountains"
+
+#. [terrain_type]: id=city_village
+#: data/core/terrain.cfg:1382
+#, fuzzy
+msgid "Human City"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=windmill_village
+#: data/core/terrain.cfg:1395
+#, fuzzy
+msgid "Windmill Village"
+msgstr "Village"
+
+#. [terrain_type]: id=city_village_wno
+#: data/core/terrain.cfg:1408
+#, fuzzy
+msgid "Snowy Human City"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=city_village_ruin
+#: data/core/terrain.cfg:1421
+#, fuzzy
+msgid "Ruined Human City"
+msgstr "Ruined Castle Keep"
+
+#. [terrain_type]: id=hill_village
+#: data/core/terrain.cfg:1434
+msgid "Hill Stone Village"
+msgstr ""
+
+#. [terrain_type]: id=snow-hill_village
+#: data/core/terrain.cfg:1447
+msgid "Snowy Hill Stone Village"
+msgstr ""
+
+#. [terrain_type]: id=hill_village_ruin
+#: data/core/terrain.cfg:1460
+#, fuzzy
+msgid "Ruined Hill Stone Village"
+msgstr "Village"
+
+#. [terrain_type]: id=tropical_forest_village
+#: data/core/terrain.cfg:1473
+#, fuzzy
+msgid "Tropical Village"
+msgstr "Tropical Forest"
+
+#. [terrain_type]: id=drake_village
+#: data/core/terrain.cfg:1486
+#, fuzzy
+msgid "Drake Village"
+msgstr "Village"
+
+#. [terrain_type]: id=underground_village
+#: data/core/terrain.cfg:1501
+#, fuzzy
+msgid "Cave Village"
+msgstr "Village"
+
+#. [terrain_type]: id=dwarven_village
+#: data/core/terrain.cfg:1514
+#, fuzzy
+msgid "Dwarven Village"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=hut_village
+#: data/core/terrain.cfg:1527
+#, fuzzy
+msgid "Hut"
+msgstr "Cut"
+
+#. [terrain_type]: id=hut_snow_village
+#: data/core/terrain.cfg:1540
+#, fuzzy
+msgid "Snowy Hut"
+msgstr "Snowy Mountains"
+
+#. [terrain_type]: id=logcabin_village
+#: data/core/terrain.cfg:1553
+msgid "Log Cabin"
+msgstr ""
+
+#. [terrain_type]: id=logcabin_snow_village
+#: data/core/terrain.cfg:1566
+#, fuzzy
+msgid "Snowy Log Cabin"
+msgstr "Snowy Mountains"
+
+#. [terrain_type]: id=igloo
+#: data/core/terrain.cfg:1579
+msgid "Igloo"
+msgstr ""
+
+#. [terrain_type]: id=swamp_village
+#: data/core/terrain.cfg:1594
+#, fuzzy
+msgid "Swamp Village"
+msgstr "Village"
+
+#. [terrain_type]: id=mermen-village
+#: data/core/terrain.cfg:1607
+#, fuzzy
+msgid "Merfolk Village"
+msgstr "Village"
+
+#. [terrain_type]: id=village_overlay
+#: data/core/terrain.cfg:1622
+#, fuzzy
+msgid "Village Overlay"
+msgstr "Castle Keep"
+
+#. [terrain_type]: id=encampment
+#. [terrain_type]: id=encampment_snow
+#: data/core/terrain.cfg:1637 data/core/terrain.cfg:1638
+#: data/core/terrain.cfg:1649
+msgid "Encampment"
+msgstr "Encampment"
+
+#. [terrain_type]: id=encampment_snow
+#: data/core/terrain.cfg:1650
+#, fuzzy
+msgid "Snowy Encampment"
+msgstr "Encampment"
+
+#. [terrain_type]: id=castle
+#. [terrain_type]: id=castle_overlay
+#. [terrain_type]: id=dwarven_castle
+#. [terrain_type]: id=elven_castle
+#. [terrain_type]: id=orcish_fort
+#. [terrain_type]: id=sand_castle
+#. [terrain_type]: id=snow_castle
+#. [terrain_type]: id=snow_orcish_fort
+#: data/core/terrain.cfg:1661 data/core/terrain.cfg:1673
+#: data/core/terrain.cfg:1685 data/core/terrain.cfg:1696
+#: data/core/terrain.cfg:1707 data/core/terrain.cfg:1719
+#: data/core/terrain.cfg:1769 data/core/terrain.cfg:1979
+msgid "Castle"
+msgstr "Castle"
+
+#. [terrain_type]: id=orcish_fort
+#: data/core/terrain.cfg:1662
+#, fuzzy
+msgid "Orcish Castle"
+msgstr "Castle"
+
+#. [terrain_type]: id=snow_orcish_fort
+#: data/core/terrain.cfg:1674
+msgid "Snowy Orcish Castle"
+msgstr ""
+
+#. [terrain_type]: id=castle
+#: data/core/terrain.cfg:1686
+#, fuzzy
+msgid "Human Castle"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=snow_castle
+#: data/core/terrain.cfg:1697
+#, fuzzy
+msgid "Snowy Human Castle"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=elven_castle
+#: data/core/terrain.cfg:1708
+#, fuzzy
+msgid "Elvish Castle"
+msgstr "Castle"
+
+#. [terrain_type]: id=dwarven_castle
+#: data/core/terrain.cfg:1720
+msgid "Dwarven Castle"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=ruin
+#. [terrain_type]: id=sand_castle_ruin
+#. [terrain_type]: id=sunkenruin
+#. [terrain_type]: id=swampruin
+#: data/core/terrain.cfg:1731 data/core/terrain.cfg:1743
+#: data/core/terrain.cfg:1756 data/core/terrain.cfg:1781
+#, fuzzy
+msgid "Ruined Castle"
+msgstr "Ruined Castle Keep"
+
+#. [terrain_type]: id=ruin
+#: data/core/terrain.cfg:1732
+#, fuzzy
+msgid "Ruined Human Castle"
+msgstr "Ruined Castle Keep"
+
+#. [terrain_type]: id=sunkenruin
+#: data/core/terrain.cfg:1744
+#, fuzzy
+msgid "Sunken Human Ruin"
+msgstr "Sunken Ruin"
+
+#. [terrain_type]: id=swampruin
+#: data/core/terrain.cfg:1757
+#, fuzzy
+msgid "Swamp Human Ruin"
+msgstr "Swamp Ruin"
+
+#. [terrain_type]: id=sand_castle
+#: data/core/terrain.cfg:1770
+#, fuzzy
+msgid "Desert Castle"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=sand_castle_ruin
+#: data/core/terrain.cfg:1782
+#, fuzzy
+msgid "Ruined Desert Castle"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=encampment_keep
+#. [terrain_type]: id=encampment_keep_tall
+#. [terrain_type]: id=encampment_snow_keep
+#: data/core/terrain.cfg:1797 data/core/terrain.cfg:1809
+#: data/core/terrain.cfg:1822
+msgid "Encampment Keep"
+msgstr "Encampment Keep"
+
+#. [terrain_type]: id=encampment_keep_tall
+#: data/core/terrain.cfg:1810
+#, fuzzy
+msgid "Tall Encampment Keep"
+msgstr "Encampment Keep"
+
+#. [terrain_type]: id=encampment_snow_keep
+#: data/core/terrain.cfg:1823
+#, fuzzy
+msgid "Snowy Encampment Keep"
+msgstr "Encampment Keep"
+
+#. [terrain_type]: id=desert_keep
+#. [terrain_type]: id=dwarven_keep
+#. [terrain_type]: id=elven_keep
+#. [terrain_type]: id=human_keep
+#. [terrain_type]: id=keep_overlay
+#. [terrain_type]: id=orcish_keep
+#. [terrain_type]: id=snow_keep
+#. [terrain_type]: id=snow_orcish_keep
+#: data/core/terrain.cfg:1835 data/core/terrain.cfg:1848
+#: data/core/terrain.cfg:1861 data/core/terrain.cfg:1874
+#: data/core/terrain.cfg:1887 data/core/terrain.cfg:1900
+#: data/core/terrain.cfg:1952 data/core/terrain.cfg:1991
+msgid "Keep"
+msgstr "Keep"
+
+#. [terrain_type]: id=orcish_keep
+#: data/core/terrain.cfg:1836
+#, fuzzy
+msgid "Orcish Keep"
+msgstr "Fort Keep"
+
+#. [terrain_type]: id=snow_orcish_keep
+#: data/core/terrain.cfg:1849
+msgid "Snowy Orcish Keep"
+msgstr ""
+
+#. [terrain_type]: id=human_keep
+#: data/core/terrain.cfg:1862
+#, fuzzy
+msgid "Human Castle Keep"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=snow_keep
+#: data/core/terrain.cfg:1875
+#, fuzzy
+msgid "Snowy Human Castle Keep"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=elven_keep
+#: data/core/terrain.cfg:1888
+#, fuzzy
+msgid "Elven Castle Keep"
+msgstr "Castle Keep"
+
+#. [terrain_type]: id=dwarven_keep
+#: data/core/terrain.cfg:1901
+#, fuzzy
+msgid "Dwarven Castle Keep"
+msgstr "Dwarven Castle"
+
+#. [terrain_type]: id=desert_keep_ruined
+#. [terrain_type]: id=ruined_keep
+#. [terrain_type]: id=sunken_keep
+#. [terrain_type]: id=swamp_keep
+#: data/core/terrain.cfg:1913 data/core/terrain.cfg:1926
+#: data/core/terrain.cfg:1939 data/core/terrain.cfg:1965
+#, fuzzy
+msgid "Ruined Keep"
+msgstr "Sunken Castle Keep"
+
+#. [terrain_type]: id=ruined_keep
+#: data/core/terrain.cfg:1914
+#, fuzzy
+msgid "Ruined Human Castle Keep"
+msgstr "Ruined Castle Keep"
+
+#. [terrain_type]: id=sunken_keep
+#: data/core/terrain.cfg:1927
+#, fuzzy
+msgid "Sunken Human Castle Keep"
+msgstr "Ruined Castle Keep"
+
+#. [terrain_type]: id=swamp_keep
+#: data/core/terrain.cfg:1940
+#, fuzzy
+msgid "Swamp Human Castle Keep"
+msgstr "Castle Keep"
+
+#. [terrain_type]: id=desert_keep
+#: data/core/terrain.cfg:1953
+#, fuzzy
+msgid "Desert Keep"
+msgstr "Desert"
+
+#. [terrain_type]: id=desert_keep_ruined
+#: data/core/terrain.cfg:1966
+#, fuzzy
+msgid "Ruined Desert Keep"
+msgstr "Desert"
+
+#. [terrain_type]: id=castle_overlay
+#: data/core/terrain.cfg:1980
+#, fuzzy
+msgid "Castle Overlay"
+msgstr "Castle Keep"
+
+#. [terrain_type]: id=keep_overlay
+#: data/core/terrain.cfg:1992
+msgid "Keep Overlay"
+msgstr ""
+
+#. [terrain_type]: id=bridge
+#. [terrain_type]: id=bridgechasm
+#. [terrain_type]: id=bridgechasmdiag1
+#. [terrain_type]: id=bridgechasmdiag2
+#. [terrain_type]: id=bridgediag1
+#. [terrain_type]: id=bridgediag2
+#. [terrain_type]: id=rotbridge
+#. [terrain_type]: id=rotbridgediag1
+#. [terrain_type]: id=rotbridgediag2
+#. [terrain_type]: id=stone_bridge
+#. [terrain_type]: id=stone_bridgediag1
+#. [terrain_type]: id=stone_bridgediag2
+#: data/core/terrain.cfg:2009 data/core/terrain.cfg:2021
+#: data/core/terrain.cfg:2033 data/core/terrain.cfg:2045
+#: data/core/terrain.cfg:2057 data/core/terrain.cfg:2069
+#: data/core/terrain.cfg:2083 data/core/terrain.cfg:2095
+#: data/core/terrain.cfg:2107 data/core/terrain.cfg:2121
+#: data/core/terrain.cfg:2132 data/core/terrain.cfg:2144
+#, fuzzy
+msgid "Bridge"
+msgstr "Bridge"
+
+#. [terrain_type]: id=bridge
+#. [terrain_type]: id=bridgediag1
+#. [terrain_type]: id=bridgediag2
+#: data/core/terrain.cfg:2010 data/core/terrain.cfg:2022
+#: data/core/terrain.cfg:2034
+#, fuzzy
+msgid "Wooden Bridge"
+msgstr "Bridge"
+
+#. [terrain_type]: id=rotbridge
+#. [terrain_type]: id=rotbridgediag1
+#. [terrain_type]: id=rotbridgediag2
+#: data/core/terrain.cfg:2046 data/core/terrain.cfg:2058
+#: data/core/terrain.cfg:2070
+#, fuzzy
+msgid "Rotting Bridge"
+msgstr "Bridge"
+
+#. [terrain_type]: id=stone_bridge
+#. [terrain_type]: id=stone_bridgediag1
+#. [terrain_type]: id=stone_bridgediag2
+#: data/core/terrain.cfg:2084 data/core/terrain.cfg:2096
+#: data/core/terrain.cfg:2108
+msgid "Basic Stone Bridge"
+msgstr ""
+
+#. [terrain_type]: id=bridgechasm
+#. [terrain_type]: id=bridgechasmdiag1
+#. [terrain_type]: id=bridgechasmdiag2
+#: data/core/terrain.cfg:2122 data/core/terrain.cfg:2133
+#: data/core/terrain.cfg:2145
+#, fuzzy
+msgid "Cave Chasm Bridge"
+msgstr "Bridge"
+
+#. [terrain_type]: id=hangingbridge
+#. [terrain_type]: id=hangingbridgediag1
+#. [terrain_type]: id=hangingbridgediag2
+#: data/core/terrain.cfg:2159 data/core/terrain.cfg:2170
+#: data/core/terrain.cfg:2181
+msgid "Hanging Bridge"
+msgstr ""
+
+#. [terrain_type]: id=stonechasmbridge
+#. [terrain_type]: id=stonechasmbridgediag1
+#. [terrain_type]: id=stonechasmbridgediag2
+#: data/core/terrain.cfg:2195 data/core/terrain.cfg:2205
+#: data/core/terrain.cfg:2215
+#, fuzzy
+msgid "Stone Chasm Bridge"
+msgstr "Bridge"
+
+#. [terrain_type]: id=plankbridge
+#. [terrain_type]: id=plankbridgediag1
+#. [terrain_type]: id=plankbridgediag2
+#: data/core/terrain.cfg:2227 data/core/terrain.cfg:2237
+#: data/core/terrain.cfg:2247
+#, fuzzy
+msgid "Plank Bridge"
+msgstr "Bridge"
+
+#. [terrain_type]: id=off_map
+#: data/core/terrain.cfg:2263
+msgid "Off Map"
+msgstr ""
+
+#. [terrain_type]: id=off_map2
+#: data/core/terrain.cfg:2273
+msgid "Experimental Fake Map Edge"
+msgstr ""
+
+#. [terrain_type]: id=shroud
+#. [toggle_button]: id=shroud
+#: data/core/terrain.cfg:2282 data/gui/default/window/mp_create_game.cfg:479
+msgid "Shroud"
+msgstr "Shroud"
+
+#. [terrain_type]: id=fog
+#: data/core/terrain.cfg:2291
+msgid "Fog"
+msgstr "Fog"
+
+#. [terrain_type]: id=flat
+#: data/core/terrain.cfg:2304
+msgid "Flat"
+msgstr "Flat"
+
+#. [terrain_type]: id=frozen
+#: data/core/terrain.cfg:2318
+msgid "Frozen"
+msgstr "Frozen"
+
+#. [terrain_type]: id=impassable
+#: data/core/terrain.cfg:2332
+msgid "Impassable"
+msgstr "Impassable"
+
+#. [terrain_type]: id=unwalkable
+#: data/core/terrain.cfg:2339
+msgid "Unwalkable"
+msgstr "Unwalkable"
+
+#. [terrain_type]: id=rails
+#: data/core/terrain.cfg:2346
+msgid "Rails"
+msgstr ""
+
+#. [label]
+#. [column]
+#: data/gui/default/window/addon_connect.cfg:32
+#: data/gui/default/window/mp_connect.cfg:31
+#: data/gui/default/window/mp_method_selection.cfg:148
+#: data/gui/default/window/mp_server_list.cfg:41
+msgid "Connect to Server"
+msgstr "Connect to Server"
+
+#. [label]
+#: data/gui/default/window/addon_connect.cfg:51
+msgid "You will now connect to a server to download add-ons."
+msgstr "You will now connect to a server to download add-ons."
+
+#. [label]
+#: data/gui/default/window/addon_connect.cfg:81
+#: data/gui/default/window/mp_connect.cfg:80
+msgid "Server:"
+msgstr "Server:"
+
+#. [button]: id=update_addons
+#: data/gui/default/window/addon_connect.cfg:137
+#: data/gui/default/window/addon_connect.cfg:138
+#, fuzzy
+msgid "Update Add-ons"
+msgstr "Update add-ons"
+
+#. [button]: id=remove_addons
+#: data/gui/default/window/addon_connect.cfg:172
+#: data/gui/default/window/addon_connect.cfg:173
+msgid "Remove Add-ons"
+msgstr "Remove Add-ons"
+
+#. [button]: id=ok
+#: data/gui/default/window/addon_connect.cfg:205
+#: data/gui/default/window/addon_connect.cfg:206
+#: data/gui/default/window/mp_connect.cfg:175
+#: data/gui/default/window/mp_connect.cfg:176
+msgid "Connect"
+msgstr "Connect"
+
+#. [button]: id=cancel
+#: data/gui/default/window/addon_connect.cfg:220
+#: data/gui/default/window/campaign_dialog.cfg:433
+#: data/gui/default/window/campaign_difficulty.cfg:182
+#: data/gui/default/window/data_manage.cfg:353
+#: data/gui/default/window/edit_label.cfg:145
+#: data/gui/default/window/editor_generate_map.cfg:111
+#: data/gui/default/window/editor_new_map.cfg:111
+#: data/gui/default/window/editor_resize_map.cfg:273
+#: data/gui/default/window/editor_settings.cfg:240
+#: data/gui/default/window/game_load.cfg:443
+#: data/gui/default/window/game_save.cfg:134
+#: data/gui/default/window/language_selection.cfg:133
+#: data/gui/default/window/message.cfg:137
+#: data/gui/default/window/mp_cmd_wrapper.cfg:462
+#: data/gui/default/window/mp_connect.cfg:190
+#: data/gui/default/window/mp_create_game.cfg:550
+#: data/gui/default/window/mp_login.cfg:262
+#: data/gui/default/window/mp_method_selection.cfg:218
+#: data/gui/default/window/mp_server_list.cfg:229
+#: data/gui/default/window/simple_item_selector.cfg:147
+#: data/gui/default/window/unit_attack.cfg:208
+#: data/gui/default/window/unit_create.cfg:201
+#: data/gui/default/window/unit_create.cfg:202 src/construct_dialog.cpp:133
+#: src/construct_dialog.cpp:136
+msgid "Cancel"
+msgstr "Cancel"
+
+#. [label]
+#: data/gui/default/window/campaign_dialog.cfg:48
+msgid "Play a campaign"
+msgstr "Play a campaign"
+
+#. [button]: id=ok
+#: data/gui/default/window/campaign_dialog.cfg:419
+#: data/gui/default/window/campaign_difficulty.cfg:169
+#: data/gui/default/window/data_manage.cfg:339
+#: data/gui/default/window/data_manage.cfg:340
+#: data/gui/default/window/edit_label.cfg:131
+#: data/gui/default/window/editor_settings.cfg:230
+#: data/gui/default/window/game_load.cfg:429
+#: data/gui/default/window/game_load.cfg:430
+#: data/gui/default/window/game_save.cfg:119
+#: data/gui/default/window/game_save.cfg:120
+#: data/gui/default/window/mp_create_game_set_password.cfg:125
+#: data/gui/default/window/mp_login.cfg:234
+#: data/gui/default/window/mp_method_selection.cfg:204
+#: data/gui/default/window/simple_item_selector.cfg:134
+#: data/gui/default/window/unit_create.cfg:189
+#: data/gui/default/window/unit_create.cfg:190
+#: data/gui/default/window/wml_message.cfg:468
+#: data/gui/default/window/wml_message.cfg:689 src/construct_dialog.cpp:125
+#: src/construct_dialog.cpp:132 src/gui/dialogs/message.cpp:162
+#: src/gui/dialogs/message.cpp:169
+msgid "OK"
+msgstr "OK"
+
+#. [label]: id=title
+#: data/gui/default/window/campaign_difficulty.cfg:49
+#, fuzzy
+msgid "Difficulty"
+msgstr "Difficulty: "
+
+#. [scroll_label]: id=message
+#: data/gui/default/window/campaign_difficulty.cfg:69
+msgid "Select difficulty level:"
+msgstr ""
+
+#. [label]: id=lblTitle
+#: data/gui/default/window/data_manage.cfg:42
+msgid "Manage Data"
+msgstr ""
+
+#. [label]: id=lblChoose
+#: data/gui/default/window/data_manage.cfg:81
+#: data/gui/default/window/game_load.cfg:181
+msgid "Choose the game to load"
+msgstr "Choose the game to load"
+
+#. [label]: id=lblFilter
+#: data/gui/default/window/data_manage.cfg:105
+#: data/gui/default/window/game_load.cfg:205
+msgid "Filter"
+msgstr "Filter"
+
+#. [label]: id=filename
+#. [label]: id=name
+#: data/gui/default/window/data_manage.cfg:155
+#: data/gui/default/window/game_load.cfg:255
+#: data/gui/default/window/mp_server_list.cfg:96
+msgid "Name"
+msgstr "Name"
+
+#. [label]: id=date
+#: data/gui/default/window/data_manage.cfg:169
+#: data/gui/default/window/game_load.cfg:269
+msgid "Date"
+msgstr "Date"
+
+#. [button]: id=clear
+#: data/gui/default/window/data_manage.cfg:258
+#: data/gui/default/window/data_manage.cfg:259
+msgid "Clear"
+msgstr ""
+
+#. [button]: id=backup
+#: data/gui/default/window/data_manage.cfg:292
+#: data/gui/default/window/data_manage.cfg:293
+msgid "Backup"
+msgstr ""
+
+#. [label]: id=title
+#: data/gui/default/window/edit_label.cfg:34
+#, fuzzy
+msgid "Place Label"
+msgstr "Set Label"
+
+#. [label]
+#: data/gui/default/window/edit_label.cfg:64
+#, fuzzy
+msgid "Label:"
+msgstr "Set Label"
+
+#. [toggle_button]: id=team_only_toggle
+#: data/gui/default/window/edit_label.cfg:102
+#, fuzzy
+msgid "Team only"
+msgstr "Team 1"
+
+#. [label]
+#: data/gui/default/window/editor_generate_map.cfg:38
+msgid "Generate Random Map"
+msgstr "Generate Random Map"
+
+#. [button]: id=next_generator
+#: data/gui/default/window/editor_generate_map.cfg:67
+#: data/gui/default/window/editor_generate_map.cfg:68
+msgid "Next Generator"
+msgstr "Next Generator"
+
+#. [button]: id=settings
+#: data/gui/default/window/editor_generate_map.cfg:90
+#: data/gui/default/window/editor_generate_map.cfg:91
+msgid "Settings"
+msgstr "Settings"
+
+#. [button]: id=ok
+#: data/gui/default/window/editor_generate_map.cfg:101
+msgid "Generate"
+msgstr "Generate"
+
+#. [label]
+#: data/gui/default/window/editor_new_map.cfg:27 src/hotkeys.cpp:123
+msgid "New Map"
+msgstr "New Map"
+
+#. [label]
+#: data/gui/default/window/editor_new_map.cfg:46 src/mapgen_dialog.cpp:121
+msgid "Width:"
+msgstr "Width:"
+
+#. [label]
+#: data/gui/default/window/editor_new_map.cfg:73 src/mapgen_dialog.cpp:122
+msgid "Height:"
+msgstr "Height:"
+
+#. [button]: id=ok
+#: data/gui/default/window/editor_new_map.cfg:100
+#: data/gui/default/window/editor_new_map.cfg:101
+msgid "Create new map"
+msgstr "Create new map"
+
+#. [label]
+#: data/gui/default/window/editor_resize_map.cfg:27 src/hotkeys.cpp:169
+msgid "Resize Map"
+msgstr "Resize Map"
+
+#. [label]
+#: data/gui/default/window/editor_resize_map.cfg:46
+msgid "New width:"
+msgstr "New Width:"
+
+#. [label]
+#: data/gui/default/window/editor_resize_map.cfg:70
+msgid "Old width:"
+msgstr "Old Width:"
+
+#. [label]
+#: data/gui/default/window/editor_resize_map.cfg:94
+msgid "New height:"
+msgstr "New Height:"
+
+#. [label]
+#: data/gui/default/window/editor_resize_map.cfg:118
+msgid "Old height:"
+msgstr "Old Height:"
+
+#. [label]
+#: data/gui/default/window/editor_resize_map.cfg:145
+msgid "Expand / shrink direction"
+msgstr "Expand / shrink direction"
+
+#. [toggle_button]: id=copy_edge_terrain
+#: data/gui/default/window/editor_resize_map.cfg:240
+msgid "Copy edge terrain"
+msgstr "Copy edge terrain"
+
+#. [button]: id=ok
+#: data/gui/default/window/editor_resize_map.cfg:262
+#: data/gui/default/window/editor_resize_map.cfg:263
+msgid "Resize map"
+msgstr "Resize map"
+
+#. [label]
+#: data/gui/default/window/editor_settings.cfg:38 src/hotkeys.cpp:121
+msgid "Editor Settings"
+msgstr "Editor Settings"
+
+#. [label]
+#: data/gui/default/window/editor_settings.cfg:46
+msgid "Time of day lighting preset"
+msgstr "Time of day lighting preset"
+
+#. [button]: id=next_tod
+#. [button]: id=next_tip
+#: data/gui/default/window/editor_settings.cfg:75
+#: data/gui/default/window/editor_settings.cfg:76
+#: data/gui/default/window/title_screen.cfg:177
+msgid "Next"
+msgstr "Next"
+
+#. [toggle_button]: id=custom_tod_toggle
+#: data/gui/default/window/editor_settings.cfg:83
+msgid "Custom lighting setting"
+msgstr "Custom lighting setting"
+
+#. [toggle_button]: id=custom_tod_auto_refresh
+#: data/gui/default/window/editor_settings.cfg:93
+msgid "Auto-update map view"
+msgstr "Auto-update map view"
+
+#. [label]
+#: data/gui/default/window/editor_settings.cfg:120
+msgid "Red:"
+msgstr "Red"
+
+#. [label]
+#: data/gui/default/window/editor_settings.cfg:146
+msgid "Green:"
+msgstr "Green:"
+
+#. [label]
+#: data/gui/default/window/editor_settings.cfg:172
+msgid "Blue:"
+msgstr "Blue:"
+
+#. [toggle_button]: id=use_mdi
+#: data/gui/default/window/editor_settings.cfg:208
+msgid "Allow more than one map to be open at the same time (MDI)"
+msgstr "Allow more than one map to be open at the same time (MDI)"
+
+#. [button]: id=apply
+#: data/gui/default/window/editor_settings.cfg:250
+#: src/game_preferences_display.cpp:203
+msgid "Apply"
+msgstr "Apply"
+
+#. [label]
+#: data/gui/default/window/formula_debugger.cfg:28
+msgid "Formula debugger"
+msgstr "Formula debugger"
+
+#. [label]
+#: data/gui/default/window/formula_debugger.cfg:51
+msgid "Welcome"
+msgstr "Welcome"
+
+#. [label]: id=state
+#: data/gui/default/window/formula_debugger.cfg:63
+msgid "state"
+msgstr "state"
+
+#. [label]
+#: data/gui/default/window/formula_debugger.cfg:77
+msgid "Call stack"
+msgstr "Call stack"
+
+#. [label]
+#: data/gui/default/window/formula_debugger.cfg:86
+#: data/gui/default/window/gamestate_inspector.cfg:268
+msgid "Actions"
+msgstr "Actions"
+
+#. [button]: id=step
+#: data/gui/default/window/formula_debugger.cfg:120
+msgid "Step operation"
+msgstr "Step operation"
+
+#. [button]: id=next
+#: data/gui/default/window/formula_debugger.cfg:131
+msgid "Next operation"
+msgstr "Next operation"
+
+#. [button]: id=stepout
+#: data/gui/default/window/formula_debugger.cfg:142
+msgid "Step out"
+msgstr "Step out"
+
+#. [button]: id=continue
+#: data/gui/default/window/formula_debugger.cfg:153
+msgid "Continue"
+msgstr "Continue"
+
+#. [label]
+#: data/gui/default/window/formula_debugger.cfg:170
+msgid "Execution trace"
+msgstr "Execution trace"
+
+#. [button]: id=cancel
+#. [button]: id=quit
+#. [grid]
+#: data/gui/default/window/formula_debugger.cfg:226
+#: data/gui/default/window/lobby_main.cfg:660
+#: data/gui/default/window/title_screen.cfg:232 src/hotkeys.cpp:722
+#: src/hotkeys.cpp:1024
+msgid "Quit"
+msgstr "Quit"
+
+#. [label]: id=lblTitle
+#: data/gui/default/window/game_delete.cfg:32
+msgid "Delete Save"
+msgstr "Delete Save"
+
+#. [label]: id=lblMessage
+#: data/gui/default/window/game_delete.cfg:52
+msgid "Do you really want to delete this game?"
+msgstr "Do you really want to delete this game?"
+
+#. [toggle_button]: id=dont_ask_again
+#: data/gui/default/window/game_delete.cfg:72
+msgid "Don’t ask me again!"
+msgstr "Don’t ask me again!"
+
+#. [button]: id=ok
+#: data/gui/default/window/game_delete.cfg:128
+#: data/gui/default/window/game_delete.cfg:129
+#: data/gui/default/window/game_save_message.cfg:139
+#: data/gui/default/window/game_save_message.cfg:140
+#: data/gui/default/window/game_save_oos.cfg:186
+#: data/gui/default/window/game_save_oos.cfg:187
+#: data/gui/default/window/game_save_overwrite.cfg:88
+#: data/gui/default/window/game_save_overwrite.cfg:89
+#: src/construct_dialog.cpp:128 src/gui/dialogs/message.cpp:176
+msgid "Yes"
+msgstr "Yes"
+
+#. [button]: id=cancel
+#: data/gui/default/window/game_delete.cfg:143
+#: data/gui/default/window/game_save_message.cfg:154
+#: data/gui/default/window/game_save_oos.cfg:201
+#: data/gui/default/window/game_save_overwrite.cfg:103
+#: src/construct_dialog.cpp:129 src/gui/dialogs/message.cpp:178
+msgid "No"
+msgstr "No"
+
+#. [label]: id=lblTitle
+#: data/gui/default/window/game_load.cfg:42
+#: src/gui/dialogs/mp_create_game.cpp:88 src/hotkeys.cpp:72
+msgid "Load Game"
+msgstr "Load Game"
+
+#, fuzzy
+msgid "Save Layout"
+msgstr "Save Replay"
+
+#, fuzzy
+msgid "Local"
+msgstr "Local Game"
+
+msgid "Network"
+msgstr ""
+
+#. [button]: id=delete
+#: data/gui/default/window/game_load.cfg:352
+#: data/gui/default/window/game_load.cfg:353
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Upload"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Uploader"
+msgstr ""
+
+#. [toggle_button]: id=show_replay
+#: data/gui/default/window/game_load.cfg:371
+msgid "Show replay"
+msgstr "Show replay"
+
+#. [toggle_button]: id=cancel_orders
+#: data/gui/default/window/game_load.cfg:389
+msgid "Cancel orders"
+msgstr "Cancel orders"
+
+#. [label]: id=lblTitle
+#: data/gui/default/window/game_save.cfg:32
+#: data/gui/default/window/game_save_message.cfg:32
+#: data/gui/default/window/game_save_oos.cfg:32 src/hotkeys.cpp:69
+msgid "Save Game"
+msgstr "Save Game"
+
+#. [label]
+#: data/gui/default/window/game_save.cfg:62
+#: data/gui/default/window/game_save_message.cfg:82
+#: data/gui/default/window/game_save_oos.cfg:82
+msgid "Name:"
+msgstr "Name:"
+
+#. [label]: id=lblMessage
+#: data/gui/default/window/game_save_message.cfg:52
+msgid "x"
+msgstr "x"
+
+#. [label]: id=lblMessage
+#: data/gui/default/window/game_save_oos.cfg:52
+msgid "OOS error"
+msgstr "OOS error"
+
+#. [toggle_button]: id=ignore_all
+#: data/gui/default/window/game_save_oos.cfg:134
+msgid "Ignore All"
+msgstr "Ignore All"
+
+#. [button]: id=quit_game
+#: data/gui/default/window/game_save_oos.cfg:159 src/hotkeys.cpp:91
+msgid "Quit Game"
+msgstr "Quit Game"
+
+#. [label]: id=lblTitle
+#: data/gui/default/window/game_save_overwrite.cfg:32
+msgid "Overwrite?"
+msgstr "Overwrite?"
+
+#. [label]: id=lblMessage
+#: data/gui/default/window/game_save_overwrite.cfg:52
+msgid "Save already exists. Do you want to overwrite it?"
+msgstr "Save already exists. Do you want to overwrite it?"
+
+#. [label]
+#: data/gui/default/window/gamestate_inspector.cfg:38
+msgid "Gamestate Inspector"
+msgstr "Gamestate Inspector"
+
+#. [label]
+#: data/gui/default/window/gamestate_inspector.cfg:92
+msgid "Types"
+msgstr "Types"
+
+#. [label]
+#: data/gui/default/window/gamestate_inspector.cfg:103
+msgid "Content"
+msgstr "Content"
+
+#. [label]
+#: data/gui/default/window/gamestate_inspector.cfg:114
+msgid "Inspection window"
+msgstr "Inspection window"
+
+#. [label]: id=unit_type
+#. [label]: id=typename
+#: data/gui/default/window/gamestate_inspector.cfg:145
+#: data/gui/default/window/unit_create.cfg:123
+msgid "Type"
+msgstr "Type"
+
+#. [label]: id=name
+#: data/gui/default/window/gamestate_inspector.cfg:206
+msgid "Variable"
+msgstr "Variable"
+
+#. [button]: id=ok
+#. [button]: id=cancel
+#. [button]: id=close_window
+#: data/gui/default/window/gamestate_inspector.cfg:331
+#: data/gui/default/window/lobby_main.cfg:619
+#: data/gui/default/window/lobby_player_info.cfg:192
+#: data/gui/default/window/message.cfg:123 src/construct_dialog.cpp:139
+msgid "Close"
+msgstr "Close"
+
+#. [grid]
+#. [label]
+#: data/gui/default/window/language_selection.cfg:31
+#: data/gui/default/window/title_screen.cfg:229
+msgid "Language"
+msgstr "Language"
+
+#. [label]
+#: data/gui/default/window/language_selection.cfg:50
+msgid "Choose your preferred language:"
+msgstr "Choose your preferred language:"
+
+#. [button]: id=ok
+#: data/gui/default/window/language_selection.cfg:118
+#: data/gui/default/window/language_selection.cfg:119
+msgid "Change language"
+msgstr "Change language"
+
+#. [row]
+#: data/gui/default/window/lobby_main.cfg:109
+msgid "Games"
+msgstr "Games"
+
+#. [row]
+#: data/gui/default/window/lobby_main.cfg:177
+msgid "Requires a password to join"
+msgstr "Requires a password to join"
+
+#. [toggle_button]: id=use_map_settings
+#. [row]
+#: data/gui/default/window/lobby_main.cfg:178
+#: data/gui/default/window/mp_create_game.cfg:313
+msgid "Use map settings"
+msgstr "Use map settings"
+
+#. [row]
+#: data/gui/default/window/lobby_main.cfg:179
+msgid "Reloaded game"
+msgstr "Reloaded game"
+
+#. [row]
+#: data/gui/default/window/lobby_main.cfg:180
+msgid "Unknown era"
+msgstr "Unknown era"
+
+#. [row]
+#: data/gui/default/window/lobby_main.cfg:182
+msgid "Gold per village"
+msgstr "Gold per village"
+
+#. [label]
+#. [row]
+#: data/gui/default/window/lobby_main.cfg:184
+#: data/gui/default/window/mp_create_game.cfg:412
+msgid "Experience modifier"
+msgstr "Experience modifier"
+
+#. [row]
+#: data/gui/default/window/lobby_main.cfg:186
+msgid "Time limit"
+msgstr "Time limit"
+
+#. [label]
+#: data/gui/default/window/lobby_main.cfg:305
+msgid "Sort players:"
+msgstr "Sort players:"
+
+#. [toggle_button]: id=player_list_sort_relation
+#: data/gui/default/window/lobby_main.cfg:313
+msgid "Friends first, ignored people last"
+msgstr "Friends first, ignored people last"
+
+#. [toggle_button]: id=player_list_sort_name
+#: data/gui/default/window/lobby_main.cfg:321
+msgid "Alphabetically"
+msgstr "Alphabetically"
+
+#. [definition]
+#: data/gui/default/window/lobby_main.cfg:337
+msgid "Selected game"
+msgstr "Selected game"
+
+#. [definition]
+#: data/gui/default/window/lobby_main.cfg:338
+msgid "Current room"
+msgstr "Current room"
+
+#. [definition]
+#: data/gui/default/window/lobby_main.cfg:339
+msgid "Lobby"
+msgstr "Lobby"
+
+#. [definition]
+#: data/gui/default/window/lobby_main.cfg:340
+msgid "Other games"
+msgstr "Other games"
+
+#. [label]: id=room
+#: data/gui/default/window/lobby_main.cfg:479
+msgid "Rooms"
+msgstr "Rooms"
+
+#. [image]: id=pending_messages
+#: data/gui/default/window/lobby_main.cfg:497
+msgid "Messages waiting"
+msgstr "Messages waiting"
+
+#. [label]
+#: data/gui/default/window/lobby_main.cfg:567
+msgid "Multiplayer Lobby"
+msgstr "Multiplayer Lobby"
+
+#. [label]
+#: data/gui/default/window/lobby_main.cfg:575
+msgid "Filter:"
+msgstr "Filter:"
+
+#. [toggle_button]: id=filter_with_friends
+#: data/gui/default/window/lobby_main.cfg:586
+msgid "Friends"
+msgstr "Friends"
+
+#. [toggle_button]: id=filter_without_ignored
+#: data/gui/default/window/lobby_main.cfg:592
+msgid "No ignored"
+msgstr "No ignored"
+
+#. [toggle_button]: id=filter_vacant_slots
+#: data/gui/default/window/lobby_main.cfg:598
+msgid "Vacant slots"
+msgstr "Vacant slots"
+
+#. [toggle_button]: id=filter_invert
+#: data/gui/default/window/lobby_main.cfg:604
+msgid "Invert filter"
+msgstr "Invert filter"
+
+#. [button]: id=send_message
+#: data/gui/default/window/lobby_main.cfg:648
+msgid "Send"
+msgstr "Send"
+
+#. [button]: id=show_preferences
+#. [grid]
+#: data/gui/default/window/lobby_main.cfg:666
+#: data/gui/default/window/title_screen.cfg:230
+#: src/game_preferences_display.cpp:56 src/hotkeys.cpp:85
+msgid "Preferences"
+msgstr "Preferences"
+
+#. [button]: id=refresh
+#: data/gui/default/window/lobby_main.cfg:672
+msgid "Refresh"
+msgstr "Refresh"
+
+#. [label]
+#. [button]: id=create
+#: data/gui/default/window/lobby_main.cfg:686
+#: data/gui/default/window/mp_create_game.cfg:33
+msgid "Create Game"
+msgstr "Create Game"
+
+#. [button]: id=join_global
+#: data/gui/default/window/lobby_main.cfg:692
+msgid "Join"
+msgstr "Join"
+
+#. [button]: id=observe_global
+#: data/gui/default/window/lobby_main.cfg:698
+msgid "Observe"
+msgstr "Observe"
+
+#. [toggle_button]: id=skip_replay
+#: data/gui/default/window/lobby_main.cfg:704
+msgid "Quick replay"
+msgstr "Quick replay"
+
+#. [label]
+#: data/gui/default/window/lobby_player_info.cfg:30
+msgid "Player Info — "
+msgstr "Player Info — "
+
+#. [button]: id=start_whisper
+#: data/gui/default/window/lobby_player_info.cfg:62
+msgid "Send private message"
+msgstr "Send private message"
+
+#. [button]: id=add_to_friends
+#: data/gui/default/window/lobby_player_info.cfg:91
+msgid "Add to friends list"
+msgstr "Add to friends list"
+
+#. [button]: id=add_to_ignores
+#: data/gui/default/window/lobby_player_info.cfg:100
+msgid "Add to ignores list"
+msgstr "Add to ignores list"
+
+#. [button]: id=remove_from_list
+#: data/gui/default/window/lobby_player_info.cfg:109
+msgid "Remove from list"
+msgstr "Remove from list"
+
+#. [label]
+#: data/gui/default/window/lobby_player_info.cfg:133
+msgid "Moderation"
+msgstr "Moderation"
+
+#. [button]: id=check_status
+#: data/gui/default/window/lobby_player_info.cfg:140
+msgid "Check status"
+msgstr "Check status"
+
+#. [label]
+#: data/gui/default/window/lobby_player_info.cfg:147
+msgid "Kick / ban reason:"
+msgstr "Kick / ban reason:"
+
+#. [button]: id=kick
+#: data/gui/default/window/lobby_player_info.cfg:160
+#: data/gui/default/window/mp_cmd_wrapper.cfg:381
+msgid "Kick"
+msgstr "Kick"
+
+#. [label]
+#: data/gui/default/window/lobby_player_info.cfg:167
+msgid "Ban time:"
+msgstr "Ban time:"
+
+#. [button]: id=kick_ban
+#: data/gui/default/window/lobby_player_info.cfg:180
+msgid "Kick/ban"
+msgstr "Kick/ban"
+
+#. [window]: id=mp_cmd_wrapper
+#: data/gui/default/window/mp_cmd_wrapper.cfg:8
+msgid "Multiplayer command dialog"
+msgstr "Multiplayer command dialog"
+
+#. [label]
+#: data/gui/default/window/mp_cmd_wrapper.cfg:31
+msgid "Messaging"
+msgstr "Messaging"
+
+#. [label]
+#: data/gui/default/window/mp_cmd_wrapper.cfg:61
+msgid "Message:"
+msgstr "Message:"
+
+#. [button]: id=ok
+#: data/gui/default/window/mp_cmd_wrapper.cfg:93
+msgid "Send a private message"
+msgstr "Send a private message"
+
+#. [label]
+#: data/gui/default/window/mp_cmd_wrapper.cfg:133
+msgid "Friends/Ignored List"
+msgstr "Friends/Ignored List"
+
+#. [button]: id=add_friend
+#: data/gui/default/window/mp_cmd_wrapper.cfg:162
+#: src/game_preferences_display.cpp:179
+msgid "Add As Friend"
+msgstr "Add As Friend"
+
+#. [button]: id=add_ignore
+#: data/gui/default/window/mp_cmd_wrapper.cfg:177
+#: src/game_preferences_display.cpp:180
+msgid "Add As Ignore"
+msgstr "Add As Ignore"
+
+#. [button]: id=remove
+#: data/gui/default/window/mp_cmd_wrapper.cfg:192
+#: src/game_preferences_display.cpp:181
+msgid "Remove"
+msgstr "Remove"
+
+#. [label]
+#: data/gui/default/window/mp_cmd_wrapper.cfg:233
+msgid "Moderating"
+msgstr "Moderating"
+
+#. [label]
+#: data/gui/default/window/mp_cmd_wrapper.cfg:263
+msgid "Reason:"
+msgstr "Reason:"
+
+#. [label]
+#: data/gui/default/window/mp_cmd_wrapper.cfg:315
+msgid "Time:"
+msgstr "Time:"
+
+#. [button]: id=status
+#: data/gui/default/window/mp_cmd_wrapper.cfg:366
+msgid "Status"
+msgstr "Status"
+
+#. [button]: id=ban
+#: data/gui/default/window/mp_cmd_wrapper.cfg:396
+msgid "Ban"
+msgstr "Ban"
+
+#. [label]
+#: data/gui/default/window/mp_connect.cfg:50
+#: data/gui/default/window/mp_server_list.cfg:61
+msgid "You will now connect to the multiplayer server."
+msgstr "You will now connect to the multiplayer server."
+
+#. [button]: id=list
+#: data/gui/default/window/mp_connect.cfg:148
+msgid "View List"
+msgstr "View List"
+
+#. [label]
+#. [text_box]: id=game_name
+#: data/gui/default/window/mp_create_game.cfg:62
+#: data/gui/default/window/mp_create_game.cfg:77
+msgid "Name of game:"
+msgstr "Name of game:"
+
+#. [label]: id=map_players
+#: data/gui/default/window/mp_create_game.cfg:140
+#, fuzzy
+msgid "Players"
+msgstr "Players:"
+
+#. [label]: id=map_size
+#: data/gui/default/window/mp_create_game.cfg:159
+msgid "Size"
+msgstr ""
+
+#. [label]
+#: data/gui/default/window/mp_create_game.cfg:177
+msgid "Era:"
+msgstr "Era:"
+
+#. [button]: id=era
+#: data/gui/default/window/mp_create_game.cfg:196
+msgid "Default"
+msgstr "Default"
+
+#. [button]: id=password
+#. [label]: id=title
+#: data/gui/default/window/mp_create_game.cfg:218
+#: data/gui/default/window/mp_create_game_set_password.cfg:34
+msgid "Set Password"
+msgstr "Set Password"
+
+#. [label]
+#: data/gui/default/window/mp_create_game.cfg:246
+#, fuzzy
+msgid "Map to play"
+msgstr "Map to play:"
+
+#. [label]
+#: data/gui/default/window/mp_create_game.cfg:331
+msgid "Number of turns"
+msgstr "Number of turns"
+
+#. [slider]: id=turn_count
+#: data/gui/default/window/mp_create_game.cfg:354
+msgid "Unlimited"
+msgstr "Unlimited"
+
+#. [label]
+#: data/gui/default/window/mp_create_game.cfg:372
+msgid "Village gold"
+msgstr "Village gold"
+
+#. [toggle_button]: id=fog
+#: data/gui/default/window/mp_create_game.cfg:452
+msgid "Fog of War"
+msgstr "Fog of War"
+
+#. [toggle_button]: id=random_start_time
+#: data/gui/default/window/mp_create_game.cfg:493
+msgid "Random start time"
+msgstr "Random start time"
+
+#. [button]: id=ok
+#: data/gui/default/window/mp_create_game.cfg:535
+msgid "Create game"
+msgstr "Create game"
+
+#. [scroll_label]: id=message
+#: data/gui/default/window/mp_create_game_set_password.cfg:53
+msgid ""
+"Set the password that people wanting to join your game as players must enter."
+msgstr ""
+
+#. [label]
+#: data/gui/default/window/mp_create_game_set_password.cfg:82
+#: data/gui/default/window/mp_login.cfg:134
+msgid "Password:"
+msgstr "Password:"
+
+#. [window]: id=mp_login
+#: data/gui/default/window/mp_login.cfg:8
+msgid "Multiplayer server login dialog"
+msgstr "Multiplayer server login dialog"
+
+#. [label]
+#: data/gui/default/window/mp_login.cfg:31
+msgid "Login"
+msgstr "Login"
+
+#. [label]
+#: data/gui/default/window/mp_login.cfg:81
+#: data/gui/default/window/mp_method_selection.cfg:61
+msgid "Login:"
+msgstr "Login:"
+
+#. [toggle_button]: id=remember_password
+#: data/gui/default/window/mp_login.cfg:190
+#: src/game_preferences_display.cpp:175
+msgid "Save password to preferences (clear text)"
+msgstr "Save password to preferences (clear text)"
+
+#. [button]: id=password_reminder
+#: data/gui/default/window/mp_login.cfg:248
+msgid "Password Reminder"
+msgstr "Password Reminder"
+
+#. [label]
+#. [grid]
+#: data/gui/default/window/mp_method_selection.cfg:31
+#: data/gui/default/window/title_screen.cfg:225
+#: src/gui/dialogs/game_load.cpp:301
+msgid "Multiplayer"
+msgstr "Multiplayer"
+
+#. [text_box]: id=user_name
+#: data/gui/default/window/mp_method_selection.cfg:82
+msgid ""
+"You may login to the official multiplayer server with your forum username "
+"and password.\n"
+"Note that registration is not required to join the server: you need to "
+"supply a password only if you wish to use a registered username.\n"
+"\n"
+"The Battle for Wesnoth forum can be found at http://www.wesnoth.org/forum/"
+msgstr ""
+"Note that registration is not required to join the server: you need to "
+"supply a password only if you wish to use a registered username."
+
+#. [column]
+#: data/gui/default/window/mp_method_selection.cfg:149
+msgid "Crusage for subcontinent"
+msgstr ""
+
+#. [column]
+#: data/gui/default/window/mp_method_selection.cfg:138
+#, fuzzy
+msgid "Enter multiplayer lobby"
+msgstr "Multiplayer Lobby"
+
+#. [column]
+#: data/gui/default/window/mp_method_selection.cfg:158
+msgid "Host Networked Game"
+msgstr "Host Networked Game"
+
+#. [column]
+#: data/gui/default/window/mp_method_selection.cfg:168
+#, fuzzy
+msgid "Attack Player"
+msgstr "Host Networked Game"
+
+#. [column]
+#: data/gui/default/window/mp_method_selection.cfg:169
+#, fuzzy
+msgid "Attack a network payer"
+msgstr "Host Networked Game"
+
+#. [label]: id=address
+#: data/gui/default/window/mp_server_list.cfg:113
+msgid "Address"
+msgstr "Address"
+
+#. [button]: id=ok
+#: data/gui/default/window/mp_server_list.cfg:215
+msgid "Select"
+msgstr "Select"
+
+#. [button]: id=help
+#: data/gui/default/window/title_screen.cfg:146 src/hotkeys.cpp:200
+msgid "Help"
+msgstr "Help"
+
+#. [button]: id=help
+#: data/gui/default/window/title_screen.cfg:147
+msgid "Show Battle for Wesnoth help"
+msgstr ""
+
+#. [button]: id=previous_tip
+#: data/gui/default/window/title_screen.cfg:162
+msgid "Previous"
+msgstr "Previous"
+
+#. [button]: id=previous_tip
+#: data/gui/default/window/title_screen.cfg:163
+msgid "Show previous tip of the day"
+msgstr ""
+
+#. [button]: id=next_tip
+#: data/gui/default/window/title_screen.cfg:178
+msgid "Show next tip of the day"
+msgstr ""
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:223
+msgid "Start a tutorial to familiarize yourself with the game"
+msgstr ""
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:223
+#: src/gui/dialogs/game_load.cpp:303
+msgid "Tutorial"
+msgstr "Tutorial"
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:224
+msgid "Campaign"
+msgstr "Campaign"
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:224
+msgid "Start a new single player campaign"
+msgstr ""
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:225
+msgid ""
+"Play multiplayer (hotseat, LAN, or Internet), or a single scenario against "
+"the AI"
+msgstr ""
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:226
+msgid "Load"
+msgstr "Load"
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:226
+#, fuzzy
+msgid "Load a saved game"
+msgstr "Reloaded game"
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:227
+msgid "Add-ons"
+msgstr "Add-ons"
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:227
+msgid "Download usermade campaigns, eras, or map packs"
+msgstr ""
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:228
+#, fuzzy
+msgid "Map Editor"
+msgstr "Editor"
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:228
+msgid "Start the map editor"
+msgstr ""
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:229 src/hotkeys.cpp:202
+msgid "Change the language"
+msgstr "Change the language"
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:230
+msgid "Configure the game's settings"
+msgstr ""
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:231
+msgid "Credits"
+msgstr "Credits"
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:231
+msgid "View the credits"
+msgstr ""
+
+msgid "Purchase item"
+msgstr ""
+
+#. [grid]
+#: data/gui/default/window/title_screen.cfg:232
+#, fuzzy
+msgid "Quit the game"
+msgstr "Quit Game"
+
+msgid "Guide"
+msgstr ""
+
+msgid "Operational guidelines for game"
+msgstr ""
+
+msgid "History"
+msgstr ""
+
+msgid "Background material about game's role"
+msgstr ""
+
+msgid "Return to title screen"
+msgstr ""
+
+#. [button]: id=ok
+#: data/gui/default/window/unit_attack.cfg:195
+msgid "Attack"
+msgstr ""
+
+#. [label]
+#: data/gui/default/window/unit_attack.cfg:255
+msgid "Attack enemy"
+msgstr ""
+
+#. [label]
+#: data/gui/default/window/unit_create.cfg:37 src/hotkeys.cpp:83
+msgid "Create Unit (Debug!)"
+msgstr "Create Unit (Debug!)"
+
+#. [label]
+#: data/gui/default/window/unit_create.cfg:59
+msgid "Gender:"
+msgstr "Gender:"
+
+#. [toggle_button]: id=male_toggle
+#: data/gui/default/window/unit_create.cfg:69
+msgid "Male"
+msgstr "Male"
+
+#. [toggle_button]: id=female_toggle
+#: data/gui/default/window/unit_create.cfg:79
+msgid "Female"
+msgstr "Female"
+
+#. [label]: id=race
+#: data/gui/default/window/unit_create.cfg:111
+msgid "Race"
+msgstr "Race"
+
+#: src/filechooser.cpp:76
+msgid "File: "
+msgstr "File: "
+
+#: src/filechooser.cpp:79
+msgid "Delete File"
+msgstr "Delete File"
+
+#: src/filechooser.cpp:81 src/filechooser.cpp:206
+msgid "New Folder"
+msgstr "New Folder"
+
+#: src/filechooser.cpp:195
+msgid "Deletion of the file failed."
+msgstr "Deletion of the file failed."
+
+#: src/filechooser.cpp:207
+msgid "Name: "
+msgstr "Name: "
+
+#: src/filechooser.cpp:213
+msgid "Creation of the directory failed."
+msgstr "Creation of the directory failed."
+
+#: src/game_preferences.cpp:290
+msgid "No server has been defined."
+msgstr "No server has been defined."
+
+#: src/game_preferences.cpp:346
+#, fuzzy
+msgid "Player"
+msgstr "Players:"
+
+#: src/game_preferences_display.cpp:161
+msgid "Full Screen"
+msgstr "Full Screen"
+
+#: src/game_preferences_display.cpp:162
+msgid "Enable scroll tracking of unit actions"
+msgstr "Enable scroll tracking of unit actions"
+
+#: src/game_preferences_display.cpp:163
+msgid "Accelerated Speed"
+msgstr "Accelerated Speed"
+
+#: src/game_preferences_display.cpp:164
+msgid "Skip AI Moves"
+msgstr "Skip AI Moves"
+
+#: src/game_preferences_display.cpp:165
+msgid "Interrupt move when an ally is sighted"
+msgstr "Interrupt move when an ally is sighted"
+
+msgid "Grid Size"
+msgstr ""
+
+#: src/game_preferences_display.cpp:166
+msgid "Show Grid"
+msgstr "Show Grid"
+
+msgid "Get one card every 25 turns"
+msgstr ""
+
+#, fuzzy
+msgid "More tactic slot"
+msgstr "Choose the game to load"
+
+#: src/game_preferences_display.cpp:166
+msgid "Don't display message when replay"
+msgstr ""
+
+#: src/game_preferences_display.cpp:167 src/game_preferences_display.cpp:350
+msgid "Save Replay on SP/MP Victory or MP Defeat"
+msgstr "Save Replay on SP/MP Victory or MP Defeat"
+
+#: src/game_preferences_display.cpp:168 src/game_preferences_display.cpp:353
+msgid "Delete Auto-Saves on SP/MP Victory or MP Defeat"
+msgstr "Delete Auto-Saves on SP/MP Victory or MP Defeat"
+
+#: src/game_preferences_display.cpp:169
+msgid "Do Not Show Lobby Joins"
+msgstr "Do Not Show Lobby Joins"
+
+#: src/game_preferences_display.cpp:170
+msgid "Show Lobby Joins Of Friends Only"
+msgstr "Show Lobby Joins Of Friends Only"
+
+#: src/game_preferences_display.cpp:171
+msgid "Show All Lobby Joins"
+msgstr "Show All Lobby Joins"
+
+#: src/game_preferences_display.cpp:172 src/game_preferences_display.cpp:375
+msgid "Use new lobby interface"
+msgstr ""
+
+#: src/game_preferences_display.cpp:173
+msgid "Sort Lobby List"
+msgstr "Sort Lobby List"
+
+#: src/game_preferences_display.cpp:174
+msgid "Iconize Lobby List"
+msgstr "Iconize Lobby List"
+
+#: src/game_preferences_display.cpp:176
+msgid "Set path to wesnothd"
+msgstr "Set path to wesnothd"
+
+#: src/game_preferences_display.cpp:177
+msgid "Friends List"
+msgstr "Friends List"
+
+#: src/game_preferences_display.cpp:178
+msgid "Multiplayer Options"
+msgstr "Multiplayer Options"
+
+#: src/game_preferences_display.cpp:182
+msgid "Show Floating Labels"
+msgstr "Show Floating Labels"
+
+#: src/game_preferences_display.cpp:183
+msgid "Turn Dialog"
+msgstr "Turn Dialogue"
+
+#: src/game_preferences_display.cpp:184
+msgid "Enable Planning Mode on Start"
+msgstr ""
+
+#: src/game_preferences_display.cpp:185
+msgid "Turn Bell"
+msgstr "Turn Bell"
+
+#: src/game_preferences_display.cpp:186
+msgid "Show Team Colors"
+msgstr "Show Team Colours"
+
+#: src/game_preferences_display.cpp:187
+msgid "Show Color Cursors"
+msgstr "Show Colour Cursors"
+
+#: src/game_preferences_display.cpp:188
+msgid "Show Haloing Effects"
+msgstr "Show Haloing Effects"
+
+#: src/game_preferences_display.cpp:189
+msgid "Change Resolution"
+msgstr "Change Resolution"
+
+#: src/game_preferences_display.cpp:190
+msgid "Theme"
+msgstr "Theme"
+
+#, fuzzy
+msgid "Dialog"
+msgstr "Turn Dialogue"
+
+#: src/game_preferences_display.cpp:191
+msgid "Hotkeys"
+msgstr "Hotkeys"
+
+#: src/game_preferences_display.cpp:192
+msgid "Reverse Time Graphics"
+msgstr "Reverse Time Graphics"
+
+#: src/game_preferences_display.cpp:194
+msgid "Sound effects"
+msgstr "Sound effects"
+
+#: src/game_preferences_display.cpp:195
+msgid "Music"
+msgstr "Music"
+
+#: src/game_preferences_display.cpp:196
+#, fuzzy
+msgid "Chat Timestamping when multiplayer"
+msgstr "Chat Timestamping"
+
+#: src/game_preferences_display.cpp:197
+msgid "sound^Advanced Options"
+msgstr "Advanced Options"
+
+#: src/game_preferences_display.cpp:198
+msgid "sound^Standard Options"
+msgstr "Standard Options"
+
+#: src/game_preferences_display.cpp:199
+msgid "User Interface Sounds"
+msgstr "User Interface Sounds"
+
+#: src/game_preferences_display.cpp:202
+msgid "Custom"
+msgstr "Custom"
+
+#: src/game_preferences_display.cpp:204
+msgid "When sneak wall, force to move"
+msgstr ""
+
+#: src/game_preferences_display.cpp:206
+msgid "Music Volume:"
+msgstr "Music Volume:"
+
+#: src/game_preferences_display.cpp:206
+msgid "SFX Volume:"
+msgstr "SFX Volume:"
+
+#: src/game_preferences_display.cpp:207
+msgid "UI Sound Volume:"
+msgstr "UI Sound Volume:"
+
+#: src/game_preferences_display.cpp:208
+msgid "Bell Volume:"
+msgstr "Bell Volume:"
+
+#: src/game_preferences_display.cpp:208
+msgid "Scroll Speed:"
+msgstr "Scroll Speed:"
+
+#: src/game_preferences_display.cpp:211
+msgid "Sample Rate (Hz):"
+msgstr "Sample Rate (Hz):"
+
+#: src/game_preferences_display.cpp:212
+msgid "Frequency:"
+msgstr "Frequency:"
+
+#: src/game_preferences_display.cpp:237
+msgid "Sound effects on/off"
+msgstr "Sound effects on/off"
+
+#: src/game_preferences_display.cpp:241
+msgid "Change the sound effects volume"
+msgstr "Change the sound effects volume"
+
+#: src/game_preferences_display.cpp:244
+msgid "Music on/off"
+msgstr "Music on/off"
+
+#: src/game_preferences_display.cpp:248
+msgid "Change the music volume"
+msgstr "Change the music volume"
+
+#: src/game_preferences_display.cpp:254
+msgid "Change the bell volume"
+msgstr "Change the bell volume"
+
+#: src/game_preferences_display.cpp:257
+msgid "Turn menu and button sounds on/off"
+msgstr "Turn menu and button sounds on/off"
+
+#: src/game_preferences_display.cpp:261
+msgid "Change the sound volume for button clicks, etc."
+msgstr "Change the sound volume for button clicks, etc."
+
+#: src/game_preferences_display.cpp:263
+msgid "Change the sample rate"
+msgstr "Change the sample rate"
+
+#: src/game_preferences_display.cpp:272
+msgid "User defined sample rate"
+msgstr "User defined sample rate"
+
+#: src/game_preferences_display.cpp:281 src/game_preferences_display.cpp:285
+msgid "Change the buffer size"
+msgstr "Change the buffer size"
+
+#: src/game_preferences_display.cpp:283 src/game_preferences_display.cpp:878
+msgid "Buffer Size: "
+msgstr "Buffer Size: "
+
+#: src/game_preferences_display.cpp:290
+msgid "Change the speed of scrolling around the map"
+msgstr "Change the speed of scrolling around the map"
+
+#: src/game_preferences_display.cpp:295 src/game_preferences_display.cpp:297
+msgid "Set the amount of chat lines shown"
+msgstr "Set the number of chat lines shown"
+
+#: src/game_preferences_display.cpp:300
+msgid "Add a timestamp to chat messages"
+msgstr "Add a timestamp to chat messages"
+
+#: src/game_preferences_display.cpp:303
+msgid "Choose whether the game should run full screen or in a window"
+msgstr "Choose whether the game should run full screen or in a window"
+
+#: src/game_preferences_display.cpp:306
+msgid ""
+"Should the map view scroll to a unit when an action or move is animated."
+msgstr ""
+"Should the map view scroll to a unit when an action or move is animated."
+
+#: src/game_preferences_display.cpp:309
+msgid "Make units move and fight faster"
+msgstr "Make units move and fight faster"
+
+#: src/game_preferences_display.cpp:326
+msgid "Units move and fight speed"
+msgstr "Units move and fight speed"
+
+#: src/game_preferences_display.cpp:329
+msgid "Show unit idle animations"
+msgstr "Show unit idle animations"
+
+#: src/game_preferences_display.cpp:335
+msgid "Set the frequency of unit idle animations"
+msgstr "Set the frequency of unit idle animations"
+
+#: src/game_preferences_display.cpp:340
+msgid "Set maximum number of automatic saves to be retained"
+msgstr "Set maximum number of automatic saves to be retained"
+
+#: src/game_preferences_display.cpp:344
+msgid "Do not animate AI units moving"
+msgstr "Do not animate AI units moving"
+
+#: src/game_preferences_display.cpp:347
+msgid "Sighting an allied unit interrupts your unit’s movement"
+msgstr ""
+
+#: src/game_preferences_display.cpp:355
+msgid "Overlay a grid onto the map"
+msgstr "Overlay a grid onto the map"
+
+#: src/game_preferences_display.cpp:358
+msgid "Sort the player list in the lobby by player groups"
+msgstr "Sort the player list in the lobby by player groups"
+
+#: src/game_preferences_display.cpp:361
+msgid "Show icons in front of the player names in the lobby."
+msgstr "Show icons in front of the player names in the lobby."
+
+#: src/game_preferences_display.cpp:364
+msgid "Uncheck to delete the saved password (on exit)."
+msgstr "Uncheck to delete the saved password (on exit)."
+
+#: src/game_preferences_display.cpp:368
+msgid "Do not show messages about players joining the multiplayer lobby"
+msgstr "Do not show messages about players joining the multiplayer lobby"
+
+#: src/game_preferences_display.cpp:370
+msgid "Show messages about your friends joining the multiplayer lobby"
+msgstr "Show messages about your friends joining the multiplayer lobby"
+
+#: src/game_preferences_display.cpp:372
+msgid "Show messages about all players joining the multiplayer lobby"
+msgstr "Show messages about all players joining the multiplayer lobby"
+
+#: src/game_preferences_display.cpp:377
+msgid "Find and set path to MP server to host LAN games."
+msgstr "Find and set path to MP server to host LAN games."
+
+#: src/game_preferences_display.cpp:378
+msgid "View and edit your friends and ignores list"
+msgstr "View and edit your friends and ignores list"
+
+#: src/game_preferences_display.cpp:379
+msgid "Back to the multiplayer options"
+msgstr "Back to the multiplayer options"
+
+#: src/game_preferences_display.cpp:380
+msgid "Add this username to your friends list"
+msgstr "Add this username to your friends list"
+
+#: src/game_preferences_display.cpp:381
+msgid "Add this username to your ignores list"
+msgstr "Add this username to your ignores list"
+
+#: src/game_preferences_display.cpp:382
+msgid "Remove this username from your list"
+msgstr "Remove this username from your list"
+
+#: src/game_preferences_display.cpp:385
+msgid "Insert a username"
+msgstr "Insert a username"
+
+#: src/game_preferences_display.cpp:388
+msgid "Show text above a unit when it is hit to display damage inflicted"
+msgstr "Show text above a unit when it is hit to display damage inflicted"
+
+#: src/game_preferences_display.cpp:390
+msgid "Change the resolution the game runs at"
+msgstr "Change the resolution the game runs at"
+
+#: src/game_preferences_display.cpp:391
+msgid "Change the theme the game runs with"
+msgstr "Change the theme the game runs with"
+
+#: src/game_preferences_display.cpp:394
+msgid "Display a dialog at the beginning of your turn"
+msgstr "Display a dialogue at the beginning of your turn"
+
+#: src/game_preferences_display.cpp:397
+msgid "Activates Planning Mode on game start"
+msgstr ""
+
+#: src/game_preferences_display.cpp:400
+msgid "Play a bell sound at the beginning of your turn"
+msgstr "Play a bell sound at the beginning of your turn"
+
+#: src/game_preferences_display.cpp:403
+msgid ""
+"Show a colored circle around the base of each unit to show which side it is "
+"on"
+msgstr ""
+"Show a coloured circle around the base of each unit to show which side it is "
+"on"
+
+#: src/game_preferences_display.cpp:406
+msgid "Choose whether the sun moves left-to-right or right-to-left"
+msgstr "Choose whether the sun moves left-to-right or right-to-left"
+
+#: src/game_preferences_display.cpp:409
+msgid "Use colored mouse cursors (may be slower)"
+msgstr "Use coloured mouse cursors (may be slower)"
+
+#: src/game_preferences_display.cpp:412
+msgid "Use graphical special effects (may be slower)"
+msgstr "Use graphical special effects (may be slower)"
+
+#: src/game_preferences_display.cpp:414
+msgid "View and configure keyboard shortcuts"
+msgstr "View and configure keyboard shortcuts"
+
+#: src/game_preferences_display.cpp:742
+msgid "Speed: "
+msgstr "Speed: "
+
+#: src/game_preferences_display.cpp:747 src/game_preferences_display.cpp:749
+msgid "Maximum Auto-Saves: "
+msgstr "Maximum Auto-Saves: "
+
+#: src/game_preferences_display.cpp:747
+msgid "infinite"
+msgstr "infinite"
+
+#: src/game_preferences_display.cpp:932
+msgid "Chat Lines: "
+msgstr "Chat Lines: "
+
+#: src/game_preferences_display.cpp:954 src/game_preferences_display.cpp:962
+msgid "Invalid username"
+msgstr "Invalid username"
+
+#: src/game_preferences_display.cpp:1065
+msgid "yes"
+msgstr "yes"
+
+#: src/game_preferences_display.cpp:1067
+msgid "no"
+msgstr "no"
+
+#: src/game_preferences_display.cpp:1100
+msgid "(empty list)"
+msgstr "(empty list)"
+
+#: src/game_preferences_display.cpp:1224
+msgid "Prefs section^General"
+msgstr "General"
+
+#: src/game_preferences_display.cpp:1225
+msgid "Prefs section^Display"
+msgstr "Display"
+
+#: src/game_preferences_display.cpp:1226
+msgid "Prefs section^Sound"
+msgstr "Sound"
+
+#: src/game_preferences_display.cpp:1227
+#, fuzzy
+msgid "Prefs section^Scenario"
+msgstr "General"
+
+#: src/game_preferences_display.cpp:1228
+msgid "Advanced section^Advanced"
+msgstr "Advanced"
+
+#: src/game_preferences_display.cpp:1263
+#, fuzzy
+msgid "Choose theme"
+msgstr "Choose the game to load"
+
+#: src/game_preferences_display.cpp:1263
+#, fuzzy
+msgid "Saved preference:"
+msgstr "Saved Theme Preference: "
+
+#: src/game_preferences_display.cpp:1272
+msgid "New theme will take effect on next new or loaded game."
+msgstr "New theme will take effect on next new or loaded game."
+
+#: src/game_preferences_display.cpp:1276
+msgid "No known themes. Try changing from within an existing game."
+msgstr "No known themes. Try changing from within an existing game."
+
+#: src/game_preferences_display.cpp:1319
+msgid "Find $filename server binary to host networked games"
+msgstr "Find $filename server binary to host networked games"
+
+#: src/gui/auxiliary/canvas.cpp:484
+msgid "Line doesn't fit on canvas."
+msgstr "Line doesn't fit on canvas."
+
+#: src/gui/auxiliary/canvas.cpp:620
+msgid "Rectangle doesn't fit on canvas."
+msgstr "Rectangle doesn't fit on canvas."
+
+#: src/gui/auxiliary/canvas.cpp:1056
+msgid "Text has a font size of 0."
+msgstr "Text has a font size of 0."
+
+#: src/gui/auxiliary/canvas.cpp:1125
+msgid "Text doesn't start on canvas."
+msgstr "Text doesn't start on canvas."
+
+#: src/gui/auxiliary/widget_definition.cpp:136
+#: src/gui/auxiliary/window_builder.cpp:228
+msgid "No resolution defined."
+msgstr "No resolution defined."
+
+#: src/gui/auxiliary/widget_definition/listbox.cpp:105
+#: src/gui/auxiliary/widget_definition/multi_page.cpp:55
+#: src/gui/auxiliary/widget_definition/scroll_label.cpp:74
+#: src/gui/auxiliary/widget_definition/scrollbar_panel.cpp:62
+#: src/gui/auxiliary/widget_definition/stacked_widget.cpp:57
+#: src/gui/auxiliary/widget_definition/tree_view.cpp:58
+#: src/gui/auxiliary/window_builder.cpp:335
+#: src/gui/auxiliary/window_builder/panel.cpp:36
+#: src/gui/auxiliary/window_builder/toggle_panel.cpp:39
+msgid "No grid defined."
+msgstr "No grid defined."
+
+#: src/gui/auxiliary/window_builder.cpp:155
+msgid "Linked '$id' group has multiple definitions."
+msgstr "Linked '$id' group has multiple definitions."
+
+#: src/gui/auxiliary/window_builder.cpp:366
+msgid "Linked '$id' group needs a 'fixed_width' or 'fixed_height' key."
+msgstr "Linked '$id' group needs a 'fixed_width' or 'fixed_height' key."
+
+#: src/gui/auxiliary/window_builder.cpp:465
+msgid "A row must have a column."
+msgstr "A row must have a column."
+
+#: src/gui/auxiliary/window_builder.cpp:466
+msgid "Number of columns differ."
+msgstr "Number of columns differ."
+
+#: src/gui/auxiliary/window_builder/horizontal_listbox.cpp:47
+#: src/gui/auxiliary/window_builder/listbox.cpp:58
+#: src/gui/auxiliary/window_builder/scrollbar_panel.cpp:42
+msgid "No list defined."
+msgstr "No list defined."
+
+#: src/gui/auxiliary/window_builder/horizontal_listbox.cpp:51
+#: src/gui/auxiliary/window_builder/listbox.cpp:62
+msgid "A 'list_definition' should contain one row."
+msgstr "A 'list_definition' should contain one row."
+
+#: src/gui/auxiliary/window_builder/horizontal_listbox.cpp:67
+#: src/gui/auxiliary/window_builder/listbox.cpp:81
+#: src/gui/auxiliary/window_builder/multi_page.cpp:61
+msgid ""
+"'list_data' must have the same number of columns as the 'list_definition'."
+msgstr ""
+"'list_data' must have the same number of columns as the 'list_definition'."
+
+#: src/gui/auxiliary/window_builder/multi_page.cpp:39
+msgid "No page defined."
+msgstr "No page defined."
+
+#: src/gui/auxiliary/window_builder/slider.cpp:66
+msgid "The number of value_labels and values don't match."
+msgstr "The number of value_labels and values don't match."
+
+#: src/gui/auxiliary/window_builder/stacked_widget.cpp:37
+msgid "No stack defined."
+msgstr "No stack defined."
+
+#: src/gui/auxiliary/window_builder/tree_view.cpp:46
+msgid "No nodes defined for a tree view."
+msgstr ""
+
+#: src/gui/auxiliary/window_builder/tree_view.cpp:86
+msgid "[node]id 'root' is reserved for the implementation."
+msgstr ""
+
+#: src/gui/auxiliary/window_builder/tree_view.cpp:90
+#, fuzzy
+msgid "No node defined."
+msgstr "No page defined."
+
+#: src/gui/dialogs/game_load.cpp:274
+msgid "#(Invalid)"
+msgstr "#(Invalid)"
+
+#: src/gui/dialogs/game_load.cpp:294
+msgid "Campaign: $campaign_name"
+msgstr "Campaign: $campaign_name"
+
+#: src/gui/dialogs/game_load.cpp:311
+msgid "replay"
+msgstr "replay"
+
+#: src/gui/dialogs/game_load.cpp:313
+msgid "Turn"
+msgstr "Turn"
+
+#: src/gui/dialogs/game_load.cpp:315
+msgid "Scenario Start"
+msgstr "Scenario Start"
+
+#: src/gui/dialogs/game_load.cpp:318
+#, fuzzy
+msgid "Create time"
+msgstr "Create Game"
+
+#: src/gui/dialogs/game_load.cpp:318
+#, fuzzy
+msgid "Total time"
+msgstr "Ban time:"
+
+#: src/gui/dialogs/game_load.cpp:322
+msgid "Version: "
+msgstr "Version: "
+
+#: src/gui/dialogs/lobby_main.cpp:230
+msgid "whisper to $receiver"
+msgstr "whisper to $receiver"
+
+#: src/gui/dialogs/lobby_main.cpp:661
+msgid "Games: showing $num_shown out of $num_total"
+msgstr "Games: showing $num_shown out of $num_total"
+
+#: src/gui/dialogs/lobby_main.cpp:705
+msgid "Observers allowed"
+msgstr "Observers allowed"
+
+#: src/gui/dialogs/lobby_main.cpp:708
+msgid "Observers not allowed"
+msgstr "Observers not allowed"
+
+#: src/gui/dialogs/lobby_main.cpp:1106
+msgid ""
+"Whisper session with $name started. If you don’t want to receive messages "
+"from this user, type /ignore $name\n"
+msgstr ""
+"Whisper session with $name started. If you don’t want to receive messages "
+"from this user, type /ignore $name\n"
+
+#: src/gui/dialogs/lobby_main.cpp:1112
+msgid "Room $name joined"
+msgstr "Room $name joined"
+
+#: src/gui/dialogs/lobby_main.cpp:1418
+msgid "$player has entered the room"
+msgstr ""
+
+#: src/gui/dialogs/lobby_main.cpp:1456
+msgid "$player has left the room"
+msgstr ""
+
+#: src/gui/dialogs/lobby_main.cpp:1569
+msgid "Password Required"
+msgstr "Password Required"
+
+#: src/gui/dialogs/lobby_main.cpp:1570
+msgid "Joining this game requires a password."
+msgstr "Joining this game requires a password."
+
+#: src/gui/dialogs/lobby_main.cpp:1571
+msgid "Password: "
+msgstr "Password: "
+
+#: src/gui/dialogs/message.cpp:190 src/gui/dialogs/transient_message.cpp:64
+msgid "Error"
+msgstr "Error"
+
+#: src/gui/dialogs/mp_create_game.cpp:89
+msgid "Load Game..."
+msgstr "Load Game..."
+
+#: src/gui/dialogs/title_screen.cpp:270
+#, fuzzy
+msgid "Version "
+msgstr "Version: "
+
+#: src/gui/dialogs/title_screen.cpp:273
+msgid "Version"
+msgstr "Version"
+
+#: src/gui/widgets/helper.cpp:137
+msgid "Mandatory widget '$id' hasn't been defined."
+msgstr "Mandatory widget '$id' hasn't been defined."
+
+#: src/gui/widgets/settings.cpp:403
+msgid ""
+"Widget definition '$definition' doesn't contain the definition for '$id'."
+msgstr ""
+"Widget definition '$definition' doesn't contain the definition for '$id'."
+
+#: src/gui/widgets/settings.cpp:459
+msgid "No default gui defined."
+msgstr "No default gui defined."
+
+#: src/gui/widgets/settings.cpp:485
+msgid "No state or draw section defined."
+msgstr "No state or draw section defined."
+
+#: src/gui/widgets/tree_view_node.cpp:103
+msgid "Unknown builder id for tree view node."
+msgstr ""
+
+#: src/gui/widgets/window.cpp:810
+msgid "Click dismiss needs a 'click_dismiss' or 'ok' button."
+msgstr "Click dismiss needs a 'click_dismiss' or 'ok' button."
+
+#: src/gui/widgets/window.cpp:835 src/gui/widgets/window.cpp:868
+#: src/tests/gui/test_gui2.cpp:230
+msgid "Failed to show a dialog, which doesn't fit on the screen."
+msgstr "Failed to show a dialogue, which doesn't fit on the screen."
+
+#: src/hotkeys.cpp:51
+#, fuzzy
+msgid "Animate Map"
+msgstr "Generate Map"
+
+#: src/hotkeys.cpp:52
+msgid "Next Unit"
+msgstr "Next Unit"
+
+#: src/hotkeys.cpp:53
+msgid "Previous Unit"
+msgstr "Previous Unit"
+
+#: src/hotkeys.cpp:54
+msgid "Add waypoint"
+msgstr "Add waypoint"
+
+#: src/hotkeys.cpp:55
+msgid "Hold Position"
+msgstr "Hold Position"
+
+#: src/hotkeys.cpp:56
+msgid "End Unit Turn"
+msgstr "End Unit Turn"
+
+#: src/hotkeys.cpp:57
+msgid "Leader"
+msgstr "Leader"
+
+#: src/hotkeys.cpp:58
+msgid "Undo"
+msgstr "Undo"
+
+#: src/hotkeys.cpp:59
+msgid "Redo"
+msgstr "Redo"
+
+#: src/hotkeys.cpp:60
+msgid "Zoom In"
+msgstr "Zoom In"
+
+#: src/hotkeys.cpp:61
+msgid "Zoom Out"
+msgstr "Zoom Out"
+
+#: src/hotkeys.cpp:62
+msgid "Default Zoom"
+msgstr "Default Zoom"
+
+#: src/hotkeys.cpp:63
+msgid "Toggle Full Screen"
+msgstr "Toggle Full Screen"
+
+#: src/hotkeys.cpp:64 src/hotkeys.cpp:976
+msgid "Screenshot"
+msgstr "Screenshot"
+
+#: src/hotkeys.cpp:65
+msgid "Map Screenshot"
+msgstr "Map Screenshot"
+
+#: src/hotkeys.cpp:66
+msgid "Accelerated"
+msgstr "Accelerated"
+
+#: src/hotkeys.cpp:67
+msgid "Unit Description"
+msgstr "Unit Description"
+
+#: src/hotkeys.cpp:68
+msgid "Rename Unit"
+msgstr "Rename Unit"
+
+#: src/hotkeys.cpp:70
+msgid "Save Replay"
+msgstr "Save Replay"
+
+#: src/hotkeys.cpp:71 src/hotkeys.cpp:125
+msgid "Save Map"
+msgstr "Save Map"
+
+#, fuzzy
+msgid "Save Window"
+msgstr "Close Window"
+
+#: src/hotkeys.cpp:73
+msgid "Recruit"
+msgstr "Recruit"
+
+#: src/hotkeys.cpp:74
+msgid "Repeat Recruit"
+msgstr "Repeat Recruit"
+
+#: src/hotkeys.cpp:75
+msgid "Recall"
+msgstr "Recall"
+
+#: src/hotkeys.cpp:76
+msgid "End Turn"
+msgstr "End Turn"
+
+#, fuzzy
+msgid "Switch List"
+msgstr "View List"
+
+#: src/hotkeys.cpp:77
+msgid "Toggle Ellipses"
+msgstr "Toggle Ellipses"
+
+#: src/hotkeys.cpp:78
+msgid "Toggle Grid"
+msgstr "Toggle Grid"
+
+#: src/hotkeys.cpp:79
+msgid "Mouse Scrolling"
+msgstr "Mouse Scrolling"
+
+#: src/hotkeys.cpp:81
+msgid "Mute"
+msgstr "Mute"
+
+#: src/hotkeys.cpp:82
+msgid "Speak"
+msgstr "Speak"
+
+#: src/hotkeys.cpp:84
+msgid "Change Side (Debug!)"
+msgstr "Change Side (Debug!)"
+
+#: src/hotkeys.cpp:86
+msgid "Scenario Objectives"
+msgstr "Scenario Objectives"
+
+#: src/hotkeys.cpp:88
+msgid "Statistics"
+msgstr "Statistics"
+
+#: src/hotkeys.cpp:89 src/hotkeys.cpp:99
+msgid "Stop"
+msgstr "Stop"
+
+#: src/hotkeys.cpp:90 src/hotkeys.cpp:97
+msgid "Play"
+msgstr "Play"
+
+#: src/hotkeys.cpp:92
+msgid "Set Team Label"
+msgstr "Set Team Label"
+
+#: src/hotkeys.cpp:93
+msgid "Set Label"
+msgstr "Set Label"
+
+#: src/hotkeys.cpp:94
+msgid "Clear Labels"
+msgstr "Clear Labels"
+
+#: src/hotkeys.cpp:95
+msgid "Show Enemy Moves"
+msgstr "Show Enemy Moves"
+
+#: src/hotkeys.cpp:96
+msgid "Best Possible Enemy Moves"
+msgstr "Best Possible Enemy Moves"
+
+#: src/hotkeys.cpp:98
+msgid "Reset"
+msgstr "Reset"
+
+#: src/hotkeys.cpp:100
+msgid "Next Turn"
+msgstr "Next Turn"
+
+#: src/hotkeys.cpp:101
+msgid "Next Side"
+msgstr "Next Side"
+
+#: src/hotkeys.cpp:103
+msgid "Full map"
+msgstr "Full map"
+
+#: src/hotkeys.cpp:105
+msgid "Each team"
+msgstr "Each team"
+
+#: src/hotkeys.cpp:107
+msgid "Team 1"
+msgstr "Team 1"
+
+#: src/hotkeys.cpp:108
+msgid "Skip animation"
+msgstr "Skip animation"
+
+#: src/hotkeys.cpp:110
+msgid "Toggle planning mode"
+msgstr ""
+
+#: src/hotkeys.cpp:111
+msgid "Execute planned action"
+msgstr ""
+
+#: src/hotkeys.cpp:112
+msgid "Execute all actions"
+msgstr ""
+
+#: src/hotkeys.cpp:113
+msgid "Delete planned action"
+msgstr ""
+
+#: src/hotkeys.cpp:114
+msgid "Move action up queue"
+msgstr ""
+
+#: src/hotkeys.cpp:115
+msgid "Move action down queue"
+msgstr ""
+
+#: src/hotkeys.cpp:118
+msgid "Quit to Desktop"
+msgstr "Quit to Desktop"
+
+#: src/hotkeys.cpp:119
+msgid "Close Map"
+msgstr "Close Map"
+
+#: src/hotkeys.cpp:120
+msgid "Switch Map"
+msgstr "Switch Map"
+
+#: src/hotkeys.cpp:122
+msgid "Partial Undo"
+msgstr "Partial Undo"
+
+#: src/hotkeys.cpp:124
+msgid "Load Map"
+msgstr "Load Map"
+
+#, fuzzy
+msgid "Load Window"
+msgstr "Close Window"
+
+#: src/hotkeys.cpp:126
+msgid "Save Map As"
+msgstr "Save Map As"
+
+#: src/hotkeys.cpp:127
+#, fuzzy
+msgid "Save All Maps"
+msgstr "Save Map"
+
+#: src/hotkeys.cpp:128
+msgid "Revert All Changes"
+msgstr "Revert All Changes"
+
+#: src/hotkeys.cpp:129
+msgid "Map Information"
+msgstr "Map Information"
+
+#: src/hotkeys.cpp:131
+msgid "Swap fore- and background terrains"
+msgstr "Swap fore- and background terrains"
+
+#: src/hotkeys.cpp:132
+msgid "Next Tool"
+msgstr "Next Tool"
+
+#: src/hotkeys.cpp:133
+msgid "Paint Tool"
+msgstr "Paint Tool"
+
+#: src/hotkeys.cpp:134
+msgid "Fill Tool"
+msgstr "Fill Tool"
+
+#: src/hotkeys.cpp:135
+msgid "Selection Tool"
+msgstr "Selection Tool"
+
+#: src/hotkeys.cpp:137
+msgid "Set Starting Positions Tool"
+msgstr "Set Starting Positions Tool"
+
+#: src/hotkeys.cpp:138
+msgid "Next Brush"
+msgstr "Next Brush"
+
+#: src/hotkeys.cpp:139
+msgid "Default Brush"
+msgstr "Default Brush"
+
+#: src/hotkeys.cpp:140
+msgid "Cut"
+msgstr "Cut"
+
+#: src/hotkeys.cpp:141
+msgid "Copy"
+msgstr "Copy"
+
+#: src/hotkeys.cpp:142
+msgid "Paste"
+msgstr "Paste"
+
+#: src/hotkeys.cpp:143
+msgid "Export selected coordinates to system clipboard"
+msgstr "Export selected coordinates to system clipboard"
+
+#: src/hotkeys.cpp:145
+msgid "Select All"
+msgstr "Select All"
+
+#: src/hotkeys.cpp:147
+msgid "Select Inverse"
+msgstr "Select Inverse"
+
+#: src/hotkeys.cpp:149
+msgid "Select None"
+msgstr "Select None"
+
+#: src/hotkeys.cpp:151
+msgid "Rotate Clipboard Clockwise"
+msgstr "Rotate Clipboard Clockwise"
+
+#: src/hotkeys.cpp:153
+msgid "Rotate Clipboard Counter-Clockwise"
+msgstr "Rotate Clipboard Counter-Clockwise"
+
+#: src/hotkeys.cpp:155
+msgid "Flip Clipboard Horizontally"
+msgstr "Flip Clipboard Horizontally"
+
+#: src/hotkeys.cpp:157
+msgid "Flip Clipboard Vertically"
+msgstr "Flip Clipboard Vertically"
+
+#: src/hotkeys.cpp:159
+msgid "Rotate Selection"
+msgstr "Rotate Selection"
+
+#: src/hotkeys.cpp:161
+msgid "Flip Selection"
+msgstr "Flip Selection"
+
+#: src/hotkeys.cpp:163
+msgid "Fill Selection"
+msgstr "Fill Selection"
+
+#: src/hotkeys.cpp:165
+msgid "Generate Tiles In Selection"
+msgstr "Generate Tiles In Selection"
+
+#: src/hotkeys.cpp:167
+msgid "Randomize Tiles In Selection"
+msgstr "Randomize Tiles In Selection"
+
+#: src/hotkeys.cpp:171
+msgid "Rotate Map"
+msgstr "Rotate Map"
+
+#: src/hotkeys.cpp:173
+msgid "Generate Map"
+msgstr "Generate Map"
+
+#: src/hotkeys.cpp:175
+msgid "Apply a Mask"
+msgstr "Apply a Mask"
+
+#: src/hotkeys.cpp:177
+msgid "Create Mask"
+msgstr "Create Mask"
+
+#: src/hotkeys.cpp:179
+msgid "Refresh Display"
+msgstr "Refresh Display"
+
+#: src/hotkeys.cpp:181
+msgid "Update Terrain Transitions"
+msgstr "Update Terrain Transitions"
+
+#: src/hotkeys.cpp:183
+msgid "Auto-update Terrain Transitions"
+msgstr "Auto-update Terrain Transitions"
+
+#: src/hotkeys.cpp:185
+msgid "Refresh Image Cache"
+msgstr "Refresh Image Cache"
+
+#: src/hotkeys.cpp:187
+msgid "Draw Hex Coordinates"
+msgstr "Draw Hex Coordinates"
+
+#: src/hotkeys.cpp:189
+msgid "Draw Terrain Codes"
+msgstr "Draw Terrain Codes"
+
+#: src/hotkeys.cpp:194
+msgid "Delay Shroud Updates"
+msgstr "Delay Shroud Updates"
+
+#: src/hotkeys.cpp:195
+msgid "Update Shroud Now"
+msgstr "Update Shroud Now"
+
+#: src/hotkeys.cpp:196
+msgid "Continue Move"
+msgstr "Continue Move"
+
+#: src/hotkeys.cpp:197
+msgid "Find Label or Unit"
+msgstr "Find Label or Unit"
+
+#: src/hotkeys.cpp:198
+msgid "Speak to Ally"
+msgstr "Speak to Ally"
+
+#: src/hotkeys.cpp:199
+msgid "Speak to All"
+msgstr "Speak to All"
+
+#: src/hotkeys.cpp:201
+msgid "View Chat Log"
+msgstr "View Chat Log"
+
+#: src/hotkeys.cpp:204
+msgid "Enter user command"
+msgstr "Enter user command"
+
+#: src/hotkeys.cpp:205
+msgid "Custom command"
+msgstr "Custom command"
+
+#: src/hotkeys.cpp:206
+msgid "Run AI formula"
+msgstr "Run AI formula"
+
+#: src/hotkeys.cpp:207
+msgid "Clear messages"
+msgstr "Clear messages"
+
+#: src/hotkeys.cpp:211
+#, fuzzy
+msgid "Refresh WML"
+msgstr "Refresh"
+
+#: src/hotkeys.cpp:218
+msgid "Next tip of the day"
+msgstr ""
+
+#: src/hotkeys.cpp:225
+#, fuzzy
+msgid "Previous tip of the day"
+msgstr "Previous Unit"
+
+#: src/hotkeys.cpp:232
+#, fuzzy
+msgid "Start tutorial"
+msgstr "Tutorial"
+
+#: src/hotkeys.cpp:239
+#, fuzzy
+msgid "Start a campaign"
+msgstr "Play a campaign"
+
+#: src/hotkeys.cpp:246
+msgid "Start a multiplayer game"
+msgstr ""
+
+#: src/hotkeys.cpp:253
+#, fuzzy
+msgid "Manage addons"
+msgstr "Update add-ons"
+
+#: src/hotkeys.cpp:261
+msgid "Start the editor"
+msgstr ""
+
+#: src/hotkeys.cpp:269
+msgid "Show the credits"
+msgstr ""
+
+#: src/hotkeys.cpp:722 src/hotkeys.cpp:1024
+msgid "Do you really want to quit?"
+msgstr "Do you really want to quit?"
+
+msgid "$name is dirty, but not save."
+msgstr ""
+
+#, fuzzy
+msgid "Map"
+msgstr "New Map"
+
+#, fuzzy
+msgid "Switch terrain group"
+msgstr "Switch Map"
+
+#, fuzzy
+msgid "Switch brush"
+msgstr "View List"
+
+#: src/hotkeys.cpp:976
+msgid "Map-Screenshot"
+msgstr "Map-Screenshot"
+
+#: src/hotkeys.cpp:983 src/hotkeys.cpp:985
+msgid "Screenshot done"
+msgstr "Screenshot done"
+
+#. TRANSLATORS: This is the language code which will be used
+#. to store and fetch localized non-textual resources, such as images,
+#. when they exist. Normally it is just the code of the PO file itself,
+#. e.g. "de" of de.po for German. But it can also be a comma-separated
+#. list of language codes by priority, when the localized resource
+#. found for first of those languages will be used. This is useful when
+#. two languages share sufficient commonality, that they can use each
+#. other's resources rather than duplicating them. For example,
+#. Swedish (sv) and Danish (da) are such, so Swedish translator could
+#. translate this message as "sv,da", while Danish as "da,sv".
+#: src/image.cpp:401
+msgid "language code for localized resources^en_US"
+msgstr "en_US"
+
+#: src/mapgen_dialog.cpp:110 src/preferences_display.cpp:291
+msgid "Close Window"
+msgstr "Close Window"
+
+#: src/mapgen_dialog.cpp:113
+msgid "Map Generator"
+msgstr "Map Generator"
+
+#: src/mapgen_dialog.cpp:120
+msgid "Players:"
+msgstr "Players:"
+
+#: src/mapgen_dialog.cpp:123
+msgid "Number of Hills:"
+msgstr "Number of Hills:"
+
+#: src/mapgen_dialog.cpp:124
+msgid "Max Hill Size:"
+msgstr "Max Hill Size:"
+
+#: src/mapgen_dialog.cpp:125
+msgid "Villages:"
+msgstr "Villages:"
+
+#: src/mapgen_dialog.cpp:126
+msgid "Castle Size:"
+msgstr "Castle Size:"
+
+#: src/mapgen_dialog.cpp:127
+msgid "Landform:"
+msgstr "Landform:"
+
+#: src/mapgen_dialog.cpp:249
+msgid "Roads Between Castles"
+msgstr "Roads Between Castles"
+
+#: src/mapgen_dialog.cpp:306
+msgid "/1000 tiles"
+msgstr "/1000 tiles"
+
+#: src/mapgen_dialog.cpp:315
+msgid "Coastal"
+msgstr "Coastal"
+
+#: src/mapgen_dialog.cpp:315
+msgid "Inland"
+msgstr "Inland"
+
+#: src/mapgen_dialog.cpp:315
+msgid "Island"
+msgstr "Island"
+
+#: src/marked-up_text.cpp:423
+msgid "The maximum text width is less than 1."
+msgstr "The maximum text width is less than 1."
+
+#: src/preferences_display.cpp:130 src/preferences_display.cpp:196
+msgid ""
+"The video mode could not be changed. Your window manager must be set to 16 "
+"bits per pixel to run the game in windowed mode. Your display must support "
+"1024x768x16 to run the game full screen."
+msgstr ""
+"The video mode could not be changed. Your window manager must be set to 16 "
+"bits per pixel to run the game in windowed mode. Your display must support "
+"1024x768x16 to run the game full screen."
+
+#: src/preferences_display.cpp:295
+msgid "Hotkey Settings"
+msgstr "Hotkey Settings"
+
+#: src/preferences_display.cpp:301 src/preferences_display.cpp:370
+msgid "Press desired Hotkey (Esc cancels)"
+msgstr "Press desired Hotkey (Esc cancels)"
+
+#: src/preferences_display.cpp:320
+msgid "Action"
+msgstr "Action"
+
+#: src/preferences_display.cpp:320
+msgid "Binding"
+msgstr "Binding"
+
+#: src/preferences_display.cpp:332
+msgid "Change Hotkey"
+msgstr "Change Hotkey"
+
+#: src/preferences_display.cpp:335
+msgid "Clear Hotkey"
+msgstr "Clear Hotkey"
+
+#: src/preferences_display.cpp:404
+msgid "This Hotkey is already in use."
+msgstr "This Hotkey is already in use."
+
+#: src/preferences_display.cpp:415
+msgid ""
+"Warning: screenshot hotkeys not combined with Control, Alt or Meta keys."
+msgstr ""
+"Warning: screenshot hotkeys not combined with Control, Alt or Meta keys."
+
+#: src/preferences_display.cpp:512
+msgid "There are no alternative video modes available"
+msgstr "There are no alternative video modes available"
+
+#: src/preferences_display.cpp:543
+msgid " (widescreen)"
+msgstr ""
+
+#: src/preferences_display.cpp:547
+msgid "Choose Resolution"
+msgstr "Choose Resolution"
+
+#: src/terrain_translation.cpp:703
+msgid ""
+"A terrain with a string with more than 4 characters has been found, the "
+"affected terrain is :"
+msgstr ""
+"A terrain with a string with more than 4 characters has been found, the "
+"affected terrain is :"
+
+#: src/text.cpp:291
+msgid "The text contains invalid markup: "
+msgstr ""
+
+#: src/wml_exception.cpp:48
+msgid ""
+"An error due to possibly invalid WML occurred\n"
+"The error message is :"
+msgstr ""
+"An error due to possibly invalid WML occurred\n"
+"The error message is :"
+
+#: src/wml_exception.cpp:50
+msgid "When reporting the bug please include the following error message :"
+msgstr "When reporting the bug please include the following error message :"
+
+#: src/wml_exception.cpp:68
+msgid ""
+"In section '[$section|]' where '$primary_key| = $primary_value' the "
+"mandatory key '$key|' isn't set."
+msgstr ""
+"In section '[$section|]' where '$primary_key| = $primary_value' the "
+"mandatory key '$key|' isn't set."
+
+#: src/wml_exception.cpp:71
+msgid "In section '[$section|]' the mandatory key '$key|' isn't set."
+msgstr "In section '[$section|]' the mandatory key '$key|' isn't set."
+
+msgid "Mayor"
+msgstr ""
+
+msgid "Front"
+msgstr ""
+
+msgid "Police"
+msgstr ""
+
+msgid "Task"
+msgstr ""
+
+msgid "Soldiers"
+msgstr ""
+
+#, fuzzy
+msgid "side list"
+msgstr "(empty list)"
+
+msgid "side troop list"
+msgstr ""
+
+#, fuzzy
+msgid "side city list"
+msgstr "(empty list)"
+
+msgid "side artifical list"
+msgstr ""
+
+msgid "troop list"
+msgstr ""
+
+#, fuzzy
+msgid "city list"
+msgstr "(empty list)"
+
+msgid "artifical list"
+msgstr ""
+
+#, fuzzy
+msgid "hero list"
+msgstr "Remove from list"
+
+#, fuzzy
+msgid "Localize save file name"
+msgstr "Reloaded game"
+
+msgid "Use local language to name save file"
+msgstr ""
+
+msgid "EA"
+msgstr ""
+
+msgid "economy area"
+msgstr ""
+
+msgid "economy area desc"
+msgstr ""
+
+#, fuzzy
+msgid "Battle"
+msgstr "Castle"
+
+#, fuzzy
+msgid "Select player"
+msgstr "Select All"
+
+msgid "Profile player hero"
+msgstr ""
+
+#, fuzzy
+msgid "Player side"
+msgstr "Players:"
+
+msgid "Profile player's side"
+msgstr ""
+
+#, fuzzy
+msgid "List"
+msgstr "View List"
+
+msgid "System"
+msgstr ""
+
+msgid "Reform"
+msgstr ""
+
+msgid "Build"
+msgstr ""
+
+msgid "Demolish"
+msgstr ""
+
+#, fuzzy
+msgid "Hero List"
+msgstr "View List"
+
+msgid "Ownership"
+msgstr ""
+
+msgid "Ability"
+msgstr ""
+
+msgid "Adaptability"
+msgstr ""
+
+msgid "Arms"
+msgstr ""
+
+msgid "Skill"
+msgstr ""
+
+#, fuzzy
+msgid "Command"
+msgstr "Custom command"
+
+#, fuzzy
+msgid "Personal"
+msgstr "Version"
+
+#, fuzzy
+msgid "Relation"
+msgstr "Moderation"
+
+#, fuzzy
+msgid "Side"
+msgstr "Next Side"
+
+msgid "City"
+msgstr ""
+
+msgid "Loyalty"
+msgstr ""
+
+#, fuzzy
+msgid "Position"
+msgstr "Hold Position"
+
+msgid "Explain"
+msgstr ""
+
+#, fuzzy
+msgid "Select Hero"
+msgstr "Select All"
+
+#, fuzzy
+msgid "Select Troop"
+msgstr "Select All"
+
+#
+# Expedite Dialog
+#
+msgid "Expedite"
+msgstr ""
+
+msgid "HP"
+msgstr ""
+
+msgid "XP"
+msgstr ""
+
+msgid "Movement"
+msgstr ""
+
+#, fuzzy
+msgid "Cost"
+msgstr "Coastal"
+
+#, fuzzy
+msgid "Disband"
+msgstr "Island"
+
+#
+# Recruit Dialog
+#
+msgid "unit^Gold"
+msgid_plural "Gold"
+msgstr[0] ""
+msgstr[1] ""
+
+#, fuzzy
+msgid "Unit Detail"
+msgstr "Unit Description"
+
+msgid "City Detail"
+msgstr ""
+
+msgid "Artifical Detail"
+msgstr ""
+
+msgid "Troop Detail"
+msgstr ""
+
+#, fuzzy
+msgid "Moves"
+msgstr "Remove"
+
+msgid "Abilities"
+msgstr ""
+
+#
+# Troop List Dialog
+#
+msgid "Troop List"
+msgstr ""
+
+#, fuzzy
+msgid "Reside Troop"
+msgstr "Resize Map"
+
+#, fuzzy
+msgid "Field Troop"
+msgstr "Fill Tool"
+
+#, fuzzy
+msgid "RPG Troop"
+msgstr "Resize Map"
+
+#, fuzzy
+msgid "Traits"
+msgstr "Credits"
+
+#
+# City List Dialog
+#
+msgid "Level"
+msgstr ""
+
+msgid "side^Character"
+msgstr ""
+
+msgid "Character"
+msgstr ""
+
+msgid "Especial"
+msgstr ""
+
+msgid "Fresh Hero"
+msgstr ""
+
+msgid "Finish Hero"
+msgstr ""
+
+msgid "Wander Hero"
+msgstr ""
+
+#, fuzzy
+msgid "Side List"
+msgstr "View List"
+
+msgid "Military"
+msgstr ""
+
+msgid "Diplomatism"
+msgstr ""
+
+msgid "Gold"
+msgstr ""
+
+#, fuzzy
+msgid "side^Feature"
+msgstr "Female"
+
+msgid "Artifical"
+msgstr ""
+
+#, fuzzy
+msgid "Plan"
+msgstr "Play"
+
+msgid "Controller"
+msgstr ""
+
+msgid "Capital"
+msgstr ""
+
+#, fuzzy
+msgid "Villages"
+msgstr "Villages:"
+
+#, fuzzy
+msgid "Units"
+msgstr "Unit List"
+
+msgid "Navigation civilization"
+msgstr ""
+
+#, fuzzy
+msgid "Card"
+msgstr "Chasm"
+
+#, fuzzy
+msgid "Ally"
+msgstr "Apply"
+
+#, fuzzy
+msgid "Upkeep"
+msgstr "Keep"
+
+msgid "Net Income"
+msgstr ""
+
+#, fuzzy
+msgid "Start Gold"
+msgstr "Tutorial"
+
+msgid "Base Gold"
+msgstr ""
+
+#, fuzzy
+msgid "Village Gold"
+msgstr "Village gold"
+
+#, fuzzy
+msgid "Market"
+msgstr "Male"
+
+msgid "Tower"
+msgstr ""
+
+#, fuzzy
+msgid "Play Card"
+msgstr "Play"
+
+msgid "Discard"
+msgstr ""
+
+msgid "object^Name"
+msgstr ""
+
+#, fuzzy
+msgid "Points"
+msgstr "Join"
+
+#, fuzzy
+msgid "Range"
+msgstr "Race"
+
+#, fuzzy
+msgid "Description"
+msgstr "Unit Description"
+
+msgid "Our cities"
+msgstr ""
+
+#
+# Preferences Dialog
+#
+msgid "Keep scrolling when mouse leaves window"
+msgstr ""
+
+#
+# Move Heros Dialog
+#
+msgid "Move Hero"
+msgstr ""
+
+#, fuzzy
+msgid "Move"
+msgstr "Remove"
+
+msgid "Select destination city"
+msgstr ""
+
+msgid "Reside Hero"
+msgstr ""
+
+#, fuzzy
+msgid "Choose weapon:"
+msgstr "Choose Resolution"
+
+#, fuzzy
+msgid "Advance Unit"
+msgstr "Advanced Mode"
+
+msgid "What should our victorious unit become?"
+msgstr ""
+
+#, fuzzy
+msgid "Change unit"
+msgstr "Change username"
+
+msgid "Which should you change?"
+msgstr ""
+
+#, fuzzy
+msgid "Human Control"
+msgstr "Dwarven Castle"
+
+msgid "Which should you control?"
+msgstr ""
+
+#, fuzzy
+msgid "(Vacant slot)"
+msgstr "Vacant slots"
+
+msgid "Anonymous local player"
+msgstr ""
+
+msgid "Computer Player"
+msgstr ""
+
+msgid "$playername $side"
+msgstr ""
+
+#, fuzzy
+msgid "(Empty slot)"
+msgstr "(empty list)"
+
+#, fuzzy
+msgid "Set Side"
+msgstr "Next Side"
+
+#, fuzzy
+msgid "Player/Type"
+msgstr "Players:"
+
+#, fuzzy
+msgid "Faction"
+msgstr "Action"
+
+msgid "Faction/Side feature"
+msgstr ""
+
+#, fuzzy
+msgid "Gold/Income"
+msgstr "Welcome"
+
+#, fuzzy
+msgid "Team/Gender"
+msgstr "Gender:"
+
+msgid "Color"
+msgstr ""
+
+#, fuzzy
+msgid "Network Player"
+msgstr "Host Networked Game"
+
+#, fuzzy
+msgid "Local Player"
+msgstr "Local Game"
+
+msgid "Empty"
+msgstr ""
+
+msgid "Waiting for players to join..."
+msgstr ""
+
+msgid "Waiting for players to choose factions..."
+msgstr ""
+
+#, fuzzy
+msgid "Random"
+msgstr "Generate Random Map"
+
+msgid "(NONE)"
+msgstr ""
+
+msgid "I'm Ready"
+msgstr ""
+
+#, fuzzy
+msgid "Income"
+msgstr "Welcome"
+
+msgid "Waiting for game to start..."
+msgstr ""
+
+#, fuzzy
+msgid "Regenerate"
+msgstr "Generate"
+
+#, fuzzy
+msgid "Settings..."
+msgstr "Settings"
+
+msgid "Maximal defeated activity"
+msgstr ""
+
+#
+# Unit merit
+#
+msgid "Merit"
+msgstr ""
+
+msgid " troop"
+msgstr ""
+
+msgid "Cause damage"
+msgstr ""
+
+msgid "Been damage"
+msgstr ""
+
+#, fuzzy
+msgid "Defeat units"
+msgstr "Repeat Recruit"
+
+#, fuzzy
+msgid "Field turns"
+msgstr "Fill Tool"
+
+msgid "Activity"
+msgstr ""
+
+msgid "Results of battle"
+msgstr ""
+
+#
+# Interior
+#
+msgid "Interior"
+msgstr ""
+
+msgid "Commercial"
+msgstr ""
+
+msgid "Exploiture"
+msgstr ""
+
+#, fuzzy
+msgid "Current mayor"
+msgstr "Current room"
+
+msgid "If appoint new mayor"
+msgstr ""
+
+#, fuzzy
+msgid "Select desired mayor"
+msgstr "Select All"
+
+msgid "Appoint mayor"
+msgstr ""
+
+msgid "Final Battle"
+msgstr ""
+
+msgid "If capture $count cities again, all AI will ally."
+msgstr ""
+
+#, fuzzy
+msgid "Select final capital"
+msgstr "Select All"
+
+#
+# List Dialog
+#
+msgid "All side"
+msgstr ""
+
+msgid "My side"
+msgstr ""
+
+#, fuzzy
+msgid "Objectives"
+msgstr "Scenario Objectives"
+
+#, fuzzy
+msgid "Troop"
+msgstr "Fill Tool"
+
+#, fuzzy
+msgid "Hero"
+msgstr "View List"
+
+#, fuzzy
+msgid "Title Screen"
+msgstr "Full Screen"
+
+msgid ""
+"Detectd capability of player hero is more than allocatable point, system has "
+"reset it. To modify, set capability in \"Player profile\"."
+msgstr ""
+
+#
+# Player selection
+#
+msgid "Stratum"
+msgstr ""
+
+msgid "Hero count of AI on stage"
+msgstr ""
+
+msgid "Hero count of employable"
+msgstr ""
+
+msgid "Tent"
+msgstr ""
+
+#, fuzzy
+msgid "Strategy List"
+msgstr "Sort Lobby List"
+
+msgid "Strategy"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+#, fuzzy
+msgid "Aggress"
+msgstr "Address"
+
+msgid "Defend"
+msgstr ""
+
+#, fuzzy
+msgid "Left turns"
+msgstr "Number of turns"
+
+#, fuzzy
+msgid "Treasure List"
+msgstr "Friends List"
+
+#, fuzzy
+msgid "Side Treasure List"
+msgstr "View List"
+
+#, fuzzy
+msgid "RPG Detail"
+msgstr "Unit Description"
+
+msgid "Wait, leader will order you to recruit"
+msgstr ""
+
+msgid "To $meritorious, will control more troops"
+msgstr ""
+
+msgid "To $meritorious, will be appointed mayor"
+msgstr ""
+
+msgid "Get mroe meritorious, will be appointed mayor"
+msgstr ""
+
+msgid "Capture more city, can be independent"
+msgstr ""
+
+msgid "Be independent will be to leader"
+msgstr ""
+
+#
+# RPG Exchange
+#
+msgid "RPG Exchange"
+msgstr ""
+
+#
+# RPG Independence
+#
+msgid "RPG Independence"
+msgstr ""
+
+msgid "Independence"
+msgstr ""
+
+msgid "Vote"
+msgstr ""
+
+msgid "Support"
+msgstr ""
+
+msgid "It is all up with the wind, $side will fallen."
+msgstr ""
+
+msgid "There are enough troops, $side will be again you."
+msgstr ""
+
+msgid "Opinion of cities in side"
+msgstr ""
+
+#, fuzzy
+msgid "Exchange Hero"
+msgstr "Change Hotkey"
+
+#, fuzzy
+msgid "Exchange"
+msgstr "Race"
+
+#
+# Create Hero
+#
+msgid "Surname"
+msgstr ""
+
+#, fuzzy
+msgid "Side feature"
+msgstr "Female"
+
+msgid "Register"
+msgstr ""
+
+msgid "Avatar"
+msgstr ""
+
+#, fuzzy
+msgid "Create"
+msgstr "Create Game"
+
+msgid "Stronger"
+msgstr ""
+
+msgid "Invalid '$key' value, not accept empty"
+msgstr ""
+
+msgid "Include unsupportable character: $char, invalid '$str' value"
+msgstr ""
+
+msgid "Range is [$min, $max], invalid '$key' value:"
+msgstr ""
+
+#, fuzzy
+msgid "Select city for player hero"
+msgstr "Select All"
+
+#
+# Assemble Treasure
+#
+msgid "Assemble Treasure"
+msgstr ""
+
+msgid ""
+"Duration this time, if remove $treasure from $hero, cannot assemble treasure "
+"to $hero again. Do you want to remove?"
+msgstr ""
+
+#
+# Cast tactic
+#
+msgid "Cast tactic"
+msgstr ""
+
+#, fuzzy
+msgid "Choose tactic"
+msgstr "Choose the game to load"
+
+msgid "tactic^Cast"
+msgstr ""
+
+msgid "Active tactic"
+msgstr ""
+
+msgid "tactic^Active"
+msgstr ""
+
+#
+# Technology tree
+#
+msgid "Technology tree"
+msgstr ""
+
+msgid "Technology"
+msgstr ""
+
+msgid "Browse"
+msgstr ""
+
+msgid "Researching"
+msgstr ""
+
+msgid "quantity^Hold"
+msgstr ""
+
+#, fuzzy
+msgid "Research"
+msgstr "Reset"
+
+#
+# Selectable attack/move to wall
+#
+msgid "Attack wall"
+msgstr ""
+
+msgid "Move to wall"
+msgstr ""
+
+msgid "None"
+msgstr "None"
+
+msgid "task^Back"
+msgstr ""
+
+msgid "task^Trade"
+msgstr ""
+
+msgid "task^Transfer"
+msgstr ""
+
+msgid "trade^Back"
+msgstr ""
+
+msgid "Decree"
+msgstr ""
+
+msgid "Gold income"
+msgstr ""
+
+msgid "Technology income"
+msgstr ""
+
+#, fuzzy
+msgid "Reside commoner"
+msgstr "Resize Map"
+
+#, fuzzy
+msgid "Field commoner"
+msgstr "Fill Tool"
+
+#, fuzzy
+msgid "Commoner"
+msgstr "Custom command"
+
+#
+# Extract
+#
+msgid "Extract hero"
+msgstr ""
+
+msgid "Extract"
+msgstr ""
+
+#
+# Employ
+#
+msgid "Employ"
+msgstr ""
+
+#, fuzzy
+msgid "Detail"
+msgstr "Unit Description"
+
+msgid "Base"
+msgstr ""
+
+msgid "Hasn't"
+msgstr ""
+
+msgid "Duel"
+msgstr ""
+
+#, fuzzy
+msgid "Reside"
+msgstr "Resize Map"
+
+#, fuzzy
+msgid "Field"
+msgstr "Fill Tool"
+
+msgid "Economy area"
+msgstr ""
+
+#
+# formation
+#
+msgid "tactical^Formation"
+msgstr ""
+
+#
+# Inapp purchase
+#
+msgid "Shop"
+msgstr ""
+
+msgid "Only $platforms support in-app purchase"
+msgstr ""
+
+msgid "Please choose item you want to purchase"
+msgstr ""
+
+msgid "Restore"
+msgstr ""
+
+msgid "Purchase"
+msgstr ""
+
+msgid "Notice"
+msgstr ""
+
+msgid "Effect mode"
+msgstr ""
+
+msgid "You is VIP currently, hold $day day still"
+msgstr ""
+
+msgid "You isn't VIP currently"
+msgstr ""
+
+msgid "Purchasing '$name'"
+msgstr ""
+
+msgid "Purchas '$name' $result|!"
+msgstr ""
+
+msgid "Restoring purchased items"
+msgstr ""
+
+msgid "Restore purchased items $result|!"
+msgstr ""
+
+msgid "Success"
+msgstr ""
+
+msgid "Failed"
+msgstr ""
+
+#, fuzzy
+msgid "Checksum dismatch"
+msgstr "Check status"
+
+msgid "You or creator has modified resource file, cannot join!"
+msgstr ""
+
+msgid ""
+"Update database fail when execute In-App Purchase! In order to compensate "
+"data you should get, please send In-App Purchase information to $mail. In-"
+"App Purchase information include: date($date), item($item), "
+"username($username)."
+msgstr ""
+
+msgid ""
+"$account that you are logining is public account, In-App Purchases on it are "
+"shared with other player. In order to benefit to youself only, advise login "
+"again with private account."
+msgstr ""
+
+msgid ""
+"System is processing inapp-purchase request, and force to quit maybe result "
+"data not integrated. Do you want to Quit?"
+msgstr ""
+
+#
+# noble
+#
+msgid "Appoint Noble"
+msgstr ""
+
+msgid "Noble"
+msgstr ""
+
+msgid "noble^Level"
+msgstr "Level"
+
+msgid "noble^Lv$level"
+msgstr "Lv$level"
+
+#, fuzzy
+msgid "Adjust"
+msgstr "Adjust Gamma"
+
+#
+# user report
+#
+msgid "Display user report"
+msgstr ""
+
+#, fuzzy
+msgid "Username"
+msgstr "Change username"
+
+#, fuzzy
+msgid "Player pass"
+msgstr "Players:"
+
+msgid "Rank pass"
+msgstr ""
+
+msgid "Siege record"
+msgstr ""
+
+msgid "Employ hero"
+msgstr ""
+
+msgid "Rank score"
+msgstr ""
+
+msgid "contest^Title"
+msgstr ""
+
+msgid "kingdom^Score"
+msgstr ""
+
+msgid "kingdom^Coin"
+msgstr ""
+
+#, fuzzy
+msgid "Credit"
+msgstr "Credits"
+
+msgid "Attacker's reinforce"
+msgstr ""
+
+msgid "Defender's reinforce"
+msgstr ""
+
+msgid "Result"
+msgstr ""
+
+msgid "Victory"
+msgstr ""
+
+#, fuzzy
+msgid "Defeat"
+msgstr "Repeat Recruit"
+
+msgid "City fallen"
+msgstr ""
+
+#, fuzzy
+msgid "scenario^Difficulty"
+msgstr "Difficulty: "
+
+msgid "scenario^Turns"
+msgstr ""
+
+msgid "scenario^Capture fort"
+msgstr ""
+
+msgid "scenario^Perfect turns"
+msgstr ""
+
+msgid "perfect^Perfect"
+msgstr ""
+
+msgid "Not support upload in multiplayer state!"
+msgstr ""
+
+#
+# register, config account
+#
+msgid "Register, config account"
+msgstr ""
+
+#, fuzzy
+msgid "Validate password"
+msgstr "Set Password"
+
+#, fuzzy
+msgid "Password"
+msgstr "Password:"
+
+msgid "account^remark($server, $host, $register, $ok)"
+msgstr ""
+"1. Please set your username/password on $server.\n"
+"2. If no username, you can do either one below: 1)Input username/password, "
+"then press $register; 2)Open $host on Internet Explorer, register a "
+"username.\n"
+"3. If want to set in future or play local only, you can input non-empty "
+"username, then press $ok."
+
+msgid "account^detect invalid($account, $ps)"
+msgstr ""
+"Detect invalid username, please set right username/password.\n"
+"$ps: Press $account in \"Player profile\" Setting to popup it again."
+
+msgid "PS"
+msgstr ""
+
+msgid "$validate_password isn't same as $password"
+msgstr ""
+
+msgid ""
+"When register, password must be greater than or equal to $min characters"
+msgstr ""
+
+msgid "'$key' value must combine $min to $max characters"
+msgstr ""
+
+msgid "Invalid '$key' value, $username is reserved!"
+msgstr ""
+
+msgid "$key cannot include $invalids!"
+msgstr ""
+
+msgid ""
+"$username may only use below special character: $special, and must not be "
+"all special!"
+msgstr ""
+
+msgid "VIP exclusive"
+msgstr ""
+
+msgid "Hero that belong to $leader."
+msgstr ""
+
+msgid "troop^Type"
+msgstr ""
+
+msgid "Family"
+msgstr ""
+
+#
+# group
+#
+msgid "Group"
+msgstr ""
+
+#, fuzzy
+msgid "$leader's side"
+msgstr "Players:"
+
+msgid "member^Fix"
+msgstr ""
+
+msgid "member^Roam"
+msgstr ""
+
+msgid "Associate"
+msgstr ""
+
+msgid "group^Draw"
+msgstr ""
+
+msgid "Upgrade"
+msgstr ""
+
+#, fuzzy
+msgid "Advance"
+msgstr "Advanced Mode"
+
+msgid "group^Layout"
+msgstr ""
+
+#, fuzzy
+msgid "Personnel"
+msgstr "Version"
+
+msgid ""
+"First $tower heros is fixed in tower mode. First $rpg heros can be on stage "
+"in RPG mode."
+msgstr ""
+
+msgid "May get $coin coin and $score score, do you want to discard $name?"
+msgstr ""
+
+msgid "May get $coin coin and $score score, do you want to redraw $count hero?"
+msgstr ""
+
+msgid "rank^Gold"
+msgstr ""
+
+msgid "rank^Silver"
+msgstr ""
+
+msgid "rank^Copper"
+msgstr ""
+
+#, fuzzy
+msgid "Exchange rate"
+msgstr "Change Hotkey"
+
+#, fuzzy
+msgid "score^Exchange"
+msgstr "Race"
+
+msgid "Fire"
+msgstr ""
+
+msgid "Do you want to exchange $from to $to?"
+msgstr ""
+
+msgid ""
+"Repertory is not enough to pay $coin coin and $score score. If lack one "
+"only, can exchange between coin and score."
+msgstr ""
+
+msgid "Repertory is less than $score score, cannot $do."
+msgstr ""
+
+#, fuzzy
+msgid "Do you want to spend $score score to $do?"
+msgstr "Do you really want to quit?"
+
+msgid "Repertory is less than $cost score!"
+msgstr ""
+
+msgid "Do you want to spend $cost score to employ $name?"
+msgstr ""
+
+msgid "$do successfully!"
+msgstr ""
+
+msgid "Append"
+msgstr ""
+
+msgid "Modify"
+msgstr ""
+
+msgid "Agreement"
+msgstr ""
+
+msgid "Give"
+msgstr ""
+
+msgid "Request ally"
+msgstr ""
+
+msgid "Request terminate"
+msgstr ""
+
+msgid "Be requested ally"
+msgstr ""
+
+msgid "Be requested terminate"
+msgstr ""
+
+msgid "process^going"
+msgstr "..."
+
+msgid "$username wants to ally, do you agree?"
+msgstr ""
+
+msgid "Notice, $username declares to terminate with you!"
+msgstr ""
+
+msgid "Username doesn't allow empty!"
+msgstr ""
+
+msgid "$username doesn't exist!"
+msgstr ""
+
+msgid "Username cannot be myself!"
+msgstr ""
+
+msgid "Username has existd in associate list, cannot append!"
+msgstr ""
+
+msgid "Initiation time: $time"
+msgstr ""
+
+msgid "Termiante automatically after $space"
+msgstr ""
+
+#, fuzzy
+msgid "Using map"
+msgstr "Resize map"
+
+msgid "How to set map"
+msgstr ""
+
+msgid ""
+"1: Select the map want to set.\n"
+"2: Play $layout, execute $save."
+msgstr ""
+
+msgid "If defend city fail, you will lose a employee."
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "$name will put into $location."
+msgstr ""
+
+msgid "$location is full, $name will lose."
+msgstr ""
+
+#
+# Siege tent
+#
+msgid "Siege tent"
+msgstr ""
+
+#, fuzzy
+msgid "side^Attacker"
+msgstr "Host Networked Game"
+
+msgid "side^Defender"
+msgstr ""
+
+#, fuzzy
+msgid "side^Reinforce"
+msgstr "Female"
+
+msgid ""
+"Require seting '$associate' in '$side'. Player that no agreement can be "
+"defender, ally agreement can be reinforce."
+msgstr ""
+
+msgid ""
+"No attackable player! Require seting '$associate' in '$side', and set at "
+"least one no agreement."
+msgstr ""
+
+msgid "Do you want to save $username|'s map to your city map?"
+msgstr ""
+
+msgid "Stratagem"
+msgstr ""
+
+#
+# 3th payment
+#
+msgid "3th payment"
+msgstr ""
+
+msgid "Transaction number"
+msgstr ""
+
+msgid "Transaction buyer"
+msgstr ""
+
+msgid "transaction^Insert"
+msgstr ""
+
+#, fuzzy
+msgid "Pay"
+msgstr "Play"
+
+msgid "Cannot find transaction!"
+msgstr ""
+
+msgid "This transaction had been used!"
+msgstr ""
+
+msgid "payment^course($alipay, $mail, $money, $pay)"
+msgstr ""
+
+msgid "payment^pay remark($ps, $alipay, $mail, $pay)"
+msgstr ""
+
+msgid "Alipay"
+msgstr ""
+
+msgid "When input, may use $hotkey"
+msgstr ""
+
+msgid "coin^Unit"
+msgstr ""
+
+#
+# give
+#
+msgid "You"
+msgstr ""
+
+msgid "$name cannot be negative!"
+msgstr ""
+
+msgid "Repertory is not enough to pay $payment!"
+msgstr ""
+
+msgid "Both $name1 and $name2 can not be zero all!"
+msgstr ""
+
+msgid "$username has $coin and $score"
+msgstr ""
+
+msgid "$username has $coin coin and $score score"
+msgstr ""
+
+#, fuzzy
+msgid "Do you want to give $sth to $sb?"
+msgstr "Do you really want to quit?"
+
+msgid "$first and $second"
+msgstr ""
+
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage."
+msgstr ""
+
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage. It is $treasure, and give it to you."
+msgstr ""
+
+msgid "No coin and score, cannot upload!"
+msgstr ""
+
+msgid "There is in test mode, cannot upload!"
+msgstr ""
+
+msgid "Save is more than $threshold hour, cannot upload!"
+msgstr ""
+
+msgid "$username lose $name!"
+msgstr ""
+
+msgid "Upload successfully!"
+msgstr ""
+
+msgid "Had uploaded pass that create at $create, cannot upload again!"
+msgstr ""
+
+msgid "Had uploaded at least $max sieges today. cannot upload more!"
+msgstr ""
+
+msgid "This save's score($score) is invalid, cannot upload!"
+msgstr ""
+
+msgid "Haven't connected to server, and unable to enter into game lobby."
+msgstr ""
+
+#
+# config city
+#
+msgid "Config city"
+msgstr ""
+
+msgid "City name"
+msgstr ""
+
+msgid ""
+"Because of product commercialization, $function does not open source code."
+msgstr ""
+
+msgid ""
+"Please do not use self-compile project to commerce, for example upload data "
+"to Data Server."
+msgstr ""
+
+#
+# Exile
+#
+msgid "Exile"
+msgstr ""
+
+msgid ""
+"There are at most $count exiled hero. Half heros will be on stage in Siege "
+"mode."
+msgstr ""
+
+#
+# http server
+#
+msgid ""
+"Invalid access! Please check your $server login information. To set up: "
+"Press $account in \"Player profile\" Setting."
+msgstr ""
+
+msgid ""
+"$nick is invalid nick when chat! To set up: Press $account in \"Player "
+"profile\" Setting, and set valid nick when chat."
+msgstr ""
+
+msgid "Invalid access! pre_kingdom_version table on $server isn't ready."
+msgstr ""
+
+msgid ""
+"Invalid access! You modified resources files, or check if your version is "
+"the newest."
+msgstr ""
+
+msgid ""
+"Invalid access! Timestamp error. Check whether login a username on more "
+"device at same time, or restart game."
+msgstr ""
+
+msgid ""
+"Send a command that server doesn't support!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+
+msgid ""
+"Receive unkonwn data!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+
+msgid "Ambushed!"
+msgstr ""
+
+msgid "Alerted!"
+msgstr ""
+
+msgid "Discover ambusher!"
+msgstr ""
+
+#, fuzzy
+msgid "Message"
+msgstr "Message:"
+
+#, fuzzy
+msgid "Sender"
+msgstr "Send"
+
+msgid "Receiver"
+msgstr ""
+
+#, fuzzy
+msgid "Time"
+msgstr "Time:"
+
+msgid "Announcement content"
+msgstr ""
+
+#
+# Sign in
+#
+msgid "Sign in"
+msgstr ""
+
+msgid "signin^Fill up"
+msgstr ""
+
+msgid ""
+"You have been sign in $continue days, broken $break days. Today $have sign "
+"in."
+msgstr ""
+
+msgid "fill up sign in($ps, $break, $max_break, $fillup)"
+msgstr ""
+"$ps You has been broken $break days. Exceeding $max_break will result to "
+"clear Sign in data. Can execute $fillup to make up."
+
+msgid "sign in remark($fillup)"
+msgstr ""
+"1: Regard uploading a non-zero score scenario as Sign in. Scenario include "
+"RPG, Tower and Siege.\n"
+"2: Continue to sign in 10 days, get 1 coin; Continue to sign in 30 days, get "
+"2 coin again.\n"
+"3: You get coin when continue to signin days divided 10 with no remainder. "
+"Can not get by $fillup to add exactly, and must be zero break days."
+
+msgid "been^have"
+msgstr ""
+
+msgid "been^haven't"
+msgstr ""
+
+#
+# standard message
+#
+msgid ""
+"You continue to sign in $continue days, reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"You have broken $break days, exceeded $max_break, and result to clear Sign "
+"in data."
+msgstr ""
+
+msgid ""
+"You hold $coin2 coin and $score2 score, most score, so win $title as an "
+"honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"In the last $days days, you attack other city to $count times, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"In the last $days days, your city was attacked to $count times, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"In the last $days days, you pass $count times RPG scenario, most times, so "
+"win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"In the last $days days, you pass $count times Tower scenario, most times, so "
+"win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+
+msgid "Inapp-purchase successfully! Increase $day days VIP membership."
+msgstr ""
+
+msgid "Inapp-purchase successfully! Increase $coin coin and $score score."
+msgstr ""
+
+msgid ""
+"System modified your data: $coin coin, $score score. If you have any "
+"questions, please contact $contact."
+msgstr ""
+
+#
+# build ea
+#
+msgid ""
+"Technology income of side equals all cities income divided by number of city."
+msgstr ""
+
+msgid "More tactic's effect that belong to same city can not be added."
+msgstr ""
+
+msgid "Must exist tow keep at least before building wall."
+msgstr ""
+
+msgid "Increase $item every day."
+msgstr ""
+
+msgid "Economy increase holden card at scenario start."
+msgstr ""
+
+msgid "Military increase hero's leadership at scenario start."
+msgstr ""
+
+msgid "Culture increase hero's charm at scenario start."
+msgstr ""
+
+msgid "Science increase holden technology at scenario start."
+msgstr ""
+
+msgid "Economy"
+msgstr ""
+
+msgid "Culture"
+msgstr ""
+
+msgid "Science"
+msgstr ""
+
+msgid ""
+"Don't pause at taking action when no hero and built artifical on all EA."
+msgstr ""
+
+msgid "Troop has come into $city as planned!"
+msgstr ""
+
+msgid ""
+"As planned, troop require to arrive at $loc, but come into $city in the "
+"middle. If want to continue arriving at $loc, please command again."
+msgstr ""
+
+msgid "Developer"
+msgstr ""
+
+msgid "Capture $city"
+msgstr ""
+
+msgid "Guard"
+msgstr ""
+
+msgid "Abolish"
+msgstr ""
+
+msgid "Abolish guard"
+msgstr ""
+
+msgid "Select a grid to guard at"
+msgstr ""
+
+#
+# side report
+#
+msgid "Researching technology"
+msgstr ""
+
+msgid "Have researched out all technology"
+msgstr ""
+
+msgid "Unallocated treasure"
+msgstr ""
+
+msgid "Unallocated noble"
+msgstr ""
+
+msgid "Show side report when city takes turn."
+msgstr ""
+
+#, fuzzy
+msgid "Game genus"
+msgstr "Games"
+
+msgid "mode^Scenario"
+msgstr ""
+
+msgid "mode^RPG"
+msgstr ""
+
+msgid "mode^Tower"
+msgstr ""
+
+msgid "mode^Siege"
+msgstr ""
+
+#, fuzzy
+msgid "Unknown"
+msgstr "Unknown era"
+
+#
+# subcontinent
+#
+msgid "subcontinent remark"
+msgstr ""
+"Capture at most one city on a subcontinent.\n"
+"One city provides 30 score every day.\n"
+"Max endurance: 100. Increase 10 every day.\n"
+"If defend city fail, endurance will drop 20.\n"
+"There are at most 4 fallen every day. "
+
+msgid "Repair"
+msgstr ""
+
+#, fuzzy
+msgid "Endurance"
+msgstr "Advanced Mode"
+
+#, fuzzy
+msgid "Subcontinent"
+msgstr "Continue"
+
+#, fuzzy
+msgid ""
+"Spend $score score may increase 10 endurance.\n"
+"Do you want to spend $score score to $do?"
+msgstr "Do you really want to quit?"
+
+#, fuzzy
+msgid "Do you want to discard $city?"
+msgstr "Do you really want to quit?"
+
+msgid ""
+"Sorry, run into program BUG. Program has save scene to $save. Hope you to "
+"upload it to sever, so that developer can solve it."
+msgstr ""
+
+msgid "Hate of national perdition! I will be mutually exclusive with $second."
+msgstr ""
+
+msgid "Forum"
+msgstr ""
+
+msgid "Chat"
+msgstr ""
+
+msgid "Wait"
+msgstr ""
+
+msgid "Consult"
+msgstr ""
+
+msgid "Ready"
+msgstr ""
+
+msgid "Netowork diagnosis"
+msgstr ""
+
+msgid "Press CR same as Send"
+msgstr ""
+
+#, fuzzy
+msgid "Normal"
+msgstr "Normal Mode"
+
+msgid "Map is for subcontinent. Find improper city location: $name($x, $y)."
+msgstr ""
+
+msgid "Location.x of city must be in [$x1, $x2], y in [$y1, $y2]!"
+msgstr ""
+
+msgid "Map error. Too short road from $from to $to, at least $shortest!"
+msgstr ""
+
+msgid "Upgrade to $to"
+msgstr ""
+
+#: src/loadscreen.cpp:222
+#, fuzzy
+msgid "Initializing user interface"
+msgstr "Invalid username"
+
+#: src/loadscreen.cpp:223
+msgid "Loading game configuration"
+msgstr ""
+
+#: src/loadscreen.cpp:224 src/loadscreen.cpp:231
+msgid "Verifying cache"
+msgstr ""
+
+#: src/loadscreen.cpp:225 src/loadscreen.cpp:232
+msgid "Reading files and creating cache"
+msgstr ""
+
+#: src/loadscreen.cpp:226 src/loadscreen.cpp:233
+msgid "Reading unit files"
+msgstr ""
+
+#: src/loadscreen.cpp:227
+msgid "Re-initialize fonts for the current language"
+msgstr ""
+
+#: src/loadscreen.cpp:228
+msgid "Searching for installed add-ons"
+msgstr ""
+
+#: src/loadscreen.cpp:229
+#, fuzzy
+msgid "Loading title screen"
+msgstr "Full Screen"
+
+#: src/loadscreen.cpp:230
+msgid "Loading data files"
+msgstr ""
+
+#: src/loadscreen.cpp:234
+msgid "Loading level"
+msgstr ""
+
+#: src/loadscreen.cpp:235
+msgid "Initializing teams"
+msgstr ""
+
+#: src/loadscreen.cpp:236
+#, fuzzy
+msgid "Loading units"
+msgstr "Change username"
+
+#: src/loadscreen.cpp:237
+msgid "Building terrain rules"
+msgstr ""
+
+#: src/loadscreen.cpp:238
+msgid "Initializing display"
+msgstr ""
+
+#: src/loadscreen.cpp:239
+msgid "Drawing theme"
+msgstr ""
+
+#: src/loadscreen.cpp:240
+msgid "Starting game"
+msgstr ""
+
+msgid "Cannot find report widget: $id."
+msgstr ""
+
+msgid "Report widget($id) must use fix rect."
+msgstr ""
+
+msgid "Defined $id conext menu, but not define same id report widget!"
+msgstr ""
+
+msgid "file^Size"
+msgstr ""
+
+#, fuzzy
+msgid "Choose a Window to Open"
+msgstr "Close Window"
+
+msgid "Open"
+msgstr ""
+
+msgid "My Document"
+msgstr ""
+
+#, fuzzy
+msgid "Sandbox"
+msgstr "Sand"
+
+#, fuzzy
+msgid "File name"
+msgstr "File: "
+
+#, fuzzy
+msgid "Save"
+msgstr "Save As"
+
+msgid "Save As"
+msgstr "Save As"
+
+msgid "Find"
+msgstr ""
+
+msgid "Nick"
+msgstr ""
+
+msgid "Nick when chat"
+msgstr ""
+
+msgid ""
+"$username of username is not a valid nick, you require to set a valid nick "
+"separately!\n"
+" Nick can ony use alpha, number and _."
+msgstr ""
+
+msgid ""
+"After $part, you can not receive message from $channel. Do you want to $part?"
+msgstr ""
+
+msgid "You set $nick into $channel successfully!"
+msgstr ""
+
+#, fuzzy
+msgid "Do you want remove $nick from $channel?"
+msgstr "Do you really want to quit?"
+
+msgid "Min users"
+msgstr ""
+
+#, fuzzy
+msgid "Friend"
+msgstr "Friends"
+
+msgid "Part"
+msgstr ""
+
+msgid "%b %d %y"
+msgstr ""
+
+msgid "%H:%M"
+msgstr ""
+
+msgid "%A, %H:%M"
+msgstr ""
+
+msgid "%b %d"
+msgstr ""
+
+msgid "%a %b %d %H:%M %Y"
+msgstr ""
+
+msgid "Transit"
+msgstr ""
+
+msgid "War of Kingdom"
+msgstr ""
+
+msgid "Rose"
+msgstr ""
+
+msgid "Align left. Maybe stretch"
+msgstr ""
+
+msgid "Align left"
+msgstr ""
+
+msgid "Align center"
+msgstr ""
+
+msgid "Align right"
+msgstr ""
+
+msgid "Align top. Maybe stretch"
+msgstr ""
+
+msgid "Align top"
+msgstr ""
+
+msgid "Align bottom"
+msgstr ""
+
+msgid "Always invisible"
+msgstr ""
+
+msgid "Auto visible"
+msgstr ""
+
+msgid "Horizontal mode"
+msgstr ""
+
+msgid "Vertical mode"
+msgstr ""
+
+#, fuzzy
+msgid "Unit width"
+msgstr "New Width:"
+
+#, fuzzy
+msgid "Unit height"
+msgstr "New Height:"
+
+#, fuzzy
+msgid "Gap"
+msgstr "New Map"
+
+msgid "widget^definition"
+msgstr ""
+
+msgid "Horizontal layout"
+msgstr ""
+
+msgid "Vertical layout"
+msgstr ""
+
+msgid "Border"
+msgstr ""
+
+msgid "Pixel"
+msgstr ""
+
+msgid "ID"
+msgstr ""
+
+#, fuzzy
+msgid "Width"
+msgstr "Width:"
+
+#, fuzzy
+msgid "Height"
+msgstr "Height:"
+
+msgid "Linked group"
+msgstr ""
+
+#, fuzzy
+msgid "Label"
+msgstr "Set Label"
+
+msgid "Tooltip"
+msgstr ""
+
+msgid "Enter fullscreen"
+msgstr ""
+
+#, fuzzy
+msgid "Exit fullscreen"
+msgstr "Full Screen"
+
+msgid "Once unpake, can not be back to template. Do you want to unpake $id?"
+msgstr ""
+
+msgid "$id holds grid that not all spacer. Do you want to delete?"
+msgstr ""
+
+msgid "Changes in the $window since the last save will be lost."
+msgstr ""
+
+msgid "Rectangle"
+msgstr ""
+
+#, fuzzy
+msgid "Advanced"
+msgstr "Advanced Mode"
+
+msgid "Absolute"
+msgstr ""
+
+msgid "ref's $field"
+msgstr ""
+
+msgid "My $field"
+msgstr ""
+
+msgid "$id is absolute type, must not be contain '+' or '-'!"
+msgstr ""
+
+msgid "$id must be integer!"
+msgstr ""
+
+msgid "(top-left)"
+msgstr ""
+
+msgid "(bottom-right)"
+msgstr ""
+
+msgid "rect^ref"
+msgstr ""
+
+msgid "xanchor"
+msgstr ""
+
+msgid "yanchor"
+msgstr ""
+
+msgid "$field1 fixed, $field2 fixed"
+msgstr ""
+
+msgid "$field1 fixed, $field2 scalable"
+msgstr ""
+
+msgid "$field1 scalable, $field2 fixed"
+msgstr ""
+
+msgid "Erase"
+msgstr ""
+
+msgid "Unpack"
+msgstr ""
+
+msgid "Check for errors in the $window"
+msgstr ""
+
+#, fuzzy
+msgid "dialog"
+msgstr "Coastal"
+
+#, fuzzy
+msgid "theme"
+msgstr "Theme"
+
+msgid "Use rect layout"
+msgstr ""
+
+#, fuzzy
+msgid "Change"
+msgstr "Race"
+
+msgid "Patch"
+msgstr ""
+
+msgid ""
+"Place grid fail! It's parent widget: $parent\n"
+"\n"
+"Layout size that calcualted base best size and grow_factor: $layout_size\n"
+"Now recalculated best size: $best_size"
+msgstr ""
+
+msgid "Content is copied to clipboard"
+msgstr ""
+
+#, fuzzy
+msgid "Context menu"
+msgstr "Content"
+
+#, fuzzy
+msgid "New patch"
+msgstr "New Width:"
+
+#, fuzzy
+msgid "Rename patch"
+msgstr "Rename Unit"
+
+msgid "Original ID"
+msgstr ""
+
+msgid "$year|.$month"
+msgstr ""
+
+msgid "Sesame Health"
+msgstr ""
+
+msgid "There is no score tonight, let Sesame to accompany you to sleep!"
+msgstr ""
+
+msgid "History Record"
+msgstr ""
+
+#, fuzzy
+msgid "Sleep Settings"
+msgstr "Settings"
+
+#, fuzzy
+msgid "Wake up time"
+msgstr "Create Game"
+
+msgid "Wake up music"
+msgstr ""
+
+#, fuzzy
+msgid "Total capture time"
+msgstr "Ban time:"
+
+msgid "The rest time of entering sleep"
+msgstr ""
+
+msgid "The rest time of wake up"
+msgstr ""
+
+msgid "Click to login/register"
+msgstr ""
+
+msgid "About i-Sleep"
+msgstr ""
+
+msgid "Sleep Analysis"
+msgstr ""
+
+msgid "Snore data"
+msgstr ""
+
+msgid "Motion data"
+msgstr ""
+
+msgid "Click to view the details"
+msgstr ""
+
+msgid "Sober"
+msgstr ""
+
+#, fuzzy
+msgid "Shallow sleep"
+msgstr "Shallow Water"
+
+#, fuzzy
+msgid "Deep sleep"
+msgstr "Deep Water"
+
+msgid "Sleep quality"
+msgstr ""
+
+#, fuzzy
+msgid "Sleep duration"
+msgstr "Step operation"
+
+#, fuzzy
+msgid "Start time"
+msgstr "Ban time:"
+
+#, fuzzy
+msgid "Shallow duration"
+msgstr "Shallow Water"
+
+#, fuzzy
+msgid "Deep duration"
+msgstr "Step operation"
+
+#, fuzzy
+msgid "Snore duration"
+msgstr "Moderation"
+
+msgid "Apnea"
+msgstr ""
+
+msgid "Sound usage"
+msgstr ""
+
+#, fuzzy
+msgid "Deleted"
+msgstr "Delete"
+
+msgid "Return to today"
+msgstr ""
+
+msgid "Snore"
+msgstr ""
+
+msgid "Done"
+msgstr ""
+
+msgid "Delay sleep time"
+msgstr ""
+
+#, fuzzy
+msgid "Select delay sleep time"
+msgstr "Select All"
+
+msgid "Select wake up music"
+msgstr ""
+
+msgid "Enable snore"
+msgstr ""
+
+#, fuzzy
+msgid "Motion"
+msgstr "Moderation"
+
+msgid "$val minutes"
+msgstr ""
+
+msgid "Immediately start"
+msgstr ""
+
+#, fuzzy
+msgid "Capture time"
+msgstr "Create Game"
+
+#, fuzzy
+msgid "Duration"
+msgstr "Moderation"
+
+msgid "Thermomiter"
+msgstr ""
+
+#, fuzzy
+msgid "Temperature"
+msgstr "Generate"
+
+msgid "Maximum temperature"
+msgstr "Max temperature"
+
+msgid "Average temperature"
+msgstr "Avg temperature"
+
+msgid "Minimum temperature"
+msgstr "Min temperature"
+
+msgid "Use guide"
+msgstr ""
+
+#, fuzzy
+msgid "Alert Settings"
+msgstr "Settings"
+
+msgid "Alert music"
+msgstr ""
+
+msgid "Alert temperature"
+msgstr ""
+
+#, fuzzy
+msgid "Select alert music"
+msgstr "Select All"
+
+#~ msgid "Join Official Server"
+#~ msgstr "Join Official Server"
+
+#~ msgid "Log on to the official Wesnoth multiplayer server"
+#~ msgstr "Log on to the official Wesnoth multiplayer server"
+
+#~ msgid "Join a different server"
+#~ msgstr "Join a different server"
+
+#~ msgid "Host a game using dedicated server ‘wesnothd’"
+#~ msgstr "Host a game using dedicated server ‘wesnothd’"
+
+#~ msgid "Local Game"
+#~ msgstr "Local Game"
+
+#~ msgid ""
+#~ "Play a multiplayer game with the AI or humans sharing the same machine"
+#~ msgstr ""
+#~ "Play a multiplayer game with the AI or humans sharing the same machine"
+
+#, fuzzy
+#~ msgid "Random map"
+#~ msgstr "Generate Random Map"
+
+#, fuzzy
+#~ msgid "Start a random map campaign"
+#~ msgstr "Play a campaign"
+
+#, fuzzy
+#~ msgid "Aquatic Village"
+#~ msgstr "Village"
+
+#, fuzzy
+#~ msgid "Swamp Keep"
+#~ msgstr "Swamp"
+
+#~ msgid "Players: "
+#~ msgstr "Players: "
+
+#~ msgid "Map size: "
+#~ msgstr "Map size: "
+
+#~ msgid "player"
+#~ msgstr "player"
+
+#~ msgid "Show Unit Idle Animations"
+#~ msgstr "Show Unit Idle Animations"
+
+#~ msgid "Prefs section^Multiplayer"
+#~ msgstr "Multiplayer"
+
+#~ msgid "Difficulty: "
+#~ msgstr "Difficulty: "
+
+#~ msgid "Status Table"
+#~ msgstr "Status Table"
+
+#, fuzzy
+#~ msgid "Leadership"
+#~ msgstr "Leader"
+
+#, fuzzy
+#~ msgid "Force"
+#~ msgstr "Forest"
+
+#, fuzzy
+#~ msgid "Intellect"
+#~ msgstr "Select"
+
+#, fuzzy
+#~ msgid "Charm"
+#~ msgstr "Chasm"
+
+#, fuzzy
+#~ msgid "Father"
+#~ msgstr "Crater"
+
+#, fuzzy
+#~ msgid "Mother"
+#~ msgstr "Mute"
+
+#, fuzzy
+#~ msgid "Intimate"
+#~ msgstr "Generate Map"
+
+#, fuzzy
+#~ msgid "Hate"
+#~ msgstr "Date"
+
+#, fuzzy
+#~ msgid "arm1"
+#~ msgstr "Team 1"
+
+#~ msgid "Generate name"
+#~ msgstr "Generate name"
+
+#~ msgid "Screenshot failed"
+#~ msgstr "Screenshot failed"
+
+#~ msgid "Mushroom Grove Lit"
+#~ msgstr "Mushroom Grove Lit"
+
+#, fuzzy
+#~ msgid "Impassable Regular Mountains"
+#~ msgstr "Impassable Desert Mountains"
+
+#~ msgid "Impassable Desert Mountains"
+#~ msgstr "Impassable Desert Mountains"
+
+#, fuzzy
+#~ msgid "Castle Human Keep"
+#~ msgstr "Castle Keep"
+
+#, fuzzy
+#~ msgid "Snowy Castle Keep"
+#~ msgstr "Castle Keep"
+
+#, fuzzy
+#~ msgid "Deep Water Medium"
+#~ msgstr "Deep Water"
+
+#, fuzzy
+#~ msgid "Deep Water Tropical"
+#~ msgstr "Deep Water"
+
+#~ msgid "Snow Forest"
+#~ msgstr "Snow Forest"
+
+#~ msgid "User-Command#2"
+#~ msgstr "User-Command#2"
+
+#~ msgid "User-Command#3"
+#~ msgstr "User-Command#3"
+
+#~ msgid "Fort"
+#~ msgstr "Fort"
+
+#~ msgid "Ruin"
+#~ msgstr "Ruin"
+
+#~ msgid "Elven Keep"
+#~ msgstr "Elven Keep"
+
+#~ msgid "River Ford"
+#~ msgstr "River Ford"
+
+#~ msgid "Wall"
+#~ msgstr "Wall"
+
+#~ msgid "Window not defined."
+#~ msgstr "Window not defined."
+
+#~ msgid "Could not get image for terrain: $terrain."
+#~ msgstr "Could not get image for terrain: $terrain."
+
+#~ msgid "Error creating or aquiring an image."
+#~ msgstr "Error creating or aquiring an image."
+
+#~ msgid "Save The Map"
+#~ msgstr "Save The Map"
+
+#, fuzzy
+#~ msgid ""
+#~ "'stack_data' must have the same number of columns as the "
+#~ "'list_definition'."
+#~ msgstr ""
+#~ "'list_data' must have the same number of columns as the 'list_definition'."
+
+#~ msgid "Gamma:"
+#~ msgstr "Gamma:"
+
+#~ msgid "Change the brightness of the display"
+#~ msgstr "Change the brightness of the display"
+
+#~ msgid "No scrollbar defined."
+#~ msgstr "No scrollbar defined."
+
+#~ msgid "Your modifications to the map will be lost. Continue?"
+#~ msgstr "Your modifications to the map will be lost. Continue?"
+
+#~ msgid "Generate New Map"
+#~ msgstr "Generate New Map"
+
+#~ msgid "Random Generator Settings"
+#~ msgstr "Random Generator Settings"
+
+#~ msgid "Map creation failed."
+#~ msgstr "Map creation failed."
+
+#~ msgid "Video Mode"
+#~ msgstr "Video Mode"
+
+#~ msgid "X-Axis"
+#~ msgstr "X-Axis"
+
+#~ msgid "Y-Axis"
+#~ msgstr "Y-Axis"
+
+#~ msgid "Flip around (this may change the dimensions of the map):"
+#~ msgstr "Flip around (this may change the dimensions of the map):"
+
+#~ msgid "Set Terrain"
+#~ msgstr "Set Terrain"
+
+#~ msgid "Set Player's keep"
+#~ msgstr "Set Player's keep"
+
+#~ msgid "Flood Fill"
+#~ msgstr "Flood Fill"
+
+#~ msgid "Flip Map"
+#~ msgstr "Flip Map"
+
+#~ msgid "Draw Terrain"
+#~ msgstr "Draw Terrain"
+
+#~ msgid "Delay transition updates"
+#~ msgstr "Delay transition updates"
+
+#~ msgid "Cave Lit"
+#~ msgstr "Cave Lit"
+
+#~ msgid "Save Hotkeys"
+#~ msgstr "Save Hotkeys"

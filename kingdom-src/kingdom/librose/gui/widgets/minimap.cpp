@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/minimap.hpp"
 
@@ -25,7 +25,7 @@
 #include "map_exception.hpp"
 #include "../../image.hpp"
 #include "../../minimap.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 
 #include <boost/bind.hpp>
 
@@ -91,21 +91,12 @@ struct tvalue
 	unsigned age;
 };
 
-#ifdef LOW_MEM
-	/**
-	 * Maximum number of items in the cache (multiple of 4).
-	 *
-	 * As small as possible for low mem.
-	 */
-	static const size_t cache_max_size = 4;
-#else
 	/**
 	 * Maximum number of items in the cache (multiple of 4).
 	 *
 	 * No testing on the optimal number is done, just seems a nice number.
 	 */
 	static const size_t cache_max_size = 100;
-#endif
 
 	/**
 	 * The terrain used to create the cache.

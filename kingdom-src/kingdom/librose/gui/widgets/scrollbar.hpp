@@ -113,6 +113,7 @@ public:
 	 * the step size is honoured. The value will be rouded down.
 	 */
 	void set_item_position(const unsigned item_position);
+	void set_item_position2(const unsigned item_position) { item_position_ = item_position; }
 	unsigned get_item_position() const { return item_position_; }
 
 	unsigned get_visible_items() const { return visible_items_; }

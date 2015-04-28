@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/browse.hpp"
 
@@ -21,7 +21,7 @@
 #include "formula_string_utils.hpp"
 #include "gettext.hpp"
 #include "filesystem.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 
 #include "gui/dialogs/helper.hpp"
 #include "gui/widgets/settings.hpp"
@@ -107,6 +107,8 @@ tbrowse::tbrowse(display& disp, tparam& param)
 
 void tbrowse::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
 	if (!param_.title.empty()) {
 		label->set_label(param_.title);
@@ -127,6 +129,7 @@ void tbrowse::pre_show(CVideo& /*video*/, twindow& window)
 				, boost::ref(window)));
 
 	navigate_ = find_widget<treport>(&window, "navigate", false, true);
+	navigate_->tabbar_init(false, "text");
 	reload_navigate(window, true);
 
 	tlistbox& list = find_widget<tlistbox>(&window, "default", false);
@@ -135,7 +138,7 @@ void tbrowse::pre_show(CVideo& /*video*/, twindow& window)
 	std::map<std::string, string_map> data;
 
 	update_file_lists(window);
-	list.set_callback_value_change(dialog_callback<tbrowse, &tbrowse::item_selected>);
+	list.set_callback_value_change(dialog_callback3<tbrowse, tlistbox, &tbrowse::item_selected>);
 
 	init_entry(window);
 
@@ -211,8 +214,8 @@ gui2::tbutton* tbrowse::create_navigate_button(twindow& window, const std::strin
 
 void tbrowse::reload_navigate(twindow& window, bool first)
 {
-	const gui2::tgrid::tchild* children = navigate_->content_grid()->children();
-	int childs = navigate_->content_grid()->children_vsize();
+	const gui2::tgrid::tchild* children = navigate_->child_begin();
+	int childs = navigate_->childs();
 
 	size_t prefix_chars;
 	std::string adjusted_current_dir;
@@ -268,7 +271,7 @@ void tbrowse::reload_navigate(twindow& window, bool first)
 		start_pos = adjusted_current_dir.find(path_delim, start_pos + 1);
 	}
 
-	childs = navigate_->content_grid()->children_vsize();
+	childs = navigate_->childs();
 	int n = 0;
 	gui2::tbutton* widget;
 	for (std::vector<std::string>::const_iterator it = ids.begin(); it != ids.end(); ++ it, n ++) {
@@ -344,10 +347,9 @@ void tbrowse::add_row(twindow& window, tlistbox& list, const std::string& name, 
 	list.add_row(list_item_item);
 
 	int index = list.get_item_count() - 1;
-	tgrid* grid_ptr = list.get_row_grid(index);
-	ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(grid_ptr->find("_toggle", true));
+	ttoggle_panel* panel = dynamic_cast<ttoggle_panel*>(list.get_row_panel(index));
 
-	tbutton* button = find_widget<tbutton>(grid_ptr, "open", false, true);
+	tbutton* button = find_widget<tbutton>(panel, "open", false, true);
 	if (dir) {
 		connect_signal_mouse_left_click(
 			*button
@@ -359,6 +361,17 @@ void tbrowse::add_row(twindow& window, tlistbox& list, const std::string& name, 
 				, _4
 				, (int)true
 				, (int)index));
+
+		panel->connect_signal<event::LEFT_BUTTON_DOUBLE_CLICK>(boost::bind(
+				  &tbrowse::open
+				, this
+				, boost::ref(window)
+				, _3
+				, _4
+				, (int)true
+				, (int)index)
+			, event::tdispatcher::back_pre_child);
+
 	} else {
 		button->set_visible(twidget::HIDDEN);
 		button->set_active(false);
@@ -374,6 +387,7 @@ void tbrowse::reload_file_table(twindow& window, int cursel)
 	for (std::set<tfile>::const_iterator it = dirs_in_current_dir_.begin(); it != dirs_in_current_dir_.end(); ++ it) {
 		const tfile& file = *it;
 		add_row(window, *list, file.name, true);
+
 	}
 	for (std::set<tfile>::const_iterator it = files_in_current_dir_.begin(); it != files_in_current_dir_.end(); ++ it) {
 		const tfile& file = *it;
@@ -386,7 +400,7 @@ void tbrowse::reload_file_table(twindow& window, int cursel)
 		list->select_row(cursel);
 	}
 
-	item_selected(window);
+	item_selected(window, *list, twidget::drag_none);
 
 	// window.invalidate_layout();
 	list->invalidate_layout(true);
@@ -482,9 +496,8 @@ std::string tbrowse::get_path(const std::string& file_or_dir) const
 	return res_path;
 }
 
-void tbrowse::item_selected(twindow& window)
+void tbrowse::item_selected(twindow& window, tlistbox& list, const int type)
 {
-	tlistbox& list = find_widget<tlistbox>(&window, "default", false);
 	int row = list.get_selected_row();
 
 	tristate dir = t_unset;
@@ -505,6 +518,15 @@ void tbrowse::item_selected(twindow& window)
 	}
 
 	set_ok_active(window, dir);
+}
+
+void tbrowse::item_double_click(twindow& window)
+{
+	tlistbox& list = find_widget<tlistbox>(&window, "default", false);
+	int row = list.get_selected_row();
+
+	bool handled, halt;
+	open(window, handled, halt, true, row);
 }
 
 void tbrowse::set_ok_active(twindow& window, tristate dir)

@@ -22,6 +22,8 @@
 
 namespace gui2 {
 
+class tlistbox;
+
 class tcombo_box : public tdialog
 {
 public:
@@ -46,7 +48,7 @@ private:
 	/** Inherited from tdialog. */
 	void post_show(twindow& window);
 
-	void item_selected(twindow& window);
+	void item_selected(twindow& window, tlistbox& list, const int type);
 
 private:
 	int index_;

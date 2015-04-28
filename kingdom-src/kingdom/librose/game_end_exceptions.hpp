@@ -27,7 +27,7 @@
 #include <string>
 
 #include "config.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 
 enum LEVEL_RESULT {
 	NONE,

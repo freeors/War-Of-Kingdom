@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/tree_view_node.hpp"
 
@@ -50,7 +50,7 @@ ttree_view_node::ttree_view_node(const std::string& id
 	set_parent(&parent_tree_view);
 	if(id != "root") {
 		BOOST_FOREACH(const tnode_definition& node_definition, node_definitions_) {
-			if(node_definition.id == id) {
+			if (node_definition.id == id) {
 				node_definition.builder->build(&grid_);
 				init_grid(&grid_, data);
 
@@ -73,7 +73,7 @@ ttree_view_node::ttree_view_node(const std::string& id
 
 				}
 
-				if(parent_node_ && parent_node_->icon_) {
+				if (parent_node_ && parent_node_->icon_) {
 					parent_node_->icon_->set_visible(twidget::VISIBLE);
 				}
 
@@ -83,7 +83,7 @@ ttree_view_node::ttree_view_node(const std::string& id
 						, false);
 
 				label_ = dynamic_cast<tselectable_*>(&widget);
-				if(label_) {
+				if (label_) {
 					widget.connect_signal<event::LEFT_BUTTON_CLICK>(
 							  boost::bind(&ttree_view_node::
 								signal_handler_label_left_button_click
@@ -102,7 +102,7 @@ ttree_view_node::ttree_view_node(const std::string& id
 								, this, _2, _3, _4)
 							, event::tdispatcher::front_post_child);
 
-					if(!tree_view().selected_item_) {
+					if (!tree_view().selected_item_) {
 						tree_view().selected_item_ = this;
 						label_->set_value(true);
 					}

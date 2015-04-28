@@ -72,11 +72,6 @@ public:
 	/** Parameters for the widget. */
 	std::string id;
 	std::string linked_group;
-
-#ifndef LOW_MEM
-	int debug_border_mode;
-	unsigned debug_border_color;
-#endif
 };
 
 typedef boost::intrusive_ptr<tbuilder_widget> tbuilder_widget_ptr;
@@ -106,6 +101,8 @@ void register_builder_widget(const std::string& id
  * @returns                       The builder for the widget instance.
  */
 tbuilder_widget_ptr create_builder_widget(const config& cfg);
+
+tbuilder_widget_ptr create_builder_widget2(const std::string& type, const config& cfg);
 
 /**
  * Helper to generate a widget from a WML widget instance.
@@ -217,6 +214,7 @@ public:
 
 		std::string definition;
 		bool theme;
+		twidget::torientation orientation;
 
 		std::vector<tlinked_group> linked_groups;
 

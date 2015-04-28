@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/label.hpp"
 
@@ -26,6 +26,17 @@
 namespace gui2 {
 
 REGISTER_WIDGET(label)
+
+tpoint tlabel::request_reduce_width(const unsigned maximum_width)
+{
+	unsigned w = maximum_width;
+
+	ttext_maximum_width_lock lock(*this, maximum_width);
+	tpoint size = calculate_best_size();
+
+	insert_reduce_widget(this, size);
+	return size;
+}
 
 bool tlabel::can_wrap() const
 {

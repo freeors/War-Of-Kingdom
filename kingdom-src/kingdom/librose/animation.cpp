@@ -18,8 +18,11 @@
 #include "animation.hpp"
 
 #include "display.hpp"
+#include "base_unit.hpp"
+#include "controller_base.hpp"
 #include "halo.hpp"
 #include "map.hpp"
+#include "rose_config.hpp"
 
 #include <boost/foreach.hpp>
 #include <algorithm>
@@ -38,7 +41,7 @@ animation::animation(int start_time, const unit_frame & frame, const std::string
 	, dst_()
 	, invalidated_(false)
 	, play_offscreen_(true)
-	, screen_mode_(false)
+	, area_mode_(false)
 	, layer_(0)
 	, cycles_(false)
 	, started_(false)
@@ -55,7 +58,7 @@ animation::animation(const config& cfg, const std::string& frame_string )
 	, dst_()
 	, invalidated_(false)
 	, play_offscreen_(true)
-	, screen_mode_(false)
+	, area_mode_(false)
 	, layer_(0)
 	, cycles_(false)
 	, started_(false)
@@ -70,7 +73,7 @@ animation::animation(const config& cfg, const std::string& frame_string )
 
 	play_offscreen_ = cfg["offscreen"].to_bool(true);
 
-	screen_mode_ = cfg["screen_mode"].to_bool();
+	area_mode_ = cfg["area_mode"].to_bool();
 	layer_ = cfg["layer"].to_int(); // use to outer anination
 }
 
@@ -285,7 +288,7 @@ void animation::redraw(frame_parameters& value)
 void animation::redraw(surface&, const SDL_Rect&)
 {
 	frame_parameters params;
-	params.screen_mode = screen_mode_;
+	params.area_mode = area_mode_;
 	redraw(params);
 }
 
@@ -296,48 +299,63 @@ void animation::require_release()
 	}
 }
 
-void animation::replace_image_name(const std::string& src, const std::string& dst)
+void animation::replace_image_name(const std::string& part, const std::string& src, const std::string& dst)
 {
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_image_name(src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_image_name(src, dst);
+	if (part.empty()) {
+		unit_anim_.replace_image_name(src, dst);
+	} else {
+		std::map<std::string, particular>::iterator it = sub_anims_.find(part + "_frame");
+		if (it != sub_anims_.end()) {
+			it->second.replace_image_name(src, dst);
+		}
 	}
 }
 
-void animation::replace_image_mod(const std::string& src, const std::string& dst)
+void animation::replace_image_mod(const std::string& part, const std::string& src, const std::string& dst)
 {
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_image_mod(src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_image_mod(src, dst);
+	if (part.empty()) {
+		unit_anim_.replace_image_mod(src, dst);
+	} else {
+		std::map<std::string, particular>::iterator it = sub_anims_.find(part + "_frame");
+		if (it != sub_anims_.end()) {
+			it->second.replace_image_mod(src, dst);
+		}
 	}
 }
 
-void animation::replace_progressive(const std::string& name, const std::string& src, const std::string& dst)
+void animation::replace_progressive(const std::string& part, const std::string& name, const std::string& src, const std::string& dst)
 {
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_progressive(name, src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_progressive(name, src, dst);
+	if (part.empty()) {
+		unit_anim_.replace_progressive(name, src, dst);
+	} else {
+		std::map<std::string, particular>::iterator it = sub_anims_.find(part + "_frame");
+		if (it != sub_anims_.end()) {
+			it->second.replace_progressive(name, src, dst);
+		}
 	}
 }
 
-void animation::replace_static_text(const std::string& src, const std::string& dst)
+void animation::replace_static_text(const std::string& part, const std::string& src, const std::string& dst)
 {
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_static_text(src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_static_text(src, dst);
+	if (part.empty()) {
+		unit_anim_.replace_static_text(src, dst);
+	} else {
+		std::map<std::string, particular>::iterator it = sub_anims_.find(part + "_frame");
+		if (it != sub_anims_.end()) {
+			it->second.replace_static_text(src, dst);
+		}
 	}
 }
 
-void animation::replace_int(const std::string& name, int src, int dst)
+void animation::replace_int(const std::string& part, const std::string& name, int src, int dst)
 {
-	std::map<std::string, particular>::iterator anim_itor = sub_anims_.begin();
-	unit_anim_.replace_int(name, src, dst);
-	for( /*null*/; anim_itor != sub_anims_.end() ; ++anim_itor) {
-		anim_itor->second.replace_int(name, src, dst);
+	if (part.empty()) {
+		unit_anim_.replace_int(name, src, dst);
+	} else {
+		std::map<std::string, particular>::iterator it = sub_anims_.find(part + "_frame");
+		if (it != sub_anims_.end()) {
+			it->second.replace_int(name, src, dst);
+		}
 	}
 }
 
@@ -395,7 +413,7 @@ bool animation::invalidate(const surface&, frame_parameters& value)
 bool animation::invalidate(const surface& screen)
 {
 	frame_parameters params;
-	params.screen_mode = screen_mode_;
+	params.area_mode = area_mode_;
 	return invalidate(screen, params);
 }
 
@@ -491,3 +509,152 @@ void animation::particular::start_animation(int start_time, bool cycles)
 	last_frame_begin_time_ = get_begin_time() -1;
 }
 
+
+void base_animator::add_animation2(base_unit* animated_unit
+		, const animation* anim
+		, const map_location &src
+		, bool with_bars
+		, bool cycles
+		, const std::string& text
+		, const Uint32 text_color)
+{
+	if (!animated_unit) {
+		return;
+	}
+
+	anim_elem tmp;
+	tmp.my_unit = animated_unit;
+	tmp.text = text;
+	tmp.text_color = text_color;
+	tmp.src = src;
+	tmp.with_bars= with_bars;
+	tmp.cycles = cycles;
+	tmp.anim = anim;
+	if (!tmp.anim) {
+		return;
+	}
+
+	start_time_ = std::max<int>(start_time_, tmp.anim->get_begin_time());
+	animated_units_.push_back(tmp);
+}
+
+void base_animator::start_animations()
+{
+	int begin_time = INT_MAX;
+	std::vector<anim_elem>::iterator anim;
+	
+	for (anim = animated_units_.begin(); anim != animated_units_.end(); ++ anim) {
+		if (anim->my_unit->get_animation()) {
+			if(anim->anim) {
+				begin_time = std::min<int>(begin_time, anim->anim->get_begin_time());
+			} else  {
+				begin_time = std::min<int>(begin_time, anim->my_unit->get_animation()->get_begin_time());
+			}
+		}
+	}
+
+	for (anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
+		if (anim->anim) {
+			// TODO: start_tick_ of particular is relative to last_update_tick_(reference to animated<T,T_void_value>::start_animation), 
+			//       and last_update_tick generated by new_animation_frame().
+			//       On the other hand, new_animation_frame() may be delayed, for example display gui2::dialog,
+			//       once it occur, last_update_tick will indicate "past" time, result to start_tick_ "too early".
+			//       ----Should displayed frame in this particular will not display!
+			//       there need call new_animation_frame(), update last_update_tick to current tick.
+			new_animation_frame();
+
+			anim->my_unit->start_animation(begin_time, anim->anim,
+				anim->with_bars, anim->cycles, anim->text, anim->text_color);
+			anim->anim = NULL;
+		} else {
+			anim->my_unit->get_animation()->update_parameters(anim->src, anim->src.get_direction(anim->my_unit->facing()));
+		}
+
+	}
+}
+
+bool base_animator::would_end() const
+{
+	bool finished = true;
+	for(std::vector<anim_elem>::const_iterator anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
+		finished &= anim->my_unit->get_animation()->animation_finished_potential();
+	}
+	return finished;
+}
+void base_animator::wait_until(controller_base& controller, int animation_time) const
+{
+	display& disp = *display::get_singleton();
+
+	double speed = disp.turbo_speed();
+	controller.play_slice(false);
+	int end_tick = animated_units_[0].my_unit->get_animation()->time_to_tick(animation_time);
+	while (SDL_GetTicks() < static_cast<unsigned int>(end_tick)
+				- std::min<int>(static_cast<unsigned int>(20/speed),20)) {
+
+		disp.delay(std::max<int>(0,
+			std::min<int>(10,
+			static_cast<int>((animation_time - get_animation_time()) * speed))));
+		controller.play_slice(false);
+        end_tick = animated_units_[0].my_unit->get_animation()->time_to_tick(animation_time);
+	}
+	disp.delay(std::max<int>(0,end_tick - SDL_GetTicks() +5));
+	new_animation_frame();
+}
+
+void base_animator::wait_for_end(controller_base& controller) const
+{
+	display& disp = *display::get_singleton();
+
+	if (game_config::no_delay) return;
+	bool finished = false;
+	while(!finished) {
+		controller.play_slice(false);
+		disp.delay(10);
+		finished = true;
+		for (std::vector<anim_elem>::const_iterator anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
+			finished &= anim->my_unit->get_animation()->animation_finished_potential();
+		}
+	}
+}
+int base_animator::get_animation_time() const
+{
+	return animated_units_[0].my_unit->get_animation()->get_animation_time() ;
+}
+
+int base_animator::get_animation_time_potential() const
+{
+	return animated_units_[0].my_unit->get_animation()->get_animation_time_potential() ;
+}
+
+int base_animator::get_end_time() const
+{
+	int end_time = INT_MIN;
+	for (std::vector<anim_elem>::const_iterator anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
+		if(anim->my_unit->get_animation()) {
+			end_time = std::max<int>(end_time,anim->my_unit->get_animation()->get_end_time());
+		}
+	}
+	return end_time;
+}
+void base_animator::pause_animation()
+{
+        for(std::vector<anim_elem>::iterator anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
+	       if(anim->my_unit->get_animation()) {
+                anim->my_unit->get_animation()->pause_animation();
+	       }
+        }
+}
+void base_animator::restart_animation()
+{
+    for (std::vector<anim_elem>::iterator anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
+		if (anim->my_unit->get_animation()) {
+			anim->my_unit->get_animation()->restart_animation();
+		}
+	}
+}
+void base_animator::set_all_standing()
+{
+	for(std::vector<anim_elem>::iterator anim = animated_units_.begin(); anim != animated_units_.end();++anim) {
+		anim->my_unit->set_standing(true);
+    }
+}

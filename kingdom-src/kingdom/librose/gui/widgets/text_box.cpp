@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/text_box.hpp"
 
@@ -88,7 +88,7 @@ ttext_box::ttext_box()
 ttext_box::~ttext_box()
 {
 	if (cursor_timer_) {
-		gui2::remove_timer(cursor_timer_);
+		remove_timer(cursor_timer_);
 	}
 }
 
@@ -100,6 +100,14 @@ void ttext_box::set_maximum_length(const size_t maximum_length)
 
 void ttext_box::set_label(const std::string& text)
 {
+	if (text.empty()) {
+		if (!label_.empty()) {
+			goto_start_of_data();
+		} else {
+			return;
+		}
+	}
+
 	std::string tmp_text;
 	bool use_tmp_text = false;
 	if (maximum_length_ != std::string::npos) {
@@ -209,6 +217,11 @@ void ttext_box::insert_str(const std::string& str)
 		str2 = tintegrate::stuff_escape(str);
 	}
 
+	if (label().empty() && !integrate_->empty()) {
+		// exist default_label_
+		integrate_->clear();
+	}
+
 	SDL_Rect new_start;
 	const std::string& text = integrate_->insert_str(true, selection_start_.x, selection_start_.y, str2, new_start);
 	// after delete, start maybe in end outer.
@@ -289,7 +302,7 @@ void ttext_box::paste_selection(const bool mouse)
 	conv_ansi_utf8(text, true);
 
 	insert_str(text);
-	fire(event::NOTIFY_MODIFIED, *this, NULL);
+	fire2(event::NOTIFY_MODIFIED, *this);
 }
 
 void ttext_box::normalize_start_end(SDL_Rect& start, SDL_Rect& end) const
@@ -303,7 +316,18 @@ void ttext_box::normalize_start_end(SDL_Rect& start, SDL_Rect& end) const
 
 void ttext_box::calculate_integrate()
 {
+	bool alternated = false;
+	if (label_.empty() && !default_label_.empty()) {
+		alternated = true;
+		label_ = default_label_;
+	}
+
 	tcontrol::calculate_integrate();
+
+	if (alternated) {
+		label_.clear();
+	}
+
 	if (integrate_) {
 		if (src_pos_ == -1) {
 			selection_start_ = integrate_->editable_at(selection_start_.x, selection_start_.y);
@@ -429,7 +453,7 @@ void ttext_box::handle_key_backspace(SDLMod /*modifier*/, bool& handled)
 	} else if (selection_start_.x || selection_start_.y){
 		delete_char(true);
 	}
-	fire(event::NOTIFY_MODIFIED, *this, NULL);
+	fire2(event::NOTIFY_MODIFIED, *this);
 }
 
 void ttext_box::handle_key_delete(SDLMod /*modifier*/, bool& handled)
@@ -442,7 +466,7 @@ void ttext_box::handle_key_delete(SDLMod /*modifier*/, bool& handled)
 	} else if (!label_.empty()) {
 		delete_char(false);
 	}
-	fire(event::NOTIFY_MODIFIED, *this, NULL);
+	fire2(event::NOTIFY_MODIFIED, *this);
 }
 
 Uint16 shift_character(SDLMod modifier, Uint16 c)
@@ -522,7 +546,7 @@ void ttext_box::handle_key_default(
 		int modified = shift_character(modifier, key);
 		std::string str(1, modified);
 		insert_str(str);
-		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		fire2(event::NOTIFY_MODIFIED, *this);
 	}
 }
 
@@ -689,6 +713,7 @@ void ttext_box::signal_handler_sdl_text_input(const event::tevent event
 	bool inserted = false;
 	utils::utf8_iterator ch(str);
 	for (utils::utf8_iterator end = utils::utf8_iterator::end(str); ch != end; ++ch) {
+/*
 		if (*ch <= 0x7f) {
 #if defined(ANDROID) || defined(_WIN32)
 			// on Android, some ASCII is receive by textinput insteal keydown.
@@ -697,6 +722,7 @@ void ttext_box::signal_handler_sdl_text_input(const event::tevent event
 			continue;
 #endif
 		}
+*/
 		if (*ch == '\r') {
 			insert_str("\n");
 		} else {
@@ -705,7 +731,7 @@ void ttext_box::signal_handler_sdl_text_input(const event::tevent event
 		inserted = true;
 	}
 	if (inserted) {
-		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		fire2(event::NOTIFY_MODIFIED, *this);
 	}
 
 	handled = true;
@@ -731,6 +757,15 @@ void ttext_box::place(const tpoint& origin, const tpoint& size)
 	tcontrol::place(origin, size);
 
 	update_offsets();
+}
+
+void ttext_box::set_visible_area(const SDL_Rect& area)
+{
+	tcontrol::set_visible_area(area);
+	BOOST_FOREACH(tcanvas& tmp, canvas()) {
+		tmp.set_variable("visible_y", variant(area.y - y_));
+		tmp.set_variable("visible_height", variant(area.h));
+	}
 }
 
 void ttext_box::cursor_timer_handler()
@@ -799,11 +834,14 @@ void ttext_box::update_canvas()
 		}
 	}
 
+	const SDL_Rect dirty_rect = get_dirty_rect();
 	/***** Set in all canvases *****/
 	
+	const std::string label2 = label().empty()? default_label_: label();
+
 	BOOST_FOREACH(tcanvas& tmp, canvas()) {
 
-		tmp.set_variable("text", variant(label()));
+		tmp.set_variable("text", variant(label2));
 		tmp.set_variable("text_x_offset", variant(text_x_offset_));
 		tmp.set_variable("text_y_offset", variant(text_y_offset_));
 		tmp.set_variable("text_maximum_width", variant(max_width));
@@ -823,6 +861,9 @@ void ttext_box::update_canvas()
 
 		tmp.set_variable("selection_width_iii", variant(selection_width_iii));
 		tmp.set_variable("selection_height_iii", variant(selection_height_iii));
+
+		tmp.set_variable("visible_y", variant(dirty_rect.y - y_));
+		tmp.set_variable("visible_height", variant(dirty_rect.h));
 	}
 }
 

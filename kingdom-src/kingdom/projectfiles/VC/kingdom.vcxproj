@@ -53,7 +53,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\librose;..\..\external\boost;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\src;..\..\src\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\external\boost;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\kingdom;..\..\kingdom\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;LOCALEDIR="translations";FIFODIR="/var/run/wesnothd";HAVE_CONFIG_H;DISABLE_POOL_ALLOC;HAS_RELATIVE_LOCALEDIR=1;_KINGDOM_EXE;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -89,7 +89,7 @@ copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)int
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..\librose;..\..\external\boost;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\src;..\..\src\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\external\boost;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\SDL\SDL-dev-framework\SDL_mixer\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\kingdom;..\..\kingdom\lua;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NOMINMAX;NDEBUG;_KINGDOM_EXE;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -119,686 +119,628 @@ copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)int
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\about.cpp" />
-    <ClCompile Include="..\..\src\actions.cpp" />
-    <ClCompile Include="..\..\src\artifical.cpp" />
-    <ClCompile Include="..\..\src\attack_prediction.cpp" />
-    <ClCompile Include="..\..\src\boilerplate-header.cpp" />
-    <ClCompile Include="..\..\src\card.cpp" />
-    <ClCompile Include="..\..\src\cavegen.cpp" />
-    <ClCompile Include="..\..\src\construct_dialog.cpp" />
-    <ClCompile Include="..\..\src\controller_base.cpp" />
-    <ClCompile Include="..\..\src\dialogs.cpp" />
-    <ClCompile Include="..\..\src\filechooser.cpp" />
-    <ClCompile Include="..\..\src\floating_textbox.cpp" />
-    <ClCompile Include="..\..\src\game.cpp" />
-    <ClCompile Include="..\..\src\game_display.cpp" />
-    <ClCompile Include="..\..\src\game_errors.cpp" />
-    <ClCompile Include="..\..\src\game_events.cpp" />
-    <ClCompile Include="..\..\src\game_preferences.cpp" />
-    <ClCompile Include="..\..\src\game_preferences_display.cpp" />
-    <ClCompile Include="..\..\src\gamestatus.cpp" />
-    <ClCompile Include="..\..\src\generate_report.cpp" />
-    <ClCompile Include="..\..\src\hash.cpp" />
-    <ClCompile Include="..\..\src\hero.cpp" />
-    <ClCompile Include="..\..\src\intro.cpp" />
-    <ClCompile Include="..\..\src\lobby_preferences.cpp" />
-    <ClCompile Include="..\..\src\map_create.cpp" />
-    <ClCompile Include="..\..\src\mapgen.cpp" />
-    <ClCompile Include="..\..\src\mapgen_dialog.cpp" />
-    <ClCompile Include="..\..\src\md5.cpp" />
-    <ClCompile Include="..\..\src\menu_events.cpp" />
-    <ClCompile Include="..\..\src\mouse_events.cpp" />
-    <ClCompile Include="..\..\src\mouse_handler_base.cpp" />
-    <ClCompile Include="..\..\src\mp_game_settings.cpp" />
-    <ClCompile Include="..\..\src\multiplayer.cpp" />
-    <ClCompile Include="..\..\src\pathutils.cpp" />
-    <ClCompile Include="..\..\src\persist_context.cpp" />
-    <ClCompile Include="..\..\src\persist_manager.cpp" />
-    <ClCompile Include="..\..\src\persist_var.cpp" />
-    <ClCompile Include="..\..\src\play_controller.cpp" />
-    <ClCompile Include="..\..\src\playcampaign.cpp" />
-    <ClCompile Include="..\..\src\playmp_controller.cpp" />
-    <ClCompile Include="..\..\src\playsingle_controller.cpp" />
-    <ClCompile Include="..\..\src\playturn.cpp" />
-    <ClCompile Include="..\..\src\replay.cpp" />
-    <ClCompile Include="..\..\src\replay_controller.cpp" />
-    <ClCompile Include="..\..\src\resources.cpp" />
-    <ClCompile Include="..\..\src\save_blocker.cpp" />
-    <ClCompile Include="..\..\src\savegame.cpp" />
-    <ClCompile Include="..\..\src\savegame_config.cpp" />
-    <ClCompile Include="..\..\src\settings.cpp" />
-    <ClCompile Include="..\..\src\show_dialog.cpp" />
-    <ClCompile Include="..\..\src\side_filter.cpp" />
-    <ClCompile Include="..\..\src\soundsource.cpp" />
-    <ClCompile Include="..\..\src\statistics.cpp" />
-    <ClCompile Include="..\..\src\statistics_dialog.cpp" />
-    <ClCompile Include="..\..\src\team.cpp" />
-    <ClCompile Include="..\..\src\terrain_filter.cpp" />
-    <ClCompile Include="..\..\src\tod_manager.cpp" />
-    <ClCompile Include="..\..\src\unit.cpp" />
-    <ClCompile Include="..\..\src\unit_abilities.cpp" />
-    <ClCompile Include="..\..\src\unit_animation.cpp" />
-    <ClCompile Include="..\..\src\unit_display.cpp" />
-    <ClCompile Include="..\..\src\unit_helper.cpp" />
-    <ClCompile Include="..\..\src\unit_id.cpp" />
-    <ClCompile Include="..\..\src\unit_map.cpp" />
-    <ClCompile Include="..\..\src\unit_types.cpp" />
-    <ClCompile Include="..\..\src\variable.cpp" />
-    <ClCompile Include="..\..\src\ai\configuration.cpp">
+    <ClCompile Include="..\..\kingdom\about.cpp" />
+    <ClCompile Include="..\..\kingdom\actions.cpp" />
+    <ClCompile Include="..\..\kingdom\artifical.cpp" />
+    <ClCompile Include="..\..\kingdom\attack_prediction.cpp" />
+    <ClCompile Include="..\..\kingdom\boilerplate-header.cpp" />
+    <ClCompile Include="..\..\kingdom\card.cpp" />
+    <ClCompile Include="..\..\kingdom\cavegen.cpp" />
+    <ClCompile Include="..\..\kingdom\dialogs.cpp" />
+    <ClCompile Include="..\..\kingdom\game.cpp" />
+    <ClCompile Include="..\..\kingdom\game_config.cpp" />
+    <ClCompile Include="..\..\kingdom\game_display.cpp" />
+    <ClCompile Include="..\..\kingdom\game_errors.cpp" />
+    <ClCompile Include="..\..\kingdom\game_events.cpp" />
+    <ClCompile Include="..\..\kingdom\game_preferences.cpp" />
+    <ClCompile Include="..\..\kingdom\game_preferences_display.cpp" />
+    <ClCompile Include="..\..\kingdom\gamestatus.cpp" />
+    <ClCompile Include="..\..\kingdom\generate_report.cpp" />
+    <ClCompile Include="..\..\kingdom\hash.cpp" />
+    <ClCompile Include="..\..\kingdom\hero.cpp" />
+    <ClCompile Include="..\..\kingdom\lobby_preferences.cpp" />
+    <ClCompile Include="..\..\kingdom\map_create.cpp" />
+    <ClCompile Include="..\..\kingdom\mapgen.cpp" />
+    <ClCompile Include="..\..\kingdom\mapgen_dialog.cpp" />
+    <ClCompile Include="..\..\kingdom\md5.cpp" />
+    <ClCompile Include="..\..\kingdom\menu_events.cpp" />
+    <ClCompile Include="..\..\kingdom\mouse_events.cpp" />
+    <ClCompile Include="..\..\kingdom\mp_game_settings.cpp" />
+    <ClCompile Include="..\..\kingdom\multiplayer.cpp" />
+    <ClCompile Include="..\..\kingdom\pathutils.cpp" />
+    <ClCompile Include="..\..\kingdom\persist_context.cpp" />
+    <ClCompile Include="..\..\kingdom\persist_manager.cpp" />
+    <ClCompile Include="..\..\kingdom\persist_var.cpp" />
+    <ClCompile Include="..\..\kingdom\play_controller.cpp" />
+    <ClCompile Include="..\..\kingdom\playcampaign.cpp" />
+    <ClCompile Include="..\..\kingdom\playmp_controller.cpp" />
+    <ClCompile Include="..\..\kingdom\playsingle_controller.cpp" />
+    <ClCompile Include="..\..\kingdom\playturn.cpp" />
+    <ClCompile Include="..\..\kingdom\replay.cpp" />
+    <ClCompile Include="..\..\kingdom\replay_controller.cpp" />
+    <ClCompile Include="..\..\kingdom\resources.cpp" />
+    <ClCompile Include="..\..\kingdom\save_blocker.cpp" />
+    <ClCompile Include="..\..\kingdom\savegame.cpp" />
+    <ClCompile Include="..\..\kingdom\savegame_config.cpp" />
+    <ClCompile Include="..\..\kingdom\settings.cpp" />
+    <ClCompile Include="..\..\kingdom\side_filter.cpp" />
+    <ClCompile Include="..\..\kingdom\soundsource.cpp" />
+    <ClCompile Include="..\..\kingdom\statistics.cpp" />
+    <ClCompile Include="..\..\kingdom\team.cpp" />
+    <ClCompile Include="..\..\kingdom\terrain_filter.cpp" />
+    <ClCompile Include="..\..\kingdom\tod_manager.cpp" />
+    <ClCompile Include="..\..\kingdom\unit.cpp" />
+    <ClCompile Include="..\..\kingdom\unit_abilities.cpp" />
+    <ClCompile Include="..\..\kingdom\unit_animation.cpp" />
+    <ClCompile Include="..\..\kingdom\unit_display.cpp" />
+    <ClCompile Include="..\..\kingdom\unit_helper.cpp" />
+    <ClCompile Include="..\..\kingdom\unit_id.cpp" />
+    <ClCompile Include="..\..\kingdom\unit_map.cpp" />
+    <ClCompile Include="..\..\kingdom\unit_types.cpp" />
+    <ClCompile Include="..\..\kingdom\variable.cpp" />
+    <ClCompile Include="..\..\kingdom\ai\configuration.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)ai\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)ai\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\ai\game_info.cpp">
+    <ClCompile Include="..\..\kingdom\ai\game_info.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)ai\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)ai\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\ai\manager.cpp">
+    <ClCompile Include="..\..\kingdom\ai\manager.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)ai\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)ai\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\ai\default\ai.cpp">
+    <ClCompile Include="..\..\kingdom\ai\default\ai.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)ai\default\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)ai\default\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\ai\default\attack.cpp">
+    <ClCompile Include="..\..\kingdom\ai\default\attack.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)ai\default\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)ai\default\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\action.cpp">
+    <ClCompile Include="..\..\kingdom\editor\action.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\brush.cpp">
+    <ClCompile Include="..\..\kingdom\editor\brush.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\editor_controller.cpp">
+    <ClCompile Include="..\..\kingdom\editor\editor_controller.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\editor_display.cpp">
+    <ClCompile Include="..\..\kingdom\editor\editor_display.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\editor_layout.cpp">
+    <ClCompile Include="..\..\kingdom\editor\editor_main.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\editor_main.cpp">
+    <ClCompile Include="..\..\kingdom\editor\editor_map.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\editor_map.cpp">
+    <ClCompile Include="..\..\kingdom\editor\editor_palettes.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\editor_palettes.cpp">
+    <ClCompile Include="..\..\kingdom\editor\editor_preferences.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\editor_preferences.cpp">
+    <ClCompile Include="..\..\kingdom\editor\map_context.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\map_context.cpp">
+    <ClCompile Include="..\..\kingdom\editor\map_fragment.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\map_fragment.cpp">
+    <ClCompile Include="..\..\kingdom\editor\mouse_action.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\editor\mouse_action.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)editor\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)editor\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\alipay.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\artifical_list.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\book.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\build_ea.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\camp_armory.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\alipay.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\campaign_selection.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\artifical_list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\city_list.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\auto_scroll.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\combo_box.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\book2.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\create_hero.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\build_ea.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\design.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\camp_armory.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\duel.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\campaign_selection.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\edit_box.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\city_list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\editor_generate_map.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\create_hero.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\editor_new_map.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\duel.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\editor_resize_map.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\editor_generate_map.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\editor_settings.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\editor_new_map.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\employ.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\editor_resize_map.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\exchange.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\editor_settings.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\exile.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\employ.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\expedite.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\exchange.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\final_battle.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\exile.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\formation_attack.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\expedite.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\game_delete.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\final_battle.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\game_load.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\formation_attack.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\game_save.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\game_delete.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\give.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\game_load.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\group.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\game_save.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\help_screen.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\group.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\hero.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\help_screen.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\hero_list.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\hero.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\hero_selection.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\hero_list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\inapp_purchase.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\hero_selection.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\independence.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\inapp_purchase.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\interior.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\independence.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\list.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\interior.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\lobby_main.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\map_generator.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\lobby_main.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\move_hero.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\map_generator.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\mp_cmd_wrapper.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\move_hero.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\mp_connect.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\mp_cmd_wrapper.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\mp_create_game.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\mp_connect.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\mp_create_game_set_password.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\mp_create_game.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\mp_login.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\mp_create_game_set_password.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\mp_method_selection.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\mp_method_selection.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\mp_side_creator.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\mp_side_creator.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\mp_side_wait.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\mp_side_wait.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\network_transmission.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\noble.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\noble.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\noble_list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\noble_list.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\personnel.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\personnel.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\play_card.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\play_card.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\player_city.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\player_city.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\player_selection.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\player_selection.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\preferences.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\preferences.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\prelude.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\prelude.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\random_map.cpp" />
+    <ClCompile Include="..\..\kingdom\gui\dialogs\recruit.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\random_map.cpp" />
-    <ClCompile Include="..\..\src\gui\dialogs\recruit.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\rpg_detail.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\rpg_detail.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\select_unit.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\select_unit.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\send_message.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\side_list.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\side_list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\side_report.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\side_report.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\siege_tent.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\siege_tent.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\signin.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\signin.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\square.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\square.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\strategy_list.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\strategy_list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\subcontinent.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\subcontinent.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\system.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\tactic.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\tactic.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\technology_tree.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\technology_tree.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\tent.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\tent.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\theme2.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\title_screen.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\title_screen.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\tower_tent.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\tower_tent.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\treasure.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\treasure.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\treasure_list.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\treasure_list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\troop_detail.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\troop_detail.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\troop_list.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\troop_list.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\troop_selection.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\troop_selection.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\unit_attack.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\unit_attack.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\unit_create.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\unit_create.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\unit_detail.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\unit_detail.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\unit_merit.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\unit_merit.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\user_message.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\user_message.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\user_report.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\user_report.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\lobby\lobby_data.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\lobby\lobby_data.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\lobby\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\lobby\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\gui\dialogs\lobby\lobby_info.cpp">
+    <ClCompile Include="..\..\kingdom\gui\dialogs\lobby\lobby_info.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)gui\dialogs\lobby\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)gui\dialogs\lobby\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\pathfind\astarsearch.cpp">
+    <ClCompile Include="..\..\kingdom\pathfind\astarsearch.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)pathfind\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)pathfind\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\pathfind\pathfind.cpp">
+    <ClCompile Include="..\..\kingdom\pathfind\pathfind.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)pathfind\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)pathfind\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\scripting\debug_lua.cpp">
+    <ClCompile Include="..\..\kingdom\scripting\debug_lua.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)scripting\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\scripting\lua.cpp">
+    <ClCompile Include="..\..\kingdom\scripting\lua.cpp">
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)scripting\</ObjectFileName>
       <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)scripting\</ObjectFileName>
     </ClCompile>
-    <ClCompile Include="..\..\src\storyscreen\controller.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)storyscreen\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)storyscreen\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\src\storyscreen\interface.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)storyscreen\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)storyscreen\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\src\storyscreen\part.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)storyscreen\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)storyscreen\</ObjectFileName>
-    </ClCompile>
-    <ClCompile Include="..\..\src\storyscreen\render.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)storyscreen\</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)storyscreen\</ObjectFileName>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\about.hpp" />
-    <ClInclude Include="..\..\src\actions.hpp" />
-    <ClInclude Include="..\..\src\artifical.hpp" />
-    <ClInclude Include="..\..\src\attack_prediction.hpp" />
-    <ClInclude Include="..\..\src\card.hpp" />
-    <ClInclude Include="..\..\src\cavegen.hpp" />
-    <ClInclude Include="..\..\src\construct_dialog.hpp" />
-    <ClInclude Include="..\..\src\controller_base.hpp" />
-    <ClInclude Include="..\..\src\dialogs.hpp" />
-    <ClInclude Include="..\..\src\filechooser.hpp" />
-    <ClInclude Include="..\..\src\floating_textbox.hpp" />
-    <ClInclude Include="..\..\src\game_display.hpp" />
-    <ClInclude Include="..\..\src\game_events.hpp" />
-    <ClInclude Include="..\..\src\game_preferences.hpp" />
-    <ClInclude Include="..\..\src\gamestatus.hpp" />
-    <ClInclude Include="..\..\src\hash.hpp" />
-    <ClInclude Include="..\..\src\intro.hpp" />
-    <ClInclude Include="..\..\src\lobby_preferences.hpp" />
-    <ClInclude Include="..\..\src\map_create.hpp" />
-    <ClInclude Include="..\..\src\mapgen.hpp" />
-    <ClInclude Include="..\..\src\mapgen_dialog.hpp" />
-    <ClInclude Include="..\..\src\md5.hpp" />
-    <ClInclude Include="..\..\src\menu_events.hpp" />
-    <ClInclude Include="..\..\src\mouse_events.hpp" />
-    <ClInclude Include="..\..\src\mouse_handler_base.hpp" />
-    <ClInclude Include="..\..\src\mp_game_settings.hpp" />
-    <ClInclude Include="..\..\src\multiplayer.hpp" />
-    <ClInclude Include="..\..\src\pathutils.hpp" />
-    <ClInclude Include="..\..\src\persist_context.hpp" />
-    <ClInclude Include="..\..\src\persist_manager.hpp" />
-    <ClInclude Include="..\..\src\persist_var.hpp" />
-    <ClInclude Include="..\..\src\play_controller.hpp" />
-    <ClInclude Include="..\..\src\playcampaign.hpp" />
-    <ClInclude Include="..\..\src\playmp_controller.hpp" />
-    <ClInclude Include="..\..\src\playsingle_controller.hpp" />
-    <ClInclude Include="..\..\src\playturn.hpp" />
-    <ClInclude Include="..\..\src\replay.hpp" />
-    <ClInclude Include="..\..\src\replay_controller.hpp" />
+    <ClInclude Include="..\..\kingdom\about.hpp" />
+    <ClInclude Include="..\..\kingdom\actions.hpp" />
+    <ClInclude Include="..\..\kingdom\artifical.hpp" />
+    <ClInclude Include="..\..\kingdom\attack_prediction.hpp" />
+    <ClInclude Include="..\..\kingdom\card.hpp" />
+    <ClInclude Include="..\..\kingdom\cavegen.hpp" />
+    <ClInclude Include="..\..\kingdom\dialogs.hpp" />
+    <ClInclude Include="..\..\kingdom\game_config.hpp" />
+    <ClInclude Include="..\..\kingdom\game_display.hpp" />
+    <ClInclude Include="..\..\kingdom\game_events.hpp" />
+    <ClInclude Include="..\..\kingdom\game_preferences.hpp" />
+    <ClInclude Include="..\..\kingdom\gamestatus.hpp" />
+    <ClInclude Include="..\..\kingdom\hash.hpp" />
+    <ClInclude Include="..\..\kingdom\lobby_preferences.hpp" />
+    <ClInclude Include="..\..\kingdom\map_create.hpp" />
+    <ClInclude Include="..\..\kingdom\mapgen.hpp" />
+    <ClInclude Include="..\..\kingdom\mapgen_dialog.hpp" />
+    <ClInclude Include="..\..\kingdom\md5.hpp" />
+    <ClInclude Include="..\..\kingdom\menu_events.hpp" />
+    <ClInclude Include="..\..\kingdom\mouse_events.hpp" />
+    <ClInclude Include="..\..\kingdom\mp_game_settings.hpp" />
+    <ClInclude Include="..\..\kingdom\multiplayer.hpp" />
+    <ClInclude Include="..\..\kingdom\pathutils.hpp" />
+    <ClInclude Include="..\..\kingdom\persist_context.hpp" />
+    <ClInclude Include="..\..\kingdom\persist_manager.hpp" />
+    <ClInclude Include="..\..\kingdom\persist_var.hpp" />
+    <ClInclude Include="..\..\kingdom\play_controller.hpp" />
+    <ClInclude Include="..\..\kingdom\playcampaign.hpp" />
+    <ClInclude Include="..\..\kingdom\playmp_controller.hpp" />
+    <ClInclude Include="..\..\kingdom\playsingle_controller.hpp" />
+    <ClInclude Include="..\..\kingdom\playturn.hpp" />
+    <ClInclude Include="..\..\kingdom\replay.hpp" />
+    <ClInclude Include="..\..\kingdom\replay_controller.hpp" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="..\..\src\resources.hpp" />
-    <ClInclude Include="..\..\src\save_blocker.hpp" />
-    <ClInclude Include="..\..\src\savegame.hpp" />
-    <ClInclude Include="..\..\src\savegame_config.hpp" />
-    <ClInclude Include="..\..\src\settings.hpp" />
-    <ClInclude Include="..\..\src\show_dialog.hpp" />
-    <ClInclude Include="..\..\src\side_filter.hpp" />
-    <ClInclude Include="..\..\src\soundsource.hpp" />
-    <ClInclude Include="..\..\src\statistics.hpp" />
-    <ClInclude Include="..\..\src\statistics_dialog.hpp" />
-    <ClInclude Include="..\..\src\team.hpp" />
-    <ClInclude Include="..\..\src\terrain_filter.hpp" />
-    <ClInclude Include="..\..\src\tod_manager.hpp" />
-    <ClInclude Include="..\..\src\unit.hpp" />
-    <ClInclude Include="..\..\src\unit_abilities.hpp" />
-    <ClInclude Include="..\..\src\unit_animation.hpp" />
-    <ClInclude Include="..\..\src\unit_display.hpp" />
-    <ClInclude Include="..\..\src\unit_helper.hpp" />
-    <ClInclude Include="..\..\src\unit_id.hpp" />
-    <ClInclude Include="..\..\src\unit_map.hpp" />
-    <ClInclude Include="..\..\src\unit_types.hpp" />
-    <ClInclude Include="..\..\src\variable.hpp" />
-    <ClInclude Include="..\..\src\ai\configuration.hpp" />
-    <ClInclude Include="..\..\src\ai\game_info.hpp" />
-    <ClInclude Include="..\..\src\ai\interface.hpp" />
-    <ClInclude Include="..\..\src\ai\manager.hpp" />
-    <ClInclude Include="..\..\src\ai\default\ai.hpp" />
-    <ClInclude Include="..\..\src\ai\default\attack.hpp" />
-    <ClInclude Include="..\..\src\editor\action.hpp" />
-    <ClInclude Include="..\..\src\editor\action_base.hpp" />
-    <ClInclude Include="..\..\src\editor\brush.hpp" />
-    <ClInclude Include="..\..\src\editor\editor_common.hpp" />
-    <ClInclude Include="..\..\src\editor\editor_controller.hpp" />
-    <ClInclude Include="..\..\src\editor\editor_display.hpp" />
-    <ClInclude Include="..\..\src\editor\editor_layout.hpp" />
-    <ClInclude Include="..\..\src\editor\editor_main.hpp" />
-    <ClInclude Include="..\..\src\editor\editor_map.hpp" />
-    <ClInclude Include="..\..\src\editor\editor_palettes.hpp" />
-    <ClInclude Include="..\..\src\editor\editor_preferences.hpp" />
-    <ClInclude Include="..\..\src\editor\map_context.hpp" />
-    <ClInclude Include="..\..\src\editor\map_fragment.hpp" />
-    <ClInclude Include="..\..\src\editor\mouse_action.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\alipay.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\artifical_list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\book.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\build_ea.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\camp_armory.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\campaign_selection.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\city_list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\combo_box.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\create_hero.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\design.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\duel.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\edit_box.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\editor_generate_map.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\editor_new_map.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\editor_resize_map.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\editor_settings.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\employ.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\exchange.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\exile.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\expedite.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\final_battle.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\formation_attack.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\game_delete.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\game_load.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\game_save.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\give.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\group.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\help_screen.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\hero.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\hero_list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\hero_selection.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\inapp_purchase.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\independence.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\interior.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\lobby_main.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\map_generator.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\move_hero.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\mp_cmd_wrapper.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\mp_connect.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\mp_create_game.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\mp_create_game_set_password.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\mp_login.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\mp_method_selection.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\mp_side_creator.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\mp_side_wait.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\network_transmission.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\noble.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\noble_list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\personnel.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\play_card.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\player_city.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\player_selection.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\preferences.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\prelude.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\random_map.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\recruit.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\rpg_detail.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\select_unit.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\side_list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\side_report.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\siege_tent.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\signin.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\square.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\strategy_list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\subcontinent.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\system.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\tactic.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\technology_tree.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\tent.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\title_screen.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\tower_tent.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\treasure.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\treasure_list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\troop_detail.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\troop_list.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\troop_selection.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\unit_attack.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\unit_create.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\unit_detail.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\unit_merit.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\user_message.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\user_report.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\lobby\lobby_data.hpp" />
-    <ClInclude Include="..\..\src\gui\dialogs\lobby\lobby_info.hpp" />
-    <ClInclude Include="..\..\src\pathfind\pathfind.hpp" />
-    <ClInclude Include="..\..\src\scripting\lua.hpp" />
-    <ClInclude Include="..\..\src\scripting\lua_api.hpp" />
-    <ClInclude Include="..\..\src\storyscreen\controller.hpp" />
-    <ClInclude Include="..\..\src\storyscreen\interface.hpp" />
-    <ClInclude Include="..\..\src\storyscreen\part.hpp" />
-    <ClInclude Include="..\..\src\storyscreen\render.hpp" />
+    <ClInclude Include="..\..\kingdom\resources.hpp" />
+    <ClInclude Include="..\..\kingdom\save_blocker.hpp" />
+    <ClInclude Include="..\..\kingdom\savegame.hpp" />
+    <ClInclude Include="..\..\kingdom\savegame_config.hpp" />
+    <ClInclude Include="..\..\kingdom\settings.hpp" />
+    <ClInclude Include="..\..\kingdom\side_filter.hpp" />
+    <ClInclude Include="..\..\kingdom\soundsource.hpp" />
+    <ClInclude Include="..\..\kingdom\statistics.hpp" />
+    <ClInclude Include="..\..\kingdom\team.hpp" />
+    <ClInclude Include="..\..\kingdom\terrain_filter.hpp" />
+    <ClInclude Include="..\..\kingdom\tod_manager.hpp" />
+    <ClInclude Include="..\..\kingdom\unit.hpp" />
+    <ClInclude Include="..\..\kingdom\unit_abilities.hpp" />
+    <ClInclude Include="..\..\kingdom\unit_animation.hpp" />
+    <ClInclude Include="..\..\kingdom\unit_display.hpp" />
+    <ClInclude Include="..\..\kingdom\unit_helper.hpp" />
+    <ClInclude Include="..\..\kingdom\unit_id.hpp" />
+    <ClInclude Include="..\..\kingdom\unit_map.hpp" />
+    <ClInclude Include="..\..\kingdom\unit_types.hpp" />
+    <ClInclude Include="..\..\kingdom\variable.hpp" />
+    <ClInclude Include="..\..\kingdom\ai\configuration.hpp" />
+    <ClInclude Include="..\..\kingdom\ai\game_info.hpp" />
+    <ClInclude Include="..\..\kingdom\ai\interface.hpp" />
+    <ClInclude Include="..\..\kingdom\ai\manager.hpp" />
+    <ClInclude Include="..\..\kingdom\ai\default\ai.hpp" />
+    <ClInclude Include="..\..\kingdom\ai\default\attack.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\action.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\action_base.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\brush.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\editor_common.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\editor_controller.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\editor_display.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\editor_main.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\editor_map.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\editor_palettes.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\editor_preferences.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\map_context.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\map_fragment.hpp" />
+    <ClInclude Include="..\..\kingdom\editor\mouse_action.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\alipay.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\artifical_list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\auto_scroll.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\book2.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\build_ea.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\camp_armory.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\campaign_selection.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\city_list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\create_hero.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\duel.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\editor_generate_map.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\editor_new_map.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\editor_resize_map.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\editor_settings.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\employ.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\exchange.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\exile.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\expedite.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\final_battle.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\formation_attack.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\game_delete.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\game_load.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\game_save.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\group.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\help_screen.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\hero.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\hero_list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\hero_selection.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\inapp_purchase.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\independence.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\interior.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\lobby_main.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\map_generator.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\move_hero.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\mp_cmd_wrapper.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\mp_connect.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\mp_create_game.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\mp_create_game_set_password.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\mp_method_selection.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\mp_side_creator.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\mp_side_wait.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\noble.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\noble_list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\personnel.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\play_card.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\player_city.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\player_selection.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\preferences.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\prelude.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\random_map.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\recruit.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\rpg_detail.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\select_unit.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\send_message.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\side_list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\side_report.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\siege_tent.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\signin.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\square.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\strategy_list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\subcontinent.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\tactic.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\technology_tree.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\tent.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\theme2.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\title_screen.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\tower_tent.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\treasure.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\treasure_list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\troop_detail.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\troop_list.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\troop_selection.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\unit_attack.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\unit_create.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\unit_detail.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\unit_merit.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\user_message.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\user_report.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\lobby\lobby_data.hpp" />
+    <ClInclude Include="..\..\kingdom\gui\dialogs\lobby\lobby_info.hpp" />
+    <ClInclude Include="..\..\kingdom\pathfind\pathfind.hpp" />
+    <ClInclude Include="..\..\kingdom\scripting\lua.hpp" />
+    <ClInclude Include="..\..\kingdom\scripting\lua_api.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="kingdom.ico" />
+    <None Include="..\..\packaging\windows\kingdom.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="kingdom.rc" />

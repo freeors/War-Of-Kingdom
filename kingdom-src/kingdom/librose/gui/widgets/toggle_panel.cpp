@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/toggle_panel.hpp"
 
@@ -38,7 +38,10 @@ ttoggle_panel::ttoggle_panel()
 	: tpanel(COUNT + 1)
 	, state_(ENABLED)
 	, retval_(0)
-	, callback_state_change_(0)
+	, at_(npos)
+	, frame_(false)
+	, callback_state_pre_change_()
+	, callback_state_change_()
 	, callback_mouse_left_double_click_()
 {
 	set_wants_mouse_left_double_click();
@@ -49,16 +52,12 @@ ttoggle_panel::ttoggle_panel()
 				&ttoggle_panel::signal_handler_mouse_leave, this, _2, _3));
 
 	connect_signal<event::LEFT_BUTTON_CLICK>(boost::bind(
-				  &ttoggle_panel::signal_handler_pre_left_button_click
-				, this, _2)
-			, event::tdispatcher::back_pre_child);
-	connect_signal<event::LEFT_BUTTON_CLICK>(boost::bind(
 				&ttoggle_panel::signal_handler_left_button_click
-					, this, _2, _3));
+					, this, _2, _3, _5));
 	connect_signal<event::LEFT_BUTTON_CLICK>(boost::bind(
 				  &ttoggle_panel::signal_handler_left_button_click
-				, this, _2, _3)
-			, event::tdispatcher::back_post_child);
+				, this, _2, _3, _5), event::tdispatcher::back_post_child);
+
 	connect_signal<event::LEFT_BUTTON_DOUBLE_CLICK>(boost::bind(
 				  &ttoggle_panel::signal_handler_left_button_double_click
 				, this, _2, _3));
@@ -154,9 +153,29 @@ void ttoggle_panel::set_state(const tstate state)
 	assert(conf);
 }
 
+void ttoggle_panel::update_canvas()
+{
+	// Inherit.
+	tcontrol::update_canvas();
+
+	bool last_row = false;
+	tgrid* grid = dynamic_cast<tgrid*>(parent_);
+	if (grid && grid->children_vsize()) {
+		last_row = grid->child(grid->children_vsize() - 1).widget_ == this;
+	}
+	
+	// set icon in canvases
+	canvas(0).set_variable("last_row", variant(last_row));
+}
+
 bool ttoggle_panel::exist_anim()
 {
 	return tcontrol::exist_anim() || (state_ >= ENABLED_SELECTED && canvas(COUNT).exist_anim());
+}
+
+bool ttoggle_panel::can_selectable() const
+{
+	return get_active() && get_visible() == twidget::VISIBLE;
 }
 
 void ttoggle_panel::impl_draw_foreground(surface& frame_buffer, int x_offset, int y_offset)
@@ -205,31 +224,38 @@ void ttoggle_panel::signal_handler_mouse_leave(
 	handled = true;
 }
 
-void ttoggle_panel::signal_handler_pre_left_button_click(
-		const event::tevent event)
+void ttoggle_panel::signal_handler_pre_left_button_click(const event::tevent event)
 {
 	DBG_GUI_E << get_control_type() << "[" << id() << "]: " << event << ".\n";
 
 	set_value(true);
-	if(callback_state_change_) {
+	if (callback_state_change_) {
 		callback_state_change_(this);
 	}
 }
 
-void ttoggle_panel::signal_handler_left_button_click(
-		const event::tevent event, bool& handled)
+void ttoggle_panel::signal_handler_left_button_click(const event::tevent event, bool& handled, const int type)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
 
-	sound::play_UI_sound(settings::sound_toggle_panel_click);
+	// sound::play_UI_sound(settings::sound_toggle_panel_click);
 
-	if(get_value()) {
+	if (callback_state_pre_change_) {
+		if (!callback_state_pre_change_(this, type)) {
+			handled = true;
+			return;
+		}
+	}
+
+	set_value(true);
+/*
+	if (get_value()) {
 		set_state(ENABLED);
 	} else {
 		set_state(ENABLED_SELECTED);
 	}
-
-	if(callback_state_change_) {
+*/
+	if (callback_state_change_) {
 		callback_state_change_(this);
 	}
 	handled = true;

@@ -208,12 +208,10 @@ void gamemap::read(const std::string& data)
 		usage_ = IS_MAP;
 		symbols["border_size_val"] = "1";
 		// BUG! to editor, it cannot support vgettext.
-		// VALIDATE(border_size_ == 1, vgettext(msg.c_str(), symbols));
 	} else if(usage == "mask") {
 		usage_ = IS_MASK;
 		symbols["border_size_val"] = "0";
 		// BUG! to editor, it cannot support vgettext.
-		// VALIDATE(border_size_ == 0, vgettext(msg.c_str(), symbols));
 	} else if(usage == "") {
 		throw incorrect_map_format_error("Map has a header but no usage");
 	} else {

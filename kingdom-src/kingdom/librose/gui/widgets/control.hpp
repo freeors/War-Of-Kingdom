@@ -18,8 +18,7 @@
 
 #include "gui/auxiliary/widget_definition.hpp"
 #include "gui/widgets/widget.hpp"
-#include "../../text.hpp"
-#include "../../integrate.hpp"
+#include "integrate.hpp"
 
 namespace gui2 {
 
@@ -32,6 +31,8 @@ class tcontrol : public virtual twidget
 {
 	friend class tdebug_layout_graph;
 public:
+	static bool force_add_to_dirty_list;
+
 	class ttext_maximum_width_lock
 	{
 	public:
@@ -49,6 +50,23 @@ public:
 	private:
 		tcontrol& widget_;
 		int original_;
+	};
+
+	class tadd_to_dirty_list_lock
+	{
+	public:
+		tadd_to_dirty_list_lock()
+			: force_add_to_dirty_list_(force_add_to_dirty_list)
+		{
+			force_add_to_dirty_list = true;
+		}
+		~tadd_to_dirty_list_lock()
+		{
+			force_add_to_dirty_list = force_add_to_dirty_list_;
+		}
+
+	private:
+		bool force_add_to_dirty_list_;
 	};
 
 	/** @deprecated Used the second overload. */
@@ -100,6 +118,8 @@ public:
 	int insert_animation(const ::config& cfg, bool pre);
 	void erase_animation(int id);
 
+	void set_canvas_variable(const std::string& name, const variant& value);
+
 protected:
 	/** Returns the id of the state.
 	 *
@@ -123,15 +143,6 @@ public:
 	virtual iterator::twalker_* create_walker();
 
 	/***** ***** ***** ***** layout functions ***** ***** ***** *****/
-
-	/**
-	 * Gets the minimum size as defined in the config.
-	 *
-	 * @pre                       config_ !=  NULL
-	 *
-	 * @returns                   The size.
-	 */
-	tpoint get_config_minimum_size() const;
 
 	/**
 	 * Gets the default size as defined in the config.
@@ -167,21 +178,33 @@ public:
 	 * use_tooltip_on_label_overflow_. */
 	void layout_init(const bool full_initialization);
 
-	/** Inherited from twidget. */
-	void request_reduce_width(const unsigned maximum_width);
-
 	void refresh_locator_anim(std::vector<tintegrate::tlocator>& locator);
+	void set_integrate_default_color(const SDL_Color& color);
 
 	virtual void set_surface(const surface& surf, int w, int h);
 
-protected:
 	/** Inherited from twidget. */
 	tpoint calculate_best_size() const;
 
+	tpoint request_reduce_width(const unsigned maximum_width);
+
+	bool drag_detect_started() const { return drag_detect_started_; }
+	const tpoint& first_drag_coordinate() const { return first_drag_coordinate_; }
+	const tpoint& last_drag_coordinate() const { return last_drag_coordinate_; }
+	void control_drag_detect(bool start, int x = npos, int y = npos, const tdrag_direction type = drag_none);
+	void set_drag_coordinate(int x, int y);
+	int drag_satisfied();
+	void set_enable_drag_draw_coordinate(bool enable) { enable_drag_draw_coordinate_ = enable; }
+
+	void set_draw_offset(int x, int y);
+	const tpoint& draw_offset() const { return draw_offset_; }
+
+protected:
 	virtual bool exist_anim();
 	virtual void calculate_integrate();
 
 	tintegrate* integrate_;
+	SDL_Color integrate_default_color_;
 	std::vector<tintegrate::tlocator> locator_;
 
 	/**
@@ -303,6 +326,18 @@ public:
 	void set_text_maximum_width(int maximum);
 	void clear_label_size_cache();
 
+	void set_callback_place(boost::function<void (tcontrol*, const SDL_Rect&)> callback)
+		{ callback_place_ = callback; }
+
+	void set_callback_control_drag_detect(boost::function<bool (tcontrol*, bool start, const tdrag_direction)> callback)
+		{ callback_control_drag_detect_ = callback; }
+
+	void set_callback_set_drag_coordinate(boost::function<bool (tcontrol*, const tpoint& first, const tpoint& last)> callback)
+		{ callback_set_drag_coordinate_ = callback; }
+
+	void set_callback_pre_impl_draw_children(boost::function<void (tcontrol*, surface&, int, int)> callback)
+		{ callback_pre_impl_draw_children_ = callback; }
+
 protected:
 	void set_config(tresolution_definition_ptr config) { config_ = config; }
 
@@ -338,6 +373,15 @@ protected:
 	/** Read only for the label? */
 	bool text_editable_;
 
+	bool drag_detect_started_;
+	tpoint first_drag_coordinate_;
+	tpoint last_drag_coordinate_;
+	bool enable_drag_draw_coordinate_;
+
+	tpoint draw_offset_;
+
+	boost::function<void (tcontrol*, surface& frame_buffer, int x_offset, int y_offset)> callback_pre_impl_draw_children_;
+
 private:
 	/**
 	 * The definition is the id of that widget class.
@@ -352,6 +396,13 @@ private:
 
 	std::vector<int> pre_anims_;
 	std::vector<int> post_anims_;
+
+	// call when after place.
+	boost::function<void (tcontrol*, const SDL_Rect&)> callback_place_;
+
+	boost::function<bool (tcontrol*, bool start, const tdrag_direction type)> callback_control_drag_detect_;
+
+	boost::function<bool (tcontrol*, const tpoint& first, const tpoint& last)> callback_set_drag_coordinate_;
 
 	/**
 	 * If the text doesn't fit on the label should the text be used as tooltip?
@@ -415,18 +466,6 @@ private:
 	 */
 	void definition_load_configuration(const std::string& control_type);
 
-public:
-	/**
-	 * Returns the control_type of the control.
-	 *
-	 * The control_type parameter for tgui_definition::get_control() To keep the
-	 * code more generic this type is required so the controls need to return
-	 * the proper string here.  Might be used at other parts as well the get the
-	 * type of
-	 * control involved.
-	 */
-	virtual const std::string& get_control_type() const = 0;
-
 protected:
 	/** Inherited from twidget. */
 	void impl_draw_background(
@@ -441,18 +480,9 @@ protected:
 			, int /*y_offset*/)
 	{ /* do nothing */ }
 
-private:
+	void child_populate_dirty_list(twindow& caller, const std::vector<twidget*>& call_stack);
 
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-	/**
-	 * Initializes the control.
-	 *
-	 * Not everything can be code in the constructor since virtual functions
-	 * can't be used. So after contruction this function needs to be called and
-	 * only once, this happens when set_definition is called.
-	 */
-	virtual void init() {}
-#endif
+private:
 
 	/**
 	 * Gets the best size for a text.
@@ -492,11 +522,6 @@ private:
 	/***** ***** ***** signal handlers ***** ****** *****/
 
 	void signal_handler_show_tooltip(
-			  const event::tevent event
-			, bool& handled
-			, const tpoint& location);
-
-	void signal_handler_show_helptip(
 			  const event::tevent event
 			, bool& handled
 			, const tpoint& location);

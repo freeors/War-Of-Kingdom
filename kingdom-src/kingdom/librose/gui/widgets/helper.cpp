@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/helper.hpp"
 
@@ -21,7 +21,7 @@
 #include "gui/widgets/settings.hpp"
 
 #include "formula_string_utils.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "SDL_ttf.h"
 
 namespace gui2 {
@@ -68,11 +68,16 @@ Uint32 decode_color(const std::string& color)
 {
 	std::vector<std::string> fields = utils::split(color);
 
+	if (fields.size() == 1 && !utils::isinteger(fields[0].c_str())) {
+		// decode by canvas variable.
+		return MAGIC_COLOR;
+	}
+
 	// make sure we have four fields
-	while(fields.size() < 4) fields.push_back("0");
+	while (fields.size() < 4) fields.push_back("0");
 
 	Uint32 result = 0;
-	for(int i = 0; i < 4; ++i) {
+	for (int i = 0; i < 4; ++i) {
 		// shift the previous value before adding, since it's a nop on the
 		// first run there's no need for an if.
 		result = result << 8;
@@ -114,17 +119,16 @@ t_string missing_widget(const std::string& id)
 	utils::string_map symbols;
 	symbols["id"] = id;
 
-	return t_string(vgettext("Mandatory widget '$id' hasn't been defined.", symbols));
+	return t_string(vgettext2("Mandatory widget '$id' hasn't been defined.", symbols));
 }
 
 void get_screen_size_variables(game_logic::map_formula_callable& variable)
 {
 	variable.add("screen_width", variant(settings::screen_width));
 	variable.add("screen_height", variant(settings::screen_height));
-	variable.add("gamemap_width", variant(settings::gamemap_width));
-	variable.add("gamemap_height", variant(settings::gamemap_height));
+	variable.add("hdpi_ratio", variant(twidget::hdpi_ratio));
 	variable.add("default_gui", variant(!game_config::tiny_gui));
-	variable.add("vga", variant((settings::screen_width >= 640 && settings::screen_height >= 480)? true: false));
+	variable.add("vga", variant(settings::screen_width >= 640 * twidget::hdpi_ratio && settings::screen_height >= 480 * twidget::hdpi_ratio));
 }
 
 game_logic::map_formula_callable get_screen_size_variables()

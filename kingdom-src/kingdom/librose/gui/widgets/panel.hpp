@@ -36,10 +36,7 @@ public:
 	 *
 	 * @param canvas_count        The canvas count for tcontrol.
 	 */
-	explicit tpanel(const unsigned canvas_count = 2) :
-		tcontainer_(canvas_count)
-	{
-	}
+	explicit tpanel(const unsigned canvas_count = 2) ;
 
 	/**
 	 * Returns the client rect.
@@ -59,7 +56,11 @@ public:
 
 	bool exist_anim();
 
-private:
+	void set_hole_variable(int left, int right);
+
+	/** Inherited from tcontrol. */
+	void update_canvas();
+
 	/** Inherited from tcontrol. */
 	void impl_draw_background(
 			  surface& frame_buffer
@@ -71,12 +72,15 @@ private:
 			  surface& frame_buffer
 			, int x_offset
 			, int y_offset);
-
+private:
 	/** Inherited from tcontrol. */
 	const std::string& get_control_type() const;
 
 	/** Inherited from tcontainer_. */
 	tpoint border_space() const;
+
+	int hole_left_;
+	int hole_right_;
 
 	/** Inherited from tcontainer_. */
 	void set_self_active(const bool /*active*/) {}

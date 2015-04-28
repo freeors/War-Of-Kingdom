@@ -28,6 +28,10 @@ struct tbuilder_image
 	explicit tbuilder_image(const config& cfg);
 
 	twidget* build () const;
+
+private:
+	tformula<unsigned> width_;
+	tformula<unsigned> height_;
 };
 
 } // namespace implementation

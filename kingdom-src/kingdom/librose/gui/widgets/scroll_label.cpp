@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/scroll_label.hpp"
 
@@ -25,7 +25,6 @@
 #include "gui/widgets/scrollbar.hpp"
 #include "gui/widgets/spacer.hpp"
 #include "gui/widgets/window.hpp"
-#include "gui/auxiliary/layout_exception.hpp"
 
 #include <boost/bind.hpp>
 
@@ -92,9 +91,12 @@ tpoint tscroll_label::calculate_best_size() const
 	unsigned w = best_width_(window->variables());
 
 	unsigned maximum_width = settings::screen_width;
-	if (w > settings::screen_width) {
+	if (w) {
 		const tpoint vertical_scrollbar = scrollbar_size(*vertical_scrollbar_grid_, vertical_scrollbar_mode_);
-		maximum_width = w - settings::screen_width - vertical_scrollbar.x;
+		maximum_width = w - vertical_scrollbar.x;
+		if (maximum_width > settings::screen_width) {
+			maximum_width -= settings::screen_width;
+		}
 	}
 
 	tlabel* label = dynamic_cast<tlabel*>(content_grid_->find("_label", false));
@@ -103,19 +105,34 @@ tpoint tscroll_label::calculate_best_size() const
 	return tscrollbar_container::calculate_best_size();
 }
 
-void tscroll_label::set_content_size(const tpoint& origin, const tpoint& desire_size)
+tpoint tscroll_label::request_reduce_width(const unsigned maximum_width)
+{
+	unsigned w = maximum_width;
+	const tpoint vertical_scrollbar = scrollbar_size(*vertical_scrollbar_grid_, vertical_scrollbar_mode_);
+	w -= vertical_scrollbar.x;
+
+	tlabel* label = dynamic_cast<tlabel*>(content_grid_->find("_label", false));
+
+	ttext_maximum_width_lock lock(*label, w);
+	tpoint size = tscrollbar_container::calculate_best_size();
+
+	insert_reduce_widget(this, size);
+	return size;
+}
+
+void tscroll_label::place_content_grid(const tpoint& content_origin, const tpoint& content_size, const tpoint& desire_origin)
 {
 	tlabel* label = dynamic_cast<tlabel*>(content_grid()->find("_label", false));
-	label->set_text_maximum_width(desire_size.x);
+	label->set_text_maximum_width(content_size.x);
 
 	const tpoint actual_size = content_grid_->get_best_size();
-	bool changed = calculate_scrollbar(actual_size, desire_size);
+	bool changed = calculate_scrollbar(actual_size, content_size);
 	if (changed) {
 		label->clear_label_size_cache();
 	}
 
-	const tpoint size(std::max(actual_size.x, desire_size.x), std::max(actual_size.y, desire_size.y));
-	tscrollbar_container::set_content_size(origin, size);
+	const tpoint size(std::max(actual_size.x, content_size.x), std::max(actual_size.y, content_size.y));
+	content_grid_->place(desire_origin, size);
 }
 
 bool tscroll_label::content_empty() const

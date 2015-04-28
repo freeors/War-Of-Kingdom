@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/toggle_button.hpp"
 
@@ -59,6 +59,7 @@ ttoggle_button::ttoggle_button()
 	, state_(ENABLED)
 	, radio_(false)
 	, retval_(0)
+	, callback_state_pre_change_()
 	, callback_state_change_()
 	, icon_name_()
 {
@@ -69,7 +70,7 @@ ttoggle_button::ttoggle_button()
 
 	connect_signal<event::LEFT_BUTTON_CLICK>(boost::bind(
 				&ttoggle_button::signal_handler_left_button_click
-					, this, _2, _3));
+					, this, _2, _3, _4));
 	connect_signal<event::LEFT_BUTTON_DOUBLE_CLICK>(boost::bind(
 				&ttoggle_button::signal_handler_left_button_double_click
 					, this, _2, _3));
@@ -148,6 +149,11 @@ void ttoggle_button::set_state(const tstate state)
 	}
 }
 
+bool ttoggle_button::can_selectable() const
+{
+	return get_active() && get_visible() == twidget::VISIBLE;
+}
+
 const std::string& ttoggle_button::get_control_type() const
 {
 	static const std::string type = "toggle_button";
@@ -189,7 +195,7 @@ void ttoggle_button::signal_handler_mouse_leave(
 }
 
 void ttoggle_button::signal_handler_left_button_click(
-		const event::tevent event, bool& handled)
+		const event::tevent event, bool& handled, bool& halt)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
 
@@ -197,7 +203,15 @@ void ttoggle_button::signal_handler_left_button_click(
 		return;
 	}
 
-	sound::play_UI_sound(settings::sound_toggle_button_click);
+	// sound::play_UI_sound(settings::sound_toggle_button_click);
+
+	if (callback_state_pre_change_) {
+		if (!callback_state_pre_change_(this)) {
+			handled = true;
+			halt = true;
+			return;
+		}
+	}
 
 	if (get_value()) {
 		set_state(ENABLED);
@@ -216,7 +230,7 @@ void ttoggle_button::signal_handler_left_button_double_click(
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
 
-	if(retval_ == 0) {
+	if (retval_ == 0) {
 		return;
 	}
 

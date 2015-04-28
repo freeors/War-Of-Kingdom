@@ -12,7 +12,7 @@
 
    See the COPYING file for more details.
 */
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 
@@ -28,61 +28,11 @@
 #include "integrate.hpp"
 #include "proto_irc.hpp"
 #include "posix.h"
+#include "display.hpp"
+#include "gui/dialogs/transient_message.hpp"
+#include "gui/dialogs/network_transmission.hpp"
 
-struct tfopen_lock
-{
-	tfopen_lock(const std::string& file, bool read_only)
-		: fp(INVALID_FILE)
-		, data(NULL)
-		, data_size(0)
-	{
-		if (read_only) {
-			posix_fopen(file.c_str(), GENERIC_READ, OPEN_EXISTING, fp);
-		} else {
-			posix_fopen(file.c_str(), GENERIC_WRITE, CREATE_ALWAYS, fp);
-		}
-	}
-
-	~tfopen_lock()
-	{
-		close();
-	}
-
-	bool valid() const { return fp != INVALID_FILE; }
-
-	void resize_data(int size, int vsize = 0)
-	{
-		if (size > data_size) {
-			char* tmp = (char*)malloc(size);
-			if (data) {
-				if (vsize) {
-					memcpy(tmp, data, vsize);
-				}
-				free(data);
-			}
-			data = tmp;
-			data_size = size;
-		}
-	}
-
-	void close()
-	{
-		if (data) {
-			free(data);
-			data = NULL;
-			data_size = 0;
-		}
-		if (fp != INVALID_FILE) {
-			posix_fclose(fp);
-			fp = INVALID_FILE;
-		}
-	}
-
-public:
-	posix_file_t fp;
-	char* data;
-	int data_size;
-};
+int dbg_error_no = 0;
 
 tlobby* lobby = NULL;
 
@@ -306,8 +256,9 @@ void tsock::reset_connect()
 	network::disconnect(conn_);
 	state_ = s_none;
 	conn_ = network::null_connection;
+	// sock2_ = NULL;
 
-	lobby->broadcast_handle_raw(at_, t_disconnected, NULL);
+	lobby->broadcast_handle_status(at_, t_disconnected);
 }
 
 bool tsock::check_time_overflow(Uint32 threshold)
@@ -332,14 +283,14 @@ bool tsock::check_time_overflow(Uint32 threshold)
 
 		utils::string_map symbols;
 		symbols["threshold"] = str_cast(threshold / 1000);
-		std::string str = vgettext("wesnoth-lib", "Have not received data in $threshold sec!", symbols);
+		std::string str = vgettext2("Have not received data in $threshold sec!", symbols);
 
 		symbols["error"] = tintegrate::generate_format(str, "red");
 		if (distance > 1000) {
 			symbols["distance"] = str_cast(distance / 1000); 
-			err = vgettext("wesnoth-lib", "$error will reconnect after $distance sec.", symbols);
+			err = vgettext2("$error will reconnect after $distance sec.", symbols);
 		} else {
-			err = vgettext("wesnoth-lib", "$error will Reconnect immediately!", symbols);
+			err = vgettext2("$error will Reconnect immediately!", symbols);
 		}
 		lobby->add_log(*this, err);
 		reset_connect();
@@ -364,9 +315,9 @@ void tsock::process_error(const std::string& err_str)
 	symbols["error"] = tintegrate::generate_format(err_str2, "red");
 	if (distance > 1000) {
 		symbols["distance"] = str_cast(distance / 1000); 
-		err = vgettext("wesnoth-lib", "$error will reconnect after $distance sec.", symbols);
+		err = vgettext2("$error will reconnect after $distance sec.", symbols);
 	} else {
-		err = vgettext("wesnoth-lib", "$error will Reconnect immediately!", symbols);
+		err = vgettext2("$error will Reconnect immediately!", symbols);
 	}
 
 	lobby->add_log(*this, err);
@@ -400,8 +351,8 @@ int tlobby_user::get_uid(const std::string& nick2, bool must_exist)
 
 	std::string nick = nick2;
 	
-	if (lobby->chat.serv()) {
-		char* nick_prefixes = lobby->chat.serv()->nick_prefixes;
+	if (lobby->chat->serv()) {
+		char* nick_prefixes = lobby->chat->serv()->nick_prefixes;
 		if (strchr(nick_prefixes, nick[0])) {
 			VALIDATE(false, "nick has invalid prefix!");
 		}
@@ -506,7 +457,7 @@ tlobby_user& tlobby_channel::get_user(int uid) const
 
 tlobby_user& tlobby_channel::insert_user(int uid, const std::string& nick)
 {
-	tlobby_user& user = lobby->chat.insert_user(uid, nick, cid);
+	tlobby_user& user = lobby->chat->insert_user(uid, nick, cid);
 	users.push_back(&user);
 	return user;
 }
@@ -519,7 +470,7 @@ void tlobby_channel::erase_user(int uid)
 		const tlobby_user& u = **it;
 		if (uid == npos || u.uid == uid) {
 			current_id = u.uid;
-			lobby->chat.erase_user(current_id, cid); // after it, u.uid became invalid!
+			lobby->chat->erase_user(current_id, cid); // after it, u.uid became invalid!
 			if (current_id == uid) {
 				users.erase(it);
 				return;
@@ -562,7 +513,7 @@ void add(int id, bool channel, const tlobby_user& sender, const std::string& msg
 		} else if (log.t < t) {
 			diff = t - log.t;
 		}
-		if (diff <= 2 && sender.nick == log.nick) {
+		if (diff <= 5 && sender.nick == log.nick) {
 			std::stringstream ss;
 			ss << log.msg << "\n" << msg;
 			log.msg = ss.str();
@@ -658,7 +609,7 @@ void verify_logfile_data(const std::string& ansifile)
 	uint32_t bytertd;
 	int index_offset, index_size;
 
-	tfopen_lock lock(ansifile, true);
+	tfopen_lock lock(ansifile, GENERIC_READ, OPEN_EXISTING);
 	bool ret = valid_logfile(lock, &index_offset, &index_size);
 	if (!ret) {
 		return;
@@ -703,7 +654,7 @@ void restore_from_logfile()
 	std::string file = get_user_data_dir_utf8() + "/data/" + history_log;
 	conv_ansi_utf8(file, false);
 
-	tfopen_lock lock(file, true);
+	tfopen_lock lock(file, GENERIC_READ, OPEN_EXISTING);
 	if (!valid_logfile(lock, &index_offset, &index_size)) {
 		return;
 	}
@@ -722,7 +673,7 @@ void user_from_logfile(const thistory_log& user, std::vector<tlog>& logs)
 	std::string file = get_user_data_dir_utf8() + "/data/" + history_log;
 	conv_ansi_utf8(file, false);
 
-	tfopen_lock lock(file, true);
+	tfopen_lock lock(file, GENERIC_READ, OPEN_EXISTING);
 	if (!valid_logfile(lock, NULL, NULL)) {
 		return;
 	}
@@ -769,7 +720,7 @@ void save_temp_logfile()
 	std::string file = get_user_data_dir_utf8() + "/data/" + temp_log;
 	conv_ansi_utf8(file, false);
 
-	tfopen_lock lock(file, false);
+	tfopen_lock lock(file, GENERIC_WRITE, CREATE_ALWAYS);
 	if (!lock.valid()) {
 		return;
 	}
@@ -889,7 +840,7 @@ void combine_logfile()
 	int temp_index_offset, temp_index_size, history_index_offset, history_index_size;
 
 	conv_ansi_utf8(temp_file, false);
-	tfopen_lock temp(temp_file, true);
+	tfopen_lock temp(temp_file, GENERIC_READ, OPEN_EXISTING);
 	if (!valid_logfile(temp, &temp_index_offset, &temp_index_size)) {
 		return;
 	}
@@ -903,7 +854,7 @@ void combine_logfile()
 	// open previous history.log for read
 	std::set<thistory_log> history_logs2;
 	conv_ansi_utf8(history_file, false);
-	tfopen_lock history(history_file, true);
+	tfopen_lock history(history_file, GENERIC_READ, OPEN_EXISTING);
 	if (valid_logfile(history, &history_index_offset, &history_index_size)) {
 		history.resize_data(history_index_size);
 		posix_fseek(history.fp, history_index_offset, 0);
@@ -930,7 +881,7 @@ void combine_logfile()
 
 	// create result.log for write
 	conv_ansi_utf8(result_file, false);
-	tfopen_lock result(result_file, false);
+	tfopen_lock result(result_file, GENERIC_WRITE, CREATE_ALWAYS);
 	if (!result.valid()) {
 		return;
 	}
@@ -1050,6 +1001,7 @@ tlobby::tchat_sock::tchat_sock()
 	, last_task_time_(0)
 	, online_offline_received_(false)
 {
+	tag_ = _("Chat");
 	task_threshold_ = noresponse_threshold_;
 	msg_send_gap = 200;
 
@@ -1084,7 +1036,7 @@ tlobby::tchat_sock::~tchat_sock()
 void tlobby::tchat_sock::save_preferences()
 {
 	std::stringstream person_ss, channel_ss;
-	for (std::map<int, tlobby_channel>::iterator it = lobby->chat.channels.begin(); it != lobby->chat.channels.end(); ++ it) {
+	for (std::map<int, tlobby_channel>::iterator it = lobby->chat->channels.begin(); it != lobby->chat->channels.end(); ++ it) {
 		bool person = !tlobby_channel::is_allocatable(it->first);
 		tlobby_channel& channel = it->second;
 		if (person) {
@@ -1116,7 +1068,7 @@ void tlobby::tchat_sock::set_host(const std::string& host, int port)
 
 void tlobby::tchat_sock::reset_connect()
 {
-	for (std::map<int, tlobby_channel>::iterator it = lobby->chat.channels.begin(); it != lobby->chat.channels.end(); ++ it) {
+	for (std::map<int, tlobby_channel>::iterator it = lobby->chat->channels.begin(); it != lobby->chat->channels.end(); ++ it) {
 		bool person = !tlobby_channel::is_allocatable(it->first);
 		tlobby_channel& channel = it->second;
 		if (person) {
@@ -1155,8 +1107,6 @@ void tlobby::tchat_sock::process()
 
 		nick_ = lobby->nick_;
 		if (!serv_) {
-			tag_ = _("Chat");
-
 			serv_ = irc::server_new(generate_ircnet());
 			serv_->sock = this;
 			strcpy(serv_->servername, host_.c_str());
@@ -1411,7 +1361,7 @@ bool tlobby::tchat_sock::join_channel(tlobby_channel& channel, bool force)
 	}
 	std::stringstream ss;
 	ss << "Want join channel: " << channel.nick;
-	lobby->add_log(lobby->chat, ss.str());
+	lobby->add_log(*lobby->chat, ss.str());
 
 	serv_->p_join(serv_, channel.nick.c_str(), channel.key.c_str());
 	if (force) {
@@ -1522,7 +1472,7 @@ void tlobby::tchat_sock::resize_line_buf(int size, int vsize)
 	}
 }
 
-SOCKET_STATE tlobby::tchat_sock::receive_buf(std::vector<char>& buf)
+SOCKET_STATE tlobby::tchat_sock::receive_buf(textendable_buf& buf)
 {
 	const int min_raw_data_size = 1024;
 	const int chunk_size = 1024;
@@ -1539,12 +1489,14 @@ SOCKET_STATE tlobby::tchat_sock::receive_buf(std::vector<char>& buf)
 		}
 		bool res = network::receive_with_timeout(*this, raw_data_ + raw_data_vsize_, chunk_size, true, 30000, 300000, &ret_size);
 		if (!res) {
+			dbg_error_no = 1;
 			return SOCKET_ERRORED;
 		}
 		raw_data_vsize_ += ret_size;
 	} while (ret_size == chunk_size);
 
 	if (!raw_data_vsize_) {
+		dbg_error_no = 2;
 		return SOCKET_ERRORED;
 	}
 
@@ -1557,8 +1509,8 @@ SOCKET_STATE tlobby::tchat_sock::receive_buf(std::vector<char>& buf)
 	}
 
 	last_lf ++;
-	buf.resize(last_lf);
-	memcpy(&buf[0], raw_data_, last_lf);
+
+	buf.put(raw_data_, last_lf);
 
 	if (last_lf != raw_data_vsize_) {
 		memmove(raw_data_, raw_data_ + last_lf, raw_data_vsize_ - last_lf);
@@ -1590,13 +1542,17 @@ void tlobby::tchat_sock::tcp_send_len(char* buf, int len)
 void tlobby::tchat_sock::handle_command(const char* param[])
 {
 	std::stringstream ss;
+	utils::string_map symbols;
 
 	if (state_ == s_consult) {
 		if (!strcasecmp(param[0], "NICKERR")) {
 			ss.str("");
 
-			VALIDATE(utils::to_int(param[2]) != 1, "Invalid nick!");
+			symbols["nick"] = tintegrate::generate_format(nick_, "red");
+			symbols["account"] = tintegrate::generate_format(_("Register, config account"), "yellow");
+			VALIDATE(utils::to_int(param[2]) != 1, vgettext2("$nick is invalid nick when chat! To set up: Press $account in \"Player profile\" Setting, and set valid nick when chat.", symbols));
 
+			ss.str("");
 			nick_ = nick_ + "_";
 			ss << tintegrate::generate_format(param[1], "red") << " is already in use. Retrying with ";
 			ss << tintegrate::generate_format(nick_, "yellow");
@@ -1618,7 +1574,7 @@ void tlobby::tchat_sock::handle_command(const char* param[])
 			me->me = true;
 
 			state_ = s_ready;
-			lobby->broadcast_handle_raw(at_, t_connected, param);
+			lobby->broadcast_handle_status(at_, t_connected);
 			return;
 		}
 
@@ -1823,7 +1779,7 @@ bool tlobby::tchat_sock::process_userlist_th(const std::string& chan, const std:
 		channel.users_receiving = true;
 	}
 
-	char* nick_prefixes = lobby->chat.serv()->nick_prefixes;
+	char* nick_prefixes = lobby->chat->serv()->nick_prefixes;
 	std::string nopre_nick;
 	for (std::vector<std::string>::const_iterator it = users.begin(); it != users.end(); ++ it) {
 		nopre_nick = *it;
@@ -1988,16 +1944,65 @@ void tlobby::tchat_sock::process_quit_bh(const std::string& nick)
 
 void tlobby::thttp_sock::process()
 {
+	const char* data = NULL;
+	int len = 0;
+	std::vector<char> buf;
+
+	if (state_ == s_none) {
+		if (tag_.empty()) {
+			tag_ = _("HTTP");
+		}
+
+		connected_at_ = 0;
+		conn_ = network::null_connection;
+
+		VALIDATE(conn_ == network::null_connection, "s_none, must be null_connection");
+		threading::waiter waiter;
+		network::connect(*this, host_, port_, waiter);
+		
+		state_ = s_create;
+
+	} else if (state_ == s_create) {
+		// create sock thread must be successfully. it is different from create sock successfully.
+		// connected_at_ != 0 mean thread successfully.
+		// conn_ != network::null_connection mean sock successfully.
+		if (connected_at_) {
+			if (conn_ != network::null_connection) {
+				state_ = s_ready;
+
+			} else {
+				state_ = s_none;
+			}
+		}
+
+	} else if (state_ == s_ready) {
+		network::connection ret = network::receive_data(buf, conn_);
+		if (ret != network::null_connection) {
+			data = &buf[0];
+			len = buf.size();
+		}
+	}
+
+	// when no data, as timer.
+	bool halt = false;
+	for (std::vector<tlobby::thandler*>::const_reverse_iterator rit = lobby->handlers_.rbegin(); rit != lobby->handlers_.rend(); ++ rit) {
+		tlobby::thandler& h = **rit;
+		halt = h.handle_raw2(at_, t_data, data, len);
+		if (halt) {
+			break;
+		}
+	}
 }
 
-SOCKET_STATE tlobby::thttp_sock::receive_buf(std::vector<char>& buf)
+SOCKET_STATE tlobby::thttp_sock::receive_buf(textendable_buf& buf)
 {
 	const int support_max_header_size = 1024;
 	int read_size, total_size, ret_size;
 
-	size_t end_header;
+	char* end_header = NULL;
 	std::string header;
-	header.resize(support_max_header_size);
+	resize_raw_data(support_max_header_size);
+
 	read_size = 0;
 	{
 		const threading::lock lock(*network::stats_mutex);
@@ -2005,40 +2010,43 @@ SOCKET_STATE tlobby::thttp_sock::receive_buf(std::vector<char>& buf)
 	}
 
 	do {
-		bool res = network::receive_with_timeout(*this, &header[read_size], support_max_header_size - read_size, true, 30000, 300000, &ret_size);
+		bool res = network::receive_with_timeout(*this, raw_data_ + read_size, support_max_header_size - read_size, true, 30000, 300000, &ret_size);
 		if (!res) {
+			dbg_error_no = 3;
 			return SOCKET_ERRORED;
 		}
 		if (!ret_size) {
 			// resumme can read header with continue.
+			dbg_error_no = 4;
 			return SOCKET_ERRORED;
 		}
 		read_size += ret_size;
-		end_header = header.find("\r\n\r\n");
-	} while (end_header == std::string::npos);
+		end_header = strstr(raw_data_, "\r\n\r\n");
+	} while (!end_header);
 
 	int content_length = 0;
-	size_t start = header.find("Content-Length:", 0);
-	if (start != std::string::npos && start < end_header) {
+	char* start = strstr(raw_data_, "Content-Length:");
+	if (start && start < end_header) {
 		start += 15;
-		size_t end = header.find("\r\n", start);
-		if (end != std::string::npos && end <= end_header) {
-			std::string str = header.substr(start, end - start);
+		char* end = strstr(start, "\r\n");
+		if (end && end <= end_header) {
+			std::string str(start, end - start);
 			content_length = lexical_cast<int>(str);
 		}
 	}
 	
-	total_size = end_header + 4 + content_length;
+	total_size = (end_header - raw_data_) + 4 + content_length;
 	if (total_size < read_size) {
 		// invalid http response
 		// return SOCKET_ERRORED;
 
-		buf.resize(read_size);
-		memcpy(&buf[0], &header[0], read_size);
+		buf.put(raw_data_, read_size);
 		return SOCKET_READY;
 	}
-	buf.resize(total_size);
-	memcpy(&buf[0], &header[0], read_size);
+
+	raw_data_vsize_ = read_size;
+	resize_raw_data(total_size);
+
 	if  (total_size - read_size > 0) {
 		{
 			const threading::lock lock(*network::stats_mutex);
@@ -2046,13 +2054,106 @@ SOCKET_STATE tlobby::thttp_sock::receive_buf(std::vector<char>& buf)
 			network::transfer_stats[sock2_].second.transfer(read_size);
 		}
 
-		bool res = network::receive_with_timeout(*this, &buf[read_size], total_size - read_size, true);
+		bool res = network::receive_with_timeout(*this, raw_data_ + read_size, total_size - read_size, true);
 		if (!res) {
+			dbg_error_no = 5;
 			return SOCKET_ERRORED;
 		}
 	}
 
+	buf.put(raw_data_, total_size);
+	raw_data_vsize_ = 0;
+
 	return SOCKET_READY;
+}
+
+void tlobby::thttp_sock::reset_connect()
+{
+	if (conn_ != network::null_connection) {
+		tsock::reset_connect();
+	}
+	set_host(null_str, INVALID_PORT);
+}
+
+std::string tlobby::thttp_sock::form_request(const std::string& task, size_t content_length) const
+{
+	std::stringstream request;
+	// request << "POST /bbs/forum.php HTTP/1.1\r\n";
+	request << "POST " << form_url(task) << " HTTP/1.1\r\n";
+
+	// request << "Accept: image/jpeg, application/x-ms-application, image/gif, application/xaml+xml, image/pjpeg, application/x-ms-xbap, application/vnd.ms-excel, application/vnd.ms-powerpoint, application/msword, */*\r\n";
+	// request << "Accept-Language: zh-CN\r\n";
+	// request << "Accept-Encoding: gzip, deflate\r\n";
+	request << "Host: " << host_ << "\r\n";
+	request << "Connection: Keep-Alive\r\n";
+	request << "Content-Length: " << content_length << "\r\n";
+	request << "\r\n";
+
+	return request.str();
+}
+
+int tlobby::thttp_sock::http_2_cfg(const std::vector<char>& http, config& cfg)
+{
+	std::string str;
+	std::vector<std::string> res;
+	int content_start = -1;
+
+	std::vector<char>::const_iterator first;
+	std::vector<char>::const_iterator end = http.end();
+	std::vector<char>::const_iterator i = http.begin();
+	while (i != http.end() && (*i == ' ' || *i == '\t' || *i == '\r' || *i == '\n')) {
+		++ i;
+	}
+	first = i;
+	
+	cfg.clear();
+	while (i != end) {
+		if (*i == '\r') {
+			++ i;
+			if (i == end) { 
+				break;
+			}
+			if (*i == '\n') {
+				str.resize((i - 1) - first);
+				std::copy(first, i - 1, str.begin());
+				if (!str.empty()) {
+					if (!cfg.has_attribute("__version")) {
+						size_t pos = str.find("HTTP/");
+						if (pos == 0) {
+							std::vector<std::string> vstr = utils::split(str, ' ');
+							if (vstr.size() >= 3) {
+								cfg["__version"] = vstr[0];
+								cfg["__status"] = lexical_cast<int>(vstr[1]);
+								std::stringstream phrase;
+								for (size_t t = 2; t < vstr.size(); t ++) {
+									if (!phrase.str().empty()) {
+										phrase << " ";
+									}
+									phrase << vstr[t];
+								}
+								cfg["__phrase"] = phrase.str();
+							}
+						}
+					} else {
+						size_t pos = str.find(":");
+						if (pos != std::string::npos) {
+							std::string key = str.substr(0, pos);
+							std::string val = str.substr(pos + 1);
+							cfg[utils::strip(key)] = utils::strip(val);
+						}
+					}
+				} else {
+					content_start = std::distance(http.begin(), i) + 1;
+					break;
+				}
+				res.push_back(str);
+				first = i + 1;
+			}
+		}
+		++ i;
+	}
+
+	return content_start;
 }
 
 void tlobby::ttransit_sock::process()
@@ -2218,34 +2319,37 @@ size_t tlobby::ttransit_sock::queue_raw_data(const char* buf, int len)
 	return 4 + len;
 }
 
-SOCKET_STATE tlobby::ttransit_sock::receive_buf(std::vector<char>& buf)
+SOCKET_STATE tlobby::ttransit_sock::receive_buf(textendable_buf& buf)
 {
 	char num_buf[4] ALIGN_4;
 	bool res = network::receive_with_timeout(*this, num_buf, 4, false);
 
 	if (!res) {
+		dbg_error_no = 6;
 		return SOCKET_ERRORED;
 	}
 
-	const int len = SDLNet_Read32(reinterpret_cast<void*>(num_buf));
+	int len = SDLNet_Read32(reinterpret_cast<void*>(num_buf));
 
 	if (len < 1 || len > 100000000) {
+		dbg_error_no = 7;
 		return SOCKET_ERRORED;
 	}
 
-	buf.resize(len);
-	char* beg = &buf[0];
-	const char* const end = beg + len;
+	resize_raw_data(len);
 
 	if (require_stats) {
 		const threading::lock lock(*network::stats_mutex);
 		network::transfer_stats[sock2_].second.fresh_current(len);
 	}
 
-	res = network::receive_with_timeout(*this, beg, end - beg, true);
+	res = network::receive_with_timeout(*this, raw_data_, len, true);
 	if (!res) {
+		dbg_error_no = 8;
 		return SOCKET_ERRORED;
 	}
+
+	buf.put(raw_data_, len);
 
 	return SOCKET_READY;
 }
@@ -2273,15 +2377,18 @@ bool tlobby::ttransit_sock::is_pending_remote_handle() const
 	return !host_.empty() && !remote_handle_;
 }
 
-tlobby::tlobby()
+tlobby::tlobby(tchat_sock* _chat, thttp_sock* _http, ttransit_sock* _transit)
 	: pump_monitor(false)
+	, chat(_chat)
+	, http(_http)
+	, transit(_transit)
 	, handlers_()
 	, log_handlers_()
 	, logs_()
 {
-	socks_.push_back(&chat);
-	socks_.push_back(&http);
-	socks_.push_back(&transit);
+	socks_.push_back(chat);
+	socks_.push_back(http);
+	socks_.push_back(transit);
 }
 
 tlobby::~tlobby() 
@@ -2289,7 +2396,19 @@ tlobby::~tlobby()
 	// sock is released at last network::~manager
 	for (std::vector<tsock*>::const_iterator it = socks_.begin(); it != socks_.end(); ++ it) {
 		tsock* info = *it;
-		if (info->accept_) {
+		if (info->at_ == tag_chat) {
+			delete info;
+			chat = NULL;
+
+		} else if (info->at_ == tag_http) {
+			delete info;
+			http = NULL;
+
+		} else if (info->at_ == tag_transit) {
+			delete info;
+			transit = NULL;
+
+		} else if (info->accept_) {
 			delete info;
 		}
 	}
@@ -2311,8 +2430,8 @@ void tlobby::set_nick(const std::string& nick)
 
 	nick_ = nick;
 	if (dirty) {
-		if (chat.connected_at_) {
-			chat.reset_connect();
+		if (chat->connected_at_) {
+			chat->reset_connect();
 		}
 	}
 }
@@ -2436,19 +2555,33 @@ std::string tlobby::format_log_str() const
 	return ss.str();
 }
 
-void tlobby::process(events::pump_info&)
+void tlobby::monitor_process()
 {
 	for (std::vector<tsock*>::const_iterator it = socks_.begin(); it != socks_.end(); ++ it) {
 		tsock* sock = *it;
 		try {
-			sock->process();
+			if (sock->port_ != INVALID_PORT && !sock->host_.empty()) {
+				sock->process();
+			}
 		} catch (network::error& e) {
+			// error sock maybe not current sock!
+			if (sock->conn_ != e.socket) {
+				sock = &get_connection_details(e.socket);
+			}
 			std::string err_str = e.message;
 			if (e.message.empty()) {
 				err_str = "Unspecial error", "red";
 			}
 			sock->process_error(err_str);
 		}
+	}
+}
+
+void tlobby::broadcast_handle_status(int at, tsock::ttype type)
+{
+	for (std::vector<tlobby::thandler*>::const_reverse_iterator rit = handlers_.rbegin(); rit != handlers_.rend(); ++ rit) {
+		tlobby::thandler& h = **rit;
+		h.handle_status(at, type);
 	}
 }
 
@@ -2465,3 +2598,243 @@ void tlobby::broadcast_handle_raw(int at, tsock::ttype type, const char* param[]
 }
 
 
+namespace network_asio {
+
+connection::connection(network::connection connection_num)
+	: connection_num_(connection_num)
+	, done_(false)
+{}
+
+size_t connection::bytes_written()
+{
+	if (connection_num_ != network::null_connection) {
+		network::statistics stat = network::get_send_stats(connection_num_);
+		return stat.current;
+	} else {
+		return 5;
+	}
+}
+
+size_t connection::bytes_to_write()
+{
+	if (connection_num_ != network::null_connection) {
+		network::statistics stat = network::get_send_stats(connection_num_);
+		return stat.current_max;
+	} else {
+		return 100;
+	}
+}
+
+size_t connection::bytes_read()
+{
+	if (connection_num_ != network::null_connection) {
+		network::statistics stat = network::get_receive_stats(connection_num_);
+		return stat.current;
+	} else {
+		return 5;
+	}
+}
+
+size_t connection::bytes_to_read()
+{
+	if (connection_num_ != network::null_connection) {
+		network::statistics stat = network::get_receive_stats(connection_num_);
+		return stat.current_max;
+	} else {
+		return 100;
+	}
+}
+
+class connection_open: public connection
+{
+public:
+	connection_open()
+		: connection(network::null_connection)
+	{}
+
+	void poll(const char* data, int len);
+};
+
+void connection_open::poll(const char* data, int len)
+{
+	if (lobby->http->state() != tsock::s_create) {
+		set_done();
+	}
+}
+
+class connection_recv_buf : public connection
+{
+public:
+	connection_recv_buf(network::connection connection_num, std::vector<char>& buf)
+		: connection(connection_num)
+		, buf_(buf)
+	{}
+
+	void poll(const char* data, int len);
+private:
+	std::vector<char>& buf_;
+};
+
+void connection_recv_buf::poll(const char* data, int len)
+{
+	if (data) {
+		buf_.resize(len);
+		memcpy(&buf_[0], data, len);
+		set_done();
+	}
+}
+
+class connection_recv_cfg : public connection, public tlobby::thandler
+{
+public:
+	connection_recv_cfg(network::connection connection_num, config& data)
+		: connection(connection_num)
+		, data_(data)
+		, res_(network::null_connection)
+	{
+		join();
+	}
+
+	bool handle(int tag, tsock::ttype type, const config& data);
+	void poll(const char* data, int len);
+	network::connection res() const { return res_; }
+private:
+	config& data_;
+	network::connection res_;
+};
+
+bool connection_recv_cfg::handle(int tag, tsock::ttype type, const config& data)
+{
+	if (type == tsock::t_data) {
+		data_ = data;
+		res_ = lobby->chat->conn();
+		return true;
+	}
+
+	return false;
+}
+
+void connection_recv_cfg::poll(const char* data, int len)
+{
+	if (data) {
+		set_done();
+	}
+}
+
+class connection_send_buf : public connection
+{
+public:
+	connection_send_buf(network::connection connection_num, int len)
+		: connection(connection_num)
+		, len_(len)
+	{}
+
+	void poll(const char* data, int len);
+
+private:
+	int len_;
+};
+
+void connection_send_buf::poll(const char* data, int len)
+{
+	network::statistics stat = network::get_send_stats(connection_num_);
+	if (stat.current == len_) {
+		set_done();
+	}
+}
+
+}
+
+static std::string form_connect_to_title()
+{
+	std::stringstream strstr;
+	utils::string_map i18n_symbols;
+	strstr << tintegrate::generate_format(game_config::bbs_server.name, "green");
+	i18n_symbols["server"] = strstr.str();
+
+	return vgettext2("Connecting to $server...", i18n_symbols);
+}
+
+static std::string form_send_to_title()
+{
+	std::stringstream strstr;
+	utils::string_map i18n_symbols;
+	strstr << tintegrate::generate_format(game_config::bbs_server.name, "green");
+	i18n_symbols["server"] = strstr.str();
+
+	return vgettext2("Sending to $server...", i18n_symbols);
+}
+
+static std::string form_receive_from_title()
+{
+	std::stringstream strstr;
+	utils::string_map i18n_symbols;
+	strstr << tintegrate::generate_format(game_config::bbs_server.name, "green");
+	i18n_symbols["server"] = strstr.str();
+
+	return vgettext2("Reading from $server...", i18n_symbols);
+}
+
+bool network_connect_dialog(display& disp, const std::string&, const std::string& hostname, int port, bool quiet)
+{
+	network_asio::connection_open conn;
+	gui2::tnetwork_transmission dlg(conn, form_connect_to_title(), "");
+	dlg.show(disp.video());
+	
+	return lobby->http->conn() != network::null_connection;
+}
+
+void network_receive_dialog(display& disp, const std::string& msg, std::vector<char>& buf, network::connection connection_num, int hidden_ms)
+{
+	try {
+		network_asio::connection_recv_buf conn(connection_num, buf);
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_receive_from_title(): msg, "", hidden_ms);
+		dlg.show(disp.video());
+
+	} catch(network::error& e) {
+		std::string err = e.message;
+		if (e.message.empty()) {
+			err = _("Unspecial error");
+		}
+		gui2::show_transient_message(disp.video(), "", err);
+	}
+}
+
+network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num, int hidden_ms)
+{
+	try {
+		network_asio::connection_recv_cfg conn(connection_num, cfg);
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_receive_from_title(): msg, "", hidden_ms);
+		dlg.show(disp.video());
+
+		return conn.res();
+
+	} catch(network::error& e) {
+		std::string err = e.message;
+		if (e.message.empty()) {
+			err = _("Unspecial error");
+		}
+		gui2::show_transient_message(disp.video(), "", err);
+	}
+
+	return network::null_connection;
+}
+
+void network_send_dialog(display& disp, const std::string& msg, const char* buf, int len, network::connection connection_num, int hidden_ms)
+{
+	try {
+		network::send_raw_data(buf, len, connection_num);
+
+		network_asio::connection_send_buf conn(connection_num, len);
+		gui2::tnetwork_transmission dlg(conn, msg.empty()? form_send_to_title(): msg, "", hidden_ms);
+		dlg.set_track_upload(true);
+		dlg.show(disp.video());
+
+	} catch(network::error& e) {
+		std::string err = e.message;
+		if (e.message.empty()) {
+			err = _("Unspecial error");
+		}
+		gui2::show_transient_message(disp.video(), "", err);
+	}
+}

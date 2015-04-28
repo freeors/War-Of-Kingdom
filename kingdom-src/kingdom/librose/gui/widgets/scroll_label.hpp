@@ -53,8 +53,10 @@ public:
 
 	/** Inherited from tscrollbar_container. */
 	tpoint calculate_best_size() const;
-	void set_content_size(const tpoint& origin, const tpoint& size);
+	void place_content_grid(const tpoint& content_origin, const tpoint& content_size, const tpoint& desire_origin);
 	bool content_empty() const;
+
+	tpoint request_reduce_width(const unsigned maximum_width);
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 

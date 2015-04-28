@@ -24,6 +24,10 @@
 
 enum tanim_type {anim_map, anim_canvas, anim_float};
 
+class display;
+class controller_base;
+class base_unit;
+
 class animation
 {
 public:
@@ -58,11 +62,11 @@ public:
 	void clear_haloes();
 	virtual bool invalidate(const surface& screen, frame_parameters& value);
 	bool invalidate(const surface& screen);
-	void replace_image_name(const std::string& src, const std::string& dst);
-	void replace_image_mod(const std::string& src, const std::string& dst);
-	void replace_progressive(const std::string& name, const std::string& src, const std::string& dst);
-	void replace_static_text(const std::string& src, const std::string& dst);
-	void replace_int(const std::string& name, int src, int dst);
+	void replace_image_name(const std::string& part, const std::string& src, const std::string& dst);
+	void replace_image_mod(const std::string& part, const std::string& src, const std::string& dst);
+	void replace_progressive(const std::string& part, const std::string& name, const std::string& src, const std::string& dst);
+	void replace_static_text(const std::string& part, const std::string& src, const std::string& dst);
+	void replace_int(const std::string& part, const std::string& name, int src, int dst);
 	int layer() const { return layer_; }
 	bool cycles() const { return cycles_; }
 	bool started() const { return started_; }
@@ -76,15 +80,17 @@ public:
 	void set_callback_finish(boost::function<void (animation*)> callback) { callback_finish_ = callback; }
 	void require_release();
 
+	bool area_mode() const { return area_mode_; }
+
 	explicit animation(const config &cfg, const std::string &frame_string = "");
 
-protected:
 	// reserved to class unit, for the special case of redrawing the unit base frame
 	const frame_parameters get_current_params(const frame_parameters & default_val = frame_parameters()) const
 	{ 
 		return unit_anim_.parameters(default_val); 
 	};
 
+protected:
 	explicit animation(int start_time
 				, const unit_frame &frame
 				, const std::string& event
@@ -152,11 +158,73 @@ protected:
 	// optimization
 	bool invalidated_;
 	bool play_offscreen_;
-	bool screen_mode_;
+	bool area_mode_;
 	int layer_;
 	bool cycles_;
 	bool started_;
 	std::set<map_location> overlaped_hex_;
+};
+
+class base_animator
+{
+public:
+	base_animator()
+		: animated_units_()
+		, start_time_(INT_MIN)
+	{}
+
+
+	void add_animation2(base_unit* animated_unit
+			, const animation * anim
+			, const map_location& src = map_location::null_location
+			, bool with_bars = false
+			, bool cycles = false
+			, const std::string& text = ""
+			, const Uint32 text_color = 0);
+	
+	void start_animations();
+	void pause_animation();
+	void restart_animation();
+	void clear() 
+	{
+		start_time_ = INT_MIN; 
+		animated_units_.clear();
+	}
+	void set_all_standing();
+
+	bool would_end() const;
+	int get_animation_time() const;
+	int get_animation_time_potential() const;
+	int get_end_time() const;
+	void wait_for_end(controller_base& controller) const;
+	void wait_until(controller_base& controller, int animation_time) const;
+
+	struct anim_elem 
+	{
+		anim_elem()
+			: my_unit(0)
+			, anim(0)
+			, text()
+			, text_color(0)
+			, src()
+			, with_bars(false)
+			, cycles(false)
+		{}
+
+		base_unit* my_unit;
+		const animation* anim;
+		std::string text;
+		Uint32 text_color;
+		map_location src;
+		bool with_bars;
+		bool cycles;
+	};
+	std::vector<anim_elem>& animated_units() { return animated_units_; }
+	const std::vector<anim_elem>& animated_units() const { return animated_units_; }
+
+protected:
+	std::vector<anim_elem> animated_units_;
+	int start_time_;
 };
 
 #endif

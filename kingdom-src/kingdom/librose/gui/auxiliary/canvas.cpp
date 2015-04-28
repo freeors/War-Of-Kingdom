@@ -18,7 +18,7 @@
  * Implementation of canvas.hpp.
  */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/canvas.hpp"
 
@@ -29,7 +29,6 @@
 #include "gui/auxiliary/formula.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/widgets/helper.hpp"
-#include "../../text.hpp"
 #include "wml_exception.hpp"
 #include "font.hpp"
 #include "display.hpp"
@@ -135,6 +134,8 @@ private:
 	/** The color of the line. */
 	Uint32 color_;
 
+	std::string color_str_;
+
 	/**
 	 * The thickness of the line.
 	 *
@@ -151,6 +152,7 @@ tline::tline(const config& cfg)
 	, x2_(cfg["x2"])
 	, y2_(cfg["y2"])
 	, color_(decode_color(cfg["color"]))
+	, color_str_(cfg["color"])
 	, thickness_(cfg["thickness"])
 {
 /*WIKI
@@ -429,23 +431,22 @@ tline::tline(const config& cfg)
 	}
 }
 
-void tline::draw(surface& canvas
-		, const game_logic::map_formula_callable& variables)
+void tline::draw(surface& canvas, const game_logic::map_formula_callable& variables)
 {
+	if (color_ == MAGIC_COLOR) {
+		tformula<unsigned> f(color_str_);
+		color_ = f(variables);
+	}
+
 	/**
 	 * @todo formulas are now recalculated every draw cycle which is a bit silly
 	 * unless there has been a resize. So to optimize we should use an extra
 	 * flag or do the calculation in a separate routine.
 	 */
-
 	const unsigned x1 = x1_(variables);
 	const unsigned y1 = y1_(variables);
 	const unsigned x2 = x2_(variables);
 	const unsigned y2 = y2_(variables);
-
-	DBG_GUI_D << "Line: draw from "
-			<< x1 << ',' << y1 << " to " << x2 << ',' << y2
-			<< " canvas size " << canvas->w << ',' << canvas->h << ".\n";
 
 	VALIDATE(
 			  static_cast<int>(x1) < canvas->w
@@ -465,11 +466,11 @@ void tline::draw(surface& canvas
 
 	// lock the surface
 	surface_lock locker(canvas);
-	if(x1 > x2) {
+	if (x1 > x2) {
 		// invert points
-		draw_line(canvas, color_, x2, y2, x1, y1);
+		draw_line(canvas, color_, x2, y2, x1, y1, true);
 	} else {
-		draw_line(canvas, color_, x1, y1, x2, y2);
+		draw_line(canvas, color_, x1, y1, x2, y2, true);
 	}
 }
 
@@ -563,7 +564,7 @@ trectangle::trectangle(const config& cfg)
  * See [[#general_variables|Line]].
  *
  */
-	if(border_color_ == 0) {
+	if (border_color_ == 0) {
 		border_thickness_ = 0;
 	}
 
@@ -586,9 +587,9 @@ void trectangle::draw(surface& canvas
 	const unsigned w = w_(variables);
 	const unsigned h = h_(variables);
 
-	DBG_GUI_D << "Rectangle: draw from " << x << ',' << y
-			<< " width " << w << " height " << h
-			<< " canvas size " << canvas->w << ',' << canvas->h << ".\n";
+	if (!w || !h) {
+		return;
+	}
 
 	VALIDATE(
 			  static_cast<int>(x) < canvas->w
@@ -609,16 +610,16 @@ void trectangle::draw(surface& canvas
 		const unsigned bottom = top + h - (i * 2) - 1;
 
 		// top horizontal (left -> right)
-		draw_line(canvas, border_color_, left, top, right, top);
+		draw_line(canvas, border_color_, left, top, right, top, true);
 
 		// right vertical (top -> bottom)
-		draw_line(canvas, border_color_, right, top, right, bottom);
+		draw_line(canvas, border_color_, right, top, right, bottom, true);
 
 		// bottom horizontal (left -> right)
-		draw_line(canvas, border_color_, left, bottom, right, bottom);
+		draw_line(canvas, border_color_, left, bottom, right, bottom, true);
 
 		// left vertical (top -> bottom)
-		draw_line(canvas, border_color_, left, top, left, bottom);
+		draw_line(canvas, border_color_, left, top, left, bottom, true);
 	}
 
 	// The fill_rect_alpha code below fails, can't remember the exact cause
@@ -632,7 +633,7 @@ void trectangle::draw(surface& canvas
 
 		for(unsigned i = top; i < bottom; ++i) {
 
-			draw_line(canvas, fill_color_, left, i, right, i);
+			draw_line(canvas, fill_color_, left, i, right, i, true);
 		}
 	}
 }
@@ -750,7 +751,7 @@ void tcircle::draw(surface& canvas
 
 	// lock the surface
 	surface_lock locker(canvas);
-	draw_circle(canvas, color_, x, y, radius);
+	draw_circle(canvas, color_, x, y, radius, true);
 }
 
 /***** ***** ***** ***** ***** IMAGE ***** ***** ***** ***** *****/
@@ -891,6 +892,8 @@ timage::timage(const config& cfg)
 	}
 }
 
+const std::string share_image_name = "share";
+
 void timage::draw(surface& canvas
 		, const game_logic::map_formula_callable& variables)
 {
@@ -908,23 +911,23 @@ void timage::draw(surface& canvas
 		return;
 	}
 
-
+	bool from_share = false;
 	/*
 	 * The locator might return a different surface for every call so we can't
 	 * cache the output, also not if no formula is used.
 	 */
-	if (!share_canvas_image || share_canvas_image->null()) {
+	if (name != share_image_name || !share_canvas_image || share_canvas_image->null()) {
 		surface tmp(image::get_image(image::locator(name)));
 		if (!tmp) {
-			ERR_GUI_D << "Image: '" << name << "' not found and won't be drawn.\n";
+			// ERR_GUI_D << "Image: '" << name << "' not found and won't be drawn.\n";
 			return;
 		}
-		image_.assign(make_neutral_surface(tmp));
+		image_ = tmp;
 	} else {
+		from_share = true;
 		// to share image, must set width/height to original size. so cannot change share_canvas_image.
 		image_ = *share_canvas_image;
 	}
-	assert(image_);
 	src_clip_ = ::create_rect(0, 0, image_->w, image_->h);
 
 	game_logic::map_formula_callable local_variables(variables);
@@ -932,23 +935,21 @@ void timage::draw(surface& canvas
 	local_variables.add("image_original_height", variant(image_->h));
 
 	unsigned w = w_(local_variables);
-	VALIDATE(static_cast<int>(w) >= 0, "Image doesn't fit on canvas.");
-/*
 	VALIDATE_WITH_DEV_MESSAGE(
 			  static_cast<int>(w) >= 0
 			, _("Image doesn't fit on canvas.")
 			, (formatter() << "Image '" << name
 				<< "', w = " << static_cast<int>(w) << ".").str());
-*/
+
 	unsigned h = h_(local_variables);
-	VALIDATE(static_cast<int>(h) >= 0, "Image doesn't fit on canvas.");
-/*
 	VALIDATE_WITH_DEV_MESSAGE(
 			  static_cast<int>(h) >= 0
 			, _("Image doesn't fit on canvas.")
 			, (formatter() << "Image '" << name
 				<< "', h = " << static_cast<int>(h) << ".").str());
-*/
+
+	VALIDATE(!from_share || (image_->w == w && image_->h == h), "share image's width and height must be original size!");
+
 	if ((!w && w_.has_formula()) || (!h && h_.has_formula())) { 
 		return;
 	}
@@ -957,24 +958,19 @@ void timage::draw(surface& canvas
 	local_variables.add("image_height", variant(h ? h : image_->h));
 
 	const unsigned x = x_(local_variables);
-	VALIDATE(static_cast<int>(x) >= 0, "Image doesn't fit on canvas.");
-/*
 	VALIDATE_WITH_DEV_MESSAGE(
 			  static_cast<int>(x) >= 0
 			, _("Image doesn't fit on canvas.")
 			, (formatter() << "Image '" << name
 				<< "', x = " << static_cast<int>(x) << ".").str());
-*/
 
 	const unsigned y = y_(local_variables);
-	VALIDATE(static_cast<int>(y) >= 0, "Image doesn't fit on canvas.");
-/*
 	VALIDATE_WITH_DEV_MESSAGE(
 			  static_cast<int>(y) >= 0
 			, _("Image doesn't fit on canvas.")
 			, (formatter() << "Image '" << name
 				<< "', y = " << static_cast<int>(y) << ".").str());
-*/
+
 	// Copy the data to local variables to avoid overwriting the originals.
 	SDL_Rect src_clip = src_clip_;
 	SDL_Rect dst_clip = ::create_rect(x, y, 0, 0);
@@ -1023,13 +1019,12 @@ void timage::draw(surface& canvas
 								, y * image_->h
 								, 0
 								, 0);
-						// blit_surface(image_, NULL, surf, &dest);
 						sdl_blit(image_, NULL, surf, &dest);
 					}
 				}
 
 			} else {
-				if(resize_mode_ == stretch) {
+				if (resize_mode_ == stretch) {
 					ERR_GUI_D << "Image: failed to stretch image, "
 							"fall back to scaling.\n";
 				}
@@ -1046,9 +1041,11 @@ void timage::draw(surface& canvas
 		surf = image_;
 	}
 
-	if(vertical_mirror_(local_variables)) {
+	if (vertical_mirror_(local_variables)) {
 		surf = flip_surface(surf, false);
 	}
+
+	// tblend_none_lock lock(surf);
 
 	sdl_blit(surf, &src_clip, canvas, &dst_clip);
 }
@@ -1108,6 +1105,8 @@ private:
 	/** The color of the text. */
 	Uint32 color_;
 
+	std::string color_str_;
+
 	/** The text to draw. */
 	tformula<t_string> text_;
 
@@ -1129,10 +1128,11 @@ ttext::ttext(const config& cfg)
 	, y_(cfg["y"])
 	, w_(cfg["w"])
 	, h_(cfg["h"])
-	, font_size_(cfg["font_size"])
+	, font_size_(cfg["font_size"].to_int())
 	, font_style_(decode_font_style(cfg["font_style"]))
 	, text_alignment_(cfg["text_alignment"])
 	, color_(decode_color(cfg["color"]))
+	, color_str_(cfg["color"])
 	, text_(cfg["text"])
 	, editable_(cfg["editable"], false)
 	, maximum_width_(cfg["maximum_width"], -1)
@@ -1186,24 +1186,27 @@ ttext::ttext(const config& cfg)
 
 	VALIDATE(font_size_, _("Text has a font size of 0."));
 
-	const std::string& debug = (cfg["debug"]);
-	if(!debug.empty()) {
-		DBG_GUI_P << "Text: found debug message '" << debug << "'.\n";
+	if (twidget::hdpi) {
+		font_size_ *= twidget::hdpi_ratio;
 	}
 }
 
-void ttext::draw(surface& canvas
-		, const game_logic::map_formula_callable& variables)
+void ttext::draw(surface& canvas, const game_logic::map_formula_callable& variables)
 {
-	assert(variables.has_key("text"));
+	if (color_ == MAGIC_COLOR) {
+		tformula<unsigned> f(color_str_);
+		color_ = f(variables);
+	}
+
+	VALIDATE(variables.has_key("text"), null_str);
 
 	// We first need to determine the size of the text which need the rendered
 	// text. So resolve and render the text first and then start to resolve
 	// the other formulas.
-	const t_string text = text_(variables);
+	const std::string text = text_(variables);
 
-	if(text.empty()) {
-		DBG_GUI_D << "Text: no text to render, leave.\n";
+	if (text.empty()) {
+		// Text: no text to render, leave.
 		return;
 	}
 
@@ -1216,22 +1219,15 @@ void ttext::draw(surface& canvas
 	}
 
 	if (surf->w == 0) {
-		DBG_GUI_D  << "Text: Rendering '"
-				<< text << "' resulted in an empty canvas, leave.\n";
+		// Text: Rendering, resulted in an empty canvas, leave.
 		return;
 	}
 
 	game_logic::map_formula_callable local_variables(variables);
 	local_variables.add("text_width", variant(surf->w));
 	local_variables.add("text_height", variant(surf->h));
-/*
-	std::cerr << "Text: drawing text '" << text
-		<< " maximum width " << maximum_width_(variables)
-		<< " maximum height " << maximum_height_(variables)
-		<< " text width " << surf->w
-		<< " text height " << surf->h;
-*/
-	///@todo formulas are now recalculated every draw cycle which is a
+
+	// @todo formulas are now recalculated every draw cycle which is a
 	// bit silly unless there has been a resize. So to optimize we should
 	// use an extra flag or do the calculation in a separate routine.
 
@@ -1243,11 +1239,6 @@ void ttext::draw(surface& canvas
 	if (share_canvas_integrate) {
 		share_canvas_integrate->set_layout_offset(x, y);
 	}
-
-	DBG_GUI_D << "Text: drawing text '" << text
-			<< "' drawn from " << x << ',' << y
-			<< " width " << w << " height " << h
-			<< " canvas size " << canvas->w << ',' << canvas->h << ".\n";
 
 	VALIDATE(static_cast<int>(x) < canvas->w && static_cast<int>(y) < canvas->h
 			, _("Text doesn't start on canvas."));
@@ -1270,8 +1261,9 @@ void ttext::draw(surface& canvas
 	// tblend_none_lock lock(surf);
 
 	SDL_Rect dst = ::create_rect(x, y, canvas->w, canvas->h);
+	// why not use sdl_blit, see login dialog of war of kingdom.
 	blit_surface(surf, &clip, canvas, &dst);
-	// sdl_blit(surf, 0, canvas, &dst);
+	// sdl_blit(surf, &clip, canvas, &dst);
 }
 
 /***** ***** ***** ***** ***** ANIMATION ***** ***** ***** ***** *****/
@@ -1540,14 +1532,14 @@ void tcanvas::blit(surface& surf, SDL_Rect rect, bool force, const std::vector<i
 	}
 
 	if (blur_depth_) {
-		if (is_neutral(surf)) {
+		if (is_neutral_surface(surf)) {
 			blur_surface(surf, rect, blur_depth_);
 		} else {
 			// Can't directly blur the surface if not 32 bpp.
 			SDL_Rect r = rect;
 			///@todo we should use: get_surface_portion(surf, r, false)
 			///no need to optimize format, since blur_surface will undo it
-			surface s = get_surface_portion(surf, r, true);
+			surface s = get_surface_portion(surf, r);
 			s = blur_surface(s, blur_depth_);
 			sdl_blit(s, NULL, surf, &r);
 		}

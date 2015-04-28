@@ -27,6 +27,8 @@
 
 class config;
 class gamemap;
+class base_map;
+
 namespace image{ class locator; }
 /**
  * The class terrain_builder is constructed from a config object, and a
@@ -103,6 +105,8 @@ public:
 	 */
 	static void release_heap();
 
+
+	void set_units(base_map* units) { units_ = units; }
 
 	const gamemap& map() const { return *map_; }
 
@@ -801,6 +805,7 @@ public:
 	tilemap tile_map_;
 
 	int selector_;
+	base_map* units_;
 
 	/**
 	 * Shorthand typedef for a map associating a list of locations to a terrain type.
@@ -820,8 +825,5 @@ public:
 
 	static std::string using_id;
 };
-
-bool cb_terrain_matches(const map_location& loc, const t_translation::t_match& terrain_types_match);
-void cb_build_terrains(std::map<t_translation::t_terrain, std::vector<map_location> >& terrain_by_type);
 
 #endif

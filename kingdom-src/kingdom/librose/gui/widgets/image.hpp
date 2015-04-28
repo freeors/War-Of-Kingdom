@@ -27,9 +27,10 @@ public:
 
 	timage()
 		: tcontrol(COUNT)
-	{
-	}
+		, best_size_(0, 0)
+	{}
 
+public:
 	/**
 	 * Wrapper for set_label.
 	 *
@@ -38,7 +39,7 @@ public:
 	 *
 	 * @param label               The filename image to show.
 	 */
-	void set_image(const t_string& label)
+	void set_image(const std::string& label)
 	{
 		set_label(label);
 	}
@@ -51,7 +52,7 @@ public:
 	 *
 	 * @returns                   The filename of the image shown.
 	 */
-	t_string get_image() const
+	std::string get_image() const
 	{
 		return label();
 	}
@@ -77,7 +78,13 @@ public:
 	/** Inherited from tcontrol. */
 	bool disable_click_dismiss() const { return false; }
 
+	/***** ***** ***** setters / getters for members ***** ****** *****/
+	void set_best_size(const tpoint& best_size) { best_size_ = best_size; }
+
 private:
+
+	/** When we're used as a fixed size item, this holds the best size. */
+	tpoint best_size_;
 
 	/**
 	 * Possible states of the widget.

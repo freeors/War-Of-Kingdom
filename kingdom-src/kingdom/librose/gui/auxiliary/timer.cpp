@@ -29,7 +29,7 @@ namespace gui2 {
 struct ttimer
 {
 	ttimer()
-		: sdl_id(NULL)
+		: sdl_id(0)
 		, interval(0)
 		, callback()
 	{

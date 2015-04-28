@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "control.hpp"
 
@@ -22,7 +22,6 @@
 #include "gui/auxiliary/iterator/walker_widget.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/event/message.hpp"
-#include "gui/dialogs/tip.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "gui/auxiliary/window_builder/control.hpp"
@@ -41,6 +40,8 @@
 
 namespace gui2 {
 
+bool tcontrol::force_add_to_dirty_list = false;
+
 tcontrol::tcontrol(const unsigned canvas_count)
 	: definition_("default")
 	, label_()
@@ -49,6 +50,7 @@ tcontrol::tcontrol(const unsigned canvas_count)
 	, pre_anims_()
 	, post_anims_()
 	, integrate_(NULL)
+	, integrate_default_color_(font::BLACK_COLOR)
 	, use_tooltip_on_label_overflow_(true)
 	, tooltip_()
 	, help_message_()
@@ -57,16 +59,14 @@ tcontrol::tcontrol(const unsigned canvas_count)
 	, text_maximum_width_(0)
 	, text_alignment_(PANGO_ALIGN_LEFT)
 	, shrunken_(false)
+	, drag_detect_started_(false)
+	, first_drag_coordinate_(0, 0)
+	, last_drag_coordinate_(0, 0)
+	, enable_drag_draw_coordinate_(true)
+	, draw_offset_(0, 0)
 {
 	connect_signal<event::SHOW_TOOLTIP>(boost::bind(
 			  &tcontrol::signal_handler_show_tooltip
-			, this
-			, _2
-			, _3
-			, _5));
-
-	connect_signal<event::SHOW_HELPTIP>(boost::bind(
-			  &tcontrol::signal_handler_show_helptip
 			, this
 			, _2
 			, _3
@@ -99,18 +99,16 @@ tcontrol::tcontrol(
 	, text_maximum_width_(0)
 	, text_alignment_(PANGO_ALIGN_LEFT)
 	, shrunken_(false)
+	, drag_detect_started_(false)
+	, first_drag_coordinate_(0, 0)
+	, last_drag_coordinate_(0, 0)
+	, enable_drag_draw_coordinate_(true)
+	, draw_offset_(0, 0)
 {
 	definition_load_configuration(control_type);
 
 	connect_signal<event::SHOW_TOOLTIP>(boost::bind(
 			  &tcontrol::signal_handler_show_tooltip
-			, this
-			, _2
-			, _3
-			, _5));
-
-	connect_signal<event::SHOW_HELPTIP>(boost::bind(
-			  &tcontrol::signal_handler_show_helptip
 			, this
 			, _2
 			, _3
@@ -182,16 +180,6 @@ iterator::twalker_* tcontrol::create_walker()
 	return new iterator::walker::twidget(*this);
 }
 
-tpoint tcontrol::get_config_minimum_size() const
-{
-	assert(config_);
-
-	tpoint result(config_->min_width, config_->min_height);
-
-	DBG_GUI_L << LOG_HEADER << " result " << result << ".\n";
-	return result;
-}
-
 tpoint tcontrol::get_config_default_size() const
 {
 	assert(config_);
@@ -234,34 +222,6 @@ void tcontrol::layout_init(const bool full_initialization)
 	}
 }
 
-void tcontrol::request_reduce_width(const unsigned maximum_width)
-{
-	assert(config_);
-
-	if(!label_.empty() && can_wrap()) {
-
-		tpoint size = get_best_text_size(
-				tpoint(0,0),
-				tpoint(maximum_width - config_->text_extra_width, 0));
-
-		size.x += config_->text_extra_width;
-		size.y += config_->text_extra_height;
-
-		set_layout_size(size);
-
-		DBG_GUI_L << LOG_HEADER
-				<< " label '" << debug_truncate(label_)
-				<< "' maximum_width " << maximum_width
-				<< " result " << size
-				<< ".\n";
-
-	} else {
-		DBG_GUI_L << LOG_HEADER
-				<< " label '" << debug_truncate(label_)
-				<< "' failed; either no label or wrapping not allowed.\n";
-	}
-}
-
 tpoint tcontrol::calculate_best_size() const
 {
 	assert(config_);
@@ -295,6 +255,11 @@ tpoint tcontrol::calculate_best_size() const
 	return result;
 }
 
+tpoint tcontrol::request_reduce_width(const unsigned maximum_width)
+{
+	return get_best_size();
+}
+
 void tcontrol::calculate_integrate()
 {
 	if (!text_editable_) {
@@ -306,11 +271,16 @@ void tcontrol::calculate_integrate()
 	int max = get_text_maximum_width();
 	if (max > 0) {
 		// before place, w_ = 0. it indicate not ready.
-		integrate_ = new tintegrate(label_, get_text_maximum_width(), -1, config()->text_font_size, font::NORMAL_COLOR, text_editable_);
+		integrate_ = new tintegrate(label_, get_text_maximum_width(), -1, config()->text_font_size, integrate_default_color_, text_editable_);
 		if (!locator_.empty()) {
 			integrate_->fill_locator_rect(locator_, true);
 		}
 	}
+}
+
+void tcontrol::set_integrate_default_color(const SDL_Color& color)
+{
+	integrate_default_color_ = color;
 }
 
 void tcontrol::refresh_locator_anim(std::vector<tintegrate::tlocator>& locator)
@@ -346,6 +316,8 @@ void tcontrol::set_surface(const surface& surf, int w, int h)
 
 void tcontrol::place(const tpoint& origin, const tpoint& size)
 {
+	SDL_Rect previous_rect = ::create_rect(x_, y_, w_, h_);
+
 	// resize canvasses
 	BOOST_FOREACH(tcanvas& canvas, canvas_) {
 		canvas.set_width(size.x);
@@ -359,6 +331,10 @@ void tcontrol::place(const tpoint& origin, const tpoint& size)
 
 	// update the state of the canvas after the sizes have been set.
 	update_canvas();
+
+	if (callback_place_) {
+		callback_place_(this, previous_rect);
+	}
 }
 
 void tcontrol::load_config()
@@ -377,10 +353,6 @@ void tcontrol::set_definition(const std::string& definition)
 	definition_ = definition;
 	load_config();
 	assert(config());
-
-#ifdef GUI2_EXPERIMENTAL_LISTBOX
-	init();
-#endif
 }
 
 void tcontrol::clear_label_size_cache()
@@ -396,7 +368,6 @@ void tcontrol::set_label(const std::string& label)
 
 	label_ = label;
 	label_size_.second.x = 0;
-	set_layout_size(tpoint(0, 0));
 	update_canvas();
 	set_dirty();
 
@@ -436,7 +407,6 @@ void tcontrol::update_canvas()
 		canvas.set_variable("text_alignment", variant(encode_text_alignment(text_alignment_)));
 		canvas.set_variable("text_maximum_width", variant(max_width));
 		canvas.set_variable("text_maximum_height", variant(max_height));
-		canvas.set_variable("text_wrap_mode", variant(can_wrap()? PANGO_ELLIPSIZE_NONE : PANGO_ELLIPSIZE_END));
 		canvas.set_variable("text_characters_per_line", variant(get_characters_per_line()));
 	}
 }
@@ -502,6 +472,14 @@ void tcontrol::erase_animation(int id)
 	}
 }
 
+void tcontrol::set_canvas_variable(const std::string& name, const variant& value)
+{
+	BOOST_FOREACH(tcanvas& canvas, canvas_) {
+		canvas.set_variable(name, value);
+	}
+	set_dirty();
+}
+
 class tshare_canvas_integrate_lock
 {
 public:
@@ -532,7 +510,17 @@ void tcontrol::impl_draw_background(
 	tshare_canvas_image_lock lock1(surf);
 	tshare_canvas_integrate_lock lock2(integrate_);
 
+	x_offset += draw_offset_.x;
+	y_offset += draw_offset_.y;
+
 	canvas(get_state()).blit(frame_buffer, calculate_blitting_rectangle(x_offset, y_offset), get_dirty(), pre_anims_, post_anims_);
+}
+
+void tcontrol::child_populate_dirty_list(twindow& caller, const std::vector<twidget*>& call_stack)
+{
+	if (force_add_to_dirty_list && !canvas_.empty()) {
+		caller.add_to_dirty_list(call_stack);
+	}
 }
 
 void tcontrol::definition_load_configuration(const std::string& control_type)
@@ -541,13 +529,141 @@ void tcontrol::definition_load_configuration(const std::string& control_type)
 
 	set_config(get_control(control_type, definition_));
 
-	assert(canvas().size() == config()->state.size());
+	VALIDATE(canvas().size() == config()->state.size(), null_str);
 	for (size_t i = 0; i < canvas().size(); ++i) {
 		canvas(i) = config()->state[i].canvas;
 		canvas(i).start_animation();
 	}
 
 	update_canvas();
+}
+
+void tcontrol::control_drag_detect(bool start, int x, int y, const tdrag_direction type)
+{
+	if (drag_ == drag_none || start == drag_detect_started_) {
+		return;
+	}
+
+	if (start) {
+		// ios sequence: SDL_MOUSEMOTION, SDL_MOUSEBUTTONDOWN
+		// it is called at SDL_MOUSEBUTTONDOWN! SDL_MOUSEMOTION before it is discard.
+		first_drag_coordinate_.x = x;
+		first_drag_coordinate_.y = y;
+
+		last_drag_coordinate_.x = x;
+		last_drag_coordinate_.y = y;
+	} else if (enable_drag_draw_coordinate_) {
+		set_draw_offset(0, 0);
+	}
+	drag_detect_started_ = start;
+
+	bool require_dirty = true;
+	if (callback_control_drag_detect_) {
+		require_dirty = callback_control_drag_detect_(this, start, type);
+	}
+	// upcaller maybe update draw_offset.
+	if (require_dirty) {
+		set_dirty();
+	}
+}
+
+void tcontrol::set_drag_coordinate(int x, int y)
+{
+	if (drag_ == drag_none || !drag_detect_started_) {
+		return;
+	}
+
+	if (last_drag_coordinate_.x == x && last_drag_coordinate_.y == y) {
+		return;
+	}
+
+	if (drag_ != drag_track) {
+		// get rid of direct noise
+		if (!(drag_ & (drag_left | drag_right))) {
+			// concert only vertical
+			if (abs(x - last_drag_coordinate_.x) > abs(y - last_drag_coordinate_.y)) {
+				// horizontal variant is more than vertical, think no.
+				return;
+			}
+
+		} else if (!(drag_ & (drag_up | drag_down))) {
+			// concert only horizontal
+			if (abs(x - last_drag_coordinate_.x) < abs(y - last_drag_coordinate_.y)) {
+				// vertical variant is more than horizontal, think no.
+				return;
+			}
+		}
+	}
+
+	last_drag_coordinate_.x = x;
+	last_drag_coordinate_.y = y;
+
+	if (enable_drag_draw_coordinate_) {
+		set_draw_offset(last_drag_coordinate_.x - first_drag_coordinate_.x, 0);
+	}
+
+	bool require_dirty = true;
+	if (callback_set_drag_coordinate_) {
+		require_dirty = callback_set_drag_coordinate_(this, first_drag_coordinate_, last_drag_coordinate_);
+	}
+
+	if (require_dirty) {
+		set_dirty();
+	}
+}
+
+int tcontrol::drag_satisfied()
+{
+	if (drag_ == drag_none || !drag_detect_started_) {
+		return drag_none;
+	}
+	tdrag_direction ret = drag_none;
+
+	const int drag_threshold_mdpi = 40;
+	const int drag_threshold = hdpi? drag_threshold_mdpi * hdpi_ratio: drag_threshold_mdpi;
+	int w_threshold = w_ / 3;
+	if (w_threshold > drag_threshold) {
+		w_threshold = drag_threshold;
+	}
+	int h_threshold = h_ / 3;
+	if (h_threshold > drag_threshold) {
+		h_threshold = drag_threshold;
+	}
+
+	
+	if (drag_ & drag_left) {
+		if (last_drag_coordinate_.x < first_drag_coordinate_.x && first_drag_coordinate_.x - last_drag_coordinate_.x > w_threshold) {
+			ret = drag_left;
+		}
+	} 
+	if (drag_ & drag_right) {
+		if (last_drag_coordinate_.x > first_drag_coordinate_.x && last_drag_coordinate_.x - first_drag_coordinate_.x > w_threshold) {
+			ret = drag_right;
+		}
+
+	}
+	if (drag_ & drag_up) {
+		if (last_drag_coordinate_.y < first_drag_coordinate_.y && first_drag_coordinate_.y - last_drag_coordinate_.y > h_threshold) {
+			ret = drag_up;
+		}
+
+	}
+	if (drag_ & drag_down) {
+		if (last_drag_coordinate_.y > first_drag_coordinate_.y && last_drag_coordinate_.y - first_drag_coordinate_.y > h_threshold) {
+			ret = drag_down;
+		}
+	}
+
+	// stop drag detect.
+	control_drag_detect(false, npos, npos, ret);
+
+	return ret;
+}
+
+void tcontrol::set_draw_offset(int x, int y) 
+{
+	draw_offset_.x = x; 
+	draw_offset_.y = y; 
 }
 
 tpoint tcontrol::get_best_text_size(
@@ -616,21 +732,8 @@ void tcontrol::signal_handler_show_tooltip(
 					, &symbols);
 		}
 
-		event::tmessage_show_tooltip message(tip, location);
+		event::tmessage_show_tooltip message(tip, *this, location);
 		handled = fire(event::MESSAGE_SHOW_TOOLTIP, *this, message);
-	}
-}
-
-void tcontrol::signal_handler_show_helptip(
-		  const event::tevent event
-		, bool& handled
-		, const tpoint& location)
-{
-	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
-
-	if(!help_message_.empty()) {
-		event::tmessage_show_helptip message(help_message_, location);
-		handled = fire(event::MESSAGE_SHOW_HELPTIP, *this, message);
 	}
 }
 
@@ -645,7 +748,8 @@ void tcontrol::signal_handler_notify_remove_tooltip(
 	 * alternative is to add a message to the window to remove the tip.
 	 * Might be done later.
 	 */
-	tip::remove();
+	get_window()->remove_tooltip();
+	// tip::remove();
 
 	handled = true;
 }

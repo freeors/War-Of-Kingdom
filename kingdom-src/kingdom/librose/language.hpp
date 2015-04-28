@@ -84,9 +84,6 @@ bool current_language_rtl();
 //function which attempts to query and return the locale on the system
 const language_def& get_locale();
 
-/** Initializes the list of textdomains from a configuration object */
-void init_textdomains(const config& cfg);
-
 bool load_language_list();
 
 #endif

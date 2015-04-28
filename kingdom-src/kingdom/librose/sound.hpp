@@ -32,6 +32,14 @@ enum channel_group {
 	SOUND_FX
 };
 
+#define MIN_AUDIO_GAIN		-16
+#define MAX_AUDIO_GAIN		16
+
+void set_play_params(int sound_sample_rate, size_t sound_buffer_size);
+size_t get_buffer_size();
+
+void SDL_XmitAudio2(bool resume);
+
 bool init_sound();
 void close_sound();
 void reset_sound();
@@ -82,8 +90,9 @@ void play_timer(const std::string& files, int loop_ticks, int fadein_ticks);
 void play_UI_sound(const std::string& files);
 
 // A class to periodically check for new music that needs to be played
-class music_thinker : public events::pump_monitor {
-	void process(events::pump_info &info);
+class music_thinker : public events::pump_monitor 
+{
+	void monitor_process();
 };
 
 // Save music playlist for snapshot
@@ -93,6 +102,27 @@ void set_music_volume(int vol);
 void set_sound_volume(int vol);
 void set_bell_volume(int vol);
 void set_UI_volume(int vol);
+
+class tpersist_xmit_audio_lock
+{
+public:
+	tpersist_xmit_audio_lock();
+	~tpersist_xmit_audio_lock();
+
+private:
+	bool original_xmit_audio_;
+};
+
+class tfrequency_lock
+{
+public:
+	tfrequency_lock(int new_frequency, int new_buffer_size);
+	~tfrequency_lock();
+
+private:
+	int original_frequency_;
+	size_t original_buffer_size_;
+};
 
 }
 

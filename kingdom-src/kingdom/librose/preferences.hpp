@@ -23,7 +23,7 @@ class display;
 class hero;
 class hero_map;
 
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "terrain_translation.hpp"
 
 #include <utility>
@@ -50,6 +50,7 @@ namespace preferences {
 	const config &get_child(const std::string &key);
 	std::string get(const std::string& key);
 	bool get(const std::string &key, bool def);
+	int get2(const std::string &key, int def);
 	void erase(const std::string& key);
 
 	void disable_preferences_save();
@@ -149,12 +150,6 @@ namespace preferences {
 	// which will cause it to conflict with the sound namespace.
 	bool sound_on();
 	bool set_sound(bool ison);
-
-	unsigned int sample_rate();
-	void save_sample_rate(const unsigned int rate);
-
-	size_t sound_buffer_size();
-	void save_sound_buffer_size(const size_t size);
 
 	int sound_volume();
 	void set_sound_volume(int vol);

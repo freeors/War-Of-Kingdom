@@ -13,29 +13,28 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/widget_definition.hpp"
 
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
 #include "gui/widgets/helper.hpp"
+#include "gui/widgets/widget.hpp"
 #include "wml_exception.hpp"
 
 namespace gui2 {
 
 tresolution_definition_::tresolution_definition_(const config& cfg)
-	: window_width(cfg["window_width"])
-	, window_height(cfg["window_height"])
-	, min_width(cfg["min_width"])
-	, min_height(cfg["min_height"])
-	, default_width(cfg["default_width"])
-	, default_height(cfg["default_height"])
-	, max_width(cfg["max_width"])
-	, max_height(cfg["max_height"])
-	, text_extra_width(cfg["text_extra_width"])
-	, text_extra_height(cfg["text_extra_height"])
-	, text_font_size(cfg["text_font_size"])
+	: window_width(cfg["window_width"].to_int())
+	, window_height(cfg["window_height"].to_int())
+	, default_width(cfg["default_width"].to_int())
+	, default_height(cfg["default_height"].to_int())
+	, max_width(cfg["max_width"].to_int())
+	, max_height(cfg["max_height"].to_int())
+	, text_extra_width(cfg["text_extra_width"].to_int())
+	, text_extra_height(cfg["text_extra_height"].to_int())
+	, text_font_size(cfg["text_font_size"].to_int())
 	, text_font_style(decode_font_style(cfg["text_font_style"]))
 	, state()
 {
@@ -100,6 +99,19 @@ tresolution_definition_::tresolution_definition_(const config& cfg)
  * @end{tag}{name="resolution"}
  * @end{parent}{name=generic/widget_definition/}
  */
+	if (twidget::hdpi) {
+		if (window_width && window_height) {
+			window_width = (window_width + 1) * twidget::hdpi_ratio - 1;
+			window_height = (window_height + 1) * twidget::hdpi_ratio - 1;
+		}
+		default_width *= twidget::hdpi_ratio;
+		default_height *= twidget::hdpi_ratio;
+		max_width *= twidget::hdpi_ratio;
+		max_height *= twidget::hdpi_ratio;
+		text_extra_width *= twidget::hdpi_ratio;
+		text_extra_height *= twidget::hdpi_ratio;
+		text_font_size *= twidget::hdpi_ratio;
+	}
 
 	DBG_GUI_P << "Parsing resolution "
 			<< window_width << ", " << window_height << '\n';

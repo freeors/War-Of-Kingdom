@@ -23,7 +23,7 @@ namespace gui2 {
 
 class tspacer;
 class tbutton;
-class ttabbar;
+class tpanel;
 
 namespace implementation {
 	struct tbuilder_report;
@@ -39,13 +39,10 @@ namespace implementation {
 class treport : public tscrollbar_container
 {
 	friend struct implementation::tbuilder_report;
-	friend class ttabbar;
 public:
 
-	treport();
-	~treport();
+	treport(int unit_w, int unit_h, int gap);
 
-	void init_report(int unit_w, int unit_h, int gap);
 	const tpoint& get_unit_size() const { return unit_size_; }
 	int get_unit_width() const { return unit_size_.x; }
 	int get_unit_height() const { return unit_size_.y; }
@@ -69,7 +66,49 @@ public:
 
 	void layout_init(const bool full_initialization);
 	tpoint calculate_best_size() const;
-	void set_content_size(const tpoint& origin, const tpoint& size);
+	void place_content_grid(const tpoint& content_origin, const tpoint& content_size, const tpoint& desire_origin);
+
+	static treport* get_report(const twidget* widget);
+
+	//
+	// tabbar function
+	//
+	void tabbar_init(bool toggle, const std::string& definition, bool always = false, int width = 0, int height = 0, int gap = npos);
+
+	tcontrol* create_child(const std::string& id, const std::string& tooltip, void* cookie);
+	void set_child_visible(int at, bool visible);
+	bool get_child_visible(int at) const;
+
+	int get_at(const twidget* widget) const;
+	int get_at2(const void* cookie) const;
+	const tgrid::tchild& get_child(int at) const;
+	tcontrol* get_widget(int at) const;
+	void select(int index);
+	void select(twidget* widget);
+	tcontrol* cursel() const;
+	void tabbar_set_callback_show(boost::function<void (treport*, tcontrol* widget)> callback) { callback_show_ = callback; }
+
+	void multiline_init(bool toggle, const std::string& definition, int width = 0, int height = 0, int gap = npos, int fixed_cols = npos);
+	void multiline_set(int gap, int fixed_cols = npos);
+
+	void set_boddy(twidget* boddy);
+
+	const tgrid::tchild* child_begin() const;
+	int childs() const;
+
+private:
+	void tabbar_erase_children();
+	void tabbar_hide_children();
+	void tabbar_replacement_children();
+
+	void multiline_replacement_children();
+
+	bool pre_toggle(twidget* widget);
+	void click(bool previous);
+	void validate_start();
+	int calculate_requrie_back_widgets() const;
+
+	void click_report(twidget* widget, bool& handled, bool& halt);
 
 private:
 	/** Inherited from tcontrol. */
@@ -78,15 +117,22 @@ private:
 			, int x_offset
 			, int y_offset);
 
+	void finalize_subclass();
+
+	/** Inherited from tcontrol. */
+	const std::string& get_control_type() const;
+
+	/***** ***** ***** signal handlers ***** ****** *****/
+
+	void signal_handler_left_button_down(const event::tevent event);
+
+private:
 	/**
 	 * Possible states of the widget.
 	 *
 	 * Note the order of the states must be the same as defined in settings.hpp.
 	 */
 	enum tstate { ENABLED, DISABLED, COUNT };
-
-//  It's not needed for now so keep it disabled, no definition exists yet.
-//	void set_state(const tstate state);
 
 	/**
 	 * Current state of the widget.
@@ -96,77 +142,45 @@ private:
 	 */
 	tstate state_;
 
-	void finalize_subclass();
-
-	/***** ***** ***** inherited ****** *****/
-
-	/** Inherited from tcontrol. */
-	const std::string& get_control_type() const;
-
-	/***** ***** ***** signal handlers ***** ****** *****/
-
-	void signal_handler_left_button_down(const event::tevent event);
-
 	tpoint unit_size_;
 	int gap_;
+
+	// true: it is multi-line report.
+	// false: it is single-line report. same as tabbar
 	bool extendable_;
 
-	bool content_layouted_;
-	ttabbar* tabbar_;
-};
+	int front_childs_;
+	int back_childs_;
 
-class ttabbar
-{
-	friend class treport;
-public:
-	static const int front_childs = 1; // 1: previous
-	static const int back_childs = 2; // 1: stuff, 1: next
-	static ttabbar* get_tabbar(twidget* widget);
+	//
+	// tabbar member
+	//
 
-	ttabbar(bool toggle, bool segment, const std::string& definition);
-	~ttabbar();
-
-	void set_report(treport* report, int width = 0, int height = 0);
-	treport* report() const { return report_; }
-	tcontrol* create_child(const std::string& id, const std::string& tooltip, void* cookie, const std::string& sparam);
-	void insert_child(twidget& widget, int at = twidget::npos);
-	void erase_child(int at);
-	void erase_children(bool clear_additional = false);
-	void hide_children();
-	void replacement_children();
-	void set_visible(int at, bool visible);
-	bool get_visible(int at) const;
-
-	int childs() const;
-	int get_index(const twidget* widget) const;
-	int get_index2(const void* cookie) const;
-	const tgrid::tchild& get_child(int at) const;
-	tcontrol* get_widget(int at) const;
-	void select(int index);
-	void select(twidget* widget);
-	void set_callback_show(boost::function<void (ttabbar*, const tgrid::tchild& child)> callback) { callback_show_ = callback; }
-
-private:
-	void click(bool previous);
-	void validate_start();
-	int calculate_requrie_back_widgets() const;
-
-private:
-	treport* report_;
+	// true: widget is toggle_button
+	// false: widget is button
 	bool toggle_;
+
+	// true:  space for the previous/next is always reserved,
+	// false: space for the previous/next is reserved according to current state.
 	bool segment_;
-	std::string definition_;
-	int start_;
 
 	// when segment_, segment_childs_ is visible widget count at one group.
 	// when !segment_, segment_childs_ is visible widget count at this time.
 	int segment_childs_;
 
+	// valid only multiline report.
+	int fixed_cols_;
+
+	std::string definition_;
+	int start_;
+
 	tbutton* previous_;
 	tspacer* stuff_widget_;
 	tbutton* next_;
-	boost::function<void (ttabbar*, const tgrid::tchild& child)> callback_show_;
+	boost::function<void (treport*, tcontrol* widget)> callback_show_;
 	int max_height_;
+
+	tpanel* boddy_;
 };
 
 } // namespace gui2

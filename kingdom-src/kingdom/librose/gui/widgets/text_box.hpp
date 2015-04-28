@@ -91,7 +91,8 @@ public:
 	int get_src_pos() const;
 	void set_src_pos(int pos);
 
-protected:
+	void set_default_label(const std::string& label) { default_label_ = label; }
+
 	/**
 	 * Backspace key pressed.
 	 *
@@ -208,6 +209,8 @@ protected:
 	virtual void delete_selection();
 
 	void handle_mouse_selection(tpoint mouse, const bool start_selection);
+
+	void set_visible_area(const SDL_Rect& area);
 
 protected:
 	/** Start of the selected text. */
@@ -373,6 +376,8 @@ private:
 
 	/** Is the mouse in dragging mode, this affects selection in mouse move */
 	bool dragging_;
+
+	std::string default_label_;
 
 	/**
 	 * Default key handler if none of the above functions is called.

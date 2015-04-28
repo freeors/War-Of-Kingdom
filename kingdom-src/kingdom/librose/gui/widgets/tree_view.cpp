@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/tree_view.hpp"
 
@@ -100,7 +100,7 @@ void ttree_view::child_populate_dirty_list(twindow& caller
 	root_node_->impl_populate_dirty_list(caller, call_stack);
 }
 
-void ttree_view::set_content_size(const tpoint& origin, const tpoint& desire_size)
+void ttree_view::place_content_grid(const tpoint& content_origin, const tpoint& desire_size, const tpoint& origin)
 {
 	tpoint size = desire_size;
 	if (left_align_ && !empty()) {
@@ -140,7 +140,7 @@ void ttree_view::set_content_size(const tpoint& origin, const tpoint& desire_siz
 
 	size.x = std::max(actual_size.x, size.x);
 	size.y = std::max(actual_size.y, size.y);
-	tscrollbar_container::set_content_size(origin, size);
+	content_grid_->place(origin, size);
 }
 
 bool ttree_view::empty() const

@@ -19,7 +19,6 @@
 #include "cursor.hpp"
 #include "display.hpp"
 #include "preferences.hpp"
-#include "tooltips.hpp"
 
 namespace events {
 
@@ -75,15 +74,11 @@ void mouse_handler_base::mouse_update(const bool browse)
 	int x, y;
 
 	SDL_GetMouseState(&x,&y);
-	mouse_motion(x, y, browse, true);
-
-	// mouse_motion(x_, y_, browse, true);
+	mouse_motion(x, y, browse);
 }
 
-bool mouse_handler_base::mouse_motion_default(int x, int y, bool /*update*/)
+bool mouse_handler_base::mouse_motion_default(int x, int y)
 {
-	tooltips::process(x, y);
-
 	if(simple_warp_) {
 		return true;
 	}
@@ -136,18 +131,18 @@ void mouse_handler_base::current_position(int* x, int* y)
 	}
 }
 
-void mouse_handler_base::mouse_motion(int x, int y, const bool browse, bool update)
+void mouse_handler_base::mouse_motion(int x, int y, const bool browse)
 {
 	x_ = x;
 	y_ = y;
 }
 
-void mouse_handler_base::mouse_press(const SDL_MouseButtonEvent& event, const bool browse)
+void mouse_handler_base::mouse_press(const SDL_MouseButtonEvent& event, bool motions, const bool browse)
 {
 	x_ = event.x;
 	y_ = event.y;
 
-	if(is_middle_click(event) && !preferences::middle_click_scrolls()) {
+	if (is_middle_click(event) && !preferences::middle_click_scrolls()) {
 		simple_warp_ = true;
 	}
 	show_menu_ = false;
@@ -157,11 +152,11 @@ void mouse_handler_base::mouse_press(const SDL_MouseButtonEvent& event, const bo
 		if (event.state == SDL_PRESSED) {
 			cancel_dragging();
 			init_dragging(dragging_left_);
-			left_click(event.x, event.y, browse);
+			left_mouse_down(event.x, event.y, browse);
 		} else if (event.state == SDL_RELEASED) {
 			minimap_scrolling_ = false;
 			clear_dragging(event, browse);
-			left_mouse_up(event.x, event.y, browse);
+			left_mouse_up(event.x, event.y, motions? true: false, browse);
 		}
 	} else if (is_right_click(event)) {
 		if (event.state == SDL_PRESSED) {
@@ -227,7 +222,7 @@ bool mouse_handler_base::allow_mouse_wheel_scroll(int /*x*/, int /*y*/)
 	return true;
 }
 
-bool mouse_handler_base::left_click(int x, int y, const bool /*browse*/)
+bool mouse_handler_base::left_mouse_down(int x, int y, const bool /*browse*/)
 {
 	// clicked on a hex on the minimap? then initiate minimap scrolling
 	const map_location& loc = gui().minimap_location_on(x, y);
@@ -236,7 +231,7 @@ bool mouse_handler_base::left_click(int x, int y, const bool /*browse*/)
 	if (loc.valid()) {
 		minimap_scrolling_ = true;
 		last_hex_ = loc;
-		disp.scroll_to_tile(loc,display::WARP, false);
+		disp.scroll_to_tile(loc, display::WARP, false);
 		return true;
 	}
 	// clicked on a hex on the mainmap?
@@ -248,10 +243,10 @@ bool mouse_handler_base::left_click(int x, int y, const bool /*browse*/)
 
 void mouse_handler_base::left_drag_end(int x, int y, const bool browse)
 {
-	left_click(x, y, browse);
+	// left_mouse_down(x, y, browse);
 }
 
-void mouse_handler_base::left_mouse_up(int /*x*/, int /*y*/, const bool /*browse*/)
+void mouse_handler_base::left_mouse_up(int /*x*/, int /*y*/, bool /*motions*/, const bool /*browse*/)
 {
 }
 

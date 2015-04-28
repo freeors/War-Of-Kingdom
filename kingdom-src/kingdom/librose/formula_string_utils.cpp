@@ -1,7 +1,6 @@
-/* $Id: formula_string_utils.cpp 47824 2010-12-05 18:09:03Z mordante $ */
 /*
    Copyright (C) 2003 by David White <dave@whitevine.net>
-   Copyright (C) 2005 - 2010 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
+   Copyright (C) 2005 - 2015 by Guillaume Melquiond <guillaume.melquiond@gmail.com>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -31,7 +30,7 @@ namespace utils {
 class string_map_variable_set : public variable_set
 {
 public:
-	string_map_variable_set(const string_map& map) : map_(map) {};
+	string_map_variable_set(const string_map& map) : map_(map) {}
 
 	virtual config::attribute_value get_variable_const(const std::string &key) const
 	{
@@ -109,7 +108,7 @@ static std::string do_interpolation(const std::string &str, const variable_set& 
 			} while(++var_end != res.end() && paren_nesting_level > 0);
 			if(paren_nesting_level > 0) {
 				ERR_NG << "Formula in WML string cannot be evaluated due to "
-					<< "missing closing paren:\n\t--> \""
+					<< "a missing closing parenthesis:\n\t--> \""
 					<< std::string(var_begin, var_end) << "\"\n";
 				res.replace(var_begin, var_end, "");
 				continue;
@@ -215,14 +214,14 @@ t_string interpolate_variables_into_tstring(const t_string &tstr, const variable
 }
 
 }
-
+/*
 std::string vgettext(const char *msgid, const utils::string_map& symbols)
 {
 	const std::string orig(_(msgid));
 	const std::string msg = utils::interpolate_variables_into_string(orig, &symbols);
 	return msg;
 }
-
+*/
 std::string vgettext(const char *domain
 		, const char *msgid
 		, const utils::string_map& symbols)

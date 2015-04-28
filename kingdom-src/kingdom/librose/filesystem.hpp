@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "exceptions.hpp"
+#include "posix.h"
 
 /** An exception object used when an IO error occurs */
 struct io_exception : public game::error {
@@ -154,7 +155,8 @@ const file_tree_checksum& data_tree_checksum(bool reset = false, int filter = SK
 void data_tree_checksum(const std::vector<std::string>& paths, file_tree_checksum& checksum, int filter);
 
 /** Returns the size of a file, or -1 if the file doesn't exist. */
-int file_size(const std::string& fname);
+int64_t file_size(const std::string& fname, bool to_utf16);
+int64_t disk_free_space(const std::string& root_name);
 
 bool ends_with(const std::string& str, const std::string& suffix);
 
@@ -169,6 +171,10 @@ std::string file_name(const std::string& file);
  * Equivalent to a portable dirname()
  */
 std::string directory_name(const std::string& file);
+
+std::string file_main_name(const std::string& file);
+
+std::string file_ext_name(const std::string& file);
 
 /**
  * Returns the absolute path of a file.
@@ -194,6 +200,7 @@ struct binary_paths_manager
 	~binary_paths_manager();
 
 	void set_paths(const class config& cfg);
+	const std::vector<std::string>& paths() const { return paths_; }
 
 private:
 	binary_paths_manager(const binary_paths_manager& o);
@@ -271,9 +278,16 @@ const char* utf8_2_ansi(const std::string& str);
 const char* ansi_2_utf8(const std::string& str);
 
 std::string format_time_ymd(time_t t);
+std::string format_time_hms(time_t t);
+std::string format_time_hm(time_t t);
 std::string format_time_date(time_t t);
 std::string format_time_local(time_t t);
-std::string format_time_elapse(time_t elapse);
+std::string format_time_ymdhms(time_t t);
+std::string format_elapse_hms(time_t elapse, bool align = false);
+std::string format_elapse_hms2(time_t elapse, bool align = false);
+std::string format_elapse_hm(time_t elapse, bool align = false);
+std::string format_elapse_hm2(time_t elapse, bool align = false);
+std::string format_elapse_ms(time_t elapse, bool align = false);
 
 char* saes_encrypt_heap(const char* ptext, int size, unsigned char* key);
 char* saes_decrypt_heap(const char* ctext, int size, unsigned char* key);
@@ -305,6 +319,45 @@ public:
 
 	char* buf;
 	int size;
+};
+
+struct tfopen_lock
+{
+	tfopen_lock(const std::string& file, uint32_t desired_access, uint32_t create_disposition)
+		: fp(INVALID_FILE)
+		, data(NULL)
+		, data_size(0)
+	{
+		posix_fopen(file.c_str(), desired_access, create_disposition, fp);
+	}
+
+	~tfopen_lock()
+	{
+		close();
+	}
+
+	bool valid() const { return fp != INVALID_FILE; }
+
+	void resize_data(int size, int vsize = 0);
+	void move(int64_t from, int64_t to, int size = 0);
+
+	void close()
+	{
+		if (data) {
+			free(data);
+			data = NULL;
+			data_size = 0;
+		}
+		if (fp != INVALID_FILE) {
+			posix_fclose(fp);
+			fp = INVALID_FILE;
+		}
+	}
+
+public:
+	posix_file_t fp;
+	char* data;
+	int data_size;
 };
 
 #endif

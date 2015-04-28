@@ -86,7 +86,7 @@ class frame_parameters {
 	tristate auto_hflip;
 	tristate primary_frame;
 	int drawing_layer;
-	bool screen_mode;
+	bool area_mode;
 	std::string sound_filter;
 
 	static frame_parameters null_param;

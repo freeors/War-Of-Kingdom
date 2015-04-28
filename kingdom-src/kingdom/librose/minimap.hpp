@@ -19,15 +19,14 @@
 #include "map_location.hpp"
 
 class gamemap;
+class display;
 struct surface;
 
 
 namespace image {
 	///function to create the minimap for a given map
 	///the surface returned must be freed by the user
-	surface getMinimap(int w, int h, const gamemap &map_, const void *vm = NULL);
+	surface getMinimap(int w, int h, const gamemap &map_, const display* disp = NULL);
 }
-
-void shrouded_and_fogged(const map_location& loc, const void* t, bool& shrouded, bool& fogged);
 
 #endif

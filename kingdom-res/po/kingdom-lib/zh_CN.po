@@ -1,0 +1,7601 @@
+# This file is distributed under the same license as the Battle for Wesnoth package.
+# Automatically generated, 2005.
+# Dionysus <huang.wei.bhu@gmail.com>, 2007.  (unicon)
+# sylecn <sylecn@yahoo.com.cn>, 2009.
+# CloudiDust <cloudidust@gmail.com>, 2010.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: kingdom-lib\n"
+"Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
+"POT-Creation-Date: 2016-02-04 19:31+0800\n"
+"PO-Revision-Date: 2016-02-04 22:04+0800\n"
+"Last-Translator: \n"
+"Language-Team: Chinese/Simplified <i18n-translation@lists.linux.net.cn>\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n>1);\n"
+"X-Poedit-Bookmarks: -1,-1,-1,3,-1,-1,-1,-1,-1,-1\n"
+"X-Generator: Poedit 1.8.6\n"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/_bonus.cpp:1
+msgid "War of Kingdom"
+msgstr "王国战争"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/data.cpp:1
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:359
+msgid "Player side"
+msgstr "玩家势力"
+
+#
+# Sign in
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/data.cpp:3
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:689
+#: kingdom-src/kingdom/src/multiplayer.cpp:2368
+msgid "Sign in"
+msgstr "签到"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:1
+msgid "("
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:3
+msgid ")"
+msgstr ""
+
+#
+# 3th payment
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:5
+msgid "3th payment"
+msgstr "第三方支付"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:7
+msgid "80%"
+msgstr ""
+
+#
+# Hero List Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:9
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:130
+msgid "Ability"
+msgstr "能力"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:11
+msgid "Accelerated Speed"
+msgstr "加速"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:13
+msgid "Action"
+msgstr "动作"
+
+#
+# Hero List Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:15
+#: kingdom-src/kingdom/src/unit.cpp:4428
+msgid "Activity"
+msgstr "活力"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:17
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:132
+#: kingdom-src/kingdom/src/unit.cpp:6519
+msgid "Adaptability"
+msgstr "适性"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:19
+msgid "Add As Friend"
+msgstr "加入好友列表"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:21
+msgid "Add As Ignore"
+msgstr "加入忽略列表"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:23
+msgid "Address"
+msgstr "地址"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:25
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:120
+msgid "Advance Unit"
+msgstr "升级部队"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:27
+msgid "Agreement"
+msgstr "协议"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:29
+msgid "Alipay dialog"
+msgstr ""
+
+#
+# List Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:31
+msgid "All side"
+msgstr "全势力"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:33
+msgid "Allow more than one map to be open at the same time (MDI)"
+msgstr "允许同时打开多张地图（MDI）"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:35
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1482
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:128
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:169
+msgid "Ally"
+msgstr "同盟"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:37
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1865
+msgid "Append"
+msgstr "添加"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:39
+msgid "Apply"
+msgstr "应用"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:41
+#: kingdom-src/kingdom/src/play_controller.cpp:1843
+msgid "Appoint Noble"
+msgstr "赐与爵位"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:43
+msgid "Appoint mayor"
+msgstr "任命太守"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:45
+msgid "Artifical"
+msgstr "建筑物"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:47
+msgid "Artifical List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:49
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:84
+#: kingdom-src/kingdom/src/play_controller.cpp:1842
+msgid "Assemble Treasure"
+msgstr "装配宝物"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:51
+msgid "Assign sides to players at random"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:53
+msgid "Assist design"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:55
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:333
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1563
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:358
+#: kingdom-src/kingdom/src/multiplayer.cpp:2037
+msgid "Associate"
+msgstr "交往"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:57
+msgid "Attack"
+msgstr "攻击"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:59
+msgid "Attack enemy"
+msgstr "攻击敌人"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:61
+msgid "Attacker's reinforce"
+msgstr "攻击方援军"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:63
+msgid "Auto scroll"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:65
+msgid "Auto-update map view"
+msgstr "自动刷新地图视图"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:67
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:318
+msgid "Avatar"
+msgstr "王国秀"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:69
+msgid "Background material about game's role"
+msgstr "游戏中角色背景资料"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:71
+msgid "Ban"
+msgstr "封禁"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:73
+msgid "Base"
+msgstr "基本"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:75
+msgid "Base Gold"
+msgstr "基本收入"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:77
+#: kingdom-src/kingdom/src/team.cpp:2850
+msgid "Been damage"
+msgstr "被损伤"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:79
+msgid "Blue:"
+msgstr "蓝:"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:81
+#: kingdom-src/kingdom/src/gui/dialogs/employ.cpp:135
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:282
+#: kingdom-src/kingdom/src/gui/dialogs/interior.cpp:276
+#: kingdom-src/kingdom/src/gui/dialogs/technology_tree.cpp:223
+msgid "Browse"
+msgstr "查看"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:83
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:182
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:87
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:88
+msgid "Build"
+msgstr "建造"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:85
+msgid "Cancel"
+msgstr "取消"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:87
+msgid "Capital"
+msgstr "都城"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:89
+msgid "Card"
+msgstr "卡牌"
+
+#
+# Cast tactic
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:91
+#: kingdom-src/kingdom/src/gui/dialogs/tactic.cpp:193
+msgid "Cast tactic"
+msgstr "施放战法"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:93
+msgid "Castle Size:"
+msgstr "城堡面积："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:95
+#: kingdom-src/kingdom/src/team.cpp:2847
+msgid "Cause damage"
+msgstr "造成损伤"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:97
+msgid "Change Resolution"
+msgstr "改变分辨率"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:99
+msgid "Change control"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:101
+msgid "Change the language"
+msgstr "切换语言"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:103
+msgid "Charm"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:105
+#: kingdom-src/kingdom/src/gui/dialogs/lobby_main.cpp:465
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:484
+msgid "Chat"
+msgstr "聊天"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:107
+msgid "Chat Timestamping when multiplayer"
+msgstr "多人对战时开启聊天时间戳"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:109
+msgid "Choose tactic"
+msgstr "选择战法"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:111
+msgid "Choose weapon:"
+msgstr "选择武器："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:113
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1601
+#: kingdom-src/kingdom/src/unit.cpp:4337 kingdom-src/kingdom/src/unit.cpp:4339
+#: kingdom-src/kingdom/src/unit.cpp:4437 kingdom-src/kingdom/src/unit.cpp:4439
+#: kingdom-src/kingdom/src/unit.cpp:4466 kingdom-src/kingdom/src/unit.cpp:4468
+msgid "City"
+msgstr "城市"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:115
+msgid "City List"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:117
+msgid "City Rect."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:119
+msgid "Close"
+msgstr "关闭"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:121
+msgid "Coin to score"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:123
+msgid "Command"
+msgstr "命令"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:125
+#: kingdom-src/kingdom/src/gui/dialogs/interior.cpp:100
+msgid "Commercial"
+msgstr "商业"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:127
+#: kingdom-src/kingdom/src/unit.cpp:4656 kingdom-src/kingdom/src/unit.cpp:4658
+msgid "Commoner"
+msgstr "平民"
+
+#
+# config city
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:129
+msgid "Config city"
+msgstr "设置城市"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:131
+msgid "Configure the game's settings"
+msgstr "配置游戏的各项设置"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:133
+msgid "Connect"
+msgstr "连接"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:135
+msgid "Connect to Server"
+msgstr "连接到服务器"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:137
+msgid "Consider Rect."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:139
+msgid "Consort"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:141
+msgid "Content"
+msgstr "内容"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:143
+msgid "Controller"
+msgstr "控制模式"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:145
+msgid "Copy edge terrain"
+msgstr "复制边界地形"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:147
+msgid "Cost"
+msgstr "成本"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:149
+msgid "Create Game"
+msgstr "创建游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:151
+msgid "Create Unit (Debug!)"
+msgstr "创建单位（调试！）"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:153
+msgid "Create game"
+msgstr "创建游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:155
+msgid "Create new map"
+msgstr "创建新地图"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:157
+msgid "Create time"
+msgstr "创建时间"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:159
+msgid "Credit"
+msgstr "贡献"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:161
+#: kingdom-src/kingdom/src/gui/dialogs/mp_method_selection.cpp:79
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:212
+msgid "Crusage for subcontinent"
+msgstr "征战次大陆"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:163
+msgid "Current mayor"
+msgstr "当前太守"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:165
+msgid "Custom lighting setting"
+msgstr "自定义光照设置"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:167
+msgid "Date"
+msgstr "日期"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:169
+#: kingdom-src/kingdom/src/unit.cpp:4622 kingdom-src/kingdom/src/unit.cpp:4624
+msgid "Decree"
+msgstr "政令"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:171
+msgid "Default"
+msgstr "默认"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:173
+#: kingdom-src/kingdom/src/team.cpp:2853
+msgid "Defeat units"
+msgstr "击溃部队数"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:175
+msgid "Defender's reinforce"
+msgstr "守备方援军"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:177
+msgid "Delete"
+msgstr "删除"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:179
+msgid "Delete Save"
+msgstr "删除存档"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:181
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:274
+msgid "Description"
+msgstr "描述"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:183
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1929
+msgid "Detail"
+msgstr "详细"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:185
+msgid "Developer"
+msgstr "开发者"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:187
+msgid "Diplomatism"
+msgstr "外交"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:189
+msgid "Disband"
+msgstr "解散"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:191
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:259
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:850
+msgid "Discard"
+msgstr "放弃"
+
+#
+# user report
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:193
+msgid "Display user report"
+msgstr "显示用户报表"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:195
+msgid "Do you really want to delete this game?"
+msgstr "您真的想删除这个游戏吗？"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:197
+msgid "Don't display message when replay"
+msgstr "回放时不显示信息框"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:199
+msgid "Down"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:201
+msgid "Draw Hex Coordinates"
+msgstr "绘制格子坐标"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:203
+msgid "Draw Terrain Codes"
+msgstr "绘制地形编码"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:205
+msgid "Duel"
+msgstr "单挑"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:207
+msgid "EA"
+msgstr "经济区"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:209
+msgid "Edit"
+msgstr "编辑"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:211
+msgid "Edit box"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:213
+msgid "Edit send message"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:215
+msgid "Editor"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:217
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:960
+msgid "Editor Settings"
+msgstr "编辑器设置"
+
+#
+# Employ
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:219
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:327
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:899
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1120
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:76
+msgid "Employ"
+msgstr "雇佣"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:221
+msgid "Employ dialog."
+msgstr ""
+
+#
+# Employ
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:223
+msgid "Employ hero"
+msgstr "雇佣武将"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:225
+msgid "Enable scroll tracking of unit actions"
+msgstr "跟随单位动作滚动屏幕"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:227
+msgid "Endurance"
+msgstr "耐久"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:229
+msgid "Enemy Cities[0]"
+msgstr ""
+
+#
+# RPG Exchange
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:231
+msgid "Exchange"
+msgstr "交换"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:233
+msgid "Exchange (Rate:200)"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:235
+msgid "Exchange Hero"
+msgstr "交换武将"
+
+#
+# Exile
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:237
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:218
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:697
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:862
+#: kingdom-src/kingdom/src/multiplayer.cpp:1736
+msgid "Exile"
+msgstr "流放"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:239
+msgid "Exile(12)"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:241
+msgid "Expand / shrink direction"
+msgstr "扩展/收缩方向"
+
+#
+# Expedite Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:243
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:98
+msgid "Expedite"
+msgstr "出征"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:245
+msgid "Experience modifier"
+msgstr "经验值修正"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:247
+msgid "Explain"
+msgstr "说明"
+
+#
+# Expedite Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:249
+msgid "Exploiture"
+msgstr "开发"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:251
+msgid "Faction"
+msgstr "派系"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:253
+msgid "Faction/Side feature"
+msgstr "集团/势力特技"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:255
+msgid "Father"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:257
+msgid "Feature"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:259
+msgid "Female"
+msgstr "女"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:261
+#: kingdom-src/kingdom/src/menu_events.cpp:316
+msgid "Field Troop"
+msgstr "城外部队"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:263
+#: kingdom-src/kingdom/src/menu_events.cpp:318
+msgid "Field commoner"
+msgstr "城外平民"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:265
+msgid "Field turns"
+msgstr "战场回合数"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:267
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:75
+msgid "Final Battle"
+msgstr "决战"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:269
+msgid "Find"
+msgstr "查找"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:271
+msgid "Finish Hero"
+msgstr "武将（完）"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:273
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:305
+msgid "Fog"
+msgstr "战争迷雾"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:275
+msgid "Fog of War"
+msgstr "战争迷雾"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:277
+msgid "Forbid"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:279
+msgid "Force"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:281
+msgid "Format"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:283
+msgid "Formation attack"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:285
+msgid "Formation attack."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:287
+msgid "Fresh Hero"
+msgstr "武将（未）"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:289
+msgid "Friends/Ignored List"
+msgstr "好友/忽略列表"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:291
+msgid "Front Cities[0]"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:293
+msgid "Full Screen"
+msgstr "全屏显示"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:295
+msgid "Game Lobby: "
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:297
+msgid "Game genus"
+msgstr "游戏方式"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:299
+msgid "Games"
+msgstr "游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:301
+msgid "Gender"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:303
+msgid "Gender:"
+msgstr "性别："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:305
+msgid "Generate"
+msgstr "生成"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:307
+msgid "Generate Random Map"
+msgstr "生成随机地图"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:309
+msgid "Get one card every 25 turns"
+msgstr "每隔25回合得到一张卡"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:311
+msgid "Give"
+msgstr "给予"
+
+#
+# Recruit Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:313
+msgid "Gold"
+msgstr "金币"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:315
+#: kingdom-src/kingdom/src/unit.cpp:4670 kingdom-src/kingdom/src/unit.cpp:4672
+#: kingdom-src/kingdom/src/unit.cpp:4684 kingdom-src/kingdom/src/unit.cpp:4686
+msgid "Gold income"
+msgstr "金收入"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:317
+msgid "Gold per village"
+msgstr "金币/村庄"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:319
+msgid "Gold/Income"
+msgstr "起始/回合金币"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:321
+msgid "Gold/Technology"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:323
+msgid "Green:"
+msgstr "绿:"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:325
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:376
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:549
+msgid "Grid Size"
+msgstr "格子尺寸"
+
+#
+# group
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:327
+msgid "Group"
+msgstr "团队"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:329
+msgid "Guide"
+msgstr "指南"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:331
+msgid "HP"
+msgstr "生命值"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:333
+msgid "Hate"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:335
+msgid "Height:"
+msgstr "高度："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:337
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:107
+#: kingdom-src/kingdom/src/unit.cpp:4358 kingdom-src/kingdom/src/unit.cpp:4360
+msgid "Hero"
+msgstr "武将"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:339
+msgid "Hero List"
+msgstr "武将列表"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:341
+msgid "Hero count of AI on stage"
+msgstr "AI出场武将数"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:343
+msgid "Hero dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:345
+msgid "Hero list dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:347
+msgid "History"
+msgstr "历史"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:349
+msgid "How to set map"
+msgstr "如何设置地图"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:351
+msgid "I'm Ready"
+msgstr "准备就绪"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:353
+msgid "If appoint new mayor"
+msgstr "任命新太守后"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:355
+msgid "Ignore All"
+msgstr "忽略全部"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:357
+msgid "Inapp purchase dialog."
+msgstr ""
+
+#
+# RPG Independence
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:359
+msgid "Independence"
+msgstr "独立"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:361
+msgid "Intellect"
+msgstr ""
+
+#
+# Interior
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:363
+#: kingdom-src/kingdom/src/gui/dialogs/interior.cpp:271
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:508
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:72
+msgid "Interior"
+msgstr "内政"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:365
+msgid "Interrupt move when an ally is sighted"
+msgstr "发现友军时中断移动"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:367
+msgid "Intimate"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:369
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:249
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:301
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:307
+msgid "Join"
+msgstr "加入"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:371
+msgid "Kick"
+msgstr "踢出"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:373
+msgid "Landform:"
+msgstr "地形："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:375
+msgid "Leader"
+msgstr "领袖"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:377
+msgid "Leadership"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:379
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:122
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:163
+msgid "Left turns"
+msgstr "剩余回合数"
+
+#
+# City List Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:381
+msgid "Level"
+msgstr "等级"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:383
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:75
+#: kingdom-src/kingdom/src/play_controller.cpp:2177
+#: kingdom-src/kingdom/src/play_controller.cpp:2190
+msgid "Load Game"
+msgstr "读取游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:385
+msgid "Load a saved game"
+msgstr "读取保存的游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:387
+msgid "Lobby"
+msgstr "大厅"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:389
+msgid "Local"
+msgstr "本地"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:391
+msgid "Localize save file name"
+msgstr "本地化存档文件名"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:393
+msgid "Login:"
+msgstr "账号："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:395
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:113
+#: kingdom-src/kingdom/src/hero.cpp:140 kingdom-src/kingdom/src/unit.cpp:4424
+msgid "Loyalty"
+msgstr "忠诚"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:397
+msgid "Male"
+msgstr "男"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:399
+msgid "Map Editor"
+msgstr "地图编辑器"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:401
+msgid "Map Generator"
+msgstr "地图生成器"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:403
+msgid "Map size: "
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:405
+msgid "Map to play"
+msgstr "选择地图"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:407
+msgid "Market"
+msgstr "市场"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:409
+msgid "Max Hill Size:"
+msgstr "山地最大面积："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:411
+msgid "Maximal defeated activity"
+msgstr "溃败后最大厌战指数"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:413
+msgid "Maximum Auto-Saves: "
+msgstr "最大自动存档数："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:415
+msgid "Merit"
+msgstr "战绩"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:417
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:172
+msgid "Message"
+msgstr "消息"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:419
+msgid "Message:"
+msgstr "消息："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:421
+msgid "Messaging"
+msgstr "消息"
+
+#
+# Hero List Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:423
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:241
+msgid "Military"
+msgstr "军事"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:425
+msgid "Moderating"
+msgstr "中等的"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:427
+msgid "More tactic slot"
+msgstr "更多预激活战法"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:429
+msgid "Mother"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:431
+#: kingdom-src/kingdom/src/unit.cpp:152
+msgid "Move"
+msgstr "移动"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:433
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:99
+msgid "Move Hero"
+msgstr "移动武将"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:435
+msgid "Movement"
+msgstr "移动"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:437
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:273
+msgid "Multiplayer"
+msgstr "多人游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:439
+msgid "Multiplayer Lobby"
+msgstr "多人游戏大厅"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:441
+msgid "Multiplayer command dialog"
+msgstr "多人游戏命令对话框"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:443
+msgid "Music"
+msgstr "音乐"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:445
+msgid "My side"
+msgstr "自势力"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:447
+msgid "NPC"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:449
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:844
+msgid "Name"
+msgstr "姓名"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:451
+msgid "Name of game:"
+msgstr "游戏名称："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:453
+msgid "Name:"
+msgstr "名字："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:455
+msgid "Navigation civilization"
+msgstr "航海文明"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:457
+msgid "Net Income"
+msgstr "净收入"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:459
+msgid "Network"
+msgstr "网络"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:461
+msgid "New Map"
+msgstr "新地图"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:463
+msgid "New height:"
+msgstr "新高度："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:465
+msgid "New width:"
+msgstr "新宽度："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:467
+msgid "Next"
+msgstr "继续"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:469
+msgid "Next Generator"
+msgstr "下一个生成器"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:471
+msgid "Nick"
+msgstr "昵称"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:473
+#: kingdom-src/kingdom/src/gui/dialogs/noble.cpp:188
+#: kingdom-src/kingdom/src/gui/dialogs/noble_list.cpp:173
+msgid "No"
+msgstr "否"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:475
+msgid "No biography available."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:477
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1187
+msgid "Noble"
+msgstr "爵位"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:479
+msgid "Number of Hills:"
+msgstr "山地的数量："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:481
+msgid "Number of turns"
+msgstr "回合数"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:483
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:328
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:246
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:98
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:120
+msgid "OK"
+msgstr "确定"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:485
+msgid "OOS error"
+msgstr "OOS错误"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:487
+msgid "Oath"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:489
+msgid "Objectives"
+msgstr "目标"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:491
+msgid "Observe"
+msgstr "观察"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:493
+msgid "Observers"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:495
+msgid "Old height:"
+msgstr "旧高度："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:497
+msgid "Old width:"
+msgstr "旧宽度："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:499
+msgid "Operational guidelines for game"
+msgstr "游戏操作指南"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:501
+msgid "Opinion of cities in side"
+msgstr "势力内城市意见"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:503
+#: kingdom-src/kingdom/src/savegame.cpp:697
+msgid "Overwrite?"
+msgstr "覆盖？"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:505
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:129
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:130
+msgid "Ownership"
+msgstr "归属"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:507
+msgid "Password:"
+msgstr "密码："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:509
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:106
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:113
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:141
+msgid "Pay"
+msgstr "支付"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:511
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:135
+msgid "Personal"
+msgstr "个人"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:513
+msgid "Personnel"
+msgstr "人事"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:515
+msgid "Plan"
+msgstr "计划"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:517
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:96
+msgid "Play Card"
+msgstr "出牌"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:519
+msgid "Play a campaign"
+msgstr "开始战役"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:521
+msgid ""
+"Play multiplayer (hotseat, LAN, or Internet), or a single scenario against "
+"the AI"
+msgstr "多人游戏（局域网或因特网游戏）"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:523
+#: kingdom-src/kingdom/src/editor/editor_map.cpp:150
+msgid "Player"
+msgstr "玩家"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:525
+msgid "Player city dialog"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:527
+msgid "Player pass"
+msgstr "通关记录"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:529
+msgid "Player selection dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:531
+msgid "Player/Type"
+msgstr "玩家/类型"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:533
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:277
+msgid "Players"
+msgstr "玩家数量"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:535
+msgid "Players:"
+msgstr "玩家数量："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:537
+msgid "Players: "
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:539
+msgid "Please choose item you want to purchase"
+msgstr "请选择您要购买的项目"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:541
+msgid "Points"
+msgstr "点数"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:543
+msgid "Position"
+msgstr "位置"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:545
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:957
+#: kingdom-src/kingdom/src/play_controller.cpp:2194
+msgid "Preferences"
+msgstr "首选项"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:547
+msgid "Previous"
+msgstr "回退"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:549
+msgid "Profile player hero"
+msgstr "配置玩家武将"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:551
+msgid "Profile player's side"
+msgstr "配置玩家势力"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:553
+msgid "Purchase"
+msgstr "购买"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:555
+msgid "Purchase item"
+msgstr "购买项目"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:557
+msgid "Quick replay"
+msgstr "快速回放"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:559
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:360
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:963
+#: kingdom-src/kingdom/src/play_controller.cpp:2202
+#: kingdom-src/kingdom/src/play_controller.cpp:2263
+msgid "Quit"
+msgstr "退出"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:561
+msgid "Quit Game"
+msgstr "退出游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:563
+msgid "Quit the game"
+msgstr "退出游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:565
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:83
+msgid "RPG Detail"
+msgstr "个人资料"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:567
+msgid "Race"
+msgstr "种族"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:569
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:506
+msgid "Range"
+msgstr "范围"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:571
+msgid "Rank pass"
+msgstr "通关排名"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:573
+msgid "Rank score"
+msgstr "积分排名"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:575
+msgid "Reason:"
+msgstr "原因："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:577
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:202
+msgid "Receiver"
+msgstr "接收"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:579
+#: kingdom-src/kingdom/src/gui/dialogs/recruit.cpp:285
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:97
+msgid "Recruit"
+msgstr "征募"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:581
+msgid "Recruit dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:583
+msgid "Red:"
+msgstr "红:"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:585
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:94
+msgid "Reform"
+msgstr "重编"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:587
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1890
+msgid "Refresh"
+msgstr "刷新"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:589
+msgid "Regenerate"
+msgstr "重新生成"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:591
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:136
+msgid "Relation"
+msgstr "关系"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:593
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:284
+msgid "Reloaded game"
+msgstr "重新读取的游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:595
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1904
+msgid "Remove"
+msgstr "移除"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:597
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:751
+msgid "Repair"
+msgstr "修补"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:599
+msgid "Requires a password to join"
+msgstr "需要密码才能加入游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:601
+msgid "Researching"
+msgstr "正在研究"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:603
+msgid "Reside Hero"
+msgstr "城内武将"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:605
+#: kingdom-src/kingdom/src/menu_events.cpp:278
+msgid "Reside Troop"
+msgstr "城内部队"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:607
+#: kingdom-src/kingdom/src/menu_events.cpp:280
+msgid "Reside commoner"
+msgstr "城内平民"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:609
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:1019
+msgid "Resize Map"
+msgstr "改变地图大小"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:611
+msgid "Resize map"
+msgstr "改变地图大小"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:613
+msgid "Restore"
+msgstr "恢复"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:615
+msgid "Result"
+msgstr "结果"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:617
+msgid "Return to title screen"
+msgstr "返回到开始界面"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:619
+msgid "Reverse Time Graphics"
+msgstr "反转时段图像"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:621
+msgid "Roads Between Castles"
+msgstr "城堡之间有道路连接"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:623
+#: kingdom-src/kingdom/src/play_controller.cpp:2171
+#: kingdom-src/kingdom/src/savegame.cpp:1136
+msgid "Save Game"
+msgstr "保存游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:625
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:946
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:302
+msgid "Save Map"
+msgstr "保存地图"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:627
+#: kingdom-src/kingdom/src/savegame.cpp:696
+msgid "Save already exists. Do you want to overwrite it?"
+msgstr "存档已经存在。要覆盖吗？"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:629
+msgid "Score to coin"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:631
+msgid "Scroll Speed:"
+msgstr "滚屏速度："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:633
+msgid "Select"
+msgstr "选择"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:635
+msgid "Select Hero"
+msgstr "玩择武将"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:637
+msgid "Select Troop"
+msgstr "玩择部队"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:639
+msgid "Select city for player hero"
+msgstr "选择玩家武将所在城市"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:641
+msgid "Select desired mayor"
+msgstr "选择希望担任太守的武将"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:643
+msgid "Select destination city"
+msgstr "选择目的城市"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:645
+msgid "Select final capital"
+msgstr "选择据点"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:647
+msgid "Select player"
+msgstr "玩择玩家"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:649
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:507
+msgid "Send"
+msgstr "发送"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:651
+msgid "Send a private message"
+msgstr "发送个人消息"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:653
+msgid "Sender"
+msgstr "发送"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:655
+msgid "Server:"
+msgstr "服务器："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:657
+msgid "Set Password"
+msgstr "设置密码"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:659
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:209
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:148
+msgid "Set Side"
+msgstr "设置势力"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:661
+msgid ""
+"Set the password that people wanting to join your game as players must enter."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:663
+msgid "Settings"
+msgstr "设置"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:665
+msgid "Settings..."
+msgstr "设置..."
+
+#
+# Inapp purchase
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:667
+msgid "Shop"
+msgstr "商店"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:669
+msgid "Show Color Cursors"
+msgstr "显示彩色光标"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:671
+msgid "Show Grid"
+msgstr "显示网格"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:673
+msgid "Show message"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:675
+msgid "Show side report when city takes turn."
+msgstr "轮到城市时自动显示。"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:677
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:308
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:311
+msgid "Shroud"
+msgstr "战场黑幕"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:679
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:107
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:139
+msgid "Side"
+msgstr "势力"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:681
+msgid "Side List"
+msgstr "全势力"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:683
+msgid "Side feature"
+msgstr "势力特技"
+
+#
+# Siege tent
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:685
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:178
+msgid "Siege record"
+msgstr "攻城记录"
+
+#
+# Siege tent
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:687
+msgid "Siege tent"
+msgstr "攻城营帐"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:691
+msgid "Sign in dialog"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:693
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:278
+msgid "Size"
+msgstr "尺寸"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:695
+msgid "Sound effects"
+msgstr "音效"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:697
+msgid "Speed: "
+msgstr "速度："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:699
+msgid "Start Gold"
+msgstr "起始金币"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:701
+msgid "Start a new single player campaign"
+msgstr "开始一场新的单人战役"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:703
+msgid "Start a tutorial to familiarize yourself with the game"
+msgstr "开始游戏教程以熟悉游戏"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:705
+msgid "Start the map editor"
+msgstr "启动地图编辑器"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:707
+msgid "Status"
+msgstr "状态"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:709
+#: kingdom-src/kingdom/src/play_controller.cpp:1847
+#: kingdom-src/kingdom/src/play_controller.cpp:2254
+msgid "Stratagem"
+msgstr "密策"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:711
+msgid "Strategy"
+msgstr "战略"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:713
+msgid "Strategy List"
+msgstr "战略列表"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:715
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:119
+msgid "Stratum"
+msgstr "身份"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:717
+msgid "Tactic."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:719
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:112
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:144
+msgid "Target"
+msgstr "目标"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:721
+#: kingdom-src/kingdom/src/gui/dialogs/interior.cpp:105
+msgid "Technology"
+msgstr "科技"
+
+#
+# Technology tree
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:723
+#: kingdom-src/kingdom/src/unit.cpp:4676 kingdom-src/kingdom/src/unit.cpp:4678
+#: kingdom-src/kingdom/src/unit.cpp:4692 kingdom-src/kingdom/src/unit.cpp:4694
+msgid "Technology income"
+msgstr "技法收入"
+
+#
+# Technology tree
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:725
+#: kingdom-src/kingdom/src/gui/dialogs/technology_tree.cpp:218
+#: kingdom-src/kingdom/src/play_controller.cpp:1844
+msgid "Technology tree"
+msgstr "科技树"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:727
+msgid "Tent"
+msgstr "营账"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:729
+msgid "The armory screen of camp."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:731
+msgid "Time"
+msgstr "时间"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:733
+msgid "Time limit"
+msgstr "时间限制"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:735
+msgid "Time of day lighting preset"
+msgstr "使用预设的时段光照配置"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:737
+msgid "Time:"
+msgstr "时间："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:739
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:189
+msgid "Total time"
+msgstr "总时间"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:741
+msgid "Tower"
+msgstr "箭塔"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:743
+msgid "Tower tent dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:745
+#: kingdom-src/kingdom/src/unit.cpp:4522
+msgid "Traits"
+msgstr "特质"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:747
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:129
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:188
+msgid "Transaction buyer"
+msgstr "商户订单号"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:749
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:122
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:183
+msgid "Transaction number"
+msgstr "交易号"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:751
+#: kingdom-src/kingdom/src/gui/dialogs/treasure_list.cpp:104
+msgid "Treasure List"
+msgstr "全宝物"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:753
+msgid "Troop"
+msgstr "部队"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:755
+#: kingdom-src/kingdom/src/gui/dialogs/unit_detail.cpp:117
+msgid "Troop Detail"
+msgstr "部队情报"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:757
+msgid "Troop List"
+msgstr "部队列表"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:759
+msgid "Turn Bell"
+msgstr "回合提示音"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:761
+#: kingdom-src/kingdom/src/gui/dialogs/campaign_selection.cpp:94
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:275
+msgid "Tutorial"
+msgstr "教程"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:763
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:504
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:116
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:150
+msgid "Type"
+msgstr "类型"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:765
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:95
+msgid "Unit Detail"
+msgstr "单位情报"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:767
+msgid "Unit Merit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:769
+msgid "Unit attack dialog."
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:771
+msgid "Units"
+msgstr "单位"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:773
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:210
+msgid "Unknown era"
+msgstr "未知时代"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:775
+msgid "Unlimited"
+msgstr "不限"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:777
+msgid "Up"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:779
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1153
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1580
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1831
+#: kingdom-src/kingdom/src/multiplayer.cpp:1563
+msgid "Upgrade"
+msgstr "升级"
+
+# i'd like to translate it as城堡主楼
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:781
+msgid "Upkeep"
+msgstr "维护费用"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:783
+msgid "Uploader"
+msgstr "上传人"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:785
+msgid "Use map settings"
+msgstr "使用地图设置"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:787
+msgid "User Interface Sounds"
+msgstr "用户界面音量"
+
+#
+# Create Hero
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:789
+msgid "Username"
+msgstr "用户"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:791
+msgid "VIP exclusive"
+msgstr "会员专有"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:793
+#: kingdom-src/kingdom/src/gui/dialogs/title_screen.cpp:202
+msgid "Version"
+msgstr "版本"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:795
+msgid "View List"
+msgstr "查看列表"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:797
+msgid "Village Gold"
+msgstr "每村庄收入"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:799
+msgid "Villages"
+msgstr "村庄"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:801
+msgid "Villages:"
+msgstr "村庄："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:803
+msgid "Vote"
+msgstr "投票"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:805
+msgid "Wander Hero"
+msgstr "在野武将"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:807
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:121
+msgid "What should our victorious unit become?"
+msgstr "选择要升级到兵种？"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:809
+msgid "When sneak wall, force to move"
+msgstr "偷城时，强制选择移动"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:811
+msgid "Width:"
+msgstr "宽度："
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:813
+msgid "XP"
+msgstr "经验值"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:815
+msgid "Xmit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:817
+#: kingdom-src/kingdom/src/gui/dialogs/noble.cpp:188
+#: kingdom-src/kingdom/src/gui/dialogs/noble_list.cpp:173
+msgid "Yes"
+msgstr "是"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:819
+msgid "You will now connect to the multiplayer server."
+msgstr "您现在将连接到多人游戏服务器。"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:821
+msgid "ancientcc1"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:823
+msgid "contest^Title"
+msgstr "称号"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:825
+msgid "continuous replay"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:827
+msgid "gold"
+msgstr "金币"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:829
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1738
+#: kingdom-src/kingdom/src/play_controller.cpp:2256
+msgid "group^Layout"
+msgstr "布防"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:831
+msgid "income"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:833
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:400
+msgid "kingdom^Coin"
+msgstr "王国币"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:835
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:385
+msgid "kingdom^Score"
+msgstr "积分"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:837
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:311
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:321
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:872
+msgid "member^Fix"
+msgstr "在职"
+
+#
+# City List Dialog
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:839
+msgid "noble^Level"
+msgstr "品级"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:841
+msgid "object^Name"
+msgstr "名称"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:843
+msgid "pause at end of turn"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:845
+msgid "prelude"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:847
+msgid "quantity^Hold"
+msgstr "拥有数"
+
+#
+# RPG Exchange
+#
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:849
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:427
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1640
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1655
+msgid "score^Exchange"
+msgstr "兑换"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:851
+msgid "side^Attacker"
+msgstr "攻击方"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:853
+msgid "side^Character"
+msgstr "特色"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:855
+msgid "side^Defender"
+msgstr "守备方"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:857
+msgid "side^Feature"
+msgstr "特色"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:859
+msgid "side^Reinforce"
+msgstr "援军"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:861
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:98
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:105
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:123
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:152
+msgid "signin^Fill up"
+msgstr "补签"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:863
+msgid "spirit"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:865
+msgid "subcontinent remark"
+msgstr ""
+"在每个次大陆最多能占据一个城市。\n"
+"一个城市每天能贡献30积分。\n"
+"最大耐久是100。如果不足，每天自动涨10。\n"
+"如果防守城市失败，耐久降20。\n"
+"对玩家占据的城市，一天最多沦陷4次。"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:867
+#: kingdom-src/kingdom/src/gui/dialogs/tactic.cpp:199
+msgid "tactic^Cast"
+msgstr "施放"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:869
+msgid "tactical^Formation"
+msgstr "阵法"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:871
+#: kingdom-src/kingdom/src/unit.cpp:4482 kingdom-src/kingdom/src/unit.cpp:4484
+#: kingdom-src/kingdom/src/unit.cpp:5150
+msgid "troop^Type"
+msgstr "兵种"
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:873
+msgid "upkeep"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:875
+msgid "villages"
+msgstr ""
+
+#: kingdom-res/po/cfg-cpp/kingdom-lib/gui.cpp:877
+msgid "x"
+msgstr "x"
+
+#: kingdom-src/kingdom/src/actions.cpp:205
+#: kingdom-src/kingdom/src/actions.cpp:278
+#: kingdom-src/kingdom/src/actions.cpp:337
+#: kingdom-src/kingdom/src/actions.cpp:1839
+msgid "An invalid attacker weapon got selected."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:210
+#: kingdom-src/kingdom/src/actions.cpp:283
+msgid "An invalid defender weapon got selected."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:238
+#: kingdom-src/kingdom/src/ai/default/ai.cpp:1813
+msgid "do_attack_analysis, unknown range."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1217
+#: kingdom-src/kingdom/src/game_events.cpp:1653
+#: kingdom-src/kingdom/src/hero.cpp:170
+#: kingdom-src/kingdom/src/play_controller.cpp:5130
+msgid "Let me join in. I will do my best to maintenance our honor."
+msgstr "冀以尘雾之微，补益山海；荧烛末光，增辉日月。"
+
+#: kingdom-src/kingdom/src/actions.cpp:1656
+msgid "female^poisoned"
+msgstr "中毒"
+
+#: kingdom-src/kingdom/src/actions.cpp:1656
+msgid "poisoned"
+msgstr "中毒"
+
+#: kingdom-src/kingdom/src/actions.cpp:1663
+msgid "female^slowed"
+msgstr "减速"
+
+#: kingdom-src/kingdom/src/actions.cpp:1663
+#: kingdom-src/kingdom/src/actions.cpp:4361
+#: kingdom-src/kingdom/src/actions.cpp:4398
+msgid "slowed"
+msgstr "减速"
+
+#: kingdom-src/kingdom/src/actions.cpp:1670
+msgid "female^broken"
+msgstr "破防"
+
+#: kingdom-src/kingdom/src/actions.cpp:1670
+#: kingdom-src/kingdom/src/actions.cpp:4353
+#: kingdom-src/kingdom/src/actions.cpp:4390
+msgid "broken"
+msgstr "破防"
+
+#: kingdom-src/kingdom/src/actions.cpp:1677
+msgid "female^petrified"
+msgstr "石化"
+
+#: kingdom-src/kingdom/src/actions.cpp:1677
+msgid "petrified"
+msgstr "石化"
+
+#: kingdom-src/kingdom/src/actions.cpp:1682
+msgid "female^injured"
+msgstr "受伤"
+
+#: kingdom-src/kingdom/src/actions.cpp:1682
+msgid "injured"
+msgstr "受伤"
+
+#: kingdom-src/kingdom/src/actions.cpp:1686
+msgid "indomitable"
+msgstr "底力"
+
+#: kingdom-src/kingdom/src/actions.cpp:1689
+#: kingdom-src/kingdom/src/artifical.cpp:1425
+msgid "Miss"
+msgstr "闪避"
+
+#: kingdom-src/kingdom/src/actions.cpp:1838
+msgid "Attacker is not attacks!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1864
+msgid "I take a duel with $second, and victory."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1866
+msgid "I take a duel with $second, but defeated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1868
+msgid "I take a duel with $second, and tied."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1926
+msgid "$first is here, who dares to take a duel with me!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:1999
+#: kingdom-src/kingdom/src/actions.cpp:2036
+#: kingdom-src/kingdom/src/actions.cpp:2076
+#: kingdom-src/kingdom/src/unit.cpp:4758 kingdom-src/kingdom/src/unit.cpp:4760
+#: kingdom-src/kingdom/src/unit.cpp:5206
+msgid "tactic"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:2005
+#: kingdom-src/kingdom/src/actions.cpp:2083
+msgid "consort"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:2007
+#: kingdom-src/kingdom/src/actions.cpp:2085
+msgid "oath"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:2053
+msgid "hate"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:3439
+msgid "Alerted!"
+msgstr "遭到预警！"
+
+#: kingdom-src/kingdom/src/actions.cpp:3492
+msgid "Ambushed!"
+msgstr "遭到伏击！"
+
+#: kingdom-src/kingdom/src/actions.cpp:3494
+msgid "Discover ambusher!"
+msgstr "发现埋伏！"
+
+#: kingdom-src/kingdom/src/actions.cpp:3779
+msgid "Units sighted! ($friendphrase, $enemyphrase)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:4124
+#: kingdom-src/kingdom/src/play_controller.cpp:2838
+#: kingdom-src/kingdom/src/replay.cpp:4825
+msgid "Get card: $first."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:4142
+#: kingdom-src/kingdom/src/replay.cpp:4875
+msgid "Lost card: $first."
+msgstr ""
+
+#: kingdom-src/kingdom/src/actions.cpp:6238
+msgid "Hate of national perdition! I will be mutually exclusive with $second."
+msgstr "亡国之恨！我和$second誓不两立。"
+
+#: kingdom-src/kingdom/src/actions.cpp:6243
+#: kingdom-src/kingdom/src/game_events.cpp:3225
+msgid "I'm happy! I got rid of hate with $second."
+msgstr "我很高兴！$second不再厌恶我了。"
+
+#: kingdom-src/kingdom/src/ai/default/ai.cpp:1398
+msgid "Prepare to battle, please recruit!"
+msgstr "为备战，请征兵！"
+
+#: kingdom-src/kingdom/src/ai/default/attack.cpp:94
+msgid "ai::attack_analisis::analyze, movements is empty!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/ai/default/attack.cpp:137
+msgid "ai::attack_analisis::analyze, cannot find <target, src> pair in usc."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:1205
+#: kingdom-src/kingdom/src/unit.cpp:3067
+msgid ""
+"In misfortune time, it is necessary to search chance that can carry out "
+"value of life."
+msgstr "在这乱世，一个人要去找适合的地方。"
+
+#: kingdom-src/kingdom/src/artifical.cpp:1867
+msgid "Go here, Can live the life I would like to?"
+msgstr "到这儿，不知道能不能过上我想到的生活？"
+
+#: kingdom-src/kingdom/src/artifical.cpp:2194
+#: kingdom-src/kingdom/src/artifical.cpp:2344
+msgid "Find wise leader, $first would like to lead troop join in."
+msgstr "乱世中遇到明主，$first愿率部队加入。"
+
+#: kingdom-src/kingdom/src/artifical.cpp:2196
+#: kingdom-src/kingdom/src/artifical.cpp:2346
+msgid "Find wise leader, I would like to lead troop join in."
+msgstr "乱世中遇到明主，我愿率部队加入。"
+
+#: kingdom-src/kingdom/src/artifical.cpp:2247
+msgid "Find wise leader, let me join in."
+msgstr "乱世中遇到明主，我愿加入。"
+
+#: kingdom-src/kingdom/src/artifical.cpp:2428
+msgid "$first occupy $second."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2453
+#: kingdom-src/kingdom/src/play_controller.cpp:1638
+msgid "$first is defeated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/artifical.cpp:2883
+msgid "Your official of $city's mayor is terminated."
+msgstr "你的$city太守官职被解除了。"
+
+#: kingdom-src/kingdom/src/artifical.cpp:2886
+msgid "$hero official of $city's mayor is terminated."
+msgstr "$hero的$city太守官职被解除了。"
+
+#: kingdom-src/kingdom/src/artifical.cpp:2891
+msgid "Congratulate! You are appointed $city mayor."
+msgstr "祝贺你！你被任命为$city太守。"
+
+#: kingdom-src/kingdom/src/artifical.cpp:2894
+msgid "Congratulate! $hero is appointed $city mayor."
+msgstr "祝贺！$hero被任命为$city太守。"
+
+#: kingdom-src/kingdom/src/dialogs.cpp:252
+msgid "No objectives available"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:72
+msgid "This terrain can not place at this area!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:77
+msgid "This terrain may draw on $count grid at most!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:79
+msgid "When drawing map, can not use this terrain!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:84
+msgid "Combining this terrain can not exceed $count grid!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:314
+msgid "Fatal error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:339
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:1065
+msgid "(New Map)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:351
+#: kingdom-src/kingdom/src/play_controller.cpp:2262
+msgid "Do you really want to quit?"
+msgstr "您真的想退出吗？"
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:353
+msgid ""
+"Do you really want to quit? Changes in the map since the last save will be "
+"lost."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:355
+msgid ""
+"Do you really want to quit? The following maps were modified and all changes "
+"since the last save will be lost:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:425
+msgid "No editor time-of-day found."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:446
+msgid "Unsaved Changes"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:446
+msgid ""
+"Do you want to discard all changes you made to the map since the last save?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:466
+msgid "Choose a Map to Open"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:500
+msgid "Save the Map As"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:500
+msgid "Save"
+msgstr "保存"
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:517
+msgid "No random map generators found."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:530
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:534
+msgid "Map creation failed."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:686
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:728
+msgid "This map is already open."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:707
+msgid "Map saved."
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:751
+msgid "Loaded embedded map data"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:752
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:766
+msgid "Map loaded from scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:762
+msgid ""
+"Loaded referenced map file:\n"
+"$new"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:772
+msgid "Error loading map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:942
+msgid "Load Map"
+msgstr "读取地图"
+
+#: kingdom-src/kingdom/src/editor/editor_controller.cpp:1025
+msgid "Generate Map"
+msgstr "生成地图"
+
+#: kingdom-src/kingdom/src/editor/editor_map.cpp:257
+msgid "The size of the target map is different from the current map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_palettes.cpp:218
+msgid "FG: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/editor_palettes.cpp:219
+msgid "BG: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:157
+msgid "File not found"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:179
+msgid ""
+"The map file looks like a scenario, but the map_data value does not point to "
+"an existing file"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:198
+msgid "Empty map file"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:321
+msgid "Could not save into scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/editor/map_context.cpp:328
+msgid "Could not save the map: $msg"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:410 kingdom-src/kingdom/src/game.cpp:428
+msgid "The file you have tried to load is corrupt"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:413 kingdom-src/kingdom/src/game.cpp:431
+#: kingdom-src/kingdom/src/savegame.cpp:541
+msgid "The file you have tried to load is corrupt: '"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:421
+msgid "File I/O Error while reading the game"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:423
+msgid "File I/O Error while reading the game: '"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:659
+msgid "No campaigns are available.\n"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game.cpp:999
+msgid ""
+"$username is reserved! Please modify to your username. To modify: Enter your "
+"username in \"Player profile\" Setting."
+msgstr ""
+"$username是保留账号！请改为自已的账号。解决步骤：在游戏的“玩家武将”窗口输入你"
+"的账号。"
+
+#: kingdom-src/kingdom/src/game.cpp:1043
+msgid "Do you really want to start the server?"
+msgstr "您真的想要启动服务器吗？"
+
+#: kingdom-src/kingdom/src/game.cpp:1044
+msgid ""
+"The server will run in a background process until all users have "
+"disconnected."
+msgstr "服务器将在一个后台进程中运行，直到所有的用户都断开连接为止。"
+
+#: kingdom-src/kingdom/src/game.cpp:1113
+msgid "Error while starting server: "
+msgstr "启动服务器时发生错误： "
+
+#: kingdom-src/kingdom/src/game.cpp:1115
+#: kingdom-src/kingdom/src/playcampaign.cpp:91
+#: kingdom-src/kingdom/src/playcampaign.cpp:334
+msgid "The game could not be loaded: "
+msgstr "无法读取游戏： "
+
+#: kingdom-src/kingdom/src/game.cpp:1117
+#: kingdom-src/kingdom/src/playcampaign.cpp:93
+#: kingdom-src/kingdom/src/playcampaign.cpp:337
+msgid "Error while playing the game: "
+msgstr "进行游戏时发生错误："
+
+#: kingdom-src/kingdom/src/game.cpp:1135
+#: kingdom-src/kingdom/src/playcampaign.cpp:95
+#: kingdom-src/kingdom/src/playcampaign.cpp:340
+msgid "The game map could not be loaded: "
+msgstr "无法读取游戏地图： "
+
+#: kingdom-src/kingdom/src/game.cpp:1157
+msgid ""
+"$account that you are logining is public account, In-App Purchases on it are "
+"shared with other player. In order to benefit to youself only, advise login "
+"again with private account."
+msgstr ""
+"您正在使用的$account是公共帐号，发生在该帐号上的内购是和他人共享的。为让内购"
+"只属于自已，建议换私人帐号重新登录。"
+
+#: kingdom-src/kingdom/src/game.cpp:1331
+msgid "ERROR DETAILS:"
+msgstr "错误细节："
+
+#: kingdom-src/kingdom/src/game.cpp:1351
+msgid "Error loading game configuration files: '"
+msgstr "读取游戏配置文件时出错： '"
+
+#: kingdom-src/kingdom/src/game.cpp:1352
+msgid "' (The game will now exit)"
+msgstr "' （现在将退出游戏）"
+
+#: kingdom-src/kingdom/src/game.cpp:1628
+msgid ""
+"Detectd capability of player hero is more than allocatable point, system has "
+"reset it. To modify, set capability in \"Player profile\"."
+msgstr ""
+"检测到玩家武将能力超出可分配点数，系统已复位玩家武将。要修改，请在游戏的“玩家"
+"武将”窗口重新设置能力。"
+
+#: kingdom-src/kingdom/src/game_display.cpp:602
+msgid "map error, road that from $from to $to exists other city: $other!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_display.cpp:720
+msgid "Invalid [game_config][images].big_flag value."
+msgstr ""
+
+#: kingdom-src/kingdom/src/game_events.cpp:174
+msgid "Error: "
+msgstr "错误："
+
+#: kingdom-src/kingdom/src/game_events.cpp:177
+msgid "Warning: "
+msgstr "警告："
+
+#: kingdom-src/kingdom/src/game_events.cpp:180
+msgid "Debug: "
+msgstr "调试："
+
+#: kingdom-src/kingdom/src/game_events.cpp:183
+msgid "Info: "
+msgstr "信息："
+
+#: kingdom-src/kingdom/src/game_events.cpp:1561
+#: kingdom-src/kingdom/src/game_events.cpp:1608
+#: kingdom-src/kingdom/src/game_events.cpp:1630
+msgid "I will leave for a while, and be back in future."
+msgstr "我要离开一会，将来会回来。"
+
+#: kingdom-src/kingdom/src/game_events.cpp:1670
+#: kingdom-src/kingdom/src/play_controller.cpp:2529
+msgid "lips death and teeth cold, all ai sides concluded treaty of alliance."
+msgstr "唇亡齿寒，所有AI缔结了同盟条约。"
+
+#: kingdom-src/kingdom/src/game_events.cpp:3211
+msgid "I'm happy! I have married with $second."
+msgstr "我很高兴！我和$second结婚了。"
+
+#: kingdom-src/kingdom/src/game_events.cpp:3216
+msgid "I'm happy! I have oathed with $second."
+msgstr "我很高兴！我和$second结义了。"
+
+#: kingdom-src/kingdom/src/game_events.cpp:3270
+msgid "$first want to marry with $second, do you agree?"
+msgstr "$first想和$second结婚，你同意吗？"
+
+#: kingdom-src/kingdom/src/game_events.cpp:3272
+msgid "$first want to oath with $second, do you agree?"
+msgstr "$first想和$second结义，你同意吗？"
+
+#: kingdom-src/kingdom/src/game_preferences.cpp:290
+msgid "No server has been defined."
+msgstr "服务器未定义。"
+
+#: kingdom-src/kingdom/src/game_preferences_display.cpp:73
+msgid "Find $filename server binary to host networked games"
+msgstr "查找$filename服务器可执行文件以便建立联网游戏"
+
+#: kingdom-src/kingdom/src/generate_report.cpp:157
+msgid "Lawful units: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:158
+msgid "Neutral units: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:159
+msgid "Chaotic units: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:162
+msgid "Liminal units: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/generate_report.cpp:410
+msgid "Observers:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:103
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:111
+msgid "Alipay"
+msgstr "支付宝"
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:107
+msgid "payment^course($alipay, $mail, $money, $pay)"
+msgstr ""
+"一、登录$alipay官方网站（www.alipay.com），执行“转账“。\n"
+"二、“收款人”输入$mail（一旦正确会变为“*佐(ancientcc@gmail.com)”），“付款金"
+"额”输入内购项对应的值，“付款说明”中写上游戏中的账号名和内购项名称。\n"
+"三、一旦后台处理完内购，玩家除了在游戏中看到变换，像王国币增加了，还会收到一"
+"条内购成功的消息。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:110
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:238
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1811
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:219
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:95
+msgid "PS"
+msgstr "注"
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:115
+msgid "payment^pay remark($ps, $alipay, $mail, $pay)"
+msgstr ""
+"$ps：后台在收到订单后须人工处理下记录，这当中可能有一、两天时差。因而$alipay"
+"官网转账成功后可能不会立即收到内购成功消息，但如果两天后$pay还没收到，请"
+"向“$mail”发邮件询问。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:123
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:130
+msgid "When input, may use $hotkey"
+msgstr "输入时可使用$hotkey"
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:161
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:804
+msgid "Invalid '$key' value, not accept empty"
+msgstr "无效“$key”值，不能是空"
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:170
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:177
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:177
+msgid "'$key' value must combine $min to $max characters"
+msgstr "“$key”必须由$min到$max个字符组成"
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:172
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:179
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:179
+msgid "'$key' value must be $min characters"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:201
+#: kingdom-src/kingdom/src/multiplayer.cpp:1953
+msgid "transaction^Insert"
+msgstr "插入交易记录"
+
+#: kingdom-src/kingdom/src/gui/dialogs/alipay.cpp:202
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:428
+msgid "$do successfully!"
+msgstr "$do成功！"
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:104
+msgid "side artifical list"
+msgstr "势力建筑物"
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:106
+msgid "artifical list"
+msgstr "全建筑物"
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:243
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:226
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:293
+msgid "Petrified "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:246
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:228
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:295
+msgid "Slowed "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/artifical_list.cpp:249
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:230
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:297
+msgid "Poisoned "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:224
+msgid "<header>text='Units having this ability'</header>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:288
+msgid "<header>text='Units having this special attack'</header>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:321
+msgid "Leaders:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:330
+msgid "Recruits:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:344
+msgid "Era:"
+msgstr "时代："
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:352
+msgid "Factions:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:359
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:361
+msgid "Factions"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:362
+msgid "Factions are only used in multiplayer"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:396
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:103
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:143
+msgid "level"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:428
+msgid "Advances from: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:430
+msgid "Advances to: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:452
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:710
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:755
+msgid "race^Miscellaneous"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:454
+msgid "Race: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:461
+msgid "Abilities: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:478
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:109
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:149
+msgid "HP: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:479
+msgid "Moves: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:480
+msgid "Cost: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:481
+msgid "Alignment: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:487
+msgid "Required XP: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:496
+msgid "unit help^Attacks"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:503
+msgid "unit help^Name"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:505
+msgid "Strikes"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:507
+msgid "Special"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:556
+msgid "Resistances"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:560
+msgid "Attack Type"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:561
+msgid "Resistance"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:596
+msgid "Terrain Modifiers"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:600
+msgid "Terrain"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:601
+msgid "Defense"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:602
+msgid "Movement Cost"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/book2.cpp:716
+msgid "<header>text='Units of this race'</header>"
+msgstr ""
+
+#
+# build ea
+#
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:138
+msgid ""
+"Technology income of side equals all cities income divided by number of city."
+msgstr "势力技法收入等于所有城市技法收入除以城市数。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:140
+msgid "More tactic's effect that belong to same city can not be added."
+msgstr "属于同一城市的多个计略府，它们效果不能叠加。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:142
+msgid "Must exist tow keep at least before building wall."
+msgstr "在造城墙前必须至少存在两座城楼。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:146
+msgid "Economy increase holden card at scenario start."
+msgstr "经济会增加开局时拥有卡牌数。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:148
+msgid "Military increase hero's leadership at scenario start."
+msgstr "军事会增加开局时武将统帅。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:150
+msgid "Culture increase hero's charm at scenario start."
+msgstr "文化会增加开局时武将魅力。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:152
+msgid "Science increase holden technology at scenario start."
+msgstr "科学会增加开局时拥有科技数。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:239
+msgid "Economy"
+msgstr "经济"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:243
+msgid "Culture"
+msgstr "文化"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:245
+msgid "Science"
+msgstr "科学"
+
+#: kingdom-src/kingdom/src/gui/dialogs/build_ea.cpp:248
+msgid "Increase $item every day."
+msgstr "每天增加$item。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/camp_armory.cpp:162
+#: kingdom-src/kingdom/src/gui/dialogs/prelude.cpp:226
+#: kingdom-src/kingdom/src/gui/dialogs/prelude.cpp:315
+msgid "Battle"
+msgstr "战斗"
+
+#: kingdom-src/kingdom/src/gui/dialogs/campaign_selection.cpp:109
+msgid "random_map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/campaign_selection.cpp:110
+msgid "random_map description"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:110
+msgid "side city list"
+msgstr "势力城市"
+
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:112
+msgid "city list"
+msgstr "全城市"
+
+#: kingdom-src/kingdom/src/gui/dialogs/city_list.cpp:265
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1490
+#: kingdom-src/kingdom/src/gui/dialogs/play_card.cpp:176
+#: kingdom-src/kingdom/src/unit.cpp:4562 kingdom-src/kingdom/src/unit.cpp:4630
+msgid "None"
+msgstr "无"
+
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:291
+msgid "Stronger"
+msgstr "较强"
+
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:811
+msgid "Include unsupportable character: $char, invalid '$str' value"
+msgstr "包含不支持的字符：$char，无效“$str”值"
+
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:835
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:369
+msgid "Range is [$min, $max], invalid '$key' value:"
+msgstr "范围[$min, $max]，无效“$key”值："
+
+#
+# Create Hero
+#
+#: kingdom-src/kingdom/src/gui/dialogs/create_hero.cpp:847
+msgid "Surname"
+msgstr "姓"
+
+#: kingdom-src/kingdom/src/gui/dialogs/editor_settings.cpp:148
+msgid "Custom setting"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/exchange.cpp:147
+#: kingdom-src/kingdom/src/gui/dialogs/exchange.cpp:205
+#: kingdom-src/kingdom/src/gui/dialogs/hero_selection.cpp:270
+#: kingdom-src/kingdom/src/gui/dialogs/noble.cpp:238
+#: kingdom-src/kingdom/src/gui/dialogs/treasure.cpp:213
+msgid "name^Troop"
+msgstr ""
+
+#
+# Recruit Dialog
+#
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:146
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:62
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:999
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:142
+#: kingdom-src/kingdom/src/gui/dialogs/user_report.cpp:350
+msgid "rank^Gold"
+msgstr "金"
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:148
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:64
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1001
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:144
+#: kingdom-src/kingdom/src/gui/dialogs/user_report.cpp:352
+msgid "rank^Silver"
+msgstr "银"
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:150
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:66
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1003
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:146
+#: kingdom-src/kingdom/src/gui/dialogs/user_report.cpp:354
+msgid "rank^Copper"
+msgstr "铜"
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:239
+msgid ""
+"There are at most $count exiled hero. Half heros will be on stage in Siege "
+"mode."
+msgstr "最多可拥有$count个流放武将。攻城时一半会出场。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:302
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:548
+msgid "Repertory is less than $score score, cannot $do."
+msgstr "库存不足$score积分，不能$do。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:309
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:557
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:153
+msgid "Do you want to spend $score score to $do?"
+msgstr "您真的想花费$score积分去$do吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:312
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:699
+msgid "$name will put into $location."
+msgstr "$name将被放入$location。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/exile.cpp:344
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:696
+#: kingdom-src/kingdom/src/multiplayer.cpp:2841
+msgid "May get $coin coin and $score score, do you want to discard $name?"
+msgstr "可以得到$coin王国币和$score积分，您真的想放弃$name吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/expedite.cpp:108
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:510
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:89
+#: kingdom-src/kingdom/src/unit.cpp:4567
+msgid "Guard"
+msgstr "警戒"
+
+#: kingdom-src/kingdom/src/gui/dialogs/expedite.cpp:110
+msgid "Abolish guard"
+msgstr "撤除警戒"
+
+#: kingdom-src/kingdom/src/gui/dialogs/expedite.cpp:112
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:90
+msgid "Abolish"
+msgstr "撤除"
+
+#: kingdom-src/kingdom/src/gui/dialogs/final_battle.cpp:122
+msgid "If capture $count cities again, all AI will ally."
+msgstr "再攻占$count座城市，AI将自动联盟。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:247
+msgid "#(Invalid)"
+msgstr "#（无效）"
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:266
+msgid "Campaign: $campaign_name"
+msgstr "战役：$campaign_name"
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:283
+#: kingdom-src/kingdom/src/savegame.cpp:1047
+msgid "replay"
+msgstr "录像"
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:285
+#: kingdom-src/kingdom/src/savegame.cpp:1101
+#: kingdom-src/kingdom/src/savegame.cpp:1147
+msgid "Turn"
+msgstr "回合"
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:287
+msgid "Scenario Start"
+msgstr "场景开始"
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:291
+msgid "Version: "
+msgstr "版本："
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:332
+msgid "You can upload one only, it will delete existed, continue?"
+msgstr "你只能在服务器存放一个存档，此次上传将删除之前存在的，要继续吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:333
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:344
+msgid "Confirm"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:343
+msgid "This file is corrupted, can not upload!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:366
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:74
+msgid "Upload"
+msgstr "上传"
+
+#: kingdom-src/kingdom/src/gui/dialogs/game_load.cpp:393
+msgid "Download"
+msgstr "下载"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:250
+msgid "$leader's side"
+msgstr "$leader的势力"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:413
+msgid "Do you want to exchange $from to $to?"
+msgstr "您真的想把$from兑换成$to吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:520
+msgid "May get $coin coin and $score score, do you want to redraw $count hero?"
+msgstr "可以得到$coin王国币和$score积分，您真的想重抽$count武将吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:547
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:556
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1139
+msgid "group^Draw"
+msgstr "抽卡"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:606
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:618
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:630
+msgid "Upgrade to $to"
+msgstr "升级到$to"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:701
+msgid "$location is full, $name will lose."
+msgstr "$location已满，$name将丢失。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:903
+msgid "Fire"
+msgstr "解雇"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1187
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1601
+msgid ":"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1226
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1477
+msgid "Request ally"
+msgstr "请求同盟"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1228
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1232
+msgid "Undo"
+msgstr "撤销"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1230
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1485
+msgid "Request terminate"
+msgstr "请求解除"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1283
+msgid "Username doesn't allow empty!"
+msgstr "用户名不能是空！"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1285
+#: kingdom-src/kingdom/src/multiplayer.cpp:2039
+msgid "Username cannot be myself!"
+msgstr "用户名不是能自已！"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1291
+msgid "Username has existd in associate list, cannot append!"
+msgstr "该用户已在交往列表，不能添加！"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1305
+msgid "$username doesn't exist!"
+msgstr "不存在$username这个用户！"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1477
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1479
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1485
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1487
+msgid "process^going"
+msgstr "中"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1479
+msgid "Be requested ally"
+msgstr "被请求同盟"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1487
+msgid "Be requested terminate"
+msgstr "被请求解除"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1501
+msgid "Initiation time: $time"
+msgstr "发起时间：$time"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1506
+msgid "Termiante automatically after $space"
+msgstr "$space后自动解除"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1607
+msgid "Exchange rate"
+msgstr "汇率"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1739
+#: kingdom-src/kingdom/src/multiplayer.cpp:1891
+#: kingdom-src/kingdom/src/play_controller.cpp:2180
+msgid "Save Layout"
+msgstr "保存布防"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1740
+msgid ""
+"1: Select the map want to set.\n"
+"2: Play $layout, execute $save."
+msgstr ""
+"1：选择你想设置到的地图。\n"
+"2：进入$layout，执行$save命令。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1761
+msgid "Using map"
+msgstr "正使用地图"
+
+#: kingdom-src/kingdom/src/gui/dialogs/group.cpp:1812
+msgid "If defend city fail, you will lose a employee."
+msgstr "如果防守城市失败，您将失去一个雇佣武将。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/hero_list.cpp:133
+#: kingdom-src/kingdom/src/unit.cpp:4821 kingdom-src/kingdom/src/unit.cpp:4823
+msgid "Skill"
+msgstr "技能"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:60
+msgid "%b %d %y"
+msgstr "%Y年%m月%d日"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:75
+msgid ""
+"Update database fail when execute In-App Purchase! In order to compensate "
+"data you should get, please send In-App Purchase information to $mail. In-"
+"App Purchase information include: date($date), item($item), "
+"username($username)."
+msgstr ""
+"执行内购时更新数据库失败！为补偿你失去的内购数据，请发送内购资料到$mail。内购"
+"资料包括：内购日期（$date）、内购项（$item），用户名（$username）。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:132
+msgid "Success"
+msgstr "成功"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:134
+msgid "Failed"
+msgstr "失败"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:148
+msgid "Purchas '$name' $result|!"
+msgstr "购买“$name”$result|！"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:150
+msgid "Restore purchased items $result|!"
+msgstr "恢复已购买项目$result|！"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:277
+msgid "Notice"
+msgstr "注意"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:287
+msgid "You is VIP currently, hold $day day still"
+msgstr "您当前已经是会员，还可拥有$day天"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:289
+msgid "You isn't VIP currently"
+msgstr "您当前不是会员"
+
+#
+# give
+#
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:293
+msgid "You"
+msgstr "您"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:296
+msgid "$username has $coin coin and $score score"
+msgstr "$username有$coin王国币和$score积分"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:360
+msgid "coin^Unit"
+msgstr "￥"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:391
+msgid "Only $platforms support in-app purchase"
+msgstr "只$platforms平台支持内购"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:484
+msgid ""
+"System is processing inapp-purchase request, and force to quit maybe result "
+"data not integrated. Do you want to Quit?"
+msgstr "系统正在处理内购请求，强制退出可能倒致数据不完整。您真的想退出吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:518
+msgid "Purchasing '$name'"
+msgstr "正在购买“$name”"
+
+#: kingdom-src/kingdom/src/gui/dialogs/inapp_purchase.cpp:520
+msgid "Restoring purchased items"
+msgstr "正在恢复已购买项目"
+
+#: kingdom-src/kingdom/src/gui/dialogs/independence.cpp:109
+msgid "It is all up with the wind, $side will fallen."
+msgstr "大势已去，$side灭亡。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/independence.cpp:111
+msgid "There are enough troops, $side will be again you."
+msgstr "$side还有足够部队，会反对你。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:205
+msgid "Unknown era: $era_id"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:265
+msgid "Remote scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:273
+msgid "Unknown scenario: $scenario_id"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:278
+msgid "Unknown scenario"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:295
+msgid "Turn "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby/lobby_data.cpp:313
+msgid "none"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby_main.cpp:327
+msgid "Games: showing $num_shown out of $num_total"
+msgstr "游戏：$num_shown个已显示，共有$num_total个"
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby_main.cpp:368
+msgid "Observers allowed"
+msgstr "允许观察"
+
+#: kingdom-src/kingdom/src/gui/dialogs/lobby_main.cpp:371
+msgid "Observers not allowed"
+msgstr "不允许观察"
+
+#: kingdom-src/kingdom/src/gui/dialogs/map_generator.cpp:118
+msgid "/1000 tiles"
+msgstr "/1000个区块"
+
+#: kingdom-src/kingdom/src/gui/dialogs/map_generator.cpp:133
+msgid "Inland"
+msgstr "内陆"
+
+#: kingdom-src/kingdom/src/gui/dialogs/map_generator.cpp:135
+msgid "Coastal"
+msgstr "滨海"
+
+#: kingdom-src/kingdom/src/gui/dialogs/map_generator.cpp:137
+msgid "Island"
+msgstr "岛屿"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_create_game.cpp:142
+msgid "$login|'s game"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_create_game.cpp:201
+msgid "No eras found."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_create_game.cpp:202
+msgid "No eras found"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_method_selection.cpp:78
+msgid "Attack Player"
+msgstr "攻击玩家"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_method_selection.cpp:80
+msgid "Enter multiplayer lobby"
+msgstr "进入对战大厅"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_method_selection.cpp:82
+msgid "Host Networked Game"
+msgstr "建立联网游戏"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:135
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:83
+msgid "Selected game"
+msgstr "选中的游戏"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:215
+msgid "The scenario is invalid because it has no id."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:219
+msgid "The scenario is invalid because it has no sides."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:520
+msgid "The save game reserved for $allow, don't support $exclude."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:668
+msgid "Cannot find era $era"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:689
+msgid "Victory:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:689
+msgid "Defeat enemy leader(s)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:718
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:430
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:302
+msgid "Network Player"
+msgstr "网络玩家"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:720
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:298
+msgid "Local Player"
+msgstr "本地玩家"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:722
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:432
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:300
+msgid "Computer Player"
+msgstr "电脑玩家"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:723
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:434
+msgid "Empty"
+msgstr "空位"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:872
+msgid "Waiting for players to join..."
+msgstr "正在等待玩家加入……"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:873
+msgid "Waiting for players to choose factions..."
+msgstr "正在等待玩家选择派系……"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:1392
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:1607
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:1729
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_creator.cpp:1730
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:445
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:316
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:586
+msgid "Random"
+msgstr "随机"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:152
+msgid "Waiting for game to start..."
+msgstr "正在等待游戏开始……"
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:166
+msgid "Getting game data..."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:221
+msgid "No era information found."
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/mp_side_wait.cpp:301
+msgid "Response"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/network_transmission.cpp:102
+#: kingdom-src/kingdom/src/gui/dialogs/network_transmission.cpp:104
+msgid "unit_byte^B"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/noble.cpp:183
+#: kingdom-src/kingdom/src/gui/dialogs/noble_list.cpp:168
+#: kingdom-src/kingdom/src/gui/dialogs/user_report.cpp:466
+msgid "noble^Lv$level"
+msgstr "$level品"
+
+#: kingdom-src/kingdom/src/gui/dialogs/personnel.cpp:220
+msgid ""
+"First $tower heros is fixed in tower mode. First $rpg heros can be on stage "
+"in RPG mode."
+msgstr "前$tower个是塔防中的固定武将。前$rpg个是RPG中能出场的武将。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/play_card.cpp:178
+msgid "Single"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/play_card.cpp:180
+msgid "Multi"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:131
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:156
+msgid "$key cannot include $invalids!"
+msgstr "$key不能包含$invalids!"
+
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:157
+msgid ""
+"$username may only use below special character: $special, and must not be "
+"all special!"
+msgstr "$username只可使用以下特殊字符：$special，而且不能全是特殊字符。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/player_city.cpp:194
+msgid "City name"
+msgstr "城市名称"
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:130
+msgid "Prefs section^General"
+msgstr "常规"
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:136
+msgid "Prefs section^Display"
+msgstr "图像"
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:142
+msgid "Prefs section^Sound"
+msgstr "声音"
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:148
+msgid "Advanced section^Advanced"
+msgstr "高级"
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:156
+msgid "Prefs section^Scenario"
+msgstr "环境"
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:315
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:582
+msgid "Hasn't"
+msgstr "没有"
+
+#: kingdom-src/kingdom/src/gui/dialogs/preferences.cpp:584
+msgid "Always"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:76
+msgid "Load Game..."
+msgstr "读取游戏..."
+
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:87
+msgid "Siege map"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/random_map.cpp:280
+msgid "Error"
+msgstr "错误"
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:147
+msgid "Wait, leader will order you to recruit"
+msgstr "等待，君主会命令你去征兵"
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:161
+msgid "Get mroe meritorious, will be appointed mayor"
+msgstr "获得更多功勋，将被任命为太守"
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:164
+msgid "To $meritorious, will control more troops"
+msgstr "到达$meritorious，将能控制更多部队"
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:166
+msgid "To $meritorious, will be appointed mayor"
+msgstr "到达$meritorious，将被任命为太守"
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:170
+msgid "Capture more city, can be independent"
+msgstr "占领更多城市，将可以独立"
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:172
+msgid "Be independent will be to leader"
+msgstr "独立后能建国"
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:176
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:156
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:222
+msgid "---"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/rpg_detail.cpp:267
+msgid "RPG Troop"
+msgstr "掌控部队"
+
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:123
+msgid "Change unit"
+msgstr "转换部队"
+
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:124
+msgid "Which should you change?"
+msgstr "选择要转换哪只部队？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:126
+msgid "Human Control"
+msgstr "手动控制"
+
+#: kingdom-src/kingdom/src/gui/dialogs/select_unit.cpp:127
+msgid "Which should you control?"
+msgstr "选择要控制哪只部队？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:96
+msgid "Please input content wanted to send"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/send_message.cpp:98
+msgid "Please input content"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:304
+msgid "(Empty slot)"
+msgstr "（空置槽位）"
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:306
+msgid "Unknown"
+msgstr "未知"
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:311
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:314
+msgid "yes"
+msgstr "是"
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:311
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:314
+msgid "no"
+msgstr "否"
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:512
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:152
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:218
+msgid "Aggress"
+msgstr "侵占"
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_list.cpp:514
+msgid "Chaotic"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_report.cpp:133
+msgid "Researching technology"
+msgstr "正在研究科技"
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_report.cpp:152
+msgid "Have researched out all technology"
+msgstr "已研究出所有科技"
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_report.cpp:157
+msgid "Unallocated treasure"
+msgstr "未分配宝物"
+
+#: kingdom-src/kingdom/src/gui/dialogs/side_report.cpp:162
+msgid "Unallocated noble"
+msgstr "未分配爵位"
+
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:361
+msgid ""
+"Require seting '$associate' in '$side'. Player that no agreement can be "
+"defender, ally agreement can be reinforce."
+msgstr ""
+"需要设置“$side”的“$associate”。没有协议的玩家能成为可攻击目标，有同盟协议的玩"
+"家能支援你。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:363
+msgid ""
+"No attackable player! Require seting '$associate' in '$side', and set at "
+"least one no agreement."
+msgstr ""
+"没有可攻击玩家！需要设置“$side”的“$associate”，并让至少存在一个没有协议的玩"
+"家。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/siege_tent.cpp:824
+msgid "Do you want to save $username|'s map to your city map?"
+msgstr "真的想把$username的地图作为您的城市地图吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:86
+msgid "been^have"
+msgstr "已经"
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:86
+msgid "been^haven't"
+msgstr "未曾"
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:88
+msgid ""
+"You have been sign in $continue days, broken $break days. Today $have sign "
+"in."
+msgstr "你连续签到$continue天，断签$break天。今天$have签到。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:101
+msgid "fill up sign in($ps, $break, $max_break, $fillup)"
+msgstr ""
+"$ps 你已经断签$break天，超过$max_break天的要被清空签到信息。你可通过$fillup来"
+"弥补断签。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:124
+msgid "sign in remark($fillup)"
+msgstr ""
+"一、上传一次积分不为0的过关记录视为签到。过关包括RPG、塔防、攻城。\n"
+"二、连续签到10天，给1王国币；连续签到30天，再给2王国币。\n"
+"三、得到王国币是在签到天数能被10整除时，不能靠$fillup恰好增加到，而且那时不能"
+"存在断签天数。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/signin.cpp:163
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:762
+#: kingdom-src/kingdom/src/hero.cpp:440
+msgid ""
+"Repertory is not enough to pay $coin coin and $score score. If lack one "
+"only, can exchange between coin and score."
+msgstr ""
+"库存不够$coin王国币和$score积分。如果只是当中一种，你可以在王国币和积分间兑"
+"换。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:154
+#: kingdom-src/kingdom/src/gui/dialogs/strategy_list.cpp:220
+msgid "Defend"
+msgstr "防御"
+
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:752
+msgid ""
+"Spend $score score may increase 10 endurance.\n"
+"Do you want to spend $score score to $do?"
+msgstr ""
+"花费$score积分可提升10耐久。\n"
+"您真的想花费$score积分去$do吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/subcontinent.cpp:776
+msgid "Do you want to discard $city?"
+msgstr "您真的想放弃$city吗？"
+
+#
+# Cast tactic
+#
+#: kingdom-src/kingdom/src/gui/dialogs/tactic.cpp:201
+msgid "Active tactic"
+msgstr "激活战法"
+
+#: kingdom-src/kingdom/src/gui/dialogs/tactic.cpp:202
+msgid "tactic^Active"
+msgstr "激活"
+
+#: kingdom-src/kingdom/src/gui/dialogs/tent.cpp:332
+msgid "ttent::pre_show, there is no item in player_list!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:73
+msgid "Adjust"
+msgstr "调整"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:77
+msgid "List"
+msgstr "情报"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:78
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:79
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:80
+msgid "Tactic"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:81
+msgid "Bomb"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:82
+msgid "RPG"
+msgstr ""
+
+#
+# RPG Exchange
+#
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:85
+msgid "RPG Exchange"
+msgstr "交换武将"
+
+#
+# RPG Independence
+#
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:86
+msgid "RPG Independence"
+msgstr "独立"
+
+#
+# Extract
+#
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:91
+msgid "Extract"
+msgstr "提取"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:92
+msgid "Advance"
+msgstr "升级"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:93
+msgid "Demolish"
+msgstr "拆除"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:100
+msgid "End Turn"
+msgstr "结束本回合"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:101
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:102
+msgid "Play"
+msgstr "播放"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:181
+msgid "Paint Tool"
+msgstr "绘图工具"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:182
+msgid "Fill Tool"
+msgstr "填充工具"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:183
+msgid "Selection Tool"
+msgstr "选择工具"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:184
+msgid "Set Starting Positions Tool"
+msgstr "设置起始点工具"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:185
+msgid "Paste"
+msgstr "粘贴"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:186
+#: kingdom-src/kingdom/src/play_controller.cpp:2252
+msgid "Map"
+msgstr "地图"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:187
+msgid "Switch terrain group"
+msgstr "切换地形组"
+
+#: kingdom-src/kingdom/src/gui/dialogs/theme2.cpp:188
+msgid "Switch brush"
+msgstr "切换画刷"
+
+#: kingdom-src/kingdom/src/gui/dialogs/title_screen.cpp:200
+msgid "v"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/treasure.cpp:246
+msgid ""
+"Duration this time, if remove $treasure from $hero, cannot assemble treasure "
+"to $hero again. Do you want to remove?"
+msgstr ""
+"如果从$hero移除$treasure，此次是不能再向$hero装配宝物。您真的想移除宝物吗？"
+
+#: kingdom-src/kingdom/src/gui/dialogs/treasure_list.cpp:102
+msgid "Side Treasure List"
+msgstr "势力宝物"
+
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:109
+msgid "side troop list"
+msgstr "势力部队"
+
+#: kingdom-src/kingdom/src/gui/dialogs/troop_list.cpp:111
+msgid "troop list"
+msgstr "全部队"
+
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:115
+#: kingdom-src/kingdom/src/gui/dialogs/unit_attack.cpp:155
+msgid "XP: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/unit_detail.cpp:112
+msgid "City Detail"
+msgstr "城市情报"
+
+#: kingdom-src/kingdom/src/gui/dialogs/unit_detail.cpp:114
+msgid "Artifical Detail"
+msgstr "建筑物情报"
+
+#: kingdom-src/kingdom/src/gui/dialogs/unit_merit.cpp:47
+msgid " troop"
+msgstr "队"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:203
+msgid "Not conform to the format message"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:229
+msgid ""
+"You continue to sign in $continue days, reward $coin coin and $score score."
+msgstr "你连续签到$continue天，奖励$coin王国币、$score积分。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:236
+msgid ""
+"You have broken $break days, exceeded $max_break, and result to clear Sign "
+"in data."
+msgstr "你断签$break天，超过$max_break，被清空签到信息。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:255
+msgid ""
+"You hold $coin2 coin and $score2 score, most score, so win $title as an "
+"honour. Reward $coin coin and $score score."
+msgstr ""
+"你累计拥有$coin2王国币和$score2积分，积分最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:259
+msgid ""
+"In the last $days days, you attack other city to $count times, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+"最近$days天，你攻击他人城市$count次，次数最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:263
+msgid ""
+"In the last $days days, your city was attacked to $count times, most times, "
+"so win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+"最近$days天，你的城市被攻击$count次，次数最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:267
+msgid ""
+"In the last $days days, you pass $count times RPG scenario, most times, so "
+"win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+"最近$days天，你玩通$count次RPG剧本，次数最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:271
+msgid ""
+"In the last $days days, you pass $count times Tower scenario, most times, so "
+"win $title as an honour. Reward $coin coin and $score score."
+msgstr ""
+"最近$days天，你玩通$count次塔防剧本，次数最多，荣获$title称号。奖励$coin王国"
+"币、$score积分。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:288
+msgid "Inapp-purchase successfully! Increase $day days VIP membership."
+msgstr "内购成功！增加$day天VIP资格。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:296
+msgid "Inapp-purchase successfully! Increase $coin coin and $score score."
+msgstr "内购成功！增加$coin王国币和$score积分。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:305
+msgid ""
+"System modified your data: $coin coin, $score score. If you have any "
+"questions, please contact $contact."
+msgstr ""
+"系统修改了您的数据：修改为$coin王国币，$score积分。如果您有疑问，请联系"
+"$contact。"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:342
+msgid "Send successfully!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:591
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:1212
+msgid "Victory"
+msgstr "胜利"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:593
+#: kingdom-src/kingdom/src/playcampaign.cpp:121
+#: kingdom-src/kingdom/src/playcampaign.cpp:163
+msgid "Defeat"
+msgstr "失败"
+
+#: kingdom-src/kingdom/src/gui/dialogs/user_message.cpp:595
+msgid "City fallen"
+msgstr "城市沦陷"
+
+#: kingdom-src/kingdom/src/hero.cpp:55
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage."
+msgstr "你已经有一个和我一样武将，而我看淡了官场，就此退出历史。"
+
+#: kingdom-src/kingdom/src/hero.cpp:60
+msgid ""
+"You had holden same hero as me. I see the light of officialdom and should "
+"unstage. It is $treasure, and give it to you."
+msgstr ""
+"你已经有一个和我一样武将，而我看淡了官场，就此退出历史。这是$treasure，你拿走"
+"吧。"
+
+#: kingdom-src/kingdom/src/hero.cpp:258
+msgid "Feeling between $first and $second is increased."
+msgstr "$first和$second之间情感度增加了。"
+
+#: kingdom-src/kingdom/src/mapgen.cpp:741
+msgid "Random maps with an odd width aren't supported."
+msgstr ""
+
+#: kingdom-src/kingdom/src/mapgen.cpp:1010
+msgid ""
+"No valid castle location found. Too many or too few mountain hexes? (please "
+"check the 'max hill size' parameter)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:114
+msgid "My lord, this unit is loyal and requires no upkeep! "
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:114
+#: kingdom-src/kingdom/src/menu_events.cpp:117
+#: kingdom-src/kingdom/src/menu_events.cpp:121
+msgid "Do you really want to dismiss him?"
+msgstr "您真的想解散他吗？"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:115
+#: kingdom-src/kingdom/src/menu_events.cpp:118
+#: kingdom-src/kingdom/src/menu_events.cpp:122
+msgid "Do you really want to dismiss her?"
+msgstr "您真的想解散她吗？"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:117
+msgid "My lord, this unit is an experienced one, having advanced levels! "
+msgstr "阁下，这个单位富有经验，而且等级很高！"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:121
+msgid "My lord, this unit is close to advancing a level! "
+msgstr "阁下，这个单位就快要升级了！"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:176
+msgid "Do you really want to discard one card randomly?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:179
+msgid "$first, do you really want to discard it?"
+msgstr "$first，您真的想放弃它吗？"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:276
+msgid "Reside unit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:314
+msgid "Field unit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:488
+msgid ""
+"There are no troops available to recall\n"
+"(You must have veteran survivors from a previous scenario)"
+msgstr ""
+"没有可供召回的部队\n"
+"（您在上一个场景中必须有老练的生还部队）"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:569
+msgid "There are no holded card"
+msgstr "你没有牌"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:604
+msgid "There are no hero available to move"
+msgstr "没有可供移动的武将"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:619
+msgid "There are no city available to move"
+msgstr "没有可供移动到的城市"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:678
+msgid "You don't have enough gold to build that artifical"
+msgstr "您没有足够的金币以建造该建筑物"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:779
+msgid "Do you really want to demolish $type?"
+msgstr "您真的想拆除$type吗？"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:811
+#: kingdom-src/kingdom/src/menu_events.cpp:833
+msgid "There are no available troop to rearm"
+msgstr "没有可供重编的部队"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1073
+msgid "There is $count vacant tactic. Do you really want to end your turn?"
+msgstr "您在这回合还可预激活$count个战法，您真的想结束本回合吗？"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1126
+msgid ""
+"$city and other $cities cities have $heros low loyalty heros. If not "
+"process, heros may wander in next turn. Do you really want to end your turn?"
+msgstr ""
+"$city等$cities个城市有$heros个忠诚度很低的武将，若不处理下回合可能会下野，您"
+"真的想结束本回合吗？"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1128
+msgid ""
+"$city has $heros low loyalty heros. If not process, heros may wander in next "
+"turn. Do you really want to end your turn?"
+msgstr ""
+"$city有$heros个忠诚度很低的武将，若不处理下回合可能会下野，您真的想结束本回合"
+"吗？"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1300
+msgid "Troop has come into $city as planned!"
+msgstr "部队已按计划进入$city！"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1303
+msgid ""
+"As planned, troop require to arrive at $loc, but come into $city in the "
+"middle. If want to continue arriving at $loc, please command again."
+msgstr ""
+"依计划部队得到达$loc，但中途进入了$city。如要继续到达$loc，请重新向部队发命"
+"令。"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1504
+msgid "This command is currently unavailable."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1510
+msgid ""
+"Unknown command '$command', try $help_command for a list of available "
+"commands."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1519
+msgid ""
+"Available commands list and command-specific help. Use \"help all\" to "
+"include currently unavailable commands."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1521
+msgid "do not translate the 'all'^[all|<command>]"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1565
+msgid "Error:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1571
+msgid "Missing argument $arg_id"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1619
+#: kingdom-src/kingdom/src/menu_events.cpp:1620
+#: kingdom-src/kingdom/src/menu_events.cpp:1643
+msgid "help"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1619
+msgid ""
+"Available commands $flags_description:\n"
+"$list_of_commands"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1620
+msgid "Type $help_command <command> for more info."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1631
+msgid " No help available."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1636
+msgid "Usage:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1641
+msgid "aliases:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1762
+msgid "(A) - admin command"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1769
+msgid "(admin only)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1789
+msgid ""
+"Send a query to the server. Without arguments the server should tell you the "
+"available commands."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1793
+msgid ""
+"Ban and kick a player or observer. If he is not in the game but on the "
+"server he will only be banned."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1794
+#: kingdom-src/kingdom/src/menu_events.cpp:1797
+#: kingdom-src/kingdom/src/menu_events.cpp:1799
+#: kingdom-src/kingdom/src/menu_events.cpp:1801
+#: kingdom-src/kingdom/src/menu_events.cpp:1803
+#: kingdom-src/kingdom/src/menu_events.cpp:1828
+#: kingdom-src/kingdom/src/menu_events.cpp:1830
+#: kingdom-src/kingdom/src/menu_events.cpp:1832
+#: kingdom-src/kingdom/src/menu_events.cpp:1846
+msgid "<nick>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1796
+msgid "Unban a user. He does not have to be in the game but on the server."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1799
+msgid "Kick a player or observer."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1801
+msgid "Mute an observer. Without an argument displays the mute status."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1803
+msgid "Unmute an observer. Without an argument unmutes everyone."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1805
+msgid "Mute/Unmute all observers. (toggles)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1815
+msgid "Send a message to the server admins currently online"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1817
+msgid "Send an emotion or personal action in chat."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1817
+msgid "<message>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1820
+msgid ""
+"Sends a private message. You can't send messages to players that don't "
+"control a side in a running game you are in."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1822
+msgid "<nick> <message>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1826
+msgid "Change the log level of a log domain."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1826
+msgid "<level> <domain>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1828
+msgid "Add a nick to your ignores list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1830
+msgid "Add a nick to your friends list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1832
+msgid "Remove a nick from your ignores or friends list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1834
+msgid "Show your ignores and friends list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1837
+msgid "Display version information."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1839
+msgid "Register your nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1839
+msgid "<password> <email (optional)>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1841
+msgid "Drop your nick."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1843
+msgid "Update details for your nick. For possible details see '/details'."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1844
+msgid "<detail> <value>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1846
+msgid "Request information about a nick."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1848
+msgid "Request a list of details you can set for your registered nick."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1850
+msgid "Join a room."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1850
+#: kingdom-src/kingdom/src/menu_events.cpp:1853
+#: kingdom-src/kingdom/src/menu_events.cpp:1855
+msgid "<room>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1853
+msgid "Part a room."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1855
+msgid "List room members."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1857
+msgid "List available rooms."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1859
+msgid "Room message."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1859
+msgid "<room> <msg>"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1861
+msgid "Room query."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1861
+msgid "<room> <type> [value]"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1939
+#: kingdom-src/kingdom/src/menu_events.cpp:1945
+#: kingdom-src/kingdom/src/menu_events.cpp:1995
+msgid "ignores list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1939
+#: kingdom-src/kingdom/src/menu_events.cpp:1958
+msgid "(empty)"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1945
+msgid "Added to ignore list: $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1948
+#: kingdom-src/kingdom/src/menu_events.cpp:1967
+msgid "Invalid username: $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1958
+#: kingdom-src/kingdom/src/menu_events.cpp:1965
+#: kingdom-src/kingdom/src/menu_events.cpp:1991
+msgid "friends list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1965
+msgid "Added to friends list: $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1981
+#: kingdom-src/kingdom/src/menu_events.cpp:1999
+msgid "friends and ignores list"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1981
+msgid "Removed from list: $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:1999
+msgid "There are no players on your friends or ignore list."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2004
+msgid "version"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2020
+msgid "registering with password *** and no email address"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2024
+msgid "registering with password *** and email address $email"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2027
+#: kingdom-src/kingdom/src/menu_events.cpp:2038
+#: kingdom-src/kingdom/src/menu_events.cpp:2056
+#: kingdom-src/kingdom/src/menu_events.cpp:2070
+msgid "nick registration"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2038
+msgid "dropping your username"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2056
+msgid "setting $var to $value"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2070
+msgid "requesting information for user $nick"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2167
+msgid "Unknown debug level: '$level'."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2168
+#: kingdom-src/kingdom/src/menu_events.cpp:2176
+msgid "error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2175
+msgid "Unknown debug domain: '$domain'."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2183
+msgid "Switched domain: '$domain' to level: '$level'."
+msgstr ""
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2253
+msgid "whisper to $receiver"
+msgstr "与$receiver说悄悄话"
+
+#: kingdom-src/kingdom/src/menu_events.cpp:2260
+msgid "whisper: $sender"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:964
+msgid "Attack wall"
+msgstr "攻击城墙"
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:969
+msgid "Move to wall"
+msgstr "移动到城墙"
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1019
+msgid "Do you really command $troop to enter $city?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1021
+msgid "Do you really command $troop to move to village?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1026
+msgid "Do you really command $troop to move to $loc?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1840
+msgid "Select a grid to build on"
+msgstr "选择建筑物要造在的格子"
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1865
+msgid "Select a unit to action on"
+msgstr "选择要作用到单位"
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1915
+msgid "Select a grid to place, or a troop to join"
+msgstr "选择哪格子放置部队，或加入哪部队"
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1934
+msgid "Select a grid to move at"
+msgstr "选择要移动到格子"
+
+#: kingdom-src/kingdom/src/mouse_events.cpp:1949
+msgid "Select a grid to guard at"
+msgstr "选择想要警戒的位置"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:96
+msgid ""
+"Because of product commercialization, $function does not open source code."
+msgstr "因为游戏商业化，$function函数不开放源码。"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:98
+msgid ""
+"Please do not use self-compile project to commerce, for example upload data "
+"to Data Server."
+msgstr "请不要把自编译工程用于商业目的，例如用它上传数据到数据服务器。"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:196
+#: kingdom-src/kingdom/src/multiplayer.cpp:343
+msgid ""
+"Invalid access! You modified resources files, or check if your version is "
+"the newest."
+msgstr "拒绝访问！你修改了资源文件，或检查在玩的是否是最新版本。"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:328
+msgid ""
+"$response\n"
+"\n"
+"Please check setting of BBS Server!"
+msgstr ""
+
+#
+# register, config account
+#
+#: kingdom-src/kingdom/src/multiplayer.cpp:333
+msgid "Register, config account"
+msgstr "注册、设置账号"
+
+#
+# http server
+#
+#: kingdom-src/kingdom/src/multiplayer.cpp:334
+msgid ""
+"Invalid access! Please check your $server login information. To set up: "
+"Press $account in \"Player profile\" Setting."
+msgstr ""
+"拒绝访问！请检查在游戏中是否正确设置了$server上的账号/密码。解决步骤：在游戏"
+"的“玩家武将”窗口按下“$account”。"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:338
+msgid "Invalid access! pre_kingdom_version table on $server isn't ready."
+msgstr "拒绝访问！$server上的pre_kingdom_version表未就绪。"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:347
+msgid "Invalid access! Security error, someone maybe attack cipher."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:351
+msgid "Invalid access! Secret key error, Secret key on $server isn't ready."
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:355
+msgid ""
+"Invalid access! Timestamp error. Check whether login a username on more "
+"device at same time, or restart game."
+msgstr ""
+"拒绝访问！Timestamp错误。检查是否在多台设备上同时登录了同一账号，或重启游戏。"
+
+#
+# http server
+#
+#: kingdom-src/kingdom/src/multiplayer.cpp:358
+msgid ""
+"Send a command that server doesn't support!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+"发送了服务器不支持命令！\n"
+"\n"
+"请检查在玩的是否是最新版本。"
+
+#
+# http server
+#
+#: kingdom-src/kingdom/src/multiplayer.cpp:361
+#: kingdom-src/kingdom/src/multiplayer.cpp:525
+#: kingdom-src/kingdom/src/multiplayer.cpp:570
+msgid ""
+"Receive unkonwn data!\n"
+"\n"
+"Please check if your version is the newest."
+msgstr ""
+"收到未知数据！\n"
+"\n"
+"请检查在玩的是否是最新版本。"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:469
+msgid "Register success!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:473
+msgid "Username is duplicated!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:476
+msgid "Username is protected!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:479
+msgid "Unknown error!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:696
+#: kingdom-src/kingdom/src/multiplayer.cpp:734
+msgid "middle avatar"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:697
+#: kingdom-src/kingdom/src/multiplayer.cpp:756
+msgid "small avatar"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:700
+msgid ""
+"No avater on $server. You can upload $middle and $small to custom "
+"visualization."
+msgstr "$server上找不到图像。你可以上传$middle和$small来自定义武将。"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:737
+#: kingdom-src/kingdom/src/multiplayer.cpp:759
+msgid ""
+"Download $name fail! $name format (size: $size, type: png), please check "
+"uploaded file on $server."
+msgstr ""
+"下载$name失败！$name格式（尺寸：$size，类型：png），请检查上传到$server的图像"
+"文件。"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:870
+msgid "$file maybe deleted by server. Download fail!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:977
+#: kingdom-src/kingdom/src/multiplayer.cpp:1096
+msgid "This save's score($score) is invalid, cannot upload!"
+msgstr "此存档的积分($score)是非法值，不能上传！"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:981
+#: kingdom-src/kingdom/src/multiplayer.cpp:1100
+msgid "Had uploaded pass that create at $create, cannot upload again!"
+msgstr "创建时间是$create的关卡已被上传过，不能再次上传！"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:984
+#: kingdom-src/kingdom/src/multiplayer.cpp:1107
+msgid "param error. cannot upload!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1104
+msgid "Had uploaded at least $max sieges today. cannot upload more!"
+msgstr "您今天至少上传了$max次攻城，不能上传更多了！"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1359
+msgid "Had uploaded message that create at $create, cannot upload again!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1363
+msgid "Receiver don't exist!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1565
+#: kingdom-src/kingdom/src/multiplayer.cpp:1654
+#: kingdom-src/kingdom/src/multiplayer.cpp:1738
+#: kingdom-src/kingdom/src/multiplayer.cpp:1801
+#: kingdom-src/kingdom/src/multiplayer.cpp:1893
+msgid "When $action, unknown hero!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1567
+#: kingdom-src/kingdom/src/multiplayer.cpp:1656
+#: kingdom-src/kingdom/src/multiplayer.cpp:1740
+#: kingdom-src/kingdom/src/multiplayer.cpp:1803
+#: kingdom-src/kingdom/src/multiplayer.cpp:1895
+#: kingdom-src/kingdom/src/multiplayer.cpp:2041
+#: kingdom-src/kingdom/src/multiplayer.cpp:2142
+msgid "When $action, error status!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1569
+#: kingdom-src/kingdom/src/multiplayer.cpp:1658
+#: kingdom-src/kingdom/src/multiplayer.cpp:1742
+#: kingdom-src/kingdom/src/multiplayer.cpp:1805
+#: kingdom-src/kingdom/src/multiplayer.cpp:1897
+#: kingdom-src/kingdom/src/multiplayer.cpp:2043
+#: kingdom-src/kingdom/src/multiplayer.cpp:2144
+msgid "When $action, error score!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1574
+#: kingdom-src/kingdom/src/multiplayer.cpp:1663
+#: kingdom-src/kingdom/src/multiplayer.cpp:1747
+#: kingdom-src/kingdom/src/multiplayer.cpp:1810
+#: kingdom-src/kingdom/src/multiplayer.cpp:1902
+#: kingdom-src/kingdom/src/multiplayer.cpp:1963
+#: kingdom-src/kingdom/src/multiplayer.cpp:2048
+#: kingdom-src/kingdom/src/multiplayer.cpp:2149
+msgid "When $action, unknown error!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1599
+msgid "member^Reload"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1600
+msgid "member^Insert"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1601
+msgid "member^Erase"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1602
+msgid "member^Resort"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1799
+msgid "Score"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1955
+msgid "When $action, error number!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1957
+msgid "When $action, error buyer!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:1959
+msgid "When $action, duplicate number!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2138
+#: kingdom-src/kingdom/src/multiplayer.cpp:2216
+msgid "Employee"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2140
+msgid "When $action, id_absent!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2218
+#: kingdom-src/kingdom/src/multiplayer.cpp:2370
+msgid "uid_error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2220
+#: kingdom-src/kingdom/src/multiplayer.cpp:2372
+msgid "id_absent"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2222
+#: kingdom-src/kingdom/src/multiplayer.cpp:2374
+msgid "lock_status_error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2224
+#: kingdom-src/kingdom/src/multiplayer.cpp:2376
+msgid "level_error"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2443
+msgid "Subcontinent"
+msgstr "次大陆"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2445
+msgid "error do"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2447
+msgid "error param"
+msgstr ""
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2509
+msgid "$username wants to ally, do you agree?"
+msgstr "$username想和你缔结同盟，你同意吗？"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2526
+msgid "Notice, $username declares to terminate with you!"
+msgstr "注意，$username宣布和你解除同盟！"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2808
+msgid "Repertory is less than $cost score!"
+msgstr "库存不足$cost积分！"
+
+#: kingdom-src/kingdom/src/multiplayer.cpp:2815
+msgid "Do you want to spend $cost score to employ $name?"
+msgstr "您真的想花费$cost积分去雇拥$name吗？"
+
+#: kingdom-src/kingdom/src/pathfind/pathfind.cpp:687
+msgid "Terrain with a movement cost less than 1 encountered."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:660
+msgid "Map is for subcontinent. Find improper city location: $name($x, $y)."
+msgstr "这是个次大陆地图，发现不正确的城市坐标：$name($x, $y)。"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:670
+msgid "Location.x of city must be in [$x1, $x2], y in [$y1, $y2]!"
+msgstr "城市的x坐标必须在范围[$x1, $x2]之内，y坐标在[$y1, $y2]！"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1579
+msgid "You exchanged $ai using $human."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1632
+msgid "$first declared independence."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1739
+msgid "$first declared belonging to $second."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1885
+msgid "There is no employable hero."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1923
+msgid "scenario^Difficulty"
+msgstr "难度"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1929
+msgid "scenario^Turns"
+msgstr "回合数"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1933
+msgid "scenario^Capture fort"
+msgstr "占领据点"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1940
+#: kingdom-src/kingdom/src/team.cpp:2856
+msgid "scenario^Perfect turns"
+msgstr "完美回合数"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:1988
+#: kingdom-src/kingdom/src/play_controller.cpp:2030
+msgid "No coin and score, cannot upload!"
+msgstr "不能上传王国币、积分都是零的存档！"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2034
+msgid "There is in test mode, cannot upload!"
+msgstr "不能上传测试模式时的存档！"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2041
+msgid "Save is more than $threshold hour, cannot upload!"
+msgstr "存档时间超过$threshold小时，不能上传！"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2072
+msgid "$username lose $name!"
+msgstr "$username失去$name！"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2074
+msgid "Upload successfully!"
+msgstr "上传成功！"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2091
+#: kingdom-src/kingdom/src/play_controller.cpp:2135
+#: kingdom-src/kingdom/src/unit.cpp:4458
+msgid "Void"
+msgstr "空"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2092
+#: kingdom-src/kingdom/src/play_controller.cpp:2136
+msgid "final battle"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2092
+#: kingdom-src/kingdom/src/play_controller.cpp:2136
+msgid ""
+"human capital: $first\n"
+"\n"
+"\n"
+"\n"
+"ai capital: $second"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2174
+#: kingdom-src/kingdom/src/savegame.cpp:1036
+msgid "Save Replay"
+msgstr "保存录像"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2198
+msgid "Help"
+msgstr "帮助"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2259
+msgid "$name is dirty, but not save."
+msgstr "$name被修改，但没被保存。"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2295
+msgid "Do you want to spend $cost gold to purchase move?"
+msgstr "您想花$cost金购买移动增涨一回合吗？"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2302
+msgid "If have $cost gold, you can purchase move."
+msgstr "如果有$cost金，您可以购买移动增涨一回合。"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:2571
+msgid "$side begin to research $begin!"
+msgstr "$side开始研究$begin科技！"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4211
+msgid ""
+"The game is out of sync. It might not make much sense to continue. Do you "
+"want to save your game?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4212
+#: kingdom-src/kingdom/src/replay_controller.cpp:176
+msgid "Error details:"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4232
+msgid ""
+"Sorry, run into program BUG. Program has save scene to $save. Hope you to "
+"upload it to sever, so that developer can solve it."
+msgstr ""
+"遇到BUG，程序已经把现场保存在$save。希望你把它上传到服务器，以便开发人员能解"
+"决该BUG。"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4253
+msgid "There are no hero available to recruit"
+msgstr "没有可供征募的武将"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4257
+msgid "There are no unit type available to recruit."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4288
+msgid "You don't have enough gold to recruit that unit"
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:4891
+msgid "You can control more troop."
+msgstr "你能够控制更多部队。"
+
+#: kingdom-src/kingdom/src/play_controller.cpp:5182
+msgid ""
+"In order to aggress upon $city, $first and $second concluded treaty of "
+"alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:5184
+msgid ""
+"In order to defend $city, $first and $second concluded treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/play_controller.cpp:5286
+msgid "Map error. Too short road from $from to $to, at least $shortest!"
+msgstr "地图错误。$from和$to之间道路太短了，至少$shortest！"
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:122
+#: kingdom-src/kingdom/src/playcampaign.cpp:164
+msgid "You have been defeated!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:344
+msgid "Error while reading the WML: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:376
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:499
+msgid "Game Over"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:377
+msgid "This scenario has ended. Do you want to continue the campaign?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playcampaign.cpp:442
+msgid "Unknown scenario: '$scenario|'"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:100
+msgid "$name has taken control"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:102
+msgid "Turn changed"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:299
+msgid "Undoing moves not yet transmitted to the server."
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:469
+msgid "Waiting for next scenario..."
+msgstr ""
+
+#: kingdom-src/kingdom/src/playmp_controller.cpp:599
+msgid ""
+"The game is out of sync, and cannot continue. There are a number of reasons "
+"this could happen: this can occur if you or another player have modified "
+"their game settings. This may mean one of the players is attempting to "
+"cheat. It could also be due to a bug in the game, but this is less likely.\n"
+"\n"
+"Do you want to save an error log of your game?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:319
+msgid "Remaining gold: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:323
+msgid "Early finish bonus: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:325
+msgid "per turn"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:326
+msgid "Turns finished early: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:328
+msgid "Bonus: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:331
+msgid "Gold: "
+msgstr "金币："
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:335
+msgid "Carry over percentage: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:338
+msgid "Bonus Gold: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:340
+msgid "Retained Gold: "
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:500
+msgid "The game is over."
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:571
+msgid ""
+"A network disconnection has occurred, and the game cannot continue. Do you "
+"want to save the game?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:781
+msgid "It is now $name|'s turn"
+msgstr "轮到$name|的回合了"
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:1209
+msgid "Scenario Report"
+msgstr "场景报告"
+
+#: kingdom-src/kingdom/src/playsingle_controller.cpp:1213
+msgid "You have emerged victorious!"
+msgstr "您取得了胜利！"
+
+#: kingdom-src/kingdom/src/playturn.cpp:209
+msgid "Replace with AI"
+msgstr "让AI替换上阵"
+
+#: kingdom-src/kingdom/src/playturn.cpp:210
+msgid "Abort game"
+msgstr "终止游戏"
+
+#: kingdom-src/kingdom/src/playturn.cpp:216
+#: kingdom-src/kingdom/src/playturn.cpp:230
+msgid "Replace with $player"
+msgstr "让$player替换上阵"
+
+#: kingdom-src/kingdom/src/playturn.cpp:236
+msgid "$player has left the game. What do you want to do?"
+msgstr "$player已经离开游戏，您想做什么？"
+
+#: kingdom-src/kingdom/src/replay_controller.cpp:175
+msgid ""
+"The replay is corrupt/out of sync. It might not make much sense to continue. "
+"Do you want to save the game?"
+msgstr ""
+
+#: kingdom-src/kingdom/src/savegame.cpp:129
+#: kingdom-src/kingdom/src/savegame.cpp:131
+msgid " replay"
+msgstr " 游戏录像"
+
+#: kingdom-src/kingdom/src/savegame.cpp:357
+#: kingdom-src/kingdom/src/savegame.cpp:369
+#: kingdom-src/kingdom/src/savegame.cpp:1083
+msgid "Auto-Save"
+msgstr "自动存档"
+
+#: kingdom-src/kingdom/src/savegame.cpp:451
+#: kingdom-src/kingdom/src/savegame.cpp:455
+msgid "Warning: The file you have tried to load is corrupt. Loading anyway.\n"
+msgstr "警告：您试图读取的文件已损坏。继续尝试读取。\n"
+
+#: kingdom-src/kingdom/src/savegame.cpp:489
+msgid "This save is from a version too old to be loaded."
+msgstr "这个存档是由一个太早期的游戏版本保存的，现在的版本无法读取。"
+
+#: kingdom-src/kingdom/src/savegame.cpp:493
+msgid ""
+"This save is from a different version of the game. Do you want to try to "
+"load it?"
+msgstr "这个存档来自于不同版本的游戏。您仍然想读取吗？"
+
+#: kingdom-src/kingdom/src/savegame.cpp:547
+msgid "This is not a multiplayer save"
+msgstr "这不是多人游戏存档"
+
+#: kingdom-src/kingdom/src/savegame.cpp:612
+msgid "The game could not be saved: "
+msgstr "无法保存游戏："
+
+#: kingdom-src/kingdom/src/savegame.cpp:696
+msgid "Name: "
+msgstr "名字："
+
+#: kingdom-src/kingdom/src/savegame.cpp:707
+msgid "Save names should not end on '.gz'. Please choose a different name."
+msgstr "存档名不能以'.gz'结尾，请选择一个不同的名字。"
+
+#: kingdom-src/kingdom/src/savegame.cpp:777
+msgid "Saved"
+msgstr "已保存"
+
+#: kingdom-src/kingdom/src/savegame.cpp:777
+msgid "The game has been saved"
+msgstr "游戏已保存"
+
+#: kingdom-src/kingdom/src/savegame.cpp:838
+msgid "Could not write to file"
+msgstr "无法写入文件"
+
+#: kingdom-src/kingdom/src/savegame.cpp:1059
+msgid "Could not auto save the game. Please save the game manually."
+msgstr "不能自动保存当前游戏，请手动存档。"
+
+#: kingdom-src/kingdom/src/team.cpp:1613
+msgid "Your noble of $noble is terminated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:1616
+msgid "$hero noble of $noble is terminated."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:1621
+msgid "Congratulate! You are appointed $noble."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:1624
+msgid "Congratulate! $hero is appointed $noble."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2030
+msgid "$side finished researching $end, will begin to research $begin!"
+msgstr "$side完成研究$end科技，接下研究$begin！"
+
+#: kingdom-src/kingdom/src/team.cpp:2032
+msgid "$side finished researching $end, and have gotten all technology!"
+msgstr "$side完成研究$end，已研究完所有科技！"
+
+#: kingdom-src/kingdom/src/team.cpp:2162
+msgid "$first and $second concluded treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2164
+msgid "$first and $second terminate treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2237 kingdom-src/kingdom/src/team.cpp:2301
+msgid ""
+"End aggressing upon $city, $first and $second terminate treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2239 kingdom-src/kingdom/src/team.cpp:2303
+msgid "End defending $city, $first and $second terminate treaty of alliance."
+msgstr ""
+
+#: kingdom-src/kingdom/src/team.cpp:2844
+msgid "Results of battle"
+msgstr "战果"
+
+#: kingdom-src/kingdom/src/team.cpp:3445
+msgid "Find treasure: $first($second)!"
+msgstr ""
+
+#: kingdom-src/kingdom/src/tod_manager.cpp:125
+msgid "No time of day has been defined."
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:148
+msgid "Formation"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:1531
+msgid "Unknown unit type '$type|' while generating traits"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4345
+msgid "Reside"
+msgstr "城内"
+
+#: kingdom-src/kingdom/src/unit.cpp:4345
+msgid "Field"
+msgstr "城外"
+
+#: kingdom-src/kingdom/src/unit.cpp:4450 kingdom-src/kingdom/src/unit.cpp:4452
+msgid "Mayor"
+msgstr "太守"
+
+#: kingdom-src/kingdom/src/unit.cpp:4542
+msgid "Moves"
+msgstr "移动"
+
+#: kingdom-src/kingdom/src/unit.cpp:4554 kingdom-src/kingdom/src/unit.cpp:4556
+msgid "AMLA"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4563
+msgid "task^Back"
+msgstr "返回"
+
+#: kingdom-src/kingdom/src/unit.cpp:4564
+msgid "task^Trade"
+msgstr "贸易"
+
+#: kingdom-src/kingdom/src/unit.cpp:4565
+msgid "task^Transfer"
+msgstr "迁移"
+
+#: kingdom-src/kingdom/src/unit.cpp:4566
+msgid "task^Station"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4571 kingdom-src/kingdom/src/unit.cpp:4573
+#: kingdom-src/kingdom/src/unit.cpp:4582
+msgid "Task"
+msgstr "任务"
+
+#: kingdom-src/kingdom/src/unit.cpp:4578
+msgid "trade^Back"
+msgstr "回程"
+
+#: kingdom-src/kingdom/src/unit.cpp:4600 kingdom-src/kingdom/src/unit.cpp:4602
+msgid "Income"
+msgstr "收入"
+
+#: kingdom-src/kingdom/src/unit.cpp:4614 kingdom-src/kingdom/src/unit.cpp:4616
+msgid "Block turns"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:4634 kingdom-src/kingdom/src/unit.cpp:4636
+msgid "Police"
+msgstr "治安"
+
+#: kingdom-src/kingdom/src/unit.cpp:4648 kingdom-src/kingdom/src/unit.cpp:4650
+msgid "Soldiers"
+msgstr "士兵部队"
+
+#: kingdom-src/kingdom/src/unit.cpp:4664 kingdom-src/kingdom/src/unit.cpp:4666
+msgid "Front"
+msgstr "前线"
+
+#
+# Hero List Dialog
+#
+#: kingdom-src/kingdom/src/unit.cpp:4705 kingdom-src/kingdom/src/unit.cpp:4707
+#: kingdom-src/kingdom/src/unit.cpp:5161
+msgid "Abilities"
+msgstr "能力"
+
+#: kingdom-src/kingdom/src/unit.cpp:4731 kingdom-src/kingdom/src/unit.cpp:4733
+#: kingdom-src/kingdom/src/unit.cpp:5183
+msgid "feature"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:6343
+msgid "Munition"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit.cpp:7698
+msgid "$second! let improve morale, prepare to better battle."
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_display.cpp:512
+msgid "Capture $city"
+msgstr "攻陷$city"
+
+#: kingdom-src/kingdom/src/unit_display.cpp:1623
+msgid "perfect^Perfect"
+msgstr "完美"
+
+#: kingdom-src/kingdom/src/unit_types.cpp:1376
+#, no-c-format
+msgid "% accuracy"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:1387
+#, no-c-format
+msgid "% parry"
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:2882
+msgid "No description available."
+msgstr ""
+
+#: kingdom-src/kingdom/src/unit_types.cpp:3174
+msgid "mode^Scenario"
+msgstr "关卡"
+
+#: kingdom-src/kingdom/src/unit_types.cpp:3176
+msgid "mode^RPG"
+msgstr "RPG"
+
+#: kingdom-src/kingdom/src/unit_types.cpp:3178
+msgid "mode^Tower"
+msgstr "塔防"
+
+#: kingdom-src/kingdom/src/unit_types.cpp:3180
+msgid "mode^Siege"
+msgstr "攻城"
+
+#~ msgid "Deep Water"
+#~ msgstr "深水"
+
+#~ msgid "Gray Deep Water"
+#~ msgstr "灰色深水"
+
+#~ msgid "Medium Deep Water"
+#~ msgstr "中等深水"
+
+#~ msgid "Tropical Deep Water"
+#~ msgstr "热带深水"
+
+#~ msgid "Shallow Water"
+#~ msgstr "浅水"
+
+#~ msgid "Gray Shallow Water"
+#~ msgstr "灰色浅水"
+
+#~ msgid "Medium Shallow Water"
+#~ msgstr "中等浅水"
+
+#~ msgid "Tropical Shallow Water"
+#~ msgstr "热带浅水"
+
+#~ msgid "Ford"
+#~ msgstr "浅滩"
+
+#~ msgid "Coastal Reef"
+#~ msgstr "礁石"
+
+#~ msgid "Gray Coastal Reef"
+#~ msgstr "灰色礁石"
+
+#~ msgid "Tropical Coastal Reef"
+#~ msgstr "热带礁石"
+
+#~ msgid "Swamp"
+#~ msgstr "沼泽"
+
+#~ msgid "Muddy Quagmire"
+#~ msgstr "泥泞的沼泽"
+
+#~ msgid "Grassland"
+#~ msgstr "草原"
+
+#~ msgid "Green Grass"
+#~ msgstr "绿草"
+
+#~ msgid "Semi-dry Grass"
+#~ msgstr "半干的草"
+
+#~ msgid "Dry Grass"
+#~ msgstr "干草"
+
+#~ msgid "Leaf Litter"
+#~ msgstr "残败的落叶"
+
+#~ msgid "Dirt"
+#~ msgstr "尘土"
+
+#~ msgid "Dark Dirt"
+#~ msgstr "暗色尘土"
+
+#~ msgid "Regular Dirt"
+#~ msgstr "普通尘土"
+
+#~ msgid "Dry Dirt"
+#~ msgstr "干燥尘土"
+
+#~ msgid "Road"
+#~ msgstr "道路"
+
+#~ msgid "Regular Cobbles"
+#~ msgstr "普通卵石"
+
+#~ msgid "Clean Gray Cobbles"
+#~ msgstr "干净的灰色卵石"
+
+#~ msgid "Overgrown Cobbles"
+#~ msgstr "杂草丛生的卵石"
+
+#~ msgid "Ice"
+#~ msgstr "冰面"
+
+#~ msgid "Snow"
+#~ msgstr "雪地"
+
+#~ msgid "Desert"
+#~ msgstr "沙漠"
+
+#~ msgid "Desert Sands"
+#~ msgstr "沙漠沙砾"
+
+#~ msgid "Sand"
+#~ msgstr "沙地"
+
+#~ msgid "Beach Sands"
+#~ msgstr "海滩沙砾"
+
+#~ msgid "Oasis"
+#~ msgstr "绿洲"
+
+#~ msgid "Rubble"
+#~ msgstr "碎石"
+
+#~ msgid "Crater"
+#~ msgstr "火山口"
+
+#~ msgid "Mixed Flowers"
+#~ msgstr "多种鲜花"
+
+#~ msgid "Farmland"
+#~ msgstr "农场"
+
+#~ msgid "Stones"
+#~ msgstr "石头"
+
+#~ msgid "Small Mushrooms"
+#~ msgstr "小蘑菇"
+
+#~ msgid "Mushroom Farm"
+#~ msgstr "蘑菇林"
+
+#~ msgid "Desert Plants"
+#~ msgstr "沙漠植物"
+
+#~ msgid "Desert Plants without Bones"
+#~ msgstr "没有茎干的沙漠植物"
+
+#~ msgid "Windmill"
+#~ msgstr "风车"
+
+#~ msgid "Fence"
+#~ msgstr "篱笆"
+
+#~ msgid "Stones with Sand Drifts"
+#~ msgstr "积沙岩石"
+
+#~ msgid "Water Lilies"
+#~ msgstr "睡莲"
+
+#~ msgid "Flowering Water Lilies"
+#~ msgstr "盛开的睡莲"
+
+#~ msgid "Great Tree"
+#~ msgstr "参天大树"
+
+#~ msgid "Dead Great Tree"
+#~ msgstr "已死的参天大树"
+
+#~ msgid "Forest"
+#~ msgstr "森林"
+
+#~ msgid "Tropical Forest"
+#~ msgstr "热带森林"
+
+#, fuzzy
+#~ msgid "Rainforest"
+#~ msgstr "松林"
+
+#, fuzzy
+#~ msgid "Palm Forest"
+#~ msgstr "松林"
+
+#, fuzzy
+#~ msgid "Dense Palm Forest"
+#~ msgstr "松林"
+
+#~ msgid "Pine Forest"
+#~ msgstr "松林"
+
+#~ msgid "Snowy Pine Forest"
+#~ msgstr "雪松林"
+
+#~ msgid "Summer Deciduous Forest"
+#~ msgstr "夏季落叶林"
+
+#~ msgid "Fall Deciduous Forest"
+#~ msgstr "秋季落叶林"
+
+#~ msgid "Winter Deciduous Forest"
+#~ msgstr "冬季落叶林"
+
+#~ msgid "Snowy Deciduous Forest"
+#~ msgstr "雪地落叶林"
+
+#~ msgid "Summer Mixed Forest"
+#~ msgstr "夏季混交林"
+
+#~ msgid "Fall Mixed Forest"
+#~ msgstr "秋季混交林"
+
+#~ msgid "Winter Mixed Forest"
+#~ msgstr "东季混交林"
+
+#~ msgid "Snowy Mixed Forest"
+#~ msgstr "雪地混交林"
+
+#~ msgid "Hills"
+#~ msgstr "丘陵"
+
+#~ msgid "Regular Hills"
+#~ msgstr "普通丘陵"
+
+#~ msgid "Dry Hills"
+#~ msgstr "干燥丘陵"
+
+#~ msgid "Dunes"
+#~ msgstr "沙丘"
+
+#~ msgid "Snow Hills"
+#~ msgstr "雪丘"
+
+#~ msgid "Mountains"
+#~ msgstr "山岭"
+
+#~ msgid "Dry Mountains"
+#~ msgstr "干燥山脉"
+
+#~ msgid "Snowy Mountains"
+#~ msgstr "积雪覆盖的山脉"
+
+#~ msgid "Forested Hills"
+#~ msgstr "森林覆盖的丘陵"
+
+#~ msgid "Forested Snow Hills"
+#~ msgstr "森林覆盖的雪山"
+
+#~ msgid "Summer Deciduous Forested Hills"
+#~ msgstr "夏季落叶林覆盖的丘陵"
+
+#~ msgid "Fall Deciduous Forested Hills"
+#~ msgstr "秋季落叶林覆盖的丘陵"
+
+#~ msgid "Winter Deciduous Forested Hills"
+#~ msgstr "东季落叶林覆盖的丘陵"
+
+#~ msgid "Snowy Deciduous Forested Hills"
+#~ msgstr "雪地落叶林覆盖的丘陵"
+
+#~ msgid "Summer Mixed Forested Hills"
+#~ msgstr "夏季混交林覆盖的丘陵"
+
+#~ msgid "Fall Mixed Forested Hills"
+#~ msgstr "秋季混交林覆盖的丘陵"
+
+#~ msgid "Winter Mixed Forested Hills"
+#~ msgstr "东季混交林覆盖的丘陵"
+
+#~ msgid "Snowy Mixed Forested Hills"
+#~ msgstr "雪地混交林覆盖的丘陵"
+
+#, fuzzy
+#~ msgid "Tropical Forested Hills"
+#~ msgstr "热带森林"
+
+#, fuzzy
+#~ msgid "Palm Forested Hills"
+#~ msgstr "森林覆盖的丘陵"
+
+#, fuzzy
+#~ msgid "Dense Palm Forested Hills"
+#~ msgstr "森林覆盖的丘陵"
+
+#, fuzzy
+#~ msgid "Savanna Forested Hills"
+#~ msgstr "森林覆盖的丘陵"
+
+#~ msgid "Wooden Floor"
+#~ msgstr "木质地面"
+
+#~ msgid "Basic Wooden Floor"
+#~ msgstr "基本的木地面"
+
+#~ msgid "Lit"
+#~ msgstr "光照"
+
+#~ msgid "Beam of Light"
+#~ msgstr "光束"
+
+#~ msgid "Cave"
+#~ msgstr "洞穴"
+
+#~ msgid "Cave Floor"
+#~ msgstr "洞穴地面"
+
+#~ msgid "Earthy Cave Floor"
+#~ msgstr "泥土洞穴地面"
+
+#~ msgid "Dark Flagstones"
+#~ msgstr "暗色石子路"
+
+#~ msgid "Cave Path"
+#~ msgstr "洞穴小径"
+
+#~ msgid "Mushroom Grove"
+#~ msgstr "蘑菇林"
+
+#~ msgid "Lit Mushroom Grove"
+#~ msgstr "被照亮的蘑菇林"
+
+#~ msgid "Rockbound Cave"
+#~ msgstr "岩石洞穴"
+
+#~ msgid "Mine Rail"
+#~ msgstr "矿中铁轨"
+
+#~ msgid "Chasm"
+#~ msgstr "裂隙"
+
+#~ msgid "Regular Chasm"
+#~ msgstr "普通裂隙"
+
+#~ msgid "Earthy Chasm"
+#~ msgstr "泥土裂隙"
+
+#~ msgid "Ethereal Abyss"
+#~ msgstr "无底深渊"
+
+#~ msgid "Lava Chasm"
+#~ msgstr "熔岩裂口"
+
+#~ msgid "Lava"
+#~ msgstr "熔岩"
+
+#~ msgid "Volcano"
+#~ msgstr "火山"
+
+#~ msgid "Regular Impassable Mountains"
+#~ msgstr "普通的高不可攀的山脉"
+
+#~ msgid "Desert Impassable Mountains"
+#~ msgstr "沙漠中的高不可攀的山脉"
+
+#~ msgid "Snowy Impassable Mountains"
+#~ msgstr "雪中的高不可攀的山脉"
+
+#~ msgid "Cave Wall"
+#~ msgstr "洞穴墙壁"
+
+#~ msgid "Natural Cave Wall"
+#~ msgstr "普通的洞穴墙壁"
+
+#~ msgid "Hewn Cave Wall"
+#~ msgstr "粗糙的洞穴墙壁"
+
+#~ msgid "Natural Earthy Cave Wall"
+#~ msgstr "天然的泥土洞穴墙壁"
+
+#~ msgid "Reinforced Earthy Cave Wall"
+#~ msgstr "加固的泥土洞穴墙壁"
+
+#~ msgid "Stone Wall"
+#~ msgstr "石墙"
+
+#~ msgid "Lit Stone Wall"
+#~ msgstr "被照亮的石墙"
+
+#~ msgid "Impassable Overlay"
+#~ msgstr "不可通过地形覆盖层"
+
+#, fuzzy
+#~ msgid "Unwalkable Overlay"
+#~ msgstr "不可通过地形"
+
+#~ msgid "Village"
+#~ msgstr "村庄"
+
+#~ msgid "Adobe Village"
+#~ msgstr "泥砖村庄"
+
+#~ msgid "Desert Tent Village"
+#~ msgstr "沙漠中的帐篷村庄"
+
+#~ msgid "Tent Village"
+#~ msgstr "帐篷村庄"
+
+#~ msgid "Orcish Village"
+#~ msgstr "兽人村庄"
+
+#~ msgid "Snowy Orcish Village"
+#~ msgstr "雪中的兽人村庄"
+
+#~ msgid "Snowy Elven Village"
+#~ msgstr "雪中的精灵村庄"
+
+#~ msgid "Elven Village"
+#~ msgstr "精灵村庄"
+
+#~ msgid "Cottage"
+#~ msgstr "小农舍"
+
+#~ msgid "Snowy Cottage"
+#~ msgstr "雪中小农舍"
+
+#~ msgid "Ruined Cottage"
+#~ msgstr "荒废的小农舍"
+
+#~ msgid "Human City"
+#~ msgstr "人类城市"
+
+#~ msgid "Windmill Village"
+#~ msgstr "风车村庄"
+
+#~ msgid "Snowy Human City"
+#~ msgstr "雪中的人类城市"
+
+#~ msgid "Ruined Human City"
+#~ msgstr "荒废的人类城市"
+
+#~ msgid "Hill Stone Village"
+#~ msgstr "山石村庄"
+
+#~ msgid "Snowy Hill Stone Village"
+#~ msgstr "雪中的山石村庄"
+
+#~ msgid "Ruined Hill Stone Village"
+#~ msgstr "荒废的山石村庄"
+
+#~ msgid "Tropical Village"
+#~ msgstr "热带村庄"
+
+#~ msgid "Drake Village"
+#~ msgstr "龙人村庄"
+
+#~ msgid "Cave Village"
+#~ msgstr "洞穴村庄"
+
+#~ msgid "Dwarven Village"
+#~ msgstr "矮人村庄"
+
+#~ msgid "Hut"
+#~ msgstr "小屋"
+
+#~ msgid "Snowy Hut"
+#~ msgstr "雪中的小屋"
+
+#~ msgid "Log Cabin"
+#~ msgstr "小木屋"
+
+#~ msgid "Snowy Log Cabin"
+#~ msgstr "雪中的小木屋"
+
+#~ msgid "Igloo"
+#~ msgstr "圆顶屋"
+
+#~ msgid "Swamp Village"
+#~ msgstr "沼泽村庄"
+
+#~ msgid "Merfolk Village"
+#~ msgstr "人鱼村庄"
+
+#~ msgid "Village Overlay"
+#~ msgstr "村庄覆盖层"
+
+#~ msgid "Encampment"
+#~ msgstr "营地"
+
+#~ msgid "Snowy Encampment"
+#~ msgstr "雪中营地"
+
+#~ msgid "Castle"
+#~ msgstr "城堡"
+
+#~ msgid "Orcish Castle"
+#~ msgstr "兽人城堡"
+
+#~ msgid "Snowy Orcish Castle"
+#~ msgstr "雪中的兽人城堡"
+
+#~ msgid "Human Castle"
+#~ msgstr "人类城堡"
+
+#~ msgid "Snowy Human Castle"
+#~ msgstr "雪中的人类城堡"
+
+#~ msgid "Elvish Castle"
+#~ msgstr "精灵城堡"
+
+#~ msgid "Dwarven Castle"
+#~ msgstr "矮人城堡"
+
+#~ msgid "Ruined Castle"
+#~ msgstr "荒废的城堡"
+
+#~ msgid "Ruined Human Castle"
+#~ msgstr "荒废的人类城堡"
+
+#~ msgid "Sunken Human Ruin"
+#~ msgstr "沉陷的人类废墟"
+
+#~ msgid "Swamp Human Ruin"
+#~ msgstr "沼泽中的人类废墟"
+
+#~ msgid "Desert Castle"
+#~ msgstr "沙漠城堡"
+
+#~ msgid "Ruined Desert Castle"
+#~ msgstr "荒废的沙漠城堡"
+
+#~ msgid "Encampment Keep"
+#~ msgstr "营地主楼"
+
+#~ msgid "Tall Encampment Keep"
+#~ msgstr "高耸的营地主楼"
+
+#~ msgid "Snowy Encampment Keep"
+#~ msgstr "雪中的营地主楼"
+
+# i'd like to translate it as城堡主楼
+#~ msgid "Keep"
+#~ msgstr "主楼"
+
+# i'd like to translate it as城堡主楼
+#~ msgid "Orcish Keep"
+#~ msgstr "兽人主楼"
+
+#~ msgid "Snowy Orcish Keep"
+#~ msgstr "雪中的兽人主楼"
+
+#~ msgid "Human Castle Keep"
+#~ msgstr "人类城堡主楼"
+
+#~ msgid "Snowy Human Castle Keep"
+#~ msgstr "雪中的人类城堡主楼"
+
+#~ msgid "Elven Castle Keep"
+#~ msgstr "精灵城堡主楼"
+
+#~ msgid "Dwarven Castle Keep"
+#~ msgstr "矮人的城堡主楼"
+
+#~ msgid "Ruined Keep"
+#~ msgstr "荒废的主楼"
+
+#~ msgid "Ruined Human Castle Keep"
+#~ msgstr "荒废的人类城堡主楼"
+
+#~ msgid "Sunken Human Castle Keep"
+#~ msgstr "沉陷的人类城堡主楼"
+
+#~ msgid "Swamp Human Castle Keep"
+#~ msgstr "沼泽中的人类城堡主楼"
+
+#~ msgid "Desert Keep"
+#~ msgstr "沙漠主楼"
+
+#~ msgid "Ruined Desert Keep"
+#~ msgstr "荒废的沙漠主楼"
+
+#~ msgid "Castle Overlay"
+#~ msgstr "主楼覆盖层"
+
+#~ msgid "Keep Overlay"
+#~ msgstr "主楼覆盖层"
+
+#~ msgid "Bridge"
+#~ msgstr "桥梁"
+
+#~ msgid "Wooden Bridge"
+#~ msgstr "木桥"
+
+#~ msgid "Rotting Bridge"
+#~ msgstr "腐坏中的桥梁"
+
+#~ msgid "Basic Stone Bridge"
+#~ msgstr "基本的石桥"
+
+#~ msgid "Cave Chasm Bridge"
+#~ msgstr "洞穴裂缝上的桥"
+
+#, fuzzy
+#~ msgid "Stone Chasm Bridge"
+#~ msgstr "桥梁"
+
+#, fuzzy
+#~ msgid "Plank Bridge"
+#~ msgstr "桥梁"
+
+#~ msgid "Off Map"
+#~ msgstr "地图之外"
+
+#~ msgid "Experimental Fake Map Edge"
+#~ msgstr "试验性的伪地图边缘"
+
+#~ msgid "Flat"
+#~ msgstr "平原"
+
+#~ msgid "Frozen"
+#~ msgstr "雪地"
+
+#~ msgid "Impassable"
+#~ msgstr "不可通过地形"
+
+#~ msgid "Unwalkable"
+#~ msgstr "不可步行地形"
+
+#~ msgid "You will now connect to a server to download add-ons."
+#~ msgstr "现在您将连接到服务器以下载附加组件。"
+
+#, fuzzy
+#~ msgid "Update Add-ons"
+#~ msgstr "更新附加组件"
+
+#~ msgid "Remove Add-ons"
+#~ msgstr "移除附加组件"
+
+#, fuzzy
+#~ msgid "Difficulty"
+#~ msgstr "难度："
+
+#~ msgid "Choose the game to load"
+#~ msgstr "选择要读取的游戏"
+
+#~ msgid "Filter"
+#~ msgstr "过滤条件"
+
+#~ msgid "Clear"
+#~ msgstr "清空"
+
+#, fuzzy
+#~ msgid "Place Label"
+#~ msgstr "设置标签"
+
+#, fuzzy
+#~ msgid "Label:"
+#~ msgstr "设置标签"
+
+#, fuzzy
+#~ msgid "Team only"
+#~ msgstr "第一团队"
+
+#~ msgid "Formula debugger"
+#~ msgstr "公式调试器"
+
+#~ msgid "Welcome"
+#~ msgstr "欢迎"
+
+#~ msgid "state"
+#~ msgstr "状态"
+
+#~ msgid "Call stack"
+#~ msgstr "调用栈"
+
+#~ msgid "Actions"
+#~ msgstr "行动"
+
+#~ msgid "Step operation"
+#~ msgstr "步进操作"
+
+#~ msgid "Next operation"
+#~ msgstr "下一个操作"
+
+#~ msgid "Step out"
+#~ msgstr "步出"
+
+#~ msgid "Continue"
+#~ msgstr "继续"
+
+#~ msgid "Execution trace"
+#~ msgstr "执行轨迹"
+
+#~ msgid "Don’t ask me again!"
+#~ msgstr "不要再次询问我！"
+
+#~ msgid "Show replay"
+#~ msgstr "显示录像"
+
+#~ msgid "Cancel orders"
+#~ msgstr "取消命令"
+
+#~ msgid "Gamestate Inspector"
+#~ msgstr "游戏状态观察器"
+
+#~ msgid "Types"
+#~ msgstr "类型"
+
+#~ msgid "Inspection window"
+#~ msgstr "观察窗口"
+
+#~ msgid "Variable"
+#~ msgstr "变量"
+
+#~ msgid "Language"
+#~ msgstr "语言"
+
+#~ msgid "Choose your preferred language:"
+#~ msgstr "选择你偏好的语言："
+
+#~ msgid "Change language"
+#~ msgstr "改变语言"
+
+#~ msgid "Sort players:"
+#~ msgstr "玩家排序："
+
+#~ msgid "Friends first, ignored people last"
+#~ msgstr "好友优先，被忽略的用户在最后"
+
+#~ msgid "Alphabetically"
+#~ msgstr "字母顺序"
+
+#~ msgid "Current room"
+#~ msgstr "当前房间"
+
+#~ msgid "Other games"
+#~ msgstr "其它游戏"
+
+#~ msgid "Rooms"
+#~ msgstr "房间"
+
+#~ msgid "Messages waiting"
+#~ msgstr "消息等待中"
+
+#~ msgid "Filter:"
+#~ msgstr "过滤条件："
+
+#~ msgid "Friends"
+#~ msgstr "好友列表"
+
+#~ msgid "No ignored"
+#~ msgstr "无被忽略的用户"
+
+#~ msgid "Vacant slots"
+#~ msgstr "空位个数"
+
+#~ msgid "Invert filter"
+#~ msgstr "反转过滤条件"
+
+#~ msgid "Player Info — "
+#~ msgstr "玩家信息 - "
+
+#~ msgid "Send private message"
+#~ msgstr "发送个人消息"
+
+#~ msgid "Add to friends list"
+#~ msgstr "加入好友列表"
+
+#~ msgid "Add to ignores list"
+#~ msgstr "加入忽略列表"
+
+#~ msgid "Remove from list"
+#~ msgstr "从列表中移除"
+
+#~ msgid "Moderation"
+#~ msgstr "管理"
+
+#~ msgid "Check status"
+#~ msgstr "检查状态"
+
+#~ msgid "Kick / ban reason:"
+#~ msgstr "剔出/封禁的理由："
+
+#~ msgid "Ban time:"
+#~ msgstr "封禁时间："
+
+#~ msgid "Kick/ban"
+#~ msgstr "剔出/封禁"
+
+#~ msgid "Village gold"
+#~ msgstr "村庄金币"
+
+#~ msgid "Random start time"
+#~ msgstr "开始时段随机"
+
+#~ msgid "Multiplayer server login dialog"
+#~ msgstr "多人游戏服务器登录对话框"
+
+#~ msgid "Login"
+#~ msgstr "登录"
+
+#~ msgid "Save password to preferences (clear text)"
+#~ msgstr "保存密码（明文）"
+
+#~ msgid "Password Reminder"
+#~ msgstr "密码提示"
+
+#~ msgid ""
+#~ "You may login to the official multiplayer server with your forum username "
+#~ "and password.\n"
+#~ "Note that registration is not required to join the server: you need to "
+#~ "supply a password only if you wish to use a registered username.\n"
+#~ "\n"
+#~ "The Battle for Wesnoth forum can be found at http://www.wesnoth.org/forum/"
+#~ msgstr ""
+#~ "要加入服务器时并不需要注册，只有在您想使用一个已经注册的用户名时才需要提供"
+#~ "密码。"
+
+#~ msgid "Attack a network payer"
+#~ msgstr "攻击网络上玩家"
+
+#~ msgid "Campaign"
+#~ msgstr "战役"
+
+#~ msgid "Load"
+#~ msgstr "读取"
+
+#~ msgid "Add-ons"
+#~ msgstr "附加组件"
+
+#~ msgid "Credits"
+#~ msgstr "贡献者"
+
+#~ msgid "View the credits"
+#~ msgstr "查看制作者名单"
+
+#~ msgid "File: "
+#~ msgstr "文件："
+
+#~ msgid "Delete File"
+#~ msgstr "删除文件"
+
+#~ msgid "New Folder"
+#~ msgstr "新建文件夹"
+
+#~ msgid "Deletion of the file failed."
+#~ msgstr "删除文件失败。"
+
+#~ msgid "Creation of the directory failed."
+#~ msgstr "建立目录失败。"
+
+#~ msgid "Skip AI Moves"
+#~ msgstr "略过AI的移动"
+
+#~ msgid "Save Replay on SP/MP Victory or MP Defeat"
+#~ msgstr "游戏胜利或者多人游戏失败时，保存录像"
+
+#~ msgid "Delete Auto-Saves on SP/MP Victory or MP Defeat"
+#~ msgstr "游戏胜利或者多人游戏失败时，删除自动存档"
+
+#~ msgid "Do Not Show Lobby Joins"
+#~ msgstr "不显示玩家进入游戏大厅的信息"
+
+#~ msgid "Show Lobby Joins Of Friends Only"
+#~ msgstr "只显示好友进入游戏大厅的信息"
+
+#~ msgid "Show All Lobby Joins"
+#~ msgstr "显示所有玩家进入游戏大厅的信息"
+
+#~ msgid "Use new lobby interface"
+#~ msgstr "使用新版多人游戏大厅界面"
+
+#~ msgid "Sort Lobby List"
+#~ msgstr "对玩家列表排序"
+
+#~ msgid "Iconize Lobby List"
+#~ msgstr "以图标形式显示玩家列表"
+
+#~ msgid "Set path to wesnothd"
+#~ msgstr "设置wesnothd所在路径"
+
+#~ msgid "Friends List"
+#~ msgstr "好友列表"
+
+#~ msgid "Multiplayer Options"
+#~ msgstr "多人游戏选项"
+
+#~ msgid "Show Floating Labels"
+#~ msgstr "显示浮动标签"
+
+#~ msgid "Turn Dialog"
+#~ msgstr "回合对话框"
+
+#~ msgid "Show Team Colors"
+#~ msgstr "显示团队颜色"
+
+#~ msgid "Show Haloing Effects"
+#~ msgstr "开启光影效果"
+
+#~ msgid "Theme"
+#~ msgstr "场景"
+
+#~ msgid "Dialog"
+#~ msgstr "对话框"
+
+#~ msgid "Hotkeys"
+#~ msgstr "快捷键"
+
+#~ msgid "sound^Advanced Options"
+#~ msgstr "高级选项"
+
+#~ msgid "sound^Standard Options"
+#~ msgstr "标准选项"
+
+#~ msgid "Custom"
+#~ msgstr "自定义"
+
+#~ msgid "Music Volume:"
+#~ msgstr "音乐音量："
+
+#~ msgid "SFX Volume:"
+#~ msgstr "音效音量："
+
+#~ msgid "UI Sound Volume:"
+#~ msgstr "UI音量："
+
+#~ msgid "Bell Volume:"
+#~ msgstr "提示音音量："
+
+#~ msgid "Sample Rate (Hz):"
+#~ msgstr "采样频率（Hz）："
+
+#~ msgid "Frequency:"
+#~ msgstr "频率："
+
+#~ msgid "Sound effects on/off"
+#~ msgstr "开/关音效"
+
+#~ msgid "Change the sound effects volume"
+#~ msgstr "调整音效的音量大小"
+
+#~ msgid "Music on/off"
+#~ msgstr "开/关音乐"
+
+#~ msgid "Change the music volume"
+#~ msgstr "调整音乐的音量大小"
+
+#~ msgid "Change the bell volume"
+#~ msgstr "调整提示音的音量大小"
+
+#~ msgid "Turn menu and button sounds on/off"
+#~ msgstr "开/关菜单和按钮音效"
+
+#~ msgid "Change the sound volume for button clicks, etc."
+#~ msgstr "调整点击按钮等操作时的音量大小。"
+
+#~ msgid "Change the sample rate"
+#~ msgstr "调整采样频率"
+
+#~ msgid "User defined sample rate"
+#~ msgstr "用户自定义采样频率"
+
+#~ msgid "Change the buffer size"
+#~ msgstr "调整缓冲区大小"
+
+#~ msgid "Buffer Size: "
+#~ msgstr "缓冲区大小："
+
+#~ msgid "Change the speed of scrolling around the map"
+#~ msgstr "调整卷屏速度"
+
+#~ msgid "Set the amount of chat lines shown"
+#~ msgstr "设置在屏幕上显示的聊天记录的行数"
+
+#~ msgid "Add a timestamp to chat messages"
+#~ msgstr "在聊天消息上加上时间戳"
+
+#~ msgid "Choose whether the game should run full screen or in a window"
+#~ msgstr "选择游戏是以全屏模式还是窗口模式运行"
+
+#~ msgid ""
+#~ "Should the map view scroll to a unit when an action or move is animated."
+#~ msgstr "是否自动切换地图视角到当前活动的单位。"
+
+#~ msgid "Make units move and fight faster"
+#~ msgstr "加快单位的移动和攻击速度"
+
+#~ msgid "Units move and fight speed"
+#~ msgstr "单位的移动和攻击速度"
+
+#~ msgid "Show unit idle animations"
+#~ msgstr "显示单位空闲动画"
+
+#~ msgid "Set the frequency of unit idle animations"
+#~ msgstr "设置单位空闲动画显示频率"
+
+#~ msgid "Set maximum number of automatic saves to be retained"
+#~ msgstr "设置自动存档的最大保留数量"
+
+#~ msgid "Do not animate AI units moving"
+#~ msgstr "不显示AI单位的移动动画"
+
+#~ msgid "Sighting an allied unit interrupts your unit’s movement"
+#~ msgstr "当看到友军单位时中断您的单位的移动"
+
+#~ msgid "Overlay a grid onto the map"
+#~ msgstr "在地图上显示六角网格"
+
+#~ msgid "Sort the player list in the lobby by player groups"
+#~ msgstr "根据玩家分组对游戏大厅中的玩家列表进行排序"
+
+#~ msgid "Show icons in front of the player names in the lobby."
+#~ msgstr "在游戏大厅中玩家的名字前显示图标。"
+
+#~ msgid "Uncheck to delete the saved password (on exit)."
+#~ msgstr "取消勾选，以删除以前保存的密码（在退出时）。"
+
+#~ msgid "Do not show messages about players joining the multiplayer lobby"
+#~ msgstr "不显示玩家进入多人游戏大厅的信息"
+
+#~ msgid "Show messages about your friends joining the multiplayer lobby"
+#~ msgstr "显示好友进入多人游戏大厅的信息"
+
+#~ msgid "Show messages about all players joining the multiplayer lobby"
+#~ msgstr "显示所有玩家进入多人游戏大厅的信息"
+
+#~ msgid "Find and set path to MP server to host LAN games."
+#~ msgstr "查找并设置多人游戏服务器的路径以便建立局域网游戏。"
+
+#~ msgid "View and edit your friends and ignores list"
+#~ msgstr "查看并编辑好友和忽略列表"
+
+#~ msgid "Back to the multiplayer options"
+#~ msgstr "回到多人游戏选项"
+
+#~ msgid "Add this username to your friends list"
+#~ msgstr "把这个用户名加入好友列表"
+
+#~ msgid "Add this username to your ignores list"
+#~ msgstr "把这个用户名加入忽略列表"
+
+#~ msgid "Remove this username from your list"
+#~ msgstr "把这个用户名从列表中移除"
+
+#~ msgid "Insert a username"
+#~ msgstr "插入一个用户名"
+
+#~ msgid "Show text above a unit when it is hit to display damage inflicted"
+#~ msgstr "在单位受到攻击时，在其上显示所受到的伤害值"
+
+#~ msgid "Change the resolution the game runs at"
+#~ msgstr "改变游戏运行分辨率"
+
+#~ msgid "Change the theme the game runs with"
+#~ msgstr "改变游戏界面主题"
+
+#~ msgid "Display a dialog at the beginning of your turn"
+#~ msgstr "在您的回合开始时显示提示对话框"
+
+#~ msgid "Play a bell sound at the beginning of your turn"
+#~ msgstr "在您的回合开始时播放提示音"
+
+#~ msgid ""
+#~ "Show a colored circle around the base of each unit to show which side it "
+#~ "is on"
+#~ msgstr "在单位脚底周围显示彩色圆环以表示其所属阵营"
+
+#~ msgid "Choose whether the sun moves left-to-right or right-to-left"
+#~ msgstr "选择太阳是从左至右还是从右至左移动"
+
+#~ msgid "Use colored mouse cursors (may be slower)"
+#~ msgstr "使用彩色鼠标指针（可能会使游戏变慢）"
+
+#~ msgid "Use graphical special effects (may be slower)"
+#~ msgstr "使用图形特效（可能会使游戏变慢）"
+
+#~ msgid "View and configure keyboard shortcuts"
+#~ msgstr "查看并设置快捷键"
+
+#~ msgid "infinite"
+#~ msgstr "无限"
+
+#~ msgid "Chat Lines: "
+#~ msgstr "聊天记录行数："
+
+#~ msgid "Invalid username"
+#~ msgstr "用户名无效"
+
+#~ msgid "(empty list)"
+#~ msgstr "（空列表）"
+
+#, fuzzy
+#~ msgid "Choose theme"
+#~ msgstr "选择要读取的游戏"
+
+#, fuzzy
+#~ msgid "Saved preference:"
+#~ msgstr "当前主题："
+
+#~ msgid "New theme will take effect on next new or loaded game."
+#~ msgstr "新主题在下一次新建或读取游戏时生效。"
+
+#~ msgid "No known themes. Try changing from within an existing game."
+#~ msgstr "当前无已知主题。请尝试在游戏时切换主题。"
+
+#~ msgid "Line doesn't fit on canvas."
+#~ msgstr "线条无法在画布上显示。"
+
+#~ msgid "Rectangle doesn't fit on canvas."
+#~ msgstr "矩形无法在画布上显示。"
+
+#~ msgid "Text has a font size of 0."
+#~ msgstr "字体大小是0。"
+
+#~ msgid "Text doesn't start on canvas."
+#~ msgstr "文字没有从画布上开始。"
+
+#~ msgid "No resolution defined."
+#~ msgstr "分辨率未定义。"
+
+#~ msgid "No grid defined."
+#~ msgstr "网格未定义。"
+
+#~ msgid "Linked '$id' group has multiple definitions."
+#~ msgstr "连接的“$id”组有重复定义。"
+
+#~ msgid "Linked '$id' group needs a 'fixed_width' or 'fixed_height' key."
+#~ msgstr "连接的“$id”组需要“fixed_width”或“fixed_height”主键。"
+
+#~ msgid "A row must have a column."
+#~ msgstr "每行至少要有一列。"
+
+#~ msgid "Number of columns differ."
+#~ msgstr "列数不一致。"
+
+#~ msgid "No list defined."
+#~ msgstr "列表未定义。"
+
+#~ msgid "A 'list_definition' should contain one row."
+#~ msgstr "每个“list_definition”（列表定义）应该至少有一行。"
+
+#~ msgid ""
+#~ "'list_data' must have the same number of columns as the 'list_definition'."
+#~ msgstr ""
+#~ "“list_data”（列表数据）与“list_definition”（列表定义）中的列数必须一致。"
+
+#~ msgid "No page defined."
+#~ msgstr "页面未定义"
+
+#~ msgid "The number of value_labels and values don't match."
+#~ msgstr "value_labels （值标签）与 values (值) 数量不匹配。"
+
+#~ msgid "No stack defined."
+#~ msgstr "堆栈未定义"
+
+#, fuzzy
+#~ msgid "No node defined."
+#~ msgstr "页面未定义"
+
+#~ msgid ""
+#~ "Whisper session with $name started. If you don’t want to receive messages "
+#~ "from this user, type /ignore $name\n"
+#~ msgstr ""
+#~ "和$name的私人聊天开始。如果你不希望接收来自该用户的消息，请输入 /ignore "
+#~ "$name\n"
+
+#~ msgid "Room $name joined"
+#~ msgstr "已加入$name房间"
+
+#~ msgid "$player has entered the room"
+#~ msgstr "$player进入了房间"
+
+#~ msgid "$player has left the room"
+#~ msgstr "$player离开了房间"
+
+#~ msgid "Password Required"
+#~ msgstr "需要密码"
+
+#~ msgid "Joining this game requires a password."
+#~ msgstr "加入这个游戏需要密码。"
+
+#~ msgid "Password: "
+#~ msgstr "密码："
+
+#, fuzzy
+#~ msgid "Version "
+#~ msgstr "版本："
+
+#~ msgid "Mandatory widget '$id' hasn't been defined."
+#~ msgstr "必须的构件“$id”未定义。"
+
+#~ msgid ""
+#~ "Widget definition '$definition' doesn't contain the definition for '$id'."
+#~ msgstr "构件定义“$definition”不包含“$id”的定义。"
+
+#~ msgid "No default gui defined."
+#~ msgstr "默认图形界面未定义。"
+
+#~ msgid "No state or draw section defined."
+#~ msgstr "状态或绘制区域未定义。"
+
+#~ msgid "Click dismiss needs a 'click_dismiss' or 'ok' button."
+#~ msgstr "单击“解散”需要一个“click_dismiss”或“ok”按钮。"
+
+#~ msgid "Failed to show a dialog, which doesn't fit on the screen."
+#~ msgstr "无法显示对话框，屏幕大小不够。"
+
+#, fuzzy
+#~ msgid "Animate Map"
+#~ msgstr "生成地图"
+
+#~ msgid "Next Unit"
+#~ msgstr "下一单位"
+
+#~ msgid "Previous Unit"
+#~ msgstr "上一单位"
+
+#~ msgid "Add waypoint"
+#~ msgstr "添加路标"
+
+#~ msgid "Hold Position"
+#~ msgstr "保持位置"
+
+#~ msgid "End Unit Turn"
+#~ msgstr "结束单位的回合"
+
+#~ msgid "Redo"
+#~ msgstr "恢复"
+
+#~ msgid "Zoom In"
+#~ msgstr "放大"
+
+#~ msgid "Zoom Out"
+#~ msgstr "缩小"
+
+#~ msgid "Default Zoom"
+#~ msgstr "默认缩放比例"
+
+#~ msgid "Toggle Full Screen"
+#~ msgstr "开/关全屏显示"
+
+#~ msgid "Screenshot"
+#~ msgstr "屏幕截图"
+
+#~ msgid "Map Screenshot"
+#~ msgstr "地图屏幕截图"
+
+#~ msgid "Accelerated"
+#~ msgstr "加速"
+
+#~ msgid "Unit Description"
+#~ msgstr "单位描述"
+
+#~ msgid "Rename Unit"
+#~ msgstr "单位重命名"
+
+#~ msgid "Save Window"
+#~ msgstr "保存窗口"
+
+#~ msgid "Repeat Recruit"
+#~ msgstr "重复征募"
+
+#~ msgid "Recall"
+#~ msgstr "召回"
+
+#~ msgid "Switch List"
+#~ msgstr "切换列表"
+
+# TODO 这个是啥？
+#~ msgid "Toggle Ellipses"
+#~ msgstr "开/关光环"
+
+#~ msgid "Toggle Grid"
+#~ msgstr "开/关网格"
+
+#~ msgid "Mouse Scrolling"
+#~ msgstr "鼠标滚屏"
+
+#~ msgid "Mute"
+#~ msgstr "静音"
+
+#~ msgid "Speak"
+#~ msgstr "聊天"
+
+#~ msgid "Change Side (Debug!)"
+#~ msgstr "改变阵营（调试！）"
+
+#~ msgid "Scenario Objectives"
+#~ msgstr "场景任务目标"
+
+#~ msgid "Statistics"
+#~ msgstr "统计"
+
+#~ msgid "Stop"
+#~ msgstr "停止"
+
+#~ msgid "Set Team Label"
+#~ msgstr "设置团队标签"
+
+#~ msgid "Set Label"
+#~ msgstr "设置标签"
+
+#~ msgid "Clear Labels"
+#~ msgstr "清除标签"
+
+#~ msgid "Show Enemy Moves"
+#~ msgstr "显示敌方移动范围"
+
+#~ msgid "Best Possible Enemy Moves"
+#~ msgstr "显示敌方最大可能移动范围"
+
+#~ msgid "Reset"
+#~ msgstr "重置"
+
+#~ msgid "Next Turn"
+#~ msgstr "下一回合"
+
+#~ msgid "Next Side"
+#~ msgstr "下一阵营"
+
+#~ msgid "Full map"
+#~ msgstr "全地图"
+
+#~ msgid "Each team"
+#~ msgstr "每一团队"
+
+#~ msgid "Team 1"
+#~ msgstr "第一团队"
+
+#~ msgid "Skip animation"
+#~ msgstr "略过动画"
+
+#~ msgid "Quit to Desktop"
+#~ msgstr "退出到桌面"
+
+#~ msgid "Close Map"
+#~ msgstr "关闭地图"
+
+#~ msgid "Switch Map"
+#~ msgstr "切换地图"
+
+#~ msgid "Partial Undo"
+#~ msgstr "部分撤销"
+
+#~ msgid "Load Window"
+#~ msgstr "加载窗口"
+
+#~ msgid "Save Map As"
+#~ msgstr "地图另存为"
+
+#~ msgid "Save All Maps"
+#~ msgstr "保存所有地图"
+
+#~ msgid "Revert All Changes"
+#~ msgstr "取消所有更改"
+
+#~ msgid "Map Information"
+#~ msgstr "地图信息"
+
+#~ msgid "Swap fore- and background terrains"
+#~ msgstr "交换前景／背景地形"
+
+#~ msgid "Next Tool"
+#~ msgstr "下一工具"
+
+#~ msgid "Next Brush"
+#~ msgstr "下一笔刷"
+
+#~ msgid "Default Brush"
+#~ msgstr "默认笔刷"
+
+#~ msgid "Cut"
+#~ msgstr "剪切"
+
+#~ msgid "Copy"
+#~ msgstr "复制"
+
+#~ msgid "Export selected coordinates to system clipboard"
+#~ msgstr "导出所选坐标范围到系统剪贴板"
+
+#~ msgid "Select All"
+#~ msgstr "全选"
+
+#~ msgid "Select Inverse"
+#~ msgstr "反选"
+
+#~ msgid "Select None"
+#~ msgstr "取消选择"
+
+#~ msgid "Rotate Clipboard Clockwise"
+#~ msgstr "顺时针旋转剪贴板"
+
+#~ msgid "Rotate Clipboard Counter-Clockwise"
+#~ msgstr "逆时针旋转剪贴板"
+
+#~ msgid "Flip Clipboard Horizontally"
+#~ msgstr "水平翻转剪贴板"
+
+#~ msgid "Flip Clipboard Vertically"
+#~ msgstr "垂直翻转剪贴板"
+
+#~ msgid "Rotate Selection"
+#~ msgstr "旋转选定区域"
+
+#~ msgid "Flip Selection"
+#~ msgstr "翻转选定区域"
+
+#~ msgid "Fill Selection"
+#~ msgstr "填充选定区域"
+
+#~ msgid "Generate Tiles In Selection"
+#~ msgstr "在选定区域内生成区块"
+
+#~ msgid "Randomize Tiles In Selection"
+#~ msgstr "在选定区域内打乱区块"
+
+#~ msgid "Rotate Map"
+#~ msgstr "旋转地图"
+
+#~ msgid "Apply a Mask"
+#~ msgstr "应用遮罩"
+
+#~ msgid "Create Mask"
+#~ msgstr "创建遮罩"
+
+#~ msgid "Refresh Display"
+#~ msgstr "刷新显示"
+
+#~ msgid "Update Terrain Transitions"
+#~ msgstr "刷新地形过渡"
+
+#~ msgid "Auto-update Terrain Transitions"
+#~ msgstr "自动刷新地形过渡"
+
+#~ msgid "Refresh Image Cache"
+#~ msgstr "刷新图像缓存"
+
+#~ msgid "Delay Shroud Updates"
+#~ msgstr "暂缓刷新黑幕"
+
+# personally i like the original translation阴影区域, gonna discuss about this
+#~ msgid "Update Shroud Now"
+#~ msgstr "立即刷新黑幕"
+
+#~ msgid "Continue Move"
+#~ msgstr "继续移动"
+
+#~ msgid "Find Label or Unit"
+#~ msgstr "查找标签或单位"
+
+#~ msgid "Speak to Ally"
+#~ msgstr "与盟友聊天"
+
+#~ msgid "Speak to All"
+#~ msgstr "与所有人聊天"
+
+#~ msgid "View Chat Log"
+#~ msgstr "察看聊天纪录"
+
+#~ msgid "Enter user command"
+#~ msgstr "输入用户命令"
+
+#~ msgid "Custom command"
+#~ msgstr "自定义命令"
+
+#~ msgid "Run AI formula"
+#~ msgstr "运行AI公式"
+
+#~ msgid "Clear messages"
+#~ msgstr "清除所有信息"
+
+#, fuzzy
+#~ msgid "Refresh WML"
+#~ msgstr "刷新"
+
+#, fuzzy
+#~ msgid "Previous tip of the day"
+#~ msgstr "上一单位"
+
+#, fuzzy
+#~ msgid "Start tutorial"
+#~ msgstr "教程"
+
+#, fuzzy
+#~ msgid "Start a campaign"
+#~ msgstr "开始战役"
+
+#, fuzzy
+#~ msgid "Manage addons"
+#~ msgstr "更新附加组件"
+
+#~ msgid "Map-Screenshot"
+#~ msgstr "地图-屏幕截图"
+
+#~ msgid "Screenshot done"
+#~ msgstr "屏幕截图完成"
+
+#~ msgid "language code for localized resources^en_US"
+#~ msgstr "zh_CN"
+
+#~ msgid "Close Window"
+#~ msgstr "关闭窗口"
+
+#~ msgid "The maximum text width is less than 1."
+#~ msgstr "最大文字宽度小于1。"
+
+#~ msgid ""
+#~ "The video mode could not be changed. Your window manager must be set to "
+#~ "16 bits per pixel to run the game in windowed mode. Your display must "
+#~ "support 1024x768x16 to run the game full screen."
+#~ msgstr ""
+#~ "无法改变视频模式。以窗口模式运行游戏需要将窗口管理器设为16位色，全屏模式需"
+#~ "要您的显示设备支持1024x768分辨率和16位色。"
+
+#~ msgid "Hotkey Settings"
+#~ msgstr "快捷键设置"
+
+#~ msgid "Press desired Hotkey (Esc cancels)"
+#~ msgstr "请按下您所期望的快捷键（按ESC取消）"
+
+#~ msgid "Binding"
+#~ msgstr "快捷键"
+
+#~ msgid "Change Hotkey"
+#~ msgstr "更改快捷键"
+
+#~ msgid "Clear Hotkey"
+#~ msgstr "清除快捷键"
+
+#~ msgid "This Hotkey is already in use."
+#~ msgstr "此快捷键已经被使用"
+
+#~ msgid ""
+#~ "Warning: screenshot hotkeys not combined with Control, Alt or Meta keys."
+#~ msgstr "警告：屏幕截图快捷键没有使用与Control、Alt或Meta键组合。"
+
+#~ msgid "There are no alternative video modes available"
+#~ msgstr "没有其他可用的显示模式"
+
+#~ msgid "Choose Resolution"
+#~ msgstr "选择分辨率"
+
+#~ msgid ""
+#~ "A terrain with a string with more than 4 characters has been found, the "
+#~ "affected terrain is :"
+#~ msgstr "找到一个具有超过4个字符的字符串的地形，受影响的地形是："
+
+#~ msgid ""
+#~ "An error due to possibly invalid WML occurred\n"
+#~ "The error message is :"
+#~ msgstr ""
+#~ "发现一个错误，可能是由于无效的WML导致的\n"
+#~ "错误信息如下："
+
+#~ msgid "When reporting the bug please include the following error message :"
+#~ msgstr "报告BUG时请包含以下错误信息："
+
+#~ msgid ""
+#~ "In section '[$section|]' where '$primary_key| = $primary_value' the "
+#~ "mandatory key '$key|' isn't set."
+#~ msgstr ""
+#~ "在小节“[$section|]”中有“$primary_key| = $primary_value”，其必须设定的键"
+#~ "值“$key|”没有设定。"
+
+#~ msgid "In section '[$section|]' the mandatory key '$key|' isn't set."
+#~ msgstr "在小节“[$section|]”中，必须设定的键值“$key|”没有设定。"
+
+#~ msgid "side list"
+#~ msgstr "全势力"
+
+#~ msgid "hero list"
+#~ msgstr "全武将"
+
+#~ msgid "Use local language to name save file"
+#~ msgstr "使用本地语言命名存档文件"
+
+#~ msgid "economy area"
+#~ msgstr "经济区"
+
+#~ msgid "economy area desc"
+#~ msgstr "经济区"
+
+#~ msgid "System"
+#~ msgstr "系统"
+
+#~ msgid "Arms"
+#~ msgstr "兵科"
+
+#
+# Recruit Dialog
+#
+#~ msgid "unit^Gold"
+#~ msgid_plural "Gold"
+#~ msgstr[0] "金币"
+#~ msgstr[1] "金币"
+
+#~ msgid "Character"
+#~ msgstr "性格"
+
+#~ msgid "Especial"
+#~ msgstr "特色"
+
+#~ msgid "Our cities"
+#~ msgstr "我方城市"
+
+#
+# Preferences Dialog
+#
+#~ msgid "Keep scrolling when mouse leaves window"
+#~ msgstr "鼠标离开窗口后继续滚屏"
+
+#~ msgid "(Vacant slot)"
+#~ msgstr "（空闲槽位）"
+
+#~ msgid "Anonymous local player"
+#~ msgstr "本地匿名玩家"
+
+#~ msgid "$playername $side"
+#~ msgstr "$playername $side"
+
+#~ msgid "Team/Gender"
+#~ msgstr "队伍/性别"
+
+#~ msgid "Color"
+#~ msgstr "颜色"
+
+#~ msgid "(NONE)"
+#~ msgstr "(空)"
+
+#~ msgid "Title Screen"
+#~ msgstr "标题屏幕"
+
+#~ msgid "Hero count of employable"
+#~ msgstr "可雇佣武将数"
+
+#~ msgid "Support"
+#~ msgstr "支持"
+
+#~ msgid "Register"
+#~ msgstr "注册"
+
+#~ msgid "Create"
+#~ msgstr "创建"
+
+#~ msgid "Research"
+#~ msgstr "研究"
+
+#
+# Extract
+#
+#~ msgid "Extract hero"
+#~ msgstr "提取武将"
+
+#~ msgid "Economy area"
+#~ msgstr "经济区"
+
+#~ msgid "Effect mode"
+#~ msgstr "影响模式"
+
+#~ msgid "Checksum dismatch"
+#~ msgstr "较验和不匹配"
+
+#~ msgid "You or creator has modified resource file, cannot join!"
+#~ msgstr "你或创建者修改了资源文件，不能加入！"
+
+#~ msgid "Not support upload in multiplayer state!"
+#~ msgstr "多人对战模式暂不支持上传积分！"
+
+#~ msgid "Validate password"
+#~ msgstr "确认密码"
+
+#~ msgid "Password"
+#~ msgstr "密码"
+
+#~ msgid "account^remark($server, $host, $register, $ok)"
+#~ msgstr ""
+#~ "一、请正确输入$server上的账号/密码\n"
+#~ "二、若没有账号请按以下两种方法之一注册。1）在这里输入账号/密码，然后"
+#~ "按“$register”；2）运行浏览器打开$host，注册个论坛账号\n"
+#~ "三、若希望将来设置或只玩单机，那只要输入非空账号，然后按“$ok”即可"
+
+#~ msgid "account^detect invalid($account, $ps)"
+#~ msgstr ""
+#~ "检测到无效账号，请正确设置账号/密码\n"
+#~ "$ps：进入游戏后，可通过“玩家武将”窗口中的“$account”再次弹出此窗口"
+
+#~ msgid "$validate_password isn't same as $password"
+#~ msgstr "$validate_password和$password不一致"
+
+#~ msgid ""
+#~ "When register, password must be greater than or equal to $min characters"
+#~ msgstr "注册时，密码必须大于等于$min个字符"
+
+#~ msgid "Invalid '$key' value, $username is reserved!"
+#~ msgstr "无效“$key”值，$username是保留字符串！"
+
+#~ msgid "Hero that belong to $leader."
+#~ msgstr "$leader麾下武将。"
+
+#~ msgid "Family"
+#~ msgstr "类别"
+
+#~ msgid "member^Roam"
+#~ msgstr "流浪"
+
+#~ msgid "Modify"
+#~ msgstr "修改"
+
+#~ msgid "Cannot find transaction!"
+#~ msgstr "没有找到该条交易记录！"
+
+#~ msgid "This transaction had been used!"
+#~ msgstr "该条交易记录已经被使用过！"
+
+#~ msgid "$name cannot be negative!"
+#~ msgstr "$name不能是负值！"
+
+#~ msgid "Repertory is not enough to pay $payment!"
+#~ msgstr "库存不足支付$payment！"
+
+#~ msgid "Both $name1 and $name2 can not be zero all!"
+#~ msgstr "$name1和$name2不能同时是零！ "
+
+#~ msgid "$username has $coin and $score"
+#~ msgstr "$username有$coin和$score"
+
+#~ msgid "Do you want to give $sth to $sb?"
+#~ msgstr "您真的想把$sth交给$sb吗？"
+
+#~ msgid "$first and $second"
+#~ msgstr "$first和$second"
+
+#~ msgid "Haven't connected to server, and unable to enter into game lobby."
+#~ msgstr "没有连接到服务器，不能进入游戏大厅。"
+
+#
+# http server
+#
+#~ msgid ""
+#~ "$nick is invalid nick when chat! To set up: Press $account in \"Player "
+#~ "profile\" Setting, and set valid nick when chat."
+#~ msgstr ""
+#~ "$nick不是有效的聊天时昵称！解决步骤：在游戏的“玩家武将”窗口按"
+#~ "下“$account”，然后设置有效的聊天时昵称。"
+
+#~ msgid "Announcement content"
+#~ msgstr ""
+#~ "发布v1.0.21(2014.2.28)\n"
+#~ "更新日志\n"
+#~ "游戏部分\n"
+#~ "支持玩家自画城市地图。\n"
+#~ "引入城市内政。城市内政细节参考“城市内政”。\n"
+#~ "引入武将工资。武将工资细节参考“武将工资”。\n"
+#~ "源码部分"
+
+#~ msgid ""
+#~ "Don't pause at taking action when no hero and built artifical on all EA."
+#~ msgstr "没武将且经济区上都已建有建筑物时，不暂停。"
+
+#~ msgid "Forum"
+#~ msgstr "论坛"
+
+#~ msgid "Wait"
+#~ msgstr "等待"
+
+#~ msgid "Consult"
+#~ msgstr "协商"
+
+#~ msgid "Ready"
+#~ msgstr "就绪"
+
+#~ msgid "Netowork diagnosis"
+#~ msgstr "网络诊断"
+
+#~ msgid "Press CR same as Send"
+#~ msgstr "按下回车键视做发送"
+
+#~ msgid "Normal"
+#~ msgstr "普通"
+
+#~ msgid "Initializing user interface"
+#~ msgstr "正在初始化用户界面......"
+
+#~ msgid "Loading game configuration"
+#~ msgstr "正在读取游戏配置……"
+
+#~ msgid "Verifying cache"
+#~ msgstr "正在验证缓存……"
+
+#~ msgid "Reading files and creating cache"
+#~ msgstr "正在读取文件并创建缓存……"
+
+#~ msgid "Reading unit files"
+#~ msgstr "正在读取单位文件……"
+
+#~ msgid "Re-initialize fonts for the current language"
+#~ msgstr "为当前语言重新初始化字体……"
+
+#~ msgid "Searching for installed add-ons"
+#~ msgstr "正在搜索已经安装的附加组件……"
+
+#~ msgid "Loading title screen"
+#~ msgstr "正在读取主屏幕……"
+
+#~ msgid "Loading data files"
+#~ msgstr "正在读取数据文件……"
+
+#~ msgid "Loading level"
+#~ msgstr "正在读取关卡文件……"
+
+#~ msgid "Initializing teams"
+#~ msgstr "正在初始化队伍……"
+
+#~ msgid "Loading units"
+#~ msgstr "正在读取单位定义……"
+
+#~ msgid "Building terrain rules"
+#~ msgstr "正在建立地形构造规则集……"
+
+#~ msgid "Initializing display"
+#~ msgstr "正在初始化显示……"
+
+#~ msgid "Drawing theme"
+#~ msgstr "正在绘制主题……"
+
+#~ msgid "Starting game"
+#~ msgstr "正在开始游戏……"
+
+#~ msgid "Cannot find report widget: $id."
+#~ msgstr "找不到状态报告：$id。"
+
+#~ msgid "Report widget($id) must use fix rect."
+#~ msgstr "状态报告（$id）必须使用固定坐标。"
+
+#~ msgid "Defined $id conext menu, but not define same id report widget!"
+#~ msgstr "定义了$id上下文菜单，但没有定义同id报表控件！"
+
+#~ msgid "file^Size"
+#~ msgstr "大小"
+
+#~ msgid "Choose a Window to Open"
+#~ msgstr "选择要打开的窗口"
+
+#~ msgid "Open"
+#~ msgstr "打开"
+
+#~ msgid "My Document"
+#~ msgstr "我的文档"
+
+#~ msgid "Sandbox"
+#~ msgstr "沙盒"
+
+#~ msgid "File name"
+#~ msgstr "文件名"
+
+#~ msgid "Save As"
+#~ msgstr "另存为"
+
+#~ msgid "Nick when chat"
+#~ msgstr "聊天时昵称"
+
+#~ msgid ""
+#~ "$username of username is not a valid nick, you require to set a valid "
+#~ "nick separately!\n"
+#~ " Nick can ony use alpha, number and _."
+#~ msgstr ""
+#~ "账号$username不是有效昵称，你需要单独设置一个昵称！\n"
+#~ "昵称只能使用字母、数字和_"
+
+#~ msgid ""
+#~ "After $part, you can not receive message from $channel. Do you want to "
+#~ "$part?"
+#~ msgstr "$part后，将不再接收从$channel发来的消息。确定要$part吗？"
+
+#~ msgid "You set $nick into $channel successfully!"
+#~ msgstr "您已成功把$nick加入$channel！"
+
+#~ msgid "Do you want remove $nick from $channel?"
+#~ msgstr "您真的要把$nick从$channel中移除吗？"
+
+#~ msgid "Min users"
+#~ msgstr "最小成员数"
+
+#~ msgid "Friend"
+#~ msgstr "好友"
+
+#~ msgid "Part"
+#~ msgstr "退出"
+
+#~ msgid "%H:%M"
+#~ msgstr "%H:%M"
+
+#~ msgid "%A, %H:%M"
+#~ msgstr "%m月%d日 %H:%M"
+
+#~ msgid "%b %d"
+#~ msgstr "%m月%d日"
+
+#~ msgid "%a %b %d %H:%M %Y"
+#~ msgstr "%Y年%m月%d日，%H时%M分"
+
+#~ msgid "Transit"
+#~ msgstr "中转"
+
+#~ msgid "Rose"
+#~ msgstr "Rose"
+
+#~ msgid "Align left. Maybe stretch"
+#~ msgstr "左对齐。可能放大"
+
+#~ msgid "Align left"
+#~ msgstr "左对齐。不放大"
+
+#~ msgid "Align center"
+#~ msgstr "中央对齐。不放大"
+
+#~ msgid "Align right"
+#~ msgstr "右对齐。不放大"
+
+#~ msgid "Align top. Maybe stretch"
+#~ msgstr "上对齐。可能放大"
+
+#~ msgid "Align top"
+#~ msgstr "上对齐。不放大"
+
+#~ msgid "Align bottom"
+#~ msgstr "下对齐。不放大"
+
+#~ msgid "Always invisible"
+#~ msgstr "一直不显示"
+
+#~ msgid "Auto visible"
+#~ msgstr "自动显示"
+
+#~ msgid "Horizontal mode"
+#~ msgstr "水平滚动条模式"
+
+#~ msgid "Vertical mode"
+#~ msgstr "垂直滚动条模式"
+
+#~ msgid "Unit width"
+#~ msgstr "单元宽度"
+
+#~ msgid "Unit height"
+#~ msgstr "单元高度"
+
+#~ msgid "Gap"
+#~ msgstr "间隔"
+
+#~ msgid "widget^definition"
+#~ msgstr "风格"
+
+#~ msgid "Horizontal layout"
+#~ msgstr "水平布局"
+
+#~ msgid "Vertical layout"
+#~ msgstr "垂直布局"
+
+#~ msgid "Border"
+#~ msgstr "边界"
+
+#~ msgid "Pixel"
+#~ msgstr "像素"
+
+#~ msgid "ID"
+#~ msgstr "标识"
+
+#~ msgid "Width"
+#~ msgstr "宽度"
+
+#~ msgid "Height"
+#~ msgstr "高度"
+
+#~ msgid "Linked group"
+#~ msgstr "等尺寸组"
+
+#~ msgid "Label"
+#~ msgstr "文本"
+
+#~ msgid "Tooltip"
+#~ msgstr "提示"
+
+#~ msgid "Enter fullscreen"
+#~ msgstr "进入全屏"
+
+#~ msgid "Exit fullscreen"
+#~ msgstr "退出全屏"
+
+#~ msgid "Once unpake, can not be back to template. Do you want to unpake $id?"
+#~ msgstr "一旦拆散，就不能恢复回模板。您真的要拆散$id吗？"
+
+#~ msgid "$id holds grid that not all spacer. Do you want to delete?"
+#~ msgstr "$id包含不是空的网格，真要地删除吗？"
+
+#~ msgid "Changes in the $window since the last save will be lost."
+#~ msgstr "之前在$window所做的修改将丢失。"
+
+#~ msgid "Rectangle"
+#~ msgstr "矩形"
+
+#~ msgid "Advanced"
+#~ msgstr "高级"
+
+#~ msgid "Absolute"
+#~ msgstr "绝对值"
+
+#~ msgid "ref's $field"
+#~ msgstr "参考矩形的$field"
+
+#~ msgid "My $field"
+#~ msgstr "自个矩形的$field"
+
+#~ msgid "$id is absolute type, must not be contain '+' or '-'!"
+#~ msgstr "$id是绝对值类型，不能含有‘+’或‘-’！"
+
+#~ msgid "$id must be integer!"
+#~ msgstr "$id必须是整数值！"
+
+#~ msgid "(top-left)"
+#~ msgstr "（左上角）"
+
+#~ msgid "(bottom-right)"
+#~ msgstr "（右下角）"
+
+#~ msgid "rect^ref"
+#~ msgstr "参考矩形"
+
+#~ msgid "xanchor"
+#~ msgstr "水平方向行为"
+
+#~ msgid "yanchor"
+#~ msgstr "垂直方向行为"
+
+#~ msgid "$field1 fixed, $field2 fixed"
+#~ msgstr "$field1固定，$field2固定"
+
+#~ msgid "$field1 fixed, $field2 scalable"
+#~ msgstr "$field1固定，$field2可能变化"
+
+#~ msgid "$field1 scalable, $field2 fixed"
+#~ msgstr "$field1可能变化，$field2固定"
+
+#~ msgid "Erase"
+#~ msgstr "删除"
+
+#~ msgid "Unpack"
+#~ msgstr "拆散"
+
+#~ msgid "Check for errors in the $window"
+#~ msgstr "检查$window中的错误"
+
+#~ msgid "dialog"
+#~ msgstr "对话框"
+
+#~ msgid "theme"
+#~ msgstr "场景"
+
+#~ msgid "Use rect layout"
+#~ msgstr "使用矩形进行布局"
+
+#~ msgid "Change"
+#~ msgstr "修改"
+
+#~ msgid "Patch"
+#~ msgstr "补丁"
+
+#~ msgid ""
+#~ "Place grid fail! It's parent widget: $parent\n"
+#~ "\n"
+#~ "Layout size that calcualted base best size and grow_factor: $layout_size\n"
+#~ "Now recalculated best size: $best_size"
+#~ msgstr ""
+#~ "放置网格失败！该网格的父控件：$parent\n"
+#~ "\n"
+#~ "根据标称尺寸和放大系数计算出的渲染尺寸：$layout_size\n"
+#~ "实时计算出的标称尺寸：$best_size"
+
+#~ msgid "Content is copied to clipboard"
+#~ msgstr "内容已复到剪贴板"
+
+#~ msgid "Context menu"
+#~ msgstr "上下文菜单"
+
+#~ msgid "New patch"
+#~ msgstr "新补丁"
+
+#~ msgid "Rename patch"
+#~ msgstr "重命名补丁"
+
+#~ msgid "Original ID"
+#~ msgstr "原标识"
+
+#~ msgid "$year|.$month"
+#~ msgstr "$year年$month月份"
+
+#~ msgid "Sesame Health"
+#~ msgstr "芝麻健康"
+
+#~ msgid "There is no score tonight, let Sesame to accompany you to sleep!"
+#~ msgstr "目前还没有评分，今晚让芝麻陪您一起入眠吧！"
+
+#~ msgid "History Record"
+#~ msgstr "历史记录"
+
+#~ msgid "Sleep Settings"
+#~ msgstr "睡眠设置"
+
+#~ msgid "Wake up time"
+#~ msgstr "唤醒时间"
+
+#~ msgid "Wake up music"
+#~ msgstr "唤醒音乐"
+
+#~ msgid "Total capture time"
+#~ msgstr "睡眠时长"
+
+#~ msgid "The rest time of entering sleep"
+#~ msgstr "进入睡眠剩余时长"
+
+#~ msgid "The rest time of wake up"
+#~ msgstr "唤醒剩余时长"
+
+#~ msgid "Click to login/register"
+#~ msgstr "点击登录/注册"
+
+#~ msgid "About i-Sleep"
+#~ msgstr "关于i-Sleep"
+
+#~ msgid "Sleep Analysis"
+#~ msgstr "睡眠分析"
+
+#~ msgid "Snore data"
+#~ msgstr "打鼾数据"
+
+#~ msgid "Motion data"
+#~ msgstr "体动数据"
+
+#~ msgid "Click to view the details"
+#~ msgstr "点击查看详情"
+
+#~ msgid "Sober"
+#~ msgstr "清醒"
+
+#~ msgid "Shallow sleep"
+#~ msgstr "浅睡"
+
+#~ msgid "Deep sleep"
+#~ msgstr "深睡"
+
+#~ msgid "Sleep quality"
+#~ msgstr "睡眠质量"
+
+#~ msgid "Sleep duration"
+#~ msgstr "睡眠时长"
+
+#~ msgid "Start time"
+#~ msgstr "入睡时间"
+
+#~ msgid "Shallow duration"
+#~ msgstr "浅睡时长"
+
+#~ msgid "Deep duration"
+#~ msgstr "深睡时长"
+
+#~ msgid "Snore duration"
+#~ msgstr "打鼾时长"
+
+#~ msgid "Apnea"
+#~ msgstr "呼吸暂停"
+
+#~ msgid "Sound usage"
+#~ msgstr "鼾声所占容量"
+
+#~ msgid "Deleted"
+#~ msgstr "已删除"
+
+#~ msgid "Return to today"
+#~ msgstr "返回当前日期"
+
+#~ msgid "Snore"
+#~ msgstr "鼾声"
+
+#~ msgid "Done"
+#~ msgstr "完成"
+
+#~ msgid "Delay sleep time"
+#~ msgstr "延迟开始时间"
+
+#~ msgid "Select delay sleep time"
+#~ msgstr "选择延迟开始时间"
+
+#~ msgid "Select wake up music"
+#~ msgstr "选择唤醒音乐"
+
+#~ msgid "Enable snore"
+#~ msgstr "启动鼾声"
+
+#~ msgid "Motion"
+#~ msgstr "体动"
+
+#~ msgid "$val minutes"
+#~ msgstr "$val 分钟"
+
+#~ msgid "Immediately start"
+#~ msgstr "立即开始"
+
+#~ msgid "Capture time"
+#~ msgstr "记录时间"
+
+#~ msgid "Duration"
+#~ msgstr "时长"
+
+#~ msgid "Thermomiter"
+#~ msgstr "体温贴"
+
+#~ msgid "Temperature"
+#~ msgstr "温度"
+
+#~ msgid "Maximum temperature"
+#~ msgstr "最高温度"
+
+#~ msgid "Average temperature"
+#~ msgstr "平均温度"
+
+#~ msgid "Minimum temperature"
+#~ msgstr "最低温度"
+
+#~ msgid "Use guide"
+#~ msgstr "指用指南"
+
+#~ msgid "Alert Settings"
+#~ msgstr "报警设置"
+
+#~ msgid "Alert music"
+#~ msgstr "报警音乐"
+
+#~ msgid "Alert temperature"
+#~ msgstr "报警温度"
+
+#~ msgid "Select alert music"
+#~ msgstr "选择报警音乐"
+
+#~ msgid "System default language"
+#~ msgstr "系统默认语言"
+
+#~ msgid "Bind"
+#~ msgstr "绑定"
+
+#~ msgid "Unbind"
+#~ msgstr "未绑定"
+
+#~ msgid "Unconnect"
+#~ msgstr "未连接"
+
+#~ msgid "Connecting"
+#~ msgstr "连接中"
+
+#~ msgid "Stick error"
+#~ msgstr "没有粘好"
+
+#~ msgid "Forget password"
+#~ msgstr "忘记密码"
+
+#~ msgid "Fast register"
+#~ msgstr "快速注册"
+
+#~ msgid "Temperature Curve"
+#~ msgstr "体温变化"
+
+#~ msgid "time^h"
+#~ msgstr "时"
+
+#~ msgid "time^m"
+#~ msgstr "分"
+
+#~ msgid "time^s"
+#~ msgstr "秒"
+
+#~ msgid "Start capturing after $time"
+#~ msgstr "$time后启动检测"
+
+#~ msgid "Stop capturing after $time"
+#~ msgstr "$time后停止检测"
+
+#~ msgid "Is stopping capture"
+#~ msgstr "正在停止采集"
+
+#~ msgid "Has stopped capturing"
+#~ msgstr "已停止检测"
+
+#~ msgid "Temperature range"
+#~ msgstr "体温范围"
+
+#~ msgid "sleep^Quality"
+#~ msgstr "睡眠质量"
+
+#
+# City List Dialog
+#
+#~ msgid "sleep^Level0"
+#~ msgstr "睡得糟糕"
+
+#
+# City List Dialog
+#
+#~ msgid "sleep^Level1"
+#~ msgstr "睡不安稳"
+
+#
+# City List Dialog
+#
+#~ msgid "sleep^Level2"
+#~ msgstr "睡得还行"
+
+#
+# City List Dialog
+#
+#~ msgid "sleep^Level3"
+#~ msgstr "睡得安稳"
+
+#
+# City List Dialog
+#
+#~ msgid "sleep^Level4"
+#~ msgstr "睡得香甜"
+
+#~ msgid "Sesame Sleep"
+#~ msgstr "芝麻睡眠"
+
+#~ msgid "version^iOS"
+#~ msgstr "iOS版"
+
+#~ msgid "Power off thermometer"
+#~ msgstr "关掉体温贴"
+
+#~ msgid ""
+#~ "Can not connect to network. Please check if the Internet is connected."
+#~ msgstr "不能联接网络。请检查是否联网。"
+
+#~ msgid "E-mail or password is error. Please write again."
+#~ msgstr "邮箱或密码错误。请重新填写。"
+
+#~ msgid "Drag to set temperature"
+#~ msgstr "拖动设置温度"
+
+#~ msgid ""
+#~ "Please make sure to enable the phone's Bluetooth, so that can access the "
+#~ "thermimoter."
+#~ msgstr "请确保打开手机的蓝牙功能，以便手机能访问体温贴。"
+
+#~ msgid ""
+#~ "Please make sure to turn on the thermimoter, so that can appear in the "
+#~ "following list."
+#~ msgstr "请确保激活想绑定的体温贴，以便它能出现在下面列表。"
+
+#~ msgid "Connect to Health"
+#~ msgstr "连接至苹果健康"
+
+#~ msgid "No enough data"
+#~ msgstr "缺少足够数据"
+
+#~ msgid "You don't sleep"
+#~ msgstr "您没有睡觉"
+
+#~ msgid "sleep^Low"
+#~ msgstr "得注意"
+
+#~ msgid "sleep^Middle"
+#~ msgstr "还可以"
+
+#~ msgid "sleep^High"
+#~ msgstr "非常棒"
+
+#~ msgid "Thermemoter Curve"
+#~ msgstr "体温变换"
+
+#~ msgid "Setting"
+#~ msgstr "设置"
+
+#~ msgid "(right-bottom)"
+#~ msgstr "（右下角）"
+
+#~ msgid "Join Official Server"
+#~ msgstr "加入官方服务器"
+
+#~ msgid "Log on to the official Wesnoth multiplayer server"
+#~ msgstr "登录到官方多人游戏服务器"
+
+#~ msgid "Join a different server"
+#~ msgstr "加入另一个服务器"
+
+#~ msgid "Host a game using dedicated server ‘wesnothd’"
+#~ msgstr "使用专用服务器“wesnothd”建立游戏"
+
+#~ msgid "Do you want to spend $cost score to sign in?"
+#~ msgstr "您真的想花费$cost积分去补签吗？"

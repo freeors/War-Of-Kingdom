@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/window_builder/stacked_widget.hpp"
 
@@ -34,11 +34,11 @@ tbuilder_stacked_widget::tbuilder_stacked_widget(const config& cfg)
 	: tbuilder_control(cfg)
 	, stack()
 {
-	const config &s = cfg.child("stack");
-	VALIDATE(s, _("No stack defined."));
+	const config& s = cfg.has_child("stack")? cfg.child("stack"): cfg;
 	BOOST_FOREACH(const config &layer, s.child_range("layer")) {
 		stack.push_back(new tbuilder_grid(layer));
 	}
+	VALIDATE(!stack.empty(), _("No layer defined."));
 }
 
 twidget* tbuilder_stacked_widget::build() const

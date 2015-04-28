@@ -24,6 +24,7 @@
 
 #include "SDL.h"
 #include "sdl_compat.h"
+#include "sdl_rotate.h"
 
 #include <cstdlib>
 #include <iosfwd>
@@ -36,13 +37,6 @@ typedef enum {
   PANGO_ALIGN_RIGHT
 } PangoAlignment;
 
-typedef enum {
-  PANGO_ELLIPSIZE_NONE,
-  PANGO_ELLIPSIZE_START,
-  PANGO_ELLIPSIZE_MIDDLE,
-  PANGO_ELLIPSIZE_END
-} PangoEllipsizeMode;
-
 #define FINGER_HIT_THRESHOLD		4
 #define FINGER_MOTION_THRESHOLD		10
 
@@ -50,10 +44,10 @@ typedef enum {
 #define MOUSE_MOTION_THRESHOLD		1
 
 extern const SDL_Rect empty_rect;
-extern const SDL_Rect invalid_rect;
+extern const SDL_Rect null_rect;
 
 #define is_empty_rect(rect)		(!(rect).w || !(rect).h)
-#define is_valid_rect(rect)		((rect).x >= 0 && (rect).y >= 0)
+#define is_null_rect(rect)		((rect).x < 0 || (rect).y < 0)
 
 SDLKey sdl_keysym_from_name(std::string const &keyname);
 
@@ -137,11 +131,14 @@ inline void sdl_fill_rect(surface& dst, SDL_Rect* dst_rect, const Uint32 color){
  *
  * @returns                       The status @c true if neutral, @c false if not.
  */
-bool is_neutral(const surface& surf);
+bool is_neutral_surface(const surface& surf);
 
 surface make_neutral_surface(const surface &surf);
 surface create_neutral_surface(int w, int h);
 surface create_optimized_surface(const surface &surf);
+
+#define is_display_surface		is_neutral_surface
+#define make_display_surface	make_neutral_surface
 
 /**
  * Stretches a surface in the horizontal direction.
@@ -195,6 +192,7 @@ surface scale_surface(const surface &surf, int w, int h, bool optimize=true);
 
 surface scale_surface_blended(const surface &surf, int w, int h, bool optimize=true);
 surface adjust_surface_color(const surface &surf, int r, int g, int b, bool optimize=true);
+void adjust_surface_color2(surface &surf, int red, int green, int blue);
 surface greyscale_image(const surface &surf, bool optimize=true);
 /** create an heavy shadow of the image, by blurring, increasing alpha and darkening */
 surface shadow_image(const surface &surf, bool optimize=true);
@@ -228,8 +226,7 @@ surface brighten_image(const surface &surf, fixed_t amount, bool optimize=true);
  *                           No RLE or Alpha bits are set.
  *  @retval 0                if error or the portion is outside of the surface.
  */
-surface get_surface_portion(const surface &surf, SDL_Rect &rect,
-	bool optimize_format=false);
+surface get_surface_portion(const surface &surf, SDL_Rect &rect);
 
 surface adjust_surface_alpha(const surface &surf, fixed_t amount, bool optimize=true);
 surface adjust_surface_alpha_add(const surface &surf, int amount, bool optimize=true);
@@ -265,7 +262,7 @@ surface blur_surface(const surface &surf, int depth = 1, bool optimize=true);
  * @param rect                    The part of the surface to blur.
  * @param depth                   The depth of the blurring.
  */
-void blur_surface(surface& surf, SDL_Rect rect, unsigned depth = 1);
+void blur_surface(surface& surf, SDL_Rect rect, int depth = 1);
 
 /**
  * Cross-fades a surface with alpha channel.
@@ -280,6 +277,8 @@ surface cut_surface(const surface &surf, SDL_Rect const &r);
 surface blend_surface(const surface &surf, double amount, Uint32 color, bool optimize=true);
 surface flip_surface(const surface &surf, bool optimize=true);
 surface flop_surface(const surface &surf, bool optimize=true);
+surface rotate_surface(const surface& surf, double angle);
+surface rotate_surface2(const surface& surf, int srcx, int srcy, int degree, int offsetx, int offsety, int& dstx, int& dsty);
 surface create_compatible_surface(const surface &surf, int width = -1, int height = -1);
 
 /**
@@ -357,10 +356,11 @@ void put_pixel(
 void draw_line(
 		  surface& canvas
 		, Uint32 color
-		, unsigned x1
-		, unsigned y1
-		, const unsigned x2
-		, unsigned y2);
+		, int x1
+		, int y1
+		, int x2
+		, int y2
+		, bool require_map);
 
 /**
  * Draws a circle on a surface.
@@ -380,7 +380,8 @@ void draw_circle(
 		, Uint32 color
 		, const unsigned x_centre
 		, const unsigned y_centre
-		, const unsigned radius);
+		, const unsigned radius
+		, bool require_map);
 
 /**
  * Helper class for pinning SDL surfaces into memory.
@@ -466,6 +467,14 @@ void blit_integer_surface(int integer, surface& to, int x, int y);
 surface generate_pip_surface(surface& bg, surface& fg);
 surface generate_pip_surface(int width, int height, const std::string& bg, const std::string& fg);
 surface generate_surface(int width, int height, const std::string& img, int integer, bool greyscale);
+
+struct tarc_pixel {
+	unsigned short x;
+	unsigned short y;
+	unsigned short degree;
+};
+tarc_pixel* circle_calculate_pixels(surface& surf, int* valid_pixels);
+void circle_draw_arc(surface& surf, tarc_pixel* circle_pixels, const int valid_pixels, int start, int stop, Uint32 erase_col);
 
 std::ostream& operator<<(std::ostream& s, const SDL_Rect& rect);
 

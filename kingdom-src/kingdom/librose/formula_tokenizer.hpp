@@ -1,6 +1,5 @@
-/* $Id: formula_tokenizer.hpp 46186 2010-09-01 21:12:38Z silene $ */
 /*
-   Copyright (C) 2007 - 2010 by David White <dave.net>
+   Copyright (C) 2007 - 2015 by David White <dave.net>
    Part of the Silver Tree Project
 
    This program is free software; you can redistribute it and/or modify
@@ -21,6 +20,7 @@ namespace formula_tokenizer
 
 typedef std::string::const_iterator iterator;
 
+/// TOKEN_TYPE is already defined in a Winnt.h (a windows header wich is included under some conditions.) 
 enum TOKEN_TYPE { TOKEN_OPERATOR, TOKEN_STRING_LITERAL,
 			TOKEN_IDENTIFIER, TOKEN_INTEGER, TOKEN_DECIMAL,
 			TOKEN_LPARENS, TOKEN_RPARENS,

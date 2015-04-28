@@ -14,32 +14,14 @@
 */
 
 #include "global.hpp"
-
 #include "gettext.hpp"
 
 #include <cstring>
 
-char const *egettext(char const *msgid)
-{
-	return msgid[0] == '\0' ? msgid : gettext(msgid);
-}
-
-const char* sgettext (const char *msgid)
-{
-	const char *msgval = gettext (msgid);
-	if (msgval == msgid) {
-		msgval = std::strrchr (msgid, '^');
-		if (msgval == NULL)
-			msgval = msgid;
-		else
-			msgval++;
-	}
-	return msgval;
-}
+char def_textdomain[MAXLEN_TEXTDOMAIN + 1];
 
 const char* dsgettext (const char * domainname, const char *msgid)
 {
-	bind_textdomain_codeset(domainname, "UTF-8");
 	const char *msgval = dgettext (domainname, msgid);
 	if (msgval == msgid) {
 		msgval = std::strrchr (msgid, '^');
@@ -66,7 +48,6 @@ const char* sngettext (const char *singular, const char *plural, int n)
 
 const char* dsngettext (const char * domainname, const char *singular, const char *plural, int n)
 {
-	bind_textdomain_codeset(domainname, "UTF-8");
 	const char *msgval = dngettext (domainname, singular, plural, n);
 	if (msgval == singular) {
 		msgval = std::strrchr (singular, '^');

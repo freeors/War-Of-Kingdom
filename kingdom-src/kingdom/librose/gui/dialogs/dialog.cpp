@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/dialog.hpp"
 
@@ -21,8 +21,9 @@
 #include "gui/widgets/integer_selector.hpp"
 #include "gui/widgets/report.hpp"
 #include "gui/widgets/toggle_button.hpp"
+#include "gui/dialogs/visual_layout.hpp"
 #include "video.hpp"
-#include "tooltips.hpp"
+#include "gettext.hpp"
 #include "display.hpp"
 
 #include <boost/foreach.hpp>
@@ -41,37 +42,54 @@ tdialog::~tdialog()
 
 bool tdialog::show(CVideo& video, const unsigned auto_close_time)
 {
-	// hide tooltip current shown.
-	tooltips::process(-1, -1);
-
 	// hide unit tip if necessary.
 	if (display::get_singleton()) {
 		display::get_singleton()->hide_tip();
 	}
 
-	// I want display volatile control, for example rpg button.
-	events::raise_volatile_draw_event();
+	std::vector<twindow*> connected = gui2::connectd_window();
+	if (!connected.empty()) {
+		connected.back()->remove_tooltip();
+	}
 
-	std::auto_ptr<twindow> window(build_window(video));
-	assert(window.get());
+	{
+		std::auto_ptr<twindow> window(build_window(video));
+		VALIDATE(window.get(), null_str);
 
-	post_build(video, *window);
+		try {
+			post_build(video, *window);
 
-	window->set_owner(this);
+			window->set_owner(this);
 
-	init_fields(*window);
+			init_fields(*window);
 
-	pre_show(video, *window);
+			pre_show(video, *window);
 
-	retval_ = window->show(restore_, auto_close_time);
+			window->set_transition(video.getSurface(), SDL_GetTicks());
 
-	events::discard(DRAW_EVENT, DRAW_EVENT);
+			retval_ = window->show(restore_, auto_close_time);
 
-	finalize_fields(*window, (retval_ ==  twindow::OK || always_save_fields_));
+			events::discard(DRAW_EVENT, DRAW_EVENT);
 
-	post_show(*window);
+			finalize_fields(*window, (retval_ ==  twindow::OK || always_save_fields_));
 
-	events::raise_volatile_undraw_event();
+			post_show(*window);
+
+		} catch (twindow::tlayout_exception& e) {
+			if (window->id() != twindow::visual_layout_id) {
+				gui2::tvisual_layout dlg(*display::get_singleton(), e.target, e.reason);
+				dlg.show(video);
+				throw CVideo::quit();
+
+			} else {
+				throw twml_exception(null_str, e.reason);
+			}
+		}
+	}
+	connected = gui2::connectd_window();
+	if (!connected.empty() && connected.back()->is_theme()) {
+		display::get_singleton()->invalidate_all();
+	}
 
 	return retval_ == twindow::OK;
 }
@@ -89,6 +107,7 @@ void tdialog::asyn_show(CVideo& video, const SDL_Rect& map_area)
 
 	pre_show(video, *window);
 
+	// window->set_transition(twindow::last_frame_buffer, SDL_GetTicks());
 	retval_ = window->asyn_show();
 
 	window->layout();
@@ -243,9 +262,9 @@ void tdialog::finalize_fields(twindow& window, const bool save_fields)
 	}
 }
 
-void tdialog::toggle_tabbar(twidget* widget)
+void tdialog::toggle_report(twidget* widget)
 {
-	ttabbar* bar = ttabbar::get_tabbar(widget);
+	treport* bar = treport::get_report(widget);
 	bar->select(widget);
 }
 

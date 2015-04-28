@@ -18,14 +18,14 @@
  * Routines for images: load, scale, re-color, etc.
  */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 
 #include "color_range.hpp"
 #include "config.hpp"
 #include "filesystem.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "image.hpp"
 #include "image_function.hpp"
 #include "log.hpp"
@@ -660,17 +660,18 @@ surface locator::load_image_file() const
 surface locator::load_image_sub_file() const
 {
 	surface surf = get_image(val_.filename_, UNSCALED);
-	if(surf == NULL)
+	if (surf == NULL) {
 		return NULL;
+	}
 
-	if(val_.loc_.valid()) {
+	if (val_.loc_.valid()) {
 		SDL_Rect srcrect = create_rect(
 				((tile_size*3) / 4) * val_.loc_.x
 				, tile_size * val_.loc_.y + (tile_size / 2) * (val_.loc_.x % 2)
 				, tile_size
 				, tile_size);
 
-		if(val_.center_x_ >= 0 && val_.center_y_>= 0){
+		if (val_.center_x_ >= 0 && val_.center_y_>= 0){
 			srcrect.x += surf->w/2 - val_.center_x_;
 			srcrect.y += surf->h/2 - val_.center_y_;
 		}
@@ -686,7 +687,7 @@ surface locator::load_image_sub_file() const
 		add_to_cache(is_empty_hex_, is_empty);
 	}
 
-	if(val_.modifications_.size()){
+	if (val_.modifications_.size()){
 		// The RC functor is very special; it must be applied
 		// before anything else, and it is not accumulative.
 		rc_function rc;
@@ -921,7 +922,7 @@ surface locator::load_image_sub_file() const
 							x = lexical_cast_default<int>(param[1]);
 							y = lexical_cast_default<int>(param[2]);
 						}
-						if(x >= 0 && y >= 0) { //required by blit_surface
+						if(x >= 0 && y >= 0) {
 							surface surf = get_image(param[0]);
 							functor_queue.push_back(new blit_function(surf, x, y));
 						} else {
@@ -940,7 +941,7 @@ surface locator::load_image_sub_file() const
 							x = lexical_cast_default<int>(param[1]);
 							y = lexical_cast_default<int>(param[2]);
 						}
-						if(x >= 0 && y >= 0) { //required by blit_surface
+						if(x >= 0 && y >= 0) {
 							surface surf = get_image(param[0]);
 							functor_queue.push_back(new mask_function(surf, x, y));
 						} else {
@@ -1058,7 +1059,7 @@ bool locator::file_exists()
 
 surface locator::load_from_disk() const
 {
-	switch(val_.type_) {
+	switch (val_.type_) {
 		case FILE:
 			return load_image_file();
 		case SUB_FILE:
@@ -1170,8 +1171,9 @@ surface get_hexed(const locator& i_locator)
 		bool is_empty = false;
 		surface res = mask_surface(image, get_hexmask(), &is_empty);
 		i_locator.add_to_cache(is_empty_hex_, is_empty);
-		if (!is_empty)
+		if (!is_empty) {
 			res = create_optimized_surface(res);
+		}
 		return res;
 	}
 	return image;
@@ -1201,7 +1203,7 @@ static surface get_scaled_to_zoom(const locator& i_locator)
 
 	surface res(get_image(i_locator, UNSCALED));
 	// For some reason haloes seems to have invalid images, protect against crashing
-	if(!res.null()) {
+	if (!res.null()) {
 		return scale_surface(res, ((res.get()->w * zoom) / tile_size), ((res.get()->h * zoom) / tile_size));
 	} else {
 		return surface(NULL);
@@ -1337,8 +1339,9 @@ surface get_image(const image::locator& i_locator, TYPE type)
 	}
 
 	// Optimizes surface before storing it
-	if (res)
+	if (res) {
 		res = create_optimized_surface(res);
+	}
 
 	i_locator.add_to_cache(*imap, res);
 

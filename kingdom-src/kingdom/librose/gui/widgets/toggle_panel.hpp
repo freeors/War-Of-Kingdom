@@ -21,6 +21,8 @@
 
 namespace gui2 {
 
+class tlistbox;
+
 /**
  * Class for a toggle button.
  *
@@ -30,6 +32,7 @@ namespace gui2 {
  */
 class ttoggle_panel : public tpanel, public tselectable_
 {
+	friend class tlistbox;
 public:
 	ttoggle_panel();
 
@@ -108,6 +111,10 @@ public:
 	void set_retval(const int retval);
 
 	/** Inherited from tselectable_. */
+	void set_callback_state_pre_change(boost::function<bool (twidget*, const int type)> callback)
+		{ callback_state_pre_change_ = callback; }
+
+	/** Inherited from tselectable_. */
 	void set_callback_state_change(boost::function<void (twidget*)> callback)
 		{ callback_state_change_ = callback; }
 
@@ -116,6 +123,12 @@ public:
 
 	void set_data(unsigned int data) { data_ = data; }
 	unsigned int get_data() const { return data_; }
+
+	int at() const { return at_; }
+	bool can_selectable() const;
+
+	/** Inherited from tcontrol. */
+	void update_canvas();
 
 	bool exist_anim();
 private:
@@ -156,6 +169,14 @@ private:
 	 */
 	unsigned int data_;
 
+	// In general, toggle panel is used for listbox, treeview. at_ indicate the location in array.
+	int at_;
+
+	bool frame_;
+
+	/** See tselectable_::set_callback_state_change. */
+	boost::function<bool (twidget*, const int type)> callback_state_pre_change_;
+
 	/** See tselectable_::set_callback_state_change. */
 	boost::function<void (twidget*)> callback_state_change_;
 
@@ -172,12 +193,7 @@ private:
 
 	/** Inherited from tpanel. */
 	void impl_draw_foreground(surface& frame_buffer, int x_offset, int y_offset);
-/*	{
-		// We don't have a fore and background and need to draw depending on
-		// our state, like a control. So we use the controls drawing method.
-		tcontrol::impl_draw_foreground(frame_buffer, x_offset, y_offset);
-	}
-*/
+
 	/** Inherited from tpanel. */
 	const std::string& get_control_type() const;
 
@@ -189,8 +205,7 @@ private:
 
 	void signal_handler_pre_left_button_click(const event::tevent event);
 
-	void signal_handler_left_button_click(
-			const event::tevent event, bool& handled);
+	void signal_handler_left_button_click(const event::tevent event, bool& handled, const int type);
 
 	void signal_handler_left_button_double_click(
 			const event::tevent event, bool& handled);

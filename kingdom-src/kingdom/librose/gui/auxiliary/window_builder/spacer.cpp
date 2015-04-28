@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/window_builder/spacer.hpp"
 
@@ -43,7 +43,7 @@ twidget* tbuilder_spacer::build() const
 	const unsigned width = width_(size);
 	const unsigned height = height_(size);
 
-	if(width || height) {
+	if (width || height) {
 		widget->set_best_size(tpoint(width, height));
 	}
 

@@ -13,12 +13,13 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/transient_message.hpp"
 
 #include "gettext.hpp"
 #include "gui/widgets/settings.hpp"
+#include "gui/widgets/window.hpp"
 #include "log.hpp"
 
 namespace gui2 {
@@ -34,6 +35,11 @@ ttransient_message::ttransient_message(const std::string& title
 	register_label("title", true, title, title_use_markup);
 	register_label("message", true, message, message_use_markup);
 	register_image("image", true, image);
+}
+
+void ttransient_message::pre_show(CVideo& /*video*/, twindow& window)
+{
+	window.set_canvas_variable("border", variant("default-border"));
 }
 
 void show_transient_message(CVideo& video

@@ -45,7 +45,7 @@
 // for memory lead detect end
 #endif
 
-enum {exe_kingdom, exe_kingdomd, exe_editor};
-extern int exe_type;
+#define MAXLEN_APP				31
+#define MAXLEN_TEXTDOMAIN		63	// MAXLEN_TEXTDOMAIN must >= MAXLEN_APP + 4. default textdomain is <app>-lib
 
 #endif

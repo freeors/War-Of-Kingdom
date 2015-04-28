@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/button.hpp"
 
@@ -194,6 +194,7 @@ void tbutton::signal_handler_mouse_enter(
 		handled = true;
 		return;
 	}
+
 	set_state(FOCUSSED);
 	handled = true;
 }
@@ -238,14 +239,12 @@ void tbutton::signal_handler_left_button_click(
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << ".\n";
 
-	if (sound_button_click_.empty()) {
-		sound::play_UI_sound(settings::sound_button_click);
-	} else {
+	if (!sound_button_click_.empty()) {
 		sound::play_UI_sound(sound_button_click_);
 	}
 
 	// If a button has a retval do the default handling.
-	if(retval_ != 0) {
+	if (retval_ != 0) {
 		twindow* window = get_window();
 		if(window) {
 			window->set_retval(retval_);

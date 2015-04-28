@@ -1,0 +1,1556 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="boost">
+      <UniqueIdentifier>{b6c1cf95-3d6b-4ce7-a25e-1019c3b172e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="boost\iostreams">
+      <UniqueIdentifier>{d3dcb5d4-9032-4f0a-a129-393c52181cef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="boost\regex">
+      <UniqueIdentifier>{ee206c46-4eb1-4a24-b36c-3da8b20e1463}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bzip2">
+      <UniqueIdentifier>{047daad0-3b17-49e1-9fb1-49a686d850b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="serialization">
+      <UniqueIdentifier>{4ac6cff4-add4-43ed-b2b1-9ed7a09f7963}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="zlib">
+      <UniqueIdentifier>{df49b610-8daa-4cd8-a4fc-8134e8b5e147}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui">
+      <UniqueIdentifier>{b5254527-57aa-4c51-b2e9-eccc615c8089}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\auxiliary">
+      <UniqueIdentifier>{f8529dee-0432-4f1f-b778-99b31bb7a67d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\auxiliary\event">
+      <UniqueIdentifier>{eb98f46a-d311-4b6f-bc1d-2afb50a1ece4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\auxiliary\iterator">
+      <UniqueIdentifier>{1e2d0c9b-1dfb-40b5-8407-cd9631625d39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\auxiliary\window_builder">
+      <UniqueIdentifier>{69acead7-4962-45c5-a729-5a85cfebd7c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\auxiliary\widget_definition">
+      <UniqueIdentifier>{4189bfce-a768-4d30-a6c3-e4ed91ae5b8d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\dialogs">
+      <UniqueIdentifier>{2012af26-8039-41f7-a1d0-117e0bcd4d50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\lib">
+      <UniqueIdentifier>{ce2a026d-2419-44c5-a555-111cbf8e5ccc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\lib\types">
+      <UniqueIdentifier>{82c6e941-40bb-47e7-95d4-43fc612ae045}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\widgets">
+      <UniqueIdentifier>{042638c9-36e9-48ca-a7fb-ae6aeea9865a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{cb1e95ad-a821-44c3-bb1a-65ff33f965a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="json">
+      <UniqueIdentifier>{a4bb8d74-8daf-42c0-9d15-89cccc1cce4e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\librose\animation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\area_anim.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\arrow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\base_instance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\base_map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\base_unit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\builder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\callable_objects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\clipboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\color_range.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\config_cache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\controller_base.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\cursor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\display.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\events.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\filesystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\filter_tag.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\font.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\formula.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\formula_debugger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\formula_debugger_fwd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\formula_function.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\formula_string_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\formula_tokenizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\generic_event.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gettext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\halo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\help.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\hero_i.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\hex_display.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\hotkeys.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\image_function.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\integrate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\key.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\language.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\loadscreen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\lobby.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\lua_jailbreak_exception.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\map_label.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\map_location.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\marked-up_text.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\minimap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\mouse_handler_base.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\network.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\network_worker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\preferences.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\preferences_display.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\proto_irc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\race.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\saes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\sdl_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\sha1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\sound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\sound_music_track.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\terrain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\terrain_translation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\time_of_day.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\tstring.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\unit_frame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\unit_frame2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\variant.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\version.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\video.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\wml_exception.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\xwml.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\bzip2.cpp">
+      <Filter>boost\iostreams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\file_descriptor.cpp">
+      <Filter>boost\iostreams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\gzip.cpp">
+      <Filter>boost\iostreams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\mapped_file.cpp">
+      <Filter>boost\iostreams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\iostreams\src\zlib.cpp">
+      <Filter>boost\iostreams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\c_regex_traits.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\cpp_regex_traits.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\cregex.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\fileiter.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\icu.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\instances.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\posix_api.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\regex.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\regex_debug.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\regex_raw_buffer.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\regex_traits_defaults.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\static_mutex.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\usinstances.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\w32_regex_traits.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\wc_regex_traits.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\wide_posix_api.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\boost\libs\regex\src\winstances.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\blocksort.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\bzlib.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\compress.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\crctable.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\decompress.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\huffman.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\bzip2\randtable.c">
+      <Filter>bzip2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\binary_or_text.cpp">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\parser.cpp">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\preprocessor.cpp">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\string_utils.cpp">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\serialization\tokenizer.cpp">
+      <Filter>serialization</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\adler32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\compress.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\crc32.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\deflate.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\gzclose.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\gzlib.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\gzread.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\gzwrite.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\infback.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\inffast.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\inflate.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\inftrees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\trees.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\uncompr.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\zlib\zutil.c">
+      <Filter>zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\canvas.cpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\log.cpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\timer.cpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\tips.cpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition.cpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder.cpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\event\dispatcher.cpp">
+      <Filter>gui\auxiliary\event</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\event\distributor.cpp">
+      <Filter>gui\auxiliary\event</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\event\handler.cpp">
+      <Filter>gui\auxiliary\event</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\iterator\iterator.cpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\iterator\walker_grid.cpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\iterator\walker_widget.cpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\button.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\control.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\drawing.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\helper.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\horizontal_scrollbar.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\image.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\label.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\listbox.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\minimap.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\panel.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\password_box.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\progress_bar.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\report.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\scroll_label.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\scroll_text_box.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\scrollbar_panel.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\slider.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\spacer.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\stacked_widget.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\text_box.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\toggle_button.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\toggle_panel.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\tree_view.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\vertical_scrollbar.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\button.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\drawing.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\horizontal_scrollbar.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\image.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\label.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\listbox.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\minimap.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\panel.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\progress_bar.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\report.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\scroll_label.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\scroll_text_box.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\scrollbar_panel.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\slider.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\spacer.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\stacked_widget.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\text_box.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\toggle_button.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\toggle_panel.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\tree_view.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\vertical_scrollbar.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\window.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\book.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\browse.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\chat.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\combo_box.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\dialog.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\edit_box.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\formula_debugger.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\language_selection.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\login.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\message.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\netdiag.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\simple_item_selector.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\system.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\theme.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\transient_message.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\visual_layout.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\lib\types\point.cpp">
+      <Filter>gui\lib\types</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\button.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\container.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\control.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\drawing.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\grid.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\helper.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\horizontal_scrollbar.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\image.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\label.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\listbox.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\minimap.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\panel.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\password_box.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\progress_bar.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\report.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scroll_label.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scroll_text_box.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scrollbar.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scrollbar_container.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\scrollbar_panel.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\settings.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\slider.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\spacer.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\stacked_widget.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\text_box.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\toggle_button.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\toggle_panel.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\tree_view.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\tree_view_node.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\vertical_scrollbar.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\widget.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\window.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\network_transmission.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\track.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\track.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\track.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\message2.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\combo_box2.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\dialogs\guide.cpp">
+      <Filter>gui\dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\SDL_rotate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\rose_config.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\widget_definition\text_box2.cpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\auxiliary\window_builder\text_box2.cpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\gui\widgets\text_box2.cpp">
+      <Filter>gui\widgets</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\librose\jsoncpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\external\boost\libs\regex\src\internals.hpp">
+      <Filter>boost\regex</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\bzip2\bzlib.h">
+      <Filter>bzip2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\bzip2\bzlib_private.h">
+      <Filter>bzip2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\animated.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\animation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\area_anim.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\arrow.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\asserts.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\base_instance.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\base_map.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\base_unit.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\builder.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\callable_objects.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\clipboard.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\color_range.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\config.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\config_cache.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\controller_base.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\cursor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\display.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\events.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\exceptions.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\filesystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\filter_tag.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\font.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formatter.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula_callable.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula_callable_fwd.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula_debugger.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula_debugger_fwd.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula_function.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula_fwd.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula_string_utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\formula_tokenizer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\game_end_exceptions.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\generic_event.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gettext.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\global.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\halo.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\help.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\hero.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\hex_display.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\hotkeys.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\ichat.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\image.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\image_function.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\integrate.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\key.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\language.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\lexical_cast.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\loadscreen.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\lobby.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\log.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\lua_jailbreak_exception.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\map.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\map_exception.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\map_label.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\map_location.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\map_utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\marked-up_text.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\minimap.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\mouse_handler_base.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\multiplayer_error_codes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\network.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\network_worker.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\posix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\preferences.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\preferences_display.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\proto_irc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\race.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\random.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\reference_counted_object.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\reports.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\rng.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\saes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\sdl_utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\sha1.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\sound.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\sound_music_track.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\terrain.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\terrain_translation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\thread.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\time_of_day.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\tstring.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\unit_frame.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\util.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\variant.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\version.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\video.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\wml_exception.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\wml_separators.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\serialization\binary_or_text.hpp">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\serialization\parser.hpp">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\serialization\preprocessor.hpp">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\serialization\string_utils.hpp">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\serialization\tokenizer.hpp">
+      <Filter>serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\crc32.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\deflate.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\gzguts.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\inffast.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\inffixed.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\inflate.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\inftrees.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\trees.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\zconf.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\zlib.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\zlib\zutil.h">
+      <Filter>zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\canvas.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\filter.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\formula.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\log.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\notifiee.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\notifier.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\timer.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\tips.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder.hpp">
+      <Filter>gui\auxiliary</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\dispatcher.hpp">
+      <Filter>gui\auxiliary\event</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\dispatcher_private.hpp">
+      <Filter>gui\auxiliary\event</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\distributor.hpp">
+      <Filter>gui\auxiliary\event</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\handler.hpp">
+      <Filter>gui\auxiliary\event</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\event\message.hpp">
+      <Filter>gui\auxiliary\event</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\exception.hpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\iterator.hpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\policy_order.hpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\policy_visit.hpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\walker.hpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\walker_grid.hpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\iterator\walker_widget.hpp">
+      <Filter>gui\auxiliary\iterator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\button.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\control.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\drawing.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\helper.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\horizontal_scrollbar.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\image.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\label.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\listbox.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\minimap.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\panel.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\password_box.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\progress_bar.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\report.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\scroll_label.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\scroll_text_box.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\scrollbar_panel.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\slider.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\spacer.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\stacked_widget.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\text_box.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\toggle_button.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\toggle_panel.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\tree_view.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\vertical_scrollbar.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\button.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\drawing.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\horizontal_scrollbar.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\image.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\label.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\listbox.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\minimap.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\panel.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\progress_bar.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\report.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\scroll_label.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\scroll_text_box.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\scrollbar_panel.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\slider.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\spacer.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\stacked_widget.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\text_box.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\toggle_button.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\toggle_panel.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\tree_view.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\vertical_scrollbar.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\window.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\book.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\browse.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\chat.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\combo_box.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\dialog.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\edit_box.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\field-fwd.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\field.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\formula_debugger.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\helper.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\language_selection.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\login.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\message.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\netdiag.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\simple_item_selector.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\system.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\theme.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\transient_message.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\visual_layout.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\lib\types\point.hpp">
+      <Filter>gui\lib\types</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\button.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\clickable.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\container.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\control.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\drawing.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\event_executor.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\grid.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\grid_private.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\helper.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\horizontal_scrollbar.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\image.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\integer_selector.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\label.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\listbox.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\minimap.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\panel.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\password_box.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\progress_bar.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\report.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\scroll_label.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\scroll_text_box.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\scrollbar.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\scrollbar_container.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\scrollbar_container_private.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\scrollbar_panel.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\selectable.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\settings.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\slider.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\spacer.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\stacked_widget.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\text_box.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\toggle_button.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\toggle_panel.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\tree_view.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\tree_view_node.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\vertical_scrollbar.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\widget.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\window.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\utils\reference_counter.hpp">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\network_transmission.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\track.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\track.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\track.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\message2.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\combo_box2.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\dialogs\guide.hpp">
+      <Filter>gui\dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\SDL_rotate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\rose_config.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\widget_definition\text_box2.hpp">
+      <Filter>gui\auxiliary\widget_definition</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\auxiliary\window_builder\text_box2.hpp">
+      <Filter>gui\auxiliary\window_builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\gui\widgets\text_box2.hpp">
+      <Filter>gui\widgets</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\json\json.h">
+      <Filter>json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\librose\json\json-forwards.h">
+      <Filter>json</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\librose\animated.i">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\librose\utils\const_clone.tpp">
+      <Filter>utils</Filter>
+    </None>
+    <None Include="..\..\librose\utils\enumerate.tpp">
+      <Filter>utils</Filter>
+    </None>
+  </ItemGroup>
+</Project>

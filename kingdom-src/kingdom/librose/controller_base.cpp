@@ -26,6 +26,13 @@
 
 #include <boost/foreach.hpp>
 
+std::set<std::string> controller_base::theme_reserved_wml;
+
+bool controller_base::is_theme_reserved(const std::string& key)
+{
+	return theme_reserved_wml.find(key) != theme_reserved_wml.end();
+}
+
 controller_base::controller_base(int ticks, const config& game_config, CVideo& /*video*/)
 	: events::handler(false)
 	, game_config_(game_config)
@@ -35,8 +42,13 @@ controller_base::controller_base(int ticks, const config& game_config, CVideo& /
 	, scrolling_(false)
 	, finger_motion_scroll_(false)
 	, finger_motion_direction_(UP)
-	, wait_bh_event_(false)
 {
+	if (theme_reserved_wml.empty()) {
+		theme_reserved_wml.insert("screen");
+		theme_reserved_wml.insert("main_map_border");
+		theme_reserved_wml.insert("context_menu");
+		theme_reserved_wml.insert("linked_group");
+	}
 }
 
 controller_base::~controller_base()
@@ -87,25 +99,111 @@ bool controller_base::handle_scroll_wheel(int dx, int dy, int hit_threshold, int
 	return true;
 }
 
+bool controller_base::finger_coordinate_valid(int x, int y) const
+{
+	const display& disp = get_display();
+
+	if (!point_in_rect(x, y, disp.map_outside_area())) {
+		return false;
+	}
+	if (disp.point_in_volatiles(x, y)) {
+		return false;
+	}
+	return true;
+}
+
+bool controller_base::mouse_wheel_coordinate_valid(int x, int y) const
+{
+	const display& disp = get_display();
+
+	return point_in_rect(x, y, disp.map_outside_area());
+}
+
+void controller_base::handle_swipe(int x, int y, int dx, int dy)
+{
+	handle_scroll_wheel(dx, dy, FINGER_HIT_THRESHOLD, FINGER_MOTION_THRESHOLD);
+}
+
+void controller_base::handle_pinch(int x, int y, bool out)
+{
+	pinch_event(out);
+}
+
+void controller_base::handle_mouse_down(const SDL_MouseButtonEvent& button)
+{
+	display& disp = get_display();
+	if (disp.point_in_volatiles(button.x, button.y)) {
+		return;
+	}
+
+	// user maybe want to click at mini-map. so allow click out of main-map.
+	get_mouse_handler_base().mouse_press(button, multi_gestures() || mouse_motions_, browse_);
+	post_mouse_press(button);
+	if (get_mouse_handler_base().get_show_menu()){
+		get_display().goto_main_context_menu();
+	}
+}
+
+void controller_base::handle_mouse_up(const SDL_MouseButtonEvent& button)
+{
+	display& disp = get_display();
+	// user maybe want to click at mini-map. so allow click out of main-map.
+
+	get_mouse_handler_base().mouse_press(button, multi_gestures() || mouse_motions_, browse_);
+	post_mouse_press(button);
+	if (get_mouse_handler_base().get_show_menu()){
+		get_display().goto_main_context_menu();
+	}
+}
+
+void controller_base::handle_mouse_motion(const SDL_MouseMotionEvent& motion)
+{
+	display& disp = get_display();
+
+	if (multi_gestures()) {
+		return;
+	}
+	// (x, y) on volatile control myabe in map, don't check in volatiles.
+/*
+	if (disp.point_in_volatiles(motion.x, motion.y)) {
+		return;
+	}
+*/
+	// user maybe want to motion at mini-map. so allow click out of main-map.
+	SDL_Event new_event;
+
+	// Ignore old mouse motion events in the event queue
+	if (SDL_PeepEvents(&new_event, 1, SDL_GETEVENT, SDL_MOUSEMOTIONMASK) > 0) {
+		while(SDL_PeepEvents(&new_event, 1, SDL_GETEVENT, SDL_MOUSEMOTIONMASK) > 0) {};
+		get_mouse_handler_base().mouse_motion_event(new_event.motion, browse_);
+	} else {
+		get_mouse_handler_base().mouse_motion_event(motion, browse_);
+	}
+}
+
+void controller_base::handle_mouse_wheel(const SDL_MouseWheelEvent& wheel, int x, int y, Uint8 mouse_flags)
+{
+	handle_scroll_wheel(wheel.x, wheel.y, MOUSE_HIT_THRESHOLD, MOUSE_MOTION_THRESHOLD);
+}
+
 void controller_base::handle_event(const SDL_Event& event)
 {
 	if (gui2::is_in_dialog()) {
 		return;
 	}
 
-	display& disp = get_display();
-	CVideo& video = disp.video();
-
-	SDL_Event new_event;
-	// events::mouse_handler& mouse_handler = get_mouse_handler_base();
-	int x, y, dx, dy;
+	int x, y;
 
 	switch(event.type) {
 	case SDL_FINGERDOWN:
-		if (events::ignore_finger_event) {
-			break;
-		}
-		wait_bh_event_ = true;
+	case SDL_FINGERMOTION:
+	case SDL_FINGERUP:
+	case SDL_MULTIGESTURE:
+	case SDL_MOUSEBUTTONDOWN:
+	case SDL_MOUSEBUTTONUP:
+	case SDL_MOUSEMOTION:
+	case SDL_MOUSEWHEEL:
+		base_finger::process_event(event);
 		break;
 
 	case SDL_KEYDOWN:
@@ -123,98 +221,12 @@ void controller_base::handle_event(const SDL_Event& event)
 		process_keyup_event(event);
 		break;
 
-	case SDL_FINGERMOTION:
-		if (events::ignore_finger_event) {
-			break;
-		}
-		SDL_GetMouseState(&x, &y);
-		if (!point_in_rect(x, y, disp.map_outside_area())) {
-			break;
-		}
-
-		x = event.tfinger.x * video.getx();
-		y = event.tfinger.y * video.gety();
-		dx = event.tfinger.dx * video.getx();
-		dy = event.tfinger.dy * video.gety();
-
-		if (!handle_scroll_wheel(dx, dy, FINGER_HIT_THRESHOLD, FINGER_MOTION_THRESHOLD)) {
-			break;
-		}
-		wait_bh_event_ = false;
-		events::ignore_finger_event = true;
-		break;
-
-	case SDL_MOUSEMOTION:
-		if (event.button.which == SDL_TOUCH_MOUSEID) {
-			break;
-		}
-		// Ignore old mouse motion events in the event queue
-		if (SDL_PeepEvents(&new_event,1,SDL_GETEVENT, SDL_MOUSEMOTIONMASK) > 0) {
-			while(SDL_PeepEvents(&new_event,1,SDL_GETEVENT, SDL_MOUSEMOTIONMASK) > 0) {};
-			get_mouse_handler_base().mouse_motion_event(new_event.motion, browse_);
-		} else {
-			get_mouse_handler_base().mouse_motion_event(event.motion, browse_);
-		}
-		break;
-	case SDL_FINGERUP:
-		if (events::ignore_finger_event) {
-			break;
-		}
-		if (!wait_bh_event_) {
-			break;
-		}
-		x = event.tfinger.x * video.getx();
-		y = event.tfinger.y * video.gety();
-		// simulate SDL_MOUSEBUTTONDOWN
-		new_event = event;
-		new_event.button.button = SDL_BUTTON_LEFT;
-		new_event.button.state = SDL_PRESSED;
-		new_event.button.x = x;
-		new_event.button.y = y;
-		do {
-			get_mouse_handler_base().mouse_press(new_event.button, browse_);
-			post_mouse_press(new_event);
-			if (get_mouse_handler_base().get_show_menu()){
-				get_display().goto_main_context_menu();
-			}
-			if (new_event.button.state == SDL_RELEASED) {
-				break;
-			}
-			new_event.button.state = SDL_RELEASED;
-		} while (true);
-		wait_bh_event_ = false;
-		break;
-
-	case SDL_MOUSEWHEEL:
-		if (event.wheel.which == SDL_TOUCH_MOUSEID) {
-			break;
-		}
-		SDL_GetMouseState(&x, &y);
-		if (!point_in_rect(x, y, disp.map_outside_area())) {
-			break;
-		}
-		handle_scroll_wheel(event.wheel.x, event.wheel.y, MOUSE_HIT_THRESHOLD, MOUSE_MOTION_THRESHOLD);
-		break;
-
-	case SDL_MOUSEBUTTONDOWN:
-	case SDL_MOUSEBUTTONUP:
-		if (event.button.which == SDL_TOUCH_MOUSEID) {
-			break;
-		}
-		get_mouse_handler_base().mouse_press(event.button, browse_);
-		post_mouse_press(event);
-		if (get_mouse_handler_base().get_show_menu()){
-			get_display().goto_main_context_menu();
-		}
-		break;
-
 	case SDL_WINDOWEVENT:
 		if (event.window.event == SDL_WINDOWEVENT_LEAVE) {
 			if (get_mouse_handler_base().is_dragging()) {
 				//simulate mouse button up when the app has lost mouse focus
 				//this should be a general fix for the issue when the mouse
 				//is dragged out of the game window and then the button is released
-				int x, y;
 				Uint8 mouse_flags = SDL_GetMouseState(&x, &y);
 				if ((mouse_flags & SDL_BUTTON_LEFT) == 0) {
 					SDL_Event e;
@@ -223,8 +235,8 @@ void controller_base::handle_event(const SDL_Event& event)
 					e.button.button = SDL_BUTTON_LEFT;
 					e.button.x = x;
 					e.button.y = y;
-					get_mouse_handler_base().mouse_press(event.button, browse_);
-					post_mouse_press(event);
+					get_mouse_handler_base().mouse_press(e.button, multi_gestures() || mouse_motions_ > 0, browse_);
+					post_mouse_press(e.button);
 				}
 			}
 		}
@@ -252,7 +264,7 @@ void controller_base::process_keyup_event(const SDL_Event& /*event*/) {
 	//no action by default
 }
 
-void controller_base::post_mouse_press(const SDL_Event& /*event*/) {
+void controller_base::post_mouse_press(const SDL_MouseButtonEvent& /*button*/) {
 	//no action by default
 }
 
@@ -269,26 +281,17 @@ bool controller_base::handle_scroll(CKey& key, int mousex, int mousey, int mouse
 	bool keyboard_focus = have_keyboard_focus();
 	int scroll_speed = preferences::scroll_speed();
 	int dx = 0, dy = 0;
-	int scroll_threshold = (preferences::mouse_scroll_enabled())
-		? preferences::mouse_scroll_threshold() : 0;
-	if ((key[SDLK_UP] && keyboard_focus) ||
-	    (mousey < scroll_threshold && mouse_in_window))
-	{
+	int scroll_threshold = (preferences::mouse_scroll_enabled())? preferences::mouse_scroll_threshold() : 0;
+	if ((key[SDLK_UP] && keyboard_focus) || (mousey < scroll_threshold && mouse_in_window)) {
 		dy -= scroll_speed;
 	}
-	if ((key[SDLK_DOWN] && keyboard_focus) ||
-	    (mousey > get_display().h() - scroll_threshold && mouse_in_window))
-	{
+	if ((key[SDLK_DOWN] && keyboard_focus) || (mousey > get_display().h() - scroll_threshold && mouse_in_window)) {
 		dy += scroll_speed;
 	}
-	if ((key[SDLK_LEFT] && keyboard_focus) ||
-	    (mousex < scroll_threshold && mouse_in_window))
-	{
+	if ((key[SDLK_LEFT] && keyboard_focus) || (mousex < scroll_threshold && mouse_in_window)) {
 		dx -= scroll_speed;
 	}
-	if ((key[SDLK_RIGHT] && keyboard_focus) ||
-	    (mousex > get_display().w() - scroll_threshold && mouse_in_window))
-	{
+	if ((key[SDLK_RIGHT] && keyboard_focus) || (mousex > get_display().w() - scroll_threshold && mouse_in_window)) {
 		dx += scroll_speed;
 	}
 	if ((mouse_flags & SDL_BUTTON_MMASK) != 0 && preferences::middle_click_scrolls()) {
@@ -330,7 +333,10 @@ bool controller_base::handle_scroll(CKey& key, int mousex, int mousey, int mouse
 		} 
 		finger_motion_scroll_ = false;
 	}
-	return get_display().scroll(dx, dy);
+	if (dx || dy) {
+		return get_display().scroll(dx, dy);
+	}
+	return false;
 }
 
 void controller_base::play_slice(bool is_delay_enabled)
@@ -378,18 +384,6 @@ void controller_base::slice_end()
 	//no action by default
 }
 
-const config& controller_base::get_theme(const config& game_config, std::string theme_name)
-{
-	if (const config &c = game_config.find_child("theme", "name", theme_name))
-		return c;
-
-	if (const config &c = game_config.find_child("theme", "name", "Default"))
-		return c;
-
-	static config empty;
-	return empty;
-}
-
 bool controller_base::actived_context_menu(const std::string& id) const
 { 
 	const display& disp = get_display();
@@ -418,7 +412,6 @@ void controller_base::execute_command(int command, const std::string& sparam)
 
 void controller_base::execute_command2(int command, const std::string& sparam)
 {
-	const int zoom_amount = 4;
 	display& disp = get_display();
 
 	switch(command) {
@@ -427,11 +420,11 @@ void controller_base::execute_command2(int command, const std::string& sparam)
 		return;
 
 	case HOTKEY_ZOOM_IN:
-		disp.set_zoom(zoom_amount);
+		disp.set_zoom(ZOOM_INCREMENT);
 		return;
 
 	case HOTKEY_ZOOM_OUT:
-		disp.set_zoom(-zoom_amount);
+		disp.set_zoom(-ZOOM_INCREMENT);
 		return;
 
 	case HOTKEY_ZOOM_DEFAULT:

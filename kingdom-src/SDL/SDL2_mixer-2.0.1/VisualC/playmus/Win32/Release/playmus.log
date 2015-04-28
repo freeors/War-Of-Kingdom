@@ -1,0 +1,13 @@
+﻿Build started 2016/2/4 21:23:26.
+     1>Project "C:\ddksample\kingdom-src\SDL\SDL2_mixer-2.0.1\VisualC\playmus\playmus.vcxproj" on node 3 (build target(s)).
+     1>InitializeBuildStatus:
+         Creating "Win32\Release\playmus.unsuccessfulbuild" because "AlwaysCreate" was specified.
+       ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oy- /D WIN32 /D NDEBUG /D _WINDOWS /D _VC80_UPGRADE=0x0600 /Gm- /EHsc /MD /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Win32\Release\\" /Fd"Win32\Release\vc100.pdb" /Gd /TC /analyze- /errorReport:prompt ..\..\playmus.c
+         playmus.c
+     1>..\..\playmus.c(35): fatal error C1083: Cannot open include file: 'SDL.h': No such file or directory
+     1>Done Building Project "C:\ddksample\kingdom-src\SDL\SDL2_mixer-2.0.1\VisualC\playmus\playmus.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.14

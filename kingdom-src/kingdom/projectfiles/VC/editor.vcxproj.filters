@@ -1,0 +1,358 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+    <Filter Include="editor2">
+      <UniqueIdentifier>{4414f60a-af66-4cbd-996b-5559703bd45e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="basesource">
+      <UniqueIdentifier>{9ddb1662-918b-49fa-8d40-352828ee6005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\kingdom\editor2\win32x.cpp">
+      <Filter>basesource</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\xfunc.cpp">
+      <Filter>basesource</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\animation.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\book.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\config.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\DlgBuilderProc.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\DlgCampaignProc.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\DlgCoreProc.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\DlgDDescProc.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\DlgHEditorProc.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\DlgSyncProc.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\DlgTitleProc.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\DlgVisualProc.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\editor.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\event.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\faction.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\feature.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\formation.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\integrate.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\main.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\multiplayer.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\noble.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\rectangle.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\terrain.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\utype.cpp">
+      <Filter>editor2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\editor2\hero.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\kingdom\unit_types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\editor2\backup.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\backup_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\build.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\build_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\cancel.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\cancel_select.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\cancel_unselect.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\check.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\clock.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\del.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\del_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\device.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\dir.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\download.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\editor.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\evt_attribute.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\evt_command.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\evt_condition.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\evt_event.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\evt_filter.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\evt_if.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\evt_then.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\ini.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\new.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\new_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\ok.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\ok_select.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\ok_unselect.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\open.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\open_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\openpcdir.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\openpcdir_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\particular.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\reboot_disable.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\reboot_select.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\reboot_unselect.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\reboot_unselect_light.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\refresh.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\refresh_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\refresh_unselect.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\rename.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\rename_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\reset.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\reset_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\save.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\save_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\sync.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\sync_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_about.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_about_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_play.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_play_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_sync.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_sync_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_update.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_update_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_wgen.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_wgen_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_xchg.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\title_xchg_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\txt.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\uncheck.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\unknown.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\upload.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\welcome.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\with_sync.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\without_sync.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\xchg.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\src\editor2\xchg_dis.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\kingdom\editor2\resource.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\kingdom\editor2\win32x.h">
+      <Filter>basesource</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\xfunc.h">
+      <Filter>basesource</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\animation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\DlgBuilderProc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\DlgCampaignProc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\DlgCoreProc.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\editor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\event.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\integrate.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\multiplayer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\rectangle.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\kingdom\editor2\struct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

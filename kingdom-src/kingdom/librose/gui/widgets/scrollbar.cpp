@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/scrollbar.hpp"
 
@@ -97,7 +97,7 @@ void tscrollbar_::scroll(const tscroll scroll)
 			break;
 
 		default :
-			assert(false);
+			VALIDATE(false, null_str);
 		}
 }
 
@@ -127,7 +127,7 @@ void tscrollbar_::set_item_position(const unsigned item_position)
 
 	update_canvas();
 
-	assert(item_position_ <= item_count_ - visible_items_);
+	VALIDATE(item_position_ <= item_count_ - visible_items_, null_str);
 }
 
 void tscrollbar_::update_canvas() {
@@ -159,7 +159,7 @@ void tscrollbar_::recalculate()
 	const int available_length =
 		get_length() - offset_before() - offset_after();
 
-	assert(available_length > 0);
+	VALIDATE(available_length > 0, null_str);
 
 	// All visible.
 	if(item_count_ <= visible_items_) {
@@ -179,15 +179,14 @@ void tscrollbar_::recalculate()
 	 */
 	if(!visible_items_) {
 		twindow* window = get_window();
-		assert(window);
+		VALIDATE(window, null_str);
 		window->invalidate_layout();
 		ERR_GUI_G << LOG_HEADER
 				<< " Can't recalculate size, force a window layout phase.\n";
 		return;
 	}
 
-	assert(step_size_);
-	assert(visible_items_);
+	VALIDATE(step_size_ && visible_items_, null_str);
 
 	const unsigned steps = (item_count_ - visible_items_ + step_size_ - 1) / step_size_;
 
@@ -261,7 +260,7 @@ void tscrollbar_::move_positioner(const int distance)
 
 		child_callback_positioner_moved();
 
-		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		fire2(event::NOTIFY_MODIFIED, *this);
 
 //		positioner_moved_notifier_.notify();
 	}
@@ -308,7 +307,7 @@ void tscrollbar_::signal_handler_mouse_motion(
 		, const tpoint& coordinate)
 {
 	DBG_GUI_E << LOG_HEADER << ' ' << event << " at " << coordinate << ".\n";
-	if (!get_active()) {
+	if (!get_active() || is_fault_coordinate(coordinate.x, coordinate.y)) {
 		handled = true;
 		return;
 	}
@@ -344,7 +343,7 @@ void tscrollbar_::signal_handler_mouse_motion(
 			break;
 
 		default :
-			assert(false);
+			VALIDATE(false, null_str);
 	}
 	handled = true;
 }
@@ -357,7 +356,7 @@ void tscrollbar_::signal_handler_mouse_leave(
 		handled = true;
 		return;
 	}
-	if(state_ == FOCUSSED) {
+	if (state_ == FOCUSSED) {
 		set_state(ENABLED);
 	}
 	handled = true;
@@ -373,8 +372,8 @@ void tscrollbar_::signal_handler_left_button_down(
 	mouse.x -= get_x();
 	mouse.y -= get_y();
 
-	if(on_positioner(mouse)) {
-		assert(get_window());
+	if (on_positioner(mouse)) {
+		VALIDATE(get_window(), null_str);
 		mouse_ = mouse;
 		get_window()->mouse_capture();
 		set_state(PRESSED);
@@ -382,16 +381,16 @@ void tscrollbar_::signal_handler_left_button_down(
 
 	const int bar = on_bar(mouse);
 
-	if(bar == -1) {
+	if (bar == -1) {
 		scroll(HALF_JUMP_BACKWARDS);
-		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		fire2(event::NOTIFY_MODIFIED, *this);
 //		positioner_moved_notifier_.notify();
-	} else if(bar == 1) {
+	} else if (bar == 1) {
 		scroll(HALF_JUMP_FORWARD);
-		fire(event::NOTIFY_MODIFIED, *this, NULL);
+		fire2(event::NOTIFY_MODIFIED, *this);
 //		positioner_moved_notifier_.notify();
 	} else {
-		assert(bar == 0);
+		VALIDATE(bar == 0, null_str);
 	}
 
 	handled = true;
@@ -410,7 +409,7 @@ void tscrollbar_::signal_handler_left_button_up(
 		return;
 	}
 
-	assert(get_window());
+	VALIDATE(get_window(), null_str);
 	get_window()->mouse_capture(false);
 
 	if(on_positioner(mouse)) {

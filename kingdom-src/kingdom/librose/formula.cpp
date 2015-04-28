@@ -1,4 +1,3 @@
-/* $Id: formula.cpp 47608 2010-11-21 01:56:29Z shadowmaster $ */
 /*
    Copyright (C) 2007 by David White <dave.net>
    Part of the Silver Tree Project
@@ -20,6 +19,7 @@
 #include "formula_callable.hpp"
 #include "formula_function.hpp"
 #include "map_utils.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/foreach.hpp>
 
@@ -118,7 +118,7 @@ private:
 		std::stringstream s;
 		s << '[';
 		bool first_item = true;
-		BOOST_FOREACH (expression_ptr a , items_) {
+		BOOST_FOREACH(expression_ptr a , items_) {
 			if (!first_item) {
 				s << ',';
 			} else {
@@ -469,7 +469,7 @@ public:
 		std::stringstream s;
 		s << "{where:(";
 		s << body_->str();
-		BOOST_FOREACH (const expr_table::value_type &a, *clauses_) {
+		BOOST_FOREACH(const expr_table::value_type &a, *clauses_) {
 			s << ", [" << a.first << "] -> ["<< a.second->str()<<"]";
 		}
 		s << ")}";
@@ -504,7 +504,7 @@ private:
 
 class null_expression : public formula_expression {
 public:
-	explicit null_expression() {};
+	explicit null_expression() {}
 	std::string str() const {
 		return "";
 	}
@@ -635,7 +635,7 @@ int operator_precedence(const token& t)
 		precedence_map["+"]     = ++n;
 		precedence_map["-"]     = n;
 		precedence_map["*"]     = ++n;
-		precedence_map["/"]     = ++n;
+		precedence_map["/"]     = n;
 		precedence_map["%"]     = ++n;
 		precedence_map["^"]     = ++n;
 		precedence_map["d"]     = ++n;
@@ -955,7 +955,7 @@ expression_ptr parse_expression(const token* i1, const token* i2, function_symbo
 				std::vector<expression_ptr> args;
 				parse_args(i1+2,i2-1,&args,symbols);
 				try{
-					return expression_ptr( create_function(std::string(i1->begin,i1->end),args,symbols) );
+					return create_function(std::string(i1->begin,i1->end),args,symbols);
 				}
 				catch(formula_error& e) {
 					throw formula_error(e.type, tokens_to_string(begin,end), *i1->filename, i1->line_number);
@@ -1034,7 +1034,7 @@ formula::formula(const std::string& str, function_symbol_table* symbols) :
 
 			tokens.push_back( get_token(i1,i2) );
 
-			TOKEN_TYPE current_type = tokens.back().type;
+			formula_tokenizer::TOKEN_TYPE current_type = tokens.back().type;
 
 			if(current_type == TOKEN_WHITESPACE)  {
 				tokens.pop_back();
@@ -1133,6 +1133,8 @@ variant formula::execute(const formula_callable& variables, formula_debugger *fd
 	try {
 		return expr_->evaluate(variables, fdb);
 	} catch(type_error& e) {
+		VALIDATE(false, std::string("formula type error: ") + e.message);
+
 		std::cerr << "formula type error: " << e.message << "\n";
 		return variant();
 	}

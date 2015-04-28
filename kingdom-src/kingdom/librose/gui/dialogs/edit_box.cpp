@@ -13,14 +13,14 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/edit_box.hpp"
 
 #include "display.hpp"
 #include "gui/widgets/button.hpp"
 #include "gui/widgets/label.hpp"
-#include "gui/widgets/text_box.hpp"
+#include "gui/widgets/text_box2.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/scroll_label.hpp"
 #include "gui/widgets/toggle_button.hpp"
@@ -76,6 +76,8 @@ tedit_box::tedit_box(display& disp, tparam& param)
 
 void tedit_box::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	tlabel* label = find_widget<tlabel>(&window, "title", false, true);
 	if (!param_.title.empty()) {
 		label->set_label(param_.title);
@@ -84,16 +86,17 @@ void tedit_box::pre_show(CVideo& /*video*/, twindow& window)
 		label = find_widget<tlabel>(&window, "remark", false, true);
 		label->set_label(param_.remark);
 	}
-	if (!param_.tag.empty()) {
-		label = find_widget<tlabel>(&window, "tag", false, true);
-		label->set_label(param_.tag);
+
+	ttext_box2* user_widget = find_widget<ttext_box2>(&window, "txt", false, true);
+
+	user_widget->text_box().set_canvas_variable("cursor_color", variant(0x000000ff));
+	user_widget->text_box().set_integrate_default_color(font::BLACK_COLOR);
+	user_widget->text_box().set_default_label(tintegrate::generate_format(param_.tag, "gray"));
+	user_widget->text_box().set_value(param_.def);
+	if (param_.max_length != -1) {
+		user_widget->text_box().set_maximum_length(param_.max_length);
 	}
 
-	ttext_box* user_widget = find_widget<ttext_box>(&window, "txt", false, true);
-	user_widget->set_value(param_.def);
-	if (param_.max_length != -1) {
-		user_widget->set_maximum_length(param_.max_length);
-	}
 	if (param_.text_changed) {
 		user_widget->set_text_changed_callback(param_.text_changed);
 	}
@@ -111,12 +114,15 @@ void tedit_box::pre_show(CVideo& /*video*/, twindow& window)
 
 void tedit_box::post_show(twindow& window)
 {
+#if (defined(__APPLE__) && TARGET_OS_IPHONE) || defined(ANDROID)
+	SDL_StopTextInput();
+#endif
 }
 
 void tedit_box::create(twindow& window)
 {
-	ttext_box* widget = find_widget<ttext_box>(&window, "txt", false, true);
-	param_.result = widget->get_value();
+	ttext_box2* widget = find_widget<ttext_box2>(&window, "txt", false, true);
+	param_.result = widget->text_box().get_value();
 	if (param_.verify && !param_.verify(param_.result)) {
 		return;
 	}

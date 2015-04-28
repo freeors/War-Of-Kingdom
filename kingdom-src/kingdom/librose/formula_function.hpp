@@ -1,7 +1,6 @@
 
-/* $Id: formula_function.hpp 47646 2010-11-21 13:58:41Z mordante $ */
 /*
-   Copyright (C) 2008 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2008 - 2015 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify

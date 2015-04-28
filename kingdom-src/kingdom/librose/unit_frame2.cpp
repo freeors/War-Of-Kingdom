@@ -35,7 +35,7 @@ bool verify_render_image(int x, int y, const surface& image, const SDL_Rect& cli
 void unit_frame::redraw(const int frame_time,bool first_time,const map_location & src,const map_location & dst,int*halo_id,const frame_parameters & animation_val,const frame_parameters & engine_val)const
 {
 	const frame_parameters current_data = merge_parameters(frame_time,animation_val,engine_val);
-	if (current_data.screen_mode) {
+	if (current_data.area_mode) {
 		redraw_screen_mode(frame_time, first_time, src, current_data);
 		return;
 	}
@@ -182,7 +182,7 @@ void unit_frame::redraw_screen_mode(const int frame_time, bool first_time, const
 	double tmp_offset_y = current_data.offset_y;
 
 	display& disp = *display::get_singleton();
-	bool map = area_anim::rt.type == anim_map;
+	bool map = anim2::rt.type == anim_map;
 	image::locator image_loc = image::locator(current_data.image, current_data.image_mod);
 
 	if (first_time ) {
@@ -206,15 +206,15 @@ void unit_frame::redraw_screen_mode(const int frame_time, bool first_time, const
 		} else {
 			image = image::get_image(image_loc);
 			if (!image.null()) {
-				image = scale_surface(image, image.get()->w * area_anim::rt.zoomx, image.get()->h * area_anim::rt.zoomy);
+				image = scale_surface(image, image.get()->w * anim2::rt.zoomx, image.get()->h * anim2::rt.zoomy);
 			}
 		}
 	}
 
-	SDL_Rect map_area = !map? area_anim::rt.rect: disp.map_outside_area();
+	SDL_Rect map_area = !map? anim2::rt.rect: disp.map_outside_area();
 
-	double zoom_factor_x = !map? area_anim::rt.zoomx: disp.get_zoom_factor();
-	double zoom_factor_y = !map? area_anim::rt.zoomy: zoom_factor_x;
+	double zoom_factor_x = !map? anim2::rt.zoomx: disp.get_zoom_factor();
+	double zoom_factor_y = !map? anim2::rt.zoomy: zoom_factor_x;
 
 	const int x = static_cast<int>(tmp_offset_x * map_area.w) + (!map? map_area.x: 0);
 	const int y = static_cast<int>(tmp_offset_y * map_area.h) + (!map? map_area.y: 0);
@@ -251,7 +251,7 @@ void unit_frame::redraw_screen_mode(const int frame_time, bool first_time, const
 std::set<map_location> unit_frame::get_overlaped_hex(const int frame_time,const map_location & src,const map_location & dst,const frame_parameters & animation_val,const frame_parameters & engine_val) const
 {
 	const frame_parameters current_data = merge_parameters(frame_time,animation_val,engine_val);
-	if (current_data.screen_mode) {
+	if (current_data.area_mode) {
 		return get_overlaped_hex_area_mode(frame_time, current_data);
 	}
 
@@ -378,7 +378,7 @@ std::vector<SDL_Rect> unit_frame::get_overlaped_rect_area_mode(const int frame_t
 	double tmp_offset_y = current_data.offset_y;
 
 	display& disp = *display::get_singleton();
-	bool map = area_anim::rt.type == anim_map;
+	bool map = anim2::rt.type == anim_map;
 	image::locator image_loc = image::locator(current_data.image, current_data.image_mod);
 
 	surface image;
@@ -388,15 +388,15 @@ std::vector<SDL_Rect> unit_frame::get_overlaped_rect_area_mode(const int frame_t
 		} else {
 			image = image::get_image(image_loc);
 			if (!image.null()) {
-				image = scale_surface(image, image.get()->w * area_anim::rt.zoomx, image.get()->h * area_anim::rt.zoomy);
+				image = scale_surface(image, image.get()->w * anim2::rt.zoomx, image.get()->h * anim2::rt.zoomy);
 			}
 		}
 	}
 
-	SDL_Rect map_area = !map? area_anim::rt.rect: disp.map_outside_area();
+	SDL_Rect map_area = !map? anim2::rt.rect: disp.map_outside_area();
 
-	double zoom_factor_x = !map? area_anim::rt.zoomx: disp.get_zoom_factor();
-	double zoom_factor_y = !map? area_anim::rt.zoomy: zoom_factor_x;
+	double zoom_factor_x = !map? anim2::rt.zoomx: disp.get_zoom_factor();
+	double zoom_factor_y = !map? anim2::rt.zoomy: zoom_factor_x;
 
 	const int x = static_cast<int>(tmp_offset_x * map_area.w) + (!map? map_area.x: 0);
 	const int y = static_cast<int>(tmp_offset_y * map_area.h) + (!map? map_area.y: 0);
@@ -508,9 +508,16 @@ void unit_frame::replace_static_text(const std::string& src, const std::string& 
 
 void unit_frame::replace_int(const std::string& name, int src, int dst)
 {
-	if (builder_.text_color_ == (src & 0xffffff)) {
-		builder_.text_color_ = dst & 0xffffff;
-	}
+	if (name == "duration") {
+		if (builder_.duration_ == src) {
+			builder_.duration_ = dst;
+		}
+
+	} else if (name == "text_color") {
+		if (builder_.text_color_ == (src & 0xffffff)) {
+			builder_.text_color_ = dst & 0xffffff;
+		}
+	} 
 }
 
 
@@ -652,7 +659,7 @@ const frame_parameters unit_frame::merge_parameters(int current_time,const frame
 		else result.auto_vflip = t_true;
 	}
 
-	result.screen_mode = engine_val.screen_mode;
+	result.area_mode = engine_val.area_mode;
 	result.sound_filter = engine_val.sound_filter;
 
 	return result;

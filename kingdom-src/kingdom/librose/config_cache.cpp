@@ -13,12 +13,12 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "config_cache.hpp"
 #include "filesystem.hpp"
 #include "gettext.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 #include "log.hpp"
 #include "marked-up_text.hpp"
 #include "sha1.hpp"
@@ -42,7 +42,6 @@ namespace game_config {
 
 	config_cache::config_cache() :
 		force_valid_cache_(false),
-		use_cache_(true),
 		fake_invalid_cache_(false),
 		defines_map_()
 	{
@@ -140,92 +139,6 @@ namespace game_config {
 		read(cfg, *stream);
 	}
 
-	void config_cache::read_cache(const std::string& path, config& cfg)
-	{
-		const std::string extension = ".gz";
-		bool is_valid = true;
-		std::stringstream defines_string;
-		defines_string << path;
-		for(preproc_map::const_iterator i = defines_map_.begin(); i != defines_map_.end(); ++i) {
-			if(i->second.value != "" || i->second.arguments.empty() == false) {
-				is_valid = false;
-				break;
-			}
-
-			defines_string << " " << i->first;
-		}
-
-		// Do cache check only if  define map is valid and
-		// caching is allowed
-		if(is_valid) {
-			const std::string& cache = get_cache_dir();
-			if(cache != "") {
-				sha1_hash sha(defines_string.str()); // use a hash for a shorter display of the defines
-				const std::string fname = cache + "/cache-v" +
-					boost::algorithm::replace_all_copy(game_config::version, ":", "_") +
-					"-" + sha.display();
-				const std::string fname_checksum = fname + ".checksum" + extension;
-
-				file_tree_checksum dir_checksum;
-
-				if(!force_valid_cache_ && !fake_invalid_cache_) {
-					try {
-						if(file_exists(fname_checksum)) {
-							DBG_CACHE << "Reading checksum: " << fname_checksum << "\n";
-							config checksum_cfg;
-							read_file(fname_checksum, checksum_cfg);
-							dir_checksum = file_tree_checksum(checksum_cfg);
-						}
-					} catch(config::error&) {
-						ERR_CACHE << "cache checksum is corrupt\n";
-					} catch(io_exception&) {
-						ERR_CACHE << "error reading cache checksum\n";
-					}
-				}
-
-				if(file_exists(fname + extension) && (force_valid_cache_ || (dir_checksum == data_tree_checksum()))) {
-					try {
-						read_file(fname + extension,cfg);
-						const std::string define_file = fname + ".define" + extension;
-						if (file_exists(define_file))
-						{
-							config_cache_transaction::instance().add_define_file(define_file);
-						}
-						return;
-					} catch(config::error& e) {
-						ERR_CACHE << "cache " << fname << extension << " is corrupt. Loading from files: "<< e.message<<"\n";
-					} catch(io_exception&) {
-						ERR_CACHE << "error reading cache " << fname << extension << ". Loading from files\n";
-					}
-				}
-
-				// Now we need queued defines so read them to memory
-				read_defines_queue();
-
-				preproc_map copy_map(make_copy_map());
-
-				read_configs(path, cfg, copy_map);
-
-				add_defines_map_diff(copy_map);
-
-				try {
-					write_file(fname + extension, cfg);
-					write_file(fname + ".define" + extension, copy_map);
-					config checksum_cfg;
-					data_tree_checksum().write(checksum_cfg);
-					write_file(fname_checksum, checksum_cfg);
-				} catch(io_exception&) {
-					ERR_CACHE << "could not write to cache '" << fname << "'\n";
-				}
-				return;
-			}
-		}
-		preproc_map copy_map(make_copy_map());
-		read_configs(path, cfg, copy_map);
-		add_defines_map_diff(copy_map);
-	}
-
-
 	void config_cache::read_defines_file(const std::string& path)
 	{
 		config cfg;
@@ -254,24 +167,14 @@ namespace game_config {
 		// Make sure that we have fake transaction if no real one is going on
 		fake_transaction fake;
 
-		// if (use_cache_) {
-		if (false) {
-			read_cache(path, cfg);
-		} else {
-			preproc_map copy_map(make_copy_map());
-			read_configs(path, cfg, copy_map);
-			add_defines_map_diff(copy_map);
-		}
+		preproc_map copy_map(make_copy_map());
+		read_configs(path, cfg, copy_map);
+		add_defines_map_diff(copy_map);
 	}
 
 	void config_cache::set_force_invalid_cache(bool force)
 	{
 		fake_invalid_cache_ = force;
-	}
-
-	void config_cache::set_use_cache(bool use)
-	{
-		use_cache_ = use;
 	}
 
 	void config_cache::set_force_valid_cache(bool force)

@@ -47,9 +47,6 @@ struct tresolution_definition_
 	unsigned window_width;
 	unsigned window_height;
 
-	unsigned min_width;
-	unsigned min_height;
-
 	unsigned default_width;
 	unsigned default_height;
 

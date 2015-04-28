@@ -39,6 +39,8 @@ tnetdiag::~tnetdiag()
 
 void tnetdiag::pre_show(CVideo& /*video*/, twindow& window)
 {
+	window.set_canvas_variable("border", variant("default-border"));
+
 	log_ = &find_widget<tscroll_label>(&window, "log", false);
 	log_->set_label(lobby->format_log_str());
 	log_->set_scroll_to_end(true);

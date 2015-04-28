@@ -81,21 +81,18 @@ namespace game_config {
 	class config_cache : private boost::noncopyable {
 		private:
 
-		bool force_valid_cache_, use_cache_, fake_invalid_cache_;
+		bool force_valid_cache_, fake_invalid_cache_;
 		preproc_map defines_map_;
 
 		void read_file(const std::string& file, config& cfg);
 		void write_file(std::string file, const config& cfg);
 		void write_file(std::string file, const preproc_map&);
 
-		void read_cache(const std::string& path, config& cfg);
-
 		void read_configs(const std::string& path, config& cfg, preproc_map& defines);
 		void load_configs(const std::string& path, config& cfg);
 		void read_defines_queue();
 		void read_defines_file(const std::string& path);
 
-		preproc_map& make_copy_map();
 		void add_defines_map_diff(preproc_map&);
 
 		// Protected to let test code access
@@ -112,6 +109,9 @@ namespace game_config {
 		static config_cache& instance();
 
 		const preproc_map& get_preproc_map() const;
+
+		preproc_map& make_copy_map();
+
 		/**
 		 * Gets a config object from given @a path.
 		 * @param path file to load. Should be _main.cfg.
@@ -132,10 +132,6 @@ namespace game_config {
 		 **/
 		void remove_define(const std::string& define);
 
-		/**
-		 * Enable/disable caching
-		 **/
-		void set_use_cache(bool use);
 		/**
 		 * Enable/disable cache validation
 		 **/

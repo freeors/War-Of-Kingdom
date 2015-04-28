@@ -31,13 +31,18 @@ namespace events {
 class mouse_handler_base;
 }
 
-class controller_base : public events::handler
+class controller_base : public events::handler, public base_finger
 {
 public:
+	static std::set<std::string> theme_reserved_wml;
+	static bool is_theme_reserved(const std::string& key);
+
 	enum DIRECTION {UP, DOWN, LEFT, RIGHT, NORTH_EAST, SOUTH_EAST, SOUTH_WEST, NORTH_WEST};
 
 	controller_base(int ticks, const config& game_config, CVideo& video);
 	virtual ~controller_base();
+
+	virtual void set_zoom(int new_zoom) {}
 
 	void play_slice(bool is_delay_enabled = true);
 
@@ -59,8 +64,8 @@ public:
 	virtual bool can_execute_command(int command, const std::string& sparam) const { return true; }
 
 	// true: halt. false: continue to exectue base action.
-	virtual bool toggle_tabbar(gui2::twidget* widget) { return true; }
-	virtual void click_tabbar(gui2::twidget* widget, const std::string& sparam) {}
+	virtual bool toggle_report(gui2::twidget* widget) { return true; }
+	virtual bool click_report(gui2::twidget* widget) { return true; }
 
 	/**
 	 * Get a reference to a display member a derived class uses
@@ -68,6 +73,7 @@ public:
 	virtual display& get_display() = 0;
 	virtual const display& get_display() const = 0;
 
+	const config& core_config() const { return game_config_; }
 protected:
 	/**
 	 * Called by play_slice after events:: calls, but before processing scroll
@@ -123,11 +129,23 @@ protected:
 	 * Called after processing a mouse button up or down event
 	 * Overridden in derived classes
 	 */
-	virtual void post_mouse_press(const SDL_Event& event);
+	virtual void post_mouse_press(const SDL_MouseButtonEvent& button);
+
+	virtual void pinch_event(bool out) {};
 
 	bool handle_scroll_wheel(int dx, int dy, int hit_threshold, int motion_threshold);
-	const config &get_theme(const config& game_config, std::string theme_name);
 
+	// override base_finger
+	bool finger_coordinate_valid(int x, int y) const;
+	bool mouse_wheel_coordinate_valid(int x, int y) const;
+	void handle_swipe(int x, int y, int dx, int dy);
+	void handle_pinch(int x, int y, bool out);
+	void handle_mouse_down(const SDL_MouseButtonEvent& button);
+	void handle_mouse_up(const SDL_MouseButtonEvent& button);
+	void handle_mouse_motion(const SDL_MouseMotionEvent& motion);
+	void handle_mouse_wheel(const SDL_MouseWheelEvent& wheel, int x, int y, Uint8 mouse_flags);
+
+protected:
 	const config& game_config_;
 	const int ticks_;
 	CKey key_;
@@ -137,7 +155,6 @@ protected:
 	// finger motion result to scroll
 	bool finger_motion_scroll_;
 	int finger_motion_direction_;
-	bool wait_bh_event_;
 };
 
 

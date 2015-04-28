@@ -218,17 +218,17 @@ typedef FILE*			posix_file_t;
 #define posix_fopen(name, desired_access, create_disposition, file)	do { \
     char __mode[5];	\
 	int __mode_pos = 0;	\
-	if (desired_access & GENERIC_WRITE) {	\
-		__mode[__mode_pos ++] = 'w';	\
-	} else {	\
+    if (create_disposition == CREATE_ALWAYS) {  \
+        __mode[__mode_pos ++] = 'w';	\
+        __mode[__mode_pos ++] = '+';	\
+    } else {	\
 		__mode[__mode_pos ++] = 'r';	\
+        if (desired_access & GENERIC_WRITE) {    \
+            __mode[__mode_pos ++] = '+';	\
+        }   \
 	}	\
-	__mode_pos = 1;	\
 	if (!(desired_access & CONTENT_TXT)) {	\
 		__mode[__mode_pos ++] = 'b';	\
-	}	\
-	if (create_disposition == CREATE_ALWAYS) {	\
-		__mode[__mode_pos ++] = '+';	\
 	}	\
 	__mode[__mode_pos] = 0;	\
 	file = fopen(name, __mode);	\

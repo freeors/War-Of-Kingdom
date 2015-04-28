@@ -13,11 +13,12 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/widget_definition/slider.hpp"
 
 #include "gui/auxiliary/log.hpp"
+#include "gui/widgets/widget.hpp"
 #include "wml_exception.hpp"
 
 namespace gui2 {
@@ -88,6 +89,14 @@ tslider_definition::tresolution::tresolution(const config& cfg)
 			, missing_mandatory_wml_key(
 				  "resolution"
 				, "minimum_positioner_length"));
+
+	if (twidget::hdpi) {
+		minimum_positioner_length *= twidget::hdpi_ratio;
+		maximum_positioner_length *= twidget::hdpi_ratio;
+		left_offset *= twidget::hdpi_ratio;
+		right_offset*= twidget::hdpi_ratio;
+	}
+
 
 	// Note the order should be the same as the enum tstate is slider.hpp.
 	state.push_back(tstate_definition(cfg.child("state_enabled")));

@@ -38,6 +38,8 @@ namespace iterator {
 	class twalker_;
 } // namespace iterator
 
+#define is_fault_coordinate(x, y)	((x) == twidget::npos && (y) == twidget::npos)
+
 typedef std::map< std::string, t_string > string_map;
 
 /**
@@ -56,7 +58,32 @@ class twidget
 	friend class twindow; // needed for modifying the layout_size.
 
 public:
-	static const int npos = -1;
+	static const int npos;
+	static const std::string tpl_widget_id_prefix;
+
+	static bool reduce_width;
+	static std::set<twidget*> reduce_widgets;
+	static void insert_reduce_widget(twidget* widget, const tpoint& size);
+	class treduce_width_lock
+	{
+	public:
+		treduce_width_lock();
+		~treduce_width_lock();
+	};
+
+	static bool is_tpl_widget_id(const std::string& id);
+	
+	enum torientation {auto_orientation, landscape_orientation, portrait_orientation};
+	static bool current_landscape;
+	static bool landscape_from_orientation(torientation orientation, bool def);
+	static bool orientation_effect_resolution(const int width, const int height);
+	static tpoint toggle_orientation_size(int width, int height);
+
+	static bool hdpi;
+	static int hdpi_ratio;
+	static const int min_uneffectable_point;
+
+	enum tdrag_direction { drag_none, drag_left = 0x1, drag_right = 0x2, drag_up = 0x4, drag_down = 0x8, drag_track = 0x10};
 
 	/** @deprecated use the second overload. */
 	twidget();
@@ -120,6 +147,25 @@ public:
 		NOT_DRAWN
 	};
 
+	class tvisible_lock
+	{
+	public:
+		tvisible_lock(twidget& widget, tvisible into)
+			: widget_(widget)
+			, into_(into)
+		{
+			widget.set_visible(into);
+		}
+		~tvisible_lock()
+		{
+			widget_.set_visible(VISIBLE);
+		}
+
+	private:
+		twidget& widget_;
+		tvisible into_;
+	};
+
 	/***** ***** ***** ***** layout functions ***** ***** ***** *****/
 
 	/**
@@ -153,59 +199,6 @@ public:
 	virtual void layout_init(const bool full_initialization);
 
 	/**
-	 * Tries to reduce the width of a widget.
-	 *
-	 * This function tries to do it 'friendly' and only use scrollbars or
-	 * wrapping of the widget.
-	 *
-	 * @see @ref layout_algorithm for more information.
-	 *
-	 * @param maximum_width       The wanted maximum width.
-	 */
-	virtual void request_reduce_width(const unsigned maximum_width) = 0;
-
-	/**
-	 * Tries to reduce the width of a widget.
-	 *
-	 * This function does it more aggressive and should only be used when
-	 * using scrollbars and wrapping failed.
-	 *
-	 * @todo Make pure virtual.
-	 *
-	 * @see @ref layout_algorithm for more information.
-	 *
-	 * @param maximum_width       The wanted maximum width.
-	 */
-	virtual void demand_reduce_width(const unsigned /*maximum_width*/) {}
-
-	/**
-	 * Tries to reduce the height of a widget.
-	 *
-	 * This function tries to do it 'friendly' and only use scrollbars.
-	 *
-	 * @todo Make pure virtual.
-	 *
-	 * @see @ref layout_algorithm for more information.
-	 *
-	 * @param maximum_height      The wanted maximum height.
-	 */
-	virtual void request_reduce_height(const unsigned /*maximum_height*/) {}
-
-	/**
-	 * Tries to reduce the height of a widget.
-	 *
-	 * This function does it more aggressive and should only be used when
-	 * using scrollbars failed.
-	 *
-	 * @todo Make pure virtual.
-	 *
-	 * @see @ref layout_algorithm for more information.
-	 *
-	 * @param maximum_height      The wanted maximum height.
-	 */
-	virtual void demand_reduce_height(const unsigned /*maximum_height*/) {}
-
-	/**
 	 * Gets the best size for the widget.
 	 *
 	 * During the layout phase a best size will be determined, several stages
@@ -229,6 +222,7 @@ private:
 	 * @retval 0,0                   The best size is 0,0.
 	 */
 	virtual tpoint calculate_best_size() const = 0;
+
 public:
 
 	/**
@@ -359,7 +353,7 @@ public:
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 
-	twidget* parent() { return parent_; }
+	twidget* parent() const { return parent_; }
 	void set_parent(twidget* parent) { parent_ = parent; }
 
 	const std::string& id() const { return id_; }
@@ -408,7 +402,7 @@ public:
 	int fix_height() const { return fix_rect_.h; }
 
 	void set_cookie(void* cookie) { cookie_ = cookie; }
-	void* cookie() { return cookie_; }
+	void* cookie() const { return cookie_; }
 
 	/**
 	 * Moves a widget.
@@ -453,16 +447,6 @@ public:
 	bool get_dirty() const { return dirty_; }
 
 	void set_volatile(bool val) { volatile_ = val; }
-
-	void set_debug_border_mode(const unsigned debug_border_mode)
-	{
-		debug_border_mode_ = debug_border_mode;
-	}
-
-	void set_debug_border_color(const unsigned debug_border_color)
-	{
-		debug_border_color_ = debug_border_color;
-	}
 
 	/**
 	 * Calculates the blitting rectangle of the widget.
@@ -560,11 +544,20 @@ public:
 	void populate_dirty_list(twindow& caller,
 			std::vector<twidget*>& call_stack);
 
+	virtual void broadcast_frame_buffer(surface& frame_buffer) {}
+
 	virtual bool exist_anim() { return false; }
 
 	/***** ***** ***** setters / getters for members ***** ****** *****/
 	void set_layout_size(const tpoint& size);
 	const tpoint& layout_size() const { return layout_size_; }
+
+	virtual std::string generate_layout_str(const int level) const;
+
+	virtual tpoint request_reduce_width(const unsigned maximum_width) { return tpoint(0, 0); }
+
+	void set_drag(unsigned drag) { drag_ = drag; };
+	unsigned drag() const { return drag_; }
 
 private:
 
@@ -579,8 +572,7 @@ private:
 	 * @param call_stack          The callstack of widgets traversed to reach
 	 *                            this function.
 	 */
-	virtual void child_populate_dirty_list(twindow& /*caller*/,
-			const std::vector<twidget*>& /*call_stack*/) {}
+	virtual void child_populate_dirty_list(twindow& caller, const std::vector<twidget*>& call_stack) {}
 
 public:
 
@@ -588,6 +580,17 @@ public:
 	{
 		linked_group_ = linked_group;
 	}
+
+	/**
+	 * Returns the control_type of the control.
+	 *
+	 * The control_type parameter for tgui_definition::get_control() To keep the
+	 * code more generic this type is required so the controls need to return
+	 * the proper string here.  Might be used at other parts as well the get the
+	 * type of
+	 * control involved.
+	 */
+	virtual const std::string& get_control_type() const = 0;
 
 protected:
 	/** The x coordinate of the widget in the screen. */
@@ -605,7 +608,16 @@ protected:
 	/** The fix rect is a widget is fix rectangle. */
 	SDL_Rect fix_rect_;
 
+	/**
+	 * The parent widget, if the widget has a parent it contains a pointer to
+	 * the parent, else it's set to NULL.
+	 */
+	twidget* parent_;
+
 	void* cookie_;
+
+	unsigned drag_;
+
 private:
 
 	/**
@@ -617,12 +629,6 @@ private:
 	 * window, eg a listbox can have the same id for every row.
 	 */
 	std::string id_;
-
-	/**
-	 * The parent widget, if the widget has a parent it contains a pointer to
-	 * the parent, else it's set to NULL.
-	 */
-	twidget* parent_;
 
 	/**
 	 * Is the widget dirty? When a widget is dirty it needs to be redrawn at
@@ -668,35 +674,6 @@ private:
 	 * finalizer function.
 	 */
 	std::string linked_group_;
-
-	/**
-	 * Mode for drawing the debug border.
-	 *
-	 * The debug border is a helper border to determine where a widget is
-	 * placed. It's only intended for debugging purposes.
-	 *
-	 * Possible values:
-	 * - 0 no border
-	 * - 1 single pixel border
-	 * - 2 floodfilled rectangle
-	 */
-	unsigned debug_border_mode_;
-
-	/** The color for the debug border. */
-	unsigned debug_border_color_;
-
-	void draw_debug_border(surface& frame_buffer);
-	void draw_debug_border(surface& frame_buffer, int x_offset, int y_offset);
-
-#ifdef DEBUG_WINDOW_LAYOUT_GRAPHS
-	/**
-	 * Debug helper to store last value of get_best_size().
-	 *
-	 * We're mutable so calls can stay const and this is disabled in
-	 * production code.
-	 */
-	mutable tpoint last_best_size_;
-#endif
 
 	/** See draw_background(). */
 	virtual void impl_draw_background(

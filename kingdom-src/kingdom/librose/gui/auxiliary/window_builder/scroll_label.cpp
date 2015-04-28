@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/window_builder/scroll_label.hpp"
 
@@ -57,8 +57,8 @@ twidget* tbuilder_scroll_label::build() const
 	widget->init_grid(conf->grid);
 	widget->finalize_setup();
 
-	tlabel* label = dynamic_cast<tlabel*>(widget->content_grid()->find("_label", false));
-	widget->set_text_editable(true);
+	// tlabel* label = dynamic_cast<tlabel*>(widget->content_grid()->find("_label", false));
+	// widget->set_text_editable(true);
 
 	DBG_GUI_G << "Window builder: placed scroll label '"
 			<< id << "' with definition '"

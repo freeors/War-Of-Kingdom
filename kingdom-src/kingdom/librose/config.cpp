@@ -27,6 +27,7 @@
 #include "util.hpp"
 #include <boost/foreach.hpp>
 #include "utils/const_clone.tpp"
+#include "wml_exception.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -274,14 +275,12 @@ const char* config::diff_track_attribute = "__diff_track";
 
 void config::check_valid() const
 {
-	if (!*this)
-		throw error("Mandatory WML child missing yet untested for. Please report.");
+	VALIDATE(*this, "Mandatory WML child missing yet untested for. Please report.");
 }
 
 void config::check_valid(const config &cfg) const
 {
-	if (!*this || !cfg)
-		throw error("Mandatory WML child missing yet untested for. Please report.");
+	VALIDATE(*this && cfg, "Mandatory WML child missing yet untested for. Please report.");
 }
 
 config::config() : values(), children(), ordered_children()

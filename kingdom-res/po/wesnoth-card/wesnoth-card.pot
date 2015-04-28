@@ -2,1903 +2,2496 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: wesnoth-card\n"
 "Report-Msgid-Bugs-To: http://bugs.wesnoth.org/\n"
-"POT-Creation-Date: 2010-12-08 18:05+0100\n"
+"POT-Creation-Date: 2016-02-04 21:13+0800\n"
 "PO-Revision-Date: 2013-01-03 10:35+0800\n"
 "Last-Translator: ancientcc <ancientcc@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.5.4\n"
+"X-Generator: Poedit 1.8.6\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-Basepath: ../cfg-cpp/wesnoth-card\n"
+"X-Poedit-KeywordsList: _;vgettext2\n"
+"X-Poedit-SearchPath-0: .\n"
 
-#
-# card section
-#
+#: _bonus.cpp:1
 msgid "None"
 msgstr ""
 
+#: _bonus.cpp:3
 msgid "Single"
 msgstr ""
 
+#: _bonus.cpp:5
 msgid "Multi"
 msgstr ""
 
+#: _bonus.cpp:7 data.cpp:1
 msgid "Loyaltys +10"
 msgstr ""
 
+#: _bonus.cpp:9 data.cpp:11
 msgid "loyaltys +10 description"
 msgstr ""
 
+#: _bonus.cpp:11
 msgid "Multi-munitions +10"
 msgstr ""
 
+#: _bonus.cpp:13
 msgid "multi-munitions +10 description"
 msgstr ""
 
+#: _bonus.cpp:15 data.cpp:5
 msgid "Office"
 msgstr ""
 
+#: _bonus.cpp:17 data.cpp:15
 msgid "office description"
 msgstr ""
 
+#: _bonus.cpp:19 data.cpp:9
 msgid "Wander"
 msgstr ""
 
+#: _bonus.cpp:21 data.cpp:19
 msgid "wander description"
 msgstr ""
 
+#: _bonus.cpp:23
 msgid "Advance"
 msgstr ""
 
+#: _bonus.cpp:25
 msgid "advance description"
 msgstr ""
 
+#: _bonus.cpp:27 data.cpp:7
 msgid "Train"
 msgstr ""
 
+#: _bonus.cpp:29 data.cpp:17
 msgid "train description"
 msgstr ""
 
+#: _bonus.cpp:31
 msgid "Communicate"
 msgstr ""
 
+#: _bonus.cpp:33
 msgid "communicate description"
 msgstr ""
 
+#: _bonus.cpp:35 data.cpp:3
 msgid "Move"
 msgstr ""
 
+#: _bonus.cpp:37 data.cpp:13
 msgid "move description"
 msgstr ""
 
-#
-# technology section
-#
+#: _bonus.cpp:39
 msgid "technology-footman hp"
 msgstr ""
 
+#: _bonus.cpp:41
 msgid "technology_desc-footman hp"
 msgstr ""
 
+#: _bonus.cpp:43
 msgid "technology-horseman hp"
 msgstr ""
 
+#: _bonus.cpp:45
 msgid "technology_desc-horseman hp"
 msgstr ""
 
+#: _bonus.cpp:47
 msgid "technology-enginery hp"
 msgstr ""
 
+#: _bonus.cpp:49
 msgid "technology_desc-enginery hp"
 msgstr ""
 
+#: _bonus.cpp:51
 msgid "technology-academy hp"
 msgstr ""
 
+#: _bonus.cpp:53
 msgid "technology_desc-academy hp"
 msgstr ""
 
+#: _bonus.cpp:55
 msgid "technology-footman attack"
 msgstr ""
 
+#: _bonus.cpp:57
 msgid "technology_desc-footman attack"
 msgstr ""
 
+#: _bonus.cpp:59
 msgid "technology-horseman attack"
 msgstr ""
 
+#: _bonus.cpp:61
 msgid "technology_desc-horseman attack"
 msgstr ""
 
+#: _bonus.cpp:63
 msgid "technology-enginery attack"
 msgstr ""
 
+#: _bonus.cpp:65
 msgid "technology_desc-enginery attack"
 msgstr ""
 
+#: _bonus.cpp:67
 msgid "technology-academy attack"
 msgstr ""
 
+#: _bonus.cpp:69
 msgid "technology_desc-academy attack"
 msgstr ""
 
+#: _bonus.cpp:71
 msgid "technology-footman defend"
 msgstr ""
 
+#: _bonus.cpp:73
 msgid "technology_desc-footman defend"
 msgstr ""
 
+#: _bonus.cpp:75
 msgid "technology-horseman defend"
 msgstr ""
 
+#: _bonus.cpp:77
 msgid "technology_desc-horseman defend"
 msgstr ""
 
+#: _bonus.cpp:79
 msgid "technology-enginery defend"
 msgstr ""
 
+#: _bonus.cpp:81
 msgid "technology_desc-enginery defend"
 msgstr ""
 
+#: _bonus.cpp:83
 msgid "technology-academy defend"
 msgstr ""
 
+#: _bonus.cpp:85
 msgid "technology_desc-academy defend"
 msgstr ""
 
+#: _bonus.cpp:87
 msgid "technology-footman"
 msgstr ""
 
+#: _bonus.cpp:89
 msgid "technology_desc-footman"
 msgstr ""
 
+#: _bonus.cpp:91
 msgid "technology-horseman"
 msgstr ""
 
+#: _bonus.cpp:93
 msgid "technology_desc-horseman"
 msgstr ""
 
+#: _bonus.cpp:95
 msgid "technology-enginery"
 msgstr ""
 
+#: _bonus.cpp:97
 msgid "technology_desc-enginery"
 msgstr ""
 
+#: _bonus.cpp:99
 msgid "technology-academy"
 msgstr ""
 
+#: _bonus.cpp:101
 msgid "technology_desc-academy"
 msgstr ""
 
+#: _bonus.cpp:103
 msgid "technology-navy"
 msgstr ""
 
+#: _bonus.cpp:105
 msgid "technology_desc-navy"
 msgstr ""
 
+#: _bonus.cpp:107
 msgid "technology-leadership"
 msgstr ""
 
+#: _bonus.cpp:109
 msgid "technology_desc-leadership"
 msgstr ""
 
+#: _bonus.cpp:111
 msgid "technology-force"
 msgstr ""
 
+#: _bonus.cpp:113
 msgid "technology_desc-force"
 msgstr ""
 
+#: _bonus.cpp:115
 msgid "technology-intellect"
 msgstr ""
 
+#: _bonus.cpp:117
 msgid "technology_desc-intellect"
 msgstr ""
 
+#: _bonus.cpp:119
 msgid "technology-politics"
 msgstr ""
 
+#: _bonus.cpp:121
 msgid "technology_desc-politics"
 msgstr ""
 
+#: _bonus.cpp:123
 msgid "technology-charm"
 msgstr ""
 
+#: _bonus.cpp:125
 msgid "technology_desc-charm"
 msgstr ""
 
+#: _bonus.cpp:127
 msgid "technology-build"
 msgstr ""
 
+#: _bonus.cpp:129
 msgid "technology_desc-build"
 msgstr ""
 
+#: _bonus.cpp:131
 msgid "technology-repair"
 msgstr ""
 
+#: _bonus.cpp:133
 msgid "technology_desc-repair"
 msgstr ""
 
+#: _bonus.cpp:135
 msgid "technology-drill"
 msgstr ""
 
+#: _bonus.cpp:137
 msgid "technology_desc-drill"
 msgstr ""
 
+#: _bonus.cpp:139
 msgid "technology-tactic degree"
 msgstr ""
 
+#: _bonus.cpp:141
 msgid "technology_desc-tactic degree"
 msgstr ""
 
+#: _bonus.cpp:143
 msgid "technology-ticks"
 msgstr ""
 
+#: _bonus.cpp:145
 msgid "technology_desc-ticks"
 msgstr ""
 
+#: _bonus.cpp:147
 msgid "technology-balefire"
 msgstr ""
 
+#: _bonus.cpp:149
 msgid "technology_desc-balefire"
 msgstr ""
 
+#: _bonus.cpp:151
 msgid "technology-sneak attack"
 msgstr ""
 
+#: _bonus.cpp:153
 msgid "technology_desc-sneak attack"
 msgstr ""
 
+#: _bonus.cpp:155
 msgid "technology-interlink"
 msgstr ""
 
+#: _bonus.cpp:157
 msgid "technology_desc-interlink"
 msgstr ""
 
+#: _bonus.cpp:159
 msgid "technology-cooperate"
 msgstr ""
 
+#: _bonus.cpp:161
 msgid "technology_desc-cooperate"
 msgstr ""
 
+#: _bonus.cpp:163
 msgid "technology-police"
 msgstr ""
 
+#: _bonus.cpp:165
 msgid "technology_desc-police"
 msgstr ""
 
+#: _bonus.cpp:167
 msgid "technology-morale"
 msgstr ""
 
+#: _bonus.cpp:169
 msgid "technology_desc-morale"
 msgstr ""
 
+#: _bonus.cpp:171
 msgid "technology-commercial"
 msgstr ""
 
+#: _bonus.cpp:173
 msgid "technology_desc-commercial"
 msgstr ""
 
+#: _bonus.cpp:175
 msgid "technology-technology"
 msgstr ""
 
+#: _bonus.cpp:177
 msgid "technology_desc-technology"
 msgstr ""
 
+#: _bonus.cpp:179
 msgid "technology-hot blooded"
 msgstr ""
 
+#: _bonus.cpp:181
 msgid "technology_desc-hot blooded"
 msgstr ""
 
+#: _bonus.cpp:183
 msgid "technology-smelt"
 msgstr ""
 
+#: _bonus.cpp:185
 msgid "technology_desc-smelt"
 msgstr ""
 
+#: _bonus.cpp:187
 msgid "technology-armature"
 msgstr ""
 
+#: _bonus.cpp:189
 msgid "technology_desc-armature"
 msgstr ""
 
+#: _bonus.cpp:191
 msgid "technology-agriculture"
 msgstr ""
 
+#: _bonus.cpp:193
 msgid "technology_desc-agriculture"
 msgstr ""
 
+#: _bonus.cpp:195
 msgid "technology-grassland"
 msgstr ""
 
+#: _bonus.cpp:197
 msgid "technology_desc-grassland"
 msgstr ""
 
+#: _bonus.cpp:199
 msgid "technology-navigation"
 msgstr ""
 
+#: _bonus.cpp:201
 msgid "technology_desc-navigation"
 msgstr ""
 
+#: _bonus.cpp:203
 msgid "technology-school"
 msgstr ""
 
+#: _bonus.cpp:205
 msgid "technology_desc-school"
 msgstr ""
 
+#: _bonus.cpp:207
 msgid "technology-mage"
 msgstr ""
 
+#: _bonus.cpp:209
 msgid "technology_desc-mage"
 msgstr ""
 
+#: _bonus.cpp:211
 msgid "technology-camouflage"
 msgstr ""
 
+#: _bonus.cpp:213
 msgid "technology_desc-camouflage"
 msgstr ""
 
+#: _bonus.cpp:215
 msgid "technology-strategic"
 msgstr ""
 
+#: _bonus.cpp:217
 msgid "technology_desc-strategic"
 msgstr ""
 
-
+#: _bonus.cpp:220
 msgid "technology-xue zhong song tan"
 msgstr ""
 
+#: _bonus.cpp:222
 msgid "technology_desc-xue zhong song tan"
 msgstr ""
 
+#: _bonus.cpp:224
 msgid "technology-miao shou hui chun"
 msgstr ""
 
+#: _bonus.cpp:226
 msgid "technology_desc-miao shou hui chun"
 msgstr ""
 
+#: _bonus.cpp:228
 msgid "technology-xiao li cang dao"
 msgstr ""
 
+#: _bonus.cpp:230
 msgid "technology_desc-xiao li cang dao"
 msgstr ""
 
+#: _bonus.cpp:232
 msgid "technology-sheng dong ji xi"
 msgstr ""
 
+#: _bonus.cpp:234
 msgid "technology_desc-sheng dong ji xi"
 msgstr ""
 
+#: _bonus.cpp:236
 msgid "technology-jiang lang cai jin"
 msgstr ""
 
+#: _bonus.cpp:238
 msgid "technology_desc-jiang lang cai jin"
 msgstr ""
 
-#
-# character section
-#
+#: _bonus.cpp:243
 msgid "character-aggressive"
 msgstr ""
 
+#: _bonus.cpp:245
 msgid "character_desc-aggressive"
 msgstr ""
 
+#: _bonus.cpp:247
 msgid "character-united"
 msgstr ""
 
+#: _bonus.cpp:249
 msgid "character_desc-united"
 msgstr ""
 
+#: _bonus.cpp:251
 msgid "character-charismatic"
 msgstr ""
 
+#: _bonus.cpp:253
 msgid "character_desc-charismatic"
 msgstr ""
 
+#: _bonus.cpp:255
 msgid "character-creative"
 msgstr ""
 
+#: _bonus.cpp:257
 msgid "character_desc-creative"
 msgstr ""
 
+#: _bonus.cpp:259
 msgid "character-expansive"
 msgstr ""
 
+#: _bonus.cpp:261
 msgid "character_desc-expansive"
 msgstr ""
 
+#: _bonus.cpp:263
 msgid "character-financial"
 msgstr ""
 
+#: _bonus.cpp:265
 msgid "character_desc-financial"
 msgstr ""
 
+#: _bonus.cpp:267
 msgid "character-industrious"
 msgstr ""
 
+#: _bonus.cpp:269
 msgid "character_desc-industrious"
 msgstr ""
 
+#: _bonus.cpp:271
 msgid "character-organized"
 msgstr ""
 
+#: _bonus.cpp:273
 msgid "character_desc-organized"
 msgstr ""
 
+#: _bonus.cpp:275
 msgid "character-protective"
 msgstr ""
 
+#: _bonus.cpp:277
 msgid "character_desc-protective"
 msgstr ""
 
+#: _bonus.cpp:279
 msgid "character-philosophical"
 msgstr ""
 
+#: _bonus.cpp:281
 msgid "character_desc-philosophical"
 msgstr ""
 
+#: _bonus.cpp:283
 msgid "character-spiritual"
 msgstr ""
 
+#: _bonus.cpp:285
 msgid "character_desc-spiritual"
 msgstr ""
 
+#: _bonus.cpp:287
 msgid "character-imperialistic"
 msgstr ""
 
+#: _bonus.cpp:289
 msgid "character_desc-imperialistic"
 msgstr ""
 
+#: _bonus.cpp:291
 msgid "character-ambitious"
 msgstr ""
 
+#: _bonus.cpp:293
 msgid "character_desc-ambitious"
 msgstr ""
 
-#
-# decree section
-#
+#: _bonus.cpp:298
 msgid "decree-business"
 msgstr ""
 
+#: _bonus.cpp:300
 msgid "decree_desc-business"
 msgstr ""
 
+#: _bonus.cpp:302
 msgid "decree-technology"
 msgstr ""
 
+#: _bonus.cpp:304
 msgid "decree_desc-technology"
 msgstr ""
 
+#: _bonus.cpp:306
 msgid "decree-demolish"
 msgstr ""
 
+#: _bonus.cpp:308
 msgid "decree_desc-demolish"
 msgstr ""
 
+#: _bonus.cpp:310
 msgid "decree-heal"
 msgstr ""
 
+#: _bonus.cpp:312
 msgid "decree_desc-heal"
 msgstr ""
 
+#: _bonus.cpp:314
 msgid "decree-interior"
 msgstr ""
 
+#: _bonus.cpp:316
 msgid "decree_desc-interior"
 msgstr ""
 
-#
-# especial
-#
+#: _bonus.cpp:321
 msgid "especial-0"
 msgstr ""
 
+#: _bonus.cpp:323
 msgid "especial-1"
 msgstr ""
 
+#: _bonus.cpp:325
 msgid "especial-2"
 msgstr ""
 
+#: _bonus.cpp:327
 msgid "especial-3"
 msgstr ""
 
+#: _bonus.cpp:329
 msgid "especial-4"
 msgstr ""
 
+#: _bonus.cpp:331
 msgid "especial-5"
 msgstr ""
 
+#: _bonus.cpp:333
 msgid "especial-6"
 msgstr ""
 
+#: _bonus.cpp:335
 msgid "especial-7"
 msgstr ""
 
+#: _bonus.cpp:337
 msgid "especial-8"
 msgstr ""
 
+#: _bonus.cpp:339
 msgid "especial-9"
 msgstr ""
 
+#: _bonus.cpp:341
 msgid "especial-10"
 msgstr ""
 
+#: _bonus.cpp:343
 msgid "especial-11"
 msgstr ""
 
+#: _bonus.cpp:345
 msgid "especial-12"
 msgstr ""
 
+#: _bonus.cpp:347
 msgid "especial-13"
 msgstr ""
 
+#: _bonus.cpp:349
 msgid "especial-14"
 msgstr ""
 
+#: _bonus.cpp:351
 msgid "especial-15"
 msgstr ""
 
+#: _bonus.cpp:353
 msgid "treasure-0"
 msgstr ""
 
+#: _bonus.cpp:355
 msgid "treasure-1"
 msgstr ""
 
+#: _bonus.cpp:357
 msgid "treasure-2"
 msgstr ""
 
+#: _bonus.cpp:359
 msgid "treasure-3"
 msgstr ""
 
+#: _bonus.cpp:361
 msgid "treasure-4"
 msgstr ""
 
+#: _bonus.cpp:363
 msgid "treasure-5"
 msgstr ""
 
+#: _bonus.cpp:365
 msgid "treasure-6"
 msgstr ""
 
+#: _bonus.cpp:367
 msgid "treasure-7"
 msgstr ""
 
+#: _bonus.cpp:369
 msgid "treasure-8"
 msgstr ""
 
+#: _bonus.cpp:371
 msgid "treasure-9"
 msgstr ""
 
+#: _bonus.cpp:373
 msgid "treasure-10"
 msgstr ""
 
+#: _bonus.cpp:375
 msgid "treasure-11"
 msgstr ""
 
+#: _bonus.cpp:377
 msgid "treasure-12"
 msgstr ""
 
+#: _bonus.cpp:379
 msgid "treasure-13"
 msgstr ""
 
+#: _bonus.cpp:381
 msgid "treasure-14"
 msgstr ""
 
+#: _bonus.cpp:383
 msgid "treasure-15"
 msgstr ""
 
+#: _bonus.cpp:385
 msgid "treasure-16"
 msgstr ""
 
+#: _bonus.cpp:387
 msgid "treasure-17"
 msgstr ""
 
+#: _bonus.cpp:389
 msgid "treasure-18"
 msgstr ""
 
+#: _bonus.cpp:391
 msgid "treasure-19"
 msgstr ""
 
+#: _bonus.cpp:393
 msgid "treasure-20"
 msgstr ""
 
+#: _bonus.cpp:395
 msgid "treasure-21"
 msgstr ""
 
+#: _bonus.cpp:397
 msgid "treasure-22"
 msgstr ""
 
+#: _bonus.cpp:399
 msgid "treasure-23"
 msgstr ""
 
+#: _bonus.cpp:401
 msgid "treasure-24"
 msgstr ""
 
+#: _bonus.cpp:403
 msgid "treasure-25"
 msgstr ""
 
+#: _bonus.cpp:405
 msgid "treasure-26"
 msgstr ""
 
+#: _bonus.cpp:407
 msgid "treasure-27"
 msgstr ""
 
+#: _bonus.cpp:409
 msgid "treasure-28"
 msgstr ""
 
+#: _bonus.cpp:411
 msgid "treasure-29"
 msgstr ""
 
+#: _bonus.cpp:413
 msgid "treasure-30"
 msgstr ""
 
+#: _bonus.cpp:415
 msgid "treasure-31"
 msgstr ""
 
+#: _bonus.cpp:417
 msgid "treasure-32"
 msgstr ""
 
+#: _bonus.cpp:419
 msgid "treasure-33"
 msgstr ""
 
+#: _bonus.cpp:421
 msgid "treasure-34"
 msgstr ""
 
+#: _bonus.cpp:423
 msgid "treasure-35"
 msgstr ""
 
+#: _bonus.cpp:425
 msgid "treasure-36"
 msgstr ""
 
+#: _bonus.cpp:427
 msgid "treasure-37"
 msgstr ""
 
+#: _bonus.cpp:429
 msgid "treasure-38"
 msgstr ""
 
+#: _bonus.cpp:431
 msgid "treasure-39"
 msgstr ""
 
+#: _bonus.cpp:433
 msgid "treasure-40"
 msgstr ""
 
+#: _bonus.cpp:435
 msgid "treasure-41"
 msgstr ""
 
+#: _bonus.cpp:437
 msgid "treasure-42"
 msgstr ""
 
+#: _bonus.cpp:439
 msgid "treasure-43"
 msgstr ""
 
+#: _bonus.cpp:441
 msgid "treasure-44"
 msgstr ""
 
+#: _bonus.cpp:443
 msgid "treasure-45"
 msgstr ""
 
+#: _bonus.cpp:445
 msgid "treasure-46"
 msgstr ""
 
+#: _bonus.cpp:447
 msgid "treasure-47"
 msgstr ""
 
+#: _bonus.cpp:449
 msgid "treasure-48"
 msgstr ""
 
+#: _bonus.cpp:451
 msgid "treasure-49"
 msgstr ""
 
+#: _bonus.cpp:453
 msgid "feature-0"
 msgstr ""
 
+#: _bonus.cpp:455
 msgid "feature_desc-0"
 msgstr ""
 
+#: _bonus.cpp:457
 msgid "feature-1"
 msgstr ""
 
+#: _bonus.cpp:459
 msgid "feature_desc-1"
 msgstr ""
 
+#: _bonus.cpp:461
 msgid "feature-2"
 msgstr ""
 
+#: _bonus.cpp:463
 msgid "feature_desc-2"
 msgstr ""
 
+#: _bonus.cpp:465
 msgid "feature-3"
 msgstr ""
 
+#: _bonus.cpp:467
 msgid "feature_desc-3"
 msgstr ""
 
+#: _bonus.cpp:469
 msgid "feature-4"
 msgstr ""
 
+#: _bonus.cpp:471
 msgid "feature_desc-4"
 msgstr ""
 
+#: _bonus.cpp:473
 msgid "feature-5"
 msgstr ""
 
+#: _bonus.cpp:475
 msgid "feature_desc-5"
 msgstr ""
 
+#: _bonus.cpp:477
 msgid "feature-6"
 msgstr ""
 
+#: _bonus.cpp:479
 msgid "feature_desc-6"
 msgstr ""
 
+#: _bonus.cpp:481
 msgid "feature-7"
 msgstr ""
 
+#: _bonus.cpp:483
 msgid "feature_desc-7"
 msgstr ""
 
+#: _bonus.cpp:485
 msgid "feature-8"
 msgstr ""
 
+#: _bonus.cpp:487
 msgid "feature_desc-8"
 msgstr ""
 
+#: _bonus.cpp:489
 msgid "feature-9"
 msgstr ""
 
+#: _bonus.cpp:491
 msgid "feature_desc-9"
 msgstr ""
 
+#: _bonus.cpp:493
 msgid "feature-10"
 msgstr ""
 
+#: _bonus.cpp:495
 msgid "feature_desc-10"
 msgstr ""
 
+#: _bonus.cpp:497
 msgid "feature-11"
 msgstr ""
 
+#: _bonus.cpp:499
 msgid "feature_desc-11"
 msgstr ""
 
+#: _bonus.cpp:501
 msgid "feature-12"
 msgstr ""
 
+#: _bonus.cpp:503
 msgid "feature_desc-12"
 msgstr ""
 
+#: _bonus.cpp:505
 msgid "feature-13"
 msgstr ""
 
+#: _bonus.cpp:507
 msgid "feature_desc-13"
 msgstr ""
 
+#: _bonus.cpp:509
 msgid "feature-14"
 msgstr ""
 
+#: _bonus.cpp:511
 msgid "feature_desc-14"
 msgstr ""
 
+#: _bonus.cpp:513
 msgid "feature-15"
 msgstr ""
 
+#: _bonus.cpp:515
 msgid "feature_desc-15"
 msgstr ""
 
+#: _bonus.cpp:517
 msgid "feature-16"
 msgstr ""
 
+#: _bonus.cpp:519
 msgid "feature_desc-16"
 msgstr ""
 
+#: _bonus.cpp:521
 msgid "feature-17"
 msgstr ""
 
+#: _bonus.cpp:523
 msgid "feature_desc-17"
 msgstr ""
 
+#: _bonus.cpp:525
 msgid "feature-18"
 msgstr ""
 
+#: _bonus.cpp:527
 msgid "feature_desc-18"
 msgstr ""
 
+#: _bonus.cpp:529
 msgid "feature-19"
 msgstr ""
 
+#: _bonus.cpp:531
 msgid "feature_desc-19"
 msgstr ""
 
+#: _bonus.cpp:533
 msgid "feature-20"
 msgstr ""
 
+#: _bonus.cpp:535
 msgid "feature_desc-20"
 msgstr ""
 
+#: _bonus.cpp:537
 msgid "feature-21"
 msgstr ""
 
+#: _bonus.cpp:539
 msgid "feature_desc-21"
 msgstr ""
 
+#: _bonus.cpp:541
 msgid "feature-22"
 msgstr ""
 
+#: _bonus.cpp:543
 msgid "feature_desc-22"
 msgstr ""
 
+#: _bonus.cpp:545
 msgid "feature-23"
 msgstr ""
 
+#: _bonus.cpp:547
 msgid "feature_desc-23"
 msgstr ""
 
+#: _bonus.cpp:549
 msgid "feature-24"
 msgstr ""
 
+#: _bonus.cpp:551
 msgid "feature_desc-24"
 msgstr ""
 
+#: _bonus.cpp:553
 msgid "feature-25"
 msgstr ""
 
+#: _bonus.cpp:555
 msgid "feature_desc-25"
 msgstr ""
 
+#: _bonus.cpp:557
 msgid "feature-26"
 msgstr ""
 
+#: _bonus.cpp:559
 msgid "feature_desc-26"
 msgstr ""
 
+#: _bonus.cpp:561
 msgid "feature-27"
 msgstr ""
 
+#: _bonus.cpp:563
 msgid "feature_desc-27"
 msgstr ""
 
+#: _bonus.cpp:565
 msgid "feature-28"
 msgstr ""
 
+#: _bonus.cpp:567
 msgid "feature_desc-28"
 msgstr ""
 
+#: _bonus.cpp:569
 msgid "feature-29"
 msgstr ""
 
+#: _bonus.cpp:571
 msgid "feature_desc-29"
 msgstr ""
 
+#: _bonus.cpp:573
 msgid "feature-30"
 msgstr ""
 
+#: _bonus.cpp:575
 msgid "feature_desc-30"
 msgstr ""
 
+#: _bonus.cpp:577
 msgid "feature-31"
 msgstr ""
 
+#: _bonus.cpp:579
 msgid "feature_desc-31"
 msgstr ""
 
+#: _bonus.cpp:581
 msgid "feature-32"
 msgstr ""
 
+#: _bonus.cpp:583
 msgid "feature_desc-32"
 msgstr ""
 
+#: _bonus.cpp:585
 msgid "feature-33"
 msgstr ""
 
+#: _bonus.cpp:587
 msgid "feature_desc-33"
 msgstr ""
 
+#: _bonus.cpp:589
 msgid "feature-34"
 msgstr ""
 
+#: _bonus.cpp:591
 msgid "feature_desc-34"
 msgstr ""
 
+#: _bonus.cpp:593
 msgid "feature-35"
 msgstr ""
 
+#: _bonus.cpp:595
 msgid "feature_desc-35"
 msgstr ""
 
+#: _bonus.cpp:597
 msgid "feature-36"
 msgstr ""
 
+#: _bonus.cpp:599
 msgid "feature_desc-36"
 msgstr ""
 
+#: _bonus.cpp:601
 msgid "feature-37"
 msgstr ""
 
+#: _bonus.cpp:603
 msgid "feature_desc-37"
 msgstr ""
 
+#: _bonus.cpp:605
 msgid "feature-38"
 msgstr ""
 
+#: _bonus.cpp:607
 msgid "feature_desc-38"
 msgstr ""
 
+#: _bonus.cpp:609
 msgid "feature-39"
 msgstr ""
 
+#: _bonus.cpp:611
 msgid "feature_desc-39"
 msgstr ""
 
+#: _bonus.cpp:613
 msgid "feature-40"
 msgstr ""
 
+#: _bonus.cpp:615
 msgid "feature_desc-40"
 msgstr ""
 
+#: _bonus.cpp:617
 msgid "feature-41"
 msgstr ""
 
+#: _bonus.cpp:619
 msgid "feature_desc-41"
 msgstr ""
 
+#: _bonus.cpp:621
 msgid "feature-42"
 msgstr ""
 
+#: _bonus.cpp:623
 msgid "feature_desc-42"
 msgstr ""
 
+#: _bonus.cpp:625
 msgid "feature-43"
 msgstr ""
 
+#: _bonus.cpp:627
 msgid "feature_desc-43"
 msgstr ""
 
+#: _bonus.cpp:629
 msgid "feature-44"
 msgstr ""
 
+#: _bonus.cpp:631
 msgid "feature_desc-44"
 msgstr ""
 
+#: _bonus.cpp:633
 msgid "feature-45"
 msgstr ""
 
+#: _bonus.cpp:635
 msgid "feature_desc-45"
 msgstr ""
 
+#: _bonus.cpp:637
 msgid "feature-46"
 msgstr ""
 
+#: _bonus.cpp:639
 msgid "feature_desc-46"
 msgstr ""
 
+#: _bonus.cpp:641
 msgid "feature-47"
 msgstr ""
 
+#: _bonus.cpp:643
 msgid "feature_desc-47"
 msgstr ""
 
+#: _bonus.cpp:645
 msgid "feature-48"
 msgstr ""
 
+#: _bonus.cpp:647
 msgid "feature_desc-48"
 msgstr ""
 
+#: _bonus.cpp:649
 msgid "feature-49"
 msgstr ""
 
+#: _bonus.cpp:651
 msgid "feature_desc-49"
 msgstr ""
 
+#: _bonus.cpp:653
 msgid "feature-50"
 msgstr ""
 
+#: _bonus.cpp:655
 msgid "feature_desc-50"
 msgstr ""
 
+#: _bonus.cpp:657
 msgid "feature-51"
 msgstr ""
 
+#: _bonus.cpp:659
 msgid "feature_desc-51"
 msgstr ""
 
+#: _bonus.cpp:661
 msgid "feature-52"
 msgstr ""
 
+#: _bonus.cpp:663
 msgid "feature_desc-52"
 msgstr ""
 
+#: _bonus.cpp:665
 msgid "feature-53"
 msgstr ""
 
+#: _bonus.cpp:667
 msgid "feature_desc-53"
 msgstr ""
 
+#: _bonus.cpp:669
 msgid "feature-54"
 msgstr ""
 
+#: _bonus.cpp:671
 msgid "feature_desc-54"
 msgstr ""
 
+#: _bonus.cpp:673
 msgid "feature-55"
 msgstr ""
 
+#: _bonus.cpp:675
 msgid "feature_desc-55"
 msgstr ""
 
+#: _bonus.cpp:677
 msgid "feature-56"
 msgstr ""
 
+#: _bonus.cpp:679
 msgid "feature_desc-56"
 msgstr ""
 
+#: _bonus.cpp:681
 msgid "feature-57"
 msgstr ""
 
+#: _bonus.cpp:683
 msgid "feature_desc-57"
 msgstr ""
 
+#: _bonus.cpp:685
 msgid "feature-58"
 msgstr ""
 
+#: _bonus.cpp:687
 msgid "feature_desc-58"
 msgstr ""
 
+#: _bonus.cpp:689
 msgid "feature-59"
 msgstr ""
 
+#: _bonus.cpp:691
 msgid "feature_desc-59"
 msgstr ""
 
+#: _bonus.cpp:693
 msgid "feature-60"
 msgstr ""
 
+#: _bonus.cpp:695
 msgid "feature_desc-60"
 msgstr ""
 
+#: _bonus.cpp:697
 msgid "feature-61"
 msgstr ""
 
+#: _bonus.cpp:699
 msgid "feature_desc-61"
 msgstr ""
 
+#: _bonus.cpp:701
 msgid "feature-62"
 msgstr ""
 
+#: _bonus.cpp:703
 msgid "feature_desc-62"
 msgstr ""
 
+#: _bonus.cpp:705
 msgid "feature-63"
 msgstr ""
 
+#: _bonus.cpp:707
 msgid "feature_desc-63"
 msgstr ""
 
+#: _bonus.cpp:709
 msgid "feature-64"
 msgstr ""
 
+#: _bonus.cpp:711
 msgid "feature_desc-64"
 msgstr ""
 
+#: _bonus.cpp:713
 msgid "feature-65"
 msgstr ""
 
+#: _bonus.cpp:715
 msgid "feature_desc-65"
 msgstr ""
 
+#: _bonus.cpp:717
 msgid "feature-66"
 msgstr ""
 
+#: _bonus.cpp:719
 msgid "feature_desc-66"
 msgstr ""
 
+#: _bonus.cpp:721
 msgid "feature-67"
 msgstr ""
 
+#: _bonus.cpp:723
 msgid "feature_desc-67"
 msgstr ""
 
+#: _bonus.cpp:725
 msgid "feature-68"
 msgstr ""
 
+#: _bonus.cpp:727
 msgid "feature_desc-68"
 msgstr ""
 
+#: _bonus.cpp:729
 msgid "feature-69"
 msgstr ""
 
+#: _bonus.cpp:731
 msgid "feature_desc-69"
 msgstr ""
 
+#: _bonus.cpp:733
 msgid "feature-70"
 msgstr ""
 
+#: _bonus.cpp:735
 msgid "feature_desc-70"
 msgstr ""
 
+#: _bonus.cpp:737
 msgid "feature-71"
 msgstr ""
 
+#: _bonus.cpp:739
 msgid "feature_desc-71"
 msgstr ""
 
+#: _bonus.cpp:741
 msgid "feature-72"
 msgstr ""
 
+#: _bonus.cpp:743
 msgid "feature_desc-72"
 msgstr ""
 
+#: _bonus.cpp:745
 msgid "feature-73"
 msgstr ""
 
+#: _bonus.cpp:747
 msgid "feature_desc-73"
 msgstr ""
 
+#: _bonus.cpp:749
 msgid "feature-74"
 msgstr ""
 
+#: _bonus.cpp:751
 msgid "feature_desc-74"
 msgstr ""
 
+#: _bonus.cpp:753
 msgid "feature-75"
 msgstr ""
 
+#: _bonus.cpp:755
 msgid "feature_desc-75"
 msgstr ""
 
+#: _bonus.cpp:757
 msgid "feature-76"
 msgstr ""
 
+#: _bonus.cpp:759
 msgid "feature_desc-76"
 msgstr ""
 
+#: _bonus.cpp:761 campaigns/tutorial.cpp:1
 msgid "feature-77"
 msgstr ""
 
+#: _bonus.cpp:763
 msgid "feature_desc-77"
 msgstr ""
 
+#: _bonus.cpp:765
 msgid "feature-78"
 msgstr ""
 
+#: _bonus.cpp:767
 msgid "feature_desc-78"
 msgstr ""
 
+#: _bonus.cpp:769
 msgid "feature-79"
 msgstr ""
 
+#: _bonus.cpp:771
 msgid "feature_desc-79"
 msgstr ""
 
+#: _bonus.cpp:773
 msgid "feature-80"
 msgstr ""
 
+#: _bonus.cpp:775
 msgid "feature_desc-80"
 msgstr ""
 
+#: _bonus.cpp:777
 msgid "feature-81"
 msgstr ""
 
+#: _bonus.cpp:779
 msgid "feature_desc-81"
 msgstr ""
 
+#: _bonus.cpp:781
 msgid "feature-82"
 msgstr ""
 
+#: _bonus.cpp:783
 msgid "feature_desc-82"
 msgstr ""
 
+#: _bonus.cpp:785
 msgid "feature-83"
 msgstr ""
 
+#: _bonus.cpp:787
 msgid "feature_desc-83"
 msgstr ""
 
+#: _bonus.cpp:789
 msgid "feature-84"
 msgstr ""
 
+#: _bonus.cpp:791
 msgid "feature_desc-84"
 msgstr ""
 
+#: _bonus.cpp:793
 msgid "feature-85"
 msgstr ""
 
+#: _bonus.cpp:795
 msgid "feature_desc-85"
 msgstr ""
 
+#: _bonus.cpp:797
 msgid "feature-86"
 msgstr ""
 
+#: _bonus.cpp:799
 msgid "feature_desc-86"
 msgstr ""
 
+#: _bonus.cpp:801
 msgid "feature-87"
 msgstr ""
 
+#: _bonus.cpp:803
 msgid "feature_desc-87"
 msgstr ""
 
+#: _bonus.cpp:805
 msgid "feature-88"
 msgstr ""
 
+#: _bonus.cpp:807
 msgid "feature_desc-88"
 msgstr ""
 
+#: _bonus.cpp:809
 msgid "feature-89"
 msgstr ""
 
+#: _bonus.cpp:811
 msgid "feature_desc-89"
 msgstr ""
 
+#: _bonus.cpp:813
 msgid "feature-90"
 msgstr ""
 
+#: _bonus.cpp:815
 msgid "feature_desc-90"
 msgstr ""
 
+#: _bonus.cpp:817
 msgid "feature-91"
 msgstr ""
 
+#: _bonus.cpp:819
 msgid "feature_desc-91"
 msgstr ""
 
+#: _bonus.cpp:821
 msgid "feature-92"
 msgstr ""
 
+#: _bonus.cpp:823
 msgid "feature_desc-92"
 msgstr ""
 
+#: _bonus.cpp:825
 msgid "feature-93"
 msgstr ""
 
+#: _bonus.cpp:827
 msgid "feature_desc-93"
 msgstr ""
 
+#: _bonus.cpp:829
 msgid "feature-94"
 msgstr ""
 
+#: _bonus.cpp:831
 msgid "feature_desc-94"
 msgstr ""
 
+#: _bonus.cpp:833
 msgid "feature-95"
 msgstr ""
 
+#: _bonus.cpp:835
 msgid "feature_desc-95"
 msgstr ""
 
+#: _bonus.cpp:837
 msgid "feature-96"
 msgstr ""
 
+#: _bonus.cpp:839
 msgid "feature_desc-96"
 msgstr ""
 
+#: _bonus.cpp:841
 msgid "feature-97"
 msgstr ""
 
+#: _bonus.cpp:843
 msgid "feature_desc-97"
 msgstr ""
 
+#: _bonus.cpp:845
 msgid "feature-98"
 msgstr ""
 
+#: _bonus.cpp:847
 msgid "feature_desc-98"
 msgstr ""
 
+#: _bonus.cpp:849
 msgid "feature-99"
 msgstr ""
 
+#: _bonus.cpp:851
 msgid "feature_desc-99"
 msgstr ""
 
+#: _bonus.cpp:853
 msgid "tactic-attack"
 msgstr ""
 
+#: _bonus.cpp:855
 msgid "tactic_desc-attack"
 msgstr ""
 
+#: _bonus.cpp:857
 msgid "tactic-more attack"
 msgstr ""
 
+#: _bonus.cpp:859
 msgid "tactic_desc-more attack"
 msgstr ""
 
+#: _bonus.cpp:861
 msgid "tactic-best attack"
 msgstr ""
 
+#: _bonus.cpp:863
 msgid "tactic_desc-best attack"
 msgstr ""
 
+#: _bonus.cpp:865
 msgid "tactic-attacks"
 msgstr ""
 
+#: _bonus.cpp:867
 msgid "tactic_desc-attacks"
 msgstr ""
 
+#: _bonus.cpp:869
 msgid "tactic-more attacks"
 msgstr ""
 
+#: _bonus.cpp:871
 msgid "tactic_desc-more attacks"
 msgstr ""
 
+#: _bonus.cpp:873
 msgid "tactic-weaken attacks"
 msgstr ""
 
+#: _bonus.cpp:875
 msgid "tactic_desc-weaken attacks"
 msgstr ""
 
+#: _bonus.cpp:877
 msgid "tactic-weaken more attacks"
 msgstr ""
 
+#: _bonus.cpp:879
 msgid "tactic_desc-weaken more attacks"
 msgstr ""
 
+#: _bonus.cpp:881
 msgid "tactic-firm"
 msgstr ""
 
+#: _bonus.cpp:883
 msgid "tactic_desc-firm"
 msgstr ""
 
+#: _bonus.cpp:885
 msgid "tactic-more firm"
 msgstr ""
 
+#: _bonus.cpp:887
 msgid "tactic_desc-more firm"
 msgstr ""
 
+#: _bonus.cpp:889
 msgid "tactic-best firm"
 msgstr ""
 
+#: _bonus.cpp:891
 msgid "tactic_desc-best firm"
 msgstr ""
 
+#: _bonus.cpp:893
 msgid "tactic-firms"
 msgstr ""
 
+#: _bonus.cpp:895
 msgid "tactic_desc-firms"
 msgstr ""
 
+#: _bonus.cpp:897
 msgid "tactic-more firms"
 msgstr ""
 
+#: _bonus.cpp:899
 msgid "tactic_desc-more firms"
 msgstr ""
 
+#: _bonus.cpp:901
 msgid "tactic-breaks"
 msgstr ""
 
+#: _bonus.cpp:903
 msgid "tactic_desc-breaks"
 msgstr ""
 
+#: _bonus.cpp:905
 msgid "tactic-more breaks"
 msgstr ""
 
+#: _bonus.cpp:907
 msgid "tactic_desc-more breaks"
 msgstr ""
 
+#: _bonus.cpp:909
 msgid "tactic-encourage"
 msgstr ""
 
+#: _bonus.cpp:911
 msgid "tactic_desc-encourage"
 msgstr ""
 
+#: _bonus.cpp:913
 msgid "tactic-more encourage"
 msgstr ""
 
+#: _bonus.cpp:915
 msgid "tactic_desc-more encourage"
 msgstr ""
 
+#: _bonus.cpp:917
 msgid "tactic-best encourage"
 msgstr ""
 
+#: _bonus.cpp:919
 msgid "tactic_desc-best encourage"
 msgstr ""
 
+#: _bonus.cpp:921
 msgid "tactic-encourages"
 msgstr ""
 
+#: _bonus.cpp:923
 msgid "tactic_desc-encourages"
 msgstr ""
 
+#: _bonus.cpp:925
 msgid "tactic-more encourages"
 msgstr ""
 
+#: _bonus.cpp:927
 msgid "tactic_desc-more encourages"
 msgstr ""
 
+#: _bonus.cpp:929
 msgid "tactic-weaken encourages"
 msgstr ""
 
+#: _bonus.cpp:931
 msgid "tactic_desc-weaken encourages"
 msgstr ""
 
+#: _bonus.cpp:933
 msgid "tactic-weaken more encourages"
 msgstr ""
 
+#: _bonus.cpp:935
 msgid "tactic_desc-weaken more encourages"
 msgstr ""
 
+#: _bonus.cpp:937
 msgid "tactic-demolish"
 msgstr ""
 
+#: _bonus.cpp:939
 msgid "tactic_desc-demolish"
 msgstr ""
 
+#: _bonus.cpp:941
 msgid "tactic-more demolish"
 msgstr ""
 
+#: _bonus.cpp:943
 msgid "tactic_desc-more demolish"
 msgstr ""
 
+#: _bonus.cpp:945
 msgid "tactic-demolishes"
 msgstr ""
 
+#: _bonus.cpp:947
 msgid "tactic_desc-demolishes"
 msgstr ""
 
+#: _bonus.cpp:949
 msgid "tactic-more demolishes"
 msgstr ""
 
+#: _bonus.cpp:951
 msgid "tactic_desc-more demolishes"
 msgstr ""
 
+#: _bonus.cpp:953
 msgid "tactic-weaken demolishes"
 msgstr ""
 
+#: _bonus.cpp:955
 msgid "tactic_desc-weaken demolishes"
 msgstr ""
 
+#: _bonus.cpp:957
 msgid "tactic-weaken more demolishes"
 msgstr ""
 
+#: _bonus.cpp:959
 msgid "tactic_desc-weaken more demolishes"
 msgstr ""
 
+#: _bonus.cpp:961
 msgid "tactic-blade"
 msgstr ""
 
+#: _bonus.cpp:963
 msgid "tactic_desc-blade"
 msgstr ""
 
+#: _bonus.cpp:965
 msgid "tactic-pierce"
 msgstr ""
 
+#: _bonus.cpp:967
 msgid "tactic_desc-pierce"
 msgstr ""
 
+#: _bonus.cpp:969
 msgid "tactic-impact"
 msgstr ""
 
+#: _bonus.cpp:971
 msgid "tactic_desc-impact"
 msgstr ""
 
+#: _bonus.cpp:973
 msgid "tactic-fire"
 msgstr ""
 
+#: _bonus.cpp:975
 msgid "tactic_desc-fire"
 msgstr ""
 
+#: _bonus.cpp:977
 msgid "tactic-hide"
 msgstr ""
 
+#: _bonus.cpp:979
 msgid "tactic_desc-hide"
 msgstr ""
 
+#: _bonus.cpp:981
 msgid "tactic-hides"
 msgstr ""
 
+#: _bonus.cpp:983
 msgid "tactic_desc-hides"
 msgstr ""
 
+#: _bonus.cpp:985
 msgid "tactic-accelerate"
 msgstr ""
 
+#: _bonus.cpp:987
 msgid "tactic_desc-accelerate"
 msgstr ""
 
+#: _bonus.cpp:989
 msgid "tactic-accelerates"
 msgstr ""
 
+#: _bonus.cpp:991
 msgid "tactic_desc-accelerates"
 msgstr ""
 
+#: _bonus.cpp:993
 msgid "tactic-decelerates"
 msgstr ""
 
+#: _bonus.cpp:995
 msgid "tactic_desc-decelerates"
 msgstr ""
 
+#: _bonus.cpp:997
 msgid "tactic-alert"
 msgstr ""
 
+#: _bonus.cpp:999
 msgid "tactic_desc-alert"
 msgstr ""
 
+#: _bonus.cpp:1001
 msgid "tactic-provoke"
 msgstr ""
 
+#: _bonus.cpp:1003
 msgid "tactic_desc-provoke"
 msgstr ""
 
+#: _bonus.cpp:1005
 msgid "tactic-clear"
 msgstr ""
 
+#: _bonus.cpp:1007
 msgid "tactic_desc-clear"
 msgstr ""
 
+#: _bonus.cpp:1009
 msgid "tactic-clears"
 msgstr ""
 
+#: _bonus.cpp:1011
 msgid "tactic_desc-clears"
 msgstr ""
 
+#: _bonus.cpp:1013
 msgid "tactic-heal"
 msgstr ""
 
+#: _bonus.cpp:1015
 msgid "tactic_desc-heal"
 msgstr ""
 
+#: _bonus.cpp:1017
 msgid "tactic-heals"
 msgstr ""
 
+#: _bonus.cpp:1019
 msgid "tactic_desc-heals"
 msgstr ""
 
+#: _bonus.cpp:1021
 msgid "tactic-action"
 msgstr ""
 
+#: _bonus.cpp:1023
 msgid "tactic_desc-action"
 msgstr ""
 
+#: _bonus.cpp:1025
 msgid "tactic-more action"
 msgstr ""
 
+#: _bonus.cpp:1027
 msgid "tactic_desc-more action"
 msgstr ""
 
+#: _bonus.cpp:1029
 msgid "tactic-actions"
 msgstr ""
 
+#: _bonus.cpp:1031
 msgid "tactic_desc-actions"
 msgstr ""
 
+#: _bonus.cpp:1033
 msgid "tactic-more actions"
 msgstr ""
 
+#: _bonus.cpp:1035
 msgid "tactic_desc-more actions"
 msgstr ""
 
+#: _bonus.cpp:1037
 msgid "tactic-weaken actions"
 msgstr ""
 
+#: _bonus.cpp:1039
 msgid "tactic_desc-weaken actions"
 msgstr ""
 
+#: _bonus.cpp:1041
 msgid "tactic-weaken more actions"
 msgstr ""
 
+#: _bonus.cpp:1043
 msgid "tactic_desc-weaken more actions"
 msgstr ""
 
+#: _bonus.cpp:1045
 msgid "tactic-revival"
 msgstr ""
 
+#: _bonus.cpp:1047
 msgid "tactic_desc-revival"
 msgstr ""
 
+#: _bonus.cpp:1049
 msgid "tactic-divine wei wu"
 msgstr ""
 
+#: _bonus.cpp:1051
 msgid "tactic_desc-divine wei wu"
 msgstr ""
 
+#: _bonus.cpp:1053
 msgid "tactic-dragon in people"
 msgstr ""
 
+#: _bonus.cpp:1055
 msgid "tactic_desc-dragon in people"
 msgstr ""
 
+#: _bonus.cpp:1057
 msgid "tactic-integrate attack and defend"
 msgstr ""
 
+#: _bonus.cpp:1059
 msgid "tactic_desc-integrate attack and defend"
 msgstr ""
 
+#: _bonus.cpp:1061
 msgid "tactic-speedy solo"
 msgstr ""
 
+#: _bonus.cpp:1063
 msgid "tactic_desc-speedy solo"
 msgstr ""
 
+#: _bonus.cpp:1065
 msgid "tactic-remote strike"
 msgstr ""
 
+#: _bonus.cpp:1067
 msgid "tactic_desc-remote strike"
 msgstr ""
 
+#: _bonus.cpp:1069
 msgid "tactic-again thousands"
 msgstr ""
 
+#: _bonus.cpp:1071
 msgid "tactic_desc-again thousands"
 msgstr ""
 
+#: _bonus.cpp:1073
 msgid "tactic-ironman"
 msgstr ""
 
+#: _bonus.cpp:1075
 msgid "tactic_desc-ironman"
 msgstr ""
 
+#: _bonus.cpp:1077
 msgid "tactic-brave ironman"
 msgstr ""
 
+#: _bonus.cpp:1079
 msgid "tactic_desc-brave ironman"
 msgstr ""
 
+#: _bonus.cpp:1081
 msgid "tactic-storm attack"
 msgstr ""
 
+#: _bonus.cpp:1083
 msgid "tactic_desc-storm attack"
 msgstr ""
 
+#: _bonus.cpp:1085
 msgid "tactic-break through"
 msgstr ""
 
+#: _bonus.cpp:1087
 msgid "tactic_desc-break through"
 msgstr ""
 
+#: _bonus.cpp:1089
 msgid "tactic-military defense"
 msgstr ""
 
+#: _bonus.cpp:1091
 msgid "tactic_desc-military defense"
 msgstr ""
 
+#: _bonus.cpp:1093
 msgid "tactic-military encourage"
 msgstr ""
 
+#: _bonus.cpp:1095
 msgid "tactic_desc-military encourage"
 msgstr ""
 
+#: _bonus.cpp:1097
 msgid "tactic-military attack"
 msgstr ""
 
+#: _bonus.cpp:1099
 msgid "tactic_desc-military attack"
 msgstr ""
 
+#: _bonus.cpp:1101
 msgid "tactic-spy infiltrate"
 msgstr ""
 
+#: _bonus.cpp:1103
 msgid "tactic_desc-spy infiltrate"
 msgstr ""
 
+#: _bonus.cpp:1105
 msgid "tactic-fire stratagem"
 msgstr ""
 
+#: _bonus.cpp:1107
 msgid "tactic_desc-fire stratagem"
 msgstr ""
 
+#: _bonus.cpp:1109
 msgid "tactic-divine fire"
 msgstr ""
 
+#: _bonus.cpp:1111
 msgid "tactic_desc-divine fire"
 msgstr ""
 
+#: _bonus.cpp:1113
 msgid "tactic-big strike"
 msgstr ""
 
+#: _bonus.cpp:1115
 msgid "tactic_desc-big strike"
 msgstr ""
 
+#: _bonus.cpp:1117
 msgid "tactic-ambush"
 msgstr ""
 
+#: _bonus.cpp:1119
 msgid "tactic_desc-ambush"
 msgstr ""
 
+#: _bonus.cpp:1121
 msgid "tactic-divine ambushes"
 msgstr ""
 
+#: _bonus.cpp:1123
 msgid "tactic_desc-divine ambushes"
 msgstr ""
 
+#: _bonus.cpp:1125
 msgid "tactic-ambush accelerate"
 msgstr ""
 
+#: _bonus.cpp:1127
 msgid "tactic_desc-ambush accelerate"
 msgstr ""
 
+#: _bonus.cpp:1129
 msgid "tactic-accelerate firms"
 msgstr ""
 
+#: _bonus.cpp:1131
 msgid "tactic_desc-accelerate firms"
 msgstr ""
 
+#: _bonus.cpp:1133
 msgid "tactic-beautiful interlink"
 msgstr ""
 
+#: _bonus.cpp:1135
 msgid "tactic_desc-beautiful interlink"
 msgstr ""
 
+#: _bonus.cpp:1137
 msgid "tactic-alert attack"
 msgstr ""
 
+#: _bonus.cpp:1139
 msgid "tactic_desc-alert attack"
 msgstr ""
 
+#: _bonus.cpp:1141
 msgid "tactic-divine provoke"
 msgstr ""
 
+#: _bonus.cpp:1143
 msgid "tactic_desc-divine provoke"
 msgstr ""
 
+#: _bonus.cpp:1145
 msgid "tactic-divine clear"
 msgstr ""
 
+#: _bonus.cpp:1147
 msgid "tactic_desc-divine clear"
 msgstr ""
 
+#: _bonus.cpp:1149
 msgid "tactic-divine heal"
 msgstr ""
 
+#: _bonus.cpp:1151
 msgid "tactic_desc-divine heal"
 msgstr ""
 
+#: _bonus.cpp:1153
 msgid "tactic-centralize mind"
 msgstr ""
 
+#: _bonus.cpp:1155
 msgid "tactic_desc-centralize mind"
 msgstr ""
 
+#: _bonus.cpp:1157
 msgid "tactic-divine advance"
 msgstr ""
 
+#: _bonus.cpp:1159
 msgid "tactic_desc-divine advance"
 msgstr ""
 
+#: _bonus.cpp:1161
 msgid "tactic-chain ring"
 msgstr ""
 
+#: _bonus.cpp:1163
 msgid "tactic_desc-chain ring"
 msgstr ""
 
-#
-# formation
-#
+#: _bonus.cpp:1168
 msgid "formation-mage"
 msgstr ""
 
+#: _bonus.cpp:1170
 msgid "formation_desc-mage"
 msgstr ""
 
+#: _bonus.cpp:1172
 msgid "formation-horse"
 msgstr ""
 
+#: _bonus.cpp:1174
 msgid "formation_desc-horse"
 msgstr ""
 
+#: _bonus.cpp:1176
 msgid "formation-pike"
 msgstr ""
 
+#: _bonus.cpp:1178
 msgid "formation_desc-pike"
 msgstr ""
 
+#: _bonus.cpp:1180
 msgid "formation-catapult"
 msgstr ""
 
+#: _bonus.cpp:1182
 msgid "formation_desc-catapult"
 msgstr ""
 
+#: _bonus.cpp:1185
 msgid "formation-bow"
 msgstr ""
 
+#: _bonus.cpp:1187
 msgid "formation_desc-bow"
 msgstr ""
 
-#
-# noble
-#
+#: _bonus.cpp:1192
 msgid "noble-emperor"
 msgstr ""
 
+#: _bonus.cpp:1194
 msgid "noble-grand commandant"
 msgstr ""
 
+#: _bonus.cpp:1196
 msgid "noble-grand preceptor"
 msgstr ""
 
+#: _bonus.cpp:1198
 msgid "noble-king"
 msgstr ""
 
+#: _bonus.cpp:1200
 msgid "noble-general of the flying cavalry"
 msgstr ""
 
+#: _bonus.cpp:1202
 msgid "noble-general of chariots and cavalry"
 msgstr ""
 
+#: _bonus.cpp:1204
 msgid "noble-chief"
 msgstr ""
 
+#: _bonus.cpp:1206
 msgid "noble-chief of palace administration"
 msgstr ""
 
+#: _bonus.cpp:1208
 msgid "noble-chief of the capital guard"
 msgstr ""
 
+#: _bonus.cpp:1210
 msgid "noble-nomarch"
 msgstr ""
 
+#: _bonus.cpp:1212
 msgid "noble-imperial minister"
 msgstr ""
 
+#: _bonus.cpp:1214
 msgid "noble-general of valiant cavalry"
 msgstr ""
 
+#: _bonus.cpp:1216
 msgid "noble-mayor"
 msgstr ""
 
+#: _bonus.cpp:1218
 msgid "noble-assistant general"
 msgstr ""
 
+#: _bonus.cpp:1220
 msgid "noble-deputy general"
 msgstr ""
 
-#
-# inapp-purchase
-#
+#: _bonus.cpp:1225
 msgid "inapp-vip2"
 msgstr ""
 
+#: _bonus.cpp:1227
 msgid "inapp_desc-vip2"
 msgstr ""
 
+#: _bonus.cpp:1229
 msgid "inapp-score"
 msgstr ""
 
+#: _bonus.cpp:1231
 msgid "inapp_desc-score"
 msgstr ""
 
+#: _bonus.cpp:1233
 msgid "inapp-8coin"
 msgstr ""
 
+#: _bonus.cpp:1235
 msgid "inapp_desc-8coin"
 msgstr ""
 
+#: _bonus.cpp:1237
 msgid "inapp-45coin"
 msgstr ""
 
+#: _bonus.cpp:1239
 msgid "inapp_desc-45coin"
 msgstr ""
 
+#: _bonus.cpp:1241
 msgid "inapp-100coin"
 msgstr ""
 
+#: _bonus.cpp:1243
 msgid "inapp_desc-100coin"
 msgstr ""
 
-#
-# title
-#
+#: _bonus.cpp:1248
 msgid "title-0"
 msgstr ""
 
+#: _bonus.cpp:1250
 msgid "title-1"
 msgstr ""
 
+#: _bonus.cpp:1252
 msgid "title-2"
 msgstr ""
 
+#: _bonus.cpp:1254
 msgid "title-3"
 msgstr ""
 
+#: _bonus.cpp:1256
 msgid "title-4"
 msgstr ""
 
-#
-# genus
-#
+#: _bonus.cpp:1261
 msgid "genus-turn_based"
 msgstr ""
 
+#: _bonus.cpp:1263
 msgid "genus-half_realtime"
 msgstr ""

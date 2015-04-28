@@ -25,12 +25,12 @@
 #include "filesystem.hpp"
 #include "log.hpp"
 #include "loadscreen.hpp"
-#include "wesconfig.h"
 #include "serialization/binary_or_text.hpp"
 #include "serialization/string_utils.hpp"
 #include "serialization/parser.hpp"
 #include "filesystem.hpp"
 #include "util.hpp"
+#include "wml_exception.hpp"
 
 #include <boost/foreach.hpp>
 #include <stdexcept>
@@ -245,7 +245,7 @@ preprocessor_streambuf::preprocessor_streambuf(preproc_map *def) :
 	current_(NULL),
 	defines_(def),
 	default_defines_(),
-	textdomain_(PACKAGE),
+	textdomain_("rose-lib"),
 	location_(""),
 	linenum_(0),
 	depth_(0),
@@ -260,7 +260,7 @@ preprocessor_streambuf::preprocessor_streambuf(preprocessor_streambuf const &t) 
 	current_(NULL),
 	defines_(t.defines_),
 	default_defines_(),
-	textdomain_(PACKAGE),
+	textdomain_("rose-lib"),
 	location_(""),
 	linenum_(0),
 	depth_(t.depth_),
@@ -346,7 +346,7 @@ void preprocessor_streambuf::error(const std::string& error_type, int l)
 	position = lineno_string(pos.str());
 	error = error_type + " at " + position;
 	ERR_CF << error << '\n';
-	throw preproc_config::error(error);
+	VALIDATE(false, error);
 }
 
 

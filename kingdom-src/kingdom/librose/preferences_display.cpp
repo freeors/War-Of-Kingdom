@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 /**
  *  @file
@@ -23,6 +23,7 @@
 #include "global.hpp"
 #include "preferences_display.hpp"
 
+#include "base_instance.hpp"
 #include "display.hpp"
 #include "preferences.hpp"
 #include "gettext.hpp"
@@ -33,8 +34,6 @@
 #include "wml_separators.hpp"
 
 #include <boost/foreach.hpp>
-
-bool require_change_resolution = false;
 
 namespace preferences {
 
@@ -58,8 +57,10 @@ void set_fullscreen(display& disp, const bool ison)
 		int bpp = video.modePossible(res.first, res.second, 32, flags);
 		VALIDATE(bpp > 0, "bpp must be large than 0!");
 
-		video.setMode(res.first, res.second,bpp, flags);
-		require_change_resolution = true;
+		// gui2::tpoint orientation_size = gui2::twidget::toggle_orientation_size(res.first, res.second);
+
+		video.setMode(res.first, res.second, bpp, flags);
+		display::require_change_resolution = true;
 	}
 }
 
@@ -68,7 +69,7 @@ void set_scroll_to_action(bool ison)
 	_set_scroll_to_action(ison);
 }
 
-bool set_resolution(display& disp, const unsigned width, const unsigned height)
+bool set_resolution(display& disp, const unsigned width, const unsigned height, bool theme)
 {
 	// - Ayin: disabled the following code. Why would one want to enforce that?
 	// Some 16:9, or laptop screens, may have resolutions which do not
@@ -84,7 +85,10 @@ bool set_resolution(display& disp, const unsigned width, const unsigned height)
 	if (rect.w == width && rect.h == height) {
 		return true;
 	}
-	if (width < 480 || height < 320) {
+
+	gui2::tpoint landscape_size = gui2::twidget::toggle_orientation_size(width, height);
+
+	if (landscape_size.x < 480 || landscape_size.y < 320) {
 		return false;
 	}
 
@@ -94,11 +98,13 @@ bool set_resolution(display& disp, const unsigned width, const unsigned height)
 	VALIDATE(bpp > 0, "bpp must be large than 0!");
 
 	video.setMode(width, height, bpp, flags);
-	require_change_resolution = true;
+	if (theme) {
+		display::require_change_resolution = true;
+	}
 
 	const std::string postfix = fullscreen() ? "resolution" : "windowsize";
-	preferences::set('x' + postfix, lexical_cast<std::string>(width));
-	preferences::set('y' + postfix, lexical_cast<std::string>(height));
+	preferences::set('x' + postfix, lexical_cast<std::string>(landscape_size.x));
+	preferences::set('y' + postfix, lexical_cast<std::string>(landscape_size.y));
 	
 	return true;
 }
@@ -165,15 +171,19 @@ bool show_video_mode_dialog(display& disp)
 		return false;
 	}
 
-	const std::pair<int,int> current_res(video.getSurface()->w, video.getSurface()->h);
+	gui2::tpoint landscape_size = gui2::twidget::toggle_orientation_size(video.getSurface()->w, video.getSurface()->h);
+	const std::pair<int,int> current_res(landscape_size.x, landscape_size.y);
 	resolutions.push_back(current_res);
 	if (!fullScreen) {
 		resolutions.push_back(std::make_pair(480, 320));
 		resolutions.push_back(std::make_pair(568, 320));
 		resolutions.push_back(std::make_pair(800, 480));
 		resolutions.push_back(std::make_pair(854, 480));
+		resolutions.push_back(std::make_pair(960, 640));
+		resolutions.push_back(std::make_pair(1136, 640));
 		resolutions.push_back(std::make_pair(1280, 720));
 		resolutions.push_back(std::make_pair(1280, 800));
+		resolutions.push_back(std::make_pair(1334, 750));
 	}
 
 	std::sort(resolutions.begin(),resolutions.end(),compare_resolutions);
@@ -209,35 +219,42 @@ bool show_video_mode_dialog(display& disp)
 	}
 
 	std::pair<int, int>& res = resolutions[static_cast<size_t>(choice)];
-	set_resolution(disp, res.first, res.second);
+
+	gui2::tpoint normal_size = gui2::twidget::toggle_orientation_size(res.first, res.second);
+	set_resolution(disp, normal_size.x, normal_size.y);
 	return true;
 }
 
-void show_preferences_dialog(display& disp)
+// true: resolution modified result to return. false: other reason return.
+int show_preferences_dialog(display& disp, bool first)
 {
-	bool first = true;
 	while (true) {
-		int res = gui2::app_show_preferences_dialog(disp, first);
+		int res = instance->show_preferences_dialog(disp, first);
 		if (first) {
 			first = false;
 		}
 		if (res == preferences::CHANGE_RESOLUTION) {
 			if (preferences::show_video_mode_dialog(disp)) {
-				return;
+				return res;
 			}
 
 		} else if (res == preferences::MAKE_FULLSCREEN) {
 			preferences::set_fullscreen(disp, true);
-			return;
+			return res;
 
 		} else if (res == preferences::MAKE_WINDOWED) {
 			preferences::set_fullscreen(disp, false);
-			return;
+			return res;
 
 		} else {
-			return;
+			return res;
 		}
 	}
+}
+
+bool is_resolution_retval(int res) 
+{ 
+	return res >= MIN_RESOLUTION && res <= MAX_RESOLUTION; 
 }
 
 } // end namespace preferences

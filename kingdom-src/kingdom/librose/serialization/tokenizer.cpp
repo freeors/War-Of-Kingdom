@@ -18,15 +18,14 @@
 
 #include "global.hpp"
 
-#include "wesconfig.h"
 #include "serialization/tokenizer.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
 
 tokenizer::tokenizer(std::istream& in) :
 	current_(EOF),
 	lineno_(1),
 	startlineno_(0),
-	textdomain_(PACKAGE),
+	textdomain_("rose-lib"),
 	file_(),
 	token_(),
 	in_(in)

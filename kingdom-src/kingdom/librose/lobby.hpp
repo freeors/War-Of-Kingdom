@@ -30,6 +30,7 @@ struct server;
 #define DEFAULT_RECONNECT_PROHABIT	20000
 #define DEFAULT_HEARTBEAT_THRESHOLD	120000 // heartbeat maybe to 1 minute.
 
+class display;
 class tlobby;
 
 struct tnoresponse_msg
@@ -64,7 +65,7 @@ public:
 	virtual ~tsock();
 
 	virtual void process() {}
-	virtual SOCKET_STATE receive_buf(std::vector<char>& buf) { return SOCKET_READY; }
+	virtual SOCKET_STATE receive_buf(textendable_buf& buf) { buf.vsize = 0; return SOCKET_READY; }
 	// true: continue, false: halt
 	virtual bool receive_probed() { return true; }
 	virtual size_t queue_raw_data(const char* buf, int len);
@@ -290,7 +291,9 @@ public:
 	public:
 		thandler();
 		virtual ~thandler();
+		virtual void handle_status(int at, tsock::ttype type) {}
 		virtual bool handle_raw(int at, tsock::ttype type, const char* param[]) { return false; }
+		virtual bool handle_raw2(int at, tsock::ttype type, const char* data, int len) { return false; }
 		virtual bool handle(int tag, tsock::ttype type, const config& data) { return false; }
 		void join();
 
@@ -338,7 +341,7 @@ public:
 		const std::string& nick() const { return nick_; }
 		irc::server* serv() const { return serv_; }
 		void process();
-		SOCKET_STATE receive_buf(std::vector<char>& buf);
+		SOCKET_STATE receive_buf(textendable_buf& buf);
 		bool connect(TCPsocket sock, const std::string& host, int port);
 		void pre_disconnect();
 		void set_host(const std::string& host, int port);
@@ -413,12 +416,18 @@ public:
 	class thttp_sock: public tsock
 	{
 	public:
+		static int http_2_cfg(const std::vector<char>& http, config& cfg);
+
 		thttp_sock()
 			: tsock(tag_http)
 		{}
 		void process();
-		SOCKET_STATE receive_buf(std::vector<char>& buf);
+		SOCKET_STATE receive_buf(textendable_buf& buf);
 		bool ready() const { return conn_ != network::null_connection; }
+		void reset_connect();
+
+		virtual std::string form_url(const std::string& task) const { return task; }
+		virtual std::string form_request(const std::string& task, size_t content_length) const;
 	};
 
 	class ttransit_sock: public tsock
@@ -431,7 +440,7 @@ public:
 			raw_data_only = false;
 		}
 		void process();
-		SOCKET_STATE receive_buf(std::vector<char>& buf);
+		SOCKET_STATE receive_buf(textendable_buf& buf);
 		bool connect(TCPsocket sock, const std::string& host, int port);
 		void pre_disconnect();
 		void post_disconnect();
@@ -448,7 +457,7 @@ public:
 		int remote_handle_;
 	};
 
-	tlobby();
+	tlobby(tchat_sock* _chat, thttp_sock* _http, ttransit_sock* _transit);
 	virtual ~tlobby();
 
 	tsock& sock(int tag) const { return *socks_[tag]; }
@@ -465,7 +474,8 @@ public:
 
 	bool insert_accept_sock(TCPsocket sock);
 
-	void process(events::pump_info&);
+	void monitor_process();
+	void broadcast_handle_status(int at, tsock::ttype type);
 	void broadcast_handle_raw(int at, tsock::ttype type, const char* param[]);
 
 	void add_log(const tsock& sock, const std::string& msg);
@@ -478,9 +488,9 @@ private:
 	virtual tsock* get_accept_sock();
 
 public:
-	tchat_sock chat;
-	thttp_sock http;
-	ttransit_sock transit;
+	tchat_sock* chat;
+	thttp_sock* http;
+	ttransit_sock* transit;
 
 protected:
 	std::vector<tsock*> socks_;
@@ -492,5 +502,35 @@ protected:
 };
 
 extern tlobby* lobby;
+
+namespace network_asio {
+
+class connection
+{
+public:
+	connection(network::connection connection_num);
+
+	virtual void poll(const char* data, int len) = 0;
+	void set_done() { done_ = true; }
+
+	// upload
+	size_t bytes_written();
+	size_t bytes_to_write();
+	// download
+	size_t bytes_read();
+	size_t bytes_to_read();
+
+	bool done() const { return done_; }
+protected:
+	network::connection connection_num_;
+	bool done_;
+};
+
+}
+
+bool network_connect_dialog(display& disp, const std::string& msg, const std::string& hostname, int port, bool quiet);
+void network_receive_dialog(display& disp, const std::string& msg, std::vector<char>& buf, network::connection connection_num, int hidden_ms = 4);
+network::connection network_receive_dialog(display& disp, const std::string& msg, config& cfg, network::connection connection_num = 0, int hidden_ms = 4);
+void network_send_dialog(display& disp, const std::string& msg, const char* buf, int len, network::connection connection_num, int hidden_ms = 4);
 
 #endif

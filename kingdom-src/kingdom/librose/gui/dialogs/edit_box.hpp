@@ -24,7 +24,7 @@ class display;
 
 namespace gui2 {
 
-class ttext_box;
+class ttext_box2;
 
 class tedit_box : public tdialog
 {
@@ -45,7 +45,7 @@ public:
 		std::string def;
 		std::string ok;
 		size_t max_length;
-		boost::function<void (ttext_box* textboxt) > text_changed;
+		boost::function<void (ttext_box2* widget) > text_changed;
 		boost::function<bool (const std::string& content)> verify;
 		std::string result;
 	};

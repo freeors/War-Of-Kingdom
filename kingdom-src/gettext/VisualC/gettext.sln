@@ -1,12 +1,9 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gettext", "gettext.vcproj", "{5A5F3A99-9F0F-4026-A26B-39782561340F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{CCBFB374-97BC-4E52-8550-664523A6988A} = {CCBFB374-97BC-4E52-8550-664523A6988A}
-	EndProjectSection
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gettext", "gettext.vcxproj", "{5A5F3A99-9F0F-4026-A26B-39782561340F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iconv", "iconv.vcproj", "{CCBFB374-97BC-4E52-8550-664523A6988A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iconv", "iconv.vcxproj", "{CCBFB374-97BC-4E52-8550-664523A6988A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

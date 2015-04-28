@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "global.hpp"
 #include "minimap.hpp"
@@ -24,6 +24,7 @@
 #include "map.hpp"
 #include "sdl_utils.hpp"
 #include "builder.hpp"
+#include "display.hpp"
 
 #include "wml_exception.hpp"
 #include "formula_string_utils.hpp"
@@ -34,7 +35,7 @@ static lg::log_domain log_display("display");
 
 namespace image {
 
-surface getMinimap(int w, int h, const gamemap &map, const void *vw)
+surface getMinimap(int w, int h, const gamemap &map, const display* disp)
 {
 	const size_t map_width = map.w() * scale_ratio_w;
 	const size_t map_height = map.h() * scale_ratio_h;
@@ -62,8 +63,8 @@ surface getMinimap(int w, int h, const gamemap &map, const void *vw)
 
 				bool shrouded = false;
 				bool fogged = false;
-				if (vw) {
-					shrouded_and_fogged(loc, vw, shrouded, fogged);
+				if (disp) {
+					disp->shrouded_and_fogged(loc, shrouded, fogged);
 				}
 				const t_translation::t_terrain terrain = shrouded ?
 						t_translation::VOID_TERRAIN : map[loc];
@@ -102,7 +103,6 @@ surface getMinimap(int w, int h, const gamemap &map, const void *vw)
 							sdl_blit(tile, NULL, combined, &r);
 							r.x = std::max(0, (tile->w - overlay->w)/2);
 							r.y = std::max(0, (tile->h - overlay->h)/2);
-							//blit_surface needs neutral surface
 							surface overlay_neutral = make_neutral_surface(overlay);
 							blit_surface(overlay_neutral, NULL, combined, &r);
 							tile = combined;

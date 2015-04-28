@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/window_builder/image.hpp"
 
@@ -27,6 +27,8 @@ namespace implementation {
 
 tbuilder_image::tbuilder_image(const config& cfg)
 	: tbuilder_control(cfg)
+	, width_(cfg["width"])
+	, height_(cfg["height"])
 {
 }
 
@@ -35,6 +37,15 @@ twidget* tbuilder_image::build() const
 	timage* widget = new timage();
 
 	init_control(widget);
+
+	const game_logic::map_formula_callable& size = get_screen_size_variables();
+
+	const unsigned width = width_(size);
+	const unsigned height = height_(size);
+
+	if (width || height) {
+		widget->set_best_size(tpoint(width, height));
+	}
 
 	DBG_GUI_G << "Window builder: placed image '"
 			<< id << "' with definition '"

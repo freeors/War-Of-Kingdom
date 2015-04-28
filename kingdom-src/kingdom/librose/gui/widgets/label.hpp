@@ -37,6 +37,9 @@ public:
 
 public:
 	/** Inherited from twidget. */
+	tpoint request_reduce_width(const unsigned maximum_width);
+
+	/** Inherited from twidget. */
 	bool can_wrap() const;
 
 	/** Inherited from tcontrol. */

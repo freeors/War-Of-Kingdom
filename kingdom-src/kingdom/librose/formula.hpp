@@ -1,6 +1,5 @@
-/* $Id: formula.hpp 47235 2010-10-26 21:38:03Z mordante $ */
 /*
-   Copyright (C) 2007 - 2010 by David White <dave.net>
+   Copyright (C) 2007 - 2015 by David White <dave.net>
    Part of the Silver Tree Project
 
    This program is free software; you can redistribute it and/or modify

@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/window_builder.hpp"
 
@@ -24,25 +24,24 @@
 #if 1 // See the #if in create_builder_widget.
 #include "gui/auxiliary/window_builder/scrollbar_panel.hpp"
 #include "gui/auxiliary/window_builder/horizontal_scrollbar.hpp"
-#include "gui/auxiliary/window_builder/repeating_button.hpp"
 #include "gui/auxiliary/window_builder/stacked_widget.hpp"
 #include "gui/auxiliary/window_builder/vertical_scrollbar.hpp"
 #include "gui/auxiliary/window_builder/label.hpp"
-#include "gui/auxiliary/window_builder/matrix.hpp"
 #include "gui/auxiliary/window_builder/report.hpp"
 #include "gui/auxiliary/window_builder/image.hpp"
 #include "gui/auxiliary/window_builder/toggle_button.hpp"
 #include "gui/auxiliary/window_builder/slider.hpp"
 #include "gui/auxiliary/window_builder/scroll_label.hpp"
+#include "gui/auxiliary/window_builder/scroll_text_box.hpp"
 #include "gui/auxiliary/window_builder/minimap.hpp"
 #include "gui/auxiliary/window_builder/button.hpp"
 #include "gui/auxiliary/window_builder/drawing.hpp"
-#include "gui/auxiliary/window_builder/pane.hpp"
 #include "gui/auxiliary/window_builder/password_box.hpp"
 #include "gui/auxiliary/window_builder/progress_bar.hpp"
-#include "gui/auxiliary/window_builder/viewport.hpp"
+#include "gui/auxiliary/window_builder/tree_view.hpp"
+#include "gui/auxiliary/window_builder/track.hpp"
+#include "gui/auxiliary/window_builder/text_box2.hpp"
 #endif
-#include "gui/auxiliary/window_builder/instance.hpp"
 #include "gui/widgets/settings.hpp"
 #include "gui/widgets/window.hpp"
 #include "formula_string_utils.hpp"
@@ -89,6 +88,7 @@ twindow *build(CVideo &video, const twindow_builder::tresolution *definition)
 			, definition->maximum_height
 			, definition->definition
 			, definition->theme
+			, definition->orientation
 			, definition->tooltip
 			, definition->helptip);
 	assert(window);
@@ -100,8 +100,7 @@ twindow *build(CVideo &video, const twindow_builder::tresolution *definition)
 		if (window->has_linked_size_group(lg.id)) {
 			utils::string_map symbols;
 			symbols["id"] = lg.id;
-			t_string msg = vgettext(
-					  "Linked '$id' group has multiple definitions."
+			t_string msg = vgettext2("Linked '$id' group has multiple definitions."
 					, symbols);
 
 			VALIDATE(false, msg);
@@ -142,10 +141,6 @@ twindow *build(CVideo &video, const std::string &type)
 tbuilder_widget::tbuilder_widget(const config& cfg)
 	: id(cfg["id"])
 	, linked_group(cfg["linked_group"])
-#ifndef LOW_MEM
-	, debug_border_mode(cfg["debug_border_mode"])
-	, debug_border_color(decode_color(cfg["debug_border_color"]))
-#endif
 {
 }
 
@@ -167,28 +162,16 @@ tbuilder_widget_ptr create_builder_widget(const config& cfg)
 				, boost::function<tbuilder_widget_ptr(config)> >
 			thack;
 	BOOST_FOREACH(const thack& item, builder_widget_lookup()) {
-		if(item.first == "window" || item.first == "tooltip") {
+		if (item.first == "window" || item.first == "tooltip") {
 			continue;
 		}
-		if(const config &c = cfg.child(item.first)) {
+		if (const config& c = cfg.child(item.first)) {
 			return item.second(c);
 		}
 	}
 
 	if(const config &c = cfg.child("grid")) {
 		return new tbuilder_grid(c);
-	}
-
-	if(const config &instance = cfg.child("instance")) {
-		return new implementation::tbuilder_instance(instance);
-	}
-
-	if(const config& pane = cfg.child("pane")) {
-		return new implementation::tbuilder_pane(pane);
-	}
-
-	if(const config& viewport = cfg.child("viewport")) {
-		return new implementation::tbuilder_viewport(viewport);
 	}
 
 /*
@@ -213,7 +196,6 @@ tbuilder_widget_ptr create_builder_widget(const config& cfg)
 	TRY(stacked_widget);
 	TRY(scrollbar_panel);
 	TRY(horizontal_scrollbar);
-	TRY(repeating_button);
 	TRY(vertical_scrollbar);
 	TRY(label);
 	TRY(report);
@@ -221,17 +203,28 @@ tbuilder_widget_ptr create_builder_widget(const config& cfg)
 	TRY(toggle_button);
 	TRY(slider);
 	TRY(scroll_label);
-	TRY(matrix);
+	TRY(scroll_text_box);
 	TRY(minimap);
 	TRY(button);
 	TRY(drawing);
 	TRY(password_box);
 	TRY(progress_bar);
+	TRY(tree_view);
+	TRY(track);
+	TRY(text_box2);
 #undef TRY
 #endif
 
 	std::cerr << cfg;
 	ERROR_LOG(false);
+}
+
+tbuilder_widget_ptr create_builder_widget2(const std::string& type, const config& cfg)
+{
+	std::map<std::string, boost::function<tbuilder_widget_ptr(config)> >::const_iterator it =
+		builder_widget_lookup().find(type);
+	VALIDATE(it != builder_widget_lookup().end(), "Unknown widget!");
+	return it->second(cfg);
 }
 
 const std::string& twindow_builder::read(const config& cfg)
@@ -293,6 +286,7 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
 	click_dismiss(cfg["click_dismiss"].to_bool()),
 	definition(cfg["definition"]),
 	theme(cfg["theme"].to_bool()),
+	orientation(implementation::get_orientation(cfg["orientation"])),
 	linked_groups(),
 	tooltip(cfg.child_or_empty("tooltip")),
 	helptip(cfg.child_or_empty("helptip")),
@@ -398,6 +392,11 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
  * @end{parent}{name=gui/window/resolution/}
  */
 
+	if (twidget::hdpi) {
+		maximum_width *= twidget::hdpi_ratio;
+		maximum_height *= twidget::hdpi_ratio;
+	}
+
 	const config &c = cfg.child("grid");
 
 	VALIDATE(c, _("No grid defined."));
@@ -430,7 +429,7 @@ twindow_builder::tresolution::tresolution(const config& cfg) :
 		if(!(linked_group.fixed_width || linked_group.fixed_height)) {
 			utils::string_map symbols;
 			symbols["id"] = linked_group.id;
-			t_string msg = vgettext(
+			t_string msg = vgettext2( 
 					  "Linked '$id' group needs a 'fixed_width' or "
 						"'fixed_height' key."
 					, symbols);
@@ -532,8 +531,8 @@ tbuilder_grid::tbuilder_grid(const config& cfg) :
 		BOOST_FOREACH(const config &c, row.child_range("column"))
 		{
 			flags.push_back(implementation::read_flags(c));
-			border_size.push_back(c["border_size"]);
-			if(rows == 0) {
+			border_size.push_back(c["border_size"].to_int() * twidget::hdpi_ratio);
+			if (rows == 0) {
 				col_grow_factor.push_back(c["grow_factor"]);
 			}
 
@@ -590,7 +589,17 @@ tgrid* tbuilder_grid::build (tgrid* grid) const
 
 			DBG_GUI_G << "Window builder: adding child at " << x << ',' << y << ".\n";
 
-			twidget* widget = widgets[x * cols + y]->build();
+			tbuilder_widget_ptr ptr = widgets[x * cols + y];
+			twidget* widget = NULL;
+			if (twidget::is_tpl_widget_id(ptr->id) && twidget::orientation_effect_resolution(settings::screen_width, settings::screen_height)) {
+				std::map<std::string, tbuilder_widget_ptr>::const_iterator it = settings::portraits.find(ptr->id);
+				if (it != settings::portraits.end()) {
+					widget = it->second->build();
+				}
+			}
+			if (!widget) {
+				widget = widgets[x * cols + y]->build();
+			}
 			grid->set_child(widget, x, y, flags[x * cols + y],  border_size[x * cols + y]);
 		}
 	}

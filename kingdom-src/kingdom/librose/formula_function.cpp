@@ -1,6 +1,5 @@
-/* $Id: formula_function.cpp 46186 2010-09-01 21:12:38Z silene $ */
 /*
-   Copyright (C) 2008 - 2010 by David White <dave@whitevine.net>
+   Copyright (C) 2008 - 2015 by David White <dave@whitevine.net>
    Part of the Battle for Wesnoth Project http://www.wesnoth.org/
 
    This program is free software; you can redistribute it and/or modify
@@ -23,14 +22,22 @@
 #include "log.hpp"
 
 #include <boost/foreach.hpp>
+#include <boost/math/constants/constants.hpp>
+using namespace boost::math::constants;
+
+#ifdef HAVE_VISUAL_LEAK_DETECTOR
+#include "vld.h"
+#endif
+
 
 static lg::log_domain log_engine("engine");
 #define DBG_NG LOG_STREAM(debug, log_engine)
 static lg::log_domain log_scripting_formula("scripting/formula");
-#define LOG_AI LOG_STREAM(info, log_scripting_formula)
+#define LOG_SF LOG_STREAM(info, log_scripting_formula)
+#define WRN_SF LOG_STREAM(warn, log_scripting_formula)
+#define ERR_SF LOG_STREAM(err, log_scripting_formula)
 
 namespace game_logic {
-
 
 std::string function_expression::str() const
 {
@@ -38,7 +45,7 @@ std::string function_expression::str() const
 	s << get_name();
 	s << '(';
 	bool first_arg = true;
-	BOOST_FOREACH (expression_ptr a , args()) {
+	BOOST_FOREACH(expression_ptr a , args()) {
 		if (!first_arg) {
 			s << ',';
 		} else {
@@ -274,13 +281,13 @@ private:
 		if( args().size() == 1)
 		{
 			str1 = var1.to_debug_string(NULL, true);
-			LOG_AI << str1 << std::endl;
+			LOG_SF << str1 << std::endl;
 			return var1;
 		} else {
 			str1 = var1.string_cast();
 			const variant var2 = args()[1]->evaluate(variables,fdb);
 			str2 = var2.to_debug_string(NULL, true);
-			LOG_AI << str1 << str2 << std::endl;
+			LOG_SF << str1 << str2 << std::endl;
 			return var2;
 		}
 	}
@@ -324,8 +331,7 @@ private:
 
 		std::vector<variant> tmp;
 
-		variant_iterator it = var.get_iterator();
-		for(it = var.begin(); it != var.end(); ++it) {
+		for(variant_iterator it = var.begin(); it != var.end(); ++it) {
 			tmp.push_back( *it );
 		}
 
@@ -354,8 +360,7 @@ private:
 				tmp[ var_1[i] ] = var_2[i];
 		} else
 		{
-			variant_iterator it = var_1.get_iterator();
-			for(it = var_1.begin(); it != var_1.end(); ++it) {
+			for(variant_iterator it = var_1.begin(); it != var_1.end(); ++it) {
 				std::map<variant, variant>::iterator map_it = tmp.find( *it );
 				if (map_it == tmp.end())
 					tmp[ *it ] = variant( 1 );
@@ -365,6 +370,131 @@ private:
 		}
 
 		return variant( &tmp );
+	}
+};
+
+class substring_function
+	: public function_expression {
+public:
+	explicit substring_function(const args_list& args)
+	     : function_expression("substring", args, 2, 3)
+	{}
+
+	variant execute(const formula_callable& variables
+			, formula_debugger *fdb) const {
+
+		std::string result = args()[0]->evaluate(variables, fdb).as_string();
+
+		int offset = args()[1]->evaluate(variables, fdb).as_int();
+		if(offset < 0) {
+			offset += result.size();
+			if(offset < 0) {
+				WRN_SF << "[substring] Offset '"
+						<< args()[1]->evaluate(variables, fdb).as_int()
+						<< "' results in a negative start in string '"
+						<< result
+						<< "' and is reset at the beginning of the string.\n";
+
+				offset = 0;
+			}
+		} else {
+			if(static_cast<size_t>(offset) >= result.size()) {
+				WRN_SF << "[substring] Offset '" << offset
+						<< "' is larger than the size of '" << result
+						<< "' and results in an empty string.\n";
+
+				return variant(std::string());
+			}
+		}
+
+		if(args().size() > 2) {
+			const int size = args()[2]->evaluate(variables, fdb).as_int();
+			if(size < 0) {
+				ERR_SF << "[substring] Size is negative an "
+						<< "empty string is returned.\n";
+
+				return variant(std::string());
+			}
+			return variant(result.substr(offset, size));
+		} else {
+			return variant(result.substr(offset));
+		}
+	}
+};
+
+class length_function
+	: public function_expression {
+public:
+	explicit length_function(const args_list& args)
+	     : function_expression("length", args, 1, 1)
+	{}
+
+	variant execute(const formula_callable& variables
+			, formula_debugger *fdb) const {
+
+		return variant(
+				args()[0]->evaluate(variables, fdb).as_string().length());
+	}
+};
+
+class concatenate_function
+		: public function_expression {
+public:
+		explicit concatenate_function(const args_list& args)
+			: function_expression("concatenate", args, 1, -1)
+		{}
+
+private:
+		variant execute(const formula_callable& variables
+						, formula_debugger *fdb) const {
+
+				std::string result;
+
+				BOOST_FOREACH(expression_ptr arg, args()) {
+						result += arg->evaluate(variables, fdb).string_cast();
+				}
+
+				return variant(result);
+		}
+};
+
+class sin_function
+	: public function_expression {
+public:
+	explicit sin_function(const args_list& args)
+	     : function_expression("sin", args, 1, 1)
+	{}
+
+private:
+	variant execute(const formula_callable& variables
+			, formula_debugger *fdb) const {
+
+		const double angle =
+				args()[0]->evaluate(variables,fdb).as_decimal() / 1000.;
+
+		return variant(
+				  static_cast<int>(1000. * sin(angle * pi<double>() / 180.))
+				, variant::DECIMAL_VARIANT);
+	}
+};
+
+class cos_function
+	: public function_expression {
+public:
+	explicit cos_function(const args_list& args)
+	     : function_expression("cos", args, 1, 1)
+	{}
+
+private:
+	variant execute(const formula_callable& variables
+			, formula_debugger *fdb) const {
+
+		const double angle =
+				args()[0]->evaluate(variables,fdb).as_decimal() / 1000.;
+
+		return variant(
+				  static_cast<int>(1000. * cos(angle * pi<double>() / 180.))
+				, variant::DECIMAL_VARIANT);
 	}
 };
 
@@ -400,11 +530,10 @@ private:
 	variant execute(const formula_callable& variables, formula_debugger *fdb) const {
 		const variant items = args()[0]->evaluate(variables,fdb);
 		variant max_value;
-		variant_iterator it = items.get_iterator();
-		variant_iterator max = variant_iterator();
+		variant_iterator max;
 
 		if(args().size() == 2) {
-			for(it = items.begin(); it != items.end(); ++it) {
+			for(variant_iterator it = items.begin(); it != items.end(); ++it) {
 				const variant val = args().back()->evaluate(formula_variant_callable_with_backup(*it, variables),fdb);
 				if(max == variant_iterator() || val > max_value) {
 					max = it;
@@ -415,7 +544,7 @@ private:
 			map_formula_callable self_callable;
 			self_callable.add_ref();
 			const std::string self = args()[1]->evaluate(variables,fdb).as_string();
-			for(it = items.begin(); it != items.end(); ++it) {
+			for(variant_iterator it = items.begin(); it != items.end(); ++it) {
 				self_callable.add(self, *it);
 				const variant val = args().back()->evaluate(formula_callable_with_backup(self_callable, formula_variant_callable_with_backup(*it, variables)),fdb);
 				if(max == variant_iterator() || val > max_value) {
@@ -442,7 +571,7 @@ public:
 private:
 	variant execute(const formula_callable& variables, formula_debugger *fdb) const {
 		const int value = args()[0]->evaluate(variables,fdb).as_int()%1000;
-		const double angle = 2.0*3.141592653589*(static_cast<double>(value)/1000.0);
+		const double angle = 2.0 * pi<double>() * (static_cast<double>(value) / 1000.0);
 		return variant(static_cast<int>(sin(angle)*1000.0));
 	}
 };
@@ -555,10 +684,8 @@ private:
 
 		const variant items = args()[0]->evaluate(variables,fdb);
 
-		variant_iterator it = items.get_iterator();
-
 		if(args().size() == 2) {
-			for(it = items.begin(); it != items.end(); ++it)  {
+			for(variant_iterator it = items.begin(); it != items.end(); ++it)  {
 				const variant val = args()[1]->evaluate(formula_variant_callable_with_backup(*it, variables),fdb);
 				if(val.as_bool()) {
 					if (items.is_map() )
@@ -571,7 +698,7 @@ private:
 			map_formula_callable self_callable;
 			self_callable.add_ref();
 			const std::string self = args()[1]->evaluate(variables,fdb).as_string();
-			for(it = items.begin(); it != items.end(); ++it) {
+			for(variant_iterator it = items.begin(); it != items.end(); ++it) {
 				self_callable.add(self, *it);
 				const variant val = args()[2]->evaluate(formula_callable_with_backup(self_callable, formula_variant_callable_with_backup(*it, variables)),fdb);
 				if(val.as_bool()) {
@@ -598,9 +725,8 @@ private:
 	variant execute(const formula_callable& variables, formula_debugger *fdb) const {
 		const variant items = args()[0]->evaluate(variables,fdb);
 
-		variant_iterator it = items.get_iterator();
 		if(args().size() == 2) {
-			for(it = items.begin(); it != items.end(); ++it) {
+			for(variant_iterator it = items.begin(); it != items.end(); ++it) {
 				const variant val = args()[1]->evaluate(formula_variant_callable_with_backup(*it, variables),fdb);
 				if(val.as_bool()) {
 					return *it;
@@ -610,7 +736,7 @@ private:
 			map_formula_callable self_callable;
 			self_callable.add_ref();
 			const std::string self = args()[1]->evaluate(variables,fdb).as_string();
-			for(it = items.begin(); it != items.end(); ++it){
+			for(variant_iterator it = items.begin(); it != items.end(); ++it){
 				self_callable.add(self, *it);
 				const variant val = args().back()->evaluate(formula_callable_with_backup(self_callable, formula_variant_callable_with_backup(*it, variables)),fdb);
 				if(val.as_bool()) {
@@ -634,9 +760,8 @@ private:
 		std::map<variant,variant> map_vars;
 		const variant items = args()[0]->evaluate(variables,fdb);
 
-		variant_iterator it = items.get_iterator();
 		if(args().size() == 2) {
-			for(it = items.begin(); it != items.end(); ++it) {
+			for(variant_iterator it = items.begin(); it != items.end(); ++it) {
 				const variant val = args().back()->evaluate(formula_variant_callable_with_backup(*it, variables),fdb);
 				if (items.is_map() )
 					map_vars[ (*it).get_member("key") ] = val;
@@ -647,7 +772,7 @@ private:
 			map_formula_callable self_callable;
 			self_callable.add_ref();
 			const std::string self = args()[1]->evaluate(variables,fdb).as_string();
-			for(it = items.begin(); it != items.end(); ++it) {
+			for(variant_iterator it = items.begin(); it != items.end(); ++it) {
 				self_callable.add(self, *it);
 				const variant val = args().back()->evaluate(formula_callable_with_backup(self_callable, formula_variant_callable_with_backup(*it, variables)),fdb);
 				if (items.is_map() )
@@ -669,8 +794,6 @@ public:
 	{}
 private:
 	variant execute(const formula_callable& variables, formula_debugger *fdb) const {
-		std::vector<variant> list_vars;
-		std::map<variant,variant> map_vars;
 		const variant items = args()[0]->evaluate(variables,fdb);
 
 		if(items.num_elements() == 0)
@@ -678,8 +801,7 @@ private:
 		else if(items.num_elements() == 1)
 			return items[0];
 
-		variant_iterator it = items.get_iterator();
-		it = items.begin();
+		variant_iterator it = items.begin();
 		variant res(*it);
 		map_formula_callable self_callable;
 		self_callable.add_ref();
@@ -745,8 +867,7 @@ public:
 private:
 	variant execute(const formula_callable& variables, formula_debugger *fdb) const {
 		const variant items = args()[0]->evaluate(variables,fdb);
-		variant_iterator it = items.get_iterator();
-		it = items.begin();
+		variant_iterator it = items.begin();
 		if(it == items.end()) {
 			return variant();
 		}
@@ -794,14 +915,9 @@ private:
 
 		int d = decimal.as_decimal();
 
-		int f = d%1000;
-
-		if( f > 0 ) {
+		if( (d>=0) && (d%1000 != 0) ) {
 			d/=1000;
 			return variant( ++d );
-		} else if( f < 0 ) {
-			d/=1000;
-			return variant( --d );
 		} else {
 			d/=1000;
 			return variant( d );
@@ -846,9 +962,9 @@ private:
 
 		int d = decimal.as_decimal();
 
-		if( d%1000 != 0 ) {
+		if( (d<0) && (d%1000 != 0) ) {
 			d/=1000;
-			return variant( d );
+			return variant( --d );
 		} else {
 			d/=1000;
 			return variant( d );
@@ -1015,6 +1131,10 @@ functions_map& get_functions_map() {
 
 	static functions_map functions_table;
 
+#ifdef HAVE_VISUAL_LEAK_DETECTOR
+	VLDDisable();
+#endif
+
 	if(functions_table.empty()) {
 #define FUNCTION(name) functions_table[#name] = new function_creator<name##_function>();
 		FUNCTION(debug);
@@ -1049,8 +1169,17 @@ functions_map& get_functions_map() {
 		FUNCTION(values);
 		FUNCTION(tolist);
 		FUNCTION(tomap);
+		FUNCTION(substring);
+		FUNCTION(length);
+		FUNCTION(concatenate);
+		FUNCTION(sin);
+		FUNCTION(cos);
 #undef FUNCTION
 	}
+
+#ifdef HAVE_VISUAL_LEAK_DETECTOR
+	VLDEnable();
+#endif
 
 	return functions_table;
 }

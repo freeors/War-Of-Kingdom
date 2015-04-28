@@ -24,8 +24,6 @@ namespace implementation {
 	struct tbuilder_stacked_widget;
 }
 
-class tgenerator_;
-
 class tstacked_widget
 		: public tcontainer_
 {
@@ -33,13 +31,32 @@ class tstacked_widget
 	friend class tdebug_layout_graph;
 
 public:
+	class tgrid2: public tgrid
+	{
+	public:
+		tgrid2(tstacked_widget& stacked)
+			: stacked_(stacked)
+		{}
+
+		tpoint calculate_best_size() const;
+
+		void set_visible_area(const SDL_Rect& area);
+
+		void set_origin(const tpoint& origin);
+		void place(const tpoint& origin, const tpoint& size);
+
+		twidget* find(const std::string& id, const bool must_be_active);
+		const twidget* find(const std::string& id, const bool must_be_active) const;
+
+	private:
+		tstacked_widget& stacked_;
+	};
 
 	tstacked_widget();
 
 	/***** ***** ***** inherited ***** ****** *****/
 	/** Inherited from tcontainer_ */
-	void child_populate_dirty_list(twindow& caller,
-		const std::vector<twidget*>& call_stack);
+	void child_populate_dirty_list(twindow& caller,	const std::vector<twidget*>& call_stack);
 
 	/** Inherited from tcontrol. */
 	bool get_active() const { return true; }
@@ -55,6 +72,14 @@ public:
 
 	/** Inherited from tcontrol. */
 	const twidget* find_at(const tpoint& coordinate, const bool must_be_active) const;
+
+	void set_float(bool val);
+
+	void set_radio_layer(int layer);
+
+	std::string generate_layout_str(const int level) const;
+
+	tgrid* layer(int at) const;
 
 private:
 
@@ -73,7 +98,9 @@ private:
 	 * of the tscrollbar_container super class and freed when it's grid is
 	 * freed.
 	 */
-	tgenerator_* generator_;
+	tgrid2* grid2_;
+
+	bool float_;
 
 	/** Inherited from tcontrol. */
 	const std::string& get_control_type() const;

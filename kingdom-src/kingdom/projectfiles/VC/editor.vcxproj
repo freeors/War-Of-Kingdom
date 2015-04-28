@@ -53,7 +53,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\librose;..\..\src;..\..\external\boost;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\kingdom;..\..\external\boost;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -84,7 +84,7 @@ copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)int
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <WholeProgramOptimization>false</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>..\..\librose;..\..\src;..\..\external\boost;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\librose;..\..\kingdom;..\..\external\boost;..\..\..\SDL\SDL-dev-framework\SDL-2.0.x\include;..\..\..\SDL\SDL-dev-framework\SDL_image\include;..\..\..\gettext\gettext-framework\include;..\..\..\SDL\SDL-dev-framework\SDL_ttf\include;..\..\..\SDL\SDL-dev-framework\SDL_net\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;NOMINMAX;_CRT_SECURE_NO_DEPRECATE;BOOST_ALL_NO_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -104,34 +104,33 @@ copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)int
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\editor2\callback.cpp" />
-    <ClCompile Include="..\..\src\editor2\hero.cpp" />
-    <ClCompile Include="..\..\src\unit_types.cpp" />
-    <ClCompile Include="..\..\src\editor2\animation.cpp" />
-    <ClCompile Include="..\..\src\editor2\book.cpp" />
-    <ClCompile Include="..\..\src\editor2\config.cpp" />
-    <ClCompile Include="..\..\src\editor2\DlgBuilderProc.cpp" />
-    <ClCompile Include="..\..\src\editor2\DlgCampaignProc.cpp" />
-    <ClCompile Include="..\..\src\editor2\DlgCoreProc.cpp" />
-    <ClCompile Include="..\..\src\editor2\DlgDDescProc.cpp" />
-    <ClCompile Include="..\..\src\editor2\DlgHEditorProc.cpp" />
-    <ClCompile Include="..\..\src\editor2\DlgSyncProc.cpp" />
-    <ClCompile Include="..\..\src\editor2\DlgTitleProc.cpp" />
-    <ClCompile Include="..\..\src\editor2\DlgVisualProc.cpp" />
-    <ClCompile Include="..\..\src\editor2\editor.cpp" />
-    <ClCompile Include="..\..\src\editor2\event.cpp" />
-    <ClCompile Include="..\..\src\editor2\faction.cpp" />
-    <ClCompile Include="..\..\src\editor2\feature.cpp" />
-    <ClCompile Include="..\..\src\editor2\formation.cpp" />
-    <ClCompile Include="..\..\src\editor2\integrate.cpp" />
-    <ClCompile Include="..\..\src\editor2\main.cpp" />
-    <ClCompile Include="..\..\src\editor2\multiplayer.cpp" />
-    <ClCompile Include="..\..\src\editor2\noble.cpp" />
-    <ClCompile Include="..\..\src\editor2\rectangle.cpp" />
-    <ClCompile Include="..\..\src\editor2\terrain.cpp" />
-    <ClCompile Include="..\..\src\editor2\utype.cpp" />
-    <ClCompile Include="..\..\src\editor2\win32x.cpp" />
-    <ClCompile Include="..\..\src\editor2\xfunc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\animation.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\book.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\config.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\DlgBuilderProc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\DlgCampaignProc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\DlgCoreProc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\DlgDDescProc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\DlgHEditorProc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\DlgSyncProc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\DlgTitleProc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\DlgVisualProc.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\editor.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\event.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\faction.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\feature.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\formation.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\hero.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\integrate.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\main.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\multiplayer.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\noble.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\rectangle.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\terrain.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\utype.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\win32x.cpp" />
+    <ClCompile Include="..\..\kingdom\editor2\xfunc.cpp" />
+    <ClCompile Include="..\..\kingdom\unit_types.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\editor2\backup.ico" />
@@ -205,23 +204,21 @@ copy $(SolutionDir)\..\..\..\gettext\gettext-framework\dll\intl.dll $(OutDir)int
     <None Include="..\..\src\editor2\xchg_dis.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\..\src\editor2\resource.rc" />
+    <ResourceCompile Include="..\..\kingdom\editor2\resource.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\editor2\win32x.h" />
-    <ClInclude Include="..\..\src\editor2\xfunc.h" />
-    <ClInclude Include="..\..\src\editor2\animation.hpp" />
-    <ClInclude Include="..\..\src\editor2\DlgBuilderProc.hpp" />
-    <ClInclude Include="..\..\src\editor2\DlgCampaignProc.hpp" />
-    <ClInclude Include="..\..\src\editor2\DlgCoreProc.hpp" />
-    <ClInclude Include="..\..\src\editor2\editor.hpp" />
-    <ClInclude Include="..\..\src\editor2\event.hpp" />
-    <ClInclude Include="..\..\src\editor2\integrate.hpp" />
-    <ClInclude Include="..\..\src\editor2\multiplayer.hpp" />
-    <ClInclude Include="..\..\src\editor2\rectangle.hpp" />
-    <ClInclude Include="..\..\src\editor2\resource.h" />
-    <ClInclude Include="..\..\src\editor2\struct.h" />
-    <ClInclude Include="..\..\src\unit_types.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\animation.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\DlgBuilderProc.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\DlgCampaignProc.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\DlgCoreProc.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\editor.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\event.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\integrate.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\multiplayer.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\rectangle.hpp" />
+    <ClInclude Include="..\..\kingdom\editor2\struct.h" />
+    <ClInclude Include="..\..\kingdom\editor2\win32x.h" />
+    <ClInclude Include="..\..\kingdom\editor2\xfunc.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="librose.vcxproj">

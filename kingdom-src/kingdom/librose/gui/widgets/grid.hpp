@@ -32,6 +32,7 @@ class tgrid : public virtual twidget
 {
 	friend class tdebug_layout_graph;
 	friend struct tgrid_implementation;
+	friend class tvisual_layout;
 
 public:
 
@@ -189,44 +190,22 @@ public:
 	/** Inherited from twidget. */
 	void layout_init(const bool full_initialization);
 
-	/**
-	 * Tries to reduce the width of a container.
-	 *
-	 * @see @ref layout_algorithm for more information.
-	 *
-	 * @param maximum_width       The wanted maximum width.
-	 */
-	void reduce_width(const unsigned maximum_width);
-
-	/** Inherited from twidget. */
-	void request_reduce_width(const unsigned maximum_width);
-
-	/** Inherited from twidget. */
-	void demand_reduce_width(const unsigned maximum_width);
-
-	/**
-	 * Tries to reduce the height of a container.
-	 *
-	 * @see @ref layout_algorithm for more information.
-	 *
-	 * @param maximum_height      The wanted maximum height.
-	 */
-	void reduce_height(const unsigned maximum_height);
-
-	/** Inherited from twidget. */
-	void request_reduce_height(const unsigned maximum_height);
-
-	/** Inherited from twidget. */
-	void demand_reduce_height(const unsigned maximum_height);
-
 	/** Inherited from twidget. */
 	tpoint calculate_best_size() const;
 
 	tpoint calculate_best_size_fix() const;
 
 	/** Inherited from twidget. */
+	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
+	void broadcast_frame_buffer(surface& frame_buffer);
+
+	tpoint request_reduce_width(const unsigned maximum_width);
+	int column_request_reduce_width(const unsigned column, const unsigned maximum_width);
+
+	/** Inherited from twidget. */
 	bool can_wrap() const;
 
+	std::string generate_layout_str(const int level) const;
 public:
 	/** Inherited from twidget. */
 	void place(const tpoint& origin, const tpoint& size);
@@ -287,14 +266,26 @@ public:
 
 	void place_fix(const tpoint& origin, const tpoint& size);
 
-	void init_report(int unit_w, int unit_y, int gap, bool extendable);
-	void insert_child(int unit_w, int unit_h, twidget& widget, int at, bool extendable);
-	void erase_child(int at, bool extendable);
-	void replacement_children(int unit_w, int unit_h, int gap, bool extendable);
-	void erase_children(int unit_w, int unit_h, int gap, bool extendable);
-	void hide_children(int unit_w, int unit_h, int gap, bool extendable);
+	void report_create_stuff(int unit_w, int unit_y, int gap, bool extendable, int fixed_cols);
+	void insert_child(int unit_w, int unit_h, twidget& widget, int at);
+	void erase_child(int at);
+	void replacement_children(int unit_w, int unit_h, int gap, bool extendable, int fixed_cols, const tspacer& content);
+	void erase_children(int unit_w, int unit_h, int gap, bool extendable, int fixed_cols, const tspacer& content);
+	void hide_children(int unit_w, int unit_h, int gap, bool extendable, int fixed_cols, const tspacer& content);
+	void clear_stuff_widget() { stuff_widget_.clear(); }
 
+	void calculate_grid_params(int unit_w, int unit_h, int gap, bool extendable, int fixed_cols);
 	void resize_children(int size);
+
+	// listbox help
+	void listbox_init();
+	int listbox_insert_child(twidget& widget, int at);
+	void listbox_erase_child(int at);
+	int listbox_cursel() const;
+
+	// stacked widget help
+	void stacked_init();
+	void stacked_insert_child(twidget& widget, int at);
 
 	/** Child item of the grid. */
 	struct tchild {
@@ -320,6 +311,16 @@ public:
 	tchild* children() { return children_; }
 	const tchild* children() const { return children_; }
 	int children_vsize() const;
+
+	const tchild& child(const unsigned row, const unsigned col) const
+		{ return children_[row * cols_ + col]; }
+	tchild& child(const unsigned row, const unsigned col)
+		{ return children_[row * cols_ + col]; }
+
+	const tchild& child(const unsigned at) const
+	{ 
+		return children_[at]; 
+	}
 
 public:
 	/** Iterator for the tchild items. */
@@ -354,6 +355,10 @@ public:
 	void update_last_draw_end();
 
 private:
+	/** Layouts the children in the grid. */
+	void layout(const tpoint& origin);
+
+protected:
 	/** The number of grid rows. */
 	unsigned rows_;
 
@@ -388,17 +393,7 @@ private:
 	int stuff_size_;
 	tpoint last_draw_end_;
 
-	const tchild& child(const unsigned row, const unsigned col) const
-		{ return children_[row * cols_ + col]; }
-	tchild& child(const unsigned row, const unsigned col)
-		{ return children_[row * cols_ + col]; }
-
-	/** Layouts the children in the grid. */
-	void layout(const tpoint& origin);
-
-	/** Inherited from twidget. */
-	void impl_draw_children(surface& frame_buffer, int x_offset, int y_offset);
-
+	const std::string& get_control_type() const;
 };
 
 /** Returns the best size for the cell. */

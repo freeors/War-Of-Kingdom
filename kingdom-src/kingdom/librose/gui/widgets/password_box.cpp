@@ -14,21 +14,16 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/password_box.hpp"
 
-#include "gui/auxiliary/log.hpp"
 #include "gui/auxiliary/widget_definition/text_box.hpp"
 #include "gui/auxiliary/window_builder/password_box.hpp"
 #include "gui/widgets/settings.hpp"
 #include "serialization/string_utils.hpp"
-#include "posix.h"
 
 #include <boost/bind.hpp>
-
-#define LOG_SCOPE_HEADER get_control_type() + " [" + id() + "] " + __func__
-#define LOG_HEADER LOG_SCOPE_HEADER + ':'
 
 namespace gui2 {
 
@@ -187,6 +182,7 @@ void tpassword_box::post_function()
 	real_value_ = label();
 	ttext_box::set_label(std::string(utils::utf8str_len(real_value_), '*'));
 
+	// maybe exist default-text in text_box.
 	// See above
 	size_t before_chars = utils::utf8str_len(before);
 	selection_start_ = integrate_->editable_at2(before_chars);
@@ -194,6 +190,12 @@ void tpassword_box::post_function()
 		size_t selection_chars = utils::utf8str_len(selection);
 		size_t end = normal? before_chars + selection_chars: before_chars - selection_chars;
 		selection_end_ = integrate_->editable_at2(end);
+	}
+
+	if (real_value_.empty()) {
+		// FIXBUG!! backspace delete all text, but exist default text.
+		int ii = 0;
+		goto_start_of_data();
 	}
 
 	// Why do the selection functions not update

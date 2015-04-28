@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/auxiliary/window_builder/control.hpp"
 
@@ -21,6 +21,7 @@
 #include "formatter.hpp"
 #include "gettext.hpp"
 #include "gui/auxiliary/log.hpp"
+#include "gui/auxiliary/window_builder/helper.hpp"
 #include "gui/widgets/control.hpp"
 #include "gui/widgets/settings.hpp"
 
@@ -38,6 +39,7 @@ tbuilder_control::tbuilder_control(const config& cfg)
 	, label(cfg["label"].t_str())
 	, tooltip(cfg["tooltip"].t_str())
 	, help(cfg["help"].t_str())
+	, drag(get_drag(cfg["drag"]))
 	, use_tooltip_on_label_overflow(true)
 	, fix_rect(empty_rect)
 {
@@ -74,9 +76,7 @@ void tbuilder_control::init_control(tcontrol* control) const
 	if (fix_rect.w && fix_rect.h) {
 		control->set_fix_rect(fix_rect);
 	}
-
-	control->set_debug_border_mode(debug_border_mode);
-	control->set_debug_border_color(debug_border_color);
+	control->set_drag(drag);
 }
 
 twidget* tbuilder_control::build(const treplacements& /*replacements*/) const
@@ -146,18 +146,7 @@ twidget* tbuilder_control::build(const treplacements& /*replacements*/) const
  *                                     used for the tooltip. If this variable is
  *                                     set to true this will happen. $
  *
- *   debug_border_mode & unsigned & 0 &
- *                                     The mode for showing the debug border.
- *                                     This border shows the area reserved for
- *                                     a widget. This function is only meant
- *                                     for debugging and might not be
- *                                     available in all Wesnoth binaries.
- *                                     Available modes:
- *                                     @* 0 no border.
- *                                     @* 1 1 pixel border.
- *                                     @* 2 floodfill the widget area. $
  *
- *   debug_border_color & color & "" & The color of the debug border. $
  *   size_text & t_string & "" &       Sets the minimum width of the widget
  *                                     depending on the text in it. (Note not
  *                                     implemented yet.) $

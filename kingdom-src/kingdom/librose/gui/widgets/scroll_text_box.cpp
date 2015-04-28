@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/widgets/scroll_text_box.hpp"
 
@@ -25,7 +25,6 @@
 #include "gui/widgets/scrollbar.hpp"
 #include "gui/widgets/spacer.hpp"
 #include "gui/widgets/window.hpp"
-#include "gui/auxiliary/layout_exception.hpp"
 
 #include <boost/bind.hpp>
 
@@ -63,9 +62,12 @@ tpoint tscroll_text_box::calculate_best_size() const
 	unsigned w = best_width_(window->variables());
 
 	unsigned maximum_width = settings::screen_width;
-	if (w > settings::screen_width) {
+	if (w) {
 		const tpoint vertical_scrollbar = scrollbar_size(*vertical_scrollbar_grid_, vertical_scrollbar_mode_);
-		maximum_width = w - settings::screen_width - vertical_scrollbar.x;
+		maximum_width = w - vertical_scrollbar.x;
+		if (maximum_width > settings::screen_width) {
+			maximum_width -= settings::screen_width;
+		}
 	}
 
 	ttext_box* tb = dynamic_cast<ttext_box*>(content_grid_->find("_text_box", false));
@@ -74,19 +76,21 @@ tpoint tscroll_text_box::calculate_best_size() const
 	return tscrollbar_container::calculate_best_size();
 }
 
-void tscroll_text_box::set_content_size(const tpoint& origin, const tpoint& desire_size)
+void tscroll_text_box::place_content_grid(const tpoint& content_origin, const tpoint& content_size, const tpoint& desire_origin)
 {
 	ttext_box* tb = dynamic_cast<ttext_box*>(content_grid()->find("_text_box", false));
-	tb->set_text_maximum_width(desire_size.x);
+	tb->set_text_maximum_width(content_size.x);
 
 	const tpoint actual_size = content_grid_->get_best_size();
-	bool changed = calculate_scrollbar(actual_size, desire_size);
+	bool changed = calculate_scrollbar(actual_size, content_size);
 	if (changed) {
 		tb->clear_label_size_cache();
 	}
 
-	const tpoint size(std::max(actual_size.x, desire_size.x), std::max(actual_size.y, desire_size.y));
-	tscrollbar_container::set_content_size(origin, size);
+	const tpoint size(std::max(actual_size.x, content_size.x), std::max(actual_size.y, content_size.y));
+	tpoint origin2 = validate_content_grid_origin(content_origin, content_size, desire_origin, size);
+	
+	content_grid_->place(origin2, size);
 }
 
 bool tscroll_text_box::content_empty() const
@@ -152,8 +156,16 @@ void tscroll_text_box::mouse_moved_callback(ttext_box* widget)
 		return;
 	}
 
+	tpoint origin = content_grid_->get_origin();
+	origin.y -= item_position - vertical_scrollbar_->get_item_position();
+	content_grid_->set_origin(origin);
+
+	tpoint best_size = content_grid_->calculate_best_size();
+	vertical_scrollbar_->set_item_count(best_size.y);
 	vertical_scrollbar_->set_item_position(item_position);
-	scrollbar_moved();
+
+	// inform place again!
+	invalidate_layout(false);
 }
 
 const std::string& tscroll_text_box::get_control_type() const

@@ -57,7 +57,7 @@ public:
 	/** Inherited from tscrollbar_container. */
 	void child_populate_dirty_list(twindow& caller,
 			const std::vector<twidget*>& call_stack);
-	void set_content_size(const tpoint& origin, const tpoint& desire_size);
+	void place_content_grid(const tpoint& content_origin, const tpoint& content_size, const tpoint& desire_origin);
 
 	/** Inherited from tcontainer_. */
 	void set_self_active(const bool /*active*/)  {}

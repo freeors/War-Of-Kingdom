@@ -13,7 +13,7 @@
    See the COPYING file for more details.
 */
 
-#define GETTEXT_DOMAIN "wesnoth-lib"
+#define GETTEXT_DOMAIN "rose-lib"
 
 #include "gui/dialogs/chat.hpp"
 
@@ -29,13 +29,13 @@
 #include "gui/widgets/tree_view_node.hpp"
 #include "gui/widgets/toggle_panel.hpp"
 #include "gui/widgets/scroll_label.hpp"
-#include "gui/widgets/scrollbar_panel.hpp"
 #include "gui/widgets/text_box.hpp"
 #include "gui/widgets/toggle_button.hpp"
 #include "gui/widgets/scroll_text_box.hpp"
 #include "gui/widgets/report.hpp"
 #include "gui/widgets/listbox.hpp"
 #include "gui/widgets/spacer.hpp"
+#include "gui/widgets/stacked_widget.hpp"
 #include "gui/dialogs/transient_message.hpp"
 #include "gui/dialogs/netdiag.hpp"
 #include "gui/dialogs/message.hpp"
@@ -44,8 +44,10 @@
 #include <hero.hpp>
 #include "filesystem.hpp"
 #include "proto_irc.hpp"
-#include "game_config.hpp"
+#include "rose_config.hpp"
+#include "clipboard.hpp"
 
+#include <iomanip>
 #include <boost/foreach.hpp>
 #include <boost/bind.hpp>
 
@@ -87,14 +89,22 @@ extern std::vector<int> generate_allies_from_team_names(const std::vector<std::s
 
 REGISTER_DIALOG(chat2)
 
-#define ctrlid_chat_layer	"_layer_chat"
-#define ctrlid_find_layer	"_layer_find"
-#define ctrlid_channel_layer	"_layer_channel"
+#define ctrlid_tpl_chat		"_tpl_chat"
+// #define ctrlid_tpl_chat		"_tpl_chat__"
+#define ctrlid_contact_layer	"_chat_layer_contact"
+#define ctrlid_find_layer	"_chat_layer_find"
+#define ctrlid_channel_layer	"_chat_layer_channel"
+#define ctrlid_msg_layer	"_chat_layer_msg"
 #define ctrlid_contact_bar	"_chat_contact_bar"
+#define ctrlid_contact_panel	"_chat_contact_panel"
 #define ctrlid_persons		"_chat_persons"
 #define ctrlid_persons_layer	"_layer_chat_persons"
 #define ctrlid_channels		"_chat_channels"
 #define ctrlid_channels_layer	"_layer_chat_channels"
+#define ctrlid_previous		"_chat_previous"
+#define ctrlid_next			"_chat_next"
+#define ctrlid_pagenum		"_chat_pagenum"
+#define ctrlid_history_stack	"_chat_history_stack"
 #define ctrlid_history		"_chat_history"
 #define ctrlid_qq_icon		"_chat_qq_icon"
 #define ctrlid_qq_name		"_chat_qq_name"
@@ -106,6 +116,7 @@ REGISTER_DIALOG(chat2)
 #define ctrlid_switch_to_chat_find	"_chat_switch_to_chat_find"
 #define ctrlid_switch_to_chat_channel	"_chat_switch_to_chat_channel"
 #define ctrlid_switch_to_find	"_chat_switch_to_find"
+#define ctrlid_return		"_chat_return"
 #define ctrlid_find			"_chat_find"
 #define ctrlid_join			"_chat_join"
 #define ctrlid_find_filter	"_chat_find_filter"
@@ -131,41 +142,41 @@ tchat_::tfunc::tfunc(int id)
 	if (id == f_netdiag) {
 		type = ft_none | ft_person | ft_channel | ft_chan_person;
 		image = "misc/network.png";
-		tooltip = dgettext("wesnoth-lib", "Network");
+		tooltip = _("Network");
 
-	} else if (id == f_previous_page) {
+	} else if (id == f_copy) {
 		type = ft_person | ft_channel | ft_chan_person;
-		image = "misc/up.png";
-		tooltip = dgettext("wesnoth-lib", "Previous page");
+		image = "misc/copy.png";
+		tooltip = _("Copy");
 
-	} else if (id == f_next_page) {
+	} else if (id == f_reply) {
 		type = ft_person | ft_channel | ft_chan_person;
-		image = "misc/down.png";
-		tooltip = dgettext("wesnoth-lib", "Next page");
+		image = "misc/reply.png";
+		tooltip = _("Reply");
 
 	} else if (id == f_face) {
 		type = 0;
 		image = "misc/face.png";
-		tooltip = dgettext("wesnoth-lib", "Face");
+		tooltip = _("Face");
 
 	} else if (id == f_part) {
 		type = ft_channel;
 		image = "misc/exit.png";
-		tooltip = dgettext("wesnoth-lib", "Part channel");
+		tooltip = _("Part channel");
 
 	} else if (id == f_part_friend) {
 		type = ft_person | ft_chan_person;
 		image = "misc/exit.png";
-		tooltip = dgettext("wesnoth-lib", "Part friend");
+		tooltip = _("Part friend");
 
 	} else if (id == f_explore) {
 		type = ft_channel;
 		image = "misc/explore.png";
-		tooltip = dgettext("wesnoth-lib", "Explore");
+		tooltip = _("Explore");
 	}
 }
 
-int tchat_::tsession::logs_per_page = 30;
+int tchat_::tsession::logs_per_page = 50;
 
 tchat_::tsession::tsession(chat_logs::treceiver& receiver)
 	: receiver(&receiver)
@@ -185,13 +196,13 @@ tchat_::tsession::tsession(chat_logs::treceiver& receiver)
 	chat_logs::user_from_logfile(*choice, history);
 }
 
-void tchat_::tsession::current_logs(std::vector<chat_logs::tlog>& logs) const
+int tchat_::tsession::current_logs(std::vector<chat_logs::tlog>& logs) const
 {
 	logs.clear();
 	int history_size = history.size();
 	int size = history_size + receiver->logs.size();
 	if (!size) {
-		return;
+		return twidget::npos;
 	}
 
 	int page = pages() - current_page - 1;
@@ -239,6 +250,8 @@ void tchat_::tsession::current_logs(std::vector<chat_logs::tlog>& logs) const
 		std::advance(end_it, now_end + 1);
 		std::copy(begin_it, end_it, std::back_inserter(logs));
 	}
+
+	return start;
 }
 
 int tchat_::tsession::pages() const
@@ -258,16 +271,31 @@ bool tchat_::tsession::can_next() const
 	return pgs && current_page > 0; 
 }
 
+const chat_logs::tlog& tchat_::tsession::log(int at) const
+{
+	const chat_logs::tlog* log = NULL;
+	int history_size = (int)history.size();
+	if (at < history_size) {
+		log = &history[at];
+	} else {
+		log = &receiver->logs[at - history_size];
+	}
+	return *log;
+}
+
 std::string tchat_::err_encode_str;
 
-tchat_::tchat_(display& disp, tgroup& g, int min_page, int chat_page, int chating_page)
+tchat_::tchat_(display& disp, int chat_page)
 	: disp_(disp)
-	, group_(g)
 	, signature_(0)
 	, person_cookies_()
 	, channel_cookies_()
 	, gamelist_()
 	, window_(NULL)
+	, contact_layer_(NULL)
+	, find_layer_(NULL)
+	, channel_layer_(NULL)
+	, msg_layer_(NULL)
 	, history_(NULL)
 	, input_(NULL)
 	, input_tb_(NULL)
@@ -277,24 +305,27 @@ tchat_::tchat_(display& disp, tgroup& g, int min_page, int chat_page, int chatin
 	, src_pos_(0)
 	, current_session_(NULL)
 	, inputing_(false)
-	, min_page_(min_page)
-	, current_page_(min_page - 1)
+	, current_page_(twidget::npos)
 	, chat_page_(chat_page)
 	, page_panel_(NULL)
 	, current_ft_(ft_none)
 	, in_find_chan_(false)
-	, catalog_(new ttabbar(true, false, "icon40"))
-	, toolbar_(new ttabbar(false, false, "icon36"))
+	, catalog_(NULL)
+	, toolbar_(NULL)
+	, swap_resultion_(false)
+	, portrait_(false)
 {
+	// application maybe enter chat directly.
+	// chat_::pre_show some action require lobby.chat to right state. for example channels/persons.
+	lobby->monitor_process();
+
 	if (err_encode_str.empty()) {
-		err_encode_str = dgettext("wesnoth-lib", "Character encoding must be UTF-8!");
+		err_encode_str = _("Character encoding must be UTF-8!");
 	}
 }
 
 tchat_::~tchat_()
 {
-	delete catalog_;
-	delete toolbar_;
 }
 
 void tchat_::user_to_title(const tcookie& cookie) const
@@ -307,7 +338,7 @@ void tchat_::user_to_title(const tcookie& cookie) const
 	}
 
 	tlabel& label = find_widget<tlabel>(window_, ctrlid_qq_name, false);
-	label.set_label(cookie.nick);
+	label.set_label(tintegrate::generate_format(cookie.nick, "gray"));
 }
 
 void tchat_::contact_person_toggled(twidget* widget)
@@ -335,7 +366,7 @@ void tchat_::contact_channel_toggled(twidget* widget)
 
 void tchat_::refresh_channel2_toolbox(const tlobby_user& user)
 {
-	bool favor = lobby->chat.is_favor_user(user.uid);
+	bool favor = lobby->chat->is_favor_user(user.uid);
 
 	// now only can chato favor's user
 	chat_to_->set_active(!user.me && favor);
@@ -347,7 +378,7 @@ void tchat_::channel2_toggled(twidget* widget)
 	ttoggle_panel* toggle = dynamic_cast<ttoggle_panel*>(widget);
 	tcookie& cookie = channel2_branch_[reinterpret_cast<long>(toggle->cookie())];
 
-	tlobby_user& user = lobby->chat.get_user(cookie.id);
+	tlobby_user& user = lobby->chat->get_user(cookie.id);
 	refresh_channel2_toolbox(user);
 }
 
@@ -380,7 +411,7 @@ void send_whisper(const tgroup& g, const std::string& receiver, const std::strin
 	cwhisper["message"] = message;
 	cwhisper["sender"] = g.leader().name();
 	data.add_child("whisper", cwhisper);
-	network::send_data(lobby->chat, data);
+	network::send_data(*lobby->chat, data);
 }
 
 bool is_blank_str(const std::string& str)
@@ -392,7 +423,7 @@ bool is_blank_str(const std::string& str)
 
 void tchat_::handle_multiline(const char* nick, const char* chan, const char* text)
 {
-	irc::server* serv = lobby->chat.serv();
+	irc::server* serv = lobby->chat->serv();
 	char* tmp = (char*)text;
 
 	int i = 0, pos = 0, len = (int)strlen(text);
@@ -423,7 +454,7 @@ void tchat_::send(bool& handled, bool& halt)
 {
 	twindow& window = *window_;
 
-	if (!lobby->chat.ready()) {
+	if (!lobby->chat->ready()) {
 		return;
 	}
 
@@ -437,18 +468,18 @@ void tchat_::send(bool& handled, bool& halt)
 
 	std::string orignal_input_str = input_str;
 
-	handle_multiline(lobby->chat.nick().c_str(), current_session_->receiver->nick.c_str(), input_str.c_str());
+	handle_multiline(lobby->chat->nick().c_str(), current_session_->receiver->nick.c_str(), input_str.c_str());
 
 	input_->set_label(null_str);
 
-	chat_logs::add(current_session_->receiver->id, current_session_->receiver->channel, *lobby->chat.me, input_str);
+	chat_logs::add(current_session_->receiver->id, current_session_->receiver->channel, *lobby->chat->me, input_str);
 	chat_2_scroll_label(*history_, *current_session_);
 }
 
 void tchat_::find(twindow& window)
 {
 	if (!in_find_chan_) {
-		irc::server* serv = lobby->chat.serv();
+		irc::server* serv = lobby->chat->serv();
 
 		ttext_box* text_box = &find_widget<ttext_box>(window_, ctrlid_find_filter, false);
 		std::string filter = text_box->get_value();
@@ -463,7 +494,7 @@ void tchat_::find(twindow& window)
 		if (!filter.empty()) {
 			nick = std::string("#") + filter;
 		}
-		lobby->chat.find_channel(nick, cond_min_users_);
+		lobby->chat->find_channel(nick, cond_min_users_);
 
 	} else {
 		process_chanlist_end();
@@ -474,11 +505,12 @@ void tchat_::join_channel(twindow& window)
 {
 	const std::string& chan = list_chans_[chanlist_->get_selected_row()];
 	int cid = tlobby_channel::get_cid(chan);
-	tlobby_channel& channel = lobby->chat.insert_channel(cid, chan);
-	std::vector<tcookie>& branch = ready_branch(false, channel);
+	tlobby_channel& channel = lobby->chat->insert_channel(cid, chan);
+	ready_branch(false, channel);
+	channel_tree_->invalidate_layout(true);
 
-	lobby->chat.join_channel(channel, true);
-	switch_to_chat(window);
+	lobby->chat->join_channel(channel, true);
+	switch_to_contact(window);
 }
 
 void tchat_::chat_to(twindow& window)
@@ -487,12 +519,16 @@ void tchat_::chat_to(twindow& window)
 	const tcookie& cookie = channel2_branch_[reinterpret_cast<long>(toggle.cookie())];
 	simulate_cookie_toggled(true, tlobby_channel::t_friend, cookie.id, false);
 
-	switch_to_chat(window);
+	if (portrait_) {
+		switch_to_msg(window);
+	} else {
+		switch_to_contact(window);
+	}
 }
 
 void tchat_::join_friend(twindow& window)
 {
-	tlobby_channel& channel = lobby->chat.get_channel(tlobby_channel::t_friend);
+	tlobby_channel& channel = lobby->chat->get_channel(tlobby_channel::t_friend);
 
 	ttoggle_panel& toggle = find_widget<ttoggle_panel>(channel2_tree_->selected_item(), "tree_view_node_label", false);
 	const tcookie& cookie = channel2_branch_[reinterpret_cast<long>(toggle.cookie())];
@@ -501,7 +537,7 @@ void tchat_::join_friend(twindow& window)
 	std::vector<tcookie>& branch = person_cookies_.find(tlobby_channel::t_friend)->second;
 	insert_user(true, branch, user);
 
-	irc::server* serv = lobby->chat.serv();
+	irc::server* serv = lobby->chat->serv();
 	serv->p_monitor(serv, cookie.nick.c_str(), true);
 
 	refresh_channel2_toolbox(user);
@@ -511,7 +547,7 @@ void tchat_::join_friend(twindow& window)
 
 	symbols["nick"] = tintegrate::generate_format(user.nick, "yellow");
 	symbols["channel"] = tintegrate::generate_format(channel.name(), "green");
-	ss << vgettext("wesnoth-lib", "You set $nick into $channel successfully!", symbols);
+	ss << vgettext2("You set $nick into $channel successfully!", symbols);
 	gui2::show_message(disp_.video(), "", ss.str());
 }
 
@@ -532,18 +568,19 @@ void tchat_::enter_inputing(bool enter)
 
 	int height;
 	if (enter) {
-		if (settings::screen_height < 600) {
-			height = settings::screen_height * 30 / 100;
+		if (settings::screen_height < twidget::hdpi_ratio * twidget::min_uneffectable_point) {
+			height = settings::screen_height * 20 / 100;
 		} else {
-			height = 180;
+			height = 108 * twidget::hdpi_ratio;
 		}
 	} else {
-		if (settings::screen_height < 600) {
+		if (settings::screen_height < twidget::hdpi_ratio * twidget::min_uneffectable_point) {
 			height = settings::screen_height * 10 / 100;
 		} else {
-			height = 60;
+			height = 54 * twidget::hdpi_ratio;
 		}
 	}
+
 	inputing_ = enter;
 
 	input_scale_->set_best_size(tpoint(0, height));
@@ -560,13 +597,8 @@ void tchat_::signal_handler_sdl_key_down(bool& handled
 	if (key == SDLK_PRINTSCREEN) {
 		SDL_Rect rc;
 		SDL_SetTextInputRect(&rc);
-		settings::keyboard_height = rc.h;
+		settings::keyboard_height = rc.h * twidget::hdpi_ratio;
         window_->invalidate_layout();
-
-		if (settings::screen_height == 320) {
-			history_->set_visible(twidget::INVISIBLE);
-			chanlist_->set_visible(twidget::INVISIBLE);
-		}
 	}
 #endif
 
@@ -582,10 +614,6 @@ void tchat_::signal_handler_sdl_key_down(bool& handled
 		settings::keyboard_height = 0;
 		window_->invalidate_layout();
 
-		if (settings::screen_height == 320) {
-			history_->set_visible(twidget::VISIBLE);
-			chanlist_->set_visible(twidget::VISIBLE);
-		}
 		handled = true;
 		halt = true;
 	}
@@ -638,6 +666,7 @@ void tchat_::generate_channel_tree(tlobby_channel& channel)
 		tlabel* label = dynamic_cast<tlabel*>(cookie.node->find("name", true));
 		label->set_label(ss.str());
 	}
+	channel2_tree_->invalidate_layout(true);
 
 	ttoggle_panel& toggle = find_widget<ttoggle_panel>(channel2_tree_->selected_item(), "tree_view_node_label", false);
 	channel2_toggled(&toggle);
@@ -766,7 +795,7 @@ void tchat_::update_node_internal(const std::vector<tcookie>& cookies, const tco
 	std::stringstream ss;
 
 	if (cookie.channel) {
-		const tlobby_channel& channel = lobby->chat.get_channel(cookie.id);
+		const tlobby_channel& channel = lobby->chat->get_channel(cookie.id);
 
 		if (tlobby_channel::is_allocatable(channel.cid)) {
 			icon_ss << channel_png;
@@ -784,7 +813,7 @@ void tchat_::update_node_internal(const std::vector<tcookie>& cookies, const tco
 			ss << "--/--";
 
 		} else if (tlobby_channel::is_allocatable(channel.cid)) {
-			ss << tintegrate::generate_format(channel.users.size(), "yellow");
+			ss << tintegrate::generate_format(channel.users.size(), "gray");
 
 		} else {
 			size_t talkable = 0;
@@ -865,15 +894,9 @@ void tchat_::reload_toolbar(twindow& window)
 		funcs_.push_back(n);
 		tfunc& func = funcs_.back();
 
-		tcontrol* widget = toolbar_->create_child(null_str, func.tooltip, reinterpret_cast<void*>(n), null_str);
+		tcontrol* widget = toolbar_->create_child(null_str, func.tooltip, reinterpret_cast<void*>(n));
 		widget->set_label(func.image);
 		toolbar_->insert_child(*widget);
-
-		if (n == f_previous_page) {
-			previous_page_ = dynamic_cast<tbutton*>(widget);
-		} else if (n == f_next_page) {
-			next_page_ = dynamic_cast<tbutton*>(widget);
-		}
 	}
 	toolbar_->replacement_children();
 }
@@ -884,12 +907,19 @@ void tchat_::refresh_toolbar(int type, int id)
 	for (std::vector<tfunc>::const_iterator it = funcs_.begin(); it != funcs_.end(); ++ it, n ++) {
 		const tfunc& func = *it;
 		bool active = true;
-		toolbar_->set_visible(n, func.type & type);
-		if (func.id == f_previous_page) {
-			active = current_session_ && current_session_->can_previous();
+		toolbar_->set_child_visible(n, func.type & type);
+		if (func.id == f_copy) {
+			active = current_session_ && (!current_session_->history.empty() || !current_session_->receiver->logs.empty());
 
-		} else if (func.id == f_next_page) {
-			active = current_session_ && current_session_->can_next();
+		} else if (func.id == f_reply) {
+			active = current_session_ && (!current_session_->history.empty() || !current_session_->receiver->logs.empty());
+			if (active) {
+				const std::string& my_nick = lobby->chat->me? lobby->chat->me->nick: lobby->nick();
+				twidget* panel = history_->get_row_panel(history_->get_selected_row());
+				int index = (int)reinterpret_cast<long>(panel->cookie());
+				const chat_logs::tlog& log = current_session_->log(index);
+				active = log.nick != my_nick;
+			}
 
 		} else if (func.id == f_face) {
 			active = false;
@@ -903,19 +933,19 @@ void tchat_::refresh_toolbar(int type, int id)
 
 	tcontrol* widget;
 	if (type == ft_channel) {
-		tlobby_channel& channel = lobby->chat.get_channel(id);
-		widget = toolbar_->get_widget(toolbar_->get_index2(reinterpret_cast<void*>(f_part)));
+		tlobby_channel& channel = lobby->chat->get_channel(id);
+		widget = toolbar_->get_widget(toolbar_->get_at2(reinterpret_cast<void*>(f_part)));
 		if ((!channel.err && channel.users.empty()) || channel.nick == game_config::app_channel) {
 			widget->set_active(false);
 		}
 		if (channel.users.empty()) {
-			widget = toolbar_->get_widget(toolbar_->get_index2(reinterpret_cast<void*>(f_explore)));
+			widget = toolbar_->get_widget(toolbar_->get_at2(reinterpret_cast<void*>(f_explore)));
 			widget->set_active(false);
 		}
 
 	} else if (type == ft_person || type == ft_chan_person) {
-		bool favor = lobby->chat.is_favor_user(id);
-		widget = toolbar_->get_widget(toolbar_->get_index2(reinterpret_cast<void*>(f_part_friend)));
+		bool favor = lobby->chat->is_favor_user(id);
+		widget = toolbar_->get_widget(toolbar_->get_at2(reinterpret_cast<void*>(f_part_friend)));
 		widget->set_active(favor && type == ft_person);
 	}
 
@@ -967,7 +997,7 @@ void tchat_::insert_user(bool person, std::vector<tcookie>& branch, const tlobby
 		toggle.set_data(signature_ ++);
 		if (person) {
 			toggle.set_callback_state_change(boost::bind(&tchat_::contact_person_toggled, this, _1));
-		} else if (user.nick != lobby->chat.nick()) {
+		} else if (user.nick != lobby->chat->nick()) {
 			toggle.set_callback_state_change(boost::bind(&tchat_::contact_channel_toggled, this, _1));
 		}
 
@@ -997,13 +1027,38 @@ void tchat_::erase_user(bool person, std::vector<tcookie>& branch, int uid)
 
 void tchat_::pre_show(twindow& window)
 {
+	const SDL_Rect rect = screen_area();
+	if (twidget::current_landscape) {
+		if (twidget::orientation_effect_resolution(rect.w, rect.h)) {
+			twidget::current_landscape = false;
+			swap_resultion_ = twindow::set_orientation_resolution();
+		}
+	}
+	portrait_ = !twidget::current_landscape && twidget::orientation_effect_resolution(rect.w, rect.h);
+	if (window_) {
+		window.invalidate_layout();
+		return;
+	}
+
 	window_ = &window;
+
+	panel_ = find_widget<tstacked_widget>(&window, ctrlid_tpl_chat, false, true);
+	contact_layer_ = find_widget<tgrid>(&window, ctrlid_contact_layer, false, true);
+	find_layer_ = find_widget<tgrid>(&window, ctrlid_find_layer, false, true);
+	channel_layer_ = find_widget<tgrid>(&window, ctrlid_channel_layer, false, true);
+	if (portrait_) {
+		msg_layer_ = find_widget<tgrid>(&window, ctrlid_msg_layer, false, true);
+	}
 
 	person_tree_ = find_widget<ttree_view>(&window, ctrlid_persons, false, true);
 	channel_tree_ = find_widget<ttree_view>(&window, ctrlid_channels, false, true);
 	channel2_tree_ = find_widget<ttree_view>(&window, ctrlid_channel2, false, true);
-	history_ = &find_widget<tscroll_label>(window_, ctrlid_history, false);
+	previous_page_ = find_widget<tbutton>(&window, ctrlid_previous, false, true);
+	next_page_ = find_widget<tbutton>(&window, ctrlid_next, false, true);
+	pagenum_ = find_widget<tlabel>(&window, ctrlid_pagenum, false, true);
+	history_ = &find_widget<tlistbox>(window_, ctrlid_history, false);
 	history_->set_scroll_to_end(true);
+	history_->set_dynamic(true);
 	input_ = &find_widget<tscroll_text_box>(window_, ctrlid_input, false);
 	input_scale_ = &find_widget<tspacer>(window_, ctrlid_input_scale, false);
 	send_ = &find_widget<tbutton>(window_, ctrlid_send, false);
@@ -1015,7 +1070,10 @@ void tchat_::pre_show(twindow& window)
 	chat_to_ = &find_widget<tbutton>(&window, ctrlid_chat_to, false);
 	join_friend_ = &find_widget<tbutton>(&window, ctrlid_join_friend, false);
 
-	chanlist_->set_callback_value_change(dialog_callback<tchat_, &tchat_::find_chan_toggled>);
+	tstacked_widget* stack = find_widget<tstacked_widget>(&window, ctrlid_history_stack, false, true);
+	stack->set_float(true);
+
+	chanlist_->set_callback_value_change(dialog_callback3<tchat_, tlistbox, &tchat_::find_chan_toggled>);
 
 	std::stringstream ss;
 	
@@ -1059,12 +1117,44 @@ void tchat_::pre_show(twindow& window)
 				  &tchat_::switch_to_find
 				, this
 				, boost::ref(window)));
+
+	if (portrait_) {
+		connect_signal_mouse_left_click(
+			  find_widget<tbutton>(contact_layer_, ctrlid_return, false)
+			, boost::bind(
+				  &tchat_::switch_to_msg
+				, this
+				, boost::ref(window)));
+
+		connect_signal_mouse_left_click(
+			  find_widget<tbutton>(msg_layer_, ctrlid_return, false)
+			, boost::bind(
+				  &tchat_::switch_to_contact
+				, this
+				, boost::ref(window)));
+	}
+
+	connect_signal_mouse_left_click(
+			  *previous_page_
+			, boost::bind(
+				  &tchat_::previous_page
+				, this
+				, boost::ref(window)));
+	previous_page_->set_visible(twidget::HIDDEN);
+
+	connect_signal_mouse_left_click(
+			  *next_page_
+			, boost::bind(
+				  &tchat_::next_page
+				, this
+				, boost::ref(window)));
+	next_page_->set_visible(twidget::HIDDEN);
 	
 	// find grid
 	connect_signal_mouse_left_click(
 			  *switch_to_chat_find_
 			, boost::bind(
-				  &tchat_::switch_to_chat
+				  &tchat_::switch_to_contact
 				, this
 				, boost::ref(window)));
 
@@ -1087,7 +1177,7 @@ void tchat_::pre_show(twindow& window)
 	connect_signal_mouse_left_click(
 			  *switch_to_chat_channel_
 			, boost::bind(
-				  &tchat_::switch_to_chat
+				  &tchat_::switch_to_contact
 				, this
 				, boost::ref(window)));
 
@@ -1115,11 +1205,11 @@ void tchat_::pre_show(twindow& window)
 
 	person_tree_->set_no_indentation(true);
 
-	for (std::map<int, tlobby_channel>::const_iterator it = lobby->chat.channels.begin(); it != lobby->chat.channels.end(); ++ it) {
+	for (std::map<int, tlobby_channel>::const_iterator it = lobby->chat->channels.begin(); it != lobby->chat->channels.end(); ++ it) {
 		bool person = !tlobby_channel::is_allocatable(it->first);
 		std::vector<tcookie>& branch = ready_branch(person, it->second);
 
-		tlobby_channel& channel = lobby->chat.get_channel(it->first);
+		tlobby_channel& channel = lobby->chat->get_channel(it->first);
 		for (std::vector<tlobby_user*>::const_iterator it = channel.users.begin(); it != channel.users.end(); ++ it) {
 			const tlobby_user& user = **it;
 			if (person && user.me) {
@@ -1131,15 +1221,23 @@ void tchat_::pre_show(twindow& window)
 
 	input_tb_->set_src_pos(src_pos_);
 
-	toolbar_->set_report(find_widget<treport>(&window, ctrlid_tool_bar, false, true));
+	toolbar_ = find_widget<treport>(&window, ctrlid_tool_bar, false, true);
+	toolbar_->tabbar_init(false, "icon36");
 	reload_toolbar(window);
 
-	catalog_->set_report(find_widget<treport>(&window, ctrlid_contact_bar, false, true));
+	catalog_ = find_widget<treport>(&window, ctrlid_contact_bar, false, true);
+	catalog_->tabbar_init(true, "image_tab");
+	catalog_->set_boddy(find_widget<twidget>(&window, ctrlid_contact_panel, false, true));
 	reload_catalog(window);
 	refresh_toolbar(ft_none, tlobby_user::npos);
 
-	switch_to_chat(window);
+	switch_to_contact(window);
 	contact_switch_to_person();
+
+	// It is time to join tlobby::thandler queue.
+	tlobby::thandler::join();
+
+	window.invalidate_layout();
 }
 
 void tchat_::contact_switch_to_person()
@@ -1164,7 +1262,7 @@ void tchat_::contact_switch_to_channel()
 	}
 }
 
-void tchat_::switch_to_chat(twindow& window)
+void tchat_::switch_to_contact(twindow& window)
 {
 	if (!channel2_branch_.empty()) {
 		ttree_view_node& root_node = channel2_tree_->get_root_node();
@@ -1172,26 +1270,25 @@ void tchat_::switch_to_chat(twindow& window)
 		channel2_branch_.clear();
 	}
 
-	find_widget<tgrid>(&window, ctrlid_chat_layer, false).set_visible(twidget::VISIBLE);
-	find_widget<tgrid>(&window, ctrlid_find_layer, false).set_visible(twidget::INVISIBLE);
-	find_widget<tgrid>(&window, ctrlid_channel_layer, false).set_visible(twidget::INVISIBLE);
+	panel_->set_radio_layer(CONTACT_LAYER);
 }
 
 void tchat_::switch_to_find(twindow& window)
 {
-	find_widget<tgrid>(window_, ctrlid_chat_layer, false).set_visible(twidget::INVISIBLE);
-	find_widget<tgrid>(window_, ctrlid_find_layer, false).set_visible(twidget::VISIBLE);
-	find_widget<tgrid>(&window, ctrlid_channel_layer, false).set_visible(twidget::INVISIBLE);
+	panel_->set_radio_layer(FIND_LAYER);
 
-	find_chan_toggled(window);
-	find_->set_active(lobby->chat.ready());
+	find_chan_toggled(window, *chanlist_);
+	find_->set_active(lobby->chat->ready());
 }
 
 void tchat_::switch_to_channel(twindow& window)
 {
-	find_widget<tgrid>(&window, ctrlid_chat_layer, false).set_visible(twidget::INVISIBLE);
-	find_widget<tgrid>(&window, ctrlid_find_layer, false).set_visible(twidget::INVISIBLE);
-	find_widget<tgrid>(&window, ctrlid_channel_layer, false).set_visible(twidget::VISIBLE);
+	panel_->set_radio_layer(CHANNEL_LAYER);
+}
+
+void tchat_::switch_to_msg(twindow& window)
+{
+	panel_->set_radio_layer(MSG_LAYER);
 }
 
 tchat_::tsession& tchat_::get_session(chat_logs::treceiver& receiver, bool allow_create)
@@ -1228,13 +1325,13 @@ void tchat_::switch_session(bool person, std::vector<tcookie>& branch, tcookie& 
 	tsession& session = get_session(receiver, true);
 	current_session_ = &session;
 
-	bool can_send = lobby->chat.ready();
+	bool can_send = lobby->chat->ready();
 	if (can_send) {
 		if (!receiver.channel) {
-			tlobby_user& user = lobby->chat.get_user(id);
+			tlobby_user& user = lobby->chat->get_user(id);
 			can_send = user.online;
 		} else if (tlobby_channel::is_allocatable(id)) {
-			tlobby_channel& channel = lobby->chat.get_channel(id);
+			tlobby_channel& channel = lobby->chat->get_channel(id);
 			can_send = channel.joined();
 		} else {
 			can_send = false;
@@ -1257,9 +1354,9 @@ void tchat_::switch_session(bool person, std::vector<tcookie>& branch, tcookie& 
 	window_->keyboard_capture(input_tb_);
 }
 
-void tchat_::toggle_tabbar(twidget* widget)
+void tchat_::toggle_report(twidget* widget)
 {
-	tdialog::toggle_tabbar(widget);
+	tdialog::toggle_report(widget);
 	int catalog_tab = (int)reinterpret_cast<long>(widget->cookie());
 	if (catalog_tab == 0) {
 		contact_switch_to_person();
@@ -1269,9 +1366,9 @@ void tchat_::toggle_tabbar(twidget* widget)
 	}
 }
 
-void tchat_::click_tabbar(twidget* widget, const std::string& sparam)
+bool tchat_::click_report(twidget* widget)
 {
-	irc::server* serv = lobby->chat.serv();
+	irc::server* serv = lobby->chat->serv();
 	utils::string_map symbols;
 	std::stringstream ss;
 
@@ -1280,44 +1377,59 @@ void tchat_::click_tabbar(twidget* widget, const std::string& sparam)
 	if (id == f_netdiag) {
 		netdiag(*window_);
 
-	} else if (id == f_previous_page) {
-		current_session_->current_page ++;
-		chat_2_scroll_label(*history_, *current_session_);
+	} else if (id == f_copy) {
+		twidget* panel = history_->get_row_panel(history_->get_selected_row());
+		int index = (int)reinterpret_cast<long>(panel->cookie());
+		const chat_logs::tlog& log = current_session_->log(index);
+		std::string msg = log.msg;
 
-		require_reload = true;
+		conv_ansi_utf8(msg, false);
+		copy_to_clipboard(msg, true);
 
-	} else if (id == f_next_page) {
-		current_session_->current_page --;
-		chat_2_scroll_label(*history_, *current_session_);
+		gui2::show_transient_message(disp_.video(), _("Content is copied to clipboard"), ss.str());
 
-		require_reload = true;
+	} else if (id == f_reply) {
+		twidget* panel = history_->get_row_panel(history_->get_selected_row());
+		int index = (int)reinterpret_cast<long>(panel->cookie());
+		const chat_logs::tlog& log = current_session_->log(index);
+
+		ss.str("");
+		ss << log.nick << "";
+		input_->set_label(ss.str());
+		input_tb_->goto_end_of_line();
+
+		input_->insert_img("misc/mini-reply.png");
+		input_tb_->insert_str(" ");
+
+		window_->keyboard_capture(input_tb_);
+		input_tb_->goto_end_of_line();
 
 	} else if (id == f_part) {
-		tlobby_channel& channel = lobby->chat.get_channel(current_session_->receiver->id);
+		tlobby_channel& channel = lobby->chat->get_channel(current_session_->receiver->id);
 
 		symbols["part"] = tintegrate::generate_format(_("Part"), "yellow");
 		symbols["channel"] = tintegrate::generate_format(channel.nick, "red");
-		ss << vgettext("wesnoth-lib", "After $part, you can not receive message from $channel. Do you want to $part?", symbols);
+		ss << vgettext2("After $part, you can not receive message from $channel. Do you want to $part?", symbols);
 		int res = gui2::show_message(disp_.video(), "", ss.str(), gui2::tmessage::yes_no_buttons);
 		if (res != gui2::twindow::OK) {
-			return;
+			return true;
 		}
-		lobby->chat.erase_channel(current_session_->receiver->id);
+		lobby->chat->erase_channel(current_session_->receiver->id);
 		remove_branch(false, current_session_->receiver->id);
 
 		// cannot part app-id channel.
 		simulate_cookie_toggled(false, tlobby_channel::get_cid(game_config::app_channel), tlobby_channel::get_cid(game_config::app_channel), true);
 
 	} else if (id == f_part_friend) {
-		tlobby_channel& channel = lobby->chat.get_channel(tlobby_channel::t_friend);
+		tlobby_channel& channel = lobby->chat->get_channel(tlobby_channel::t_friend);
 		tlobby_user& user = channel.get_user(current_session_->receiver->id);
 
 		symbols["nick"] = tintegrate::generate_format(user.nick, "yellow");
 		symbols["channel"] = tintegrate::generate_format(channel.name(), "green");
-		ss << vgettext("wesnoth-lib", "Do you want remove $nick from $channel?", symbols);
+		ss << vgettext2("Do you want remove $nick from $channel?", symbols);
 		int res = gui2::show_message(disp_.video(), "", ss.str(), gui2::tmessage::yes_no_buttons);
 		if (res != gui2::twindow::OK) {
-			return;
+			return true;
 		}
 
 		channel.erase_user(user.uid);
@@ -1343,11 +1455,11 @@ void tchat_::click_tabbar(twidget* widget, const std::string& sparam)
 
 		} else {
 			simulate_cookie_toggled(false, tlobby_channel::get_cid(game_config::app_channel), tlobby_channel::get_cid(game_config::app_channel), true);
-			toggle_tabbar(catalog_->get_widget(at_channel));
+			toggle_report(catalog_->get_widget(at_channel));
 		}
 
 	} else if (id == f_explore) {
-		tlobby_channel& channel = lobby->chat.get_channel(current_session_->receiver->id);
+		tlobby_channel& channel = lobby->chat->get_channel(current_session_->receiver->id);
 
 		switch_to_channel(*window_);
 		generate_channel_tree(channel);
@@ -1357,25 +1469,31 @@ void tchat_::click_tabbar(twidget* widget, const std::string& sparam)
 	if (require_reload) {
 		refresh_toolbar(current_ft_, current_session_->receiver->id);
 	}
+
+	return true;
+}
+
+void tchat_::previous_page(twindow& window)
+{
+	current_session_->current_page ++;
+	chat_2_scroll_label(*history_, *current_session_);
+}
+
+void tchat_::next_page(twindow& window)
+{
+	current_session_->current_page --;
+	chat_2_scroll_label(*history_, *current_session_);
 }
 
 void tchat_::post_show(twindow& window)
 {
-	person_tree_->get_root_node().clear();
-	person_tree_ = NULL;
-	channel_tree_->get_root_node().clear();
-	channel_tree_ = NULL;
+	if (swap_resultion_) {
+		twidget::current_landscape = twidget::landscape_from_orientation(window.get_orientation(), true);
+		VALIDATE(twidget::current_landscape, "window must be landscape!");
 
-	input_ = NULL;
-	send_ = NULL;
-	previous_page_ = NULL;
-	next_page_ = NULL;
-
-	signature_ = 0;
-	person_cookies_.clear();
-	channel_cookies_.clear();
-	sessions_.clear();
-	current_session_ = NULL;
+		swap_resultion_ = false;
+		twindow::set_orientation_resolution();
+	}
 }
 
 bool tchat_::gui_ready() const
@@ -1394,7 +1512,7 @@ void tchat_::reload_catalog(twindow& window)
 	std::stringstream ss;
 	int index = 0;
 	for (std::vector<std::string>::const_iterator it = catalogs.begin(); it != catalogs.end(); ++ it) {
-		tcontrol* widget = catalog_->create_child(null_str, null_str, NULL, null_str);
+		tcontrol* widget = catalog_->create_child(null_str, null_str, NULL);
 		widget->set_label(*it);
 		widget->set_cookie(reinterpret_cast<void*>(index ++));
 		catalog_->insert_child(*widget);
@@ -1405,11 +1523,11 @@ void tchat_::reload_catalog(twindow& window)
 
 void tchat_::process_message(const std::string& chan, const std::string& from, const std::string& text)
 {
-	tlobby_user& user = lobby->chat.get_user(tlobby_user::get_uid(from));
+	tlobby_user& user = lobby->chat->get_user(tlobby_user::get_uid(from));
 	std::pair<std::vector<tcookie>*, tcookie* > pair;
 	int receive_id;
 	if (chan.empty()) {
-		if (lobby->chat.is_favor_user(user.uid)) {
+		if (lobby->chat->is_favor_user(user.uid)) {
 			pair = contact_find(true, tlobby_channel::npos, user.uid, false);
 		} else {
 			pair = contact_find(false, tlobby_channel::npos, user.uid, false);
@@ -1429,7 +1547,8 @@ void tchat_::process_message(const std::string& chan, const std::string& from, c
 
 	chat_logs::add(receive_id, !chan.empty(), user, utils::is_utf8str(text)? tintegrate::stuff_escape(text): err_encode_str);
 	if (current_session_ && pair.second->channel == current_session_->receiver->channel && pair.second->id == current_session_->receiver->id) {
-		chat_2_scroll_label(*history_, *current_session_);
+		int cursel = history_->get_selected_row();
+		chat_2_scroll_label(*history_, *current_session_, cursel > 0? cursel - 1: cursel);
 
 	} else {
 		pair.second->unread ++;
@@ -1440,14 +1559,14 @@ void tchat_::process_message(const std::string& chan, const std::string& from, c
 void tchat_::process_userlist(const std::string& chan, const std::string& names)
 {
 	std::vector<std::string> vstr = utils::split(names, ' ');
-	tlobby_channel& channel = lobby->chat.get_channel(tlobby_channel::get_cid(chan));
+	tlobby_channel& channel = lobby->chat->get_channel(tlobby_channel::get_cid(chan));
 
 	if (!channel.users_receiving) {
 		clear_branch(false, channel.cid);
 	}
 
 	std::vector<tcookie>& branch = channel_cookies_.find(channel.cid)->second;
-	char* nick_prefixes = lobby->chat.serv()->nick_prefixes;
+	char* nick_prefixes = lobby->chat->serv()->nick_prefixes;
 	std::string nopre_nick;
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		const std::string& nick = *it;
@@ -1465,7 +1584,7 @@ void tchat_::process_userlist(const std::string& chan, const std::string& names)
 
 void tchat_::process_userlist_end(const std::string& chan)
 {
-	tlobby_channel& channel = lobby->chat.get_channel(tlobby_channel::get_cid(chan));
+	tlobby_channel& channel = lobby->chat->get_channel(tlobby_channel::get_cid(chan));
 
 	// std::vector<tcookie>& branch = channel_cookies_.find(channel.cid)->second;
 	// branch.front().node->fold();
@@ -1477,13 +1596,13 @@ void tchat_::process_userlist_end(const std::string& chan)
 
 void tchat_::process_join(const std::string& chan, const std::string& nick)
 {
-	tlobby_channel& channel = lobby->chat.get_channel(tlobby_channel::get_cid(chan));
+	tlobby_channel& channel = lobby->chat->get_channel(tlobby_channel::get_cid(chan));
 	tlobby_user& user = channel.get_user(tlobby_user::get_uid(nick));
 
 	std::vector<tcookie>& branch = channel_cookies_.find(channel.cid)->second;
 	insert_user(false, branch, user);
 
-	if (lobby->chat.is_favor_user(user.uid)) {
+	if (lobby->chat->is_favor_user(user.uid)) {
 		std::pair<std::vector<tchat_::tcookie>*, tchat_::tcookie* > ret = tchat_::contact_find(true, tlobby_channel::t_friend, user.uid, false);
 		tcookie* cookie = ret.second;
 		if (!cookie->online) {
@@ -1500,7 +1619,7 @@ void tchat_::process_uparted(const std::string& chan)
 
 void tchat_::process_part(const std::string& chan, const std::string& nick, const std::string& reason)
 {
-	tlobby_channel& channel = lobby->chat.get_channel(tlobby_channel::get_cid(chan));
+	tlobby_channel& channel = lobby->chat->get_channel(tlobby_channel::get_cid(chan));
 	std::vector<tcookie>& branch = channel_cookies_.find(channel.cid)->second;
 	int uid = tlobby_user::get_uid(nick, false);
 	erase_user(false, branch, uid);
@@ -1515,12 +1634,12 @@ void tchat_::process_online(const char* nicks)
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		const std::string& nick = *it;
 		int uid = tlobby_user::get_uid(nick);
-		tlobby_user& user = lobby->chat.get_user(uid);
+		tlobby_user& user = lobby->chat->get_user(uid);
 		if (!user.valid()) {
 			continue;
 		}
 
-		if (lobby->chat.is_favor_user(uid)) {
+		if (lobby->chat->is_favor_user(uid)) {
 			ret = tchat_::contact_find(true, tlobby_channel::t_friend, uid, false);
 			if (ret.first) {
 				tcookie* cookie = ret.second;
@@ -1544,12 +1663,12 @@ void tchat_::process_offline(const char* nicks)
 	for (std::vector<std::string>::const_iterator it = vstr.begin(); it != vstr.end(); ++ it) {
 		const std::string& nick = *it;
 		int uid = tlobby_user::get_uid(nick);
-		tlobby_user& user = lobby->chat.get_user(uid);
+		tlobby_user& user = lobby->chat->get_user(uid);
 		if (!user.valid()) {
 			continue;
 		}
 
-		if (lobby->chat.is_favor_user(uid)) {
+		if (lobby->chat->is_favor_user(uid)) {
 			ret = tchat_::contact_find(true, tlobby_channel::t_friend, uid, false);
 			if (ret.first) {
 				tcookie* cookie = ret.second;
@@ -1565,7 +1684,7 @@ void tchat_::process_offline(const char* nicks)
 void tchat_::process_forbid_join(const std::string& chan, const std::string& reason)
 {
 	int cid = tlobby_channel::get_cid(chan);
-	tlobby_channel& channel = lobby->chat.get_channel(cid);
+	tlobby_channel& channel = lobby->chat->get_channel(cid);
 
 	std::vector<tcookie>& branch = channel_cookies_.find(cid)->second;
 	update_node_internal(branch, branch.front());
@@ -1574,10 +1693,10 @@ void tchat_::process_forbid_join(const std::string& chan, const std::string& rea
 void tchat_::process_whois(const std::string& chan, const std::string& nick, bool online, bool away)
 {
 	int uid = tlobby_user::get_uid(nick);
-	tlobby_user& user = lobby->chat.get_user(uid);
+	tlobby_user& user = lobby->chat->get_user(uid);
 
 	std::pair<std::vector<tchat_::tcookie>*, tchat_::tcookie* > ret;
-	if (irc::is_channel(lobby->chat.serv(), chan.c_str())) {
+	if (irc::is_channel(lobby->chat->serv(), chan.c_str())) {
 		ret = tchat_::contact_find(false, tlobby_channel::get_cid(chan), user.uid, false);
 		if (ret.first) {
 			tcookie* cookie = ret.second;
@@ -1589,7 +1708,7 @@ void tchat_::process_whois(const std::string& chan, const std::string& nick, boo
 		}
 	}
 
-	if (lobby->chat.is_favor_user(uid)) {
+	if (lobby->chat->is_favor_user(uid)) {
 		ret = tchat_::contact_find(true, tlobby_channel::t_friend, user.uid, false);
 		if (ret.first) {
 			tcookie* cookie = ret.second;
@@ -1608,7 +1727,7 @@ void tchat_::process_whois(const std::string& chan, const std::string& nick, boo
 
 void tchat_::process_quit(const std::string& nick)
 {
-	tlobby_user& user = lobby->chat.get_user(tlobby_user::get_uid(nick));
+	tlobby_user& user = lobby->chat->get_user(tlobby_user::get_uid(nick));
 
 	for (std::set<int>::const_iterator it = user.cids.begin(); it != user.cids.end(); ++ it) {
 		int cid = *it;
@@ -1628,11 +1747,11 @@ void tchat_::process_quit(const std::string& nick)
 	}
 }
 
-void tchat_::find_chan_toggled(twindow& window)
+void tchat_::find_chan_toggled(twindow& window, tlistbox& list, const int type)
 {
 	bool active = !list_chans_.empty() && chanlist_->get_item_count();
 	if (active) {
-		const tlobby_channel& channel = lobby->chat.get_channel(tlobby_channel::get_cid(list_chans_[chanlist_->get_selected_row()], false));
+		const tlobby_channel& channel = lobby->chat->get_channel(tlobby_channel::get_cid(list_chans_[chanlist_->get_selected_row()], false));
 		active = !channel.valid();
 	}
 	join_channel_->set_active(active);
@@ -1647,7 +1766,7 @@ void tchat_::process_chanlist_start()
 	label.set_label("0/0");
 
 	switch_to_chat_find_->set_active(false);
-	find_->set_label(dgettext("wesnoth-lib", "Cancel"));
+	find_->set_label(_("Cancel"));
 }
 
 void tchat_::process_chanlist(const std::string& chan, int users, const std::string& topic)
@@ -1696,72 +1815,116 @@ void tchat_::process_chanlist_end()
 	chanlist_->invalidate_layout(true);
 
 	switch_to_chat_find_->set_active(true);
-	find_->set_label(dgettext("wesnoth-lib", "Find"));
-	find_->set_active(lobby->chat.ready());
-	find_chan_toggled(*window_);
+	find_->set_label(_("Find"));
+	find_->set_active(lobby->chat->ready());
+	find_chan_toggled(*window_, *chanlist_);
 }
 
 void tchat_::process_network_status(bool connected)
 {
 	if (connected) {
-		network::send_data(lobby->chat, config("refresh_lobby"));
 	}
 }
 
-std::string tchat_::format_log_str(const tsession& sess, std::vector<tintegrate::tlocator>& locator) const
+void tchat_::format_log_2_listbox(tlistbox& list, const tsession& sess, int cursel) const
 {
 	std::vector<chat_logs::tlog> logs;
-	sess.current_logs(logs);
+	int start = sess.current_logs(logs);
+
+	list.clear();
+
+	string_map list_item;
+	std::map<std::string, string_map> list_item_item;
 
 	std::stringstream ss;
-	int start;
-	const std::string& my_nick = lobby->chat.me? lobby->chat.me->nick: lobby->nick();
-	const config& bubble_cfg = settings::bubbles.find("default")->second;
+	const std::string& my_nick = lobby->chat->me? lobby->chat->me->nick: lobby->nick();
 	for (std::vector<chat_logs::tlog>::const_iterator it = logs.begin(); it != logs.end(); ++ it) {
 		const chat_logs::tlog& log = *it;
-		if (it != logs.begin()) {
-			ss << "\n";
-			locator.push_back(tintegrate::tlocator(bubble_cfg, start, ss.str().size()));
-			ss << "\n";
-		}
-		if (log.nick == my_nick) {
+		
+		list_item.clear();
+		list_item_item.clear();
+		ss.str("");
+
+		bool me = log.nick == my_nick;
+		if (me) {
+			ss << format_time_date(log.t) << "    ";
 			ss << tintegrate::generate_format(log.nick, "green");
 		} else {
-			ss << tintegrate::generate_format(log.nick, "yellow");
+			ss << tintegrate::generate_format(log.nick, "blue");
+			ss << "    " << format_time_date(log.t);
 		}
-		ss << "    " << format_time_date(log.t) << "\n";
-		start = ss.str().size();
-		ss << log.msg;
+
+		list_item["label"] = "misc/rose-36.png";
+		list_item_item.insert(std::make_pair("lportrait", list_item));
+
+		list_item["label"] = "misc/rose-36.png";
+		list_item_item.insert(std::make_pair("rportrait", list_item));
+
+		list_item["label"] = ss.str();
+		list_item_item.insert(std::make_pair("sender", list_item));
+
+		list_item["label"] = log.msg;
+		list_item_item.insert(std::make_pair("msg", list_item));
+
+		list.add_row(list_item_item);
+
+		twidget* panel = list.get_row_panel(list.get_item_count() - 1);
+		panel->set_cookie(reinterpret_cast<void*>(start ++));
+
+		twidget& portrait = find_widget<twidget>(panel, me? "lportrait": "rportrait", false);
+		portrait.set_visible(twidget::HIDDEN);
+
+		tgrid& grid_msg = find_widget<tgrid>(panel, "_grid_msg", false);
+		tgrid::tchild& child = grid_msg.child(0, 0);
+		child.flags_ &= ~tgrid::HORIZONTAL_MASK;
+		child.flags_ |= me? tgrid::HORIZONTAL_ALIGN_RIGHT: tgrid::HORIZONTAL_ALIGN_LEFT;
+
+		tlabel& msg = find_widget<tlabel>(panel, "msg", false);
+		msg.set_canvas_variable("border", variant(me? "border6": "border5"));
 	}
-	if (!logs.empty()) {
-		locator.push_back(tintegrate::tlocator(bubble_cfg, start));
+
+	if (list.get_item_count()) {
+		if (cursel == twidget::npos || cursel >= list.get_item_count()) {
+			cursel = list.get_item_count() - 1;
+		}
+		list.select_row(cursel);
 	}
-	return ss.str();
+
+	list.invalidate_layout(true);
 }
 
-void tchat_::chat_2_scroll_label(tscroll_label& label, const tsession& sess)
+void tchat_::chat_2_scroll_label(tlistbox& list, const tsession& sess, int cursel)
 {
-	std::vector<tintegrate::tlocator> locator;
-	std::string str = format_log_str(sess, locator);
+	format_log_2_listbox(list, sess, cursel);
 
-	tlabel* widget = find_widget<tlabel>(label.content_grid(), "_label", false, true);
+	std::stringstream ss;
+	if (current_session_) {
+		ss << std::setfill('0') << std::setw(2) << (current_session_->pages() - current_session_->current_page);
+		ss << "/";
+		ss << std::setfill('0') << std::setw(2) << current_session_->pages();
+	} else {
+		ss << "--/--";
+	}
+	pagenum_->set_label(ss.str());
 
-	label.set_label(str);
-	widget->refresh_locator_anim(locator);
+	previous_page_->set_visible(current_session_ && current_session_->can_previous()? twidget::VISIBLE: twidget::HIDDEN);
+	next_page_->set_visible(current_session_ && current_session_->can_next()? twidget::VISIBLE: twidget::HIDDEN);
 }
 
-bool tchat_::handle_raw(int at, tsock::ttype type, const char* param[])
+void tchat_::handle_status(int at, tsock::ttype type)
 {
+	if (at != tlobby::tag_chat) {
+		return;
+	}
 	if (!gui_ready()) {
-		return false;
+		return;
 	}
-
 	if (type == tsock::t_connected) {
 		find_->set_active(true);
-		return false;
+		return;
 
 	} else if (type == tsock::t_disconnected) {
-		for (std::map<int, tlobby_channel>::iterator it = lobby->chat.channels.begin(); it != lobby->chat.channels.end(); ++ it) {
+		for (std::map<int, tlobby_channel>::iterator it = lobby->chat->channels.begin(); it != lobby->chat->channels.end(); ++ it) {
 			bool person = !tlobby_channel::is_allocatable(it->first);
 			tlobby_channel& channel = it->second;
 			if (person) {
@@ -1792,6 +1955,15 @@ bool tchat_::handle_raw(int at, tsock::ttype type, const char* param[])
 				refresh_toolbar(current_ft_, current_session_->receiver->id);
 			}
 		}
+	}
+}
+
+bool tchat_::handle_raw(int at, tsock::ttype type, const char* param[])
+{
+	if (at != tlobby::tag_chat) {
+		return false;
+	}
+	if (!gui_ready()) {
 		return false;
 	}
 
@@ -1846,107 +2018,64 @@ bool tchat_::handle_raw(int at, tsock::ttype type, const char* param[])
 	return halt;
 }
 
-void tchat_::swap_page(twindow& window, int page, bool swap)
+void tchat_::swap_page(twindow& window, int layer, bool swap)
 {
-	if (page < min_page_ || !page_panel_) {
+	if (!page_panel_) {
 		return;
 	}
-	int index = page - min_page_;
-
-	if (page_panel_->current_page() == index) {
+	if (current_page_ == layer) {
 		// desired page is the displaying page, do nothing.
 		return;
 	}
 
+	bool require_layout_window = false;
 	if (current_page_ == chat_page_) {
+		require_layout_window = swap_resultion_;
 		tchat_::post_show(window);
 	} else {
 		desire_swap_page(window, current_page_, false);
 	}
 
-	page_panel_->swap_uh(window, index);
-	if (swap) {
-		page_panel_->swap_bh(window);
-	}
+	page_panel_->set_radio_layer(layer);
 
-	if (page == chat_page_) {
+	if (layer == chat_page_) {
 		tchat_::pre_show(window);
-		network::send_data(lobby->chat, config("refresh_lobby"));
 
 	} else {
-		desire_swap_page(window, page, true);
+		desire_swap_page(window, layer, true);
+		if (require_layout_window) {
+			window.invalidate_layout();
+		}
 	}
 
-	current_page_ = page;
+	current_page_ = layer;
 }
 
-tchat2::tchat2(display& disp, tgroup& g)
-	: tchat_(disp, g, MIN_PAGE, CHAT_PAGE, CHATING_PAGE)
+tchat2::tchat2(display& disp)
+	: tchat_(disp, CHAT_PAGE)
 	, disp_(disp)
 {
-}
-
-void tchat2::sheet_toggled(twidget* widget)
-{
-	ttoggle_button* toggle = dynamic_cast<ttoggle_button*>(widget);
-	int toggled_page = toggle->get_data();
-
-	if (!toggle->get_value()) {
-		// At most select one page. recheck it!
-		toggle->set_value(true);
-	} else {
-		for (std::map<int, ttoggle_button*>::iterator it = sheet_.begin(); it != sheet_.end(); ++ it) {
-			if (it->second == toggle) {
-				continue;
-			}
-			it->second->set_value(false);
-		}
-		swap_page(*toggle->get_window(), toggled_page, true);
-	}
 }
 
 void tchat2::pre_show(CVideo& /*video*/, twindow& window)
 {
 	window.set_escape_disabled(true);
 
-	sheet_.insert(std::make_pair((int)CHAT_PAGE, find_widget<ttoggle_button>(&window, "chat", false, true)));
-	for (std::map<int, ttoggle_button*>::iterator it = sheet_.begin(); it != sheet_.end(); ++ it) {
-		it->second->set_callback_state_change(boost::bind(&tchat2::sheet_toggled, this, _1));
-		it->second->set_data(it->first);
-	}
-
-	page_panel_ = find_widget<tscrollbar_panel>(&window, "page", false, true);
+	page_panel_ = find_widget<tstacked_widget>(&window, "panel", false, true);
 	swap_page(window, CHAT_PAGE, false);
-	sheet_.begin()->second->set_value(true);
 
-	update_network_status(window, lobby->chat.ready());
 	join();
 }
 
-bool tchat2::handle_raw(int at, tsock::ttype type, const char* param[])
+void tchat2::handle_status(int at, tsock::ttype type)
 {
 	if (at != tlobby::tag_chat) {
-		return false;
+		return;
 	}
 
-	if (type == tsock::t_connected || type == tsock::t_disconnected) {
-		update_network_status(*page_panel_->get_window(), type == tsock::t_connected);
-		process_network_status(type == tsock::t_connected);
-	}
+	process_network_status(type == tsock::t_connected);
 
-	return tchat_::handle_raw(at, type, param);
-}
-
-void tchat2::update_network_status(twindow& window, bool connected)
-{
-	std::stringstream strstr;
-	strstr << dgettext("wesnoth-lib", "Chat");
-	if (!connected) {
-		strstr << tintegrate::generate_img("misc/network-disconnected.png");
-	} else {
-		strstr << tintegrate::generate_img("misc/network-connected.png");
-	}
-	find_widget<ttoggle_button>(&window, "chat", false, true)->set_label(strstr.str());
+	tchat_::handle_status(at, type);
 }
 
 }

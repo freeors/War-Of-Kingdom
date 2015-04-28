@@ -34,6 +34,46 @@
 #define ALIGN_4
 #endif
 
+struct textendable_buf
+{
+	textendable_buf()
+		: data(NULL)
+		, size(0)
+		, vsize(0)
+	{}
+	~textendable_buf()
+	{
+		if (data) {
+			free(data);
+		}
+	}
+
+	void put(const void* src, int src_size)
+	{
+		if (!src || src_size <= 0) {
+			return;
+		}
+
+		if (src_size > size) {
+			char* tmp = (char*)malloc(src_size);
+			if (data) {
+				if (vsize) {
+					memcpy(tmp, data, vsize);
+				}
+				free(data);
+			}
+			data = tmp;
+			size = src_size;
+		}
+		memcpy(data, src, src_size);
+		vsize = src_size;
+	}
+
+	char* data;
+	int size;
+	int vsize;
+};
+
 namespace network_worker_pool
 {
 
@@ -65,10 +105,10 @@ void queue_file(TCPsocket sock, const std::string&);
 
 size_t queue_data(TCPsocket sock, const config& buf, const std::string& packet_type);
 bool is_locked(const TCPsocket sock);
-bool close_socket(TCPsocket sock);
+void close_socket(TCPsocket sock);
 TCPsocket detect_error();
 
-std::pair<network::statistics,network::statistics> get_current_transfer_stats(TCPsocket sock);
+std::pair<network::statistics, network::statistics> get_current_transfer_stats(TCPsocket sock);
 }
 
 #endif
